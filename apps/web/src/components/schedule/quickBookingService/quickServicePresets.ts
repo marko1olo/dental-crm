@@ -8,8 +8,20 @@ import {
   type QuickBookingStageService,
 } from "../QuickBookingDrawerTypes";
 import type { QuickServicePreset } from "./types";
+import {
+  appendReasonPreset,
+  hasTreatmentPlanStageContext,
+  extractStageBookingServices,
+} from "./quickServiceHelpers";
 
-export { APPOINTMENT_TYPE_PRESETS, COMMON_REASONS, DURATION_PRESETS };
+export {
+  APPOINTMENT_TYPE_PRESETS,
+  COMMON_REASONS,
+  DURATION_PRESETS,
+  appendReasonPreset,
+  hasTreatmentPlanStageContext,
+  extractStageBookingServices,
+};
 
 /**
  * Catalog of clinical quick-booking presets by dental specialty with standard duration in minutes.
@@ -86,41 +98,3 @@ export const QUICK_SERVICE_PRESETS: readonly QuickServicePreset[] = [
     appointmentType: "emergency",
   },
 ];
-
-/**
- * Appends a preset reason chip to the current reason text without duplicating commas.
- */
-export function appendReasonPreset(currentReason: string, chipLabel: string): string {
-  const cur = currentReason.trim();
-  return cur ? `${cur}, ${chipLabel.toLowerCase()}` : chipLabel;
-}
-
-/**
- * Checks whether an initial booking slot carries treatment plan stage binding data.
- */
-export function hasTreatmentPlanStageContext(
-  initialSlot?: QuickBookingSlotInfo | null,
-): boolean {
-  return Boolean(
-    initialSlot?.stageTitle ||
-      initialSlot?.treatmentPlanId ||
-      initialSlot?.stageId ||
-      initialSlot?.services?.length ||
-      initialSlot?.items?.length ||
-      initialSlot?.procedures?.length,
-  );
-}
-
-/**
- * Extracts normalized stage services list from an initial booking slot.
- */
-export function extractStageBookingServices(
-  initialSlot?: QuickBookingSlotInfo | null,
-): QuickBookingStageService[] {
-  return (
-    initialSlot?.services ||
-    initialSlot?.items ||
-    initialSlot?.procedures ||
-    []
-  );
-}

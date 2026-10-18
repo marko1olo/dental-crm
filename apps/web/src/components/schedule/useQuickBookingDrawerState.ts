@@ -84,3 +84,5 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     editingAppointment: editingAppt, ...submit,
   };
 }
+
+export type QuickBookingDrawerState = ReturnType<typeof useQuickBookingDrawerState>;

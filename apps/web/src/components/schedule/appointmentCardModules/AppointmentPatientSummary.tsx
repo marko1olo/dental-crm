@@ -33,12 +33,12 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 
 	return (
 		<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-			{/* Time Range */}
+			{/* Time Range: clear start - end time for long visits (e.g. 14:00 - 16:00) */}
 			<span
 				className="font-bold text-xs text-[var(--ink)] font-mono shrink-0"
 				title={`Время приёма: ${aStart}–${aEnd}`}
 			>
-				{aStart}
+				{durationMin > 30 && aEnd && aEnd !== aStart ? `${aStart} - ${aEnd}` : aStart}
 			</span>
 
 			{/* CITO / Urgent Pain Alert */}

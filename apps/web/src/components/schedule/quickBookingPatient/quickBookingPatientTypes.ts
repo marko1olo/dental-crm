@@ -1,0 +1,41 @@
+import type { Dashboard, Patient } from "@dental/shared";
+import type React from "react";
+import type { PotentialDuplicateItem } from "../patientSearchEngine";
+import type { PatientReliabilityAssessment } from "../patientReliabilityScore";
+
+export interface QuickBookingPatientSectionProps {
+  dashboard?: Dashboard | undefined;
+  selectedPatient: Patient | null;
+  setSelectedPatient: (p: Patient | null) => void;
+  setPatientId: (id: string) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  isTypeaheadOpen: boolean;
+  setIsTypeaheadOpen: (open: boolean) => void;
+  searchResults: Array<{ patient: Patient; isFuzzy?: boolean | undefined; suggestedName?: string | undefined }>;
+  highlightedIndex: number;
+  setHighlightedIndex: React.Dispatch<React.SetStateAction<number>>;
+  selectPatient: (p: Patient) => void;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
+  focusTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  showInlineNewPatient: boolean;
+  setShowInlineNewPatient: (show: boolean) => void;
+  newPatientFullName: string;
+  setNewPatientFullName: (name: string) => void;
+  newPatientPhone: string;
+  setNewPatientPhone: (phone: string) => void;
+  newPatientBirthDate: string;
+  setNewPatientBirthDate: (bd: string) => void;
+  isCreatingPatient: boolean;
+  handleCreateInlinePatient: (e: React.FormEvent) => Promise<void>;
+  newPatientFullNameInputRef: React.RefObject<HTMLInputElement | null>;
+  potentialDuplicates: PotentialDuplicateItem[];
+  patientReliability: PatientReliabilityAssessment | null;
+  hasActivePatientVisit: boolean;
+  doctorUserId: string;
+  doctors: Array<{ id: string; fullName: string }>;
+  setAppointmentType: (t: any) => void;
+  setReason: (r: string) => void;
+  setComment: (c: string) => void;
+  setDurationMinutes: (d: number) => void;
+}
