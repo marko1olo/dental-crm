@@ -1,6 +1,9 @@
 export * from "./CallPlayer";
 export * from "./CampaignPanel";
+export * from "./ChairsideIntercomBar";
 export * from "./MessageDeliveryConsole";
+export * from "./MobileCommunicationsMessenger";
+export * from "./StaffMessengerPanel";
 export * from "./deliveryReportNotice";
 export * from "./journalDigest";
 export type { TemplateVariable } from "./CampaignPanel";

@@ -32,7 +32,7 @@ export function CommunicationsView(
 
 	return (
 		<div
-			className="panel communications-panel"
+			className="panel communications-panel w-full max-w-full overflow-x-clip"
 			id="communications"
 			data-testid="communications-view"
 		>

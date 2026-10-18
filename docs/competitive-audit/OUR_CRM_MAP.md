@@ -7540,4 +7540,51 @@
   - `docs/proofs/orthodontics/ortho_mobile_dark_390x844.png`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 330)
 
+### 2.10.427. Волна 331: Канонический центр коммуникаций и Chairside Intercom у кресла (Мандаты 4, 8c, 8e, 8n / THE HAMMER), устранение горизонтального переполнения, 100% Vitest и 4-State Red Team Visual Proof
+- **Функционал**:
+  1. *Chairside Intercom Bar у кресла (Mandate 4 & Mandate 8e)*:
+     - Крупные сенсорные кнопки 44–48px для врача в перчатках с тактильным эффектом `active:scale-[0.97]` и звуковым сопровождением `playIntercomChime`: «🪑 Нужен ассистент» (с выбором специализации: Терапия/Эндо, Хирургия/Имплантация, Ортопедия, Гигиена), «🚪 Пригласите следующего», «⏳ Задержка 10 мин», «🧼 Стерилизация», «🔔 В холле», «📼 Снимок КТ», «🦷 ЗТЛ», «🚨 SOS»;
+     - В `packages/shared/src/staff/clinicIntercom.ts` канонизированы схемы и пресеты `intercomPresetKeySchema`: `"invite_next_patient"`, `"doctor_delay_10m"`, `"prepare_sterilization"` без `undefined`;
+  2. *Стандартизация дизайн-токенов кнопок и ликвидация Tailwind-светофора*:
+     - Все кнопки переведены на канонические классы `.primary-button`, `.secondary-button`, дизайн-токены `var(--paper)`, `var(--ink)`, `var(--primary)`, `var(--line)`;
+     - Компактный плеер звонков `CallPlayer.tsx`: кнопки 36px, дискретное переключение скорости `1x -> 1.5x -> 2x`;
+     - Панель быстрого ввода `StaffChatInput.tsx`: поле ввода с поддержкой `Enter` и кнопка `.primary-button` (min-h-[44px]);
+  3. *Ликвидация паразитного горизонтального сдвига и обрезания кнопок*:
+     - Устранена ошибка Flexbox `min-width: auto`: на правую панель чата и контейнер `StaffMessengerPanel` наложены `min-w-0` и `max-w-full`, предотвращающие раздувание до 1501px и гарантирующие адаптивную прокрутку пресетов;
+     - Заменен неконтролируемый `scrollIntoView()` окна на локальный `parentElement.scrollTop = parentElement.scrollHeight`, устранивший горизонтальный сдвиг `window.scrollX`;
+     - Кнопки «Омниканальный чат» и контекстное меню «...» в шапке теперь 100% отображаются целиком без усечения текста;
+  4. *Apple HIG Mobile Messenger (390×844)*:
+     - Grouped List карточек пациентов в стиле iOS Settings/Health, тач-таргеты $\ge 44\text{px}$, 0px паразитного горизонтального скролла, плавающие панели;
+  5. *100% Green Vitest Suite*:
+     - Все 6 сьютов коммуникаций проходят успешно: `6 passed (6), 78 passed (78), Exit Code 0` (`vitest run apps/web/src/components/communications`);
+  6. *4-State Red Team Visual Proof*:
+     - Реальные скриншоты в боевом монорепозитории (`http://127.0.0.1:5173/?demo=true&communications=1`, Fastify API `:4100`, PostgreSQL 18 `:5432`):
+       * `docs/proofs/communications/comms_pc_light_1440x900.png` (79.1 KB)
+       * `docs/proofs/communications/comms_pc_dark_1440x900.png` (83.5 KB)
+       * `docs/proofs/communications/comms_mobile_light_390x844.png` (96.2 KB)
+       * `docs/proofs/communications/comms_mobile_dark_390x844.png` (96.3 KB)
+     - Каждый скриншот лично отсмотрен ревизором через `view_file`: подтверждено идеальное качество светлой и тёмной тем на десктопе и смартфоне.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/staff/clinicIntercom.ts`
+  - `apps/web/src/components/communications/ChairsideIntercomBar.tsx`
+  - `apps/web/src/components/communications/CallPlayer.tsx`
+  - `apps/web/src/components/communications/staffMessenger/StaffChatInput.tsx`
+  - `apps/web/src/components/communications/staffMessenger/index.tsx`
+  - `apps/web/src/components/communications/staffMessenger/useStaffMessenger.ts`
+  - `apps/web/src/components/communications/communicationsViewModules/CommunicationsActiveChatPane.tsx`
+  - `apps/web/src/components/communications/communicationsViewModules/CommunicationsConversationsList.tsx`
+  - `apps/web/src/components/communications/communicationsViewModules/useCommunicationsViewController.ts`
+  - `apps/web/src/components/communications/deliveryConsole/useMessageDeliveryConsole.ts`
+  - `apps/web/src/components/communications/__tests__/callPlayer.test.tsx`
+  - `apps/web/src/components/communications/__tests__/staffMessengerPanel.test.tsx`
+  - `apps/web/src/main.tsx`
+  - `apps/web/src/CommunicationsView.tsx`
+  - `docs/proofs/communications/comms_pc_light_1440x900.png`
+  - `docs/proofs/communications/comms_pc_dark_1440x900.png`
+  - `docs/proofs/communications/comms_mobile_light_390x844.png`
+  - `docs/proofs/communications/comms_mobile_dark_390x844.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 331)
+
+
 

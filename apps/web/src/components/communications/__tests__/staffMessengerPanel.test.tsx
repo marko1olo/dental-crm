@@ -60,6 +60,18 @@ describe("In-Clinic Staff Messenger & Chairside Intercom (Mandate 4 & 8e)", () =
 			"Must render 1-click assistant call button",
 		);
 		assert.ok(
+			html.includes('data-testid="intercom-btn-invite-next"'),
+			"Must render 1-click invite next patient button",
+		);
+		assert.ok(
+			html.includes('data-testid="intercom-btn-delay-10m"'),
+			"Must render 1-click delay 10m button",
+		);
+		assert.ok(
+			html.includes('data-testid="intercom-btn-sterilization"'),
+			"Must render 1-click sterilization button",
+		);
+		assert.ok(
 			html.includes('data-testid="intercom-btn-patient-arrived"'),
 			"Must render 1-click patient arrived button",
 		);
@@ -77,7 +89,7 @@ describe("In-Clinic Staff Messenger & Chairside Intercom (Mandate 4 & 8e)", () =
 		);
 	});
 
-	it("renders ChairsideIntercomBar HUD component with clinical specialty grouping", () => {
+	it("renders ChairsideIntercomBar HUD component with clinical specialty grouping and 44px touch targets", () => {
 		const html = renderToStaticMarkup(
 			<ChairsideIntercomBar cabinetNumber="2" />,
 		);
@@ -89,6 +101,22 @@ describe("In-Clinic Staff Messenger & Chairside Intercom (Mandate 4 & 8e)", () =
 		assert.ok(
 			html.includes('data-testid="chairside-call-assistant-btn"'),
 			"Must render call assistant button in chair HUD",
+		);
+		assert.ok(
+			html.includes('data-testid="chairside-invite-next-btn"'),
+			"Must render invite next button in chair HUD",
+		);
+		assert.ok(
+			html.includes('data-testid="chairside-delay-btn"'),
+			"Must render delay 10m button in chair HUD",
+		);
+		assert.ok(
+			html.includes('data-testid="chairside-sterilization-btn"'),
+			"Must render sterilization button in chair HUD",
+		);
+		assert.ok(
+			html.includes('data-testid="chairside-sos-btn"'),
+			"Must render SOS button in chair HUD",
 		);
 		assert.ok(
 			html.includes("Каб. 2"),

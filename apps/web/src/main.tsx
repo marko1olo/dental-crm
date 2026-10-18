@@ -108,6 +108,11 @@ const OrthopedicsChairsidePanel = React.lazy(() =>
 		default: m.OrthopedicsChairsidePanel,
 	})),
 );
+const CommunicationsView = React.lazy(() =>
+	import("./CommunicationsView").then((m) => ({
+		default: m.CommunicationsView,
+	})),
+);
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -789,6 +794,41 @@ if (publicPortalRoute) {
 							activeToothFdi={16}
 							selectedTeeth={[16]}
 						/>
+					</div>
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).has("communications") ||
+		new URLSearchParams(window.location.search).has("comms") ||
+		window.location.hash.toLowerCase().includes("communications") ||
+		window.location.hash.toLowerCase().includes("comms"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	console.info("[Communications] Standalone branch mounted");
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка центра коммуникаций...
+						</div>
+					}
+				>
+					<div className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-2 sm:p-4 overflow-y-auto">
+						<CommunicationsView />
 					</div>
 				</React.Suspense>
 				<GlobalToast />

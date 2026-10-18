@@ -110,7 +110,7 @@ export function CommunicationsConversationsList({
 									}
 									staffRoleLabels={staffRoleLabels}
 									task={task}
-									appointments={dashboard.appointments}
+									appointments={dashboard?.appointments}
 								/>
 							))}
 							{tasksSlice.hasMore && (

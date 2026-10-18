@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { summarizeJournal } from "../journalDigest";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { sliceDomList } from "../../../utils/domVirtualizationHelper";
@@ -28,11 +28,8 @@ import type {
 export function useCommunicationsViewController(
 	rawProps?: Partial<CommunicationsViewProps>,
 ) {
-	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as ReturnType<
-		typeof useAppLogicContext
-	> &
-		Partial<CommunicationsViewProps>;
+	const logicContext = useOptionalAppLogicContext() ?? ({} as any);
+	const props = { ...logicContext, ...rawProps } as any;
 
 	const {
 		communicationChannelLabels = DEFAULT_COMMUNICATION_CHANNEL_LABELS,
@@ -87,10 +84,11 @@ export function useCommunicationsViewController(
 				if (hash.includes("chat") || search.includes("chat")) return "chat";
 				if (hash.includes("notifications") || search.includes("notifications"))
 					return "notifications";
-				if (hash.includes("staff_chat") || search.includes("staff_chat"))
+				if (hash.includes("staff_chat") || search.includes("staff_chat") || search.includes("intercom") || hash.includes("intercom"))
 					return "staff_chat";
+				if (hash.includes("tasks") || search.includes("tasks")) return "tasks";
 			}
-			return "tasks";
+			return "staff_chat";
 		},
 	);
 

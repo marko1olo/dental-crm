@@ -80,8 +80,13 @@ export function useStaffMessenger({
 				const data = await res.json();
 				if (Array.isArray(data.channels) && data.channels.length > 0) {
 					setChannels(data.channels);
-					if (!activeChannelId && data.channels[0]) {
-						setActiveChannelId(data.channels[0].id);
+					if (!activeChannelId) {
+						const defaultCh =
+							data.channels.find((c: StaffChatChannel) => c.slug === "general") ||
+							data.channels[0];
+						if (defaultCh) {
+							setActiveChannelId(defaultCh.id);
+						}
 					}
 				} else if (isDemoShowcaseMode()) {
 					// Стартовые каналы для демо-режима
@@ -140,9 +145,96 @@ export function useStaffMessenger({
 						setActiveChannelId(fallbackChannels[0].id);
 					}
 				}
+			} else if (isDemoShowcaseMode()) {
+				const fallbackChannels: StaffChatChannel[] = [
+					{
+						id: "demo-ch-1",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "general",
+						name: "Общий чат",
+						description: "Объявления, смены, оперативные вопросы клиники",
+						icon: "hospital",
+						isDefault: true,
+						unreadCount: 0,
+						createdAt: new Date().toISOString(),
+					},
+					{
+						id: "demo-ch-2",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "reception",
+						name: "Ресепшен и визиты",
+						description: "Приход пациентов, оформление, координация приёма",
+						icon: "bell",
+						isDefault: true,
+						unreadCount: 1,
+						createdAt: new Date().toISOString(),
+					},
+					{
+						id: "demo-ch-3",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "intercom_assistants",
+						name: "Интерком и ассистенты",
+						description: "Вызовы к установке, материалы, помощь врачам",
+						icon: "chair",
+						isDefault: true,
+						unreadCount: 2,
+						createdAt: new Date().toISOString(),
+					},
+					{
+						id: "demo-ch-4",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "lab_ztl",
+						name: "Лаборатория ЗТЛ",
+						description: "Наряды, примерки, цвет Vita, обсуждение коронок",
+						icon: "tooth",
+						isDefault: true,
+						unreadCount: 0,
+						createdAt: new Date().toISOString(),
+					},
+				];
+				setChannels(fallbackChannels);
+				if (!activeChannelId && fallbackChannels[0]) {
+					setActiveChannelId(fallbackChannels[0].id);
+				}
 			}
 		} catch (e) {
 			console.error("Ошибка загрузки каналов:", e);
+			if (isDemoShowcaseMode()) {
+				const fallbackChannels: StaffChatChannel[] = [
+					{
+						id: "demo-ch-1",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "general",
+						name: "Общий чат",
+						description: "Объявления, смены, оперативные вопросы клиники",
+						icon: "hospital",
+						isDefault: true,
+						unreadCount: 0,
+						createdAt: new Date().toISOString(),
+					},
+					{
+						id: "demo-ch-2",
+						organizationId: "demo-org",
+						type: "channel",
+						slug: "reception",
+						name: "Ресепшен и визиты",
+						description: "Приход пациентов, оформление, координация приёма",
+						icon: "bell",
+						isDefault: true,
+						unreadCount: 1,
+						createdAt: new Date().toISOString(),
+					},
+				];
+				setChannels(fallbackChannels);
+				if (!activeChannelId && fallbackChannels[0]) {
+					setActiveChannelId(fallbackChannels[0].id);
+				}
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -334,7 +426,10 @@ export function useStaffMessenger({
 	}, [activeChannelId]);
 
 	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+		if (messagesEndRef.current?.parentElement) {
+			messagesEndRef.current.parentElement.scrollTop =
+				messagesEndRef.current.parentElement.scrollHeight;
+		}
 	}, [messages]);
 
 	const activeChannel = useMemo(

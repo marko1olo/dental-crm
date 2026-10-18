@@ -29,6 +29,9 @@ export const intercomPresetKeySchema = z.enum([
 	"lab_work_ready",
 	"patient_delay",
 	"urgent_doctor_call",
+	"invite_next_patient",
+	"doctor_delay_10m",
+	"prepare_sterilization",
 ]);
 export type IntercomPresetKey = z.infer<typeof intercomPresetKeySchema>;
 
@@ -255,6 +258,36 @@ export const INTERCOM_PRESETS: Record<IntercomPresetKey, IntercomPresetDefinitio
 			}
 			return text;
 		},
+	},
+	invite_next_patient: {
+		key: "invite_next_patient",
+		label: "Пригласите следующего пациента",
+		badge: "🚪",
+		channelSlug: "reception",
+		defaultUrgency: "normal",
+		description: "Врач закончил приём и готов принять следующего пациента из холла",
+		formatMessage: ({ cabinetNumber = "1", doctorName = "Врач" }) =>
+			`Кабинет ${cabinetNumber} (${doctorName}): приём завершён. Пригласите следующего пациента, пожалуйста!`,
+	},
+	doctor_delay_10m: {
+		key: "doctor_delay_10m",
+		label: "Задержка приёма на 10 мин",
+		badge: "⏳",
+		channelSlug: "reception",
+		defaultUrgency: "urgent",
+		description: "Текущий приём задерживается на 10 минут, предупредите ожидающего в холле",
+		formatMessage: ({ cabinetNumber = "1", delayMinutes = 10, doctorName = "Врач" }) =>
+			`Кабинет ${cabinetNumber} (${doctorName}): приём задерживается на ${delayMinutes} мин. Пожалуйста, предупредите следующего пациента.`,
+	},
+	prepare_sterilization: {
+		key: "prepare_sterilization",
+		label: "Подготовьте кабинет стерилизации",
+		badge: "🧼",
+		channelSlug: "intercom_assistants",
+		defaultUrgency: "normal",
+		description: "Запрос в ЦСО/ассистентам на подготовку стерильного лотка или крафт-пакета",
+		formatMessage: ({ cabinetNumber = "1", customNote = "базовый стерильный набор" }) =>
+			`Кабинет ${cabinetNumber}: требуется подготовить стерилизацию / инструменты (${customNote}).`,
 	},
 };
 

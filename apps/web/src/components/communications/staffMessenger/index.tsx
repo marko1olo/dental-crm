@@ -16,7 +16,7 @@ export const StaffMessengerPanel: React.FC<StaffMessengerPanelProps> = ({
 
 	return (
 		<div
-			className="staff-messenger-container flex flex-col md:flex-row h-[780px] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-2xl overflow-hidden shadow-xl"
+			className="staff-messenger-container w-full max-w-full min-w-0 flex flex-col md:flex-row h-[780px] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-2xl overflow-hidden shadow-xl"
 			data-testid="staff-messenger-panel"
 		>
 			{/* Левая боковая панель: Каналы и коллеги */}
@@ -35,7 +35,7 @@ export const StaffMessengerPanel: React.FC<StaffMessengerPanelProps> = ({
 
 			{/* Правая панель: Чат живого общения и интерком */}
 			<div
-				className={`flex-1 flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper,#0f172a)] ${
+				className={`flex-1 min-w-0 flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper,#0f172a)] ${
 					logic.mobileView === "channels" ? "hidden md:flex" : "flex"
 				}`}
 			>

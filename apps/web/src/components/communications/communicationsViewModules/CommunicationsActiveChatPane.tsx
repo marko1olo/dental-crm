@@ -45,7 +45,7 @@ export function CommunicationsActiveChatPane({
 			)}
 
 			{ctrl.activeSection === "staff_chat" && (
-				<div className="h-[780px] mb-5">
+				<div className="h-[780px] mb-5 w-full max-w-full min-w-0">
 					<Suspense fallback={null}>
 						<StaffMessengerPanel />
 					</Suspense>
