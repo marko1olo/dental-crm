@@ -20,6 +20,7 @@ export interface ToothNumberBadgeProps {
 	activeStamp?: ToothState | null | undefined;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
+	stageBadge?: string | undefined;
 }
 
 export const ToothNumberBadge: React.FC<ToothNumberBadgeProps> = memo(({
@@ -38,6 +39,7 @@ export const ToothNumberBadge: React.FC<ToothNumberBadgeProps> = memo(({
 	activeStamp,
 	onQuickStateChange,
 	onResorptionChange,
+	stageBadge,
 }) => {
 	return (
 		<div className="relative flex flex-col items-center group/badge">
@@ -56,9 +58,22 @@ export const ToothNumberBadge: React.FC<ToothNumberBadgeProps> = memo(({
 				/>
 			)}
 
-			<span className={`tooth-number-badge ${isSelected ? "selected" : ""}`}>
+			<span
+				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
+				data-testid={`presenter-fdi-tooth-${number}`}
+				id={`presenter-fdi-tooth-${number}`}
+			>
 				<span className="tooth-status-dot" style={{ backgroundColor: colors.badgeColor }} />
 				<span className="tooth-number-text font-black text-[13px] sm:text-[14px] leading-tight select-none">{number}</span>
+				{stageBadge && (
+					<span
+						className="ml-1 px-1 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white shadow-2xs leading-tight"
+						data-testid={`presenter-stage-badge-${number}`}
+						title={`Этап лечения: ${stageBadge}`}
+					>
+						{stageBadge}
+					</span>
+				)}
 				{resorptionVisual && resorptionVisual.stage > 0 && (
 					<span
 						className="ml-1 px-1 py-0.5 rounded text-xs font-black leading-none shadow-2xs"

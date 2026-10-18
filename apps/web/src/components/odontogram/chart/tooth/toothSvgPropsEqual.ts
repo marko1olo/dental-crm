@@ -41,6 +41,7 @@ export function areToothSvgPropsEqual(
 	if (prev.onClick !== next.onClick) return false;
 	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
 	if (prev.onResorptionChange !== next.onResorptionChange) return false;
+	if (prev.stageBadge !== next.stageBadge) return false;
 	if (!areSurfacesEqual(prev.surfaces, next.surfaces)) return false;
 
 	if ((prev.isSelected || next.isSelected) && prev.selectedTeeth !== next.selectedTeeth) {

@@ -23,6 +23,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 	pocketDepth, pocketDepthMm, maxPocketDepth, isSelected, selectedTeeth,
 	activeStamp, onClick, onQuickStateChange, onResorptionChange, pediatricMode,
 	surfaces, useSurfaces, showPulpAndCanals, showPeriapicalHalos = true, showPeriodontalBoneLoss = true,
+	stageBadge,
 }: ToothSvgProps) => {
 	const effectivePocketDepth = pocketDepth ?? pocketDepthMm ?? maxPocketDepth;
 	const isTop = number < 30 || (number >= 51 && number <= 65);
@@ -49,7 +50,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 	}, [onClick, number, useSurfaces]);
 
 	const onKeyDown = useToothSvgKeyboard({ number, state, surfaces, useSurfaces, selectedTeeth, pediatricMode, onQuickStateChange });
-	const badgeProps = { number, isTop, isPrimary, state, colors, isSelected, surfaces, useSurfaces, selectedTeeth, rootResorptionStage, resorptionVisual, effectivePocketDepth, activeStamp, onQuickStateChange, onResorptionChange };
+	const badgeProps = { number, isTop, isPrimary, state, colors, isSelected, surfaces, useSurfaces, selectedTeeth, rootResorptionStage, resorptionVisual, effectivePocketDepth, activeStamp, onQuickStateChange, onResorptionChange, stageBadge };
 
 	return (
 		<div
@@ -57,6 +58,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			tabIndex={0}
 			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${isSelected ? "selected ring-2 ring-[var(--teal,#0d9488)]" : ""} ${isSelected && isTouchScreen ? "touch-zoomed" : ""}`}
 			data-tooth-id={number}
+			id={`plan-tooth-${number}`}
 			data-testid={`pediatric-tooth-btn-${number}`}
 			title={`${getToothFolkAndAnatomicalNameRu(number)} — Статус: ${TOOTH_STATE_LABELS[state]}`}
 			aria-label={`${getToothFolkAndAnatomicalNameRu(number)}, статус: ${TOOTH_STATE_LABELS[state]}`}

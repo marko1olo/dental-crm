@@ -69,6 +69,7 @@ export interface ToothData {
 	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16;
 	hasFracture?: boolean;
 	hasApicoectomy?: boolean;
+	stageBadge?: string | undefined;
 	updatedAt?: string;
 }
 

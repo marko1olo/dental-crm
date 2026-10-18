@@ -39,6 +39,8 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 	mobileDisplayMode,
 	onToggleMobileDisplayMode,
 }) => {
+	if (hideQuadrantSwitcher && hideExpressActions) return null;
+
 	return (
 		<div className="tooth-chart-toolbar-wrapper w-full flex flex-col gap-1 mb-1">
 			{/* Mobile 2x2 Quadrant Tabs per Apple HIG (< 768px) */}

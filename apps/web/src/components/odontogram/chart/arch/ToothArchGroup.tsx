@@ -69,6 +69,7 @@ export const ToothArchGroup: React.FC<ToothArchGroupProps> = memo(({
 						onQuickStateChange={onQuickStateChange}
 						onResorptionChange={onResorptionChange}
 						pediatricMode={pediatricMode}
+						stageBadge={tData?.stageBadge}
 					/>
 				);
 			})}

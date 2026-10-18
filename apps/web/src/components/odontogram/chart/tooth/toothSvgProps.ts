@@ -35,4 +35,5 @@ export interface ToothSvgProps {
 	showPulpAndCanals?: boolean | undefined;
 	showPeriapicalHalos?: boolean | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
+	stageBadge?: string | undefined;
 }
