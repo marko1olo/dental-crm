@@ -76,7 +76,7 @@ export const ClinicalTasksStandaloneWorkspace: React.FC = () => {
 
 	const handleComplete = (taskId: string) => {
 		setCompletingTaskId(taskId);
-		updateLocalTaskStatus(taskId, "completed");
+		updateLocalTaskStatus("pat-showcase-1", taskId, "completed");
 		setTasks((prev) =>
 			prev.map((t) => (t.id === taskId ? { ...t, status: "completed" as const } : t)),
 		);
@@ -103,7 +103,7 @@ export const ClinicalTasksStandaloneWorkspace: React.FC = () => {
 			dueAt: newTask.dueAt || null,
 			createdAt: new Date().toISOString(),
 		};
-		saveLocalTask(created);
+		saveLocalTask("pat-showcase-1", created);
 		setTasks((prev) => [created, ...prev]);
 	};
 

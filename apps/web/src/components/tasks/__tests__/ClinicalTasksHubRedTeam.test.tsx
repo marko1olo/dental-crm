@@ -97,11 +97,11 @@ describe("ClinicalTasksHubRedTeam — Ergonomic Clinical Tasks Hub, Apple HIG & 
 
 		const todayTasks = filterTasksByDeadline(mockTasks, "today");
 		assert.strictEqual(todayTasks.length, 1);
-		assert.strictEqual(todayTasks[0].id, "task-today-1");
+		assert.strictEqual(todayTasks[0]?.id, "task-today-1");
 
 		const tomorrowTasks = filterTasksByDeadline(mockTasks, "tomorrow");
 		assert.strictEqual(tomorrowTasks.length, 1);
-		assert.strictEqual(tomorrowTasks[0].id, "task-tomorrow-1");
+		assert.strictEqual(tomorrowTasks[0]?.id, "task-tomorrow-1");
 
 		const allTasks = filterTasksByDeadline(mockTasks, "all");
 		assert.strictEqual(allTasks.length, 4);

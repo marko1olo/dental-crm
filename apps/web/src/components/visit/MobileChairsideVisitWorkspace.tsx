@@ -1,7 +1,6 @@
 /**
  * apps/web/src/components/visit/MobileChairsideVisitWorkspace.tsx
  * DENTE Dental CRM — Sovereign Mobile Chairside Visit Workspace (Layer 5: Master Facade)
- * Preservation tokens: mobile-chairside-allergy-clean allergy-clean-badge
  */
 
 import React from "react";
@@ -16,78 +15,46 @@ import {
   useChairsideVisitWorkspace,
 } from "./mobileChairside";
 import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
+import { ClinicalTasksPanel } from "../../ClinicalTasksPanel";
 import type {
   MobileChairsideStep,
   MobileChairsideBillingItem,
   MobileChairsideVisitWorkspaceProps,
 } from "./mobileChairside/types";
 
-export type {
-  MobileChairsideStep,
-  MobileChairsideBillingItem,
-  MobileChairsideVisitWorkspaceProps,
-};
+export type { MobileChairsideStep, MobileChairsideBillingItem, MobileChairsideVisitWorkspaceProps };
 
-export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspaceProps> = (
-  props,
-) => {
+export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspaceProps> = (props) => {
   const {
-    activePatient,
-    activeAppointment,
-    visitNoteForm = {},
-    updateVisitNoteField,
-    handlePrintForm043uFast,
-    handleOpenLabOrder,
-    onOpenWarrantyModal,
-    consolidatedAllergyChip,
-    patientAge,
-    toothStateByCode = {},
-    setToothState,
-    onClose,
-    testId = "mobile-chairside-workspace",
-    loadedTreatmentPlan,
+    activePatient, activeAppointment, visitNoteForm = {}, updateVisitNoteField,
+    handlePrintForm043uFast, handleOpenLabOrder, onOpenWarrantyModal,
+    consolidatedAllergyChip, patientAge, toothStateByCode = {}, setToothState,
+    onClose, testId = "mobile-chairside-workspace", loadedTreatmentPlan,
   } = props;
 
   const ws = useChairsideVisitWorkspace(props);
 
   return (
     <div className="mobile-chairside-container" data-testid={testId}>
-      {/* 1. TOP HUD (APPLE HIG COMPACT PATIENT BAR) */}
       <ChairsidePatientQuickBar
-        activePatient={activePatient}
-        activeAppointment={activeAppointment}
-        patientAge={patientAge ?? null}
-        consolidatedAllergyChip={consolidatedAllergyChip ?? null}
-        handlePrintForm043uFast={handlePrintForm043uFast}
-        handleOpenLabOrder={handleOpenLabOrder}
-        onOpenWarrantyModal={onOpenWarrantyModal}
-        onClose={onClose}
-        onPrevStep={ws.handlePrevStep}
-        testId={testId}
+        activePatient={activePatient} activeAppointment={activeAppointment} patientAge={patientAge ?? null}
+        consolidatedAllergyChip={consolidatedAllergyChip ?? null} handlePrintForm043uFast={handlePrintForm043uFast}
+        handleOpenLabOrder={handleOpenLabOrder} onOpenWarrantyModal={onOpenWarrantyModal} onClose={onClose}
+        onPrevStep={ws.handlePrevStep} testId={testId}
       />
 
-      {/* SPECIALTY FOCUS BAR & EXPANDABLE PROTOCOL (ДЕТСТВО / ХИРУРГИЯ / ТЕРАПИЯ) */}
       <div className="px-3 pt-2">
-        <VisitSpecialtyFocus
-          activePatient={activePatient}
-          activeDoctor={props.activeDoctor}
-        />
+        <VisitSpecialtyFocus compact activePatient={activePatient} activeDoctor={props.activeDoctor} />
       </div>
 
-      {/* 2. SEGMENTED STEP PROGRESS BAR (5 STEPS) */}
       <ChairsideStepNav
-        currentStep={ws.currentStep}
-        onStepSelect={ws.setCurrentStep}
-        visitNoteForm={visitNoteForm}
-        billingItemsCount={ws.billingItems.length}
-        testId={testId}
+        currentStep={ws.currentStep} onStepSelect={ws.setCurrentStep} visitNoteForm={visitNoteForm}
+        billingItemsCount={ws.billingItems.length} testId={testId}
       />
 
-      {/* 3. CLINICAL WORKSPACE CONTENT */}
       <main className="mobile-chairside-content" data-testid={`${testId}-main-content`}>
         {ws.currentStep !== "checkout" && (
           <>
-            {/* 52px 1-TAP SOMATIC NORM BUTTON */}
             <button
               type="button"
               onClick={ws.onApplyChairsideNorm}
@@ -103,50 +70,64 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
               <span className="text-[12px] opacity-90 font-medium">1 тап</span>
             </button>
 
-            {/* FULL-WIDTH SMART MICROPHONE VOICE DICTATION */}
             <ChairsideSmartMicrophone
-              isRecording={ws.isRecording}
-              onToggleRecording={ws.toggleVoiceRecording}
-              onAppendPhrase={ws.appendQuickPhrase}
-              recognizedSnippet={ws.recognizedVoiceSnippet}
-              testId={testId}
+              isRecording={ws.isRecording} onToggleRecording={ws.toggleVoiceRecording}
+              onAppendPhrase={ws.appendQuickPhrase} recognizedSnippet={ws.recognizedVoiceSnippet} testId={testId}
             />
           </>
         )}
 
         <ChairsideProtocolsSection
-          currentStep={ws.currentStep}
-          visitNoteForm={visitNoteForm}
-          updateVisitNoteField={updateVisitNoteField}
-          activePatient={activePatient}
-          activeAppointment={activeAppointment}
-          loadedTreatmentPlan={loadedTreatmentPlan}
-          isStageTaken={ws.isStageTaken}
-          onTakeStage={ws.handleTakeStageFromBanner}
-          activeQuadrant={ws.activeQuadrant}
-          onQuadrantChange={ws.setActiveQuadrant}
-          toothStateByCode={toothStateByCode ?? {}}
-          setToothState={setToothState}
-          billingItems={ws.billingItems}
-          totalBillingAmountRub={ws.totalBillingAmountRub}
-          onAddBillingItem={ws.addBillingItem}
-          onRemoveBillingItem={ws.removeBillingItem}
-          isCheckoutSheetOpen={ws.isCheckoutSheetOpen}
-          onCloseCheckoutSheet={() => ws.setIsCheckoutSheetOpen(false)}
-          onConfirmCheckout={ws.executeFinalCheckout}
-          testId={testId}
+          currentStep={ws.currentStep} visitNoteForm={visitNoteForm} updateVisitNoteField={updateVisitNoteField}
+          activePatient={activePatient} activeAppointment={activeAppointment} loadedTreatmentPlan={loadedTreatmentPlan}
+          isStageTaken={ws.isStageTaken} onTakeStage={ws.handleTakeStageFromBanner} activeQuadrant={ws.activeQuadrant}
+          onQuadrantChange={ws.setActiveQuadrant} toothStateByCode={toothStateByCode ?? {}} setToothState={setToothState}
+          billingItems={ws.billingItems} totalBillingAmountRub={ws.totalBillingAmountRub} onAddBillingItem={ws.addBillingItem}
+          onRemoveBillingItem={ws.removeBillingItem} isCheckoutSheetOpen={ws.isCheckoutSheetOpen}
+          onCloseCheckoutSheet={() => ws.setIsCheckoutSheetOpen(false)} onConfirmCheckout={ws.executeFinalCheckout} testId={testId}
         />
+
+        {activePatient?.id ? (
+          <div className="mt-4 pb-24 px-1" data-testid="mobile-chairside-tasks-section">
+            <details className="ops-panel" open style={{ borderRadius: "12px", border: "1px solid var(--line)" }}>
+              <summary
+                style={{
+                  padding: "0.75rem 1rem",
+                  background: "var(--paper-soft)",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  cursor: "pointer",
+                  borderRadius: "12px",
+                }}
+              >
+                Клинические задачи и назначения передачи
+              </summary>
+              <div style={{ padding: "0.75rem 0.5rem" }}>
+                <ClinicalTasksPanel
+                  patientId={activePatient.id}
+                  assignedDoctorId={
+                    (typeof props.activeDoctor?.id === "string" && props.activeDoctor.id) ||
+                    (typeof props.activeDoctor?.userId === "string" && props.activeDoctor.userId) ||
+                    null
+                  }
+                  treatmentPlanId={
+                    (typeof activePatient?.activeTreatmentPlanId === "string" &&
+                      activePatient.activeTreatmentPlanId) ||
+                    (typeof activeAppointment?.treatmentPlanId === "string" &&
+                      activeAppointment.treatmentPlanId) ||
+                    null
+                  }
+                />
+              </div>
+            </details>
+          </div>
+        ) : null}
       </main>
 
-      {/* 4. FLOATING BOTTOM BAR (NATURAL THUMB ZONE) */}
       <ChairsideBottomStickyActions
-        currentStep={ws.currentStep}
-        loadedTreatmentPlan={loadedTreatmentPlan}
-        isStageTaken={ws.isStageTaken}
-        onPrevStep={ws.handlePrevStep}
-        onNextStep={ws.handleNextStep}
-        onTakeActivePlanStage={ws.handleTakeActivePlanStage}
-        testId={testId}
+        currentStep={ws.currentStep} loadedTreatmentPlan={loadedTreatmentPlan} isStageTaken={ws.isStageTaken}
+        onPrevStep={ws.handlePrevStep} onNextStep={ws.handleNextStep} onTakeActivePlanStage={ws.handleTakeActivePlanStage} testId={testId}
       />
     </div>
   );

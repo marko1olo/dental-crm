@@ -254,11 +254,11 @@ export function VisitActionFooter({
 				</button>
 			</div>
 
-			{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (СКРЫТЫ НА ОДОНТОГРАММЕ) ── */}
+			{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (ШАБЛОНЫ, ЗАДАЧИ, КОНТРОЛЬ ЦЕН) ── */}
 			<details
 				className="visit-secondary-tools-accordion"
 				style={{
-					display: visitSubViewTab === "odontogram" ? "none" : "block",
+					display: "block",
 					margin: "1rem 0",
 					border: "1px solid var(--glass-border)",
 					borderRadius: "12px",

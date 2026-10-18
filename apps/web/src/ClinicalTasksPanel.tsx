@@ -528,10 +528,13 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							title={preset.hint}
 							onClick={() => void createPresetTask(preset)}
 							style={{
-								fontSize: "0.85rem",
-								padding: "0.4rem 0.75rem",
-								borderRadius: "6px",
+								fontSize: "0.82rem",
+								minHeight: "36px",
+								padding: "0 0.75rem",
+								borderRadius: "8px",
 								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
 							}}
 						>
 							{preset.label}
@@ -703,6 +706,41 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				visibleTasks={visibleTasks}
 				completingTaskId={completingTaskId}
 				onCompleteTask={handleCompleteTask}
+				patientId={patientId}
+				assignedDoctorId={assignedDoctorId}
+				onAddTask={async (taskData) => {
+					if (!patientId) return;
+					const newTask: ClinicalTask = {
+						id:
+							typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+								? crypto.randomUUID()
+								: `clinical-task-${Date.now()}-${(Date.now() % 100000).toString(36)}`,
+						organizationId: auth?.organizationId ?? "current-org",
+						patientId,
+						treatmentPlanId,
+						assignedDoctorId,
+						taskType: taskData.taskType ?? "custom_reminder",
+						status: "pending",
+						title: taskData.title,
+						description: taskData.description ?? null,
+						dueAt: taskData.dueAt ?? null,
+						createdAt: new Date().toISOString(),
+					};
+					saveLocalTask(patientId, newTask);
+					setTasks((prev) => [newTask, ...(prev ?? []).filter((t) => t.id !== newTask.id)]);
+					showToast(`Задача создана: ${taskData.title}`, "success");
+					try {
+						await fetch(`/api/clinical/tasks`, {
+							method: "POST",
+							headers: auth
+								? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+								: { "Content-Type": "application/json" },
+							body: JSON.stringify(newTask),
+						});
+					} catch (e) {
+						logger.warn("[ClinicalTasksPanel] Sync task failed, kept locally", e);
+					}
+				}}
 			/>
 
 
