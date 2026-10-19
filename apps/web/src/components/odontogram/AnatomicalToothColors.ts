@@ -79,7 +79,7 @@ export const getAnatomicalToothColors = (
 		case "Caries":
 			return {
 				fill: "url(#dente-caries-grad)",
-				crownFill: "url(#dente-enamel-healthy)",
+				crownFill: "url(#dente-caries-grad)",
 				rootFill: "url(#dente-root-dentin)",
 				stroke: "#d97706",
 				opacity: "1",
@@ -90,7 +90,7 @@ export const getAnatomicalToothColors = (
 		case "Pulpitis":
 			return {
 				fill: "url(#dente-pulpitis-grad)",
-				crownFill: "url(#dente-enamel-healthy)",
+				crownFill: "url(#dente-pulpitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
 				stroke: "#ef4444",
 				opacity: "1",
@@ -101,7 +101,7 @@ export const getAnatomicalToothColors = (
 		case "Periodontitis":
 			return {
 				fill: "url(#dente-periodontitis-grad)",
-				crownFill: "url(#dente-enamel-healthy)",
+				crownFill: "url(#dente-periodontitis-grad)",
 				rootFill: "url(#dente-root-dentin)",
 				stroke: "#c2410c",
 				opacity: "1",
