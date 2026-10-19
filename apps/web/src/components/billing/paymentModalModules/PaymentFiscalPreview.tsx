@@ -45,13 +45,13 @@ export const PaymentFiscalPreview: React.FC<PaymentFiscalPreviewProps> = ({
 						<span>Предпросмотр чека</span>
 					</span>
 					<div className="flex items-center gap-1.5">
-						<span className="text-[10px] font-mono text-emerald-600 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-							Онлайн-касса 54-ФЗ
+						<span className="text-[10px] font-mono text-emerald-600 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+							Кассовый чек
 						</span>
 					</div>
 				</div>
 
-				{/* 54-FZ Receipt Delivery Switcher (Apple Segmented Bar) */}
+				{/* Receipt Delivery Switcher (Apple Segmented Bar) */}
 				<div className="space-y-1">
 					<div className="payment-doc-segmented-bar w-full">
 						<button
@@ -83,40 +83,6 @@ export const PaymentFiscalPreview: React.FC<PaymentFiscalPreviewProps> = ({
 						>
 							<Receipt size={12} />
 							<span>Email</span>
-						</button>
-					</div>
-				</div>
-
-				{/* 54-FZ Taxation System (СНО) Quick Selector */}
-				<div className="flex items-center justify-between gap-1 px-1 py-1 rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[11px]">
-					<div className="flex items-center gap-1 text-[var(--muted,#64748b)] shrink-0">
-						<Scale size={12} className="text-teal-600" />
-						<span className="font-semibold">СНО:</span>
-					</div>
-					<div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-						<button
-							type="button"
-							onClick={() => setTaxSystem("usn_income")}
-							className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${taxSystem === "usn_income" ? "bg-teal-600 text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
-							title="УСН Доходы (без НДС по ст. 149 НК РФ)"
-						>
-							УСН Доходы
-						</button>
-						<button
-							type="button"
-							onClick={() => setTaxSystem("patent")}
-							className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${taxSystem === "patent" ? "bg-teal-600 text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
-							title="Патентная система налогообложения (ПСН)"
-						>
-							ПСН
-						</button>
-						<button
-							type="button"
-							onClick={() => setTaxSystem("osn")}
-							className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${taxSystem === "osn" ? "bg-teal-600 text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
-							title="Общая система налогообложения"
-						>
-							ОСН
 						</button>
 					</div>
 				</div>

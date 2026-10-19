@@ -89,7 +89,7 @@ describe("Studio Clinical HIG: CashRegisterPaymentPane Cashier Terminal (Mandate
 
 		assert.ok(html.includes('data-testid="pane-tender-card"'));
 		assert.ok(html.includes('data-testid="btn-confirm-card-pos"'));
-		assert.ok(html.includes("Эквайринг 54-ФЗ"));
+		assert.ok(html.includes("Эквайринг"));
 	});
 
 	it("renders deposit tender pane with family wallet balances and 1-click deduction (Mandate 8n)", () => {

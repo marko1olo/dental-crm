@@ -112,7 +112,7 @@ describe("Studio Clinical HIG: PaymentModal 1-Click Operations (Mandates 8e, 8n)
 		);
 
 		assert.ok(html.includes('data-testid="inn-physical-not-required-badge"'));
-		assert.ok(html.includes("По 54-ФЗ для физлиц не требуется"));
+		assert.ok(html.includes("Для физлиц не требуется") || html.includes("для физлиц не требуется"));
 		assert.ok(html.includes('data-testid="input-buyer-inn-physical"'));
 	});
 

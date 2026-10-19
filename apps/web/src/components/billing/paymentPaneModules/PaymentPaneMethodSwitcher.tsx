@@ -20,9 +20,9 @@ export const PaymentPaneMethodSwitcher: React.FC<PaymentPaneMethodSwitcherProps>
 	setActiveMethod,
 }) => {
 	const methods: { id: CashierPaymentMethod; label: string; icon: any; color: string; testId: string }[] = [
-		{ id: "sbp", label: "СБП", icon: QrCode, color: "teal", testId: "btn-method-tab-sbp" },
+		{ id: "sbp", label: "СБП QR", icon: QrCode, color: "teal", testId: "btn-method-tab-sbp" },
 		{ id: "card", label: "Карта", icon: CreditCard, color: "blue", testId: "btn-method-tab-card" },
-		{ id: "cash", label: "Нал", icon: Banknote, color: "emerald", testId: "btn-method-tab-cash" },
+		{ id: "cash", label: "Наличные", icon: Banknote, color: "emerald", testId: "btn-method-tab-cash" },
 		{ id: "deposit", label: "Депозит", icon: Wallet, color: "indigo", testId: "btn-method-tab-deposit" },
 		{ id: "split", label: "Сплит", icon: Layers, color: "purple", testId: "btn-method-tab-split" },
 	];

@@ -94,7 +94,7 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
 							<h2 id="payment-modal-title" className="text-base sm:text-lg font-black m-0 text-[var(--ink,#0f172a)] flex items-center gap-2">
-								<span>{title || "Касса 54-ФЗ · Оплата приёма"}</span>
+								<span>{title || "Касса · Оплата приёма"}</span>
 								<span className="font-mono text-teal-700 dark:text-teal-400" data-testid="display-total-amount-due">{formatDisplayCurrency(discountsHook.totalDueRub)}</span>
 							</h2>
 							{discountsHook.discountRub > 0 && (
@@ -173,13 +173,13 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
 				</div>
 			</div>
 
-			{/* 3. Hero Amount Panel on Mobile (Apple Wallet / Square POS Dominance) */}
+			{/* 3. Hero Amount Panel (Square POS / Apple Store Dominance on Desktop & Mobile) */}
 			{mobileTab === "checkout" && (
-				<div className="mobile-payment-hero md:hidden space-y-1">
+				<div className="payment-hero-dominant px-4 py-3 sm:py-3.5 text-center border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] select-none shrink-0" data-testid="payment-hero-dominant">
 					<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 						Сумма к оплате
 					</div>
-					<div className="mobile-payment-hero-amount" data-testid="mobile-hero-amount">
+					<div className="payment-hero-amount text-3xl sm:text-4xl font-black font-mono tracking-tight text-[var(--ink,#0f172a)] my-0.5" data-testid="mobile-hero-amount">
 						{discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽
 					</div>
 					{discountsHook.discountRub > 0 && (
@@ -192,7 +192,7 @@ export const PaymentHeader: React.FC<PaymentHeaderProps> = ({
 							</span>
 						</div>
 					)}
-					<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
+					<div className="text-[11px] sm:text-xs text-[var(--muted,#64748b)] truncate">
 						Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong>
 						{patientPhone && <span> · {patientPhone}</span>}
 					</div>

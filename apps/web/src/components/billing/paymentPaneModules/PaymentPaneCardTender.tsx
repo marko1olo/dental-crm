@@ -34,7 +34,7 @@ export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
 				<div className="flex items-center gap-2">
 					<CreditCard size={18} className="text-blue-600" />
 					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-						Банковский терминал (Эквайринг 54-ФЗ)
+						Банковский терминал (Эквайринг)
 					</span>
 				</div>
 				<span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">

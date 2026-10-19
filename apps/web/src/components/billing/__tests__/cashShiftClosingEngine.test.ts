@@ -374,7 +374,7 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			assert.ok(html.includes("Акт закрытия кассовой смены и инвентаризации кассы"));
 			assert.ok(html.includes("АКТ-42"));
 			assert.ok(html.includes("СВЕРЕНО (0.00 ₽)"));
-			assert.ok(html.includes("1. ФИСКАЛЬНЫЕ ИТОГИ СМЕНЫ 54-ФЗ"));
+			assert.ok(html.includes("1. ФИСКАЛЬНЫЕ ИТОГИ СМЕНЫ"));
 		});
 	});
 

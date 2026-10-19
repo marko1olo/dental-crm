@@ -107,7 +107,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 						<span data-testid="btn-cash-submit" className="sr-only">Принять наличные</span>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<CheckCircle size={16} className="shrink-0" />
-						<span className="truncate">Принять наличные {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="truncate">Принять наличные ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 				) : activeMethod === "sbp_qr" ? (
 					<button
@@ -119,7 +119,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 					>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<CheckCircle size={16} className="shrink-0" />
-						<span className="truncate">Подтвердить СБП {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="truncate">Оплатить через СБП ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 				) : activeMethod === "split" ? (
 					<button
@@ -131,7 +131,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 					>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<CheckCircle size={16} className="shrink-0" />
-						<span className="truncate">Пробить сплит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="truncate">Оплатить сплит ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 				) : activeMethod === "family_deposit" ? (
 					<button
@@ -143,7 +143,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 					>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<Wallet size={16} className="shrink-0" />
-						<span className="truncate">Списать депозит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="truncate">Оплатить с депозита ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 				) : (
 					<button
@@ -155,7 +155,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = ({
 					>
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only">Оплатить 54-ФЗ</span>
 						<CreditCard size={16} className="shrink-0" />
-						<span className="truncate">Оплатить картой {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="truncate">Оплатить картой ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 					</button>
 				)}
 			</div>

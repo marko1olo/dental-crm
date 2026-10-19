@@ -34,9 +34,9 @@ describe("Subagent 4 Inquisitor: CashRegisterCheckoutModal 54-FZ Operations", ()
 			})
 		);
 
-		// Modal container & 54-FZ Title
+		// Modal container & Clean Title
 		assert.ok(html.includes('data-testid="cash-register-checkout-modal"'));
-		assert.ok(html.includes("Касса 54-ФЗ · Оплата приёма"));
+		assert.ok(html.includes("Касса · Оплата приёма"));
 		assert.ok(html.includes("Ковалёв Роман Станиславович"));
 
 		// Large centered total amount due

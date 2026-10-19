@@ -187,7 +187,7 @@ export const PaymentDiscountsPresets: React.FC<PaymentDiscountsPresetsProps> = (
 						title="ИНН с пациентов-физлиц не требуется"
 					>
 						<ShieldCheck size={12} className="inline mr-1 text-emerald-600" />
-						По 54-ФЗ для физлиц не требуется
+						Для физлиц не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
 					</span>
 				</div>
 
@@ -198,8 +198,8 @@ export const PaymentDiscountsPresets: React.FC<PaymentDiscountsPresetsProps> = (
 						onChange={(e) => tendersHook.handleInnChange(e.target.value)}
 						placeholder={
 							tendersHook.payerType === "legal_entity"
-								? "ИНН организации / ИП (10 или 12 цифр для B2B/ДМС чека Тег 1228)"
-								: "ИНН пациента (необязательно, 12 цифр для справки НДФЛ 13%)"
+								? "ИНН организации или ИП (10 или 12 цифр для юрлиц)"
+								: "ИНН пациента (необязательно, для справки НДФЛ 13%)"
 						}
 						maxLength={12}
 						className="h-8 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 shadow-2xs"
