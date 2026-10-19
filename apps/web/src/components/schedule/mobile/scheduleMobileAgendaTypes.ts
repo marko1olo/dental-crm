@@ -21,6 +21,7 @@ export interface ScheduleMobileAgendaViewProps {
   onSelectDoctor?: ((id: string | null) => void) | undefined;
   chairDoctorAssignments?: Record<string, any> | undefined;
   onQuickBooking?: (() => void) | undefined;
+  onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
   timezone?: string | undefined;
 }
 

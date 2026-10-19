@@ -1,11 +1,15 @@
 import React from "react";
-import { AlertTriangle, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { AlertTriangle, ChevronRight as ChevronRightIcon, CreditCard, Stethoscope } from "lucide-react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { formatDoctorShortName } from "../GridAppointmentCard";
 import { formatPatientDisplayFio } from "../appointmentCardHelpers";
 import { type TimelineItem, extractToothBadge, resolveMobileAllergyBadge, getStatusTheme } from "./scheduleMobileAgendaTypes";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import { ScheduleMobileGapRow } from "./ScheduleMobileGapRow";
+import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
+import { useAppStore } from "../../../store/appStore";
+import { usePatientStore } from "../../../store/patientStore";
+import { showToast } from "../../GlobalToast";
 
 export interface ScheduleMobileTimelineRowProps {
   item: TimelineItem;
@@ -17,6 +21,8 @@ export interface ScheduleMobileTimelineRowProps {
   appointmentLabels: Record<Appointment["status"], string>;
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onSelectMobileAppt: (appt: Appointment) => void;
+  onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined;
+  onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
 }
 
 export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps> = ({
@@ -29,6 +35,8 @@ export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps>
   appointmentLabels,
   onSlotClick,
   onSelectMobileAppt,
+  onQuickStatusChange,
+  onOpenVisit,
 }) => {
   if (item.type === "gap") {
     return (
@@ -54,6 +62,33 @@ export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps>
   const rawBal = pat?.balanceRub ?? (pat as any)?.balance;
   const balance = rawBal !== undefined && rawBal !== null && rawBal !== "" && Number.isFinite(Number(rawBal)) ? Number(rawBal) : null;
 
+  const handleStartTreatment = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onQuickStatusChange) {
+      onQuickStatusChange(appt.id, "in_treatment");
+    }
+    await openVisitWithBackendSync(appt, pat, onOpenVisit ? () => onOpenVisit(appt) : undefined);
+    showToast(`Пациент «${pName}» в кресле: открыта медкарта`, "success");
+  };
+
+  const handleOpenActiveVisit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await openVisitWithBackendSync(appt, pat, onOpenVisit ? () => onOpenVisit(appt) : undefined);
+  };
+
+  const handleOpenCheckout = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const pid = pat?.id || appt.patientId;
+    if (pid) {
+      usePatientStore.getState().setSelectedPatientId(pid);
+    }
+    if (typeof window !== "undefined") {
+      window.location.hash = "#finance";
+    }
+    useAppStore.getState().setCurrentView("finance");
+    showToast(`Касса: расчёт «${pName}»`, "info");
+  };
+
   return (
     <div className="schedule-mobile-appt-row">
       <div className="schedule-mobile-time-col">
@@ -78,37 +113,75 @@ export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps>
               <span className="schedule-mobile-patient-name" title={fullPatientName}>{pName}</span>
               {toothBadge && <span className="schedule-mobile-tooth-badge">{toothBadge}</span>}
             </div>
-            <span className={`schedule-mobile-status-badge ${statusTheme.badgeBg}`}>{statusTheme.label}</span>
+            <div className="schedule-mobile-header-end">
+              <span className={`schedule-mobile-status-badge ${statusTheme.badgeBg}`}>{statusTheme.label}</span>
+              <ChevronRightIcon size={18} className="text-[var(--muted,#64748b)] shrink-0" />
+            </div>
           </div>
 
           <div className="schedule-mobile-procedure-row">
             <span className="schedule-mobile-procedure-text">{appt.reason || "Первичный осмотр / консультация"}</span>
           </div>
 
-          <div className="schedule-mobile-meta-row">
-            {(chair || doc) && (
-              <span className="schedule-mobile-doctor-chair-chip">
-                {chair?.name || "Кабинет"}{doc ? ` · ${formatDoctorShortName(doc.fullName)}` : ""}
-              </span>
-            )}
+          <div className="schedule-mobile-card-footer">
+            <div className="schedule-mobile-meta-chips">
+              {(chair || doc) && (
+                <span className="schedule-mobile-doctor-chair-chip">
+                  {chair?.name || "Кабинет"}{doc ? ` · ${formatDoctorShortName(doc.fullName)}` : ""}
+                </span>
+              )}
 
-            {balance !== null && (
-              <span className={`schedule-mobile-balance-chip ${balance > 0 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30" : balance < 0 ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30" : "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`}>
-                {balance > 0 ? `+${balance.toLocaleString("ru-RU")} ₽` : balance < 0 ? `Долг: ${Math.abs(balance).toLocaleString("ru-RU")} ₽` : "Оплачено"}
-              </span>
-            )}
+              {balance !== null && (
+                <span className={`schedule-mobile-balance-chip ${balance > 0 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30" : balance < 0 ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30" : "bg-slate-500/10 text-slate-600 dark:text-slate-400"}`}>
+                  {balance > 0 ? `+${balance.toLocaleString("ru-RU")} ₽` : balance < 0 ? `Долг: ${Math.abs(balance).toLocaleString("ru-RU")} ₽` : "Оплачено"}
+                </span>
+              )}
 
-            {allergyText && (
-              <span className="schedule-mobile-allergy-chip" title={allergyText}>
-                <AlertTriangle size={10} className="shrink-0" />
-                <span>{allergyText}</span>
-              </span>
-            )}
+              {allergyText && (
+                <span className="schedule-mobile-allergy-chip" title={allergyText}>
+                  <AlertTriangle size={10} className="shrink-0" />
+                  <span>{allergyText}</span>
+                </span>
+              )}
+            </div>
+
+            <div className="schedule-mobile-card-actions-col">
+              {appt.status === "in_treatment" ? (
+                <button
+                  type="button"
+                  className="schedule-mobile-chair-action-btn btn-active-visit"
+                  onClick={handleOpenActiveVisit}
+                  title="Открыть карту приёма"
+                  data-testid={`mobile-chair-btn-${appt.id}`}
+                >
+                  <Stethoscope size={15} />
+                  <span>В приём</span>
+                </button>
+              ) : appt.status === "completed" ? (
+                <button
+                  type="button"
+                  className="schedule-mobile-chair-action-btn btn-pay"
+                  onClick={handleOpenCheckout}
+                  title="Принять оплату / Касса"
+                  data-testid={`mobile-pay-btn-${appt.id}`}
+                >
+                  <CreditCard size={15} />
+                  <span>Чек</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="schedule-mobile-chair-action-btn btn-chair"
+                  onClick={handleStartTreatment}
+                  title="Пациент в кресле (Начать приём)"
+                  data-testid={`mobile-chair-btn-${appt.id}`}
+                >
+                  <Stethoscope size={15} />
+                  <span>В кресло</span>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-
-        <div className="flex items-center pl-1 text-[var(--muted,#64748b)]">
-          <ChevronRightIcon size={18} />
         </div>
       </div>
     </div>

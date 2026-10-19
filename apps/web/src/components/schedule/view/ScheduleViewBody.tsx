@@ -10,9 +10,7 @@ import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { ScheduleMobileAgendaView } from "../ScheduleMobileAgendaView";
-import { useAppStore } from "../../../store/appStore";
-import { usePatientStore } from "../../../store/patientStore";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
+import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
 
 export interface ScheduleViewBodyProps {
   scheduleViewMode: "timeline" | "grid" | "chairs";
@@ -130,30 +128,13 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   const isMobile = useIsMobile(768);
 
   const handleOpenVisit = (appointment?: Appointment) => {
-    if (appointment?.patientId) {
-      usePatientStore.getState().setSelectedPatientId(appointment.patientId);
+    if (appointment) {
+      void openVisitWithBackendSync(appointment, null);
+    } else {
+      if (typeof window !== "undefined") {
+        window.location.hash = "#visit";
+      }
     }
-    if (appointment?.id) {
-      void fetch(`/api/appointments/${encodeURIComponent(appointment.id)}/visit`, {
-        method: "POST",
-        headers: denteAdminSecretRequestHeaders(),
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data?.visit) {
-            useAppStore.setState((state) => ({
-              dashboard: state.dashboard
-                ? { ...state.dashboard, activeVisit: data.visit }
-                : state.dashboard,
-            }));
-          }
-        })
-        .catch(() => {});
-    }
-    if (typeof window !== "undefined") {
-      window.location.hash = "#visit";
-    }
-    useAppStore.getState().setCurrentView("visit");
   };
 
   const handleQuickStatusChangeWithWaitlistAutoFill = async (
@@ -163,24 +144,10 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     updateAppointmentScheduleDraft(appointmentId, "status", status);
     const success = await saveAppointmentSchedule(appointmentId);
     if (success) {
-      if (status === "in_treatment") {
-        void fetch(`/api/appointments/${encodeURIComponent(appointmentId)}/visit`, {
-          method: "POST",
-          headers: denteAdminSecretRequestHeaders(),
-        })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.visit) {
-              useAppStore.setState((state) => ({
-                dashboard: state.dashboard
-                  ? { ...state.dashboard, activeVisit: data.visit }
-                  : state.dashboard,
-              }));
-            }
-          })
-          .catch(() => {});
-      }
       const p = dashboard?.appointments?.find((a) => a.id === appointmentId);
+      if (status === "in_treatment" && p) {
+        void openVisitWithBackendSync(p, null);
+      }
       const pName =
         p && patientName
           ? patientName(dashboard?.patients ?? [], p.patientId)
@@ -251,6 +218,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
         }}
         onAppointmentClick={handleOpenAppointmentInQuickBooking}
         onQuickStatusChange={handleQuickStatusChangeWithWaitlistAutoFill}
+        onOpenVisit={handleOpenVisit}
         onAppointmentMove={async (appointmentId, updates) => {
           if (updates.startsAt)
             updateAppointmentScheduleDraft(

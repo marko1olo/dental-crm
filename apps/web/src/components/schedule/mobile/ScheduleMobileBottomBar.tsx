@@ -18,9 +18,10 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
         type="button"
         className="primary-button schedule-mobile-primary-action-btn"
         onClick={onAction}
+        data-testid="schedule-mobile-add-btn"
       >
         <Plus size={18} />
-        <span>Запись</span>
+        <span>+ Записать визит</span>
       </button>
     </div>
   );

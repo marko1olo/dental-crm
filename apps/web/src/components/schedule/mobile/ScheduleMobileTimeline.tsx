@@ -16,6 +16,8 @@ export interface ScheduleMobileTimelineProps {
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onSelectMobileAppt: (appt: Appointment) => void;
   onAddAppointment: () => void;
+  onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined;
+  onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
 }
 
 export const ScheduleMobileTimeline: React.FC<ScheduleMobileTimelineProps> = ({
@@ -29,6 +31,8 @@ export const ScheduleMobileTimeline: React.FC<ScheduleMobileTimelineProps> = ({
   onSlotClick,
   onSelectMobileAppt,
   onAddAppointment,
+  onQuickStatusChange,
+  onOpenVisit,
 }) => {
   return (
     <div className="schedule-mobile-timeline">
@@ -47,6 +51,8 @@ export const ScheduleMobileTimeline: React.FC<ScheduleMobileTimelineProps> = ({
             appointmentLabels={appointmentLabels}
             onSlotClick={onSlotClick}
             onSelectMobileAppt={onSelectMobileAppt}
+            onQuickStatusChange={onQuickStatusChange}
+            onOpenVisit={onOpenVisit}
           />
         ))
       )}

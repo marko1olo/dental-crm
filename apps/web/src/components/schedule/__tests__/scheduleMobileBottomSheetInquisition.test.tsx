@@ -6,6 +6,7 @@ import { ScheduleMobileBottomSheet } from "../grid/ScheduleMobileBottomSheet";
 describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 	const mockAppointment: Appointment = {
 		id: "appt-mobile-1",
+		organizationId: "org-1",
 		patientId: "patient-101",
 		doctorUserId: "doc-1",
 		chairId: "chair-1",
@@ -13,6 +14,7 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 		endsAt: "2026-10-19T11:00:00Z",
 		status: "confirmed",
 		reason: "Лечение кариеса 16 зуба",
+		comment: "",
 	};
 
 	const mockDashboard: Dashboard = {

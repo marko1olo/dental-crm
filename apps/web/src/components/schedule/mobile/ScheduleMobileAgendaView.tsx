@@ -88,6 +88,8 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
           onSlotClick={onSlotClick}
           onSelectMobileAppt={setSelectedMobileAppt}
           onAddAppointment={handleCreateBooking}
+          onQuickStatusChange={props.onQuickStatusChange}
+          onOpenVisit={props.onOpenVisit}
         />
 
         <ScheduleMobileBottomBar

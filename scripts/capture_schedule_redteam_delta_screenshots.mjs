@@ -3,13 +3,15 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-const OUT_CONV = "C:/Users/Admin/.gemini/antigravity/brain/29e4f7f5-d071-4038-9459-330585c7113c/screenshots";
-const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/screenshots/schedule";
+const OUT_CONV = "C:/Users/Admin/.gemini/antigravity/brain/e3299e96-2120-4a7b-a901-cf1daef619b8/screenshots";
+const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/schedule";
+const OUT_DOCS_LEGACY = "C:/Clinic_MVP/dental-crm/docs/screenshots/schedule";
 const webBaseUrl = "http://127.0.0.1:5173";
 const cdpPort = 9252;
 
 await mkdir(OUT_CONV, { recursive: true });
 await mkdir(OUT_DOCS, { recursive: true });
+await mkdir(OUT_DOCS_LEGACY, { recursive: true });
 
 const browserCandidates = [
 	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -344,11 +346,10 @@ async function shot(filename) {
 		format: "png",
 		captureBeyondViewport: false,
 	});
-	const pathConv = path.join(OUT_CONV, `${filename}.png`);
-	const pathDocs = path.join(OUT_DOCS, `${filename}.png`);
 	const buf = Buffer.from(data, "base64");
-	await writeFile(pathConv, buf);
-	await writeFile(pathDocs, buf);
+	await writeFile(path.join(OUT_CONV, `${filename}.png`), buf);
+	await writeFile(path.join(OUT_DOCS, `${filename}.png`), buf);
+	await writeFile(path.join(OUT_DOCS_LEGACY, `${filename}.png`), buf);
 	console.log(`[CAPTURED] ${filename}.png (${(data.length * 0.75 / 1024).toFixed(1)} KB)`);
 }
 
@@ -379,7 +380,10 @@ try {
 	await sleep(2000);
 
 	console.log("Reloading with authenticated mock session...");
-	await cdp.send("Page.reload", {});
+	try {
+		await cdp.send("Page.reload", {});
+	} catch {}
+	await sleep(2500);
 	await waitForAppReady();
 	await sleep(2000);
 
@@ -394,34 +398,38 @@ try {
 	});
 	await sleep(1500);
 
-	// 1. PC Light (1440x900) -> schedule_grid_pc_light
-	console.log("Capturing schedule_grid_pc_light...");
+	// 1. PC Light (1440x900)
+	console.log("Capturing schedule_pc_light_1440x900...");
 	await setViewport(1440, 900, false);
 	await setTheme("light");
+	await shot("schedule_pc_light_1440x900");
 	await shot("schedule_grid_pc_light");
 
-	// 2. PC Dark (1440x900) -> schedule_grid_pc_dark
-	console.log("Capturing schedule_grid_pc_dark...");
+	// 2. PC Dark (1440x900)
+	console.log("Capturing schedule_pc_dark_1440x900...");
 	await setTheme("dark");
+	await shot("schedule_pc_dark_1440x900");
 	await shot("schedule_grid_pc_dark");
 
-	// 3. Mobile Light (390x844) -> schedule_mobile_agenda_light
-	console.log("Capturing schedule_mobile_agenda_light...");
+	// 3. Mobile Light (390x844)
+	console.log("Capturing schedule_mobile_light_390x844...");
 	await setViewport(390, 844, true);
-	// Trigger mobile check by reloading / dispatching resize
+	// Trigger mobile check by dispatching resize
 	await cdp.send("Runtime.evaluate", {
 		expression: `(() => {
 			window.dispatchEvent(new Event('resize'));
 		})()`,
 		returnByValue: true,
 	});
-	await sleep(1000);
+	await sleep(1200);
 	await setTheme("light");
+	await shot("schedule_mobile_light_390x844");
 	await shot("schedule_mobile_agenda_light");
 
-	// 4. Mobile Dark (390x844) -> schedule_mobile_agenda_dark
-	console.log("Capturing schedule_mobile_agenda_dark...");
+	// 4. Mobile Dark (390x844)
+	console.log("Capturing schedule_mobile_dark_390x844...");
 	await setTheme("dark");
+	await shot("schedule_mobile_dark_390x844");
 	await shot("schedule_mobile_agenda_dark");
 
 	console.log("All 4 schedule states captured successfully!");
