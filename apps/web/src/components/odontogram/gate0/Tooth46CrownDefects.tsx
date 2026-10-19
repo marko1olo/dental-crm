@@ -23,7 +23,9 @@ export const Tooth46CrownDefects: React.FC<Tooth46CrownDefectsProps> = ({
 					? "#92400e" // Burnished golden hole rim
 					: material === "pmma"
 						? "#fde68a" // Matte acrylic resin core
-						: "#1e293b"; // Dark oxidized metal coping (PFM / Co-Cr)
+						: material === "metal"
+							? "#0f172a" // Deep oxidized dark base metal alloy
+							: "#1e293b"; // Dark oxidized metal coping (PFM)
 
 	const alertStroke = isDark ? "#f87171" : "#dc2626";
 

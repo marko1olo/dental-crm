@@ -10,6 +10,7 @@ export interface Tooth46RestorationOverlayProps {
 	crownMaterial?: CrownMaterial;
 	compositeCondition?: RestorationCondition;
 	crownCondition?: RestorationCondition;
+	translucent?: boolean;
 	isDark?: boolean;
 	className?: string;
 }
@@ -22,6 +23,7 @@ export const Tooth46RestorationOverlay: React.FC<
 	crownMaterial = "zirconia",
 	compositeCondition = "adequate",
 	crownCondition = "adequate",
+	translucent = false,
 	isDark = false,
 	className,
 }) => {
@@ -43,6 +45,7 @@ export const Tooth46RestorationOverlay: React.FC<
 				<Tooth46CrownOverlay
 					material={crownMaterial}
 					condition={crownCondition}
+					translucent={translucent}
 					isDark={isDark}
 				/>
 			)}

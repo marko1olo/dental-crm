@@ -5,6 +5,7 @@ export interface Tooth46RootsProps {
 	showGrooves?: boolean;
 	showCej?: boolean;
 	isDark?: boolean;
+	isEndo?: boolean;
 	className?: string;
 }
 
@@ -17,6 +18,7 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	showGrooves = true,
 	showCej = true,
 	isDark = false,
+	isEndo = false,
 	className,
 }) => {
 	const strokeColor = isDark
@@ -25,6 +27,7 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	const grooveColor = isDark
 		? "rgba(148, 163, 184, 0.65)"
 		: "rgba(100, 116, 139, 0.55)";
+	const rootOpacity = isEndo ? "0.48" : "1.0";
 
 	return (
 		<g id="tooth46-roots" className={className}>
@@ -32,6 +35,7 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 			<path
 				d={TOOTH46_GEOMETRY.rootMonolithPath}
 				fill="url(#dente-root-dentin)"
+				fillOpacity={rootOpacity}
 				stroke={strokeColor}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
@@ -60,12 +64,11 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 			{/* Mesial and Distal Sulcus Longitudinalis */}
 			{showGrooves && (
 				<g id="tooth46-root-grooves" clipPath="url(#tooth46-root-clip)">
-					{/* Deep mesial sulcus shadow trough (creates double-lobed 3D volume) */}
 					<path
 						d={TOOTH46_GEOMETRY.mesialLongitudinalGroove}
 						fill="none"
 						stroke="url(#dente-root-sulcus-shadow)"
-						strokeWidth="2.4"
+						strokeWidth="2.2"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -73,16 +76,15 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 						d={TOOTH46_GEOMETRY.mesialLongitudinalGroove}
 						fill="none"
 						stroke={grooveColor}
-						strokeWidth="0.8"
+						strokeWidth="0.75"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
-					{/* Distal root longitudinal furrow */}
 					<path
 						d={TOOTH46_GEOMETRY.distalLongitudinalGroove}
 						fill="none"
 						stroke="url(#dente-root-sulcus-shadow)"
-						strokeWidth="1.8"
+						strokeWidth="1.6"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -90,7 +92,7 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 						d={TOOTH46_GEOMETRY.distalLongitudinalGroove}
 						fill="none"
 						stroke={grooveColor}
-						strokeWidth="0.7"
+						strokeWidth="0.65"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>

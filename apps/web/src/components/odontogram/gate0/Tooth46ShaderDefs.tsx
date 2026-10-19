@@ -47,12 +47,12 @@ export const Tooth46ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#94a3b8" stopOpacity="0.05" />
 			</linearGradient>
 
-			{/* Central Fossa Ambient Depth (3D Dished Occlusal Basin) */}
-			<radialGradient id="dente-fossa-shadow" cx="50%" cy="30%" r="45%">
-				<stop offset="0%" stopColor="#475569" stopOpacity="0.35" />
-				<stop offset="50%" stopColor="#64748b" stopOpacity="0.15" />
-				<stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
-			</radialGradient>
+			{/* Central Fossa Ambient Depth (Linear Directed Depth) */}
+			<linearGradient id="dente-fossa-shadow" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#334155" stopOpacity="0.30" />
+				<stop offset="60%" stopColor="#475569" stopOpacity="0.15" />
+				<stop offset="100%" stopColor="#64748b" stopOpacity="0.0" />
+			</linearGradient>
 
 			{/* Buccal Cervical Ridge Convexity Highlight */}
 			<linearGradient id="dente-cervical-ridge" x1="0" y1="0" x2="0" y2="1">

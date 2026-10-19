@@ -6,41 +6,39 @@ export interface Tooth46PulpChamberProps {
 	condition?: CanalCondition | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
+	unified?: boolean | undefined;
 }
 
 /**
  * Wheeler's Dental Anatomy Ch. 11 Coronal Pulp Chamber (Cavitas pulparis coronae).
- * - Tegmen cavi at Y=42..46 (lower half of crown, under >= 2.5mm occlusal dentin)
- * - 5 slender pulp horns (ML Y=26, MB Y=32, DB Y=34, DL Y=29, D Y=36)
- * - Fundus cavi convex over furcation at Y=69..72 with 3 funnel orifices.
+ * Seamless anatomical continuity connecting coronal chamber horns to radicular apices.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46PulpChamber: React.FC<Tooth46PulpChamberProps> = ({
 	condition = "vital",
 	className,
+	unified = false,
 }) => {
 	const p = TOOTH46_PULP_GEOMETRY;
-
+	const pathD = unified ? p.unifiedPulpSystemPath : p.coronalPulpChamber;
 	const isNecrotic = condition === "necrotic";
 	const isPulpitis = condition === "pulpitis";
-	const isObturated =
-		condition === "adequate" ||
-		condition === "underfill" ||
-		condition === "overfill";
+	const isObturated = ["adequate", "underfill", "overfill"].includes(condition);
 
 	const chamberFill = isNecrotic
 		? "url(#dente-pulp-necrotic)"
-		: isObturated
-			? "url(#dente-guttapercha-cone)"
-			: "url(#dente-pulp-vital)";
+		: isPulpitis
+			? "url(#dente-pulp-hyperemia)"
+			: isObturated
+				? "url(#dente-guttapercha-cone)"
+				: "url(#dente-pulp-vital)";
 
 	const chamberStroke = isNecrotic
-		? "rgba(87, 83, 78, 0.70)"
+		? "rgba(68, 64, 60, 0.85)"
 		: isPulpitis
-			? "rgba(244, 63, 94, 0.90)"
-			: "rgba(159, 18, 57, 0.60)";
-
-	const chamberOpacity = isPulpitis ? "0.92" : isNecrotic ? "0.85" : "0.75";
+			? "#ef4444"
+			: "rgba(159, 18, 57, 0.70)";
+	const chamberOpacity = isPulpitis ? "0.95" : isNecrotic ? "0.90" : "0.80";
 
 	return (
 		<g
@@ -49,30 +47,67 @@ export const Tooth46PulpChamber: React.FC<Tooth46PulpChamberProps> = ({
 			opacity={chamberOpacity}
 			className={className}
 		>
-			{/* Cavitas pulparis dome with 5 slender cornua pulpae */}
+			{/* Cavitas pulparis dome with 5 slender cornua pulpae & root canals */}
 			<path
-				d={p.coronalPulpChamber}
+				d={pathD}
 				fill={chamberFill}
 				stroke={chamberStroke}
-				strokeWidth="0.75"
+				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Neurovascular Capillary Plexus Strands */}
+			{/* Krasner & Rankow (2004) Dark Pulpal Floor Rostrum & Fusion Lines */}
+			<path
+				d={p.rostrumMap.grooves}
+				fill="none"
+				stroke={
+					isNecrotic
+						? "rgba(28, 25, 23, 0.90)"
+						: isPulpitis
+							? "rgba(153, 27, 27, 0.80)"
+							: "rgba(136, 19, 55, 0.65)"
+				}
+				strokeWidth="0.7"
+				strokeLinecap="round"
+				vectorEffect="non-scaling-stroke"
+			/>
+
+			{/* Canal Orifice Light Anchors at Rostrum Fusion Termini */}
+			{p.rostrumMap.orifices.map((orf) => (
+				<circle
+					key={`orifice-${orf.id}`}
+					id={`orifice-${orf.id}`}
+					cx={orf.x}
+					cy={orf.y}
+					r={orf.r}
+					fill={
+						isNecrotic
+							? "#44403c"
+							: isObturated
+								? "#be123c"
+								: "rgba(254, 226, 226, 0.90)"
+					}
+					stroke={isNecrotic ? "#1c1917" : "#9f1239"}
+					strokeWidth="0.3"
+				/>
+			))}
+
+			{/* Raschkow Neurovascular Capillary Plexus Strands */}
 			{!isNecrotic &&
 				!isObturated &&
 				p.neuroPlexus.map((strand) => (
 					<path
 						key={`plexus-${strand.id}`}
+						id={`plexus-${strand.id}`}
 						d={strand.d}
 						fill="none"
 						stroke={
 							isPulpitis
-								? "rgba(254, 205, 211, 0.50)"
-								: "rgba(254, 205, 211, 0.35)"
+								? "rgba(254, 205, 211, 0.70)"
+								: "rgba(254, 205, 211, 0.40)"
 						}
-						strokeWidth="0.5"
+						strokeWidth={isPulpitis ? "0.6" : "0.45"}
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>

@@ -11,7 +11,7 @@ export interface Tooth46CystOverlayProps {
 /**
  * Periapical inflammatory defect overlay:
  * 1. "granuloma": circumscribed osteolytic lesion with fibrous capsule rim.
- * 2. "cyst": well-demarcated radicular cyst with white sclerotic hyperostotic border.
+ * 2. "cyst": radicular cyst with white sclerotic hyperostotic border & trabecular spicules.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46CystOverlay: React.FC<Tooth46CystOverlayProps> = ({
@@ -24,6 +24,10 @@ export const Tooth46CystOverlay: React.FC<Tooth46CystOverlayProps> = ({
 	if (condition === "cyst") {
 		const cyst = geo.radicularCyst;
 		const outerBorder = isDark ? "#ffffff" : "#f1f5f9";
+		const spiculeStroke = isDark
+			? "rgba(226, 232, 240, 0.5)"
+			: "rgba(100, 116, 139, 0.5)";
+
 		return (
 			<g
 				id="tooth46-radicular-cyst"
@@ -48,6 +52,18 @@ export const Tooth46CystOverlay: React.FC<Tooth46CystOverlayProps> = ({
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>
+				{/* Trabecular Bone Spicules Radiating into Host Bone */}
+				{cyst.trabeculaeSpicules.map((spicule) => (
+					<path
+						key={`spicule-${spicule.slice(0, 12)}`}
+						d={spicule}
+						data-component="cyst-spicule"
+						fill="none"
+						stroke={spiculeStroke}
+						strokeWidth="0.6"
+						strokeLinecap="round"
+					/>
+				))}
 			</g>
 		);
 	}
@@ -60,31 +76,31 @@ export const Tooth46CystOverlay: React.FC<Tooth46CystOverlayProps> = ({
 			data-testid="tooth46-granuloma"
 			className={`tooth46-periapical-halo-group ${className ?? ""}`}
 		>
-			{/* Mesial Apex Granuloma & Capsule */}
+			{/* Mesial Apex Granuloma Diffuse Halo */}
 			<path
 				d={gran.mesial.capsuleRim}
 				fill="url(#dente-granuloma-capsule)"
-				stroke="rgba(239, 68, 68, 0.60)"
-				strokeWidth="0.6"
+				stroke="none"
+				opacity="0.85"
 			/>
 			<path
 				d={gran.mesial.core}
 				fill="url(#dente-granuloma-core)"
-				stroke="rgba(185, 28, 28, 0.50)"
-				strokeWidth="0.5"
+				stroke="none"
+				opacity="0.9"
 			/>
-			{/* Distal Apex Granuloma & Capsule */}
+			{/* Distal Apex Granuloma Diffuse Halo */}
 			<path
 				d={gran.distal.capsuleRim}
 				fill="url(#dente-granuloma-capsule)"
-				stroke="rgba(239, 68, 68, 0.60)"
-				strokeWidth="0.6"
+				stroke="none"
+				opacity="0.85"
 			/>
 			<path
 				d={gran.distal.core}
 				fill="url(#dente-granuloma-core)"
-				stroke="rgba(185, 28, 28, 0.50)"
-				strokeWidth="0.5"
+				stroke="none"
+				opacity="0.9"
 			/>
 		</g>
 	);

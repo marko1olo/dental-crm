@@ -30,15 +30,20 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 	const isUnderfill = canalCondition === "underfill";
 	const isOverfill = canalCondition === "overfill";
 	const isBrokenFile = canalCondition === "broken_file";
+	const isUnified = Boolean(showPulp && showCanals);
 
 	return (
 		<g id="tooth46-endodontics" className={className}>
-			{/* Wheeler Ch. 11 Coronal Cavitas Pulparis Chamber */}
+			{/* Wheeler Ch. 11 Coronal Cavitas Pulparis Chamber (Monolithic seamless system) */}
 			{showPulp && (
-				<Tooth46PulpChamber condition={canalCondition} isDark={isDark} />
+				<Tooth46PulpChamber
+					condition={canalCondition}
+					isDark={isDark}
+					unified={isUnified}
+				/>
 			)}
 
-			{/* 3 Radicular Canals (MB, ML, D) Originating at Cervical Floor Y=72 */}
+			{/* 3 Radicular Canals (MB, ML, D) Seamlessly Integrated with Chamber Floor */}
 			{showCanals && (
 				<g id="tooth46-canals-tract">
 					{p.canals.map((canal, idx) => (
@@ -49,6 +54,7 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 							isNecrotic={isNecrotic}
 							isUnderfill={isUnderfill}
 							underfillData={pathGeo.underfill[idx]}
+							isUnifiedLumen={isUnified}
 						/>
 					))}
 

@@ -8,7 +8,7 @@ export interface Tooth46BrokenFileOverlayProps {
 
 /**
  * Separated endodontic instrument (сломанный файл NiTi) in mesial root canal.
- * Features tungsten/silver flutes, apical curvature, fracture point, and warning outline.
+ * Features helical spiral flutes, torsional fracture point, and specular ridge.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46BrokenFileOverlay: React.FC<
@@ -25,7 +25,6 @@ export const Tooth46BrokenFileOverlay: React.FC<
 			data-testid="tooth46-broken-file"
 			className={className}
 		>
-			{/* High-visibility amber clinical alert outline */}
 			<path
 				d={bf.warningOutline}
 				fill="none"
@@ -34,33 +33,41 @@ export const Tooth46BrokenFileOverlay: React.FC<
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Metallic NiTi Instrument Core Body */}
 			<path
 				d={bf.shaft}
 				fill="url(#dente-niti-metal)"
 				stroke="#334155"
-				strokeWidth="0.4"
+				strokeWidth="0.45"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Jagged Coronal Fracture Horizon */}
 			<path
 				d={bf.fractureLine}
 				fill="none"
 				stroke="#ef4444"
-				strokeWidth="0.7"
+				strokeWidth="0.75"
 				strokeLinecap="round"
+				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Spiral Flute Cutting Edges */}
-			{bf.flutes.map((flute) => (
+			<path
+				d={bf.microHelicalRidge}
+				fill="none"
+				stroke="#ffffff"
+				strokeWidth="0.35"
+				strokeOpacity="0.8"
+				vectorEffect="non-scaling-stroke"
+			/>
+			{bf.flutes.map((flute, idx) => (
 				<path
-					key={`flute-${flute.slice(0, 12)}`}
+					key={`flute-${flute.slice(0, 14)}`}
+					id={`flute-${idx}`}
 					d={flute}
+					data-component="broken-file-flute"
 					fill="none"
 					stroke="#ffffff"
 					strokeWidth="0.5"
-					strokeOpacity="0.85"
+					strokeOpacity="0.9"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>

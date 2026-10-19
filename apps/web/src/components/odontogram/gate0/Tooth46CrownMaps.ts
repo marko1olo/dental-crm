@@ -51,3 +51,18 @@ export const getCrownFissureStroke = (
 	};
 	return isDark ? darkMap[mat] : lightMap[mat];
 };
+
+export const getGlazeStroke = (mat: CrownMaterial): string => {
+	if (mat === "gold") return "rgba(254, 240, 138, 0.85)";
+	if (mat === "metal") return "rgba(241, 245, 249, 0.75)";
+	if (mat === "emax") return "rgba(255, 255, 255, 0.95)";
+	return "rgba(255, 255, 255, 0.85)";
+};
+
+export const getCuspSlopeColors = (mat: CrownMaterial) => ({
+	highlight:
+		mat === "emax"
+			? "url(#dente-emax-opalescent)"
+			: "rgba(255, 255, 255, 0.22)",
+	shadow: mat === "gold" ? "rgba(146, 64, 14, 0.20)" : "rgba(15, 23, 42, 0.12)",
+});

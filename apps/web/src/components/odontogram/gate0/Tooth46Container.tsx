@@ -32,7 +32,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
-	const crownOpacity = isEndo && !a.zirconiaCrown ? "0.38" : "1.0";
+	const crownOpacity = isEndo && !a.zirconiaCrown ? "0.48" : "1.0";
 
 	return (
 		<svg
@@ -58,6 +58,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				<Tooth46Roots
 					showGrooves={a.grooves ?? true}
 					showCej={a.cej ?? true}
+					isEndo={isEndo}
 					isDark={isDark}
 				/>
 			)}
@@ -99,6 +100,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 					crownMaterial={a.crownMaterial ?? "zirconia"}
 					compositeCondition={a.compositeCondition ?? "adequate"}
 					crownCondition={a.crownCondition ?? "adequate"}
+					translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore))}
 					isDark={isDark}
 				/>
 			)}
