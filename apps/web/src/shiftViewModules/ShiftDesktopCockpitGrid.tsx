@@ -36,6 +36,7 @@ export interface ShiftDesktopCockpitGridProps {
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
 	runRecommendedAction: (action: any) => void;
+	userRole?: string | undefined;
 }
 
 export const ShiftDesktopCockpitGrid: React.FC<ShiftDesktopCockpitGridProps> = (p) => (
@@ -89,6 +90,7 @@ export const ShiftDesktopCockpitGrid: React.FC<ShiftDesktopCockpitGridProps> = (
 			recommendedActionPriorityLabels={p.recommendedActionPriorityLabels}
 			patientsById={p.patientsById}
 			runRecommendedAction={p.runRecommendedAction}
+			userRole={p.userRole}
 		/>
 	</div>
 );

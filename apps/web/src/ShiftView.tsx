@@ -22,6 +22,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 	const props = { ...logicContext, ...rawProps } as ReturnType<typeof useAppLogicContext> & ShiftViewProps;
 	const { visibleRecommendedActions, recommendedActionPriorityLabels, staffRoleLabels, dashboard, activeQueueRole, setError, mostLoadedResource, setSelectedPatientId, forceMobile } = props;
 	const isMobile = forceMobile ?? useIsMobile(768);
+	const userRole = (props as any).selectedWorkspaceRole || "doctor";
 
 	const shiftData = useDoctorShiftData({ dashboard });
 
@@ -81,6 +82,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 				onOpenPatientEmk={(patientId) => { setSelectedPatientId?.(patientId); window.location.hash = "emk"; }}
 				onOpenCashCheckout={(patientId) => { setSelectedPatientId?.(patientId); window.location.hash = "invoices"; }}
 				modalsNode={modalsNode}
+				userRole={userRole}
 			/>
 		);
 	}
@@ -114,6 +116,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			activeQueueRole={activeQueueRole}
 			staffRoleLabels={staffRoleLabels}
 			modalsNode={modalsNode}
+			userRole={userRole}
 		/>
 	);
 }

@@ -17,6 +17,7 @@ export interface ShiftMobileCockpitWrapProps {
 	onOpenPatientEmk?: ((patientId: string) => void) | undefined;
 	onOpenCashCheckout?: ((patientId: string) => void) | undefined;
 	modalsNode: React.ReactNode;
+	userRole?: string | undefined;
 }
 
 export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
@@ -32,6 +33,7 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 	onOpenPatientEmk,
 	onOpenCashCheckout,
 	modalsNode,
+	userRole,
 }) => {
 	return (
 		<div
@@ -66,6 +68,7 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 				onSelectAppointment={onSelectAppointment}
 				onOpenPatientEmk={onOpenPatientEmk}
 				onOpenCashCheckout={onOpenCashCheckout}
+				userRole={userRole}
 			/>
 			{modalsNode}
 		</div>

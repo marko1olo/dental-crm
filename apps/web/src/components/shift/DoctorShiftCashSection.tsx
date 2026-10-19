@@ -4,6 +4,7 @@ import { printEncashmentStatement } from "./shiftPrintStatements";
 import { DoctorShiftCashHeader } from "./cashSection/DoctorShiftCashHeader";
 import { DoctorShiftCashChannelsGrid } from "./cashSection/DoctorShiftCashChannelsGrid";
 import { DoctorShiftEncashmentControls } from "./cashSection/DoctorShiftEncashmentControls";
+import { DoctorShiftEarningsCard } from "./cashSection/DoctorShiftEarningsCard";
 
 export interface DoctorShiftCashSectionProps {
 	readonly cashSummary?: DoctorShiftCashSummary | undefined;
@@ -14,6 +15,9 @@ export interface DoctorShiftCashSectionProps {
 	readonly clinicName?: string | undefined;
 	readonly onPrintStatement?: (() => void) | undefined;
 	readonly className?: string | undefined;
+	readonly userRole?: string | undefined;
+	readonly completedPatientsCount?: number | undefined;
+	readonly totalAppointmentsCount?: number | undefined;
 }
 
 export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
@@ -25,7 +29,34 @@ export const DoctorShiftCashSection: React.FC<DoctorShiftCashSectionProps> = ({
 	clinicName = "ООО «Денте Стоматология»",
 	onPrintStatement,
 	className = "",
+	userRole = "doctor",
+	completedPatientsCount = 0,
+	totalAppointmentsCount = 0,
 }) => {
+	const isStaffManager =
+		userRole === "administrator" ||
+		userRole === "cashier" ||
+		userRole === "owner" ||
+		userRole === "manager";
+
+	// Clinical Doctor Perspective: strictly personal earnings and work output.
+	// ZERO safe encashments, ZERO cash drawer change floats (Role Separation Principle).
+	if (!isStaffManager) {
+		return (
+			<DoctorShiftEarningsCard
+				totalRevenueRub={totalRevenueRub}
+				doctorCommissionPct={doctorCommissionPct}
+				estimatedDoctorPayoutRub={estimatedDoctorPayoutRub}
+				doctorFullName={doctorFullName}
+				completedPatientsCount={completedPatientsCount}
+				totalAppointmentsCount={totalAppointmentsCount}
+				onPrintStatement={onPrintStatement}
+				className={className}
+			/>
+		);
+	}
+
+	// Administrator / Owner Perspective: Clinic cashier operations and safe encashment.
 	const cashRub = cashSummary?.cashRub ?? 0;
 	const cardRub = cashSummary?.cardRub ?? 0;
 	const sbpRub = cashSummary?.sbpRub ?? 0;

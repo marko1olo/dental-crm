@@ -8,6 +8,7 @@ export interface MobileShiftBottomBarProps {
 	readonly onOpenCashInSheet?: (() => void) | undefined;
 	readonly onOpenCashOutSheet?: (() => void) | undefined;
 	readonly onOpenConsumablesSheet?: (() => void) | undefined;
+	readonly userRole?: string | undefined;
 }
 
 export const MobileShiftBottomBar: React.FC<MobileShiftBottomBarProps> = ({
@@ -17,7 +18,10 @@ export const MobileShiftBottomBar: React.FC<MobileShiftBottomBarProps> = ({
 	onOpenCashInSheet,
 	onOpenCashOutSheet,
 	onOpenConsumablesSheet,
+	userRole,
 }) => {
+	const isDoctor = userRole === "doctor";
+
 	const handleCashOpsClick = () => {
 		if (onOpenCashOpsSheet) {
 			onOpenCashOpsSheet();
@@ -29,15 +33,17 @@ export const MobileShiftBottomBar: React.FC<MobileShiftBottomBarProps> = ({
 	return (
 		<footer className="mobile-shift-bottom-bar" data-testid="mobile-shift-bottom-bar">
 			<div className="mobile-shift-quick-actions-row">
-				<button
-					type="button"
-					className="mobile-shift-btn-secondary cash-ops"
-					onClick={handleCashOpsClick}
-					data-testid="btn-mobile-cash-ops"
-				>
-					<Banknote size={15} />
-					<span>Касса</span>
-				</button>
+				{!isDoctor && (
+					<button
+						type="button"
+						className="mobile-shift-btn-secondary cash-ops"
+						onClick={handleCashOpsClick}
+						data-testid="btn-mobile-cash-ops"
+					>
+						<Banknote size={15} />
+						<span>Касса</span>
+					</button>
+				)}
 
 				<button
 					type="button"

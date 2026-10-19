@@ -22,6 +22,7 @@ export interface ShiftDesktopRightColumnProps {
 	patientsById: Map<string, any>;
 	// biome-ignore lint/suspicious/noExplicitAny: action
 	runRecommendedAction: (action: any) => void;
+	userRole?: string | undefined;
 }
 
 export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = ({
@@ -37,6 +38,7 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 	recommendedActionPriorityLabels,
 	patientsById,
 	runRecommendedAction,
+	userRole,
 }) => (
 	<div className="space-y-4 min-w-0" data-testid="shift-right-column">
 		<DoctorShiftCashSection
@@ -45,6 +47,9 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 			estimatedDoctorPayoutRub={shiftStats?.estimatedDoctorPayoutRub ?? 0}
 			doctorFullName={activeDoctorFullName}
 			clinicName={clinicName ?? ""}
+			userRole={userRole}
+			completedPatientsCount={shiftStats?.completedCount ?? 0}
+			totalAppointmentsCount={shiftStats?.totalAppointments ?? 0}
 			onPrintStatement={() => setIsShiftCloseModalOpen(true)}
 		/>
 

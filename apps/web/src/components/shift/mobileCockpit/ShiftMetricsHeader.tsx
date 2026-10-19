@@ -24,6 +24,7 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 	topbarOnly,
 	heroOnly,
 	chairRentalTimerDisplay,
+	userRole,
 }) => {
 	const renderTopbar = () => (
 		<header className="mobile-shift-topbar">
@@ -73,6 +74,7 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 			sbpSumRub={sbpSumRub}
 			doctorCommissionPct={doctorCommissionPct}
 			estimatedDoctorPayoutRub={estimatedDoctorPayoutRub}
+			userRole={userRole}
 		/>
 	);
 

@@ -36,6 +36,7 @@ export interface ShiftDesktopViewWrapProps {
 	activeQueueRole?: string;
 	staffRoleLabels?: Record<string, string>;
 	modalsNode: React.ReactNode;
+	userRole?: string | undefined;
 }
 
 export const ShiftDesktopViewWrap: React.FC<ShiftDesktopViewWrapProps> = (p) => (
@@ -86,6 +87,7 @@ export const ShiftDesktopViewWrap: React.FC<ShiftDesktopViewWrapProps> = (p) => 
 			setChairRentalNetIncomeRub={p.setChairRentalNetIncomeRub}
 			setChairRentalRentExpenseRub={p.setChairRentalRentExpenseRub}
 			runRecommendedAction={p.runRecommendedAction}
+			userRole={p.userRole}
 		/>
 
 		<ShiftSecondaryAccordion

@@ -12,6 +12,7 @@ export interface MobileShiftHeroCardProps {
 	readonly sbpSumRub?: number;
 	readonly doctorCommissionPct?: number;
 	readonly estimatedDoctorPayoutRub?: number;
+	readonly userRole?: string | undefined;
 }
 
 export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
@@ -24,7 +25,11 @@ export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
 	sbpSumRub = 5000,
 	doctorCommissionPct = 30,
 	estimatedDoctorPayoutRub = 12750,
-}) => (
+	userRole,
+}) => {
+	const isDoctor = userRole === "doctor";
+
+	return (
 	<section
 		className="mobile-shift-hero-card"
 		aria-label="Карточка дежурной смены"
@@ -51,26 +56,28 @@ export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
 				</span>
 			</div>
 
-			<div className="mobile-shift-channels-grid">
-				<div className="mobile-shift-channel-item">
-					<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-						<Banknote size={11} /> Наличные
-					</span>
-					<span className="mobile-shift-channel-sum">{money(cashInDrawerRub)}</span>
+			{!isDoctor && (
+				<div className="mobile-shift-channels-grid">
+					<div className="mobile-shift-channel-item">
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<Banknote size={11} /> Наличные
+						</span>
+						<span className="mobile-shift-channel-sum">{money(cashInDrawerRub)}</span>
+					</div>
+					<div className="mobile-shift-channel-item">
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<CreditCard size={11} /> POS карты
+						</span>
+						<span className="mobile-shift-channel-sum">{money(cardSumRub)}</span>
+					</div>
+					<div className="mobile-shift-channel-item">
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<QrCode size={11} /> СБП QR
+						</span>
+						<span className="mobile-shift-channel-sum">{money(sbpSumRub)}</span>
+					</div>
 				</div>
-				<div className="mobile-shift-channel-item">
-					<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-						<CreditCard size={11} /> POS карты
-					</span>
-					<span className="mobile-shift-channel-sum">{money(cardSumRub)}</span>
-				</div>
-				<div className="mobile-shift-channel-item">
-					<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
-						<QrCode size={11} /> СБП QR
-					</span>
-					<span className="mobile-shift-channel-sum">{money(sbpSumRub)}</span>
-				</div>
-			</div>
+			)}
 
 			<div className="mobile-shift-payout-strip">
 				<span className="mobile-shift-payout-label">
@@ -81,4 +88,5 @@ export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
 			</div>
 		</div>
 	</section>
-);
+	);
+};

@@ -43,4 +43,5 @@ export interface MobileShiftCockpitProps {
 	readonly nextDoctorName?: string | undefined;
 	readonly chairRentalTimerDisplay?: string | undefined;
 	readonly isChairRentalActive?: boolean | undefined;
+	readonly userRole?: string | undefined;
 }

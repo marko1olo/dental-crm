@@ -50,7 +50,11 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 	sbpSumRub = 5000,
 	consumables,
 	handleAdjustConsumable = () => {},
-}) => (
+	userRole,
+}) => {
+	const isDoctor = userRole === "doctor";
+
+	return (
 	<>
 		<MobileShiftBottomBar
 			isShiftOpen={isShiftOpen}
@@ -59,30 +63,35 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 			onOpenCashInSheet={() => setIsCashInSheetOpen(true)}
 			onOpenCashOutSheet={() => setIsCashOutSheetOpen(true)}
 			onOpenConsumablesSheet={() => setIsConsumablesSheetOpen?.(true)}
+			userRole={userRole}
 		/>
 
-		<MobileShiftCashInSheet
-			isOpen={isCashInSheetOpen}
-			onClose={() => setIsCashInSheetOpen(false)}
-			cashInAmount={cashInAmount}
-			setCashInAmount={setCashInAmount}
-			cashInReason={cashInReason}
-			setCashInReason={setCashInReason}
-			isSubmittingCashIn={isSubmittingCashIn}
-			handleConfirmCashIn={handleConfirmCashIn}
-		/>
+		{!isDoctor && (
+			<>
+				<MobileShiftCashInSheet
+					isOpen={isCashInSheetOpen}
+					onClose={() => setIsCashInSheetOpen(false)}
+					cashInAmount={cashInAmount}
+					setCashInAmount={setCashInAmount}
+					cashInReason={cashInReason}
+					setCashInReason={setCashInReason}
+					isSubmittingCashIn={isSubmittingCashIn}
+					handleConfirmCashIn={handleConfirmCashIn}
+				/>
 
-		<MobileShiftCashOutSheet
-			isOpen={isCashOutSheetOpen}
-			onClose={() => setIsCashOutSheetOpen(false)}
-			cashInDrawerRub={cashInDrawerRub}
-			cardSumRub={cardSumRub}
-			sbpSumRub={sbpSumRub}
-			cashOutMode={cashOutMode}
-			setCashOutMode={setCashOutMode}
-			isSubmittingCashOut={isSubmittingCashOut}
-			handleConfirmCashOutAndZReport={handleConfirmCashOutAndZReport}
-		/>
+				<MobileShiftCashOutSheet
+					isOpen={isCashOutSheetOpen}
+					onClose={() => setIsCashOutSheetOpen(false)}
+					cashInDrawerRub={cashInDrawerRub}
+					cardSumRub={cardSumRub}
+					sbpSumRub={sbpSumRub}
+					cashOutMode={cashOutMode}
+					setCashOutMode={setCashOutMode}
+					isSubmittingCashOut={isSubmittingCashOut}
+					handleConfirmCashOutAndZReport={handleConfirmCashOutAndZReport}
+				/>
+			</>
+		)}
 
 		<MobileShiftConsumablesSheet
 			isOpen={isConsumablesSheetOpen}
@@ -91,4 +100,5 @@ export const ShiftActionsToolbar: React.FC<ShiftActionsToolbarProps> = ({
 			handleAdjustConsumable={handleAdjustConsumable}
 		/>
 	</>
-);
+	);
+};
