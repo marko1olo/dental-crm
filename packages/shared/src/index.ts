@@ -76,6 +76,7 @@ export * from "./legal/index.js";
 export * from "./documents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
+export * from "./clinical/therapyProtocolEngine.js";
 export * from "./pricelist/index.js";
 export { ORDER_804N_CODE_REGEX } from "./pricelist/index.js";
 export * from "./perio/index.js";
