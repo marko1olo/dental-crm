@@ -152,7 +152,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowFullMonthCalendar((prev) => !prev)}
-						className="dbw-ribbon-toggle-btn"
+						className="dbw-ribbon-toggle-btn secondary-button"
 						aria-expanded={showFullMonthCalendar}
 					>
 						<Calendar size={14} />
@@ -253,7 +253,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 					type="button"
 					role="tab"
 					aria-selected={activePeriodFilter === "all"}
-					className={`dbw-chip-btn ${activePeriodFilter === "all" ? "active" : ""}`}
+					className={`dbw-chip-btn dente-filter-chip ${activePeriodFilter === "all" ? "active" : ""}`}
 					onClick={() => setActivePeriodFilter("all")}
 				>
 					<Clock size={16} />
@@ -264,7 +264,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 					type="button"
 					role="tab"
 					aria-selected={activePeriodFilter === "morning"}
-					className={`dbw-chip-btn ${activePeriodFilter === "morning" ? "active" : ""}`}
+					className={`dbw-chip-btn dente-filter-chip ${activePeriodFilter === "morning" ? "active" : ""}`}
 					onClick={() => setActivePeriodFilter("morning")}
 					disabled={morningSlots.length === 0}
 				>
@@ -276,7 +276,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 					type="button"
 					role="tab"
 					aria-selected={activePeriodFilter === "afternoon"}
-					className={`dbw-chip-btn ${activePeriodFilter === "afternoon" ? "active" : ""}`}
+					className={`dbw-chip-btn dente-filter-chip ${activePeriodFilter === "afternoon" ? "active" : ""}`}
 					onClick={() => setActivePeriodFilter("afternoon")}
 					disabled={afternoonSlots.length === 0}
 				>
@@ -288,7 +288,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 					type="button"
 					role="tab"
 					aria-selected={activePeriodFilter === "evening"}
-					className={`dbw-chip-btn ${activePeriodFilter === "evening" ? "active" : ""}`}
+					className={`dbw-chip-btn dente-filter-chip ${activePeriodFilter === "evening" ? "active" : ""}`}
 					onClick={() => setActivePeriodFilter("evening")}
 					disabled={eveningSlots.length === 0}
 				>
@@ -321,7 +321,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 						{onJoinWaitlist && (
 							<button
 								type="button"
-								className="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+								className="mt-4 primary-button px-4 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-2 cursor-pointer active:scale-95"
 								data-testid="join-waitlist-btn"
 								onClick={onJoinWaitlist}
 							>

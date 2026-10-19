@@ -31,6 +31,8 @@ export interface BookingContactsSectionProps {
 	enteredSmsCode: string;
 	setEnteredSmsCode: (code: string) => void;
 	isSmsVerified: boolean;
+	isSmsFallbackActive?: boolean | undefined;
+	onEnableSmsFallback?: (() => void) | undefined;
 	smsResendCountdown: number;
 	smsError: string | null;
 	handleSendSmsCode: () => void;
@@ -57,6 +59,8 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 	enteredSmsCode,
 	setEnteredSmsCode,
 	isSmsVerified,
+	isSmsFallbackActive,
+	onEnableSmsFallback,
 	smsResendCountdown,
 	smsError,
 	handleSendSmsCode,
@@ -97,7 +101,7 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 						<button
 							type="button"
 							onClick={handleTelegramShareContact}
-							className="dbw-tg-share-btn text-xs font-bold px-3 py-2 rounded-lg bg-[#229ED9] hover:bg-[#1c8ec4] text-white flex items-center gap-1.5 transition-all active:scale-[0.98] min-h-[40px] shadow-sm"
+							className="dbw-tg-share-btn secondary-button text-xs font-bold px-3 py-2 rounded-lg bg-[#229ED9] hover:bg-[#1c8ec4] text-white flex items-center gap-1.5 transition-all active:scale-[0.98] min-h-[44px] shadow-sm"
 							aria-label="Поделиться номером в Telegram"
 						>
 							<Phone size={13} />
@@ -179,11 +183,13 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 						smsCodeSent={smsCodeSent}
 						enteredSmsCode={enteredSmsCode}
 						isSmsVerified={isSmsVerified}
+						isSmsFallbackActive={isSmsFallbackActive}
 						smsResendCountdown={smsResendCountdown}
 						smsError={smsError}
 						onSendSmsCode={handleSendSmsCode}
 						onVerifySmsCode={handleVerifySmsCode}
 						onCodeChange={setEnteredSmsCode}
+						onEnableSmsFallback={onEnableSmsFallback}
 					/>
 				)}
 
@@ -219,7 +225,7 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 					<button
 						type="submit"
 						disabled={isSubmitting}
-						className="dbw-btn-confirm w-full min-h-[44px]"
+						className="dbw-btn-confirm primary-button w-full min-h-[48px]"
 						data-testid="step4-confirm-btn"
 						aria-label="Подтвердить запись и записаться на приём"
 					>

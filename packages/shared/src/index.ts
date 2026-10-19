@@ -49,8 +49,11 @@ export {
 	autoAlignSplitRemainder,
 	calculate5050Split,
 	isSplitBalanced,
+	calculateDmsSplitBill,
 	type AutoAlignRemainderInput,
 	type AutoAlignRemainderResult,
+	type DmsSplitBillInput,
+	type DmsSplitBillResult,
 } from "./billing/splitPayment.js";
 export { parseGs1DataMatrix, GS1_FNC1, GS1_GROUP_SEPARATOR } from "./mdlp/index.js";
 export * from "./mdlp/index.js";
@@ -217,4 +220,4 @@ export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
 export * from "./ai/index.js";
 export * from "./ai/tokenCompactor.js";
-
+export { generateUuidV7 } from "./sync/hashing.js";

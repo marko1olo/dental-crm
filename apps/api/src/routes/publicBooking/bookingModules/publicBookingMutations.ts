@@ -149,6 +149,7 @@ export async function handleBookAppointment(
 			utm_medium?: string;
 			utm_content?: string;
 			utm_term?: string;
+			idempotencyKey?: string;
 		};
 	}>,
 	reply: FastifyReply,
@@ -302,6 +303,14 @@ export async function handleBookAppointment(
 				parsed.data.source ||
 				"widget";
 
+			const headerIdempotencyKey =
+				(typeof request.headers["idempotency-key"] === "string"
+					? request.headers["idempotency-key"]
+					: typeof request.headers["x-idempotency-key"] === "string"
+					? request.headers["x-idempotency-key"]
+					: undefined);
+			const effectiveIdempotencyKey = parsed.data.idempotencyKey || headerIdempotencyKey;
+
 			const result = await tenantTx.transaction(async (tx) => {
 				const bookingResult = await executePublicBookingAppointment(tx, {
 					organizationId,
@@ -315,6 +324,7 @@ export async function handleBookAppointment(
 					utmSource: parsed.data.utm_source || parsed.data.utmSource,
 					utmCampaign: parsed.data.utm_campaign,
 					utmMedium: parsed.data.utm_medium,
+					idempotencyKey: effectiveIdempotencyKey,
 				});
 
 				if (bookingResult.conflict || ("blocked" in bookingResult && bookingResult.blocked)) {
@@ -348,7 +358,12 @@ export async function handleBookAppointment(
 				});
 			}
 
-			return { success: true, appointment: result.appointment };
+			return {
+				success: true,
+				status: "unconfirmed",
+				bookingStatus: "web_booking",
+				appointment: result.appointment,
+			};
 		} catch (error) {
 			const err = error as { code?: string; message?: string };
 			if (

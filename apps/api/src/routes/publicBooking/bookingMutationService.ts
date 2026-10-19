@@ -26,6 +26,7 @@ export interface BookingMutationParams {
 	utmSource?: string | undefined;
 	utmCampaign?: string | undefined;
 	utmMedium?: string | undefined;
+	idempotencyKey?: string | undefined;
 }
 
 export type BookingMutationResult =
@@ -338,7 +339,7 @@ export async function executeBookingTransaction(
 	}
 
 	const overlapping = await tx
-		.select({ id: appointments.id })
+		.select()
 		.from(appointments)
 		.where(
 			and(
@@ -354,8 +355,27 @@ export async function executeBookingTransaction(
 		.limit(1);
 
 	if (overlapping.length > 0) {
+		const existing = overlapping[0];
+		// Double-click guard & idempotency check (Mandates 8e, 8n):
+		// If the existing appointment is for the same patient, same doctor and exact same startsAt timestamp:
+		if (
+			existing &&
+			patientId &&
+			existing.patientId === patientId &&
+			existing.doctorUserId === doctorId &&
+			new Date(existing.startsAt).getTime() === startDate.getTime()
+		) {
+			return { conflict: false as const, appointment: existing, patientId };
+		}
 		return { conflict: true as const };
 	}
+
+	const appointmentComment = [
+		comment ? `[Онлайн-запись] ${comment}` : "Онлайн-запись через виджет на сайте",
+		params.idempotencyKey ? `[idempotency:${params.idempotencyKey}]` : null,
+	]
+		.filter(Boolean)
+		.join(" ");
 
 	const [created] = await tx
 		.insert(appointments)
@@ -368,7 +388,7 @@ export async function executeBookingTransaction(
 			startsAt: startDate,
 			endsAt: endDate,
 			reason: "Онлайн-запись через сайт",
-			comment: comment ? `[Онлайн-запись] ${comment}` : "Онлайн-запись через виджет на сайте",
+			comment: appointmentComment,
 		})
 		.returning();
 	if (!created) throw new Error("appointment_insert_failed");

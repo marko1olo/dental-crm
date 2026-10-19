@@ -119,4 +119,65 @@ describe("Honest Booking & Patient Portal — Zero Fake Slots & Real Empty State
 			globalThis.fetch = originalFetch;
 		}
 	});
+
+	it("6. BookingDoctorCard does not render a fake slot string when nextAvailableSlot is undefined", () => {
+		const { BookingDoctorCard } = require("../BookingDoctorCard.js");
+		const html = renderToString(
+			<BookingDoctorCard
+				doctor={{
+					id: "doc-1",
+					fullName: "Д-р Смирнова Анна Павловна",
+					specialties: ["Стоматолог-терапевт"],
+					experienceYears: 7,
+					rating: 4.95,
+					reviewsCount: 42,
+					categoryIds: ["therapy"],
+				}}
+				isSelected={false}
+				onSelect={() => {}}
+			/>,
+		);
+
+		assert.ok(
+			!html.includes("Ближайший слот: Сегодня 11:30"),
+			"Must NEVER render hardcoded fake slot 'Ближайший слот: Сегодня 11:30'",
+		);
+		assert.ok(
+			!html.includes("dbw-badge-slot"),
+			"Must not render slot badge when nextAvailableSlot is missing",
+		);
+	});
+
+	it("7. BookingSlotPicker renders canonical DENTE button and chip classes", () => {
+		const html = renderToString(
+			<BookingSlotPicker
+				selectedDate="2026-10-18"
+				onSelectDate={() => {}}
+				calendarMonth={new Date("2026-10-01")}
+				onPrevMonth={() => {}}
+				onNextMonth={() => {}}
+				calendarDays={[]}
+				monthLabel="Октябрь 2026"
+				slots={[]}
+				selectedSlot={null}
+				onSelectSlot={() => {}}
+				slotsLoading={false}
+				onJoinWaitlist={() => {}}
+			/>,
+		);
+
+		assert.ok(
+			html.includes("primary-button"),
+			"Waitlist CTA button must have primary-button class",
+		);
+		assert.ok(
+			html.includes("dente-filter-chip"),
+			"Period filter buttons must have dente-filter-chip class",
+		);
+		assert.ok(
+			html.includes("secondary-button"),
+			"Month toggle button must have secondary-button class",
+		);
+	});
 });
+

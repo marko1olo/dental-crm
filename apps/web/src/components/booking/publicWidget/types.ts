@@ -68,6 +68,8 @@ export interface BookingPatientFormStepProps {
 	enteredSmsCode: string;
 	setEnteredSmsCode: (code: string) => void;
 	isSmsVerified: boolean;
+	isSmsFallbackActive?: boolean | undefined;
+	handleEnableSmsFallback?: (() => void) | undefined;
 	smsResendCountdown: number;
 	smsError: string | null;
 	handleSendSmsCode: () => void;

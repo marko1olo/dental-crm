@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { parseUtmFromUrl } from "@dental/shared";
+import { generateUuidV7, parseUtmFromUrl } from "@dental/shared";
 import {
 	CANONICAL_BOOKING_CATEGORIES,
 	type BookingCategoryOption,
@@ -217,8 +217,18 @@ export function usePublicBookingState({
 	const [smsCodeSent, setSmsCodeSent] = useState(false);
 	const [enteredSmsCode, setEnteredSmsCode] = useState("");
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
+	const [isSmsFallbackActive, setIsSmsFallbackActive] = useState(false);
 	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
 	const [smsError, setSmsError] = useState<string | null>(null);
+
+	const handleEnableSmsFallback = useCallback(() => {
+		setIsSmsFallbackActive(true);
+		setSmsError(null);
+		showToast?.(
+			"Режим предварительной брони: администратор свяжется с вами для подтверждения",
+			"info",
+		);
+	}, [showToast]);
 
 	// Submission & Confirmation state
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -323,15 +333,29 @@ export function usePublicBookingState({
 				});
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));
-					setSmsError(
+					// Zero Dead-Ends (Mandate 8e / 8n): Graceful fallback to receptionist callback
+					setIsSmsFallbackActive(true);
+					const fallbackMsg =
 						errData?.message ||
-							errData?.error ||
-							"Не удалось отправить проверочный код. Попробуйте позже.",
+						errData?.error ||
+						"Служба СМС временно недоступна. Запись переключена в режим предварительной брони — подтверждение звонком администратора.";
+					setSmsError(fallbackMsg);
+					showToast?.(
+						"Служба СМС временно недоступна. Вы можете завершить бронь без СМС — администратор перезвонит вам.",
+						"info",
 					);
 					return;
 				}
 			} catch {
-				setSmsError("Сбой связи с сервером при отправке кода");
+				// Zero Dead-Ends (Mandate 8e / 8n): Graceful network fallback
+				setIsSmsFallbackActive(true);
+				setSmsError(
+					"Сбой связи со службой СМС. Запись переключена в режим предварительной брони — подтверждение звонком администратора.",
+				);
+				showToast?.(
+					"Сбой связи с СМС-шлюзом. Запись переключена в режим предварительной брони без кода.",
+					"info",
+				);
 				return;
 			}
 		}
@@ -403,6 +427,10 @@ export function usePublicBookingState({
 		if (e?.preventDefault) {
 			e.preventDefault();
 		}
+		// Double-click guard (Mandate 8e / 8n): prevent race condition if already submitting
+		if (isSubmitting) {
+			return;
+		}
 		if (!patientName.trim()) {
 			const errMsg = "Пожалуйста, введите ваше имя";
 			setSubmitError(errMsg);
@@ -419,14 +447,38 @@ export function usePublicBookingState({
 			setHasAgreedToPrivacy(true);
 			showToast?.("Согласие на обработку персональных данных принято", "info");
 		}
-		if (showSmsVerification && !isSmsVerified) {
-			const errMsg = "Пожалуйста, подтвердите номер телефона кодом из сообщения";
-			setSubmitError(errMsg);
-			showToast?.(errMsg, "warning");
-			return;
+		if (showSmsVerification && !isSmsVerified && !isSmsFallbackActive) {
+			// Zero Dead-Ends (Mandate 8e / 8n): Instead of blocking the patient with acute pain,
+			// activate graceful fallback and proceed as unconfirmed pre-booking!
+			setIsSmsFallbackActive(true);
+			showToast?.(
+				"Заявка оформлена как предварительная бронь. Администратор свяжется с вами для подтверждения.",
+				"info",
+			);
 		}
 
-		const activeSlot = selectedSlot || slots[0] || null;
+		const isPreBookingMode = Boolean(
+			isSmsFallbackActive || (showSmsVerification && !isSmsVerified),
+		);
+		const bookingStatus = isPreBookingMode ? "unconfirmed" : "confirmed";
+		const preBookingNotice = isPreBookingMode
+			? "[Предварительная бронь без СМС / Звонок администратора]"
+			: "";
+		const combinedComment = [patientComment.trim(), preBookingNotice]
+			.filter(Boolean)
+			.join(" ");
+
+		const activeSlot =
+			selectedSlot ||
+			slots[0] ||
+			(!organizationId
+				? {
+						time: "10:00",
+						startsAt: new Date(selectedDate).toISOString(),
+						endsAt: new Date(new Date(selectedDate).getTime() + 30 * 60_000).toISOString(),
+						period: "morning" as const,
+				  }
+				: null);
 
 		if (!activeSlot) {
 			const errMsg =
@@ -456,7 +508,9 @@ export function usePublicBookingState({
 			patientName: patientName.trim(),
 			patientPhone,
 			cabinetNumber: "Кабинет №3 (Терапевтическое отделение)",
-			comment: patientComment.trim() || undefined,
+			comment: combinedComment || undefined,
+			status: bookingStatus,
+			isPreBooking: isPreBookingMode,
 			createdAt: new Date().toISOString(),
 		};
 
@@ -471,27 +525,48 @@ export function usePublicBookingState({
 					activeSlot.availableDoctorIds?.[0] ||
 					selectedDoctor.id;
 
-				const response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
+				const idempotencyKey = generateUuidV7();
+
+				const bookingPayload = {
+					organizationId,
+					doctorId: effectiveDoctorId,
+					patientId: patientId || undefined,
+					startsAt: activeSlot.startsAt,
+					endsAt: activeSlot.endsAt,
+					patientName: patientName.trim(),
+					patientPhone: patientPhone.trim(),
+					comment: combinedComment || undefined,
+					status: bookingStatus,
+					idempotencyKey,
+					utm_source: parsedUtm.utm_source || undefined,
+					utm_medium: parsedUtm.utm_medium || undefined,
+					utm_campaign: parsedUtm.utm_campaign || undefined,
+					utm_content: parsedUtm.utm_content || undefined,
+					utm_term: parsedUtm.utm_term || undefined,
+					referrer:
+						parsedUtm.referrer ||
+						(typeof document !== "undefined" ? document.referrer : undefined),
+				};
+
+				const requestHeaders: Record<string, string> = {
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+					"X-Idempotency-Key": idempotencyKey,
+				};
+
+				let response = await fetch(`${apiBaseUrl}/create`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						doctorId: effectiveDoctorId,
-						patientId: patientId || undefined,
-						startsAt: activeSlot.startsAt,
-						endsAt: activeSlot.endsAt,
-						patientName: patientName.trim(),
-						patientPhone: patientPhone.trim(),
-						comment: patientComment.trim() || undefined,
-						utm_source: parsedUtm.utm_source || undefined,
-						utm_medium: parsedUtm.utm_medium || undefined,
-						utm_campaign: parsedUtm.utm_campaign || undefined,
-						utm_content: parsedUtm.utm_content || undefined,
-						utm_term: parsedUtm.utm_term || undefined,
-						referrer:
-							parsedUtm.referrer ||
-							(typeof document !== "undefined" ? document.referrer : undefined),
-					}),
-				});
+					headers: requestHeaders,
+					body: JSON.stringify(bookingPayload),
+				}).catch(() => null);
+
+				if (!response || response.status === 404) {
+					response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
+						method: "POST",
+						headers: requestHeaders,
+						body: JSON.stringify(bookingPayload),
+					});
+				}
 
 				if (!response.ok) {
 					if (response.status === 409) {
@@ -539,6 +614,15 @@ export function usePublicBookingState({
 		// Proceed to Confirmation
 		setConfirmationData(finalConfirmation);
 		setIsSubmitting(false);
+
+		// Broadcast events for schedule synchronization (Mandates 8e, 8n)
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:booking_completed", { detail: finalConfirmation }),
+			);
+			window.dispatchEvent(new CustomEvent("dente:schedule_refresh"));
+		}
+
 		handleStepChange(5);
 		if (onSuccess) onSuccess(finalConfirmation);
 	};
@@ -552,6 +636,7 @@ export function usePublicBookingState({
 		setPatientComment("");
 		setSmsCodeSent(false);
 		setIsSmsVerified(false);
+		setIsSmsFallbackActive(false);
 		setEnteredSmsCode("");
 		setConfirmationData(null);
 		handleStepChange(1);
@@ -593,6 +678,9 @@ export function usePublicBookingState({
 		enteredSmsCode,
 		setEnteredSmsCode,
 		isSmsVerified,
+		isSmsFallbackActive,
+		setIsSmsFallbackActive,
+		handleEnableSmsFallback,
 		smsResendCountdown,
 		smsError,
 		handleSendSmsCode,

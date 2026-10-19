@@ -203,6 +203,15 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 	const patientDisplayPhone =
 		confirmationData?.patientPhone || patientPhone || "";
 
+	// Pre-booking / unconfirmed reservation check (Mandates 8e, 8n)
+	const isUnconfirmed = Boolean(
+		confirmationData?.status === "unconfirmed" ||
+			confirmationData?.isPreBooking ||
+			(confirmationData?.comment &&
+				(confirmationData.comment.includes("Предварительная бронь") ||
+					confirmationData.comment.includes("Звонок администратора"))),
+	);
+
 	// Start & End timestamps for calendar
 	const startsAt =
 		confirmationData?.startsAt ||
@@ -283,9 +292,26 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 					Запись успешно оформлена!
 				</h3>
 
-				<p className="text-sm font-medium text-slate-600 dark:text-slate-300 max-w-md min-w-0 break-words">
-					Мы забронировали время и ждём вас в клинике. Предъявите электронный талон на ресепшене:
-				</p>
+				{isUnconfirmed ? (
+					<div
+						className="bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-xl p-3.5 text-xs text-teal-900 dark:text-teal-200 flex items-start gap-3 my-2 max-w-md text-left w-full"
+						data-testid="prebooking-banner"
+					>
+						<Phone size={18} className="shrink-0 mt-0.5 text-teal-600 dark:text-teal-400" />
+						<div className="min-w-0 flex-1">
+							<div className="font-bold text-sm text-teal-950 dark:text-teal-100">
+								Предварительная бронь принята!
+							</div>
+							<div className="mt-1 leading-relaxed">
+								Администратор клиники перезвонит вам по номеру <strong>{patientDisplayPhone || "телефона"}</strong> для согласования деталей визита.
+							</div>
+						</div>
+					</div>
+				) : (
+					<p className="text-sm font-medium text-slate-600 dark:text-slate-300 max-w-md min-w-0 break-words">
+						Мы забронировали время и ждём вас в клинике. Предъявите электронный талон на ресепшене:
+					</p>
+				)}
 
 				{/* Ticket Reference Pill */}
 				<div className="dbw-ticket-pill">
@@ -315,9 +341,22 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 								Dental Boarding Pass
 							</span>
 						</div>
-						<span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20">
-							Подтверждено
-						</span>
+						{isUnconfirmed ? (
+							<span
+								className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-500/30 text-white flex items-center gap-1"
+								data-testid="confirmation-status-badge"
+							>
+								<Phone size={11} />
+								<span>Предварительная бронь</span>
+							</span>
+						) : (
+							<span
+								className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20"
+								data-testid="confirmation-status-badge"
+							>
+								Подтверждено
+							</span>
+						)}
 					</div>
 
 					<div className="dbw-pass-body">
@@ -455,7 +494,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 					<div className="dbw-export-actions-grid">
 						<button
 							type="button"
-							className="dbw-export-btn primary"
+							className="dbw-export-btn primary-button primary"
 							onClick={handleDownloadIcs}
 						>
 							<Download size={16} />
@@ -472,7 +511,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 							})}
 							target="_blank"
 							rel="noreferrer"
-							className="dbw-export-btn"
+							className="dbw-export-btn secondary-button"
 						>
 							<CalendarPlus size={16} />
 							<span>Google Календарь</span>
@@ -489,7 +528,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 							})}
 							target="_blank"
 							rel="noreferrer"
-							className="dbw-export-btn"
+							className="dbw-export-btn secondary-button"
 						>
 							<CalendarPlus size={16} />
 							<span>Яндекс Календарь</span>
@@ -511,7 +550,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 							)}`}
 							target="_blank"
 							rel="noreferrer"
-							className="dbw-action-chip-btn"
+							className="dbw-action-chip-btn secondary-button"
 						>
 							<MapPin size={16} className="text-red-500 shrink-0" />
 							<span className="truncate">Открыть маршрут в Яндекс.Картах</span>
@@ -525,7 +564,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 							)}`}
 							target="_blank"
 							rel="noreferrer"
-							className="dbw-action-chip-btn"
+							className="dbw-action-chip-btn secondary-button"
 						>
 							<MessageSquare size={16} className="text-green-500 shrink-0" />
 							<span className="truncate">Написать в WhatsApp клиники</span>
@@ -538,7 +577,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 				<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap gap-2">
 					<button
 						type="button"
-						className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2"
+						className="secondary-button flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2 min-h-[44px]"
 						onClick={() => window.print()}
 					>
 						<Printer size={16} />
@@ -548,7 +587,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 					{onReset && (
 						<button
 							type="button"
-							className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 hover:underline p-2"
+							className="secondary-button flex items-center gap-1.5 text-teal-600 dark:text-teal-400 hover:underline p-2 min-h-[44px]"
 							onClick={onReset}
 						>
 							<RotateCcw size={16} />

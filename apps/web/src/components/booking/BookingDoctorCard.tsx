@@ -30,7 +30,7 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 	className = "",
 }) => {
 	const initial = doctor.fullName.replace("Д-р ", "").trim()[0] || "В";
-	const nextSlot = doctor.nextAvailableSlot || "Ближайший слот: Сегодня 11:30";
+	const nextSlot = doctor.nextAvailableSlot;
 
 	return (
 		<button
@@ -73,9 +73,11 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 						<span className="dbw-badge-exp text-xs font-semibold">
 							Стаж {doctor.experienceYears} лет
 						</span>
-						<span className="dbw-badge-slot text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-1.5 py-0.5 rounded border border-teal-500/20">
-							{nextSlot}
-						</span>
+						{nextSlot && (
+							<span className="dbw-badge-slot text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-1.5 py-0.5 rounded border border-teal-500/20">
+								{nextSlot}
+							</span>
+						)}
 						<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
 							({doctor.reviewsCount} отзывов)
 						</span>
@@ -134,7 +136,7 @@ export const BookingAnyDoctorCard: React.FC<BookingAnyDoctorCardProps> = ({
 						<span className="dbw-badge-rating text-xs font-bold">
 							<Star size={13} fill="#b45309" aria-hidden="true" /> Рекомендуем
 						</span>
-						<span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+						<span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
 							Автоматический подбор
 						</span>
 					</div>

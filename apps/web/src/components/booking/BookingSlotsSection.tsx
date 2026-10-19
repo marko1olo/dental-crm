@@ -90,7 +90,7 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 			<div className="pt-2 text-right">
 				<button
 					type="button"
-					className="dbw-btn-next text-xs py-2 px-3 min-h-[44px]"
+					className="dbw-btn-next secondary-button text-xs py-2 px-3 min-h-[44px]"
 					data-testid="step3-next-btn"
 					onClick={onNextStep}
 				>

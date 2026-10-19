@@ -60,7 +60,7 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 					type="button"
 					onClick={handleClick}
 					disabled={isSubmitting}
-					className="dbw-floating-cta-btn shrink-0"
+					className="dbw-floating-cta-btn primary-button shrink-0"
 					data-testid="floating-primary-cta"
 					aria-label="Записаться на приём"
 				>

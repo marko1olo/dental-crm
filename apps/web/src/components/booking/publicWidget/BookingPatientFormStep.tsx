@@ -17,6 +17,8 @@ export const BookingPatientFormStep: React.FC<BookingPatientFormStepProps> = ({
 	enteredSmsCode,
 	setEnteredSmsCode,
 	isSmsVerified,
+	isSmsFallbackActive,
+	handleEnableSmsFallback,
 	smsResendCountdown,
 	smsError,
 	handleSendSmsCode,
@@ -44,6 +46,8 @@ export const BookingPatientFormStep: React.FC<BookingPatientFormStepProps> = ({
 				enteredSmsCode={enteredSmsCode}
 				setEnteredSmsCode={setEnteredSmsCode}
 				isSmsVerified={isSmsVerified}
+				isSmsFallbackActive={isSmsFallbackActive}
+				onEnableSmsFallback={handleEnableSmsFallback}
 				smsResendCountdown={smsResendCountdown}
 				smsError={smsError}
 				handleSendSmsCode={handleSendSmsCode}

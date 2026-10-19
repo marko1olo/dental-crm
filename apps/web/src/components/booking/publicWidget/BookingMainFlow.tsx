@@ -79,6 +79,8 @@ export const BookingMainFlow: React.FC<BookingMainFlowProps> = ({ state }) => {
 				enteredSmsCode={state.enteredSmsCode}
 				setEnteredSmsCode={state.setEnteredSmsCode}
 				isSmsVerified={state.isSmsVerified}
+				isSmsFallbackActive={state.isSmsFallbackActive}
+				handleEnableSmsFallback={state.handleEnableSmsFallback}
 				smsResendCountdown={state.smsResendCountdown}
 				smsError={state.smsError}
 				handleSendSmsCode={state.handleSendSmsCode}

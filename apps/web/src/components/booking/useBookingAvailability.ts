@@ -130,20 +130,37 @@ export function useBookingAvailability({
 			? `&doctorId=${encodeURIComponent(selectedDoctorId)}`
 			: "";
 
-		fetch(
-			`${apiBaseUrl}/${effectiveOrgId}/slots?date=${encodeURIComponent(selectedDate)}${doctorParam}`,
-		)
-			.then(async (res) => {
-				const data = await res.json().catch(() => null);
-				if (!res.ok) {
-					const errMsg =
-						data?.message ||
-						data?.error ||
-						"На выбранную дату приём не ведётся. Выберите другую дату.";
-					throw new Error(errMsg);
-				}
-				return data;
-			})
+		const orgParam = effectiveOrgId
+			? `&organizationId=${encodeURIComponent(effectiveOrgId)}`
+			: "";
+
+		const fetchAvailableSlots = async () => {
+			let res = await fetch(
+				`${apiBaseUrl}/available-slots?date=${encodeURIComponent(selectedDate)}${doctorParam}${orgParam}`,
+			).catch(() => null);
+
+			if (!res || res.status === 404) {
+				res = await fetch(
+					`${apiBaseUrl}/${effectiveOrgId}/slots?date=${encodeURIComponent(selectedDate)}${doctorParam}`,
+				).catch(() => null);
+			}
+
+			if (!res) {
+				throw new Error("Сетевая ошибка при загрузке расписания");
+			}
+
+			const data = await res.json().catch(() => null);
+			if (!res.ok) {
+				const errMsg =
+					data?.message ||
+					data?.error ||
+					"На выбранную дату приём не ведётся. Выберите другую дату.";
+				throw new Error(errMsg);
+			}
+			return data;
+		};
+
+		fetchAvailableSlots()
 			.then((data) => {
 				if (isCancelled) return;
 				if (Array.isArray(data) && data.length > 0) {

@@ -68,6 +68,8 @@ export interface BookingConfirmationData {
 	patientPhone: string;
 	cabinetNumber?: string | undefined;
 	comment?: string | undefined;
+	status?: "confirmed" | "unconfirmed" | string | undefined;
+	isPreBooking?: boolean | undefined;
 	createdAt: string;
 }
 

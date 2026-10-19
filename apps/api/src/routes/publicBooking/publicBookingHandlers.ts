@@ -124,7 +124,35 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 	});
 
-	// 0. Get default active clinic for direct booking link (/book or #/book)
+	// Helper: resolve default clinic organization ID
+	const resolveDefaultClinicOrgId = async (): Promise<string> => {
+		const [demoOrg] = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select({
+					organizationId: organizations.id,
+				})
+				.from(organizations)
+				.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
+				.limit(1);
+		});
+		if (demoOrg?.organizationId) return demoOrg.organizationId;
+
+		const [orgWithDoctor] = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select({
+					organizationId: organizations.id,
+				})
+				.from(organizations)
+				.innerJoin(users, eq(users.organizationId, organizations.id))
+				.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
+				.limit(1);
+		});
+		if (orgWithDoctor?.organizationId) return orgWithDoctor.organizationId;
+
+		return "01a00000-0000-0000-0000-000000000000";
+	};
+
+	// 0a. Get default active clinic for direct booking link (/book or #/book)
 	server.get("/default-clinic", async (request, reply) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
@@ -166,6 +194,63 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			organizationId: "01a00000-0000-0000-0000-000000000000",
 			name: "Стоматологическая Клиника DENTE (Демо)",
 		};
+	});
+
+	// 0b. Direct available-slots query: GET /api/public/booking/available-slots?date=YYYY-MM-DD[&doctorId=UUID][&organizationId=UUID]
+	// Mandate 8a & 8k: Real schedule calculation between appointments in PostgreSQL 18.
+	server.get<{
+		Querystring: { date: string; doctorId?: string; organizationId?: string };
+	}>("/available-slots", async (request, reply) => {
+		if (isRateLimited(request.ip ?? "unknown")) {
+			return reply.status(429).send({ error: "Слишком много запросов." });
+		}
+		const { date, doctorId } = request.query;
+		const organizationId =
+			request.query.organizationId || (await resolveDefaultClinicOrgId());
+
+		if (!date) {
+			return reply.status(400).send({
+				error: "BookingDateMissing",
+				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
+			});
+		}
+		if (doctorId && !optionalDoctorIdSchema.safeParse(doctorId).success) {
+			return reply.status(400).send({
+				error: "DoctorIdInvalid",
+				message: "Некорректный идентификатор врача.",
+			});
+		}
+
+		return handleSlotsQuery(organizationId, date, doctorId, reply);
+	});
+
+	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create
+	server.post<{
+		Body: {
+			organizationId?: string;
+			doctorId: string;
+			startsAt: string;
+			endsAt: string;
+			patientName: string;
+			patientPhone: string;
+			comment?: string;
+			verificationCode?: string;
+			source?: string;
+			utm_source?: string;
+			utmSource?: string;
+			utm_campaign?: string;
+			utm_medium?: string;
+			utm_content?: string;
+			utm_term?: string;
+		};
+	}>("/create", async (request, reply) => {
+		const organizationId =
+			request.body?.organizationId || (await resolveDefaultClinicOrgId());
+		const reqWithOrg = {
+			...request,
+			params: { organizationId },
+		};
+		return handleBookAppointment(reqWithOrg as any, reply);
 	});
 
 	// 1. Get doctors for an organization
