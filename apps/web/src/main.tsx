@@ -123,6 +123,11 @@ const Tooth46InspectionStand = React.lazy(() =>
 		default: m.Tooth46InspectionStand,
 	})),
 );
+const Tooth16InspectionStand = React.lazy(() =>
+	import("./components/odontogram/gate1").then((m) => ({
+		default: m.Tooth16InspectionStand,
+	})),
+);
 import { TelephonyStandaloneWorkspace } from "./components/telephony/TelephonyStandaloneWorkspace";
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -873,7 +878,9 @@ if (publicPortalRoute) {
 	typeof window !== "undefined" &&
 	(new URLSearchParams(window.location.search).get("stand") === "odontogram-gate0" ||
 		new URLSearchParams(window.location.search).has("odontogram-gate0") ||
-		window.location.hash.toLowerCase().includes("odontogram-gate0"))
+		window.location.hash.toLowerCase().includes("odontogram-gate0") ||
+		(new URLSearchParams(window.location.search).get("stand") === "odontogram" &&
+			new URLSearchParams(window.location.search).get("tooth") === "46"))
 ) {
 	applyThemeToRoot(
 		document.documentElement,
@@ -889,6 +896,35 @@ if (publicPortalRoute) {
 			<BootErrorBoundary audience="clinic">
 				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка стенда одонтограммы Gate 0...</div>}>
 					<Tooth46InspectionStand />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(new URLSearchParams(window.location.search).get("stand") === "odontogram-gate1" ||
+		new URLSearchParams(window.location.search).has("odontogram-gate1") ||
+		window.location.hash.toLowerCase().includes("odontogram-gate1") ||
+		(new URLSearchParams(window.location.search).get("stand") === "odontogram" &&
+			(new URLSearchParams(window.location.search).get("tooth") === "16" ||
+				new URLSearchParams(window.location.search).get("tooth") === "26" ||
+				!new URLSearchParams(window.location.search).get("tooth"))))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			(localStorage.getItem("dente_theme") as any) || "auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка стенда одонтограммы Gate 1...</div>}>
+					<Tooth16InspectionStand />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
