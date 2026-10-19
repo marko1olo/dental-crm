@@ -13,7 +13,7 @@ import {
 	type WaitlistCandidateItem,
 	type WaitlistUrgency,
 	URGENCY_CONFIG,
-	generate152FzWaitlistOfferMessage,
+	generateWaitlistOfferMessage,
 	openTelegramChat,
 	openWhatsAppChat,
 } from "./waitlistCancellationEngine";
@@ -282,7 +282,7 @@ export function useWaitlistDrawerOperations({
 			showToast("У пациента не указан номер телефона", "error");
 			return;
 		}
-		const msg = generate152FzWaitlistOfferMessage({
+		const msg = generateWaitlistOfferMessage({
 			patientName: item.patientName,
 			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
 			startsAt: targetSlot?.startsAt || new Date().toISOString(),
@@ -303,7 +303,7 @@ export function useWaitlistDrawerOperations({
 			showToast("У пациента не указан номер телефона", "error");
 			return;
 		}
-		const msg = generate152FzWaitlistOfferMessage({
+		const msg = generateWaitlistOfferMessage({
 			patientName: item.patientName,
 			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
 			startsAt: targetSlot?.startsAt || new Date().toISOString(),
@@ -320,7 +320,7 @@ export function useWaitlistDrawerOperations({
 
 	// 1-Click Copy SMS
 	const handleCopySms = (item: WaitlistCandidateItem) => {
-		const msg = generate152FzWaitlistOfferMessage({
+		const msg = generateWaitlistOfferMessage({
 			patientName: item.patientName,
 			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
 			startsAt: targetSlot?.startsAt || new Date().toISOString(),
@@ -444,7 +444,7 @@ export function useWaitlistDrawerOperations({
 				return;
 			}
 
-			const offerMsg = generate152FzWaitlistOfferMessage({
+			const offerMsg = generateWaitlistOfferMessage({
 				patientName: item.patientName,
 				doctorName: targetSlot?.doctorName || item.preferredDoctorName,
 				startsAt: targetSlot?.startsAt || new Date().toISOString(),

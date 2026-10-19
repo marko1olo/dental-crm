@@ -244,7 +244,9 @@ export function useScheduleSurfaceCoordination({
         } else if (state.activeDrawer !== "quick_booking" && quickBookingOpen) {
           setQuickBookingOpen(false);
         }
-        if (
+        if (state.activeDrawer === "waitlist" && !waitlistOpen) {
+          setWaitlistOpen(true);
+        } else if (
           state.activeDrawer !== "waitlist" &&
           (waitlistOpen || waitlistQuickFillSlot !== null)
         ) {

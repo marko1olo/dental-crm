@@ -15,6 +15,7 @@ import {
   detectCandidateUrgency,
   extractPoliteName,
   formatDoctorSalutation,
+  generateSlotOfferMessage,
   generate152FzSlotOfferMessage,
   generateWhatsAppLink,
   getTimeOfDayCategory,
@@ -135,14 +136,24 @@ describe("Smart Slot Recovery Engine & Popover (Priorities & 152-FZ)", () => {
       assert.equal(formatDoctorSalutation(""), "доктора");
     });
 
-    it("generates 152-FZ safe offer message with zero disclosure of diagnosis", () => {
-      const msg = generate152FzSlotOfferMessage({
+    it("generates privacy-compliant safe offer message with zero disclosure of diagnosis", () => {
+      const msg = generateSlotOfferMessage({
         patientName: "Волков Сергей Николаевич",
         doctorName: "Д-р Смирнов А.П.",
         clinicName: "DENTE",
         startsAt: "2026-10-06T10:00:00.000Z",
         durationMinutes: 60,
       });
+
+      // Backward-compat alias check
+      const aliasMsg = generate152FzSlotOfferMessage({
+        patientName: "Волков Сергей Николаевич",
+        doctorName: "Д-р Смирнов А.П.",
+        clinicName: "DENTE",
+        startsAt: "2026-10-06T10:00:00.000Z",
+        durationMinutes: 60,
+      });
+      assert.equal(msg, aliasMsg);
 
       assert.ok(
         msg.includes("Здравствуйте, Сергей Николаевич!"),

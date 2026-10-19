@@ -68,55 +68,32 @@ export interface ReliabilityCalculationOptions {
 }
 
 /**
- * Extracts lateness in minutes from appointment reason, comment or admin notes.
- * Matches patterns: "опоздал на 20 мин", "опоздание 15 минут", "задержка 30м", "+25 мин опоздание", "late 20 min".
+ * Calculates lateness in minutes strictly from structured appointment timestamp fields.
+ * Compares actual start time against scheduled start time.
+ * If either field is missing or invalid, returns null (zero fabrication).
  */
-export function extractLatenessMinutes(text: string | null | undefined): number | null {
-	if (!text || typeof text !== "string") return null;
+export function calculateAppointmentLatenessMinutes(
+	appt: Appointment | Record<string, unknown> | null | undefined,
+): number | null {
+	if (!appt || typeof appt !== "object") return null;
 
-	const normalized = text.toLowerCase();
+	const record = appt as Record<string, unknown>;
+	const rawActual = record.actualStartTime ?? record.actualStartsAt;
+	const rawPlanned = record.startTime ?? (record as { startsAt?: unknown }).startsAt;
 
-	// Pattern 1: "опоздал(а)? (на)? X мин" / "опоздала на 10м"
-	const match1 = normalized.match(
-		/(?:опозда(?:л[аио]?|ние|ть|ла|ли|ло|вш[а-я]*))\s*(?:на\s*)?(\d+)\s*(?:мин(?:ут[а-я]*)?|м(?![а-я0-9]))/iu,
-	);
-	if (match1 && match1[1]) {
-		const mins = Number.parseInt(match1[1], 10);
-		if (!Number.isNaN(mins) && mins > 0) return mins;
-	}
+	if (!rawActual || !rawPlanned) return null;
 
-	// Pattern 2: "задержка (на)? X мин"
-	const match2 = normalized.match(
-		/(?:задержк[а-я]*|задержал(?:ся|ась|ись)?)\s*(?:на\s*)?(\d+)\s*(?:мин(?:ут[а-я]*)?|м(?![а-я0-9]))/iu,
-	);
-	if (match2 && match2[1]) {
-		const mins = Number.parseInt(match2[1], 10);
-		if (!Number.isNaN(mins) && mins > 0) return mins;
-	}
+	const actualMs =
+		typeof rawActual === "number" ? rawActual : Date.parse(String(rawActual));
+	const plannedMs =
+		typeof rawPlanned === "number" ? rawPlanned : Date.parse(String(rawPlanned));
 
-	// Pattern 3: "+X мин опоздание" or "X мин опоздания"
-	const match3 = normalized.match(
-		/(?:\+)?(\d+)\s*(?:мин(?:ут[а-я]*)?|м(?![а-я0-9]))\s*(?:опоздан|задержк)/iu,
-	);
-	if (match3 && match3[1]) {
-		const mins = Number.parseInt(match3[1], 10);
-		if (!Number.isNaN(mins) && mins > 0) return mins;
-	}
+	if (Number.isNaN(actualMs) || Number.isNaN(plannedMs)) return null;
 
-	// Pattern 4: "late X min"
-	const match4 = normalized.match(/late\s*(?:by\s*)?(\d+)\s*(?:min(?:utes?)?|m\b)/i);
-	if (match4 && match4[1]) {
-		const mins = Number.parseInt(match4[1], 10);
-		if (!Number.isNaN(mins) && mins > 0) return mins;
-	}
-
-	// Generic lateness mentions without explicit minutes (e.g. "сильное опоздание", "опоздал на прием")
-	if (/опозда(?:л|ние)|задержка\s*пациента/i.test(normalized)) {
-		return 15; // default benchmark for unquantified lateness
-	}
-
-	return null;
+	const diffMinutes = Math.round((actualMs - plannedMs) / 60_000);
+	return diffMinutes > 0 ? diffMinutes : 0;
 }
+
 
 /**
  * Determines if an appointment belongs to past finalized visit history.
@@ -148,24 +125,11 @@ export function isAppointmentFinalizedOrPast(
 }
 
 /**
- * Determines whether an appointment is considered an unexcused missed visit (no-show).
- * Supports explicit 'no_show' status as well as unexcused cancellation notes.
+ * Determines whether an appointment is an unexcused missed visit (no-show).
+ * Strictly checks the relational appointment status without parsing free-text notes.
  */
 export function isUnexcusedNoShow(appt: Appointment): boolean {
-	if (appt.status === "no_show") return true;
-	if (appt.status === "cancelled") {
-		const rawNotes = typeof (appt as Record<string, unknown>).notes === "string" ? ((appt as Record<string, unknown>).notes as string) : "";
-		const text = `${rawNotes} ${appt.reason || ""} ${appt.comment || ""}`.toLowerCase();
-		return (
-			text.includes("не яв") ||
-			text.includes("неявк") ||
-			text.includes("не приш") ||
-			text.includes("no show") ||
-			text.includes("сорвал") ||
-			text.includes("без предупрежд")
-		);
-	}
-	return false;
+	return appt.status === "no_show";
 }
 
 /**
@@ -327,10 +291,7 @@ export function calculatePatientReliability(
 		const st = appt.status;
 		if (st === "completed" || st === "arrived" || st === "in_treatment") {
 			completedCount++;
-			const latenessMin =
-				extractLatenessMinutes(appt.comment) ??
-				extractLatenessMinutes(appt.reason) ??
-				extractLatenessMinutes(typeof (appt as Record<string, unknown>).notes === "string" ? ((appt as Record<string, unknown>).notes as string) : null);
+			const latenessMin = calculateAppointmentLatenessMinutes(appt);
 			if (latenessMin !== null && latenessMin >= latenessThreshold) {
 				lateCount++;
 			}
@@ -405,15 +366,15 @@ export function calculatePatientReliability(
 	const isInsightHighRisk = options?.overrideInsight?.riskLevel === "high";
 
 	if (totalFinished === 0) {
-		// New patient with no historical visits
+		// New patient with no historical visits — zero fabrication, status 'new'
 		category = "new";
 		status = "new";
-		score = 85;
-		badgeText = "Новый пациент";
+		score = 0;
+		badgeText = "Новый пациент (история визитов формируется)";
 		shortLabel = "Новый";
 		emoji = "new";
 		recommendation = "Первичный прием: запросить паспорт и оформить согласие на лечение.";
-		summary = "Нет истории визитов";
+		summary = "История визитов формируется";
 		badgeClass = "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40";
 		requiresTwoHourConfirmation = false;
 		receptionistAlert = "Первичный визит. Оформить договор и согласие на лечение (или распечатать бланк со строками _______).";

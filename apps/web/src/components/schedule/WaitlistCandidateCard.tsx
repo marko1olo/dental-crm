@@ -77,7 +77,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 				);
 				e.dataTransfer.effectAllowed = "copy";
 			}}
-			className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-3 flex flex-col gap-2 hover:border-[var(--teal)]/40 transition-all cursor-grab active:cursor-grabbing"
+			className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-2xl p-3 flex flex-col gap-2 hover:border-[var(--teal)]/40 transition-all cursor-grab active:cursor-grabbing"
 			data-testid={`waitlist-candidate-${item.id}`}
 		>
 			{/* Top Row: Index, Name, Urgency badge */}

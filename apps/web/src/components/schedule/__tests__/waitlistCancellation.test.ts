@@ -12,6 +12,7 @@ import {
   extractPatientPoliteName,
   filterWaitlistCandidates,
   formatDoctorSalutation,
+  generateWaitlistOfferMessage,
   generate152FzWaitlistOfferMessage,
   scoreWaitlistCandidate,
 } from "../waitlistCancellationEngine";
@@ -46,15 +47,24 @@ const mockAppLogicValue: any = {
   },
 };
 
-describe("Waitlist Cancellation Auto-Fill & 152-FZ Engine", () => {
-  describe("152-FZ Polite Message Generation", () => {
+describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
+  describe("Privacy-First Polite Message Generation", () => {
     it("generates polite appointment offer without disclosing diagnosis or teeth numbers", () => {
-      const message = generate152FzWaitlistOfferMessage({
+      const message = generateWaitlistOfferMessage({
         patientName: "Иванов Иван Иванович",
         doctorName: "Д-р Ковалев Сергей Петрович",
         startsAt: "2026-09-25T15:30:00.000Z",
         clinicName: "Стоматология DENTE",
       });
+
+      // Backward-compat alias check
+      const aliasMsg = generate152FzWaitlistOfferMessage({
+        patientName: "Иванов Иван Иванович",
+        doctorName: "Д-р Ковалев Сергей Петрович",
+        startsAt: "2026-09-25T15:30:00.000Z",
+        clinicName: "Стоматология DENTE",
+      });
+      assert.equal(message, aliasMsg);
 
       assert.ok(
         message.includes("Здравствуйте, Иван Иванович!"),
@@ -71,7 +81,7 @@ describe("Waitlist Cancellation Auto-Fill & 152-FZ Engine", () => {
         "Should politely ask availability",
       );
 
-      // 152-FZ Invariant: no medical details allowed
+      // Privacy Invariant: no medical details allowed
       assert.strictEqual(
         message.includes("зуб"),
         false,
@@ -95,7 +105,7 @@ describe("Waitlist Cancellation Auto-Fill & 152-FZ Engine", () => {
     });
 
     it("falls back safely when optional parameters are missing", () => {
-      const message = generate152FzWaitlistOfferMessage({
+      const message = generateWaitlistOfferMessage({
         startsAt: "2026-09-25T10:00:00.000Z",
       });
 

@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Appointment, Patient, PatientInsight } from "@dental/shared";
 import {
+	calculateAppointmentLatenessMinutes,
 	calculateConsecutiveNoShows,
 	calculatePatientReliability,
-	extractLatenessMinutes,
 	formatPatientBalanceBadge,
 	hasConsecutiveNoShows,
 	isAppointmentFinalizedOrPast,
@@ -53,8 +53,9 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 
 		assert.equal(result.category, "new");
 		assert.equal(result.reliabilityBadge.status, "new");
-		assert.equal(result.reliabilityBadge.badgeText, "Новый пациент");
+		assert.equal(result.reliabilityBadge.badgeText, "Новый пациент (история визитов формируется)");
 		assert.equal(result.reliabilityBadge.shortLabel, "Новый");
+		assert.equal(result.score, 0);
 		assert.ok(!result.reliabilityBadge.badgeText.includes("✨"), "No raw ✨ emoji");
 		assert.ok(!result.reliabilityBadge.emoji.includes("✨"), "No raw emoji in emoji property");
 		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, false);
@@ -133,10 +134,29 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 		assert.ok(!zeroBadge.label.includes("💳"), "No 💳 in zero balance label");
 	});
 
-	it("6. extractLatenessMinutes accurately parses lateness without errors", () => {
-		assert.equal(extractLatenessMinutes("опоздал на 20 мин"), 20);
-		assert.equal(extractLatenessMinutes("задержка 15 минут"), 15);
-		assert.equal(extractLatenessMinutes("вовремя"), null);
+	it("6. calculateAppointmentLatenessMinutes calculates lateness strictly from structured timestamps", () => {
+		const lateAppt = createMockAppointment({
+			startsAt: "2026-08-01T10:00:00.000Z",
+			...({ actualStartTime: "2026-08-01T10:20:00.000Z" } as any),
+		});
+		assert.equal(calculateAppointmentLatenessMinutes(lateAppt), 20);
+
+		const onTimeAppt = createMockAppointment({
+			startsAt: "2026-08-01T10:00:00.000Z",
+			...({ actualStartTime: "2026-08-01T10:00:00.000Z" } as any),
+		});
+		assert.equal(calculateAppointmentLatenessMinutes(onTimeAppt), 0);
+
+		const earlyAppt = createMockAppointment({
+			startsAt: "2026-08-01T10:00:00.000Z",
+			...({ actualStartTime: "2026-08-01T09:50:00.000Z" } as any),
+		});
+		assert.equal(calculateAppointmentLatenessMinutes(earlyAppt), 0);
+
+		const noActualAppt = createMockAppointment({
+			startsAt: "2026-08-01T10:00:00.000Z",
+		});
+		assert.equal(calculateAppointmentLatenessMinutes(noActualAppt), null);
 	});
 
 	it("7. classifies patient with >90% on-time visits and 0 no-shows as 'reliable'", () => {
@@ -170,20 +190,20 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 		assert.ok(result.reliabilityBadge.badgeText.includes("Надежный"));
 	});
 
-	it("8. classifies frequent lateness >15 min as attention zone", () => {
+	it("8. classifies frequent lateness >15 min as attention zone via structured timestamps", () => {
 		const patient = createMockPatient({ id: "pat-late" });
 		const appts: Appointment[] = [
 			createMockAppointment({
 				patientId: "pat-late",
 				startsAt: "2026-08-01T10:00:00Z",
+				...({ actualStartTime: "2026-08-01T10:20:00Z" } as any),
 				status: "completed",
-				comment: "Пациент опоздал на 20 мин",
 			}),
 			createMockAppointment({
 				patientId: "pat-late",
 				startsAt: "2026-08-05T10:00:00Z",
+				...({ actualStartTime: "2026-08-05T10:25:00Z" } as any),
 				status: "completed",
-				comment: "Задержка 25 минут из-за пробок",
 			}),
 			createMockAppointment({
 				patientId: "pat-late",
@@ -254,17 +274,25 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 		assert.equal(hasStreak, true);
 	});
 
-	it("12. extractLatenessMinutes accurately parses diverse Russian and English lateness expressions", () => {
-		assert.equal(extractLatenessMinutes("пациент опоздал на 20 мин"), 20);
-		assert.equal(extractLatenessMinutes("опоздание 15 минут из-за погоды"), 15);
-		assert.equal(extractLatenessMinutes("задержка на 35 мин"), 35);
-		assert.equal(extractLatenessMinutes("+40 мин опоздание"), 40);
-		assert.equal(extractLatenessMinutes("late by 25 min"), 25);
-		assert.equal(extractLatenessMinutes("опоздала на 10м"), 10);
-		assert.equal(extractLatenessMinutes("плановый визит вовремя"), null);
-		assert.equal(extractLatenessMinutes(null), null);
-		assert.equal(extractLatenessMinutes(undefined), null);
-		assert.equal(extractLatenessMinutes(""), null);
+	it("12. calculateAppointmentLatenessMinutes handles ISO strings, timestamps and missing fields safely", () => {
+		assert.equal(
+			calculateAppointmentLatenessMinutes({
+				startTime: "2026-08-01T10:00:00Z",
+				actualStartTime: "2026-08-01T10:35:00Z",
+			}),
+			35,
+		);
+		assert.equal(
+			calculateAppointmentLatenessMinutes({
+				startsAt: "2026-08-01T10:00:00Z",
+				actualStartsAt: "2026-08-01T10:15:00Z",
+			}),
+			15,
+		);
+		assert.equal(calculateAppointmentLatenessMinutes(null), null);
+		assert.equal(calculateAppointmentLatenessMinutes(undefined), null);
+		assert.equal(calculateAppointmentLatenessMinutes({}), null);
+		assert.equal(calculateAppointmentLatenessMinutes({ startsAt: "invalid" }), null);
 	});
 
 	it("13. formatPatientBalanceBadge handles exact kopecks without rounding error", () => {
@@ -327,7 +355,7 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 	it("16. handles null or undefined patient and appointments gracefully without throwing", () => {
 		const resNull = calculatePatientReliability(null, null);
 		assert.equal(resNull.category, "new");
-		assert.equal(resNull.score, 85);
+		assert.equal(resNull.score, 0);
 		assert.equal(resNull.financialBadge.status, "settled");
 
 		const resUndef = calculatePatientReliability(undefined, undefined);

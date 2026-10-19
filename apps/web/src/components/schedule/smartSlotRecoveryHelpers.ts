@@ -1,6 +1,6 @@
 /**
  * apps/web/src/components/schedule/smartSlotRecoveryHelpers.ts
- * Time utilities and 152-FZ communication helpers for slot recovery.
+ * Time utilities and patient privacy-compliant communication helpers for slot recovery.
  */
 
 import type { TimeOfDay, WaitlistUrgency } from "./smartSlotRecoveryTypes";
@@ -69,7 +69,7 @@ export function calculateWaitingDays(
   return Math.max(0, Math.floor((nowMs - createdMs) / 86400000));
 }
 
-export function generate152FzSlotOfferMessage(params: {
+export function generateSlotOfferMessage(params: {
   patientName?: string | null;
   doctorName?: string | null;
   startsAt: string;
@@ -105,6 +105,12 @@ export function generate152FzSlotOfferMessage(params: {
 
   return `Здравствуйте, ${politeName}! ${who} освободилось время ${dateWord} в ${timeStr}${dur}. Сможете подойти?`;
 }
+
+/**
+ * Backward-compatibility alias for generateSlotOfferMessage.
+ * @deprecated Use generateSlotOfferMessage instead (Mandates 8ao, 8ap).
+ */
+export const generate152FzSlotOfferMessage = generateSlotOfferMessage;
 
 export function generateWhatsAppLink(phone: string | null | undefined, message: string): string {
   if (!phone) return "";

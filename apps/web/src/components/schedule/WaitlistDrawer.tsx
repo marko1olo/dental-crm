@@ -7,6 +7,7 @@ import {
   type WaitlistUrgency,
   detectWaitlistUrgency,
   extractPatientPoliteName,
+  generateWaitlistOfferMessage,
   generate152FzWaitlistOfferMessage,
   openWhatsAppChat,
   openTelegramChat,
@@ -26,6 +27,7 @@ import { WaitlistDrawerSurface } from "./waitlistDrawer/WaitlistDrawerSurface";
 
 export type { TargetSlotInfo, WaitlistCandidateItem, WaitlistUrgency };
 export {
+  generateWaitlistOfferMessage,
   generate152FzWaitlistOfferMessage,
   detectWaitlistUrgency,
   extractPatientPoliteName,

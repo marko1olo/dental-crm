@@ -2,8 +2,8 @@
  * Core engine and helpers for Schedule Cancellation Auto-Fill & Waitlist Drawer.
  *
  * Compliant with:
- * - 152-FZ: polite communication without disclosing medical diagnosis, teeth numbers, or clinical reasons.
- * - StomX Parity: fast cancellation auto-fill matching doctor, chair, time window, and urgency.
+ * - Patient Privacy: polite communication without disclosing medical diagnosis, teeth numbers, or clinical reasons.
+ * - Dynamic Fast Cancellation: auto-fill matching doctor, chair, time window, and urgency.
  * - Scale Sovereignty: solo doctor & small clinic 1-click ergonomics.
  */
 
@@ -132,14 +132,14 @@ export function formatDoctorSalutation(
 }
 
 /**
- * Generates a 152-FZ compliant notification message for WhatsApp/SMS.
+ * Generates a privacy-compliant notification message for WhatsApp/SMS.
  * Invariant: ZERO disclosure of medical diagnosis, tooth FDI, clinical status,
  * or procedure details over insecure transport.
  *
  * Standard template:
  * «Здравствуйте, [Имя]! У доктора [Врач] в клинике «[Клиника]» освободилось время сегодня в [Время]. Сможете подойти?»
  */
-export function generate152FzWaitlistOfferMessage(params: {
+export function generateWaitlistOfferMessage(params: {
   patientName?: string | null | undefined;
   doctorName?: string | null | undefined;
   startsAt: string; // ISO or YYYY-MM-DDTHH:mm
@@ -199,6 +199,12 @@ export function generate152FzWaitlistOfferMessage(params: {
 
   return `Здравствуйте, ${politeName}! ${whoPhrase} освободилось время ${dateWord} в ${timeStr}. Сможете подойти?`;
 }
+
+/**
+ * Backward-compatibility alias for generateWaitlistOfferMessage.
+ * @deprecated Use generateWaitlistOfferMessage instead (Mandates 8ao, 8ap).
+ */
+export const generate152FzWaitlistOfferMessage = generateWaitlistOfferMessage;
 
 /**
  * Detects waitlist urgency from explicit field, priorityLevel, or natural text.

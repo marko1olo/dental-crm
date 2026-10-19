@@ -17,7 +17,7 @@ import {
   calculateWaitingDays,
   extractPoliteName,
   formatDoctorSalutation,
-  generate152FzSlotOfferMessage,
+  generateSlotOfferMessage,
   generateWhatsAppLink,
   getTimeOfDayCategory,
   openWhatsAppLinkDirect,
@@ -134,7 +134,7 @@ export function matchWaitlistCandidatesForSlot(params: MatchWaitlistSlotParams):
   });
 
   const matches: SmartSlotCandidateMatch[] = scoredCandidates.slice(0, Math.max(1, limit)).map((c) => {
-    const offerMessage = generate152FzSlotOfferMessage({ patientName: c.patientName, doctorName: doctorName ?? null, startsAt: startAt, clinicName, durationMinutes: slotDurationMinutes });
+    const offerMessage = generateSlotOfferMessage({ patientName: c.patientName, doctorName: doctorName ?? null, startsAt: startAt, clinicName, durationMinutes: slotDurationMinutes });
     return { ...c, offerMessage, whatsappUrl: generateWhatsAppLink(c.phone, offerMessage) };
   });
 
