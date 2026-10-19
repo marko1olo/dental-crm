@@ -118,11 +118,8 @@ export const PhotoVideoConsentForm = React.memo(function PhotoVideoConsentForm({
 						aria-live="polite"
 						style={{ marginTop: "12px" }}
 					>
-						<strong>
-							Согласие на фото и видео не создастся: не выполнено{" "}
-							{review.blockers.length} условий из {review.requiredCount}.
-							Отметки ниже перемешаны: часть выбирает пациент, а эти обязательны
-							для клиники:
+						<strong className="block font-semibold mb-1 text-[var(--teal,#0d9488)]">
+							Печать и сохранение доступны: незаполненные отметки ({review.blockers.length} из {review.requiredCount}) можно отметить вручную на распечатанном бланке:
 						</strong>
 						<ul>
 							{review.blockers.map((blocker) => (
@@ -132,8 +129,7 @@ export const PhotoVideoConsentForm = React.memo(function PhotoVideoConsentForm({
 							))}
 						</ul>
 						<small>
-							Все они в блоке «Ручная корректировка полей» ниже. Перечень
-							пересчитывается сам, пока вы отмечаете.
+							Перечень пересчитывается автоматически по мере выбора параметров.
 						</small>
 					</div>
 				) : null}

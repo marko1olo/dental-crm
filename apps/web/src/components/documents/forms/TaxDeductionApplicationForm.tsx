@@ -153,9 +153,9 @@ export function TaxDeductionApplicationForm({
 							aria-live="polite"
 							style={{ marginTop: "12px" }}
 						>
-							<strong>
-								Заявление не создастся: осталось {review.blockers.length}{" "}
-								условий из {review.requiredCount}:
+							<strong className="block font-semibold mb-1 text-[var(--teal,#0d9488)]">
+								Печать заявления и выдача справки доступны: незаполненные поля ({review.blockers.length}{" "}
+								из {review.requiredCount}) заявитель может заполнить от руки на распечатанном бланке:
 							</strong>
 							<ul>
 								{review.blockers.map((blocker) => (
@@ -165,8 +165,8 @@ export function TaxDeductionApplicationForm({
 								))}
 							</ul>
 							<small>
-								Все эти поля в блоке «Ручная корректировка полей» ниже. Дату
-								заявления программа поставит сама при создании.
+								Все эти поля доступны для редактирования ниже. Дату
+								заявления программа поставит автоматически.
 							</small>
 						</div>
 					) : null

@@ -28,7 +28,7 @@ export const DocumentIssueModalFooter: React.FC<DocumentIssueModalFooterProps> =
 					className="min-h-[38px] px-4 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:bg-[var(--teal-hover,var(--teal))] transition-colors inline-flex items-center gap-1.5 cursor-pointer border-none"
 				>
 					<CheckCircle2 className="w-4 h-4" />
-					<span>{saving ? "Выдаю документ..." : "Выдать после проверки"}</span>
+					<span>{saving ? "Выдаю документ..." : "Выдать / Подтвердить"}</span>
 				</button>
 			</div>
 		);
