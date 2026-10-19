@@ -23,8 +23,7 @@ export type PresenterTabId =
 	| "stages"
 	| "roadmap"
 	| "finance"
-	| "print_appendix"
-	| "ai_audit";
+	| "print_appendix";
 
 export interface TreatmentPlanPresenterHeaderProps {
 	readonly patientName: string;
@@ -37,9 +36,9 @@ export interface TreatmentPlanPresenterHeaderProps {
 	readonly onCopyTiersSummary: () => void;
 	readonly onPrintAppendix: () => void;
 	readonly onClose: () => void;
-	readonly aiAuditResult: unknown;
-	readonly isAiAuditing: boolean;
-	readonly onRunAiAudit: () => void;
+	readonly aiAuditResult?: unknown | undefined;
+	readonly isAiAuditing?: boolean | undefined;
+	readonly onRunAiAudit?: (() => void) | undefined;
 }
 
 export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeaderProps> = ({
@@ -185,20 +184,6 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 				>
 					<FileText size={14} />
 					<span>Приложение №1</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						onSelectTab("ai_audit");
-						if (!aiAuditResult && !isAiAuditing) {
-							onRunAiAudit();
-						}
-					}}
-					className={"treatment-presenter-tab-btn " + (activeTab === "ai_audit" ? "active" : "")}
-					data-testid="tab-ai-audit-btn"
-				>
-					<Bot size={14} className="text-amber-500" />
-					<span>ИИ-Аудит & Комментарий</span>
 				</button>
 			</nav>
 			</div>

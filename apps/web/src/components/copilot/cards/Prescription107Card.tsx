@@ -56,9 +56,6 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 						<Pill size={16} className="text-[var(--teal)]" />
 						<span>Рецептурный бланк № 107-1/у</span>
 					</h4>
-					<span className="copilot-rx-subtitle">
-						Приказ Минздрава России от 24.11.2021 № 1094н
-					</span>
 				</div>
 				<div className="flex flex-col items-end gap-1">
 					<span className="copilot-rx-series-badge">
@@ -103,7 +100,7 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 				</div>
 			)}
 
-			{/* Drug List (Rp: items in Latin + Signa in Russian per Order 1094n) */}
+			{/* Drug List (Rp: items in Latin + Signa in Russian) */}
 			<div className="copilot-rx-drug-list">
 				{prescription.drugs.map((drug, idx) => (
 					<div key={drug.id || idx} className="copilot-rx-drug-item">
@@ -126,7 +123,7 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 			{/* DDI Safety Badge */}
 			<div className="copilot-rx-safety-badge">
 				<ShieldCheck size={14} />
-				<span>Клинический контроль: Совместимость препаратов проверена (DDI Safe)</span>
+				<span>Клинический контроль: Совместимость препаратов проверена</span>
 			</div>
 
 			{/* UKEP Stamp Box */}
@@ -199,8 +196,3 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 		</div>
 	);
 };
-
-// ============================================================================
-// 4. EstimateTierCard COMPONENT
-// ============================================================================
-

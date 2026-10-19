@@ -8,7 +8,6 @@ import type { TreatmentPlanStatus } from "./types";
 import type { CopilotCommandType } from "../../services/ai/treatmentPlanCopilot";
 import type { ClinicalBundleId } from "./treatmentPlanBundlesEngine";
 import { TreatmentPlanDiscountsModal } from "./TreatmentPlanDiscountsModal";
-import { TreatmentPlanCopilotModal } from "./TreatmentPlanCopilotModal";
 import { TreatmentPlanHeaderBar } from "./toolbar/TreatmentPlanHeaderBar";
 import { TreatmentPlanStatusControl } from "./toolbar/TreatmentPlanStatusControl";
 import { TreatmentPlanViewTabs } from "./toolbar/TreatmentPlanViewTabs";
@@ -72,7 +71,6 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 
 	const [isOptionsOpen, setIsOptionsOpen] = useState(initialOptionsMenuOpen);
 	const [isDiscountsOpen, setIsDiscountsOpen] = useState(false);
-	const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
 	return (
 		<>
@@ -93,17 +91,6 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 				</div>
 			</div>
 			<TreatmentPlanDiscountsModal isOpen={isDiscountsOpen} onClose={() => setIsDiscountsOpen(false)} discountPercent={discountPercent} setDiscountPercent={setDiscountPercent} bonusPointsToUseRub={bonusPointsToUseRub} setBonusPointsToUseRub={setBonusPointsToUseRub} patientBalanceRub={patientBalanceRub} planGrossKopecks={planGrossKopecks} />
-			<TreatmentPlanCopilotModal
-				isOpen={isCopilotOpen}
-				onClose={() => setIsCopilotOpen(false)}
-				isCopilotExecuting={isCopilotExecuting}
-				onExecuteCopilot={onExecuteCopilot}
-				copilotFeedback={props.copilotFeedback}
-				setCopilotFeedback={props.setCopilotFeedback}
-				onResetPlan={onResetPlan}
-				onOpenPresenterModal={onOpenPresenterModal}
-				hasCustomModifications={Boolean((props.customStages && props.customStages.length > 0) || props.cbctAutoPlanTiers)}
-			/>
 		</>
 	);
 };

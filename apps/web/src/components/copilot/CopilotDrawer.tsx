@@ -2,6 +2,7 @@ import {
 	Activity,
 	CalendarPlus,
 	CheckSquare,
+	ClipboardList,
 	Clock,
 	FileText,
 	Flame,
@@ -12,6 +13,7 @@ import {
 	RotateCcw,
 	Share2,
 	Sparkles,
+	Stethoscope,
 	User,
 	X,
 	Zap,
@@ -728,7 +730,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 						className="copilot-playbook-chip"
 						data-testid="playbook-morning-briefing"
 					>
-						<span aria-hidden="true">📋</span>
+						<ClipboardList size={14} className="shrink-0 text-[var(--teal)]" aria-hidden="true" />
 						<span>Утренний брифинг</span>
 					</button>
 					<button
@@ -741,7 +743,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 						className="copilot-playbook-chip"
 						data-testid="playbook-prepare-visit"
 					>
-						<span aria-hidden="true">🩺</span>
+						<Stethoscope size={14} className="shrink-0 text-[var(--teal)]" aria-hidden="true" />
 						<span>Подготовить визит</span>
 					</button>
 					<button
@@ -754,7 +756,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 						className="copilot-playbook-chip"
 						data-testid="playbook-fill-gap"
 					>
-						<span aria-hidden="true">⏱️</span>
+						<Clock size={14} className="shrink-0 text-[var(--teal)]" aria-hidden="true" />
 						<span>Заполнить окно в расписании</span>
 					</button>
 				</div>

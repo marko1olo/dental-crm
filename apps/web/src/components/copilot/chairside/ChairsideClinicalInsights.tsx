@@ -78,12 +78,12 @@ export const ChairsideClinicalInsights: React.FC<ChairsideClinicalInsightsProps>
         ))}
       </div>
 
-      {/* Clinical Verdict Banner (T.A.R.S. 100%) */}
+      {/* Clinical Verdict Banner */}
       {verdict && (
         <section className="chairside-hud-verdict" data-testid="chairside-hud-verdict">
           <div className="chairside-hud-verdict-title">
             <Sparkles size={13} className="text-[var(--teal-dark)]" />
-            <span>Клинический вердикт ассистента DENTE (T.A.R.S. 100%)</span>
+            <span>Клиническая рекомендация</span>
           </div>
           <div className="chairside-hud-verdict-body">{verdict}</div>
         </section>
@@ -142,7 +142,7 @@ export const ChairsideClinicalInsights: React.FC<ChairsideClinicalInsightsProps>
         )}
       </section>
 
-      {/* Clinical Catalog 1 142 Protocol Banner (if matched) */}
+      {/* Clinical Protocol Banner (if matched) */}
       {matchedProtocol && (
         <div
           className="chairside-hud-catalog-banner flex items-center justify-between gap-2 px-2.5 py-1.5 mb-2.5 rounded-lg bg-[var(--paper-subtle)] border border-[var(--glass-border)] text-xs"
@@ -151,7 +151,7 @@ export const ChairsideClinicalInsights: React.FC<ChairsideClinicalInsightsProps>
           <div className="flex items-center gap-1.5 overflow-hidden">
             <BookOpen size={13} className="text-[var(--teal)] shrink-0" />
             <span className="truncate">
-              Каталог 1 142: <strong className="text-[var(--ink-strong)]">{matchedProtocol.procedureName}</strong>
+              Клинические протоколы: <strong className="text-[var(--ink-strong)]">{matchedProtocol.procedureName}</strong>
               {matchedProtocol.matchedIcd10 && <span className="opacity-70 ml-1">({matchedProtocol.matchedIcd10})</span>}
             </span>
           </div>
@@ -171,7 +171,7 @@ export const ChairsideClinicalInsights: React.FC<ChairsideClinicalInsightsProps>
             }}
             data-testid="btn-chairside-choose-another-protocol"
           >
-            Выбрать другой из 1 142
+            Справочник процедур
           </button>
         </div>
       )}

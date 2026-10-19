@@ -3,7 +3,6 @@ import { TreatmentPlanPresenterComparisonTab } from "../TreatmentPlanPresenterCo
 import { TreatmentPlanPresenterStagesTab } from "../TreatmentPlanPresenterStagesTab";
 import { TreatmentPlanRoadmap } from "../TreatmentPlanRoadmap";
 import { TreatmentPlanPresenterFinanceTab } from "../TreatmentPlanPresenterFinanceTab";
-import { TreatmentPlanPresenterAiAuditTab } from "../TreatmentPlanPresenterAiAuditTab";
 import { TreatmentPlanPresenterPrintTab } from "./TreatmentPlanPresenterPrintTab";
 import {
 	getTierLetter,
@@ -102,17 +101,6 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 
 			{s.activeTab === "print_appendix" && (
 				<TreatmentPlanPresenterPrintTab s={s} props={props} />
-			)}
-
-			{s.activeTab === "ai_audit" && (
-				<TreatmentPlanPresenterAiAuditTab
-					aiAuditResult={s.aiAuditResult}
-					isAiAuditing={s.isAiAuditing}
-					aiAuditError={s.aiAuditError}
-					onRunAiAudit={s.handleRunAiAudit}
-					onExecuteCopilot={s.handleExecuteCopilot}
-					selectedTier={s.selectedTier}
-				/>
 			)}
 		</main>
 	);

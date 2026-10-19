@@ -61,17 +61,18 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<h4 className="copilot-ddi-title">
 							{replacedStatus
-								? (data.title && data.title.includes("DDI") ? data.title : "Лекарственная безопасность восстановлена (DDI Safe)")
-								: data.title ||
-									(data.severity === "critical"
-										? "Критическое предупреждение: Противопоказание DDI"
-										: "Предупреждение об аллергии / анамнезе")}
+								? "Лекарственная безопасность восстановлена"
+								: (data.title
+										? data.title.replace(/🛡️\s*/, "").replace("Противопоказание DDI", "Конфликт препаратов")
+										: (data.severity === "critical"
+												? "Критическое предупреждение: Конфликт препаратов"
+												: "Предупреждение об аллергии / анамнезе"))}
 						</h4>
 						<span
 							className={`copilot-ddi-severity-pill ${replacedStatus ? "safe" : "danger"}`}
 						>
 							{replacedStatus
-								? "DDI Safe"
+								? "Лекарственная безопасность"
 								: data.severity === "critical" || data.severity === "contraindicated"
 									? "Критический риск"
 									: "Внимание (анамнез)"}
@@ -79,7 +80,7 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 					</div>
 					<p className="copilot-ddi-desc">
 						{data.description ||
-							"В карте зафиксирована аллергическая реакция в анамнезе. Проверьте совместимость или утвердите назначение (автономия врача гарантирована, приём не блокируется)."}
+							"В карте зафиксирована аллергическая реакция в анамнезе. Проверьте совместимость или утвердите назначение."}
 					</p>
 				</div>
 			</div>
@@ -165,8 +166,3 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 		</div>
 	);
 };
-
-// ============================================================================
-// 9. ProactiveAlertCardView (Red Emergency & Clinical Alerts)
-// ============================================================================
-

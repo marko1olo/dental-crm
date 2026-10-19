@@ -8,6 +8,9 @@ import { ClinicalProtocolsCatalogModal } from '../visit/clinicalCatalog/Clinical
 import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinicalCatalog/clinicalProtocolsCatalog';
 import { useVisitStore } from '../../store/visitStore';
 
+import { VoiceDictationAssistantModal } from '../voice/VoiceDictationAssistantModal';
+import { useAppStore } from '../../store/appStore';
+
 declare global {
   interface Window {
     __denteCopilot?: {
@@ -17,6 +20,11 @@ declare global {
       openHud: () => void;
       closeHud: () => void;
       toggleHud: () => void;
+      openVoiceModal: () => void;
+      closeVoiceModal: () => void;
+      openTreatmentPlanCopilot: () => void;
+      closeTreatmentPlanCopilot: () => void;
+      openAiSettings: () => void;
       setMessages: (messages: CopilotUiMessage[]) => void;
       setPending: (pending: PendingConfirmation | null) => void;
       setActiveTab: (tab: 'chat' | 'pending') => void;
@@ -52,10 +60,16 @@ export const CopilotGlobalHost: React.FC = () => {
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
   const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all');
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isTreatmentPlanCopilotOpen, setIsTreatmentPlanCopilotOpen] = useState(false);
 
   const openHud = useCallback(() => setIsHudOpen(true), []);
   const closeHud = useCallback(() => setIsHudOpen(false), []);
   const toggleHud = useCallback(() => setIsHudOpen((prev) => !prev), []);
+  const openVoiceModal = useCallback(() => setIsVoiceModalOpen(true), []);
+  const closeVoiceModal = useCallback(() => setIsVoiceModalOpen(false), []);
+  const openTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(true), []);
+  const closeTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(false), []);
 
   const handleApplyCatalogPatch = useCallback((patch: VisitNoteFieldsPatch, _successMessage: string) => {
     useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -89,6 +103,14 @@ export const CopilotGlobalHost: React.FC = () => {
       openHud,
       closeHud,
       toggleHud,
+      openVoiceModal,
+      closeVoiceModal,
+      openTreatmentPlanCopilot,
+      closeTreatmentPlanCopilot,
+      openAiSettings: () => {
+        useAppStore.getState().setCurrentView('settings');
+        useAppStore.getState().setSettingsTab('ai');
+      },
       setMessages: (msgs) => setCustomMessages(msgs),
       setPending: (pend) => setCustomPending(pend),
       setActiveTab: (tab) => setActiveTab(tab),
@@ -98,6 +120,14 @@ export const CopilotGlobalHost: React.FC = () => {
     const handleToggleHud = () => setIsHudOpen((prev) => !prev);
     const handleOpenHud = () => setIsHudOpen(true);
     const handleCloseHud = () => setIsHudOpen(false);
+    const handleOpenVoice = () => setIsVoiceModalOpen(true);
+    const handleCloseVoice = () => setIsVoiceModalOpen(false);
+    const handleOpenTp = () => setIsTreatmentPlanCopilotOpen(true);
+    const handleCloseTp = () => setIsTreatmentPlanCopilotOpen(false);
+    const handleOpenAi = () => {
+      useAppStore.getState().setCurrentView('settings');
+      useAppStore.getState().setSettingsTab('ai');
+    };
 
     const handleOpenCatalog = (e: Event) => {
       const customEvent = e as CustomEvent<{ tooth?: number; query?: string; category?: SpecialtyCategoryKey }>;
@@ -119,6 +149,11 @@ export const CopilotGlobalHost: React.FC = () => {
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
     window.addEventListener('dente:open-chairside-hud', handleOpenHud);
     window.addEventListener('dente:close-chairside-hud', handleCloseHud);
+    window.addEventListener('dente:open-voice-dictation', handleOpenVoice);
+    window.addEventListener('dente:close-voice-dictation', handleCloseVoice);
+    window.addEventListener('dente:open-treatment-plan-copilot', handleOpenTp);
+    window.addEventListener('dente:close-treatment-plan-copilot', handleCloseTp);
+    window.addEventListener('dente:open-ai-settings', handleOpenAi);
     window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
     window.addEventListener('keydown', handleKeyDown);
 
@@ -127,11 +162,16 @@ export const CopilotGlobalHost: React.FC = () => {
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
       window.removeEventListener('dente:open-chairside-hud', handleOpenHud);
       window.removeEventListener('dente:close-chairside-hud', handleCloseHud);
+      window.removeEventListener('dente:open-voice-dictation', handleOpenVoice);
+      window.removeEventListener('dente:close-voice-dictation', handleCloseVoice);
+      window.removeEventListener('dente:open-treatment-plan-copilot', handleOpenTp);
+      window.removeEventListener('dente:close-treatment-plan-copilot', handleCloseTp);
+      window.removeEventListener('dente:open-ai-settings', handleOpenAi);
       window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
       window.removeEventListener('keydown', handleKeyDown);
       delete window.__denteCopilot;
     };
-  }, [openDrawer, closeDrawer, toggle, setActiveTab, openHud, closeHud, toggleHud]);
+  }, [openDrawer, closeDrawer, toggle, setActiveTab, openHud, closeHud, toggleHud, openVoiceModal, closeVoiceModal, openTreatmentPlanCopilot, closeTreatmentPlanCopilot]);
 
   const effectiveMessages = customMessages !== null ? customMessages : messages;
   const effectivePending = customPending !== null ? customPending : pending;
@@ -183,6 +223,15 @@ export const CopilotGlobalHost: React.FC = () => {
           currentNoteForm={useVisitStore.getState().visitNoteForm}
           onApplyPatch={handleApplyCatalogPatch}
           initialSpecialty={catalogSpecialty}
+        />
+      )}
+
+      {/* Voice Dictation Assistant Modal */}
+      {isVoiceModalOpen && (
+        <VoiceDictationAssistantModal
+          isOpen={isVoiceModalOpen}
+          onClose={closeVoiceModal}
+          activeToothNumber={numericActiveTooth}
         />
       )}
     </>

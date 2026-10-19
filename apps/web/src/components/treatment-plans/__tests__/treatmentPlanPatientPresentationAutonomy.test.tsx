@@ -100,10 +100,6 @@ describe("Treatment Plan Patient Presentation Autonomy & Integrity Tests", () =>
 			assert.ok(html.includes("presenter-copilot-send-btn"), "Copilot send button must exist");
 			assert.ok(!html.includes('disabled="" data-testid="presenter-copilot-send-btn"'), "Send button must not be disabled");
 
-			// AI audit tab button must exist and not be disabled
-			assert.ok(html.includes("tab-ai-audit-btn"), "AI audit tab button must exist");
-			assert.ok(!html.includes('disabled="" data-testid="tab-ai-audit-btn"'), "AI audit button must not be disabled");
-
 			// Direct approve & sign action button must be rendered
 			assert.ok(html.includes("approve-and-sign-btn"), "Direct approve & sign button must be rendered");
 			assert.ok(html.includes("Подписать план лечения"), "Button text must indicate direct signing");

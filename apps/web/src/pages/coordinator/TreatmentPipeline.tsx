@@ -25,10 +25,15 @@ import {
 import { PipelineKpiSummary } from "./pipeline/PipelineKpiSummary";
 import { PipelineBoard } from "./pipeline/PipelineBoard";
 import { TreatmentPlanPresenterModal } from "../../components/treatment-plans/TreatmentPlanPresenterModal";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export type { PipelineStage, PipelineCard, PipelineResponse, PipelineStageFilter, PipelineViewMode };
 
 export const TreatmentPipeline: React.FC = () => {
+	const branding = useDocumentBrandingStore();
+	const appLogic = useOptionalAppLogicContext();
 	const [data, setData] = useState<PipelineResponse | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
@@ -376,13 +381,18 @@ export const TreatmentPipeline: React.FC = () => {
 					patientName={selectedCardForPresenter.patientName}
 					patientId={selectedCardForPresenter.patientId}
 					patientPhone={selectedCardForPresenter.patientPhone || ""}
-					doctorFullName={selectedCardForPresenter.doctorName || "Д-р Воронов Алексей Владимирович"}
-					doctorSpecialty="Стоматолог-ортопед, хирург-имплантолог"
-					clinicName="DENTE Стоматология"
-					clinicLegalName="ООО «ДЕНТЕ КЛИНИК»"
-					clinicInn="7701234567"
-					clinicOgrn="1237700123456"
-					clinicAddress="г. Москва, ул. Арбат, д. 24"
+					doctorFullName={
+						selectedCardForPresenter.doctorName ||
+						appLogic?.dashboard?.activeDoctor?.fullName ||
+						appLogic?.auth?.currentUser?.name ||
+						"Лечащий врач"
+					}
+					doctorSpecialty={appLogic?.dashboard?.activeDoctor?.specialty || ""}
+					clinicName={branding.clinicName || "Стоматологическая клиника"}
+					clinicLegalName={branding.clinicLegalName || ""}
+					clinicInn={branding.clinicInn || "—"}
+					clinicOgrn={branding.clinicOgrn || "—"}
+					clinicAddress={branding.clinicAddress || "—"}
 					planId={selectedCardForPresenter.id}
 					planCreatedAtIso={selectedCardForPresenter.createdAt}
 					onConfirmSelection={async () => {
@@ -391,7 +401,7 @@ export const TreatmentPipeline: React.FC = () => {
 					onApproveAndSign={async () => {
 						await fetchPipeline();
 					}}
-					isDemoMode={false}
+					isDemoMode={isDemoShowcaseMode()}
 				/>
 			)}
 		</div>

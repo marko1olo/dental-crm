@@ -2,7 +2,7 @@
  * treatmentPlanStagesEngine.ts — единая точка входа и фасад клинико-финансового движка планов лечения DENTE CRM.
  *
  * Декомпозирован строго по Мандату 8b (лимит строк <= 800 строк на файл):
- * 1. treatmentPlanNomenclature804n.ts — Номенклатура медицинских услуг Приказа Минздрава РФ № 804н и анатомические предикаты
+ * 1. treatmentPlanServicesCatalog.ts — Каталог стоматологических услуг и анатомические предикаты
  * 2. treatmentPlanPricingEngine.ts — Каталожный матчинг, расчет скидок, бонусы, 13% НДФЛ и рассрочка 0%
  * 3. treatmentPlanItemFactory.ts — Фабрика процедур и пустых клинических этапов
  * 4. treatmentPlanAutoGenerator.ts — 1-Click генерация этапов плана лечения по одонтограмме (3 этапа)
@@ -13,7 +13,6 @@
  */
 
 export * from "./treatmentPlanServicesCatalog";
-export * from "./treatmentPlanNomenclature804n";
 export * from "./treatmentPlanPricingEngine";
 export * from "./treatmentPlanItemFactory";
 export * from "./treatmentPlanAutoGenerator";

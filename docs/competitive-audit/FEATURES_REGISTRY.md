@@ -948,14 +948,16 @@
    - На экранах $\le 640$px 3 сценария переключаются через компактный нативный Segmented Control `[ Эконом | Оптимум | ★ Премиум ]`, исключая 2500px скролл-туннели.
    - Закрепленный внизу Floating Bottom Bar с Natural Thumb Zone: крупная кнопка «Согласовать план», сумма и ежемесячный платеж без горизонтального дрифта.
 6. **100% покрытие тестами и доказательная база**:
-   - Все 48 тестов планов лечения (`treatmentPlan3TierComparison.test.tsx`, `treatmentPlanMath.test.ts`, `treatmentPlanAddServiceModal.test.tsx`, `stagePaymentAutonomy.test.tsx`, `stagePaymentEngine.test.ts`, `treatmentPlanInvoiceExportAndCashierAutonomyWave62.test.tsx`, `treatmentPlanPresenterAutonomyWave49.test.tsx`) проходят с результатом 100% PASS (Exit Code 0).
-   - 5 проверенных скриншотов в `docs/proofs/treatment-plans/`:
-     * `01_treatment_plan_pc_light_1440x900.png` (116.4 KB, MD5: `fed24f758d8575e0d1e66efe1b47d56c`)
-     * `02_treatment_plan_pc_dark_1440x900.png` (115.5 KB, MD5: `1836f798ccceda1e6ae71bd3ff20a181`)
-     * `03_treatment_plan_3tier_scenarios_1440x900.png` (179.3 KB, MD5: `6af9218fac5741fc62d71c3c5cba8cff`)
-     * `04_treatment_plan_mobile_light_390x844.png` (181.9 KB, MD5: `2fdfa126c35cb464a75fa2ded9efac11`)
-     * `05_treatment_plan_mobile_dark_390x844.png` (171.4 KB, MD5: `8904678087bf095751d8bd97dc372557`)
-   - Все открыты лично через `view_file`, подтверждено отсутствие 7 смертных грехов.
+   - Все 32 тестовых файла планов лечения (`apps/web/src/components/treatment-plans/`) и инквизиционный тест `apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts` (всего 289 тестов) проходят со 100% PASS (Exit Code 0).
+   - Ликвидированы бутафорские AI-модалки с искусственными задержками (`TreatmentPlanCopilotModal.tsx`, `TreatmentPlanPresenterAiAuditTab.tsx`).
+   - Физически удален `treatmentPlanNomenclature804n.ts` в пользу чистого семантического каталога `treatmentPlanServicesCatalog.ts`.
+   - В мобильном представлении устранена вертикальная «простыня» 2500px: отображается строго 1 активная карточка тарифа с мгновенным переключением нативным Segmented Control.
+   - 4-состоятельные скриншоты проверены лично через `view_file` в `docs/proofs/treatment-plans/`:
+     * `treatment_plan_pc_light_1440x900.png`
+     * `treatment_plan_pc_dark_1440x900.png`
+     * `treatment_plan_mobile_light_390x844.png`
+     * `treatment_plan_mobile_dark_390x844.png`
+   - Подтверждено отсутствие всех 7 смертных грехов UI, контрастность в темной теме и эргономика зоны большого пальца.
 
 ### 12. Фича #483: Electronic Prescriptions Canonical SSOT, 1-Click Dental Courses, Order 1094n Statutory Compliance, Doctor Autonomy & Non-Blocking A5 Print Inquisitor
 

@@ -65,7 +65,7 @@
 .btn-patient-choice {
 	background: var(--teal);
 	color: var(--paper-strong, #ffffff);
-	border: none;
+	border: 1px solid var(--teal-dark, var(--primary));
 	padding: 0 18px;
 	font-size: 13px;
 	font-weight: 700;

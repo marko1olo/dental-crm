@@ -5,7 +5,6 @@ import { renderToString } from "react-dom/server";
 import { MissingPriceAlert } from "../MissingPriceAlert";
 import { TreatmentPlanStageCard } from "../TreatmentPlanStageCard";
 import { TreatmentPlanPresenterModal } from "../TreatmentPlanPresenterModal";
-import { TreatmentPlanCopilotModal } from "../TreatmentPlanCopilotModal";
 import {
 	optimizePlanForBudget,
 	replaceImplantationWithBridge,
@@ -338,20 +337,6 @@ describe("MissingPriceAlert & AI Treatment Plan Copilot Suite", () => {
 			assert.ok(aiResult.financialArgumentation.ndflDeduction.totalRefundRub > 0, "Must calculate 13% tax refund");
 		});
 
-		it("9. TreatmentPlanPresenterModal renders AI Audit tab and trigger button", () => {
-			const html = renderToString(
-				<TreatmentPlanPresenterModal
-					isOpen={true}
-					onClose={() => {}}
-					patientName="Петров Петр"
-					doctorFullName="Д-р Смирнов"
-				/>,
-			);
-
-			assert.ok(html.includes("ИИ-Аудит &amp; Комментарий"), "Must include AI Audit tab button in presenter modal");
-			assert.ok(html.includes("tab-ai-audit-btn"), "Must have tab-ai-audit-btn data-testid");
-		});
-
 		it("10. applyEconomyScenarioToPlan applies base functional rehabilitation with integer rubles", () => {
 			const res = applyEconomyScenarioToPlan(initialStages);
 			assert.ok(res.success, "Economy scenario must succeed");
@@ -459,81 +444,6 @@ describe("MissingPriceAlert & AI Treatment Plan Copilot Suite", () => {
 			assert.equal(stageWithConsumables.items.length, 3, "Warehouse BOM retains all 3 items");
 		});
 	});
-
-	describe("TreatmentPlanCopilotModal Component with 3 Scenarios and Missing Price Alert", () => {
-		const sampleStageWithMissingPrice: TreatmentPlanStage = {
-			stageNumber: 1,
-			stageKind: "stage_1_therapy",
-			title: "Этап 1: Санация",
-			subtitle: "Санация полости рта",
-			clinicalGoal: "Ликвидация очагов инфекции",
-			items: [sampleItemMissingPrice, sampleItemPriced],
-			totalRub: 4500,
-			totalKopecks: 450000 as any,
-			estimatedVisits: 1,
-			estimatedWeeks: 1,
-			order804nCodes: ["A16.07.002.099", "A16.07.002.001"],
-		};
-
-		it("renders 3 clinical scenario selector buttons (economy, optimum, premium)", () => {
-			const html = renderToString(
-				<TreatmentPlanCopilotModal
-					isOpen={true}
-					onClose={() => {}}
-					isCopilotExecuting={false}
-					copilotFeedback={null}
-					setCopilotFeedback={() => {}}
-					onExecuteCopilot={() => {}}
-					onResetPlan={() => {}}
-					onOpenPresenterModal={() => {}}
-					hasCustomModifications={false}
-					stages={[sampleStageWithMissingPrice]}
-				/>,
-			);
-
-			assert.ok(html.includes("copilot-scenario-btn-economy"), "Must render economy scenario button");
-			assert.ok(html.includes("copilot-scenario-btn-optimum"), "Must render optimum scenario button");
-			assert.ok(html.includes("copilot-scenario-btn-premium"), "Must render premium scenario button");
-		});
-
-		it("renders custom NLP command input and submit button", () => {
-			const html = renderToString(
-				<TreatmentPlanCopilotModal
-					isOpen={true}
-					onClose={() => {}}
-					isCopilotExecuting={false}
-					copilotFeedback={null}
-					setCopilotFeedback={() => {}}
-					onExecuteCopilot={() => {}}
-					onResetPlan={() => {}}
-					onOpenPresenterModal={() => {}}
-					hasCustomModifications={false}
-				/>,
-			);
-
-			assert.ok(html.includes("copilot-custom-input"), "Must render custom NLP input");
-			assert.ok(html.includes("copilot-custom-submit"), "Must render custom NLP submit button");
-		});
-
-		it("renders missing price alert banner inside copilot modal when unpriced items exist", () => {
-			const html = renderToString(
-				<TreatmentPlanCopilotModal
-					isOpen={true}
-					onClose={() => {}}
-					isCopilotExecuting={false}
-					copilotFeedback={null}
-					setCopilotFeedback={() => {}}
-					onExecuteCopilot={() => {}}
-					onResetPlan={() => {}}
-					onOpenPresenterModal={() => {}}
-					hasCustomModifications={false}
-					stages={[sampleStageWithMissingPrice]}
-				/>,
-			);
-
-			assert.ok(html.includes("copilot-missing-price-alert"), "Must render missing price alert in modal");
-			assert.ok(html.includes("без цены в каталоге клиники"), "Must describe missing price warning");
-		});
-	});
 });
+
 

@@ -353,14 +353,14 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			<LabWorkOrderModal
 				isOpen={isLabOrderModalOpen}
 				onClose={() => setIsLabOrderModalOpen(false)}
-				patientId={planPayload?.patientId || "pat-001"}
+				patientId={planPayload?.patientId || undefined}
 				patientName={planPayload?.patientName || "Пациент"}
 				patientChartNumber={
 					planPayload?.planNumber ||
-					`К-${(planPayload?.patientId || "001").slice(0, 5)}`
+					(planPayload?.patientId ? `К-${planPayload.patientId.slice(0, 5)}` : undefined)
 				}
-				doctorId={planPayload?.doctorId || "doc-001"}
-				doctorName={planPayload?.doctorFullName || "Д-р Ковалев С. П."}
+				doctorId={planPayload?.doctorId || undefined}
+				doctorName={planPayload?.doctorFullName || undefined}
 				initialTeeth={labTeeth}
 			/>
 		);

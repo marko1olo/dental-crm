@@ -4,10 +4,15 @@ const path = require("node:path");
 
 const API_BASE = "http://127.0.0.1:4100";
 const APP_BASE = "http://127.0.0.1:5173";
-const PROOFS_DIR = path.resolve("docs/proofs/treatment_plans");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/bf2d4e28-50a1-4c79-a673-e98ca5d61542");
+const PROOFS_DIRS = [
+	path.resolve("docs/proofs/treatment-plans"),
+	path.resolve("docs/proofs/treatment_plans"),
+];
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/cd1e87fa-8eac-4adb-a092-61f733f60e3b");
 
-fs.mkdirSync(PROOFS_DIR, { recursive: true });
+for (const dir of PROOFS_DIRS) {
+	fs.mkdirSync(dir, { recursive: true });
+}
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
 async function suppressOverlays(page) {
@@ -30,12 +35,31 @@ async function suppressOverlays(page) {
 }
 
 async function takeProof(page, filename, description) {
-	const proofPath = path.join(PROOFS_DIR, filename);
-	await page.screenshot({ path: proofPath, fullPage: false });
-	const brainPath = path.join(BRAIN_DIR, filename);
-	fs.copyFileSync(proofPath, brainPath);
+	const filenames = [
+		filename,
+		filename.startsWith("treatment_plans_")
+			? filename.replace("treatment_plans_", "treatment_plan_")
+			: filename.replace("treatment_plan_", "treatment_plans_"),
+	];
 
-	const stats = fs.statSync(proofPath);
+	const primaryProofPath = path.join(PROOFS_DIRS[0], filenames[0]);
+	await page.screenshot({ path: primaryProofPath, fullPage: false });
+
+	for (const dir of PROOFS_DIRS) {
+		for (const fname of filenames) {
+			const targetPath = path.join(dir, fname);
+			if (targetPath !== primaryProofPath) {
+				fs.copyFileSync(primaryProofPath, targetPath);
+			}
+		}
+	}
+
+	for (const fname of filenames) {
+		const brainPath = path.join(BRAIN_DIR, fname);
+		fs.copyFileSync(primaryProofPath, brainPath);
+	}
+
+	const stats = fs.statSync(primaryProofPath);
 	console.log(`[PROOF CAPTURED] ${filename} (${stats.size} bytes) -> ${description}`);
 	if (stats.size < 20480) {
 		throw new Error(`Screenshot ${filename} is too small (${stats.size} bytes < 20KB)`);
@@ -89,43 +113,83 @@ async function main() {
 
 		const pcPage = await pcContext.newPage();
 		await pcPage.addInitScript((tokens) => {
-			localStorage.setItem("dente_clinic_token", tokens.clinicToken || "demo-showcase-token-owner");
-			localStorage.setItem("dente_staff_token", tokens.staffToken || "demo-showcase-staff-token-owner");
-			localStorage.setItem("dente_demo_showcase", "true");
-			localStorage.setItem("dente_theme", "light");
-			localStorage.setItem("dente_last_view", "pipeline");
-			localStorage.setItem("dente_onboarding_completed", "true");
+			try {
+				localStorage.setItem("dente_clinic_token", tokens.clinicToken || "demo-showcase-token-owner");
+				localStorage.setItem("dente_staff_token", tokens.staffToken || "demo-showcase-staff-token-owner");
+				localStorage.setItem("dente_active_session_token", tokens.staffToken || "demo-showcase-staff-token-owner");
+				localStorage.setItem("dente_active_role", "owner");
+				localStorage.setItem("dente_active_mode", "clinic");
+				sessionStorage.setItem("dente_unlocked", "true");
+				localStorage.setItem("dente_staff_session", JSON.stringify({
+					userId: tokens.userId || "owner-1",
+					name: "Д-р Воронов Алексей Владимирович",
+					fullName: "Д-р Воронов Алексей Владимирович",
+					role: "owner",
+					specialties: ["Стоматолог-терапевт", "Ортопед"]
+				}));
+				localStorage.setItem("dente_demo_showcase", "true");
+				localStorage.setItem("dente_theme", "light");
+				localStorage.setItem("dente_last_view", "pipeline");
+				localStorage.setItem("dente_onboarding_completed", "true");
+			} catch (e) {
+				// Ignore about:blank access error
+			}
 		}, auth);
 
+		pcPage.on("console", (msg) => {
+			if (msg.type() === "error") {
+				console.log(`[PC BROWSER ERROR]:`, msg.text());
+			}
+		});
+		pcPage.on("pageerror", (err) => console.log("[PC PAGE ERROR]:", err.message));
+
 		console.log("Navigating to http://127.0.0.1:5173/?demo=true#pipeline ...");
-		await pcPage.goto(`${APP_BASE}/?demo=true#pipeline`, { waitUntil: "domcontentloaded", timeout: 45000 });
+		await pcPage.goto(`${APP_BASE}/?demo=true#pipeline`, { waitUntil: "networkidle", timeout: 45000 }).catch(() => {
+			return pcPage.goto(`${APP_BASE}/?demo=true#pipeline`, { waitUntil: "domcontentloaded", timeout: 45000 });
+		});
 
 		console.log("Waiting for CRM hydration...");
 		await pcPage.waitForFunction(() => {
 			const text = document.body.innerText || "";
-			return !text.includes("Загрузка CRM") && !text.includes("Загрузка системы");
+			return text.length > 50 && !text.includes("Загрузка CRM") && !text.includes("Загрузка системы");
 		}, { timeout: 35000 });
 		await pcPage.waitForTimeout(2000);
 		await suppressOverlays(pcPage);
 
-		// Check if on pipeline view or click sidebar pipeline
-		const pipelineNav = pcPage.locator('a[href="#pipeline"], button:has-text("Планы"), button:has-text("Воронка")').first();
-		if (await pipelineNav.isVisible({ timeout: 4000 }).catch(() => false)) {
-			console.log("Clicking pipeline nav...");
-			await pipelineNav.click();
-			await pcPage.waitForTimeout(1500);
+		console.log("Current page URL:", pcPage.url());
+		const hasOpenBtn = await pcPage.evaluate(() => {
+			const btns = Array.from(document.querySelectorAll('[data-testid="pipeline-card-open-plan-btn"]'));
+			const allBtns = Array.from(document.querySelectorAll("button")).map(b => b.innerText.trim()).filter(Boolean);
+			return {
+				openBtnsCount: btns.length,
+				someButtons: allBtns.slice(0, 15),
+				bodySnippet: document.body.innerText.slice(0, 400),
+			};
+		});
+		console.log("Page inspection:", JSON.stringify(hasOpenBtn, null, 2));
+
+		if (hasOpenBtn.openBtnsCount === 0) {
+			const pipelineTab = pcPage.locator('a[href="#pipeline"], [data-nav="pipeline"]').first();
+			if (await pipelineTab.isVisible().catch(() => false)) {
+				console.log("Clicking pipeline nav link...");
+				await pipelineTab.click();
+				await pcPage.waitForTimeout(2000);
+			}
 		}
 
 		console.log("Looking for pipeline plan open buttons...");
-		const openBtnSelector = '[data-testid="pipeline-card-open-plan-btn"]';
-		await pcPage.waitForSelector(openBtnSelector, { state: "visible", timeout: 15000 });
-		const openBtn = pcPage.locator(openBtnSelector).first();
-		console.log("Clicking first pipeline card plan button...");
-		await openBtn.click();
+		await pcPage.waitForFunction(() => {
+			return Boolean(document.querySelector('[data-testid="pipeline-card-open-plan-btn"]'));
+		}, { timeout: 30000 });
+		console.log("Clicking first pipeline card plan button via DOM evaluate...");
+		await pcPage.evaluate(() => {
+			const btn = document.querySelector('[data-testid="pipeline-card-open-plan-btn"]');
+			if (btn) btn.click();
+		});
 
 		// Wait for TreatmentPlanPresenterModal
 		console.log("Waiting for TreatmentPlanPresenterModal...");
-		await pcPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 15000 });
+		await pcPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 20000 });
 		await pcPage.waitForTimeout(1500);
 
 		// PC Light
@@ -134,9 +198,9 @@ async function main() {
 			document.documentElement.setAttribute("data-theme", "light");
 			document.documentElement.classList.remove("dark");
 			document.documentElement.classList.add("light");
-			document.body.className = "light";
 		});
-		await pcPage.waitForTimeout(800);
+		await pcPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 10000 });
+		await pcPage.waitForTimeout(1000);
 		await takeProof(
 			pcPage,
 			"treatment_plans_pc_light_1440x900.png",
@@ -149,9 +213,9 @@ async function main() {
 			document.documentElement.setAttribute("data-theme", "dark");
 			document.documentElement.classList.remove("light");
 			document.documentElement.classList.add("dark");
-			document.body.className = "dark";
 		});
-		await pcPage.waitForTimeout(800);
+		await pcPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 10000 });
+		await pcPage.waitForTimeout(1000);
 		await takeProof(
 			pcPage,
 			"treatment_plans_pc_dark_1440x900.png",
@@ -178,12 +242,27 @@ async function main() {
 
 		const mobilePage = await mobileContext.newPage();
 		await mobilePage.addInitScript((tokens) => {
-			localStorage.setItem("dente_clinic_token", tokens.clinicToken || "demo-showcase-token-owner");
-			localStorage.setItem("dente_staff_token", tokens.staffToken || "demo-showcase-staff-token-owner");
-			localStorage.setItem("dente_demo_showcase", "true");
-			localStorage.setItem("dente_theme", "light");
-			localStorage.setItem("dente_last_view", "pipeline");
-			localStorage.setItem("dente_onboarding_completed", "true");
+			try {
+				localStorage.setItem("dente_clinic_token", tokens.clinicToken || "demo-showcase-token-owner");
+				localStorage.setItem("dente_staff_token", tokens.staffToken || "demo-showcase-staff-token-owner");
+				localStorage.setItem("dente_active_session_token", tokens.staffToken || "demo-showcase-staff-token-owner");
+				localStorage.setItem("dente_active_role", "owner");
+				localStorage.setItem("dente_active_mode", "clinic");
+				sessionStorage.setItem("dente_unlocked", "true");
+				localStorage.setItem("dente_staff_session", JSON.stringify({
+					userId: tokens.userId || "owner-1",
+					name: "Д-р Воронов Алексей Владимирович",
+					fullName: "Д-р Воронов Алексей Владимирович",
+					role: "owner",
+					specialties: ["Стоматолог-терапевт", "Ортопед"]
+				}));
+				localStorage.setItem("dente_demo_showcase", "true");
+				localStorage.setItem("dente_theme", "light");
+				localStorage.setItem("dente_last_view", "pipeline");
+				localStorage.setItem("dente_onboarding_completed", "true");
+			} catch (e) {
+				// Ignore about:blank access error
+			}
 		}, auth);
 
 		console.log("Navigating mobile to http://127.0.0.1:5173/?demo=true#pipeline ...");
@@ -192,7 +271,7 @@ async function main() {
 		console.log("Waiting for mobile CRM hydration...");
 		await mobilePage.waitForFunction(() => {
 			const text = document.body.innerText || "";
-			return !text.includes("Загрузка CRM") && !text.includes("Загрузка системы");
+			return text.length > 50 && !text.includes("Загрузка CRM") && !text.includes("Загрузка системы");
 		}, { timeout: 35000 });
 		await mobilePage.waitForTimeout(2000);
 		await suppressOverlays(mobilePage);
@@ -215,9 +294,9 @@ async function main() {
 			document.documentElement.setAttribute("data-theme", "light");
 			document.documentElement.classList.remove("dark");
 			document.documentElement.classList.add("light");
-			document.body.className = "light";
 		});
-		await mobilePage.waitForTimeout(800);
+		await mobilePage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 10000 });
+		await mobilePage.waitForTimeout(1000);
 		await takeProof(
 			mobilePage,
 			"treatment_plans_mobile_light_390x844.png",
@@ -230,9 +309,9 @@ async function main() {
 			document.documentElement.setAttribute("data-theme", "dark");
 			document.documentElement.classList.remove("light");
 			document.documentElement.classList.add("dark");
-			document.body.className = "dark";
 		});
-		await mobilePage.waitForTimeout(800);
+		await mobilePage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { state: "visible", timeout: 10000 });
+		await mobilePage.waitForTimeout(1000);
 		await takeProof(
 			mobilePage,
 			"treatment_plans_mobile_dark_390x844.png",

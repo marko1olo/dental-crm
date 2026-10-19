@@ -198,7 +198,6 @@ describe("Treatment Plan Red Team Inquisition (8c, 8e, 8k, 8n)", () => {
 			const targetFiles = [
 				"TreatmentPlanPresenterModal.tsx",
 				"TreatmentPlanPresenterPrintView.tsx",
-				"TreatmentPlanPresenterAiAuditTab.tsx",
 				"TreatmentPlan3TierComparison.tsx",
 				"TreatmentPlan3TierToolbar.tsx",
 				"TreatmentPlanRoadmap.tsx",

@@ -547,13 +547,12 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     );
 
     assert.ok(html.includes('Рецептурный бланк № 107-1/у'));
-    assert.ok(html.includes('1094н'));
     assert.ok(html.includes('77-АА № 004821'));
     assert.ok(html.includes('Смирнова Елена Васильевна'));
     assert.ok(html.includes('Tab. Nimesulidi 100 мг'));
     assert.ok(html.includes('Sol. Chlorhexidini bigluconatis 0.05%'));
     assert.ok(html.includes('D.S.'));
-    assert.ok(html.includes('DDI Safe'));
+    assert.ok(html.includes('Клинический контроль: Совместимость препаратов проверена'));
     assert.ok(html.includes('Электронный документ подписан УКЭП') || html.includes('УКЭП'));
     assert.ok(html.includes('00E10352F71B39D48C19'));
     assert.ok(html.includes('Печать 107-1/у'));
@@ -824,7 +823,7 @@ describe('Copilot DDI Safety & Allergy Blocking Card', () => {
       <CopilotDdiSafetyCard data={ddiData} />
     );
 
-    assert.ok(html.includes('Критическое предупреждение: Противопоказание DDI'));
+    assert.ok(html.includes('Критическое предупреждение: Конфликт препаратов'));
     assert.ok(html.includes('Критический риск'));
     assert.ok(html.includes('Пенициллины'));
     assert.ok(html.includes('Новокаин'));
@@ -846,7 +845,7 @@ describe('Copilot DDI Safety & Allergy Blocking Card', () => {
     );
 
     assert.ok(html.includes('Лекарственная безопасность восстановлена'));
-    assert.ok(html.includes('DDI Safe'));
+    assert.ok(html.includes('Лекарственная безопасность'));
     assert.ok(html.includes('Препарат успешно заменен'));
   });
 });
@@ -937,7 +936,7 @@ describe('Copilot Proactive Clinical Tooth Protocol Nudges', () => {
     assert.ok(html.includes('Зуб #46'));
     assert.ok(html.includes('МКБ-10: K04.0'));
     assert.ok(html.includes('Артикаин 1:100 000'));
-    assert.ok(html.includes('1 клик в карту'));
+    assert.ok(html.includes('В карту'));
     assert.ok(html.includes('Обсудить'));
   });
 });
