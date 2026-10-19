@@ -14,7 +14,10 @@ import {
 export const Tooth46InspectionStand: React.FC = () => {
 	const [isDark, setIsDark] = useState<boolean>(() => {
 		if (typeof document !== "undefined") {
-			return document.documentElement.getAttribute("data-theme") === "dark";
+			return (
+				document.documentElement.getAttribute("data-theme") === "dark" ||
+				document.documentElement.classList.contains("dark")
+			);
 		}
 		return false;
 	});
@@ -30,6 +33,8 @@ export const Tooth46InspectionStand: React.FC = () => {
 			"data-theme",
 			isDark ? "dark" : "light",
 		);
+		document.documentElement.classList.toggle("dark", isDark);
+		document.documentElement.classList.toggle("light", !isDark);
 	}, [isDark]);
 
 	const handleSelectPreset = (presetId: Tooth46ClinicalPreset) => {
@@ -54,10 +59,8 @@ export const Tooth46InspectionStand: React.FC = () => {
 		}));
 	};
 
-	const bg = isDark ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900";
-	const card = isDark
-		? "bg-slate-900/90 border-slate-800"
-		: "bg-slate-50 border-slate-200";
+	const bg = "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]";
+	const card = "bg-[var(--paper-strong,#f8fafc)] border-[var(--line,#e2e8f0)]";
 
 	return (
 		<div
@@ -70,7 +73,6 @@ export const Tooth46InspectionStand: React.FC = () => {
 				onZoomChange={setZoom}
 				onToggleTheme={() => setIsDark((d) => !d)}
 			/>
-
 			<Tooth46StandToggles
 				layers={layers}
 				activePreset={activePreset}
@@ -79,13 +81,12 @@ export const Tooth46InspectionStand: React.FC = () => {
 				onChangeCrownMaterial={handleChangeCrownMaterial}
 				onToggleCondition={handleToggleCondition}
 			/>
-
 			<main
 				className={`flex-1 w-full max-w-5xl rounded-2xl border p-3 sm:p-6 flex flex-col items-center justify-center relative overflow-auto ${card}`}
 			>
 				<div className="stand-hud absolute top-2 left-3 sm:top-3 sm:left-4 text-[10px] sm:text-xs font-mono opacity-60 space-y-0.5 pointer-events-none">
 					<div>
-						Масштаб: {zoom}x ({100 * zoom}×{160 * zoom}px)
+						Масштаб: {zoom}x ({100 * zoom}×{170 * zoom}px)
 					</div>
 					<div>
 						Статус:{" "}
@@ -98,7 +99,7 @@ export const Tooth46InspectionStand: React.FC = () => {
 						D, ML, DL
 					</div>
 				</div>
-				<div className="p-2 sm:p-8 transition-transform duration-200">
+				<div className="p-2 sm:p-8 pb-44 sm:pb-8 transition-transform duration-200">
 					<Tooth46Container isDark={isDark} zoom={zoom} layers={layers} />
 				</div>
 			</main>

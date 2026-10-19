@@ -23,16 +23,39 @@ export type Tooth46ClinicalPreset =
 	| "crown"
 	| "crown_defective"
 	| "crown_pfm"
+	| "crown_pfm_defective"
 	| "crown_emax"
+	| "crown_emax_defective"
 	| "crown_gold"
+	| "crown_gold_defective"
 	| "crown_metal"
+	| "crown_metal_defective"
 	| "crown_pmma"
+	| "crown_pmma_defective"
 	| "abfraction"
 	| "postCore"
+	| "postCore_cast"
+	| "underfill"
+	| "overfill"
+	| "broken_file"
+	| "cyst"
+	| "resorption"
 	| "calculus"
 	| "crack"
 	| "implant"
 	| "missing";
+
+export type CanalCondition =
+	| "vital"
+	| "pulpitis"
+	| "necrotic"
+	| "adequate"
+	| "underfill"
+	| "overfill"
+	| "broken_file";
+
+export type PeriapicalCondition = "none" | "granuloma" | "cyst" | "resorption";
+export type PostCoreType = "fiber" | "cast";
 
 export interface Tooth46LayerFlags {
 	roots?: boolean;
@@ -44,7 +67,9 @@ export interface Tooth46LayerFlags {
 	pulp?: boolean;
 	canals?: boolean;
 	guttaPercha?: boolean;
+	canalCondition?: CanalCondition;
 	periapicalHalo?: boolean;
+	periapicalCondition?: PeriapicalCondition;
 	caries?: boolean;
 	composite?: boolean;
 	compositeCondition?: RestorationCondition;
@@ -53,6 +78,7 @@ export interface Tooth46LayerFlags {
 	crownCondition?: RestorationCondition;
 	abfraction?: boolean;
 	postCore?: boolean;
+	postCoreType?: PostCoreType;
 	calculus?: boolean;
 	crack?: boolean;
 	implant?: boolean;
@@ -69,7 +95,9 @@ export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
 	pulp: false,
 	canals: false,
 	guttaPercha: false,
+	canalCondition: "vital",
 	periapicalHalo: false,
+	periapicalCondition: "none",
 	caries: false,
 	composite: false,
 	compositeCondition: "adequate",
@@ -78,6 +106,7 @@ export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
 	crownCondition: "adequate",
 	abfraction: false,
 	postCore: false,
+	postCoreType: "fiber",
 	calculus: false,
 	crack: false,
 	implant: false,

@@ -2,6 +2,7 @@ import type React from "react";
 import { Tooth46CrownShaders } from "./Tooth46CrownShaders";
 import { Tooth46EndoShaders } from "./Tooth46EndoShaders";
 import { Tooth46PathologyShaders } from "./Tooth46PathologyShaders";
+import { Tooth46PeriapicalShaders } from "./Tooth46PeriapicalShaders";
 import { Tooth46RestorationShaders } from "./Tooth46RestorationShaders";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 
@@ -72,6 +73,7 @@ export const Tooth46ShaderDefs: React.FC = () => {
 			<Tooth46CrownShaders />
 			<Tooth46RestorationShaders />
 			<Tooth46PathologyShaders />
+			<Tooth46PeriapicalShaders />
 		</defs>
 	);
 };

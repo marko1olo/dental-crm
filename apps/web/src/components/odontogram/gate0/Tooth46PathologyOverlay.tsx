@@ -1,13 +1,16 @@
 import type React from "react";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
+import { Tooth46PostCoreOverlay } from "./Tooth46PostCoreOverlay";
+import type { PostCoreType } from "./tooth46Types";
 
 export interface Tooth46PathologyOverlayProps {
-	showAbfraction?: boolean;
-	showPostCore?: boolean;
-	showCalculus?: boolean;
-	showCrack?: boolean;
-	isDark?: boolean;
-	className?: string;
+	showAbfraction?: boolean | undefined;
+	showPostCore?: boolean | undefined;
+	postCoreType?: PostCoreType | undefined;
+	showCalculus?: boolean | undefined;
+	showCrack?: boolean | undefined;
+	isDark?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth46PathologyOverlay: React.FC<
@@ -15,6 +18,7 @@ export const Tooth46PathologyOverlay: React.FC<
 > = ({
 	showAbfraction = false,
 	showPostCore = false,
+	postCoreType = "fiber",
 	showCalculus = false,
 	showCrack = false,
 	isDark = false,
@@ -48,22 +52,10 @@ export const Tooth46PathologyOverlay: React.FC<
 				</g>
 			)}
 
-			{/* Endodontic Fiber Post & Core Stump */}
+			{/* Endodontic Post & Core (КШВ or СВШ) */}
 			{showPostCore && (
 				<g id="tooth46-post-core">
-					<path
-						d={g.postAndCore.postShaft}
-						fill="url(#dente-fiber-post)"
-						stroke="rgba(148, 163, 184, 0.80)"
-						strokeWidth="0.6"
-					/>
-					<path
-						d={g.postAndCore.coreStump}
-						fill="url(#dente-composite-core)"
-						stroke="rgba(2, 132, 199, 0.90)"
-						strokeWidth="0.7"
-						strokeDasharray="2.5 1.5"
-					/>
+					<Tooth46PostCoreOverlay type={postCoreType} isDark={isDark} />
 				</g>
 			)}
 

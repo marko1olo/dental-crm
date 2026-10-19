@@ -32,5 +32,7 @@ export const TOOTH46_DEFECT_GEOMETRY = {
 			"M 50.5,21.5 " +
 			"C 53.5,20.5 56,22 55,24.8 " +
 			"C 52.5,26 49.5,24.5 50.5,21.5 Z",
+		// Overhanging proximal margin into mesial interdental embrasure
+		overhangingMargin: "M 15.5,73 C 12,74 11,76 13,78 C 15,79 17,76 15.5,73 Z",
 	},
 } as const;

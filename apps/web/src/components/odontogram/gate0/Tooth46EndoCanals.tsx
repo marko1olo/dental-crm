@@ -1,100 +1,73 @@
 import type React from "react";
+import { Tooth46BrokenFileOverlay } from "./Tooth46BrokenFileOverlay";
+import { TOOTH46_ENDO_PATHOLOGY_GEOMETRY } from "./Tooth46EndoPathologyGeometry";
+import { Tooth46PulpChamber } from "./Tooth46PulpChamber";
 import { TOOTH46_PULP_GEOMETRY } from "./Tooth46PulpGeometry";
+import { Tooth46SingleCanal } from "./Tooth46SingleCanal";
+import type { CanalCondition } from "./tooth46Types";
 
 export interface Tooth46EndoCanalsProps {
-	showPulp?: boolean;
-	showCanals?: boolean;
-	showGuttaPercha?: boolean;
-	isDark?: boolean;
-	className?: string;
+	showPulp?: boolean | undefined;
+	showCanals?: boolean | undefined;
+	showGuttaPercha?: boolean | undefined;
+	canalCondition?: CanalCondition | undefined;
+	isDark?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 	showPulp = true,
 	showCanals = true,
 	showGuttaPercha = true,
+	canalCondition = "vital",
+	isDark = false,
 	className,
 }) => {
 	const p = TOOTH46_PULP_GEOMETRY;
+	const pathGeo = TOOTH46_ENDO_PATHOLOGY_GEOMETRY;
+
+	const isNecrotic = canalCondition === "necrotic";
+	const isUnderfill = canalCondition === "underfill";
+	const isOverfill = canalCondition === "overfill";
+	const isBrokenFile = canalCondition === "broken_file";
 
 	return (
 		<g id="tooth46-endodontics" className={className}>
+			{/* Wheeler Ch. 11 Coronal Cavitas Pulparis Chamber */}
 			{showPulp && (
-				<g id="tooth46-pulp-chamber" opacity="0.48">
-					<path
-						d={p.coronalPulpChamber}
-						fill="url(#dente-pulp-vital)"
-						stroke="rgba(159, 18, 57, 0.50)"
-						strokeWidth="0.7"
-						strokeLinejoin="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					{p.neuroPlexus.map((strand) => (
-						<path
-							key={`plexus-${strand.id}`}
-							d={strand.d}
-							fill="none"
-							stroke="rgba(254, 205, 211, 0.70)"
-							strokeWidth="0.5"
-							strokeLinecap="round"
-							vectorEffect="non-scaling-stroke"
-						/>
-					))}
-				</g>
+				<Tooth46PulpChamber condition={canalCondition} isDark={isDark} />
 			)}
 
+			{/* 3 Radicular Canals (MB, ML, D) Originating at Cervical Floor Y=72 */}
 			{showCanals && (
 				<g id="tooth46-canals-tract">
-					{p.canals.map((canal) => (
-						<g key={canal.id} id={`canal-${canal.id}`}>
-							{showGuttaPercha ? (
-								<>
-									<path
-										d={canal.taperedLumen}
-										fill="url(#dente-guttapercha-cone)"
-										stroke="url(#dente-guttapercha-sheath)"
-										strokeWidth="0.8"
-										strokeLinejoin="round"
-										vectorEffect="non-scaling-stroke"
-									/>
-									<path
-										d={canal.centerLine}
-										fill="none"
-										stroke="#ffffff"
-										strokeWidth="0.7"
-										strokeOpacity="0.9"
-										strokeLinecap="round"
-										vectorEffect="non-scaling-stroke"
-									/>
-									<circle
-										cx={canal.apex.x}
-										cy={canal.apex.y}
-										r="1.1"
-										fill="#be123c"
-									/>
-								</>
-							) : (
-								<>
-									<path
-										d={canal.taperedLumen}
-										fill="url(#dente-pulp-vital)"
-										stroke="rgba(153, 27, 27, 0.6)"
-										strokeWidth="0.6"
-										strokeLinejoin="round"
-										vectorEffect="non-scaling-stroke"
-									/>
-									<path
-										d={canal.centerLine}
-										fill="none"
-										stroke="rgba(254, 202, 202, 0.7)"
-										strokeWidth="0.4"
-										strokeLinecap="round"
-										vectorEffect="non-scaling-stroke"
-									/>
-								</>
-							)}
-						</g>
+					{p.canals.map((canal, idx) => (
+						<Tooth46SingleCanal
+							key={canal.id}
+							canal={canal}
+							showGuttaPercha={showGuttaPercha}
+							isNecrotic={isNecrotic}
+							isUnderfill={isUnderfill}
+							underfillData={pathGeo.underfill[idx]}
+						/>
 					))}
+
+					{/* Overfilled Apical Sealer Mushroom Puffs */}
+					{showGuttaPercha &&
+						isOverfill &&
+						pathGeo.overfillPuffs.map((puff) => (
+							<path
+								key={puff.id}
+								d={puff.d}
+								fill="url(#dente-sealer-puff)"
+								stroke="#881337"
+								strokeWidth="0.6"
+								vectorEffect="non-scaling-stroke"
+							/>
+						))}
+
+					{/* Fractured NiTi Rotary Instrument in Apical Third of MB Canal */}
+					{isBrokenFile && <Tooth46BrokenFileOverlay isDark={isDark} />}
 				</g>
 			)}
 		</g>

@@ -35,7 +35,13 @@ export const TOOTH46_BASE_PRESETS: readonly Tooth46PresetDef[] = [
 		nameRu: "Пульпит (острый очаговый)",
 		badge: "Пульпит",
 		description: "Гиперемия пульпы, 5 пульпарных рогов и капиллярное сплетение",
-		layers: { ...def, pulp: true, canals: true, caries: true },
+		layers: {
+			...def,
+			pulp: true,
+			canals: true,
+			caries: false,
+			canalCondition: "pulpitis",
+		},
 	},
 	{
 		id: "periodontitis",
@@ -47,7 +53,9 @@ export const TOOTH46_BASE_PRESETS: readonly Tooth46PresetDef[] = [
 			pulp: true,
 			canals: true,
 			periapicalHalo: true,
-			caries: true,
+			periapicalCondition: "granuloma",
+			caries: false,
+			canalCondition: "necrotic",
 		},
 	},
 	{
@@ -55,7 +63,14 @@ export const TOOTH46_BASE_PRESETS: readonly Tooth46PresetDef[] = [
 		nameRu: "Эндодонтия (3 канала)",
 		badge: "Обтурация",
 		description: "Трехмерная обтурация гуттаперчей с апикальным силером",
-		layers: { ...def, canals: true, guttaPercha: true },
+		layers: {
+			...def,
+			pulp: true,
+			canals: true,
+			guttaPercha: true,
+			caries: false,
+			canalCondition: "adequate",
+		},
 	},
 	{
 		id: "composite",

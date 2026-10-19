@@ -14,8 +14,8 @@ export interface Tooth46CuspDef {
 }
 
 export const TOOTH46_GEOMETRY = {
-	viewBox: "0 0 100 160",
-	aspectRatio: "100 / 160",
+	viewBox: "0 0 100 170",
+	aspectRatio: "100 / 170",
 	// Sculpted 5-cusp crown perimeter with developmental notches
 	crownMonolithPath:
 		"M 16,74 C 13,62 11,48 12,38 C 13,28 17,20 22,16 C 25,14 28,11 32,10 " +

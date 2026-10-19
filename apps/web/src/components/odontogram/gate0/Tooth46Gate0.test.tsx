@@ -6,7 +6,7 @@ import { TOOTH46_GEOMETRY, Tooth46Container } from "./index";
 
 describe("Gate 0 First Article — Tooth 46 Monolithic Anatomical Odontogram", () => {
 	it("satisfies Wheeler Dental Anatomy 2.5D geometric invariants", () => {
-		assert.equal(TOOTH46_GEOMETRY.viewBox, "0 0 100 160");
+		assert.equal(TOOTH46_GEOMETRY.viewBox, "0 0 100 170");
 		assert.equal(TOOTH46_GEOMETRY.cusps.length, 5, "Must have exactly 5 cusps");
 		assert.equal(TOOTH46_GEOMETRY.endoCanals.length, 3, "3 canals");
 		assert.deepEqual(TOOTH46_GEOMETRY.bifurcationCrotch, { x: 50, y: 96 });
@@ -27,7 +27,7 @@ describe("Gate 0 First Article — Tooth 46 Monolithic Anatomical Odontogram", (
 			React.createElement(Tooth46Container, { isDark: true, zoom: 1 }),
 		);
 
-		assert.ok(htmlLight.includes('viewBox="0 0 100 160"'));
+		assert.ok(htmlLight.includes('viewBox="0 0 100 170"'));
 		assert.ok(htmlLight.includes("dente-enamel-porcelain"));
 		assert.ok(htmlLight.includes("dente-root-dentin"));
 		assert.ok(htmlDark.includes("dente-enamel-porcelain"));

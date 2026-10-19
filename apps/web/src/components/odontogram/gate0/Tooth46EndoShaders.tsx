@@ -2,7 +2,7 @@ import type React from "react";
 
 /**
  * DENTE Dental CRM — Endodontic, Caries & Periapical Shaders for Tooth 46
- * Cavitas pulparis ruby gel, gutta-percha, caries zones and periapical halo.
+ * Cavitas pulparis ruby gel, necrotic gangrene, gutta-percha, NiTi metal, sealer puff.
  * Mandate 8b <= 120 lines.
  */
 export const Tooth46EndoShaders: React.FC = () => {
@@ -16,6 +16,14 @@ export const Tooth46EndoShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#881337" stopOpacity="0.98" />
 			</linearGradient>
 
+			{/* Devitalized Gangrenous Necrotic Pulp Chamber & Canals */}
+			<linearGradient id="dente-pulp-necrotic" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#57534e" stopOpacity="0.95" />
+				<stop offset="35%" stopColor="#292524" stopOpacity="0.98" />
+				<stop offset="70%" stopColor="#1c1917" stopOpacity="0.99" />
+				<stop offset="100%" stopColor="#0c0a09" stopOpacity="1" />
+			</linearGradient>
+
 			{/* Tapered Gutta-Percha Cone & Outer Sheath */}
 			<linearGradient id="dente-guttapercha-cone" x1="0" y1="0" x2="0" y2="1">
 				<stop offset="0%" stopColor="#fda4af" stopOpacity="1" />
@@ -27,6 +35,22 @@ export const Tooth46EndoShaders: React.FC = () => {
 				<stop offset="0%" stopColor="#fb7185" stopOpacity="1" />
 				<stop offset="50%" stopColor="#f43f5e" stopOpacity="1" />
 				<stop offset="100%" stopColor="#be123c" stopOpacity="1" />
+			</linearGradient>
+
+			{/* Overfilled Extruded Sealer Puff Gradient */}
+			<radialGradient id="dente-sealer-puff" cx="45%" cy="40%" r="60%">
+				<stop offset="0%" stopColor="#f43f5e" stopOpacity="1" />
+				<stop offset="65%" stopColor="#be123c" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#881337" stopOpacity="0.90" />
+			</radialGradient>
+
+			{/* Fractured NiTi Rotary Instrument (Polished Surgical Alloy) */}
+			<linearGradient id="dente-niti-metal" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#475569" stopOpacity="1" />
+				<stop offset="30%" stopColor="#94a3b8" stopOpacity="1" />
+				<stop offset="55%" stopColor="#f8fafc" stopOpacity="1" />
+				<stop offset="80%" stopColor="#64748b" stopOpacity="1" />
+				<stop offset="100%" stopColor="#334155" stopOpacity="1" />
 			</linearGradient>
 
 			{/* Biological Caries Pathology Zones */}

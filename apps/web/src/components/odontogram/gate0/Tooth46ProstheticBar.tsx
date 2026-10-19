@@ -26,14 +26,16 @@ export const Tooth46ProstheticBar: React.FC<Tooth46ProstheticBarProps> = ({
 	return (
 		<div className="flex items-center gap-2 pt-1 border-t border-current/10 text-xs overflow-x-auto scrollbar-none touch-pan-x [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] md:[mask-image:none]">
 			{layers.zirconiaCrown && (
-				<div className="flex items-center gap-1">
-					<span className="font-semibold text-muted-foreground">Материал:</span>
+				<div className="flex items-center gap-1 shrink-0">
+					<span className="font-semibold text-muted-foreground mr-1">
+						Материал:
+					</span>
 					{CROWN_MATS.map(([mat, name]) => (
 						<button
 							key={mat}
 							type="button"
 							onClick={() => onChangeCrownMaterial?.(mat)}
-							className={`px-2 py-0.5 rounded border transition-all ${
+							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[28px] rounded border transition-all flex items-center justify-center shrink-0 ${
 								layers.crownMaterial === mat
 									? "bg-amber-600 text-white border-amber-500 font-semibold"
 									: "dark:bg-slate-800 dark:border-slate-700 bg-white text-slate-700 hover:bg-slate-100"
@@ -45,7 +47,7 @@ export const Tooth46ProstheticBar: React.FC<Tooth46ProstheticBarProps> = ({
 					<button
 						type="button"
 						onClick={() => onToggleCondition?.("crown")}
-						className={`px-2 py-0.5 rounded border font-semibold ml-1.5 ${
+						className={`px-3 py-1.5 min-h-[44px] sm:min-h-[28px] rounded border font-semibold ml-1.5 shrink-0 flex items-center justify-center ${
 							layers.crownCondition === "defective"
 								? "bg-rose-600 text-white border-rose-500"
 								: "bg-emerald-600 text-white border-emerald-500"
@@ -58,19 +60,21 @@ export const Tooth46ProstheticBar: React.FC<Tooth46ProstheticBarProps> = ({
 				</div>
 			)}
 			{layers.composite && (
-				<div className="flex items-center gap-1">
-					<span className="font-semibold text-muted-foreground">Пломба:</span>
+				<div className="flex items-center gap-1 shrink-0">
+					<span className="font-semibold text-muted-foreground mr-1">
+						Пломба:
+					</span>
 					<button
 						type="button"
 						onClick={() => onToggleCondition?.("composite")}
-						className={`px-2 py-0.5 rounded border font-semibold ${
+						className={`px-3 py-1.5 min-h-[44px] sm:min-h-[28px] rounded border font-semibold shrink-0 flex items-center justify-center ${
 							layers.compositeCondition === "defective"
 								? "bg-rose-600 text-white border-rose-500"
 								: "bg-emerald-600 text-white border-emerald-500"
 						}`}
 					>
 						{layers.compositeCondition === "defective"
-							? "Несостоятельная (втор. кариес)"
+							? "Несостоятельная (вторичный кариес)"
 							: "Состоятельная"}
 					</button>
 				</div>

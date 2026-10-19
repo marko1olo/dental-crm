@@ -54,11 +54,41 @@ describe("Gate 0 Advanced Clinical States — Tooth 46", () => {
 		assert.ok(missingHtml.includes("tooth46-missing-cross"));
 	});
 
-	it("renders Tooth46InspectionStand with 20 clinical presets and HUD", () => {
+	it("renders endodontic spectrum: broken file, cast post КШВ, radicular cyst, and apical resorption", () => {
+		const bfHtml = renderToString(
+			React.createElement(Tooth46Container, {
+				layers: { canals: true, canalCondition: "broken_file" },
+			}),
+		);
+		assert.ok(bfHtml.includes("tooth46-broken-file"));
+
+		const castPostHtml = renderToString(
+			React.createElement(Tooth46Container, {
+				layers: { postCore: true, postCoreType: "cast" },
+			}),
+		);
+		assert.ok(castPostHtml.includes("tooth46-post-core-cast"));
+
+		const cystHtml = renderToString(
+			React.createElement(Tooth46Container, {
+				layers: { periapicalCondition: "cyst" },
+			}),
+		);
+		assert.ok(cystHtml.includes("tooth46-radicular-cyst"));
+
+		const resorbHtml = renderToString(
+			React.createElement(Tooth46Container, {
+				layers: { periapicalCondition: "resorption" },
+			}),
+		);
+		assert.ok(resorbHtml.includes("tooth46-resorption"));
+	});
+
+	it("renders Tooth46InspectionStand with 31 clinical presets and HUD", () => {
 		assert.equal(
 			TOOTH46_PRESETS.length,
-			20,
-			"Must have exactly 20 clinical presets",
+			31,
+			"Must have 31 clinical presets (6 crown mats x 2, endo spectrum, base)",
 		);
 		const standHtml = renderToString(
 			React.createElement(Tooth46InspectionStand),

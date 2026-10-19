@@ -1,100 +1,40 @@
 import type { Tooth46PresetDef } from "./Tooth46BasePresets";
-import { DEFAULT_TOOTH46_LAYERS } from "./tooth46Types";
+import {
+	type CrownMaterial,
+	DEFAULT_TOOTH46_LAYERS,
+	type RestorationCondition,
+	type Tooth46ClinicalPreset,
+} from "./tooth46Types";
 
 const def = DEFAULT_TOOTH46_LAYERS;
 const noCrown = { crown: false, cusps: false, fissures: false };
 
+const mk = (
+	id: Tooth46ClinicalPreset,
+	nameRu: string,
+	badge: string,
+	desc: string,
+	mat: CrownMaterial,
+	cond: RestorationCondition = "adequate",
+): Tooth46PresetDef => ({
+	id,
+	nameRu,
+	badge,
+	description: desc,
+	layers: { ...def, ...noCrown, zirconiaCrown: true, crownMaterial: mat, crownCondition: cond },
+});
+
 export const TOOTH46_CROWN_PRESETS: readonly Tooth46PresetDef[] = [
-	{
-		id: "crown",
-		nameRu: "Коронка: Цирконий (состоятельная)",
-		badge: "Цирконий (сост.)",
-		description: "Монолитный многослойный фрезерованный цирконий с глазурью",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "zirconia",
-			crownCondition: "adequate",
-		},
-	},
-	{
-		id: "crown_defective",
-		nameRu: "Коронка: Цирконий (несостоятельная / скол)",
-		badge: "Цирконий (скол)",
-		description:
-			"Скол керамики, краевая расцементировка и окклюзионная перфорация",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "zirconia",
-			crownCondition: "defective",
-		},
-	},
-	{
-		id: "crown_pfm",
-		nameRu: "Коронка: Металлокерамика (PFM)",
-		badge: "PFM",
-		description: "Керамика на металле с поддесневой металлической гирляндой",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "pfm",
-			crownCondition: "adequate",
-		},
-	},
-	{
-		id: "crown_emax",
-		nameRu: "Коронка: Пресс-керамика E-Max",
-		badge: "E-Max",
-		description: "Стеклокерамика дисиликат лития с опалесценцией",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "emax",
-			crownCondition: "adequate",
-		},
-	},
-	{
-		id: "crown_gold",
-		nameRu: "Коронка: Цельнолитое золото (18K/24K)",
-		badge: "Золото",
-		description: "Благородный полированный золотой сплав высокой прочности",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "gold",
-			crownCondition: "adequate",
-		},
-	},
-	{
-		id: "crown_metal",
-		nameRu: "Коронка: Цельнолитой металл (Co-Cr)",
-		badge: "КХС/Металл",
-		description: "Клинический кобальт-хромовый сплав со стальным блеском",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "metal",
-			crownCondition: "adequate",
-		},
-	},
-	{
-		id: "crown_pmma",
-		nameRu: "Коронка: Временная пластмасса (PMMA)",
-		badge: "PMMA",
-		description: "Временная пластмассовая фрезерованная коронка",
-		layers: {
-			...def,
-			...noCrown,
-			zirconiaCrown: true,
-			crownMaterial: "pmma",
-			crownCondition: "adequate",
-		},
-	},
+	mk("crown", "Коронка: Цирконий (сост.)", "Цирконий (сост.)", "Монолитный многослойный цирконий с глазурью", "zirconia"),
+	mk("crown_defective", "Коронка: Цирконий (скол)", "Цирконий (скол)", "Скол керамики, краевая щель, перфорация", "zirconia", "defective"),
+	mk("crown_pfm", "Коронка: Металлокерамика (сост.)", "PFM (сост.)", "Керамика на металле с гирляндой", "pfm"),
+	mk("crown_pfm_defective", "Коронка: Металлокерамика (скол)", "PFM (скол)", "Скол фарфора с обнажением каркаса", "pfm", "defective"),
+	mk("crown_emax", "Коронка: E-Max (сост.)", "E-Max (сост.)", "Дисиликат лития с опалесценцией", "emax"),
+	mk("crown_emax_defective", "Коронка: E-Max (скол)", "E-Max (скол)", "Краевой скол стеклокерамики, щель", "emax", "defective"),
+	mk("crown_gold", "Коронка: Золото 18K (сост.)", "Золото (сост.)", "Благородный полированный золотой сплав", "gold"),
+	mk("crown_gold_defective", "Коронка: Золото (дефект)", "Золото (дефект)", "Окклюзионная перфорация от стирания", "gold", "defective"),
+	mk("crown_metal", "Коронка: Металл Co-Cr (сост.)", "КХС/Металл (сост.)", "Цельнолитой кобальт-хромовый сплав", "metal"),
+	mk("crown_metal_defective", "Коронка: Металл (дефект)", "КХС (дефект)", "Краевая расцементировка, истирание", "metal", "defective"),
+	mk("crown_pmma", "Коронка: PMMA (сост.)", "PMMA (сост.)", "Фрезерованная временная пластмасса", "pmma"),
+	mk("crown_pmma_defective", "Коронка: PMMA (трещина)", "PMMA (трещина)", "Перелом временной коронки, краевая щель", "pmma", "defective"),
 ];

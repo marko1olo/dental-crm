@@ -22,19 +22,18 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 						Зуб 46 (Моляр 1)
 					</span>
 				</h1>
-				<p className="text-[11px] sm:text-xs opacity-60 truncate max-w-[340px] sm:max-w-none">
-					Wheeler Dental Anatomy 2.5D · 6 Материалов коронок · Состоятельные /
-					Несостоятельные
+				<p className="text-[11px] sm:text-xs opacity-70">
+					FDI 46 · 2.5D Wheeler · 6 материалов · Эндо · Патология
 				</p>
 			</div>
-			<div className="flex items-center gap-1.5 sm:gap-2">
+			<div className="flex items-center gap-2">
 				<div className="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 text-xs font-semibold">
 					{([1, 2, 4] as const).map((z) => (
 						<button
 							key={z}
 							type="button"
 							onClick={() => onZoomChange(z)}
-							className={`px-2 py-0.5 sm:px-2.5 sm:py-1 min-h-[32px] sm:min-h-[28px] min-w-[32px] rounded transition-colors ${
+							className={`h-11 sm:h-8 px-3.5 sm:px-2.5 min-w-[44px] sm:min-w-[32px] rounded transition-colors flex items-center justify-center ${
 								zoom === z
 									? "bg-teal-500 text-white font-medium shadow-sm"
 									: "dark:bg-slate-800/80 dark:text-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -47,9 +46,10 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 				<button
 					type="button"
 					onClick={onToggleTheme}
-					className="px-2.5 py-1 sm:px-3 sm:py-1.5 min-h-[32px] sm:min-h-[28px] text-xs font-medium rounded-lg border dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+					aria-label="Переключить тему оформления"
+					className="h-11 sm:h-8 px-4 sm:px-3 min-w-[44px] text-xs font-medium rounded-lg border dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
 				>
-					{isDark ? "🌙 Dark" : "☀️ Light"}
+					{isDark ? "Тёмная" : "Светлая"}
 				</button>
 			</div>
 		</header>
