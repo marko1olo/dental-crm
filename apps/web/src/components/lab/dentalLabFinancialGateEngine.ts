@@ -72,8 +72,10 @@ export function checkDentalLabFinancialGate(
 	const reqStr = formatKopecksRu(requiredAdvance);
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Рекомендуется аванс ${minAdvancePercent}%. Внесено ${paidPercent}%. Недостающий аванс: ${missingStr}. Лечащий врач вправе отправить наряд в ЗТЛ под личную ответственность.`
-			: "Финансовый контроль пройден: аванс за этап внесен.";
+			? `Внимание: этап не оплачен. Рекомендуется аванс ${minAdvancePercent}%. Внесено ${paidPercent}%. Недостающий аванс: ${missingStr}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную ответственность.`
+			: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
+				? `Финансовый контроль пройден: авторизовано под ответственность Главного врача (${activeOverride?.doctorName || "Главврач"}).`
+				: "Финансовый контроль пройден: аванс за этап внесен.";
 	const detailedReasonRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
 			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из рекомендуемых ${minAdvancePercent}% (${reqStr}). Врач вправе согласовать наряд без блокировок.`

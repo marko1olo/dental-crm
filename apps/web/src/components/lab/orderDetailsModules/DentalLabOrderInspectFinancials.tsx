@@ -1,3 +1,4 @@
+import React from "react";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 
 export function DentalLabOrderInspectFinancials({

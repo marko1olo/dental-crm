@@ -3,12 +3,12 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 export interface DentalLabFinancialGateModalProps {
 	readonly isPaid: boolean;
 	readonly label: string;
-	readonly onConfirmOverride?: (override: {
+	readonly onConfirmOverride?: ((override: {
 		authorized: boolean;
 		doctorName: string;
 		timestampIso: string;
 		reason: string;
-	}) => void;
+	}) => void) | undefined;
 }
 
 export function DentalLabFinancialGateModal({

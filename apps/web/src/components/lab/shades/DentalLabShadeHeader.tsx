@@ -7,8 +7,8 @@ export interface DentalLabShadeHeaderProps {
 		sys: "classical" | "3d_master" | "bleach" | "stump",
 	) => void;
 	readonly selectedShade: string;
-	readonly selectedStumpShade?: string | null;
-	readonly showBleachTab?: boolean;
+	readonly selectedStumpShade?: string | null | undefined;
+	readonly showBleachTab?: boolean | undefined;
 }
 
 export function DentalLabShadeHeader({

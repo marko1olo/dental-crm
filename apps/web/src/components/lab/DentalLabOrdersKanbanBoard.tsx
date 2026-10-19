@@ -30,25 +30,27 @@ export interface CanonicalKanbanColumnDef {
 	readonly colorHex: string;
 }
 
-export const CANONICAL_5_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{ id: "draft", title: "Слепок снят", shortTitle: "Слепок", icon: <FileText size={16} />, colorHex: "#64748b" },
-	{ id: "sent_to_lab", title: "Отправлено в ЗТЛ", shortTitle: "В ЗТЛ", icon: <Truck size={16} />, colorHex: "#3b82f6" },
-	{ id: "in_progress", title: "Моделирование/Литье", shortTitle: "CAD/Литье", icon: <Layers size={16} />, colorHex: "#8b5cf6" },
-	{ id: "fitting_scheduled", title: "Примерка/В клинике", shortTitle: "В клинике", icon: <Calendar size={16} />, colorHex: "#f59e0b" },
-	{ id: "installed_completed", title: "Сдано пациенту", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
+export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
+	{ id: "sent_to_lab", title: "Слепок/Скан отправлен", shortTitle: "Скан/Слепок", icon: <Truck size={16} />, colorHex: "#3b82f6" },
+	{ id: "in_progress", title: "В работе в ЗТЛ", shortTitle: "В ЗТЛ", icon: <Layers size={16} />, colorHex: "#8b5cf6" },
+	{ id: "fitting_scheduled", title: "В клинике / На примерку", shortTitle: "В клинике", icon: <Calendar size={16} />, colorHex: "#f59e0b" },
+	{ id: "installed_completed", title: "Установлено / Сдано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
 ] as const;
 
-export const CANONICAL_4_KANBAN_COLUMNS = CANONICAL_5_KANBAN_COLUMNS;
+export const CANONICAL_5_KANBAN_COLUMNS = CANONICAL_4_KANBAN_COLUMNS;
 
 /**
- * 5-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
+ * 4-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
  */
 export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = (props) => {
 	const [dragOverCol, setDragOverCol] = useState<CanonicalKanbanStageId | null>(null);
 
 	const resolved = useMemo(() => ({
-		draft: props.ordersByStage.draft || [],
-		sent_to_lab: props.ordersByStage.sent_to_lab || [],
+		draft: [],
+		sent_to_lab: [
+			...(props.ordersByStage.draft || []),
+			...(props.ordersByStage.sent_to_lab || []),
+		],
 		in_progress: [
 			...((props.ordersByStage as any).in_progress || []),
 			...(props.ordersByStage.warranty_rework || []),
@@ -59,7 +61,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 
 	return (
 		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board">
-			{CANONICAL_5_KANBAN_COLUMNS.map((col) => {
+			{CANONICAL_4_KANBAN_COLUMNS.map((col) => {
 				const colOrders = resolved[col.id] || [];
 				return (
 					<KanbanColumn

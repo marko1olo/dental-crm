@@ -46,7 +46,7 @@ export function DentalLabCourierDispatchBar({
 		try {
 			await Promise.all(
 				pendingOrders.map((o) =>
-					fetch(`/api/clinical/lab-orders/${encodeURIComponent(o.id)}`, {
+					fetch(`/api/clinical/lab-orders/${encodeURIComponent(o.id ?? "")}`, {
 						method: "PUT",
 						headers: {
 							...denteAdminSecretRequestHeaders(),

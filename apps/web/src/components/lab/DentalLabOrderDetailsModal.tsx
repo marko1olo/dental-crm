@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
 import {
 	type ActionPromptState,
@@ -16,10 +16,10 @@ export interface DentalLabOrderDetailsModalProps {
 	readonly onPrintBlank: (order: DentalLabWorkflowOrder) => void;
 	readonly onAdvanceTechStage: (
 		order: DentalLabWorkflowOrder,
-		targetTechStage?: LabTechnologicalStageId,
+		targetTechStage?: LabTechnologicalStageId | undefined,
 	) => void;
 	readonly onOpenWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onView3DScan?: (order: DentalLabWorkflowOrder) => void;
+	readonly onView3DScan?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 
 	readonly warrantyReworkOrder: DentalLabWorkflowOrder | null;
 	readonly onCloseWarrantyRework: () => void;

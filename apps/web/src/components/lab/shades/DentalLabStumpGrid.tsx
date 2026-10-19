@@ -2,9 +2,9 @@ import { Check } from "lucide-react";
 import { SHADE_SWATCH_MAP, STUMP_NATURAL_DIE_SHADES } from "../labShadesData";
 
 interface DentalLabStumpGridProps {
-	readonly selectedStumpShade?: string | null;
-	readonly onSelectStumpShade?: (stumpShade: string) => void;
-	readonly mode?: "tab" | "inline";
+	readonly selectedStumpShade?: string | null | undefined;
+	readonly onSelectStumpShade?: ((stumpShade: string) => void) | undefined;
+	readonly mode?: "tab" | "inline" | undefined;
 }
 
 export function DentalLabStumpGrid({

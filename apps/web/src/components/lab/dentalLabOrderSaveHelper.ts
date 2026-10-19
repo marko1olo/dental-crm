@@ -133,7 +133,7 @@ export async function executeSaveLabOrder(params: SaveLabOrderParams): Promise<v
 		method,
 		headers: {
 			"Content-Type": "application/json",
-			"Idempotency-Key": `lab-order-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+			"Idempotency-Key": `lab-order-${Date.now()}-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Date.now().toString(36)}`,
 			...denteAdminSecretRequestHeaders(),
 		},
 		body: JSON.stringify(payload),

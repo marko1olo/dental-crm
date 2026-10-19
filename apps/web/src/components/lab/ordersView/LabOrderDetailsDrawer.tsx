@@ -1,14 +1,8 @@
-import React, { lazy, Suspense } from "react";
+import { DentalLabOrderModal } from "../DentalLabOrderModal";
 import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
-
-const DentalLabOrderDrawer = lazy(() =>
-	import("../DentalLabOrderDrawer").then((module) => ({
-		default: module.DentalLabOrderDrawer,
-	})),
-);
 
 export interface LabOrderDetailsDrawerProps {
 	readonly isWorkOrderModalOpen?: boolean;
@@ -71,22 +65,24 @@ export function LabOrderDetailsDrawer({
 
 	return (
 		<>
-			{/* Единый канонический SSOT-дравер наряда ЗТЛ */}
+			{/* Единая каноническая модалка наряд-заказа ЗТЛ (Пациент -> Зуб FDI -> Конструкция -> Цвет VITA -> Сроки -> Печать) */}
 			{isDrawerVisible && (
-				<Suspense fallback={null}>
-					<DentalLabOrderDrawer
-						isOpen={isDrawerVisible}
-						onClose={handleCloseDrawer}
-						editingOrder={selectedOrderForEdit}
-						initialTab={modalInitialTab}
-						treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
-						stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
-						stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
-						stageId={selectedOrderForEdit?.stageId ?? undefined}
-						onSaveOrder={() => onOrderSaved()}
-						onOrderSaved={onOrderSaved}
-					/>
-				</Suspense>
+				<DentalLabOrderModal
+					isOpen={isDrawerVisible}
+					onClose={handleCloseDrawer}
+					initialOrder={selectedOrderForEdit}
+					initialTab={modalInitialTab}
+					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
+					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
+					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
+					stageId={selectedOrderForEdit?.stageId ?? undefined}
+					patientId={selectedOrderForEdit?.patientId ?? undefined}
+					patientName={selectedOrderForEdit?.patientName ?? undefined}
+					doctorId={selectedOrderForEdit?.doctorId ?? undefined}
+					doctorName={selectedOrderForEdit?.doctorName ?? undefined}
+					onSaveOrder={() => onOrderSaved()}
+					onOrderSaved={onOrderSaved}
+				/>
 			)}
 
 			{/* Модалка прейскуранта DentalLabPriceMatrixModal */}

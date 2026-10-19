@@ -1,3 +1,4 @@
+import React from "react";
 import { Box, Printer, RotateCcw } from "lucide-react";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 
@@ -6,7 +7,7 @@ export interface DentalLabOrderInspectFooterProps {
 	readonly onClose: () => void;
 	readonly onPrintBlank: (order: DentalLabWorkflowOrder) => void;
 	readonly onOpenWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onView3DScan?: (order: DentalLabWorkflowOrder) => void;
+	readonly onView3DScan?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export function DentalLabOrderInspectFooter({

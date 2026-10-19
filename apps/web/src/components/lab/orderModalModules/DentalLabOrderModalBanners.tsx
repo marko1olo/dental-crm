@@ -24,13 +24,15 @@ export function DentalLabOrderModalBanners({
 	onAdjustStages,
 }: DentalLabOrderModalBannersProps) {
 	const isPaid =
-		financialGateResult.isGatePassed || financialGateResult.paidPercent >= 100;
-	const percent = financialGateResult.paidPercent ?? 0;
-	const paymentLabel = isPaid
-		? "Оплачено 100%"
-		: percent > 0
-			? `Предоплата ${percent}%`
-			: "Без предоплаты";
+		financialGateResult.paidPercent >= 100 ||
+		(financialGateResult.isGatePassed && financialGateResult.missingAdvanceRub <= 0);
+	const missingRub = financialGateResult.missingAdvanceRub || 0;
+	const missingFormatted = `${missingRub.toLocaleString("ru-RU")} ₽`;
+	const debtLabel =
+		financialGateResult.paidPercent === 0
+			? `Не внесен аванс: ${missingFormatted}`
+			: `Долг за работу: ${missingFormatted}`;
+	const paymentLabel = isPaid ? "Оплачено 100%" : debtLabel;
 
 	return (
 		<div className="space-y-2">

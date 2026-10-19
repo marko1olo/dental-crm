@@ -32,13 +32,16 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 }) => {
 	if (!isOpen) return null;
 
-	const isPaid = gateResult.isGatePassed || gateResult.paidPercent >= 100;
-	const percent = gateResult.paidPercent ?? 0;
-	const label = isPaid
-		? "Оплачено 100%"
-		: percent > 0
-			? `Предоплата ${percent}%`
-			: "Без предоплаты";
+	const isPaid =
+		gateResult.paidPercent >= 100 ||
+		(gateResult.isGatePassed && gateResult.missingAdvanceRub <= 0);
+	const missingRub = gateResult.missingAdvanceRub || 0;
+	const missingFormatted = `${missingRub.toLocaleString("ru-RU")} ₽`;
+	const debtLabel =
+		gateResult.paidPercent === 0
+			? `Не внесен аванс: ${missingFormatted}`
+			: `Долг за работу: ${missingFormatted}`;
+	const label = isPaid ? "Оплачено 100%" : debtLabel;
 
 	if (variant === "modal") {
 		return (

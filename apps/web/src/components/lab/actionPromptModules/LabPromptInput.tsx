@@ -1,8 +1,8 @@
 import type React from "react";
 
 export interface LabPromptInputProps {
-	readonly multiline?: boolean;
-	readonly placeholder?: string;
+	readonly multiline?: boolean | undefined;
+	readonly placeholder?: string | undefined;
 	readonly value: string;
 	readonly onChange: (val: string) => void;
 	readonly onSubmit: () => void;

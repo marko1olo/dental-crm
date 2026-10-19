@@ -3,8 +3,8 @@ import { ToothShadeGuide } from "../../icons/DentalIcons";
 
 interface DentalLabPhotoReferenceProps {
 	readonly selectedShade: string;
-	readonly shadePhotoUrl?: string | null;
-	readonly onShadePhotoChange?: (url: string | null) => void;
+	readonly shadePhotoUrl?: string | null | undefined;
+	readonly onShadePhotoChange?: ((url: string | null) => void) | undefined;
 }
 
 export function DentalLabPhotoReference({

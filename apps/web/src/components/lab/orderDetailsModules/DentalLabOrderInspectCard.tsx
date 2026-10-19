@@ -1,3 +1,4 @@
+import React from "react";
 import { RotateCcw, X } from "lucide-react";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 import type { LabTechnologicalStageId } from "../orders/labWorkOrderPresets";
@@ -12,10 +13,10 @@ export interface DentalLabOrderInspectCardProps {
 	readonly onPrintBlank: (order: DentalLabWorkflowOrder) => void;
 	readonly onAdvanceTechStage: (
 		order: DentalLabWorkflowOrder,
-		targetTechStage?: LabTechnologicalStageId,
+		targetTechStage?: LabTechnologicalStageId | undefined,
 	) => void;
 	readonly onOpenWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onView3DScan?: (order: DentalLabWorkflowOrder) => void;
+	readonly onView3DScan?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export function DentalLabOrderInspectCard({

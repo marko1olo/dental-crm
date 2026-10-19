@@ -1,3 +1,4 @@
+import React from "react";
 import {
 	type DentalLabWorkflowOrder,
 	LAB_WORKFLOW_STATUSES,
