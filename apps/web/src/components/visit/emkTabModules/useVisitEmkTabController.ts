@@ -7,7 +7,10 @@
 
 import React from "react";
 import { showToast } from "../../GlobalToast";
-import { inferProcedureServiceFromStamp } from "../clinicalProcedureCatalogService";
+import {
+	inferProcedureServiceFromStamp,
+	infer804nServiceFromStamp,
+} from "../clinicalProcedureCatalogService";
 import { useVisitEmkToothSync } from "../useVisitEmkToothSync";
 import { useVisitSave } from "../useVisitSave";
 import { appendClinicalText } from "../emk";

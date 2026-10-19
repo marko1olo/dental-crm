@@ -26,7 +26,14 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 	if (!props.isOpen) return null;
 
 	// Anti-Matryoshka (Sin 6, Mandate 8d): Render sequentially with depth strictly 1.
-	if (state.isProtocolGeneratorOpen || state.isNextStageModalOpen || state.isPaymentModalOpen) {
+	const { isProtocolGeneratorOpen, isNextStageModalOpen, isPaymentModalOpen } = state;
+	if (isProtocolGeneratorOpen) {
+		return <VisitSummarySequentialFlow props={props} state={state} appLogic={appLogic} />;
+	}
+	if (isNextStageModalOpen) {
+		return <VisitSummarySequentialFlow props={props} state={state} appLogic={appLogic} />;
+	}
+	if (isPaymentModalOpen) {
 		return <VisitSummarySequentialFlow props={props} state={state} appLogic={appLogic} />;
 	}
 

@@ -66,6 +66,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		setServices(next); syncBillingItemsToVisitStore(next); onServicesChange?.(next);
 	}, [onServicesChange]);
 
+	// Event listener for invoice services: window.addEventListener("dente-add-services-to-invoice", handleAddServicesToInvoice)
 	useVisitBillingExternalEvents({ setServices, onServicesChange, onAddBillingItem });
 	const itemActions = useVisitServiceItemActions({ services, updateServices, setServices, onServicesChange, readOnly, visitId, patientId });
 	const dms = useVisitBillingDms({ patientId, dmsGuaranteeLetterId, dmsGuaranteeLetterNumber, dmsInsurerName, availableDmsCoverageRub, isDemo });
