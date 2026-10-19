@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { SHADE_SWATCH_MAP, VITA_CLASSICAL_GROUPS } from "../labMath";
 
 export interface DentalLabExpressShadeBarProps {
@@ -8,12 +8,9 @@ export interface DentalLabExpressShadeBarProps {
 	readonly onSelectShade: (shade: string) => void;
 }
 
-export const DentalLabExpressShadeBar: React.FC<DentalLabExpressShadeBarProps> = ({
-	shadeSystem,
-	setShadeSystem,
-	currentShade,
-	onSelectShade,
-}) => {
+export const DentalLabExpressShadeBar: React.FC<
+	DentalLabExpressShadeBarProps
+> = ({ shadeSystem, setShadeSystem, currentShade, onSelectShade }) => {
 	const currentSwatch = SHADE_SWATCH_MAP[currentShade];
 
 	return (
@@ -32,7 +29,11 @@ export const DentalLabExpressShadeBar: React.FC<DentalLabExpressShadeBarProps> =
 									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
 							}`}
 						>
-							{sys === "classical" ? "VITA Classical" : sys === "bleach" ? "Bleach" : "3D-Master"}
+							{sys === "classical"
+								? "VITA Classical"
+								: sys === "bleach"
+									? "Bleach"
+									: "3D-Master"}
 						</button>
 					))}
 				</div>
@@ -58,8 +59,12 @@ export const DentalLabExpressShadeBar: React.FC<DentalLabExpressShadeBarProps> =
 						data-testid={`vita-classical-group-${grp.id}`}
 					>
 						<div className="flex items-center justify-between border-b border-[var(--line,#cbd5e1)] pb-1">
-							<span className="text-xs font-bold text-[var(--ink,#0f172a)]">{grp.name}</span>
-							<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">{grp.toneRu}</span>
+							<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+								{grp.name}
+							</span>
+							<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">
+								{grp.toneRu}
+							</span>
 						</div>
 						<div className="grid grid-cols-4 gap-1">
 							{grp.shades.map((shade) => {

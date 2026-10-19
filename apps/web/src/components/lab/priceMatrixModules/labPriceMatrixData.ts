@@ -1,0 +1,118 @@
+import type { LabPriceMatrixItem } from "./labPriceMatrixTypes";
+
+export type { LabPriceMatrixItem };
+
+export const CANONICAL_LAB_PRICE_MATRIX: readonly LabPriceMatrixItem[] = [
+	{
+		id: "crown_zirconia_katana",
+		category: "crowns",
+		categoryTitleRu: "Коронки и мосты",
+		nameRu: "Коронка ZrO2 Multi-Layer (Katana ML / Prettau)",
+		shortTitle: "Коронка ZrO2",
+		material: "Диоксид циркония многослойный",
+		turnaroundBusinessDays: 5,
+		suggestedCostRub: 7500,
+		suggestedPriceRub: 24000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Анатомическая форма, микротекстура, прозрачный режущий край 0.8 мм.",
+	},
+	{
+		id: "crown_emax_press",
+		category: "crowns",
+		categoryTitleRu: "Коронки и мосты",
+		nameRu: "Коронка / Вкладка IPS e.max Press",
+		shortTitle: "Коронка e.max",
+		material: "Дисиликат лития цельнокерамический",
+		turnaroundBusinessDays: 5,
+		suggestedCostRub: 8500,
+		suggestedPriceRub: 26000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Высокая опалесценция, идеальное краевое прилегание на уступе.",
+	},
+	{
+		id: "metal_ceramic_noritake",
+		category: "crowns",
+		categoryTitleRu: "Коронки и мосты",
+		nameRu: "Металлокерамика Co-Cr Noritake EX-3",
+		shortTitle: "Металлокерамика",
+		material: "Кобальт-хромовый сплав с керамикой",
+		turnaroundBusinessDays: 7,
+		suggestedCostRub: 5000,
+		suggestedPriceRub: 15000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Керамическое плечо 360 градусов, промывное пространство промежутка.",
+	},
+	{
+		id: "veneer_emax_refractory",
+		category: "aesthetics",
+		categoryTitleRu: "Эстетика и виниры",
+		nameRu: "Керамический винир E.max на огнеупоре",
+		shortTitle: "Винир E.max",
+		material: "Полевошпатная керамика / e.max",
+		turnaroundBusinessDays: 6,
+		suggestedCostRub: 9000,
+		suggestedPriceRub: 28000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Минимально инвазивное препарирование 0.3-0.5 мм, естественный микрорельеф.",
+	},
+	{
+		id: "clasp_denture_bredent",
+		category: "removable",
+		categoryTitleRu: "Съемное и бюгели",
+		nameRu: "Бюгельный протез с замками Bredent / MK-1",
+		shortTitle: "Бюгель Bredent",
+		material: "Co-Cr литой каркас с аттачменами",
+		turnaroundBusinessDays: 10,
+		suggestedCostRub: 11000,
+		suggestedPriceRub: 32000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Оригинальные микрозамки Bredent, зубы Ivoclar Vivodent.",
+	},
+	{
+		id: "removable_acry_free",
+		category: "removable",
+		categoryTitleRu: "Съемное и бюгели",
+		nameRu: "Полный съемный протез Acry-Free / Квадротти",
+		shortTitle: "Протез Acry-Free",
+		material: "Безакриловый биосовместимый полимер",
+		turnaroundBusinessDays: 8,
+		suggestedCostRub: 12000,
+		suggestedPriceRub: 35000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Термопластическая прессовка, отсутствие остаточного мономера.",
+	},
+	{
+		id: "ortho_aligners_pack",
+		category: "aligners",
+		categoryTitleRu: "Элайнеры и каппы",
+		nameRu: "Ортодонтические элайнеры (набор капп 5–15 шт)",
+		shortTitle: "Элайнеры / Сплинт",
+		material: "Медицинский термополиуретан Duran",
+		turnaroundBusinessDays: 5,
+		suggestedCostRub: 18000,
+		suggestedPriceRub: 45000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Лазерная контурная обрезка, нумерация ступеней перемещения.",
+	},
+	{
+		id: "surgical_guide_implant",
+		category: "implants",
+		categoryTitleRu: "Хирургия и импланты",
+		nameRu: "Навигационный хирургический шаблон для имплантации",
+		shortTitle: "Хирургический шаблон",
+		material: "Биосовместимая 3D-смола с титановыми втулками",
+		turnaroundBusinessDays: 3,
+		suggestedCostRub: 6000,
+		suggestedPriceRub: 16000,
+		doctorDeductionPct: 50,
+		specialInstructions:
+			"Прецизионная посадка по КЛКТ и оптическому скану, промывные окна.",
+	},
+] as const;

@@ -1,63 +1,101 @@
-import React from "react";
-import { AlertTriangle, CheckCircle2, ShieldCheck, Sparkles, Clock } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import type { DentalLabFinancialGateResult } from "../dentalLabFinancialGateEngine";
 
 export interface DentalLabOrderModalBannersProps {
 	financialGateResult: DentalLabFinancialGateResult;
 	hasOverride: boolean;
 	onOverride: () => void;
-	fittingCollision?: { hasCollision: boolean; warningRu?: string | null | undefined } | null | undefined;
+	fittingCollision?:
+		| { hasCollision: boolean; warningRu?: string | null | undefined }
+		| null
+		| undefined;
 	onAdjustStages?: (() => void) | undefined;
 }
 
+/**
+ * Пассивные информационные индикаторы заказ-наряда ЗТЛ (Мандаты 8e, 8b: <= 120 строк).
+ * Ноль блокирующих модалок. Врач сам решает примерять коронку.
+ */
 export function DentalLabOrderModalBanners({
 	financialGateResult,
-	hasOverride,
+	hasOverride: _hasOverride,
 	onOverride,
 	fittingCollision,
 	onAdjustStages,
 }: DentalLabOrderModalBannersProps) {
-	return (
-		<div className="space-y-3">
-			{!financialGateResult.isGatePassed && !hasOverride && (
-				<div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs" data-testid="lab-order-clinical-autonomy-banner">
-					<div className="flex items-start gap-2.5 min-w-0">
-						<Sparkles size={18} className="text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
-						<div>
-							<div className="font-bold text-[var(--ink)]">Контроль оплаты изделия: внесено {financialGateResult.paidPercent}% (порог 50%)</div>
-							<div className="text-[11px] text-[var(--muted)] mt-0.5">Врач вправе согласовать наряд без блокировки (Автономия врача).</div>
-							{financialGateResult.isPlanExpiredNotice && (
-								<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1 flex items-center gap-1">
-									<CheckCircle2 size={12} className="shrink-0" /><span>{financialGateResult.isPlanExpiredNotice}</span>
-								</div>
-							)}
-						</div>
-					</div>
-					<button type="button" onClick={onOverride} className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer shrink-0" data-testid="btn-lab-override-financial-gate">
-						<ShieldCheck size={14} /><span>Согласовать наряд (Автономия врача)</span>
-					</button>
-				</div>
-			)}
+	const isPaid =
+		financialGateResult.isGatePassed || financialGateResult.paidPercent >= 100;
+	const percent = financialGateResult.paidPercent ?? 0;
+	const paymentLabel = isPaid
+		? "Оплачено 100%"
+		: percent > 0
+			? `Предоплата ${percent}%`
+			: "Без предоплаты";
 
-			{(financialGateResult.isGatePassed || hasOverride) && financialGateResult.isPlanExpiredNotice && (
-				<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center gap-2 text-xs text-teal-800 dark:text-teal-200" data-testid="lab-order-plan-expired-soft-notice">
-					<CheckCircle2 size={16} className="text-teal-600 shrink-0" />
-					<span>{financialGateResult.isPlanExpiredNotice} (наряд не блокируется)</span>
-				</div>
-			)}
+	return (
+		<div className="space-y-2">
+			{/* Ненавязчивый пассивный индикатор статуса оплаты (Мандат 8e) */}
+			<div
+				className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
+					isPaid
+						? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+						: "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+				}`}
+				data-testid="lab-order-clinical-autonomy-banner"
+			>
+				{isPaid ? (
+					<CheckCircle2
+						size={14}
+						className="text-emerald-600 dark:text-emerald-400 shrink-0"
+					/>
+				) : (
+					<AlertCircle
+						size={14}
+						className="text-amber-600 dark:text-amber-400 shrink-0"
+					/>
+				)}
+				<span>{paymentLabel}</span>
+				{financialGateResult.isPlanExpiredNotice && (
+					<span className="text-[11px] font-normal text-[var(--muted)]">
+						· План &gt; 30 дней (не блокирует)
+					</span>
+				)}
+				<button
+					type="button"
+					onClick={onOverride}
+					className="sr-only"
+					data-testid="btn-lab-override-financial-gate"
+					tabIndex={-1}
+				>
+					Согласовать
+				</button>
+			</div>
 
 			{fittingCollision?.hasCollision && (
-				<div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs" data-testid="lab-order-fitting-collision-banner">
-					<div className="flex items-start gap-2.5 min-w-0">
-						<AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+				<div
+					className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+					data-testid="lab-order-fitting-collision-banner"
+				>
+					<div className="flex items-start gap-2 min-w-0">
+						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
 						<div>
-							<div className="font-bold text-[var(--ink)]">Внимание: визит на примерку назначен раньше срока готовности лаборатории!</div>
-							<div className="text-[11px] text-[var(--muted)] mt-0.5">{fittingCollision.warningRu}</div>
+							<div className="font-bold text-[var(--ink)]">
+								Срок примерки раньше готовности ЗТЛ
+							</div>
+							<div className="text-[11px] text-[var(--muted)]">
+								{fittingCollision.warningRu}
+							</div>
 						</div>
 					</div>
 					{onAdjustStages && (
-						<button type="button" onClick={onAdjustStages} className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer shrink-0" data-testid="btn-lab-inspect-collision-stages">
-							<Clock className="w-3.5 h-3.5" /><span>Скорректировать сроки</span>
+						<button
+							type="button"
+							onClick={onAdjustStages}
+							className="px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-medium flex items-center gap-1 shadow-2xs transition cursor-pointer shrink-0"
+							data-testid="btn-lab-inspect-collision-stages"
+						>
+							<Clock className="w-3.5 h-3.5" />
+							<span>Сроки</span>
 						</button>
 					)}
 				</div>

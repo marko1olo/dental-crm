@@ -11514,3 +11514,29 @@
         - `04_pc_sterilization_modal_dark_1440x900.png` (197.2 КБ, PC Dark 1440×900, темная тема модального окна автоклава)
         - `sterilization_mobile_light_390x844.png` (170.5 КБ, Mobile Light 390×844, карточки циклов, статус «Стерильно», Apple HIG)
         - `sterilization_mobile_dark_390x844.png` (170.9 КБ, Mobile Dark 390×844, темная мобильная картотека стерилизации, тач-таргеты $\ge 44$px).
+
+59. **Волна 351: Red Team Инквизиция Зуботехнической Лаборатории (ЗТЛ), Декомпозиция Монолитов $\le 120$ строк, Интеграция VITA Шкал и Клиническая Автономия Врача (Мандаты 8b, 8d, 8e, 8k, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)**:
+    - **1. Архитектурная декомпозиция монолитов до лимита $\le 120$ строк (Мандат 8b)**:
+      * Все 54 файла в домене `apps/web/src/components/lab/` строго соответствуют лимиту $\le 120$ строк;
+      * Проведена глубокая декомпозиция ранее монолитных компонентов: `DentalLabShadePicker.tsx`, `DentalLabOrderDetailsModal.tsx`, `LabAttachScanModal.tsx`, `LabActionPromptModal.tsx`, `DentalLabKanbanCardMenu.tsx`, `DentalLabFinancialGate.tsx`, `DentalLabCourierDispatchBar.tsx`, `DentalLabPriceMatrixModal.tsx`, `DentalLabOrderModalBanners.tsx`;
+      * Выделены изолированные специализированные субмодули: `actionPromptModules/`, `attachScanModules/`, `courierModules/`, `financialGateModules/`, `kanbanModules/`, `orderDetailsModules/`, `priceMatrixModules/`, `shades/`.
+    - **2. Клиническая автономия врача (Мандаты 8e, 8n)**:
+      * Тотальный запрет на блокирующие модальные окна и заблокированные (`disabled`) кнопки приёма;
+      * Кнопки «Сохранить», «Примерка», «Оформить наряд-заказ» всегда активны (ноль `disabled`);
+      * Финансовый гейт переведен в пассивный статус-бейдж (`Оплачено 100%`, `Предоплата X%`, `Без предоплаты`), предупреждения о планах лечения старше 30 дней не блокируют клинические манипуляции.
+    - **3. Интерактивная палитра VITA и фотопротокол**:
+      * Единая согласованная система шкал: VITA Classical (A1–D4), 3D-Master (L1..L5), Bleach (0M1–0M3), культевая шкала Natural Die (ND1–ND9) и шкала прозрачности эмали;
+      * Полноценная поддержка прикрепления клинических фотографий образцов с зуботехническими линейками и макросъемкой.
+    - **4. Ликвидация ролевых симуляторов курьера (Мандаты 8k, 8wy)**:
+      * Искоренена игровая симуляция перемещения курьеров; поддержано честное пакетное обновление статуса доставки в Fastify API и PostgreSQL 18.
+    - **5. Чистота интерфейса без эмодзи (Мандат 8d)**:
+      * Полный запрет на мультяшные эмодзи и dingbats; исключительно векторные иконки Lucide (`CheckCircle2`, `AlertCircle`, `AlertTriangle`, `CalendarCheck`, `Send`, `Copy`, `Trash2`, `Plus`, `Search`).
+    - **6. Верификация, Biome и 4-State Visual Proof**:
+      * Biome: 0 ошибок, 0 предупреждений (54 файла checked);
+      * Vitest: 213/213 тестов пройдены со 100% успехом во всех сьютах ЗТЛ (19 сьютов);
+      * Playwright 4-State Red Team Visual Proof сняты и проверены лично ревизором через `view_file`:
+        - `01_lab_kanban_5stages_pc_light_1440x900.png` (143.7 КБ, PC Light 1440×900, 5-стадийный канбан ЗТЛ)
+        - `02_lab_order_drawer_shades_pc_dark_1440x900.png` (75.7 КБ, PC Dark 1440×900, дравер наряда, шкала VITA 3D-Master, Code128/QR)
+        - `03_lab_mobile_light_390x844.png` (54.4 КБ, Mobile Light 390×844, Grouped List, сенсорный минимум $\ge 44$px, Apple HIG)
+        - `04_lab_mobile_dark_390x844.png` (36.7 КБ, Mobile Dark 390×844, нативный Bottom Sheet, 0px горизонтального скролла).
+

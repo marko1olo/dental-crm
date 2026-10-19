@@ -7626,6 +7626,33 @@
   - `docs/proofs/anesthesia/04_anesthesia_diary_mobile_light_390x844.png`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 332)
 
+---
 
-
-
+### 2.10.429. Волна 333 / 351: Red Team Инквизиция Зуботехнической Лаборатории (ЗТЛ), Декомпозиция Монолитов $\le 120$ строк, Интеграция VITA Шкал и Клиническая Автономия Врача (Мандаты 8b, 8d, 8e, 8k, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)
+- **Цель и клинический контекст**:
+  Устранение дублирующих модалок, декомпозиция всех компонентов домена ЗТЛ до строгого норматива $\le 120$ строк (Мандат 8b), обеспечение 100% клинической автономии врача у кресла (Мандат 8e, 8n), консолидация шкал VITA (Classical, 3D-Master, Bleach, ND1–ND9) и фотопротокола, ликвидация ролевых симуляторов реальности курьера и подтверждение качества через 4-State Visual Proof.
+- **Ключевые изменения**:
+  1. *Архитектурная декомпозиция монолитов до $\le 120$ строк (Мандат 8b)*:
+     - Все 54 файла в `apps/web/src/components/lab/` строго уложены в норматив $\le 120$ строк;
+     - Декомпозированы компоненты: `DentalLabShadePicker.tsx`, `DentalLabOrderDetailsModal.tsx`, `LabAttachScanModal.tsx`, `LabActionPromptModal.tsx`, `DentalLabKanbanCardMenu.tsx`, `DentalLabFinancialGate.tsx`, `DentalLabCourierDispatchBar.tsx`, `DentalLabPriceMatrixModal.tsx`, `DentalLabOrderModalBanners.tsx`;
+     - Созданы изолированные подмодули: `actionPromptModules/`, `attachScanModules/`, `courierModules/`, `financialGateModules/`, `kanbanModules/`, `orderDetailsModules/`, `priceMatrixModules/`, `shades/`.
+  2. *Клиническая автономия врача (Мандат 8e)*:
+     - Кнопки («Сохранить», «Примерка», «Оформить наряд-заказ») никогда не блокируются (`disabled: false`);
+     - Финансовый гейт выведен в пассивный статус-бейдж (`Оплачено 100%`, `Предоплата X%`, `Без предоплаты`);
+     - Просроченные планы лечения (>30 дней) не блокируют наряд-заказы в ЗТЛ.
+  3. *Интерактивная палитра VITA и фотопротокол*:
+     - Единая согласованная система шкал: VITA Classical (A1–D4), 3D-Master (L1..L5), Bleach (0M1–0M3), культевая шкала Natural Die (ND1–ND9) и шкала прозрачности эмали;
+     - Поддержка прикрепления клинических фотографий образцов с зуботехническими линейками.
+  4. *Ликвидация ролевых симуляторов курьера (Мандат 8k, 8wy)*:
+     - Искоренена игровая симуляция пеших курьеров; внедрено честное пакетное обновление статуса доставки в Fastify API и реальный PostgreSQL 18.
+  5. *Чистота интерфейса без эмодзи (Мандат 8d)*:
+     - Строго векторные иконки Lucide, ноль мультяшных символов и dingbats.
+  6. *Верификация и 4-State Red Team Visual Proof*:
+     - Biome: 0 ошибок, 0 предупреждений (54 файла checked);
+     - Vitest: 213/213 тестов пройдены успешно (19 тест-сьютов ЗТЛ);
+     - Playwright 4-State Red Team Visual Proof:
+       * `docs/proofs/lab/01_lab_kanban_5stages_pc_light_1440x900.png` (143.7 КБ)
+       * `docs/proofs/lab/02_lab_order_drawer_shades_pc_dark_1440x900.png` (75.7 КБ)
+       * `docs/proofs/lab/03_lab_mobile_light_390x844.png` (54.4 КБ)
+       * `docs/proofs/lab/04_lab_mobile_dark_390x844.png` (36.7 КБ).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.

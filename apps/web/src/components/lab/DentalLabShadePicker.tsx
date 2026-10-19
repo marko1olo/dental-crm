@@ -1,29 +1,21 @@
-/**
- * DentalLabShadePicker.tsx — Канонический Single Source of Truth (SSOT) селектор расцветки VITA
- * (VITA Classical A1-D4, VITA 3D-Master 1M1-5M3, Bleach 0M1-0M3/BL1-BL4, IPS Natural Die Stump ND1-ND9).
- *
- * Mandate 8s: Закон Единого Неделимого Авторитета (The Best of Breed SSOT).
- * Mandate 8e: 1-клик выбор у кресла, сенсорные тач-таргеты min-h-[48px].
- * Mandate 8d: Ноль мультяшных эмодзи (строго векторные иконки Lucide и анатомические превью).
- */
-
 import React from "react";
+
 if (typeof document !== "undefined") {
 	void import("../../styles/components.css");
 }
-import { Camera, Check, CheckCircle2, Trash2, Upload } from "lucide-react";
-import { ToothShadeGuide } from "../icons/DentalIcons";
-import {
-	VITA_CLASSICAL_GROUPS,
-	VITA_3D_MASTER_GROUPS,
-	VITA_BLEACH_SHADES_CLASSIFIED,
-	STUMP_NATURAL_DIE_SHADES,
-	SHADE_SWATCH_MAP,
-} from "./labShadesData";
+
+import { DentalLab3dMasterGrid } from "./shades/DentalLab3dMasterGrid";
+import { DentalLabBleachGrid } from "./shades/DentalLabBleachGrid";
+import { DentalLabClassicalGrid } from "./shades/DentalLabClassicalGrid";
+import { DentalLabPhotoReference } from "./shades/DentalLabPhotoReference";
+import { DentalLabShadeHeader } from "./shades/DentalLabShadeHeader";
+import { DentalLabStumpGrid } from "./shades/DentalLabStumpGrid";
 
 export interface DentalLabShadePickerProps {
 	readonly shadeSystem?: "classical" | "3d_master" | "bleach" | "stump";
-	readonly onShadeSystemChange?: (system: "classical" | "3d_master" | "bleach" | "stump") => void;
+	readonly onShadeSystemChange?: (
+		system: "classical" | "3d_master" | "bleach" | "stump",
+	) => void;
 	readonly selectedShade: string;
 	readonly onSelectShade: (shade: string) => void;
 	readonly selectedStumpShade?: string | null;
@@ -44,518 +36,72 @@ export function DentalLabShadePicker({
 	onSelectStumpShade,
 	showStumpSelector = false,
 	showBleachTab = true,
-	compact = false,
+	compact: _compact = false,
 	shadePhotoUrl,
 	onShadePhotoChange,
 }: DentalLabShadePickerProps) {
-	const [internalSystem, setInternalSystem] = React.useState<"classical" | "3d_master" | "bleach" | "stump">(shadeSystem || "classical");
-	const currentSystem = onShadeSystemChange ? (shadeSystem || "classical") : internalSystem;
-	const currentSwatch = SHADE_SWATCH_MAP[selectedShade];
+	const [internalSystem, setInternalSystem] = React.useState<
+		"classical" | "3d_master" | "bleach" | "stump"
+	>(shadeSystem || "classical");
+	const currentSystem = onShadeSystemChange
+		? shadeSystem || "classical"
+		: internalSystem;
 
 	React.useEffect(() => {
-		if (shadeSystem) {
-			setInternalSystem(shadeSystem);
-		}
+		if (shadeSystem) setInternalSystem(shadeSystem);
 	}, [shadeSystem]);
 
-	const handleSystemTabClick = (sys: "classical" | "3d_master" | "bleach" | "stump") => {
-		if (onShadeSystemChange) {
-			onShadeSystemChange(sys);
-		} else {
-			setInternalSystem(sys);
-		}
+	const handleTab = (sys: "classical" | "3d_master" | "bleach" | "stump") => {
+		if (onShadeSystemChange) onShadeSystemChange(sys);
+		else setInternalSystem(sys);
 	};
 
 	return (
 		<div className="rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] p-2.5 sm:p-3 space-y-3 max-w-full overflow-x-clip">
-			{/* Верхняя строка: переключатель шкал и текущий выбранный оттенок */}
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<div className="flex items-center gap-2 flex-wrap min-w-0">
-					<ToothShadeGuide size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-bold text-[var(--ink,#0f172a)] shrink-0">
-						Шкала VITA:
-					</span>
-					<div className="dente-segmented-bar inline-flex items-center shrink-0 overflow-x-auto max-w-full scrollbar-none">
-						<button
-							type="button"
-							onClick={() => handleSystemTabClick("classical")}
-							data-active={currentSystem === "classical" ? "true" : "false"}
-							className={`dente-segmented-item min-h-[36px] ${currentSystem === "classical" ? "active" : ""}`}
-							data-testid="vita-classical-tab"
-						>
-							VITA Classical
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSystemTabClick("3d_master")}
-							data-active={currentSystem === "3d_master" ? "true" : "false"}
-							className={`dente-segmented-item min-h-[36px] ${currentSystem === "3d_master" ? "active" : ""}`}
-							data-testid="vita-3d-master-tab"
-						>
-							VITA 3D-Master
-						</button>
-						{showBleachTab && (
-							<button
-								type="button"
-								onClick={() => handleSystemTabClick("bleach")}
-								data-active={currentSystem === "bleach" ? "true" : "false"}
-								className={`dente-segmented-item min-h-[36px] ${currentSystem === "bleach" ? "active" : ""}`}
-								data-testid="vita-bleach-tab"
-							>
-								Bleach
-							</button>
-						)}
-						<button
-							type="button"
-							onClick={() => handleSystemTabClick("stump")}
-							data-active={currentSystem === "stump" ? "true" : "false"}
-							className={`dente-segmented-item min-h-[36px] ${currentSystem === "stump" ? "active" : ""}`}
-							data-testid="vita-stump-tab"
-						>
-							Культя (ND)
-						</button>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="text-xs text-[var(--muted,#64748b)] font-medium">
-						Выбранный оттенок:
-					</span>
-					<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-teal-600 text-white shadow-xs inline-flex items-center gap-1.5">
-						{currentSwatch && (
-							<span
-								className="w-2.5 h-2.5 rounded-full border border-white/60 shrink-0"
-								style={{ backgroundColor: currentSwatch.bg }}
-								aria-hidden="true"
-							/>
-						)}
-						<span>{selectedShade || "—"}</span>
-					</span>
-					{selectedStumpShade && (
-						<span
-							className="text-xs font-mono font-bold px-2 py-1 rounded-md bg-amber-700 dark:bg-amber-600 text-white shadow-xs inline-flex items-center gap-1.5"
-							title={`Культя зуба: ${selectedStumpShade}`}
-							data-testid="selected-stump-shade-header-chip"
-						>
-							<span className="text-[10px] opacity-80">Культя:</span>
-							<span>{selectedStumpShade}</span>
-						</span>
-					)}
-				</div>
-			</div>
-
-			{/* 1. Сетка VITA Classical (Группы A, B, C, D + Bleach пресеты) */}
+			<DentalLabShadeHeader
+				currentSystem={currentSystem}
+				onSystemChange={handleTab}
+				selectedShade={selectedShade}
+				selectedStumpShade={selectedStumpShade}
+				showBleachTab={showBleachTab}
+			/>
 			{currentSystem === "classical" && (
-				<div className="space-y-2">
-					{VITA_CLASSICAL_GROUPS.map((grp) => (
-						<div
-							key={grp.id}
-							className="flex flex-wrap items-center gap-1.5"
-							data-testid={`vita-classical-group-${grp.id}`}
-						>
-							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] w-16 shrink-0">
-								Гр. {grp.id}:
-							</span>
-							<div className="flex flex-wrap items-center gap-1.5 flex-1">
-								{grp.shades.map((shade) => {
-									const isSelected = selectedShade === shade;
-									const swatch = SHADE_SWATCH_MAP[shade];
-
-									return (
-										<button
-											key={shade}
-											type="button"
-											onClick={() => onSelectShade(shade)}
-											aria-label={`Оттенок ${shade}`}
-											title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок ${shade}`}
-											className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-												isSelected
-													? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
-											}`}
-											data-testid={`vita-shade-${shade}`}
-										>
-											<span
-												className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-												style={{
-													backgroundColor: swatch?.bg || "#f5f0eb",
-													borderColor: swatch?.border || "#d1c7bd",
-												}}
-												aria-hidden="true"
-											/>
-											<span>{shade}</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-					))}
-
-					{/* Дополнительная строка Bleach (BL1..BL4) прямо в Classical для быстрой доступности */}
-					<div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200/80 dark:border-slate-700/80">
-						<span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 w-16 shrink-0">
-							Bleach:
-						</span>
-						<div className="flex flex-wrap items-center gap-1.5 flex-1">
-							{["BL1", "BL2", "BL3", "BL4"].map((shade) => {
-								const isSelected = selectedShade === shade;
-								const swatch = SHADE_SWATCH_MAP[shade];
-
-								return (
-									<button
-										key={shade}
-										type="button"
-										onClick={() => onSelectShade(shade)}
-										aria-label={`Оттенок Bleach ${shade}`}
-										title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок ${shade}`}
-										className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-											isSelected
-												? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-												: "bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-										}`}
-										data-testid={`vita-shade-${shade}`}
-									>
-										<span
-											className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-											style={{
-												backgroundColor: swatch?.bg || "#ffffff",
-												borderColor: swatch?.border || "#ded9cc",
-											}}
-											aria-hidden="true"
-										/>
-										<span>{shade}</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				</div>
+				<DentalLabClassicalGrid
+					selectedShade={selectedShade}
+					onSelectShade={onSelectShade}
+				/>
 			)}
-
-			{/* 2. Сетка VITA 3D-Master (Уровни L1..L5) */}
 			{currentSystem === "3d_master" && (
-				<div className="space-y-2">
-					{VITA_3D_MASTER_GROUPS.map((grp) => (
-						<div
-							key={grp.level}
-							className="flex flex-col sm:flex-row sm:items-center gap-1.5"
-							data-testid={`vita-3dmaster-group-l${grp.level}`}
-						>
-							<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-24 shrink-0">
-								{grp.name}:
-							</span>
-							<div className="flex flex-wrap items-center gap-1.5 flex-1 max-w-full overflow-x-auto scrollbar-none overscroll-contain py-0.5">
-								{grp.shades.map((shade) => {
-									const isSelected = selectedShade === shade;
-									const swatch = SHADE_SWATCH_MAP[shade];
-
-									return (
-										<button
-											key={shade}
-											type="button"
-											onClick={() => onSelectShade(shade)}
-											aria-label={`Оттенок 3D-Master ${shade}`}
-											title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок 3D-Master ${shade}`}
-											className={`min-h-[44px] sm:min-h-[48px] min-w-[50px] sm:min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-												isSelected
-													? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
-											}`}
-											data-testid={`vita-shade-${shade}`}
-										>
-											<span
-												className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-												style={{
-													backgroundColor: swatch?.bg || "#f5f0eb",
-													borderColor: swatch?.border || "#d1c7bd",
-												}}
-												aria-hidden="true"
-											/>
-											<span>{shade}</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-					))}
-				</div>
+				<DentalLab3dMasterGrid
+					selectedShade={selectedShade}
+					onSelectShade={onSelectShade}
+				/>
 			)}
-
-			{/* 3. Сетка Bleach (0M1-0M3 и BL1-BL4) */}
 			{currentSystem === "bleach" && (
-				<div className="space-y-2">
-					<div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 w-28 shrink-0">
-							3D Bleach:
-						</span>
-						<div className="flex flex-wrap items-center gap-1.5 flex-1 max-w-full overflow-x-auto scrollbar-none overscroll-contain py-0.5">
-							{["0M1", "0M2", "0M3"].map((shade) => {
-								const isSelected = selectedShade === shade;
-								const swatch = SHADE_SWATCH_MAP[shade];
-
-								return (
-									<button
-										key={shade}
-										type="button"
-										onClick={() => onSelectShade(shade)}
-										aria-label={`Оттенок 3D Bleach ${shade}`}
-										title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок ${shade}`}
-										className={`min-h-[44px] sm:min-h-[48px] min-w-[56px] sm:min-w-[64px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-											isSelected
-												? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-												: "bg-teal-50 dark:bg-teal-950/40 text-teal-950 dark:text-teal-100 border border-teal-300 dark:border-teal-700 hover:bg-teal-100 dark:hover:bg-teal-900/50"
-										}`}
-										data-testid={`vita-shade-${shade}`}
-									>
-										<span
-											className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-											style={{
-												backgroundColor: swatch?.bg || "#ffffff",
-												borderColor: swatch?.border || "#ded9cc",
-											}}
-											aria-hidden="true"
-										/>
-										<span>{shade}</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					<div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-						<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-28 shrink-0">
-							Ivoclar Bleach:
-						</span>
-						<div className="flex flex-wrap items-center gap-1.5 flex-1 max-w-full overflow-x-auto scrollbar-none overscroll-contain py-0.5">
-							{["BL1", "BL2", "BL3", "BL4"].map((shade) => {
-								const isSelected = selectedShade === shade;
-								const swatch = SHADE_SWATCH_MAP[shade];
-
-								return (
-									<button
-										key={shade}
-										type="button"
-										onClick={() => onSelectShade(shade)}
-										aria-label={`Оттенок Ivoclar Bleach ${shade}`}
-										title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок ${shade}`}
-										className={`min-h-[44px] sm:min-h-[48px] min-w-[56px] sm:min-w-[64px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-											isSelected
-												? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
-										}`}
-										data-testid={`vita-shade-${shade}`}
-									>
-										<span
-											className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-											style={{
-												backgroundColor: swatch?.bg || "#ffffff",
-												borderColor: swatch?.border || "#ded9cc",
-											}}
-											aria-hidden="true"
-										/>
-										<span>{shade}</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				</div>
+				<DentalLabBleachGrid
+					selectedShade={selectedShade}
+					onSelectShade={onSelectShade}
+				/>
 			)}
-
-			{/* 4. Сетка оттенков культи (IPS Natural Die ND1–ND9) при выборе таба Культя */}
 			{currentSystem === "stump" && (
-				<div className="space-y-2.5" data-testid="stump-tab-content">
-					<div className="flex items-center justify-between flex-wrap gap-1">
-						<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-							Эталон цвета культи препарированного зуба (IPS Natural Die ND1–ND9):
-						</span>
-						{selectedStumpShade && onSelectStumpShade && (
-							<button
-								type="button"
-								onClick={() => onSelectStumpShade("")}
-								className="text-[11px] text-[var(--muted,#64748b)] hover:text-rose-600 underline cursor-pointer"
-							>
-								Сбросить культю
-							</button>
-						)}
-					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-						{STUMP_NATURAL_DIE_SHADES.map((nd) => {
-							const isSelected = selectedStumpShade === nd.id;
-							const swatch = SHADE_SWATCH_MAP[nd.id];
-
-							return (
-								<button
-									key={nd.id}
-									type="button"
-									onClick={() => onSelectStumpShade?.(isSelected ? "" : nd.id)}
-									data-testid={`stump-tab-shade-${nd.id}`}
-									className={`min-h-[50px] p-2 text-left rounded-lg border text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
-										isSelected
-											? "bg-teal-500/15 border-teal-600 font-bold text-teal-800 dark:text-teal-200 ring-2 ring-teal-500/30 shadow-xs"
-											: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
-									}`}
-								>
-									<div className="flex items-center gap-2 min-w-0">
-										<span
-											className="w-4 h-4 rounded-full shrink-0 border border-slate-400 dark:border-slate-500 shadow-2xs"
-											style={{ backgroundColor: swatch?.bg || "#ebdcc9" }}
-											aria-hidden="true"
-										/>
-										<div className="min-w-0 truncate">
-											<div className="font-bold font-mono text-xs">{nd.id}</div>
-											<div className="text-[10px] text-[var(--muted,#64748b)] truncate">{nd.name.replace(/^ND\d+\s*—\s*/, "")}</div>
-										</div>
-									</div>
-									{isSelected && <Check size={14} className="text-teal-600 shrink-0" />}
-								</button>
-							);
-						})}
-					</div>
-				</div>
+				<DentalLabStumpGrid
+					selectedStumpShade={selectedStumpShade}
+					onSelectStumpShade={onSelectStumpShade}
+					mode="tab"
+				/>
 			)}
-
-			{/* 4. Опциональный селектор оттенка культи (IPS Natural Die ND1–ND9) */}
 			{showStumpSelector && (
-				<div className="pt-2 border-t border-[var(--line,#cbd5e1)] space-y-2" data-testid="stump-shade-container">
-					<div className="flex items-center justify-between flex-wrap gap-1">
-						<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-							Цвет культи препарированного зуба (IPS Natural Die ND1–ND9):
-						</span>
-						{selectedStumpShade && onSelectStumpShade && (
-							<button
-								type="button"
-								onClick={() => onSelectStumpShade("")}
-								className="text-[11px] text-[var(--muted,#64748b)] hover:text-rose-600 underline cursor-pointer"
-							>
-								Сбросить культю
-							</button>
-						)}
-					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
-						{STUMP_NATURAL_DIE_SHADES.map((nd) => {
-							const isSelected = selectedStumpShade === nd.id;
-							const swatch = SHADE_SWATCH_MAP[nd.id];
-
-							return (
-								<button
-									key={nd.id}
-									type="button"
-									onClick={() => onSelectStumpShade?.(isSelected ? "" : nd.id)}
-									data-testid={`stump-shade-${nd.id}`}
-									className={`min-h-[48px] px-2.5 py-1.5 text-left rounded-lg border text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
-										isSelected
-											? "bg-teal-500/15 border-teal-600 font-bold text-teal-800 dark:text-teal-200 ring-2 ring-teal-500/30"
-											: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
-									}`}
-								>
-									<div className="flex items-center gap-2 min-w-0">
-										<span
-											className="w-3.5 h-3.5 rounded-full shrink-0 border border-slate-400"
-											style={{ backgroundColor: swatch?.bg || "#ebdcc9" }}
-											aria-hidden="true"
-										/>
-										<span className="truncate font-semibold">{nd.id}</span>
-									</div>
-									{isSelected && <Check size={14} className="text-teal-600 shrink-0" />}
-								</button>
-							);
-						})}
-					</div>
-				</div>
+				<DentalLabStumpGrid
+					selectedStumpShade={selectedStumpShade}
+					onSelectStumpShade={onSelectStumpShade}
+					mode="inline"
+				/>
 			)}
-
-			{/* 5. Клиническая фотография расцветки VITA с зубом */}
-			<div className="pt-2 border-t border-slate-200 dark:border-slate-700/80 space-y-2" data-testid="shade-picker-photo-section">
-				<div className="flex items-center justify-between flex-wrap gap-2">
-					<div className="flex items-center gap-1.5">
-						<Camera size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Фотография расцветки с зубом:
-						</span>
-					</div>
-					{shadePhotoUrl && (
-						<span className="text-[11px] font-bold text-teal-600 dark:text-teal-400 inline-flex items-center gap-1">
-							<CheckCircle2 size={12} />
-							<span>Фото эталона прикреплено</span>
-						</span>
-					)}
-				</div>
-
-				{shadePhotoUrl ? (
-					<div className="flex items-center gap-3 p-2 rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)]">
-						<div className="w-14 h-14 rounded-md overflow-hidden border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0 flex items-center justify-center relative">
-							<img
-								src={shadePhotoUrl}
-								alt="Эталон VITA"
-								className="w-full h-full object-cover z-10"
-								onError={(e) => {
-									(e.currentTarget as HTMLElement).style.display = "none";
-								}}
-							/>
-							<ToothShadeGuide size={22} className="text-teal-600/60 absolute pointer-events-none" />
-						</div>
-						<div className="flex-1 min-w-0">
-							<div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-								{shadePhotoUrl.split("/").pop()}
-							</div>
-							<div className="text-[10px] text-slate-500 dark:text-slate-400">
-								Эталон: VITA {selectedShade}
-							</div>
-							{onShadePhotoChange && (
-								<button
-									type="button"
-									onClick={() => onShadePhotoChange(null)}
-									className="text-[11px] font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 mt-1 cursor-pointer"
-									data-testid="remove-shade-picker-photo-btn"
-								>
-									<Trash2 size={11} />
-									<span>Удалить</span>
-								</button>
-							)}
-						</div>
-					</div>
-				) : (
-					<div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white/40 dark:bg-slate-900/30">
-						<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-							Снимок расцветки VITA {selectedShade} у зуба
-						</span>
-						<div className="flex items-center gap-1.5 shrink-0">
-							<label className="min-h-[36px] px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1 shadow-2xs transition cursor-pointer">
-								<Camera size={12} />
-								<span>Фото</span>
-								<input
-									type="file"
-									accept="image/jpeg,image/png,image/webp"
-									className="hidden"
-									data-testid="shade-picker-file-input"
-									onChange={(e) => {
-										const file = e.target.files?.[0];
-										if (!file) return;
-										const reader = new FileReader();
-										reader.onload = (ev) => {
-											if (typeof ev.target?.result === "string") {
-												onShadePhotoChange?.(ev.target.result);
-											}
-										};
-										reader.readAsDataURL(file);
-									}}
-								/>
-							</label>
-							{onShadePhotoChange && (
-								<button
-									type="button"
-									onClick={() => onShadePhotoChange(`photos/vita_${selectedShade.toLowerCase()}_shade_reference.jpg`)}
-									className="min-h-[36px] px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-									data-testid="shade-picker-sample-photo-btn"
-								>
-									Образец
-								</button>
-							)}
-						</div>
-					</div>
-				)}
-			</div>
+			<DentalLabPhotoReference
+				selectedShade={selectedShade}
+				shadePhotoUrl={shadePhotoUrl}
+				onShadePhotoChange={onShadePhotoChange}
+			/>
 		</div>
 	);
 }

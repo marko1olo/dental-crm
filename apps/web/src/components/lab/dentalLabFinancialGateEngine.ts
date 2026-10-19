@@ -1,83 +1,19 @@
 /**
- * dentalLabFinancialGateEngine.ts — Финансовый шлюз наряд-заказов в зуботехническую лабораторию (ЗТЛ).
- * 
- * НОРМАТИВНАЯ И ФИНАНСОВАЯ ЛОГИКА:
- * • Защита клиники от неликвидных лабораторных затрат (CAD/CAM фрезерование, диоксид циркония, элайнеры).
- * • Порог блокировки: если по текущему ортопедическому этапу оплачено < 50% сметы (или депозита недостаточно),
- *   отправка наряда в лабораторию блокируется.
- * • Исключение: персональный оверрайд (разрешение) Главного врача клиники («Отправить под ответственность главврача»).
- * • Интеграция с 1-клик банковской рассрочкой (Сбер / Т-Банк / Подели) для мгновенного закрытия аванса пациентом.
+ * dentalLabFinancialGateEngine.ts — Финансовый контроль наряд-заказов в ЗТЛ.
+ * Mandate 8e: врач сам решает, примерять ли коронку, кнопка никогда не блокируется.
+ * Mandate 8b: строго <= 120 строк.
  */
 
-import {
-	type Kopecks,
-	formatKopecksRu,
-	percentageOfKopecks,
-} from "@dental/shared";
+import { formatKopecksRu, percentageOfKopecks } from "@dental/shared";
+import type {
+	DentalLabFinancialGateParams,
+	DentalLabFinancialGateResult,
+	DentalLabGateStatus,
+} from "./financialGateModules/dentalLabFinancialGateTypes";
 
-export type DentalLabGateStatus =
-	| "CLEARED" // Оплачено >= 50%, наряд разрешен к отправке в ЗТЛ
-	| "BLOCKED_REQUIRES_ADVANCE" // Оплачено < 50%, требуется внесение аванса или рассрочка
-	| "CHIEF_DOCTOR_OVERRIDE" // Одобрено главным врачом под личную ответственность
-	| "DOCTOR_OVERRIDE"; // Согласовано лечащим врачом (клиническая необходимость / срочно)
+export * from "./financialGateModules/dentalLabFinancialGateOverrides";
+export * from "./financialGateModules/dentalLabFinancialGateTypes";
 
-export interface DentalLabFinancialGateParams {
-	readonly stageTotalKopecks: Kopecks;
-	readonly paidKopecks: Kopecks;
-	readonly availableDepositKopecks?: Kopecks | undefined;
-	readonly labOrderPriceKopecks?: Kopecks | undefined;
-	readonly minAdvancePercent?: number | undefined; // По умолчанию 50%
-	readonly chiefDoctorOverride?: {
-		readonly authorized: boolean;
-		readonly doctorName: string;
-		readonly timestampIso: string;
-		readonly reason?: string | undefined;
-	} | undefined;
-	readonly doctorOverride?: {
-		readonly authorized: boolean;
-		readonly doctorName: string;
-		readonly timestampIso: string;
-		readonly reason?: string | undefined;
-	} | undefined;
-	/**
-	 * Возраст плана лечения в днях.
-	 * Согласно Мандату 8e: «Истечение 30 дней с момента составления плана лечения
-	 * НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату.»
-	 */
-	readonly treatmentPlanAgeDays?: number | undefined;
-	/** Флаг истечения срока фиксации цен плана (>30 дней). Не блокирует ЗТЛ! */
-	readonly isPlanExpired?: boolean | undefined;
-	/** Срочная временная работа (PMMA / mock-up / защитная каппа) — отправка без аванса по Мандату 8e */
-	readonly isUrgentTemporary?: boolean | undefined;
-}
-
-export interface DentalLabFinancialGateResult {
-	readonly isGatePassed: boolean;
-	readonly gateStatus: DentalLabGateStatus;
-	readonly isUrgentBypassed?: boolean | undefined;
-	readonly minAdvancePercent: number;
-	readonly stageTotalKopecks: Kopecks;
-	readonly totalPaidAndCoveredKopecks: Kopecks;
-	readonly requiredAdvanceKopecks: Kopecks;
-	readonly missingAdvanceKopecks: Kopecks;
-	readonly missingAdvanceRub: number;
-	readonly paidPercent: number;
-	readonly warningMessageRu: string;
-	readonly detailedReasonRu: string;
-	readonly chiefDoctorOverrideAuthorized: boolean;
-	readonly isPlanExpiredNotice?: string | undefined;
-	readonly canSendInOneClick: boolean;
-	readonly isSoftWarning: boolean;
-	readonly overrideMeta?: {
-		readonly doctorName: string;
-		readonly timestampIso: string;
-		readonly reason?: string | undefined;
-	} | undefined;
-}
-
-/**
- * Проверка финансового шлюза ЗТЛ
- */
 export function checkDentalLabFinancialGate(
 	params: DentalLabFinancialGateParams,
 ): DentalLabFinancialGateResult {
@@ -85,91 +21,73 @@ export function checkDentalLabFinancialGate(
 	const stageTotal = Math.max(0, params.stageTotalKopecks ?? 0);
 	const directPaid = Math.max(0, params.paidKopecks ?? 0);
 	const deposit = Math.max(0, params.availableDepositKopecks ?? 0);
-
-	// Суммарное покрытие: внесенный аванс по этапу + свободный депозит пациента
 	const totalCovered = directPaid + deposit;
 
-	// Требуемый аванс (по умолчанию 50% от общей стоимости этапа или стоимости наряда)
-	const baseAmountKopecks = stageTotal > 0 ? stageTotal : (params.labOrderPriceKopecks ?? 0);
-	const requiredAdvanceKopecks = percentageOfKopecks(
-		baseAmountKopecks,
+	const baseAmount =
+		stageTotal > 0 ? stageTotal : (params.labOrderPriceKopecks ?? 0);
+	const requiredAdvance = percentageOfKopecks(
+		baseAmount,
 		minAdvancePercent * 100,
 	);
-
-	const missingAdvanceKopecks = Math.max(0, requiredAdvanceKopecks - totalCovered);
-	const missingAdvanceRub = Math.ceil(missingAdvanceKopecks / 100);
-
+	const missingAdvance = Math.max(0, requiredAdvance - totalCovered);
+	const missingRub = Math.ceil(missingAdvance / 100);
 	const paidPercent =
-		baseAmountKopecks > 0
-			? Math.min(100, Math.round((totalCovered / baseAmountKopecks) * 100))
+		baseAmount > 0
+			? Math.min(100, Math.round((totalCovered / baseAmount) * 100))
 			: 100;
 
-	// Проверка оверрайда врача или главврача (клиническая автономия)
 	const activeOverride = params.doctorOverride?.authorized
 		? params.doctorOverride
 		: params.chiefDoctorOverride?.authorized
-		? params.chiefDoctorOverride
-		: undefined;
+			? params.chiefDoctorOverride
+			: undefined;
 	const isOverrideActive = Boolean(activeOverride?.authorized);
 
-	// Мандат 8e: Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ
-	// создание нарядов ЗТЛ, оказание услуг или оплату.
 	const isPlanOver30Days =
-		(params.treatmentPlanAgeDays !== undefined && params.treatmentPlanAgeDays > 30) ||
+		(params.treatmentPlanAgeDays !== undefined &&
+			params.treatmentPlanAgeDays > 30) ||
 		params.isPlanExpired === true;
 	const planExpiredNotice = isPlanOver30Days
 		? "План составлен более 30 дней назад, цены могут быть скорректированы: срок плана НЕ БЛОКИРУЕТ (не блокирует) создание наряда ЗТЛ, услуги и оплату."
 		: undefined;
 
 	const isUrgent = Boolean(params.isUrgentTemporary);
+	let gateStatus: DentalLabGateStatus = "CLEARED";
+	let isGatePassed = true;
 
-	let gateStatus: DentalLabGateStatus;
-	let isGatePassed: boolean;
-
-	if (isUrgent) {
-		gateStatus = "CLEARED";
-		isGatePassed = true;
-	} else if (totalCovered >= requiredAdvanceKopecks || baseAmountKopecks === 0) {
+	if (isUrgent || totalCovered >= requiredAdvance || baseAmount === 0) {
 		gateStatus = "CLEARED";
 		isGatePassed = true;
 	} else if (isOverrideActive) {
-		gateStatus = params.doctorOverride?.authorized ? "DOCTOR_OVERRIDE" : "CHIEF_DOCTOR_OVERRIDE";
+		gateStatus = params.doctorOverride?.authorized
+			? "DOCTOR_OVERRIDE"
+			: "CHIEF_DOCTOR_OVERRIDE";
 		isGatePassed = true;
 	} else {
 		gateStatus = "BLOCKED_REQUIRES_ADVANCE";
 		isGatePassed = false;
 	}
 
-	const formattedMissingAdvance = formatKopecksRu(missingAdvanceKopecks);
-	const formattedRequiredAdvance = formatKopecksRu(requiredAdvanceKopecks);
-
+	const missingStr = formatKopecksRu(missingAdvance);
+	const reqStr = formatKopecksRu(requiredAdvance);
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Рекомендуется аванс 50%. Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Автономия врача).`
-			: gateStatus === "DOCTOR_OVERRIDE"
-				? `Наряд ЗТЛ отправлен в производство под клиническую ответственность лечащего врача (${activeOverride?.doctorName || "Лечащий врач"}).`
-				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
-				? `Наряд ЗТЛ отправлен в производство под ответственность Главного врача (${activeOverride?.doctorName || "Главный врач"}).`
-				: "Финансовый контроль пройден: аванс за этап внесен в полном объеме.";
-
+			? `Рекомендуется аванс ${minAdvancePercent}%. Внесено ${paidPercent}%. Недостающий аванс: ${missingStr}. Лечащий врач вправе отправить наряд в ЗТЛ под личную ответственность.`
+			: "Финансовый контроль пройден: аванс за этап внесен.";
 	const detailedReasonRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из требуемых ${minAdvancePercent}% (${formattedRequiredAdvance}). Врач вправе отправить наряд в ЗТЛ («Отправить в работу без аванса (Автономия врача)»).`
-			: gateStatus === "DOCTOR_OVERRIDE"
-				? `Клиническое решение лечащего врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Основание: ${activeOverride?.reason || "Отправить в работу без аванса (Автономия врача)"}.`
-				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
-				? `Авторизован оверрайд главного врача: ${activeOverride?.doctorName} в ${activeOverride?.timestampIso?.slice(0, 16) || "сегодня"}. Недостающий аванс: ${formattedMissingAdvance}.`
-				: `Внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}), что полностью покрывает лабораторный депозит этапа (${formattedRequiredAdvance}).`;
+			? `По этапу внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}) из рекомендуемых ${minAdvancePercent}% (${reqStr}). Врач вправе согласовать наряд без блокировок.`
+			: `Внесено ${paidPercent}% (${formatKopecksRu(totalCovered)}), покрывает ${reqStr}.`;
 
 	return {
 		isGatePassed,
 		gateStatus,
 		minAdvancePercent,
-		stageTotalKopecks: baseAmountKopecks,
+		stageTotalKopecks: baseAmount,
 		totalPaidAndCoveredKopecks: totalCovered,
-		requiredAdvanceKopecks,
-		missingAdvanceKopecks,
-		missingAdvanceRub,
+		requiredAdvanceKopecks: requiredAdvance,
+		missingAdvanceKopecks: missingAdvance,
+		missingAdvanceRub: missingRub,
 		paidPercent,
 		warningMessageRu,
 		detailedReasonRu,
@@ -187,45 +105,5 @@ export function checkDentalLabFinancialGate(
 					},
 				}
 			: {}),
-	};
-}
-
-/**
- * Создание записи об отправке наряда под клиническую ответственность лечащего врача (1 клик)
- */
-export function createDoctorClinicalOverride(
-	doctorName: string,
-	reason = "Отправить в работу без аванса (Автономия врача)",
-): {
-	readonly authorized: boolean;
-	readonly doctorName: string;
-	readonly timestampIso: string;
-	readonly reason: string;
-} {
-	return {
-		authorized: true,
-		doctorName: doctorName.trim() || "Лечащий врач",
-		timestampIso: new Date().toISOString(),
-		reason: reason.trim(),
-	};
-}
-
-/**
- * Создание записи об оверрайде Главным врачом
- */
-export function createChiefDoctorOverride(
-	doctorName: string,
-	reason = "Согласовано ввиду срочности клинического этапа",
-): {
-	readonly authorized: boolean;
-	readonly doctorName: string;
-	readonly timestampIso: string;
-	readonly reason: string;
-} {
-	return {
-		authorized: true,
-		doctorName: doctorName.trim() || "Главный врач клиники",
-		timestampIso: new Date().toISOString(),
-		reason: reason.trim(),
 	};
 }
