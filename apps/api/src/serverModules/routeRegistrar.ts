@@ -60,6 +60,7 @@ import { registerMigrationRoutes } from "../routes/migration.js";
 import { registerMigrationRunRoutes } from "../routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "../routes/odontogram.js";
 import { registerPeriodontogramRoutes } from "../routes/periodontogram.js";
+import { registerPediatricRoutes as registerPediatricDomainRoutes } from "../routes/pediatric.js";
 import { registerOrthodonticsRoutes } from "../routes/orthodontics.js";
 import registerToothHistoryRoutes from "../routes/toothHistory.js";
 import { registerOutpatientRoutes } from "../routes/outpatient.js";
@@ -113,6 +114,8 @@ import { workspaceProfileRoutes } from "../routes/workspaceProfile.js";
 import { registerLanNetworkRoutes } from "../routes/lanNetwork.js";
 import { registerXrayRoutes } from "../routes/xray.js";
 import { registerYandexCalendarRoutes } from "../routes/yandexCalendar.js";
+import { registerWarrantyRoutes } from "../routes/warranty.js";
+import { registerShiftRoutes } from "../routes/shifts/index.js";
 
 /**
  * Регистрация всех доменных групп маршрутов Dente API.
@@ -152,6 +155,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	// tooth-states/batch not found», поэтому состояния зубов физически не могли
 	// сохраниться, а вкладка «История зуба» не имела источника данных.
 	await registerOdontogramRoutes(app);
+	await registerPediatricDomainRoutes(app);
 	await registerPeriodontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
 	await registerOutpatientRoutes(app);
@@ -292,4 +296,10 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 
 	// Автономный клинический агент DENTE (/api/agent/chat, /api/agent/tools).
 	await app.register(registerAgentRoutes);
+
+	// Гарантийные паспорта и публичная верификация QR
+	await app.register(registerWarrantyRoutes);
+
+	// Смена врача и авто-закрытие по расписанию (Mandates 8e, 8n)
+	await registerShiftRoutes(app);
 }

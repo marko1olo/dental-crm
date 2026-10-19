@@ -40,8 +40,5 @@ export interface MobileShiftCockpitProps {
 	readonly onSelectAppointment?: ((appointmentId: string) => void) | undefined;
 	readonly onOpenPatientEmk?: ((patientId: string) => void) | undefined;
 	readonly onOpenCashCheckout?: ((patientId: string) => void) | undefined;
-	readonly nextDoctorName?: string | undefined;
-	readonly chairRentalTimerDisplay?: string | undefined;
-	readonly isChairRentalActive?: boolean | undefined;
 	readonly userRole?: string | undefined;
 }

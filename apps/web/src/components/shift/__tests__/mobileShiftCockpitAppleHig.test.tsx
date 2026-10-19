@@ -13,7 +13,7 @@ function cleanSsrHtml(html: string): string {
 }
 
 describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", () => {
-	it("1. ShiftMetricsHeader: renders Grouped Card with 42 500 ₽ revenue, 3 channels and chair rental timer", () => {
+	it("1. ShiftMetricsHeader: renders Grouped Card with 42 500 ₽ revenue, 3 channels and shift duration timer (no carsharing rental timer)", () => {
 		const rawHtml = renderToString(
 			React.createElement(ShiftMetricsHeader, {
 				isShiftOpen: true,
@@ -28,8 +28,6 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 				doctorCommissionPct: 30,
 				estimatedDoctorPayoutRub: 12750,
 				elapsedTimeDisplay: "06:15:30",
-				chairRentalTimerDisplay: "02:45",
-				isChairRentalActive: true,
 			}),
 		);
 		const html = cleanSsrHtml(rawHtml);
@@ -56,9 +54,13 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 		assert.ok(html.includes("Начислено врачу (30%):"));
 		assert.ok(html.includes("12 750 ₽"));
 
-		// Timers: Shift and Chair Rental
+		// Timer: Shift Duration
 		assert.ok(html.includes("06:15:30"));
-		assert.ok(html.includes("Аренда: 02:45"));
+		assert.equal(
+			html.includes("Аренда:"),
+			false,
+			"В шапке смены НЕ должно быть таймера поминутной аренды кресла",
+		);
 
 		// Zero cartoon emojis
 		assert.equal(

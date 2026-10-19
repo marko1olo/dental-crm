@@ -116,6 +116,9 @@ export function useShiftViewController({
 		let isCancelled = false;
 		async function sync() {
 			try {
+				try {
+					await fetch("/api/shifts/auto-close-check", { method: "POST" });
+				} catch {}
 				const res = await fetch("/api/cash/shift-reconciliation");
 				if (!res.ok) return;
 				const data = await res.json();

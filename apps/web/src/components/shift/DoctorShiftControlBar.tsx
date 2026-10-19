@@ -36,7 +36,6 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React
 	onOpenChairRentalAct,
 	chairStatus,
 	onChangeChairStatus,
-	onHandoverShift,
 	onPrintPreliminaryReport,
 	onCallAssistant,
 	className = "",

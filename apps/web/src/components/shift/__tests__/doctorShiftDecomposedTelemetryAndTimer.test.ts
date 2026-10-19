@@ -56,11 +56,9 @@ describe("Doctor Shift Realtime Telemetry, Timer & Chair Status (LOW-SPEC CHAIRS
 	it("DoctorShiftActionsMenu: renders compact dropdown trigger and secondary actions", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(DoctorShiftActionsMenu, {
-				onHandoverShift: () => {},
 				onPrintPreliminaryReport: () => {},
 				onCallAssistant: () => {},
 				onOpenT13Timesheet: () => {},
-				isChairRental: false,
 			}),
 		);
 

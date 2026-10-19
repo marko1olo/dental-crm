@@ -100,43 +100,30 @@ describe("ChairRentalShiftWidget (Виджет субаренды кресла �
 		);
 	});
 
-	it("4. Поддерживает автономный старт аренды кресла соло-врачом в 1 клик (Мандаты 8e, 8n)", () => {
-		// Неактивная аренда — кнопка старта
-		const idleHtml = cleanSsrHtml(
+	it("4. Выжжен каршеринговый симулятор: отсутствуют кнопки поминутного старта/остановки аренды и секундомеры (Мандаты 8e, 8n)", () => {
+		const html = cleanSsrHtml(
 			renderToString(
 				React.createElement(ChairRentalShiftWidget, {
 					doctorFullName: "Барабаш С.В.",
-					initialRentalActive: false,
+					initialGrossRevenueRub: 50000,
 				}),
 			),
 		);
 
-		assert.ok(idleHtml.includes("Рабочее место:"));
-		assert.ok(idleHtml.includes("Кресло №1 (Anthos A5)"));
-		assert.ok(idleHtml.includes("Арендовать кресло и начать приём"));
 		assert.equal(
-			EMOJI_REGEX.test(idleHtml),
+			html.includes("Арендовать кресло и начать приём"),
 			false,
-			"Idle аренда кресла не должна содержать эмодзи",
+			"В виджете субаренды НЕ должно быть симулятора старта аренды (CRM != Reality Simulator)",
 		);
-
-		// Активная аренда — бейдж открытого приёма и кнопка завершения
-		const activeHtml = cleanSsrHtml(
-			renderToString(
-				React.createElement(ChairRentalShiftWidget, {
-					doctorFullName: "Барабаш С.В.",
-					initialRentalActive: true,
-					initialChairId: "chair-01",
-				}),
-			),
-		);
-
-		assert.ok(activeHtml.includes("Кресло арендовано · Приём открыт"));
-		assert.ok(activeHtml.includes("Завершить аренду кресла"));
 		assert.equal(
-			EMOJI_REGEX.test(activeHtml),
+			html.includes("Завершить аренду кресла"),
 			false,
-			"Active аренда кресла не должна содержать эмодзи",
+			"В виджете субаренды НЕ должно быть кнопки завершения аренды со счетчиком",
+		);
+		assert.equal(
+			EMOJI_REGEX.test(html),
+			false,
+			"Виджет субаренды не должен содержать эмодзи",
 		);
 	});
 });

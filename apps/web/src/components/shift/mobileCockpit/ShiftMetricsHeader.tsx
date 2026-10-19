@@ -23,7 +23,6 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 	elapsedTimeDisplay,
 	topbarOnly,
 	heroOnly,
-	chairRentalTimerDisplay,
 	userRole,
 }) => {
 	const renderTopbar = () => (
@@ -40,21 +39,6 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 				</span>
 			</div>
 			<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-				{chairRentalTimerDisplay && (
-					<div
-						className="mobile-shift-duration-badge"
-						style={{
-							background: "color-mix(in srgb, var(--ok-fg, #15803d) 12%, transparent)",
-							color: "var(--ok-fg, #15803d)",
-							borderColor: "color-mix(in srgb, var(--ok-fg, #15803d) 25%, transparent)",
-						}}
-						title="Таймер аренды кресла"
-						data-testid="chair-rental-timer"
-					>
-						<Clock size={13} aria-hidden="true" />
-						<span>Аренда: {chairRentalTimerDisplay}</span>
-					</div>
-				)}
 				<div className="mobile-shift-duration-badge" title="Время текущей рабочей смены" data-testid="shift-duration-timer">
 					<Clock size={13} aria-hidden="true" />
 					<span>{elapsedTimeDisplay}</span>

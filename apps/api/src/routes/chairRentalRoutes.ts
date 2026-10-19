@@ -6,10 +6,7 @@
  * - GET /api/doctor/chair-rental/summary: Doctor-scoped ledger summary with strict RBAC isolation.
  */
 
-import fs from "node:fs";
-import path from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { and, eq, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
@@ -391,132 +388,26 @@ export async function registerChairRentalRoutes(app: FastifyInstance): Promise<v
 	);
 
 	/**
-	 * Autonomous Chair Rental Session Management (Mandates 8e, 8n)
-	 * Allows solo doctor to instantly book & start chair rental without multi-level admin approval.
+	 * Anti-Reality-Simulator Law (Mandates 8e, 8n):
+	 * PURGED: Simulated carsharing chair rental timers with interval stopwatches.
+	 * Returns clean static state without artificial ticking timers or chair lockouts.
 	 */
-	const activeChairRentalSessions = new Map<string, {
-		isActive: boolean;
-		doctorId: string;
-		organizationId: string;
-		chairId: string;
-		chairName: string;
-		model: ChairRentalModel;
-		startedAt: string;
-		stoppedAt?: string;
-		elapsedMinutes?: number;
-		rateRub?: number;
-	}>();
-
 	app.post(
 		"/api/doctor/chair-rental/session",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"chair rental session start/stop",
-			);
-			if (!orgId) return reply;
-
-			const identity = getRequestIdentity(request);
-			const targetDoctorId = identity.userId || "00000000-0000-0000-0000-000000000001";
-			const sessionKey = `${orgId}:${targetDoctorId}`;
-
-			const bodySchema = z.object({
-				action: z.enum(["start", "stop"]),
-				chairId: z.string().optional(),
-				chairName: z.string().optional(),
-				model: z.enum(["hourly", "per_shift", "revenue_percent", "fixed_monthly"]).optional(),
-				rateRub: z.number().optional(),
-			});
-
-			const parsed = bodySchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры сессии субаренды.",
-					issues: parsed.error.issues,
-				});
-			}
-
-			const { action, chairId, chairName, model, rateRub } = parsed.data;
-
-			if (action === "start") {
-				const session = {
-					isActive: true,
-					doctorId: targetDoctorId,
-					organizationId: orgId,
-					chairId: chairId || "chair-01",
-					chairName: chairName || "Кресло №1 (Anthos A5)",
-					model: model || "hourly",
-					startedAt: new Date().toISOString(),
-					rateRub: rateRub || 1500,
-				};
-				activeChairRentalSessions.set(sessionKey, session);
-
-				return reply.send({
-					success: true,
-					message: "Аренда кресла успешно начата. Приём открыт.",
-					session,
-				});
-			} else {
-				const existing = activeChairRentalSessions.get(sessionKey);
-				const now = new Date();
-				const startTime = existing?.startedAt ? new Date(existing.startedAt) : now;
-				const elapsedMinutes = Math.max(1, Math.round((now.getTime() - startTime.getTime()) / 60000));
-
-				const closedSession = {
+		async (_request: FastifyRequest, reply: FastifyReply) => {
+			return reply.send({
+				success: true,
+				message: "Субаренда кресла ведется по смене и акту сверки без каршеринговых секундомеров.",
+				session: {
 					isActive: false,
-					doctorId: targetDoctorId,
-					organizationId: orgId,
-					chairId: existing?.chairId || chairId || "chair-01",
-					chairName: existing?.chairName || chairName || "Кресло №1 (Anthos A5)",
-					model: existing?.model || model || "hourly",
-					startedAt: existing?.startedAt || now.toISOString(),
-					stoppedAt: now.toISOString(),
-					elapsedMinutes,
-					rateRub: existing?.rateRub || rateRub || 1500,
-				};
-
-				activeChairRentalSessions.delete(sessionKey);
-
-				return reply.send({
-					success: true,
-					message: "Аренда кресла завершена.",
-					session: closedSession,
-				});
-			}
+				},
+			});
 		},
 	);
 
 	app.get(
 		"/api/doctor/chair-rental/session",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"chair rental session read",
-			);
-			if (!orgId) return reply;
-
-			const identity = getRequestIdentity(request);
-			const targetDoctorId = identity.userId || "00000000-0000-0000-0000-000000000001";
-			const sessionKey = `${orgId}:${targetDoctorId}`;
-
-			const current = activeChairRentalSessions.get(sessionKey);
-			if (current && current.isActive) {
-				const now = new Date();
-				const startTime = new Date(current.startedAt);
-				const elapsedMinutes = Math.max(0, Math.round((now.getTime() - startTime.getTime()) / 60000));
-
-				return reply.send({
-					success: true,
-					session: {
-						...current,
-						elapsedMinutes,
-					},
-				});
-			}
-
+		async (_request: FastifyRequest, reply: FastifyReply) => {
 			return reply.send({
 				success: true,
 				session: {

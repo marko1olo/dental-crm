@@ -91,12 +91,10 @@ async function main() {
 
   const targetDirs = [
     "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\shift",
-    "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d93c9822-d8c2-48b0-8ca3-1e9fb5b4b5ff",
-    "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\2d41233f-cb42-451b-b625-8a85401ad490",
+    "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\840d025c-f804-42b4-bd0f-bdb907a708dc",
   ];
 
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await context.addInitScript(({ ct, st, uid }) => {
+  const initScript = ({ ct, st, uid }) => {
     localStorage.setItem("dente_clinic_token", ct);
     localStorage.setItem("dente_staff_token", st);
     localStorage.setItem("dente_active_role", "doctor");
@@ -132,46 +130,47 @@ async function main() {
         activeRole: "doctor",
       })
     );
-  }, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId });
+  };
+
+  // --- PC DESKTOP (1440x900) ---
+  console.log("\n=== 1. PC Desktop 1440x900 ===");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addInitScript(initScript, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId });
 
   const page = await context.newPage();
-  page.on("console", (msg) => console.log("PAGE LOG:", msg.type(), msg.text()));
   page.on("pageerror", (err) => console.error("PAGE ERROR:", err));
 
   console.log("Navigating to http://127.0.0.1:5173/#shift...");
   await page.goto("http://127.0.0.1:5173/#shift", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(3000);
-
-  const debugPath = path.join("C:\\Clinic_MVP\\dental-crm\\scripts", "probe_shift_debug.png");
-  await page.screenshot({ path: debugPath });
-  console.log("Captured debug screenshot to", debugPath);
+  await page.waitForTimeout(2000);
 
   await page.waitForSelector('[data-testid="shift-view-desktop"]', { timeout: 20000 });
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1000);
 
-  // 1. shift_cockpit_pc_light.png
-  console.log("Capturing shift_cockpit_pc_light.png...");
+  // 1. shift_cockpit_1440x900_light.png
+  console.log("Capturing shift_cockpit_1440x900_light.png...");
+  await saveProof(page, "shift_cockpit_1440x900_light.png", targetDirs);
   await saveProof(page, "shift_cockpit_pc_light.png", targetDirs);
 
-  // 2. shift_chairs_status_pc_light.png
-  console.log("Capturing shift_chairs_status_pc_light.png...");
-  await saveProof(page, "shift_chairs_status_pc_light.png", targetDirs, '[data-testid="shift-chair-status-card"]');
-
-  // 3. Open close modal
+  // 2. Open close modal (PC Light)
   console.log("Opening close shift modal...");
   const toggleBtn = await page.$('[data-testid="shift-toggle-btn"]');
   if (toggleBtn) {
     await toggleBtn.click();
     await page.waitForSelector('[data-testid="doctor-shift-close-modal"]', { timeout: 10000 });
     await page.waitForTimeout(600);
+    await saveProof(page, "shift_open_close_modal_pc_light.png", targetDirs);
+
+    // Close modal
+    const closeBtn = await page.$('[data-testid="doctor-shift-close-modal"] button');
+    if (closeBtn) {
+      await closeBtn.click();
+      await page.waitForTimeout(600);
+    }
   }
 
-  // 4. shift_open_close_modal_pc_light.png
-  console.log("Capturing shift_open_close_modal_pc_light.png...");
-  await saveProof(page, "shift_open_close_modal_pc_light.png", targetDirs);
-
   // Switch to dark theme
-  console.log("Switching to dark theme...");
+  console.log("Switching PC to dark theme...");
   await page.evaluate(() => {
     document.documentElement.setAttribute("data-theme", "dark");
     document.body.setAttribute("data-theme", "dark");
@@ -183,27 +182,55 @@ async function main() {
   });
   await page.waitForTimeout(600);
 
-  // 5. shift_open_close_modal_pc_dark.png
-  console.log("Capturing shift_open_close_modal_pc_dark.png...");
-  await saveProof(page, "shift_open_close_modal_pc_dark.png", targetDirs);
-
-  // Close the modal
-  const closeBtn = await page.$('[data-testid="doctor-shift-close-modal"] button');
-  if (closeBtn) {
-    await closeBtn.click();
-    await page.waitForTimeout(600);
-  }
-
-  // 6. shift_cockpit_pc_dark.png
-  console.log("Capturing shift_cockpit_pc_dark.png...");
+  // 3. shift_cockpit_1440x900_dark.png
+  console.log("Capturing shift_cockpit_1440x900_dark.png...");
+  await saveProof(page, "shift_cockpit_1440x900_dark.png", targetDirs);
   await saveProof(page, "shift_cockpit_pc_dark.png", targetDirs);
 
-  // 7. shift_chairs_status_pc_dark.png
-  console.log("Capturing shift_chairs_status_pc_dark.png...");
-  await saveProof(page, "shift_chairs_status_pc_dark.png", targetDirs, '[data-testid="shift-chair-status-card"]');
+  await context.close();
 
+  // --- MOBILE (390x844) ---
+  console.log("\n=== 2. Mobile 390x844 (Apple HIG) ===");
+  const mobileContext = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    isMobile: true,
+    hasTouch: true,
+  });
+  await mobileContext.addInitScript(initScript, { ct: auth.clinicToken, st: auth.staffToken, uid: auth.ownerUserId });
+
+  const mobilePage = await mobileContext.newPage();
+  console.log("Navigating mobile to http://127.0.0.1:5173/#shift...");
+  await mobilePage.goto("http://127.0.0.1:5173/#shift", { waitUntil: "domcontentloaded", timeout: 30000 });
+  await mobilePage.waitForTimeout(2000);
+
+  await mobilePage.waitForSelector('[data-testid="shift-view-mobile"]', { timeout: 20000 });
+  await mobilePage.waitForTimeout(1000);
+
+  // 4. shift_cockpit_390x844_light.png
+  console.log("Capturing shift_cockpit_390x844_light.png...");
+  await saveProof(mobilePage, "shift_cockpit_390x844_light.png", targetDirs);
+
+  // Switch mobile to dark theme
+  console.log("Switching mobile to dark theme...");
+  await mobilePage.evaluate(() => {
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.body.setAttribute("data-theme", "dark");
+    document.documentElement.classList.add("dark");
+    document.documentElement.classList.remove("light");
+    document.body.classList.add("dark");
+    document.body.classList.remove("light");
+    document.documentElement.style.colorScheme = "dark";
+  });
+  await mobilePage.waitForTimeout(600);
+
+  // 5. shift_cockpit_390x844_dark.png
+  console.log("Capturing shift_cockpit_390x844_dark.png...");
+  await saveProof(mobilePage, "shift_cockpit_390x844_dark.png", targetDirs);
+
+  await mobileContext.close();
   await browser.close();
-  console.log("All 6 shift screenshots captured successfully!");
+  console.log("\n[Proof Runner] All 4 canonical states successfully captured!");
 }
 
 main().catch((err) => {

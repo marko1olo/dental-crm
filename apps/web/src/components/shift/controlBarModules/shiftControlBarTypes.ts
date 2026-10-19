@@ -35,7 +35,6 @@ export interface DoctorShiftControlBarProps {
 	readonly onChangeChairStatus?: ((status: ChairOperationalStatus) => void) | undefined;
 	readonly shiftOperationalState?: ShiftOperationalState | undefined;
 	readonly onChangeOperationalState?: ((state: ShiftOperationalState) => void) | undefined;
-	readonly onHandoverShift?: (() => void) | undefined;
 	readonly onPrintPreliminaryReport?: (() => void) | undefined;
 	readonly onCallAssistant?: (() => void) | undefined;
 	readonly className?: string | undefined;

@@ -79,7 +79,6 @@ export interface ShiftChairStatusCardProps {
 	inChairAppointment: any;
 	doctorFullName: string;
 	cabinetName?: string;
-	nextDoctorName?: string;
 	isSterilized?: boolean;
 	assistantReady?: boolean;
 	// biome-ignore lint/suspicious/noExplicitAny: patient object
