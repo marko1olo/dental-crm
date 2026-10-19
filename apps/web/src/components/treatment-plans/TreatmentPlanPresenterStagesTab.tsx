@@ -4,10 +4,11 @@
  */
 
 import React from "react";
-import { Package } from "lucide-react";
-import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
+import { CalendarPlus, Package, Receipt } from "lucide-react";
+import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { MissingPriceAlert } from "./MissingPriceAlert";
+import { showToast } from "../GlobalToast";
 
 export interface TreatmentPlanPresenterStagesTabProps {
 	readonly selectedTier: TreatmentPlanTier;
@@ -17,6 +18,10 @@ export interface TreatmentPlanPresenterStagesTabProps {
 	readonly showMicroConsumables: boolean;
 	readonly setShowMicroConsumables?: (React.Dispatch<React.SetStateAction<boolean>> | ((fn: (prev: boolean) => boolean) => void)) | undefined;
 	readonly onUpdateItemPrice: (itemId: string, newPriceRub: number) => void;
+	readonly onSendStageToVisit?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onSendStageToInvoice?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
 }
 
 export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterStagesTabProps> = ({
@@ -27,7 +32,47 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 	showMicroConsumables,
 	setShowMicroConsumables,
 	onUpdateItemPrice,
+	onSendStageToVisit,
+	onSendStageToInvoice,
+	patientId,
+	patientName,
 }) => {
+	const handleSendStage = (stage: TreatmentPlanStage, target: "visit" | "invoice") => {
+		const services = (stage.items || []).map((it) => ({
+			code804n: it.code804n,
+			name: it.name,
+			title: it.name,
+			priceRub: it.priceRub || it.unitPriceRub || 0,
+			unitPriceRub: it.unitPriceRub || it.priceRub || 0,
+			quantity: it.quantity || 1,
+			toothNumber: it.toothNumber,
+			toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+		}));
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						services,
+						items: services,
+						stageNumber: stage.stageNumber,
+						stageTitle: stage.title,
+						patientId,
+						patientName,
+						target,
+					},
+				}),
+			);
+		}
+
+		if (target === "visit") {
+			onSendStageToVisit?.(stage);
+			showToast(`Этап ${stage.stageNumber} («${stage.title}») передан в приём врача`, "success");
+		} else {
+			onSendStageToInvoice?.(stage);
+			showToast(`Этап ${stage.stageNumber} («${stage.title}») передан в кассовый счёт`, "success");
+		}
+	};
 	return (
 						<div className="flex flex-col gap-4" data-testid="stages-detailed-view">
 							<div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex-wrap gap-3">
@@ -74,7 +119,7 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 								) : (
 									selectedTier.stages.map((st) => (
 										<div key={st.stageNumber} className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
-											<div className="flex items-center justify-between pb-3 border-b border-[var(--tp-border)] mb-3">
+											<div className="flex items-center justify-between pb-3 border-b border-[var(--tp-border)] mb-3 flex-wrap gap-2">
 												<div className="flex items-center gap-3 min-w-0 flex-1">
 													<div className="treatment-stage-num-badge shrink-0">{st.stageNumber}</div>
 													<div className="min-w-0 flex-1">
@@ -82,12 +127,36 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 														<p className="text-xs text-[var(--tp-text-muted)] m-0 truncate">{st.clinicalGoal}</p>
 													</div>
 												</div>
-												<div className="text-right shrink-0">
-													<div className="text-sm font-black text-[var(--tp-text-main)] font-mono">
-														{(st.totalRub || 0).toLocaleString("ru-RU")} ₽
+												<div className="flex items-center gap-3 shrink-0">
+													<div className="flex items-center gap-1.5">
+														<button
+															type="button"
+															onClick={() => handleSendStage(st, "visit")}
+															className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,var(--tp-surface-soft))] hover:bg-[var(--paper,var(--tp-surface))] border border-[var(--line-subtle,var(--tp-border))] text-[var(--ink,var(--tp-text-main))] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+															data-testid={`stage-send-to-visit-btn-${st.stageNumber}`}
+															title="Перенести услуги этапа в текущий приём врача"
+														>
+															<CalendarPlus size={13} className="text-[var(--teal,var(--tp-primary))]" />
+															<span>В приём</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => handleSendStage(st, "invoice")}
+															className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft,rgba(20,184,166,0.1))] hover:bg-[var(--teal-soft-strong,rgba(20,184,166,0.2))] border border-[var(--teal,rgba(20,184,166,0.3))] text-[var(--teal-dark,var(--teal))] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+															data-testid={`stage-send-to-invoice-btn-${st.stageNumber}`}
+															title="Перенести услуги этапа в кассовый счёт на оплату"
+														>
+															<Receipt size={13} className="text-[var(--teal,var(--tp-primary))]" />
+															<span>В счёт</span>
+														</button>
 													</div>
-													<div className="text-[11px] text-[var(--tp-text-muted)]">
-														{st.estimatedWeeks} нед. · {st.estimatedVisits} визитов
+													<div className="text-right">
+														<div className="text-sm font-black text-[var(--tp-text-main)] font-mono">
+															{(st.totalRub || 0).toLocaleString("ru-RU")} ₽
+														</div>
+														<div className="text-[11px] text-[var(--tp-text-muted)]">
+															{st.estimatedWeeks} нед. · {st.estimatedVisits} визитов
+														</div>
 													</div>
 												</div>
 											</div>

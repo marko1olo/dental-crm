@@ -55,7 +55,7 @@ export const TreatmentPlanOptionsMenu: React.FC<TreatmentPlanOptionsMenuProps> =
 			<button
 				type="button"
 				onClick={onToggle}
-				className="secondary-button icon-button h-8 w-8 min-h-[44px] sm:min-h-[38px] min-w-[44px] sm:min-w-[38px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
+				className="secondary-button icon-button min-h-[44px] min-w-[44px] h-[44px] w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
 				title="Дополнительные студии, печать и опции"
 				aria-label="Опции плана лечения"
 				aria-expanded={isOpen}

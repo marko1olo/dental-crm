@@ -29,6 +29,8 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 		clinicName = "DENTE Стоматология",
 		teeth,
 		onApproveAndSign,
+		onSendStageToVisit,
+		onSendStageToInvoice,
 		planId,
 	} = props;
 
@@ -67,6 +69,10 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 					onSelectTier={s.handleSelectTier}
 					showMicroConsumables={s.showMicroConsumables}
 					onUpdateItemPrice={s.handleUpdateItemPrice}
+					onSendStageToVisit={onSendStageToVisit}
+					onSendStageToInvoice={onSendStageToInvoice}
+					patientId={patientId}
+					patientName={patientName}
 				/>
 			)}
 

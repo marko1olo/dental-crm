@@ -85,8 +85,12 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto" role="dialog" aria-modal="true" data-testid="clinical-service-bundles-modal">
-			<div className="relative w-full max-w-5xl rounded-2xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" role="dialog" aria-modal="true" data-testid="clinical-service-bundles-modal">
+			<div className="relative w-full max-w-5xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] shadow-2xl flex flex-col max-h-[88dvh] sm:max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+				{/* Tactile drag handle for mobile bottom sheet */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
 				<BundlesModalHeader onClose={onClose} />
 
 				<div className="flex items-center justify-between gap-2.5 px-5 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex-wrap shrink-0">

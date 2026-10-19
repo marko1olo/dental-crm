@@ -63,16 +63,16 @@ export const BundleCardItem: React.FC<BundleCardItemProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={() => onToggleExpand(bundle.id)} className="h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-1 cursor-pointer" title="Настроить состав пакета" data-testid={`toggle-expand-${bundle.id}`}>
+						<button type="button" onClick={() => onToggleExpand(bundle.id)} className="min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-1 cursor-pointer touch-manipulation" title="Настроить состав пакета" data-testid={`toggle-expand-${bundle.id}`}>
 							<span>Состав</span>{isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
 						</button>
 						{(targetMode === "both" || targetMode === "plan") && (
-							<button type="button" onClick={() => onApplyPlan(bundle)} className="h-9 min-h-[36px] px-4 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95" title={`Добавить пакет в план${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`} data-testid={`apply-plan-${bundle.id}`}>
+							<button type="button" onClick={() => onApplyPlan(bundle)} className="min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 touch-manipulation" title={`Добавить пакет в план${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`} data-testid={`apply-plan-${bundle.id}`}>
 								<PackagePlus size={15} /><span>В план</span>
 							</button>
 						)}
 						{(targetMode === "both" || targetMode === "invoice") && (
-							<button type="button" onClick={() => onApplyInvoice(bundle)} className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark)] dark:text-teal-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95" title={`Выставить счет пациенту${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`} data-testid={`apply-invoice-${bundle.id}`}>
+							<button type="button" onClick={() => onApplyInvoice(bundle)} className="min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark)] dark:text-teal-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation" title={`Выставить счет пациенту${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`} data-testid={`apply-invoice-${bundle.id}`}>
 								<Receipt size={15} /><span>В счет</span>
 							</button>
 						)}

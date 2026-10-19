@@ -53,7 +53,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					type="button"
 					onClick={onOpenAddCatalogService}
 					data-testid="tp-add-catalog-service-btn"
-					className="secondary-button tp-action-btn tp-action-btn-catalog"
+					className="secondary-button tp-action-btn tp-action-btn-catalog min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
 					title="Добавить любую услугу из утвержденного прейскуранта клиники"
 				>
 					<Plus size={14} className="shrink-0" />
@@ -64,7 +64,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					type="button"
 					onClick={onOpenCreateStageModal}
 					data-testid="tp-create-stage-btn"
-					className="secondary-button tp-action-btn tp-action-btn-stage"
+					className="secondary-button tp-action-btn tp-action-btn-stage min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
 					title="Добавить новый этап в план лечения"
 				>
 					<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />

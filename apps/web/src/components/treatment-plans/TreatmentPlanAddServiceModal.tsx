@@ -65,8 +65,12 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-labelledby="add-service-modal-title" data-testid="add-service-from-catalog-modal">
-			<div className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-3xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+		<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-labelledby="add-service-modal-title" data-testid="add-service-from-catalog-modal">
+			<div className="w-full sm:max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-t-[24px] sm:rounded-3xl border-t sm:border border-[var(--line)] shadow-2xl flex flex-col max-h-[88dvh] sm:max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+				{/* Tactile drag handle for mobile bottom sheet */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
 				<div className="flex items-center justify-between p-4 border-b border-[var(--line)] bg-[var(--paper-strong)]">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="p-2 rounded-xl bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]/20 shrink-0"><FolderPlus size={18} /></div>
@@ -75,7 +79,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 							<p className="text-[11px] text-[var(--muted)] leading-tight break-words mt-0.5">Прейскурант и клинические позиции для плана лечения</p>
 						</div>
 					</div>
-					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shrink-0" aria-label="Закрыть окно"><X size={18} /></button>
+					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shrink-0 flex items-center justify-center touch-manipulation" aria-label="Закрыть окно"><X size={18} /></button>
 				</div>
 
 				<div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
@@ -85,9 +89,9 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 					)}
 				</div>
 
-				<div className="p-4 border-t border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)]">
-					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="secondary-button min-h-[38px] px-4 font-semibold">Отмена</button>
-					<button type="button" disabled={!selectedItem} onClick={handleConfirm} data-testid="confirm-add-service-to-stage-btn" className="primary-button min-h-[38px] px-5 font-bold">
+				<div className="p-4 border-t border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)] pb-[max(1rem,env(safe-area-inset-bottom))]">
+					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="secondary-button min-h-[44px] sm:min-h-[38px] px-4 font-semibold touch-manipulation">Отмена</button>
+					<button type="button" onClick={handleConfirm} data-testid="confirm-add-service-to-stage-btn" className="primary-button min-h-[44px] sm:min-h-[38px] px-5 font-bold touch-manipulation active:scale-98">
 						<Plus size={16} /><span>Добавить в этап</span>
 					</button>
 				</div>

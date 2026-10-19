@@ -220,7 +220,7 @@ export function validateTreatmentPlanStarProtocols(
 				status: "warning",
 				messageRu: `Позиция «${item.name}» использует пользовательский код номенклатуры: «${item.code804n}»`,
 				recommendationRu: "Рекомендуется указать утвержденный код прейскуранта услуг (например, A16.07.002.001)",
-				normativeRefRu: "Приказ Минздрава России от 13.10.2017 № 804н",
+				normativeRefRu: "Прейскурант и клинические стандарты услуг",
 				order804nCodesRelated: [item.code804n],
 			});
 		}
@@ -234,7 +234,7 @@ export function validateTreatmentPlanStarProtocols(
 			ruleDescriptionRu: "Все позиции плана соответствуют прейскуранту услуг",
 			status: "pass",
 			messageRu: `Все ${allItems.length} процедур плана имеют зарегистрированные коды прейскуранта услуг`,
-			normativeRefRu: "Приказ Минздрава России от 13.10.2017 № 804н",
+			normativeRefRu: "Прейскурант и клинические стандарты услуг",
 			order804nCodesRelated: Array.from(codesPresent),
 		});
 	}

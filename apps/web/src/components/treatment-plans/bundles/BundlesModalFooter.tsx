@@ -6,7 +6,7 @@ interface BundlesModalFooterProps {
 }
 
 export const BundlesModalFooter: React.FC<BundlesModalFooterProps> = ({ onClose }) => (
-	<div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs text-[var(--muted)]">
+	<div className="flex items-center justify-between gap-3 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs text-[var(--muted)]">
 		<div className="flex items-center gap-2">
 			<Stethoscope size={14} className="text-[var(--teal)]" />
 			<span>Все суммы рассчитываются в копейках с гарантией абсолютной точности.</span>
@@ -14,7 +14,7 @@ export const BundlesModalFooter: React.FC<BundlesModalFooterProps> = ({ onClose 
 		<button
 			type="button"
 			onClick={onClose}
-			className="secondary-button min-h-[36px] px-4"
+			className="secondary-button min-h-[44px] sm:min-h-[36px] px-4 font-semibold touch-manipulation cursor-pointer"
 			data-testid="bundles-modal-bottom-close-btn"
 		>
 			Закрыть

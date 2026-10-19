@@ -31,7 +31,7 @@ export const BundlesModalHeader: React.FC<BundlesModalHeaderProps> = ({ onClose 
 		<button
 			type="button"
 			onClick={onClose}
-			className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+			className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0 flex items-center justify-center touch-manipulation"
 			title="Закрыть окно (Esc)"
 			aria-label="Закрыть окно"
 			data-testid="bundles-modal-close-btn"

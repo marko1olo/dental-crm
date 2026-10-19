@@ -12,8 +12,10 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Clock,
+	Receipt,
 	ShieldCheck,
 } from "lucide-react";
+import { showToast } from "../../GlobalToast.js";
 import { formatFdiToothName } from "../../portal/patientPortalEngine.js";
 import type { RoadmapStageData } from "./types.js";
 import {
@@ -33,6 +35,8 @@ export interface RoadmapStageCardProps {
 	onBookStage?: ((stage: RoadmapStageData) => void) | undefined;
 	onSelectStage?: ((stage: RoadmapStageData) => void) | undefined;
 	onBookStageSlot?: ((stageNumber: number, stage: RoadmapStageData) => void) | undefined;
+	onSendStageToVisit?: ((stage: RoadmapStageData) => void) | undefined;
+	onSendStageToInvoice?: ((stage: RoadmapStageData) => void) | undefined;
 }
 
 export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
@@ -47,8 +51,74 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 	onBookStage,
 	onSelectStage,
 	onBookStageSlot,
+	onSendStageToVisit,
+	onSendStageToInvoice,
 }) => {
-	const meta = CANONICAL_ROADMAP_META[stage.stageKind];
+	const meta = CANONICAL_ROADMAP_META[stage.stageKind] || CANONICAL_ROADMAP_META.stage_2_therapy;
+
+	const handleSendStageToVisit = () => {
+		const services = (stage.procedures || []).map((p) => ({
+			code804n: p.code804n,
+			name: p.titleRu,
+			title: p.titleRu,
+			priceRub: p.priceRub || 0,
+			unitPriceRub: p.priceRub || 0,
+			quantity: 1,
+			toothNumber: p.toothNumber,
+			toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
+		}));
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						services,
+						items: services,
+						stageNumber: stage.stageNumber,
+						stageTitle: stage.titleRu,
+						patientId,
+						patientName: effectivePatientName,
+						target: "visit",
+					},
+				}),
+			);
+		}
+
+		onSendStageToVisit?.(stage);
+		showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в приём врача`, "success");
+	};
+
+	const handleSendStageToInvoice = () => {
+		const services = (stage.procedures || []).map((p) => ({
+			code804n: p.code804n,
+			name: p.titleRu,
+			title: p.titleRu,
+			priceRub: p.priceRub || 0,
+			unitPriceRub: p.priceRub || 0,
+			quantity: 1,
+			toothNumber: p.toothNumber,
+			toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
+		}));
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						services,
+						items: services,
+						stageNumber: stage.stageNumber,
+						stageTitle: stage.titleRu,
+						patientId,
+						patientName: effectivePatientName,
+						target: "invoice",
+					},
+				}),
+			);
+		}
+
+		onSendStageToInvoice?.(stage);
+		showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в кассовый счёт`, "success");
+	};
 
 	return (
 		<div
@@ -190,7 +260,7 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 			</div>
 
 			{/* Teeth Involved */}
-			{stage.teethFdiList.length > 0 && (
+			{Boolean(stage.teethFdiList && stage.teethFdiList.length > 0) && (
 				<div className="roadmap-teeth-row">
 					<span className="text-xs font-medium text-[var(--muted,var(--ink-muted))] mr-1 self-center">
 						Зубы:
@@ -238,7 +308,10 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 								</div>
 
 								<div className="roadmap-proc-price">
-									{formatKopecksToRubExact(proc.priceKopecks * proc.quantity)} ₽
+									{formatKopecksToRubExact(
+										(typeof proc.priceKopecks === "number" ? proc.priceKopecks : Math.round((proc.priceRub || 0) * 100)) *
+										(typeof proc.quantity === "number" ? proc.quantity : 1)
+									)} ₽
 								</div>
 							</div>
 						))
@@ -255,7 +328,9 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 				<div>
 					<div className="roadmap-stage-total-label">Стоимость этапа</div>
 					<div className="roadmap-stage-total-sum">
-						{formatKopecksToRubExact(stage.totalKopecks)} ₽
+						{formatKopecksToRubExact(
+							typeof stage.totalKopecks === "number" ? stage.totalKopecks : Math.round((stage.totalRub || 0) * 100)
+						)} ₽
 					</div>
 					{stage.status === "completed" && (
 						<div
@@ -267,83 +342,108 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 					)}
 				</div>
 
-				{stage.status === "completed" ? (
-					<div
-						className="roadmap-stage-completed-badge flex items-center gap-2"
-						data-testid={`stage-completed-badge-${stage.stageNumber}`}
-					>
-						<span
-							className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs"
-							data-testid={`stage-paid-footer-badge-${stage.stageNumber}`}
+				<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex items-center gap-1.5">
+						<button
+							type="button"
+							onClick={handleSendStageToVisit}
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] border border-[var(--line-subtle,rgba(255,255,255,0.08))] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+							data-testid={`roadmap-send-to-visit-${stage.stageNumber}`}
+							title="Перенести услуги этапа в текущий приём врача"
 						>
-							✓ ОПЛАЧЕНО 100%
-						</span>
-						<span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-							{`✓ Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
-						</span>
+							<CalendarPlus className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>В приём</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleSendStageToInvoice}
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+							data-testid={`roadmap-send-to-invoice-${stage.stageNumber}`}
+							title="Перенести услуги этапа в кассовый счёт на оплату"
+						>
+							<Receipt className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>В счёт</span>
+						</button>
 					</div>
-				) : (
-					<button
-						type="button"
-						onClick={() => {
-							onBookStage?.(stage);
-							onSelectStage?.(stage);
-							onBookStageSlot?.(stage.stageNumber, stage);
-							if (typeof window !== "undefined") {
-								const estimatedMins =
-									stage.procedures && stage.procedures.length > 0
-										? Math.min(120, Math.max(30, stage.procedures.length * 20))
-										: 30;
-								const bookingDetail = {
-									treatmentPlanId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
-									planId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
-									patientId: patientId || undefined,
-									patientName: effectivePatientName,
-									patientFullName: effectivePatientName,
-									stageId: stage.stageKind || String(stage.stageNumber),
-									stageNumber: stage.stageNumber,
-									stageTitle: stage.titleRu,
-									timelineRu: stage.timelineRu,
-									services: stage.procedures,
-									items: stage.procedures,
-									procedures: stage.procedures,
-									reason: `Этап ${stage.stageNumber}: ${stage.titleRu}`,
-									estimatedDurationMinutes: estimatedMins,
-									durationMinutes: estimatedMins,
-								};
 
-								try {
-									window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(bookingDetail));
-								} catch {
-									// quota fallback
+					{stage.status === "completed" ? (
+						<div
+							className="roadmap-stage-completed-badge flex items-center gap-2"
+							data-testid={`stage-completed-badge-${stage.stageNumber}`}
+						>
+							<span
+								className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs"
+								data-testid={`stage-paid-footer-badge-${stage.stageNumber}`}
+							>
+								✓ ОПЛАЧЕНО 100%
+							</span>
+							<span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+								<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+								{`✓ Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
+							</span>
+						</div>
+					) : (
+						<button
+							type="button"
+							onClick={() => {
+								onBookStage?.(stage);
+								onSelectStage?.(stage);
+								onBookStageSlot?.(stage.stageNumber, stage);
+								if (typeof window !== "undefined") {
+									const estimatedMins =
+										stage.procedures && stage.procedures.length > 0
+											? Math.min(120, Math.max(30, stage.procedures.length * 20))
+											: 30;
+									const bookingDetail = {
+										treatmentPlanId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+										planId: planId || (effectivePlanNumber ? `PLAN-${effectivePlanNumber}` : undefined),
+										patientId: patientId || undefined,
+										patientName: effectivePatientName,
+										patientFullName: effectivePatientName,
+										stageId: stage.stageKind || String(stage.stageNumber),
+										stageNumber: stage.stageNumber,
+										stageTitle: stage.titleRu,
+										timelineRu: stage.timelineRu,
+										services: stage.procedures,
+										items: stage.procedures,
+										procedures: stage.procedures,
+										reason: `Этап ${stage.stageNumber}: ${stage.titleRu}`,
+										estimatedDurationMinutes: estimatedMins,
+										durationMinutes: estimatedMins,
+									};
+
+									try {
+										window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(bookingDetail));
+									} catch {
+										// quota fallback
+									}
+
+									window.dispatchEvent(
+										new CustomEvent("dente-book-stage-appointment", {
+											detail: bookingDetail,
+										}),
+									);
+									window.dispatchEvent(
+										new CustomEvent("dente-quick-appointment-draft", {
+											detail: bookingDetail,
+										}),
+									);
+									window.dispatchEvent(
+										new CustomEvent("dente-open-quick-booking", {
+											detail: bookingDetail,
+										}),
+									);
+									window.location.hash = "#schedule";
 								}
-
-								window.dispatchEvent(
-									new CustomEvent("dente-book-stage-appointment", {
-										detail: bookingDetail,
-									}),
-								);
-								window.dispatchEvent(
-									new CustomEvent("dente-quick-appointment-draft", {
-										detail: bookingDetail,
-									}),
-								);
-								window.dispatchEvent(
-									new CustomEvent("dente-open-quick-booking", {
-										detail: bookingDetail,
-									}),
-								);
-								window.location.hash = "#schedule";
-							}
-						}}
-						className="roadmap-book-stage-btn"
-						data-testid={`book-stage-btn-${stage.stageNumber}`}
-					>
-						<CalendarPlus className="w-4 h-4" />
-						Записаться на этот этап
-					</button>
-				)}
+							}}
+							className="roadmap-book-stage-btn"
+							data-testid={`book-stage-btn-${stage.stageNumber}`}
+						>
+							<CalendarPlus className="w-4 h-4" />
+							Записаться на этот этап
+						</button>
+					)}
+				</div>
 			</div>
 		</div>
 	);

@@ -130,6 +130,8 @@ export interface TreatmentPlanPresenterBaseProps {
 	onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
 	onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
 	onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
+	onSendStageToVisit?: ((stage: TreatmentPlanStage) => void) | undefined;
+	onSendStageToInvoice?: ((stage: TreatmentPlanStage) => void) | undefined;
 	planCreatedAtIso?: string | undefined;
 	isClosed?: boolean | undefined;
 	isDraft?: boolean | undefined;

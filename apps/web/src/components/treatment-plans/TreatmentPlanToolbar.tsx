@@ -77,7 +77,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 	return (
 		<>
 			<TreatmentPlanHeaderBar patientName={patientName} totalItemsCount={totalItemsCount} />
-			<div className="treatment-plan-toolbar flex items-center justify-between gap-2 min-h-[36px] h-9 px-0.5 border-b border-[var(--line,var(--border,#cbd5e1))] flex-nowrap overflow-x-auto max-w-full" data-testid="treatment-plan-toolbar">
+			<div className="treatment-plan-toolbar flex items-center justify-between gap-2 min-h-[48px] sm:min-h-[36px] sm:h-9 py-1 sm:py-0 px-0.5 border-b border-[var(--line,var(--border,#cbd5e1))] flex-nowrap overflow-x-auto max-w-full" data-testid="treatment-plan-toolbar">
 				<TreatmentPlanStatusControl planStatus={planStatus} onStatusTransition={onStatusTransition} planAgeDays={planAgeDays} />
 				<TreatmentPlanViewTabs activeViewTab={activeViewTab} setActiveViewTab={setActiveViewTab} />
 				<div className="flex items-center gap-1.5 shrink-0">
