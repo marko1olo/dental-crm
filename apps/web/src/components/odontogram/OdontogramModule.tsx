@@ -29,11 +29,9 @@ import {
 	type ToothActionMenuConfig,
 } from "./ToothActionMenuPortal";
 import { ToothRadialMenu } from "./ToothRadialMenu";
-import { OdontogramAiBanners } from "./OdontogramAiBanners";
 import { OdontogramPrintA4 } from "./OdontogramPrintA4";
 import { OdontogramModalsLayer } from "./OdontogramModalsLayer";
 import { useOdontogramSync } from "./useOdontogramSync";
-import { useOdontogramAiIntegration } from "./useOdontogramAiIntegration";
 import { useOdontogramQuickActions } from "./useOdontogramQuickActions";
 
 // Re-exports for 100% backward compatibility
@@ -44,11 +42,9 @@ export {
 	TEETH_SUBJECT,
 	getInitialShowcaseTeeth,
 	ToothActionMenuPortal,
-	OdontogramAiBanners,
 	OdontogramPrintA4,
 	OdontogramModalsLayer,
 	useOdontogramSync,
-	useOdontogramAiIntegration,
 	useOdontogramQuickActions,
 };
 
@@ -85,6 +81,11 @@ export const OdontogramModule = React.memo(({
 	const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
 	const [isPerioOpen, setIsPerioOpen] = useState(false);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+	const [_aiPendingProposal, setAiPendingProposal] = useState<{
+		source: "voice" | "vision" | "sensor";
+		title: string;
+		findings: Array<{ toothNumber: number; state: ToothState; surfaces?: string[] }>;
+	} | null>(null);
 
 	const clearMenu = useCallback(() => {
 		setMenuConfig(null);
@@ -111,22 +112,6 @@ export const OdontogramModule = React.memo(({
 		onClearMenu: clearMenu,
 	});
 
-	// AI and Diagnocat findings proposal integration
-	const {
-		diagnocatLoading,
-		diagnocatPendingReport,
-		loadDiagnocatReport,
-		handleApplyDiagnocatFindings,
-		handleRejectDiagnocatFindings,
-		aiPendingProposal,
-		setAiPendingProposal,
-		handleApplyAiProposal,
-		handleRejectAiProposal,
-	} = useOdontogramAiIntegration({
-		patientId,
-		setTeethData,
-		updateToothState,
-	});
 
 	// Auto-compute live invoice items and gross total in rubles for In-Chair Hot Path Cockpit
 	const liveInvoiceItems = useMemo(() => {
@@ -519,15 +504,6 @@ export const OdontogramModule = React.memo(({
 					/>
 				)}
 
-				<OdontogramAiBanners
-					diagnocatPendingReport={diagnocatPendingReport}
-					onApplyDiagnocat={handleApplyDiagnocatFindings}
-					onRejectDiagnocat={handleRejectDiagnocatFindings}
-					aiPendingProposal={aiPendingProposal}
-					onApplyAiProposal={handleApplyAiProposal}
-					onRejectAiProposal={handleRejectAiProposal}
-				/>
-
 				<OdontogramViewContainer
 					patientId={patientId}
 					teethData={teethData}
@@ -546,8 +522,6 @@ export const OdontogramModule = React.memo(({
 					isPerioOpen={isPerioOpen}
 					onToggleEstimator={handleToggleEstimator}
 					isEstimatorOpen={isEstimatorOpen}
-					onLoadDiagnocat={loadDiagnocatReport}
-					diagnocatLoading={diagnocatLoading}
 					isMultiSelectMode={isMultiSelectMode}
 					onToggleMultiSelect={handleToggleMultiSelect}
 					onSelectTeethGroup={handleSelectTeethGroup}

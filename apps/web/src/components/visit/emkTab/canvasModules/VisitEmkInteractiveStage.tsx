@@ -4,7 +4,6 @@ import { showToast } from "../../../GlobalToast";
 import {
 	EmkSoapVisibilityTracker,
 	EmkObjectiveStatusSection,
-	EmkAnesthesiaSection,
 	EmkEndoSection,
 	EmkPerioSection,
 	EmkDiaryProtocolSection,
@@ -93,14 +92,6 @@ export function VisitEmkInteractiveStage({
 					onDisposalCarpules={() => {}}
 					patientId={activePatient?.id}
 					visitId={openVisitId}
-				/>
-
-				<EmkAnesthesiaSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-					patientAge={activePatient?.age}
-					patientGender={activePatient?.gender}
 				/>
 
 				<EmkEndoSection
@@ -371,12 +362,24 @@ export function VisitEmkInteractiveStage({
 					/>
 					{activeEmkTab === "treatmentPlan" && (
 						<>
-							<EmkAnesthesiaSection
-								visitNoteForm={visitNoteForm}
-								updateVisitNoteField={updateVisitNoteField}
+							<VisitDiaryAnesthesiaBar
+								fieldsDisabled={isLocked}
+								activePatient={activePatient}
+								diary={visitNoteForm as any}
+								doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 								isLocked={isLocked}
-								patientAge={activePatient?.age}
-								patientGender={activePatient?.gender}
+								isRevising={false}
+								beginRevise={() => {}}
+								applyAnesthesiaPreset={(preset) => {
+									const curr = visitNoteForm?.treatmentPlan || "";
+									updateVisitNoteField(
+										"treatmentPlan",
+										appendClinicalText(curr, preset, "\n\n"),
+									);
+								}}
+								onDisposalCarpules={() => {}}
+								patientId={activePatient?.id}
+								visitId={openVisitId}
 							/>
 							<VisitEmkServicesBilling
 								openVisitId={openVisitId}

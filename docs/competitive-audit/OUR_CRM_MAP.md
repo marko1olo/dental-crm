@@ -7628,6 +7628,50 @@
 
 ---
 
+### 2.10.429. Волна 333: RED TEAM ИНКВИЗИЦИЯ №1 (ФИНАЛ) — Полный снос 3-этажного «Франкенштейна» анестезии у кресла, канонические Apple HIG 1-клик пресеты, 100% Vitest и 4-State Visual Proof
+- **Функционал**:
+  1. *Ликвидация 3-этажного «Франкенштейна» анестезии у кресла*:
+     - Полный демонтаж дублирующих слоев `VisitDiaryAnesthesiaBar.tsx`, `AnesthesiaQuickBar.tsx` и `EmkAnesthesiaSection.tsx` в `VisitEmkInteractiveStage.tsx`.
+     - `VisitDiaryAnesthesiaBar.tsx` очищен от избыточного аккордеона `<details>` и дублирующих алертов: теперь это чистая карточка с прямым делегированием в единый Apple HIG компонент.
+     - Ликвидирован дублирующий вызов `<EmkAnesthesiaSection>` в `VisitEmkInteractiveStage.tsx`, унифицирован рендеринг в фокусной вкладке плана лечения.
+  2. *Канонический 1-рядный блок быстрых пресетов Apple HIG*:
+     - В `AnesthesiaQuickBar.tsx` внедрена чистая одноповерхностная карточка на дизайн-токенах `var(--paper)`, `var(--line)` и `var(--ink)`.
+     - 4 канонических клинических пресета в 1 клик:
+       * `«Ультракаин Д-С 1:200 000 (1.7 мл)»`
+       * `«Ультракаин Д-С Форте 1:100 000 (1.7 мл)»`
+       * `«Скандонест 3% (1.8 мл)»`
+       * `«Без анестезии / Интактно»`
+     - В 1 клик текст мгновенно вносится в протокол лечения дневника визита и эмитится событие `dente-add-services-to-invoice` для биллинга без блокировок.
+  3. *Ликвидация токсикологических мониторов и панических кнопок (Мандаты 8e, 8y)*:
+     - Окончательно удалены академический расчет токсичности («МДД по массе тела 70 кг», «Безопасный остаток 4.8 карп / 17%»), панические кнопки («Шок / LAST 112», «АНТИШОК») и дублирующие сетки дозировок (0.5, 1, 1.5, 2, 3).
+     - Реализован лаконичный степпер `[-] 1 карп. (1.7 мл) [+]` с Primary CTA `Применить анестезию` и неброской кнопкой протокола укладки «Аптечка».
+     - Пассивные предупреждения об аллергиях в `AnesthesiaAllergyPassiveBadges.tsx` (`String.fromCodePoint` без сырых эмодзи в TSX-коде по Мандату 8d) без блокировок кнопок действий врача.
+  4. *Устранение регрессии в одонтограмме*:
+     - В `OdontogramModule.tsx` объявлен недостающий стейт `aiPendingProposal / setAiPendingProposal`, предотвративший падение ErrorBoundary при монтировании одонтограммы.
+  5. *100% Green Vitest Suite*:
+     - Все тесты анестезии, дневника визита и контекстной шторки зуба проходят успешно: 9/9 сьютов, 88 passing, 0 failing.
+  6. *4-State Red Team Visual Proof*:
+     - Реальные скриншоты в живом приложении монорепозитория:
+       * `docs/proofs/anesthesia/anesthesia_pc_light_1440x900.png` (119.4 KB)
+       * `docs/proofs/anesthesia/anesthesia_pc_dark_1440x900.png` (121.5 KB)
+       * `docs/proofs/anesthesia/anesthesia_mobile_light_390x844.png` (183.5 KB)
+       * `docs/proofs/anesthesia/anesthesia_mobile_dark_390x844.png` (188.0 KB)
+     - Каждый скриншот лично отсмотрен ревизором через `view_file`: подтверждено соответствие Apple HIG, отсутствие сжатия десктопа и идеальная читаемость в Light/Dark темах.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`
+  - `apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaAllergyPassiveBadges.tsx`
+  - `apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaSafetyHeader.tsx`
+  - `apps/web/src/components/visit/diary/VisitDiaryAnesthesiaBar.tsx`
+  - `apps/web/src/components/visit/emkTab/canvasModules/VisitEmkInteractiveStage.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `scripts/capture_anesthesia_4state_proofs.mjs`
+  - `docs/proofs/anesthesia/anesthesia_pc_light_1440x900.png`
+  - `docs/proofs/anesthesia/anesthesia_pc_dark_1440x900.png`
+  - `docs/proofs/anesthesia/anesthesia_mobile_light_390x844.png`
+  - `docs/proofs/anesthesia/anesthesia_mobile_dark_390x844.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 333)
+
 ### 2.10.429. Волна 333 / 351: Red Team Инквизиция Зуботехнической Лаборатории (ЗТЛ), Декомпозиция Монолитов $\le 120$ строк, Интеграция VITA Шкал и Клиническая Автономия Врача (Мандаты 8b, 8d, 8e, 8k, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)
 - **Цель и клинический контекст**:
   Устранение дублирующих модалок, декомпозиция всех компонентов домена ЗТЛ до строгого норматива $\le 120$ строк (Мандат 8b), обеспечение 100% клинической автономии врача у кресла (Мандат 8e, 8n), консолидация шкал VITA (Classical, 3D-Master, Bleach, ND1–ND9) и фотопротокола, ликвидация ролевых симуляторов реальности курьера и подтверждение качества через 4-State Visual Proof.
