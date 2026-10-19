@@ -306,7 +306,7 @@ export function OfflineFiscalBatchModal({
 						</div>
 						<div>
 							<h2 className="text-lg font-bold text-[var(--ink)]">
-								Пакетная фискализация и сверка офлайн-очереди 54-ФЗ
+								Пакетная печать и сверка офлайн-чеков кассы
 							</h2>
 							<p className="text-xs text-[var(--muted)]">
 								Автоматическое пробитие накопившихся оплат, закрытие смен Z-отчетами и исключение дублей
@@ -315,7 +315,7 @@ export function OfflineFiscalBatchModal({
 					</div>
 					<button
 						onClick={onClose}
-						className="p-2 rounded-lg hover:bg-[var(--glass-hover)] transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-[var(--glass-hover)] transition-colors flex items-center justify-center cursor-pointer"
 						title="Закрыть"
 						data-testid="offline-fiscal-batch-close-btn"
 					>
@@ -691,7 +691,7 @@ export function OfflineFiscalBatchModal({
 					</div>
 					<button
 						onClick={onClose}
-						className="px-4 py-2 text-sm font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] hover:bg-[var(--glass-hover)] transition-colors"
+						className="secondary-button min-h-[44px] px-5 py-2 text-sm font-semibold rounded-xl cursor-pointer"
 						data-testid="offline-fiscal-batch-done-btn"
 					>
 						Закрыть

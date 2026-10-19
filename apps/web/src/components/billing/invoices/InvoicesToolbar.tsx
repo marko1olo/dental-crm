@@ -79,7 +79,7 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 					)}
 				</div>
 
-				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2.5 rounded-lg text-xs font-bold text-white shrink-0" data-testid="btn-open-create-invoice-modal">
+				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2.5 rounded-lg text-xs font-bold text-white shrink-0" data-testid="btn-create-invoice-open">
 					<Plus size={14} /> <span>Новый счёт</span>
 				</button>
 				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-cash-drawer">
@@ -106,7 +106,7 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 				</div>
 
 				{onClose && (
-					<button type="button" onClick={onClose} className="secondary-button w-8 h-8 p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" aria-label="Закрыть реестр счетов" data-testid="btn-close-invoices-view">
+					<button type="button" onClick={onClose} className="secondary-button w-8 h-8 p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" aria-label="Закрыть реестр счетов" data-testid="btn-invoices-close">
 						<X size={15} />
 					</button>
 				)}

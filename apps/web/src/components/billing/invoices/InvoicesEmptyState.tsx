@@ -30,14 +30,24 @@ export const InvoicesEmptyState: React.FC<InvoicesEmptyStateProps> = ({
 					? `По запросу «${searchQuery}» ничего не найдено. Проверьте правильность написания или сбросьте поиск.`
 					: "В выбранной категории пока нет выставленных счетов."}
 			</div>
-			<button
-				type="button"
-				onClick={onResetFilters}
-				className="secondary-button h-8 px-3 rounded-lg text-xs font-semibold"
-				data-testid="btn-reset-invoices-filters"
-			>
-				Сбросить фильтры
-			</button>
+			<div className="flex items-center gap-2">
+				<button
+					type="button"
+					onClick={onResetFilters}
+					className="secondary-button h-8 px-3 rounded-lg text-xs font-semibold"
+					data-testid="btn-reset-invoices-filters"
+				>
+					Сбросить фильтры
+				</button>
+				<button
+					type="button"
+					onClick={onResetFilters}
+					className="primary-button h-8 px-3 rounded-lg text-xs font-bold text-white"
+					data-testid="btn-create-first-invoice"
+				>
+					Создать первый счет
+				</button>
+			</div>
 		</div>
 	);
 };

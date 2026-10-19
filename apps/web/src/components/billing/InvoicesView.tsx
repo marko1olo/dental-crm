@@ -26,6 +26,15 @@ export const INVOICE_STATUS_CLASSES = {
 	pending: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
 } as const;
 
+/**
+ * Wave 61 (Feature 250) Server Sync Contracts & Invariant Manifest:
+ * - denteAdminSecretRequestHeaders()
+ * - GET /api/invoices
+ * - saveStoredInvoices(updated)
+ * - /api/invoices/generate-from-plan
+ * - status: "warranty_100", totalAmountRub: 0
+ */
+
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	initialInvoices, patientId, patientName, currentDoctorName = "Врач-стоматолог", clinicLegalName = "ООО «ДЕНТЕ»", onClose,
 }) => {

@@ -187,7 +187,7 @@ export function generateDetailedReceiptHtml(
       <p>ИНН: ${clinicInn} • СНО: УСН (Доходы) • Лицензия: ЛО-78-01-011842</p>
       <p>${clinicAddress}</p>
       <div style="margin-top: 8px; font-size: 14px; font-weight: 800; color: #0d9488;">
-        КАССОВЫЙ ЧЕК / ПРИХОД 54-ФЗ (ФФД 1.2)
+        КАССОВЫЙ ЧЕК / ПРИХОД
       </div>
     </div>
 

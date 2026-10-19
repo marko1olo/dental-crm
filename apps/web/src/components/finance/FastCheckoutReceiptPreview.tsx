@@ -88,6 +88,28 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 	const activeMethodTitle =
 		CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu || "Картой";
 
+	const friendlyMethodName = (() => {
+		switch (activeMethod) {
+			case "bank_card":
+			case "card":
+				return "Картой";
+			case "cash":
+				return "Наличными";
+			case "sbp_qr":
+			case "sbp":
+				return "СБП";
+			case "patient_deposit":
+			case "deposit":
+				return "Депозит";
+			case "split":
+				return "Сплит";
+			case "dms_insurance":
+				return "ДМС";
+			default:
+				return CHECKOUT_PAYMENT_METHODS.find((m) => m.id === activeMethod)?.titleRu || "Картой";
+		}
+	})();
+
 	return (
 		<>
 			{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
@@ -342,17 +364,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 							type="button"
 							onClick={onClose}
 							data-testid="btn-close-fast-checkout"
-							style={{
-								height: 38,
-								padding: "0 16px",
-								borderRadius: 10,
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								fontWeight: 600,
-								fontSize: 13,
-								cursor: "pointer",
-							}}
+							className="secondary-button min-h-[44px] h-11 px-4 rounded-xl font-semibold text-sm cursor-pointer select-none transition-colors"
 						>
 							Закрыть
 						</button>
@@ -364,20 +376,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						data-testid="btn-autonomous-terminal-checkout"
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
-						style={{
-							height: 38,
-							padding: "0 14px",
-							borderRadius: 10,
-							border: "1px solid rgba(245,158,11,0.4)",
-							background: "rgba(245,158,11,0.1)",
-							color: "#b45309",
-							fontWeight: 700,
-							fontSize: 12,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 6,
-							cursor: "pointer",
-						}}
+						className="min-h-[44px] h-11 px-4 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
@@ -401,35 +400,20 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						onClick={() => void onExecutePayment()}
 						disabled={isPrinting}
 						title={isPrinting ? "Идет печать кассового чека..." : undefined}
-						style={{
-							height: 38,
-							padding: "0 22px",
-							borderRadius: 10,
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							border: "1px solid var(--teal, #0d9488)",
-							fontWeight: 700,
-							fontSize: 13,
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: 6,
-							cursor: isPrinting ? "not-allowed" : "pointer",
-							boxShadow: "0 2px 8px rgba(13,148,136,0.25)",
-						}}
+						className="primary-button w-full sm:w-auto min-h-[52px] sm:min-h-[44px] h-[52px] sm:h-11 px-6 rounded-xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{isPrinting ? (
 							<>
-								<Printer className="w-4 h-4 animate-spin shrink-0" />
+								<Printer className="w-5 h-5 animate-spin shrink-0" />
 								<span className="truncate">Печать кассового чека...</span>
 							</>
 						) : (
 							<>
-								<Check className="w-4 h-4 shrink-0" />
+								<Check className="w-5 h-5 shrink-0" />
 								<span className="truncate">
 									{targetBillKop === 0
 										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
-										: `Выбить чек (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+										: `Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
 								</span>
 							</>
 						)}

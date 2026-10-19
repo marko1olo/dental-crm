@@ -284,7 +284,7 @@ export async function executeFiscalPayment(
 									pointsToRedeem: effectiveLoyaltyRub,
 									allowFullCoverage: true,
 									clientMutationId: `${compositeIdempotencyKey}-loyalty`,
-									description: `Списание бонусов в кассе при оплате счета: ${effectiveLoyaltyRub} б. (тег 1215)`,
+									description: `Списание бонусов в кассе при оплате счета: ${effectiveLoyaltyRub} б. (Чек и списание аванса)`,
 								}),
 							}).catch((loyaltyErr) => {
 								console.warn("[FastCheckoutModal] /api/loyalty/redeem sync error:", loyaltyErr);

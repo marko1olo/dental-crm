@@ -153,7 +153,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 								navigator.clipboard.writeText(oneCXmlPreview);
 								notify("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
 							}}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 						>
 							<Copy size={14} />
 							<span>Копировать XML</span>
@@ -166,7 +166,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 								navigator.clipboard.writeText(summaryText);
 								notify("Сводка для бухгалтера скопирована!", "success", 2500);
 							}}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 						>
 							<FileText size={14} />
 							<span>Сводка для бухгалтерии</span>
@@ -177,7 +177,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -199,7 +199,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							contractDate={oneCDocDate}
 							variant="primary"
 							label="Экспорт в 1С (XML)"
-							className="h-9 px-5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
 						/>
 					</div>
 				</>
@@ -210,7 +210,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyActData}
-						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+						className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
 						<Copy size={14} />
 						<span>Скопировать текст Акта</span>
@@ -219,14 +219,14 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={handlePrintAct || (() => window.print())}
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
 							<span>Печать акта лечения</span>
@@ -240,7 +240,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyCertData}
-						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+						className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
 						<Copy size={14} />
 						<span>Скопировать данные справки</span>
@@ -249,14 +249,14 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={handlePrintCertificate || (() => window.print())}
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
 							<span>Печать справки для налогового вычета</span>
@@ -277,7 +277,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -293,7 +293,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 										: undefined
 							}
 							data-testid="btn-refund-footer-execute"
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 						>
 							<RotateCcw size={15} />
 							<span>
@@ -318,7 +318,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -327,7 +327,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							onClick={() => handleExecuteFiscalization()}
 							disabled={isFiscalizing}
 							title={isFiscalizing ? "Идет печать чека коррекции на кассе..." : undefined}
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 						>
 							<ShieldCheck size={15} />
 							<span>
@@ -352,14 +352,14 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
+							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
 							<span>Печать чека</span>
