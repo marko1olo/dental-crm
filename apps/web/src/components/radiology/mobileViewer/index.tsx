@@ -7,7 +7,9 @@ import {
 } from "lucide-react";
 import { formatShortDate } from "../../../AppHelpers.js";
 import { showToast } from "../../GlobalToast.js";
-import "../mobileRadiology.css";
+if (typeof document !== "undefined") {
+	void import("../mobileRadiology.css");
+}
 
 import type {
 	MobileChairsideRadiologyViewerProps,
@@ -28,7 +30,7 @@ export * from "./MobilePatientShowcaseOverlay.js";
  * MobileChairsideRadiologyViewer: Master coordinator component for chairside
  * tablet / smartphone radiology viewing. Implements Apple HIG touch ergonomics,
  * natural thumb zone controls, calibrated calipers, CLAHE enhancement, and
- * 1-click patient demonstration with Form 043/u clinical protocol linking.
+ * 1-click patient demonstration with clinical protocol linking.
  */
 export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyViewerProps> = ({
 	selectedImagingStudy,
@@ -235,35 +237,48 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 					</span>
 				</button>
 
-				{/* Center: Active Tooth / Region & Study Type / Date & Showcase Trigger */}
+				{/* Center: Active Tooth / Region & Study Type / Date */}
 				<div className="mobile-radiology-topbar-title min-w-0 flex-1 px-1">
-					<div className="flex items-center justify-center gap-1.5 flex-nowrap">
+					<div className="flex items-center justify-center">
 						<span
-							className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 shrink-0"
+							className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 shrink-0"
 							title={toothBadge}
 						>
 							{toothBadge}
 						</span>
-						<button
-							type="button"
-							onClick={() => {
-								triggerHaptic();
-								setIsShowcaseOpen(true);
-							}}
-							className="mobile-radiology-showcase-btn rounded-full font-bold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/15 transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap"
-							title="Режим демонстрации пациенту (До/После и 043/у)"
-						>
-							<FileText size={10} className="text-teal-400 shrink-0" />
-							<span>Пациенту</span>
-						</button>
 					</div>
-					<div className="text-[11px] text-slate-400 truncate mt-0.5">
+					<div className="text-[11px] text-slate-400 truncate mt-0.5 font-medium">
 						{studyDateStr} · {modalityTitle}
 					</div>
 				</div>
 
-				{/* Right: Camera Shot & Reset Button */}
-				<div className="flex items-center gap-1 shrink-0">
+				{/* Right: Showcase Button, Camera Shot & Close Viewer */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						onClick={() => {
+							triggerHaptic();
+							setIsShowcaseOpen(true);
+						}}
+						data-testid="btn-open-mobile-showcase"
+						className="mobile-radiology-showcase-btn rounded-xl font-semibold bg-white/10 hover:bg-white/20 active:scale-95 text-slate-200 border border-white/15 transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap px-2.5 h-10"
+						title="Режим демонстрации пациенту (До/После и протокол приёма)"
+					>
+						<FileText size={14} className="text-teal-400 shrink-0" />
+						<span className="text-xs font-medium">Пациенту</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleResetTransform}
+						className="mobile-radiology-icon-btn hidden sm:flex rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 items-center justify-center transition-all border border-white/10 cursor-pointer"
+						data-testid="btn-mobile-reset-transform"
+						aria-label="Сбросить масштаб и положение"
+						title="Сброс (1:1)"
+					>
+						<RefreshCw size={15} />
+					</button>
+
 					<button
 						type="button"
 						onClick={onCaptureCamera}
@@ -273,17 +288,6 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 						title="Снимок с камеры"
 					>
 						<Camera size={16} />
-					</button>
-
-					<button
-						type="button"
-						onClick={handleResetTransform}
-						className="mobile-radiology-icon-btn rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 flex items-center justify-center transition-all border border-white/10 cursor-pointer"
-						data-testid="btn-mobile-reset-transform"
-						aria-label="Сбросить масштаб и положение"
-						title="Сброс (1:1)"
-					>
-						<RefreshCw size={15} />
 					</button>
 
 					<button
@@ -446,7 +450,7 @@ export const MobileChairsideRadiologyViewer: React.FC<MobileChairsideRadiologyVi
 			/>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    5. PATIENT SHOWCASE OVERLAY (1-CLICK BEFORE/AFTER & 043/U LINK)
+			    5. PATIENT SHOWCASE OVERLAY (1-CLICK BEFORE/AFTER & CLINICAL PROTOCOL LINK)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<MobilePatientShowcaseOverlay
 				isOpen={isShowcaseOpen}

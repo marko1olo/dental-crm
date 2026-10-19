@@ -41,28 +41,28 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.mobile-radiology-topbar button {
-	min-height: 36px !important;
-	height: 36px !important;
-	padding: 0 10px !important;
-	font-size: 12px !important;
+.mobile-radiology-topbar > button:not(.mobile-radiology-showcase-btn) {
+	min-height: 44px !important;
+	height: 44px !important;
+	padding: 0 12px !important;
+	font-size: 13px !important;
 	line-height: 1 !important;
 }
 
 .mobile-radiology-topbar .mobile-radiology-icon-btn {
-	min-width: 36px !important;
-	width: 36px !important;
-	height: 36px !important;
-	min-height: 36px !important;
+	min-width: 44px !important;
+	width: 44px !important;
+	height: 44px !important;
+	min-height: 44px !important;
 	padding: 0 !important;
 }
 
 .mobile-radiology-topbar .mobile-radiology-showcase-btn {
-	min-height: 24px !important;
-	height: 24px !important;
-	padding: 0 8px !important;
-	font-size: 11px !important;
-	border-radius: 999px !important;
+	min-height: 44px !important;
+	height: 44px !important;
+	padding: 0 10px !important;
+	font-size: 12px !important;
+	border-radius: 12px !important;
 }
 
 .mobile-radiology-topbar-title {
@@ -255,7 +255,9 @@
 .mobile-radiology-thumb-btn {
 	min-width: 44px;
 	min-height: 44px;
-	width: 48px;
+	width: auto;
+	flex: 1;
+	max-width: 58px;
 	height: 48px;
 	display: flex;
 	flex-direction: column;
@@ -266,12 +268,19 @@
 	background: rgba(255, 255, 255, 0.08);
 	border: 1px solid rgba(255, 255, 255, 0.12);
 	color: #cbd5e1;
-	font-size: 10px;
+	font-size: 9.5px;
 	font-weight: 600;
-	line-height: 1;
+	line-height: 1.1;
+	white-space: nowrap;
 	cursor: pointer;
 	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-radiology-thumb-btn span {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: clip;
 }
 
 .mobile-radiology-thumb-btn:active {

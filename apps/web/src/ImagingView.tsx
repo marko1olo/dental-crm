@@ -52,6 +52,38 @@ export function ImagingView(props: ImagingViewProps) {
 						hasFile: true,
 						capturedAt: new Date().toISOString(),
 					} as any,
+					{
+						id: "sample_rvg_36",
+						patientId: activePatient?.id || "sample_patient",
+						kind: "periapical",
+						title: "Прицельный снимок RVG #36 (Контроль обтурации)",
+						toothCode: "36",
+						region: "posterior",
+						previewUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+						hasFile: true,
+						capturedAt: new Date().toISOString(),
+					} as any,
+					{
+						id: "sample_optg_pano",
+						patientId: activePatient?.id || "sample_patient",
+						kind: "opg",
+						title: "Панорамная томограмма (ОПТГ)",
+						region: "maxilla_mandible",
+						previewUrl: "/radiology/sample_optg_panoramic.png",
+						hasFile: true,
+						capturedAt: new Date().toISOString(),
+					} as any,
+					{
+						id: "sample_rvg_pathology",
+						patientId: activePatient?.id || "sample_patient",
+						kind: "periapical",
+						title: "Прицельный снимок RVG #26 (Периодонтит)",
+						toothCode: "26",
+						region: "posterior",
+						previewUrl: "/radiology/sample_rvg_pathology.jpg",
+						hasFile: true,
+						capturedAt: new Date().toISOString(),
+					} as any,
 				];
 	const effectiveSelectedStudy = selectedImagingStudy ?? resolvedStudies[0] ?? null;
 

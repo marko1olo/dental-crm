@@ -186,11 +186,12 @@ export const MobileRadiologyFilterToolbar: React.FC<MobileRadiologyFilterToolbar
 							/>
 						</label>
 
-						<div className="flex items-center justify-between pt-1">
+						<div className="flex items-center justify-between pt-1 gap-2">
 							<button
 								type="button"
 								onClick={onResetFilters}
-								className="text-xs font-semibold text-slate-400 hover:text-white underline cursor-pointer"
+								className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/15 active:scale-95 transition-all cursor-pointer shadow-2xs"
+								data-testid="btn-mobile-reset-filters"
 							>
 								Сброс фильтров
 							</button>
@@ -198,9 +199,12 @@ export const MobileRadiologyFilterToolbar: React.FC<MobileRadiologyFilterToolbar
 							<button
 								type="button"
 								onClick={onToggleClahe}
-								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-									enhancementClahe ? "bg-teal-600 text-white" : "bg-white/10 text-slate-200"
+								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 border ${
+									enhancementClahe
+										? "bg-teal-600 text-white border-teal-400 shadow-teal-500/20"
+										: "bg-white/10 text-slate-200 border-white/15 hover:bg-white/15"
 								}`}
+								data-testid="btn-mobile-toggle-clahe"
 							>
 								CLAHE четкость
 							</button>
