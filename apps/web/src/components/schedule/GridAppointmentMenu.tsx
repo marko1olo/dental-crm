@@ -1,7 +1,7 @@
 import {
 	type Appointment,
 	type Dashboard,
-	getStomxWorkplacePalette,
+	getWorkplaceChairPalette,
 } from "@dental/shared";
 import {
 	CalendarCheck,
@@ -430,7 +430,7 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 					</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{effectiveChairs.map((ch, chIdx) => {
-							const chPalette = getStomxWorkplacePalette((ch as any).colorId ?? ch.id ?? chIdx);
+							const chPalette = getWorkplaceChairPalette((ch as any).colorId ?? ch.id ?? chIdx);
 							const chAccent = ch.color || chPalette.bright_code;
 							const isCurrent = a.chairId === ch.id;
 							return (

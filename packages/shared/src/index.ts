@@ -108,6 +108,7 @@ export {
 } from "./warehouse/index.js";
 export * from "./sync/index.js";
 export * from "./finance/index.js";
+export * from "./finance/cashFlowCatalogs.js";
 export * from "./finance/stomxCashFlowCatalogs.js";
 export * from "./finance/treatmentBudgetEngine.js";
 export * from "./finance/accountingExportEngine.js";

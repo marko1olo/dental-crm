@@ -26,11 +26,7 @@ export * from "./doctorNetSalaryEngine.js";
 export * from "./doctorShiftEarnings.js";
 export * from "./doctorPayoutCalculator.js";
 export * from "./managerialPnlEngine.js";
-export {
-	STOMX_EXPENSE_PNL_CATEGORIES,
-	stomxExpensePnlCategorySchema,
-	type StomxExpensePnlCategory,
-} from "./stomxCashFlowCatalogs.js";
+export * from "./cashFlowCatalogs.js";
 export * from "./stomxCashFlowCategories.js";
 export * from "./stomxCashFlowCatalogs.js";
 export * from "./treatmentBudgetEngine.js";

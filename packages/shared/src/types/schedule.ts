@@ -1,10 +1,7 @@
 /**
  * packages/shared/src/types/schedule.ts
  *
- * StomX 4-State Workplace & Chair Color Palettes.
- * Derived from StomX:
- *   - data/catalogs/workplace_colors.json
- *   - data/workplaces/all.json
+ * Канонические 4-состоятельные палитры кресел и рабочих мест расписания DENTE Dental CRM.
  *
  * Each workplace/chair palette has 4 theme-aware colors:
  * - bright_code: light accent (borders, active pills, badges)
@@ -15,7 +12,7 @@
 
 import { z } from "zod";
 
-export const stomxWorkplacePaletteItemSchema = z.object({
+export const workplaceChairPaletteItemSchema = z.object({
 	id: z.number().optional(),
 	nameRu: z.string(),
 	bright_code: z.string(),
@@ -24,10 +21,10 @@ export const stomxWorkplacePaletteItemSchema = z.object({
 	dark: z.string(),
 });
 
-export type StomxWorkplacePaletteItem = z.infer<typeof stomxWorkplacePaletteItemSchema>;
-export const stomxWorkplacePaletteSchema = stomxWorkplacePaletteItemSchema;
+export type WorkplaceChairPaletteItem = z.infer<typeof workplaceChairPaletteItemSchema>;
+export const workplaceChairPaletteSchema = workplaceChairPaletteItemSchema;
 
-export const STOMX_WORKPLACE_PALETTES = [
+export const WORKPLACE_CHAIR_PALETTES = [
 	{
 		id: 1,
 		nameRu: "Лаванда",
@@ -68,50 +65,62 @@ export const STOMX_WORKPLACE_PALETTES = [
 		code: "#F2F8CC",
 		dark: "#624E38",
 	},
-] as const satisfies readonly StomxWorkplacePaletteItem[];
+] as const satisfies readonly WorkplaceChairPaletteItem[];
 
-export type StomxWorkplacePalette = (typeof STOMX_WORKPLACE_PALETTES)[number];
+export type WorkplaceChairPalette = (typeof WORKPLACE_CHAIR_PALETTES)[number];
 
-export const DEFAULT_STOMX_WORKPLACE_PALETTE: StomxWorkplacePaletteItem = STOMX_WORKPLACE_PALETTES[0]!;
+export const DEFAULT_WORKPLACE_CHAIR_PALETTE: WorkplaceChairPaletteItem = WORKPLACE_CHAIR_PALETTES[0]!;
 
-export const STOMX_WORKPLACE_PALETTES_MAP = {
-	lavender: STOMX_WORKPLACE_PALETTES[0],
-	blue: STOMX_WORKPLACE_PALETTES[1],
-	rose: STOMX_WORKPLACE_PALETTES[2],
-	olive: STOMX_WORKPLACE_PALETTES[3],
-	sand: STOMX_WORKPLACE_PALETTES[4],
+export const WORKPLACE_CHAIR_PALETTES_MAP = {
+	lavender: WORKPLACE_CHAIR_PALETTES[0],
+	blue: WORKPLACE_CHAIR_PALETTES[1],
+	rose: WORKPLACE_CHAIR_PALETTES[2],
+	olive: WORKPLACE_CHAIR_PALETTES[3],
+	sand: WORKPLACE_CHAIR_PALETTES[4],
 } as const;
 
 /**
- * Resolves a StomX 4-state workplace palette by ID, number index, or string identifier.
+ * Resolves a 4-state workplace chair palette by ID, number index, or string identifier.
  */
-export function getStomxWorkplacePalette(indexOrId: number | string): StomxWorkplacePaletteItem {
+export function getWorkplaceChairPalette(indexOrId: number | string): WorkplaceChairPaletteItem {
 	if (typeof indexOrId === "number") {
-		const byId = STOMX_WORKPLACE_PALETTES.find((p) => p.id === indexOrId);
+		const byId = WORKPLACE_CHAIR_PALETTES.find((p) => p.id === indexOrId);
 		if (byId) return byId;
-		const idx = Math.abs(indexOrId) % STOMX_WORKPLACE_PALETTES.length;
-		return STOMX_WORKPLACE_PALETTES[idx] ?? DEFAULT_STOMX_WORKPLACE_PALETTE;
+		const idx = Math.abs(indexOrId) % WORKPLACE_CHAIR_PALETTES.length;
+		return WORKPLACE_CHAIR_PALETTES[idx] ?? DEFAULT_WORKPLACE_CHAIR_PALETTE;
 	}
 	if (!indexOrId) {
-		return DEFAULT_STOMX_WORKPLACE_PALETTE;
+		return DEFAULT_WORKPLACE_CHAIR_PALETTE;
 	}
 	const lower = String(indexOrId).toLowerCase();
-	const mapped = (STOMX_WORKPLACE_PALETTES_MAP as Record<string, StomxWorkplacePaletteItem | undefined>)[lower];
+	const mapped = (WORKPLACE_CHAIR_PALETTES_MAP as Record<string, WorkplaceChairPaletteItem | undefined>)[lower];
 	if (mapped) {
 		return mapped;
 	}
 	const num = Number(indexOrId);
 	if (!Number.isNaN(num)) {
-		const byId = STOMX_WORKPLACE_PALETTES.find((p) => p.id === num);
+		const byId = WORKPLACE_CHAIR_PALETTES.find((p) => p.id === num);
 		if (byId) return byId;
-		const idx = Math.abs(num) % STOMX_WORKPLACE_PALETTES.length;
-		return STOMX_WORKPLACE_PALETTES[idx] ?? DEFAULT_STOMX_WORKPLACE_PALETTE;
+		const idx = Math.abs(num) % WORKPLACE_CHAIR_PALETTES.length;
+		return WORKPLACE_CHAIR_PALETTES[idx] ?? DEFAULT_WORKPLACE_CHAIR_PALETTE;
 	}
 	let hash = 0;
 	for (let i = 0; i < indexOrId.length; i++) {
 		hash = (hash << 5) - hash + indexOrId.charCodeAt(i);
 		hash |= 0;
 	}
-	const hashIdx = Math.abs(hash) % STOMX_WORKPLACE_PALETTES.length;
-	return STOMX_WORKPLACE_PALETTES[hashIdx] ?? DEFAULT_STOMX_WORKPLACE_PALETTE;
+	const hashIdx = Math.abs(hash) % WORKPLACE_CHAIR_PALETTES.length;
+	return WORKPLACE_CHAIR_PALETTES[hashIdx] ?? DEFAULT_WORKPLACE_CHAIR_PALETTE;
 }
+
+// ============================================================================
+// Обратная совместимость для плавного перехода (Backward Compatibility Aliases)
+// ============================================================================
+export const stomxWorkplacePaletteItemSchema = workplaceChairPaletteItemSchema;
+export type StomxWorkplacePaletteItem = WorkplaceChairPaletteItem;
+export const stomxWorkplacePaletteSchema = workplaceChairPaletteSchema;
+export const STOMX_WORKPLACE_PALETTES = WORKPLACE_CHAIR_PALETTES;
+export type StomxWorkplacePalette = WorkplaceChairPalette;
+export const DEFAULT_STOMX_WORKPLACE_PALETTE = DEFAULT_WORKPLACE_CHAIR_PALETTE;
+export const STOMX_WORKPLACE_PALETTES_MAP = WORKPLACE_CHAIR_PALETTES_MAP;
+export const getStomxWorkplacePalette = getWorkplaceChairPalette;

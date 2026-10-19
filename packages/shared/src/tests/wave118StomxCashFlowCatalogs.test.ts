@@ -23,9 +23,32 @@ import {
 	stomxCashReceiptItemSchema,
 	getFfd1054Label,
 	isFiscal54FzOperation,
+	CASH_EXPENSE_CATALOG,
+	CASH_RECEIPT_CATALOG,
+	CASH_EXPENSE_BY_ALIAS,
+	CASH_EXPENSE_BY_ID,
+	CASH_RECEIPT_BY_ALIAS,
+	CASH_RECEIPT_BY_ID,
+	CASH_EXPENSE_TYPE_ALIASES,
+	CASH_RECEIPT_TYPE_ALIASES,
+	cashExpenseItemSchema,
+	cashReceiptItemSchema,
 } from "../finance/stomxCashFlowCatalogs.js";
 
 describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification", () => {
+	it("exposes clean canonical DENTE aliases identical to legacy catalog", () => {
+		assert.strictEqual(CASH_EXPENSE_CATALOG, STOMX_CASH_EXPENSE_CATALOG);
+		assert.strictEqual(CASH_RECEIPT_CATALOG, STOMX_CASH_RECEIPT_CATALOG);
+		assert.strictEqual(CASH_EXPENSE_BY_ALIAS, STOMX_CASH_EXPENSE_BY_ALIAS);
+		assert.strictEqual(CASH_EXPENSE_BY_ID, STOMX_CASH_EXPENSE_BY_ID);
+		assert.strictEqual(CASH_RECEIPT_BY_ALIAS, STOMX_CASH_RECEIPT_BY_ALIAS);
+		assert.strictEqual(CASH_RECEIPT_BY_ID, STOMX_CASH_RECEIPT_BY_ID);
+		assert.strictEqual(CASH_EXPENSE_TYPE_ALIASES, STOMX_EXPENSE_TYPE_ALIASES);
+		assert.strictEqual(CASH_RECEIPT_TYPE_ALIASES, STOMX_RECEIPT_TYPE_ALIASES);
+		assert.strictEqual(cashExpenseItemSchema, stomxCashExpenseItemSchema);
+		assert.strictEqual(cashReceiptItemSchema, stomxCashReceiptItemSchema);
+	});
+
 	it("contains exactly 14 canonical StomX cash expense types with valid schemas and IDs", () => {
 		assert.equal(STOMX_CASH_EXPENSE_CATALOG.length, 14, "Must contain exactly 14 expense types");
 		assert.equal(STOMX_EXPENSE_TYPE_ALIASES.length, 14, "Must list all 14 aliases");

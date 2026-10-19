@@ -1,14 +1,13 @@
 /**
  * packages/shared/src/types/pricing.ts
  *
- * StomX 21 Canonical Dental Clinical Pricelist Categories.
- * Derived from StomX Reverse Engineering Depot:
- *   РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/data/pricelist/categories.json
+ * Канонический клинический классификатор категорий услуг DENTE Dental CRM.
+ * 21 каноническая клиническая категория услуг амбулаторной стоматологической практики.
  */
 
 import { z } from "zod";
 
-export const STOMX_PRICELIST_CATEGORIES = [
+export const CLINICAL_PRICELIST_CATEGORIES = [
 	"Первичный/повторный прием",
 	"Гигиена и профилактика",
 	"Диагностика",
@@ -32,25 +31,35 @@ export const STOMX_PRICELIST_CATEGORIES = [
 	"Изготовление и ремонт зубных протезов",
 ] as const;
 
-export type StomxPricelistCategoryName = (typeof STOMX_PRICELIST_CATEGORIES)[number];
+export type ClinicalPricelistCategoryName = (typeof CLINICAL_PRICELIST_CATEGORIES)[number];
 
-export const stomxPricelistCategoryNameSchema = z.enum(STOMX_PRICELIST_CATEGORIES);
+export const clinicalPricelistCategoryNameSchema = z.enum(CLINICAL_PRICELIST_CATEGORIES);
 
-export interface StomxPricelistCategoryItem {
+export interface ClinicalPricelistCategoryItem {
 	readonly id: number;
-	readonly nameRu: StomxPricelistCategoryName;
+	readonly nameRu: ClinicalPricelistCategoryName;
 	readonly slug: string;
 }
 
-export const STOMX_PRICELIST_CATEGORY_ITEMS: readonly StomxPricelistCategoryItem[] =
-	STOMX_PRICELIST_CATEGORIES.map((nameRu, index) => ({
+export const CLINICAL_PRICELIST_CATEGORY_ITEMS: readonly ClinicalPricelistCategoryItem[] =
+	CLINICAL_PRICELIST_CATEGORIES.map((nameRu, index) => ({
 		id: index + 1,
 		nameRu,
 		slug: `category_${index + 1}`,
 	}));
 
-export const stomxPricelistCategoryItemSchema = z.object({
+export const clinicalPricelistCategoryItemSchema = z.object({
 	id: z.number().int().positive(),
-	nameRu: stomxPricelistCategoryNameSchema,
+	nameRu: clinicalPricelistCategoryNameSchema,
 	slug: z.string().min(1),
 });
+
+// ============================================================================
+// Обратная совместимость для плавного перехода (Backward Compatibility Aliases)
+// ============================================================================
+export const STOMX_PRICELIST_CATEGORIES = CLINICAL_PRICELIST_CATEGORIES;
+export type StomxPricelistCategoryName = ClinicalPricelistCategoryName;
+export const stomxPricelistCategoryNameSchema = clinicalPricelistCategoryNameSchema;
+export type StomxPricelistCategoryItem = ClinicalPricelistCategoryItem;
+export const STOMX_PRICELIST_CATEGORY_ITEMS = CLINICAL_PRICELIST_CATEGORY_ITEMS;
+export const stomxPricelistCategoryItemSchema = clinicalPricelistCategoryItemSchema;

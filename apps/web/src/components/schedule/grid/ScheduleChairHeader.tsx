@@ -5,7 +5,7 @@ import {
   X,
 } from "lucide-react";
 import type { Dashboard } from "@dental/shared";
-import { getStomxWorkplacePalette } from "@dental/shared";
+import { getWorkplaceChairPalette } from "@dental/shared";
 import { formatDoctorShortName } from ".././GridAppointmentCard";
 import { DEFAULT_SOLO_CHAIR } from "./gridConstants";
 import { ScheduleChairDoctorPopover } from "./ScheduleChairDoctorPopover";
@@ -81,7 +81,7 @@ export function ScheduleChairHeader({
 }: ScheduleChairHeaderProps) {
   const assignment = effectiveChairAssignments[chair.id];
   const hasDoctor = Boolean(assignment && assignment.doctorId);
-  const chairPalette = getStomxWorkplacePalette(
+  const chairPalette = getWorkplaceChairPalette(
     (chair as any).colorId ?? chair.id ?? chairIndex,
   );
   const chairAccentColor = chair.color || chairPalette.bright_code;

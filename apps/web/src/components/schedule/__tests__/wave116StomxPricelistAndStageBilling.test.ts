@@ -19,6 +19,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+	CLINICAL_PRICELIST_CATEGORIES,
+	CLINICAL_PRICELIST_CATEGORY_ITEMS,
+	clinicalPricelistCategoryNameSchema,
+	clinicalPricelistCategoryItemSchema,
 	STOMX_PRICELIST_CATEGORIES,
 	STOMX_PRICELIST_CATEGORY_ITEMS,
 	stomxPricelistCategoryNameSchema,
@@ -29,6 +33,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Wave 116: StomX 21 Pricelist Categories & Treatment Plan Stage Billing", () => {
+	it("0. CLINICAL_PRICELIST_CATEGORIES is the clean canonical source of truth for DENTE", () => {
+		assert.strictEqual(CLINICAL_PRICELIST_CATEGORIES, STOMX_PRICELIST_CATEGORIES);
+		assert.strictEqual(CLINICAL_PRICELIST_CATEGORY_ITEMS, STOMX_PRICELIST_CATEGORY_ITEMS);
+		assert.strictEqual(clinicalPricelistCategoryNameSchema, stomxPricelistCategoryNameSchema);
+		assert.strictEqual(clinicalPricelistCategoryItemSchema, stomxPricelistCategoryItemSchema);
+	});
+
 	it("1. STOMX_PRICELIST_CATEGORIES exports exactly 21 canonical clinical categories", () => {
 		assert.equal(
 			STOMX_PRICELIST_CATEGORIES.length,

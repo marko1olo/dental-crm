@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock, Plus, Zap } from "lucide-react";
-import { getStomxWorkplacePalette } from "@dental/shared";
+import { getWorkplaceChairPalette } from "@dental/shared";
 import type { ScheduleDensityMode } from "../../useScheduleState";
 import type { ScheduleAppointmentTrackProps, SlotCellData } from "./types";
 import { calcAppointmentsSpan } from "./appointmentTrackUtils";
@@ -39,7 +39,7 @@ export function AppointmentTimeSlotCell({
   props,
 }: AppointmentTimeSlotCellProps) {
   const rowIndex = hIndex + 1;
-  const chairPalette = getStomxWorkplacePalette(
+  const chairPalette = getWorkplaceChairPalette(
     (chair as any).colorId ?? chair.id ?? chairIndex,
   );
   const { cellAppointments, continuingAppointments, cellMaintenance } = cellData;

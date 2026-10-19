@@ -8,6 +8,8 @@
 import {
 	kopecksToRub,
 	rubToKopecks,
+	CASH_BOXES,
+	CASH_RECEIPT_CATEGORIES,
 	STOMX_CASH_BOXES,
 	STOMX_CASH_RECEIPT_CATEGORIES,
 } from "@dental/shared";
@@ -129,17 +131,17 @@ export async function executeCashSubmit(
 
 	try {
 		const activeCategoryTitle =
-			STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
+			CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
 			"Оплата услуг";
 		const activeBoxTitle =
-			STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+			CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 
 		const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 		const changeNote =
 			cashChange.changeRub > 0
 				? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)`
 				: "";
-		const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
+		const cashFlowNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 
 		const res = await dispatchPaymentApi(
 			{
@@ -154,7 +156,7 @@ export async function executeCashSubmit(
 				clientMutationId,
 				toothNumber: toothNumber ? Number(toothNumber) || toothNumber : undefined,
 				invoiceItems: formatInvoiceItems(items),
-				note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
+				note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}${cashFlowNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 			},
 			headers,
 		);
@@ -327,10 +329,10 @@ export async function executeSplitSubmit(
 
 	try {
 		const activeCategoryTitle =
-			STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
+			CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
 			"Оплата услуг";
 		const activeBoxTitle =
-			STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+			CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 
 		const parts: string[] = [];
 		if (effectiveCardRub > 0) parts.push(`карта ${effectiveCardRub} ₽`);
@@ -362,7 +364,7 @@ export async function executeSplitSubmit(
 							: "card";
 
 		const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
-		const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
+		const cashFlowNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 
 		const res = await dispatchPaymentApi(
 			{
@@ -389,7 +391,7 @@ export async function executeSplitSubmit(
 				clientMutationId,
 				toothNumber: toothNumber ? Number(toothNumber) || toothNumber : undefined,
 				invoiceItems: formatInvoiceItems(items),
-				note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
+				note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote}${cashFlowNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 			},
 			headers,
 		);
@@ -465,12 +467,12 @@ export async function executeDepositSubmit(
 
 	try {
 		const activeCategoryTitle =
-			STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
+			CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
 			"Оплата услуг";
 		const activeBoxTitle =
-			STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+			CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 
-		const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
+		const cashFlowNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 		const res = await dispatchPaymentApi(
 			{
 				patientId,
@@ -486,8 +488,8 @@ export async function executeDepositSubmit(
 				invoiceItems: formatInvoiceItems(items),
 				note:
 					source === "family"
-						? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`
-						: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
+						? `Оплата с семейного баланса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${cashFlowNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`
+						: `Оплата с лицевого счета / аванса (${totalDueRub} ₽)${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${cashFlowNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 			},
 			headers,
 		);

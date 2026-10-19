@@ -1,10 +1,7 @@
 /**
  * packages/shared/src/finance/stomxCashFlowCategories.ts
  *
- * StomX Cash Flow Categories & 54-FZ Fiscal Operation Harmonizer.
- * Derived from StomX catalogs:
- *   - data/catalogs/cash_expense_types.json (Cash Outflow / Expense operations)
- *   - data/catalogs/cash_receipt_types.json (Cash Inflow / Receipt operations)
+ * DENTE Dental CRM — Канонические категории движения денежных средств и гармонизатор кассовых операций 54-ФЗ.
  *
  * Invariants & Regulatory Compliance:
  * - 54-FZ & FFD 1.2 Calculation Subjects (услуга=4, товар=1, аванс=3, внереализационный=null)
@@ -21,6 +18,24 @@ import { z } from "zod";
 // ============================================================================
 
 import {
+	CASH_RECEIPT_TYPE_ALIASES,
+	cashReceiptTypeAliasSchema,
+	type CashReceiptTypeAlias,
+	CASH_RECEIPT_CATALOG,
+	CASH_RECEIPT_BY_ALIAS,
+	CASH_RECEIPT_BY_ID,
+	CASH_EXPENSE_TYPE_ALIASES,
+	cashExpenseTypeAliasSchema,
+	type CashExpenseTypeAlias,
+	CASH_EXPENSE_CATALOG,
+	CASH_EXPENSE_BY_ALIAS,
+	CASH_EXPENSE_BY_ID,
+	type CashExpenseItem,
+	type CashReceiptItem,
+	CASH_EXPENSE_PNL_CATEGORIES,
+	cashExpensePnlCategorySchema,
+	type CashExpensePnlCategory,
+	// Backward-compatibility aliases
 	STOMX_RECEIPT_TYPE_ALIASES,
 	stomxReceiptTypeAliasSchema,
 	type StomxReceiptTypeAlias,
@@ -41,6 +56,24 @@ import {
 } from "./stomxCashFlowCatalogs.js";
 
 export {
+	CASH_RECEIPT_TYPE_ALIASES,
+	cashReceiptTypeAliasSchema,
+	type CashReceiptTypeAlias,
+	CASH_RECEIPT_CATALOG,
+	CASH_RECEIPT_BY_ALIAS,
+	CASH_RECEIPT_BY_ID,
+	CASH_EXPENSE_TYPE_ALIASES,
+	cashExpenseTypeAliasSchema,
+	type CashExpenseTypeAlias,
+	CASH_EXPENSE_CATALOG,
+	CASH_EXPENSE_BY_ALIAS,
+	CASH_EXPENSE_BY_ID,
+	type CashExpenseItem,
+	type CashReceiptItem,
+	CASH_EXPENSE_PNL_CATEGORIES,
+	cashExpensePnlCategorySchema,
+	type CashExpensePnlCategory,
+	// Backward-compatibility aliases
 	STOMX_RECEIPT_TYPE_ALIASES,
 	stomxReceiptTypeAliasSchema,
 	type StomxReceiptTypeAlias,
@@ -69,19 +102,17 @@ export {
  */
 export type FfdCalculationSubjectCode = 1 | 3 | 4 | null;
 
-export type StomxCashReceiptTypeMeta = StomxCashReceiptItem;
-export const STOMX_CASH_RECEIPT_CATEGORIES = STOMX_CASH_RECEIPT_CATALOG;
+export type CashReceiptTypeMeta = CashReceiptItem;
+export type StomxCashReceiptTypeMeta = CashReceiptTypeMeta;
 
+export const CASH_RECEIPT_CATEGORIES = CASH_RECEIPT_CATALOG;
+export const STOMX_CASH_RECEIPT_CATEGORIES = CASH_RECEIPT_CATEGORIES;
 
 // ============================================================================
 // 2. CASH EXPENSE / OUTFLOW TYPES (РАСХОДНЫЕ ОПЕРАЦИИ И ИЗЪЯТИЯ КАССЫ)
 // ============================================================================
 
-// (Expense aliases and schemas imported from ./stomxCashFlowCatalogs.js)
-
-// (STOMX_EXPENSE_PNL_CATEGORIES and schema imported from ./stomxCashFlowCatalogs.js)
-
-export const STOMX_EXPENSE_PNL_LABELS_RU: Record<StomxExpensePnlCategory, string> = {
+export const CASH_EXPENSE_PNL_LABELS_RU: Record<CashExpensePnlCategory, string> = {
 	salaries: "ФОТ и заработная плата персонала",
 	materials: "Стоматологические материалы и медикаменты",
 	household: "Хозяйственные нужды и клининг",
@@ -92,16 +123,19 @@ export const STOMX_EXPENSE_PNL_LABELS_RU: Record<StomxExpensePnlCategory, string
 	refund: "Возврат денежных средств пациенту",
 	other: "Прочие управленческие расходы",
 };
+export const STOMX_EXPENSE_PNL_LABELS_RU = CASH_EXPENSE_PNL_LABELS_RU;
 
-export type StomxCashExpenseTypeMeta = StomxCashExpenseItem;
-export const STOMX_CASH_EXPENSE_CATEGORIES = STOMX_CASH_EXPENSE_CATALOG;
+export type CashExpenseTypeMeta = CashExpenseItem;
+export type StomxCashExpenseTypeMeta = CashExpenseTypeMeta;
 
+export const CASH_EXPENSE_CATEGORIES = CASH_EXPENSE_CATALOG;
+export const STOMX_CASH_EXPENSE_CATEGORIES = CASH_EXPENSE_CATEGORIES;
 
 // ============================================================================
-// 2.1 STOMX CASH BOXES & REGISTERS (СПРАВОЧНИК КАСС КЛИНИКИ)
+// 2.1 CASH BOXES & REGISTERS (СПРАВОЧНИК КАСС КЛИНИКИ)
 // ============================================================================
 
-export const STOMX_CASH_BOX_TYPES = [
+export const CASH_BOX_TYPES = [
 	"main",     // id: 1, Основная
 	"extra",    // id: 2, Дополнительная
 	"cashless", // id: 3, Безналичный расчет
@@ -109,21 +143,25 @@ export const STOMX_CASH_BOX_TYPES = [
 	"account",  // id: 5, Расчетный счет
 	"expenses", // id: 6, Расходы
 ] as const;
+export const STOMX_CASH_BOX_TYPES = CASH_BOX_TYPES;
 
-export const stomxCashBoxTypeSchema = z.enum(STOMX_CASH_BOX_TYPES);
-export type StomxCashBoxType = z.infer<typeof stomxCashBoxTypeSchema>;
+export const cashBoxTypeSchema = z.enum(CASH_BOX_TYPES);
+export const stomxCashBoxTypeSchema = cashBoxTypeSchema;
+export type CashBoxType = z.infer<typeof cashBoxTypeSchema>;
+export type StomxCashBoxType = CashBoxType;
 
-export interface StomxCashBoxMeta {
+export interface CashBoxMeta {
 	readonly id: number;
-	readonly type: StomxCashBoxType;
+	readonly type: CashBoxType;
 	readonly name: string;
 	readonly isMain: boolean;
 	readonly isCashless: boolean;
 	readonly order: number;
 	readonly descriptionRu: string;
 }
+export type StomxCashBoxMeta = CashBoxMeta;
 
-export const STOMX_CASH_BOXES: readonly StomxCashBoxMeta[] = [
+export const CASH_BOXES: readonly CashBoxMeta[] = [
 	{
 		id: 1,
 		type: "main",
@@ -179,30 +217,35 @@ export const STOMX_CASH_BOXES: readonly StomxCashBoxMeta[] = [
 		descriptionRu: "Касса операционных расходов и выдачи подотчетных сумм",
 	},
 ] as const;
+export const STOMX_CASH_BOXES = CASH_BOXES;
 
-export const STOMX_CASH_BOX_BY_TYPE = Object.freeze(
+export const CASH_BOX_BY_TYPE = Object.freeze(
 	Object.fromEntries(
-		STOMX_CASH_BOXES.map((b) => [b.type, b]),
-	) as Record<StomxCashBoxType, StomxCashBoxMeta>,
+		CASH_BOXES.map((b) => [b.type, b]),
+	) as Record<CashBoxType, CashBoxMeta>,
 );
+export const STOMX_CASH_BOX_BY_TYPE = CASH_BOX_BY_TYPE;
 
-export const STOMX_CASH_BOX_BY_ID = Object.freeze(
+export const CASH_BOX_BY_ID = Object.freeze(
 	Object.fromEntries(
-		STOMX_CASH_BOXES.map((b) => [b.id, b]),
-	) as Record<number, StomxCashBoxMeta>,
+		CASH_BOXES.map((b) => [b.id, b]),
+	) as Record<number, CashBoxMeta>,
 );
+export const STOMX_CASH_BOX_BY_ID = CASH_BOX_BY_ID;
 
-export function getStomxCashBoxByType(
+export function getCashBoxByType(
 	type: string,
-): StomxCashBoxMeta | undefined {
-	return STOMX_CASH_BOX_BY_TYPE[type as StomxCashBoxType];
+): CashBoxMeta | undefined {
+	return CASH_BOX_BY_TYPE[type as CashBoxType];
 }
+export const getStomxCashBoxByType = getCashBoxByType;
 
-export function getStomxCashBoxById(
+export function getCashBoxById(
 	id: number,
-): StomxCashBoxMeta | undefined {
-	return STOMX_CASH_BOX_BY_ID[id];
+): CashBoxMeta | undefined {
+	return CASH_BOX_BY_ID[id];
 }
+export const getStomxCashBoxById = getCashBoxById;
 
 // ============================================================================
 // 3. PAYMENT METHOD & TENDER SCHEMAS (СПОСОБЫ ОПЛАТЫ И ТЕНДЕРЫ ПО 54-ФЗ)
@@ -238,7 +281,7 @@ export const CASH_TENDER_LABELS_RU: Record<CashTenderMethod, string> = {
  * По закону 54-ФЗ физлицо НЕ ОБЯЗАНО предоставлять ИНН при оплате наличными или картой.
  * Требование ИНН обязательно только для юрлиц и индивидуальных предпринимателей.
  */
-export const stomxPayerPartySchema = z.object({
+export const payerPartySchema = z.object({
 	partyType: z.enum(["individual", "legal_entity", "sole_proprietor"]).default("individual"),
 	fullName: z.string().min(1, "ФИО или наименование плательщика обязательно"),
 	inn: z
@@ -259,23 +302,24 @@ export const stomxPayerPartySchema = z.object({
 		});
 	}
 });
-
-export type StomxPayerParty = z.infer<typeof stomxPayerPartySchema>;
+export const stomxPayerPartySchema = payerPartySchema;
+export type PayerParty = z.infer<typeof payerPartySchema>;
+export type StomxPayerParty = PayerParty;
 
 /**
  * Запись приходной кассовой операции
  */
-export const stomxCashReceiptRecordSchema = z.object({
+export const cashReceiptRecordSchema = z.object({
 	id: z.string().uuid().optional(),
 	organizationId: z.string().uuid(),
 	branchId: z.string().uuid().optional().nullable(),
-	receiptTypeAlias: stomxReceiptTypeAliasSchema,
+	receiptTypeAlias: cashReceiptTypeAliasSchema,
 	amountKopecks: z
 		.number()
 		.int("Сумма должна быть целым числом копеек")
 		.positive("Сумма должна быть строго больше нуля"),
 	paymentMethod: cashTenderMethodSchema.default("cash"),
-	payer: stomxPayerPartySchema,
+	payer: payerPartySchema,
 	patientId: z.string().uuid().optional().nullable(),
 	appointmentId: z.string().uuid().optional().nullable(),
 	invoiceId: z.string().uuid().optional().nullable(),
@@ -284,17 +328,19 @@ export const stomxCashReceiptRecordSchema = z.object({
 	isFiscalPrinted: z.boolean().default(false),
 	createdAt: z.string().datetime().optional(),
 });
-export type StomxCashReceiptRecord = z.infer<typeof stomxCashReceiptRecordSchema>;
+export const stomxCashReceiptRecordSchema = cashReceiptRecordSchema;
+export type CashReceiptRecord = z.infer<typeof cashReceiptRecordSchema>;
+export type StomxCashReceiptRecord = CashReceiptRecord;
 
 /**
  * Запись расходной кассовой операции
  */
-export const stomxCashExpenseRecordSchema = z.object({
+export const cashExpenseRecordSchema = z.object({
 	id: z.string().uuid().optional(),
 	organizationId: z.string().uuid(),
 	branchId: z.string().uuid().optional().nullable(),
-	expenseTypeAlias: stomxExpenseTypeAliasSchema,
-	pnlCategory: stomxExpensePnlCategorySchema,
+	expenseTypeAlias: cashExpenseTypeAliasSchema,
+	pnlCategory: cashExpensePnlCategorySchema,
 	amountKopecks: z
 		.number()
 		.int("Сумма должна быть целым числом копеек")
@@ -307,7 +353,9 @@ export const stomxCashExpenseRecordSchema = z.object({
 	isFiscalRefundPrinted: z.boolean().default(false),
 	createdAt: z.string().datetime().optional(),
 });
-export type StomxCashExpenseRecord = z.infer<typeof stomxCashExpenseRecordSchema>;
+export const stomxCashExpenseRecordSchema = cashExpenseRecordSchema;
+export type CashExpenseRecord = z.infer<typeof cashExpenseRecordSchema>;
+export type StomxCashExpenseRecord = CashExpenseRecord;
 
 // ============================================================================
 // 4. BUSINESS LOGIC HELPERS & HARMONIZATION UTILITIES
@@ -316,69 +364,74 @@ export type StomxCashExpenseRecord = z.infer<typeof stomxCashExpenseRecordSchema
 /**
  * Находит метаданные типа поступления по его псевдониму
  */
-export function getStomxReceiptTypeByAlias(
+export function getCashReceiptTypeByAlias(
 	alias: string,
-): StomxCashReceiptTypeMeta | undefined {
-	return STOMX_CASH_RECEIPT_BY_ALIAS[alias as StomxReceiptTypeAlias];
+): CashReceiptTypeMeta | undefined {
+	return CASH_RECEIPT_BY_ALIAS[alias as CashReceiptTypeAlias];
 }
+export const getStomxReceiptTypeByAlias = getCashReceiptTypeByAlias;
 
 /**
- * Находит метаданные типа поступления по числовому ID StomX
+ * Находит метаданные типа поступления по числовому ID
  */
-export function getStomxReceiptTypeById(
+export function getCashReceiptTypeById(
 	id: number,
-): StomxCashReceiptTypeMeta | undefined {
-	return STOMX_CASH_RECEIPT_BY_ID[id];
+): CashReceiptTypeMeta | undefined {
+	return CASH_RECEIPT_BY_ID[id];
 }
+export const getStomxReceiptTypeById = getCashReceiptTypeById;
 
 /**
  * Находит метаданные типа расхода по его псевдониму
  */
-export function getStomxExpenseTypeByAlias(
+export function getCashExpenseTypeByAlias(
 	alias: string,
-): StomxCashExpenseTypeMeta | undefined {
-	return STOMX_CASH_EXPENSE_BY_ALIAS[alias as StomxExpenseTypeAlias];
+): CashExpenseTypeMeta | undefined {
+	return CASH_EXPENSE_BY_ALIAS[alias as CashExpenseTypeAlias];
 }
+export const getStomxExpenseTypeByAlias = getCashExpenseTypeByAlias;
 
 /**
- * Находит метаданные типа расхода по числовому ID StomX
+ * Находит метаданные типа расхода по числовому ID
  */
-export function getStomxExpenseTypeById(
+export function getCashExpenseTypeById(
 	id: number,
-): StomxCashExpenseTypeMeta | undefined {
-	return STOMX_CASH_EXPENSE_BY_ID[id];
+): CashExpenseTypeMeta | undefined {
+	return CASH_EXPENSE_BY_ID[id];
 }
+export const getStomxExpenseTypeById = getCashExpenseTypeById;
 
 /**
  * Определяет, подлежит ли операция поступления выдаче чека 54-ФЗ
  */
-export function isFiscalReceiptOperation(alias: StomxReceiptTypeAlias): boolean {
-	return STOMX_CASH_RECEIPT_BY_ALIAS[alias]?.isFiscal ?? false;
+export function isFiscalReceiptOperation(alias: CashReceiptTypeAlias): boolean {
+	return CASH_RECEIPT_BY_ALIAS[alias]?.isFiscal ?? false;
 }
 
 /**
  * Определяет, является ли расходная операция фискальным возвратом прихода по 54-ФЗ
  */
-export function isFiscalRefundOperation(alias: StomxExpenseTypeAlias): boolean {
-	return STOMX_CASH_EXPENSE_BY_ALIAS[alias]?.isFiscalRefund ?? false;
+export function isFiscalRefundOperation(alias: CashExpenseTypeAlias): boolean {
+	return CASH_EXPENSE_BY_ALIAS[alias]?.isFiscalRefund ?? false;
 }
 
 /**
- * Сопоставляет расход StomX с управленческой статьей P&L с учетом контекста
+ * Сопоставляет расход с управленческой статьей P&L с учетом контекста
  */
-export function mapStomxExpenseToPnlCategory(
-	alias: StomxExpenseTypeAlias,
-	explicitCategory?: StomxExpensePnlCategory,
-): StomxExpensePnlCategory {
+export function mapCashExpenseToPnlCategory(
+	alias: CashExpenseTypeAlias,
+	explicitCategory?: CashExpensePnlCategory,
+): CashExpensePnlCategory {
 	if (explicitCategory) {
 		return explicitCategory;
 	}
-	const meta = STOMX_CASH_EXPENSE_BY_ALIAS[alias];
+	const meta = CASH_EXPENSE_BY_ALIAS[alias];
 	if (meta?.defaultPnlCategory) {
-		return meta.defaultPnlCategory as StomxExpensePnlCategory;
+		return meta.defaultPnlCategory as CashExpensePnlCategory;
 	}
 	return "other";
 }
+export const mapStomxExpenseToPnlCategory = mapCashExpenseToPnlCategory;
 
 /**
  * Мандат 8e / 8n: Проверка оплаты физического лица.

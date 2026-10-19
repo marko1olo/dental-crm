@@ -8,9 +8,11 @@ import { useState, useEffect } from "react";
 import {
 	createCompositeIdempotencyKey,
 	rubToKopecks,
-	STOMX_CASH_BOXES,
-	STOMX_CASH_RECEIPT_CATEGORIES,
+	CASH_BOXES,
+	CASH_RECEIPT_CATEGORIES,
 	type SberPosTransactionResponse,
+	type CashBoxType,
+	type CashReceiptTypeAlias,
 	type StomxCashBoxType,
 	type StomxReceiptTypeAlias,
 } from "@dental/shared";
@@ -120,10 +122,10 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 			});
 
 			const activeCategoryTitle =
-				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
+				CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
 				"Оплата услуг";
 			const activeBoxTitle =
-				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+				CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
@@ -261,12 +263,12 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 		});
 
 		const activeCategoryTitle =
-			STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
+			CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name ||
 			"Оплата услуг";
 		const activeBoxTitle =
-			STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+			CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
 		const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
-		const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
+		const cashFlowNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 
 		try {
 			const res = await fetch("/api/billing/payments", {
@@ -293,7 +295,7 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 					})) : undefined,
 					electronicAmountRub: effectiveAmountRub,
 					electronicAmountKopecks: discountCalc.totalDueKopecks,
-					note: `Оплата через СБП (НСПК / ГОСТ Р 56042-2014) (${effectiveAmountRub} ₽ • ${effectiveCashier}) [Заказ: ${effectiveOrderId}]${receiptId ? ` [Чек: ${receiptId}]` : ""}${innNote}${stomxNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
+					note: `Оплата через СБП (НСПК / ГОСТ Р 56042-2014) (${effectiveAmountRub} ₽ • ${effectiveCashier}) [Заказ: ${effectiveOrderId}]${receiptId ? ` [Чек: ${receiptId}]` : ""}${innNote}${cashFlowNote}${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`,
 				}),
 			});
 

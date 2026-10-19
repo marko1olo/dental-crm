@@ -24,12 +24,26 @@ import {
 	STOMX_WORKPLACE_PALETTES_MAP,
 	stomxWorkplacePaletteSchema,
 	type StomxWorkplacePalette,
+	DEFAULT_WORKPLACE_CHAIR_PALETTE,
+	getWorkplaceChairPalette,
+	WORKPLACE_CHAIR_PALETTES,
+	WORKPLACE_CHAIR_PALETTES_MAP,
+	workplaceChairPaletteSchema,
+	type WorkplaceChairPalette,
 } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Wave 115: StomX 4-State Workplace Palettes Parity", () => {
+	it("exposes clean canonical DENTE chair palette aliases", () => {
+		assert.strictEqual(WORKPLACE_CHAIR_PALETTES, STOMX_WORKPLACE_PALETTES);
+		assert.strictEqual(getWorkplaceChairPalette, getStomxWorkplacePalette);
+		assert.strictEqual(DEFAULT_WORKPLACE_CHAIR_PALETTE, DEFAULT_STOMX_WORKPLACE_PALETTE);
+		assert.strictEqual(WORKPLACE_CHAIR_PALETTES_MAP, STOMX_WORKPLACE_PALETTES_MAP);
+		assert.strictEqual(workplaceChairPaletteSchema, stomxWorkplacePaletteSchema);
+	});
+
 	it("should have exactly 5 canonical StomX workplace palettes", () => {
 		assert.equal(STOMX_WORKPLACE_PALETTES.length, 5);
 		const expectedIds = [1, 5, 6, 8, 9];

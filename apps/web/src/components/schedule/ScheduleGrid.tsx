@@ -1,6 +1,16 @@
 import React from "react";
-import { STOMX_WORKPLACE_PALETTES, getStomxWorkplacePalette } from "@dental/shared";
-export { STOMX_WORKPLACE_PALETTES, getStomxWorkplacePalette };
+import {
+  WORKPLACE_CHAIR_PALETTES,
+  getWorkplaceChairPalette,
+  STOMX_WORKPLACE_PALETTES,
+  getStomxWorkplacePalette,
+} from "@dental/shared";
+export {
+  WORKPLACE_CHAIR_PALETTES,
+  getWorkplaceChairPalette,
+  STOMX_WORKPLACE_PALETTES,
+  getStomxWorkplacePalette,
+};
 export { resolveChairDutyDoctor, detectAppointmentCollisions, findAlternativeChairsForSlot, findShiftMinutesOptions } from "./chairRosterMath";
 export { getAppointmentDurationMinutes, calculateAppointmentSpan, calculateAppointmentCardHeight, validateQuickBookingFields } from "./appointmentCardHelpers";
 export type { ChairMaintenanceBlock } from "../../utils/scheduleCollisionUtils";
