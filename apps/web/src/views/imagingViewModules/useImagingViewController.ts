@@ -8,6 +8,7 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 	const auth = appLogic?.auth;
 	const { activeAppointment, activePatient, selectedImagingStudy, setSelectedImagingStudyId, setImagingKindFilter } = props;
 	const [activeModal, setActiveModal] = useState<ImagingModalId>(null);
+	const [rvgInitialTooth, setRvgInitialTooth] = useState<string | null>(null);
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const [isCapturingCameraPhoto, setIsCapturingCameraPhoto] = useState(false);
 
@@ -42,9 +43,23 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 			const detail = (e as CustomEvent<{ modalId: string }>).detail;
 			if (detail?.modalId === "cbct_mpr_workspace" || detail?.modalId === "cbct_implant_studio") openPopoutStudio();
 			else if (detail?.modalId === "panoramic_recon_window") handleOpenPanoramic();
+			else if (detail?.modalId === "rvg_capture") setActiveModal("rvg_capture");
+		};
+		const handleOpenRvg = (e: Event) => {
+			const detail = (e as CustomEvent<{ tooth?: string }>).detail;
+			if (detail?.tooth && detail.tooth !== "all") {
+				setRvgInitialTooth(detail.tooth);
+			} else {
+				setRvgInitialTooth(null);
+			}
+			setActiveModal("rvg_capture");
 		};
 		window.addEventListener("dente-open-backoffice-modal", handleOpen);
-		return () => window.removeEventListener("dente-open-backoffice-modal", handleOpen);
+		window.addEventListener("dente-open-rvg-capture-modal", handleOpenRvg);
+		return () => {
+			window.removeEventListener("dente-open-backoffice-modal", handleOpen);
+			window.removeEventListener("dente-open-rvg-capture-modal", handleOpenRvg);
+		};
 	}, [openPopoutStudio, handleOpenPanoramic]);
 
 	const handleCameraPhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,9 +118,21 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 		} catch { showToast("Не удалось обновить привязку к визиту", "error"); }
 	}, [selectedImagingStudy?.id, auth, props, appLogic]);
 
+	const handleRvgSaveToEmr = useCallback((study: any) => {
+		if (study?.id && setSelectedImagingStudyId) {
+			setSelectedImagingStudyId(study.id);
+		}
+		if ((props as any).onStudyCreated) {
+			(props as any).onStudyCreated(study);
+		}
+		if (appLogic?.loadDashboard) {
+			void appLogic.loadDashboard();
+		}
+	}, [setSelectedImagingStudyId, props, appLogic]);
+
 	return {
-		activeModal, setActiveModal, localImageIds, setLocalImageIds,
+		activeModal, setActiveModal, rvgInitialTooth, localImageIds, setLocalImageIds,
 		isCapturingCameraPhoto, openPopoutStudio, handleOpenPanoramic,
-		handleCameraPhotoCapture, handleAttachTooth, handleAttachVisit,
+		handleCameraPhotoCapture, handleAttachTooth, handleAttachVisit, handleRvgSaveToEmr,
 	};
 }

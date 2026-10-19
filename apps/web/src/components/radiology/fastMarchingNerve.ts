@@ -359,8 +359,16 @@ export function traceMandibularCanal2Seeds(
 
 	const sliceStride = dims.width * dims.height;
 
-	// 2. Распространение волнового фронта Fast Marching / Dijkstra
-	while (heap.size > 0) {
+	// 2. Распространение волнового фронта Fast Marching / Dijkstra (защита от зависания потока браузера)
+	let iterations = 0;
+	const maxIterations = Math.min(roiVolume, 50000);
+	const maxExecutionBudgetMs = 300;
+
+	while (heap.size > 0 && iterations < maxIterations) {
+		iterations++;
+		if ((iterations & 2047) === 0 && performance.now() - startTime > maxExecutionBudgetMs) {
+			break;
+		}
 		const currRoiIdx = heap.pop();
 		if (currRoiIdx === endRoiIdx) break; // Мандибулярное отверстие достигнуто!
 

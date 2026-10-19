@@ -170,6 +170,18 @@ export function ImagingStudyList({
 		} else {
 			setLocalToothFilter(tooth);
 		}
+		if (tooth !== "all") {
+			const candidateStudies =
+				activeImagingStudies && activeImagingStudies.length > 0
+					? activeImagingStudies
+					: visibleImagingStudies;
+			const matching = (candidateStudies || []).find(
+				(s) => String(s.toothCode ?? "").trim() === String(tooth).trim(),
+			);
+			if (matching && matching.id) {
+				onSelectStudy(matching.id);
+			}
+		}
 	};
 
 	const availableTeeth = React.useMemo(() => {
@@ -332,13 +344,28 @@ export function ImagingStudyList({
 						title={`Снимков для зуба #${effectiveToothFilter} у пациента нет`}
 						description={`В карте пациента есть ${countLabel(activeImagingStudies?.length, "снимок", "снимка", "снимков")} для других зубов.`}
 						action={
-							<button
-								className="h-8 px-3 rounded-lg text-[13px] font-medium border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]/40 transition-all shadow-2xs active:scale-98 cursor-pointer"
-								type="button"
-								onClick={() => handleToothChange("all")}
-							>
-								Показать все зубы
-							</button>
+							<div className="flex flex-col gap-1.5 w-full">
+								<button
+									className="primary-button h-8 px-3 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+									type="button"
+									onClick={() => {
+										window.dispatchEvent(
+											new CustomEvent("dente-open-rvg-capture-modal", {
+												detail: { toothCode: effectiveToothFilter },
+											}),
+										);
+									}}
+								>
+									<span>Сделать снимок зуба #{effectiveToothFilter}</span>
+								</button>
+								<button
+									className="secondary-button h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+									type="button"
+									onClick={() => handleToothChange("all")}
+								>
+									Показать все зубы
+								</button>
+							</div>
 						}
 					/>
 				) : activeImagingStudies?.length > 0 && imagingKindFilter !== "all" ? (

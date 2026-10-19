@@ -36,7 +36,8 @@ export type ImagingModalId =
 	| "panoramic"
 	| "radiology_module"
 	| "export"
-	| "comparison";
+	| "comparison"
+	| "rvg_capture";
 
 // biome-ignore lint/suspicious/noExplicitAny: generic CRM views host props
 export type ImagingViewProps = Record<string, any>;

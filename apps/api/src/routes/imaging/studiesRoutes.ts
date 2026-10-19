@@ -101,7 +101,9 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			});
 		}
 		const effectivePatientId =
-			parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
+			(request.params as { patientId?: string })?.patientId ??
+			parsedQuery.data.patientId ??
+			parsedQuery.data.patient_id;
 		const effectiveBindingStatus =
 			parsedQuery.data.bindingStatus ?? parsedQuery.data.binding_status;
 
@@ -122,6 +124,9 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	app.get("/api/imaging/studies", getStudiesHandler);
 	app.get("/api/radiology/studies", getStudiesHandler);
 	app.get("/api/radiology/slices", getStudiesHandler);
+	app.get("/api/patients/:patientId/studies", getStudiesHandler);
+	app.get("/api/patients/:patientId/imaging/studies", getStudiesHandler);
+	app.get("/api/patients/:patientId/radiology/studies", getStudiesHandler);
 
 	const getViewerSessionHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
@@ -342,9 +347,14 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 
 	const createStudyHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const rawBody = (request.body && typeof request.body === "object" ? { ...request.body } : {}) as Record<string, unknown>;
+		const paramPatientId = (request.params as { patientId?: string })?.patientId;
+		if (paramPatientId && !rawBody.patientId) {
+			rawBody.patientId = paramPatientId;
+		}
 		const parsed = parseImagingPayload(
 			createImagingStudySchema,
-			request.body,
+			rawBody,
 			"Снимок не создан: выберите пациента, вид снимка и название.",
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
@@ -392,12 +402,12 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 			}
 		}
 		let storagePath = input.storagePath;
-		const rawBody = (request.body && typeof request.body === "object" ? request.body : {}) as {
+		const imageBody = (request.body && typeof request.body === "object" ? request.body : {}) as {
 			imageBase64?: unknown;
 		};
-		if (typeof rawBody.imageBase64 === "string" && rawBody.imageBase64.trim()) {
+		if (typeof imageBody.imageBase64 === "string" && imageBody.imageBase64.trim()) {
 			try {
-				let base64Data = rawBody.imageBase64.trim();
+				let base64Data = imageBody.imageBase64.trim();
 				let mime = "image/jpeg";
 				if (base64Data.startsWith("data:")) {
 					const match = base64Data.match(/^data:([^;]+);base64,/);
@@ -436,6 +446,8 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 	app.post("/api/imaging/studies", createStudyHandler);
 	app.post("/api/radiology/studies", createStudyHandler);
+	app.post("/api/patients/:patientId/studies", createStudyHandler);
+	app.post("/api/patients/:patientId/radiology/studies", createStudyHandler);
 
 	// ─── AI Analysis ──────────────────────────────────────────────────────────
 

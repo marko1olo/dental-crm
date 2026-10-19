@@ -27,6 +27,7 @@ export interface ImagingHeaderProps {
 	onOpenCbctStudio: () => void;
 	onOpenPanoramic: () => void;
 	onOpenRadiologyModule: () => void;
+	onOpenRvgCapture?: () => void;
 	onOpenCtSelector?: () => void;
 	onOpenPopoutStudio?: () => void;
 	onOpenExport?: () => void;
@@ -65,6 +66,7 @@ export function ImagingHeader({
 	onOpenCbctStudio,
 	onOpenPanoramic,
 	onOpenRadiologyModule,
+	onOpenRvgCapture,
 	onOpenCtSelector,
 	onOpenPopoutStudio,
 	onOpenExport,
@@ -172,6 +174,20 @@ export function ImagingHeader({
 					<span>3D КТ</span>
 				</button>
 
+				{/* 1b. RVG Capture: Захват RVG */}
+				{onOpenRvgCapture && (
+					<button
+						className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
+						type="button"
+						data-testid="imaging-rvg-capture-btn"
+						onClick={onOpenRvgCapture}
+						title="Прямой захват RVG (Vatech, EzSensor, KaVo, Carestream)"
+					>
+						<Scan aria-hidden="true" size={16} className="shrink-0 text-[var(--primary)]" />
+						<span>Захват RVG</span>
+					</button>
+				)}
+
 				{/* 2. Secondary: Camera */}
 				<button
 					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
@@ -237,6 +253,25 @@ export function ImagingHeader({
 							role="menu"
 							aria-label="Дополнительные модули снимков"
 						>
+							{onOpenRvgCapture && (
+								<button
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
+									type="button"
+									role="menuitem"
+									data-testid="btn-open-rvg-capture"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										onOpenRvgCapture();
+									}}
+								>
+									<Scan aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
+									<div className="flex flex-col">
+										<span>Захват RVG (Визиограф)</span>
+										<span className="text-[10px] text-[var(--ink-muted)] font-normal">Прямой захват / Hot Folder</span>
+									</div>
+								</button>
+							)}
+
 							{onOpenCtSelector && (
 								<button
 									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"

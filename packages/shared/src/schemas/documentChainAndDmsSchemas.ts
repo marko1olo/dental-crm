@@ -171,6 +171,8 @@ export const imagingStudySchema = z.object({
 	patientFullName: z.string().nullable().optional(),
 	status: imagingStudyStatusSchema,
 	aiSummary: z.string().nullable(),
+	doseMsv: z.number().nullable().optional(),
+	effectiveDoseMsv: z.number().nullable().optional(),
 	previewUrl: z.string(),
 	viewerUrl: z.string().nullable(),
 });

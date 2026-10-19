@@ -116,6 +116,8 @@ export function ImagingView(props: ImagingViewProps) {
 				isRadiologyModuleOpen={activeModal === "radiology_module"} setIsRadiologyModuleOpen={(o) => setActiveModal(o ? "radiology_module" : null)}
 				isExportModalOpen={activeModal === "export"} setIsExportModalOpen={(o) => setActiveModal(o ? "export" : null)}
 				isComparisonOpen={activeModal === "comparison"} setIsComparisonOpen={(o) => setActiveModal(o ? "comparison" : null)}
+				isRvgCaptureOpen={activeModal === "rvg_capture"} setIsRvgCaptureOpen={(o) => setActiveModal(o ? "rvg_capture" : null)}
+				rvgInitialTooth={controller.rvgInitialTooth} onRvgSaveToEmr={controller.handleRvgSaveToEmr}
 				selectedImagingStudy={selectedImagingStudy} activePatient={activePatient} activeAppointment={activeAppointment}
 				activeImagingStudies={activeImagingStudies ?? []} authClinicName={auth?.clinic?.name}
 				effectivePreviewUrl={viewState.effectivePreviewUrl} selectedStudySummary={viewState.selectedStudySummary}

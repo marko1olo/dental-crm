@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { CtSelectorModal } from "../../components/radiology/CtSelectorModal";
+import { DirectRvgCaptureModal } from "../../components/radiology/DirectRvgCaptureModal";
 import { ImagingAuxiliaryModals } from "../../components/imaging";
 
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
@@ -22,6 +23,10 @@ export interface ImagingViewModalsProps {
 	setIsExportModalOpen: (open: boolean) => void;
 	isComparisonOpen: boolean;
 	setIsComparisonOpen: (open: boolean) => void;
+	isRvgCaptureOpen?: boolean;
+	setIsRvgCaptureOpen?: (open: boolean) => void;
+	rvgInitialTooth?: string | null;
+	onRvgSaveToEmr?: (study: any) => void;
 	selectedImagingStudy: any;
 	activePatient: any;
 	activeAppointment: any;
@@ -46,6 +51,10 @@ export function ImagingViewModals({
 	setIsExportModalOpen,
 	isComparisonOpen,
 	setIsComparisonOpen,
+	isRvgCaptureOpen,
+	setIsRvgCaptureOpen,
+	rvgInitialTooth,
+	onRvgSaveToEmr,
 	selectedImagingStudy,
 	activePatient,
 	activeAppointment,
@@ -58,6 +67,21 @@ export function ImagingViewModals({
 }: ImagingViewModalsProps) {
 	return (
 		<>
+			{isRvgCaptureOpen && (
+				<DirectRvgCaptureModal
+					isOpen={Boolean(isRvgCaptureOpen)}
+					onClose={() => setIsRvgCaptureOpen?.(false)}
+					patientId={activePatient?.id}
+					patientName={activePatient?.name ?? activePatient?.fullName}
+					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
+					initialToothFdi={rvgInitialTooth ?? undefined}
+					onSaveToEmr={(study) => {
+						onRvgSaveToEmr?.(study);
+						setIsRvgCaptureOpen?.(false);
+					}}
+				/>
+			)}
+
 			{isCbctStudioOpen && (
 				<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
 					<CbctMprImplantStudioModal

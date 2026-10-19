@@ -13,26 +13,39 @@ export const updateClinicProfileSchema = z.object({
 	clinicName: z.string().trim().min(1).max(240).optional(),
 	legalName: z.string().trim().max(240).nullable().optional(),
 	inn: z
-		.string()
-		.trim()
-		.regex(/^\d{10}$|^\d{12}$/)
+		.union([
+			z.string().trim().regex(/^\d{10}$|^\d{12}$/),
+			z.literal(""),
+		])
+		.transform((val) => (val === "" ? null : val))
 		.nullable()
 		.optional(),
 	kpp: z
-		.string()
-		.trim()
-		.regex(/^\d{9}$/)
+		.union([
+			z.string().trim().regex(/^\d{9}$/),
+			z.literal(""),
+		])
+		.transform((val) => (val === "" ? null : val))
 		.nullable()
 		.optional(),
 	ogrn: z
-		.string()
-		.trim()
-		.regex(/^\d{13}$|^\d{15}$/)
+		.union([
+			z.string().trim().regex(/^\d{13}$|^\d{15}$/),
+			z.literal(""),
+		])
+		.transform((val) => (val === "" ? null : val))
 		.nullable()
 		.optional(),
 	address: z.string().trim().max(500).nullable().optional(),
 	phone: z.string().trim().max(80).nullable().optional(),
-	email: z.string().trim().email().max(240).nullable().optional(),
+	email: z
+		.union([
+			z.string().trim().email().max(240),
+			z.literal(""),
+		])
+		.transform((val) => (val === "" ? null : val))
+		.nullable()
+		.optional(),
 	website: z.string().trim().max(300).nullable().optional(),
 	medicalLicenseNumber: z.string().trim().max(160).nullable().optional(),
 	medicalLicenseIssuedAt: nullableDocumentDateLikeStringSchema,
@@ -334,6 +347,8 @@ export const createImagingStudySchema = z.object({
 	sourceName: z.string().trim().min(1).max(160).default("manual"),
 	storagePath: z.string().trim().min(1).max(2048).nullable().optional(),
 	dicomStudyUid: z.string().trim().min(1).max(128).nullable().optional(),
+	doseMsv: z.number().nullable().optional(),
+	effectiveDoseMsv: z.number().nullable().optional(),
 	capturedAt: z.string().optional(),
 	aiSummary: z.string().trim().max(2000).nullable().optional(),
 });

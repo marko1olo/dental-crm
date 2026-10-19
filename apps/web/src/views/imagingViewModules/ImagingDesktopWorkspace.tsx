@@ -57,7 +57,7 @@ export function ImagingDesktopWorkspace({
 				isCapturingCameraPhoto={isCapturingCameraPhoto} onPickFolder={() => void pickBrowserImagingFolder()}
 				onPickFiles={pickBrowserImagingFiles} onCaptureCamera={() => cameraCaptureInputRef.current?.click()}
 				onOpenCbctStudio={() => setActiveModal("cbct_studio")} onOpenPanoramic={() => setActiveModal("panoramic")}
-				onOpenRadiologyModule={() => setActiveModal("radiology_module")} onOpenCtSelector={() => setActiveModal("ct_selector")}
+				onOpenRadiologyModule={() => setActiveModal("radiology_module")} onOpenRvgCapture={() => setActiveModal("rvg_capture")} onOpenCtSelector={() => setActiveModal("ct_selector")}
 				onOpenExport={() => setActiveModal("export")} onOpenComparison={() => setActiveModal("comparison")}
 				imagingKindFilter={imagingKindFilter} setImagingKindFilter={setImagingKindFilter}
 				imagingKindOptions={imagingKindOptions} imagingKindLabels={imagingKindLabels}

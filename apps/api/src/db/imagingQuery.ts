@@ -83,6 +83,26 @@ function mapImagingStudy(
 		patientFullName: patientFullName ?? null,
 		status: record.status,
 		aiSummary: record.aiSummary,
+		doseMsv:
+			record.kind === "periapical" || record.kind === "bitewing"
+				? 0.002
+				: record.kind === "opg"
+					? 0.025
+					: record.kind === "cbct"
+						? 0.05
+						: record.kind === "ceph"
+							? 0.01
+							: null,
+		effectiveDoseMsv:
+			record.kind === "periapical" || record.kind === "bitewing"
+				? 0.002
+				: record.kind === "opg"
+					? 0.025
+					: record.kind === "cbct"
+						? 0.05
+						: record.kind === "ceph"
+							? 0.01
+							: null,
 		previewUrl: record.storagePath
 			? (browserRenderableImageMimeType(record.storagePath)
 				? `/api/imaging/studies/${record.id}/file`
@@ -91,6 +111,69 @@ function mapImagingStudy(
 		viewerUrl: record.storagePath
 			? `/api/imaging/studies/${record.id}/file`
 			: `/api/imaging/studies/${record.id}/preview.svg`,
+	};
+}
+
+function mapXrayScanToImagingStudy(
+	record: typeof schema.xrayScans.$inferSelect,
+	patientFullName?: string | null,
+): ImagingStudy {
+	const kind = (record.kind === "bitewing"
+		? "bitewing"
+		: record.kind === "opg"
+			? "opg"
+			: record.kind === "other"
+				? "other"
+				: "periapical") as "periapical" | "bitewing" | "opg" | "other";
+
+	const title = record.originalFilename
+		? record.originalFilename
+		: record.toothCode
+			? `Прицельный снимок зуба ${record.toothCode}`
+			: "Прицельный снимок RVG";
+
+	return {
+		id: record.id,
+		organizationId: record.organizationId,
+		patientId: record.patientId,
+		visitId: record.visitId,
+		doctorId: null,
+		kind,
+		title,
+		toothCode: record.toothCode,
+		region: record.toothCode ? `Зуб ${record.toothCode}` : null,
+		capturedAt: record.capturedAt.toISOString(),
+		sourceKind: "sensor_bridge",
+		sourceName: "Визиограф (RVG)",
+		storagePath: record.storagePath,
+		dicomStudyUid: null,
+		studyInstanceUid: null,
+		seriesInstanceUid: null,
+		modality: record.kind === "opg" ? "PX" : "IO",
+		seriesDescription: record.notes ?? title,
+		studyDate: record.capturedAt.toISOString().slice(0, 10).replace(/-/g, ""),
+		sliceCount: 1,
+		dimensions: null,
+		voxelSpacing: null,
+		fileSizeBytes: record.fileSizeBytes,
+		bindingStatus: "manual_bound",
+		bindingConfidence: 100,
+		dicomPatientName: null,
+		dicomPatientId: null,
+		dicomBirthDate: null,
+		patientFullName: patientFullName ?? null,
+		status: "available",
+		aiSummary: record.aiSummary,
+		doseMsv: kind === "opg" ? 0.025 : 0.002,
+		effectiveDoseMsv: kind === "opg" ? 0.025 : 0.002,
+		previewUrl: record.storagePath
+			? (browserRenderableImageMimeType(record.storagePath)
+				? `/api/imaging/studies/${record.id}/file`
+				: `/api/imaging/studies/${record.id}/preview.svg`)
+			: (record.fileUrl ? `${record.fileUrl}/${record.id}` : `/api/imaging/studies/${record.id}/preview.svg`),
+		viewerUrl: record.storagePath
+			? `/api/imaging/studies/${record.id}/file`
+			: (record.fileUrl ? `${record.fileUrl}/${record.id}` : `/api/imaging/studies/${record.id}/preview.svg`),
 	};
 }
 
@@ -152,25 +235,54 @@ export async function getImagingStudiesWithFilters(
 		.where(and(...conditions))
 		.orderBy(desc(schema.imagingStudies.capturedAt));
 
-	const limitVal = typeof filters.limit === "number" && filters.limit > 0 ? filters.limit : undefined;
-	const offsetVal = typeof filters.offset === "number" && filters.offset > 0 ? filters.offset : undefined;
+	const rows = await baseQuery;
+	const studies = rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
+	const existingStudyIds = new Set(studies.map((s) => s.id));
 
-	let rows: Array<{
-		study: typeof schema.imagingStudies.$inferSelect;
-		patientFullName: string | null;
-	}>;
+	// Также объединяем снимки из xray_scans (если они ещё не продублированы в imaging_studies)
+	const xrayConditions = [eq(schema.xrayScans.organizationId, organizationId)];
+	if (filters.patientId) {
+		xrayConditions.push(eq(schema.xrayScans.patientId, filters.patientId));
+	}
+	const legacyScans = await db
+		.select({
+			scan: schema.xrayScans,
+			patientFullName: schema.patients.fullName,
+		})
+		.from(schema.xrayScans)
+		.leftJoin(
+			schema.patients,
+			and(
+				eq(schema.patients.organizationId, organizationId),
+				eq(schema.patients.id, schema.xrayScans.patientId),
+			),
+		)
+		.where(and(...xrayConditions))
+		.orderBy(desc(schema.xrayScans.capturedAt));
 
-	if (limitVal !== undefined && offsetVal !== undefined) {
-		rows = await baseQuery.limit(limitVal).offset(offsetVal);
-	} else if (limitVal !== undefined) {
-		rows = await baseQuery.limit(limitVal);
-	} else if (offsetVal !== undefined) {
-		rows = await baseQuery.offset(offsetVal);
-	} else {
-		rows = await baseQuery;
+	for (const item of legacyScans) {
+		if (!existingStudyIds.has(item.scan.id)) {
+			const scanModality = item.scan.kind === "opg" ? "PX" : "IO";
+			if (filters.modality && filters.modality.toUpperCase() !== scanModality) {
+				continue;
+			}
+			studies.push(mapXrayScanToImagingStudy(item.scan, item.patientFullName));
+			existingStudyIds.add(item.scan.id);
+		}
 	}
 
-	return rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
+	studies.sort((a, b) => new Date(b.capturedAt).getTime() - new Date(a.capturedAt).getTime());
+
+	const limitVal = typeof filters.limit === "number" && filters.limit > 0 ? filters.limit : undefined;
+	const offsetVal = typeof filters.offset === "number" && filters.offset > 0 ? filters.offset : 0;
+
+	if (limitVal !== undefined) {
+		return studies.slice(offsetVal, offsetVal + limitVal);
+	}
+	if (offsetVal > 0) {
+		return studies.slice(offsetVal);
+	}
+	return studies;
 }
 
 export async function getImagingStudiesForPatient(
@@ -263,7 +375,19 @@ export async function getImagingStudyById(
 			),
 		)
 		.limit(1);
-	return record ? mapImagingStudy(record) : null;
+	if (record) return mapImagingStudy(record);
+
+	const [xray] = await targetDb
+		.select()
+		.from(schema.xrayScans)
+		.where(
+			and(
+				eq(schema.xrayScans.organizationId, organizationId),
+				eq(schema.xrayScans.id, id),
+			),
+		)
+		.limit(1);
+	return xray ? mapXrayScanToImagingStudy(xray) : null;
 }
 
 export async function createImagingStudiesInDb(

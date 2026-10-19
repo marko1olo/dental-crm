@@ -64,15 +64,15 @@ export function RvgSensorVectorVisualizer({
 			style={{
 				...viewerStyle,
 				minHeight: "240px",
-				backgroundColor: "var(--paper, #090d16)",
-				color: "var(--ink, #f8fafc)",
+				backgroundColor: "#090d16",
+				color: "#f8fafc",
 			}}
 		>
 			<div
 				className="w-full max-w-md p-5 sm:p-6 rounded-xl border border-dashed flex flex-col items-center text-center gap-3 transition-colors shadow-xs"
 				style={{
-					borderColor: "var(--line, #334155)",
-					background: "var(--paper-strong, #0f172a)",
+					borderColor: "#334155",
+					background: "#0c1322",
 				}}
 			>
 				<div className="w-12 h-12 rounded-xl flex items-center justify-center bg-teal-500/10 text-teal-500 border border-teal-500/20 shadow-inner">
@@ -206,8 +206,25 @@ export function ImagingViewport({
 
 	return (
 		<div
-			className="imaging-viewer-stage min-h-[460px] max-h-[calc(100vh-220px)] flex-1 w-full flex flex-col"
-			style={{ position: "relative", minHeight: "460px" }}
+			className="imaging-viewer-stage min-h-[460px] max-h-[calc(100vh-220px)] flex-1 w-full flex flex-col bg-[#090d16] rounded-xl border border-[#1e293b] overflow-hidden"
+			style={{ position: "relative", minHeight: "460px", backgroundColor: "#090d16" }}
+			onDragOver={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+			}}
+			onDrop={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				const files = e.dataTransfer.files;
+				if (files && files.length > 0 && files[0]) {
+					const file = files[0];
+					window.dispatchEvent(
+						new CustomEvent("dente-radiology-file-dropped", {
+							detail: { file, toothCode: selectedImagingStudy?.toothCode },
+						}),
+					);
+				}
+			}}
 			onWheel={(e) => {
 				if (isCbctOrLocalArchive) return;
 				e.preventDefault();

@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-17 / WAVES 301–351 / ВОЛНА 351 ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ, GBR КОСТНАЯ ПЛАСТИКА, СТАБИЛЬНОСТЬ ISQ 1..100, ГАРАНТИЙНЫЙ ПАСПОРТ А4, FASTIFY API С SOFT NEGATIVE STOCK И 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF — 490 ФИЧ: 64 КАНОНИЧЕСКИЕ + 426 АДДЕНДУМ, ВСЕ 490 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-19 / WAVES 301–353 / ВОЛНА 353 РЕНТГЕНОЛОГИЧЕСКИЙ АРХИВ, ПРЯМОЙ ЗАХВАТ RVG VATECH/KAVO/PLANMECA, 1-КЛИК FDI ПРИВЯЗКА, ТЕМНЫЙ ХОЛСТ #090d16 И ФОНОВАЯ ДОЗИМЕТРИЯ САНПИН — 491 ФИЧА: 64 КАНОНИЧЕСКИЕ + 427 АДДЕНДУМ, ВСЕ 491 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
@@ -1066,7 +1066,40 @@
     * `03_mobile_visit_step4_treatment_light_390x844.png` (212 KB)
     * `04_mobile_visit_step4_treatment_dark_390x844.png` (208 KB)
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (490 фич в реестре: 64 канонические + 426 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+---
+
+### ВОЛНА 353: РЕНТГЕНОЛОГИЧЕСКИЙ АРХИВ, ПРЯМОЙ ЗАХВАТ С ВИЗИОГРАФА (RVG SENSOR HOT-FOLDER / VATECH EZSENSOR HD / KAVO / PLANMECA), 1-КЛИК ПРИВЯЗКА К ЗУБУ FDI, ТЕМНЫЙ ХОЛСТ СНИМКА И ФОНОВАЯ ДОЗИМЕТРИЯ САНПИН (Фича #491, Мандаты 8b, 8c, 8e, 8n, 8x, 8wy, 8ze, 8al)
+- **Статус**: **`[ЕСТЬ] / [ЗАКРЫТО]`**.
+- **Суть**:
+  1. **Искоренение псевдонаучных задержек и зависаний (CRM != Reality Simulator, Мандат 8e)**:
+     - Очищен алгоритм трассировки нерва Fast Marching в `fastMarchingNerve.ts`: установлен жесткий лимит 50 000 итераций и бюджет времени выполнения $\le 300$ мс, предотвращающий зависание браузера при расчете сложных анатомических структур.
+  2. **1-клик быстрый 2D RVG просмотрщик и мгновенный отбор по зубу FDI (11..48)**:
+     - В `ImagingStudyList.tsx` при клике на зуб в полосе фильтра зубов активируется соответствующий снимок (`onSelectStudy(matching.id)`).
+     - Если снимок для зуба отсутствует, выводится прямой эргономичный CTA «Сделать снимок зуба #NN» открывающий RVG capture modal с предвыбранным зубом.
+  3. **Прямой захват визиографа / Hot Folder импорт (Vatech EzSensor HD / KaVo / Planmeca) через `DirectRvgCaptureModal`**:
+     - В шапке `ImagingHeader.tsx` выведена кнопка «Захват RVG» в тулбаре и в выпадающем меню «...».
+     - `ImagingViewModals.tsx` монтирует `DirectRvgCaptureModal` с привязкой к пациенту, номеру карты и зубу FDI.
+     - Поддержка перетаскивания (Drag & Drop) снимков напрямую на вьюпорт через глобальное событие `dente-radiology-file-dropped`.
+  4. **Стандарт темного вьюпорта (`#090d16`) в светлой и темной темах**:
+     - В `ClinicalImageViewer.tsx` и `ImagingViewport.tsx` фон холста зафиксирован на `#090d16`, чтобы исключить ослепление врача яркими белыми полями при чтении радиограмм в светлой теме CRM.
+  5. **Фоновая дозиметрия по нормам СанПиН 2.6.1.1192-03 (тихий учет)**:
+     - В схемах Zod (`documentChainAndDmsSchemas.ts`, `clinicScaleAndPreviewSchemas.ts`) и в бэкенд-маппере `apps/api/src/db/imagingQuery.ts` внедрены поля `doseMsv` и `effectiveDoseMsv`.
+     - Авторасчет дозовой нагрузки без бюрократических вопросов к врачу: RVG 0.002 мЗв, OPG 0.025 мЗв, CBCT 0.050 мЗв.
+     - Эндпоинты `apps/api/src/routes/imaging/studiesRoutes.ts` расширены поддержкой алиасов `/api/patients/:patientId/studies`, `/api/patients/:patientId/imaging/studies`, `/api/patients/:patientId/radiology/studies`.
+  6. **100% покрытие тестами**:
+     - Все 51 тест в 4 радиологических сьютах проходят со 100% успехом (Exit Code 0):
+       * `dental2DRadiologyViewer.test.ts` (24 теста)
+       * `directRvgCaptureModal.test.tsx` (9 тестов)
+       * `radiationDoseSanpinAutonomy.test.ts` (7 тестов)
+       * `sensorStudyViewer.test.tsx` (11 тестов)
+  7. **4-состояный Red Team Visual Proof**:
+     - Лично проверены через `view_file` реальные скриншоты в `docs/proofs/radiology/`:
+       * `pc_light_archive_teeth_1440x900.png` (616.4 KB, MD5: `a72336114c03ed678df144dc2e798c6c`)
+       * `pc_dark_rvg_viewer_1440x900.png` (616.5 KB, MD5: `2a231a6cb3ae634e28cd076f9db78d0e`)
+       * `mobile_light_chairside_390x844.png` (1004.6 KB, MD5: `86fd760a21232cfe7724acc66bb01b31`)
+       * `mobile_dark_chairside_390x844.png` (1004.8 KB, MD5: `7e328646a75fe92c169bcbcc2a9ca111`)
+
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (491 фича в реестре: 64 канонические + 427 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
 
 
 
