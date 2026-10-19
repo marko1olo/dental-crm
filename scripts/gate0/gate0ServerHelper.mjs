@@ -27,20 +27,35 @@ export async function ensureViteServer(url) {
 	}
 
 	console.log("[Vite] Dev server not responding. Spawning on port 5173...");
-	const viteBin = path.resolve("C:/Clinic_MVP/dental-crm/node_modules/vite/bin/vite.js");
+	const viteBin = path.resolve(
+		"C:/Clinic_MVP/dental-crm/node_modules/vite/bin/vite.js",
+	);
 	const webDir = path.resolve("C:/Clinic_MVP/dental-crm/apps/web");
 
-	const proc = spawn(process.execPath, ["--max-old-space-size=2048", viteBin, "--host", "127.0.0.1", "--port", "5173"], {
-		cwd: webDir,
-		stdio: "ignore",
-	});
+	const proc = spawn(
+		process.execPath,
+		[
+			"--max-old-space-size=2048",
+			viteBin,
+			"--host",
+			"127.0.0.1",
+			"--port",
+			"5173",
+		],
+		{
+			cwd: webDir,
+			stdio: "ignore",
+		},
+	);
 
 	let ready = false;
 	for (let i = 0; i < 50; i++) {
 		await new Promise((r) => setTimeout(r, 600));
 		if (await isPortResponding(url, 1000)) {
 			ready = true;
-			console.log(`[Vite] Server successfully initialized and responding after ${(i + 1) * 600}ms.`);
+			console.log(
+				`[Vite] Server successfully initialized and responding after ${(i + 1) * 600}ms.`,
+			);
 			break;
 		}
 	}
@@ -49,7 +64,9 @@ export async function ensureViteServer(url) {
 		try {
 			proc.kill();
 		} catch {}
-		throw new Error("[FATAL] Vite dev server failed to start on port 5173 within 30s.");
+		throw new Error(
+			"[FATAL] Vite dev server failed to start on port 5173 within 30s.",
+		);
 	}
 
 	return proc;

@@ -5,17 +5,23 @@
  */
 
 import { existsSync, mkdirSync } from "node:fs";
-import { OUT_DIR, STAND_BASE_URL } from "./gate0/gate0CaptureConstants.mjs";
-import { ensureViteServer } from "./gate0/gate0ServerHelper.mjs";
 import { launchBrowser } from "./gate0/gate0BrowserHelper.mjs";
+import { OUT_DIR, STAND_BASE_URL } from "./gate0/gate0CaptureConstants.mjs";
 import { captureDesktopProofs } from "./gate0/gate0DesktopCaptures.mjs";
-import { captureMobileProofs } from "./gate0/gate0MobileCaptures.mjs";
 import { captureMacroProofs } from "./gate0/gate0MacroCaptures.mjs";
+import { captureMobileProofs } from "./gate0/gate0MobileCaptures.mjs";
+import { ensureViteServer } from "./gate0/gate0ServerHelper.mjs";
 
 async function main() {
-	console.log("===============================================================");
-	console.log("   DENTE CRM: Tooth 46 Masterpiece Visual Atlas Capture (Gate 0)");
-	console.log("===============================================================");
+	console.log(
+		"===============================================================",
+	);
+	console.log(
+		"   DENTE CRM: Tooth 46 Masterpiece Visual Atlas Capture (Gate 0)",
+	);
+	console.log(
+		"===============================================================",
+	);
 
 	if (!existsSync(OUT_DIR)) {
 		mkdirSync(OUT_DIR, { recursive: true });
@@ -33,9 +39,15 @@ async function main() {
 		await captureMobileProofs(browser, results);
 		await captureMacroProofs(browser, results);
 
-		console.log("\n===============================================================");
-		console.log(`  VICTORY: Captured & Validated ${results.length} Visual Atlas Proofs!`);
-		console.log("===============================================================");
+		console.log(
+			"\n===============================================================",
+		);
+		console.log(
+			`  VICTORY: Captured & Validated ${results.length} Visual Atlas Proofs!`,
+		);
+		console.log(
+			"===============================================================",
+		);
 		console.table(
 			results.map((r) => ({
 				File: r.file,
@@ -43,7 +55,7 @@ async function main() {
 				StdDev: r.stdDev,
 				Viewport: r.viewport,
 				Status: "PASS",
-			}))
+			})),
 		);
 	} catch (err) {
 		console.error("\n[FATAL ERROR] Visual Atlas capture failed:", err);

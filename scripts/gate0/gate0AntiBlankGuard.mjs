@@ -11,7 +11,7 @@ export function verifyAntiBlankGuard(filePath) {
 	const stats = statSync(filePath);
 	if (stats.size < BYTE_GUARD_MIN) {
 		throw new Error(
-			`[FAIL] Anti-Blank Byte Guard violation: ${filePath} size is ${stats.size} bytes (< ${BYTE_GUARD_MIN}B floor).`
+			`[FAIL] Anti-Blank Byte Guard violation: ${filePath} size is ${stats.size} bytes (< ${BYTE_GUARD_MIN}B floor).`,
 		);
 	}
 
@@ -38,7 +38,7 @@ export function verifyAntiBlankGuard(filePath) {
 
 	if (stdDev < STDDEV_MIN) {
 		throw new Error(
-			`[FAIL] Anti-Blank Variance violation: ${filePath} stddev ${stdDev.toFixed(2)} (< ${STDDEV_MIN}). Image appears uniform or blank.`
+			`[FAIL] Anti-Blank Variance violation: ${filePath} stddev ${stdDev.toFixed(2)} (< ${STDDEV_MIN}). Image appears uniform or blank.`,
 		);
 	}
 
