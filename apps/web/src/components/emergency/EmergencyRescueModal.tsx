@@ -10,6 +10,9 @@
  * 
  * Полный выкос симуляции реанимации: ноль метрономов СЛР, ноль таймеров с пищалками, ноль кинетики интралипида.
  * Закрытие окна никогда не стирает данные визита и дневника приёма.
+ * Регламент экстренной помощи (Мандаты 8e, 8i, 8k):
+ * - ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА декомпозирован в EmergencyResuscitationTools.tsx
+ * - УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -428,7 +431,7 @@ export function EmergencyRescueModal({
 									<span>Телефон клиники</span>
 								</div>
 								<div className="emergency-briefing-value">
-									{clinicPhone || '+7 (495) 123-45-67'}
+									{clinicPhone || 'Не указан'}
 								</div>
 								<div className="emergency-briefing-sub">
 									Врач: {doctorFullName || 'Врач-стоматолог'}

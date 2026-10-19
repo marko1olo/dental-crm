@@ -277,7 +277,10 @@ export async function updateLabOrderInDb(
 		return { kind: "not_found" as const };
 	}
 
-	let targetStatus: LabOrderStatus | undefined = updateData.status;
+	let targetStatus: LabOrderStatus | undefined = undefined;
+	if (updateData.status) {
+		targetStatus = mapStageToLabOrderStatus(updateData.status) ?? (updateData.status as LabOrderStatus);
+	}
 	if (!targetStatus && updateData.stage) {
 		const mapped = mapStageToLabOrderStatus(updateData.stage);
 		if (mapped) targetStatus = mapped;
@@ -287,7 +290,20 @@ export async function updateLabOrderInDb(
 		const currentStatus = currentOrder.status as LabOrderStatus;
 		const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
 
-		if (!allowed || !allowed.includes(targetStatus)) {
+		const isPermittedShortcut =
+			(currentStatus === "in_progress" &&
+				["received", "refitting", "completed", "shipped", "cancelled"].includes(targetStatus)) ||
+			(currentStatus === "received" &&
+				["completed", "refitting", "in_progress", "cancelled"].includes(targetStatus)) ||
+			(currentStatus === "refitting" &&
+				["in_progress", "received", "completed", "cancelled"].includes(targetStatus)) ||
+			(currentStatus === "sent" &&
+				["in_progress", "shipped", "received", "cancelled"].includes(targetStatus)) ||
+			(currentStatus === "completed" &&
+				["refitting"].includes(targetStatus)) ||
+			targetStatus === "cancelled";
+
+		if ((!allowed || !allowed.includes(targetStatus)) && !isPermittedShortcut) {
 			return {
 				kind: "invalid_transition" as const,
 				currentStatus,

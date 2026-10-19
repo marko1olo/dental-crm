@@ -30,7 +30,7 @@ export const updateLabOrderSchema = z.object({
 	clinicalNotes: z.string().trim().optional().nullable(),
 	doctorNotes: z.string().trim().optional().nullable(),
 	priceRub: labOrderPriceRubSchema.optional().nullable(),
-	status: labOrderStatusSchema.optional(),
+	status: z.string().trim().optional(),
 	stage: z.string().trim().optional().nullable(),
 	techStage: z.string().trim().optional().nullable(),
 	overrideActive: z.boolean().optional().nullable(),

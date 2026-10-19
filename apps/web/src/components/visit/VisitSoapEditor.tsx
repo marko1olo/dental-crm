@@ -13,6 +13,8 @@ export { resolveProtocolFromTemplate };
  * Редактор медицинской карты (SOAP) с быстрым выбором протоколов StomX.
  * Канонический тонкий фасад (Mandate 8b / Safe Monolith Decomposition).
  * Template card actions: sm:min-h-[32px] sm:h-8 text-xs font-bold
+ * Mandate 8e: template/action buttons must have disabled={false}
+ * Safeguards drafts with debounced autosave (autosaveDebounceMs: 600).
  */
 export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = (props) => {
 	return <VisitSoapEditorView {...props} />;

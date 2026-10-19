@@ -8,17 +8,28 @@ export function useLabOrderActions(
 	fetchOrders: () => Promise<void>,
 	onOpenReadyPrompt: (order: DentalLabOrderData) => void,
 ) {
-	const handleStatusChange = useCallback(async (orderId: string, newStatus: string) => {
+	const handleStatusChange = useCallback(async (orderId: string, newStatus: string, notes?: string) => {
 		try {
+			const payload: Record<string, any> = { status: newStatus, stage: newStatus };
+			if (notes) {
+				payload.clinicalNotes = notes;
+				payload.remakeReason = notes;
+			}
 			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-				body: JSON.stringify({ status: newStatus }),
+				body: JSON.stringify(payload),
 			});
 			if (!res.ok) throw new Error("Ошибка обновления статуса");
 			showToast("Статус наряда ЗТЛ успешно обновлен", "success");
 			void fetchOrders();
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: { orderId, status: newStatus } }));
+			}
 			if (["ready", "ready_in_clinic", "shipped", "delivered", "received"].includes(newStatus)) {
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente-lab-order-ready", { detail: { orderId, status: newStatus } }));
+				}
 				onOpenReadyPrompt({ id: orderId, status: newStatus } as any);
 			}
 		} catch (err: unknown) {

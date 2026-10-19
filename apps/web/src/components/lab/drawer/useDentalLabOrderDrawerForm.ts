@@ -98,6 +98,29 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		props.onClose();
 	};
 
+	const handleMarkReadyInClinic = () => {
+		setStatus("ready_in_clinic");
+		const teeth = parseFdiTeethString(teethInput);
+		const teethFinal = teeth.length > 0 ? teeth : [16];
+		const def = DENTAL_LAB_CONSTRUCTIONS[construction];
+		const fin = calculateZtlWageFinancials({ unitsCount: teethFinal.length, patientPriceRub, ztlCostRub, doctorSharePercent: doctorPercent });
+		const record = createDentalLabOrderRecord({
+			...(editingOrder || {}), patientName, doctorName, labName: labName.trim() || "Основная лаборатория",
+			technicianName, teethFdi: teethFinal, constructionType: construction, materialRu: def?.defaultMaterialRu,
+			vitaShade, translucency, stumpShade, sentDate, deadlineDate, scheduledVisitDate: scheduledVisit || undefined,
+			status: "ready_in_clinic", patientPriceKopecks: fin.patientPriceKopecks, ztlCostKopecks: fin.ztlCostKopecks,
+			doctorSharePercent: fin.doctorSharePercent, clinicalNotes, attachedScanUrl,
+		});
+		props.onSaveOrder?.(record, Boolean(editingOrder));
+		props.onOrderSaved?.(record);
+		showToast("Работа принята в клинике! Ортопед уведомлен.", "success");
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente-lab-order-ready", { detail: { ...record, status: "ready_in_clinic", stage: "fitting_scheduled" } }));
+			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: { orderId: record.id, status: "ready_in_clinic", stage: "fitting_scheduled" } }));
+		}
+		props.onClose();
+	};
+
 	return {
 		patientName, setPatientName, doctorName, setDoctorName, labName, setLabName,
 		technicianName, setTechnicianName, teethInput, setTeethInput, construction,
@@ -106,6 +129,7 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		scheduledVisit, setScheduledVisit, patientPriceRub, setPatientPriceRub, ztlCostRub,
 		setZtlCostRub, doctorPercent, setDoctorPercent, clinicalNotes, setClinicalNotes,
 		attachedScanUrl, setAttachedScanUrl, status, setStatus, collision, handleSubmit,
+		handleMarkReadyInClinic,
 		setWorkingDays: (d: number) => setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, d))),
 		autoBookFitting: () => setScheduledVisit(toIsoDate(addWorkingDaysRu(deadlineDate, 1))),
 		editingOrder,

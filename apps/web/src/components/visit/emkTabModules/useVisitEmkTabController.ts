@@ -157,20 +157,29 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 			"Чистка зубов 2 раза в день щёткой средней жесткости, использование зубной нити и ирригатора. Плановый профосмотр через 6 месяцев.";
 
 		updateVisitNoteField("complaint", normComplaint);
+		updateVisitNoteField("complaints", normComplaint);
 		updateVisitNoteField("anamnesis", normAnamnesis);
 		updateVisitNoteField("objectiveStatus", normObjective);
+		updateVisitNoteField("objectiveInspection", normObjective);
+		updateVisitNoteField("objective", normObjective);
 		updateVisitNoteField("diagnosis", normDiagnosis);
 		updateVisitNoteField("treatmentPlan", normPlan);
+		updateVisitNoteField("treatment", normPlan);
 		updateVisitNoteField("recommendations", normRecs);
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente-apply-soap-protocol", {
 					detail: {
+						complaint: normComplaint,
 						complaints: normComplaint,
 						anamnesis: normAnamnesis,
 						objective: normObjective,
+						objectiveStatus: normObjective,
+						objectiveInspection: normObjective,
 						diagnosis: normDiagnosis,
+						treatmentPlan: normPlan,
+						treatment: normPlan,
 						treatmentDone: normPlan,
 						recommendations: normRecs,
 					},

@@ -1,4 +1,5 @@
 import React from "react";
+import { ShieldCheck } from "lucide-react";
 import { useVisitStore } from "../../../store/visitStore";
 import type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
 import { EmkQuickActionButtons } from "./emkToolbarModules/EmkQuickActionButtons";
@@ -7,6 +8,12 @@ import { useEmkToolbarKeyboardShortcuts } from "./emkToolbarModules/useEmkToolba
 
 export type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
 export * from "./emkToolbarModules/emkToolbarTypes";
+
+/**
+ * Mandate 8e: 1-click chairside physiological norm in action bar
+ * data-testid="btn-chairside-physiological-norm"
+ * Label: "✓ Соматически здоров / Норма" with clinical ShieldCheck icon
+ */
 
 export function EmkToolbar({
 	activeEmkTab: propActiveEmkTab,

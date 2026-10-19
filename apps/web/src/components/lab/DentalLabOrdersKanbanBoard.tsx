@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Calendar, CheckCircle2, FileText, Truck } from "lucide-react";
+import { Calendar, CheckCircle2, FileText, Layers, Truck } from "lucide-react";
 import type { LabWorkflowStatus, DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
 import type { CanonicalKanbanStageId } from "./DentalLabKanbanCard";
 import { KanbanColumn } from "./kanbanBoardModules/KanbanColumn";
@@ -30,29 +30,36 @@ export interface CanonicalKanbanColumnDef {
 	readonly colorHex: string;
 }
 
-export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{ id: "draft", title: "Отправлен", shortTitle: "Отправлен", icon: <FileText size={16} />, colorHex: "#64748b" },
-	{ id: "sent_to_lab", title: "В работе у техника", shortTitle: "В работе", icon: <Truck size={16} />, colorHex: "#3b82f6" },
-	{ id: "fitting_scheduled", title: "В клинике / Готов к сдаче", shortTitle: "В клинике", icon: <Calendar size={16} />, colorHex: "#f59e0b" },
-	{ id: "installed_completed", title: "Сдан пациенту", shortTitle: "Сдан", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
+export const CANONICAL_5_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
+	{ id: "draft", title: "Слепок снят", shortTitle: "Слепок", icon: <FileText size={16} />, colorHex: "#64748b" },
+	{ id: "sent_to_lab", title: "Отправлено в ЗТЛ", shortTitle: "В ЗТЛ", icon: <Truck size={16} />, colorHex: "#3b82f6" },
+	{ id: "in_progress", title: "Моделирование/Литье", shortTitle: "CAD/Литье", icon: <Layers size={16} />, colorHex: "#8b5cf6" },
+	{ id: "fitting_scheduled", title: "Примерка/В клинике", shortTitle: "В клинике", icon: <Calendar size={16} />, colorHex: "#f59e0b" },
+	{ id: "installed_completed", title: "Сдано пациенту", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
 ] as const;
 
+export const CANONICAL_4_KANBAN_COLUMNS = CANONICAL_5_KANBAN_COLUMNS;
+
 /**
- * 4-колоночная канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
+ * 5-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
  */
 export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = (props) => {
 	const [dragOverCol, setDragOverCol] = useState<CanonicalKanbanStageId | null>(null);
 
 	const resolved = useMemo(() => ({
 		draft: props.ordersByStage.draft || [],
-		sent_to_lab: [...(props.ordersByStage.sent_to_lab || []), ...(props.ordersByStage.warranty_rework || [])],
+		sent_to_lab: props.ordersByStage.sent_to_lab || [],
+		in_progress: [
+			...((props.ordersByStage as any).in_progress || []),
+			...(props.ordersByStage.warranty_rework || []),
+		],
 		fitting_scheduled: props.ordersByStage.fitting_scheduled || [],
 		installed_completed: props.ordersByStage.installed_completed || [],
 	}), [props.ordersByStage]);
 
 	return (
 		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board">
-			{CANONICAL_4_KANBAN_COLUMNS.map((col) => {
+			{CANONICAL_5_KANBAN_COLUMNS.map((col) => {
 				const colOrders = resolved[col.id] || [];
 				return (
 					<KanbanColumn

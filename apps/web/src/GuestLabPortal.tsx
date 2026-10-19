@@ -17,7 +17,7 @@ import {
 	Truck,
 	User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { actionFailureToast } from "./lib/panelStateText";
 import {
@@ -39,7 +39,9 @@ import {
 	getAttachmentExtension,
 	getAttachmentFileSize,
 } from "./components/lab/guestLabPortalHelpers";
-import "./GuestLabPortal.css";
+if (typeof document !== "undefined") {
+	void import("./GuestLabPortal.css");
+}
 
 export type { GuestLabPortalProps, LabOrderData };
 

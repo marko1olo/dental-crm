@@ -133,16 +133,21 @@ export function executeApplyHygienePresetAutonomy({
 		if (!visitNoteForm?.diagnosis) {
 			updateVisitNoteField("diagnosis", "K03.6 Отложения [наросты] на зубах (зубной камень, пигментированный налёт)");
 		}
-		if (!visitNoteForm?.complaints) {
-			updateVisitNoteField("complaints", "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.");
+		if (!visitNoteForm?.complaints && !(visitNoteForm as any)?.complaint) {
+			const hygieneComplaints = "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.";
+			updateVisitNoteField("complaints", hygieneComplaints);
+			updateVisitNoteField("complaint", hygieneComplaints);
 		}
 		const hygieneObj = "Индекс гигиены OHI-S = 1.8. Обильный пигментированный налёт и наддесневой зубной камень во фронтальном отделе нижней челюсти. Слизистая десны умеренно гиперемирована в области десневых сосочков.";
-		if (!visitNoteForm?.objectiveInspection) {
+		if (!visitNoteForm?.objectiveInspection && !(visitNoteForm as any)?.objectiveStatus) {
 			updateVisitNoteField("objectiveInspection", hygieneObj);
+			updateVisitNoteField("objectiveStatus", hygieneObj);
 		}
 		const hygieneTreatment = "Проведена комплексная профессиональная гигиена полости рта: ультразвуковое удаление над- и поддесневых зубных отложений (скалер Woodpecker), воздушно-абразивная полировка Air-Flow (порошок на основе глицина), полировка пастой Kerr Cleanic. Антисептическая обработка десневого края 0.05% раствором хлоргексидина. Глубокое фторирование эмали фторлаком Bifluorid 12.";
-		const currentTreatment = visitNoteForm?.treatment || "";
-		updateVisitNoteField("treatment", currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment);
+		const currentTreatment = visitNoteForm?.treatment || (visitNoteForm as any)?.treatmentPlan || "";
+		const updatedTreatment = currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment;
+		updateVisitNoteField("treatment", updatedTreatment);
+		updateVisitNoteField("treatmentPlan", updatedTreatment);
 
 		const hygieneRec = "Щадящая чистка зубов мягкой щёткой в течение 2 дней. Исключить красящие продукты (кофе, чай, ягоды) на 48 часов. Контрольный осмотр через 6 месяцев.";
 		if (!visitNoteForm?.recommendations) {
@@ -209,11 +214,10 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	}
 
 	if (typeof updateVisitNoteField === "function") {
-		const current = visitNoteForm?.treatment || "";
-		updateVisitNoteField(
-			"treatment",
-			current ? `${current}\n\n${anesthesiaText}` : anesthesiaText,
-		);
+		const current = visitNoteForm?.treatment || (visitNoteForm as any)?.treatmentPlan || "";
+		const updatedTreatment = current ? `${current}\n\n${anesthesiaText}` : anesthesiaText;
+		updateVisitNoteField("treatment", updatedTreatment);
+		updateVisitNoteField("treatmentPlan", updatedTreatment);
 	}
 	showToastFn(toastMessage, "success");
 	return { executed: true, anesthesiaText };

@@ -620,7 +620,7 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
         (comment ?? "").toLowerCase().includes("острая боль")
       ) {
         const created = await handleCreateInlinePatient({
-          fullName: "Пациент с острой болью (Срочно)",
+          fullName: "Пациент с острой болью (CITO)",
         });
         if (created?.id) {
           effectivePatientId = created.id;

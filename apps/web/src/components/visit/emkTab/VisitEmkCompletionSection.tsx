@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, ChevronRight, FileCheck, QrCode } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, FileCheck, QrCode, RefreshCw } from "lucide-react";
 import type { VisitEmkCompletionSectionProps } from "./types";
 
 export function VisitEmkCompletionSection({
@@ -11,12 +11,37 @@ export function VisitEmkCompletionSection({
 	isDraftAccepting,
 	isCompletingVisit,
 	completionResult,
+	completionError,
 	setIsSbpQrModalOpen,
 	activeEmkTab,
 	setActiveEmkTab,
 }: VisitEmkCompletionSectionProps) {
 	return (
 		<>
+			{/* Честный неблокирующий баннер ошибки расчёта сметы без фальшивых чеков */}
+			{completionError && (
+				<div
+					className="mt-2.5 p-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-200 text-xs flex flex-wrap items-center justify-between gap-2"
+					data-testid="emk-completion-error-banner"
+					role="alert"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<AlertTriangle size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<span className="truncate">{completionError}</span>
+					</div>
+					<button
+						type="button"
+						onClick={handleCompleteVisitAndGenerateReceipt}
+						disabled={isCompletingVisit}
+						className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+						data-testid="btn-retry-visit-estimate"
+					>
+						<RefreshCw size={12} className="shrink-0" />
+						<span>Повторить расчёт сметы</span>
+					</button>
+				</div>
+			)}
+
 			{/* Баннер ревизии закрытого дневника («Исправленному верить») */}
 			{isSignedVisit && (
 				<div
@@ -101,10 +126,10 @@ export function VisitEmkCompletionSection({
 					type="button"
 					onClick={handleSaveVisitNote}
 					disabled={isDraftAccepting}
-					className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--brand)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+					className="secondary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
 					data-testid="btn-save-visit-note"
 				>
-					<FileCheck size={16} className="shrink-0" />
+					<FileCheck size={16} className="shrink-0 text-[var(--teal)]" />
 					<span>Сохранить запись приёма</span>
 				</button>
 
@@ -112,7 +137,7 @@ export function VisitEmkCompletionSection({
 					type="button"
 					onClick={handleCompleteVisitAndGenerateReceipt}
 					disabled={isCompletingVisit}
-					className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] hover:opacity-90 text-[var(--on-primary,white)] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
 					data-testid="btn-complete-visit-emk"
 				>
 					<Check size={16} className="shrink-0" />

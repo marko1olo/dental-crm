@@ -52,6 +52,8 @@ export function DentalLabOrderDrawer(props: DentalLabOrderDrawerProps) {
 					treatmentPlanId={props.treatmentPlanId}
 					stageNumber={props.stageNumber}
 					stageTitle={props.stageTitle}
+					currentStatus={form.status}
+					onMarkReadyInClinic={form.editingOrder ? form.handleMarkReadyInClinic : undefined}
 					onClose={props.onClose}
 				/>
 

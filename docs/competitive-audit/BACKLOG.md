@@ -11434,3 +11434,30 @@
         - `02_booking_pc_dark.png` / `booking-pc-dark.png` (460.7 КБ, PC Dark 1440×900, темная тема, высокий контраст, отсутствие засветов)
         - `03_booking_mobile_light.png` / `booking-mobile-light.png` (201.8 КБ, Mobile Light 390×844, Apple HIG, тач-таргеты $\ge 44\times 44$px, плавающий Floating Bottom Bar)
         - `04_booking_mobile_dark.png` / `booking-mobile-dark.png` (213.2 КБ, Mobile Dark 390×844, мобильная темная тема смартфона, 0px горизонтального скролла).
+
+56. **Волна 348: Red Team Инквизиция Зуботехнической Лаборатории (ЗТЛ), Ортопедических Нарядов, Шкалы VITA/3D-Master/Bleach, Векторных Штрихкодов Code128/QR и Интеграции с Расписанием и Расчетом ЗП Врача (Мандаты 8b, 8e, 8n, 8x, 8al, 8ze, Apple HIG)**:
+    - **1. Канонический 5-колоночный Канбан ЗТЛ (`DentalLabOrdersKanbanBoard.tsx`)**:
+      * Реализованы 5 канонических клинических колонок: «Слепок снят» (`draft`), «Отправлено в ЗТЛ» (`sent_to_lab`), «Моделирование/Литье» (`in_progress`), «Примерка/В клинике» (`fitting_scheduled`), «Сдано пациенту» (`installed_completed`);
+      * Поддержан drag-and-drop перенос нарядов между колонками с немедленным вызовом `PATCH /api/lab/orders/:id/status` и сохранением в PostgreSQL 18;
+      * Карточки канбана строго соответствуют закону Миллера: 2 кнопки быстрого действия («Открыть», «В работу / Далее») и контекстное меню «...».
+    - **2. SSOT Дравер наряда ЗТЛ и интерактивная матрица расцветок (`DentalLabOrderDrawer.tsx`, `DentalLabDrawerShadesSection.tsx`, `DentalLabDrawerConstructionSection.tsx`, `DentalLabDrawerHeader.tsx`)**:
+      * 1-клик селектор зубов формулы FDI (все 32 зуба 11..48) с быстрыми переключателями «В/Ч», «Н/Ч», «Сброс» и экспресс-выбором конструкций (Цирконий Multilayer, E.max, PMMA, Металлокерамика, Абатмент, Вкладка);
+      * Сегментированная шкала расцветки `[ Classical | 3D-Master | Bleach ]` с кликабельными сэмплами тонов: Classical (A1–D4), 3D-Master по уровням L1–L5 (1M1..5M3), Bleach (0M1..0M3, BL1..BL4);
+      * Векторный рендеринг штрихкода Code128 (`generateBarcodeSvg`) и QR-кода (`generateQrCodeSvg`) в заголовке наряда;
+      * Кнопка быстрого интейка «✓ Работа в клинике (Принято)» (`data-testid="btn-mark-ready-in-clinic"`), переводящая наряд в статус `ready_in_clinic` в 1 клик, сохраняющая заказ и рассылающая события `dente-lab-order-ready` для оповещения ортопеда.
+    - **3. Авторасчет себестоимости и интеграция с ФОТ врача (0 копеек дрифта)**:
+      * Себестоимость лабораторного этапа автоматически вычитается из валовой базы начисления зарплаты врача: `wageBase = price - labCost`;
+      * Полная синхронизация со списанием расходных материалов по модели Soft Negative Stock.
+    - **4. Apple HIG Мобильный Адаптив (`MobileLabOrdersTimeline.tsx`, `mobileLabOrders.css`)**:
+      * На смартфонах ($\le 768$px) 5-колоночная сетка заменяется на вертикальный Grouped List карточек Apple Health / Settings style;
+      * Тач-таргеты строго $\ge 44\times 44$px, плавающий Bottom Bar с кнопкой создания наряда в Natural Thumb Zone;
+      * Форма наряда открывается в виде нативного Bottom Sheet с Drag Handle 36×5px, скруглением `rounded-t-[24px]` и 0px паразитного горизонтального скролла.
+    - **5. Верификация и 4-State Red Team Visual Proof**:
+      * 218/218 тестов пройдены успешно (20 сьютов, 0 сбоев);
+      * `npm run check:encoding` проверено 14 684 файлов, замечаний нет;
+      * Сняты и лично отсмотрены глазами через `view_file` 4 скриншота из живой связки Fastify API (4100) + PostgreSQL 18 + Vite (5173) в `docs/proofs/lab/`:
+        - `01_lab_kanban_5stages_pc_light_1440x900.png` (142.9 КБ, PC Light 1440×900, 5 колонок канбана, чистая светлая тема DENTE)
+        - `02_lab_order_drawer_shades_pc_dark_1440x900.png` (75.7 КБ, PC Dark 1440×900, темный дравер, вкладка 3D-Master со сэмплами, FDI селектор, штрихкод Code128 и QR)
+        - `03_lab_mobile_light_390x844.png` (54.5 КБ, Mobile Light 390×844, Grouped List карточки заказов, тач-таргеты $\ge 44$px, Apple HIG)
+        - `04_lab_mobile_dark_390x844.png` (36.7 КБ, Mobile Dark 390×844, нативный Bottom Sheet в темной теме, Drag Handle, кнопка в Natural Thumb Zone, 0px overflow).
+

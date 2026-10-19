@@ -50,7 +50,7 @@ export async function registerOrderStatusPatchRoutes(app: FastifyInstance) {
 
 		const patchSchema = z.object({
 			stage: z.string().trim().optional(),
-			status: labOrderStatusSchema.optional(),
+			status: z.string().trim().optional(),
 			notes: z.string().trim().max(2000).optional().nullable(),
 			clinicalNotes: z.string().trim().max(2000).optional().nullable(),
 			labComments: z.string().trim().max(2000).optional().nullable(),
@@ -68,8 +68,11 @@ export async function registerOrderStatusPatchRoutes(app: FastifyInstance) {
 
 		const body = parsed.data;
 
-		// Маппинг этапа на допустимый статус lab_orders.status (миграция 0042)
-		let targetStatus: LabOrderStatus | undefined = body.status;
+		// Маппинг статуса и этапа на допустимый статус lab_orders.status (миграция 0042)
+		let targetStatus: LabOrderStatus | undefined = undefined;
+		if (body.status) {
+			targetStatus = mapStageToLabOrderStatus(body.status) ?? (body.status as LabOrderStatus);
+		}
 		if (!targetStatus && body.stage) {
 			const mapped = mapStageToLabOrderStatus(body.stage);
 			if (mapped) {
@@ -241,6 +244,7 @@ export async function registerOrderStatusPatchRoutes(app: FastifyInstance) {
 	};
 
 	app.patch("/api/lab/orders/:id", patchLabOrderHandler);
+	app.patch("/api/lab/orders/:id/status", patchLabOrderHandler);
 	app.patch("/api/clinical/lab-orders/:id", patchLabOrderHandler);
 	app.patch("/api/clinical/lab-orders/:id/status", patchLabOrderHandler);
 	app.patch("/api/dental-lab/orders/:id", patchLabOrderHandler);

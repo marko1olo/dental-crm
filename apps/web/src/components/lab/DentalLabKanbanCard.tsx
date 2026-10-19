@@ -5,7 +5,7 @@ import { KanbanCardHeader } from "./kanbanCardModules/KanbanCardHeader";
 import { KanbanCardBody } from "./kanbanCardModules/KanbanCardBody";
 import { KanbanCardActions } from "./kanbanCardModules/KanbanCardActions";
 
-export type CanonicalKanbanStageId = "draft" | "sent_to_lab" | "fitting_scheduled" | "installed_completed";
+export type CanonicalKanbanStageId = "draft" | "sent_to_lab" | "in_progress" | "fitting_scheduled" | "installed_completed";
 
 export interface DentalLabKanbanCardProps {
 	readonly order: DentalLabWorkflowOrder;
