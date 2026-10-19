@@ -287,7 +287,7 @@ export function calculateKraftSterilityExpiration(
 	if (daysLifespan === 0) {
 		humanReadableRemainingRu = "Без упаковки (использовать в течение смены)";
 	} else if (isExpired) {
-		humanReadableRemainingRu = `Срок истек ${Math.abs(daysRemaining)} дн. назад (требуется повторная ПСО)`;
+		humanReadableRemainingRu = `Срок истек ${Math.abs(daysRemaining)} дн. назад (требуется повторная очистка и стерилизация)`;
 	} else if (daysRemaining === 0) {
 		humanReadableRemainingRu = "Истекает сегодня (до 23:59)";
 	} else if (daysRemaining === 1) {

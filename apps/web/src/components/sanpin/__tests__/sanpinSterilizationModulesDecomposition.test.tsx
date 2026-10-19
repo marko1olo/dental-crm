@@ -150,12 +150,12 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 			/>
 		);
 
-		assert.ok(html.includes("Контроль ПСО"), "Must have PSO section");
+		assert.ok(html.includes("Предстерилизационная очистка") || html.includes("Контроль ПСО"), "Must have PSO section");
 		assert.ok(html.includes("Азопирам"), "Must have azopyram indicator");
 		assert.ok(html.includes("Фенолфталеин"), "Must have phenolphthalein indicator");
 		assert.ok(html.includes("КТ-1"), "Must have 5 chamber test points KT-1");
 		assert.ok(html.includes("КТ-5"), "Must have 5 chamber test points KT-5");
-		assert.ok(html.includes("СанПиН 3.3686-21"), "Must reference statutory rule");
+		assert.ok(html.includes("контроль качества") || html.includes("СанПиН 3.3686-21"), "Must reference quality control or statutory rule");
 	});
 
 	it("renders AutoclaveIndicatorBadge and AutoclaveCycleRowItem correctly", () => {

@@ -57,7 +57,7 @@ export function CycleChemicalIndicatorSelect({
 				>
 					<div style={{ fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.3rem" }}>
 						<ShieldCheck size={14} color="var(--teal, #0d9488)" />
-						<span>Контроль ПСО (предстерилизационная очистка, СанПиН 3.3686-21)</span>
+						<span>Предстерилизационная очистка (контроль качества)</span>
 					</div>
 					<span style={{ fontSize: "0.72rem", color: "var(--muted, #64748b)" }}>
 						Серия азопирама: АЗО-2026/08-114

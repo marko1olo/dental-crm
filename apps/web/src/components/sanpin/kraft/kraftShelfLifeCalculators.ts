@@ -78,7 +78,7 @@ export function calculatePackageExpiryDate(
 		packDateFormatted: packDate.toISOString().slice(0, 10), expiryDateFormatted: expDate.toISOString().slice(0, 10),
 		shelfLifeDays, daysRemaining, status, statusLabelRu, statusColorHex,
 		isExpired: isExp, isExpiringSoon: isSoon, sanpinClause: def.sanpinClauseRu,
-		recommendationRu: isExp ? "ВНИМАНИЕ! Срок стерильности истек. Использование запрещено. Отправить на повторную предстерилизационную очистку (ПСО)." : "Изделие стерильно, готово к безопасному клиническому применению.",
+		recommendationRu: isExp ? "ВНИМАНИЕ! Срок стерильности истек. Использование запрещено. Отправить на повторную очистку и стерилизацию." : "Изделие стерильно, готово к безопасному клиническому применению.",
 	};
 }
 
@@ -105,7 +105,7 @@ export function validateSterilizationCycleParameters(
 	const isValid = errors.length === 0;
 	const complianceVerdictRu = isValid
 		? `Цикл полностью соответствует нормам ${regime.sanpinNormClauseRu}. Стерилизация подтверждена.`
-		: `БРАК СТЕРИЛИЗАЦИИ: параметры цикла нарушают требования СанПиН 3.3686-21. Все пакеты подлежат повторной ПСО.`;
+		: `БРАК СТЕРИЛИЗАЦИИ: параметры цикла нарушают требования норм. Все пакеты подлежат повторной очистке и стерилизации.`;
 
 	return {
 		isValid, regime, actualTempCelsius: actualTemp, actualPressureBar: actualPressure, actualExposureMinutes: actualTimeMinutes,

@@ -96,7 +96,7 @@ export function AutoclaveJournal257Tab({
 		link.setAttribute("href", url);
 		link.setAttribute(
 			"download",
-			`Journal_Form_257u_${new Date().toISOString().split("T")[0]}.csv`,
+			`Zhurnal_avtoklavirovaniya_${new Date().toISOString().split("T")[0]}.csv`,
 		);
 		document.body.appendChild(link);
 		link.click();

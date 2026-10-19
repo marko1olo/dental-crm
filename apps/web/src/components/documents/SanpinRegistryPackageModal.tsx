@@ -155,13 +155,13 @@ export function SanpinRegistryPackageModal({
 							</div>
 						</div>
 
-						{/* 2. ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ПСО) */}
+						{/* 2. ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ */}
 						<div className="document-package-item-card">
 							<div className="document-package-item-info">
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<FlaskConical size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Журнал предстерилизационной очистки (ПСО)
+										Журнал предстерилизационной очистки
 									</span>
 								</div>
 								<span className="document-package-item-sub">
@@ -182,7 +182,7 @@ export function SanpinRegistryPackageModal({
 										}
 									}}
 								>
-									Открыть журнал ПСО
+									Открыть журнал очистки
 								</button>
 							</div>
 						</div>

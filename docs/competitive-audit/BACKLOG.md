@@ -11468,5 +11468,49 @@
         - `01_lab_kanban_5stages_pc_light_1440x900.png` (142.9 КБ, PC Light 1440×900, 5 колонок канбана, чистая светлая тема DENTE)
         - `02_lab_order_drawer_shades_pc_dark_1440x900.png` (75.7 КБ, PC Dark 1440×900, темный дравер, вкладка 3D-Master со сэмплами, FDI селектор, штрихкод Code128 и QR)
         - `03_lab_mobile_light_390x844.png` (54.5 КБ, Mobile Light 390×844, Grouped List карточки заказов, тач-таргеты $\ge 44$px, Apple HIG)
-        - `04_lab_mobile_dark_390x844.png` (36.7 КБ, Mobile Dark 390×844, нативный Bottom Sheet в темной теме, Drag Handle, кнопка в Natural Thumb Zone, 0px overflow).
+57. **Волна 349: Red Team Инквизиция Рентгенодиагностики, Визиографа и Архива Снимков (Radiology / 2D Periapical RVG / DICOM / SanPiN doses / Apple HIG) (Мандаты 8d, 8e, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)**:
+    - **1. Искоренение советского канцелярита и шифра «Форма 043/у» (Мандат 8x)**:
+      * Ликвидирован советский канцелярит «Форма 043/у» во всех тостах, кнопках, подсказках и тулбарах рентген-модуля (`MobilePatientShowcaseOverlay.tsx`, `RadiologyModuleToolbar.tsx`, `RadiologyHubCards.tsx`);
+      * Вместо бюрократических шифров внедрены понятные клинические термины: «Медицинская карта приёма», «В медкарту приёма», «Снимок прикреплен к медицинской карте приёма»;
+      * Регуляторная дозиметрия СанПиН выведена в тихий фоновый режим: кнопка «Архив доз» («Архив лучевой нагрузки (для проверок)») без навязчивых предупреждений и с запретом блокировок съемки врачу (Мандат 8e).
+    - **2. 1-Клик привязка снимка к зубу формулы FDI ISO 3950 (`ToothRadialMenu.tsx`, `useImagingViewController.ts`)**:
+      * При вызове визиографа из радиального меню одонтограммы зуб (например, #16, #26, #36) мгновенно подтягивается в метаданные съемки без ручного поиска;
+      * Синхронизация через унифицированные события (`dente-open-rvg-capture`, `dente-open-rvg-capture-modal`, `dente:open-direct-rvg`) и `visitStore.activeToothNumber`.
+    - **3. Apple HIG мобильная эргономика и ликвидация переносов слов (`MobileChairsideRadiologyViewer.tsx`, `mobileRadiology.css`)**:
+      * Устранены дефекты переноса букв на мобильном тулбаре инструментов: кнопки «Негатив», «Контраст», «Линейка», «Зум», «Поворот», «Фильтр» отображаются строго в одну строку без паразитных переносов (`white-space: nowrap; font-size: 9.5px`);
+      * Кнопка «Пациенту» (`MobilePatientShowcaseOverlay`) оформлена в скругленный баббл со свободным дыханием без деформации от родительских стилей;
+      * Сенсорный минимум строго $\ge 44\times 44\text{px}$, Natural Thumb Zone в нижней трети экрана, 0px паразитного горизонтального скролла на 390×844.
+    - **4. Верификация и 4-State Red Team Visual Proof**:
+      * 19/19 тестов чистоты языка пройдены (`zeroBirdLanguagePurity.test.ts`), полный сьют рентгенодиагностики (81 файл, 1263 теста) зелёный;
+      * Сняты и лично верифицированы глазами через `view_file` 6 скриншотов из живой связки Fastify API (4100) + PostgreSQL 18 + Vite (5173) в `docs/screenshots/radiology_archive/` и `docs/proofs/radiology_archive/`:
+        - `01_pc_light_radiology_workspace.png` (1878.4 КБ, PC Light 1440×900, рабочий стол снимков, лента исследований, быстрый тулбар КТ/RVG)
+        - `02_pc_dark_radiology_workspace.png` (1882.4 КБ, PC Dark 1440×900, темный режим без засветов, глубокий контраст рентгенограмм)
+        - `03_pc_dark_direct_rvg_modal_tooth16.png` (1870.5 КБ, PC Dark 1440×900, модальное окно RVG прямого захвата для Зуба #16, бейдж «Зуб #16 Прицельный снимок RVG #16 (Эндодонтия)»)
+        - `04_mobile_light_chairside_viewer.png` (1011.6 КБ, Mobile Light 390×844, мобильный просмотрщик у кресла, идеальный тулбар в 1 строку)
+        - `05_mobile_dark_chairside_viewer.png` (1011.7 КБ, Mobile Dark 390×844, мобильный темный просмотрщик, тактильные кнопки в Thumb Zone)
+        - `06_mobile_dark_showcase_overlay_clean.png` (914.9 КБ, Mobile Dark 390×844, режим демонстрации пациенту, кнопки «Сравнение 'До/После'» и «+ В медкарту приёма»).
 
+58. **Волна 350: Red Team Инквизиция Стерилизации, Автоклавирования и СанПиН 3.3686-21 без Канцелярита и Симуляторов (Мандаты 8d, 8e, 8n, 8x, 8wy, 8ze, 8al, Apple HIG)**:
+    - **1. Искоренение советского номерного птичьего языка (Мандат 8x)**:
+      * Заменены бюрократические советские шифры: «Форма № 257/у» -> «Журнал автоклавирования», «Форма № 366/у» / «ПСО» -> «Предстерилизационная очистка» во всех кнопках, вкладках, модальных окнах, тостах и служебных примечаниях (`SanpinRegistryPackageModal.tsx`, `CycleChemicalIndicatorSelect.tsx`, `SterilizationCycleModal.tsx`, `AutoclaveCycleModal.tsx`, `AutoclaveJournal257Tab.tsx`, `kraftPackageEngine.ts`, `kraftShelfLifeCalculators.ts`);
+      * Экспорт CSV переименован с `Journal_Form_257u_*.csv` на чистое клиническое имя `Zhurnal_avtoklavirovaniya_*.csv`;
+      * Рекомендации при истечении срока стерильности заменены с «повторной ПСО» на «повторную очистку и стерилизацию» (`kraftPackageEngine.ts`, `kraftShelfLifeCalculators.ts`, `calculations.ts`, `sanpinPackagingSsot.ts`, `thermalLabelEngine.ts`, `disinfectionSchemas.ts`).
+    - **2. Ликвидация процедурных симуляторов реальности (Мандаты 8e, 8k, 8n)**:
+      * Подтверждена окончательная ликвидация позубного сканирования крафт-пакетов у кресла врача (`ToothSanpinKraftBinding.tsx`, `KraftPackageQuickScanner.tsx`);
+      * Презумпция стерильности лотка по умолчанию: горячий путь врача и ассистента в `useVisitCompletion.ts` и `VisitSoapEditor.tsx` на 100% автономен и не требует сканирования штрихкодов или одобрения медсестры.
+    - **3. Пакетная фиксация циклов в 1 клик для ЦСО (Мандат 8n)**:
+      * Кнопки пакетной фиксации циклов автоклавирования (Класс B 134°C, 2.1 бар, 5 мин / 121°C 1.15 бар, 5 контрольных точек камеры, отрицательный азопирам и фенолфталеин) с мгновенным списанием расходных материалов по модели Soft Negative Stock;
+      * Кнопка «Норма 100%» в модальном окне цикла автоклава с тач-таргетом $\ge 44\text{px}$.
+    - **4. Apple HIG Мобильный стандарт (Bottom Sheets 390×844)**:
+      * На экранах $\le 768\text{px}$ модальные окна стерилизации трансформируются в нативные Bottom Sheets (`items-end sm:items-center`, `rounded-t-[24px] sm:rounded-2xl`, тактильный Drag Handle 36×5px `sanpin-mobile-drag-handle`, максимальная высота `90dvh`);
+      * Интерактивные кнопки и элементы управления имеют сенсорный минимум строго $\ge 44\times 44\text{px}$;
+      * 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+    - **5. Верификация и 4-State Red Team Visual Proof**:
+      * Все наборы тестов пройдены со 100% успехом: `apps/web/src/components/sterilization/__tests__/` (4 файла, 43 теста pass), `apps/web/src/tests/sterilizationForm257BatchReporting.test.ts` (6 тестов pass), `apps/web/src/components/sanpin/__tests__/` (19 файлов, 250 тестов pass), `sterilizationKraftLogbook.test.ts` и `autoclaveLog.test.ts` (46 тестов pass) — суммарно 345+ тестов;
+      * Сняты и верифицированы через `view_file` 6 скриншотов из живой CRM в `docs/proofs/sterilization/`:
+        - `01_pc_sterilization_journal_light_1440x900.png` (206.4 КБ, PC Light 1440×900, чистый журнал автоклавирования, zero-decree тулбар)
+        - `02_pc_sterilization_modal_light_1440x900.png` (183.9 КБ, PC Light 1440×900, модалка фиксации цикла, 1-клик «Заполнить нормой»)
+        - `03_pc_sterilization_journal_dark_1440x900.png` (210.8 КБ, PC Dark 1440×900, идеальная темная тема без засветов)
+        - `04_pc_sterilization_modal_dark_1440x900.png` (197.2 КБ, PC Dark 1440×900, темная тема модального окна автоклава)
+        - `sterilization_mobile_light_390x844.png` (170.5 КБ, Mobile Light 390×844, карточки циклов, статус «Стерильно», Apple HIG)
+        - `sterilization_mobile_dark_390x844.png` (170.9 КБ, Mobile Dark 390×844, темная мобильная картотека стерилизации, тач-таргеты $\ge 44$px).

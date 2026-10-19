@@ -487,7 +487,7 @@ export function validateSterilizationCycleParameters(
 	const isValid = errors.length === 0;
 	const complianceVerdictRu = isValid
 		? (warnings.length === 0 ? `Цикл полностью соответствует ${regime.sanpinNormClauseRu}. Стерилизация подтверждена.` : `Параметры в допуске: ${warnings.join("; ")}`)
-		: "БРАК СТЕРИЛИЗАЦИИ: параметры нарушают СанПиН 3.3686-21. Все пакеты подлежат повторной ПСО.";
+		: "БРАК СТЕРИЛИЗАЦИИ: параметры нарушают требования норм. Все пакеты подлежат повторной очистке и стерилизации.";
 
 	return { isValid, regime, actualTempCelsius: actualTemp, actualPressureBar: actualPressure, actualExposureMinutes: actualMinutes, errors, warnings, complianceVerdictRu };
 }

@@ -147,16 +147,21 @@ export function AutoclaveCycleModal({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+			className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
 			onClick={onClose}
 			role="dialog"
 			aria-modal="true"
 			aria-label="Фиксация цикла в журнале автоклавирования"
 		>
 			<div
-				className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-2xl p-4 sm:p-6 flex flex-col gap-4 text-ink"
+				className="w-full max-w-xl max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-2xl p-4 sm:p-6 flex flex-col gap-4 text-ink"
 				onClick={(e) => e.stopPropagation()}
 			>
+				{/* Mobile drag handle for Apple HIG */}
+				<div className="flex sm:hidden justify-center pt-1 pb-1 -mt-1" aria-hidden="true">
+					<div className="w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
+				</div>
+
 				{/* Header */}
 				<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]">
 					<div className="flex items-center gap-2">
@@ -176,8 +181,8 @@ export function AutoclaveCycleModal({
 						<button
 							type="button"
 							onClick={handleFillNormIn1Click}
-							className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 cursor-pointer min-h-[36px] inline-flex items-center gap-1"
-							title="Заполнить всеми нормативными параметрами СанПиН"
+							className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 cursor-pointer min-h-[44px] inline-flex items-center gap-1"
+							title="Заполнить всеми нормативными параметрами"
 						>
 							<Sparkles size={13} />
 							<span>Норма 100%</span>
@@ -479,7 +484,7 @@ export function AutoclaveCycleModal({
 						)}
 						<span>
 							{isCompliant
-								? "Параметры цикла, термоиндикаторы и пробы ПСО соответствуют СанПиН 3.3686-21. Партия стерильна."
+								? "Параметры цикла, термоиндикаторы и пробы очистки соответствуют нормам. Партия стерильна."
 								: "ВНИМАНИЕ: Нарушение параметров! Инструменты подлежат браковке и повторной стерилизации."}
 						</span>
 					</div>

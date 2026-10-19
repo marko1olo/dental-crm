@@ -59,7 +59,7 @@ export function calculatePackageExpiration(
 	let humanReadableRemainingRu = "";
 	if (isExpired) {
 		const overdueDays = Math.abs(daysRemaining);
-		humanReadableRemainingRu = `Просрочено на ${overdueDays} дн. (требуется повторная ПСО)`;
+		humanReadableRemainingRu = `Просрочено на ${overdueDays} дн. (требуется повторная очистка и стерилизация)`;
 	} else if (daysRemaining === 0) {
 		humanReadableRemainingRu = "Истекает сегодня (до 23:59)";
 	} else if (daysRemaining === 1) {

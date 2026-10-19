@@ -113,7 +113,7 @@ export function SterilizationCycleModal({
 		setPsoAzopyramNegative(true);
 		setPsoPhenolphthaleinNegative(true);
 		setPsoSampleSize(Math.max(3, Math.ceil(packsCount * 0.01)));
-		showToast("Параметры цикла и пробы ПСО установлены на 100% регламентную норму СанПиН", "success");
+		showToast("Параметры цикла и пробы очистки установлены на 100% норму", "success");
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -136,7 +136,7 @@ export function SterilizationCycleModal({
 				indicatorTradeName: selectedRegime.recommendedIndicatorName, indicatorClass: selectedRegime.indicatorClass,
 				indicatorType: "class5_integrating", isCyclePassed: isCycleSterileCompliant, passedIndicator: isCycleSterileCompliant,
 				operatorName, psoAzopyramNegative, psoPhenolphthaleinNegative, psoSampleSize,
-				notes: `Контроль ПСО (ф. 366/у): Азопирам ${psoAzopyramNegative ? "отриц." : "полож."}, Фенолфталеин ${psoPhenolphthaleinNegative ? "отриц." : "полож."} (${psoSampleSize} шт.). Термоиндикаторы: наружные ${indicatorExternalPassed ? "норма" : "брак"}, 5 точек ${areAllChamberPointsPassed ? "норма" : "брак"}. Срок: ${expiryDateStr}.`,
+				notes: `Контроль очистки: Азопирам ${psoAzopyramNegative ? "отриц." : "полож."}, Фенолфталеин ${psoPhenolphthaleinNegative ? "отриц." : "полож."} (${psoSampleSize} шт.). Термоиндикаторы: наружные ${indicatorExternalPassed ? "норма" : "брак"}, 5 точек ${areAllChamberPointsPassed ? "норма" : "брак"}. Срок: ${expiryDateStr}.`,
 			};
 
 			const res = await fetch("/api/registers/sterilization", {
@@ -166,6 +166,7 @@ export function SterilizationCycleModal({
 	const modalContent = (
 		<div className="sanpin-modal-overlay" role="dialog" aria-modal="true" aria-label="Фиксация цикла автоклавирования" onClick={onClose}>
 			<div className="sanpin-modal" style={{ maxWidth: "680px", width: "95%" }} onClick={(e) => e.stopPropagation()}>
+				<div className="sanpin-mobile-drag-handle" aria-hidden="true" />
 				<div className="sanpin-modal-header" style={{ padding: "1.2rem 1.5rem" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
 						<Flame size={22} color="#0284c7" />
