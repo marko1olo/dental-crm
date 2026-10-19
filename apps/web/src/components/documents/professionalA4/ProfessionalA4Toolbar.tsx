@@ -60,7 +60,7 @@ export const ProfessionalA4Toolbar: React.FC<ProfessionalA4ToolbarProps> = ({
 						role="tab"
 						aria-selected={isInformedConsentTab}
 						className={`pro-a4-tab-btn ${isInformedConsentTab ? "active" : ""}`}
-						onClick={() => onTabChange?.("consent_1051n")}
+						onClick={() => onTabChange?.("informed_consent")}
 						data-testid="a4-tab-consent-1051n"
 						title="4. Информированное добровольное согласие на лечение [2 листа]"
 					>

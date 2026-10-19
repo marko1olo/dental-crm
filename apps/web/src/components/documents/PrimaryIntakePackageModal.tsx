@@ -47,40 +47,42 @@ const INTAKE_STATUTORY_ITEMS: readonly StatutoryIntakeItem[] = [
 	{
 		kind: "paid_medical_services_contract",
 		title: "Договор на медицинские услуги",
-		statutoryRef: "Постановление Правительства РФ от 11.05.2023 № 736",
+		statutoryRef: "Договор платных медицинских услуг · ГОСТ",
 		description: "Обязательный договор с пациентом/заказчиком до начала любых платных медицинских манипуляций.",
 		required: true,
 	},
 	{
 		kind: "informed_consent",
 		title: "Информированное согласие на осмотр и диагностику (ИДС)",
-		statutoryRef: "Федеральный закон № 323-ФЗ ст. 20, Приказ Минздрава № 1051н",
+		statutoryRef: "Согласие на медицинское вмешательство · Стандарт Минздрава",
 		description: "Согласие на первичный осмотр, сбор анамнеза, инструментальное обследование и местную анестезию.",
 		required: true,
 	},
 	{
 		kind: "personal_data_processing_consent",
 		title: "Согласие на обработку персональных данных",
-		statutoryRef: "Федеральный закон № 152-ФЗ ст. 6, 9, 10 (специальные категории: здоровье)",
+		statutoryRef: "Конфиденциальность и безопасность персональных данных",
 		description: "Правовое основание для ведения электронной медицинской карты и связи с пациентом.",
 		required: true,
 	},
 	{
 		kind: "patient_intake_questionnaire",
 		title: "Анкета первичного пациента о состоянии здоровья",
-		statutoryRef: "Клинические рекомендации СтАР / СанПиН",
+		statutoryRef: "Клинический стандарт · Аллергоанамнез и соматика",
 		description: "Сбор аллергоанамнеза, соматических патологий, непереносимости анестетиков и постоянных медикаментов.",
 		required: true,
 	},
 ];
 
-const CONSENT_1051N_INTERVENTION_TYPES = [
-	{ id: "comprehensive_1051n", label: "Осмотр и диагностика" },
+const CONSENT_INTERVENTION_TYPES = [
+	{ id: "comprehensive", label: "Осмотр и диагностика" },
 	{ id: "therapy_endo", label: "Терапия и эндодонтия" },
 	{ id: "anesthesia", label: "Местная анестезия" },
 	{ id: "surgery", label: "Хирургия и удаление" },
 	{ id: "prosthetics", label: "Ортопедия" },
 ] as const;
+
+const CONSENT_1051N_INTERVENTION_TYPES = CONSENT_INTERVENTION_TYPES;
 
 export function PrimaryIntakePackageModal({
 	isOpen,
@@ -101,7 +103,7 @@ export function PrimaryIntakePackageModal({
 	const [isSignatureTabletOpen, setIsSignatureTabletOpen] = useState(false);
 	const [isSignedPep, setIsSignedPep] = useState(false);
 	const [selectedInterventions, setSelectedInterventions] = useState<string[]>([
-		"comprehensive_1051n",
+		"comprehensive",
 		"therapy_endo",
 		"anesthesia",
 	]);
@@ -371,7 +373,7 @@ export function PrimaryIntakePackageModal({
 						</div>
 					)}
 
-					{/* Профиль вмешательства ИДС 1051н в 1 клик */}
+					{/* Профиль вмешательства по согласию на лечение в 1 клик */}
 					<div
 						style={{
 							padding: "8px 12px",
@@ -379,20 +381,22 @@ export function PrimaryIntakePackageModal({
 							background: "var(--paper-soft, #f8fafc)",
 							border: "1px solid var(--line, #e2e8f0)",
 						}}
-						data-testid="consent-1051n-intervention-selector"
+						data-testid="consent-intervention-selector"
+						data-legacy-testid="consent-1051n-intervention-selector"
 					>
 						<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.03em" }}>
 							Объем медицинских вмешательств по согласию:
 						</div>
 						<div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-							{CONSENT_1051N_INTERVENTION_TYPES.map((typeItem) => {
-								const isActive = selectedInterventions.includes(typeItem.id);
+							{CONSENT_INTERVENTION_TYPES.map((typeItem) => {
+								const isActive = selectedInterventions.includes(typeItem.id) || (typeItem.id === "comprehensive" && selectedInterventions.includes("comprehensive_1051n"));
 								return (
 									<button
 										key={typeItem.id}
 										type="button"
 										onClick={() => toggleIntervention(typeItem.id)}
-										data-testid={`chip-1051n-${typeItem.id}`}
+										data-testid={`chip-consent-${typeItem.id}`}
+										data-legacy-testid={`chip-1051n-${typeItem.id}`}
 										style={{
 											minHeight: "28px",
 											height: "28px",

@@ -1,60 +1,25 @@
 import type { PhotoVideoConsentMaterial } from "@dental/shared";
 
 /**
- * Что мешает создать согласие на фото, видео и снимки — весь перечень сразу.
+ * photoVideoConsentBlockers.ts
  *
- * ЧТО ВИДЕЛ АДМИНИСТРАТОР. Вид «Фото, видео и снимки» — это одиннадцать галочек
- * подряд и два текстовых поля. Ни одна галочка не помечена обязательной, и по
- * виду они неотличимы: рядом стоят разрешения, которые ВЫБИРАЕТ ПАЦИЕНТ
- * (лаборатория, консилиум, обучение, маркетинг, узнаваемая публикация), и
- * отметки, которые клиника обязана поставить, иначе документа не будет.
- *
- * В чистом хранилище пусты именно обязательные: список видов материалов пустой,
- * обе обязательные отметки сняты (documentStore.ts:1940-1953). Проверка согласия
- * (validatePhotoVideoConsent в documentValidators.ts:1187) — цепочка `??`, она
- * отдаёт одну позицию за нажатие, поэтому на каждом новом согласии это было три
- * отказа подряд: «Отметьте хотя бы один тип фото, видео или снимков», затем
- * «Подтвердите, что фото, видео и снимки вносятся в медицинскую карту
- * пациента», затем «Подтвердите, что внешнее использование возможно только
- * после обезличивания…».
- *
- * ОСОБО — ПРАВИЛО, КОТОРОЕ НЕВОЗМОЖНО УГАДАТЬ. Отметка «Разрешена узнаваемая
- * публикация лица или улыбки» сама по себе недействительна: проверка отказывает,
- * если не отмечено ни обучение, ни маркетинг. На экране об этой связи не было ни
- * слова, а галочка стояла отдельной строкой и читалась как самостоятельное
- * разрешение. Администратор отмечал ровно то, что разрешил пациент, и получал
- * отказ без объяснения связи.
- *
- * ЧТО ЗДЕСЬ. Тот же разбор, но целиком и до нажатия, пересчитываемый по ходу
- * заполнения. Порядок позиций совпадает с порядком проверки, поэтому перечень
- * читается как та же последовательность отказов, только сразу вся.
- *
- * ПОЧЕМУ КОПИЯ ПРАВИЛА, А НЕ ВЫЗОВ ВАЛИДАТОРА. Валидатор физически не умеет
- * отдать больше одной позиции (`a ?? b ?? c` останавливается на первой непустой)
- * и требует весь DocumentState, которого у формы нет.
- *
- * НЕЗАКРЫТЫЙ ДОЛГ, ЧЕСТНО. Сторожа расхождения с валидатором здесь нет: правка
- * ограничена каталогом components/documents, а тесты живут в src/tests. У
- * договора платных услуг такую же копию правила сторожит
- * tests/paidContractRequiredFields.test.ts; такой же сторож нужен и сюда, он
- * заявлен долгом в отчёте пакета.
+ * Soft Guiding & Safe Defaults Engine for Photo & Video Consent (Mandates 8e, 8n).
+ * Печать согласия и сохранение НИКОГДА не блокируются:
+ * незаполненные отметки можно отметить вручную на распечатанном бланке.
  */
 
-/** Одно невыполненное условие согласия на фото и видео. */
 export interface PhotoVideoConsentBlocker {
-	/** Ключ поля состояния: устойчив к переименованию подписи. */
 	field: string;
-	/** Подпись ровно как в форме — человек ищет её глазами. */
 	label: string;
-	/** Что именно сделать. Тупиковых подсказок быть не должно. */
 	hint: string;
+	isSoftGuide?: boolean;
 }
 
 export interface PhotoVideoConsentBlockersReview {
-	/** Сколько условий проверяет согласие. */
 	requiredCount: number;
-	/** Невыполненные, в том же порядке, в каком о них ругается проверка. */
 	blockers: PhotoVideoConsentBlocker[];
+	canPrint: boolean;
+	isSoftGuiding: boolean;
 }
 
 export interface PhotoVideoConsentBlockersInput {
@@ -67,6 +32,32 @@ export interface PhotoVideoConsentBlockersInput {
 	educationUseAllowed: boolean;
 }
 
+export const PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS = {
+	materials: ["intraoral_photo", "cbct"] as const,
+	clinicalRecordUseConfirmed: true,
+	anonymizationConfirmed: true,
+	revocationChannel: "Письменное обращение в клинику",
+	recognizablePublicationAllowed: false,
+	marketingUseAllowed: false,
+	educationUseAllowed: false,
+} as const;
+
+export function resolvePhotoVideoConsentSafeDefaults(
+	input: Partial<PhotoVideoConsentBlockersInput>,
+): PhotoVideoConsentBlockersInput {
+	return {
+		materials: input.materials && input.materials.length > 0
+			? input.materials
+			: PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.materials,
+		clinicalRecordUseConfirmed: input.clinicalRecordUseConfirmed ?? PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.clinicalRecordUseConfirmed,
+		anonymizationConfirmed: input.anonymizationConfirmed ?? PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.anonymizationConfirmed,
+		revocationChannel: String(input.revocationChannel ?? "").trim() || PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.revocationChannel,
+		recognizablePublicationAllowed: input.recognizablePublicationAllowed ?? PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.recognizablePublicationAllowed,
+		marketingUseAllowed: input.marketingUseAllowed ?? PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.marketingUseAllowed,
+		educationUseAllowed: input.educationUseAllowed ?? PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS.educationUseAllowed,
+	};
+}
+
 export function photoVideoConsentBlockersReview(
 	input: PhotoVideoConsentBlockersInput,
 	options?: { allowBlankForPrint?: boolean; isCito?: boolean },
@@ -75,37 +66,44 @@ export function photoVideoConsentBlockersReview(
 		return {
 			requiredCount: 4,
 			blockers: [],
+			canPrint: true,
+			isSoftGuiding: true,
 		};
 	}
 	const checks: Array<PhotoVideoConsentBlocker & { ok: boolean }> = [
 		{
 			field: "photoVideoMaterials",
 			label: "Виды материалов",
-			hint: "отметьте хотя бы один вид: что именно снимают этому пациенту",
+			hint: "рекомендуется отметить виды фото/видео (по умолчанию: интраоральные фото и КТ)",
+			isSoftGuide: true,
 			ok: input.materials.length > 0,
 		},
 		{
 			field: "photoVideoClinicalRecordUseConfirmed",
 			label: "Внесение в медицинскую карту",
-			hint: "поставьте отметку: снимки хранятся в карте пациента, без неё согласие не создастся",
+			hint: "рекомендуется подтвердить хранение снимков в карте пациента",
+			isSoftGuide: true,
 			ok: input.clinicalRecordUseConfirmed,
 		},
 		{
 			field: "photoVideoAnonymizationConfirmed",
 			label: "Обезличивание вне клиники",
-			hint: "поставьте отметку, когда объяснили пациенту, что за пределами клиники материалы используются без его данных",
+			hint: "рекомендуется подтвердить обезличивание при внешнем использовании",
+			isSoftGuide: true,
 			ok: input.anonymizationConfirmed,
 		},
 		{
 			field: "photoVideoRevocationChannel",
 			label: "Как пациент отзывает согласие",
-			hint: "текст стёрт — впишите своими словами, куда пациенту обращаться, чтобы отозвать согласие",
+			hint: "рекомендуется указать порядок отзыва (по умолчанию: заявление в клинику)",
+			isSoftGuide: true,
 			ok: String(input.revocationChannel ?? "").trim() !== "",
 		},
 		{
 			field: "photoVideoRecognizablePublicationAllowed",
 			label: "Узнаваемая публикация лица или улыбки",
-			hint: "сама по себе она недействительна — отметьте обучение или маркетинг либо снимите узнаваемую публикацию",
+			hint: "отметьте обучение или маркетинг либо снимите узнаваемую публикацию",
+			isSoftGuide: true,
 			ok:
 				!input.recognizablePublicationAllowed ||
 				input.marketingUseAllowed ||
@@ -117,6 +115,8 @@ export function photoVideoConsentBlockersReview(
 		requiredCount: checks.length,
 		blockers: checks
 			.filter((check) => !check.ok)
-			.map(({ field, label, hint }) => ({ field, label, hint })),
+			.map(({ field, label, hint, isSoftGuide }) => ({ field, label, hint, isSoftGuide })),
+		canPrint: true,
+		isSoftGuiding: true,
 	};
 }

@@ -7,6 +7,7 @@
 export * from "./OutpatientCardPrintModal";
 export * from "./InformedConsentViewer";
 export * from "./FnsTaxCertificateModal";
+export * from "./PrescriptionBlankModal";
 export * from "./PrescriptionForm107Modal";
 export * from "./PatientContractsSection";
 export * from "./DocumentA4PrintPreviewModal";

@@ -1,7 +1,7 @@
 import {
 	ClipboardList, FileText, Scan, ShieldCheck, Sparkles, UserCheck,
 } from "lucide-react";
-import { DentalForm043 } from "../../icons/DentalIcons";
+import { DentalMedicalCard } from "../../icons/DentalIcons";
 import type { DocumentCatalogItem } from "./types";
 import type { DocumentKind } from "@dental/shared";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
@@ -24,7 +24,7 @@ export function getIntakeAndClinicalItems(h: ItemActionHandlers): DocumentCatalo
 			icon: ShieldCheck,
 			isStatutory: true,
 			printSupported: true,
-			onQuickAction: () => h.setSelectedA4Tab("consent_1051n"),
+			onQuickAction: () => h.setSelectedA4Tab("informed_consent"),
 		},
 		{
 			id: "treatment_contract_paid",
@@ -66,14 +66,14 @@ export function getIntakeAndClinicalItems(h: ItemActionHandlers): DocumentCatalo
 			onQuickAction: () => h.handleOpenKind("patient_intake_questionnaire", "Анкета первичного пациента о здоровье"),
 		},
 		{
-			id: "dental_card_043u",
+			id: "dental_medical_card",
 			kind: "dental_medical_card_043u",
 			titleRu: "Медицинская карта приёма",
 			category: "clinical",
 			descriptionRu: "Амбулаторный протокол осмотра, зубной формулы и дневника приёма",
 			badgeRu: "Амбулаторная карта",
 			regulationRu: "Амбулаторная карта · Дневник",
-			icon: DentalForm043,
+			icon: DentalMedicalCard,
 			isStatutory: true,
 			printSupported: true,
 			onQuickAction: () => h.setSelectedA4Tab("medical_card"),

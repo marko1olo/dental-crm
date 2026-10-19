@@ -238,7 +238,7 @@ export const DentalMirrorProbe = createDentalIcon(
   </>
 );
 
-// 14. DentalForm043 — Амбулаторная медицинская карта ф. 043/у
+// 14. DentalForm043 / DentalMedicalCard — Амбулаторная медицинская карта
 export const DentalForm043 = createDentalIcon(
   "DentalForm043",
   "lucide-dental-form-043",
@@ -250,6 +250,8 @@ export const DentalForm043 = createDentalIcon(
     <line x1="8" y1="19" x2="16" y2="19" />
   </>
 );
+
+export const DentalMedicalCard = DentalForm043;
 
 // 15. DentalLabOrder — Наряд-заказ зуботехнической лаборатории
 export const DentalLabOrder = createDentalIcon(
@@ -619,6 +621,7 @@ export const DENTAL_ICONS_MAP = {
   DentalChairUnit,
   DentalMirrorProbe,
   DentalForm043,
+  DentalMedicalCard,
   DentalLabOrder,
   NerveCanal,
   DentalHandpiece,

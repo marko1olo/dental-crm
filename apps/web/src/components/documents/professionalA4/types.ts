@@ -11,8 +11,8 @@ export type ProfessionalA4DocumentTab =
 	| "contract"
 	| "act"
 	| "treatment_plan"
-	| "consent_1051n"
 	| "informed_consent"
+	| "consent_1051n"
 	| "personal_data"
 	| "medical_card";
 

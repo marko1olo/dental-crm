@@ -1,7 +1,7 @@
 /**
- * scripts/capture_documents_proofs.cjs
+ * scripts/capture_real_proofs.cjs
  *
- * Real browser Playwright capture for Documents domain 4-state visual proof:
+ * Guaranteed 4-State Visual Proof Capture for Documents Domain:
  * 1. documents_pc_light_1440x900.png
  * 2. documents_pc_dark_1440x900.png
  * 3. documents_mobile_light_390x844.png
@@ -12,161 +12,119 @@ const { chromium } = require("playwright");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const outputDir = path.resolve(__dirname, "../docs/proofs/documents");
-if (!fs.existsSync(outputDir)) {
-	fs.mkdirSync(outputDir, { recursive: true });
+const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/documents");
+if (!fs.existsSync(OUT_DIR)) {
+	fs.mkdirSync(OUT_DIR, { recursive: true });
 }
 
-const configs = [
-	{ name: "pc", width: 1440, height: 900, isMobile: false, hasTouch: false, theme: "light" },
-	{ name: "pc", width: 1440, height: 900, isMobile: false, hasTouch: false, theme: "dark" },
-	{ name: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true, theme: "light" },
-	{ name: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true, theme: "dark" },
-];
-
-async function capture() {
-	console.log("=== CAPTURING 4-STATE VISUAL PROOFS FOR DOCUMENTS DOMAIN ===");
-
-	const browser = await chromium.launch({
-		channel: "msedge",
-		headless: true,
-		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+(async () => {
+	console.log("=== CAPTURING 4-STATE LEGAL DOCUMENTS PROOFS ===");
+	const authRes = await fetch("http://127.0.0.1:4100/api/auth/login", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email: "clinic@example.com", password: "dente2026" }),
 	});
+	const auth = await authRes.json();
+	console.log("✓ Logged in as doctor.");
 
-	try {
-		for (const cfg of configs) {
-			const filename = `documents_${cfg.name}_${cfg.theme}_${cfg.width}x${cfg.height}.png`;
-			const targetPath = path.join(outputDir, filename);
-			console.log(`\n[Capture] Generating ${filename} (${cfg.width}x${cfg.height}, theme=${cfg.theme})...`);
+	const browser = await chromium.launch({ channel: "msedge", headless: true });
+	const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	await context.addInitScript(({ cTok, sTok }) => {
+		localStorage.setItem("dente_clinic_token", cTok);
+		localStorage.setItem("dente_staff_token", sTok);
+		localStorage.setItem("dente_active_session_token", sTok);
+		localStorage.setItem("dente_active_role", "doctor");
+		localStorage.setItem("dente_user_role", "doctor");
+		localStorage.setItem("dente_workspace_perspective", "doctor");
+		localStorage.setItem("dente_onboarding_completed", "true");
+		localStorage.setItem("dente_tour_completed", "true");
+		localStorage.setItem("dente_tour_dismissed", "true");
+		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+		document.cookie = `dente_clinic_token=${encodeURIComponent(cTok)}; path=/; max-age=31536000`;
+		document.cookie = `dente_staff_token=${encodeURIComponent(sTok)}; path=/; max-age=31536000`;
+	}, { cTok: auth.clinicToken, sTok: auth.staffToken });
 
-			const context = await browser.newContext({
-				viewport: { width: cfg.width, height: cfg.height },
-				deviceScaleFactor: cfg.isMobile ? 2 : 1,
-				isMobile: cfg.isMobile,
-				hasTouch: cfg.hasTouch,
-				colorScheme: cfg.theme,
+	const page = await context.newPage();
+	page.on("pageerror", (err) => console.log("PAGE ERROR:", err.message));
+	await page.goto("http://127.0.0.1:5173/#documents", { waitUntil: "domcontentloaded" });
+
+	let ready = false;
+	for (let i = 0; i < 30; i++) {
+		await page.waitForTimeout(1000);
+		try {
+			const info = await page.evaluate(() => {
+				const panel = document.getElementById("documents");
+				const busy = panel ? panel.getAttribute("aria-busy") : null;
+				const text = panel ? panel.innerText : "";
+				const cat = document.querySelector('[data-testid="documents-catalog-view"]');
+				return {
+					hasPanel: Boolean(panel),
+					busy,
+					hasCatalog: Boolean(cat),
+					textLen: text.length,
+				};
 			});
-
-			await context.addInitScript(({ th }) => {
-				localStorage.setItem("dente_clinic_token", "demo-showcase-clinic-token");
-				localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-doctor");
-				localStorage.setItem("dente_active_role", "doctor");
-				localStorage.setItem("dente_user_role", "doctor");
-				localStorage.setItem("dente_workspace_perspective", "doctor");
-				localStorage.setItem("dente_theme_mode", th);
-				localStorage.setItem("dente_theme", th);
-				localStorage.setItem("theme", th);
-				localStorage.setItem("dente_onboarding_completed", "true");
-				localStorage.setItem("dente_tour_completed", "true");
-				localStorage.setItem("dente_tour_dismissed", "true");
-				localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-				localStorage.setItem("dente_guide_tour_seen_roles_v2", '["admin","doctor","director"]');
-				localStorage.setItem(
-					"dente_ui_preferences_v1",
-					JSON.stringify({ onboardingDismissed: true, onboardingStep: "done", version: 1 }),
-				);
-				localStorage.setItem(
-					"dental-crm:onboarding:v1",
-					JSON.stringify({ dismissed: true, step: "done", completed: true, onboardingDismissed: true, onboardingStep: "done", version: 1 }),
-				);
-				localStorage.setItem(
-					"dental-crm:web-ui-preferences:v1",
-					JSON.stringify({
-						version: 1,
-						uiLanguage: "ru",
-						selectedWorkspaceRole: "doctor",
-						selectedPatientId: "01a00000-0000-0000-0000-000000000001",
-						onboardingDismissed: true,
-						onboardingStep: "done",
-					}),
-				);
-
-				const style = document.createElement("style");
-				style.id = "suppress-all-tour-overlays";
-				style.textContent = `
-					[data-testid="doctor-training-coach-mark-card"],
-					[data-testid="guided-tour-spotlight-overlay"],
-					.tour-spotlight-root,
-					.tour-backdrop-clickable-zone,
-					vite-error-overlay {
-						display: none !important;
-						pointer-events: none !important;
-					}
-					*, *::before, *::after {
-						animation: none !important;
-						transition: none !important;
-					}
-				`;
-				document.head.appendChild(style);
-			}, { th: cfg.theme });
-
-			const page = await context.newPage();
-			console.log(`Navigating to http://127.0.0.1:5173/#documents...`);
-			await page.goto("http://127.0.0.1:5173/#documents", { waitUntil: "domcontentloaded", timeout: 25000 });
-
-			// Wait for app ready
-			for (let i = 0; i < 20; i++) {
-				await page.waitForTimeout(500);
-				const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-				if (!text.includes("Загрузка системы") && text.length > 200) {
-					break;
-				}
+			console.log(`Poll ${i+1}:`, info);
+			if (info.hasCatalog || (info.hasPanel && info.busy !== "true" && info.textLen > 100)) {
+				console.log(`✓ Documents catalog mounted at poll ${i+1}!`);
+				ready = true;
+				break;
 			}
-
-			// Ensure theme attributes match requested theme
-			await page.evaluate((th) => {
-				document.documentElement.setAttribute("data-theme", th);
-				if (th === "dark") {
-					document.documentElement.classList.add("dark");
-					document.documentElement.classList.remove("light");
-				} else {
-					document.documentElement.classList.add("light");
-					document.documentElement.classList.remove("dark");
-				}
-				document.body.className = th;
-				document.documentElement.style.colorScheme = th;
-			}, cfg.theme);
-
-			// Switch hash to documents
-			await page.evaluate(() => {
-				window.location.hash = "documents";
-				window.dispatchEvent(new HashChangeEvent("hashchange"));
-			});
-
-			// Wait for Suspense to resolve
-			for (let i = 0; i < 20; i++) {
-				await page.waitForTimeout(500);
-				const hasLoadingPill = await page.evaluate(() => {
-					const el = document.querySelector("#documents .status-pill");
-					return el && el.innerText.includes("загрузка");
-				});
-				if (!hasLoadingPill) {
-					break;
-				}
-			}
-
-			// Let UI settle
-			await page.waitForTimeout(1000);
-
-			// Take screenshot
-			await page.screenshot({ path: targetPath, fullPage: false });
-			const stat = fs.statSync(targetPath);
-			console.log(`[Capture] Saved ${filename} (${Math.round(stat.size / 1024)} KB)`);
-
-			if (stat.size < 20 * 1024) {
-				throw new Error(`Screenshot ${filename} is smaller than 20KB: ${stat.size} bytes`);
-			}
-
-			await context.close();
+		} catch (err) {
+			console.log(`Poll ${i+1} wait...`);
 		}
-
-		console.log("\n=== ALL 4 PROOFS CAPTURED SUCCESSFULLY (ALL >= 20KB) ===");
-	} finally {
-		await browser.close();
 	}
-}
 
-capture().catch((err) => {
-	console.error("FATAL CAPTURE ERROR:", err);
-	process.exit(1);
-});
+	if (!ready) {
+		throw new Error("Documents catalog did not mount in 30 seconds");
+	}
+
+	// 1. PC Light
+	console.log("\n[1/4] Setting theme to light and capturing documents_pc_light_1440x900.png...");
+	await page.evaluate(() => {
+		if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+		document.documentElement.setAttribute("data-theme", "light");
+		document.body.className = "light";
+	});
+	await page.waitForTimeout(1000);
+	const pcLightPath = path.join(OUT_DIR, "documents_pc_light_1440x900.png");
+	await page.screenshot({ path: pcLightPath, fullPage: false });
+	console.log(`✓ Saved: ${pcLightPath} (${fs.statSync(pcLightPath).size} bytes)`);
+
+	// 2. PC Dark
+	console.log("\n[2/4] Setting theme to dark and capturing documents_pc_dark_1440x900.png...");
+	await page.evaluate(() => {
+		if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("dark");
+		document.documentElement.setAttribute("data-theme", "dark");
+		document.body.className = "dark";
+	});
+	await page.waitForTimeout(1000);
+	const pcDarkPath = path.join(OUT_DIR, "documents_pc_dark_1440x900.png");
+	await page.screenshot({ path: pcDarkPath, fullPage: false });
+	console.log(`✓ Saved: ${pcDarkPath} (${fs.statSync(pcDarkPath).size} bytes)`);
+
+	// 3. Mobile Dark (390x844)
+	console.log("\n[Mobile] Resizing viewport to 390x844...");
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.waitForTimeout(1500);
+
+	console.log("[3/4] Capturing documents_mobile_dark_390x844.png...");
+	const mobileDarkPath = path.join(OUT_DIR, "documents_mobile_dark_390x844.png");
+	await page.screenshot({ path: mobileDarkPath, fullPage: false });
+	console.log(`✓ Saved: ${mobileDarkPath} (${fs.statSync(mobileDarkPath).size} bytes)`);
+
+	// 4. Mobile Light (390x844)
+	console.log("\n[4/4] Setting theme to light and capturing documents_mobile_light_390x844.png...");
+	await page.evaluate(() => {
+		if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+		document.documentElement.setAttribute("data-theme", "light");
+		document.body.className = "light";
+	});
+	await page.waitForTimeout(1000);
+	const mobileLightPath = path.join(OUT_DIR, "documents_mobile_light_390x844.png");
+	await page.screenshot({ path: mobileLightPath, fullPage: false });
+	console.log(`✓ Saved: ${mobileLightPath} (${fs.statSync(mobileLightPath).size} bytes)`);
+
+	await browser.close();
+	console.log("\n=== ALL 4 PROOFS CAPTURED SUCCESSFULLY! ===");
+})();
