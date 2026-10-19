@@ -68,6 +68,8 @@ export interface ServiceMaterialNormItem {
 	readonly clinicalRationaleRu: string;
 }
 
+export type ProcedureCatalogServiceNorm = Order804nServiceNorm;
+
 export interface Order804nServiceNorm {
 	readonly serviceCode: string;
 	readonly serviceTitle: string;
