@@ -7,44 +7,23 @@
  */
 
 import {
-	AlertTriangle,
-	Clock,
-	Download,
-	FileText,
-	Layers,
-	MoreVertical,
-	PackageCheck,
-	Printer,
-	RefreshCw,
-	ShieldAlert,
-	X,
+	AlertTriangle, Clock, Download, FileText, Layers, MoreVertical,
+	PackageCheck, Printer, RefreshCw, ShieldAlert, ShoppingCart, X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
 import {
-	type ClinicalWriteoffDocument,
-	type ClinicalWriteoffLine,
-	type ClinicalWriteoffTotals,
-	type CompletedClinicalService,
-	aggregateWriteoffFromServices,
-	calculateClinicalWriteoffTotals,
-	createQuickAnesthesiaPackageWriteoffDocument,
-	createQuickCarpuleWriteoffDocument,
-	createQuickVisitWriteoffDocument,
-	exportClinicalWriteoffToCsv,
-	generateAct0504230Html,
-	generateFormM11Html,
-	generateTorg16Html,
-	updateLineActualQuantity,
-	validateWriteoffDocument,
+	type ClinicalWriteoffDocument, type ClinicalWriteoffLine, type ClinicalWriteoffTotals,
+	type CompletedClinicalService, aggregateWriteoffFromServices, calculateClinicalWriteoffTotals,
+	calculateLineCostKopecks, createQuickAnesthesiaPackageWriteoffDocument, createQuickCarpuleWriteoffDocument,
+	createQuickVisitWriteoffDocument, exportClinicalWriteoffToCsv, generateAct0504230Html,
+	generateFormM11Html, generateTorg16Html, updateLineActualQuantity, validateWriteoffDocument,
 } from "./clinicalWriteoffEngine.js";
 import {
-	type CabinetStockBatch,
-	DEFAULT_CLINIC_LEGAL_INFO,
-	DENTAL_CABINET_STOCK_PRESETS,
-	type DiscrepancyReasonCode,
+	type CabinetStockBatch, DEFAULT_CLINIC_LEGAL_INFO, DENTAL_CABINET_STOCK_PRESETS, type DiscrepancyReasonCode,
 } from "./clinicalWriteoffPresets.js";
+import { type SupplierPurchaseOrderView, formatSupplierPurchaseOrderTextRu } from "../inventorySupplierOrders.js";
 import { ClinicalWriteoffQuickStrip } from "./ClinicalWriteoffQuickStrip.js";
 import { ClinicalWriteoffServiceTable } from "./ClinicalWriteoffServiceTable.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
@@ -69,36 +48,15 @@ export interface ClinicalWriteoffModalProps {
 }
 
 export const DEFAULT_CLINICAL_SERVICES: readonly CompletedClinicalService[] = [
-	{
-		serviceCode: "A16.07.002.001",
-		toothNumber: 26,
-		serviceTitle: "Пломбирование зуба светоотверждаемым композитом",
-		quantityMultiplier: 1,
-	},
-	{
-		serviceCode: "A16.07.004",
-		toothNumber: 26,
-		serviceTitle: "Местная анестезия инфильтрационная",
-		quantityMultiplier: 1,
-	},
+	{ serviceCode: "A16.07.002.001", toothNumber: 26, serviceTitle: "Пломбирование зуба светоотверждаемым композитом", quantityMultiplier: 1 },
+	{ serviceCode: "A16.07.004", toothNumber: 26, serviceTitle: "Местная анестезия инфильтрационная", quantityMultiplier: 1 },
 ];
 
 export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
-	isOpen,
-	onClose,
-	onConfirmWriteoff,
-	initialServices,
-	patientName: propPatientName,
-	patientId: propPatientId,
-	patientBirthDate = "1988-04-12",
-	doctorFullName: propDoctorFullName,
-	doctorSpecialty = "Врач-стоматолог терапевт",
-	assistantFullName = "Смирнова А.В. (ассистент)",
-	cabinetId = "cab_01_therapy",
-	cabinetNameRu = "Кабинет №1 (Терапия)",
-	stockBatches: propStockBatches,
-	defaultFormType = "0504230",
-	isDeducting = false,
+	isOpen, onClose, onConfirmWriteoff, initialServices, patientName: propPatientName, patientId: propPatientId,
+	patientBirthDate = "1988-04-12", doctorFullName: propDoctorFullName, doctorSpecialty = "Врач-стоматолог терапевт",
+	assistantFullName = "Смирнова А.В. (ассистент)", cabinetId = "cab_01_therapy", cabinetNameRu = "Кабинет №1 (Терапия)",
+	stockBatches: propStockBatches, defaultFormType = "0504230", isDeducting = false,
 }) => {
 	const isDemo = isDemoShowcaseMode();
 	const patientName = propPatientName ?? (isDemo ? "Смирнов Алексей Викторович" : "Пациент");
@@ -140,7 +98,11 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	const [showExtraForms, setShowExtraForms] = useState<boolean>(false);
 
 	// 2. Строки списания
-	const [lines, setLines] = useState<ClinicalWriteoffLine[]>([]);
+	const [lines, setLines] = useState<ClinicalWriteoffLine[]>(() =>
+		isOpen && services.length > 0
+			? aggregateWriteoffFromServices(services, stockBatches, selectedCabinetId, actDate)
+			: []
+	);
 
 	// Инициализация строк при открытии модального окна
 	useEffect(() => {
@@ -291,45 +253,15 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	}, [selectedCabinetId, stockBatches, doctorFullName, doctorSpecialty, patientName]);
 
 	// Формирование объекта документа
-	const currentDocument = useMemo<ClinicalWriteoffDocument>(() => {
-		return {
-			id: `doc_writeoff_${Date.now()}`,
-			actNumber,
-			actDate,
-			patientId,
-			patientName,
-			patientBirthDate,
-			doctorFullName,
-			doctorSpecialty,
-			assistantFullName,
-			cabinetId: selectedCabinetId,
-			cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
-			completedServices: services,
-			lines,
-			totals,
-			statutoryFormType,
-			status: "confirmed",
-			notes: notes.trim() || undefined,
-			confirmedAt: new Date().toISOString(),
-			clinicInfo: DEFAULT_CLINIC_LEGAL_INFO,
-			isSingleSigner,
-		};
-	}, [
-		actNumber,
-		actDate,
-		patientId,
-		patientName,
-		patientBirthDate,
-		doctorFullName,
-		doctorSpecialty,
-		assistantFullName,
-		selectedCabinetId,
-		services,
-		lines,
-		totals,
-		statutoryFormType,
-		notes,
-		isSingleSigner,
+	const currentDocument = useMemo<ClinicalWriteoffDocument>(() => ({
+		id: `doc_writeoff_${Date.now()}`, actNumber, actDate, patientId, patientName, patientBirthDate,
+		doctorFullName, doctorSpecialty, assistantFullName, cabinetId: selectedCabinetId,
+		cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
+		completedServices: services, lines, totals, statutoryFormType, status: "confirmed",
+		notes: notes.trim() || undefined, confirmedAt: new Date().toISOString(), clinicInfo: DEFAULT_CLINIC_LEGAL_INFO, isSingleSigner,
+	}), [
+		actNumber, actDate, patientId, patientName, patientBirthDate, doctorFullName, doctorSpecialty,
+		assistantFullName, selectedCabinetId, services, lines, totals, statutoryFormType, notes, isSingleSigner,
 	]);
 
 	// 1-Click Списание в наряд (Мандат 8e: без скрытых блокировок, ясный фидбек)
@@ -343,6 +275,48 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 			await onConfirmWriteoff(currentDocument);
 		}
 		onClose();
+	};
+
+	// 1-Click Черновик заказа поставщику при дефиците (Мандаты 8e, 8n)
+	const handleGenerateSupplierOrder = () => {
+		const deficitLines = lines.filter((l) => l.stockStatus === "deficit" || l.stockStatus === "warning" || l.stockAvailable < l.actualQuantity);
+		const poItems = deficitLines.map((l) => {
+			const shortfall = Math.max(0, Number((l.actualQuantity - l.stockAvailable).toFixed(2)));
+			const threshold = l.criticalThreshold > 0 ? l.criticalThreshold : 2;
+			const suggested = Math.max(threshold * 2, shortfall + threshold, 1);
+			const lineCost = calculateLineCostKopecks(l.unitCostKopecks, suggested);
+			return {
+				sku: l.sku || l.materialId,
+				materialName: l.nameRu,
+				category: l.category as any,
+				unit: l.unit,
+				currentStock: l.stockAvailable,
+				criticalThreshold: threshold,
+				shortfall,
+				suggestedOrderQuantity: suggested,
+				unitCostKopecks: l.unitCostKopecks,
+				unitCostFormatted: `${(l.unitCostKopecks / 100).toFixed(2)} ₽`,
+				totalCostKopecks: lineCost,
+				totalCostFormatted: `${(lineCost / 100).toFixed(2)} ₽`,
+			};
+		});
+		const totalCost = poItems.reduce((acc, i) => acc + i.totalCostKopecks, 0);
+		const orderView: SupplierPurchaseOrderView = {
+			id: `po_draft_${Date.now()}`,
+			orderNumber: `ПО-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`,
+			orderDate: new Date().toISOString().slice(0, 10),
+			clinicNameRu: DEFAULT_CLINIC_LEGAL_INFO.clinicNameRu,
+			reason: "stock_deficit",
+			items: poItems,
+			totalItemsCount: poItems.length,
+			totalCostKopecks: totalCost,
+			totalCostFormatted: `${(totalCost / 100).toFixed(2)} ₽`,
+		};
+		const text = formatSupplierPurchaseOrderTextRu(orderView);
+		if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+			void navigator.clipboard.writeText(text);
+		}
+		showToast(`Черновик заказа поставщику на ${poItems.length} поз. скопирован в буфер!`, "success");
 	};
 
 	// 1-Click Печать официального акта (0504230, М-11, ТОРГ-16)
@@ -519,11 +493,21 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 					{totals.hasDeficit && !totals.hasExpiredLots && (
 						<div className="cw-warning-banner cw-warning-amber">
 							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
-							<div>
-								<strong>Внимание: остаток отрицательный, требуется оприходование накладной (списание с дефицитом: {totals.deficitItemsCount} поз.):</strong>
+							<div className="flex-1">
+								<strong>Внимание: остаток отрицательный, требуется закупка / оприходование ({totals.deficitItemsCount} поз.):</strong>
 								<div className="mt-0.5">
-									Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Клинический регламент, режим соло-практики). Задержка накладной не блокирует прием.
+									Позиции будут списаны с отрицательным остатком (мягкий овердрафт) без блокировки врача (Мандаты 8e, 8n).
 								</div>
+								<button
+									type="button"
+									onClick={handleGenerateSupplierOrder}
+									className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all cursor-pointer shadow-xs active:scale-95"
+									data-testid="btn-generate-supplier-order"
+									title="Сформировать черновик заказа поставщику в буфер обмена"
+								>
+									<ShoppingCart size={14} />
+									<span>Сформировать черновик заказа поставщику ({totals.deficitItemsCount} поз.)</span>
+								</button>
 							</div>
 						</div>
 					)}

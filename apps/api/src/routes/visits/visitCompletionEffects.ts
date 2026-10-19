@@ -4,10 +4,8 @@ import { db as database } from "../../db/client.js";
 import { appointments } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
-import {
-	syncRecallOnAppointmentCompleted,
-	syncRecallOnVisitCompleted,
-} from "../../services/patients/recallSyncService.js";
+import { syncRecallOnAppointmentCompleted, syncRecallOnVisitCompleted } from "../../services/patients/recallSyncService.js";
+import { executeAutoBomWriteoff } from "../../services/treatmentConsumables/autoBomWriteoffService.js";
 
 export interface VisitCompletionPayload {
 	orgId: string;
@@ -50,6 +48,20 @@ export async function executeVisitCompletionSideEffects({
 				status: "completed",
 			},
 		});
+	}
+
+	try {
+		await executeAutoBomWriteoff(database, {
+			organizationId: orgId,
+			visitId: visit.id,
+			userId: doctorId ?? null,
+			allowOverdraft: true,
+		});
+	} catch (bomErr) {
+		log.warn(
+			{ error: bomErr, visitId: visit.id },
+			"Автоматическое списание по техкартам (BOM) завершилось с предупреждением (не блокирует подписание)",
+		);
 	}
 
 	wsBroker.broadcastToOrganization(orgId, {

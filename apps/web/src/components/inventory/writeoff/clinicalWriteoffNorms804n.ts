@@ -1,9 +1,9 @@
 import type { Order804nServiceNorm } from "./clinicalWriteoffPresets.js";
 
 /**
- * 4. Технологические карты и нормы расхода материалов по Приказу Минздрава РФ № 804н
+ * 4. Технологические карты и нормы расхода материалов по каталогу процедур (ранее Приказ № 804н)
  */
-export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
+export const PROCEDURE_CATALOG_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 	// A16.07.002.001 — Пломбирование зуба композитом светового отверждения
 	{
 		serviceCode: "A16.07.002.001",
@@ -416,9 +416,17 @@ export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 ];
 
 /**
- * Вспомогательная функция поиска норм расхода по коду услуги
+ * Обратная совместимость с каноническим наименованием ORDER_804N_SERVICE_NORMS
  */
-export function getOrder804nServiceNorm(serviceCode: string): Order804nServiceNorm | undefined {
-	return ORDER_804N_SERVICE_NORMS.find((s) => s.serviceCode === serviceCode);
+export const ORDER_804N_SERVICE_NORMS = PROCEDURE_CATALOG_SERVICE_NORMS;
+
+/**
+ * Вспомогательная функция поиска норм расхода по коду услуги по каталогу процедур
+ */
+export function getProcedureCatalogServiceNorm(serviceCode: string): Order804nServiceNorm | undefined {
+	return PROCEDURE_CATALOG_SERVICE_NORMS.find((s) => s.serviceCode === serviceCode);
 }
+
+export const getOrder804nServiceNorm = getProcedureCatalogServiceNorm;
+
 

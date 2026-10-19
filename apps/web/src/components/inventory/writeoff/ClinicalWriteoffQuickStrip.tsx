@@ -53,20 +53,20 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					onClick={onQuickCarpuleWriteoff}
 					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-carpule-writeoff"
-					title="Списать 1 использованную карпулу анестетика (Артикаин)"
+					title="Пакетное списание анестезии на приём (карпула + игла) без поштучного подсчета у кресла"
 				>
 					<PackageCheck size={16} className="text-teal-600 shrink-0" />
-					<span>Карпула анестетика (1 шт.)</span>
+					<span>Пакет анестезии на приём</span>
 				</button>
 				<button
 					type="button"
 					onClick={onQuickAnesthesiaPackageWriteoff}
 					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-teal-500/60 text-teal-900 dark:text-teal-100 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-anesthesia-package-writeoff"
-					title="Списать стандартный пакет анестезии (карпула 1.7 мл + игла 30G + антисептик)"
+					title="Списать полный пакет анестезии (карпула 1.7 мл + игла 30G + антисептик)"
 				>
 					<PackageCheck size={16} className="text-teal-600 shrink-0" />
-					<span>Пакет анестезии (карпула + игла + антисептик)</span>
+					<span>Полный пакет анестезии</span>
 				</button>
 				<button
 					type="button"
