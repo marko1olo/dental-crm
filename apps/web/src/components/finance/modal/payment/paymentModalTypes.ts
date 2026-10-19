@@ -31,6 +31,8 @@ export interface PaymentModalProps {
 	readonly defaultMethod?: PaymentMethodTab | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyHeadName?: string | undefined;
+	readonly familyGroupName?: string | undefined;
 	readonly patientDebtRub?: number | undefined;
 	readonly cashierName?: string | undefined;
 	readonly doctorName?: string | undefined;

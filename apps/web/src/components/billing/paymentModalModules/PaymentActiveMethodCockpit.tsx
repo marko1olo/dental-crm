@@ -124,6 +124,8 @@ export const PaymentActiveMethodCockpit: React.FC<PaymentActiveMethodCockpitProp
 		<PaymentFamilyDepositView
 			patientDepositRub={patientDepositRub}
 			patientFamilyBalanceRub={patientFamilyBalanceRub}
+			familyHeadName={props.familyHeadName}
+			familyGroupName={props.familyGroupName}
 			totalDueRub={discountsHook.totalDueRub}
 			amountRub={discountsHook.totalDueRub.toFixed(2)}
 			isSubmittingDeposit={execHook.isSubmittingDeposit}

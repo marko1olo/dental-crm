@@ -25,6 +25,8 @@ import type { PaymentMethodTab } from "./paymentModalTypes.js";
 export interface PaymentFamilyDepositViewProps {
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyHeadName?: string | null | undefined;
+	readonly familyGroupName?: string | null | undefined;
 	readonly totalDueRub: number;
 	readonly amountRub: string;
 	readonly isSubmittingDeposit: boolean;
@@ -41,6 +43,8 @@ export const PaymentFamilyDepositView: React.FC<
 > = ({
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
+	familyHeadName,
+	familyGroupName,
 	totalDueRub,
 	amountRub,
 	isSubmittingDeposit,
@@ -149,7 +153,9 @@ export const PaymentFamilyDepositView: React.FC<
 							</div>
 							<p className="text-[11px] text-[var(--muted,#64748b)] m-0 leading-tight">
 								{patientFamilyBalanceRub >= totalDueRub
-									? "Семейный баланс покрывает 100% стоимости счета."
+									? familyHeadName
+										? `Баланс семьи: ${formatMoneyClean(patientFamilyBalanceRub)}, Глава: ${familyHeadName}. Покрывает 100% стоимости счета.`
+										: "Семейный баланс покрывает 100% стоимости счета."
 									: patientFamilyBalanceRub > 0
 										? `${formatAvailableForDebitLabel(patientFamilyBalanceRub)}. Недостает ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))}.`
 										: "Семейный баланс пуст или не подключен."}
@@ -163,7 +169,9 @@ export const PaymentFamilyDepositView: React.FC<
 								isSubmittingDeposit
 									? "Выполняется списание с семейного баланса..."
 									: patientFamilyBalanceRub >= totalDueRub
-										? `Списать ${displayAmount} с семейного баланса`
+										? familyHeadName
+											? `Списать с семейного депозита (Баланс семьи: ${formatMoneyClean(patientFamilyBalanceRub)}, Глава: ${familyHeadName})`
+											: `Списать ${displayAmount} с семейного депозита`
 										: patientFamilyBalanceRub > 0
 											? `Зачесть ${formatMoneyClean(patientFamilyBalanceRub)} из семьи + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))} оплатить картой`
 											: "Нажмите для проверки семейного счета или пополнения"
@@ -182,7 +190,11 @@ export const PaymentFamilyDepositView: React.FC<
 							{patientFamilyBalanceRub >= totalDueRub ? (
 								<>
 									<CheckCircle size={13} className="shrink-0" />
-									<span>Списать {displayAmount} с семейного счета</span>
+									<span>
+										{familyHeadName
+											? `Списать с семейного депозита (Баланс семьи: ${formatMoneyClean(patientFamilyBalanceRub)}, Глава: ${familyHeadName})`
+											: `Списать ${displayAmount} с семейного счета`}
+									</span>
 								</>
 							) : patientFamilyBalanceRub > 0 ? (
 								<>

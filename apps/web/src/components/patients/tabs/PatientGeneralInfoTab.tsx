@@ -28,6 +28,8 @@ import { PatientSafetyBanner } from "./generalInfo/PatientSafetyBanner";
 import { PatientDemographicsBasicCard } from "./generalInfo/PatientDemographicsBasicCard";
 import { PatientVisitsOverviewSection } from "./generalInfo/PatientVisitsOverviewSection";
 import { type ClinicalVisitItem, DEFAULT_CLINICAL_VISITS } from "../PatientHistoryTab";
+import { PatientFamilyCard } from "../PatientFamilyCard";
+import { usePatientFamilyLoader } from "../overview/usePatientFamilyLoader";
 
 export {
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -97,6 +99,10 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 		}, [patient?.dmsInsuranceCompany, patient?.dmsPolicyNumber, patient?.snils]);
 
 		const [viewingProtocolVisit, setViewingProtocolVisit] = useState<PatientVisitHistoryItem | null>(null);
+		const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(
+			patient?.id,
+			null,
+		);
 
 		const toggleAccordion = useCallback((key: "passport" | "insurance" | "notes") => {
 			setAccordionsOpen((prev) => ({
@@ -374,12 +380,22 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 
 				{/* 4. ЗАКОННЫЕ ПРЕДСТАВИТЕЛИ И СЕМЕЙНЫЕ СВЯЗИ */}
 				{showFamily && (
-					<PatientRepresentativesSection
-						patient={patient}
-						onUpdatePatient={onUpdatePatient}
-						disabled={disabled}
-						mode="full"
-					/>
+					<div className="flex flex-col gap-4">
+						<PatientFamilyCard
+							patientId={patient?.id || null}
+							patientName={patient?.fullName || null}
+							familyData={familyData}
+							loadFailure={familyLoadFailure}
+							onRetryLoad={loadFamily}
+							onFamilyDataChanged={loadFamily}
+						/>
+						<PatientRepresentativesSection
+							patient={patient}
+							onUpdatePatient={onUpdatePatient}
+							disabled={disabled}
+							mode="full"
+						/>
+					</div>
 				)}
 
 				{viewingProtocolVisit && (
