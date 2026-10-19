@@ -13,29 +13,26 @@ export * from "./leadsKanbanSla";
 export * from "./leadsKanbanSorting";
 
 /**
- * Проверяет принадлежность статуса лида к одной из 4 канонических колонок канбана.
- * Обратная совместимость для существующих статусов в БД:
- * - new -> new ("Новые обращения")
- * - contacted -> contacted ("Думают / Перезвонить")
- * - consult_booked, showed_up, converted -> consult_booked ("Записаны на приём")
- * - trash, no_answer -> trash ("Не дошли / Архив")
+ * Проверяет принадлежность статуса лида к одной из 4 канонических колонок клинического канбана:
+ * [ Новые обращения ] -> [ Записаны на приём ] -> [ Дошли до клиники ] -> [ Архив / Спам ]
+ * Обратная совместимость для всех промежуточных статусов в БД:
+ * - new, contacted -> new ("Новые обращения")
+ * - consult_booked -> consult_booked ("Записаны на приём")
+ * - showed_up, converted -> showed_up ("Дошли до клиники")
+ * - trash, no_answer -> trash ("Архив / Спам")
  */
 export function isLeadInKanbanColumn(
 	leadStatus: LeadStatus | string | null | undefined,
 	columnId: LeadStatus,
 ): boolean {
-	if (!leadStatus || leadStatus === "new") {
+	if (!leadStatus || leadStatus === "new" || leadStatus === "contacted") {
 		return columnId === "new";
 	}
-	if (leadStatus === "contacted") {
-		return columnId === "contacted";
-	}
-	if (
-		leadStatus === "consult_booked" ||
-		leadStatus === "showed_up" ||
-		leadStatus === "converted"
-	) {
+	if (leadStatus === "consult_booked") {
 		return columnId === "consult_booked";
+	}
+	if (leadStatus === "showed_up" || leadStatus === "converted") {
+		return columnId === "showed_up";
 	}
 	if (leadStatus === "trash" || leadStatus === "no_answer") {
 		return columnId === "trash";
@@ -49,18 +46,15 @@ export function isLeadInKanbanColumn(
 export function getKanbanColumnForLeadStatus(
 	status?: LeadStatus | string | null,
 ): ColumnConfig {
-	if (!status || status === "new") {
+	if (!status || status === "new" || status === "contacted") {
 		return COLUMNS[0];
 	}
-	if (status === "contacted") {
+	if (status === "consult_booked") {
 		return COLUMNS[1];
 	}
-	if (
-		status === "consult_booked" ||
-		status === "showed_up" ||
-		status === "converted"
-	) {
+	if (status === "showed_up" || status === "converted") {
 		return COLUMNS[2];
 	}
 	return COLUMNS[3];
 }
+

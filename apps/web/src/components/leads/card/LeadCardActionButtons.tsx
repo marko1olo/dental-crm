@@ -4,13 +4,14 @@
  */
 
 import React from "react";
-import { Calendar, UserCheck, UserPlus } from "lucide-react";
+import { Calendar, UserCheck, UserPlus, Zap } from "lucide-react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadCardActionButtonsProps {
 	lead: Lead;
 	creatingPatientLeadId: string | null;
 	onSchedule: (leadId: string) => void;
+	onQuickSchedule?: ((leadId: string) => Promise<void> | void) | undefined;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
 	onOpenPatient: (e: React.MouseEvent, patientId: string) => void;
 }
@@ -19,6 +20,7 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 	lead,
 	creatingPatientLeadId,
 	onSchedule,
+	onQuickSchedule,
 	onCreatePatient,
 	onOpenPatient,
 }) => {
@@ -27,24 +29,42 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 			className="flex flex-col gap-1.5 mt-2"
 			onClick={(e) => e.stopPropagation()}
 		>
-			{/* Действие 1: Записать в сетку расписания (Primary CTA) */}
+			{/* Действие 1: Записать в сетку расписания (Primary CTA + 1-Click Fast Booking) */}
 			{lead.status !== "trash" && (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onSchedule(lead.id);
-					}}
-					className="primary-button w-full h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer"
-					data-testid={`schedule-lead-btn-${lead.id}`}
-					title="Записать в сетку расписания"
-				>
-					<Calendar size={13} className="shrink-0" />
-					<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-						Записать на приём
-					</span>
-				</button>
+				<div className="flex items-center gap-1.5 w-full">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onSchedule(lead.id);
+						}}
+						className="primary-button flex-1 h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer border border-[var(--teal)]"
+						data-testid={`schedule-lead-btn-${lead.id}`}
+						title="Выбрать слот в расписании и записать пациента"
+					>
+						<Calendar size={13} className="shrink-0" />
+						<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+							Записать на приём
+						</span>
+					</button>
+					{onQuickSchedule && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								void onQuickSchedule(lead.id);
+							}}
+							className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] px-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-dark, var(--teal))] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-[0.95] inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
+							data-testid={`quick-schedule-lead-btn-${lead.id}`}
+							title="Мгновенная запись на завтра в 10:00 (1 клик)"
+							aria-label="Записать в 1 клик на завтра"
+						>
+							<Zap size={13} className="shrink-0 fill-current" />
+						</button>
+					)}
+				</div>
 			)}
+
 
 			{/* Действие 2: Создать амбулаторную карту пациента или открыть существующую (Secondary CTA) */}
 			{lead.existingPatient ? (

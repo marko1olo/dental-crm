@@ -47,6 +47,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onStatusChange,
 	onCreatePatient,
 	onSchedule,
+	onQuickSchedule,
 	onOpenPatientCard,
 }) => {
 	const sla = getLeadSlaStatus(lead);
@@ -111,6 +112,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				lead={lead}
 				creatingPatientLeadId={creatingPatientLeadId}
 				onSchedule={onSchedule}
+				onQuickSchedule={onQuickSchedule}
 				onCreatePatient={onCreatePatient}
 				onOpenPatient={handleOpenPatient}
 			/>

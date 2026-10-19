@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { CalendarClock, Phone, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, Plus, Trash2, UserCheck } from "lucide-react";
 import type { LeadStatus } from "../../store/leadsStore";
 
 export type ColumnConfig = {
@@ -23,15 +23,9 @@ export const COLUMNS: readonly [
 ] = [
 	{
 		id: "new",
-		label: "Новые заявки",
+		label: "Новые обращения",
 		color: "var(--teal-soft)",
 		icon: React.createElement(Plus, { size: 15 }),
-	},
-	{
-		id: "contacted",
-		label: "В обработке / Звонок",
-		color: "var(--amber-soft)",
-		icon: React.createElement(Phone, { size: 15 }),
 	},
 	{
 		id: "consult_booked",
@@ -40,8 +34,14 @@ export const COLUMNS: readonly [
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
 	{
+		id: "showed_up",
+		label: "Дошли до клиники",
+		color: "var(--teal-soft)",
+		icon: React.createElement(UserCheck, { size: 15 }),
+	},
+	{
 		id: "trash",
-		label: "Архив / Нецелевой",
+		label: "Архив / Спам",
 		color: "var(--paper)",
 		icon: React.createElement(Trash2, { size: 15 }),
 	},
@@ -50,23 +50,24 @@ export const COLUMNS: readonly [
 export const CORE_FUNNEL_COLUMNS = COLUMNS;
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
-	new: "«Новые заявки»",
-	contacted: "«В обработке / Звонок»",
+	new: "«Новые обращения»",
+	contacted: "«Новые обращения»",
 	consult_booked: "«Записаны на приём»",
-	showed_up: "«Записаны на приём»",
-	converted: "«Записаны на приём»",
-	no_answer: "«Архив / Нецелевой»",
-	trash: "«Архив / Нецелевой»",
+	showed_up: "«Дошли до клиники»",
+	converted: "«Дошли до клиники»",
+	no_answer: "«Архив / Спам»",
+	trash: "«Архив / Спам»",
 };
 
 export const NEXT_STAGE_MAP: Partial<
 	Record<LeadStatus, { status: LeadStatus; label: string }>
 > = {
-	new: { status: "contacted", label: "Звонок / Квалификация →" },
+	new: { status: "consult_booked", label: "Записать на приём →" },
 	contacted: { status: "consult_booked", label: "Записать на приём →" },
-	consult_booked: { status: "trash", label: "В архив →" },
+	consult_booked: { status: "showed_up", label: "Отметить визит (прибыл) →" },
 	showed_up: { status: "trash", label: "В архив →" },
 	converted: { status: "trash", label: "В архив →" },
-	no_answer: { status: "new", label: "Восстановить заявку →" },
-	trash: { status: "new", label: "Восстановить заявку →" },
+	no_answer: { status: "new", label: "Вернуть в новые →" },
+	trash: { status: "new", label: "Вернуть в новые →" },
 };
+

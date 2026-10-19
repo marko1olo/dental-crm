@@ -82,7 +82,7 @@ export const LeadsKanbanHeaderToolbar: React.FC<LeadsKanbanHeaderToolbarProps> =
 					title="Быстрое создание заявки за 10 секунд"
 				>
 					<Plus size={15} />
-					<span>+ Заявка</span>
+					<span>Новое обращение</span>
 				</button>
 
 				<LeadsKanbanMoreMenu

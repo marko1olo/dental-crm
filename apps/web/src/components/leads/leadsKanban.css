@@ -1,1 +1,143 @@
-/* DENTE Dental CRM — Leads Kanban CSS (Imports moved to kanbanView/index.tsx for Tailwind v4 compatibility) */
+/**
+ * DENTE Dental CRM — Leads Kanban Board & Pipeline Master Styles
+ *
+ * Mandate 8x (Clinical Language & Visual Invariants)
+ * Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)
+ * Mandate 8n (Clinical Ergonomics, Scale Sovereignty & Solo Doctor Autonomy)
+ * Apple HIG Touch Ergonomics & 10-Theme Parity
+ */
+
+@import "./styles/leadsKanbanStyles.css";
+
+/* -------------------------------------------------------------------------- */
+/* MAIN KANBAN BOARD WRAPPER                                                  */
+/* -------------------------------------------------------------------------- */
+
+.leads-board-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-height: calc(100vh - 64px);
+	background: var(--paper);
+	padding: 16px 20px;
+	box-sizing: border-box;
+	overflow-x: auto;
+}
+
+/* 4-Stage Clinical Funnel Grid */
+.leads-kanban-board,
+.leads-kanban-board--funnel {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(270px, 1fr));
+	gap: 14px;
+	align-items: start;
+	width: 100%;
+	min-width: 1100px;
+	margin-top: 14px;
+	box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------------------- */
+/* KANBAN STAGE COLUMN                                                        */
+/* -------------------------------------------------------------------------- */
+
+.leads-kanban-column {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	min-height: 520px;
+	padding: 12px;
+	box-sizing: border-box;
+	transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.leads-kanban-column:hover {
+	border-color: color-mix(in srgb, var(--line) 70%, var(--teal) 30%);
+}
+
+.leads-kanban-column-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex: 1;
+	min-height: 120px;
+}
+
+/* Drag-over indicator */
+.leads-kanban-empty-dropzone {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 96px;
+	border: 2px dashed var(--line);
+	border-radius: 10px;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 500;
+	background: color-mix(in srgb, var(--paper) 70%, transparent);
+	transition: all 0.2s ease;
+}
+
+.leads-kanban-column:hover .leads-kanban-empty-dropzone {
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+}
+
+/* -------------------------------------------------------------------------- */
+/* LEAD CARD INVARIANTS (DESIGN SYSTEM)                                       */
+/* -------------------------------------------------------------------------- */
+
+.lead-kanban-card {
+	position: relative;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px 14px;
+	cursor: grab;
+	user-select: none;
+	box-sizing: border-box;
+	transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.lead-kanban-card:hover {
+	border-color: color-mix(in srgb, var(--line) 50%, var(--teal) 50%);
+	transform: translateY(-2px);
+}
+
+.lead-kanban-card:active {
+	cursor: grabbing;
+}
+
+/* Card buttons with firm visible borders */
+.lead-card-action-btn,
+.lead-kanban-card button.secondary-button {
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	transition: all 0.15s ease !important;
+}
+
+.lead-card-action-btn:hover,
+.lead-kanban-card button.secondary-button:hover {
+	border-color: var(--teal) !important;
+	background: var(--paper-hover, var(--paper-soft)) !important;
+}
+
+.lead-kanban-card button.primary-button {
+	border: 1px solid var(--teal) !important;
+	border-radius: 8px !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	transition: opacity 0.15s ease, transform 0.1s ease !important;
+}
+
+.lead-kanban-card button.primary-button:hover {
+	opacity: 0.92;
+}
+
+.lead-kanban-card button.primary-button:active {
+	transform: scale(0.98);
+}

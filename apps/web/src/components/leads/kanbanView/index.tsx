@@ -21,23 +21,15 @@ import { useLeadConvertModalSubmit } from "./useLeadConvertModalSubmit";
 import { useLeadFormState } from "./useLeadFormState";
 import { useLeadDragAndDrop } from "./useLeadDragAndDrop";
 import { useLeadsKanbanViewState } from "./useLeadsKanbanViewState";
-import "../styles/leadsKanbanToolbar.css";
-import "../styles/leadsKanbanMoreMenu.css";
-import "../styles/leadsFocusHeader.css";
-import "../styles/leadsFocusHeaderMetrics.css";
-import "../styles/leadsFocusToolbar.css";
-import "../styles/leadsFocusBulkBar.css";
-import "../styles/leadsFocusBulkActions.css";
-import "../styles/leadsFocusCardsGrid.css";
-import "../styles/leadsFocusCardActions.css";
-import "../styles/leadsFocusTableView.css";
-import "../styles/leadsFocusFooter.css";
+import "../leadsKanban.css";
+
 
 export * from "../leadsKanbanTypes";
 export * from "./LeadKanbanCard";
 export * from "./LeadKanbanColumn";
 export * from "./LeadsKanbanHeaderToolbar";
 export * from "./types";
+
 export function LeadsKanbanView() {
 	const { leads, fetchLeads, updateLeadStatus, batchUpdateStage, updateLeadDetails, addLead, deleteLead, convertLeadToAppointment, createPatientFromLead, isLoading, error: loadError } = useLeadsStore();
 	const { dashboard } = useAppLogicContext();
@@ -80,7 +72,7 @@ export function LeadsKanbanView() {
 		/>
 	);
 
-	if (isLoading && leads.length === 0) return <div className="leads-loading-state">Загрузка конвейера...</div>;
+	if (isLoading && leads.length === 0 && !isDemoShowcaseMode()) return <div className="leads-loading-state">Загрузка конвейера...</div>;
 	if (isMobile) {
 		return (
 			<div className="leads-mobile-container" style={{ width: "100%", maxWidth: "100vw", overflowX: "clip" }}>

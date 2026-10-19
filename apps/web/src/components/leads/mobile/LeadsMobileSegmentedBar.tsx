@@ -15,14 +15,13 @@ interface LeadsMobileSegmentedBarProps {
 }
 
 const TABS: { id: LeadStatus | "all"; label: string; testId: string }[] = [
-	{ id: "new", label: "Новый", testId: "mobile-tab-new" },
-	{ id: "contacted", label: "Думает", testId: "mobile-tab-contacted" },
-	{ id: "consult_booked", label: "Записан", testId: "mobile-tab-consult_booked" },
-	{ id: "showed_up", label: "Дошли", testId: "mobile-tab-showed_up" },
-	{ id: "no_answer", label: "Недозвон", testId: "mobile-tab-no_answer" },
-	{ id: "trash", label: "Отказ", testId: "mobile-tab-trash" },
 	{ id: "all", label: "Все", testId: "mobile-tab-all" },
+	{ id: "new", label: "Новые", testId: "mobile-tab-new" },
+	{ id: "consult_booked", label: "Записаны", testId: "mobile-tab-consult_booked" },
+	{ id: "showed_up", label: "Дошли", testId: "mobile-tab-showed_up" },
+	{ id: "trash", label: "Архив", testId: "mobile-tab-trash" },
 ];
+
 
 export const LeadsMobileSegmentedBar: React.FC<LeadsMobileSegmentedBarProps> = ({
 	activeTab, setActiveTab, counts, breachedCount,

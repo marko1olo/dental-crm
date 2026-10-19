@@ -25,14 +25,12 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 	onStatusChange,
 }) => {
 	const currentSelectValue =
-		lead.status === "new"
+		lead.status === "new" || lead.status === "contacted"
 			? "new"
-			: lead.status === "contacted"
-				? "contacted"
-				: lead.status === "consult_booked" ||
-						lead.status === "showed_up" ||
-						lead.status === "converted"
-					? "consult_booked"
+			: lead.status === "consult_booked"
+				? "consult_booked"
+				: lead.status === "showed_up" || lead.status === "converted"
+					? "showed_up"
 					: "trash";
 
 	return (
@@ -66,9 +64,9 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 				aria-label="Выбрать статус обращения"
 			>
 				<option value="new">Новые обращения</option>
-				<option value="contacted">Думают / Перезвонить</option>
 				<option value="consult_booked">Записаны на приём</option>
-				<option value="trash">Не дошли / Архив</option>
+				<option value="showed_up">Дошли до клиники</option>
+				<option value="trash">Архив / Спам</option>
 			</select>
 
 			{NEXT_STAGE_MAP[lead.status] ? (
@@ -78,20 +76,20 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 						e.stopPropagation();
 						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
 					}}
-					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--teal)] border border-[var(--line)] inline-flex items-center justify-center gap-1 cursor-pointer transition-all hover:border-[var(--teal)] shrink-0"
-					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
+					className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] px-0 rounded-lg text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--teal-dark, var(--teal))] border border-[var(--line)] inline-flex items-center justify-center cursor-pointer transition-all hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-[0.95] shrink-0"
+					title={`Перевести на этап: ${NEXT_STAGE_MAP[lead.status]!.label}`}
 					data-testid={`advance-stage-btn-${lead.id}`}
+					aria-label={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
 				>
-					<span>Далее</span>
-					<ArrowRight size={12} className="shrink-0" />
+					<ArrowRight size={13} className="shrink-0" />
 				</button>
-			) : lead.status === "showed_up" ? (
+			) : lead.status === "showed_up" || lead.status === "converted" ? (
 				<span
-					className="h-8 min-h-[32px] px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--line)] inline-flex items-center justify-center gap-1 shrink-0"
-					title="Пациент пришёл в клинику"
+					className="h-8 min-h-[32px] w-8 min-w-[32px] rounded-lg text-[11px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark, var(--teal))] border border-[var(--teal)] inline-flex items-center justify-center shrink-0"
+					title="Пациент в клинике"
+					aria-label="Пациент в клинике"
 				>
-					<Check size={12} className="shrink-0" />
-					<span>В клинике</span>
+					<Check size={13} className="shrink-0 stroke-[2.5]" />
 				</span>
 			) : null}
 		</div>

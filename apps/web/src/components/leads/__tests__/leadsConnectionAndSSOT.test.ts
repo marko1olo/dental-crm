@@ -51,7 +51,7 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 		it("Kanban COLUMNS IDs exactly match canonical funnel LeadStatus values", () => {
 			const columnIds = COLUMNS.map((c) => c.id);
 			assert.strictEqual(columnIds.length, 4);
-			for (const status of ["new", "contacted", "consult_booked", "trash"] as const) {
+			for (const status of ["new", "consult_booked", "showed_up", "trash"] as const) {
 				assert.ok(
 					columnIds.includes(status),
 					`Kanban COLUMNS must include status "${status}"`,
