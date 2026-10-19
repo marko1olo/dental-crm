@@ -35,6 +35,13 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 	modalsNode,
 	userRole,
 }) => {
+	const cashBreakdown = shiftStats?.cashBreakdown || {
+		cashRub: Math.round((shiftStats?.totalRevenueRub || 0) * 0.45),
+		cardRub: Math.round((shiftStats?.totalRevenueRub || 0) * 0.35),
+		sbpRub: Math.round((shiftStats?.totalRevenueRub || 0) * 0.2),
+		depositRub: 0,
+	};
+
 	return (
 		<div
 			className="mobile-shift-cockpit-view-wrapper"
@@ -59,9 +66,10 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 				completedCount={shiftStats.completedCount}
 				inChairCount={shiftStats.inProgressCount}
 				totalRevenueRub={shiftStats.totalRevenueRub}
-				cashInDrawerRub={Math.round(shiftStats.totalRevenueRub * 0.45)}
-				cardSumRub={Math.round(shiftStats.totalRevenueRub * 0.35)}
-				sbpSumRub={Math.round(shiftStats.totalRevenueRub * 0.2)}
+				cashInDrawerRub={cashBreakdown.cashRub}
+				cardSumRub={cashBreakdown.cardRub}
+				sbpSumRub={cashBreakdown.sbpRub}
+				depositSumRub={cashBreakdown.depositRub}
 				doctorCommissionPct={shiftStats.doctorCommissionPct}
 				estimatedDoctorPayoutRub={shiftStats.estimatedDoctorPayoutRub}
 				appointments={mobileAppointments}

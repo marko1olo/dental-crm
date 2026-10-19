@@ -44,6 +44,13 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			todayIso={shiftData.todayIso}
 			activeDoctorFullName={c.activeDoctorFullName}
 			shiftStats={shiftData.shiftStats}
+			cashSummary={shiftData.shiftStats?.cashBreakdown ? {
+				cashRub: shiftData.shiftStats.cashBreakdown.cashRub,
+				cardRub: shiftData.shiftStats.cashBreakdown.cardRub,
+				sbpRub: shiftData.shiftStats.cashBreakdown.sbpRub,
+				depositRub: shiftData.shiftStats.cashBreakdown.depositRub,
+				totalRevenueRub: shiftData.shiftStats.totalRevenueRub,
+			} : undefined}
 			shiftDoctorsList={shiftData.shiftDoctorsList || []}
 			shiftActiveDoctorId={shiftData.shiftActiveDoctorId || ""}
 			shiftCompletedServices={[...shiftData.shiftCompletedServices]}

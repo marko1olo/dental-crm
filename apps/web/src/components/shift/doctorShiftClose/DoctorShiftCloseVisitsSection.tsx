@@ -22,9 +22,7 @@ export const DoctorShiftCloseVisitsSection: React.FC<DoctorShiftCloseVisitsSecti
 				<div className="p-3 sm:p-3.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
 					<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
 					<div>
-						<span className="font-bold">Внимание:</span> Не подписано электронных
-						карт 043/у: {emrPending}. Рекомендуется заверить карты ПЭП (63-ФЗ) до
-						сдачи смены.
+						<span className="font-bold">Внимание:</span> Не подписано электронных карт 043/у: {emrPending}. Рекомендуется заверить карты ПЭП до сдачи смены.
 					</div>
 				</div>
 			)}

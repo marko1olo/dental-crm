@@ -34,6 +34,7 @@ export interface MobileShiftCockpitProps {
 	readonly cashInDrawerRub?: number | undefined;
 	readonly cardSumRub?: number | undefined;
 	readonly sbpSumRub?: number | undefined;
+	readonly depositSumRub?: number | undefined;
 	readonly doctorCommissionPct?: number | undefined;
 	readonly estimatedDoctorPayoutRub?: number | undefined;
 	readonly appointments?: readonly MobileShiftAppointmentSummary[] | undefined;

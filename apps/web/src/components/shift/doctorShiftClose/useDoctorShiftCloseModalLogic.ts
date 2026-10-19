@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
+import { showToast } from "../../GlobalToast";
 import type { DoctorShiftStats } from "../controlBarModules/shiftControlBarTypes";
+import { printEncashmentStatement } from "../shiftPrintStatements";
 import type {
 	DoctorShiftCashSummary,
 	DoctorShiftEmrSummary,
@@ -60,6 +62,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 	const [labDeductionsRub, setLabDeductionsRub] = useState<number>(0);
 	const [fixedRentRub, setFixedRentRub] = useState<number>(3500);
 	const [baseSalaryRub, setBaseSalaryRub] = useState<number>(2500);
+	const [isEncashmentDone, setIsEncashmentDone] = useState<boolean>(false);
 
 	useEffect(() => {
 		setCountedCashRub(cashRub);
@@ -90,6 +93,30 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		});
 	};
 
+	const handleExecuteEncashment = () => {
+		const amt = countedCashRub > 0 ? countedCashRub : cashRub;
+		printEncashmentStatement({
+			doctorFullName,
+			clinicName: clinicName || "ООО «Денте Стоматология»",
+			encashmentAmount: amt,
+			effectiveTotalRub: effectiveTotalCashRub,
+			cashRub,
+			cardRub,
+			sbpRub,
+			depositRub,
+			doctorCommissionPct: commissionPct,
+			estimatedDoctorPayoutRub: calculatedPayoutRub,
+		});
+		StaffActionAuditService.logShiftClose({
+			cashRegisterId: "main_cashier",
+			shiftNumber: shiftDateLabel || "today",
+			totalRevenueKopecks: Math.round(effectiveTotalCashRub * 100),
+			closingCashKopecks: Math.round(amt * 100),
+		});
+		setIsEncashmentDone(true);
+		showToast(`Акт инкассации на ${amt.toLocaleString("ru-RU")} ₽ сформирован`, "info");
+	};
+
 	const handleConfirm = () => {
 		if (printShiftSummary) handlePrint();
 		StaffActionAuditService.logShiftClose({
@@ -108,5 +135,6 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		setCompensationModel, commissionPct, setCommissionPct, labDeductionsRub,
 		setLabDeductionsRub, fixedRentRub, setFixedRentRub, baseSalaryRub,
 		setBaseSalaryRub, calculatedPayoutRub, handlePrint, handleConfirm,
+		handleExecuteEncashment, isEncashmentDone,
 	};
 }

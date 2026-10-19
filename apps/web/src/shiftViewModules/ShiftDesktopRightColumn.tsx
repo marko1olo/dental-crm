@@ -42,6 +42,7 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 }) => (
 	<div className="space-y-4 min-w-0" data-testid="shift-right-column">
 		<DoctorShiftCashSection
+			cashSummary={shiftStats?.cashBreakdown}
 			totalRevenueRub={shiftStats?.totalRevenueRub ?? 0}
 			doctorCommissionPct={shiftStats?.doctorCommissionPct ?? 30}
 			estimatedDoctorPayoutRub={shiftStats?.estimatedDoctorPayoutRub ?? 0}

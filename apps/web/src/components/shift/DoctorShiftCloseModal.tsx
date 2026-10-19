@@ -58,6 +58,11 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 				className="w-full max-w-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-t-[24px] sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
 				style={{ background: "var(--paper)", color: "var(--ink)" }}
 			>
+				{/* Apple HIG Tactile Drag Handle for Mobile Bottom Sheet */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1" aria-hidden="true">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
+
 				<DoctorShiftCloseHeader
 					doctorFullName={doctorFullName}
 					doctorSpecialtyRu={doctorSpecialtyRu}
@@ -85,6 +90,8 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 						onSetPrintZReport={l.setPrintZReport}
 						printShiftSummary={l.printShiftSummary}
 						onSetPrintShiftSummary={l.setPrintShiftSummary}
+						onExecuteEncashment={l.handleExecuteEncashment}
+						isEncashmentDone={l.isEncashmentDone}
 					/>
 
 					<ShiftCompensationSection

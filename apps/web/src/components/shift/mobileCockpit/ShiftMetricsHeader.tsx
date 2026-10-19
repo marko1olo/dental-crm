@@ -18,6 +18,7 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 	cashInDrawerRub = 15000,
 	cardSumRub = 22500,
 	sbpSumRub = 5000,
+	depositSumRub = 0,
 	doctorCommissionPct = 30,
 	estimatedDoctorPayoutRub = 12750,
 	elapsedTimeDisplay,
@@ -56,6 +57,7 @@ export const ShiftMetricsHeader: React.FC<ShiftMetricsHeaderProps> = ({
 			cashInDrawerRub={cashInDrawerRub}
 			cardSumRub={cardSumRub}
 			sbpSumRub={sbpSumRub}
+			depositSumRub={depositSumRub}
 			doctorCommissionPct={doctorCommissionPct}
 			estimatedDoctorPayoutRub={estimatedDoctorPayoutRub}
 			userRole={userRole}

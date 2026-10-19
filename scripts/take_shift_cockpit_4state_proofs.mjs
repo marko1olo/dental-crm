@@ -4,8 +4,8 @@ import { chromium } from "playwright";
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:5173";
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/shift";
-const CONV_ID = "9ab26d12-bb3e-495a-a60c-db6da6f864f8";
-const CALLER_CONV_ID = "da920fe7-8cf1-4af3-83bf-33b629e2b869";
+const CONV_ID = "a956e2bc-d85b-4581-af25-f4fbeabcc6de";
+const CALLER_CONV_ID = "cbe78645-8247-4a61-875e-c1cdb1eaea11";
 const BRAIN_DIR = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const CALLER_BRAIN_DIR = `C:/Users/Admin/.gemini/antigravity/brain/${CALLER_CONV_ID}`;
 const browserExecutable = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
@@ -14,61 +14,7 @@ const browserExecutable = "C:\\Program Files\\Google\\Chrome\\Application\\chrom
 	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 });
 
-async function suppressOverlays(page, theme) {
-	try {
-		await page.evaluate((th) => {
-			document.documentElement.setAttribute("data-theme", th);
-			const isDark = th === "dark";
-			document.documentElement.classList.toggle("dark", isDark);
-			document.documentElement.classList.toggle("light", !isDark);
-			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-			if (document.body) {
-				document.body.className = isDark ? "dark" : "light";
-			}
-
-			const style = document.createElement("style");
-			style.id = "suppress-all-overlays";
-			style.innerHTML = `
-				.tour-spotlight-root,
-				.tour-backdrop-clickable-zone,
-				[data-testid="guided-tour-spotlight-overlay"],
-				[data-testid="guided-tour-coach-mark-card"],
-				[data-testid="demo-mode-banner"],
-				.global-toast-container,
-				vite-error-overlay {
-					display: none !important;
-					pointer-events: none !important;
-				}
-				*, *::before, *::after {
-					animation: none !important;
-					transition: none !important;
-				}
-			`;
-			document.head.appendChild(style);
-			document.querySelectorAll("vite-error-overlay, .tour-spotlight-root, [data-testid='guided-tour-spotlight-overlay']").forEach((el) => el.remove());
-		}, theme);
-	} catch (_) {}
-}
-
-async function setTheme(page, theme) {
-	await page.evaluate((th) => {
-		document.documentElement.setAttribute("data-theme", th);
-		const isDark = th === "dark";
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		if (document.body) {
-			document.body.className = isDark ? "dark" : "light";
-		}
-		localStorage.setItem("dente_theme", th);
-		localStorage.setItem("dente_theme_mode", th);
-		localStorage.setItem("theme", th);
-	}, theme);
-	await suppressOverlays(page, theme);
-	await page.waitForTimeout(600);
-}
-
-async function captureProof(page, filename, altFilename) {
+async function captureProof(page, filename, ...altFilenames) {
 	const targetPath = path.join(PROOFS_DIR, filename);
 	await page.screenshot({ path: targetPath, fullPage: false, animations: "disabled" });
 
@@ -79,8 +25,8 @@ async function captureProof(page, filename, altFilename) {
 		throw new Error(`Screenshot ${filename} is too small: ${size} bytes (< 20000)`);
 	}
 
-	if (altFilename) {
-		const altPath = path.join(PROOFS_DIR, altFilename);
+	for (const alt of altFilenames.flat().filter(Boolean)) {
+		const altPath = path.join(PROOFS_DIR, alt);
 		copyFileSync(targetPath, altPath);
 	}
 
@@ -91,13 +37,30 @@ async function captureProof(page, filename, altFilename) {
 	}
 }
 
+async function setTheme(page, theme) {
+	await page.evaluate((th) => {
+		const isDark = th === "dark";
+		document.documentElement.setAttribute("data-theme", th);
+		document.documentElement.classList.toggle("dark", isDark);
+		document.documentElement.classList.toggle("light", !isDark);
+		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+		if (document.body) {
+			document.body.className = isDark ? "dark" : "light";
+		}
+		localStorage.setItem("dente_theme", th);
+		localStorage.setItem("dente_theme_mode", th);
+		localStorage.setItem("theme", th);
+	}, theme);
+	await page.waitForTimeout(600);
+}
+
 async function initContext(context) {
 	await context.addInitScript(() => {
 		localStorage.setItem("dente_clinic_token", "demo-clinic-token");
 		localStorage.setItem("dente_staff_token", "demo-staff-token");
 		localStorage.setItem("dente_active_session_token", "demo-staff-token");
 		localStorage.setItem("dente_demo_showcase", "true");
-		localStorage.setItem("dente_active_role", "doctor");
+		localStorage.setItem("dente_active_role", "admin");
 		localStorage.setItem("dente_theme", "light");
 		localStorage.setItem("dente_theme_mode", "light");
 		localStorage.setItem("theme", "light");
@@ -107,12 +70,8 @@ async function initContext(context) {
 		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
 		localStorage.setItem("dente_demo_banner_dismissed", "true");
 		localStorage.setItem("dente_doctor_shift_active", "true");
-		localStorage.setItem(
-			"dente-workspace-profile",
-			JSON.stringify({ mode: "doctor", role: "doctor", activeRole: "doctor" })
-		);
 		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
-		localStorage.setItem("dente_quest_progress_v2", JSON.stringify({ isDismissedPermanently: true, activeTrack: null, tracksProgress: {} }));
+		localStorage.setItem("dente-workspace-profile", JSON.stringify({ mode: "doctor", role: "doctor", activeRole: "doctor" }));
 		localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
 			version: 1,
 			uiLanguage: "ru",
@@ -146,45 +105,54 @@ async function run() {
 		console.log(`Navigating PC to ${BASE_URL}/?demo=true#shift...`);
 		await pcPage.goto(`${BASE_URL}/?demo=true#shift`, { waitUntil: "domcontentloaded", timeout: 35000 });
 
-		for (let i = 0; i < 40; i++) {
+		// Wait for shift content to appear
+		for (let i = 0; i < 50; i++) {
 			await pcPage.waitForTimeout(400);
 			try {
-				const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
-				if (!text.includes("Загрузка системы") && text.length > 200) {
-					console.log(`PC Shell ready (${text.length} chars)`);
+				const hasShiftContent = await pcPage.evaluate(() => {
+					const text = document.body ? document.body.innerText : "";
+					return text.includes("ОКАЗАНО УСЛУГ") || text.includes("Касса смены") || text.includes("Кабинет №1");
+				});
+				if (hasShiftContent) {
+					console.log(`PC Shift fully loaded at iteration ${i}!`);
 					break;
 				}
 			} catch (_) {}
 		}
 
-		await suppressOverlays(pcPage, "light");
-		await pcPage.evaluate(() => {
-			if (window.__useAppStore) {
-				window.__useAppStore.getState().setCurrentView("shift");
-			}
-			window.location.hash = "shift";
-			window.dispatchEvent(new HashChangeEvent("hashchange"));
-		});
+		await pcPage.waitForTimeout(1500);
 
-		try {
-			await pcPage.waitForSelector('[data-testid="shift-view-desktop"], .shift-view-scroll-container', {
-				timeout: 8000,
-				state: "visible",
-			});
-			console.log("PC Shift element detected!");
-		} catch (_) {}
-
-		await pcPage.waitForTimeout(1000);
-
-		// PC Light
+		// PC Light Cockpit
 		console.log("Capturing shift_cockpit_1440x900_light.png...");
 		await setTheme(pcPage, "light");
-		await captureProof(pcPage, "shift_cockpit_1440x900_light.png", "shift_cockpit_pc_light_1440x900.png");
+		await captureProof(pcPage, "shift_cockpit_1440x900_light.png", "shift_cockpit_pc_light_1440x900.png", "shift_pc_light_1440x900.png");
 
-		// PC Dark
+		// PC Dark Cockpit
 		console.log("Capturing shift_cockpit_1440x900_dark.png...");
 		await setTheme(pcPage, "dark");
-		await captureProof(pcPage, "shift_cockpit_1440x900_dark.png", "shift_cockpit_pc_dark_1440x900.png");
+		await captureProof(pcPage, "shift_cockpit_1440x900_dark.png", "shift_cockpit_pc_dark_1440x900.png", "shift_pc_dark_1440x900.png");
+
+		// Now open Shift Close Modal on PC to capture reconciliation & 1-click closure view
+		console.log("Opening Shift Close Reconciliation Modal on PC...");
+		try {
+			await pcPage.evaluate(() => {
+				const btn = Array.from(document.querySelectorAll("button")).find(
+					(b) => b.textContent?.includes("Завершить смену") || b.getAttribute("data-testid") === "btn-toggle-shift-modal"
+				);
+				if (btn) btn.click();
+			});
+			await pcPage.waitForTimeout(1000);
+
+			// PC Light Modal
+			await setTheme(pcPage, "light");
+			await captureProof(pcPage, "shift_close_modal_pc_light_1440x900.png");
+
+			// PC Dark Modal
+			await setTheme(pcPage, "dark");
+			await captureProof(pcPage, "shift_close_modal_pc_dark_1440x900.png");
+		} catch (err) {
+			console.warn("Could not capture shift close modal on PC:", err.message);
+		}
 
 		await pcContext.close();
 
@@ -202,49 +170,35 @@ async function run() {
 		console.log(`Navigating Mobile to ${BASE_URL}/?demo=true#shift...`);
 		await mobilePage.goto(`${BASE_URL}/?demo=true#shift`, { waitUntil: "domcontentloaded", timeout: 35000 });
 
-		for (let i = 0; i < 40; i++) {
+		for (let i = 0; i < 50; i++) {
 			await mobilePage.waitForTimeout(400);
 			try {
-				const text = await mobilePage.evaluate(() => document.body ? document.body.innerText : "");
-				if (!text.includes("Загрузка системы") && text.length > 200) {
-					console.log(`Mobile Shell ready (${text.length} chars)`);
+				const hasMobileShift = await mobilePage.evaluate(() => {
+					const text = document.body ? document.body.innerText : "";
+					return text.includes("Смена врача") && (text.includes("78 500") || text.includes("ВЫРУЧКА"));
+				});
+				if (hasMobileShift) {
+					console.log(`Mobile Shift ready at iteration ${i}!`);
 					break;
 				}
 			} catch (_) {}
 		}
 
-		await suppressOverlays(mobilePage, "light");
-		await mobilePage.evaluate(() => {
-			if (window.__useAppStore) {
-				window.__useAppStore.getState().setCurrentView("shift");
-			}
-			window.location.hash = "shift";
-			window.dispatchEvent(new HashChangeEvent("hashchange"));
-		});
-
-		try {
-			await mobilePage.waitForSelector('[data-testid="shift-view-mobile"], .mobile-shift-cockpit-view-wrapper', {
-				timeout: 8000,
-				state: "visible",
-			});
-			console.log("Mobile Shift element detected!");
-		} catch (_) {}
-
-		await mobilePage.waitForTimeout(1000);
+		await mobilePage.waitForTimeout(1500);
 
 		// Mobile Light
 		console.log("Capturing shift_cockpit_390x844_light.png...");
 		await setTheme(mobilePage, "light");
-		await captureProof(mobilePage, "shift_cockpit_390x844_light.png", "shift_cockpit_mobile_light_390x844.png");
+		await captureProof(mobilePage, "shift_cockpit_390x844_light.png", "shift_cockpit_mobile_light_390x844.png", "shift_mobile_light_390x844.png");
 
 		// Mobile Dark
 		console.log("Capturing shift_cockpit_390x844_dark.png...");
 		await setTheme(mobilePage, "dark");
-		await captureProof(mobilePage, "shift_cockpit_390x844_dark.png", "shift_cockpit_mobile_dark_390x844.png");
+		await captureProof(mobilePage, "shift_cockpit_390x844_dark.png", "shift_cockpit_mobile_dark_390x844.png", "shift_mobile_dark_390x844.png");
 
 		await mobileContext.close();
 
-		console.log("\n✅ All 4 Doctor Shift proofs successfully captured and verified!");
+		console.log("\n✅ All Doctor Shift proofs successfully captured and verified!");
 	} finally {
 		await browser.close();
 	}

@@ -15,6 +15,8 @@ export interface DoctorShiftCloseCashSectionProps {
 	readonly onSetPrintZReport: (val: boolean) => void;
 	readonly printShiftSummary: boolean;
 	readonly onSetPrintShiftSummary: (val: boolean) => void;
+	readonly onExecuteEncashment?: (() => void) | undefined;
+	readonly isEncashmentDone?: boolean | undefined;
 }
 
 export const DoctorShiftCloseCashSection: React.FC<DoctorShiftCloseCashSectionProps> = ({
@@ -30,6 +32,8 @@ export const DoctorShiftCloseCashSection: React.FC<DoctorShiftCloseCashSectionPr
 	onSetPrintZReport,
 	printShiftSummary,
 	onSetPrintShiftSummary,
+	onExecuteEncashment,
+	isEncashmentDone,
 }) => (
 	<div className="space-y-3">
 		<DoctorShiftCloseBreakdownCard
@@ -49,6 +53,8 @@ export const DoctorShiftCloseCashSection: React.FC<DoctorShiftCloseCashSectionPr
 			onSetPrintZReport={onSetPrintZReport}
 			printShiftSummary={printShiftSummary}
 			onSetPrintShiftSummary={onSetPrintShiftSummary}
+			onExecuteEncashment={onExecuteEncashment}
+			isEncashmentDone={isEncashmentDone}
 		/>
 	</div>
 );

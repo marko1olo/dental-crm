@@ -1,5 +1,5 @@
 import React from "react";
-import { Banknote, CreditCard, QrCode, Zap } from "lucide-react";
+import { Banknote, CreditCard, QrCode, Wallet, Zap } from "lucide-react";
 import { money } from "../../../AppHelpers";
 
 export interface MobileShiftHeroCardProps {
@@ -10,6 +10,7 @@ export interface MobileShiftHeroCardProps {
 	readonly cashInDrawerRub?: number;
 	readonly cardSumRub?: number;
 	readonly sbpSumRub?: number;
+	readonly depositSumRub?: number;
 	readonly doctorCommissionPct?: number;
 	readonly estimatedDoctorPayoutRub?: number;
 	readonly userRole?: string | undefined;
@@ -23,6 +24,7 @@ export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
 	cashInDrawerRub = 15000,
 	cardSumRub = 22500,
 	sbpSumRub = 5000,
+	depositSumRub = 0,
 	doctorCommissionPct = 30,
 	estimatedDoctorPayoutRub = 12750,
 	userRole,
@@ -75,6 +77,12 @@ export const MobileShiftHeroCard: React.FC<MobileShiftHeroCardProps> = ({
 							<QrCode size={11} /> СБП QR
 						</span>
 						<span className="mobile-shift-channel-sum">{money(sbpSumRub)}</span>
+					</div>
+					<div className="mobile-shift-channel-item">
+						<span className="mobile-shift-channel-title" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+							<Wallet size={11} /> Депозиты
+						</span>
+						<span className="mobile-shift-channel-sum">{money(depositSumRub)}</span>
 					</div>
 				</div>
 			)}

@@ -157,7 +157,8 @@ export function useShiftViewController({
 		}
 	};
 
-	const handleConfirmCloseShift = async () => {
+	// biome-ignore lint/suspicious/noExplicitAny: close shift summary
+	const handleConfirmCloseShift = async (summary?: any) => {
 		setIsShiftOpen(false);
 		setIsShiftCloseModalOpen(false);
 		try {
@@ -167,13 +168,27 @@ export function useShiftViewController({
 		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
 		const dashAny = dashboard as any;
 		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName, {
-			totalAppointments: shiftStats.totalAppointments, completedCount: shiftStats.completedCount,
-			totalRevenueRub: shiftStats.totalRevenueRub, estimatedDoctorPayoutRub: shiftStats.estimatedDoctorPayoutRub,
+			totalAppointments: shiftStats.totalAppointments,
+			completedCount: shiftStats.completedCount,
+			totalRevenueRub: shiftStats.totalRevenueRub,
+			estimatedDoctorPayoutRub: summary?.calculatedPayoutRub ?? shiftStats.estimatedDoctorPayoutRub,
+			countedCashRub: summary?.countedCashRub,
 		});
 		try {
 			await fetch("/api/fiscal/shift/close", {
-				method: "POST", headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ force: true, closedByUserId: dashAny?.activeAppointment?.doctorId }),
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					force: true,
+					closedByUserId: dashAny?.activeAppointment?.doctorId,
+					countedCashRub: summary?.countedCashRub,
+					printZReport: summary?.printZReport,
+					incomeCashRub: shiftStats?.cashBreakdown?.cashRub,
+					incomeElectronicRub: shiftStats?.cashBreakdown?.cardRub,
+					incomeSbpRub: shiftStats?.cashBreakdown?.sbpRub,
+					advanceOffsetRub: shiftStats?.cashBreakdown?.depositRub,
+					netRevenueRub: shiftStats?.totalRevenueRub,
+				}),
 			});
 		} catch {}
 	};

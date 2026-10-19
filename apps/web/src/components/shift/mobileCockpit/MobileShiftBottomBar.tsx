@@ -65,7 +65,7 @@ export const MobileShiftBottomBar: React.FC<MobileShiftBottomBarProps> = ({
 				{isShiftOpen ? (
 					<>
 						<CheckCircle2 size={19} />
-						<span>Закрыть смену</span>
+						<span>Закрыть смену и Z-отчёт</span>
 					</>
 				) : (
 					<>
