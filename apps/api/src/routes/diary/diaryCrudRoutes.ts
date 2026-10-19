@@ -62,13 +62,13 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 				organizationId: orgId,
 				patientId: "unknown",
 				action: "ACCESS_DENIED_DIARY",
-				diagnosis: "Попытка несанкционированного доступа к дневнику 043/у (152-ФЗ)",
+				diagnosis: "Попытка несанкционированного доступа к дневнику приёма (152-ФЗ)",
 			});
 			return reply.code(403).send({
 				error: "PermissionDenied",
 				permission: "clinical.diary.read",
 				role: staffRole,
-				message: `Отказ в доступе к дневнику 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в доступе к дневнику приёма (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
 			});
 		}
 
@@ -208,7 +208,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 				error: "PermissionDenied",
 				permission: "clinical.diary.write",
 				role: staffRole,
-				message: `Отказ в записи дневника 043/у (152-ФЗ / 323-ФЗ): ${evalAccess.reason}. Набранный текст остаётся в форме, не закрывайте окно приёма. Обратитесь к администратору клиники.`,
+				message: `Отказ в записи дневника приёма (152-ФЗ / 323-ФЗ): ${evalAccess.reason}. Набранный текст остаётся в форме, не закрывайте окно приёма. Обратитесь к администратору клиники.`,
 			});
 		}
 
@@ -227,11 +227,11 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 		data.organizationId = orgId;
 
 		/*
-		 * Привязка 043/у к реальному приёму клиники.
+		 * Привязка дневника к реальному приёму клиники.
 		 * БЫЛО: insert/update visit_diaries с visitId/patientId из тела без
 		 * проверки visits. У visit_diaries.visit_id НЕТ FK — любой UUID
 		 * принимался. Можно было завести дневник на чужой/несуществующий
-		 * приём или подменить patientId (хеш 043/у и печать — на «левом»
+		 * приём или подменить patientId (хеш карты и печать — на «левом»
 		 * пациенте). СТАЛО: visit ∈ org, patientId совпадает с карточкой
 		 * приёма — до транзакции и до записи на диск/в БД.
 		 */
@@ -244,7 +244,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 			return reply.code(403).send({
 				error: "VisitNotInClinic",
 				message:
-					"Приём не найден в этой клинике — дневник 043/у к нему не привязать. Откройте приём заново из расписания.",
+					"Приём не найден в этой клинике — дневник приёма к нему не привязать. Откройте приём заново из расписания.",
 			});
 		}
 		if (visitForDiary.patientId !== data.patientId) {
