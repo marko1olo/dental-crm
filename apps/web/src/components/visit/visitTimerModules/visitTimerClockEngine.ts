@@ -1,6 +1,8 @@
 import { formatTimerSeconds } from "../clinicalVisitWorkflow";
 
-export function computeChairElapsed(startTimeIso: string | null | undefined): string {
+export function computeChairElapsed(
+	startTimeIso: string | null | undefined,
+): string {
 	if (!startTimeIso || typeof startTimeIso !== "string") return "";
 	const start = new Date(startTimeIso).getTime();
 	if (!Number.isFinite(start) || Number.isNaN(start)) return "";
@@ -14,7 +16,10 @@ export function computeDoctorElapsed(
 	sliceStartMs: number,
 ): string {
 	if (isDoctorHere) {
-		const currentSliceSec = Math.max(0, Math.floor((Date.now() - sliceStartMs) / 1000));
+		const currentSliceSec = Math.max(
+			0,
+			Math.floor((Date.now() - sliceStartMs) / 1000),
+		);
 		return formatTimerSeconds(doctorWorkSec + currentSliceSec);
 	}
 	return formatTimerSeconds(doctorWorkSec);

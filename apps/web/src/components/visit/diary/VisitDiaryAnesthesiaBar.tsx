@@ -1,23 +1,29 @@
-import React from "react";
 import { Syringe } from "lucide-react";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { AnesthesiaQuickBar } from "../../anesthesia/AnesthesiaQuickBar";
 import type { AnestheticDrugId } from "../../anesthesia/anesthesiaCatalog";
 import type { DiaryState } from "../../useVisitDiaryLogic";
-import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
+import {
+	extractPatientAnesthesiaProfile,
+	getPassiveAnesthesiaAlert,
+} from "./visitDiaryAnesthesiaSafety";
 
 export interface VisitDiaryAnesthesiaBarProps {
 	readonly fieldsDisabled: boolean;
-	readonly activePatient?: any;
+	readonly activePatient?: unknown;
 	readonly diary: DiaryState;
 	readonly doctorName: string;
 	readonly isLocked: boolean;
 	readonly isRevising: boolean;
 	readonly beginRevise: () => void;
 	readonly applyAnesthesiaPreset: (preset: string) => void;
-	readonly onDisposalCarpules: (count: number, drugId: AnestheticDrugId) => void;
+	readonly onDisposalCarpules: (
+		count: number,
+		drugId: AnestheticDrugId | string,
+	) => void;
 	readonly onOpenEmergencyProtocol?: () => void;
-	readonly patientId?: string;
-	readonly visitId?: string;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 }
 
 export function VisitDiaryAnesthesiaBar({
@@ -37,35 +43,15 @@ export function VisitDiaryAnesthesiaBar({
 	if (fieldsDisabled) return null;
 
 	const ensureRevisingIfLocked = () => {
-		if (isLocked && !isRevising) {
-			beginRevise();
-		}
+		if (isLocked && !isRevising) beginRevise();
 	};
 
-	const hasLidocaineAllergy = Boolean(
-		(activePatient as any)?.clinicalSafetyProfile?.hasLidocaineAllergy ||
-		(activePatient as any)?.administrativeProfile?.hasLidocaineAllergy ||
-		(activePatient as any)?.administrativeProfile?.clinicalSafetyProfile?.hasLidocaineAllergy ||
-		(typeof (activePatient as any)?.allergies === "string" && (activePatient as any).allergies.toLowerCase().includes("лидокаин")) ||
-		(Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => String(a).toLowerCase().includes("лидокаин"))) ||
-		(typeof (activePatient as any)?.notes === "string" && (activePatient as any).notes.toLowerCase().includes("лидокаин")) ||
-		(typeof (activePatient as any)?.anamnesis === "string" && (activePatient as any).anamnesis.toLowerCase().includes("лидокаин")) ||
-		diary.comorbidities?.toLowerCase().includes("лидокаин"),
-	);
-
-	const hasArticaineAllergy = Boolean(
-		(activePatient as any)?.clinicalSafetyProfile?.hasArticaineAllergy ||
-		(activePatient as any)?.administrativeProfile?.hasArticaineAllergy ||
-		(activePatient as any)?.administrativeProfile?.clinicalSafetyProfile?.hasArticaineAllergy ||
-		(typeof (activePatient as any)?.allergies === "string" && (activePatient as any).allergies.toLowerCase().includes("артикаин")) ||
-		(Array.isArray((activePatient as any)?.allergies) && (activePatient as any).allergies.some((a: string) => String(a).toLowerCase().includes("артикаин"))) ||
-		(typeof (activePatient as any)?.notes === "string" && (activePatient as any).notes.toLowerCase().includes("артикаин")) ||
-		(typeof (activePatient as any)?.anamnesis === "string" && (activePatient as any).anamnesis.toLowerCase().includes("артикаин")) ||
-		diary.comorbidities?.toLowerCase().includes("артикаин"),
-	);
+	const safety = extractPatientAnesthesiaProfile(activePatient, diary);
+	const passiveAlert = getPassiveAnesthesiaAlert(safety);
 
 	return (
 		<details
+			open
 			className="group rounded-2xl border border-[var(--glass-border)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
 			data-testid="anesthesia-quick-logger-bar"
 		>
@@ -79,62 +65,24 @@ export function VisitDiaryAnesthesiaBar({
 				</span>
 			</summary>
 			<div className="pt-2.5">
+				{passiveAlert && (
+					<div
+						data-testid="anesthesia-passive-allergy-alert"
+						className="mb-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-1.5 font-medium"
+					>
+						<span>⚠️</span>
+						<span>{passiveAlert}</span>
+					</div>
+				)}
 				<AnesthesiaQuickBar
-					patientWeightKg={
-						typeof (activePatient as any)?.weightKg === "number" &&
-						(activePatient as any).weightKg > 0
-							? (activePatient as any).weightKg
-							: typeof (activePatient as any)?.administrativeProfile?.weightKg ===
-										"number" &&
-								  (activePatient as any).administrativeProfile.weightKg > 0
-								? (activePatient as any).administrativeProfile.weightKg
-								: 70
-					}
+					patientWeightKg={safety.patientWeightKg}
 					targetToothNumberFdi={diary.diagnosisTooth || 16}
-					hasCardiovascularRisk={
-						Boolean(
-							(activePatient as any)?.clinicalSafetyProfile
-								?.hasCardiovascularDisease,
-						) ||
-						Boolean(
-							(activePatient as any)?.clinicalSafetyProfile
-								?.hasPacemakerExs,
-						) ||
-						Boolean(
-							(activePatient as any)?.clinicalSafetyProfile
-								?.hasHypertension,
-						) ||
-						diary.comorbidities?.toLowerCase().includes("сердц") ||
-						diary.comorbidities?.toLowerCase().includes("давлен") ||
-						diary.comorbidities?.toLowerCase().includes("ибс") ||
-						diary.comorbidities?.toLowerCase().includes("гипертон")
-					}
-					hasSulfiteAllergy={
-						Boolean(
-							(activePatient as any)?.clinicalSafetyProfile
-								?.hasSulfiteAllergy,
-						) ||
-						diary.comorbidities?.toLowerCase().includes("сульфит") ||
-						diary.comorbidities?.toLowerCase().includes("аллерги")
-					}
-					hasBronchialAsthma={
-						Boolean(
-							(activePatient as any)?.clinicalSafetyProfile
-								?.hasBronchialAsthma,
-						) ||
-						diary.comorbidities?.toLowerCase().includes("астм") ||
-						diary.comorbidities?.toLowerCase().includes("бронх")
-					}
-					isPregnantOrLactating={
-						((activePatient as any)?.clinicalSafetyProfile
-							?.pregnancyTrimester &&
-							(activePatient as any).clinicalSafetyProfile
-								.pregnancyTrimester !== "none") ||
-						diary.comorbidities?.toLowerCase().includes("беремен") ||
-						diary.comorbidities?.toLowerCase().includes("лактац")
-					}
-					hasLidocaineAllergy={hasLidocaineAllergy}
-					hasArticaineAllergy={hasArticaineAllergy}
+					hasCardiovascularRisk={safety.hasCardiovascularRisk}
+					hasSulfiteAllergy={safety.hasSulfiteAllergy}
+					hasBronchialAsthma={safety.hasBronchialAsthma}
+					isPregnantOrLactating={safety.isPregnantOrLactating}
+					hasLidocaineAllergy={safety.hasLidocaineAllergy}
+					hasArticaineAllergy={safety.hasArticaineAllergy}
 					disabled={fieldsDisabled}
 					patientId={patientId}
 					visitId={visitId}
@@ -143,7 +91,7 @@ export function VisitDiaryAnesthesiaBar({
 						applyAnesthesiaPreset(text);
 					}}
 					onDisposalCarpules={(count, drugId) => {
-						onDisposalCarpules(count, drugId);
+						onDisposalCarpules(count, drugId || "articaine_1_100k");
 					}}
 					onOpenEmergencyProtocol={
 						onOpenEmergencyProtocol ||

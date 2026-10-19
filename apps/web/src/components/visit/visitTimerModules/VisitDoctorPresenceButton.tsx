@@ -1,5 +1,4 @@
-import React from "react";
-import { UserCheck, Pause } from "lucide-react";
+import { Pause, UserCheck } from "lucide-react";
 
 export interface VisitDoctorPresenceButtonProps {
 	readonly isDoctorHere: boolean;
@@ -30,13 +29,19 @@ export function VisitDoctorPresenceButton({
 		>
 			{isDoctorHere ? (
 				<>
-					<UserCheck size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+					<UserCheck
+						size={13}
+						className="shrink-0 text-emerald-600 dark:text-emerald-400"
+					/>
 					<span>Врач: {doctorElapsed}</span>
 					<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
 				</>
 			) : (
 				<>
-					<Pause size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+					<Pause
+						size={13}
+						className="shrink-0 text-amber-600 dark:text-amber-400"
+					/>
 					<span>Врач (пауза): {doctorElapsed}</span>
 				</>
 			)}

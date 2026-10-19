@@ -1,12 +1,10 @@
 import { Clock } from "lucide-react";
-import React from "react";
 import type {
-	DoctorChairSession,
 	ChairSessionStatus,
+	DoctorChairSession,
 } from "./clinicalVisitWorkflow";
 import { useVisitTimerLogic } from "./visitTimerModules/useVisitTimerLogic";
 import { VisitDoctorPresenceButton } from "./visitTimerModules/VisitDoctorPresenceButton";
-import { VisitAnesthesiaCountdownBadge } from "./visitTimerModules/VisitAnesthesiaCountdownBadge";
 
 export interface VisitTimerProps {
 	readonly createdAt?: string | null | undefined;
@@ -28,7 +26,6 @@ export function VisitTimer(props: VisitTimerProps) {
 		chairElapsed,
 		doctorElapsed,
 		isDoctorHere,
-		anesthesiaCountdown,
 		handleTogglePresence,
 	} = useVisitTimerLogic(props);
 
@@ -38,8 +35,7 @@ export function VisitTimer(props: VisitTimerProps) {
 		props.chairSession ||
 			props.showDualMetrics ||
 			props.isDoctorPresent !== undefined ||
-			props.anesthesiaStartedAt ||
-			props.chairSession?.anesthesiaStartedAt,
+			props.anesthesiaStartedAt,
 	);
 
 	return (
@@ -79,11 +75,6 @@ export function VisitTimer(props: VisitTimerProps) {
 					doctorElapsed={doctorElapsed}
 					onTogglePresence={handleTogglePresence}
 				/>
-			)}
-
-			{/* Индикатор ожидания анестезии */}
-			{anesthesiaCountdown && (
-				<VisitAnesthesiaCountdownBadge countdown={anesthesiaCountdown} />
 			)}
 		</div>
 	);

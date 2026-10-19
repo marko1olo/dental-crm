@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
-import type { DoctorChairSession, ChairSessionStatus } from "../clinicalVisitWorkflow";
+import { useCallback, useEffect, useState } from "react";
+import type {
+	ChairSessionStatus,
+	DoctorChairSession,
+} from "../clinicalVisitWorkflow";
 import {
 	computeChairElapsed,
 	computeDoctorElapsed,
-	computeAnesthesiaCountdown,
 } from "./visitTimerClockEngine";
 
 export interface UseVisitTimerLogicParams {
@@ -25,8 +27,8 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		chairId,
 		isDoctorPresent: propDoctorPresent,
 		status: propStatus,
-		anesthesiaStartedAt: propAnesthesiaStartedAt,
-		anesthesiaDurationMinutes: propAnesthesiaDurationMinutes,
+		anesthesiaStartedAt: _propAnesthesiaStartedAt,
+		anesthesiaDurationMinutes: _propAnesthesiaDurationMinutes,
 		doctorActiveSeconds: propDoctorActiveSeconds,
 		onToggleDoctorPresence,
 	} = params;
@@ -38,11 +40,13 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		return true;
 	});
 
-	const [internalStatus, setInternalStatus] = useState<ChairSessionStatus>(() => {
-		if (propStatus) return propStatus;
-		if (chairSession) return chairSession.status;
-		return "active";
-	});
+	const [internalStatus, setInternalStatus] = useState<ChairSessionStatus>(
+		() => {
+			if (propStatus) return propStatus;
+			if (chairSession) return chairSession.status;
+			return "active";
+		},
+	);
 
 	useEffect(() => {
 		if (propDoctorPresent !== undefined) setIsDoctorHere(propDoctorPresent);
@@ -54,13 +58,15 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		else if (chairSession) setInternalStatus(chairSession.status);
 	}, [propStatus, chairSession]);
 
-	const doctorWorkSec = propDoctorActiveSeconds ?? chairSession?.doctorWorkSeconds ?? 0;
-	const [chairElapsed, setChairElapsed] = useState<string>(() => computeChairElapsed(effectiveStartTime));
-	const [doctorElapsed, setDoctorElapsed] = useState<string>(() => computeDoctorElapsed(false, doctorWorkSec, 0));
-	const [anesthesiaCountdown, setAnesthesiaCountdown] = useState<string | null>(null);
-
-	const effectiveAnesStart = propAnesthesiaStartedAt ?? chairSession?.anesthesiaStartedAt ?? null;
-	const effectiveAnesDuration = propAnesthesiaDurationMinutes ?? chairSession?.anesthesiaDurationMinutes ?? 8;
+	const doctorWorkSec =
+		propDoctorActiveSeconds ?? chairSession?.doctorWorkSeconds ?? 0;
+	const [chairElapsed, setChairElapsed] = useState<string>(() =>
+		computeChairElapsed(effectiveStartTime),
+	);
+	const [doctorElapsed, setDoctorElapsed] = useState<string>(() =>
+		computeDoctorElapsed(false, doctorWorkSec, 0),
+	);
+	const [anesthesiaCountdown] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!effectiveStartTime) {
@@ -71,8 +77,9 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		const updateClocks = () => {
 			if (typeof document !== "undefined" && document.hidden) return;
 			setChairElapsed(computeChairElapsed(effectiveStartTime));
-			setDoctorElapsed(computeDoctorElapsed(isDoctorHere, doctorWorkSec, sliceStartMs));
-			setAnesthesiaCountdown(computeAnesthesiaCountdown(effectiveAnesStart, effectiveAnesDuration));
+			setDoctorElapsed(
+				computeDoctorElapsed(isDoctorHere, doctorWorkSec, sliceStartMs),
+			);
 		};
 
 		updateClocks();
@@ -80,13 +87,15 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		const onVisChange = () => {
 			if (typeof document !== "undefined" && !document.hidden) updateClocks();
 		};
-		if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisChange);
+		if (typeof document !== "undefined")
+			document.addEventListener("visibilitychange", onVisChange);
 
 		return () => {
 			clearInterval(interval);
-			if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisChange);
+			if (typeof document !== "undefined")
+				document.removeEventListener("visibilitychange", onVisChange);
 		};
-	}, [effectiveStartTime, isDoctorHere, doctorWorkSec, effectiveAnesStart, effectiveAnesDuration]);
+	}, [effectiveStartTime, isDoctorHere, doctorWorkSec]);
 
 	const handleTogglePresence = useCallback(() => {
 		const nextState = !isDoctorHere;
@@ -95,7 +104,10 @@ export function useVisitTimerLogic(params: UseVisitTimerLogicParams) {
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente-toggle-doctor-presence", {
-					detail: { chairId: chairId || chairSession?.chairId, isDoctorPresent: nextState },
+					detail: {
+						chairId: chairId || chairSession?.chairId,
+						isDoctorPresent: nextState,
+					},
 				}),
 			);
 		}

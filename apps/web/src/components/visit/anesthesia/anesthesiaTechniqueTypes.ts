@@ -1,58 +1,58 @@
 /**
- * anesthesiaTechniqueTypes.ts — Type definitions for dental anesthesia techniques, needles, and zones
- * Standards: Минздрав РФ, СтАР, ФАР, Malamed
+ * anesthesiaTechniqueTypes.ts — Clinical types for dental anesthesia techniques and needles
+ * Standards: Минздрав РФ, СтАР. Mandates: 8e, 8n (Solo Doctor), 8b (<= 120 lines SSOT)
  */
 
 export type ConductionTechniqueId =
-	| 'mandibular_weisbrem'
-	| 'mandibular_gow_gates'
-	| 'mandibular_akinosi'
-	| 'torusal'
-	| 'tuberal'
-	| 'incisive_canal'
-	| 'greater_palatine'
-	| 'infiltration_supraperiosteal'
-	| 'intraligamentary_pdl'
-	| 'intraosseous_quicksleeper'
-	| 'mental_incisive'
-	| 'infraorbital';
+	| "mandibular_weisbrem"
+	| "mandibular_gow_gates"
+	| "mandibular_akinosi"
+	| "torusal"
+	| "tuberal"
+	| "incisive_canal"
+	| "greater_palatine"
+	| "infiltration_supraperiosteal"
+	| "intraligamentary_pdl"
+	| "intraosseous_quicksleeper"
+	| "mental_incisive"
+	| "infraorbital";
 
 export type TechniqueCategory =
-	| 'conduction_mandibular'
-	| 'conduction_maxillary'
-	| 'conduction_palatal'
-	| 'infiltration'
-	| 'intraligamentary_pressure'
-	| 'intraosseous';
+	| "conduction_mandibular"
+	| "conduction_maxillary"
+	| "conduction_palatal"
+	| "infiltration"
+	| "intraligamentary_pressure"
+	| "intraosseous";
 
 export type NeedleGaugeId =
-	| 'gauge_27_long_35mm'
-	| 'gauge_30_medium_25mm'
-	| 'gauge_30_short_21mm'
-	| 'gauge_30_ultrashort_12mm'
-	| 'gauge_30_extrashort_8mm';
+	| "gauge_27_long_35mm"
+	| "gauge_30_medium_25mm"
+	| "gauge_30_short_21mm"
+	| "gauge_30_ultrashort_12mm"
+	| "gauge_30_extrashort_8mm";
 
 export type AnestheticDrugKey =
-	| 'articaine_1_100k'
-	| 'articaine_1_200k'
-	| 'mepivacaine_plain_3'
-	| 'lidocaine_2_100k'
-	| 'bupivacaine_05';
+	| "articaine_1_100k"
+	| "articaine_1_200k"
+	| "mepivacaine_plain_3"
+	| "lidocaine_2_100k"
+	| "bupivacaine_05";
 
-export type VascularRiskTier = 'critical_high' | 'moderate' | 'low' | 'minimal';
+export type VascularRiskTier = "critical_high" | "moderate" | "low" | "minimal";
 
 export interface NeedleSpecification {
 	readonly id: NeedleGaugeId;
-	readonly gauge: string; // "27G" | "30G"
-	readonly externalDiameterMm: number; // 0.40 | 0.30
-	readonly internalDiameterMm: number; // 0.20 | 0.15
-	readonly lengthMm: number; // 35 | 25 | 21 | 12 | 8
-	readonly colorCode: string; // "#eab308" (Yellow), "#3b82f6" (Blue), "#22c55e" (Green), "#a855f7" (Purple)
-	readonly capColorRu: string; // "Желтый", "Синий", "Зеленый", "Фиолетовый"
+	readonly gauge: string;
+	readonly externalDiameterMm: number;
+	readonly internalDiameterMm: number;
+	readonly lengthMm: number;
+	readonly colorCode: string;
+	readonly capColorRu: string;
 	readonly nameRu: string;
 	readonly primaryIndicationsRu: string;
-	readonly aspirationLumenSafety: 'high' | 'medium' | 'restricted_lumen';
-	readonly deflectionResistancePercent: number; // e.g. 90% for 27G vs 45% for 30G 25mm
+	readonly aspirationLumenSafety: "high" | "medium" | "restricted_lumen";
+	readonly deflectionResistancePercent: number;
 }
 
 export interface AnatomicNumbnessZones {
@@ -77,38 +77,20 @@ export interface TechniqueSpecification {
 	readonly targetNervesRu: readonly string[];
 	readonly recommendedNeedle: NeedleGaugeId;
 	readonly allowedNeedles: readonly NeedleGaugeId[];
-	readonly insertionDepthMm: {
-		readonly min: number;
-		readonly max: number;
-		readonly target: number;
-	};
+	readonly insertionDepthMm: { readonly min: number; readonly max: number; readonly target: number };
 	readonly requiresBoneContact: boolean;
 	readonly typicalVolumeCarpules: number;
 	readonly typicalVolumeMl: number;
 	readonly minVolumeMl: number;
 	readonly maxVolumeMl: number;
-	readonly targetPressureAtm: {
-		readonly min: number;
-		readonly max: number;
-		readonly isHighPressure: boolean;
-	};
+	readonly targetPressureAtm: { readonly min: number; readonly max: number; readonly isHighPressure: boolean };
 	readonly baseVascularHitRiskPercent: number;
 	readonly vascularRiskTier: VascularRiskTier;
-	readonly onsetMinutes: {
-		readonly min: number;
-		readonly max: number;
-		readonly defaultWaitTimeSec: number;
-	};
-	readonly pulpalDurationMinutes: {
-		readonly min: number;
-		readonly max: number;
-	};
-	readonly softTissueDurationMinutes: {
-		readonly min: number;
-		readonly max: number;
-	};
+	readonly onsetMinutes: { readonly min: number; readonly max: number; readonly defaultWaitTimeSec: number };
+	readonly pulpalDurationMinutes: { readonly min: number; readonly max: number };
+	readonly softTissueDurationMinutes: { readonly min: number; readonly max: number };
 	readonly anatomicZones: AnatomicNumbnessZones;
-	readonly aspirationPlanesRequired: number; // 2 for mandibular/tuberal, 1 for infiltration
+	readonly aspirationPlanesRequired: number;
 	readonly clinicalRecommendationsRu: string;
 	readonly contraindicationsOrCautionsRu: readonly string[];
 }
@@ -119,7 +101,7 @@ export interface AnestheticDrugSpec {
 	readonly activeSubstanceRu: string;
 	readonly activeConcentrationPercent: number;
 	readonly mgPerMlActive: number;
-	readonly vasoconstrictorRatio: '1:100000' | '1:200000' | 'none';
+	readonly vasoconstrictorRatio: "1:100000" | "1:200000" | "none";
 	readonly vasoconstrictorNameRu: string;
 	readonly epinephrineMgPerMl: number;
 	readonly standardCarpuleVolumeMl: number;
