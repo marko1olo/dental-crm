@@ -16,30 +16,39 @@ export interface EmkAnesthesiaPreset {
 export const EMK_ANESTHESIA_PRESETS: readonly EmkAnesthesiaPreset[] = [
 	{
 		key: "ultracain_ds",
-		title: "Ультракаин Д-С 1:200k (1 карп.)",
-		shortLabel: "Ультракаин Д-С 1:200k",
+		title: "Ультракаин Д-С (1:200 000) 1.7 мл",
+		shortLabel: "Ультракаин Д-С (1:200 000) 1.7 мл",
 		clinicalNote:
-			"Анестезия: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
+			"Инфильтрационная анестезия Sol. Ultracaini D-S 1:200 000 — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-infiltration-standard",
 		priceRub: 950,
 	},
 	{
 		key: "ultracain_ds_forte",
-		title: "Ультракаин Форте 1:100k (1 карп.)",
-		shortLabel: "Ультракаин Форте 1:100k",
+		title: "Ультракаин Д-С форте (1:100 000) 1.7 мл",
+		shortLabel: "Ультракаин Д-С форте (1:100 000) 1.7 мл",
 		clinicalNote:
-			"Анестезия: проводниковая/инфильтрационная Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
+			"Инфильтрационная анестезия Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-conduction-forte",
 		priceRub: 1100,
 	},
 	{
 		key: "scandonest_3",
-		title: "Скандонест 3% (без адреналина)",
-		shortLabel: "Скандонест 3% (кардио)",
+		title: "Скандонест 3% (без адреналина) 1.8 мл",
+		shortLabel: "Скандонест 3% (без адреналина) 1.8 мл",
 		clinicalNote:
-			"Анестезия: инфильтрационная Sol. Scandonest 3% (без адреналина) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание достаточное.",
+			"Инфильтрационная анестезия Sol. Scandonest 3% (без адреналина) — 1.8 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-plain-mepivacaine",
 		priceRub: 1050,
 		isAdrenalineFree: true,
+	},
+	{
+		key: "ubistesin_1_7",
+		title: "Убистезин 1.7 мл",
+		shortLabel: "Убистезин 1.7 мл",
+		clinicalNote:
+			"Инфильтрационная анестезия Sol. Ubistesin 1:200 000 — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
+		procedureCode: "anes-ubistesin-standard",
+		priceRub: 1000,
 	},
 ];

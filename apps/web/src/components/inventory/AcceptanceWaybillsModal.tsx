@@ -711,11 +711,11 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 							type="button"
 							className="acceptance-btn-secondary"
 							onClick={handlePrintTorg12}
-							title="Печать приходной накладной (ТОРГ-12)"
+							title="Печать приходной накладной (форма ТОРГ-12)"
 							data-testid="btn-print-torg12"
 						>
 							<Printer size={15} />
-							<span>Печать ТОРГ-12</span>
+							<span>Печать накладной</span>
 						</button>
 
 						<button

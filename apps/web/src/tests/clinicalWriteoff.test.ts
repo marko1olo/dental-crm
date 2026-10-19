@@ -789,13 +789,13 @@ describe("React SSR-Safety & Component Rendering", () => {
 		);
 
 		assert.ok(html.includes("data-testid=\"clinical-writeoff-modal\""));
-		assert.ok(html.includes("Клиническое автосписание материалов (Приказ № 804н)"));
+		assert.ok(html.includes("Клиническое списание материалов"));
 		assert.ok(html.includes("Смирнов Алексей Викторович"));
 		assert.ok(html.includes("Д-р Кузнецов М.С."));
 		assert.ok(html.includes("A16.07.002.001"));
 		assert.ok(html.includes("Зуб №26"));
 		assert.ok(html.includes("Списать материалы в наряд"));
-		assert.ok(html.includes("Акт 0504230 (Минфин 52н)"));
+		assert.ok(html.includes("Акт списания материалов"));
 	});
 
 	it("ClinicalWriteoffModal возвращает пустую строку при isOpen = false", () => {

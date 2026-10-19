@@ -32,7 +32,7 @@ describe("ShiftBatchDeductionModal SSR & Component Verification (Mandates 8e, 8n
 		);
 
 		assert.ok(html.includes("Списание расходников за смену"), "Должен быть заголовок списания смены");
-		assert.ok(html.includes("1 клик по техкартам BOM"), "Должен быть бейдж автосписания BOM");
+		assert.ok(html.includes("1 клик по техкартам"), "Должен быть бейдж автосписания по техкартам");
 		assert.ok(html.includes("Мягкий овердрафт"), "Должно быть упоминание мягкого овердрафта (Мандат 8n)");
 		assert.ok(html.includes("btn-confirm-shift-batch-deduction"), "Должна быть кнопка подтверждения списания");
 	});

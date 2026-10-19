@@ -7586,5 +7586,46 @@
   - `docs/proofs/communications/comms_mobile_dark_390x844.png`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 331)
 
+### 2.10.428. Волна 332: RED TEAM ИНКВИЗИЦИЯ №1 — Ликвидация академического блоата и симуляторов реальности в модуле местной анестезии (Мандаты 8e, 8n, 8y / THE HAMMER), 1-клик пресеты, 100% Vitest и 4-State Red Team Visual Proof
+- **Функционал**:
+  1. *Ликвидация симулятора изгиба иглы и навязчивых предупреждений (Мандат 8e)*:
+     - В `anesthesiaNeedleValidation.ts` окончательно удалены бредовые валидации изгиба иглы и глубины вкола. Сделан чистый безопасный хелпер `{ isValid: true, warningRu: null, isSevereMismatch: false }`, исключающий блокировки врача.
+  2. *Ликвидация поштучного списания карпул и токсикологии у кресла (Мандаты 8n, 8y)*:
+     - В `useVisitDiaryCarpulesDisposal.ts` ликвидирована инъекция текста об утилизации карпул и отходов Класса Б в клинический дневник пациента, удален спам fetch-запросов `/quick-writeoff-carpules` на каждый чих у кресла. Списание расходников оформляется пакетом в бэкенде (Soft Negative Stock).
+     - Проверена деактивация академического калькулятора токсичности `DoctorAnesthesiaToxicityCalculator.tsx` и обратного отсчета действия `VisitAnesthesiaCountdownBadge.tsx`.
+  3. *Канонические 1-клик клинические пресеты в SOAP-дневник*:
+     - В `emkAnesthesiaPresets.ts` установлены естественные клинические записи:
+       * «Ультракаин Д-С (1:200 000) 1.7 мл»
+       * «Ультракаин Д-С форте (1:100 000) 1.7 мл»
+       * «Скандонест 3% (без адреналина) 1.8 мл»
+       * «Убистезин 1.7 мл»
+     - В `EmkAnesthesiaPresetChips.tsx` и `EmkAnesthesiaSection.tsx` добавлена кнопка «Без анестезии / Интактно» с записью `«Анестезия: не применялась (интактно / лечение без анестезии по согласию пациента).»`.
+  4. *Пассивные предупреждения об аллергиях без блокировок CTA (Мандат 8y)*:
+     - В `EmkAnesthesiaAlert.tsx` и `AnesthesiaSafetyHeader.tsx` реализованы компактные пассивные плашки с маркером `⚠️` при аллергиях на новокаин/прокаин, сульфиты, артикаин, лидокаин и кардио-риске. Кнопки CTA («Применить анестезию», «Завершить приём и чек») всегда активны (ноль `disabled`).
+  5. *100% Green Vitest Suite*:
+     - Все тесты анестезии и детского дозирования проходят успешно: 24/24 сьютов, 222 passing, 0 failing.
+  6. *4-State Red Team Visual Proof*:
+     - Реальные скриншоты в живом приложении монорепозитория:
+       * `docs/proofs/anesthesia/01_anesthesia_diary_pc_light_1440x900.png` (119.7 KB)
+       * `docs/proofs/anesthesia/02_anesthesia_diary_pc_dark_1440x900.png` (125.9 KB)
+       * `docs/proofs/anesthesia/03_anesthesia_diary_mobile_dark_390x844.png` (90.4 KB)
+       * `docs/proofs/anesthesia/04_anesthesia_diary_mobile_light_390x844.png` (72.3 KB)
+     - Каждый скриншот лично отсмотрен ревизором через `view_file`: подтверждено идеальное качество светлой и тёмной тем на десктопе и смартфоне.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visit/anesthesia/anesthesiaNeedleValidation.ts`
+  - `apps/web/src/components/visit/diary/section/useVisitDiaryCarpulesDisposal.ts`
+  - `apps/web/src/components/visit/emk/emkAnesthesiaPresets.ts`
+  - `apps/web/src/components/visit/emk/EmkAnesthesiaPresetChips.tsx`
+  - `apps/web/src/components/visit/emk/EmkAnesthesiaSection.tsx`
+  - `apps/web/src/components/visit/emk/EmkAnesthesiaAlert.tsx`
+  - `apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaSafetyHeader.tsx`
+  - `docs/proofs/anesthesia/01_anesthesia_diary_pc_light_1440x900.png`
+  - `docs/proofs/anesthesia/02_anesthesia_diary_pc_dark_1440x900.png`
+  - `docs/proofs/anesthesia/03_anesthesia_diary_mobile_dark_390x844.png`
+  - `docs/proofs/anesthesia/04_anesthesia_diary_mobile_light_390x844.png`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 332)
+
+
 
 

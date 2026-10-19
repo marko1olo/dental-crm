@@ -358,7 +358,7 @@ export function calculateClassBWasteWeightKg(
  */
 export const consumableItemLinkSchema = z.object({
 	id: z.string().min(1, "ID связи обязателен"),
-	service804nCode: z.string().min(1, "Код номенклатуры 804н обязателен"),
+	service804nCode: z.string().min(1, "Код услуги обязателен"),
 	serviceTitle: z.string().min(1, "Наименование услуги обязательно"),
 	inventoryItemId: z.string().min(1, "ID складской номенклатуры обязателен"),
 	itemName: z.string().min(1, "Наименование расходного материала обязательно"),
@@ -375,7 +375,7 @@ export type ConsumableItemLink = z.input<typeof consumableItemLinkSchema>;
  * Rendered service in a completed or in-progress clinical visit.
  */
 export const renderedServiceItemSchema = z.object({
-	serviceCode: z.string().min(1, "Код услуги 804н обязателен"),
+	serviceCode: z.string().min(1, "Код услуги обязателен"),
 	serviceTitle: z.string().optional(),
 	quantity: z.number().positive().optional().default(1),
 	toothNumber: z.number().int().min(11).max(85).optional().nullable(),

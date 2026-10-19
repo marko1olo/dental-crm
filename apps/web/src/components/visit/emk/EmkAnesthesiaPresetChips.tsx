@@ -59,11 +59,15 @@ export function EmkAnesthesiaPresetChips({
 				type="button"
 				onClick={onNoAnesthesia}
 				data-testid="btn-anes-none"
-				className="dente-filter-chip min-h-[34px] h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
-				title="Лечение без анестезии"
+				className={`dente-filter-chip min-h-[34px] h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+					selectedDrugKey === "none"
+						? "bg-[var(--paper)] border-2 border-emerald-600 text-[var(--ink)] font-bold"
+						: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"
+				}`}
+				title="Лечение без анестезии / Интактно"
 			>
 				<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-				<span>Без анестезии</span>
+				<span>Без анестезии / Интактно</span>
 			</button>
 			<button
 				type="button"

@@ -462,7 +462,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 									Списание расходников за смену
 								</h2>
 								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200 shrink-0">
-									1 клик по техкартам BOM • Мягкий овердрафт
+									1 клик по техкартам • Мягкий овердрафт
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] truncate">
@@ -704,7 +704,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 								) : (
 									<>
 										<PackageCheck className="w-4 h-4 shrink-0" />
-										<span>Списать расходники за смену</span>
+										<span>Списать расходники смены по оказанным услугам</span>
 									</>
 								)}
 							</button>

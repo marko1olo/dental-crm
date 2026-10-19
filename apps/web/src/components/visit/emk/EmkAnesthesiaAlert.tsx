@@ -14,6 +14,7 @@ export function EmkAnesthesiaAlert({
 
 	const hasSulfiteOrAsthma =
 		lower.includes("сульфит") ||
+		lower.includes("метабисульфит") ||
 		lower.includes("астм") ||
 		lower.includes("бронх");
 	const hasCardio =
@@ -23,23 +24,30 @@ export function EmkAnesthesiaAlert({
 		lower.includes("гипертон");
 	const hasLidocaine = lower.includes("лидокаин");
 	const hasArticaine = lower.includes("артикаин");
+	const hasNovocaine = lower.includes("новокаин") || lower.includes("прокаин");
 
-	if (!hasSulfiteOrAsthma && !hasCardio && !hasLidocaine && !hasArticaine) {
+	if (!hasSulfiteOrAsthma && !hasCardio && !hasLidocaine && !hasArticaine && !hasNovocaine) {
 		return null;
 	}
 
-	let warningText = "";
-	if (hasSulfiteOrAsthma) {
-		warningText =
-			"Аллергия на сульфиты/бронхиальная астма. Рекомендуется препарат без адреналина (Скандонест 3%).";
-	} else if (hasArticaine) {
-		warningText = "Аллергия на препараты артикаинового ряда в анамнезе!";
-	} else if (hasLidocaine) {
-		warningText = "Аллергия на лидокаин в анамнезе.";
-	} else if (hasCardio) {
-		warningText =
-			"Группа кардиоваскулярного риска (щадящий режим: Скандонест 3% или адреналин <= 0.04 мг).";
+	const alerts: string[] = [];
+	if (hasNovocaine) {
+		alerts.push("⚠️ Аллергия на новокаин / прокаин в анамнезе");
 	}
+	if (hasSulfiteOrAsthma) {
+		alerts.push("⚠️ Аллергия на сульфиты / бронхиальная астма (рекомендуется Скандонест 3% без адреналина)");
+	}
+	if (hasArticaine) {
+		alerts.push("⚠️ Аллергия на препараты артикаинового ряда в анамнезе");
+	}
+	if (hasLidocaine) {
+		alerts.push("⚠️ Аллергия на лидокаин в анамнезе");
+	}
+	if (hasCardio && !hasSulfiteOrAsthma) {
+		alerts.push("⚠️ Группа кардиоваскулярного риска (щадящий режим: Скандонест 3% или адреналин <= 0.04 мг)");
+	}
+
+	const warningText = alerts.join(". ");
 
 	return (
 		<div
@@ -51,7 +59,7 @@ export function EmkAnesthesiaAlert({
 				<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 				<span className="font-medium break-words">{warningText}</span>
 			</div>
-			{onSelectSafeDrug && (hasSulfiteOrAsthma || hasCardio) && (
+			{onSelectSafeDrug && (hasSulfiteOrAsthma || hasCardio || hasNovocaine) && (
 				<button
 					type="button"
 					onClick={() => onSelectSafeDrug("scandonest_3")}

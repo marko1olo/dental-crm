@@ -638,9 +638,9 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 							type="button"
 							className="cw-btn cw-btn-secondary"
 							onClick={() => handlePrintAct("0504230")}
-							title="Печать Акта о списании материальных запасов по форме № 0504230 (Приказ Минфина 52н)"
+							title="Печать акта о списании материальных запасов (форма 0504230)"
 						>
-							<Printer size={16} /> Акт 0504230 (Минфин 52н)
+							<Printer size={16} /> Акт списания материалов
 						</button>
 
 						{/* Secondary menu ... (другие формы и экспорт) */}

@@ -169,7 +169,7 @@ export const DISCREPANCY_REASONS: readonly DiscrepancyReasonDefinition[] = [
 	},
 	{
 		code: "expired_quarantine",
-		labelRu: "Истекший срок годности (карантин/ТОРГ-16)",
+		labelRu: "Истекший срок годности (утилизация)",
 		descriptionRu: "Партия с истекшим сроком годности направлена на утилизацию",
 		isDefect: true,
 	},

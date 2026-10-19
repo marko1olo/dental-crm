@@ -149,7 +149,7 @@ export function ProcedureMaterialDeductionModal(props: ProcedureMaterialDeductio
 						</div>
 
 						<span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--ink-muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line-subtle)]">
-							Мандат 8n: Soft Negative Stock
+							Мягкий учет остатков
 						</span>
 					</div>
 				)}

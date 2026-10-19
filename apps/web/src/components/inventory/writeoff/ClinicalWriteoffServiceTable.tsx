@@ -74,7 +74,7 @@ export const ClinicalWriteoffServiceTable: React.FC<
 											</span>
 											<input
 												type="text"
-												placeholder="Введите серийный номер (МДЛП)"
+												placeholder="Серийный номер / партия"
 												value={line.serialNumber || ""}
 												onChange={(e) =>
 													onSerialNumberChange(line.id, e.target.value)

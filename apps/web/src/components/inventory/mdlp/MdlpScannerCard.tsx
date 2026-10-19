@@ -38,7 +38,7 @@ export const MdlpScannerCard: React.FC<MdlpScannerCardProps> = ({
 			{/* Переключатель кода операции МДЛП: 332 (Медпомощь) vs 331 (Списание / уничтожение / брак) */}
 			<div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-line/60">
 				<div className="flex items-center gap-2">
-					<span className="text-xs font-bold text-ink">Операция МДЛП:</span>
+					<span className="text-xs font-bold text-ink">Тип выбытия:</span>
 					<div className="inline-flex rounded-lg border border-line bg-paper-soft p-0.5">
 						<button
 							type="button"
@@ -49,9 +49,9 @@ export const MdlpScannerCard: React.FC<MdlpScannerCardProps> = ({
 							}`}
 							onClick={() => onSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE)}
 							data-testid="op-code-332-btn"
-							title="Код 332: Производственное использование анестетиков в лечебных целях у стоматологического кресла (Схема 10560)"
+							title="Производственное использование анестетиков в лечебных целях у стоматологического кресла (Код 332)"
 						>
-							Код 332 (Медпомощь)
+							Медпомощь (лечение)
 						</button>
 						<button
 							type="button"
@@ -62,9 +62,9 @@ export const MdlpScannerCard: React.FC<MdlpScannerCardProps> = ({
 							}`}
 							onClick={() => onSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_WRITE_OFF_OR_DEFECT)}
 							data-testid="op-code-331-btn"
-							title="Код 331: Выбытие по причине боя, нарушения герметичности, брака или истечения срока годности (Схема 10560)"
+							title="Выбытие по причине боя, нарушения герметичности, брака или истечения срока годности (Код 331)"
 						>
-							Код 331 (Бой / брак / утиль)
+							Списание (бой / брак / утиль)
 						</button>
 					</div>
 				</div>

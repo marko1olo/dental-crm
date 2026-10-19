@@ -56,11 +56,11 @@ export function EmkAnesthesiaSection({
 			"treatmentPlan",
 			appendClinicalText(
 				currentPlan,
-				"Анестезия: не применялась (лечение без анестезии по согласию пациента).",
+				"Анестезия: не применялась (интактно / лечение без анестезии по согласию пациента).",
 				"\n\n",
 			),
 		);
-		showToast("Зафиксировано: лечение без анестезии", "info", 2500);
+		showToast("Зафиксировано: без анестезии / интактно", "info", 2500);
 	};
 
 	const handleAntishockEmergency = async () => {

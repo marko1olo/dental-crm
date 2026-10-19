@@ -1,6 +1,7 @@
 import {
 	ChevronDown,
 	FileText,
+	Flame,
 	Package,
 	PackageCheck,
 	QrCode,
@@ -26,6 +27,7 @@ export interface InventoryOperationsMenuProps {
 	readonly onOpenMdlpDisposal: () => void;
 	readonly onOpenNurseCarpuleModal?: (() => void) | undefined;
 	readonly onOpenShiftDeductionModal?: (() => void) | undefined;
+	readonly onOpenSterilizationCycleModal?: (() => void) | undefined;
 	readonly onQuickWriteoffStandardKit: () => void;
 	readonly onQuickWriteoffAnestheticCarpule: () => void;
 	readonly onQuickWriteoffSterilizationKit: () => void;
@@ -53,6 +55,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 	onOpenMdlpDisposal,
 	onOpenNurseCarpuleModal,
 	onOpenShiftDeductionModal,
+	onOpenSterilizationCycleModal,
 	onQuickWriteoffStandardKit,
 	onQuickWriteoffAnestheticCarpule,
 	onQuickWriteoffSterilizationKit,
@@ -229,10 +232,28 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 								onClose();
 							}}
 							role="menuitem"
-							title="Сводка и списание всех расходников смены в 1 клик по техкартам (BOM)"
+							title="Списание расходников смены по оказанным услугам в 1 клик"
 						>
 							<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-							<span>Списать расходники за смену</span>
+							<span>Списать расходники смены</span>
+						</button>
+					)}
+
+					{/* 1-Клик запуск цикла автоклавирования со списанием расходников со склада */}
+					{onOpenSterilizationCycleModal && (
+						<button
+							type="button"
+							className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--teal,#0d9488)]/10 text-xs font-bold text-[var(--teal,#0d9488)] cursor-pointer transition-colors"
+							data-testid="nurse-menu-sterilization-batch-cycle-btn"
+							onClick={() => {
+								onOpenSterilizationCycleModal();
+								onClose();
+							}}
+							role="menuitem"
+							title="1-кликовый цикл автоклавирования: списание крафт-пакетов и индикаторов 5 класса со склада"
+						>
+							<Flame size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Стерилизация в автоклаве (1 клик)</span>
 						</button>
 					)}
 
