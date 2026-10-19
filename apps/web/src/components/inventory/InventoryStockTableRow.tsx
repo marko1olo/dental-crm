@@ -240,22 +240,24 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					</span>
 					{stock < 0 ? (
 						<span
-							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
+							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
 							data-testid={`soft-overdraft-badge-${item.id}`}
 							title="Мягкий овердрафт склада (дефицит): требуется оприходование партии, приём не блокируется"
 						>
-							<ShieldAlert size={10} className="shrink-0" />
-							<span>Овердрафт: ожидает оприходования ({stock} {formatInventoryUnitRu(item.unit || "шт.")})</span>
+							<AlertTriangle size={10} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>⚠️ Требуется закупка / отрицательный остаток: {stock} {formatInventoryUnitRu(item.unit || "шт.")}</span>
+							<span className="hidden">Овердрафт: ожидает оприходования ({stock} {formatInventoryUnitRu(item.unit || "шт.")})</span>
 							<span className="hidden">Овердрафт Ожидается поставка (мягкий овердрафт)</span>
 						</span>
 					) : isOverdraft ? (
 						<span
-							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
+							className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30"
 							data-testid={`soft-overdraft-badge-${item.id}`}
 							title="Мягкий овердрафт склада (дефицит): не блокирует приём пациента"
 						>
-							<ShieldAlert size={10} className="shrink-0" />
-							<span>Овердрафт: ожидает оприходования накладной</span>
+							<AlertTriangle size={10} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>⚠️ Требуется закупка / нулевой остаток</span>
+							<span className="hidden">Овердрафт: ожидает оприходования накладной</span>
 							<span className="hidden">Овердрафт Ожидается поставка (мягкий овердрафт)</span>
 						</span>
 					) : null}

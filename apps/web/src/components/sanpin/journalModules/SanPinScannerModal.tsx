@@ -27,7 +27,7 @@ export const SanPinScannerModal: React.FC<SanPinScannerModalProps> = ({
 		if (onAttachPouchToVisit) {
 			onAttachPouchToVisit(
 				"BATCH-AUTO-134",
-				"Стерильный лоток (134°C, 5 мин, 5 класс, СанПиН 3.3686-21)",
+				"Стерильный лоток (134°C, 5 мин, индикатор 5 класса пройден)",
 			);
 		}
 		showToast("Стерильная партия лотков успешно прикреплена к приёму", "success");

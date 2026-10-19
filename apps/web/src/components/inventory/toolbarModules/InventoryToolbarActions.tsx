@@ -1,4 +1,4 @@
-import { Package, Plus, Search, Truck, X, Zap } from "lucide-react";
+import { Package, PackageCheck, Plus, Search, Truck, X, Zap } from "lucide-react";
 import React from "react";
 import { InventoryOperationsMenu } from "../InventoryOperationsMenu.js";
 
@@ -90,9 +90,10 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 			</button>
 
 			{onOpenShiftDeductionModal && (
-				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenShiftDeductionModal} title="Списание за смену" data-testid="btn-open-shift-batch-deduction">
-					<Package className="w-4 h-4 shrink-0 text-[var(--teal)]" />
-					<span>Смена</span>
+				<button type="button" className="secondary-button inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenShiftDeductionModal} title="Списать расходники за смену (1 клик)" data-testid="btn-open-shift-batch-deduction">
+					<PackageCheck className="w-4 h-4 shrink-0 text-[var(--teal)]" />
+					<span className="hidden sm:inline">Смена (1 клик)</span>
+					<span className="sm:hidden">Смена</span>
 				</button>
 			)}
 

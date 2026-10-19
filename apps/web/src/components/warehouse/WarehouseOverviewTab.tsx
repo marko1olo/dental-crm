@@ -1,4 +1,4 @@
-import { AlertTriangle, Package, Search, Truck } from "lucide-react";
+import { AlertTriangle, Package, PackageCheck, Search, Truck } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import type { InventoryItem } from "../inventory/useInventoryLogic.js";
 import { formatCategoryRu } from "./WarehouseCatalogView.js";
@@ -34,12 +34,14 @@ export interface WarehouseOverviewTabProps {
 	readonly onQuickWriteoffCarpules?: (() => void) | undefined;
 	readonly onOpenAddModal?: (() => void) | undefined;
 	readonly onOpenProtocolDeduction?: (() => void) | undefined;
+	readonly onOpenShiftDeductionModal?: (() => void) | undefined;
 }
 
 export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 	items,
 	onSelectItem,
 	onOpenWaybills,
+	onOpenShiftDeductionModal,
 }) => {
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -61,17 +63,31 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 
 	return (
 		<div className="warehouse-overview-tab flex-1 flex flex-col min-h-0 overflow-hidden w-full gap-2 p-2" data-testid="warehouse-overview-tab">
-			<div className="kpi-stock-total min-h-[32px] py-1 px-3 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
+			<div className="kpi-stock-total min-h-[32px] py-1.5 px-3 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg flex flex-wrap items-center justify-between gap-2 shrink-0 text-xs">
 				<div className="flex items-center gap-3.5 flex-wrap">
 					<div className="flex items-center gap-1.5"><span className="text-[var(--muted)]">Всего позиций:</span><span className="font-bold text-[var(--ink)]">{kpis.totalCount}</span></div>
 					<div className="flex items-center gap-1.5"><span className="text-orange-700 dark:text-orange-400 font-semibold">Критический остаток:</span><span className="font-bold text-orange-600 dark:text-orange-400">{kpis.lowStockCount}</span></div>
 					<div className="flex items-center gap-1.5"><span className="text-amber-700 dark:text-amber-400 font-semibold">Расход сверх остатка:</span><span className="font-bold text-amber-600 dark:text-amber-400">{kpis.overdraftCount}</span></div>
 				</div>
-				{kpis.overdraftCount > 0 && onOpenWaybills && (
-					<button type="button" onClick={onOpenWaybills} className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer">
-						<Truck size={12} /><span>Оприходовать накладную</span>
-					</button>
-				)}
+				<div className="flex items-center gap-2">
+					{onOpenShiftDeductionModal && (
+						<button
+							type="button"
+							onClick={onOpenShiftDeductionModal}
+							className="text-[11px] font-bold text-teal-800 dark:text-teal-200 bg-teal-500/15 hover:bg-teal-500/25 px-2.5 py-1 rounded-lg border border-teal-500/30 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							data-testid="btn-overview-shift-batch-deduction"
+							title="Списать расходники за смену (1 клик)"
+						>
+							<PackageCheck size={13} className="text-teal-600 dark:text-teal-400" />
+							<span>Списать расходники за смену (1 клик)</span>
+						</button>
+					)}
+					{kpis.overdraftCount > 0 && onOpenWaybills && (
+						<button type="button" onClick={onOpenWaybills} className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer">
+							<Truck size={12} /><span>Оприходовать накладную</span>
+						</button>
+					)}
+				</div>
 			</div>
 
 			<div className="h-9 min-h-[36px] px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex items-center gap-2 shrink-0">
@@ -95,7 +111,17 @@ export const WarehouseOverviewTab: React.FC<WarehouseOverviewTabProps> = ({
 							<tr key={it.id} className="hover:bg-[var(--paper-soft)] cursor-pointer" onClick={() => onSelectItem?.(it)}>
 								<td className="py-2 px-3 font-medium text-[var(--ink)]">
 									<div>{it.name}</div>
-									{it.stockQuantity <= 0 && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">[Ожидает оприходования накладной]</span>}
+									{it.stockQuantity < 0 ? (
+										<span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30 mt-0.5" data-testid={`overview-overdraft-${it.id}`}>
+											<AlertTriangle size={10} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>⚠️ Требуется закупка / отрицательный остаток: {it.stockQuantity} {it.unit || "шт."}</span>
+										</span>
+									) : it.stockQuantity === 0 ? (
+										<span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30 mt-0.5">
+											<AlertTriangle size={10} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>⚠️ Требуется закупка / нулевой остаток</span>
+										</span>
+									) : null}
 								</td>
 								<td className="py-2 px-3 text-[var(--muted)]">{formatCategoryRu(it.category)}</td>
 								<td className="py-2 px-3 text-right font-mono font-bold text-[var(--ink)]">{it.stockQuantity} {it.unit || "шт."}</td>

@@ -249,7 +249,7 @@ describe("IDENT & Dentaro Reverse Engineering — Doctor Salary & Material Write
 
 		// Format statutory act and check absence of emojis (Mandate 8d)
 		const actText = formatIdentMaterialWriteoffAct(result, "Барабаш С.В.", "Иванов И.И.");
-		assert.ok(actText.includes("АКТ 2-УРОВНЕВОГО СПИСАНИЯ МАТЕРИАЛОВ (СТАНДАРТ IDENT)"));
+		assert.ok(actText.includes("АКТ 2-УРОВНЕВОГО СПИСАНИЯ МАТЕРИАЛОВ (СТАНДАРТ DENTE)"));
 		assert.ok(actText.includes("НЕ ИСПОЛЬЗОВАН ВРАЧОМ / ФЛАГ ВН"));
 		assert.ok(actText.includes("СКОРРЕКТИРОВАН ВРАЧОМ / ФЛАГ ВИ"));
 		assert.ok(!/[🎉🚀💡🦷📦📄⚠️]/.test(actText), "Mandate 8d: zero cartoon emojis");

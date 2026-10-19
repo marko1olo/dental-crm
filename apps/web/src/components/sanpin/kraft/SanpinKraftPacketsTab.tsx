@@ -42,7 +42,7 @@ export function SanpinKraftPacketsTab() {
 			if (res.ok) {
 				showToast(`Смена проведена: ${batchCount} наборов (134°C, 2.1 бар, 5 мин), расходники списаны`, "success");
 			} else {
-				showToast(`Смена зафиксирована: ${batchCount} наборов по СанПиН 3.3686-21`, "success");
+				showToast(`Смена зафиксирована: ${batchCount} наборов (стерилизация норма)`, "success");
 			}
 		} catch {
 			showToast("Ошибка связи с сервером при регистрации смены", "error");
@@ -68,7 +68,7 @@ export function SanpinKraftPacketsTab() {
 						</div>
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink)]">Пакетный учет автоклавирования смены</h3>
-							<p className="text-xs text-[var(--muted)]">Регламент СанПиН 3.3686-21: 1 клик на смену, без поштучного сканирования у кресла</p>
+							<p className="text-xs text-[var(--muted)]">Журнал стерилизации и автоклава: 1 клик на смену, без поштучного сканирования у кресла</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-2">

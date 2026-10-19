@@ -29,4 +29,5 @@ export * from "./sanpinConsolidatedExportHelpers";
 export * from "./autoclave/index";
 export * from "./disinfection/index";
 export * from "./SanPinSterilizationJournal";
+export * from "./SanPinJournalView";
 export { SanpinRegisters as default } from "./SanpinRegisters";

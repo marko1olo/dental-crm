@@ -1,12 +1,14 @@
 /**
  * ============================================================================
- * SANPIN 3.3686-21 STERILIZATION & AUTOCLAVE LOGBOOK MODULE
- * Экспорт компонентов учета стерилизации, журналов 257/у и 366/у,
- * химических индикаторов 4-5 классов и 1-кликовой привязки к форме 043/у.
+ * STERILIZATION & AUTOCLAVE LOGBOOK MODULE (DENTE Apple HIG)
+ * Компоненты учета стерилизации, журналы работы стерилизаторов,
+ * химические индикаторы 5 класса и 1-кликовые пресеты автоклавирования.
  * ============================================================================
  */
 
 export * from "./sterilizationPresets";
+export * from "./SterilizationCycleDrawer";
+export * from "./SterilizationJournalTable";
 
 // Re-exports from SanPiN autoclave and kraft domains
 export { AutoclaveRegisterTab } from "../sanpin/AutoclaveRegisterTab";

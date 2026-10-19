@@ -173,7 +173,7 @@ export function AutoclaveCycleModal({
 								Фиксация цикла в журнале автоклавирования
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0">
-								СанПиН 3.3686-21 • Предстерилизационная очистка и стерилизация
+								Журнал стерилизации и автоклава • Предстерилизационная очистка и контроль
 							</p>
 						</div>
 					</div>
@@ -322,7 +322,7 @@ export function AutoclaveCycleModal({
 					<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex flex-col gap-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-ink">
-								Контроль предстерилизационной очистки (СанПиН 3.3686-21)
+								Контроль предстерилизационной очистки (ПСО)
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
 								Серия: АЗО-2026/08-114

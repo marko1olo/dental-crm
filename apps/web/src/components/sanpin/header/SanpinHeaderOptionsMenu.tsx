@@ -78,7 +78,7 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 
 			<button type="button" role="menuitem" onClick={() => { onClose(); printConsolidatedBinderAction(exportContext); }} className="sanpin-dropdown-item" data-testid="print-consolidated-binder-btn">
 				<FileBadge size={15} color="var(--teal)" className="shrink-0" />
-				<span>Отчет для Роспотребнадзора</span>
+				<span>Журнал работы стерилизаторов</span>
 			</button>
 
 			<button type="button" role="menuitem" onClick={() => { onClose(); exportConsolidatedCsvAction(exportContext); }} className="sanpin-dropdown-item" data-testid="export-consolidated-csv-btn">

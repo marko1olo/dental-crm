@@ -358,11 +358,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		showToast("Инвентаризационная опись успешно выгружена в CSV.");
 	}, [currentDocument, docNumber, auditDate, handleDownloadFile, showToast]);
 
-	// Экспорт в 1C XML
+	// Экспорт в CommerceML XML
 	const handleExport1C = useCallback(() => {
 		const xml = exportInventoryTo1C(currentDocument);
-		handleDownloadFile(xml, `1C_Инвентаризация_${docNumber}.xml`, "application/xml");
-		showToast("Документ инвентаризации выгружен в формате 1C CommerceML.");
+		handleDownloadFile(xml, `Инвентаризация_CommerceML_${docNumber}.xml`, "application/xml");
+		showToast("Документ инвентаризации выгружен в формате CommerceML XML.");
 	}, [currentDocument, docNumber, handleDownloadFile, showToast]);
 
 	// Экспорт сличительной ведомости в CSV
@@ -719,10 +719,10 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={handleExport1C}
-							title="Выгрузить документ инвентаризации в формате 1C CommerceML XML"
+							title="Выгрузить документ инвентаризации в формате CommerceML XML"
 						>
 							<FileCode size={14} />
-							<span>1C CommerceML</span>
+							<span>CommerceML XML</span>
 						</button>
 
 						<button

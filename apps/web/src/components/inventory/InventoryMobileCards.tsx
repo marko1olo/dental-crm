@@ -355,10 +355,15 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 									</span>
 								</div>
 								<div className="mt-0.5">
-									{isOverdraft ? (
-										<span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-											<ShieldAlert size={11} className="shrink-0" />
-											<span>Расход сверх остатка</span>
+									{stock < 0 ? (
+										<span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
+											<AlertTriangle size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>⚠️ Требуется закупка / отрицательный остаток: {stock} {item.unit || "шт."}</span>
+										</span>
+									) : isOverdraft ? (
+										<span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
+											<AlertTriangle size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span>⚠️ Требуется закупка / нулевой остаток</span>
 										</span>
 									) : isLowStock ? (
 										<span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">

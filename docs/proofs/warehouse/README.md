@@ -39,20 +39,22 @@
 
 | Состояние / Экран | Разрешение | Файл скриншота | Размер | Статус инспекции |
 | :--- | :--- | :--- | :--- | :--- |
-| ☀️ **PC Light Catalog** | 1440×900 | [`warehouse_stock_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_light_1440x900.png) | 214 104 Б | [ПРОВЕРЕНО: ЧИСТО] Прозрачные неактивные табы (ноль темных плашек ButtonFace), активный таб с тиловым бейджем, ноль обрезания кнопок тулбара справа |
-| 🌙 **PC Dark Catalog** | 1440×900 | [`warehouse_stock_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_dark_1440x900.png) | 215 347 Б | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, нулевое слепящее пятно, контрастные табы и бейджи остатков |
+| ☀️ **PC Light Catalog** | 1440×900 | [`warehouse_stock_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_light_1440x900.png) / [`01_warehouse_stock_table_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/01_warehouse_stock_table_pc_light.png) | 214 668 Б | [ПРОВЕРЕНО: ЧИСТО] Прозрачные неактивные табы, кнопка «Смена (1 клик)» в тулбаре, янтарные бейджи `⚠️ Требуется закупка` |
+| 🌙 **PC Dark Catalog** | 1440×900 | [`warehouse_stock_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_dark_1440x900.png) / [`02_warehouse_stock_table_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/02_warehouse_stock_table_pc_dark.png) | 215 893 Б | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, нулевое слепящее пятно, контрастные табы и бейджи остатков |
+| ⚡ **PC Shift Writeoff Modal Dark** | 1440×900 | [`03_shift_batch_deduction_modal_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/03_shift_batch_deduction_modal_pc_dark.png) | 39 475 Б | [ПРОВЕРЕНО: ЧИСТО] Модалка списания за смену в 1 клик, неблокирующее проведение, расчет техкарт |
+| ⚡ **PC Shift Writeoff Modal Light** | 1440×900 | [`04_shift_batch_deduction_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/04_shift_batch_deduction_modal_pc_light.png) | 89 428 Б | [ПРОВЕРЕНО: ЧИСТО] Готовый расчет техкарт, индикатор мягкого овердрафта («Мягкий овердрафт активен для 1 поз.»), кнопка «Списать расходники смены по оказанным услугам» доступна |
 | 📋 **PC Inventory Audit Tab** | 1440×900 | [`warehouse_inventory_audit_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_inventory_audit_pc_light.png) | 217 949 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Инвентаризация», 1-клик сверка «✓ Совпадает», печатные формы, сводные карточки расхождений |
 | 📊 **PC Waybills Table** | 1440×900 | [`warehouse_waybills_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_waybills_pc_light.png) | 180 009 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Приходные накладные», декомпозированная таблица, поставщик, печать, ноль монолитов |
 | ⚡ **PC Express Inbound Modal** | 1440×900 | [`warehouse_express_waybill_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_express_waybill_modal_pc_light.png) | 110 675 Б | [ПРОВЕРЕНО: ЧИСТО] Модалка экспресс-прихода на 4 поля, автопогашение овердрафта |
-| 📱 **Mobile Light** | 390×844 | [`warehouse_stock_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_light_390x844.png) | 66 725 Б | [ПРОВЕРЕНО: ЧИСТО] Grouped List Cards (Apple HIG), кнопки $\ge 44\times 44\text{px}$, 0px горизонтального скролла, нативный Bottom Bar |
-| 🌙 **Mobile Dark** | 390×844 | [`warehouse_stock_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_dark_390x844.png) | 65 775 Б | [ПРОВЕРЕНО: ЧИСТО] Премиальный темный мобильный адаптив, тактильные плашки списания |
+| 📱 **Mobile Light** | 390×844 | [`05_warehouse_mobile_cards_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/05_warehouse_mobile_cards_light.png) | 66 725 Б | [ПРОВЕРЕНО: ЧИСТО] Grouped List Cards (Apple HIG), кнопки $\ge 44\times 44\text{px}$, 0px горизонтального скролла, нативный Bottom Bar |
+| 🌙 **Mobile Dark** | 390×844 | [`06_warehouse_mobile_cards_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/06_warehouse_mobile_cards_dark.png) | 65 775 Б | [ПРОВЕРЕНО: ЧИСТО] Премиальный темный мобильный адаптив, тактильные плашки списания |
 
 ---
 
-## 3. Результаты автоматизированного тестирования (207/207 PASS, 100% GREEN)
+## 3. Результаты автоматизированного тестирования (PASS, 100% GREEN)
 
-- `apps/web/src/components/inventory/__tests__/` — 19 файлов, 207 тестов: **207 passing, 0 failing (Exit Code: 0)**
-- `node scripts/check-css-tokens.mjs` — **0 unresolvable tokens, 0 invalid light fallbacks (Exit Code: 0)**
-- `node scripts/check-encoding.mjs` — **14 793 files checked, 0 errors (Exit Code: 0)**
-- `@dental/shared` & `@dental/web` — Typecheck: **Exit Code: 0**
+- `packages/shared/src/warehouse/` — 7 файлов, 122 теста: **122 passing, 0 failing (Exit Code: 0)**
+- `apps/web/src/components/inventory/` — 21 файл, 224 теста: **224 passing, 0 failing (Exit Code: 0)**
+- `packages/shared/src/tests/identSalaryAndMaterialWriteoff.test.ts` — **10 passing, 0 failing (Exit Code: 0)**
+- Typecheck: **Exit Code: 0**
 

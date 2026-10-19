@@ -86,9 +86,9 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 					</button>
 				)}
 
-				<button type="button" onClick={onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Официальный отчет для проверки Роспотребнадзора">
+				<button type="button" onClick={onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала работы стерилизаторов">
 					<Printer size={14} />
-					<span>Печать журнала (Роспотребнадзор)</span>
+					<span>Печать журнала</span>
 				</button>
 
 				<button type="button" onClick={onExportCsv} className={BTN_SEC} data-testid="export-csv-btn" title="Экспорт в CSV">

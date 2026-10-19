@@ -18,10 +18,12 @@ export type {
 	SteamPenetrationTestType,
 	SteamPenetrationTestOption,
 	SterilizationCycleModalProps,
+	ClinicalAutoclavePreset,
 } from "./sterilizationModules/sterilizationCycleTypes";
 
 export {
 	STATUTORY_REGIMES_OPTIONS,
+	CLINICAL_AUTOCLAVE_1CLICK_PRESETS,
 	STATUTORY_PACKAGING_PRESETS,
 	INITIAL_5_POINTS,
 	STEAM_PENETRATION_TEST_OPTIONS,

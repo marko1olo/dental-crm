@@ -16,7 +16,7 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 		<div className="sanpin-title-block">
 			<h1 className="sanpin-main-title">
 				<ShieldCheck size={18} color="var(--teal, #0d9488)" className="shrink-0" />
-				<span>Стерилизация и ЦСО</span>
+				<span>Журнал стерилизации и автоклава</span>
 			</h1>
 
 			<button
