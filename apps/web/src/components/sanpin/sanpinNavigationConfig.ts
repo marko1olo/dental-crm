@@ -34,7 +34,7 @@ export const SANPIN_CANONICAL_TABS: SanpinTabDef[] = [
 	{
 		id: "pso",
 		label: "Проверка качества очистки (азопирам)",
-		shortLabel: "Качество очистки",
+		shortLabel: "Очистка",
 		icon: FlaskConical,
 	},
 	{

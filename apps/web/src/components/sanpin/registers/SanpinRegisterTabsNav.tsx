@@ -56,7 +56,8 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 							}}
 						>
 							<Icon size={14} color={isActive ? "var(--teal, #0d9488)" : "currentColor"} className="shrink-0" />
-							<span>{tab.label}</span>
+							<span className="hidden sm:inline">{tab.label}</span>
+							<span className="inline sm:hidden">{tab.shortLabel}</span>
 						</button>
 					);
 				})}
