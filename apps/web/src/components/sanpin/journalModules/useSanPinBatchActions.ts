@@ -48,22 +48,24 @@ export function useSanPinBatchActions(
 		}
 	};
 
-	const handleQuickBatchNorm = async (batchSize = 27, regime: "134" | "121" = "134") => {
+	const handleQuickBatchNorm = async (batchSize = 27, regime: "134" | "121" = "134", cycleName?: string) => {
 		try {
 			setIsAutofilling(true);
 			const isDelicate = regime === "121";
-			const tempC = isDelicate ? 121.0 : 134.4;
+			const tempC = isDelicate ? 121.0 : 134.0;
 			const pressBar = isDelicate ? 1.15 : 2.15;
 			const targetBatch = isDelicate ? 15 : batchSize;
 			const autoId = selectedAutoclave !== "all" ? selectedAutoclave : (devices[0]?.id || "АК-01");
 			const devName = autoId === "АК-02" ? "W&H Lina 17 (ЦСО)" : "Melag Vacuklav 23 B+ (ЦСО №1)";
+			const cycleLabel = cycleName || (new Date().getHours() < 12 ? "Утренний цикл" : new Date().getHours() < 17 ? "Дневной цикл" : "Вечерний цикл");
 			const itemsDesc = isDelicate
 				? "Пакетная стерилизация щадящая: 15 наборов (оптика, полимеры, наконечники)"
-				: `Пакетная стерилизация смены: ${targetBatch} наборов (15 смотровых, 8 терапевтических, 4 турбины)`;
+				: `${cycleLabel} автоклавирования: ${targetBatch} наборов (15 смотровых, 8 терапевтических, 4 турбины)`;
 
 			const payload = {
 				regime: isDelicate ? "delicate_121" : "standard_134",
 				batchSize: targetBatch,
+				cycleName: cycleLabel,
 				temperatureCelsius: tempC,
 				durationMin: isDelicate ? 20 : 5,
 				pressureBar: pressBar,
@@ -80,10 +82,10 @@ export function useSanPinBatchActions(
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`Цикл автоклавирования на смену проведён (${autoId}): ${tempC}°C / ${pressBar} бар, расходники списаны`, "success");
+				showToast(`${cycleLabel} автоклавирования проведён (${autoId}): ${tempC}°C / ${pressBar} бар, расходники списаны`, "success");
 				await fetchCyclesFromDb(period);
 			} else if (isDemoShowcaseMode()) {
-				showToast(`Цикл автоклавирования на смену проведён (${autoId}): ${tempC}°C (норма, расходники списаны)`, "success");
+				showToast(`${cycleLabel} автоклавирования проведён (${autoId}): ${tempC}°C (норма, расходники списаны)`, "success");
 			}
 		} finally {
 			setIsAutofilling(false);
@@ -100,10 +102,10 @@ export function useSanPinBatchActions(
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast("Контроль ПСО зафиксирован: азопирам и фенолфталеин отрицательно (100% норма)", "success");
+				showToast("Предстерилизационная очистка зафиксирована: азопирам и фенолфталеин отрицательно (100% норма)", "success");
 				await fetchCyclesFromDb(period);
 			} else {
-				showToast("Контроль ПСО: норма (азопирам отрицательно)", "success");
+				showToast("Предстерилизационная очистка: норма (азопирам отрицательно)", "success");
 			}
 		} finally {
 			setIsAutofilling(false);

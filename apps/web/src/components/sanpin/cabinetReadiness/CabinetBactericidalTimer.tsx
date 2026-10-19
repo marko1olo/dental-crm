@@ -4,8 +4,8 @@
  */
 
 import { calculateLampOperatingHours } from "@dental/shared";
-import { AlertTriangle, CheckCircle2, Clock, Pause, Play, RotateCcw, ShieldCheck, Sparkles, Wind } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, Sparkles, Wind } from "lucide-react";
+import React, { useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import type { BactericidalExposureLog, CabinetBactericidalTimerProps } from "./types";
 
@@ -18,62 +18,20 @@ export function CabinetBactericidalTimer({
 	onExposureLogged,
 }: CabinetBactericidalTimerProps) {
 	const [selectedDurationMinutes, setSelectedDurationMinutes] = useState<number>(30);
-	const [secondsRemaining, setSecondsRemaining] = useState<number>(30 * 60);
-	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const [operatingHours, setOperatingHours] = useState<number>(initialOperatingHours);
 	const [mode, setMode] = useState<"closed_recirculator" | "open_uv">("closed_recirculator");
-
-	// Synchronize timer countdown
-	useEffect(() => {
-		if (!isRunning) return;
-
-		const interval = setInterval(() => {
-			setSecondsRemaining((prev) => {
-				if (prev <= 1) {
-					setIsRunning(false);
-					showToast(`Обеззараживание воздуха завершено: ${selectedCabinet} (${selectedDurationMinutes} мин)`, "success");
-					return 0;
-				}
-				return prev - 1;
-			});
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [isRunning, selectedCabinet, selectedDurationMinutes]);
+	const [lastLoggedAt, setLastLoggedAt] = useState<string | null>(null);
 
 	// Calculate statutory lamp lifecycle
 	const lampCalc = useMemo(() => {
 		return calculateLampOperatingHours(operatingHours, 0, maxLampHours);
 	}, [operatingHours, maxLampHours]);
 
-	const formatTime = (totalSeconds: number) => {
-		const mins = Math.floor(totalSeconds / 60);
-		const secs = totalSeconds % 60;
-		return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-	};
-
-	const handleSelectPreset = (mins: number) => {
-		setSelectedDurationMinutes(mins);
-		setSecondsRemaining(mins * 60);
-		setIsRunning(false);
-	};
-
-	const handleToggleTimer = () => {
-		if (secondsRemaining === 0) {
-			setSecondsRemaining(selectedDurationMinutes * 60);
-		}
-		setIsRunning((prev) => !prev);
-	};
-
-	const handleResetTimer = () => {
-		setIsRunning(false);
-		setSecondsRemaining(selectedDurationMinutes * 60);
-	};
-
 	const handleLogExposureToSanpin = () => {
 		const sessionHours = Math.round((selectedDurationMinutes / 60) * 100) / 100;
 		const nextHours = Math.round((operatingHours + sessionHours) * 100) / 100;
 		setOperatingHours(nextHours);
+		setLastLoggedAt(new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
 
 		const logEntry: BactericidalExposureLog = {
 			id: `bac-${Date.now()}`,
@@ -92,7 +50,7 @@ export function CabinetBactericidalTimer({
 		}
 
 		showToast(
-			`Зафиксировано в журнале СанПиН: ${selectedCabinet}, ${lampModel}, +${selectedDurationMinutes} мин (наработка ${nextHours}/${maxLampHours} ч)`,
+			`Зафиксировано в журнале: ${selectedCabinet}, ${lampModel}, +${selectedDurationMinutes} мин (наработка ${nextHours}/${maxLampHours} ч)`,
 			"success",
 		);
 	};
@@ -161,7 +119,7 @@ export function CabinetBactericidalTimer({
 				</div>
 			</div>
 
-			{/* Mode & Timer Controls */}
+			{/* Mode & 1-Click Batch Controls */}
 			<div
 				style={{
 					display: "grid",
@@ -180,11 +138,12 @@ export function CabinetBactericidalTimer({
 							<button
 								key={mins}
 								type="button"
-								onClick={() => handleSelectPreset(mins)}
+								onClick={() => setSelectedDurationMinutes(mins)}
+								className="secondary-button"
 								style={{
-									minHeight: "38px",
+									minHeight: "40px",
 									padding: "0.35rem 0.75rem",
-									borderRadius: "0.375rem",
+									borderRadius: "0.5rem",
 									fontSize: "0.82rem",
 									fontWeight: selectedDurationMinutes === mins ? 800 : 600,
 									border: selectedDurationMinutes === mins ? "2px solid var(--teal, #0d9488)" : "1px solid var(--paper-border, #cbd5e1)",
@@ -199,80 +158,38 @@ export function CabinetBactericidalTimer({
 					</div>
 				</div>
 
-				{/* Timer countdown and action buttons */}
+				{/* 1-Click Action Button */}
 				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
-					<div
-						style={{
-							fontFamily: "monospace",
-							fontSize: "1.5rem",
-							fontWeight: 800,
-							color: isRunning ? "var(--teal, #0d9488)" : "var(--ink, #1e293b)",
-							letterSpacing: "0.05em",
-						}}
-					>
-						{formatTime(secondsRemaining)}
-					</div>
-
-					<button
-						type="button"
-						onClick={handleToggleTimer}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{
-							minHeight: "44px",
-							padding: "0.45rem 1rem",
-							fontSize: "0.88rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							background: isRunning ? "var(--warn-fg, #d97706)" : "var(--teal, #0d9488)",
-							color: "#ffffff",
-							borderRadius: "0.5rem",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.35rem",
-						}}
-					>
-						{isRunning ? <Pause size={16} /> : <Play size={16} />}
-						<span>{isRunning ? "Пауза" : "Старт облучения"}</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleResetTimer}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{
-							minHeight: "44px",
-							padding: "0.45rem 0.75rem",
-							fontSize: "0.85rem",
-							cursor: "pointer",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--line, #cbd5e1)",
-						}}
-						title="Сброс таймера"
-					>
-						<RotateCcw size={15} />
-					</button>
+					{lastLoggedAt && (
+						<div style={{ fontSize: "0.78rem", color: "var(--ok-fg, #059669)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+							<CheckCircle2 size={13} />
+							<span>Зафиксировано в {lastLoggedAt}</span>
+						</div>
+					)}
 
 					<button
 						type="button"
 						onClick={handleLogExposureToSanpin}
-						className="sanpin-btn sanpin-btn-secondary"
+						className="primary-button sanpin-btn-primary"
 						style={{
 							minHeight: "44px",
-							padding: "0.45rem 0.85rem",
-							fontSize: "0.82rem",
+							padding: "0.5rem 1.15rem",
+							fontSize: "0.85rem",
 							fontWeight: 700,
 							cursor: "pointer",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
 							borderRadius: "0.5rem",
-							background: "rgba(37, 99, 235, 0.08)",
-							color: "var(--brand-primary, #2563eb)",
-							border: "1px solid rgba(37, 99, 235, 0.25)",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.35rem",
+							gap: "0.4rem",
+							boxShadow: "0 1px 3px rgba(13, 148, 136, 0.2)",
 						}}
-						title="Внести факт работы облучателя в электронный журнал СанПиН"
+						data-testid="bactericidal-log-cycle-btn"
+						title="Зафиксировать цикл работы рециркулятора в журнале в 1 клик"
 					>
-						<Sparkles size={15} /> <span>В журнал СанПиН</span>
+						<Sparkles size={16} />
+						<span>Зафиксировать цикл ({selectedDurationMinutes} мин)</span>
 					</button>
 				</div>
 			</div>

@@ -4,7 +4,7 @@ import { CheckCircle2, Play, Sparkles, Thermometer } from "lucide-react";
 export interface SanPinTableEmptyStateProps {
 	readonly onAutofillShift?: (() => void) | undefined;
 	readonly isAutofilling?: boolean | undefined;
-	readonly onQuickBatchNorm?: ((batchSize: number, regime: "134" | "121") => void) | undefined;
+	readonly onQuickBatchNorm?: ((batchSize: number, regime: "134" | "121", cycleName?: string) => void) | undefined;
 }
 
 export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({

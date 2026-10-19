@@ -130,7 +130,7 @@ export async function executeSterilizationConsumablesDeduction(
 					);
 
 				// Фиксируем складское движение
-				const note = `[СанПиН 2.1.3678-20 / Форма 257/у] Списание при цикле автоклава${params.cycleNumber ? ` №${params.cycleNumber}` : ""}${params.barcode ? ` (${params.barcode})` : ""}`;
+				const note = `[Журнал автоклавирования] Списание расходников при цикле автоклава${params.cycleNumber ? ` №${params.cycleNumber}` : ""}${params.barcode ? ` (${params.barcode})` : ""}`;
 
 				await tx.insert(inventoryTransactions).values({
 					organizationId: orgId,

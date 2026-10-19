@@ -179,16 +179,22 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 			"SettingsProtocolsTab должен монтировать AutoclaveLog257Modal",
 		);
 
-		// DocumentsView.tsx
+		// DocumentsCatalogView.tsx (or decomposed catalog/CatalogToolbar.tsx) & DocumentsView.tsx
+		const catalogViewPath = path.join(webSrc, "components/documents/DocumentsCatalogView.tsx");
+		const catalogToolbarPath = path.join(webSrc, "components/documents/catalog/CatalogToolbar.tsx");
+		const catalogViewContent =
+			(fs.existsSync(catalogViewPath) ? fs.readFileSync(catalogViewPath, "utf8") : "") +
+			(fs.existsSync(catalogToolbarPath) ? fs.readFileSync(catalogToolbarPath, "utf8") : "");
+		assert.ok(
+			catalogViewContent.includes("documents-open-autoclave-log-257-btn"),
+			"DocumentsCatalogView должен содержать 1-клик кнопку вызова журнала стерилизации",
+		);
+
 		const documentsViewPath = path.join(webSrc, "DocumentsView.tsx");
 		const documentsViewContent = fs.readFileSync(documentsViewPath, "utf8");
 		assert.ok(
-			documentsViewContent.includes("documents-open-autoclave-log-257-btn"),
-			"DocumentsView должен содержать 1-клик кнопку вызова журнала стерилизации 257/у",
-		);
-		assert.ok(
 			documentsViewContent.includes("onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}"),
-			"DocumentsView должен пробрасывать вызов журнала стерилизации в PrimaryIntakePackageModal",
+			"DocumentsView должен пробрасывать вызов журнала стерилизации в DocumentModalsContainer",
 		);
 	});
 

@@ -3,9 +3,10 @@
  * DENTE Dental CRM — Sovereign Mobile Chairside Visit Workspace (Layer 3: State Hook)
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
+import { useVisitStore } from "../../../store/visitStore";
 import type {
   MobileChairsideBillingItem,
   MobileChairsideStep,
@@ -18,6 +19,7 @@ export function useChairsideVisitWorkspace({
   flushPendingVisitSaves,
   handleApplySomaticNormQuick,
   handleFinishVisitAction,
+  setToothState,
   onClose,
   testId = "mobile-chairside-workspace",
   loadedTreatmentPlan,
@@ -32,25 +34,82 @@ export function useChairsideVisitWorkspace({
   // Speech Recognition state for SmartMicrophone
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedVoiceSnippet, setRecognizedVoiceSnippet] = useState("");
+  const speechRecognitionRef = useRef<any>(null);
 
-  // In-session chairside billing items
-  const [billingItems, setBillingItems] = useState<MobileChairsideBillingItem[]>([
-    {
-      id: "item-1",
-      code804n: "B01.065.001",
-      title: "Приём (осмотр, консультация) врача-стоматолога",
-      priceRub: 1000,
-      quantity: 1,
-    },
-    {
-      id: "item-2",
-      code804n: "A16.07.002",
-      title: "Восстановление зуба пломбой световой полимеризации",
-      priceRub: 3500,
-      quantity: 1,
-      toothCode: "16",
-    },
-  ]);
+  // In-session chairside billing items (derived from treatment plan or completed store items)
+  const [billingItems, setBillingItems] = useState<MobileChairsideBillingItem[]>(() => {
+    try {
+      const storeServices = useVisitStore.getState().completedServices;
+      if (storeServices && storeServices.length > 0) {
+        return storeServices.map((it, idx) => ({
+          id: it.serviceId || `store-item-${idx}`,
+          code804n: it.code804n || "A16.07.002",
+          title: it.name || "Услуга приёма",
+          priceRub: Number(it.priceRub || 0),
+          quantity: Number(it.quantity || 1),
+          toothCode: it.toothNumber ? String(it.toothNumber) : it.toothCode,
+        }));
+      }
+    } catch {
+      // ignore
+    }
+
+    if (loadedTreatmentPlan?.stages?.[0]?.items?.length) {
+      return loadedTreatmentPlan.stages[0].items.map((it: any, idx: number) => ({
+        id: it.id || `stage-item-${idx}`,
+        code804n: it.code || it.code804n || "A16.07.002",
+        title: it.name || it.title || "Услуга плана",
+        priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+        quantity: Number(it.quantity || 1),
+        toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+      }));
+    }
+    if (loadedTreatmentPlan?.items?.length) {
+      return loadedTreatmentPlan.items.map((it: any, idx: number) => ({
+        id: it.id || `plan-item-${idx}`,
+        code804n: it.code || it.code804n || "A16.07.002",
+        title: it.name || it.title || "Услуга плана",
+        priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+        quantity: Number(it.quantity || 1),
+        toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+      }));
+    }
+
+    return [];
+  });
+
+  // Listen to external billing items added from catalog or tooth protocol
+  useEffect(() => {
+    const handleAddBillingEvent = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (!detail) return;
+      const it = detail.item || detail;
+      if (!it) return;
+      const newItem: MobileChairsideBillingItem = {
+        id: it.id || `billing-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        code804n: it.code || it.code804n || "A16.07.002",
+        title: it.title || it.name || "Услуга приёма",
+        priceRub: Number(it.unitPriceRub || it.priceRub || it.price || 0),
+        quantity: Number(it.quantity || 1),
+        toothCode: it.toothNumber ? String(it.toothNumber) : it.toothCode,
+      };
+      setBillingItems((prev) => {
+        const exists = prev.some(
+          (p) =>
+            p.id === newItem.id ||
+            (p.toothCode === newItem.toothCode &&
+              ((p.code804n && p.code804n === newItem.code804n) || p.title === newItem.title)),
+        );
+        if (exists) return prev;
+        return [...prev, newItem];
+      });
+    };
+
+    window.addEventListener("dente-add-billing-item", handleAddBillingEvent);
+    return () => {
+      window.removeEventListener("dente-add-billing-item", handleAddBillingEvent);
+    };
+  }, []);
 
   const totalBillingAmountRub = useMemo(() => {
     return billingItems.reduce((sum, item) => sum + item.priceRub * item.quantity, 0);
@@ -114,29 +173,57 @@ export function useChairsideVisitWorkspace({
     handleTakeStageFromBanner(activeStage, items);
   }, [loadedTreatmentPlan, handleTakeStageFromBanner]);
 
-  // 1-Tap Somatic Norm Action
+  // 1-Tap Somatic Norm Action & All Teeth Healthy (Mandate 8e)
   const onApplyChairsideNorm = useCallback(() => {
     triggerHaptic("success");
     setIsNormApplied(true);
+    if (setToothState) {
+      const allTeeth = [
+        "18", "17", "16", "15", "14", "13", "12", "11",
+        "21", "22", "23", "24", "25", "26", "27", "28",
+        "48", "47", "46", "45", "44", "43", "42", "41",
+        "31", "32", "33", "34", "35", "36", "37", "38",
+      ];
+      for (const t of allTeeth) {
+        setToothState(t, "Healthy");
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("dente-batch-update-tooth-state", {
+            detail: { state: "Healthy", teeth: allTeeth },
+          }),
+        );
+      }
+    }
     if (handleApplySomaticNormQuick) {
       handleApplySomaticNormQuick();
     } else {
       updateVisitNoteField(
         "objectiveStatus",
-        "Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Зубные ряды интактны, патологических зубодесневых карманов нет. Прикус ортогнатический. Регионарные лимфоузлы не пальпируются. Перкуссия безболезненна.",
+        "Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Зубные ряды интактны, кариозных полостей нет, патологических зубодесневых карманов нет. Прикус ортогнатический. Регионарные лимфоузлы не пальпируются. Перкуссия безболезненна.",
       );
       updateVisitNoteField(
         "anamnesis",
         "Соматически здоров. Хронические заболевания, гепатит, ВИЧ, туберкулез отрицает. Аллергоанамнез не отягощен.",
       );
     }
-    showToast("✓ Соматическая норма успешно внесена", "success");
-  }, [handleApplySomaticNormQuick, updateVisitNoteField]);
+    if (flushPendingVisitSaves) {
+      void flushPendingVisitSaves();
+    }
+    showToast("✓ Норма внесена: пациент соматически здоров, зубные ряды интактны", "success");
+  }, [handleApplySomaticNormQuick, updateVisitNoteField, setToothState, flushPendingVisitSaves]);
 
-  // Smart Microphone toggler with Web Speech API fallback
+  // Smart Microphone toggler with real Web Speech API (zero fake timeouts or mocks)
   const toggleVoiceRecording = useCallback(() => {
     triggerHaptic("selection");
     if (isRecording) {
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
       setIsRecording(false);
       showToast("Диктовка завершена", "info");
       return;
@@ -145,65 +232,62 @@ export function useChairsideVisitWorkspace({
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.lang = "ru-RU";
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
+    if (!SpeechRecognition) {
+      setIsRecording(false);
+      showToast("Голосовой ввод не поддерживается данным браузером", "warning");
+      return;
+    }
 
-        recognition.onstart = () => {
-          setIsRecording(true);
-          showToast("Слушаю клиническую речь...", "info");
-        };
+    try {
+      const recognition = new SpeechRecognition();
+      speechRecognitionRef.current = recognition;
+      recognition.lang = "ru-RU";
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
 
-        recognition.onresult = (event: any) => {
-          const current = event.resultIndex;
-          const transcript = event.results[current][0].transcript;
-          setRecognizedVoiceSnippet(transcript);
-
-          if (event.results[current].isFinal) {
-            triggerHaptic("success");
-            if (currentStep === "complaints") {
-              const cur = visitNoteForm?.complaint || "";
-              updateVisitNoteField("complaint", cur ? `${cur} ${transcript}` : transcript);
-            } else if (currentStep === "exam") {
-              const cur = visitNoteForm?.objectiveStatus || "";
-              updateVisitNoteField("objectiveStatus", cur ? `${cur} ${transcript}` : transcript);
-            } else if (currentStep === "diagnosis") {
-              updateVisitNoteField("diagnosis", transcript);
-            } else if (currentStep === "treatment") {
-              const cur = visitNoteForm?.treatmentPlan || "";
-              updateVisitNoteField("treatmentPlan", cur ? `${cur} ${transcript}` : transcript);
-            }
-          }
-        };
-
-        recognition.onerror = () => {
-          setIsRecording(false);
-        };
-
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-
-        recognition.start();
-      } catch {
+      recognition.onstart = () => {
         setIsRecording(true);
-        setTimeout(() => setIsRecording(false), 3000);
-      }
-    } else {
-      setIsRecording(true);
-      setTimeout(() => {
-        setIsRecording(false);
-        const quickText = "Препарирование кариозной полости, пломба световой полимеризации.";
-        setRecognizedVoiceSnippet(quickText);
-        if (currentStep === "treatment") {
-          const cur = visitNoteForm?.treatmentPlan || "";
-          updateVisitNoteField("treatmentPlan", cur ? `${cur}\n${quickText}` : quickText);
+        showToast("Слушаю клиническую речь...", "info");
+      };
+
+      recognition.onresult = (event: any) => {
+        const current = event.resultIndex;
+        const transcript = event.results[current]?.[0]?.transcript;
+        if (!transcript) return;
+        setRecognizedVoiceSnippet(transcript);
+
+        if (event.results[current].isFinal) {
+          triggerHaptic("success");
+          if (currentStep === "complaints") {
+            const cur = visitNoteForm?.complaint || "";
+            updateVisitNoteField("complaint", cur ? `${cur} ${transcript}` : transcript);
+          } else if (currentStep === "exam") {
+            const cur = visitNoteForm?.objectiveStatus || "";
+            updateVisitNoteField("objectiveStatus", cur ? `${cur} ${transcript}` : transcript);
+          } else if (currentStep === "diagnosis") {
+            updateVisitNoteField("diagnosis", transcript);
+          } else if (currentStep === "treatment") {
+            const cur = visitNoteForm?.treatmentPlan || "";
+            updateVisitNoteField("treatmentPlan", cur ? `${cur} ${transcript}` : transcript);
+          }
         }
-        showToast("Голосовая заметка сохранена", "success");
-      }, 1500);
+      };
+
+      recognition.onerror = () => {
+        setIsRecording(false);
+        speechRecognitionRef.current = null;
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        speechRecognitionRef.current = null;
+      };
+
+      recognition.start();
+    } catch {
+      setIsRecording(false);
+      speechRecognitionRef.current = null;
+      showToast("Не удалось запустить распознавание речи", "warning");
     }
   }, [isRecording, currentStep, visitNoteForm, updateVisitNoteField]);
 
@@ -230,6 +314,7 @@ export function useChairsideVisitWorkspace({
 
   const handleNextStep = () => {
     triggerHaptic("selection");
+    if (flushPendingVisitSaves) void flushPendingVisitSaves();
     if (currentStep === "complaints") setCurrentStep("exam");
     else if (currentStep === "exam") setCurrentStep("diagnosis");
     else if (currentStep === "diagnosis") setCurrentStep("treatment");
@@ -241,6 +326,7 @@ export function useChairsideVisitWorkspace({
 
   const handlePrevStep = () => {
     triggerHaptic("selection");
+    if (flushPendingVisitSaves) void flushPendingVisitSaves();
     if (currentStep === "checkout") setCurrentStep("treatment");
     else if (currentStep === "treatment") setCurrentStep("diagnosis");
     else if (currentStep === "diagnosis") setCurrentStep("exam");
@@ -249,6 +335,23 @@ export function useChairsideVisitWorkspace({
       if (onClose) onClose();
     }
   };
+
+  // Quiet debounced auto-save of clinical draft notes (Mandate 8e)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (flushPendingVisitSaves) {
+        void flushPendingVisitSaves();
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [
+    visitNoteForm?.complaint,
+    visitNoteForm?.anamnesis,
+    visitNoteForm?.objectiveStatus,
+    visitNoteForm?.diagnosis,
+    visitNoteForm?.treatmentPlan,
+    flushPendingVisitSaves,
+  ]);
 
   const addBillingItem = (item: { code804n: string; title: string; priceRub: number }) => {
     triggerHaptic("selection");

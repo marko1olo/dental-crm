@@ -20,7 +20,7 @@ export interface SanPinJournalToolbarProps {
 	readonly onOpenNewCycleModal?: () => void;
 	readonly period?: SanPinJournalPeriod;
 	readonly onPeriodChange?: (p: SanPinJournalPeriod) => void;
-	readonly onQuickBatchNorm?: (batchSize: number, regime: "134" | "121") => void;
+	readonly onQuickBatchNorm?: (batchSize: number, regime: "134" | "121", cycleName?: string) => void;
 	readonly onQuickPsoNorm?: () => void;
 }
 

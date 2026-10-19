@@ -8,7 +8,7 @@ export interface SanPinCyclesTableProps {
 	readonly cycles: readonly SanPinCycleEntry[];
 	readonly onAutofillShift?: () => void;
 	readonly isAutofilling?: boolean;
-	readonly onQuickBatchNorm?: (batchSize: number, regime: "134" | "121") => void;
+	readonly onQuickBatchNorm?: (batchSize: number, regime: "134" | "121", cycleName?: string) => void;
 	readonly onQuickPsoNorm?: () => void;
 }
 

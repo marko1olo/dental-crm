@@ -65,8 +65,8 @@ export function PouchBarcodeScanner({
 								key={preset.label}
 								type="button"
 								onClick={() => onItemsDescriptionChange(preset.text)}
-								className="sanpin-btn sanpin-btn-secondary"
-								style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem", borderRadius: "12px" }}
+								className="sanpin-btn sanpin-btn-secondary secondary-button"
+								style={{ fontSize: "0.75rem", padding: "0.35rem 0.6rem", minHeight: "36px", borderRadius: "12px" }}
 							>
 								{preset.label}
 							</button>
@@ -80,7 +80,7 @@ export function PouchBarcodeScanner({
 					value={itemsDescription}
 					onChange={(e) => onItemsDescriptionChange(e.target.value)}
 					className="sanpin-input"
-					style={{ minHeight: "36px", fontSize: "0.85rem" }}
+					style={{ minHeight: "38px", fontSize: "0.85rem" }}
 					placeholder="Стоматологические наконечники, боры, зеркала, зонды, пинцеты"
 				/>
 			</div>
@@ -96,7 +96,7 @@ export function PouchBarcodeScanner({
 						value={packsCount}
 						onChange={(e) => onPacksCountChange(parseInt(e.target.value, 10) || 1)}
 						className="sanpin-input"
-						style={{ minHeight: "36px", fontSize: "0.85rem", fontWeight: 700 }}
+						style={{ minHeight: "38px", fontSize: "0.85rem", fontWeight: 700 }}
 					/>
 				</div>
 
@@ -106,7 +106,7 @@ export function PouchBarcodeScanner({
 						value={packagingPresetId}
 						onChange={(e) => onPackagingPresetIdChange(e.target.value)}
 						className="sanpin-select"
-						style={{ minHeight: "36px", fontSize: "0.85rem" }}
+						style={{ minHeight: "38px", fontSize: "0.85rem" }}
 					>
 						{STATUTORY_PACKAGING_PRESETS.map((p) => (
 							<option key={p.id} value={p.id}>
@@ -147,11 +147,11 @@ export function PouchBarcodeScanner({
 					<button
 						type="button"
 						onClick={handleGenerateQuickBarcode}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ fontSize: "0.72rem", padding: "0.15rem 0.45rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+						className="sanpin-btn sanpin-btn-secondary secondary-button"
+						style={{ fontSize: "0.75rem", padding: "0.35rem 0.6rem", minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
 						title="Сгенерировать канонический идентификатор упаковки"
 					>
-						<Sparkles size={11} color="var(--teal, #0d9488)" /> <span>Сгенерировать код</span>
+						<Sparkles size={13} color="var(--teal, #0d9488)" /> <span>Сгенерировать код</span>
 					</button>
 				</div>
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>

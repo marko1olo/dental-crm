@@ -245,8 +245,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							title="Мягкий овердрафт склада (дефицит): требуется оприходование партии, приём не блокируется"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
-							<span>Ожидает оприходования накладной ({stock} {formatInventoryUnitRu(item.unit || "шт.")})</span>
-							<span className="hidden">Ожидается поставка (мягкий овердрафт)</span>
+							<span>Овердрафт: ожидает оприходования ({stock} {formatInventoryUnitRu(item.unit || "шт.")})</span>
+							<span className="hidden">Овердрафт Ожидается поставка (мягкий овердрафт)</span>
 						</span>
 					) : isOverdraft ? (
 						<span
@@ -255,8 +255,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							title="Мягкий овердрафт склада (дефицит): не блокирует приём пациента"
 						>
 							<ShieldAlert size={10} className="shrink-0" />
-							<span>Ожидает оприходования накладной</span>
-							<span className="hidden">Ожидается поставка (мягкий овердрафт)</span>
+							<span>Овердрафт: ожидает оприходования накладной</span>
+							<span className="hidden">Овердрафт Ожидается поставка (мягкий овердрафт)</span>
 						</span>
 					) : null}
 				</div>

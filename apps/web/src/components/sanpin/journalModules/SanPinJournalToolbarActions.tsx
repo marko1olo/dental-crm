@@ -17,7 +17,7 @@ export interface SanPinJournalToolbarActionsProps {
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onQuickBatchNorm?: ((batchSize: number, regime: "134" | "121") => void) | undefined;
+	readonly onQuickBatchNorm?: ((batchSize: number, regime: "134" | "121", cycleName?: string) => void) | undefined;
 	readonly onQuickPsoNorm?: (() => void) | undefined;
 }
 

@@ -66,18 +66,18 @@ export const ChairsideBottomStickyActions: React.FC<ChairsideBottomStickyActions
         >
           {currentStep === "checkout" ? (
             <>
-              <CreditCard size={20} />
-              <span>Завершить приём и сформировать счёт</span>
+              <CreditCard size={20} className="shrink-0" />
+              <span className="truncate">Завершить приём и сформировать счёт</span>
             </>
           ) : (
             <>
-              <span>
+              <span className="truncate">
                 {currentStep === "complaints" && "Далее: 2. Осмотр"}
                 {currentStep === "exam" && "Далее: 3. Диагноз"}
                 {currentStep === "diagnosis" && "Далее: 4. Лечение"}
                 {currentStep === "treatment" && "Далее: 5. Итог и Чек"}
               </span>
-              <ArrowRight size={18} />
+              <ArrowRight size={18} className="shrink-0" />
             </>
           )}
         </button>

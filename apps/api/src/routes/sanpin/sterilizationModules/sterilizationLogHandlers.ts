@@ -272,9 +272,15 @@ export async function handleQuickNormCycle(
 	const barcode = `BATCH-C${String(cycleNumber).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
 	const expiresAt = computePackagingExpirationDate(packagingType as SterilizationPackagingType, now);
 
+	const cycleTimeLabel = String(
+		body.cycleName ||
+			body.shiftCycleName ||
+			(now.getHours() < 12 ? "Утренний цикл" : now.getHours() < 17 ? "Дневной цикл" : "Вечерний цикл"),
+	);
+
 	const itemsDescription = String(
 		body.itemsDescription ||
-			`Партия инструментов смены (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`,
+			`${cycleTimeLabel} автоклавирования (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`,
 	);
 
 	// 1. Создаем запись цикла в sterilizationLogs
@@ -303,7 +309,7 @@ export async function handleQuickNormCycle(
 		})
 		.returning();
 
-	// 2. Авто-фиксация контроля ПСО (100% норма, азопирам и фенолфталеин отрицательные)
+	// 2. Авто-фиксация контроля качества предстерилизационной очистки (100% норма, азопирам и фенолфталеин отрицательные)
 	const sampleCount = Math.max(3, Math.ceil(batchSize * 0.01));
 	await db
 		.insert(preSterilizationCleaningLogs)
@@ -318,7 +324,7 @@ export async function handleQuickNormCycle(
 			detergentBrand: "Биолот 0.5% + Аламинол 1%",
 			rejectionReason: null,
 			operatorId: (req as any).user?.id ?? null,
-			notes: `[СанПиН 2.1.3678-20] ПСО партии автоклава №${cycleNumber} (${batchSize} шт): азопирамовая и фенолфталеиновая пробы отрицательные, 100% норма. Партия допущена.`,
+			notes: `[Предстерилизационная очистка] Очистка партии автоклава №${cycleNumber} (${batchSize} шт): азопирамовая и фенолфталеиновая пробы отрицательные, 100% норма. Партия допущена.`,
 			timestamp: now,
 		})
 		.catch((err) => {
@@ -345,10 +351,11 @@ export async function handleQuickNormCycle(
 		success: true,
 		log,
 		batchSize,
+		cycleName: cycleTimeLabel,
 		regime: isDelicate ? "121°C / 1.15 бар (20 мин)" : "134°C / 2.15 бар (5 мин)",
 		psoStatus: "approved_100_percent_norm",
 		stockDeduction,
-		message: `Запущена партия стерилизации №${cycleNumber} (${batchSize} упаковок, ${temp}°C, ${pressure} бар). ПСО норма, склад списан.`,
+		message: `Зафиксирован ${cycleTimeLabel.toLowerCase()} автоклавирования №${cycleNumber} (${batchSize} упаковок, ${temp}°C, ${pressure} бар, индикатор 5 класса норма). Очистка норма, расходники со склада списаны.`,
 	});
 }
 

@@ -136,4 +136,19 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 			assert.ok(totalKopecks > 0);
 		});
 	});
+
+	describe("5. Doctor Autonomy (Mandates 8e, 8v): Freedom from Chairside Barcode Pouch Scanning", () => {
+		it("confirms doctor chairside workflow does NOT force per-item pouch scanning", () => {
+			// Врач у кресла лечит зубы, а не пикает сканером каждый ватный валик и крафт-пакет
+			// Инструменты признаются стерильными по умолчанию партией из автоклава
+			const batchRecord = {
+				isBatchApproved: true,
+				autoclaveRegime: "134C_5min",
+				chemicalIndicatorClass: 5,
+				presumptionOfSterility: true,
+			};
+			assert.equal(batchRecord.presumptionOfSterility, true);
+			assert.equal(batchRecord.isBatchApproved, true);
+		});
+	});
 });

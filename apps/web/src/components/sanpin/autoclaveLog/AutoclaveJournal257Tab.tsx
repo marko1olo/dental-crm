@@ -21,7 +21,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import { Autoclave, DentalForm043 } from "../../icons/DentalIcons";
+import { Autoclave } from "../../icons/DentalIcons";
 import {
 	DEFAULT_CLINIC_LEGAL_INFO,
 	createDefault5ChamberPoints,
@@ -550,7 +550,7 @@ export function AutoclaveJournal257Tab({
 							title="Автоматическое формирование и печать журнала стерилизаторов за текущий месяц"
 							data-testid="journal-tab-generate-monthly-form257-btn"
 						>
-							<DentalForm043 size={15} color="var(--teal, #0d9488)" />
+							<Calendar size={15} color="var(--teal, #0d9488)" />
 							<span>За месяц</span>
 						</button>
 

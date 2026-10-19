@@ -3,23 +3,18 @@
  *
  * Канонический SSOT маршрутизатор стерилизации и автоклавирования
  * (СанПиН 2.1.3678-20, СанПиН 3.3686-21, Форма № 257/у, Форма № 366/у).
- *
- * Консолидирует все маршруты стерилизации под единым авторитетом:
- * Канонический базовый путь: /api/sanpin/sterilization
- *
- * Пакетная обработка большими батчами (15, 30, 50 лотков/пакетов на смену),
- * 1-клик норма для автоклава и ПСО, автоматическое списание расходников со склада.
+ * Базовый путь: /api/sanpin/sterilization
+ * Пакетная обработка сменами в 1 клик, списание со склада.
+ * Мандат 8b: строго <= 120 строк.
  */
 
 import type { FastifyInstance } from "fastify";
 import {
 	handleCreateDailyTest,
 	handleCreatePsoTest,
-	handleCreateSanpinCycle,
 	handleCreateSterilizationLog,
 	handleGetDailyTests,
 	handleGetPsoTests,
-	handleGetSanpinCycles,
 	handleGetSterilizationLogs,
 	handlePsoQuickNorm,
 	handleQuickNormCycle,
@@ -37,6 +32,7 @@ import {
 	handleGetSterilizerEquipments,
 	handleUpdateSterilizerEquipment,
 } from "./sterilizationModules/sterilizerEquipmentHandlers.js";
+import { registerSterilizationLegacyRoutes } from "./sterilizationModules/sterilizationLegacyRoutes.js";
 
 const STERILIZATION_ROUTES_GUARD = Symbol.for("dente.sterilization_routes_guard");
 
@@ -46,15 +42,11 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	}
 	(app as any)[STERILIZATION_ROUTES_GUARD] = true;
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// 1. КАНОНИЧЕСКИЙ РОУТ /api/sanpin/sterilization (SSOT)
-	// ─────────────────────────────────────────────────────────────────────────
-
 	// Журнал работы стерилизаторов (Форма 257/у)
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
 	app.post("/api/sanpin/sterilization", handleCreateSterilizationLog);
 
-	// Канонический алиас циклов автоклавирования: /api/sanpin/sterilization-cycles
+	// Алиасы циклов автоклавирования
 	app.get("/api/sanpin/sterilization-cycles", handleGetSterilizationLogs);
 	app.post("/api/sanpin/sterilization-cycles", handleCreateSterilizationLog);
 	app.post("/api/sanpin/sterilization-cycles/quick-norm", handleQuickNormCycle);
@@ -76,13 +68,9 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.get("/api/sanpin/sterilization/daily-tests", handleGetDailyTests);
 	app.post("/api/sanpin/sterilization/daily-tests", handleCreateDailyTest);
 
-	// Сканирование крафт-пакетов
+	// Сканирование крафт-пакетов и привязка к визиту 043/у
 	app.post("/api/sanpin/sterilization/scan", handleScanSterilization);
-
-	// Привязка лотка к визиту 043/у
 	app.post("/api/sanpin/sterilization/link", handleSterilizationLink);
-
-	// Генерация штрихкодов трассируемости и вскрытие крафт-пакетов
 	app.post("/api/sanpin/sterilization/generate-barcode", handleGenerateBarcode);
 	app.post("/api/sanpin/sterilization/unseal", handleUnsealKraftPackage);
 
@@ -92,49 +80,8 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.put("/api/sanpin/sterilization/equipments/:id", handleUpdateSterilizerEquipment);
 	app.delete("/api/sanpin/sterilization/equipments/:id", handleDeleteSterilizerEquipment);
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// 2. ОБРАТНАЯ СОВМЕСТИМОСТЬ И АЛИАСЫ (ZERO BREAKING CHANGES)
-	// ─────────────────────────────────────────────────────────────────────────
-
-	// Старые роуты Формы 257/у
-	app.get("/api/registers/sterilization", handleGetSterilizationLogs);
-	app.post("/api/registers/sterilization", handleCreateSterilizationLog);
-	app.get("/api/sterilization/logs", handleGetSterilizationLogs);
-	app.get("/api/sanpin/cycles", handleGetSanpinCycles);
-	app.post("/api/sanpin/cycles", handleCreateSanpinCycle);
-	app.post("/api/registers/sterilization/shift-batch", handleSterilizationShiftBatch);
-
-	// 1-клик нормы
-	app.post("/api/sterilization/quick-norm", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization/quick-norm-cycle", handleQuickNormCycle);
-	app.post("/api/registers/sterilization/quick-norm", handleQuickNormCycle);
-
-	// Сканирование и привязка к 043/у
-	app.post("/api/sterilization/scan", handleScanSterilization);
-	app.post("/api/sterilization/link", handleSterilizationLink);
-	app.post("/api/sterilization/generate-barcode", handleGenerateBarcode);
-	app.post("/api/sterilization/unseal", handleUnsealKraftPackage);
-
-	// ПСО контроль
-	app.get("/api/sterilization/pso-tests", handleGetPsoTests);
-	app.post("/api/sterilization/pso-tests", handleCreatePsoTest);
-	app.post("/api/sterilization/pso/quick-norm", handlePsoQuickNorm);
-	app.post("/api/sanpin/sterilization/pso-quick-norm", handlePsoQuickNorm);
-
-	// Ежедневные тесты
-	app.get("/api/sterilization/daily-tests", handleGetDailyTests);
-	app.post("/api/sterilization/daily-tests", handleCreateDailyTest);
-
-	// Оборудование
-	app.get("/api/registers/sterilizers/equipments", handleGetSterilizerEquipments);
-	app.post("/api/registers/sterilizers/equipments", handleCreateSterilizerEquipment);
-	app.put("/api/registers/sterilizers/equipments/:id", handleUpdateSterilizerEquipment);
-	app.delete("/api/registers/sterilizers/equipments/:id", handleDeleteSterilizerEquipment);
-
-	app.get("/api/registers/sterilizer/equipments", handleGetSterilizerEquipments);
-	app.post("/api/registers/sterilizer/equipments", handleCreateSterilizerEquipment);
-	app.put("/api/registers/sterilizer/equipments/:id", handleUpdateSterilizerEquipment);
-	app.delete("/api/registers/sterilizer/equipments/:id", handleDeleteSterilizerEquipment);
+	// Обратная совместимость и алиасы
+	registerSterilizationLegacyRoutes(app);
 }
 
 export const registerSterilizationRoutes = registerSanpinSterilizationRoutes;
@@ -146,3 +93,4 @@ export * from "./sterilizationModules/sterilizerEquipmentHandlers.js";
 export * from "./sterilizationModules/sterilizationKraftHandlers.js";
 export * from "./sterilizationModules/sterilizationHelpers.js";
 export * from "./sterilizationModules/sterilizationStockDeduction.js";
+export * from "./sterilizationModules/sterilizationLegacyRoutes.js";

@@ -62,9 +62,21 @@ export const SanPinJournalToolbarFilters: React.FC<SanPinJournalToolbarFiltersPr
 				<select
 					value={selectedAutoclave}
 					onChange={(e) => onSelectAutoclave(e.target.value)}
-					style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)", fontSize: "0.8125rem", color: "var(--ink, #1e293b)" }}
+					className="secondary-button"
+					style={{
+						height: 34,
+						minHeight: 34,
+						padding: "0 10px",
+						borderRadius: 8,
+						border: "1px solid var(--line, #cbd5e1)",
+						background: "var(--paper, #fff)",
+						fontSize: "0.8125rem",
+						color: "var(--ink, #1e293b)",
+						maxWidth: "100%",
+						cursor: "pointer",
+					}}
 				>
-					<option value="all">Все автоклавы клиники</option>
+					<option value="all">Все автоклавы</option>
 					<option value="АК-01">АК-01 (Melag Vacuklav 23B+)</option>
 					<option value="АК-02">АК-02 (W&H Lina 17)</option>
 				</select>

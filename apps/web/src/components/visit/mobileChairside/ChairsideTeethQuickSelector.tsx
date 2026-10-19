@@ -70,6 +70,31 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
   const q3Label = isPrimary ? "Q8 (85–81)" : isMixed ? "Q8 (46+85–81)" : "Q3 (48–41)";
   const q4Label = isPrimary ? "Q7 (71–75)" : isMixed ? "Q7 (71–75+36)" : "Q4 (31–38)";
 
+  const handleMarkAllTeethHealthy = () => {
+    triggerHaptic("success");
+    const allTeeth = isPrimary
+      ? ["55", "54", "53", "52", "51", "61", "62", "63", "64", "65", "85", "84", "83", "82", "81", "71", "72", "73", "74", "75"]
+      : [
+          "18", "17", "16", "15", "14", "13", "12", "11",
+          "21", "22", "23", "24", "25", "26", "27", "28",
+          "48", "47", "46", "45", "44", "43", "42", "41",
+          "31", "32", "33", "34", "35", "36", "37", "38",
+        ];
+    if (setToothState) {
+      for (const t of allTeeth) {
+        setToothState(t, "Healthy");
+      }
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("dente-batch-update-tooth-state", {
+          detail: { state: "Healthy", teeth: allTeeth },
+        }),
+      );
+    }
+    showToast("✓ Все зубы интактны (Физиологическая норма)", "success");
+  };
+
   const gridClass = isPrimary
     ? "grid grid-cols-5 gap-1.5 mt-2"
     : isMixed
@@ -83,6 +108,19 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
           {isChild ? "Зубная формула детского приёма (FDI 51–85)" : "Зубная формула по квадрантам (FDI)"}
         </div>
         <div className="p-3">
+          <button
+            type="button"
+            onClick={handleMarkAllTeethHealthy}
+            className="mobile-chairside-teeth-norm-action"
+            data-testid={`${testId}-teeth-norm-btn`}
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="font-bold text-[14px]">✓ Интактные зубы (Норма в 1 клик)</span>
+            </div>
+            <span className="text-[12px] opacity-80 font-medium">Все 32</span>
+          </button>
+
           <div className="mobile-quadrant-tabs">
             <button
               type="button"
@@ -126,7 +164,8 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
             </button>
           </div>
 
-          <div className={gridClass}>
+          <div className="mobile-teeth-scroller-wrap" data-testid={`${testId}-teeth-scroller`}>
+            <div className={`mobile-teeth-horizontal-scroller ${gridClass}`}>
             {quadrantTeeth.map((tooth) => {
               const status = toothStateByCode[tooth] || "Healthy";
               const isHealthy = status === "Healthy" || status === "watch";
@@ -156,6 +195,7 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
@@ -176,6 +216,13 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
                 if (selectedToothModal && setToothState) {
                   triggerHaptic("selection");
                   setToothState(selectedToothModal, item.id);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("dente-update-tooth-state", {
+                        detail: { toothNumber: selectedToothModal, state: item.id },
+                      }),
+                    );
+                  }
                   showToast(`Зуб ${selectedToothModal}: ${item.label}`, "info");
                 }
                 setSelectedToothModal(null);

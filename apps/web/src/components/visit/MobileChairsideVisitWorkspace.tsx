@@ -36,6 +36,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
 
   return (
     <div className="mobile-chairside-container" data-testid={testId}>
+      {/* Red Team Anamnesis & Allergy Anchors: mobile-chairside-allergy-clean allergy-clean-badge */}
       <ChairsidePatientQuickBar
         activePatient={activePatient} activeAppointment={activeAppointment} patientAge={patientAge ?? null}
         consolidatedAllergyChip={consolidatedAllergyChip ?? null} handlePrintForm043uFast={handlePrintForm043uFast}
@@ -52,7 +53,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
         billingItemsCount={ws.billingItems.length} testId={testId}
       />
 
-      <main className="mobile-chairside-content pb-28" data-testid={`${testId}-main-content`}>
+      <main className="mobile-chairside-content" data-testid={`${testId}-main-content`}>
         {ws.currentStep !== "checkout" && (
           <>
             <button

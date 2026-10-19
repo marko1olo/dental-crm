@@ -231,7 +231,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
 
       {/* ═══ STEP 4: ЛЕЧЕНИЕ И ПРОТОКОЛ ═══ */}
       {currentStep === "treatment" && (
-        <div className="space-y-3 pb-28" data-testid={`${testId}-step4-content`}>
+        <div className="space-y-3" data-testid={`${testId}-step4-content`}>
           <VisitPlanStageHandoffBanner
             loadedTreatmentPlan={loadedTreatmentPlan}
             activeAppointment={activeAppointment}
@@ -305,7 +305,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title flex items-center justify-between">
               <span>Оказанные услуги и манипуляции</span>
-              <span className="text-[11px] text-teal-600 font-bold">Стандарт услуг</span>
+              <span className="text-[11px] text-teal-600 font-bold">Каталог процедур</span>
             </div>
 
             {billingItems.map((item) => (
