@@ -49,7 +49,7 @@ export function DateRangeQuickButtons({
 			<button
 				type="button"
 				onClick={() => setScheduleDateFilter(todayIso)}
-				className={`h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+				className={`secondary-button h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 					currentDateIso === todayIso
 						? "bg-[var(--teal)]/15 text-[var(--teal)] border-[var(--teal)]/40 font-bold"
 						: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--teal)]"

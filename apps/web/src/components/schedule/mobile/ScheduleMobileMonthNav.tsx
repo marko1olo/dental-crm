@@ -21,7 +21,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
         {isDifferentFromToday && (
           <button
             type="button"
-            className="schedule-mobile-today-chip"
+            className="secondary-button schedule-mobile-today-chip"
             onClick={onTodayClick}
             aria-label="Перейти на сегодня"
           >
@@ -30,7 +30,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
         )}
         <button
           type="button"
-          className="schedule-mobile-nav-btn"
+          className="secondary-button schedule-mobile-nav-btn"
           onClick={() => onShiftWeek(-7)}
           aria-label="Предыдущая неделя"
           title="Неделя назад"
@@ -39,7 +39,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
         </button>
         <button
           type="button"
-          className="schedule-mobile-nav-btn"
+          className="secondary-button schedule-mobile-nav-btn"
           onClick={() => onShiftWeek(7)}
           aria-label="Следующая неделя"
           title="Неделя вперёд"

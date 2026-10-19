@@ -16,7 +16,7 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
     <div className="schedule-mobile-bottom-bar">
       <button
         type="button"
-        className="schedule-mobile-primary-action-btn"
+        className="primary-button schedule-mobile-primary-action-btn"
         onClick={onAction}
       >
         <Plus size={18} />

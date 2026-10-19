@@ -19,7 +19,7 @@ export const ScheduleMobileEmptyDay: React.FC<ScheduleMobileEmptyDayProps> = ({
       </div>
       <button
         type="button"
-        className="schedule-mobile-empty-btn"
+        className="primary-button schedule-mobile-empty-btn"
         onClick={onAddAppointment}
       >
         <Plus size={16} />

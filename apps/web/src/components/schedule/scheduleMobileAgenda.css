@@ -565,6 +565,31 @@
   border-color: var(--line, #1e293b);
 }
 
+[data-theme="dark"] .schedule-mobile-month-nav,
+.dark .schedule-mobile-month-nav,
+[data-theme="dark"] .schedule-mobile-day-strip,
+.dark .schedule-mobile-day-strip,
+[data-theme="dark"] .schedule-mobile-chips-wrapper,
+.dark .schedule-mobile-chips-wrapper,
+[data-theme="dark"] .schedule-mobile-empty-day,
+.dark .schedule-mobile-empty-day {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #1e293b);
+}
+
+[data-theme="dark"] .schedule-mobile-nav-btn,
+.dark .schedule-mobile-nav-btn,
+[data-theme="dark"] .schedule-mobile-today-chip,
+.dark .schedule-mobile-today-chip,
+[data-theme="dark"] .schedule-mobile-filter-chip:not(.active),
+.dark .schedule-mobile-filter-chip:not(.active),
+[data-theme="dark"] .schedule-mobile-empty-icon,
+.dark .schedule-mobile-empty-icon {
+  background: var(--paper-soft, #1e293b);
+  border-color: var(--line, #334155);
+  color: var(--ink, #f8fafc);
+}
+
 [data-theme="dark"] .schedule-mobile-bottom-bar,
 .dark .schedule-mobile-bottom-bar {
   background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);

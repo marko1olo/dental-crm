@@ -117,7 +117,7 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						<button
 							type="button"
 							onClick={onOpenPendingOnlineBookings}
-							className={`schedule-pending-online-badge h-7 min-h-[26px] max-h-7 px-2 rounded-lg border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs ${
+							className={`secondary-button schedule-pending-online-badge h-7 min-h-[26px] max-h-7 px-2 rounded-lg border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs ${
 								(pendingOnlineBookingsCount ?? 0) > 0
 									? "bg-cyan-500/15 border-cyan-500/50 text-cyan-950 dark:text-cyan-100 hover:bg-cyan-500/25"
 									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -245,7 +245,7 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						<button
 							type="button"
 							onClick={onOpenDoctorShiftDrawer}
-							className="schedule-toolbar-shift-drawer-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+							className="secondary-button schedule-toolbar-shift-drawer-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
 							data-testid="schedule-toolbar-doctor-shift-btn"
 							title="Назначить смену врача"
 							aria-label="График смен"
@@ -258,7 +258,7 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						<button
 							type="button"
 							onClick={onOpenChairDateRangeModal}
-							className="schedule-toolbar-chair-range-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+							className="secondary-button schedule-toolbar-chair-range-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
 							data-testid="schedule-toolbar-chair-range-btn"
 							title="Назначить период кресел"
 							aria-label="Период кресел"

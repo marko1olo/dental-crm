@@ -11360,3 +11360,52 @@
         - `pc_dark_1440x900.png` (108.3 КБ, PC Dark 1440×900, глубокая тёмная палитра без слепящих белых пятен)
         - `mobile_light_390x844.png` (144.1 КБ, Mobile Light 390×844, Apple HIG, адаптивная 2-колоночная сетка этапов, тач-таргеты $\ge 48$px, 0px горизонтального скролла)
         - `mobile_dark_390x844.png` (149.5 КБ, Mobile Dark 390×844, тёмная тема смартфона, идеальная читаемость в перчатках).
+
+53. **Волна 345: Страховая Медицина (ДМС), Сплит-Расчеты Пациента vs Страховщик, Гарантийные Письма, Реестры Счетов и 4-State Visual Proof (Мандаты 8e, 8n, 8b, 8al, 8ze, Apple HIG)**:
+    - **1. Консолидация калькуляторов сплита и SSOT математики ДМС (`dmsSplitEngine.ts`, `@dental/shared`)**:
+      * Сделан канонический SSOT калькулятор сплит-расчетов (`dmsSplitEngine.ts`) с копеечной точностью без погрешностей IEEE-754;
+      * Гармонизирована логика с `packages/shared/src/insurance/dmsFranchiseEngine.ts` и `packages/shared/src/finance/splitPayment.ts`;
+      * Инвариант баланса: `dmsCoveredKopecks + patientPaidKopecks === totalBillKopecks` соблюдается с точностью до 0 копеек.
+    - **2. Сквозная интеграция с Fastify API и базой данных PostgreSQL 18 (`apps/api/src/routes/insuranceRoutes/`)**:
+      * Исправлены контракты роутов контрактов ДМС: поддержаны поля `patientFranchisePct` и `requiresGuaranteeLetter` в `policyManagementHandlers.ts`;
+      * Запросы отправляются с авторизационными заголовками `denteAdminSecretRequestHeaders()`, исключены 401/403/422;
+      * Все 19 интеграционных тестов бэкенда (`insuranceBody.test.ts`, `insuranceRegistry.test.ts`, `insuranceDmsCoverage.test.ts`) проходят со 100% успехом.
+    - **3. Сквозная связка с Кассой 54-ФЗ и Планами лечения (`PaymentModal`, `VisitServiceBillingWidget`)**:
+      * Авто-сплит суммы ДМС (реестр страховщика) и франшизы/сооплаты пациента без ручного пересчета на калькуляторе;
+      * Кнопка переноса в кассу (`btn-apply-dms-split-to-checkout`) автоматически передает рассчитанную сумму покрытия в `initialSplitDmsRub` и сооплату пациента к оплате картой/наличными;
+      * 1-клик экспорт реестра медицинских услуг ДМС в форматах RFC 4180 CSV (с кодировкой UTF-8 BOM для Microsoft Excel / 1C) и электронный XML для страховых организаций;
+      * Печать официального двустороннего Акта сдачи-приемки и Акта медико-экономической экспертизы (МЭЭ) со ссылками на стандарты СтАР.
+    - **4. Стандартизация кнопок DENTE и нативный мобильный Bottom Sheet Apple iOS HIG**:
+      * Все кнопки переведены на канонические классы дизайн-системы DENTE (`.primary-button`, `.secondary-button`, `.icon-button`, `.dente-filter-chip`);
+      * На смартфонах ($\le 768$px) модалка гарантийного письма ДМС открывается в виде нативного Bottom Sheet Apple iOS HIG: тактильный Drag Handle 36×5px по центру, скругление `rounded-t-[24px]`, сенсорные кнопки $\ge 44\times 44$px в Natural Thumb Zone, 0px паразитного горизонтального скролла;
+      * Мандат 8e: режим экстренного приёма («Острая боль / Гарантия в пути») разблокирует приём и кассу в 1 клик при задержке письма страховщика по телефону.
+    - **5. Верификация, Typecheck и 4-State Red Team Visual Proof**:
+      * 82/82 теста ДМС успешно пройдены (10 тест-сьютов во фронтенде и бэкенде, Exit Code 0);
+      * Проверка кодировки: `npm run check:encoding` проверено 14448 файлов, 0 замечаний;
+      * Typecheck `@dental/api` и `@dental/shared`: Exit Code 0;
+      * Сняты на живом стенде Vite 5174 и лично отсмотрены через `view_file` 4 скриншота в `docs/proofs/insurance/` (>50 КБ каждый):
+        - `01_insurance_guarantee_pc_light.png` (112.8 КБ, PC Light 1440×900, модалка ГП, лимит 120 000 ₽, остаток 101 500 ₽, 1-клик пресеты, бирюзовая Primary CTA)
+        - `02_insurance_guarantee_pc_dark.png` (117.0 КБ, PC Dark 1440×900, темная тема, глубокий контраст дизайн-токенов)
+        - `03_insurance_guarantee_mobile_light.png` (52.1 КБ, Mobile Light 390×844, Apple HIG Bottom Sheet со шторкой, drag handle, тач-таргеты $\ge 44\times 44$px)
+        - `04_insurance_guarantee_mobile_dark.png` (54.5 КБ, Mobile Dark 390×844, мобильная темная тема, 0px горизонтального дрифта).
+54. **Волна 346: Red Team Инквизиция расписания и быстрой записи — ликвидация синтетических ID, Apple iOS Agenda 390x844, Dark Mode гармония и стандартизация тулбаров (Мандаты 8e, 8n, 8al, 8ze, Apple HIG)**:
+    - **1. Ликвидация синтетических идентификаторов и гармонизация с PostgreSQL 18 (`quickBookingInlinePatient.ts`)**:
+      * Устранена генерация синтетического `id: pat-${Date.now()}` при сбоях создания пациента в быстрой записи, приводившая к падению Zod схемы `createAppointmentSchema` (`patientId: z.string().uuid()`) и краху внешнего ключа в PostgreSQL 18;
+      * При невозможности создать пациента функция `resolveOrAutoCreateSubmitPatient` честно возвращает `null`, что позволяет отобразить пользователю понятное клиническое предупреждение, а для экстренных визитов (`emergency`) создавать запись без блокировок (Мандат 8e);
+      * Добавлена поддержка извлечения `existingPatientId` при ответе `409 Conflict` (дубликат карты).
+    - **2. Стандартизация кнопок тулбаров расписания DENTE (`primary-button` / `secondary-button`)**:
+      * В `apps/web/src/components/schedule/filterStrip/DateRangeQuickButtons.tsx`: кнопка «Сегодня» переведена на `secondary-button`;
+      * В `apps/web/src/components/schedule/filterStrip/ScheduleFilterStripContent.tsx`: бейдж онлайн-заявок, кнопки вызова графика смен врача (`onOpenDoctorShiftDrawer`) и периода кресел (`onOpenChairDateRangeModal`) переведены на семантический класс `secondary-button`;
+      * В `apps/web/src/components/schedule/filterStrip/CabinetFilterBar.tsx`: кнопка быстрого добавления кресла переведена на `secondary-button` с сохранением минимального тач-таргета $\ge 44\times 44$px;
+      * В `apps/web/src/components/schedule/mobile/ScheduleMobileMonthNav.tsx`: кнопки перехода на сегодня и стрелки переключения недели переведены на `secondary-button`;
+      * В `apps/web/src/components/schedule/mobile/ScheduleMobileBottomBar.tsx` и `ScheduleMobileEmptyDay.tsx`: кнопки создания записи переведены на `primary-button`.
+    - **3. Apple iOS HIG Mobile Agenda & Усиление Dark Mode (`scheduleMobileAgenda.css`)**:
+      * Сняты риски вспышек белого фона в темной теме: добавлены селекторы `[data-theme="dark"]` и `.dark` для панели месяца, 7-дневной полосы недели, горизонтального скроллера чипов врачей/кресел и карточки пустого дня;
+      * Подтвержден инвариант 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`) и Floating Bottom Action Bar в нижней зоне большого пальца (Natural Thumb Zone).
+    - **4. Верификация и 4-State Red Team Visual Proof**:
+      * 30/30 целевых тестов расписания и быстрой записи пройдены успешно (`scheduleButtonsRedTeamInquisition.test.tsx`, `quickBookingAutonomyWave50.test.tsx`, `chairScheduleToolbarDensity.test.tsx`, `soloDoctorScheduleAutonomy.test.tsx`, `soloDoctorScheduleAutonomyWave310.test.tsx`, Exit Code 0);
+      * Сняты и лично отсмотрены глазами через `view_file` 4 скриншота расписания из реального Fastify API (4100) + PostgreSQL 18 + Vite (5173) в `docs/screenshots/schedule/`:
+        - `proof_schedule_redteam_pc_light_1440x900.png` (126.4 КБ, PC Light 1440×900, чистая сетка 2 кресел соло-клиники, тулбар с четкими кнопками)
+        - `proof_schedule_redteam_pc_dark_1440x900.png` (99.1 КБ, PC Dark 1440×900, глубокая тёмная тема DENTE, отсутствие белых пятен)
+        - `proof_schedule_redteam_mobile_light_390x844.png` (32.6 КБ, Mobile Light 390×844, вертикальный таймлайн Agenda Apple HIG, тач-таргеты $\ge 44$px)
+        - `proof_schedule_redteam_mobile_dark_390x844.png` (33.6 КБ, Mobile Dark 390×844, безупречная темная тема смартфона, плавающий Bottom Bar).

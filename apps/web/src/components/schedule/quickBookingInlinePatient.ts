@@ -53,14 +53,7 @@ export async function resolveOrAutoCreateSubmitPatient(
   } catch {}
 
   if (!inlinePat?.id) {
-    inlinePat = {
-      id: `pat-${Date.now()}`,
-      fullName: fallbackName,
-      phone: cleanPhone || rawPhone || null,
-      status: "active",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as Patient;
+    return null;
   }
   patientSearch.setSelectedPatient(inlinePat);
   patientSearch.setPatientId(inlinePat.id);
