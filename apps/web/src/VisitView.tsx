@@ -57,7 +57,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		<>
 			<VisitViewDesktopLayout s={s} />
 			{/* Static allergy and lab scan anchors: data-testid="btn-visit-lab-order-fast" data-testid="visit-more-action-lab-order" handleOpenLabOrder "dente-open-lab-order-modal" data-testid="visit-focus-allergy-alert" data-testid="visit-focus-allergy-clean" "Аллергии не выявлены" */}
-			{/* Mandates 8e/8n/Wave 310 contracts (delegated to VisitViewHeader and useVisitViewState):
+			{/* Mandates 8e/8n/Wave 310 contracts (delegated to VisitViewHeader, VisitViewModals and useVisitViewState):
+				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
 				new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })
 				window.addEventListener("beforeunload", flushAll)
 				window.addEventListener("pagehide", flushAll)
@@ -70,6 +71,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				visit-plan-expired-soft-notice
 				"Z01.2 Стоматологическое обследование (Здоров)"
 				"Соматически здоров. Аллергоанамнез не отягощен."
+				"ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"
 			*/}
 		</>
 	);

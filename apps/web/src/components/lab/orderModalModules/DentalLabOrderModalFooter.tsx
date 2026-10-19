@@ -52,16 +52,14 @@ export function DentalLabOrderModalFooter({
 			</div>
 
 			{/* Mobile (Apple HIG) */}
-			<div className="flex sm:hidden flex-col gap-2 p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-				<div className="flex items-center justify-between text-xs font-bold text-[var(--muted)]">
-					<span className="truncate">{teethLabel}</span>
-					<div className="flex gap-1">
-						<button type="button" onClick={onCopySummary} className="px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)]">Копия</button>
-						<button type="button" onClick={onPrint} className="px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)]">А4</button>
-						<button type="button" onClick={onClose} className="px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)]">Отмена</button>
-					</div>
+			<div className="flex sm:hidden flex-col gap-2.5 p-3 pb-[max(14px,env(safe-area-inset-bottom))]">
+				<div className="text-xs font-bold text-[var(--muted)] truncate">{teethLabel}</div>
+				<div className="grid grid-cols-3 gap-2">
+					<button type="button" onClick={onCopySummary} className="min-h-[44px] h-11 px-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center cursor-pointer shadow-2xs">Копия ЗТЛ</button>
+					<button type="button" onClick={onPrint} className="min-h-[44px] h-11 px-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center cursor-pointer shadow-2xs">Печать А4</button>
+					<button type="button" onClick={onClose} className="min-h-[44px] h-11 px-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] flex items-center justify-center cursor-pointer">Отмена</button>
 				</div>
-				<button type="button" onClick={onSubmit} disabled={isSubmitting} className="w-full h-11 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer" data-testid="submit-lab-order-btn">
+				<button type="button" onClick={onSubmit} disabled={isSubmitting} className="w-full min-h-[48px] h-12 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-98 transition-transform" data-testid="submit-lab-order-btn">
 					{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
 					<span>{isEdit ? "Сохранить изменения" : "Создать наряд"}</span>
 				</button>

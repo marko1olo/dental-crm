@@ -33,9 +33,22 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 		showToast(`Оттенок VITA ${selectedShade} передан в заказ-наряд ЗТЛ`, 'success', 3000);
 	};
 
+	const getCollagePayload = () => ({
+		clinicName,
+		patientName,
+		patientCardNumber,
+		doctorName,
+		beforeTitle: preset.slots[0]?.shortLabelRu || 'До',
+		afterTitle: preset.slots[1]?.shortLabelRu || 'После',
+		beforeImageUrl: slotsData[preset.slots[0]?.id || '']?.imageUrl,
+		afterImageUrl: slotsData[preset.slots[1]?.id || '']?.imageUrl,
+		beforeShade: selectedShade,
+		afterShade: selectedShade,
+	});
+
 	const handleExportPng = async () => {
 		try {
-			await exportCollageAsPng(preset, slotsData, clinicName, patientName, patientCardNumber, doctorName, '16_9_hd');
+			await exportCollageAsPng(getCollagePayload());
 			showToast('Коллаж успешно сохранен в PNG', 'success');
 		} catch {
 			showToast('Ошибка экспорта коллажа', 'error');
@@ -82,7 +95,7 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 				<button type="button" className="photo-touch-btn" data-testid="btn-export-lab-png" onClick={handleExportPng} style={{ minHeight: '44px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
 					<Download size={15} /> Экспорт PNG
 				</button>
-				<button type="button" className="photo-touch-btn primary" data-testid="btn-export-lab-pdf" onClick={() => exportCollageAsPdf(preset, slotsData, clinicName, patientName, patientCardNumber, doctorName, 'A4_landscape')} style={{ minHeight: '44px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
+				<button type="button" className="photo-touch-btn primary" data-testid="btn-export-lab-pdf" onClick={() => exportCollageAsPdf(getCollagePayload())} style={{ minHeight: '44px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
 					<Printer size={15} /> Печать PDF
 				</button>
 			</div>

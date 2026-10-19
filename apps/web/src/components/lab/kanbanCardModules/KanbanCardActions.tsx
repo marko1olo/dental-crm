@@ -17,8 +17,8 @@ export interface KanbanCardActionsProps {
 	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
 	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
 	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
-	readonly onRescheduleAppointment?: (order: DentalLabWorkflowOrder) => void;
-	readonly onPartialDelivery?: (order: DentalLabWorkflowOrder) => void;
+	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
+	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export function KanbanCardActions({
@@ -51,13 +51,13 @@ export function KanbanCardActions({
 
 	return (
 		<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
-			<button type="button" className="secondary-button ztl-btn-card-action min-h-[36px] sm:min-h-0" onClick={(e) => { e.stopPropagation(); onInspectOrder(order); }} title="Открыть спецификацию наряда" data-testid={`ztl-card-open-${order.id}`}>
+			<button type="button" className="secondary-button ztl-btn-card-action min-h-[44px] sm:min-h-0" onClick={(e) => { e.stopPropagation(); onInspectOrder(order); }} title="Открыть спецификацию наряда" data-testid={`ztl-card-open-${order.id}`}>
 				<Eye size={13} /><span>Открыть</span>
 			</button>
 
 			<button
 				type="button"
-				className={`ztl-btn-card-action min-h-[36px] sm:min-h-0 ${columnId === "installed_completed" ? "secondary-button font-bold text-emerald-600" : "primary-button ztl-btn-advance"}`}
+				className={`ztl-btn-card-action min-h-[44px] sm:min-h-0 ${columnId === "installed_completed" ? "secondary-button font-bold text-emerald-600" : "primary-button ztl-btn-advance"}`}
 				onClick={(e) => { e.stopPropagation(); columnId === "installed_completed" ? onInspectOrder(order) : onAdvanceStage(order); }}
 				title={advanceTitle}
 				data-testid={`ztl-card-status-${order.id}`}
@@ -66,7 +66,7 @@ export function KanbanCardActions({
 			</button>
 
 			<div style={{ position: "relative", flexShrink: 0 }}>
-				<button type="button" className="icon-button ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2" style={{ minWidth: "32px", padding: "0 6px" }} onClick={(e) => { e.stopPropagation(); onToggleMenu(e); }} title="Действия" aria-expanded={isMenuOpen} data-testid={`ztl-card-menu-btn-${order.id}`}>
+				<button type="button" className="icon-button ztl-btn-card-action min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 px-2 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); onToggleMenu(e); }} title="Действия" aria-expanded={isMenuOpen} data-testid={`ztl-card-menu-btn-${order.id}`}>
 					<MoreHorizontal size={13} />
 				</button>
 				{isMenuOpen && (

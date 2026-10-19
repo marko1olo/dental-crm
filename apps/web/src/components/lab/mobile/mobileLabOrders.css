@@ -159,9 +159,9 @@
 }
 
 .mobile-lab-chip {
-	height: 34px;
-	min-height: 34px;
-	padding: 0 12px;
+	height: 38px;
+	min-height: 38px;
+	padding: 0 14px;
 	border-radius: 10px;
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -564,10 +564,10 @@
 }
 
 .mobile-lab-sheet-close-btn {
-	width: 36px;
-	height: 36px;
-	min-width: 36px;
-	min-height: 36px;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
 	border-radius: 9999px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);

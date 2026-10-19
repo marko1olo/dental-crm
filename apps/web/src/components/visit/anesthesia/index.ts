@@ -3,6 +3,6 @@
  * Standards: Минздрав РФ, СтАР, ФАР
  */
 
-export * from './anesthesiaTechniqueMath';
-export * from './aspirationSafetyEngine';
-export * from './anesthesiaExpressPresets';
+export * from "./anesthesiaExpressPresets";
+export * from "./anesthesiaTechniqueMath";
+export * from "./aspirationSafetyEngine";

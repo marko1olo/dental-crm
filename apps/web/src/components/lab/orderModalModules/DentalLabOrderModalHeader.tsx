@@ -3,11 +3,11 @@ import { FlaskConical, Printer, Sparkles, X } from "lucide-react";
 
 export interface DentalLabOrderModalHeaderProps {
 	patientName: string;
-	patientChartNumber?: string;
+	patientChartNumber?: string | undefined;
 	doctorName: string;
-	treatmentPlanId?: string;
-	stageNumber?: number | null;
-	stageTitle?: string;
+	treatmentPlanId?: string | undefined;
+	stageNumber?: number | null | undefined;
+	stageTitle?: string | undefined;
 	onApplyDefaults: () => void;
 	onPrint: () => void;
 	onClose: () => void;

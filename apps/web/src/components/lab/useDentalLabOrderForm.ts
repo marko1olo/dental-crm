@@ -346,8 +346,11 @@ export function useDentalLabOrderForm({
 		if (!scheduledVisitDate) {
 			setScheduledVisitDate(fitDateIso);
 		}
+		if (selectedTeeth.length === 0 && !jawScope) {
+			setSelectedTeeth([16]);
+		}
 		showToast(
-			`Применен шаблон: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
+			`Применен шаблон: «Коронка ZrO2 (диоксид циркония), цвет А2, зуб 16, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
 			"success",
 			4000,
 		);

@@ -76,7 +76,7 @@ export function DentalLabExpressConfigurator({
 							onClick={() => {
 								setConstructionType("single_crown");
 								setMaterial(p.mat);
-								setDueDate(addWorkingDays(new Date(), p.days));
+								setDueDate(addWorkingDays(new Date(), p.days).toISOString().slice(0, 10));
 								setShadeClassical?.(p.shade);
 								setShadeBody?.(p.shade);
 							}}

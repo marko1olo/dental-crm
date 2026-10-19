@@ -109,8 +109,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={() => {
 					onPrintBlank(order);
 					onCloseMenu();
@@ -139,8 +140,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={() => {
 					onInspectOrder(order);
 					onCloseMenu();
@@ -168,8 +170,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={() => {
 					onAttachBitePhoto(order);
 					onCloseMenu();
@@ -197,8 +200,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={() => {
 					onTechnicianComment(order);
 					onCloseMenu();
@@ -227,8 +231,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 						cursor: "pointer",
 						width: "100%",
 						textAlign: "left",
-						minHeight: "36px",
+						minHeight: "var(--touch-target-item-height, 44px)",
 					}}
+					className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 					onClick={() => {
 						onRepeatFitting(order);
 						onCloseMenu();
@@ -257,8 +262,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={handleReschedule}
 				title="Перейти к записи пациента для переноса визита"
 				role="menuitem"
@@ -285,8 +291,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 						cursor: "pointer",
 						width: "100%",
 						textAlign: "left",
-						minHeight: "36px",
+						minHeight: "var(--touch-target-item-height, 44px)",
 					}}
+					className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 					onClick={() => {
 						onCloseMenu();
 						if (onPartialDelivery) {
@@ -320,8 +327,9 @@ export const DentalLabKanbanCardMenu: React.FC<DentalLabKanbanCardMenuProps> = (
 					cursor: "pointer",
 					width: "100%",
 					textAlign: "left",
-					minHeight: "36px",
+					minHeight: "var(--touch-target-item-height, 44px)",
 				}}
+				className="min-h-[44px] sm:min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors"
 				onClick={() => {
 					onRequestWarrantyRework(order);
 					onCloseMenu();

@@ -6,7 +6,7 @@ import type { FittingUrgencyInfo } from "../DentalLabKanbanCard";
 export interface KanbanCardBodyProps {
 	readonly order: DentalLabWorkflowOrder;
 	readonly fittingUrgency: FittingUrgencyInfo | null;
-	readonly onRescheduleAppointment?: (order: DentalLabWorkflowOrder) => void;
+	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment }: KanbanCardBodyProps) {

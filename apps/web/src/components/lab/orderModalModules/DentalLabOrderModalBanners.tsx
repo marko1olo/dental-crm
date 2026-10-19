@@ -6,8 +6,8 @@ export interface DentalLabOrderModalBannersProps {
 	financialGateResult: DentalLabFinancialGateResult;
 	hasOverride: boolean;
 	onOverride: () => void;
-	fittingCollision?: { hasCollision: boolean; warningRu?: string } | null;
-	onAdjustStages?: () => void;
+	fittingCollision?: { hasCollision: boolean; warningRu?: string | null | undefined } | null | undefined;
+	onAdjustStages?: (() => void) | undefined;
 }
 
 export function DentalLabOrderModalBanners({

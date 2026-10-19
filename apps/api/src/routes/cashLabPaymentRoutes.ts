@@ -32,11 +32,16 @@ import {
 import { wsBroker } from "../services/websocketBroker.js";
 
 export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
+	if ((app as any).__cashLabPaymentRoutesRegistered) {
+		return;
+	}
+	(app as any).__cashLabPaymentRoutesRegistered = true;
+
 	/**
-	 * 1. POST /api/lab-orders/:id/pay
+	 * 1. POST /api/lab-orders/:id/pay & /api/clinical/lab-orders/:id/pay
 	 * Оплата наряда ЗТЛ из кассы по системной статье 11 («Оплата услуг лаборатории»).
 	 */
-	app.post("/api/lab-orders/:id/pay", async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+	const payHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -205,13 +210,15 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 			cashOperation: result.operation,
 			labOrder: result.labOrder,
 		});
-	});
+	};
+	app.post("/api/lab-orders/:id/pay", payHandler);
+	app.post("/api/clinical/lab-orders/:id/pay", payHandler);
 
 	/**
-	 * 2. POST /api/lab-orders/:id/mark-installed
+	 * 2. POST /api/lab-orders/:id/mark-installed & /api/clinical/lab-orders/:id/mark-installed
 	 * Сдача конструкции пациенту и НАМЕРТВО блокировка наряда (installed).
 	 */
-	app.post("/api/lab-orders/:id/mark-installed", async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+	const markInstalledHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -313,5 +320,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 			message: "Заказ-наряд ЗТЛ успешно сдан пациенту и намертво заблокирован от изменений.",
 			labOrder: result.labOrder,
 		});
-	});
+	};
+	app.post("/api/lab-orders/:id/mark-installed", markInstalledHandler);
+	app.post("/api/clinical/lab-orders/:id/mark-installed", markInstalledHandler);
 }
