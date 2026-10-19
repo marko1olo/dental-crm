@@ -20,34 +20,59 @@ export const DoctorShiftEncashmentPresets: React.FC<DoctorShiftEncashmentPresets
 	onToggleCustomMode,
 	onChangeAmount,
 }) => {
+	const isFull = !isCustomMode && encashmentAmount === cashRub;
+	const is5k = !isCustomMode && cashRub >= 5000 && encashmentAmount === Math.max(0, cashRub - 5000);
+	const is10k = !isCustomMode && cashRub >= 10000 && encashmentAmount === Math.max(0, cashRub - 10000);
+
 	const btnStyle = (active: boolean): React.CSSProperties => ({
 		fontSize: "12px",
-		padding: "0 10px",
+		padding: "0 12px",
 		height: "32px",
 		borderRadius: "8px",
 		fontWeight: active ? 700 : 500,
-		background: active ? "var(--teal-surface, rgba(13, 148, 136, 0.1))" : "var(--paper)",
-		border: active ? "1px solid var(--teal)" : "1px solid var(--line)",
+		background: active ? "var(--teal-surface, rgba(13, 148, 136, 0.12))" : "var(--paper-soft)",
+		border: active ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line)",
 		color: active ? "var(--teal-dark, #0f766e)" : "var(--ink)",
 		cursor: "pointer",
 		display: "inline-flex",
 		alignItems: "center",
+		whiteSpace: "nowrap",
 		transition: "all 0.15s ease",
 	});
 
 	return (
 		<>
-			<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-				<button type="button" style={btnStyle(encashmentAmount === cashRub && !isCustomMode)} onClick={onFullEncashment}>
+			<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+				<button
+					type="button"
+					style={btnStyle(isFull)}
+					onClick={onFullEncashment}
+					data-testid="btn-encashment-100"
+				>
 					100% наличности
 				</button>
-				<button type="button" style={btnStyle(false)} onClick={() => onKeepFloat(5000)}>
+				<button
+					type="button"
+					style={btnStyle(is5k)}
+					onClick={() => onKeepFloat(5000)}
+					data-testid="btn-encashment-float-5k"
+				>
 					Размен 5 000 ₽
 				</button>
-				<button type="button" style={btnStyle(false)} onClick={() => onKeepFloat(10000)}>
+				<button
+					type="button"
+					style={btnStyle(is10k)}
+					onClick={() => onKeepFloat(10000)}
+					data-testid="btn-encashment-float-10k"
+				>
 					Размен 10 000 ₽
 				</button>
-				<button type="button" style={btnStyle(isCustomMode)} onClick={onToggleCustomMode}>
+				<button
+					type="button"
+					style={btnStyle(isCustomMode)}
+					onClick={onToggleCustomMode}
+					data-testid="btn-encashment-custom"
+				>
 					{isCustomMode ? "Скрыть ввод" : "Другая сумма"}
 				</button>
 			</div>

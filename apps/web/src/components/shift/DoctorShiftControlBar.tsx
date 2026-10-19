@@ -71,7 +71,7 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React
 					isOffline={isOffline}
 				/>
 
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, flexWrap: "nowrap" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "nowrap" }}>
 					{onChangeChairStatus && (
 						<ChairStatusQuickToggle currentStatus={chairStatus} onChangeStatus={onChangeChairStatus} />
 					)}

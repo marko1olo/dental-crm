@@ -15,7 +15,7 @@ export const DoctorShiftVisitsHeader: React.FC<DoctorShiftVisitsHeaderProps> = (
 }) => (
 	<div className="today-schedule-header">
 		<h3 style={{ color: "var(--ink)", margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700 }}>
-			<ClipboardCheck size={16} aria-hidden="true" /> Журнал приёмов за смену
+			<ClipboardCheck size={16} aria-hidden="true" /> Сводка приёмов на смене
 		</h3>
 		<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 			<span className="today-schedule-count" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>

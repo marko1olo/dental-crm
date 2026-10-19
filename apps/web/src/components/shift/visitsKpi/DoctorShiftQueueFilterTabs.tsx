@@ -28,16 +28,16 @@ export const DoctorShiftQueueFilterTabs: React.FC<DoctorShiftQueueFilterTabsProp
 
 	return (
 		<div
-			className="stomx-queue-strip"
+			className="dente-queue-strip"
 			role="tablist"
 			aria-label="Очереди приёмов смены"
 			style={{
 				display: "inline-flex",
 				alignItems: "center",
-				gap: "3px",
+				gap: "4px",
 				background: "var(--paper-soft)",
 				border: "1px solid var(--line)",
-				borderRadius: "8px",
+				borderRadius: "10px",
 				padding: "3px",
 				marginBottom: "12px",
 				maxWidth: "100%",
@@ -54,8 +54,8 @@ export const DoctorShiftQueueFilterTabs: React.FC<DoctorShiftQueueFilterTabsProp
 						aria-selected={isActive}
 						style={{
 							fontSize: "12px",
-							padding: "4px 10px",
-							borderRadius: "6px",
+							padding: "5px 12px",
+							borderRadius: "7px",
 							fontWeight: isActive ? 700 : 500,
 							background: isActive ? "var(--paper)" : "transparent",
 							color: isActive ? "var(--ink)" : "var(--muted)",

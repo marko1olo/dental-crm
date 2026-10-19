@@ -1,11 +1,17 @@
 import { useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { calendarDateOfInstant, formatClockTime, localCalendarDateString, NIL_UUID } from "./shiftPrintStatements";
 import { useShiftRealtimeTelemetry } from "./useShiftRealtimeTelemetry";
 import { useShiftFinancialSummary } from "./useShiftFinancialSummary";
 import { useShiftAppointmentQueues } from "./useShiftAppointmentQueues";
 import { useShiftActivePatient } from "./useShiftActivePatient";
 import { useShiftStaffMetadata } from "./useShiftStaffMetadata";
+import {
+	getDemoShiftAppointments,
+	getDemoShiftPatients,
+	getDemoShiftPayments,
+} from "./demoShiftShowcase";
 
 export { calendarDateOfInstant, formatClockTime, localCalendarDateString, NIL_UUID };
 export { useShiftRealtimeTelemetry } from "./useShiftRealtimeTelemetry";
@@ -17,22 +23,42 @@ export interface UseDoctorShiftDataOptions {
 }
 
 export function useDoctorShiftData({ dashboard }: UseDoctorShiftDataOptions) {
+	const isDemo = isDemoShowcaseMode();
+
 	const patientsById = useMemo(() => {
 		// biome-ignore lint/suspicious/noExplicitAny: patient map
 		const index = new Map<string, any>();
 		for (const patient of dashboard?.patients ?? []) index.set(patient.id, patient);
+		if (isDemo) {
+			for (const p of getDemoShiftPatients()) {
+				if (!index.has(p.id)) index.set(p.id, p);
+			}
+		}
 		return index;
-	}, [dashboard?.patients]);
+	}, [dashboard?.patients, isDemo]);
 
 	const todayIso = dashboard?.todayIso || localCalendarDateString();
 
 	const todayAppointments = useMemo(() => {
-		return (dashboard?.appointments ?? [])
+		const raw = (dashboard?.appointments ?? [])
 			// biome-ignore lint/suspicious/noExplicitAny: appointment
 			.filter((app: any) => calendarDateOfInstant(app.startsAt) === todayIso && !["cancelled", "no_show"].includes(String(app.status ?? "").toLowerCase()))
 			// biome-ignore lint/suspicious/noExplicitAny: appointment
 			.sort((a: any, b: any) => String(a.startsAt).localeCompare(String(b.startsAt)));
-	}, [dashboard?.appointments, todayIso]);
+
+		if (raw.length === 0 && isDemo) {
+			return getDemoShiftAppointments(todayIso);
+		}
+		return raw;
+	}, [dashboard?.appointments, todayIso, isDemo]);
+
+	const effectivePayments = useMemo(() => {
+		const raw = dashboard?.payments ?? [];
+		if (raw.length === 0 && isDemo) {
+			return getDemoShiftPayments(todayIso);
+		}
+		return raw;
+	}, [dashboard?.payments, isDemo, todayIso]);
 
 	const inChairAppointment = useMemo(() => {
 		const found = todayAppointments.find((app: any) => ["in_chair", "in_treatment", "in_progress"].includes(String(app.status || app.appointmentStatus || app.state || "").toLowerCase()));
@@ -51,7 +77,7 @@ export function useDoctorShiftData({ dashboard }: UseDoctorShiftDataOptions) {
 	const staffMeta = useShiftStaffMetadata({ dashboard, inChairAppointment });
 	const queues = useShiftAppointmentQueues({ todayAppointments, inChairAppointment, patientsById });
 	const telemetry = useShiftRealtimeTelemetry({ todayAppointments, inChairAppointments: queues.inChairAppointments, patientsById, currentPatient: activePatient.currentPatient, todayIso });
-	const financial = useShiftFinancialSummary({ todayAppointments, payments: dashboard?.payments, staffById: staffMeta.staffById, patientsById, currentPatient: activePatient.currentPatient, shiftActiveDoctorId: staffMeta.shiftActiveDoctorId, todayIso });
+	const financial = useShiftFinancialSummary({ todayAppointments, payments: effectivePayments, staffById: staffMeta.staffById, patientsById, currentPatient: activePatient.currentPatient, shiftActiveDoctorId: staffMeta.shiftActiveDoctorId, todayIso });
 
 	const shiftStats = useMemo(() => ({
 		totalAppointments: telemetry.totalAppointments,

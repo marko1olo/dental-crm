@@ -23,7 +23,7 @@ export function renderEncashmentStatementHtml(options: PrintEncashmentOptions): 
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Ведомость инкассации 54-ФЗ — ${doctorFullName}</title>
+	<title>Ведомость инкассации — ${doctorFullName}</title>
 	<style>
 		@page { size: A4; margin: 15mm; }
 		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11pt; color: #0f172a; margin: 0; padding: 12px; }
@@ -45,7 +45,7 @@ export function renderEncashmentStatementHtml(options: PrintEncashmentOptions): 
 <body>
 	<div class="head">
 		<h1>ВЕДОМОСТЬ ИНКАССАЦИИ И КАССОВЫЙ СРЕЗ СМЕНЫ</h1>
-		<p>${clinicName} • Регламент 54-ФЗ • Кассовый срез смены</p>
+		<p>${clinicName} • Касса и выручка смены</p>
 	</div>
 	<div class="info-grid">
 		<div><strong>Врач / Кассир:</strong> ${doctorFullName}</div>

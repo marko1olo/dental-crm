@@ -22,23 +22,24 @@ export const DoctorShiftPrimaryButtons: React.FC<DoctorShiftPrimaryButtonsProps>
 				style={{
 					height: "32px",
 					borderRadius: "8px",
-					padding: "0 10px",
-					fontSize: "11.5px",
+					padding: "0 14px",
+					fontSize: "12px",
 					fontWeight: 600,
 					display: "inline-flex",
 					alignItems: "center",
-					gap: "5px",
+					gap: "6px",
 					cursor: "pointer",
 					whiteSpace: "nowrap",
 					transition: "all 0.15s ease",
 					background: isShiftOpen ? "var(--paper-soft)" : "var(--teal)",
 					border: isShiftOpen ? "1px solid var(--line)" : "1px solid transparent",
 					color: isShiftOpen ? "var(--ink)" : "#ffffff",
+					boxShadow: isShiftOpen ? "none" : "0 1px 2px rgba(13, 148, 136, 0.25)",
 				}}
-				title={isShiftOpen ? "Завершить рабочую смену" : "Открыть смену врача"}
+				title={isShiftOpen ? "Завершить рабочую смену врача" : "Открыть рабочую смену врача"}
 				data-testid="shift-toggle-btn"
 			>
-				<Zap size={13} style={{ flexShrink: 0 }} />
+				<Zap size={14} style={{ flexShrink: 0 }} />
 				<span>{isShiftOpen ? "Завершить смену" : "Открыть смену"}</span>
 			</button>
 
@@ -55,12 +56,12 @@ export const DoctorShiftPrimaryButtons: React.FC<DoctorShiftPrimaryButtonsProps>
 					style={{
 						height: "32px",
 						borderRadius: "8px",
-						padding: "0 10px",
-						fontSize: "11.5px",
+						padding: "0 12px",
+						fontSize: "12px",
 						fontWeight: 600,
 						display: "inline-flex",
 						alignItems: "center",
-						gap: "5px",
+						gap: "6px",
 						cursor: "pointer",
 						whiteSpace: "nowrap",
 						transition: "all 0.15s ease",
@@ -71,7 +72,7 @@ export const DoctorShiftPrimaryButtons: React.FC<DoctorShiftPrimaryButtonsProps>
 					title="Перейти к настройке тарифа и условий субаренды кресла"
 					data-testid="btn-shift-rental-terms"
 				>
-					<Calculator size={13} style={{ flexShrink: 0 }} />
+					<Calculator size={14} style={{ flexShrink: 0 }} />
 					<span>Условия аренды</span>
 				</button>
 			) : (
