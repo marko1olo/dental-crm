@@ -8,9 +8,9 @@
  */
 
 import {
-	DEFAULT_CLINIC_FISCAL_DETAILS,
 	type CashShiftReconciliationResult,
 	type ClinicFiscalDetails,
+	DEFAULT_CLINIC_FISCAL_DETAILS,
 	type EncashmentStatementData,
 	type Ko1CashInflowVoucher,
 	type Ko2CashOutflowVoucher,
@@ -166,7 +166,7 @@ export function generateShiftClosingActHtml(act: ShiftClosingActData): string {
 
 	<table>
 		<tr>
-			<th colspan="2">1. ФИСКАЛЬНЫЕ ИТОГИ СМЕНЫ 54-ФЗ (ФФД 1.2)</th>
+			<th colspan="2">1. ФИСКАЛЬНЫЕ ИТОГИ СМЕНЫ (КАССОВЫЕ ЧЕКИ)</th>
 		</tr>
 		<tr>
 			<td style="width: 60%;">Всего чеков прихода / возврата:</td>
@@ -244,7 +244,9 @@ export function generateShiftClosingActHtml(act: ShiftClosingActData): string {
 /**
  * Generates print-ready HTML for statement of encashment.
  */
-export function generateEncashmentStatementHtml(stmt: EncashmentStatementData): string {
+export function generateEncashmentStatementHtml(
+	stmt: EncashmentStatementData,
+): string {
 	const d = stmt.denominations;
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -375,7 +377,10 @@ export function generateMonospacedTapeText(params: {
 		return left + " ".repeat(gap) + right;
 	}
 
-	const title = reportType === "z_report" ? "ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z)" : "ПРОМЕЖУТОЧНЫЙ ОТЧЕТ (X)";
+	const title =
+		reportType === "z_report"
+			? "ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z)"
+			: "ПРОМЕЖУТОЧНЫЙ ОТЧЕТ (X)";
 
 	const lines: string[] = [
 		center(clinic.legalName),
@@ -394,13 +399,19 @@ export function generateMonospacedTapeText(params: {
 		row("• Наличными (1031):", `${rec.tenders.cashIncomeRub.toFixed(2)} ₽`),
 		row("• Эквайринг (1081):", `${rec.tenders.cardIncomeRub.toFixed(2)} ₽`),
 		row("• СБП QR (1081):", `${rec.tenders.sbpIncomeRub.toFixed(2)} ₽`),
-		row("• Зачет аванса (1215):", `${rec.tenders.advanceOffsetIncomeRub.toFixed(2)} ₽`),
+		row(
+			"• Зачет аванса (1215):",
+			`${rec.tenders.advanceOffsetIncomeRub.toFixed(2)} ₽`,
+		),
 		row("ИТОГО ПРИХОД:", `${rec.tenders.totalGrossIncomeRub.toFixed(2)} ₽`),
 		subLine,
 		center("--- ВОЗВРАТ ПРИХОДА (ТЕГ 1054=2) ---"),
 		row("Чеков возврата:", String(rec.returnsCount)),
 		row("• Наличными из кассы:", `${rec.tenders.cashReturnRub.toFixed(2)} ₽`),
-		row("• На карту / СБП:", `${(rec.tenders.cardReturnRub + rec.tenders.sbpReturnRub).toFixed(2)} ₽`),
+		row(
+			"• На карту / СБП:",
+			`${(rec.tenders.cardReturnRub + rec.tenders.sbpReturnRub).toFixed(2)} ₽`,
+		),
 		row("ИТОГО ВОЗВРАТЫ:", `${rec.tenders.totalReturnsRub.toFixed(2)} ₽`),
 		divLine,
 		row("ЧИСТАЯ ВЫРУЧКА:", `${rec.tenders.netRevenueRub.toFixed(2)} ₽`),
@@ -409,12 +420,25 @@ export function generateMonospacedTapeText(params: {
 		row("Разменный фонд (утро):", `${rec.initialChangeFundRub.toFixed(2)} ₽`),
 		row("Расчетный остаток:", `${rec.calculatedCashInDrawerRub.toFixed(2)} ₽`),
 		row("Фактический пересчет:", `${rec.countedCashInDrawerRub.toFixed(2)} ₽`),
-		row("Расхождение:", `${rec.differenceRub >= 0 ? "+" : ""}${rec.differenceRub.toFixed(2)} ₽`),
-		row("Статус:", rec.status === "balanced" ? "СВЕРЕНО (0.00)" : rec.status === "surplus" ? "ИЗЛИШЕК" : "НЕДОСТАЧА"),
+		row(
+			"Расхождение:",
+			`${rec.differenceRub >= 0 ? "+" : ""}${rec.differenceRub.toFixed(2)} ₽`,
+		),
+		row(
+			"Статус:",
+			rec.status === "balanced"
+				? "СВЕРЕНО (0.00)"
+				: rec.status === "surplus"
+					? "ИЗЛИШЕК"
+					: "НЕДОСТАЧА",
+		),
 		subLine,
 		center("--- ИНКАССАЦИЯ И СЕЙФ ---"),
 		row("Сдано в инкассацию:", `${rec.encashmentAmountRub.toFixed(2)} ₽`),
-		row("Остаток на след. смену:", `${rec.retainedNextShiftChangeFundRub.toFixed(2)} ₽`),
+		row(
+			"Остаток на след. смену:",
+			`${rec.retainedNextShiftChangeFundRub.toFixed(2)} ₽`,
+		),
 		divLine,
 		row("РН ККТ:", clinic.kktRegNumber),
 		row("ЗН ККТ:", clinic.kktSerialNumber),

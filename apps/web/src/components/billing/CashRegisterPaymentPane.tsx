@@ -5,21 +5,21 @@
  * Mandates 8e, 8n, 8d (WCAG AAA contrast, zero emojis, clean 36px buttons).
  */
 
-import React from "react";
-import { SbpDynamicQrCard } from "./SbpDynamicQrCard.js";
+import type React from "react";
 import {
 	type CashierPaymentMethod,
 	type CashRegisterPaymentPaneProps,
-	usePaymentPaneLogic,
-	PaymentPaneInvoiceHeader,
 	PaymentPaneAmountDisplay,
-	PaymentPaneDoctorDiscounts,
-	PaymentPaneMethodSwitcher,
 	PaymentPaneCardTender,
 	PaymentPaneCashTender,
 	PaymentPaneDepositTender,
+	PaymentPaneDoctorDiscounts,
+	PaymentPaneInvoiceHeader,
+	PaymentPaneMethodSwitcher,
 	PaymentPaneSplitTender,
+	usePaymentPaneLogic,
 } from "./paymentPaneModules/index.js";
+import { SbpDynamicQrCard } from "./SbpDynamicQrCard.js";
 
 export type { CashierPaymentMethod, CashRegisterPaymentPaneProps };
 

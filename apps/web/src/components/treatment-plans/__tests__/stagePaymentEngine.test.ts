@@ -60,8 +60,9 @@ describe("stagePaymentEngine: Kopeck-exact Escrow, Waterfall Allocation & 54-FZ"
 
 		const result = allocatePatientDepositToStages(stages, depositWallet);
 		assert.ok(result.allocatedLog.length > 0);
-		assert.ok(result.updatedDeposit.lockedEscrowKopecks > 0);
+		assert.equal(result.updatedDeposit.lockedEscrowKopecks, 0);
 		assert.ok(result.updatedStages[0]!.advancePaidKopecks > 0);
+		assert.ok(result.updatedDeposit.availableDepositKopecks < depositWallet.availableDepositKopecks);
 	});
 
 	test("closeStageWithCompletedAct переводит этап в статус закрытия и освобождает эскроу", () => {

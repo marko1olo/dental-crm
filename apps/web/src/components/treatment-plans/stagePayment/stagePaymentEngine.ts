@@ -12,18 +12,12 @@
 import {
 	type Kopecks,
 	formatKopecksRu,
-	multiplyKopecks,
-	parseKopecks,
 	percentageOfKopecks,
 	rublesToKopecks,
-	sumKopecks,
 } from "@dental/shared";
 import {
-	type FiscalAdvanceTag,
 	type StagePaymentKind,
-	type StagePaymentPreset,
 	type StagePaymentStatus,
-	STAGE_PAYMENT_PRESETS,
 	getStagePresetByKind,
 } from "./stagePaymentPresets.js";
 
@@ -173,7 +167,7 @@ export function calculateStagePaymentTotals(
 	let totalCompletionPaid = 0;
 
 	for (const stage of stages) {
-		const stageTotal = Number(stage.totalKopecks ?? (stage as any).totalAmountKopecks) || 0;
+		const stageTotal = Number(stage.totalKopecks ?? (stage as unknown as { totalAmountKopecks?: number }).totalAmountKopecks) || 0;
 		grandTotal += stageTotal;
 		totalAdvanceRequired += Number(stage.advanceRequiredKopecks) || 0;
 		totalAdvancePaid += Number(stage.advancePaidKopecks) || 0;
@@ -217,7 +211,6 @@ export function allocatePatientDepositToStages(
 	readonly allocatedLog: readonly { stageId: string; amountKopecks: Kopecks; reason: string }[];
 } {
 	let available = deposit.availableDepositKopecks;
-	let lockedEscrow = deposit.lockedEscrowKopecks;
 	const log: { stageId: string; amountKopecks: Kopecks; reason: string }[] = [];
 
 	const updatedStages: MilestoneStage[] = stages.map((stage) => {
@@ -225,10 +218,9 @@ export function allocatePatientDepositToStages(
 			return stage;
 		}
 
-		// 1. Покрываем обязательный аванс этапа, если он еще не внесен полностью
+		// 1. Покрываем обязательный аванс этапа из свободного депозита пациента
 		const unpaidAdvance = Math.max(0, stage.advanceRequiredKopecks - stage.advancePaidKopecks);
 		let currentAdvancePaid = stage.advancePaidKopecks;
-		let currentEscrowLocked = stage.escrowLockedKopecks;
 		let currentCompletionPaid = stage.completionPaidKopecks;
 		let currentStatus: StagePaymentStatus = stage.status;
 
@@ -236,13 +228,11 @@ export function allocatePatientDepositToStages(
 			const toAllocateAdvance = Math.min(available, unpaidAdvance);
 			available -= toAllocateAdvance;
 			currentAdvancePaid += toAllocateAdvance;
-			currentEscrowLocked += toAllocateAdvance;
-			lockedEscrow += toAllocateAdvance;
 
 			log.push({
 				stageId: stage.id,
 				amountKopecks: toAllocateAdvance,
-				reason: `Покрытие аванса этапа №${stage.stageNumber} "${stage.title}"`,
+				reason: `Списание с авансового депозита этапа №${stage.stageNumber} "${stage.title}"`,
 			});
 
 			if (currentAdvancePaid >= stage.advanceRequiredKopecks && currentStatus === "draft") {
@@ -250,7 +240,7 @@ export function allocatePatientDepositToStages(
 			}
 		}
 
-		// 2. Если аванс закрыт, а этап уже принят по акту (или разрешена полная предоплата), покрываем остаток
+		// 2. Если аванс закрыт, а этап уже принят по акту, покрываем остаток
 		const unpaidTotal = Math.max(
 			0,
 			stage.totalKopecks - (currentAdvancePaid + currentCompletionPaid),
@@ -264,7 +254,7 @@ export function allocatePatientDepositToStages(
 			log.push({
 				stageId: stage.id,
 				amountKopecks: toAllocateRemaining,
-				reason: `Окончательный расчет по этапу №${stage.stageNumber} "${stage.title}"`,
+				reason: `Списание с депозита в счет окончательного расчета этапа №${stage.stageNumber} "${stage.title}"`,
 			});
 
 			if (currentAdvancePaid + currentCompletionPaid >= stage.totalKopecks) {
@@ -275,7 +265,7 @@ export function allocatePatientDepositToStages(
 		return {
 			...stage,
 			advancePaidKopecks: currentAdvancePaid,
-			escrowLockedKopecks: currentEscrowLocked,
+			escrowLockedKopecks: 0,
 			completionPaidKopecks: currentCompletionPaid,
 			status: currentStatus,
 		};
@@ -284,8 +274,8 @@ export function allocatePatientDepositToStages(
 	const updatedDeposit: PatientDepositWallet = {
 		patientId: deposit.patientId,
 		availableDepositKopecks: available,
-		lockedEscrowKopecks: lockedEscrow,
-		totalBalanceKopecks: available + lockedEscrow,
+		lockedEscrowKopecks: 0,
+		totalBalanceKopecks: available,
 	};
 
 	return {
@@ -308,7 +298,7 @@ export function closeStageWithCompletedAct(
 	readonly releasedEscrowKopecks: Kopecks;
 	readonly recognizedRevenueKopecks: Kopecks;
 } {
-	const releasedEscrow = stage.escrowLockedKopecks;
+	const releasedEscrow = 0;
 	const recognizedRevenue = stage.totalKopecks;
 	const isFullyPaid = stage.advancePaidKopecks + stage.completionPaidKopecks >= stage.totalKopecks;
 
@@ -432,7 +422,8 @@ export function generate54FzStageFiscalReceipt(
 ): StageFiscalReceipt54Fz {
 	const now = new Date();
 	const timestamp = now.toISOString();
-	const preset = getStagePresetByKind(stage.kind);
+	const _preset = getStagePresetByKind(stage.kind);
+	void _preset;
 
 	let calculationSign: "ПРЕДОПЛАТА 100%" | "ПРЕДОПЛАТА" | "ПОЛНЫЙ РАСЧЕТ";
 	let fiscalTag1214: string;

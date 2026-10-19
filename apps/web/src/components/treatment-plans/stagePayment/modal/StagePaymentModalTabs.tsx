@@ -1,6 +1,13 @@
-import React from "react";
-import { Calendar, FileCheck, FileText, QrCode, RotateCcw, Wallet } from "lucide-react";
 import { formatKopecksRu } from "@dental/shared";
+import {
+	Calendar,
+	FileCheck,
+	FileText,
+	QrCode,
+	RotateCcw,
+	Wallet,
+} from "lucide-react";
+import type React from "react";
 import type { PatientDepositWallet } from "../stagePaymentEngine.js";
 import type { StagePaymentModalTab } from "./stagePaymentModalTypes";
 
@@ -37,10 +44,10 @@ export const StagePaymentModalTabs: React.FC<StagePaymentModalTabsProps> = ({
 				className={`stage-payment-tab-btn ${activeTab === "escrow" ? "active" : ""}`}
 			>
 				<Wallet className="h-4 w-4" />
-				<span>Депозит и Эскроу</span>
-				{depositWallet.lockedEscrowKopecks > 0 && (
+				<span>Авансовый депозит</span>
+				{depositWallet.availableDepositKopecks > 0 && (
 					<span className="ml-1 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] px-2 py-0.2 text-xs">
-						{formatKopecksRu(depositWallet.lockedEscrowKopecks)}
+						{formatKopecksRu(depositWallet.availableDepositKopecks)}
 					</span>
 				)}
 			</button>

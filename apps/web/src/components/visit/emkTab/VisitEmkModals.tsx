@@ -1,14 +1,14 @@
-import React from "react";
-import { Check, X, Zap } from "lucide-react";
 import { generateQrCodeSvg } from "@dental/shared";
-import { showToast } from "../../GlobalToast";
-import { appendClinicalText } from "../emk";
+import { Check, X, Zap } from "lucide-react";
+import React from "react";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { Form043PrintModal } from "../../emr/Form043PrintModal";
 import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
-import { EmkPrintableForm043 } from "../emk/EmkPrintableForm043";
-import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
+import { showToast } from "../../GlobalToast";
 import { PerioChartModal } from "../../perio/PerioChartModal";
+import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
+import { appendClinicalText } from "../emk";
+import { EmkPrintableForm043 } from "../emk/EmkPrintableForm043";
 import type { VisitEmkModalsProps } from "./types";
 
 export function VisitEmkModals({
@@ -93,6 +93,7 @@ export function VisitEmkModals({
 							<div
 								className="flex items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto"
 								data-testid="sbp-qr-svg-container"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized SVG generated from validated NSPK payload
 								dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
 							/>
 						</div>
@@ -111,6 +112,18 @@ export function VisitEmkModals({
 							<button
 								type="button"
 								onClick={() => {
+									fetch("/api/billing/fiscalize-receipt", {
+										method: "POST",
+										headers: { "Content-Type": "application/json" },
+										credentials: "same-origin",
+										body: JSON.stringify({
+											visitId: dashboard?.activeVisit?.id,
+											patientId: activePatient?.id,
+											receiptNumber,
+											totalRub: totalNetRub,
+											paymentMethod: "SBP_QR",
+										}),
+									}).catch(() => null);
 									showToast("Оплата по СБП успешно подтверждена!", "success", 4000);
 									setIsSbpQrModalOpen(false);
 								}}
@@ -169,7 +182,7 @@ export function VisitEmkModals({
 					}
 					if (newDiary.assessmentDiagnosisText || newDiary.assessmentIcd10Code) {
 						const diagText = newDiary.assessmentDiagnosisText
-							? `${newDiary.assessmentIcd10Code ? newDiary.assessmentIcd10Code + " " : ""}${newDiary.assessmentDiagnosisText}${newDiary.toothNumber ? ` (зуб ${newDiary.toothNumber})` : ""}`
+							? `${newDiary.assessmentIcd10Code ? `${newDiary.assessmentIcd10Code} ` : ""}${newDiary.assessmentDiagnosisText}${newDiary.toothNumber ? ` (зуб ${newDiary.toothNumber})` : ""}`
 							: (newDiary.assessmentIcd10Code || "");
 						updateVisitNoteField("diagnosis", diagText);
 					}
@@ -205,7 +218,7 @@ export function VisitEmkModals({
 						}
 						if (d.assessmentDiagnosisText || d.assessmentIcd10Code) {
 							const diagText = d.assessmentDiagnosisText
-								? `${d.assessmentIcd10Code ? d.assessmentIcd10Code + " " : ""}${d.assessmentDiagnosisText}${d.toothNumber ? ` (зуб ${d.toothNumber})` : ""}`
+								? `${d.assessmentIcd10Code ? `${d.assessmentIcd10Code} ` : ""}${d.assessmentDiagnosisText}${d.toothNumber ? ` (зуб ${d.toothNumber})` : ""}`
 								: (d.assessmentIcd10Code || "");
 							updateVisitNoteField("diagnosis", diagText);
 						}
@@ -300,6 +313,7 @@ export function VisitEmkModals({
 				initialData={{
 					patient: activePatient,
 					diary: visitNoteForm,
+					// biome-ignore lint/suspicious/noExplicitAny: Form043 initialData duck-typing
 				} as any}
 				isLocked={isSignedVisit}
 				status={isSignedVisit ? "signed" : "draft"}

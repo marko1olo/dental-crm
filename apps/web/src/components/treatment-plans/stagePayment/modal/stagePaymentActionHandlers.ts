@@ -1,13 +1,11 @@
-import { rublesToKopecks, formatKopecksRu } from "@dental/shared";
+import { formatKopecksRu, rublesToKopecks } from "@dental/shared";
 import type {
 	MilestoneStage,
 	PatientDepositWallet,
-	TerminationExpenseItem,
 } from "../stagePaymentEngine.js";
 import {
 	allocatePatientDepositToStages,
 	closeStageWithCompletedAct,
-	generate54FzStageFiscalReceipt,
 	exportStageScheduleToCsv,
 } from "../stagePaymentEngine.js";
 
@@ -15,13 +13,14 @@ export function executeTopUpDeposit(
 	topUpAmountRub: string,
 	depositWallet: PatientDepositWallet,
 ): { updatedDeposit: PatientDepositWallet; message: string } | null {
-	const parsedRub = parseFloat(topUpAmountRub);
-	if (isNaN(parsedRub) || parsedRub <= 0) return null;
+	const parsedRub = Number.parseFloat(topUpAmountRub);
+	if (Number.isNaN(parsedRub) || parsedRub <= 0) return null;
 	const addKopecks = rublesToKopecks(Math.round(parsedRub));
 	return {
 		updatedDeposit: {
 			...depositWallet,
-			availableDepositKopecks: depositWallet.availableDepositKopecks + addKopecks,
+			availableDepositKopecks:
+				depositWallet.availableDepositKopecks + addKopecks,
 			totalBalanceKopecks: depositWallet.totalBalanceKopecks + addKopecks,
 		},
 		message: `Депозит пациента успешно пополнен на ${formatKopecksRu(addKopecks)}.`,
@@ -36,7 +35,7 @@ export function executeAutoAllocate(
 	const result = allocatePatientDepositToStages(stages, depositWallet);
 	const message =
 		result.allocatedLog.length > 0
-			? `Депозит успешно распределен! Операций: ${result.allocatedLog.length}. Зарезервировано в эскроу: ${formatKopecksRu(result.allocatedLog.reduce((a, b) => a + b.amountKopecks, 0))}`
+			? `Депозит успешно распределен! Операций: ${result.allocatedLog.length}. Списано с авансового депозита: ${formatKopecksRu(result.allocatedLog.reduce((a, b) => a + b.amountKopecks, 0))}`
 			: "Нет этапов, требующих распределения депозита, либо недостаточно средств.";
 	return { result, message };
 }
@@ -50,8 +49,14 @@ export function executeSignStageAct(
 	const result = closeStageWithCompletedAct(stage, actNumber, signDate);
 	const updatedDeposit: PatientDepositWallet = {
 		...depositWallet,
-		lockedEscrowKopecks: Math.max(0, depositWallet.lockedEscrowKopecks - result.releasedEscrowKopecks),
-		totalBalanceKopecks: Math.max(0, depositWallet.totalBalanceKopecks - result.releasedEscrowKopecks),
+		lockedEscrowKopecks: Math.max(
+			0,
+			depositWallet.lockedEscrowKopecks - result.releasedEscrowKopecks,
+		),
+		totalBalanceKopecks: Math.max(
+			0,
+			depositWallet.totalBalanceKopecks - result.releasedEscrowKopecks,
+		),
 	};
 	const message = `Акт №${result.updatedStage.actNumber} успешно подписан! Выручка клиники признана: ${formatKopecksRu(result.recognizedRevenueKopecks)}.`;
 	return { result, updatedDeposit, message };

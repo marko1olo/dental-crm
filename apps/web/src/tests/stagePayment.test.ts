@@ -188,25 +188,25 @@ describe("Statutory Treatment Plan Stage Payment & Escrow Engine", () => {
 
 			const result = allocatePatientDepositToStages(stages, deposit);
 
-			// Этап 1 (Терапия, аванс 28 500 ₽) -> полностью покрыт (28 500 ₽) и заблокирован в эскроу
+			// Этап 1 (Терапия, аванс 28 500 ₽) -> полностью покрыт (28 500 ₽) списанием с депозита
 			const stage1 = result.updatedStages[0]!;
 			assert.equal(stage1.advancePaidKopecks, rublesToKopecks(28500));
-			assert.equal(stage1.escrowLockedKopecks, rublesToKopecks(28500));
+			assert.equal(stage1.escrowLockedKopecks, 0);
 			assert.equal(stage1.status, "advance_paid");
 
 			// Этап 2 (Хирургия, аванс 42 500 ₽) -> частично покрыт остатком 21 500 ₽
 			const stage2 = result.updatedStages[1]!;
 			assert.equal(stage2.advancePaidKopecks, rublesToKopecks(21500));
-			assert.equal(stage2.escrowLockedKopecks, rublesToKopecks(21500));
+			assert.equal(stage2.escrowLockedKopecks, 0);
 
 			// Этап 3 (Ортопедия) -> 0 ₽
 			const stage3 = result.updatedStages[2]!;
 			assert.equal(stage3.advancePaidKopecks, 0);
 
-			// Депозит: 0 ₽ свободно, 50 000 ₽ заблокировано в эскроу
+			// Депозит: 0 ₽ свободно, 0 ₽ заблокировано в эскроу
 			assert.equal(result.updatedDeposit.availableDepositKopecks, 0);
-			assert.equal(result.updatedDeposit.lockedEscrowKopecks, rublesToKopecks(50000));
-			assert.equal(result.updatedDeposit.totalBalanceKopecks, rublesToKopecks(50000));
+			assert.equal(result.updatedDeposit.lockedEscrowKopecks, 0);
+			assert.equal(result.updatedDeposit.totalBalanceKopecks, 0);
 		});
 
 		it("сохраняет балансовый инвариант: available + locked === totalBalance", () => {
@@ -225,7 +225,8 @@ describe("Statutory Treatment Plan Stage Payment & Escrow Engine", () => {
 				result.updatedDeposit.availableDepositKopecks + result.updatedDeposit.lockedEscrowKopecks,
 				result.updatedDeposit.totalBalanceKopecks,
 			);
-			assert.equal(result.updatedDeposit.lockedEscrowKopecks, rublesToKopecks(131000));
+			assert.equal(result.updatedDeposit.lockedEscrowKopecks, 0);
+			assert.equal(result.updatedDeposit.availableDepositKopecks, rublesToKopecks(250000) - totalAllocated);
 			assert.equal(totalAllocated, rublesToKopecks(233500));
 		});
 	});
@@ -250,7 +251,7 @@ describe("Statutory Treatment Plan Stage Payment & Escrow Engine", () => {
 			assert.equal(result.updatedStage.escrowLockedKopecks, 0);
 			assert.equal(result.updatedStage.actNumber, "АКТ-001/2026");
 			assert.equal(result.updatedStage.actSignedAt, "2026-08-22");
-			assert.equal(result.releasedEscrowKopecks, stage1.totalKopecks);
+			assert.equal(result.releasedEscrowKopecks, 0);
 			assert.equal(result.recognizedRevenueKopecks, stage1.totalKopecks);
 		});
 	});

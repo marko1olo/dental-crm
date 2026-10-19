@@ -301,5 +301,6 @@ export function registerSbpRoutes(app: FastifyInstance): void {
 	app.post("/api/billing/sbp/webhook", handleSbpWebhook);
 	app.post("/api/sbp/webhook", handleSbpWebhook);
 
+	app.get("/api/billing/sbp/status/:id", handleGetSbpStatus);
 	app.get("/api/sbp/status/:id", handleGetSbpStatus);
 }

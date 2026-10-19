@@ -28,5 +28,18 @@ export {
 	isSplitBalanced,
 } from "./splitPayment.js";
 
+export {
+	type SbpPaymentPackage,
+	type SbpQrType,
+	type ParsedEmvCoQr,
+	type GenerateSbpDynamicQrInput,
+	type GenerateSbpDynamicQrOutput,
+	generateSbpDynamicQrSchema,
+	sbpQrTypeSchema,
+	computeCrc16Ccitt,
+	SbpQrEngine,
+} from "../messaging/sbpPaymentEngine.js";
+
+
 
 

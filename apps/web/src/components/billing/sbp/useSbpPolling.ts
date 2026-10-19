@@ -1,14 +1,13 @@
 /**
  * apps/web/src/components/billing/sbp/useSbpPolling.ts
- *
  * Hook managing SBP QR creation, countdown timer, network polling, and manual confirmation.
  * Strictly <= 120 lines per Mandate 8b.
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { showToast } from "../../GlobalToast.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { playTactileEarcon } from "../../../lib/chairsideErgonomics.js";
-import { createSbpDynamicQr, copySbpUrlToClipboard, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
+import { showToast } from "../../GlobalToast.js";
+import { copySbpUrlToClipboard, createSbpDynamicQr, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
 import type { SbpDynamicQrCardProps } from "./sbpTypes.js";
 
 export function useSbpPolling(props: SbpDynamicQrCardProps) {
@@ -20,9 +19,9 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 	const [isCheckingSbp, setIsCheckingSbp] = useState<boolean>(false);
 	const [sbpCheckMessage, setSbpCheckMessage] = useState<string | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: qrIteration forces QR re-generation on manual refresh
 	const qrData: SbpDynamicQrPayloadData = useMemo(() => {
 		return createSbpDynamicQr({ sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds });
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds, qrIteration]);
 
 	const handleConfirmPayment = useCallback(() => {
@@ -39,11 +38,17 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 			if (manual) setIsCheckingSbp(true);
 			const effectiveId = qrData.paymentId || orderId || invoiceId || "";
 			const sumKop = Math.round(sumRub * 100);
-			const url = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(effectiveId)}&qrId=${encodeURIComponent(qrData.paymentId)}&sumKop=${sumKop}`;
-			const res = await fetch(url, { credentials: "same-origin" });
+			let res = await fetch(`/api/billing/sbp/status/${encodeURIComponent(effectiveId)}`, { credentials: "same-origin" });
+			if (!res.ok) {
+				const fallbackUrl = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(effectiveId)}&qrId=${encodeURIComponent(qrData.paymentId)}&sumKop=${sumKop}`;
+				res = await fetch(fallbackUrl, { credentials: "same-origin" });
+			}
 			if (res.ok) {
 				const json = await res.json();
-				if (json.isPaid || json.status === "paid") { handleConfirmPayment(); return; }
+				if (json.isPaid || json.status === "paid" || json.paymentStatus === "CONFIRMED" || json.paymentStatus === "ACCEPTED") {
+					handleConfirmPayment();
+					return;
+				}
 				if (manual) { setSbpCheckMessage("Ожидание зачисления от банка..."); setTimeout(() => setSbpCheckMessage(null), 3500); }
 			}
 		} catch {
@@ -57,7 +62,10 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 		if (status !== "awaiting") return;
 		const timer = setInterval(() => {
 			setSecondsLeft((prev) => {
-				if (prev <= 1) { setStatus("expired"); return 0; }
+				if (prev <= 1) {
+					setStatus("expired");
+					return 0;
+				}
 				return prev - 1;
 			});
 		}, 1000);

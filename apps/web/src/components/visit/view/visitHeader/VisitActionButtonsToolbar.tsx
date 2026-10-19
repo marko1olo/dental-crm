@@ -1,17 +1,7 @@
 import React from "react";
 import {
-	AlertOctagon,
-	AlertTriangle,
-	Calculator,
-	Check,
-	CheckCircle2,
-	Clock,
-	FileText,
-	FlaskConical,
-	Lock,
-	MoreHorizontal,
-	Printer,
-	ShieldCheck,
+	AlertOctagon, AlertTriangle, Calculator, Check, CheckCircle2,
+	Clock, FileText, FlaskConical, Lock, MoreHorizontal, Printer, Receipt, ShieldCheck,
 } from "lucide-react";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
@@ -464,22 +454,34 @@ export function VisitActionButtonsToolbar({
 							type="button"
 							onClick={() => {
 								setIsHeaderMoreMenuOpen(false);
+								useAppStore.getState().setCurrentView("finance");
+								showToast("Переход в кассу для оплаты приёма", "info");
+							}}
+							data-testid="visit-more-action-open-cashbox"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							role="menuitem"
+						>
+							<Receipt className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
+							<div className="flex flex-col">
+								<span className="font-semibold">Касса и оплата приёма</span>
+								<span className="text-[10px] text-[var(--muted)]">Приём оплаты картой, наличными, СБП</span>
+							</div>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								setIsHeaderMoreMenuOpen(false);
 								setIsStagePaymentModalOpen(true);
 							}}
 							data-testid="visit-more-action-stage-payment"
 							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 							role="menuitem"
 						>
-							<Lock
-								className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
-							/>
+							<Lock className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
 							<div className="flex flex-col">
-								<span className="font-semibold">
-									График оплаты и этапы
-								</span>
-								<span className="text-[10px] text-[var(--muted)]">
-									Рассрочка и депонирование этапов
-								</span>
+								<span className="font-semibold">График оплаты и этапы</span>
+								<span className="text-[10px] text-[var(--muted)]">Рассрочка и депонирование этапов</span>
 							</div>
 						</button>
 					</div>
