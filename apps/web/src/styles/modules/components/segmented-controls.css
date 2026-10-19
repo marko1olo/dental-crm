@@ -87,6 +87,11 @@ button:is([class*="border"]):not([class*="border-none"]):not([class*="border-tra
 	border-style: solid;
 }
 
+/* Ensure tablist buttons never inherit default browser ButtonFace dark backgrounds */
+[role="tablist"] > button:not([aria-selected="true"]):not(.active):not([data-active="true"]) {
+	background-color: transparent;
+}
+
 /* B. Modern Filter Chips / Pills (For Categories, Statuses, Channels, Tags) */
 .dente-filter-chips,
 .filter-chips-strip {

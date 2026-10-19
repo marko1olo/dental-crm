@@ -396,8 +396,15 @@ export function AppTopBar(props: AppTopBarProps) {
 						<span>Реквизиты клиники можно заполнить позже.</span>
 					</div>
 					<span className="onboarding-compact-score">
-						{currentOnboardingIndex + 1}/{onboardingSteps.length} ·
-						документы {legalReadinessPercent}%
+						{Math.min(
+							Math.max(1, currentOnboardingIndex + 1),
+							onboardingSteps?.length || 5,
+						)}
+						/{onboardingSteps?.length || 5} · документы{" "}
+						{Number.isFinite(legalReadinessPercent)
+							? Math.round(legalReadinessPercent)
+							: 0}
+						%
 					</span>
 					<button
 						className="primary-button"

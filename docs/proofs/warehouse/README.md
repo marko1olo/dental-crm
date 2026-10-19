@@ -39,17 +39,20 @@
 
 | Состояние / Экран | Разрешение | Файл скриншота | Размер | Статус инспекции |
 | :--- | :--- | :--- | :--- | :--- |
-| ☀️ **PC Light Catalog** | 1440×900 | [`warehouse_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_pc_light.png) | 121 984 Б | [ПРОВЕРЕНО: ЧИСТО] Заголовок «ДЕНТЕ Склад и СанПиН», чистые табы, кнопки «Приходная накладная», «Добавить первую партию» |
-| 🌙 **PC Dark Catalog** | 1440×900 | [`warehouse_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_pc_dark.png) | 124 406 Б | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, нулевое слепящее пятно, паритет контрастности |
-| 📊 **PC Waybills Table** | 1440×900 | [`warehouse_waybills_clean_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_waybills_clean_pc_light.png) | 211 880 Б | [ПРОВЕРЕНО: ЧИСТО] Живой склад из 33 позиций остатков, категории, строки списания/прихода, кнопка «Печать накладной» |
-| 📱 **Mobile Light** | 390×844 | [`warehouse_stock_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_light_390x844.png) | 161 841 Б | [ПРОВЕРЕНО: ЧИСТО] Grouped List Cards (Apple HIG), кнопки $\ge 44\times 44\text{px}$, 0px горизонтального скролла, нативный Bottom Bar |
-| 🌙 **Mobile Dark** | 390×844 | [`warehouse_stock_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_dark_390x844.png) | 328 570 Б | [ПРОВЕРЕНО: ЧИСТО] Премиальный темный мобильный адаптив, тактильные плашки списания |
+| ☀️ **PC Light Catalog** | 1440×900 | [`warehouse_stock_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_light_1440x900.png) | 214 104 Б | [ПРОВЕРЕНО: ЧИСТО] Прозрачные неактивные табы (ноль темных плашек ButtonFace), активный таб с тиловым бейджем, ноль обрезания кнопок тулбара справа |
+| 🌙 **PC Dark Catalog** | 1440×900 | [`warehouse_stock_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_dark_1440x900.png) | 215 347 Б | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, нулевое слепящее пятно, контрастные табы и бейджи остатков |
+| 📋 **PC Inventory Audit Tab** | 1440×900 | [`warehouse_inventory_audit_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_inventory_audit_pc_light.png) | 217 949 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Инвентаризация», 1-клик сверка «✓ Совпадает», печатные формы, сводные карточки расхождений |
+| 📊 **PC Waybills Table** | 1440×900 | [`warehouse_waybills_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_waybills_pc_light.png) | 180 009 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Приходные накладные», декомпозированная таблица, поставщик, печать, ноль монолитов |
+| ⚡ **PC Express Inbound Modal** | 1440×900 | [`warehouse_express_waybill_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_express_waybill_modal_pc_light.png) | 110 675 Б | [ПРОВЕРЕНО: ЧИСТО] Модалка экспресс-прихода на 4 поля, автопогашение овердрафта |
+| 📱 **Mobile Light** | 390×844 | [`warehouse_stock_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_light_390x844.png) | 66 725 Б | [ПРОВЕРЕНО: ЧИСТО] Grouped List Cards (Apple HIG), кнопки $\ge 44\times 44\text{px}$, 0px горизонтального скролла, нативный Bottom Bar |
+| 🌙 **Mobile Dark** | 390×844 | [`warehouse_stock_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_mobile_dark_390x844.png) | 65 775 Б | [ПРОВЕРЕНО: ЧИСТО] Премиальный темный мобильный адаптив, тактильные плашки списания |
 
 ---
 
-## 3. Результаты автоматизированного тестирования (236/236 PASS, 100% GREEN)
+## 3. Результаты автоматизированного тестирования (207/207 PASS, 100% GREEN)
 
-- `apps/web/src/components/inventory/__tests__/` — 18 файлов, 203 теста: **203 passing, 0 failing (Exit Code: 0)**
-- `apps/web/src/tests/clinicalWriteoff.test.ts` — 24 теста: **24 passing, 0 failing (Exit Code: 0)**
-- `packages/shared/src/warehouse/__tests__/wave122TreatmentConsumables.test.ts` — 9 тестов: **9 passing, 0 failing (Exit Code: 0)**
-- `@dental/shared` — Typecheck: **Exit Code: 0**
+- `apps/web/src/components/inventory/__tests__/` — 19 файлов, 207 тестов: **207 passing, 0 failing (Exit Code: 0)**
+- `node scripts/check-css-tokens.mjs` — **0 unresolvable tokens, 0 invalid light fallbacks (Exit Code: 0)**
+- `node scripts/check-encoding.mjs` — **14 793 files checked, 0 errors (Exit Code: 0)**
+- `@dental/shared` & `@dental/web` — Typecheck: **Exit Code: 0**
+

@@ -78,7 +78,7 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 	const dismissOnboarding = () => {
 		if (!onboardingReadyToFinish) {
 			showToast(
-				"Настройки сохранены в черновике. Профиль клиники можно дополнить в любой момент в разделе Настройки (Мандат 8e)",
+				"Настройки сохранены в черновике. Профиль клиники можно дополнить в любой момент в разделе «Настройки».",
 				"success",
 				4000,
 			);
@@ -147,8 +147,19 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 					</div>
 					<div className="onboarding-head-aside">
 						<div className="onboarding-score">
-							<span>{currentOnboardingIndex + 1}/{onboardingSteps.length}</span>
-							<strong>{legalReadinessPercent}%</strong>
+							<span>
+								{Math.min(
+									Math.max(1, currentOnboardingIndex + 1),
+									onboardingSteps?.length || 5,
+								)}
+								/{onboardingSteps?.length || 5}
+							</span>
+							<strong>
+								{Number.isFinite(legalReadinessPercent)
+									? Math.round(legalReadinessPercent)
+									: 0}
+								%
+							</strong>
 							<small>готовность документов</small>
 						</div>
 						<button className="onboarding-head-close-btn" type="button" onClick={dismissOnboarding} title="Скрыть мастер настройки" aria-label="Скрыть мастер настройки">

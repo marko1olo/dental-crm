@@ -206,7 +206,7 @@
 
 .visiograph-popout-item:hover {
 	background: var(--paper-soft, rgba(255, 255, 255, 0.08));
-	color: var(--ink-strong, #ffffff);
+	color: var(--ink-strong, var(--ink));
 }
 
 .visiograph-popout-item.is-active {

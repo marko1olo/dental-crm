@@ -34,6 +34,7 @@ export interface InventoryTopToolbarProps {
 	setIsMdlpDisposalOpen: (open: boolean) => void;
 	setIsNurseCarpuleModalOpen?: (open: boolean) => void;
 	onOpenShiftDeductionModal?: () => void;
+	onOpenSterilizationCycleModal?: () => void;
 	onOpenProtocolDeduction?: () => void;
 	handleQuickWriteoffStandardKit: () => void;
 	handleQuickWriteoffAnestheticCarpule: () => void;
@@ -57,11 +58,11 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = (props) =
 
 	return (
 		<div
-			className="h-12 min-h-[48px] max-h-[52px] px-3 sm:px-4 bg-[var(--paper)] border-b border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 shrink-0 w-full overflow-x-auto no-scrollbar scrollbar-none"
+			className="min-h-[48px] py-1.5 px-3 sm:px-4 bg-[var(--paper)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2 shrink-0 w-full"
 			role="toolbar"
 			aria-label="Панель склада материалов"
 		>
-			<div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
+			<div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
 				<InventoryToolbarIdentity
 					activeSubTab={activeSubTab}
 					setActiveSubTab={setActiveSubTab}
