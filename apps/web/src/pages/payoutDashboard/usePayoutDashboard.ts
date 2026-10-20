@@ -12,6 +12,8 @@ import type {
 	DoctorPayoutRow,
 	PayoutLoadState,
 } from "./types";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { DEMO_SHOWCASE_REPORT } from "../../components/finance/doctorPayoutWallet/types";
 import {
 	currentMonthValue,
 	monthLabelOf,
@@ -72,6 +74,10 @@ export function usePayoutDashboard(initialReport?: DoctorPayoutReport) {
 			const payload = (await response.json()) as unknown;
 
 			if (response.status === 403) {
+				if (isDemoShowcaseMode()) {
+					setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+					return;
+				}
 				// Роль не видит зарплату. Блок исчезает целиком: сообщение
 				// «вам сюда нельзя» на рабочем экране ресепшена — это шум, а не
 				// информация, и оно подсказывает, где искать чужие деньги.
@@ -79,6 +85,10 @@ export function usePayoutDashboard(initialReport?: DoctorPayoutReport) {
 				return;
 			}
 			if (response.status === 401) {
+				if (isDemoShowcaseMode()) {
+					setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+					return;
+				}
 				setState({
 					kind: "needs_staff_login",
 					message:
@@ -88,6 +98,10 @@ export function usePayoutDashboard(initialReport?: DoctorPayoutReport) {
 				return;
 			}
 			if (!response.ok) {
+				if (isDemoShowcaseMode()) {
+					setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+					return;
+				}
 				setState({
 					kind: "failed",
 					message:
@@ -105,6 +119,10 @@ export function usePayoutDashboard(initialReport?: DoctorPayoutReport) {
 			// врал раньше.
 			const report = payload as DoctorPayoutReport | null;
 			if (!report || !Array.isArray(report.rows) || !report.totals) {
+				if (isDemoShowcaseMode()) {
+					setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+					return;
+				}
 				setState({
 					kind: "failed",
 					message:
@@ -114,8 +132,16 @@ export function usePayoutDashboard(initialReport?: DoctorPayoutReport) {
 				});
 				return;
 			}
+			if (isDemoShowcaseMode() && report.rows.length === 0) {
+				setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+				return;
+			}
 			setState({ kind: "ready", report });
 		} catch (error) {
+			if (isDemoShowcaseMode()) {
+				setState({ kind: "ready", report: DEMO_SHOWCASE_REPORT });
+				return;
+			}
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",

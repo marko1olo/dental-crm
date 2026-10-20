@@ -29,7 +29,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		const res = calculateDoctorPeriodPayroll({
 			doctorId: "doc-1",
 			doctorName: "Д-р Смирнов А. В.",
-			specialtyId: "therapist", // 25% default
+			specialtyId: "therapist", // 30% default (First Principles)
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services,
@@ -38,8 +38,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(res.totalGrossRevenueKop, 1000000);
 		assert.equal(res.totalMaterialDeductionsKop, 200000);
 		assert.equal(res.totalNetBaseKop, 800000); // 8,000.00 RUB
-		assert.equal(res.baseCommissionPercent, 25);
-		// Pre-guarantee earned: 25% of 8,000 = 2,000 RUB (200,000 kop)
+		assert.equal(res.baseCommissionPercent, 30);
+		// Pre-guarantee earned: 30% of 8,000 = 2,400 RUB (240,000 kop)
 		// Min guarantee for therapist is 60,000 RUB (6,000,000 kop)
 		assert.equal(res.minimumGuaranteeApplied, true);
 		assert.equal(res.grossPayoutBeforeTaxKop, 6000000);
@@ -65,7 +65,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		const res = calculateDoctorPeriodPayroll({
 			doctorId: "doc-2",
 			doctorName: "Д-р Ортопедов К. М.",
-			specialtyId: "orthopedist", // 25% default, deducts lab
+			specialtyId: "orthopedist", // 30% default, deducts lab
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services,
@@ -75,12 +75,12 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(res.totalLabDeductionsKop, 12000000);
 		assert.equal(res.totalMaterialDeductionsKop, 0);
 		assert.equal(res.totalNetBaseKop, 33000000); // 330,000.00 RUB
-		// 25% of 330,000 = 82,500 RUB (8,250,000 kop)
-		// Min guarantee for orthopedist is 80,000 RUB -> 82,500 > 80,000 so guaranteeApplied = false
+		// 30% of 330,000 = 99,000 RUB (9,900,000 kop)
+		// Min guarantee for orthopedist is 80,000 RUB -> 99,000 > 80,000 so guaranteeApplied = false
 		assert.equal(res.minimumGuaranteeApplied, false);
-		assert.equal(res.grossPayoutBeforeTaxKop, 8250000);
-		assert.equal(res.ndfl13TaxKop, 1072500); // 13% of 82,500 = 10,725.00 RUB
-		assert.equal(res.netPayoutToDoctorKop, 7177500); // 71,775.00 RUB
+		assert.equal(res.grossPayoutBeforeTaxKop, 9900000);
+		assert.equal(res.ndfl13TaxKop, 1287000); // 13% of 99,000 = 12,870.00 RUB
+		assert.equal(res.netPayoutToDoctorKop, 8613000); // 86,130.00 RUB
 	});
 
 	it("1.3 Calculates high revenue doctor with KPI Tier 1 (+5% bonus)", () => {
@@ -110,16 +110,16 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(res.kpiBonusPercent, 5);
 		assert.equal(res.minimumGuaranteeApplied, false);
 		// Net base: 1,000,000 RUB (100,000,000 kop)
-		// 25% base = 250,000 RUB (25,000,000 kop)
+		// 30% base = 300,000 RUB (30,000,000 kop)
 		// 5% KPI = 50,000 RUB (5,000,000 kop)
-		// Gross = 300,000 RUB (30,000,000 kop)
-		assert.equal(res.earnedBaseCommissionKop, 25000000);
+		// Gross = 350,000 RUB (35,000,000 kop)
+		assert.equal(res.earnedBaseCommissionKop, 30000000);
 		assert.equal(res.kpiBonusEarnedKop, 5000000);
-		assert.equal(res.grossPayoutBeforeTaxKop, 30000000);
-		// NDFL 13% = 39,000 RUB (3,900,000 kop)
-		assert.equal(res.ndfl13TaxKop, 3900000);
-		// Net = 261,000 RUB (26,100,000 kop)
-		assert.equal(res.netPayoutToDoctorKop, 26100000);
+		assert.equal(res.grossPayoutBeforeTaxKop, 35000000);
+		// NDFL 13% = 45,500 RUB (4,550,000 kop)
+		assert.equal(res.ndfl13TaxKop, 4550000);
+		// Net = 304,500 RUB (30,450,000 kop)
+		assert.equal(res.netPayoutToDoctorKop, 30450000);
 	});
 
 	it("1.4 Calculates retail home hygiene sales commission (Curaprox / Oral-B)", () => {
@@ -260,12 +260,12 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 
 		// Net base: 400,000.00 - 133,333.33 = 266,666.67 RUB (26,666,667 kop)
 		assert.equal(res.totalNetBaseKop, 26666667);
-		// 25% of net base = Math.round(26666667 * 0.25) = 6,666,667 kop (66,666.67 RUB)
-		assert.equal(res.grossPayoutBeforeTaxKop, 6666667);
-		// Art. 225 p. 6 Tax Code RF: 66,666.67 * 0.13 = 8,666.6671 RUB -> rounded to full ruble = 8,667 RUB (866,700 kop)
-		assert.equal(res.ndfl13TaxKop, 866700);
-		// Net payout: 6,666,667 - 866,700 = 5,799,967 kop (57,999.67 RUB)
-		assert.equal(res.netPayoutToDoctorKop, 5799967);
+		// 30% of net base = Math.round(26666667 * 0.30) = 8,000,000 kop (80,000.00 RUB)
+		assert.equal(res.grossPayoutBeforeTaxKop, 8000000);
+		// Art. 225 p. 6 Tax Code RF: 80,000 * 0.13 = 10,400 RUB (1,040,000 kop)
+		assert.equal(res.ndfl13TaxKop, 1040000);
+		// Net payout: 8,000,000 - 1,040,000 = 6,960,000 kop (69,600.00 RUB)
+		assert.equal(res.netPayoutToDoctorKop, 6960000);
 		// Zero drift invariant: gross = ndfl + net
 		assert.equal(res.grossPayoutBeforeTaxKop, res.ndfl13TaxKop + res.netPayoutToDoctorKop);
 	});
@@ -319,7 +319,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		const resAlreadyAbove = calculateDoctorPeriodPayroll({
 			doctorId: "doc-already-above",
 			doctorName: "Д-р Высокодоходный В. Д.",
-			specialtyId: "therapist", // 25%
+			specialtyId: "therapist", // 30%
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services: [
@@ -338,14 +338,14 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 			cumulativeYtdGrossKop: 500000000, // Exactly 5,000,000 RUB already accumulated
 		});
 
-		// 25% of 400,000 = 100,000 RUB (10,000,000 kop)
-		assert.equal(resAlreadyAbove.grossPayoutBeforeTaxKop, 10000000);
+		// 30% of 400,000 = 120,000 RUB (12,000,000 kop)
+		assert.equal(resAlreadyAbove.grossPayoutBeforeTaxKop, 12000000);
 		assert.equal(resAlreadyAbove.isProgressiveTaxApplied, true);
 		assert.equal(resAlreadyAbove.ndfl13TaxKop, 0);
-		// 15% of 100,000 = 15,000 RUB (1,500,000 kop)
-		assert.equal(resAlreadyAbove.ndfl15TaxKop, 1500000);
-		assert.equal(resAlreadyAbove.ndflTaxKop, 1500000);
-		assert.equal(resAlreadyAbove.netPayoutToDoctorKop, 8500000); // 85,000 RUB
+		// 15% of 120,000 = 18,000 RUB (1,800,000 kop)
+		assert.equal(resAlreadyAbove.ndfl15TaxKop, 1800000);
+		assert.equal(resAlreadyAbove.ndflTaxKop, 1800000);
+		assert.equal(resAlreadyAbove.netPayoutToDoctorKop, 10200000); // 102,000 RUB
 	});
 
 	it("1.9 Protects general clinic overhead consumables (gloves, napkins, saliva ejectors) from doctor salary deduction", () => {
@@ -374,7 +374,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		const res = calculateDoctorPeriodPayroll({
 			doctorId: "doc-clean-overhead",
 			doctorName: "Д-р Защищенный З. П.",
-			specialtyId: "therapist", // 25%
+			specialtyId: "therapist", // 30%
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services: servicesWithOverhead,
@@ -386,8 +386,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(res.totalMaterialDeductionsKop, 265000);
 		// Net base: 20,000 - 2,650 = 17,350 RUB (1,735,000 kop) (NOT 20,000 - 3,500 = 16,500)
 		assert.equal(res.totalNetBaseKop, 1735000);
-		// 25% of 17,350 = 4,337.50 RUB -> 433,750 kop
-		assert.equal(res.earnedBaseCommissionKop, 433750);
+		// 30% of 17,350 = 5,205.00 RUB -> 520,500 kop
+		assert.equal(res.earnedBaseCommissionKop, 520500);
 	});
 
 	it("1.10 Zero NDFL deduction for self-employed doctor (ИП / Самозанятый) and solo practitioner (Mandate 8e/8n)", () => {

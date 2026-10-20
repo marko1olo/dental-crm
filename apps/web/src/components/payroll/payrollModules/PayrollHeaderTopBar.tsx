@@ -45,24 +45,6 @@ export const PayrollHeaderTopBar: React.FC<PayrollHeaderTopBarProps> = ({
 			</div>
 
 			<div className="flex items-center gap-3">
-				{onSelectWorkspaceTab && (
-					<div className="dente-segmented-bar" data-testid="payroll-workspace-tab-toggle">
-						<button
-							type="button"
-							className={`dente-segmented-item ${activeWorkspaceTab === "payroll" ? "active" : ""}`}
-							onClick={() => onSelectWorkspaceTab("payroll")}
-						>
-							Зарплата врача (Net Revenue)
-						</button>
-						<button
-							type="button"
-							className={`dente-segmented-item ${activeWorkspaceTab === "timesheet" ? "active" : ""}`}
-							onClick={() => onSelectWorkspaceTab("timesheet")}
-						>
-							Учёт рабочих часов
-						</button>
-					</div>
-				)}
 				<button
 					type="button"
 					onClick={onClose}

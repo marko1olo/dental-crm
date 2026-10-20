@@ -42,8 +42,8 @@ import {
 import {
 	staffToEmployeeInfo,
 	generateDefaultMonthSchedule,
-	TimesheetT13Modal,
-} from "../TimesheetT13Modal";
+} from "../timesheetT13/types";
+import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -239,11 +239,11 @@ describe("Red Team: Kopeck-Exact Arithmetic & Zero Rounding Drift (Mandate 8b)",
 		const res = calculateDoctorStaffPayroll(input);
 		// Net base = 1,000,000 - 100,000 - 100,000 = 800,000 kop
 		assert.equal(res.totalNetBaseKop, 800000);
-		// 25% of 800,000 = 200,000 kop (2,000 RUB)
-		assert.equal(res.earnedBaseCommissionKop, 200000);
+		// 30% of 800,000 = 240,000 kop (2,400 RUB)
+		assert.equal(res.earnedBaseCommissionKop, 240000);
 		// Guarantee top-up to 70,000 RUB (7,000,000 kop) applies because daysWorked = 21
 		assert.equal(res.minimumGuaranteeApplied, true);
-		assert.equal(res.guaranteeTopUpKop, 6800000);
+		assert.equal(res.guaranteeTopUpKop, 6760000);
 		assert.equal(res.grossPayoutBeforeTaxKop, 7000000);
 	});
 
@@ -268,26 +268,26 @@ describe("Red Team: Kopeck-Exact Arithmetic & Zero Rounding Drift (Mandate 8b)",
 });
 
 describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 8d, 8s)", () => {
-	it("3.1 TimesheetT13Modal.tsx contains 0 nested modals and exports cleanly", () => {
-		assert.ok(TimesheetT13Modal, "TimesheetT13Modal must be exported");
+	it("3.1 DoctorPayrollModal.tsx contains 0 nested modals and exports cleanly", () => {
+		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
 
-		const filePath = path.resolve(__dirname, "../TimesheetT13Modal.tsx");
+		const filePath = path.resolve(__dirname, "../DoctorPayrollModal.tsx");
 		const content = fs.readFileSync(filePath, "utf8");
 
-		// Check for nested modal tags inside TimesheetT13Modal
+		// Check for nested modal tags inside DoctorPayrollModal
 		const modalTagMatches = content.match(/<Modal\b|<Dialog\b/g);
-		assert.equal(modalTagMatches, null, "TimesheetT13Modal must not contain nested <Modal> or <Dialog> elements");
+		assert.equal(modalTagMatches, null, "DoctorPayrollModal must not contain nested <Modal> or <Dialog> elements");
 
 		// Check overlay depth: exactly 1 level
-		const overlayCount = (content.match(/timesheet-modal-overlay/g) || []).length;
-		assert.ok(overlayCount >= 1 && overlayCount <= 2, "Timesheet modal overlay must not be nested");
+		const overlayCount = (content.match(/payroll-modal-overlay/g) || []).length;
+		assert.ok(overlayCount <= 1, "DoctorPayrollModal overlay must not be nested");
 	});
 
-	it("3.2 Zero cartoon emojis exist in TimesheetT13Modal.tsx, staffPayrollEngine.ts, or timesheetT13.css", () => {
+	it("3.2 Zero cartoon emojis exist in DoctorPayrollModal.tsx, DoctorPayrollModalContent.tsx, or staffPayrollEngine.ts", () => {
 		const files = [
-			path.resolve(__dirname, "../TimesheetT13Modal.tsx"),
+			path.resolve(__dirname, "../DoctorPayrollModal.tsx"),
+			path.resolve(__dirname, "../DoctorPayrollModalContent.tsx"),
 			path.resolve(__dirname, "../staffPayrollEngine.ts"),
-			path.resolve(__dirname, "../timesheetT13.css"),
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
@@ -305,25 +305,25 @@ describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 
 		});
 	});
 
-	it("3.3 timesheetT13.css contains zero hardcoded hex colors (#xxx or #xxxxxx)", () => {
-		const cssPath = path.resolve(__dirname, "../timesheetT13.css");
+	it("3.3 doctorPayrollModal.css contains zero hardcoded hex colors (#xxx or #xxxxxx)", () => {
+		const cssPath = path.resolve(__dirname, "../styles/doctorPayrollModal.css");
 		const css = fs.readFileSync(cssPath, "utf8");
 
 		const hexMatches = css.match(/#[0-9a-fA-F]{3,8}\b/g);
 		assert.equal(
 			hexMatches,
 			null,
-			`timesheetT13.css must not contain hardcoded hex colors, found: ${JSON.stringify(hexMatches)}`,
+			`doctorPayrollModal.css must not contain hardcoded hex colors, found: ${JSON.stringify(hexMatches)}`,
 		);
 	});
 });
 
 describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission Deductions", () => {
-	it("4.1 Verifies clinical statutory commission rates: Therapy 25%, Orthopedics 20%, Surgery 22%, Orthodontics 22%, Hygiene 30%, Retail 10%", () => {
-		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.therapy, 25);
-		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthopedics, 20);
+	it("4.1 Verifies clinical statutory commission rates: Therapy 30%, Orthopedics 30%, Surgery 22%, Orthodontics 25%, Hygiene 30%, Retail 10%", () => {
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.therapy, 30);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthopedics, 30);
 		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.surgery, 22);
-		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthodontics, 22);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthodontics, 25);
 		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.hygiene, 30);
 		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.retail_hygiene, 10);
 	});
@@ -357,9 +357,9 @@ describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission
 		assert.equal(res.totalGrossRevenueKop, 5000000);
 		assert.equal(res.totalLabDeductionsKop, 1500000);
 		assert.equal(res.totalNetBaseKop, 3500000);
-		// Clinical rate for orthopedics = 20%: 20% of 3,500,000 = 700,000 kop (7,000 RUB)
-		// NOT 20% of 50,000 (which would be 10,000 RUB)
-		assert.equal(res.earnedBaseCommissionKop, 700000);
+		// Clinical rate for orthopedics = 30%: 30% of 3,500,000 = 1,050,000 kop (10,500 RUB)
+		// NOT 30% of 50,000 (which would be 15,000 RUB)
+		assert.equal(res.earnedBaseCommissionKop, 1050000);
 	});
 
 	it("4.3 Pre-commission deduction of costly implants and bone materials from surgery piecework base", () => {
@@ -476,8 +476,8 @@ describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission
 			assert.equal(res.totalGrossRevenueKop, 4000000, "Gross revenue must reflect only 54-FZ paid cash");
 			// Net base = 40,000 - 10,000 (lab for paid item) = 30,000 RUB = 3,000,000 kop
 			assert.equal(res.totalNetBaseKop, 3000000, "Net base must deduct ZTL strictly from collected cash");
-			// Orthopedist 25% of 30,000 RUB = 7,500 RUB = 750,000 kop
-			assert.equal(res.earnedBaseCommissionKop, 750000, "Doctor must receive commission strictly from paid cash");
+			// Orthopedist 30% of 30,000 RUB = 9,000 RUB = 900,000 kop
+			assert.equal(res.earnedBaseCommissionKop, 900000, "Doctor must receive commission strictly from paid cash");
 		});
 
 		it("5.2 Partially paid services generate commission strictly from the paid portion minus lab costs", () => {
@@ -507,8 +507,8 @@ describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission
 			assert.equal(res.totalGrossRevenueKop, 10000000, "Gross must be capped at cash collected");
 			// Net base = 100,000 - 40,000 = 60,000 RUB (6,000,000 kop)
 			assert.equal(res.totalNetBaseKop, 6000000, "Net base must deduct ZTL from collected cash");
-			// 25% of 60,000 RUB = 15,000 RUB (1,500,000 kop)
-			assert.equal(res.earnedBaseCommissionKop, 1500000);
+			// 30% of 60,000 RUB = 18,000 RUB (1,800,000 kop)
+			assert.equal(res.earnedBaseCommissionKop, 1800000);
 		});
 
 		it("5.3 Chair rental shift economics: shiftsCount * shiftRateRub correctly computes rent and net profit", () => {

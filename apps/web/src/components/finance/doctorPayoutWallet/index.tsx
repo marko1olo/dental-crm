@@ -6,6 +6,7 @@ import "../../../styles/modules/mobile-doctor-payout.css";
 import type { DoctorPayoutRow } from "../../../pages/payoutDashboard/types.js";
 import {
 	DEMO_SHOWCASE_DOCTOR,
+	DEMO_SHOWCASE_SOLO_DOCTOR,
 	formatMonthLabel,
 } from "./types.js";
 import type {
@@ -45,7 +46,7 @@ export function DoctorPayoutMobileWallet({
 			return report.rows;
 		}
 		if (isDemo) {
-			return [DEMO_SHOWCASE_DOCTOR];
+			return [DEMO_SHOWCASE_DOCTOR, DEMO_SHOWCASE_SOLO_DOCTOR];
 		}
 		return [];
 	}, [report, isDemo]);
@@ -162,7 +163,7 @@ export function DoctorPayoutMobileWallet({
 					type="button"
 					className="doctor-wallet-primary-cta"
 					onClick={() => onOpenPayrollModal(currentDoctor)}
-					aria-label="Открыть расчётную ведомость Т-51"
+					aria-label="Открыть расчётную ведомость"
 				>
 					<FileSpreadsheet size={18} />
 					<span>Расчётная ведомость</span>

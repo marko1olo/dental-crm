@@ -4,6 +4,7 @@ import { PayrollRentalInputs } from "./PayrollRentalInputs";
 
 export interface PayrollRentalSectionProps {
 	readonly payoutModel: "percentage" | "chair_rental";
+	readonly chairRentalMode?: "fixed" | "split_70_30" | undefined;
 	readonly baseCommissionPercent: number;
 	readonly chairRentalRub: number;
 	readonly shiftsCount: number;
@@ -13,6 +14,7 @@ export interface PayrollRentalSectionProps {
 	readonly npd6TaxKop?: number | undefined;
 	readonly netPayoutToDoctorKop: number;
 	readonly isNpdReceiptDone: boolean;
+	readonly onSetChairRentalMode?: ((mode: "fixed" | "split_70_30") => void) | undefined;
 	readonly onSetChairRentalRub: (val: number) => void;
 	readonly onSetShiftsCount: (val: number) => void;
 	readonly onSetShiftRateRub: (val: number) => void;
@@ -22,6 +24,7 @@ export interface PayrollRentalSectionProps {
 
 export const PayrollRentalSection: React.FC<PayrollRentalSectionProps> = ({
 	payoutModel,
+	chairRentalMode = "fixed",
 	baseCommissionPercent,
 	chairRentalRub,
 	shiftsCount,
@@ -31,6 +34,7 @@ export const PayrollRentalSection: React.FC<PayrollRentalSectionProps> = ({
 	npd6TaxKop,
 	netPayoutToDoctorKop,
 	isNpdReceiptDone,
+	onSetChairRentalMode,
 	onSetChairRentalRub,
 	onSetShiftsCount,
 	onSetShiftRateRub,
@@ -48,9 +52,11 @@ export const PayrollRentalSection: React.FC<PayrollRentalSectionProps> = ({
 		>
 			{payoutModel === "chair_rental" ? (
 				<PayrollRentalInputs
+					chairRentalMode={chairRentalMode}
 					shiftsCount={shiftsCount}
 					shiftRateRub={shiftRateRub}
 					chairRentalRub={chairRentalRub}
+					onSetChairRentalMode={onSetChairRentalMode}
 					onSetChairRentalRub={onSetChairRentalRub}
 					onSetShiftsCount={onSetShiftsCount}
 					onSetShiftRateRub={onSetShiftRateRub}

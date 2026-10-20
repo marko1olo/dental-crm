@@ -33,6 +33,7 @@ export function PayoutDashboardHeader({
 					<input
 						id="payout-month"
 						type="month"
+						lang="ru-RU"
 						value={month}
 						onChange={(event) => onMonthChange(event.target.value)}
 					/>

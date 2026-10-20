@@ -3,7 +3,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import {
 	calculateDoctorStaffPayroll,
 	calculateAssistantStaffPayroll,
@@ -22,13 +22,11 @@ import {
 	type TimesheetDayRecord,
 	type EmployeeTimesheetInput,
 } from "@dental/shared";
-import { TimesheetT13Modal } from "../TimesheetT13Modal.js";
 import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal.js";
 
 describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
 	it("1.1 Re-exports all required payroll modals and engines from canonical modules", () => {
 		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
-		assert.ok(TimesheetT13Modal, "TimesheetT13Modal must be exported");
 		assert.ok(calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
 		assert.ok(calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
 		assert.ok(calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");

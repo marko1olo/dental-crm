@@ -50,14 +50,14 @@ describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () 
 		});
 
 		// Net base for therapy = 6000 - 1000 = 5000 ₽ = 500,000 kop
-		// Commission for therapist = 25% of 500,000 = 125,000 kop (1,250 ₽)
+		// Commission for therapist = 30% of 500,000 = 150,000 kop (1,500 ₽)
 		// Retail commission = 10% of 100,000 = 10,000 kop (100 ₽)
-		// Total before tax = 125,000 + 10,000 = 135,000 kop (1,350 ₽)
+		// Total before tax = 150,000 + 10,000 = 160,000 kop (1,600 ₽)
 		// Minimum guarantee for therapist is 60,000 ₽ (6,000,000 kop), so guarantee kicks in
 		assert.equal(result.totalGrossRevenueKop, 700000);
 		assert.equal(result.totalMaterialDeductionsKop, 100000);
 		assert.equal(result.totalLabDeductionsKop, 0);
-		assert.equal(result.earnedBaseCommissionKop, 125000);
+		assert.equal(result.earnedBaseCommissionKop, 150000);
 		assert.equal(result.earnedRetailCommissionKop, 10000);
 		assert.equal(result.minimumGuaranteeApplied, true);
 		assert.equal(result.grossPayoutBeforeTaxKop, 6000000); // 60,000 ₽ guarantee
@@ -95,11 +95,11 @@ describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () 
 		// Total Gross = 600,000 ₽ = 60,000,000 kop (triggers Tier 2: +2% KPI bonus)
 		// Total Lab = 180,000 ₽ = 18,000,000 kop
 		// Total Net Base = 420,000 ₽ = 42,000,000 kop
-		// Base commission (orthopedist = 25%) = 25% of 42,000,000 = 10,500,000 kop (105,000 ₽)
+		// Base commission (orthopedist = 30%) = 30% of 42,000,000 = 12,600,000 kop (126,000 ₽)
 		// KPI bonus = 2% of 42,000,000 = 840,000 kop (8,400 ₽)
-		// Gross payout before tax = 10,500,000 + 840,000 = 11,340,000 kop (113,400 ₽)
-		// NDFL 13% = 11,340,000 * 0.13 = 1,474,200 kop (14,742 ₽)
-		// Net to doctor = 11,340,000 - 1,474,200 = 9,865,800 kop (98,658 ₽)
+		// Gross payout before tax = 12,600,000 + 840,000 = 13,440,000 kop (134,400 ₽)
+		// NDFL 13% = 13,440,000 * 0.13 = 1,747,200 kop (17,472 ₽)
+		// Net to doctor = 13,440,000 - 1,747,200 = 11,692,800 kop (116,928 ₽)
 
 		const result = calculateDoctorPeriodPayroll({
 			doctorId: "doc-ortho-1",
@@ -113,13 +113,13 @@ describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () 
 		assert.equal(result.totalGrossRevenueKop, 60000000);
 		assert.equal(result.totalLabDeductionsKop, 18000000);
 		assert.equal(result.totalNetBaseKop, 42000000);
-		assert.equal(result.baseCommissionPercent, 25);
-		assert.equal(result.earnedBaseCommissionKop, 10500000);
+		assert.equal(result.baseCommissionPercent, 30);
+		assert.equal(result.earnedBaseCommissionKop, 12600000);
 		assert.equal(result.kpiBonusPercent, 2);
 		assert.equal(result.kpiBonusEarnedKop, 840000);
-		assert.equal(result.grossPayoutBeforeTaxKop, 11340000);
-		assert.equal(result.ndfl13TaxKop, 1474200);
-		assert.equal(result.netPayoutToDoctorKop, 9865800);
+		assert.equal(result.grossPayoutBeforeTaxKop, 13440000);
+		assert.equal(result.ndfl13TaxKop, 1747200);
+		assert.equal(result.netPayoutToDoctorKop, 11692800);
 		assert.equal(result.minimumGuaranteeApplied, false);
 	});
 
@@ -405,11 +405,11 @@ describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () 
 
 		assert.equal(therapistResult.serviceCount, 1);
 		assert.equal(therapistResult.totalGrossRevenueKop, 800000);
-		assert.equal(therapistResult.earnedBaseCommissionKop, 175000); // 25% of (8,000 - 1,000)
+		assert.equal(therapistResult.earnedBaseCommissionKop, 210000); // 30% of (8,000 - 1,000)
 
 		assert.equal(orthoResult.serviceCount, 1);
 		assert.equal(orthoResult.totalGrossRevenueKop, 1200000);
-		assert.equal(orthoResult.earnedBaseCommissionKop, 300000); // 25% of 12,000 (ortho doesn't deduct materials by default)
+		assert.equal(orthoResult.earnedBaseCommissionKop, 360000); // 30% of 12,000 (ortho doesn't deduct materials by default)
 	});
 
 	it("1.9 Family deposit payment accrual on actual service vs advance deposit funding", () => {
@@ -452,6 +452,6 @@ describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () 
 		// Advance is ignored from piece-rate; actual service rendered is credited
 		assert.equal(result.totalGrossRevenueKop, 600000);
 		assert.equal(result.totalNetBaseKop, 500000);
-		assert.equal(result.earnedBaseCommissionKop, 125000); // 25% of 5,000 = 1,250 ₽
+		assert.equal(result.earnedBaseCommissionKop, 150000); // 30% of 5,000 = 1,500 ₽
 	});
 });

@@ -7,7 +7,6 @@ import {
 	SOLO_DOCTOR_SPECIALTY_PRESETS,
 	DEFAULT_SOLO_DOCTOR,
 } from "./staffPayrollEngine";
-import { useTimesheetT13State } from "./timesheetT13";
 import { getDefaultPayrollPeriod, getDatesForPeriodPreset, type PeriodPresetType } from "./doctorPayrollModalUtils";
 import { fetchDoctorEarningsApi } from "./fetchDoctorEarningsApi";
 
@@ -37,11 +36,12 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 	const [periodEnd, setPeriodEnd] = useState(params.initialPeriodEnd || defaultPeriod.end);
 	const [periodPreset, setPeriodPreset] = useState<PeriodPresetType>("current_month");
 	const [payoutModel, setPayoutModel] = useState<"percentage" | "chair_rental">("percentage");
+	const [chairRentalMode, setChairRentalMode] = useState<"fixed" | "split_70_30">("fixed");
 	const [shiftsCount, setShiftsCount] = useState<number>(10);
 	const [shiftRateRub, setShiftRateRub] = useState<number>(4000);
 	const [chairRentalRub, setChairRentalRub] = useState<number>(40000);
 	const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"payroll" | "timesheet">("payroll");
-	const timesheetState = useTimesheetT13State({ isOpen: params.isOpen, clinicName: params.clinicName });
+	const timesheetState = null;
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
 	const [isNpdReceiptDone, setIsNpdReceiptDone] = useState<boolean>(false);
 	const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -100,15 +100,18 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 			services: servicesToUse, customBasePercentage: customPercent, useClinicalCategoryRates: params.useClinicalCategoryRates,
 			taxRegime: payoutModel === "chair_rental" ? "self_employed" : taxRegime,
 			isSoloDoctor: !params.doctorsList || params.doctorsList.length === 0 || activeDoc.specialtyId === "solo_practitioner" || activeDoc.specialtyId === "solo-doctor" || payoutModel === "chair_rental",
-			manualAdjustmentKop: 0, payoutModel, chairRentalKop: payoutModel === "chair_rental" ? Math.round(chairRentalRub * 100) : 0,
+			manualAdjustmentKop: 0,
+			payoutModel,
+			chairRentalMode,
+			chairRentalKop: payoutModel === "chair_rental" ? Math.round(chairRentalRub * 100) : 0,
 			advancePayoutKop: Math.round(advanceRub * 100),
 		});
-	}, [params.isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, params.useClinicalCategoryRates, taxRegime, params.doctorsList, payoutModel, chairRentalRub, advanceRub]);
+	}, [params.isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, params.useClinicalCategoryRates, taxRegime, params.doctorsList, payoutModel, chairRentalMode, chairRentalRub, advanceRub]);
 
 	return {
 		selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
-		payoutModel, setPayoutModel, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
+		payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
 		activeWorkspaceTab, setActiveWorkspaceTab, timesheetState, advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,
 		copyFeedback, setCopyFeedback, customPercent, setCustomPercent, taxRegime, setTaxRegime, isLoadingEarnings, servicesToUse, payrollResult,
 	};

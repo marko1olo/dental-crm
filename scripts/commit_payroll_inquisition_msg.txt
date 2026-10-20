@@ -1,0 +1,33 @@
+feat(payroll): First Principles расчет выплат врачам без советских табелей Т-13/Т-51
+
+## Контекст и архитектурная цель (Why):
+- Ликвидация советской бюрократии Госкомстата (Формы Т-13 и Т-51) в финансовом блоке DENTE CRM.
+- Перевод на First Principles частной стоматологии РФ (Мандаты 8e, 8n): софт для врача, а не врач для софта.
+- Сдельный процент строго от фактически оплаченных через кассу 54-ФЗ услуг (минус виртуальные долги).
+- Вычет прямых затрат на зуботехническую лабораторию (ЗТЛ) до расчета процента врача.
+- Клинические ставки: 25-30% терапия, 30% ортопедия.
+- Режим аренды кресла для соло-врача: фикс за смену (shiftsCount * shiftRateRub) или сплит 70/30 (70% врачу, 30% арендодателю за минусом ЗТЛ) с поддержкой НПД 6%.
+- 1-клик действие «✓ Выплатить и распечатать расчетный листок».
+
+## Что конкретно сделано (What & Where):
+- packages/shared/src/finance/doctorPayrollEngine.ts: канонический SSOT движок сдельной зарплаты, расчета аренды кресла, прогрессивного НДФЛ 13/15% и НПД 6% без потери копеек.
+- packages/shared/src/finance/doctorPayrollT51.ts: заменен на @deprecated тонкий фасад, реэкспортирующий функции из doctorPayrollEngine.js.
+- apps/web/src/components/payroll/: удален TimesheetT13Modal.tsx и PayrollTimesheetTab.tsx; вычищены советские номера форм («Форма Т-13», «Т-51») из интерфейса, тулбаров, кнопок и ариа-меток.
+- apps/web/src/components/payroll/payrollModules/: обновлены PayrollRentalInputs.tsx, PayrollRentalSection.tsx, PayrollActionButtonsBar.tsx, PayrollHeaderTopBar.tsx, useDoctorPayrollModalState.ts для поддержки аренды кресла и быстрых действий.
+- apps/web/src/components/finance/doctorPayoutWallet/: обновлен мобильный кошелек выплат (Apple HIG 390x844); добавлены Д-р Смирнова А. В. (30% терапия, 55 200 ₽) и Д-р Ковалев И. С. (ортопед аренда кресла 70/30, 192 500 ₽).
+- apps/web/src/pages/payoutDashboard/usePayoutDashboard.ts & PayoutDashboardHeader.tsx: привязка демо-режима fallback к DEMO_SHOWCASE_REPORT, отображение аналитики без белых пятен.
+- apps/web/src/utils/routeUtils.ts: поддержка маршрутизации #payout, #payouts, #payroll.
+- scripts/capture-all-payroll-4state.cjs: автоматизированный скрипт снятия 4-состояний доказательств в реальном контуре CRM.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Тесты: 62 passed, 0 failed (doctorPayroll.test.ts, doctorPayrollEngine.test.ts, advancedPayrollComponents.test.ts, payrollTimesheetSoloDoctorAutonomy.test.ts, soloDoctorPayrollAutonomy.test.ts, doctorPayrollT51.test.ts).
+- Кодировка: npm run check:encoding — 14 972 файлов проверено, 0 замечаний (0 BOM).
+- Визуальный пруф (4-State Visual Proof):
+  - ☀️ PC Light (1440x900): docs/proofs/payroll/payroll_pc_light_1440x900.png
+  - 🌙 PC Dark (1440x900): docs/proofs/payroll/payroll_pc_dark_1440x900.png
+  - 📱 Mobile Light (390x844): docs/proofs/payroll/payroll_mobile_light_390x844.png
+  - 🌙 Mobile Dark (390x844): docs/proofs/payroll/payroll_mobile_dark_390x844.png
+- Все скриншоты лично просмотрены через view_file: 0px горизонтального скролла, сенсорные элементы >= 44x44px, Floating Bottom Bar в natural thumb zone.
+
+## Синхронизация документации (Documentation Sync):
+- Синхронизировано с .agents/AGENTS.md (Мандаты 8e, 8n, 8ze, 8al), MOBILE_DESIGN_APPLE_HIG.md и FEATURES_REGISTRY.md.

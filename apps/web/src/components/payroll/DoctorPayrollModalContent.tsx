@@ -4,7 +4,6 @@ import {
 	PayrollRentalSection,
 	PayrollTotalsBar,
 	PayrollServicesTable,
-	PayrollTimesheetTab,
 } from "./payrollModules";
 import type { useDoctorPayrollModalState } from "./useDoctorPayrollModalState";
 
@@ -28,9 +27,9 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 	onPrintPayslip,
 }) => {
 	const {
-		taxRegime, setTaxRegime, payoutModel, setPayoutModel, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
+		taxRegime, setTaxRegime, payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, selectedDoctorId, setSelectedDoctorId,
-		soloSpecialtyId, setSoloSpecialtyId, activeWorkspaceTab, setActiveWorkspaceTab, timesheetState,
+		soloSpecialtyId, setSoloSpecialtyId, activeWorkspaceTab, setActiveWorkspaceTab,
 		payrollResult, chairRentalRub, setChairRentalRub, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub,
 		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone, copyFeedback, servicesToUse, isLoadingEarnings,
 	} = state;
@@ -62,46 +61,42 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 				/>
 
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
-					{activeWorkspaceTab === "payroll" ? (
-						<>
-							<PayrollRentalSection
-								payoutModel={payoutModel}
-								baseCommissionPercent={payrollResult.baseCommissionPercent}
-								chairRentalRub={chairRentalRub}
-								shiftsCount={shiftsCount}
-								shiftRateRub={shiftRateRub}
-								advanceRub={advanceRub}
-								taxRegime={taxRegime}
-								npd6TaxKop={payrollResult.npd6TaxKop}
-								netPayoutToDoctorKop={payrollResult.netPayoutToDoctorKop}
-								isNpdReceiptDone={isNpdReceiptDone}
-								onSetChairRentalRub={setChairRentalRub}
-								onSetShiftsCount={setShiftsCount}
-								onSetShiftRateRub={setShiftRateRub}
-								onSetAdvanceRub={setAdvanceRub}
-								onSetIsNpdReceiptDone={setIsNpdReceiptDone}
-							/>
+					<PayrollRentalSection
+						payoutModel={payoutModel}
+						chairRentalMode={chairRentalMode}
+						baseCommissionPercent={payrollResult.baseCommissionPercent}
+						chairRentalRub={chairRentalRub}
+						shiftsCount={shiftsCount}
+						shiftRateRub={shiftRateRub}
+						advanceRub={advanceRub}
+						taxRegime={taxRegime}
+						npd6TaxKop={payrollResult.npd6TaxKop}
+						netPayoutToDoctorKop={payrollResult.netPayoutToDoctorKop}
+						isNpdReceiptDone={isNpdReceiptDone}
+						onSetChairRentalMode={setChairRentalMode}
+						onSetChairRentalRub={setChairRentalRub}
+						onSetShiftsCount={setShiftsCount}
+						onSetShiftRateRub={setShiftRateRub}
+						onSetAdvanceRub={setAdvanceRub}
+						onSetIsNpdReceiptDone={setIsNpdReceiptDone}
+					/>
 
-							<PayrollTotalsBar
-								payrollResult={payrollResult}
-								payoutModel={payoutModel}
-								taxRegime={taxRegime}
-								copyFeedback={copyFeedback}
-								onSendToMessenger={onSendToMessenger}
-								onDownloadCsv={onDownloadCsv}
-								onPrintPayslip={onPrintPayslip}
-								onClose={onClose}
-							/>
+					<PayrollTotalsBar
+						payrollResult={payrollResult}
+						payoutModel={payoutModel}
+						taxRegime={taxRegime}
+						copyFeedback={copyFeedback}
+						onSendToMessenger={onSendToMessenger}
+						onDownloadCsv={onDownloadCsv}
+						onPrintPayslip={onPrintPayslip}
+						onClose={onClose}
+					/>
 
-							<PayrollServicesTable
-								services={servicesToUse}
-								isLoading={isLoadingEarnings}
-								baseCommissionPercent={payrollResult.baseCommissionPercent}
-							/>
-						</>
-					) : (
-						<PayrollTimesheetTab timesheetState={timesheetState} />
-					)}
+					<PayrollServicesTable
+						services={servicesToUse}
+						isLoading={isLoadingEarnings}
+						baseCommissionPercent={payrollResult.baseCommissionPercent}
+					/>
 				</div>
 			</div>
 		</div>

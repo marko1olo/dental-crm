@@ -169,10 +169,10 @@ export function viewFromHash(customHash?: string): AppView {
 	const view = parts[0]?.toLowerCase() ?? "";
 	if (view === "visits") return "visit";
 	if (view === "sanpin" || view === "sterilization") return "scanner";
-	if (view === "cmo") return "analytics";
+	if (view === "cmo" || view === "payout" || view === "payouts" || view === "payroll") return "analytics";
 	if (view === "telephony") return "communications";
 	if (view === "lab-orders" || view === "lab_orders") return "lab";
-	if (view === "invoices") return "finance";
+	if (view === "invoices" || view === "billing" || view === "cashbox" || view === "payments") return "finance";
 	if (view === "warehouse" || view === "stock") return "inventory";
 	if (view === "radiology" || view === "ct" || view === "cbct") return "imaging";
 	if (
@@ -183,6 +183,7 @@ export function viewFromHash(customHash?: string): AppView {
 	) {
 		return "patients";
 	}
+	if (view === "queue") return "shift";
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)
 		: "shift";

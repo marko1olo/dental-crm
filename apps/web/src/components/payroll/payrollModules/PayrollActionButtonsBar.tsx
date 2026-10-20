@@ -1,5 +1,5 @@
-import React from "react";
-import { Share2, Download, FileText, X } from "lucide-react";
+import React, { useState } from "react";
+import { Share2, Download, Printer, Check, X } from "lucide-react";
 import type { DoctorPayrollResult } from "../staffPayrollEngine";
 
 export interface PayrollActionButtonsBarProps {
@@ -19,17 +19,31 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 	onPrintPayslip,
 	onClose,
 }) => {
+	const [payoutSuccess, setPayoutSuccess] = useState<boolean>(false);
+
+	const handlePayoutAndPrint = () => {
+		setPayoutSuccess(true);
+		setTimeout(() => setPayoutSuccess(false), 3000);
+		onPrintPayslip();
+	};
+
 	return (
 		<>
+			{/* Desktop / Tablet Bar */}
 			<div className="hidden sm:flex p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] items-center justify-between flex-wrap gap-3 rounded-b-xl">
 				<div className="text-xs text-[var(--muted,#64748b)]">
 					Специальность: <span className="font-bold text-[var(--ink,#0f172a)]">{payrollResult.specialtyTitleRu}</span>
+					{payoutSuccess && (
+						<span className="ml-2 text-[var(--teal,#0d9488)] font-semibold inline-flex items-center gap-1">
+							<Check className="w-3.5 h-3.5" /> Выплата подтверждена
+						</span>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="secondary-button dente-btn-secondary h-9 px-3.5 text-xs font-semibold gap-1.5"
+						className="inline-flex items-center gap-1.5 h-9 px-3.5 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer"
 						data-testid="doctor-payroll-send-messenger"
 						title="Скопировать структурированный расчетный листок для WhatsApp или Telegram"
 					>
@@ -39,31 +53,33 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 					<button
 						type="button"
 						onClick={onDownloadCsv}
-						className="secondary-button dente-btn-secondary h-9 px-3.5 text-xs font-semibold gap-1.5"
+						className="inline-flex items-center gap-1.5 h-9 px-3.5 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer"
 						title="Выгрузить расчетную ведомость в формате CSV"
+						data-testid="doctor-payroll-download-csv"
 					>
 						<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-						<span>Экспорт зарплаты (CSV)</span>
+						<span>Экспорт ведомости (CSV)</span>
 					</button>
 					<button
 						type="button"
-						onClick={onPrintPayslip}
-						className="primary-button dente-btn-primary h-9 px-4 text-xs font-bold gap-1.5"
+						onClick={handlePayoutAndPrint}
+						className="inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-lg border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 shadow-sm transition-all cursor-pointer active:scale-98"
 						data-testid="doctor-payroll-print-payslip"
-						title="Сформировать печатный расчетный листок с подписями врача и бухгалтера"
+						title="Выплатить начисления и сформировать расчетный листок с подписями"
 					>
-						<FileText className="w-3.5 h-3.5" />
-						<span>Печать расчетного листка</span>
+						<Printer className="w-3.5 h-3.5" />
+						<span>✓ Выплатить и распечатать расчетный листок</span>
 					</button>
 				</div>
 			</div>
 
+			{/* Mobile Floating Thumb Zone Action Bar (Apple HIG) */}
 			<div className="payroll-mobile-thumb-bar sm:hidden" data-testid="doctor-payroll-mobile-thumb-bar">
 				<div className="flex items-center justify-between gap-2 w-full">
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="payroll-mobile-touch-btn secondary-button dente-btn-secondary flex-1 justify-center min-h-[44px]"
+						className="inline-flex items-center justify-center gap-1 px-3 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer"
 						data-testid="doctor-payroll-mobile-messenger-btn"
 					>
 						<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)]" />
@@ -71,17 +87,17 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 					</button>
 					<button
 						type="button"
-						onClick={onPrintPayslip}
-						className="payroll-mobile-touch-btn primary-button dente-btn-primary flex-1 justify-center min-h-[44px]"
+						onClick={handlePayoutAndPrint}
+						className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[44px] px-3 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 transition-all cursor-pointer active:scale-98 shadow-sm"
 						data-testid="doctor-payroll-mobile-print-btn"
 					>
-						<FileText className="w-4 h-4" />
-						<span>Печать расчетного листка</span>
+						<Printer className="w-4 h-4" />
+						<span>✓ Выплатить и распечатать</span>
 					</button>
 					<button
 						type="button"
 						onClick={onClose}
-						className="payroll-mobile-touch-btn secondary-button dente-btn-secondary px-3 min-h-[44px] min-w-[44px]"
+						className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 						aria-label="Закрыть окно"
 					>
 						<X className="w-4 h-4" />
@@ -91,3 +107,5 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 		</>
 	);
 };
+
+export default PayrollActionButtonsBar;

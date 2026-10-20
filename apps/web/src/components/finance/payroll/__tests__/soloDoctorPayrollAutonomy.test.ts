@@ -171,8 +171,8 @@ describe("Solo Doctor Payroll Autonomy & Zero-Staff Fallback (Mandates 8e & 8n)"
 		expect(result.totalNetBaseKop).toBe(2900000); // 29,000.00 RUB
 		expect(result.baseCommissionPercent).toBe(25);
 
-		// Earned base: 25% of 29,000 = 7,250 RUB = 725,000 kop
-		expect(result.earnedBaseCommissionKop).toBe(725000);
+		// Earned base: 30% therapy of 29,000 = 8,700 RUB = 870,000 kop
+		expect(result.earnedBaseCommissionKop).toBe(870000);
 		// Min guarantee for general dentist is 60,000 RUB (6,000,000 kop)
 		expect(result.minimumGuaranteeApplied).toBe(true);
 		expect(result.grossPayoutBeforeTaxKop).toBe(6000000);
@@ -210,7 +210,7 @@ describe("Solo Doctor Payroll Autonomy & Zero-Staff Fallback (Mandates 8e & 8n)"
 		expect(result.totalLabDeductionsKop).toBe(1000000); // Lab deducted
 		expect(result.totalMaterialDeductionsKop).toBe(0); // Material NOT deducted for orthopedist preset
 		expect(result.totalNetBaseKop).toBe(2500000); // 25,000.00 RUB
-		expect(result.baseCommissionPercent).toBe(25);
+		expect(result.baseCommissionPercent).toBe(30);
 	});
 
 	it("5. Switches clinical specialty to Surgeon and verifies 20% commission with material deduction", () => {
@@ -341,8 +341,8 @@ describe("Solo Doctor Payroll Autonomy & Zero-Staff Fallback (Mandates 8e & 8n)"
 		expect(html).toContain("Врач-ортодонт (брекеты / элайнеры)");
 
 		// Export CSV and Print buttons must be present
-		expect(html).toContain("Экспорт зарплаты (CSV)");
-		expect(html).toContain("Печать расчетного листка");
+		expect(html).toContain("Экспорт ведомости (CSV)");
+		expect(html).toContain("распечатать расчетный листок");
 	});
 
 	it("9. Handles undefined doctorsList safely without crashing", () => {

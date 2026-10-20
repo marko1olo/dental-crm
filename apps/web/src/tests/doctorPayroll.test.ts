@@ -28,7 +28,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		const res = calculateDoctorPeriodPayroll({
 			doctorId: "doc-1",
 			doctorName: "Д-р Тестов",
-			specialtyId: "therapist", // 25% default
+			specialtyId: "therapist", // 30% default
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services,
@@ -37,8 +37,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(res.totalGrossRevenueKop, 1000000);
 		assert.equal(res.totalMaterialDeductionsKop, 200000);
 		assert.equal(res.totalNetBaseKop, 800000); // 8,000 RUB
-		assert.equal(res.baseCommissionPercent, 25);
-		// Pre-guarantee earned: 25% of 8,000 = 2,000 RUB (200,000 kop)
+		assert.equal(res.baseCommissionPercent, 30);
+		// Pre-guarantee earned: 30% of 8,000 = 2,400 RUB (240,000 kop)
 		// Min guarantee for therapist is 60,000 RUB (6,000,000 kop)
 		assert.equal(res.minimumGuaranteeApplied, true);
 		assert.equal(res.grossPayoutBeforeTaxKop, 6000000);
@@ -73,14 +73,14 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(res.kpiBonusPercent, 5);
 		assert.equal(res.minimumGuaranteeApplied, false);
 		// Net base: 1,000,000 RUB (100,000,000 kop)
-		// 25% = 250,000 RUB (25,000,000 kop)
+		// 30% = 300,000 RUB (30,000,000 kop)
 		// 5% KPI = 50,000 RUB (5,000,000 kop)
-		// Gross = 300,000 RUB (30,000,000 kop)
-		assert.equal(res.grossPayoutBeforeTaxKop, 30000000);
-		// NDFL 13% = 39,000 RUB (3,900,000 kop)
-		assert.equal(res.ndfl13TaxKop, 3900000);
-		// Net = 261,000 RUB (26,100,000 kop)
-		assert.equal(res.netPayoutToDoctorKop, 26100000);
+		// Gross = 350,000 RUB (35,000,000 kop)
+		assert.equal(res.grossPayoutBeforeTaxKop, 35000000);
+		// NDFL 13% = 45,500 RUB (4,550,000 kop)
+		assert.equal(res.ndfl13TaxKop, 4550000);
+		// Net = 304,500 RUB (30,450,000 kop)
+		assert.equal(res.netPayoutToDoctorKop, 30450000);
 	});
 
 	it("should calculate assistant shifts and radiograph bonuses", () => {
@@ -280,8 +280,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(resTherapist.serviceCount, 1);
 		assert.equal(resTherapist.totalGrossRevenueKop, 1500000);
 		assert.equal(resTherapist.totalMaterialDeductionsKop, 300000);
-		// Net base: 12,000 ₽ -> 25% = 3,000 ₽ (300,000 kop)
-		assert.equal(resTherapist.earnedBaseCommissionKop, 300000);
+		// Net base: 12,000 ₽ -> 30% = 3,600 ₽ (360,000 kop)
+		assert.equal(resTherapist.earnedBaseCommissionKop, 360000);
 
 		// 2. Surgeon calculation receives full joint array, but only takes their service
 		const resSurgeon = calculateDoctorPeriodPayroll({
@@ -340,8 +340,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		// Advance is ignored; only actual care is counted
 		assert.equal(res.totalGrossRevenueKop, 800000);
 		assert.equal(res.totalMaterialDeductionsKop, 100000);
-		// Net base: 7,000 ₽ -> 25% = 1,750 ₽ (175,000 kop)
-		assert.equal(res.earnedBaseCommissionKop, 175000);
+		// Net base: 7,000 ₽ -> 30% = 2,100 ₽ (210,000 kop)
+		assert.equal(res.earnedBaseCommissionKop, 210000);
 	});
 
 	it("should calculate chair rental mode (Mandates 8e, 8n): Revenue - Chair Rental - ZTL - Materials = 100% Net Income with Advance Split and NPD 6%", () => {
@@ -399,5 +399,76 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.ok(!text.includes("🦷"));
 		assert.ok(!text.includes("🚀"));
 		assert.ok(!text.includes("🎉"));
+	});
+
+	it("should ignore unpaid virtual debt services and calculate net revenue strictly from actually received partial payments", () => {
+		const services: DoctorCompletedServiceItem[] = [
+			// 1. Fully paid service: 20,000 ₽ gross, 2,000 ₽ lab, 1,000 ₽ mat -> Net base: 17,000 ₽ (25% = 4,250 ₽)
+			{
+				id: "srv-paid-1",
+				dateIso: "2026-08-15",
+				patientName: "Оплаченный О.О.",
+				medicalCardNumber: "043/у-60",
+				serviceNameRu: "Керамическая накладка",
+				category: "orthopedics",
+				grossRevenueKop: 2000000,
+				labCostKop: 200000,
+				materialCostKop: 100000,
+				isPaid: true,
+				invoiceStatus: "paid",
+			},
+			// 2. Unpaid virtual debt check: 50,000 ₽ gross, 15,000 ₽ lab -> MUST NOT ACCRUE!
+			{
+				id: "srv-debt-1",
+				dateIso: "2026-08-16",
+				patientName: "Должник Д.Д.",
+				medicalCardNumber: "043/у-61",
+				serviceNameRu: "Имплантация (в долг)",
+				category: "surgery",
+				grossRevenueKop: 5000000,
+				labCostKop: 1500000,
+				materialCostKop: 500000,
+				isPaid: false,
+				isDebt: true,
+				invoiceStatus: "unpaid",
+			},
+			// 3. Partially paid service: 30,000 ₽ invoice, but patient paid only 10,000 ₽ cash, lab 3,000 ₽, mat 1,000 ₽
+			// Net base = 10,000 - 3,000 - 1,000 = 6,000 ₽ (600,000 kop) -> 25% = 1,500 ₽ (150,000 kop)
+			{
+				id: "srv-partial-1",
+				dateIso: "2026-08-17",
+				patientName: "Частичный Ч.Ч.",
+				medicalCardNumber: "043/у-62",
+				serviceNameRu: "Коронка E.max (частичная оплата)",
+				category: "orthopedics",
+				grossRevenueKop: 3000000, // 30,000 ₽ bill
+				paidAmountKop: 1000000, // 10,000 ₽ received
+				actuallyPaidGrossKop: 1000000,
+				labCostKop: 300000, // 3,000 ₽
+				materialCostKop: 100000, // 1,000 ₽
+				invoiceStatus: "partially_paid",
+			},
+		];
+
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-1",
+			doctorName: "Д-р Профессионал",
+			specialtyId: "general_dentist",
+			customBasePercentage: 25,
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+		});
+
+		// 1. Gross revenue: 20,000 ₽ + 10,000 ₽ = 30,000 ₽ (3,000,000 kop). Unpaid 50,000 ₽ is completely excluded!
+		assert.equal(res.totalGrossRevenueKop, 3000000);
+		// 2. Lab deductions: 2,000 ₽ + 3,000 ₽ = 5,000 ₽ (500,000 kop). Debt lab (15,000 ₽) is NOT deducted from other services!
+		assert.equal(res.totalLabDeductionsKop, 500000);
+		// 3. Material deductions: 1,000 ₽ + 1,000 ₽ = 2,000 ₽ (200,000 kop).
+		assert.equal(res.totalMaterialDeductionsKop, 200000);
+		// 4. Total net base: 30,000 - 5,000 - 2,000 = 23,000 ₽ (2,300,000 kop).
+		assert.equal(res.totalNetBaseKop, 2300000);
+		// 5. Earned commission: 25% of 17,000 (4,250 ₽) + 25% of 6,000 (1,500 ₽) = 5,750 ₽ (575,000 kop).
+		assert.equal(res.earnedBaseCommissionKop, 575000);
 	});
 });
