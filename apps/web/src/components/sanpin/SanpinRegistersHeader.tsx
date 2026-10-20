@@ -81,7 +81,7 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					title="Печать сводного журнала контроля стерилизации"
 				>
 					<Printer size={14} className="shrink-0" />
-					<span>Журнал работы стерилизаторов</span>
+					<span>Журнал автоклавирования</span>
 				</button>
 
 				<div ref={exportMenuRef} className="sanpin-options-menu-wrap">

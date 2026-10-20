@@ -468,7 +468,7 @@ export function renderSpecializedAdministrativeLaunchers({
 		};
 
 		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка чека 54-ФЗ..." />}>
+			<Suspense fallback={<AppLoadingState message="Загрузка кассового чека..." />}>
 				<CashReceiptPrintModal
 					isOpen={true}
 					invoice={sampleInvoice}

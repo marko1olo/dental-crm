@@ -147,5 +147,20 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.equal(EMOJI_REGEX.test(res.message), false);
 	});
+
+	it("supports shift batch unseal when barcode is omitted or empty (no micro-tracking mandate)", () => {
+		const now = new Date("2026-09-23T08:30:00.000Z");
+		const res = buildUnsealKraftPackageResponse({
+			barcode: "",
+			operatorName: "Сидорова В. В.",
+			now,
+		});
+
+		assert.equal(res.success, true);
+		assert.match(res.barcode, /^BATCH-SHIFT-20260923/);
+		assert.equal(res.commissionRequired, false);
+		assert.equal(res.status, "unsealed");
+		assert.equal(res.sanpinVerified, true);
+	});
 });
 

@@ -27,6 +27,7 @@ export const DepositAmountSection: React.FC<DepositAmountSectionProps> = ({
 				</span>
 				<div className="flex items-center justify-center gap-2">
 					<input
+						id="deposit-amount-input"
 						type="number"
 						value={amountRub || ""}
 						onChange={(e) => setAmountRub(Math.max(0, Number(e.target.value) || 0))}

@@ -484,10 +484,10 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 											type="button"
 											onClick={() => {
 												onInsertToProtocol?.("Соматический статус: Соматически здоров / физиологическая норма. Аллергологический анамнез не отягощен.");
-												showToast("Соматическая норма внесена в протокол 043/у", "success", 2000);
+												showToast("Соматическая норма внесена в медицинскую карту", "success", 2000);
 											}}
 											className="px-2 py-1 text-[11px] font-bold rounded-md bg-[var(--teal-surface)] text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition-colors shrink-0 ml-2 cursor-pointer"
-											title="Вставить соматическую норму в протокол 043/у"
+											title="Вставить соматическую норму в медицинскую карту"
 											data-testid="tooth-somatic-norm-btn"
 										>
 											В протокол

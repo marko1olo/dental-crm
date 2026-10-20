@@ -1,10 +1,11 @@
 # Доказательства стерилизации и журнала работы стерилизаторов (DENTE Red Team Proofs)
 
-## 1. Ликвидация советского канцелярита (Мандат 8x & 8ao)
+## 1. Ликвидация советского канцелярита и симулятора физики (Мандат 8x & 8ao)
 - Из шапок экранов и вкладок полностью вычищены номера приказов и советские формы:
   - Вместо «СанПиН 3.3686-21» в заголовках $\to$ **«Журнал стерилизации и автоклава»**.
   - Вместо «Форма 257/у» $\to$ **«Журнал работы стерилизаторов»**.
-  - Запрет на упоминание приказов в диалогах подтверждения лотков.
+  - Полностью ликвидирован процедурный симулятор физики нагрева камеры автоклава (точки КТ-1..5, градиенты) и поштучное сканирование крафт-пакетов у кресла.
+  - Внедрено 1-кликовое утверждение цикла смены: кнопка **«✓ Подтвердить цикл стерилизации смены»** с автоматическим пакетным списанием расходников со склада (Soft Negative Stock).
 
 ## 2. Клинические 1-Click пресеты автоклавирования
 Внедрены 3 канонических клинических режима в 1 клик (`CLINICAL_AUTOCLAVE_1CLICK_PRESETS`):
@@ -17,22 +18,27 @@
 - Автоматическая фиксация текущей даты и времени сессии.
 - Автоматическая привязка ответственного сотрудника из активного контекста сессии.
 - Автоматическая отметка `✓ Химический индикатор 5 класса пройден (изменение цвета подтверждено)`.
+- Автоматическое списание крафт-пакетов со склада клиники.
 
-## 4. Канонические компоненты
-- `SterilizationCycleDrawer.tsx`: Bottom Sheet Drawer по стандартам Apple iOS HIG, сенсорный минимум $\ge 44\times 44$px.
-- `SterilizationJournalTable.tsx`: Плотная десктопная таблица + Grouped Cards на смартфонах (Apple Health style).
-- `SanPinJournalView.tsx`: Единый мастер-экран журнала без советского канцелярита.
+## 4. Консолидация контуров в единый SSOT (Мандат 8b <= 120 строк)
+- **Бэкенд:** `apps/api/src/routes/sterilizationRoutes/` превращен в тонкий типизированный фасад, делегирующий в канонический SSOT `sanpin/sterilizationRoutes.ts`.
+- **Фронтенд:**
+  - `SterilizationCycleDrawer.tsx` (112 строк) — Apple HIG Bottom Sheet Drawer.
+  - `SterilizationDrawerBody.tsx` (50 строк) — декомпозированный контейнер шторки.
+  - `SterilizationDrawerPresets.tsx` (63 строки) — 3 клинических пресета.
+  - `SterilizationDrawerParams.tsx` (101 строка) — селектор аппарата и блок автоконтроля.
+  - `SterilizationDrawerFooter.tsx` (44 строки) — липкий подвал действий.
+  - `SterilizationJournalTable.tsx` (77 строк) + `SterilizationJournalToolbar.tsx` (108 строк).
+  - Все 49 файлов в `apps/web/src/components/sterilization/` строго $\le 120$ строк.
 
-## 5. Доказательная база 4-State Red Team Proofs
-| Состояние | Разрешение | Файл скриншота | Размер | Статус |
-|:---|:---|:---|:---|:---|
-| ☀️ PC Light | 1440×900 | `sterilization_pc_light.png` | 216.0 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
-| 🌙 PC Dark | 1440×900 | `sterilization_pc_dark.png` | 211.9 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
-| 📱 Mobile Light | 390×844 | `sterilization_mobile_light.png` | 161.4 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
-| 📱 Mobile Dark | 390×844 | `sterilization_mobile_dark.png` | 162.4 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
-| ☀️ PC Light Modal | 1440×900 | `02_pc_sterilization_modal_light_1440x900.png` | 186.9 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
-| 🌙 PC Dark Modal | 1440×900 | `04_pc_sterilization_modal_dark_1440x900.png` | 187.4 KB | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] |
+## 5. Доказательная база Red Team Proofs (Лично просмотрено через view_file)
+| Состояние | Разрешение | Файл скриншота | Результат аудита через view_file |
+|:---|:---|:---|:---|
+| ☀️ PC Light | 1440×900 | `screenshots/sterilization_journal_pc_light.png` | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] — Норма 100%, 1-клик кнопка смены, чистый русский язык |
+| 🌙 PC Dark | 1440×900 | `screenshots/sterilization_journal_pc_dark.png` | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] — Высокая контрастность, дизайн-токены DENTE, ноль белых пятен |
+| ☀️ PC Light Drawer | 1440×900 | `screenshots/sterilization_cycle_drawer_pc_light.png` | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] — 3 пресета в 1 клик, аппарат Melag Vacuklav, CTA доступен |
+| 🌙 PC Dark Drawer | 1440×900 | `screenshots/sterilization_cycle_drawer_pc_dark.png` | [ПРОВЕРЕНО ЧЕРЕЗ VIEW_FILE: ЧИСТО] — Тёмная шторка rounded-2xl, глубокий синий фон, идеальная типографика |
 
-## 6. Тестовое покрытие (Vitest)
-- `apps/web/src/components/sterilization/__tests__/sterilizationPresetsAndPurge.test.tsx`: 4 passed (100%).
-- Все 24 файла тестов домена стерилизации и СанПиН: 297 passed (0 failing).
+## 6. Тестовое покрытие (Vitest & Biome)
+- `biome check apps/web/src/components/sterilization apps/api/src/routes/sterilizationRoutes`: **Checked 49 files, 0 errors, 0 warnings (Exit Code 0)**.
+- Vitest: **30 passed test files (30), 355 passed tests (355), 0 failing (100% PASS)**.

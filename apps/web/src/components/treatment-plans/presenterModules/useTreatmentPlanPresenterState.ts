@@ -41,7 +41,12 @@ export function useTreatmentPlanPresenterState(props: TreatmentPlanPresenterModa
 
 	const initialCalculatedTiers = useMemo(() => {
 		if (propTiers && propTiers.length > 0) return propTiers;
-		const effectiveTeeth = teeth && teeth.length > 0 ? teeth : isDemo ? DEFAULT_SAMPLE_TEETH : [];
+		const effectiveTeeth =
+			teeth && teeth.length > 0
+				? teeth
+				: isDemo
+					? (isDemoShowcaseMode() ? DEFAULT_SAMPLE_TEETH : [])
+					: [];
 		return generate3TierPlanComparison(effectiveTeeth, undefined, 0, 0, { isDemoMode: isDemo });
 	}, [propTiers, teeth, isDemo]);
 

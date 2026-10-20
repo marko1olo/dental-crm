@@ -291,7 +291,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 		const text = generateEndoProtocol043({ toothNumber, ...clinicalData });
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
-			showToast(`Протокол эндодонтии зуба #${toothNumber} вставлен в 043/у!`, "success");
+			showToast(`Протокол эндодонтии зуба #${toothNumber} сохранен в карте!`, "success");
 		} else {
 			try {
 				navigator.clipboard.writeText(text);
@@ -540,7 +540,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 							className="dente-primary-action-btn"
 						>
 							<DentalForm043 size={15} />
-							<span>Вставить протокол эндодонтии в карту 043/у</span>
+							<span>Вставить протокол эндодонтии в медкарту</span>
 						</button>
 					</div>
 				</div>

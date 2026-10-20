@@ -77,19 +77,21 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 					</div>
 				)}
 				<div className="flex flex-col gap-2 min-w-0">
-					<button
-						type="button"
-						onClick={() => {
-							if (isLocked && !isRevising) beginRevise();
-							onApplyNorm();
-						}}
-						className="sr-only"
-						tabIndex={-1}
-						aria-hidden="true"
-						data-testid="diary-norm-043-btn"
-					>
-						<span>Норма</span>
-					</button>
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={() => {
+								if (isLocked && !isRevising) beginRevise();
+								onApplyNorm();
+							}}
+							className="border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
+							data-testid="diary-norm-043-btn"
+							title="Заполнить дневник физиологической нормой: соматически здоров, интактные зубы"
+						>
+							<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>✓ Физиологическая норма (соматически здоров)</span>
+						</button>
+					</div>
 
 					<VisitDiaryPerioPediatricPresets
 						perioMenuRef={perioMenuRef}

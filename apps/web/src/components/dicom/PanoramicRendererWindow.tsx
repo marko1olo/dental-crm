@@ -579,7 +579,7 @@ export function PanoramicRendererWindow({
 
 		if (!patientId) {
 			showToast(
-				"Пациент не выбран. Откройте снимок из амбулаторной карты для прикрепления к Форме 043/у.",
+				"Пациент не выбран. Откройте снимок из амбулаторной карты для прикрепления к медкарте.",
 				"error",
 			);
 			return;
@@ -617,7 +617,7 @@ export function PanoramicRendererWindow({
 			);
 
 			if (outcome.success) {
-				showToast("Снимок ОПТГ успешно прикреплен к карте 043/у!", "success");
+				showToast("Снимок ОПТГ успешно прикреплен к медкарте!", "success");
 			} else {
 				showToast(outcome.message, "error");
 			}

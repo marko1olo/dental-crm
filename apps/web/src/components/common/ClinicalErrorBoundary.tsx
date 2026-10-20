@@ -120,7 +120,7 @@ export class ClinicalErrorBoundary extends Component<
 							draftRecovered: true,
 							recoveredSummary: `Восстановлен черновик приёма от ${new Date(draft.updatedAt).toLocaleTimeString("ru-RU")}.`,
 						});
-						showToast("Черновик протокола 043/у восстановлен из памяти", "success");
+						showToast("Черновик медицинской карты восстановлен из памяти", "success");
 						this.handleRetry();
 						return;
 					}

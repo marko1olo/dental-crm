@@ -281,7 +281,7 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 							gap: "4px",
 							whiteSpace: "nowrap",
 						}}
-						title="Посмотреть клинический кейс роли, дневник 043/у и смету"
+						title="Посмотреть клинический кейс роли, медицинскую карту и смету"
 					>
 						<HelpCircle size={13} aria-hidden="true" />
 						Кейс роли

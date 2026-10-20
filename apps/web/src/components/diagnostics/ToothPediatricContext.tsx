@@ -454,7 +454,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
-			showToast(`Запись о резорбции зуба #${toothNumber} внесена в 043/у!`, "success");
+			showToast(`Запись о резорбции зуба #${toothNumber} внесена в карту!`, "success");
 		} else {
 			try {
 				navigator.clipboard.writeText(text);
@@ -469,7 +469,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 		const text = `Психоэмоциональный статус ребенка (Шкала Франкла): ${activeFranklDef.symbol} (${activeFranklDef.nameRu}). Применены техники психологической адаптации Tell-Show-Do («Сказать-Показать-Сделать»). Контакт установлен продуктивно.`;
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
-			showToast(`Психологический статус Франкла внесен в 043/у!`, "success");
+			showToast(`Психологический статус Франкла внесен в карту!`, "success");
 		} else {
 			try {
 				navigator.clipboard.writeText(text);
@@ -522,10 +522,10 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 						onClick={handleInsertResorptionProtocol}
 						className="dente-secondary-btn"
 						style={{ minHeight: "32px", height: "32px", padding: "4px 10px", fontSize: "12px", gap: "6px" }}
-						title={`Внести запись о резорбции корней зуба #${toothNumber} в карту 043/у`}
+						title={`Внести запись о резорбции корней зуба #${toothNumber} в карту`}
 					>
 						<DentalForm043 size={14} />
-						<span>Внести в 043/у</span>
+						<span>Внести в карту</span>
 					</button>
 				</div>
 				<div className="dente-resorption-grid">
@@ -547,7 +547,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				</div>
 			</div>
 
-			{/* Actions Row: TSD to 043/u and Parent Memo */}
+			{/* Actions Row: TSD to EMR and Parent Memo */}
 			<div className="dente-pediatric-footer">
 				<button
 					type="button"
@@ -556,7 +556,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 					style={{ minHeight: "32px", height: "32px", padding: "0 10px", fontSize: "12px" }}
 				>
 					<DentalForm043 size={15} />
-					<span>Вставить статус Франкла в 043/у</span>
+					<span>Вставить статус Франкла в карту</span>
 				</button>
 
 				<button

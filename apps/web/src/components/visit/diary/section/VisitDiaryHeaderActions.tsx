@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Printer, Sparkles } from "lucide-react";
+import { CheckCircle2, MoreHorizontal, Printer, Sparkles } from "lucide-react";
 import { VisitDiaryHeaderMoreMenu } from "../VisitDiaryHeaderMoreMenu";
 import { VisitDiaryHeaderLockBadge } from "./VisitDiaryHeaderLockBadge";
 
@@ -52,11 +52,11 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 				id="diary-norm-direct-btn"
 				data-testid="diary-norm-direct-btn"
 				onClick={onApplyNorm}
-				className="sr-only"
-				tabIndex={-1}
-				aria-hidden="true"
+				className="border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
+				title="Заполнить в 1 клик физиологическую норму: соматически здоров, слизистая бледно-розовая, зубы интактны"
 			>
-				<span>Норма</span>
+				<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+				<span>✓ Норма (здоров)</span>
 			</button>
 			<button
 				type="button"
@@ -98,11 +98,11 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 							setIsOpen(false);
 							onApplyNorm();
 						}}
-						className="sr-only"
-						tabIndex={-1}
-						aria-hidden="true"
+						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 font-semibold text-left cursor-pointer transition-colors"
+						title="Заполнить физиологическую норму: соматически здоров, интактные зубы"
 					>
-						<span>Норма / Здоров</span>
+						<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+						<span>✓ Норма (соматически здоров)</span>
 					</button>
 				</VisitDiaryHeaderMoreMenu>
 			</div>

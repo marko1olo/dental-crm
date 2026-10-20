@@ -133,7 +133,7 @@ export const scanSchema = z.object({
 
 export const linkSchema = z.object({
 	visitId: z.string().uuid("Некорректный ID визита."),
-	barcode: z.string().trim().min(1, "Штрихкод обязателен."),
+	barcode: z.string().trim().optional().nullable().default(""),
 });
 
 export const generateBarcodeBodySchema = z.object({
@@ -143,7 +143,7 @@ export const generateBarcodeBodySchema = z.object({
 });
 
 export const unsealBodySchema = z.object({
-	barcode: z.string().trim().min(1, "Штрихкод крафт-пакета обязателен."),
+	barcode: z.string().trim().optional().nullable().default(""),
 	operatorName: z.string().trim().optional().nullable(),
 	operatorId: z.string().uuid().optional().nullable(),
 	patientId: z.string().uuid().optional().nullable(),
@@ -185,10 +185,14 @@ export const sanpinCycleCreateSchema = z
 export const sterilizationShiftBatchSchema = z
 	.object({
 		cyclesCount: z.union([z.number(), z.string()]).optional(),
+		batchSize: z.union([z.number(), z.string()]).optional(),
 		deviceName: z.string().optional(),
 		autoclaveId: z.string().optional(),
 		packagingType: z.string().optional(),
 		itemsDescription: z.string().optional(),
+		regime: z.enum(["standard_134", "delicate_121", "prion_134"]).optional(),
+		operatorId: z.string().uuid().nullable().optional(),
+		operatorName: z.string().optional(),
 	})
 	.passthrough();
 

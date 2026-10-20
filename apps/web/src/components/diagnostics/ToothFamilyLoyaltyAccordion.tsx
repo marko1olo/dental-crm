@@ -90,7 +90,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 				<div className="dente-warm-tool-title-group">
 					<Wallet size={18} color="var(--brand-primary, var(--teal))" />
 					<h3 className="dente-warm-tool-title">
-						Семейный депозит и бонусы лояльности (Сплит 54-ФЗ)
+						Семейный депозит и бонусы лояльности (Сплит-оплата)
 					</h3>
 				</div>
 				<span className="dente-warm-tag ok">

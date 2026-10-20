@@ -11587,4 +11587,24 @@
         - `radiology_mobile_light_390x844.png` (326.2 КБ, Mobile Light 390×844, Apple HIG, зона большого пальца, обособленный TopBar)
         - `radiology_mobile_dark_390x844.png` (326.2 КБ, Mobile Dark 390×844, темный мобильный просмотрщик у кресла).
 
+62. **Волна 355: Red Team Клинический Инквизитор — Ликвидация блокировок, 1-клик физиологическая норма, мягкий фокус в рассрочках и депозитах, касса без ИНН и тотальная очистка канцелярита (Мандаты 8e, 8n, Директивы Создателя)**:
+    - **1. 1-клик физиологическая норма («✓ Соматически здоров / Интактные зубы»)**:
+      * В тулбаре дневника приёма (`VisitDiaryHeaderActions.tsx`) кнопка `diary-norm-direct-btn` выведена из скрытого класса `sr-only` и оформлена как полноправный красивый клинический контрол «✓ Норма (здоров)» с иконкой `CheckCircle2` и всплывающей подсказкой;
+      * В выпадающем меню `VisitDiaryHeaderMoreMenu.tsx` кнопка `diary-1click-norm-btn` также сделана видимой строкой «✓ Норма (соматически здоров)»;
+      * В аккордеоне быстрых протоколов `VisitDiaryPresetsAccordion.tsx` кнопка `diary-norm-043-btn` оформлена в виде видимого 1-клик пресета «✓ Физиологическая норма (соматически здоров)»;
+    - **2. Ликвидация мертвых блокировок `disabled={...}` в платежах и рассрочках**:
+      * В `InstallmentsActionBar.tsx` с кнопки «Принять очередной взнос» (`btn-quick-pay-next`) снята мертвая блокировка `disabled={isPlanCompleted}`. При нажатии на закрытый план выдается понятный информационный тост `showToast("План рассрочки полностью закрыт (100%)", "info")`;
+      * В `DepositFooterActions.tsx` с кнопки «Пополнить» (`btn-submit-deposit-topup`) снят `disabled={amountRub <= 0}`. При нулевой сумме выдается предупреждение `showToast("Укажите сумму пополнения депозита", "warning")` и выполняется плавный скролл и фокус на `#deposit-amount-input`;
+    - **3. Касса и чеки без требования ИНН с физлиц (Мандат 8n)**:
+      * В `PaymentBuyerRequisitesSection.tsx` бейдж избавлен от сырого шифра «По 54-ФЗ» и переименован в ясное утверждение «Для физлиц не требуется»;
+      * Подтверждена работа `isCashierActionBlockedByInn` и `validateBuyerInn54Fz`: для физлиц ИНН строго опционален и никогда не блокирует оплату и чеки;
+    - **4. Складской овердрафт (Soft Negative Stock)**:
+      * Проверено и подтверждено: списание расходников по BOM-картам (`performAutoVisitBomDeduction`) при нулевом или отрицательном остатке работает в режиме мягкого фонового овердрафта (`allowOverdraft: true`) и нигде в UI не блокирует сохранение дневника приёма или пробитие чека;
+    - **5. Вычистка бюрократического канцелярита и сырых нормативных актов**:
+      * Проведена тотальная очистка пользовательского интерфейса от сырых аббревиатур `043/у`, `804н`, `54-ФЗ` в видимых текстах кнопок, подсказок и заголовков (в `DentalAgentCockpit.tsx`, `dentalAgentCockpitLogic.ts`, `SpecializedAdministrativeLaunchers.tsx`, `SpecializedClinicalLaunchers.tsx`, `InventoryServiceUsagePanel.tsx`, `ClinicalErrorBoundary.tsx`, `ToothContextDrawer.tsx`, `ToothEndoCanalsSection.tsx`, `ToothFamilyLoyaltyAccordion.tsx`, `ToothPediatricContext.tsx`, `ToothRvgThumbnail.tsx`, `PanoramicHeader.tsx`, `PanoramicRendererWindow.tsx`, `DemoCaseFinancialSummary.tsx`, `DemoCaseTreatmentTimeline.tsx`, `DemoModeBanner.tsx`, `questCatalogTracks.ts`);
+    - **6. Машинные гейты и автотесты**:
+      * Создан проверочный тестовый сьют `redTeamClinicalInquisitionMandates8e8n.test.tsx` (6 tests passing, 100% green);
+      * Успешно пройдены смежные сьюты: `cashboxViewModules.test.tsx` (6 passed), `cashierAutonomySoloDoctorWave310.test.tsx` (16 passed), `soloDoctorAdminErgonomicsAudit.test.ts` (22 passed), `installmentsEngine.test.ts` (4 passed), `paymentModalStudioHig.test.tsx` (8 passed), `chairsideAutonomyWave310.test.tsx` (7 passed), `visitViewAutonomyInquisition.test.tsx` (14 passed), `DentalAgentCockpit.test.ts` (5 passed).
+
+
 

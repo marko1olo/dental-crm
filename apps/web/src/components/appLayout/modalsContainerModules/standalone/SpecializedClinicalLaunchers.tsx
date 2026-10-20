@@ -527,7 +527,7 @@ export function renderSpecializedClinicalLaunchers({
 
 	if (isFastCheckoutDirect) {
 		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка кассы 54-ФЗ..." />}>
+			<Suspense fallback={<AppLoadingState message="Загрузка кассы..." />}>
 				<FastCheckoutModal
 					isOpen={true}
 					onClose={() => {

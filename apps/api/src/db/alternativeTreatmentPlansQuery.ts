@@ -16,6 +16,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
+	auditEvents,
 	patients,
 	serviceCatalogItems,
 	treatmentItems,
@@ -487,6 +488,19 @@ export async function selectAndApprovePlanVariant(
 		policyKind: "standard_30_days",
 		actorUserId: input.actorUserId ?? null,
 		notes: `Закрепление цен на дату утверждения плана «${targetPlan.name}» (ПП РФ №659)`,
+	});
+
+	// 6. Юридически значимый журнал аудита (audit_events) для фиксации факта утверждения варианта
+	await tx.insert(auditEvents).values({
+		id: randomUUID(),
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId ?? null,
+		entityType: "treatment_plan",
+		entityId: targetPlan.id,
+		action: "approve_variant",
+		reason:
+			input.reason ||
+			`Утвержден вариант плана лечения: «${targetPlan.name}» (ст. 20 323-ФЗ / ПП РФ №659)`,
 	});
 
 	return {

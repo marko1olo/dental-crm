@@ -75,7 +75,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 						Смета плана лечения {estimateNumber} от {estimateDateIso.slice(0, 10)}
 					</div>
 					<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "2px" }}>
-						Расчет по Номенклатуре медицинских услуг (Приказ Минздрава РФ № 804н)
+						Расчет по клиническому прейскуранту услуг
 					</div>
 				</div>
 
@@ -115,7 +115,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 								color: "var(--muted, #64748b)",
 							}}
 						>
-							<th style={{ padding: "8px 10px" }}>Код 804н</th>
+							<th style={{ padding: "8px 10px" }}>Код услуги</th>
 							<th style={{ padding: "8px 10px" }}>Наименование услуги</th>
 							<th style={{ padding: "8px 10px" }}>Зуб</th>
 							<th style={{ padding: "8px 10px", textAlign: "center" }}>Кол-во</th>
@@ -294,7 +294,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 				</div>
 
 				<div style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
-					Соответствие 54-ФЗ и фискализация чека в 1 клик
+					Кассовый чек и фискализация в 1 клик
 				</div>
 			</div>
 		</div>

@@ -127,13 +127,17 @@ export function evaluateSterilizationLogForLinking(
 
 /**
  * Формирует ответ на списание/вскрытие крафт-пакета медсестрой.
+ * Поддерживает как поштучные штрихкоды, так и списание партии смены без обязательного сканера.
  */
 export function buildUnsealKraftPackageResponse(params: UnsealKraftPackageParams): UnsealKraftPackageResponse {
 	const now = params.now ?? new Date();
 	const operator = params.operatorName || "Медсестра ЦСО";
+	const effectiveBarcode =
+		(params.barcode || "").trim() ||
+		`BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
 	return {
 		success: true,
-		barcode: params.barcode.trim(),
+		barcode: effectiveBarcode,
 		unsealedAt: now.toISOString(),
 		commissionRequired: false,
 		operatorName: operator,

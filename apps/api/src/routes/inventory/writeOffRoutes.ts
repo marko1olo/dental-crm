@@ -69,11 +69,41 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
 
 		const body = request.body ?? {};
+		const effectiveCount = body.carpulesCount ?? body.count ?? 1;
+		const effectiveDrug = body.drugName ?? body.drugId;
 		return withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 				organizationId,
-				carpulesCount: body.carpulesCount,
-				drugName: body.drugName,
+				carpulesCount: effectiveCount,
+				drugName: effectiveDrug,
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
+	// Dual-Route Parity: непараметризованный роут списания карпул (Мандаты 8e, 8k, 8s)
+	server.post<{
+		Body?: QuickWriteoffCarpulesBody & { organizationId?: string };
+	}>("/quick-writeoff-carpules", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff carpules fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		const effectiveCount = body.carpulesCount ?? body.count ?? 1;
+		const effectiveDrug = body.drugName ?? body.drugId;
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+				organizationId: targetOrgId,
+				carpulesCount: effectiveCount,
+				drugName: effectiveDrug,
 				userId: request.user?.id ?? null,
 				visitId: body.visitId ?? null,
 				notes: body.notes ?? null,

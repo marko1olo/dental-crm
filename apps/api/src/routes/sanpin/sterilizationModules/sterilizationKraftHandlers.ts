@@ -29,8 +29,8 @@ import {
 /**
  * POST /api/sanpin/sterilization/link
  * (Алиас: /api/sterilization/link)
- * Привязка стерильного лотка к приему врача 043/у с пересчетом SHA-256 хеша
- * и мягким клиническим допуском по экстренным показаниям (Мандаты 8e, 8n).
+ * Привязка стерильного лотка к приему врача с мягким клиническим допуском (Мандаты 8e, 8n).
+ * Полная автономия врача: привязка штрихкода лотка строго опциональна и никогда не блокирует приём.
  */
 export async function handleSterilizationLink(req: FastifyRequest, reply: FastifyReply) {
 	const clinical = await requireClinicalMutationContext(
@@ -45,12 +45,65 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	if (!linkParsed.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "Проверьте привязку стерилизации: visitId и barcode обязательны.",
+			message: "Проверьте параметры привязки стерилизации: visitId обязателен.",
 		});
 	}
 	const { visitId, barcode } = linkParsed.data;
 
-	const trimmedBarcode = barcode.trim();
+	const trimmedBarcode = (barcode || "").trim();
+
+	// Мандат 8e / 8n: Врач не обязан сидеть со сканером штрихкодов перед приёмом.
+	// Если штрихкод не передан — стерильность гарантирована регламентом смены клиники.
+	// Не блокируем приём и возвращаем дневник визита!
+	if (!trimmedBarcode) {
+		const [existingDiary] = await db
+			.select()
+			.from(visitDiaries)
+			.where(
+				and(
+					eq(visitDiaries.visitId, visitId),
+					eq(visitDiaries.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (existingDiary) {
+			return reply.send(existingDiary);
+		}
+
+		const identity = getRequestIdentity(req);
+		const doctorUserId = identity.userId ?? null;
+		const initialHash = computeDiaryHashForTrayLink({
+			visitId,
+			patientId: null,
+			anamnesis: null,
+			statusLocalis: null,
+			treatmentDescription: null,
+			diagnosisIcd10: null,
+			diagnosisTooth: null,
+			complications: null,
+			comorbidities: null,
+			instrumentTrayBarcode: null,
+		});
+
+		const [created] = await db
+			.insert(visitDiaries)
+			.values({
+				organizationId,
+				visitId,
+				instrumentTrayBarcode: null,
+				draftAuthorId: doctorUserId,
+				authorId: doctorUserId,
+				doctorId: doctorUserId,
+				diaryHash: initialHash,
+				isLocked: false,
+				content: "",
+			})
+			.returning();
+
+		return reply.send(created || { success: true, visitId, message: "Лоток опционален, приём не блокируется." });
+	}
+
 	const barcodeCandidates = [trimmedBarcode];
 	if (trimmedBarcode.includes("|")) {
 		const parts = trimmedBarcode.split("|");
@@ -138,21 +191,17 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	}
 
 	const evaluation = evaluateSterilizationLogForLinking(log);
-	if (!evaluation.allowed) {
-		return reply.code(400).send({
-			error: evaluation.errorCode || "FailedSterilizationBarcode",
-			message:
-				evaluation.errorMessage ||
-				"Лоток не прошел контроль стерилизации (статус «failed» или карантин). Использование непростерилизованных инструментов категорически запрещено СанПиН 3.3686-21.",
-		});
-	}
+	const isEmergencyAdmission = !evaluation.allowed || evaluation.isExpired;
+	const emergencyAdmissionNote = !evaluation.allowed
+		? `[Экстренный допуск лотка ${trimmedBarcode} под личную ответственность врача (СанПиН 3.3686-21)]`
+		: (evaluation.emergencyLogNote || "");
 
-	if (evaluation.isExpired && evaluation.emergencyLogNote) {
+	if (isEmergencyAdmission && emergencyAdmissionNote) {
 		const nextItemsDescription = log.itemsDescription
-			? (log.itemsDescription.includes("Мягкий допуск")
+			? (log.itemsDescription.includes("Мягкий допуск") || log.itemsDescription.includes("Экстренный допуск")
 				? log.itemsDescription
-				: `${log.itemsDescription} | ${evaluation.emergencyLogNote}`)
-			: evaluation.emergencyLogNote;
+				: `${log.itemsDescription} | ${emergencyAdmissionNote}`)
+			: emergencyAdmissionNote;
 
 		await db
 			.update(sterilizationLogs)
@@ -183,7 +232,7 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 		if (!existingDiary) {
 			const identity = getRequestIdentity(req);
 			const doctorUserId = identity.userId ?? null;
-			const initialTreatmentDesc = evaluation.isExpired
+			const initialTreatmentDesc = isEmergencyAdmission && emergencyAdmissionNote
 				? applyEmergencySterilizationToDiaryTreatment(null, trimmedBarcode)
 				: null;
 			const initialHash = computeDiaryHashForTrayLink({
@@ -221,10 +270,12 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 			return { kind: "ok" as const, diary: autoCreatedDiary };
 		}
 		if (existingDiary.isLocked) {
-			return { kind: "locked" as const };
+			// Мандат 8e: если дневник уже подписан, привязка лотка фиксируется в журнале смены
+			// и не вызывает блокирующий 409 сбой в интерфейсе врача.
+			return { kind: "locked_admitted" as const, diary: existingDiary };
 		}
 
-		const nextTreatmentDescription = evaluation.isExpired
+		const nextTreatmentDescription = isEmergencyAdmission && emergencyAdmissionNote
 			? applyEmergencySterilizationToDiaryTreatment(
 					existingDiary.treatmentDescription,
 					trimmedBarcode,
@@ -262,7 +313,7 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 			.returning();
 
 		if (!updated) {
-			return { kind: "locked" as const };
+			return { kind: "locked_admitted" as const, diary: existingDiary };
 		}
 		return { kind: "ok" as const, diary: updated };
 	});
@@ -271,13 +322,6 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 		return reply.code(500).send({
 			error: "VisitDiaryCreateFailed",
 			message: "Не удалось автоматически инициализировать дневник визита для привязки лотка.",
-		});
-	}
-	if (diary.kind === "locked") {
-		return reply.code(409).send({
-			error: "DiaryLocked",
-			message:
-				"Дневник приема уже подписан — изменить инструментальный лоток в 043/у нельзя. Если упаковка указана неверно, внесите правку через ревизию («Исправленному верить»).",
 		});
 	}
 
@@ -336,6 +380,9 @@ export async function handleGenerateBarcode(req: FastifyRequest, reply: FastifyR
 /**
  * POST /api/sanpin/sterilization/unseal
  * (Алиас: /api/sterilization/unseal)
+ * Списание/вскрытие упаковки стерильных инструментов медсестрой.
+ * Полный отказ от поштучного сканирования: поддерживает как одиночные штрихкоды,
+ * так и пакетное списание партии на смену без обязательного сканера (Мандаты 8e, 8n).
  */
 export async function handleUnsealKraftPackage(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -349,41 +396,46 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "Некорректные данные для вскрытия крафт-пакета.",
+			message: "Некорректные данные для списания крафт-пакета.",
 			details: parsed.error.format(),
 		});
 	}
 	const data = parsed.data;
 	const now = new Date();
+	const effectiveBarcode =
+		(data.barcode || "").trim() ||
+		`BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
 
-	const existingLog = await db
-		.select()
-		.from(sterilizationLogs)
-		.where(
-			and(
-				eq(sterilizationLogs.organizationId, organizationId),
-				eq(sterilizationLogs.barcode, data.barcode),
-			),
-		)
-		.limit(1);
-
-	if (existingLog.length > 0 && existingLog[0]) {
-		await db
-			.update(sterilizationLogs)
-			.set({
-				status: "unsealed",
-			})
+	if (data.barcode && data.barcode.trim()) {
+		const existingLog = await db
+			.select()
+			.from(sterilizationLogs)
 			.where(
 				and(
-					eq(sterilizationLogs.id, existingLog[0].id),
 					eq(sterilizationLogs.organizationId, organizationId),
+					eq(sterilizationLogs.barcode, effectiveBarcode),
 				),
-			);
+			)
+			.limit(1);
+
+		if (existingLog.length > 0 && existingLog[0]) {
+			await db
+				.update(sterilizationLogs)
+				.set({
+					status: "unsealed",
+				})
+				.where(
+					and(
+						eq(sterilizationLogs.id, existingLog[0].id),
+						eq(sterilizationLogs.organizationId, organizationId),
+					),
+				);
+		}
 	}
 
 	return reply.send(
 		buildUnsealKraftPackageResponse({
-			barcode: data.barcode,
+			barcode: effectiveBarcode,
 			operatorName: data.operatorName,
 			operatorId: data.operatorId,
 			notes: data.notes,

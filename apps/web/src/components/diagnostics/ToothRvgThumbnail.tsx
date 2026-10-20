@@ -248,7 +248,7 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
 						>
 							<DentalForm043 size={13} />
-							<span>Вставить в 043/у</span>
+							<span>Вставить в карту</span>
 						</button>
 
 						<button

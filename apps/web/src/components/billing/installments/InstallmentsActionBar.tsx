@@ -7,6 +7,7 @@
 
 import React from "react";
 import { Plus, MessageSquare, QrCode, CreditCard } from "lucide-react";
+import { showToast } from "../../GlobalToast.js";
 import type { InstallmentsSubView } from "./installmentsTypes.js";
 
 interface InstallmentsActionBarProps {
@@ -24,6 +25,14 @@ export const InstallmentsActionBar: React.FC<InstallmentsActionBarProps> = ({
 	onInitiateQuickPay,
 	onOpenBankInstallment,
 }) => {
+	const handleQuickPayClick = () => {
+		if (isPlanCompleted) {
+			showToast("План рассрочки полностью закрыт (100%)", "info");
+			return;
+		}
+		onInitiateQuickPay();
+	};
+
 	return (
 		<div className="patient-installments-action-bar">
 			<div className="flex items-center gap-2">
@@ -64,9 +73,8 @@ export const InstallmentsActionBar: React.FC<InstallmentsActionBarProps> = ({
 			<div className="flex items-center gap-2">
 				<button
 					type="button"
-					onClick={onInitiateQuickPay}
-					disabled={isPlanCompleted}
-					className="h-8 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+					onClick={handleQuickPayClick}
+					className="h-8 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
 					data-testid="btn-quick-pay-next"
 				>
 					<CreditCard className="w-3.5 h-3.5" />

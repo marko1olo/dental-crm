@@ -56,16 +56,16 @@ export const PanoramicHeader: React.FC<PanoramicHeaderProps> = ({
 					type="button"
 					onClick={onExportTo043}
 					disabled={loading || isExporting}
-					aria-label="Экспорт в форму 043/у"
+					aria-label="Прикрепить к медицинской карте"
 					className="mpr-btn-touch mpr-btn-success text-xs font-bold px-2.5 py-1 whitespace-nowrap min-h-[32px] flex items-center gap-1"
-					title="Прикрепить снимок к амбулаторной карте 043/у"
+					title="Прикрепить снимок к медицинской карте"
 				>
 					{isExporting ? (
 						<Loader2 className="w-3.5 h-3.5 animate-spin" />
 					) : (
 						<Camera className="w-3.5 h-3.5" />
 					)}
-					<span className="hidden sm:inline">В карту 043/у</span>
+					<span className="hidden sm:inline">В медкарту</span>
 				</button>
 
 				<button

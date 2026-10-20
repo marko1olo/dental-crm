@@ -163,7 +163,7 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<Layers size={15} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} />
 					<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-						Расход материалов по услугам (Номенклатура 804н)
+						Расход материалов по услугам (Каталог процедур)
 					</span>
 				</div>
 

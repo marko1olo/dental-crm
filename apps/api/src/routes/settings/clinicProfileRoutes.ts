@@ -51,6 +51,16 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		return clinicSettingsSchema.parse(settings);
 	});
 
+	const handleGetClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const settings = await getClinicSettingsFromDb(orgId);
+		return clinicSettingsSchema.parse(settings).profile;
+	};
+
+	app.get("/api/settings/clinic/profile", handleGetClinicProfile);
+	app.get("/api/settings/clinic-profile", handleGetClinicProfile);
+
 	app.get("/api/settings/clinic/fiscal", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
@@ -145,7 +155,10 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	};
 
 	app.put("/api/settings/clinic/profile", handleUpdateClinicProfile);
+	app.patch("/api/settings/clinic/profile", handleUpdateClinicProfile);
 	app.post("/api/settings/clinic/profile", handleUpdateClinicProfile);
+	app.put("/api/settings/clinic-profile", handleUpdateClinicProfile);
+	app.patch("/api/settings/clinic-profile", handleUpdateClinicProfile);
 	app.put("/api/settings/clinic", handleUpdateClinicProfile);
 	app.patch("/api/settings/clinic", handleUpdateClinicProfile);
 	app.post("/api/settings/clinic", handleUpdateClinicProfile);

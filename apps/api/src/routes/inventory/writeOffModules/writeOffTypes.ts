@@ -19,7 +19,10 @@ export interface QuickWriteoffStandardKitBody {
 
 export interface QuickWriteoffCarpulesBody {
 	carpulesCount?: number;
+	count?: number;
 	drugName?: string;
+	drugId?: string;
+	patientId?: string;
 	visitId?: string;
 	notes?: string;
 }

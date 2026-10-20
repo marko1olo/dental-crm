@@ -279,7 +279,7 @@ export function AutoclaveRegisterToolbar({
 								</button>
 							)}
 
-							{/* Журнал работы стерилизаторов (автоклавов) за месяц */}
+							{/* Журнал автоклавирования за месяц */}
 							<button
 								type="button"
 								onClick={() => {
@@ -305,10 +305,10 @@ export function AutoclaveRegisterToolbar({
 								data-testid="generate-monthly-form257-btn"
 							>
 								<Sparkles size={15} color="#0d9488" />
-								<span>Журнал работы стерилизаторов за месяц</span>
+								<span>Журнал автоклавирования за месяц</span>
 							</button>
 
-							{/* Журнал работы стерилизаторов (автоклавов) */}
+							{/* Журнал автоклавирования */}
 							<button
 								type="button"
 								onClick={() => {
@@ -334,7 +334,7 @@ export function AutoclaveRegisterToolbar({
 								data-testid="open-journal-257-studio-btn"
 							>
 								<FileSpreadsheet size={15} color="#059669" />
-								<span>Журнал работы стерилизаторов (автоклавов)</span>
+								<span>Журнал автоклавирования</span>
 							</button>
 						</div>
 					)}

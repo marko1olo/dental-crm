@@ -662,12 +662,12 @@ export const DentalAgentCockpit: React.FC<DentalAgentCockpitProps> = ({
 									className="cockpit-hint-item"
 									onClick={() =>
 										handleSend(
-											"Сформируй протокол лечения кариеса по стандарту СтАР для дневника 043/у",
+											"Сформируй клинический протокол лечения кариеса по стандарту СтАР для медицинской карты",
 										)
 									}
 								>
 									<ChevronRight className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-									<span>📋 Сформировать протокол 043/у для дневника</span>
+									<span>📋 Сформировать протокол для медицинской карты</span>
 								</button>
 								<button
 									type="button"

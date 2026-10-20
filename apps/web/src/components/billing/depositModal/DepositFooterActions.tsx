@@ -8,6 +8,7 @@
 import React from "react";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { formatDisplayCurrency } from "@dental/shared";
+import { showToast } from "../../GlobalToast.js";
 
 interface DepositFooterActionsProps {
 	readonly amountRub: number;
@@ -24,6 +25,26 @@ export const DepositFooterActions: React.FC<DepositFooterActionsProps> = ({
 	onClose,
 	onExecute,
 }) => {
+	const handleSubmitClick = () => {
+		if (isCompleted) {
+			showToast("Баланс депозита уже успешно пополнен", "info");
+			return;
+		}
+		if (isSubmitting) {
+			return;
+		}
+		if (amountRub <= 0) {
+			showToast("Укажите сумму пополнения депозита", "warning");
+			const input = document.getElementById("deposit-amount-input") || document.querySelector<HTMLInputElement>('[data-testid="input-deposit-amount"]');
+			if (input) {
+				input.focus();
+				input.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+			return;
+		}
+		onExecute();
+	};
+
 	return (
 		<div className="px-4 py-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-3 shrink-0">
 			<button
@@ -37,9 +58,9 @@ export const DepositFooterActions: React.FC<DepositFooterActionsProps> = ({
 
 			<button
 				type="button"
-				onClick={onExecute}
-				disabled={amountRub <= 0 || isSubmitting || isCompleted}
-				className="flex-1 md:flex-none md:min-w-[260px] h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+				onClick={handleSubmitClick}
+				disabled={isSubmitting}
+				className="flex-1 md:flex-none md:min-w-[260px] h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
 				data-testid="btn-submit-deposit-topup"
 			>
 				{isCompleted ? (

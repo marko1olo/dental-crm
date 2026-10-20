@@ -235,7 +235,7 @@ export const DemoCaseTreatmentTimeline: React.FC<DemoCaseTreatmentTimelineProps>
 										<strong>Клиническое содержание:</strong> {stage.clinicalDescription}
 									</div>
 									<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-										<strong style={{ color: "var(--muted, #64748b)" }}>Номенклатура 804н:</strong>
+										<strong style={{ color: "var(--muted, #64748b)" }}>Коды услуг:</strong>
 										{stage.nomenclatureCodes.map((code) => (
 											<span
 												key={code}
@@ -274,7 +274,7 @@ export const DemoCaseTreatmentTimeline: React.FC<DemoCaseTreatmentTimelineProps>
 					{activeRoleKey === "therapist" && clinicalDetails.soapDiary && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 							<div style={{ fontWeight: 700, color: "var(--teal, #0d9488)", fontSize: "13px" }}>
-								📋 Электронная медицинская карта (Форма 043/у):
+								📋 Электронная медицинская карта приёма:
 							</div>
 							<div style={{ fontSize: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
 								<div><strong>Жалобы:</strong> {clinicalDetails.soapDiary.complaints}</div>
