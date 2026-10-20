@@ -160,6 +160,7 @@ scripts/test_*.mjs
 scripts/snap_*.cjs
 scripts/redteam_*.cjs
 scripts/sandbox_*.cjs
+!scripts/sandbox_hunter.cjs
 scripts/split_*.cjs
 scripts/split_*.py
 scripts/split.py

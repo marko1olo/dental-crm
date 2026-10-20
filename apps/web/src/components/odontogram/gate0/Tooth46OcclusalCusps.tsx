@@ -1,8 +1,6 @@
 import type React from "react";
-import {
-	TOOTH46_GEOMETRY,
-	type Tooth46CuspDef,
-} from "./tooth46GeometryConstants";
+import { Tooth46SingleCusp } from "./Tooth46SingleCusp";
+import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 
 export interface Tooth46OcclusalCuspsProps {
 	showCusps?: boolean;
@@ -11,39 +9,6 @@ export interface Tooth46OcclusalCuspsProps {
 	isDark?: boolean;
 	className?: string;
 }
-
-const renderCusp = (c: Tooth46CuspDef, isDark: boolean) => {
-	const lf = isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(255, 255, 255, 0.30)";
-	const sf = isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(51, 65, 85, 0.10)";
-	const rs = isDark ? "rgba(241, 245, 249, 0.75)" : "rgba(255, 255, 255, 0.85)";
-
-	return (
-		<g key={c.id} id={`cusp-${c.id}`}>
-			{c.buccalMesialSlope && <path d={c.buccalMesialSlope} fill={lf} />}
-			{c.buccalDistalSlope && <path d={c.buccalDistalSlope} fill={sf} />}
-			{c.buccalRidgePath && (
-				<path
-					d={c.buccalRidgePath}
-					fill="none"
-					stroke={rs}
-					strokeWidth="0.8"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-			)}
-			<path d={c.mesialSlope} fill={lf} />
-			<path d={c.distalSlope} fill={sf} />
-			<path
-				d={c.ridgePath}
-				fill="none"
-				stroke={rs}
-				strokeWidth="0.9"
-				strokeLinecap="round"
-				vectorEffect="non-scaling-stroke"
-			/>
-		</g>
-	);
-};
 
 export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	showCusps = true,
@@ -55,17 +20,24 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
-	const fShadow = isDark ? "rgba(15, 23, 42, 0.92)" : "rgba(51, 65, 85, 0.60)";
+	const fShadow = isDark ? "rgba(15, 23, 42, 0.55)" : "rgba(71, 85, 105, 0.30)";
 	const fCore = isDark
-		? "rgba(203, 213, 225, 0.85)"
-		: "rgba(71, 85, 105, 0.80)";
-	const f = TOOTH46_GEOMETRY.fissures;
-	const fissures = [
-		f.sulcusCentralis,
-		f.sulcusMesiobuccalis,
-		f.sulcusDistobuccalis,
-		f.sulcusLingualis,
-	];
+		? "rgba(203, 213, 225, 0.70)"
+		: "rgba(71, 85, 105, 0.55)";
+	const crFill = isDark
+		? "url(#dente-cervical-ridge-dark)"
+		: "url(#dente-cervical-ridge)";
+	const crStroke = isDark
+		? "rgba(255, 255, 255, 0.20)"
+		: "rgba(255, 255, 255, 0.40)";
+	const crHighlight = isDark
+		? "rgba(255, 255, 255, 0.28)"
+		: "rgba(255, 255, 255, 0.60)";
+	const pitCore = isDark
+		? "rgba(255, 255, 255, 0.35)"
+		: "rgba(255, 255, 255, 0.65)";
+	const fissures = TOOTH46_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
+	const pit = TOOTH46_GEOMETRY.fissures.buccalPit;
 
 	return (
 		<g id="tooth46-crown" className={className}>
@@ -79,36 +51,57 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 					vectorEffect="non-scaling-stroke"
 				/>
 			)}
-			<path
-				d={TOOTH46_GEOMETRY.buccalCervicalRidge}
-				fill="url(#dente-cervical-ridge)"
-				opacity="0.35"
-				clipPath="url(#tooth46-crown-clip)"
-				pointerEvents="none"
-			/>
 			{showCusps && (
 				<g id="tooth46-cusp-ridges" clipPath="url(#tooth46-crown-clip)">
-					{TOOTH46_GEOMETRY.cusps.map((c) => renderCusp(c, isDark))}
+					{/* Wheeler Ch. 11 Cervical Ridge (Convexity in cervical third above CEJ) */}
+					<path
+						d={TOOTH46_GEOMETRY.buccalCervicalRidge}
+						fill={crFill}
+						stroke={crStroke}
+						strokeWidth="0.6"
+						vectorEffect="non-scaling-stroke"
+					/>
+					<path
+						d={TOOTH46_GEOMETRY.cervicalRidgeHighlight}
+						fill="none"
+						stroke={crHighlight}
+						strokeWidth="0.75"
+						strokeLinecap="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+					{TOOTH46_GEOMETRY.cusps.map((c) => (
+						<Tooth46SingleCusp key={c.id} cusp={c} isDark={isDark} />
+					))}
 				</g>
 			)}
 			{showFissures && (
 				<g id="tooth46-fissures" clipPath="url(#tooth46-crown-clip)">
 					<path
-						d={fissures.join(" ")}
+						d={fissures}
 						fill="none"
 						stroke={fShadow}
-						strokeWidth="1.3"
+						strokeWidth="1.0"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
 					<path
-						d={fissures.join(" ")}
+						d={fissures}
 						fill="none"
 						stroke={fCore}
-						strokeWidth="0.6"
+						strokeWidth="0.5"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
+					{/* Anatomical Buccal Pit (Foramen Caecum) at mesiobuccal groove terminus */}
+					<circle
+						cx={pit.cx}
+						cy={pit.cy}
+						r={pit.r}
+						fill={fShadow}
+						stroke={fCore}
+						strokeWidth="0.35"
+					/>
+					<circle cx={pit.cx} cy={pit.cy} r={pit.r * 0.4} fill={pitCore} />
 				</g>
 			)}
 		</g>

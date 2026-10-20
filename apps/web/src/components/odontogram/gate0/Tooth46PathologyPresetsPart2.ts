@@ -2,7 +2,6 @@ import type { Tooth46PresetDef } from "./Tooth46BasePresets";
 import { DEFAULT_TOOTH46_LAYERS } from "./tooth46Types";
 
 const def = DEFAULT_TOOTH46_LAYERS;
-const noCrown = { crown: false, cusps: false, fissures: false };
 
 export const PATHOLOGY_PART2: readonly Tooth46PresetDef[] = [
 	{
@@ -48,20 +47,6 @@ export const PATHOLOGY_PART2: readonly Tooth46PresetDef[] = [
 		badge: "Трещина",
 		description: "Вертикальная субмиллиметровая микротрещина эмали",
 		layers: { ...def, crack: true },
-	},
-	{
-		id: "implant",
-		nameRu: "Титановый имплант Grade-5",
-		badge: "Имплант",
-		description: "Конический винтовой титановый имплант с абатментом",
-		layers: {
-			...def,
-			...noCrown,
-			roots: false,
-			canals: false,
-			pulp: false,
-			implant: true,
-		},
 	},
 	{
 		id: "missing",

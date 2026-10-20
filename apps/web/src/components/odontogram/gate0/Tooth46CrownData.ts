@@ -1,0 +1,107 @@
+import type {
+	CrownMaterial,
+	RestorationCondition,
+	Tooth46ClinicalPreset,
+} from "./tooth46Types";
+
+export type RawCrownTuple = readonly [
+	id: Tooth46ClinicalPreset,
+	nameRu: string,
+	badge: string,
+	desc: string,
+	mat: CrownMaterial,
+	cond?: RestorationCondition,
+];
+
+export const RAW_CROWNS: readonly RawCrownTuple[] = [
+	[
+		"crown",
+		"Коронка: Цирконий (сост.)",
+		"Цирконий (сост.)",
+		"Монолитный многослойный цирконий с глазурью",
+		"zirconia",
+	],
+	[
+		"crown_defective",
+		"Коронка: Цирконий (скол)",
+		"Цирконий (скол)",
+		"Скол керамики, краевая щель, перфорация",
+		"zirconia",
+		"defective",
+	],
+	[
+		"crown_pfm",
+		"Коронка: Металлокерамика (сост.)",
+		"PFM (сост.)",
+		"Керамика на металле с гирляндой",
+		"pfm",
+	],
+	[
+		"crown_pfm_defective",
+		"Коронка: Металлокерамика (скол)",
+		"PFM (скол)",
+		"Скол фарфора с обнажением каркаса",
+		"pfm",
+		"defective",
+	],
+	[
+		"crown_emax",
+		"Коронка: E-Max (сост.)",
+		"E-Max (сост.)",
+		"Дисиликат лития с опалесценцией",
+		"emax",
+	],
+	[
+		"crown_emax_defective",
+		"Коронка: E-Max (скол)",
+		"E-Max (скол)",
+		"Краевой скол стеклокерамики, щель",
+		"emax",
+		"defective",
+	],
+	[
+		"crown_gold",
+		"Коронка: Золото 18K (сост.)",
+		"Золото (сост.)",
+		"Благородный полированный золотой сплав",
+		"gold",
+	],
+	[
+		"crown_gold_defective",
+		"Коронка: Золото (дефект)",
+		"Золото (дефект)",
+		"Окклюзионная перфорация от стирания",
+		"gold",
+		"defective",
+	],
+	[
+		"crown_metal",
+		"Коронка: Металл Co-Cr (сост.)",
+		"КХС/Металл (сост.)",
+		"Цельнолитой кобальт-хромовый сплав",
+		"metal",
+	],
+	[
+		"crown_metal_defective",
+		"Коронка: Металл (дефект)",
+		"КХС (дефект)",
+		"Краевая расцементировка, истирание",
+		"metal",
+		"defective",
+	],
+	[
+		"crown_pmma",
+		"Коронка: PMMA (сост.)",
+		"PMMA (сост.)",
+		"Фрезерованная временная пластмасса",
+		"pmma",
+	],
+	[
+		"crown_pmma_defective",
+		"Коронка: PMMA (трещина)",
+		"PMMA (трещина)",
+		"Перелом временной коронки, краевая щель",
+		"pmma",
+		"defective",
+	],
+];

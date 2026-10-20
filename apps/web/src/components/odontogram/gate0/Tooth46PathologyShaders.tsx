@@ -58,6 +58,13 @@ export const Tooth46PathologyShaders: React.FC = () => {
 				<stop offset="70%" stopColor="#cbd5e1" stopOpacity="1" />
 				<stop offset="100%" stopColor="#475569" stopOpacity="1" />
 			</linearGradient>
+
+			{/* Peri-implant Gingival Cuff / Keratinized Mucosa */}
+			<linearGradient id="dente-gingival-cuff" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#f43f5e" stopOpacity="0.22" />
+				<stop offset="50%" stopColor="#fb7185" stopOpacity="0.14" />
+				<stop offset="100%" stopColor="#fda4af" stopOpacity="0.05" />
+			</linearGradient>
 		</>
 	);
 };

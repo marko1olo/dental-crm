@@ -4,6 +4,8 @@
  * Wheeler Dental Anatomy clinical morphology (Mandate 8b <= 120 lines).
  */
 
+import { ZIRCONIA_CUSP_SLOPES } from "./Tooth46CrownCuspSlopes";
+
 export const TOOTH46_RESTORATION_GEOMETRY = {
 	// Class I Anatomical Composite Filling in occlusal table & triangular fossae
 	compositeFilling:
@@ -19,18 +21,29 @@ export const TOOTH46_RESTORATION_GEOMETRY = {
 		{ id: "lng", d: "M 52,22 C 51,19 49,17.5 48.5,17" },
 	] as const,
 
-	// Monolithic Multilayer Zirconia Crown Outer Shell
+	// Monolithic Multilayer Zirconia Crown Outer Shell (Natural Tooth Prep)
 	zirconiaCrownShell:
 		"M 16,73 C 13,61 11,47 12,37 C 13,27 17,19 22,15 C 25,13 28,10 32,9 " +
 		"C 38,10 44,13 47,13 C 52,12 57,10 62,10 C 68,11 73,14 76,16 C 79,18 82,21 83,23 " +
 		"C 85,28 86,32 86,35 C 87,41 88,47 88,53 C 87,61 86,67 84,73 C 68,78 32,78 16,73 Z",
 
-	// Zirconia chamfer margin (cervical preparation shoulder above CEJ)
+	// Specialized Anatomical Crown Shell on Implant (Authentic Tulip Emergence Profile)
+	implantCrownShell:
+		"M 35,72.5 C 33.5,72 31,70 27,66 C 22,60 18,54 14,45 C 13,42 12.5,39.5 12,37 " +
+		"C 13,27 17,19 22,15 C 25,13 28,10 32,9 C 38,10 44,13 47,13 C 52,12 57,10 62,10 " +
+		"C 68,11 73,14 76,16 C 79,18 82,21 83,23 C 85,28 86,32 86,35 C 86.5,38 86.5,42 86,45 " +
+		"C 82,54 78,60 73,66 C 69,70 66.5,72 65,72.5 L 35,72.5 Z",
+
+	// Natural Tooth Cervical Shoulders & Collars
 	zirconiaCervicalShoulder:
 		"M 16,73 C 34,77 50,78 84,73 C 78,75.5 52,77 50,77 C 48,77 22,75.5 16,73 Z",
-
-	// PFM cervical metal collar margin (subgingival metal line at CEJ)
 	pfmMetalCollar: "M 16,73 C 34,77 50,78 84,73 C 81,74.5 50,76 16,73 Z",
+
+	// Implant Platform Chamfer Shoulder & PFM Collar (Hermetic Fit at Y=72.5)
+	implantCervicalShoulder:
+		"M 35,72.5 C 42,73.5 58,73.5 65,72.5 C 60,71.8 40,71.8 35,72.5 Z",
+	implantPfmMetalCollar:
+		"M 35,72.5 C 42,73.5 58,73.5 65,72.5 C 59,72.0 41,72.0 35,72.5 Z",
 
 	// CAD/CAM milled monolithic occlusal fissures (Dryopithecus Y-5 pattern)
 	zirconiaMilledFissures: [
@@ -43,71 +56,16 @@ export const TOOTH46_RESTORATION_GEOMETRY = {
 		{ id: "lng", d: "M 52,22.2 C 51,17.5 50,14 49,11.5" },
 	] as const,
 
-	// Vestibular equator highlight contour across cervical-middle third
+	// Vestibular equator highlight contours
 	crownEquatorHighlight: "M 17,50 C 32,55 52,56 83,50",
+	implantEquatorHighlight: "M 16,48 C 32,52 52,53 84,48",
 
-	// CAD/CAM milled polygonal cusp slopes (mesial light / distal shadow facets)
-	zirconiaCuspSlopes: [
-		// MB cusp: mesial illuminated facet & distal shaded slope
-		{
-			id: "mb-m",
-			type: "highlight",
-			d: "M 24,17 C 20,18.5 16,21 15,24 C 20,25 24,24 27,21.5 C 26,19 25,18 24,17 Z",
-		},
-		{
-			id: "mb-d",
-			type: "shadow",
-			d: "M 24,17 C 29,19 34,21 38,22.5 C 37,28 35,32 32,28 C 28,24 25,20 24,17 Z",
-		},
-		// ML cusp: tall pyramidal lingual cusp
-		{
-			id: "ml-m",
-			type: "highlight",
-			d: "M 32,9 C 27,11 23,13 22,15 C 25,17 28,19 32,20 C 33,16 33,12 32,9 Z",
-		},
-		{
-			id: "ml-d",
-			type: "shadow",
-			d: "M 32,9 C 36,13 40,18 42,22 C 45,19 47,15 48,12 C 42,10 37,9 32,9 Z",
-		},
-		// DB cusp: central buccal cusp
-		{
-			id: "db-m",
-			type: "highlight",
-			d: "M 50,18 C 46,19.5 43,21 41,22.8 C 40,27 44,25 50,18 Z",
-		},
-		{
-			id: "db-d",
-			type: "shadow",
-			d: "M 50,18 C 53,19.5 56,21 59,22.2 C 58,27 54,25 50,18 Z",
-		},
-		// DL cusp: prominent lingual cusp
-		{
-			id: "dl-m",
-			type: "highlight",
-			d: "M 62,10 C 57,10.5 52,11 48,12 C 50,16 51,19 52,22.2 C 56,18 59,14 62,10 Z",
-		},
-		{
-			id: "dl-d",
-			type: "shadow",
-			d: "M 62,10 C 66,11 70,13 73,14 C 71,17 69,20 68,22.5 C 66,18 64,14 62,10 Z",
-		},
-		// D cusp: small distal cusp
-		{
-			id: "d-m",
-			type: "highlight",
-			d: "M 75,21.5 C 71,21.8 67,22 62,22.2 C 64,25 68,25 75,21.5 Z",
-		},
-		{
-			id: "d-d",
-			type: "shadow",
-			d: "M 75,21.5 C 78,22 81,22.5 83,23 C 81,26 78,26 75,21.5 Z",
-		},
-	] as const,
+	// CAD/CAM milled anatomical cusp slopes (mesial light / distal shadow facets)
+	zirconiaCuspSlopes: ZIRCONIA_CUSP_SLOPES,
 
 	// High-luster specular light paths strictly following 3D cusp crest trajectories
 	zirconiaSpecularRidges: [
-		{ id: "mb", d: "M 24,17 C 28,19 33,20.8 38,22.5" },
+		{ id: "mb", d: "M 24,17 C 27.8,19 32.8,20.8 38,22.5" },
 		{ id: "ml", d: "M 32,9.5 C 35.5,13.5 39,18 42,21.8" },
 		{ id: "db", d: "M 50,18 C 50.8,19.5 51.5,21 52,22.2" },
 		{ id: "dl", d: "M 62,10.5 C 59,14 56,18 53,21.8" },

@@ -7,11 +7,12 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-export async function isPortResponding(url, timeoutMs = 2000) {
+export async function isPortResponding(url, timeoutMs = 2500) {
 	try {
 		const controller = new AbortController();
 		const t = setTimeout(() => controller.abort(), timeoutMs);
-		const res = await fetch(url, { signal: controller.signal });
+		const baseUrl = new URL(url).origin;
+		const res = await fetch(baseUrl, { signal: controller.signal });
 		clearTimeout(t);
 		return res.ok || res.status === 200 || res.status === 304;
 	} catch {
@@ -20,7 +21,7 @@ export async function isPortResponding(url, timeoutMs = 2000) {
 }
 
 export async function ensureViteServer(url) {
-	const alive = await isPortResponding(url, 1500);
+	const alive = await isPortResponding(url, 2000);
 	if (alive) {
 		console.log("[Vite] Detected active dev server on port 5173.");
 		return null;

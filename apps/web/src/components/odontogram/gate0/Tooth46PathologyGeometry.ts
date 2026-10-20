@@ -68,15 +68,22 @@ export const TOOTH46_PATHOLOGY_GEOMETRY = {
 	// 5. Grade-5 Titanium Implant Fixture & Abutment (Mapped from CAD/CAM engine)
 	implant: {
 		fixtureBody: TOOTH46_IMPLANT_GEOMETRY.fixture.coreBody,
-		abutment: TOOTH46_IMPLANT_GEOMETRY.abutment.body,
+		abutment: TOOTH46_IMPLANT_GEOMETRY.healingAbutment.body,
 		collar: TOOTH46_IMPLANT_GEOMETRY.collar.platformSwitch,
 		threads: TOOTH46_IMPLANT_GEOMETRY.fixture.macroThreadFlanks,
 		microThreads: TOOTH46_IMPLANT_GEOMETRY.collar.microThreads,
-		hexSocket: TOOTH46_IMPLANT_GEOMETRY.abutment.hexSocket,
-		specular: TOOTH46_IMPLANT_GEOMETRY.abutment.specularHighlight,
+		hexSocket: TOOTH46_IMPLANT_GEOMETRY.healingAbutment.hexSocket,
+		specular: TOOTH46_IMPLANT_GEOMETRY.healingAbutment.specularHighlight,
 		fluteLeft: TOOTH46_IMPLANT_GEOMETRY.fixture.apicalCuttingFluteLeft,
 		fluteRight: TOOTH46_IMPLANT_GEOMETRY.fixture.apicalCuttingFluteRight,
 		apexDome: TOOTH46_IMPLANT_GEOMETRY.fixture.domeApex,
+		coverScrew: TOOTH46_IMPLANT_GEOMETRY.coverScrew,
+		healingAbutment: TOOTH46_IMPLANT_GEOMETRY.healingAbutment,
+		standardAbutment: TOOTH46_IMPLANT_GEOMETRY.standardAbutment,
+		screwAccessHole: TOOTH46_IMPLANT_GEOMETRY.screwAccessHole,
+		temporaryAbutment: TOOTH46_IMPLANT_GEOMETRY.temporaryAbutment,
+		gingivalCuff: TOOTH46_IMPLANT_GEOMETRY.gingivalCuff,
+		implantCrownShell: TOOTH46_IMPLANT_GEOMETRY.implantCrownShell,
 	},
 
 	// 6. Extracted Tooth: Clinical X-cross and ghost alveolar socket bed

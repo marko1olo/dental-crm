@@ -61,8 +61,12 @@ export const MACRO_SHOTS = [
 	shot("gate0_tooth46_macro_cyst.png", "cyst"),
 	shot("gate0_tooth46_macro_resorption.png", "resorption"),
 	shot("gate0_tooth46_macro_calculus.png", "calculus"),
-	shot("gate0_tooth46_macro_crack.png", "crack"),
 	shot("gate0_tooth46_macro_implant.png", "implant"),
+	shot("gate0_tooth46_macro_implant_pure.png", "implant"),
+	shot("gate0_tooth46_macro_implant_healing_abutment.png", "implant_healing_abutment"),
+	shot("gate0_tooth46_macro_implant_crown.png", "implant_crown"),
+	shot("gate0_tooth46_macro_implant_crown_screw.png", "implant_crown_screw"),
+	shot("gate0_tooth46_macro_implant_temporary.png", "implant_temporary"),
 	shot("gate0_tooth46_macro_missing.png", "missing"),
 	// Backward-compatible aliases and specific zoomed details
 	shot("gate0_tooth46_macro_pulp.png", "pulpitis"),

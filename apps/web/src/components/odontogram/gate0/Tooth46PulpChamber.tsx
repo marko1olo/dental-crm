@@ -47,7 +47,7 @@ export const Tooth46PulpChamber: React.FC<Tooth46PulpChamberProps> = ({
 			opacity={chamberOpacity}
 			className={className}
 		>
-			{/* Cavitas pulparis dome with 5 slender cornua pulpae & root canals */}
+			{/* Cavitas pulparis dome with 2 anatomical rounded cornua pulpae & root canals */}
 			<path
 				d={pathD}
 				fill={chamberFill}

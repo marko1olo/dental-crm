@@ -1,5 +1,6 @@
 import type React from "react";
 import { Tooth46CrownShaders } from "./Tooth46CrownShaders";
+import { Tooth46CuspShaders } from "./Tooth46CuspShaders";
 import { Tooth46EndoShaders } from "./Tooth46EndoShaders";
 import { Tooth46PathologyShaders } from "./Tooth46PathologyShaders";
 import { Tooth46PeriapicalShaders } from "./Tooth46PeriapicalShaders";
@@ -61,6 +62,19 @@ export const Tooth46ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#f8fafc" stopOpacity="0.05" />
 			</linearGradient>
 
+			{/* Buccal Cervical Ridge Convexity Highlight - Dark Mode */}
+			<linearGradient
+				id="dente-cervical-ridge-dark"
+				x1="0"
+				y1="0"
+				x2="0"
+				y2="1"
+			>
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+				<stop offset="60%" stopColor="#94a3b8" stopOpacity="0.12" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.02" />
+			</linearGradient>
+
 			{/* Triangular Ridge Directional Specular Sheen */}
 			<linearGradient id="dente-ridge-highlight" x1="0" y1="0" x2="0" y2="1">
 				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
@@ -69,6 +83,7 @@ export const Tooth46ShaderDefs: React.FC = () => {
 			</linearGradient>
 
 			{/* Modular Domain Shaders */}
+			<Tooth46CuspShaders />
 			<Tooth46EndoShaders />
 			<Tooth46CrownShaders />
 			<Tooth46RestorationShaders />

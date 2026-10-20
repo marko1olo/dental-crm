@@ -1,61 +1,26 @@
 /**
- * Types and defaults for Tooth 46 Gate 0 Anatomical Odontogram
+ * Layer flags & defaults for Tooth 46 Gate 0 Anatomical Odontogram
+ * Mandate 8b <= 120 lines.
  */
 
-export type CrownMaterial =
-	| "zirconia"
-	| "pfm"
-	| "emax"
-	| "gold"
-	| "metal"
-	| "pmma";
+import type {
+	CanalCondition,
+	CrownMaterial,
+	ImplantStage,
+	PeriapicalCondition,
+	PostCoreType,
+	RestorationCondition,
+} from "./tooth46PresetTypes";
 
-export type RestorationCondition = "adequate" | "defective";
-
-export type Tooth46ClinicalPreset =
-	| "intact"
-	| "caries"
-	| "pulpitis"
-	| "periodontitis"
-	| "endodontics"
-	| "composite"
-	| "composite_defective"
-	| "crown"
-	| "crown_defective"
-	| "crown_pfm"
-	| "crown_pfm_defective"
-	| "crown_emax"
-	| "crown_emax_defective"
-	| "crown_gold"
-	| "crown_gold_defective"
-	| "crown_metal"
-	| "crown_metal_defective"
-	| "crown_pmma"
-	| "crown_pmma_defective"
-	| "abfraction"
-	| "postCore"
-	| "postCore_cast"
-	| "underfill"
-	| "overfill"
-	| "broken_file"
-	| "cyst"
-	| "resorption"
-	| "calculus"
-	| "crack"
-	| "implant"
-	| "missing";
-
-export type CanalCondition =
-	| "vital"
-	| "pulpitis"
-	| "necrotic"
-	| "adequate"
-	| "underfill"
-	| "overfill"
-	| "broken_file";
-
-export type PeriapicalCondition = "none" | "granuloma" | "cyst" | "resorption";
-export type PostCoreType = "fiber" | "cast";
+export type {
+	CanalCondition,
+	CrownMaterial,
+	ImplantStage,
+	PeriapicalCondition,
+	PostCoreType,
+	RestorationCondition,
+	Tooth46ClinicalPreset,
+} from "./tooth46PresetTypes";
 
 export interface Tooth46LayerFlags {
 	roots?: boolean;
@@ -82,6 +47,7 @@ export interface Tooth46LayerFlags {
 	calculus?: boolean;
 	crack?: boolean;
 	implant?: boolean;
+	implantStage?: ImplantStage;
 	missing?: boolean;
 }
 
@@ -110,5 +76,14 @@ export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
 	calculus: false,
 	crack: false,
 	implant: false,
+	implantStage: "pure",
 	missing: false,
 };
+
+export interface Tooth46ContainerProps {
+	isDark?: boolean | undefined;
+	zoom?: number | undefined;
+	layers?: Tooth46LayerFlags | undefined;
+	className?: string | undefined;
+	style?: React.CSSProperties | undefined;
+}

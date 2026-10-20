@@ -12,6 +12,7 @@ export interface Tooth46RestorationOverlayProps {
 	crownCondition?: RestorationCondition;
 	translucent?: boolean;
 	isDark?: boolean;
+	isImplant?: boolean;
 	className?: string;
 }
 
@@ -25,6 +26,7 @@ export const Tooth46RestorationOverlay: React.FC<
 	crownCondition = "adequate",
 	translucent = false,
 	isDark = false,
+	isImplant = false,
 	className,
 }) => {
 	const r = TOOTH46_RESTORATION_GEOMETRY;
@@ -47,6 +49,7 @@ export const Tooth46RestorationOverlay: React.FC<
 					condition={crownCondition}
 					translucent={translucent}
 					isDark={isDark}
+					isImplant={isImplant}
 				/>
 			)}
 

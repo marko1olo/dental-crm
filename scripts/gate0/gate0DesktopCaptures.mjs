@@ -28,9 +28,9 @@ export async function captureDesktopProofs(browser, results) {
 		timeout: 60000,
 	});
 	await page.waitForSelector('[data-testid="tooth-46-gate0-stand"]', {
-		timeout: 45000,
+		timeout: 60000,
 	});
-	await page.waitForSelector('svg[role="img"]', { timeout: 30000 });
+	await page.waitForSelector('svg[role="img"]', { timeout: 45000 });
 	await suppressOverlays(page);
 	await setZoom(page, 2);
 

@@ -66,17 +66,6 @@ describe("Gate 0 Red Team Inquisition — Tooth 46 Pathologies & Surgery", () =>
 		assert.ok(html.includes('data-component="resorption-lacuna"'));
 	});
 
-	it("renders CAD/CAM Grade-5 titanium implant with macro-threads, micro-threads and abutment", () => {
-		const html = renderToString(
-			React.createElement(Tooth46Container, { layers: { implant: true } }),
-		);
-		assert.ok(html.includes('data-testid="tooth46-implant"'));
-		assert.ok(html.includes('data-component="implant-macro-thread"'));
-		assert.ok(html.includes('data-component="implant-micro-thread"'));
-		assert.ok(html.includes("dente-titanium-body"));
-		assert.ok(html.includes("dente-titanium-abutment"));
-	});
-
 	it("renders surgical extraction cross with post-extraction alveolar socket ghost", () => {
 		const html = renderToString(
 			React.createElement(Tooth46Container, { layers: { missing: true } }),

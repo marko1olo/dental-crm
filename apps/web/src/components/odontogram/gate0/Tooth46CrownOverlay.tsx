@@ -15,6 +15,7 @@ export interface Tooth46CrownOverlayProps {
 	condition?: RestorationCondition;
 	translucent?: boolean;
 	isDark?: boolean;
+	isImplant?: boolean;
 	className?: string;
 }
 
@@ -23,6 +24,7 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 	condition = "adequate",
 	translucent = false,
 	isDark = false,
+	isImplant = false,
 	className,
 }) => {
 	const r = TOOTH46_RESTORATION_GEOMETRY;
@@ -30,17 +32,26 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 	const fissureColor = getCrownFissureStroke(material, isDark);
 	const glazeStroke = getGlazeStroke(material);
 	const slopes = getCuspSlopeColors(material);
+	const shell = isImplant ? r.implantCrownShell : r.zirconiaCrownShell;
+	const shoulder = isImplant
+		? r.implantCervicalShoulder
+		: r.zirconiaCervicalShoulder;
+	const pfmCollar = isImplant ? r.implantPfmMetalCollar : r.pfmMetalCollar;
+	const equator = isImplant
+		? r.implantEquatorHighlight
+		: r.crownEquatorHighlight;
 
 	return (
 		<g
 			id="tooth46-zirconia-crown"
 			data-crown-material={material}
 			data-crown-condition={condition}
+			data-implant-crown={isImplant ? "true" : undefined}
 			className={className}
 		>
 			<path
 				id="tooth46-crown-shell"
-				d={r.zirconiaCrownShell}
+				d={shell}
 				fill={CROWN_FILL_MAP[material]}
 				fillOpacity={translucent ? "0.62" : undefined}
 				stroke={stroke}
@@ -49,10 +60,10 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{material === "pfm" && (
-				<path d={r.pfmMetalCollar} fill="url(#dente-pfm-metal-collar)" stroke="none" />
+				<path d={pfmCollar} fill="url(#dente-pfm-metal-collar)" stroke="none" />
 			)}
 			{(material === "zirconia" || material === "emax") && (
-				<path d={r.zirconiaCervicalShoulder} fill="url(#dente-zirconia-chamfer)" stroke="none" />
+				<path d={shoulder} fill="url(#dente-zirconia-chamfer)" stroke="none" />
 			)}
 			{r.zirconiaCuspSlopes.map((s) => (
 				<path
@@ -89,7 +100,7 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 					/>
 				))}
 			<path
-				d={r.crownEquatorHighlight}
+				d={equator}
 				fill="none"
 				stroke={glazeStroke}
 				strokeWidth="0.6"

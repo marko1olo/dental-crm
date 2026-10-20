@@ -1,87 +1,57 @@
 import type React from "react";
+import { Tooth46GingivalCuff } from "./Tooth46GingivalCuff";
+import { Tooth46ImplantFixture } from "./Tooth46ImplantFixture";
+import { Tooth46ImplantSuprastructure } from "./Tooth46ImplantSuprastructure";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
+import type { ImplantStage } from "./tooth46Types";
 
 export interface Tooth46SurgeryOverlayProps {
 	showImplant?: boolean | undefined;
+	implantStage?: ImplantStage | undefined;
+	renderScrewAccessOnly?: boolean | undefined;
 	showMissing?: boolean | undefined;
+	isDark?: boolean | undefined;
 	className?: string | undefined;
 }
 
 /**
  * DENTE Dental CRM — Surgical Overlays for Tooth 46
- * Grade-5 SLA Titanium Implant Fixture & Missing Tooth Extraction Cross.
+ * Grade-5 Titanium Implant, Gingival Cuff & Missing Tooth Extraction Cross.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46SurgeryOverlay: React.FC<Tooth46SurgeryOverlayProps> = ({
 	showImplant = false,
+	implantStage = "pure",
+	renderScrewAccessOnly = false,
 	showMissing = false,
+	isDark = false,
 	className,
 }) => {
 	const g = TOOTH46_PATHOLOGY_GEOMETRY;
 
+	if (renderScrewAccessOnly && showImplant) {
+		return (
+			<Tooth46ImplantSuprastructure
+				stage={implantStage}
+				renderScrewAccessOnly
+				className={className}
+			/>
+		);
+	}
+
 	return (
 		<g id="tooth46-surgical-overlays" className={className}>
 			{showImplant && (
-				<g id="tooth46-titanium-implant" data-testid="tooth46-implant">
-					<path
-						d={g.implant.fixtureBody}
-						fill="url(#dente-titanium-body)"
-						stroke="#334155"
-						strokeWidth="0.8"
-						strokeLinejoin="round"
-					/>
-					{g.implant.threads.map((t) => (
-						<path
-							key={`m-${t.slice(0, 10)}`}
-							d={t}
-							data-component="implant-macro-thread"
-							fill="url(#dente-titanium-body)"
-							stroke="#1e293b"
-							strokeWidth="0.75"
-						/>
-					))}
-					{g.implant.microThreads.map((m) => (
-						<path
-							key={`u-${m.slice(0, 10)}`}
-							d={m}
-							data-component="implant-micro-thread"
-							fill="none"
-							stroke="#475569"
-							strokeWidth="0.6"
-						/>
-					))}
-					<path d={g.implant.fluteLeft} fill="#0f172a" opacity="0.45" />
-					<path d={g.implant.fluteRight} fill="#0f172a" opacity="0.45" />
-					<path
-						d={g.implant.collar}
-						fill="url(#dente-titanium-collar)"
-						stroke="#475569"
-						strokeWidth="0.7"
-					/>
-					<path
-						d={g.implant.abutment}
-						data-component="implant-abutment"
-						fill="url(#dente-titanium-abutment)"
-						stroke="#334155"
-						strokeWidth="0.8"
-					/>
-					<path
-						d={g.implant.hexSocket}
-						fill="#1e293b"
-						stroke="#0f172a"
-						strokeWidth="0.5"
-					/>
-					<path
-						d={g.implant.specular}
-						fill="none"
-						stroke="#ffffff"
-						strokeWidth="0.9"
-						strokeOpacity="0.75"
-						strokeLinecap="round"
-					/>
+				<g
+					id="tooth46-titanium-implant"
+					data-testid="tooth46-implant"
+					data-stage={implantStage}
+				>
+					<Tooth46ImplantFixture />
+					<Tooth46ImplantSuprastructure stage={implantStage} />
+					<Tooth46GingivalCuff stage={implantStage} isDark={isDark} />
 				</g>
 			)}
-
 			{showMissing && (
 				<g id="tooth46-missing-cross" data-testid="tooth46-missing">
 					<path
