@@ -1,14 +1,15 @@
 /**
  * apps/web/src/components/visit/view/fastPrintModules/fastPrintDiaryBuilder.ts
  *
- * Генератор печатного бланка дневника стоматологического осмотра (вкладыш в медкарту 043/у)
- * и печатной формы первичного осмотра Формы 043/у.
+ * Генератор печатного бланка дневника стоматологического осмотра (вкладыш в медкарту)
+ * и печатной формы медицинской карты приёма.
  * Строго 0 мультяшных эмодзи (Мандат 8d, Грех №7) — только официальная медицинская типографика.
  */
 
 import { formatRuDateShort } from "../../../../utils/dateUtils";
+import type { A4DocumentMedicalCardData } from "@dental/shared";
 
-export interface FastPrint043Params {
+export interface FastPrintClinicalDiaryParams {
 	readonly activePatient?: any;
 	readonly activeDoctor?: any;
 	readonly activeAppointment?: any;
@@ -19,6 +20,8 @@ export interface FastPrint043Params {
 	readonly teethFormula?: Record<string | number, any>;
 	readonly selectedToothForMenu?: any;
 }
+
+export type FastPrint043Params = FastPrintClinicalDiaryParams;
 
 export interface FastPrintDiarySheetParams {
 	readonly activePatient?: any;
@@ -71,12 +74,32 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle = "Печ�
 }
 
 export function extractClinicRequisites(dashboard: any) {
-	const clinicName = dashboard?.organization?.name || dashboard?.organizationName || "Стоматологическая клиника DENTE";
-	const clinicAddress = dashboard?.organization?.address || "г. Москва, Клинический проезд, д. 4";
-	const clinicPhone = dashboard?.organization?.phone || "+7 (495) 000-00-00";
-	const clinicOgrn = dashboard?.organization?.ogrn || "1027700000000";
-	const clinicInn = dashboard?.organization?.inn || "7701000000";
-	const license = dashboard?.organization?.licenseNumber || "ЛО-77-01-020000 от 12.04.2021";
+	const clinicName =
+		dashboard?.organization?.name ||
+		dashboard?.organizationName ||
+		dashboard?.clinicSettings?.clinicName ||
+		"Стоматологическая клиника";
+	const clinicAddress =
+		dashboard?.organization?.address ||
+		dashboard?.clinicSettings?.address ||
+		"—";
+	const clinicPhone =
+		dashboard?.organization?.phone ||
+		dashboard?.clinicSettings?.phone ||
+		"—";
+	const clinicOgrn =
+		dashboard?.organization?.ogrn ||
+		dashboard?.clinicSettings?.ogrn ||
+		"—";
+	const clinicInn =
+		dashboard?.organization?.inn ||
+		dashboard?.clinicSettings?.inn ||
+		"—";
+	const license =
+		dashboard?.organization?.licenseNumber ||
+		dashboard?.organization?.license ||
+		dashboard?.clinicSettings?.licenseNumber ||
+		"—";
 
 	return {
 		clinicName,
@@ -142,8 +165,11 @@ export function normalizeOdontogramForDmft(teethFormula: any) {
  * 0 эмодзи, строго регламентированная медицинская типографика ГОСТ.
  */
 export function buildFastPrintDiarySheetHtml(params: FastPrintDiarySheetParams): string {
-	const patientName = params.activePatient?.fullName || "Пациент";
-	const cardNumber = params.activePatient?.cardNumber || params.activePatient?.medicalCardNumber || params.activePatient?.id || "—";
+	if (!params.activePatient || !params.activePatient.fullName) {
+		throw new Error("Пациент не выбран. Печать невозможна");
+	}
+	const patientName = params.activePatient.fullName;
+	const cardNumber = params.activePatient.cardNumber || params.activePatient.medicalCardNumber || params.activePatient.id || "—";
 	const doctorName = params.activeDoctor?.fullName || "Лечащий врач";
 	const specialty = params.activeDoctor?.specialty || "Стоматолог-терапевт";
 	const dateStr = params.visitDate ? formatRuDateShort(params.visitDate) : new Date().toLocaleDateString("ru-RU");
@@ -180,7 +206,7 @@ export function buildFastPrintDiarySheetHtml(params: FastPrintDiarySheetParams):
 <body>
 	<div class="header">
 		<div class="clinic-title">${params.clinicName || "Стоматологическая клиника DENTE"}</div>
-		<div class="doc-sub">Вкладыш в медицинскую карту стоматологического пациента № 043/у</div>
+		<div class="doc-sub">Дневник приёма стоматологического пациента<!-- Вкладыш в медицинскую карту стоматологического пациента № 043/у --></div>
 	</div>
 	<div class="meta-grid">
 		<div class="meta-row">
@@ -235,7 +261,72 @@ export function executeFastPrintDiarySheet(params: FastPrintDiarySheetParams): v
 	printHtmlViaIframe(html, `Дневник_${params.activePatient?.fullName || "Пациент"}`);
 }
 
-export function executeFastPrint043u({
+/**
+ * Единый канонический SSOT-трансформер данных приёма в структуру медицинской карты А4 (A4DocumentMedicalCardData).
+ * Исключает расхождение данных между быстрой печатью и формой MedicalCardSheet.tsx.
+ */
+export function buildMedicalCardDataFromFastPrintParams(params: FastPrintClinicalDiaryParams): A4DocumentMedicalCardData {
+	if (!params.activePatient || !params.activePatient.fullName) {
+		throw new Error("Пациент не выбран. Печать невозможна");
+	}
+	const req = extractClinicRequisites(params.dashboard);
+	const activePatient = params.activePatient;
+	const activeDoctor = params.activeDoctor;
+	const activeAppointment = params.activeAppointment;
+	const visitNoteForm = params.visitNoteForm;
+
+	const patientName = activePatient.fullName;
+	const cardNumber = activePatient.cardNumber || activePatient.medicalCardNumber || activePatient.id || "—";
+	const visitDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
+
+	const rawDiagnosis = visitNoteForm?.diagnosis || (params.selectedToothForMenu ? `Зуб ${params.selectedToothForMenu}: K02.1 Кариес дентина` : "K02.1 Кариес дентина");
+	const icd10Match = rawDiagnosis.match(/([A-Z]\d{2}(?:\.\d+)?)/i);
+	const diagnosisIcd10 = icd10Match ? icd10Match[1].toUpperCase() : "Z01.2";
+	const diagnosisDescription = rawDiagnosis.replace(/^[A-Z]\d{2}(?:\.\d+)?\s*/i, "").trim() || "Стоматологическое обследование и лечение";
+
+	return {
+		cardNumber,
+		visitDate,
+		clinic: {
+			name: req.clinicName,
+			legalName: req.clinicName,
+			shortName: req.clinicName,
+			address: req.clinicAddress,
+			actualAddress: req.clinicAddress,
+			phone: req.clinicPhone,
+			inn: req.clinicInn,
+			ogrn: req.clinicOgrn,
+			licenseNumber: req.license,
+			licenseDate: "",
+			city: "г. Москва",
+		},
+		patient: {
+			fullName: patientName,
+			birthDate: activePatient?.birthDate ? formatRuDateShort(activePatient.birthDate) : "—",
+			gender: activePatient?.gender || "unknown",
+			phone: activePatient?.phone || "—",
+			address: activePatient?.address || "—",
+			registrationAddress: activePatient?.address || "—",
+			snils: activePatient?.snils || activePatient?.administrativeProfile?.snils || "",
+			omsPolis: activePatient?.omsPolis || activePatient?.administrativeProfile?.omsPolis || "",
+		},
+		doctorFullName: activeDoctor?.fullName || "Лечащий врач",
+		doctorSpecialty: activeDoctor?.specialty || "Врач-стоматолог",
+		complaints: visitNoteForm?.complaint || "Жалоб на момент осмотра не предъявляет.",
+		anamnesisMorbi: visitNoteForm?.anamnesis || "Соматически здоров. Аллергологический анамнез не отягощен.",
+		allergyStatus: activePatient?.allergies?.length ? activePatient.allergies.join(", ") : "Не отягощен (со слов пациента)",
+		somaticStatus: "Соматически здоров, сопутствующих заболеваний нет",
+		statusLocalis: visitNoteForm?.objectiveStatus || "Слизистая оболочка полости рта бледно-розовая, влажная. Прикус физиологический.",
+		diagnosisIcd10,
+		diagnosisDescription,
+		diagnosisTooth: params.selectedToothForMenu || undefined,
+		teethFormulaMap: params.teethFormula as any,
+		treatmentProtocol: visitNoteForm?.treatmentPlan || "Препарирование кариозной полости, медикаментозная обработка, постановка пломбы светового отверждения.",
+		recommendations: visitNoteForm?.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
+	};
+}
+
+export function executeFastPrintClinicalDiary({
 	activePatient,
 	activeDoctor,
 	activeAppointment,
@@ -245,15 +336,19 @@ export function executeFastPrint043u({
 	dashboard,
 	teethFormula,
 	selectedToothForMenu,
-}: FastPrint043Params) {
+}: FastPrintClinicalDiaryParams) {
+	if (!activePatient || !activePatient.fullName) {
+		throw new Error("Пациент не выбран. Печать невозможна");
+	}
+
 	const req = extractClinicRequisites(dashboard);
 	const dmft = normalizeOdontogramForDmft(teethFormula);
 
-	const patientName = activePatient?.fullName || "Иванов Иван Иванович";
-	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id || "001";
-	const birthDate = activePatient?.birthDate ? formatRuDateShort(activePatient.birthDate) : "—";
-	const phone = activePatient?.phone || "—";
-	const address = activePatient?.address || "г. Москва";
+	const patientName = activePatient.fullName;
+	const cardNumber = activePatient.cardNumber || activePatient.medicalCardNumber || activePatient.id || "—";
+	const birthDate = activePatient.birthDate ? formatRuDateShort(activePatient.birthDate) : "—";
+	const phone = activePatient.phone || "—";
+	const address = activePatient.address || "—";
 	const doctorName = activeDoctor?.fullName || "Лечащий врач";
 	const specialty = activeDoctor?.specialty || "Стоматолог общей практики";
 	const visitDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
@@ -269,7 +364,7 @@ export function executeFastPrint043u({
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Форма 043/у — ${patientName}</title>
+	<title>Медицинская карта приёма — ${patientName}</title>
 	<style>
 		@page { size: A4; margin: 12mm 15mm 15mm 20mm; }
 		body { font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.35; color: #000; margin: 0; padding: 0; }
@@ -369,3 +464,8 @@ export function executeFastPrint043u({
 
 	printHtmlViaIframe(html, `Медицинская_карта_${patientName}`);
 }
+
+/**
+ * Алиас обратной совместимости
+ */
+export const executeFastPrint043u = executeFastPrintClinicalDiary;

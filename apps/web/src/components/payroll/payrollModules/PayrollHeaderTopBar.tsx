@@ -39,7 +39,7 @@ export const PayrollHeaderTopBar: React.FC<PayrollHeaderTopBarProps> = ({
 						</span>
 					</h2>
 					<p className="text-xs text-[var(--muted,#64748b)]">
-						{clinicName} • Автоматический вычет материалов и зуботехнической лаборатории
+						{clinicName ? `${clinicName} • ` : ""}Автоматический вычет материалов и зуботехнической лаборатории
 					</p>
 				</div>
 			</div>

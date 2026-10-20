@@ -12,6 +12,8 @@ import {
 import { getDefaultPayrollPeriod } from "./doctorPayrollModalUtils";
 import { useDoctorPayrollModalState } from "./useDoctorPayrollModalState";
 import { DoctorPayrollModalContent } from "./DoctorPayrollModalContent";
+import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import "./doctorPayroll.css";
 
 export { DEFAULT_SOLO_DOCTOR, SOLO_DOCTOR_SPECIALTY_PRESETS, type SoloDoctorSpecialtyPreset, getDefaultPayrollPeriod };
@@ -32,7 +34,7 @@ export interface DoctorPayrollModalProps {
 export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	isOpen,
 	onClose,
-	clinicName = "ООО «Денте Стоматология»",
+	clinicName,
 	doctorsList = [],
 	initialDoctorId,
 	initialServices,
@@ -41,15 +43,24 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	initialBasePercentage,
 	useClinicalCategoryRates,
 }) => {
+	const branding = useDocumentBrandingStore((s) => s.branding);
+	const appLogic = useOptionalAppLogicContext();
+	const resolvedClinicName = (clinicName && clinicName.trim())
+		|| branding?.clinicName
+		|| branding?.legalEntityName
+		|| appLogic?.dashboard?.organization?.name
+		|| appLogic?.dashboard?.clinicSettings?.clinicName
+		|| "";
+
 	const state = useDoctorPayrollModalState({
-		isOpen, clinicName, doctorsList, initialDoctorId, initialServices,
+		isOpen, clinicName: resolvedClinicName, doctorsList, initialDoctorId, initialServices,
 		initialPeriodStart, initialPeriodEnd, initialBasePercentage, useClinicalCategoryRates,
 	});
 
 	if (!isOpen) return null;
 
 	const handleSendToMessenger = (platform: "clipboard" | "whatsapp" | "telegram" = "clipboard") => {
-		const text = generateDoctorPayslipMessengerText(state.payrollResult, clinicName);
+		const text = generateDoctorPayslipMessengerText(state.payrollResult, resolvedClinicName);
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(text);
 			state.setCopyFeedback("Текст листка скопирован!");
@@ -74,7 +85,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 	const handlePrintPayslip = () => {
 		const printWindow = window.open("", "_blank", "width=800,height=900");
-		const html = generateDoctorPayslipHtml(state.payrollResult, clinicName, state.servicesToUse);
+		const html = generateDoctorPayslipHtml(state.payrollResult, resolvedClinicName, state.servicesToUse);
 		if (!printWindow) { window.print(); return; }
 		printWindow.document.open();
 		printWindow.document.write(html);
@@ -83,7 +94,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 	const modal = (
 		<DoctorPayrollModalContent
-			clinicName={clinicName}
+			clinicName={resolvedClinicName}
 			doctorsList={doctorsList}
 			onClose={onClose}
 			state={state}

@@ -55,11 +55,14 @@ export const PayrollHeaderDoctorPicker: React.FC<PayrollHeaderDoctorPickerProps>
 							</option>
 						))
 					) : (
-						doctorsList.map((doc) => (
-							<option key={doc.id} value={doc.id}>
-								{doc.name}
-							</option>
-						))
+						<>
+							<option value="">— Выберите врача —</option>
+							{doctorsList.map((doc) => (
+								<option key={doc.id} value={doc.id}>
+									{doc.name}
+								</option>
+							))}
+						</>
 					)}
 				</select>
 			</div>

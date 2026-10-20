@@ -31,6 +31,17 @@ import { MobileSegmentedControl } from "./MobileSegmentedControl";
 import "./mobileHigPrimitives.css";
 
 export type EhrStep = "complaints" | "exam" | "diagnosis" | "plan";
+export type MobilePaymentMethod = "sbp" | "card" | "cash";
+
+export interface MobileChairsideEHRFinishData {
+  step: EhrStep;
+  complaints: string;
+  objectiveExam: string;
+  diagnosis: string;
+  treatmentPlan: string;
+  paymentMethod?: MobilePaymentMethod | undefined;
+  amountRub?: number | undefined;
+}
 
 export interface MobileChairsideEHRProps {
   patientName: string;
@@ -38,14 +49,13 @@ export interface MobileChairsideEHRProps {
   allergyNotice?: string | null | undefined;
   visitReason?: string | undefined;
   toothCode?: string | undefined;
+  initialDiagnosis?: string | undefined;
+  initialTreatmentPlan?: string | undefined;
+  initialPaymentMethod?: MobilePaymentMethod | undefined;
+  initialReceiptSheetOpen?: boolean | undefined;
+  onSelectPaymentMethod?: ((method: MobilePaymentMethod) => void) | undefined;
   onClose: () => void;
-  onFinishVisit: (data: {
-    step: EhrStep;
-    complaints: string;
-    objectiveExam: string;
-    diagnosis: string;
-    treatmentPlan: string;
-  }) => void;
+  onFinishVisit: (data: MobileChairsideEHRFinishData) => void;
   testId?: string | undefined;
 }
 
@@ -64,6 +74,12 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
   allergyNotice,
   visitReason = "Первичный осмотр",
   toothCode,
+  totalDueRub,
+  initialDiagnosis = "",
+  initialTreatmentPlan = "",
+  initialPaymentMethod,
+  initialReceiptSheetOpen = false,
+  onSelectPaymentMethod,
   onClose,
   onFinishVisit,
   testId = "mobile-chairside-ehr",
@@ -71,12 +87,13 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
   const [currentStep, setCurrentStep] = useState<EhrStep>("complaints");
   const [complaints, setComplaints] = useState<string>(visitReason);
   const [objectiveExam, setObjectiveExam] = useState<string>("");
-  const [diagnosis, setDiagnosis] = useState<string>("К02.1 Кариес дентина");
-  const [treatmentPlan, setTreatmentPlan] = useState<string>(
-    "Препарирование, медикаментозная обработка, пломбирование светоотверждаемым композитом"
-  );
+  const [diagnosis, setDiagnosis] = useState<string>(initialDiagnosis);
+  const [treatmentPlan, setTreatmentPlan] = useState<string>(initialTreatmentPlan);
   const [isNormApplied, setIsNormApplied] = useState(false);
-  const [isReceiptSheetOpen, setIsReceiptSheetOpen] = useState(false);
+  const [isReceiptSheetOpen, setIsReceiptSheetOpen] = useState(initialReceiptSheetOpen);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<MobilePaymentMethod>(
+    initialPaymentMethod || "sbp"
+  );
 
   // 1-Tap Normal Protocol Fill
   const handleApplyNorm = () => {
@@ -251,6 +268,7 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
                 type="text"
                 value={diagnosis}
                 onChange={(e) => setDiagnosis(e.target.value)}
+                placeholder="Укажите диагноз по МКБ-10..."
                 className="w-full min-h-[44px] px-3.5 text-[15px] font-semibold rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,#0d9488)]"
                 data-testid={`${testId}-diagnosis-input`}
               />
@@ -277,6 +295,7 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
               <textarea
                 value={treatmentPlan}
                 onChange={(e) => setTreatmentPlan(e.target.value)}
+                placeholder="Опишите выполненные манипуляции и план лечения..."
                 className="w-full min-h-[120px] p-3 text-[15px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,#0d9488)] resize-none"
                 data-testid={`${testId}-plan-input`}
               />
@@ -298,7 +317,7 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
       {/* ─── 4. NATURAL THUMB ZONE FLOATING BOTTOM BAR ─── */}
       <MobileFloatingBottomBar
         primaryLabel={
-          currentStep === "plan" ? "Завершить приём и чек (54-ФЗ)" : "Далее к следующему этапу"
+          currentStep === "plan" ? "Завершить приём и чек" : "Далее к следующему этапу"
         }
         primaryIcon={currentStep === "plan" ? <CreditCard size={18} /> : <ArrowRight size={18} />}
         onPrimaryClick={handleNextStep}
@@ -325,6 +344,8 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
                 objectiveExam,
                 diagnosis,
                 treatmentPlan,
+                paymentMethod: selectedPaymentMethod,
+                amountRub: totalDueRub ?? 0,
               });
             }}
             data-testid={`${testId}-confirm-checkout-btn`}
@@ -339,23 +360,53 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
             <div className="text-xs font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
               К оплате по приёму
             </div>
-            <div className="text-3xl font-extrabold text-[var(--ink,#0f172a)] font-mono mt-1">
-              4 500 ₽
+            <div className="text-3xl font-extrabold text-[var(--ink,#0f172a)] font-mono mt-1" data-testid={`${testId}-amount-due`}>
+              {totalDueRub !== undefined && totalDueRub > 0 ? `${totalDueRub.toLocaleString("ru-RU")} ₽` : "0 ₽"}
             </div>
           </div>
 
           <MobileGroupedList label="Способ оплаты">
             <MobileGroupedListItem
               title="СБП (QR-код)"
-              subtitle="Комиссия 0.4%, мгновенно на счет клиники"
-              icon={<Sparkles size={16} />}
-              onClick={() => {}}
+              subtitle={
+                selectedPaymentMethod === "sbp"
+                  ? "✓ Выбрано • Комиссия 0.4%, мгновенно на счет клиники"
+                  : "Комиссия 0.4%, мгновенно на счет клиники"
+              }
+              icon={<Sparkles size={16} className={selectedPaymentMethod === "sbp" ? "text-teal-600 dark:text-teal-400" : ""} />}
+              onClick={() => {
+                triggerHaptic("selection");
+                setSelectedPaymentMethod("sbp");
+                onSelectPaymentMethod?.("sbp");
+              }}
             />
             <MobileGroupedListItem
               title="Банковская карта (POS-терминал)"
-              subtitle="Эквайринг по терминалу у кресла"
-              icon={<CreditCard size={16} />}
-              onClick={() => {}}
+              subtitle={
+                selectedPaymentMethod === "card"
+                  ? "✓ Выбрано • Эквайринг по терминалу у кресла"
+                  : "Эквайринг по терминалу у кресла"
+              }
+              icon={<CreditCard size={16} className={selectedPaymentMethod === "card" ? "text-teal-600 dark:text-teal-400" : ""} />}
+              onClick={() => {
+                triggerHaptic("selection");
+                setSelectedPaymentMethod("card");
+                onSelectPaymentMethod?.("card");
+              }}
+            />
+            <MobileGroupedListItem
+              title="Наличные"
+              subtitle={
+                selectedPaymentMethod === "cash"
+                  ? "✓ Выбрано • Расчет наличными в кассу"
+                  : "Оплата наличными без сдачи"
+              }
+              icon={<CheckCircle2 size={16} className={selectedPaymentMethod === "cash" ? "text-teal-600 dark:text-teal-400" : ""} />}
+              onClick={() => {
+                triggerHaptic("selection");
+                setSelectedPaymentMethod("cash");
+                onSelectPaymentMethod?.("cash");
+              }}
             />
           </MobileGroupedList>
         </div>

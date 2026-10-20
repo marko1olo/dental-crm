@@ -24,7 +24,7 @@ export interface UseDoctorPayrollModalParams {
 
 export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) {
 	const defaultPeriod = useMemo(() => getDefaultPayrollPeriod(), []);
-	const [selectedDoctorId, setSelectedDoctorId] = useState(params.initialDoctorId || params.doctorsList?.[0]?.id || "");
+	const [selectedDoctorId, setSelectedDoctorId] = useState(params.initialDoctorId || "");
 	const [soloSpecialtyId, setSoloSpecialtyId] = useState<string>(() => {
 		if (params.initialDoctorId && params.initialDoctorId !== "solo-doctor") {
 			const matched = SOLO_DOCTOR_SPECIALTY_PRESETS.find((s) => s.specialtyId === params.initialDoctorId);
@@ -60,33 +60,37 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 	};
 
 	const activeDoc = useMemo(() => {
-		if (!params.doctorsList || params.doctorsList.length === 0) {
-			const specId = soloSpecialtyId === "solo-doctor" || !soloSpecialtyId ? DEFAULT_SOLO_DOCTOR.specialtyId : soloSpecialtyId;
-			return { id: DEFAULT_SOLO_DOCTOR.id, name: DEFAULT_SOLO_DOCTOR.name, specialtyId: specId };
+		if (params.doctorsList && params.doctorsList.length > 0) {
+			if (!selectedDoctorId) return null;
+			return params.doctorsList.find((d) => d.id === selectedDoctorId) ?? null;
 		}
-		return params.doctorsList.find((d) => d.id === selectedDoctorId) ?? params.doctorsList[0] ?? null;
-	}, [params.doctorsList, selectedDoctorId, soloSpecialtyId]);
+		if (params.initialDoctorId) {
+			const specId = soloSpecialtyId === "solo-doctor" || !soloSpecialtyId ? DEFAULT_SOLO_DOCTOR.specialtyId : soloSpecialtyId;
+			return { id: params.initialDoctorId, name: DEFAULT_SOLO_DOCTOR.name, specialtyId: specId };
+		}
+		return null;
+	}, [params.doctorsList, selectedDoctorId, params.initialDoctorId, soloSpecialtyId]);
 
 	useEffect(() => {
-		if (!params.isOpen || (params.initialServices && params.initialServices.length > 0)) return;
-		const docId = activeDoc?.id || selectedDoctorId || "doc-1";
+		if (!params.isOpen || !activeDoc?.id || (params.initialServices && params.initialServices.length > 0)) return;
+		const docId = activeDoc.id;
 		let cancelled = false;
 		setIsLoadingEarnings(true);
 		fetchDoctorEarningsApi({ doctorId: docId, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime })
 			.then((items) => { if (!cancelled) { setApiServices(items); setIsLoadingEarnings(false); } })
 			.catch(() => { if (!cancelled) setIsLoadingEarnings(false); });
 		return () => { cancelled = true; };
-	}, [params.isOpen, params.initialServices, activeDoc?.id, selectedDoctorId, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime]);
+	}, [params.isOpen, params.initialServices, activeDoc?.id, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime]);
 
 	const servicesToUse = useMemo(() => {
 		const raw = params.initialServices && params.initialServices.length > 0 ? params.initialServices : apiServices;
-		return activeDoc ? filterServicesForDoctor(raw, activeDoc.id) : raw;
+		return activeDoc ? filterServicesForDoctor(raw, activeDoc.id) : [];
 	}, [params.initialServices, apiServices, activeDoc]);
 
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
 		if (!params.isOpen || !activeDoc) {
 			return {
-				doctorId: activeDoc?.id ?? "", doctorName: activeDoc?.name ?? "Сотрудник не выбран", specialtyTitleRu: "—",
+				doctorId: "", doctorName: "Врач не выбран", specialtyTitleRu: "—",
 				periodLabelRu: `${periodStart} — ${periodEnd}`, totalGrossRevenueKop: 0, totalLabDeductionsKop: 0,
 				totalMaterialDeductionsKop: 0, totalNetBaseKop: 0, baseCommissionPercent: customPercent ?? 0,
 				earnedBaseCommissionKop: 0, kpiBonusPercent: 0, kpiBonusEarnedKop: 0, kpiTierBadgeRu: "—",
@@ -109,7 +113,7 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 	}, [params.isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, params.useClinicalCategoryRates, taxRegime, params.doctorsList, payoutModel, chairRentalMode, chairRentalRub, advanceRub]);
 
 	return {
-		selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
+		activeDoc, selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
 		activeWorkspaceTab, setActiveWorkspaceTab, timesheetState, advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,

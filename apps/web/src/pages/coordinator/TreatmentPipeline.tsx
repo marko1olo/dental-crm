@@ -135,6 +135,38 @@ export const TreatmentPipeline: React.FC = () => {
 		}
 	};
 
+	const staffList = useMemo(() => {
+		const rawStaff = (appLogic?.dashboard?.clinicSettings?.staff as Array<{
+			id: string;
+			fullName?: string;
+			name?: string;
+			role?: string;
+		}>) || [];
+		if (rawStaff.length > 0) {
+			return rawStaff.map((s) => ({
+				id: s.id,
+				name: s.fullName || s.name || "Врач",
+			}));
+		}
+		return doctorOptions;
+	}, [appLogic?.dashboard?.clinicSettings?.staff, doctorOptions]);
+
+	const clinicName = branding.clinicName || appLogic?.dashboard?.organization?.name || "";
+	const clinicLegalName = branding.clinicLegalName || appLogic?.dashboard?.organization?.legalName || clinicName;
+	const clinicInn = branding.clinicInn || appLogic?.dashboard?.organization?.inn || "";
+	const clinicOgrn = branding.clinicOgrn || appLogic?.dashboard?.organization?.ogrn || "";
+	const clinicAddress = branding.clinicAddress || appLogic?.dashboard?.organization?.address || "";
+	const areRequisitesMissing = !clinicInn || !clinicOgrn || !clinicAddress;
+
+	const [presenterDoctorOverride, setPresenterDoctorOverride] = useState<string>("");
+
+	const effectiveDoctorName = useMemo(() => {
+		if (presenterDoctorOverride) return presenterDoctorOverride;
+		if (selectedCardForPresenter?.doctorName) return selectedCardForPresenter.doctorName;
+		if (appLogic?.dashboard?.activeDoctor?.fullName) return appLogic.dashboard.activeDoctor.fullName;
+		return "Врач не назначен";
+	}, [presenterDoctorOverride, selectedCardForPresenter?.doctorName, appLogic?.dashboard?.activeDoctor?.fullName]);
+
 	return (
 		<div className="w-full min-h-screen flex flex-col p-2.5 sm:p-4 space-y-4 overflow-x-hidden bg-[var(--bg)] text-[var(--text)] pb-4 md:pb-6">
 			{/* Top Header & View Mode Switcher / Refresh: Strictly 1 Row */}
@@ -375,34 +407,68 @@ export const TreatmentPipeline: React.FC = () => {
 					: null)}
 
 			{selectedCardForPresenter && (
-				<TreatmentPlanPresenterModal
-					isOpen={Boolean(selectedCardForPresenter)}
-					onClose={() => setSelectedCardForPresenter(null)}
-					patientName={selectedCardForPresenter.patientName}
-					patientId={selectedCardForPresenter.patientId}
-					patientPhone={selectedCardForPresenter.patientPhone || ""}
-					doctorFullName={
-						selectedCardForPresenter.doctorName ||
-						appLogic?.dashboard?.activeDoctor?.fullName ||
-						appLogic?.auth?.currentUser?.name ||
-						"Лечащий врач"
-					}
-					doctorSpecialty={appLogic?.dashboard?.activeDoctor?.specialty || ""}
-					clinicName={branding.clinicName || "Стоматологическая клиника"}
-					clinicLegalName={branding.clinicLegalName || ""}
-					clinicInn={branding.clinicInn || "—"}
-					clinicOgrn={branding.clinicOgrn || "—"}
-					clinicAddress={branding.clinicAddress || "—"}
-					planId={selectedCardForPresenter.id}
-					planCreatedAtIso={selectedCardForPresenter.createdAt}
-					onConfirmSelection={async () => {
-						await fetchPipeline();
-					}}
-					onApproveAndSign={async () => {
-						await fetchPipeline();
-					}}
-					isDemoMode={isDemoShowcaseMode()}
-				/>
+				<>
+					{(areRequisitesMissing || (!selectedCardForPresenter.doctorName && !presenterDoctorOverride)) && (
+						<div
+							className="fixed top-2 left-1/2 -translate-x-1/2 z-[10000] max-w-xl w-[92vw] flex flex-col gap-1.5 p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-500/40 shadow-2xl text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
+							data-testid="pipeline-presenter-warning-bar"
+						>
+							{areRequisitesMissing && (
+								<div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-semibold">
+									<AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+									<span>⚠️ Реквизиты клиники не заполнены в профиле организации (Настройки -&gt; Клиника)</span>
+								</div>
+							)}
+							{(!selectedCardForPresenter.doctorName && !presenterDoctorOverride) && (
+								<div className="flex items-center justify-between gap-2 flex-wrap">
+									<span className="text-amber-800 dark:text-amber-200 font-medium">
+										Врач не назначен для данного плана:
+									</span>
+									<select
+										value={presenterDoctorOverride}
+										onChange={(e) => setPresenterDoctorOverride(e.target.value)}
+										className="h-7 px-2 text-xs rounded-md border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] cursor-pointer"
+										data-testid="pipeline-doctor-assign-select"
+									>
+										<option value="">-- Выбрать врача из персонала --</option>
+										{staffList.map((doc) => (
+											<option key={doc.id} value={doc.name}>
+												{doc.name}
+											</option>
+										))}
+									</select>
+								</div>
+							)}
+						</div>
+					)}
+
+					<TreatmentPlanPresenterModal
+						isOpen={Boolean(selectedCardForPresenter)}
+						onClose={() => {
+							setSelectedCardForPresenter(null);
+							setPresenterDoctorOverride("");
+						}}
+						patientName={selectedCardForPresenter.patientName}
+						patientId={selectedCardForPresenter.patientId}
+						patientPhone={selectedCardForPresenter.patientPhone || ""}
+						doctorFullName={effectiveDoctorName}
+						doctorSpecialty={appLogic?.dashboard?.activeDoctor?.specialty || ""}
+						clinicName={clinicName}
+						clinicLegalName={clinicLegalName}
+						clinicInn={clinicInn}
+						clinicOgrn={clinicOgrn}
+						clinicAddress={clinicAddress}
+						planId={selectedCardForPresenter.id}
+						planCreatedAtIso={selectedCardForPresenter.createdAt}
+						onConfirmSelection={async () => {
+							await fetchPipeline();
+						}}
+						onApproveAndSign={async () => {
+							await fetchPipeline();
+						}}
+						isDemoMode={isDemoShowcaseMode()}
+					/>
+				</>
 			)}
 		</div>
 	);

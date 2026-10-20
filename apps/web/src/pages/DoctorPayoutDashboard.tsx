@@ -13,6 +13,8 @@ import { usePayoutDashboard } from "./payoutDashboard/usePayoutDashboard";
 import { PayoutDashboardHeader } from "./payoutDashboard/PayoutDashboardHeader";
 import { PayoutSummaryCards } from "./payoutDashboard/PayoutSummaryCards";
 import { PayoutDoctorTable } from "./payoutDashboard/PayoutDoctorTable";
+import { useDocumentBrandingStore } from "../store/documentBrandingStore";
+import { useOptionalAppLogicContext } from "../contexts/AppLogicContext";
 
 export type {
 	DoctorPayoutVisitService,
@@ -35,6 +37,14 @@ export {
 
 export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardProps = {}) {
 	const isMobile = useIsMobile(768);
+	const branding = useDocumentBrandingStore((s) => s.branding);
+	const appLogic = useOptionalAppLogicContext();
+	const resolvedClinicName = branding?.clinicName
+		|| branding?.legalEntityName
+		|| appLogic?.dashboard?.organization?.name
+		|| appLogic?.dashboard?.clinicSettings?.clinicName
+		|| "";
+
 	const {
 		month,
 		setMonth,
@@ -64,6 +74,46 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 		setPayrollModalDoctor,
 	} = usePayoutDashboard(initialReport);
 
+	const [isPayrollModalOpen, setIsPayrollModalOpen] = React.useState<boolean>(false);
+
+	const allReportDoctors = React.useMemo(() => {
+		if (!report?.doctors) return [];
+		return report.doctors.map((d) => ({
+			id: d.doctorUserId,
+			name: d.doctorName,
+			specialtyId: mapRoleToSpecialtyId(d.role),
+		}));
+	}, [report?.doctors]);
+
+	React.useEffect(() => {
+		const handleOpenPayroll = (e: Event) => {
+			const customEvent = e as CustomEvent;
+			const passedDoctor = customEvent.detail?.doctor;
+			const passedDoctorId = customEvent.detail?.doctorId;
+
+			if (passedDoctor && (passedDoctor.doctorUserId || passedDoctor.id)) {
+				setPayrollModalDoctor(passedDoctor);
+				setIsPayrollModalOpen(true);
+				return;
+			}
+
+			if (passedDoctorId && report?.doctors) {
+				const found = report.doctors.find((d) => d.doctorUserId === passedDoctorId);
+				if (found) {
+					setPayrollModalDoctor(found);
+					setIsPayrollModalOpen(true);
+					return;
+				}
+			}
+
+			// Если доктор не передан — открываем расчетный лист в честном EmptyState
+			setPayrollModalDoctor(null);
+			setIsPayrollModalOpen(true);
+		};
+		window.addEventListener("dente:open-doctor-payroll", handleOpenPayroll);
+		return () => window.removeEventListener("dente:open-doctor-payroll", handleOpenPayroll);
+	}, [report, setPayrollModalDoctor]);
+
 	// Роль отказала — блока нет вовсе, вместе с заголовком.
 	if (state.kind === "denied") return null;
 
@@ -92,12 +142,34 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 		}
 		return (
 			<>
+				{showDoctorSelectionNotice && (
+					<div
+						className="p-4 mb-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] flex items-center justify-between shadow-sm"
+						role="status"
+						data-testid="payroll-no-doctor-selected-notice"
+					>
+						<div className="flex items-center gap-2">
+							<span className="text-amber-500 font-bold text-base">ℹ</span>
+							<span className="text-sm font-medium">Выберите врача для отображения зарплатной ведомости</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setShowDoctorSelectionNotice(false)}
+							className="text-xs px-2.5 py-1 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+						>
+							Закрыть
+						</button>
+					</div>
+				)}
 				<DoctorPayoutMobileWallet
 					report={report}
 					month={month}
 					onMonthChange={setMonth}
 					onRefresh={() => void load(month)}
-					onOpenPayrollModal={(doc) => setPayrollModalDoctor(doc)}
+					onOpenPayrollModal={(doc) => {
+						setShowDoctorSelectionNotice(false);
+						setPayrollModalDoctor(doc);
+					}}
 					canEditRates={canEditRates}
 					isLoading={state.kind === "loading"}
 				/>
@@ -125,6 +197,25 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 
 	return (
 		<>
+			{showDoctorSelectionNotice && (
+				<div
+					className="p-4 mb-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] flex items-center justify-between shadow-sm"
+					role="status"
+					data-testid="payroll-no-doctor-selected-notice"
+				>
+					<div className="flex items-center gap-2">
+						<span className="text-amber-500 font-bold text-base">ℹ</span>
+						<span className="text-sm font-medium">Выберите врача для отображения зарплатной ведомости</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => setShowDoctorSelectionNotice(false)}
+						className="text-xs px-2.5 py-1 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+					>
+						Закрыть
+					</button>
+				</div>
+			)}
 			<PayoutDashboardHeader
 				month={month}
 				onMonthChange={setMonth}
@@ -156,7 +247,10 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 						onSearchChange={handleSearchChange}
 						visitPages={visitPages}
 						onPageChange={handlePageChange}
-						onOpenPayrollModal={(doc) => setPayrollModalDoctor(doc)}
+						onOpenPayrollModal={(doc) => {
+							setPayrollModalDoctor(doc);
+							setIsPayrollModalOpen(true);
+						}}
 					/>
 
 					<PayoutSummaryCards
@@ -168,22 +262,26 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 				</>
 			) : null}
 
-			{payrollModalDoctor ? (
+			{isPayrollModalOpen ? (
 				<DoctorPayrollModal
-					isOpen={Boolean(payrollModalDoctor)}
-					onClose={() => setPayrollModalDoctor(null)}
-					initialDoctorId={payrollModalDoctor.doctorUserId}
-					initialServices={doctorServicesForPayrollModal(payrollModalDoctor)}
-					initialBasePercentage={payrollModalDoctor.commissionPct ?? undefined}
+					isOpen={isPayrollModalOpen}
+					onClose={() => {
+						setIsPayrollModalOpen(false);
+						setPayrollModalDoctor(null);
+					}}
+					clinicName={resolvedClinicName}
+					initialDoctorId={payrollModalDoctor?.doctorUserId}
+					initialServices={payrollModalDoctor ? doctorServicesForPayrollModal(payrollModalDoctor) : undefined}
+					initialBasePercentage={payrollModalDoctor?.commissionPct ?? undefined}
 					initialPeriodStart={report?.period ? report.period.from.slice(0, 10) : undefined}
 					initialPeriodEnd={report?.period ? report.period.to.slice(0, 10) : undefined}
-					doctorsList={[
+					doctorsList={allReportDoctors.length > 0 ? allReportDoctors : (payrollModalDoctor ? [
 						{
 							id: payrollModalDoctor.doctorUserId,
 							name: payrollModalDoctor.doctorName,
 							specialtyId: mapRoleToSpecialtyId(payrollModalDoctor.role),
 						},
-					]}
+					] : [])}
 				/>
 			) : null}
 		</>

@@ -66,9 +66,9 @@ const EMPTY_PLAN_PAYLOAD: TreatmentPlanValidationPayload = {
 	planNumber: "",
 	planTitle: "План лечения",
 	patientId: "",
-	patientName: "Пациент",
+	patientName: "",
 	doctorId: "",
-	doctorFullName: "Врач",
+	doctorFullName: "",
 	createdAtIso: new Date().toISOString(),
 	items: [],
 };
@@ -258,7 +258,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 		const teeth = payloadItems
 			.map((i) => i.toothNumber)
 			.filter((t): t is number => typeof t === "number" && t > 0);
-		return teeth.length > 0 ? Array.from(new Set(teeth)) : [21];
+		return teeth.length > 0 ? Array.from(new Set(teeth)) : [];
 	}, [planPayload]);
 
 	if (!isOpen) return null;
@@ -318,6 +318,14 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 
 	// Оформление Наряд-заказа
 	const handleGenerateWorkOrder = () => {
+		if (!planPayload || !planPayload.items || planPayload.items.length === 0) {
+			setStatusNotice("Невозможно сформировать наряд ЗТЛ: в плане лечения отсутствуют позиции услуг.");
+			return;
+		}
+		if (!planPayload.patientName?.trim() && !planPayload.patientId) {
+			setStatusNotice("Невозможно сформировать наряд ЗТЛ: не указан пациент.");
+			return;
+		}
 		const exportData = generateWorkOrderExportPayload(report, "work_order");
 		if (onExportWorkOrder) {
 			onExportWorkOrder(exportData);
@@ -330,6 +338,14 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 
 	// Оформление Акта выполненных работ
 	const handleGenerateCompletedAct = () => {
+		if (!planPayload || !planPayload.items || planPayload.items.length === 0) {
+			setStatusNotice("Невозможно сформировать акт: в плане лечения отсутствуют позиции услуг.");
+			return;
+		}
+		if (!planPayload.patientName?.trim() && !planPayload.patientId) {
+			setStatusNotice("Невозможно сформировать акт: не указан пациент.");
+			return;
+		}
 		const exportData = generateWorkOrderExportPayload(
 			report,
 			"completed_works_act",
@@ -354,7 +370,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 				isOpen={isLabOrderModalOpen}
 				onClose={() => setIsLabOrderModalOpen(false)}
 				patientId={planPayload?.patientId || undefined}
-				patientName={planPayload?.patientName || "Пациент"}
+				patientName={planPayload?.patientName || "Пациент не указан"}
 				patientChartNumber={
 					planPayload?.planNumber ||
 					(planPayload?.patientId ? `К-${planPayload.patientId.slice(0, 5)}` : undefined)

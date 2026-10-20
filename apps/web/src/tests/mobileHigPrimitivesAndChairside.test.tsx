@@ -137,7 +137,9 @@ test("Sovereign Mobile Layer — Apple HIG Primitives & Chairside EHR Suite", as
   });
 
   await t.test("7. CSS Token & Invariant Verification: 0px horizontal drift, safe-area-insets, touch targets", () => {
-    const cssPath = path.resolve(process.cwd(), "src/components/mobile/mobileHigPrimitives.css");
+    const candidatePath1 = path.resolve(process.cwd(), "src/components/mobile/mobileHigPrimitives.css");
+    const candidatePath2 = path.resolve(process.cwd(), "apps/web/src/components/mobile/mobileHigPrimitives.css");
+    const cssPath = fs.existsSync(candidatePath1) ? candidatePath1 : candidatePath2;
     const cssContent = fs.readFileSync(cssPath, "utf-8");
 
     // 0px horizontal drift guarantee
@@ -154,5 +156,40 @@ test("Sovereign Mobile Layer — Apple HIG Primitives & Chairside EHR Suite", as
 
     // Dark theme support
     assert.ok(cssContent.includes('[data-theme="dark"]'), "Must support dark theme tokens without glare");
+  });
+
+  await t.test("8. MobileChairsideEHR renders dynamic totalDueRub and interactive payment methods (no hardcoded fallback)", () => {
+    const html = renderToString(
+      <MobileChairsideEHR
+        patientName="Сидоров Алексей Владимирович"
+        patientAge={42}
+        totalDueRub={8200}
+        initialPaymentMethod="sbp"
+        initialReceiptSheetOpen={true}
+        onClose={() => {}}
+        onFinishVisit={() => {}}
+      />
+    );
+
+    assert.ok(html.includes((8200).toLocaleString("ru-RU")) || html.includes("8200"), "Must render dynamic total due");
+    assert.ok(html.includes("СБП (QR-код)"), "Must render SBP payment method");
+    assert.ok(html.includes("Банковская карта (POS-терминал)"), "Must render Card payment method");
+    assert.ok(html.includes("Наличные"), "Must render Cash payment method");
+    assert.ok(html.includes("✓ Выбрано • Комиссия 0.4%"), "Must indicate initial selected payment method");
+  });
+
+  await t.test("9. MobileChairsideEHR initializes with clean empty diagnosis and plan (Mandates 8f, 8am, 8wy)", () => {
+    const html = renderToString(
+      <MobileChairsideEHR
+        patientName="Ковалев Игорь Николаевич"
+        onClose={() => {}}
+        onFinishVisit={() => {}}
+      />
+    );
+
+    // Initial state does not render pre-filled hardcoded "К02.1 Кариес дентина" or pre-filled treatment plan in raw value
+    assert.ok(!html.includes('value="К02.1 Кариес дентина"'), "Must not hardcode diagnosis");
+    assert.ok(!html.includes('value="Препарирование, медикаментозная обработка'), "Must not hardcode treatment plan");
+    assert.ok(html.includes("Ковалев Игорь Николаевич"), "Renders patient name correctly");
   });
 });
