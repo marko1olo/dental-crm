@@ -81,5 +81,9 @@ export const patientRecalls = pgTable(
 		orgPatientIdx: index("idx_patient_recalls_org_patient").on(t.organizationId, t.patientId),
 		statusIdx: index("idx_patient_recalls_status").on(t.organizationId, t.status),
 		dueDateIdx: index("idx_patient_recalls_due_date").on(t.organizationId, t.dueDate),
+		doctorIdIdx: index("idx_patient_recalls_doctor_id").on(t.doctorId),
+		appointmentIdIdx: index("idx_patient_recalls_appointment_id").on(t.appointmentId),
+		scheduledApptIdIdx: index("idx_patient_recalls_scheduled_appt_id").on(t.scheduledAppointmentId),
+		orgCreatedIdx: index("idx_patient_recalls_org_created").on(t.organizationId, t.createdAt),
 	}),
 );

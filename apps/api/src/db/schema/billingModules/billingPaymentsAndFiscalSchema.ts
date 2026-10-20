@@ -151,6 +151,9 @@ export const fiscalReceiptQueue = pgTable(
 		idxFiscalReceiptQueuePaymentId: index(
 			"idx_fiscal_receipt_queue_payment_id",
 		).on(table.paymentId),
+		idxFiscalReceiptQueueVisitId: index(
+			"idx_fiscal_receipt_queue_visit_id",
+		).on(table.visitId),
 	}),
 );
 
@@ -211,6 +214,13 @@ export const digitalReceiptDispatches = pgTable(
 		organizationIdIdx: index(
 			"digital_receipt_dispatches_organizationId_idx",
 		).on(t.organizationId),
+		paymentIdIdx: index("digital_receipt_dispatches_payment_id_idx").on(
+			t.paymentId,
+		),
+		orgCreatedIdx: index("digital_receipt_dispatches_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -266,6 +276,10 @@ export const sberbankTransactions = pgTable(
 		patientIdIdx: index("sberbank_transactions_patient_id_idx").on(
 			t.patientId,
 		),
+		orgCreatedIdx: index("sberbank_transactions_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -293,6 +307,7 @@ export const cashLedger = pgTable(
 	(table) => ({
 		invoiceIdIdx: index("cash_ledger_invoice_id_idx").on(table.invoiceId),
 		timestampIdx: index("cash_ledger_timestamp_idx").on(table.timestamp),
+		operatorIdIdx: index("cash_ledger_operator_id_idx").on(table.operatorId),
 	}),
 );
 
@@ -329,6 +344,17 @@ export const cashShifts = pgTable(
 			table.organizationId,
 		),
 		statusIdx: index("cash_shifts_status_idx").on(table.status),
+		orgStatusIdx: index("cash_shifts_org_status_idx").on(
+			table.organizationId,
+			table.status,
+		),
+		openedByUserIdIdx: index("cash_shifts_opened_by_user_id_idx").on(
+			table.openedByUserId,
+		),
+		orgOpenedAtIdx: index("cash_shifts_org_opened_at_idx").on(
+			table.organizationId,
+			table.openedAt,
+		),
 	}),
 );
 

@@ -184,6 +184,16 @@ export const documentSignatures = pgTable(
 			t.organizationId,
 			t.documentId,
 		),
+		patientIdIdx: index("doc_signatures_patient_id_idx").on(t.patientId),
+		documentIdIdx: index("doc_signatures_doc_id_idx").on(t.documentId),
+		orgCreatedIdx: index("doc_signatures_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		orgPatientIdx: index("doc_signatures_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
 	}),
 );
 

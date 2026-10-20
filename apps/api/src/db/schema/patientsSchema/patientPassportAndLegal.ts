@@ -163,5 +163,14 @@ export const patientArchiveReasonsAndBlacklists = pgTable(
 		organizationIdIdx: index(
 			"patient_archive_reasons_and_blacklists_organizationId_idx",
 		).on(t.organizationId),
+		patientIdIdx: index(
+			"patient_archive_reasons_and_blacklists_patient_id_idx",
+		).on(t.patientId),
+		orgPatientIdx: index(
+			"patient_archive_reasons_and_blacklists_org_patient_idx",
+		).on(t.organizationId, t.patientId),
+		orgBlacklistedIdx: index(
+			"patient_archive_reasons_and_blacklists_org_blacklisted_idx",
+		).on(t.organizationId, t.isBlacklisted),
 	}),
 );

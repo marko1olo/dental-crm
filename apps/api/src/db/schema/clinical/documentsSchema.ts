@@ -122,6 +122,18 @@ export const generatedDocuments = pgTable(
 			voidedByUserIdIdx: index("generated_documents_voided_by_idx").on(
 				table.voidedByUserId,
 			),
+			orgStatusIdx: index("generated_documents_org_status_idx").on(
+				table.organizationId,
+				table.status,
+			),
+			orgCreatedIdx: index("generated_documents_org_created_idx").on(
+				table.organizationId,
+				table.createdAt,
+			),
+			orgKindIdx: index("generated_documents_org_kind_idx").on(
+				table.organizationId,
+				table.kind,
+			),
 		};
 	},
 );
@@ -161,6 +173,11 @@ export const egiszBlankPermissions = pgTable(
 	(t) => ({
 		organizationIdIdx: index("egisz_blank_permissions_organizationId_idx").on(
 			t.organizationId,
+		),
+		doctorIdIdx: index("egisz_blank_permissions_doctor_id_idx").on(t.doctorId),
+		orgDoctorIdx: index("egisz_blank_permissions_org_doctor_idx").on(
+			t.organizationId,
+			t.doctorId,
 		),
 	}),
 );
@@ -209,6 +226,14 @@ export const egiszLogs = pgTable(
 		),
 		patientIdIdx: index("egisz_logs_patientId_idx").on(t.patientId),
 		visitIdIdx: index("egisz_logs_visitId_idx").on(t.visitId),
+		orgCreatedIdx: index("egisz_logs_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		orgStatusIdx: index("egisz_logs_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
 	}),
 );
 
@@ -291,6 +316,12 @@ export const egiszOutbox = pgTable(
 			t.patientId,
 		),
 		visitIdx: index("egisz_outbox_visit_idx").on(t.organizationId, t.visitId),
+		doctorIdIdx: index("egisz_outbox_doctor_id_idx").on(t.doctorId),
+		documentIdIdx: index("egisz_outbox_document_id_idx").on(t.documentId),
+		orgCreatedIdx: index("egisz_outbox_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -479,6 +510,18 @@ export const electronicPrescriptions = pgTable(
 			t.organizationId,
 			t.prescriptionNumber,
 		),
+		visitIdIdx: index("prescriptions_visit_id_idx").on(t.visitId),
+		prescribingDoctorIdIdx: index("prescriptions_doctor_id_idx").on(
+			t.prescribingDoctorId,
+		),
+		orgStatusIdx: index("prescriptions_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedIdx: index("prescriptions_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -513,6 +556,9 @@ export const electronicPrescriptionItems = pgTable(
 		orgPrescriptionIdx: index("prescription_items_org_presc_idx").on(
 			t.organizationId,
 			t.prescriptionId,
+		),
+		catalogDrugIdIdx: index("prescription_items_catalog_drug_id_idx").on(
+			t.catalogDrugId,
 		),
 	}),
 );

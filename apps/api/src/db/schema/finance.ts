@@ -199,6 +199,17 @@ export const cashOperations = pgTable(
 			t.cashBoxId,
 			t.createdAt,
 		),
+		invoiceIdIdx: index("cash_operations_invoice_id_idx").on(t.invoiceId),
+		operatorIdIdx: index("cash_operations_operator_id_idx").on(t.operatorId),
+		labOrderIdIdx: index("cash_operations_lab_order_id_idx").on(t.labOrderId),
+		orgPatientIdx: index("cash_operations_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		orgOpTypeIdx: index("cash_operations_org_op_type_idx").on(
+			t.organizationId,
+			t.operationType,
+		),
 	}),
 );
 
@@ -242,6 +253,18 @@ export const installmentContracts = pgTable(
 		patientIdx: index("installment_contracts_patient_idx").on(t.patientId),
 		statusIdx: index("installment_contracts_status_idx").on(t.status),
 		treatmentPlanIdx: index("installment_contracts_treatment_plan_idx").on(t.treatmentPlanId),
+		orgPatientIdx: index("installment_contracts_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		orgStatusIdx: index("installment_contracts_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedAtIdx: index("installment_contracts_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -274,6 +297,12 @@ export const installmentTranches = pgTable(
 		orgIdx: index("installment_tranches_org_idx").on(t.organizationId),
 		statusIdx: index("installment_tranches_status_idx").on(t.status),
 		dueDateIdx: index("installment_tranches_due_date_idx").on(t.dueDate),
+		cashOpIdx: index("installment_tranches_cash_op_idx").on(t.cashOperationId),
+		orgStatusDueIdx: index("installment_tranches_org_status_due_idx").on(
+			t.organizationId,
+			t.status,
+			t.dueDate,
+		),
 	}),
 );
 
@@ -344,5 +373,13 @@ export const doctorPayrollStatements = pgTable(
 		orgIdx: index("doctor_payroll_statements_org_idx").on(t.organizationId),
 		doctorIdx: index("doctor_payroll_statements_doctor_idx").on(t.doctorId),
 		periodIdx: index("doctor_payroll_statements_period_idx").on(t.period),
+		orgPeriodIdx: index("doctor_payroll_statements_org_period_idx").on(
+			t.organizationId,
+			t.period,
+		),
+		orgDoctorIdx: index("doctor_payroll_statements_org_doctor_idx").on(
+			t.organizationId,
+			t.doctorId,
+		),
 	}),
 );

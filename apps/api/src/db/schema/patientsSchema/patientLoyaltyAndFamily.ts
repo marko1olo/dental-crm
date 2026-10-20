@@ -58,6 +58,10 @@ export const familyGroups = pgTable(
 		organizationIdIdx: index("family_groups_organizationId_idx").on(
 			t.organizationId,
 		),
+		headPatientIdx: index("family_groups_head_patient_idx").on(t.headPatientId),
+		primaryPatientIdx: index("family_groups_primary_patient_idx").on(
+			t.primaryPatientId,
+		),
 	}),
 );
 
@@ -249,6 +253,16 @@ export const bonusTransactions = pgTable(
 		mutationIdx: uniqueIndex("bonus_tx_org_mutation_unique").on(
 			t.organizationId,
 			t.clientMutationId,
+		),
+		relatedPaymentIdx: index("bonus_tx_related_payment_idx").on(
+			t.relatedPaymentId,
+		),
+		relatedInvoiceIdx: index("bonus_tx_related_invoice_idx").on(
+			t.relatedInvoiceId,
+		),
+		orgCreatedIdx: index("bonus_tx_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );
@@ -486,6 +500,15 @@ export const giftCertificates = pgTable(
 		recipientIdx: index("idx_gift_certificates_org_recipient").on(
 			t.organizationId,
 			t.recipientPatientId,
+		),
+		paymentIdx: index("idx_gift_certificates_payment").on(t.relatedPaymentId),
+		orgStatusIdx: index("idx_gift_certificates_org_status").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedIdx: index("idx_gift_certificates_org_created").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );

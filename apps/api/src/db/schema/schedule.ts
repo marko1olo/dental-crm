@@ -98,6 +98,9 @@ export const appointments = pgTable(
 				table.assistantUserId,
 			),
 			chairIdIdx: index("appointments_chair_id_idx").on(table.chairId),
+			parentAppointmentIdIdx: index(
+				"appointments_parent_appointment_id_idx",
+			).on(table.parentAppointmentId),
 			timeOrderCheck: check(
 				"appointments_time_order_check",
 				sql`${table.startsAt} < ${table.endsAt}`,
@@ -155,6 +158,12 @@ export const quickAppointmentConfirmations = pgTable(
 		organizationIdIdx: index(
 			"quick_appointment_confirmations_organizationId_idx",
 		).on(t.organizationId),
+		appointmentIdIdx: index(
+			"quick_appointment_confirmations_appointment_id_idx",
+		).on(t.appointmentId),
+		orgCreatedIdx: index(
+			"quick_appointment_confirmations_org_created_idx",
+		).on(t.organizationId, t.confirmedAt),
 	}),
 );
 

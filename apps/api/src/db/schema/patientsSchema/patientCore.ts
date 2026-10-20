@@ -107,6 +107,12 @@ export const patientDuplicateMergeQueues = pgTable(
 		organizationIdIdx: index(
 			"patient_duplicate_merge_queues_organizationId_idx",
 		).on(t.organizationId),
+		sourceIdx: index("patient_dup_merge_src_idx").on(t.sourcePatientId),
+		targetIdx: index("patient_dup_merge_tgt_idx").on(t.targetPatientId),
+		orgStatusIdx: index("patient_dup_merge_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
 	}),
 );
 
@@ -149,6 +155,18 @@ export const patientTaskTickets = pgTable(
 		patientIdIdx: index("patient_task_tickets_patient_id_idx").on(t.patientId),
 		assignedToIdIdx: index("patient_task_tickets_assigned_to_id_idx").on(
 			t.assignedToId,
+		),
+		orgPatientIdx: index("patient_task_tickets_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		orgStatusIdx: index("patient_task_tickets_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedIdx: index("patient_task_tickets_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );

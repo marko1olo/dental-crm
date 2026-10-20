@@ -32,5 +32,8 @@ export function getPatientTableIndexes(table: any) {
 		idxPatientsFamilyGroup: index("idx_patients_family_group_id").on(
 			table.familyGroupId,
 		),
+		idxPatientsMergedInto: index("idx_patients_merged_into").on(
+			table.mergedIntoPatientId,
+		),
 	};
 }
