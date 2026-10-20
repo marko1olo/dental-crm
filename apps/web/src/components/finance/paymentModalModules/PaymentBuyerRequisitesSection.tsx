@@ -1,16 +1,19 @@
-import React from "react";
 import { ShieldCheck, User } from "lucide-react";
+import type React from "react";
 import type { PaymentLogicResult } from "./types.js";
 
 export interface PaymentBuyerRequisitesSectionProps {
 	readonly tendersHook: PaymentLogicResult["tendersHook"];
 }
 
-export const PaymentBuyerRequisitesSection: React.FC<PaymentBuyerRequisitesSectionProps> = ({
-	tendersHook,
-}) => {
+export const PaymentBuyerRequisitesSection: React.FC<
+	PaymentBuyerRequisitesSectionProps
+> = ({ tendersHook }) => {
 	return (
-		<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payer-type-section">
+		<div
+			className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs"
+			data-testid="payer-type-section"
+		>
 			<div className="flex gap-2">
 				<button
 					type="button"
@@ -50,7 +53,7 @@ export const PaymentBuyerRequisitesSection: React.FC<PaymentBuyerRequisitesSecti
 					title="ИНН с пациентов-физлиц не требуется"
 				>
 					<ShieldCheck size={12} className="inline mr-1 text-emerald-600" />
-					Для физлиц не требуется
+					По 54-ФЗ для физлиц не требуется
 				</span>
 			</div>
 

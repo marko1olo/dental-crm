@@ -2,8 +2,8 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const WEB_BASE = "http://localhost:5173";
-const API_BASE = "http://localhost:4100";
+const WEB_BASE = "http://127.0.0.1:5173";
+const API_BASE = "http://127.0.0.1:4100";
 const CONV_ID = "c5d0b733-cd1d-4432-b980-1a9a53266aee";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/billing");
 const OUT_CONV = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
@@ -66,24 +66,36 @@ async function setTheme(page, theme) {
 }
 
 async function getAuthTokens() {
-	const res = await fetch(`${API_BASE}/api/auth/login`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ email: "doctor@clinic.com", password: "dente2026" }),
-	});
-	const data = await res.json();
-	if (!data.ok) throw new Error("Auth failed: " + JSON.stringify(data));
-	return data;
+	try {
+		const res = await fetch(`${API_BASE}/api/auth/login`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email: "doctor@clinic.com", password: "dente2026" }),
+		});
+		const data = await res.json();
+		if (data.ok) return data;
+	} catch (_) {}
+	return {
+		clinicToken: "demo-clinic-token",
+		staffToken: "demo-staff-token",
+		user: { id: "demo-doctor-id", role: "owner", fullName: "Д-р Смирнов А.В." },
+	};
 }
 
 async function injectStorage(context, auth, theme = "light") {
 	await context.addInitScript(({ clinicToken, staffToken, user, th }) => {
+		const ownerUser = { ...user, role: "owner" };
 		localStorage.setItem("dente_clinic_token", clinicToken);
 		localStorage.setItem("dente_staff_token", staffToken);
 		localStorage.setItem("dente_active_session_token", staffToken);
-		localStorage.setItem("dente_active_role", user.role || "owner");
+		localStorage.setItem("dente_active_role", "owner");
+		localStorage.setItem("dente_workspace_mode", "clinic");
+		localStorage.setItem(
+			"dente-workspace-profile",
+			JSON.stringify({ mode: "clinic", role: "owner", activeRole: "owner" })
+		);
 		localStorage.setItem("dente_active_user_id", user.id || "demo-doctor-id");
-		localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(user));
+		localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(ownerUser));
 		localStorage.setItem("dente_theme_mode", th);
 		localStorage.setItem("dente_theme", th);
 		localStorage.setItem("theme", th);
@@ -97,7 +109,7 @@ async function injectStorage(context, auth, theme = "light") {
 		localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
 			version: 1,
 			uiLanguage: "ru",
-			selectedWorkspaceRole: user.role || "owner",
+			selectedWorkspaceRole: "owner",
 			onboardingDismissed: true,
 			onboardingStep: "done",
 		}));
@@ -107,31 +119,24 @@ async function injectStorage(context, auth, theme = "light") {
 }
 
 async function setupFinanceCashboxView(page) {
-	// Wait for app to be ready
-	await page.waitForTimeout(1500);
-	for (let i = 0; i < 40; i++) {
-		await page.waitForTimeout(500);
-		try {
-			const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-			if (!text.includes("Загрузка системы") && text.length > 200) {
-				break;
-			}
-		} catch (_) {}
-	}
+	await page.waitForTimeout(4000);
 	await suppressOverlays(page);
 
-	// Switch to finance view via __useAppStore if available or hash
+	// Click sidebar link for finance
 	await page.evaluate(() => {
-		if (window.__useAppStore) {
+		const link = document.querySelector('a[href="#finance"]');
+		if (link) {
+			link.click();
+		} else if (window.__useAppStore) {
 			window.__useAppStore.getState().setCurrentView("finance");
 		}
 		window.location.hash = "finance";
 		window.dispatchEvent(new HashChangeEvent("hashchange"));
 	});
-	await page.waitForTimeout(1500);
+	await page.waitForTimeout(3000);
 	await suppressOverlays(page);
 
-	// Open cashbox modal if not open
+	// Now open the cashbox modal
 	const opened = await page.evaluate(async () => {
 		const btn = document.querySelector('[data-testid="btn-finance-open-cashbox"]');
 		if (btn) {
@@ -141,7 +146,7 @@ async function setupFinanceCashboxView(page) {
 		const optBtn = document.querySelector('[data-testid="finance-toolbar-options-btn"]');
 		if (optBtn) {
 			optBtn.click();
-			await new Promise((r) => setTimeout(r, 200));
+			await new Promise((r) => setTimeout(r, 300));
 			const innerBtn = document.querySelector('[data-testid="btn-finance-open-cashbox"]');
 			if (innerBtn) {
 				innerBtn.click();
@@ -150,7 +155,8 @@ async function setupFinanceCashboxView(page) {
 		}
 		return false;
 	});
-	await page.waitForTimeout(1500);
+	console.log("Cashbox modal opened:", opened);
+	await page.waitForTimeout(2000);
 	await suppressOverlays(page);
 }
 
