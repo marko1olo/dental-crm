@@ -2,18 +2,31 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 import path from "node:path";
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
-import { SCAN_MIME_TYPES } from "../../services/labScanDirectUpload.js";
+import {
+	ALLOWED_SCAN_EXTENSIONS,
+	MAX_SCAN_FILE_SIZE_BYTES,
+	SCAN_MIME_TYPES,
+} from "../../services/labScanDirectUpload.js";
 
 const BASE_STORAGE_DIR = path.resolve(process.cwd(), ".data", "lab_scans");
 
 /**
  * Безопасное разрешение пути к файлу 3D-скана в локальном офлайн-хранилище (.data/lab_scans/)
- * с защитой от Path Traversal.
+ * с защитой от Path Traversal, изоляцией организации и проверкой расширения.
  */
 export function resolveSafeStoragePath(key: string): string | null {
 	if (!key || typeof key !== "string") return null;
 	// Строгий запрет на попытки Path Traversal и абсолютные пути
 	if (key.includes("..") || key.includes("\\") || path.isAbsolute(key)) {
+		return null;
+	}
+	// Изоляция организации: ключ ОБЯЗАН начинаться с префикса org_<id>/
+	if (!/^org_[a-zA-Z0-9_-]+\//.test(key)) {
+		return null;
+	}
+	// Валидация расширения файла (только стоматологические 3D форматы: stl, ply, obj, dcm, zip)
+	const extMatch = /\.([a-zA-Z0-9]+)$/.exec(key);
+	if (!extMatch || !ALLOWED_SCAN_EXTENSIONS.has(extMatch[1].toLowerCase())) {
 		return null;
 	}
 	const fullPath = path.resolve(BASE_STORAGE_DIR, key);
@@ -25,7 +38,7 @@ interface MockStorageQuery {
 	key?: string;
 }
 
-export const registerPortalMockStorageRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
+export async function registerPortalMockStorageRoutes(server: FastifyInstance): Promise<void> {
 	// Добавляем парсер двоичных данных для стоматологических форматов 3D сканов
 	for (const ct of [
 		"application/octet-stream",
@@ -55,7 +68,23 @@ export const registerPortalMockStorageRoutes: FastifyPluginAsync = async (server
 
 		const fullPath = resolveSafeStoragePath(key);
 		if (!fullPath) {
-			return reply.status(400).send({ error: "Недопустимый ключ хранилища (Path Traversal запрещен)" });
+			return reply.status(400).send({ error: "Недопустимый ключ хранилища (Path Traversal запрещен, требуется формат org_<id>/... и расширение STL/PLY/OBJ/DCM/ZIP)" });
+		}
+
+		// Изоляция организации: проверка соответствия ключа вызывающей организации
+		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
+		const callerOrg = (request as any).tenantId || (request as any).organizationId || orgHeader;
+		if (callerOrg && typeof callerOrg === "string") {
+			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
+			const keyOrg = key.split("/")[0];
+			if (keyOrg !== cleanOrg) {
+				return reply.status(403).send({ error: "Доступ к хранилищу другой организации запрещен" });
+			}
+		}
+
+		// Проверка размера буфера в памяти
+		if (Buffer.isBuffer(request.body) && request.body.length > MAX_SCAN_FILE_SIZE_BYTES) {
+			return reply.status(413).send({ error: "Размер файла превышает допустимый лимит 500 МБ" });
 		}
 
 		try {
@@ -77,6 +106,11 @@ export const registerPortalMockStorageRoutes: FastifyPluginAsync = async (server
 				bytesWritten = stat.size;
 			} else {
 				return reply.status(400).send({ error: "Отсутствует тело файла для загрузки" });
+			}
+
+			if (bytesWritten > MAX_SCAN_FILE_SIZE_BYTES) {
+				await fs.promises.unlink(fullPath).catch(() => {});
+				return reply.status(413).send({ error: "Размер файла превышает допустимый лимит 500 МБ" });
 			}
 
 			return reply.status(200).send({
@@ -107,6 +141,17 @@ export const registerPortalMockStorageRoutes: FastifyPluginAsync = async (server
 		const fullPath = resolveSafeStoragePath(key);
 		if (!fullPath) {
 			return reply.status(400).send({ error: "Недопустимый ключ хранилища" });
+		}
+
+		// Изоляция организации: проверка соответствия ключа вызывающей организации
+		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
+		const callerOrg = (request as any).tenantId || (request as any).organizationId || orgHeader;
+		if (callerOrg && typeof callerOrg === "string") {
+			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
+			const keyOrg = key.split("/")[0];
+			if (keyOrg !== cleanOrg) {
+				return reply.status(403).send({ error: "Доступ к скачиванию скана другой организации запрещен" });
+			}
 		}
 
 		if (!fs.existsSync(fullPath)) {

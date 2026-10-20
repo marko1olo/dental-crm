@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { isPrimaryTooth } from "@dental/shared";
 import {
 	AlertTriangle,
 	Camera,
@@ -10,20 +10,21 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import {
-	ToothMolar,
-	ToothCaries,
-	ToothPulpitis,
-	EndoFileCanal,
-	DentalCrown,
-	DentalImplant,
-	ToothExtractForceps,
-	ToothDeciduous,
-	DentalHandpiece,
-} from "../icons/DentalIcons";
-import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
+import type React from "react";
+import { useState } from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
-import { isPrimaryTooth } from "@dental/shared";
+import {
+	DentalCrown,
+	DentalHandpiece,
+	DentalImplant,
+	EndoFileCanal,
+	ToothCaries,
+	ToothDeciduous,
+	ToothExtractForceps,
+	ToothMolar,
+	ToothPulpitis,
+} from "../icons/DentalIcons";
+import { TOOTH_STATE_LABELS, type ToothState } from "./ToothChart";
 import type { RadialMenuItem } from "./ToothRadialMenu";
 
 export interface ToothRadialMobileSheetProps {
@@ -55,7 +56,10 @@ export interface ToothRadialMobileSheetProps {
 	onOpenTherapy?: (() => void) | undefined;
 	onAddToInvoice?: (() => void) | undefined;
 	onOpenEndo?: (() => void) | undefined;
-	toothScanThumbnail?: { id: string; url: string; title: string } | null | undefined;
+	toothScanThumbnail?:
+		| { id: string; url: string; title: string }
+		| null
+		| undefined;
 	onOpenRvg?: (() => void) | undefined;
 	onClose: () => void;
 }
@@ -89,7 +93,14 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 	const [isSecondaryOpen, setIsSecondaryOpen] = useState(false);
 
 	// The 6 Core Clinical Statuses for fast 1-click execution in chairside gloved hand
-	const core6Ids = ["healthy", "caries", "filled", "pulpitis", "crown", "missing"];
+	const core6Ids = [
+		"healthy",
+		"caries",
+		"filled",
+		"pulpitis",
+		"crown",
+		"missing",
+	];
 	const primaryItems = items.filter((it) => core6Ids.includes(it.id));
 	const secondaryItems = items.filter((it) => !core6Ids.includes(it.id));
 
@@ -101,9 +112,12 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 			onTouchEnd={handleSheetTouchEnd}
 			style={{
 				transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined,
-				transition: isDraggingSheet ? "none" : "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+				transition: isDraggingSheet
+					? "none"
+					: "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
 				touchAction: "pan-y",
-				paddingBottom: "max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)))",
+				paddingBottom:
+					"max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)))",
 			}}
 			className="radial-mobile-sheet w-full max-w-xl mx-auto bg-[var(--paper)] border-t border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl p-4 sm:p-5 flex flex-col gap-3 max-h-[88vh] overflow-y-auto animate-slideUp select-none text-[var(--ink)]"
 			role="dialog"
@@ -127,7 +141,10 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							{getToothFolkAndAnatomicalNameRu(toothNumber)}
 						</span>
 						<span className="text-xs text-[var(--muted)]">
-							Текущий: <strong className="text-[var(--ink)]">{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}</strong>
+							Текущий:{" "}
+							<strong className="text-[var(--ink)]">
+								{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}
+							</strong>
 						</span>
 					</div>
 				</div>
@@ -150,7 +167,9 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							Поверхности (1 тап):
 						</span>
 						<span className="text-[11px] font-mono font-bold text-[var(--teal)]">
-							{selectedSurfaces.length > 0 ? selectedSurfaces.join("") : "вся коронка"}
+							{selectedSurfaces.length > 0
+								? selectedSurfaces.join("")
+								: "вся коронка"}
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
@@ -160,9 +179,21 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							{ label: "D", surfs: ["D"], title: "Дистальная" },
 							{ label: "V", surfs: ["V"], title: "Вестибулярная" },
 							{ label: "L", surfs: ["L"], title: "Язычная" },
-							{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная" },
-							{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная" },
-							{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная" },
+							{
+								label: "MOD",
+								surfs: ["M", "O", "D"],
+								title: "Медиально-окклюзионно-дистальная",
+							},
+							{
+								label: "MO",
+								surfs: ["M", "O"],
+								title: "Медиально-окклюзионная",
+							},
+							{
+								label: "OD",
+								surfs: ["O", "D"],
+								title: "Окклюзионно-дистальная",
+							},
 						].map((chip) => {
 							const isMatch =
 								chip.surfs.length === selectedSurfaces.length &&
@@ -217,8 +248,12 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							data-testid={`radial-btn-${item.id}`}
 						>
 							<div className="flex items-center gap-2 min-w-0">
-								<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-								<span className="text-xs sm:text-sm font-extrabold truncate">{item.shortLabel}</span>
+								<span className="shrink-0 flex items-center justify-center">
+									{item.icon}
+								</span>
+								<span className="text-xs sm:text-sm font-extrabold truncate">
+									{item.shortLabel}
+								</span>
 							</div>
 							<span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold shrink-0 border border-[var(--line-subtle)]">
 								{item.hotkey}
@@ -237,9 +272,15 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 				>
 					<span className="flex items-center gap-1.5">
 						<span>Другие статусы и классификации</span>
-						<span className="text-[10px] text-[var(--muted)] font-normal">(Периодонтит, Имплант, Корень, Блэк)</span>
+						<span className="text-[10px] text-[var(--muted)] font-normal">
+							(Периодонтит, Имплант, Корень, Блэк)
+						</span>
 					</span>
-					{isSecondaryOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+					{isSecondaryOpen ? (
+						<ChevronUp size={16} />
+					) : (
+						<ChevronDown size={16} />
+					)}
 				</button>
 
 				{isSecondaryOpen && (
@@ -256,7 +297,9 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 											if (item.state) {
 												handleSelectStateWithHaptic(
 													item.state,
-													selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+													selectedSurfaces.length > 0
+														? selectedSurfaces
+														: surfaces,
 												);
 											}
 										}}
@@ -270,7 +313,9 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 									>
 										<div className="flex items-center gap-1.5 min-w-0">
 											<span className="shrink-0">{item.icon}</span>
-											<span className="text-xs truncate font-bold">{item.shortLabel}</span>
+											<span className="text-xs truncate font-bold">
+												{item.shortLabel}
+											</span>
 										</div>
 										<span className="text-[9px] px-1 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold">
 											{item.hotkey}
@@ -282,18 +327,52 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 
 						{/* Black Classes I - VI (>= 44px Touch Targets) */}
 						<div className="flex items-center justify-between pt-1 border-t border-[var(--line-subtle)]">
-							<span className="text-[11px] uppercase font-black text-amber-700 dark:text-amber-400 px-0.5 shrink-0">Классы по Блэку:</span>
+							<span className="text-[11px] uppercase font-black text-amber-700 dark:text-amber-400 px-0.5 shrink-0">
+								Классы по Блэку:
+							</span>
 						</div>
 						<div className="grid grid-cols-4 gap-1.5 w-full">
 							{[
-								{ label: "I: O", surfs: ["O"], title: "I класс: Окклюзионные фиссуры (O)" },
-								{ label: "II: MOD", surfs: ["M", "O", "D"], title: "II класс: Медиально-окклюзионно-дистальная (MOD)" },
-								{ label: "II: MO", surfs: ["M", "O"], title: "II класс: Медиально-окклюзионная (MO)" },
-								{ label: "II: OD", surfs: ["O", "D"], title: "II класс: Окклюзионно-дистальная (OD)" },
-								{ label: "III: M/D", surfs: ["M", "D"], title: "III класс: Апроксимальные поверхности резцов (M/D)" },
-								{ label: "IV: Реж", surfs: ["M", "O", "D"], title: "IV класс: Режущий край (MOD)" },
-								{ label: "V: Приш", surfs: ["C"], title: "V класс: Пришеечная полость (C)" },
-								{ label: "VI: Бугры", surfs: ["O"], title: "VI класс: Бугры моляров (O)" },
+								{
+									label: "I: O",
+									surfs: ["O"],
+									title: "I класс: Окклюзионные фиссуры (O)",
+								},
+								{
+									label: "II: MOD",
+									surfs: ["M", "O", "D"],
+									title: "II класс: Медиально-окклюзионно-дистальная (MOD)",
+								},
+								{
+									label: "II: MO",
+									surfs: ["M", "O"],
+									title: "II класс: Медиально-окклюзионная (MO)",
+								},
+								{
+									label: "II: OD",
+									surfs: ["O", "D"],
+									title: "II класс: Окклюзионно-дистальная (OD)",
+								},
+								{
+									label: "III: M/D",
+									surfs: ["M", "D"],
+									title: "III класс: Апроксимальные поверхности резцов (M/D)",
+								},
+								{
+									label: "IV: Реж",
+									surfs: ["M", "O", "D"],
+									title: "IV класс: Режущий край (MOD)",
+								},
+								{
+									label: "V: Приш",
+									surfs: ["C"],
+									title: "V класс: Пришеечная полость (C)",
+								},
+								{
+									label: "VI: Бугры",
+									surfs: ["O"],
+									title: "VI класс: Бугры моляров (O)",
+								},
 							].map((blk) => (
 								<button
 									key={blk.label}
@@ -332,7 +411,11 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							<button
 								type="button"
 								onClick={() => {
-									onSelectState("Filled", selectedSurfaces.length > 0 ? selectedSurfaces : surfaces, "defective_filling");
+									onSelectState(
+										"Filled",
+										selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+										"defective_filling",
+									);
 									onClose();
 								}}
 								className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-black bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 transition-all cursor-pointer border border-amber-500/25 touch-manipulation text-center"
@@ -356,7 +439,11 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 							<button
 								type="button"
 								onClick={() => {
-									onSelectState("Caries", selectedSurfaces.length > 0 ? selectedSurfaces : ["V"], "hypoplasia_fluorosis");
+									onSelectState(
+										"Caries",
+										selectedSurfaces.length > 0 ? selectedSurfaces : ["V"],
+										"hypoplasia_fluorosis",
+									);
 									onClose();
 								}}
 								className="min-h-[44px] px-2 py-1 rounded-lg text-[11px] font-black bg-sky-500/10 text-sky-900 dark:text-sky-200 hover:bg-sky-500/20 transition-all cursor-pointer border border-sky-500/25 touch-manipulation text-center"
@@ -398,7 +485,9 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 			{isPrimary && (
 				<div className="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
 					<div className="flex items-center justify-between">
-						<span className="text-[11px] uppercase font-black text-purple-700 dark:text-purple-400 px-1 shrink-0">Резорбция корней:</span>
+						<span className="text-[11px] uppercase font-black text-purple-700 dark:text-purple-400 px-1 shrink-0">
+							Резорбция корней:
+						</span>
 						<span className="text-[11px] text-[var(--muted)]">0–100%</span>
 					</div>
 					<div className="grid grid-cols-4 gap-1.5 w-full">
@@ -451,10 +540,18 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 			)}
 
 			{/* IROPZ warning */}
-			{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+			{(Boolean(iropz && iropz > 0.6) ||
+				currentState === "Pulpitis" ||
+				currentState === "Periodontitis") && (
 				<div className="flex items-center gap-2 bg-amber-500/15 text-amber-900 dark:text-amber-200 p-2.5 rounded-xl border border-amber-500/30 text-xs font-bold">
-					<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-					<span>ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка Z51.8)</span>
+					<AlertTriangle
+						size={16}
+						className="text-amber-600 dark:text-amber-400 shrink-0"
+					/>
+					<span>
+						ИРОПЗ &gt; 0.6: Рекомендовано ортопедическое восстановление (коронка
+						Z51.8)
+					</span>
 				</div>
 			)}
 
@@ -469,7 +566,11 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 								onClose();
 							}}
 							className="flex-1 min-h-[48px] min-w-[48px] py-2.5 px-3 rounded-xl text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-							title={toothScanThumbnail ? "Посмотреть снимок RVG" : "Захват снимка визиографа (RVG)"}
+							title={
+								toothScanThumbnail
+									? "Посмотреть снимок RVG"
+									: "Захват снимка визиографа (RVG)"
+							}
 						>
 							{toothScanThumbnail ? (
 								<span className="flex items-center gap-1.5 font-bold">

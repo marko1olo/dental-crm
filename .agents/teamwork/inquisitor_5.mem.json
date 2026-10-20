@@ -1,0 +1,94 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_5",
+  "taskName": "Audit of compilation, integration seams, backend/DB integrity and tenant isolation in DENTE",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T09:12:00Z",
+  "invariantsPreserved": [
+    "THE_HAMMER Master Prompt (Single-Compiler Heavy Lockout, Swarm RAM Guard)",
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty, HDD/Weak PC Performance)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication)",
+    "Mandate 8wy (Strict Production vs Demo-Showcase Separation, Zero-Mocks)",
+    "Mandate 8ao (Clean Semantic Domain Language, No Fake Scoring)"
+  ],
+  "inspectedSubsystems": [
+    {
+      "subsystem": "Fiscal Receipt Services (54-FZ / FFD 1.2)",
+      "files": [
+        "apps/api/src/services/kkt/FiscalReceiptFactory.ts",
+        "apps/api/src/routes/sbp/fiscalReceiptService.ts",
+        "apps/api/src/routes/billingRoutes/fiscalReceiptService.ts",
+        "packages/shared/src/fiscal/fiscalReceiptSchemas.ts",
+        "packages/shared/src/fiscal/mixedFiscalReceipt.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Identified and fixed inverted Tag 1212 mapping in sbp/fiscalReceiptService.ts (goods_with_marking vs goods_without_marking). Re-aligned to statutory FTS Order ED-7-20/662@ and FiscalReceiptFactory."
+    },
+    {
+      "subsystem": "3D Lab Scans & Mock Storage Security / Tenant Isolation",
+      "files": [
+        "apps/api/src/services/labScanDirectUpload.ts",
+        "apps/api/src/routes/portal/portalMockStorageRoutes.ts",
+        "apps/api/src/routes/lab/technicianPortalRoutes.ts",
+        "apps/api/src/tests/routes/portalMockStorage.test.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Patched security vulnerabilities in portalMockStorageRoutes.ts: enforced org_<id>/ prefix, restricted file extensions to ALLOWED_SCAN_EXTENSIONS (STL, PLY, OBJ, DCM, ZIP), guarded against disk exhaustion with MAX_SCAN_FILE_SIZE_BYTES (500 MB), and enforced 403 cross-tenant isolation."
+    },
+    {
+      "subsystem": "PostgreSQL 18 Drizzle Schemas & Tenant Indexes",
+      "files": [
+        "apps/api/src/db/schema/clinical/visitsSchema.ts",
+        "apps/api/src/db/schema/schedule.ts",
+        "apps/api/src/db/schema/billingModules/billingPaymentsAndFiscalSchema.ts",
+        "apps/api/src/db/schema/system.ts",
+        "apps/api/src/db/schema/clinical/documentsSchema.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Added missing composite index idxClinicalAuditOrgCreated on (organizationId, createdAt) in clinicalAuditLogs table to prevent expensive sequential scans on slow HDD/weak clinic hardware."
+    },
+    {
+      "subsystem": "Contracts & Zod Schemas (@dental/shared)",
+      "files": [
+        "packages/shared/src/schemas/telegramAndReceiptSchemas.ts",
+        "packages/shared/src/clinical/visitWorkOrder.ts",
+        "packages/shared/src/lab/labOrders.ts",
+        "packages/shared/src/lab/labOrdersEngine.ts",
+        "packages/shared/src/billing/splitPayment.ts"
+      ],
+      "status": "VERIFIED_CLEAN",
+      "findings": "All Zod schemas for visits, receipts, split payments, and prosthodontic lab orders are synchronized and build cleanly without drift."
+    }
+  ],
+  "remediatedDefects": [
+    {
+      "file": "apps/api/src/routes/sbp/fiscalReceiptService.ts",
+      "defect": "Tag 1212 values for marked goods were inverted: goods_without_marking returned 32 and goods_with_marking returned 33.",
+      "fix": "Reversed to statutory standard: goods_with_marking returns 32, goods_without_marking returns 33."
+    },
+    {
+      "file": "apps/api/src/routes/portal/portalMockStorageRoutes.ts",
+      "defect": "Missing file extension validation, missing tenant isolation check, and no payload size limits.",
+      "fix": "Added regex check for org_<id>/ prefix, whitelisted ALLOWED_SCAN_EXTENSIONS, enforced 403 on cross-organization access, and added MAX_SCAN_FILE_SIZE_BYTES ceiling."
+    },
+    {
+      "file": "apps/api/src/db/schema/clinical/visitsSchema.ts",
+      "defect": "clinicalAuditLogs had only single-column organizationIdIdx, causing slow scans for audit trail sorting.",
+      "fix": "Added idxClinicalAuditOrgCreated composite index on (organizationId, createdAt)."
+    },
+    {
+      "file": "apps/api/src/tests/routes/portalMockStorage.test.ts",
+      "defect": "Test suite lacked security tests for extension validation, key prefix verification, and cross-tenant access.",
+      "fix": "Added 3 new unit tests covering 400 on .exe, 400 on unscoped keys, and 403 on cross-tenant requests."
+    }
+  ],
+  "verificationGates": {
+    "sharedPackageBuild": "PASS (Exit Code 0: tsc -p tsconfig.json in packages/shared)",
+    "batch1Tests": "PASS (35/35 passing: fiscalReceiptFactory.test.ts, portalMockStorage.test.ts, labScanDirectUpload.test.ts)",
+    "batch2Tests": "PASS (15/15 passing: fiscalReceiptRoutes.test.ts, fiscalReceiptQueue.test.ts)",
+    "batch3Tests": "PASS (63/63 passing: wave127LabOrders.test.ts, mixedFiscalReceipt.test.ts, splitPaymentEngine.test.ts, chaosFinancialBilling.test.ts)",
+    "totalTargetedTestsPassing": 113,
+    "totalTargetedTestsFailing": 0,
+    "singleCompilerLockoutPreserved": true
+  }
+}

@@ -73,9 +73,9 @@ export function resolveTag1212(subject: string): number {
 			return 30;
 		case "excisable_goods_with_marking":
 			return 31;
-		case "goods_without_marking":
-			return 32;
 		case "goods_with_marking":
+			return 32;
+		case "goods_without_marking":
 			return 33;
 		default:
 			return 4;

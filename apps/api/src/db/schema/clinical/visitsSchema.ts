@@ -43,6 +43,7 @@ export const visits = pgTable(
 		doctorSummary: text("doctor_summary"),
 		transcript: text("transcript"), // Store the raw voice/text transcript for AI processing
 		draftAutosave: jsonb("draft_autosave"), // Store the transient UI VisitDraftAutosave payload
+		hygieneIndices: jsonb("hygiene_indices"), // OHI-S & clinical hygiene indices: { ohi_s, debris, calculus, date }
 		signedAt: timestamp("signed_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -111,6 +112,9 @@ export const egiszMultipleDiagnoses = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
 		patientName: text("patient_name").notNull(),
 		mainDiagnosisMkb: text("main_diagnosis_mkb").notNull(),
 		mainDiagnosisName: text("main_diagnosis_name").notNull(),
@@ -125,6 +129,9 @@ export const egiszMultipleDiagnoses = pgTable(
 	(t) => ({
 		organizationIdIdx: index("egisz_multiple_diagnoses_organizationId_idx").on(
 			t.organizationId,
+		),
+		patientIdIdx: index("egisz_multiple_diagnoses_patient_id_idx").on(
+			t.patientId,
 		),
 	}),
 );
@@ -233,6 +240,15 @@ export const visitDiaries = pgTable(
 		),
 		visitIdIdx: index("visit_diaries_visit_id_idx").on(t.visitId),
 		patientIdIdx: index("visit_diaries_patient_id_idx").on(t.patientId),
+		doctorIdIdx: index("visit_diaries_doctor_id_idx").on(t.doctorId),
+		orgCreatedAtIdx: index("idx_visit_diaries_org_created_at").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		orgVisitIdx: index("idx_visit_diaries_org_visit").on(
+			t.organizationId,
+			t.visitId,
+		),
 	}),
 );
 
@@ -382,6 +398,10 @@ export const clinicalAuditLogs = pgTable(
 	(t) => ({
 		organizationIdIdx: index("clinical_audit_logs_organizationId_idx").on(
 			t.organizationId,
+		),
+		idxClinicalAuditOrgCreated: index("idx_clinical_audit_org_created").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );

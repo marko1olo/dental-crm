@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { isPrimaryTooth } from "@dental/shared";
 import {
 	AlertTriangle,
 	Camera,
@@ -11,26 +10,28 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import {
-	ToothMolar,
-	ToothCaries,
-	ToothPulpitis,
-	EndoFileCanal,
-	DentalCrown,
-	DentalImplant,
-	ToothExtractForceps,
-	ToothDeciduous,
-	DentalHandpiece,
-} from "../icons/DentalIcons";
-import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
-import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
-import { isPrimaryTooth } from "@dental/shared";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { triggerHaptic } from "../../native/mobileBridge";
 import { usePatientStore } from "../../store/patientStore";
 import { useVisitStore } from "../../store/visitStore";
-import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+import {
+	DentalCrown,
+	DentalHandpiece,
+	DentalImplant,
+	EndoFileCanal,
+	ToothCaries,
+	ToothDeciduous,
+	ToothExtractForceps,
+	ToothMolar,
+	ToothPulpitis,
+} from "../icons/DentalIcons";
+import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
 import { SurfaceSelector } from "./chart/SurfaceSelector";
+import { TOOTH_STATE_LABELS, type ToothState } from "./ToothChart";
 import { ToothRadialMobileSheet } from "./ToothRadialMobileSheet";
 
 export interface RadialMenuItem {
@@ -51,7 +52,11 @@ export interface ToothRadialMenuProps {
 	currentState?: ToothState | undefined;
 	iropz?: number | undefined;
 	surfaces?: readonly string[] | undefined;
-	onSelectState: (state: ToothState, surfaces?: readonly string[], subType?: string) => void;
+	onSelectState: (
+		state: ToothState,
+		surfaces?: readonly string[],
+		subType?: string,
+	) => void;
 	onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	onOpenEndo?: () => void;
 	onOpenTherapy?: () => void;
@@ -78,7 +83,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				window.innerWidth <= 768 ||
 				(window.innerWidth <= 1024 &&
 					("ontouchstart" in window ||
-						(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)))
+						(typeof navigator !== "undefined" &&
+							Boolean(navigator.maxTouchPoints) &&
+							navigator.maxTouchPoints > 0)))
 			);
 		}
 		return false;
@@ -88,9 +95,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		const handleResize = () => {
 			setIsTouchOrMobile(
 				window.innerWidth <= 768 ||
-				(window.innerWidth <= 1024 &&
-					("ontouchstart" in window ||
-						(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)))
+					(window.innerWidth <= 1024 &&
+						("ontouchstart" in window ||
+							(typeof navigator !== "undefined" &&
+								Boolean(navigator.maxTouchPoints) &&
+								navigator.maxTouchPoints > 0))),
 			);
 		};
 		window.addEventListener("resize", handleResize);
@@ -98,7 +107,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	}, []);
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
-	const [toothScanThumbnail, setToothScanThumbnail] = useState<{ id: string; url: string; title: string } | null>(null);
+	const [toothScanThumbnail, setToothScanThumbnail] = useState<{
+		id: string;
+		url: string;
+		title: string;
+	} | null>(null);
 	const [isMoreStatusesOpen, setIsMoreStatusesOpen] = useState(false);
 
 	useEffect(() => {
@@ -127,11 +140,16 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 			})
 			.then((scans) => {
 				if (!active) return;
-				const matched = scans.find((s: any) => String(s.toothCode ?? "").trim() === toothStr);
+				const matched = scans.find(
+					(s: any) => String(s.toothCode ?? "").trim() === toothStr,
+				);
 				if (matched) {
 					setToothScanThumbnail({
 						id: matched.id,
-						url: matched.imageDataUri || matched.fileUrl || `/api/xray/scans/${matched.id}/file`,
+						url:
+							matched.imageDataUri ||
+							matched.fileUrl ||
+							`/api/xray/scans/${matched.id}/file`,
 						title: matched.originalFilename || `RVG Зуб #${toothNumber}`,
 					});
 				} else {
@@ -161,9 +179,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				patientId: selectedPatientId,
 				scanId: toothScanThumbnail?.id,
 			};
-			window.dispatchEvent(new CustomEvent("dente-open-rvg-capture", { detail }));
-			window.dispatchEvent(new CustomEvent("dente-open-rvg-capture-modal", { detail }));
-			window.dispatchEvent(new CustomEvent("dente:open-direct-rvg", { detail }));
+			window.dispatchEvent(
+				new CustomEvent("dente-open-rvg-capture", { detail }),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-open-rvg-capture-modal", { detail }),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente:open-direct-rvg", { detail }),
+			);
 		}
 		onClose();
 	};
@@ -241,7 +265,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				label: "Здоров / Интактный (0)",
 				shortLabel: "Здоров",
 				state: "Healthy",
-				icon: isPrimary ? <ToothDeciduous size={18} className="text-emerald-500 shrink-0" /> : <ToothMolar size={18} className="text-emerald-500 shrink-0" />,
+				icon: isPrimary ? (
+					<ToothDeciduous size={18} className="text-emerald-500 shrink-0" />
+				) : (
+					<ToothMolar size={18} className="text-emerald-500 shrink-0" />
+				),
 				color: "text-emerald-600 dark:text-emerald-400",
 				bgGradient: "",
 				hotkey: "0",
@@ -327,7 +355,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				label: "Разрушенный корень (R)",
 				shortLabel: "Корень",
 				state: "Root",
-				icon: <ToothExtractForceps size={16} className="text-rose-600 shrink-0" />,
+				icon: (
+					<ToothExtractForceps size={16} className="text-rose-600 shrink-0" />
+				),
 				color: "text-rose-700 dark:text-rose-300",
 				bgGradient: "",
 				hotkey: "R",
@@ -360,14 +390,20 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 			const parsedState = getToothStateFromHotkey(e.key);
 			if (parsedState) {
 				e.preventDefault();
-				handleSelectStateWithHaptic(parsedState, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
+				handleSelectStateWithHaptic(
+					parsedState,
+					selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+				);
 				return;
 			}
 			const keyUpper = e.key.toUpperCase();
 			const matched = allItems.find((it) => it.hotkey === keyUpper);
 			if (matched && matched.state) {
 				e.preventDefault();
-				handleSelectStateWithHaptic(matched.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
+				handleSelectStateWithHaptic(
+					matched.state,
+					selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+				);
 			}
 		};
 
@@ -393,8 +429,14 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	// Smart Edge Clamping Desktop Popover Dimensions (Apple Studio HIG compact 400px)
 	const POPUP_WIDTH = 400;
 	const POPUP_HEIGHT = 440;
-	const clampedCenterX = Math.max(POPUP_WIDTH / 2 + 16, Math.min(vw - POPUP_WIDTH / 2 - 16, rawCenterX));
-	const clampedCenterY = Math.max(POPUP_HEIGHT / 2 + 16, Math.min(vh - POPUP_HEIGHT / 2 - 16, rawCenterY));
+	const clampedCenterX = Math.max(
+		POPUP_WIDTH / 2 + 16,
+		Math.min(vw - POPUP_WIDTH / 2 - 16, rawCenterX),
+	);
+	const clampedCenterY = Math.max(
+		POPUP_HEIGHT / 2 + 16,
+		Math.min(vh - POPUP_HEIGHT / 2 - 16, rawCenterY),
+	);
 
 	const content = (
 		<div
@@ -449,7 +491,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						width: `${POPUP_WIDTH}px`,
 						maxHeight: `${POPUP_HEIGHT}px`,
 						transform: "translate(-50%, -50%)",
-						boxShadow: "0 24px 48px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line)",
+						boxShadow:
+							"0 24px 48px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line)",
 					}}
 					role="dialog"
 					aria-label={`Клиническое меню зуба ${toothNumber}`}
@@ -467,7 +510,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								</span>
 								<span className="text-[11px] text-[var(--muted)] flex items-center gap-1">
 									<span>Статус:</span>
-									<span className="font-extrabold text-[var(--ink)]">{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}</span>
+									<span className="font-extrabold text-[var(--ink)]">
+										{TOOTH_STATE_LABELS[currentState ?? "Healthy"]}
+									</span>
 								</span>
 							</div>
 						</div>
@@ -486,21 +531,41 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					{!isPrimary && (
 						<div className="flex flex-col gap-1 px-2 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Поверхности:</span>
+								<span className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+									Поверхности:
+								</span>
 								<span className="text-[10px] font-mono font-bold text-[var(--teal)]">
-									{selectedSurfaces.length > 0 ? selectedSurfaces.join("") : "вся коронка"}
+									{selectedSurfaces.length > 0
+										? selectedSurfaces.join("")
+										: "вся коронка"}
 								</span>
 							</div>
 							<div className="flex items-center gap-1 flex-wrap">
 								{[
-									{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
+									{
+										label: "O",
+										surfs: ["O"],
+										title: "Окклюзионная (O/Жевательная)",
+									},
 									{ label: "M", surfs: ["M"], title: "Медиальная (M)" },
 									{ label: "D", surfs: ["D"], title: "Дистальная (D)" },
 									{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
 									{ label: "L", surfs: ["L"], title: "Язычная / Нёбная (L)" },
-									{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
-									{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
-									{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+									{
+										label: "MOD",
+										surfs: ["M", "O", "D"],
+										title: "Медиально-окклюзионно-дистальная (MOD)",
+									},
+									{
+										label: "MO",
+										surfs: ["M", "O"],
+										title: "Медиально-окклюзионная (MO)",
+									},
+									{
+										label: "OD",
+										surfs: ["O", "D"],
+										title: "Окклюзионно-дистальная (OD)",
+									},
 								].map((chip) => {
 									const isMatch =
 										chip.surfs.length === selectedSurfaces.length &&
@@ -542,7 +607,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										if (item.state) {
 											handleSelectStateWithHaptic(
 												item.state,
-												selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+												selectedSurfaces.length > 0
+													? selectedSurfaces
+													: surfaces,
 											);
 										}
 									}}
@@ -555,8 +622,12 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									data-testid={`radial-btn-${item.id}`}
 								>
 									<div className="flex items-center gap-2 min-w-0">
-										<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-										<span className="text-xs font-extrabold truncate">{item.shortLabel}</span>
+										<span className="shrink-0 flex items-center justify-center">
+											{item.icon}
+										</span>
+										<span className="text-xs font-extrabold truncate">
+											{item.shortLabel}
+										</span>
 									</div>
 									<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold shrink-0 border border-[var(--line-subtle)]">
 										{item.hotkey}
@@ -575,9 +646,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						>
 							<span className="flex items-center gap-1">
 								<span>Другие клинические статусы</span>
-								<span className="text-[10px] text-[var(--muted)] font-normal">(Периодонтит, Имплант, Корень)</span>
+								<span className="text-[10px] text-[var(--muted)] font-normal">
+									(Периодонтит, Имплант, Корень)
+								</span>
 							</span>
-							{isMoreStatusesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+							{isMoreStatusesOpen ? (
+								<ChevronUp size={14} />
+							) : (
+								<ChevronDown size={14} />
+							)}
 						</button>
 
 						{isMoreStatusesOpen && (
@@ -592,7 +669,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 												if (item.state) {
 													handleSelectStateWithHaptic(
 														item.state,
-														selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+														selectedSurfaces.length > 0
+															? selectedSurfaces
+															: surfaces,
 													);
 												}
 											}}
@@ -606,7 +685,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										>
 											<div className="flex items-center gap-1.5 min-w-0">
 												<span className="shrink-0">{item.icon}</span>
-												<span className="text-[11px] truncate font-bold">{item.shortLabel}</span>
+												<span className="text-[11px] truncate font-bold">
+													{item.shortLabel}
+												</span>
 											</div>
 											<span className="text-[9px] px-1 py-0.2 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold">
 												{item.hotkey}
@@ -622,7 +703,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					{isPrimary && (
 						<div className="flex flex-col gap-1 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 							<div className="flex items-center justify-between">
-								<span className="text-[10px] uppercase font-black text-purple-600 dark:text-purple-400">Резорбция корней:</span>
+								<span className="text-[10px] uppercase font-black text-purple-600 dark:text-purple-400">
+									Резорбция корней:
+								</span>
 								<span className="text-[10px] text-[var(--muted)]">0–100%</span>
 							</div>
 							<div className="grid grid-cols-4 gap-1 w-full">
@@ -675,9 +758,14 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					)}
 
 					{/* IROPZ warning */}
-					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
+					{(Boolean(iropz && iropz > 0.6) ||
+						currentState === "Pulpitis" ||
+						currentState === "Periodontitis") && (
 						<div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-900 dark:text-amber-200 px-2 py-1 rounded-xl border border-amber-500/30 text-[10px] font-bold">
-							<AlertTriangle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<AlertTriangle
+								size={13}
+								className="text-amber-600 dark:text-amber-400 shrink-0"
+							/>
 							<span>ИРОПЗ &gt; 0.6: Рекомендована коронка (Z51.8)</span>
 						</div>
 					)}
@@ -691,7 +779,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								onClose();
 							}}
 							className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-							title={toothScanThumbnail ? "Посмотреть снимок RVG" : "Захват снимка визиографа (RVG)"}
+							title={
+								toothScanThumbnail
+									? "Посмотреть снимок RVG"
+									: "Захват снимка визиографа (RVG)"
+							}
 						>
 							{toothScanThumbnail ? (
 								<span className="flex items-center gap-1.5 font-bold">
@@ -756,4 +848,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	return content;
 };
 
-export { ToothRadialMenu as RadialToothMenu, ToothRadialMenu as ToothClinicalPopover };
+export {
+	ToothRadialMenu as RadialToothMenu,
+	ToothRadialMenu as ToothClinicalPopover,
+};

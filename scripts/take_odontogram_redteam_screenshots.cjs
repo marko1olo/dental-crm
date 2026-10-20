@@ -113,6 +113,7 @@ const mockDashboard = {
 
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
+  path.resolve("docs/proofs/odontogram"),
   "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
   "C:/Users/Admin/.gemini/antigravity/brain/9ea21f87-962f-4962-8237-a01bee2ebf13",
   "C:/Users/Admin/.gemini/antigravity/brain/8c13fca0-8160-48cc-95c0-54805cda73b5",
@@ -135,6 +136,19 @@ async function saveProof(page, fileName, description = "") {
     const stats = fs.statSync(fullPath);
     const md5 = crypto.createHash("md5").update(fs.readFileSync(fullPath)).digest("hex");
     console.log(`[PROOF] ${fileName} (${stats.size} B / ${(stats.size / 1024).toFixed(1)} KB, MD5: ${md5}) - ${description}`);
+  }
+
+  const canonicalMap = {
+    "01_odontogram_desktop_light.png": "odontogram_pc_light_1440x900.png",
+    "02_odontogram_desktop_dark.png": "odontogram_pc_dark_1440x900.png",
+    "13_odontogram_mobile_light.png": "odontogram_mobile_light_390x844.png",
+    "14_odontogram_mobile_dark.png": "odontogram_mobile_dark_390x844.png",
+  };
+  if (canonicalMap[fileName]) {
+    const canonicalName = canonicalMap[fileName];
+    const canonicalPath = path.resolve("docs/proofs/odontogram", canonicalName);
+    fs.copyFileSync(path.join(targetDirs[0], fileName), canonicalPath);
+    console.log(`[CANONICAL 4-STATE PROOF SYNCED] -> ${canonicalPath}`);
   }
 }
 
@@ -163,8 +177,14 @@ async function setTheme(page, theme) {
 
 async function setupPageRoutes(page) {
   await page.route("**/api/**", async (route) => {
-    const url = route.request().url();
-    if (url.includes("/src/")) return route.continue();
+    const req = route.request();
+    if (req.resourceType() === "script" || req.resourceType() === "stylesheet" || req.resourceType() === "document") {
+      return route.continue();
+    }
+    const url = req.url();
+    if (url.includes("/src/") || url.includes("/@") || url.includes("/node_modules/")) {
+      return route.continue();
+    }
     if (url.includes("/api/dashboard")) {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard) });
     }
@@ -476,24 +496,36 @@ async function run() {
     await mPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
     await mPage.waitForTimeout(2000);
 
-    await mPage.evaluate(() => { window.location.hash = "#visit"; });
-    try {
-      await mPage.waitForSelector('[data-testid="visit-subtab-odontogram"]', { timeout: 15000 });
-    } catch {
-      await mPage.waitForTimeout(3000);
-    }
-
+    console.log("[Mobile] Navigating to Visit view via hash...");
     await mPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="visit-subtab-odontogram"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
-      if (btn) btn.click();
+      window.location.hash = "visit";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
     try {
-      await mPage.waitForSelector('.odontogram-toolbar, .tooth-chart-svg, [data-testid="mark-intact-dentition-btn"]', { timeout: 15000 });
+      await mPage.waitForSelector('.mobile-chairside-steps-container, .mobile-chairside-step-chip, [data-testid="mobile-chairside-workspace-primary-cta-btn"], [data-testid="visit-subtab-odontogram"]', { timeout: 15000 });
     } catch {
-      await mPage.waitForTimeout(2000);
+      await mPage.waitForTimeout(2500);
     }
-    await mPage.waitForTimeout(600);
+    await mPage.waitForTimeout(800);
+
+    console.log("[Mobile] Activating Step 2: Осмотр...");
+    await mPage.evaluate(() => {
+      const examChip = Array.from(document.querySelectorAll('.mobile-chairside-step-chip, button')).find(b => b.textContent && b.textContent.includes('Осмотр'));
+      if (examChip) {
+        examChip.click();
+      } else {
+        const nextBtn = document.querySelector('[data-testid="mobile-chairside-workspace-primary-cta-btn"]');
+        if (nextBtn) nextBtn.click();
+        const odoBtn = document.querySelector('[data-testid="visit-subtab-odontogram"]');
+        if (odoBtn) odoBtn.click();
+      }
+    });
+    try {
+      await mPage.waitForSelector('.mobile-quadrant-tabs, .mobile-teeth-scroller-wrap, .mobile-tooth-tile', { timeout: 15000 });
+    } catch {
+      await mPage.waitForTimeout(1500);
+    }
+    await mPage.waitForTimeout(800);
 
     // 2A. Mobile Odontogram Light & Dark
     await setTheme(mPage, "light");
@@ -504,23 +536,16 @@ async function run() {
 
     // 2B. Mobile Tooth Radial Menu (Bottom Sheet)
     console.log("[Mobile] Opening Tooth Bottom Sheet on Tooth 16 via DOM click...");
-    await mPage.waitForTimeout(1000);
+    await mPage.evaluate(() => {
+      const t = Array.from(document.querySelectorAll('.mobile-tooth-tile, button')).find(b => b.textContent && b.textContent.includes('16')) ||
+                document.querySelector('.mobile-tooth-tile') ||
+                document.querySelector('[data-tooth-id="16"]');
+      if (t) t.click();
+    });
     try {
-      await mPage.evaluate(() => {
-        const t = document.querySelector('[data-tooth-id="16"]') ||
-                  document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
-                  document.querySelector('[data-testid="tooth-cell-16"]');
-        if (t) t.click();
-      });
-    } catch (err) {
-      console.warn("[WARN] Mobile tooth click error:", err.message);
-      await mPage.waitForTimeout(1200);
-      await mPage.evaluate(() => {
-        const t = document.querySelector('[data-tooth-id="16"]') ||
-                  document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
-                  document.querySelector('[data-testid="tooth-cell-16"]');
-        if (t) t.click();
-      }).catch(() => {});
+      await mPage.waitForSelector('.mobile-bottom-sheet-content, .mobile-bottom-sheet-container, [data-testid="tooth-radial-mobile-sheet"]', { timeout: 10000 });
+    } catch {
+      await mPage.waitForTimeout(1500);
     }
     await mPage.waitForTimeout(800);
 
