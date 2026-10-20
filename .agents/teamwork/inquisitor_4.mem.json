@@ -1,0 +1,70 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_4",
+  "taskName": "Seamless integration of clinical modules (Prescriptions, Tax Deductions, Anesthesia, Clinical Tasks) into real CRM loops and elimination of standalone sandboxes",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T09:10:00Z",
+  "invariantsPreserved": [
+    "THE_HAMMER §23 (The Ironclad Ban on Fake Preview Sandboxes & Vacuum Screenshot Fraud)",
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication)",
+    "Mandate 8wy (Strict Production vs Demo-Showcase Separation)",
+    "Mandate 8ze/8al (Apple HIG, 44x44px Touch Targets, Natural Thumb Zone)"
+  ],
+  "seamlessIntegrations": [
+    {
+      "module": "Prescriptions (PrescriptionModal)",
+      "targetWorkspace": "VisitView (Doctor Chairside Loop)",
+      "triggerElement": "VisitActionButtonsToolbar / VisitViewHeader '...' dropdown menu -> 'Выписать рецепт' (data-testid=\"visit-more-action-prescription\")",
+      "filesModified": [
+        "apps/web/src/components/visit/view/viewStateModules/useVisitModalsState.ts",
+        "apps/web/src/components/visit/view/viewModalsModules/useVisitModalsManager.ts",
+        "apps/web/src/components/visit/view/viewModalsModules/visitViewModalsTypes.ts",
+        "apps/web/src/components/visit/view/viewModalsModules/ClinicalSupportModals.tsx",
+        "apps/web/src/components/visit/view/VisitViewModals.tsx",
+        "apps/web/src/components/visit/view/VisitViewDesktopLayout.tsx",
+        "apps/web/src/components/visit/view/VisitViewMobileLayout.tsx",
+        "apps/web/src/components/visit/view/visitHeader/types.ts",
+        "apps/web/src/components/visit/view/visitHeader/index.tsx",
+        "apps/web/src/components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx",
+        "apps/web/src/components/visit/view/types.ts",
+        "apps/web/src/components/visit/view/VisitViewPanel.tsx",
+        "apps/web/src/components/visit/view/VisitViewHeader.tsx"
+      ],
+      "clinicalCapabilities": "Prescription modal seamlessly opens from active visit; pre-populates patient allergies, doctor name, and clinic details; on insert, seamlessly injects prescription text directly into the EHR diary recommendations."
+    },
+    {
+      "module": "Prescriptions & Tax Deductions (PrescriptionModal & TaxDeductionCertificateModal)",
+      "targetWorkspace": "PatientWorkspaceView (Patient Profile & Curator Loop)",
+      "triggerElement": "PatientWorkspaceToolbar 'Документы и ДМС' dropdown ('btn-patient-prescriptions-modal', 'btn-patient-tax-deduction-modal') & PatientFinanceTab ('btn-finance-tax-certificate')",
+      "filesModified": [
+        "apps/web/src/components/patients/workspaceView/usePatientWorkspaceViewLogic.ts",
+        "apps/web/src/components/patients/workspaceView/PatientWorkspaceTabContent.tsx",
+        "apps/web/src/components/patients/workspaceView/PatientWorkspaceToolbar.tsx",
+        "apps/web/src/components/patients/PatientWorkspaceView.tsx",
+        "apps/web/src/components/patients/workspaceView/PatientWorkspaceModalsWrapper.tsx"
+      ],
+      "clinicalCapabilities": "Receptionist, curator, or doctor can generate 107-1/u prescriptions or Russian 13% tax deduction certificates (справка об оплате медицинских услуг) directly from the patient record using authentic historical ledger entries and clinic tax credentials."
+    }
+  ],
+  "eliminatedStandaloneSandboxes": [
+    "apps/web/src/components/prescriptions/PrescriptionsStandaloneWorkspace.tsx",
+    "apps/web/src/components/telephony/TelephonyStandaloneWorkspace.tsx",
+    "apps/web/src/components/tasks/ClinicalTasksStandaloneWorkspace.tsx"
+  ],
+  "cleanPackageFixes": [
+    {
+      "file": "packages/shared/src/finance/doctorPayrollEngine.ts",
+      "issue": "exactOptionalPropertyTypes error on DoctorPayrollResult optional properties without explicit undefined union",
+      "remediation": "Updated DoctorPayrollResult interface definitions with '| undefined' on optional fields."
+    }
+  ],
+  "verificationGates": {
+    "seamlessVisitIntegrationTests": "PASS (4/4 passing in apps/web/src/components/visit/__tests__/clinicalModulesIntegrationSeamless.test.tsx)",
+    "prescriptionsSuite": "PASS (60/60 passing in apps/web/src/components/prescriptions/__tests__/)",
+    "taxDeductionSuite": "PASS (5/5 passing in apps/web/src/components/finance/taxDeduction/__tests__/TaxDeductionDecomposition.test.tsx)",
+    "clinicalTasksSuite": "PASS (19/19 passing in apps/web/src/components/tasks/__tests__/)",
+    "anesthesiaSuite": "PASS (17/17 passing in apps/web/src/components/anesthesia/__tests__/)",
+    "sharedBuild": "PASS (Exit Code 0: npm run build -w @dental/shared)"
+  }
+}

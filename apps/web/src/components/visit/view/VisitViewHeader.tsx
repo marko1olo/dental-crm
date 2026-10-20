@@ -10,6 +10,7 @@ import {
 	FlaskConical,
 	Lock,
 	MoreHorizontal,
+	Pill,
 	Printer,
 	ShieldCheck,
 	Sparkles,
@@ -51,20 +52,21 @@ export function VisitViewHeader({
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
 	setIsWarrantyModalOpen,
+	setIsPrescriptionModalOpen,
 	onOpenVisiographComparison,
 	setIsVisiographComparisonModalOpen,
 }: VisitViewHeaderProps) {
 	return (
 		<div className="min-h-[44px] h-[44px] flex items-center justify-between gap-1 px-2 py-1 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 			<div className="flex items-center gap-1 shrink min-w-0 overflow-hidden">
-				<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
+				<PatientAvatar fullName={activePatient?.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 				<span
 					className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 flex-shrink-0 whitespace-nowrap"
-					title={activePatient.fullName || activePatient.name}
+					title={activePatient?.fullName || activePatient?.name}
 				>
 					<span className="sm:hidden font-bold">
 						{(() => {
-							const fn = activePatient.fullName || activePatient.name || "";
+							const fn = activePatient?.fullName || activePatient?.name || "";
 							const parts = fn.trim().split(/\s+/);
 							if (parts.length >= 2) {
 								return `${parts[0]} ${parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).join("")}`;
@@ -510,6 +512,22 @@ export function VisitViewHeader({
 							>
 								<CheckCircle2 className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
 								<span className="font-semibold">Поэтапная оплата</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsHeaderMoreMenuOpen(false);
+									setIsPrescriptionModalOpen?.(true);
+								}}
+								data-testid="visit-more-action-prescription"
+								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
+								role="menuitem"
+							>
+								<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0" aria-hidden="true" />
+								<div className="flex flex-col">
+									<span className="font-semibold">Выписать рецепт</span>
+									<span className="text-[10px] text-[var(--muted)]">Бланки 107-1/у и 148-1/у-88, антибиотики, НПВС</span>
+								</div>
 							</button>
 						</div>
 					)}

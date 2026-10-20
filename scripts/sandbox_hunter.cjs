@@ -89,6 +89,19 @@ function scanDirectory(dir) {
         }
       }
 
+      // Mandate 2b: apps/web/public HTML Purity — Strictly whitelisted canonical public assets
+      if (parentDirRel === 'apps/web/public' && lowerName.endsWith('.html')) {
+        const ALLOWED_PUBLIC_HTML = new Set(['gallery.html', 'offline.html', 'viewer3d.html']);
+        if (!ALLOWED_PUBLIC_HTML.has(lowerName)) {
+          findings.push({
+            path: relPath,
+            rule: 'apps/web/public *.html purity',
+            detail: `apps/web/public permits strictly only whitelisted assets (gallery.html, offline.html, viewer3d.html). Forbidden stray HTML: ${entry.name}`
+          });
+          continue;
+        }
+      }
+
       // Mandate 3: apps/web/src/ HTML Purity — Zero HTML files allowed in source tree
       if (relPath.startsWith('apps/web/src/') && lowerName.endsWith('.html')) {
         findings.push({
@@ -106,6 +119,18 @@ function scanDirectory(dir) {
             path: relPath,
             rule: '*preview*.html',
             detail: 'Potemkin isolated preview HTML sandbox detected'
+          });
+          continue;
+        }
+      }
+
+      // Pattern 1b: Any *standalone*.html outside official tests
+      if (lowerName.endsWith('.html') && (lowerName.startsWith('standalone') || lowerName.includes('standalone'))) {
+        if (!isOfficialTestDir(fullPath)) {
+          findings.push({
+            path: relPath,
+            rule: '*standalone*.html',
+            detail: 'Potemkin isolated standalone HTML sandbox detected outside official test suites'
           });
           continue;
         }

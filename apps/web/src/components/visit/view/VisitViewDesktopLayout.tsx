@@ -67,6 +67,8 @@ export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
 				setIsDoctorShiftModalOpen={s.setIsDoctorShiftModalOpen}
 				isInformedConsentModalOpen={s.isInformedConsentModalOpen}
 				setIsInformedConsentModalOpen={s.setIsInformedConsentModalOpen}
+				isPrescriptionModalOpen={s.isPrescriptionModalOpen}
+				setIsPrescriptionModalOpen={s.setIsPrescriptionModalOpen}
 				activePatient={s.activePatient}
 				activeDoctor={s.activeDoctor}
 				dashboard={s.dashboard}

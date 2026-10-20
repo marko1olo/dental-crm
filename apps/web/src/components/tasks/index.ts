@@ -5,4 +5,3 @@ export * from "./ClinicalTasksToolbar";
 export * from "./ClinicalTaskCreateDrawer";
 export * from "./ClinicalTasksDesktopTable";
 export * from "./ClinicalTasksMobileCards";
-export * from "./ClinicalTasksStandaloneWorkspace";

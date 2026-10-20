@@ -36,6 +36,7 @@ export function VisitHeaderMonolith({
 	visitSubViewTab,
 	setVisitSubViewTab,
 	handleApplySomaticNormQuick,
+	handlePrintClinicalDiaryFast,
 	handlePrintForm043uFast,
 	setIsEmergencyModalOpen,
 	shiftDayQueue,
@@ -53,6 +54,7 @@ export function VisitHeaderMonolith({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	setIsPrescriptionModalOpen,
 	handlePrintCompletedActFast,
 	handlePrintEstimateFast,
 	onOpenLabOrderModal,
@@ -138,6 +140,7 @@ export function VisitHeaderMonolith({
 					{/* Тулбар клинических действий, печать бланков, очередь смены, завершение визита */}
 					<VisitActionButtonsToolbar
 						handleApplySomaticNormQuick={handleApplySomaticNormQuick}
+						handlePrintClinicalDiaryFast={handlePrintClinicalDiaryFast}
 						handlePrintForm043uFast={handlePrintForm043uFast}
 						handlePrintCompletedActFast={handlePrintCompletedActFast}
 						handlePrintEstimateFast={handlePrintEstimateFast}
@@ -158,6 +161,7 @@ export function VisitHeaderMonolith({
 						setIsDoctorShiftModalOpen={setIsDoctorShiftModalOpen}
 						setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
 						setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
+						setIsPrescriptionModalOpen={setIsPrescriptionModalOpen}
 					/>
 				</div>
 			</div>

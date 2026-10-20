@@ -42,7 +42,8 @@ export interface VisitHeaderMonolithProps {
 	visitSubViewTab: VisitSubViewTab;
 	setVisitSubViewTab: (tab: VisitSubViewTab) => void;
 	handleApplySomaticNormQuick: () => void;
-	handlePrintForm043uFast: () => void;
+	handlePrintClinicalDiaryFast?: (() => void) | undefined;
+	handlePrintForm043uFast?: (() => void) | undefined;
 	setIsEmergencyModalOpen: (v: boolean) => void;
 	shiftDayQueue: ShiftDayQueue;
 	isQueueLobbyDropdownOpen: boolean;
@@ -59,6 +60,7 @@ export interface VisitHeaderMonolithProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
+	setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
 	handlePrintCompletedActFast?: (() => void) | undefined;
 	handlePrintEstimateFast?: (() => void) | undefined;
 	onOpenLabOrderModal?: (() => void) | undefined;
@@ -98,7 +100,8 @@ export interface VisitTimerAndStatusControlsProps {
  */
 export interface VisitActionButtonsToolbarProps {
 	handleApplySomaticNormQuick: () => void;
-	handlePrintForm043uFast: () => void;
+	handlePrintClinicalDiaryFast?: (() => void) | undefined;
+	handlePrintForm043uFast?: (() => void) | undefined;
 	handlePrintCompletedActFast?: (() => void) | undefined;
 	handlePrintEstimateFast?: (() => void) | undefined;
 	onOpenLabOrderModal?: (() => void) | undefined;
@@ -118,4 +121,5 @@ export interface VisitActionButtonsToolbarProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
+	setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
 }

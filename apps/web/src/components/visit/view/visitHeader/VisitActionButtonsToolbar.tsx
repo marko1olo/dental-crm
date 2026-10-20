@@ -1,7 +1,7 @@
 import React from "react";
 import {
 	AlertOctagon, AlertTriangle, Calculator, Check, CheckCircle2,
-	Clock, FileText, FlaskConical, Lock, MoreHorizontal, Printer, Receipt, ShieldCheck,
+	Clock, FileText, FlaskConical, Lock, MoreHorizontal, Pill, Printer, Receipt, ShieldCheck,
 } from "lucide-react";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
@@ -15,7 +15,8 @@ import type { VisitActionButtonsToolbarProps } from "./types";
  */
 export function VisitActionButtonsToolbar({
 	handleApplySomaticNormQuick,
-	handlePrintForm043uFast,
+	handlePrintClinicalDiaryFast: propPrintClinicalDiaryFast,
+	handlePrintForm043uFast: propPrintForm043uFast,
 	handlePrintCompletedActFast,
 	handlePrintEstimateFast,
 	onOpenLabOrderModal,
@@ -35,7 +36,15 @@ export function VisitActionButtonsToolbar({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	setIsPrescriptionModalOpen,
 }: VisitActionButtonsToolbarProps) {
+	const handlePrintClinicalDiaryFast =
+		propPrintClinicalDiaryFast ??
+		propPrintForm043uFast ??
+		(() => {
+			showToast("Печать медицинской карты приёма", "info");
+		});
+
 	return (
 		<>
 			{/* Кнопка физиологической нормы */}
@@ -65,7 +74,7 @@ export function VisitActionButtonsToolbar({
 				{/* Печать медицинской карты приёма */}
 				<button
 					type="button"
-					onClick={handlePrintForm043uFast}
+					onClick={handlePrintClinicalDiaryFast}
 					data-testid="btn-visit-fast-print-medical-card"
 					className="icon-button secondary-button h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl transition-colors"
 					title="Медицинская карта приёма (печать со штампом)"
@@ -73,7 +82,7 @@ export function VisitActionButtonsToolbar({
 				>
 					<Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
 				</button>
-				<span data-testid="btn-visit-fast-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintForm043uFast} />
+				<span data-testid="btn-visit-fast-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintClinicalDiaryFast} />
 
 				{/* Печать Акта выполненных работ */}
 				<button
@@ -250,7 +259,7 @@ export function VisitActionButtonsToolbar({
 							type="button"
 							onClick={() => {
 								setIsHeaderMoreMenuOpen(false);
-								handlePrintForm043uFast();
+								handlePrintClinicalDiaryFast();
 							}}
 							data-testid="visit-more-action-print-medical-card"
 							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
@@ -266,7 +275,7 @@ export function VisitActionButtonsToolbar({
 								</span>
 							</div>
 						</button>
-						<span data-testid="visit-more-action-print-043u" className="hidden" aria-hidden="true" />
+						<span data-testid="visit-more-action-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintClinicalDiaryFast} />
 
 						<button
 							type="button"
@@ -482,6 +491,25 @@ export function VisitActionButtonsToolbar({
 							<div className="flex flex-col">
 								<span className="font-semibold">График оплаты и этапы</span>
 								<span className="text-[10px] text-[var(--muted)]">Рассрочка и депонирование этапов</span>
+							</div>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								setIsHeaderMoreMenuOpen(false);
+								setIsPrescriptionModalOpen?.(true);
+							}}
+							data-testid="visit-more-action-prescription"
+							className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+							role="menuitem"
+						>
+							<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0" />
+							<div className="flex flex-col">
+								<span className="font-semibold">Выписать рецепт</span>
+								<span className="text-[10px] text-[var(--muted)]">
+									Бланки 107-1/у и 148-1/у-88, антибиотики, НПВС
+								</span>
 							</div>
 						</button>
 					</div>

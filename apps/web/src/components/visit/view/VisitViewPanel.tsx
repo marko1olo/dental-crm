@@ -46,6 +46,7 @@ export function VisitViewPanel({ s }: VisitViewPanelProps) {
 					setIsPriceValidatorModalOpen={s.setIsPriceValidatorModalOpen}
 					setIsStagePaymentModalOpen={s.setIsStagePaymentModalOpen}
 					setIsWarrantyModalOpen={s.setIsWarrantyModalOpen}
+					setIsPrescriptionModalOpen={s.setIsPrescriptionModalOpen}
 					onOpenVisiographComparison={() => s.setIsVisiographComparisonModalOpen(true)}
 					setIsVisiographComparisonModalOpen={s.setIsVisiographComparisonModalOpen}
 				/>

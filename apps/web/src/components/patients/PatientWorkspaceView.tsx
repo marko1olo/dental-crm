@@ -56,6 +56,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 						setIsLoyaltyModalOpen={logic.setIsLoyaltyModalOpen}
 						setIsDmsLetterOpen={logic.setIsDmsLetterOpen}
 						setIsDmsRegistryOpen={logic.setIsDmsRegistryOpen}
+						setIsPrescriptionModalOpen={logic.setIsPrescriptionModalOpen}
+						setIsTaxCertificateOpen={logic.setIsTaxCertificateOpen}
 					/>
 				</div>
 			</div>

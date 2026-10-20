@@ -138,3 +138,25 @@ test('Milestone 1 Purge: sandbox_hunter.cjs passes with zero violations', () => 
     'sandbox_hunter.cjs must output 0 Potemkin sandboxes found'
   );
 });
+
+test('Milestone 1 Hardening: sandbox_hunter.cjs catches preview-*.html and standalone_*.html sandboxes', () => {
+  const hunterPath = path.join(repoRoot, 'scripts/sandbox_hunter.cjs');
+  const probeFile = path.join(repoRoot, 'apps/web/public/standalone_probe_sandbox.html');
+
+  fs.writeFileSync(probeFile, '<!DOCTYPE html><html><body>probe</body></html>', 'utf8');
+  try {
+    let threw = false;
+    try {
+      execSync(`node "${hunterPath}"`, { cwd: repoRoot, stdio: 'pipe' });
+    } catch (err) {
+      threw = true;
+      assert.strictEqual(err.status, 1, 'Hunter must exit with code 1 on standalone sandbox');
+    }
+    assert.strictEqual(threw, true, 'Hunter must reject standalone_*.html file');
+  } finally {
+    if (fs.existsSync(probeFile)) {
+      fs.unlinkSync(probeFile);
+    }
+  }
+});
+

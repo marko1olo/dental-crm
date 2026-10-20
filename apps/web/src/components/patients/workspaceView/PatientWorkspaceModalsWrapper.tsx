@@ -21,6 +21,18 @@ const RadiologyConsultationSplit = React.lazy(() =>
 	})),
 );
 
+const PrescriptionModal = React.lazy(() =>
+	import("../../prescriptions/PrescriptionModal").then((m) => ({
+		default: m.PrescriptionModal,
+	})),
+);
+
+const TaxDeductionCertificateModal = React.lazy(() =>
+	import("../../finance/TaxDeductionCertificateModal").then((m) => ({
+		default: m.TaxDeductionCertificateModal,
+	})),
+);
+
 export interface PatientWorkspaceModalsWrapperProps {
 	patientId: string;
 	patientName?: string | null | undefined;
@@ -111,6 +123,57 @@ export const PatientWorkspaceModalsWrapper: React.FC<PatientWorkspaceModalsWrapp
 								</div>,
 								document.body,
 							)}
+					</React.Suspense>
+				)}
+
+				{logic.isPrescriptionModalOpen && (
+					<React.Suspense fallback={null}>
+						<PrescriptionModal
+							isOpen={logic.isPrescriptionModalOpen}
+							onClose={() => logic.setIsPrescriptionModalOpen(false)}
+							patient={logic.currentPatient}
+							patientName={patientName || logic.currentPatient?.fullName}
+							allergies={logic.currentPatient?.allergies}
+							doctorName={logic.dashboard?.activeDoctor?.fullName || undefined}
+							clinicName={
+								logic.dashboard?.clinicSettings?.profile?.brandName ||
+								logic.dashboard?.organization?.name ||
+								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+							}
+							clinicAddress={logic.dashboard?.clinicSettings?.profile?.address || undefined}
+							clinicPhone={logic.dashboard?.clinicSettings?.profile?.phone || undefined}
+						/>
+					</React.Suspense>
+				)}
+
+				{logic.isTaxCertificateOpen && (
+					<React.Suspense fallback={null}>
+						<TaxDeductionCertificateModal
+							isOpen={logic.isTaxCertificateOpen}
+							onClose={() => logic.setIsTaxCertificateOpen(false)}
+							patientId={patientId}
+							patientName={patientName || logic.currentPatient?.fullName}
+							patientBirthDate={logic.currentPatient?.birthDate}
+							patientInn={logic.currentPatient?.inn}
+							patientSnils={logic.currentPatient?.snils}
+							autoFetchPayments={true}
+							clinicName={
+								logic.dashboard?.clinicSettings?.profile?.legalName ||
+								logic.dashboard?.clinicSettings?.profile?.brandName ||
+								logic.dashboard?.organization?.name ||
+								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+							}
+							clinicInn={logic.dashboard?.clinicSettings?.profile?.inn || "7701000000"}
+							clinicKpp={logic.dashboard?.clinicSettings?.profile?.kpp || "770101001"}
+							clinicOgrn={logic.dashboard?.clinicSettings?.profile?.ogrn || "1127746000000"}
+							clinicLicenseNumber={
+								logic.dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
+								"ЛО41-01137-77/00368421"
+							}
+							clinicLicenseDate={logic.dashboard?.clinicSettings?.profile?.medicalLicenseDate}
+							clinicAddress={logic.dashboard?.clinicSettings?.profile?.address}
+							chiefDoctorName={logic.dashboard?.clinicSettings?.profile?.chiefDoctor}
+						/>
 					</React.Suspense>
 				)}
 			</>

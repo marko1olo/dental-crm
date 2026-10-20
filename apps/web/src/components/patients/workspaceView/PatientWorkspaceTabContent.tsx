@@ -62,6 +62,7 @@ export const PatientWorkspaceTabContent: React.FC<PatientWorkspaceTabContentProp
 						}
 					}}
 					onNewAppointment={logic.handleCreateNewPlanCallback}
+					onOpenTaxCertificate={() => logic.setIsTaxCertificateOpen(true)}
 				/>
 			</div>
 		);

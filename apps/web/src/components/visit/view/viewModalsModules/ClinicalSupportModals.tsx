@@ -23,6 +23,7 @@ import {
 } from "../../../warranty/WarrantyPassportModal";
 import { DoctorMobileShiftModal } from "../../../doctor-portal/DoctorMobileShiftModal";
 import { InformedConsentModal } from "../../../consents/InformedConsentModal";
+import { PrescriptionModal } from "../../../prescriptions/PrescriptionModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visit";
 import { showToast } from "../../../GlobalToast";
@@ -39,6 +40,8 @@ export interface ClinicalSupportModalsProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	isInformedConsentModalOpen: boolean;
 	setIsInformedConsentModalOpen: (v: boolean) => void;
+	isPrescriptionModalOpen?: boolean | undefined;
+	setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
 	activePatient: any;
 	activeDoctor: any;
 	dashboard: any;
@@ -62,6 +65,8 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 	setIsDoctorShiftModalOpen,
 	isInformedConsentModalOpen,
 	setIsInformedConsentModalOpen,
+	isPrescriptionModalOpen,
+	setIsPrescriptionModalOpen,
 	activePatient,
 	activeDoctor,
 	dashboard,
@@ -336,6 +341,52 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 							"Информированное согласие прикреплено к протоколу приёма",
 							"success",
 						);
+					}}
+				/>
+			)}
+
+			{/* Рецептурный модуль (Приказы 1094н / 107-1/у и 148-1/у-88) — Мандаты 8e, 8x, 8y */}
+			{(effectiveActiveModal === "prescription" || isPrescriptionModalOpen) && (
+				<PrescriptionModal
+					isOpen={true}
+					onClose={() => {
+						setIsPrescriptionModalOpen?.(false);
+						useUiSurfaceStore.getState().closePrimaryModal("prescription");
+					}}
+					patient={activePatient}
+					patientName={activePatient?.fullName || activePatient?.name}
+					allergies={activePatient?.allergies}
+					doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
+					doctorSpecialty={activeDoctor?.specialty || "Врач-стоматолог"}
+					doctorSnils={activeDoctor?.snils}
+					clinicName={
+						(dashboard as any)?.clinicSettings?.profile?.brandName ||
+						dashboard?.organization?.name ||
+						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					}
+					clinicAddress={
+						(dashboard as any)?.clinicSettings?.profile?.address ||
+						"г. Москва, ул. Клиническая, д. 10"
+					}
+					clinicPhone={
+						(dashboard as any)?.clinicSettings?.profile?.phone ||
+						"+7 (495) 000-00-00"
+					}
+					clinicOgrn={(dashboard as any)?.clinicSettings?.profile?.ogrn || "1127746000000"}
+					clinicInn={(dashboard as any)?.clinicSettings?.profile?.inn || "7701000000"}
+					medicalLicenseNumber={
+						(dashboard as any)?.clinicSettings?.profile?.medicalLicenseNumber ||
+						"ЛО41-01137-77/00368421"
+					}
+					diary={{
+						diagnosisIcd10: visitNoteForm?.diagnosis || "K02.1",
+						treatmentDescription: visitNoteForm?.treatmentDescription || visitNoteForm?.diary,
+						anamnesis: visitNoteForm?.anamnesis,
+						statusLocalis: visitNoteForm?.statusLocalis,
+					}}
+					onInsertToDiary={(prescriptionText) => {
+						appendToEMKField("recommendations", prescriptionText);
+						showToast("Назначение рецепта добавлено в рекомендации приёма", "success");
 					}}
 				/>
 			)}

@@ -46,7 +46,7 @@ export interface VisitLoadedTreatmentPlan
 }
 
 export interface VisitViewHeaderProps {
-	activePatient: VisitPatientEntity;
+	activePatient: VisitPatientEntity | null | undefined;
 	patientAge: string | null;
 	activeAppointment?: VisitAppointmentEntity | null | undefined;
 	activeDoctor?: VisitDoctorEntity | null | undefined;
@@ -59,6 +59,7 @@ export interface VisitViewHeaderProps {
 		| ((field: string, value: string) => void)
 		| undefined;
 	handleApplySomaticNormQuick: () => void;
+	handlePrintClinicalDiaryFast?: (() => void) | undefined;
 	handlePrintForm043uFast: () => void;
 	handlePrintCompletedActFast: () => void;
 	handlePrintEstimateFast: () => void;
@@ -80,6 +81,7 @@ export interface VisitViewHeaderProps {
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
 	setIsWarrantyModalOpen?: ((open: boolean) => void) | undefined;
+	setIsPrescriptionModalOpen?: ((open: boolean) => void) | undefined;
 	onOpenVisiographComparison?: (() => void) | undefined;
 	setIsVisiographComparisonModalOpen?: ((open: boolean) => void) | undefined;
 }
@@ -110,6 +112,7 @@ export interface VisitActionFooterProps {
 	polishTranscript?: (() => Promise<void> | void) | undefined;
 	updateVisitNoteField?: ((field: string, val: string) => void) | undefined;
 	visitNoteForm?: VisitNoteFormExtended | undefined;
+	handlePrintClinicalDiaryFast?: (() => void) | undefined;
 	handlePrintForm043uFast: () => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;

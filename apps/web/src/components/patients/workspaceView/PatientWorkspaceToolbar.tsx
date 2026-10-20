@@ -2,10 +2,12 @@ import {
 	Activity,
 	Camera,
 	Eye,
+	FileCheck,
 	FileSpreadsheet,
 	FileText,
 	Gift,
 	MoreVertical,
+	Pill,
 	Plus,
 	Printer,
 	Receipt,
@@ -35,6 +37,8 @@ export interface PatientWorkspaceToolbarProps {
 	setIsLoyaltyModalOpen: (v: boolean) => void;
 	setIsDmsLetterOpen: (v: boolean) => void;
 	setIsDmsRegistryOpen: (v: boolean) => void;
+	setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
+	setIsTaxCertificateOpen?: ((v: boolean) => void) | undefined;
 }
 
 export const PatientWorkspaceToolbar: React.FC<PatientWorkspaceToolbarProps> = React.memo(
@@ -51,6 +55,8 @@ export const PatientWorkspaceToolbar: React.FC<PatientWorkspaceToolbarProps> = R
 		setIsLoyaltyModalOpen,
 		setIsDmsLetterOpen,
 		setIsDmsRegistryOpen,
+		setIsPrescriptionModalOpen,
+		setIsTaxCertificateOpen,
 	}) => {
 		const appLogic = useAppLogicContext();
 		const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
@@ -363,6 +369,36 @@ export const PatientWorkspaceToolbar: React.FC<PatientWorkspaceToolbarProps> = R
 							>
 								<Shield className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>Бланк ИДС / согласий (_______)</span>
+							</button>
+
+							<button
+								type="button"
+								role="menuitem"
+								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors text-teal-700 dark:text-teal-300"
+								onClick={() => {
+									setIsDocsMenuOpen(false);
+									setIsPrescriptionModalOpen?.(true);
+								}}
+								title="Оформить рецепт (107-1/у, 148-1/у-88)"
+								data-testid="btn-patient-prescriptions-modal"
+							>
+								<Pill className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Выписать рецепт</span>
+							</button>
+
+							<button
+								type="button"
+								role="menuitem"
+								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors text-emerald-700 dark:text-emerald-300"
+								onClick={() => {
+									setIsDocsMenuOpen(false);
+									setIsTaxCertificateOpen?.(true);
+								}}
+								title="Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ)"
+								data-testid="btn-patient-tax-deduction-modal"
+							>
+								<FileCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Справка для вычета (13%)</span>
 							</button>
 						</div>
 					)}
