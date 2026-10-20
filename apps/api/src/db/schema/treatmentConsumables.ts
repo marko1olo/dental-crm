@@ -102,5 +102,14 @@ export const treatmentConsumableDeductions = pgTable(
 			table.organizationId,
 			table.visitId,
 		),
+		doctorIdIdx: index("treatment_consumable_deductions_doctor_id_idx").on(
+			table.doctorId,
+		),
+		orgCreatedIdx: index(
+			"treatment_consumable_deductions_org_created_idx",
+		).on(table.organizationId, table.createdAt),
+		orgStatusIdx: index(
+			"treatment_consumable_deductions_org_status_idx",
+		).on(table.organizationId, table.status),
 	}),
 );

@@ -75,6 +75,18 @@ export const inventoryItems = pgTable(
 			organizationIdIdx: index("inventory_items_organizationId_idx").on(
 				table.organizationId,
 			),
+			orgCategoryIdx: index("inventory_items_org_category_idx").on(
+				table.organizationId,
+				table.category,
+			),
+			orgBarcodeIdx: index("inventory_items_org_barcode_idx").on(
+				table.organizationId,
+				table.barcode,
+			),
+			orgCreatedIdx: index("inventory_items_org_created_idx").on(
+				table.organizationId,
+				table.createdAt,
+			),
 		};
 	},
 );
@@ -194,6 +206,20 @@ export const inventoryTransactions = pgTable(
 			t.organizationId,
 		),
 		batchIdIdx: index("inventory_transactions_batch_idx").on(t.batchId),
+		orgCreatedIdx: index("inventory_transactions_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		orgItemIdx: index("inventory_transactions_org_item_idx").on(
+			t.organizationId,
+			t.inventoryItemId,
+		),
+		orgWarehouseIdx: index("inventory_transactions_org_warehouse_idx").on(
+			t.organizationId,
+			t.warehouseId,
+		),
+		visitIdIdx: index("inventory_transactions_visit_id_idx").on(t.visitId),
+		userIdIdx: index("inventory_transactions_user_id_idx").on(t.userId),
 	}),
 );
 
@@ -283,6 +309,7 @@ export const procedureTechCardItems = pgTable(
 	},
 	(t) => ({
 		techCardIdx: index("procedure_tech_card_items_card_idx").on(t.techCardId),
+		itemIdx: index("procedure_tech_card_items_item_idx").on(t.inventoryItemId),
 	}),
 );
 
@@ -337,6 +364,11 @@ export const sterilizationLogs = pgTable(
 	(t) => ({
 		organizationIdIdx: index("sterilization_logs_organizationId_idx").on(
 			t.organizationId,
+		),
+		operatorIdIdx: index("sterilization_logs_operator_id_idx").on(t.operatorId),
+		orgCreatedIdx: index("sterilization_logs_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );
@@ -427,24 +459,60 @@ export const autoclaveDailyTests = pgTable(
 );
 
 // inventory transfers (TORG-13)
-export const inventoryTransfers = pgTable("inventory_transfers", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	senderOrganizationId: uuid("sender_organization_id").notNull().references(() => organizations.id),
-	receiverOrganizationId: uuid("receiver_organization_id").notNull().references(() => organizations.id),
-	status: text("status").notNull().default("draft"), // draft, in_transit, partially_received, completed, cancelled
-	notes: text("notes"),
-	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const inventoryTransfers = pgTable(
+	"inventory_transfers",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		senderOrganizationId: uuid("sender_organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		receiverOrganizationId: uuid("receiver_organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		status: text("status").notNull().default("draft"), // draft, in_transit, partially_received, completed, cancelled
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		senderOrgIdx: index("inventory_transfers_sender_org_idx").on(
+			t.senderOrganizationId,
+		),
+		receiverOrgIdx: index("inventory_transfers_receiver_org_idx").on(
+			t.receiverOrganizationId,
+		),
+		senderStatusIdx: index("inventory_transfers_sender_status_idx").on(
+			t.senderOrganizationId,
+			t.status,
+		),
+	}),
+);
 
-export const inventoryTransferItems = pgTable("inventory_transfer_items", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	transferId: uuid("transfer_id").notNull().references(() => inventoryTransfers.id),
-	inventoryItemId: uuid("inventory_item_id").notNull().references(() => inventoryItems.id),
-	quantitySent: numeric("quantity_sent", { precision: 10, scale: 3 }).notNull(),
-	quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).default("0"),
-	quantityDamaged: numeric("quantity_damaged", { precision: 10, scale: 3 }).default("0"),
-	notes: text("notes"),
-});
+export const inventoryTransferItems = pgTable(
+	"inventory_transfer_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		transferId: uuid("transfer_id")
+			.notNull()
+			.references(() => inventoryTransfers.id),
+		inventoryItemId: uuid("inventory_item_id")
+			.notNull()
+			.references(() => inventoryItems.id),
+		quantitySent: numeric("quantity_sent", { precision: 10, scale: 3 }).notNull(),
+		quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).default("0"),
+		quantityDamaged: numeric("quantity_damaged", { precision: 10, scale: 3 }).default("0"),
+		notes: text("notes"),
+	},
+	(t) => ({
+		transferIdIdx: index("inventory_transfer_items_transfer_idx").on(
+			t.transferId,
+		),
+		itemIdIdx: index("inventory_transfer_items_item_idx").on(
+			t.inventoryItemId,
+		),
+	}),
+);
 
 // ─── MDLP / Chestny Znak (ФЗ № 425-ФЗ & Постановление № 1556) ─────────────
 
@@ -508,6 +576,14 @@ export const mdlpItems = pgTable(
 			t.organizationId,
 			t.status,
 		),
+		patientIdIdx: index("mdlp_items_patient_id_idx").on(t.patientId),
+		visitIdIdx: index("mdlp_items_visit_id_idx").on(t.visitId),
+		doctorIdIdx: index("mdlp_items_doctor_id_idx").on(t.doctorId),
+		warehouseIdIdx: index("mdlp_items_warehouse_id_idx").on(t.warehouseId),
+		inventoryItemIdIdx: index("mdlp_items_inventory_item_idx").on(
+			t.inventoryItemId,
+		),
+		batchIdIdx: index("mdlp_items_batch_id_idx").on(t.batchId),
 	}),
 );
 

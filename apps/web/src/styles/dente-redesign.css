@@ -12,6 +12,10 @@
 @import "./modules/dente/layout-utilities.css";
 @import "./modules/dente/documents.css";
 
+:root {
+	--sidebar-width: 200px;
+}
+
 @media (max-width: 1140px) {
 	.compact-top-button {
 		display: none !important;

@@ -247,6 +247,9 @@ export const scheduleClipboardItems = pgTable(
 		organizationIdIdx: index("schedule_clipboard_items_organizationId_idx").on(
 			t.organizationId,
 		),
+		appointmentIdIdx: index("schedule_clipboard_items_appointment_id_idx").on(
+			t.appointmentId,
+		),
 	}),
 );
 
@@ -355,6 +358,17 @@ export const appointmentWaitlists = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("appointment_waitlists_patientId_idx").on(t.patientId),
+		preferredDoctorIdx: index(
+			"appointment_waitlists_preferred_doctor_idx",
+		).on(t.preferredDoctorId),
+		orgStatusIdx: index("appointment_waitlists_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedIdx: index("appointment_waitlists_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -449,6 +463,11 @@ export const yandexCalendarSyncs = pgTable(
 	(t) => ({
 		organizationIdIdx: index("yandex_calendar_syncs_organizationId_idx").on(
 			t.organizationId,
+		),
+		doctorIdIdx: index("yandex_calendar_syncs_doctor_id_idx").on(t.doctorId),
+		orgDoctorIdx: index("yandex_calendar_syncs_org_doctor_idx").on(
+			t.organizationId,
+			t.doctorId,
 		),
 	}),
 );

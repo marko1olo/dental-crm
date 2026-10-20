@@ -73,6 +73,15 @@ export const toothStates = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("tooth_states_patientId_idx").on(t.patientId),
+		orgPatientIdx: index("tooth_states_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		orgPatientToothIdx: index("tooth_states_org_patient_tooth_idx").on(
+			t.organizationId,
+			t.patientId,
+			t.toothNumber,
+		),
 	}),
 );
 
@@ -122,6 +131,14 @@ export const toothStateHistory = pgTable(
 		organizationIdIdx: index("tooth_state_history_organizationId_idx").on(
 			table.organizationId,
 		),
+		orgPatientIdx: index("tooth_state_history_org_patient_idx").on(
+			table.organizationId,
+			table.patientId,
+		),
+		visitIdIdx: index("tooth_state_history_visit_id_idx").on(table.visitId),
+		changedByIdx: index("tooth_state_history_changed_by_idx").on(
+			table.changedByUserId,
+		),
 	}),
 );
 
@@ -163,5 +180,8 @@ export const perioCharts = pgTable(
 		index("perio_charts_organization_id_idx").on(t.organizationId),
 		index("perio_charts_patient_id_idx").on(t.patientId),
 		index("perio_charts_chart_date_idx").on(t.patientId, t.chartDate),
+		index("perio_charts_visit_id_idx").on(t.visitId),
+		index("perio_charts_doctor_id_idx").on(t.doctorId),
+		index("perio_charts_org_patient_idx").on(t.organizationId, t.patientId),
 	],
 );

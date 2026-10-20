@@ -153,6 +153,15 @@ export const services = pgTable(
 		organizationIdIdx: index("services_organizationId_idx").on(
 			t.organizationId,
 		),
+		orgCategoryIdx: index("services_org_category_idx").on(
+			t.organizationId,
+			t.category,
+		),
+		orgActiveIdx: index("services_org_active_idx").on(
+			t.organizationId,
+			t.active,
+		),
+		orgCodeIdx: index("services_org_code_idx").on(t.organizationId, t.code),
 	}),
 );
 
@@ -297,6 +306,10 @@ export const treatmentScenarios = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("treatment_scenarios_patient_id_idx").on(t.patientId),
+		orgPatientIdx: index("treatment_scenarios_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
 	}),
 );
 
@@ -504,6 +517,18 @@ export const treatmentPlans = pgTable(
 		priceFreezeTokenIdx: index("treatment_plans_price_freeze_token_idx").on(
 			t.activePriceFreezeTokenId,
 		),
+		orgPatientIdx: index("treatment_plans_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
+		orgStatusIdx: index("treatment_plans_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		orgCreatedIdx: index("treatment_plans_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
 	}),
 );
 
@@ -628,6 +653,14 @@ export const treatmentPlanItemsNew = pgTable(
 		),
 		planIdIdx: index("treatment_plan_items_new_plan_id_idx").on(t.planId),
 		doctorIdIdx: index("treatment_plan_items_new_doctor_id_idx").on(t.doctorId),
+		orgPlanIdx: index("treatment_plan_items_new_org_plan_idx").on(
+			t.organizationId,
+			t.planId,
+		),
+		orgDoctorIdx: index("treatment_plan_items_new_org_doctor_idx").on(
+			t.organizationId,
+			t.doctorId,
+		),
 	}),
 );
 
