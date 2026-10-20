@@ -205,7 +205,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					}
 				}
 
-				const targetLedgerIds = targetIndices
+				const targetLedgerIds = Array.from(targetIndices)
 					.map((idx) => (planItems[idx] ? ledgerRowId(planId, idx) : null))
 					.filter((id): id is string => Boolean(id));
 

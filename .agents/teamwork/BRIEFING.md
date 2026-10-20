@@ -1,7 +1,7 @@
-# BRIEFING — 2026-10-20T06:18:30Z
+# BRIEFING — 2026-10-20T06:36:00Z
 
 ## Mission
-Autonomous Red Team Inquisitor Swarm: Deep technical audit, crash fix, performance optimization, and codebase remediation of DENTE Dental CRM (backend typecheck zero-exit-code, frontend useAppLogic re-renders & state co-location, Three.js WebGL memory cleanup, bundle code-splitting, Fastify transactions & indexes, clinical autonomy).
+Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fallbacks, and orphaned stub components across DENTE Dental CRM, integrating all standalone features into the real production UI and PostgreSQL 18 backend.
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -22,19 +22,19 @@ Autonomous Red Team Inquisitor Swarm: Deep technical audit, crash fix, performan
 - Cron (Liveness Check): task-873 (*/15 * * * *) [STOPPED by restart]
 - Cron (Liveness Check): task-981 (*/15 * * * *) [STOPPED by restart]
 - Cron (Liveness Check): task-1089 (*/15 * * * *) [CANCELLED]
-- Active Orchestrator: 47f9f488-23df-448d-9d14-106c107b506b (teamwork_preview_orchestrator_4)
-- Cron 1 (Progress Reporting): task-26 (*/8 * * * *) [CANCELLED by restart]
-- Cron 2 (Liveness Check): task-28 (*/10 * * * *) [CANCELLED by restart]
-- Cron 1 (Progress Reporting): task-54 (*/8 * * * *) [CANCELLED by restart]
-- Cron 2 (Liveness Check): task-56 (*/10 * * * *) [CANCELLED by restart]
-- Cron 1 (Progress Reporting): task-112 (*/8 * * * *) [CANCELLED by restart 3]
-- Cron 2 (Liveness Check): task-114 (*/10 * * * *) [CANCELLED by restart 3]
-- Cron 1 (Progress Reporting): task-192 (*/8 * * * *) [CANCELLED by restart 4]
-- Cron 2 (Liveness Check): task-194 (*/10 * * * *) [CANCELLED by restart 4]
-- Cron 1 (Progress Reporting): task-260 (*/8 * * * *) [CANCELLED by restart 5]
-- Cron 2 (Liveness Check): task-262 (*/10 * * * *) [CANCELLED by restart 5]
-- Cron 1 (Progress Reporting): task-338 (*/8 * * * *) [ACTIVE post-restart 5]
-- Cron 2 (Liveness Check): task-340 (*/10 * * * *) [ACTIVE post-restart 5]
+- Active Orchestrator: 1dba1dd3-1b54-431d-9253-a722303ba51f (teamwork_preview_orchestrator_4)
+- Cron 1 (Progress Reporting): task-24 (*/8 * * * *) [CANCELLED by restart]
+- Cron 2 (Liveness Check): task-26 (*/10 * * * *) [CANCELLED by restart]
+- Cron 1 (Progress Reporting): task-53 (*/8 * * * *) [CANCELLED by restart 2]
+- Cron 2 (Liveness Check): task-55 (*/10 * * * *) [CANCELLED by restart 2]
+- Cron 1 (Progress Reporting): task-109 (*/8 * * * *) [CANCELLED by restart 3]
+- Cron 2 (Liveness Check): task-111 (*/10 * * * *) [CANCELLED by restart 3]
+- Cron 1 (Progress Reporting): task-184 (*/8 * * * *) [CANCELLED by restart 4]
+- Cron 2 (Liveness Check): task-186 (*/10 * * * *) [CANCELLED by restart 4]
+- Cron 1 (Progress Reporting): task-261 (*/8 * * * *) [CANCELLED by restart 5]
+- Cron 2 (Liveness Check): task-263 (*/10 * * * *) [CANCELLED by restart 5]
+- Cron 1 (Progress Reporting): task-345 (*/8 * * * *) [ACTIVE post-restart 5]
+- Cron 2 (Liveness Check): task-347 (*/10 * * * *) [ACTIVE post-restart 5]
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
@@ -52,25 +52,23 @@ Autonomous Red Team Inquisitor Swarm: Deep technical audit, crash fix, performan
 - Iteration 3 Remediation Mandate: (1) Pulp/nerve is an INTERNAL structure with translucent radiological x-ray shader (opacity: 0.35–0.50, neurovascular mesh, hidden by default under enamel); (2) Caries: strict ban on `<circle r="..." />`! Dendritic fissure demineralization with chalky white halo, amber-brown softened dentin branching, dark chocolate central cavitation depth; (3) Crown & cusps: volumetric organic hills with ambient occlusion central basin, no wireframe fissures; (4) Stand default state: clean natural tooth (enamel + roots + relief), pathologies toggled on via neat clinical layers.
 - 5 Surgical Fixes Mandate (Gate 0 Masterpiece): (1) Replace harsh grey diamond in root bifurcation with smooth radial shadow (dente-furcation-shadow); (2) Clip or flare canal orifices at CEJ under root boundary (clipPath="url(#tooth46-root-clip)"); (3) Shift apical canal dots 1.5px up inside anatomical root tip; (4) Soften top-left boundary of dendritic caries lesion to flow naturally out of central fissure; (5) Zero-lag performance via clean SVG gradients without heavy filter recursion (120 FPS target).
 - Iteration 4 Sculpt Master Mandate: (1) Eradicate brown caries tongue on buccal margin; true organic dendritic caries along Y-5 fissure with micro-cavities; (2) Remove artificial oval in occlusal basin; build 5 sculpted cusps with triangular ridges and pearlescent specular highlights; (3) Deepen longitudinal anatomical groove on mesial root (Wheeler Ch. 11) with distal apical curve; (4) Implement full spectrum of clinical states (Intact, Caries, Pulpitis, Periodontitis, Endo, Restoration/Filling, Crown); (5) Absolute ban on premature victory declarations — work proceeds until unconditional visual approval by Creator.
-- Red Team Inquisitor Mandate: 100% presumption of defect. Zero synthetic mocks in production code (real PostgreSQL 18 on 127.0.0.1:5432). No Potemkin sandboxes. Host RAM ceiling: --max-old-space-size=2048. Subagents forbidden from running concurrent tsc -p/npm run typecheck to prevent OOM. Mandatory documentation sync (.agents/, docs/, ARCHITECTURE.md). Non-destructive worktree discipline.
+- Anti-Potemkin Mandate: Complete purge of standalone *_preview.html files and main.tsx bypass query parameters; zero synthetic mock fallbacks in production views; real backend wiring for lab uploads and button actions; all verification proofs strictly via http://127.0.0.1:5173/ root app.
 
 ## Routing Decision
 - **Path chosen**: General (`teamwork_preview_orchestrator`)
-- **Rationale**: Multi-track architectural remediation: backend compilation crashes, frontend memoization/splitting, 3D WebGL resource lifecycle, Fastify transactions/indexes, clinical autonomy.
+- **Rationale**: Full-stack SWE, navigation restructuring, mock removal, backend endpoints, and E2E verification.
 
 ## User Context
-- **Last user request**: 2026-10-20T06:15:52Z: Creator mandate for maximum parallelization («НАДО БОЛЬШЕ СПАВНИТЬ СУБАГЕНТОВ»). 5 parallel workers deployed across all remaining milestones.
+- **Last user request**: 2026-10-20T06:35:37Z: Квота восстановлена! Активируй весь рой инквизиторов, проверь статус всех воркеров M1-M5 и аудиторов. Убей все потёмкинские деревни, доведи интеграцию до конца и зафиксируй результат.
 - **Pending clarifications**: none
-- **Delivered results**: 5 parallel workers actively executing across isolated file domains.
+- **Delivered results**:
+  - M1 PASSED & COMMITTED (`1f2382e6e`).
+  - M3 COMMITTED (`a26be4a9a`), passed dual review (2x APPROVE), Auditor M3 (`3e7701a6`) in final evaluation.
+  - M2: Worker M2 Gen 2 (`76c83436`) in final test verification of 9 clinical workspaces.
+  - M4 & Audit Remediation: Worker M4 (`d6bb3dc7`) dispatched to wire local scan storage and remediate all 4 audit defects.
 
 ## Project Status
-- **Phase**: Maximum Parallel Swarm Execution (5 Parallel Workers):
-  - **Worker 1 (Audit Remediation)** (`802d6087`): Resolving TS2532, 15 `any` in receipt routes, ACID `tx` propagation in `visitQuickRoutes.ts`, WebGL `pagehide`/`unload` lifecycle.
-  - **Worker 2 (M2 Clinical Navigation)** (`b56e9cdd`): Integrating 9 clinical workspaces into `Sidebar.tsx`, `VisitEmkTab.tsx`, `PatientCardModal.tsx`.
-  - **Worker 3 (M3 Data Purity)** (`7b592488`): Purging synthetic defaults in `TreatmentPipeline.tsx`, `DoctorPayoutDashboard.tsx`, connecting `HeaderGlobalSearch.tsx` to live Fastify API.
-  - **Worker 4 (M4 Backend Wiring)** (`d30b243e`): Local `.data/lab_scans` fallback, Fastify `model/ply` Content-Type, wiring dead `onClick` handlers.
-  - **Worker 5 (M5 E2E Proofs)** (`95068f8e`): Running root Playwright Chromium tests, capturing 4-state visual proofs, verifying 0 of 7 deadly UI sins.
-- Orchestrator `47f9f488-23df-448d-9d14-106c107b506b` actively supervising. Crons task-338 & task-340 active.
+- **Phase**: in progress (Milestones M2/M3 verification & Milestone 4 execution)
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -78,7 +76,9 @@ Autonomous Red Team Inquisitor Swarm: Deep technical audit, crash fix, performan
 - **Retry count**: 0
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md — User request record
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md — Authoritative user requests log
 - C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Supreme constitutional law
 - C:\Clinic_MVP\dental-crm\.agents\AGENTS.md — Canonical architectural mandates
 - C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\ — Active Orchestrator workspace
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\progress.md — Active Orchestrator liveness ledger
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\GATE_STATUS.md — Gate verdicts

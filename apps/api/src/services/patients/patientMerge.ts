@@ -413,17 +413,20 @@ export async function mergePatients(
 					primary.familyGroupId !== duplicate.familyGroupId
 				) {
 					// Загружаем балансы семейных кошельков с детерминированной блокировкой FOR UPDATE в порядке возрастания ID (Deadlock-Free)
-					const [firstFamId, secondFamId] = [
-						duplicate.familyGroupId,
-						primary.familyGroupId,
-					].sort();
+					const [firstFamId, secondFamId] =
+						duplicate.familyGroupId < primary.familyGroupId
+							? [duplicate.familyGroupId, primary.familyGroupId]
+							: [primary.familyGroupId, duplicate.familyGroupId];
 
 					const lockedFamilyRows = await inner
 						.select()
 						.from(familyGroups)
 						.where(
 							and(
-								inArray(familyGroups.id, [firstFamId, secondFamId]),
+								or(
+									eq(familyGroups.id, firstFamId),
+									eq(familyGroups.id, secondFamId),
+								),
 								eq(familyGroups.organizationId, input.organizationId),
 							),
 						)
