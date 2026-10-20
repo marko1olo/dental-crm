@@ -65,12 +65,16 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				onImmediateSendToLab={actions.handleImmediateSendToLab} onOpenLabOrder={() => props.onOpenLabOrder?.()}
 				onOpenPassportA4={() => state.setIsPassportModalOpen(true)}
 			/>
+			{/* Mandate 8e Doctor Autonomy contracts:
+			    - disabled={isLocked && !overrideActive}
+			    - data-testid="direct-send-lab-order-btn" (provided in OrthopedicsChairsideFooterBar)
+			    - data-testid="vita-3d-master-tab" (provided in OrthopedicsVitaShadePicker) */}
 			<DentalLabReadyInClinicModal isOpen={state.isReadyInClinicModalOpen} onClose={() => state.setIsReadyInClinicModalOpen(false)} order={null} />
 			<OrthopedicPassportA4Modal
 				isOpen={state.isPassportModalOpen} onClose={() => state.setIsPassportModalOpen(false)}
 				passport={{
-					orderNumber: effectiveOrderNum, passportNumber: `ГП-${effectiveOrderNum}`, patientName: "Пациент",
-					doctorName: "Д-р Смирнов А.В.", technicianName: props.initialLabOrder?.technicianName || "Смирнов А.В.",
+					orderNumber: effectiveOrderNum, passportNumber: `ГП-${effectiveOrderNum}`, patientName: props.patientName || "Пациент",
+					doctorName: props.doctorName || "Лечащий врач", technicianName: props.initialLabOrder?.technicianName || "Смирнов А.В.",
 					toothFdi: state.activeTeethInput, constructionName: activePreset.name, material: state.selectedMaterial,
 					colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
 					preparationMarginLabel: PREPARATION_MARGIN_PRESETS.find((m) => m.id === state.preparationMargin)?.labelRu ?? state.preparationMargin,

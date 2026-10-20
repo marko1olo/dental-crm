@@ -417,7 +417,7 @@ export function usePerioChartLogic({
 		if (readOnly) return;
 		setTeeth((prevTeeth) => applyHealthyPeriodontiumPreset(prevTeeth));
 		showToast(
-			"✓ Пародонт интактен (норма): глубина 1–2 мм, BOP 0%, PMA 0%",
+			"Пародонт интактен (норма): глубина 1–2 мм, BOP 0%, PMA 0%",
 			"success",
 			4000,
 		);

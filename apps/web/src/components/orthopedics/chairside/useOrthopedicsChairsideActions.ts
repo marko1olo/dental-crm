@@ -71,6 +71,10 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 	}, [state, props]);
 
 	const handleApplyProtocol = useCallback((protocol: OrthopedicProtocolPreset) => {
+		if (props.isLocked && !state.overrideActive) {
+			showToast("Клинический протокол заблокирован (активируйте оверрайд врача)", "warning");
+			return;
+		}
 		const teethParts = state.activeTeethInput.split(/[\s,;-]+/).map((p: string) => p.trim()).filter(Boolean);
 		const options: FormatOrthopedicProtocolOptions = {
 			teethFdi: teethParts.length > 0 ? teethParts : undefined,

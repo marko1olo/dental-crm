@@ -422,6 +422,8 @@ export function VisitEmkInteractiveStage({
 						activeToothFdi={effectiveActiveTooth || 16}
 						selectedTeeth={[effectiveActiveTooth || 16]}
 						patientId={activePatient?.id}
+						patientName={activePatient?.fullName}
+						doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 						isLocked={isLocked}
 					/>
 				</div>

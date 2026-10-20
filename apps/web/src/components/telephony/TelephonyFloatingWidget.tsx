@@ -25,7 +25,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 	// Non-blocking call ergonomics (Mandate 8e): dialInputRef.current?.focus();
 	// showToast("Введите номер телефона для набора", "warning");
 	const isDoctorChairsideMode = s.isDoctorChairsideMode;
-	if (isDoctorChairsideMode && !s.activeCall) {
+	if (isDoctorChairsideMode) {
 		return null;
 	}
 	if (s.isFullScreenStudioActive || s.hasPrimaryModal || (!s.activeCall && !s.isOpen && !props.defaultExpanded)) {

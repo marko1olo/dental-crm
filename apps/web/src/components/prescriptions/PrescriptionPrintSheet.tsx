@@ -11,37 +11,21 @@ import type { PrescriptionDrugItem } from "./PrescriptionPrintModal";
 export interface PrescriptionPrintSheetProps {
 	readonly seriesNumber: string;
 	readonly clinicName: string;
-	readonly clinicAddress?: string;
-	readonly clinicPhone?: string;
-	readonly doctorName: string;
-	readonly doctorSpecialty?: string;
-	readonly patientName: string;
-	readonly patientBirthDate?: string;
-	readonly medicalCardNumber?: string;
-	readonly prescriptionDate: string;
+	readonly clinicAddress?: string; readonly clinicPhone?: string;
+	readonly doctorName: string; readonly doctorSpecialty?: string;
+	readonly patientName: string; readonly patientBirthDate?: string;
+	readonly medicalCardNumber?: string; readonly prescriptionDate: string;
 	readonly items: readonly PrescriptionDrugItem[];
-	readonly validityDays?: string;
-	readonly isMemoMode?: boolean;
-	readonly isUkepSigned?: boolean;
-	readonly className?: string;
+	readonly validityDays?: string; readonly isMemoMode?: boolean;
+	readonly isUkepSigned?: boolean; readonly className?: string;
 }
 
 export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
-	seriesNumber,
-	clinicName,
-	clinicAddress,
-	clinicPhone,
-	doctorName,
-	doctorSpecialty = "Врач-стоматолог",
-	patientName,
-	patientBirthDate,
-	medicalCardNumber,
-	prescriptionDate,
-	items,
-	validityDays = "60",
-	isMemoMode = false,
-	isUkepSigned = false,
-	className,
+	seriesNumber, clinicName, clinicAddress, clinicPhone,
+	doctorName, doctorSpecialty = "Врач-стоматолог",
+	patientName, patientBirthDate, medicalCardNumber,
+	prescriptionDate, items, validityDays = "60",
+	isMemoMode = false, isUkepSigned = false, className,
 }) => {
 	return (
 		<div

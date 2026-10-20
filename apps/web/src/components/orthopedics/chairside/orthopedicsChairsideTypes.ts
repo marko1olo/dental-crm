@@ -3,6 +3,8 @@ import type { Order804nServiceItem } from "./orthopedicProtocols.js";
 
 export interface OrthopedicsChairsidePanelProps {
 	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
 	readonly activeToothFdi?: string | number | undefined;
 	readonly selectedTeeth?: readonly (string | number)[] | undefined;
 	readonly recentToothXrayUrl?: string | undefined;
