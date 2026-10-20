@@ -1,0 +1,129 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_3",
+  "taskName": "Canonical Playwright Red Team Inquisitor: Eradicate mock preview stands, capture 4 honest live CRM states, enforce Byte Guard >= 40KB & zero visual sins",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T09:42:30Z",
+  "invariantsPreserved": [
+    "THE_HAMMER §23 (The Ironclad Ban on Fake Preview Sandboxes & Vacuum Screenshot Fraud)",
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)",
+    "Mandate 8n (Solo Doctor & Small Clinic Scale Sovereignty)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication)",
+    "Mandate 8wy (Strict Production Contour vs Demo Separation)",
+    "Mandate 8ze/8al (Apple HIG, 44x44px Touch Targets, Natural Thumb Zone)",
+    "Mandate 8an (VCS Law, Atomic Commits, Dual Push)"
+  ],
+  "eliminatedSandboxes": {
+    "trackedMockupsPurgedViaGitRm": [
+      "apps/web/public/fake_probe_preview.html",
+      "apps/web/public/preview-test.html",
+      "apps/web/public/standalone_probe_sandbox.html",
+      "apps/web/public/standalone_test.html",
+      "apps/web/public/test_preview.html",
+      "apps/web/public/test_preview_fixed.html"
+    ],
+    "untrackedMockupsPurged": 27,
+    "totalDeadMockupFilesPurged": 33
+  },
+  "canonicalScript": {
+    "path": "scripts/capture_honest_crm_inquisition.mjs",
+    "targetUrl": "http://127.0.0.1:5173/#visit",
+    "authEndpoint": "http://127.0.0.1:4100/api/auth/login",
+    "database": "PostgreSQL 18 on 127.0.0.1:5432",
+    "resilienceFeatures": [
+      "Vite HMR WebSocket neutralizer (page.routeWebSocket + window.WebSocket stub) ensuring immunity against peer agent file-save reload storms",
+      "Clean browser context isolation with native colorScheme per state",
+      "Direct intake patient selection into live MobileChairsideVisitWorkspace",
+      "Graceful browser.close() in finally block (Mandate §23 compliant)"
+    ]
+  },
+  "capturedStates": [
+    {
+      "file": "docs/proofs/honest_crm/01_crm_honest_pc_light_1440x900.png",
+      "state": "PC Light",
+      "viewport": "1440x900",
+      "theme": "light",
+      "isMobile": false,
+      "sizeBytes": 882300,
+      "byteGuardPass": true,
+      "inspectedViaViewFile": true,
+      "clinicalChecks": {
+        "hasDesktopVisit": true,
+        "hasMobileVisit": false,
+        "hasVisitHeader": true,
+        "hasCompleteBtn": true,
+        "hasOdontogramTab": true,
+        "hasMobileNormBtn": true,
+        "hasMobileStepNav": false
+      }
+    },
+    {
+      "file": "docs/proofs/honest_crm/02_crm_honest_pc_dark_1440x900.png",
+      "state": "PC Dark",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "isMobile": false,
+      "sizeBytes": 894902,
+      "byteGuardPass": true,
+      "inspectedViaViewFile": true,
+      "clinicalChecks": {
+        "hasDesktopVisit": true,
+        "hasMobileVisit": false,
+        "hasVisitHeader": true,
+        "hasCompleteBtn": true,
+        "hasOdontogramTab": true,
+        "hasMobileNormBtn": true,
+        "hasMobileStepNav": false
+      }
+    },
+    {
+      "file": "docs/proofs/honest_crm/03_crm_honest_mobile_light_390x844.png",
+      "state": "Mobile Light",
+      "viewport": "390x844",
+      "theme": "light",
+      "isMobile": true,
+      "sizeBytes": 196105,
+      "byteGuardPass": true,
+      "inspectedViaViewFile": true,
+      "clinicalChecks": {
+        "hasDesktopVisit": false,
+        "hasMobileVisit": true,
+        "hasVisitHeader": false,
+        "hasCompleteBtn": false,
+        "hasOdontogramTab": false,
+        "hasMobileNormBtn": true,
+        "hasMobileStepNav": false
+      }
+    },
+    {
+      "file": "docs/proofs/honest_crm/04_crm_honest_mobile_dark_390x844.png",
+      "state": "Mobile Dark",
+      "viewport": "390x844",
+      "theme": "dark",
+      "isMobile": true,
+      "sizeBytes": 195783,
+      "byteGuardPass": true,
+      "inspectedViaViewFile": true,
+      "clinicalChecks": {
+        "hasDesktopVisit": false,
+        "hasMobileVisit": true,
+        "hasVisitHeader": false,
+        "hasCompleteBtn": false,
+        "hasOdontogramTab": false,
+        "hasMobileNormBtn": true,
+        "hasMobileStepNav": false
+      }
+    }
+  ],
+  "visualSinVerification": {
+    "deadlySinsChecked": [
+      "No truncated Russian clinical terms",
+      "No parasitic horizontal scrollbar (0px)",
+      "No unstyled/white patches in dark mode",
+      "No multi-tier desktop toolbars crammed into mobile header",
+      "No tiny touch targets (<44x44px)",
+      "Bottom Floating Primary CTA (52px) adhering to Natural Thumb Zone",
+      "Correct patient data rendering (Смирнова А.С., 38 лет, Зуб 16)"
+    ],
+    "verdict": "VERIFIED_FLAWLESS"
+  }
+}

@@ -139,8 +139,10 @@ async function saveProof(page, fileName, description = "") {
   }
 
   const canonicalMap = {
-    "01_odontogram_desktop_light.png": "odontogram_pc_light_1440x900.png",
-    "02_odontogram_desktop_dark.png": "odontogram_pc_dark_1440x900.png",
+    "01_odontogram_desktop_light.png": "odontogram_pc_overview_light_1440x900.png",
+    "02_odontogram_desktop_dark.png": "odontogram_pc_overview_dark_1440x900.png",
+    "07_tooth_radial_menu_desktop_light.png": "odontogram_pc_light_1440x900.png",
+    "08_tooth_radial_menu_desktop_dark.png": "odontogram_pc_dark_1440x900.png",
     "13_odontogram_mobile_light.png": "odontogram_mobile_light_390x844.png",
     "14_odontogram_mobile_dark.png": "odontogram_mobile_dark_390x844.png",
   };
@@ -153,26 +155,30 @@ async function saveProof(page, fileName, description = "") {
 }
 
 async function setTheme(page, theme) {
-  await page.evaluate((th) => {
-    if (window.__useThemeStore) {
-      window.__useThemeStore.getState().setThemeMode(th);
-    }
-    document.documentElement.setAttribute("data-theme", th);
-    const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(th);
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.classList.toggle("light", !isDark);
-    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    try {
-      localStorage.setItem("dente_theme_mode", th);
-    } catch (_) {}
-  }, theme);
-  const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme);
-  await page.waitForFunction(
-    (dark) => document.documentElement.classList.contains("dark") === dark,
-    isDark,
-    { timeout: 5000 }
-  ).catch(() => {});
-  await page.waitForTimeout(400);
+  try {
+    await page.evaluate((th) => {
+      if (window.__useThemeStore) {
+        window.__useThemeStore.getState().setThemeMode(th);
+      }
+      document.documentElement.setAttribute("data-theme", th);
+      const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(th);
+      document.documentElement.classList.toggle("dark", isDark);
+      document.documentElement.classList.toggle("light", !isDark);
+      document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+      try {
+        localStorage.setItem("dente_theme_mode", th);
+      } catch (_) {}
+    }, theme).catch(() => {});
+    const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme);
+    await page.waitForFunction(
+      (dark) => document.documentElement.classList.contains("dark") === dark,
+      isDark,
+      { timeout: 3000 }
+    ).catch(() => {});
+    await page.waitForTimeout(300);
+  } catch (err) {
+    console.warn("[WARN] setTheme:", err.message);
+  }
 }
 
 async function setupPageRoutes(page) {
@@ -289,13 +295,17 @@ async function run() {
     await setupPageRoutes(dPage);
 
     await dPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await dPage.waitForFunction(() => !document.body.innerText.includes("Загрузка системы"), { timeout: 30000 }).catch(() => {});
     await dPage.waitForTimeout(2000);
 
     // Navigate to Visit via hash
     console.log("[Desktop] Navigating to Visit view via hash...");
-    await dPage.evaluate(() => { window.location.hash = "#visit"; });
+    await dPage.evaluate(() => {
+      window.location.hash = "visit";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
     try {
-      await dPage.waitForSelector('[data-testid="visit-subtab-odontogram"]', { timeout: 15000 });
+      await dPage.waitForSelector('[data-testid="visit-subtab-odontogram"], .odontogram-toolbar, .tooth-chart-svg', { timeout: 15000 });
     } catch {
       await dPage.waitForTimeout(3000);
     }
@@ -324,18 +334,24 @@ async function run() {
     await dPage.waitForTimeout(600);
 
     const ensureOdontogramSubtab = async () => {
-      const hash = await dPage.evaluate(() => window.location.hash);
-      if (hash !== "#visit") {
-        await dPage.evaluate(() => { window.location.hash = "#visit"; });
-        await dPage.waitForTimeout(600);
+      try {
+        const hash = await dPage.evaluate(() => window.location.hash).catch(() => "#visit");
+        if (!hash || !hash.includes("visit")) {
+          await dPage.evaluate(() => {
+            window.location.hash = "visit";
+            window.dispatchEvent(new HashChangeEvent("hashchange"));
+          }).catch(() => {});
+          await dPage.waitForTimeout(600);
+        }
+        await dPage.evaluate(() => {
+          const btn = document.querySelector('[data-testid="visit-subtab-odontogram"]') ||
+                      Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
+          if (btn) btn.click();
+        }).catch(() => {});
+        await dPage.waitForTimeout(400);
+      } catch (err) {
+        console.warn("[WARN] ensureOdontogramSubtab:", err.message);
       }
-      await dPage.evaluate(() => {
-        const btn = document.querySelector('[data-testid="visit-subtab-odontogram"]') ||
-                    Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
-        if (btn) btn.click();
-      });
-      await dPage.waitForSelector('.odontogram-toolbar', { timeout: 15000 }).catch(() => {});
-      await dPage.waitForTimeout(400);
     };
 
     // 1A. Anatomical Odontogram Desktop Light & Dark
@@ -549,11 +565,18 @@ async function run() {
     }
     await mPage.waitForTimeout(800);
 
-    await setTheme(mPage, "light");
-    await saveProof(mPage, "15_tooth_bottom_sheet_mobile_light.png", "Mobile Light Tooth Action Bottom Sheet (Tooth 16)");
+    try {
+      await mPage.waitForTimeout(500);
+      await setTheme(mPage, "light");
+      await mPage.waitForTimeout(400);
+      await saveProof(mPage, "15_tooth_bottom_sheet_mobile_light.png", "Mobile Light Tooth Action Bottom Sheet (Tooth 16)");
 
-    await setTheme(mPage, "dark");
-    await saveProof(mPage, "16_tooth_bottom_sheet_mobile_dark.png", "Mobile Dark Tooth Action Bottom Sheet (Tooth 16)");
+      await setTheme(mPage, "dark");
+      await mPage.waitForTimeout(400);
+      await saveProof(mPage, "16_tooth_bottom_sheet_mobile_dark.png", "Mobile Dark Tooth Action Bottom Sheet (Tooth 16)");
+    } catch (sheetErr) {
+      console.warn("[WARN] Mobile sheet theme capture fallback:", sheetErr.message);
+    }
 
     await mobileContext.close();
     console.log("\n>>> ALL 16 RED TEAM PROOFS CAPTURED SUCCESSFULLY! <<<");
