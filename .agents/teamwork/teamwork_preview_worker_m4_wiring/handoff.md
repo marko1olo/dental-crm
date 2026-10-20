@@ -84,7 +84,13 @@ All 6 task items of Milestone 4 (R4 Backend Wiring & Audit Remediation) have bee
 
 To independently verify the implementation:
 
-1. **Automated Unit & Integration Tests**:
+1. **Compiler Verification (Targeted Typecheck)**:
+   ```powershell
+   npx tsc -p apps/api/tsconfig.json --noEmit
+   ```
+   **Observed Results**: Exit Code 0 (0 errors, 100% clean typecheck).
+
+2. **Automated Unit & Integration Tests**:
    ```powershell
    node --import tsx --test apps/api/src/tests/routes/portalMockStorage.test.ts
    node --import tsx --test apps/api/src/services/__tests__/labScanDirectUpload.test.ts
@@ -98,9 +104,10 @@ To independently verify the implementation:
    - `fiscalReceiptRoutes.test.ts`: 8 passed, 0 failed (Exit Code 0).
    - Total: 35 tests passed, 0 failed.
 
-2. **Source Code Inspection**:
+3. **Source Code Inspection**:
    - `apps/api/src/routes/portal/portalMockStorageRoutes.ts`: Line 46 contains `"model/ply"`.
    - `apps/web/src/components/lab/attachScanModules/useLabAttachScanState.ts`: Line 62 contains `fetch(uploadUrl, { method: "PUT", headers, body: file })`.
    - `apps/api/src/routes/sbp/sbpRouteHandlers.ts`: Line 140 uses `err instanceof FiscalInvoiceError`.
+   - `apps/api/src/routes/billingRoutes/billingRouteHandlers.ts`: Lines 817-832 strictly types `patientInvoices` row total and paid calculation without `any` or nonexistent columns.
    - `apps/web/public/viewer3d.html`: Line 338-358 contains `forceContextLoss`, `scene.traverse`, and `pagehide`/`unload` listeners.
    - `apps/web/src/components/treatment-plans/addService/AddServiceToothSelector.tsx`: Line 36, 43 uses `onSelectTooth`.

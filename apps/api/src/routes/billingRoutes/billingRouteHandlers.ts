@@ -814,18 +814,23 @@ export async function handleGetBillingInvoices(
 		.orderBy(desc(patientInvoices.createdAt))
 		.limit(500);
 
-	const data = rows.map((row) => ({
-		id: row.id,
-		totalRub: Number(row.totalAmountRub || 0),
-		totalAmountRub: Number(row.totalAmountRub || 0),
-		paidRub: Number(row.paidAmountRub || 0),
-		paidAmountRub: Number(row.paidAmountRub || 0),
-		status: row.status,
-		patientId: row.patientId,
-		visitId: row.visitId,
-		dueDate: row.dueDate ? new Date(row.dueDate).toISOString() : undefined,
-		createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : undefined,
-	}));
+	const data = rows.map((row) => {
+		const total = Number(row.totalAmountRub || 0);
+		const paid = row.status === "paid" ? total : 0;
+		return {
+			id: row.id,
+			totalRub: total,
+			totalAmountRub: total,
+			paidRub: paid,
+			paidAmountRub: paid,
+			status: row.status,
+			patientId: row.patientId,
+			visitId: row.visitId,
+			issuedAt: row.issuedAt ? new Date(row.issuedAt).toISOString() : undefined,
+			paidAt: row.paidAt ? new Date(row.paidAt).toISOString() : undefined,
+			createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : undefined,
+		};
+	});
 
 	return reply.send({ success: true, data });
 }
