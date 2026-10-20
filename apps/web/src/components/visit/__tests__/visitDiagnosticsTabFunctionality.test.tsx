@@ -23,7 +23,7 @@ import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it  } from "vitest";
 import { fileURLToPath } from "node:url";
 import React, { act, Suspense } from "react";
 globalThis.React = React;

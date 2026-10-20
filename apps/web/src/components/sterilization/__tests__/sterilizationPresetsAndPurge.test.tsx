@@ -5,19 +5,24 @@
  * и автономии врача (Мандат 8e / 8x / Apple HIG).
  */
 
-import React from "react";
-import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { SanPinJournalView } from "../../sanpin/SanPinJournalView";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../../sanpin/sterilizationModules/sterilizationCycleTypes";
 import { SterilizationCycleDrawer } from "../SterilizationCycleDrawer";
 import { SterilizationJournalTable } from "../SterilizationJournalTable";
-import { SanPinJournalView } from "../../sanpin/SanPinJournalView";
 
 describe("Sterilization Presets & Red Team Jargon Purge", () => {
 	it("provides 3 standard 1-click clinical presets for autoclaves with correct parameters", () => {
 		expect(CLINICAL_AUTOCLAVE_1CLICK_PRESETS).toHaveLength(3);
 
-		const [standard, delicate, quick] = CLINICAL_AUTOCLAVE_1CLICK_PRESETS;
+		const standard = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[0];
+		const delicate = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[1];
+		const quick = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[2];
+		expect(standard).toBeDefined();
+		expect(delicate).toBeDefined();
+		expect(quick).toBeDefined();
+		if (!standard || !delicate || !quick) return;
 
 		// 1. Стандарт 134°C / 2.1 бар — 5 мин (Упакованные инструменты)
 		expect(standard.id).toBe("standard_134_5");
@@ -49,15 +54,14 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 
 	it("SterilizationCycleDrawer renders all 3 presets and unblocked approval CTA", () => {
 		const html = renderToStaticMarkup(
-			<SterilizationCycleDrawer
-				isOpen={true}
-				onClose={() => {}}
-			/>
+			<SterilizationCycleDrawer isOpen={true} onClose={() => {}} />,
 		);
 
 		// Header is clean clinical
 		expect(html).toContain("Утверждение цикла автоклава");
-		expect(html).toContain("Журнал работы стерилизаторов • 1-Click пресеты смены");
+		expect(html).toContain(
+			"Журнал работы стерилизаторов • 1-Click пресеты смены",
+		);
 
 		// Check all 3 presets in rendered output
 		expect(html).toContain("drawer-preset-btn-standard_134_5");
@@ -80,7 +84,7 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 				onQuickBatchShift={() => {}}
 				onPrintJournal={() => {}}
 				onExportCsv={() => {}}
-			/>
+			/>,
 		);
 
 		expect(html).toContain("sterilization-journal-search-input");

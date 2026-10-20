@@ -18,7 +18,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import {
@@ -26,13 +26,10 @@ import {
 	type PatientPrescriptionMemoParams,
 } from "../generator/prescriptionEngine.js";
 import {
-	PrescriptionPrintModal as MedicalPrescriptionModal,
-	PrescriptionPrintModal,
-} from "../PrescriptionPrintModal.js";
-import {
 	DENTAL_MEDICATIONS_CATALOG,
 	type DentalMedicationPreset,
 } from "../generator/prescriptionPresets.js";
+import { PrescriptionPrintModal as MedicalPrescriptionModal } from "../PrescriptionPrintModal.js";
 
 // ============================================================================
 // Cartoon Emoji Validator per Mandate 8d pt 7
@@ -425,7 +422,11 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 
 		it("modal does not render when isOpen=false", () => {
 			const html = renderToString(
-				<MedicalPrescriptionModal isOpen={false} onClose={() => {}} disablePortal={true} />,
+				<MedicalPrescriptionModal
+					isOpen={false}
+					onClose={() => {}}
+					disablePortal={true}
+				/>,
 			);
 
 			assert.strictEqual(html, "", "Modal must return null when isOpen=false");
@@ -433,12 +434,15 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 	});
 
 	describe("2. Pure Function formatPatientPrescriptionMemo Formatting & Safety Memo", () => {
-		const amoxiclav = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "amoxiclav_875_125") ??
-			DENTAL_MEDICATIONS_CATALOG[0]) as DentalMedicationPreset;
-		const nimesil = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "nimesil_100") ??
-			DENTAL_MEDICATIONS_CATALOG[1]) as DentalMedicationPreset;
-		const chlorhexidine = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "chlorhexidine_005") ??
-			DENTAL_MEDICATIONS_CATALOG[2]) as DentalMedicationPreset;
+		const amoxiclav = (DENTAL_MEDICATIONS_CATALOG.find(
+			(m) => m.id === "amoxiclav_875_125",
+		) ?? DENTAL_MEDICATIONS_CATALOG[0]) as DentalMedicationPreset;
+		const nimesil = (DENTAL_MEDICATIONS_CATALOG.find(
+			(m) => m.id === "nimesil_100",
+		) ?? DENTAL_MEDICATIONS_CATALOG[1]) as DentalMedicationPreset;
+		const chlorhexidine = (DENTAL_MEDICATIONS_CATALOG.find(
+			(m) => m.id === "chlorhexidine_005",
+		) ?? DENTAL_MEDICATIONS_CATALOG[2]) as DentalMedicationPreset;
 
 		it("formats multi-drug prescription memo with clinic, doctor, patient and cleaned signaRu", () => {
 			const params: PatientPrescriptionMemoParams = {
@@ -617,7 +621,11 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 						clinicName="ООО «Денте Стоматология»"
 						clinicPhone="+7 (495) 999-00-11"
 						disablePortal={true}
-						initialSelectedDrugIds={["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"]}
+						initialSelectedDrugIds={[
+							"amoxiclav_875_125",
+							"nimesulide_100",
+							"chlorhexidine_005",
+						]}
 					/>,
 				);
 			});

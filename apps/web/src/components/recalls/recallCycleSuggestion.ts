@@ -12,6 +12,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 	readonly hasDeepCaries?: boolean | undefined;
 	readonly decayedTeethCount?: number | undefined;
 	readonly hasCrownsOrVeneers?: boolean | undefined;
+	readonly hasActiveRetention?: boolean | undefined;
 }): {
 	readonly suggestedCycle: RecallCycleType;
 	readonly reason: string;
@@ -20,7 +21,8 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 	readonly intervalUnit: "months" | "weeks";
 } {
 	if ((clinicalData.maxPocketDepthMm && clinicalData.maxPocketDepthMm >= 4) || clinicalData.hasBleedingOnProbing) {
-		return { suggestedCycle: "periodontal_maintenance", reason: "Пародонтит: поддерживающая терапия раз в 3–4 месяца.", recommendedIntervalValue: 3, recommendedIntervalMonths: 3, intervalUnit: "months" };
+		const pocketReason = clinicalData.maxPocketDepthMm ? ` (глубина ПК ${clinicalData.maxPocketDepthMm} мм)` : "";
+		return { suggestedCycle: "periodontal_maintenance", reason: `Пародонтит${pocketReason}: поддерживающая терапия раз в 3–4 месяца.`, recommendedIntervalValue: 3, recommendedIntervalMonths: 3, intervalUnit: "months" };
 	}
 	if (clinicalData.hasImplants) {
 		const months = clinicalData.monthsSinceImplantSurgery ?? 6;
@@ -32,6 +34,9 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 	}
 	if (clinicalData.hasAligners) {
 		return { suggestedCycle: "orthodontic_aligners", reason: "Элайнеры: ревизия трекинга каждые 6–8 недель.", recommendedIntervalValue: 6, recommendedIntervalMonths: 2, intervalUnit: "weeks" };
+	}
+	if (clinicalData.hasActiveRetention) {
+		return { suggestedCycle: "orthodontic_retention", reason: "Ретенционный период: контроль фиксации ретейнеров каждые 3–6 месяцев.", recommendedIntervalValue: 3, recommendedIntervalMonths: 3, intervalUnit: "months" };
 	}
 	if (clinicalData.isChildUnder14) {
 		return { suggestedCycle: "pediatric_fluoridation", reason: "Детский возраст: минерализация эмали каждые 3–4 месяца.", recommendedIntervalValue: 3, recommendedIntervalMonths: 3, intervalUnit: "months" };

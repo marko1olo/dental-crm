@@ -4,10 +4,13 @@ import type { RemdDocumentRecord } from "./egiszJournalData";
 
 export interface EgiszBackgroundQueueTableProps {
 	readonly records: readonly RemdDocumentRecord[];
-	readonly onRetryRecord?: (record: RemdDocumentRecord) => void;
-	readonly onDownloadZip?: (record: RemdDocumentRecord) => void;
-	readonly onRefresh?: () => void;
+	readonly onRetryRecord?: ((record: RemdDocumentRecord) => void) | undefined;
+	readonly onDownloadZip?: ((record: RemdDocumentRecord) => void) | undefined;
+	readonly onRefresh?: (() => void) | undefined;
 }
+
+const getDocTitle = (r: RemdDocumentRecord) => (r as any).docTitle || r.docTypeName || `СЭМД ${(r as any).semdDocCode || r.docTypeCode || "105"}`;
+const getPatientName = (r: RemdDocumentRecord) => (r as any).patientFullName || r.patient?.fullName || "Пациент";
 
 export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps> = ({
 	records,
@@ -62,8 +65,8 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 							<tbody>
 								{records.map((r) => (
 									<tr key={r.id} data-testid={`queue-row-${r.id}`}>
-										<td className="font-semibold">{r.docTitle || `СЭМД ${r.semdDocCode || "105"}`}</td>
-										<td>{r.patientFullName || "Пациент"}</td>
+										<td className="font-semibold">{getDocTitle(r)}</td>
+										<td>{getPatientName(r)}</td>
 										<td className="text-muted">{r.createdAt ? new Date(r.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
 										<td>{renderBadge(r.status)}</td>
 										<td style={{ textAlign: "right" }}>
@@ -91,10 +94,10 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 						{records.map((r) => (
 							<div key={r.id} className="egisz-queue-card" data-testid={`queue-card-${r.id}`}>
 								<div className="egisz-card-top">
-									<span className="font-bold">{r.docTitle || `СЭМД ${r.semdDocCode || "105"}`}</span>
+									<span className="font-bold">{getDocTitle(r)}</span>
 									{renderBadge(r.status)}
 								</div>
-								<div className="egisz-card-patient">{r.patientFullName || "Пациент"}</div>
+								<div className="egisz-card-patient">{getPatientName(r)}</div>
 								<div className="egisz-card-actions">
 									{(r.status === "error" || r.status === "rejected_by_egisz" || r.status === "draft") && onRetryRecord && (
 										<button type="button" onClick={() => onRetryRecord(r)} className="egisz-btn sm flex-1">

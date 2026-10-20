@@ -1,0 +1,423 @@
+/* Moved to modules/odontogram.css */
+
+.legend-missing {
+	background: #ece7df;
+	color: #8c8177;
+	text-decoration: line-through;
+}
+
+.legend-missing {
+	background: #ece7df;
+	color: #6f665d;
+}
+
+.visit-note-panel {
+	background: var(--paper, #fbfefd);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	margin-bottom: 14px;
+	padding: 12px;
+}
+
+html.dark .visit-note-panel,
+[data-theme="dark"] .visit-note-panel,
+[data-theme="night"] .visit-note-panel {
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+html.dark .visit-note-panel h3,
+html.dark .visit-note-panel h4,
+html.dark .visit-note-panel strong,
+[data-theme="dark"] .visit-note-panel h3,
+[data-theme="dark"] .visit-note-panel h4,
+[data-theme="dark"] .visit-note-panel strong,
+[data-theme="night"] .visit-note-panel h3,
+[data-theme="night"] .visit-note-panel h4,
+[data-theme="night"] .visit-note-panel strong {
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-note-panel .eyebrow,
+[data-theme="dark"] .visit-note-panel .eyebrow,
+[data-theme="night"] .visit-note-panel .eyebrow {
+	color: var(--ink-2, #e2e8f0) !important;
+}
+
+html.dark .emk-field-container,
+[data-theme="dark"] .emk-field-container,
+[data-theme="night"] .emk-field-container {
+	background: var(--paper-soft, rgba(30, 41, 59, 0.5));
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+html.dark .emk-field-container strong,
+[data-theme="dark"] .emk-field-container strong,
+[data-theme="night"] .emk-field-container strong {
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-fields textarea,
+[data-theme="dark"] .visit-fields textarea,
+[data-theme="night"] .visit-fields textarea,
+html.dark .emk-field-container textarea,
+[data-theme="dark"] .emk-field-container textarea,
+[data-theme="night"] .emk-field-container textarea {
+	background: var(--paper, rgba(15, 23, 42, 0.85)) !important;
+	color: var(--ink, #f8fafc) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
+}
+
+html.dark .emk-tabs-container,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.emk-tabs-container,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.emk-tabs-container {
+	background: rgba(30, 41, 59, 0.8);
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .emk-tab-button,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.emk-tab-button,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.emk-tab-button {
+	color: var(--muted);
+	background: transparent;
+	border: 1px solid transparent;
+}
+
+html.dark .emk-tab-button:hover,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.emk-tab-button:hover,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.emk-tab-button:hover {
+	background: color-mix(in srgb, var(--paper) 60%, transparent);
+	border-color: transparent;
+	color: var(--ink);
+}
+
+html.dark .emk-tab-button.active,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.emk-tab-button.active,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.emk-tab-button.active {
+	background: var(--paper) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+	font-weight: 600 !important;
+	border-radius: 6px !important;
+}
+
+.visit-note-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.visit-note-head h3 {
+	font-size: 16px;
+	margin: 0;
+}
+
+.visit-note-head > span,
+.visit-note-status-badge {
+	background: #f4ead8;
+	border-radius: 999px;
+	color: #744d18;
+	flex: 0 0 auto;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 3px 8px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	min-width: max-content;
+}
+
+.visit-note-head > span.ready,
+.visit-note-status-badge.ready {
+	background: #dfeee3;
+	color: #26562f;
+}
+
+html.dark .visit-note-head > span,
+[data-theme="dark"] .visit-note-head > span,
+[data-theme="night"] .visit-note-head > span,
+html.dark .visit-note-status-badge,
+[data-theme="dark"] .visit-note-status-badge,
+[data-theme="night"] .visit-note-status-badge {
+	background: rgba(30, 41, 59, 0.8) !important;
+	color: var(--ink, #f8fafc) !important;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.15)) !important;
+}
+
+html.dark .visit-note-head > span.ready,
+[data-theme="dark"] .visit-note-head > span.ready,
+[data-theme="night"] .visit-note-head > span.ready,
+html.dark .visit-note-status-badge.ready,
+[data-theme="dark"] .visit-note-status-badge.ready,
+[data-theme="night"] .visit-note-status-badge.ready {
+	background: rgba(16, 185, 129, 0.15) !important;
+	color: #34d399 !important;
+	border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.visit-fields {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.visit-fields label {
+	color: var(--muted);
+	display: grid;
+	font-size: 13px;
+	font-weight: 850;
+	gap: 6px;
+}
+
+.visit-fields label:nth-child(5) {
+	grid-column: 1 / -1;
+}
+
+.visit-fields textarea,
+.dictation-box textarea {
+	background: #fffdf9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	line-height: 1.45;
+	padding: 10px;
+	resize: vertical;
+}
+
+.visit-fields textarea {
+	min-height: 68px;
+}
+
+.visit-fields textarea:focus {
+	min-height: 110px;
+	border-color: rgba(15, 118, 110, 0.55);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	outline: none;
+	transition: min-height 0.2s ease;
+}
+
+.ai-draft {
+	align-items: center;
+	background: #f5ece1;
+	border: 1px solid #e1cdb7;
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+	padding: 12px;
+}
+
+.ai-draft svg {
+	color: var(--rust);
+	height: 22px;
+	width: 22px;
+}
+
+.ai-draft p {
+	margin: 0;
+}
+
+.ai-draft .secondary-button,
+.ai-draft .primary-button {
+	min-height: 38px;
+}
+
+.visit-note-missing {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	display: grid;
+	gap: 6px;
+	grid-column: 1 / -1;
+	padding: 10px 12px;
+}
+
+.visit-note-missing strong {
+	font-size: 13px;
+}
+
+.visit-note-missing ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.visit-draft-quality {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 10px 12px;
+}
+
+.visit-draft-quality.quality-review {
+	border-left-color: var(--amber);
+}
+
+.visit-draft-quality.quality-needs_more_dictation {
+	border-left-color: var(--rust);
+}
+
+.visit-draft-quality > div:first-child {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+}
+
+.visit-draft-quality strong {
+	color: var(--ink);
+	line-height: 1.2;
+}
+
+.visit-draft-quality span,
+.visit-draft-quality small,
+.visit-draft-quality p {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.visit-draft-quality > div:first-child span {
+	color: var(--teal-dark);
+	text-align: right;
+}
+
+.visit-draft-signal-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.visit-draft-signal-row span,
+.visit-draft-signal-row small {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	padding: 5px 7px;
+}
+
+.visit-draft-signal-row small {
+	background: #fff7e6;
+	color: #744d18;
+}
+
+.close-checklist {
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 9px;
+	margin-top: 14px;
+	padding: 12px;
+}
+
+.close-checklist-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.close-checklist-head p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.close-checklist-head span {
+	background: #f4ead8;
+	border-radius: 999px;
+	color: #744d18;
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 950;
+	padding: 6px 9px;
+	text-transform: uppercase;
+}
+
+.close-checklist-head span.ready {
+	background: #dfeee3;
+	color: #26562f;
+}
+
+.close-task {
+	align-items: center;
+	/* Было #faf7f1: в тёмной теме фон оставался светлым, а текст брался из
+     --ink и становился почти белым — «Клинические предупреждения»
+     давали контраст 1.07, то есть были невидимы. */
+	background: var(--srf-check-task);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+	min-height: 58px;
+	padding: 10px;
+	text-align: left;
+	width: 100%;
+}
+
+.close-task.blocking {
+	/* Было #fffaf0 — та же поломка тёмной темы, «ЭМК заполнена» с
+     контрастом 1.10. */
+	background: var(--srf-check-task-blocking);
+	border-color: rgba(184, 120, 31, 0.45);
+}
+
+.close-task svg {
+	color: #9b8f82;
+	height: 20px;
+	width: 20px;
+}
+
+.close-task.done svg {
+	color: var(--green);
+}
+
+.close-task.blocking svg {
+	color: var(--amber);
+}
+
+.close-task strong {
+	display: block;
+	font-size: 14px;
+}
+
+.close-task p {
+	color: var(--muted);
+	margin: 3px 0 0;
+}
+
+.close-task small {
+	color: var(--teal-dark);
+	display: block;
+	font-size: 12px;
+	font-weight: 850;
+	margin-top: 5px;
+}

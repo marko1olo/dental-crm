@@ -10,8 +10,10 @@ import {
 	Zap,
 } from "lucide-react";
 import { money } from "../../AppHelpers";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	CHAIRSIDE_EXPRESS_SERVICES,
+	resolveExpressServicesAgainstCatalog,
 	type ChairsideExpressService,
 } from "./completedServicesPlan";
 
@@ -42,12 +44,31 @@ export function getExpressIcon(id: string) {
 export interface ChairsideExpressGridProps {
 	selectedTooth: string | null;
 	onAddExpressService: (service: ChairsideExpressService) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog array
+	catalog?: readonly any[] | undefined;
 }
 
 export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 	selectedTooth,
 	onAddExpressService,
+	catalog,
 }) => {
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic context access
+	const appLogic = useOptionalAppLogicContext() as any;
+	const effectiveCatalog =
+		Array.isArray(catalog) && catalog.length > 0
+			? catalog
+			: Array.isArray(appLogic?.dashboard?.serviceCatalog)
+				? appLogic.dashboard.serviceCatalog
+				: [];
+	const expressServices = React.useMemo(
+		() =>
+			effectiveCatalog.length > 0
+				? resolveExpressServicesAgainstCatalog(effectiveCatalog)
+				: CHAIRSIDE_EXPRESS_SERVICES,
+		[effectiveCatalog],
+	);
+
 	return (
 		<div className="mb-3 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-800/50">
 			<div className="flex items-center justify-between gap-2 mb-2">
@@ -62,7 +83,7 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 				</span>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-				{CHAIRSIDE_EXPRESS_SERVICES.map((s) => (
+				{expressServices.map((s) => (
 					<button
 						key={s.id}
 						type="button"

@@ -9,14 +9,14 @@
  * Tax compliance: пп. 2 п. 2 ст. 149 НК РФ (0% НДС).
  */
 
-export type * from './presets/types';
-export * from './presets/constants';
-export * from './presets/therapyPresets';
-export * from './presets/surgeryImplantPresets';
-export * from './presets/orthoProstheticPresets';
-export * from './presets/diagnosticPediatricPresets';
-export * from './presets/presetMatcher';
 export {
-	STATUTORY_ORDER_804N_PRESETS,
 	BASELINE_804N_PRICELIST_SERVICES,
-} from './presets';
+	STATUTORY_ORDER_804N_PRESETS,
+} from "./presets";
+export * from "./presets/constants";
+export * from "./presets/diagnosticPediatricPresets";
+export * from "./presets/orthoProstheticPresets";
+export * from "./presets/presetMatcher";
+export * from "./presets/surgeryImplantPresets";
+export * from "./presets/therapyPresets";
+export type * from "./presets/types";

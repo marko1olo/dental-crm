@@ -212,10 +212,11 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 	statusCode: number;
 	code: string;
 	message: string;
+	paperFallbackAvailable: boolean;
 	details?: unknown;
 } {
 	if (err instanceof CryptoProCliError) {
-		let statusCode = 500;
+		let statusCode = 422;
 		if (err.code === "CSP_NOT_INSTALLED") {
 			statusCode = 503;
 		} else if (
@@ -241,15 +242,28 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 			statusCode,
 			code: err.code,
 			message: err.message,
+			paperFallbackAvailable: true,
 			details: err.details,
+		};
+	}
+
+	const sysErr = err as { code?: string; message?: string };
+	if (sysErr?.code === "ENOENT") {
+		return {
+			statusCode: 503,
+			code: "CSP_NOT_INSTALLED",
+			message:
+				"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+			paperFallbackAvailable: true,
 		};
 	}
 
 	const message = err instanceof Error ? err.message : String(err);
 	return {
-		statusCode: 500,
-		code: "CRYPTO_INTERNAL_ERROR",
-		message,
+		statusCode: 503,
+		code: "CRYPTO_SERVICE_UNAVAILABLE",
+		message: `Сервис электронной подписи временно недоступен: ${message}. Вы можете распечатать бумажный бланк документа для живой подписи врача.`,
+		paperFallbackAvailable: true,
 	};
 }
 
@@ -289,6 +303,9 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 		return reply.send({
 			success: true,
 			installed: status.installed,
+			signingAvailable: status.signingAvailable,
+			paperFallbackAvailable: status.paperFallbackAvailable,
+			message: status.message,
 			paths: status.paths,
 		});
 	});
@@ -296,7 +313,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/crypto/certificates
 	 * Получение списка установленных сертификатов УКЭП с фильтрацией по текущей клинике/врачу.
-	 * КАТЕГОРИЧЕСКИЙ ЗАПРЕТ НА ФЕЙКОВЫЕ СЕРТИФИКАТЫ:
+	 * КАТЕГОРИЧЕСЧЕСКИЙ ЗАПРЕТ НА ФЕЙКОВЫЕ СЕРТИФИКАТЫ:
 	 * Если КриптоПро CSP не обнаружен в системе — возвращает HTTP 503 с кодом CSP_NOT_INSTALLED.
 	 */
 	app.get("/api/crypto/certificates", async (request, reply) => {
@@ -308,7 +325,9 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			return reply.status(503).send({
 				success: false,
 				code: "CSP_NOT_INSTALLED",
-				message: "КриптоПро CSP не обнаружен в операционной системе",
+				paperFallbackAvailable: true,
+				message:
+					"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
 			});
 		}
 
@@ -321,6 +340,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				success: true,
 				certificates: filteredCerts,
 				total: filteredCerts.length,
+				paperFallbackAvailable: true,
 			});
 		} catch (err: unknown) {
 			const mapped = mapCryptoErrorToHttpStatus(err);
@@ -328,6 +348,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				success: false,
 				code: mapped.code,
 				message: mapped.message,
+				paperFallbackAvailable: mapped.paperFallbackAvailable,
 				details: mapped.details,
 			});
 		}
@@ -365,7 +386,9 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			return reply.status(503).send({
 				success: false,
 				code: "CSP_NOT_INSTALLED",
-				message: "КриптоПро CSP не обнаружен в операционной системе",
+				paperFallbackAvailable: true,
+				message:
+					"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
 			});
 		}
 
@@ -409,6 +432,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				success: false,
 				code: mapped.code,
 				message: mapped.message,
+				paperFallbackAvailable: mapped.paperFallbackAvailable,
 				details: mapped.details,
 			});
 		}
@@ -432,7 +456,9 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			return reply.status(503).send({
 				success: false,
 				code: "CSP_NOT_INSTALLED",
-				message: "КриптоПро CSP не обнаружен в операционной системе",
+				paperFallbackAvailable: true,
+				message:
+					"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
 			});
 		}
 

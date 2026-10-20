@@ -122,7 +122,7 @@ export async function registerSpeechLiveRoutes(
 				if (!evalAccess.hasClinicalAccess) {
 					request.log.warn(
 						{ role: identity.role, orgId: identity.organizationId },
-						"[speechLive] Blocked non-clinical staff attempt to access live speech dictation (152-FZ / 323-FZ)",
+						"[speechLive] Blocked non-clinical staff attempt to access live speech dictation",
 					);
 					if (clientSocket.readyState === clientSocket.OPEN) {
 						clientSocket.send(
@@ -131,8 +131,7 @@ export async function registerSpeechLiveRoutes(
 								error: "MedicalSpeechDictationForbidden",
 								permission: "speech.dictation.clinical",
 								role: identity.role,
-								message:
-									"Доступ к живому речевому распознаванию клинического приема ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права врача.",
+								message: "Голосовая диктовка доступна врачу на приёме.",
 								timestampMs: Date.now(),
 							}),
 						);

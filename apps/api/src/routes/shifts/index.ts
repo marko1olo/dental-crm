@@ -20,6 +20,7 @@ import {
 	DEFAULT_MAX_SHIFT_HOURS,
 	DEFAULT_SHIFT_BUFFER_MINUTES,
 	checkAndAutoCloseExpiredShifts,
+	type AutoCloseExpiredShiftsOptions,
 } from "./shiftAutoCloseService.js";
 
 export * from "./shiftAutoCloseService.js";

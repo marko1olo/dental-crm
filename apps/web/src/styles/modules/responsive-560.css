@@ -1,0 +1,615 @@
+@media (max-width: 560px) {
+	.dicom-mpr-head {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.dicomweb-launch-head {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.clinical-mpr-head {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.ct-planning-suite-head,
+	.ct-implant-library-head {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.ct-planning-suite-head > span {
+		width: fit-content;
+	}
+
+	.ct-implant-library-head span {
+		max-width: none;
+		text-align: left;
+	}
+
+	.clinical-mpr-head .secondary-button {
+		width: 100%;
+	}
+
+	.dicom-mpr-head > span {
+		width: fit-content;
+	}
+
+	.dicomweb-launch-head > span {
+		width: fit-content;
+	}
+
+	.mpr-plane-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mpr-axis-visualizer {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mpr-clinical-preset-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mpr-manual-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mpr-memory-strip {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mpr-stepper-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.dicomweb-action-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dicomweb-action-row .primary-button,
+	.dicomweb-action-row .secondary-button {
+		white-space: normal;
+		width: 100%;
+	}
+
+	.dicom-first-frame-tools {
+		grid-template-columns: repeat(7, minmax(30px, 1fr));
+	}
+
+	.dicom-first-frame-slice-controls {
+		grid-template-columns: 38px minmax(0, 1fr) 38px;
+	}
+
+	.dicom-first-frame-sliders {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dicom-first-frame-image-wrap {
+		max-height: 52vh;
+		min-height: 140px;
+	}
+
+	.mpr-plane {
+		min-height: 64px;
+		padding: 9px;
+	}
+
+	/* Topbar adheres strictly to Apple HIG 1-Row Invariant (Mandate 8c & mobile_hig.md) */
+	.topbar {
+		flex-direction: row !important;
+		align-items: center !important;
+		height: 48px !important;
+		min-height: 48px !important;
+		max-height: 48px !important;
+		padding-bottom: 0 !important;
+	}
+
+	.hero-actions {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.patients-panel .quick-create {
+		grid-template-columns: minmax(0, 1fr);
+		padding: 8px;
+	}
+
+	.patients-panel .quick-create .icon-button {
+		width: 100%;
+	}
+
+	.patients-panel .quick-create .quick-create-action {
+		justify-content: center;
+		width: 100%;
+	}
+
+	.appointment-row,
+	.appointment-editor,
+	.document-row,
+	.finance-row,
+	.clinical-rule-card,
+	.communication-task,
+	.imaging-row,
+	.ops-row,
+	.shift-warning,
+	.import-row,
+	.protocol-head,
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	.protocol-summary,
+	.tooth-map-head,
+	.tooth-map-selected,
+	.visit-draft-quality > div:first-child,
+	.visit-focus-actions,
+	.ai-draft {
+		align-items: start;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.document-actions {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.imaging-row-actions {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.document-audit-facts-heading {
+		display: grid;
+	}
+
+	.document-audit-facts-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.document-issue-attestation-grid,
+	.document-issue-checkboxes {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.document-issue-confirmation-actions {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.communication-task-actions {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.document-issue-confirmation-actions .primary-button,
+	.document-issue-confirmation-actions .secondary-button,
+	.communication-task-actions .primary-button,
+	.communication-task-actions .secondary-button {
+		min-width: 0;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.schedule-empty-state {
+		align-items: stretch;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.schedule-empty-actions {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-content: stretch;
+	}
+
+	.schedule-empty-actions .primary-button,
+	.schedule-empty-actions .secondary-button,
+	.schedule-empty-actions .text-button {
+		justify-content: center;
+		min-width: 0;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.visit-draft-quality > div:first-child {
+		display: grid;
+	}
+
+	.visit-draft-quality > div:first-child span {
+		text-align: left;
+	}
+
+	.visit-focus-actions {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		width: 100%;
+	}
+
+	.visit-focus-actions .primary-button,
+	.visit-focus-actions .secondary-button {
+		min-width: 0;
+		padding: 0 8px;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.protocol-head {
+		display: grid;
+	}
+
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	.protocol-summary {
+		display: grid;
+	}
+
+	.protocol-head > span {
+		justify-self: start;
+	}
+
+	.tooth-map-head .secondary-button {
+		justify-content: center;
+		width: 100%;
+	}
+
+	.tooth-map-selected > div {
+		justify-content: flex-start;
+	}
+
+	.tooth-map-selected button {
+		flex: 1 1 118px;
+	}
+
+	.protocol-card .secondary-button {
+		width: 100%;
+	}
+
+	.shift-warning .text-button {
+		width: 100%;
+	}
+
+	.ops-row span {
+		text-align: left;
+	}
+
+	.imaging-copy {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.imaging-actions {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		align-items: center !important;
+		gap: 6px !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+		max-width: 100% !important;
+		padding-bottom: 2px !important;
+	}
+	.imaging-actions::-webkit-scrollbar {
+		display: none !important;
+	}
+
+	.imaging-actions .primary-button,
+	.imaging-actions .secondary-button:not(.hidden):not(.\!hidden) {
+		justify-content: center !important;
+		min-width: fit-content !important;
+		white-space: nowrap !important;
+		width: auto !important;
+		height: 34px !important;
+		min-height: 34px !important;
+		padding: 0 10px !important;
+		font-size: 12px !important;
+		flex-shrink: 0 !important;
+	}
+
+	.imaging-actions .secondary-button.hidden,
+	.imaging-actions .secondary-button.\!hidden,
+	.imaging-actions [data-testid="imaging-open-3d-mpr"].\!hidden,
+	.imaging-actions [data-testid="imaging-open-panoramic"].\!hidden {
+		display: none !important;
+	}
+
+	.imaging-patient-strip {
+		display: flex !important;
+		flex-direction: column !important;
+		width: 100% !important;
+		gap: 6px !important;
+		margin-bottom: 8px !important;
+	}
+
+	.imaging-patient-strip article {
+		width: 100% !important;
+		padding: 8px 10px !important;
+		gap: 2px !important;
+		min-width: 0 !important;
+	}
+
+	.imaging-patient-strip article:first-child {
+		width: 100% !important;
+	}
+
+	.imaging-patient-strip strong {
+		font-size: 14px !important;
+		line-height: 1.25 !important;
+		word-break: normal !important;
+		overflow-wrap: break-word !important;
+		hyphens: manual !important;
+	}
+
+	.imaging-patient-strip article:first-child strong {
+		font-size: 14px !important;
+		white-space: normal !important;
+		word-break: normal !important;
+		overflow-wrap: break-word !important;
+		hyphens: manual !important;
+	}
+
+	.imaging-patient-strip span,
+	.imaging-patient-strip small {
+		font-size: 11px !important;
+		line-height: 1.2 !important;
+	}
+
+	.imaging-upload-status > div:first-child {
+		display: grid;
+	}
+
+	.imaging-upload-status > div:first-child span {
+		max-width: none;
+		text-align: left;
+	}
+
+	.migration-kickstart-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.migration-progress-strip {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.migration-kickstart-grid .primary-button,
+	.migration-kickstart-grid .secondary-button {
+		justify-content: center;
+		min-width: 0;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.imaging-copy h2 {
+		font-size: 20px;
+		overflow-wrap: anywhere;
+	}
+
+	.imaging-viewer {
+		min-height: 0;
+	}
+
+	.imaging-viewer-stage {
+		min-height: 0;
+	}
+
+	.imaging-viewer-stage img {
+		aspect-ratio: 4 / 3;
+		min-height: 0;
+	}
+
+	.imaging-viewer-meta {
+		background: var(--paper-soft, #1e293b);
+		color: var(--ink, #f8fafc);
+		padding: 12px;
+		position: static;
+	}
+
+	.imaging-viewer-plan > div:first-child {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.imaging-viewer-tools {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		grid-template-columns: none;
+	}
+
+	.viewer-slider-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		width: 100%;
+		position: static;
+	}
+
+	.imaging-compare-head {
+		align-items: start;
+		display: grid;
+	}
+
+	.imaging-compare-head span {
+		text-align: left;
+	}
+
+	.imaging-compare-list {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.imaging-row img {
+		height: auto;
+		max-height: 160px;
+		width: 100%;
+	}
+
+	.patient-feature-grid article {
+		min-height: auto;
+	}
+
+	.patient-summary-card,
+	.imaging-panel,
+	.settings-zone,
+	.recognition-lab,
+	.dicom-capability-panel,
+	.import-studio,
+	.pricelist-studio {
+		max-width: 100%;
+		overflow-x: hidden;
+		padding: 14px;
+		width: 100%;
+	}
+
+	.pricelist-taxonomy summary {
+		align-items: start;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.pricelist-taxonomy summary small {
+		grid-column: 1;
+		text-align: left;
+	}
+
+	.settings-heading,
+	.settings-tabs {
+		max-width: 100%;
+		overflow-x: hidden;
+		width: 100%;
+	}
+
+	.settings-heading {
+		align-items: center;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.workspace-role-switcher {
+		padding-bottom: 2px;
+	}
+
+	.role-focus-meta {
+		justify-content: start;
+	}
+
+	.settings-tabs {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
+		padding-bottom: 2px;
+		scrollbar-width: thin;
+	}
+
+	.settings-tabs button {
+		flex: 0 0 auto;
+		min-width: 128px;
+	}
+
+	.settings-tabs button.active {
+		order: -1;
+	}
+
+	.migration-primary-action {
+		flex-direction: column;
+	}
+
+	.migration-primary-action .migration-source-card-actions {
+		justify-content: flex-start;
+	}
+
+	.clinic-config-head {
+		flex-direction: column;
+	}
+
+	.clinic-config-head > span {
+		max-width: 100%;
+	}
+
+	.settings-heading-actions {
+		align-items: center;
+		flex-direction: row;
+		width: auto;
+		flex-shrink: 0;
+	}
+
+	.onboarding-actions,
+	.clinic-profile-actions {
+		align-items: stretch;
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.onboarding-actions > *,
+	.clinic-profile-actions > * {
+		width: 100%;
+	}
+
+	.form-span-2 {
+		grid-column: 1;
+	}
+
+	.active-workspace-card .workspace-token-row {
+		justify-content: start;
+		max-width: none;
+	}
+
+	.preset-card {
+		min-height: auto;
+	}
+
+	.preset-card-head {
+		flex-direction: column;
+	}
+
+	.recognition-result > div:first-child {
+		flex-direction: column;
+	}
+
+	.mode-card {
+		min-height: auto;
+	}
+
+	.staff-row {
+		align-items: start;
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+
+	.role-picker,
+	.equipment-picker,
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	.payment-methods {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.staff-row small {
+		grid-column: 2;
+	}
+
+	.staff-schedule-editor {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.onboarding-schedule-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.staff-schedule-editor .weekday-toggle-row,
+	.staff-schedule-editor .staff-day-hours,
+	.staff-schedule-editor button {
+		grid-column: 1 / -1;
+	}
+
+	/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	.panel-heading {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.search-box {
+		width: 100%;
+	}
+
+	.tooth-row {
+		grid-template-columns: repeat(8, minmax(0, 1fr));
+	}
+}

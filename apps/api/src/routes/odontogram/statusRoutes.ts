@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -22,7 +22,7 @@ import {
 } from "./types.js";
 
 export function registerStatusRoutes(app: FastifyInstance) {
-	app.get("/api/patients/:patientId/tooth-states", async (request, reply) => {
+	const getToothStatesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const organizationId = await requireResolvedOrganizationId(
 			request,
 			reply,
@@ -127,7 +127,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		}));
 
 		return reply.send({ success: true, states });
-	});
+	};
+
+	app.get("/api/patients/:patientId/tooth-states", getToothStatesHandler);
+	app.get("/api/patients/:patientId/odontogram", getToothStatesHandler);
 
 	app.post(
 		"/api/patients/:patientId/tooth-states/batch",
@@ -213,6 +216,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					? JSON.stringify(parsed.data.clinicalData)
 					: parsed.data.notes;
 
+				const historyToInsert: (typeof toothStateHistory.$inferInsert)[] = [];
+				const teethToDelete: number[] = [];
+				const statesToInsert: (typeof toothStates.$inferInsert)[] = [];
+
 				for (const toothNumber of toothNumbers) {
 					const prev = previousByTooth.get(toothNumber);
 					const prevTime = prev?.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
@@ -226,7 +233,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 
 					if (incomingWins) {
 						// 1. Record transition into append-only tooth state history audit log
-						await tx.insert(toothStateHistory).values({
+						historyToInsert.push({
 							organizationId,
 							patientId,
 							visitId: parsed.data.visitId ?? null,
@@ -242,23 +249,14 @@ export function registerStatusRoutes(app: FastifyInstance) {
 							changedAt: incomingUpdatedAt,
 						});
 
-						// 2. Delete and insert winning state in toothStates
-						await tx
-							.delete(toothStates)
-							.where(
-								and(
-									eq(toothStates.organizationId, organizationId),
-									eq(toothStates.patientId, patientId),
-									eq(toothStates.toothNumber, toothNumber),
-								),
-							);
+						teethToDelete.push(toothNumber);
 
 						const effectiveNotes =
 							serializedClinicalNotes !== undefined
 								? serializedClinicalNotes
 								: (prev?.notes ?? null);
 
-						await tx.insert(toothStates).values({
+						statesToInsert.push({
 							organizationId,
 							patientId,
 							toothNumber,
@@ -272,7 +270,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					} else {
 						// Stale offline mutation: Server active state is newer and wins (LWW),
 						// but offline mutation transition is STILL appended to toothStateHistory for full 043/u audit trail!
-						await tx.insert(toothStateHistory).values({
+						historyToInsert.push({
 							organizationId,
 							patientId,
 							visitId: parsed.data.visitId ?? null,
@@ -288,6 +286,24 @@ export function registerStatusRoutes(app: FastifyInstance) {
 							changedAt: incomingUpdatedAt,
 						});
 					}
+				}
+
+				if (historyToInsert.length > 0) {
+					await tx.insert(toothStateHistory).values(historyToInsert);
+				}
+				if (teethToDelete.length > 0) {
+					await tx
+						.delete(toothStates)
+						.where(
+							and(
+								eq(toothStates.organizationId, organizationId),
+								eq(toothStates.patientId, patientId),
+								inArray(toothStates.toothNumber, teethToDelete),
+							),
+						);
+				}
+				if (statesToInsert.length > 0) {
+					await tx.insert(toothStates).values(statesToInsert);
 				}
 
 				const currentStates = await tx

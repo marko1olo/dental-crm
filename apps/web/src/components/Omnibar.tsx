@@ -264,15 +264,8 @@ export function Omnibar() {
 	}, [isOmnibarOpen, filteredCommands, selectedIndex, setOmnibarOpen]);
 
 	useEffect(() => {
-		const handleGlobalKeyDown = (e: KeyboardEvent) => {
-			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-				e.preventDefault();
-				setOmnibarOpen(!isOmnibarOpen);
-			}
-		};
-		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-	}, [isOmnibarOpen, setOmnibarOpen]);
+		// Делегировано омни-командному HUD врача у кресла (DoctorCommandHud)
+	}, []);
 
 	/* Кнопка поиска живёт в слоте `search` группы действий рабочей области, в
      обычном потоке страницы, и НИЧЕГО не перекрывает. Раньше она портировалась
@@ -316,7 +309,11 @@ export function Omnibar() {
 			<WorkspaceActionsSlot slot="search">
 				<button
 					type="button"
-					onClick={() => setOmnibarOpen(!isOmnibarOpen)}
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente:open-command-hud"));
+						}
+					}}
 					aria-expanded={isOmnibarOpen}
 					className="dnt-actions__control"
 					title={workspaceActionsLabels.search.title}

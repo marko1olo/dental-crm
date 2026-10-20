@@ -43,6 +43,34 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 			"enhanced_non_qualified_electronic_signature",
 		);
 		assert.strictEqual(resUnep.valid, true);
+
+		// Tier 1 Chairside Hot Flow: внутриклиническая сессия и дневники приёма разрешены
+		const resShiftSession = validateDoctorSignatureStatutoryMode(
+			"internal_shift_session",
+			"internal_visit_diary",
+		);
+		assert.strictEqual(resShiftSession.valid, true);
+
+		const resChairsideDiary = validateDoctorSignatureStatutoryMode(
+			"simple_electronic_signature",
+			"internal_visit_diary",
+		);
+		assert.strictEqual(resChairsideDiary.valid, true);
+
+		// Tier 3 External Statutory (СЭМД ЕГИСЗ, ИДС): строгий запрет ПЭП/PIN
+		const resSemdPep = validateDoctorSignatureStatutoryMode(
+			"simple_electronic_signature",
+			"semd_egisz",
+		);
+		assert.strictEqual(resSemdPep.valid, false);
+		assert.strictEqual(resSemdPep.error, DOCTOR_PEP_FORBIDDEN_MESSAGE);
+
+		const resIdcPin = validateDoctorSignatureStatutoryMode(
+			"pin:1234",
+			"informed_consent",
+		);
+		assert.strictEqual(resIdcPin.valid, false);
+		assert.strictEqual(resIdcPin.error, DOCTOR_PEP_FORBIDDEN_MESSAGE);
 	});
 
 	it("computes deterministic canonical text and SHA-256 digest for informed consent", () => {

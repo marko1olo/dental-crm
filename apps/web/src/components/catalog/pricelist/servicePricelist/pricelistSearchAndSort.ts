@@ -1,17 +1,20 @@
 import {
 	CATEGORY_LABELS,
-	SPECIALTY_LABELS,
 	type PriceTierKind,
 	type ServicePricelistItem,
-} from '../servicePricelistPresets';
-import { calculateTierPrice } from './currencyMath';
-import { calculateServiceProfitability } from './profitabilityCalculator';
-import { getClinicalSynonyms, normalizeSearchText } from './serviceCodesAndSynonyms';
+	SPECIALTY_LABELS,
+} from "../servicePricelistPresets";
+import { calculateTierPrice } from "./currencyMath";
+import { calculateServiceProfitability } from "./profitabilityCalculator";
+import {
+	getClinicalSynonyms,
+	normalizeSearchText,
+} from "./serviceCodesAndSynonyms";
 import type {
 	PricelistSortDirection,
 	PricelistSortField,
 	SearchPricelistQuery,
-} from './types';
+} from "./types";
 
 // =============================================================================
 // LAYER 2: FAST SEARCH, MULTI-INDEX & SORTING
@@ -22,16 +25,20 @@ interface ItemSearchIndex {
 	readonly cleanCode: string;
 }
 
-const itemSearchIndexCache = new WeakMap<ServicePricelistItem, ItemSearchIndex>();
+const itemSearchIndexCache = new WeakMap<
+	ServicePricelistItem,
+	ItemSearchIndex
+>();
 
 function getItemSearchIndex(item: ServicePricelistItem): ItemSearchIndex {
 	let cached = itemSearchIndexCache.get(item);
 	if (!cached) {
-		const cleanCode = item.code804n.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-		const catLabel = CATEGORY_LABELS[item.category] ?? '';
-		const specLabel = SPECIALTY_LABELS[item.specialty] ?? '';
-		const tagsStr = item.tags.length > 0 ? item.tags.join(' ') : '';
-		const icdStr = item.icd10Indications.length > 0 ? item.icd10Indications.join(' ') : '';
+		const cleanCode = item.code804n.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+		const catLabel = CATEGORY_LABELS[item.category] ?? "";
+		const specLabel = SPECIALTY_LABELS[item.specialty] ?? "";
+		const tagsStr = item.tags.length > 0 ? item.tags.join(" ") : "";
+		const icdStr =
+			item.icd10Indications.length > 0 ? item.icd10Indications.join(" ") : "";
 		const searchableText = normalizeSearchText(
 			`${item.code804n} ${item.commercialTitle} ${item.statutoryTitle804n} ${tagsStr} ${icdStr} ${catLabel} ${specLabel}`,
 		);
@@ -49,21 +56,36 @@ export function searchPricelistItems(
 	items: readonly ServicePricelistItem[],
 	query: SearchPricelistQuery | string,
 ): readonly ServicePricelistItem[] {
-	const normalizedQuery: SearchPricelistQuery = typeof query === 'string' ? { searchTerm: query } : (query ?? {});
-	const rawSearch = normalizedQuery.searchTerm?.trim() ?? '';
+	const normalizedQuery: SearchPricelistQuery =
+		typeof query === "string" ? { searchTerm: query } : (query ?? {});
+	const rawSearch = normalizedQuery.searchTerm?.trim() ?? "";
 	const normSearch = normalizeSearchText(rawSearch);
-	const searchTokens = normSearch.length > 0 ? normSearch.split(' ').filter((t) => t.length > 0) : [];
-	const searchCleanCode = rawSearch.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+	const searchTokens =
+		normSearch.length > 0
+			? normSearch.split(" ").filter((t) => t.length > 0)
+			: [];
+	const searchCleanCode = rawSearch.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 
-	const categoryFilter = normalizedQuery.category && normalizedQuery.category !== 'all' ? normalizedQuery.category : null;
-	const specialtyFilter = normalizedQuery.specialty && normalizedQuery.specialty !== 'all' ? normalizedQuery.specialty : null;
-	const profitFilter = normalizedQuery.profitabilityLevel && normalizedQuery.profitabilityLevel !== 'all' ? normalizedQuery.profitabilityLevel : null;
+	const categoryFilter =
+		normalizedQuery.category && normalizedQuery.category !== "all"
+			? normalizedQuery.category
+			: null;
+	const specialtyFilter =
+		normalizedQuery.specialty && normalizedQuery.specialty !== "all"
+			? normalizedQuery.specialty
+			: null;
+	const profitFilter =
+		normalizedQuery.profitabilityLevel &&
+		normalizedQuery.profitabilityLevel !== "all"
+			? normalizedQuery.profitabilityLevel
+			: null;
 	const includeArchived = normalizedQuery.includeArchived ?? false;
 	const minPriceFilter = normalizedQuery.minPriceRub;
 	const maxPriceFilter = normalizedQuery.maxPriceRub;
 
 	// Преаллокация и резолв синонимов ОДИН РАЗ до фильтрации вместо повторного вызова внутри 3000-элементного цикла
-	const preparedTokens: Array<{ token: string; synonyms: readonly string[] }> = [];
+	const preparedTokens: Array<{ token: string; synonyms: readonly string[] }> =
+		[];
 	for (let i = 0; i < searchTokens.length; i++) {
 		const token = searchTokens[i];
 		if (!token) continue;
@@ -79,7 +101,12 @@ export function searchPricelistItems(
 		}
 		// When user types a search query (by 804n code or procedure name), search globally across all categories
 		// to eliminate wandering across multi-level category trees.
-		if (categoryFilter && item.category !== categoryFilter && searchTokens.length === 0 && searchCleanCode.length === 0) {
+		if (
+			categoryFilter &&
+			item.category !== categoryFilter &&
+			searchTokens.length === 0 &&
+			searchCleanCode.length === 0
+		) {
 			return false;
 		}
 		if (specialtyFilter && item.specialty !== specialtyFilter) {
@@ -104,7 +131,10 @@ export function searchPricelistItems(
 		const index = getItemSearchIndex(item);
 
 		// Exact or stripped 804n code match
-		if (searchCleanCode.length > 0 && index.cleanCode.includes(searchCleanCode)) {
+		if (
+			searchCleanCode.length > 0 &&
+			index.cleanCode.includes(searchCleanCode)
+		) {
 			return true;
 		}
 
@@ -145,27 +175,37 @@ export function searchPricelist(
 export function sortPricelistItems(
 	items: readonly ServicePricelistItem[],
 	field: PricelistSortField,
-	direction: PricelistSortDirection = 'asc',
-	tier: PriceTierKind = 'standard',
+	direction: PricelistSortDirection = "asc",
+	tier: PriceTierKind = "standard",
 ): readonly ServicePricelistItem[] {
-	const factor = direction === 'asc' ? 1 : -1;
+	const factor = direction === "asc" ? 1 : -1;
 	return [...items].sort((a, b) => {
 		switch (field) {
-			case 'code':
-				return factor * a.code804n.localeCompare(b.code804n, 'ru');
-			case 'title':
-				return factor * a.commercialTitle.localeCompare(b.commercialTitle, 'ru');
-			case 'price': {
-				const priceA = calculateTierPrice(a.basePriceRub, tier, a.tierPrices?.[tier]);
-				const priceB = calculateTierPrice(b.basePriceRub, tier, b.tierPrices?.[tier]);
+			case "code":
+				return factor * a.code804n.localeCompare(b.code804n, "ru");
+			case "title":
+				return (
+					factor * a.commercialTitle.localeCompare(b.commercialTitle, "ru")
+				);
+			case "price": {
+				const priceA = calculateTierPrice(
+					a.basePriceRub,
+					tier,
+					a.tierPrices?.[tier],
+				);
+				const priceB = calculateTierPrice(
+					b.basePriceRub,
+					tier,
+					b.tierPrices?.[tier],
+				);
 				return factor * (priceA - priceB);
 			}
-			case 'margin': {
+			case "margin": {
 				const marginA = calculateServiceProfitability(a, tier).marginPercent;
 				const marginB = calculateServiceProfitability(b, tier).marginPercent;
 				return factor * (marginA - marginB);
 			}
-			case 'duration':
+			case "duration":
 				return factor * (a.estimatedDurationMin - b.estimatedDurationMin);
 			default:
 				return 0;

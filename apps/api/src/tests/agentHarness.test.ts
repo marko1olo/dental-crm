@@ -50,12 +50,12 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 	// ─── 1. RUNTIMEMODE & DENTAL TOOLS TESTS ───────────────────────────────────
 
-	it("1. Dental tools reflect runtimeMode: 13 tools in web_browser vs 18 in desktop_native", () => {
+	it("1. Dental tools reflect runtimeMode: 16 tools in web_browser vs 31 in desktop_native", () => {
 		const webTools = getDentalTools("web_browser");
 		const desktopTools = getDentalTools("desktop_native");
 
-		assert.equal(webTools.length, 13, "web_browser must have exactly 13 clinical + CRM tools");
-		assert.equal(desktopTools.length, 18, "desktop_native must have 18 tools (13 clinical + 5 workstation hardware tools)");
+		assert.equal(webTools.length, 16, "web_browser must have exactly 16 clinical + CRM tools");
+		assert.equal(desktopTools.length, 31, "desktop_native must have 31 tools (16 clinical + 15 workstation hardware tools)");
 
 		const webToolNames = webTools.map((t) => t.function.name);
 		assert.ok(webToolNames.includes("calculate_anesthesia"));
@@ -205,7 +205,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.equal(callCount, 2, "Must perform 2 calls to model");
 		assert.equal(result.iterations, 2);
 		assert.equal(result.toolCalls.length, 1);
-		assert.equal(result.toolCalls[0].tool, "calculate_anesthesia");
+		assert.equal(result.toolCalls[0]?.tool, "calculate_anesthesia");
 		assert.match(result.text, /7 карпул/);
 
 		// Verify event sequence: reasoning -> tool_start -> tool_end -> token -> done
@@ -280,7 +280,9 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 					messages: [{ role: "user", content: "Тестовая ошибка" }],
 					context: { organizationId: testOrgId },
 					client: failingClient,
-					onEvent: (ev) => capturedEvents.push(ev),
+					onEvent: (ev) => {
+						capturedEvents.push(ev);
+					},
 				});
 			},
 			(err: Error) => {
@@ -321,7 +323,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 		assert.equal(authRes.statusCode, 200);
 		const json = authRes.json();
-		assert.equal(json.count, 13);
+		assert.equal(json.count, 16);
 		assert.equal(json.runtimeMode, "web_browser");
 
 		// Authenticated request with x-agent-runtime: desktop_native
@@ -336,7 +338,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 		assert.equal(nativeRes.statusCode, 200);
 		const nativeJson = nativeRes.json();
-		assert.equal(nativeJson.count, 18);
+		assert.equal(nativeJson.count, 31);
 		assert.equal(nativeJson.runtimeMode, "desktop_native");
 
 		await app.close();

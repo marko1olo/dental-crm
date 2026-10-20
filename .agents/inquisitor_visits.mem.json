@@ -1,0 +1,100 @@
+{
+  "audit_version": "1.0.0",
+  "agent_role": "Red Team Clinical Visits and Recurrences Inquisitor",
+  "audit_date": "2026-10-12T00:05:00+04:00",
+  "organization_context": "Clinic MVP / DENTE Dental CRM",
+  "database_target": "PostgreSQL 18 on 127.0.0.1:5432",
+  "summary": {
+    "total_defects": 8,
+    "critical_safety_defects": 4,
+    "financial_and_fiscal_defects": 3,
+    "workflow_and_idempotency_defects": 1
+  },
+  "defects": [
+    {
+      "id": "DEFECT-VISIT-01",
+      "severity": "CRITICAL",
+      "category": "CLINICAL_SAFETY",
+      "title": "Локальный кэш localStorage блокирует исцеление зуба при повторном визите (State Override Bug)",
+      "file": "apps/web/src/components/odontogram/useOdontogramSync.ts",
+      "lines": "363-373",
+      "description": "При мердже зубов серверный Healthy насильно перезаписывается локальным не-Healthy состоянием из localStorage без учета времени обновления.",
+      "code_snippet": "if (cachedTooth.state !== 'Healthy' && (found.state === 'Healthy' || (found.state as string) === 'healthy')) { return { ...found, ...cachedTooth, state: cachedTooth.state, ...surfacePatch }; }",
+      "clinical_consequence": "Если зуб был вылечен или снят диагноз другим врачом в базе данных, повторный визит в локальном браузере вечно показывает старую патологию (кариес, пульпит), провоцируя гипердиагностику и ненужное препарирование."
+    },
+    {
+      "id": "DEFECT-VISIT-02",
+      "severity": "HIGH",
+      "category": "CLINICAL_FEEDBACK",
+      "title": "Ложное спокойствие: «32 зуба интактны» у рецидивного больного при открытии визита (Empty State Trap)",
+      "file": "apps/web/src/components/visit/emkTab/VisitEmkOdontogramBar.tsx",
+      "lines": "51-66",
+      "description": "Сводка формулы formulaSummary считается только по локальному пустому объекту visitToothStateByCode нового визита, полностью игнорируя реальные патологии пациента из базы данных.",
+      "code_snippet": "if (pathologyEntries.length === 0) { return `${totalTeeth} ${dentitionMode === 'pediatric' ? 'молочных зубов интактны' : 'зуба интактны'}`; }",
+      "clinical_consequence": "Пациент с множественными коронками, имплантами или удаленными зубами в блоке ЭМК отображается как полностью здоровый ('32 зуба интактны'), дезориентируя врача у кресла."
+    },
+    {
+      "id": "DEFECT-VISIT-03",
+      "severity": "CRITICAL",
+      "category": "ZERO_MOCKS_VIOLATION",
+      "title": "Потёмкинский чек на 1500 ₽ в кассу при сбое завершения визита (Zero-Mocks Violation)",
+      "file": "apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts",
+      "lines": "208-228",
+      "description": "При любой ошибке или таймауте завершения приёма блок catch молча генерирует фальшивый чек на 1500 ₽ за 'Осмотр и консультация' и переводит экран в кассу.",
+      "code_snippet": "const fallbackCheckout = { patientId: activePatient?.id || 'pat-default', services: [{ name: 'Осмотр и консультация', priceRub: 1500, quantity: 1, totalRub: 1500 }], totalDueRub: 1500, receiptNumber: `REC-${Date.now().toString().slice(-5)}` };",
+      "clinical_consequence": "Грубейший мокап и нарушение закона о честности клиники: операция на 100 000 ₽ или бесплатный гарантийный приём превращаются в счет на 1500 ₽ без предупреждения врача."
+    },
+    {
+      "id": "DEFECT-VISIT-04",
+      "severity": "CRITICAL",
+      "category": "RACE_CONDITION",
+      "title": "Гонка перехода в кассу из шапки приёма (useVisitViewState vs useVisitCompletionWorkflow)",
+      "file": "apps/web/src/components/visit/view/useVisitViewState.ts",
+      "lines": "370-394",
+      "description": "Кнопка 'Завершить приём' в шапке синхронно пишет 1500 ₽ в sessionStorage.dente_pending_checkout, диспатчит ивент завершения и через 300 мс переходит на #finance, опережая реальный асинхронный расчет сметы.",
+      "clinical_consequence": "Касса открывается до завершения сборки сметы и списывания BOM, успевая прочитать фальшивые 1500 ₽. Реальная смета врача отбрасывается."
+    },
+    {
+      "id": "DEFECT-VISIT-05",
+      "severity": "CRITICAL",
+      "category": "DOCTOR_AUTONOMY",
+      "title": "Разрушение 100% скидки и гарантийного приёма у кресла из-за логического оператора || (Falsy Zero Bug)",
+      "file": "apps/web/src/components/schedule/GridAppointmentCard.tsx",
+      "lines": "658-659, 465, 630",
+      "description": "При цене визита 0 ₽ (100% скидка, гарантия) проверка (a as any).priceRub || 2500 превращает 0 в 2500 ₽ из-за того, что 0 является falsy.",
+      "code_snippet": "priceRub: (a as any).priceRub || (a as any).amountRub || 2500\nconst defPrice = Number(activeAppointment?.price || 1500);\nconst defPrice = Number(activeAppointment?.price || 2500);",
+      "clinical_consequence": "Пациент пришел по гарантии врача на бесплатный прием (0 ₽), а при переходе в кассу или печати акта система автоматически требует с него 2500 ₽ или 1500 ₽."
+    },
+    {
+      "id": "DEFECT-VISIT-06",
+      "severity": "CRITICAL",
+      "category": "CLINICAL_SAFETY",
+      "title": "Клиническая утечка данных между пациентами в Zustand useVisitStore (Cross-Patient State Leakage)",
+      "file": "apps/web/src/store/visit/odontogramSlice.ts",
+      "lines": "281-290",
+      "description": "Функция resetVisitToothState() нигде не вызывается в production коде при смене активного пациента (setSelectedPatientId). Стор сохраняет чужие completedServices, visitToothStateByCode и visitNoteForm.",
+      "clinical_consequence": "При переключении с Пациента А на Пациента Б в памяти висят услуги, жалобы и отмеченные патологии Пациента А. Врач рискует выставить счет за чужие манипуляции."
+    },
+    {
+      "id": "DEFECT-VISIT-07",
+      "severity": "HIGH",
+      "category": "WORKFLOW_INTEGRITY",
+      "title": "Разрыв цепочки вызова листа ожидания в контекстном меню карточки приёма",
+      "file": "apps/web/src/components/schedule/AppointmentCardContextMenu.tsx",
+      "lines": "394-398",
+      "description": "Кнопка 'Освобождено под лист ожидания' меняет статус записи на cancelled, но не вызывает переданный коллбек onFreeSlotToWaitlist(appointment).",
+      "code_snippet": "onClick={() => { setIsCardMenuOpen(false); void handleQuickStatusChange('cancelled', 'Освобождено под лист ожидания'); }}",
+      "clinical_consequence": "Окно освобождается, но модальное окно/шторка подбора кандидатов из листа ожидания не открывается, нарушая быстрый цикл перезаписи."
+    },
+    {
+      "id": "DEFECT-VISIT-08",
+      "severity": "MEDIUM",
+      "category": "IDEMPOTENCY",
+      "title": "Отсутствие clientMutationId в таблице visits (Idempotency Void)",
+      "file": "apps/api/src/db/visitsQueryModules/visitProtocolQueries.ts",
+      "lines": "610-617",
+      "description": "В схеме visits отсутствует колонка client_mutation_id. Повторный вызов подписания возвращает 409 Conflict вместо идемпотентного статуса duplicate.",
+      "clinical_consequence": "Двойной клик врача на 'Подписать приём' или сетевой повтор браузера приводит к ошибке 409 вместо мягкого квитирования."
+    }
+  ]
+}

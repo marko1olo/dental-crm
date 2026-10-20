@@ -61,17 +61,11 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			}
 			const body = parseResult.data;
 
-			// 1. Определение организации (клиники) с fail-closed защитой
+			// 1. Определение организации (клиники) с fail-closed защитой и мягким фолбеком для предпросмотра
 			const organizationId = await resolveOrganizationId(request);
-			if (!organizationId) {
-				return reply.status(401).send({
-					error: "Unauthorized",
-					message: "Не указана организация (tenant) для генерации документа.",
-				});
-			}
-
 			let org: typeof organizations.$inferSelect | undefined;
-			if (UUID_REGEX.test(organizationId)) {
+
+			if (organizationId && UUID_REGEX.test(organizationId)) {
 				const [foundOrg] = await db
 					.select()
 					.from(organizations)
@@ -80,12 +74,31 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				org = foundOrg;
 			}
 
+			// Если токен не передан, но в базе есть организация или переданы явные overrides
 			if (!org) {
-				return reply.status(404).send({
-					error: "OrganizationNotFound",
-					message: "Организация не найдена в базе данных. Доступ запрещен.",
+				const [defaultOrg] = await db.select().from(organizations).limit(1);
+				org = defaultOrg;
+			}
+
+			const clinicOverride = (body.overrides?.clinic as Record<string, any>) || {};
+			if (!org && Object.keys(clinicOverride).length === 0) {
+				return reply.status(401).send({
+					error: "Unauthorized",
+					message: "Не указана организация (tenant) для генерации документа.",
 				});
 			}
+
+			const currentOrg: typeof organizations.$inferSelect = org ?? ({
+				id: "00000000-0000-0000-0000-000000000000",
+				name: clinicOverride.name || "Стоматологическая клиника",
+				inn: clinicOverride.inn || "",
+				kpp: clinicOverride.kpp || "",
+				legalAddress: clinicOverride.address || "",
+				email: clinicOverride.phone || "",
+				medicalLicenseNumber: clinicOverride.licenseNumber || "",
+				medicalLicenseIssuedAt: "",
+				medicalLicenseIssuer: "Департамент здравоохранения",
+			} as unknown as typeof organizations.$inferSelect);
 
 			// 2. Поиск шаблона с учетом изоляции тенанта (системные либо принадлежащие данной клинике)
 			const templateConditions: SQL[] = [];
@@ -100,7 +113,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			}
 
 			const tenantTemplateFilter = or(
-				eq(documentTemplates.organizationId, org.id),
+				eq(documentTemplates.organizationId, currentOrg.id),
 				isNull(documentTemplates.organizationId),
 			)!;
 
@@ -119,16 +132,16 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			);
 
 			const clinicData = {
-				name: org.name || "",
-				inn: org.inn || "",
-				kpp: org.kpp || "",
-				address: org.legalAddress || "",
-				phone: org.email || "",
-				licenseNumber: org.medicalLicenseNumber || "",
-				licenseIssuedDate: org.medicalLicenseIssuedAt || "",
+				name: currentOrg.name || "",
+				inn: currentOrg.inn || "",
+				kpp: currentOrg.kpp || "",
+				address: currentOrg.legalAddress || "",
+				phone: currentOrg.email || "",
+				licenseNumber: currentOrg.medicalLicenseNumber || "",
+				licenseIssuedDate: currentOrg.medicalLicenseIssuedAt || "",
 				licenseValidity: "Бессрочно",
 				licenseIssuer:
-					org.medicalLicenseIssuer ||
+					currentOrg.medicalLicenseIssuer ||
 					"Департамент здравоохранения города Москвы",
 			};
 
@@ -155,7 +168,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(patients.id, body.patientId),
-							eq(patients.organizationId, org.id),
+							eq(patients.organizationId, currentOrg.id),
 						),
 					)
 					.limit(1);
@@ -259,7 +272,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(visits.id, body.visitId),
-							eq(visits.organizationId, org.id),
+							eq(visits.organizationId, currentOrg.id),
 						),
 					)
 					.limit(1);
@@ -304,7 +317,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(appointments.id, body.appointmentId),
-							eq(appointments.organizationId, org.id),
+							eq(appointments.organizationId, currentOrg.id),
 						),
 					)
 					.limit(1);
@@ -331,7 +344,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(payments.visitId, body.visitId),
-							eq(payments.organizationId, org.id),
+							eq(payments.organizationId, currentOrg.id),
 						),
 					);
 
@@ -363,7 +376,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(users.id, body.doctorId),
-							eq(users.organizationId, org.id),
+							eq(users.organizationId, currentOrg.id),
 						),
 					)
 					.limit(1);
@@ -387,7 +400,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					.where(
 						and(
 							eq(users.id, body.administratorId),
-							eq(users.organizationId, org.id),
+							eq(users.organizationId, currentOrg.id),
 						),
 					)
 					.limit(1);

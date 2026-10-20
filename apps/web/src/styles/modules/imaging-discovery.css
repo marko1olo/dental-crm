@@ -1,0 +1,321 @@
+/* ==========================================================================
+   DENTE CRM — LOCAL IMAGING DISCOVERY & PUBLIC LOOKUP (modules/imaging-discovery.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Clinic lookup, local case organizer, 3D model bench, import rows.
+   ========================================================================== */
+.clinic-public-lookup-result {
+	background: #102d2b;
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.clinic-public-suggestions,
+.clinic-public-targets {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.clinic-public-suggestions article {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.2);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.clinic-public-suggestions strong,
+.clinic-public-suggestions p,
+.clinic-public-suggestions small,
+.clinic-public-lookup-result > small {
+	color: #dff7f4;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.clinic-public-suggestions strong {
+	color: #eef8f5;
+	font-size: 13px;
+}
+
+.clinic-public-boundary {
+	background: rgba(255, 240, 189, 0.12);
+	border: 1px solid rgba(240, 180, 75, 0.28);
+	border-radius: 6px;
+	color: #f2d992;
+	display: block;
+	padding: 7px 8px;
+}
+
+.clinic-public-suggestions .clinic-public-apply-summary,
+.import-row .clinic-public-apply-summary {
+	background: rgba(119, 215, 199, 0.12);
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-radius: 6px;
+	color: #eef8f5;
+	padding: 6px 8px;
+}
+
+.import-row .clinic-public-apply-summary {
+	color: #24413c;
+	font-weight: 850;
+}
+
+.clinic-public-save-row {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 10px;
+	min-width: 0;
+}
+
+.clinic-public-save-row small {
+	color: #24413c;
+	flex: 1 1 220px;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.clinic-public-lookup-result .clinic-public-save-row small {
+	color: #dff7f4;
+}
+
+.clinic-public-targets .secondary-button {
+	justify-content: start;
+	min-width: 0;
+}
+
+.local-imaging-organizer-result {
+	background: #102d2b;
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.local-imaging-case-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.local-imaging-case {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.2);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 7px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.local-imaging-case > div:first-child {
+	display: grid;
+	gap: 4px;
+}
+
+.local-imaging-case.local-action-review_3d_models {
+	border-left-color: #8fc5ff;
+}
+
+.local-imaging-case.local-action-mixed_case_workup {
+	border-left-color: #f0b44b;
+}
+
+.local-imaging-case.local-action-manual_review {
+	border-left-color: #ff8f8f;
+}
+
+.local-imaging-case strong,
+.local-imaging-case span,
+.local-imaging-case small,
+.local-imaging-organizer-result > small {
+	overflow-wrap: anywhere;
+}
+
+.local-imaging-case strong {
+	color: #eef8f5;
+	display: block;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.local-imaging-case span,
+.local-imaging-case small,
+.local-imaging-organizer-result > small {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.local-imaging-case-metrics,
+.local-imaging-model-list,
+.local-imaging-model-workbench {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.local-imaging-model-workbench {
+	background: rgba(117, 196, 255, 0.08);
+	border: 1px solid rgba(117, 196, 255, 0.2);
+	border-radius: 8px;
+	padding: 7px;
+}
+
+.local-imaging-model-workbench strong,
+.local-imaging-model-workbench small {
+	flex: 1 1 100%;
+}
+
+.local-imaging-case-metrics span,
+.local-imaging-model-list span,
+.local-imaging-model-workbench span {
+	background: rgba(215, 255, 246, 0.1);
+	border: 1px solid rgba(215, 255, 246, 0.12);
+	border-radius: 999px;
+	color: #d9f4ef;
+	font-size: 11px;
+	font-weight: 900;
+	padding: 4px 7px;
+}
+
+.local-imaging-case button {
+	justify-self: start;
+}
+
+.recognition-notes {
+	display: grid;
+	gap: 7px;
+	grid-column: 1 / -1;
+}
+
+.recognition-notes span {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: #33534b;
+	font-size: 13px;
+	font-weight: 800;
+	padding: 9px 10px;
+}
+
+.import-preview {
+	display: grid;
+	gap: 10px;
+	grid-column: 1 / -1;
+}
+
+.import-stats {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.import-stats span {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 900;
+	min-height: 38px;
+	padding: 10px;
+	text-align: center;
+}
+
+.import-actions {
+	align-items: center;
+	background: rgba(255, 255, 255, 0.62);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	min-height: 52px;
+	padding: 8px;
+}
+
+.import-actions span {
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 800;
+	text-align: right;
+}
+
+.import-empty-guidance {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	font-size: 13px;
+	font-weight: 850;
+	margin: 0;
+	padding: 10px 12px;
+}
+
+.import-rows {
+	display: grid;
+	gap: 8px;
+}
+
+.import-row {
+	align-items: center;
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--green);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px 12px;
+	grid-template-columns: minmax(180px, 1.2fr) minmax(128px, 0.8fr) minmax(
+			110px,
+			0.65fr
+		) minmax(180px, 1fr);
+	min-height: 58px;
+	padding: 10px 12px;
+}
+
+.import-row strong,
+.import-row span,
+.import-row p {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.import-row strong {
+	color: var(--ink);
+}
+
+.import-row span {
+	color: #394a43;
+	font-weight: 750;
+}
+
+.import-row p {
+	color: var(--muted);
+	margin: 0;
+}
+
+.import-warning {
+	border-left-color: var(--amber);
+}
+
+.import-blocked {
+	border-left-color: var(--rust);
+	background: #fff8f6;
+}

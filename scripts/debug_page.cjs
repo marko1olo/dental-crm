@@ -1,65 +1,111 @@
 const { chromium } = require("playwright");
-const fs = require("node:fs");
 
 async function main() {
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+	const browser = await chromium.launch({
+		headless: true,
+		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+	});
+	const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+	await page.route("**/api/**", async (route) => {
+		if (route.request().url().includes("/api/clinical/implants/stock")) {
+			return route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({
+					success: true,
+					implants: [
+						{
+							id: "inv-oss-4010",
+							name: "Имплантат Osstem TS III SA Ø4.0x10мм",
+							category: "Имплантология",
+							unit: "шт.",
+							stockQuantity: "5.000",
+							currentQty: "5.000",
+							unitCostRub: "12500.00",
+							pricePerUnit: "12500.00",
+							sku: "TS3S4010S",
+							barcode: "01088061400012341024C120821SN-884210",
+							lotNumber: "24C1208",
+							expirationDate: "2028-11-30",
+						},
+						{
+							id: "inv-dent-4510",
+							name: "Имплантат Dentium SuperLine SLA Ø4.5x10мм",
+							category: "Имплантология",
+							unit: "шт.",
+							stockQuantity: "6.000",
+							currentQty: "6.000",
+							unitCostRub: "10500.00",
+							pricePerUnit: "10500.00",
+							sku: "FX4010",
+							barcode: "010880918000567810DT-7810221SN-441290",
+							lotNumber: "DT-78102",
+							expirationDate: "2029-01-31",
+						},
+					],
+					consumables: {
+						grafts: [
+							{
+								id: "inv-bio-oss-05",
+								name: "Костный графт Geistlich Bio-Oss (0.5г)",
+								unitCostRub: "8200.00",
+								lotNumber: "BO-8921",
+								expirationDate: "2028-06-30",
+								stockQuantity: "8.000",
+							},
+						],
+						membranes: [
+							{
+								id: "inv-bio-gide-1622",
+								name: "Коллагеновая мембрана Geistlich Bio-Gide (16x22мм)",
+								unitCostRub: "9800.00",
+								lotNumber: "BG-3310",
+								expirationDate: "2028-08-31",
+								stockQuantity: "5.000",
+							},
+						],
+						sutures: [
+							{
+								id: "inv-vicryl-40",
+								name: "Шовный материал Ethicon Викрил 4-0 (игла 19мм)",
+								unitCostRub: "650.00",
+								lotNumber: "VK-2026",
+								expirationDate: "2027-12-31",
+								stockQuantity: "20.000",
+							},
+						],
+					},
+				}),
+			});
+		}
+		return route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({ success: true }),
+		});
+	});
 
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	await page.addInitScript(() => {
+		localStorage.setItem("dente_clinic_token", "live-inquisition-clinic-token");
+		localStorage.setItem("dente_staff_token", "live-inquisition-staff-token");
+		localStorage.setItem("dente_active_role", "owner");
+		localStorage.setItem("dente_theme_mode", "light");
+		localStorage.setItem("dente_active_patient_id", "demo_patient");
+		localStorage.setItem("dente_tour_completed", "true");
+	});
 
-  const loginRes = await fetch("http://127.0.0.1:4100/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "clinic@example.com", password: "dente2026" }),
-  });
-  const login = await loginRes.json();
+	console.log("Navigating to http://127.0.0.1:5173/?demo=true&implant_passport=true...");
+	await page.goto("http://127.0.0.1:5173/?demo=true&implant_passport=true", {
+		waitUntil: "domcontentloaded",
+		timeout: 20000,
+	});
 
-  await context.addInitScript(
-    ({ token, staff, user }) => {
-      localStorage.setItem("dente_clinic_token", token);
-      localStorage.setItem("dente_staff_token", staff);
-      localStorage.setItem("dente_active_role", "doctor");
-      localStorage.setItem("dente_current_doctor_id", user.id);
-      localStorage.setItem("dente_active_staff_user", JSON.stringify(user));
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-      localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true, onboardingStep: "done", version: 1 }));
-      localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true, version: 1 }));
-      localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({ version: 1, uiLanguage: "ru", selectedWorkspaceRole: "doctor", onboardingDismissed: true }));
-      localStorage.setItem(
-        "dente-workspace-profile",
-        JSON.stringify({
-          state: {
-            clinicName: "Стоматология ДЕНТЕ Премиум",
-            organizationId: "00000000-0000-0000-0000-000000000001",
-            currentDoctor: { id: user.id, fullName: user.fullName, role: user.role },
-            flags: { disableTour: true },
-          },
-        })
-      );
-    },
-    { token: login.clinicToken, staff: login.staffToken, user: login.user }
-  );
-
-  const page = await context.newPage();
-  console.log("Navigating to http://127.0.0.1:5173/#patients...");
-  await page.goto("http://127.0.0.1:5173/#patients", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(5000);
-
-  const url = page.url();
-  console.log("Current URL:", url);
-
-  const buttons = await page.$$eval("button", (btns) => btns.map((b) => ({ text: b.textContent.trim(), testId: b.getAttribute("data-testid") })));
-  console.log("Visible buttons count:", buttons.length);
-  console.log("Buttons sample:", JSON.stringify(buttons.slice(0, 15), null, 2));
-
-  await page.screenshot({ path: "docs/screenshots/patient_intake_inquisition/debug_rendered.png" });
-  console.log("Saved debug_rendered.png");
-
-  await browser.close();
+	await page.waitForTimeout(3000);
+	await page.screenshot({ path: "scripts/debug_screen_demo.png" });
+	const hasModal = (await page.locator('[data-testid*="implant-passport-modal"]').count()) > 0;
+	console.log("Has modal:", hasModal);
+	await browser.close();
 }
 
 main().catch(console.error);

@@ -23,6 +23,8 @@ import { actionFailureToast } from "../../../lib/panelStateText";
 import { useAppStore } from "../../../store/appStore";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
+import { cacheClinicDashboard } from "../../../lib/offlineStorage";
+import { cacheClinicalRecord } from "../../../services/storage/clinicalCacheStorage";
 import type {
 	UseVisitOfflineQueueParams,
 	UseVisitOfflineQueueReturn,
@@ -65,15 +67,22 @@ export function useVisitOfflineQueue({
 
 	const applyAcceptedVisitResponse = useCallback(
 		(result: AcceptVisitDraftResponse) => {
-			setDashboard((current) =>
-				current
+			setDashboard((current) => {
+				const next = current
 					? {
 							...current,
 							activeVisit: result.visit,
 							visitCloseChecklist: result.visitCloseChecklist,
 						}
-					: current,
-			);
+					: current;
+				if (next) {
+					cacheClinicDashboard(next);
+				}
+				return next;
+			});
+			if (result.visit?.id) {
+				void cacheClinicalRecord("visit", result.visit.id, result.visit);
+			}
 			setDraft(null);
 			setVisitNoteForm((currentForm) => {
 				const serverForm = visitNoteFormFromVisit(result.visit);
@@ -135,6 +144,9 @@ export function useVisitOfflineQueue({
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						...(options.clientMutationId
+							? { "Idempotency-Key": options.clientMutationId }
+							: {}),
 					}),
 					body: JSON.stringify({
 						draft: draftToAccept,
@@ -340,9 +352,16 @@ export function useVisitOfflineQueue({
 					"Черновик ЭМК принят врачом локально и ожидает синхронизацию.",
 				updatedAt: queued.queuedAt,
 			};
-			setDashboard((current) =>
-				current ? { ...current, activeVisit: optimisticVisit } : current,
-			);
+			setDashboard((current) => {
+				const next = current ? { ...current, activeVisit: optimisticVisit } : current;
+				if (next) {
+					cacheClinicDashboard(next);
+				}
+				return next;
+			});
+			if (dashboard?.activeVisit?.id) {
+				void cacheClinicalRecord("visit", dashboard.activeVisit.id, optimisticVisit);
+			}
 			setDraft(null);
 			setVisitNoteForm(visitNoteFormFromVisit(optimisticVisit));
 			scrollToVisitArea(".visit-fields");

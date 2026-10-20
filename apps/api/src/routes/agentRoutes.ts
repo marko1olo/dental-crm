@@ -28,6 +28,10 @@ const agentChatBodySchema = z.object({
 	activeVisitId: z.string().uuid().optional(),
 	stream: z.boolean().optional().default(false),
 	runtimeMode: z.enum(["web_browser", "desktop_native"]).optional(),
+	enableAutoCompaction: z.boolean().optional(),
+	compactThresholdTokens: z.number().int().positive().optional(),
+	slidingWindowRetainedTurns: z.number().int().positive().optional(),
+	initialSummary: z.string().optional(),
 });
 
 function formatSseMessage(event: string, data: unknown): string {
@@ -106,6 +110,10 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 							runtimeMode,
 						},
 						runtimeMode,
+						enableAutoCompaction: body.enableAutoCompaction,
+						compactThresholdTokens: body.compactThresholdTokens,
+						slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
+						initialSummary: body.initialSummary,
 						signal: abortController.signal,
 						onEvent: (event: AgentHarnessEvent) => {
 							if (!reply.raw.writableEnded) {
@@ -138,6 +146,10 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 						runtimeMode,
 					},
 					runtimeMode,
+					enableAutoCompaction: body.enableAutoCompaction,
+					compactThresholdTokens: body.compactThresholdTokens,
+					slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
+					initialSummary: body.initialSummary,
 					signal: abortController.signal,
 				});
 
@@ -146,6 +158,9 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 					toolCalls: result.toolCalls,
 					iterations: result.iterations,
 					runtimeMode,
+					compacted: result.compacted,
+					summary: result.summary,
+					tokenUsage: result.tokenUsage,
 				});
 			} catch (err: unknown) {
 				const msg = err instanceof Error ? err.message : String(err);

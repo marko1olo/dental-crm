@@ -1,0 +1,75 @@
+{
+	"agent": "Clinical State Machine Fixer Inquisitor",
+	"parentConversationId": "be550c60-5bbe-4462-93e4-69ff4fe5f07b",
+	"updatedAt": "2026-10-12T00:20:15+04:00",
+	"status": "completed",
+	"fixes": [
+		{
+			"id": 1,
+			"title": "Исцеление одонтограммы от зомби-кариеса из кэша (Server Healthy Override)",
+			"file": "apps/web/src/components/odontogram/useOdontogramSync.ts",
+			"lines": "363-397",
+			"summary": "Ликвидирован слепой возврат локального кэша при s.state === 'Healthy'. Теперь при наличии серверной метки времени (serverTime >= localTime) или отсутствии локальной метки серверное состояние (включая Healthy) побеждает локальный кэш localStorage."
+		},
+		{
+			"id": 2,
+			"title": "Ликвидация ложного «32 зуба интактны» в VisitEmkOdontogramBar",
+			"file": "apps/web/src/components/visit/emkTab/VisitEmkOdontogramBar.tsx",
+			"lines": "49-151",
+			"summary": "Построена карта effectiveToothStateByCode, объединяющая сохраненную историю зубов пациента (loadStoredTeethData, patientHistory, activePatient.teeth, activePatient.toothStates) и текущие состояния визита (visitToothStateByCode). Сводка formulaSummary теперь честно отображает количество удалённых зубов, коронок/имплантов, пломб и патологий вместо ложного «32 зуба интактны»."
+		},
+		{
+			"id": 3,
+			"title": "Ликвидация фейкового чека на 1500 ₽ (Zero Mocks) в useVisitCompletionWorkflow",
+			"file": "apps/web/src/components/visit/emkTab/useVisitCompletionWorkflow.ts",
+			"lines": "204-216",
+			"summary": "Полностью удалён синтетический fallbackCheckout на 1500 ₽ в блоке catch. Добавлено состояние completionError и неблокирующий баннер с кнопкой «Повторить расчёт сметы» в VisitEmkCompletionSection.tsx."
+		},
+		{
+			"id": 4,
+			"title": "Устранение гонки перехода в кассу (#finance) в useVisitViewState",
+			"file": "apps/web/src/components/visit/view/useVisitViewState.ts",
+			"lines": "361-429",
+			"summary": "Удалён слепой setTimeout(..., 300) и синтетический fallbackCheckout на 1500 ₽. Событие dente:trigger-complete-visit теперь возвращает промис фактического сохранения визита и расчёта сметы; переход на window.location.hash = 'finance' происходит строго после успешного разрешения промиса."
+		},
+		{
+			"id": 5,
+			"title": "Защита 100% скидки и гарантийного приёма 0 ₽ (Falsy Zero Bug)",
+			"files": [
+				"apps/web/src/components/schedule/GridAppointmentCard.tsx#L656-L687",
+				"apps/web/src/components/visit/view/visitFastPrint.ts#L450-L645",
+				"apps/web/src/components/visit/clinicalVisitWorkflow.ts#L458-L515",
+				"apps/web/src/components/visit/useVisitCompletion.ts#L44-L84"
+			],
+			"summary": "Заменены операторы || 2500, || 1500 и || 0 на проверки typeof ... === 'number' && Number.isFinite(...) и оператор ?? (Nullish Coalescing), чтобы гарантийные визиты и услуги со 100% скидкой (0 ₽) сохраняли стоимость 0 ₽."
+		},
+		{
+			"id": 6,
+			"title": "Ликвидация утечки данных между пациентами в Zustand useVisitStore",
+			"files": [
+				"apps/web/src/hooks/domains/usePatientLogic.ts#L431-L460",
+				"apps/web/src/store/patientStore.ts#L114-L125",
+				"apps/web/src/components/visit/useVisitEmkToothSync.ts#L104-L128"
+			],
+			"summary": "При смене выбранного или активного пациента гарантированно вызываются useVisitStore.getState().resetVisitToothState() и useVisitStore.getState().setCompletedServices([]), исключая перетекание зубной формулы и выполненных услуг от предыдущего пациента."
+		},
+		{
+			"id": 7,
+			"title": "Восстановление шторки листа ожидания при освобождении слота",
+			"files": [
+				"apps/web/src/components/schedule/AppointmentCardContextMenu.tsx#L394-L403",
+				"apps/web/src/components/schedule/appointmentCardModules/AppointmentCardContainer.tsx#L228-L248",
+				"apps/web/src/components/schedule/appointmentCardModules/AppointmentCardVisualBody.tsx#L204-L415",
+				"apps/web/src/components/schedule/useAppointmentCardState.ts#L391-L406"
+			],
+			"summary": "Проброшен и вызван коллбэк onFreeSlotToWaitlist(appointment) в AppointmentCardContextMenu при клике на освобождение слота под лист ожидания, а также обновлены зависимости handleQuickStatusChange."
+		},
+		{
+			"id": 8,
+			"title": "Защита черновика и ключи идемпотентности при завершении визита в useVisitCompletion",
+			"file": "apps/web/src/components/visit/useVisitCompletion.ts",
+			"lines": "276-320",
+			"summary": "Исправлено фоновое автосохранение при завершении визита (передача реального черновика visitNoteForm и transcript вместо затирания пустой строкой) и добавлены заголовки Idempotency-Key на мутирующие вызовы завершения визита."
+		}
+	]
+}

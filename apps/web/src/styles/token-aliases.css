@@ -195,8 +195,8 @@
      (GuestLabPortal.css:50, запас #2563eb). --brand-500 держит синий в светлой
      (#0ea5e9) и тёмной (#38bdf8) теме и уходит в тёплый в ночной, то есть
      оттенок сохраняется там, где он был, а не заменяется бирюзой. */
-	--primary: var(--brand-500);
-	--brand-primary: var(--brand-500);
+	--primary: var(--brand-500, var(--teal, #0d9488));
+	--brand-primary: var(--brand-500, var(--teal, #0d9488));
 	--paper-subtle: var(--paper-soft);
 
 	/* --text-muted: «второстепенный текст на поверхности темы»

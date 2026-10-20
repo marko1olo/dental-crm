@@ -87,11 +87,11 @@ export const ChronicDiseasesSection: React.FC<ChronicDiseasesSectionProps> = ({
 				</div>
 
 				{/* Уточняющие инпуты для антикоагулянтов, бисфосфонатов и триместра беременности */}
-				{(selectedRisks.includes("Приём антикоагулянтов") ||
-					selectedRisks.includes("Приём бисфосфонатов") ||
-					selectedRisks.includes("Беременность / Лактация")) && (
+				{(selectedRisks.some((r) => r.includes("антикоагулянт")) ||
+					selectedRisks.some((r) => r.includes("бисфосфонат")) ||
+					selectedRisks.some((r) => r.includes("Беременность") || r.includes("лактац"))) && (
 					<div className="anamnesis-clarify-card">
-						{selectedRisks.includes("Приём антикоагулянтов") && (
+						{selectedRisks.some((r) => r.includes("антикоагулянт")) && (
 							<div className="flex flex-col gap-1">
 								<label
 									htmlFor={anticoagulantInputId}
@@ -110,13 +110,13 @@ export const ChronicDiseasesSection: React.FC<ChronicDiseasesSectionProps> = ({
 							</div>
 						)}
 
-						{selectedRisks.includes("Приём бисфосфонатов") && (
+						{selectedRisks.some((r) => r.includes("бисфосфонат")) && (
 							<div className="flex flex-col gap-1">
 								<label
 									htmlFor={bisphosphonateInputId}
 									className="text-[11px] font-bold text-rose-800 dark:text-rose-300"
 								>
-									Препарат бисфосфонатов (MRONJ):
+									Препарат бисфосфонатов (риск БОНЧ):
 								</label>
 								<input
 									id={bisphosphonateInputId}
@@ -129,7 +129,7 @@ export const ChronicDiseasesSection: React.FC<ChronicDiseasesSectionProps> = ({
 							</div>
 						)}
 
-						{selectedRisks.includes("Беременность / Лактация") && (
+						{selectedRisks.some((r) => r.includes("Беременность") || r.includes("лактац")) && (
 							<div className="flex flex-col gap-1">
 								<span className="text-[11px] font-bold text-pink-800 dark:text-pink-300">
 									Срок / Период лактации:

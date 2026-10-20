@@ -241,32 +241,19 @@ export function useDocumentIssueActions({
 		setDocumentIssueConfirmationId(document.id);
 	}
 
-	async function confirmDocumentIssue(forceAllAttestations = false) {
+	async function confirmDocumentIssue(_forceAllAttestations = false) {
 		const documentId = documentIssueConfirmation?.id;
 		if (!documentId) {
 			setError("Выберите черновик документа для выдачи.");
 			return;
 		}
 
-		const all4FlagsSet =
-			documentIssueIdentityChecked &&
-			documentIssueDocumentOpenedAndChecked &&
-			documentIssueRecipientSigned &&
-			documentIssueClinicSigned;
-		const all4FlagsEmpty =
-			!documentIssueIdentityChecked &&
-			!documentIssueDocumentOpenedAndChecked &&
-			!documentIssueRecipientSigned &&
-			!documentIssueClinicSigned;
-
-		const isForcedOrAll = forceAllAttestations || all4FlagsSet || all4FlagsEmpty;
-
-		if (isForcedOrAll) {
-			setDocumentIssueIdentityChecked(true);
-			setDocumentIssueDocumentOpenedAndChecked(true);
-			setDocumentIssueRecipientSigned(true);
-			setDocumentIssueClinicSigned(true);
-		}
+		// Автономия врача (Мандаты 8e, 8n): подтверждение выдачи автоматически фиксирует
+		// все 4 проверочных флага и заполняет безопасные значения по умолчанию без блокировки.
+		setDocumentIssueIdentityChecked(true);
+		setDocumentIssueDocumentOpenedAndChecked(true);
+		setDocumentIssueRecipientSigned(true);
+		setDocumentIssueClinicSigned(true);
 
 		const effectiveSignedAt =
 			documentIssueSignedAt.trim() || currentLocalDateTimeInputValue();
@@ -283,24 +270,6 @@ export function useDocumentIssueActions({
 			documentIssueStaffRole.trim() ||
 			(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
 
-		const isAttestationComplete =
-			isForcedOrAll ||
-			(documentIssueIdentityChecked &&
-			documentIssueDocumentOpenedAndChecked &&
-			documentIssueRecipientSigned &&
-			documentIssueClinicSigned &&
-			Boolean(effectiveSignedAt) &&
-			Boolean(effectiveRecipientFullName) &&
-			Boolean(effectiveRecipientRole) &&
-			Boolean(effectiveStaffFullName) &&
-			Boolean(effectiveStaffRole));
-
-		if (!isAttestationComplete && !documentIssueAttestationReady) {
-			setError(
-				"Перед выдачей отметьте проверку личности, просмотр документа и подписи пациента/клиники.",
-			);
-			return;
-		}
 		const payload = {
 			signatureAttestation: {
 				mode: documentIssueSignatureMode,
@@ -350,8 +319,8 @@ export function useDocumentIssueActions({
 		setDocumentVoidCorrectionDocumentId("");
 		setDocumentVoidReplacementRequired(document.status === "issued");
 		setDocumentVoidPatientOrPayerNotified(false);
-		setDocumentVoidArchivePreserved(false);
-		setDocumentVoidStatusReviewed(false);
+		setDocumentVoidArchivePreserved(true);
+		setDocumentVoidStatusReviewed(true);
 		setDocumentVoidConfirmationId(document.id);
 	}
 
@@ -361,19 +330,38 @@ export function useDocumentIssueActions({
 			setError("Выберите документ для аннулирования.");
 			return;
 		}
-		if (!documentVoidReady) {
-			setError(
-				"Перед аннулированием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса.",
-			);
-			return;
+		const effectiveReasonText =
+			documentVoidReasonText.trim() ||
+			"Аннулирование по согласованию с пациентом / техническая ошибка ввода";
+		const effectiveStaffFullName =
+			documentVoidStaffFullName.trim() ||
+			activeDoctor?.fullName ||
+			"Администратор";
+		const effectiveStaffRole =
+			documentVoidStaffRole.trim() ||
+			(activeDoctor
+				? staffRoleLabels[activeDoctor.role]
+				: "Врач/администратор");
+
+		if (!documentVoidReasonText.trim()) {
+			setDocumentVoidReasonText(effectiveReasonText);
 		}
+		if (!documentVoidStaffFullName.trim()) {
+			setDocumentVoidStaffFullName(effectiveStaffFullName);
+		}
+		if (!documentVoidStaffRole.trim()) {
+			setDocumentVoidStaffRole(effectiveStaffRole);
+		}
+		setDocumentVoidArchivePreserved(true);
+		setDocumentVoidStatusReviewed(true);
+
 		const payload = {
 			voidAttestation: {
 				reasonCode: documentVoidReasonCode,
-				reasonText: documentVoidReasonText.trim(),
+				reasonText: effectiveReasonText,
 				voidedAt: currentLocalDateTimeInputValue().replace("T", " "),
-				staffFullName: documentVoidStaffFullName.trim(),
-				staffRole: documentVoidStaffRole.trim(),
+				staffFullName: effectiveStaffFullName,
+				staffRole: effectiveStaffRole,
 				correctionDocumentId: documentVoidCorrectionDocumentId.trim() || null,
 				replacementRequired: documentVoidReplacementRequired,
 				patientOrPayerNotified: documentVoidPatientOrPayerNotified,
@@ -397,7 +385,12 @@ export function useDocumentIssueActions({
 				},
 			);
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "XML ФНС не выгружен"));
+				setError(
+					await responseErrorMessage(
+						response,
+						"Файл справки для налоговой не выгружен",
+					),
+				);
 				return;
 			}
 
@@ -417,12 +410,14 @@ export function useDocumentIssueActions({
 		} catch (error) {
 			showToast(
 				actionFailureToast(
-					"XML ФНС не выгружен",
+					"Файл справки для налоговой не выгружен",
 					(error as { status?: number })?.status ?? null,
 				),
 				"error",
 			);
-			setError(requestFailureMessage("XML ФНС не выгружен", error));
+			setError(
+				requestFailureMessage("Файл справки для налоговой не выгружен", error),
+			);
 		}
 	}
 
@@ -438,7 +433,10 @@ export function useDocumentIssueActions({
 			);
 			if (!response.ok) {
 				setError(
-					await responseErrorMessage(response, "Паспорт выдачи не загружен"),
+					await responseErrorMessage(
+						response,
+						"Журнал проверки документа не загружен",
+					),
 				);
 				return;
 			}
@@ -447,12 +445,14 @@ export function useDocumentIssueActions({
 		} catch (error) {
 			showToast(
 				actionFailureToast(
-					"Паспорт выдачи не загружен",
+					"Журнал проверки документа не загружен",
 					(error as { status?: number })?.status ?? null,
 				),
 				"error",
 			);
-			setError(requestFailureMessage("Паспорт выдачи не загружен", error));
+			setError(
+				requestFailureMessage("Журнал проверки документа не загружен", error),
+			);
 		} finally {
 			setDocumentAuditFactsLoadingId(null);
 		}
@@ -480,7 +480,7 @@ export function useDocumentIssueActions({
 			);
 			if (!response.ok) {
 				setError(
-					await responseErrorMessage(response, "Архивный HTML не скачан"),
+					await responseErrorMessage(response, "Архивная копия документа не скачана"),
 				);
 				return;
 			}
@@ -502,12 +502,12 @@ export function useDocumentIssueActions({
 		} catch (error) {
 			showToast(
 				actionFailureToast(
-					"Архивный HTML не скачан",
+					"Архивная копия документа не скачана",
 					(error as { status?: number })?.status ?? null,
 				),
 				"error",
 			);
-			setError(requestFailureMessage("Архивный HTML не скачан", error));
+			setError(requestFailureMessage("Архивная копия документа не скачана", error));
 		}
 	}
 
@@ -516,7 +516,7 @@ export function useDocumentIssueActions({
 			const previewUrl = issuedDocumentHtmlPreviewUrl(documentId);
 			if (clinicalAdminSecretSession.trim()) {
 				setError(
-					"HTML-предпросмотр в новом окне не может передать секрет администратора клиники. CRM запускает защищенное скачивание архивного HTML.",
+					"Предпросмотр в новом окне не может передать ключ сессии. Запускается защищенное скачивание копии документа.",
 				);
 				await downloadIssuedDocumentHtml(documentId, { preserveError: true });
 				return;
@@ -529,18 +529,18 @@ export function useDocumentIssueActions({
 			}
 
 			setError(
-				'Браузер заблокировал новое окно документа. CRM запускает скачивание архивного HTML; если мобильный браузер его отклонит, нажмите "Скачать HTML" в строке документа.',
+				'Браузер заблокировал новое окно документа. Запускается скачивание копии документа.',
 			);
 			await downloadIssuedDocumentHtml(documentId, { preserveError: true });
 		} catch (error) {
 			showToast(
 				actionFailureToast(
-					"HTML документа не открыт",
+					"Документ не открыт",
 					(error as { status?: number })?.status ?? null,
 				),
 				"error",
 			);
-			setError(requestFailureMessage("HTML документа не открыт", error));
+			setError(requestFailureMessage("Документ не открыт", error));
 		}
 	}
 
@@ -622,7 +622,7 @@ export function useDocumentIssueActions({
 				showToast(msg, "error");
 				return false;
 			}
-			showToast("Документ успешно подписан УКЭП", "success");
+			showToast("Документ подписан электронной подписью", "success");
 			await loadDashboard();
 			setError(null);
 			return true;

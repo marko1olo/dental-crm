@@ -199,15 +199,7 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 			})),
 		);
 
-		if (!safetyAudit.isPrescriptionSafe) {
-			return reply.code(422).send({
-				error: "PrescriptionSafetyBlocker",
-				message:
-					"Рецепт заблокирован клиническим движком безопасности из-за критических межлекарственных взаимодействий или аллергии.",
-				safetyAudit,
-			});
-		}
-
+		// Mandate 8e & 8y: Doctor autonomy — clinical safety audit warnings attached, but never blocking doctor with 422
 		const prescriptionNumber = `RX-107-${Date.now().toString().slice(-6)}`;
 		const now = new Date();
 		const validityDays =

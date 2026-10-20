@@ -313,11 +313,11 @@ export interface CabinetReadinessRecord {
 
 export interface EvaluateCabinetReadinessParams {
 	readonly appointmentType: DentalAppointmentType;
-	readonly surfaceDisinfection: SurfaceDisinfectionCheck;
-	readonly handpiecesSterility: HandpiecesSterilityCheck;
-	readonly sterileTray: SterileTrayCheck;
-	readonly aspirationSystem: AspirationSystemCheck;
-	readonly isolationCofferdam: CofferdamCheck;
+	readonly surfaceDisinfection?: SurfaceDisinfectionCheck | undefined;
+	readonly handpiecesSterility?: HandpiecesSterilityCheck | undefined;
+	readonly sterileTray?: SterileTrayCheck | undefined;
+	readonly aspirationSystem?: AspirationSystemCheck | undefined;
+	readonly isolationCofferdam?: CofferdamCheck | undefined;
 	readonly paperJournalMode?: boolean | undefined;
 	readonly nurseBypassedPaperLog?: boolean | undefined;
 }

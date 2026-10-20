@@ -31,6 +31,11 @@ export const handlePrintMedicalCardFast = (params?: any) => {
 };
 
 /**
+ * Канонический алиас печати дневника приёма (Мандат 8x)
+ */
+export const handlePrintClinicalDiaryFast = handlePrintMedicalCardFast;
+
+/**
  * Алиас обратной совместимости
  */
 export const handlePrintForm043uFast = handlePrintMedicalCardFast;

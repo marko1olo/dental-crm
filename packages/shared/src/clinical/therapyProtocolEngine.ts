@@ -169,10 +169,11 @@ export function getTherapyPresetById(id?: string): TherapyProtocolPreset {
 }
 
 /**
- * 1-Клик генератор полного клинического протокола терапии (SOAP 043/у + Номенклатура 804н).
+ * 1-Клик генератор полного клинического протокола терапии (Дневник приёма + Номенклатура 804н).
+ * Чистый клинический язык без советского канцелярита (Мандат 8x, Мандат 8e).
  * Гарантирует абсолютную чистоту текста (ноль эмодзи) и соответствие стандартам СтАР.
  */
-export function generateTherapySoap043(params: TherapyProtocolApplyParams): TherapySoapResult {
+export function generateTherapySoapProtocol(params: TherapyProtocolApplyParams): TherapySoapResult {
 	const { toothNumber } = params;
 	const preset = getTherapyPresetById(params.presetId);
 	const surfaces = params.surfaces.length > 0 ? params.surfaces : preset.defaultSurfaces;
@@ -254,7 +255,7 @@ export function generateTherapySoap043(params: TherapyProtocolApplyParams): Ther
 	].join("\n");
 
 	const fullProtocolText043 = [
-		`ДНЕВНИК ПРИЕМА (ФОРМА 043/у) — ${toothTitleRu}:`,
+		`ДНЕВНИК ПРИЁМА — ${toothTitleRu}:`,
 		`Диагноз (МКБ-10): ${preset.icd10Default} — ${preset.titleRu}`,
 		`Жалобы: ${subjectiveComplaints}`,
 		`Анамнез: ${anamnesisMorbi}`,
@@ -284,8 +285,15 @@ export function generateTherapySoap043(params: TherapyProtocolApplyParams): Ther
 }
 
 /**
- * 1-Клик генерация консолидированного текста для Формы 043/у
+ * Алиас обратной совместимости для generateTherapySoapProtocol
  */
-export function generateTherapyProtocolText043(params: TherapyProtocolApplyParams): string {
-	return generateTherapySoap043(params).fullProtocolText043;
+export const generateTherapySoap043 = generateTherapySoapProtocol;
+
+/**
+ * 1-Клик генерация консолидированного текста для дневника приёма
+ */
+export function generateTherapyProtocolTextProtocol(params: TherapyProtocolApplyParams): string {
+	return generateTherapySoapProtocol(params).fullProtocolText043;
 }
+
+export const generateTherapyProtocolText043 = generateTherapyProtocolTextProtocol;

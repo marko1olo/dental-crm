@@ -6,7 +6,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
-import { TimesheetT13Modal } from "../../payroll/TimesheetT13Modal";
+import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal";
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,
@@ -158,14 +158,18 @@ export function DoctorShiftRosterModal(props: DoctorShiftRosterModalProps) {
 
 	if (!isOpen) return null;
 
-	// Anti-Matryoshka (Sin 6, Mandate 8d): Render TimesheetT13Modal sequentially (depth strictly 1).
+	// Anti-Matryoshka (Sin 6, Mandate 8d): Render DoctorPayrollModal sequentially (depth strictly 1)
 	if (isT13ModalOpen) {
 		return (
-			<TimesheetT13Modal
+			<DoctorPayrollModal
 				isOpen={true}
 				onClose={() => setIsT13ModalOpen(false)}
 				clinicName={clinicName}
-				employees={t13Employees}
+				doctorsList={staffList.filter((s) => s.isDoctor).map((s) => ({
+					id: s.id,
+					name: s.fullName,
+					specialtyId: "general_dentist",
+				}))}
 			/>
 		);
 	}

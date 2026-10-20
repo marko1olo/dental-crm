@@ -3,31 +3,37 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const OUT_DIR = path.resolve('docs/proofs/insurance');
+const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/da26b9e7-9dc9-48fe-bf01-5cf845cbb0a0';
 fs.mkdirSync(OUT_DIR, { recursive: true });
+if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 const targets = [
   {
-    id: '01_insurance_pc_light_1440.png',
+    canonicalId: '01_insurance_guarantee_pc_light.png',
+    legacyId: '01_insurance_pc_light_1440.png',
     theme: 'light',
     viewport: { width: 1440, height: 900 },
     isMobile: false,
   },
   {
-    id: '02_insurance_pc_dark_1440.png',
+    canonicalId: '02_insurance_guarantee_pc_dark.png',
+    legacyId: '02_insurance_pc_dark_1440.png',
     theme: 'dark',
     viewport: { width: 1440, height: 900 },
     isMobile: false,
   },
   {
-    id: '03_insurance_mobile_light_390.png',
+    canonicalId: '03_insurance_guarantee_mobile_light.png',
+    legacyId: '03_insurance_mobile_light_390.png',
     theme: 'light',
     viewport: { width: 390, height: 844 },
     isMobile: true,
   },
   {
-    id: '04_insurance_mobile_dark_390.png',
+    canonicalId: '04_insurance_guarantee_mobile_dark.png',
+    legacyId: '04_insurance_mobile_dark_390.png',
     theme: 'dark',
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -35,7 +41,7 @@ const targets = [
 ];
 
 async function capture() {
-  console.log('Launching browser for 4-state DMS and Insurance verification...');
+  console.log('Launching browser for 4-state DMS Guarantee Letter verification...');
   const browser = await chromium.launch({
     executablePath: CHROME_PATH,
     headless: true,
@@ -43,7 +49,7 @@ async function capture() {
   });
 
   for (const t of targets) {
-    console.log(`\n--- Capturing ${t.id} (${t.theme}, ${t.viewport.width}x${t.viewport.height}) ---`);
+    console.log(`\n--- Capturing ${t.canonicalId} (${t.theme}, ${t.viewport.width}x${t.viewport.height}) ---`);
     const context = await browser.newContext({
       viewport: t.viewport,
       isMobile: t.isMobile,
@@ -58,8 +64,9 @@ async function capture() {
       window.localStorage.setItem('dente_active_role', 'doctor');
     }, { theme: t.theme });
 
-    await page.goto('http://127.0.0.1:5173/?demo=true#patients', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('http://127.0.0.1:5174/?demo=true#patients', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(1000);
+
     // Wait for loading screen to clear
     await page.waitForFunction(() => !document.body.innerText.includes('Загрузка системы...'), { timeout: 30000 });
 
@@ -75,6 +82,23 @@ async function capture() {
         document.documentElement.classList.add('light');
         document.documentElement.style.colorScheme = 'light';
       }
+
+      // Suppress annoying tour overlays
+      const style = document.createElement('style');
+      style.id = 'suppress-overlays';
+      style.innerHTML = `
+        .tour-spotlight-root,
+        .tour-backdrop-clickable-zone,
+        [data-testid="guided-tour-spotlight-overlay"],
+        [data-testid="guided-tour-coach-mark-card"],
+        [data-testid="demo-mode-banner"],
+        .global-toast-container,
+        vite-error-overlay {
+          display: none !important;
+          pointer-events: none !important;
+        }
+      `;
+      document.head.appendChild(style);
     }, t.theme);
 
     // Open patient card modal
@@ -102,57 +126,41 @@ async function capture() {
 
     await dmsPolicyInput.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Click СОГАЗ chip inside modal
-    const sogazChip = modal.locator('button:has-text("СОГАЗ")').first();
-    if (await sogazChip.isVisible().catch(() => false)) {
-      await sogazChip.click();
-      await page.waitForTimeout(150);
-    }
+    // Open Guarantee Letter Modal directly
+    const letterBtn = modal.locator('[data-testid="btn-open-dms-letters-tab"]');
+    if (await letterBtn.isVisible().catch(() => false)) {
+      console.log('Opening Guarantee Letter modal...');
+      await letterBtn.click();
+      const lettersModal = page.locator('[data-testid="dms-guarantee-letters-modal"]');
+      await lettersModal.waitFor({ state: 'visible', timeout: 10000 });
+      await page.waitForTimeout(1000);
 
-    // Fill policy details
-    await modal.locator('[data-testid="input-dms-policy"]').fill('ДМС-2026/00123');
-    await modal.locator('[data-testid="input-dms-letter-number"]').fill('ГП-8841/26');
-    await modal.locator('[data-testid="input-dms-coverage-limit"]').fill('50000');
+      // Save Canonical Guarantee Letter Modal proof
+      const canonicalPath = path.join(OUT_DIR, t.canonicalId);
+      await page.screenshot({ path: canonicalPath, fullPage: false });
+      const stats = fs.statSync(canonicalPath);
+      console.log(`Saved: ${t.canonicalId} (${stats.size} bytes)`);
 
-    // Scroll DMS card into view
-    const dmsCompanyInput = modal.locator('[data-testid="input-dms-company"]');
-    await dmsCompanyInput.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(600);
+      // Copy to brain folder for artifact linking
+      const brainPath = path.join(BRAIN_DIR, t.canonicalId);
+      fs.copyFileSync(canonicalPath, brainPath);
 
-    const screenshotPath = path.join(OUT_DIR, t.id);
-    await page.screenshot({ path: screenshotPath, fullPage: false });
+      // Also copy to legacy ID for backwards compatibility
+      const legacyPath = path.join(OUT_DIR, t.legacyId);
+      fs.copyFileSync(canonicalPath, legacyPath);
 
-    const stats = fs.statSync(screenshotPath);
-    console.log(`Saved: ${t.id} (${stats.size} bytes)`);
-    if (stats.size < 20000) {
-      throw new Error(`File ${t.id} size (${stats.size}) is under 20KB threshold!`);
-    }
-
-    // If PC Light, also capture 05_insurance_guarantee_letters_pc_light.png
-    if (t.id === '01_insurance_pc_light_1440.png') {
-      const letterBtn = modal.locator('[data-testid="btn-open-dms-letters-tab"]');
-      if (await letterBtn.isVisible().catch(() => false)) {
-        console.log('Opening Guarantee Letter modal...');
-        await letterBtn.click();
-        const lettersModal = page.locator('[data-testid="dms-guarantee-letters-modal"]');
-        await lettersModal.waitFor({ state: 'visible', timeout: 10000 });
-        await page.waitForTimeout(800);
-
-        const lettersScreenshotPath = path.join(OUT_DIR, '05_insurance_guarantee_letters_pc_light.png');
-        await page.screenshot({ path: lettersScreenshotPath, fullPage: false });
-        const letterStats = fs.statSync(lettersScreenshotPath);
-        console.log(`Saved: 05_insurance_guarantee_letters_pc_light.png (${letterStats.size} bytes)`);
-        if (letterStats.size < 20000) {
-          throw new Error(`05_insurance_guarantee_letters_pc_light.png size (${letterStats.size}) is under 20KB!`);
-        }
+      if (stats.size < 20000) {
+        throw new Error(`File ${t.canonicalId} size (${stats.size}) is under 20KB threshold!`);
       }
+    } else {
+      throw new Error(`Button [data-testid="btn-open-dms-letters-tab"] not found!`);
     }
 
     await context.close();
   }
 
   await browser.close();
-  console.log('\nAll canonical insurance screenshots successfully captured and verified (>20 KB each)!');
+  console.log('\nAll 4-state DMS Guarantee Letter screenshots successfully captured and verified (>20 KB each)!');
 }
 
 capture().catch((err) => {

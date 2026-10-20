@@ -30,6 +30,9 @@ This document describes the structure, data flows, and architectural conventions
 * 📞 **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Mango/Zadarma/UIS Telephony webhooks, WebSocket broadcasts, Patient Portal OTP auth, and PWA setup.
 * 📄 **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
 * 💬 **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
+* 🧠 **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция, правила поведения и T.A.R.S. протокол ИИ-ассистента DENTE.
+* 🏛️ **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Архитектура ИИ-ассистента, 3 контура взаимодействия, Dual-Harness (Web vs Desktop) и 26 инструментов.
+* 🖥️ **[AI_ASSISTANT_DESKTOP_MCP.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)** — Архитектура десктопного харнесса (.EXE / Windows), файловый движок, фоновые задачи (schedule/manage_task), управление софтом томографов и аппаратный MCP-мост оборудования.
 
 ---
 

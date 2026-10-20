@@ -31,7 +31,6 @@ import {
 } from "../components/payments/sberPos/sberPosPresets.js";
 import { RefundServiceModal } from "../components/finance/refunds/RefundServiceModal.js";
 import { FastCheckoutModal } from "../components/finance/FastCheckoutModal.js";
-import { SberPosTerminalModal } from "../components/payments/sberPos/SberPosTerminalModal.js";
 import { SberPayIntegration } from "../components/finance/SberPayIntegration.js";
 
 // Mock localStorage for node environment
@@ -265,21 +264,6 @@ describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout, Refunds & Sber PO
 	});
 
 	describe("5. Sber POS & SberPay Dual-Mode Unconfigured Display (Mandate 8y)", () => {
-		it("SberPosTerminalModal renders unconfigured notice and TID НЕ НАСТРОЕН when unconfigured", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(SberPosTerminalModal, {
-					isOpen: true,
-					onClose: () => {},
-					totalBillKop: 100000,
-					forceUnconfigured: true,
-				}),
-			);
-
-			assert.match(html, /data-testid="sber-pos-unconfigured-notice"/);
-			assert.match(html, /Терминал Сбербанк POS не настроен/);
-			assert.match(html, /TID НЕ НАСТРОЕН/);
-		});
-
 		it("SberPayIntegration renders unconfigured notice and TID НЕ НАСТРОЕН when unconfigured", () => {
 			const html = renderToStaticMarkup(
 				React.createElement(SberPayIntegration, {

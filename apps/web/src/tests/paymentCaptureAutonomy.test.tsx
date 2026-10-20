@@ -314,19 +314,23 @@ function setupMockDom() {
 function findNodeByTestId(
 	node: MockDomNode | null,
 	testId: string,
+	searchBody = true,
 ): MockDomNode | null {
 	if (!node) return null;
 	if (node.getAttribute?.("data-testid") === testId) return node;
 	if (node.children) {
 		for (const child of node.children) {
-			const res = findNodeByTestId(child, testId);
+			const res = findNodeByTestId(child, testId, false);
 			if (res) return res;
 		}
+	}
+	if (searchBody && (node as any)?.ownerDocument?.body && (node as any).ownerDocument.body !== node) {
+		return findNodeByTestId((node as any).ownerDocument.body, testId, false);
 	}
 	return null;
 }
 
-function findAllButtons(node: MockDomNode | null): MockDomNode[] {
+function findAllButtons(node: MockDomNode | null, searchBody = true): MockDomNode[] {
 	if (!node) return [];
 	const results: MockDomNode[] = [];
 	if (node.tagName === "BUTTON") {
@@ -334,8 +338,11 @@ function findAllButtons(node: MockDomNode | null): MockDomNode[] {
 	}
 	if (node.children) {
 		for (const child of node.children) {
-			results.push(...findAllButtons(child));
+			results.push(...findAllButtons(child, false));
 		}
+	}
+	if (searchBody && (node as any)?.ownerDocument?.body && (node as any).ownerDocument.body !== node) {
+		results.push(...findAllButtons((node as any).ownerDocument.body, false));
 	}
 	return results;
 }

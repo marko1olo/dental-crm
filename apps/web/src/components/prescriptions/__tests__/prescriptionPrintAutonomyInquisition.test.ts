@@ -41,15 +41,8 @@ import {
 	detectPrescriptionAllergyConflicts,
 	PrescriptionPrintModal,
 } from "../PrescriptionPrintModal.js";
-import {
-	generatePatientMemoPrintHtml,
-	cleanHumanInstruction,
-} from "../prescriptionPrintHtml.js";
-import {
-	hasAnestheticAllergy,
-	hasPenicillinAllergy,
-	hasNsaidAllergy,
-} from "../prescriptionAllergyChecker.js";
+import { hasAnestheticAllergy } from "../prescriptionAllergyChecker.js";
+import { generatePatientMemoPrintHtml } from "../prescriptionPrintHtml.js";
 
 // Regulatory Cartoon Emoji Regex (Mandate 8d pt 7)
 const CARTOON_EMOJI_REGEX =
@@ -106,8 +99,16 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 
 		for (const check of tradeChecks) {
 			const res = validateDentalMnn(check.trade);
-			assert.strictEqual(res.isValid, true, `Should recognize trade name: ${check.trade}`);
-			assert.strictEqual(res.isTradeName, true, `Must flag as trade name: ${check.trade}`);
+			assert.strictEqual(
+				res.isValid,
+				true,
+				`Should recognize trade name: ${check.trade}`,
+			);
+			assert.strictEqual(
+				res.isTradeName,
+				true,
+				`Must flag as trade name: ${check.trade}`,
+			);
 			assert.strictEqual(res.matchedMnn?.key, check.expectedMnn);
 			assert.ok(
 				res.warning?.includes("1094н"),
@@ -160,9 +161,15 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 				dispenseLatin: "D.t.d. N 10 in tab.",
 				signaRu: vague,
 			});
-			assert.strictEqual(res.isValid, false, `Must reject vague signa: '${vague}'`);
+			assert.strictEqual(
+				res.isValid,
+				false,
+				`Must reject vague signa: '${vague}'`,
+			);
 			assert.ok(
-				res.errors.some((e) => e.includes("1094н") || e.includes("неопределенные")),
+				res.errors.some(
+					(e) => e.includes("1094н") || e.includes("неопределенные"),
+				),
 				`Must cite Order 1094n in error for '${vague}'`,
 			);
 		}
@@ -204,7 +211,11 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 			doctorFullName: "Д-р Кузнецов С.В.",
 			doctorSpecialty: "Врач-стоматолог-хирург",
 			doctorSnils: "112-233-445 99",
-			selectedMedicationIds: ["amoxiclav_875_125", "nimesil_100", "chlorhexidine_005"],
+			selectedMedicationIds: [
+				"amoxiclav_875_125",
+				"nimesil_100",
+				"chlorhexidine_005",
+			],
 		});
 
 		assert.strictEqual(doc.header.seriesNumber, "РЕЦ-2026-0042");
@@ -212,8 +223,8 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 		assert.strictEqual(doc.patient.fullName, "Иванов Иван Иванович");
 		assert.strictEqual(doc.doctor.fullName, "Д-р Кузнецов С.В.");
 		assert.strictEqual(doc.items.length, 3);
-		assert.ok(doc.items[0]!.latinRp.startsWith("Rp.:"));
-		assert.ok(doc.items[0]!.dispenseLatin.includes("D.t.d."));
+		assert.ok(doc.items[0]?.latinRp.startsWith("Rp.:"));
+		assert.ok(doc.items[0]?.dispenseLatin.includes("D.t.d."));
 	});
 });
 
@@ -237,8 +248,13 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 	it("2.2 Nimesulide absolute contraindication in children under 12 years (hepatotoxicity)", () => {
 		const childNimesil = calculateMedicationDosage("nimesulide_100", 28, 9);
 		assert.ok(childNimesil);
-		assert.ok(childNimesil.warningRu?.includes("ПРОТИВОПОКАЗАН детям до 12 лет"));
-		assert.strictEqual(childNimesil.maxDailyDoseRu, "0 мг (применяйте Ибупрофен или Парацетамол)");
+		assert.ok(
+			childNimesil.warningRu?.includes("ПРОТИВОПОКАЗАН детям до 12 лет"),
+		);
+		assert.strictEqual(
+			childNimesil.maxDailyDoseRu,
+			"0 мг (применяйте Ибупрофен или Парацетамол)",
+		);
 
 		const validation = validatePrescriptionDosage({
 			medicationKey: "nimesulide",
@@ -289,7 +305,7 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 			],
 		);
 		assert.strictEqual(penicillinConflict.length, 1);
-		assert.strictEqual(penicillinConflict[0]!.type, "penicillin");
+		assert.strictEqual(penicillinConflict[0]?.type, "penicillin");
 
 		const nsaidConflict = detectPrescriptionAllergyConflicts(
 			"Аспириновая триада, аллергия на НПВП",
@@ -308,12 +324,15 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 			],
 		);
 		assert.strictEqual(nsaidConflict.length, 1);
-		assert.strictEqual(nsaidConflict[0]!.type, "nsaid");
+		assert.strictEqual(nsaidConflict[0]?.type, "nsaid");
 	});
 
 	it("2.6 Allergy conflict detection warns on local anesthetics (Lidocaine, Articaine, Novocaine)", () => {
 		assert.strictEqual(hasAnestheticAllergy("Непереносимость лидокаина"), true);
-		assert.strictEqual(hasAnestheticAllergy(["Аллергия на новокаин и артикаин"]), true);
+		assert.strictEqual(
+			hasAnestheticAllergy(["Аллергия на новокаин и артикаин"]),
+			true,
+		);
 		assert.strictEqual(hasAnestheticAllergy("Только пыльца"), false);
 
 		const anestheticConflict = detectPrescriptionAllergyConflicts(
@@ -321,7 +340,8 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 			[
 				{
 					id: "articaine_forte",
-					latinName: "Rp.: Solutionis Articaini 4% cum Epinephrino 1:100000 1.7 ml",
+					latinName:
+						"Rp.: Solutionis Articaini 4% cum Epinephrino 1:100000 1.7 ml",
 					tradeName: "Ультракаин Д-С форте",
 					form: "раствор для инъекций",
 					dosage: "4%",
@@ -334,9 +354,12 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 		);
 
 		assert.strictEqual(anestheticConflict.length, 1);
-		assert.strictEqual(anestheticConflict[0]!.type, "anesthetic");
-		assert.ok(anestheticConflict[0]!.matchedAllergyTerm.includes("лидокаин"));
-		assert.strictEqual(anestheticConflict[0]!.conflictingDrugs[0]!.tradeName, "Ультракаин Д-С форте");
+		assert.strictEqual(anestheticConflict[0]?.type, "anesthetic");
+		assert.ok(anestheticConflict[0]?.matchedAllergyTerm.includes("лидокаин"));
+		assert.strictEqual(
+			anestheticConflict[0]?.conflictingDrugs[0]?.tradeName,
+			"Ультракаин Д-С форте",
+		);
 	});
 });
 
@@ -397,7 +420,7 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 			}),
 		);
 
-		assert.ok(html.includes("data-testid=\"prescription-print-modal\""));
+		assert.ok(html.includes('data-testid="prescription-print-modal"'));
 		assert.ok(html.includes("Лечащий врач"));
 		assert.ok(html.includes("Стоматологическая клиника"));
 	});
@@ -419,27 +442,27 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 
 		// Warning banner is displayed
 		assert.ok(
-			html.includes("data-testid=\"allergy-conflict-penicillin\""),
+			html.includes('data-testid="allergy-conflict-penicillin"'),
 			"Must display penicillin allergy conflict warning",
 		);
 		assert.ok(
-			html.includes("data-testid=\"allergy-conflict-nsaid\""),
+			html.includes('data-testid="allergy-conflict-nsaid"'),
 			"Must display NSAID allergy conflict warning",
 		);
 		assert.ok(
-			html.includes("data-testid=\"prescription-allergy-modal-banner\""),
+			html.includes('data-testid="prescription-allergy-modal-banner"'),
 			"Must display prominent modal top allergy warning banner",
 		);
 		assert.ok(
-			html.includes("data-testid=\"drug-allergy-badge-amoxiclav_875_125\""),
+			html.includes('data-testid="drug-allergy-badge-amoxiclav_875_125"'),
 			"Must highlight conflicting antibiotic in drug catalog",
 		);
 		assert.ok(
-			html.includes("data-testid=\"preset-allergy-badge-alveolitis_dry_socket\""),
+			html.includes('data-testid="preset-allergy-badge-alveolitis_dry_socket"'),
 			"Must highlight fast prescription preset containing allergen",
 		);
 		assert.ok(
-			html.includes("data-testid=\"patient-prescription-memo-card\""),
+			html.includes('data-testid="patient-prescription-memo-card"'),
 			"Must render human-readable patient memo card",
 		);
 
@@ -449,19 +472,19 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 			"Must affirm Doctor Autonomy in warning banner",
 		);
 		assert.ok(
-			html.includes("data-testid=\"print-prescription-btn\""),
+			html.includes('data-testid="print-prescription-btn"'),
 			"Print button remains fully available",
 		);
 		assert.ok(
-			!html.includes("data-testid=\"print-prescription-btn\" disabled"),
+			!html.includes('data-testid="print-prescription-btn" disabled'),
 			"Print prescription button must NEVER be disabled",
 		);
 		assert.ok(
-			html.includes("data-testid=\"print-patient-memo-btn\""),
+			html.includes('data-testid="print-patient-memo-btn"'),
 			"Print patient memo button must be present",
 		);
 		assert.ok(
-			!html.includes("data-testid=\"print-patient-memo-btn\" disabled"),
+			!html.includes('data-testid="print-patient-memo-btn" disabled'),
 			"Print patient memo button must NEVER be disabled",
 		);
 	});
@@ -475,7 +498,10 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 		];
 		const setIds = DENTAL_FAST_PRESCRIPTION_SETS.map((s) => s.id);
 		for (const req of requiredSets) {
-			assert.ok(setIds.includes(req), `Fast sets must include protocol: ${req}`);
+			assert.ok(
+				setIds.includes(req),
+				`Fast sets must include protocol: ${req}`,
+			);
 		}
 	});
 });
@@ -528,14 +554,34 @@ describe("Red Team Inquisition: Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 
 	it("5.2 All prescription catalog items and presets contain 0 emojis", () => {
 		for (const drug of DENTAL_MEDICATIONS_CATALOG) {
-			assert.strictEqual(hasEmojis(drug.tradeNameRu), false, `Emoji in tradeName: ${drug.tradeNameRu}`);
-			assert.strictEqual(hasEmojis(drug.signaRu), false, `Emoji in signaRu: ${drug.signaRu}`);
-			assert.strictEqual(hasEmojis(drug.latinRp), false, `Emoji in latinRp: ${drug.latinRp}`);
+			assert.strictEqual(
+				hasEmojis(drug.tradeNameRu),
+				false,
+				`Emoji in tradeName: ${drug.tradeNameRu}`,
+			);
+			assert.strictEqual(
+				hasEmojis(drug.signaRu),
+				false,
+				`Emoji in signaRu: ${drug.signaRu}`,
+			);
+			assert.strictEqual(
+				hasEmojis(drug.latinRp),
+				false,
+				`Emoji in latinRp: ${drug.latinRp}`,
+			);
 		}
 
 		for (const pkg of DENTAL_FAST_PRESCRIPTION_PACKAGES) {
-			assert.strictEqual(hasEmojis(pkg.label), false, `Emoji in pkg label: ${pkg.label}`);
-			assert.strictEqual(hasEmojis(pkg.desc), false, `Emoji in pkg desc: ${pkg.desc}`);
+			assert.strictEqual(
+				hasEmojis(pkg.label),
+				false,
+				`Emoji in pkg label: ${pkg.label}`,
+			);
+			assert.strictEqual(
+				hasEmojis(pkg.desc),
+				false,
+				`Emoji in pkg desc: ${pkg.desc}`,
+			);
 		}
 	});
 
@@ -578,17 +624,39 @@ describe("Red Team Inquisition: Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 					dosage: "875+125 мг",
 					quantity: "N. 14",
 					dispenseLatin: "D.t.d. N 14 in tab.",
-					signaRussian: "S. Внутрь по 1 таблетке 2 раза в день во время еды, 7 дней",
+					signaRussian:
+						"S. Внутрь по 1 таблетке 2 раза в день во время еды, 7 дней",
 				},
 			],
 		});
 
-		assert.strictEqual(hasEmojis(memoHtml), false, "Patient memo HTML must NOT contain cartoon emojis");
-		assert.ok(memoHtml.includes("ПАМЯТКА ДЛЯ ПАЦИЕНТА"), "Must contain patient memo title");
-		assert.ok(memoHtml.includes("Способ применения: Внутрь по 1 таблетке 2 раза в день"), "Must contain clean human instructions");
-		assert.ok(!memoHtml.includes("S. Внутрь"), "Must strip Latin 'S.' prefix in patient memo");
-		assert.ok(!memoHtml.includes("Rp.:"), "Must strip Latin 'Rp.:' in patient memo");
-		assert.ok(!memoHtml.includes("D.t.d."), "Must strip Latin 'D.t.d.' in patient memo");
+		assert.strictEqual(
+			hasEmojis(memoHtml),
+			false,
+			"Patient memo HTML must NOT contain cartoon emojis",
+		);
+		assert.ok(
+			memoHtml.includes("ПАМЯТКА ДЛЯ ПАЦИЕНТА"),
+			"Must contain patient memo title",
+		);
+		assert.ok(
+			memoHtml.includes(
+				"Способ применения: Внутрь по 1 таблетке 2 раза в день",
+			),
+			"Must contain clean human instructions",
+		);
+		assert.ok(
+			!memoHtml.includes("S. Внутрь"),
+			"Must strip Latin 'S.' prefix in patient memo",
+		);
+		assert.ok(
+			!memoHtml.includes("Rp.:"),
+			"Must strip Latin 'Rp.:' in patient memo",
+		);
+		assert.ok(
+			!memoHtml.includes("D.t.d."),
+			"Must strip Latin 'D.t.d.' in patient memo",
+		);
 	});
 });
 
@@ -600,7 +668,10 @@ describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (WCAG AAA)"
 		);
 		const filePath = fs.existsSync(rawPath)
 			? rawPath
-			: path.resolve(process.cwd(), "src/components/prescriptions/PrescriptionPrintModal.tsx");
+			: path.resolve(
+					process.cwd(),
+					"src/components/prescriptions/PrescriptionPrintModal.tsx",
+				);
 		const content = fs.readFileSync(filePath, "utf8");
 		const hexRegex = /#[0-9a-fA-F]{3,8}\b/g;
 		const matches = content.match(hexRegex) || [];

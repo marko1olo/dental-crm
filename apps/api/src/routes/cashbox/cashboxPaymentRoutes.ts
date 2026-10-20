@@ -52,6 +52,41 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	});
 
 	/**
+	 * 1b. PATCH /api/cash/cash-box/:id
+	 * Обновление параметров фискального регистратора ККТ (модель, заводской номер, филиал, активность) в PostgreSQL.
+	 */
+	app.patch("/api/cash/cash-box/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "cash box update");
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
+
+		const { id } = request.params as { id: string };
+		const body = (request.body ?? {}) as Record<string, unknown>;
+
+		const updated = await withTenantCtx(orgId, async (tx) => {
+			// biome-ignore lint/suspicious/noExplicitAny: dynamic update fields
+			const setFields: Record<string, any> = { updatedAt: new Date() };
+			if (typeof body.name === "string" && body.name.trim()) setFields.name = body.name.trim();
+			if (body.kkmModel !== undefined) setFields.kkmModel = typeof body.kkmModel === "string" ? body.kkmModel.trim() : null;
+			if (body.kkmSerialNumber !== undefined) setFields.kkmSerialNumber = typeof body.kkmSerialNumber === "string" ? body.kkmSerialNumber.trim() : null;
+			if (body.branchId !== undefined) setFields.branchId = typeof body.branchId === "string" ? body.branchId.trim() : null;
+			if (typeof body.kkmActive === "boolean") setFields.kkmActive = body.kkmActive;
+
+			const [row] = await tx
+				.update(cashBoxes)
+				.set(setFields)
+				.where(and(eq(cashBoxes.id, id), eq(cashBoxes.organizationId, orgId)))
+				.returning();
+			return row ?? null;
+		});
+
+		if (!updated) {
+			return reply.code(404).send({ error: "NotFound", message: "Кассовый аппарат не найден" });
+		}
+		return reply.send({ data: updated });
+	});
+
+	/**
 	 * 2. GET /api/cash/expense-reasons & GET /api/cash/expense-reason
 	 * 12 регламентированных статей расхода клиники.
 	 */

@@ -1,0 +1,353 @@
+/* ==========================================================================
+   DENTE CRM — CLINICAL VISIT WORKSPACE & FOCUS PANEL (modules/visit-workspace.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Work grid, visit focus bar, specialty focus options.
+   ========================================================================== */
+.work-grid {
+	display: grid;
+	gap: 18px;
+	grid-template-columns: minmax(360px, 1fr) minmax(340px, 0.95fr);
+}
+
+.page-grid {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.panel {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	min-width: 0;
+	padding: 16px;
+}
+
+.visit-panel {
+	grid-column: 1 / 2;
+}
+
+.documents-panel {
+	grid-column: 2 / 3;
+}
+
+.page-grid .visit-panel,
+.page-grid .documents-panel {
+	grid-column: auto;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.panel-heading {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 14px;
+}
+
+.panel-heading h2 {
+	font-size: 18px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.visit-focus-bar {
+	align-items: center;
+	background: #f7fbf9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(260px, 1.1fr) minmax(220px, 0.9fr) auto;
+	margin-bottom: 14px;
+	padding: 12px;
+}
+
+.visit-focus-patient {
+	align-items: center;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.visit-focus-patient .avatar {
+	font-size: 22px;
+	height: 50px;
+	width: 50px;
+}
+
+.visit-focus-patient h3 {
+	font-size: 18px;
+	line-height: 1.15;
+	margin: 0;
+}
+
+.visit-focus-patient p:not(.eyebrow),
+.visit-focus-status p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.visit-focus-status {
+	display: grid;
+	gap: 4px;
+}
+
+.visit-focus-status span {
+	color: #744d18;
+	font-size: 12px;
+	font-weight: 950;
+	text-transform: uppercase;
+}
+
+.visit-focus-status span.ready {
+	color: var(--green);
+}
+
+.visit-focus-status strong {
+	font-size: 16px;
+	line-height: 1.2;
+}
+
+.visit-focus-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.visit-focus-actions .primary-button,
+.visit-focus-actions .secondary-button {
+	min-height: 42px;
+}
+
+.visit-next-step {
+	background: #fffdf9;
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	margin: -2px 0 14px;
+	padding: 12px;
+}
+
+.visit-next-step-main {
+	align-items: center;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.visit-next-step h3 {
+	font-size: 17px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.visit-next-step p {
+	color: var(--muted);
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 4px 0 0;
+}
+
+.visit-primary-action {
+	min-height: 36px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.visit-progress-strip {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.visit-progress-step {
+	align-items: center;
+	background: #f7fbf9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: auto minmax(0, 1fr);
+	min-height: 58px;
+	padding: 9px;
+}
+
+.visit-progress-step > span {
+	align-items: center;
+	background: #e9f4f1;
+	border: 1px solid rgba(15, 118, 110, 0.2);
+	border-radius: 50%;
+	color: var(--teal-dark);
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 950;
+	height: 26px;
+	justify-content: center;
+	width: 26px;
+}
+
+.visit-progress-step strong {
+	color: var(--ink);
+	display: block;
+	font-size: 13px;
+	line-height: 1.15;
+}
+
+.visit-progress-step p {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.25;
+	margin: 2px 0 0;
+}
+
+.visit-progress-step.step-ready {
+	background: #f0faf3;
+	border-color: rgba(47, 115, 64, 0.28);
+}
+
+.visit-progress-step.step-ready > span {
+	background: #dfeee3;
+	color: var(--green);
+}
+
+.visit-progress-step.step-active {
+	background: #eef8f6;
+	border-color: rgba(15, 118, 110, 0.35);
+	box-shadow: inset 4px 0 0 var(--teal);
+}
+
+.visit-progress-step.step-locked {
+	background: #faf7f1;
+	color: var(--muted);
+}
+
+.visit-work-status {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-left: 4px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 4px;
+	margin: -4px 0 12px;
+	padding: 10px 12px;
+}
+
+.visit-work-status.status-warn {
+	border-left-color: var(--amber);
+}
+
+.visit-work-status.status-busy {
+	border-left-color: var(--line-strong);
+}
+
+.visit-work-status strong {
+	color: var(--ink);
+	font-size: 14px;
+	line-height: 1.25;
+}
+
+.visit-work-status p {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.specialty-focus-bar {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.specialty-focus-bar summary {
+	align-items: center;
+	cursor: pointer;
+	display: grid;
+	gap: 4px 10px;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	list-style: none;
+	padding: 10px 12px;
+}
+
+.specialty-focus-bar summary::-webkit-details-marker {
+	display: none;
+}
+
+.specialty-focus-bar summary::after {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	content: "Настроить";
+	font-size: 12px;
+	font-weight: 900;
+	grid-row: 1 / span 2;
+	padding: 5px 9px;
+}
+
+.specialty-focus-bar[open] summary {
+	border-bottom: 1px solid var(--line);
+}
+
+.specialty-focus-bar[open] summary::after {
+	content: "Скрыть";
+}
+
+.specialty-focus-bar summary span,
+.specialty-focus-bar summary small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.25;
+}
+
+.specialty-focus-bar summary strong {
+	color: var(--ink);
+	font-size: 15px;
+	line-height: 1.2;
+}
+
+.specialty-focus-options {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	padding: 10px;
+}
+
+.specialty-focus-options button {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	cursor: pointer;
+	display: grid;
+	gap: 3px;
+	min-height: 58px;
+	padding: 9px;
+	text-align: left;
+}
+
+.specialty-focus-options button.active {
+	background: var(--teal-soft);
+	border-color: rgba(15, 118, 110, 0.45);
+	box-shadow: inset 4px 0 0 var(--teal);
+}
+
+.specialty-focus-options strong {
+	font-size: 13px;
+	line-height: 1.15;
+}
+
+.specialty-focus-options span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 750;
+	line-height: 1.2;
+}

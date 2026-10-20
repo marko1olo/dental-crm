@@ -68,7 +68,7 @@ export const TaxDeductionHeader: React.FC<TaxDeductionHeaderProps> = ({
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-							Приказ ФНС России № ЕА-7-11/824@ • Формат 5.01 • Разделение сумм по Коду 01 и Коду 02 • QR-верификация
+							Справка об оплате медицинских услуг • Вычет 13% • Разделение сумм по Коду 1 и Коду 2 • QR-код для налоговой
 						</p>
 					</div>
 				</div>

@@ -42,7 +42,7 @@ export function DmsGuaranteeLetterModal(props: DmsGuaranteeLetterModalProps) {
 					</h2>
 					<button
 						type="button"
-						className="dms-btn dms-btn-secondary dms-btn-icon"
+						className="dms-btn dms-btn-secondary dms-btn-icon icon-button"
 						onClick={onClose}
 						aria-label="Закрыть модальное окно"
 					>

@@ -69,7 +69,8 @@ export function ThemeQuickAccessWidget({
 	);
 	const Icon = THEME_ICONS[currentMode] || Palette;
 	const dotColor = currentMeta?.primaryDot || "#0d9488";
-	const label = currentMeta?.name || "Тема оформления";
+	const label = currentMeta?.name || "Авто-тема";
+	const shortDisplayLabel = currentMeta?.shortLabel || "Авто-тема";
 
 	if (variant === "footer") {
 		return (
@@ -99,8 +100,8 @@ export function ThemeQuickAccessWidget({
 					/>
 					<Icon size={12} className="shrink-0 opacity-75" aria-hidden="true" />
 					{!collapsed && (
-						<span className="truncate flex-1 min-w-0 text-[11px] font-medium leading-none text-left">
-							{currentMeta?.shortLabel || label}
+						<span className="flex-1 min-w-0 text-[11px] font-medium leading-none text-left whitespace-nowrap">
+							{shortDisplayLabel}
 						</span>
 					)}
 				</button>

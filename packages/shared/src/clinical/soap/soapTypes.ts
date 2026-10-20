@@ -26,6 +26,7 @@ export type ToothClinicalState =
 	| "Periodontitis"
 	| "Filled"
 	| "Crown"
+	| "Planned_Crown"
 	| "Implant"
 	| "Planned_Implant"
 	| "Missing"

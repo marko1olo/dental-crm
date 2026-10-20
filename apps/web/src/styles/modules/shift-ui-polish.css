@@ -1,0 +1,217 @@
+.default-clinic-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	background: linear-gradient(
+		135deg,
+		rgba(217, 119, 6, 0.08),
+		rgba(251, 191, 36, 0.03)
+	);
+	border: 1px dashed rgba(217, 119, 6, 0.4);
+	border-radius: 12px;
+	padding: 14px 20px;
+	margin: 16px 24px 8px;
+	box-shadow: 0 4px 12px rgba(217, 119, 6, 0.03);
+}
+
+.default-clinic-banner .banner-content {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex: 1;
+}
+
+.default-clinic-banner .banner-icon {
+	font-size: 1.3rem;
+	flex-shrink: 0;
+}
+
+.default-clinic-banner p {
+	margin: 0;
+	font-size: 14px;
+	color: #78350f;
+	line-height: 1.5;
+}
+
+.default-clinic-banner p strong {
+	color: #b45309;
+}
+
+.default-clinic-banner .banner-btn {
+	font-size: 13px;
+	padding: 8px 16px;
+	min-height: auto;
+	height: 36px;
+	background: #d97706;
+	color: white;
+	border-color: #d97706;
+	flex-shrink: 0;
+}
+
+.default-clinic-banner .banner-btn:hover {
+	background: #b45309;
+	border-color: #b45309;
+	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
+}
+
+@media (max-width: 860px) {
+	.default-clinic-banner {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+		margin: 12px 12px 4px;
+		padding: 12px;
+	}
+	.default-clinic-banner .banner-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* ================================================================
+   ROLE QUEUE HEADER AND TOGGLE STYLES
+   ================================================================ */
+.role-queue-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	width: 100%;
+}
+
+.role-queue-header-row h3 {
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.role-queue-header-row .toggle-queues-btn {
+	font-size: 13px;
+	color: var(--teal);
+	font-weight: 600;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+	padding: 4px 8px;
+}
+
+.role-queue-header-row .toggle-queues-btn:hover {
+	color: var(--teal-dark);
+	text-decoration: underline;
+}
+
+/* Moved to modules/patient-workspace.css, modules/modals.css, modules/odontogram.css, modules/schedule.css */
+/* --- UX REDESIGN OVERRIDES --- */
+.visit-fields {
+	padding: 12px;
+}
+.close-task {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 6px 10px;
+	min-height: auto;
+}
+.close-task strong {
+	font-size: 13px;
+	display: inline-block;
+}
+.close-task p {
+	font-size: 12px;
+	display: inline-block;
+	margin: 0 0 0 6px;
+}
+.close-task small {
+	font-size: 11px;
+	display: inline-block;
+	margin: 0 0 0 6px;
+}
+.close-checklist {
+	gap: 4px;
+	padding: 8px;
+}
+
+.dictation-box textarea {
+	min-height: 80px;
+}
+.visit-dictation,
+.dictation-box {
+	padding: 12px;
+}
+.dictation-header h3 {
+	font-size: 15px;
+	margin: 0;
+}
+.dictation-header p {
+	font-size: 12px;
+	margin: 2px 0 0;
+}
+
+.patient-row {
+	padding: 12px 16px;
+	align-items: center;
+}
+.patient-row h3 {
+	font-size: 15px;
+	margin: 0 0 4px;
+}
+.patient-row p {
+	font-size: 13px;
+	margin: 0;
+}
+.patient-row-meta {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 6px;
+}
+.patient-row-meta span,
+.patient-row-meta strong {
+	font-size: 11px;
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+.clinic-profile-form-grid label {
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+.clinic-profile-form-grid input,
+.clinic-profile-form-grid select,
+.clinic-profile-form-grid textarea {
+	padding: 8px;
+	font-size: 13px;
+}
+
+.shift-panel .patient-row {
+	flex-direction: row;
+	padding: 12px 16px;
+}
+.shift-dashboard-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.shift-dashboard-grid > * {
+	flex: 1 1 150px;
+}
+.shift-dashboard-grid .metric-card {
+	padding: 12px;
+}
+.shift-dashboard-grid .metric-card h3 {
+	font-size: 20px;
+	margin-bottom: 4px;
+}
+.shift-focus-bar {
+	padding: 12px 16px;
+	margin: 12px 0;
+	border-radius: 8px;
+}
+.shift-focus-bar h3 {
+	font-size: 16px;
+	margin: 0 0 4px;
+}
+
+/* QUICK CHIPS REFACTOR */

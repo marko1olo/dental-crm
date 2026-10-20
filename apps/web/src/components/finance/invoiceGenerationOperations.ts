@@ -16,7 +16,7 @@ import {
 	loadStoredInvoices,
 	saveStoredInvoices,
 } from "../billing/InvoicesView";
-import type { InvoiceUnapprovedItem } from "./InvoiceDecree659Banner";
+import type { InvoiceUnapprovedItem } from "./InvoiceTaxDecreeBanner";
 
 export interface SubmitInvoiceParams {
 	readonly patientId: string;
@@ -233,7 +233,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 	}
 }
 
-export async function createDecree659Addendum(
+export async function createTaxAddendum(
 	patientId: string,
 	unapprovedItems: readonly InvoiceUnapprovedItem[],
 ): Promise<any> {
@@ -244,10 +244,11 @@ export async function createDecree659Addendum(
 	const payload = {
 		patientId,
 		kind: "treatment_plan_acceptance",
-		title: `Дополнительное соглашение к плану лечения (ПП РФ №659) от ${new Date().toLocaleDateString("ru-RU")}`,
+		title: `Дополнительное соглашение к плану лечения от ${new Date().toLocaleDateString("ru-RU")}`,
 		totalAmountRub,
 		status: "issued",
 		payloadJson: {
+			taxConsentCompliant: true,
 			decree659Compliant: true,
 			unapprovedItems: unapprovedItems.map((it) => ({
 				itemId: it.itemId,
@@ -274,9 +275,11 @@ export async function createDecree659Addendum(
 
 	const doc = await res.json();
 	showToast(
-		`Дополнительное соглашение на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽ успешно сформировано (ПП РФ №659)!`,
+		`Дополнительное соглашение на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽ успешно сформировано!`,
 		"success",
 		5000,
 	);
 	return doc;
 }
+
+export const createDecree659Addendum = createTaxAddendum;

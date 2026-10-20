@@ -8,6 +8,7 @@ import {
 export interface EmkStepperControlsProps {
 	activeEmkTab: string;
 	setActiveEmkTab: (tabId: string) => void;
+	onTabChange?: ((tabId: string) => void) | undefined;
 	noteForm?: Record<string, any>;
 }
 

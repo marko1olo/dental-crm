@@ -423,8 +423,10 @@ test("--teal-glow с двумя типами: теневое использов�
 		"цветовые использования --teal-glow должны остаться цветовыми",
 	);
 
-	const strip = allRules.find((rule) =>
-		splitSelectorList(rule.selector).includes(".onboarding-compact-strip"),
+	const strip = allRules.find(
+		(rule) =>
+			splitSelectorList(rule.selector).includes(".onboarding-compact-strip") &&
+			rule.body.includes("border"),
 	);
 	assert.ok(strip, "правило .onboarding-compact-strip обязано быть в дереве");
 	assert.match(

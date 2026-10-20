@@ -1,10 +1,17 @@
-import { db } from "../apps/api/dist/db/client.js";
-import { users, organizations, sterilizationLogs } from "../apps/api/dist/db/schema.js";
+import { db } from "../apps/api/src/db/client.js";
+import { sql } from "drizzle-orm";
 
-const orgs = await db.select().from(organizations);
-console.log("Orgs:", orgs.map(o => ({ id: o.id, name: o.name })));
-const u = await db.select().from(users);
-console.log("Users:", u.map(x => ({ id: x.id, name: x.fullName, orgId: x.organizationId })));
-const logs = await db.select().from(sterilizationLogs);
-console.log("SterilizationLogs count:", logs.length, "OrgIds in logs:", [...new Set(logs.map(l => l.organizationId))]);
-process.exit(0);
+async function main() {
+  const orgs = await db.execute(sql`SELECT id, name FROM organizations`);
+  console.log("ORGS IN DB:", orgs.rows);
+  const cl = await db.execute(sql`SELECT id, name, organization_id FROM clinics`);
+  console.log("CLINICS IN DB:", cl.rows);
+  const usr = await db.execute(sql`SELECT id, full_name, role, organization_id FROM users LIMIT 10`);
+  console.log("USERS IN DB:", usr.rows);
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error("DB check failed:", err);
+  process.exit(1);
+});

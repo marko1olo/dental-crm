@@ -14,7 +14,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	calculateMedicationDosage,
-	calculatePrescriptionExpiration,
 	DENTAL_STATUTORY_MNN_CATALOG,
 	formatPatientPrescriptionMemo,
 	validateDentalMnn,
@@ -30,13 +29,22 @@ describe("Приказ Минздрава 1094н: Валидация МНН ст
 	it("1.1 Каталог МНН содержит обязательные стоматологические препараты", () => {
 		const mnnKeys = Object.keys(DENTAL_STATUTORY_MNN_CATALOG);
 		assert.ok(mnnKeys.includes("amoxicillin"), "Должен содержать амоксициллин");
-		assert.ok(mnnKeys.includes("amoxicillin_clavulanate"), "Должен содержать амоксициллин+клавуланат");
+		assert.ok(
+			mnnKeys.includes("amoxicillin_clavulanate"),
+			"Должен содержать амоксициллин+клавуланат",
+		);
 		assert.ok(mnnKeys.includes("ibuprofen"), "Должен содержать ибупрофен");
-		assert.ok(mnnKeys.includes("chlorhexidine"), "Должен содержать хлоргексидин");
+		assert.ok(
+			mnnKeys.includes("chlorhexidine"),
+			"Должен содержать хлоргексидин",
+		);
 		assert.ok(mnnKeys.includes("articaine"), "Должен содержать артикаин");
 		assert.ok(mnnKeys.includes("nimesulide"), "Должен содержать нимесулид");
 		assert.ok(mnnKeys.includes("ketorolac"), "Должен содержать кеторолак");
-		assert.ok(mnnKeys.includes("chloropyramine"), "Должен содержать хлоропирамин");
+		assert.ok(
+			mnnKeys.includes("chloropyramine"),
+			"Должен содержать хлоропирамин",
+		);
 	});
 
 	it("1.2 Корректно валидирует русские и латинские наименования МНН", () => {
@@ -83,7 +91,9 @@ describe("Приказ Минздрава 1094н: Валидация МНН ст
 	});
 
 	it("1.4 Для неизвестных препаратов выставляет isValid=false и предупреждает о Приказе 1094н", () => {
-		const resUnknown = validateDentalMnn("НеизвестныйЭкспериментальныйПрепарат");
+		const resUnknown = validateDentalMnn(
+			"НеизвестныйЭкспериментальныйПрепарат",
+		);
 		assert.strictEqual(resUnknown.isValid, false);
 		assert.strictEqual(resUnknown.matchedMnn, undefined);
 		assert.ok(
@@ -98,7 +108,8 @@ describe("Приказ Минздрава 1094н: Латинская пропи�
 		const res = validateLatinRxSigna({
 			latinName: "Rp.: Amoxicillini 0,5",
 			dispenseFormula: "D.t.d. N. 20 in tabulettis",
-			signaRu: "Принимать внутрь по 1 таблетке 3 раза в день после еды в течение 7 дней",
+			signaRu:
+				"Принимать внутрь по 1 таблетке 3 раза в день после еды в течение 7 дней",
 		});
 
 		assert.strictEqual(res.isValid, true);
@@ -155,7 +166,9 @@ describe("Приказ Минздрава 1094н: Латинская пропи�
 				`Должна быть отклонена расплывчатая инструкция: '${vague}'`,
 			);
 			assert.ok(
-				res.errors.some((e) => e.includes("1094н") || e.includes("неопределенные")),
+				res.errors.some(
+					(e) => e.includes("1094н") || e.includes("неопределенные"),
+				),
 				"Ошибка должна указывать на нарушение Приказа 1094н",
 			);
 		}
@@ -207,7 +220,11 @@ describe("Дозировки и расчет анестетиков (Артик�
 			prescribedDoseMg: 150, // превышает 100 мг
 		});
 		assert.strictEqual(valExceeded.isValid, false);
-		assert.ok(valExceeded.errors.some((e) => e.includes("превышает максимально допустимую")));
+		assert.ok(
+			valExceeded.errors.some((e) =>
+				e.includes("превышает максимально допустимую"),
+			),
+		);
 	});
 
 	it("3.4 Проверяет дозировки амоксициллина и ибупрофена для взрослых", () => {
@@ -230,9 +247,18 @@ describe("Дозировки и расчет анестетиков (Артик�
 describe("Стоматологические 1-клик пресеты рецептов (Пульпит, Альвеолит, Удаление)", () => {
 	it("4.1 Пресеты содержат пакеты pulpitis, alveolitis, post_tooth_extraction", () => {
 		const pkgKeys = DENTAL_FAST_PRESCRIPTION_PACKAGES.map((p) => p.id);
-		assert.ok(pkgKeys.includes("pulpitis_acute_relief"), "Должен быть пресет острого пульпита");
-		assert.ok(pkgKeys.includes("alveolitis_dry_socket"), "Должен быть пресет альвеолита (сухой лунки)");
-		assert.ok(pkgKeys.includes("post_tooth_extraction"), "Должен быть пресет после удаления зуба");
+		assert.ok(
+			pkgKeys.includes("pulpitis_acute_relief"),
+			"Должен быть пресет острого пульпита",
+		);
+		assert.ok(
+			pkgKeys.includes("alveolitis_dry_socket"),
+			"Должен быть пресет альвеолита (сухой лунки)",
+		);
+		assert.ok(
+			pkgKeys.includes("post_tooth_extraction"),
+			"Должен быть пресет после удаления зуба",
+		);
 	});
 
 	it("4.2 Все препараты в пресетах соответствуют МНН из каталога", () => {
@@ -271,7 +297,8 @@ describe("Стоматологические 1-клик пресеты реце�
 	});
 
 	it("4.4 Мандат 8d п. 7: Категорически 0 эмодзи во всех пресетах и пакетах", () => {
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		const emojiRegex =
+			/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 		for (const med of DENTAL_MEDICATIONS_CATALOG) {
 			const nameRu = med.nameRu || med.tradeNameRu;

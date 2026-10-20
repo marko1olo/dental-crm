@@ -23,26 +23,34 @@ export interface OpenAIToolDefinition {
 
 export interface DentalToolContext {
 	organizationId: string;
-	userId?: string;
-	doctorId?: string;
-	patientId?: string;
-	activeVisitId?: string;
-	runtimeMode?: AgentRuntimeMode;
+	userId?: string | undefined;
+	doctorId?: string | undefined;
+	patientId?: string | undefined;
+	activeVisitId?: string | undefined;
+	runtimeMode?: AgentRuntimeMode | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle database instance
 	db?: any;
-	allowLocalExecution?: boolean;
+	allowLocalExecution?: boolean | undefined;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Generic dental tool entry
 export type AnyDentalToolEntry = DentalToolEntry<any, any>;
 
-export interface DentalToolEntry<TSchema extends z.ZodTypeAny = z.ZodTypeAny, TResult = unknown> {
+export interface DentalToolEntry<
+	TSchema extends z.ZodTypeAny = z.ZodTypeAny,
+	TResult = unknown,
+> {
 	name: string;
 	description: string;
 	schema: TSchema;
 	supportedModes: readonly AgentRuntimeMode[];
 	definition: OpenAIToolDefinition;
-	handler: (args: z.infer<TSchema>, context: DentalToolContext) => Promise<TResult>;
+	destructive?: boolean;
+	titleRu?: string;
+	handler: (
+		args: z.infer<TSchema>,
+		context: DentalToolContext,
+	) => Promise<TResult>;
 }
 
 /**
@@ -58,7 +66,10 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 			let current = propSchema as z.ZodTypeAny;
 			let isOptional = false;
 
-			if (current instanceof z.ZodOptional || current instanceof z.ZodNullable) {
+			if (
+				current instanceof z.ZodOptional ||
+				current instanceof z.ZodNullable
+			) {
 				isOptional = true;
 				// biome-ignore lint/suspicious/noExplicitAny: unwrap helper
 				current = (current as any).unwrap();
@@ -122,9 +133,36 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 		return zodToJsonSchema((schema as any).unwrap());
 	}
 
-	if (schema instanceof z.ZodDefault) {
-		// biome-ignore lint/suspicious/noExplicitAny: default helper
-		return zodToJsonSchema((schema as any)._def.innerType);
+	if (schema instanceof z.ZodRecord) {
+		return {
+			type: "object",
+			additionalProperties: zodToJsonSchema(schema.valueSchema),
+			...(schema.description ? { description: schema.description } : {}),
+		};
+	}
+
+	if (schema instanceof z.ZodLiteral) {
+		return {
+			type: typeof schema.value,
+			enum: [schema.value],
+			...(schema.description ? { description: schema.description } : {}),
+		};
+	}
+
+	if (schema instanceof z.ZodUnion) {
+		return {
+			anyOf: schema._def.options.map((opt: z.ZodTypeAny) =>
+				zodToJsonSchema(opt),
+			),
+			...(schema.description ? { description: schema.description } : {}),
+		};
+	}
+
+	if (schema instanceof z.ZodUnknown || schema instanceof z.ZodAny) {
+		return {
+			type: "object",
+			...(schema.description ? { description: schema.description } : {}),
+		};
 	}
 
 	return { type: "string" };

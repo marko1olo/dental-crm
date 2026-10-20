@@ -33,6 +33,7 @@ import type {
 	ClinicalCachedEntity,
 	StoragePruneReport,
 } from "./storageTypes";
+import { writeThroughL2Snapshot } from "./clinicalIndexedDbL2";
 
 export const LOCAL_STORAGE_CACHE_PREFIX = "dente_cached_entity_v1:";
 
@@ -114,7 +115,10 @@ export async function cacheClinicalRecord<T = unknown>(
 	// 1. L1 RAM Hit (0 ms, zero HDD seek)
 	inMemoryEntityCacheMap.set(cacheKey, record as ClinicalCachedEntity<unknown>);
 
-	// 2. Coalesced batched write to IndexedDB / localStorage (prevents disk thrashing)
+	// 2. Synchronous Write-Through to safeLocalStorage mirror (crash & reboot resilience)
+	saveLocalStorageCachedEntity(record);
+
+	// 3. Coalesced batched write to IndexedDB
 	queueBatchedStorePut({
 		storeName: CLINICAL_CACHE_STORE_NAME,
 		key: cacheKey,
@@ -122,6 +126,9 @@ export async function cacheClinicalRecord<T = unknown>(
 		localStorageKey: `${LOCAL_STORAGE_CACHE_PREFIX}${record.cacheKey}`,
 		serializedValue: JSON.stringify(record),
 	});
+
+	// 4. L2 IndexedDB write-through in microtask for crash recovery
+	writeThroughL2Snapshot(entityKind, entityId, data, organizationId);
 
 	return record;
 }
@@ -175,6 +182,30 @@ export async function getCachedClinicalRecord<T = unknown>(
 		return localRecord;
 	}
 }
+
+/**
+ * Synchronous L1 RAM & LocalStorage lookup for instant 0 ms clinical cache hydration.
+ * Ensures zero-delay rendering on slow Celeron / Atom workstations without disk seek.
+ */
+export function getCachedClinicalRecordSync<T = unknown>(
+	entityKind: CachedEntityKind | string,
+	entityId: string,
+): ClinicalCachedEntity<T> | null {
+	const cacheKey = buildCacheKey(entityKind, entityId);
+
+	// 1. Fast L1 RAM Hit (0 ms)
+	const memHit = inMemoryEntityCacheMap.get(cacheKey) as ClinicalCachedEntity<T> | undefined;
+	if (memHit) return memHit;
+
+	// 2. Synchronous safeLocalStorage fallback
+	const localRecord = getLocalStorageCachedEntity<T>(cacheKey);
+	if (localRecord) {
+		inMemoryEntityCacheMap.set(cacheKey, localRecord as ClinicalCachedEntity<unknown>);
+	}
+	return localRecord;
+}
+
+export const getCachedEntitySync = getCachedClinicalRecordSync;
 
 /**
  * Clears the in-memory L1 clinical entity cache (0 ms)

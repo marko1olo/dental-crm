@@ -29,23 +29,22 @@ export function registerStockRoute(app: FastifyInstance) {
 			);
 
 		if (items.length === 0) {
-			for (const seed of CANONICAL_IMPLANT_WAREHOUSE_SEEDS) {
-				await db.insert(inventoryItems).values({
-					organizationId: orgId,
-					name: seed.name,
-					category: seed.category,
-					unit: seed.unit,
-					stockQuantity: seed.stockQuantity,
-					currentQty: seed.currentQty,
-					unitCostRub: seed.unitCostRub,
-					pricePerUnit: seed.pricePerUnit,
-					sku: seed.sku,
-					barcode: seed.barcode,
-					lotNumber: seed.lotNumber,
-					expirationDate: seed.expirationDate,
-					notes: seed.notes,
-				});
-			}
+			const seedsToInsert = CANONICAL_IMPLANT_WAREHOUSE_SEEDS.map((seed) => ({
+				organizationId: orgId,
+				name: seed.name,
+				category: seed.category,
+				unit: seed.unit,
+				stockQuantity: seed.stockQuantity,
+				currentQty: seed.currentQty,
+				unitCostRub: seed.unitCostRub,
+				pricePerUnit: seed.pricePerUnit,
+				sku: seed.sku,
+				barcode: seed.barcode,
+				lotNumber: seed.lotNumber,
+				expirationDate: seed.expirationDate,
+				notes: seed.notes,
+			}));
+			await db.insert(inventoryItems).values(seedsToInsert);
 
 			items = await db
 				.select()

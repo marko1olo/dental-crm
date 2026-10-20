@@ -214,7 +214,7 @@ export function useRadiologyDiagnosticSyncController({
 			}
 
 			showToast(
-				`«${pathology.titleRu}» привязана к зубу #${toothKey} и внесена в диагноз и план лечения Формы 043/у`,
+				`«${pathology.titleRu}» привязана к зубу #${toothKey} и внесена в диагноз и план лечения медицинской карты`,
 				"success",
 			);
 		},

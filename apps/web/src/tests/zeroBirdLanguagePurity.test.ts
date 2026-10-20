@@ -31,7 +31,12 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	};
 
 	it("1. RadiologyModule: quiet archival dosimetry without SanPiN yellow alerts", () => {
-		const code = readComponent("components/radiology/RadiologyModule.tsx");
+		const code =
+			readComponent("components/radiology/RadiologyModule.tsx") +
+			"\n" +
+			readComponent("components/radiology/radiologyModule/RadiologyModuleToolbar.tsx") +
+			"\n" +
+			readComponent("components/radiology/radiologyModule/RadiologyHubCards.tsx");
 
 		// No default card number with 043/у
 		assert.ok(!code.includes('"МК-043/у"'), "RadiologyModule must not default patient card to МК-043/у");
@@ -87,7 +92,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("6. Radiology Referral: purged ALARA and SanPiN from print template & modal", () => {
-		const modalCode = readComponent("components/radiology/RadiologyReferralModal.tsx");
+		const modalCode =
+			readComponent("components/radiology/RadiologyReferralModal.tsx") +
+			"\n" +
+			readComponent("components/radiology/radiologyReferral/RadiologyReferralHeaderFooter.tsx");
 		assert.ok(!modalCode.includes("ALARA"), "RadiologyReferralModal must not contain ALARA acronym");
 		assert.ok(!modalCode.includes("ЭМК 043/у"), "RadiologyReferralModal must not contain ЭМК 043/у in footer");
 		assert.ok(modalCode.includes("Внести в дневник"), "RadiologyReferralModal button must be 'Внести в дневник'");

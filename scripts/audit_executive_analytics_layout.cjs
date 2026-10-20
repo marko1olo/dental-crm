@@ -649,10 +649,14 @@ async function injectSession(context) {
 
 async function run() {
   const screenshotsDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics");
+  const proofsDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/analytics");
   const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a1694a54-c82b-48ae-8427-f98d2ef54bbf");
 
   if (!fs.existsSync(screenshotsDir)) {
     fs.mkdirSync(screenshotsDir, { recursive: true });
+  }
+  if (!fs.existsSync(proofsDir)) {
+    fs.mkdirSync(proofsDir, { recursive: true });
   }
 
   const browser = await chromium.launch({
@@ -684,23 +688,32 @@ async function run() {
       });
       await setupInterception(page);
 
-      await page.goto("http://127.0.0.1:5173/#analytics", { waitUntil: "networkidle" });
-      await page.waitForSelector("#analytics", { timeout: 15000 });
+      await page.goto("http://127.0.0.1:5173/#analytics", { waitUntil: "commit" });
+      await page.waitForSelector("#analytics, .executive-dashboard-desktop-wrapper, .analytics-dashboard", { timeout: 15000 });
+      await page.waitForTimeout(1500);
 
       // PC Light
-      await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+      await page.evaluate(() => {
+        document.documentElement.setAttribute("data-theme", "light");
+        document.documentElement.classList.remove("dark");
+      });
       await page.waitForTimeout(1000);
       const pcLightPath = path.join(screenshotsDir, "audit_pc_light_director_executive.png");
       await page.screenshot({ path: pcLightPath, fullPage: false });
-      fs.copyFileSync(pcLightPath, path.join(brainDir, "audit_pc_light_director_executive.png"));
+      if (fs.existsSync(brainDir)) fs.copyFileSync(pcLightPath, path.join(brainDir, "audit_pc_light_director_executive.png"));
+      fs.copyFileSync(pcLightPath, path.join(proofsDir, "analytics_pc_light.png"));
       console.log(`[Captured] ${pcLightPath}`);
 
       // PC Dark
-      await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+      await page.evaluate(() => {
+        document.documentElement.setAttribute("data-theme", "dark");
+        document.documentElement.classList.add("dark");
+      });
       await page.waitForTimeout(1000);
       const pcDarkPath = path.join(screenshotsDir, "audit_pc_dark_director_executive.png");
       await page.screenshot({ path: pcDarkPath, fullPage: false });
-      fs.copyFileSync(pcDarkPath, path.join(brainDir, "audit_pc_dark_director_executive.png"));
+      if (fs.existsSync(brainDir)) fs.copyFileSync(pcDarkPath, path.join(brainDir, "audit_pc_dark_director_executive.png"));
+      fs.copyFileSync(pcDarkPath, path.join(proofsDir, "analytics_pc_dark.png"));
       console.log(`[Captured] ${pcDarkPath}`);
 
       // ───────────────────────────────────────────────────────────────────────
@@ -822,23 +835,32 @@ async function run() {
       const page = await context.newPage();
       await setupInterception(page);
 
-      await page.goto("http://127.0.0.1:5173/#analytics", { waitUntil: "networkidle" });
-      await page.waitForSelector("#analytics", { timeout: 15000 });
+      await page.goto("http://127.0.0.1:5173/#analytics", { waitUntil: "commit" });
+      await page.waitForSelector("#analytics, .mobile-executive-dashboard, .analytics-dashboard", { timeout: 15000 });
+      await page.waitForTimeout(1500);
 
       // Mobile Light
-      await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+      await page.evaluate(() => {
+        document.documentElement.setAttribute("data-theme", "light");
+        document.documentElement.classList.remove("dark");
+      });
       await page.waitForTimeout(1000);
       const mobLightPath = path.join(screenshotsDir, "audit_mobile_light_executive.png");
       await page.screenshot({ path: mobLightPath, fullPage: false });
-      fs.copyFileSync(mobLightPath, path.join(brainDir, "audit_mobile_light_executive.png"));
+      if (fs.existsSync(brainDir)) fs.copyFileSync(mobLightPath, path.join(brainDir, "audit_mobile_light_executive.png"));
+      fs.copyFileSync(mobLightPath, path.join(proofsDir, "analytics_mobile_light.png"));
       console.log(`[Captured] ${mobLightPath}`);
 
       // Mobile Dark
-      await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+      await page.evaluate(() => {
+        document.documentElement.setAttribute("data-theme", "dark");
+        document.documentElement.classList.add("dark");
+      });
       await page.waitForTimeout(1000);
       const mobDarkPath = path.join(screenshotsDir, "audit_mobile_dark_executive.png");
       await page.screenshot({ path: mobDarkPath, fullPage: false });
-      fs.copyFileSync(mobDarkPath, path.join(brainDir, "audit_mobile_dark_executive.png"));
+      if (fs.existsSync(brainDir)) fs.copyFileSync(mobDarkPath, path.join(brainDir, "audit_mobile_dark_executive.png"));
+      fs.copyFileSync(mobDarkPath, path.join(proofsDir, "analytics_mobile_dark.png"));
       console.log(`[Captured] ${mobDarkPath}`);
 
       await context.close();

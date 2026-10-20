@@ -5,7 +5,7 @@
  */
 
 import {
-	type CreateFiscalReceiptPayloadInput,
+	type CreateFiscalReceiptPayloadOutput as CreateFiscalReceiptPayload,
 	createFiscalReceiptPayloadSchema,
 	kopecksToRub,
 	parseKopecks,
@@ -35,7 +35,7 @@ export type CatalogPriceVerificationResult =
  */
 export async function verifyAndEnforceCatalogPrices(
 	orgId: string,
-	items: CreateFiscalReceiptPayloadInput["items"],
+	items: CreateFiscalReceiptPayload["items"],
 ): Promise<CatalogPriceVerificationResult> {
 	const serviceIds = items
 		.map((it) => it.serviceId || it.catalogItemId)
@@ -87,7 +87,7 @@ export async function verifyAndEnforceCatalogPrices(
 			// Автономия врача на скидки до 100% (гарантийные переделки, скидки персоналу, округление копеек)
 			const actualDiscountKop = catalogUnitPriceKop * item.quantity - item.amountKopecks;
 			if (actualDiscountKop > 0) {
-				(item as any).discountKopecks = actualDiscountKop;
+				item.discountKopecks = actualDiscountKop;
 			}
 		} else {
 			return {

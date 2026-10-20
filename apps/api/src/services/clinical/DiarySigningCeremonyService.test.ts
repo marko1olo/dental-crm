@@ -9,10 +9,12 @@ import { hashCredential } from "../../utils/cryptoHelper.js";
 import {
 	DiarySigningCeremonyService,
 	DiarySigningError,
+	type DiaryDbTransaction,
 	computeDiaryHash,
 	formatDoctorSpecialtyLabel,
 	isDeductibleQuantity,
 	redactLegacyPinSignature,
+	resolveSignatureForStorage,
 } from "./DiarySigningCeremonyService.js";
 
 describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
@@ -204,4 +206,114 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 			assert.equal(badTooth.errorCode, "ToothInvalid");
 		}
 	});
+
+	it("resolveSignatureForStorage supports SHIFT_SESSION, 4-digit PIN verification, and PKCS#7", async () => {
+		const makeMockExecutor = (
+			pinCodeHash: string | null,
+		): Pick<DiaryDbTransaction, "select"> =>
+			({
+				select: () => ({
+					from: () => ({
+						where: () => ({
+							limit: async () => (pinCodeHash === undefined ? [] : [{ pinCodeHash }]),
+						}),
+					}),
+				}),
+			}) as unknown as Pick<DiaryDbTransaction, "select">;
+
+		// 1. Empty / null signature returns stored: null
+		const emptyRes = await resolveSignatureForStorage({
+			pkcs7Signature: null,
+			userId: "doc-1",
+			organizationId: "org-1",
+		});
+		assert.deepEqual(emptyRes, { ok: true, stored: null });
+
+		// 2. SHIFT_SESSION 1-click signature produces SIMPLE_PIN_EP|userId|iso|hashPrefix
+		const sessionRes = await resolveSignatureForStorage({
+			pkcs7Signature: "SHIFT_SESSION",
+			userId: "doc-1",
+			organizationId: "org-1",
+			diaryHashForMark: "0123456789abcdef0123456789abcdef",
+		});
+		assert.equal(sessionRes.ok, true);
+		if (sessionRes.ok) {
+			assert.ok(sessionRes.stored?.startsWith("SIMPLE_PIN_EP|doc-1|"));
+			assert.ok(sessionRes.stored?.endsWith("|0123456789ab"));
+		}
+
+		// 3. SHIFT_SESSION without userId returns UserRequired
+		const sessionNoUser = await resolveSignatureForStorage({
+			pkcs7Signature: "SHIFT_SESSION",
+			userId: null,
+			organizationId: "org-1",
+		});
+		assert.equal(sessionNoUser.ok, false);
+		if (!sessionNoUser.ok) {
+			assert.equal(sessionNoUser.code, "UserRequired");
+		}
+
+		// 4. Valid 4-digit PIN verified against users.pinCodeHash
+		const realHash = await hashCredential("4826");
+		const pinOk = await resolveSignatureForStorage({
+			pkcs7Signature: "PIN:4826",
+			userId: "doc-1",
+			organizationId: "org-1",
+			diaryHashForMark: "fedcba9876543210",
+			executor: makeMockExecutor(realHash),
+		});
+		assert.equal(pinOk.ok, true);
+		if (pinOk.ok) {
+			assert.ok(pinOk.stored?.startsWith("SIMPLE_PIN_EP|doc-1|"));
+			assert.ok(pinOk.stored?.endsWith("|fedcba987654"));
+			assert.ok(!pinOk.stored?.includes("4826"), "Raw PIN digits must never be stored");
+		}
+
+		// 5. Wrong 4-digit PIN returns PinInvalid
+		const pinWrong = await resolveSignatureForStorage({
+			pkcs7Signature: "PIN:0000",
+			userId: "doc-1",
+			organizationId: "org-1",
+			executor: makeMockExecutor(realHash),
+		});
+		assert.equal(pinWrong.ok, false);
+		if (!pinWrong.ok) {
+			assert.equal(pinWrong.code, "PinInvalid");
+		}
+
+		// 6. Malformed PIN (not 4 digits) returns PinInvalid without hitting DB
+		const pinBadFormat = await resolveSignatureForStorage({
+			pkcs7Signature: "PIN:12",
+			userId: "doc-1",
+			organizationId: "org-1",
+		});
+		assert.equal(pinBadFormat.ok, false);
+		if (!pinBadFormat.ok) {
+			assert.equal(pinBadFormat.code, "PinInvalid");
+		}
+
+		// 7. Missing pinCodeHash on user account returns PinNotSet
+		const pinNotSet = await resolveSignatureForStorage({
+			pkcs7Signature: "PIN:4826",
+			userId: "doc-1",
+			organizationId: "org-1",
+			executor: makeMockExecutor(null),
+		});
+		assert.equal(pinNotSet.ok, false);
+		if (!pinNotSet.ok) {
+			assert.equal(pinNotSet.code, "PinNotSet");
+		}
+
+		// 8. PKCS#7 / UKEP string passes through intact
+		const pkcs7Res = await resolveSignatureForStorage({
+			pkcs7Signature: "MIIBogYJKoZIhvcNAQcCoIIBkzCCAY8CAQEx",
+			userId: "doc-1",
+			organizationId: "org-1",
+		});
+		assert.deepEqual(pkcs7Res, {
+			ok: true,
+			stored: "MIIBogYJKoZIhvcNAQcCoIIBkzCCAY8CAQEx",
+		});
+	});
 });
+

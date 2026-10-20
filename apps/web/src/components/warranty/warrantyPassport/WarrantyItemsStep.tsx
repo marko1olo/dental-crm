@@ -232,15 +232,15 @@ export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = ({
 					<div className="warranty-section-header">
 						<h4>
 							<Layers size={16} />
-							2. Нормативная категория стоматологической помощи:
+							2. Категория стоматологической помощи:
 						</h4>
 					</div>
 
-					{/* Нормативные пресеты СтАР */}
+					{/* Быстрые пресеты гарантий */}
 					<div className="warranty-star-presets-bar">
 						<div className="warranty-star-presets-title">
 							<Award size={14} style={{ color: "var(--teal)" }} />
-							<span>Нормативные пресеты СтАР:</span>
+							<span>Быстрые пресеты гарантий клиники:</span>
 						</div>
 						<div className="warranty-star-presets-grid">
 							{STAR_QUICK_PRESETS.map((qp) => (

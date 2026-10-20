@@ -11,26 +11,33 @@
  * - Мандат 8e: врачебная автономия (мгновенное применение).
  */
 
-import React from "react";
 import { Check, Stethoscope } from "lucide-react";
-import { showToast } from "../../GlobalToast";
+import React from "react";
 import {
-	useDoctorPreferencesStore,
 	type DoctorSpecialtyKey,
+	useDoctorPreferencesStore,
 } from "../../../store/doctorPreferencesStore";
+import { showToast } from "../../GlobalToast";
 import { SPECIALTY_PRESET_ITEMS } from "../doctorClinicalPreferencesConstants";
 
 export interface DoctorSpecialtyPresetsCardProps {
 	readonly className?: string | undefined;
 }
 
-export function DoctorSpecialtyPresetsCard({ className = "" }: DoctorSpecialtyPresetsCardProps) {
+export function DoctorSpecialtyPresetsCard({
+	className = "",
+}: DoctorSpecialtyPresetsCardProps) {
 	const specialty = useDoctorPreferencesStore((s) => s.preferences.specialty);
-	const applySpecialtyPreset = useDoctorPreferencesStore((s) => s.applySpecialtyPreset);
+	const applySpecialtyPreset = useDoctorPreferencesStore(
+		(s) => s.applySpecialtyPreset,
+	);
 
 	const handleSelectPreset = (key: DoctorSpecialtyKey, label: string) => {
 		applySpecialtyPreset(key);
-		showToast(`Профиль врача «${label}» активирован (кабинет перенастроен)`, "success");
+		showToast(
+			`Профиль врача «${label}» активирован (кабинет перенастроен)`,
+			"success",
+		);
 	};
 
 	return (
@@ -70,7 +77,9 @@ export function DoctorSpecialtyPresetsCard({ className = "" }: DoctorSpecialtyPr
 							data-testid={`doctor-specialty-preset-${spec.key}`}
 						>
 							<span className="whitespace-nowrap">{displayText}</span>
-							{isSelected && <Check size={13} className="stroke-[3] shrink-0" />}
+							{isSelected && (
+								<Check size={13} className="stroke-[3] shrink-0" />
+							)}
 						</button>
 					);
 				})}

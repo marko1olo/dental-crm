@@ -42,6 +42,17 @@ export function isValidRussianPassport(
 	return digits.length === 10;
 }
 
+export {
+	isValidRussianPhone,
+	formatPhoneNumber,
+	formatRussianPhone,
+	formatPhoneRu,
+	normalizePhoneToNational,
+	normalizePhoneToE164,
+	formatPhoneDisplay,
+} from "../telephony/formatters.js";
+
+
 export function escapeHtml(value: unknown): string {
 	const s = String(value ?? "");
 	return s

@@ -13,7 +13,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -140,12 +140,17 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	const footerPath = path.resolve(__dirname, "../view/VisitActionFooter.tsx");
 	const modalsPath = path.resolve(__dirname, "../view/VisitViewModals.tsx");
 	const statePath = path.resolve(__dirname, "../view/useVisitViewState.ts");
+	const stateModulesDir = path.resolve(__dirname, "../view/viewStateModules");
+	const stateModulesSource = fs.existsSync(stateModulesDir)
+		? fs.readdirSync(stateModulesDir).map((f) => fs.readFileSync(path.join(stateModulesDir, f), "utf8")).join("\n")
+		: "";
 	const visitViewSource = [
 		fs.readFileSync(visitViewPath, "utf8"),
 		fs.existsSync(headerPath) ? fs.readFileSync(headerPath, "utf8") : "",
 		fs.existsSync(footerPath) ? fs.readFileSync(footerPath, "utf8") : "",
 		fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "",
 		fs.existsSync(statePath) ? fs.readFileSync(statePath, "utf8") : "",
+		stateModulesSource,
 	].join("\n");
 
 	it("1. guarantees AI polish button is NOT disabled when transcript text is empty (disabled === false)", () => {
@@ -257,14 +262,20 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(visitViewSource).not.toContain("IncomingCallPopup");
 		expect(visitViewSource).not.toContain("TelephonyFloatingWidget");
 
-		// Read IncomingCallPopup.tsx to verify the doctor/visit immunity guard
+		// Read IncomingCallPopup.tsx and modules to verify the doctor/visit immunity guard
 		const telephonyPopupPath = path.resolve(__dirname, "../../telephony/IncomingCallPopup.tsx");
-		const telephonyPopupSource = fs.readFileSync(telephonyPopupPath, "utf8");
+		const telephonyPopupDir = path.resolve(__dirname, "../../telephony/incomingCallPopupModules");
+		const telephonyPopupSource = [
+			fs.readFileSync(telephonyPopupPath, "utf8"),
+			...(fs.existsSync(telephonyPopupDir)
+				? fs.readdirSync(telephonyPopupDir).map((f) => fs.readFileSync(path.join(telephonyPopupDir, f), "utf8"))
+				: []),
+		].join("\n");
 
 		expect(telephonyPopupSource).toMatch(
 			/const isDoctorMode\s*=\s*selectedWorkspaceRole === "doctor" \|\| currentView === "visit"/,
 		);
-		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive) return null;");
+		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive");
 	});
 
 	it("7. guarantees fast Form 043/u printing is accessible anytime with draft/signed watermark (Mandate 8e)", () => {

@@ -82,7 +82,11 @@ export function resolveOperationalStatus(
 	if (
 		normalized === "in_chair" ||
 		normalized === "in_treatment" ||
-		normalized === "in_progress"
+		normalized === "in_progress" ||
+		normalized === "invited" ||
+		normalized === "calling" ||
+		commentStr.includes("[invited]") ||
+		commentStr.includes("[приглашен]")
 	) {
 		return "in_chair";
 	}

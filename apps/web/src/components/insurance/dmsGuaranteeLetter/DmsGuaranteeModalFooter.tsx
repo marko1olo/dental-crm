@@ -37,7 +37,7 @@ export function DmsGuaranteeModalFooter({
 			<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 				<button
 					type="button"
-					className="dms-btn dms-btn-secondary"
+					className="dms-btn dms-btn-secondary secondary-button"
 					onClick={onSendPreAuthRequest}
 					title="Отправить список услуг на согласование куратору страховой компании"
 				>
@@ -47,7 +47,7 @@ export function DmsGuaranteeModalFooter({
 
 				<button
 					type="button"
-					className="dms-btn dms-btn-secondary"
+					className="dms-btn dms-btn-secondary secondary-button"
 					onClick={onAttachToCurrentVisit}
 					title="Сохранить и сразу привязать гарантийное письмо к текущему визиту пациента"
 				>
@@ -59,7 +59,7 @@ export function DmsGuaranteeModalFooter({
 			<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 				<button
 					type="button"
-					className="dms-btn dms-btn-secondary"
+					className="dms-btn dms-btn-secondary secondary-button"
 					onClick={onClose}
 				>
 					<span>Отмена</span>
@@ -68,7 +68,7 @@ export function DmsGuaranteeModalFooter({
 				{isEmergencyCare ? (
 					<button
 						type="button"
-						className="dms-btn dms-btn-primary"
+						className="dms-btn dms-btn-primary primary-button"
 						style={{
 							background: "var(--ok-fg, #059669)",
 							borderColor: "var(--ok-fg, #059669)",
@@ -83,7 +83,7 @@ export function DmsGuaranteeModalFooter({
 				) : (
 					<button
 						type="button"
-						className="dms-btn dms-btn-primary"
+						className="dms-btn dms-btn-primary primary-button"
 						onClick={onSave}
 						title="Сохранить параметры гарантийного письма ДМС"
 					>

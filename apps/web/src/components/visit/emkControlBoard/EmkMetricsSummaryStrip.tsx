@@ -116,7 +116,7 @@ export function EmkMetricsSummaryStrip({ metrics }: EmkMetricsSummaryStripProps)
 						marginBottom: "4px",
 					}}
 				>
-					Соответствие СтАР / Минздрав
+					Клинические стандарты
 				</div>
 				<div
 					style={{

@@ -41,7 +41,7 @@ export const OfflineBackupExportSection: React.FC<
 			style={{
 				background: "transparent",
 				border: "none",
-				padding: "16px 0",
+				padding: "4px 0",
 				boxShadow: "none",
 			}}
 		>
@@ -49,15 +49,15 @@ export const OfflineBackupExportSection: React.FC<
 				style={{
 					display: "flex",
 					alignItems: "center",
-					gap: "12px",
-					marginBottom: "16px",
+					gap: "10px",
+					marginBottom: "10px",
 				}}
 			>
 				<div
 					style={{
-						width: "44px",
-						height: "44px",
-						borderRadius: "10px",
+						width: "36px",
+						height: "36px",
+						borderRadius: "8px",
 						background: "rgba(16, 185, 129, 0.12)",
 						color: "var(--ok-fg)",
 						display: "flex",
@@ -65,23 +65,23 @@ export const OfflineBackupExportSection: React.FC<
 						justifyContent: "center",
 					}}
 				>
-					<HardDrive size={24} />
+					<HardDrive size={20} />
 				</div>
 				<div>
 					<h3
 						style={{
 							margin: 0,
-							fontSize: "18px",
+							fontSize: "15.5px",
 							fontWeight: "600",
 							color: "var(--ink, #1e293b)",
 						}}
 					>
-						Зашифрованный экспорт базы клиники (.dente AES-GCM-256)
+						Зашифрованный архив базы клиники (.dente)
 					</h3>
 					<p
 						style={{
-							margin: "4px 0 0",
-							fontSize: "13px",
+							margin: "2px 0 0",
+							fontSize: "12px",
 							color: "var(--muted, #64748b)",
 						}}
 					>
@@ -94,9 +94,9 @@ export const OfflineBackupExportSection: React.FC<
 			<div
 				style={{
 					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+					gridTemplateColumns: "minmax(220px, 1fr) minmax(220px, 1fr) auto",
 					gap: "12px",
-					marginBottom: "16px",
+					alignItems: "end",
 				}}
 			>
 				<div>
@@ -109,7 +109,7 @@ export const OfflineBackupExportSection: React.FC<
 							color: "var(--ink, #1e293b)",
 						}}
 					>
-						Мастер-пароль шифрования архива (опционально)
+						Пароль защиты архива (необязательно)
 					</label>
 					<div style={{ position: "relative" }}>
 						<input
@@ -117,19 +117,45 @@ export const OfflineBackupExportSection: React.FC<
 							value={exportPassphrase}
 							onChange={(e) => setExportPassphrase(e.target.value)}
 							placeholder="По умолчанию — защищенный ключ клиники"
-							className="w-full h-11 min-h-[44px] pl-3 pr-12 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
+							style={{
+								width: "100%",
+								minHeight: "38px",
+								padding: "6px 38px 6px 12px",
+								borderRadius: "8px",
+								border: "1px solid var(--line)",
+								background: "var(--paper-soft)",
+								color: "var(--ink)",
+								fontSize: "12.5px",
+								boxSizing: "border-box",
+							}}
 						/>
 						<button
 							type="button"
 							onClick={() => setShowExportPassphrase(!showExportPassphrase)}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer touch-manipulation absolute right-0 top-1/2 -translate-y-1/2"
+							style={{
+								position: "absolute",
+								right: "2px",
+								top: "50%",
+								transform: "translateY(-50%)",
+								minHeight: "34px",
+								minWidth: "34px",
+								padding: "6px",
+								borderRadius: "6px",
+								border: "none",
+								background: "transparent",
+								color: "var(--muted)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								cursor: "pointer",
+							}}
 							aria-label={
 								showExportPassphrase
-									? "Скрыть мастер-пароль"
-									: "Показать мастер-пароль"
+									? "Скрыть пароль защиты"
+									: "Показать пароль защиты"
 							}
 						>
-							{showExportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
+							{showExportPassphrase ? <EyeOff size={16} /> : <Eye size={16} />}
 						</button>
 					</div>
 				</div>
@@ -150,58 +176,86 @@ export const OfflineBackupExportSection: React.FC<
 						type="text"
 						value={exportNotes}
 						onChange={(e) => setExportNotes(e.target.value)}
-						placeholder="Например: Плановый бэкап перед закрытием смены"
-						className="w-full h-11 min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
+						placeholder="Например: Копия перед закрытием смены"
+						style={{
+							width: "100%",
+							minHeight: "38px",
+							padding: "6px 12px",
+							borderRadius: "8px",
+							border: "1px solid var(--line)",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							fontSize: "12.5px",
+							boxSizing: "border-box",
+						}}
 					/>
 				</div>
-			</div>
 
-			<div
-				style={{
-					display: "flex",
-					flexWrap: "wrap",
-					gap: "10px",
-					alignItems: "center",
-				}}
-			>
-				<button
-					type="button"
-					onClick={() => handleExport(true)}
-					disabled={isExporting}
+				<div
 					style={{
-						minHeight: "44px",
-						padding: "0 18px",
-						borderRadius: "8px",
-						background: "var(--ok-fg)",
-						color: "var(--on-teal, #ffffff)",
-						border: "none",
-						fontWeight: "600",
-						fontSize: "13px",
-						cursor: isExporting ? "not-allowed" : "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
+						display: "flex",
+						flexWrap: "wrap",
 						gap: "8px",
-						boxShadow: "0 1px 3px rgba(5,150,105,0.2)",
-						boxSizing: "border-box",
+						alignItems: "center",
 					}}
-					className="touch-manipulation"
 				>
-					<Download size={16} />
-					<span>
-						{isExporting ? "Создание архива..." : "Выбрать диск / USB (.dente)"}
-					</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => handleExport(false)}
+						disabled={isExporting}
+						data-testid="btn-create-backup"
+						style={{
+							minHeight: "38px",
+							padding: "0 16px",
+							borderRadius: "8px",
+							background: "var(--teal)",
+							color: "var(--on-teal, #ffffff)",
+							border: "none",
+							fontWeight: "600",
+							fontSize: "12.5px",
+							cursor: isExporting ? "not-allowed" : "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "6px",
+							boxSizing: "border-box",
+							whiteSpace: "nowrap",
+						}}
+						className="touch-manipulation"
+					>
+						<Download size={15} />
+						<span>
+							{isExporting ? "Создание архива..." : "Создать резервную копию"}
+						</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => handleExport(false)}
-					disabled={isExporting}
-					className="secondary-button min-h-[44px] px-4 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
-				>
-					<Download size={15} />
-					<span>Скачать в Загрузки</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => handleExport(true)}
+						disabled={isExporting}
+						style={{
+							minHeight: "38px",
+							padding: "0 14px",
+							borderRadius: "8px",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							border: "1px solid var(--line)",
+							fontWeight: "600",
+							fontSize: "12.5px",
+							cursor: isExporting ? "not-allowed" : "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "6px",
+							boxSizing: "border-box",
+							whiteSpace: "nowrap",
+						}}
+						className="secondary-button touch-manipulation"
+					>
+						<HardDrive size={14} />
+						<span>Сохранить на диск / USB (.dente)</span>
+					</button>
+				</div>
 			</div>
 
 			{exportError && (
@@ -245,7 +299,7 @@ export const OfflineBackupExportSection: React.FC<
 						}}
 					>
 						<CheckCircle2 size={18} />
-						Архив успешно создан и зашифрован (AES-GCM-256)
+						Архив успешно создан и защищён
 					</div>
 					<div
 						style={{
@@ -260,16 +314,13 @@ export const OfflineBackupExportSection: React.FC<
 							Файл: <strong>{lastExportResult.filename}</strong>
 						</div>
 						<div>
-							Контейнер: <strong>{lastExportResult.header.magic}</strong>
-						</div>
-						<div>
-							SHA-256:{" "}
+							Код целостности:{" "}
 							<strong>
 								{lastExportResult.header.payloadSha256.substring(0, 16)}...
 							</strong>
 						</div>
 						<div>
-							Мутаций: <strong>{lastExportResult.stats.mutations}</strong>
+							Изменений: <strong>{lastExportResult.stats.mutations}</strong>
 						</div>
 						<div>
 							Черновиков: <strong>{lastExportResult.stats.drafts}</strong>

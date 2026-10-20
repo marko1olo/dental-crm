@@ -193,7 +193,7 @@ export function renderDigitalSignatureStampHtml(params: VisualSignatureStampPara
         ДОКУМЕНТ ПОДПИСАН ВРАЧОМ
       </div>
       <div style="font-size: 6.5pt; font-weight: 600; color: #115e59; text-transform: uppercase; margin-top: 1px;">
-        ПРОСТАЯ ЭЛЕКТРОННАЯ ПОДПИСЬ (ПЭП) &bull; СТ. 5 ФЗ № 63-ФЗ
+        ПРОСТАЯ ЭЛЕКТРОННАЯ ПОДПИСЬ (ПЭП) &bull; ПОДТВЕРЖДЕНО ВРАЧОМ
       </div>
     </div>
   </div>
@@ -314,8 +314,26 @@ export function injectVisualSignatureStampIntoHtml(
 ): string {
 	if (!html || !stampHtml) return html;
 
+	// Если в документе уже есть предварительный штамп (черновик или ПЭП), а поступает финальный штамп УКЭП/УНЭП — заменяем его на месте
+	const existingStampBlockRegex =
+		/<!-- BEGIN_GOST_SIGNATURE_STAMP -->[\s\S]*?<!-- END_GOST_SIGNATURE_STAMP -->/;
+	if (existingStampBlockRegex.test(html)) {
+		const hasPreliminaryStamp =
+			html.includes("gost-stamp-draft") || html.includes("gost-stamp-simple");
+		const incomingIsPreliminary =
+			stampHtml.includes("gost-stamp-draft") ||
+			stampHtml.includes("gost-stamp-simple");
+		if (hasPreliminaryStamp && !incomingIsPreliminary) {
+			return html.replace(existingStampBlockRegex, stampHtml);
+		}
+		return html;
+	}
+
 	// Если штамп уже внедрен — не дублируем
-	if (html.includes("BEGIN_GOST_SIGNATURE_STAMP") || html.includes("<div class=\"gost-digital-stamp\"")) {
+	if (
+		html.includes("BEGIN_GOST_SIGNATURE_STAMP") ||
+		html.includes('<div class="gost-digital-stamp"')
+	) {
 		return html;
 	}
 

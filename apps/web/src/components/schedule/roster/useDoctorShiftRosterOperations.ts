@@ -5,7 +5,15 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import type { EmployeeInfo } from "../../payroll/TimesheetT13Modal";
+
+export interface EmployeeInfo {
+	readonly id: string;
+	readonly tabNumber: string;
+	readonly name: string;
+	readonly positionRu: string;
+	readonly departmentRu: string;
+	readonly defaultShiftHours: number;
+}
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,

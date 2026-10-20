@@ -1,0 +1,168 @@
+/* Moved to modules/schedule.css & modules/patient-workspace.css */
+/* --- Communications Dark Mode Theme Harmony --- */
+[data-theme="dark"] .communications-summary-grid article,
+[data-theme="night"] .communications-summary-grid article,
+.dark .communications-summary-grid article,
+body.dark-mode .communications-summary-grid article,
+[data-theme="dark"] .communication-note-row,
+[data-theme="night"] .communication-note-row,
+.dark .communication-note-row,
+body.dark-mode .communication-note-row,
+[data-theme="dark"] .communication-task,
+[data-theme="night"] .communication-task,
+.dark .communication-task,
+body.dark-mode .communication-task,
+[data-theme="dark"] .communication-side section,
+[data-theme="night"] .communication-side section,
+.dark .communication-side section,
+body.dark-mode .communication-side section,
+[data-theme="dark"] .template-list article,
+[data-theme="night"] .template-list article,
+.dark .template-list article,
+body.dark-mode .template-list article,
+[data-theme="dark"] .communication-empty-state,
+[data-theme="night"] .communication-empty-state,
+.dark .communication-empty-state,
+body.dark-mode .communication-empty-state {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}
+
+/* --- Finance Dark Mode Theme Harmony --- */
+[data-theme="dark"] .finance-summary-grid article,
+[data-theme="night"] .finance-summary-grid article,
+.dark .finance-summary-grid article,
+body.dark-mode .finance-summary-grid article,
+html.dark .payment-capture,
+[data-theme="dark"] .payment-capture,
+[data-theme="night"] .payment-capture,
+.dark .payment-capture,
+body.dark-mode .payment-capture,
+[data-theme="dark"] .plan-scenarios,
+[data-theme="night"] .plan-scenarios,
+.dark .plan-scenarios,
+body.dark-mode .plan-scenarios,
+[data-theme="dark"] .plan-scenario,
+[data-theme="night"] .plan-scenario,
+.dark .plan-scenario,
+body.dark-mode .plan-scenario,
+[data-theme="dark"] .clinical-rule-panel,
+[data-theme="night"] .clinical-rule-panel,
+.dark .clinical-rule-panel,
+body.dark-mode .clinical-rule-panel,
+[data-theme="dark"] .clinical-rule-card,
+[data-theme="night"] .clinical-rule-card,
+.dark .clinical-rule-card,
+body.dark-mode .clinical-rule-card,
+[data-theme="dark"] .finance-list,
+[data-theme="night"] .finance-list,
+.dark .finance-list,
+body.dark-mode .finance-list,
+[data-theme="dark"] .service-catalog-strip article,
+[data-theme="night"] .service-catalog-strip article,
+.dark .service-catalog-strip article,
+body.dark-mode .service-catalog-strip article,
+html.dark .payment-capture-detail-section,
+[data-theme="dark"] .payment-capture-detail-section,
+[data-theme="night"] .payment-capture-detail-section,
+.dark .payment-capture-detail-section,
+body.dark-mode .payment-capture-detail-section {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+	color: var(--text-color, #f8fafc);
+}
+
+/* Dark mode: document manual override details (DocumentsView) */
+html.dark .document-manual-override,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.document-manual-override,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.document-manual-override,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.dark .document-manual-override,
+body.dark-mode .document-manual-override {
+	background: var(--glass-panel);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+/* ============================================================
+   Floating Softphone (FAB) Clearance for Main Scroll Containers
+   ============================================================ */
+.settings-tab-panel,
+.access-settings,
+.clinic-config,
+.telegram-settings,
+.schedule-panel,
+.patient-card-column,
+.patient-card-body,
+.patient-workspace,
+.visit-note-panel,
+.visit-view-layout,
+.workspace.view-visit,
+.doctor-cockpit-body,
+.doctor-cockpit-container,
+.visit-fields {
+	padding-bottom: 128px !important;
+}
+
+@media (max-width: 640px) {
+	.settings-tab-panel,
+	.access-settings,
+	.clinic-config,
+	.telegram-settings,
+	.schedule-panel,
+	.patient-card-column,
+	.patient-card-body,
+	.patient-workspace,
+	.visit-note-panel,
+	.visit-view-layout,
+	.workspace.view-visit,
+	.doctor-cockpit-body,
+	.doctor-cockpit-container,
+	.visit-fields {
+		padding-bottom: 24px !important;
+	}
+}
+
+html.dark .quick-chip,
+[data-theme="dark"] .quick-chip,
+[data-theme="night"] .quick-chip,
+[data-theme="ocean"] .quick-chip,
+[data-theme="emerald"] .quick-chip,
+[data-theme="cyber_xray"] .quick-chip,
+[data-theme="contrast"] .quick-chip {
+	background: var(--paper-soft, rgba(30, 41, 59, 0.7)) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .quick-chip:hover,
+[data-theme="dark"] .quick-chip:hover,
+[data-theme="night"] .quick-chip:hover,
+[data-theme="ocean"] .quick-chip:hover,
+[data-theme="emerald"] .quick-chip:hover,
+[data-theme="cyber_xray"] .quick-chip:hover,
+[data-theme="contrast"] .quick-chip:hover {
+	background: var(--paper-strong, rgba(51, 65, 85, 0.85)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+}
+
+html.dark .quick-chip.active,
+[data-theme="dark"] .quick-chip.active,
+[data-theme="night"] .quick-chip.active,
+[data-theme="ocean"] .quick-chip.active,
+[data-theme="emerald"] .quick-chip.active,
+[data-theme="cyber_xray"] .quick-chip.active,
+[data-theme="contrast"] .quick-chip.active,
+.dark .quick-chip.active,
+body.dark-mode .quick-chip.active {
+	background: rgba(13, 148, 136, 0.25) !important;
+	border-color: #2dd4bf !important;
+	color: #5eead4 !important;
+	font-weight: 800 !important;
+}

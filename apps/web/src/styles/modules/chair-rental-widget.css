@@ -1,0 +1,540 @@
+/* chair-rental-widget.css — Chair Rental & Freelance Doctor Economics Widget */
+
+.chair-rental-widget {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	color: var(--ink);
+	font-family: inherit;
+	box-sizing: border-box;
+	width: 100%;
+	position: relative;
+	overflow: hidden;
+}
+
+/* Header */
+.chair-rental-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line-subtle, var(--line));
+}
+
+.chair-rental-title-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.chair-rental-icon-badge {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--teal) 14%, transparent);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.chair-rental-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.25;
+}
+
+.chair-rental-subtitle {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+}
+
+/* Model Selector Segmented Control */
+.chair-rental-models-bar {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	background: var(--paper-soft);
+	padding: 4px;
+	border-radius: 12px;
+	gap: 4px;
+	margin: 14px 0;
+	border: 1px solid var(--line-subtle, var(--line));
+}
+
+.chair-rental-model-chip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 6px 8px;
+	border-radius: 9px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.chair-rental-model-chip svg {
+	flex-shrink: 0;
+}
+
+.chair-rental-model-chip:hover {
+	color: var(--ink);
+	background: var(--paper-hover, rgba(0, 0, 0, 0.03));
+}
+
+.chair-rental-model-chip.active {
+	background: var(--paper);
+	color: var(--teal);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	border: 1px solid var(--line);
+}
+
+/* Rate Inputs Grid */
+.chair-rental-inputs-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.chair-rental-input-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.chair-rental-input-label {
+	font-size: 10.5px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+}
+
+.chair-rental-input-field {
+	height: 44px;
+	box-sizing: border-box;
+	padding: 0 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong, var(--paper));
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 600;
+	outline: none;
+	width: 100%;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chair-rental-input-field:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 16%, transparent);
+}
+
+/* Spotlight Net Income Banner */
+.chair-rental-net-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	background: linear-gradient(135deg, color-mix(in srgb, var(--teal) 14%, var(--paper)), color-mix(in srgb, var(--teal) 6%, var(--paper)));
+	border: 1px solid color-mix(in srgb, var(--teal) 32%, var(--line));
+	border-radius: 14px;
+	padding: 12px 14px;
+	margin-bottom: 12px;
+}
+
+.chair-rental-net-title {
+	font-size: 11.5px;
+	font-weight: 700;
+	color: var(--teal-dark, var(--teal));
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.chair-rental-net-amount {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--ink);
+	margin-top: 2px;
+	line-height: 1.1;
+}
+
+.chair-rental-net-metrics {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.chair-rental-badge-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 700;
+	background: color-mix(in srgb, var(--teal) 18%, transparent);
+	color: var(--teal-dark, var(--teal));
+	white-space: nowrap;
+}
+
+.chair-rental-hourly-rate-sub {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--muted);
+	white-space: nowrap;
+}
+
+/* Breakdown Grid (2x2 for zero clipping) */
+.chair-rental-breakdown-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.chair-rental-breakdown-card {
+	display: flex;
+	flex-direction: column;
+	padding: 9px 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 11px;
+}
+
+.chair-rental-breakdown-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	white-space: nowrap;
+}
+
+.chair-rental-breakdown-val {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	margin-top: 2px;
+}
+
+.chair-rental-breakdown-val.expense {
+	color: var(--danger, #e11d48);
+}
+
+/* Footer Actions */
+.chair-rental-footer-actions {
+	display: flex;
+	align-items: center;
+	justify-content: stretch;
+	gap: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--line-subtle, var(--line));
+}
+
+.chair-rental-footer-actions .chair-rental-act-btn {
+	width: 100%;
+}
+
+.chair-rental-act-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 44px;
+	padding: 0 14px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.chair-rental-act-btn svg {
+	flex-shrink: 0;
+}
+
+.chair-rental-act-btn:hover {
+	background: var(--paper-hover, rgba(0, 0, 0, 0.05));
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+/* Modal / Bottom Sheet for Reconciliation Act */
+.chair-rental-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.chair-rental-modal-container {
+	width: 100%;
+	max-width: 640px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
+}
+
+.chair-rental-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+.chair-rental-modal-body {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+	box-sizing: border-box;
+}
+
+.chair-rental-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+/* Printable Act Sheet inside modal (SSOT White Paper Document) */
+.chair-rental-act-sheet {
+	background: #ffffff;
+	color: #0f172a;
+	border: 1px solid #cbd5e1;
+	border-radius: 12px;
+	padding: 24px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.chair-rental-act-sheet strong,
+.chair-rental-act-sheet h2,
+.chair-rental-act-sheet h4,
+.chair-rental-act-sheet span,
+.chair-rental-act-sheet td {
+	color: #0f172a;
+}
+
+.chair-rental-act-header-doc {
+	border-bottom: 2px solid #0f172a;
+	padding-bottom: 12px;
+	margin-bottom: 16px;
+}
+
+.chair-rental-act-title-doc {
+	font-size: 16px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	margin: 0 0 6px 0;
+	color: #0f172a !important;
+}
+
+.chair-rental-act-meta-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	color: #475569;
+}
+
+.chair-rental-act-meta-row span {
+	color: #475569;
+}
+
+.chair-rental-act-meta-row strong {
+	color: #0f172a !important;
+}
+
+.chair-rental-act-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 14px 0;
+	font-size: 13px;
+}
+
+.chair-rental-act-table th,
+.chair-rental-act-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #e2e8f0;
+	text-align: left;
+}
+
+.chair-rental-act-table th {
+	background: #f8fafc;
+	font-weight: 700;
+	color: #334155;
+	font-size: 11.5px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.chair-rental-act-table td.amount {
+	text-align: right;
+	font-weight: 600;
+}
+
+.chair-rental-act-table td.amount-expense {
+	color: #e11d48 !important;
+}
+
+.chair-rental-act-table td.amount-profit {
+	color: #0f766e !important;
+}
+
+.chair-rental-act-table tr.total-row td {
+	border-top: 2px solid #0f172a;
+	font-weight: 800;
+	font-size: 14px;
+	color: #0f172a;
+	background: #f1f5f9;
+}
+
+.chair-rental-act-signatures {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px dashed #94a3b8;
+	font-size: 12px;
+}
+
+.chair-rental-act-sign-box {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.chair-rental-act-sign-line {
+	border-bottom: 1px solid #64748b;
+	height: 24px;
+}
+
+/* Mobile Apple HIG Responsiveness */
+@media (max-width: 768px) {
+	.chair-rental-widget {
+		padding: 8px 10px;
+		border-radius: 14px;
+	}
+
+	.chair-rental-header {
+		padding-bottom: 6px;
+	}
+
+	.chair-rental-models-bar {
+		grid-template-columns: 1fr 1fr;
+		gap: 4px;
+		margin: 6px 0;
+	}
+
+	.chair-rental-model-chip {
+		min-height: 44px;
+		font-size: 12px;
+	}
+
+	.chair-rental-inputs-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		margin-bottom: 6px;
+	}
+
+	.chair-rental-input-label {
+		font-size: 10px;
+	}
+
+	.chair-rental-net-banner {
+		padding: 7px 10px;
+		margin-bottom: 6px;
+	}
+
+	.chair-rental-net-amount {
+		font-size: 19px;
+	}
+
+	.chair-rental-breakdown-grid {
+		grid-template-columns: 1fr 1fr;
+		gap: 6px;
+		margin-bottom: 6px;
+	}
+
+	.chair-rental-breakdown-card {
+		padding: 5px 8px;
+	}
+
+	.chair-rental-footer-actions {
+		padding-top: 6px;
+	}
+
+	.chair-rental-footer-actions .chair-rental-act-btn {
+		width: 100%;
+	}
+
+	.chair-rental-modal-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.chair-rental-modal-container {
+		max-height: 85vh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+	}
+
+	.chair-rental-modal-drag-handle {
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line-strong, #cbd5e1);
+		margin: 8px auto 4px auto;
+	}
+
+	.chair-rental-modal-footer {
+		padding-bottom: max(14px, env(safe-area-inset-bottom));
+	}
+}
+

@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -23,7 +23,17 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 	);
 
 	it("1. EmkToolbar primary row contains <= 7 buttons and no confusing gray 'Отменить' or pulsating pimple", () => {
-		const content = fs.readFileSync(toolbarPath, "utf-8");
+		const quickButtonsPath = path.resolve(
+			process.cwd(),
+			"apps/web/src/components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx",
+		);
+		const protocolsMenuPath = path.resolve(
+			process.cwd(),
+			"apps/web/src/components/visit/emk/emkToolbarModules/EmkProtocolsDropdownMenu.tsx",
+		);
+		const content = fs.readFileSync(toolbarPath, "utf-8") +
+			(fs.existsSync(quickButtonsPath) ? "\n" + fs.readFileSync(quickButtonsPath, "utf-8") : "") +
+			(fs.existsSync(protocolsMenuPath) ? "\n" + fs.readFileSync(protocolsMenuPath, "utf-8") : "");
 
 		// Pulsating orange dot eliminated
 		assert.equal(
@@ -112,7 +122,12 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 	});
 
 	it("4. VisitView listens to 'dente:visit-tab-change' event for seamless cross-component tab switching", () => {
-		const content = fs.readFileSync(visitViewPath, "utf-8");
+		const statePath = path.resolve(
+			process.cwd(),
+			"apps/web/src/components/visit/view/useVisitViewState.ts",
+		);
+		const content = fs.readFileSync(visitViewPath, "utf-8") +
+			(fs.existsSync(statePath) ? "\n" + fs.readFileSync(statePath, "utf-8") : "");
 		assert.ok(
 			content.includes("dente:visit-tab-change"),
 			"VisitView must listen to dente:visit-tab-change",

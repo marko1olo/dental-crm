@@ -1,3 +1,4 @@
+import React from "react";
 import { Check } from "lucide-react";
 import { SHADE_SWATCH_MAP, STUMP_NATURAL_DIE_SHADES } from "../labMath";
 

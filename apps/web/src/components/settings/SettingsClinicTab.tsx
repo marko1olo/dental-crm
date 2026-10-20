@@ -152,7 +152,7 @@ export function SettingsClinicTab({
 				clinicProfileDraft={clinicProfileDraft}
 				capabilities={capabilities}
 				changeClinicMode={changeClinicMode || p?.changeClinicMode}
-				hideScalePresets={p?.hideScalePresets}
+				hideScalePresets={p?.hideScalePresets ?? true}
 			/>
 
 			{/* 1. Legal Profile, DaData Lookup & Document Requisites */}

@@ -22,6 +22,8 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .queue-billboard-header {
+	position: relative;
+	z-index: 10;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -92,6 +94,8 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .queue-billboard-grid {
+	position: relative;
+	z-index: 10;
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 1.75rem;
@@ -258,6 +262,8 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .queue-billboard-ticker {
+	position: relative;
+	z-index: 10;
 	margin-top: 1.5rem;
 	padding: 1rem 1.75rem;
 	background: var(--paper-strong, #ffffff);

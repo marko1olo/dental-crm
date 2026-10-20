@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../useVisitDiaryLogic";
 
 const VisitSummaryModal = lazy(() =>
 	import("../../VisitSummaryModal").then((m) => ({ default: m.VisitSummaryModal }))

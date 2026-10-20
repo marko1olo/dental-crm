@@ -24,7 +24,7 @@ export {
 	VisitPlanStageHandoffBanner,
 };
 export * from "./components/visit/visitPlanStageHandoff";
-export { handlePrintMedicalCardFast, handlePrintForm043uFast } from "./components/visit/view";
+export { handlePrintMedicalCardFast, handlePrintClinicalDiaryFast, handlePrintForm043uFast } from "./components/visit/view";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const s = useVisitViewState(rawProps);

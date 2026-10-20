@@ -253,8 +253,8 @@ export function Billing1CExportModal({
 									<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-800 dark:text-teal-200 border border-teal-500/25 font-bold whitespace-nowrap">
 										CommerceML 2.09
 									</span>
-									<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border border-cyan-500/25 font-bold whitespace-nowrap">
-										ФФД 1.2
+									<span className="text-[11px] font-sans px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 border border-cyan-500/25 font-bold whitespace-nowrap">
+										Кассовый чек
 									</span>
 								</div>
 							</div>

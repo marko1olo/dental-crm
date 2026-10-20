@@ -12,37 +12,34 @@
  * 3. Наличие живых коннекторов к Fastify REST API и PostgreSQL 18.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-
-// Sterilization
+import { describe, it } from "node:test";
+import { createChestnyZnakScannedItem } from "@dental/shared";
+// DMS Insurance
 import {
-	getSampleKraftBarcodes,
-	saveQuickAutoclaveCycleToApi,
-	saveQuickPsoRecordToApi,
-	fetchSterilizationLogsFromApi,
-	fetchPsoLogsFromApi,
-	createQuickAutoclaveCycle,
-	createQuickCombinedPsoRecord,
-} from "../sterilizationPresets";
-
+	fetchPatientGuaranteeLettersFromApi,
+	getActiveBillItemsToSplit,
+	getStatutoryGuaranteeLetters,
+	mapBackendLetterToPatientGuaranteeLetter,
+	saveGuaranteeLetterToApi,
+} from "../../insurance/dmsInsurancePresets";
 // MDLP
 import {
+	fetchMdlpLiveQueue,
 	getMdlpSampleBarcodes,
 	submitMdlpBarcodeScan,
 	syncMdlpQueueToBackend,
-	fetchMdlpLiveQueue,
 } from "../../mdlp/mdlpScanningPresets";
-import { createChestnyZnakScannedItem } from "@dental/shared";
-
-// DMS Insurance
+// Sterilization
 import {
-	getStatutoryGuaranteeLetters,
-	getActiveBillItemsToSplit,
-	saveGuaranteeLetterToApi,
-	fetchPatientGuaranteeLettersFromApi,
-	mapBackendLetterToPatientGuaranteeLetter,
-} from "../../insurance/dmsInsurancePresets";
+	createQuickAutoclaveCycle,
+	createQuickCombinedPsoRecord,
+	fetchPsoLogsFromApi,
+	fetchSterilizationLogsFromApi,
+	getSampleKraftBarcodes,
+	saveQuickAutoclaveCycleToApi,
+	saveQuickPsoRecordToApi,
+} from "../sterilizationPresets";
 
 describe("Red Team Compliance: Sterilization SanPiN 3.3686-21 Zero-Mocks Isolation", () => {
 	it("в боевом режиме (isDemo = false) список тестовых крафт-штрихкодов строго пуст (0% моков)", () => {
@@ -56,9 +53,17 @@ describe("Red Team Compliance: Sterilization SanPiN 3.3686-21 Zero-Mocks Isolati
 
 	it("в демонстрационном режиме (isDemo = true) возвращаются образцы для обучения персонала", () => {
 		const barcodesDemo = getSampleKraftBarcodes(true);
-		assert.ok(barcodesDemo.length >= 3, "В демо-режиме должны присутствовать образцы");
-		const therapy = barcodesDemo.find((b) => b.label.includes("Терапевтический"));
-		assert.ok(therapy, "Образец терапевтического лотка должен присутствовать в демо");
+		assert.ok(
+			barcodesDemo.length >= 3,
+			"В демо-режиме должны присутствовать образцы",
+		);
+		const therapy = barcodesDemo.find((b) =>
+			b.label.includes("Терапевтический"),
+		);
+		assert.ok(
+			therapy,
+			"Образец терапевтического лотка должен присутствовать в демо",
+		);
 	});
 
 	it("функции REST API стерилизации экспортированы и готовы к вызову живого Fastify бэкенда", () => {
@@ -97,9 +102,15 @@ describe("Red Team Compliance: MDLP «Честный Знак» 54-ФЗ / 531 Ze
 
 	it("в демонстрационном режиме (isDemo = true) возвращаются DataMatrix коды карпул и имплантов", () => {
 		const mdlpDemo = getMdlpSampleBarcodes(true);
-		assert.ok(mdlpDemo.length >= 3, "В демо-режиме должны присутствовать образцы DataMatrix");
+		assert.ok(
+			mdlpDemo.length >= 3,
+			"В демо-режиме должны присутствовать образцы DataMatrix",
+		);
 		const ultracain = mdlpDemo.find((b) => b.label.includes("Ультракаин"));
-		assert.ok(ultracain, "Образец Ультракаина Д-С Форте должен присутствовать в демо");
+		assert.ok(
+			ultracain,
+			"Образец Ультракаина Д-С Форте должен присутствовать в демо",
+		);
 	});
 
 	it("функции очереди выбытия МДЛП экспортированы и взаимодействуют с Fastify эндпоинтами", () => {
@@ -140,10 +151,16 @@ describe("Red Team Compliance: DMS Insurance & Order 804n Zero-Mocks Isolation",
 
 	it("в демонстрационном режиме (isDemo = true) доступны демонстрационные гарантийные письма и строки счетов", () => {
 		const lettersDemo = getStatutoryGuaranteeLetters(true);
-		assert.ok(lettersDemo.length >= 3, "В демо-режиме должны быть эталонные письма");
+		assert.ok(
+			lettersDemo.length >= 3,
+			"В демо-режиме должны быть эталонные письма",
+		);
 
 		const billItemsDemo = getActiveBillItemsToSplit(true);
-		assert.ok(billItemsDemo.length >= 3, "В демо-режиме должны быть эталонные строки счета");
+		assert.ok(
+			billItemsDemo.length >= 3,
+			"В демо-режиме должны быть эталонные строки счета",
+		);
 	});
 
 	it("функции REST API гарантийных писем экспортированы и готовы к взаимодействию с /api/insurance/guarantee-letters", () => {

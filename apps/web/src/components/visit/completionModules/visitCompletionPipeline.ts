@@ -182,6 +182,54 @@ export async function executeWorkOrderCompletion(
 }
 
 /**
+ * 3.1. Сквозное завершение приёма в Fastify API / PostgreSQL 18 (/api/v1/visits/:visitId/complete)
+ */
+export async function executeVisitCompletionEndpoint(
+	ctx: VisitPostCompletionContext,
+): Promise<void> {
+	if (!isUuid(ctx.effectiveVisitId)) return;
+
+	try {
+		await fetchWithHandling(
+			`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": `complete-visit-${ctx.effectiveVisitId}`,
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					diary: ctx.effectiveDiary,
+					doctorSummary: ctx.effectiveDiary?.treatmentDescription || null,
+					status: "completed",
+				}),
+			},
+		).catch(async () => {
+			await fetchWithHandling(
+				`/api/visits/${ctx.effectiveVisitId}/complete`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": `complete-visit-fallback-${ctx.effectiveVisitId}`,
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						diary: ctx.effectiveDiary,
+						status: "completed",
+					}),
+				},
+			).catch((err) => {
+				logger.warn("[visitCompletionPipeline] Завершение через /api/visits/complete:", err);
+			});
+		});
+	} catch {
+		// Мягкий режим: сбой сети не блокирует работу врача
+	}
+}
+
+/**
  * 4. Закрытие выполненных позиций плана лечения (Closed Loop)
  */
 export async function executeTreatmentPlanItemCompletion(
@@ -473,9 +521,10 @@ export async function executeVisitPostCompletionPipeline(
 		executeDraftAutosave(ctx),
 	]);
 
-	// 2. Закрытие наряда, плана лечения и синхронизация истории одонтограммы запускаются после фиксации черновика
+	// 2. Закрытие наряда, завершение визита в API/БД, закрытие позиций плана лечения и синхронизация одонтограммы
 	Promise.allSettled([
 		executeWorkOrderCompletion(ctx),
+		executeVisitCompletionEndpoint(ctx),
 		executeTreatmentPlanItemCompletion(ctx),
 		executeOdontogramToothHistorySync(ctx),
 	]).catch((err) => {

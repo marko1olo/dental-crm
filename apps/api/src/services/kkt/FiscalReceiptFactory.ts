@@ -12,6 +12,7 @@ import { z } from "zod";
 import {
 	buildFfd12Tag2000MarkingPayload,
 	type CreateFiscalReceiptPayloadInput,
+	type CreateFiscalReceiptPayloadOutput,
 	FFD12_TAG_1057_AGENT_CODES,
 	FFD12_TAG_1222_AGENT_CODES,
 	type Ffd12AgentSign,
@@ -92,7 +93,7 @@ export class FiscalReceiptFactory {
 	/**
 	 * Tag 1054: Operation type (1=Income, 2=Income Return, 3=Expense, 4=Expense Return)
 	 */
-	public static resolveTag1054(operationType: Ffd12OperationType): number {
+	public static resolveTag1054(operationType?: Ffd12OperationType | null): number {
 		switch (operationType) {
 			case "income":
 				return 1;
@@ -110,7 +111,7 @@ export class FiscalReceiptFactory {
 	/**
 	 * Tag 1212: Payment Subject (1=Commodity, 3=Job, 4=Service, 10=Payment/Advance, 32=Marked Goods)
 	 */
-	public static resolveTag1212(subject: Ffd12PaymentSubject): number {
+	public static resolveTag1212(subject?: Ffd12PaymentSubject | null): number {
 		switch (subject) {
 			case "commodity":
 				return 1;
@@ -139,7 +140,7 @@ export class FiscalReceiptFactory {
 	 * 6 = Credit Handover (Передача в кредит)
 	 * 7 = Credit Payment (Оплата кредита)
 	 */
-	public static resolveTag1214(method: Ffd12PaymentMethod): number {
+	public static resolveTag1214(method?: Ffd12PaymentMethod | null): number {
 		switch (method) {
 			case "full_prepayment":
 				return 1;
@@ -164,7 +165,7 @@ export class FiscalReceiptFactory {
 	 * Tag 1199: VAT rate:
 	 * 1 = 20%, 2 = 10%, 3 = 20/120, 4 = 10/110, 5 = 0%, 6 = Без НДС (Art. 149 Tax Code RF)
 	 */
-	public static resolveTag1199(vatRate: Ffd12VatRate): number {
+	public static resolveTag1199(vatRate?: Ffd12VatRate | null): number {
 		switch (vatRate) {
 			case "vat_20":
 				return 1;
@@ -185,7 +186,7 @@ export class FiscalReceiptFactory {
 	/**
 	 * Tag 2108: Quantity measure (0 = piece / unit)
 	 */
-	public static resolveTag2108(measure: Ffd12QuantityMeasure): number {
+	public static resolveTag2108(measure?: Ffd12QuantityMeasure | null): number {
 		switch (measure) {
 			case "piece":
 				return 0;
@@ -202,7 +203,7 @@ export class FiscalReceiptFactory {
 	/**
 	 * Tag 1055: Taxation system (1=OSN, 2=USN Income, 4=USN Income-Expense, 8=ESXN, 16=PSN)
 	 */
-	public static resolveTag1055(taxation: Ffd12TaxationSystem): number {
+	public static resolveTag1055(taxation?: Ffd12TaxationSystem | null): number {
 		switch (taxation) {
 			case "osn":
 				return 1;
@@ -238,13 +239,16 @@ export class FiscalReceiptFactory {
 	/**
 	 * Constructs structured FFD 1.2 compliant receipt payload.
 	 */
-	public static buildFfd12Receipt(input: CreateFiscalReceiptPayloadInput): Ffd12ReceiptPayload {
+	public static buildFfd12Receipt(
+		input: CreateFiscalReceiptPayloadOutput | CreateFiscalReceiptPayloadInput,
+	): Ffd12ReceiptPayload {
 		const items: Ffd12ItemPayload[] = input.items.map((item) => {
 			const tag1212 = this.resolveTag1212(item.subject);
 			const tag1214 = this.resolveTag1214(item.method);
 			const tag1199 = this.resolveTag1199(item.vatRate);
 			const tag2108 = this.resolveTag2108(item.measure);
 			const tag1222 = this.resolveTag1222(item.agentSign);
+			const quantity = typeof item.quantity === "number" ? item.quantity : 1;
 
 			let markingPayload: Ffd12ItemPayload["tag2000_markingPayload"] = null;
 			if (item.markingCode && item.markingCode.trim().length > 0) {
@@ -263,11 +267,11 @@ export class FiscalReceiptFactory {
 			return {
 				name: item.name,
 				priceKopecks: item.priceKopecks,
-				quantity: item.quantity,
+				quantity,
 				amountKopecks: item.amountKopecks,
 				tag1030_subjectName: item.name,
 				tag1079_unitPriceRub: kopecksToNumericString(item.priceKopecks),
-				tag1023_quantity: item.quantity,
+				tag1023_quantity: quantity,
 				tag1043_amountRub: kopecksToNumericString(item.amountKopecks),
 				tag1212_paymentSubject: tag1212,
 				tag1214_paymentMethod: tag1214,
@@ -290,13 +294,13 @@ export class FiscalReceiptFactory {
 			tag1054_operationType: this.resolveTag1054(input.operationType),
 			tag1055_taxationSystem: this.resolveTag1055(input.taxationSystem),
 			tag1057_agentSign: this.resolveTag1057(input.agentSign),
-			tag1021_cashierName: input.cashierFullName,
-			tag1203_cashierInn: input.cashierInn ?? null,
-			tag1008_customerContact: input.customerContact,
-			tag1227_customerName: input.customerName ?? null,
-			tag1228_customerInn: input.customerInn ?? null,
-			tag1009_paymentAddress: input.paymentAddress ?? undefined,
-			tag1187_paymentPlace: input.paymentPlace ?? undefined,
+			tag1021_cashierName: typeof input.cashierFullName === "string" ? input.cashierFullName : "Кассир-администратор",
+			tag1203_cashierInn: typeof input.cashierInn === "string" ? input.cashierInn : null,
+			tag1008_customerContact: typeof input.customerContact === "string" ? input.customerContact : "",
+			tag1227_customerName: typeof input.customerName === "string" ? input.customerName : null,
+			tag1228_customerInn: typeof input.customerInn === "string" ? input.customerInn : null,
+			tag1009_paymentAddress: typeof input.paymentAddress === "string" ? input.paymentAddress : undefined,
+			tag1187_paymentPlace: typeof input.paymentPlace === "string" ? input.paymentPlace : undefined,
 			tag1020_totalRub: kopecksToNumericString(input.totalKopecks),
 			totalKopecks: input.totalKopecks,
 			payments: {

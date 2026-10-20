@@ -1,8 +1,17 @@
-import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
 import { Archive, Folder } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+let dicomImageLoaderPromise: Promise<any> | null = null;
+export async function getDicomImageLoader() {
+	if (!dicomImageLoaderPromise) {
+		dicomImageLoaderPromise = import("@cornerstonejs/dicom-image-loader").then(
+			(mod) => mod.default ?? mod,
+		);
+	}
+	return dicomImageLoaderPromise;
+}
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -99,7 +108,11 @@ export function DicomArchiveUploader({
 				batchTimerRef.current = null;
 			}
 			try {
-				cornerstoneDICOMImageLoader.wadouri.fileManager.purge();
+				if (dicomImageLoaderPromise) {
+					void dicomImageLoaderPromise.then((loader) => {
+						loader?.wadouri?.fileManager?.purge?.();
+					});
+				}
 			} catch {
 				// Ignore
 			}
@@ -118,7 +131,7 @@ export function DicomArchiveUploader({
 			}
 			return new Promise((resolve) => {
 				const reader = new FileReader();
-				reader.onload = () => {
+				reader.onload = async () => {
 					try {
 						const arrayBuffer = reader.result as ArrayBuffer;
 						const byteArray = new Uint8Array(arrayBuffer);
@@ -128,8 +141,8 @@ export function DicomArchiveUploader({
 							return;
 						}
 
-						const imageId =
-							cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+						const loader = await getDicomImageLoader();
+						const imageId = loader.wadouri.fileManager.add(file);
 						resolve({ imageId, file });
 					} catch (e) {
 						showToast(
@@ -183,7 +196,7 @@ export function DicomArchiveUploader({
 
 					let currentIndex = 0;
 
-					const processNextBatch = () => {
+					const processNextBatch = async () => {
 						if (!isMountedRef.current) {
 							batchTimerRef.current = null;
 							for (const k of Object.keys(unzipped)) {
@@ -197,6 +210,8 @@ export function DicomArchiveUploader({
 							currentIndex + BATCH_PROCESSING_CHUNK_SIZE,
 							totalFiles,
 						);
+
+						const loader = await getDicomImageLoader();
 
 						for (let i = currentIndex; i < batchEnd; i++) {
 							const filename = entries[i];
@@ -213,8 +228,7 @@ export function DicomArchiveUploader({
 
 							if (isDicomEntry(filename, fileData)) {
 								const file = new File([fileData], filename);
-								const imageId =
-									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+								const imageId = loader.wadouri.fileManager.add(file);
 								results.push({ imageId, file });
 							}
 							// Zero-leak GC: immediately free this slice's uncompressed Uint8Array buffer

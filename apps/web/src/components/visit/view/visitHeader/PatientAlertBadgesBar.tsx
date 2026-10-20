@@ -22,14 +22,18 @@ export function buildConsolidatedAllergyChip(activePatient: any, activePatientCr
 	const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
 	const parts: string[] = [];
 	if (allergyStr.trim()) {
-		parts.push(allergyStr.trim());
+		const cleaned = allergyStr.trim().replace(/\s*\([^)]*\)/g, "").trim();
+		if (cleaned) parts.push(cleaned);
 	}
 	for (const b of activePatientCriticalBadges) {
 		if (b.id !== "allergy") {
 			const short = b.shortLabel ? b.shortLabel.replace(/[\u26a0\ufe0f!]/gu, "").trim() : "";
 			if (short && !parts.some((p) => p.toLowerCase().includes(short.toLowerCase()))) {
-				const capitalized = short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
-				parts.push(capitalized);
+				const isAcronym = /^(АГ|ССЗ|ЭКС|СД|НПВП)/i.test(short);
+				const formatted = isAcronym
+					? short.toUpperCase()
+					: short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
+				parts.push(formatted);
 			}
 		}
 	}
@@ -131,7 +135,9 @@ export function PatientAlertBadgesBar({
 					<span className="font-extrabold">
 						{labStatus.isOverdue
 							? `ЗТЛ: +${labStatus.daysOverdue} дн!`
-							: labStatus.labelRu}
+							: labStatus.state === "ready_in_clinic"
+								? (labStatus.readinessText || `Работа из ЗТЛ доставлена: ${labStatus.workTypeRu || "Конструкция"}${labStatus.toothFdi ? ` зуб ${labStatus.toothFdi}` : ""}`)
+								: labStatus.labelRu}
 					</span>
 					{labStatus.colorVita && (
 						<span

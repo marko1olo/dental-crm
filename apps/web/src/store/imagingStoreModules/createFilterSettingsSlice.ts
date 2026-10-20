@@ -26,6 +26,10 @@ export const createFilterSettingsSlice: StateCreator<
 		set((state) => ({
 			imagingKindFilter: resolveUpdater(val, state.imagingKindFilter),
 		})),
+	setImagingToothFilter: (val) =>
+		set((state) => ({
+			imagingToothFilter: resolveUpdater(val, state.imagingToothFilter),
+		})),
 	setImagingCreateSavingKind: (val) =>
 		set((state) => ({
 			imagingCreateSavingKind: resolveUpdater(

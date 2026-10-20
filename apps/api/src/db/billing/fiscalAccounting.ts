@@ -35,8 +35,13 @@ export async function recordCashAndFiscalAccounting(
 		resolvedDepositKop,
 	} = params;
 
-	// Поиск открытой смены кассы и целевого счета кассы (Мандаты 8e, 8n)
-	const [activeShift] = await tx
+	// 1. Поиск кассовых счетов клиники и открытых смен (Мандаты 8e, 8n)
+	const allBoxes = await tx
+		.select()
+		.from(schema.cashBoxes)
+		.where(eq(schema.cashBoxes.organizationId, organizationId));
+
+	const openShifts = await tx
 		.select()
 		.from(schema.cashBoxShifts)
 		.where(
@@ -44,31 +49,27 @@ export async function recordCashAndFiscalAccounting(
 				eq(schema.cashBoxShifts.organizationId, organizationId),
 				eq(schema.cashBoxShifts.status, "open"),
 			),
-		)
-		.limit(1);
+		);
 
-	let targetCashBox = (
-		await tx
-			.select()
-			.from(schema.cashBoxes)
-			.where(
-				and(
-					eq(schema.cashBoxes.organizationId, organizationId),
-					eq(schema.cashBoxes.isMain, true),
-				),
-			)
-			.limit(1)
-	)[0];
+	const getTargetBoxAndShift = (preferredType: string, specificBoxId?: string | null) => {
+		let box = specificBoxId ? allBoxes.find((b) => b.id === specificBoxId) : undefined;
+		if (!box) {
+			box = allBoxes.find((b) => b.type === preferredType);
+		}
+		if (!box && (preferredType === "sbp" || preferredType === "online" || preferredType === "dms")) {
+			box = allBoxes.find((b) => b.type === "cashless");
+		}
+		if (!box) {
+			box = allBoxes.find((b) => b.isMain) || allBoxes[0];
+		}
+		const shift = box
+			? openShifts.find((s) => s.cashBoxId === box!.id) || openShifts[0] || null
+			: openShifts[0] || null;
+		return { box, shift };
+	};
 
-	if (!targetCashBox) {
-		targetCashBox = (
-			await tx
-				.select()
-				.from(schema.cashBoxes)
-				.where(eq(schema.cashBoxes.organizationId, organizationId))
-				.limit(1)
-		)[0];
-	}
+	const defaultBoxType = input.cashBoxType || (input.method === "cash" ? "main" : "cashless");
+	const { box: targetCashBox, shift: activeShift } = getTargetBoxAndShift(defaultBoxType, input.cashBoxId);
 
 	// Генерация подлинного последовательного номера ФД и ФПД (54-ФЗ)
 	let effectiveFdNumber = input.fiscalReceiptNumber;
@@ -123,36 +124,70 @@ export async function recordCashAndFiscalAccounting(
 	}
 
 	// Фиксация кассовой проводки в cashOperations и обновление баланса кассы
-	if (targetCashBox && incomingPaymentKopecks > 0 && !isWarrantyOrFullDiscount) {
-		const currentBalance = Number(targetCashBox.balanceRub || 0);
-		const newBalance = currentBalance + input.amountRub;
+	const recordBoxIncome = async (
+		box: typeof schema.cashBoxes.$inferSelect | undefined,
+		shift: typeof schema.cashBoxShifts.$inferSelect | null,
+		amtRub: number,
+		tenderLabel: string,
+	) => {
+		if (!box || amtRub <= 0 || isWarrantyOrFullDiscount) return;
+		const currentBalance = Number(box.balanceRub || 0);
+		const newBalance = Number((currentBalance + amtRub).toFixed(2));
 
 		await tx.insert(schema.cashOperations).values({
 			organizationId,
-			cashBoxId: targetCashBox.id,
-			shiftId: activeShift ? activeShift.id : null,
+			cashBoxId: box.id,
+			shiftId: shift ? shift.id : null,
 			operationType: "income",
-			amountRub: input.amountRub,
+			amountRub: amtRub,
 			balanceBeforeRub: currentBalance,
 			balanceAfterRub: newBalance,
 			patientId: input.patientId,
 			invoiceId: input.documentId ? input.documentId : null,
 			kkmDocNumber: effectiveFdNumber || null,
-			reasonText: `Оплата медицинских стоматологических услуг (${effectiveFdNumber || "Без чека"})`,
+			reasonText: `Оплата медицинских стоматологических услуг [${tenderLabel}] (${effectiveFdNumber || "Без чека"})`,
 			operatorName: input.payerFullName || "Кассир",
 		});
 
 		await tx
 			.update(schema.cashBoxes)
 			.set({ balanceRub: newBalance, updatedAt: new Date() })
-			.where(eq(schema.cashBoxes.id, targetCashBox.id));
+			.where(eq(schema.cashBoxes.id, box.id));
 
-		if (activeShift) {
-			const currentShiftIncome = Number(activeShift.incomeTotalRub || 0);
+		if (shift) {
+			const currentShiftIncome = Number(shift.incomeTotalRub || 0);
 			await tx
 				.update(schema.cashBoxShifts)
-				.set({ incomeTotalRub: currentShiftIncome + input.amountRub })
-				.where(eq(schema.cashBoxShifts.id, activeShift.id));
+				.set({ incomeTotalRub: Number((currentShiftIncome + amtRub).toFixed(2)) })
+				.where(eq(schema.cashBoxShifts.id, shift.id));
+		}
+	};
+
+	if (incomingPaymentKopecks > 0 && !isWarrantyOrFullDiscount) {
+		if (isSplit) {
+			// Раздельные кассовые проводки по видам оплат в целевые кассы
+			if (resolvedCashKop > 0) {
+				const { box, shift } = getTargetBoxAndShift("main");
+				await recordBoxIncome(box, shift, Number((resolvedCashKop / 100).toFixed(2)), "Наличные");
+			}
+			if (resolvedElectronicKop > 0) {
+				const { box, shift } = getTargetBoxAndShift("cashless");
+				await recordBoxIncome(box, shift, Number((resolvedElectronicKop / 100).toFixed(2)), "Безналичный расчет");
+			}
+			if (resolvedDmsKop > 0) {
+				const { box, shift } = getTargetBoxAndShift("dms");
+				await recordBoxIncome(box, shift, Number((resolvedDmsKop / 100).toFixed(2)), "ДМС");
+			}
+		} else if (input.method !== "family_wallet") {
+			const tenderLabel =
+				input.method === "cash"
+					? "Наличные"
+					: input.cashBoxType === "sbp" || input.method === "online"
+						? "СБП QR / Онлайн"
+						: input.method === "insurance"
+							? "ДМС"
+							: "Безналичный расчет";
+			await recordBoxIncome(targetCashBox, activeShift, input.amountRub, tenderLabel);
 		}
 	}
 

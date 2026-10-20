@@ -589,7 +589,7 @@ export class VisitWorkOrderService {
 			if (!visit) {
 				throw new VisitWorkOrderError("VISIT_NOT_FOUND", "Приём не найден.", 404);
 			}
-			if (visit.status === "voided" || visit.status === "cancelled") {
+			if ((visit.status as string) === "voided" || (visit.status as string) === "cancelled") {
 				throw new VisitWorkOrderError(
 					"VISIT_CLOSED",
 					"Нельзя списать материалы и завершить аннулированный приём.",

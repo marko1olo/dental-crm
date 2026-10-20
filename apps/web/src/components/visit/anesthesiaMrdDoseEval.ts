@@ -11,13 +11,17 @@ export interface DoseEvalParams {
 	weight: number;
 	age: number | null;
 	isPediatric: boolean;
-	pediatricFormula?: "clark" | "young" | "direct_mg_kg";
+	pediatricFormula?: "clark" | "young" | "direct_mg_kg" | undefined;
 	isCardiacRisk: boolean;
 	injectedActiveMg: number;
 	injectedEpiMg: number;
 }
 
-export function evaluateSafeDose(p: DoseEvalParams) {
+export function evaluateSafeDose(p: DoseEvalParams): {
+	maxSafeActiveMg: number;
+	limitingFactor: LimitingFactor;
+	limitingDesc: string;
+} {
 	let maxSafeActiveMg = 0;
 	let limitingFactor: LimitingFactor = "patient_weight";
 	let limitingDesc = `Лимит по массе тела (${p.weight} кг × ${p.drug.maxDoseMgPerKgAdult} мг/кг).`;

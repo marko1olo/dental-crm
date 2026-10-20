@@ -19,6 +19,10 @@ import { useVisitDiaryDraftAutosave } from "./visit/diaryLogic/useVisitDiaryDraf
 import { useVisitDiaryStatusHandlers } from "./visit/diaryLogic/useVisitDiaryStatusHandlers";
 import { useVisitDiaryToothLinking } from "./visit/diaryLogic/useVisitDiaryToothLinking";
 import { showToast } from "./GlobalToast";
+import {
+	getGlobalClinicalStenographer,
+	type ClinicalSnippet,
+} from "@dental/shared";
 
 const NOOP = () => {};
 
@@ -335,6 +339,38 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		);
 	}, [isLocked, isRevising, beginRevise, setIsRevising, scheduleDebouncedSave, setDiary]);
 
+	/**
+	 * Вставка или автозамена клинической стенограммы Формы 043/у.
+	 * Zero-latency O(1) префиксный поиск и подстановка в дневник.
+	 */
+	const applyStenographerSnippet = useCallback(
+		(field: keyof DiaryState, snippetKeyOrSnippet: string | ClinicalSnippet) => {
+			if (isLocked && !isRevising) {
+				setIsRevising(true);
+				beginRevise();
+			}
+			const engine = getGlobalClinicalStenographer();
+			const snippet =
+				typeof snippetKeyOrSnippet === "string"
+					? engine.get(snippetKeyOrSnippet)
+					: snippetKeyOrSnippet;
+
+			if (!snippet) return;
+
+			setDiary((prev) => {
+				const current = String(prev[field] ?? "").trim();
+				const nextText = current ? `${current}\n${snippet.text}` : snippet.text;
+				return {
+					...prev,
+					[field]: nextText,
+				};
+			});
+			scheduleDebouncedSave();
+			showToast(`Стенограмма применена: «${snippet.label}»`, "success", 2000);
+		},
+		[isLocked, isRevising, beginRevise, setIsRevising, scheduleDebouncedSave, setDiary],
+	);
+
 	return {
 		diary,
 		setDiary,
@@ -398,6 +434,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		applyAnesthesiaPreset,
 		applyClinicalPreset,
 		apply1ClickAutopilot,
+		applyStenographerSnippet,
 		applySomaticNorm,
 	};
 }

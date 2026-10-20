@@ -32,6 +32,12 @@ const VoiceChairsideHudBar = lazyWithRetry(() =>
 	})),
 );
 
+const DoctorCommandHud = lazyWithRetry(() =>
+	import("../chairside/DoctorCommandHud").then((module) => ({
+		default: module.DoctorCommandHud,
+	})),
+);
+
 export function AppToastPortal(props: AppToastPortalProps) {
 	const { setCurrentView, setQuery, setScheduleDateFilter } = props;
 
@@ -68,6 +74,16 @@ export function AppToastPortal(props: AppToastPortalProps) {
 			</Suspense>
 			<Suspense fallback={null}>
 				<VoiceChairsideHudBar />
+			</Suspense>
+			<Suspense fallback={null}>
+				<DoctorCommandHud
+					onNavigate={(view) => {
+						setCurrentView(view);
+						if (typeof window !== "undefined") {
+							window.location.hash = view;
+						}
+					}}
+				/>
 			</Suspense>
 		</>
 	);

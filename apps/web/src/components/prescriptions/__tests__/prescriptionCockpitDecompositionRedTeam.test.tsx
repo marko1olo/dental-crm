@@ -22,22 +22,21 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "node:test";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import {
-	PrescriptionCockpitModal,
-	PrescriptionExpressPills,
-	PrescriptionAllergyBanner,
-	PrescriptionPrintSheet,
-	PrescriptionPrintModal,
 	DENTAL_FAST_PRESCRIPTION_SETS,
 	detectPrescriptionAllergyConflicts,
 	detectPrescriptionSomaticWarnings,
+	PrescriptionAllergyBanner,
+	PrescriptionCockpitModal,
+	PrescriptionExpressPills,
+	PrescriptionPrintSheet,
 } from "../index";
 
 describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)", () => {
@@ -45,7 +44,10 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 
 	it("1.1 PrescriptionCockpitModal.tsx is strictly <= 120 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionCockpitModal.tsx");
-		assert.ok(fs.existsSync(filePath), "PrescriptionCockpitModal.tsx must exist");
+		assert.ok(
+			fs.existsSync(filePath),
+			"PrescriptionCockpitModal.tsx must exist",
+		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
 			lines <= 120,
@@ -55,7 +57,10 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 
 	it("1.2 PrescriptionExpressPills.tsx is strictly <= 120 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionExpressPills.tsx");
-		assert.ok(fs.existsSync(filePath), "PrescriptionExpressPills.tsx must exist");
+		assert.ok(
+			fs.existsSync(filePath),
+			"PrescriptionExpressPills.tsx must exist",
+		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
 			lines <= 120,
@@ -65,7 +70,10 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 
 	it("1.3 PrescriptionAllergyBanner.tsx is strictly <= 120 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionAllergyBanner.tsx");
-		assert.ok(fs.existsSync(filePath), "PrescriptionAllergyBanner.tsx must exist");
+		assert.ok(
+			fs.existsSync(filePath),
+			"PrescriptionAllergyBanner.tsx must exist",
+		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
 			lines <= 120,
@@ -106,7 +114,9 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 
 		// 2. «После установки имплантата»
 		assert.ok(
-			setLabels.some((l) => l.includes("имплантации") || l.includes("имплантата")),
+			setLabels.some(
+				(l) => l.includes("имплантации") || l.includes("имплантата"),
+			),
 			"Must contain implant surgery scenario",
 		);
 
@@ -130,19 +140,22 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 	});
 
 	it("2.2 Soft allergy check warns on Penicillin and NSAID allergies without locking buttons", () => {
-		const allergyConflicts = detectPrescriptionAllergyConflicts(["Пенициллин", "Амоксициллин"], [
-			{
-				id: "amoxiclav_875_125",
-				tradeName: "Амоксиклав",
-				latinName: "Rp.: Tab. Amoxicillini 875 mg",
-				dispenseLatin: "D.t.d. N 14",
-				signaRussian: "По 1 таб 2 раза в день",
-				category: "antibiotic",
-				dosage: "875 мг",
-				form: "таблетки",
-				quantity: "N 14",
-			},
-		]);
+		const allergyConflicts = detectPrescriptionAllergyConflicts(
+			["Пенициллин", "Амоксициллин"],
+			[
+				{
+					id: "amoxiclav_875_125",
+					tradeName: "Амоксиклав",
+					latinName: "Rp.: Tab. Amoxicillini 875 mg",
+					dispenseLatin: "D.t.d. N 14",
+					signaRussian: "По 1 таб 2 раза в день",
+					category: "antibiotic",
+					dosage: "875 мг",
+					form: "таблетки",
+					quantity: "N 14",
+				},
+			],
+		);
 
 		assert.ok(allergyConflicts.length > 0, "Must detect penicillin conflict");
 		assert.strictEqual(allergyConflicts[0]?.type, "penicillin");
@@ -154,27 +167,39 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 			}),
 		);
 
-		assert.ok(html.includes("Автономия врача (Печать доступна)"), "Must preserve doctor autonomy");
+		assert.ok(
+			html.includes("Автономия врача (Печать доступна)"),
+			"Must preserve doctor autonomy",
+		);
 		assert.ok(!html.includes("disabled"), "Must never disable actions");
 	});
 
 	it("2.3 Soft somatic check suggests gastroprotection for ulcer/gastritis", () => {
-		const somaticWarnings = detectPrescriptionSomaticWarnings("Язвенная болезнь желудка в анамнезе", [
-			{
-				id: "nimesulide_100",
-				tradeName: "Нимесил",
-				latinName: "Rp.: Nimesulidi 100 mg",
-				dispenseLatin: "D.t.d. N 10",
-				signaRussian: "По 1 пакетику 2 раза в день",
-				category: "nsaid",
-				dosage: "100 мг",
-				form: "гранулы",
-				quantity: "N 10",
-			},
-		]);
+		const somaticWarnings = detectPrescriptionSomaticWarnings(
+			"Язвенная болезнь желудка в анамнезе",
+			[
+				{
+					id: "nimesulide_100",
+					tradeName: "Нимесил",
+					latinName: "Rp.: Nimesulidi 100 mg",
+					dispenseLatin: "D.t.d. N 10",
+					signaRussian: "По 1 пакетику 2 раза в день",
+					category: "nsaid",
+					dosage: "100 мг",
+					form: "гранулы",
+					quantity: "N 10",
+				},
+			],
+		);
 
-		assert.ok(somaticWarnings.length > 0, "Must warn on NSAID with ulcer/gastritis");
-		assert.ok(somaticWarnings[0]?.messageRu.includes("язвенная болезнь") || somaticWarnings[0]?.messageRu.includes("гастрит"));
+		assert.ok(
+			somaticWarnings.length > 0,
+			"Must warn on NSAID with ulcer/gastritis",
+		);
+		assert.ok(
+			somaticWarnings[0]?.messageRu.includes("язвенная болезнь") ||
+				somaticWarnings[0]?.messageRu.includes("гастрит"),
+		);
 
 		const html = renderToString(
 			React.createElement(PrescriptionAllergyBanner, {
@@ -184,7 +209,10 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 			}),
 		);
 
-		assert.ok(html.includes("Омепразол 20 мг"), "Must provide 1-click gastroprotection option");
+		assert.ok(
+			html.includes("Омепразол 20 мг"),
+			"Must provide 1-click gastroprotection option",
+		);
 	});
 });
 
@@ -200,12 +228,24 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 		);
 
 		// Rounded top corners for Bottom Sheet
-		assert.ok(html.includes("rounded-t-[24px]"), "Must use rounded-t-[24px] for Apple Bottom Sheet");
+		assert.ok(
+			html.includes("rounded-t-[24px]"),
+			"Must use rounded-t-[24px] for Apple Bottom Sheet",
+		);
 		// Tactile Drag Handle for swipe gesture
-		assert.ok(html.includes("w-10 h-1 rounded-full"), "Must render tactile drag handle for mobile sheet");
+		assert.ok(
+			html.includes("w-10 h-1 rounded-full"),
+			"Must render tactile drag handle for mobile sheet",
+		);
 		// Copy for patient button in Natural Thumb Zone
-		assert.ok(html.includes("med-rx-copy-patient-btn"), "Must have patient copy button in footer");
-		assert.ok(html.includes("min-h-[44px]"), "Must have touch target min-height >= 44px");
+		assert.ok(
+			html.includes("med-rx-copy-patient-btn"),
+			"Must have patient copy button in footer",
+		);
+		assert.ok(
+			html.includes("min-h-[44px]"),
+			"Must have touch target min-height >= 44px",
+		);
 	});
 
 	it("3.2 PrescriptionExpressPills enforces minimum 48px touch target for gloved fingers", () => {
@@ -216,7 +256,10 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 			}),
 		);
 
-		assert.ok(html.includes("min-h-[48px]"), "Express preset buttons must have min-height >= 48px");
+		assert.ok(
+			html.includes("min-h-[48px]"),
+			"Express preset buttons must have min-height >= 48px",
+		);
 	});
 
 	it("3.3 PrescriptionPrintSheet renders high-grade responsive print sheet", () => {
@@ -242,9 +285,18 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 			}),
 		);
 
-		assert.ok(html.includes("bg-[var(--paper-strong)]"), "Must use design token bg-[var(--paper-strong)]");
-		assert.ok(html.includes("text-[var(--ink)]"), "Must use design token text-[var(--ink)]");
+		assert.ok(
+			html.includes("bg-[var(--paper-strong)]"),
+			"Must use design token bg-[var(--paper-strong)]",
+		);
+		assert.ok(
+			html.includes("text-[var(--ink)]"),
+			"Must use design token text-[var(--ink)]",
+		);
 		assert.ok(html.includes("Амоксиклав"), "Must render trade name");
-		assert.ok(html.includes("Печать клиники и подпись врача"), "Must render official stamp confirmation");
+		assert.ok(
+			html.includes("Печать клиники и подпись врача"),
+			"Must render official stamp confirmation",
+		);
 	});
 });

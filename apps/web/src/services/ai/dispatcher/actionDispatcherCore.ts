@@ -35,23 +35,35 @@ export function isDestructiveAction(
 		normalized.includes("cancel") ||
 		normalized.includes("delete") ||
 		normalized.includes("refund") ||
-		normalized.includes("remove")
+		normalized.includes("remove") ||
+		normalized.includes("fiscal") ||
+		normalized === "checkout" ||
+		normalized === "create_receipt"
 	) {
 		return true;
 	}
 
-	// Tooth status check: extraction / removal is clinically destructive
+	// Direct implant tool or implant surgery
+	if (normalized.includes("implant") && !normalized.includes("search") && !normalized.includes("get")) {
+		return true;
+	}
+
+	// Tooth status check: extraction / removal / implant is clinically destructive (Mandate 8e)
 	if (
 		normalized.includes("tooth") ||
+		normalized.includes("teeth") ||
 		normalized.includes("odontogram")
 	) {
-		const status = String(args.status || "").toLowerCase();
+		const status = String(args.status || args.state || "").toLowerCase();
 		if (
 			status.includes("удал") ||
 			status.includes("extract") ||
 			status.includes("отсутств") ||
+			status.includes("имплант") ||
+			status.includes("implant") ||
 			status === "x" ||
-			status === "a"
+			status === "a" ||
+			status === "i"
 		) {
 			return true;
 		}
@@ -64,25 +76,42 @@ export function isDestructiveAction(
  * Human-readable Russian title for action notifications
  */
 export function getActionTitleRu(toolName: string): string {
-	const n = toolName.toLowerCase().replace(/^(crm|clinical|agenda|billing|dente_agent)\./, "");
+	const n = toolName
+		.replace(/^(crm|clinical|agenda|billing|dente_agent)\./, "")
+		.replace(/([A-Z])/g, "_$1")
+		.toLowerCase()
+		.replace(/^_/, "");
+
 	switch (n) {
 		case "update_tooth_status":
 		case "update_teeth_chart":
+		case "get_teeth_chart":
+		case "get_tooth_history":
 			return "Изменение статуса зуба в одонтограмме";
 		case "draft_043u_soap_diary":
+		case "draft043u_soap_diary":
+		case "draft_043_u_soap_diary":
 		case "save_protocol_043":
+		case "draft_lab_work_order":
 			return "Заполнение дневника приёма";
 		case "apply_clinical_protocol":
 		case "search_clinical_protocols":
 		case "select_clinical_protocol":
 		case "use_clinical_protocol":
+		case "suggest_clinical_protocol":
 			return "Применение клинического протокола из каталога (1 142)";
 		case "calculate_804n_estimate":
+		case "calculate804n_estimate":
+		case "calculate_804_n_estimate":
 		case "create_treatment_plan":
 		case "suggest_treatment_plan":
+		case "calculate_plan_cost":
+		case "calculate_treatment_estimate":
+		case "add_treatment_stage":
 			return "Формирование клинической сметы";
 		case "book_appointment":
 		case "book_chairside_appointment":
+		case "create_appointment":
 			return "Запись пациента на приём";
 		case "reschedule_appointment":
 			return "Перенос приёма";
@@ -90,6 +119,7 @@ export function getActionTitleRu(toolName: string): string {
 			return "Отмена приёма";
 		case "create_dental_lab_order":
 		case "create_lab_order":
+		case "get_lab_order_status":
 			return "Наряд в зуботехническую лабораторию";
 		case "search_patients":
 		case "select_patient":
@@ -107,7 +137,13 @@ export function getActionTitleRu(toolName: string): string {
 		case "check_warehouse_supplies":
 		case "check_stock_availability":
 		case "log_material_usage":
+		case "deduct_materials":
 			return "Расходные материалы (автосписание)";
+		case "analyze_radiograph_vision":
+			return "Анализ дентального снимка";
+		case "verify_kraft_pack":
+		case "record_sterilization_test":
+			return "Контроль стерилизации СанПиН";
 		default:
 			return "Клиническое действие";
 	}

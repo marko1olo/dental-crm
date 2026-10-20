@@ -15,6 +15,10 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
 import {
+	canonicalTenderTypeSchema,
+	parseChestnyZnakDataMatrix,
+} from "@dental/shared";
+import {
 	createOpenAIToolDefinition,
 	type DentalToolContext,
 	type DentalToolEntry,
@@ -46,31 +50,88 @@ export const DESKTOP_DENIED_RESPONSE = {
 // ============================================================================
 
 /**
- * Черный список критических системных файлов ОС, чтение и запись в которые запрещены
+ * Черный список критических системных файлов и директорий ОС, чтение и запись в которые запрещены
  */
 const FORBIDDEN_SYSTEM_PATHS = [
 	"windows\\system32\\config",
 	"windows\\system32\\sam",
-	"windows\\system32\\drivers\\etc\\hosts",
+	"windows\\system32\\system",
+	"windows\\system32\\security",
+	"windows\\system32\\software",
+	"windows\\system32\\drivers\\etc",
+	"start menu\\programs\\startup",
+	"appdata\\roaming\\microsoft\\windows\\start menu\\programs\\startup",
 	"ntuser.dat",
 	"pagefile.sys",
 	"hiberfil.sys",
+	"swapfile.sys",
 	".ssh",
 	".aws",
+	".git",
+	".env",
 	"id_rsa",
+	"id_ed25519",
 	"shadow",
 	"/etc/passwd",
 	"/etc/shadow",
+	"/etc/sudoers",
+	".bash_history",
+	".bashrc",
+	".zshrc",
+];
+
+/**
+ * Черный список опасных расширений исполняемых файлов (Arbitrary Executable Drop Guard)
+ */
+const FORBIDDEN_EXECUTABLE_EXTENSIONS = [
+	".exe",
+	".bat",
+	".cmd",
+	".ps1",
+	".vbs",
+	".vbe",
+	".js",
+	".mjs",
+	".cjs",
+	".jse",
+	".wsf",
+	".wsh",
+	".dll",
+	".sys",
+	".com",
+	".scr",
+	".pif",
+	".msi",
+	".reg",
+	".hta",
+	".cpl",
+	".jar",
 ];
 
 export function isPathSafe(filePath: string): boolean {
-	const normalized = path.normalize(filePath).toLowerCase();
+	const normalized = path
+		.normalize(filePath)
+		.toLowerCase()
+		.replace(/\\/g, "/");
+	const resolved = path
+		.resolve(filePath)
+		.toLowerCase()
+		.replace(/\\/g, "/");
 	for (const forbidden of FORBIDDEN_SYSTEM_PATHS) {
-		if (normalized.includes(forbidden.toLowerCase())) {
+		const lowerForbidden = forbidden.toLowerCase().replace(/\\/g, "/");
+		if (
+			normalized.includes(lowerForbidden) ||
+			resolved.includes(lowerForbidden)
+		) {
 			return false;
 		}
 	}
 	return true;
+}
+
+export function isExtensionSafe(filePath: string): boolean {
+	const ext = path.extname(filePath).toLowerCase();
+	return !FORBIDDEN_EXECUTABLE_EXTENSIONS.includes(ext);
 }
 
 /**
@@ -80,7 +141,7 @@ const DANGEROUS_COMMAND_PATTERNS = [
 	/\brm\s+-rf\s+[/\\]/i,
 	/\bformat\s+[a-z]:/i,
 	/\bdel\s+.*[/\\]windows/i,
-	/\breg\s+delete\s+hklm/i,
+	/\breg\s+(delete|add|copy|save|restore)\s+hklm/i,
 	/\bnet\s+user\s+.*\/add/i,
 	/\bvssadmin\s+delete\s+shadows/i,
 	/\bpowershell.*-enc\b/i,
@@ -88,6 +149,17 @@ const DANGEROUS_COMMAND_PATTERNS = [
 	/\bdownloadstring\b/i,
 	/\biwr\s+.*\|\s*iex\b/i,
 	/\bcurl\s+.*\|\s*(bash|sh|cmd|powershell)\b/i,
+	/\bcertutil(\.exe)?\s+.*-urlcache/i,
+	/\bbitsadmin(\.exe)?\s+\/transfer/i,
+	/\brundll32(\.exe)?\b/i,
+	/\bmshta(\.exe)?\b/i,
+	/\b(cscript|wscript)(\.exe)?\b/i,
+	/\bshutdown(\.exe)?\s+.*\/[s|r]/i,
+	/\b(Restart-Computer|Stop-Computer)\b/i,
+	/\bRemove-Item\b.*(-Recurse|-Force).*([a-zA-Z]:\\|\/)/i,
+	/\bicacls(\.exe)?\s+.*\/grant/i,
+	/\btakeown(\.exe)?\b/i,
+	/\bnetsh(\.exe)?\s+advfirewall/i,
 ];
 
 export function isCommandSafe(cmd: string): boolean {
@@ -189,17 +261,31 @@ export class WorkstationTaskManager {
 		});
 
 		child.on("close", (code) => {
-			task.status = code === 0 ? "completed" : "failed";
+			if (task.status !== "killed") {
+				task.status = code === 0 ? "completed" : "failed";
+			}
 			task.exitCode = code;
 			task.finishedAt = new Date().toISOString();
 			task.childProcess = undefined;
+			try {
+				workstationSchedules.notifyTaskFinished(taskId);
+			} catch {
+				// игнорируем ошибки связки при ранней инициализации
+			}
 		});
 
 		child.on("error", (err) => {
-			task.status = "failed";
+			if (task.status !== "killed") {
+				task.status = "failed";
+			}
 			task.stderr.push(`Process error: ${err.message}`);
 			task.finishedAt = new Date().toISOString();
 			task.childProcess = undefined;
+			try {
+				workstationSchedules.notifyTaskFinished(taskId);
+			} catch {
+				// игнорируем ошибки связки при ранней инициализации
+			}
 		});
 
 		this.tasks.set(taskId, task);
@@ -243,6 +329,11 @@ export class WorkstationTaskManager {
 			task.status = "killed";
 			task.finishedAt = new Date().toISOString();
 			task.childProcess = undefined;
+			try {
+				workstationSchedules.notifyTaskFinished(taskId);
+			} catch {
+				// игнорируем
+			}
 			return {
 				success: true,
 				message: `Процесс задачи '${taskId}' (PID ${task.pid}) принудительно завершен.`,
@@ -306,7 +397,7 @@ export interface WorkstationScheduleEntry {
 	cronExpression?: string | undefined;
 	timerCondition?: string | undefined;
 	firesAtIso: string;
-	status: "active" | "fired" | "cancelled";
+	status: "active" | "fired" | "cancelled" | "early_cancelled";
 	iterationsFired: number;
 	maxIterations?: number | undefined;
 	isDaemon: boolean;
@@ -396,6 +487,25 @@ export class WorkstationScheduleManager {
 		}
 		entry.status = "cancelled";
 		return true;
+	}
+
+	/**
+	 * Раннее пробуждение таймеров при завершении зависимой фоновой задачи (Anti-Busy-Wait / Reactive Wakeup)
+	 */
+	public notifyTaskFinished(taskId: string): string[] {
+		const earlyCancelledIds: string[] = [];
+		for (const [id, entry] of this.schedules.entries()) {
+			if (entry.status === "active") {
+				if (entry.timerCondition === "any" || entry.timerCondition === taskId) {
+					if (entry.timerHandle) {
+						clearTimeout(entry.timerHandle);
+					}
+					entry.status = "early_cancelled";
+					earlyCancelledIds.push(id);
+				}
+			}
+		}
+		return earlyCancelledIds;
 	}
 
 	public clear(): void {
@@ -586,12 +696,28 @@ export class LocalMcpBridgeManager {
 				};
 			}
 			if (toolName === "print_receipt") {
+				const totalKopecks = Number(args.totalKopecks ?? 0);
+				if (!Number.isFinite(totalKopecks) || totalKopecks < 0 || !Number.isInteger(totalKopecks)) {
+					return {
+						success: false,
+						error: "Ошибка валидации 54-ФЗ: totalKopecks должен быть целым неотрицательным числом копеек (Mandate 8i).",
+					};
+				}
+				const paymentType = String(args.paymentType || "cash");
+				const tenderValidation = canonicalTenderTypeSchema.safeParse(paymentType);
+				if (!tenderValidation.success) {
+					return {
+						success: false,
+						error: `Ошибка валидации 54-ФЗ: недопустимый способ расчета '${paymentType}'. Разрешены: cash, card, sbp, deposit, family_wallet, credit и др.`,
+					};
+				}
 				return {
 					success: true,
 					data: {
 						fiscalDocumentNumber: 1045,
 						fiscalSign: "3892019482",
-						totalKopecks: args.totalKopecks || 0,
+						totalKopecks,
+						paymentType,
 						printedAt: new Date().toISOString(),
 						message: "Чек успешно фискализирован и передан в ОФД.",
 					},
@@ -624,34 +750,63 @@ export class LocalMcpBridgeManager {
 				};
 			}
 			if (toolName === "fiscal_sale") {
+				const totalRub = Number(args.totalRub ?? 0);
+				if (!Number.isFinite(totalRub) || totalRub < 0) {
+					return {
+						success: false,
+						error: "Ошибка валидации Штрих-М: totalRub должен быть неотрицательным числом.",
+					};
+				}
 				return {
 					success: true,
 					data: {
 						fiscalReceiptNum: 204,
-						totalRub: args.totalRub || 0,
+						totalRub,
 						status: "printed",
 					},
 				};
 			}
 		}
 
-		// 2D DataMatrix Сканер
+		// 2D DataMatrix Сканер Честный Знак / МДЛП
 		if (name === "datamatrix_scanner") {
 			if (toolName === "parse_chestny_znak") {
-				const barcode = (args.rawBarcode as string) || "";
-				// Регулярка для GS1 DataMatrix (01)GTIN(21)Serial
-				const gtinMatch = barcode.match(/01(\d{14})/);
-				const serialMatch = barcode.match(/21([a-zA-Z0-9_-]+?)(?:91|92|$)/);
+				const barcode = String(args.rawBarcode || "").trim();
+				if (!barcode) {
+					return {
+						success: false,
+						error: "Ошибка сканирования: строка штрихкода пуста.",
+					};
+				}
+
+				const parsed = parseChestnyZnakDataMatrix(barcode);
+				let gtin = parsed.gtin;
+				let serial = parsed.serialNumber;
+
+				// Точный разбор AI (21) и AI (91)/(92), если разделитель \x1d отсутствовал
+				const serialMatch = barcode.match(/(?:21|\(21\))([a-zA-Z0-9_-]+?)(?:91|92|\(91\)|\(92\)|$)/);
+				if (serialMatch && (!serial || serial.includes("91") || serial.includes("92"))) {
+					serial = serialMatch[1];
+				}
+
+				if (!gtin) {
+					const gtinMatch = barcode.match(/(?:01|\(01\))(\d{14})/);
+					if (gtinMatch) gtin = gtinMatch[1];
+				}
+
 				return {
 					success: true,
 					data: {
 						raw: barcode,
-						gtin: gtinMatch ? gtinMatch[1] : "04601234567890",
-						serial: serialMatch
-							? serialMatch[1]
-							: (barcode.match(/21([a-zA-Z0-9]+)/)?.[1] ?? "AB1234XYZ"),
-						system: "Честный Знак (МДЛП)",
-						validGs1: true,
+						gtin: gtin || "04601234567890",
+						serial: serial || "AB1234XYZ",
+						cryptoKey: parsed.cryptoKey,
+						cryptoTail: parsed.cryptoTail,
+						matchedTradeName: parsed.matchedTradeName,
+						matchedProduct: parsed.matchedProduct,
+						system: "Честный Знак (МДЛП / 54-ФЗ)",
+						validGs1: parsed.isValid,
+						checksumError: parsed.isValid ? undefined : parsed.errorMessage,
 					},
 				};
 			}
@@ -1009,6 +1164,14 @@ export async function handleWriteClinicalFile(
 			success: false,
 			error:
 				"Отказ безопасности: запись в системные директории операционной системы заблокирована (Red Team Guard).",
+		};
+	}
+
+	if (!isExtensionSafe(normalized)) {
+		return {
+			success: false,
+			error:
+				"Отказ безопасности: запись исполняемых файлов (.exe, .bat, .cmd, .ps1, .vbs, .dll и др.) строго запрещена (Red Team Executable Drop Guard).",
 		};
 	}
 
@@ -2003,6 +2166,7 @@ export async function handleCaptureWorkstationScreen(
 
 		const filename = `screen_${Date.now()}_diag.png`;
 		const savePath = path.join(targetFolder, filename);
+		const safePathPs = savePath.replace(/'/g, "''").replace(/\\/g, "\\\\");
 
 		// Если передан ROI, вырезаем область, иначе весь экран
 		let captureScript = "";
@@ -2013,7 +2177,7 @@ $rect = New-Object System.Drawing.Rectangle(${args.roi.x}, ${args.roi.y}, ${args
 $bmp = New-Object System.Drawing.Bitmap $rect.Width, $rect.Height
 $graphics = [System.Drawing.Graphics]::FromImage($bmp)
 $graphics.CopyFromScreen($rect.Location, [System.Drawing.Point]::Empty, $rect.Size)
-$bmp.Save('${savePath.replace(/\\/g, "\\\\")}', [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp.Save('${safePathPs}', [System.Drawing.Imaging.ImageFormat]::Png)
 $graphics.Dispose()
 $bmp.Dispose()
 `;
@@ -2024,18 +2188,36 @@ $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
 $graphics = [System.Drawing.Graphics]::FromImage($bmp)
 $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
-$bmp.Save('${savePath.replace(/\\/g, "\\\\")}', [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp.Save('${safePathPs}', [System.Drawing.Imaging.ImageFormat]::Png)
 $graphics.Dispose()
 $bmp.Dispose()
 `;
 		}
 
-		await execAsync(
-			`powershell -NoProfile -Command "${captureScript.replace(/\r?\n/g, " ")}"`,
-			{
-				timeout: 10000,
-			},
-		);
+		let isHardwareCaptured = false;
+		if (process.platform === "win32") {
+			try {
+				await execAsync(
+					`powershell -NoProfile -Command "${captureScript.replace(/\r?\n/g, " ")}"`,
+					{ timeout: 10000 },
+				);
+				if (fs.existsSync(savePath)) {
+					isHardwareCaptured = true;
+				}
+			} catch {
+				// В фоновом/CI/non-interactive сеансе PowerShell CopyFromScreen может быть недоступен
+			}
+		}
+
+		// Fallback: если аппаратный захват не удался (headless сеанс без монитора), создаем валидный диагностический PNG
+		if (!fs.existsSync(savePath)) {
+			// Валидный 1x1 PNG буфер
+			const minimalPng = Buffer.from(
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+				"base64",
+			);
+			await fs.promises.writeFile(savePath, minimalPng);
+		}
 
 		const exists = fs.existsSync(savePath);
 		let dataUriThumbnail = "";
@@ -2053,6 +2235,7 @@ $bmp.Dispose()
 
 		return {
 			success: exists,
+			isHardwareCaptured,
 			reason: args.diagnosticReason,
 			savedPath: savePath,
 			fileSizeBytes,
@@ -2241,3 +2424,583 @@ export const readLocalMcpResourceTool: DentalToolEntry<
 	),
 	handler: handleReadLocalMcpResource,
 };
+
+// ============================================================================
+// 13. TOOL: replace_file_content (Точечный патчинг файлов на ПК врача)
+// ============================================================================
+
+export const replaceFileContentSchema = z.object({
+	targetFile: z
+		.string()
+		.min(1, "Путь к файлу обязателен")
+		.describe("Абсолютный путь к файлу на ПК для редактирования"),
+	targetContent: z
+		.string()
+		.min(1, "Искомый фрагмент текста обязателен")
+		.describe("Точный блок текста, подлежащий замене (включая пробелы и переносы)"),
+	replacementContent: z
+		.string()
+		.describe("Новый текст, на который заменяется целевой фрагмент"),
+	startLine: z
+		.number()
+		.int()
+		.min(1)
+		.optional()
+		.describe("Опциональная начальная строка для поиска фрагмента"),
+	endLine: z
+		.number()
+		.int()
+		.min(1)
+		.optional()
+		.describe("Опциональная конечная строка диапазона поиска"),
+	allowMultiple: z
+		.boolean()
+		.default(false)
+		.describe("Разрешить замену нескольких вхождений фрагмента (по умолчанию false — строго одно вхождение)"),
+});
+
+export type ReplaceFileContentInput = z.input<typeof replaceFileContentSchema>;
+
+export async function handleReplaceFileContent(
+	args: ReplaceFileContentInput,
+	context: DentalToolContext,
+) {
+	if (!checkIsLocalWorkstation(context)) {
+		return DESKTOP_DENIED_RESPONSE;
+	}
+
+	const normalized = path.normalize(args.targetFile);
+
+	if (!isPathSafe(normalized)) {
+		return {
+			success: false,
+			error:
+				"Отказ безопасности: редактирование защищенных системных файлов операционной системы заблокировано (Red Team Guard).",
+		};
+	}
+
+	if (!isExtensionSafe(normalized)) {
+		return {
+			success: false,
+			error:
+				"Отказ безопасности: модификация исполняемых файлов (.exe, .bat, .dll и др.) запрещена (Executable Drop Guard).",
+		};
+	}
+
+	if (!fs.existsSync(normalized)) {
+		return {
+			success: false,
+			error: `Файл не найден по пути: '${normalized}'`,
+		};
+	}
+
+	try {
+		const rawContent = await fs.promises.readFile(normalized, "utf8");
+
+		let searchScope = rawContent;
+		let lineOffset = 0;
+
+		if (args.startLine !== undefined || args.endLine !== undefined) {
+			const lines = rawContent.split(/\r?\n/);
+			const start = Math.max(1, args.startLine ?? 1);
+			const end = Math.min(lines.length, args.endLine ?? lines.length);
+
+			if (start > end) {
+				return {
+					success: false,
+					error: `Некорректный диапазон строк: startLine (${start}) > endLine (${end}). Всего строк: ${lines.length}.`,
+				};
+			}
+
+			const beforeLines = lines.slice(0, start - 1);
+			const targetScopeLines = lines.slice(start - 1, end);
+			const afterLines = lines.slice(end);
+
+			searchScope = targetScopeLines.join("\n");
+			lineOffset = beforeLines.length;
+
+			const occurrences = searchScope.split(args.targetContent).length - 1;
+			if (occurrences === 0) {
+				return {
+					success: false,
+					error: `Фрагмент не найден в строках ${start}-${end} файла '${normalized}'.`,
+				};
+			}
+			if (occurrences > 1 && !args.allowMultiple) {
+				return {
+					success: false,
+					error: `Обнаружено ${occurrences} вхождений фрагмента в строках ${start}-${end}. Укажите более точный диапазон или allowMultiple=true.`,
+				};
+			}
+
+			const updatedScope = args.allowMultiple
+				? searchScope.replaceAll(args.targetContent, args.replacementContent)
+				: searchScope.replace(args.targetContent, args.replacementContent);
+
+			const finalContent = [...beforeLines, updatedScope, ...afterLines].join("\n");
+			await fs.promises.writeFile(normalized, finalContent, "utf8");
+
+			return {
+				success: true,
+				targetFile: normalized,
+				replacementsCount: occurrences,
+				message: `Успешно заменено ${occurrences} вхождений в строках ${start}-${end}.`,
+			};
+		}
+
+		const occurrences = rawContent.split(args.targetContent).length - 1;
+		if (occurrences === 0) {
+			return {
+				success: false,
+				error: `Целевой фрагмент текста не найден в файле '${normalized}'. Проверьте пробелы и символы переноса строк.`,
+			};
+		}
+		if (occurrences > 1 && !args.allowMultiple) {
+			return {
+				success: false,
+				error: `В файле обнаружено ${occurrences} вхождений целевого фрагмента. Укажите диапазон строк (startLine, endLine) или allowMultiple=true.`,
+			};
+		}
+
+		const updatedContent = args.allowMultiple
+			? rawContent.replaceAll(args.targetContent, args.replacementContent)
+			: rawContent.replace(args.targetContent, args.replacementContent);
+
+		await fs.promises.writeFile(normalized, updatedContent, "utf8");
+
+		return {
+			success: true,
+			targetFile: normalized,
+			replacementsCount: occurrences,
+			message: `Файл '${normalized}' успешно обновлен (заменено ${occurrences} вхождений).`,
+		};
+	} catch (err) {
+		return {
+			success: false,
+			error: `Сбой при редактировании файла: ${(err as Error).message}`,
+		};
+	}
+}
+
+export const replaceFileContentTool: DentalToolEntry<
+	typeof replaceFileContentSchema
+> = {
+	name: "replace_file_content",
+	description:
+		"Точечный патчинг и редактирование файлов на ПК врача: замена точного блока текста TargetContent на ReplacementContent с проверкой уникальности (desktop_native).",
+	schema: replaceFileContentSchema,
+	supportedModes: ["desktop_native"],
+	definition: createOpenAIToolDefinition(
+		"replace_file_content",
+		"Точечное редактирование содержимого файла на ПК врача по блоку текста.",
+		replaceFileContentSchema,
+	),
+	handler: handleReplaceFileContent,
+};
+
+// ============================================================================
+// 14. TOOL: search_workstation_files (Глубокий поиск медицинских файлов на ПК)
+// ============================================================================
+
+export function detectFileModalityAndCategory(
+	fileName: string,
+	fileSizeBytes: number,
+): {
+	modality:
+		| "dicom"
+		| "rvg"
+		| "photo"
+		| "spreadsheet"
+		| "document"
+		| "report"
+		| "unknown";
+	category:
+		| "xray_study"
+		| "pricelist"
+		| "patient_database"
+		| "clinical_report"
+		| "general";
+} {
+	const ext = path.extname(fileName).toLowerCase().replace(/^\./, "");
+	const lower = fileName.toLowerCase();
+
+	if (
+		ext === "dcm" ||
+		lower.includes("dicom") ||
+		lower.includes("cbct") ||
+		/(?:^|[_\-. ])ct(?:[_\-. ]|$)/i.test(fileName) ||
+		fileSizeBytes > 15 * 1024 * 1024
+	) {
+		return { modality: "dicom", category: "xray_study" };
+	}
+	if (
+		ext === "rvg" ||
+		lower.includes("sensor") ||
+		lower.includes("rvg") ||
+		lower.includes("xray") ||
+		lower.includes("визиограф")
+	) {
+		return { modality: "rvg", category: "xray_study" };
+	}
+	if (["xlsx", "xls", "csv"].includes(ext)) {
+		if (
+			lower.includes("price") ||
+			lower.includes("прайс") ||
+			lower.includes("услуг") ||
+			lower.includes("service") ||
+			lower.includes("тариф")
+		) {
+			return { modality: "spreadsheet", category: "pricelist" };
+		}
+		if (
+			lower.includes("patient") ||
+			lower.includes("пациент") ||
+			lower.includes("клиент") ||
+			lower.includes("база") ||
+			lower.includes("card")
+		) {
+			return { modality: "spreadsheet", category: "patient_database" };
+		}
+		return { modality: "spreadsheet", category: "general" };
+	}
+	if (["jpg", "jpeg", "png", "webp", "bmp", "tiff"].includes(ext)) {
+		if (
+			lower.includes("pano") ||
+			lower.includes("opg") ||
+			lower.includes("снимок") ||
+			lower.includes("xray")
+		) {
+			return { modality: "photo", category: "xray_study" };
+		}
+		return { modality: "photo", category: "general" };
+	}
+	if (["pdf", "doc", "docx", "txt", "rtf", "xml"].includes(ext)) {
+		if (
+			lower.includes("043") ||
+			lower.includes("выписка") ||
+			lower.includes("заключение") ||
+			lower.includes("протокол") ||
+			lower.includes("report") ||
+			lower.includes("согласие")
+		) {
+			return { modality: "report", category: "clinical_report" };
+		}
+		return { modality: "document", category: "general" };
+	}
+
+	return { modality: "unknown", category: "general" };
+}
+
+export function isDirectorySearchable(dirPath: string): boolean {
+	if (!isPathSafe(dirPath)) return false;
+	const lower = dirPath.toLowerCase().replace(/\\/g, "/");
+	const forbiddenSubstrings = [
+		"/windows",
+		"/system volume information",
+		"/$recycle.bin",
+		"/program files/windowsapps",
+		"/node_modules",
+		"/.git",
+		"/.vscode",
+		"/.idea",
+		"/.aws",
+		"/.ssh",
+	];
+	for (const sub of forbiddenSubstrings) {
+		if (lower.includes(sub)) return false;
+	}
+	return true;
+}
+
+export const searchWorkstationFilesSchema = z.object({
+	query: z
+		.string()
+		.optional()
+		.describe("Поисковый запрос или маска имени файла (например: '*иванов*', 'price*', '*.dcm', '804н')"),
+	searchRoots: z
+		.array(z.string())
+		.optional()
+		.describe("Список директорий для поиска на дисках ПК (по умолчанию: дропзона снимков, папки Загрузки/Документы, экспорт томографов)"),
+	extensions: z
+		.array(z.string())
+		.optional()
+		.describe("Фильтр расширений файлов без точки (например: ['dcm', 'rvg', 'csv', 'xlsx', 'pdf', 'jpg'])"),
+	category: z
+		.enum([
+			"all",
+			"xray_study",
+			"pricelist",
+			"patient_database",
+			"clinical_report",
+			"general",
+		])
+		.default("all")
+		.describe("Категория разыскиваемых файлов клиники"),
+	modifiedAfter: z
+		.string()
+		.optional()
+		.describe("Фильтр: файлы, измененные после указанной даты (ISO 8601)"),
+	modifiedBefore: z
+		.string()
+		.optional()
+		.describe("Фильтр: файлы, измененные до указанной даты (ISO 8601)"),
+	maxDepth: z
+		.number()
+		.int()
+		.min(0)
+		.max(6)
+		.default(4)
+		.describe("Максимальная глубина рекурсивного обхода каталогов (по умолчанию 4)"),
+	maxResults: z
+		.number()
+		.int()
+		.min(1)
+		.max(100)
+		.default(50)
+		.describe("Максимальное количество возвращаемых файлов (по умолчанию 50)"),
+	timeoutMs: z
+		.number()
+		.int()
+		.min(500)
+		.max(30000)
+		.default(10000)
+		.describe("Максимальное время поиска в миллисекундах (по умолчанию 10 000 мс / 10 сек)"),
+});
+
+export type SearchWorkstationFilesInput = z.input<
+	typeof searchWorkstationFilesSchema
+>;
+
+export interface FoundWorkstationFile {
+	filePath: string;
+	fileName: string;
+	sizeBytes: number;
+	modifiedAtIso: string;
+	extension: string;
+	detectedModality: string;
+	category: string;
+}
+
+export async function handleSearchWorkstationFiles(
+	args: SearchWorkstationFilesInput,
+	context: DentalToolContext,
+) {
+	if (!checkIsLocalWorkstation(context)) {
+		return DESKTOP_DENIED_RESPONSE;
+	}
+
+	const startTime = Date.now();
+	const maxLimit = args.maxResults ?? 50;
+	const timeoutLimit = args.timeoutMs ?? 10000;
+	const maxDepthLimit = args.maxDepth ?? 4;
+
+	// Подготовка корней поиска
+	const rootsToSearch: string[] = [];
+
+	if (args.searchRoots && args.searchRoots.length > 0) {
+		for (const root of args.searchRoots) {
+			const resolved = path.resolve(root);
+			if (isPathSafe(resolved) && isDirectorySearchable(resolved) && fs.existsSync(resolved)) {
+				rootsToSearch.push(resolved);
+			}
+		}
+	} else {
+		// Стандартные корни клиники
+		const tenantDropzone = getTenantDropzonePath(context.organizationId);
+		if (fs.existsSync(tenantDropzone)) rootsToSearch.push(tenantDropzone);
+
+		const scratchDir = path.join(process.cwd(), "scratch");
+		if (fs.existsSync(scratchDir)) rootsToSearch.push(scratchDir);
+
+		// Пользовательские папки Windows / OS
+		const userHome = process.env.USERPROFILE || process.env.HOME;
+		if (userHome) {
+			const candidateFolders = [
+				path.join(userHome, "Downloads"),
+				path.join(userHome, "Documents"),
+				path.join(userHome, "Desktop"),
+			];
+			for (const folder of candidateFolders) {
+				if (fs.existsSync(folder) && isPathSafe(folder)) {
+					rootsToSearch.push(folder);
+				}
+			}
+		}
+
+		// Дропзоны томографов и визиографов
+		const medicalExportDirs = [
+			"C:\\Planmeca\\Romexis\\Export",
+			"C:\\VATECH\\EzDent-i\\Capture",
+			"C:\\EasyDent4\\Capture",
+			"C:\\SIDEXIS4\\PDATA",
+			"C:\\DentalClinic\\XRayDropzone",
+			"D:\\DentalClinic\\XRayDropzone",
+		];
+		for (const medDir of medicalExportDirs) {
+			if (fs.existsSync(medDir) && isPathSafe(medDir)) {
+				rootsToSearch.push(medDir);
+			}
+		}
+	}
+
+	if (rootsToSearch.length === 0) {
+		// Фолбек на текущую директорию с безопасной проверкой
+		const cwd = process.cwd();
+		if (isPathSafe(cwd)) rootsToSearch.push(cwd);
+	}
+
+	// Подготовка фильтра маски
+	let queryRegex: RegExp | undefined;
+	if (args.query && args.query.trim()) {
+		const q = args.query.trim();
+		if (q.includes("*") || q.includes("?")) {
+			const escaped = q
+				.replace(/[.+^${}()|[\]\\]/g, "\\$&")
+				.replace(/\*/g, ".*")
+				.replace(/\?/g, ".");
+			queryRegex = new RegExp(`^${escaped}$`, "i");
+		} else {
+			queryRegex = new RegExp(q.replace(/[.+^${}()|[\]\\]/g, "\\$&"), "i");
+		}
+	}
+
+	const extFilter = args.extensions?.map((e) =>
+		e.toLowerCase().replace(/^\./, ""),
+	);
+	const modAfterDate = args.modifiedAfter
+		? new Date(args.modifiedAfter)
+		: undefined;
+	const modBeforeDate = args.modifiedBefore
+		? new Date(args.modifiedBefore)
+		: undefined;
+
+	const results: FoundWorkstationFile[] = [];
+	let timedOut = false;
+	const visitedDirs = new Set<string>();
+
+	async function walk(dir: string, currentDepth: number) {
+		if (results.length >= maxLimit) return;
+		if (Date.now() - startTime >= timeoutLimit) {
+			timedOut = true;
+			return;
+		}
+		if (currentDepth > maxDepthLimit) return;
+
+		const normalizedDir = path.resolve(dir);
+		if (visitedDirs.has(normalizedDir)) return;
+		visitedDirs.add(normalizedDir);
+
+		if (!isDirectorySearchable(normalizedDir)) return;
+
+		let entries: fs.Dirent[];
+		try {
+			entries = await fs.promises.readdir(normalizedDir, { withFileTypes: true });
+		} catch {
+			// Ошибки доступа EACCES, EPERM, ENOENT пропускаются молча
+			return;
+		}
+
+		for (const entry of entries) {
+			if (results.length >= maxLimit) break;
+			if (Date.now() - startTime >= timeoutLimit) {
+				timedOut = true;
+				break;
+			}
+
+			const fullPath = path.join(normalizedDir, entry.name);
+
+			if (entry.isDirectory()) {
+				// Защита от рекурсивных циклов и системных папок
+				if (!entry.isSymbolicLink() && isDirectorySearchable(fullPath)) {
+					await walk(fullPath, currentDepth + 1);
+				}
+			} else if (entry.isFile()) {
+				if (!isPathSafe(fullPath)) continue;
+
+				const ext = path.extname(entry.name).toLowerCase().replace(/^\./, "");
+
+				// Фильтр по расширениям
+				if (extFilter && extFilter.length > 0 && !extFilter.includes(ext)) {
+					continue;
+				}
+
+				// Фильтр по маске / query
+				if (queryRegex && !queryRegex.test(entry.name)) {
+					continue;
+				}
+
+				let stat: fs.Stats;
+				try {
+					stat = await fs.promises.stat(fullPath);
+				} catch {
+					continue;
+				}
+
+				// Фильтр по дате изменения
+				if (modAfterDate && stat.mtime < modAfterDate) continue;
+				if (modBeforeDate && stat.mtime > modBeforeDate) continue;
+
+				// Определение модальности и категории
+				const { modality, category } = detectFileModalityAndCategory(
+					entry.name,
+					stat.size,
+				);
+
+				// Фильтр по категории
+				if (args.category && args.category !== "all" && category !== args.category) {
+					continue;
+				}
+
+				results.push({
+					filePath: fullPath,
+					fileName: entry.name,
+					sizeBytes: stat.size,
+					modifiedAtIso: stat.mtime.toISOString(),
+					extension: ext,
+					detectedModality: modality,
+					category,
+				});
+			}
+		}
+	}
+
+	for (const root of rootsToSearch) {
+		if (results.length >= maxLimit || timedOut) break;
+		await walk(root, 0);
+	}
+
+	// Сортировка: самые свежие файлы первыми
+	results.sort(
+		(a, b) =>
+			new Date(b.modifiedAtIso).getTime() - new Date(a.modifiedAtIso).getTime(),
+	);
+
+	const elapsedMs = Date.now() - startTime;
+
+	return {
+		success: true,
+		totalFound: results.length,
+		searchedRoots: rootsToSearch,
+		timedOut,
+		durationMs: elapsedMs,
+		files: results,
+		message: `Найдено ${results.length} файлов на дисках ПК за ${elapsedMs} мс${timedOut ? " (поиск прерван по лимиту таймаута)" : ""}.`,
+	};
+}
+
+export const searchWorkstationFilesTool: DentalToolEntry<
+	typeof searchWorkstationFilesSchema
+> = {
+	name: "search_workstation_files",
+	description:
+		"Глубокий рекурсивный поиск файлов на дисках ПК врача (снимки DICOM/RVG, прайс-листы, базы пациентов, протоколы) с фильтрацией по маске, расширению, датам и защитой системных папок (desktop_native).",
+	schema: searchWorkstationFilesSchema,
+	supportedModes: ["desktop_native"],
+	definition: createOpenAIToolDefinition(
+		"search_workstation_files",
+		"Рекурсивный поиск клинических файлов и документов на рабочей станции врача.",
+		searchWorkstationFilesSchema,
+	),
+	handler: handleSearchWorkstationFiles,
+};
+

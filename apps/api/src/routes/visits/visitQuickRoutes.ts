@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
+import { db as database } from "../../db/client.js";
 import { createPatientInDb } from "../../db/patientsQuery.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
@@ -62,32 +63,44 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const patient = await createPatientInDb(orgId, {
-			fullName: "Быстрый прием",
-			isAnonymous: false,
-			phone: null,
-			birthDate: null,
-		});
-
 		const startsAt = new Date().toISOString();
 		const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 		try {
-			const appointment = await createAppointmentInDb(orgId, {
-				patientId: patient.id,
-				doctorUserId,
-				chairId: chair.id,
-				status: "in_treatment",
-				startsAt,
-				endsAt,
-				reason: "Быстрый прием",
-				comment: null,
-				assistantUserId: null,
+			const result = await database.transaction(async (tx) => {
+				const patient = await createPatientInDb(
+					orgId,
+					{
+						fullName: "Быстрый прием",
+						isAnonymous: false,
+						phone: null,
+						birthDate: null,
+					},
+					tx,
+				);
+
+				const appointment = await createAppointmentInDb(
+					orgId,
+					{
+						patientId: patient.id,
+						doctorUserId,
+						chairId: chair.id,
+						status: "in_treatment",
+						startsAt,
+						endsAt,
+						reason: "Быстрый прием",
+						comment: null,
+						assistantUserId: null,
+					},
+					tx,
+				);
+
+				await openVisitForAppointmentInDb(orgId, appointment.id, tx);
+
+				return { patientId: patient.id, appointmentId: appointment.id };
 			});
 
-			await openVisitForAppointmentInDb(orgId, appointment.id);
-
 			reply.code(201);
-			return { patientId: patient.id, appointmentId: appointment.id };
+			return result;
 		} catch (error) {
 			if (isOverlapError(error)) {
 				return reply.code(409).send({

@@ -47,6 +47,7 @@ export type FilterSettingsStateValues = Omit<
 	| "setImagingViewerState"
 	| "setSelectedImagingStudyId"
 	| "setImagingKindFilter"
+	| "setImagingToothFilter"
 	| "setImagingCreateSavingKind"
 >;
 
@@ -128,6 +129,7 @@ export const initialFilterSettingsState: FilterSettingsStateValues = {
 	imagingViewerState: defaultImagingViewerState,
 	selectedImagingStudyId: null,
 	imagingKindFilter: initialUiPreferences.imagingKindFilter,
+	imagingToothFilter: "all",
 	imagingCreateSavingKind: null,
 };
 

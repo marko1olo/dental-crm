@@ -329,6 +329,13 @@ export async function updateWorkspaceProfileHandler(
 			});
 		}
 
+		const existingRaw =
+			existing.flags &&
+			typeof existing.flags === "object" &&
+			!Array.isArray(existing.flags)
+				? (existing.flags as Record<string, unknown>)
+				: {};
+
 		const merged = workspaceFlagsFromStorage({
 			...workspaceFlagsFromStorage(existing.flags),
 			...incoming,
@@ -337,7 +344,10 @@ export async function updateWorkspaceProfileHandler(
 		await db
 			.update(schema.organizations)
 			.set({
-				workspaceFeatureFlags: merged,
+				workspaceFeatureFlags: {
+					...existingRaw,
+					...merged,
+				},
 				updatedAt: new Date(),
 			})
 			.where(eq(schema.organizations.id, organizationId));
@@ -417,6 +427,12 @@ export async function applyWorkspacePresetHandler(
 				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
 			});
 		}
+		const existingRaw =
+			existing.flags &&
+			typeof existing.flags === "object" &&
+			!Array.isArray(existing.flags)
+				? (existing.flags as Record<string, unknown>)
+				: {};
 		const savedFlags = workspaceFlagsFromStorage({
 			...workspaceFlagsFromStorage(existing.flags),
 			...finalFlags,
@@ -425,7 +441,13 @@ export async function applyWorkspacePresetHandler(
 
 		await db
 			.update(schema.organizations)
-			.set({ workspaceFeatureFlags: savedFlags, updatedAt: new Date() })
+			.set({
+				workspaceFeatureFlags: {
+					...existingRaw,
+					...savedFlags,
+				},
+				updatedAt: new Date(),
+			})
 			.where(eq(schema.organizations.id, organizationId));
 
 		// Async seeding — don't block response

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Download, QrCode } from "lucide-react";
-import type { FnsTaxPaymentEntry } from "./cdaR2XmlBuilder";
+import type { FnsTaxPaymentItem } from "./cdaR2XmlBuilder";
 import { formatKopecksToRubles } from "./cdaR2XmlBuilder";
 
 export interface TaxDeductionCertificateDrawerProps {
 	readonly patientName: string;
 	readonly patientInn?: string;
-	readonly payments?: readonly FnsTaxPaymentEntry[];
+	readonly payments?: readonly FnsTaxPaymentItem[];
 	readonly defaultYear?: number;
 	readonly onPrintCertificate?: (year: number) => void;
 	readonly onExportPdf?: (year: number) => void;
@@ -86,7 +86,9 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 					<div key={idx} className="egisz-tax-payment-item">
 						<div>
 							<div className="font-semibold text-xs">{p.serviceDescription}</div>
-							<div className="text-xs text-muted">{p.date} • Код: {p.serviceCode}</div>
+							<div className="text-xs text-muted">
+								{typeof p.date === "string" ? p.date : p.date.toLocaleDateString("ru-RU")} • Код: {p.serviceCode}
+							</div>
 						</div>
 						<div className="font-bold text-sm">{`${formatKopecksToRubles(p.amountKopecks)} ₽`}</div>
 					</div>

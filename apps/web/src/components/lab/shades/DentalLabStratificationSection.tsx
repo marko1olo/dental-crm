@@ -1,5 +1,5 @@
 import { Layers, Sliders, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { getStratificationPreset } from "../labMath";
 import { DentalLabStratificationDropdowns } from "./DentalLabStratificationDropdowns";
 import { DentalLabStratificationStump } from "./DentalLabStratificationStump";

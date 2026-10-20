@@ -51,7 +51,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 				reply,
 				"migration upload",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			// Имена приходят в процентной кодировке UTF-8: в заголовке кириллицы быть
 			// не может, а файл «Пациенты.dbf» — обычное дело.
@@ -195,7 +195,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			reply,
 			"migration discovery",
 		);
-		if (!context) return;
+		if (!context) return reply;
 
 		const parsed = discoverRequestSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
@@ -281,7 +281,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			reply,
 			"migration dicom inspect",
 		);
-		if (!context) return;
+		if (!context) return reply;
 
 		const parsed = dicomInspectSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {

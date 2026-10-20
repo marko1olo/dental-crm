@@ -14,6 +14,9 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
 	type AgentHarnessEvent,
@@ -27,6 +30,7 @@ import type {
 	AgentRouterStreamCallbacks,
 } from "./agentRouterClient.js";
 import type { DentalToolContext } from "./dentalTools.js";
+import { clearActivePlansStore } from "./dentalTools/taskPlanTools.js";
 
 const dummyContext: DentalToolContext = {
 	organizationId: "11111111-1111-1111-1111-111111111111",
@@ -456,3 +460,523 @@ test("7. buildAgentSystemPrompt: Correctly isolates web_browser vs desktop_nativ
 	assert.ok(desktopPrompt.includes("launch_workstation_app"));
 	assert.ok(desktopPrompt.includes("read_clinical_file"));
 });
+
+test("8. runAgentHarness: manage_task_plan updates active plan and emits plan_updated events", async () => {
+	clearActivePlansStore();
+	const events: AgentHarnessEvent[] = [];
+
+	const mockClient = createMockClient([
+		// Turn 1: Model creates plan
+		{
+			id: "resp-plan-1",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-plan-create",
+								type: "function",
+								function: {
+									name: "manage_task_plan",
+									arguments: JSON.stringify({
+										action: "create",
+										goal: "Комплексная санация зубов 16 и 26",
+										items: [
+											{ id: "step_1", title: "Лечение кариеса зуба 16" },
+											{
+												id: "step_2",
+												title: "Эндодонтическое лечение зуба 26",
+												blockedBy: ["step_1"],
+											},
+										],
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 2: Model updates step_1 to completed
+		{
+			id: "resp-plan-2",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-plan-update",
+								type: "function",
+								function: {
+									name: "manage_task_plan",
+									arguments: JSON.stringify({
+										action: "update_status",
+										itemId: "step_1",
+										status: "completed",
+										notes: "Кариес зуба 16 успешно вылечен, поставлена пломба.",
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 3: Final response
+		{
+			id: "resp-plan-3",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content:
+							"План лечения зафиксирован. Шаг 1 выполнен, перехожу к эндодонтии зуба 26.",
+					},
+					finish_reason: "stop",
+				},
+			],
+		},
+	]);
+
+	const result = await runAgentHarness({
+		messages: [{ role: "user", content: "Составь план санации зубов 16 и 26" }],
+		context: dummyContext,
+		client: mockClient,
+		onEvent: (e) => {
+			events.push(e);
+		},
+	});
+
+	assert.equal(result.iterations, 3);
+	assert.ok(result.plan, "Result must contain active plan");
+	assert.equal(result.plan.goal, "Комплексная санация зубов 16 и 26");
+	assert.equal(result.plan.items.length, 2);
+	assert.equal(result.plan.items[0]?.status, "completed");
+	assert.equal(result.plan.items[1]?.status, "pending");
+
+	const planUpdatedEvents = events.filter((e) => e.type === "plan_updated");
+	assert.equal(
+		planUpdatedEvents.length,
+		2,
+		"Must emit plan_updated event on create and on update_status",
+	);
+
+	const doneEvent = events.find((e) => e.type === "done");
+	assert.ok(doneEvent && doneEvent.type === "done");
+	assert.ok(doneEvent.plan, "done event must include plan");
+	assert.equal(doneEvent.plan.items[0]?.status, "completed");
+});
+
+test("9. runAgentHarness: Context auto-compaction triggers when token threshold is exceeded", async () => {
+	const events: AgentHarnessEvent[] = [];
+
+	const mockClient = createMockClient([
+		{
+			id: "resp-c1",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-calc-1",
+								type: "function",
+								function: {
+									name: "calculate_anesthesia",
+									arguments: JSON.stringify({
+										patientWeightKg: 85,
+										plannedCarpules: 1,
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		{
+			id: "resp-c2",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content:
+							"Дозировка безопасна. 1 карпула артикаина в пределах нормы для веса 85 кг.",
+					},
+					finish_reason: "stop",
+				},
+			],
+		},
+	]);
+
+	const largeClinicalNote =
+		"Пациент жалуется на острую пульсирующую боль в зубе 46 при накусывании. ".repeat(
+			15,
+		);
+
+	const result = await runAgentHarness({
+		messages: [
+			{ role: "user", content: largeClinicalNote },
+			{
+				role: "assistant",
+				content:
+					"Провожу осмотр и зондирование зуба 46. Глубокая кариозная полость.",
+			},
+			{
+				role: "user",
+				content: "Рассчитай анестезию для веса 85 кг перед лечением.",
+			},
+		],
+		context: dummyContext,
+		client: mockClient,
+		enableAutoCompaction: true,
+		compactThresholdTokens: 50,
+		slidingWindowRetainedTurns: 2,
+		onEvent: (e) => {
+			events.push(e);
+		},
+	});
+
+	assert.equal(result.compacted, true, "Harness result must flag compacted = true");
+	const compactEvent = events.find((e) => e.type === "compact_triggered");
+	assert.ok(compactEvent, "Must emit compact_triggered event");
+	assert.ok(result.text.includes("Дозировка безопасна"));
+});
+
+test("10. runAgentHarness: Universal workstation aliases (write_file, read_file, search_files, run_command) resolve in desktop_native mode", async () => {
+	const desktopContext: DentalToolContext = {
+		organizationId: "11111111-1111-1111-1111-111111111111",
+		patientId: "22222222-2222-2222-2222-222222222222",
+		runtimeMode: "desktop_native",
+		allowLocalExecution: true,
+	};
+
+	const testFilePath = path.resolve(
+		os.tmpdir(),
+		`dente_alias_test_${Date.now()}.txt`,
+	);
+
+	const mockClient = createMockClient([
+		// Turn 1: write_file alias -> write_clinical_file
+		{
+			id: "resp-a1",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-write",
+								type: "function",
+								function: {
+									name: "write_file",
+									arguments: JSON.stringify({
+										targetFile: testFilePath,
+										content: "CLINICAL_TEST_DATA_ALIAS",
+										overwrite: true,
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 2: read_file alias -> read_clinical_file
+		{
+			id: "resp-a2",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-read",
+								type: "function",
+								function: {
+									name: "read_file",
+									arguments: JSON.stringify({
+										filePath: testFilePath,
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 3: search_files alias -> search_workstation_files
+		{
+			id: "resp-a3",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-search",
+								type: "function",
+								function: {
+									name: "search_files",
+									arguments: JSON.stringify({
+										query: "dente_alias_test",
+										searchRoots: [os.tmpdir()],
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 4: run_command alias -> run_workstation_command
+		{
+			id: "resp-a4",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-cmd",
+								type: "function",
+								function: {
+									name: "run_command",
+									arguments: JSON.stringify({
+										commandLine: "echo ALIAS_OK",
+									}),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 5: Final response
+		{
+			id: "resp-a5",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content:
+							"Все системные инструменты успешно вызваны через стандартные псевдонимы.",
+					},
+					finish_reason: "stop",
+				},
+			],
+		},
+	]);
+
+	try {
+		const result = await runAgentHarness({
+			messages: [{ role: "user", content: "Проверь файловый харнесс" }],
+			context: desktopContext,
+			client: mockClient,
+		});
+
+		assert.equal(result.iterations, 5);
+		assert.equal(result.toolCalls.length, 4);
+
+		// 1. write_file
+		assert.equal(result.toolCalls[0]?.tool, "write_file");
+		assert.equal(
+			(result.toolCalls[0]?.result as { success: boolean }).success,
+			true,
+		);
+
+		// 2. read_file
+		assert.equal(result.toolCalls[1]?.tool, "read_file");
+		const readRes = result.toolCalls[1]?.result as {
+			success: boolean;
+			content: string;
+		};
+		assert.equal(readRes.success, true);
+		assert.ok(readRes.content.includes("CLINICAL_TEST_DATA_ALIAS"));
+
+		// 3. search_files
+		assert.equal(result.toolCalls[2]?.tool, "search_files");
+		assert.equal(
+			(result.toolCalls[2]?.result as { success: boolean }).success,
+			true,
+		);
+
+		// 4. run_command
+		assert.equal(result.toolCalls[3]?.tool, "run_command");
+		assert.equal(
+			(result.toolCalls[3]?.result as { success: boolean }).success,
+			true,
+		);
+
+		assert.ok(
+			result.text.includes("Все системные инструменты успешно вызваны"),
+		);
+	} finally {
+		if (fs.existsSync(testFilePath)) {
+			try {
+				fs.unlinkSync(testFilePath);
+			} catch {
+				// ignore cleanup error
+			}
+		}
+	}
+});
+
+test("11. runAgentHarness: Repetitive tool failure sentinel attaches stuckDetectionWarning on repeated failures", async () => {
+	const mockClient = createMockClient([
+		// Turn 1: Model calls non-existent tool -> 1st failure
+		{
+			id: "resp-f1",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-fail-1",
+								type: "function",
+								function: {
+									name: "non_existent_tool_1",
+									arguments: "{}",
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 2: Model calls non-existent tool again -> 2nd failure triggers stuck warning
+		{
+			id: "resp-f2",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content: null,
+						tool_calls: [
+							{
+								id: "call-fail-2",
+								type: "function",
+								function: {
+									name: "non_existent_tool_2",
+									arguments: "{}",
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		// Turn 3: Model notices warning and stops calling bad tools
+		{
+			id: "resp-f3",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "deepseek-v4-flash",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						content:
+							"Зафиксирован повторный сбой вызова инструментов. Прекращаю попытки и формулирую ответ врачу напрямую.",
+					},
+					finish_reason: "stop",
+				},
+			],
+		},
+	]);
+
+	const result = await runAgentHarness({
+		messages: [
+			{ role: "user", content: "Попробуй выполнить неизвестную команду" },
+		],
+		context: dummyContext,
+		client: mockClient,
+	});
+
+	assert.equal(result.iterations, 3);
+	assert.equal(result.toolCalls.length, 2);
+
+	// First tool failure has no stuck warning
+	const firstResult = result.toolCalls[0]?.result as Record<string, unknown>;
+	assert.equal(firstResult.stuckDetectionWarning, undefined);
+
+	// Second tool failure must have stuckDetectionWarning
+	const secondResult = result.toolCalls[1]?.result as Record<string, unknown>;
+	assert.ok(typeof secondResult.stuckDetectionWarning === "string");
+	assert.ok(
+		(secondResult.stuckDetectionWarning as string).includes("STUCK_DETECTION"),
+		"Must attach stuck detection warning on 2nd consecutive failure",
+	);
+
+	assert.ok(result.text.includes("Зафиксирован повторный сбой"));
+});
+

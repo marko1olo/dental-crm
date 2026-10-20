@@ -1,3 +1,4 @@
+import React from "react";
 import { ToothShadeGuide } from "../../icons/DentalIcons";
 import { SHADE_SWATCH_MAP } from "../labShadesData";
 

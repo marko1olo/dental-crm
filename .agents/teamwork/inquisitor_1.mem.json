@@ -1,0 +1,92 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_1",
+  "taskName": "Complete elimination of preview.html sandboxes and purification of main.tsx",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T02:22:30Z",
+  "invariantsPreserved": [
+    "THE_HAMMER §23 (The Ironclad Ban on Fake Preview Sandboxes & Vacuum Screenshot Fraud)",
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication)"
+  ],
+  "deletedSandboxFiles": {
+    "html": [
+      "apps/web/cashbox_checkout_preview.html",
+      "apps/web/clinical_hygiene_ortho_preview.html",
+      "apps/web/endo_modal_preview.html",
+      "apps/web/odontogram_popover_preview.html",
+      "apps/web/patient_registration_preview.html",
+      "apps/web/ortho_warranty_preview.html",
+      "apps/web/prescription_modal_preview.html"
+    ],
+    "tsx": [
+      "apps/web/src/cashbox_checkout_preview_main.tsx",
+      "apps/web/src/clinical_hygiene_ortho_preview_main.tsx",
+      "apps/web/src/endo_modal_preview_main.tsx",
+      "apps/web/src/odontogram_popover_preview_main.tsx",
+      "apps/web/src/patient_registration_preview_main.tsx",
+      "apps/web/src/ortho_warranty_preview_main.tsx",
+      "apps/web/src/prescription_modal_preview_main.tsx"
+    ]
+  },
+  "mainTsxRefactoring": {
+    "linesBefore": 1069,
+    "linesAfter": 490,
+    "linesRemoved": 579,
+    "bytesBefore": 42114,
+    "bytesAfter": 22781,
+    "bytesDelta": -19333,
+    "removedPreviewBranches": [
+      "HygieneIndicesPanel (?hygiene)",
+      "AnesthesiaStandaloneWorkspace (?anesthesia)",
+      "TelephonyStandaloneWorkspace (?telephony)",
+      "PerioStandaloneWorkspace (?perio)",
+      "PrescriptionsStandaloneWorkspace (?prescriptions, ?rx)",
+      "ImplantPassportModal (?implant_passport, ?implants)",
+      "ClinicalTasksStandaloneWorkspace (?tasks, ?clinical_tasks)",
+      "TaxDeductionCertificateModal (?tax, ?tax_deduction)",
+      "OrthopedicsChairsidePanel (?orthopedics)",
+      "CommunicationsView (?communications, ?comms)",
+      "TournamentArena (?tournament)",
+      "Tooth46InspectionStand (?stand=odontogram-gate0)",
+      "Tooth16InspectionStand (?stand=odontogram-gate1)",
+      "ToothIncisorInspectionStand (?stand=odontogram-gate2)"
+    ],
+    "removedUnusedImports": [
+      "HygieneIndicesPanel",
+      "AnesthesiaStandaloneWorkspace",
+      "TelephonyStandaloneWorkspace",
+      "PerioStandaloneWorkspace",
+      "PrescriptionsStandaloneWorkspace",
+      "ImplantPassportModal",
+      "ClinicalTasksStandaloneWorkspace",
+      "TaxDeductionCertificateModal",
+      "OrthopedicsChairsidePanel",
+      "CommunicationsView",
+      "TournamentArena",
+      "Tooth46InspectionStand",
+      "Tooth16InspectionStand",
+      "ToothIncisorInspectionStand",
+      "PatientBudgetSignView"
+    ],
+    "canonicalRootFlow": "installApiAuthFetch() -> appRoot.render(<React.StrictMode><Suspense fallback={null}><AppShell /></Suspense></React.StrictMode>)"
+  },
+  "architecturalIntegrityProof": {
+    "realMountLocationsVerified": {
+      "HygieneIndicesPanel": "Mounted in SpecializedClinicalLaunchers.tsx and PeriodontogramChart.tsx",
+      "AnesthesiaQuickBar & Workspace": "Mounted in SpecializedClinicalLaunchers.tsx and VisitView.tsx",
+      "PerioWorkspace & Chart": "Mounted in SpecializedClinicalLaunchers.tsx and EmkPerioSection.tsx",
+      "ImplantPassportModal": "Mounted in SpecializedClinicalLaunchers.tsx and VisitPlanStageHandoffItemsPreview.tsx",
+      "PrescriptionsModal": "Mounted in VisitView.tsx and PatientProfileView.tsx",
+      "TaxDeductionCertificateModal": "Mounted in PatientProfileView.tsx and BillingDocumentsTab.tsx"
+    },
+    "brokenImportsRepaired": [
+      "apps/web/src/components/leads/leadsKanban.css (replaced non-existent leadsKanbanStyles.css with modular leadsKanbanToolbar.css & leadsKanbanMoreMenu.css)"
+    ]
+  },
+  "verificationGates": {
+    "biomeLint": "PASS (Exit Code 0, 0 errors)",
+    "liveDevServer": "PASS (Root 200 OK, Main.tsx 200 OK on http://127.0.0.1:5173/)",
+    "targetedUnitTests": "PASS (leadsKanbanBookingAutonomy: 13/13, leadsKanbanDefaultDay: 7/7, appHelpersDecomposition: 11/11)"
+  }
+}

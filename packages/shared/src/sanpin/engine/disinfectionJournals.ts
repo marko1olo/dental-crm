@@ -327,7 +327,7 @@ export function evaluateCabinetReadiness(
 	const missingItems: string[] = [];
 
 	// 1. Дезинфекция поверхностей
-	if (!params.surfaceDisinfection.isCompleted) {
+	if (!params.surfaceDisinfection?.isCompleted) {
 		missingItems.push("Дезинфекция поверхностей не отмечена как выполненная");
 	} else if (params.surfaceDisinfection.exposureMinutes < preset.minExposureMinutes) {
 		missingItems.push(
@@ -336,7 +336,7 @@ export function evaluateCabinetReadiness(
 	}
 
 	// 2. Стерильные наконечники и крафт-пакеты (индикаторы 5 класса)
-	if (!params.handpiecesSterility.isCompleted) {
+	if (!params.handpiecesSterility?.isCompleted) {
 		missingItems.push("Стерильность наконечников не подтверждена");
 	} else {
 		if (!params.handpiecesSterility.turbineHandpieceSterile) {
@@ -354,7 +354,7 @@ export function evaluateCabinetReadiness(
 	}
 
 	// 3. Базовый стерильный лоток (зеркало, зонд, пинцет, экскаватор, гладилка)
-	if (!params.sterileTray.isCompleted) {
+	if (!params.sterileTray?.isCompleted) {
 		missingItems.push("Базовый смотровой лоток не укомплектован");
 	} else {
 		const trayMissing: string[] = [];
@@ -369,7 +369,7 @@ export function evaluateCabinetReadiness(
 	}
 
 	// 4. Аспирационная система
-	if (!params.aspirationSystem.isCompleted) {
+	if (!params.aspirationSystem?.isCompleted) {
 		missingItems.push("Аспирационная система не подключена");
 	} else {
 		if (!params.aspirationSystem.salivaEjectorConnected) {
@@ -385,13 +385,13 @@ export function evaluateCabinetReadiness(
 
 	// 5. Коффердам (обязателен для Терапии, Эндодонтии, Детства)
 	if (preset.requiresCofferdam) {
-		if (!params.isolationCofferdam.isCompleted && !params.isolationCofferdam.isNotRequiredForProfile) {
+		if (!params.isolationCofferdam?.isCompleted && !params.isolationCofferdam?.isNotRequiredForProfile) {
 			missingItems.push("Коффердам не подготовлен для изоляции рабочего поля");
-		} else if (!params.isolationCofferdam.isNotRequiredForProfile) {
+		} else if (!params.isolationCofferdam?.isNotRequiredForProfile) {
 			const coffMissing: string[] = [];
-			if (!params.isolationCofferdam.rubberDamSheetReady) coffMissing.push("латексный/силиконовый платок");
-			if (!params.isolationCofferdam.clampsReady) coffMissing.push("клампы (2A, W8A)");
-			if (!params.isolationCofferdam.forcepsReady) coffMissing.push("щипцы для клампов");
+			if (!params.isolationCofferdam?.rubberDamSheetReady) coffMissing.push("латексный/силиконовый платок");
+			if (!params.isolationCofferdam?.clampsReady) coffMissing.push("клампы (2A, W8A)");
+			if (!params.isolationCofferdam?.forcepsReady) coffMissing.push("щипцы для клампов");
 			if (coffMissing.length > 0) {
 				missingItems.push(`Для коффердама не подготовлены: ${coffMissing.join(", ")}`);
 			}

@@ -46,7 +46,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenSummary();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 			>
 				<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
 				<span>Клиническая сводка</span>
@@ -58,7 +58,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenPrescription();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 			>
 				<Pill className="w-4 h-4 text-blue-500 shrink-0" />
 				<span>Рецепт на лекарства</span>
@@ -70,7 +70,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenRadiology();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 			>
 				<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 				<span>Направление КЛКТ/ОПТГ</span>
@@ -82,7 +82,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenTier3Perio();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 				title="Пародонтологическая карта (6 точек зондирования, скрининг PSR / CPITN)"
 			>
 				<BarChart2 className="w-4 h-4 text-teal-500 shrink-0" />
@@ -95,7 +95,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenEgisz();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 			>
 				<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
 				<span>Электронная медкарта (Госуслуги)</span>
@@ -107,7 +107,7 @@ export function VisitDiaryHeaderMoreMenu({
 					onClose();
 					onOpenBranding();
 				}}
-				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer transition-colors"
 			>
 				<Palette className="w-4 h-4 text-amber-500 shrink-0" />
 				<span>Бланк и стиль</span>

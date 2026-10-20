@@ -288,6 +288,8 @@ test("Clinical HTML Renderers: Generates print-ready HTML for all 6 forms", () =
 		pregnancyLactationStatus: "Нет",
 		pastDentalInterventions: "Ранее лечился по поводу кареиса.",
 		odontogramTeeth: [],
+		initialOdontogramTeeth: [],
+		sanitizedOdontogramTeeth: [],
 		dmftIndex: {
 			decayed: 1,
 			filled: 1,

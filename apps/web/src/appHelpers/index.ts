@@ -15,3 +15,30 @@ export * from "./appointmentHelpers.js";
 export * from "./preferenceHelpers.js";
 export * from "./persistenceHelpers.js";
 export * from "../utils/browserScanUtils.js";
+export {
+	cleanPhoneDigits,
+	formatRussianPhone,
+	formatPhoneDisplay,
+	formatRubles,
+	formatDateRu,
+	formatDateTimeRu,
+	formatRussianDate,
+	formatRussianDateGost,
+	formatRussianDateTime,
+	formatBirthDate,
+	formatSnils,
+	formatRussianPassport,
+	formatRussianInn,
+	formatOmsPolicy,
+	isValidRussianPhone,
+	isValidRussianPassport,
+	isValidSnils,
+	isValidRussianInn,
+	isValidRussianOmsPolicy,
+	maskRussianPhone,
+	maskRussianPassport,
+	maskRussianSnils,
+	maskRussianOmsPolicy,
+	sanitizePatientName,
+	sanitizeCyrillicText,
+} from "../utils/formatters.js";

@@ -1,3 +1,11 @@
+/**
+ * apps/api/src/routes/sterilizationRoutes/sterilizationLogHandlers.ts
+ *
+ * Журнал стерилизации и контроль очистки.
+ * Делегирует в apps/api/src/routes/sanpin/sterilizationModules/sterilizationLogHandlers.js.
+ * Мандат 8b: строго <= 120 строк.
+ */
+
 import type { FastifyInstance } from "fastify";
 import {
 	handleCreateDailyTest,
@@ -10,7 +18,9 @@ import {
 
 export * from "../sanpin/sterilizationModules/sterilizationLogHandlers.js";
 
-export async function registerSterilizationLogRoutes(app: FastifyInstance): Promise<void> {
+export async function registerSterilizationLogRoutes(
+	app: FastifyInstance,
+): Promise<void> {
 	app.post("/api/sterilization/scan", handleScanSterilization);
 	app.post("/api/sterilization/pso-tests", handleCreatePsoTest);
 	app.post("/api/sterilization/pso/quick-norm", handlePsoQuickNorm);

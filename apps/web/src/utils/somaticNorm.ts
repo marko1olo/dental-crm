@@ -11,122 +11,50 @@
  * - Mandate 8d item 7: Sanctity of Medical Records (Zero cartoon emojis, strictly professional clinical terminology).
  */
 
-/**
- * Single canonical 1-click physiological norm formulation:
- * «Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.»
- */
-export const CANONICAL_SOMATIC_HEALTHY_NORM_TEXT =
-	"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.";
+import {
+	ALLERGY_REACTIONS,
+	CANONICAL_FORM043_SOMATIC_NORM,
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT,
+	CANONICAL_SOMATIC_NORM_BADGE_LABEL,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	DENTAL_ALLERGEN_CATALOG,
+	DENTAL_ALLERGEN_MAP,
+	DENTAL_SOMATIC_STOP_FACTOR_CATALOG,
+	DENTAL_SOMATIC_STOP_FACTOR_MAP,
+	SOMATIC_QUICK_CHIPS,
+	isSomaticTextPhysiologicalNorm,
+} from "@dental/shared";
 
-/**
- * Extended canonical formulation with explicit infection list (Hepatitis B/C, HIV, Syphilis)
- * used in comprehensive anamnesis and clinical safety profiles.
- */
-export const CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT =
-	"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
+export {
+	ALLERGY_REACTIONS,
+	CANONICAL_FORM043_SOMATIC_NORM,
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT,
+	CANONICAL_SOMATIC_NORM_BADGE_LABEL,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	DENTAL_ALLERGEN_CATALOG,
+	DENTAL_ALLERGEN_MAP,
+	DENTAL_SOMATIC_STOP_FACTOR_CATALOG,
+	DENTAL_SOMATIC_STOP_FACTOR_MAP,
+	SOMATIC_QUICK_CHIPS,
+	isSomaticTextPhysiologicalNorm,
+};
 
-/**
- * Compact short label for badges and toolbar pills
- */
-export const CANONICAL_SOMATIC_NORM_SHORT = "Соматически здоров / норма";
+export type {
+	DentalContraindicationBadge,
+	SomaticProfileInput,
+	PatientSomaticGuardStatus,
+	SomaticBadgeInfo,
+} from "./somaticNormTypes";
 
-/**
- * UI badge title for patient workspace and tooth drawer
- */
-export const CANONICAL_SOMATIC_NORM_BADGE_LABEL = "Соматически здоров (Норма)";
+import type {
+	DentalContraindicationBadge,
+	SomaticProfileInput,
+	PatientSomaticGuardStatus,
+	SomaticBadgeInfo,
+} from "./somaticNormTypes";
 
-/**
- * Form 043/u canonical somatic and anamnesis vitae norm preset
- */
-export const CANONICAL_FORM043_SOMATIC_NORM = Object.freeze({
-	allergologicalHistory:
-		"Аллергологический анамнез не отягощен. Аллергии на местные анестетики (артикаин, мепивакаин), антибиотики и латекс отрицает.",
-	concomitantDiseases:
-		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.",
-	currentMedications:
-		"Постоянный прием лекарственных препаратов (антикоагулянтов, дезагрегантов, бисфосфонатов) отрицает.",
-	pastDentalInterventions:
-		"Ранее проводилось плановое терапевтическое лечение кариеса и профессиональная гигиена полости рта без осложнений.",
-	pregnancyLactationStatus: "Нет",
-	biteType: "orthognathic" as const,
-	biteDescription:
-		"Прикус ортогнатический, смыкание зубных рядов по I классу Энгля, межрезцовое перекрытие на 1/3 высоты коронки.",
-});
-
-/**
- * Structure of a Tier-1 dental contraindication badge
- */
-export interface DentalContraindicationBadge {
-	readonly id: string;
-	readonly testId: string;
-	readonly shortLabel: string;
-	readonly fullLabel: string;
-	readonly title: string;
-	readonly severity: "critical" | "warning" | "healthy";
-	readonly actionHint: string;
-}
-
-/**
- * Interface matching patient safety profile fields relevant to dental contraindications
- */
-export interface SomaticProfileInput {
-	readonly hasArticaineAllergy?: boolean | null;
-	readonly hasLidocaineAllergy?: boolean | null;
-	readonly hasNovocaineAllergy?: boolean | null;
-	readonly hasProcaineAllergy?: boolean | null;
-	readonly hasMepivacaineAllergy?: boolean | null;
-	readonly hasPenicillinAllergy?: boolean | null;
-	readonly hasNsaidAllergy?: boolean | null;
-	readonly hasLatexAllergy?: boolean | null;
-	readonly hasSulfitesAllergy?: boolean | null;
-	readonly hasIodineAllergy?: boolean | null;
-	readonly hasAnaphylaxisHistory?: boolean | null;
-	readonly hasPacemakerExs?: boolean | null;
-	readonly takesAnticoagulants?: boolean | null;
-	readonly hasAnticoagulantTherapy?: boolean | null;
-	readonly anticoagulantName?: string | null;
-	readonly takesBisphosphonates?: boolean | null;
-	readonly hasBisphosphonateTherapy?: boolean | null;
-	readonly bisphosphonateName?: string | null;
-	readonly hasDiabetesMellitus?: boolean | null;
-	readonly diabetesType?: string | null;
-	readonly pregnancyTrimester?: string | null;
-	readonly hasBronchialAsthma?: boolean | null;
-	readonly hasAsthma?: boolean | null;
-	readonly hasEpilepsy?: boolean | null;
-	readonly patientWeightKg?: number | null;
-	readonly patientAgeYears?: number | null;
-	readonly customAllergyNotes?: string | null;
-	readonly customChronicNotes?: string | null;
-}
-
-/**
- * Evaluates whether text represents physiological norm without active contraindications.
- */
-export function isSomaticTextPhysiologicalNorm(text?: string | null): boolean {
-	if (!text) return true;
-	const trimmed = text.trim();
-	if (!trimmed) return true;
-
-	const lower = trimmed.toLowerCase();
-
-	// Must have positive declaration of health/norm
-	const hasNormIndicator =
-		lower.includes("соматически здоров") ||
-		lower.includes("физиологическая норма") ||
-		lower.includes("патологий не заявлено") ||
-		lower.includes("аллергоанамнез не отягощен");
-
-	// Must not have confirmed active high-risk contraindications
-	const hasActiveContraindication =
-		(lower.includes("аллергия") && !lower.includes("отрицает") && !lower.includes("не отягощен") && !lower.includes("не отмечен")) ||
-		lower.includes("кардиостимулятор") ||
-		(lower.includes("антикоагулянт") && !lower.includes("не принимает") && !lower.includes("отрицает")) ||
-		(lower.includes("бисфосфонат") && !lower.includes("не принимает") && !lower.includes("отрицает")) ||
-		lower.includes("сахарный диабет декомпенсированный");
-
-	return hasNormIndicator && !hasActiveContraindication;
-}
 
 /**
  * Applies canonical somatic norm to existing notes, preserving previous entries if any.
@@ -498,15 +426,6 @@ export const CANONICAL_SOMATIC_NORM_BADGE: DentalContraindicationBadge = Object.
 	actionHint: "Патологий не выявлено. Врач правит только выявленную патологию.",
 });
 
-export interface PatientSomaticGuardStatus {
-	readonly isHealthyNorm: boolean;
-	readonly badges: readonly DentalContraindicationBadge[];
-	readonly criticalBadges: readonly DentalContraindicationBadge[];
-	readonly warningBadges: readonly DentalContraindicationBadge[];
-	readonly hasCriticalAllergy: boolean;
-	readonly normBadge: DentalContraindicationBadge | null;
-}
-
 /**
  * Evaluates full chairside allergo-somatic guard status for patient workspace & visit header.
  */
@@ -528,4 +447,23 @@ export function getPatientSomaticGuardStatus(
 		normBadge: isHealthyNorm ? CANONICAL_SOMATIC_NORM_BADGE : null,
 	};
 }
+
+export function getSomaticBadgeInfo(
+	allergies?: string | readonly string[] | null,
+	medicalFlags?: string | readonly string[] | null,
+): SomaticBadgeInfo {
+	const rawAllergies = Array.isArray(allergies) ? allergies.join(", ") : String(allergies || "").trim();
+	const rawFlags = Array.isArray(medicalFlags) ? medicalFlags.join(", ") : String(medicalFlags || "").trim();
+
+	const hasAllergy = Boolean(rawAllergies && rawAllergies !== "Нет" && !rawAllergies.toLowerCase().includes("не выявлен"));
+	const hasSomaticWarning = Boolean(rawFlags && rawFlags !== "Нет" && !rawFlags.toLowerCase().includes("здоров") && !rawFlags.toLowerCase().includes("не выявлен"));
+
+	return {
+		hasAllergy,
+		allergyLabel: hasAllergy ? rawAllergies : "",
+		hasSomaticWarning,
+		somaticLabel: hasSomaticWarning ? rawFlags : "",
+	};
+}
+
 

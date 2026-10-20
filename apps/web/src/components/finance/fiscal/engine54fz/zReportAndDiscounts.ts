@@ -337,7 +337,7 @@ export function generate54FzZReportReceiptTapeText(params: ZReportPrintTapeParam
 	const lines: string[] = [
 		divider,
 		padCenter("ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ", maxCols),
-		padCenter("(Z-ОТЧЕТ 54-ФЗ / ФФД 1.2)", maxCols),
+		padCenter("(СУММАРНЫЙ Z-ОТЧЕТ КАССЫ 54-ФЗ)", maxCols),
 		divider,
 		padCenter(clinicName, maxCols),
 		padCenter(`ИНН ${clinicInn} КПП ${clinicKpp}`, maxCols),

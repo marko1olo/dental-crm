@@ -1,37 +1,64 @@
-## 2026-09-24T17:34:44Z
-«Читайте документ по такому адресу: 
-C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md
-целиком от первого до последнего символа перед началом любых действий. Никаких домыслов, никаких правок в конституцию, никакой самодеятельности.»
+## 2026-10-19T22:13:26Z
+[PARAGRAPH 1: РОЛЬ, СТАТУС RED TEAM ИНКВИЗИТОРА И КОНСТИТУЦИЯ]
+Ты назначен Субагентом-Разведчиком №2 (Survey Explorer 2: In-App Navigation & Real Context Integration). Твой рабочий каталог: C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2. Твой статус — беспощадный Red Team Инквизитор кодовой базы с презумпцией дефекта и фальсификации 100%. Всё, к чему ты прикасаешься, априори считается бракованным и потенциальной потёмкинской деревней, пока не доказано обратное. В своем самом первом шаге ты ОБЯЗАН открыть через view_file (порциями по 800 строк) и внимательно прочитать конституционные документы проекта: C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md, C:\Clinic_MVP\dental-crm\.agents\AGENTS.md, C:\Clinic_MVP\dental-crm\GEMINI.md и правила C:\Users\Admin\.gemini\config\rules\core.md (особенно Мандат 8e автономия врача и Мандат 8n соло-врач). Запомни: ты READ-ONLY исследователь. Ты НЕ вносишь правки в исходный код, а формируешь исчерпывающий, хирургически точный отчёт C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2\survey_report.md и handoff.md.
 
-ТВОЯ ИДЕНТИФИКАЦИЯ:
-- Роль: Survey Explorer 2 (R2 CRM Retention, Recalls & Leads)
-- Archetype: teamwork_preview_explorer
-- Твоя рабочая директория: C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2
-- Корень проекта: C:\Clinic_MVP\dental-crm
-- Официальный файл исходного запроса: C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md
+[PARAGRAPH 2: СЫРЫЕ СЛОВА СОЗДАТЕЛЯ 1:1 И КЛИНИЧЕСКИЙ СМЫСЛ]
+Сырые слова создателя и авторизованный запрос:
+«Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fallbacks, and orphaned stub components across DENTE Dental CRM, integrating all standalone features into the real production UI and PostgreSQL 18 backend.
+R2. Seamless Integration of Orphaned Modules into Real CRM Navigation & Context:
+- All clinical workspaces (Anesthesia, Hygiene Indices, Perio Chart, Prescriptions, Implant Passports, Clinical Tasks, Tax Deduction Certificates, Orthopedics Cockpit, Telephony Floating Widget) must be accessible through authentic in-app navigation (patient card tabs, chairside visit toolbar, treatment plan steps, receptionist sidebar), bound to live patient and clinic context from PostgreSQL 18 via Fastify API.
+R4. Real Backend Wiring for Stubbed Endpoints & Direct Uploads:
+- Fix stubbed or non-existent endpoints (e.g. /api/portal/mock-storage/* in labScanDirectUpload.ts) by providing real local file storage handling when cloud S3 credentials are absent, preventing 404 errors during offline or local laboratory order processing. Wire all orphaned actions (onClick={() => {}} in MobileChairsideEHR.tsx, AddServiceToothSelector.tsx, etc.) to real state transitions or proper handlers.»
+Клинический смысл: Врач за креслом не должен переключать вкладки браузера на урлы с ?anesthesia или ?perio. Анестезия должна протоколироваться прямо в визите, пародонтограмма — открываться в карточке пациента, рецепты 1094н — выписываться прямо из дневника приёма, а звонки телефонии — всплывать в рабочем виджете. Лабораторные заказ-наряды должны реально сохранять STL-сканы на диск сервера, а не падать в 404 на несуществующий mock-storage.
 
-ОБЯЗАТЕЛЬНЫЕ ОГРАНИЧЕНИЯ:
-1. Ты — агент исследования (Read-Only Explorer). НЕ модифицируй код в apps/ или packages/! Все свои отчеты и находки пиши ИСКЛЮЧИТЕЛЬНО в свою рабочую директорию.
-2. МАНДАТ 8t (Single-Compiler Gate): КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО запускать глобальный tsc, build или typecheck (`npm run typecheck`, `tsc -b --noEmit`). Используй ripgrep, fd, ast-grep, view_file.
-3. Чек-лист 7 смертных грехов интерфейса (Закон Хика: тулбар ровно 1 строка 32-36px, Закон Миллера: <=2 действия на карточке, 0 эмодзи в медформах, WCAG AAA контраст, автономия врача Мандаты 8e/8n).
-4. Оценивать состояние с фокусом на соло-врача и небольшую клинику 1-3 кресла.
+[PARAGRAPH 3: ТЕХНИЧЕСКИЙ СКОУП И ИНВАРИАНТЫ ДЛЯ ИССЛЕДОВАНИЯ]
+Твой персональный фронт исследований сфокусирован на Требованиях R2 и R4:
+1. Для каждого из 9 осиротевших клинических рабочих пространств:
+   - Anesthesia (протокол анестезии, выбор препарата, дозы, карпулы)
+   - Hygiene Indices (индексы гигиены OHI-S, Silness-Loe, КПУ, окрашивание)
+   - Perio Chart (пародонтологическая карта 6 точек, глубина карманов, кровоточивость)
+   - Prescriptions (электронные рецепты 1094н, QR-код, печать бланка)
+   - Implant Passports (паспорт имплантации, серийные номера, лоты, гарантия)
+   - Clinical Tasks (клинические задачи, напоминания, маршрутные листы)
+   - Tax Deduction Certificates (справки об оплате медицинских услуг для налогового вычета ФНС)
+   - Orthopedics Cockpit (ортопедический заказ-наряд, заказ коронок/протезов в зуботехническую лабораторию)
+   - Telephony Floating Widget (плавающий виджет входящего звонка, карточка звонящего, запись разговора)
+   Выясни: где лежит каждый компонент, какие пропсы он ожидает (patientId, visitId, clinicId, onSave), какие хуки использует.
+2. Проанализируй реальное дерево навигации DENTE:
+   - Где они должны открываться: Patient Card (табы в `PatientCard.tsx` / `PatientDetailsModal.tsx`), Chairside Visit Toolbar (`VisitModal.tsx` / `ChairsideEHR.tsx` / `DayTimeline.tsx`), Treatment Plan Steps (`TreatmentPlanModal.tsx`), Receptionist Sidebar (`AppShell.tsx` / `Sidebar.tsx`).
+   - Покажи точные точки врезки в JSX, как прокинуть реальный patientId и clinic context.
+3. Проанализируй Fastify API и Drizzle схемы в `apps/api/`:
+   - Какие эндпоинты уже существуют в `apps/api/src/routes/` для этих сущностей (perio, hygiene, anesthesia, prescriptions, implant-passports, lab-orders, tax-deduction, telephony).
+   - Есть ли отсутствующие роуты, которые нужно дописать, или все схемы уже есть в PostgreSQL 18?
+4. Исследуй `labScanDirectUpload.ts` и эндпоинт `/api/portal/mock-storage/*`:
+   - Где находится этот файл, как он отправляет запросы, почему падает в 404 при отсутствии S3.
+   - Как реализован локальный диск в `apps/api/` (например, Fastify multipart / uploads) и как перенаправить загрузку на реальный эндпоинт Fastify.
+5. Исследуй мертвые экшены `onClick={() => {}}` и заглушки в `MobileChairsideEHR.tsx`, `AddServiceToothSelector.tsx` и соседних компонентах: покажи точные файлы и строки.
 
-ТВОЯ ЦЕЛЕВАЯ ЗАДАЧА (R2: CRM Core & Patient Retention Revitalization):
-1. Провести аудит компонентов в `apps/web/src/components/recalls/` и смежных:
-   - Как сейчас идентифицируются пациенты, которым требуется профилактическая санация (>= 6 месяцев с последнего завершенного визита)?
-   - Есть ли моки/хардкод вместо реального расчета?
-   - Как устроен интерфейс 1-click генерации контакта (WhatsApp, SMS, звонок) без лишних модальных окон?
-2. Провести аудит компонентов в `apps/web/src/components/leads/` и воронки лидов:
-   - Как устроен процесс конвертации лида в запись на прием (appointment) в расписании (`ScheduleView`)?
-   - Есть ли блокирующие бюрократические поля (требование обязательного ИНН, ассистента, 10 полей анкеты)?
-   - Проверить путь конвертации: укладывается ли создание записи в <= 2 клика без модальных тупиков per Мандаты 8e, 8n?
-3. Проверить эргономику UI:
-   - Высота служебных областей (тулбаров, фильтров) — не более 160-180px суммарно на экране;
-   - Нет ли "карточек в карточках" (Закон Анти-Матрёшки);
-   - Темы оформления: поддержка Dark и Light режимов.
-4. Составить детальный план хирургических изменений для Worker:
-   - Затронутые компоненты и хуки;
-   - Необходимый рефакторинг UI и интеграция с реальным API;
-   - Чек-лист для визуальной проверки Playwright.
-5. Записать отчет в `C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2\survey_r2.md` и `handoff.md`.
-6. По завершении отправь короткое сообщение родительскому агенту через `send_message`.
+[PARAGRAPH 4: RED TEAM ЛОВУШКИ И BLIND-SPOT RADAR]
+Остерегайся ловушек:
+- Не пытайся сжать десктопные компоненты в мобилку кривыми медиа-запросами (нарушение Mobile HIG).
+- Проверь, чтобы при открытии модалок/табов контекст пациента (patientId, organizationId) не был undefined или захардкоженным '1'.
+- Убедись, что все кнопки («Сохранить», «Печать», «Утвердить») не заблокированы disabled (Мандат 8e).
+- Проверь soft negative stock и отсутствие фармакологического террора (Мандаты 8y, 8z).
+
+[PARAGRAPH 5: ПРОТОКОЛ СДАЧИ И РЕЗУЛЬТАТ]
+Зафиксируй все результаты в C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2\survey_report.md и подготовь handoff.md со структурой:
+1. Observation (полная матрица 9 модулей: файл, пропсы, API роут, точка врезки в UI).
+2. Logic Chain (пошаговый алгоритм интеграции каждого модуля и устранения stubs в labScan).
+3. Caveats (узкие места типизации, пропсов и Fastify эндпоинтов).
+4. Conclusion (техническое задание для воркеров по интеграции).
+По завершении отправь сообщение оркестратору (teamwork_preview_orchestrator_4) через send_message с кратким резюме и ссылкой на файл отчёта. Твой родитель — 1dba1dd3-1b54-431d-9253-a722303ba51f. Не забудь прочесть C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md.
+
+
+## 2026-10-19T22:17:11Z
+Сервер перезапущен, квота восстановлена. Продолжай выполнение задания по исследованию R2 и R4 (In-App Navigation & Real Context Integration, Stubbed Endpoints). Прочитай THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md и сформируй детальный survey_report.md.
+
+## 2026-10-19T22:30:57Z
+Сервер перезапущен, квота полностью восстановлена. Продолжай выполнение исследования со Шага 2:
+1. Исследуй 9 клинических пространств (Anesthesia, Hygiene Indices, Perio Chart, Prescriptions, Implant Passports, Clinical Tasks, Tax Deduction Certificates, Orthopedics Cockpit, Telephony Floating Widget) — файлы, пропсы, хуки.
+2. Исследуй точки врезки в реальную навигацию (PatientCard, ChairsideEHR / VisitModal, TreatmentPlan, AppShell / Sidebar).
+3. Исследуй Fastify API и Drizzle схемы в apps/api/ для этих сущностей.
+4. Исследуй labScanDirectUpload.ts и эндпоинт /api/portal/mock-storage/* (почему 404, как подключить локальное хранилище на сервере при отсутствии S3).
+5. Исследуй мертвые экшены onClick={() => {}} в MobileChairsideEHR.tsx, AddServiceToothSelector.tsx и соседних компонентах.
+Зафиксируй все результаты в survey_report.md и сформируй новый handoff.md.

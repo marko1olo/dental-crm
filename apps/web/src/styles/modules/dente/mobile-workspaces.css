@@ -1,0 +1,124 @@
+/* ---------- 20. МОБИЛЬНЫЙ ПУСТОЙ СТЕЙТ ПАЦИЕНТА И ПОИСК ---------- */
+@media (max-width: 840px) {
+	/* Рабочее пространство на мобиле: отступы.
+     Низ здесь НЕ переопределяется. Раньше стоял shorthand
+     `padding: 10px 12px 80px !important`, который при равной специфичности
+     (0,3,0) шёл ПОЗЖЕ правила резерва в §17 и молча его отменял: замер живой
+     страницы на 390x844 давал у `.workspace` вычисленный `padding-bottom: 80px`
+     при опубликованном резерве 144px. То есть на телефоне механизм резерва не
+     работал вообще, хотя высота навигации измерялась и публиковалась. */
+	.app-shell.dente-redesign .workspace {
+		padding-top: 10px;
+		padding-inline: 12px;
+	}
+
+	/* Пациенты — принудительно одна колонка (override inline style) */
+	.patients-main-grid {
+		display: flex !important;
+		flex-direction: column !important;
+		gap: 12px !important;
+		margin-top: 12px;
+	}
+
+	.patient-list {
+		max-height: 42vh;
+		overflow-y: auto;
+		border-radius: 12px;
+	}
+
+	/* Правая панель пациента на мобиле — полный экран */
+	.patient-admin-panel {
+		border-radius: 14px;
+		padding: 16px;
+	}
+
+	/* Пациент не выбран — компактный инфо-стейт */
+	.patient-admin-panel:not(:has([data-testid="patient-overview-tab"])) {
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		padding: 24px 20px;
+		text-align: center;
+	}
+
+	/* Карточка пустого стейта пациента */
+	.patient-empty-state,
+	[data-testid="patient-empty-state"],
+	.no-patient-selected {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: 32px 24px;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		box-shadow: var(--shadow-1);
+		margin: 0;
+		gap: 12px;
+	}
+
+	/* Строка поиска пациентов на мобиле */
+	.patients-search-bar,
+	.patient-search-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 12px;
+		background: var(--paper);
+		border-top: 1px solid var(--line);
+		position: sticky;
+		bottom: 60px;
+		z-index: 20;
+	}
+
+	/* Кнопка создать у поиска */
+	.patient-create-btn,
+	.patients-search-bar .primary-button {
+		background: var(--teal);
+		color: var(--on-teal);
+		border-radius: 10px;
+		padding: 6px 14px;
+		font-size: 12px;
+		font-weight: 700;
+		white-space: nowrap;
+		flex-shrink: 0;
+		border: none;
+	}
+
+	/* Demo/onboarding banner на мобиле — компактнее */
+	.default-clinic-banner {
+		padding: 8px 12px;
+		border-radius: 10px;
+		font-size: 12px;
+	}
+
+	.default-clinic-banner p {
+		font-size: 11px;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	/* Грид шифта и пилюли на мобиле — одна колонка */
+	.shift-hero,
+	.dnt-hero {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.shift-queues,
+	.dnt-queues {
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+
+	.shift-cockpit,
+	.dnt-cockpit {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+}
+

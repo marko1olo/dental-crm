@@ -125,6 +125,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 				}
 			} catch {}
 		};
+		syncPendingCheckout();
 		window.addEventListener("dente:pending-checkout-ready", syncPendingCheckout);
 		window.addEventListener("hashchange", syncPendingCheckout);
 		return () => {

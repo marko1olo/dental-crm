@@ -26,7 +26,7 @@ export const RetailModalHeader: React.FC<RetailModalHeaderProps> = ({ patientNam
 							Витрина стойки ресепшена
 						</h2>
 						<span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-							54-ФЗ НДС 20% / Аванс
+							Кассовый чек: НДС 20% / Аванс
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted,#64748b)] truncate">
@@ -64,7 +64,7 @@ export const RetailModalFooter: React.FC<RetailModalFooterProps> = ({
 			<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
 				<ShieldCheck size={14} className="text-teal-600 shrink-0" />
 				<span className="hidden sm:inline">
-					54-ФЗ: товары витрины пробиваются со ставкой <strong>НДС 20%</strong> (ст. 164 НК РФ). Медуслуги — <strong>Без НДС</strong>.
+					Товары витрины пробиваются со ставкой <strong>НДС 20%</strong>. Медицинские услуги — <strong>Без НДС</strong>.
 				</span>
 				<span className="sm:hidden text-[11px]">
 					Товары: НДС 20% · Услуги: Без НДС

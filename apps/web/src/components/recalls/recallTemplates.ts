@@ -1,8 +1,6 @@
 /**
  * Omnichannel Communication Templates & 1-Click Booking Link Generator (DOMAIN: RECALLS)
- *
- * Персонализированные шаблоны для WhatsApp, Telegram, SMS и телефонных скриптов администратора.
- * Соответствует ФЗ «О рекламе» ст. 18 ч. 1, принципам клинической деонтологии и юридическим стандартам клиники.
+ * Mandate 8b (<= 120 lines), Mandate 8x (Human Clinical Language)
  */
 
 export {
@@ -31,7 +29,11 @@ export {
 
 export type {
 	RecallScriptObjection,
+	RecallInvitationTemplate,
 	RecallCallingScript,
-} from "./recallCallingScriptTypes";
+} from "./recallInvitationTemplates";
 
-export { CLINICAL_CALLING_SCRIPTS } from "./recallCallingScriptsCatalog";
+export {
+	INVITATION_TEMPLATES,
+	CLINICAL_CALLING_SCRIPTS,
+} from "./recallInvitationTemplates";

@@ -263,6 +263,47 @@ export function formatKopecksRu(kopecks: Kopecks): string {
 /** Алиас для обратной совместимости */
 export const moneyRub = formatKopecksRu;
 
+/**
+ * Форматирует рублевую сумму с копейками в стандарте РФ: "1 500,00 ₽" или "1 500,50 ₽".
+ * Гарантирует точные 2 знака копеек, неразрывный пробел U+00A0 и знак рубля.
+ */
+export function formatRublesExactRu(rubles: number | string | null | undefined): string {
+	if (rubles === null || rubles === undefined || rubles === "") return `0,00${RU_MONEY_NBSP}₽`;
+	const kopecks = parseKopecks(rubles);
+	return formatKopecksRu(kopecks);
+}
+
+/** Алиас для соответствия банковским и фискальным реестрам */
+export const formatCurrencyRu = formatRublesExactRu;
+
+/**
+ * Сумма для показа человеку в интерфейсе (Мандат 8b):
+ * Круглые суммы отображаются без лишних копеек ("1 500 ₽"), суммы с копейками — с 2 знаками ("1 500,50 ₽").
+ * Неопределённые значения заменяются на fallback (по умолчанию "0 ₽" или заданный текст).
+ */
+export function formatCurrency(
+	value: number | string | null | undefined,
+	fallback = "0 ₽",
+): string {
+	if (value === null || value === undefined || value === "") return fallback;
+	try {
+		const kopecks = parseKopecks(value);
+		if (kopecks === 0) return `0${RU_MONEY_NBSP}₽`;
+		if (kopecks % KOPECKS_IN_RUBLE === 0) {
+			const whole = Math.trunc(Math.abs(kopecks) / KOPECKS_IN_RUBLE);
+			const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, RU_MONEY_NBSP);
+			const sign = kopecks < 0 ? RU_MONEY_MINUS : "";
+			return `${sign}${grouped}${RU_MONEY_NBSP}₽`;
+		}
+		return formatKopecksRu(kopecks);
+	} catch {
+		return fallback;
+	}
+}
+
+export const formatRubles = formatCurrency;
+
+
 function assertWholeKopecks(value: Kopecks): void {
 	if (typeof value !== "number" || !Number.isFinite(value) || Number.isNaN(value) || !Number.isInteger(value)) {
 		throw new Error(

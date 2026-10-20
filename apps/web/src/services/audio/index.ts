@@ -6,3 +6,4 @@ export * from "./ResamplingAudioWorklet";
 export * from "./VadEngine";
 export * from "./audioWorkletLoader";
 export * from "./SoundFeedbackService";
+export * from "./clinicalProceduralAudio";

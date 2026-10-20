@@ -13,12 +13,12 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 
 const API_BASE = "http://127.0.0.1:4100";
-const WEB_BASE = "http://127.0.0.1:5173";
+const WEB_BASE = process.env.VITE_URL || "http://127.0.0.1:5174";
 
 const TARGET_DIRS = [
   path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/radiology"),
   path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/radiology"),
-  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/353f6729-cd87-47a5-b81f-a3c590d0de80"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/d4e8eae4-1e30-42da-a55e-8010c79f5bb6"),
 ];
 
 for (const dir of TARGET_DIRS) {
@@ -348,6 +348,7 @@ async function run() {
     await applyTheme(page, false);
     await page.waitForTimeout(800);
     results.push(await saveProof(page, "radiology_gallery_pc_light.png"));
+    results.push(await saveProof(page, "pc_light_archive_teeth_1440x900.png"));
 
     await applyTheme(page, true);
     await page.waitForTimeout(800);
@@ -404,6 +405,7 @@ async function run() {
     await applyTheme(page, true);
     await page.waitForTimeout(800);
     results.push(await saveProof(page, "chairside_xray_binding_pc_dark.png"));
+    results.push(await saveProof(page, "pc_dark_rvg_viewer_1440x900.png"));
 
     console.log("Closing DirectRvgCaptureModal...");
     const rvgCloseBtn = await page.waitForSelector('[data-testid="rvg-modal-close-btn"]', { timeout: 5000 }).catch(() => null);
@@ -553,10 +555,12 @@ async function run() {
     await applyTheme(mobilePage, false);
     await mobilePage.waitForTimeout(800);
     results.push(await saveProof(mobilePage, "radiology_studio_mobile_light_390x844.png"));
+    results.push(await saveProof(mobilePage, "mobile_light_chairside_390x844.png"));
 
     await applyTheme(mobilePage, true);
     await mobilePage.waitForTimeout(800);
     results.push(await saveProof(mobilePage, "radiology_studio_mobile_dark_390x844.png"));
+    results.push(await saveProof(mobilePage, "mobile_dark_chairside_390x844.png"));
     await mobileContext.close();
 
     console.log("\n=================== VERIFICATION AUDIT ===================");

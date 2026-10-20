@@ -36,7 +36,7 @@ export const RetailProductCard: React.FC<RetailProductCardProps> = ({
 						className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${
 							isCert ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
 						}`}
-						title={isCert ? "Подарочный сертификат: Аванс по 54-ФЗ" : "Розничный товар: НДС 20%"}
+						title={isCert ? "Подарочный сертификат: Аванс" : "Розничный товар: НДС 20%"}
 					>
 						{isCert ? "АВАНС / БЕЗ НДС" : "НДС 20%"}
 					</span>

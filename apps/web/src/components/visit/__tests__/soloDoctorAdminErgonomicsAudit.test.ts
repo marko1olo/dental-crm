@@ -20,7 +20,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import {
 	compileShiftForm257Records,
 	compileShiftPsoBatches,
@@ -308,13 +308,13 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 			);
 		});
 
-		it("verifies DoctorShiftRosterModal renders TimesheetT13Modal sequentially (depth 1)", () => {
+		it("verifies DoctorShiftRosterModal renders DoctorPayrollModal sequentially (depth 1)", () => {
 			const rosterFile = path.join(WEB_SRC, "components/schedule/roster/DoctorShiftRosterModal.tsx");
 			const content = fs.readFileSync(rosterFile, "utf8");
 
 			assert.ok(
-				content.includes("Anti-Matryoshka (Sin 6, Mandate 8d): Render TimesheetT13Modal sequentially (depth strictly 1)"),
-				"DoctorShiftRosterModal must sequentially render TimesheetT13Modal",
+				content.includes("Anti-Matryoshka (Sin 6, Mandate 8d): Render DoctorPayrollModal sequentially (depth strictly 1)"),
+				"DoctorShiftRosterModal must sequentially render DoctorPayrollModal",
 			);
 		});
 

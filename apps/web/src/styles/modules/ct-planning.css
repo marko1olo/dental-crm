@@ -1,0 +1,799 @@
+/* ==========================================================================
+   DENTE CRM — CT IMPLANT PLANNING & LIBRARY STYLES (modules/ct-planning.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Plan board, implant library, surgical guide artifacts.
+   ========================================================================== */
+.ct-planning-suite {
+	background: rgba(234, 255, 250, 0.06);
+	border: 1px solid rgba(215, 255, 246, 0.16);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 10px;
+}
+
+.ct-planning-suite.compact {
+	background: #102a2b;
+}
+
+.ct-planning-suite-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.ct-planning-suite-head div {
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+}
+
+.ct-planning-suite-head strong {
+	color: #eafffa;
+	font-size: 14px;
+	line-height: 1.2;
+}
+
+.ct-planning-suite-head span {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-suite-head > span {
+	border: 1px solid rgba(215, 255, 246, 0.18);
+	border-radius: 999px;
+	flex: 0 0 auto;
+	padding: 6px 9px;
+	white-space: nowrap;
+}
+
+.ct-planning-suite-head > span.ready {
+	background: rgba(119, 215, 199, 0.18);
+	color: #ddfff8;
+}
+
+.ct-planning-suite-head > span.locked {
+	background: rgba(240, 180, 75, 0.16);
+	color: #ffe5aa;
+}
+
+.ct-planning-tool-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-quick-actions {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ct-planning-quick-action {
+	background: rgba(234, 255, 250, 0.07);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	gap: 4px;
+	font: inherit;
+	min-width: 0;
+	padding: 8px;
+	text-align: left;
+}
+
+.ct-planning-quick-action:hover,
+.ct-planning-quick-action:focus-visible,
+.ct-planning-quick-action.selected {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+	outline: none;
+}
+
+.ct-planning-quick-action.locked,
+.ct-planning-quick-action:disabled {
+	border-left-color: #f0b44b;
+	cursor: not-allowed;
+	opacity: 0.72;
+}
+
+.ct-planning-quick-action span {
+	color: #eafffa;
+	font-size: 13px;
+	font-weight: 900;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-quick-action strong,
+.ct-planning-quick-action small {
+	color: #b7dcd7;
+	font-size: 11px;
+	font-weight: 850;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-workflow,
+.ct-planning-plan-board,
+.ct-planning-metric-grid {
+	display: grid;
+	gap: 8px;
+}
+
+.ct-planning-workflow {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-workflow.ct-planning-workflow-board {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.ct-planning-workflow-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ct-planning-plan-board {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-metric-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-workflow article,
+.ct-planning-plan-board article,
+.ct-planning-metric-grid article {
+	background: rgba(0, 0, 0, 0.12);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.ct-planning-workflow article.locked,
+.ct-planning-metric-grid article.locked {
+	opacity: 0.78;
+}
+
+.ct-planning-plan-board article {
+	border-left: 3px solid #77d7c7;
+}
+
+.ct-planning-workflow strong,
+.ct-planning-plan-board strong,
+.ct-planning-metric-grid strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-workflow span,
+.ct-planning-plan-board span,
+.ct-planning-metric-grid span,
+.ct-planning-plan-board p,
+.ct-planning-metric-grid p,
+.ct-planning-metric-grid small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-plan-board span,
+.ct-planning-metric-grid span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	text-transform: uppercase;
+}
+
+.ct-planning-active-action-artifacts {
+	display: grid;
+	gap: 6px;
+}
+
+.ct-planning-active-artifact-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.ct-planning-export-scenario-artifacts,
+.ct-planning-workflow-issues {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.ct-planning-active-artifact-chips em {
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 999px;
+	color: #d7fff6;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 900;
+	line-height: 1.2;
+	padding: 4px 7px;
+}
+
+.ct-planning-export-scenario-artifacts em,
+.ct-planning-workflow-issues em {
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 999px;
+	color: #d7fff6;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 900;
+	line-height: 1.2;
+	padding: 4px 7px;
+}
+
+.ct-planning-active-artifact-chips em.blocked {
+	border-color: rgba(240, 180, 75, 0.42);
+	color: #ffe2a8;
+}
+
+.ct-planning-export-scenario-artifacts em.blocked {
+	border-color: rgba(240, 180, 75, 0.42);
+	color: #ffe2a8;
+}
+
+.ct-planning-active-artifact-chips em.draft {
+	border-color: rgba(119, 215, 199, 0.34);
+	color: #c4eee8;
+}
+
+.ct-planning-export-scenario-artifacts em.draft {
+	border-color: rgba(119, 215, 199, 0.34);
+	color: #c4eee8;
+}
+
+.ct-planning-active-action-artifacts button {
+	background: rgba(119, 215, 199, 0.12);
+	border: 1px solid rgba(119, 215, 199, 0.4);
+	border-radius: 8px;
+	color: #eafffa;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 950;
+	justify-self: start;
+	min-height: 32px;
+	padding: 6px 9px;
+}
+
+.ct-planning-active-action-artifacts button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.ct-planning-tool {
+	background: rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.ct-planning-tool.locked {
+	border-left-color: #f0b44b;
+	opacity: 0.84;
+}
+
+.ct-planning-tool > span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.ct-planning-tool strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-tool p,
+.ct-planning-tool small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-tool small {
+	color: #b7dcd7;
+}
+
+.ct-planning-task-board,
+.ct-planning-task-list,
+.ct-planning-workflow-grid,
+.ct-planning-geometry-grid,
+.ct-planning-validation-grid,
+.ct-planning-measurement-board,
+.ct-planning-measurement-grid,
+.ct-planning-implant-fit-board,
+.ct-planning-implant-fit-grid,
+.ct-planning-implant-board,
+.ct-planning-implant-grid,
+.ct-planning-reconstruction-board,
+.ct-planning-reconstruction-grid,
+.ct-planning-export-board,
+.ct-planning-export-facts,
+.ct-planning-export-lanes,
+.ct-planning-artifact-board,
+.ct-planning-artifact-grid {
+	display: grid;
+	gap: 8px;
+}
+
+.ct-planning-task-board {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-task-list,
+.ct-planning-workflow-grid,
+.ct-planning-geometry-grid,
+.ct-planning-validation-grid,
+.ct-planning-measurement-grid,
+.ct-planning-implant-fit-grid,
+.ct-planning-implant-grid,
+.ct-planning-reconstruction-grid,
+.ct-planning-export-facts,
+.ct-planning-export-lanes,
+.ct-planning-artifact-grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ct-planning-reconstruction-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-implant-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-implant-fit-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:is(
+	.ct-planning-task-board article,
+	.ct-planning-task,
+	.ct-planning-workflow-summary,
+	.ct-planning-workflow-focus,
+	.ct-planning-workflow-step,
+	.ct-planning-workflow-warnings,
+	.ct-planning-geometry-card,
+	.ct-planning-validation-card,
+	.ct-planning-measurement-summary,
+	.ct-planning-measurement-card,
+	.ct-planning-measurement-warnings,
+	.ct-planning-implant-fit-summary,
+	.ct-planning-implant-fit-card,
+	.ct-planning-implant-fit-warnings,
+	.ct-planning-implant-summary,
+	.ct-planning-implant-card,
+	.ct-planning-implant-warnings,
+	.ct-planning-reconstruction-summary,
+	.ct-planning-reconstruction-card,
+	.ct-planning-reconstruction-warnings,
+	.ct-planning-export-summary,
+	.ct-planning-export-release,
+	.ct-planning-export-focus,
+	.ct-planning-export-fit,
+	.ct-planning-export-fact,
+	.ct-planning-export-card,
+	.ct-planning-export-missing,
+	.ct-planning-artifact-summary,
+	.ct-planning-artifact-card
+) {
+	background: rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 10px;
+}
+
+:is(
+	.ct-planning-task-board article.blocked,
+	.ct-planning-task.blocked,
+	.ct-planning-workflow-summary.active,
+	.ct-planning-workflow-focus.active,
+	.ct-planning-workflow-step.active,
+	.ct-planning-geometry-card.attention,
+	.ct-planning-validation-card.warn,
+	.ct-planning-measurement-summary.draft,
+	.ct-planning-measurement-card.draft,
+	.ct-planning-implant-fit-summary.draft,
+	.ct-planning-implant-fit-card.draft,
+	.ct-planning-implant-summary.draft,
+	.ct-planning-implant-card.draft,
+	.ct-planning-reconstruction-summary.draft,
+	.ct-planning-reconstruction-card.draft,
+	.ct-planning-export-summary.warning,
+	.ct-planning-export-release.warning,
+	.ct-planning-export-focus.warning,
+	.ct-planning-export-fit.warning,
+	.ct-planning-export-fact.warning,
+	.ct-planning-export-card.warning,
+	.ct-planning-artifact-card.draft
+) {
+	border-left-color: #f0b44b;
+}
+
+:is(
+	.ct-planning-validation-card.fail,
+	.ct-planning-workflow-summary.blocked,
+	.ct-planning-workflow-focus.blocked,
+	.ct-planning-workflow-step.blocked,
+	.ct-planning-workflow-warnings,
+	.ct-planning-measurement-summary.blocked,
+	.ct-planning-measurement-card.blocked,
+	.ct-planning-measurement-warnings,
+	.ct-planning-implant-fit-summary.blocked,
+	.ct-planning-implant-fit-card.blocked,
+	.ct-planning-implant-fit-warnings,
+	.ct-planning-implant-summary.blocked,
+	.ct-planning-implant-card.blocked,
+	.ct-planning-implant-warnings,
+	.ct-planning-reconstruction-summary.blocked,
+	.ct-planning-reconstruction-card.blocked,
+	.ct-planning-reconstruction-warnings,
+	.ct-planning-export-summary.blocked,
+	.ct-planning-export-release.blocked,
+	.ct-planning-export-focus.blocked,
+	.ct-planning-export-fit.blocked,
+	.ct-planning-export-fact.blocked,
+	.ct-planning-export-card.blocked,
+	.ct-planning-export-missing,
+	.ct-planning-artifact-card.blocked
+) {
+	border-left-color: #ef6f6c;
+}
+
+:is(
+	.ct-planning-validation-card.pass,
+	.ct-planning-workflow-summary.ready,
+	.ct-planning-workflow-focus.ready,
+	.ct-planning-workflow-step.ready,
+	.ct-planning-measurement-summary.ready,
+	.ct-planning-measurement-card.ready,
+	.ct-planning-implant-fit-summary.ready,
+	.ct-planning-implant-fit-card.ready,
+	.ct-planning-implant-summary.ready,
+	.ct-planning-implant-card.ready,
+	.ct-planning-reconstruction-summary.ready,
+	.ct-planning-reconstruction-card.ready,
+	.ct-planning-export-summary.ready,
+	.ct-planning-export-release.ready,
+	.ct-planning-export-focus.ready,
+	.ct-planning-export-fit.ready,
+	.ct-planning-export-fact.ready,
+	.ct-planning-export-card.ready,
+	.ct-planning-artifact-card.ready
+) {
+	border-left-color: #77d7c7;
+}
+
+:is(
+	.ct-planning-task.active,
+	.ct-planning-workflow-focus.active,
+	.ct-planning-workflow-step.active
+) {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+}
+
+:is(
+		.ct-planning-task-board,
+		.ct-planning-task,
+		.ct-planning-workflow-summary,
+		.ct-planning-workflow-focus,
+		.ct-planning-workflow-step,
+		.ct-planning-workflow-warnings,
+		.ct-planning-geometry-card,
+		.ct-planning-validation-card,
+		.ct-planning-measurement-summary,
+		.ct-planning-measurement-card,
+		.ct-planning-measurement-warnings,
+		.ct-planning-implant-fit-summary,
+		.ct-planning-implant-fit-card,
+		.ct-planning-implant-fit-warnings,
+		.ct-planning-implant-summary,
+		.ct-planning-implant-card,
+		.ct-planning-implant-warnings,
+		.ct-planning-reconstruction-summary,
+		.ct-planning-reconstruction-card,
+		.ct-planning-reconstruction-warnings,
+		.ct-planning-export-summary,
+		.ct-planning-export-release,
+		.ct-planning-export-focus,
+		.ct-planning-export-fit,
+		.ct-planning-export-fact,
+		.ct-planning-export-card,
+		.ct-planning-export-missing,
+		.ct-planning-artifact-summary,
+		.ct-planning-artifact-card
+	)
+	span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+:is(
+		.ct-planning-task-board,
+		.ct-planning-task,
+		.ct-planning-workflow-summary,
+		.ct-planning-workflow-focus,
+		.ct-planning-workflow-step,
+		.ct-planning-geometry-card,
+		.ct-planning-validation-card,
+		.ct-planning-measurement-summary,
+		.ct-planning-measurement-card,
+		.ct-planning-implant-fit-summary,
+		.ct-planning-implant-fit-card,
+		.ct-planning-implant-summary,
+		.ct-planning-implant-card,
+		.ct-planning-reconstruction-summary,
+		.ct-planning-reconstruction-card,
+		.ct-planning-export-summary,
+		.ct-planning-export-release,
+		.ct-planning-export-focus,
+		.ct-planning-export-fit,
+		.ct-planning-export-fact,
+		.ct-planning-export-card,
+		.ct-planning-artifact-summary,
+		.ct-planning-artifact-card
+	)
+	strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-export-card b {
+	color: #77d7c7;
+	font-size: 12px;
+	line-height: 1.25;
+}
+
+.ct-planning-artifact-card button {
+	align-items: center;
+	background: rgba(119, 215, 199, 0.14);
+	border: 1px solid rgba(119, 215, 199, 0.32);
+	border-radius: 8px;
+	color: #eafffa;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 950;
+	justify-content: center;
+	min-height: 34px;
+	padding: 6px 10px;
+}
+
+.ct-planning-artifact-card button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.ct-planning-task-board p,
+.ct-planning-task-board small,
+.ct-planning-task p,
+.ct-planning-task small,
+.ct-planning-task em,
+.ct-planning-workflow-summary p,
+.ct-planning-workflow-summary small,
+.ct-planning-workflow-focus p,
+.ct-planning-workflow-focus small,
+.ct-planning-workflow-step p,
+.ct-planning-workflow-step small,
+.ct-planning-workflow-warnings p,
+.ct-planning-geometry-card p,
+.ct-planning-geometry-card small,
+.ct-planning-validation-card p,
+.ct-planning-measurement-summary p,
+.ct-planning-measurement-summary small,
+.ct-planning-measurement-card p,
+.ct-planning-measurement-card small,
+.ct-planning-measurement-warnings p,
+.ct-planning-implant-fit-summary p,
+.ct-planning-implant-fit-summary small,
+.ct-planning-implant-fit-card p,
+.ct-planning-implant-fit-card small,
+.ct-planning-implant-fit-warnings p,
+.ct-planning-implant-summary p,
+.ct-planning-implant-summary small,
+.ct-planning-implant-card p,
+.ct-planning-implant-card small,
+.ct-planning-implant-warnings p,
+.ct-planning-reconstruction-summary p,
+.ct-planning-reconstruction-summary small,
+.ct-planning-reconstruction-card p,
+.ct-planning-reconstruction-card small,
+.ct-planning-reconstruction-warnings p,
+.ct-planning-export-summary p,
+.ct-planning-export-summary small,
+.ct-planning-export-release p,
+.ct-planning-export-release small,
+.ct-planning-export-focus p,
+.ct-planning-export-focus small,
+.ct-planning-export-fit p,
+.ct-planning-export-fit small,
+.ct-planning-export-fact p,
+.ct-planning-export-card p,
+.ct-planning-export-card small,
+.ct-planning-export-missing p,
+.ct-planning-artifact-summary p,
+.ct-planning-artifact-card p,
+.ct-planning-artifact-card small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-task em {
+	color: #ffe5aa;
+}
+
+.ct-planning-export-summary,
+.ct-planning-export-release {
+	background: rgba(119, 215, 199, 0.1);
+}
+
+.ct-planning-export-summary.blocked,
+.ct-planning-export-release.blocked {
+	background: rgba(239, 111, 108, 0.1);
+}
+
+.ct-planning-export-focus,
+.ct-planning-export-fit {
+	background: rgba(215, 255, 246, 0.07);
+}
+
+.ct-planning-export-release.warning,
+.ct-planning-export-focus.warning,
+.ct-planning-export-fit.warning {
+	background: rgba(240, 180, 75, 0.1);
+}
+
+.ct-planning-export-missing p {
+	color: #ffd1d0;
+}
+
+.ct-planning-implant-fit-card.selected {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+}
+
+.ct-planning-implant-fit-reasons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.ct-planning-implant-fit-reasons em {
+	background: rgba(215, 255, 246, 0.08);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 999px;
+	color: #d7fff6;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 850;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+	padding: 3px 6px;
+}
+
+.ct-implant-library-strip {
+	background: rgba(0, 0, 0, 0.12);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 9px;
+}
+
+.ct-implant-library-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.ct-implant-library-head strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-implant-library-head span {
+	color: #b7dcd7;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	max-width: 680px;
+	text-align: right;
+}
+
+.ct-implant-library-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-implant-library-card {
+	background: rgba(234, 255, 250, 0.07);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	gap: 4px;
+	font: inherit;
+	min-width: 0;
+	padding: 8px;
+	text-align: left;
+}
+
+.ct-implant-library-card:hover,
+.ct-implant-library-card:focus-visible,
+.ct-implant-library-card.selected {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+	outline: none;
+}
+
+.ct-implant-library-card span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.ct-implant-library-card strong {
+	color: #eafffa;
+	font-size: 14px;
+	line-height: 1.25;
+}
+
+.ct-implant-library-card p,
+.ct-implant-library-card small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}

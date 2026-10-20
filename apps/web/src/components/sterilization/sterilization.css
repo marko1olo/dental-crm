@@ -497,13 +497,21 @@
 	padding: 0.35rem 0.65rem;
 	min-height: 38px;
 	border-radius: 10px;
-	background: linear-gradient(135deg, rgba(20, 184, 166, 0.06) 0%, rgba(2, 132, 199, 0.06) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(20, 184, 166, 0.06) 0%,
+		rgba(2, 132, 199, 0.06) 100%
+	);
 	border: 1px solid var(--teal, rgba(20, 184, 166, 0.3));
 	flex-wrap: wrap;
 }
 
 [data-theme="dark"] .sterilization-presets-bar {
-	background: linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, rgba(2, 132, 199, 0.12) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(20, 184, 166, 0.12) 0%,
+		rgba(2, 132, 199, 0.12) 100%
+	);
 	border-color: rgba(45, 212, 191, 0.35);
 }
 
@@ -778,7 +786,7 @@
 	.sterilization-footer,
 	.sterilization-scanner-box,
 	.sterilization-presets-bar {
-		display: none !important;
+		display: none;
 	}
 	.sterilization-table {
 		width: 100%;
@@ -792,5 +800,3 @@
 		padding: 4px 6px;
 	}
 }
-
-

@@ -1,0 +1,280 @@
+/* ==========================================================================
+   DENTE CRM — PRICELIST RECOGNITION & TAXONOMY (modules/pricelist-recognition.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Recognition lab, taxonomy chips, image upload, price row.
+   ========================================================================== */
+.recognition-lab {
+	background:
+		linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(255, 255, 255, 0)),
+		var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}
+
+.pricelist-studio {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}
+
+.pricelist-controls {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.pricelist-workbench,
+.pricelist-result {
+	display: grid;
+	gap: 10px;
+}
+
+.pricelist-taxonomy {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.pricelist-taxonomy summary {
+	align-items: center;
+	cursor: pointer;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	list-style: none;
+	min-height: 36px;
+	padding: 6px 12px;
+}
+
+.pricelist-taxonomy summary::-webkit-details-marker {
+	display: none;
+}
+
+.pricelist-taxonomy summary::after {
+	color: var(--teal-dark);
+	content: "+";
+	flex: 0 0 auto;
+	font-weight: 900;
+}
+
+.pricelist-taxonomy[open] summary::after {
+	content: "-";
+}
+
+.pricelist-taxonomy summary span {
+	color: var(--ink);
+	font-weight: 900;
+}
+
+.pricelist-taxonomy summary small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	text-align: right;
+}
+
+.taxonomy-grid {
+	border-top: 1px solid var(--line);
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	padding: 10px;
+}
+
+.taxonomy-grid article {
+	background: #f7fbfa;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.taxonomy-grid strong {
+	color: var(--teal-dark);
+	font-size: 13px;
+	line-height: 1.2;
+}
+
+.taxonomy-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.taxonomy-chip-row span,
+.taxonomy-chip-row small {
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 850;
+	line-height: 1.2;
+	padding: 5px 7px;
+}
+
+.taxonomy-chip-row span {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.taxonomy-chip-row small {
+	background: #fff;
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.taxonomy-chip-row-flat small {
+	color: var(--teal-dark);
+}
+
+.pricelist-workbench textarea {
+	min-height: 180px;
+}
+
+.pricelist-image-row {
+	align-items: stretch;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.pricelist-image-upload {
+	align-items: center;
+	background: #fbfefd;
+	border: 1px dashed rgba(15, 118, 110, 0.4);
+	border-radius: 8px;
+	cursor: pointer;
+	display: grid;
+	gap: 3px 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+	padding: 10px;
+}
+
+.pricelist-image-upload svg {
+	color: var(--teal);
+	grid-row: 1 / 3;
+	height: 22px;
+	width: 22px;
+}
+
+.pricelist-image-upload span {
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 900;
+	overflow-wrap: anywhere;
+}
+
+.pricelist-image-upload small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.pricelist-image-upload input {
+	height: 1px;
+	opacity: 0;
+	position: absolute;
+	width: 1px;
+}
+
+.pricelist-status {
+	align-items: center;
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(120px, 0.7fr) auto auto minmax(220px, 1.4fr);
+	padding: 9px;
+}
+
+.pricelist-status strong {
+	color: var(--teal-dark);
+}
+
+.pricelist-status span,
+.pricelist-status small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+}
+
+.pricelist-summary {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pricelist-summary article {
+	background: #f7fbfa;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 4px;
+	padding: 10px;
+}
+
+.pricelist-summary strong,
+.pricelist-row strong {
+	color: var(--ink);
+	line-height: 1.25;
+}
+
+.pricelist-summary span,
+.pricelist-summary p,
+.pricelist-summary small,
+.pricelist-row span,
+.pricelist-row small,
+.pricelist-row p {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.pricelist-rows {
+	display: grid;
+	gap: 7px;
+}
+
+.pricelist-row {
+	align-items: start;
+	background: #fff;
+	border: 1px solid var(--line);
+	border-left: 4px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.7fr) minmax(
+			170px,
+			0.9fr
+		);
+	padding: 9px;
+}
+
+.secondary-button.active {
+	background: var(--teal-soft);
+	border-color: rgba(15, 118, 110, 0.35);
+	color: var(--teal-dark);
+}
+
+.speech-provider-panel {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 12px;
+}

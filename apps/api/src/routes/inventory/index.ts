@@ -3,20 +3,25 @@ import { batchTrackingRoutes } from "./batchTrackingRoutes.js";
 import { itemCatalogRoutes } from "./itemCatalogRoutes.js";
 import { procedureRuleRoutes } from "./procedureRuleRoutes.js";
 import { stockLedgerRoutes } from "./stockLedgerRoutes.js";
+import { stornoRoutes } from "./stornoRoutes.js";
 import { supplierInvoiceRoutes } from "./supplierInvoiceRoutes.js";
 import { writeOffRoutes } from "./writeOffRoutes.js";
-import { stornoRoutes } from "./stornoRoutes.js";
 
-export { INVALID_DATE, normalizedExpirationDate, toValidUuid } from "./types.js";
+export * from "./consumables/index.js";
 export * from "./types.js";
+export {
+	INVALID_DATE,
+	normalizedExpirationDate,
+	toValidUuid,
+} from "./types.js";
 export {
 	batchTrackingRoutes,
 	itemCatalogRoutes,
 	procedureRuleRoutes,
 	stockLedgerRoutes,
+	stornoRoutes,
 	supplierInvoiceRoutes,
 	writeOffRoutes,
-	stornoRoutes,
 };
 
 export const inventoryRoutes: FastifyPluginAsync = async (

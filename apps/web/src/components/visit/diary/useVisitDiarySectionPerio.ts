@@ -1,8 +1,8 @@
 import type React from "react";
 import type { DiaryState } from "../../useVisitDiaryLogic";
 import type { PerioPathologyPreset } from "../../../lib/clinicalProtocols043";
-import { generatePediatricCariogramDiaryText } from "../../odontogram/pediatricDentitionEngine";
 import { showToast } from "../../GlobalToast";
+import { buildPerioStatusText, buildPediatricStatusText } from "./perioDiaryTemplates";
 
 export interface UseVisitDiarySectionPerioParams {
 	readonly ensureRevisingIfLocked: () => void;
@@ -17,36 +17,29 @@ export interface UseVisitDiarySectionPerioParams {
 	readonly ctxToast?: (msg: string, variant?: "info" | "success" | "warn" | "error") => void;
 }
 
-export function useVisitDiarySectionPerio({
-	ensureRevisingIfLocked,
-	setDiary,
-	scheduleDebouncedSave,
-	setIcdSearch,
-	diary,
-	doctorName,
-	patientBirthDate,
-	activeTeeth,
-	setShowPerioPathologyMenu,
-	ctxToast,
-}: UseVisitDiarySectionPerioParams) {
+export function useVisitDiarySectionPerio(params: UseVisitDiarySectionPerioParams) {
+	const {
+		ensureRevisingIfLocked,
+		setDiary,
+		scheduleDebouncedSave,
+		setIcdSearch,
+		diary,
+		doctorName,
+		patientBirthDate,
+		activeTeeth,
+		setShowPerioPathologyMenu,
+		ctxToast,
+	} = params;
+
 	const handleInsertPerioStatus = () => {
 		ensureRevisingIfLocked();
-		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (ФИЗИОЛОГИЧЕСКАЯ НОРМА)]
-Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено, патологических карманов нет (норма).
-Глубина зондирования зубодесневых борозд: 1–2 мм во всех секстантах.
-Кровоточивость при зондировании (BOP): отсутствует (0%).
-Патологическая подвижность зубов и фуркационные дефекты: не выявлены.
-Клинический диагноз: Клинически здоровый пародонт (К05.0 / Здоровый пародонт).
-Врач: ${doctorName || "Лечащий врач"}.`;
-
+		const perioText = buildPerioStatusText(doctorName);
 		const icd10Code = "K05.0";
 
 		setDiary((prev) => ({
 			...prev,
 			diagnosisIcd10: prev.diagnosisIcd10 || icd10Code,
-			statusLocalis: prev.statusLocalis
-				? `${prev.statusLocalis}\n\n${perioText}`
-				: perioText,
+			statusLocalis: prev.statusLocalis ? `${prev.statusLocalis}\n\n${perioText}` : perioText,
 			treatmentDescription: prev.treatmentDescription
 				? `${prev.treatmentDescription}\n\n• Профилактический осмотр через 6 месяцев.`
 				: "• Контролируемая индивидуальная гигиена полости рта.\n• Профилактический осмотр через 6 месяцев.",
@@ -81,29 +74,12 @@ export function useVisitDiarySectionPerio({
 
 	const handleInsertPediatricStatus = () => {
 		ensureRevisingIfLocked();
-		const patientAgeYears = patientBirthDate
-			? Math.floor(
-					(Date.now() - new Date(patientBirthDate).getTime()) /
-						(365.25 * 24 * 3600 * 1000),
-				)
-			: 8;
-
-		const teethStatesMap = activeTeeth.reduce(
-			(acc, t) => ({ ...acc, [t.toothNumber]: t.state }),
-			{} as Record<number, string>,
-		);
-
-		const pediatricText = generatePediatricCariogramDiaryText({
-			patientAgeYears: Math.max(1, Math.min(18, patientAgeYears || 8)),
-			teethStates: teethStatesMap,
-		});
+		const pediatricText = buildPediatricStatusText(patientBirthDate, activeTeeth);
 
 		setDiary((prev) => ({
 			...prev,
 			diagnosisIcd10: prev.diagnosisIcd10 || "Z01.2",
-			statusLocalis: prev.statusLocalis
-				? `${prev.statusLocalis}\n\n${pediatricText}`
-				: pediatricText,
+			statusLocalis: prev.statusLocalis ? `${prev.statusLocalis}\n\n${pediatricText}` : pediatricText,
 			treatmentDescription: prev.treatmentDescription
 				? `${prev.treatmentDescription}\n\n• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур постоянных моляров (16, 26, 36, 46).`
 				: "• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур первых постоянных моляров (16, 26, 36, 46).\n• Обучение гигиене и подбор детской фторсодержащей пасты (1000 ppm F-).",
@@ -119,23 +95,10 @@ export function useVisitDiarySectionPerio({
 		ensureRevisingIfLocked();
 		setDiary((prev) => {
 			const cur = (prev.anamnesis ?? "").trim();
-			if (!cur) {
-				return {
-					...prev,
-					anamnesis: `${chipText}.`,
-				};
-			}
-			if (cur.includes(chipText)) {
-				return prev;
-			}
-			const separator =
-				cur.endsWith(".") || cur.endsWith(";") || cur.endsWith("!")
-					? " "
-					: ". ";
-			return {
-				...prev,
-				anamnesis: `${cur}${separator}${chipText}.`,
-			};
+			if (!cur) return { ...prev, anamnesis: `${chipText}.` };
+			if (cur.includes(chipText)) return prev;
+			const separator = cur.endsWith(".") || cur.endsWith(";") || cur.endsWith("!") ? " " : ". ";
+			return { ...prev, anamnesis: `${cur}${separator}${chipText}.` };
 		});
 		scheduleDebouncedSave();
 		showToast(`Добавлена жалоба: «${chipText}»`, "info", 2000);

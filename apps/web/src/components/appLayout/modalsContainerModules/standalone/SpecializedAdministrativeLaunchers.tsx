@@ -1,6 +1,7 @@
 import type React from "react";
 import { Suspense } from "react";
 import { AppLoadingState } from "../../../../AppBootState";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 import type { StandaloneLaunchersProps } from "../modalsContainerTypes";
 
@@ -23,11 +24,9 @@ const DmsGuaranteeLetterModal = lazyWithRetry(() =>
 );
 
 const PlanScenarioComparisonModal = lazyWithRetry(() =>
-	import("../../../treatment-plans/PlanScenarioComparisonModal").then(
-		(module) => ({
-			default: module.PlanScenarioComparisonModal,
-		}),
-	),
+	import("../../../treatment-plans/PlanScenarioComparisonModal").then((module) => ({
+		default: module.PlanScenarioComparisonModal,
+	})),
 );
 
 const LiveTreatmentPlanPresenterLauncher = lazyWithRetry(() =>
@@ -82,6 +81,8 @@ export function renderSpecializedAdministrativeLaunchers({
 	isReceiptDirectModalOpen,
 	setIsReceiptDirectModalOpen,
 }: StandaloneLaunchersProps): React.ReactElement | null {
+	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
 	// EGISZ REMD & ORDER 947N CDA R2 XML STANDALONE LAUNCHER (?egisz=demo, ?remd=demo, #egisz, #remd)
 	if (isEgiszRemdModalOpen) {
 		return (

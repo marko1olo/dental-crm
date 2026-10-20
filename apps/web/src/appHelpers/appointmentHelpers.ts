@@ -7,6 +7,7 @@ import type {
 } from "./types.js";
 import type {
 	Appointment,
+	CanonicalToothState,
 	CreateAppointmentInput,
 	Dashboard,
 	DentalSpecialty,
@@ -107,15 +108,12 @@ export const toothRows = [
 	],
 ] as const;
 
-export const toothStateByCode: Record<
-	string,
-	"watch" | "planned" | "done" | "missing"
-> = {
-	"16": "watch",
-	"26": "done",
-	"36": "planned",
-	"46": "watch",
-	"48": "missing",
+export const toothStateByCode: Record<string, CanonicalToothState> = {
+	"16": "Caries",
+	"26": "Filled",
+	"36": "Caries",
+	"46": "Caries",
+	"48": "Missing",
 };
 
 export function patientName(patients: Patient[] | undefined | null, patientId: string | null) {

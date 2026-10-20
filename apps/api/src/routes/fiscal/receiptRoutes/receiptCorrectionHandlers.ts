@@ -33,10 +33,10 @@ import {
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { LanKktDriverService } from "../../../services/hardware/index.js";
-import type { ApplyCashBoxRefundParams, PrintResultMetadata } from "./types.js";
+import type { ApplyCashBoxRefundParams, DbClientOrTransaction, PrintResultMetadata } from "./types.js";
 
 export async function applyCashBoxFiscalRefund(
-	tx: any,
+	tx: DbClientOrTransaction,
 	orgId: string,
 	data: ApplyCashBoxRefundParams,
 	printResult: PrintResultMetadata,
@@ -65,8 +65,11 @@ export async function applyCashBoxFiscalRefund(
 		}
 	}
 
-	const mainBox = allBoxes.find((b: any) => b.isMain || b.type === "main") || allBoxes[0];
-	const cashlessBox = allBoxes.find((b: any) => b.isCashless || b.type === "cashless") || mainBox;
+	const firstBox = allBoxes[0];
+	if (!firstBox) return;
+
+	const mainBox = allBoxes.find((b) => b.isMain || b.type === "main") ?? firstBox;
+	const cashlessBox = allBoxes.find((b) => b.isCashless || b.type === "cashless") ?? mainBox;
 
 	const cashKop = data.refundCashKopecks || 0;
 	if (cashKop > 0) {

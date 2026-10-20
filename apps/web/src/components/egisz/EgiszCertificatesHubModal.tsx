@@ -25,8 +25,8 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 	initialSection = "queue",
 	patientName = "Смирнова Елена Васильевна",
 	records = [
-		{ id: "remd-1", docTitle: "СЭМД 105: Протокол консультации", patientFullName: patientName, status: "accepted_by_egisz", createdAt: "2026-10-15T10:30:00Z" },
-		{ id: "remd-2", docTitle: "СЭМД 303: Протокол операции", patientFullName: patientName, status: "sent", createdAt: "2026-10-15T11:45:00Z" },
+		{ id: "remd-1", docTitle: "СЭМД 105: Протокол консультации", patientFullName: patientName, status: "accepted_by_egisz", createdAt: "2026-10-15T10:30:00Z" } as unknown as RemdDocumentRecord,
+		{ id: "remd-2", docTitle: "СЭМД 303: Протокол операции", patientFullName: patientName, status: "sent", createdAt: "2026-10-15T11:45:00Z" } as unknown as RemdDocumentRecord,
 	],
 	onRetryRecord,
 }) => {
@@ -49,7 +49,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			taxpayer: { fullName: patientName, inn: "770123456789" },
 			patient: { fullName: patientName, relationshipCode: "1" },
 			payments: [{ date: `${taxYear}-03-12`, serviceCode: "1", serviceDescription: "Лечение кариеса", amountKopecks: 2450000 }],
-			signer: { fullName: "Главврач Клиники" },
+			signer: { fullName: "Главврач Клиники", position: "Главный врач" },
 		}));
 	};
 

@@ -9,7 +9,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,7 +80,8 @@ describe("Red Team Inquisition: Cephalometrics & TRG AI Engine", () => {
 		assert.ok(fs.existsSync(modalPath), "CephalometricAnalysisModal.tsx must exist");
 		assert.ok(fs.existsSync(canvasPath), "CephalometricCanvas.tsx must exist");
 
-		const modalCode = fs.readFileSync(modalPath, "utf-8");
+		const hookPath = path.resolve(__dirname, "../components/radiology/cephModal/useCephLandmarks.ts");
+		const modalCode = fs.readFileSync(modalPath, "utf-8") + (fs.existsSync(hookPath) ? "\n" + fs.readFileSync(hookPath, "utf-8") : "");
 		const canvasCode = fs.readFileSync(canvasPath, "utf-8");
 
 		// Verifies imports of demoMode in modal and canvas

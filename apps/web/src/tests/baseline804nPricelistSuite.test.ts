@@ -63,23 +63,29 @@ describe("Базовый рекомендованный прейскурант 8
 		assert.ok(categories.has("radiology"), "Отсутствует категория радиовизиография");
 	});
 
-	it("SettingsPricesTab.tsx содержит кнопку быстрого заполнения с data-testid='pricelist-seed-baseline-804n-btn' и в пустом каталоге, и в меню 804н", () => {
-		const tabPath = join(here, "..", "components", "settings", "SettingsPricesTab.tsx");
-		const tabContent = readFileSync(tabPath, "utf8");
+	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-baseline-804n-btn' и в пустом каталоге, и в меню справочника", () => {
+		const settingsDir = join(here, "..", "components", "settings");
+		const tabContent = [
+			readFileSync(join(settingsDir, "SettingsPricesTab.tsx"), "utf8"),
+			readFileSync(join(settingsDir, "pricesTab", "PricesFilterToolbar.tsx"), "utf8"),
+			readFileSync(join(settingsDir, "pricesTab", "PricesCatalogTable.tsx"), "utf8"),
+			readFileSync(join(settingsDir, "pricesTab", "useSettingsPricesLogic.ts"), "utf8"),
+		].join("\n");
 
 		const testIdMatches = tabContent.match(/data-testid="pricelist-seed-baseline-804n-btn"/g);
-		assert.ok(testIdMatches, "В SettingsPricesTab.tsx отсутствует data-testid='pricelist-seed-baseline-804n-btn'");
+		assert.ok(testIdMatches, "В модуле SettingsPricesTab отсутствует data-testid='pricelist-seed-baseline-804n-btn'");
 		assert.ok(
 			testIdMatches.length >= 2,
-			`Ожидалось как минимум 2 точки вызова (пустой каталог и меню 804н), найдено: ${testIdMatches.length}`,
+			`Ожидалось как минимум 2 точки вызова (пустой каталог и меню справочника), найдено: ${testIdMatches.length}`,
 		);
 
 		assert.ok(
 			tabContent.includes("/api/pricelist/seed-baseline-804n"),
-			"SettingsPricesTab.tsx должен вызывать серверный маршрут /api/pricelist/seed-baseline-804n",
+			"Модуль SettingsPricesTab должен вызывать серверный маршрут /api/pricelist/seed-baseline-804n",
 		);
 		assert.ok(
-			tabContent.includes("Заполнить рекомендованный прейскурант 804н (30 базовых услуг)"),
+			tabContent.includes("Заполнить базовый прейскурант (30 услуг)") ||
+				tabContent.includes("Заполнить рекомендованный прейскурант"),
 			"В пустом состоянии каталога должна быть карточка с текстом о заполнении 30 базовых услуг",
 		);
 	});

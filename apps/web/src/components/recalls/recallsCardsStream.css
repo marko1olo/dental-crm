@@ -62,20 +62,11 @@
 	line-height: 1.4;
 }
 
-.recall-patient-card__procedure {
-	font-weight: 600;
-	color: var(--teal);
-}
-
-.recall-patient-card__divider {
-	color: var(--muted);
-	font-size: 0.75rem;
-}
-
-.recall-patient-card__last-visit {
-	color: var(--rm-text-main);
-	font-size: 0.8125rem;
-}
+.recall-patient-card__procedure { font-weight: 600; color: var(--teal); }
+.recall-patient-card__divider { color: var(--muted); font-size: 0.75rem; }
+.recall-patient-card__last-visit { color: var(--rm-text-main); font-size: 0.8125rem; }
+.recall-patient-card__no-phone { color: var(--muted); font-style: italic; }
+.recall-patient-card__doctor { color: var(--rm-text-muted); }
 
 .recall-patient-card__meta {
 	display: flex;
@@ -96,18 +87,7 @@
 	min-height: 24px;
 }
 
-.recall-patient-card__phone:hover {
-	text-decoration: underline;
-}
-
-.recall-patient-card__no-phone {
-	color: var(--muted);
-	font-style: italic;
-}
-
-.recall-patient-card__doctor {
-	color: var(--rm-text-muted);
-}
+.recall-patient-card__phone:hover { text-decoration: underline; }
 
 .recall-patient-card__actions {
 	display: flex;
@@ -127,4 +107,16 @@
 	color: var(--rm-text-main);
 	background: var(--rm-surface-hover);
 	border-color: var(--rm-text-muted);
+}
+
+.recall-contact-dropdown-menu {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-3);
+}
+
+.recall-registry-section .recall-status-chips {
+	margin-bottom: 12px;
+	padding: 2px 4px;
 }

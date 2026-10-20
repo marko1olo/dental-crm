@@ -8,7 +8,6 @@ import { useRecallHubActions } from "./useRecallHubActions";
 import { RecallHubHeader } from "./RecallHubHeader";
 import { RecallCycleSegmentedBar } from "./RecallCycleSegmentedBar";
 import { PatientRecallsHubTabRouter } from "./PatientRecallsHubTabRouter";
-import { RecallCallScriptDrawer } from "./RecallCallScriptDrawer";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 import "./recalls.css";
 
@@ -72,8 +71,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 						onStatusUpdate={actions.handleStatusUpdate}
 					/>
 				</main>
-
-				<RecallCallScriptDrawer candidate={hub.activeScriptCandidate} onClose={() => hub.setActiveScriptCandidate(null)} onBook={actions.handleBook} onWhatsApp={actions.handleWhatsApp} />
 
 				{hub.bookingSlot && (
 					<QuickBookingDrawer isOpen={Boolean(hub.bookingSlot)} initialSlot={hub.bookingSlot} dashboard={appLogic?.dashboard} auth={appLogic?.auth} onClose={() => hub.setBookingSlot(null)} onAppointmentCreated={() => { if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled"); hub.setBookingSlot(null); }} />

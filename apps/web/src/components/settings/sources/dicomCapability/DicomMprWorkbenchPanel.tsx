@@ -176,13 +176,21 @@ export function DicomMprWorkbenchPanel({
 		any | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedLocalBridgeReadiness = localBridgeReadiness as any | null;
-	const typedCbctWorkbenchProjections = (cbctWorkbenchProjections ??
-		[]) as string[];
-	const typedCbctWorkbenchTools = (cbctWorkbenchTools ?? []) as string[];
-	const typedCbctMprBlockers = (cbctMprBlockers ?? []) as string[];
-	const typedCbctMprWarnings = (cbctMprWarnings ?? []) as string[];
-	const typedCbctResourceSafetyCaps = (cbctResourceSafetyCaps ??
-		[]) as string[];
+	const typedCbctWorkbenchProjections = (
+		Array.isArray(cbctWorkbenchProjections) ? cbctWorkbenchProjections : []
+	) as string[];
+	const typedCbctWorkbenchTools = (
+		Array.isArray(cbctWorkbenchTools) ? cbctWorkbenchTools : []
+	) as string[];
+	const typedCbctMprBlockers = (
+		Array.isArray(cbctMprBlockers) ? cbctMprBlockers : []
+	) as string[];
+	const typedCbctMprWarnings = (
+		Array.isArray(cbctMprWarnings) ? cbctMprWarnings : []
+	) as string[];
+	const typedCbctResourceSafetyCaps = (
+		Array.isArray(cbctResourceSafetyCaps) ? cbctResourceSafetyCaps : []
+	) as string[];
 	const typedDicomWorkstationReadiness =
 		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -239,7 +247,7 @@ export function DicomMprWorkbenchPanel({
 
 			<div className="dicom-mpr-layout">
 				<div className="mpr-plane-grid">
-					{(cbctWorkbenchPlanes as CbctWorkbenchPlane[]).map((plane) => {
+					{((Array.isArray(cbctWorkbenchPlanes) ? cbctWorkbenchPlanes : []) as CbctWorkbenchPlane[]).map((plane) => {
 						const planeSupported = typedCbctWorkbenchProjections.includes(
 							plane.key,
 						);

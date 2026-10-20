@@ -117,6 +117,10 @@ export async function handleCreateTreatmentPlan(
 			})
 			.returning();
 
+		if (!newPlan) {
+			throw new Error("Не удалось создать план лечения в транзакции");
+		}
+
 		const createdStages: Array<typeof treatmentPlanStages.$inferSelect> = [];
 		const createdItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
 

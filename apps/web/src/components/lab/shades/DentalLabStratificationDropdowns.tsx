@@ -1,3 +1,4 @@
+import React from "react";
 import { VITA_CLASSICAL_SHADES } from "../labMath";
 
 export function DentalLabStratificationDropdowns({

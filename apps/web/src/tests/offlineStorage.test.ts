@@ -78,9 +78,19 @@ describe("offlineStorage: resilient offline caching", () => {
 		assert.equal(demo.patients?.length, 4);
 		assert.equal(demo.appointments?.length, 4);
 		const names = demo.patients.map((p) => p.fullName);
-		assert.ok(names.includes("Иванов Алексей Сергеевич"));
-		assert.ok(names.includes("Смирнова Елена Викторовна"));
-		assert.ok(names.includes("Кузнецов Дмитрий Михайлович"));
-		assert.ok(names.includes("Морозова Анна Александровна"));
+		assert.ok(names.includes("Смирнова Анна Сергеевна"));
+		assert.ok(names.includes("Воронов Дмитрий Игоревич"));
+		assert.ok(names.includes("Ковалева Елена Павловна"));
+		assert.ok(names.includes("Кузнецов Михаил Викторович"));
+	});
+
+	it("createOfflineFallbackDashboard НЕ внедряет демо-пациентов в реальные клиники (Мандаты 8e, 8n)", () => {
+		const realClinic = createOfflineFallbackDashboard({
+			id: "b45a0000-0000-0000-0000-000000000001",
+			name: "Стоматология Практик",
+			scale: "solo",
+		});
+		assert.equal(realClinic.patients?.length, 0, "Реальная клиника обязана иметь пустой список пациентов");
+		assert.equal(realClinic.appointments?.length, 0, "Реальная клиника обязана иметь пустой список приёмов");
 	});
 });

@@ -75,9 +75,9 @@ export const FiscalAgentSettings: React.FC<FiscalAgentSettingsProps> = ({
 						className="w-full h-9 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
 					>
 						<option value="1.2">
-							ФФД 1.2 (Поддержка маркировки Честный ЗНАК)
+							Формат чеков 1.2 (с маркировкой лекарств и имплантов)
 						</option>
-						<option value="1.05">ФФД 1.05 (Базовый режим медуслуг)</option>
+						<option value="1.05">Формат чеков 1.05 (базовый режим медуслуг)</option>
 					</select>
 				</label>
 
@@ -110,7 +110,7 @@ export const FiscalAgentSettings: React.FC<FiscalAgentSettingsProps> = ({
 				<div className="pt-2 border-t border-[var(--line)]/50">
 					<label className="space-y-1 block max-w-md">
 						<span className="text-[11px] font-semibold text-[var(--muted)] block">
-							Признак агента (ФФД 1.2 Тег 1057 / 1222)
+							Признак агента (для комиссий и сторонних лабораторий)
 						</span>
 						<select
 							aria-label="Признак агента"

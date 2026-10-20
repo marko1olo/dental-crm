@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,8 +60,13 @@ test("VisitEmkTab: nested card matryoshka is eliminated per Anti-Matryoshka law"
 
 test("WhatsAppChatPanel: WCAG AAA Light Mode contrast tokens are strictly applied", () => {
 	const chatPath = path.join(webSrcRoot, "components/chat/WhatsAppChatPanel.tsx");
+	const headerPath = path.join(webSrcRoot, "components/chat/WhatsAppChatHeader.tsx");
+	const stripPath = path.join(webSrcRoot, "components/chat/WhatsAppPatientSummaryStrip.tsx");
 	const presetsPath = path.join(webSrcRoot, "components/chat/WhatsAppEmptyStatePresets.tsx");
-	const code = readFileSync(chatPath, "utf8") + "\n" + (existsSync(presetsPath) ? readFileSync(presetsPath, "utf8") : "");
+	const code = [chatPath, headerPath, stripPath, presetsPath]
+		.filter((p) => existsSync(p))
+		.map((p) => readFileSync(p, "utf8"))
+		.join("\n");
 
 	// 1. Upcoming appointment banner contrast
 	assert.ok(

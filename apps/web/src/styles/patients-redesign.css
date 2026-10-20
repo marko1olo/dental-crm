@@ -14,19 +14,19 @@
 	scroll-margin-top: 68px;
 }
 
-/* Modern Single-Tier Toolbar Header (Strictly 1 row, <= 88px, HIG Compliant) */
+/* Modern Single-Tier Toolbar Header (Strictly 1 row, 48-52px, Mandate 8am & HIG Compliant) */
 .patients-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	flex-wrap: nowrap;
-	gap: 0.5rem;
+	gap: 0.625rem;
 	background: var(--paper);
 	padding: 0 0.75rem;
-	height: 36px;
-	min-height: 36px;
-	max-height: 36px;
-	border-radius: 10px;
+	height: 48px;
+	min-height: 48px;
+	max-height: 52px;
+	border-radius: 12px;
 	box-shadow: var(--shadow-1);
 	border: 1px solid var(--line);
 	box-sizing: border-box;
@@ -134,31 +134,32 @@
 	height: 36px;
 	min-height: 36px;
 	padding: 0 0.75rem;
-	font-weight: 600;
+	font-weight: 500;
 	font-size: 0.8125rem;
-	border-radius: 8px;
+	border-radius: 12px;
 	white-space: nowrap;
 	border: 1px solid var(--line);
-	background: var(--paper-soft);
+	background: var(--paper);
 	color: var(--ink);
 	transition: all 0.15s ease;
 }
 
 .patients-header-actions .secondary-button.active {
-	background: var(--teal) !important;
-	color: var(--on-teal, var(--paper, #ffffff)) !important;
-	border-color: var(--teal) !important;
+	background: var(--primary-soft, rgba(13, 148, 136, 0.12)) !important;
+	color: var(--primary) !important;
+	border-color: var(--primary) !important;
 }
 
 .patients-header-actions .secondary-button:hover {
-	border-color: var(--teal);
-	color: var(--teal);
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
 }
 
 .patients-header-actions .secondary-button.active:hover {
-	background: var(--teal-dark, var(--teal)) !important;
-	color: var(--on-teal, var(--paper, #ffffff)) !important;
-	border-color: var(--teal-dark, var(--teal)) !important;
+	background: var(--primary-surface, rgba(13, 148, 136, 0.18)) !important;
+	color: var(--primary) !important;
+	border-color: var(--primary) !important;
 }
 
 .patients-new-patient-btn {
@@ -168,11 +169,18 @@
 	gap: 6px;
 	height: 36px;
 	min-height: 36px;
-	padding: 0 0.75rem;
-	font-weight: 700;
+	padding: 0 0.875rem;
+	font-weight: 600;
 	font-size: 0.8125rem;
-	border-radius: 8px;
+	border-radius: 12px;
 	white-space: nowrap;
+	background: var(--primary);
+	color: #ffffff;
+	transition: all 0.15s ease;
+}
+
+.patients-new-patient-btn:hover {
+	background: var(--primary-strong);
 }
 
 @media (pointer: coarse), (max-width: 768px) {
@@ -685,9 +693,17 @@
 [data-theme="night"] .patients-header-actions .secondary-button,
 [data-theme="contrast"] .patients-header-actions .secondary-button,
 [data-theme="cyber_xray"] .patients-header-actions .secondary-button {
-	background: var(--paper-soft, #1e293b);
-	color: var(--ink, #f8fafc);
-	border-color: var(--line, rgba(255, 255, 255, 0.2));
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .patients-header-actions .secondary-button:hover,
+[data-theme="night"] .patients-header-actions .secondary-button:hover,
+[data-theme="contrast"] .patients-header-actions .secondary-button:hover,
+[data-theme="cyber_xray"] .patients-header-actions .secondary-button:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
 }
 
 [data-theme="dark"] .patient-row,

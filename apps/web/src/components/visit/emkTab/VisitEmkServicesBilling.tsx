@@ -1,7 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { Award, Tag } from "lucide-react";
 import { EmkServicesSection } from "../emk/EmkServicesSection";
-import { EgiszMultipleDiagnosesWidget } from "../EgiszMultipleDiagnosesWidget";
 import { Icd10ClinicalSelector } from "../../diagnostics/Icd10ClinicalSelector";
 import type { VisitEmkServicesBillingProps } from "./types";
 
@@ -20,10 +19,35 @@ export function VisitEmkServicesBilling({
 	dashboard,
 	effectiveActiveTooth,
 }: VisitEmkServicesBillingProps) {
+	const linkedLabOrder = React.useMemo(() => {
+		const appts = Array.isArray(dashboard?.appointments) ? dashboard.appointments : [];
+		const currentAppt = appts.find((a: any) => String(a?.id) === String(openVisitId));
+		if (currentAppt?.labOrder) {
+			return currentAppt.labOrder;
+		}
+		if (activePatient?.id) {
+			const patientApptWithLab = appts.find(
+				(a: any) => String(a?.patientId) === String(activePatient.id) && a?.labOrder,
+			);
+			if (patientApptWithLab?.labOrder) {
+				return patientApptWithLab.labOrder;
+			}
+			const labOrders = Array.isArray(dashboard?.labOrders) ? dashboard.labOrders : [];
+			const foundOrder = labOrders.find(
+				(lo: any) => String(lo?.patientId) === String(activePatient.id),
+			);
+			if (foundOrder) {
+				return foundOrder;
+			}
+		}
+		return undefined;
+	}, [dashboard?.appointments, dashboard?.labOrders, openVisitId, activePatient?.id]);
+
 	return (
 		<div className="space-y-4 w-full min-w-0" data-testid="emk-treatment-section">
 			<Suspense fallback={null}>
 				<details
+					open={Boolean(linkedLabOrder)}
 					className="group border-t border-[var(--line)] pt-2 bg-transparent"
 					data-testid="emk-orthopedics-details"
 				>
@@ -37,6 +61,7 @@ export function VisitEmkServicesBilling({
 						<OrthopedicsChairsidePanel
 							patientId={activePatient?.id}
 							activeToothFdi={effectiveActiveTooth}
+							initialLabOrder={linkedLabOrder}
 							isLocked={isLocked}
 						/>
 					</div>
@@ -53,8 +78,7 @@ export function VisitEmkServicesBilling({
 				clinicLegalName={dashboard?.activeDoctor?.clinicName || "ООО «ДЕНТЕ»"}
 			/>
 
-			<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
-				<EgiszMultipleDiagnosesWidget />
+			<div className="pt-2">
 				<details
 					className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent"
 					data-testid="emk-icd10-selector-details"

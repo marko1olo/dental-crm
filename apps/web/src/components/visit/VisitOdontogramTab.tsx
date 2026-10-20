@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { EgiszMonitor } from "../EgiszMonitor";
-import { OdontogramModule } from "../odontogram/OdontogramModule";
+import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { VisitDiarySection } from "./VisitDiarySection";
 import type { VisitOdontogramTabProps } from "./odontogramTab/visitOdontogramTabTypes";
 import { useVisitOdontogramIds } from "./odontogramTab/useVisitOdontogramIds";
@@ -11,6 +11,27 @@ import { useVisitOdontogramDentition } from "./odontogramTab/useVisitOdontogramD
 import { useVisitAutoOpen } from "./odontogramTab/useVisitAutoOpen";
 import { DentitionStatusBanner } from "./odontogramTab/DentitionStatusBanner";
 import { VisitDiaryInitializer } from "./odontogramTab/VisitDiaryInitializer";
+
+const OdontogramModule = lazyWithRetry(() =>
+	import("../odontogram/OdontogramModule").then((module) => ({
+		default: module.OdontogramModule,
+	})),
+);
+
+export function OdontogramSkeleton() {
+	return (
+		<div
+			className="odontogram-skeleton"
+			aria-label="Загрузка зубной формулы"
+			aria-busy="true"
+		>
+			<div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+				<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)] animate-spin" />
+				<span>Загрузка интерактивной зубной формулы...</span>
+			</div>
+		</div>
+	);
+}
 
 export * from "./odontogramTab/visitOdontogramTabTypes";
 export { resolveValidVisitUuid } from "./odontogramTab/visitOdontogramResolve";
@@ -60,11 +81,13 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 				/>
 
 				<div className="w-full">
-					<OdontogramModule
-						patientId={activePatient.id}
-						pediatricMode={isPediatric}
-						dentitionMode={smartDentitionMode}
-					/>
+					<React.Suspense fallback={<OdontogramSkeleton />}>
+						<OdontogramModule
+							patientId={activePatient.id}
+							pediatricMode={isPediatric}
+							dentitionMode={smartDentitionMode}
+						/>
+					</React.Suspense>
 				</div>
 
 				<div className="w-full">

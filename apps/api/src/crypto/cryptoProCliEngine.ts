@@ -185,16 +185,52 @@ export async function isCryptoProInstalled(): Promise<boolean> {
 }
 
 /**
- * Возвращает статус установки утилит КриптоПро для диагностических экранов.
+ * Возвращает статус установки утилит КриптоПро для диагностических экранов
+ * с человеческим объяснением на русском языке и признаком доступности бумажного фолбека.
  */
 export async function getCryptoProCliStatus(): Promise<{
 	installed: boolean;
+	signingAvailable: boolean;
+	paperFallbackAvailable: boolean;
+	message: string;
 	paths: CryptoProPaths;
 }> {
 	const paths = findCryptoProPaths();
+	const installed = Boolean(paths.csptest || paths.cryptcp || paths.certmgr);
+	const signingAvailable = Boolean(paths.csptest || paths.cryptcp);
+	const message = signingAvailable
+		? "КриптоПро CSP установлен и готов к подписанию электронных документов."
+		: "КриптоПро CSP не обнаружен в операционной системе. Работа врача не блокируется: доступно сохранение документа и печать бумажного бланка для личной подписи.";
+
 	return {
-		installed: Boolean(paths.csptest || paths.cryptcp || paths.certmgr),
+		installed,
+		signingAvailable,
+		paperFallbackAvailable: true,
+		message,
 		paths,
+	};
+}
+
+/**
+ * Генерирует гарантированно изолированные пути временных файлов в os.tmpdir()
+ * для защиты от гонок (race-condition isolation) при параллельных запросах подписания.
+ */
+export function buildIsolatedTempSignPaths(requestId?: string): {
+	tmpDir: string;
+	tmpFile: string;
+	sgnFile: string;
+	sigFile: string;
+} {
+	const cleanReq = (requestId ?? "").replace(/[^a-z0-9]/gi, "").slice(0, 48);
+	const uniqueNonce = crypto.randomBytes(6).toString("hex");
+	const fileTag = cleanReq.length > 0 ? `-${cleanReq}-${uniqueNonce}` : `-${uniqueNonce}`;
+	const tmpDir = os.tmpdir();
+	const tmpFile = path.join(tmpDir, `dente-sign${fileTag}.dat`);
+	return {
+		tmpDir,
+		tmpFile,
+		sgnFile: `${tmpFile}.sgn`,
+		sigFile: `${tmpFile}.sig`,
 	};
 }
 
@@ -417,8 +453,11 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 	if (!paths.csptest && !paths.cryptcp && !paths.certmgr) {
 		throw new CryptoProCliError(
 			"CSP_NOT_INSTALLED",
-			"КриптоПро CSP не обнаружен в операционной системе",
-			{ searchedStandardPaths: STANDARD_WINDOWS_PATHS },
+			"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+			{
+				paperFallbackAvailable: true,
+				searchedStandardPaths: STANDARD_WINDOWS_PATHS,
+			},
 		);
 	}
 
@@ -458,7 +497,14 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
 		} catch (err: unknown) {
-			const error = err as { stdout?: Buffer; stderr?: Buffer; message?: string };
+			const error = err as { stdout?: Buffer; stderr?: Buffer; message?: string; code?: string | number };
+			if (error.code === "ENOENT") {
+				throw new CryptoProCliError(
+					"CSP_NOT_INSTALLED",
+					"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+					{ paperFallbackAvailable: true },
+				);
+			}
 			const errOutput = decodeCryptoProOutput(error.stderr || error.stdout || Buffer.from(error.message || ""));
 			if (
 				errOutput.includes("0x8010000C") ||
@@ -504,8 +550,11 @@ export async function signDetachedGost(
 	if (!paths.csptest && !paths.cryptcp) {
 		throw new CryptoProCliError(
 			"CSP_NOT_INSTALLED",
-			"КриптоПро CSP не обнаружен в операционной системе",
-			{ searchedStandardPaths: STANDARD_WINDOWS_PATHS },
+			"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+			{
+				paperFallbackAvailable: true,
+				searchedStandardPaths: STANDARD_WINDOWS_PATHS,
+			},
 		);
 	}
 
@@ -526,13 +575,8 @@ export async function signDetachedGost(
 		);
 	}
 
-	// Защита от параллельных гонок по стандарту StomX (#4975)
-	const requestId = options?.requestId ?? crypto.randomUUID();
-	const fileTag = "-" + String(requestId).replace(/[^a-z0-9]/gi, "");
-	const tmpDir = os.tmpdir();
-	const tmpFile = path.join(tmpDir, `dente-sign${fileTag}.dat`);
-	const sgnFile = `${tmpFile}.sgn`;
-	const sigFile = `${tmpFile}.sig`;
+	// Защита от параллельных гонок (race-condition isolation через уникальные временные файлы в os.tmpdir())
+	const { tmpDir, tmpFile, sgnFile, sigFile } = buildIsolatedTempSignPaths(options?.requestId);
 
 	const cleanup = async () => {
 		await fs.promises.unlink(tmpFile).catch(() => {});
@@ -609,7 +653,14 @@ export async function signDetachedGost(
 		if (err instanceof CryptoProCliError) {
 			throw err;
 		}
-		const execError = err as { stdout?: Buffer; stderr?: Buffer; message?: string; code?: number };
+		const execError = err as { stdout?: Buffer; stderr?: Buffer; message?: string; code?: string | number };
+		if (execError.code === "ENOENT") {
+			throw new CryptoProCliError(
+				"CSP_NOT_INSTALLED",
+				"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+				{ paperFallbackAvailable: true },
+			);
+		}
 		const decodedErr = decodeCryptoProOutput(execError.stderr || execError.stdout || Buffer.from(execError.message || ""));
 
 		let errorCode = "SIGNING_FAILED";

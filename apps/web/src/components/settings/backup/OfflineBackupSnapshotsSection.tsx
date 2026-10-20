@@ -62,7 +62,7 @@ export const OfflineBackupSnapshotsSection: React.FC<
 								color: "var(--ink, #1e293b)",
 							}}
 						>
-							Моментальные слепки базы данных и SHA-256 хеширование
+							Журнал резервных копий и сверка таблиц базы
 						</h3>
 						<p
 							style={{
@@ -71,8 +71,7 @@ export const OfflineBackupSnapshotsSection: React.FC<
 								color: "var(--muted, #64748b)",
 							}}
 						>
-							Потабличный расчет контрольных сумм и корневой дайджест базы
-							(IndexedDB / SQLite)
+							Потабличный контроль сохранности записей локальной базы клиники
 						</p>
 					</div>
 				</div>
@@ -83,14 +82,14 @@ export const OfflineBackupSnapshotsSection: React.FC<
 						onClick={handleCreateSnapshot}
 						disabled={isCreatingSnapshot}
 						style={{
-							minHeight: "44px",
-							padding: "0 18px",
+							minHeight: "40px",
+							padding: "0 16px",
 							borderRadius: "8px",
 							background: "var(--teal)",
 							color: "var(--on-teal, #ffffff)",
 							border: "none",
 							fontWeight: "600",
-							fontSize: "14px",
+							fontSize: "13px",
 							cursor: isCreatingSnapshot ? "not-allowed" : "pointer",
 							display: "flex",
 							alignItems: "center",
@@ -102,8 +101,8 @@ export const OfflineBackupSnapshotsSection: React.FC<
 							className={isCreatingSnapshot ? "spin-animation" : ""}
 						/>
 						{isCreatingSnapshot
-							? "Создание слепка..."
-							: "Пересчитать хеши базы"}
+							? "Создание копии..."
+							: "Обновить сверку таблиц"}
 					</button>
 				</div>
 			</div>
@@ -146,19 +145,19 @@ export const OfflineBackupSnapshotsSection: React.FC<
 						}}
 					>
 						<div>
-							<strong>Root Merkle SHA-256:</strong>{" "}
+							<strong>Код целостности базы:</strong>{" "}
 							<code style={{ fontSize: "12px", wordBreak: "break-all" }}>
 								{currentSnapshot.metadata.rootSha256}
 							</code>
 						</div>
 						<div>
-							Слепок:{" "}
+							Срез от:{" "}
 							<strong>
 								{new Date(
 									currentSnapshot.metadata.createdAtIso,
 								).toLocaleTimeString("ru-RU")}
 							</strong>{" "}
-							(Объектов: {currentSnapshot.metadata.totalRecords})
+							(Записей: {currentSnapshot.metadata.totalRecords})
 						</div>
 					</div>
 
@@ -175,8 +174,8 @@ export const OfflineBackupSnapshotsSection: React.FC<
 									key={tableName}
 									style={{
 										padding: "12px 14px",
-										background: "var(--paper, #f8fafc)",
-										border: "1px solid var(--glass-border, #e2e8f0)",
+										background: "var(--paper-soft)",
+										border: "1px solid var(--line)",
 										borderRadius: "8px",
 									}}
 								>
@@ -211,7 +210,7 @@ export const OfflineBackupSnapshotsSection: React.FC<
 											wordBreak: "break-all",
 										}}
 									>
-										SHA-256:{" "}
+										Код сверки:{" "}
 										<code>{table.tableSha256.substring(0, 24)}...</code>
 									</div>
 								</div>

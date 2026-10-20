@@ -45,16 +45,18 @@
 
 /* Main Booking Widget Container (100% Opaque Solid Surface) */
 .PublicBookingWidget-root .dente-booking-widget {
-	background: var(--paper-strong, #ffffff);
-	border-color: var(--line, #e2e8f0);
+	background: var(--dbw-bg, #ffffff);
+	border-color: var(--dbw-border, #e2e8f0);
 	opacity: 1;
 	box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"] .PublicBookingWidget-root .dente-booking-widget,
-.dark .PublicBookingWidget-root .dente-booking-widget {
-	background: var(--paper-strong, #090d16);
-	border-color: var(--line, #1e293b);
+.dark .PublicBookingWidget-root .dente-booking-widget,
+[data-theme="dark"] .dente-booking-widget,
+.dark .dente-booking-widget {
+	background: #090d16 !important;
+	border-color: #1e293b !important;
 	box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.7);
 }
 

@@ -1,29 +1,13 @@
 /**
- * SoundFeedbackService.ts — Нативный аппаратный синтезатор звуковых эффектов и тактильной отдачи (Haptics)
- * для работы врача-стоматолога в перчатках (DENTE CRM).
- *
- * ИНВАРИАНТЫ:
- * 1. Чистый Web Audio API (AudioContext + OscillatorNode + BiquadFilterNode + GainNode).
- *    - НОЛЬ внешних mp3/wav файлов — нулевой трафик, мгновенный отклик (<2ms), полная автономность.
- * 2. Аппаратные пресеты звуков:
- *    - `playMicStart()`: мягкий восходящий тон (880Hz -> 1760Hz, 80ms, sine, fade-out) — старт микрофона.
- *    - `playMicStop()`: нисходящий тон (1760Hz -> 440Hz, 80ms, sine) — выключение микрофона.
- *    - `playSpeechCaptured()`: короткий мягкий клик (1200Hz, 40ms, soft exponential decay) — захват речи VAD.
- *    - `playActionSuccess()`: мажорный медицинский аккорд (C6 1046.5Hz, E6 1318.5Hz, G6 1568.0Hz, 120ms) — действие сохранено.
- *    - `playWarningAlert()`: низкий двойной предупреждающий тон (220Hz + 180Hz, 150ms, sawtooth filtered) — аллергия / конфликт.
- * 3. Энергоэффективность и безопасность (Battery & Autoplay Safe):
- *    - Ленивая инициализация AudioContext по первому пользовательскому жесту.
- *    - Автоматический suspend() после 5 секунд бездействия для экономии батареи планшета/ноутбука.
- *    - Мгновенный resume() перед воспроизведением.
- * 4. Настройки и персистентность:
- *    - Master Volume (0.0 .. 1.0) и переключатель звуков в localStorage.
- *    - Вибрация (Haptic feedback) через navigator.vibrate при наличии поддержки устройства.
+ * SoundFeedbackService.ts — Нативный синтезатор звуковых эффектов и тактильной отдачи (Haptics)
+ * Чистый Web Audio API (AudioContext + OscillatorNode + BiquadFilterNode + GainNode). 0 KB ассетов.
  */
-
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { clinicalProceduralAudio } from "./clinicalProceduralAudio.js";
+import { getSharedAudioContext, resetSharedAudioContext } from "./sharedAudioContext.js";
 
 export type SoundEffectType =
 	| "mic_start"
@@ -32,7 +16,11 @@ export type SoundEffectType =
 	| "action_success"
 	| "warning_alert"
 	| "online_booking_chime"
-	| "slot_end_warning_chime";
+	| "slot_end_warning_chime"
+	| "scanner_beep"
+	| "cashier_kaching"
+	| "autosave_whisper"
+	| "somatic_danger_chord";
 
 export interface SoundFeedbackConfig {
 	enabled: boolean;
@@ -54,7 +42,7 @@ export const CHORD_G6_HZ = 1567.98;
 export class SoundFeedbackService {
 	private static instance: SoundFeedbackService | null = null;
 
-	private audioContext: AudioContext | null = null;
+	private customAudioContext: AudioContext | null = null;
 	private idleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
 	private readonly idleTimeoutMs = 5000;
 
@@ -65,7 +53,7 @@ export class SoundFeedbackService {
 
 	constructor(customAudioContext?: AudioContext | null) {
 		if (customAudioContext) {
-			this.audioContext = customAudioContext;
+			this.customAudioContext = customAudioContext;
 		}
 		this.loadSettings();
 	}
@@ -85,6 +73,7 @@ export class SoundFeedbackService {
 			SoundFeedbackService.instance.dispose();
 			SoundFeedbackService.instance = null;
 		}
+		resetSharedAudioContext();
 	}
 
 	/**
@@ -111,34 +100,21 @@ export class SoundFeedbackService {
 	}
 
 	/**
-	 * Получение или ленивая инициализация AudioContext
+	 * Получение или ленивая инициализация AudioContext (единого для всего приложения)
 	 */
 	public getAudioContext(): AudioContext | null {
 		if (this.isDisposed) return null;
-
-		if (!this.audioContext && typeof window !== "undefined") {
-			const AudioCtxClass =
-				window.AudioContext ||
-				// biome-ignore lint/suspicious/noExplicitAny: webkitAudioContext fallback for Safari
-				(window as any).webkitAudioContext;
-
-			if (AudioCtxClass) {
-				try {
-					this.audioContext = new AudioCtxClass();
-				} catch (err) {
-					console.warn("[SoundFeedbackService] Failed to initialize AudioContext:", err);
-				}
-			}
+		if (this.customAudioContext) {
+			return this.customAudioContext;
 		}
-
-		return this.audioContext;
+		return getSharedAudioContext();
 	}
 
 	/**
 	 * Проверка поддержки Web Audio API в текущей среде
 	 */
 	public isAudioSupported(): boolean {
-		if (this.audioContext) return true;
+		if (this.customAudioContext) return true;
 		if (typeof window === "undefined") return false;
 		return Boolean(
 			window.AudioContext ||
@@ -153,10 +129,8 @@ export class SoundFeedbackService {
 
 	public setEnabled(enabled: boolean): void {
 		this.enabled = enabled;
-		safeLocalStorageSetItem(
-			SOUND_STORAGE_KEYS.ENABLED,
-			enabled ? "true" : "false",
-		);
+		safeLocalStorageSetItem(SOUND_STORAGE_KEYS.ENABLED, enabled ? "true" : "false", true);
+		clinicalProceduralAudio.setEnabled(enabled);
 	}
 
 	public getVolume(): number {
@@ -166,10 +140,8 @@ export class SoundFeedbackService {
 	public setVolume(volume: number): void {
 		const clamped = Math.max(0.0, Math.min(1.0, volume));
 		this.volume = clamped;
-		safeLocalStorageSetItem(
-			SOUND_STORAGE_KEYS.VOLUME,
-			clamped.toString(),
-		);
+		safeLocalStorageSetItem(SOUND_STORAGE_KEYS.VOLUME, clamped.toString(), true);
+		clinicalProceduralAudio.setVolume(clamped);
 	}
 
 	public isHapticsEnabled(): boolean {
@@ -178,10 +150,8 @@ export class SoundFeedbackService {
 
 	public setHapticsEnabled(enabled: boolean): void {
 		this.hapticsEnabled = enabled;
-		safeLocalStorageSetItem(
-			SOUND_STORAGE_KEYS.HAPTICS,
-			enabled ? "true" : "false",
-		);
+		safeLocalStorageSetItem(SOUND_STORAGE_KEYS.HAPTICS, enabled ? "true" : "false", true);
+		clinicalProceduralAudio.setHapticsEnabled(enabled);
 	}
 
 	/**
@@ -230,8 +200,9 @@ export class SoundFeedbackService {
 		}
 
 		this.idleSuspendTimer = setTimeout(() => {
-			if (this.audioContext && this.audioContext.state === "running") {
-				this.audioContext.suspend().catch(() => {});
+			const ctx = this.getAudioContext();
+			if (ctx && ctx.state === "running") {
+				ctx.suspend().catch(() => {});
 			}
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
@@ -562,25 +533,38 @@ export class SoundFeedbackService {
 		}
 	}
 
+	public playScannerBeep(): Promise<void> {
+		return clinicalProceduralAudio.playScannerBeep();
+	}
+
+	public playCashierKaching(): Promise<void> {
+		return clinicalProceduralAudio.playCashierKaching();
+	}
+
+	public playAutosaveWhisper(): Promise<void> {
+		return clinicalProceduralAudio.playAutosaveWhisper();
+	}
+
+	public playSomaticDangerChord(): Promise<void> {
+		return clinicalProceduralAudio.playSomaticDangerChord();
+	}
+
 	/**
 	 * Универсальный вызов звука по его типу
 	 */
 	public async playSound(type: SoundEffectType): Promise<void> {
 		switch (type) {
-			case "mic_start":
-				return this.playMicStart();
-			case "mic_stop":
-				return this.playMicStop();
-			case "speech_captured":
-				return this.playSpeechCaptured();
-			case "action_success":
-				return this.playActionSuccess();
-			case "warning_alert":
-				return this.playWarningAlert();
-			case "online_booking_chime":
-				return this.playOnlineBookingChime();
-			case "slot_end_warning_chime":
-				return this.playSlotEndWarningChime();
+			case "mic_start": return this.playMicStart();
+			case "mic_stop": return this.playMicStop();
+			case "speech_captured": return this.playSpeechCaptured();
+			case "action_success": return this.playActionSuccess();
+			case "warning_alert": return this.playWarningAlert();
+			case "online_booking_chime": return this.playOnlineBookingChime();
+			case "slot_end_warning_chime": return this.playSlotEndWarningChime();
+			case "scanner_beep": return this.playScannerBeep();
+			case "cashier_kaching": return this.playCashierKaching();
+			case "autosave_whisper": return this.playAutosaveWhisper();
+			case "somatic_danger_chord": return this.playSomaticDangerChord();
 		}
 	}
 
@@ -593,15 +577,17 @@ export class SoundFeedbackService {
 			clearTimeout(this.idleSuspendTimer);
 			this.idleSuspendTimer = null;
 		}
-		if (this.audioContext) {
+		if (this.customAudioContext) {
 			try {
-				this.audioContext.close().catch((err: unknown) => {
-					console.warn("[SoundFeedbackService] AudioContext close async rejection:", err);
-				});
+				if (typeof this.customAudioContext.close === "function") {
+					this.customAudioContext.close().catch((err: unknown) => {
+						console.warn("[SoundFeedbackService] AudioContext close async rejection:", err);
+					});
+				}
 			} catch (err: unknown) {
 				console.warn("[SoundFeedbackService] AudioContext close failed:", err);
 			}
-			this.audioContext = null;
+			this.customAudioContext = null;
 		}
 	}
 }

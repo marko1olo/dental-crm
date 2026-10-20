@@ -8,7 +8,7 @@ import { showToast } from "../../GlobalToast";
 import { PerioChartModal } from "../../perio/PerioChartModal";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { appendClinicalText } from "../emk";
-import { EmkPrintableForm043 } from "../emk/EmkPrintableForm043";
+import { VisitClinicalDiaryPrintSheet } from "../emk/VisitClinicalDiaryPrintSheet";
 import type { VisitEmkModalsProps } from "./types";
 
 export function VisitEmkModals({
@@ -320,7 +320,7 @@ export function VisitEmkModals({
 			/>
 
 			{/* Печатная форма медицинской карты */}
-			<EmkPrintableForm043
+			<VisitClinicalDiaryPrintSheet
 				patient={activePatient}
 				visitNoteForm={visitNoteForm}
 				isSignedVisit={isSignedVisit}

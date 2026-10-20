@@ -13,6 +13,7 @@ import {
 	CHORD_G6_HZ,
 	type SoundEffectType,
 } from "../SoundFeedbackService";
+import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage.js";
 
 // Mock-структуры для тестирования Web Audio API параметров
 interface MockAudioParamCall {
@@ -181,6 +182,7 @@ describe("SoundFeedbackService: Constants and Mathematical Frequencies", () => {
 describe("SoundFeedbackService: Volume, Settings & Persistence", () => {
 	beforeEach(() => {
 		mockStorage.clear();
+		clearInMemoryStorageCache();
 		// biome-ignore lint/suspicious/noExplicitAny: test environment mock
 		(globalThis as any).window = mockWindow;
 		setupNavigatorMock();
@@ -241,6 +243,7 @@ describe("SoundFeedbackService: Volume, Settings & Persistence", () => {
 	});
 
 	it("restores previously saved settings on initialization", () => {
+		clearInMemoryStorageCache();
 		mockStorage.set(SOUND_STORAGE_KEYS.ENABLED, "false");
 		mockStorage.set(SOUND_STORAGE_KEYS.VOLUME, "0.35");
 		mockStorage.set(SOUND_STORAGE_KEYS.HAPTICS, "false");
@@ -258,6 +261,7 @@ describe("SoundFeedbackService: Web Audio DSP Synthesis & Oscillators", () => {
 
 	beforeEach(() => {
 		mockStorage.clear();
+		clearInMemoryStorageCache();
 		// biome-ignore lint/suspicious/noExplicitAny: test environment mock
 		(globalThis as any).window = mockWindow;
 		setupNavigatorMock();

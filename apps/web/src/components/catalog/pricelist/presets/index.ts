@@ -4,7 +4,6 @@
  * Layer 5: Presets Barrel & Canonical Presets Assembly
  */
 
-import type { ServicePricelistItem } from './types';
 import {
 	ANESTHESIA_STATUTORY_PRESETS,
 	CONSULTATION_BASELINE_SERVICES,
@@ -13,33 +12,34 @@ import {
 	PEDIATRIC_STATUTORY_PRESETS,
 	RADIOLOGY_BASELINE_SERVICES,
 	RADIOLOGY_STATUTORY_PRESETS,
-} from './diagnosticPediatricPresets';
+} from "./diagnosticPediatricPresets";
 import {
 	ORTHODONTIC_STATUTORY_PRESETS,
 	ORTHOPEDIC_BASELINE_SERVICES_PART1,
 	ORTHOPEDIC_BASELINE_SERVICES_PART2,
 	ORTHOPEDIC_STATUTORY_PRESETS,
-} from './orthoProstheticPresets';
+} from "./orthoProstheticPresets";
 import {
 	SURGERY_BASELINE_SERVICES_PART1,
 	SURGERY_BASELINE_SERVICES_PART2,
 	SURGERY_BASELINE_SERVICES_PART3,
 	SURGERY_STATUTORY_PRESETS,
-} from './surgeryImplantPresets';
+} from "./surgeryImplantPresets";
 import {
 	HYGIENE_BASELINE_SERVICES,
 	HYGIENE_STATUTORY_PRESETS,
 	THERAPY_BASELINE_SERVICES,
 	THERAPY_STATUTORY_PRESETS,
-} from './therapyPresets';
+} from "./therapyPresets";
+import type { ServicePricelistItem } from "./types";
 
-export type * from './types';
-export * from './constants';
-export * from './therapyPresets';
-export * from './surgeryImplantPresets';
-export * from './orthoProstheticPresets';
-export * from './diagnosticPediatricPresets';
-export * from './presetMatcher';
+export * from "./constants";
+export * from "./diagnosticPediatricPresets";
+export * from "./orthoProstheticPresets";
+export * from "./presetMatcher";
+export * from "./surgeryImplantPresets";
+export * from "./therapyPresets";
+export type * from "./types";
 
 /**
  * Canonical Presets of Statutory Russian Order 804n Nomenclature for Dental Practices (50 canonical presets)
@@ -72,23 +72,24 @@ export const STATUTORY_ORDER_804N_PRESETS: readonly ServicePricelistItem[] = [
  * Baseline 804n Pricelist (30 canonical services) для быстрого заполнения каталога клиники (Мандаты 8e, 8k, 8n)
  * Assembled with 100% byte-for-byte and exact numeric order (srv-base-01 to srv-base-30).
  */
-export const BASELINE_804N_PRICELIST_SERVICES: readonly ServicePricelistItem[] = [
-	// srv-base-01 to srv-base-11: Анестезия, коффердам, кариес, эндодонтия 1-4 канала
-	...THERAPY_BASELINE_SERVICES,
-	// srv-base-12 to srv-base-16: Цирконий, металлокерамика, вкладка E.max, слепок А-силикон, цемент
-	...ORTHOPEDIC_BASELINE_SERVICES_PART1,
-	// srv-base-17 to srv-base-20: Удаления зубов и швы
-	...SURGERY_BASELINE_SERVICES_PART1,
-	// srv-base-21 to srv-base-23: УЗ-чистка, Air-Flow, фторирование Tiefenfluorid
-	...HYGIENE_BASELINE_SERVICES,
-	// srv-base-24 to srv-base-25: Имплантация и формирователь десны
-	...SURGERY_BASELINE_SERVICES_PART2,
-	// srv-base-26: Индивидуальный циркониевый абатмент
-	...ORTHOPEDIC_BASELINE_SERVICES_PART2,
-	// srv-base-27: Первичный осмотр и консультация врача
-	...CONSULTATION_BASELINE_SERVICES,
-	// srv-base-28 to srv-base-29: Радиовизиография и панорамный снимок ОПТГ
-	...RADIOLOGY_BASELINE_SERVICES,
-	// srv-base-30: Снятие послеоперационных швов
-	...SURGERY_BASELINE_SERVICES_PART3,
-];
+export const BASELINE_804N_PRICELIST_SERVICES: readonly ServicePricelistItem[] =
+	[
+		// srv-base-01 to srv-base-11: Анестезия, коффердам, кариес, эндодонтия 1-4 канала
+		...THERAPY_BASELINE_SERVICES,
+		// srv-base-12 to srv-base-16: Цирконий, металлокерамика, вкладка E.max, слепок А-силикон, цемент
+		...ORTHOPEDIC_BASELINE_SERVICES_PART1,
+		// srv-base-17 to srv-base-20: Удаления зубов и швы
+		...SURGERY_BASELINE_SERVICES_PART1,
+		// srv-base-21 to srv-base-23: УЗ-чистка, Air-Flow, фторирование Tiefenfluorid
+		...HYGIENE_BASELINE_SERVICES,
+		// srv-base-24 to srv-base-25: Имплантация и формирователь десны
+		...SURGERY_BASELINE_SERVICES_PART2,
+		// srv-base-26: Индивидуальный циркониевый абатмент
+		...ORTHOPEDIC_BASELINE_SERVICES_PART2,
+		// srv-base-27: Первичный осмотр и консультация врача
+		...CONSULTATION_BASELINE_SERVICES,
+		// srv-base-28 to srv-base-29: Радиовизиография и панорамный снимок ОПТГ
+		...RADIOLOGY_BASELINE_SERVICES,
+		// srv-base-30: Снятие послеоперационных швов
+		...SURGERY_BASELINE_SERVICES_PART3,
+	];

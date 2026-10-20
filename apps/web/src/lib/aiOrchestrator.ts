@@ -309,20 +309,22 @@ export class AiOrchestrator {
 			.trim()
 			.replace(/[.,!?]/g, "");
 
-		// 1. Check for search query (e.g. "найди пациента Иванов", "открой карту Петрова")
+		// 1. Check for patient search query (e.g. "найди пациента Иванов", "открой карту Петрова")
 		const searchMatch = lower.match(
-			/^(?:найди|открой|ищи|поиск|найди пациента|открой карту|открой карточку)\s+(.+)$/i,
+			/^(?:найди|ищи|поиск|найди пациента|поиск пациента|открой карту|открой карточку)\s+(.+)$/i,
 		);
 		if (searchMatch?.[1]) {
-			const queryName = searchMatch[1].trim();
-			// Capitalize first letter for visual query cleanliness if possible
-			const capitalizedQuery =
-				queryName.charAt(0).toUpperCase() + queryName.slice(1);
-			return {
-				view: "patients",
-				query: capitalizedQuery,
-				feedbackText: `Ищу пациента ${capitalizedQuery}.`,
-			};
+			const queryName = searchMatch[1].replace(/^(?:пациента|пациент)\s+/i, "").trim();
+			// Ensure it's not a view navigation command like "одонтограмму" or "расписание"
+			if (!/(?:одонтограм|зубн[а-яё]*\s*формул|зубн[а-яё]*\s*карт|расписан|смен|склад)/i.test(queryName)) {
+				const capitalizedQuery =
+					queryName.charAt(0).toUpperCase() + queryName.slice(1);
+				return {
+					view: "patients",
+					query: capitalizedQuery,
+					feedbackText: `Ищу пациента ${capitalizedQuery}.`,
+				};
+			}
 		}
 
 		// 2. Check view mapping synonyms
@@ -411,6 +413,22 @@ export class AiOrchestrator {
 		) {
 			view = "marketing";
 			feedbackText = "Открываю маркетинг.";
+		} else if (
+			/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:одонтограм|зубн[а-яё]*\s*формул|зубн[а-яё]*\s*карт|формул[а-яё]*\s*зуб)/i.test(
+				lower,
+			) ||
+			/(одонтограмм|зубн[а-яё]*\s*формул|зубн[а-яё]*\s*карт)/i.test(lower)
+		) {
+			view = "odontogram";
+			feedbackText = "Открываю зубную формулу и одонтограмму.";
+		} else if (
+			/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:склад|материал|остат)/i.test(
+				lower,
+			) ||
+			/(склад|материал)/i.test(lower)
+		) {
+			view = "inventory";
+			feedbackText = "Открываю склад материалов.";
 		}
 
 		// 3. Date filtering for Schedule (if view is schedule or active, e.g. "записи на завтра", "расписание сегодня")

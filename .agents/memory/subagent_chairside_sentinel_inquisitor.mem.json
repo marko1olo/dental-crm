@@ -1,0 +1,59 @@
+{
+  "subagent": "chairside_sentinel_inquisitor",
+  "domain": "Clinical Core, Chairside Sentinel & Autonomous AI Copilot Safety",
+  "status": "passed_100_percent",
+  "verified_at": "2026-10-15T00:51:00Z",
+  "verified_components": [
+    "packages/shared/src/ai/clinicalCognitiveCore.ts",
+    "packages/shared/src/ai/anesthesiaEngine.ts",
+    "packages/shared/src/ai/emergencyProtocols.ts",
+    "packages/shared/src/ai/toothGrammarSsot.ts",
+    "packages/shared/src/ai/dentalProtocols.ts",
+    "apps/api/src/services/agent/chairsideSentinel/allergyAndDrugRules.ts",
+    "apps/api/src/services/agent/chairsideSentinel/somaticGuardRules.ts",
+    "apps/api/src/services/agent/chairsideSentinel/protocolCompletenessRules.ts",
+    "apps/api/src/services/agent/chairsideSentinel/sentinelEngineCore.ts",
+    "apps/api/src/ai/dentalTools/clinicalCalculators.ts",
+    "apps/api/src/ai/dentalTools/crmDatabaseTools.ts",
+    "apps/api/src/ai/dentalTools/desktopSystemTools.ts",
+    "apps/api/src/ai/dentalTools/index.ts",
+    "apps/api/src/routes/agentRoutes.ts",
+    "apps/web/src/components/ai/DentalAgentCockpit.tsx",
+    "apps/web/src/components/ai/dentalAgentCockpitLogic.ts"
+  ],
+  "invariants_verified": {
+    "anesthesia_calculation": {
+      "articaine_4_percent": "7.0 mg/kg, absolute ceiling 500 mg, 68 mg per 1.7 ml carpule (max 7 carpules for 70 kg adult)",
+      "mepivacaine_3_plain": "4.4 mg/kg, absolute ceiling 300-400 mg (max 5 carpules for 70 kg adult), 0 mcg epinephrine, indicated for cardiovascular patients",
+      "epinephrine_cardio_limit": "0.04 mg (40 mcg) max for cardiovascular conditions, 0.2 mg (200 mcg) for healthy",
+      "pediatric_safeguard": "Articaine strictly blocked for children < 15 kg / < 4 years per Russian Ministry of Health instruction"
+    },
+    "zero_bureaucracy_mandate_8e": {
+      "one_click_norm": "Automatic physiological norm detection via NORM_SOMATIC_MARKERS and NORM_ALLERGY_MARKERS without 50 hospital checklist fields",
+      "non_blocking_alerts": "isBlocking: false always, doctorAutonomyBlocked: false, zero disabled buttons"
+    },
+    "statutory_standards": {
+      "mkb_10_mapping": "Strict mapping for K02.1 (Caries), K04.0 (Pulpitis), K04.5 (Periodontitis), K08.1 (Extraction), Z01.2 (Checkup)",
+      "order_804n_codes": "A16.07.030 (Anesthesia), A16.07.082 (Cofferdam), A16.07.030.001-003 (Instrumentation), A16.07.008.001-003 (Obturation), A16.07.002.001 (Composite filling), B01.065.001 (Consultation)",
+      "kopecks_integer_arithmetic": "All prices calculated via parseKopecks and multiplyKopecks"
+    },
+    "soap_043u_synthesizer": {
+      "format": "Subjective (complaints, anamnesis), Objective (status localis, percussion, cold test, probing), Assessment (ICD-10, FDI tooth), Plan (Order 804n protocol, recommendations)",
+      "editable_draft": "Autonomous draft editable by doctor in 1 click, auto_approved_draft in autonomous mode"
+    },
+    "zero_inpatient_bloat": {
+      "form_025u_liquidated": "Form 025/u liquidated per Mandates 8i and 8s, replaced with outpatient dental Form 043/u",
+      "hospital_fields_eliminated": "Zero bed-days, zero routine blood/urine tests on simple fillings, zero temperature/humidity blocking locks"
+    },
+    "dual_runtime_harness": {
+      "web_browser": "13 CRM and clinical tools active",
+      "desktop_native": "18 tools active (+ launch workstation app, open dropzone folder, read clinical file, run command, capture screen)"
+    }
+  },
+  "test_suites_passed": [
+    "packages/shared/src/ai/clinicalKnowledge.test.ts (58/58 passed)",
+    "packages/shared/src/ai/toothGrammarSsot.test.ts (passed)",
+    "apps/api/src/services/agent/__tests__/chairsideSentinelEngine.test.ts (passed)",
+    "apps/api/src/tests/agentHarness.test.ts (10/10 passed)"
+  ]
+}

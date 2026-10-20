@@ -92,129 +92,226 @@ export function MigrationSourcePanel(props: {
 		(VENDOR_GUIDES[0] as (typeof VENDOR_GUIDES)[number]);
 
 	return (
-		<div className="mw-panel">
-			{/* Зона перетаскивания и выбора файла */}
-			<section
-				aria-label="Зона загрузки файла"
-				className={`mw-drop ${dragging ? "is-dragging" : ""}`}
-				onDragOver={(event) => {
-					event.preventDefault();
-					setDragging(true);
-				}}
-				onDragLeave={() => setDragging(false)}
-				onDrop={(event) => {
-					event.preventDefault();
-					setDragging(false);
-					const file = event.dataTransfer.files.item(0);
-					if (file) props.onFile(file);
+		<div className="mw-panel" style={{ padding: "10px 14px", gap: "8px" }}>
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+					gap: "12px",
+					alignItems: "stretch",
 				}}
 			>
-				<div className="mw-drop-icon" aria-hidden="true">
-					<UploadCloud size={32} />
-				</div>
-				<p className="mw-drop-title">Перетащите файл выгрузки сюда</p>
-				<p className="mw-drop-hint">
-					Поддерживаются DBF (FoxPro, dBASE), SQLite, XLSX, XLS, CSV и TSV в
-					любой кодировке (UTF-8, Windows-1251, CP866), JSON, XML
-				</p>
-				<button
-					type="button"
-					className="mw-btn mw-btn-primary"
-					disabled={props.busy}
-					onClick={() => props.fileInputRef.current?.click()}
-				>
-					{props.busy ? "Загрузка…" : "Выбрать файл на компьютере"}
-				</button>
-				<input
-					ref={props.fileInputRef}
-					type="file"
-					className="mw-file-input"
-					onChange={(event) => {
-						const file = event.target.files?.item(0);
-						if (file) props.onFile(file);
-						event.target.value = "";
-					}}
-				/>
-			</section>
-
-			{/* Инструкции по экспорту из популярных стоматологических программ */}
-			<section
-				className="mt-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs"
-				aria-label="Пресеты переноса из популярных систем"
-			>
-				<div className="flex items-center gap-2 mb-2 font-semibold text-slate-900 dark:text-slate-100">
-					<Database size={16} className="text-teal-500 shrink-0" />
-					<span>Как быстро выгрузить базу из вашей старой программы:</span>
-				</div>
-
-				<div className="flex flex-wrap gap-1.5 mb-3">
-					{VENDOR_GUIDES.map((vendor) => (
+				{/* Левая колонка: Зона перетаскивания и ИИ-переключатель */}
+				<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+					<section
+						aria-label="Зона загрузки файла"
+						className={`mw-drop ${dragging ? "is-dragging" : ""}`}
+						style={{ flex: 1, justifyContent: "center", padding: "10px 14px", gap: "4px" }}
+						onDragOver={(event) => {
+							event.preventDefault();
+							setDragging(true);
+						}}
+						onDragLeave={() => setDragging(false)}
+						onDrop={(event) => {
+							event.preventDefault();
+							setDragging(false);
+							const file = event.dataTransfer.files.item(0);
+							if (file) props.onFile(file);
+						}}
+					>
+						<div className="mw-drop-icon" aria-hidden="true">
+							<UploadCloud size={22} />
+						</div>
+						<p className="mw-drop-title" style={{ margin: 0, fontSize: "14px" }}>
+							Перетащите файл выгрузки сюда
+						</p>
+						<p className="mw-drop-hint" style={{ margin: "0 0 2px", fontSize: "11.5px" }}>
+							Поддерживаются DBF (FoxPro, dBASE), SQLite, XLSX, XLS, CSV и TSV в
+							любой кодировке (UTF-8, Windows-1251, CP866), JSON, XML
+						</p>
 						<button
-							key={vendor.id}
 							type="button"
-							className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-								selectedVendor === vendor.id
-									? "bg-teal-500/10 border-teal-500/30 text-teal-700 dark:text-teal-300 font-semibold"
-									: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"
-							}`}
-							onClick={() => setSelectedVendor(vendor.id)}
+							className="mw-btn mw-btn-primary"
+							style={{ minHeight: "34px", padding: "5px 14px", fontSize: "12.5px" }}
+							disabled={props.busy}
+							onClick={() => props.fileInputRef.current?.click()}
 						>
-							{vendor.title}
+							{props.busy ? "Загрузка…" : "Выбрать файл на компьютере"}
 						</button>
-					))}
+						<input
+							ref={props.fileInputRef}
+							type="file"
+							className="mw-file-input"
+							onChange={(event) => {
+								const file = event.target.files?.item(0);
+								if (file) props.onFile(file);
+								event.target.value = "";
+							}}
+						/>
+					</section>
+
+					<label className="mw-toggle" style={{ padding: "6px 10px", margin: 0, fontSize: "12px" }}>
+						<input
+							type="checkbox"
+							checked={props.allowLlm}
+							onChange={(event) => props.onAllowLlmChange(event.target.checked)}
+						/>
+						<span>
+							Привлекать нейросеть к неопознанным колонкам
+							<em className="mw-toggle-note">
+								Передаются только маски вида «99.99.9999» — ФИО и телефоны не
+								передаются.
+							</em>
+						</span>
+					</label>
 				</div>
 
-				<div className="p-3 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
-					<div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-						<span className="font-semibold text-slate-900 dark:text-slate-100">
-							{activeGuide.title}
-						</span>
-						<span className="text-[11px] text-teal-600 dark:text-teal-400 font-mono">
-							Рекомендуемый формат: {activeGuide.recommendedFormat}
+				{/* Правая колонка: Инструкции по экспорту из популярных МИС */}
+				<section
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						justifyContent: "space-between",
+						gap: "8px",
+						padding: "10px 12px",
+						borderRadius: "10px",
+						border: "1px solid var(--line)",
+						background: "var(--paper-soft)",
+						fontSize: "11.5px",
+					}}
+					aria-label="Пресеты переноса из популярных систем"
+				>
+					<div>
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+								marginBottom: "10px",
+								fontWeight: 600,
+								color: "var(--ink)",
+							}}
+						>
+							<Database size={15} style={{ color: "var(--teal)", flexShrink: 0 }} />
+							<span>Как быстро выгрузить базу из вашей старой программы:</span>
+						</div>
+
+						<div
+							style={{
+								display: "flex",
+								flexWrap: "wrap",
+								gap: "4px",
+								marginBottom: "8px",
+							}}
+						>
+							{VENDOR_GUIDES.map((vendor) => {
+								const isSelected = selectedVendor === vendor.id;
+								return (
+									<button
+										key={vendor.id}
+										type="button"
+										style={{
+											padding: "2px 7px",
+											minHeight: "26px",
+											borderRadius: "6px",
+											border: isSelected
+												? "1px solid var(--teal)"
+												: "1px solid var(--line)",
+											background: isSelected
+												? "var(--teal-surface)"
+												: "var(--paper)",
+											color: isSelected ? "var(--ink)" : "var(--muted)",
+											fontWeight: isSelected ? 600 : 500,
+											fontSize: "11px",
+											cursor: "pointer",
+											transition: "all 0.15s ease",
+										}}
+										onClick={() => setSelectedVendor(vendor.id)}
+									>
+										{vendor.title}
+									</button>
+								);
+							})}
+						</div>
+
+						<div
+							style={{
+								padding: "10px 12px",
+								borderRadius: "10px",
+								background: "var(--paper)",
+								border: "1px solid var(--line)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "6px",
+							}}
+						>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									gap: "8px",
+									flexWrap: "wrap",
+								}}
+							>
+								<span style={{ fontWeight: 600, color: "var(--ink)" }}>
+									{activeGuide.title}
+								</span>
+								<span
+									style={{
+										fontSize: "11px",
+										color: "var(--teal)",
+										fontFamily: "var(--font-mono, monospace)",
+										fontWeight: 600,
+									}}
+								>
+									Формат: {activeGuide.recommendedFormat}
+								</span>
+							</div>
+							<p
+								style={{
+									margin: 0,
+									color: "var(--ink-2)",
+									lineHeight: 1.45,
+								}}
+							>
+								{activeGuide.steps}
+							</p>
+							<p
+								style={{
+									margin: 0,
+									paddingTop: "6px",
+									borderTop: "1px solid var(--line)",
+									fontSize: "11px",
+									color: "var(--muted)",
+								}}
+							>
+								Переносимые данные: {activeGuide.fields}
+							</p>
+						</div>
+					</div>
+
+					<div
+						style={{
+							display: "flex",
+							alignItems: "flex-start",
+							gap: "8px",
+							color: "var(--muted)",
+							fontSize: "11px",
+							lineHeight: 1.4,
+						}}
+					>
+						<Info
+							size={14}
+							style={{ color: "var(--teal)", flexShrink: 0, marginTop: "2px" }}
+						/>
+						<span>
+							<strong>Автонормализация и закрытые СУБД:</strong> телефоны
+							приводятся к +7XXXXXXXXXX, дубликаты склеиваются. Для серверных баз
+							Firebird / MS SQL нажмите «Найти базы на сервере» вверху справа.
 						</span>
 					</div>
-					<p className="text-slate-600 dark:text-slate-400 leading-relaxed m-0">
-						{activeGuide.steps}
-					</p>
-					<p className="text-[11px] text-slate-500 dark:text-slate-500 m-0 pt-1 border-t border-slate-100 dark:border-slate-700/60">
-						Переносимые данные: {activeGuide.fields}
-					</p>
-				</div>
-
-				<div className="mt-3 flex items-start gap-2 text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
-					<Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
-					<span>
-						<strong>Автоматическая нормализация:</strong> номера телефонов
-						приводятся к стандарту РФ (+7XXXXXXXXXX), даты рождения
-						распознаются во всех форматах (ДД.ММ.ГГГГ, ГГГГ-ММ-ДД, ДД/ММ/ГГГГ).
-						Повторная загрузка обновляет существующие карточки без создания дубликатов.
-					</span>
-				</div>
-			</section>
-
-			{/* Переключатель помощи нейросети */}
-			<label className="mw-toggle mt-4">
-				<input
-					type="checkbox"
-					checked={props.allowLlm}
-					onChange={(event) => props.onAllowLlmChange(event.target.checked)}
-				/>
-				<span>
-					Привлекать нейросеть к неопознанным колонкам
-					<em className="mw-toggle-note">
-						Модель получает только статистику колонок и маски вида «99.99.9999» —
-						персональные данные пациентов (ФИО, телефоны) третьим лицам не
-						передаются.
-					</em>
-				</span>
-			</label>
-
-			{/* Справка о закрытых форматах */}
-			<div className="mw-note">
-				<strong>Закрытые форматы.</strong> Firebird (IDENT), MS SQL (DentalPRO),
-				Access и 1С читать напрямую нельзя — это страничные форматы, привязанные
-				к своему серверу. Нажмите «Найти базы на сервере»: движок опознает их и
-				подскажет, чем открыть и что выгрузить.
+				</section>
 			</div>
 		</div>
 	);

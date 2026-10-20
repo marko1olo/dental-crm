@@ -136,12 +136,7 @@
 @media (max-width: 900px) {
 	.marketing-dashboard-kpis {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-
-@media (max-width: 520px) {
-	.marketing-dashboard-kpis {
-		grid-template-columns: 1fr;
+		gap: 8px;
 	}
 }
 
@@ -149,7 +144,7 @@
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 12px;
-	padding: 14px 16px;
+	padding: 12px 14px;
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -193,7 +188,12 @@
 	color: var(--muted);
 	display: flex;
 	align-items: center;
+	white-space: nowrap;
 	gap: 4px;
+}
+
+.marketing-kpi-sub strong {
+	white-space: nowrap;
 }
 
 .marketing-kpi-tag-good {
@@ -548,52 +548,48 @@
 
 .marketing-cohort-top {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 6px;
+	gap: 8px;
 }
 
 .marketing-cohort-name {
-	font-size: 12px;
+	font-size: 12.5px;
 	font-weight: 600;
 	color: var(--ink);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	line-height: 1.3;
+	word-break: break-word;
 }
 
 .marketing-cohort-badge {
-	font-size: 10.5px;
+	font-size: 11px;
 	font-weight: 700;
-	padding: 1px 6px;
-	border-radius: 4px;
+	padding: 2px 6px;
+	border-radius: 6px;
 	background: var(--paper);
 	color: var(--teal-dark, var(--teal));
 	border: 1px solid var(--line);
 	flex-shrink: 0;
+	white-space: nowrap;
 }
 
 .marketing-cohort-desc {
-	font-size: 10.5px;
+	font-size: 11px;
 	color: var(--muted);
 	margin: 0;
-	line-height: 1.35;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+	line-height: 1.4;
 }
 
 .marketing-cohort-action {
 	margin-top: 4px;
-	height: 26px;
-	padding: 0 8px;
-	font-size: 11px;
+	min-height: 32px;
+	padding: 4px 10px;
+	font-size: 11.5px;
 	font-weight: 600;
 	color: var(--teal-dark, var(--teal));
 	background: var(--teal-soft);
 	border: 1px solid var(--teal);
-	border-radius: 6px;
+	border-radius: 8px;
 	cursor: pointer;
 	text-align: left;
 	display: inline-flex;
@@ -647,25 +643,100 @@
 }
 
 .marketing-modal-link {
-	height: 28px;
-	padding: 0 10px;
+	min-height: 32px;
+	padding: 4px 10px;
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--teal-dark, var(--teal));
 	background: var(--teal-soft);
 	border: 1px solid var(--teal);
-	border-radius: 7px;
+	border-radius: 8px;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
 	transition: all 0.15s ease;
+	white-space: nowrap;
 }
 
 .marketing-modal-link:hover {
 	background: var(--teal);
 	color: var(--paper-strong, #ffffff);
 	text-decoration: none;
+}
+
+.marketing-period-label-short {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.marketing-dashboard-page--embedded .marketing-dashboard-title-wrap {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.marketing-dashboard-controls {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.marketing-period-segmented.dente-segmented-bar {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: 1.35fr 1fr 1fr 1fr 0.85fr 0.85fr;
+		height: 36px;
+		width: 100%;
+		padding: 3px;
+		gap: 2px;
+		overflow: hidden;
+	}
+
+	.marketing-period-label-full {
+		display: none;
+	}
+
+	.marketing-period-label-short {
+		display: inline;
+	}
+
+	.marketing-period-segmented.dente-segmented-bar .marketing-period-btn {
+		width: 100% !important;
+		min-width: 0 !important;
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 0 4px !important;
+		font-size: 11.5px !important;
+	}
+
+	.marketing-header-promo-btn {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.marketing-kpi-card {
+		padding: 10px 12px;
+	}
+
+	.marketing-kpi-value {
+		font-size: 1.15rem;
+	}
+
+	.marketing-header-csv-btn,
+	.marketing-header-promo-btn,
+	.marketing-cohort-action,
+	.marketing-modal-link {
+		min-height: 44px;
+		height: 44px;
+	}
 }
 
 /* Dark mode elevation (all 6 dark themes) */

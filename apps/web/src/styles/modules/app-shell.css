@@ -1,0 +1,410 @@
+.workspace > * {
+	animation: fade-up 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.panel {
+	animation: fade-up 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.shift-hero > * {
+	animation: fade-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ───────────────────────────────────────────────
+   SIDEBAR GLASSMORPHISM UPGRADE
+   ─────────────────────────────────────────────── */
+.sidebar {
+	position: relative;
+	background:
+		linear-gradient(
+			160deg,
+			rgba(15, 118, 110, 0.15) 0%,
+			rgba(9, 75, 69, 0.05) 100%
+		),
+		rgba(20, 28, 25, 0.96);
+	backdrop-filter: blur(20px) saturate(1.4);
+	-webkit-backdrop-filter: blur(20px) saturate(1.4);
+	border-right: 1px solid rgba(255, 255, 255, 0.07);
+	box-shadow: 4px 0 32px rgba(0, 0, 0, 0.18);
+}
+
+/* ───────────────────────────────────────────────
+   NAV ITEM MICRO-ANIMATIONS
+   ─────────────────────────────────────────────── */
+.nav-item {
+	transition:
+		background 0.15s ease,
+		color 0.15s ease,
+		transform 0.12s ease,
+		box-shadow 0.15s ease;
+	will-change: transform;
+	animation: slide-in-left 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sidebar nav .nav-item:nth-child(1) {
+	animation-delay: 0.04s;
+}
+.sidebar nav .nav-item:nth-child(2) {
+	animation-delay: 0.07s;
+}
+.sidebar nav .nav-item:nth-child(3) {
+	animation-delay: 0.1s;
+}
+.sidebar nav .nav-item:nth-child(4) {
+	animation-delay: 0.13s;
+}
+.sidebar nav .nav-item:nth-child(5) {
+	animation-delay: 0.16s;
+}
+.sidebar nav .nav-item:nth-child(6) {
+	animation-delay: 0.19s;
+}
+.sidebar nav .nav-item:nth-child(7) {
+	animation-delay: 0.22s;
+}
+
+.nav-item:hover {
+	background: rgba(15, 118, 110, 0.25);
+	color: #ffffff;
+	transform: translateX(3px);
+	box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.nav-item.active {
+	background: rgba(15, 118, 110, 0.3);
+	color: #ffffff;
+	box-shadow: inset 3px 0 0 var(--teal);
+	position: relative;
+}
+
+.nav-item.active::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 4px;
+	bottom: 4px;
+	width: 3px;
+	background: var(--teal);
+	border-radius: 0 2px 2px 0;
+}
+
+/* ───────────────────────────────────────────────
+   BUTTON MICRO-ANIMATIONS
+   ─────────────────────────────────────────────── */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.primary-button,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.secondary-button {
+	transition:
+		transform 0.1s ease,
+		box-shadow 0.1s ease,
+		background 0.15s ease,
+		opacity 0.15s ease;
+	will-change: transform;
+}
+
+.primary-button:hover:not(:disabled) {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(15, 118, 110, 0.35);
+}
+
+.primary-button:active:not(:disabled) {
+	transform: translateY(0);
+	box-shadow: none;
+}
+
+.secondary-button:hover:not(:disabled) {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.secondary-button:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+/* ───────────────────────────────────────────────
+   ACTION TILE UPGRADE
+   ─────────────────────────────────────────────── */
+.action-tile {
+	transition:
+		transform 0.15s ease,
+		box-shadow 0.15s ease,
+		border-color 0.15s ease;
+	will-change: transform;
+}
+
+.action-tile:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 8px 24px rgba(15, 118, 110, 0.15);
+	border-color: var(--teal-soft);
+}
+
+.action-tile:active {
+	transform: translateY(-1px);
+}
+
+/* ───────────────────────────────────────────────
+   PANEL HOVER LIFT
+   ─────────────────────────────────────────────── */
+.now-card,
+.panel {
+	transition: box-shadow 0.2s ease;
+}
+
+.now-card:hover {
+	box-shadow: 0 20px 48px rgba(22, 53, 46, 0.15);
+}
+
+/* ───────────────────────────────────────────────
+   STATUS PILL PULSE (loading state)
+   ─────────────────────────────────────────────── */
+.status-pill.status-loading {
+	opacity: 0.75;
+}
+
+/* ───────────────────────────────────────────────
+   TOPBAR GLASSMORPHISM
+   ─────────────────────────────────────────────── */
+.topbar {
+	position: sticky;
+	top: 0;
+	z-index: 25;
+	height: 52px;
+	min-height: 52px;
+	max-height: 52px;
+	padding: 0 16px;
+	margin: 0;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* ───────────────────────────────────────────────
+   AVATAR PULSE ON HOVER
+   ─────────────────────────────────────────────── */
+.avatar {
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.2s ease;
+}
+
+.patient-hero:hover .avatar {
+	box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.2);
+	transform: scale(1.06);
+}
+
+/* ───────────────────────────────────────────────
+   ROLE SWITCHER SMOOTH OPEN
+   ─────────────────────────────────────────────── */
+
+/* Тот же отказ, что был у входных анимаций разделов выше: `both` включает
+   `backwards`, а `backwards` держит кадр `from` (`opacity: 0`) всё время до
+   активной фазы. Список ролей — единственный способ переключить роль, и пустой
+   раскрытый список ничем не отличается от сломанного. Задержки у правила нет,
+   поэтому `forwards` в работающем браузере даёт ровно ту же картинку и меняет
+   только сторону отказа: не тикнула анимация — список ВИДЕН.
+
+   Каскад .sidebar nav .nav-item ниже намеренно оставлен на `both`: там задержки
+   до 0,22 с, и с `forwards` пункты сначала показывались бы, а потом дёргались в
+   прозрачность. Их страхует блок prefers-reduced-motion (main.css:268). */
+.role-switcher-options {
+	animation: fade-up 0.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ───────────────────────────────────────────────
+   BRAND MARK SUBTLE ANIMATION
+   ─────────────────────────────────────────────── */
+.brand-mark svg {
+	transition: transform 0.3s ease;
+}
+
+.brand-mark:hover svg {
+	transform: rotate(-10deg) scale(1.1);
+}
+
+/* PREMIUM ANIMATIONS & LAYOUT REFINEMENTS */
+body {
+	background-color: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Sidebar Glassmorphism */
+.sidebar {
+	background: linear-gradient(
+		180deg,
+		rgba(20, 27, 24, 0.95),
+		rgba(15, 20, 18, 0.98)
+	);
+	backdrop-filter: blur(10px);
+	box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+	border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar .nav-item {
+	transition: all var(--transition-fast);
+	border-radius: 8px;
+	margin: 0 8px;
+}
+.sidebar .nav-item:hover {
+	background: rgba(255, 255, 255, 0.08);
+	transform: translateX(4px);
+}
+.sidebar .nav-item.active {
+	background: linear-gradient(
+		90deg,
+		rgba(13, 148, 136, 0.85),
+		rgba(13, 148, 136, 0.4)
+	);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+
+/* Topbar & Header Enhancements */
+.topbar {
+	background: var(--glass-bg);
+	backdrop-filter: var(--glass-blur);
+	border-bottom: 1px solid var(--line);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.topbar h1 {
+	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	font-weight: 800;
+	letter-spacing: -0.5px;
+}
+
+/* Clean Panels with Soft Shadows */
+.panel {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: var(--shadow-premium);
+	transition:
+		transform var(--transition-smooth),
+		box-shadow var(--transition-smooth);
+}
+.panel:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 16px 48px -12px rgba(15, 118, 110, 0.2);
+}
+
+/* Buttons with Micro-animations */
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.primary-button {
+	background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
+	border: none;
+	box-shadow: 0 4px 12px var(--teal-glow);
+	transition: all var(--transition-fast);
+	font-weight: 600;
+}
+.primary-button:hover:not(:disabled) {
+	transform: translateY(-2px) scale(1.02);
+	box-shadow: 0 6px 16px var(--teal-glow);
+	filter: brightness(1.1);
+}
+.primary-button:active:not(:disabled) {
+	transform: translateY(0) scale(0.98);
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.secondary-button {
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	transition: all var(--transition-fast);
+	font-weight: 500;
+}
+.secondary-button:hover:not(:disabled) {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	transform: translateY(-1px);
+}
+
+/* Visit View Declutter */
+.visit-focus-bar,
+.specialty-focus-bar,
+.visit-next-step,
+.dictation-box {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 20px;
+	margin-bottom: 16px;
+}
+
+.visit-next-step-main {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+}
+.visit-next-step-main h3 {
+	font-size: 24px;
+	color: var(--teal-dark);
+}
+.visit-primary-action {
+	font-size: 18px;
+	padding: 14px 24px;
+	border-radius: 12px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+@media (max-width: 860px) {
+	.visit-next-step-main {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+	.visit-primary-action {
+		width: 100%;
+		font-size: 16px;
+		padding: 13px 20px;
+		white-space: nowrap;
+		justify-content: center;
+	}
+}
+
+/* Visit Progress Strip */
+.visit-progress-strip {
+	display: flex;
+	gap: 12px;
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px dashed var(--line-strong);
+}
+.visit-progress-step {
+	flex: 1;
+	background: var(--paper-soft);
+	border-radius: 8px;
+	padding: 12px;
+	border: 1px solid var(--line);
+	transition: all var(--transition-smooth);
+}
+.visit-progress-step.step-completed {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+.visit-progress-step.step-completed span {
+	background: var(--teal);
+	color: white;
+}
+
+/* Smooth Inputs */
+input,
+select,
+textarea {
+	transition:
+		border-color var(--transition-fast),
+		box-shadow var(--transition-fast);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+input:focus,
+select:focus,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+textarea:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-glow);
+}
+/* SETTINGS VIEW PREMIUM REDESIGN */

@@ -11,6 +11,7 @@ import { useInventoryViewAudit } from "./inventory/viewModules/useInventoryViewA
 import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryViewMobileLayout.js";
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
+import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/SterilizationBatchCycleModal.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
 export * from "./InventoryStockTable.js";
@@ -24,7 +25,7 @@ export * from "./inventory/InventoryExternalModals.js";
 export * from "./inventory/ShiftBatchDeductionModal.js";
 export * from "./inventory/MobileInventoryGroupedList.js";
 export * from "./inventory/InventoryTopToolbar.js";
-export * from "./warehouse/WarehouseWaybillsTab.js";
+export * from "./inventory/WarehouseWaybillsTab.js";
 export * from "./inventory/WarehouseInventoryTab.js";
 
 const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organizationId }) => {
@@ -45,7 +46,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 	const [isNurseCarpuleModalOpen, setIsNurseCarpuleModalOpen] = useState(false), [isAcceptanceWaybillsOpen, setIsAcceptanceWaybillsOpen] = useState(false);
 	const [isInboundInvoiceModalOpen, setIsInboundInvoiceModalOpen] = useState(false), [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false), [isShiftDeductionOpen, setIsShiftDeductionOpen] = useState(false);
-	const [isConsumablesDeductionOpen, setIsConsumablesDeductionOpen] = useState(false), [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
+	const [isConsumablesDeductionOpen, setIsConsumablesDeductionOpen] = useState(false), [isSterilizationCycleOpen, setIsSterilizationCycleOpen] = useState(false), [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
 	const { auditInitialDoc, handleApplyInventoryAudit } = useInventoryViewAudit(organizationId, items, getHeaders, fetchItems);
 	const { selectedCategory, setSelectedCategory, setDisplayLimit, inventorySlice } = useInventoryViewCategories(filteredItems, searchQuery, activeSubTab);
 	const isMobile = useIsMobile(768);
@@ -79,7 +80,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 
 	return (
 		<div className="w-full h-full flex flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
-			<InventoryTopToolbar activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} stockViewMode={stockViewMode} setStockViewMode={setStockViewMode} itemsCount={items.length} rulesCount={rulesList.length} totalItems={totalItems} lowStockCount={lowStockCount} totalValue={totalValue} searchQuery={searchQuery} setSearchQuery={setSearchQuery} isQuickPackagesOpen={isQuickPackagesOpen} setIsQuickPackagesOpen={setIsQuickPackagesOpen} isWritingOffCarpules={isWritingOffCarpules} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} isOpsMenuOpen={isOpsMenuOpen} setIsOpsMenuOpen={setIsOpsMenuOpen} setIsAcceptanceWaybillsOpen={setIsAcceptanceWaybillsOpen} setIsWarehouseManagerOpen={setIsWarehouseManagerOpen} setIsMdlpScanningOpen={setIsMdlpScanningOpen} setIsClinicalWriteoffOpen={setIsClinicalWriteoffOpen} setIsProcedureDeductionOpen={setIsProcedureDeductionOpen} setIsWarehouseTransferOpen={setIsWarehouseTransferOpen} setIsInventoryAuditOpen={setIsInventoryAuditOpen} setIsMdlpDisposalOpen={setIsMdlpDisposalOpen} setIsNurseCarpuleModalOpen={setIsNurseCarpuleModalOpen} onOpenShiftDeductionModal={() => setIsShiftDeductionOpen(true)} onOpenProtocolDeduction={() => setIsConsumablesDeductionOpen(true)} handleQuickWriteoffStandardKit={handleQuickWriteoffStandardKit} handleQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule} handleQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit} handleQuickWriteoffVisitBundle={handleQuickWriteoffVisitBundle} handleQuickWriteoffShiftBundle={handleQuickWriteoffShiftBundle} setIsInboundInvoiceModalOpen={setIsInboundInvoiceModalOpen} openAddModal={openAddModal} />
+			<InventoryTopToolbar activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} stockViewMode={stockViewMode} setStockViewMode={setStockViewMode} itemsCount={items.length} rulesCount={rulesList.length} totalItems={totalItems} lowStockCount={lowStockCount} totalValue={totalValue} searchQuery={searchQuery} setSearchQuery={setSearchQuery} isQuickPackagesOpen={isQuickPackagesOpen} setIsQuickPackagesOpen={setIsQuickPackagesOpen} isWritingOffCarpules={isWritingOffCarpules} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} isOpsMenuOpen={isOpsMenuOpen} setIsOpsMenuOpen={setIsOpsMenuOpen} setIsAcceptanceWaybillsOpen={setIsAcceptanceWaybillsOpen} setIsWarehouseManagerOpen={setIsWarehouseManagerOpen} setIsMdlpScanningOpen={setIsMdlpScanningOpen} setIsClinicalWriteoffOpen={setIsClinicalWriteoffOpen} setIsProcedureDeductionOpen={setIsProcedureDeductionOpen} setIsWarehouseTransferOpen={setIsWarehouseTransferOpen} setIsInventoryAuditOpen={setIsInventoryAuditOpen} setIsMdlpDisposalOpen={setIsMdlpDisposalOpen} setIsNurseCarpuleModalOpen={setIsNurseCarpuleModalOpen} onOpenShiftDeductionModal={() => setIsShiftDeductionOpen(true)} onOpenSterilizationCycleModal={() => setIsSterilizationCycleOpen(true)} onOpenProtocolDeduction={() => setIsConsumablesDeductionOpen(true)} handleQuickWriteoffStandardKit={handleQuickWriteoffStandardKit} handleQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule} handleQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit} handleQuickWriteoffVisitBundle={handleQuickWriteoffVisitBundle} handleQuickWriteoffShiftBundle={handleQuickWriteoffShiftBundle} setIsInboundInvoiceModalOpen={setIsInboundInvoiceModalOpen} openAddModal={openAddModal} />
 
 			{activeSubTab === "inventory" && (
 				<div className="dente-filter-chips min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0" role="toolbar" aria-label="Фильтр по категориям материалов" data-testid="inventory-category-filters-row">
@@ -107,6 +108,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 			</div>
 
 			<InventoryViewModalsContainer organizationId={organizationId} items={items} showModal={showModal} setShowModal={setShowModal} editingItem={editingItem} formData={formData} setFormData={setFormData} handleSaveItem={handleSaveItem} isSavingItem={isSavingItem} adjustingItem={adjustingItem} setAdjustingItem={setAdjustingItem} adjustType={adjustType} setAdjustType={setAdjustType} adjustAmount={adjustAmount} setAdjustAmount={setAdjustAmount} handleAdjustStock={handleAdjustStock} isAdjustingStock={isAdjustingStock} confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} auditInitialDoc={auditInitialDoc} externalModalsProps={extModalProps} isShiftDeductionOpen={isShiftDeductionOpen} setIsShiftDeductionOpen={setIsShiftDeductionOpen} isConsumablesDeductionOpen={isConsumablesDeductionOpen} setIsConsumablesDeductionOpen={setIsConsumablesDeductionOpen} stockMap={stockMap} fetchItems={fetchItems} getHeaders={getHeaders} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} />
+			<SterilizationBatchCycleModal isOpen={isSterilizationCycleOpen} onClose={() => setIsSterilizationCycleOpen(false)} organizationId={organizationId} onCycleCompleted={() => fetchItems()} />
 		</div>
 	);
 };

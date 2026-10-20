@@ -41,8 +41,8 @@ export const TOOTH16_PULP_GEOMETRY = {
 		{
 			id: "P",
 			nameRu: "Нёбный (Palatal)",
-			path: "M 50,98.5 C 50,70 50,38 50,8",
-			orifice: { x: 50, y: 98.5 },
+			path: "M 49.5,98.5 C 50.5,68 49.2,36 50,8",
+			orifice: { x: 49.5, y: 98.5 },
 			apex: { x: 50, y: 8 },
 			width: 2.6,
 		},

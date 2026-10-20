@@ -18,12 +18,12 @@ export const PriceDiffLeftPane: React.FC<PriceDiffLeftPaneProps> = ({
 	onHoverRow,
 }) => {
 	return (
-		<section className="pricelist-diff-pane left-pane" aria-label="Исходный документ">
+		<section className="pricelist-diff-pane left-pane" aria-label="Исходный прейскурант клиники">
 			<header className="pricelist-diff-pane-header">
 				<div className="pricelist-diff-pane-title">
 					<FileText size={13} style={{ flexShrink: 0 }} />
 					<span className="pricelist-diff-pane-title-text">
-						1. Исходная строка старого документа
+						1. Исходный прейскурант клиники
 					</span>
 				</div>
 				<span className="pricelist-diff-pane-counter">{`${filteredItems.length} строк`}</span>

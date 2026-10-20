@@ -26,8 +26,9 @@ export function SourcesDicomCapability() {
 		mprResourceTierLabels,
 	} = mergedProps;
 
-	const typedImagingViewerCapabilities = (imagingViewerCapabilities ??
-		[]) as Array<{
+	const typedImagingViewerCapabilities = (
+		Array.isArray(imagingViewerCapabilities) ? imagingViewerCapabilities : []
+	) as Array<{
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		icon: any;
 		title: string;
@@ -35,12 +36,16 @@ export function SourcesDicomCapability() {
 		state: string;
 	}>;
 
-	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
+	const typedDicomSeriesPreviewSeries = (
+		Array.isArray(dicomSeriesPreview?.series) ? dicomSeriesPreview.series : []
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		[]) as Array<any>;
+	) as Array<any>;
 
-	const typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ??
-		[]) as Array<string>;
+	const typedDicomSeriesPreviewParserNotes = (
+		Array.isArray(dicomSeriesPreview?.parserNotes)
+			? dicomSeriesPreview.parserNotes
+			: []
+	) as Array<string>;
 
 	return (
 		<section

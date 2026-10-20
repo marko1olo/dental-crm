@@ -7,6 +7,7 @@ import {
 	Layers3,
 } from "lucide-react";
 import { humanizeMigrationText } from "../../SettingsViewHelpers";
+import { DicomServerConfigPanel } from "./DicomServerConfigPanel";
 import type { DicomOhifBridgePanelProps, TextInputChangeEvent } from "./types";
 
 export function DicomOhifBridgePanel({
@@ -192,6 +193,15 @@ export function DicomOhifBridgePanel({
 								? "Планирую"
 								: "Подготовить быструю загрузку"}
 						</button>
+					</div>
+					<div style={{ marginTop: 12 }}>
+						<DicomServerConfigPanel
+							onSaveConfig={(cfg) => {
+								const nextEndpoint = `http://${cfg.host.trim() || "127.0.0.1"}:${cfg.port || 8042}/dicom-web`;
+								setDicomWebEndpointUrl(nextEndpoint);
+								void checkDicomWebConnector();
+							}}
+						/>
 					</div>
 					<small>
 						Только метаданные и состояние. Саму серию открывает внешний или

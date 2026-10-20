@@ -7,7 +7,8 @@
  * Apple HIG Touch Ergonomics & 10-Theme Parity
  */
 
-@import "./styles/leadsKanbanStyles.css";
+@import "./styles/leadsKanbanToolbar.css";
+@import "./styles/leadsKanbanMoreMenu.css";
 
 /* -------------------------------------------------------------------------- */
 /* MAIN KANBAN BOARD WRAPPER                                                  */

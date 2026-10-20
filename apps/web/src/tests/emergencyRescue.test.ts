@@ -310,13 +310,16 @@ describe('Russian Dental Emergency Protocols & Resuscitation Suite', () => {
 				})
 			);
 
-			assert.ok(html.includes('ЭКСТРЕННЫЙ РЕАНИМАЦИОННЫЙ HUD'));
-			assert.ok(html.includes('ВЫЗОВ СМП (103 / 112)'));
-			assert.ok(html.includes('Экстренные дозировки препаратов'));
-			assert.ok(html.includes('ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА'));
-			assert.ok(html.includes('СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ &amp; ФАР)') || html.includes('СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)'));
-			assert.ok(html.includes('30 компрессий : 2 вдоха'));
-			assert.ok(html.includes('100–120 в минуту'));
+			assert.ok(html.includes('Экстренная помощь у кресла'));
+			assert.ok(html.includes('Вызов скорой помощи (112)'));
+			assert.ok(html.includes('Шпаргалка для диспетчера 112 / 103'));
+			assert.ok(html.includes('Состав аптечки и дозировки 1-й линии'));
+			assert.ok(html.includes('Адреналин 0.1% (Эпинефрин)'));
+			assert.ok(html.includes('Преднизолон 30 мг/мл'));
+			assert.ok(html.includes('Печать Акта (СМП)'));
+			// Verification that reality simulator antipattern is completely purged:
+			assert.ok(!html.includes('ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА'));
+			assert.ok(!html.includes('30 компрессий : 2 вдоха'));
 		});
 
 		it('returns null when isOpen is false', async () => {

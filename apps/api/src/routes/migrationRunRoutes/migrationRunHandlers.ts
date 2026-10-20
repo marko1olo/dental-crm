@@ -29,7 +29,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				reply,
 				"migration map",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			const parsed = mapRequestSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
@@ -91,7 +91,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				reply,
 				"migration stage",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			try {
 				const result = await stageRunPhase({
@@ -133,7 +133,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				reply,
 				"migration execute",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			const parsed = executeRequestSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {

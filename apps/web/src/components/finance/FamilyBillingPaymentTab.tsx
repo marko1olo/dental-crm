@@ -226,7 +226,7 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 									</h4>
 								</div>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-									54-ФЗ: Безналичный расчет
+									Безналичный расчет
 								</span>
 							</div>
 
@@ -253,7 +253,7 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 									</h4>
 								</div>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-									54-ФЗ: Наличный расчет
+									Наличный расчет
 								</span>
 							</div>
 
@@ -304,7 +304,7 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 											: `Недостает ${(billingResult.defaultSplit.remainingDueRub - (cashReceivedRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}
 									</div>
 									<div className="text-[11px] text-[var(--muted,#64748b)] mt-1">
-										Сдача рассчитывается автоматически в чеке 54-ФЗ
+										Сдача рассчитывается автоматически в кассовом чеке
 									</div>
 								</div>
 							</div>

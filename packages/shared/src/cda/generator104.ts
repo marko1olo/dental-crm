@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * SEMD 104: ЭПИКРИЗ СТОМАТОЛОГИЧЕСКИЙ В СТАЦИОНАРЕ / АМБУЛАТОРНЫЙ (CDA R2)
+ * SEMD 104: ЭПИКРИЗ СТОМАТОЛОГИЧЕСКИЙ АМБУЛАТОРНЫЙ (CDA R2)
  * Compliant with Minzdrav Order No. 911n and SEMD 104 Specification.
  * ═══════════════════════════════════════════════════════════════════════════
  */
@@ -15,7 +15,7 @@ export function generateSemd104Xml(params: CdaSemd104Params): string {
 	const headerXml = generateClinicalDocumentHeader({
 		docKind: "104",
 		docTypeNsiCode: "104",
-		docTitle: "Стоматологический эпикриз (амбулаторный / стационарный)",
+		docTitle: "Стоматологический эпикриз (амбулаторный)",
 		templateOids: [
 			EGISZ_OIDS.SEMD_TEMPLATE_104,
 			EGISZ_OIDS.SEMD_TEMPLATE_BASE_CONSULTATION,
@@ -39,7 +39,7 @@ export function generateSemd104Xml(params: CdaSemd104Params): string {
 
 	const admissionItems = admissionList.map((d) => {
 		const toothInfo = d.tooth ? ` (зуб ${escapeXml(String(d.tooth))})` : "";
-		return `<item>[При поступлении] ${escapeXml(d.icd10Code)} — ${escapeXml(d.diagnosisText)}${toothInfo}</item>`;
+		return `<item>[Первичный диагноз] ${escapeXml(d.icd10Code)} — ${escapeXml(d.diagnosisText)}${toothInfo}</item>`;
 	}).join("\n\t\t\t\t\t\t\t");
 
 	const dischargeItems = dischargeList.map((d) => {
@@ -62,11 +62,11 @@ export function generateSemd104Xml(params: CdaSemd104Params): string {
 	}).join("\n");
 
 	const diagnosesSection = `
-			<!-- Секция 1: Клинический диагноз (при поступлении и выписной) -->
+			<!-- Секция 1: Клинический диагноз (при обращении и заключительный) -->
 			<component>
 				<section>
 					<code code="${EGISZ_OIDS.LOINC_DIAGNOSIS_SECTION}" codeSystem="${EGISZ_OIDS.LOINC}" codeSystemName="LOINC" displayName="Диагнозы"/>
-					<title>Клинический диагноз при поступлении и выписке</title>
+					<title>Клинический диагноз при обращении и заключительный</title>
 					<text>
 						<list>
 							${admissionItems ? `${admissionItems}\n\t\t\t\t\t\t\t` : ""}${dischargeItems}
@@ -218,7 +218,7 @@ ${serviceEntriesXml}
 	}
 
 	const epicrisisSection = `
-			<!-- Секция 6: Выписной эпикриз и план диспансерного наблюдения -->
+			<!-- Секция 6: Стоматологический эпикриз и план диспансерного наблюдения -->
 			<component>
 				<section>
 					<code code="${EGISZ_OIDS.LOINC_EPICRISIS}" codeSystem="${EGISZ_OIDS.LOINC}" codeSystemName="LOINC" displayName="Выписной эпикриз"/>
@@ -226,7 +226,7 @@ ${serviceEntriesXml}
 					<text>
 						<paragraph><strong>Исход лечения:</strong> ${escapeXml(outcomeName)}.${escapeXml(nextVisitStr)}</paragraph>
 						<paragraph><strong>Заключение:</strong> ${escapeXml(params.epicrisisText)}</paragraph>
-						<paragraph><strong>Рекомендации при выписке:</strong></paragraph>
+						<paragraph><strong>Назначения и рекомендации:</strong></paragraph>
 						${recsText}
 					</text>
 				</section>

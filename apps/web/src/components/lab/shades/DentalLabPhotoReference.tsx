@@ -1,3 +1,4 @@
+import React from "react";
 import { Camera, CheckCircle2, Trash2 } from "lucide-react";
 import { ToothShadeGuide } from "../../icons/DentalIcons";
 

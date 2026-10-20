@@ -56,8 +56,6 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			shiftCompletedServices={[...shiftData.shiftCompletedServices]}
 			isPayrollModalOpen={c.isPayrollModalOpen}
 			onClosePayrollModal={() => c.setIsPayrollModalOpen(false)}
-			isTimesheetT13ModalOpen={c.isTimesheetT13ModalOpen}
-			onCloseTimesheetT13Modal={() => c.setIsTimesheetT13ModalOpen(false)}
 			isShiftCloseModalOpen={c.isShiftCloseModalOpen}
 			onCloseShiftCloseModal={() => c.setIsShiftCloseModalOpen(false)}
 			onConfirmCloseShift={c.handleConfirmCloseShift}
@@ -102,7 +100,6 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			isShiftOpen={c.isShiftOpen}
 			handleToggleShift={c.handleToggleShift}
 			setIsPayrollModalOpen={c.setIsPayrollModalOpen}
-			setIsTimesheetT13ModalOpen={c.setIsTimesheetT13ModalOpen}
 			shiftData={shiftData}
 			shiftFinancialMode={c.shiftFinancialMode}
 			handleChangeFinancialMode={c.handleChangeFinancialMode}

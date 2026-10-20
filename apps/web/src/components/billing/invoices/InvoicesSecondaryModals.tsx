@@ -77,7 +77,7 @@ export const InvoicesSecondaryModals: React.FC<InvoicesSecondaryModalsProps> = (
 					}))}
 					onRefundSuccess={(res) => {
 						setRefundInvoice(null);
-						showToast(`Возврат по счету ${refundInvoice.number} на сумму ${res.totalRefundRub} ₽ успешно проведен по 54-ФЗ`, "success");
+						showToast(`Возврат по счету ${refundInvoice.number} на сумму ${res.totalRefundRub} ₽ успешно проведен, чек возврата сформирован`, "success");
 					}}
 				/>
 			)}

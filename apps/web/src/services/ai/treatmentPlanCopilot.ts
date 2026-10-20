@@ -16,6 +16,11 @@
  */
 
 import {
+	generatePatientCasePresentation,
+	humanizeDentalText,
+	isMicroConsumable,
+	type PatientCasePresentation,
+	type RawPlanItem,
 	type TreatmentPlanValidateAndCommentRequest,
 	type TreatmentPlanValidateAndCommentResponse,
 } from "@dental/shared";
@@ -40,11 +45,17 @@ import {
 	recalculateAnesthesiaAndIsolation,
 	replaceImplantationWithBridge,
 } from "./treatmentPlanCopilotModifiers";
+import {
+	applyEconomyScenarioToPlan,
+	applyOptimumScenarioToPlan,
+	applyPremiumScenarioToPlan,
+} from "./treatmentPlanScenarios";
 
 // Re-export contracts & sub-modules per Mandate 8s (SSOT & Backward Compatibility)
 export * from "./treatmentPlanCopilotTypes";
 export * from "./treatmentPlanAllOn4";
 export * from "./treatmentPlanCopilotModifiers";
+export * from "./treatmentPlanScenarios";
 
 /**
  * 1. Оптимизация плана под целевой бюджет
@@ -175,8 +186,31 @@ export function applyCopilotCommandToPlan(
 ): CopilotModificationResult {
 	const lower = commandText.toLowerCase().trim();
 
+	// 0. Клинические сценарии (Эконом, Оптимум, Премиум)
+	if (
+		commandText === "tier_economy" ||
+		/сценарий.*эконом|эконом.*сценарий|перейти на эконом|включить эконом/i.test(lower) ||
+		lower === "эконом"
+	) {
+		return applyEconomyScenarioToPlan(stages);
+	}
+	if (
+		commandText === "tier_optimum" ||
+		/сценарий.*оптимум|оптимум.*сценарий|золот.*стандарт|перейти на оптимум|включить оптимум/i.test(lower) ||
+		lower === "оптимум"
+	) {
+		return applyOptimumScenarioToPlan(stages);
+	}
+	if (
+		commandText === "tier_premium" ||
+		/сценарий.*премиум|премиум.*сценарий|перейти на премиум|включить премиум|люкс|vip|эстетик/i.test(lower) ||
+		lower === "премиум"
+	) {
+		return applyPremiumScenarioToPlan(stages);
+	}
+
 	// 1. Бюджетная оптимизация ("Оптимизировать смету под 100 000 руб", "бюджет 120к", "до 80 тыс")
-	if (/бюджет|оптимиз|дешев|эконом|улож|лимит|снизить сумм|стоимост/i.test(lower)) {
+	if (commandText === "budget_optimize" || /бюджет|оптимиз|дешев|улож|лимит|снизить сумм|стоимост/i.test(lower)) {
 		// Очищаем пробелы между цифрами (например "100 000" -> "100000", "1 200 000" -> "1200000")
 		const normalized = lower.replace(/(\d+)\s+(\d{3})/g, "$1$2").replace(/(\d+)\s+(\d{3})/g, "$1$2");
 		const budgetMatch = normalized.match(/(\d+)[\s]*(тыс|тысяч|к|k|руб|р|₽)?/i);
@@ -309,10 +343,16 @@ export async function requestTreatmentPlanAiValidationAndComment(
 			...(options.authHeaders || {}),
 		});
 
-		const response = await fetch("/api/ai/treatment-plan-validate-and-comment", {
+		const isTestEnv = typeof process !== "undefined" && (process.env.NODE_ENV === "test" || Boolean(process.env.VITEST));
+		const timeoutMs = options.timeoutMs ?? (isTestEnv ? 400 : 4000);
+		const signal = options.signal ?? AbortSignal.timeout(timeoutMs);
+
+		const baseUrl = typeof window !== "undefined" ? "" : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
+		const response = await fetch(`${baseUrl}/api/ai/treatment-plan-validate-and-comment`, {
 			method: "POST",
 			headers,
 			body: JSON.stringify(requestBody),
+			signal,
 		});
 
 		if (!response.ok) {
@@ -326,6 +366,7 @@ export async function requestTreatmentPlanAiValidationAndComment(
 	} catch (error) {
 		console.warn("[TreatmentPlanCopilot] Falling back to client-side deterministic engine:", error);
 		const totalRub = stages.reduce((acc, s) => acc + s.totalRub, 0);
+		const presentation = buildChairsidePatientCasePresentation(stages, options);
 		return {
 			clinicalValidation: {
 				overallStatus: "COMPLIANT_WITH_RECOMMENDATIONS",
@@ -335,17 +376,22 @@ export async function requestTreatmentPlanAiValidationAndComment(
 				warningsCount: 1,
 				errorsCount: 0,
 				criticalWarnings: [],
-				clinicalRecommendations: ["Рекомендуется регулярная гигиена и 3D КЛКТ контроль."],
+				clinicalRecommendations: [
+					...presentation.slides.diagnosis.bulletPointsRu,
+					"Рекомендуется регулярная гигиена и 3D КЛКТ контроль.",
+				],
 				anatomicalChecks: [],
 			},
 			chairsideCommentary: {
-				patientFriendlySummary: `Комплексный план лечения из ${stages.length} этапов на общую сумму ${totalRub.toLocaleString("ru-RU")} ₽. Включает полную санацию, восстановление жевательной эффективности и эстетики.`,
-				urgencyArgument: "Математика здоровья: своевременное лечение предотвращает разрушение зубов и сокращает затраты в 4-10 раз.",
+				patientFriendlySummary: `${presentation.slides.diagnosis.summaryRu} Итого по плану (${stages.length} эт.): ${totalRub.toLocaleString("ru-RU")} ₽.`,
+				urgencyArgument: `${presentation.slides.risks.costOfInactionHeadlineRu}. ${presentation.slides.risks.timelineProgression.map((t) => `${t.timeframeRu}: ${t.clinicalConsequenceRu}`).join(" ")}`,
 				hygieneAndCareAdvice: "Чистка зубов 2 раза в день выметающими движениями, ирригатор обязателен для коронок и имплантатов.",
 				stageByStageExplanation: stages.map((s) => ({
 					stageNumber: s.stageNumber,
 					stageTitle: s.title,
-					plainRussianDescription: s.clinicalGoal || s.items.map((i) => i.name).join(", "),
+					plainRussianDescription:
+						s.clinicalGoal ||
+						s.items.map((i) => humanizeDentalText(i.name)).join("; "),
 					patientBenefit: `Надежный результат этапа ${s.title}`,
 				})),
 			},
@@ -384,3 +430,65 @@ export async function requestTreatmentPlanAiValidationAndComment(
 		};
 	}
 }
+
+/**
+ * 9. Синхронная сборка 3-слайдовой презентации для пациента («Переводчик с врачебного на человеческий»)
+ * на базе канонического движка @dental/shared (patientCasePresenterEngine).
+ */
+export function buildChairsidePatientCasePresentation(
+	stages: readonly TreatmentPlanStage[],
+	options: TreatmentPlanAiAuditOptions = {},
+): PatientCasePresentation {
+	const rawItems: RawPlanItem[] = stages.flatMap((s) =>
+		s.items
+			.filter((it) => !isMicroConsumable(it))
+			.map((it) => {
+			let cat: RawPlanItem["category"] = "other";
+			const catLower = (it.category || "").toLowerCase();
+			if (catLower.includes("хирург") || catLower.includes("имплант")) cat = "surgery_implant";
+			else if (catLower.includes("ортопед") || catLower.includes("коронк")) cat = "prosthetics";
+			else if (catLower.includes("терап") || catLower.includes("эндо")) cat = "therapy";
+			else if (catLower.includes("гигиен")) cat = "hygiene";
+			else if (catLower.includes("диагн")) cat = "diagnostics";
+
+			return {
+				code: it.code804n,
+				name: it.name && it.name.trim().length >= 2 ? it.name.trim() : "Стоматологическая процедура",
+				...(it.toothNumber && it.toothNumber >= 11 && it.toothNumber <= 85 ? { tooth: it.toothNumber } : {}),
+				quantity: Math.max(1, it.quantity || 1),
+				priceRub: Math.max(1, it.unitPriceRub || it.priceRub || 1500),
+				category: cat,
+			};
+		}),
+	);
+
+	const effectiveItems: RawPlanItem[] =
+		rawItems.length > 0
+			? rawItems
+			: [
+					{
+						code: "A01.07.001",
+						name: "Комплексный осмотр и составление плана лечения",
+						quantity: 1,
+						priceRub: 1500,
+						category: "diagnostics",
+					},
+				];
+
+	return generatePatientCasePresentation({
+		patientFullName: options.patientName?.trim() || "Уважаемый Пациент",
+		doctorFullName: (options.doctorFullName || options.doctorName)?.trim() || "Лечащий врач",
+		clinicName: options.clinicName?.trim() || "DENTE Стоматология",
+		clinicPhone: "+7 (495) 000-00-00",
+		planTitle: options.selectedTierTitle?.trim() || "Комплексный план лечения",
+		items: effectiveItems,
+		installmentAvailable: true,
+		maxInstallmentMonths:
+			options.installmentMonths && options.installmentMonths >= 3 && options.installmentMonths <= 36
+				? options.installmentMonths
+				: 12,
+	});
+}
+
+export { generatePatientCasePresentation, humanizeDentalText, type PatientCasePresentation };
+

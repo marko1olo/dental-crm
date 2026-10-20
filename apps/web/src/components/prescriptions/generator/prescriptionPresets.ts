@@ -2,13 +2,23 @@
  * DENTE Dental CRM — Russian Dental Pharmacopeia & Form 107-1/u Presets
  */
 
-
 export interface DentalMedicationPreset {
 	readonly id: string;
 	readonly tradeNameRu: string;
 	readonly nameRu?: string | undefined;
 	readonly activeSubstanceRu: string;
-	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine" | "controlled_pku" | "hemostatic" | "gastroprotective" | "preferential_somatic" | "anesthetic" | "other";
+	readonly category:
+		| "antibiotic"
+		| "nsaid"
+		| "antiseptic"
+		| "dental_gel"
+		| "antihistamine"
+		| "controlled_pku"
+		| "hemostatic"
+		| "gastroprotective"
+		| "preferential_somatic"
+		| "anesthetic"
+		| "other";
 	readonly categoryLabelRu: string;
 	readonly latinRp: string;
 	readonly latinName?: string | undefined;
@@ -33,7 +43,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "875/125 мг",
 		quantityLabel: "N. 14",
 		dispenseLatin: "D.t.d. N 14 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды, курс 7 дней.",
+		signaRu:
+			"S. Внутрь по 1 таблетке 2 раза в сутки во время еды, курс 7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -47,7 +58,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "875/125 мг",
 		quantityLabel: "N. 14",
 		dispenseLatin: "D.t.d. N 14 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды, курс 7 дней.",
+		signaRu:
+			"S. Внутрь по 1 таблетке 2 раза в сутки во время еды, курс 7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -61,7 +73,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "500 мг",
 		quantityLabel: "N. 20 (капсулы)",
 		dispenseLatin: "D.t.d. N 20 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле (500 мг) 3 раза в день через каждые 8 часов, курс 5–7 дней.",
+		signaRu:
+			"S. Внутрь по 1 капсуле (500 мг) 3 раза в день через каждые 8 часов, курс 5–7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -89,7 +102,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "100 мг",
 		quantityLabel: "N. 9 (пакетики)",
 		dispenseLatin: "D.t.d. N 9 in gran.",
-		signaRu: "S. Внутрь по 1 пакетику (100 мг) 2 раза в день после еды, растворив в 100 мл воды, при болях (3–5 дней).",
+		signaRu:
+			"S. Внутрь по 1 пакетику (100 мг) 2 раза в день после еды, растворив в 100 мл воды, при болях (3–5 дней).",
 		validityDays: 60,
 	},
 	{
@@ -103,7 +117,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "100 мг",
 		quantityLabel: "N. 9 (пакетики)",
 		dispenseLatin: "D.t.d. N 9 in gran.",
-		signaRu: "S. Внутрь по 1 пакетику (100 мг) 2 раза в день после еды, растворив в 100 мл воды, при болях (3–5 дней).",
+		signaRu:
+			"S. Внутрь по 1 пакетику (100 мг) 2 раза в день после еды, растворив в 100 мл воды, при болях (3–5 дней).",
 		validityDays: 60,
 	},
 	{
@@ -117,7 +132,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "0.05%",
 		quantityLabel: "N. 1 (флакон)",
 		dispenseLatin: "D.t.d. N 1",
-		signaRu: "S. Ротовые ванночки по 1 минуте 3 раза в день после еды, 7 дней (не полоскать активно!).",
+		signaRu:
+			"S. Ротовые ванночки по 1 минуте 3 раза в день после еды, 7 дней (не полоскать активно!).",
 		validityDays: 60,
 	},
 	{
@@ -131,7 +147,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "10 г",
 		quantityLabel: "N. 1 (туба)",
 		dispenseLatin: "D.t.d. N 1 in gel.",
-		signaRu: "S. Наносить на десну чистым пальцем полоской 1 см 2–3 раза в день за 15 минут до еды.",
+		signaRu:
+			"S. Наносить на десну чистым пальцем полоской 1 см 2–3 раза в день за 15 минут до еды.",
 		validityDays: 60,
 	},
 	{
@@ -145,7 +162,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "10 г",
 		quantityLabel: "N. 1 (туба)",
 		dispenseLatin: "D.t.d. N 1 in gel.",
-		signaRu: "S. Наносить на десну чистым пальцем полоской 1 см 2–3 раза в день за 15 минут до еды.",
+		signaRu:
+			"S. Наносить на десну чистым пальцем полоской 1 см 2–3 раза в день за 15 минут до еды.",
 		validityDays: 60,
 	},
 	{
@@ -159,7 +177,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "20 г",
 		quantityLabel: "N. 1 (туба)",
 		dispenseLatin: "D.t.d. N 1 in gel.",
-		signaRu: "S. Наносить на область десен 2 раза в день после чистки зубов в течение 7-10 дней. После нанесения не пить и не принимать пищу 30 минут.",
+		signaRu:
+			"S. Наносить на область десен 2 раза в день после чистки зубов в течение 7-10 дней. После нанесения не пить и не принимать пищу 30 минут.",
 		validityDays: 60,
 	},
 	{
@@ -173,7 +192,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "10 мг",
 		quantityLabel: "N. 10",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 1 раз в сутки вечером, 3–5 дней для уменьшения постоперационного отека.",
+		signaRu:
+			"S. Внутрь по 1 таблетке 1 раз в сутки вечером, 3–5 дней для уменьшения постоперационного отека.",
 		validityDays: 60,
 	},
 	{
@@ -187,7 +207,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "500 мг",
 		quantityLabel: "N. 10",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 3 раза в день при кровоточивости лунки, 2-3 дня.",
+		signaRu:
+			"S. Внутрь по 1 таблетке 3 раза в день при кровоточивости лунки, 2-3 дня.",
 		validityDays: 60,
 	},
 	{
@@ -201,7 +222,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "25 мг",
 		quantityLabel: "N. 20",
 		dispenseLatin: "D.t.d. N 20 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (25 мг) 2-3 раза в день во время еды, 3-5 дней для снятия постоперационного отека.",
+		signaRu:
+			"S. Внутрь по 1 таблетке (25 мг) 2-3 раза в день во время еды, 3-5 дней для снятия постоперационного отека.",
 		validityDays: 60,
 	},
 	{
@@ -215,7 +237,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "400 мг",
 		quantityLabel: "N. 20",
 		dispenseLatin: "D.t.d. N 20 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (400 мг) 2-3 раза в день после еды, запивая водой. Не более 1200 мг в сутки, курс 3-5 дней.",
+		signaRu:
+			"S. Внутрь по 1 таблетке (400 мг) 2-3 раза в день после еды, запивая водой. Не более 1200 мг в сутки, курс 3-5 дней.",
 		validityDays: 60,
 	},
 	{
@@ -229,7 +252,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "100 мг/5 мл (фл. 100 мл)",
 		quantityLabel: "N. 1 (флакон)",
 		dispenseLatin: "D.t.d. N 1 in flac.",
-		signaRu: "S. Внутрь мерным шприцем из расчета 10 мг/кг (до 3 раз в сутки при боли или температуре с интервалом не менее 6 часов).",
+		signaRu:
+			"S. Внутрь мерным шприцем из расчета 10 мг/кг (до 3 раз в сутки при боли или температуре с интервалом не менее 6 часов).",
 		validityDays: 60,
 	},
 	{
@@ -243,7 +267,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "0.01%",
 		quantityLabel: "N. 1 (флакон)",
 		dispenseLatin: "D.t.d. N 1 in flac.",
-		signaRu: "S. Орошать полость рта 3-4 раза в сутки путем 3-4 нажатий на насадку-распылитель после еды, 7 дней.",
+		signaRu:
+			"S. Орошать полость рта 3-4 раза в сутки путем 3-4 нажатий на насадку-распылитель после еды, 7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -257,7 +282,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "100 мл",
 		quantityLabel: "N. 1 (флакон)",
 		dispenseLatin: "D.t.d. N 1 in flac.",
-		signaRu: "S. Развести 7.5 мл в 1/4 стакана теплой воды, полоскать полость рта 3-4 раза в день после еды, 7-10 дней.",
+		signaRu:
+			"S. Развести 7.5 мл в 1/4 стакана теплой воды, полоскать полость рта 3-4 раза в день после еды, 7-10 дней.",
 		validityDays: 60,
 	},
 	{
@@ -271,7 +297,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "10 мг",
 		quantityLabel: "N. 10 (таблетки)",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (10 мг) при острой боли (не более 4 таблеток в сутки, курс до 5 дней).",
+		signaRu:
+			"S. Внутрь по 1 таблетке (10 мг) при острой боли (не более 4 таблеток в сутки, курс до 5 дней).",
 		validityDays: 60,
 	},
 	{
@@ -280,12 +307,14 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		activeSubstanceRu: "Ципрофлоксацин + Тинидазол",
 		category: "antibiotic",
 		categoryLabelRu: "Антибиотик комбинированный (фторхинолон + нитроимидазол)",
-		latinRp: "Rp.: Tab. 'Cifran ST' (Ciprofloxacini 500 mg + Tinidazoli 600 mg)",
+		latinRp:
+			"Rp.: Tab. 'Cifran ST' (Ciprofloxacini 500 mg + Tinidazoli 600 mg)",
 		formRu: "таблетки, покрытые оболочкой",
 		dosageRu: "500 мг + 600 мг",
 		quantityLabel: "N. 10 (таблетки)",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки после еды через 12 часов, запивая водой, курс 5 дней.",
+		signaRu:
+			"S. Внутрь по 1 таблетке 2 раза в сутки после еды через 12 часов, запивая водой, курс 5 дней.",
 		validityDays: 60,
 	},
 	{
@@ -299,7 +328,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "стандартная",
 		quantityLabel: "N. 14 (капсулы)",
 		dispenseLatin: "D.t.d. N 14 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле 2 раза в день во время еды через 2 часа после приема антибиотика, курс 10-14 дней.",
+		signaRu:
+			"S. Внутрь по 1 капсуле 2 раза в день во время еды через 2 часа после приема антибиотика, курс 10-14 дней.",
 		validityDays: 60,
 	},
 	{
@@ -313,7 +343,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "20 мг",
 		quantityLabel: "N. 20 (капсулы)",
 		dispenseLatin: "D.t.d. N 20 in caps.",
-		signaRu: "S. Внутрь по 1 капсуле (20 мг) утром за 30 минут до завтрака на весь период приема НПВП, курс 5-10 дней.",
+		signaRu:
+			"S. Внутрь по 1 капсуле (20 мг) утром за 30 минут до завтрака на весь период приема НПВП, курс 5-10 дней.",
 		validityDays: 60,
 	},
 	{
@@ -327,7 +358,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "4% (68 мг/1.7 мл) + 1:100 000",
 		quantityLabel: "N. 10 (карпулы)",
 		dispenseLatin: "D.t.d. N 10 in carpp.",
-		signaRu: "S. Для инфильтрационной и проводниковой анестезии в амбулаторной стоматологии (1-2 карпулы, 1.7-3.4 мл).",
+		signaRu:
+			"S. Для инфильтрационной и проводниковой анестезии в амбулаторной стоматологии (1-2 карпулы, 1.7-3.4 мл).",
 		validityDays: 60,
 	},
 	{
@@ -335,13 +367,15 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		tradeNameRu: "Ультракаин Д-С (Артикаин 4% + Эпинефрин 1:200 000)",
 		activeSubstanceRu: "Артикаин + Эпинефрин",
 		category: "anesthetic",
-		categoryLabelRu: "Местный анестетик (пониженная концентрация вазоконстриктора)",
+		categoryLabelRu:
+			"Местный анестетик (пониженная концентрация вазоконстриктора)",
 		latinRp: "Rp.: Sol. Articaini 4% cum Epinephrino 1:200 000 - 1.7 ml",
 		formRu: "раствор для инъекций (карпулы)",
 		dosageRu: "4% (68 мг/1.7 мл) + 1:200 000",
 		quantityLabel: "N. 10 (карпулы)",
 		dispenseLatin: "D.t.d. N 10 in carpp.",
-		signaRu: "S. Для инфильтрационной и проводниковой анестезии у пациентов с сердечно-сосудистой патологией.",
+		signaRu:
+			"S. Для инфильтрационной и проводниковой анестезии у пациентов с сердечно-сосудистой патологией.",
 		validityDays: 60,
 	},
 	{
@@ -355,7 +389,8 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "500 мг",
 		quantityLabel: "N. 10 (таблетки)",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (500 мг) 2 раза в сутки за 30 минут до еды, запивая стаканом воды, курс 5–7 дней.",
+		signaRu:
+			"S. Внутрь по 1 таблетке (500 мг) 2 раза в сутки за 30 минут до еды, запивая стаканом воды, курс 5–7 дней.",
 		validityDays: 60,
 	},
 	{
@@ -369,13 +404,15 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "10 мг",
 		quantityLabel: "N. 10 (таблетки)",
 		dispenseLatin: "D.t.d. N 10 in tab.",
-		signaRu: "S. Внутрь по 1 таблетке (10 мг) при острой боли (не более 4 таблеток в сутки, курс до 5 дней).",
+		signaRu:
+			"S. Внутрь по 1 таблетке (10 мг) при острой боли (не более 4 таблеток в сутки, курс до 5 дней).",
 		validityDays: 60,
 	},
 	{
 		id: "solcoseryl_dental",
 		tradeNameRu: "Солкосерил (дентальная адгезивная паста 5 г)",
-		activeSubstanceRu: "Депротеинизированный диализат из крови телят + Полидоканол",
+		activeSubstanceRu:
+			"Депротеинизированный диализат из крови телят + Полидоканол",
 		category: "dental_gel",
 		categoryLabelRu: "Стоматологическая регенерирующая паста",
 		latinRp: "Rp.: Pastae Solcoseryl dentalis adhesivae 5.0",
@@ -383,17 +420,19 @@ const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 		dosageRu: "5 г",
 		quantityLabel: "N. 1 (туба)",
 		dispenseLatin: "D.t.d. N 1 in tuba",
-		signaRu: "S. Наносить тонким слоем на предварительно высушенный дефект слизистой оболочки рта 3–5 раз в сутки после еды и перед сном.",
+		signaRu:
+			"S. Наносить тонким слоем на предварительно высушенный дефект слизистой оболочки рта 3–5 раз в сутки после еды и перед сном.",
 		validityDays: 60,
 	},
 ];
 
-export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = DENTAL_MEDICATIONS_BASE.map((m) => ({
-	...m,
-	nameRu: m.tradeNameRu,
-	latinName: m.latinRp,
-	dispenseFormula: m.dispenseLatin,
-}));
+export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] =
+	DENTAL_MEDICATIONS_BASE.map((m) => ({
+		...m,
+		nameRu: m.tradeNameRu,
+		latinName: m.latinRp,
+		dispenseFormula: m.dispenseLatin,
+	}));
 
 export interface DentalFastPrescriptionPackage {
 	readonly id: string;
@@ -406,134 +445,156 @@ export interface DentalFastPrescriptionPackage {
 	readonly badge?: string;
 }
 
-const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPackage[] = [
-	{
-		id: "pulpitis_acute_relief",
-		label: "«Пульпит (купирование острого болевого синдрома и воспаления)»",
-		desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
-		drugIds: ["nimesil_100", "omeprazole_20", "chlorhexidine_005"],
-		badge: "Пульпит",
-	},
-	{
-		id: "alveolitis_dry_socket",
-		label: "«Альвеолит / Сухая лунка (постэкстракционный синдром)»",
-		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (протокол лечения альвеолита)",
-		drugIds: ["amoxiclav_875_125", "nimesil_100", "holisal_gel", "chlorhexidine_005"],
-		badge: "Альвеолит",
-	},
-	{
-		id: "post_tooth_extraction",
-		label: "«После удаления зуба (стандартный хирургический протокол)»",
-		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% 100 мл + Супрастин 25 мг №20 (противоболевой, антисептический и противоотечный комплекс)",
-		drugIds: ["ibuprofen_400", "chlorhexidine_005", "suprastin_25"],
-		badge: "После удаления",
-	},
-	{
-		id: "amoxiclav_first_line",
-		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
-		desc: "Rp: Amoxicillini + Acidi clavulanici 875/125mg, D.t.d. N 14 in tab., S. По 1 таблетке 2 раза в день во время еды 7 дней.",
-		drugIds: ["amoxiclav_875"],
-		badge: "1-й ряд",
-	},
-	{
-		id: "clarithromycin_reserve",
-		label: "«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
-		desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
-		drugIds: ["clarithromycin_500"],
-		badge: "Резерв (Аллергия)",
-	},
-	{
-		id: "analgesia_nimesil",
-		label: "«НПВП / Обезболивающее при острой боли (Нимесил 100 мг)»",
-		desc: "Rp: Nimesulidi 100mg, D.t.d. N 10 in gran., S. По 1 пакетику 2 раза в день после еды, растворив в 100 мл воды, до 5 дней.",
-		drugIds: ["nimesil_100"],
-		badge: "Острая боль",
-	},
-	{
-		id: "ibuprofen_moderate_pain",
-		label: "«Обезболивающее умеренное (Ибупрофен 400 мг)»",
-		desc: "Rp: Ibuprofeni 400mg, D.t.d. N 20 in tab., S. По 1 таб. при болях, не более 3 таб. в сутки.",
-		drugIds: ["ibuprofen_400"],
-		badge: "Умеренная боль",
-	},
-	{
-		id: "chlorhexidine_antiseptic_rinse",
-		label: "«Антисептик для полоскания (Хлоргексидин 0.05%)»",
-		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.S. Ротовые ванночки 3 раза в день по 1 минуте после еды, 7-10 дней.",
-		drugIds: ["chlorhexidine_005"],
-		badge: "Антисептик",
-	},
-	{
-		id: "anti_inflammatory_dental_gel",
-		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
-		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
-		drugIds: ["holisal_gel"],
-		badge: "Десневой гель",
-	},
-	{
-		id: "standard_anti_inflammatory_course",
-		label: "«Стандартный противовоспалительный курс» (Амоксиклав + Нимесил + Хлоргексидин)",
-		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
-		drugIds: ["amoxiclav_875_125", "nimesil_100", "chlorhexidine_005"],
-		badge: "Курс 1094н",
-	},
-	{
-		id: "post_extraction_implant",
-		label: "Комплект после удаления / имплантации (Нимесил 100мг + Хлоргексидин 0.05% + Амоксиклав 875/125)",
-		desc: "Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл + Амоксиклав 875/125 мг №14 (хирургический протокол)",
-		drugIds: ["nimesil_100", "chlorhexidine_005", "amoxiclav_875_125"],
-		badge: "Хирургия / Удаление",
-	},
-	{
-		id: "cyfran_st_pericoronitis",
-		label: "Комплект: Перикоронит / Абсцесс (Цифран СТ + Нимесил 100мг + Хлоргексидин 0.05%)",
-		desc: "Цифран СТ (500+600 мг) №10 + Нимесил 100 мг №9 + Хлоргексидин 0.05% (протокол при абсцессе/перикороните)",
-		drugIds: ["cyfran_st", "nimesil_100", "chlorhexidine_005"],
-		badge: "Абсцесс / Перикоронит",
-	},
-	{
-		id: "endo_periodontitis",
-		label: "Комплект: Эндодонтия / Периодонтит (Ибупрофен 400мг + Супрастин 25мг)",
-		desc: "Ибупрофен 400 мг №20 + Супрастин 25 мг №20 (противовоспалительный и противоотечный комплекс)",
-		drugIds: ["ibuprofen_400", "suprastin_25"],
-		badge: "Эндодонтия / Периодонтит",
-	},
-	{
-		id: "acute_pain_express",
-		label: "Экспресс-обезболивание (Кетанов / Кеторолак 10мг при острой боли)",
-		desc: "Кетанов (Кеторолак) 10 мг №10 (быстрое купирование выраженного болевого синдрома)",
-		drugIds: ["ketorolac_10"],
-		badge: "Острая боль",
-	},
-	{
-		id: "suprastin_antiallergic",
-		label: "«Супрастин 25 мг (Противоотечное / Антигистаминное)»",
-		desc: "Rp: Tab. Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке 2-3 раза в день во время еды 3-5 дней.",
-		drugIds: ["suprastin_25"],
-		badge: "Противоотечное",
-	},
-	{
-		id: "dental_statutory_express_formulary",
-		label: "«Стоматологический экспресс-формуляр (Приказ 1094н)»",
-		desc: "Амоксиклав 875/125 мг + Ципролет 500 мг + Нимесил 100 мг + Кеторол 10 мг + Хлоргексидин 0.05% + Холисал + Солкосерил",
-		drugIds: ["amoxiclav_875_125", "ciprolet_500", "nimesil_100", "ketorol_10", "chlorhexidine_005", "holisal_gel", "solcoseryl_dental"],
-		badge: "1094н Экспресс",
-	},
-	{
-		id: "solcoseryl_mucosa_regeneration",
-		label: "«Регенерация слизистой рта (Солкосерил + Холисал + Хлоргексидин)»",
-		desc: "Солкосерил дентальная паста 5 г + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (язвы, афты, травмы слизистой)",
-		drugIds: ["solcoseryl_dental", "holisal_gel", "chlorhexidine_005"],
-		badge: "Слизистая",
-	},
-	{
-		id: "ciprolet_fluoroquinolone_reserve",
-		label: "«Антибиотик резерва (Ципролет 500 мг при аллергии на пенициллины)»",
-		desc: "Ципролет 500 мг №10 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
-		drugIds: ["ciprolet_500", "nimesil_100", "chlorhexidine_005"],
-		badge: "Фторхинолон",
-	},
-];
+const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPackage[] =
+	[
+		{
+			id: "pulpitis_acute_relief",
+			label: "«Пульпит (купирование острого болевого синдрома и воспаления)»",
+			desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
+			drugIds: ["nimesil_100", "omeprazole_20", "chlorhexidine_005"],
+			badge: "Пульпит",
+		},
+		{
+			id: "alveolitis_dry_socket",
+			label: "«Альвеолит / Сухая лунка (постэкстракционный синдром)»",
+			desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (протокол лечения альвеолита)",
+			drugIds: [
+				"amoxiclav_875_125",
+				"nimesil_100",
+				"holisal_gel",
+				"chlorhexidine_005",
+			],
+			badge: "Альвеолит",
+		},
+		{
+			id: "post_tooth_extraction",
+			label: "«После удаления зуба (стандартный хирургический протокол)»",
+			desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% 100 мл + Супрастин 25 мг №20 (противоболевой, антисептический и противоотечный комплекс)",
+			drugIds: ["ibuprofen_400", "chlorhexidine_005", "suprastin_25"],
+			badge: "После удаления",
+		},
+		{
+			id: "amoxiclav_first_line",
+			label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
+			desc: "Rp: Amoxicillini + Acidi clavulanici 875/125mg, D.t.d. N 14 in tab., S. По 1 таблетке 2 раза в день во время еды 7 дней.",
+			drugIds: ["amoxiclav_875"],
+			badge: "1-й ряд",
+		},
+		{
+			id: "clarithromycin_reserve",
+			label:
+				"«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
+			desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
+			drugIds: ["clarithromycin_500"],
+			badge: "Резерв (Аллергия)",
+		},
+		{
+			id: "analgesia_nimesil",
+			label: "«НПВП / Обезболивающее при острой боли (Нимесил 100 мг)»",
+			desc: "Rp: Nimesulidi 100mg, D.t.d. N 10 in gran., S. По 1 пакетику 2 раза в день после еды, растворив в 100 мл воды, до 5 дней.",
+			drugIds: ["nimesil_100"],
+			badge: "Острая боль",
+		},
+		{
+			id: "ibuprofen_moderate_pain",
+			label: "«Обезболивающее умеренное (Ибупрофен 400 мг)»",
+			desc: "Rp: Ibuprofeni 400mg, D.t.d. N 20 in tab., S. По 1 таб. при болях, не более 3 таб. в сутки.",
+			drugIds: ["ibuprofen_400"],
+			badge: "Умеренная боль",
+		},
+		{
+			id: "chlorhexidine_antiseptic_rinse",
+			label: "«Антисептик для полоскания (Хлоргексидин 0.05%)»",
+			desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.S. Ротовые ванночки 3 раза в день по 1 минуте после еды, 7-10 дней.",
+			drugIds: ["chlorhexidine_005"],
+			badge: "Антисептик",
+		},
+		{
+			id: "anti_inflammatory_dental_gel",
+			label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
+			desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
+			drugIds: ["holisal_gel"],
+			badge: "Десневой гель",
+		},
+		{
+			id: "standard_anti_inflammatory_course",
+			label:
+				"«Стандартный противовоспалительный курс» (Амоксиклав + Нимесил + Хлоргексидин)",
+			desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
+			drugIds: ["amoxiclav_875_125", "nimesil_100", "chlorhexidine_005"],
+			badge: "Курс 1094н",
+		},
+		{
+			id: "post_extraction_implant",
+			label:
+				"Комплект после удаления / имплантации (Нимесил 100мг + Хлоргексидин 0.05% + Амоксиклав 875/125)",
+			desc: "Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл + Амоксиклав 875/125 мг №14 (хирургический протокол)",
+			drugIds: ["nimesil_100", "chlorhexidine_005", "amoxiclav_875_125"],
+			badge: "Хирургия / Удаление",
+		},
+		{
+			id: "cyfran_st_pericoronitis",
+			label:
+				"Комплект: Перикоронит / Абсцесс (Цифран СТ + Нимесил 100мг + Хлоргексидин 0.05%)",
+			desc: "Цифран СТ (500+600 мг) №10 + Нимесил 100 мг №9 + Хлоргексидин 0.05% (протокол при абсцессе/перикороните)",
+			drugIds: ["cyfran_st", "nimesil_100", "chlorhexidine_005"],
+			badge: "Абсцесс / Перикоронит",
+		},
+		{
+			id: "endo_periodontitis",
+			label:
+				"Комплект: Эндодонтия / Периодонтит (Ибупрофен 400мг + Супрастин 25мг)",
+			desc: "Ибупрофен 400 мг №20 + Супрастин 25 мг №20 (противовоспалительный и противоотечный комплекс)",
+			drugIds: ["ibuprofen_400", "suprastin_25"],
+			badge: "Эндодонтия / Периодонтит",
+		},
+		{
+			id: "acute_pain_express",
+			label:
+				"Экспресс-обезболивание (Кетанов / Кеторолак 10мг при острой боли)",
+			desc: "Кетанов (Кеторолак) 10 мг №10 (быстрое купирование выраженного болевого синдрома)",
+			drugIds: ["ketorolac_10"],
+			badge: "Острая боль",
+		},
+		{
+			id: "suprastin_antiallergic",
+			label: "«Супрастин 25 мг (Противоотечное / Антигистаминное)»",
+			desc: "Rp: Tab. Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке 2-3 раза в день во время еды 3-5 дней.",
+			drugIds: ["suprastin_25"],
+			badge: "Противоотечное",
+		},
+		{
+			id: "dental_statutory_express_formulary",
+			label: "«Стоматологический экспресс-формуляр (Приказ 1094н)»",
+			desc: "Амоксиклав 875/125 мг + Ципролет 500 мг + Нимесил 100 мг + Кеторол 10 мг + Хлоргексидин 0.05% + Холисал + Солкосерил",
+			drugIds: [
+				"amoxiclav_875_125",
+				"ciprolet_500",
+				"nimesil_100",
+				"ketorol_10",
+				"chlorhexidine_005",
+				"holisal_gel",
+				"solcoseryl_dental",
+			],
+			badge: "1094н Экспресс",
+		},
+		{
+			id: "solcoseryl_mucosa_regeneration",
+			label:
+				"«Регенерация слизистой рта (Солкосерил + Холисал + Хлоргексидин)»",
+			desc: "Солкосерил дентальная паста 5 г + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (язвы, афты, травмы слизистой)",
+			drugIds: ["solcoseryl_dental", "holisal_gel", "chlorhexidine_005"],
+			badge: "Слизистая",
+		},
+		{
+			id: "ciprolet_fluoroquinolone_reserve",
+			label:
+				"«Антибиотик резерва (Ципролет 500 мг при аллергии на пенициллины)»",
+			desc: "Ципролет 500 мг №10 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
+			drugIds: ["ciprolet_500", "nimesil_100", "chlorhexidine_005"],
+			badge: "Фторхинолон",
+		},
+	];
 
 export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] =
 	DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE.map((p) => ({
@@ -564,4 +625,3 @@ export function calculatePediatricIbuprofenDose(weightKg: number): {
 		signaRu: `S. Внутрь с помощью мерного шприца по ${singleDoseMl} мл (${singleDoseMg} мг) до 3 раз в сутки при боли или температуре с интервалом не менее 6 часов (расчет на вес ребенка ${validWeight} кг).`,
 	};
 }
-

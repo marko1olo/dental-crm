@@ -200,7 +200,7 @@ function rejectHollowBackup(
 	return null;
 }
 
-function backupsDirectory(): string {
+export function backupsDirectory(): string {
 	return (
 		process.env.DENTE_BACKUP_DIR?.trim() ||
 		path.resolve(process.cwd(), "../../backups")

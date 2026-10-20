@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-10T15:37:35.640Z",
+  "savedAt": "2026-10-14T09:06:56.264Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -624,7 +624,7 @@
         "status": "planned",
         "startsAt": "2026-05-12T10:30:00+04:00",
         "endsAt": "2026-05-12T11:15:00+04:00",
-        "reason": "Профгигиена",
+        "reason": "Посадка из листа ожидания (Администратор 1)",
         "comment": "После оплаты выдать справку для вычета."
       },
       {
@@ -1029,6 +1029,56 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "a861db19-a2b3-4d61-996b-e14321c9a8d5",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-14T09:06:56.254Z"
+      },
+      {
+        "id": "7610eec8-d221-4169-9356-7400cbd6e3f9",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-14T05:46:04.987Z"
+      },
+      {
+        "id": "9a6a67b8-ad13-4c80-b090-1a841246d631",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-14T05:38:38.775Z"
+      },
+      {
+        "id": "cdcc4575-8796-4242-810d-b9e227762c6e",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-12T16:06:27.922Z"
+      },
+      {
+        "id": "8fc56ef5-d0b2-4557-9778-4742e94d0f0b",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-12T15:54:22.099Z"
+      },
+      {
         "id": "e4cd7e0a-47df-47b0-82aa-d2306cab880f",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1233,5 +1283,5 @@
       "updatedAt": "2026-10-09T16:23:48.438Z"
     }
   },
-  "checksum": "29b7ad1d7f16c1126c1d16bccade130fddb9705fa136aacc907b90534cebd1fa"
+  "checksum": "cb36734e6ff4252fe8bdf4ca99c18a534dcba9490af21f74d6e64da43f7e19f8"
 }

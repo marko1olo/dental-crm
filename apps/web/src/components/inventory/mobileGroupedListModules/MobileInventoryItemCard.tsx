@@ -58,7 +58,7 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 					) : isZeroStock ? (
 						<span className="mobile-inventory-badge critical-deficit" data-testid="badge-critical-deficit">
 							<AlertTriangle size={11} aria-hidden="true" />
-							<span>Ожидает оприходования накладной</span>
+							<span>Закончился: 0 {item.unit || "шт."} (Овердрафт)</span>
 						</span>
 					) : isLowStock ? (
 						<span className="mobile-inventory-badge critical-warning" data-testid="badge-critical-warning">

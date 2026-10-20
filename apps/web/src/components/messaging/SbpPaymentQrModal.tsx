@@ -341,7 +341,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 									<p className="sbp-success-receipt">
 										{fiscalReceiptId ? (
 											<>
-												Чек 54-ФЗ (Тег 1081): <strong>#{fiscalReceiptId}</strong>
+												Кассовый чек: <strong>#{fiscalReceiptId}</strong>
 											</>
 										) : (
 											<strong>Ручная сверка (без чека ККТ)</strong>
@@ -444,7 +444,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 
 							{invoice.familyDepositOffsetRub && invoice.familyDepositOffsetRub > 0 ? (
 								<div className="sbp-summary-row sub">
-									<span>Покрыто семейным депозитом (Тег 1215):</span>
+									<span>Покрыто семейным депозитом:</span>
 									<span>{formatCurrencyRu(invoice.familyDepositOffsetRub)}</span>
 								</div>
 							) : null}
@@ -738,7 +738,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 					<div className="sbp-footer-legal">
 						<ShieldCheck size={16} className="text-ok" />
 						<span>
-							Безопасный эквайринг через АО «НСПК» и ЦБ РФ. Соответствует ФЗ-54 (Безналичный расчет Тег 1081).
+							Безопасный эквайринг через АО «НСПК» и ЦБ РФ. Соответствует 54-ФЗ (Безналичная оплата).
 						</span>
 					</div>
 

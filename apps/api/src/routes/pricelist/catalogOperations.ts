@@ -150,7 +150,7 @@ export async function commitIngestedPriceListItems(
 	itemsToCommit: IngestItemToCommit[],
 ): Promise<number> {
 	let committedCount = 0;
-	await db.transaction(async () => {
+	await db.transaction(async (tx) => {
 		for (const item of itemsToCommit) {
 			const category = normalizeCategory(item.category);
 			const specialty = normalizeSpecialty(item.specialty);
@@ -229,7 +229,7 @@ export async function commitScanAndImportItems(
 	let updatedCount = 0;
 	let skippedCount = 0;
 
-	await db.transaction(async () => {
+	await db.transaction(async (tx) => {
 		for (const item of itemsToCommit) {
 			const category = normalizeCategory(item.category);
 			const specialty = normalizeSpecialty(item.specialty);
@@ -302,7 +302,7 @@ export async function commitBatchImportItems(
 		return { createdCount: 0, updatedCount: 0, skippedCount: 0 };
 	}
 
-	await db.transaction(async () => {
+	await db.transaction(async (tx) => {
 		for (const item of items) {
 			const category = normalizeCategory(item.category);
 			const specialty = normalizeSpecialty(item.specialty);

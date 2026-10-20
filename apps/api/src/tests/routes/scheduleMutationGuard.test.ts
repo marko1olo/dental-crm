@@ -54,12 +54,16 @@ import { signToken } from "../../utils/cryptoHelper.js";
  * этот файл не создаёт и убирать за собой ему нечего.
  */
 
-process.env.DENTAL_STATE_PERSISTENCE = "off";
+import fs from "node:fs";
 
-const SCHEDULE_ROUTE_FILE = path.resolve(
-	import.meta.dirname,
-	"../../routes/schedule.ts",
-);
+const SCHEDULE_ROUTE_FILES = [
+	path.resolve(import.meta.dirname, "../../routes/schedule.ts"),
+	path.resolve(import.meta.dirname, "../../routes/appointments.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../../routes/appointments/appointmentsMutationRoutes.ts",
+	),
+];
 const SECRET_HEADER = "x-dente-admin-secret";
 const UNGUARDED_FLAG = "DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS";
 const SECRET_VARIABLE = "DENTE_SCHEDULE_ADMIN_SECRET";
@@ -157,7 +161,11 @@ function discoverMutatingRoutes(source: string): DiscoveredRoute[] {
 	return routes;
 }
 
-const scheduleSource = readFileSync(SCHEDULE_ROUTE_FILE, "utf8");
+const scheduleSource = SCHEDULE_ROUTE_FILES.filter((f) =>
+	fs.existsSync(f),
+)
+	.map((f) => readFileSync(f, "utf8"))
+	.join("\n");
 const MUTATING_ROUTES = discoverMutatingRoutes(scheduleSource);
 
 describe("периметр расписания закрыт секретом администратора на КАЖДОМ изменяющем маршруте", { concurrency: 1 }, () => {
@@ -168,9 +176,11 @@ describe("периметр расписания закрыт секретом а
 		secret: process.env[SECRET_VARIABLE],
 		flag: process.env[UNGUARDED_FLAG],
 		mode: process.env.NODE_ENV,
+		persistence: process.env.DENTAL_STATE_PERSISTENCE,
 	};
 
 	before(async () => {
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
 		app = Fastify({ logger: false });
 		await registerScheduleRoutes(app);
 		await app.ready();
@@ -194,6 +204,7 @@ describe("периметр расписания закрыт секретом а
 		setEnvironment(savedEnvironment.secret, SECRET_VARIABLE);
 		setEnvironment(savedEnvironment.flag, UNGUARDED_FLAG);
 		setEnvironment(savedEnvironment.mode, "NODE_ENV");
+		setEnvironment(savedEnvironment.persistence, "DENTAL_STATE_PERSISTENCE");
 	}
 
 	/**

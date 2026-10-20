@@ -14,6 +14,7 @@ export const verifyPayloadBodySchema = z.object({
 export type VerifyPayloadInput = z.infer<typeof verifyPayloadBodySchema>;
 export type GenerateSbpDynamicQrInput = z.infer<typeof generateSbpDynamicQrSchema>;
 export type CreateFiscalReceiptPayloadInput = z.infer<typeof createFiscalReceiptPayloadSchema>;
+export type CreateFiscalReceiptPayload = z.infer<typeof createFiscalReceiptPayloadSchema>;
 
 export type Tag1054OperationType =
 	| "income"

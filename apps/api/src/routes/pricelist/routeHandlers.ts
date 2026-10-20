@@ -721,6 +721,7 @@ export async function handleBatchReprice(
 export async function registerPricelistRoutes(app: FastifyInstance) {
 	app.get("/api/pricelists", handleGetPricelists);
 	app.get("/api/pricelist", handleGetPricelists);
+	app.get("/api/pricing/catalog", handleGetPricelists);
 	app.get("/api/pricelist/categories", handleGetCategories);
 
 	app.post(

@@ -1,5 +1,5 @@
 import type React from "react";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../useVisitDiaryLogic";
 
 export interface VisitDiaryModalsProps {
 	readonly showSummaryModal: boolean;

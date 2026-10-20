@@ -19,93 +19,62 @@ import { generateBridgeId } from "../utils/idGenerators.js";
 
 export { generateBridgeId };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FDI TOOTH CONSTANTS & QUADRANTS (ISO 3950)
-// ─────────────────────────────────────────────────────────────────────────────
+import {
+	ALL_FDI_TEETH,
+	DECIDUOUS_LOWER_ARCH_SEQUENCE,
+	DECIDUOUS_TEETH,
+	DECIDUOUS_TEETH_QUADRANT_5,
+	DECIDUOUS_TEETH_QUADRANT_6,
+	DECIDUOUS_TEETH_QUADRANT_7,
+	DECIDUOUS_TEETH_QUADRANT_8,
+	DECIDUOUS_UPPER_ARCH_SEQUENCE,
+	LOWER_ARCH_SEQUENCE,
+	PERMANENT_TEETH,
+	PERMANENT_TEETH_QUADRANT_1,
+	PERMANENT_TEETH_QUADRANT_2,
+	PERMANENT_TEETH_QUADRANT_3,
+	PERMANENT_TEETH_QUADRANT_4,
+	SURFACE_NAMES_RU,
+	type Surface,
+	TOOTH_SURFACES,
+	UPPER_ARCH_SEQUENCE,
+	getArchSequenceForTooth,
+	getToothArch,
+	getToothDentitionType,
+	isDeciduousTooth,
+	isPermanentTooth,
+	isValidFdiTooth,
+} from "./dentalFormulaSsot.js";
 
-/** FDI Permanent Teeth Quadrant 1 (Upper Right / 18..11) */
-export const PERMANENT_TEETH_QUADRANT_1 = [18, 17, 16, 15, 14, 13, 12, 11] as const;
-
-/** FDI Permanent Teeth Quadrant 2 (Upper Left / 21..28) */
-export const PERMANENT_TEETH_QUADRANT_2 = [21, 22, 23, 24, 25, 26, 27, 28] as const;
-
-/** FDI Permanent Teeth Quadrant 3 (Lower Left / 31..38) */
-export const PERMANENT_TEETH_QUADRANT_3 = [31, 32, 33, 34, 35, 36, 37, 38] as const;
-
-/** FDI Permanent Teeth Quadrant 4 (Lower Right / 48..41) */
-export const PERMANENT_TEETH_QUADRANT_4 = [48, 47, 46, 45, 44, 43, 42, 41] as const;
-
-/** All 32 permanent teeth (Adult) */
-export const PERMANENT_TEETH = [
-	...PERMANENT_TEETH_QUADRANT_1,
-	...PERMANENT_TEETH_QUADRANT_2,
-	...PERMANENT_TEETH_QUADRANT_3,
-	...PERMANENT_TEETH_QUADRANT_4,
-] as const;
-
-/** FDI Deciduous Teeth Quadrant 5 (Upper Right / 55..51) */
-export const DECIDUOUS_TEETH_QUADRANT_5 = [55, 54, 53, 52, 51] as const;
-
-/** FDI Deciduous Teeth Quadrant 6 (Upper Left / 61..65) */
-export const DECIDUOUS_TEETH_QUADRANT_6 = [61, 62, 63, 64, 65] as const;
-
-/** FDI Deciduous Teeth Quadrant 7 (Lower Left / 71..75) */
-export const DECIDUOUS_TEETH_QUADRANT_7 = [71, 72, 73, 74, 75] as const;
-
-/** FDI Deciduous Teeth Quadrant 8 (Lower Right / 85..81) */
-export const DECIDUOUS_TEETH_QUADRANT_8 = [85, 84, 83, 82, 81] as const;
-
-/** All 20 deciduous teeth (Child) */
-export const DECIDUOUS_TEETH = [
-	...DECIDUOUS_TEETH_QUADRANT_5,
-	...DECIDUOUS_TEETH_QUADRANT_6,
-	...DECIDUOUS_TEETH_QUADRANT_8,
-	...DECIDUOUS_TEETH_QUADRANT_7,
-] as const;
-
-/** Total 52 teeth tracked across permanent and deciduous dentition */
-export const ALL_FDI_TEETH = [...PERMANENT_TEETH, ...DECIDUOUS_TEETH] as const;
-
-/** Upper arch contiguous sequence from right to left (18 to 28) */
-export const UPPER_ARCH_SEQUENCE = [
-	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
-] as const;
-
-/** Lower arch contiguous sequence from right to left (48 to 38) */
-export const LOWER_ARCH_SEQUENCE = [
-	48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
-] as const;
-
-/** Deciduous upper arch contiguous sequence (55 to 65) */
-export const DECIDUOUS_UPPER_ARCH_SEQUENCE = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65] as const;
-
-/** Deciduous lower arch contiguous sequence (85 to 75) */
-export const DECIDUOUS_LOWER_ARCH_SEQUENCE = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75] as const;
+export {
+	PERMANENT_TEETH_QUADRANT_1,
+	PERMANENT_TEETH_QUADRANT_2,
+	PERMANENT_TEETH_QUADRANT_3,
+	PERMANENT_TEETH_QUADRANT_4,
+	PERMANENT_TEETH,
+	DECIDUOUS_TEETH_QUADRANT_5,
+	DECIDUOUS_TEETH_QUADRANT_6,
+	DECIDUOUS_TEETH_QUADRANT_7,
+	DECIDUOUS_TEETH_QUADRANT_8,
+	DECIDUOUS_TEETH,
+	ALL_FDI_TEETH,
+	UPPER_ARCH_SEQUENCE,
+	LOWER_ARCH_SEQUENCE,
+	DECIDUOUS_UPPER_ARCH_SEQUENCE,
+	DECIDUOUS_LOWER_ARCH_SEQUENCE,
+	TOOTH_SURFACES,
+	type Surface,
+	SURFACE_NAMES_RU,
+	isPermanentTooth,
+	isDeciduousTooth,
+	isValidFdiTooth,
+	getToothDentitionType,
+	getToothArch,
+	getArchSequenceForTooth,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TOOTH SURFACES & ANATOMICAL NOMENCLATURE
-// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * 5 Standard tooth surfaces according to international dental notation:
- * - M: Mesial (медиальная / к средней линии)
- * - D: Distal (дистальная / от средней линии)
- * - O: Occlusal / Incisal (окклюзионная / режущий край)
- * - V: Vestibular (вестибулярная / щёчная / губная)
- * - L: Lingual / Palatal (язычная / нёбная)
- */
-export const TOOTH_SURFACES = ["M", "D", "O", "V", "L"] as const;
-export type Surface = (typeof TOOTH_SURFACES)[number];
-
-export const SURFACE_NAMES_RU: Readonly<Record<Surface, string>> = Object.freeze({
-	M: "Медиальная (M)",
-	D: "Дистальная (D)",
-	O: "Окклюзионная/Режущая (O)",
-	V: "Вестибулярная (V)",
-	L: "Язычная/Нёбная (L)",
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CLINICAL CONDITIONS & PROSTHETIC ROLES
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -254,53 +223,6 @@ export const odontogramStatsSchema = z.object({
 	rootCanalsCount: z.number().int().nonnegative(),
 	totalTeethTracked: z.number().int().nonnegative(),
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FDI & ANATOMICAL HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function isPermanentTooth(toothNumber: number): boolean {
-	return (PERMANENT_TEETH as readonly number[]).includes(toothNumber);
-}
-
-export function isDeciduousTooth(toothNumber: number): boolean {
-	return (DECIDUOUS_TEETH as readonly number[]).includes(toothNumber);
-}
-
-export function isValidFdiTooth(toothNumber: number): boolean {
-	return isPermanentTooth(toothNumber) || isDeciduousTooth(toothNumber);
-}
-
-export function getToothDentitionType(toothNumber: number): "permanent" | "deciduous" {
-	if (isPermanentTooth(toothNumber)) return "permanent";
-	if (isDeciduousTooth(toothNumber)) return "deciduous";
-	throw new Error(`Invalid FDI tooth number: ${toothNumber}`);
-}
-
-export function getToothArch(toothNumber: number): "upper" | "lower" {
-	if (
-		(UPPER_ARCH_SEQUENCE as readonly number[]).includes(toothNumber) ||
-		(DECIDUOUS_UPPER_ARCH_SEQUENCE as readonly number[]).includes(toothNumber)
-	) {
-		return "upper";
-	}
-	if (
-		(LOWER_ARCH_SEQUENCE as readonly number[]).includes(toothNumber) ||
-		(DECIDUOUS_LOWER_ARCH_SEQUENCE as readonly number[]).includes(toothNumber)
-	) {
-		return "lower";
-	}
-	throw new Error(`Invalid FDI tooth number: ${toothNumber}`);
-}
-
-export function getArchSequenceForTooth(toothNumber: number): readonly number[] {
-	if (isPermanentTooth(toothNumber)) {
-		return getToothArch(toothNumber) === "upper" ? UPPER_ARCH_SEQUENCE : LOWER_ARCH_SEQUENCE;
-	}
-	return getToothArch(toothNumber) === "upper"
-		? DECIDUOUS_UPPER_ARCH_SEQUENCE
-		: DECIDUOUS_LOWER_ARCH_SEQUENCE;
-}
 
 function createDefaultSurfaces(condition: ToothCondition = "healthy"): Record<Surface, ToothCondition> {
 	return {

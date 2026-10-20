@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import { registerHooks } from "node:module";
 
 if (typeof registerHooks === "function") {
@@ -65,7 +65,7 @@ describe("VisitHeaderMonolith Safe Decomposition Health (Wave 28)", () => {
 	});
 
 	describe("2. Public Export Parity", () => {
-		it("exports all canonical components and functions", async () => {
+		(it as any)("exports all canonical components and functions", async () => {
 			const mod = await import("../index.js");
 			assert.equal(typeof mod.VisitHeaderMonolith, "function", "VisitHeaderMonolith must be exported");
 			assert.equal(typeof mod.default, "function", "Default export must be VisitHeaderMonolith");
@@ -74,7 +74,7 @@ describe("VisitHeaderMonolith Safe Decomposition Health (Wave 28)", () => {
 			assert.equal(typeof mod.VisitShiftQueueControls, "function", "VisitShiftQueueControls must be exported");
 			assert.equal(typeof mod.VisitActionButtonsToolbar, "function", "VisitActionButtonsToolbar must be exported");
 			assert.equal(typeof mod.buildConsolidatedAllergyChip, "function", "buildConsolidatedAllergyChip must be exported");
-		});
+		}, 30000);
 	});
 
 	describe("3. Test Anchor Parity (data-testid, aria-label, data-tour)", () => {

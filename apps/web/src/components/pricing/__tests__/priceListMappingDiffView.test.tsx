@@ -138,8 +138,8 @@ describe("PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)", () =
 		// Container & Panes
 		assert.ok(html.includes("pricelist-diff-container"));
 		assert.ok(html.includes("pricelist-diff-panes"));
-		assert.ok(html.includes("1. Исходная строка старого документа"));
-		assert.ok(html.includes("2. Распознанное наименование, код услуги, цена и действие"));
+		assert.ok(html.includes("1. Исходный прейскурант клиники"));
+		assert.ok(html.includes("2. Сопоставление со стандартной номенклатурой"));
 
 		// Left Raw Document lines
 		assert.ok(html.includes("Filtek Z250 4500 руб"));

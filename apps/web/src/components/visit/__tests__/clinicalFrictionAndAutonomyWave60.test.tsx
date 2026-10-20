@@ -7,7 +7,7 @@
  * 8k (CRM != Reality Simulator), 8n (Solo Doctor & Small Clinic Sovereignty).
  */
 
-import { describe, it } from 'node:test';
+import { describe, it  } from "vitest";
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,8 +32,14 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
 	const anesthesiaQuickBarDir = path.resolve(__dirname, '../../anesthesia/anesthesiaQuickBar');
 
+	const usePatientLogicDir = path.resolve(__dirname, '../../../hooks/domains/patientLogicModules');
 	const clinicProfileUtilsCode = fs.readFileSync(clinicProfileUtilsPath, 'utf8');
-	const usePatientLogicCode = fs.readFileSync(usePatientLogicPath, 'utf8');
+	const usePatientLogicCode = [
+		fs.readFileSync(usePatientLogicPath, 'utf8'),
+		...(fs.existsSync(usePatientLogicDir)
+			? fs.readdirSync(usePatientLogicDir).map((f) => fs.readFileSync(path.join(usePatientLogicDir, f), 'utf8'))
+			: []),
+	].join('\n');
 	const visiographAnalyzerCode = fs.readFileSync(visiographAnalyzerPath, 'utf8');
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
 	const anesthesiaQuickBarCode = [

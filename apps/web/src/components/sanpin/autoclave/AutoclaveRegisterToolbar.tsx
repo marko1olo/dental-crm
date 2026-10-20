@@ -187,7 +187,7 @@ export function AutoclaveRegisterToolbar({
 				>
 					<Sparkles size={13} className="shrink-0" />
 					<span className="shrink-0 whitespace-nowrap">
-						{isLoggingBatch ? "Фиксация..." : "Провести цикл на смену (134°C)"}
+						{isLoggingBatch ? "Фиксация..." : "Подтвердить цикл стерилизации смены"}
 					</span>
 				</button>
 

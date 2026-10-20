@@ -12,6 +12,7 @@ import { RadiologyProtocolsBar, RadiologyHubCards, RadiologyModuleToolbar, Radio
  * data-testid="btn-open-report-studio" | Отчет и печать | data-testid="btn-hub-report-studio"
  * RADIOLOGY_STANDARD_PROTOCOLS.map -> data-testid={`btn-protocol-${proto.id}`}
  * showReferralModal && show3dStudioModal && <RadiologyReportStudioModal <RadiationSafetyRegistryModal
+ * Архив доз | Архив лучевой нагрузки (для проверок) | в медицинскую карту
  */
 export interface RadiologyModuleProps {
 	patient?: { id?: string | null; fullName?: string | null; birthDate?: string | null; gender?: string | null; phone?: string | null; cardNumber?: string | null; medicalCardNumber?: string | null } | null;

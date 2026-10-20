@@ -16,10 +16,13 @@ export async function handleSchedulingAction(
 	callId: string,
 	context: ActionExecutionContext,
 ): Promise<CRMActionResult | null> {
+	const n = shortName.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
+
 	// 4. Scheduling: Book Appointment
 	if (
-		shortName === "book_chairside_appointment" ||
-		shortName === "book_appointment"
+		n === "book_chairside_appointment" ||
+		n === "book_appointment" ||
+		n === "create_appointment"
 	) {
 		const patientId = String(
 			args.patientId ||
@@ -31,28 +34,69 @@ export async function handleSchedulingAction(
 			args.start_time ||
 			new Date(Date.now() + 86400000).toISOString(),
 		);
+		const parsedStart = new Date(startsAt).getTime();
+		const endsAt = String(
+			args.endsAt ||
+			args.end_time ||
+			new Date(parsedStart + 30 * 60 * 1000).toISOString(),
+		);
 		const reason = String(args.reason || "Повторный приём / продолжение санации");
-		const doctorId = String(args.doctorUserId || args.doctorId || "doc-current");
+		const doctorId = String(args.doctorUserId || args.doctorId || "00000000-0000-7000-8000-000000000001");
+		const chairId = String(args.chairId || "00000000-0000-7000-8000-000000000001");
 
-		// Trigger API call if URL provided
+		let createdApptId = `local_appt_${Date.now()}`;
+
+		// Trigger Fastify API call if URL provided: POST /api/appointments
 		if (context.apiBaseUrl) {
-			await fetch(`${context.apiBaseUrl}/api/v1/schedule/appointments`, {
-				method: "POST",
-				headers: context.headers ?? {},
-				body: JSON.stringify({
-					patientId,
-					doctorUserId: doctorId,
-					startsAt,
-					reason,
-				}),
-			}).catch(() => {});
+			try {
+				const res = await fetch(`${context.apiBaseUrl}/api/appointments`, {
+					method: "POST",
+					headers: context.headers ?? { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						patientId,
+						doctorUserId: doctorId,
+						chairId,
+						startsAt,
+						endsAt,
+						reason,
+					}),
+				});
+				if (res.ok) {
+					const body = (await res.json()) as { appointment?: { id?: string } };
+					if (body?.appointment?.id) {
+						createdApptId = body.appointment.id;
+					}
+				}
+			} catch {
+				// Local-first resilience: proceed with local store sync
+			}
 		}
+
+		// Direct sync into useAppStore.getState().dashboard.appointments
+		useAppStore.getState().setDashboard((prev) => {
+			if (!prev) return prev;
+			const newAppt = {
+				id: createdApptId,
+				patientId,
+				doctorUserId: doctorId,
+				chairId,
+				startsAt,
+				endsAt,
+				status: "planned",
+				reason,
+			};
+			const existing = prev.appointments || [];
+			return {
+				...prev,
+				appointments: [...existing, newAppt as any],
+			};
+		});
 
 		// Broadcast event for UI update
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente:appointment-created", {
-					detail: { patientId, startsAt, reason },
+					detail: { id: createdApptId, patientId, startsAt, endsAt, reason },
 				}),
 			);
 		}
@@ -63,22 +107,42 @@ export async function handleSchedulingAction(
 			actionName: name,
 			category: "schedule",
 			message: `Запись успешно создана на ${new Date(startsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}: ${reason}.`,
-			data: { patientId, startsAt, reason },
+			data: { id: createdApptId, patientId, startsAt, endsAt, reason },
 		};
 	}
 
 	// 5. Scheduling: Cancel Appointment (Destructive, confirmed)
-	if (shortName === "cancel_appointment") {
+	if (n === "cancel_appointment") {
 		const appointmentId = String(args.appointmentId || "app_current");
 		const reason = String(args.reason || "Отменено врачом");
 
+		// Trigger Fastify API call: PATCH /api/appointments/:id/status
 		if (context.apiBaseUrl) {
-			await fetch(`${context.apiBaseUrl}/api/v1/schedule/appointments/${appointmentId}/cancel`, {
-				method: "POST",
-				headers: context.headers ?? {},
-				body: JSON.stringify({ reason }),
-			}).catch(() => {});
+			try {
+				await fetch(`${context.apiBaseUrl}/api/appointments/${appointmentId}/status`, {
+					method: "PATCH",
+					headers: context.headers ?? { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						status: "cancelled",
+						cancelReason: reason,
+						reason,
+					}),
+				});
+			} catch {
+				// Local-first resilience
+			}
 		}
+
+		// Direct sync into useAppStore.getState().dashboard.appointments
+		useAppStore.getState().setDashboard((prev) => {
+			if (!prev || !prev.appointments) return prev;
+			return {
+				...prev,
+				appointments: prev.appointments.map((a: any) =>
+					a.id === appointmentId ? { ...a, status: "cancelled", cancelReason: reason } : a,
+				),
+			};
+		});
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -100,22 +164,47 @@ export async function handleSchedulingAction(
 	}
 
 	// 6. Scheduling: Reschedule Appointment
-	if (shortName === "reschedule_appointment") {
+	if (n === "reschedule_appointment") {
 		const appointmentId = String(args.appointmentId || "app_current");
 		const newStartsAt = String(args.newStartsAt || args.startsAt || new Date().toISOString());
+		const parsedNewStart = new Date(newStartsAt).getTime();
+		const newEndsAt = String(
+			args.newEndsAt ||
+			args.endsAt ||
+			new Date(parsedNewStart + 30 * 60 * 1000).toISOString(),
+		);
 
+		// Trigger Fastify API call: PATCH /api/appointments/:id
 		if (context.apiBaseUrl) {
-			await fetch(`${context.apiBaseUrl}/api/v1/schedule/appointments/${appointmentId}/reschedule`, {
-				method: "POST",
-				headers: context.headers ?? {},
-				body: JSON.stringify({ newStartsAt }),
-			}).catch(() => {});
+			try {
+				await fetch(`${context.apiBaseUrl}/api/appointments/${appointmentId}`, {
+					method: "PATCH",
+					headers: context.headers ?? { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						startsAt: newStartsAt,
+						endsAt: newEndsAt,
+					}),
+				});
+			} catch {
+				// Local-first resilience
+			}
 		}
+
+		// Direct sync into useAppStore.getState().dashboard.appointments
+		useAppStore.getState().setDashboard((prev) => {
+			if (!prev || !prev.appointments) return prev;
+			return {
+				...prev,
+				appointments: prev.appointments.map((a: any) =>
+					a.id === appointmentId ? { ...a, startsAt: newStartsAt, endsAt: newEndsAt } : a,
+				),
+			};
+		});
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente:appointment-rescheduled", {
-					detail: { appointmentId, newStartsAt },
+					detail: { appointmentId, newStartsAt, newEndsAt },
 				}),
 			);
 		}
@@ -126,12 +215,12 @@ export async function handleSchedulingAction(
 			actionName: name,
 			category: "schedule",
 			message: `Запись успешно перенесена на ${new Date(newStartsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.`,
-			data: { appointmentId, newStartsAt },
+			data: { appointmentId, newStartsAt, newEndsAt },
 		};
 	}
 
 	// 7. Patient Search & Select
-	if (shortName === "search_patients" || shortName === "select_patient") {
+	if (n === "search_patients" || n === "select_patient") {
 		const patientId = String(args.patientId || args.id || "");
 		if (patientId) {
 			useAppStore.getState().setActivePatientId(patientId);

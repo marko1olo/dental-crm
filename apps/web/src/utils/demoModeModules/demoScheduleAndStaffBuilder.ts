@@ -120,8 +120,11 @@ export function getDemoShowcaseAppointments(baseDateIso?: string): Appointment[]
 			status: "completed",
 			startsAt: `${today}T09:00:00.000Z`,
 			endsAt: `${today}T10:30:00.000Z`,
-			reason: "Терапия: лечение глубокого кариеса зуба 46, реставрация световой композит",
-			comment: "Приём успешно завершён, пациент направлен на гигиену",
+			reason: "Эндодонтия (1 этап): инструментальная обработка каналов зуба 46, временная пломба",
+			comment: "1-й этап завершён, требуется обтурация через 10 дней",
+			toothNumber: 46,
+			diagnosisMkb10: "K04.0",
+			clinicalStage: "endo_stage_1",
 		},
 		{
 			id: "01a00000-0000-0000-0001-000000000002",
@@ -134,6 +137,9 @@ export function getDemoShowcaseAppointments(baseDateIso?: string): Appointment[]
 			endsAt: `${today}T13:00:00.000Z`,
 			reason: "Эндодонтия под микроскопом: распломбировка и обтурация 3 каналов зуба 36",
 			comment: "Длительный непрерывный приём (2 часа), коффердам наложен",
+			toothNumber: 36,
+			diagnosisMkb10: "K04.0",
+			clinicalStage: "endo_stage_1",
 		},
 		{
 			id: "01a00000-0000-0000-0001-000000000003",

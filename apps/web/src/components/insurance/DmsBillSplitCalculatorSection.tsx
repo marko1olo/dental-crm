@@ -653,7 +653,7 @@ export function DmsBillSplitCalculatorSection({
 										insurerName: letter.insurerName,
 									});
 								}}
-								className="dms-btn dms-btn-primary dms-cta-apply-checkout"
+								className="dms-btn dms-btn-primary primary-button dms-cta-apply-checkout"
 								data-testid="btn-apply-dms-split-to-checkout"
 							>
 								<Split size={16} />

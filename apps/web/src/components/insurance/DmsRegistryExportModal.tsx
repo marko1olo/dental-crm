@@ -384,7 +384,7 @@ export function DmsRegistryExportModal({
 					</h2>
 					<button
 						type="button"
-						className="dms-btn dms-btn-secondary dms-btn-icon"
+						className="dms-btn dms-btn-secondary dms-btn-icon icon-button"
 						onClick={onClose}
 						aria-label="Закрыть окно"
 					>
@@ -722,7 +722,7 @@ export function DmsRegistryExportModal({
 					<div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
 						<button
 							type="button"
-							className="dms-btn dms-btn-secondary"
+							className="dms-btn dms-btn-secondary secondary-button"
 							onClick={onClose}
 						>
 							Закрыть
@@ -730,7 +730,7 @@ export function DmsRegistryExportModal({
 
 						<button
 							type="button"
-							className="dms-btn dms-btn-secondary"
+							className="dms-btn dms-btn-secondary secondary-button"
 							onClick={handleExportCsv}
 							title="Быстрый экспорт в CSV/Excel (с кодировкой UTF-8 BOM и точкой с запятой)"
 						>
@@ -740,7 +740,7 @@ export function DmsRegistryExportModal({
 
 						<button
 							type="button"
-							className="dms-btn dms-btn-secondary"
+							className="dms-btn dms-btn-secondary secondary-button"
 							onClick={handleExportXml}
 							title="Экспорт в электронный XML-формат реестра ДМС для страховых компаний"
 						>
@@ -750,7 +750,7 @@ export function DmsRegistryExportModal({
 
 						<button
 							type="button"
-							className="dms-btn dms-btn-secondary"
+							className="dms-btn dms-btn-secondary secondary-button"
 							onClick={handlePrintMeeAct}
 							title="Сформировать официальный Акт медико-экономической экспертизы (МЭЭ) с обоснованием по СтАР"
 						>
@@ -760,7 +760,7 @@ export function DmsRegistryExportModal({
 
 						<button
 							type="button"
-							className="dms-btn dms-btn-primary"
+							className="dms-btn dms-btn-primary primary-button"
 							onClick={handlePrintAct}
 							title="Сформировать печатный двусторонний акт сдачи-приемки оказанных услуг"
 						>

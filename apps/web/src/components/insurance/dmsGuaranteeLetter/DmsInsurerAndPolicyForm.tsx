@@ -175,7 +175,7 @@ export function DmsInsurerAndPolicyForm({
 						/>
 						<button
 							type="button"
-							className="dms-btn dms-btn-secondary"
+							className="dms-btn dms-btn-secondary secondary-button"
 							onClick={() => fileInputRef.current?.click()}
 							title="Прикрепить скан гарантийного письма в формате PDF или изображения"
 						>
@@ -255,7 +255,7 @@ export function DmsInsurerAndPolicyForm({
 							key={ins.key}
 							type="button"
 							onClick={() => onInsurerKeyChange(ins.key)}
-							className={`dms-quick-chip ${insurerKey === ins.key ? "active" : ""}`}
+							className={`dms-quick-chip dente-filter-chip ${insurerKey === ins.key ? "active" : ""}`}
 							title={`Выбрать страховую компанию ${ins.name}`}
 						>
 							{insurerKey === ins.key && <Check size={12} />}

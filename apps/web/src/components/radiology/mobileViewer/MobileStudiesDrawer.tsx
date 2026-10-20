@@ -56,10 +56,10 @@ export const MobileStudiesDrawer: React.FC<MobileStudiesDrawerProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 rounded-full flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer"
+						className="w-11 h-11 rounded-full flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer shrink-0"
 						aria-label="Закрыть шторку"
 					>
-						<X size={18} />
+						<X size={20} />
 					</button>
 				</div>
 

@@ -225,7 +225,7 @@ export function CashDayTally({
 		const text = `
 ========================================
     ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z-ОТЧЕТ)
-           ФФД 1.2 / 54-ФЗ
+         Фискальный кассовый чек
 ========================================
 ${zReportData.clinicLegalName}
 ИНН: ${zReportData.clinicInn} КПП: ${zReportData.clinicKpp || "770101001"}
@@ -555,7 +555,7 @@ ${zReportData.clinicLegalName}
 				)}
 			</div>
 
-			{/* Модальное окно Z-отчета закрытия смены 54-ФЗ */}
+			{/* Модальное окно Z-отчета закрытия смены */}
 			{isZReportOpen && zReportData && (
 				<div
 					className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
@@ -575,10 +575,10 @@ ${zReportData.clinicLegalName}
 								<FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />
 								<div>
 									<h3 id="z-report-modal-title" className="text-base sm:text-lg font-bold m-0 text-[var(--ink,#0f172a)]">
-										Отчет о закрытии смены (Z-отчет 54-ФЗ)
+										Отчет о закрытии смены (Фискальный Z-отчет)
 									</h3>
 									<span className="text-xs text-[var(--muted,#64748b)]">
-										ФФД 1.2 • Смена №{zReportData.shiftNumber} • ФД №{zReportData.fiscalDocumentNumber}
+										Кассовый чек • Смена №{zReportData.shiftNumber} • ФД №{zReportData.fiscalDocumentNumber}
 									</span>
 								</div>
 							</div>

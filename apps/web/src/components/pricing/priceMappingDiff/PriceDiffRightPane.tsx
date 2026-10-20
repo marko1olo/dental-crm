@@ -35,16 +35,16 @@ export const PriceDiffRightPane: React.FC<PriceDiffRightPaneProps> = ({
 	return (
 		<section
 			className="pricelist-diff-pane right-pane"
-			aria-label="Сопоставление с номенклатурой услуг"
+			aria-label="Сопоставление со стандартной номенклатурой"
 		>
 			<header className="pricelist-diff-pane-header">
 				<div className="pricelist-diff-pane-title">
 					<ShieldCheck size={13} style={{ color: 'var(--ok-fg)', flexShrink: 0 }} />
 					<span
 						className="pricelist-diff-pane-title-text"
-						title="2. Распознанное наименование, код услуги, цена и действие"
+						title="2. Сопоставление со стандартной номенклатурой"
 					>
-						2. Распознанное наименование, код услуги, цена и действие
+						2. Сопоставление со стандартной номенклатурой
 					</span>
 				</div>
 				<span className="pricelist-diff-pane-counter">

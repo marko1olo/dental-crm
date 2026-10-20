@@ -155,9 +155,8 @@
 
 .quick-chips-group-title {
 	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	font-weight: 600;
+	text-transform: none;
 	color: var(--muted);
 }
 
@@ -307,7 +306,7 @@
 	width: 100%;
 	max-width: 560px;
 	max-height: 90vh;
-	overflow-y: auto;
+	overflow: hidden;
 	background: var(--paper);
 	border: 1px solid var(--line-strong, var(--line));
 	border-radius: 16px;
@@ -335,6 +334,7 @@
 	justify-content: space-between;
 	padding: 1.25rem 1.5rem;
 	border-bottom: 1px solid var(--line);
+	flex-shrink: 0;
 }
 
 .create-patient-modal-title-wrap {
@@ -398,6 +398,8 @@
 	display: flex;
 	flex-direction: column;
 	gap: 1.15rem;
+	overflow-y: auto;
+	flex: 1 1 auto;
 }
 
 .create-patient-form-field {
@@ -479,6 +481,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
+	flex-shrink: 0;
 }
 
 .patient-create-modal-guidance {
@@ -492,6 +495,14 @@
 	align-items: center;
 	justify-content: flex-end;
 	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.create-patient-modal-actions button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
 }
 
 .create-patient-cancel-btn {
@@ -510,6 +521,142 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
+}
+
+.create-patient-modal-drag-handle-wrap {
+	display: none;
+}
+
+/* Mobile Apple HIG Bottom Sheet Adaptation (<= 768px, Mandate 8e, 8al, 8ze) */
+@media (max-width: 768px) {
+	.create-patient-modal-overlay {
+		align-items: flex-end !important;
+		padding: 0 !important;
+		background: rgba(0, 0, 0, 0.65) !important;
+	}
+
+	.create-patient-modal-card {
+		width: 100% !important;
+		max-width: 100% !important;
+		max-height: 90dvh !important;
+		height: 90dvh !important;
+		border-radius: 24px 24px 0 0 !important;
+		border-left: none !important;
+		border-right: none !important;
+		border-bottom: none !important;
+		margin: 0 !important;
+		display: flex !important;
+		flex-direction: column !important;
+		overflow: hidden !important;
+		animation: bottomSheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+	}
+
+	.create-patient-modal-drag-handle-wrap {
+		display: flex !important;
+		justify-content: center !important;
+		padding: 10px 0 4px 0 !important;
+		cursor: grab !important;
+		flex-shrink: 0 !important;
+	}
+
+	.create-patient-modal-drag-handle {
+		width: 36px !important;
+		height: 5px !important;
+		border-radius: 9999px !important;
+		background: var(--line-strong, rgba(150, 150, 150, 0.4)) !important;
+	}
+
+	.create-patient-modal-header {
+		padding: 0.5rem 1.25rem 0.75rem 1.25rem !important;
+		flex-shrink: 0 !important;
+	}
+
+	.create-patient-modal-close-btn {
+		min-width: 44px !important;
+		min-height: 44px !important;
+		width: 44px !important;
+		height: 44px !important;
+	}
+
+	.create-patient-modal-body {
+		padding: 0.875rem 1.25rem 1rem 1.25rem !important;
+		gap: 0.875rem !important;
+		overflow-y: auto !important;
+		flex: 1 1 auto !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.create-patient-modal-footer {
+		position: sticky !important;
+		bottom: 0 !important;
+		z-index: 10 !important;
+		padding: 0.75rem 1.25rem max(16px, env(safe-area-inset-bottom)) 1.25rem !important;
+		border-radius: 0 !important;
+		background: color-mix(in srgb, var(--paper-soft) 95%, transparent) !important;
+		backdrop-filter: blur(12px) !important;
+		-webkit-backdrop-filter: blur(12px) !important;
+		flex-shrink: 0 !important;
+	}
+
+	.create-patient-modal-actions {
+		display: grid !important;
+		grid-template-columns: 1fr 1fr !important;
+		gap: 8px !important;
+		width: 100% !important;
+	}
+
+	.create-patient-modal-actions button {
+		width: 100% !important;
+		min-height: 44px !important;
+		height: auto !important;
+		padding: 8px 10px !important;
+		font-size: 0.8125rem !important;
+		font-weight: 700 !important;
+		border-radius: 12px !important;
+		justify-content: center !important;
+		text-align: center !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-btn"] {
+		grid-column: 1 / -1 !important;
+		min-height: 48px !important;
+		font-size: 0.9375rem !important;
+		order: 1 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-and-book-btn"] {
+		order: 2 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-and-visit-btn"] {
+		order: 3 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-print-blank-contract-btn"] {
+		order: 4 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="footer-allow-duplicate-create-btn"] {
+		grid-column: 1 / -1 !important;
+		order: 5 !important;
+	}
+
+	.create-patient-modal-actions .create-patient-cancel-btn {
+		grid-column: 1 / -1 !important;
+		order: 99 !important;
+		min-height: 44px !important;
+	}
+}
+
+@keyframes bottomSheetSlideUp {
+	from {
+		transform: translateY(100%);
+		opacity: 0.8;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
 }
 
 /* Mobile Topbar Cleanup: remove redundant + Запись button from topbar on Patients and Finance views (Mandate 8p) */
@@ -564,8 +711,28 @@
 	color: var(--ink) !important;
 }
 
-.finance-summary-grid p {
-	display: none !important;
+.finance-summary-grid article.finance-tax-deduction-card {
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 8px !important;
+}
+
+.finance-summary-grid article.finance-tax-deduction-card .finance-tax-card-header {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+}
+
+.finance-summary-grid article.finance-tax-deduction-card button {
+	display: inline-flex !important;
+	align-items: center !important;
+	margin: 0 0 0 6px !important;
+	padding: 2px 8px !important;
+	font-size: 11px !important;
+	line-height: 1.2 !important;
+	border-radius: 6px !important;
+	white-space: nowrap !important;
 }
 
 @media (max-width: 768px) {
@@ -589,6 +756,35 @@
 		padding: 2px 4px !important;
 		border: none !important;
 		background: transparent !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: stretch !important;
+		justify-content: center !important;
+		min-height: auto !important;
+		max-height: none !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card .finance-tax-card-header {
+		display: flex !important;
+		flex-direction: row !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		width: 100% !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card button {
+		display: block !important;
+		width: 100% !important;
+		margin-top: 2px !important;
+		padding: 0 !important;
+		font-size: 11px !important;
+		line-height: 1.25 !important;
+		white-space: normal !important;
+		text-align: left !important;
+		word-break: break-word !important;
 	}
 
 	.finance-summary-grid p {
@@ -676,8 +872,7 @@
 .quick-chips-group-title {
 	font-size: 11px;
 	font-weight: 600;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
+	text-transform: none;
 	color: var(--muted);
 }
 

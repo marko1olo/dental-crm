@@ -33,6 +33,7 @@ export {
 export { generateDoctorT51Payslip } from "./t51Payslip.js";
 
 export { doctorPayouts } from "./reportEngine.js";
+export { buildDoctorPayoutAggregateQuery } from "./queries.js";
 
 export {
 	type IdentSalaryModel,

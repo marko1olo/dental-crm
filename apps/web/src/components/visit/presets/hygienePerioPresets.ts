@@ -202,7 +202,6 @@ export const HYGIENE_PERIO_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 31. K05.3 ВЕКТОР-ТЕРАПИЯ АППАРАТОМ VECTOR (DÜRR DENTAL) (SSOT) ──
 	...(findSoapProtocolById("perio_vector_ultrasonic_therapy")
 		? [
-				findSoapProtocolById("perio_vector_ultrasonic_therapy") as ClinicalSoapPreset,
 				{
 					...(findSoapProtocolById("perio_vector_ultrasonic_therapy") as ClinicalSoapPreset),
 					id: "perio_vector_therapy",

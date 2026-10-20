@@ -225,7 +225,7 @@ export async function getShiftConsumablesSummary(
 	// Формируем разбивку оказанных процедур
 	const breakdown: ShiftSummaryProcedure[] = [];
 	if (todaysTreatmentItems.length > 0) {
-		const grouped = new Map<string, { name: string; count: number; code?: string }>();
+		const grouped = new Map<string, ShiftSummaryProcedure>();
 		for (const it of todaysTreatmentItems) {
 			const key = it.title || "Услуга";
 			const count = Number(it.quantity ?? 1);
@@ -233,7 +233,10 @@ export async function getShiftConsumablesSummary(
 			if (existing) {
 				existing.count += count;
 			} else {
-				grouped.set(key, { name: key, count, code: it.serviceId ?? undefined });
+				const proc: ShiftSummaryProcedure = it.serviceId
+					? { name: key, count, code: it.serviceId }
+					: { name: key, count };
+				grouped.set(key, proc);
 			}
 		}
 		for (const val of grouped.values()) {

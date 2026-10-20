@@ -21,6 +21,10 @@ export interface UseAudioFeedbackReturn {
 	playSpeechCaptured: () => Promise<void>;
 	playActionSuccess: () => Promise<void>;
 	playWarningAlert: () => Promise<void>;
+	playScannerBeep: () => Promise<void>;
+	playCashierKaching: () => Promise<void>;
+	playAutosaveWhisper: () => Promise<void>;
+	playSomaticDangerChord: () => Promise<void>;
 	playSound: (type: SoundEffectType) => Promise<void>;
 	isEnabled: boolean;
 	setEnabled: (enabled: boolean) => void;
@@ -83,6 +87,22 @@ export function useAudioFeedback(): UseAudioFeedbackReturn {
 		() => soundFeedback.playWarningAlert(),
 		[],
 	);
+	const playScannerBeep = useCallback(
+		() => soundFeedback.playScannerBeep(),
+		[],
+	);
+	const playCashierKaching = useCallback(
+		() => soundFeedback.playCashierKaching(),
+		[],
+	);
+	const playAutosaveWhisper = useCallback(
+		() => soundFeedback.playAutosaveWhisper(),
+		[],
+	);
+	const playSomaticDangerChord = useCallback(
+		() => soundFeedback.playSomaticDangerChord(),
+		[],
+	);
 	const playSound = useCallback(
 		(type: SoundEffectType) => soundFeedback.playSound(type),
 		[],
@@ -94,6 +114,10 @@ export function useAudioFeedback(): UseAudioFeedbackReturn {
 		playSpeechCaptured,
 		playActionSuccess,
 		playWarningAlert,
+		playScannerBeep,
+		playCashierKaching,
+		playAutosaveWhisper,
+		playSomaticDangerChord,
 		playSound,
 		isEnabled,
 		setEnabled,

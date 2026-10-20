@@ -356,7 +356,7 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 							)}
 						</div>
 						<span className="font-mono font-bold text-pink-700 dark:text-pink-300">
-							Тег 1215: Зачет семейного аванса
+							Зачет семейного аванса
 						</span>
 					</div>
 				)}
@@ -373,7 +373,7 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 							)}
 						</div>
 						<span className="font-mono font-bold text-indigo-700 dark:text-indigo-300">
-							Тег 1215: Зачет аванса
+							Зачет аванса
 						</span>
 					</div>
 				)}

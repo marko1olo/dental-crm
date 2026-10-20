@@ -4,7 +4,7 @@
  * under Mandate 8d (UI Deadly Sin #7) and Apple HIG / DENTE Ergonomics.
  */
 
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

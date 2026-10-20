@@ -12,8 +12,10 @@ import {
 	PUBLIC_BOOKING_PORTAL_PATH,
 	TGAPP_PORTAL_PATH,
 	TGAPP_SHORT_PATH,
+	WARRANTY_PORTAL_PATH,
 	buildKioskPortalUrl,
 	buildPatientCabinetPortalUrl,
+	buildWarrantyPortalUrl,
 	publicPortalRouteFromHash,
 } from "../lib/publicPortalRoute";
 
@@ -161,10 +163,15 @@ test("ссылка онлайн-записи разбирается в клин�
  * доезжает до неё как null, а не подменяется рабочим местом.
  */
 test("ссылка записи без клиники остаётся публичной страницей, а не рабочим местом", () => {
+	const organizationId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
 	for (const hash of [
 		"#/portal/booking/",
 		"#/portal/booking",
 		"#/portal/booking?utm_source=vk",
+		"#/book",
+		"/book",
+		"#/book?utm_source=vk",
+		"#/portal/book",
 	]) {
 		assert.deepEqual(
 			publicPortalRouteFromHash(hash),
@@ -172,6 +179,11 @@ test("ссылка записи без клиники остаётся публ�
 			`адрес «${hash}» уводит пациента в рабочее место клиники`,
 		);
 	}
+
+	assert.deepEqual(
+		publicPortalRouteFromHash(`#/book/${organizationId}`),
+		{ kind: "booking", organizationId },
+	);
 });
 
 test("страницу записи рендерит точка монтирования, а не только разбор", () => {
@@ -360,6 +372,45 @@ test("ссылка Telegram WebApp Mini App разбирается в маршр
 	assert.ok(
 		entry.includes('kind === "tgapp"'),
 		"main.tsx обязан различать маршрут tgapp",
+	);
+});
+
+test("ссылка публичной проверки гарантийного паспорта разбирается в маршрут kind=warranty", () => {
+	const cert = "WAR-2026-1049";
+	const card = "МК-4821";
+
+	assert.deepEqual(publicPortalRouteFromHash(`#${WARRANTY_PORTAL_PATH}?cert=${cert}&card=${card}`), {
+		kind: "warranty",
+		certificateNumber: cert,
+		cardNumber: card,
+	});
+	assert.deepEqual(publicPortalRouteFromHash(`/portal/warranty?cert=${cert}`), {
+		kind: "warranty",
+		certificateNumber: cert,
+		cardNumber: null,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("/warranty?cert=WAR-9999"), {
+		kind: "warranty",
+		certificateNumber: "WAR-9999",
+		cardNumber: null,
+	});
+	assert.equal(
+		buildWarrantyPortalUrl(cert, "https://dente.clinic", card),
+		"https://dente.clinic/#/portal/warranty?cert=WAR-2026-1049&card=%D0%9C%D0%9A-4821",
+	);
+	assert.equal(
+		buildWarrantyPortalUrl(cert, ""),
+		"/#/portal/warranty?cert=WAR-2026-1049",
+	);
+
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<PublicWarrantyVerificationPage"),
+		"main.tsx обязан рендерить PublicWarrantyVerificationPage для маршрута warranty",
+	);
+	assert.ok(
+		entry.includes('kind === "warranty"'),
+		"main.tsx обязан различать маршрут warranty",
 	);
 });
 

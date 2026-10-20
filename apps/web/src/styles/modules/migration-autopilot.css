@@ -1,0 +1,332 @@
+/* ==========================================================================
+   DENTE CRM — MIGRATION AUTOPILOT & KICKSTART ENGINE (modules/migration-autopilot.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Progress steps, kickstart grid, triage queue, dry runs.
+   ========================================================================== */
+.migration-kickstart-panel {
+	background: #f4fbf8;
+	border: 1px solid #b8d8cc;
+	border-left: 4px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 12px;
+}
+
+.migration-kickstart-panel > div:first-child {
+	display: grid;
+	gap: 4px;
+}
+
+.migration-kickstart-panel strong,
+.migration-kickstart-panel span {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.migration-kickstart-panel > div:first-child strong {
+	color: var(--ink);
+	font-size: 15px;
+}
+
+.migration-kickstart-panel > div:first-child span {
+	color: #587269;
+	font-size: 13px;
+	font-weight: 800;
+}
+
+.migration-progress-strip {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.migration-progress-step {
+	background: #ffffff;
+	border: 1px solid #d7e8e1;
+	border-left: 4px solid #b7c8c1;
+	border-radius: 8px;
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+	padding: 8px 9px;
+}
+
+.migration-progress-step.status-ready {
+	border-left-color: #2f9d78;
+}
+
+.migration-progress-step.status-active {
+	border-left-color: #d8a43d;
+}
+
+.migration-progress-step.status-locked {
+	opacity: 0.66;
+}
+
+.migration-progress-step strong {
+	color: #23483d;
+	font-size: 12px;
+}
+
+.migration-progress-step span {
+	color: #60756e;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.3;
+}
+
+.migration-kickstart-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.migration-kickstart-grid article {
+	align-content: start;
+	background: #ffffff;
+	border: 1px solid #d7e8e1;
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.migration-kickstart-grid article > strong {
+	color: #23483d;
+	font-size: 13px;
+}
+
+.migration-kickstart-grid article > span {
+	color: #60756e;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.migration-kickstart-grid button {
+	justify-self: start;
+}
+
+.migration-autopilot-result {
+	background: #0f2b2c;
+}
+
+.migration-autopilot-summary {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.migration-autopilot-summary article,
+.migration-autopilot-operator-packet,
+.migration-autopilot-script,
+.migration-autopilot-clinic {
+	background: rgba(119, 215, 199, 0.08);
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-left: 3px solid #d8b866;
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.migration-autopilot-operator-packet {
+	background: rgba(255, 248, 221, 0.06);
+	gap: 10px;
+}
+
+.migration-autopilot-script {
+	background: rgba(216, 184, 102, 0.09);
+	gap: 10px;
+}
+
+.migration-operator-score {
+	display: grid;
+	gap: 4px;
+}
+
+.migration-dry-run-summary {
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 248, 221, 0.2);
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	padding: 10px;
+}
+
+.migration-dry-run-summary > div {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+	min-width: 0;
+}
+
+.migration-dry-run-summary p {
+	color: #dff7f4;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.migration-primary-action {
+	align-items: flex-start;
+	border-bottom: 1px solid rgba(255, 248, 221, 0.2);
+	border-top: 1px solid rgba(255, 248, 221, 0.2);
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+	padding: 10px 0;
+}
+
+.migration-primary-action > div:first-child {
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+}
+
+.migration-primary-action .migration-source-card-actions {
+	flex: 0 0 auto;
+	justify-content: flex-end;
+}
+
+.migration-triage-queue {
+	background: rgba(255, 248, 221, 0.08);
+	border: 1px solid rgba(255, 248, 221, 0.2);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.migration-triage-head,
+.migration-triage-grid,
+.migration-triage-item {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+
+.migration-triage-item {
+	background: rgba(0, 0, 0, 0.16);
+	border-left: 3px solid rgba(216, 184, 102, 0.82);
+	border-radius: 6px;
+	padding: 8px;
+}
+
+.migration-triage-item.status-blocked {
+	border-left-color: #f08a72;
+}
+
+.migration-triage-item.status-needs_bridge,
+.migration-triage-item.status-needs_export {
+	border-left-color: #d8b866;
+}
+
+.migration-technical-boundary {
+	border-top: 1px solid rgba(183, 213, 209, 0.14);
+	padding-top: 6px;
+}
+
+.migration-technical-boundary summary {
+	color: #b7d5d1;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.migration-technical-boundary div {
+	display: grid;
+	gap: 4px;
+	padding-top: 6px;
+}
+
+.migration-autopilot-summary strong,
+.migration-autopilot-summary span,
+.migration-autopilot-summary small,
+.migration-autopilot-operator-packet strong,
+.migration-autopilot-operator-packet span,
+.migration-autopilot-operator-packet small,
+.migration-autopilot-script strong,
+.migration-autopilot-script span,
+.migration-autopilot-script small,
+.migration-autopilot-clinic strong,
+.migration-autopilot-clinic span,
+.migration-triage-queue strong,
+.migration-triage-queue span,
+.migration-triage-queue small {
+	color: #dff7f4;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.migration-autopilot-summary strong,
+.migration-autopilot-operator-packet strong,
+.migration-autopilot-script strong,
+.migration-autopilot-clinic strong,
+.migration-triage-queue strong {
+	color: #fff8dd;
+	font-size: 13px;
+}
+
+.migration-source-workup-lanes {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.migration-source-workup-lanes article {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.2);
+	border-left: 3px solid #d8b866;
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.migration-source-workup-lanes strong,
+.migration-source-workup-lanes p,
+.migration-source-workup-lanes span,
+.migration-source-workup-lanes small {
+	color: #dff7f4;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.migration-source-workup-lanes strong {
+	color: #fff8dd;
+	font-size: 13px;
+}
+
+.migration-source-artifact-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.migration-source-artifact-list span {
+	background: rgba(216, 184, 102, 0.12);
+	border: 1px solid rgba(216, 184, 102, 0.24);
+	border-radius: 999px;
+	color: #fff8dd;
+	font-size: 12px;
+	font-weight: 900;
+	line-height: 1.25;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	padding: 5px 8px;
+}

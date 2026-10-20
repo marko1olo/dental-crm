@@ -50,7 +50,7 @@ export const calculateAnesthesiaSchema = z.object({
 		.describe("Планируемое врачом количество карпул (по умолчанию 1)"),
 });
 
-export type CalculateAnesthesiaInput = z.infer<typeof calculateAnesthesiaSchema>;
+export type CalculateAnesthesiaInput = z.input<typeof calculateAnesthesiaSchema>;
 
 export interface CalculateAnesthesiaResult {
 	readonly drugName: string;

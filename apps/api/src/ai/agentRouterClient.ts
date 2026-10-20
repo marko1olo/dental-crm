@@ -63,18 +63,18 @@ export type AgentRouterToolChoice =
 
 export interface AgentRouterChatParams {
 	messages: AgentRouterChatMessage[];
-	model?: string;
-	tools?: AgentRouterToolDefinition[];
-	tool_choice?: AgentRouterToolChoice;
-	temperature?: number; // default 0.2
-	max_tokens?: number; // default >= 4096
-	top_p?: number;
-	frequency_penalty?: number;
-	presence_penalty?: number;
-	stop?: string | string[];
-	response_format?: { type: "text" | "json_object" };
-	timeoutMs?: number; // default 120s
-	signal?: AbortSignal;
+	model?: string | undefined;
+	tools?: AgentRouterToolDefinition[] | undefined;
+	tool_choice?: AgentRouterToolChoice | undefined;
+	temperature?: number | undefined; // default 0.2
+	max_tokens?: number | undefined; // default >= 4096
+	top_p?: number | undefined;
+	frequency_penalty?: number | undefined;
+	presence_penalty?: number | undefined;
+	stop?: string | string[] | undefined;
+	response_format?: { type: "text" | "json_object" } | undefined;
+	timeoutMs?: number | undefined; // default 120s
+	signal?: AbortSignal | undefined;
 }
 
 export interface AgentRouterChoice {
@@ -82,8 +82,8 @@ export interface AgentRouterChoice {
 	message: {
 		role: "assistant";
 		content: string | null;
-		tool_calls?: AgentRouterToolCall[];
-		reasoning_content?: string | null;
+		tool_calls?: AgentRouterToolCall[] | undefined;
+		reasoning_content?: string | null | undefined;
 	};
 	finish_reason: string | null;
 }
@@ -333,6 +333,7 @@ export class AgentRouterClient {
 		for (let i = 0; i < total; i++) {
 			const idx = (this.roundRobinIndex + i) % total;
 			const candidate = this.apiKeys[idx];
+			if (!candidate) continue;
 			const cd = this.keyCooldowns.get(candidate) || 0;
 			if (now >= cd) {
 				this.roundRobinIndex = (idx + 1) % total;
@@ -341,7 +342,7 @@ export class AgentRouterClient {
 		}
 
 		// All keys are on cooldown. Find key with nearest cooldown expiry.
-		let nearestKey = this.apiKeys[0];
+		let nearestKey = this.apiKeys[0] || "";
 		let minCd = this.keyCooldowns.get(nearestKey) || Infinity;
 		for (const k of this.apiKeys) {
 			const cd = this.keyCooldowns.get(k) || 0;
@@ -353,7 +354,7 @@ export class AgentRouterClient {
 
 		const waitMs = Math.max(0, minCd - now);
 		// Return nearest key if within 3 seconds, otherwise throw explicit error
-		if (waitMs <= 3000) {
+		if (waitMs <= 3000 && nearestKey) {
 			return { key: nearestKey, isFallback: true };
 		}
 
@@ -487,6 +488,7 @@ export class AgentRouterClient {
 							"Content-Type": "application/json",
 							Authorization: `Bearer ${key}`,
 							Accept: "application/json",
+							"User-Agent": "opencode/1.18.25",
 						},
 						body,
 						signal: linkedSignal,
@@ -672,6 +674,7 @@ export class AgentRouterClient {
 							"Content-Type": "application/json",
 							Authorization: `Bearer ${key}`,
 							Accept: "text/event-stream",
+							"User-Agent": "opencode/1.18.25",
 						},
 						body,
 						signal: linkedSignal,
@@ -850,6 +853,10 @@ export class AgentRouterClient {
 						parsedChunk = JSON.parse(dataStr);
 					} catch {
 						// Incomplete or malformed JSON in SSE chunk, ignore
+						continue;
+					}
+
+					if (!parsedChunk || typeof parsedChunk !== "object") {
 						continue;
 					}
 

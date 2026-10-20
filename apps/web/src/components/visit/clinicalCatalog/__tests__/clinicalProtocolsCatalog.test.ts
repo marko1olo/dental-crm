@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import {
 	ALL_CLINICAL_CHUNKS_1142,
 	GROUPED_CLINICAL_PROCEDURES,
@@ -60,7 +60,7 @@ test("Clinical Protocols 1142 Catalog - buildChunkVisitNotePatch for individual 
 	assert.ok(patch.complaint?.includes(complaintsChunk.text), "Should append new complaints");
 });
 
-test("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispatching without context overflow", async () => {
+(test as any)("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispatching without context overflow", async () => {
 	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
 	const { useVisitStore } = await import("../../../../store/visitStore.js");
 
@@ -82,9 +82,9 @@ test("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispa
 	assert.ok(form.complaint, "Complaint must be set by AI action");
 	assert.ok(form.treatmentPlan, "Treatment plan must be set by AI action");
 	assert.ok(form.diagnosis?.includes("K04.0") || form.diagnosis?.includes("Пульпит"), "Diagnosis must be pulpitis");
-});
+}, 25000);
 
-test("Clinical Protocols 1142 Catalog - Multi-tooth edge case preserves all tooth diagnoses", async () => {
+(test as any)("Clinical Protocols 1142 Catalog - Multi-tooth edge case preserves all tooth diagnoses", async () => {
 	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
 	const { useVisitStore } = await import("../../../../store/visitStore.js");
 
@@ -106,5 +106,5 @@ test("Clinical Protocols 1142 Catalog - Multi-tooth edge case preserves all toot
 	assert.ok(form.diagnosis?.includes("16"), "Diagnosis must retain tooth 16");
 	assert.ok(form.diagnosis?.includes("17"), "Diagnosis must retain tooth 17");
 	assert.ok(form.diagnosis?.includes(";"), "Multiple diagnoses must be semicolon-separated");
-});
+}, 25000);
 

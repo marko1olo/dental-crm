@@ -161,14 +161,15 @@ export const PatientWorkspaceModalsWrapper: React.FC<PatientWorkspaceModalsWrapp
 								logic.dashboard?.clinicSettings?.profile?.legalName ||
 								logic.dashboard?.clinicSettings?.profile?.brandName ||
 								logic.dashboard?.organization?.name ||
-								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+								"Медицинская организация"
 							}
-							clinicInn={logic.dashboard?.clinicSettings?.profile?.inn || "7701000000"}
-							clinicKpp={logic.dashboard?.clinicSettings?.profile?.kpp || "770101001"}
-							clinicOgrn={logic.dashboard?.clinicSettings?.profile?.ogrn || "1127746000000"}
+							clinicInn={logic.dashboard?.clinicSettings?.profile?.inn || logic.dashboard?.organization?.inn || ""}
+							clinicKpp={logic.dashboard?.clinicSettings?.profile?.kpp || logic.dashboard?.organization?.kpp || ""}
+							clinicOgrn={logic.dashboard?.clinicSettings?.profile?.ogrn || logic.dashboard?.organization?.ogrn || ""}
 							clinicLicenseNumber={
 								logic.dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
-								"ЛО41-01137-77/00368421"
+								logic.dashboard?.organization?.medicalLicenseNumber ||
+								""
 							}
 							clinicLicenseDate={logic.dashboard?.clinicSettings?.profile?.medicalLicenseDate}
 							clinicAddress={logic.dashboard?.clinicSettings?.profile?.address}

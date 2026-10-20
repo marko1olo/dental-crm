@@ -13,7 +13,7 @@ import type { MobilePatientShowcaseOverlayProps } from "./types.js";
 /**
  * MobilePatientShowcaseOverlay: Chairside presentation mode for patient education.
  * Provides 1-click 'Before/After' comparison, large readable labels, hides confusing
- * technical sensor parameters, and links findings directly to Form 043/u clinical protocol.
+ * technical sensor parameters, and links findings directly to medical record protocol.
  */
 export const MobilePatientShowcaseOverlay: React.FC<MobilePatientShowcaseOverlayProps> = ({
 	isOpen,
@@ -46,8 +46,8 @@ export const MobilePatientShowcaseOverlay: React.FC<MobilePatientShowcaseOverlay
 			} else {
 				showToast(
 					next
-						? "Снимок прикреплен к протоколу 043/у (Осмотр и диагностика)"
-						: "Привязка к 043/у снята",
+						? "Снимок прикреплен к медицинской карте приёма"
+						: "Привязка к медицинской карте снята",
 					next ? "success" : "info"
 				);
 			}
@@ -179,7 +179,7 @@ export const MobilePatientShowcaseOverlay: React.FC<MobilePatientShowcaseOverlay
 						<span>{comparisonMode === "split" ? "Одиночный вид" : "Сравнение 'До/После'"}</span>
 					</button>
 
-					{/* Protocol 043/u Attachment Toggle */}
+					{/* Clinical Protocol Attachment Toggle */}
 					<button
 						type="button"
 						onClick={handleToggleAttach043}
@@ -191,7 +191,7 @@ export const MobilePatientShowcaseOverlay: React.FC<MobilePatientShowcaseOverlay
 						data-testid="btn-toggle-attach-protocol-043"
 					>
 						{attachedTo043 ? <Check size={16} /> : <FileText size={16} />}
-						<span>{attachedTo043 ? "В протоколе 043/у" : "+ В протокол 043/у"}</span>
+						<span>{attachedTo043 ? "В медкарте приёма" : "+ В медкарту приёма"}</span>
 					</button>
 				</div>
 			</div>

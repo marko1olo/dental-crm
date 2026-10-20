@@ -15,20 +15,13 @@ export const PatientRecallsCohortsTab: React.FC<PatientRecallsCohortsTabProps> =
 }) => {
 	return (
 		<main className="recall-content-area" data-testid="recall-cohorts-view">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "12px",
-				}}
-			>
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
 				<div>
 					<h3 style={{ margin: 0, fontSize: "1.0625rem", color: "var(--rm-text-main)" }}>
-						Когортная аналитика возвращаемости и LTV recall-пациентов
+						Профосмотры и ретеншн пациентов
 					</h3>
 					<p style={{ margin: "2px 0 0", fontSize: "0.8125rem", color: "var(--rm-text-muted)" }}>
-						Группировка пациентов по периодам визитов и оценка эффективности повторного привлечения
+						Контроль регулярных визитов и возвращаемости к лечащему врачу
 					</p>
 				</div>
 
@@ -50,21 +43,20 @@ export const PatientRecallsCohortsTab: React.FC<PatientRecallsCohortsTabProps> =
 				</div>
 			</div>
 
-			<div className="recall-table-wrap">
+			<PatientRecallsCohortsMetrics cohortReport={cohortReport} />
+
+			<div className="recall-table-wrap" style={{ marginTop: "16px" }}>
 				<table className="recall-table">
 					<thead>
 						<tr>
-							<th scope="col">Когорта (Период)</th>
-							<th scope="col">Пациентов</th>
+							<th scope="col">Период визита</th>
+							<th scope="col">Всего</th>
 							<th scope="col">Пора звать</th>
 							<th scope="col">Приглашены</th>
 							<th scope="col">Записались</th>
-							<th scope="col">Пришли</th>
-							<th scope="col">Отказ</th>
-							<th scope="col">Retention Rate %</th>
+							<th scope="col">Дошли</th>
 							<th scope="col">Конверсия %</th>
-							<th scope="col">Средний LTV</th>
-							<th scope="col">Выручка визитов</th>
+							<th scope="col">Выручка</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -75,21 +67,12 @@ export const PatientRecallsCohortsTab: React.FC<PatientRecallsCohortsTabProps> =
 								<td>{cohort.dueCount}</td>
 								<td>{cohort.contactedCount}</td>
 								<td>{cohort.scheduledCount}</td>
-								<td style={{ color: "var(--rm-success)", fontWeight: 700 }}>
-									{cohort.completedCount}
-								</td>
-								<td style={{ color: "var(--rm-danger)" }}>{cohort.declinedCount}</td>
-								<td>
-									<span className="recall-badge recall-badge--upcoming" style={{ fontWeight: 800 }}>
-										{cohort.retentionRatePercent}%
-									</span>
-								</td>
+								<td style={{ color: "var(--rm-success)", fontWeight: 700 }}>{cohort.completedCount}</td>
 								<td>
 									<span className="recall-badge recall-badge--completed">
 										{cohort.conversionRatePercent}%
 									</span>
 								</td>
-								<td>{cohort.averageLtvRub.toLocaleString("ru-RU")} ₽</td>
 								<td style={{ fontWeight: 700, color: "var(--rm-text-main)" }}>
 									{cohort.totalRevenueRub.toLocaleString("ru-RU")} ₽
 								</td>
@@ -98,8 +81,6 @@ export const PatientRecallsCohortsTab: React.FC<PatientRecallsCohortsTabProps> =
 					</tbody>
 				</table>
 			</div>
-
-			<PatientRecallsCohortsMetrics cohortReport={cohortReport} />
 		</main>
 	);
 };

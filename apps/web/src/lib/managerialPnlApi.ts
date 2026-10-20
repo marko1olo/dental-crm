@@ -3,6 +3,7 @@
  */
 
 import type { ManagerialPnlReport } from "@dental/shared";
+import { handleApiResponse } from "./apiResponseHandler.js";
 
 export interface FetchPnlParams {
 	from?: string | undefined; // YYYY-MM-DD
@@ -19,9 +20,5 @@ export async function fetchManagerialPnl(
 
 	const url = `/api/reports/pnl${query.toString() ? `?${query.toString()}` : ""}`;
 	const res = await fetch(url, { method: "GET", headers });
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка загрузки P&L отчета" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ data: ManagerialPnlReport }>(res, "Ошибка загрузки P&L отчета");
 }

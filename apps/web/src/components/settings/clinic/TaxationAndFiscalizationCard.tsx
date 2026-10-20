@@ -69,7 +69,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 								Налогообложение (СНО) и касса 54-ФЗ
 							</h3>
 							<span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
-								ФФД {ffdVersion} · {kkmModel}
+								Кассовый чек ({ffdVersion}) · {kkmModel}
 							</span>
 							{saveStatus === "saved" && !isLoading && (
 								<span

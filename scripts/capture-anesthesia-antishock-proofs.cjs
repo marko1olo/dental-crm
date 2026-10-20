@@ -43,7 +43,7 @@ async function main() {
     // 1. CAPTURE CHAIRSIDE ANESTHESIA COCKPIT & PRESETS
     // ─────────────────────────────────────────────────────────────
     console.log("Navigating to live chairside anesthesia cockpit...");
-    await page.goto(`${WEB_BASE}/?anesthesia=1`, {
+    await page.goto(`${WEB_BASE}/?demo=true&anesthesia=1`, {
       waitUntil: "domcontentloaded",
       timeout: 30000,
     });
@@ -100,10 +100,44 @@ async function main() {
     await saveProof(page, "anesthesia_cockpit_mobile_dark.png");
 
     // ─────────────────────────────────────────────────────────────
+    // 1.5 CAPTURE CARDIO RISK / BETA-BLOCKERS YELLOW WARNING BADGE
+    // ─────────────────────────────────────────────────────────────
+    console.log("Navigating to cardio-risk patient anesthesia cockpit...");
+    await page.goto(`${WEB_BASE}/?demo=true&anesthesia=1&beta=1&cardio=1`, {
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
+    });
+    await page.locator('[data-testid="anesthesia-quick-bar"]').waitFor({ state: "visible", timeout: 15000 });
+    // Click on Ultracain Forte 1:100k
+    await page.locator('button:has-text("Ультракаин Д-С форте")').click();
+    await page.locator('[data-testid="anesthesia-cardio-100k-warning-badge"]').waitFor({ state: "visible", timeout: 5000 });
+
+    // PC Light Cardio Warning
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(() => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      document.body.setAttribute("data-theme", "light");
+    });
+    await page.waitForTimeout(600);
+    await saveProof(page, "anesthesia_cardio_warning_pc_light.png");
+
+    // PC Dark Cardio Warning
+    await page.evaluate(() => {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
+      document.body.setAttribute("data-theme", "dark");
+    });
+    await page.waitForTimeout(600);
+    await saveProof(page, "anesthesia_cardio_warning_pc_dark.png");
+
+    // ─────────────────────────────────────────────────────────────
     // 2. CAPTURE EMERGENCY RESCUE HUD (TRIGGERED BY АНТИШОК)
     // ─────────────────────────────────────────────────────────────
     console.log("Navigating to live Emergency Antishock HUD (Order 786n)...");
-    await page.goto(`${WEB_BASE}/?emergency=1`, {
+    await page.goto(`${WEB_BASE}/?demo=true&emergency=1`, {
       waitUntil: "domcontentloaded",
       timeout: 30000,
     });

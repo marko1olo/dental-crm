@@ -87,7 +87,7 @@ const DRAWER_SECTIONS: readonly DrawerSection[] = [
 			{
 				id: "documents",
 				label: "Документы и справки",
-				subtitle: "ИДС 1051н, договоры и акты",
+				subtitle: "Информированные согласия, договоры и акты",
 				icon: FileText,
 				badgeBg: "rgba(59, 130, 246, 0.15)",
 				iconColor: "var(--blue-fg, #3b82f6)",

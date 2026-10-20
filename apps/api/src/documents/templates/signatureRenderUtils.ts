@@ -140,7 +140,7 @@ export function issueSignatureAttestationBlock(document: GeneratedDocument) {
       ${row("Дата и время подписи/выдачи", attestation.signedAt)}
       ${row("Получатель", `${attestation.recipientFullName}, ${attestation.recipientRole}`)}
       ${row("Сотрудник клиники", `${attestation.staffFullName}, ${attestation.staffRole}`)}
-      ${row("Проверка", "личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр")}
+      ${row("Проверка", "личность получателя проверена; текст документа сверен; получатель и представитель клиники подписали экземпляр")}
       ${attestation.note ? row("Заметка выдачи", attestation.note) : ""}
     </table>
   </section>`;

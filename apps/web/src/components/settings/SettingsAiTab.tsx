@@ -23,6 +23,7 @@ import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type { RecognitionPreset } from "../../settingsStaticData";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { speechGatewayCanUpload as canonicalSpeechGatewayCanUpload } from "../../helpers/speechHelpers";
 import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
 /* Форматтер предупреждений — константа модуля, а не пропс. */
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
@@ -61,7 +62,7 @@ type SettingsAiTabProps = {
 	sendRecognitionResultToImport: () => void;
 	speechGatewayHealthReport: SpeechGatewayHealthReport | null;
 	refreshSpeechRuntime: (options: { silent?: boolean }) => void | Promise<void>;
-	speechGatewayCanUpload: (status: SpeechGatewayStatus | null) => boolean;
+	speechGatewayCanUpload?: (status: SpeechGatewayStatus | null) => boolean;
 	speechGatewayStatus: SpeechGatewayStatus | null;
 };
 
@@ -98,6 +99,11 @@ export function SettingsAiTab() {
 		speechGatewayStatus,
 	} = mergedProps;
 
+	const canUpload =
+		typeof speechGatewayCanUpload === "function"
+			? speechGatewayCanUpload
+			: canonicalSpeechGatewayCanUpload;
+
 	const typedRecognitionPresets = recognitionPresets ?? [];
 	const typedSpeechProviders = speechProviders ?? [];
 	const typedRecognitionJob = recognitionJob;
@@ -121,11 +127,11 @@ export function SettingsAiTab() {
 				{speechGatewayStatus ? (
 					<div className="ai-gateway-status">
 						<div
-							className={`ai-gateway-status-pill ${speechGatewayCanUpload(speechGatewayStatus) ? "success" : "warning"}`}
+							className={`ai-gateway-status-pill ${canUpload(speechGatewayStatus) ? "success" : "warning"}`}
 						>
 							<span>Статус сервера</span>
 							<strong>
-								{speechGatewayCanUpload(speechGatewayStatus)
+								{canUpload(speechGatewayStatus)
 									? "Подключено"
 									: "Не активно"}
 							</strong>

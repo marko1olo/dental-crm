@@ -4,6 +4,7 @@
  */
 
 export * from "./taxDeduction.js";
+export * from "./doctorPayrollEngine.js";
 export * from "./doctorPayrollT51.js";
 export * from "../payroll/formT13TimesheetEngine.js";
 export * from "./familyDeposit.js";

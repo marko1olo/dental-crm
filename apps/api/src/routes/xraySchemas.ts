@@ -7,7 +7,7 @@ import { z } from "zod";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { transactionStorage } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { xrayScans } from "../db/schema.js";
+import { imagingStudies, xrayScans } from "../db/schema.js";
 
 // Schemas
 
@@ -122,6 +122,32 @@ export async function persistXrayAnalysisOutcome(
 					eq(xrayScans.organizationId, job.organizationId),
 				),
 			);
+
+		if (patch.aiSummary !== undefined || patch.toothCode !== undefined) {
+			try {
+				const studyPatch: {
+					aiSummary?: string | null;
+					toothCode?: string | null;
+					region?: string | null;
+				} = {};
+				if (patch.aiSummary !== undefined) studyPatch.aiSummary = patch.aiSummary;
+				if (patch.toothCode !== undefined) {
+					studyPatch.toothCode = patch.toothCode;
+					studyPatch.region = patch.toothCode ? `Зуб ${patch.toothCode}` : null;
+				}
+				await tx
+					.update(imagingStudies)
+					.set(studyPatch)
+					.where(
+						and(
+							eq(imagingStudies.id, job.scanId),
+							eq(imagingStudies.organizationId, job.organizationId),
+						),
+					);
+			} catch {
+				// Record might not exist in imagingStudies
+			}
+		}
 	});
 }
 

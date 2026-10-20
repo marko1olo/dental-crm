@@ -1,11 +1,11 @@
-import React from "react";
-import { Check, Copy, FileText, Printer, RotateCcw, ShieldCheck } from "lucide-react";
 import type { OneCDocumentType } from "@dental/shared";
-import { OneCExportButton } from "../../OneCExportButton";
-import { showToast } from "../../../GlobalToast";
-import { formatMoneyRu } from "./fiscalModalRefundLogic";
-import type { FiscalModalTab } from "./fiscalModalTypes";
-import type { FiscalReceipt54FzResult } from "../../order804nFiscalEngine";
+import type React from "react";
+import { showToast } from "../../../GlobalToast.js";
+import type { OneCExportItem } from "../../OneCExportButton.js";
+import type { FiscalReceipt54FzResult } from "../../order804nFiscalEngine.js";
+import { FiscalFooterAuxActions } from "./FiscalFooterAuxActions.js";
+import { FiscalFooterPaymentActions } from "./FiscalFooterPaymentActions.js";
+import type { FiscalModalTab } from "./fiscalModalTypes.js";
 
 export interface FiscalReceiptFooterProps {
 	activeTab: FiscalModalTab;
@@ -17,7 +17,11 @@ export interface FiscalReceiptFooterProps {
 	handlePrintSalesSlip: () => void;
 	handleExecuteFiscalization: () => void;
 	oneCXmlPreview: string;
-	showToast?: (msg: string, type: "success" | "error" | "info", duration?: number) => void;
+	showToast?: (
+		msg: string,
+		type: "success" | "error" | "info",
+		duration?: number,
+	) => void;
 	oneCDocType: OneCDocumentType;
 	actNumber: string;
 	oneCDocDate: string;
@@ -26,7 +30,7 @@ export interface FiscalReceiptFooterProps {
 	oneCClinicKpp: string;
 	patientName: string;
 	contractNumber: string;
-	activeItems: readonly any[];
+	activeItems: readonly OneCExportItem[];
 	patientId?: string | undefined;
 	customerContact?: string | undefined;
 	patientPhone?: string | undefined;
@@ -40,332 +44,21 @@ export interface FiscalReceiptFooterProps {
 	handlePrintCertificate?: () => void;
 }
 
-export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
-	activeTab,
-	totalSumRub,
-	remainingRub,
-	allocation,
-	isFiscalizing,
-	onClose,
-	handlePrintSalesSlip,
-	handleExecuteFiscalization,
-	oneCXmlPreview,
-	showToast: propShowToast,
-	oneCDocType,
-	actNumber,
-	oneCDocDate,
-	clinicName,
-	oneCClinicInn,
-	oneCClinicKpp,
-	patientName,
-	contractNumber,
-	activeItems,
-	patientId,
-	customerContact,
-	patientPhone,
-	oneCPatientAddress,
-	cashierFullName,
-	handleCopyActData,
-	handleCopyCertData,
-	handlePrintAct,
-	handlePrintCertificate,
-	refundFiscalData,
-	fiscalReceipt,
-}) => {
-	const notify = propShowToast || showToast;
+/**
+ * Footer orchestrator for FiscalReceiptModal.
+ * Mandate 8b: <= 120 lines.
+ */
+export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = (
+	props,
+) => {
+	const notify = props.showToast || showToast;
 
 	return (
 		<div className="shrink-0 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-			{activeTab === "payment" && (
-				<>
-					<div className="text-xs text-[var(--muted,#64748b)] flex items-center justify-between sm:justify-start gap-2">
-						<span>
-							К оплате:{" "}
-							<strong className="text-sm font-mono text-[var(--ink,#0f172a)] font-bold">
-								{formatMoneyRu(totalSumRub)}
-							</strong>
-						</span>
-						<span>·</span>
-						<span
-							className={
-								allocation.isFullyAllocated
-									? "text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"
-									: "text-amber-600 dark:text-amber-400 font-bold"
-							}
-						>
-							{allocation.isFullyAllocated ? (
-								<>
-									<Check size={14} className="shrink-0" />
-									<span>Сумма распределена</span>
-								</>
-							) : (
-								`Остаток: ${formatMoneyRu(remainingRub)}`
-							)}
-						</span>
-					</div>
-					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
-						<div className="flex items-center gap-2 w-full sm:w-auto">
-							<button
-								type="button"
-								onClick={handlePrintSalesSlip}
-								className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-3 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
-								data-testid="btn-print-sales-slip-modal"
-								title="Напечатать товарный чек без отправки в налоговую"
-							>
-								<FileText size={14} className="text-teal-600" />
-								<span>Товарный чек</span>
-							</button>
-							<button
-								type="button"
-								onClick={onClose}
-								className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center cursor-pointer transition-colors"
-							>
-								Закрыть
-							</button>
-						</div>
-						<button
-							type="button"
-							onClick={() => handleExecuteFiscalization()}
-							disabled={isFiscalizing}
-							data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
-							title={isFiscalizing ? "Идет печать чека на кассе..." : undefined}
-							className="w-full sm:w-auto min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 shrink-0"
-						>
-							<ShieldCheck size={16} />
-							<span>
-								{isFiscalizing
-									? "Печать чека..."
-									: totalSumRub === 0
-										? "Пробить чек 0.00 ₽ (Гарантия)"
-										: `Пробить чек на ${formatMoneyRu(totalSumRub)}`}
-							</span>
-						</button>
-					</div>
-				</>
-			)}
-
-			{activeTab === "oneC" && (
-				<>
-					<div className="flex items-center gap-2 flex-wrap">
-						<button
-							type="button"
-							onClick={() => {
-								navigator.clipboard.writeText(oneCXmlPreview);
-								notify("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
-							}}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
-						>
-							<Copy size={14} />
-							<span>Копировать XML</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => {
-								const summaryText = `ВЫГРУЗКА В 1С:ПРЕДПРИЯТИЕ 8.3\nДокумент: ${oneCDocType === "act" ? "Акт выполненных работ" : "Счет на оплату"} № ${actNumber} от ${oneCDocDate}\nКлиника: ${clinicName} (ИНН ${oneCClinicInn} / КПП ${oneCClinicKpp})\nПациент: ${patientName} (Договор ${contractNumber})\nПозиций: ${activeItems.length}\nСумма: ${formatMoneyRu(totalSumRub)} (Без НДС - пп. 2 п. 2 ст. 149 НК РФ)`;
-								navigator.clipboard.writeText(summaryText);
-								notify("Сводка для бухгалтера скопирована!", "success", 2500);
-							}}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
-						>
-							<FileText size={14} />
-							<span>Сводка для бухгалтерии</span>
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<OneCExportButton
-							actNumber={actNumber}
-							documentDate={oneCDocDate}
-							docType={oneCDocType}
-							patientName={patientName}
-							patientId={patientId}
-							patientPhone={customerContact || patientPhone}
-							patientAddress={oneCPatientAddress}
-							doctorName={cashierFullName}
-							clinicName={clinicName}
-							clinicInn={oneCClinicInn}
-							clinicKpp={oneCClinicKpp}
-							items={activeItems as any}
-							totalRub={totalSumRub}
-							contractNumber={contractNumber}
-							contractDate={oneCDocDate}
-							variant="primary"
-							label="Экспорт в 1С (XML)"
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white"
-						/>
-					</div>
-				</>
-			)}
-
-			{activeTab === "act" && (
-				<>
-					<button
-						type="button"
-						onClick={handleCopyActData}
-						className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
-					>
-						<Copy size={14} />
-						<span>Скопировать текст Акта</span>
-					</button>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={handlePrintAct || (() => window.print())}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
-						>
-							<Printer size={15} />
-							<span>Печать акта лечения</span>
-						</button>
-					</div>
-				</>
-			)}
-
-			{activeTab === "certificate" && (
-				<>
-					<button
-						type="button"
-						onClick={handleCopyCertData}
-						className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
-					>
-						<Copy size={14} />
-						<span>Скопировать данные справки</span>
-					</button>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={handlePrintCertificate || (() => window.print())}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
-						>
-							<Printer size={15} />
-							<span>Печать справки для налогового вычета</span>
-						</button>
-					</div>
-				</>
-			)}
-
-			{activeTab === "refund" && (
-				<>
-					<div className="text-xs text-[var(--muted,#64748b)]">
-						К возврату:{" "}
-						<strong className="text-sm font-mono text-rose-600 dark:text-rose-400 font-bold">
-							{formatMoneyRu(refundFiscalData.totalRub)}
-						</strong>
-					</div>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={() => handleExecuteFiscalization()}
-							disabled={isFiscalizing}
-							title={
-								isFiscalizing
-									? "Идет печать чека возврата на кассе..."
-									: refundFiscalData.totalRub <= 0
-										? "Укажите сумму возврата больше 0 ₽"
-										: undefined
-							}
-							data-testid="btn-refund-footer-execute"
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
-						>
-							<RotateCcw size={15} />
-							<span>
-								{isFiscalizing
-									? "Печать чека..."
-									: `Пробить чек возврата на ${formatMoneyRu(refundFiscalData.totalRub)}`}
-							</span>
-						</button>
-					</div>
-				</>
-			)}
-
-			{activeTab === "correction" && (
-				<>
-					<div className="text-xs text-[var(--muted,#64748b)]">
-						Сумма коррекции:{" "}
-						<strong className="text-sm font-mono text-amber-600 dark:text-amber-400 font-bold">
-							{formatMoneyRu(totalSumRub)}
-						</strong>
-					</div>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={() => handleExecuteFiscalization()}
-							disabled={isFiscalizing}
-							title={isFiscalizing ? "Идет печать чека коррекции на кассе..." : undefined}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
-						>
-							<ShieldCheck size={15} />
-							<span>
-								{isFiscalizing
-									? "Печать чека..."
-									: `Пробить чек коррекции на ${formatMoneyRu(totalSumRub)}`}
-							</span>
-						</button>
-					</div>
-				</>
-			)}
-
-			{activeTab === "preview" && (
-				<>
-					<div className="text-xs text-[var(--muted,#64748b)]">
-						Кассовый чек ·{" "}
-						<strong className="font-mono text-[var(--ink,#0f172a)]">
-							{fiscalReceipt.receiptNumber}
-						</strong>
-					</div>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-0 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
-						>
-							<Printer size={15} />
-							<span>Печать чека</span>
-						</button>
-					</div>
-				</>
+			{props.activeTab === "payment" ? (
+				<FiscalFooterPaymentActions {...props} />
+			) : (
+				<FiscalFooterAuxActions {...props} notify={notify} />
 			)}
 		</div>
 	);

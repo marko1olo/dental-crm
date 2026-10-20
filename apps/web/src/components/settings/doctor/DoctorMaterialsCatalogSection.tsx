@@ -11,43 +11,46 @@
  * - Мандат 8e: врачебная автономия (1 клик = автосохранение).
  */
 
+import { Activity, Check, Copy, Search, Sparkles, X } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
-	Activity,
-	Check,
-	Copy,
-	Search,
-	Sparkles,
-	X,
-} from "lucide-react";
-import { showToast } from "../../GlobalToast";
-import {
 	ADHESIVE_OPTIONS,
-	ANESTHETIC_OPTIONS,
-	COMPOSITE_OPTIONS,
-	ETCHANT_OPTIONS,
-	ISOLATION_OPTIONS,
-	useDoctorPreferencesStore,
 	type AdhesiveSystem,
+	ANESTHETIC_OPTIONS,
 	type AnestheticKey,
 	type ClinicalMaterialOption,
+	COMPOSITE_OPTIONS,
 	type CompositeMaterial,
+	ETCHANT_OPTIONS,
 	type EtchantGel,
+	ISOLATION_OPTIONS,
 	type IsolationType,
+	useDoctorPreferencesStore,
 } from "../../../store/doctorPreferencesStore";
+import { showToast } from "../../GlobalToast";
 import { buildDoctorPersonalizedTherapySnippet } from "../protocolSnippetHelpers";
 
-type MaterialCategoryTab = "composites" | "adhesives" | "anesthetics" | "isolation" | "etchants";
+type MaterialCategoryTab =
+	| "composites"
+	| "adhesives"
+	| "anesthetics"
+	| "isolation"
+	| "etchants";
 
 export interface DoctorMaterialsCatalogSectionProps {
 	readonly className?: string | undefined;
 }
 
-export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterialsCatalogSectionProps) {
+export function DoctorMaterialsCatalogSection({
+	className = "",
+}: DoctorMaterialsCatalogSectionProps) {
 	const preferences = useDoctorPreferencesStore((s) => s.preferences);
-	const updatePreferences = useDoctorPreferencesStore((s) => s.updatePreferences);
+	const updatePreferences = useDoctorPreferencesStore(
+		(s) => s.updatePreferences,
+	);
 
-	const [activeMaterialTab, setActiveMaterialTab] = useState<MaterialCategoryTab>("composites");
+	const [activeMaterialTab, setActiveMaterialTab] =
+		useState<MaterialCategoryTab>("composites");
 	const [materialSearchQuery, setMaterialSearchQuery] = useState<string>("");
 
 	// Фильтрация материалов по поисковому запросу и активной вкладке
@@ -119,7 +122,10 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 				updatePreferences({ defaultEtchant: item.id as EtchantGel });
 				break;
 		}
-		showToast(`Материал «${item.name}» выбран и подтягивается в протокол ЕМК`, "success");
+		showToast(
+			`Материал «${item.name}» выбран и подтягивается в протокол ЕМК`,
+			"success",
+		);
 	};
 
 	// Персонализированный сниппет протокола ЕМК для предпросмотра
@@ -141,10 +147,13 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 				<div>
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Activity size={15} className="text-teal-600" />
-						<span>Реестр клинических материалов (90% рынка РФ/СНГ) и изоляция</span>
+						<span>
+							Реестр клинических материалов (90% рынка РФ/СНГ) и изоляция
+						</span>
 					</label>
 					<p className="m-0 text-[11px] text-[var(--muted)]">
-						Выбор основного материала с автоматической подстановкой в протокол медицинской карты
+						Выбор основного материала с автоматической подстановкой в протокол
+						медицинской карты
 					</p>
 				</div>
 				{/* Поиск материала — Canonical Dente Search Wrap */}
@@ -174,11 +183,26 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 			{/* Вкладки категорий материалов — Canonical Dente Filter Chips (Mandate 8zf) */}
 			<div className="dente-filter-chips border-b border-[var(--line)] pb-2">
 				{[
-					{ id: "composites" as const, label: `Композиты (${COMPOSITE_OPTIONS.length})` },
-					{ id: "adhesives" as const, label: `Адгезивы (${ADHESIVE_OPTIONS.length})` },
-					{ id: "anesthetics" as const, label: `Анестетики (${ANESTHETIC_OPTIONS.length})` },
-					{ id: "isolation" as const, label: `Изоляция (${ISOLATION_OPTIONS.length})` },
-					{ id: "etchants" as const, label: `Протравка (${ETCHANT_OPTIONS.length})` },
+					{
+						id: "composites" as const,
+						label: `Композиты (${COMPOSITE_OPTIONS.length})`,
+					},
+					{
+						id: "adhesives" as const,
+						label: `Адгезивы (${ADHESIVE_OPTIONS.length})`,
+					},
+					{
+						id: "anesthetics" as const,
+						label: `Анестетики (${ANESTHETIC_OPTIONS.length})`,
+					},
+					{
+						id: "isolation" as const,
+						label: `Изоляция (${ISOLATION_OPTIONS.length})`,
+					},
+					{
+						id: "etchants" as const,
+						label: `Протравка (${ETCHANT_OPTIONS.length})`,
+					},
 				].map((tab) => {
 					const isActive = activeMaterialTab === tab.id;
 					return (
@@ -227,11 +251,17 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 									</span>
 								</div>
 								{isSelected ? (
-									<span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0" title="Выбран по умолчанию">
+									<span
+										className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0"
+										title="Выбран по умолчанию"
+									>
 										<Check size={12} className="stroke-[3]" />
 									</span>
 								) : (
-									<span className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0" title="Нажмите для выбора" />
+									<span
+										className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0"
+										title="Нажмите для выбора"
+									/>
 								)}
 							</div>
 
@@ -259,7 +289,10 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 				<div className="flex items-center justify-between gap-2">
 					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Sparkles size={14} className="text-teal-600" />
-						<span>Автоматический фрагмент протокола для медкарты с вашими материалами</span>
+						<span>
+							Автоматический фрагмент протокола для медкарты с вашими
+							материалами
+						</span>
 					</span>
 					<button
 						type="button"

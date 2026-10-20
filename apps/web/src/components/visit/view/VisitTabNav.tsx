@@ -12,14 +12,14 @@ export const VISIT_VIEW_TABS: VisitTabItem[] = [
 
 export function VisitTabNav({ activeTab, onTabChange }: VisitTabNavProps) {
 	return (
-		<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.02))] rounded-b-xl min-h-[36px] h-[36px]">
-			<div className="flex items-center gap-1.5 px-2.5 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
+		<div className="relative border-t border-[var(--line)] bg-[var(--paper-soft)] rounded-b-xl min-h-[36px] h-9 max-w-full overflow-hidden">
+			<div className="flex items-center gap-1.5 px-2.5 h-9 min-h-[36px] overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 				{VISIT_VIEW_TABS.map((tab) => (
 					<button
 						key={tab.id}
 						type="button"
 						data-testid={tab.testId}
-						className={`visit-subtab-btn ${activeTab === tab.id ? "active" : ""}`}
+						className={`rounded-lg visit-subtab-btn ${activeTab === tab.id ? "active" : ""}`}
 						onClick={() => onTabChange(tab.id)}
 					>
 						{tab.label}

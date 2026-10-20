@@ -65,7 +65,7 @@ export function RadiologyHubCards({
 						</div>
 						<h4 className="text-sm font-bold text-[var(--ink)] mb-1">Прицельные снимки</h4>
 						<p className="text-xs text-[var(--muted)] mb-3 leading-relaxed">
-							Просмотр снимков за &lt;50мс, аппаратные фильтры контрастности, калиброванная линейка и быстрое внесение рентген-нормы.
+							Просмотр снимков за &lt;50мс, аппаратные фильтры контрастности, калиброванная линейка и быстрое внесение рентген-нормы в медицинскую карту.
 						</p>
 					</div>
 					<div className="flex flex-col gap-2 mt-2">

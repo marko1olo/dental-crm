@@ -8,7 +8,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { copilotHitlCards } from "../../../db/schema.js";
 import {
@@ -197,15 +197,25 @@ export class WhatsAppHitLQueue {
 		card.status = "approved";
 		const replyText = (modifiedReply ?? card.draftReply).trim();
 
-		// Update PostgreSQL copilotHitlCards table
+		// Update PostgreSQL copilotHitlCards table with tenant isolation & logging
 		db.update(copilotHitlCards)
 			.set({
 				status: "approved",
 				draftReply: replyText,
 				resolvedAt: new Date(),
 			})
-			.where(eq(copilotHitlCards.id, card.approvalId))
-			.catch(() => {});
+			.where(
+				and(
+					eq(copilotHitlCards.id, card.approvalId),
+					eq(copilotHitlCards.organizationId, card.organizationId),
+				),
+			)
+			.catch((err) => {
+				console.error(
+					`[WhatsAppHitLQueue:ERROR] Failed to persist card approval for ${card.approvalId} (org: ${card.organizationId}):`,
+					err,
+				);
+			});
 
 		let sent = false;
 		if (this.sendCallback) {

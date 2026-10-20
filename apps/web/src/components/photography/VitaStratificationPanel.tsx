@@ -43,7 +43,7 @@ export const VitaStratificationPanel: React.FC<VitaStratificationPanelProps> = (
 					>
 						<option value="">Не выбрано</option>
 						{STUMP_NATURAL_DIE_SHADES.map((nd) => (
-							<option key={nd} value={nd}>{nd}</option>
+							<option key={nd.id} value={nd.id}>{nd.name}</option>
 						))}
 					</select>
 				</div>

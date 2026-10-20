@@ -1,482 +1,381 @@
 /**
  * scripts/capture_treatment_plans.cjs
- *
- * Full, robust capture of Treatment Plans & Estimates in PC Light and Dark modes.
- * Uses safe_playwright.cjs to respect RAM caps and avoid zombie browser processes.
+ * Visual Proof Capture Suite for Treatment Plans & 3-Tier Case Presenter.
+ * 
+ * Required Outputs:
+ * 1. docs/proofs/treatment_plans/pc_light_treatment_plan_stages.png (1440x900)
+ * 2. docs/proofs/treatment_plans/pc_light_3tier_presenter.png (1440x900)
+ * 3. docs/proofs/treatment_plans/pc_dark_3tier_presenter.png (1440x900)
+ * 4. docs/proofs/treatment_plans/mobile_light_treatment_plan.png (390x844)
  */
 
-const path = require("path");
-const fs = require("fs");
-const { launchSafeBrowser } = require("./safe_playwright.cjs");
+const { chromium } = require("playwright");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
 
-const SCREENSHOTS_DIR = path.resolve(__dirname, "../artifacts/screenshots");
-if (!fs.existsSync(SCREENSHOTS_DIR)) {
-	fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+const API_BASE = "http://127.0.0.1:4100";
+const WEB_BASE = "http://127.0.0.1:5173";
+const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans");
+
+async function provisionSession() {
+  const uniqueId = Date.now();
+  console.log(`[Provisioning] Initializing test session tp-${uniqueId}@dente-clinic.ru...`);
+
+  const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      clinicName: "Стоматология ДЕНТЕ Премиум",
+      email: `tp-proof-${uniqueId}@dente-clinic.ru`,
+      password: "Password123!",
+      ownerName: "Д-р Воронов Алексей Владимирович",
+      ownerPin: "1234",
+    }),
+  });
+
+  if (!initRes.ok) {
+    throw new Error(`Clinic setup failed: ${await initRes.text()}`);
+  }
+  const initData = await initRes.json();
+
+  const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-dente-clinic-token": initData.clinicToken,
+    },
+    body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
+  });
+
+  if (!unlockRes.ok) {
+    throw new Error(`Staff unlock failed: ${await unlockRes.text()}`);
+  }
+  const unlockData = await unlockRes.json();
+
+  const headers = {
+    "Content-Type": "application/json",
+    "x-dente-clinic-token": initData.clinicToken,
+    "x-dente-staff-token": unlockData.staffToken,
+  };
+
+  let patientId = null;
+  const pRes = await fetch(`${API_BASE}/api/patients`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      fullName: "Ковалёв Роман Станиславович",
+      birthDate: "1988-04-12",
+      gender: "male",
+      phone: "+7 (999) 888-77-66",
+      allergies: "Бронхиальная астма, аллергия на лидокаин",
+      chronicDiseases: "Хронический гастрит",
+    }),
+  });
+  if (pRes.ok) {
+    const pData = await pRes.json();
+    patientId = pData.patient?.id || pData.id || null;
+    console.log(`[Provisioning] Seeded patient: ${patientId}`);
+  }
+
+  return {
+    clinicToken: initData.clinicToken,
+    staffToken: unlockData.staffToken,
+    ownerUserId: initData.ownerUserId,
+    patientId,
+  };
 }
 
-(async () => {
-	let browser = null;
-	try {
-		console.log("[CAPTURE] Launching Safe Playwright Browser...");
-		browser = await launchSafeBrowser({
-			headless: true,
-		});
+async function applyTheme(page, isDark) {
+  await page.evaluate((dark) => {
+    const theme = dark ? "dark" : "light";
+    localStorage.setItem("dente_theme_mode", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.dataset.theme = theme;
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+      document.documentElement.style.colorScheme = "dark";
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      document.documentElement.style.colorScheme = "light";
+    }
+    if (window.__useThemeStore) {
+      window.__useThemeStore.getState().setThemeMode(theme);
+    }
+  }, isDark);
+  await page.waitForTimeout(600);
+}
 
-		const context = await browser.newContext({
-			viewport: { width: 1440, height: 900 },
-			deviceScaleFactor: 1.5,
-		});
+function verifyAndLog(filePath) {
+  const stats = fs.statSync(filePath);
+  const sizeKb = (stats.size / 1024).toFixed(1);
+  const passed = stats.size >= 20480;
+  console.log(`[Captured] ${path.basename(filePath)} | ${sizeKb} KB | >= 20KB: ${passed ? "PASS" : "FAIL"}`);
+  if (!passed) {
+    throw new Error(`File ${filePath} is under 20KB (${stats.size} bytes)!`);
+  }
+}
 
-		const page = await context.newPage();
+async function main() {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
 
-		page.on("pageerror", (err) => {
-			console.log("[BROWSER PAGE ERROR]:", err.message);
-		});
+  const auth = await provisionSession();
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    args: ["--no-sandbox", "--disable-gpu", "--font-render-hinting=none"],
+  });
 
-		// Mock APIs exactly as in playwright-audit.cjs
-		await page.route("**/api/**", async (route) => {
-			const url = route.request().url();
-			if (url.includes("/api/dashboard")) {
-				await route.fulfill({
-					status: 200,
-					contentType: "application/json",
-					body: JSON.stringify({
-						clinicName: "Стоматология Дент-Премиум",
-						todayIso: "2026-10-06",
-						clinicSettings: {
-							profile: {
-								id: "1",
-								clinicName: "Стоматология Дент-Премиум",
-								mode: "one_chair",
-								defaultVisitMinutes: 45,
-								scheduleDefaults: {
-									workingDays: [1, 2, 3, 4, 5],
-									workdayStart: "09:00",
-									workdayEnd: "20:00",
-									appointmentBufferMinutes: 15,
-								},
-							},
-							staff: [
-								{
-									id: "01a00000-0000-0000-0003-000000000001",
-									fullName: "Д-р Смирнов А.П.",
-									role: "doctor",
-									specialties: ["therapist", "orthopedist"],
-									active: true,
-								},
-							],
-							chairs: [
-								{
-									id: "chair1",
-									name: "Кабинет 1",
-									active: true,
-									hasXraySensor: true,
-									hasMicroscope: true,
-									hasSurgeryKit: true,
-								},
-							],
-							integrationPresets: [],
-							workspaceProfiles: [],
-							roleAccessPolicies: [],
-							modeHints: [],
-							soloDoctorMode: false,
-						},
-						shiftIntelligence: {
-							modeFit: {
-								mode: "one_chair",
-								title: "Соло-кабинет",
-								fitScore: 100,
-								blockers: [],
-								upgrades: [],
-								lowFrictionNextStep: "ready",
-							},
-							doctorLoads: [],
-							assistantLoads: [],
-							chairLoads: [],
-							roleQueues: [],
-							scheduleWarnings: [],
-						},
-						patients: [
-							{
-								id: "p1",
-								organizationId: "1",
-								status: "active",
-								fullName: "Барабаш Сергей Владимирович",
-								birthDate: "1988-04-12",
-								phone: "+7 (916) 123-45-67",
-								email: "",
-								notes: "",
-								administrativeProfile: "normal",
-								createdAt: "2026-07-06T00:00:00Z",
-								updatedAt: "2026-07-06T00:00:00Z",
-							},
-						],
-						patientInsights: [],
-						recommendedActions: [],
-						appointments: [
-							{
-								id: "app1",
-								organizationId: "1",
-								patientId: "p1",
-								doctorUserId: "01a00000-0000-0000-0003-000000000001",
-								chairId: "chair1",
-								state: "in_progress",
-								priority: "normal",
-								intent: "treatment",
-								startsAt: "2026-10-06T10:00:00Z",
-								endsAt: "2026-10-06T11:00:00Z",
-								serviceCategories: [],
-								createdByUserId: "01a00000-0000-0000-0003-000000000001",
-								createdAt: "2026-10-06T09:00:00Z",
-								updatedAt: "2026-10-06T09:00:00Z",
-								patientName: "Барабаш Сергей Владимирович",
-								doctorName: "Д-р Смирнов А.П.",
-							},
-						],
-						appointmentReadiness: [],
-						scheduleSuggestions: [],
-						activeVisit: {
-							id: "v1",
-							appointmentId: "app1",
-							patientId: "p1",
-							organizationId: "1",
-							status: "draft",
-							revision: 1,
-							complaint: "Консультация и составление комплексного плана",
-							anamnesis: "Соматически здоров",
-							objectiveStatus: null,
-							diagnosis: "К02.1 Кариес дентина",
-							treatmentPlan: null,
-							doctorSummary: null,
-							createdAt: "2026-10-06T10:00:00Z",
-							updatedAt: "2026-10-06T10:00:00Z",
-						},
-						visitCloseChecklist: {
-							visitId: "v1",
-							readyToSign: false,
-							score: 0,
-							nextAction: "review",
-							blockingItems: 0,
-							items: [],
-						},
-						protocolTemplates: [],
-						treatmentPlanItems: [],
-						treatmentPlanScenarios: [],
-						clinicalRuleEvaluations: [],
-						clinicalRuleSummary: {
-							activeRules: 0,
-							evaluatedRules: 0,
-							unresolved: 0,
-							blockers: 0,
-							warnings: 0,
-							requiredServices: 0,
-							coveredRules: 0,
-						},
-						payments: [],
-						billingSummary: {
-							totalPlannedRub: 0,
-							totalDiscountRub: 0,
-							totalPaidRub: 0,
-							totalDueRub: 0,
-							taxDeductionEligibleRub: 0,
-							draftDocumentAmountRub: 0,
-							openTreatmentItems: 0,
-							unpaidDocuments: 0,
-						},
-						communicationTemplates: [],
-						communicationEvents: [],
-						communicationSummary: {
-							openTasks: 0,
-							urgentTasks: 0,
-							dueToday: 0,
-							overdue: 0,
-							completedToday: 0,
-							appointmentConfirmations: 0,
-							paymentReminders: 0,
-							postVisitInstructions: 0,
-						},
-						importBatches: [],
-						speechProviders: [],
-						auditEvents: [],
-						complianceWarnings: [],
-						documents: [],
-						imagingStudies: [],
-						serviceCatalog: [],
-						clinicalRules: [],
-						communicationTasks: [],
-					}),
-				});
-			} else if (url.includes("/api/patients")) {
-				await route.fulfill({
-					status: 200,
-					contentType: "application/json",
-					body: JSON.stringify({
-						id: "p1",
-						organizationId: "1",
-						status: "active",
-						fullName: "Барабаш Сергей Владимирович",
-						birthDate: "1988-04-12",
-						phone: "+7 (916) 123-45-67",
-						email: "",
-						notes: "",
-						administrativeProfile: "normal",
-						createdAt: "2026-07-06T00:00:00Z",
-						updatedAt: "2026-07-06T00:00:00Z",
-					}),
-				});
-			} else if (url.includes("/api/auth/staff/unlock")) {
-				await route.fulfill({
-					status: 200,
-					contentType: "application/json",
-					body: JSON.stringify({
-						staffToken: "mock_staff_token_123",
-						user: {
-							id: "doctor1",
-							fullName: "Д-р Смирнов А.П.",
-							role: "doctor",
-							organizationId: "1",
-							email: "doctor@dente.ru",
-						},
-					}),
-				});
-			} else {
-				await route.fulfill({
-					status: 200,
-					contentType: "application/json",
-					body: JSON.stringify(
-						url.includes("status") ||
-							url.includes("list") ||
-							url.includes("provider")
-							? []
-							: {},
-					),
-				});
-			}
-		});
+  const addStorageScript = (context, isMobile = false, themeMode = "light") => {
+    return context.addInitScript(({ ct, st, uid, pid, mobile, theme }) => {
+      localStorage.setItem("dente_clinic_token", ct);
+      localStorage.setItem("dente_staff_token", st);
+      localStorage.setItem("dente_active_session_token", st);
+      localStorage.setItem("dente_workspace_perspective", "presentation");
+      localStorage.setItem("dente_active_user_id", uid);
+      localStorage.setItem("dente_active_role", "owner");
+      localStorage.setItem("dente_active_mode", "clinic");
+      localStorage.setItem("dente_theme_mode", theme);
+      sessionStorage.setItem("dente_unlocked", "true");
+      localStorage.setItem(
+        "dente_staff_session",
+        JSON.stringify({
+          userId: uid,
+          name: "Д-р Воронов Алексей Владимирович",
+          fullName: "Д-р Воронов Алексей Владимирович",
+          role: "owner",
+          specialties: ["Стоматолог-терапевт", "Ортопед"],
+        })
+      );
+      localStorage.setItem(
+        "dental-crm:web-ui-preferences:v1",
+        JSON.stringify({
+          version: 1,
+          uiLanguage: "ru",
+          selectedWorkspaceRole: "owner",
+          selectedPatientId: pid,
+          onboardingDismissed: true,
+          onboardingStep: "done",
+        })
+      );
+      document.cookie = `dente_clinic_token=${encodeURIComponent(ct)}; path=/; max-age=31536000`;
+      document.cookie = `dente_staff_token=${encodeURIComponent(st)}; path=/; max-age=31536000`;
+    }, {
+      ct: auth.clinicToken,
+      st: auth.staffToken,
+      uid: auth.ownerUserId,
+      pid: auth.patientId,
+      mobile: isMobile,
+      theme: themeMode,
+    });
+  };
 
-		console.log("[CAPTURE] Navigating to http://127.0.0.1:5173/...");
-		await page.goto("http://127.0.0.1:5173/");
+  try {
+    // ═════════════════════════════════════════════════════════════════════
+    // 1 & 2: DESKTOP PC LIGHT (1440x900)
+    // ═════════════════════════════════════════════════════════════════════
+    console.log("\n>>> Launching PC Desktop Light Context (1440x900) <<<\n");
+    const pcContext = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
+      isMobile: false,
+    });
+    await addStorageScript(pcContext, false, "light");
 
-		await page.evaluate(() => {
-			localStorage.setItem("dente_clinic_token", "mock_clinic_token");
-			localStorage.setItem("dente_staff_token", "mock_token");
-			localStorage.setItem(
-				"dental-crm:onboarding:v1:org:1",
-				JSON.stringify({
-					version: 1,
-					dismissed: true,
-					savedAt: "2026-07-06",
-					draftMode: false,
-				}),
-			);
-			localStorage.setItem(
-				"dental-crm:onboarding:v1",
-				JSON.stringify({
-					version: 1,
-					dismissed: true,
-					savedAt: "2026-07-06",
-					draftMode: false,
-				}),
-			);
-			localStorage.setItem(
-				"dente_ui_preferences_v1",
-				JSON.stringify({ onboardingDismissed: true, version: 1 }),
-			);
-			localStorage.setItem("dente_workspace_perspective", "presentation");
-			localStorage.setItem("dente_current_view", "visit");
-		});
+    const pcPage = await pcContext.newPage();
+    pcPage.on("pageerror", (e) => console.log("[PAGE_ERR]:", e.message));
 
-		console.log("[CAPTURE] Reloading with applied storage...");
-		await page.reload({ waitUntil: "domcontentloaded" });
+    console.log("Navigating to http://127.0.0.1:5173/#visit...");
+    await pcPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
+    await pcPage.evaluate(() => {
+      if (window.__usePerspectiveStore) {
+        window.__usePerspectiveStore.getState().setPerspective("presentation");
+      }
+    });
+    await pcPage.waitForSelector('[data-testid="treatment-plan-module"]', { timeout: 30000 });
+    await pcPage.waitForTimeout(1500);
 
-		// Handle Boot Unlock Form if appears
-		try {
-			await page.waitForSelector('.boot-unlock-form input[type="password"]', { timeout: 2000 });
-			console.log("[CAPTURE] Unlocking boot screen...");
-			await page.fill('.boot-unlock-form input[type="password"]', "dente123");
-			await page.click('.boot-unlock-form button[type="submit"]');
-			await page.waitForTimeout(1000);
-		} catch (e) {
-			console.log("[CAPTURE] No boot unlock screen.");
-		}
+    await applyTheme(pcPage, false);
 
-		// Handle StaffPinPad if appears
-		try {
-			console.log("[CAPTURE] Checking for StaffPinPad...");
-			const zeroBtn = await page.waitForSelector('.auth-pin-btn:has-text("0")', { timeout: 3000 });
-			if (zeroBtn) {
-				console.log("[CAPTURE] Entering PIN 0000 on PinPad...");
-				for (let i = 0; i < 4; i++) {
-					await zeroBtn.click();
-					await page.waitForTimeout(150);
-				}
-				await page.waitForTimeout(1200);
-			}
-		} catch (e) {
-			console.log("[CAPTURE] No StaffPinPad found or error:", e.message);
-		}
+    // ─────────────────────────────────────────────────────────────────
+    // Screen 1: pc_light_treatment_plan_stages.png
+    // ─────────────────────────────────────────────────────────────────
+    console.log("\n[1/5] Capturing pc_light_treatment_plan_stages.png...");
+    const stagesTabBtn = await pcPage.waitForSelector('[data-testid="tp-tab-stages"]', { timeout: 10000 });
+    await stagesTabBtn.click();
+    await pcPage.waitForTimeout(1000);
 
-		// Wait for workspace or treatment module
-		console.log("[CAPTURE] Waiting for workspace...");
-		try {
-			await page.waitForSelector(".workspace, .treatment-plan-module, #visit", { timeout: 10000 });
-		} catch (e) {
-			console.log("[CAPTURE] Timeout waiting for workspace, dumping debug state...");
-			const debugPath = path.join(SCREENSHOTS_DIR, "debug_current_state.png");
-			await page.screenshot({ path: debugPath });
-			fs.writeFileSync(path.join(SCREENSHOTS_DIR, "debug_current_state.html"), await page.content());
-			console.log(`[CAPTURE] Saved debug screenshot to ${debugPath}`);
-			throw e;
-		}
-		// Dismiss any onboarding popups if present
-		try {
-			await page.keyboard.press("Escape");
-			await page.waitForTimeout(200);
-			for (let i = 0; i < 3; i++) {
-				const skipBtn = await page.$(
-					'button:has-text("Пропустить Далее"), button:has-text("Пропустить"), button:has-text("Понятно, я сам"), button:has-text("Больше не показывать")'
-				);
-				if (skipBtn) {
-					console.log("[CAPTURE] Dismissing onboarding modal...");
-					await skipBtn.click({ force: true });
-					await page.waitForTimeout(400);
-				}
-			}
-		} catch (e) {}
+    const stagesPath = path.join(OUT_DIR, "pc_light_treatment_plan_stages.png");
+    await pcPage.screenshot({ path: stagesPath, fullPage: false, animations: "disabled" });
+    verifyAndLog(stagesPath);
 
-		// Navigate into Visit / Treatment Plan view
-		console.log("[CAPTURE] Navigating into Visit / Treatment Plan view...");
-		await page.evaluate(() => {
-			localStorage.setItem("dente_workspace_perspective", "presentation");
-			if (window.__usePerspectiveStore) {
-				window.__usePerspectiveStore.getState().setPerspective("presentation");
-			}
-			window.location.hash = "visit";
-		});
-		await page.waitForTimeout(2000);
+    // ─────────────────────────────────────────────────────────────────
+    // Screen 2: pc_light_3tier_presenter.png
+    // ─────────────────────────────────────────────────────────────────
+    console.log("\n[2/5] Capturing pc_light_3tier_presenter.png...");
+    const optionsBtn = await pcPage.waitForSelector('[data-testid="treatment-plan-options-menu-btn"]', { timeout: 10000 });
+    await optionsBtn.click();
+    await pcPage.waitForTimeout(400);
 
-		// If visit view still not active, click openCardBtn
-		try {
-			const openCardBtn = await page.$('button:has-text("Открыть карту / Прием")');
-			if (openCardBtn) {
-				console.log("[CAPTURE] Clicking 'Открыть карту / Прием' button...");
-				await openCardBtn.click({ force: true });
-				await page.waitForTimeout(2000);
-			}
-		} catch (e) {}
+    const presenterBtn = await pcPage.waitForSelector('[data-testid="options-menu-presenter-btn"]', { timeout: 10000 });
+    await presenterBtn.click();
+    await pcPage.waitForTimeout(1200);
 
-		// Wait for TreatmentPlanModule
-		console.log("[CAPTURE] Waiting for treatment plan module...");
-		await page.waitForSelector(
-			".treatment-plan-module, [data-testid='treatment-plan-module'], .plan-comparison-container, [data-testid='visit-view']",
-			{ timeout: 12000 }
-		);
-		console.log("[CAPTURE] Treatment Plan UI detected successfully!");
-		await page.waitForTimeout(1000);
+    await pcPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { timeout: 10000 });
+    await pcPage.waitForTimeout(500);
 
-		// Dismiss any lingering tour popups on visit
-		try {
-			await page.keyboard.press("Escape");
-			await page.waitForTimeout(200);
-			for (let i = 0; i < 3; i++) {
-				const skipBtn = await page.$(
-					'button:has-text("Понятно, я сам"), button:has-text("Больше не показывать"), button:has-text("Пропустить Далее"), button:has-text("Пропустить")'
-				);
-				if (skipBtn) {
-					console.log("[CAPTURE] Clicking tour skip button...");
-					await skipBtn.click({ force: true });
-					await page.waitForTimeout(400);
-				}
-			}
-		} catch (e) {}
+    const presenterLightPath = path.join(OUT_DIR, "pc_light_3tier_presenter.png");
+    await pcPage.screenshot({ path: presenterLightPath, fullPage: false, animations: "disabled" });
+    verifyAndLog(presenterLightPath);
 
-		// Switch to Light Theme
-		await page.evaluate(() => {
-			document.documentElement.classList.remove("dark");
-			document.documentElement.setAttribute("data-theme", "light");
-			localStorage.setItem("dente_theme", "light");
-		});
-		await page.waitForTimeout(600);
+    await pcContext.close();
 
-		const lightPath = path.join(SCREENSHOTS_DIR, "treatment_plans_light_1440x900.png");
-		await page.screenshot({ path: lightPath, fullPage: false });
-		console.log(`[CAPTURE] Saved Clean Light Screenshot: ${lightPath} (${fs.statSync(lightPath).size} bytes)`);
+    // ═════════════════════════════════════════════════════════════════════
+    // 3: DESKTOP PC DARK (1440x900)
+    // ═════════════════════════════════════════════════════════════════════
+    console.log("\n>>> Launching PC Desktop Dark Context (1440x900) <<<\n");
+    const pcDarkContext = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
+      isMobile: false,
+    });
+    await addStorageScript(pcDarkContext, false, "dark");
 
-		// Switch to Dark Theme for Treatment Plan Module
-		await page.evaluate(() => {
-			document.documentElement.classList.add("dark");
-			document.documentElement.setAttribute("data-theme", "dark");
-			localStorage.setItem("dente_theme", "dark");
-		});
-		await page.waitForTimeout(600);
+    const pcDarkPage = await pcDarkContext.newPage();
+    await pcDarkPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await pcDarkPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
+    await pcDarkPage.evaluate(() => {
+      if (window.__usePerspectiveStore) {
+        window.__usePerspectiveStore.getState().setPerspective("presentation");
+      }
+    });
+    await pcDarkPage.waitForSelector('[data-testid="treatment-plan-module"]', { timeout: 30000 });
+    await pcDarkPage.waitForTimeout(1000);
 
-		const darkPath = path.join(SCREENSHOTS_DIR, "treatment_plans_dark_1440x900.png");
-		await page.screenshot({ path: darkPath, fullPage: false });
-		console.log(`[CAPTURE] Saved Clean Dark Screenshot: ${darkPath} (${fs.statSync(darkPath).size} bytes)`);
+    await applyTheme(pcDarkPage, true);
+    await pcDarkPage.waitForTimeout(500);
 
-		// Switch back to Light Theme before opening Presenter Modal
-		await page.evaluate(() => {
-			document.documentElement.classList.remove("dark");
-			document.documentElement.setAttribute("data-theme", "light");
-			localStorage.setItem("dente_theme", "light");
-		});
-		await page.waitForTimeout(400);
+    console.log("\n[3/5] Capturing pc_dark_3tier_presenter.png...");
+    const darkOptionsBtn = await pcDarkPage.waitForSelector('[data-testid="treatment-plan-options-menu-btn"]', { timeout: 10000 });
+    await darkOptionsBtn.click();
+    await pcDarkPage.waitForTimeout(400);
 
-		// Open Presenter Modal
-		console.log("[CAPTURE] Looking for Presenter button in Options menu...");
-		const optionsBtn = await page.$('button:has-text("Опции")');
-		if (optionsBtn) {
-			console.log("[CAPTURE] Opening Options menu...");
-			await optionsBtn.click();
-			await page.waitForTimeout(500);
-			const presenterItem = await page.$(
-				'button:has-text("Презентация планов"), [role="menuitem"]:has-text("Презентация")'
-			);
-			if (presenterItem) {
-				console.log("[CAPTURE] Clicking 'Презентация планов' item...");
-				await presenterItem.click();
-				await page.waitForTimeout(1500);
-			}
-		}
+    const darkPresenterBtn = await pcDarkPage.waitForSelector('[data-testid="options-menu-presenter-btn"]', { timeout: 10000 });
+    await darkPresenterBtn.click();
+    await pcDarkPage.waitForTimeout(1200);
 
-		let presenterOpened = Boolean(await page.$('.treatment-presenter-modal, .treatment-presenter-header'));
-		if (presenterOpened) {
-			console.log("[CAPTURE] Presenter modal detected, capturing light presenter...");
-			const presenterLightPath = path.join(SCREENSHOTS_DIR, "treatment_presenter_light_1440x900.png");
-			await page.screenshot({ path: presenterLightPath, fullPage: false });
-			console.log(
-				`[CAPTURE] Saved Presenter Light Screenshot: ${presenterLightPath} (${fs.statSync(presenterLightPath).size} bytes)`
-			);
+    await pcDarkPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { timeout: 10000 });
+    await pcDarkPage.waitForTimeout(500);
 
-			// Dark theme presenter
-			await page.evaluate(() => {
-				document.documentElement.classList.add("dark");
-				document.documentElement.setAttribute("data-theme", "dark");
-				localStorage.setItem("dente_theme", "dark");
-			});
-			await page.waitForTimeout(600);
+    const presenterDarkPath = path.join(OUT_DIR, "pc_dark_3tier_presenter.png");
+    await pcDarkPage.screenshot({ path: presenterDarkPath, fullPage: false, animations: "disabled" });
+    verifyAndLog(presenterDarkPath);
 
-			const presenterDarkPath = path.join(SCREENSHOTS_DIR, "treatment_presenter_dark_1440x900.png");
-			await page.screenshot({ path: presenterDarkPath, fullPage: false });
-			console.log(
-				`[CAPTURE] Saved Presenter Dark Screenshot: ${presenterDarkPath} (${fs.statSync(presenterDarkPath).size} bytes)`
-			);
+    await pcDarkContext.close();
 
-			// Close presenter cleanly
-			const closeBtn = await page.$('[data-testid="close-treatment-presenter-btn"], .treatment-presenter-close-btn');
-			if (closeBtn) {
-				await closeBtn.click();
-				await page.waitForTimeout(500);
-			}
-		}
+    // ═════════════════════════════════════════════════════════════════════
+    // 4: MOBILE LIGHT (390x844)
+    // ═════════════════════════════════════════════════════════════════════
+    console.log("\n>>> Launching Mobile Light Context (390x844) <<<\n");
+    const mobileContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 2,
+      isMobile: true,
+      hasTouch: true,
+    });
+    await addStorageScript(mobileContext, true, "light");
 
-		console.log("[CAPTURE] SUCCESS: All screenshots captured!");
-	} catch (err) {
-		console.error("[CAPTURE ERROR]:", err);
-		process.exitCode = 1;
-	} finally {
-		if (browser) {
-			await browser.close();
-		}
-	}
-})();
+    const mobilePage = await mobileContext.newPage();
+    mobilePage.on("pageerror", (e) => console.log("[MOBILE_PAGE_ERR]:", e.message));
+
+    console.log("Navigating mobile to http://127.0.0.1:5173/#visit...");
+    await mobilePage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await mobilePage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
+    await mobilePage.evaluate(() => {
+      if (window.__usePerspectiveStore) {
+        window.__usePerspectiveStore.getState().setPerspective("presentation");
+      }
+    });
+    await mobilePage.waitForSelector('[data-testid="treatment-plan-module"]', { timeout: 30000 });
+    await mobilePage.waitForTimeout(1500);
+
+    await applyTheme(mobilePage, false);
+
+    console.log("\n[4/5] Capturing mobile_light_treatment_plan.png...");
+    const mOptionsBtn = await mobilePage.waitForSelector('[data-testid="treatment-plan-options-menu-btn"]', { timeout: 10000 });
+    await mOptionsBtn.click();
+    await mobilePage.waitForTimeout(400);
+
+    const mPresenterBtn = await mobilePage.waitForSelector('[data-testid="options-menu-presenter-btn"]', { timeout: 10000 });
+    await mPresenterBtn.click();
+    await mobilePage.waitForTimeout(1200);
+
+    await mobilePage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { timeout: 10000 });
+    await mobilePage.waitForTimeout(500);
+
+    const mobilePath = path.join(OUT_DIR, "mobile_light_treatment_plan.png");
+    await mobilePage.screenshot({ path: mobilePath, fullPage: false, animations: "disabled" });
+    verifyAndLog(mobilePath);
+
+    await mobileContext.close();
+
+    // ═════════════════════════════════════════════════════════════════════
+    // 5: MOBILE DARK (390x844)
+    // ═════════════════════════════════════════════════════════════════════
+    console.log("\n>>> Launching Mobile Dark Context (390x844) <<<\n");
+    const mobileDarkContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 2,
+      isMobile: true,
+      hasTouch: true,
+    });
+    await addStorageScript(mobileDarkContext, true, "dark");
+
+    const mobileDarkPage = await mobileDarkContext.newPage();
+    await mobileDarkPage.goto(`${WEB_BASE}/#visit`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await mobileDarkPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
+    await mobileDarkPage.evaluate(() => {
+      if (window.__usePerspectiveStore) {
+        window.__usePerspectiveStore.getState().setPerspective("presentation");
+      }
+    });
+    await mobileDarkPage.waitForSelector('[data-testid="treatment-plan-module"]', { timeout: 30000 });
+    await mobileDarkPage.waitForTimeout(1000);
+
+    await applyTheme(mobileDarkPage, true);
+    await mobileDarkPage.waitForTimeout(500);
+
+    console.log("\n[5/5] Capturing mobile_dark_treatment_plan.png...");
+    const mDarkOptionsBtn = await mobileDarkPage.waitForSelector('[data-testid="treatment-plan-options-menu-btn"]', { timeout: 10000 });
+    await mDarkOptionsBtn.click();
+    await mobileDarkPage.waitForTimeout(400);
+
+    const mDarkPresenterBtn = await mobileDarkPage.waitForSelector('[data-testid="options-menu-presenter-btn"]', { timeout: 10000 });
+    await mDarkPresenterBtn.click();
+    await mobileDarkPage.waitForTimeout(1200);
+
+    await mobileDarkPage.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { timeout: 10000 });
+    await mobileDarkPage.waitForTimeout(500);
+
+    const mobileDarkPath = path.join(OUT_DIR, "mobile_dark_treatment_plan.png");
+    await mobileDarkPage.screenshot({ path: mobileDarkPath, fullPage: false, animations: "disabled" });
+    verifyAndLog(mobileDarkPath);
+
+    await mobileDarkContext.close();
+
+    console.log("\n=======================================================");
+    console.log("ALL 5 SCREENSHOT PROOFS SUCCESSFULLY CAPTURED & AUDITED!");
+    console.log("=======================================================\n");
+
+  } finally {
+    await browser.close();
+  }
+}
+
+main().catch((err) => {
+  console.error("FATAL ERROR IN CAPTURE SCRIPT:", err);
+  process.exit(1);
+});

@@ -32,7 +32,8 @@
 		"noEmit": true,
 		"declaration": false,
 		// rootDir не имеет смысла без записи и мешает включению src/tests.
-		"rootDir": "."
+		"rootDir": ".",
+		"noUncheckedIndexedAccess": false
 	},
 	"include": ["src"],
 	// Пусто намеренно: в этом конфиге проверяется ВСЁ, включая тесты. Появится

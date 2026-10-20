@@ -19,12 +19,11 @@ export const Tooth16EndoShaders: React.FC = () => (
 		</linearGradient>
 
 		{/* Coral pink Gutta-percha with central core light highlight */}
-		<linearGradient id="dente16-guttapercha" x1="0" y1="0" x2="1" y2="0">
-			<stop offset="0%" stopColor="#f472b6" stopOpacity="0.95" />
+		<linearGradient id="dente16-guttapercha" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0%" stopColor="#fda4af" stopOpacity="1.0" />
 			<stop offset="35%" stopColor="#fb7185" stopOpacity="1.0" />
-			<stop offset="55%" stopColor="#fda4af" stopOpacity="1.0" />
-			<stop offset="75%" stopColor="#f43f5e" stopOpacity="1.0" />
-			<stop offset="100%" stopColor="#e11d48" stopOpacity="0.95" />
+			<stop offset="70%" stopColor="#f43f5e" stopOpacity="1.0" />
+			<stop offset="100%" stopColor="#be123c" stopOpacity="0.95" />
 		</linearGradient>
 
 		{/* Apical bio-ceramic sealer plug */}

@@ -1,0 +1,35 @@
+feat(odontogram): Gate 0 Iteration 5 remediation of Tooth 46, Apple HIG 390x844 and endo continuity
+
+## Контекст и архитектурная цель (Why):
+- Ремедиация дефектов Итерации 4 Зуба 46 (Gate 0 First Article Inspection).
+- Ликвидация 5 ошибок TS2375 (exactOptionalPropertyTypes: true) в Tooth46Container и Tooth46StandToggles.
+- Ликвидация 12–16px анатомического разрыва между дном пульпарной камеры и устьями корневых каналов MB, ML, D.
+- Утапливание апексов каналов в дентин верхушек корней (MB/ML y=145.8, D y=144.5).
+- Ликвидация 5.5px зазора щечной бороздки и замена концентрических кругов foramen caecum на органические кривые Безье.
+- Устранение дефекта Apple HIG на мобильном экране 390x844: срез слова «Пульпит» до «Пу.» и обрезание корней снизу (обеспечен запас высоты >200px).
+- Соблюдение Мандата 8b: все 35 файлов модуля строго <= 120 строк.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/odontogram/gate0/:
+  * Tooth46Container.tsx: внедрены fallback-значения и явные булевы приведения для опциональных props дочерних компонентов.
+  * Tooth46ProstheticBar.tsx: в интерфейс добавлены | undefined к коллбекам и горизонтальный скролл с Apple HIG fade mask.
+  * Tooth46StandToggles.tsx: лейбл «Пресет:» (экономия 29px), градиентная маска затухания, 19 слоев в свайпаемую 1 строку чипов.
+  * Tooth46InspectionStand.tsx: компактные адаптивные отступы p-2.5/p-3/p-2 с запасом высоты под апексами >200px.
+  * Tooth46StandHeader.tsx: адаптивные высоты и отступы под стандарты сенсорной эргономики.
+  * Tooth46EndoCanals.tsx: удален clipPath="url(#tooth46-root-clip)" из группы тракта каналов.
+  * Tooth46PulpGeometry.ts: продлены устья каналов MB, ML, D до y=57.0 с воронкой устья, входящей на 1.5px в дно пульпы (0px щели); смещены апексы в дентин.
+  * Tooth46CariesGeometry.ts: продлена щечная бороздка до (36.6, 42.0), органическая каплевидная кавитация foramen caecum.
+  * tooth46LayerConstants.ts: вынесен константный массив LAYER_ITEMS (24 строки).
+- docs/proofs/odontogram/:
+  * Пересняты все 10 PNG скриншотов через Chromium Playwright (все >= 20KB, свежие временные метки).
+  * handoff_iteration5_tooth46.md: канонический отчет синхронизации документации.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- TypeScript Single-Compiler Gate: Exit Code 0 (0 ошибок в gate0).
+- Biome Linter: Exit Code 0, 0 errors, 0 warnings (35 файлов проверено).
+- Vitest: 8 passed (2 test files, 100% pass, 295ms).
+- Mandate 8b: все 35 файлов модуля <= 120 строк (максимум 119 строк).
+- Визуальный пруф (10 скриншотов): личный осмотр через view_file подтвердил отсутствие срезов слов, 0px эндо-щель и >200px запас под корнями.
+
+## Синхронизация документации (Documentation Sync):
+- Создан docs/proofs/odontogram/handoff_iteration5_tooth46.md со сводной матрицей файлов и машинных гейтов.

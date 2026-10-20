@@ -442,7 +442,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 					<button
 						type="button"
 						onClick={onResetView}
-						className="hfi-dock-btn text-gray-400 hover:text-white"
+						className="hfi-dock-btn text-[var(--muted,#94a3b8)] hover:text-rose-400"
 						data-testid="hfi-reset-view-btn"
 						title="Сбросить масштаб и положение"
 					>

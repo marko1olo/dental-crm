@@ -26,7 +26,7 @@ import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { settingsTabs } from "../../AppConstants";
-import { appViews, viewLabels } from "../../workspaceShell";
+import { appViews, viewLabels } from "../../utils/routeUtils";
 import {
 	MESSENGERS_SETTINGS_TAB,
 	settingsTabHash,
@@ -103,6 +103,19 @@ describe("типизированный переход на вкладку нас
 		// Идентификатор исторический, а подпись давно другая: за вкладкой живут
 		// ещё WhatsApp и MAX. Подпись в разметке писать руками нельзя.
 		assert.notEqual(settingsTabTitle(MESSENGERS_SETTINGS_TAB), "ТГ-бот");
+	});
+
+	test("вкладки комиссий врачей и техкарт 804н зарегистрированы в settingsTabs", () => {
+		assert.ok(
+			knownTabIds.has("commissions"),
+			"settingsTabs обязан содержать «commissions» для прямого перехода #settings/commissions",
+		);
+		assert.ok(
+			knownTabIds.has("procedure-boms"),
+			"settingsTabs обязан содержать «procedure-boms» для прямого перехода #settings/procedure-boms",
+		);
+		assert.equal(settingsTabHash("commissions"), "settings/commissions");
+		assert.equal(settingsTabHash("procedure-boms"), "settings/procedure-boms");
 	});
 });
 

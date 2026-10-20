@@ -20,6 +20,9 @@ export type CopilotCommandType =
 	| "all_on_4_lower"
 	| "bone_graft_bio_oss"
 	| "recalculate_anesthesia_isolation"
+	| "tier_economy"
+	| "tier_optimum"
+	| "tier_premium"
 	| "custom_ai";
 
 export interface CopilotOptimizationOptions {
@@ -127,6 +130,8 @@ export interface TreatmentPlanAiAuditOptions {
 	readonly clinicName?: string | undefined;
 	readonly userPrompt?: string | undefined;
 	readonly authHeaders?: Record<string, string> | undefined;
+	readonly timeoutMs?: number | undefined;
+	readonly signal?: AbortSignal | undefined;
 }
 
 /**

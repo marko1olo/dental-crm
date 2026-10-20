@@ -265,11 +265,13 @@ export async function getPatientsFromDb(
 export async function createPatientInDb(
 	organizationId: string,
 	input: CreatePatientInput,
+	tx?: any,
 ): Promise<Patient> {
 	if (useInMemory()) {
 		return createPatientInMemory(input);
 	}
 	try {
+		const executor = tx || db;
 		const mergedAdminProfile =
 			input.administrativeProfile || input.isAnonymous !== undefined || input.anonymousCode !== undefined
 				? {
@@ -278,7 +280,7 @@ export async function createPatientInDb(
 						...(input.anonymousCode !== undefined ? { anonymousCode: input.anonymousCode } : {}),
 					}
 				: null;
-		const [created] = await db
+		const [created] = await executor
 			.insert(schema.patients)
 			.values({
 				organizationId,

@@ -45,27 +45,28 @@ export const stornoRoutes: FastifyPluginAsync = async (
 		try {
 			let recordedCount = 0;
 			if (data.items && data.items.length > 0) {
-				await db.transaction(async (tx) => {
-					for (const it of data.items) {
-						const rawItemId = it.itemId || it.inventoryItemId;
-						const validItemId = toValidUuid(rawItemId);
-						const deficit = it.deficitQty ?? it.quantity ?? 1;
-
-						await tx.insert(inventoryTransactions).values({
-							organizationId,
-							itemId: validItemId,
-							inventoryItemId: validItemId,
-							visitId: safeVisitId,
-							transactionType: "emergency_overdraft",
-							quantityChanged: `-${deficit}`,
-							qty: `-${deficit}`,
-							isOverdraft: true,
-							notes: `[Дефицит/Овердрафт] ${it.itemName ? `Материал: ${it.itemName}. ` : ""}${data.cabinetId ? `Кабинет: ${data.cabinetId}. ` : ""}${data.chairId ? `Кресло: ${data.chairId}. ` : ""}${data.message ?? ""}`.trim(),
-							userId: effectiveUserId,
-						});
-						recordedCount++;
-					}
+				const txRecords = data.items.map((it) => {
+					const rawItemId = it.itemId || it.inventoryItemId;
+					const validItemId = toValidUuid(rawItemId);
+					const deficit = it.deficitQty ?? it.quantity ?? 1;
+					return {
+						organizationId,
+						itemId: validItemId,
+						inventoryItemId: validItemId,
+						visitId: safeVisitId,
+						transactionType: "emergency_overdraft",
+						quantityChanged: `-${deficit}`,
+						qty: `-${deficit}`,
+						isOverdraft: true,
+						notes: `[Дефицит/Овердрафт] ${it.itemName ? `Материал: ${it.itemName}. ` : ""}${data.cabinetId ? `Кабинет: ${data.cabinetId}. ` : ""}${data.chairId ? `Кресло: ${data.chairId}. ` : ""}${data.message ?? ""}`.trim(),
+						userId: effectiveUserId,
+					};
 				});
+
+				await db.transaction(async (tx) => {
+					await tx.insert(inventoryTransactions).values(txRecords);
+				});
+				recordedCount = txRecords.length;
 			}
 
 			return reply.status(200).send({

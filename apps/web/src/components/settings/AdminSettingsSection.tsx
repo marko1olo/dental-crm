@@ -177,7 +177,7 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 		saveReminderCadenceSettings(updated);
 		showToast(
 			next
-				? "Памятка и опрос 043/у через 24ч после операции включены"
+				? "Памятка и опрос самочувствия через 24ч после операции включены"
 				: "Памятка после операции отключена",
 			"info",
 		);
@@ -260,7 +260,7 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 						<DelimitedTileCard
 							icon={HeartPulse}
 							title="После операции"
-							description="Опрос 043/у (24ч)"
+							description="Опрос самочувствия (24ч)"
 							checked={cadence.postOp24hEnabled}
 							onChange={togglePostOp24h}
 							testId="admin-cadence-toggle-postop"

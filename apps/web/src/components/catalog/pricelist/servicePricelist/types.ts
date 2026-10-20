@@ -3,13 +3,13 @@ import type {
 	Order804nCategory,
 	PriceTierKind,
 	ServicePricelistItem,
-} from '../servicePricelistPresets';
+} from "../servicePricelistPresets";
 
 // =============================================================================
 // LAYER 0: DOMAIN TYPES & INTERFACES FOR SERVICE PRICELIST ENGINE
 // =============================================================================
 
-export type ProfitabilityLevel = 'high' | 'medium' | 'low' | 'loss';
+export type ProfitabilityLevel = "high" | "medium" | "low" | "loss";
 
 export interface ServiceProfitability {
 	readonly sellingPriceRub: number;
@@ -23,30 +23,35 @@ export interface ServiceProfitability {
 	readonly level: ProfitabilityLevel;
 }
 
-export type PriceRoundingMode = 'none' | 'round_10' | 'round_50' | 'round_100' | 'round_500';
+export type PriceRoundingMode =
+	| "none"
+	| "round_10"
+	| "round_50"
+	| "round_100"
+	| "round_500";
 
 export interface BatchMarkupOptions {
 	readonly percentChange?: number | undefined; // e.g. +5, +10, -5
 	readonly fixedRubChange?: number | undefined; // e.g. +200, -500
 	readonly roundMode?: PriceRoundingMode | undefined;
-	readonly categoryFilter?: Order804nCategory | 'all' | undefined;
-	readonly specialtyFilter?: DoctorSpecialty | 'all' | undefined;
+	readonly categoryFilter?: Order804nCategory | "all" | undefined;
+	readonly specialtyFilter?: DoctorSpecialty | "all" | undefined;
 	readonly targetItemIds?: readonly string[] | undefined;
 	readonly applyToTiers?: readonly PriceTierKind[] | undefined;
 }
 
 export interface SearchPricelistQuery {
 	readonly searchTerm?: string | undefined;
-	readonly category?: Order804nCategory | 'all' | undefined;
-	readonly specialty?: DoctorSpecialty | 'all' | undefined;
+	readonly category?: Order804nCategory | "all" | undefined;
+	readonly specialty?: DoctorSpecialty | "all" | undefined;
 	readonly includeArchived?: boolean | undefined;
 	readonly minPriceRub?: number | undefined;
 	readonly maxPriceRub?: number | undefined;
-	readonly profitabilityLevel?: ProfitabilityLevel | 'all' | undefined;
+	readonly profitabilityLevel?: ProfitabilityLevel | "all" | undefined;
 }
 
 export interface CsvExportOptions {
-	readonly delimiter?: ';' | ',' | undefined;
+	readonly delimiter?: ";" | "," | undefined;
 }
 
 export interface CsvRowError {
@@ -82,8 +87,13 @@ export interface ParsedPriceProposal {
 	readonly suggestedCategory: Order804nCategory;
 	readonly suggestedSpecialty: DoctorSpecialty;
 	readonly priceRub: number;
-	readonly confidence: 'exact_code' | 'keyword_match' | 'fallback';
+	readonly confidence: "exact_code" | "keyword_match" | "fallback";
 }
 
-export type PricelistSortField = 'code' | 'title' | 'price' | 'margin' | 'duration';
-export type PricelistSortDirection = 'asc' | 'desc';
+export type PricelistSortField =
+	| "code"
+	| "title"
+	| "price"
+	| "margin"
+	| "duration";
+export type PricelistSortDirection = "asc" | "desc";

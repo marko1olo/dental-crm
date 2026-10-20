@@ -41,16 +41,16 @@ export function DicomMprVisualizerPanel({
 			</span>
 			<div className="mpr-axis-board" aria-hidden="true">
 				<span className="mpr-axis-label mpr-axis-label-top">
-					{mprProjectionCompass.top}
+					{mprProjectionCompass?.top}
 				</span>
 				<span className="mpr-axis-label mpr-axis-label-right">
-					{mprProjectionCompass.right}
+					{mprProjectionCompass?.right}
 				</span>
 				<span className="mpr-axis-label mpr-axis-label-bottom">
-					{mprProjectionCompass.bottom}
+					{mprProjectionCompass?.bottom}
 				</span>
 				<span className="mpr-axis-label mpr-axis-label-left">
-					{mprProjectionCompass.left}
+					{mprProjectionCompass?.left}
 				</span>
 				<span className="mpr-axis-slab" />
 				<span className="mpr-axis-slice-marker" />
@@ -66,7 +66,7 @@ export function DicomMprVisualizerPanel({
 			<div className="mpr-axis-facts">
 				<strong>{mprActiveProjectionLabel}</strong>
 				<span>{mprActiveProjectionOrientation}</span>
-				<span>{mprProjectionCompass.summary}</span>
+				<span>{mprProjectionCompass?.summary}</span>
 				<span>{mprAxisDirectionLabel}</span>
 				<span>слой {mprSlabMm} мм</span>
 				<span>{mprSliceLabel}</span>
@@ -74,9 +74,9 @@ export function DicomMprVisualizerPanel({
 					className="mpr-axis-guidance"
 					data-testid="ct-mpr-axis-guidance"
 				>
-					<span>{mprAxisGuidance.tiltLabel}</span>
-					<span>{mprAxisGuidance.slabLabel}</span>
-					<span>{mprAxisGuidance.sliceLabel}</span>
+					<span>{mprAxisGuidance?.tiltLabel}</span>
+					<span>{mprAxisGuidance?.slabLabel}</span>
+					<span>{mprAxisGuidance?.sliceLabel}</span>
 				</div>
 				<small
 					className="mpr-workbench-summary"
@@ -91,20 +91,20 @@ export function DicomMprVisualizerPanel({
 						: "нажмите «Проверить серии» и выберите готовую КЛКТ/КТ-серию"}
 				</small>
 				<div
-					className={`mpr-preset-fit ${mprNearestClinicalPreset.exact ? "exact" : ""}`}
+					className={`mpr-preset-fit ${mprNearestClinicalPreset?.exact ? "exact" : ""}`}
 					data-testid="ct-mpr-preset-fit"
 				>
-					<span>{mprNearestClinicalPreset.label}</span>
+					<span>{mprNearestClinicalPreset?.label}</span>
 					<button
 						type="button"
 						onClick={applyNearestMprClinicalPreset}
 						disabled={
 							!mprControlsReady ||
-							!mprNearestClinicalPreset.deltas.length ||
-							!mprNearestClinicalPreset.title
+							!mprNearestClinicalPreset?.deltas?.length ||
+							!mprNearestClinicalPreset?.title
 						}
-						aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
-						title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
+						aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
+						title={`Подогнать под протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
 					>
 						Подогнать
 					</button>

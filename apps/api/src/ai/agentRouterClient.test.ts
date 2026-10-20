@@ -106,7 +106,7 @@ test("AgentRouterClient enforces clinical defaults: temperature 0.2 and max_toke
 		messages: [{ role: "user", content: "Привет" }],
 	});
 
-	assert.equal(res.choices[0].message.content, "Клинический диагноз подтверждён.");
+	assert.equal(res.choices[0]?.message.content, "Клинический диагноз подтверждён.");
 	assert.equal(capturedAuth, "Bearer sk-key-test-abcde");
 	assert.equal(capturedBody.temperature, DEFAULT_CLINICAL_TEMPERATURE);
 	assert.equal(capturedBody.max_tokens, MIN_REASONING_MAX_TOKENS);
@@ -172,7 +172,7 @@ test("AgentRouterClient rotates keys automatically on HTTP 429 Rate Limit", asyn
 		messages: [{ role: "user", content: "Лечение пульпита 3.6" }],
 	});
 
-	assert.equal(response.choices[0].message.content, "Успешный ответ со второго ключа.");
+	assert.equal(response.choices[0]?.message.content, "Успешный ответ со второго ключа.");
 	assert.deepEqual(calledKeys, ["sk-key-primary-11111", "sk-key-secondary-22222"]);
 
 	// Verify health snapshot: primary key is in cooldown, secondary key is healthy
@@ -227,10 +227,12 @@ test("AgentRouterClient HTTP 402 Budget pool quota exhausted: bans MODEL for 180
 
 	// 2. CRITICAL INVARIANT: API key MUST REMAIN ACTIVE!
 	const health = client.getKeyHealthSnapshot();
-	assert.equal(health[0].keyMask, "agentrouter...33333");
-	assert.equal(health[0].isAvailable, true, "API Key MUST NOT be placed on cooldown on 402");
-	assert.equal(health[0].cooldownUntil, 0);
-	assert.equal(health[0].failures, 0);
+	const firstHealth = health[0];
+	assert.ok(firstHealth);
+	assert.equal(firstHealth.keyMask, "agentrouter...33333");
+	assert.equal(firstHealth.isAvailable, true, "API Key MUST NOT be placed on cooldown on 402");
+	assert.equal(firstHealth.cooldownUntil, 0);
+	assert.equal(firstHealth.failures, 0);
 
 	// 3. Second call for the same model fails immediately due to model ban without hitting network
 	const initialFetchCount = fetchCallCount;
@@ -291,7 +293,7 @@ test("AgentRouterClient rotates keys on HTTP 500 / 502 / 503 Server Errors", asy
 		messages: [{ role: "user", content: "Проверка отказоустойчивости" }],
 	});
 
-	assert.equal(response.choices[0].message.content, "Успех после 502");
+	assert.equal(response.choices[0]?.message.content, "Успех после 502");
 	assert.deepEqual(calledTokens, ["sk-key-srv-1", "sk-key-srv-2"]);
 });
 
@@ -363,28 +365,32 @@ test("AgentRouterClient createStreamingChatCompletion streams SSE chunks, reason
 	assert.ok(toolDeltas.length >= 2);
 
 	// 4. Aggregated full response verification
+	const firstChoice = fullResponse.choices[0];
+	assert.ok(firstChoice);
 	assert.equal(
-		fullResponse.choices[0].message.content,
+		firstChoice.message.content,
 		"Здравствуйте! Потребуется осмотр зуба 1.6.",
 	);
 	assert.equal(
-		fullResponse.choices[0].message.reasoning_content,
+		firstChoice.message.reasoning_content,
 		"Анализирую жалобу пациента: выявляем кариес дентина 1.6.",
 	);
-	assert.equal(fullResponse.choices[0].finish_reason, "tool_calls");
+	assert.equal(firstChoice.finish_reason, "tool_calls");
 
-	const toolCalls = fullResponse.choices[0].message.tool_calls;
+	const toolCalls = firstChoice.message.tool_calls;
 	assert.ok(Array.isArray(toolCalls) && toolCalls.length === 1);
-	assert.equal(toolCalls[0].id, "call_diag_123");
-	assert.equal(toolCalls[0].function.name, "record_diagnosis");
+	const firstToolCall = toolCalls[0];
+	assert.ok(firstToolCall);
+	assert.equal(firstToolCall.id, "call_diag_123");
+	assert.equal(firstToolCall.function.name, "record_diagnosis");
 	assert.equal(
-		toolCalls[0].function.arguments,
+		firstToolCall.function.arguments,
 		'{"tooth": 16, "code": "K02.1"}',
 	);
 
 	// 5. Test safeParseToolArguments on aggregated tool call
 	const parsedArgs = safeParseToolArguments<{ tooth: number; code: string }>(
-		toolCalls[0],
+		firstToolCall,
 	);
 	assert.deepEqual(parsedArgs, { tooth: 16, code: "K02.1" });
 });

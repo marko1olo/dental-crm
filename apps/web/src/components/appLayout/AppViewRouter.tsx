@@ -8,9 +8,15 @@ import { WorkspaceRouteErrorBoundary } from "../../workspaceRouteErrorBoundary";
 import { ClinicalErrorBoundary } from "../common/ClinicalErrorBoundary";
 import { loadStoredTeethData } from "../odontogram/odontogramStorage";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
-import { VisitView } from "../../VisitView";
-import { FinanceView } from "../../FinanceView";
-import { PatientsView } from "../../PatientsView";
+const VisitView = lazyWithRetry(() =>
+	import("../../VisitView").then((module) => ({ default: module.VisitView })),
+);
+const FinanceView = lazyWithRetry(() =>
+	import("../../FinanceView").then((module) => ({ default: module.FinanceView })),
+);
+const PatientsView = lazyWithRetry(() =>
+	import("../../PatientsView").then((module) => ({ default: module.PatientsView })),
+);
 
 const ShiftView = lazyWithRetry(() =>
 	import("../../ShiftView").then((module) => ({ default: module.ShiftView })),
@@ -123,6 +129,15 @@ export function AppViewRouter({
 		window.addEventListener("dente:open-doctor-payroll", handleGlobalPayroll);
 		return () => window.removeEventListener("dente:open-doctor-payroll", handleGlobalPayroll);
 	}, []);
+
+	const lockScheduleAdminSession = React.useCallback(() => {
+		appLogicValue?.lockTelegramAdminSession?.("schedule");
+	}, [appLogicValue?.lockTelegramAdminSession]);
+
+	const unlockScheduleAdminSession = React.useCallback(() => {
+		appLogicValue?.unlockTelegramAdminSession?.("schedule");
+	}, [appLogicValue?.unlockTelegramAdminSession]);
+
 	return (
 		<section
 			className={`workspace view-${currentView}`}
@@ -267,16 +282,11 @@ export function AppViewRouter({
 									workspaceKey="schedule"
 								>
 									<ScheduleView
-										{...(appLogicValue as any)}
 										dashboard={dashboard}
 										patientName={appLogicValue?.patientName}
 										loadDashboard={appLogicValue?.loadDashboard}
-										lockScheduleAdminSession={() =>
-											appLogicValue?.lockTelegramAdminSession?.("schedule")
-										}
-										unlockScheduleAdminSession={() =>
-											appLogicValue?.unlockTelegramAdminSession?.("schedule")
-										}
+										lockScheduleAdminSession={lockScheduleAdminSession}
+										unlockScheduleAdminSession={unlockScheduleAdminSession}
 									/>
 								</ClinicalErrorBoundary>
 							</Suspense>
@@ -293,7 +303,22 @@ export function AppViewRouter({
 								workspaceName="Реестр пациентов"
 								workspaceKey="patients"
 							>
-								<PatientsView />
+								<Suspense
+									fallback={
+										<section
+											className="panel patients-panel"
+											id="patients"
+											aria-label="Реестр пациентов"
+											aria-busy="true"
+										>
+											<AppLoadingState
+												message="Подготовка картотеки пациентов..."
+											/>
+										</section>
+									}
+								>
+									<PatientsView />
+								</Suspense>
 							</ClinicalErrorBoundary>
 						</WorkspaceRouteErrorBoundary>
 					) : null}

@@ -7,14 +7,14 @@
  * ============================================================================
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-	insertPouchIntoDiaryText,
 	formatPouch043StatutorySnippet,
+	insertPouchIntoDiaryText,
 } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,7 +39,10 @@ describe("ChairsideSterilizationPouchWidget Elimination & Doctor Screen Purity (
 			webSrcRoot,
 			"components/sterilization/index.ts",
 		);
-		assert.ok(fs.existsSync(indexPath), "components/sterilization/index.ts должен существовать");
+		assert.ok(
+			fs.existsSync(indexPath),
+			"components/sterilization/index.ts должен существовать",
+		);
 		const indexContent = fs.readFileSync(indexPath, "utf8");
 
 		assert.ok(
@@ -52,21 +55,42 @@ describe("ChairsideSterilizationPouchWidget Elimination & Doctor Screen Purity (
 		const snippet = formatPouch043StatutorySnippet({ pouchCode: "КП-0925-14" });
 		const existingDiary = "Анестезия Убистезин 1.7 мл. Препарирование полости.";
 
-		const updated = insertPouchIntoDiaryText(existingDiary, snippet, "КП-0925-14");
+		const updated = insertPouchIntoDiaryText(
+			existingDiary,
+			snippet,
+			"КП-0925-14",
+		);
 		assert.ok(updated.includes(snippet));
 		assert.ok(updated.includes(existingDiary));
 
 		// Повторная вставка того же крафт-пакета не должна дублировать запись
-		const deduplicated = insertPouchIntoDiaryText(updated, snippet, "КП-0925-14");
-		assert.equal(deduplicated, updated, "Не должно быть дублирования записи в дневнике");
+		const deduplicated = insertPouchIntoDiaryText(
+			updated,
+			snippet,
+			"КП-0925-14",
+		);
+		assert.equal(
+			deduplicated,
+			updated,
+			"Не должно быть дублирования записи в дневнике",
+		);
 	});
 
 	it("4. подтверждает отсутствие ChairsideSterilizationPouchWidget на экранах врача (VisitView.tsx и VisitSoapEditor.tsx чисты, Мандаты 8e, 8n, 8v)", () => {
 		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-		const visitSoapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
+		const visitSoapPath = path.join(
+			webSrcRoot,
+			"components/visit/VisitSoapEditor.tsx",
+		);
 
-		assert.ok(fs.existsSync(visitViewPath), "VisitView.tsx должен существовать");
-		assert.ok(fs.existsSync(visitSoapPath), "VisitSoapEditor.tsx должен существовать");
+		assert.ok(
+			fs.existsSync(visitViewPath),
+			"VisitView.tsx должен существовать",
+		);
+		assert.ok(
+			fs.existsSync(visitSoapPath),
+			"VisitSoapEditor.tsx должен существовать",
+		);
 
 		const visitViewContent = fs.readFileSync(visitViewPath, "utf8");
 		const visitSoapContent = fs.readFileSync(visitSoapPath, "utf8");

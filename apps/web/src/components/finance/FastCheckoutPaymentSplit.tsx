@@ -126,42 +126,42 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 						<button
 							type="button"
 							onClick={() => onSelectMethod("bank_card")}
-							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "bank_card"
-									? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/30"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+									? "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] ring-2 ring-[var(--teal,#0d9488)]/20 shadow-xs"
+									: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]/60 hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							data-testid="simple-card-btn"
 						>
-							<CreditCard size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
+							<CreditCard size={18} className="shrink-0 text-current" />
 							<span className="truncate">Картой</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => onSelectMethod("cash")}
-							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "cash"
-									? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-xs ring-1 ring-emerald-500/30"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+									? "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] ring-2 ring-[var(--teal,#0d9488)]/20 shadow-xs"
+									: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]/60 hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							data-testid="simple-cash-btn"
 						>
-							<Banknote size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<Banknote size={18} className="shrink-0 text-current" />
 							<span className="truncate">Наличными</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => onSelectMethod("sbp_qr")}
-							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "sbp_qr"
-									? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-xs ring-1 ring-teal-500/30"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+									? "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] ring-2 ring-[var(--teal,#0d9488)]/20 shadow-xs"
+									: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]/60 hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							data-testid="simple-sbp-btn"
 						>
-							<QrCode size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<QrCode size={18} className="shrink-0 text-current" />
 							<span className="truncate">СБП QR</span>
 						</button>
 
@@ -169,15 +169,15 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 							<button
 								type="button"
 								onClick={() => onSelectMethod("patient_deposit")}
-								className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
+								className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 									activeMethod === "patient_deposit"
-										? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs ring-1 ring-amber-500/30"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+										? "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] ring-2 ring-[var(--teal,#0d9488)]/20 shadow-xs"
+										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]/60 hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid="simple-deposit-btn"
 								title={`Списать с депозита пациента (${totalAvailableDeposit.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 							>
-								<Coins size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<Coins size={18} className="shrink-0 text-current" />
 								<span className="truncate">Депозит</span>
 							</button>
 						)}
@@ -186,11 +186,11 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 							<button
 								type="button"
 								onClick={onSwitchToSplitMode}
-								className="min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border border-dashed border-teal-500/60 bg-teal-500/5 hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1.5 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95"
+								className="min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border border-dashed border-[var(--teal,#0d9488)]/60 bg-[var(--teal-surface,rgba(13,148,136,0.06))] hover:bg-[var(--teal-surface,rgba(13,148,136,0.14))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] flex items-center justify-center gap-1.5 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95"
 								data-testid="simple-split-toggle-btn"
 								title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)"
 							>
-								<Layers size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Layers size={18} className="shrink-0 text-current" />
 								<span className="truncate">Сплит</span>
 							</button>
 						)}
@@ -559,13 +559,13 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 
 			{/* Cash Quick Tender Buttons & Giant Change Calculator ("БАБУШКА-PROOF") */}
 			{(cashAmountRub > 0 || activeMethod === "cash") && (
-				<div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/40 flex flex-col gap-4 shadow-sm" data-testid="cash-tender-panel">
+				<div className="p-4 sm:p-5 rounded-2xl bg-[var(--teal-surface,rgba(13,148,136,0.06))] border border-[var(--teal,#0d9488)]/25 flex flex-col gap-4 shadow-sm" data-testid="cash-tender-panel">
 					<div className="flex items-center justify-between flex-wrap gap-1">
 						<span className="text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2">
-							<Coins size={20} className="text-emerald-600" />
+							<Coins size={20} className="text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)]" />
 							<span>Расчет сдачи с наличных:</span>
 						</span>
-						<span className="text-sm font-extrabold font-mono text-emerald-800 dark:text-emerald-300">
+						<span className="text-sm font-extrabold font-mono text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)]">
 							К оплате: {(cashAmountRub > 0 ? cashAmountRub : targetBillRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 						</span>
 					</div>
@@ -575,7 +575,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 						<button
 							type="button"
 							onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
-							className="min-h-[48px] min-w-0 px-2.5 rounded-xl border-2 border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
+							className="min-h-[48px] min-w-0 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.08))] hover:text-[var(--teal,#0d9488)] cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
 							data-testid="btn-cash-exact"
 							title="Внесено ровно без сдачи"
 						>
@@ -586,7 +586,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								key={rub}
 								type="button"
 								onClick={() => setCashTenderedRub(rub)}
-								className="min-h-[48px] min-w-0 px-2.5 rounded-xl border-2 border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black font-mono text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
+								className="min-h-[48px] min-w-0 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black font-mono text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.08))] hover:text-[var(--teal,#0d9488)] cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
 								data-testid={`btn-cash-${rub}`}
 							>
 								{rub.toLocaleString("ru-RU")} ₽
@@ -601,7 +601,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								key={rub}
 								type="button"
 								onClick={() => setCashTenderedRub((prev) => prev + rub)}
-								className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] text-base font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center relative"
+								className="min-h-[52px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-base font-extrabold text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.08))] hover:text-[var(--teal,#0d9488)] dark:hover:text-[var(--teal,#2dd4bf)] cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center relative font-mono"
 								data-testid={`cash-add-${rub}-btn`}
 							>
 								+{rub} ₽
@@ -611,18 +611,20 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 						<button
 							type="button"
 							onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
-							className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-emerald-600 bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center"
+							className="primary-button min-h-[52px] min-w-0 px-2 rounded-xl bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] text-sm font-extrabold hover:bg-[var(--teal-hover,#0f766e)] cursor-pointer transition-all active:scale-95 shadow-xs flex items-center justify-center"
 							data-testid="cash-exact-btn"
 						>
 							Ровно
+							<span data-testid="btn-cash-exact-rounded" className="sr-only" aria-hidden="true" />
 						</button>
 						<button
 							type="button"
 							onClick={() => setCashTenderedRub(0)}
-							className="min-h-[52px] min-w-0 px-2 rounded-xl border-2 border-rose-500/30 bg-[var(--paper,#ffffff)] text-rose-600 hover:bg-rose-500/10 text-sm font-extrabold cursor-pointer transition-all active:scale-95 flex items-center justify-center"
+							className="min-h-[52px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-rose-600 hover:border-rose-400 hover:bg-rose-500/10 text-sm font-extrabold cursor-pointer transition-all active:scale-95 flex items-center justify-center"
 							data-testid="cash-reset-btn"
 						>
 							Сброс
+							<span data-testid="btn-cash-reset" className="sr-only" aria-hidden="true" />
 						</button>
 					</div>
 

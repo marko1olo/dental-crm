@@ -63,7 +63,7 @@ export const TenderModeSelector: React.FC<TenderModeSelectorProps> = ({
 					data-testid="segment-card"
 				>
 					<CreditCard size={14} className="shrink-0" />
-					<span>Карта</span>
+					<span>Безналичные (Карта / Терминал)</span>
 				</button>
 
 				<button
@@ -80,7 +80,7 @@ export const TenderModeSelector: React.FC<TenderModeSelectorProps> = ({
 					data-testid="segment-sbp"
 				>
 					<QrCode size={14} className="shrink-0" />
-					<span>СБП</span>
+					<span>СБП (QR-код)</span>
 				</button>
 
 				<button
@@ -97,7 +97,7 @@ export const TenderModeSelector: React.FC<TenderModeSelectorProps> = ({
 					data-testid="segment-deposit"
 				>
 					<Coins size={14} className="shrink-0" />
-					<span>Баланс семьи</span>
+					<span>Аванс / Семейный депозит</span>
 				</button>
 
 				<button
@@ -111,7 +111,7 @@ export const TenderModeSelector: React.FC<TenderModeSelectorProps> = ({
 					data-testid="segment-split"
 				>
 					<Layers size={14} className="shrink-0" />
-					<span>Сплит</span>
+					<span>Сплит-оплата</span>
 				</button>
 			</div>
 		</div>

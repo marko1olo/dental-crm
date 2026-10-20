@@ -85,16 +85,19 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 			}
 
 			try {
-				const result = await openVisitForAppointmentInDb(orgId, appointmentId);
-				await database
-					.update(appointments)
-					.set({ status: "in_treatment" })
-					.where(
-						and(
-							eq(appointments.id, appointmentId),
-							eq(appointments.organizationId, orgId),
-						),
-					);
+				const result = await database.transaction(async (tx) => {
+					const res = await openVisitForAppointmentInDb(orgId, appointmentId, tx);
+					await tx
+						.update(appointments)
+						.set({ status: "in_treatment" })
+						.where(
+							and(
+								eq(appointments.id, appointmentId),
+								eq(appointments.organizationId, orgId),
+							),
+						);
+					return res;
+				});
 
 				wsBroker.broadcastToOrganization(orgId, {
 					type: "APPOINTMENT_UPDATED",

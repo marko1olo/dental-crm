@@ -21,7 +21,7 @@ import {
 } from "../../db/billingQuery.js";
 import { db } from "../../db/client.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
-import { fiscalReceiptQueue } from "../../db/schema.js";
+import { fiscalReceiptQueue, patientInvoices, payments } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import {
@@ -704,8 +704,136 @@ export async function handleRetryAllFiscalQueue(
 	});
 }
 
+export async function handleGetBillingPayments(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"billing get payments",
+	);
+	if (reply.sent) return reply;
+	if (!orgId) return reply;
+
+	const query = request.query as Record<string, string | undefined> | undefined;
+	const period = query?.period;
+	const patientId = query?.patientId;
+
+	let dateThreshold: Date | undefined;
+	const now = new Date();
+	if (period === "day") {
+		dateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	} else if (period === "week") {
+		dateThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+	} else if (period === "month") {
+		dateThreshold = new Date(now.getFullYear(), now.getMonth(), 1);
+	} else if (period === "quarter") {
+		const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
+		dateThreshold = new Date(now.getFullYear(), currentQuarterMonth, 1);
+	} else if (period === "year") {
+		dateThreshold = new Date(now.getFullYear(), 0, 1);
+	}
+
+	const conditions = [eq(payments.organizationId, orgId)];
+	if (patientId) {
+		conditions.push(eq(payments.patientId, patientId));
+	}
+	if (dateThreshold) {
+		conditions.push(sql`${payments.paidAt} >= ${dateThreshold}`);
+	}
+
+	const rows = await db
+		.select()
+		.from(payments)
+		.where(and(...conditions))
+		.orderBy(desc(payments.paidAt))
+		.limit(500);
+
+	const data = rows.map((row) => ({
+		id: row.id,
+		amountRub: Number(row.amountRub),
+		amountKopecks: Math.round(Number(row.amountRub) * 100),
+		status: row.status,
+		method: row.method,
+		paymentMethod: row.method,
+		patientId: row.patientId,
+		visitId: row.visitId,
+		documentId: row.documentId,
+		isPrimaryPatient: true,
+		paidAt: row.paidAt ? row.paidAt.toISOString() : undefined,
+		createdAt: row.createdAt ? row.createdAt.toISOString() : undefined,
+	}));
+
+	return reply.send({ success: true, data });
+}
+
+export async function handleGetBillingInvoices(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"billing get invoices",
+	);
+	if (reply.sent) return reply;
+	if (!orgId) return reply;
+
+	const query = request.query as Record<string, string | undefined> | undefined;
+	const period = query?.period;
+	const patientId = query?.patientId;
+
+	let dateThreshold: Date | undefined;
+	const now = new Date();
+	if (period === "day") {
+		dateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	} else if (period === "week") {
+		dateThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+	} else if (period === "month") {
+		dateThreshold = new Date(now.getFullYear(), now.getMonth(), 1);
+	} else if (period === "quarter") {
+		const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
+		dateThreshold = new Date(now.getFullYear(), currentQuarterMonth, 1);
+	} else if (period === "year") {
+		dateThreshold = new Date(now.getFullYear(), 0, 1);
+	}
+
+	const conditions = [eq(patientInvoices.organizationId, orgId)];
+	if (patientId) {
+		conditions.push(eq(patientInvoices.patientId, patientId));
+	}
+	if (dateThreshold) {
+		conditions.push(sql`${patientInvoices.createdAt} >= ${dateThreshold}`);
+	}
+
+	const rows = await db
+		.select()
+		.from(patientInvoices)
+		.where(and(...conditions))
+		.orderBy(desc(patientInvoices.createdAt))
+		.limit(500);
+
+	const data = rows.map((row: any) => ({
+		id: row.id,
+		totalRub: Number(row.totalAmountRub || row.totalRub || 0),
+		totalAmountRub: Number(row.totalAmountRub || row.totalRub || 0),
+		paidRub: Number(row.paidAmountRub || 0),
+		paidAmountRub: Number(row.paidAmountRub || 0),
+		status: row.status,
+		patientId: row.patientId,
+		visitId: row.visitId,
+		dueDate: row.dueDate ? new Date(row.dueDate).toISOString() : undefined,
+		createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : undefined,
+	}));
+
+	return reply.send({ success: true, data });
+}
+
 export async function registerBillingRoutes(app: FastifyInstance) {
 	app.get("/api/billing/payouts", handleGetPayouts);
+	app.get("/api/billing/payments", handleGetBillingPayments);
+	app.get("/api/billing/invoices", handleGetBillingInvoices);
 	app.post("/api/billing/payments", handleCreatePayment);
 	app.post("/api/finance/payments", handleCreatePayment);
 	app.post("/api/v1/billing/payments", handleCreatePayment);

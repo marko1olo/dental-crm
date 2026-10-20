@@ -16,7 +16,7 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 			const found = await tx.select().from(inventoryItems).where(and(
 				eq(inventoryItems.organizationId, organizationId),
 				or(ilike(inventoryItems.name, `%${itemNamePattern}%`), ilike(inventoryItems.name, `%${defaultItemName}%`)),
-			)).limit(1).for("update");
+			)).orderBy(inventoryItems.id).limit(1).for("update");
 			let targetItem = found[0];
 			if (!targetItem) {
 				const [created] = await tx.insert(inventoryItems).values({

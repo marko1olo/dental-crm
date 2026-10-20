@@ -1,0 +1,752 @@
+/* ==========================================================================
+   DENTE CRM — CLINIC ONBOARDING, PROFILE & LEGAL READINESS (clinic-onboarding.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Guarded by scripts/tests/theme-contrast-guard.test.mjs. Strictly <= 800 lines.
+   ========================================================================== */
+/*
+ * ПОДЛОЖКА ПОЛОСЫ ГОТОВНОСТИ БЕРЁТСЯ ИЗ ТОКЕНА, А НЕ ИЗ ЛИТЕРАЛА #eef8f5.
+ *
+ * Литерал почти белый и не привязан к теме, а текст полосы красится
+ * var(--ink) / var(--muted) — в тёмных темах он светлый. Поправка на тёмную
+ * тему ниже перечисляла только [data-theme="dark"] («Ночь»); тема «Тепло» —
+ * это data-theme="night" — в список не попала и оставалась на литерале.
+ *
+ * ПО КАКОЙ ПАЛИТРЕ СЧИТАНО. Порядок тем во всех цифрах ниже:
+ * светлая / «Ночь» (data-theme="dark") / «Тепло» (data-theme="night").
+ * Для светлой и «Ночи» значения берутся из main.css:126-147 и main.css:66-87:
+ * селектор там начинается с :root[data-theme="..."], специфичность (0,2,0), и
+ * он перебивает dente-redesign.css:11/67 со специфичностью (0,1,0). Для
+ * «Тепла» в main.css блока нет вовсе, поэтому побеждает
+ * dente-redesign.css:115-129. Первая версия этой правки посчитала светлую и
+ * «Ночь» по проигравшему файлу (--muted #5d746f вместо #64748b, --teal-surface
+ * rgba(13,148,136,.07) вместо rgba(204,251,241,.5)) и напечатала 4.63 там, где
+ * браузер даёт 4.48.
+ *
+ * До правки: strong (--ink #111827 / #f8fafc / #f1e8dd) на литерале #eef8f5 —
+ * 16.37 / 1.04 / 1.12, то есть в обеих тёмных темах белым по белому; span
+ * (--muted #64748b / #94a3b8 / #98897a) — 4.39 / 2.37 / 3.13 при норме 4.5;
+ * счёт готовности (--teal-dark #0f766e / #14b8a6 / #cf9146 на литерале
+ * #ffffff) — 5.47 / 2.49 / 2.70. В «Ночи» strong спасала поправка: на её
+ * rgba(15,23,42,.92) выходило 17.27, в «Тепле» поправка не срабатывала.
+ * Это первый экран после входа в незаполненную клинику.
+ *
+ * После перевода на токены (--teal-surface / --paper, объявлены во всех трёх
+ * темах) поправка на «Ночь» становится лишней и удалена — она задавала
+ * холодный сине-серый rgba(15,23,42,.92) в бирюзовом макете и была вторым
+ * источником правды. Подложка стала #e6fdf8 / rgb(18,42,57) / rgb(44,34,25) —
+ * это --teal-surface, наложенный на --paper. Стало: strong 16.69 / 14.19 /
+ * 17.31, счёт 5.47 / 7.17 / 6.59.
+ *
+ * ОСТАТОЧНЫЙ ПРОМАХ ЗАКРЫТ ЦВЕТОМ, А НЕ ОГОВОРКОЙ. span на --muted давал
+ * 4.48 / 5.79 / 4.58 — светлая тема не добирала до 4.5 (13px крупным текстом
+ * не считается). Цвет переведён на --ink-2 (#3f544f / #b9c9c4 / #cdbfae):
+ * 7.62 / 8.64 / 8.62. --ink-2 объявлен в dente-redesign.css:19/74/122 для всех
+ * трёх тем и там никому не проигрывает — main.css это имя не объявляет вовсе.
+ *
+ * РАМКА СНЯТА С --teal-glow: у этого имени ДВА РАЗНЫХ ТИПА. Цвет — в этом файле
+ * (строки 24, 86, 146) и в dente-redesign.css:26/81/129; готовая тень
+ * «0 0 20px rgba(...)» — в premium.css:19/65/111. Здесь стояло, что цвет держится
+ * только порядком импорта; перемерено по каскаду — это верно лишь для «Тепла». В
+ * светлой и в «Ночи» выигрывают объявления ЭТОГО файла на
+ * :root[data-theme="light"] и :root[data-theme="dark"] со специфичностью (0,2,0)
+ * против (0,1,0) у premium.css. В «Тепле» блока в main.css нет, и цвет из
+ * dente-redesign.css выигрывает порядком импорта — main.tsx:17 после main.tsx:16
+ * (в прежней записи стояли строки 12 и 13, таких импортов там нет).
+ *
+ * Значит цвет побеждает во всех трёх темах, и «border: 1px solid var(...)» был бы
+ * валиден. Но обратная сторона того же конфликта — живой дефект: единственное
+ * теневое использование, «box-shadow: var(--teal-glow) !important» на
+ * .nav-item.active (premium.css:239), разрешается в «box-shadow: rgba(...)» без
+ * длин, то есть недействительно на этапе вычисления значения, и тень активного
+ * пункта меню отсутствует во всех трёх темах. Правка не в этом файле, поэтому
+ * здесь только названа.
+ *
+ * Рамка всё равно взята на --line-strong (#cbd5e1 / rgba(204,251,241,.3) /
+ * rgba(220,195,160,.26)): объявлен во всех трёх темах и всегда является цветом,
+ * то есть не зависит от того, кто из трёх файлов победит.
+ * Форму охраняет scripts/tests/theme-contrast-guard.test.mjs, третий тест.
+ */
+.onboarding-compact-strip {
+	align-items: center;
+	background: var(--teal-surface);
+	border: 1px solid var(--line-strong);
+	border-radius: 8px;
+	display: flex;
+	gap: 10px;
+	padding: 4px 12px;
+	min-height: 34px;
+}
+
+.onboarding-compact-strip > div {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 0;
+}
+
+.onboarding-compact-strip strong {
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.onboarding-compact-strip span {
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 750;
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.onboarding-compact-score {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 11px;
+	font-weight: 900;
+	padding: 4px 8px;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .onboarding-draft-strip,
+[data-theme="night"] .onboarding-draft-strip,
+.dark .onboarding-draft-strip,
+html.dark .onboarding-draft-strip,
+body.dark-mode .onboarding-draft-strip {
+	background: rgba(45, 26, 0, 0.75);
+	border-color: #b45309;
+	color: #fef3c7;
+}
+
+[data-theme="dark"] .onboarding-draft-strip strong,
+[data-theme="night"] .onboarding-draft-strip strong,
+.dark .onboarding-draft-strip strong,
+html.dark .onboarding-draft-strip strong,
+body.dark-mode .onboarding-draft-strip strong {
+	color: #fef3c7;
+}
+
+[data-theme="dark"] .onboarding-draft-strip span,
+[data-theme="night"] .onboarding-draft-strip span,
+.dark .onboarding-draft-strip span,
+html.dark .onboarding-draft-strip span,
+body.dark-mode .onboarding-draft-strip span {
+	color: #fde68a;
+}
+
+.onboarding-shell {
+	background:
+		linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(255, 255, 255, 0)),
+		var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}
+
+.onboarding-head {
+	align-items: start;
+	display: grid;
+	gap: 14px;
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.onboarding-head h2,
+.onboarding-panel h3,
+.clinic-legal-summary h3 {
+	font-size: 20px;
+	line-height: 1.15;
+	margin: 0;
+}
+
+.onboarding-head p,
+.onboarding-panel p,
+.clinic-legal-summary p {
+	color: var(--muted);
+	margin: 6px 0 0;
+}
+
+.onboarding-score {
+	align-items: center;
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 3px;
+	justify-items: center;
+	min-width: 126px;
+	padding: 10px;
+}
+
+.onboarding-score span,
+.onboarding-score small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+}
+
+.onboarding-score strong {
+	color: var(--teal-dark);
+	font-size: 28px;
+	line-height: 1;
+}
+
+.onboarding-fast-start {
+	align-items: center;
+	background: #0d4f49;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 8px;
+	color: #ffffff;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(0, 1fr) auto auto auto;
+	padding: 12px;
+}
+
+.onboarding-fast-start div {
+	display: grid;
+	gap: 3px;
+}
+
+.onboarding-fast-start strong {
+	font-size: 16px;
+	line-height: 1.15;
+}
+
+.onboarding-fast-start span {
+	color: #d8f0ea;
+	font-size: 13px;
+	line-height: 1.35;
+}
+
+.onboarding-fast-start .secondary-button {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.24);
+	color: #ffffff;
+}
+
+.onboarding-fast-start .primary-button {
+	background: #ffffff;
+	border-color: #ffffff;
+	color: var(--teal-dark);
+}
+
+.onboarding-step-list {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-step-list button {
+	align-items: flex-start;
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 96px;
+	padding: 12px;
+	text-align: left;
+	width: 100%;
+}
+
+.onboarding-step-list button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+}
+
+.onboarding-step-list button.done {
+	border-color: rgba(15, 118, 110, 0.35);
+}
+
+.onboarding-step-list span {
+	align-items: center;
+	background: rgba(15, 118, 110, 0.12);
+	border-radius: 50%;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 900;
+	height: 22px;
+	justify-content: center;
+	width: 22px;
+}
+
+.onboarding-step-list .active span {
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.onboarding-step-list strong {
+	font-size: 13px;
+	line-height: 1.15;
+}
+
+.onboarding-step-list small {
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1.2;
+}
+
+.onboarding-panel {
+	/* Было #fbfefd — в тёмной теме панель оставалась белой. */
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 14px;
+	padding: 14px;
+}
+
+.onboarding-form-grid,
+.clinic-profile-form-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-form-grid label,
+.clinic-profile-form-grid label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 6px;
+}
+
+.onboarding-form-grid input,
+.onboarding-form-grid select,
+.clinic-profile-form-grid input,
+.clinic-profile-form-grid select,
+.clinic-profile-form-grid textarea {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	min-height: 40px;
+	padding: 9px 10px;
+}
+
+.field-note {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.clinic-profile-form-grid textarea {
+	min-height: 78px;
+	resize: vertical;
+}
+
+.form-span-2 {
+	grid-column: span 2;
+}
+
+.patient-appointment-preferences {
+	display: grid;
+	gap: 6px;
+}
+
+.patient-appointment-preferences > span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.checkbox-line {
+	align-items: center;
+	display: flex;
+	gap: 9px;
+}
+
+.checkbox-line input {
+	min-height: auto;
+	width: auto;
+}
+
+.weekday-toggle-row {
+	align-items: center;
+	background: rgba(14, 116, 144, 0.05);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 9px;
+}
+
+.weekday-toggle-row span {
+	color: var(--muted);
+	flex: 1 1 120px;
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.weekday-toggle-row button {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 950;
+	min-height: 34px;
+	min-width: 40px;
+	padding: 7px 9px;
+}
+
+.weekday-toggle-row button.active {
+	background: #0f766e;
+	border-color: #0f766e;
+	color: #ffffff;
+}
+
+.onboarding-source-grid,
+.onboarding-readiness-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-source-grid span,
+.onboarding-readiness-grid span,
+.onboarding-source-grid button {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--teal-dark);
+	font-size: 13px;
+	font-weight: 850;
+	min-height: 42px;
+	padding: 9px 10px;
+	text-align: left;
+}
+
+.onboarding-source-grid button {
+	cursor: pointer;
+}
+
+.onboarding-source-config {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-source-section {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 9px;
+	min-width: 0;
+	padding: 12px;
+}
+
+.onboarding-source-section-wide {
+	grid-column: 1 / -1;
+}
+
+.onboarding-source-section strong {
+	color: var(--ink);
+	display: block;
+	font-size: 14px;
+	line-height: 1.2;
+}
+
+.onboarding-source-section span,
+.onboarding-source-url-grid label {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.onboarding-source-choice-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+}
+
+.onboarding-source-choice-row button {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--muted);
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 900;
+	min-height: 32px;
+	padding: 6px 10px;
+}
+
+.onboarding-source-choice-row button.active {
+	background: var(--teal-soft);
+	border-color: rgba(15, 118, 110, 0.35);
+	color: var(--teal-dark);
+}
+
+.onboarding-source-url-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-source-url-grid label {
+	display: grid;
+	gap: 5px;
+}
+
+.onboarding-source-url-grid input {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	min-height: 38px;
+	min-width: 0;
+	padding: 8px 10px;
+}
+
+.onboarding-telegram-status {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-telegram-status span {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 850;
+	gap: 4px;
+	min-height: 58px;
+	padding: 10px;
+}
+
+.onboarding-telegram-status strong {
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.15;
+}
+
+.onboarding-feature-list {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.onboarding-feature-list label {
+	align-items: center;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: flex;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 8px;
+	min-height: 42px;
+	padding: 8px 9px;
+}
+
+.onboarding-feature-list label.active {
+	background: #eef8f5;
+	border-color: rgba(15, 118, 110, 0.28);
+	color: var(--teal-dark);
+}
+
+.onboarding-feature-list input {
+	flex: 0 0 auto;
+}
+
+.onboarding-telegram-visual-cards {
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-telegram-visual-cards label {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.onboarding-telegram-visual-cards input {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	min-height: 38px;
+	min-width: 0;
+	padding: 8px 10px;
+}
+
+.onboarding-telegram-visual-cards small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.onboarding-inline-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 9px;
+}
+
+.onboarding-actions,
+.clinic-profile-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 9px;
+	justify-content: flex-end;
+}
+
+.onboarding-blocker {
+	background: #fff5ee;
+	border: 1px solid #f5b682;
+	border-radius: 8px;
+	color: #8a3d08;
+	font-weight: 750;
+	margin: 0;
+	padding: 10px 12px;
+}
+
+.onboarding-blocker.onboarding-advisory {
+	background: #eef8f5;
+	border-color: #9bd4c7;
+	color: var(--teal-dark);
+}
+
+.onboarding-action-guidance {
+	overflow-wrap: anywhere;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.onboarding-draft-strip {
+	align-items: center;
+	background: #fff9ed;
+	border: 1px solid #edbf68;
+	border-radius: 8px;
+	color: #6c4300;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: space-between;
+	padding: 12px 14px;
+}
+
+.onboarding-draft-strip div {
+	display: grid;
+	gap: 3px;
+}
+
+.onboarding-draft-strip span {
+	color: #7a5617;
+	font-size: 13px;
+}
+
+.clinic-legal-form {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 13px;
+	padding: 14px;
+}
+
+.clinic-legal-summary {
+	align-items: center;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr) auto minmax(180px, 0.45fr);
+}
+
+.clinic-legal-summary > strong {
+	color: var(--teal-dark);
+	font-size: 28px;
+	line-height: 1;
+}
+
+.clinic-legal-summary > span,
+.save-state {
+	background: var(--surface-muted, #eef8f5);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 8px;
+	color: var(--teal-dark, #0d9488);
+	font-size: 12px;
+	font-weight: 700;
+	padding: 6px 10px;
+}
+
+.dark .save-state,
+[data-theme="dark"] .save-state,
+[data-theme="night"] .save-state,
+[data-theme="oled"] .save-state,
+[data-theme="calm_teal"] .save-state,
+[data-theme="contrast"] .save-state {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--teal, #2dd4bf);
+}
+
+.save-state-error {
+	background: var(--bad-bg, #fff1ee);
+	color: var(--red, #8f2f20);
+}
+
+.dark .save-state-error,
+[data-theme="dark"] .save-state-error,
+[data-theme="night"] .save-state-error,
+[data-theme="oled"] .save-state-error {
+	background: rgba(239, 68, 68, 0.15);
+	color: #fca5a5;
+}
+
+.save-state-saved {
+	background: var(--ok-bg, #e5f6ea);
+	color: var(--green, #25683b);
+}
+
+.dark .save-state-saved,
+[data-theme="dark"] .save-state-saved,
+[data-theme="night"] .save-state-saved,
+[data-theme="oled"] .save-state-saved {
+	background: rgba(34, 197, 94, 0.15);
+	color: #86efac;
+}
+
+.admin-unlock-guidance {
+	align-self: stretch;
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	font-size: 13px;
+	font-weight: 850;
+	margin: 0;
+	padding: 9px 10px;
+}

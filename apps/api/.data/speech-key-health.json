@@ -1,22 +1,58 @@
 {
   "version": 1,
-  "savedAt": "2026-10-09T18:04:17.210Z",
+  "savedAt": "2026-10-19T22:42:12.853Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 5,
-      "lastUsedAt": 1791569057203,
+      "successes": 25,
+      "lastUsedAt": 1792449732845,
       "lastStatusCode": null,
       "lastError": null
     },
-    "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1791569537210,
-      "failures": 5,
-      "consecutiveFailures": 5,
+    "gemini:086400c4e22a": {
+      "cooldownUntil": 0,
+      "failures": 3,
+      "consecutiveFailures": 3,
       "successes": 0,
-      "lastUsedAt": 1791569057210,
+      "lastUsedAt": 1792348641535,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
+    "gemini:d2f7e7168b58": {
+      "cooldownUntil": 0,
+      "failures": 3,
+      "consecutiveFailures": 3,
+      "successes": 0,
+      "lastUsedAt": 1792348641747,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
+    "gemini:dc3b77f3539e": {
+      "cooldownUntil": 1792348761205,
+      "failures": 3,
+      "consecutiveFailures": 3,
+      "successes": 0,
+      "lastUsedAt": 1792348641205,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:ecb4dd2e44da": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1792321390873,
+      "lastStatusCode": 400,
+      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
+    },
+    "groq_whisper:5510319c53a6": {
+      "cooldownUntil": 1792450212853,
+      "failures": 23,
+      "consecutiveFailures": 23,
+      "successes": 0,
+      "lastUsedAt": 1792449732853,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -24,8 +60,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 5,
-      "lastUsedAt": 1791569057194,
+      "successes": 25,
+      "lastUsedAt": 1792449732832,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -33,35 +69,98 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 5,
-      "lastUsedAt": 1791569057165,
+      "successes": 25,
+      "lastUsedAt": 1792449732802,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1791569537189,
-      "failures": 5,
-      "consecutiveFailures": 5,
+      "cooldownUntil": 1792450212826,
+      "failures": 23,
+      "consecutiveFailures": 23,
       "successes": 0,
-      "lastUsedAt": 1791569057189,
+      "lastUsedAt": 1792449732826,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1791569537199,
-      "failures": 5,
-      "consecutiveFailures": 5,
+      "cooldownUntil": 1792450212839,
+      "failures": 23,
+      "consecutiveFailures": 23,
       "successes": 0,
-      "lastUsedAt": 1791569057199,
+      "lastUsedAt": 1792449732839,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
-    "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1791570017201,
+    "groq:6058314b22ec": {
+      "cooldownUntil": 1792349590377,
       "failures": 5,
       "consecutiveFailures": 5,
       "successes": 0,
-      "lastUsedAt": 1791569057201,
+      "lastUsedAt": 1792348630377,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kvq0pcpje21bzaccwx8m7nzk` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198547, Requested 25281. Please"
+    },
+    "groq:6ea9f119eff0": {
+      "cooldownUntil": 1792349590565,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348630565,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0pb1jbf59sfvanqbgxk3fd` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198587, Requested 25309. Please"
+    },
+    "groq:6eed7e8c3252": {
+      "cooldownUntil": 1792349590181,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348630181,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw1wmwr7e3gawf9sjcrnjwe2` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 196911, Requested 25197. Please"
+    },
+    "groq:83177d60e957": {
+      "cooldownUntil": 1792349589971,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348629971,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0p5e6zf9vb59msp25t3zgh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198163, Requested 25182. Please"
+    },
+    "groq:c50f385b1343": {
+      "cooldownUntil": 1792349590772,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348630772,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0pjm7bfzp8yzyhxwvenyw4` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 196823, Requested 25197. Please"
+    },
+    "groq:c73b9c86b8c4": {
+      "cooldownUntil": 1792349591047,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348631047,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0ppgmxet9t6p0z1wppd9v9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 195915, Requested 25182. Please"
+    },
+    "groq:caf98f576295": {
+      "cooldownUntil": 1792349589692,
+      "failures": 5,
+      "consecutiveFailures": 5,
+      "successes": 0,
+      "lastUsedAt": 1792348629692,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 195130, Requested 25197. Please"
+    },
+    "openai_transcribe:8234d0fc8e1f": {
+      "cooldownUntil": 1792450692843,
+      "failures": 21,
+      "consecutiveFailures": 21,
+      "successes": 0,
+      "lastUsedAt": 1792449732843,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -69,8 +168,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 5,
-      "lastUsedAt": 1791569057192,
+      "successes": 25,
+      "lastUsedAt": 1792449732828,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -78,8 +177,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 5,
-      "lastUsedAt": 1791569057196,
+      "successes": 25,
+      "lastUsedAt": 1792449732835,
       "lastStatusCode": null,
       "lastError": null
     }

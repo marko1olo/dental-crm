@@ -11,21 +11,32 @@ export function useIsMobile(breakpoint = 768): boolean {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    if (typeof window === "undefined") return;
 
-    const query = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-      setIsMobile(e.matches);
+    const updateMatches = () => {
+      setIsMobile(window.innerWidth <= breakpoint);
     };
 
-    setIsMobile(query.matches);
+    updateMatches();
+    window.addEventListener("resize", updateMatches);
 
-    if (query.addEventListener) {
-      query.addEventListener("change", handler);
-      return () => query.removeEventListener("change", handler);
+    if (typeof window.matchMedia === "function") {
+      const query = window.matchMedia(`(max-width: ${breakpoint}px)`);
+      if (query.addEventListener) {
+        query.addEventListener("change", updateMatches);
+        return () => {
+          window.removeEventListener("resize", updateMatches);
+          query.removeEventListener("change", updateMatches);
+        };
+      }
+      query.addListener(updateMatches);
+      return () => {
+        window.removeEventListener("resize", updateMatches);
+        query.removeListener(updateMatches);
+      };
     }
-    query.addListener(handler);
-    return () => query.removeListener(handler);
+
+    return () => window.removeEventListener("resize", updateMatches);
   }, [breakpoint]);
 
   return isMobile;

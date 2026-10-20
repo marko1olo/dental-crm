@@ -30,10 +30,15 @@ export async function handleClinicalAction(
 	callId: string,
 	_context?: ActionExecutionContext,
 ): Promise<CRMActionResult | null> {
+	const n = shortName
+		.replace(/([A-Z])/g, "_$1")
+		.toLowerCase()
+		.replace(/^_/, "");
+
 	// 1. Odontogram & Tooth Status
 	if (
-		shortName === "update_tooth_status" ||
-		shortName === "update_teeth_chart"
+		n === "update_tooth_status" ||
+		n === "update_teeth_chart"
 	) {
 		const toothNum = normalizeToothNumber(args.tooth ?? args.toothNumber ?? args.tooth_number);
 		const toothCode = toothNum ? String(toothNum) : "36";
@@ -70,6 +75,22 @@ export async function handleClinicalAction(
 			useAppStore.getState().setActiveTooth(toothNum);
 		}
 
+		// Fastify REST API sync if baseUrl available: POST /api/patients/:patientId/tooth-states/batch
+		if (_context?.apiBaseUrl) {
+			const pid = String(args.patientId || useAppStore.getState().activePatientId || "");
+			if (pid && toothNum) {
+				fetch(`${_context.apiBaseUrl}/api/patients/${pid}/tooth-states/batch`, {
+					method: "POST",
+					headers: _context.headers ?? { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						toothNumbers: [toothNum],
+						state: mappedState,
+						notes: diagText,
+					}),
+				}).catch(() => {});
+			}
+		}
+
 		return {
 			success: true,
 			callId,
@@ -82,8 +103,8 @@ export async function handleClinicalAction(
 
 	// 2. Clinical Diary & Form 043/u
 	if (
-		shortName === "draft_043u_soap_diary" ||
-		shortName === "save_protocol_043"
+		n === "draft_043u_soap_diary" ||
+		n === "save_protocol_043"
 	) {
 		const toothNum = normalizeToothNumber(args.toothNumber ?? args.tooth);
 		const complaints = String(args.complaints || args.complaint || "Жалобы отсутствуют (плановый осмотр).");
@@ -118,15 +139,15 @@ export async function handleClinicalAction(
 
 	// 2.5 Clinical Protocol from Catalog (1 142 SSOT Protocols & IDENT/DentalPRO Parity)
 	if (
-		shortName === "apply_clinical_protocol" ||
-		shortName === "select_clinical_protocol" ||
-		shortName === "use_clinical_protocol" ||
-		shortName === "search_clinical_protocols" ||
-		shortName === "suggest_clinical_protocol"
+		n === "apply_clinical_protocol" ||
+		n === "select_clinical_protocol" ||
+		n === "use_clinical_protocol" ||
+		n === "search_clinical_protocols" ||
+		n === "suggest_clinical_protocol"
 	) {
 		const isReadOnlySearch =
-			shortName === "search_clinical_protocols" ||
-			shortName === "suggest_clinical_protocol";
+			n === "search_clinical_protocols" ||
+			n === "suggest_clinical_protocol";
 		const query = String(args.query || args.procedureName || args.name || args.protocol || "");
 		const rawTooth = args.toothNumber ?? args.tooth ?? args.activeTooth;
 		const toothNum =
@@ -253,9 +274,12 @@ export async function handleClinicalAction(
 
 	// 3. Treatment Estimate & 804n Pricing
 	if (
-		shortName === "calculate_804n_estimate" ||
-		shortName === "create_treatment_plan" ||
-		shortName === "suggest_treatment_plan"
+		n === "calculate_804n_estimate" ||
+		n === "create_treatment_plan" ||
+		n === "suggest_treatment_plan" ||
+		n === "calculate_plan_cost" ||
+		n === "calculate_treatment_estimate" ||
+		n === "add_treatment_stage"
 	) {
 		const teethRaw = args.teeth || args.toothNumber || args.tooth;
 		const teethList = Array.isArray(teethRaw)
@@ -282,10 +306,33 @@ export async function handleClinicalAction(
 	}
 
 	// 8. Dental Lab Order (ЗТЛ)
-	if (shortName === "create_dental_lab_order" || shortName === "create_lab_order") {
+	if (
+		n === "create_dental_lab_order" ||
+		n === "create_lab_order" ||
+		n === "draft_lab_work_order"
+	) {
 		const teeth = String(args.toothCodes || args.toothFdi || "16");
 		const workType = String(args.workType || "Коронка циркониевая ZrO2");
 		const vitaShade = String(args.vitaShade || "A2").toUpperCase();
+
+		// Trigger Fastify REST API call if baseUrl provided: POST /api/lab/orders
+		if (_context?.apiBaseUrl) {
+			const pid = String(args.patientId || useAppStore.getState().activePatientId || "00000000-0000-7000-8000-000000000001");
+			const docId = String(args.doctorUserId || "00000000-0000-7000-8000-000000000001");
+			fetch(`${_context.apiBaseUrl}/api/lab/orders`, {
+				method: "POST",
+				headers: _context.headers ?? { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					patientId: pid,
+					doctorUserId: docId,
+					workType,
+					teeth: teeth ? teeth.split(",").map((s) => s.trim()) : ["16"],
+					shade: vitaShade,
+					orderDate: new Date().toISOString(),
+					status: "sent",
+				}),
+			}).catch(() => {});
+		}
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -307,15 +354,43 @@ export async function handleClinicalAction(
 
 	// 9. Add Clinical Service to Invoice / Visit Order (Mandate 8e: 1-click clinical billing)
 	if (
-		shortName === "add_procedure_to_invoice" ||
-		shortName === "add_service_to_invoice" ||
-		shortName === "add_nomenclative_service"
+		n === "add_procedure_to_invoice" ||
+		n === "add_service_to_invoice" ||
+		n === "add_nomenclative_service"
 	) {
 		const toothNum = normalizeToothNumber(args.toothNumber ?? args.tooth ?? args.tooth_number);
 		const serviceCode = String(args.serviceCode || args.code || "A16.07.002.010");
 		const serviceName = String(args.serviceName || args.name || args.title || "Восстановление зуба пломбой");
 		const price = Number(args.price || args.cost || args.amountRub || 3500);
 		const quantity = Number(args.quantity || args.count || 1);
+
+		// Real direct dispatch into useVisitStore (completedServices & reactive tooth state)
+		useVisitStore.getState().addCompletedService({
+			code: serviceCode,
+			title: serviceName,
+			price,
+			quantity,
+			toothNumber: toothNum ?? undefined,
+			toothCode: toothNum ? String(toothNum) : undefined,
+		} as any);
+
+		useVisitStore.getState().applyServicesToToothState({
+			toothNumber: toothNum ?? undefined,
+			toothCode: toothNum ? String(toothNum) : undefined,
+			services: [
+				{
+					code: serviceCode,
+					title: serviceName,
+					price,
+					toothNumber: toothNum ?? undefined,
+					toothCode: toothNum ? String(toothNum) : undefined,
+				},
+			],
+		});
+
+		if (toothNum) {
+			useAppStore.getState().setActiveTooth(toothNum);
+		}
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -344,10 +419,10 @@ export async function handleClinicalAction(
 
 	// 10. Warehouse Inventory & Automatic Deduction (Mandate 8ab/8v: background script, doctor unhindered)
 	if (
-		shortName === "check_warehouse_supplies" ||
-		shortName === "check_stock_availability" ||
-		shortName === "log_material_usage" ||
-		shortName === "deduct_materials"
+		n === "check_warehouse_supplies" ||
+		n === "check_stock_availability" ||
+		n === "log_material_usage" ||
+		n === "deduct_materials"
 	) {
 		const itemName = String(args.itemName || args.itemNames || "Расходные материалы");
 		return {

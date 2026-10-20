@@ -153,3 +153,40 @@ export const documentTemplatesRelations = relations(
 		}),
 	}),
 );
+
+/**
+ * 4. Реестр простых и усиленных электронных подписей (ПЭП 63-ФЗ / УКЭП)
+ */
+export const documentSignatures = pgTable(
+	"document_signatures",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		documentId: uuid("document_id").notNull(),
+		patientId: uuid("patient_id"),
+		signerRole: text("signer_role").notNull().default("patient"),
+		signerName: text("signer_name").notNull(),
+		signatureType: text("signature_type").notNull().default("pep_canvas"),
+		signatureSvg: text("signature_svg"),
+		pepCodeHash: text("pep_code_hash"),
+		documentSha256: text("document_sha256").notNull(),
+		signedAt: timestamp("signed_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgDocIdx: index("doc_signatures_org_doc_idx").on(
+			t.organizationId,
+			t.documentId,
+		),
+	}),
+);
+
+export type DocumentSignature = typeof documentSignatures.$inferSelect;
+export type NewDocumentSignature = typeof documentSignatures.$inferInsert;
+

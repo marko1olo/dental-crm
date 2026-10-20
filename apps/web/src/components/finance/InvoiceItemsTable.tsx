@@ -85,7 +85,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 									{isUnapproved && (
 										<div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded w-fit">
 											<AlertTriangle size={11} className="shrink-0" />
-											<span>ПП РФ №659: Требует Допсоглашения</span>
+											<span>Требует допсоглашения</span>
 										</div>
 									)}
 

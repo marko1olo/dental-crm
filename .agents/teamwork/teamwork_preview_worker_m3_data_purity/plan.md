@@ -1,0 +1,2 @@
+# Plan: Worker M3 (Eradicate Production Hardcoded Fallbacks & Silent Dummy Data)
+- Objective: Audit and eliminate fake hardcoded Russian names, clinic requisites, and synthesized payroll/patient balances in TreatmentPipeline.tsx, DoctorPayoutDashboard.tsx, HeaderGlobalSearch.tsx, TreatmentPlanPriceValidatorModal.tsx. Replace with honest EmptyStates, explicit validation warnings, and live context propagation.

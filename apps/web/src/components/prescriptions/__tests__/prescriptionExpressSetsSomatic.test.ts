@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	DENTAL_1CLICK_RX_SETS,
-	DENTAL_CANONICAL_SSOT_MEDICATIONS,
 	getDentalSsotMedicationById,
 } from "@dental/shared";
 import {
@@ -17,7 +16,10 @@ import {
 
 describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Check", () => {
 	it("1. DENTAL_1CLICK_RX_SETS contains the 4 canonical express-sets at the top", () => {
-		assert.ok(DENTAL_1CLICK_RX_SETS.length >= 4, "Must have at least 4 express sets");
+		assert.ok(
+			DENTAL_1CLICK_RX_SETS.length >= 4,
+			"Must have at least 4 express sets",
+		);
 
 		const set1 = DENTAL_1CLICK_RX_SETS[0]!;
 		const set2 = DENTAL_1CLICK_RX_SETS[1]!;
@@ -27,11 +29,10 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 		// 1. После хирургии / периодонтита
 		assert.strictEqual(set1.code, "POST_SURGERY_PERIODONTITIS");
 		assert.ok(set1.titleRu.includes("После хирургии / периодонтита"));
-		assert.deepStrictEqual([...set1.drugIds], [
-			"amoxiclav_875_125",
-			"nimesil_100_sachet",
-			"chlorhexidine_005_sol",
-		]);
+		assert.deepStrictEqual(
+			[...set1.drugIds],
+			["amoxiclav_875_125", "nimesil_100_sachet", "chlorhexidine_005_sol"],
+		);
 
 		// 2. При аллергии на пенициллины
 		assert.strictEqual(set2.code, "PENICILLIN_ALLERGY_ALTERNATIVE");
@@ -42,10 +43,10 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 		// 3. Противовоспалительный курс
 		assert.strictEqual(set3.code, "ANTI_INFLAMMATORY_COURSE");
 		assert.ok(set3.titleRu.includes("Противовоспалительный курс"));
-		assert.deepStrictEqual([...set3.drugIds], [
-			"nimesil_100_sachet",
-			"suprastin_25_tab",
-		]);
+		assert.deepStrictEqual(
+			[...set3.drugIds],
+			["nimesil_100_sachet", "suprastin_25_tab"],
+		);
 
 		// 4. Детский стоматологический
 		assert.strictEqual(set4.code, "PEDIATRIC_DENTAL");
@@ -104,7 +105,8 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 	});
 
 	it("5. Soft somatic check detects peptic ulcer / gastritis with NSAIDs", () => {
-		const patientHistory = "Хронический гастрит с повышенной кислотностью, язвенная болезнь 12-перстной кишки в ремиссии";
+		const patientHistory =
+			"Хронический гастрит с повышенной кислотностью, язвенная болезнь 12-перстной кишки в ремиссии";
 		assert.strictEqual(hasUlcerGastritisCondition(patientHistory), true);
 
 		const activeNsaid: PrescriptionDrugItemLike[] = [
@@ -116,11 +118,14 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 			},
 		];
 
-		const warnings = detectPrescriptionSomaticWarnings(patientHistory, activeNsaid);
+		const warnings = detectPrescriptionSomaticWarnings(
+			patientHistory,
+			activeNsaid,
+		);
 		assert.strictEqual(warnings.length, 1);
-		assert.strictEqual(warnings[0]!.type, "ulcer_gastritis_nsaid");
-		assert.ok(warnings[0]!.messageRu.includes("поражение ЖКТ"));
-		assert.ok(warnings[0]!.recommendationRu.includes("Омепразол"));
+		assert.strictEqual(warnings[0]?.type, "ulcer_gastritis_nsaid");
+		assert.ok(warnings[0]?.messageRu.includes("поражение ЖКТ"));
+		assert.ok(warnings[0]?.recommendationRu.includes("Омепразол"));
 	});
 
 	it("6. Soft somatic check does NOT warn if no NSAIDs are prescribed", () => {
@@ -140,7 +145,10 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 			},
 		];
 
-		const warnings = detectPrescriptionSomaticWarnings(patientHistory, antibioticsOnly);
+		const warnings = detectPrescriptionSomaticWarnings(
+			patientHistory,
+			antibioticsOnly,
+		);
 		assert.strictEqual(warnings.length, 0);
 	});
 });

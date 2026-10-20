@@ -767,24 +767,36 @@ const TARGET_SCREENS = [
 	{
 		prefix: "16_offline_backup_vault_panel",
 		name: "16. Offline Storage: AES-GCM 256 Database Vault & Cache Integrity Verifier",
-		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=offline_backup_vault#clinical-modals-studio?modal=offline_backup_vault`,
+		url: `${APP_BASE}/#settings`,
 		setup: async (page) => {
+			await page.waitForFunction(() => typeof window !== "undefined" && Boolean(window.__APP_STORE__), { timeout: 25000 });
+			await page.evaluate(() => {
+				window.localStorage.setItem("dente_user_role", "owner");
+				if (window.__APP_STORE__) {
+					window.__APP_STORE__.getState().setSelectedWorkspaceRole("owner");
+					window.__APP_STORE__.getState().setCurrentView("settings");
+					window.__APP_STORE__.getState().setSettingsTab("audit");
+				}
+			});
 			await page.waitForTimeout(800);
-			const modalDialog = page.locator('[data-testid="offline-vault-modal"], [role="dialog"]').first();
+			const modalDialog = page.locator('[data-testid="offline-vault-modal"], .offline-backup-vault-panel').first();
 			let isVis = false;
 			try {
-				await modalDialog.waitFor({ state: "visible", timeout: 3000 });
+				await modalDialog.waitFor({ state: "visible", timeout: 6000 });
 				isVis = await modalDialog.isVisible();
 			} catch {
 				isVis = false;
 			}
 			if (!isVis) {
-				const trigger = page.locator('[data-testid="open-offline-vault-modal-btn"]').first();
-				await trigger.waitFor({ state: "visible", timeout: 5000 });
-				await trigger.scrollIntoViewIfNeeded();
-				await trigger.click({ force: true });
-				await modalDialog.waitFor({ state: "visible", timeout: 5000 });
+				const auditTabBtn = page.locator('button:has-text("Аудит")').or(page.locator('#settings-tab-audit')).first();
+				if (await auditTabBtn.isVisible()) {
+					await auditTabBtn.click({ force: true });
+					await page.waitForTimeout(600);
+				}
+				await modalDialog.waitFor({ state: "visible", timeout: 10000 });
 			}
+			await modalDialog.scrollIntoViewIfNeeded();
+			await page.waitForTimeout(500);
 		},
 		all4States: true,
 	},
@@ -983,19 +995,32 @@ for (const screen of screensToRun) {
 			});
 		});
 
+		await page.route((url) => {
+			const pathname = url.pathname;
+			return pathname.startsWith("/api/") && !pathname.endsWith(".ts") && !pathname.endsWith(".tsx") && !pathname.endsWith(".js") && !pathname.endsWith(".mjs");
+		}, (route) => {
+			route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ ok: true, success: true, data: [] }),
+			});
+		});
+
 		await page.addInitScript(() => {
+			const isOwnerScreen = window.location.hash.includes("settings") || window.location.search.includes("settings");
+			const activeRole = isOwnerScreen ? "owner" : "doctor";
 			window.localStorage.setItem("dente_organization_id", "c-1");
 			window.localStorage.setItem("dente_clinic_token", "dev_token_sample_clinic");
 			window.localStorage.setItem("dente_staff_token", "dev_token_sample_staff");
 			window.localStorage.setItem("dente_active_session_token", "mock-session-token");
-			window.localStorage.setItem("dente_user_role", "doctor");
-			window.localStorage.setItem("dente_user_name", "Д-р Ковалев С.П.");
+			window.localStorage.setItem("dente_user_role", activeRole);
+			window.localStorage.setItem("dente_user_name", activeRole === "owner" ? "Д-р Ковалев С.П. (Главврач)" : "Д-р Ковалев С.П.");
 			window.localStorage.setItem(
 				"dente_active_user",
 				JSON.stringify({
 					id: "doc-1",
-					name: "Д-р Ковалев С.П.",
-					role: "doctor",
+					name: activeRole === "owner" ? "Д-р Ковалев С.П. (Главврач)" : "Д-р Ковалев С.П.",
+					role: activeRole,
 					organizationId: "c-1",
 				}),
 			);
@@ -1008,7 +1033,7 @@ for (const screen of screensToRun) {
 				JSON.stringify({
 					version: 1,
 					uiLanguage: "ru",
-					selectedWorkspaceRole: "doctor",
+					selectedWorkspaceRole: activeRole,
 					selectedSpecialty: "therapist",
 					selectedPatientId: "PAT-001",
 					onboardingDismissed: true,
@@ -1019,7 +1044,7 @@ for (const screen of screensToRun) {
 				JSON.stringify({
 					version: 1,
 					uiLanguage: "ru",
-					selectedWorkspaceRole: "doctor",
+					selectedWorkspaceRole: activeRole,
 					selectedSpecialty: "therapist",
 					selectedPatientId: "PAT-001",
 					onboardingDismissed: true,

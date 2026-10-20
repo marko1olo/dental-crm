@@ -105,17 +105,17 @@ export const BRAND_COLOR_PALETTES: Record<
 };
 
 const DEFAULT_BRANDING: Omit<DocumentBrandingState, "updateBranding" | "resetToDefaults"> = {
-	clinicName: "Стоматологическая клиника «DENTE»",
-	clinicLegalName: "ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»",
-	licenseNumber: "№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения",
-	clinicAddress: "г. Москва, ул. Стоматологическая, д. 24, корп. 1",
-	clinicPhone: "+7 (495) 777-88-99",
-	clinicEmail: "info@dente-clinic.ru",
-	clinicWebsite: "dente-clinic.ru",
+	clinicName: "Стоматологическая клиника",
+	clinicLegalName: "",
+	licenseNumber: "",
+	clinicAddress: "",
+	clinicPhone: "",
+	clinicEmail: "",
+	clinicWebsite: "",
 	clinicInn: "",
 	clinicOgrn: "",
 	logoUrl: null,
-	slogan: "Премиальная цифровая стоматология и имплантология",
+	slogan: "",
 
 	brandAccentColor: "deep_teal",
 	layoutDensity: "comfortable",

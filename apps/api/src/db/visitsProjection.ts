@@ -51,6 +51,7 @@ export function projectVisitRow(row: VisitRow): Visit {
 		diagnosis: row.diagnosis ?? null,
 		treatmentPlan: row.treatmentPlan ?? null,
 		doctorSummary: row.doctorSummary ?? null,
+		hygieneIndices: (row as any).hygieneIndices ?? (row as any).hygiene_indices ?? null,
 		createdAt: visitTimestamp(row.createdAt),
 		updatedAt: visitTimestamp(row.updatedAt),
 	};

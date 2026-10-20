@@ -1,0 +1,198 @@
+/* ==========================================================================
+   DENTE CRM — 3D CLINICAL MULTI-PLANAR RECONSTRUCTION (modules/imaging-mpr.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Axial, sagittal, coronal MPR views, viewport controls, operator summary.
+   ========================================================================== */
+.clinical-mpr-panel {
+	background: #0b2426;
+	border: 1px solid #174b4f;
+	border-radius: 8px;
+	color: #eafffa;
+	display: grid;
+	gap: 12px;
+	padding: 14px;
+}
+
+.clinical-mpr-head {
+	align-items: start;
+	display: flex;
+	gap: 14px;
+	justify-content: space-between;
+}
+
+.clinical-mpr-head h3 {
+	color: #eafffa;
+	font-size: 18px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.clinical-mpr-head small {
+	color: #b7dcd7;
+	display: block;
+	font-weight: 800;
+	margin-top: 5px;
+}
+
+.clinical-mpr-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+.clinical-mpr-summary-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.clinical-mpr-summary-grid article {
+	background: rgba(234, 255, 250, 0.08);
+	border: 1px solid rgba(215, 255, 246, 0.16);
+	border-radius: 8px;
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.clinical-mpr-summary-grid strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.clinical-mpr-summary-grid span {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.mpr-clinical-roadmap {
+	background: rgba(234, 255, 250, 0.06);
+	border: 1px solid rgba(215, 255, 246, 0.16);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 10px;
+}
+
+.mpr-clinical-roadmap-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.mpr-clinical-roadmap-head strong,
+.mpr-clinical-roadmap-head span {
+	color: #eafffa;
+	font-size: 13px;
+	font-weight: 900;
+	line-height: 1.35;
+}
+
+.mpr-clinical-roadmap-head span {
+	color: #c4eee8;
+	max-width: 560px;
+	text-align: right;
+}
+
+.mpr-clinical-roadmap-steps {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mpr-clinical-step {
+	background: rgba(0, 0, 0, 0.12);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #9fbdb5;
+	border-radius: 6px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 8px;
+}
+
+.mpr-clinical-step.status-ready {
+	border-left-color: #77d7c7;
+}
+
+.mpr-clinical-step.status-active {
+	border-left-color: #d8b866;
+}
+
+.mpr-clinical-step.status-pending_review {
+	border-left-color: #78958e;
+	opacity: 0.84;
+}
+
+.mpr-clinical-step strong,
+.mpr-clinical-step span {
+	color: #eafffa;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.mpr-clinical-step span {
+	color: #b7dcd7;
+}
+
+.mpr-operator-summary {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mpr-operator-summary article {
+	background: rgba(234, 255, 250, 0.07);
+	border: 1px solid rgba(215, 255, 246, 0.16);
+	border-left: 3px solid #78958e;
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.mpr-operator-summary article.tone-ready {
+	border-left-color: #77d7c7;
+}
+
+.mpr-operator-summary article.tone-attention {
+	border-left-color: #f0b44b;
+}
+
+.mpr-operator-summary article.tone-muted {
+	opacity: 0.78;
+}
+
+.mpr-operator-summary span {
+	color: #b7dcd7;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.25;
+	text-transform: uppercase;
+}
+
+.mpr-operator-summary strong {
+	color: #eafffa;
+	font-size: 14px;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+}
+
+.mpr-operator-summary p {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}

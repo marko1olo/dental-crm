@@ -1,6 +1,6 @@
 import React from "react";
 import { InventoryServiceUsagePanel } from "../../InventoryServiceUsagePanel.js";
-import { WarehouseWaybillsTab } from "../../warehouse/WarehouseWaybillsTab.js";
+import { WarehouseWaybillsTab } from "../WarehouseWaybillsTab.js";
 import { WarehouseInventoryTab } from "../WarehouseInventoryTab.js";
 import { InventoryBatchFefoPanel } from "../../InventoryBatchFefoPanel.js";
 import { InventoryStockTable } from "../../InventoryStockTable.js";

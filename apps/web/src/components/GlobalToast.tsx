@@ -19,8 +19,8 @@ export interface ToastAction {
 export interface ToastEventDetail {
 	type: ToastType;
 	text: string;
-	duration?: number;
-	action?: ToastAction;
+	duration?: number | undefined;
+	action?: ToastAction | undefined;
 }
 
 // Global utility function to trigger a toast
@@ -34,9 +34,10 @@ export function showToast(
 		typeof window !== "undefined" &&
 		typeof window.dispatchEvent === "function"
 	) {
-		const event = new CustomEvent<ToastEventDetail>("dente-toast", {
-			detail: { text, type, duration, action },
-		});
+		const detail: ToastEventDetail = action
+			? { text, type, duration, action }
+			: { text, type, duration };
+		const event = new CustomEvent<ToastEventDetail>("dente-toast", { detail });
 		window.dispatchEvent(event);
 	}
 }

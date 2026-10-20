@@ -35,12 +35,10 @@ export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.
 		isPopupExpanded,
 	} = ctrl;
 
-	// In DND or fullscreen studio mode, completely suppress popups to prevent disruption
-	if (isDndActive || isFullScreenStudioActive || !activeCall || !currentCall) return null;
+	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
+	if (!activeCall || isDoctorMode || isDndActive || isFullScreenStudioActive || !currentCall) return null;
 	if (typeof document === "undefined") return null;
 
-	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
-	if (isDoctorMode) return null;
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
 
 	return createPortal(
@@ -54,7 +52,7 @@ export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.
 					<IncomingCallCapsuleBar ctrl={ctrl} />
 				) : (
 					<section
-						className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[380px] sm:w-[480px] max-w-[calc(100%-24px)]"
+						className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-full max-w-[480px] box-border"
 						aria-label="Входящий звонок телефонии"
 						data-testid="incoming-call-popup"
 					>

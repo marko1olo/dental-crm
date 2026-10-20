@@ -16,8 +16,8 @@ import {
 import { showToast } from "../../GlobalToast";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
-import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
 import { VisitDiaryAnesthesiaBar } from "../diary/VisitDiaryAnesthesiaBar";
+import { postQuickCarpuleWriteoff } from "../../anesthesia/anesthesiaQuickBar/anesthesiaApiPersistence";
 import { ChairsideTeethQuickSelector } from "./ChairsideTeethQuickSelector";
 import { EmkEndoSection } from "../emk/EmkEndoSection";
 import {
@@ -161,13 +161,22 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
             diary={visitNoteForm as any}
             doctorName="Лечащий врач"
             isLocked={false}
-            isRevising={false}
-            beginRevise={() => {}}
+            isRevising={Boolean((visitNoteForm as any)?.isRevising)}
+            beginRevise={() => {
+              updateVisitNoteField("isRevising", true);
+            }}
             applyAnesthesiaPreset={(preset) => {
               const curr = visitNoteForm?.treatmentPlan || "";
               updateVisitNoteField("treatmentPlan", curr ? `${curr}\n\n${preset}` : preset);
             }}
-            onDisposalCarpules={() => {}}
+            onDisposalCarpules={(count, drugId) => {
+              void postQuickCarpuleWriteoff({
+                visitId: activeAppointment?.id,
+                patientId: activePatient?.id,
+                count,
+                drugId: typeof drugId === "string" ? drugId : undefined,
+              });
+            }}
             patientId={activePatient?.id}
             visitId={activeAppointment?.id}
           />

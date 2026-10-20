@@ -110,11 +110,11 @@ async function openForm043InDocuments(page) {
 	await sleep(1500);
 	await suppressOverlays(page);
 
-	// Click to open 043/u card
-	console.log("[Documents] Clicking dental_card_043u card button...");
-	await page.waitForSelector('[data-testid="btn-open-dental_card_043u"]', { timeout: 15000 });
-	await page.click('[data-testid="btn-open-dental_card_043u"]');
-	console.log("[Documents] Clicked [data-testid=\"btn-open-dental_card_043u\"] successfully!");
+	// Click to open medical card
+	console.log("[Documents] Clicking dental_medical_card card button...");
+	await page.waitForSelector('[data-testid="btn-open-dental_medical_card"], [data-testid="btn-open-dental_card_043u"]', { timeout: 15000 });
+	await page.click('[data-testid="btn-open-dental_medical_card"], [data-testid="btn-open-dental_card_043u"]');
+	console.log("[Documents] Clicked dental medical card successfully!");
 
 	// Wait for 043/u form and tooth chart to render
 	await page.waitForSelector('.odontogram-flagship-wrapper, .form-043u-formula-tab, .tooth-chart-container', { timeout: 25000 });

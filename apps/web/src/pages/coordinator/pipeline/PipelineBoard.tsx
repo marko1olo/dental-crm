@@ -19,6 +19,7 @@ export interface PipelineBoardProps {
 	copiedToken: string | null;
 	isGeneratingLink: string | null;
 	onCopyOrGenerateLink: (card: PipelineCard) => void;
+	onOpenPlan?: ((card: PipelineCard) => void) | undefined;
 }
 
 export const PipelineBoard: React.FC<PipelineBoardProps> = ({
@@ -30,6 +31,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 	copiedToken,
 	isGeneratingLink,
 	onCopyOrGenerateLink,
+	onOpenPlan,
 }) => {
 	const mobileCfg = STAGE_CONFIG[activeMobileStage];
 	const mobileCards = data.pipeline[activeMobileStage] || [];
@@ -85,6 +87,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									copiedToken={copiedToken}
 									isGeneratingLink={isGeneratingLink}
 									onCopyOrGenerateLink={onCopyOrGenerateLink}
+									onOpenPlan={onOpenPlan}
 								/>
 							))
 						)}
@@ -165,6 +168,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 													copiedToken={copiedToken}
 													isGeneratingLink={isGeneratingLink}
 													onCopyOrGenerateLink={onCopyOrGenerateLink}
+													onOpenPlan={onOpenPlan}
 												/>
 											))
 										)}
@@ -250,6 +254,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 														copiedToken={copiedToken}
 														isGeneratingLink={isGeneratingLink}
 														onCopyOrGenerateLink={onCopyOrGenerateLink}
+														onOpenPlan={onOpenPlan}
 													/>
 												))}
 											</div>
@@ -318,6 +323,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 														copiedToken={copiedToken}
 														isGeneratingLink={isGeneratingLink}
 														onCopyOrGenerateLink={onCopyOrGenerateLink}
+														onOpenPlan={onOpenPlan}
 													/>
 												))
 											)}

@@ -85,7 +85,12 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 				}
 			}}
 		>
-			<div className="create-patient-modal-card">
+			<div className="create-patient-modal-card" data-testid="create-patient-modal-shell">
+				{/* Tactile Drag Handle for Mobile Bottom Sheet (Apple HIG) */}
+				<div className="create-patient-modal-drag-handle-wrap" aria-hidden="true">
+					<div className="create-patient-modal-drag-handle" />
+				</div>
+
 				{/* Modal Header */}
 				<header className="create-patient-modal-header">
 					<div className="create-patient-modal-title-wrap">
@@ -199,6 +204,15 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 								identityDocument,
 							}))
 						}
+						registrationAddress={
+							patientAdministrativeProfileDraft.registrationAddress || ""
+						}
+						onRegistrationAddressChange={(registrationAddress) =>
+							setPatientAdministrativeProfileDraft((prev) => ({
+								...prev,
+								registrationAddress,
+							}))
+						}
 					/>
 				</div>
 
@@ -229,14 +243,8 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							onClick={handlePrintBlankContract}
 							title="Распечатать бланк договора и согласий со строками «________» для ручного заполнения пациентом в зоне ожидания"
 							data-testid="patient-creation-print-blank-contract-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
 						>
-							<Printer size={15} aria-hidden="true" />
+							<Printer size={16} aria-hidden="true" />
 							<span>Бланк договора («____»)</span>
 						</button>
 						<button
@@ -246,14 +254,8 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							disabled={false}
 							title="Создать карту и сразу открыть расписание с выбранным пациентом"
 							data-testid="patient-creation-submit-and-book-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
 						>
-							<Calendar size={15} aria-hidden="true" />
+							<Calendar size={16} aria-hidden="true" />
 							<span>Создать и записать</span>
 						</button>
 						<button
@@ -263,14 +265,8 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 							disabled={false}
 							title="Создать карту и сразу открыть приём (для дежурного врача)"
 							data-testid="patient-creation-submit-and-visit-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
 						>
-							<Stethoscope size={15} aria-hidden="true" />
+							<Stethoscope size={16} aria-hidden="true" />
 							<span>Создать и начать приём</span>
 						</button>
 						{duplicateConflict ? (
@@ -281,12 +277,6 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 								disabled={false}
 								data-testid="footer-allow-duplicate-create-btn"
 								title="Подтвердить создание новой карты для тёзки / однофамильца"
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "6px",
-									minHeight: "36px",
-								}}
 							>
 								<span>Создать как однофамильца</span>
 							</button>
@@ -306,12 +296,6 @@ export function PatientCreationModalView(props: PatientCreationModalProps) {
 									: "Создать медицинскую карту пациента"
 							}
 							data-testid="patient-creation-submit-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
 						>
 							<Plus size={18} aria-hidden="true" />
 							<span>

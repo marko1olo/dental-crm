@@ -11,7 +11,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -25,10 +25,10 @@ const webSrc = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../..",
 );
-const settingsViewSource = readFileSync(
-	path.join(webSrc, "SettingsView.tsx"),
-	"utf8",
-);
+const settingsViewPath = existsSync(path.join(webSrc, "views", "settingsView", "index.tsx"))
+	? path.join(webSrc, "views", "settingsView", "index.tsx")
+	: path.join(webSrc, "SettingsView.tsx");
+const settingsViewSource = readFileSync(settingsViewPath, "utf8");
 /*
  * Набор признаков читается исходником, а не объектом со значениями по умолчанию:
  * тот из hooks/useWorkspaceProfile.ts не экспортируется, и тащить его наружу ради

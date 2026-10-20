@@ -39,6 +39,7 @@ export {
 	humanizeRestorationType,
 	generateDoctorT51Payslip,
 	doctorPayouts,
+	buildDoctorPayoutAggregateQuery,
 	type IdentSalaryModel,
 	type IdentDoctorSalaryCalculationParams,
 	type IdentDoctorSalaryCalculationResult,

@@ -1,3 +1,4 @@
+import React from "react";
 import { SHADE_SWATCH_MAP, VITA_CLASSICAL_GROUPS } from "../labShadesData";
 
 interface DentalLabClassicalGridProps {

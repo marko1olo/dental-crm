@@ -23,12 +23,14 @@ import {
 	Tag,
 	X,
 	Clock,
+	Printer,
 } from "lucide-react";
 import { money } from "../../../AppHelpers";
 import { MobilePriceDrawer } from "./MobilePriceDrawer";
 import { CATEGORY_TABS } from "../pricelistEditorHelpers";
 import { showToast } from "../../GlobalToast";
 import { BASELINE_804N_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
+import { ServicePricelistManagerModal } from "../../catalog/pricelist/ServicePricelistManagerModal";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
@@ -69,6 +71,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: edited service item
 	const [editingService, setEditingService] = useState<any | null>(null);
 	const [isSeeding, setIsSeeding] = useState(false);

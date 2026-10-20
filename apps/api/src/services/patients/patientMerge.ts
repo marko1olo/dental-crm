@@ -28,7 +28,7 @@
  */
 
 import type { PatientAdministrativeProfile } from "@dental/shared";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { inMemoryBlacklist } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
@@ -412,30 +412,30 @@ export async function mergePatients(
 					duplicate.familyGroupId &&
 					primary.familyGroupId !== duplicate.familyGroupId
 				) {
-					// Загружаем балансы семейных кошельков с блокировкой FOR UPDATE
-					const [dupFamily] = await inner
-						.select()
-						.from(familyGroups)
-						.where(
-							and(
-								eq(familyGroups.id, duplicate.familyGroupId),
-								eq(familyGroups.organizationId, input.organizationId),
-							),
-						)
-						.for("update")
-						.limit(1);
+					// Загружаем балансы семейных кошельков с детерминированной блокировкой FOR UPDATE в порядке возрастания ID (Deadlock-Free)
+					const [firstFamId, secondFamId] = [
+						duplicate.familyGroupId,
+						primary.familyGroupId,
+					].sort();
 
-					const [primFamily] = await inner
+					const lockedFamilyRows = await inner
 						.select()
 						.from(familyGroups)
 						.where(
 							and(
-								eq(familyGroups.id, primary.familyGroupId),
+								inArray(familyGroups.id, [firstFamId, secondFamId]),
 								eq(familyGroups.organizationId, input.organizationId),
 							),
 						)
-						.for("update")
-						.limit(1);
+						.orderBy(familyGroups.id)
+						.for("update");
+
+					const dupFamily = lockedFamilyRows.find(
+						(f) => f.id === duplicate.familyGroupId,
+					);
+					const primFamily = lockedFamilyRows.find(
+						(f) => f.id === primary.familyGroupId,
+					);
 
 					if (dupFamily && primFamily) {
 						const dupFamilyBal = Number(dupFamily.balance ?? 0);

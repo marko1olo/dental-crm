@@ -102,7 +102,7 @@ export function EmkControlBoardView({ board }: EmkControlBoardViewProps) {
 							color: "var(--ink-2, #64748b)",
 						}}
 					>
-						Соответствие медицинским картам, стандартам Минздрава и СтАР
+						Соответствие медицинским картам и клиническим стандартам лечения
 					</p>
 				</div>
 

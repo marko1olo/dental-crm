@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "role": "Red Team AI Swarm & Rules Architect",
+    "timestamp": "2026-10-15T07:38:00.000Z",
+    "scope": "Adult Dual-Contour AI Assistant, 29-Tool Registry, Context Compaction & Token Budgeting, Rules & In-App Multi-Agent Swarm",
+    "status": "COMPLETED_VERIFIED",
+    "encodingCheck": "PASS (12148 files checked, 0 errors, npm run check:encoding)",
+    "testVerification": "PASS (122/122 tests pass, 0 fail, npx tsx --test apps/api/src/ai/*.test.ts)"
+  },
+  "createdDocuments": [
+    {
+      "path": ".agents/AI_ASSISTANT_SUBAGENT_SWARM.md",
+      "absolutePath": "C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_SUBAGENT_SWARM.md",
+      "purpose": "Comprehensive technical architecture of in-app multi-agent swarm in DENTE Dental CRM",
+      "subagents": [
+        "Triage Agent (первичный анамнез, Socratic triage, маршрутизация звонков/мессенджеров/портала)",
+        "Odontogram & Diary Inquisitor (авто-аудит ЭМК и дневников приёма по стандартам СтАР)",
+        "Billing & Fiscal Sentinel (авто-сверка целочисленных копеек, прейскуранта и чеков кассы)",
+        "Vision / DICOM Specialist (анализ RVG и срезов КЛКТ, классификация кости D1-D4 по Хаунсфилду)"
+      ],
+      "invariants": [
+        "Fresh context lifecycle (Mandate 8l)",
+        "Deep transcript relay",
+        "Reactive wakeup without busy-waiting polling",
+        "Two-phase execution guard for DB mutations"
+      ]
+    },
+    {
+      "path": "C:/Users/Admin/.gemini/config/rules/ai_assistant.md",
+      "absolutePath": "C:/Users/Admin/.gemini/config/rules/ai_assistant.md",
+      "purpose": "Global system rulebook for DENTE AI Assistant & Swarm",
+      "invariants": [
+        "T.A.R.S. 100% honesty, 80% skepticism, zero AI fluff",
+        "Mandate 8e absolute doctor autonomy (no disabled buttons, 1-click norm, print anytime)",
+        "Mandate 8n solo doctor sovereignty (no mandatory assistants, касса без ИНН физлиц, BOM списание)",
+        "Dual-Harness Runtime Doctrine (Web CRM 13 tools vs Desktop Native OS 16 tools, total 29 tools)",
+        "Token Budget & Compaction Law (soft 70%, hard 85%, sliding window k=6, preservation of clinical invariants)"
+      ]
+    },
+    {
+      "path": ".agents/rules/ai_assistant.md",
+      "absolutePath": "C:/Clinic_MVP/dental-crm/.agents/rules/ai_assistant.md",
+      "purpose": "Local repository mirror of global AI Assistant rulebook"
+    }
+  ],
+  "expandedAndHardenedDocuments": [
+    {
+      "file": ".agents/AI_ASSISTANT_TOOL_REGISTRY.md",
+      "changes": [
+        "Expanded tool catalog from 26 to 29 tools (added search_workstation_files, configure_clinic_setup, import_clinic_data_file)",
+        "Full Zod validation schemas, JSON Schema parameters, response types, and error codes in Section VI",
+        "Purged Soviet bureaucratic ciphers (043/у, 804н, 54-ФЗ) in tool titles and descriptions; replaced with natural Russian clinical terminology per Mandates 8x/8z"
+      ]
+    },
+    {
+      "file": ".agents/AI_ASSISTANT_HARNESS_SPEC.md",
+      "changes": [
+        "Expanded Section 1 with open platforms heritage (Cline, OpenHands, Goose, Aider, Antigravity)",
+        "Section 4 Dual-Contour Architecture (Contour 1: Clinical CRM, Contour 2: OS Workstation Engine)",
+        "Added Section 8: Token Budgeting (128k/200k/1M), Multi-Level Compaction Pipeline (Tool Output Pruning, CoT Reasoning Pruning, Sliding Window k=6, Executive Clinical Summary), and Clinical Invariant Preservation Law",
+        "Comparison table across open agent platforms and DENTE implementation"
+      ]
+    },
+    {
+      "file": ".agents/AI_ASSISTANT_RULES.md",
+      "changes": [
+        "Section IV updated to 29 tools (13 Web CRM + 16 Desktop Native)",
+        "Section VII Mode 2 expanded with tools 27-29 (search_workstation_files, configure_clinic_setup, import_clinic_data_file)",
+        "Added Section VIII: Token Budget & Compaction Law, adult agent permissions and 2-phase confirmation guard"
+      ]
+    },
+    {
+      "file": ".agents/AI_ASSISTANT_ARCHITECTURE.md",
+      "changes": [
+        "Updated total tool count to 29 tools in navigation link and Section 3 heading",
+        "Added tools 27-29 to Section 3 Dental Tool Arsenal table and cleaned bureaucratic ciphers"
+      ]
+    },
+    {
+      "file": ".agents/AI_ASSISTANT_DESKTOP_MCP.md",
+      "changes": [
+        "Updated header navigation to 29 tools",
+        "Added tools 5-7 (search_workstation_files, configure_clinic_setup, import_clinic_data_file) to Section 2 Clinical File Engine"
+      ]
+    },
+    {
+      "file": ".agents/INDEX.md",
+      "changes": [
+        "Updated lines 68-69 to reflect 29 tools (13 Web CRM + 16 Desktop Native)"
+      ]
+    }
+  ],
+  "verificationSuite": {
+    "encodingCheck": "PASS (12148 files clean, UTF-8 verified)",
+    "aiUnitTests": "PASS (122/122 tests pass, 19 suites)",
+    "antiSycophancy": "100% compliant with T.A.R.S. and Mandates 8e, 8n, 8x, 8z"
+  }
+}

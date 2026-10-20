@@ -23,6 +23,7 @@ import type {
 	visitNoteFieldDefinitions,
 	visitSaveReceiptText,
 } from "../../AppHelpers";
+import type { ImagingStore } from "../../store/imagingStore";
 import type { BrowserContinuityStatus } from "../../browserContinuity";
 import type {
 	buildMprAxisGuidance,
@@ -317,6 +318,10 @@ export interface SettingsAndIntegrationsLogicSlice {
 	telegram: TelegramModuleReturn;
 	telegramSettingsModule: TelegramModuleReturn["telegramSettingsModule"];
 	visibleImagingStudies: Dashboard["imagingStudies"];
+	imagingToothFilter: string | "all";
+	setImagingToothFilter: (val: string | "all") => void;
+	imagingViewerState: ImagingStore["imagingViewerState"];
+	setImagingViewerState: ImagingStore["setImagingViewerState"];
 	mprProjectionCompass: ReturnType<typeof mprProjectionCompassLabels>;
 	mprAxisGuidance: ReturnType<typeof buildMprAxisGuidance>;
 }

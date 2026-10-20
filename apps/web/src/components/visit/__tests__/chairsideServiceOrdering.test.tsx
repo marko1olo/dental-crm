@@ -16,7 +16,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import { fileURLToPath } from "node:url";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";

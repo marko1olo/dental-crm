@@ -66,10 +66,10 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
-					title="Сдать смену стерилизации (автоклавы 134°C, азопирам отрицательный, дезинфекция в норме)"
+					title="Подтвердить цикл стерилизации смены в 1 клик (автоклавы 134°C, азопирам норма, автоматическое списание пакетов со склада)"
 				>
 					<CheckCircle2 size={15} className="shrink-0 text-white" />
-					<span>{autoFilling ? "Сохранение смены..." : "Сдать смену стерилизации"}</span>
+					<span>{autoFilling ? "Сохранение смены..." : "Подтвердить цикл стерилизации смены"}</span>
 				</button>
 
 				<button

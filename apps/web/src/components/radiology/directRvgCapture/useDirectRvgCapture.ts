@@ -35,7 +35,7 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 		onClose,
 		patientId = "PAT-001",
 		patientName = "Пациент",
-		patientCardNumber = "043/у-2026/891",
+		patientCardNumber = "МК-2026/891",
 		doctorName = "Лечащий врач",
 		initialToothFdi = "16",
 		initialImageUrl,
@@ -92,6 +92,11 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 
 	// Tooth & Projection
 	const [selectedTeeth, setSelectedTeeth] = useState<string[]>([initialToothFdi]);
+	useEffect(() => {
+		if (initialToothFdi && initialToothFdi !== "all") {
+			setSelectedTeeth([initialToothFdi]);
+		}
+	}, [initialToothFdi]);
 	const [projectionType, setProjectionType] = useState<ProjectionAngleType>("periapical");
 	const [clinicalNotes, setClinicalNotes] = useState<string>(
 		"Контрольный прицельный снимок после эндодонтической обработки и пломбирования.",

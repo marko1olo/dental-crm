@@ -39,6 +39,7 @@ import {
 	detectBlackClass,
 	calculateRestorationWarrantyMonths,
 	resolve804nServicesForRestoration,
+	generateTherapySoapProtocol,
 	generateTherapySoap043,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
@@ -174,7 +175,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 	// Формирование полного структурированного результата SOAP
 	const soapResult = useMemo(() => {
-		return generateTherapySoap043({
+		return generateTherapySoapProtocol({
 			toothNumber: effectiveTooth,
 			surfaces: selectedSurfaces,
 			presetId: activePresetId,
@@ -197,8 +198,8 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		includeFluoridation,
 	]);
 
-	// ВНЕСЕНИЕ В КАРТУ 043/у (ДВОЙНОЙ ДИСПАТЧ: useVisitStore + CustomEvent dente-apply-soap-protocol)
-	const handleInsertToForm043 = useCallback(() => {
+	// ВНЕСЕНИЕ В ДНЕВНИК ПРИЁМА (ДВОЙНОЙ ДИСПАТЧ: useVisitStore + CustomEvent dente-apply-soap-protocol)
+	const handleInsertToClinicalDiary = useCallback(() => {
 		const textToApply = soapResult.fullProtocolText043;
 
 		// 1. Прямой коллбек родителя, если передан
@@ -246,6 +247,9 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
 	}, [soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
+
+	// Алиас обратной совместимости
+	const handleInsertToForm043 = handleInsertToClinicalDiary;
 
 	// ДОБАВЛЕНИЕ В СМЕТУ / НАЧИСЛЕНИЕ УСЛУГ 804н
 	const handleAddServicesToInvoice = useCallback(() => {
@@ -359,19 +363,24 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 			</div>
 
-			{/* ПОВЕРХНОСТИ ЗУБА (ТАЧ-ТАРГЕТЫ >= 44-48px) */}
-			<div className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3">
-				<div className="mb-2 flex items-center justify-between">
-					<span className="text-xs font-semibold text-[var(--ink)]">
-						Поверхности зуба:
-					</span>
+			{/* ПОВЕРХНОСТИ ЗУБА (ОПЦИОНАЛЬНО, МАНДАТ 8e: DOCTOR AUTONOMY) */}
+			<div className="mb-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2 sm:p-2.5 shadow-2xs">
+				<div className="mb-1.5 flex items-center justify-between">
+					<div className="flex items-center gap-1.5">
+						<span className="text-xs font-semibold text-[var(--ink)]">
+							Поверхности зуба:
+						</span>
+						<span className="text-[10px] font-medium text-[var(--muted)]">
+							(опционально)
+						</span>
+					</div>
 					<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
 						[{selectedSurfaces.join(", ") || "O"}]
 					</span>
 				</div>
 
 				{/* Быстрые комбинации */}
-				<div className="mb-2.5 flex flex-wrap gap-1.5">
+				<div className="mb-2 flex flex-wrap gap-1">
 					{RESTORATION_SURFACE_PRESETS.map((preset) => {
 						const isMatch =
 							preset.surfaces.length === selectedSurfaces.length &&
@@ -381,9 +390,9 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								key={preset.id}
 								type="button"
 								onClick={() => handleApplySurfacePreset(preset.surfaces)}
-								className={`min-h-[44px] px-3 rounded-lg text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+								className={`h-7 sm:h-8 px-2.5 rounded-md text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center ${
 									isMatch
-										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
 										: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={preset.descriptionRu}
@@ -396,8 +405,8 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 
 				{/* Отдельные поверхности */}
-				<div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
-					<span className="text-[11px] text-[var(--muted)] mr-1">По отдельности:</span>
+				<div className="flex flex-wrap items-center gap-1 border-t border-[var(--line)] pt-1.5">
+					<span className="text-[10px] text-[var(--muted)] mr-1">По отдельности:</span>
 					{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 						const isActive = selectedSurfaces.includes(surf);
 						return (
@@ -405,12 +414,12 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								key={surf}
 								type="button"
 								onClick={() => toggleSurface(surf)}
-								className={`min-h-[44px] min-w-[44px] px-2.5 rounded-lg text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+								className={`h-7 sm:h-8 min-w-[28px] sm:min-w-[32px] px-2 rounded-md text-[11px] font-mono font-bold border transition cursor-pointer select-none shrink-0 flex items-center justify-center ${
 									isActive
-										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
 										: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
 								}`}
-								title={`Поверхность ${surf}`}
+								title={`Поверхность ${surf} (нажмите для переключения)`}
 							>
 								{surf}
 							</button>
@@ -532,10 +541,10 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: ВНЕСЕНИЕ В 043/у И В СМЕТУ (МАНДАТ 8e: КНОПКИ ВСЕГДА АКТИВНЫ) */}
 			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--line)]">
 				<div className="flex items-center gap-2">
-					{/* Кнопка внесения в 043/у */}
+					{/* Кнопка внесения в дневник приёма */}
 					<button
 						type="button"
-						onClick={handleInsertToForm043}
+						onClick={handleInsertToClinicalDiary}
 						className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-700 active:scale-95 cursor-pointer touch-manipulation"
 						data-testid="therapy-btn-apply-043"
 					>
@@ -555,11 +564,11 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 					</button>
 				</div>
 
-				<div className="text-right">
+				<div className="text-right shrink-0 max-w-[340px]">
 					<div className="text-xs font-mono font-bold text-[var(--ink)]">
 						{soapResult.diagnosisIcd10}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] truncate max-w-[200px]">
+					<div className="text-[11px] text-[var(--muted)] whitespace-normal leading-tight">
 						{BLACK_CAVITY_CLASS_LABELS[blackClass]}
 					</div>
 				</div>

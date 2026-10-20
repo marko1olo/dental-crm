@@ -1,52 +1,55 @@
-# BRIEFING — 2026-09-24T17:45:00Z
+# BRIEFING — 2026-10-20T02:32:00Z
 
 ## Mission
-Conduct a thorough read-only investigation and UI/API audit for R2: CRM Core & Patient Retention Revitalization (Recalls, Retention, and Leads Funnel).
+Red Team Inquisitor survey for Requirements R2 (Seamless Integration of 9 Orphaned Clinical Modules into Real CRM Navigation & Context) and R4 (Real Backend Wiring for Stubbed Endpoints & Direct Uploads, Dead Actions).
 
 ## 🔒 My Identity
-- Archetype: teamwork_preview_explorer
-- Roles: Survey Explorer 2 (R2 CRM Retention, Recalls & Leads)
+- Archetype: Explorer / Red Team Inquisitor (Survey Explorer 2)
+- Roles: Read-only investigation, architectural defect hunting, navigation integration audit, Fastify/Drizzle endpoint analysis, stub elimination
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2
-- Original parent: 6d15d988-47c3-4836-97b3-58f3eb0d6502
-- Milestone: Survey & Audit Phase (R2 CRM Retention, Recalls & Leads)
+- Original parent: 1dba1dd3-1b54-431d-9253-a722303ba51f
+- Milestone: Survey & Architectural Blueprint for R2/R4 Eradication
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement
-- MANDATE 8t: Single-compiler gate, strictly NO global tsc/build/typecheck
-- 7 Deadly UI Sins checklist: Hick's law (toolbar 1 line 32-36px), Miller's law (<=2 actions/card), 0 emojis in medical forms, WCAG AAA contrast, doctor autonomy (Mandates 8e/8n)
-- Solo-doctor & small clinic 1-3 chairs primary ergonomics
-- Write only to C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_explorer_survey_2
+- Read-only investigation — do NOT modify application source code
+- Mandate 8e: Doctor & staff autonomy, zero disabled blocking buttons
+- Mandate 8n: Solo-doctor & small clinic scale sovereignty
+- Mandate 8y/8z: Zero pharmacological paranoia, soft negative stock
+- Apple HIG & Mobile Invariants: No squeezed desktop, touch target >= 44x44px, bottom sheets
+- 100% truth, zero fabrication, exact file:line references
 
 ## Current Parent
-- Conversation ID: 6d15d988-47c3-4836-97b3-58f3eb0d6502
-- Updated: 2026-09-24T17:45:00Z
+- Conversation ID: 1dba1dd3-1b54-431d-9253-a722303ba51f
+- Updated: 2026-10-20T02:32:00Z
 
 ## Investigation State
 - **Explored paths**:
-  - `apps/api/src/routes/patientRecall.ts`, `apps/api/src/services/patients/recallCandidates.ts`
-  - `apps/api/src/routes/leads.ts`
-  - `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`, `patientRecallEngine.ts`, `recalls.css`
-  - `apps/web/src/components/patients/RecallListPanel.tsx`
-  - `apps/web/src/components/leads/LeadsKanbanView.tsx`, `LeadsFunnelAnalyticsModal.tsx`, `leadsFunnelEngine.ts`
-  - `apps/web/src/CommunicationsView.tsx`, `MarketingView.tsx`, `ScheduleView.tsx`
-  - Visual screenshots in `docs/screenshots/` and `apps/web/screenshots/`
+  - `apps/web/src/main.tsx` (standalone query param routes already purged by peers, leaving modules orphaned without direct root routing)
+  - `apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedClinicalLaunchers.tsx` & `StandaloneLaunchers.tsx` (uncovered hardcoded mock patients: Смирнова, Ковалёв, Захаров)
+  - 9 Clinical Workspaces: AnesthesiaQuickBar, HygieneIndicesPanel, PerioChartModal & PeriodontogramChart, PrescriptionModal, ImplantPassportModal, ClinicalTasksTable, TaxDeductionCertificateModal, OrthopedicsChairsidePanel, TelephonyFloatingWidget
+  - Real Navigation Trees: `PatientCardModal.tsx`, `PatientWorkspaceToolbar.tsx`, `VisitViewModals.tsx`, `VisitTabNav.tsx`, `VisitEmkTab.tsx`, `MobileChairsideVisitWorkspace.tsx`, `Sidebar.tsx`, `App.tsx`
+  - Backend API Parity: `apps/api/src/routes/` (anesthesia, perio, prescriptions, clinicalImplants, tasks, documents/ndflCalculator, telephony, lab/scansUploadRoutes, portal/portalMockStorageRoutes)
+  - Lab Scan Direct Upload: `apps/api/src/services/labScanDirectUpload.ts` and `apps/web/src/components/lab/attachScanModules/useLabAttachScanState.ts` (uncovered that web frontend never calls upload API, only appends `'scans/' + name`, plus Fastify MIME mismatch for `model/ply` vs `application/x-ply`)
+  - Dead Actions: `ChairsideToothFdiGrid.tsx`, `AddServiceToothSelector.tsx`, `ChairsideProtocolsSection.tsx`, `VisitEmkInteractiveStage.tsx`, `EmkToolbar.tsx`
 - **Key findings**:
-  1. Backend `recallCandidates.ts` is 100% authentic Drizzle SQL (due >=6m, overdue >=12m, probably_lost >=24m). Zero backend mocks.
-  2. `PatientRecallsHubModal.tsx` never calls `GET /api/patients/recall-candidates`, relying on `initialCandidates` which `CommunicationsView.tsx:1083` omits (renders empty table).
-  3. `RecallListPanel.tsx:128-174` contains hardcoded synthetic mock patients in `catch (_loadError)`.
-  4. `POST /api/leads/:id/convert` complies with Solo Doctor Autonomy (no mandatory INN, assistant, or bureaucracy).
-  5. `LeadsKanbanView.tsx:1251` hides booking button unless status is `consult_booked` (4-click gate). No link to calendar after booking.
-  6. UI Ergonomics: `PatientRecallsHubModal` steals 260px in header/toolbar; 5 buttons per table row cause 85px row height; raw emojis in `leadsFunnelEngine.ts`.
-- **Unexplored areas**: None within R2 scope. Audit complete.
+  1. Root `main.tsx` standalone routes were eliminated, making in-app integration into `PatientCardModal`, `VisitViewModals`, and `PatientWorkspaceToolbar` urgent.
+  2. Root `App.tsx:1602` still renders `ImplantPassportModal` with hardcoded fake Russian patient "Ковалёв Роман Станиславович", `patientId="PAT-2026-088"`.
+  3. `VisitEmkModals.tsx:37` has dead state `isLocalPerioModalOpen` where `setIsLocalPerioModalOpen(true)` is never invoked.
+  4. Web frontend lab scan attachment (`useLabAttachScanState.ts`) never calls `POST /api/lab/orders/:id/scans/upload-url`, saving a raw string `'scans/' + name` without file upload, guaranteeing 404 when downloading.
+  5. `portalMockStorageRoutes.ts` misses `model/ply` content-type parser (only has `application/x-ply`), causing 415 HTTP error on PLY uploads.
+  6. Empty arrow functions (`() => {}`) used in `ChairsideProtocolsSection.tsx` (`beginRevise`, `onDisposalCarpules`) and `AnatomicalToothSVG` inside buttons.
+- **Unexplored areas**: None. Scope fully surveyed.
 
 ## Key Decisions Made
-- Completed full audit of R2 components without any source code modification.
-- Formulated 6-phase surgical implementation plan for the worker in `survey_r2.md`.
-- Produced comprehensive 5-component `handoff.md`.
+- Deliver a comprehensive, deeply structured `survey_report.md` with:
+  1. Full Matrix of 9 Workspaces (Component Path, Props Interface, Current Standalone Mock State, Exact UI Integration Blueprint with live props, Fastify Route & Drizzle Schema).
+  2. Complete Lab Scan Direct Upload Architecture analysis (Root Cause of 404, Offline Local Storage Fallback, Fastify Content-Type Parser Fix, Web Hook Client upload implementation).
+  3. Catalog of Dead Action Handlers with exact file paths, line numbers, and proposed live handler implementations.
+- Author `handoff.md` strictly following the 5-component protocol.
 
 ## Artifact Index
-- `DISPATCH.md` — Incoming dispatch instructions
-- `BRIEFING.md` — Persistent working memory and situational awareness
-- `progress.md` — Heartbeat and status tracker
-- `survey_r2.md` — Complete exhaustive investigation and architectural audit report
-- `handoff.md` — 5-Component Hard Handoff report for parent and worker
+- `DISPATCH.md` — Inbound instructions log
+- `BRIEFING.md` — Working memory and status
+- `progress.md` — Heartbeat and step checklist
+- `survey_report.md` — Comprehensive technical report for R2 & R4
+- `handoff.md` — 5-component handoff report

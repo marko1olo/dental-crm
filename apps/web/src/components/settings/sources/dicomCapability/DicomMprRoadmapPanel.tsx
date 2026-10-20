@@ -23,7 +23,7 @@ export function DicomMprRoadmapPanel({
 					<span>{mprClinicalNextStep}</span>
 				</div>
 				<div className="mpr-clinical-roadmap-steps">
-					{mprClinicalChecklist.map((item) => (
+					{(Array.isArray(mprClinicalChecklist) ? mprClinicalChecklist : []).map((item) => (
 						<article
 							className={`mpr-clinical-step status-${item.status}`}
 							key={item.id}
@@ -39,7 +39,7 @@ export function DicomMprRoadmapPanel({
 				data-testid="ct-mpr-operator-summary"
 				aria-label="Быстрая сводка настройки КТ-срезов"
 			>
-				{mprOperatorSummaryCards.map((card) => (
+				{(Array.isArray(mprOperatorSummaryCards) ? mprOperatorSummaryCards : []).map((card) => (
 					<article className={`tone-${card.tone}`} key={card.id}>
 						<span>{card.title}</span>
 						<strong>{card.value}</strong>

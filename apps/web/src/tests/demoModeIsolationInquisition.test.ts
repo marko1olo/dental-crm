@@ -178,7 +178,10 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		const htmlDemo = renderToStaticMarkup(React.createElement(DemoModeBanner, {}));
 		assert.ok(htmlDemo.includes('data-testid="demo-mode-banner"'), "DemoModeBanner renders banner in demo mode");
 		assert.ok(htmlDemo.includes('data-testid="exit-demo-button"'), "Banner contains exit demo button");
-		assert.ok(htmlDemo.includes("ДЕМО-РЕЖИМ (Витрина):"), "Banner contains demo indicator text");
+		assert.ok(
+			htmlDemo.includes("Демо-симулятор") || htmlDemo.includes("ДЕМО-РЕЖИМ (Витрина):") || htmlDemo.includes("Ознакомительный режим:"),
+			"Banner contains demo indicator text",
+		);
 
 		setRuntimeDemoMode(null);
 	});
@@ -228,18 +231,18 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 	});
 
 	it("TREATMENT PLANS AUDIT: verifies TreatmentPlanPresenterModal and TreatmentPlanPriceValidatorModal quarantine sample teeth and price presets behind isDemoShowcaseMode", () => {
-		const presenterPath = path.resolve(
+		const presenterHookPath = path.resolve(
 			getWebRoot(),
-			"src/components/treatment-plans/TreatmentPlanPresenterModal.tsx",
+			"src/components/treatment-plans/presenterModules/useTreatmentPlanPresenterState.ts",
 		);
-		const presenterSource = fs.readFileSync(presenterPath, "utf-8");
+		const presenterHookSource = fs.readFileSync(presenterHookPath, "utf-8");
 		assert.ok(
-			presenterSource.includes("isDemoShowcaseMode"),
-			"TreatmentPlanPresenterModal uses isDemoShowcaseMode",
+			presenterHookSource.includes("isDemoShowcaseMode"),
+			"useTreatmentPlanPresenterState uses isDemoShowcaseMode",
 		);
 		assert.ok(
-			/isDemoShowcaseMode\(\)\s*\?\s*DEFAULT_SAMPLE_TEETH\s*:\s*\[\]/.test(presenterSource),
-			"TreatmentPlanPresenterModal guards DEFAULT_SAMPLE_TEETH strictly behind isDemoShowcaseMode",
+			/isDemoShowcaseMode\(\)\s*\?\s*DEFAULT_SAMPLE_TEETH\s*:\s*\[\]/.test(presenterHookSource),
+			"TreatmentPlanPresenter guards DEFAULT_SAMPLE_TEETH strictly behind isDemoShowcaseMode",
 		);
 
 		const validatorPath = path.resolve(

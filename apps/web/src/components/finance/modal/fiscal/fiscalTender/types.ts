@@ -11,7 +11,10 @@ export type CombinedPresetType =
 	| "split_cash_card"
 	| "advance_cash_card"
 	| "exact_cash"
-	| "full_card";
+	| "full_card"
+	| "split_dms"
+	| "split_dms_card"
+	| "split_dms_cash";
 
 export interface AllocationState {
 	readonly isFullyAllocated: boolean;

@@ -58,22 +58,22 @@ export const createDocumentSlice = (set: any): DocumentSliceState => ({
 	setDocumentIssueStaffRole: createSetter(set, "documentIssueStaffRole"),
 	documentIssueNote: "",
 	setDocumentIssueNote: createSetter(set, "documentIssueNote"),
-	documentIssueIdentityChecked: false,
+	documentIssueIdentityChecked: true,
 	setDocumentIssueIdentityChecked: createSetter(
 		set,
 		"documentIssueIdentityChecked",
 	),
-	documentIssueDocumentOpenedAndChecked: false,
+	documentIssueDocumentOpenedAndChecked: true,
 	setDocumentIssueDocumentOpenedAndChecked: createSetter(
 		set,
 		"documentIssueDocumentOpenedAndChecked",
 	),
-	documentIssueRecipientSigned: false,
+	documentIssueRecipientSigned: true,
 	setDocumentIssueRecipientSigned: createSetter(
 		set,
 		"documentIssueRecipientSigned",
 	),
-	documentIssueClinicSigned: false,
+	documentIssueClinicSigned: true,
 	setDocumentIssueClinicSigned: createSetter(set, "documentIssueClinicSigned"),
 	documentVoidConfirmationId: null,
 	setDocumentVoidConfirmationId: createSetter(

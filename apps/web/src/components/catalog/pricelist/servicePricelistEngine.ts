@@ -11,4 +11,4 @@
  * - Layer 5: Module Barrel (`./servicePricelist/index`) & Master Facade (this file, <= 50 lines)
  */
 
-export * from './servicePricelist';
+export * from "./servicePricelist";

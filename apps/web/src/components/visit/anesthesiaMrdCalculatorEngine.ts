@@ -31,7 +31,7 @@ export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalcula
 	});
 
 	let maxSafeActiveMg = evaluatedMaxActive;
-	let limitingFactor = initLimit;
+	let limitingFactor: LimitingFactor = initLimit;
 	let limitingDesc = initDesc;
 	const isCardiac = Boolean(params.isCardiacRisk);
 	const maxSafeEpi = isCardiac ? EPINEPHRINE_LIMITS_MG.cardiovascularGate : EPINEPHRINE_LIMITS_MG.healthyAdult;

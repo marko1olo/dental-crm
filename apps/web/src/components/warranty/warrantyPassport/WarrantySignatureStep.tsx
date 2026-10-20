@@ -74,24 +74,24 @@ export const WarrantySignatureStep: React.FC<WarrantySignatureStepProps> = ({
 						<ShieldCheck size={22} />
 					</div>
 					<div>
-						<h4>Гарантийный приём & Устранение дефекта (0 ₽)</h4>
+						<h4>Гарантийная переделка у кресла (0 ₽)</h4>
 						<p>
-							Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29) • Положение СтАР • Внутренний регламент клиники
+							Гарантия качества клиники • Врачебная автономия • 100% скидка без блокировки счёта
 						</p>
 					</div>
 				</div>
 				<div className="warranty-statutory-features">
 					<div className="statutory-feat-pill">
 						<Check size={14} style={{ color: "var(--ok-fg)" }} />
-						<span>Пациент платит: <strong>0 ₽ (Скидка 100%)</strong></span>
+						<span>Пациент платит: <strong>0 ₽ (Гарантия 100%)</strong></span>
 					</div>
 					<div className="statutory-feat-pill">
 						<Check size={14} style={{ color: "var(--ok-fg)" }} />
-						<span>Материалы: <strong>Списание со склада по факту</strong></span>
+						<span>Материалы: <strong>Автоматическое списание со склада</strong></span>
 					</div>
 					<div className="statutory-feat-pill">
 						<Check size={14} style={{ color: "var(--ok-fg)" }} />
-						<span>Свобода врача: <strong>Без мастер-паролей и согласований</strong></span>
+						<span>Решение врача: <strong>В 1 клик без блокировки счёта</strong></span>
 					</div>
 				</div>
 			</div>
@@ -107,7 +107,7 @@ export const WarrantySignatureStep: React.FC<WarrantySignatureStepProps> = ({
 				<div className="warranty-section-header">
 					<h4>
 						<Award size={16} />
-						1. Выберите зуб и шаблон гарантийной переделки:
+						1. Выберите зуб и причину гарантийного обращения:
 					</h4>
 				</div>
 
@@ -137,7 +137,7 @@ export const WarrantySignatureStep: React.FC<WarrantySignatureStepProps> = ({
 
 				{/* Шаблоны дефекта */}
 				<div className="warranty-form-group" style={{ marginBottom: "16px" }}>
-					<label className="warranty-label">Клинический шаблон дефекта (СтАР / 0 ₽):</label>
+					<label className="warranty-label">Причина гарантийного обращения (0 ₽):</label>
 					<div className="warranty-defect-templates-grid">
 						{getAllWarrantyDefectTemplates().map((tmpl) => (
 							<button
@@ -216,7 +216,7 @@ export const WarrantySignatureStep: React.FC<WarrantySignatureStepProps> = ({
 						onClick={onCreateRemediation}
 					>
 						<CheckCircle2 size={18} />
-						Оформить гарантийное устранение (0 ₽) & Списать материалы
+						Оформить гарантийную переделку (0 ₽) & Списать материалы
 					</button>
 				</div>
 			</div>

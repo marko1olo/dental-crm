@@ -1,0 +1,92 @@
+﻿apps/api/src/routes/fiscal/receiptRoutes/receiptDraftHandlers.ts(84,66): error TS18048: 'item.quantity' is possibly 'undefined'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptDraftHandlers.ts(86,51): error TS18048: 'item.quantity' is possibly 'undefined'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptDraftHandlers.ts(88,52): error TS18048: 'item.quantity' is possibly 'undefined'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts(68,55): error TS2339: Property 'trim' does not exist on type '{}'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts(69,46): error TS2339: Property 'trim' does not exist on type '{}'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts(94,47): error TS2345: Argument of type '{ items: { name: string; amountKopecks: number; priceKopecks: number; id?: string | undefined; quantity?: number | undefined; subject?: "other" | "service" | "payment" | "commodity" | "job" | ... 6 more ... | undefined; ... 16 more ...; addendumConfirmed?: boolean | undefined; }[]; ... 30 more ...; correctionDocNumb...' is not assignable to parameter of type 'ApplyCashBoxReceiptParams'.
+  Types of property 'operationType' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts(123,53): error TS2339: Property 'trim' does not exist on type '{}'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptFiscalizeHandlers.ts(124,44): error TS2339: Property 'trim' does not exist on type '{}'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptKktSender.ts(89,55): error TS2345: Argument of type '{ items: { name: string; amountKopecks: number; priceKopecks: number; id?: string | undefined; quantity?: number | undefined; subject?: "other" | "service" | "payment" | "commodity" | "job" | ... 6 more ... | undefined; ... 16 more ...; addendumConfirmed?: boolean | undefined; }[]; ... 30 more ...; correctionDocNumb...' is not assignable to parameter of type '{ patientId: string; cashBoxId?: string | null | undefined; operationType?: string | undefined; taxationSystem?: string | undefined; totalKopecks: number; cashKopecks?: number | undefined; ... 4 more ...; items: readonly { ...; }[]; }'.
+  Types of property 'items' are incompatible.
+    Type '{ name: string; amountKopecks: number; priceKopecks: number; id?: string | undefined; quantity?: number | undefined; subject?: "other" | "service" | "payment" | "commodity" | "job" | "agency_fee" | ... 5 more ... | undefined; ... 16 more ...; addendumConfirmed?: boolean | undefined; }[]' is not assignable to type 'readonly { serviceId?: string | null | undefined; catalogItemId?: string | null | undefined; name: string; priceKopecks: number; quantity: number; discountKopecks?: number | null | undefined; discountPercent?: number | ... 1 more ... | undefined; ... 6 more ...; medicalServiceCode804n?: string | ... 1 more ... | und...'.
+      Type '{ name: string; amountKopecks: number; priceKopecks: number; id?: string | undefined; quantity?: number | undefined; subject?: "other" | "service" | "payment" | "commodity" | "job" | "agency_fee" | ... 5 more ... | undefined; ... 16 more ...; addendumConfirmed?: boolean | undefined; }' is not assignable to type '{ serviceId?: string | null | undefined; catalogItemId?: string | null | undefined; name: string; priceKopecks: number; quantity: number; discountKopecks?: number | null | undefined; discountPercent?: number | ... 1 more ... | undefined; ... 6 more ...; medicalServiceCode804n?: string | ... 1 more ... | undefined; }'.
+        Types of property 'quantity' are incompatible.
+          Type 'number | undefined' is not assignable to type 'number'.
+            Type 'undefined' is not assignable to type 'number'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptKktSender.ts(95,39): error TS2345: Argument of type '"expense" | "income" | "income_return" | "expense_return" | undefined' is not assignable to parameter of type '"expense" | "income" | "income_return" | "expense_return"'.
+  Type 'undefined' is not assignable to type '"expense" | "income" | "income_return" | "expense_return"'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptKktSender.ts(174,57): error TS2345: Argument of type '"expense" | "income" | "income_return" | "expense_return" | undefined' is not assignable to parameter of type '"expense" | "income" | "income_return" | "expense_return"'.
+  Type 'undefined' is not assignable to type '"expense" | "income" | "income_return" | "expense_return"'.
+apps/api/src/routes/fiscal/receiptRoutes/receiptKktSender.ts(205,45): error TS2345: Argument of type '{ items: { name: string; amountKopecks: number; priceKopecks: number; id?: string | undefined; quantity?: number | undefined; subject?: "other" | "service" | "payment" | "commodity" | "job" | ... 6 more ... | undefined; ... 16 more ...; addendumConfirmed?: boolean | undefined; }[]; ... 30 more ...; correctionDocNumb...' is not assignable to parameter of type 'ApplyCashBoxReceiptParams'.
+  Types of property 'operationType' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(163,2): error TS2322: Type '{ name: string; priceKopecks: number; quantity: number | undefined; amountKopecks: number; tag1212_paymentSubject: number; tag1214_paymentMethod: number; tag1199_vatRate: number; tag2108_quantityMeasure: number; medicalServiceCode804n: string | null; }[]' is not assignable to type 'ItemizedFfd12Tag[]'.
+  Type '{ name: string; priceKopecks: number; quantity: number | undefined; amountKopecks: number; tag1212_paymentSubject: number; tag1214_paymentMethod: number; tag1199_vatRate: number; tag2108_quantityMeasure: number; medicalServiceCode804n: string | null; }' is not assignable to type 'ItemizedFfd12Tag'.
+    Types of property 'quantity' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(168,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(169,41): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(170,35): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(171,43): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(257,6): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "client_mutation_id"; tableName: "payments"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<{}>, right: {} | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "client_mutation_id"; tableName: "payments"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<{}>'.
+      Type 'PgColumn<{ name: "client_mutation_id"; tableName: "payments"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<{}>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "client_mutation_id"; tableName: "payments"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(284,27): error TS2339: Property 'trim' does not exist on type '{}'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(352,6): error TS18048: 'input.sbpKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(354,9): error TS18048: 'input.electronicCardKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(385,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(453,6): error TS18048: 'input.sbpKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(455,9): error TS18048: 'input.electronicCardKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(588,42): error TS2345: Argument of type '"expense" | "income" | "income_return" | "expense_return" | undefined' is not assignable to parameter of type 'Tag1054OperationType'.
+  Type 'undefined' is not assignable to type 'Tag1054OperationType'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(589,43): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(591,4): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(592,4): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(594,5): error TS18048: 'input.electronicCardKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(594,35): error TS18048: 'input.sbpKopecks' is possibly 'undefined'.
+apps/api/src/routes/sbp/fiscalReceiptService.ts(595,4): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+apps/api/src/routes/shifts/index.ts(51,19): error TS2304: Cannot find name 'AutoCloseExpiredShiftsOptions'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(242,9): error TS2322: Type '{ name: string; priceKopecks: number; quantity: number | undefined; amountKopecks: number; tag1030_subjectName: string; tag1079_unitPriceRub: string; tag1023_quantity: number | undefined; ... 8 more ...; tag2000_markingPayload: { ...; } | null; }[]' is not assignable to type 'Ffd12ItemPayload[]'.
+  Type '{ name: string; priceKopecks: number; quantity: number | undefined; amountKopecks: number; tag1030_subjectName: string; tag1079_unitPriceRub: string; tag1023_quantity: number | undefined; ... 8 more ...; tag2000_markingPayload: { ...; } | null; }' is not assignable to type 'Ffd12ItemPayload'.
+    Types of property 'quantity' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(243,40): error TS2345: Argument of type '"other" | "service" | "payment" | "commodity" | "job" | "agency_fee" | "composite" | "excisable_goods_with_marking" | "excisable_goods_without_marking" | "goods_with_marking" | "goods_without_marking" | undefined' is not assignable to parameter of type '"other" | "service" | "payment" | "commodity" | "job" | "agency_fee" | "composite" | "excisable_goods_with_marking" | "excisable_goods_without_marking" | "goods_with_marking" | "goods_without_marking"'.
+  Type 'undefined' is not assignable to type '"other" | "service" | "payment" | "commodity" | "job" | "agency_fee" | "composite" | "excisable_goods_with_marking" | "excisable_goods_without_marking" | "goods_with_marking" | "goods_without_marking"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(244,40): error TS2345: Argument of type '"full_payment" | "full_prepayment" | "prepayment" | "advance" | "partial_payment_and_credit" | "credit_handover" | "credit_payment" | undefined' is not assignable to parameter of type '"full_payment" | "full_prepayment" | "prepayment" | "advance" | "partial_payment_and_credit" | "credit_handover" | "credit_payment"'.
+  Type 'undefined' is not assignable to type '"full_payment" | "full_prepayment" | "prepayment" | "advance" | "partial_payment_and_credit" | "credit_handover" | "credit_payment"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(245,40): error TS2345: Argument of type '"vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none" | undefined' is not assignable to parameter of type '"vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none"'.
+  Type 'undefined' is not assignable to type '"vat_20" | "vat_10" | "vat_20_120" | "vat_10_110" | "vat_0" | "vat_none"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(246,40): error TS2345: Argument of type '"other" | "day" | "hour" | "minute" | "gram" | "piece" | "kilogram" | undefined' is not assignable to parameter of type '"other" | "day" | "hour" | "minute" | "gram" | "piece" | "kilogram"'.
+  Type 'undefined' is not assignable to type '"other" | "day" | "hour" | "minute" | "gram" | "piece" | "kilogram"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(290,47): error TS2345: Argument of type '"expense" | "income" | "income_return" | "expense_return" | undefined' is not assignable to parameter of type '"expense" | "income" | "income_return" | "expense_return"'.
+  Type 'undefined' is not assignable to type '"expense" | "income" | "income_return" | "expense_return"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(291,48): error TS2345: Argument of type '"usn_income" | "usn_income_expense" | "psn" | "osn" | "esxn" | undefined' is not assignable to parameter of type '"usn_income" | "usn_income_expense" | "psn" | "osn" | "esxn"'.
+  Type 'undefined' is not assignable to type '"usn_income" | "usn_income_expense" | "psn" | "osn" | "esxn"'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(293,4): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(294,4): error TS2322: Type '{} | null' is not assignable to type 'string | null | undefined'.
+  Type '{}' is not assignable to type 'string'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(296,4): error TS2322: Type '{} | null' is not assignable to type 'string | null | undefined'.
+  Type '{}' is not assignable to type 'string'.
+apps/api/src/services/kkt/FiscalReceiptFactory.ts(297,4): error TS2322: Type '{} | null' is not assignable to type 'string | null | undefined'.
+  Type '{}' is not assignable to type 'string'.

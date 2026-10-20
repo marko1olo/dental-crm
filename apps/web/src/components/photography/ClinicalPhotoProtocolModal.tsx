@@ -17,18 +17,18 @@ import { denteAdminSecretRequestHeaders } from '../../lib/denteRequestHeaders';
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	visitId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	doctorName?: string;
-	clinicName?: string;
-	initialSlots?: Record<string, PhotoSlotRecord>;
-	initialPresetId?: string;
-	initialStage?: 'before' | 'during' | 'after' | 'followup';
-	onSaveProtocol?: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
-	onPhotoSaved?: (res: unknown) => void;
-	onPhotoProcessed?: (res: unknown) => void;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
+	patientName?: string | undefined;
+	patientCardNumber?: string | undefined;
+	doctorName?: string | undefined;
+	clinicName?: string | undefined;
+	initialSlots?: Record<string, PhotoSlotRecord> | undefined;
+	initialPresetId?: string | undefined;
+	initialStage?: 'before' | 'during' | 'after' | 'followup' | undefined;
+	onSaveProtocol?: ((slots: Record<string, PhotoSlotRecord>, presetId: string) => void) | undefined;
+	onPhotoSaved?: ((res: unknown) => void) | undefined;
+	onPhotoProcessed?: ((res: unknown) => void) | undefined;
 }
 
 export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProps> = ({

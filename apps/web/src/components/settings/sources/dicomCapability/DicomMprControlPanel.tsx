@@ -4,45 +4,45 @@ import type { DicomMprControlPanelProps, InputChangeEvent } from "./types";
 
 export function DicomMprControlPanel({
 	mprControlsReady,
-	cbctWorkbenchProjections,
+	cbctWorkbenchProjections = [],
 	mprProjection,
 	setMprProjection,
-	mprProjectionLabels,
-	mprAxisDeg,
+	mprProjectionLabels = {} as DicomMprControlPanelProps["mprProjectionLabels"],
+	mprAxisDeg = 0,
 	mprAxisRangeValue,
-	mprAxisBounds,
+	mprAxisBounds = { min: -45, max: 45 },
 	setMprAxisDeg,
 	clampMprAxisDeg,
-	mprAxisNudgeDeg,
-	formatSignedMprStep,
-	mprAxisPresetDeg,
-	mprSlabMm,
+	mprAxisNudgeDeg = [-5, -1, 1, 5],
+	formatSignedMprStep = (v, u) => `${v > 0 ? `+${v}` : v}${u}`,
+	mprAxisPresetDeg = [-30, -15, 0, 15, 30],
+	mprSlabMm = 1,
 	mprSlabRangeValue,
-	mprSlabBounds,
+	mprSlabBounds = { min: 1, max: 30 },
 	setMprSlabMm,
 	clampMprSlabMm,
-	mprSlabNudgeMm,
-	mprSlabPresetMm,
+	mprSlabNudgeMm = [-2, -1, 1, 2],
+	mprSlabPresetMm = [1, 3, 5, 10, 20],
 	mprSliceLabel,
-	mprSliceMaxIndex,
-	mprSafeSliceIndex,
+	mprSliceMaxIndex = 0,
+	mprSafeSliceIndex = 0,
 	mprSliceRangeValue,
 	setMprSliceIndex,
 	clampMprSliceIndex,
-	mprSliceNudgeSteps,
-	mprSlicePresetFractions,
+	mprSliceNudgeSteps = [-10, -1, 1, 10],
+	mprSlicePresetFractions = [],
 	mprSliceIndexFromFraction,
 	resetMprControls,
 	mprWorkbenchLocalSavedAt,
-	formatTime,
+	formatTime = (v) => String(v ?? ""),
 	mprWorkbenchDraftRestored,
 	restoreMprWorkbenchLocalDraft,
-	mprClinicalPresets,
+	mprClinicalPresets = [],
 	describeMprClinicalPresetProjectionFallback,
-	mprClinicalPresetButtonClass,
+	mprClinicalPresetButtonClass = () => "",
 	applyMprClinicalPreset,
 	mprNearestClinicalPreset,
-	mprWindowPresetLabels,
+	mprWindowPresetLabels = {} as Record<MprWindowPreset, string>,
 	mprWindowPreset,
 	setMprWindowPreset,
 	mprCrosshairEnabled,
@@ -50,10 +50,39 @@ export function DicomMprControlPanel({
 	mprLinkedPlanesEnabled,
 	setMprLinkedPlanesEnabled,
 }: DicomMprControlPanelProps) {
+	const safeProjections = Array.isArray(cbctWorkbenchProjections)
+		? cbctWorkbenchProjections
+		: [];
+	const safeAxisNudge = Array.isArray(mprAxisNudgeDeg)
+		? mprAxisNudgeDeg
+		: [-5, -1, 1, 5];
+	const safeAxisPresets = Array.isArray(mprAxisPresetDeg)
+		? mprAxisPresetDeg
+		: [-30, -15, 0, 15, 30];
+	const safeSlabNudge = Array.isArray(mprSlabNudgeMm)
+		? mprSlabNudgeMm
+		: [-2, -1, 1, 2];
+	const safeSlabPresets = Array.isArray(mprSlabPresetMm)
+		? mprSlabPresetMm
+		: [1, 3, 5, 10, 20];
+	const safeSliceNudge = Array.isArray(mprSliceNudgeSteps)
+		? mprSliceNudgeSteps
+		: [-10, -1, 1, 10];
+	const safeSliceFractions = Array.isArray(mprSlicePresetFractions)
+		? mprSlicePresetFractions
+		: [];
+	const safeClinicalPresets = Array.isArray(mprClinicalPresets)
+		? mprClinicalPresets
+		: [];
+	const safeWindowLabels =
+		mprWindowPresetLabels && typeof mprWindowPresetLabels === "object"
+			? mprWindowPresetLabels
+			: ({} as Record<MprWindowPreset, string>);
+
 	return (
 		<div className="mpr-control-panel">
 			<div className="mpr-toggle-row">
-				{cbctWorkbenchProjections.map((projection) => (
+				{safeProjections.map((projection) => (
 					<button
 						className={mprProjection === projection ? "active" : ""}
 						key={projection}
@@ -62,7 +91,7 @@ export function DicomMprControlPanel({
 						disabled={!mprControlsReady}
 						aria-pressed={mprProjection === projection}
 					>
-						{mprProjectionLabels[projection]}
+						{mprProjectionLabels?.[projection] ?? projection}
 					</button>
 				))}
 			</div>
@@ -71,8 +100,8 @@ export function DicomMprControlPanel({
 				<input
 					aria-valuetext={mprAxisRangeValue}
 					disabled={!mprControlsReady}
-					min={mprAxisBounds.min}
-					max={mprAxisBounds.max}
+					min={mprAxisBounds?.min ?? -45}
+					max={mprAxisBounds?.max ?? 45}
 					step="1"
 					type="range"
 					value={mprAxisDeg}
@@ -87,7 +116,7 @@ export function DicomMprControlPanel({
 				data-testid="ct-mpr-axis-nudge"
 				aria-label="Точная правка угла КТ-срезов"
 			>
-				{mprAxisNudgeDeg.map((delta) => (
+				{safeAxisNudge.map((delta) => (
 					<button
 						key={delta}
 						type="button"
@@ -104,7 +133,7 @@ export function DicomMprControlPanel({
 				className="mpr-preset-row"
 				aria-label="Быстрые углы КТ-срезов"
 			>
-				{mprAxisPresetDeg.map((angle) => (
+				{safeAxisPresets.map((angle) => (
 					<button
 						className={mprAxisDeg === angle ? "active" : ""}
 						key={angle}
@@ -123,8 +152,8 @@ export function DicomMprControlPanel({
 				<input
 					aria-valuetext={mprSlabRangeValue}
 					disabled={!mprControlsReady}
-					min={mprSlabBounds.min}
-					max={mprSlabBounds.max}
+					min={mprSlabBounds?.min ?? 1}
+					max={mprSlabBounds?.max ?? 30}
 					step="1"
 					type="range"
 					value={mprSlabMm}
@@ -139,7 +168,7 @@ export function DicomMprControlPanel({
 				data-testid="ct-mpr-slab-nudge"
 				aria-label="Точная правка толщины слоя КТ-срезов"
 			>
-				{mprSlabNudgeMm.map((delta) => (
+				{safeSlabNudge.map((delta) => (
 					<button
 						key={delta}
 						type="button"
@@ -156,7 +185,7 @@ export function DicomMprControlPanel({
 				className="mpr-preset-row"
 				aria-label="Быстрая толщина слоя КТ-срезов"
 			>
-				{mprSlabPresetMm.map((slab) => (
+				{safeSlabPresets.map((slab) => (
 					<button
 						className={mprSlabMm === slab ? "active" : ""}
 						key={slab}
@@ -210,8 +239,8 @@ export function DicomMprControlPanel({
 					<input
 						disabled={!mprControlsReady}
 						inputMode="numeric"
-						max={mprAxisBounds.max}
-						min={mprAxisBounds.min}
+						max={mprAxisBounds?.max ?? 45}
+						min={mprAxisBounds?.min ?? -45}
 						step="1"
 						type="number"
 						value={mprAxisDeg}
@@ -225,8 +254,8 @@ export function DicomMprControlPanel({
 					<input
 						disabled={!mprControlsReady}
 						inputMode="numeric"
-						max={mprSlabBounds.max}
-						min={mprSlabBounds.min}
+						max={mprSlabBounds?.max ?? 30}
+						min={mprSlabBounds?.min ?? 1}
 						step="1"
 						type="number"
 						value={mprSlabMm}
@@ -262,7 +291,7 @@ export function DicomMprControlPanel({
 				data-testid="ct-mpr-slice-nudge"
 				aria-label="Точная навигация по КТ-срезам"
 			>
-				{mprSliceNudgeSteps.map((delta) => (
+				{safeSliceNudge.map((delta) => (
 					<button
 						key={delta}
 						type="button"
@@ -286,7 +315,7 @@ export function DicomMprControlPanel({
 				className="mpr-preset-row"
 				aria-label="Опорные КТ-срезы"
 			>
-				{mprSlicePresetFractions.map((preset) => {
+				{safeSliceFractions.map((preset) => {
 					const targetIndex = mprSliceIndexFromFraction(
 						preset.fraction,
 						mprSliceMaxIndex,
@@ -343,14 +372,15 @@ export function DicomMprControlPanel({
 				data-testid="ct-mpr-clinical-presets"
 				aria-label="Клинические протоколы КТ-срезов"
 			>
-				{mprClinicalPresets.map((preset) => {
-					const projectionFallbackNote = mprControlsReady
-						? describeMprClinicalPresetProjectionFallback(
-								preset.projection,
-								cbctWorkbenchProjections,
-								mprProjectionLabels,
-							)
-						: null;
+				{safeClinicalPresets.map((preset) => {
+					const projectionFallbackNote =
+						mprControlsReady && describeMprClinicalPresetProjectionFallback
+							? describeMprClinicalPresetProjectionFallback(
+									preset.projection,
+									safeProjections,
+									mprProjectionLabels,
+								)
+							: null;
 					return (
 						<button
 							className={mprClinicalPresetButtonClass(preset)}
@@ -358,8 +388,8 @@ export function DicomMprControlPanel({
 							type="button"
 							onClick={() => applyMprClinicalPreset(preset)}
 							aria-current={
-								mprNearestClinicalPreset.exact &&
-								mprNearestClinicalPreset.title === preset.title
+								mprNearestClinicalPreset?.exact &&
+								mprNearestClinicalPreset?.title === preset.title
 									? "true"
 									: undefined
 							}
@@ -375,7 +405,7 @@ export function DicomMprControlPanel({
 				})}
 			</div>
 			<div className="mpr-toggle-row">
-				{(Object.keys(mprWindowPresetLabels) as MprWindowPreset[]).map(
+				{(Object.keys(safeWindowLabels) as MprWindowPreset[]).map(
 					(preset) => (
 						<button
 							className={mprWindowPreset === preset ? "active" : ""}
@@ -385,7 +415,7 @@ export function DicomMprControlPanel({
 							disabled={!mprControlsReady}
 							aria-pressed={mprWindowPreset === preset}
 						>
-							{mprWindowPresetLabels[preset]}
+							{safeWindowLabels[preset]}
 						</button>
 					),
 				)}

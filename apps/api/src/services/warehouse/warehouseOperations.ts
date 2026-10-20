@@ -113,6 +113,7 @@ export async function executeSoftOverdraftDeduct(
 						sql`lower(${inventoryItems.name}) = lower(${searchName})`,
 					),
 				)
+				.orderBy(inventoryItems.id)
 				.limit(1)
 				.for("update");
 			item = itemByName;
@@ -128,6 +129,7 @@ export async function executeSoftOverdraftDeduct(
 						ilike(inventoryItems.name, `%${searchName}%`),
 					),
 				)
+				.orderBy(inventoryItems.id)
 				.limit(1)
 				.for("update");
 			item = partial;
@@ -252,6 +254,7 @@ export async function executeQuickCarpuleDisposal(
 						),
 					),
 				)
+				.orderBy(inventoryItems.id)
 				.limit(1)
 				.for("update");
 			matchingItem = itemByName;

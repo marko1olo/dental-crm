@@ -1,13 +1,19 @@
 import { AlertTriangle, Calendar, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { EmptyState } from "../../components/EmptyState.js";
+import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { NETWORK_FAILURE_MESSAGE } from "../analyticsDoctorMetrics.js";
 import { AnalyticsDoctorsTable } from "./AnalyticsDoctorsTable";
 import { AnalyticsHeaderBar } from "./AnalyticsHeaderBar";
 import { AnalyticsKpiCards } from "./AnalyticsKpiCards";
-import { AnalyticsRevenueCharts } from "./AnalyticsRevenueCharts";
 import { AnalyticsSubDashboards } from "./AnalyticsSubDashboards";
 import { RebookingConversionRulesWidget } from "./RebookingConversionRulesWidget";
+
+const AnalyticsRevenueCharts = lazyWithRetry(() =>
+	import("./AnalyticsRevenueCharts").then((module) => ({
+		default: module.AnalyticsRevenueCharts,
+	})),
+);
 import type { AnalyticsSection } from "./types";
 import { useAnalyticsDashboardData } from "./useAnalyticsDashboardData";
 
@@ -165,7 +171,22 @@ export function AnalyticsDashboardView() {
 									<AnalyticsKpiCards data={data} />
 
 									<div className="analytics-grid">
-										<AnalyticsRevenueCharts data={data} />
+										<Suspense
+											fallback={
+												<div
+													className="analytics-chart-skeleton"
+													aria-label="Загрузка графиков выручки"
+													aria-busy="true"
+												>
+													<div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-[var(--muted)]">
+														<RefreshCw className="w-8 h-8 animate-spin text-[var(--teal,#0d9488)]" />
+														<p className="text-sm font-medium">Подготовка аналитических графиков...</p>
+													</div>
+												</div>
+											}
+										>
+											<AnalyticsRevenueCharts data={data} />
+										</Suspense>
 										<AnalyticsDoctorsTable rows={data?.doctorProfitabilityJson ?? []} />
 									</div>
 

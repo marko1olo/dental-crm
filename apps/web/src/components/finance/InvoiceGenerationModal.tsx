@@ -32,18 +32,19 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
-import { InvoiceDecree659Banner } from "./InvoiceDecree659Banner";
+import { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./InvoiceTaxDecreeBanner";
 import { InvoiceAdminPinDrawer } from "./InvoiceAdminPinDrawer";
 import { InvoiceItemsTable } from "./InvoiceItemsTable";
 import {
+	createTaxAddendum,
 	createDecree659Addendum,
 	submitInvoiceFromPlan,
 } from "./invoiceGenerationOperations";
 
-export { InvoiceDecree659Banner } from "./InvoiceDecree659Banner";
+export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./InvoiceTaxDecreeBanner";
 export { InvoiceAdminPinDrawer } from "./InvoiceAdminPinDrawer";
 export { InvoiceItemsTable } from "./InvoiceItemsTable";
-export { submitInvoiceFromPlan, createDecree659Addendum } from "./invoiceGenerationOperations";
+export { submitInvoiceFromPlan, createTaxAddendum, createDecree659Addendum } from "./invoiceGenerationOperations";
 
 export interface InvoiceGenerationModalProps {
 	readonly isOpen: boolean;
@@ -658,9 +659,9 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					</div>
 				</div>
 
-				{/* 3. Items Table & Decree 659 Banner */}
+				{/* 3. Items Table & Additional Agreement Banner */}
 				<div className="flex-1 overflow-y-auto p-6 min-h-0 flex flex-col">
-					<InvoiceDecree659Banner
+					<InvoiceTaxDecreeBanner
 						unapprovedItems={unapprovedItems}
 						isCreatingAddendum={isCreatingAddendum}
 						onCreateAddendum={handleCreateAddendum}
@@ -766,7 +767,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 								isSubmitting || isCreatingAddendum
 									? "Идет формирование документа и сохранение..."
 									: unapprovedItems.length > 0
-										? "Включает автосогласование дополнительных услуг по ПП РФ №659"
+										? "Включает автосогласование дополнительных услуг к плану лечения"
 										: undefined
 							}
 							className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-lg shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-95 cursor-pointer"

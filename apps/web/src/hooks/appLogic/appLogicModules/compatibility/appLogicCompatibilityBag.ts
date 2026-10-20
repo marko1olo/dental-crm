@@ -1,0 +1,246 @@
+import type { StaffRole } from "@dental/shared";
+import {
+	defaultUiLanguageOption, operatorWorkflowFailureMessage, patientName as patientNameHelper,
+	visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftSignalLabel,
+	visitNoteFieldDefinitions, visitSaveReceiptText,
+} from "../../../../AppHelpers";
+import { viewLabels } from "../../../../utils/routeUtils";
+import { buildAppLogicImagingCompatibility } from "../appLogicImagingCompatibility";
+import { buildAppLogicWorkflowCompatibility } from "../appLogicWorkflowCompatibility";
+import {
+	buildLegacyAppStoreBindings,
+	buildLegacyFieldBindings,
+	buildLegacyNavigationAndClinicalBindings,
+	buildLegacyNormalizers,
+	buildLegacyPatientFields,
+	buildLegacyStubsAndFallbacks,
+	buildProfileAndLegalHelpers,
+	sortCommunicationTasks,
+} from "./appLogicLegacyBridge";
+
+export type { AppLogicCompatibilityInputParams as BuildAppLogicCompatibilityBagParams } from "./appLogicCompatibilityTypes";
+
+// biome-ignore lint/suspicious/noExplicitAny: master compatibility bag builder
+export function buildAppLogicCompatibilityBag(params: any): any {
+	const {
+		appStore,
+		settingsStore,
+		imagingStore,
+		soundNotifications,
+		auth,
+		navigationState,
+		patientSelection,
+		scheduleLogic,
+		clinicalSession,
+		billingModal,
+		modalController,
+		offlineSync,
+		settingsAndIntegrations,
+		staffSettingsLogic,
+		migrationQueries,
+		imagingQueries,
+		communicationsQueries,
+		emergencyTriage,
+		navigationSync,
+	} = params;
+
+	const { dashboard } = appStore;
+	const { selectedWorkspaceRole } = navigationState;
+	const { patient } = patientSelection;
+	const { documentPatient } = patient;
+	const { dicomWorkbenchModule, documentWorkflow, telegram, telegramSettingsModule } =
+		settingsAndIntegrations;
+
+	const activeQueueRole: StaffRole =
+		(selectedWorkspaceRole as string) === "all" ? "doctor" : selectedWorkspaceRole;
+
+	const profileAndLegal = buildProfileAndLegalHelpers(appStore);
+	const legacyStubs = buildLegacyStubsAndFallbacks();
+	const legacyFieldBindings = buildLegacyFieldBindings(params);
+	const legacyAppStore = buildLegacyAppStoreBindings(appStore);
+	const legacyNavigation = buildLegacyNavigationAndClinicalBindings(clinicalSession, navigationState);
+
+	const appLogicBag: any = {
+		...appStore,
+		...settingsStore,
+		...imagingStore,
+		...clinicalSession,
+		...settingsAndIntegrations,
+		...dicomWorkbenchModule,
+		...documentWorkflow,
+		...modalController.modalOrchestrator,
+		...staffSettingsLogic,
+		...patientSelection.patientIntakeLogic,
+		...migrationQueries,
+		...imagingQueries,
+		...communicationsQueries,
+		...scheduleLogic.scheduleFilterController,
+		...navigationState.navigationRouter,
+		...patientSelection,
+		...billingModal,
+		...scheduleLogic,
+	};
+
+	const imagingSlice = buildAppLogicImagingCompatibility({
+		offlineSync,
+		settingsAndIntegrations,
+		appLogicBag,
+	});
+
+	const workflowSlice = buildAppLogicWorkflowCompatibility({
+		appStore,
+		settingsAndIntegrations,
+		modalController,
+		offlineSync,
+		appLogicBag,
+		browserDirectoryInputRef: params.browserDirectoryInputRef,
+		browserMigrationInputRef: params.browserMigrationInputRef,
+		refreshSpeechRuntimeRef: params.refreshSpeechRuntimeRef,
+	});
+
+	const legacyNormalizers = buildLegacyNormalizers(appLogicBag);
+	const legacyPatient = buildLegacyPatientFields(documentPatient, dashboard);
+	const sortedCommunicationTasks = sortCommunicationTasks(dashboard?.communicationTasks);
+
+	return {
+		...documentWorkflow,
+		...dicomWorkbenchModule,
+		...telegramSettingsModule,
+		...telegram,
+		...auth,
+		...clinicalSession.clinicalVisitLogic,
+		...staffSettingsLogic,
+		...patientSelection.patientIntakeLogic,
+		...migrationQueries,
+		...imagingQueries,
+		...communicationsQueries,
+		...modalController.modalOrchestrator,
+		...scheduleLogic.scheduleFilterController,
+		...navigationState.navigationRouter,
+		...patientSelection,
+		...billingModal,
+		...scheduleLogic,
+		...emergencyTriage,
+		...navigationSync,
+		...workflowSlice,
+		...imagingSlice,
+		...legacyStubs,
+		...profileAndLegal,
+		...legacyFieldBindings,
+		...legacyAppStore,
+		...legacyNavigation,
+		...legacyNormalizers,
+		...legacyPatient,
+		soundNotifications,
+		auth,
+		activeAppointment: scheduleLogic.activeAppointment,
+		activeChair: scheduleLogic.activeChair,
+		activeDoctor: scheduleLogic.activeDoctor,
+		activePatient: patientSelection.activePatient,
+		activeVisitPatient: patientSelection.activeVisitPatient,
+		activePatientCallablePhone: patientSelection.activePatientCallablePhone,
+		activePatientHasCallablePhone: patientSelection.activePatientHasCallablePhone,
+		activePatientInsight: patientSelection.activePatientInsight,
+		activeQueueRole,
+		appointmentReadinessById: scheduleLogic.appointmentReadinessById,
+		appointmentReadinessLabels: appLogicBag.appointmentReadinessLabels ?? {},
+		appointmentScheduleDraftFromAppointment: appLogicBag.appointmentScheduleDraftFromAppointment ?? (() => null),
+		buildDraft: appLogicBag.buildDraft ?? (() => null),
+		buildOfflineDraft: appLogicBag.buildOfflineDraft ?? (() => null),
+		clinicPublicLookup: appLogicBag.clinicPublicLookup ?? null,
+		closeAppointmentEditor: scheduleLogic.closeAppointmentEditor ?? (() => {}),
+		completeCommunicationTask: settingsAndIntegrations.completeCommunicationTask,
+		createAppointmentFromDraft: scheduleLogic.createAppointmentFromDraft ?? (async () => {}),
+		createClinicalRuleFromSettings: settingsAndIntegrations.createClinicalRuleFromSettings,
+		dashboard,
+		documentFactoryGroups: appLogicBag.documentFactoryGroups ?? [],
+		documentPatient,
+		editingAppointmentId: scheduleLogic.editingAppointmentId,
+		filteredPatients: patientSelection.filteredPatients,
+		flushPendingVisitSaves: appLogicBag.flushPendingVisitSaves ?? (async () => {}),
+		isPaymentSaving: appLogicBag.isPaymentSaving ?? false,
+		isRecognitionLoading: appLogicBag.isRecognitionLoading ?? false,
+		isVisitNoteDirty: appLogicBag.isVisitNoteDirty ?? false,
+		openAppointmentEditor: scheduleLogic.openAppointmentEditor ?? (() => {}),
+		openScheduleWarning: scheduleLogic.openScheduleWarning ?? (() => {}),
+		openVisitWarningAction: appLogicBag.openVisitWarningAction ?? (() => {}),
+		patientAdministrativeProfileValidationMessage: patientSelection.patientAdministrativeProfileValidationMessage,
+		patientInsightById: patientSelection.patientInsightById,
+		patientInsightRiskLabels: appLogicBag.patientInsightRiskLabels ?? {},
+		patientIntakePregnancyStatusOptions: appLogicBag.patientIntakePregnancyStatusOptions ?? [],
+		patientName: patientNameHelper,
+		paymentMutationIdRef: params.paymentMutationIdRef,
+		paymentPatientContextMessage: patientSelection.paymentPatientContextMessage,
+		paymentPatientContextReady: patientSelection.paymentPatientContextReady,
+		photoVideoMaterialOptions: appLogicBag.photoVideoMaterialOptions ?? [],
+		policyAuditEventLabels: appLogicBag.policyAuditEventLabels ?? {},
+		pricelistParserModeLabels: appLogicBag.pricelistParserModeLabels ?? {},
+		primaryVisitWarning: appLogicBag.primaryVisitWarning ?? null,
+		procedureSpecificConsentProcedureOptions: appLogicBag.procedureSpecificConsentProcedureOptions ?? [],
+		query: patientSelection.query,
+		recommendedActionPriorityLabels: appLogicBag.recommendedActionPriorityLabels ?? {},
+		recordPayment: billingModal.finance?.recordPayment ?? (async () => {}),
+		resetNewAppointmentDraft: scheduleLogic.resetNewAppointmentDraft ?? (() => {}),
+		roleFocusOrder: appLogicBag.roleFocusOrder ?? [],
+		saveAppointmentSchedule: scheduleLogic.saveAppointmentSchedule ?? (async () => {}),
+		saveChairSchedule: scheduleLogic.saveChairSchedule ?? (async () => {}),
+		saveClinicProfileFromDraft: settingsAndIntegrations.saveClinicProfileFromDraft,
+		savePatientAdministrativeProfile: patientSelection.savePatientAdministrativeProfile,
+		savePatientCore: patientSelection.savePatientCore,
+		createPatient: patientSelection.createPatient,
+		saveStaffSchedule: scheduleLogic.saveStaffSchedule,
+		scenarioPriorityLabels: appLogicBag.scenarioPriorityLabels ?? {},
+		scenarioStrategyLabels: appLogicBag.scenarioStrategyLabels ?? {},
+		scheduleAdminSecretDraft: scheduleLogic.scheduleAdminSecretDraft,
+		scheduleAdminSecretSession: scheduleLogic.scheduleAdminSecretSession,
+		selectedPatient: patientSelection.selectedPatient,
+		selectedUiLanguageOption: defaultUiLanguageOption,
+		selectedWorkspaceRole,
+		setQuery: patientSelection.setQuery,
+		settingsTabs: appLogicBag.settingsTabs ?? [],
+		sortedAppointments: scheduleLogic.sortedAppointments,
+		staffScheduleDraftFromWorkingHours: appLogicBag.staffScheduleDraftFromWorkingHours ?? (() => null),
+		taxApplicationDeliveryChannelOptions: appLogicBag.taxApplicationDeliveryChannelOptions ?? [],
+		taxApplicationFormOptions: appLogicBag.taxApplicationFormOptions ?? [],
+		taxApplicationRelationshipOptions: appLogicBag.taxApplicationRelationshipOptions ?? [],
+		uiLanguageOptions: appLogicBag.uiLanguageOptions ?? [],
+		soundNotificationsMuted: soundNotifications.muted,
+		setSoundNotificationsMuted: soundNotifications.setMuted,
+		testOnlineBookingSound: soundNotifications.testOnlineBookingSound,
+		testSlotEndSound: soundNotifications.testSlotEndSound,
+		updatePatientAdministrativeProfileDraft: patientSelection.updatePatientAdministrativeProfileDraft,
+		updatePatientCoreDraft: patientSelection.updatePatientCoreDraft,
+		viewLabels,
+		visitDraftMissingFieldLabel,
+		visitDraftQualityLabels,
+		visitDraftSignalLabel,
+		visitNoteFieldDefinitions,
+		visitSaveReceiptText,
+		loadDashboard: params.loadDashboard,
+		operatorWorkflowFailureMessage,
+		activeCommunicationTasks: null,
+		activePayments: billingModal.activePayments,
+		activeTreatmentPlanItems: billingModal.activeTreatmentPlanItems,
+		addImagingViewerNoteAnnotation: null,
+		analyzePricelist: settingsAndIntegrations.analyzePricelist,
+		applyProtocolTemplate: null,
+		applyProtocolTemplateDirectly: null,
+		assembleSpeechRecording: async () => {},
+		chooseRecognitionPreset: null,
+		clinicalMutationHeaders: auth.denteClinicalMutationHeaders,
+		clinicalReadHeaders: auth.denteClinicalReadHeaders,
+		selectedPaymentReceiptTotalRub: 0,
+		selectedProtocolTemplate: null,
+		selectedTaxPaymentTotalRub: 0,
+		setSelectedPatientId: patientSelection.setSelectedPatientId,
+		shiftWarnings: null,
+		sortedCommunicationTasks,
+		specialtiesWithTemplates: [],
+		specialtyProtocolTemplates: [],
+		visibleVisitSpecialtyFocusOptions: [],
+		visitPrimaryAction: null,
+		visitSafetyCards: [],
+		visitWorkflowSteps: [],
+		recentPatientViewsVersion: params.recentPatientViewsVersion,
+	};
+}

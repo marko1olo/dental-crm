@@ -9,7 +9,10 @@
 import { sha256Hex, sha256Bytes } from "../sync/hashing.js";
 import { z } from "zod";
 import { EGISZ_OIDS } from "../cda/oids.js";
-import { buildGenuineGostCmsPkcs7Der } from "./gostCmsPkcs7Engine.js";
+import {
+	buildDeterministicGostCmsTestContainer,
+	buildGenuineGostCmsPkcs7Der,
+} from "./gostCmsPkcs7Engine.js";
 import { CADES_CONSTANTS, CADES_GOST_CRYPTO_OIDS, GOST_CRYPTO_OIDS } from "./cadespluginConstants.js";
 
 // ─── CAdESCOM / CAPICOM Constants ──────────────────────────────────────────
@@ -140,13 +143,28 @@ export const DOCTOR_PEP_FORBIDDEN_MESSAGE =
 
 /**
  * Валидирует допустимость режима электронной подписи для медицинского работника.
- * Возвращает ошибку, если врач пытается использовать простую ЭП (ПЭП).
+ * Разделяет:
+ * - Tier 1 (Chairside Hot Flow — `internal_visit_diary` / `internal_clinical_note` / `internal_shift_session`):
+ *   внутриклиническая фиксация записи в МИС во время приёма (без передачи безбумажного СЭМД в ЕГИСЗ),
+ *   где не требуется втыкать USB-токен у кресла.
+ * - Tier 3 (Cold Backoffice / Юридически значимый внешний ЭМД — СЭМД РЭМД, ИДС, План лечения):
+ *   строго требует УКЭП или УНЭП по 63-ФЗ и Приказу 947н, отклоняя ПЭП/ПИН.
  */
 export function validateDoctorSignatureStatutoryMode(
 	mode: string,
 	documentKind?: string,
 ): { valid: boolean; error?: string } {
 	const normalized = mode.trim().toLowerCase();
+	const normalizedKind = (documentKind ?? "").trim().toLowerCase();
+
+	if (
+		normalized === "internal_shift_session" ||
+		normalizedKind === "internal_visit_diary" ||
+		normalizedKind === "internal_clinical_note"
+	) {
+		return { valid: true };
+	}
+
 	if (
 		normalized === "simple_electronic_signature" ||
 		normalized === "pep" ||
@@ -423,10 +441,10 @@ export function validateCertificateStatus(params: {
 }
 
 /**
- * Создает демонстрационный сертифицированный отсоединенный контейнер CMS (PKCS#7)
- * по стандарту ГОСТ Р 34.10-2012 для тестирования, разработки и валидации.
+ * Создает детерминированный тестовый отсоединенный контейнер CMS (PKCS#7)
+ * для проверки контроля целостности (Tamper Detection) и автотестов без физического USB-токена.
  */
-export function createDemonstrationGostCmsSignature(params: {
+export function createDeterministicGostCmsTestSignature(params: {
 	documentId: string;
 	documentKind: string;
 	documentHashHex: string;
@@ -454,7 +472,7 @@ export function createDemonstrationGostCmsSignature(params: {
 		"CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU";
 	const subject = `CN=${params.doctorFullName}, O=${params.clinicName ?? "Стоматологическая клиника ДЕНТЕ"}, C=RU`;
 
-	const derBuf = buildGenuineGostCmsPkcs7Der({
+	const derBuf = buildDeterministicGostCmsTestContainer({
 		documentHashSha256Hex: params.documentHashHex,
 		doctorFullName: params.doctorFullName,
 		certificateSerialNumber: serialHex,
@@ -486,5 +504,19 @@ export function createDemonstrationGostCmsSignature(params: {
 	};
 }
 
+/**
+ * Алиас обратной совместимости для существующих модулей и тестов.
+ */
+export const createDemonstrationGostCmsSignature =
+	createDeterministicGostCmsTestSignature;
+
 export * from "./cadespluginConstants.js";
-export { buildGenuineGostCmsPkcs7Der, validateGostCmsPkcs7Signature, extractGostCmsMetadata } from "./gostCmsPkcs7Engine.js";
+export {
+	buildDeterministicGostCmsTestContainer,
+	buildGenuineGostCmsPkcs7Der,
+	isDeterministicGostTestContainer,
+	validateGostCmsPkcs7Signature,
+	extractGostCmsMetadata,
+	type GostContainerOrigin,
+	type DeterministicGostCmsContainerParams,
+} from "./gostCmsPkcs7Engine.js";

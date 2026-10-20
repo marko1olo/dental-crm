@@ -30,7 +30,7 @@ import {
 	generateFriendlyBillingWhatsAppMessage,
 	buildWhatsAppLink,
 } from "../portal/patientCabinet/patientCareInstructionsEngine";
-import { FiscalReceipt54FzModal as Fiscal54FzReceiptModal } from "./FiscalReceipt54FzModal";
+import { FiscalReceiptModal as Fiscal54FzReceiptModal } from "./FiscalReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
 import type { TaxDeductionPaymentItem } from "@dental/shared";

@@ -57,7 +57,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 							Сумма: {totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 						</p>
 						<span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-							Транзакция подтверждена • Чек 54-ФЗ успешно сформирован
+							Транзакция подтверждена • Фискальный чек успешно сформирован
 						</span>
 					</div>
 				) : (

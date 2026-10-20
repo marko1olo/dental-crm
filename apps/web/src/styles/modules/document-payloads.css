@@ -1,0 +1,497 @@
+.document-payload-forms {
+	display: grid;
+	gap: 10px;
+	grid-column: 1 / -1;
+	/* min(...): колонка не должна оставаться шире контейнера на телефоне. */
+	grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+
+.document-payload-card {
+	background: var(--paper, #fff);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-payload-card h3,
+.document-payload-card p {
+	margin: 0;
+}
+
+.document-payload-card h3 {
+	color: var(--ink);
+	font-size: 13px;
+}
+
+.document-payload-card p {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.document-payload-card .document-payload-note {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.document-payload-card label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 800;
+	gap: 4px;
+	min-width: 0;
+}
+
+.document-payload-card input,
+.document-payload-card select,
+.document-payload-card textarea {
+	background: var(--paper-soft, #fbfefd);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	color: var(--ink);
+	font: inherit;
+	min-height: 36px;
+	min-width: 0;
+	padding: 7px 8px;
+	resize: vertical;
+}
+
+.document-payload-card input:focus,
+.document-payload-card select:focus,
+.document-payload-card textarea:focus {
+	border-color: var(--teal);
+	outline: none;
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+}
+
+/* Moved to modules/modals.css */
+
+.inventory-confirm-actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.inventory-confirm-actions button {
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	min-height: 42px;
+	padding: 10px 18px;
+}
+
+.inventory-confirm-cancel {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+
+.inventory-confirm-danger {
+	background: var(--rust, #b91c1c);
+	border: 1px solid var(--rust, #b91c1c);
+	color: #ffffff;
+}
+
+.inventory-confirm-danger:hover {
+	filter: brightness(1.08);
+}
+
+/*
+ * Поля формы материала.
+ *
+ * Партия и срок годности стоят на поверхности: просроченный расходник — вред
+ * пациенту. Артикул и штрихкод убраны под раскрытие, у соло-врача их обычно нет.
+ */
+.inventory-form-row {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inventory-form-field {
+	color: var(--muted);
+	display: grid;
+	font-size: 13px;
+	font-weight: 500;
+	gap: 6px;
+}
+
+.inventory-form-field input {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	padding: 10px 14px;
+}
+
+.inventory-form-more summary {
+	color: var(--teal);
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 4px 0;
+	user-select: none;
+}
+
+.inventory-form-more[open] summary {
+	margin-bottom: 10px;
+}
+
+/* Срок годности в списке материалов. */
+.inventory-expiry-expired {
+	color: var(--rust, #b91c1c);
+	font-weight: 700;
+}
+
+.inventory-expiry-soon {
+	color: var(--amber, #d97706);
+	font-weight: 700;
+}
+
+@media (max-width: 640px) {
+	.inventory-form-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.document-payload-card .document-payload-checkbox {
+	align-items: center;
+	display: flex;
+	font-weight: 700;
+}
+
+.document-payload-card .document-payload-checkbox input {
+	min-height: auto;
+	width: 16px;
+}
+
+.document-payload-row {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/*
+ * Быстрая вставка отрицательного ответа в поле анамнеза.
+ *
+ * Поле пустое, пока врач не спросил пациента. Кнопка видна только у пустого
+ * поля и вписывает готовую фразу в одно нажатие, чтобы честность не
+ * превращалась в пять одинаковых предложений, набранных руками за приём.
+ */
+.document-anamnesis-field {
+	display: grid;
+	gap: 6px;
+}
+
+.document-anamnesis-quick {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	cursor: pointer;
+	font-size: 13px;
+	justify-self: start;
+	min-height: 34px;
+	padding: 6px 12px;
+}
+
+.document-anamnesis-quick:hover {
+	border-color: var(--teal);
+}
+
+.document-payload-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.document-payload-actions small {
+	color: var(--muted);
+	flex: 1 1 240px;
+	font-size: 12px;
+	line-height: 1.35;
+	min-width: 0;
+}
+
+.document-payload-actions .document-action-guidance {
+	background: var(--paper-soft, #eef7f5);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--teal-dark, #0f5f56);
+	padding: 6px 8px;
+}
+
+.document-open-guidance {
+	background: var(--paper-soft, #f4fbf8);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+	margin: -4px 0 10px;
+	padding: 7px 9px;
+}
+
+.document-create-guidance {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.document-factory-group h3 {
+	color: var(--muted);
+	font-size: 12px;
+	letter-spacing: 0;
+	margin: 0;
+}
+
+.document-factory-group > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.document-factory .secondary-button {
+	font-size: 13px;
+	justify-content: flex-start;
+	min-height: 34px;
+	min-width: 0;
+	padding: 0 9px;
+}
+
+.document-row > svg {
+	color: var(--green);
+	height: 22px;
+	width: 22px;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.doc-link {
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--teal-dark);
+	display: inline-flex;
+	font-size: 13px;
+	font-weight: 850;
+	min-height: 34px;
+	padding: 0 10px;
+	text-decoration: none;
+}
+
+.document-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.document-actions .text-button {
+	font-size: 13px;
+	min-height: 34px;
+	padding: 0 10px;
+}
+
+.document-issue-confirmation {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-left: 5px solid var(--amber);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.document-issue-confirmation span {
+	color: #744d18;
+	display: block;
+	font-size: 12px;
+	font-weight: 950;
+	margin-bottom: 3px;
+}
+
+.document-issue-confirmation strong {
+	color: var(--ink);
+	display: block;
+	font-size: 16px;
+	line-height: 1.2;
+}
+
+.document-issue-confirmation p,
+.document-issue-confirmation ul {
+	color: var(--muted);
+	margin: 0;
+}
+
+.document-issue-confirmation ul {
+	display: grid;
+	gap: 5px;
+	padding-left: 18px;
+}
+
+.document-issue-attestation-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.document-issue-attestation-grid label,
+.document-issue-checkboxes label {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+
+.document-issue-attestation-grid input,
+.document-issue-attestation-grid select,
+.document-issue-attestation-grid textarea {
+	background: #fff;
+	border: 1px solid #e0c18a;
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	min-width: 0;
+	padding: 9px 10px;
+	width: 100%;
+}
+
+.document-issue-attestation-grid textarea {
+	min-height: 74px;
+	resize: vertical;
+}
+
+.document-issue-attestation-note {
+	grid-column: 1 / -1;
+}
+
+.document-issue-checkboxes {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.document-issue-checkboxes label {
+	align-items: center;
+	background: rgba(255, 255, 255, 0.72);
+	border: 1px solid #ead2a1;
+	border-radius: 8px;
+	display: flex;
+	gap: 8px;
+	padding: 8px 10px;
+}
+
+.document-issue-checkboxes input {
+	flex: 0 0 auto;
+}
+
+.document-issue-checkboxes span {
+	color: var(--ink);
+	font-size: 13px;
+	margin: 0;
+}
+
+.document-confirmation-missing {
+	background: #fff;
+	border: 1px solid #e5b95d;
+	border-radius: 8px;
+	color: #6f4410;
+	display: grid;
+	gap: 6px;
+	padding: 10px 12px;
+}
+
+.document-confirmation-missing strong {
+	color: #6f4410;
+	font-size: 13px;
+}
+
+.document-confirmation-missing ul {
+	color: #7a4c16;
+	font-size: 13px;
+	margin: 0;
+}
+
+.document-issue-confirmation-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.document-audit-facts {
+	background: #f7fbff;
+	border: 1px solid #bfdaee;
+	border-left: 5px solid #2f86b7;
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 12px;
+}
+
+.document-audit-facts-heading {
+	align-items: start;
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+	min-width: 0;
+}
+
+.document-audit-facts-heading span:first-child,
+.document-audit-facts-grid span {
+	color: #245a78;
+	display: block;
+	font-size: 12px;
+	font-weight: 950;
+	margin-bottom: 3px;
+}
+
+.document-audit-facts-heading strong,
+.document-audit-facts-grid strong {
+	color: var(--ink);
+	display: block;
+	line-height: 1.2;
+}
+
+.document-audit-facts-heading p,
+.document-audit-facts-grid small {
+	color: var(--muted);
+	margin: 0;
+}
+
+.document-audit-facts-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.document-audit-facts-grid > div {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-audit-facts code {
+	color: var(--ink);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.document-audit-facts-notes {
+	color: var(--muted);
+	display: grid;
+	gap: 5px;
+	margin: 0;
+	padding-left: 18px;
+}

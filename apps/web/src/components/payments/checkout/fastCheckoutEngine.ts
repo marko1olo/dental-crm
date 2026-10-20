@@ -152,7 +152,7 @@ export function calculateStageAdvanceAmount(
 				advanceOffsetTag1215Kop,
 				remainingDueKop: 0,
 				ffdTag1214: 4, // Полный расчет с зачетом аванса
-				ffdTag1214NameRu: "Полный расчет с зачетом ранее внесенного аванса (Тег 1215)",
+				ffdTag1214NameRu: "Полный расчет с зачетом ранее внесенного аванса",
 				ffdTag1212: 4,
 				ffdTag1212NameRu: "Медицинская услуга (этап лечения)",
 				isAdvanceReceipt: false,

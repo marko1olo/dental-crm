@@ -1,0 +1,15 @@
+## 2026-10-19T15:45:32Z
+You are the Pathology, Z-Index & DOM Pruning Explorer (teamwork_preview_explorer) for Gate 0 Iteration 6: Tooth 46 Masterpiece Remediation in the DENTE Dental CRM Odontogram. Subagents MUST read `C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md` before starting work. Your working directory is `C:\Clinic_MVP\dental-crm\.agents\teamwork\explorer_tooth46_pathology_dom`. You are a technical and architectural investigator; you do NOT modify repository code outside your directory.
+
+You are acting on the direct Forensic Audit Evidence in `C:\Clinic_MVP\dental-crm\.agents\teamwork\auditor_tooth46\handoff.md`, the Visual Inquisitor Report in `C:\Clinic_MVP\dental-crm\.agents\teamwork\reviewer_tooth46_visual\handoff.md`, and the Sentinel Directive. You have three critical architectural defects to solve:
+
+1) Periapical Pathology & Granuloma Halo Remediation:
+The Sentinel and Creator rejected the current granuloma rendering: 'two red concentric target circles looking like casino chips or dartboard targets'. In clinical radiology, periapical granuloma is a diffuse osteolytic bone destruction zone. You must design a soft diffuse osteolytic halo utilizing smooth radial gradient attenuation (`rgba(239, 68, 68, 0.65)` -> `rgba(239, 68, 68, 0.15)` -> `transparent`) with organic irregular borders, rather than solid concentric circular disks.
+
+2) Fix Hidden Apical Resorption Z-Index Bug:
+Reviewer 2 caught a critical rendering defect: In `Tooth46Container.tsx`, `<Tooth46ResorptionOverlay>` is mounted at line 49, BEFORE `<Tooth46Roots>` at line 58. The opaque root dentin renders down to Y=149, completely concealing the blunted resorption crater at Y=138! In addition, `Tooth46PathologyPresets.ts` sets `periapicalHalo: true` for resorption, causing `<Tooth46CystOverlay>` to render bilateral granulomas over intact apices. Design the exact component layer hierarchy, clipping strategy, and preset definitions so the blunted root and Howship's lacunae are visually prominent and unobstructed.
+
+3) SVG DOM Element Budget Optimization (120 FPS Invariant):
+The Forensic Auditor measured the default resting tooth (`Tooth46Container`) and discovered 51 visual SVG elements (250 elements total including `<defs>`), exceeding the mandated ceiling of <= 30 visual elements by 70%. You must audit every element rendered by `Tooth46Container.tsx`, `Tooth46OcclusalCusps.tsx`, `Tooth46Roots.tsx`, and `Tooth46ShaderDefs.tsx`, and design path consolidation (e.g. merging static fissure paths into single multi-subpath `d="..."`, consolidating redundant background `<path>` and `<g>` wrappers) to bring the visual element count strictly to <= 30 without sacrificing visual quality.
+
+Ensure every proposed file conforms strictly to Mandate 8b (every file <= 120 lines). Document your complete findings, Z-index layer stack, and DOM pruning plan in `C:\Clinic_MVP\dental-crm\.agents\teamwork\explorer_tooth46_pathology_dom\handoff.md`. When complete, notify the orchestrator via send_message.

@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { TimesheetT13Modal, staffToEmployeeInfo } from "../payroll/TimesheetT13Modal";
+import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
 import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { StaffProfileCard } from "./StaffProfileCard";
@@ -68,11 +68,15 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 			)}
 
 			{isTimesheetT13Open && (
-				<TimesheetT13Modal
+				<DoctorPayrollModal
 					isOpen={isTimesheetT13Open}
 					onClose={() => setIsTimesheetT13Open(false)}
 					clinicName={dashboard?.clinicSettings?.name || dashboard?.clinicName}
-					employees={staffToEmployeeInfo(staff)}
+					doctorsList={staff.filter((s: any) => s.role === "doctor" || s.role === "owner").map((s: any) => ({
+						id: s.id,
+						name: s.fullName || s.name,
+						specialtyId: s.specialties?.[0] || "general_dentist",
+					}))}
 				/>
 			)}
 		</section>

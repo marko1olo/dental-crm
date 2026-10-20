@@ -1,0 +1,164 @@
+/* ==========================================================================
+   DENTE CRM — WORKSPACE PROFILES & ACCESS POLICIES (modules/workspace-profiles.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Active workspace card, profile grid, access policy cards.
+   ========================================================================== */
+.active-workspace-card {
+	align-items: start;
+	background: #0f3936;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	border-radius: 8px;
+	color: #ffffff;
+	display: grid;
+	gap: 16px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding: 16px;
+}
+
+.active-workspace-card h3,
+.active-workspace-card p {
+	margin: 0;
+}
+
+.active-workspace-card h3 {
+	font-size: 24px;
+	line-height: 1.1;
+	margin-top: 5px;
+}
+
+.active-workspace-card p {
+	color: rgba(255, 255, 255, 0.76);
+	margin-top: 8px;
+}
+
+.active-workspace-card > div:first-child > span,
+.workspace-profile-head span,
+.access-policy-head span {
+	color: var(--amber);
+	font-size: 12px;
+	font-weight: 950;
+	letter-spacing: 0;
+	text-transform: uppercase;
+}
+
+.workspace-profile-grid,
+.access-policy-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-profile-card,
+.access-policy-card {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 14px;
+}
+
+.workspace-profile-card.active {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.11);
+}
+
+.workspace-profile-head strong {
+	display: block;
+	font-size: 18px;
+	line-height: 1.15;
+	margin-top: 5px;
+}
+
+.workspace-profile-head p,
+.access-policy-head p,
+.workspace-profile-card small,
+.access-policy-card small {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.38;
+	margin: 5px 0 0;
+}
+
+.workspace-token-row,
+.access-column-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+}
+
+.workspace-token-row span,
+.workspace-token-row strong,
+.access-column-row span {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 6px 8px;
+}
+
+.active-workspace-card .workspace-token-row {
+	justify-content: end;
+	max-width: 360px;
+}
+
+.active-workspace-card .workspace-token-row span,
+.active-workspace-card .workspace-token-row strong {
+	background: rgba(255, 255, 255, 0.11);
+	border-color: rgba(255, 255, 255, 0.18);
+	color: #ffffff;
+}
+
+.workspace-profile-card ul,
+.access-policy-card ul {
+	color: var(--muted);
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.access-policy-head {
+	align-items: start;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.access-policy-head svg {
+	color: var(--teal);
+	height: 22px;
+	width: 22px;
+}
+
+.access-policy-head h3 {
+	font-size: 18px;
+	line-height: 1.15;
+	margin: 4px 0 0;
+}
+
+.access-column-row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.access-column-row > div {
+	align-content: start;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+	padding: 10px;
+}
+
+.access-column-row strong {
+	color: var(--ink);
+	flex-basis: 100%;
+	font-size: 12px;
+	text-transform: uppercase;
+}

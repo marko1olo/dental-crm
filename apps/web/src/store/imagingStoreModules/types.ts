@@ -178,6 +178,13 @@ export interface FilterSettingsSlice {
 			| "all"
 			| ((prev: ImagingStudyKind | "all") => ImagingStudyKind | "all"),
 	) => void;
+	imagingToothFilter: string | "all";
+	setImagingToothFilter: (
+		val:
+			| string
+			| "all"
+			| ((prev: string | "all") => string | "all"),
+	) => void;
 	imagingCreateSavingKind: ImagingStudyKind | null;
 	setImagingCreateSavingKind: (
 		val:

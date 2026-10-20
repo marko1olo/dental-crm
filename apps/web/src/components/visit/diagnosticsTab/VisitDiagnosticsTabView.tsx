@@ -18,7 +18,9 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 			aria-label="Снимки и диагностика"
 			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-2 sm:p-2.5 flex flex-col gap-2 shadow-2xs"
 		>
-			<span className="sr-only">Снимки и диагностика</span>
+			<div data-testid="visit-diagnostics-header" className="sr-only">
+				<span>Снимки и диагностика</span>
+			</div>
 			<DiagnosticsTabToolbar
 				diagnosticMode={state.diagnosticMode}
 				setDiagnosticMode={state.setDiagnosticMode}

@@ -17,7 +17,7 @@ import type {
 } from "@dental/shared";
 import type React from "react";
 import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
-import type { useVisitStore } from "../../../store/visitStore";
+import type { VisitStore } from "../../../store/visitStore";
 
 export interface UseVisitLogicParams {
 	dashboard?: Dashboard | null;
@@ -59,7 +59,7 @@ export interface UseVisitLogicParams {
 	setImportCommit?: (val: any) => void;
 }
 
-export type VisitStoreSlice = ReturnType<typeof useVisitStore>;
+export type VisitStoreSlice = VisitStore;
 
 export interface UseVisitSpeechParams {
 	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers

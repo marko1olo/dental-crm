@@ -7,7 +7,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach } from "vitest";
 import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
@@ -39,6 +39,8 @@ if (!globalThis.window) {
 	const win = new EventTarget() as unknown as Window & typeof globalThis;
 	// biome-ignore lint/suspicious/noExplicitAny: mock
 	(win as any).localStorage = localStorageMock;
+	// biome-ignore lint/suspicious/noExplicitAny: mock
+	(win as any).location = { hostname: "127.0.0.1", origin: "http://127.0.0.1:5173", hash: "", search: "" };
 	globalThis.window = win;
 }
 if (!globalThis.localStorage) {
@@ -139,5 +141,84 @@ describe("End-to-End Clinical Data Flow Suite (Odontogram -> 043/u Diary -> Trea
 		assert.strictEqual(clamped28X, 225, "Tooth 28 sub-menu anchor clamped to minX (225px)");
 		assert.ok(clamped28X - halfSub >= 0, "Left edge >= 0px (Zero clipping)");
 		assert.ok(clamped28X + halfSub <= vw, "Right edge <= 1440px");
+	});
+
+	it("5. AI Patient Case Presenter (patientCasePresenterEngine) integrates with 3-tier treatment plan stages", async () => {
+		const { buildChairsidePatientCasePresentation, humanizeDentalText } = await import(
+			"../../../services/ai/treatmentPlanCopilot"
+		);
+		const realTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
+			{ toothNumber: 36, state: "Missing" },
+		];
+		const tiers = generate3TierPlanComparison(realTeeth, undefined, 0);
+		const standardTier = tiers.find((t) => t.tierId === "standard") || tiers[0]!;
+		const presentation = buildChairsidePatientCasePresentation(standardTier.stages, {
+			patientName: "Смирнов Алексей Викторович",
+			doctorName: "Волков И.С.",
+			selectedTierTitle: standardTier.title,
+		});
+
+		assert.ok(presentation.presentationId.startsWith("case_"));
+		assert.strictEqual(presentation.slides.diagnosis.slideType, "diagnosis");
+		assert.strictEqual(presentation.slides.risks.slideType, "risks");
+		assert.strictEqual(presentation.slides.roadmap.slideType, "roadmap");
+		assert.ok(presentation.slides.roadmap.totalPlanCostRub > 0);
+		assert.ok(humanizeDentalText("Требуется синус-лифтинг").includes("Бережное наращивание кости"));
+	});
+
+	it("6. Visit store completed services flow without loss into clinical estimate and cashier receipt", async () => {
+		const { useVisitStore } = await import("../../../store/visitStore");
+		const { assembleVisitStoreCompletedServices } = await import("../useVisitCompletion");
+		const { completeClinicalVisitAndAssembleEstimate } = await import("../clinicalVisitWorkflow");
+
+		useVisitStore.setState({
+			completedServices: [
+				{
+					serviceId: "stage-item-1",
+					code804n: "A16.07.002",
+					name: "Восстановление зуба пломбой светоотверждаемой",
+					priceRub: 4500,
+					priceKopecks: 450000,
+					quantity: 1,
+					category: "therapy",
+					toothNumber: 16,
+					toothCode: "16",
+				},
+				{
+					serviceId: "stage-item-2",
+					code804n: "A16.07.002.001",
+					name: "Лечение кариеса эмали",
+					priceRub: 3500,
+					priceKopecks: 350000,
+					quantity: 1,
+					category: "therapy",
+					toothNumber: 15,
+					toothCode: "15",
+				},
+			],
+		});
+
+		const assembled = assembleVisitStoreCompletedServices();
+		assert.strictEqual(assembled.length, 2);
+
+		const result = completeClinicalVisitAndAssembleEstimate({
+			visitId: "VIS-E2E-101",
+			patientId: "patient-real-flow-101",
+			patientName: "Смирнов Алексей Викторович",
+			doctorName: "Волков И.С.",
+			diary: {
+				anamnesis: "Соматически здоров.",
+				statusLocalis: "Зуб 16, 15 кариозные полости.",
+				diagnosisIcd10: "K02.1 Кариес дентина",
+				treatmentDescription: "[Этап 1]: пломбирование зубов 16, 15",
+			},
+			additionalServices: assembled,
+		});
+
+		assert.strictEqual(result.totalNetRub, 8000, "Total due must equal 4500 + 3500 = 8000 RUB");
+		assert.ok(result.items.some((i) => i.code === "A16.07.002" && i.totalRub === 4500));
+		assert.ok(result.items.some((i) => i.code === "A16.07.002.001" && i.totalRub === 3500));
+		assert.ok(result.receiptNumber.length > 0);
 	});
 });

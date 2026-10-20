@@ -50,9 +50,20 @@ async function testRealAuth() {
     document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .global-toast-container, [role="alert"]').forEach((el) => el.remove());
   });
 
-  const shot = path.resolve(__dirname, "..", "docs", "screenshots", "dental_chart_inquisition", "real_auth_app.png");
+  console.log("[Leads] Switching to leads view via __useAppStore...");
+  const switched = await page.evaluate(() => {
+    if (window.__useAppStore) {
+      window.__useAppStore.getState().setCurrentView("leads");
+      return true;
+    }
+    return false;
+  });
+  console.log("[Leads] Switched:", switched);
+  await page.waitForTimeout(5000);
+
+  const shot = path.resolve(__dirname, "..", "docs", "proofs", "leads", "01_pc_leads_kanban_light_1440x900.png");
   await page.screenshot({ path: shot });
-  console.log("[Auth] Saved screenshot:", shot);
+  console.log("[Leads] Saved 01_pc_leads_kanban_light_1440x900.png:", shot, "Size:", fs.statSync(shot).size);
 
   await context.close();
   await browser.close();

@@ -186,7 +186,7 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "protocols",
 						title: "Протоколы лечения",
-						subtitle: "Шаблоны дневника приёма, ЭМК 043/у",
+						subtitle: "Шаблоны дневника приёма, электронная карта",
 						icon: FileText,
 						iconBg: "var(--paper-muted)",
 						iconColor: "var(--teal)",
@@ -294,13 +294,6 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					Настройки
 				</h1>
 			</div>
-
-			{/* Scale Sovereignty Presets Card directly accessible in 1 click on Mobile above the fold */}
-			{!searchQuery && (
-				<div className="px-4 py-1">
-					<SovereignScalePresetsCard mode="settings" compactMode={true} />
-				</div>
-			)}
 
 			{/* Search Input */}
 			<div className="px-4 py-1.5">

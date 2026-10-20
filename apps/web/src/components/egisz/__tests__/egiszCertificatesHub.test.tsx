@@ -12,6 +12,7 @@ import {
 	generateMedicalRecordExtractPrintHtml,
 	type MedicalRecordExtractPayload,
 } from "../egiszRemdPrintTemplates";
+import type { RemdDocumentRecord } from "../egiszJournalData";
 
 describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & Apple HIG)", () => {
 	it("1.1 File size constraint: all 4 decomposed modules are strictly <= 120 lines", () => {
@@ -91,7 +92,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		];
 		const html = renderToString(
 			createElement(EgiszBackgroundQueueTable, {
-				records,
+				records: records as unknown as readonly RemdDocumentRecord[],
 				onRetryRecord: () => {},
 				onDownloadZip: () => {},
 			}),

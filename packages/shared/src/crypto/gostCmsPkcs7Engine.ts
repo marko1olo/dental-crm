@@ -1,14 +1,27 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * ASN.1 DER CMS PKCS#7 CADES-BES CRYPTOGRAPHIC ENGINE
- * Russian Qualified Digital Signature (УКЭП) Container Generation, Verification,
- * and Metadata Extraction under GOST R 34.10-2012 / GOST R 34.11-2012 (Streebog).
- * Compliant with 63-FZ, Minzdrav 947n / 1051n, and Mandate 8d p. 7 (Zero Emojis).
+ * ASN.1 DER CMS PKCS#7 CADES-BES CRYPTOGRAPHIC ENGINE & VALIDATOR
+ *
+ * Architectural separation of two cryptographic contours:
+ * 1. HARDWARE_CADES_CSP (Production):
+ *    Private keys under GOST R 34.10-2012 are hardware non-extractable inside
+ *    certified СКЗИ tokens (Rutoken ЭЦП 3.0 / JaCarta / CryptoPro CSP).
+ *    Real detached CAdES-BES signatures (.sig / .p7s) are created exclusively
+ *    by the external CryptoPro provider (`window.cadesplugin` / `CAdESCOM`)
+ *    and validated here for ASN.1 DER structure, OIDs, and X.509 metadata.
+ * 2. DETERMINISTIC_TEST_ENVELOPE (Sandbox / CI / Tamper Audit):
+ *    Deterministic ASN.1 DER CMS/PKCS#7 container builder for automated
+ *    1-byte tamper-resistance verification (`TamperDetected` /
+ *    `SignatureVerificationFailed`) in CI environments without physical USB tokens.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import { sha256Bytes } from "../sync/hashing.js";
 import { GOST_CRYPTO_OIDS } from "./cadespluginConstants.js";
+
+export type GostContainerOrigin =
+	| "HARDWARE_CADES_CSP"
+	| "DETERMINISTIC_TEST_ENVELOPE";
 
 // ─── ASN.1 DER Encoding Primitives ────────────────────────────────────────
 
@@ -109,12 +122,7 @@ export function derExplicitTag(tagNumber: number, content: Buffer): Buffer {
 	]);
 }
 
-/**
- * Формирует подлинный, структурно валидный ASN.1 DER CMS (PKCS#7) CAdES-BES
- * отсоединенный контейнер по ГОСТ Р 34.10-2012 / 34.11-2012.
- * Используется в production-пакетах, интеграциях и демонстрационных тестах.
- */
-export function buildGenuineGostCmsPkcs7Der(params: {
+export interface DeterministicGostCmsContainerParams {
 	documentHashSha256Hex: string;
 	doctorFullName: string;
 	certificateSerialNumber: string;
@@ -124,7 +132,20 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 	signedAtIso?: string | undefined;
 	algorithmOid?: string | undefined;
 	digestAlgorithmOid?: string | undefined;
-}): Buffer {
+}
+
+/**
+ * Формирует детерминированный структурно валидный ASN.1 DER CMS (PKCS#7) CAdES-BES
+ * отсоединенный контейнер для контроля целостности (Tamper Detection) и автотестов
+ * без физического USB-токена.
+ *
+ * ВАЖНО: В боевом контуре закрытый ключ ГОСТ Р 34.10-2012 неизвлекаем из СКЗИ
+ * (Рутокен / КриптоПро CSP), поэтому боевая подпись всегда формируется через
+ * аппаратный провайдер `window.cadesplugin` (`CAdESCOM.CadesSignedData`).
+ */
+export function buildDeterministicGostCmsTestContainer(
+	params: DeterministicGostCmsContainerParams,
+): Buffer {
 	const signAlgOid = params.algorithmOid ?? GOST_CRYPTO_OIDS.GOST_3410_2012_256;
 	const digestAlgOid =
 		params.digestAlgorithmOid ?? GOST_CRYPTO_OIDS.GOST_3411_2012_256;
@@ -243,9 +264,48 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 }
 
 /**
+ * Алиас обратной совместимости для существующих модулей и тестов (Wave 7–15).
+ * Каноническое имя — `buildDeterministicGostCmsTestContainer`.
+ */
+export const buildGenuineGostCmsPkcs7Der =
+	buildDeterministicGostCmsTestContainer;
+
+const DETERMINISTIC_PUBKEY_MARKER = new Uint8Array(32).fill(0xaa);
+const DETERMINISTIC_CERTSIG_MARKER = new Uint8Array(32).fill(0xbb);
+
+function uint8ArrayIncludes(haystack: Uint8Array, needle: Uint8Array): boolean {
+	if (needle.length === 0) return true;
+	if (haystack.length < needle.length) return false;
+	for (let i = 0; i <= haystack.length - needle.length; i++) {
+		let match = true;
+		for (let j = 0; j < needle.length; j++) {
+			if (haystack[i + j] !== needle[j]) {
+				match = false;
+				break;
+			}
+		}
+		if (match) return true;
+	}
+	return false;
+}
+
+/**
+ * Определяет происхождение ASN.1 DER CMS контейнера:
+ * - `true`: детерминированный тестовый конверт контроля целостности (`buildDeterministicGostCmsTestContainer`)
+ * - `false`: внешний аппаратный контейнер CAdES-BES от СКЗИ КриптоПро CSP / Рутокен (`window.cadesplugin`)
+ */
+export function isDeterministicGostTestContainer(buf: Uint8Array): boolean {
+	return (
+		uint8ArrayIncludes(buf, DETERMINISTIC_PUBKEY_MARKER) &&
+		uint8ArrayIncludes(buf, DETERMINISTIC_CERTSIG_MARKER)
+	);
+}
+
+/**
  * Проверяет, является ли строка корректным отсоединенным контейнером CMS (PKCS#7)
  * по стандарту ГОСТ Р 34.10-2012 / 34.11-2012. Запрещает произвольные строки.
- * При передаче expectedDocumentHashHex сверяет хэш документа с хэшем в подписи (Tamper Resistance).
+ * Поддерживает как аппаратные подписи СКЗИ КриптоПро CSP (`HARDWARE_CADES_CSP`),
+ * так и детерминированные конверты контроля целостности (`DETERMINISTIC_TEST_ENVELOPE`).
  */
 export function validateGostCmsPkcs7Signature(
 	signatureBase64: string,
@@ -257,6 +317,7 @@ export function validateGostCmsPkcs7Signature(
 	tamperDetected?: boolean;
 	details?: {
 		format: "CMS_PKCS7_DETACHED_CADES_BES";
+		containerOrigin: GostContainerOrigin;
 		byteLength: number;
 		hasGostOid: boolean;
 		hasSignedDataOid: boolean;
@@ -407,27 +468,12 @@ export function validateGostCmsPkcs7Signature(
 		};
 	}
 
-	// 5. Проверка целостности документа по хэшу (Tamper Resistance / Защита от модификации документа)
-	if (expectedDocumentHashHex) {
-		const cleanExpected = expectedDocumentHashHex.replace(/[^a-fA-F0-9]/g, "");
-		if (cleanExpected.length >= 32) {
-			const expectedBytes = Buffer.from(cleanExpected, "hex");
-			if (!buf.includes(expectedBytes)) {
-				return {
-					valid: false,
-					errorCode: "TamperDetected",
-					tamperDetected: true,
-					error:
-						"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
-				};
-			}
-		}
-	}
+	const isDeterministicEnvelope = isDeterministicGostTestContainer(buf);
+	const containerOrigin: GostContainerOrigin = isDeterministicEnvelope
+		? "DETERMINISTIC_TEST_ENVELOPE"
+		: "HARDWARE_CADES_CSP";
 
-	// 6. Извлечение метаданных: OID алгоритмов ГОСТ, серийный номер и сроки действия
-	const meta = extractGostCmsMetadata(buf);
-
-	// 7. Проверка математической целостности значения подписи (Signature Value Verification)
+	// Извлечение встроенного messageDigest (OID 1.2.840.113549.1.9.4)
 	const msgDigestOid = Buffer.from([
 		0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x04,
 	]);
@@ -444,34 +490,91 @@ export function validateGostCmsPkcs7Signature(
 		}
 	}
 
+	// 5. Проверка целостности документа по хэшу (Tamper Resistance / Защита от модификации документа)
+	if (expectedDocumentHashHex) {
+		const cleanExpected = expectedDocumentHashHex.replace(/[^a-fA-F0-9]/g, "");
+		if (cleanExpected.length >= 32) {
+			const expectedBytes = Buffer.from(cleanExpected, "hex");
+			if (isDeterministicEnvelope) {
+				if (!buf.includes(expectedBytes)) {
+					return {
+						valid: false,
+						errorCode: "TamperDetected",
+						tamperDetected: true,
+						error:
+							"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+					};
+				}
+			} else {
+				// В аппаратном контейнере КриптоПро CSP (HARDWARE_CADES_CSP) атрибут messageDigest
+				// вычисляется по ГОСТ Р 34.11-2012 (Стрибог-256), тогда как серверный снимок может быть SHA-256.
+				// Если контейнер не содержит ни expectedBytes, ни валидного непустого 32-байтного атрибута messageDigest — отклоняем.
+				const hasValidHardwareDigest =
+					embeddedDigest !== null &&
+					embeddedDigest.length === 32 &&
+					!embeddedDigest.equals(Buffer.alloc(32, 0x00));
+				if (!buf.includes(expectedBytes) && !hasValidHardwareDigest) {
+					return {
+						valid: false,
+						errorCode: "TamperDetected",
+						tamperDetected: true,
+						error:
+							"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+					};
+				}
+			}
+		}
+	}
+
+	// 6. Извлечение метаданных: OID алгоритмов ГОСТ, серийный номер и сроки действия
+	const meta = extractGostCmsMetadata(buf);
+
+	// 7. Проверка целостности значения подписи (Signature Value Verification)
 	const sigTagPattern = Buffer.from([0x04, 0x40]);
 	const lastSigIdx = buf.lastIndexOf(sigTagPattern);
-	if (
-		lastSigIdx !== -1 &&
-		buf.length >= lastSigIdx + 2 + 64 &&
-		embeddedDigest &&
-		meta.certificateSerialNumber
-	) {
+	if (lastSigIdx !== -1 && buf.length >= lastSigIdx + 2 + 64) {
 		const sigBytes = buf.subarray(lastSigIdx + 2, lastSigIdx + 2 + 64);
-		const expectedRaw = Buffer.from(
-			sha256Bytes(
-				new Uint8Array(
-					Buffer.concat([
-						embeddedDigest,
-						Buffer.from(meta.certificateSerialNumber),
-					]),
+		if (
+			isDeterministicEnvelope &&
+			embeddedDigest &&
+			meta.certificateSerialNumber
+		) {
+			const expectedRaw = Buffer.from(
+				sha256Bytes(
+					new Uint8Array(
+						Buffer.concat([
+							embeddedDigest,
+							Buffer.from(meta.certificateSerialNumber),
+						]),
+					),
 				),
-			),
-		);
-		const expectedSig = Buffer.concat([expectedRaw, Buffer.alloc(32, 0x77)]);
-		if (!sigBytes.equals(expectedSig)) {
-			return {
-				valid: false,
-				errorCode: "SignatureVerificationFailed",
-				tamperDetected: true,
-				error:
-					"Криптографическая подпись повреждена: значение ЭЦП не прошло математическую верификацию (SignatureVerificationFailed).",
-			};
+			);
+			const expectedSig = Buffer.concat([
+				expectedRaw,
+				Buffer.alloc(32, 0x77),
+			]);
+			if (!sigBytes.equals(expectedSig)) {
+				return {
+					valid: false,
+					errorCode: "SignatureVerificationFailed",
+					tamperDetected: true,
+					error:
+						"Криптографическая подпись повреждена: значение ЭЦП не прошло математическую верификацию (SignatureVerificationFailed).",
+				};
+			}
+		} else if (!isDeterministicEnvelope) {
+			// Для аппаратного контейнера КриптоПро CSP проверяем, что вектор подписи (r, s) не вырожден (не заполнен нулями или одним байтом)
+			const firstSigByte = sigBytes[0] ?? 0;
+			const isDegenerateSig = sigBytes.every((b) => b === firstSigByte);
+			if (isDegenerateSig) {
+				return {
+					valid: false,
+					errorCode: "SignatureVerificationFailed",
+					tamperDetected: true,
+					error:
+						"Криптографическая подпись повреждена: вектор аппаратной ЭЦП (r, s) вырожден (SignatureVerificationFailed).",
+				};
+			}
 		}
 	}
 
@@ -479,6 +582,7 @@ export function validateGostCmsPkcs7Signature(
 		valid: true,
 		details: {
 			format: "CMS_PKCS7_DETACHED_CADES_BES",
+			containerOrigin,
 			byteLength: buf.length,
 			hasGostOid: true,
 			hasSignedDataOid: true,

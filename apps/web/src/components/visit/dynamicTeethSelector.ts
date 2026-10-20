@@ -81,6 +81,8 @@ export const TOOTH_UI_STATE_LABELS: Record<ToothState, string> = {
 	caries: "Кариес",
 	pulpitis: "Пульпит",
 	crown: "Коронка",
+	Planned_Crown: "План: Коронка",
+	planned_crown: "План: Коронка",
 };
 
 export type ToothColorVariant =

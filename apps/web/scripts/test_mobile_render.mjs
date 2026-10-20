@@ -1,0 +1,59 @@
+import { existsSync } from "node:fs";
+import { chromium } from "playwright";
+
+const edgePaths = [
+	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+];
+const executablePath = edgePaths.find((p) => existsSync(p));
+
+async function run() {
+	const browser = await chromium.launch({
+		executablePath,
+		headless: true,
+		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+	});
+	const context = await browser.newContext({
+		viewport: { width: 390, height: 844 },
+		isMobile: true,
+		hasTouch: true,
+	});
+	const page = await context.newPage();
+
+	await page.addInitScript(() => {
+		window.localStorage.setItem("dente_clinic_token", "demo-showcase-token-therapist");
+		window.localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-therapist");
+		window.localStorage.setItem("dente_demo_showcase_active", "true");
+		window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ onboardingDismissed: true }));
+		window.localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true }));
+		window.localStorage.setItem("dente_onboarding_strip_dismissed", "true");
+		window.localStorage.setItem("active_staff_user", JSON.stringify({
+			id: "01a00000-0000-0000-0000-000000000002",
+			fullName: "Д-р Соколов А. В.",
+			role: "doctor",
+			email: "doctor@clinic.com",
+			organizationId: "01a00000-0000-0000-0000-000000000001",
+			specialization: "Терапевт",
+		}));
+	});
+
+	await page.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 35000 });
+	await page.waitForSelector(".boot-state", { state: "detached", timeout: 35000 }).catch((e) => console.log("boot-state wait warning:", e.message));
+	await page.waitForTimeout(2500);
+
+	// Click step 2 "2. Осмотр"
+	const step2Btn = page.locator("button:has-text('2. Осмотр')").first();
+	if (await step2Btn.isVisible()) {
+		await step2Btn.click();
+		await page.waitForTimeout(1000);
+	}
+
+	const screenshotPath = "C:/Users/Admin/.gemini/antigravity/brain/29510b6c-103f-4931-9052-ff72f199f38a/test_mobile_visit_step2.png";
+	await page.screenshot({ path: screenshotPath });
+	console.log("Mobile step2 screenshot saved to", screenshotPath);
+
+	await browser.close();
+}
+
+run().catch(console.error);

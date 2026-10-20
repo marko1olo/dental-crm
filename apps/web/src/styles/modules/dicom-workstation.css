@@ -1,0 +1,435 @@
+/* ==========================================================================
+   DENTE CRM — DICOM WORKSTATION & BUNDLE BENCH (modules/dicom-workstation.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Launch head, cache phases, toolstate, manifest result.
+   ========================================================================== */
+.dicom-mpr-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.dicom-mpr-head strong {
+	display: block;
+	font-size: 16px;
+	margin-bottom: 3px;
+}
+
+.dicom-mpr-head p {
+	color: #b7d5d1;
+	margin: 0;
+}
+
+.dicom-mpr-head > span {
+	border: 1px solid #2f8f5b;
+	border-radius: 999px;
+	color: #dff7e5;
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 950;
+	padding: 6px 9px;
+	text-transform: uppercase;
+}
+
+.dicom-mpr-head > span.mpr-warn {
+	border-color: #b8781f;
+	color: #ffe3a8;
+}
+
+.dicom-resource-policy {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.24);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	padding: 12px;
+}
+
+.dicom-resource-policy article {
+	background: rgba(7, 27, 30, 0.58);
+	border: 1px solid rgba(119, 215, 199, 0.18);
+	border-radius: 8px;
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.dicom-resource-policy strong,
+.dicom-resource-policy span,
+.dicom-resource-policy small,
+.dicom-resource-policy p {
+	overflow-wrap: anywhere;
+}
+
+.dicom-resource-policy strong {
+	color: #eef8f5;
+	font-size: 13px;
+}
+
+.dicom-resource-policy span,
+.dicom-resource-policy small {
+	color: #b7d5d1;
+	font-size: 12px;
+}
+
+.dicom-resource-policy p {
+	color: #d9f4ef;
+	grid-column: 1 / -1;
+	margin: 0;
+}
+
+.dicomweb-launch-panel {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.24);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.dicomweb-launch-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.dicomweb-launch-head strong,
+.dicomweb-manifest-result strong,
+.dicom-workbench-bundle-result strong,
+.dicomweb-status-grid strong {
+	color: #eef8f5;
+	display: block;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.dicomweb-launch-head p,
+.dicomweb-manifest-result p,
+.dicomweb-manifest-result span,
+.dicom-workbench-bundle-result p,
+.dicom-workbench-bundle-result span,
+.dicomweb-status-grid span {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.dicomweb-launch-head > span {
+	border: 1px solid rgba(119, 215, 199, 0.36);
+	border-radius: 999px;
+	color: #dff7e5;
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 950;
+	padding: 6px 9px;
+}
+
+.dicomweb-input-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dicomweb-input-grid label {
+	color: #d9f4ef;
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 5px;
+}
+
+.dicomweb-input-grid input {
+	background: #102727;
+	border: 1px solid rgba(215, 255, 246, 0.24);
+	border-radius: 8px;
+	color: #f3fffd;
+	min-height: 38px;
+	min-width: 0;
+	padding: 8px 10px;
+	width: 100%;
+}
+
+.dicomweb-action-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.dicom-action-guidance {
+	background: rgba(216, 184, 102, 0.12);
+	border: 1px solid rgba(216, 184, 102, 0.34);
+	border-radius: 8px;
+	color: #fff0bd;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+	padding: 8px 10px;
+}
+
+.local-dicom-guidance {
+	background: #fff8ef;
+	color: #744d18;
+}
+
+.dicomweb-status-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dicomweb-status-grid article,
+.dicomweb-manifest-result,
+.dicom-toolstate-result,
+.dicom-workbench-bundle-result,
+.dicom-cache-plan-result,
+.dicom-cache-plan-result article,
+.dicom-workbench-bundle-result article,
+.dicom-workstation-result,
+.dicom-workstation-checks article {
+	background: rgba(7, 27, 30, 0.58);
+	border: 1px solid rgba(119, 215, 199, 0.18);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.dicom-workstation-result {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: auto minmax(180px, 0.75fr) minmax(0, 1fr);
+}
+
+.dicom-workstation-score,
+.dicom-render-plan {
+	align-content: center;
+	background: rgba(119, 215, 199, 0.12);
+	border: 1px solid rgba(119, 215, 199, 0.24);
+	border-radius: 8px;
+	display: grid;
+	gap: 3px;
+	min-width: 104px;
+	padding: 9px;
+}
+
+.dicom-workstation-score strong {
+	color: #eef8f5;
+	font-size: 22px;
+	line-height: 1.1;
+}
+
+.dicom-workstation-score span,
+.dicom-workstation-result p,
+.dicom-render-plan span,
+.dicom-render-plan small,
+.dicom-workstation-checks span {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.dicom-render-plan strong {
+	color: #eef8f5;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.dicom-workstation-checks {
+	display: grid;
+	gap: 6px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dicom-workstation-checks strong {
+	color: #eef8f5;
+	font-size: 12px;
+	line-height: 1.25;
+}
+
+.dicom-workstation-checks .dicom-check-warn {
+	border-left-color: #f0b44b;
+}
+
+.dicom-workstation-checks .dicom-check-fail {
+	border-left-color: #ff8f8f;
+}
+
+.dicom-workstation-result p {
+	grid-column: 1 / -1;
+}
+
+.dicom-cache-plan-result,
+.dicom-workbench-bundle-result {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(0, 1fr) repeat(3, minmax(90px, 0.24fr));
+}
+
+.dicom-cache-plan-result > div:first-child,
+.dicom-cache-plan-result article,
+.dicom-workbench-bundle-result > div:first-child,
+.dicom-workbench-bundle-result article {
+	align-content: center;
+	background: rgba(119, 215, 199, 0.1);
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-radius: 8px;
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.dicom-cache-plan-result strong,
+.dicom-workbench-bundle-result strong {
+	color: #eef8f5;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.dicom-cache-plan-result span,
+.dicom-cache-plan-result p,
+.dicom-cache-plan-result small,
+.dicom-workbench-bundle-result span,
+.dicom-workbench-bundle-result p {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.dicom-cache-plan-result p,
+.dicom-workbench-bundle-result p,
+.dicom-workbench-actions,
+.dicom-cache-task-list,
+.dicom-cache-phase-list,
+.dicom-cache-progressive-list {
+	grid-column: 1 / -1;
+}
+
+.dicom-workbench-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: space-between;
+}
+
+.dicom-workbench-actions > span {
+	color: #b7d5d1;
+	flex: 1 1 220px;
+	font-size: 12px;
+	font-weight: 900;
+	overflow-wrap: anywhere;
+}
+
+.dicom-cache-task-list,
+.dicom-cache-phase-list,
+.dicom-cache-progressive-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.dicom-cache-task-list span,
+.dicom-cache-phase-list span,
+.dicom-cache-progressive-list span {
+	background: rgba(215, 255, 246, 0.08);
+	border: 1px solid rgba(183, 213, 209, 0.18);
+	border-radius: 999px;
+	padding: 5px 8px;
+}
+
+.dicom-cache-phase-list span {
+	background: rgba(240, 180, 75, 0.12);
+	border-color: rgba(240, 180, 75, 0.24);
+	color: #fff0bd;
+}
+
+.dicom-cache-progressive-list span {
+	background: rgba(117, 196, 255, 0.12);
+	border-color: rgba(117, 196, 255, 0.24);
+	color: #caecff;
+}
+
+.dicomweb-status.dicomweb-auth_required,
+.dicomweb-status.dicomweb-misconfigured {
+	border-left-color: #f0b44b;
+}
+
+.dicomweb-status.dicomweb-unreachable {
+	border-left-color: #ff8f8f;
+}
+
+.dicomweb-manifest-result {
+	align-items: center;
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.dicom-toolstate-result {
+	align-items: center;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	margin: 10px 0;
+}
+
+.dicom-toolstate-result strong,
+.dicom-toolstate-result span,
+.dicom-toolstate-result p,
+.dicom-toolstate-result small {
+	overflow-wrap: anywhere;
+}
+
+.dicom-toolstate-result strong {
+	color: #eef8f5;
+	display: block;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.dicom-toolstate-result span,
+.dicom-toolstate-result p,
+.dicom-toolstate-result small {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.dicom-toolstate-result p,
+.dicom-toolstate-result small {
+	grid-column: 1 / -1;
+}
+
+.dicomweb-manifest-result p {
+	grid-column: 1 / -1;
+}
+
+.dicomweb-manifest-result a {
+	border: 1px solid rgba(119, 215, 199, 0.5);
+	border-radius: 8px;
+	color: #dff7e5;
+	font-size: 12px;
+	font-weight: 950;
+	padding: 7px 9px;
+	text-decoration: none;
+	white-space: nowrap;
+}

@@ -45,9 +45,9 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 					className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-emerald-500/30 space-y-3"
 					data-testid="panel-cash-focused"
 				>
-					<div className="flex items-center justify-between">
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
 						<div className="flex items-center gap-2.5">
-							<div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+							<div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
 								<Banknote size={20} />
 							</div>
 							<div>
@@ -59,59 +59,102 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 								</span>
 							</div>
 						</div>
-						<div className="text-right">
-							<span className="text-xs text-[var(--muted,#64748b)] block">К оплате:</span>
-							<span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300">
+						<div className="text-center sm:text-right w-full sm:w-auto p-2 sm:p-0 rounded-xl bg-emerald-500/5 sm:bg-transparent">
+							<span className="text-xs text-[var(--muted,#64748b)] block font-semibold">К оплате наличными:</span>
+							<span className="text-2xl sm:text-lg font-black font-mono text-emerald-700 dark:text-emerald-300">
 								{formatMoneyRu(cashAmount)}
 							</span>
 						</div>
 					</div>
 
 					{/* Cash Tendered & Change Calculator */}
-					<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-2">
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
-								Получено от пациента (₽):
-							</label>
-							<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-2.5">
+						<div className="space-y-1.5">
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									Купюры и быстрый ввод:
+								</label>
+								{receivedCashRub > 0 && (
+									<button
+										type="button"
+										onClick={() => setReceivedCashRub(0)}
+										className="text-[11px] text-rose-600 dark:text-rose-400 font-bold hover:underline cursor-pointer"
+										data-testid="btn-cash-reset"
+									>
+										Сброс (0 ₽)
+									</button>
+								)}
+							</div>
+
+							{/* 2 колонки быстрых купюр на мобильном, единый ряд на десктопе */}
+							<div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
 								<button
 									type="button"
 									onClick={() => setReceivedCashRub(cashAmount)}
-									className="min-h-[44px] sm:min-h-0 sm:h-6 px-2 rounded text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 cursor-pointer transition-colors inline-flex items-center justify-center"
+									className={`min-h-[44px] h-11 sm:h-8 px-3 rounded-xl text-xs font-extrabold cursor-pointer transition-all flex items-center justify-center text-center ${
+										receivedCashRub === cashAmount
+											? "bg-emerald-600 text-white shadow-xs"
+											: "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-200 border border-emerald-300 dark:border-emerald-700"
+									}`}
+									data-testid="btn-cash-exact"
 								>
-									Ровно без сдачи
+									Без сдачи ({formatMoneyRu(cashAmount)})
 								</button>
-								{[500, 1000, 5000].map((val) => (
+								{[1000, 2000, 5000].map((val) => (
 									<button
 										key={val}
 										type="button"
-										onClick={() =>
-											setReceivedCashRub((prev) => (prev || cashAmount) + val)
-										}
-										className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-6 px-2 rounded text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors inline-flex items-center justify-center"
+										onClick={() => setReceivedCashRub(val)}
+										className={`min-h-[44px] h-11 sm:h-8 px-3 rounded-xl text-xs font-bold font-mono cursor-pointer transition-all flex items-center justify-center text-center ${
+											receivedCashRub === val
+												? "bg-emerald-600 text-white shadow-xs"
+												: "bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid={`btn-cash-${val}`}
 									>
-										+{val} ₽
+										{val.toLocaleString("ru-RU")} ₽
+									</button>
+								))}
+							</div>
+
+							{/* Быстрое добавление к сумме */}
+							<div className="flex items-center gap-1.5 flex-wrap pt-1">
+								<span className="text-[11px] text-[var(--muted,#64748b)]">Добавить:</span>
+								{[500, 1000, 2000, 5000].map((val) => (
+									<button
+										key={`add-${val}`}
+										type="button"
+										onClick={() => setReceivedCashRub((prev) => (prev || cashAmount) + val)}
+										className="min-h-[32px] h-7 px-2 rounded-lg text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors inline-flex items-center justify-center"
+									>
+										+{val.toLocaleString("ru-RU")} ₽
 									</button>
 								))}
 							</div>
 						</div>
 
-						<div className="flex items-center gap-3">
-							<input
-								type="number"
-								min={0}
-								value={receivedCashRub || ""}
-								onChange={(e) =>
-									setReceivedCashRub(Math.max(0, Number(e.target.value) || 0))
-								}
-								placeholder={cashAmount.toString()}
-								className="h-10 w-40 px-3 text-base font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-							/>
+						<div className="flex items-center gap-3 pt-1">
+							<div className="w-40 sm:w-44">
+								<label className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)] block mb-0.5">
+									Получено (₽):
+								</label>
+								<input
+									type="number"
+									min={0}
+									value={receivedCashRub || ""}
+									onChange={(e) =>
+										setReceivedCashRub(Math.max(0, Number(e.target.value) || 0))
+									}
+									placeholder={cashAmount.toString()}
+									className="h-10 w-full px-3 text-base font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+									data-testid="input-cash-received"
+								/>
+							</div>
 							<div className="flex-1 text-right">
 								{receivedCashRub >= cashAmount && receivedCashRub > 0 ? (
 									<div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-										Сдача:{" "}
-										<span className="text-base font-mono font-black">
+										<span className="block text-[11px] text-[var(--muted,#64748b)]">Сдача:</span>
+										<span className="text-lg font-mono font-black" data-testid="cash-change-amount">
 											{formatMoneyRu(
 												kopecksToRub(
 													Math.max(
@@ -125,8 +168,8 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 									</div>
 								) : receivedCashRub > 0 ? (
 									<div className="text-xs font-bold text-amber-700 dark:text-amber-300">
-										К доплате:{" "}
-										<span className="text-base font-mono font-black">
+										<span className="block text-[11px] text-[var(--muted,#64748b)]">К доплате:</span>
+										<span className="text-lg font-mono font-black">
 											{formatMoneyRu(
 												kopecksToRub(
 													Math.max(
@@ -154,9 +197,9 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 					className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-blue-500/30 space-y-3"
 					data-testid="panel-card-focused"
 				>
-					<div className="flex items-center justify-between">
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
 						<div className="flex items-center gap-2.5">
-							<div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+							<div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
 								<CreditCard size={20} />
 							</div>
 							<div>
@@ -168,9 +211,9 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 								</span>
 							</div>
 						</div>
-						<div className="text-right">
-							<span className="text-xs text-[var(--muted,#64748b)] block">К списанию:</span>
-							<span className="text-lg font-black font-mono text-blue-700 dark:text-blue-300">
+						<div className="text-center sm:text-right w-full sm:w-auto p-2 sm:p-0 rounded-xl bg-blue-500/5 sm:bg-transparent">
+							<span className="text-xs text-[var(--muted,#64748b)] block font-semibold">К списанию:</span>
+							<span className="text-2xl sm:text-lg font-black font-mono text-blue-700 dark:text-blue-300">
 								{formatMoneyRu(cardAmount)}
 							</span>
 						</div>
@@ -190,6 +233,20 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 							<span>Подтвердить вручную (автономный POS)</span>
 						</button>
 					</div>
+
+					{/* Mobile 52px Touch Button */}
+					<div className="sm:hidden pt-1">
+						<button
+							type="button"
+							onClick={handleManualCardTerminalConfirm}
+							disabled={isSubmittingManualCard}
+							className="w-full min-h-[52px] h-[52px] rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-all"
+							data-testid="btn-mobile-pay-card-terminal"
+						>
+							<CreditCard size={18} />
+							<span>Оплатить через Терминал ({formatMoneyRu(cardAmount)})</span>
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -198,9 +255,9 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 					className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-teal-500/30 space-y-3"
 					data-testid="panel-sbp-focused"
 				>
-					<div className="flex items-center justify-between">
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
 						<div className="flex items-center gap-2.5">
-							<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+							<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
 								<QrCode size={20} />
 							</div>
 							<div>
@@ -208,13 +265,13 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 									Система быстрых платежей (СБП QR)
 								</span>
 								<span className="text-xs text-[var(--muted,#64748b)]">
-									Динамический QR НСПК сформирован справа
+									Динамический QR НСПК сформирован
 								</span>
 							</div>
 						</div>
-						<div className="text-right">
-							<span className="text-xs text-[var(--muted,#64748b)] block">К оплате:</span>
-							<span className="text-lg font-black font-mono text-teal-700 dark:text-teal-300">
+						<div className="text-center sm:text-right w-full sm:w-auto p-2 sm:p-0 rounded-xl bg-teal-500/5 sm:bg-transparent">
+							<span className="text-xs text-[var(--muted,#64748b)] block font-semibold">К оплате:</span>
+							<span className="text-2xl sm:text-lg font-black font-mono text-teal-700 dark:text-teal-300">
 								{formatMoneyRu(sbpAmount)}
 							</span>
 						</div>
@@ -223,6 +280,18 @@ export const TenderMethodList: React.FC<TenderMethodListProps> = ({
 						Пациент сканирует QR камерой или через приложение любого банка РФ.
 						Зачисление мгновенно без комиссии для пациента.
 					</p>
+
+					{/* Mobile 52px Touch Button */}
+					<div className="sm:hidden pt-1">
+						<button
+							type="button"
+							className="w-full min-h-[52px] h-[52px] rounded-xl text-sm font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-all"
+							data-testid="btn-mobile-pay-sbp-qr"
+						>
+							<QrCode size={18} />
+							<span>Оплатить СБП (QR-код {formatMoneyRu(sbpAmount)})</span>
+						</button>
+					</div>
 				</div>
 			)}
 

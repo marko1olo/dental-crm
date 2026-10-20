@@ -8,6 +8,7 @@ import type {
 	CrmLeakFunnelMetrics,
 	CrmLeakLeadItem,
 } from "@dental/shared";
+import { handleApiResponse } from "./apiResponseHandler.js";
 
 export interface FetchLeadsParams {
 	minDays?: number | undefined;
@@ -32,11 +33,7 @@ export async function fetchLeakDetectorLeads(
 
 	const url = `/api/crm/leak-detector${query.toString() ? `?${query.toString()}` : ""}`;
 	const res = await fetch(url, { method: "GET", headers });
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка загрузки списка утечки" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ data: CrmLeakLeadItem[]; total: number }>(res, "Ошибка загрузки списка утечки");
 }
 
 export async function syncLeakDetector(
@@ -46,11 +43,7 @@ export async function syncLeakDetector(
 		method: "POST",
 		headers: { ...headers, "Content-Type": "application/json" },
 	});
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка синхронизации" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ success: boolean; message: string; createdCount: number; updatedCount: number }>(res, "Ошибка синхронизации");
 }
 
 export async function startLeakLead(
@@ -61,11 +54,7 @@ export async function startLeakLead(
 		method: "POST",
 		headers: { ...headers, "Content-Type": "application/json" },
 	});
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка взятия лида в работу" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ success: boolean; lead: CrmLeakLeadItem }>(res, "Ошибка взятия лида в работу");
 }
 
 export async function processLeakLead(
@@ -82,11 +71,7 @@ export async function processLeakLead(
 		headers: { ...headers, "Content-Type": "application/json" },
 		body: JSON.stringify(payload),
 	});
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка фиксации контакта" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ success: boolean; lead: CrmLeakLeadItem }>(res, "Ошибка фиксации контакта");
 }
 
 export async function cancelLeakLead(
@@ -102,22 +87,14 @@ export async function cancelLeakLead(
 		headers: { ...headers, "Content-Type": "application/json" },
 		body: JSON.stringify(payload),
 	});
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка отмены лида" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ success: boolean; lead: CrmLeakLeadItem }>(res, "Ошибка отмены лида");
 }
 
 export async function fetchLeakFunnelMetrics(
 	headers: Record<string, string>,
 ): Promise<{ data: CrmLeakFunnelMetrics }> {
 	const res = await fetch("/api/funnels/leak-detector", { method: "GET", headers });
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка загрузки воронки утечек" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ data: CrmLeakFunnelMetrics }>(res, "Ошибка загрузки воронки утечек");
 }
 
 export async function createLeakTask(
@@ -128,10 +105,6 @@ export async function createLeakTask(
 		method: "POST",
 		headers: { ...headers, "Content-Type": "application/json" },
 	});
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка создания задачи" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-	return res.json();
+	return handleApiResponse<{ success: boolean; message: string; lead: CrmLeakLeadItem }>(res, "Ошибка создания задачи");
 }
 

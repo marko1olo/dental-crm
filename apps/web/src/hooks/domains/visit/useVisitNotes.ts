@@ -33,28 +33,31 @@ export function useVisitNotes({
 	speechGatewayStatus,
 	scrollToVisitArea,
 }: UseVisitNotesParams): UseVisitNotesReturn {
-	const visitStore = useVisitStore();
-	const appStore = useAppStore();
+	const selectedSpecialty = useVisitStore((s) => s.selectedSpecialty);
+	const clearedTranscriptSnapshot = useVisitStore(
+		(s) => s.clearedTranscriptSnapshot,
+	);
+	const setClearedTranscriptSnapshot = useVisitStore(
+		(s) => s.setClearedTranscriptSnapshot,
+	);
+	const transcript = useVisitStore((s) => s.transcript);
+	const setTranscript = useVisitStore((s) => s.setTranscript);
+	const draft = useVisitStore((s) => s.draft);
+	const setDraft = useVisitStore((s) => s.setDraft);
+	const setVisitFlowResult = useVisitStore((s) => s.setVisitFlowResult);
+	const visitNoteForm = useVisitStore((s) => s.visitNoteForm);
+	const setVisitNoteForm = useVisitStore((s) => s.setVisitNoteForm);
+	const applyAiToothCodes = useVisitStore((s) => s.applyAiToothCodes);
+	const isDraftAccepting = useVisitStore((s) => s.isDraftAccepting);
+	const setIsDraftLoading = useVisitStore((s) => s.setIsDraftLoading);
+	const setIsTranscriptPolishing = useVisitStore(
+		(s) => s.setIsTranscriptPolishing,
+	);
+	const visitDraftUserEditedRef = useVisitStore(
+		(s) => s.visitDraftUserEditedRef,
+	);
 
-	const {
-		selectedSpecialty,
-		clearedTranscriptSnapshot,
-		setClearedTranscriptSnapshot,
-		transcript,
-		setTranscript,
-		draft,
-		setDraft,
-		setVisitFlowResult,
-		visitNoteForm,
-		setVisitNoteForm,
-		applyAiToothCodes,
-		isDraftAccepting,
-		setIsDraftLoading,
-		setIsTranscriptPolishing,
-		visitDraftUserEditedRef,
-	} = visitStore;
-
-	const { setSpeechStatusNote } = appStore;
+	const setSpeechStatusNote = useAppStore((s) => s.setSpeechStatusNote);
 
 	const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
 	const visitWarnings =

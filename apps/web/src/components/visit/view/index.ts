@@ -11,3 +11,6 @@ export * from "./VisitTabNav";
 export * from "./VisitTabContent";
 export * from "./VisitActionFooter";
 export * from "./useVisitViewState";
+export * from "./VisitViewPanel";
+export * from "./VisitViewDesktopLayout";
+export * from "./VisitViewMobileLayout";

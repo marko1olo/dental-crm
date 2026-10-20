@@ -215,3 +215,41 @@ export async function loadTreatmentPlansForPatient(
 		),
 	);
 }
+
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+
+const PLAN_STAFF_READER_ROLES = new Set([
+	"admin",
+	"owner",
+	"director",
+	"administrator",
+	"receptionist",
+	"curator",
+	"registrator",
+]);
+
+const PLAN_STAFF_WRITER_ROLES = new Set([
+	"admin",
+	"owner",
+	"director",
+	"curator",
+	"administrator",
+	"receptionist",
+]);
+
+export function verifyPlanReadAccess(staffRole: string | null | undefined): { allowed: boolean; reason?: string } {
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (evalAccess.hasClinicalAccess || (staffRole && PLAN_STAFF_READER_ROLES.has(staffRole))) {
+		return { allowed: true };
+	}
+	return { allowed: false, reason: evalAccess.reason };
+}
+
+export function verifyPlanWriteAccess(staffRole: string | null | undefined): { allowed: boolean; reason?: string } {
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (evalAccess.hasClinicalAccess || (staffRole && PLAN_STAFF_WRITER_ROLES.has(staffRole))) {
+		return { allowed: true };
+	}
+	return { allowed: false, reason: evalAccess.reason };
+}
+

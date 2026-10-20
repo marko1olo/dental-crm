@@ -16,6 +16,8 @@ export type {
 export {
 	setCachedEntity,
 	getCachedEntity,
+	getCachedClinicalRecordSync,
+	getCachedEntitySync,
 	removeCachedEntity,
 	clearClinicalCacheByKind,
 	clearAllClinicalCache,
@@ -38,5 +40,13 @@ export {
 } from "./statutoryCatalogCache";
 
 export * from "./crossTabSync";
+export {
+	chairsideMemoryShield,
+	type MemoryShieldConfig,
+	type CachedRvgImage,
+	type MemoryShieldMetrics,
+} from "./chairsideMemoryShield";
+
+export * from "./clinicalIndexedDbL2";
 
 

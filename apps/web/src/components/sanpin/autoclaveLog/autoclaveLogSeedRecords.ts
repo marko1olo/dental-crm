@@ -81,7 +81,7 @@ export const INITIAL_FORM257_RECORDS: readonly Form257Record[] = [
 		itemsDescriptionRu:
 			"Боры алмазные и твердосплавные, стальные эндодонтические плаггеры и спредеры, тигели зуботехнические",
 		packsCount: 20,
-		packagingType: "open_tray",
+		packagingType: "open_tray_immediate",
 		chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
 		operatorStaffFullName: "Сотрудник клиники",
 		operatorStaffPosition: "Сотрудник ЦСО / Врач",

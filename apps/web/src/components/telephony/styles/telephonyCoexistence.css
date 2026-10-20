@@ -16,10 +16,27 @@ body:has([aria-modal="true"]) .telephony-floating-widget {
 }
 
 body:has([role="dialog"]) .dnt-incoming-call-badge-container,
-body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
-	bottom: 24px;
+body:has([aria-modal="true"]) .dnt-incoming-call-badge-container,
+body:has([data-testid="visit-view"]) .dnt-incoming-call-badge-container,
+body:has(.floating-bottom-bar) .dnt-incoming-call-badge-container,
+body:has(.visit-bottom-bar) .dnt-incoming-call-badge-container {
+	top: 68px;
+	bottom: auto;
 	right: 24px;
 	z-index: 9995;
+}
+
+body:has([role="dialog"]) .dnt-telephony-floating-widget,
+body:has([aria-modal="true"]) .dnt-telephony-floating-widget,
+body:has([data-testid="visit-view"]) .dnt-telephony-floating-widget,
+body:has(.floating-bottom-bar) .dnt-telephony-floating-widget,
+body:has([role="dialog"]) .telephony-floating-softphone,
+body:has([aria-modal="true"]) .telephony-floating-softphone,
+body:has([data-testid="visit-view"]) .telephony-floating-softphone,
+body:has(.floating-bottom-bar) .telephony-floating-softphone {
+	top: 68px;
+	bottom: auto;
+	right: 24px;
 }
 
 .dnt-telephony-island-container > *,

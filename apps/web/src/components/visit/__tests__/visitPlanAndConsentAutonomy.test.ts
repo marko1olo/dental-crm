@@ -12,7 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import test, { describe } from "node:test";
+import { test, describe } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

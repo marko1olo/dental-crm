@@ -4,7 +4,7 @@ import {
 	BarChart3, CalendarClock, CalendarDays, ChevronsLeft,
 	ClipboardCheck, ClipboardList, CreditCard, Database, FileCheck2, FileText,
 	FlaskConical, Image as ImageIcon, Layers, LayoutDashboard, Megaphone,
-	MessageSquare, Package, PackageSearch, ScanLine, Stethoscope, TrendingUp,
+	MessageSquare, Package, PackageSearch, PhoneCall, ScanLine, Stethoscope, TrendingUp,
 	UserPlus, Users,
 } from "lucide-react";
 import React, { useMemo } from "react";
@@ -281,6 +281,28 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
+			<div className="sidebar-quick-tools max-w-full shrink-0 flex flex-col gap-1 px-2 py-1.5 border-t border-[var(--line-subtle,var(--line))]">
+				<button
+					type="button"
+					data-testid="sidebar-quick-tasks-btn"
+					onClick={() => window.dispatchEvent(new CustomEvent("dente:open-clinical-tasks"))}
+					className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+					title="Клинические задачи передачи этапов"
+				>
+					<ClipboardCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					{!collapsed && <span>Клинические задачи</span>}
+				</button>
+				<button
+					type="button"
+					data-testid="sidebar-quick-recalls-btn"
+					onClick={() => window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"))}
+					className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+					title="Профосмотры и повторные вызовы"
+				>
+					<PhoneCall size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+					{!collapsed && <span>Профосмотры</span>}
+				</button>
+			</div>
 			<div className="sidebar-footer max-w-full shrink-0 mt-auto flex flex-col gap-1.5 pt-2 pb-1 border-t border-[var(--line)]">
 				<div className="sidebar-footer-tier sidebar-footer-tier--top flex items-center justify-between gap-1 w-full">
 					<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />

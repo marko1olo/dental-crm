@@ -2,13 +2,17 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	allocateSplitPaymentAcrossItems,
+	autoAlignSplitRemainder,
 	balanceSplitDepositPlusCard,
 	balanceSplitTenderRemainder,
+	calculate5050Split,
+	calculateDmsSplitBill,
+	isSplitBalanced,
 	type SplitPaymentPositionItem,
 	type SplitPaymentTenderInput,
 	SplitPaymentValidationError,
 	validateAndBalanceSplitPayment,
-} from "../finance/splitPayment.js";
+} from "../billing/splitPayment.js";
 import { rubToKopecks, kopecksToRub } from "../fiscal/kopecksArithmetic.js";
 
 describe("Wave 23: Domain 1 — Split Payment Engine (Святость денег и ACID)", () => {
@@ -292,6 +296,73 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		assert.equal(totalCertAllocated, 0);
 		assert.equal(totalDmsAllocated + totalCardAllocated, 1000000);
 	});
+
+	it("11. calculate5050Split splits odd amount without losing a single kopeck", () => {
+		const split = calculate5050Split(15000.33);
+		assert.equal(split.cashRub + split.electronicRub, 15000.33);
+		assert.equal(rubToKopecks(split.cashRub) + rubToKopecks(split.electronicRub), 1500033);
+	});
+
+	it("12. autoAlignSplitRemainder eliminates rounding gaps to exact kopecks", () => {
+		const aligned = autoAlignSplitRemainder({
+			totalDueRub: 10000,
+			totalAllocatedRub: 8000,
+			splitCardRub: 5000,
+			splitCashRub: 3000,
+		});
+		assert.equal(aligned.nextCardRub, 7000);
+		assert.equal(aligned.nextCashRub, 3000);
+	});
+
+	it("13. isSplitBalanced verifies exact allocation down to 0 kopeck discrepancy", () => {
+		assert.equal(isSplitBalanced(1500, [500, 1000]), true);
+		assert.equal(isSplitBalanced(1500, [500, 999.99]), false);
+	});
+
+	it("14. calculateDmsSplitBill performs 0-drift split for full coverage, franchise, and limit overflow", () => {
+		// Full coverage (0% franchise, limit >= bill)
+		const full = calculateDmsSplitBill({
+			totalBillRub: 12500.5,
+			availableCoverageRub: 50000,
+		});
+		assert.equal(full.dmsCoveredRub, 12500.5);
+		assert.equal(full.patientCoPayRub, 0);
+		assert.equal(full.isFullyCovered, true);
+		assert.equal(full.dmsCoveredKopecks + full.patientCoPayKopecks, 1250050);
+
+		// 20% franchise with odd kopecks
+		const franchise20 = calculateDmsSplitBill({
+			totalBillRub: 13333.33,
+			franchisePercent: 20,
+		});
+		assert.equal(franchise20.dmsCoveredKopecks + franchise20.patientCoPayKopecks, 1333333);
+		assert.equal(franchise20.isFullyCovered, false);
+		assert.equal(franchise20.franchiseAppliedKopecks, 266667); // round(1333333 * 0.20)
+		assert.equal(franchise20.dmsCoveredKopecks, 1066666);
+		assert.equal(franchise20.patientCoPayKopecks, 266667);
+
+		// Limit overflow: bill 25,000 ₽, remaining letter limit 15,000 ₽
+		const overflow = calculateDmsSplitBill({
+			totalBillRub: 25000,
+			availableCoverageRub: 15000,
+			franchisePercent: 0,
+		});
+		assert.equal(overflow.dmsCoveredRub, 15000);
+		assert.equal(overflow.patientCoPayRub, 10000);
+		assert.equal(overflow.isFullyCovered, false);
+		assert.equal(overflow.dmsCoveredKopecks + overflow.patientCoPayKopecks, 2500000);
+
+		// Limit overflow with franchise: bill 10,000 ₽, 10% franchise (DMS initial 9,000 ₽), but limit is 6,000 ₽
+		const overflowFranchise = calculateDmsSplitBill({
+			totalBillRub: 10000,
+			availableCoverageRub: 6000,
+			franchisePercent: 10,
+		});
+		assert.equal(overflowFranchise.dmsCoveredRub, 6000);
+		assert.equal(overflowFranchise.patientCoPayRub, 4000);
+		assert.equal(overflowFranchise.dmsCoveredKopecks + overflowFranchise.patientCoPayKopecks, 1000000);
+	});
 });
+
 
 

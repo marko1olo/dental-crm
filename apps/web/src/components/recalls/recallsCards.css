@@ -1,10 +1,7 @@
 /* ==========================================================================
    Apple HIG & Touch-First Recalls Card Stream & Dispensary Funnel
-   Extracted for Anti-Monolith Modularization (<=800 lines ceiling)
    ========================================================================== */
 
 @import "./recallsCardsStream.css";
 @import "./recallsCardsFunnel.css";
-@import "./recallsCardsScripts.css";
-@import "./recallsCardsObjections.css";
 @import "./recallsCardsMobile.css";

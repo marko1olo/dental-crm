@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { PremiumDocumentPrintSheet } from "../../documents/PremiumDocumentPrintSheet";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import { PremiumDocumentPrintSheet } from "../../../documents/PremiumDocumentPrintSheet";
+import type { DiaryState } from "../../../useVisitDiaryLogic";
 import { PrintPreviewToolbar } from "./PrintPreviewToolbar";
 
 export interface PrintPreviewOverlayProps {

@@ -5,19 +5,21 @@
  * Mandate 8s: Strict Bounded Context & Single Canonical Authority.
  */
 
-/**
- * Single canonical 1-click physiological norm formulation for Form 043/u:
- * «Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.»
- */
-export const CANONICAL_SOMATIC_HEALTHY_NORM_TEXT =
-	"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.";
+import {
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	type SomaticPregnancyTrimester,
+	type SomaticRiskLevel,
+	isNegativeAllergyOrSomaticStatement,
+} from "./somaticCatalog.js";
 
-export const CANONICAL_SOMATIC_HEALTHY_NORM_WITH_INFECTIONS_TEXT =
-	"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
-
-export const CANONICAL_SOMATIC_NORM_SHORT = "Соматически здоров / норма";
-
-export const CANONICAL_SOMATIC_NORM_BADGE_LABEL = "Соматически здоров (Норма)";
+export {
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	type SomaticPregnancyTrimester,
+	type SomaticRiskLevel,
+	isNegativeAllergyOrSomaticStatement,
+};
 
 /**
  * 5 Core Critical Dental Stop-Factor Categories
@@ -32,13 +34,6 @@ export type SomaticStopFactorCategory =
 	| "other";
 
 export type SomaticSeverity = "critical" | "warning" | "healthy";
-
-export type SomaticPregnancyTrimester =
-	| "trimester_1"
-	| "trimester_2"
-	| "trimester_3"
-	| "lactation"
-	| "none";
 
 /**
  * Individual evaluated stop-factor entity
@@ -168,81 +163,6 @@ export interface SomaticSafetyEvaluation {
 		readonly recommendations: readonly string[];
 		readonly anesthesiaGuidance: string;
 	}>;
-}
-
-/**
- * Detects whether an allergy/somatic text string represents an explicit negation of pathology
- * (e.g. "аллергий нет", "отрицает", "не отягощен", "норма", "-", "—", "соматически здоров").
- */
-export function isNegativeAllergyOrSomaticStatement(text?: string | null): boolean {
-	if (!text) return true;
-	const trimmed = text.trim();
-	if (!trimmed) return true;
-	const lower = trimmed.toLowerCase();
-
-	if (/^[-—–._\s/]*$/.test(trimmed) || /^(нет|none|no|n\/a|0)$/i.test(trimmed)) {
-		return true;
-	}
-
-	// Active allergen / stop-factor mentions override simple punctuation
-	const hasActiveTrigger =
-		lower.includes("артикаин") ||
-		lower.includes("ультракаин") ||
-		lower.includes("лидокаин") ||
-		lower.includes("мепивакаин") ||
-		lower.includes("скандонест") ||
-		lower.includes("новокаин") ||
-		lower.includes("пенициллин") ||
-		lower.includes("амоксиклав") ||
-		lower.includes("аугментин") ||
-		lower.includes("гипертонический криз") ||
-		lower.includes("инфаркт") ||
-		lower.includes("варфарин") ||
-		lower.includes("ксарелто") ||
-		lower.includes("эликвис") ||
-		lower.includes("тромбо асс") ||
-		lower.includes("бисфосфонат") ||
-		lower.includes("зомета") ||
-		lower.includes("фосамакс") ||
-		lower.includes("акласта") ||
-		lower.includes("mronj") ||
-		lower.includes("бонч") ||
-		lower.includes("декомпенсирован") ||
-		lower.includes("кардиостимулятор");
-
-	const isExplicitNegation =
-		lower.includes("отрицает") ||
-		lower.includes("не отягощен") ||
-		lower.includes("не отягощён") ||
-		lower.includes("нет аллергии") ||
-		lower.includes("аллергий нет") ||
-		lower.includes("аллергии нет") ||
-		lower.includes("не принимает") ||
-		lower.includes("не выявлено") ||
-		lower.includes("без особенностей") ||
-		lower.includes("соматически здоров") ||
-		lower.includes("патологий не заявлено");
-
-	if (isExplicitNegation && !hasActiveTrigger) {
-		return true;
-	}
-
-	// Exact phrases of negation even if term was mentioned as negated
-	if (
-		lower === "нет" ||
-		lower === "норма" ||
-		lower === "отрицает" ||
-		lower === "не отягощен" ||
-		lower === "не отягощён" ||
-		lower === "здоров" ||
-		lower === "чисто" ||
-		lower === "аллергоанамнез не отягощен" ||
-		lower === "аллергии отрицает"
-	) {
-		return true;
-	}
-
-	return false;
 }
 
 /**

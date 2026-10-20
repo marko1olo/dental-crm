@@ -3,7 +3,7 @@ import { RECALL_CYCLE_CATALOG } from "./recallCycleCatalog";
 import { generate1ClickBookingLink, extractFirstName, interpolateRecallTemplate } from "./recallMessageFormatters";
 
 export const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
-	standard_prophylaxis: "Здравствуйте, {{PATIENT_FIRST_NAME}}! Стоматология «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает: прошло 6 месяцев с прошлого визита ({{LAST_VISIT_DATE}}). Подошел срок плановой профгигиены Air-Flow и осмотра.\n\nЗаписаться в 1 клик:\n{{BOOKING_URL}}",
+	standard_prophylaxis: "Здравствуйте, {{PATIENT_FIRST_NAME}}! Стоматология «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает: прошло 6 месяцев с прошлого визита ({{LAST_VISIT_DATE}}). Подошел срок плановой профгигиены Air-Flow и осмотра для сохранения здоровья зубов и гарантии.\n\nЗаписаться в 1 клик:\n{{BOOKING_URL}}",
 	periodontal_maintenance: "Добрый день, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает о поддерживающей гигиене для десен (прошло {{INTERVAL_DESC}} с визита {{LAST_VISIT_DATE}}).\n\nЗапись на прием:\n{{BOOKING_URL}}",
 	implant_monitoring: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Подошел срок контрольного осмотра имплантатов у доктора {{DOCTOR_NAME}} (прошлый визит {{LAST_VISIT_DATE}}).\n\nЗаписаться к доктору:\n{{BOOKING_URL}}",
 	orthodontic_braces: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} ждет Вас на плановую активацию брекетов и смену дуг (визит {{LAST_VISIT_DATE}}).\n\nВыбрать слот онлайн:\n{{BOOKING_URL}}",

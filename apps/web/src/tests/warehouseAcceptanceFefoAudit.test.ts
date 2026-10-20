@@ -40,7 +40,7 @@ import {
 
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { WarehouseItemsTable } from "../components/warehouse/WarehouseItemsTable";
+import { WarehouseItemsTable } from "../components/inventory/WarehouseItemsTable";
 import { generateFormM11Html } from "../components/inventory/writeoff/clinicalWriteoffPrintForms";
 import {
 	createSampleDentalWaybill,

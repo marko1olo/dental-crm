@@ -441,9 +441,13 @@ async function capture(page, targetPath) {
 }
 
 async function main() {
-	const proofDir = path.resolve(__dirname, "../docs/proofs/schedule_mobile");
+	const proofDir = path.resolve(__dirname, "../docs/proofs/schedule");
+	const legacyProofDir = path.resolve(__dirname, "../docs/proofs/schedule_mobile");
 	if (!fs.existsSync(proofDir)) {
 		fs.mkdirSync(proofDir, { recursive: true });
+	}
+	if (!fs.existsSync(legacyProofDir)) {
+		fs.mkdirSync(legacyProofDir, { recursive: true });
 	}
 
 	console.log("[Visual Proof] Launching Chromium...");
@@ -484,12 +488,16 @@ async function main() {
 		// PC Light
 		console.log("  -> Switching to Light theme...");
 		await setTheme(pcPage, "light", false);
-		await capture(pcPage, path.join(proofDir, "pc_schedule_light_1440x900.png"));
+		const pcLight = await capture(pcPage, path.join(proofDir, "schedule_pc_light_1440x900.png"));
+		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_schedule_light_1440x900.png"));
+		fs.copyFileSync(pcLight.path, path.join(legacyProofDir, "pc_schedule_light_1440x900.png"));
 
 		// PC Dark
 		console.log("  -> Switching to Dark theme...");
 		await setTheme(pcPage, "dark", true);
-		await capture(pcPage, path.join(proofDir, "pc_schedule_dark_1440x900.png"));
+		const pcDark = await capture(pcPage, path.join(proofDir, "schedule_pc_dark_1440x900.png"));
+		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_schedule_dark_1440x900.png"));
+		fs.copyFileSync(pcDark.path, path.join(legacyProofDir, "pc_schedule_dark_1440x900.png"));
 
 		await pcContext.close();
 
@@ -524,12 +532,16 @@ async function main() {
 		// Mobile Light
 		console.log("  -> Switching to Mobile Light theme...");
 		await setTheme(mobilePage, "light", false);
-		await capture(mobilePage, path.join(proofDir, "mobile_schedule_light_390x844.png"));
+		const mobLight = await capture(mobilePage, path.join(proofDir, "schedule_mobile_light_390x844.png"));
+		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_schedule_light_390x844.png"));
+		fs.copyFileSync(mobLight.path, path.join(legacyProofDir, "mobile_schedule_light_390x844.png"));
 
 		// Mobile Dark
 		console.log("  -> Switching to Mobile Dark theme...");
 		await setTheme(mobilePage, "dark", true);
-		await capture(mobilePage, path.join(proofDir, "mobile_schedule_dark_390x844.png"));
+		const mobDark = await capture(mobilePage, path.join(proofDir, "schedule_mobile_dark_390x844.png"));
+		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_schedule_dark_390x844.png"));
+		fs.copyFileSync(mobDark.path, path.join(legacyProofDir, "mobile_schedule_dark_390x844.png"));
 
 		await mobileContext.close();
 

@@ -1,9 +1,10 @@
+import { GOST_CRYPTO_OIDS } from "@dental/shared";
 import { logger } from "./logger";
 
 /**
  * Utility module to interface with CryptoPro Browser Plug-in (cadesplugin)
  * for signing documents with Qualified Electronic Signature (УКЭП/УНЭП)
- * under 63-FZ and GOST R 34.10-2012.
+ * under GOST R 34.10-2012 (Hardware CAdES-BES contour).
  */
 
 declare global {
@@ -136,7 +137,7 @@ export function parseCryptoProError(err: unknown): CryptoProParsedError {
 	) {
 		return {
 			userMessage:
-				"Алгоритм ключа не соответствует ГОСТ Р 34.10-2012. Подписание медицинских документов допускается только по стандарту ГОСТ Р 34.10-2012 (63-ФЗ).",
+				"Алгоритм ключа не соответствует ГОСТ Р 34.10-2012. Выберите квалифицированный сертификат по стандарту ГОСТ Р 34.10-2012.",
 			code: "INVALID_ALGORITHM",
 			isCancellation: false,
 		};
@@ -279,9 +280,9 @@ export async function getPersonalCertificates(): Promise<
 						}
 
 						const isGost =
-							algorithmOid === "1.2.643.7.1.1.1.1" ||
-							algorithmOid === "1.2.643.7.1.1.1.2" ||
-							algorithmOid === "1.2.643.2.2.19" ||
+							algorithmOid === GOST_CRYPTO_OIDS.GOST_3410_2012_256 ||
+							algorithmOid === GOST_CRYPTO_OIDS.GOST_3410_2012_512 ||
+							algorithmOid === GOST_CRYPTO_OIDS.GOST_3410_2001_LEGACY ||
 							algorithmName.toLowerCase().includes("гост") ||
 							algorithmName.toLowerCase().includes("gost");
 

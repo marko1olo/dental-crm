@@ -1,13 +1,13 @@
 import {
 	CATEGORY_LABELS,
-	PRICE_TIER_LABELS,
-	SPECIALTY_LABELS,
 	type Order804nCategory,
+	PRICE_TIER_LABELS,
 	type PriceTierKind,
 	type ServicePricelistItem,
-} from '../servicePricelistPresets';
-import { calculateTierPrice, formatRubles } from './currencyMath';
-import type { ClinicPricelistPrintInfo } from './types';
+	SPECIALTY_LABELS,
+} from "../servicePricelistPresets";
+import { calculateTierPrice, formatRubles } from "./currencyMath";
+import type { ClinicPricelistPrintInfo } from "./types";
 
 // =============================================================================
 // LAYER 2: PRINTABLE OFFICIAL CLINIC PRICELIST HTML GENERATOR (A4)
@@ -19,26 +19,33 @@ import type { ClinicPricelistPrintInfo } from './types';
 export function generatePrintablePricelistHtml(
 	clinicInfo: ClinicPricelistPrintInfo,
 	items: readonly ServicePricelistItem[],
-	tier: PriceTierKind = 'standard',
+	tier: PriceTierKind = "standard",
 ): string {
 	const activeItems = items.filter((i) => !i.isArchived && i.isActive);
 
 	// Group items by category
-	const groupedByCategory = new Map<Order804nCategory, ServicePricelistItem[]>();
+	const groupedByCategory = new Map<
+		Order804nCategory,
+		ServicePricelistItem[]
+	>();
 	for (const item of activeItems) {
 		const list = groupedByCategory.get(item.category) ?? [];
 		list.push(item);
 		groupedByCategory.set(item.category, list);
 	}
 
-	let categorySectionsHtml = '';
+	let categorySectionsHtml = "";
 
 	for (const [category, catItems] of groupedByCategory.entries()) {
 		const categoryTitle = CATEGORY_LABELS[category] ?? category;
 
 		const rowsHtml = catItems
 			.map((item, idx) => {
-				const price = calculateTierPrice(item.basePriceRub, tier, item.tierPrices?.[tier]);
+				const price = calculateTierPrice(
+					item.basePriceRub,
+					tier,
+					item.tierPrices?.[tier],
+				);
 				return `
 					<tr>
 						<td class="col-num">${idx + 1}</td>
@@ -52,7 +59,7 @@ export function generatePrintablePricelistHtml(
 					</tr>
 				`;
 			})
-			.join('');
+			.join("");
 
 		categorySectionsHtml += `
 			<div class="pricelist-category-section">
@@ -214,9 +221,9 @@ export function generatePrintablePricelistHtml(
 		<div class="clinic-info">
 			<h1>${clinicInfo.clinicName}</h1>
 			<div class="clinic-details">
-				<div>${clinicInfo.clinicAddress}${clinicInfo.clinicPhone ? ` · Тел: ${clinicInfo.clinicPhone}` : ''}</div>
+				<div>${clinicInfo.clinicAddress}${clinicInfo.clinicPhone ? ` · Тел: ${clinicInfo.clinicPhone}` : ""}</div>
 				<div>Лицензия на осуществление медицинской деятельности: ${clinicInfo.clinicLicense}</div>
-				${clinicInfo.inn || clinicInfo.ogrn ? `<div>${clinicInfo.inn ? `ИНН: ${clinicInfo.inn}` : ''}${clinicInfo.inn && clinicInfo.ogrn ? ' · ' : ''}${clinicInfo.ogrn ? `ОГРН: ${clinicInfo.ogrn}` : ''}</div>` : ''}
+				${clinicInfo.inn || clinicInfo.ogrn ? `<div>${clinicInfo.inn ? `ИНН: ${clinicInfo.inn}` : ""}${clinicInfo.inn && clinicInfo.ogrn ? " · " : ""}${clinicInfo.ogrn ? `ОГРН: ${clinicInfo.ogrn}` : ""}</div>` : ""}
 			</div>
 		</div>
 		<div class="approval-block">
@@ -228,7 +235,7 @@ export function generatePrintablePricelistHtml(
 	</div>
 
 	<div class="pricelist-title-banner">
-		${clinicInfo.isConsumerCornerStand ? '<div style="font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #0284c7; margin-bottom: 2px;">Информационный стенд «Уголок потребителя»</div>' : ''}
+		${clinicInfo.isConsumerCornerStand ? '<div style="font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #0284c7; margin-bottom: 2px;">Информационный стенд «Уголок потребителя»</div>' : ""}
 		<h2>ПРЕЙСКУРАНТ ЦЕН НА МЕДИЦИНСКИЕ СТОМАТОЛОГИЧЕСКИЕ УСЛУГИ</h2>
 		<div class="sub">
 			Введен в действие с ${clinicInfo.effectiveDateRu} г. (${PRICE_TIER_LABELS[tier]})
@@ -245,7 +252,7 @@ export function generatePrintablePricelistHtml(
 		Законом РФ № 2300-1 «О защите прав потребителей» и клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
 		На основании подпункта 2 пункта 2 статьи 149 Налогового кодекса Российской Федерации медицинские услуги
 		НДС не облагаются (0%).
-		${clinicInfo.isConsumerCornerStand ? '<div style="margin-top: 4px;">Сведения о надзорных органах: Территориальный орган Росздравнадзора, Управление Роспотребнадзора, орган исполнительной власти субъекта РФ в сфере охраны здоровья. Прейскурант доступен для ознакомления каждому пациенту по первому требованию.</div>' : ''}
+		${clinicInfo.isConsumerCornerStand ? '<div style="margin-top: 4px;">Сведения о надзорных органах: Территориальный орган Росздравнадзора, Управление Роспотребнадзора, орган исполнительной власти субъекта РФ в сфере охраны здоровья. Прейскурант доступен для ознакомления каждому пациенту по первому требованию.</div>' : ""}
 	</div>
 
 	<div class="signatures">

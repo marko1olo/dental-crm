@@ -1,5 +1,5 @@
 import type React from "react";
-import { Calendar, ChevronRight, MessageCircle, PhoneCall, Send } from "lucide-react";
+import { Calendar, ChevronRight, MessageCircle, Phone, PhoneCall, Send } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 
 export interface RecallPatientRowCardActionsProps {
@@ -28,16 +28,27 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 
 	return (
 		<div className="recall-patient-card__actions" role="group" aria-label="Действия вызова">
+			<a
+				href={candidate.phone ? `tel:${candidate.phone}` : undefined}
+				className={`${btnBase} recall-action-btn--phone`}
+				data-testid={`recall-phone-btn-${candidate.id}`}
+				title={candidate.phone ? `Позвонить: ${candidate.phone}` : "Телефон не указан"}
+				style={{ minHeight: "36px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+			>
+				<Phone size={15} />
+				<span>Позвонить</span>
+			</a>
+
 			<button
 				type="button"
 				className={`${btnBase} recall-action-btn--whatsapp`}
 				onClick={() => onWhatsApp(candidate)}
 				data-testid={`recall-whatsapp-btn-${candidate.id}`}
-				title="Пригласить в WhatsApp"
-				style={{ minHeight: "44px", minWidth: "44px" }}
+				title="WhatsApp шаблон"
+				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
 			>
-				<MessageCircle size={16} />
-				<span>WhatsApp</span>
+				<MessageCircle size={15} />
+				<span>WhatsApp шаблон</span>
 			</button>
 
 			<button
@@ -46,9 +57,9 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 				onClick={() => onBook(candidate)}
 				data-testid={`recall-book-btn-${candidate.id}`}
 				title="Записать на приём"
-				style={{ minHeight: "44px", minWidth: "44px" }}
+				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
 			>
-				<Calendar size={16} />
+				<Calendar size={15} />
 				<span>Записать на приём</span>
 				<ChevronRight size={14} />
 			</button>
@@ -58,11 +69,11 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 				className={`${btnBase} recall-action-btn--script ${isScriptActive ? "active" : ""}`}
 				onClick={() => onToggleScript(candidate)}
 				data-testid={`recall-script-btn-${candidate.id}`}
-				title="Скрипт звонка"
-				style={{ minHeight: "44px", minWidth: "44px" }}
+				title="Шаблон приглашения"
+				style={{ minHeight: "36px", display: "none" }}
 			>
-				<PhoneCall size={16} />
-				<span>Скрипт</span>
+				<PhoneCall size={15} />
+				<span>Шаблон</span>
 			</button>
 
 			<button
@@ -71,7 +82,7 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 				onClick={() => onCopySms(candidate)}
 				data-testid={`recall-sms-btn-${candidate.id}`}
 				title="Скопировать СМС"
-				style={{ minHeight: "44px", minWidth: "44px" }}
+				style={{ minHeight: "36px", display: "none" }}
 			>
 				<Send size={14} />
 				<span>СМС</span>
@@ -83,7 +94,7 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 				onClick={() => onTelegram(candidate)}
 				data-testid={`recall-telegram-btn-${candidate.id}`}
 				title="Telegram"
-				style={{ minHeight: "44px", minWidth: "44px" }}
+				style={{ minHeight: "36px", display: "none" }}
 			>
 				<Send size={14} />
 				<span>TG</span>

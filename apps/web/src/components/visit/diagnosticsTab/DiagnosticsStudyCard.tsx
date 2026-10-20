@@ -1,5 +1,6 @@
 import { ExternalLink, Eye, Image as ImageIcon, Maximize2, Trash2 } from "lucide-react";
 import React from "react";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { is3DScanUrl } from "../../lab/LabAttachScanModal";
 import { openCbctPopoutWindow } from "../../../native/desktopBridge";
 import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols043";
@@ -31,7 +32,12 @@ export function DiagnosticsStudyCard({
 		study.modality === "OBJ" ||
 		is3DScanUrl(study.previewUrl || study.viewerUrl || "");
 	const isCbct = !is3DScan && (study.kind === "cbct" || study.modality === "cbct_3d");
-	const thumbSrc = study.previewUrl || study.viewerUrl || "/radiology/sample_rvg_tooth16.jpg";
+	const hasRealImage = Boolean(study.previewUrl || study.viewerUrl);
+	const thumbSrc = hasRealImage
+		? (study.previewUrl || study.viewerUrl || "")
+		: (isDemoShowcaseMode() || isDemoPatientId(effectiveTargetPatientId)
+			? "/radiology/sample_rvg_tooth16.jpg"
+			: "");
 
 	return (
 		<div
@@ -46,7 +52,7 @@ export function DiagnosticsStudyCard({
 				} else if (onSelectStudy) {
 					onSelectStudy(study);
 				} else {
-					onOpenDicom(thumbSrc);
+					onOpenDicom(thumbSrc || study.viewerUrl || study.previewUrl || "");
 				}
 			}}
 			title={
@@ -57,14 +63,20 @@ export function DiagnosticsStudyCard({
 						: "Загрузить во вьюер визиографа"
 			}
 		>
-			<img
-				src={thumbSrc}
-				alt={study.title || "Рентген-снимок"}
-				loading="lazy"
-				decoding="async"
-				className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-				style={{ width: "100%", height: "100%", objectFit: "cover" }}
-			/>
+			{thumbSrc ? (
+				<img
+					src={thumbSrc}
+					alt={study.title || "Рентген-снимок"}
+					loading="lazy"
+					decoding="async"
+					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+					style={{ width: "100%", height: "100%", objectFit: "cover" }}
+				/>
+			) : (
+				<div className="w-full h-full flex flex-col items-center justify-center bg-zinc-950 text-zinc-500">
+					<ImageIcon size={18} className="text-zinc-500" />
+				</div>
+			)}
 			{/* Modality, Tooth & Dose Badges */}
 			<div className="absolute top-1 left-1 right-1 flex items-center justify-between pointer-events-none gap-0.5">
 				<span className="text-[9px] font-bold px-1 py-0.2 rounded bg-black/85 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs leading-none">

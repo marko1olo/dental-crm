@@ -1,0 +1,493 @@
+/* LIST ROWS PREMIUM REDESIGN */
+.appointment-row,
+.patient-row,
+.document-row {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+	transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+.appointment-row:hover,
+.patient-row:hover,
+.document-row:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 24px rgba(15, 118, 110, 0.08);
+	border-color: var(--line-strong);
+	z-index: 10;
+}
+.appointment-row.readiness-needs_attention {
+	border-left: 6px solid var(--amber);
+}
+.appointment-row.readiness-ready {
+	border-left: 6px solid var(--teal);
+}
+.appointment-row.readiness-unknown {
+	border-left: 6px solid var(--muted);
+}
+/* DECLUTTER ROWS: Action buttons appear only on hover */
+.appointment-row .appointment-edit-button,
+.patient-row .patient-action-button,
+.document-row .document-action-button {
+	opacity: 0;
+	pointer-events: none;
+	transform: scale(0.95);
+	transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.appointment-row:hover .appointment-edit-button,
+.patient-row:hover .patient-action-button,
+.document-row:hover .document-action-button {
+	opacity: 1;
+	pointer-events: auto;
+	transform: scale(1);
+}
+
+/* READINESS MICRO-BADGES */
+.appointment-readiness {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	margin-top: 8px;
+}
+.appointment-readiness span {
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+.appointment-readiness .check-ready {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: rgba(13, 148, 136, 0.2);
+}
+.appointment-readiness .check-missing {
+	background: var(--rust-soft);
+	color: var(--rust);
+	border-color: rgba(163, 79, 50, 0.2);
+}
+.appointment-readiness .check-warning {
+	background: rgba(184, 120, 31, 0.1);
+	color: var(--amber);
+	border-color: rgba(184, 120, 31, 0.2);
+}
+
+/* DOCUMENT FACTORY SELECTED KIND REDESIGN */
+.document-factory-selected-kind {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	color: var(--muted);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	grid-column: 1 / -1;
+	padding: 16px;
+	align-items: stretch;
+}
+
+.document-factory-selected-kind label {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
+}
+
+.document-factory-selected-kind select {
+	width: 100%;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	font-weight: 800;
+	min-height: 38px;
+	padding: 0 12px;
+}
+
+.document-factory-selected-kind span {
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--muted);
+}
+
+.document-factory-selected-kind .document-create-guidance {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--muted);
+	background: var(--paper-subtle, var(--paper-soft));
+	border: 1px solid var(--line);
+	padding: 8px 12px;
+	border-radius: 6px;
+}
+
+.document-factory-selected-kind .primary-button {
+	align-self: flex-start;
+	min-height: 40px;
+	padding: 0 20px;
+}
+
+/* DOCUMENTS VIEW READABILITY ENHANCEMENTS */
+.documents-panel {
+	font-size: 14.5px;
+}
+
+.documents-panel h2 {
+	font-size: 24px;
+}
+
+.documents-panel p,
+.documents-panel span,
+.documents-panel small,
+.document-row-guidance,
+.document-source-card p,
+.document-payload-card p {
+	font-size: 13.5px;
+	line-height: 1.5;
+}
+
+.document-factory-kind-button-text > span {
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.documents-panel select,
+.documents-panel input,
+.documents-panel textarea {
+	font-size: 14.5px;
+}
+
+/* SETTINGS SIDEBAR GROUPING STYLES */
+.settings-tabs-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 16px;
+}
+
+.settings-tabs-group-header {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--ink-muted, var(--muted));
+	margin-bottom: 6px;
+	padding-left: 14px;
+}
+
+[data-theme="dark"] .settings-tabs-group-header,
+[data-theme="night"] .settings-tabs-group-header {
+	color: var(--ink-2, #94a3b8);
+}
+
+/* VISIT VIEW READABILITY ENHANCEMENTS */
+.visit-fields textarea,
+.dictation-box textarea {
+	font-size: 14.5px;
+	line-height: 1.5;
+}
+
+.visit-fields label {
+	font-size: 14px;
+}
+
+.protocol-library {
+	font-size: 14px;
+}
+
+/* ================================================================
+   SETTINGS ACCORDION / COLLAPSIBLE IMPROVEMENTS
+   ================================================================ */
+
+.settings-essential-block {
+	margin-bottom: 0.5rem;
+}
+
+.settings-advanced-block {
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 10px;
+	margin: 0.75rem 0 0.5rem;
+	overflow: hidden;
+	transition: box-shadow 0.2s ease;
+}
+.settings-advanced-block:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.settings-advanced-toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.9rem 1.1rem;
+	cursor: pointer;
+	list-style: none;
+	background: var(--surface-alt, #f8fafc);
+	user-select: none;
+	transition: background 0.15s ease;
+	border: none;
+	width: 100%;
+}
+.settings-advanced-toggle::-webkit-details-marker {
+	display: none;
+}
+.settings-advanced-toggle::marker {
+	display: none;
+}
+.settings-advanced-toggle:hover {
+	background: var(--surface-hover, #f0f4f8);
+}
+.settings-advanced-label {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var(--text-primary, #1a202c);
+	flex: 1;
+}
+.settings-advanced-icon {
+	font-size: 1rem;
+}
+.settings-advanced-hint {
+	font-size: 0.78rem;
+	color: var(--text-muted, #718096);
+	margin-left: auto;
+	white-space: nowrap;
+}
+.settings-advanced-chevron {
+	font-size: 0.65rem;
+	color: var(--text-muted, #718096);
+	transition: transform 0.25s ease;
+	display: inline-block;
+}
+.settings-advanced-block[open] .settings-advanced-chevron {
+	transform: rotate(180deg);
+}
+.settings-advanced-block[open] .settings-advanced-toggle {
+	border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+[data-theme="dark"] .settings-advanced-block,
+[data-theme="night"] .settings-advanced-block {
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .settings-advanced-toggle,
+[data-theme="night"] .settings-advanced-toggle {
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .settings-advanced-toggle:hover,
+[data-theme="night"] .settings-advanced-toggle:hover {
+	background: rgba(30, 41, 59, 0.9);
+}
+
+[data-theme="dark"] .settings-advanced-label,
+[data-theme="night"] .settings-advanced-label {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .settings-advanced-hint,
+[data-theme="night"] .settings-advanced-hint {
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .settings-advanced-form,
+[data-theme="night"] .settings-advanced-form {
+	background: rgba(15, 23, 42, 0.85);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.settings-advanced-form {
+	padding: 1.25rem 1.1rem 1rem;
+	animation: accordion-open 0.22s ease both;
+}
+@keyframes accordion-open {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.field-note {
+	display: block;
+	font-size: 0.73rem;
+	color: var(--text-muted, #718096);
+	margin-top: 0.2rem;
+	line-height: 1.4;
+}
+
+.legal-readiness-badge {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.15rem;
+	flex-shrink: 0;
+}
+.legal-readiness-badge strong {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: var(--teal-600, #0d9488);
+}
+.legal-readiness-badge span {
+	font-size: 0.72rem;
+	color: var(--text-muted, #718096);
+	max-width: 160px;
+	text-align: right;
+}
+
+/* ================================================================
+   SHIFT DETAILS TOGGLE
+   ================================================================ */
+.shift-details-toggle {
+	display: flex;
+	justify-content: center;
+	padding: 0.5rem 0 0.25rem;
+}
+.shift-details-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.8rem;
+	color: var(--text-muted, #718096);
+	padding: 0.35rem 0.75rem;
+	border-radius: 20px;
+	border: 1px solid var(--border-color, #e2e8f0);
+	background: transparent;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+.shift-details-btn:hover {
+	background: var(--surface-alt, #f8fafc);
+	color: var(--text-primary, #1a202c);
+	border-color: var(--border-hover, #cbd5e0);
+}
+
+/* Moved to modules/schedule.css */
+/* ================================================================
+   MOBILE OVERRIDES (MUST BE DECLARED AT THE VERY END OF FILE)
+   ================================================================ */
+@media (max-width: 860px) {
+	.settings-zone {
+		position: relative;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		grid-template-columns: minmax(0, 1fr);
+		padding: 12px;
+		gap: 16px;
+		border-radius: 8px;
+		width: 100%;
+	}
+
+	.settings-heading {
+		width: 100%;
+		margin-bottom: 12px;
+		position: relative;
+		z-index: 5;
+		flex-shrink: 0;
+	}
+
+	/* Horizontal scroll for settings tabs group */
+	.settings-tabs {
+		position: relative;
+		top: auto;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-padding: 0 12px;
+		gap: 12px;
+		padding: 6px 12px 10px;
+		margin-bottom: 12px;
+		scrollbar-width: none;
+		width: 100%;
+		max-width: 100%;
+		border-bottom: 1px solid var(--line);
+		z-index: 4;
+		-webkit-overflow-scrolling: touch;
+	}
+	.settings-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.settings-tabs-group {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 0;
+		flex-shrink: 0;
+	}
+
+	.settings-tabs-group-header {
+		font-size: 10px;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--ink-muted, var(--muted));
+		margin-bottom: 0;
+		padding-left: 0;
+		width: auto;
+		white-space: nowrap;
+		margin-right: 4px;
+		flex-shrink: 0;
+	}
+
+	.settings-tabs button {
+		padding: 8px 14px;
+		font-size: 12px;
+		white-space: nowrap !important;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--paper);
+		min-height: 44px;
+		min-width: max-content;
+		flex-shrink: 0 !important;
+		text-align: center;
+		justify-content: center;
+	}
+
+	.settings-tabs button:hover {
+		transform: none;
+	}
+
+	.settings-tabs button.active {
+		order: 0;
+		background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
+		color: white;
+		box-shadow: 0 2px 8px var(--teal-glow);
+		transform: none;
+	}
+
+	.settings-tab-panel {
+		position: relative;
+		z-index: 1;
+		padding: 16px 12px 96px;
+		margin-top: 0;
+		border-radius: 8px;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.settings-tab-pane {
+		position: relative;
+		z-index: 1;
+	}
+}
+
+/* ================================================================
+   DEFAULT CLINIC ALERT BANNER STYLES
+   ================================================================ */

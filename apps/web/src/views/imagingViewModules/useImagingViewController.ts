@@ -46,9 +46,10 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 			else if (detail?.modalId === "rvg_capture") setActiveModal("rvg_capture");
 		};
 		const handleOpenRvg = (e: Event) => {
-			const detail = (e as CustomEvent<{ tooth?: string }>).detail;
-			if (detail?.tooth && detail.tooth !== "all") {
-				setRvgInitialTooth(detail.tooth);
+			const detail = (e as CustomEvent<{ tooth?: string; toothFdiCode?: string; toothNumber?: number }>).detail;
+			const tooth = detail?.tooth || detail?.toothFdiCode || (detail?.toothNumber ? String(detail.toothNumber) : null);
+			if (tooth && tooth !== "all") {
+				setRvgInitialTooth(tooth);
 			} else {
 				setRvgInitialTooth(null);
 			}
@@ -56,9 +57,13 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 		};
 		window.addEventListener("dente-open-backoffice-modal", handleOpen);
 		window.addEventListener("dente-open-rvg-capture-modal", handleOpenRvg);
+		window.addEventListener("dente-open-rvg-capture", handleOpenRvg);
+		window.addEventListener("dente:open-direct-rvg", handleOpenRvg);
 		return () => {
 			window.removeEventListener("dente-open-backoffice-modal", handleOpen);
 			window.removeEventListener("dente-open-rvg-capture-modal", handleOpenRvg);
+			window.removeEventListener("dente-open-rvg-capture", handleOpenRvg);
+			window.removeEventListener("dente:open-direct-rvg", handleOpenRvg);
 		};
 	}, [openPopoutStudio, handleOpenPanoramic]);
 

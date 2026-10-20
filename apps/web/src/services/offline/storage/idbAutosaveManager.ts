@@ -9,6 +9,7 @@ import {
 	VISIT_DRAFT_KEY_PREFIX,
 } from "./constants";
 import { saveOfflineDraft } from "./idbDraftOps";
+import { clinicalProceduralAudio } from "../../audio/clinicalProceduralAudio.js";
 import {
 	getLocalStorageMutations,
 	saveLocalStorageDraft,
@@ -91,6 +92,7 @@ export class ClinicalDraftAutosaveManager {
 						data,
 						organizationId,
 					);
+					void clinicalProceduralAudio.playAutosaveWhisper();
 					resolve(saved);
 				} catch (err) {
 					reject(err);

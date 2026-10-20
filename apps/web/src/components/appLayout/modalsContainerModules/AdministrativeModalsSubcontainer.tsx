@@ -32,10 +32,14 @@ export function AdministrativeModalsSubcontainer({
 					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
 					onCreateOrder={() => setIsGlobalLabCreateOrderOpen(false)}
 					currentPatientName={
-						labCreateOrderContext?.patientName || "Смирнова Екатерина Васильевна"
+						labCreateOrderContext?.patientName || "Пациент"
 					}
 					currentPatientId={labCreateOrderContext?.patientId || ""}
-					currentDoctorName={activeStaffUser?.name || "Д-р Барабаш С. В."}
+					currentDoctorName={
+						activeStaffUser?.name ||
+						activeStaffUser?.fullName ||
+						"Лечащий врач"
+					}
 					currentToothNumber={labCreateOrderContext?.toothNumber || "21"}
 					treatmentPlanId={labCreateOrderContext?.treatmentPlanId}
 					stageNumber={labCreateOrderContext?.stageNumber ?? 2}

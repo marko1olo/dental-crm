@@ -1,7 +1,6 @@
 /**
  * apps/web/src/components/visit/VisitPlanStageHandoffBanner.tsx
  * DENTE Dental CRM — Targeted Treatment Plan Stage Handoff Cockpit Strip.
- * Декомпозирован строго по Мандату 8b (лимит <= 120 строк).
  */
 
 import React from "react";
@@ -12,17 +11,16 @@ import { VisitPlanStageHandoffItemsPreview } from "./VisitPlanStageHandoffItemsP
 
 export interface VisitPlanStageHandoffBannerProps {
 	readonly loadedTreatmentPlan: any;
-	readonly activeAppointment?: any | null | undefined;
-	readonly activePatient?: any | null | undefined;
-	readonly style?: React.CSSProperties | undefined;
-	readonly onTakeStage?: ((stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void) | undefined;
-	readonly onOpenLabOrder?: ((stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void) | undefined;
+	readonly activeAppointment?: any;
+	readonly activePatient?: any;
+	readonly style?: React.CSSProperties;
+	readonly onTakeStage?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
+	readonly onOpenLabOrder?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
 }
 
 export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerProps) {
 	const { loadedTreatmentPlan, style } = props;
 	const h = useVisitPlanStageHandoff(props);
-
 	if (!loadedTreatmentPlan || h.allPlanItems.length === 0) return null;
 
 	return (
@@ -31,7 +29,6 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 			className="my-2 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/30 dark:border-teal-500/30 flex flex-col gap-2.5 text-xs shadow-2xs overflow-x-clip max-w-full box-border"
 			style={style}
 		>
-			{/* Top row: Status info + Primary action */}
 			<div className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="flex items-start gap-2.5 min-w-0 flex-1">
 					<div className="p-1.5 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 shrink-0 mt-0.5">
@@ -77,7 +74,6 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 					</div>
 				</div>
 
-				{/* Action CTA buttons */}
 				<div className="flex items-center gap-2 w-full sm:w-auto">
 					<button
 						type="button"
@@ -95,7 +91,7 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 						data-testid="handoff-stage-lab-order-btn"
 						onClick={h.handleOpenLabOrderForStage}
 						className="secondary-button min-h-[44px] h-11 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 shrink-0 border border-[var(--teal,#0d9488)]/40 bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--teal-dark,#0f766e)] dark:text-teal-300 hover:bg-[var(--teal,#0d9488)]/10"
-						title="Сформировать наряд-заказ в зуботехническую лабораторию (ЗТЛ) по данному этапу"
+						title="Сформировать наряд-заказ в зуботехническую лабораторию (ЗТЛ)"
 					>
 						<FlaskConical size={15} />
 						<span>Заказ в ЗТЛ</span>
@@ -103,7 +99,6 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 				</div>
 			</div>
 
-			{/* Stage Selector Chips */}
 			{h.hasMultipleStages && (
 				<VisitPlanStageHandoffChips
 					stages={h.stages}
@@ -113,7 +108,6 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 				/>
 			)}
 
-			{/* Compact preview of procedures */}
 			<VisitPlanStageHandoffItemsPreview selectedItems={h.selectedItems} />
 		</div>
 	);

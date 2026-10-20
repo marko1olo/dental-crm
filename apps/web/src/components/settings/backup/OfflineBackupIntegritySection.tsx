@@ -62,7 +62,7 @@ export const OfflineBackupIntegritySection: React.FC<
 								color: "var(--ink, #1e293b)",
 							}}
 						>
-							Диагностика целостности локального хранилища (Integrity Engine)
+							Диагностика целостности локального хранилища
 						</h3>
 						<p
 							style={{
@@ -71,8 +71,8 @@ export const OfflineBackupIntegritySection: React.FC<
 								color: "var(--muted, #64748b)",
 							}}
 						>
-							Сверка контрольных сумм полезной нагрузки, структуры таблиц и
-							квоты браузера
+							Сверка контрольных сумм данных, структуры таблиц и свободного
+							места
 						</p>
 					</div>
 				</div>
@@ -83,14 +83,14 @@ export const OfflineBackupIntegritySection: React.FC<
 						onClick={() => runIntegrityCheck(false)}
 						disabled={isCheckingIntegrity}
 						style={{
-							minHeight: "44px",
+							minHeight: "40px",
 							padding: "0 16px",
 							borderRadius: "8px",
-							background: "var(--paper, #f1f5f9)",
-							color: "var(--ink, #334155)",
-							border: "1px solid var(--glass-border, #cbd5e1)",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							border: "1px solid var(--line)",
 							fontWeight: "500",
-							fontSize: "14px",
+							fontSize: "13px",
 							cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
 							display: "flex",
 							alignItems: "center",
@@ -107,14 +107,14 @@ export const OfflineBackupIntegritySection: React.FC<
 							onClick={() => runIntegrityCheck(true)}
 							disabled={isCheckingIntegrity}
 							style={{
-								minHeight: "44px",
+								minHeight: "40px",
 								padding: "0 16px",
 								borderRadius: "8px",
 								background: "var(--warn-fg)",
 								color: "var(--on-teal, #ffffff)",
 								border: "none",
 								fontWeight: "600",
-								fontSize: "14px",
+								fontSize: "13px",
 								cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
 								display: "flex",
 								alignItems: "center",
@@ -171,11 +171,13 @@ export const OfflineBackupIntegritySection: React.FC<
 						<div
 							style={{
 								padding: "10px",
-								background: "var(--paper, #f8fafc)",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--line)",
 								borderRadius: "6px",
 							}}
 						>
-							Мутации: <strong>{integrityReport.storesStats.mutationsCount}</strong>
+							Очередь изменений:{" "}
+							<strong>{integrityReport.storesStats.mutationsCount}</strong>
 						</div>
 						<div
 							style={{

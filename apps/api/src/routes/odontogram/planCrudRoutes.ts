@@ -22,7 +22,6 @@ import {
 	rublesFromKopecks,
 } from "../../money/patientDebt.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import {
 	ensurePatientInOrganization,
 	ledgerRowId,
@@ -30,6 +29,8 @@ import {
 	numeric,
 	serializeTreatmentPlan,
 	splitStoredPriceId,
+	verifyPlanReadAccess,
+	verifyPlanWriteAccess,
 } from "./planHelpers.js";
 import {
 	LEDGER_ID_PREFIX_LENGTH,
@@ -51,17 +52,14 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanReadAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.read",
 					role: staffRole,
-					message: `Отказ в доступе к плану лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в доступе к плану лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 
@@ -233,17 +231,14 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 
 			// 152-ФЗ / 323-ФЗ: Планы лечения содержат медицинскую тайну — доступ только клиническому персоналу
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanReadAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.read",
 					role: staffRole,
-					message: `Отказ в доступе к планам лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в доступе к планам лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 
@@ -270,20 +265,16 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 			);
 			if (!organizationId) return;
 
-			// 152-ФЗ / 323-ФЗ: План лечения является клиническим документом — создание доступно только медработникам
+			// 152-ФЗ / 323-ФЗ: План лечения — доступ медработникам и администраторам
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user
-					?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanWriteAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в создании плана лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в создании плана лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 
@@ -346,8 +337,11 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 
 						// БЛОКИРУЮЩИЙ ГЕЙТ №2 (ПОСТАНОВЛЕНИЕ №659 И СТ. 16 ЗОЗПП):
 						// Запрещено изменять утвержденный (status === "Approved") или подписанный план лечения
-						// без отдельного Дополнительного соглашения.
-						if (existing.status === "Approved" || existing.patientSignature) {
+						// без отдельного Дополнительного соглашения или явного подтверждения ревизии (allowRevision).
+						if (
+							(existing.status === "Approved" || existing.patientSignature) &&
+							!input.allowRevision
+						) {
 							const err = new Error(
 								"Запрещено изменять утвержденный или подписанный план лечения. Согласно Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП любые изменения и дополнения платных услуг требуют оформления отдельного Дополнительного соглашения или создания нового плана лечения.",
 							);
@@ -362,9 +356,14 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 								name: input.name,
 								totalPrice: totalPriceText,
 								totalPriceRub: debtNumericText(totalPriceKopecks),
+								...(input.status !== undefined
+									? { status: input.status }
+									: {}),
 								...(input.patientSignature !== undefined
 									? { patientSignature: input.patientSignature }
-									: {}),
+									: input.allowRevision
+										? { patientSignature: null }
+										: {}),
 								...(input.planGroupId !== undefined
 									? { planGroupId: input.planGroupId }
 									: {}),
@@ -424,6 +423,7 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 								organizationId,
 								patientId,
 								name: input.name,
+								status: input.status ?? "Draft",
 								totalPrice: totalPriceText,
 								totalPriceRub: debtNumericText(totalPriceKopecks),
 								patientSignature: input.patientSignature ?? null,

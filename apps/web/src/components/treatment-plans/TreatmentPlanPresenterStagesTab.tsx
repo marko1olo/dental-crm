@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { CalendarPlus, Package, Receipt } from "lucide-react";
+import { CalendarPlus, FlaskConical, Package, Receipt } from "lucide-react";
 import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { MissingPriceAlert } from "./MissingPriceAlert";
@@ -148,6 +148,33 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 														>
 															<Receipt size={13} className="text-[var(--teal,var(--tp-primary))]" />
 															<span>В счёт</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																const targetTooth = st.items.find((i) => i.toothNumber)?.toothNumber || 16;
+																if (typeof window !== "undefined") {
+																	window.dispatchEvent(
+																		new CustomEvent("dente-open-create-lab-order", {
+																			detail: {
+																				patientId,
+																				patientName,
+																				toothNumber: String(targetTooth),
+																				toothFdi: targetTooth,
+																				workType: st.title || "Ортопедическая конструкция",
+																				stageNumber: st.stageNumber,
+																				stageTitle: st.title,
+																			},
+																		}),
+																	);
+																}
+															}}
+															className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+															data-testid={`stage-create-lab-order-btn-${st.stageNumber}`}
+															title="Создать наряд в зуботехническую лабораторию (ЗТЛ)"
+														>
+															<FlaskConical size={13} className="text-amber-600 dark:text-amber-400" />
+															<span>Наряд ЗТЛ</span>
 														</button>
 													</div>
 													<div className="text-right">

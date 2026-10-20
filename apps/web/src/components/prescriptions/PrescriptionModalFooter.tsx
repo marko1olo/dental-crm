@@ -4,8 +4,8 @@
  * UI_STANDARDS.md: Primary CTA strictly 1 per block, rounded-xl (10-12px).
  */
 
-import React from "react";
 import { Check, Copy, Printer, ShieldCheck } from "lucide-react";
+import type React from "react";
 
 export interface PrescriptionModalFooterProps {
 	readonly isMemoCopied: boolean;
@@ -18,7 +18,9 @@ export interface PrescriptionModalFooterProps {
 	readonly onPrintPrescription: () => void;
 }
 
-export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = ({
+export const PrescriptionModalFooter: React.FC<
+	PrescriptionModalFooterProps
+> = ({
 	isMemoCopied,
 	isUkepSigned,
 	isSigningUkep,
@@ -40,7 +42,9 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					className="secondary-button h-9 min-h-[44px] md:min-h-[36px] px-3.5 text-xs font-medium rounded-xl inline-flex items-center gap-1.5 cursor-pointer flex-1 sm:flex-initial justify-center"
 				>
 					<Copy className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-					<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
+					<span>
+						{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}
+					</span>
 				</button>
 				<button
 					type="button"
@@ -66,7 +70,13 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					}`}
 				>
 					<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-					<span>{isUkepSigned ? "УКЭП подписана" : isSigningUkep ? "Подписание..." : "Подписать УКЭП"}</span>
+					<span>
+						{isUkepSigned
+							? "УКЭП подписана"
+							: isSigningUkep
+								? "Подписание..."
+								: "Подписать УКЭП"}
+					</span>
 				</button>
 				<button
 					type="button"

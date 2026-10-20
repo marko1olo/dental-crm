@@ -7,6 +7,7 @@ import { PatientFinanceTab } from "../tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "../tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "../formula/PatientDentalFormulaTab";
 import { PatientDocumentsTab } from "../tabs/PatientDocumentsTab";
+import { PeriodontogramChart } from "../../perio/PeriodontogramChart";
 
 interface PatientCardModalBodyProps {
 	readonly activeTab: PatientCardTab;
@@ -50,6 +51,11 @@ export const PatientCardModalBody: React.FC<PatientCardModalBodyProps> = ({
 				/>
 			) : activeTab === "documents" ? (
 				<PatientDocumentsTab patient={patientData as any} onPrintOutpatientCard={onPrint} />
+			) : activeTab === "perio" ? (
+				<PeriodontogramChart
+					patientId={patientData.id}
+					patientName={patientData.fullName}
+				/>
 			) : activeTab === "formula" ? (
 				<PatientDentalFormulaTab
 					patientId={patientData.id || ""}

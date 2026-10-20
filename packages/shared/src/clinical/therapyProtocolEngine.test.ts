@@ -233,13 +233,13 @@ describe("Chairside Therapy Protocol Engine (therapyProtocolEngine)", () => {
 		assert.ok(!/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(result.fullProtocolText043));
 	});
 
-	it("generateTherapyProtocolText043 returns complete text suitable for Form 043/u", () => {
+	it("generateTherapyProtocolText043 returns complete text suitable for clinical diary", () => {
 		const text = generateTherapyProtocolText043({
 			toothNumber: 15,
 			surfaces: ["O"],
 			presetId: "caries_composite",
 		});
-		assert.ok(text.includes("ДНЕВНИК ПРИЕМА (ФОРМА 043/у) — Зуб 15:"));
+		assert.ok(text.includes("ДНЕВНИК ПРИЁМА — Зуб 15:"));
 		assert.ok(text.includes("Диагноз (МКБ-10): K02.1"));
 		assert.ok(text.includes("ПРОТОКОЛ ТЕРАПЕВТИЧЕСКОГО ЛЕЧЕНИЯ"));
 		assert.ok(text.includes("Рекомендации:"));

@@ -1,5 +1,5 @@
 import { type SettingsTab, settingsTabs } from "../../AppConstants";
-import { type AppView, viewLabels } from "../../workspaceShell";
+import { type AppView, viewLabels } from "../../utils/routeUtils";
 
 /** Часть адреса после `#`: `settings/telegram`. */
 export function settingsTabHash(tab: SettingsTab): string {

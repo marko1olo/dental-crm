@@ -50,7 +50,7 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 		<div className="marketing-promos-col" data-testid="marketing-promos-list">
 			{/* Top Bar: Segmented Switcher & New Promo CTA */}
 			<div className="marketing-col-header">
-				<div className="marketing-segmented-control dente-segmented-bar" role="tablist">
+				<div className="marketing-segmented-control dente-segmented-bar h-8 rounded-lg" role="tablist">
 					<button
 						type="button"
 						role="tab"
@@ -77,7 +77,7 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 
 				<button
 					type="button"
-					className="secondary-button marketing-add-btn"
+					className="primary-button marketing-add-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3"
 					onClick={onOpenNewPromoModal}
 					title="Создать новую промо-акцию клиники"
 					data-testid="btn-new-promo"
@@ -88,14 +88,14 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 			</div>
 
 			{/* Search input */}
-			<div className="dente-search-wrap marketing-search-box">
+			<div className="dente-search-wrap marketing-search-box h-9 min-h-[36px] rounded-xl">
 				<Search size={14} className="dente-search-icon marketing-search-icon" aria-hidden="true" />
 				<input
 					type="text"
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					placeholder="Поиск по названию или промокоду…"
-					className="dente-search-input marketing-search-input"
+					className="dente-search-input marketing-search-input h-9 min-h-[36px] !pl-[38px] rounded-xl bg-[var(--paper)] border border-[var(--line)]"
 					data-testid="marketing-promos-search"
 				/>
 				{searchQuery && (
@@ -162,7 +162,7 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 								<h4 className="marketing-promo-card__title">{promo.title}</h4>
 
 								<div className="marketing-promo-card__discount">
-									<Sparkles size={12} className="text-teal" aria-hidden="true" />
+									<Sparkles size={12} className="text-[var(--primary)]" aria-hidden="true" />
 									<span>{promo.discountText}</span>
 								</div>
 

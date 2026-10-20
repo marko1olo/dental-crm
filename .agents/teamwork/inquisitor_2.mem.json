@@ -1,0 +1,50 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_2",
+  "taskName": "Eradication of Potemkin villages, fake data, hardcoded fallbacks, and 404 mock storage across production",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T02:24:00Z",
+  "invariantsPreserved": [
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Blockers)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication)",
+    "Mandate 8wy (Strict Production vs Demo-Showcase Separation)",
+    "Mandate 8ze/8al (Apple HIG, 44x44px Touch Targets, Natural Thumb Zone)"
+  ],
+  "eradicatedPotemkinVillages": [
+    {
+      "file": "apps/web/src/pages/coordinator/TreatmentPipeline.tsx",
+      "issue": "Hardcoded fake clinic requisites (INN 7701234567, OGRN 1237700123456, Arbat 24) and fake Dr. Voronov",
+      "remediation": "Connected to useDocumentBrandingStore() for clinic requisites; connected doctor name and specialty to active pipeline card, dashboard activeDoctor, or currentUser; wrapped isDemoMode in isDemoShowcaseMode()"
+    },
+    {
+      "file": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+      "issue": "Synthetic payroll generation for fake Dr. Voronov (61,500 ₽ revenue, 4,100 ₽ materials, 12,000 ₽ lab)",
+      "remediation": "Replaced synthetic doctor generation with honest report lookup; added showDoctorSelectionNotice banner [data-testid=\"payroll-no-doctor-selected-notice\"] informing user to select a doctor"
+    },
+    {
+      "file": "apps/web/src/components/visit/view/fastPrintModules/fastPrintDiaryBuilder.ts",
+      "issue": "Fake patient 'Иванов Иван Иванович', card '001', address 'г. Москва' silently printed into clinical diary",
+      "remediation": "Implemented strict clinical validation throwing Error('Пациент не выбран. Печать невозможна'); replaced card and address fallbacks with '—'"
+    },
+    {
+      "file": "apps/web/src/components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx",
+      "issue": "Hardcoded fallback to 'pat-001', '001', 'doc-001', and 'Д-р Ковалев С. П.'",
+      "remediation": "Cleanly passing undefined when plan payload attributes are absent to preserve genuine caller context"
+    },
+    {
+      "file": "apps/api/src/routes/portal/portalMockStorageRoutes.ts",
+      "issue": "HTTP 404 on /api/portal/mock-storage/upload and /download breaking 3D dental lab scan uploads in offline mode",
+      "remediation": "Created Fastify plugin registered in routes/portal/index.ts for PUT/POST upload and GET download to .data/lab_scans/ with path traversal guards and binary stream parsers"
+    },
+    {
+      "file": "apps/web/src/components/mobile/MobileChairsideEHR.tsx",
+      "issue": "Hardcoded '4 500 ₽' total and empty dummy onClick={() => {}} handlers on checkout payment options",
+      "remediation": "Added totalDueRub, initialPaymentMethod, initialReceiptSheetOpen, onSelectPaymentMethod props; dynamic currency formatting; interactive payment toggle with haptic feedback; passed payment data to onFinishVisit"
+    }
+  ],
+  "verificationGates": {
+    "portalMockStorageRoutesTest": "PASS (Exit Code 0, 5/5 passing in apps/api/src/tests/routes/portalMockStorage.test.ts)",
+    "labScanDirectUploadServiceTest": "PASS (Exit Code 0, 12/12 passing in apps/api/src/services/__tests__/labScanDirectUpload.test.ts)",
+    "mobileHigPrimitivesAndChairsideTest": "PASS (Exit Code 0, 9/9 passing in apps/web/src/tests/mobileHigPrimitivesAndChairside.test.tsx)"
+  }
+}

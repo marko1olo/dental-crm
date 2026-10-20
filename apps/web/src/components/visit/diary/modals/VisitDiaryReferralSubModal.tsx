@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../useVisitDiaryLogic";
 
 const RadiologyReferralModal = lazy(() =>
 	import("../../../radiology/RadiologyReferralModal").then((m) => ({ default: m.RadiologyReferralModal }))
@@ -11,12 +11,12 @@ export interface VisitDiaryReferralSubModalProps {
 	readonly printPatient?: any;
 	readonly activePatient?: any;
 	readonly patientFullName: string;
-	readonly patientBirthDate?: string | null;
-	readonly patientCardNumber?: string | null;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientCardNumber?: string | null | undefined;
 	readonly diary: DiaryState;
 	readonly doctorName: string;
 	readonly doctorSpecialty: string;
-	readonly clinicName?: string | null;
+	readonly clinicName?: string | null | undefined;
 }
 
 export const VisitDiaryReferralSubModal: React.FC<VisitDiaryReferralSubModalProps> = ({

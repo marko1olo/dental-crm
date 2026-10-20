@@ -1,0 +1,46 @@
+feat(data-purity): eradicate hardcoded fallbacks and silent dummy data across CRM
+
+## Контекст и архитектурная цель (Why):
+- Исполнение задач Milestone 3 / R3 по очистке кодовой базы от синтетических данных (Mandates 8f, 8am — 100% честность и Zero-Fabrication; Mandate 8wy — строгая изоляция боевого прода от демо-витрины; Mandates 8e/8n — автономия клинициста и соло-врача).
+- Устранение скрытых рисков утечки фейковых данных в продакшн: дефолтные юрлица, синтетические зарплаты 61 500 ₽, фейковые пациенты («Иванов», «Смирнова»), хардкодный зуб [21] в нарядах ЗТЛ и неинициализированные диагнозы («К02.1 Кариес дентина»).
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/pages/coordinator/TreatmentPipeline.tsx:
+  * Привязаны живые реквизиты клиники из useDocumentBrandingStore и dashboard.organization.
+  * Добавлен баннер предупреждения при отсутствии заполненных реквизитов организации (Настройки -> Клиника).
+  * Реализован выбор врача из штата при неназначенном враче с передачей effectiveDoctorName в модалку.
+- apps/web/src/components/payroll/ (DoctorPayrollModal, DoctorPayrollModalContent, useDoctorPayrollModalState, submodules):
+  * Удален хардкод clinicName = "ООО «Денте Стоматология»", имя клиники извлекается динамически из контекста.
+  * selectedDoctorId инициализируется честно как params.initialDoctorId || "" (без автоподстановки первого врача).
+  * При невыбранном враче возвращается activeDoc: null, "Врач не выбран" и 0 коп.
+  * В DoctorPayrollModalContent отрисовывается честный EmptyState («Выберите врача для формирования расчетного листа») с селектором врача.
+- apps/web/src/pages/DoctorPayoutDashboard.tsx:
+  * Связано открытие модалки расчета по событию dente:open-doctor-payroll в честном EmptyState без синтетических выплат.
+  * Передается полный список врачей allReportDoctors и динамический clinicName.
+- apps/web/src/components/appLayout/modalsContainerModules/standalone/PayrollStandaloneLauncher.tsx:
+  * Ограничен строго условием isDemoShowcaseMode() без обхода через import.meta.env.DEV.
+- apps/web/src/components/headerModules/HeaderGlobalSearch.tsx:
+  * Полностью удален SAMPLE_PATIENTS («Иванов», «Смирнова», «Кузнецов»).
+  * Подключен живой дебаунсированный (250мс) запрос к эндпоинту GET /api/patients?search=... с индикатором загрузки и честным пустым состоянием.
+- apps/web/src/components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx:
+  * Устранен фейковый фоллбэк [21] центрального резца в labTeeth, заменен на [].
+  * Очищены поля patientName и doctorFullName в EMPTY_PLAN_PAYLOAD.
+  * Добавлена клиническая валидация обязательного наличия пациента и позиций плана перед формированием наряда ЗТЛ и акта.
+- apps/web/src/components/visit/view/fastPrintModules/fastPrintConsentAndMemoBuilder.ts & fastPrintDiaryBuilder.ts:
+  * Ликвидированы синтетические услуги с фиксированными суммами (1500, 4500, 5500, 4800, 12500 ₽).
+  * При отсутствии позиций выводятся честные строки «Услуги не выбраны» / «Позиции плана лечения не указаны».
+  * extractClinicRequisites расширен чтением dashboard.clinicSettings.
+- apps/web/src/components/mobile/MobileChairsideEHR.tsx:
+  * initialDiagnosis и initialTreatmentPlan инициализируются пустой строкой "" вместо навязывания кариеса К02.1 и препарирования.
+- apps/web/src/tests/milestone3DataPurityInquisition.test.ts:
+  * Создан полный тестовый сьют инквизиции чистоты данных (6/6 passing).
+- apps/web/src/tests/mobileHigPrimitivesAndChairside.test.tsx:
+  * Добавлен тест 9 для верификации чистого начального состояния MobileChairsideEHR.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Тесты: 50 passing, 0 failing across 11 test suites.
+- Команда проверки: node --import tsx --import ./testCssStub.mjs --test "src/tests/milestone3DataPurityInquisition.test.ts" "src/tests/mobileHigPrimitivesAndChairside.test.tsx" "src/tests/planPriceValidation.test.ts" "src/components/payroll/__tests__/payrollTimesheetSoloDoctorAutonomy.test.ts" (Exit Code 0).
+- Отсутствие мультяшных эмодзи и сохранение всех Apple HIG инвариантов.
+
+## Синхронизация документации (Documentation Sync):
+- Обновлены .agents/teamwork/teamwork_preview_worker_m3_data_purity/BRIEFING.md, progress.md, handoff.md.

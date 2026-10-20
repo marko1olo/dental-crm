@@ -4,6 +4,7 @@
  * Organization sequence: <id>* -> <name>* -> <telecom>* -> <addr>*
  */
 
+import { normalizeCanonicalSurface } from "@dental/shared";
 import type { EgiszCdaParams } from "./schema.js";
 
 /** Escape free-text for CDA XML text/attribute nodes. */
@@ -148,36 +149,30 @@ export function normalizeToothSurfaces(
 		const s = raw.trim().toUpperCase();
 		if (!s) continue;
 
-		if (s === "V" || s === "B" || s === "VESTIBULAR" || s === "BUCCAL" || s === "Щ" || s === "В" || s === "ЩЕЧНАЯ" || s === "ВЕСТИБУЛЯРНАЯ") {
-			if (!seen.has("V")) {
-				seen.add("V");
-				result.push({ code: "SURF_V", symbol: "V", displayName: "Вестибулярная (щечная)" });
-			}
-		} else if (s === "L" || s === "P" || s === "LINGUAL" || s === "PALATAL" || s === "Я" || s === "Н" || s === "ЯЗЫЧНАЯ" || s === "НЕБНАЯ") {
-			if (!seen.has("L")) {
-				seen.add("L");
-				result.push({ code: "SURF_L", symbol: "L", displayName: "Язычная (небная)" });
-			}
-		} else if (s === "O" || s === "I" || s === "OCCLUSAL" || s === "INCISAL" || s === "О" || s === "Р" || s === "ОККЛЮЗИОННАЯ" || s === "ЖЕВАТЕЛЬНАЯ" || s === "РЕЖУЩИЙ КРАЙ") {
-			if (!seen.has("O")) {
-				seen.add("O");
-				result.push({ code: "SURF_O", symbol: "O", displayName: "Окклюзионная (режущий край)" });
-			}
-		} else if (s === "M" || s === "MESIAL" || s === "М" || s === "МЕДИАЛЬНАЯ") {
-			if (!seen.has("M")) {
-				seen.add("M");
-				result.push({ code: "SURF_M", symbol: "M", displayName: "Медиальная" });
-			}
-		} else if (s === "D" || s === "DISTAL" || s === "Д" || s === "ДИСТАЛЬНАЯ") {
-			if (!seen.has("D")) {
-				seen.add("D");
-				result.push({ code: "SURF_D", symbol: "D", displayName: "Дистальная" });
-			}
-		} else if (s === "R" || s === "ROOT" || s === "RADIX" || s === "К" || s === "КОРЕНЬ") {
+		if (s === "R" || s === "ROOT" || s === "RADIX" || s === "К" || s === "КОРЕНЬ") {
 			if (!seen.has("R")) {
 				seen.add("R");
 				result.push({ code: "SURF_ROOT", symbol: "R", displayName: "Корень" });
 			}
+			continue;
+		}
+
+		const canonical = s === "Р" ? "O" : normalizeCanonicalSurface(s);
+		if (canonical === "V" && !seen.has("V")) {
+			seen.add("V");
+			result.push({ code: "SURF_V", symbol: "V", displayName: "Вестибулярная (щечная)" });
+		} else if (canonical === "L" && !seen.has("L")) {
+			seen.add("L");
+			result.push({ code: "SURF_L", symbol: "L", displayName: "Язычная (небная)" });
+		} else if (canonical === "O" && !seen.has("O")) {
+			seen.add("O");
+			result.push({ code: "SURF_O", symbol: "O", displayName: "Окклюзионная (режущий край)" });
+		} else if (canonical === "M" && !seen.has("M")) {
+			seen.add("M");
+			result.push({ code: "SURF_M", symbol: "M", displayName: "Медиальная" });
+		} else if (canonical === "D" && !seen.has("D")) {
+			seen.add("D");
+			result.push({ code: "SURF_D", symbol: "D", displayName: "Дистальная" });
 		}
 	}
 

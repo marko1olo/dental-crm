@@ -312,7 +312,15 @@ export function WizardTeamStep({
 									);
 								const scheduleSaveState =
 									chairScheduleSaveStates[chair.id] ?? "saved";
-								const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
+								const scheduleDirty = Boolean(
+									chairScheduleDirtyIds && typeof (chairScheduleDirtyIds as any).has === "function"
+										? (chairScheduleDirtyIds as Set<string>).has(chair.id)
+										: Array.isArray(chairScheduleDirtyIds)
+											? (chairScheduleDirtyIds as string[]).includes(chair.id)
+											: typeof chairScheduleDirtyIds === "object"
+												? Boolean((chairScheduleDirtyIds as any)[chair.id])
+												: false,
+								);
 								const scheduleSaving =
 									chairScheduleSavingId === chair.id ||
 									scheduleSaveState === "saving";

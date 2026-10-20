@@ -305,7 +305,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 								data-testid="btn-copy-promo"
 							>
 								{isCopied ? (
-									<Check size={14} className="text-teal" />
+									<Check size={14} className="text-[var(--primary)]" />
 								) : (
 									<Copy size={14} />
 								)}
@@ -341,7 +341,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			<div className="marketing-section" data-testid="marketing-analytics-section">
 				<div className="marketing-section-header">
 					<div className="flex items-center gap-1.5">
-						<TrendingUp size={16} className="text-teal" aria-hidden="true" />
+						<TrendingUp size={16} className="text-[var(--primary)]" aria-hidden="true" />
 						<h4 className="marketing-section-title">Аналитика эффективности и окупаемость</h4>
 					</div>
 					<span className="marketing-section-badge">Автоматический учет по промокоду</span>
@@ -351,7 +351,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 					{/* KPI 1: Охват */}
 					<div className="marketing-kpi-card">
 						<div className="marketing-kpi-card__top">
-							<Users size={16} className="text-teal" aria-hidden="true" />
+							<Users size={16} className="text-[var(--primary)]" aria-hidden="true" />
 							<span className="marketing-kpi-label">Охват рассылки</span>
 						</div>
 						<div className="marketing-kpi-value">{promo.stats.reach} чел.</div>
@@ -363,10 +363,10 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 					{/* KPI 2: Конверсия */}
 					<div className="marketing-kpi-card">
 						<div className="marketing-kpi-card__top">
-							<Target size={16} className="text-teal" aria-hidden="true" />
+							<Target size={16} className="text-[var(--primary)]" aria-hidden="true" />
 							<span className="marketing-kpi-label">Конверсия в визиты</span>
 						</div>
-						<div className="marketing-kpi-value text-teal">
+						<div className="marketing-kpi-value text-[var(--primary)]">
 							{promo.stats.conversionPercent}%
 						</div>
 						<div className="marketing-kpi-sub">{promo.stats.visits} пациентов записались</div>
@@ -375,7 +375,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 					{/* KPI 3: Выручка */}
 					<div className="marketing-kpi-card">
 						<div className="marketing-kpi-card__top">
-							<DollarSign size={16} className="text-teal" aria-hidden="true" />
+							<DollarSign size={16} className="text-[var(--primary)]" aria-hidden="true" />
 							<span className="marketing-kpi-label">Выручка по промокоду</span>
 						</div>
 						<div className="marketing-kpi-value">
@@ -394,10 +394,10 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 					{/* KPI 4: ROMI */}
 					<div className="marketing-kpi-card">
 						<div className="marketing-kpi-card__top">
-							<Sparkles size={16} className="text-teal" aria-hidden="true" />
+							<Sparkles size={16} className="text-[var(--primary)]" aria-hidden="true" />
 							<span className="marketing-kpi-label">Окупаемость (ROMI)</span>
 						</div>
-						<div className="marketing-kpi-value text-teal-dark font-extrabold">
+						<div className="marketing-kpi-value text-[var(--primary)] font-extrabold">
 							+{promo.stats.romiPercent}%
 						</div>
 						<div className="marketing-kpi-sub">
@@ -419,7 +419,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 					</div>
 					<div className="marketing-funnel-arrow">→</div>
 					<div className="marketing-funnel-step">
-						<span className="marketing-funnel-num text-teal">{promo.stats.visits}</span>
+						<span className="marketing-funnel-num text-[var(--primary)]">{promo.stats.visits}</span>
 						<span className="marketing-funnel-name">Визиты ({promo.stats.conversionPercent}%)</span>
 					</div>
 					<div className="marketing-funnel-arrow">→</div>
@@ -436,7 +436,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			<div className="marketing-section" data-testid="marketing-preview-section">
 				<div className="marketing-section-header">
 					<div className="flex items-center gap-1.5">
-						<MessageSquare size={16} className="text-teal" aria-hidden="true" />
+						<MessageSquare size={16} className="text-[var(--primary)]" aria-hidden="true" />
 						<h4 className="marketing-section-title">Превью шаблона сообщения</h4>
 					</div>
 
@@ -482,7 +482,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 							<span className="marketing-chat-sender-name">
 								{clinicName || "Стоматология ДЕНТЕ Премиум"}
 							</span>
-							<CheckCircle2 size={12} className="text-teal inline" aria-label="Верифицировано" />
+							<CheckCircle2 size={12} className="text-[var(--primary)] inline" aria-label="Верифицировано" />
 							<span className="marketing-chat-time">10:30</span>
 						</div>
 
@@ -515,7 +515,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			<div className="marketing-section" data-testid="marketing-launch-section">
 				<div className="marketing-section-header">
 					<div className="flex items-center gap-1.5">
-						<Send size={16} className="text-teal" aria-hidden="true" />
+						<Send size={16} className="text-[var(--primary)]" aria-hidden="true" />
 						<h4 className="marketing-section-title">Быстрый запуск сегменту пациентов</h4>
 					</div>
 					<span className="marketing-section-badge">Запуск рассылки</span>
@@ -552,7 +552,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 							onChange={(e) => setConsentOnly(e.target.checked)}
 							className="marketing-checkbox-input"
 						/>
-						<ShieldCheck size={15} className="text-teal shrink-0" aria-hidden="true" />
+						<ShieldCheck size={15} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 						<span className="marketing-compliance-text">
 							Только пациенты с подтвержденным согласием на сервисные и рекламные сообщения
 						</span>

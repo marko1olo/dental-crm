@@ -140,6 +140,19 @@ export function DiagnosticsTabToolbar({
 						</button>
 					)}
 
+					{onOpenDicomViewer && (
+						<button
+							type="button"
+							onClick={onOpenDicomViewer}
+							data-testid="btn-open-dicom-viewer-modal"
+							className="diag-btn h-7 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0"
+							title="Открыть просмотрщик DICOM снимков"
+						>
+							<FileText size={13} className="text-[var(--teal)]" />
+							<span>DICOM</span>
+						</button>
+					)}
+
 					<button
 						type="button"
 						onClick={onOpenReportStudio}

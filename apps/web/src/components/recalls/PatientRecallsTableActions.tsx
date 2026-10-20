@@ -1,5 +1,5 @@
 import type React from "react";
-import { Calendar, Check, ChevronDown, Eye, MessageCircle } from "lucide-react";
+import { Calendar, Check, ChevronDown, Eye, MessageCircle, Phone } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 import { PatientRecallsDropdownMenu } from "./PatientRecallsDropdownMenu";
 
@@ -21,26 +21,37 @@ export interface PatientRecallsTableActionsProps {
 }
 
 export const PatientRecallsTableActions: React.FC<PatientRecallsTableActionsProps> = ({
-	candidate,
-	isScriptActive,
-	isRealPreviewActive,
-	isOpen,
-	copiedCandidateId,
-	onBook,
-	onTogglePreview,
-	onToggleScript,
-	onWhatsApp,
-	onTelegram,
-	onCopySms,
-	onStatusUpdate,
-	onPostpone,
-	onToggleDropdown,
+	candidate, isScriptActive, isRealPreviewActive, isOpen, copiedCandidateId,
+	onBook, onTogglePreview, onToggleScript, onWhatsApp, onTelegram, onCopySms,
+	onStatusUpdate, onPostpone, onToggleDropdown,
 }) => {
 	const isScheduled = candidate.status === "scheduled";
 	const btnCls = "dente-btn recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
 
 	return (
 		<div className="recall-actions-cell" style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+			<a
+				href={candidate.phone ? `tel:${candidate.phone}` : undefined}
+				className={`${btnCls} recall-action-btn--phone`}
+				data-testid={`recall-phone-btn-${candidate.id}`}
+				title={candidate.phone ? `Позвонить: ${candidate.phone}` : "Телефон не указан"}
+				style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
+			>
+				<Phone size={14} />
+				<span>Позвонить</span>
+			</a>
+
+			<button
+				type="button"
+				className={`${btnCls} recall-action-btn--whatsapp`}
+				title="WhatsApp шаблон"
+				onClick={() => onWhatsApp(candidate)}
+				data-testid={`recall-whatsapp-btn-${candidate.id}`}
+			>
+				<MessageCircle size={14} />
+				<span>WhatsApp</span>
+			</button>
+
 			<button
 				type="button"
 				className={`${btnCls} recall-action-btn--book`}
@@ -48,7 +59,7 @@ export const PatientRecallsTableActions: React.FC<PatientRecallsTableActionsProp
 				onClick={() => onBook(candidate)}
 				data-testid={`recall-book-btn-${candidate.id}`}
 			>
-				<Calendar size={15} />
+				<Calendar size={14} />
 				<span>Записать</span>
 			</button>
 
@@ -71,11 +82,11 @@ export const PatientRecallsTableActions: React.FC<PatientRecallsTableActionsProp
 			<button
 				type="button"
 				className={`${btnCls} ${isRealPreviewActive ? "recall-action-btn--script active" : ""}`}
-				title="Предпросмотр SMS и WhatsApp сообщений с расчетом сегментов"
+				title="Предпросмотр SMS и WhatsApp сообщений"
 				onClick={() => onTogglePreview(candidate)}
 				data-testid={`recall-quick-preview-btn-${candidate.id}`}
 			>
-				<Eye size={15} />
+				<Eye size={14} />
 				<span>Превью</span>
 			</button>
 
@@ -83,31 +94,22 @@ export const PatientRecallsTableActions: React.FC<PatientRecallsTableActionsProp
 				<button
 					type="button"
 					className={btnCls}
-					title="Каналы связи, скрипты и отложить визит"
+					title="Каналы связи и отложить визит"
 					style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
 					onClick={onToggleDropdown}
 					data-testid={`recall-contact-menu-btn-${candidate.id}`}
 					aria-expanded={isOpen}
 				>
-					<MessageCircle size={15} />
-					<span>Связаться</span>
 					<ChevronDown size={14} />
 				</button>
 
 				{isOpen && (
 					<PatientRecallsDropdownMenu
-						candidate={candidate}
-						isScriptActive={isScriptActive}
-						isRealPreviewActive={isRealPreviewActive}
-						copiedCandidateId={copiedCandidateId}
-						onToggleDropdown={onToggleDropdown}
-						onWhatsApp={onWhatsApp}
-						onTelegram={onTelegram}
-						onCopySms={onCopySms}
-						onTogglePreview={onTogglePreview}
-						onToggleScript={onToggleScript}
-						onStatusUpdate={onStatusUpdate}
-						onPostpone={onPostpone}
+						candidate={candidate} isScriptActive={isScriptActive}
+						isRealPreviewActive={isRealPreviewActive} copiedCandidateId={copiedCandidateId}
+						onToggleDropdown={onToggleDropdown} onWhatsApp={onWhatsApp} onTelegram={onTelegram}
+						onCopySms={onCopySms} onTogglePreview={onTogglePreview} onToggleScript={onToggleScript}
+						onStatusUpdate={onStatusUpdate} onPostpone={onPostpone}
 					/>
 				)}
 			</div>

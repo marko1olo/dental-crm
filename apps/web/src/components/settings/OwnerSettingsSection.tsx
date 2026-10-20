@@ -40,7 +40,6 @@ import { AuditLogsPanel } from "../../AuditLogsPanel";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { MaterialBomsSettingsPanel } from "../inventory/MaterialBomsSettingsPanel";
 import { showToast } from "../GlobalToast";
-import { TaxationAndFiscalizationCard } from "./clinic/TaxationAndFiscalizationCard";
 import { InsuranceContractsPanel } from "./InsuranceContractsPanel";
 import { MigrationWizard } from "./MigrationWizard";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
@@ -91,9 +90,9 @@ const OWNER_TABS: Array<{
 	},
 	{
 		id: "prices",
-		label: "Прейскурант 804н",
+		label: "Прейскурант",
 		description: "Номенклатура услуг, анализ рентабельности и цен",
-		icon: DollarSign,
+		icon: FileText,
 	},
 	{
 		id: "commissions",
@@ -146,7 +145,7 @@ const OWNER_TABS: Array<{
 	{
 		id: "deep-clinical",
 		label: "Автономия и ЭМК",
-		description: "ЭМК, ИДС 1051н, нормы списаний, интерком и 54-ФЗ автономия",
+		description: "Электронная карта, согласия на лечение, нормы списаний, интерком и кассовая автономия",
 		icon: Sparkles,
 	},
 ];
@@ -261,7 +260,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 					data-testid="owner-tab-system-more-select"
 				>
 					<option value="" disabled>
-						Системные разделы...
+						Ещё разделы
 					</option>
 					{OWNER_TABS.slice(6).map((tab) => (
 						<option key={tab.id} value={tab.id} data-testid={`owner-tab-${tab.id}`}>
@@ -276,27 +275,6 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				{activeSubTab === "clinic" && (
 					<ErrorBoundary moduleName="Реквизиты и касса">
 						<div className="space-y-6">
-							{/* Scale Sovereignty Presets (Mandate 8s & 8n: Doctor Autonomy & Database-Backed Presets) */}
-							<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-								<SovereignScalePresetsCard
-									compactMode={false}
-									hideHeader={false}
-									onPresetApplied={(presetId) => {
-										const targetMode: ClinicMode =
-											presetId === "solo_doctor"
-												? "solo_doctor"
-												: presetId === "standard_clinic"
-													? "small_clinic"
-													: "network_clinic";
-										if (appLogic?.changeClinicMode) {
-											appLogic.changeClinicMode(targetMode);
-										} else if (props?.changeClinicMode) {
-											props.changeClinicMode(targetMode);
-										}
-									}}
-								/>
-							</div>
-							<TaxationAndFiscalizationCard />
 							<SettingsClinicTab props={props} settingsTab="clinic" />
 						</div>
 					</ErrorBoundary>
@@ -394,9 +372,11 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				{activeSubTab === "procedure-boms" && (
 					<ErrorBoundary moduleName="Техкарты расхода материалов">
 						<MaterialBomsSettingsPanel
-							{...(props?.auth?.currentUser?.organizationId
-								? { organizationId: props.auth.currentUser.organizationId }
-								: {})}
+							organizationId={
+								props?.dashboard?.clinicSettings?.profile?.organizationId ||
+								props?.auth?.currentUser?.organizationId ||
+								props?.organizationId
+							}
 						/>
 					</ErrorBoundary>
 				)}
@@ -417,6 +397,10 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 					<ErrorBoundary moduleName="Перенос данных">
 						<div className="space-y-6">
 							<MigrationWizard />
+							<OfflineBackupVaultPanel
+								organizationId={props?.organizationId}
+								clinicName={props?.clinicSettings?.name}
+							/>
 							<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden">
 								<summary className="px-4 py-3 cursor-pointer text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none transition-colors">
 									<span>Расширенный режим: Индивидуальный импорт и ручные утилиты (legacy)</span>
@@ -432,7 +416,13 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 
 				{activeSubTab === "backup" && (
 					<ErrorBoundary moduleName="Резервное копирование Vault">
-						<OfflineBackupVaultPanel />
+						<div className="space-y-6">
+							<OfflineBackupVaultPanel
+								organizationId={props?.organizationId}
+								clinicName={props?.clinicSettings?.name}
+							/>
+							<SettingsAuditTab {...props} settingsTab="backup" hideVaultPanel />
+						</div>
 					</ErrorBoundary>
 				)}
 

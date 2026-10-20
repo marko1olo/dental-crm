@@ -3,7 +3,12 @@
  */
 
 import { z } from "zod";
+import type { db } from "../../../db/client.js";
+import type { DbExecutor } from "../../../db/seeds/seed_cash_and_reasons.js";
 import type { FiscalQueueStatus } from "./constants.js";
+
+export type DbClientOrTransaction = DbExecutor;
+
 
 export const sbpStatusInputSchema = z.object({
 	orderId: z.string().trim().max(128).optional(),
@@ -71,6 +76,12 @@ export interface ApplyCashBoxRefundParams {
 }
 
 export interface PrintResultMetadata {
+	status?: string | undefined;
+	fnSerial?: string | undefined;
 	fiscalDocumentNumber?: number | string | null | undefined;
+	fiscalSign?: string | undefined;
+	receiptIssuedAt?: Date | string | undefined;
 	ofdVerificationUrl?: string | null | undefined;
+	qrString?: string | null | undefined;
+	errorMessage?: string | null | undefined;
 }

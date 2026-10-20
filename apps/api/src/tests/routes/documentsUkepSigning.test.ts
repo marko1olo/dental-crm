@@ -94,18 +94,30 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 		);
 	});
 
-	it("resolveSignatureForStorage strictly rejects doctor PEP (PIN code) under 63-FZ and Order 947n", async () => {
-		const res = await resolveSignatureForStorage({
-			pkcs7Signature: "PIN:1234",
+	it("resolveSignatureForStorage supports operational doctor SHIFT_SESSION and 4-digit PIN for internal diary locking", async () => {
+		const sessionRes = await resolveSignatureForStorage({
+			pkcs7Signature: "SHIFT_SESSION",
+			userId: "user-1",
+			organizationId: "org-1",
+			diaryHashForMark: "abcdef1234567890",
+		});
+		assert.strictEqual(sessionRes.ok, true);
+		if (sessionRes.ok) {
+			assert.ok(
+				sessionRes.stored?.startsWith("SIMPLE_PIN_EP|user-1|"),
+				"Ожидалась отметка SIMPLE_PIN_EP для сессионной подписи врача",
+			);
+			assert.ok(sessionRes.stored?.endsWith("|abcdef123456"));
+		}
+
+		const badFormatRes = await resolveSignatureForStorage({
+			pkcs7Signature: "PIN:12",
 			userId: "user-1",
 			organizationId: "org-1",
 		});
-
-		assert.strictEqual(res.ok, false);
-		if (!res.ok) {
-			assert.strictEqual(res.code, "PepDoctorForbidden");
-			assert.ok(res.message.includes("63-ФЗ"));
-			assert.ok(res.message.includes("947н"));
+		assert.strictEqual(badFormatRes.ok, false);
+		if (!badFormatRes.ok) {
+			assert.strictEqual(badFormatRes.code, "PinInvalid");
 		}
 	});
 

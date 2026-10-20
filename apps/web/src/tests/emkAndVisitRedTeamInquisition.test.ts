@@ -94,6 +94,7 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"components/visit/emk/EmkDiaryProtocolSection.tsx",
 			"components/visit/emk/EmkServicesSection.tsx",
 			"components/visit/emk/EmkPrintableForm043.tsx",
+			"components/visit/emk/VisitClinicalDiaryPrintSheet.tsx",
 		];
 
 		const forbiddenEmojis = ["🦷", "💉", "🩺", "📝", "🏥", "💊", "🚨"];
@@ -154,22 +155,25 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 		);
 
 		const emkToolbarCode = readSrcFile("components/visit/emk/EmkToolbar.tsx");
+		const quickButtonsCode = readSrcFile("components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx");
 		// Кнопка нормы доступна в 1 клик
 		assert.ok(
-			emkToolbarCode.includes('data-testid="btn-chairside-physiological-norm"'),
+			emkToolbarCode.includes('data-testid="btn-chairside-physiological-norm"') ||
+				quickButtonsCode.includes('data-testid="btn-chairside-physiological-norm"'),
 			"Кнопка физиологической нормы должна присутствовать на тулбаре ЭМК",
 		);
 	});
 
 	it("6. Сквозная связность: оказанные в приёме услуги автоматически попадают в виджет биллинга и кассу", () => {
-		const emkCode = readSrcFile("components/visit/VisitEmkTab.tsx");
+		const controllerCode = readSrcFile("components/visit/emkTabModules/useVisitEmkTabController.ts");
 		assert.ok(
-			emkCode.includes("infer804nServiceFromStamp"),
-			"VisitEmkTab должен выводить услугу по номенклатуре из выбранной патологии",
+			controllerCode.includes("infer804nServiceFromStamp"),
+			"useVisitEmkTabController должен выводить услугу по номенклатуре из выбранной патологии",
 		);
 		assert.ok(
-			emkCode.includes('window.dispatchEvent(\n\t\t\t\t\t\tnew CustomEvent("dente-add-services-to-invoice"'),
-			"VisitEmkTab должен передавать услуги в биллинг через событие dente-add-services-to-invoice",
+			controllerCode.includes('new CustomEvent("dente-add-services-to-invoice"') &&
+				controllerCode.includes("window.dispatchEvent("),
+			"useVisitEmkTabController должен передавать услуги в биллинг через событие dente-add-services-to-invoice",
 		);
 
 		const billingCode = readSrcFile("components/visit/VisitServiceBillingWidget.tsx");
@@ -186,6 +190,117 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 		assert.ok(
 			summaryCode.includes('data-testid="chairside-pay-sbp-qr-btn"'),
 			"VisitSummaryModal должен содержать кнопку быстрой оплаты СБП по QR",
+		);
+	});
+
+	it("7. Унификация кнопок, табов и экшен-кластеров шапки приёма (Мандат 8am): 36px, rounded-xl, единые клинические токены без светофора", () => {
+		const headerCode = readSrcFile("components/visit/view/VisitViewHeader.tsx");
+		const tabNavCode = readSrcFile("components/visit/view/VisitTabNav.tsx");
+		const visitCss = readSrcFile("styles/VisitView.css");
+
+		// 1. Запрет микро-кнопок 28px и контейнера 34px в кластере печати
+		assert.ok(
+			!headerCode.includes("min-h-[28px]") && !headerCode.includes("h-[34px]"),
+			"В VisitViewHeader запрещены микро-кнопки 28px и нестандартная высота 34px (Мандат 8am)",
+		);
+
+		// 2. Кластер быстрой печати и кнопки имеют высоту 36px (h-9 min-h-[36px]), скругление rounded-xl и иконки w-4 h-4
+		assert.ok(
+			headerCode.includes('data-testid="btn-visit-fast-print-043u"') &&
+				headerCode.includes("h-9 min-h-[36px] min-w-[36px] w-9") &&
+				headerCode.includes("rounded-xl"),
+			"Кнопки быстрой печати должны иметь высоту 36px (h-9 min-h-[36px]) и радиус rounded-xl",
+		);
+
+		// 3. Запрет радужных цветов на служебных иконках печати и меню (кроме семантических аллергий и аптечки rose)
+		for (const forbiddenColor of [
+			"text-sky-600",
+			"text-blue-600",
+			"text-violet-600",
+			"text-teal-600",
+			"text-amber-600",
+			"text-purple-600",
+			"bg-emerald-600",
+		]) {
+			assert.ok(
+				!headerCode.includes(forbiddenColor),
+				`В VisitViewHeader обнаружен запрещённый радужный цвет "${forbiddenColor}" (Мандат 8am)`,
+			);
+		}
+
+		// 4. Primary CTA btn-complete-visit-header использует bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs
+		assert.ok(
+			headerCode.includes("bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white"),
+			"Кнопка завершения приёма должна использовать чистый токен bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white",
+		);
+
+		// 5. VisitTabNav и VisitView.css используют 36px (h-9 min-h-[36px]), rounded-lg и var(--primary) для активного таба
+		assert.ok(
+			tabNavCode.includes("min-h-[36px] h-9") && tabNavCode.includes("rounded-lg"),
+			"VisitTabNav должен иметь высоту 36px (h-9 min-h-[36px]) и скругление сегментов rounded-lg",
+		);
+		assert.ok(
+			visitCss.includes("color: var(--primary, #0d9488);"),
+			"Активный таб в VisitView.css должен использовать токен var(--primary)",
+		);
+	});
+
+	it("8. Ликвидация советского канцелярита и номеров приказов в ЭМК и бланке печати дневника (Мандат 8x, Мандат 8e)", () => {
+		const sheetCode = readSrcFile("components/visit/emk/VisitClinicalDiaryPrintSheet.tsx");
+
+		// Шапка печатного бланка использует чистый язык
+		assert.ok(
+			sheetCode.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПРИЁМА"),
+			"VisitClinicalDiaryPrintSheet должен содержать чистый заголовок 'МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПРИЁМА'",
+		);
+		assert.ok(
+			sheetCode.includes("Дневник приёма и протокол лечения"),
+			"VisitClinicalDiaryPrintSheet должен содержать подзаголовок 'Дневник приёма и протокол лечения'",
+		);
+		assert.ok(
+			!sheetCode.includes("Форма № 043/у"),
+			"В VisitClinicalDiaryPrintSheet не должно быть упоминания 'Форма № 043/у'",
+		);
+		assert.ok(
+			!sheetCode.includes("Приказом Минздрава России от 15.12.2014 № 834н"),
+			"В VisitClinicalDiaryPrintSheet не должно быть ссылки на советский/бюрократический приказ 834н",
+		);
+
+		// fastPrintDiaryBuilder.ts
+		const diaryBuilderCode = readSrcFile("components/visit/view/fastPrintModules/fastPrintDiaryBuilder.ts");
+		assert.ok(
+			diaryBuilderCode.includes("executeFastPrintClinicalDiary"),
+			"fastPrintDiaryBuilder должен содержать функцию executeFastPrintClinicalDiary",
+		);
+		assert.ok(
+			diaryBuilderCode.includes("buildMedicalCardDataFromFastPrintParams"),
+			"fastPrintDiaryBuilder должен содержать SSOT-консолидацию buildMedicalCardDataFromFastPrintParams",
+		);
+
+		// VisitActionButtonsToolbar.tsx
+		const toolbarCode = readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx");
+		assert.ok(
+			toolbarCode.includes("handlePrintClinicalDiaryFast"),
+			"VisitActionButtonsToolbar должен поддерживать канонический хендлер handlePrintClinicalDiaryFast",
+		);
+		assert.ok(
+			toolbarCode.includes("Медицинская карта приёма"),
+			"VisitActionButtonsToolbar должен иметь кнопку 'Медицинская карта приёма'",
+		);
+
+		// VisitTherapyProtocolWidget.tsx
+		const therapyCode = readSrcFile("components/visit/therapy/VisitTherapyProtocolWidget.tsx");
+		assert.ok(
+			therapyCode.includes("handleInsertToClinicalDiary"),
+			"VisitTherapyProtocolWidget должен содержать хендлер handleInsertToClinicalDiary",
+		);
+		assert.ok(
+			therapyCode.includes("generateTherapySoapProtocol"),
+			"VisitTherapyProtocolWidget должен использовать generateTherapySoapProtocol",
+		);
+		assert.ok(
+			therapyCode.includes("Внести в дневник"),
+			"Кнопка действия в VisitTherapyProtocolWidget должна называться 'Внести в дневник'",
 		);
 	});
 });

@@ -10,36 +10,35 @@
  * - Мандат 8e: врачебная автономия (1-клик генерация текста для ЕМК).
  */
 
+import { Check, Copy, FileText, Filter, Sparkles, Tag } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import {
-	Check,
-	Copy,
-	FileText,
-	Filter,
-	Sparkles,
-	Tag,
-} from "lucide-react";
-import { showToast } from "../../GlobalToast";
 import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore";
+import { showToast } from "../../GlobalToast";
 import {
-	STATUTORY_DIARY_TEMPLATES,
 	buildContextFromDoctorPreferences,
+	type DiaryTemplateDefinition,
 	extractTemplateTags,
 	interpolateDiaryTemplateTags,
-	type DiaryTemplateDefinition,
+	STATUTORY_DIARY_TEMPLATES,
 } from "./diaryTemplateTags";
 
 export function DoctorForm043TemplatesSection() {
 	const preferences = useDoctorPreferencesStore((s) => s.preferences);
 
-	const [selectedTemplateId, setSelectedTemplateId] = useState<string>("caries_restoration");
-	const [activeSpecialtyFilter, setActiveSpecialtyFilter] = useState<string>("all");
+	const [selectedTemplateId, setSelectedTemplateId] =
+		useState<string>("caries_restoration");
+	const [activeSpecialtyFilter, setActiveSpecialtyFilter] =
+		useState<string>("all");
 	const [testTooth, setTestTooth] = useState<string>("16");
-	const [testDiagnosis, setTestDiagnosis] = useState<string>("К02.1 Кариес дентина");
+	const [testDiagnosis, setTestDiagnosis] = useState<string>(
+		"К02.1 Кариес дентина",
+	);
 
 	const filteredTemplates = useMemo(() => {
 		if (activeSpecialtyFilter === "all") return STATUTORY_DIARY_TEMPLATES;
-		return STATUTORY_DIARY_TEMPLATES.filter((t) => t.specialty === activeSpecialtyFilter);
+		return STATUTORY_DIARY_TEMPLATES.filter(
+			(t) => t.specialty === activeSpecialtyFilter,
+		);
 	}, [activeSpecialtyFilter]);
 
 	const currentTemplate = useMemo(() => {
@@ -58,15 +57,24 @@ export function DoctorForm043TemplatesSection() {
 	}, [preferences, testTooth, testDiagnosis]);
 
 	const interpolatedComplaints = useMemo(() => {
-		return interpolateDiaryTemplateTags(currentTemplate.complaintTemplate, tagContext);
+		return interpolateDiaryTemplateTags(
+			currentTemplate.complaintTemplate,
+			tagContext,
+		);
 	}, [currentTemplate, tagContext]);
 
 	const interpolatedObjective = useMemo(() => {
-		return interpolateDiaryTemplateTags(currentTemplate.objectiveTemplate, tagContext);
+		return interpolateDiaryTemplateTags(
+			currentTemplate.objectiveTemplate,
+			tagContext,
+		);
 	}, [currentTemplate, tagContext]);
 
 	const interpolatedTreatment = useMemo(() => {
-		return interpolateDiaryTemplateTags(currentTemplate.treatmentTemplate, tagContext);
+		return interpolateDiaryTemplateTags(
+			currentTemplate.treatmentTemplate,
+			tagContext,
+		);
 	}, [currentTemplate, tagContext]);
 
 	const fullDiaryText = useMemo(() => {
@@ -85,11 +93,17 @@ export function DoctorForm043TemplatesSection() {
 
 	const handleCopyFullDiary = () => {
 		navigator.clipboard.writeText(fullDiaryText);
-		showToast(`Протокол «${currentTemplate.title}» скопирован в буфер с заполненными тегами`, "success");
+		showToast(
+			`Протокол «${currentTemplate.title}» скопирован в буфер с заполненными тегами`,
+			"success",
+		);
 	};
 
 	return (
-		<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4" data-testid="doctor-form043-templates-section">
+		<div
+			className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4"
+			data-testid="doctor-form043-templates-section"
+		>
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-2.5">
@@ -101,7 +115,8 @@ export function DoctorForm043TemplatesSection() {
 							Шаблоны дневников медицинской карты с автозаполнением тегов
 						</h4>
 						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-							Умная подстановка тегов &#123;зуб&#125;, &#123;диагноз&#125;, &#123;материал&#125;, &#123;анестезия&#125;, &#123;изоляция&#125;
+							Умная подстановка тегов &#123;зуб&#125;, &#123;диагноз&#125;,
+							&#123;материал&#125;, &#123;анестезия&#125;, &#123;изоляция&#125;
 						</p>
 					</div>
 				</div>
@@ -163,7 +178,9 @@ export function DoctorForm043TemplatesSection() {
 						onChange={(e) => setActiveSpecialtyFilter(e.target.value)}
 						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:outline-none focus:border-teal-600"
 					>
-						<option value="all">Все направления ({STATUTORY_DIARY_TEMPLATES.length})</option>
+						<option value="all">
+							Все направления ({STATUTORY_DIARY_TEMPLATES.length})
+						</option>
 						<option value="therapist">Терапия</option>
 						<option value="surgeon">Хирургия-имплантология</option>
 						<option value="orthopedist">Ортопедия</option>
@@ -192,7 +209,9 @@ export function DoctorForm043TemplatesSection() {
 							<span>{tpl.title}</span>
 							<span
 								className={`text-[10px] font-mono px-1 rounded ${
-									isSelected ? "bg-white/20 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"
+									isSelected
+										? "bg-white/20 text-white"
+										: "bg-[var(--paper-soft)] text-[var(--muted)]"
 								}`}
 							>
 								{tpl.defaultIcd10}
@@ -234,14 +253,18 @@ export function DoctorForm043TemplatesSection() {
 					</div>
 
 					<div>
-						<strong className="text-[var(--ink)] block mb-0.5">Объективный статус:</strong>
+						<strong className="text-[var(--ink)] block mb-0.5">
+							Объективный статус:
+						</strong>
 						<p className="m-0 text-[var(--muted)] p-2 rounded bg-[var(--paper-soft)] border border-[var(--line)] font-sans">
 							{interpolatedObjective}
 						</p>
 					</div>
 
 					<div>
-						<strong className="text-[var(--ink)] block mb-0.5">План лечения и протокол манипуляций:</strong>
+						<strong className="text-[var(--ink)] block mb-0.5">
+							План лечения и протокол манипуляций:
+						</strong>
 						<p className="m-0 text-[var(--muted)] p-2 rounded bg-[var(--paper-soft)] border border-[var(--line)] font-sans">
 							{interpolatedTreatment}
 						</p>

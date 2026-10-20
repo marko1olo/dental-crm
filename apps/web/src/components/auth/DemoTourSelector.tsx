@@ -55,7 +55,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		id: "therapist",
 		title: "Терапевт",
 		subtitle: "Кариес 16, пломба 24, пульпит 36",
-		badge: "Клинический Hot Path",
+		badge: "Терапевтический приём",
 		doctorName: "Д-р Соколов А. В.",
 		role: "doctor",
 		icon: Stethoscope,
@@ -84,7 +84,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 			"Интраоральный 3D-скан STL и расчет себестоимости лабораторных работ",
 		],
 		avatarInitials: "ОА",
-		colorTheme: "amber",
+		colorTheme: "teal",
 		targetView: "patients",
 		targetPatientId: "01a00000-0000-0000-0000-000000000002",
 		staffId: DEMO_DOCTOR_ORTHOPEDIST_ID,
@@ -103,7 +103,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 			"Клинический фотопротокол окклюзии, протокол IPR и эластики II класса",
 		],
 		avatarInitials: "МЕ",
-		colorTheme: "indigo",
+		colorTheme: "teal",
 		targetView: "patients",
 		targetPatientId: "01a00000-0000-0000-0000-000000000003",
 		staffId: DEMO_DOCTOR_2_ID,
@@ -122,7 +122,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 			"Информированное добровольное согласие (ИДС) и послеоперационный лист",
 		],
 		avatarInitials: "ГК",
-		colorTheme: "rose",
+		colorTheme: "teal",
 		targetView: "patients",
 		targetPatientId: "01a00000-0000-0000-0000-000000000004",
 		staffId: DEMO_DOCTOR_SURGEON_ID,
@@ -141,7 +141,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 			"Сдельный расчет зарплаты врачей (терапевт 25%, ортопед 20%, хирург 22%)",
 		],
 		avatarInitials: "ВМ",
-		colorTheme: "amber",
+		colorTheme: "teal",
 		targetView: "analytics",
 		staffId: DEMO_OWNER_ID,
 	},
@@ -159,7 +159,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 			"Уведомления пациентов в WhatsApp и Telegram",
 		],
 		avatarInitials: "СП",
-		colorTheme: "emerald",
+		colorTheme: "teal",
 		targetView: "schedule",
 		staffId: DEMO_ADMIN_ID,
 	},
@@ -209,6 +209,24 @@ export function DemoTourSelector({
 				`demo-showcase-staff-token-${roleOption.id}`,
 			);
 			syncAuthTokensFromStorage();
+
+			// Честный засев PostgreSQL 18 через Fastify API перед переходом в витрину
+			try {
+				await fetch("/api/demo/seed", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-dente-clinic-token": `demo-showcase-token-${roleOption.id}`,
+						"x-dente-staff-token": `demo-showcase-staff-token-${roleOption.id}`,
+					},
+					body: JSON.stringify({ forceReset: false }),
+				});
+			} catch (seedErr) {
+				console.warn(
+					"[DEMO_TOUR_API_SEED_WARN] Серверный засев недоступен, продолжение в локальном режиме:",
+					seedErr,
+				);
+			}
 
 			cacheActiveStaffUser(userProfile);
 

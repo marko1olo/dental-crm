@@ -522,3 +522,17 @@
 	transform: translateY(-0.5px);
 }
 
+@media (max-width: 640px) {
+	.tp-action-btn {
+		height: 44px !important;
+		min-height: 44px !important;
+		padding: 0 14px !important;
+		font-size: 13px !important;
+	}
+	.tp-btn-cashier {
+		height: 44px !important;
+		min-height: 44px !important;
+		padding: 0 14px !important;
+	}
+}
+

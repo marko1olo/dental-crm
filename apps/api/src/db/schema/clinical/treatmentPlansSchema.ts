@@ -68,6 +68,11 @@ export const serviceCatalogItems = pgTable(
 			.notNull()
 			.default(false),
 		nsiServiceId: text("nsi_service_id"),
+		materialsCostRub: numeric("materials_cost_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}).default(0),
 		isActive: boolean("is_active").notNull().default(true),
 	},
 	(t) => ({

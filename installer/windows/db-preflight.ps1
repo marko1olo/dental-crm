@@ -374,7 +374,8 @@ function Sync-PostgresConf {
             if ($content -notmatch "(?m)^\s*listen_addresses") {
                 $content += "`r`nlisten_addresses = '127.0.0.1'`r`n"
             }
-            [System.IO.File]::WriteAllText($confFile, $content, [System.Text.Encoding]::UTF8)
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            [System.IO.File]::WriteAllText($confFile, $content, $utf8NoBom)
             Write-PreflightLog "Updated postgresql.conf with port = $Port" "INFO"
         }
     }

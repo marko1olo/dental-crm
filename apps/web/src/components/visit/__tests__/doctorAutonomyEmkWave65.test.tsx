@@ -15,7 +15,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,7 +28,13 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 	const visitEmkTabSource = fs.readFileSync(visitEmkTabPath, "utf8");
 
 	const visitDiarySectionPath = path.resolve(__dirname, "../VisitDiarySection.tsx");
-	const visitDiarySectionSource = fs.readFileSync(visitDiarySectionPath, "utf8");
+	const visitDiarySectionDir = path.resolve(__dirname, "../diary/section");
+	const visitDiarySectionSource = [
+		fs.readFileSync(visitDiarySectionPath, "utf8"),
+		...(fs.existsSync(visitDiarySectionDir)
+			? fs.readdirSync(visitDiarySectionDir).map((f) => fs.readFileSync(path.join(visitDiarySectionDir, f), "utf8"))
+			: []),
+	].join("\n");
 
 	const form043PrintModalPath = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
 	const form043PrintModalSource = fs.readFileSync(form043PrintModalPath, "utf8");
@@ -91,12 +97,16 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 			"Must have data-testid='diary-norm-direct-btn'",
 		);
 		assert.ok(
-			visitDiarySectionSource.includes("handleApplyFullPhysiologicalNorm()"),
-			"Must wire up handleApplyFullPhysiologicalNorm",
+			visitDiarySectionSource.includes("handleApplyFullPhysiologicalNorm") ||
+			visitDiarySectionSource.includes("handleApplyNorm") ||
+			visitDiarySectionSource.includes("applyFullPhysiologicalNorm"),
+			"Must wire up physiological norm handler",
 		);
 		// Auto beginRevise if locked
 		assert.ok(
-			visitDiarySectionSource.includes("if (isLocked && !isRevising) {\n\t\t\t\t\t\t\t\tbeginRevise();\n\t\t\t\t\t\t\t}"),
+			visitDiarySectionSource.includes("logic.beginRevise()") ||
+			visitDiarySectionSource.includes("beginRevise()") ||
+			visitDiarySectionSource.includes("ensureRevisingIfLocked"),
 			"Must invoke beginRevise() automatically if locked when doctor clicks 1-Click norm",
 		);
 

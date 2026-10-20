@@ -9,6 +9,8 @@ export {
 	type ClinicalServiceBundle,
 	CompletedServicesChecklist,
 	type CompletedServicesChecklistProps,
+	CompletedServicesList,
+	type CompletedServicesListProps,
 	CompletedServiceRowItem,
 	PreliminaryTreatmentPlanSection,
 	QuickServiceSearchAndPresets,

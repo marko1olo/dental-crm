@@ -13,6 +13,7 @@ import {
 	defaultUiPreferences,
 	loadUiPreferences,
 } from "../utils/preferencesUtils";
+import { useVisitStore } from "./visitStore";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
@@ -112,10 +113,18 @@ export interface PatientStore {
 export const usePatientStore = create<PatientStore>((set) => ({
 	selectedPatientId: initialUiPreferences.selectedPatientId ?? null,
 	setSelectedPatientId: (val) =>
-		set((state) => ({
-			selectedPatientId:
-				typeof val === "function" ? val(state.selectedPatientId) : val,
-		})),
+		set((state) => {
+			const nextSelectedPatientId =
+				typeof val === "function" ? val(state.selectedPatientId) : val;
+			if (
+				state.selectedPatientId !== null &&
+				nextSelectedPatientId !== state.selectedPatientId
+			) {
+				useVisitStore.getState().resetVisitToothState();
+				useVisitStore.getState().setCompletedServices([]);
+			}
+			return { selectedPatientId: nextSelectedPatientId };
+		}),
 
 	patientCoreDraft: emptyPatientCoreDraft(),
 	setPatientCoreDraft: (val) =>

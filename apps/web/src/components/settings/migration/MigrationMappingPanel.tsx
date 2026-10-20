@@ -12,6 +12,7 @@ import {
 	DECISION_TITLES,
 	formatBytes,
 	type MapResponse,
+	TARGET_FIELD_TITLES,
 	type UploadResponse,
 } from "./migrationTypes";
 
@@ -116,7 +117,10 @@ export function MigrationMappingPanel(props: {
 							{(mapping?.mapping?.columns ?? []).map((column) => (
 								<tr className="mw-mapping-row" key={column.sourceColumn}>
 									<td className="mw-col-source">{column.sourceColumn}</td>
-									<td className="mw-col-target">{column.targetField}</td>
+									<td className="mw-col-target">
+										{TARGET_FIELD_TITLES[column.targetField] ??
+											column.targetField}
+									</td>
 									<td>
 										<span
 											className={`mw-badge mw-badge-${column.decidedBy}`}

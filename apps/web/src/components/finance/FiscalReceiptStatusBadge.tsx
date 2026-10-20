@@ -53,7 +53,7 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			labelRu: "Фискализирован в ОФД",
 			bgClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30",
 			icon: CheckCircle2,
-			title: "Кассовый чек успешно передан в ОФД и зарегистрирован в ФНС (54-ФЗ)",
+			title: "Кассовый чек успешно передан в ОФД и зарегистрирован в налоговой",
 		},
 		pending: {
 			labelRu: "В очереди ОФД",
@@ -74,7 +74,7 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			title: "Чек сохранён в локальном буфере кассы при отсутствии интернета",
 		},
 		refund: {
-			labelRu: "Возврат прихода (54-ФЗ)",
+			labelRu: "Возврат прихода (чек)",
 			bgClass: "bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30",
 			icon: RotateCcw,
 			title: "Оформлен фискальный чек возврата денежных средств пациенту",

@@ -5,10 +5,48 @@ import { users } from "../../db/schema.js";
 import {
 	DEMO_ADMIN_ID,
 	DEMO_DOCTOR_1_ID,
+	DEMO_DOCTOR_2_ID,
+	DEMO_DOCTOR_ORTHOPEDIST_ID,
+	DEMO_DOCTOR_SURGEON_ID,
+	DEMO_OWNER_ID,
 	DEMO_SHOWCASE_ORG_ID,
 } from "../../services/demo/deepDemoSeeder.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./tokenHelpers.js";
+
+function parseDemoStaffPayload(
+	staffToken: string | null | undefined,
+): { userId: string; organizationId: string } | null {
+	if (!staffToken || typeof staffToken !== "string") return null;
+	const isDemoStaff =
+		staffToken.startsWith("demo-showcase-staff-token") ||
+		staffToken.startsWith("demo-token-");
+	if (!isDemoStaff) return null;
+
+	const roleHint = staffToken
+		.replace("demo-showcase-staff-token-", "")
+		.replace("demo-token-", "")
+		.toLowerCase()
+		.trim();
+
+	let userId = DEMO_DOCTOR_1_ID;
+	if (roleHint.includes("orthopedist")) {
+		userId = DEMO_DOCTOR_ORTHOPEDIST_ID;
+	} else if (roleHint.includes("orthodontist")) {
+		userId = DEMO_DOCTOR_2_ID;
+	} else if (roleHint.includes("surgeon")) {
+		userId = DEMO_DOCTOR_SURGEON_ID;
+	} else if (roleHint.includes("owner")) {
+		userId = DEMO_OWNER_ID;
+	} else if (roleHint.includes("admin")) {
+		userId = DEMO_ADMIN_ID;
+	}
+
+	return {
+		userId,
+		organizationId: DEMO_SHOWCASE_ORG_ID,
+	};
+}
 
 export function registerSessionRoutes(app: FastifyInstance): void {
 	// ─── Session Status Check ─────────────────────────────────────────────────────
@@ -33,25 +71,8 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 						? verifyToken(clinicToken, TOKEN_SECRET())
 						: null;
 			const staffPayload =
-				staffToken && staffToken.startsWith("demo-showcase-staff-token")
-					? {
-							userId:
-								staffToken.includes("orthopedist")
-									? "01a00000-0000-0000-0003-000000000006"
-									: staffToken.includes("orthodontist")
-										? "01a00000-0000-0000-0003-000000000002"
-										: staffToken.includes("surgeon")
-											? "01a00000-0000-0000-0003-000000000003"
-											: staffToken.includes("owner")
-												? "01a00000-0000-0000-0003-000000000004"
-												: staffToken.includes("admin")
-													? DEMO_ADMIN_ID
-													: DEMO_DOCTOR_1_ID,
-							organizationId: DEMO_SHOWCASE_ORG_ID,
-						}
-					: staffToken
-						? verifyToken(staffToken, TOKEN_SECRET())
-						: null;
+				parseDemoStaffPayload(staffToken) ??
+				(staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null);
 
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let activeUser: any = null;
@@ -86,9 +107,9 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 			const staffToken = Array.isArray(staffHeader)
 				? staffHeader[0]
 				: staffHeader;
-			const payload = staffToken
-				? verifyToken(staffToken, TOKEN_SECRET())
-				: null;
+			const payload =
+				parseDemoStaffPayload(staffToken) ??
+				(staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null);
 
 			if (!payload?.userId)
 				return reply
@@ -112,10 +133,34 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 				)
 				.limit(1);
 
-			if (!user)
+			if (!user) {
+				if (staffToken && staffToken.startsWith("demo-showcase-staff-token")) {
+					return reply.send({
+						ok: true,
+						user: {
+							id: payload.userId,
+							fullName: staffToken.includes("owner")
+								? "Доктор Романов И. В. (Владелец)"
+								: staffToken.includes("admin")
+									? "Смирнова А. К. (Администратор)"
+									: "Д-р Иванов П. С. (Терапевт)",
+							role: staffToken.includes("owner")
+								? "owner"
+								: staffToken.includes("admin")
+									? "admin"
+									: "doctor",
+							email: "demo@dente.pro",
+							organizationId: DEMO_SHOWCASE_ORG_ID,
+							isActive: true,
+							yandexCalendarId: null,
+							yandexCalendarToken: null,
+						},
+					});
+				}
 				return reply
 					.code(404)
 					.send({ error: "NotFound", message: "Пользователь не найден." });
+			}
 
 			return reply.send({ ok: true, user });
 		},

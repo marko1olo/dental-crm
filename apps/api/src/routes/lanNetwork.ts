@@ -281,6 +281,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		let nonce = "";
 		let orgId = "";
 		let role: "doctor" | "assistant" = "doctor";
+		let staffUserId: string | undefined = undefined;
 
 		// 1. Direct high-entropy nonce lookup
 		const directEntry = activePairingNonces.get(token);
@@ -288,6 +289,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			nonce = directEntry.nonce;
 			orgId = directEntry.organizationId;
 			role = directEntry.role;
+			staffUserId = directEntry.staffUserId;
 		} else {
 			// 2. Fallback to signed JWT pairing payload
 			const verified = verifyToken(token, authTokenSecret());
@@ -296,6 +298,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 				nonce = payload.nonce;
 				orgId = payload.organizationId;
 				role = payload.role || "doctor";
+				staffUserId = payload.staffUserId;
 			}
 		}
 
@@ -351,14 +354,14 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		let matchedUser: { id: string; fullName: string; role: string } | null = null;
 
 		try {
-			if (payload.staffUserId) {
+			if (staffUserId) {
 				const [user] = await withTenantCtx(orgId, async (tx) => {
 					return tx
 						.select({ id: users.id, fullName: users.fullName, role: users.role })
 						.from(users)
 						.where(
 							and(
-								eq(users.id, payload.staffUserId!),
+								eq(users.id, staffUserId!),
 								eq(users.organizationId, orgId),
 							),
 						)

@@ -1,0 +1,148 @@
+.protocol-library {
+	background: #f7fbf9;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	margin-bottom: 14px;
+	padding: 14px;
+}
+
+.protocol-library[open] .protocol-summary {
+	border-bottom: 1px solid var(--line);
+	margin-bottom: 2px;
+	padding-bottom: 10px;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.protocol-summary {
+	align-items: center;
+	cursor: pointer;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	list-style: none;
+}
+
+.protocol-summary::-webkit-details-marker {
+	display: none;
+}
+
+.protocol-summary h3 {
+	font-size: 16px;
+	margin: 0;
+}
+
+.protocol-summary p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.protocol-summary > span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 950;
+	padding: 6px 9px;
+	text-transform: uppercase;
+}
+
+.protocol-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.protocol-head h3 {
+	font-size: 16px;
+	margin: 0;
+}
+
+.protocol-head p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.protocol-head > span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-weight: 900;
+	padding: 6px 9px;
+}
+
+.specialty-strip {
+	display: flex;
+	gap: 6px;
+	overflow-x: auto;
+	padding-bottom: 2px;
+}
+
+.specialty-strip button,
+.protocol-template-list button {
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 900;
+	min-height: 32px;
+	padding: 6px 10px;
+}
+
+.specialty-strip button {
+	background: #ffffff;
+	color: var(--muted);
+	flex: 0 0 auto;
+}
+
+.specialty-strip button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+}
+
+.protocol-card {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.protocol-card strong {
+	display: block;
+	font-size: 15px;
+}
+
+.protocol-card p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.protocol-card ul {
+	color: #4e463f;
+	display: grid;
+	gap: 5px;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.protocol-template-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.protocol-template-list button {
+	background: #eef8f5;
+	color: var(--teal-dark);
+}
+
+.protocol-template-list button.active {
+	background: var(--teal-dark);
+	border-color: var(--teal-dark);
+	color: #ffffff;
+}

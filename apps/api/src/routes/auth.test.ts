@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import Fastify from "fastify";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import * as rls from "../db/rls.js";
@@ -551,21 +551,33 @@ describe("auth routes", () => {
 					.where(eq(patients.organizationId, data.organizationId));
 				assert.strictEqual(orgPatients.length, 4);
 
-				// Проверяем, что созданы демо-записи в расписании (4 штуки)
+				// Проверяем, что созданы демо-записи в расписании (6 штук)
 				const orgAppointments = await tx
 					.select()
 					.from(appointments)
 					.where(eq(appointments.organizationId, data.organizationId));
-				assert.strictEqual(orgAppointments.length, 4);
+				assert.strictEqual(orgAppointments.length, 6);
 				assert.strictEqual(orgAppointments[0]!.doctorUserId, data.userId);
 
-				// Чистим за собой
-				await tx.delete(appointments).where(eq(appointments.organizationId, data.organizationId));
-				await tx.delete(patients).where(eq(patients.organizationId, data.organizationId));
-				await tx.delete(chairs).where(eq(chairs.organizationId, data.organizationId));
-				await tx.delete(clinics).where(eq(clinics.organizationId, data.organizationId));
-				await tx.delete(users).where(eq(users.organizationId, data.organizationId));
-				await tx.delete(organizations).where(eq(organizations.id, data.organizationId));
+				// Чистим за собой все демо-сущности в порядке внешних ключей
+				await tx.execute(sql`DELETE FROM visit_diaries WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM visits WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM tooth_states WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM treatment_plan_stages WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM treatment_plans WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM appointments WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM stock_batches WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM inventory_items WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM warehouses WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM lab_order_events WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM lab_items WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM lab_orders WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM crm_leads WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM patients WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM chairs WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM clinics WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM users WHERE organization_id = ${data.organizationId}::uuid`);
+				await tx.execute(sql`DELETE FROM organizations WHERE id = ${data.organizationId}::uuid`);
 			});
 		});
 

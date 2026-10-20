@@ -210,3 +210,7 @@ export const egiszBlankPermissionsPatchSchema = z.object({
 	isExportAllowed: z.boolean().optional(),
 	patientOptOutRespect: z.boolean().optional(),
 });
+
+export const egiszMultipleDiagnosesQuerySchema = z.object({
+	patientId: z.string().uuid("patientId обязателен и должен быть корректным UUID"),
+});

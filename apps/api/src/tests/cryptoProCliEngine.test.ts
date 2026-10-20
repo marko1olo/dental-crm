@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
 import {
+	buildIsolatedTempSignPaths,
 	CryptoProCliError,
 	decodeCryptoProOutput,
 	executeSignDetachedGost,
@@ -566,11 +567,68 @@ PrivateKey: Present
 			assert.strictEqual(mapCryptoErrorToHttpStatus(emptyErr).statusCode, 400);
 		});
 
-		it("maps CSP_NOT_INSTALLED to HTTP 503", () => {
+		it("maps CSP_NOT_INSTALLED to HTTP 503 with paperFallbackAvailable = true", () => {
 			const cspErr = new CryptoProCliError("CSP_NOT_INSTALLED", "CSP не установлен");
 			const mapped = mapCryptoErrorToHttpStatus(cspErr);
 			assert.strictEqual(mapped.statusCode, 503);
 			assert.strictEqual(mapped.code, "CSP_NOT_INSTALLED");
+			assert.strictEqual(mapped.paperFallbackAvailable, true);
+		});
+
+		it("never returns HTTP 500 for CLI or system errors and always includes paperFallbackAvailable", () => {
+			const enumErr = new CryptoProCliError("CERTIFICATES_ENUM_FAILED", "Сбой чтения хранилища");
+			const mappedEnum = mapCryptoErrorToHttpStatus(enumErr);
+			assert.strictEqual(mappedEnum.statusCode, 422);
+			assert.strictEqual(mappedEnum.paperFallbackAvailable, true);
+
+			const signFailedErr = new CryptoProCliError("SIGNING_FAILED", "Сбой подписи");
+			const mappedSign = mapCryptoErrorToHttpStatus(signFailedErr);
+			assert.strictEqual(mappedSign.statusCode, 422);
+			assert.strictEqual(mappedSign.paperFallbackAvailable, true);
+
+			const enoentErr = Object.assign(new Error("spawn csptest.exe ENOENT"), { code: "ENOENT" });
+			const mappedEnoent = mapCryptoErrorToHttpStatus(enoentErr);
+			assert.strictEqual(mappedEnoent.statusCode, 503);
+			assert.strictEqual(mappedEnoent.code, "CSP_NOT_INSTALLED");
+			assert.strictEqual(mappedEnoent.paperFallbackAvailable, true);
+
+			const genericErr = new Error("Unexpected crypto error");
+			const mappedGeneric = mapCryptoErrorToHttpStatus(genericErr);
+			assert.notStrictEqual(mappedGeneric.statusCode, 500);
+			assert.strictEqual(mappedGeneric.statusCode, 503);
+			assert.strictEqual(mappedGeneric.paperFallbackAvailable, true);
+		});
+	});
+
+	// ─── 9. Temp File Race-Condition Isolation & Paper Fallback Status ────────
+
+	describe("9. Temp File Race-Condition Isolation & Paper Fallback Status", () => {
+		it("buildIsolatedTempSignPaths generates unique paths even with identical or empty requestId", () => {
+			const pairA = buildIsolatedTempSignPaths("duplicate-req-123");
+			const pairB = buildIsolatedTempSignPaths("duplicate-req-123");
+			const pairEmpty1 = buildIsolatedTempSignPaths("");
+			const pairEmpty2 = buildIsolatedTempSignPaths(undefined);
+
+			assert.notStrictEqual(pairA.tmpFile, pairB.tmpFile);
+			assert.notStrictEqual(pairA.sgnFile, pairB.sgnFile);
+			assert.notStrictEqual(pairA.sigFile, pairB.sigFile);
+			assert.notStrictEqual(pairEmpty1.tmpFile, pairEmpty2.tmpFile);
+			assert.ok(pairA.tmpFile.endsWith(".dat"));
+			assert.ok(pairA.sgnFile.endsWith(".sgn"));
+			assert.ok(pairA.sigFile.endsWith(".sig"));
+		});
+
+		it("buildIsolatedTempSignPaths sanitizes malicious traversal characters in requestId", () => {
+			const pair = buildIsolatedTempSignPaths("../../../etc/passwd;rm -rf");
+			assert.ok(!pair.tmpFile.includes(".."));
+			assert.ok(!pair.tmpFile.includes(";"));
+		});
+
+		it("getCryptoProCliStatus includes signingAvailable, paperFallbackAvailable, and human-readable Russian message", async () => {
+			const status = await getCryptoProCliStatus();
+			assert.strictEqual(typeof status.signingAvailable, "boolean");
+			assert.strictEqual(status.paperFallbackAvailable, true);
+			assert.ok(typeof status.message === "string" && status.message.length > 10);
 		});
 	});
 });

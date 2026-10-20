@@ -228,6 +228,29 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 */
 	const cryptoSigningUnavailable = !diaryHash;
 
+	const handleSessionLock = async () => {
+		if (lockInProgress) return;
+		setFailureText(null);
+		setIsSigning(true);
+		try {
+			await onLock("SESSION_SIGNATURE", "SHIFT_SESSION");
+			setPinCode("");
+			setAwaitingLockConfirmation(true);
+		} catch (error) {
+			showToast(
+				actionFailureToast(
+					"Ошибка выполнения операции",
+					(error as { status?: number })?.status ?? null,
+				),
+				"error",
+			);
+			logger.error("[ЭЦП] подписание сессией врача не выполнено:", error);
+			setFailureText(readableSigningFailure(error));
+		} finally {
+			setIsSigning(false);
+		}
+	};
+
 	const handleConfirmLock = async () => {
 		// Пока ждём подтверждения подписи, второе нажатие — второе подписание той
 		// же записи.
@@ -283,8 +306,15 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			return;
 		}
 
+		if (pinCode.length === 0) {
+			await handleSessionLock();
+			return;
+		}
+
 		if (pinCode.length !== 4) {
-			setFailureText("ПИН-код сотрудника — четыре цифры. Введите все четыре.");
+			setFailureText(
+				"ПИН-код сотрудника — четыре цифры. Введите все четыре или оставьте поле пустым для подписи в 1 клик.",
+			);
 			return;
 		}
 		setIsSigning(true);
@@ -359,7 +389,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							Подписание дневника
 						</h3>
 						<p className="text-[var(--muted)] text-sm mb-4">
-							После подписания документ фиксируется ЭЦП. Дальнейшие правки оформляются дополнениями.
+							После подписания запись защищается от случайных правок. При необходимости исправления вносятся через «Исправленному верить».
 						</p>
 
 						{/* Бумажная автономия: быстрая печать черновика/бланка в 1 клик (Мандаты 8e, 8n) */}
@@ -374,7 +404,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										window.print();
 									}
 								}}
-								className="w-full py-2.5 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+								className="w-full py-2.5 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors min-h-[44px]"
 								title="Распечатать карту или протокол приёма со штампом черновика для бумажной подписи"
 							>
 								<Printer className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
@@ -392,13 +422,13 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									// Поле ПИН общее для двух способов: чужой остаток не переносим.
 									setPinCode("");
 								}}
-								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer ${
+								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer min-h-[40px] ${
 									signatureType === "pin"
 										? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Простая подпись (ПИН)
+								Подпись врача
 							</button>
 							<button
 								type="button"
@@ -409,7 +439,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									setPinCode("");
 									loadCertificates();
 								}}
-								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer ${
+								className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer min-h-[40px] ${
 									signatureType === "crypto"
 										? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -421,11 +451,22 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 
 						{signatureType === "pin" ? (
 							<div className="mb-6">
+								<button
+									type="button"
+									onClick={handleSessionLock}
+									disabled={lockInProgress}
+									data-testid="diary-one-click-session-sign-btn"
+									className="w-full mb-4 px-4 py-3 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+								>
+									<CheckCircle2 className="w-4 h-4 shrink-0" />
+									<span>Подписать и закрыть приём (1 клик)</span>
+								</button>
+
 								<label
 									htmlFor="cryptopro-pincode"
 									className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider"
 								>
-									Ваш ПИН-код сотрудника
+									Или подтвердите ПИН-кодом смены (опционально)
 								</label>
 								<input
 									id="cryptopro-pincode"
@@ -434,7 +475,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									autoComplete="off"
 									maxLength={4}
 									disabled={lockInProgress}
-									className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none disabled:opacity-60"
+									className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none disabled:opacity-60 min-h-[44px]"
 									value={pinCode}
 									onChange={(e) => {
 										setPinCode(e.target.value.replace(/\D/g, ""));
@@ -443,7 +484,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									placeholder="••••"
 								/>
 								<p className="mt-2 text-xs text-[var(--muted)]">
-									Четыре цифры — тот же ПИН, которым вы входите в смену.
+									Четыре цифры — для подтверждения на общем компьютере в кабинете.
 								</p>
 							</div>
 						) : (

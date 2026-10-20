@@ -15,55 +15,26 @@
 import { STOMX_POSITION_ANOMALIES } from "./stomtAnomaliesData.js";
 import { STOMX_TOOTH_DEFECTS } from "./stomtDefectsData.js";
 
-export type StomxDefectColor =
-	| "green"
-	| "red"
-	| "yellow"
-	| "white"
-	| "orange"
-	| "blue"
-	| "purple"
-	| null;
+import type {
+	CrmToothState,
+	StomxDefectCategory,
+	StomxDefectColor,
+	StomxDefectKey,
+	StomxDefectType,
+	StomxToothDefect,
+	StomxToothDefectItem,
+} from "./stomtDefects/types.js";
 
-export type StomxDefectType = "outpatient" | "anomaly" | "orthodontic";
+export type {
+	CrmToothState,
+	StomxDefectCategory,
+	StomxDefectColor,
+	StomxDefectKey,
+	StomxDefectType,
+	StomxToothDefect,
+	StomxToothDefectItem,
+};
 
-export type StomxDefectKey =
-	| "require_treatment"
-	| "cured_teeth"
-	| "rg_klkt"
-	| "position"
-	| "time_cut"
-	| "amount"
-	| "colors"
-	| "tvtk"
-	| "forms"
-	| "md"
-	| "removal"
-	| null;
-
-export type StomxDefectCategory =
-	| "healthy"
-	| "position_anomaly"
-	| "time_cut_anomaly"
-	| "amount_anomaly"
-	| "structure_anomaly"
-	| "pathology"
-	| "restoration"
-	| "radiology"
-	| "surgery";
-
-export type CrmToothState =
-	| "Caries"
-	| "Pulpitis"
-	| "Periodontitis"
-	| "Missing"
-	| "Crown"
-	| "Implant"
-	| "Filled"
-	| "Healthy"
-	| "Planned_Implant"
-	| "Retained"
-	| "Root";
 
 export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Healthy",
@@ -73,6 +44,7 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Root_Canal_Treated",
 	"Filled",
 	"Crown",
+	"Planned_Crown",
 	"Bridge",
 	"Bridge_Abutment",
 	"Implant",
@@ -115,34 +87,6 @@ export interface StomxPositionAnomaly {
 	key: "position";
 	type: "anomaly";
 	description: string;
-}
-
-export interface StomxToothDefectItem {
-	id: number;
-	alias: string;
-	name?: string | undefined;
-	color: StomxDefectColor;
-	order: number;
-	type: StomxDefectType;
-	number?: string | undefined;
-}
-
-export interface StomxToothDefect {
-	id: number;
-	name: string;
-	alias: string;
-	color: StomxDefectColor;
-	order: number;
-	type: StomxDefectType;
-	key: StomxDefectKey;
-	require_treatment: boolean;
-	crmToothState?: CrmToothState | undefined;
-	category: StomxDefectCategory;
-	description?: string | undefined;
-	items?: StomxToothDefectItem[] | undefined;
-	medplan_only?: boolean | undefined;
-	display_as?: string | undefined;
-	image_alias?: string | undefined;
 }
 
 export interface StomxAnatomicalTooth {
@@ -356,6 +300,7 @@ export function mapCrmToothStateToStomxDefect(
 		case "Filled":
 			return findStomxDefectByAlias("П");
 		case "Crown":
+		case "Planned_Crown":
 			return findStomxDefectByAlias("К");
 		case "Implant":
 		case "Planned_Implant":

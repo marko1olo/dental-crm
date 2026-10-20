@@ -449,7 +449,8 @@
 	border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.margin-badge.low, .margin-badge.loss {
+.margin-badge.low,
+.margin-badge.loss {
 	background: rgba(239, 68, 68, 0.12);
 	color: var(--bad, #ef4444);
 	border: 1px solid rgba(239, 68, 68, 0.3);

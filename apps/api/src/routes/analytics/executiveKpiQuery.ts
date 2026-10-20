@@ -457,7 +457,7 @@ export async function queryExecutiveKpiAndFunnel(
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
 		paymentBreakdown,
-		doctorPayrollKopecks: Math.round(cashPayrollExpensesRub * 100) || Math.round(totalRevenueKopecks * 0.28),
+		doctorPayrollKopecks: Math.round(cashPayrollExpensesRub * 100),
 		materialsCostKopecks: Math.round(directMaterialsCostRub * 100),
 		labCostKopecks: Math.round(directLabCostRub * 100),
 	});

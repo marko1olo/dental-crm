@@ -196,7 +196,7 @@ export function DoctorCbctPreferencesCard() {
 			</div>
 
 			{/* Metric Chips Grid */}
-			<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-7 gap-2.5">
 				<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between">
 					<span className="text-[10px] font-semibold text-[var(--muted)]">
 						Ширина окна (WW)

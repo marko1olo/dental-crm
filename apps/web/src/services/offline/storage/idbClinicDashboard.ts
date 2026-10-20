@@ -167,138 +167,24 @@ export function createOfflineFallbackDashboard(
 			];
 
 	// Populated when explicitly requested or in demo/offline mode (Zero Dead-Ends, Mandates 8e, 8n)
-	const shouldSeedDemo =
-		options?.withDemoData !== false &&
-		profile?.withDemoData !== false &&
-		profile?.hasDemoData !== false &&
-		(profile?.hasDemoData === true ||
-			profile?.withDemoData === true ||
-			isDemoShowcaseMode() ||
-			isOfflineAutonomyMode());
+	// Категорический запрет на инъекцию демо-пациентов в реальные клиники (Мандаты 8e, 8n)
+	// Демо-данные разрешены ИСКЛЮЧИТЕЛЬНО для организации DEMO_SHOWCASE_ORG_ID
+	const isDemoOrg = orgId === DEMO_SHOWCASE_ORG_ID;
+	const isDemoModeActive = isDemoShowcaseMode() && isDemoOrg;
+	const shouldSeedDemo = isDemoOrg && (options?.withDemoData === true || profile?.withDemoData === true || profile?.hasDemoData === true || isDemoModeActive);
 
-	const isDemoModeActive = isDemoShowcaseMode();
 	const today = new Date().toISOString().slice(0, 10);
 
-	const starterPatients = isDemoModeActive
-		? getDemoShowcasePatients()
-		: shouldSeedDemo
-			? [
-				{
-					id: "01a00000-0000-0000-0000-000000000001",
-					organizationId: orgId,
-					fullName: "Иванов Алексей Сергеевич",
-					birthDate: "1988-04-12",
-					gender: "male",
-					phone: "+7 (912) 345-67-89",
-					notes: "Первичный осмотр, жалоба на чувствительность 2.4",
-					status: "active",
-					balanceRub: 0,
-					administrativeProfile: null,
-					createdAt: `${today}T08:00:00.000Z`,
-					updatedAt: `${today}T08:00:00.000Z`,
-				},
-				{
-					id: "01a00000-0000-0000-0000-000000000002",
-					organizationId: orgId,
-					fullName: "Смирнова Елена Викторовна",
-					birthDate: "1992-09-25",
-					gender: "female",
-					phone: "+7 (927) 876-54-32",
-					notes: "Профгигиена полости рта (Air-Flow + ультразвук)",
-					status: "active",
-					balanceRub: 3500,
-					administrativeProfile: null,
-					createdAt: `${today}T08:00:00.000Z`,
-					updatedAt: `${today}T08:00:00.000Z`,
-				},
-				{
-					id: "01a00000-0000-0000-0000-000000000003",
-					organizationId: orgId,
-					fullName: "Кузнецов Дмитрий Михайлович",
-					birthDate: "1980-11-03",
-					gender: "male",
-					phone: "+7 (903) 555-44-33",
-					notes: "Консультация ортопеда, составление плана лечения",
-					status: "active",
-					balanceRub: 0,
-					administrativeProfile: null,
-					createdAt: `${today}T08:00:00.000Z`,
-					updatedAt: `${today}T08:00:00.000Z`,
-				},
-				{
-					id: "01a00000-0000-0000-0000-000000000004",
-					organizationId: orgId,
-					fullName: "Морозова Анна Александровна",
-					birthDate: "1995-06-18",
-					gender: "female",
-					phone: "+7 (915) 999-88-77",
-					notes: "Лечение кариеса 4.6 (световая пломба Estelite)",
-					status: "active",
-					balanceRub: 0,
-					administrativeProfile: null,
-					createdAt: `${today}T08:00:00.000Z`,
-					updatedAt: `${today}T08:00:00.000Z`,
-				},
-			]
+	const starterPatients = shouldSeedDemo
+		? getDemoShowcasePatients().map((p) => ({ ...p, organizationId: DEMO_SHOWCASE_ORG_ID }))
 		: [];
 
-	const starterAppointments = isDemoModeActive
-		? getDemoShowcaseAppointments()
-		: shouldSeedDemo
-			? [
-				{
-					id: "01a00000-0000-0000-0001-000000000001",
-					organizationId: orgId,
-					patientId: "01a00000-0000-0000-0000-000000000001",
-					doctorUserId: DEMO_CHIEF_DOCTOR.id,
-					chairId: DEMO_CHAIR_1_ID,
-					status: "completed",
-					startsAt: `${today}T09:00:00.000Z`,
-					endsAt: `${today}T10:00:00.000Z`,
-					reason: "Первичный осмотр и консультация",
-					comment: "Осмотр завершен, составлен план лечения",
-				},
-				{
-					id: "01a00000-0000-0000-0001-000000000002",
-					organizationId: orgId,
-					patientId: "01a00000-0000-0000-0000-000000000002",
-					doctorUserId: DEMO_CHIEF_DOCTOR.id,
-					chairId: DEMO_CHAIR_1_ID,
-					status: "in_treatment",
-					startsAt: `${today}T10:30:00.000Z`,
-					endsAt: `${today}T11:30:00.000Z`,
-					reason: "Комплексная профгигиена полости рта",
-					comment: "Пациент в кресле",
-				},
-				{
-					id: "01a00000-0000-0000-0001-000000000003",
-					organizationId: orgId,
-					patientId: "01a00000-0000-0000-0000-000000000003",
-					doctorUserId: DEMO_CHIEF_DOCTOR.id,
-					chairId: DEMO_CHAIR_1_ID,
-					status: "scheduled",
-					startsAt: `${today}T12:00:00.000Z`,
-					endsAt: `${today}T13:00:00.000Z`,
-					reason: "Консультация ортопеда",
-					comment: "Запланирован",
-				},
-				{
-					id: "01a00000-0000-0000-0001-000000000004",
-					organizationId: orgId,
-					patientId: "01a00000-0000-0000-0000-000000000004",
-					doctorUserId: DEMO_CHIEF_DOCTOR.id,
-					chairId: DEMO_CHAIR_1_ID,
-					status: "scheduled",
-					startsAt: `${today}T14:00:00.000Z`,
-					endsAt: `${today}T15:00:00.000Z`,
-					reason: "Лечение кариеса 4.6",
-					comment: "Запланирован",
-				},
-			]
+	const starterAppointments = shouldSeedDemo
+		? getDemoShowcaseAppointments().map((a) => ({ ...a, organizationId: DEMO_SHOWCASE_ORG_ID }))
 		: [];
 
-	const fallbackStaff = isDemoModeActive
-		? getDemoShowcaseStaff()
+	const fallbackStaff = shouldSeedDemo
+		? getDemoShowcaseStaff().map((s) => ({ ...s, organizationId: DEMO_SHOWCASE_ORG_ID }))
 		: [
 				{
 					id: DEMO_CHIEF_DOCTOR.id,

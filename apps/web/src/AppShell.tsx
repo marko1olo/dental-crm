@@ -8,7 +8,7 @@ import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
 import "./theme.css";
 
-import { App as DentalWorkspace } from "./App";
+const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
 
 const DiagnosticDrawer = lazy(() =>
 	import("./components/diagnostics/DiagnosticDrawer").then((module) => ({
@@ -66,8 +66,8 @@ export function AppShell() {
 				fallback={
 					<main className="boot-state" aria-busy="true">
 						<Stethoscope aria-hidden="true" className="boot-logo" />
-						<h1 className="boot-title">DENTE</h1>
-						<p className="boot-subtitle">Загрузка CRM</p>
+						<h1>DENTE</h1>
+						<p>Загрузка CRM</p>
 					</main>
 				}
 			>

@@ -1,4 +1,5 @@
 import React, { Suspense, useState } from "react";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../AppBootState";
 import { InformedConsentModal } from "../../../consents/InformedConsentModal";
@@ -119,6 +120,42 @@ export function renderSpecializedClinicalLaunchers({
 	isEmergencyDirectModalOpen,
 	setIsEmergencyDirectModalOpen,
 }: StandaloneLaunchersProps): React.ReactElement | null {
+	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
+		return null;
+	}
+
+	// IMPLANT SURGICAL PROTOCOL & PASSPORT STANDALONE LAUNCHER (?implant_passport=1, ?passport=demo, #implants)
+	const isImplantPassportDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("implant_passport") ||
+			new URLSearchParams(window.location.search).has("passport") ||
+			new URLSearchParams(window.location.search).has("implants") ||
+			window.location.hash.toLowerCase().includes("implant_passport") ||
+			window.location.hash.toLowerCase().includes("implants") ||
+			window.location.hash.toLowerCase().includes("passport"));
+
+	if (isImplantPassportDirect) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка хирургического протокола..." />}>
+				<ImplantPassportModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("implant_passport");
+						url.searchParams.delete("passport");
+						const cleanHash = url.hash.includes("passport") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					patientName="Ковалёв Роман Станиславович"
+					patientId="PAT-2026-088"
+					doctorName="Д-р Воронов А. В."
+					doctorId="DOC-01"
+					initialTooth={46}
+				/>
+			</Suspense>
+		);
+	}
+
 	// CHAIRSIDE ANESTHESIA COCKPIT & MRD CALIPER (?anesthesia=1, ?anesthesia=demo, #anesthesia)
 	const isAnesthesiaDirect =
 		typeof window !== "undefined" &&
@@ -510,36 +547,6 @@ export function renderSpecializedClinicalLaunchers({
 					cashierFullName="Кассир-администратор Смирнова А.В."
 					initialPaymentMethod="sbp_qr"
 					initialSimpleCashierMode={false}
-				/>
-			</Suspense>
-		);
-	}
-
-	// IMPLANT SURGICAL PROTOCOL & PASSPORT STANDALONE LAUNCHER (?implant_passport=1, ?passport=demo, #implant_passport)
-	const isImplantPassportDirect =
-		typeof window !== "undefined" &&
-		(new URLSearchParams(window.location.search).has("implant_passport") ||
-			new URLSearchParams(window.location.search).has("passport") ||
-			window.location.hash.toLowerCase().includes("implant_passport") ||
-			window.location.hash.toLowerCase().includes("passport"));
-
-	if (isImplantPassportDirect) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка хирургического протокола..." />}>
-				<ImplantPassportModal
-					isOpen={true}
-					onClose={() => {
-						const url = new URL(window.location.href);
-						url.searchParams.delete("implant_passport");
-						url.searchParams.delete("passport");
-						const cleanHash = url.hash.includes("passport") ? "" : url.hash;
-						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
-					}}
-					patientName="Ковалёв Роман Станиславович"
-					patientId="PAT-2026-088"
-					doctorName="Д-р Воронов А. В."
-					doctorId="DOC-01"
-					initialTooth={46}
 				/>
 			</Suspense>
 		);

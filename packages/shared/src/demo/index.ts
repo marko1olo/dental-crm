@@ -3,3 +3,4 @@
  */
 
 export * from "./demoConstants.js";
+export * from "./showcaseSeedData.js";

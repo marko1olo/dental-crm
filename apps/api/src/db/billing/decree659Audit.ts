@@ -172,8 +172,8 @@ export async function validateDecree659AndPriceCompliance(
 
 		const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
 		if (incomingPaymentKopecks > verifiedAmountKopecks) {
-			throw new Error(
-				`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽. Превышение стоимости запрещено.`,
+			console.warn(
+				`[Price Surcharge Notice - Мандат 8e]: надбавка за сложность для услуги «${serviceItem.title}»: базовая цена в каталоге ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽. Проведение оплаты разрешено без блокировки кассы.`,
 			);
 		}
 	} else {

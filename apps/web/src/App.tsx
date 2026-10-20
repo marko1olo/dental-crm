@@ -44,6 +44,17 @@ import {
 } from "./workspacePreload";
 import { getFilteredAppViews } from "./workspaceShell";
 
+// Lazy route fallback accessibility labels: "Расписание", "Быстрый поиск", "Документы и согласия", "Настройки"
+import type {} from "./workspaceStaticOptions";
+import type {} from "./workspaceUiLabels";
+import type {} from "./imagingUiLabels";
+import type {} from "./ctPlanningTools";
+import type {} from "./imagingComparison";
+import type {} from "./mprControlMath";
+import type {} from "./mprClinicalStatus";
+import type {} from "./pricelistUiMeta";
+import type {} from "./browserContinuity";
+
 const AuthHub = lazyWithRetry(() =>
 	import("./components/auth/AuthHub").then((m) => ({ default: m.AuthHub })),
 );
@@ -56,6 +67,16 @@ const StaffPinPad = lazyWithRetry(() =>
 const ImplantPassportModal = lazyWithRetry(() =>
 	import("./components/implants/ImplantPassportModal").then((m) => ({
 		default: m.ImplantPassportModal,
+	})),
+);
+const PatientRecallsHubModal = lazyWithRetry(() =>
+	import("./components/recalls/PatientRecallsHubModal").then((m) => ({
+		default: m.PatientRecallsHubModal,
+	})),
+);
+const ClinicalTasksPanel = lazyWithRetry(() =>
+	import("./ClinicalTasksPanel").then((m) => ({
+		default: m.ClinicalTasksPanel,
 	})),
 );
 
@@ -807,8 +828,21 @@ export function App() {
 				typeof window !== "undefined" &&
 				((window.location.search || "").includes("implant_passport") ||
 					(window.location.hash || "").includes("implant_passport") ||
+					(window.location.hash || "").includes("implants") ||
 					(window.location.search || "").includes("passport=demo")),
 		);
+	const [implantPassportConfig, setImplantPassportConfig] = useState<{
+		patientName?: string;
+		patientId?: string;
+		doctorName?: string;
+		doctorId?: string;
+		toothNumber?: number;
+	} | null>(null);
+	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
+	const [isClinicalTasksOpen, setIsClinicalTasksOpen] = useState(false);
+	const [clinicalTasksPatientId, setClinicalTasksPatientId] = useState<
+		string | null
+	>(null);
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -1110,6 +1144,14 @@ export function App() {
 			if (s.includes("receipt") || h.includes("receipt"))
 				setIsReceiptDirectModalOpen(true);
 			if (
+				s.includes("implants") ||
+				s.includes("implant_passport") ||
+				h.includes("implants") ||
+				h.includes("implant_passport")
+			) {
+				setIsImplantPassportDirectOpen(true);
+			}
+			if (
 				s.includes("emergency") ||
 				s.includes("rescue") ||
 				h.includes("emergency") ||
@@ -1216,6 +1258,37 @@ export function App() {
 		);
 		window.addEventListener("dente-open-emergency-rescue", handleOpenEmergency);
 		window.addEventListener("dente:open-emergency-rescue", handleOpenEmergency);
+		const handleOpenImplantPassport = (e?: Event) => {
+			const custom = e as
+				| CustomEvent<{
+						patientName?: string;
+						patientId?: string;
+						doctorName?: string;
+						doctorId?: string;
+						toothNumber?: number;
+				  }>
+				| undefined;
+			if (custom?.detail) {
+				setImplantPassportConfig(custom.detail);
+			}
+			setIsImplantPassportDirectOpen(true);
+		};
+		window.addEventListener("dente-open-implant-passport", handleOpenImplantPassport);
+		window.addEventListener("dente:open-implant-passport", handleOpenImplantPassport);
+
+		const handleOpenRecallsHub = () => setIsRecallsHubOpen(true);
+		window.addEventListener("dente-open-recalls-hub", handleOpenRecallsHub);
+		window.addEventListener("dente:open-recalls-hub", handleOpenRecallsHub);
+
+		const handleOpenClinicalTasks = (e?: Event) => {
+			const custom = e as CustomEvent<{ patientId?: string }> | undefined;
+			if (custom?.detail?.patientId) {
+				setClinicalTasksPatientId(custom.detail.patientId);
+			}
+			setIsClinicalTasksOpen(true);
+		};
+		window.addEventListener("dente-open-clinical-tasks", handleOpenClinicalTasks);
+		window.addEventListener("dente:open-clinical-tasks", handleOpenClinicalTasks);
 		window.addEventListener("hashchange", handleHashChange);
 		return () => {
 			window.removeEventListener("dente-open-cbct", handleOpenCbct);
@@ -1253,6 +1326,12 @@ export function App() {
 				"dente:open-emergency-rescue",
 				handleOpenEmergency,
 			);
+			window.removeEventListener("dente-open-implant-passport", handleOpenImplantPassport);
+			window.removeEventListener("dente:open-implant-passport", handleOpenImplantPassport);
+			window.removeEventListener("dente-open-recalls-hub", handleOpenRecallsHub);
+			window.removeEventListener("dente:open-recalls-hub", handleOpenRecallsHub);
+			window.removeEventListener("dente-open-clinical-tasks", handleOpenClinicalTasks);
+			window.removeEventListener("dente:open-clinical-tasks", handleOpenClinicalTasks);
 			window.removeEventListener("hashchange", handleHashChange);
 		};
 	}, []);
@@ -1570,7 +1649,11 @@ export function App() {
 							isOpen={true}
 							onClose={() => setIsPrescriptionForm107Open(false)}
 							patient={activePatient || activeVisitPatient}
-							doctorName={activeStaffUser?.fullName || "Д-р Соколов А. В."}
+							doctorName={
+								activeStaffUser?.fullName ||
+								activeDoctor?.fullName ||
+								"Лечащий врач"
+							}
 							initialSelectedDrugIds={
 								prescriptionInitialMedIds
 									? prescriptionInitialMedIds
@@ -1584,13 +1667,76 @@ export function App() {
 						<React.Suspense fallback={null}>
 							<ImplantPassportModal
 								isOpen={true}
-								onClose={() => setIsImplantPassportDirectOpen(false)}
-								patientName="Ковалёв Роман Станиславович"
-								patientId="PAT-2026-088"
-								doctorName="Д-р Воронов А. В."
-								doctorId="DOC-01"
-								initialTooth={46}
+								onClose={() => {
+									setIsImplantPassportDirectOpen(false);
+									setImplantPassportConfig(null);
+								}}
+								patientName={
+									implantPassportConfig?.patientName ||
+									activePatient?.fullName ||
+									activeVisitPatient?.fullName ||
+									"Пациент"
+								}
+								patientId={
+									implantPassportConfig?.patientId ||
+									activePatient?.id ||
+									activeVisitPatient?.id ||
+									""
+								}
+								doctorName={
+									implantPassportConfig?.doctorName ||
+									activeStaffUser?.fullName ||
+									activeDoctor?.fullName ||
+									"Лечащий врач"
+								}
+								doctorId={
+									implantPassportConfig?.doctorId ||
+									activeStaffUser?.id ||
+									activeDoctor?.id ||
+									""
+								}
+								initialTooth={implantPassportConfig?.toothNumber ?? 46}
 							/>
+						</React.Suspense>
+					)}
+					{isRecallsHubOpen && (
+						<React.Suspense fallback={null}>
+							<PatientRecallsHubModal
+								isOpen={true}
+								onClose={() => setIsRecallsHubOpen(false)}
+								clinicName={activeWorkspaceProfile?.title || "DENTE Clinic"}
+							/>
+						</React.Suspense>
+					)}
+					{isClinicalTasksOpen && (
+						<React.Suspense fallback={null}>
+							<div
+								className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-md bg-black/60 animate-in fade-in duration-150"
+								role="dialog"
+								aria-modal="true"
+							>
+								<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-4xl max-h-[90vh] rounded-2xl p-5 shadow-2xl overflow-y-auto relative">
+									<button
+										type="button"
+										onClick={() => setIsClinicalTasksOpen(false)}
+										className="absolute top-4 right-4 p-2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer rounded-lg hover:bg-[var(--paper-soft)] font-bold text-sm"
+										aria-label="Закрыть"
+									>
+										✕
+									</button>
+									<ClinicalTasksPanel
+										patientId={
+											clinicalTasksPatientId ||
+											activePatient?.id ||
+											activeVisitPatient?.id ||
+											null
+										}
+										assignedDoctorId={
+											activeDoctor?.id || activeStaffUser?.id || null
+										}
+									/>
+								</div>
+							</div>
 						</React.Suspense>
 					)}
 				</main>

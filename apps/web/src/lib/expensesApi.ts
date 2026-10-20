@@ -12,6 +12,7 @@ import {
 	type MonthlyExpensesSummary,
 	type NetProfitSummary,
 } from "@dental/shared";
+import { handleApiResponse } from "./apiResponseHandler.js";
 
 export interface CreateExpensePayload {
 	category: ExpenseCategory;
@@ -53,13 +54,7 @@ export async function createExpense(
 		},
 		body: JSON.stringify(payload),
 	});
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка сохранения расхода" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-
-	return res.json();
+	return handleApiResponse<{ success: boolean; data: ExpenseRecord }>(res, "Ошибка сохранения расхода");
 }
 
 export async function fetchExpenses(
@@ -73,13 +68,7 @@ export async function fetchExpenses(
 
 	const url = `/api/v1/expenses${query.toString() ? `?${query.toString()}` : ""}`;
 	const res = await fetch(url, { method: "GET", headers });
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка загрузки расходов" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-
-	return res.json();
+	return handleApiResponse<{ data: ExpenseRecord[]; total: number }>(res, "Ошибка загрузки расходов");
 }
 
 export async function fetchExpensesSummary(
@@ -92,13 +81,7 @@ export async function fetchExpensesSummary(
 
 	const url = `/api/v1/expenses/summary${query.toString() ? `?${query.toString()}` : ""}`;
 	const res = await fetch(url, { method: "GET", headers });
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка загрузки сводки расходов" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-
-	return res.json();
+	return handleApiResponse<{ data: ExpensesSummaryResponse }>(res, "Ошибка загрузки сводки расходов");
 }
 
 export async function deleteExpense(
@@ -109,11 +92,5 @@ export async function deleteExpense(
 		method: "DELETE",
 		headers,
 	});
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({ message: "Ошибка удаления расхода" }));
-		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
-	}
-
-	return res.json();
+	return handleApiResponse<{ success: boolean; id: string }>(res, "Ошибка удаления расхода");
 }

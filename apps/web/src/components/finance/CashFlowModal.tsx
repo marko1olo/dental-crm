@@ -86,7 +86,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 					await onCashIn(amount, cashFlowBasis || "Внесение наличных", selectedTypeAlias);
 				}
 				const item = STOMX_CASH_RECEIPT_CATALOG.find((r) => r.alias === selectedTypeAlias);
-				const ffdLabel = item?.ffdTag1054 != null ? ` (54-ФЗ: ${getFfd1054Label(item.ffdTag1054)})` : " (Нефискально)";
+				const ffdLabel = item?.ffdTag1054 != null ? ` (Кассовый чек: ${getFfd1054Label(item.ffdTag1054)})` : " (Нефискально)";
 				showToast(
 					`Внесение ${formatMoneyRu(amount)} успешно зафиксировано${ffdLabel}`,
 					"success",
@@ -97,7 +97,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 					await onCashOut(amount, cashFlowBasis || "Изъятие наличных", cashFlowPerson || undefined, selectedTypeAlias);
 				}
 				const item = STOMX_CASH_EXPENSE_CATALOG.find((e) => e.alias === selectedTypeAlias);
-				const ffdLabel = item?.ffdTag1054 != null ? ` (54-ФЗ: ${getFfd1054Label(item.ffdTag1054)})` : " (Нефискально)";
+				const ffdLabel = item?.ffdTag1054 != null ? ` (Кассовый чек: ${getFfd1054Label(item.ffdTag1054)})` : " (Нефискально)";
 				showToast(
 					`Изъятие ${formatMoneyRu(amount)} успешно зафиксировано${ffdLabel}`,
 					"success",
@@ -137,7 +137,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({
 								{cashFlowMode === "cash_in" ? "Кассовое внесение наличных (Приход)" : "Кассовое изъятие наличных (Расход)"}
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)]">
-								Классификация операций ККТ 54-ФЗ и кассы клиники
+								Категории кассовых операций клиники
 							</p>
 						</div>
 					</div>

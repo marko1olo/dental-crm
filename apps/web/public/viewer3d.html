@@ -228,6 +228,28 @@ const MATERIALS = {
 
 let scene, camera, renderer, controls, currentMesh;
 let currentPreset = 'tooth';
+let rafId = null;
+let activeBlobUrl = null;
+
+function disposeMesh(mesh) {
+  if (!mesh) return;
+  mesh.traverse((child) => {
+    if (child.isMesh) {
+      if (child.geometry && typeof child.geometry.dispose === 'function') {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => {
+            if (mat && typeof mat.dispose === 'function') mat.dispose();
+          });
+        } else if (typeof child.material.dispose === 'function') {
+          child.material.dispose();
+        }
+      }
+    }
+  });
+}
 
 function init() {
   const container = document.getElementById('container');
@@ -271,11 +293,56 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  (function animate() {
-    requestAnimationFrame(animate);
+  // WebGL context loss protection
+  renderer.domElement.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    showError('Потерян контекст WebGL (сбой GPU драйвера или нехватка памяти). Пожалуйста, обновите страницу.');
+  });
+
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    if (rafId === null) {
+      animate();
+    }
+  });
+
+  function animate() {
+    rafId = requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-  })();
+  }
+  animate();
+
+  function cleanup() {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    if (activeBlobUrl) {
+      URL.revokeObjectURL(activeBlobUrl);
+      activeBlobUrl = null;
+    }
+    if (currentMesh) {
+      if (scene) scene.remove(currentMesh);
+      disposeMesh(currentMesh);
+      currentMesh = null;
+    }
+    if (renderer && typeof renderer.dispose === 'function') {
+      renderer.dispose();
+    }
+  }
+
+  window.addEventListener('beforeunload', cleanup);
+  window.addEventListener('pagehide', cleanup);
+  window.addEventListener('unload', cleanup);
+  window.addEventListener('message', (e) => {
+    if (e.data === 'dente:teardown' || e.data?.type === 'dente:teardown') {
+      cleanup();
+    }
+  });
 
   setupFileHandling();
   checkUrlParams();
@@ -306,8 +373,25 @@ function applyMaterial(preset) {
     wireframe: m.wireframe,
     side: THREE.DoubleSide,
   });
+
+  const oldMaterials = new Set();
   currentMesh.traverse((child) => {
-    if (child.isMesh) child.material = mat;
+    if (child.isMesh) {
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((oldMat) => oldMaterials.add(oldMat));
+        } else {
+          oldMaterials.add(child.material);
+        }
+      }
+      child.material = mat;
+    }
+  });
+
+  oldMaterials.forEach((oldMat) => {
+    if (oldMat && oldMat !== mat && typeof oldMat.dispose === 'function') {
+      oldMat.dispose();
+    }
   });
 }
 
@@ -327,6 +411,14 @@ window.loadModel = function(url, ext) {
   document.getElementById('error').style.display = 'none';
   document.getElementById('dropzone').classList.add('hidden');
 
+  if (activeBlobUrl && activeBlobUrl !== url) {
+    URL.revokeObjectURL(activeBlobUrl);
+    activeBlobUrl = null;
+  }
+  if (url && typeof url === 'string' && url.startsWith('blob:')) {
+    activeBlobUrl = url;
+  }
+
   const normalizedExt = (ext || '').toLowerCase().replace(/^\./, '');
   let loader;
   switch (normalizedExt) {
@@ -334,12 +426,24 @@ window.loadModel = function(url, ext) {
     case 'obj': loader = new OBJLoader(); break;
     case 'ply': loader = new PLYLoader(); break;
     default:
+      if (url && typeof url === 'string' && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+        if (activeBlobUrl === url) activeBlobUrl = null;
+      }
       showError('Формат .' + normalizedExt + ' не поддерживается (используйте STL, OBJ, PLY)');
       return;
   }
 
   const onLoad = (result) => {
-    if (currentMesh) scene.remove(currentMesh);
+    if (url && typeof url === 'string' && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+      if (activeBlobUrl === url) activeBlobUrl = null;
+    }
+    if (currentMesh) {
+      scene.remove(currentMesh);
+      disposeMesh(currentMesh);
+      currentMesh = null;
+    }
     if (normalizedExt === 'obj') {
       currentMesh = result;
     } else {
@@ -354,6 +458,10 @@ window.loadModel = function(url, ext) {
   };
 
   const onError = (err) => {
+    if (url && typeof url === 'string' && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+      if (activeBlobUrl === url) activeBlobUrl = null;
+    }
     showError('Ошибка загрузки: ' + (err.message || 'Не удалось прочитать файл'));
   };
 

@@ -11,8 +11,13 @@
  */
 
 import {
+	formatCurrencyRu as formatCurrencyRuShared,
+	formatDateRu as formatDateRuShared,
+	formatDateTimeRu as formatDateTimeRuShared,
+	formatIsoDate as formatIsoDateShared,
 	formatKopecksRu as formatKopecksRuShared,
 	formatKopecksToRubles as formatKopecksToRublesShared,
+	formatRublesExactRu as formatRublesExactRuShared,
 	kopecksToRubles as kopecksToRublesShared,
 	rublesToKopecks as rublesToKopecksShared,
 } from "@dental/shared";
@@ -93,25 +98,7 @@ export function formatRubles(
  * Форматирует сумму в рублях с копейками строго в стандарте валюты: 1 500,00 ₽.
  * Используется в финансовых актах, реестрах страховых и фискальных чеках.
  */
-export function formatCurrencyRu(sumRub: number | string | null | undefined): string {
-	const amount =
-		typeof sumRub === "string"
-			? sumRub.trim() === ""
-				? Number.NaN
-				: Number(sumRub)
-			: sumRub;
-
-	if (typeof amount !== "number" || !Number.isFinite(amount) || Number.isNaN(amount)) {
-		return `0,00${RU_MONEY_NBSP}₽`;
-	}
-
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(amount);
-}
+export const formatCurrencyRu = formatCurrencyRuShared;
 
 /**
  * Форматирует сумму из целочисленных копеек в рубли: 150050 -> "1 500,50 ₽".
@@ -131,10 +118,7 @@ export function formatKopecksToRubles(kopecks: number): string {
 /**
  * Преобразует сумму в рублях в строку с 2 десятичными знаками и знаком рубля: "1 500,50 ₽".
  */
-export function formatRublesExactRu(rubles: number): string {
-	if (!Number.isFinite(rubles)) return `0,00${RU_MONEY_NBSP}₽`;
-	return formatKopecksRu(rublesToKopecks(rubles));
-}
+export const formatRublesExactRu = formatRublesExactRuShared;
 
 /**
  * Перевод рублей в целые копейки с защитой от погрешности IEEE-754.
@@ -158,37 +142,14 @@ export function kopecksToRubles(kopecks: number): number {
  * Форматирует дату в ГОСТ формат РФ: ДД.ММ.ГГГГ (например, "24.05.2026").
  * Принимает ISO-строку, Date или таймштамп.
  */
-export function formatRussianDateGost(
-	value: string | Date | number | null | undefined,
-): string {
-	if (!value) return "—";
-
-	if (typeof value === "string") {
-		const trimmed = value.trim();
-		// Quick path for ISO date YYYY-MM-DD
-		if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
-			const [y, m, d] = trimmed.slice(0, 10).split("-");
-			if (y && m && d) return `${d}.${m}.${y}`;
-		}
-		// Already in RU format DD.MM.YYYY
-		if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
-			return trimmed;
-		}
-	}
-
-	const d = value instanceof Date ? value : new Date(value);
-	if (Number.isNaN(d.getTime())) return "—";
-
-	const day = String(d.getDate()).padStart(2, "0");
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const year = d.getFullYear();
-	return `${day}.${month}.${year}`;
-}
-
 /**
- * Канонический алиас для даты ГОСТ ДД.ММ.ГГГГ
+ * Форматирует дату в ГОСТ формат РФ: ДД.ММ.ГГГГ (например, "24.05.2026").
+ * Каноническая реализация в @dental/shared (Мандат 8s).
  */
-export const formatDateRu = formatRussianDateGost;
+export const formatDateRu = formatDateRuShared;
+export const formatRussianDateGost = formatDateRuShared;
+export const formatDateTimeRu = formatDateTimeRuShared;
+export const formatIsoDate = formatIsoDateShared;
 
 /**
  * Форматирует дату с названием месяца на русском языке: "24 мая 2026 г." или "понедельник, 24 мая 2026 г.".
@@ -368,3 +329,11 @@ export {
 	isoDateLabel,
 	minutesLabel,
 };
+
+// Re-export canonical Russian pluralization SSOT
+export {
+	countLabel,
+	pluralizeRu,
+	pluralizeRussian,
+} from "../lib/russianPlural.js";
+

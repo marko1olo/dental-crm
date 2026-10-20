@@ -23,7 +23,7 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				reply,
 				"migration run status",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -52,7 +52,7 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				reply,
 				"migration reconciliation",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -114,7 +114,7 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				reply,
 				"migration reconciliation csv",
 			);
-			if (!context) return;
+			if (!context) return reply;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -177,7 +177,7 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 			reply,
 			"migration worker status",
 		);
-		if (!context) return;
+		if (!context) return reply;
 		reply.code(200);
 		return { worker: migrationWorkerStatus() };
 	});

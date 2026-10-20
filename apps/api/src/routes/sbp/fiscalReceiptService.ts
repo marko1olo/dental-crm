@@ -18,6 +18,20 @@ import type {
 	Tag1054OperationType,
 } from "./types.js";
 
+export class FiscalInvoiceError extends Error {
+	public statusCode: number;
+	public errorCode?: string;
+
+	constructor(message: string, statusCode: number, errorCode?: string) {
+		super(message);
+		this.name = "FiscalInvoiceError";
+		this.statusCode = statusCode;
+		if (errorCode) {
+			this.errorCode = errorCode;
+		}
+	}
+}
+
 /** Computes deterministic fiscal sign hash */
 export function computeFiscalSign(
 	fn: string,
@@ -317,24 +331,18 @@ export async function executeFiscalizeReceiptTransaction(params: {
 				.limit(1);
 
 			if (!lockedInvoice) {
-				const err = new Error("Счёт на оплату не найден в этой клинике.");
-				// biome-ignore lint/suspicious/noExplicitAny: error mapping
-				(err as any).statusCode = 404;
-				throw err;
+				throw new FiscalInvoiceError("Счёт на оплату не найден в этой клинике.", 404);
 			}
 
 			if (
 				input.operationType !== "income_return" &&
 				(lockedInvoice.status === "paid" || lockedInvoice.status === "refunded")
 			) {
-				const err = new Error(
+				throw new FiscalInvoiceError(
 					`Счёт уже находится в статусе «${lockedInvoice.status}» и не может быть фискализирован повторно.`,
+					409,
+					"InvoiceAlreadySettled",
 				);
-				// biome-ignore lint/suspicious/noExplicitAny: error mapping
-				(err as any).statusCode = 409;
-				// biome-ignore lint/suspicious/noExplicitAny: error mapping
-				(err as any).errorCode = "InvoiceAlreadySettled";
-				throw err;
 			}
 		}
 

@@ -210,31 +210,33 @@ export async function seedCashAndReasons(targetOrgId?: string) {
 	for (const org of orgs) {
 		console.log(`[SEED] Seeding Organization: ${org.name} (${org.id})`);
 
-		const boxesResult = await ensureOrganizationCashBoxes(db, org.id);
-		console.log(`  -> Main Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`);
+		await db.transaction(async (tx) => {
+			const boxesResult = await ensureOrganizationCashBoxes(tx, org.id);
+			console.log(`  -> Main Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`);
 
-		// Tier 3 Multi-Clinic Network check: seed dedicated branch cash desks if multiple clinics exist
-		const orgClinics = await db
-			.select({ id: clinics.id, name: clinics.name })
-			.from(clinics)
-			.where(eq(clinics.organizationId, org.id));
+			// Tier 3 Multi-Clinic Network check: seed dedicated branch cash desks if multiple clinics exist
+			const orgClinics = await tx
+				.select({ id: clinics.id, name: clinics.name })
+				.from(clinics)
+				.where(eq(clinics.organizationId, org.id));
 
-		if (orgClinics.length > 1) {
-			for (const branch of orgClinics) {
-				const branchBoxes = await ensureOrganizationCashBoxes(
-					db,
-					org.id,
-					branch.id,
-					branch.name,
-				);
-				console.log(
-					`  -> Branch cash boxes for "${branch.name}": ${branchBoxes.existingCount} existed, ${branchBoxes.createdCount} created.`,
-				);
+			if (orgClinics.length > 1) {
+				for (const branch of orgClinics) {
+					const branchBoxes = await ensureOrganizationCashBoxes(
+						tx,
+						org.id,
+						branch.id,
+						branch.name,
+					);
+					console.log(
+						`  -> Branch cash boxes for "${branch.name}": ${branchBoxes.existingCount} existed, ${branchBoxes.createdCount} created.`,
+					);
+				}
 			}
-		}
 
-		const reasonsResult = await ensureOrganizationExpenseReasons(db, org.id);
-		console.log(`  -> Expense reasons: ${reasonsResult.existingCount} existed, ${reasonsResult.createdCount} created.`);
+			const reasonsResult = await ensureOrganizationExpenseReasons(tx, org.id);
+			console.log(`  -> Expense reasons: ${reasonsResult.existingCount} existed, ${reasonsResult.createdCount} created.`);
+		});
 	}
 
 	console.log("=== [SEED] Successfully completed Cash Boxes & Expense Reasons Seeding ===");

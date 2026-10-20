@@ -236,10 +236,10 @@ export interface VisitClinicalToothTabsProps {
 	handleSelectDiagnosis: (state: string, text?: string, field?: string) => void;
 	appendToEMKField: (field: string, text: string) => void;
 	closeClinicalModal: () => void;
-	setEndoModalToothNumber: (v: number | null) => void;
+	setEndoModalToothNumber: (v: number | string | null) => void;
 	setEndoModalToothState: (v: string) => void;
 	setIsEndoModalOpen: (v: boolean) => void;
-	setLabOrderModalToothNumber: (v: string | undefined) => void;
+	setLabOrderModalToothNumber: (v: number | string | null) => void;
 	setIsLabOrderModalOpen: (v: boolean) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: warnings
 	visitWarnings?: any[] | undefined;

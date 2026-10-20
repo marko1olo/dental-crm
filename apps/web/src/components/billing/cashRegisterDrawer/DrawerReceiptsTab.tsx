@@ -38,7 +38,7 @@ export const DrawerReceiptsTab: React.FC<DrawerReceiptsTabProps> = ({
 								{rec.patientName}
 							</div>
 							<div className="text-[11px] text-[var(--muted,#64748b)]">
-								{rec.items.length} услуги • Без НДС (54-ФЗ)
+								{rec.items.length} услуги • Без НДС (медуслуги)
 							</div>
 						</div>
 						<div className="text-right space-y-1">

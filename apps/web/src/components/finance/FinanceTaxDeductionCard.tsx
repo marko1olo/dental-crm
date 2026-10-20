@@ -26,19 +26,36 @@ export const FinanceTaxDeductionCard: React.FC<FinanceTaxDeductionCardProps> = (
 		<article
 			className={`finance-tax-deduction-card pb-3 flex flex-col justify-between ${className}`.trim()}
 			data-testid="finance-tax-deduction-card"
+			style={{ display: "inline-flex", flexDirection: "row", alignItems: "center", gap: "8px", flexWrap: "nowrap" }}
 		>
-			<div className="finance-tax-card-header flex items-center justify-between w-full">
-				<span>Вычет</span>
-				<strong>{displayValue}</strong>
+			<div className="finance-tax-card-header" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+				<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)" }}>Вычет:</span>
+				<strong style={{ fontSize: "13px", fontWeight: 800, color: "var(--ink, #0f172a)" }}>{displayValue}</strong>
 			</div>
-			<p className="leading-relaxed text-xs text-[var(--muted,#64748b)] mt-1.5 m-0">
+			<p className="leading-relaxed text-xs text-[var(--muted,#64748b)] mt-1.5 m-0" style={{ display: "none" }}>
 				медицинские услуги, пригодные для справки
 			</p>
 			{onOpenCertificateModal && (
 				<button
 					type="button"
 					onClick={onOpenCertificateModal}
-					className="mt-2 text-xs font-semibold text-[var(--teal,var(--brand-primary))] hover:underline text-left cursor-pointer p-0 bg-transparent border-none whitespace-nowrap shrink-0"
+					className="finance-tax-cert-btn"
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "4px",
+						padding: "2px 8px",
+						fontSize: "11px",
+						fontWeight: 600,
+						color: "var(--teal, #0d9488)",
+						background: "var(--paper-soft, #f1f5f9)",
+						border: "1px solid var(--line-subtle, var(--line, #e2e8f0))",
+						borderRadius: "6px",
+						cursor: "pointer",
+						whiteSpace: "nowrap",
+						marginLeft: "4px",
+						transition: "all 0.15s ease",
+					}}
 				>
 					Сформировать справку для ФНС →
 				</button>

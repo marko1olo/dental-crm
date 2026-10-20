@@ -1,0 +1,163 @@
+/* ==========================================================================
+   DENTE CRM — WORKSPACE CONTINUITY & SYSTEM NOTICES (workspace-continuity.css)
+   ==========================================================================
+   CSS Layer 3 (Component-Scoped Styles). Authority: decomposer/SKILL.md
+   LAN/Offline synchronization indicators, telegram handoff, hero guidance.
+   ========================================================================== */
+.hero-call-guidance {
+	background: var(--warn-bg, #fef3c7);
+	border: 1px solid var(--warn-border, rgba(217, 119, 6, 0.3));
+	border-radius: 8px;
+	color: var(--warn-fg, #92400e);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+	margin: -6px 0 0;
+	padding: 9px 11px;
+}
+
+[data-theme="dark"] .hero-call-guidance,
+[data-theme="night"] .hero-call-guidance,
+.dark .hero-call-guidance {
+	background: rgba(69, 26, 3, 0.4);
+	border-color: rgba(146, 64, 14, 0.5);
+	color: #fde68a;
+}
+
+.app-notice {
+	align-items: center;
+	background: #fff7e6;
+	border: 1px solid rgba(184, 120, 31, 0.45);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	padding: 10px 12px;
+}
+
+.app-notice svg {
+	color: var(--amber);
+	height: 20px;
+	width: 20px;
+}
+
+.app-notice p {
+	color: #5a4520;
+	margin: 0;
+}
+
+.workspace-continuity-strip {
+	align-items: center;
+	background: rgba(13, 148, 136, 0.08);
+	border: 1px solid rgba(13, 148, 136, 0.2);
+	border-radius: 6px;
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 0 10px;
+	min-height: 28px;
+	max-height: 28px;
+	height: 28px;
+	font-size: 11px;
+	box-sizing: border-box;
+	user-select: none;
+}
+
+.workspace-continuity-strip.offline {
+	background: rgba(245, 158, 11, 0.1);
+	border-color: rgba(245, 158, 11, 0.3);
+}
+
+.workspace-continuity-left {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	flex: 1;
+}
+
+.workspace-continuity-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 9999px;
+	flex-shrink: 0;
+}
+
+.workspace-continuity-dot--offline {
+	background: #f59e0b;
+	box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.workspace-continuity-dot--queued {
+	background: #f59e0b;
+}
+
+.workspace-continuity-dot--lan {
+	background: #0ea5e9;
+	box-shadow: 0 0 6px rgba(14, 165, 233, 0.4);
+}
+
+.workspace-continuity-dot--online {
+	background: #10b981;
+}
+
+.workspace-continuity-text {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.workspace-continuity-strip.offline .workspace-continuity-text {
+	color: #92400e;
+}
+
+.workspace-continuity-strip.lan {
+	background: rgba(14, 165, 233, 0.08);
+	border-color: rgba(14, 165, 233, 0.25);
+}
+
+.workspace-continuity-strip.lan .workspace-continuity-text {
+	color: #0369a1;
+}
+
+.workspace-continuity-actions {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.workspace-continuity-btn {
+	height: 22px;
+	padding: 0 8px;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 4px;
+	border: 1px solid rgba(245, 158, 11, 0.4);
+	background: rgba(245, 158, 11, 0.15);
+	color: #78350f;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.workspace-continuity-btn:hover:not(:disabled) {
+	background: rgba(245, 158, 11, 0.25);
+}
+
+.workspace-continuity-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.telegram-handoff-notice {
+	background: #eef9f7;
+	border-color: rgba(30, 126, 118, 0.35);
+}
+
+.telegram-handoff-notice svg,
+.telegram-handoff-notice p {
+	color: #1d5f59;
+}

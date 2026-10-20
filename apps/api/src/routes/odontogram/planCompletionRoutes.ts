@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
@@ -205,40 +205,51 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					}
 				}
 
+				const targetLedgerIds = targetIndices
+					.map((idx) => (planItems[idx] ? ledgerRowId(planId, idx) : null))
+					.filter((id): id is string => Boolean(id));
+
+				const existingRows =
+					targetLedgerIds.length > 0
+						? await tx
+								.select({ id: treatmentItems.id })
+								.from(treatmentItems)
+								.where(
+									and(
+										inArray(treatmentItems.id, targetLedgerIds),
+										eq(treatmentItems.organizationId, organizationId),
+									),
+								)
+						: [];
+
+				const existingIdSet = new Set(existingRows.map((r) => r.id));
+
+				const idsToUpdate = targetLedgerIds.filter((id) => existingIdSet.has(id));
+				if (idsToUpdate.length > 0) {
+					await tx
+						.update(treatmentItems)
+						.set({
+							status: "completed",
+							visitId: validVisitId,
+							isSynced: false,
+							version: sql`${treatmentItems.version} + 1`,
+						})
+						.where(
+							and(
+								inArray(treatmentItems.id, idsToUpdate),
+								eq(treatmentItems.organizationId, organizationId),
+							),
+						);
+				}
+
+				const itemsToInsert: (typeof treatmentItems.$inferInsert)[] = [];
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
 					const ledgerId = ledgerRowId(planId, idx);
-
-					const [existing] = await tx
-						.select({ id: treatmentItems.id })
-						.from(treatmentItems)
-						.where(
-							and(
-								eq(treatmentItems.id, ledgerId),
-								eq(treatmentItems.organizationId, organizationId),
-							),
-						)
-						.limit(1);
-
-					if (existing) {
-						await tx
-							.update(treatmentItems)
-							.set({
-								status: "completed",
-								visitId: validVisitId,
-								isSynced: false,
-								version: sql`${treatmentItems.version} + 1`,
-							})
-							.where(
-								and(
-									eq(treatmentItems.id, ledgerId),
-									eq(treatmentItems.organizationId, organizationId),
-								),
-							);
-					} else {
+					if (!existingIdSet.has(ledgerId)) {
 						const { name } = splitStoredPriceId(item.priceId);
-						await tx.insert(treatmentItems).values({
+						itemsToInsert.push({
 							id: ledgerId,
 							organizationId,
 							patientId,
@@ -260,6 +271,10 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							version: 1,
 						});
 					}
+				}
+
+				if (itemsToInsert.length > 0) {
+					await tx.insert(treatmentItems).values(itemsToInsert);
 				}
 
 				// Проверяем, все ли позиции плана теперь завершены

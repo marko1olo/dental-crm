@@ -501,7 +501,7 @@ export async function registerTelegramReferralLoyaltyRoutes(app: FastifyInstance
 	/**
 	 * 10. Подтверждение записи ребенка / члена семьи родителем в 1 клик:
 	 */
-	app.post("/api/telegram/family/confirm-booking", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleFamilyConfirm = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = familyConfirmSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -520,5 +520,8 @@ export async function registerTelegramReferralLoyaltyRoutes(app: FastifyInstance
 		);
 
 		return reply.send(result);
-	});
+	};
+
+	app.post("/api/telegram/family/confirm-booking", handleFamilyConfirm);
+	app.post("/api/telegram/webapp/family/confirm", handleFamilyConfirm);
 }

@@ -85,6 +85,7 @@ export function usePatientSelectionState({
 	}, [selectedPatientId, dashboard, auth]);
 
 	return {
+		...patient,
 		query,
 		setQuery,
 		selectedPatientId,

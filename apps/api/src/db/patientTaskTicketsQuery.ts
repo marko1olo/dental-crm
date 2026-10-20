@@ -17,11 +17,12 @@
  * законченный день.
  */
 import { and, desc, eq } from "drizzle-orm";
+import type { ClinicalTaskStatus } from "@dental/shared";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
-/** Ровно те два состояния, которыми пользуется экран. */
-export type PatientTaskTicketStatus = "pending" | "completed";
+/** Ровно те состояния, которыми пользуются экран и бэкенд (SSOT: ClinicalTaskStatus). */
+export type PatientTaskTicketStatus = ClinicalTaskStatus;
 
 export type PatientTaskTicket = {
 	id: string;
@@ -56,7 +57,9 @@ function toTicket(
 		 * если ограничение однажды снимут, третье значение выглядело бы на экране
 		 * ВЫПОЛНЕННОЙ задачей — то есть поручение молча исчезло бы из работы.
 		 */
-		status: row.status === "completed" ? "completed" : "pending",
+		status: (["pending", "in_progress", "completed", "cancelled"].includes(row.status)
+			? (row.status as PatientTaskTicketStatus)
+			: "pending"),
 		priority: row.priority,
 		createdAt: row.createdAt.toISOString(),
 	};

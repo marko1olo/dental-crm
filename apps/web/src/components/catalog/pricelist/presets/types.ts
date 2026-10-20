@@ -8,31 +8,36 @@
  */
 
 export type Order804nCategory =
-	| 'therapy'
-	| 'surgery'
-	| 'orthopedics'
-	| 'orthodontics'
-	| 'pediatric'
-	| 'radiology'
-	| 'hygiene'
-	| 'periodontics'
-	| 'anesthesia'
-	| 'consultation'
-	| 'package'
-	| 'other';
+	| "therapy"
+	| "surgery"
+	| "orthopedics"
+	| "orthodontics"
+	| "pediatric"
+	| "radiology"
+	| "hygiene"
+	| "periodontics"
+	| "anesthesia"
+	| "consultation"
+	| "package"
+	| "other";
 
 export type DoctorSpecialty =
-	| 'therapist'
-	| 'surgeon'
-	| 'orthopedist'
-	| 'orthodontist'
-	| 'pediatric'
-	| 'hygienist'
-	| 'radiologist'
-	| 'anesthesiologist'
-	| 'general';
+	| "therapist"
+	| "surgeon"
+	| "orthopedist"
+	| "orthodontist"
+	| "pediatric"
+	| "hygienist"
+	| "radiologist"
+	| "anesthesiologist"
+	| "general";
 
-export type PriceTierKind = 'standard' | 'vip' | 'dms' | 'promo' | 'night_weekend';
+export type PriceTierKind =
+	| "standard"
+	| "vip"
+	| "dms"
+	| "promo"
+	| "night_weekend";
 
 export interface ServicePricelistItem {
 	readonly id: string;
@@ -93,7 +98,13 @@ export interface PresetMatcherCriteria {
 export interface PresetMatchResult {
 	readonly item: ServicePricelistItem;
 	readonly score: number;
-	readonly matchedBy: 'code' | 'icd10' | 'tooth' | 'complaint' | 'tag' | 'specialty';
+	readonly matchedBy:
+		| "code"
+		| "icd10"
+		| "tooth"
+		| "complaint"
+		| "tag"
+		| "specialty";
 	readonly matchReason: string;
 }
 

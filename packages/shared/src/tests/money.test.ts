@@ -12,7 +12,10 @@ import {
 	rublesToKopecks,
 	splitKopecks,
 	sumKopecks,
+	formatRublesExactRu,
+	formatCurrency,
 } from "../utils/money.js";
+
 
 /**
  * Ожидаемые строки собираются из констант модуля, а не переписываются вручную:
@@ -180,3 +183,21 @@ describe("formatKopecksRu", () => {
 		);
 	});
 });
+
+describe("formatRublesExactRu and formatCurrency", () => {
+	test("formatRublesExactRu formats rubles to exact 2-decimal Russian format", () => {
+		assert.strictEqual(formatRublesExactRu(150.5), money("150,50"));
+		assert.strictEqual(formatRublesExactRu(0), money("0,00"));
+		assert.strictEqual(formatRublesExactRu(null), money("0,00"));
+		assert.strictEqual(formatRublesExactRu("1500"), money(`1${RU_MONEY_NBSP}500,00`));
+	});
+
+	test("formatCurrency formats integer rubles without redundant fraction", () => {
+		assert.strictEqual(formatCurrency(1500), `1${RU_MONEY_NBSP}500${RU_MONEY_NBSP}₽`);
+		assert.strictEqual(formatCurrency(150.5), money("150,50"));
+		assert.strictEqual(formatCurrency(0), `0${RU_MONEY_NBSP}₽`);
+		assert.strictEqual(formatCurrency(null), "0 ₽");
+		assert.strictEqual(formatCurrency(null, "не указано"), "не указано");
+	});
+});
+

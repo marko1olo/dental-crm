@@ -1,3 +1,4 @@
+import React from "react";
 import { SHADE_SWATCH_MAP } from "../labShadesData";
 
 interface DentalLabBleachGridProps {

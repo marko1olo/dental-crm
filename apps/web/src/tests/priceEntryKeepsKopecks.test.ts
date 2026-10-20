@@ -30,10 +30,14 @@ import { fileURLToPath } from "node:url";
  * Тот же приём уже используют moneyFieldsStartEmpty и ещё двадцать проверок.
  */
 const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(
-	join(here, "..", "components", "settings", "SettingsPricesTab.tsx"),
-	"utf8",
-);
+const settingsDir = join(here, "..", "components", "settings");
+const source = [
+	readFileSync(join(settingsDir, "SettingsPricesTab.tsx"), "utf8"),
+	readFileSync(join(settingsDir, "pricesTab", "PriceItemEditModal.tsx"), "utf8"),
+	readFileSync(join(settingsDir, "pricesTab", "useSettingsPricesLogic.ts"), "utf8"),
+	readFileSync(join(settingsDir, "SettingsPricesCategoryGroup.tsx"), "utf8"),
+].join("\n");
+
 
 /**
  * Комментарии убираются перед проверкой.
@@ -106,7 +110,7 @@ describe("ручной ввод цены услуги держит копейк�
 
 	it("сумма разбирается общей normalizeRubAmountInput при сохранении", () => {
 		assert.ok(
-			/import \{ normalizeRubAmountInput \} from "\.\.\/\.\.\/rubAmountInput"/.test(
+			/import \{ normalizeRubAmountInput \} from "(\.\.\/)+rubAmountInput"/.test(
 				source,
 			),
 			"разбор суммы должен быть общим для всего приложения",
@@ -128,7 +132,7 @@ describe("ручной ввод цены услуги держит копейк�
 
 	it("деньги на экране печатаются общим money, а не своим toLocaleString", () => {
 		assert.ok(
-			/import \{ money \} from "\.\.\/\.\.\/AppHelpers"/.test(source),
+			/import \{ money \} from "(\.\.\/)+AppHelpers"/.test(source),
 			"формат денег в приложении один",
 		);
 		assert.ok(

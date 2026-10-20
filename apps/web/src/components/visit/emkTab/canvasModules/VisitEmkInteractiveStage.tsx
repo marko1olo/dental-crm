@@ -13,6 +13,8 @@ import { EmkComplaintsAndAnamnesisSection } from "../../emkTabModules/EmkComplai
 import { EmkDiagnosisAndProtocolSection } from "../../emkTabModules/EmkDiagnosisAndProtocolSection";
 import { ClinicalQuickPresetsBar } from "../../ClinicalQuickPresetsBar";
 import { VisitDiaryAnesthesiaBar } from "../../diary/VisitDiaryAnesthesiaBar";
+import { postQuickCarpuleWriteoff } from "../../../anesthesia/anesthesiaQuickBar/anesthesiaApiPersistence";
+import { OrthopedicsChairsidePanel } from "../../../orthopedics/OrthopedicsChairsidePanel";
 import { VisitEmkServicesBilling } from "../VisitEmkServicesBilling";
 import type { VisitEmkInteractiveStageProps } from "./visitEmkCanvasTypes";
 
@@ -80,8 +82,10 @@ export function VisitEmkInteractiveStage({
 					diary={visitNoteForm as any}
 					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 					isLocked={isLocked}
-					isRevising={false}
-					beginRevise={() => {}}
+					isRevising={Boolean(visitNoteForm?.isRevising)}
+					beginRevise={() => {
+						updateVisitNoteField("isRevising", true);
+					}}
 					applyAnesthesiaPreset={(preset) => {
 						const curr = visitNoteForm?.treatmentPlan || "";
 						updateVisitNoteField(
@@ -89,7 +93,14 @@ export function VisitEmkInteractiveStage({
 							appendClinicalText(curr, preset, "\n\n"),
 						);
 					}}
-					onDisposalCarpules={() => {}}
+					onDisposalCarpules={(count, drugId) => {
+						void postQuickCarpuleWriteoff({
+							visitId: openVisitId,
+							patientId: activePatient?.id,
+							count,
+							drugId: typeof drugId === "string" ? drugId : undefined,
+						});
+					}}
 					patientId={activePatient?.id}
 					visitId={openVisitId}
 				/>
@@ -368,8 +379,10 @@ export function VisitEmkInteractiveStage({
 								diary={visitNoteForm as any}
 								doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 								isLocked={isLocked}
-								isRevising={false}
-								beginRevise={() => {}}
+								isRevising={Boolean(visitNoteForm?.isRevising)}
+								beginRevise={() => {
+									updateVisitNoteField("isRevising", true);
+								}}
 								applyAnesthesiaPreset={(preset) => {
 									const curr = visitNoteForm?.treatmentPlan || "";
 									updateVisitNoteField(
@@ -377,7 +390,14 @@ export function VisitEmkInteractiveStage({
 										appendClinicalText(curr, preset, "\n\n"),
 									);
 								}}
-								onDisposalCarpules={() => {}}
+								onDisposalCarpules={(count, drugId) => {
+									void postQuickCarpuleWriteoff({
+										visitId: openVisitId,
+										patientId: activePatient?.id,
+										count,
+										drugId: typeof drugId === "string" ? drugId : undefined,
+									});
+								}}
 								patientId={activePatient?.id}
 								visitId={openVisitId}
 							/>
@@ -392,6 +412,18 @@ export function VisitEmkInteractiveStage({
 							/>
 						</>
 					)}
+				</div>
+			)}
+
+			{/* Фокусный режим: Ортопедия и ЗТЛ наряд у кресла */}
+			{(activeEmkTab === "ortho" || activeEmkTab === "orthopedics") && (
+				<div className="space-y-4 w-full min-w-0">
+					<OrthopedicsChairsidePanel
+						activeToothFdi={effectiveActiveTooth || 16}
+						selectedTeeth={[effectiveActiveTooth || 16]}
+						patientId={activePatient?.id}
+						isLocked={isLocked}
+					/>
 				</div>
 			)}
 

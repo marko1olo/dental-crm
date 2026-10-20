@@ -3,7 +3,7 @@ import { KraftPackageBarcodeModal } from "../kraft/KraftPackageBarcodeModal";
 import { AutoclaveLog257Modal } from "../autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "../waste/MedicalWasteJournalModal";
 import { SterilizerEquipmentModal } from "../SterilizerEquipmentModal";
-import { SterilizationCycleModal } from "../SterilizationCycleModal";
+import { SterilizationCycleDrawer } from "../../sterilization/SterilizationCycleDrawer";
 import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 
 export interface AutoclaveRegisterModalsProps {
@@ -59,10 +59,10 @@ export const AutoclaveRegisterModals: React.FC<AutoclaveRegisterModalsProps> = (
 				onClose={() => setIsJournal257ModalOpen(false)}
 			/>
 
-			<SterilizationCycleModal
+			<SterilizationCycleDrawer
 				isOpen={isNewCycleModalOpen}
 				onClose={() => setIsNewCycleModalOpen(false)}
-				onCycleCreated={onCycleCreated}
+				onCycleApproved={onCycleCreated}
 				clinicDevices={clinicDevices}
 			/>
 

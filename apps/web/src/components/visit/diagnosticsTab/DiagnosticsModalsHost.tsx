@@ -8,56 +8,16 @@ import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { routeOpenCbctPopout } from "../../../utils/runtimeRouter";
 import type { DiagnosticStudy } from "./types";
 
-const ClinicalPhotoProtocolModal = React.lazy(() =>
-	import("../../photography/ClinicalPhotoProtocolModal").then((m) => ({
-		default: m.ClinicalPhotoProtocolModal,
-	})),
-);
-const RadiologyReferralModal = React.lazy(() =>
-	import("../../radiology/RadiologyReferralModal").then((m) => ({
-		default: m.RadiologyReferralModal,
-	})),
-);
-const DirectRvgCaptureModal = React.lazy(() =>
-	import("../../radiology/DirectRvgCaptureModal").then((m) => ({
-		default: m.DirectRvgCaptureModal,
-	})),
-);
-const DicomViewerModal = React.lazy(() =>
-	import("../../imaging/DicomViewerModal").then((m) => ({
-		default: m.DicomViewerModal,
-	})),
-);
-const HotFolderIntakeModal = React.lazy(() =>
-	import("../../radiology/HotFolderIntakeModal").then((m) => ({
-		default: m.HotFolderIntakeModal,
-	})),
-);
-const CephalometricAnalysisModal = React.lazy(() =>
-	import("../../radiology/CephalometricAnalysisModal").then((m) => ({
-		default: m.CephalometricAnalysisModal,
-	})),
-);
-const RadiologyReportStudioModal = React.lazy(() =>
-	import("../../radiology/RadiologyReportStudioModal").then((m) => ({
-		default: m.RadiologyReportStudioModal,
-	})),
-);
-const CtSelectorModal = React.lazy(() =>
-	import("../../radiology/CtSelectorModal").then((m) => ({
-		default: m.CtSelectorModal,
-	})),
-);
-const IntraoralScan3DViewerModal = React.lazy(() =>
-	import("../../radiology/IntraoralScan3DViewerModal").then((m) => ({
-		default: m.IntraoralScan3DViewerModal,
-	})),
-);
-const VisiographComparisonModal = React.lazy(() =>
-	import("../../visiograph/VisiographComparisonModal").then((m) => ({
-		default: m.VisiographComparisonModal,
-	})),
-);
+import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProtocolModal";
+import { RadiologyReferralModal } from "../../radiology/RadiologyReferralModal";
+import { DirectRvgCaptureModal } from "../../radiology/DirectRvgCaptureModal";
+import { DicomViewerModal } from "../../imaging/DicomViewerModal";
+import { HotFolderIntakeModal } from "../../radiology/HotFolderIntakeModal";
+import { CephalometricAnalysisModal } from "../../radiology/CephalometricAnalysisModal";
+import { RadiologyReportStudioModal } from "../../radiology/RadiologyReportStudioModal";
+import { CtSelectorModal } from "../../radiology/CtSelectorModal";
+import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
+import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
 
 export interface DiagnosticsModalsHostProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression

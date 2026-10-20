@@ -278,7 +278,7 @@ export function generateAcquiringReconciliationPrintHtml(
 			<div class="kpi-value">${report.totalTerminalRub.toFixed(2)} ₽</div>
 		</div>
 		<div class="kpi-card">
-			<div class="kpi-label">Чеки ККТ (Тег 1081)</div>
+			<div class="kpi-label">Чеки безналичной оплаты</div>
 			<div class="kpi-value">${report.totalKktRub.toFixed(2)} ₽</div>
 		</div>
 		<div class="kpi-card">

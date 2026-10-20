@@ -71,6 +71,7 @@ import {
 import {
 	queueBatchedStorePut,
 	flushBatchedStoreWrites,
+	getPendingBatchedStoreWritesCount,
 	yieldToMainThread,
 	scheduleVisitDraftAutosave,
 	loadVisitDraft,
@@ -1016,10 +1017,19 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			localStorageKey: "dente_test_patient",
 			serializedValue: JSON.stringify({ id: "p-1", name: "Иван Иванов" }),
 		});
+		assert.equal(
+			getPendingBatchedStoreWritesCount(),
+			1,
+			"queueBatchedStorePut must enqueue 1 pending store write before flush",
+		);
 
 		// Test flush writes
 		await flushBatchedStoreWrites();
-		assert.ok(true);
+		assert.equal(
+			getPendingBatchedStoreWritesCount(),
+			0,
+			"flushBatchedStoreWrites must drain pending store writes queue to 0",
+		);
 	});
 
 	await t.test("disposeWebGlRenderingContext triggers loseContext and releases GPU VRAM immediately", () => {

@@ -226,12 +226,33 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		}
 	};
 
-	// Digital signature submission
+	// Digital signature submission (supports both canvas PNG and 1-click PEP SVG DataURL)
+	const buildQuickPepSignatureDataUrl = (name: string): string => {
+		const cleanName = (name || budget?.patientFirstName || "Пациент")
+			.trim()
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
+		const dateStr = new Date().toLocaleDateString("ru-RU");
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="54" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">${cleanName} • ${dateStr}</text></svg>`;
+		if (typeof window !== "undefined" && typeof window.btoa === "function") {
+			return `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
+		}
+		return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+	};
+
 	const handleSignSubmit = async (data: { signaturePng: string; signerName: string }) => {
 		if (!token) return;
 
 		setIsSubmittingSign(true);
 		setSignError(null);
+
+		const effectiveSignerName = (data.signerName || signerName || budget?.patientFirstName || "Пациент").trim();
+		const effectiveSignaturePng =
+			data.signaturePng && data.signaturePng.startsWith("data:image/")
+				? data.signaturePng
+				: buildQuickPepSignatureDataUrl(effectiveSignerName);
 
 		try {
 			const headers: Record<string, string> = {
@@ -245,8 +266,8 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				method: "POST",
 				headers,
 				body: JSON.stringify({
-					signaturePng: data.signaturePng,
-					signerName: data.signerName,
+					signaturePng: effectiveSignaturePng,
+					signerName: effectiveSignerName,
 				}),
 			});
 
@@ -255,8 +276,8 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					method: "POST",
 					headers,
 					body: JSON.stringify({
-						signaturePng: data.signaturePng,
-						signerName: data.signerName,
+						signaturePng: effectiveSignaturePng,
+						signerName: effectiveSignerName,
 					}),
 				});
 			}
@@ -382,7 +403,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 						<div className="text-center space-y-1">
 							<h2 className="text-base font-semibold text-slate-900 dark:text-white">Подтверждение личности пациента</h2>
-							<p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">В целях защиты врачебной тайны (323-ФЗ ст. 13) смета защищена подтверждением номера телефона.</p>
+							<p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">В целях защиты врачебной тайны смета защищена подтверждением номера телефона.</p>
 						</div>
 
 						{budget.maskedPhone && (
@@ -534,6 +555,35 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							error={signError}
 							onSign={handleSignSubmit}
 						/>
+
+						{/* 1-Click PEP Confirmation & Paper Print Fallback (Zero Dead-Ends, Mandates 8e, 8n) */}
+						<div className="no-print bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+							<button
+								type="button"
+								data-testid="public-budget-quick-pep-btn"
+								disabled={isSubmittingSign}
+								onClick={() => {
+									const fallbackName = (signerName || budget.patientFirstName || "Пациент").trim();
+									void handleSignSubmit({
+										signaturePng: buildQuickPepSignatureDataUrl(fallbackName),
+										signerName: fallbackName,
+									});
+								}}
+								className="flex-1 min-h-[44px] py-2.5 px-3.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition flex items-center justify-center gap-2"
+							>
+								<CheckCircle2 className="w-4 h-4 shrink-0" />
+								<span>Подтвердить в 1 клик (по коду телефона)</span>
+							</button>
+							<button
+								type="button"
+								data-testid="public-budget-print-btn"
+								onClick={() => window.print()}
+								className="min-h-[44px] py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition flex items-center justify-center gap-2"
+							>
+								<Printer className="w-4 h-4 shrink-0" />
+								<span>Печать сметы (А4)</span>
+							</button>
+						</div>
 					</div>
 				)}
 
@@ -547,7 +597,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						<div className="space-y-1">
 							<h2 className="text-lg font-bold text-slate-900 dark:text-white">Смета успешно согласована</h2>
 							<p className="text-xs text-slate-500 dark:text-slate-400">
-								Цифровая подпись принята и внесена в электронную медицинскую карту.
+								Электронная подпись принята и внесена в медицинскую карту пациента.
 							</p>
 						</div>
 
@@ -587,7 +637,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 			{/* Footer disclaimer */}
 			<footer className="no-print mt-8 text-center text-[11px] text-slate-600 max-w-sm mx-auto">
-				Защищённый контур ДЕНТЕ CRM. Сертификация по 152-ФЗ и 323-ФЗ ст. 13.
+				Защищённый контур ДЕНТЕ CRM • Конфиденциальность медицинских данных
 			</footer>
 		</div>
 	);

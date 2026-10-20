@@ -45,7 +45,7 @@ export const SoapTemplatesDrawer: React.FC<SoapTemplatesDrawerProps> = ({
 								title="Клинические протоколы (448 шаблонов)"
 								data-catalog-source="Клинические протоколы СтАР"
 							>
-								Клинические протоколы (448 шаблонов)
+								Клинические протоколы StomX (448 протоколов)
 							</span>
 						</div>
 						<button

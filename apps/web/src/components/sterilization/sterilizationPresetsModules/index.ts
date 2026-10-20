@@ -6,8 +6,8 @@
  * ============================================================================
  */
 
-export * from "./types.js";
 export * from "./autoclaveCyclePresets.js";
 export * from "./chemicalDisinfectionPresets.js";
-export * from "./psoQualityControlPresets.js";
 export * from "./kraftTrayPresets.js";
+export * from "./psoQualityControlPresets.js";
+export * from "./types.js";

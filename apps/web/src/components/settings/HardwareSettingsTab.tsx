@@ -67,7 +67,7 @@ import { HardwareCockpitBar } from "./hardware/HardwareCockpitBar.js";
 import { HardwareKktSection } from "./hardware/HardwareKktSection.js";
 import { HardwareScannerSection } from "./hardware/HardwareScannerSection.js";
 import { HardwareLabelPrinterSection } from "./hardware/HardwareLabelPrinterSection.js";
-import { MicrophoneCalibrationModal } from "../audio/MicrophoneCalibrationModal.js";
+import { HardwareAudioSection } from "./hardware/HardwareAudioSection.js";
 if (typeof window !== "undefined") {
 	void import("./HardwareSettingsTab.css");
 }
@@ -76,7 +76,6 @@ export type HardwareDomainTab = "imaging" | "kkt" | "scanners" | "labels" | "aud
 
 export function HardwareSettingsTab() {
 	const [activeDomain, setActiveDomain] = useState<HardwareDomainTab>("imaging");
-	const [isMicCalibrationOpen, setIsMicCalibrationOpen] = useState(false);
 
 	const {
 		devices,
@@ -252,49 +251,7 @@ export function HardwareSettingsTab() {
 			{activeDomain === "kkt" && <HardwareKktSection />}
 			{activeDomain === "scanners" && <HardwareScannerSection />}
 			{activeDomain === "labels" && <HardwareLabelPrinterSection />}
-			{activeDomain === "audio" && (
-				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4" data-testid="hardware-audio-section">
-					<div className="flex items-center justify-between flex-wrap gap-2">
-						<div className="flex items-center gap-2">
-							<div className="w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal)] flex items-center justify-center">
-								<Mic size={16} />
-							</div>
-							<div>
-								<h3 className="text-sm font-bold text-[var(--ink)]">Аудиооборудование и микрофоны кабинетов</h3>
-								<p className="text-xs text-[var(--muted)]">Калибровка чувствительности, шумоподавление бормашины и Web Audio DSP</p>
-							</div>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsMicCalibrationOpen(true)}
-							className="min-h-[34px] px-3.5 py-1.5 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-							data-testid="hw-audio-btn-calibrate"
-						>
-							<SlidersHorizontal size={14} />
-							<span>Калибровка микрофона</span>
-						</button>
-					</div>
-
-					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-4">
-						<div className="space-y-0.5">
-							<span className="text-xs font-bold text-[var(--ink)] block">Клинический профиль шумоподавления</span>
-							<span className="text-[11px] text-[var(--muted)]">
-								Фильтрация высокочастотного шума турбин (4.5–6 кГц) и компрессоров без искажения диктовки диагнозов
-							</span>
-						</div>
-						<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shrink-0">
-							DSP Активен
-						</span>
-					</div>
-
-					{isMicCalibrationOpen && (
-						<MicrophoneCalibrationModal
-							isOpen={isMicCalibrationOpen}
-							onClose={() => setIsMicCalibrationOpen(false)}
-						/>
-					)}
-				</div>
-			)}
+			{activeDomain === "audio" && <HardwareAudioSection />}
 
 			{activeDomain === "imaging" && (
 				<>

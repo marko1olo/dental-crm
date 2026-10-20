@@ -34,6 +34,7 @@ export function useStaffSettingsLogic({
 	const [isChairCreating, setIsChairCreating] = useState(false);
 
 	const {
+		dashboard,
 		newStaffName,
 		setNewStaffName,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -221,12 +222,14 @@ export function useStaffSettingsLogic({
 		}
 	}
 
-	async function addChair() {
-		const name = newChairName.trim();
-		if (!name) {
-			setError("Введите название кресла или кабинета перед добавлением.");
-			return;
-		}
+	async function addChair(overrideName?: string) {
+		const rawName =
+			typeof overrideName === "string" && overrideName.trim()
+				? overrideName.trim()
+				: newChairName.trim();
+		const name =
+			rawName ||
+			`Кресло ${(dashboard?.clinicSettings?.chairs?.length ?? 0) + 1}`;
 		if (chairCreateInFlightRef.current) return;
 		chairCreateInFlightRef.current = true;
 		try {

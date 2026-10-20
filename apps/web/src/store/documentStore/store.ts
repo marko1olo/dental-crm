@@ -21,3 +21,8 @@ export const useDocumentStore = create<DocumentState>(
 				set(documentFormInitialValues() as DocumentState),
 		}) as DocumentState,
 );
+
+if (typeof window !== "undefined") {
+	(window as any).__DOCUMENT_STORE__ = useDocumentStore;
+	(window as any).__useDocumentStore = useDocumentStore;
+}

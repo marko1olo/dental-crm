@@ -303,6 +303,13 @@ export const visitDiaryRevisions = pgTable(
 			t.organizationId,
 		),
 		diaryIdIdx: index("visit_diary_revisions_diary_id_idx").on(t.diaryId),
+		orgCreatedIdx: index("visit_diary_revisions_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		revisedByUserIdIdx: index("visit_diary_revisions_revised_by_user_idx").on(
+			t.revisedByUserId,
+		),
 	}),
 );
 
@@ -403,6 +410,10 @@ export const clinicalAuditLogs = pgTable(
 			t.organizationId,
 			t.createdAt,
 		),
+		patientIdIdx: index("clinical_audit_logs_patient_id_idx").on(t.patientId),
+		actorUserIdIdx: index("clinical_audit_logs_actor_user_id_idx").on(
+			t.actorUserId,
+		),
 	}),
 );
 
@@ -446,6 +457,14 @@ export const clinicalQualityAudits = pgTable(
 		visitIdx: index("clinical_quality_audits_visit_idx").on(t.visitId),
 		reviewerIdx: index("clinical_quality_audits_reviewer_idx").on(
 			t.reviewerDoctorId,
+		),
+		patientIdx: index("clinical_quality_audits_patient_id_idx").on(t.patientId),
+		attendingDoctorIdx: index(
+			"clinical_quality_audits_attending_doctor_id_idx",
+		).on(t.attendingDoctorId),
+		orgCreatedIdx: index("clinical_quality_audits_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
 		),
 	}),
 );

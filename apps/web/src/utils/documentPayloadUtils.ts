@@ -1,4 +1,8 @@
 import {
+	toCanonicalToothState,
+	type CanonicalToothState,
+} from "@dental/shared";
+import {
 	type ClinicalToothStatus,
 	type ClinicalToothSurface,
 	clinicalToothStatusAliases,
@@ -51,8 +55,12 @@ export function clinicalToothSurfacesValue(
 	return surfaces.length ? Array.from(new Set(surfaces)) : ["not_applicable"];
 }
 
-export function clinicalToothStatusValue(value: string): ClinicalToothStatus {
+export function clinicalToothStatusValue(
+	value: string,
+): CanonicalToothState & ClinicalToothStatus {
+	const normalized = normalizeClinicalToothAlias(value);
 	return (
-		clinicalToothStatusAliases[normalizeClinicalToothAlias(value)] ?? "planned"
+		clinicalToothStatusAliases[normalized] ??
+		(value.trim() ? toCanonicalToothState(value) : "Caries")
 	);
 }

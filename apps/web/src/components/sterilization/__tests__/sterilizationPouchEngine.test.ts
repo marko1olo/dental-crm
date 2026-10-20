@@ -7,21 +7,20 @@
  * ============================================================================
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
+	CHAIRSIDE_TRAY_PRESETS,
+	createChairsidePouchRecord,
+	createForm257Link,
+	DEFAULT_CHAIRSIDE_AUTOCLAVE_PARAMS,
+	exportChairsidePouchToForm257Record,
+	formatPouch043StatutorySnippet,
 	generateChairsidePouchCode,
+	insertPouchIntoDiaryText,
 	normalizeChairsidePouchCode,
 	parseChairsidePouchInput,
-	createChairsidePouchRecord,
-	formatPouch043StatutorySnippet,
-	formatPouch043FullDiaryText,
-	insertPouchIntoDiaryText,
-	createForm257Link,
-	exportChairsidePouchToForm257Record,
 	STATUTORY_INDICATOR_TRANSITIONS,
-	DEFAULT_CHAIRSIDE_AUTOCLAVE_PARAMS,
-	CHAIRSIDE_TRAY_PRESETS,
 } from "@dental/shared";
 
 describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
@@ -49,7 +48,8 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 		});
 
 		it("парсит 2D DataMatrix со структурой СанПиН", () => {
-			const matrix = "KB-20260925-01#14|АК-01|CYC2|2026-09-25|2026-11-14|NURSE-01|set_therapeutic_tray";
+			const matrix =
+				"KB-20260925-01#14|АК-01|CYC2|2026-09-25|2026-11-14|NURSE-01|set_therapeutic_tray";
 			const parsed = parseChairsidePouchInput(matrix);
 			assert.equal(parsed.pouchCode, "KB-20260925-01-14");
 			assert.equal(parsed.detectedAutoclaveCode, "АК-01");
@@ -69,14 +69,18 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 	// ─── 2. ХИМИЧЕСКИЕ ИНДИКАТОРЫ 4-5 КЛАССОВ (РОЗОВЫЙ -> КОРИЧНЕВЫЙ) ─────────
 	describe("2. Контроль химических индикаторов 4-5 классов", () => {
 		it("содержит регламентные цветовые переходы индикаторов 4 и 5 классов", () => {
-			const class5Steam = STATUTORY_INDICATOR_TRANSITIONS.find((t) => t.id === "pink_to_brown");
+			const class5Steam = STATUTORY_INDICATOR_TRANSITIONS.find(
+				(t) => t.id === "pink_to_brown",
+			);
 			assert.ok(class5Steam);
 			assert.equal(class5Steam.indicatorClass, 5);
 			assert.equal(class5Steam.initialColorRu, "розовый");
 			assert.equal(class5Steam.finalColorRu, "коричневый");
 			assert.equal(class5Steam.labelRu, "розовый -> коричневый, стерильно");
 
-			const class4Steam = STATUTORY_INDICATOR_TRANSITIONS.find((t) => t.id === "blue_to_brown");
+			const class4Steam = STATUTORY_INDICATOR_TRANSITIONS.find(
+				(t) => t.id === "blue_to_brown",
+			);
 			assert.ok(class4Steam);
 			assert.equal(class4Steam.indicatorClass, 4);
 		});
@@ -90,7 +94,11 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 			assert.equal(record.indicator.indicatorClass, 5);
 			assert.equal(record.indicator.isPassed, true);
 			assert.equal(record.indicator.transitionId, "pink_to_brown");
-			assert.ok(record.indicator.colorStatusText.includes("розовый -> коричневый, стерильно"));
+			assert.ok(
+				record.indicator.colorStatusText.includes(
+					"розовый -> коричневый, стерильно",
+				),
+			);
 		});
 
 		it("формирует статус отбраковки при несработавшем индикаторе", () => {
@@ -117,7 +125,11 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 			assert.equal(record.autoclave.temperatureC, 134);
 			assert.equal(record.autoclave.pressureBar, 2.1);
 			assert.equal(record.autoclave.exposureMinutes, 5);
-			assert.ok(record.autoclave.regimeName.includes("134°C, 2.1 бар, экспозиция 5 мин"));
+			assert.ok(
+				record.autoclave.regimeName.includes(
+					"134°C, 2.1 бар, экспозиция 5 мин",
+				),
+			);
 			assert.equal(record.autoclave.shiftName, "Смена 1 (утро)");
 			assert.equal(record.autoclave.cycleNumber, 1);
 		});
@@ -155,19 +167,31 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 		});
 
 		it("вставляет запись крафт-пакета в существующий дневник приёма", () => {
-			const currentDiary = "Препарирование кариозной полости зуба 16. Коффердам, адгезивный протокол.";
-			const snippet = "Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.";
+			const currentDiary =
+				"Препарирование кариозной полости зуба 16. Коффердам, адгезивный протокол.";
+			const snippet =
+				"Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.";
 
-			const updated = insertPouchIntoDiaryText(currentDiary, snippet, "КП-0925-14");
+			const updated = insertPouchIntoDiaryText(
+				currentDiary,
+				snippet,
+				"КП-0925-14",
+			);
 			assert.ok(updated.startsWith(snippet));
 			assert.ok(updated.includes(currentDiary));
 		});
 
 		it("не дублирует запись, если крафт-пакет уже внесен в дневник", () => {
-			const currentDiary = "Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.\n\nЛечение кариеса.";
-			const snippet = "Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.";
+			const currentDiary =
+				"Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.\n\nЛечение кариеса.";
+			const snippet =
+				"Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал.";
 
-			const result = insertPouchIntoDiaryText(currentDiary, snippet, "КП-0925-14");
+			const result = insertPouchIntoDiaryText(
+				currentDiary,
+				snippet,
+				"КП-0925-14",
+			);
 			assert.equal(result, currentDiary);
 		});
 	});
@@ -211,15 +235,21 @@ describe("ChairsideSterilizationPouchEngine (СанПиН 3.3686-21)", () => {
 	describe("6. Пресеты лотков и нормативные сроки годности СанПиН", () => {
 		it("содержит стандартные пресеты (терапевтический, хирургический, эндо)", () => {
 			assert.equal(CHAIRSIDE_TRAY_PRESETS.length, 4);
-			const therapy = CHAIRSIDE_TRAY_PRESETS.find((p) => p.trayKind === "therapeutic");
+			const therapy = CHAIRSIDE_TRAY_PRESETS.find(
+				(p) => p.trayKind === "therapeutic",
+			);
 			assert.ok(therapy);
 			assert.equal(therapy.shelfLifeDays, 50);
 
-			const surgery = CHAIRSIDE_TRAY_PRESETS.find((p) => p.trayKind === "surgical");
+			const surgery = CHAIRSIDE_TRAY_PRESETS.find(
+				(p) => p.trayKind === "surgical",
+			);
 			assert.ok(surgery);
 			assert.equal(surgery.shelfLifeDays, 60);
 
-			const endo = CHAIRSIDE_TRAY_PRESETS.find((p) => p.trayKind === "endodontic");
+			const endo = CHAIRSIDE_TRAY_PRESETS.find(
+				(p) => p.trayKind === "endodontic",
+			);
 			assert.ok(endo);
 			assert.equal(endo.shelfLifeDays, 180);
 		});

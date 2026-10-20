@@ -45,7 +45,13 @@
 *   **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал.
 *   **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Интеграция WhatsApp Cloud API, VK MAX bot, единый лог входящих сообщений.
 
-### 5. Реестр Конкурентного Паритета и Реверс-Инжиниринг (`competitive-audit/`)
+### 5. Искусственный Интеллект, Когнитивное Ядро и Агентный Харнесс
+*   **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция, правила поведения, T.A.R.S. протокол честности (100% честность / 80% скепсис), 15 когнитивных законов EBM и автономия врача (Мандат 8e).
+*   **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Техническая спецификация архитектуры ИИ: 3 контура интеграции (Hot Path, Warm Context, Cold Backoffice), Dual-Harness (Web CRM vs Desktop OS EXE), реестр 26 инструментов, Chairside Sentinel, речевой ввод FDI и ротация API-ключей Gemini.
+*   **[AI_ASSISTANT_SUBAGENT_SWARM.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_SUBAGENT_SWARM.md)** — Архитектура мультиагентного роя (In-App Swarm): 4 субагента (Triage, Inquisitor, Sentinel, Vision), протоколы Context Relay, Reactive Wakeup, жизненный цикл и IPC.
+*   **[ai_assistant.md (Rules)](file:///C:/Users/Admin/.gemini/config/rules/ai_assistant.md)** — Глобальный файл правил ИИ-ассистента и роя.
+
+### 6. Реестр Конкурентного Паритета и Реверс-Инжиниринг (`competitive-audit/`)
 *   **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — Канонический реестр 63 уникальных фич конкурентов (IDENT, DentalPRO, iStom) с доказательствами и статусами.
 *   **[OUR_CRM_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)** — Полная карта возможностей кодовой базы DENTE по всем модулям.
 *   **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)** — Архитектурные варианты реализации для фич со статусами `[НЕТ]` и `[ЧАСТИЧНО]`.

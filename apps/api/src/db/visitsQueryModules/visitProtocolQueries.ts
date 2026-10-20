@@ -167,7 +167,9 @@ export async function upsertVisitDraftAutosaveInDb(
 			.set({
 				draftAutosave: serverDraft, transcript: input.transcript, complaint: nextComplaint,
 				anamnesis: nextAnamnesis, objectiveStatus: nextObjectiveStatus,
-				diagnosis: nextDiagnosis, treatmentPlan: nextTreatmentPlan, updatedAt: now,
+				diagnosis: nextDiagnosis, treatmentPlan: nextTreatmentPlan,
+				hygieneIndices: (input as any).hygieneIndices ?? (input.draft as any).hygieneIndices ?? visit.hygieneIndices ?? null,
+				updatedAt: now,
 			})
 			.where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.id, input.visitId)))
 			.returning({ id: schema.visits.id });
@@ -350,6 +352,7 @@ export async function acceptVisitDraftInDb(
 						: `Исправленному верить: ред. ${newRevision} от ${savedAt.toLocaleString("ru-RU")}`
 					: input.doctorSummary,
 				draftAutosave: updatedDraftAutosave,
+				hygieneIndices: (input as any).hygieneIndices ?? (input.draft as any).hygieneIndices ?? visit.hygieneIndices ?? null,
 				signedAt: visit.signedAt ?? savedAt,
 				updatedAt: savedAt,
 			})

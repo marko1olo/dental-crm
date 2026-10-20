@@ -114,7 +114,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 			<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
 				<span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1 mr-0.5 shrink-0">
 					<FileCheck2 size={13} className="text-[var(--teal)] shrink-0" />
-					<span className="hidden lg:inline">Форма 043/у:</span>
+					<span className="hidden lg:inline">Дневник визита:</span>
 				</span>
 
 				{/* 1. Жалобы (S) */}

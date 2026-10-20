@@ -15,7 +15,6 @@ import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	cashBoxShifts,
-	cashShifts,
 	doctorPayrollStatements,
 	patientInvoices,
 	payments,
@@ -57,6 +56,7 @@ export interface CreateInvoiceResult {
 	status: "issued";
 	subtotalRub: number;
 	discountPercent: number;
+	totalAmountRub: number;
 	totalRub: number;
 	totalKopecks: number;
 	formattedTotal: string;
@@ -132,6 +132,7 @@ export const createInvoiceTool: ToolDefinition<
 			status: "issued",
 			subtotalRub,
 			discountPercent,
+			totalAmountRub: totalRub,
 			totalRub,
 			totalKopecks,
 			formattedTotal: formatKopecksRu(totalKopecks),
@@ -303,7 +304,7 @@ export const checkCashierShiftTool: ToolDefinition<
 	parameters: checkCashierShiftSchema,
 	permissions: ["finance.read"],
 	category: "read",
-	handler: async (ctx: AgentContext, _args: CheckCashierShiftInput): Promise<CheckCashierShiftResult> => {
+	handler: async (ctx: AgentContext, args: CheckCashierShiftInput): Promise<CheckCashierShiftResult> => {
 		const targetDb = ctx.db === null ? null : (ctx.db || db);
 		const orgId = ctx.organizationId || "";
 
@@ -314,11 +315,17 @@ export const checkCashierShiftTool: ToolDefinition<
 		if (targetDb && orgId) {
 			try {
 				const loadShift = async (tx: any) => {
-					// Check cash_box_shifts first
+					const conditions = [
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.status, "open"),
+					];
+					if (args?.cashBoxId) {
+						conditions.push(eq(cashBoxShifts.cashBoxId, args.cashBoxId));
+					}
 					const [shift] = await tx
 						.select()
 						.from(cashBoxShifts)
-						.where(and(eq(cashBoxShifts.organizationId, orgId), eq(cashBoxShifts.status, "open")))
+						.where(and(...conditions))
 						.orderBy(desc(cashBoxShifts.openedAt))
 						.limit(1);
 
@@ -327,23 +334,9 @@ export const checkCashierShiftTool: ToolDefinition<
 						shiftNumber = shift.shiftNumber ?? 1;
 						openedAt = shift.openedAt ? new Date(shift.openedAt) : null;
 					} else {
-						// Check billing cash_shifts
-						const [altShift] = await tx
-							.select()
-							.from(cashShifts)
-							.where(and(eq(cashShifts.organizationId, orgId), eq(cashShifts.status, "open")))
-							.orderBy(desc(cashShifts.openedAt))
-							.limit(1);
-
-						if (altShift) {
-							isShiftOpen = true;
-							shiftNumber = (altShift as any).shiftNumber ?? 1;
-							openedAt = altShift.openedAt ? new Date(altShift.openedAt) : null;
-						} else {
-							isShiftOpen = false;
-							shiftNumber = null;
-							openedAt = null;
-						}
+						isShiftOpen = false;
+						shiftNumber = null;
+						openedAt = null;
 					}
 				};
 

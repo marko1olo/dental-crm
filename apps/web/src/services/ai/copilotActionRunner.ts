@@ -212,6 +212,7 @@ export class CopilotActionRunner {
 		callId: string,
 		modifiedArgs?: Record<string, unknown>,
 		apiBaseUrl = "",
+		sessionId?: string,
 	): Promise<CRMActionResult> {
 		const pending = this.pendingActions.get(callId);
 		const finalArgs = {
@@ -227,9 +228,11 @@ export class CopilotActionRunner {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					Accept: "application/json",
 					...(token ? { Authorization: `Bearer ${token}` } : {}),
 				},
 				body: JSON.stringify({
+					sessionId: sessionId || "default-session",
 					callId,
 					decision: "confirm",
 					modifiedArgs: finalArgs,
@@ -257,6 +260,7 @@ export class CopilotActionRunner {
 		callId: string,
 		reason = "Отклонено врачом",
 		apiBaseUrl = "",
+		sessionId?: string,
 	): Promise<void> {
 		this.pendingActions.delete(callId);
 
@@ -266,9 +270,11 @@ export class CopilotActionRunner {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					Accept: "application/json",
 					...(token ? { Authorization: `Bearer ${token}` } : {}),
 				},
 				body: JSON.stringify({
+					sessionId: sessionId || "default-session",
 					callId,
 					decision: "reject",
 					reason,

@@ -1,0 +1,76 @@
+/* ---------- 14. ПОЯВЛЕНИЕ СЕКЦИЙ ---------- */
+.panel,
+.shift-hero > *,
+.patient-cockpit > * {
+	animation: dntUp 0.45s ease backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none;
+		transition: none;
+	}
+}
+
+/* ---------- 15. ГЛОБАЛЬНАЯ НЕЙТРАЛИЗАЦИЯ ЖЕСТКИХ TAILWIND КЛАССОВ ---------- */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class~="bg-white"], .bg-white):not([class*="dark:"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+	background-color: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class~="bg-slate-50"], .bg-slate-50, [class~="bg-slate-100"], .bg-slate-100):not([class*="dark:"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+	background-color: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+[data-theme="light"] :is([class~="bg-slate-800"], [class~="bg-slate-900"], .bg-slate-800, .bg-slate-900):not([class*="dark:"]) {
+	background-color: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class~="text-slate-900"], [class~="text-slate-800"], [class~="text-slate-700"]):not([class*="dark:"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class~="text-slate-500"], [class~="text-slate-400"]):not([class*="dark:"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+	color: var(--muted);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class~="border-slate-200"], [class~="border-slate-100"], [class~="border-slate-300"]):not([class*="dark:"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+	border-color: var(--line);
+}
+
+/* ---------- 16. СТРУКТУРИРОВАНИЕ И ЕДИНЫЙ ДИЗАЙН КАРТОЧЕК И СЕТОК ---------- */
+.schedule-widgets-container,
+.dnt-widgets-grid {
+	display: grid;
+	/* min(420px, 100%): жёсткие 420px не помещаются ни на одном телефоне —
+     колонка оставалась шире контейнера, и карточки обрезались справа. */
+	grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+	gap: 16px;
+	margin-top: 20px;
+}
+
+.panel,
+.section-card,
+[data-testid*="-widget"],
+.schedule-widgets-container > * {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: var(--shadow-1);
+	margin: 0;
+}
+
+@media (max-width: 840px) {
+	.schedule-widgets-container,
+	.dnt-widgets-grid {
+		grid-template-columns: 1fr;
+	}
+}
+

@@ -26,7 +26,8 @@ export function resolveSafeStoragePath(key: string): string | null {
 	}
 	// Валидация расширения файла (только стоматологические 3D форматы: stl, ply, obj, dcm, zip)
 	const extMatch = /\.([a-zA-Z0-9]+)$/.exec(key);
-	if (!extMatch || !ALLOWED_SCAN_EXTENSIONS.has(extMatch[1].toLowerCase())) {
+	const ext = extMatch?.[1]?.toLowerCase();
+	if (!ext || !ALLOWED_SCAN_EXTENSIONS.has(ext)) {
 		return null;
 	}
 	const fullPath = path.resolve(BASE_STORAGE_DIR, key);
@@ -73,11 +74,12 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 
 		// Изоляция организации: проверка соответствия ключа вызывающей организации
 		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
-		const callerOrg = (request as any).tenantId || (request as any).organizationId || orgHeader;
+		const requestContext = request as unknown as { tenantId?: string; organizationId?: string };
+		const callerOrg = requestContext.tenantId || requestContext.organizationId || orgHeader;
 		if (callerOrg && typeof callerOrg === "string") {
 			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
-			const keyOrg = key.split("/")[0];
-			if (keyOrg !== cleanOrg) {
+			const keyOrg = key.split("/")[0] ?? "";
+			if (!keyOrg || keyOrg !== cleanOrg) {
 				return reply.status(403).send({ error: "Доступ к хранилищу другой организации запрещен" });
 			}
 		}
@@ -94,12 +96,22 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 			if (Buffer.isBuffer(request.body)) {
 				await fs.promises.writeFile(fullPath, request.body);
 				bytesWritten = request.body.length;
-			} else if (request.body && typeof (request.body as any).pipe === "function") {
+			} else if (
+				request.body &&
+				typeof request.body === "object" &&
+				"pipe" in request.body &&
+				typeof (request.body as { pipe?: unknown }).pipe === "function"
+			) {
 				const writeStream = fs.createWriteStream(fullPath);
-				await pipeline(request.body as NodeJS.ReadableStream, writeStream);
+				await pipeline(request.body as unknown as NodeJS.ReadableStream, writeStream);
 				const stat = await fs.promises.stat(fullPath);
 				bytesWritten = stat.size;
-			} else if (typeof (request.raw as any).pipe === "function") {
+			} else if (
+				request.raw &&
+				typeof request.raw === "object" &&
+				"pipe" in request.raw &&
+				typeof (request.raw as { pipe?: unknown }).pipe === "function"
+			) {
 				const writeStream = fs.createWriteStream(fullPath);
 				await pipeline(request.raw, writeStream);
 				const stat = await fs.promises.stat(fullPath);
@@ -145,11 +157,12 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 
 		// Изоляция организации: проверка соответствия ключа вызывающей организации
 		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
-		const callerOrg = (request as any).tenantId || (request as any).organizationId || orgHeader;
+		const requestContext = request as unknown as { tenantId?: string; organizationId?: string };
+		const callerOrg = requestContext.tenantId || requestContext.organizationId || orgHeader;
 		if (callerOrg && typeof callerOrg === "string") {
 			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
-			const keyOrg = key.split("/")[0];
-			if (keyOrg !== cleanOrg) {
+			const keyOrg = key.split("/")[0] ?? "";
+			if (!keyOrg || keyOrg !== cleanOrg) {
 				return reply.status(403).send({ error: "Доступ к скачиванию скана другой организации запрещен" });
 			}
 		}

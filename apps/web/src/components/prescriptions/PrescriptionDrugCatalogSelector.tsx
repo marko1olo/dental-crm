@@ -1,387 +1,86 @@
 /**
- * PrescriptionDrugCatalogSelector.tsx
- *
- * Left panel of Statutory Prescription Modal:
- * Fast 1-click dental prescription presets, drug catalog browser,
- * custom drug formulation draft, and validity duration selectors.
+ * PrescriptionDrugCatalogSelector.tsx — Left panel of Prescription Cockpit
+ * Decomposed coordinator <= 120 lines (Mandate 8b).
  */
 
-import React from "react";
-import {
-	AlertTriangle,
-	Award,
-	CheckCircle2,
-	PenTool,
-	Plus,
-	Printer,
-	Search,
-	Sparkles,
-	X,
-} from "lucide-react";
-import type { DentalFastPrescriptionSet } from "./prescriptionDataSets";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type React from "react";
+import { PrescriptionCatalogList } from "./PrescriptionCatalogList";
+import { PrescriptionCustomDrugForm } from "./PrescriptionCustomDrugForm";
 import { PrescriptionExpressPills } from "./PrescriptionExpressPills";
-import {
-	getDrugAllergyConflictType,
-	isDrugConflictingWithAllergies,
-} from "./prescriptionAllergyChecker";
+import { PrescriptionPediatricCalculator } from "./PrescriptionPediatricCalculator";
+import { PrescriptionValidityDetails } from "./PrescriptionValidityDetails";
+import type { PrescriptionDrugCatalogSelectorProps } from "./prescriptionCatalogTypes";
 
-export interface PrescriptionDrugCatalogSelectorProps {
-	readonly fastPresets: readonly DentalFastPrescriptionSet[];
-	readonly activePresetId?: string | undefined;
-	readonly onSelectPreset?: ((preset: DentalFastPrescriptionSet) => void) | undefined;
-	readonly onApplyAndInsertToDiary: (preset: DentalFastPrescriptionSet) => void;
-	readonly onApplyAndPrint: (preset: DentalFastPrescriptionSet) => void;
-	readonly searchQuery: string;
-	readonly onSearchQueryChange: (query: string) => void;
-	readonly filteredCatalog: readonly {
-		readonly id: string;
-		readonly tradeNameRu: string;
-		readonly latinRp: string;
-		readonly dosageRu: string;
-		readonly category?: string;
-	}[];
-	readonly selectedDrugIds: readonly string[];
-	readonly onToggleDrug: (id: string) => void;
-	readonly isAddingCustom: boolean;
-	readonly onToggleAddingCustom: () => void;
-	readonly customTradeName: string;
-	readonly onCustomTradeNameChange: (val: string) => void;
-	readonly customLatinRp: string;
-	readonly onCustomLatinRpChange: (val: string) => void;
-	readonly customDispense: string;
-	readonly onCustomDispenseChange: (val: string) => void;
-	readonly customSigna: string;
-	readonly onCustomSignaChange: (val: string) => void;
-	readonly onAddCustomDrug: () => void;
-	readonly customSeriesNumber: string;
-	readonly onCustomSeriesNumberChange: (val: string) => void;
-	readonly validityDays: "15" | "30" | "60" | "365";
-	readonly onValidityDaysChange: (days: "15" | "30" | "60" | "365") => void;
-	readonly isChronicSpecialCare: boolean;
-	readonly onToggleChronicSpecialCare: () => void;
-	readonly chronicPeriodicity: string;
-	readonly onChronicPeriodicityChange: (val: string) => void;
-	readonly patientAddress: string;
-	readonly onPatientAddressChange: (val: string) => void;
-	readonly activeForm: PrescriptionFormType;
-	readonly patientAllergies?: string | readonly string[] | null | undefined;
-	readonly className?: string | undefined;
-	readonly patientWeightKg?: number | undefined;
-	readonly onPatientWeightKgChange?: ((val: number | undefined) => void) | undefined;
-}
+export type { PrescriptionDrugCatalogSelectorProps } from "./prescriptionCatalogTypes";
 
-export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSelectorProps> = ({
-	fastPresets,
-	activePresetId,
-	onSelectPreset,
-	onApplyAndInsertToDiary,
-	onApplyAndPrint,
-	searchQuery,
-	onSearchQueryChange,
-	filteredCatalog,
-	selectedDrugIds,
-	onToggleDrug,
-	isAddingCustom,
-	onToggleAddingCustom,
-	customTradeName,
-	onCustomTradeNameChange,
-	customLatinRp,
-	onCustomLatinRpChange,
-	customDispense,
-	onCustomDispenseChange,
-	customSigna,
-	onCustomSignaChange,
-	onAddCustomDrug,
-	customSeriesNumber,
-	onCustomSeriesNumberChange,
-	validityDays,
-	onValidityDaysChange,
-	isChronicSpecialCare,
-	onToggleChronicSpecialCare,
-	chronicPeriodicity,
-	onChronicPeriodicityChange,
-	patientAddress,
-	onPatientAddressChange,
-	activeForm,
-	patientAllergies,
-	className,
-	patientWeightKg,
-	onPatientWeightKgChange,
-}) => {
-	const isPediatricActive =
-		selectedDrugIds.includes("ibuprofen_suspension_100_5ml") ||
-		(patientWeightKg !== undefined && patientWeightKg > 0);
+export const PrescriptionDrugCatalogSelector: React.FC<
+	PrescriptionDrugCatalogSelectorProps
+> = (props) => {
+	const isPediatric =
+		props.selectedDrugIds.includes("ibuprofen_suspension_100_5ml") ||
+		(props.patientWeightKg !== undefined && props.patientWeightKg > 0);
 
 	return (
-		<div className={`w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 ${className || ""}`}>
-			{/* Pediatric Weight & Dose Calculator Card */}
-			{isPediatricActive && (
-				<div
-					data-testid="pediatric-dose-calculator-card"
-					className="p-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-100 flex flex-col gap-2 shrink-0"
-				>
-					<div className="flex items-center justify-between gap-2">
-						<span className="text-xs font-bold flex items-center gap-1.5 text-sky-800 dark:text-sky-200">
-							<Sparkles className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-							Детская дозировка (Ибупрофен 100 мг / 5 мл):
-						</span>
-						<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-sky-600 text-white shrink-0">
-							10 мг/кг
-						</span>
-					</div>
-					<div className="flex items-center gap-3 flex-wrap text-xs">
-						<div className="flex items-center gap-1.5">
-							<label className="text-xs text-[var(--muted)] font-medium">Вес ребенка:</label>
-							<input
-								type="number"
-								min="5"
-								max="60"
-								step="1"
-								value={patientWeightKg ?? 15}
-								onChange={(e) => {
-									const val = parseFloat(e.target.value);
-									onPatientWeightKgChange?.(Number.isNaN(val) ? undefined : val);
-								}}
-								className="w-20 px-2 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold text-center"
-							/>
-							<span className="font-semibold text-[var(--ink)]">кг</span>
-						</div>
-						<div className="text-xs text-sky-800 dark:text-sky-200">
-							Разово: <strong>{(((patientWeightKg ?? 15) / 2)).toFixed(1)} мл</strong> ({Math.round((patientWeightKg ?? 15) * 10)} мг) до 3 р/д
-						</div>
-					</div>
-				</div>
+		<div
+			className={`w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 ${props.className || ""}`}
+		>
+			{isPediatric && (
+				<PrescriptionPediatricCalculator
+					patientWeightKg={props.patientWeightKg}
+					onPatientWeightKgChange={props.onPatientWeightKgChange}
+				/>
 			)}
 
-			{/* 1-Click Fast Presets Bar via PrescriptionExpressPills */}
 			<PrescriptionExpressPills
-				presets={fastPresets}
-				activePresetId={activePresetId}
-				onSelectPreset={(p) => (onSelectPreset ? onSelectPreset(p) : onApplyAndInsertToDiary(p))}
-				onApplyAndPrint={onApplyAndPrint}
-				onApplyAndInsertToDiary={onApplyAndInsertToDiary}
-				patientAllergies={patientAllergies}
-				catalogDrugs={filteredCatalog}
+				presets={props.fastPresets}
+				activePresetId={props.activePresetId}
+				onSelectPreset={(p) =>
+					props.onSelectPreset
+						? props.onSelectPreset(p)
+						: props.onApplyAndInsertToDiary(p)
+				}
+				onApplyAndPrint={props.onApplyAndPrint}
+				onApplyAndInsertToDiary={props.onApplyAndInsertToDiary}
+				patientAllergies={props.patientAllergies}
+				catalogDrugs={props.filteredCatalog}
 			/>
 
-			{/* Search and Drug List */}
-			<div className="flex flex-col gap-2">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<Award className="w-3.5 h-3.5 text-[var(--teal)]" />
-						Каталог препаратов
-					</span>
-					<button
-						type="button"
-						onClick={onToggleAddingCustom}
-						className="secondary-button h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
-					>
-						<Plus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
-						<span>Свой препарат</span>
-					</button>
-				</div>
+			<PrescriptionCatalogList
+				searchQuery={props.searchQuery}
+				onSearchQueryChange={props.onSearchQueryChange}
+				filteredCatalog={props.filteredCatalog}
+				selectedDrugIds={props.selectedDrugIds}
+				onToggleDrug={props.onToggleDrug}
+				onToggleAddingCustom={props.onToggleAddingCustom}
+				patientAllergies={props.patientAllergies}
+			/>
 
-				<div className="dente-search-wrap w-full">
-					<Search className="dente-search-icon" />
-					<input
-						type="text"
-						placeholder="Поиск по МНН, торговому названию или латыни..."
-						value={searchQuery}
-						onChange={(e) => onSearchQueryChange(e.target.value)}
-						className="dente-search-input"
-					/>
-					{searchQuery && (
-						<button
-							type="button"
-							onClick={() => onSearchQueryChange("")}
-							className="dente-search-clear"
-							aria-label="Очистить поиск"
-						>
-							<X className="w-3.5 h-3.5" />
-						</button>
-					)}
-				</div>
+			<PrescriptionCustomDrugForm
+				isAddingCustom={props.isAddingCustom}
+				customTradeName={props.customTradeName}
+				onCustomTradeNameChange={props.onCustomTradeNameChange}
+				customLatinRp={props.customLatinRp}
+				onCustomLatinRpChange={props.onCustomLatinRpChange}
+				customDispense={props.customDispense}
+				onCustomDispenseChange={props.onCustomDispenseChange}
+				customSigna={props.customSigna}
+				onCustomSignaChange={props.onCustomSignaChange}
+				onAddCustomDrug={props.onAddCustomDrug}
+			/>
 
-				<div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-					{filteredCatalog.map((drug) => {
-						const isSelected = selectedDrugIds.includes(drug.id);
-						const conflictType = getDrugAllergyConflictType(
-							{ id: drug.id, tradeName: drug.tradeNameRu, latinName: drug.latinRp, category: drug.category },
-							patientAllergies,
-						);
-						return (
-							<div
-								key={drug.id}
-								onClick={() => onToggleDrug(drug.id)}
-								className={`p-2 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between gap-2 ${
-									isSelected
-										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] font-semibold shadow-xs"
-										: conflictType
-											? "bg-rose-500/5 border-rose-500/30 text-[var(--ink)] hover:border-rose-500/50"
-											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"
-								}`}
-							>
-								<div className="min-w-0">
-									<div className="flex items-center gap-1.5 flex-wrap">
-										<span className="font-bold truncate">{drug.tradeNameRu}</span>
-										{conflictType && (
-											<span
-												data-testid={`drug-allergy-badge-${drug.id}`}
-												className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-0.5 shrink-0"
-											>
-												<AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
-												АЛЛЕРГИЯ
-											</span>
-										)}
-									</div>
-									<div className="text-xs text-[var(--muted)] truncate italic">
-										{drug.latinRp}
-									</div>
-								</div>
-								<div className="flex items-center gap-2 shrink-0">
-									<span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)]">
-										{drug.dosageRu}
-									</span>
-									<div
-										className={`w-4 h-4 rounded-md border flex items-center justify-center ${
-											isSelected
-												? "bg-[var(--teal)] border-[var(--teal)] text-[var(--ink-inverse)]"
-												: "border-[var(--line)]"
-										}`}
-									>
-										{isSelected && <CheckCircle2 className="w-3 h-3" />}
-									</div>
-								</div>
-							</div>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* Custom Drug Input Strip */}
-			{isAddingCustom && (
-				<div className="p-3 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2">
-					<div className="text-xs font-bold text-[var(--ink)]">
-						Добавление нестандартного препарата:
-					</div>
-					<input
-						type="text"
-						placeholder="Торговое название (напр. Нимесил)..."
-						value={customTradeName}
-						onChange={(e) => onCustomTradeNameChange(e.target.value)}
-						className="w-full px-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-					/>
-					<input
-						type="text"
-						placeholder="Латинская пропись (Rp.: Nimesulidi 100 mg)..."
-						value={customLatinRp}
-						onChange={(e) => onCustomLatinRpChange(e.target.value)}
-						className="w-full px-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-					/>
-					<div className="flex gap-2">
-						<input
-							type="text"
-							placeholder="Отпуск (D.t.d. N 10)..."
-							value={customDispense}
-							onChange={(e) => onCustomDispenseChange(e.target.value)}
-							className="w-1/2 px-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-						/>
-						<input
-							type="text"
-							placeholder="Сигнатура (S. Внутрь по 1 пак. 2 р/д)..."
-							value={customSigna}
-							onChange={(e) => onCustomSignaChange(e.target.value)}
-							className="w-1/2 px-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-						/>
-					</div>
-					<button
-						type="button"
-						onClick={onAddCustomDrug}
-						className="primary-button h-8 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer self-end shadow-xs"
-					>
-						Добавить в рецепт
-					</button>
-				</div>
-			)}
-
-			{/* Prescription Form Details & Validity Selector */}
-			<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
-				<div className="grid grid-cols-2 gap-2">
-					<div>
-						<label className="text-xs font-medium text-[var(--muted)] block mb-1">
-							Серия и номер бланка:
-						</label>
-						<input
-							type="text"
-							value={customSeriesNumber}
-							onChange={(e) => onCustomSeriesNumberChange(e.target.value)}
-							className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-mono"
-						/>
-					</div>
-					<div>
-						<label className="text-xs font-medium text-[var(--muted)] block mb-1">
-							Срок действия:
-						</label>
-						<div className="dente-segmented-bar w-full">
-							{[
-								{ days: "15" as const, label: "15 дней" },
-								{ days: "30" as const, label: "30 дн." },
-								{ days: "60" as const, label: "60 дн." },
-								{ days: "365" as const, label: "1 год" },
-							].map((opt) => (
-								<button
-									key={opt.days}
-									type="button"
-									onClick={() => onValidityDaysChange(opt.days)}
-									className={`dente-segmented-item ${validityDays === opt.days ? "active" : ""}`}
-									data-active={validityDays === opt.days}
-								>
-									{opt.label}
-								</button>
-							))}
-						</div>
-					</div>
-				</div>
-
-				{validityDays === "365" && (
-					<div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col gap-1.5">
-						<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800 dark:text-amber-200">
-							<input
-								type="checkbox"
-								checked={isChronicSpecialCare}
-								onChange={onToggleChronicSpecialCare}
-								className="rounded text-[var(--teal)] focus:ring-[var(--teal)]"
-							/>
-							Спец. отметка «По специальному назначению» (хронические заболевания)
-						</label>
-						{isChronicSpecialCare && (
-							<input
-								type="text"
-								placeholder="Периодичность отпуска (напр. ежемесячно / 1 раз в 15 дней)..."
-								value={chronicPeriodicity}
-								onChange={(e) => onChronicPeriodicityChange(e.target.value)}
-								className="w-full px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-amber-500/30 text-[var(--ink)]"
-							/>
-						)}
-					</div>
-				)}
-
-				{activeForm === "148-1u-88" && (
-					<div>
-						<label className="text-xs font-medium text-[var(--muted)] block mb-1">
-							Адрес проживания пациента (рецепт строгого учета):
-						</label>
-						<input
-							type="text"
-							placeholder="Город, улица, дом, кв..."
-							value={patientAddress}
-							onChange={(e) => onPatientAddressChange(e.target.value)}
-							className="w-full px-3 py-1.5 text-xs rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
-						/>
-					</div>
-				)}
-			</div>
+			<PrescriptionValidityDetails
+				customSeriesNumber={props.customSeriesNumber}
+				onCustomSeriesNumberChange={props.onCustomSeriesNumberChange}
+				validityDays={props.validityDays}
+				onValidityDaysChange={props.onValidityDaysChange}
+				isChronicSpecialCare={props.isChronicSpecialCare}
+				onToggleChronicSpecialCare={props.onToggleChronicSpecialCare}
+				chronicPeriodicity={props.chronicPeriodicity}
+				onChronicPeriodicityChange={props.onChronicPeriodicityChange}
+				patientAddress={props.patientAddress}
+				onPatientAddressChange={props.onPatientAddressChange}
+				activeForm={props.activeForm}
+			/>
 		</div>
 	);
 };

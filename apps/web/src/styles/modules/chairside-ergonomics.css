@@ -1,0 +1,305 @@
+/* ==========================================================================
+   DENTE CLINIC MVP — CHAIRSIDE ERGONOMICS & HARDWARE INTEGRATION LAYER
+   Mandate: DESIGNER_VISUAL_INQUISITION_BIBLE.md & THE_HAMMER_MASTER_PROMPT.md
+   Tokens: var(--paper), var(--paper-soft), var(--line), var(--ink), var(--muted), var(--teal)
+   ========================================================================== */
+
+/* ── 1. PATIENT PRIVACY SHIELD («Показать монитор пациенту» / Alt+H) ─────── */
+
+[data-dente-privacy-shield="active"] .dente-privacy-sensitive,
+[data-patient-privacy="true"] .dente-privacy-sensitive,
+[data-dente-privacy-shield="active"] .dente-sensitive-data,
+[data-patient-privacy="true"] .dente-sensitive-data,
+[data-dente-privacy-shield="active"] [data-privacy-sensitive="true"],
+[data-patient-privacy="true"] [data-privacy-sensitive="true"],
+[data-dente-privacy-shield="active"] .dente-financial-amount,
+[data-patient-privacy="true"] .dente-financial-amount,
+[data-dente-privacy-shield="active"] .dente-cost-price,
+[data-patient-privacy="true"] .dente-cost-price,
+[data-dente-privacy-shield="active"] .dente-debt-balance,
+[data-patient-privacy="true"] .dente-debt-balance,
+[data-dente-privacy-shield="active"] .dente-doctor-salary,
+[data-patient-privacy="true"] .dente-doctor-salary,
+[data-dente-privacy-shield="active"] .patient-balance-negative,
+[data-patient-privacy="true"] .patient-balance-negative,
+[data-dente-privacy-shield="active"] .patient-balance-badge,
+[data-patient-privacy="true"] .patient-balance-badge,
+[data-dente-privacy-shield="active"] .patient-balance-value,
+[data-patient-privacy="true"] .patient-balance-value,
+[data-dente-privacy-shield="active"] [data-testid="patient-financial-balance"],
+[data-patient-privacy="true"] [data-testid="patient-financial-balance"],
+[data-dente-privacy-shield="active"] [data-testid="doctor-salary-card"],
+[data-patient-privacy="true"] [data-testid="doctor-salary-card"],
+[data-dente-privacy-shield="active"] .metric-value,
+[data-patient-privacy="true"] .metric-value,
+[data-dente-privacy-shield="active"] .stat-value,
+[data-patient-privacy="true"] .stat-value,
+[data-dente-privacy-shield="active"] .finance-amount,
+[data-patient-privacy="true"] .finance-amount,
+[data-dente-privacy-shield="active"] .cash-amount,
+[data-patient-privacy="true"] .cash-amount,
+[data-dente-privacy-shield="active"] .money-value,
+[data-patient-privacy="true"] .money-value,
+[data-dente-privacy-shield="active"] .price-badge,
+[data-patient-privacy="true"] .price-badge,
+[data-dente-privacy-shield="active"] [data-privacy-auto-masked="true"],
+[data-patient-privacy="true"] [data-privacy-auto-masked="true"] {
+	filter: blur(8px) !important;
+	user-select: none !important;
+	pointer-events: none !important;
+	transition: filter 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 2. FLOATING ERGONOMICS TOASTS & HUD WIDGETS ──────────────────────────── */
+
+.chairside-toast-container {
+	position: fixed;
+	bottom: 72px;
+	right: 24px;
+	z-index: 100005;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 480px;
+	width: calc(100vw - 32px);
+	pointer-events: none;
+}
+
+body:has([data-testid="chairside-ergonomics-host"]) [data-testid="global-toast"] {
+	bottom: 118px !important;
+}
+
+body:has(.chairside-privacy-bottom-badge) .chairside-toast-container {
+	bottom: 124px;
+}
+
+@media (max-width: 640px) {
+	.chairside-toast-container {
+		bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+		right: 16px;
+		left: 16px;
+		width: auto;
+	}
+}
+
+.chairside-toast-card {
+	pointer-events: auto;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.28), 0 0 1px rgba(13, 148, 136, 0.25);
+	padding: 12px 14px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	animation: chairsideToastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+[data-theme="dark"] .chairside-toast-card,
+.dark .chairside-toast-card {
+	background: #0f172a;
+	border-color: rgba(148, 163, 184, 0.22);
+	box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.65), 0 0 1px rgba(20, 184, 166, 0.35);
+}
+
+@keyframes chairsideToastSlideUp {
+	from {
+		opacity: 0;
+		transform: translateY(16px) scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.chairside-toast-thumb {
+	width: 56px;
+	height: 56px;
+	border-radius: 8px;
+	border: 1px solid var(--line-subtle, var(--line));
+	object-fit: cover;
+	background: var(--paper-soft);
+	flex-shrink: 0;
+}
+
+.chairside-toast-icon-wrap {
+	width: 38px;
+	height: 38px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.chairside-toast-icon-wrap.teal {
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.08);
+	border-color: rgba(13, 148, 136, 0.2);
+}
+
+.chairside-toast-icon-wrap.indigo {
+	color: #6366f1;
+	background: rgba(99, 102, 241, 0.08);
+	border-color: rgba(99, 102, 241, 0.2);
+}
+
+.chairside-toast-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.chairside-toast-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.3;
+	white-space: normal;
+}
+
+.chairside-toast-subtitle {
+	font-size: 11.5px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+	line-height: 1.35;
+	font-family: inherit;
+}
+
+.chairside-toast-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.chairside-toast-btn-primary {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #ffffff;
+	background: var(--teal);
+	border: none;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: opacity 0.15s ease, transform 0.1s ease;
+	white-space: nowrap;
+}
+
+.chairside-toast-btn-primary:hover {
+	opacity: 0.92;
+}
+
+.chairside-toast-btn-primary:active {
+	transform: scale(0.97);
+}
+
+.chairside-toast-btn-ghost {
+	height: 32px;
+	width: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--muted);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chairside-toast-btn-ghost:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* ── 3. PERSISTENT BOTTOM PRIVACY BADGE & TOPBAR PILL ─────────────────────── */
+
+.chairside-privacy-bottom-badge {
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 100004;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 16px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid rgba(13, 148, 136, 0.45);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	backdrop-filter: blur(12px);
+}
+
+body:has(.checkout-bottom-bar, .sticky-bottom-actions, .mobile-tab-bar, [data-testid="checkout-sticky-footer"]) .chairside-privacy-bottom-badge {
+	bottom: 76px;
+}
+
+[data-theme="dark"] .chairside-privacy-bottom-badge,
+.dark .chairside-privacy-bottom-badge {
+	background: #0f172a;
+	border-color: rgba(20, 184, 166, 0.45);
+	color: #f8fafc;
+}
+
+.chairside-privacy-bottom-badge:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.chairside-privacy-bottom-badge .pulse-dot,
+.chairside-privacy-pill .pulse-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--teal);
+	animation: chairsidePulse 1.8s infinite;
+	flex-shrink: 0;
+}
+
+.chairside-privacy-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 14px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.chairside-privacy-pill:hover {
+	background: rgba(13, 148, 136, 0.2);
+}
+
+@keyframes chairsidePulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.6);
+	}
+	70% {
+		box-shadow: 0 0 0 6px rgba(13, 148, 136, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0);
+	}
+}

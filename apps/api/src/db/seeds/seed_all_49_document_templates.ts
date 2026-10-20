@@ -7,6 +7,7 @@ import {
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import { db } from "../client.js";
+import { withSuperuserBypass } from "../rls.js";
 import {
 	documentTemplateCategories,
 	documentTemplates,
@@ -132,20 +133,21 @@ export async function seedAll49DocumentTemplates(): Promise<{
 	variablesCount: number;
 	templatesCount: number;
 }> {
-	const stomxDir = resolveStomxTemplatesDir();
+	return withSuperuserBypass(async (tx) => {
+		const stomxDir = resolveStomxTemplatesDir();
 
-	// ─── 1. СИДИРОВАНИЕ 10 КАТЕГОРИЙ ──────────────────────────────────────────
-	const categoriesPath = path.join(stomxDir, "categories.json");
-	const rawCategories = JSON.parse(fs.readFileSync(categoriesPath, "utf8")) as Array<{
-		id: number;
-		name: string;
-		order: number;
-	}>;
+		// ─── 1. СИДИРОВАНИЕ 10 КАТЕГОРИЙ ──────────────────────────────────────────
+		const categoriesPath = path.join(stomxDir, "categories.json");
+		const rawCategories = JSON.parse(fs.readFileSync(categoriesPath, "utf8")) as Array<{
+			id: number;
+			name: string;
+			order: number;
+		}>;
 
-	let categoriesCount = 0;
-	for (const cat of rawCategories) {
-		await db
-			.insert(documentTemplateCategories)
+		let categoriesCount = 0;
+		for (const cat of rawCategories) {
+			await tx
+				.insert(documentTemplateCategories)
 			.values({
 				id: cat.id,
 				name: cat.name,
@@ -195,7 +197,7 @@ export async function seedAll49DocumentTemplates(): Promise<{
 				: (spec?.exampleValue ?? "");
 		const resolverPath = spec?.resolverPath ?? "";
 
-		await db
+		await tx
 			.insert(documentTemplateVariables)
 			.values({
 				token,
@@ -257,7 +259,7 @@ export async function seedAll49DocumentTemplates(): Promise<{
 			item.name,
 		);
 
-		await db
+		await tx
 			.insert(documentTemplates)
 			.values({
 				stomxId: item.id,
@@ -294,11 +296,12 @@ export async function seedAll49DocumentTemplates(): Promise<{
 		templatesCount++;
 	}
 
-	return {
-		categoriesCount,
-		variablesCount,
-		templatesCount,
-	};
+		return {
+			categoriesCount,
+			variablesCount,
+			templatesCount,
+		};
+	});
 }
 
 // Запуск напрямую через CLI (node / tsx)

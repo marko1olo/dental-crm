@@ -50,11 +50,19 @@ export interface AssistantToolCall {
 	titleRu: string;
 }
 
+export interface CompactionTriggeredData {
+	beforeTokens: number;
+	afterTokens: number;
+	tokensSaved: number;
+	summary: string;
+}
+
 export interface AssistantEventCallbacks {
 	onMessageUpdated?: (message: AssistantMessage) => void;
 	onPhaseChanged?: (phase: AssistantPhase) => void;
 	onError?: (errorText: string) => void;
 	onConfirmationRequired?: (toolCall: AssistantToolCall) => void;
+	onCompactTriggered?: (data: CompactionTriggeredData) => void;
 }
 
 export class AIAssistantService {
@@ -63,6 +71,7 @@ export class AIAssistantService {
 	private currentAbortController: AbortController | null = null;
 	private currentPhase: AssistantPhase = "idle";
 	private callbacks: AssistantEventCallbacks = {};
+	private lastCompactionStats: (CompactionTriggeredData & { timestamp: number }) | null = null;
 
 	constructor(apiBaseUrl = "") {
 		this.apiBaseUrl = apiBaseUrl;
@@ -90,6 +99,10 @@ export class AIAssistantService {
 		}
 		this.activeSessionId = null;
 		this.setPhase("idle");
+	}
+
+	public getLastCompactionStats(): (CompactionTriggeredData & { timestamp: number }) | null {
+		return this.lastCompactionStats;
 	}
 
 	private setPhase(phase: AssistantPhase): void {
@@ -317,6 +330,17 @@ export class AIAssistantService {
 				this.callbacks.onMessageUpdated?.({ ...msg });
 
 				if (destructive) {
+					// Register unconfirmed action in copilotActionRunner for 1-click confirmation
+					copilotActionRunner.executeAction(
+						{
+							callId,
+							name: toolName,
+							arguments: args,
+							confirmed: false,
+						},
+						{ apiBaseUrl: this.apiBaseUrl },
+					).catch(() => {});
+
 					this.callbacks.onConfirmationRequired?.(toolCallObj);
 				} else {
 					// Safe action: auto-execute via copilotActionRunner
@@ -341,13 +365,90 @@ export class AIAssistantService {
 				break;
 			}
 
+			case "tool_confirmation_required":
+			case "confirmation_required": {
+				this.setPhase("working");
+				const callId = String(data.callId || data.id || `call_${Date.now()}`);
+				const toolName = String(data.name || data.tool || "tool");
+				const args = (data.args || data.arguments || {}) as Record<string, unknown>;
+				const titleRu = getActionTitleRu(toolName);
+
+				const toolCallObj: AssistantToolCall = {
+					callId,
+					name: toolName,
+					arguments: args,
+					status: "confirmation_required",
+					destructive: true,
+					titleRu,
+				};
+
+				// Register in pending actions of copilotActionRunner so 1-click UI confirmation works
+				copilotActionRunner.executeAction(
+					{
+						callId,
+						name: toolName,
+						arguments: args,
+						confirmed: false,
+					},
+					{ apiBaseUrl: this.apiBaseUrl },
+				).catch(() => {});
+
+				const existingIndex = msg.toolCalls?.findIndex((t) => t.callId === callId) ?? -1;
+				if (existingIndex >= 0 && msg.toolCalls) {
+					msg.toolCalls[existingIndex] = toolCallObj;
+				} else {
+					msg.toolCalls = [...(msg.toolCalls || []), toolCallObj];
+				}
+
+				this.callbacks.onMessageUpdated?.({ ...msg });
+				this.callbacks.onConfirmationRequired?.(toolCallObj);
+				break;
+			}
+
+			case "compact_triggered": {
+				const before = Number(data.beforeTokens || 0);
+				const after = Number(data.afterTokens || 0);
+				const saved = Number(data.tokensSaved || Math.max(0, before - after));
+				const summary = String(data.summary || "");
+
+				this.lastCompactionStats = {
+					beforeTokens: before,
+					afterTokens: after,
+					tokensSaved: saved,
+					summary,
+					timestamp: Date.now(),
+				};
+
+				this.callbacks.onCompactTriggered?.({
+					beforeTokens: before,
+					afterTokens: after,
+					tokensSaved: saved,
+					summary,
+				});
+				break;
+			}
+
+			case "tool_end":
 			case "tool_result": {
 				const callId = String(data.callId || data.id);
 				const target = msg.toolCalls?.find((t) => t.callId === callId);
 				if (target) {
-					target.status = data.ok !== false ? "done" : "failed";
+					target.status = data.ok !== false && (data.result as any)?.error === undefined ? "done" : "failed";
 					target.result = data.result;
 					this.callbacks.onMessageUpdated?.({ ...msg });
+
+					// Seamless client store synchronization on successful backend tool result
+					if (data.ok !== false) {
+						copilotActionRunner.executeAction(
+							{
+								callId,
+								name: target.name,
+								arguments: target.arguments,
+								confirmed: true,
+							},
+							{ apiBaseUrl: this.apiBaseUrl },
+						).catch(() => {});
+					}
 				}
 				break;
 			}
@@ -413,14 +514,16 @@ export class AIAssistantService {
 		if (isProtocolIntent) {
 			const detectedTooth = extractFdiToothFromText(userText) ?? currentTooth;
 			const isPureExtraction = (lower.includes("удал") || lower.includes("экстракц")) && !lower.includes("протокол") && !lower.includes("заполни");
-			const isDestructive = isPureExtraction;
+			const isPureImplant = lower.includes("имплант") && !lower.includes("протокол") && !lower.includes("заполни");
+			const isDestructive = isPureExtraction || isPureImplant;
 
 			const callId = `local_protocol_${Date.now()}`;
-			const toolName = "apply_clinical_protocol";
-			const args = {
-				query: userText,
-				toothNumber: detectedTooth,
-			};
+			const toolName = isPureImplant ? "update_tooth_status" : (isPureExtraction ? "update_tooth_status" : "apply_clinical_protocol");
+			const args = isPureImplant
+				? { tooth: detectedTooth, status: "имплант", diagnosis: "Дентальный имплантат" }
+				: (isPureExtraction
+					? { tooth: detectedTooth, status: "удален", diagnosis: "Отсутствует / удален" }
+					: { query: userText, toothNumber: detectedTooth });
 
 			const toolCallObj: AssistantToolCall = {
 				callId,
@@ -434,7 +537,15 @@ export class AIAssistantService {
 			msg.toolCalls = [toolCallObj];
 
 			if (isDestructive) {
-				msg.content = `Клиническое действие требует подтверждения врача: удаление зуба ${detectedTooth}.`;
+				await copilotActionRunner.executeAction({
+					callId,
+					name: toolName,
+					arguments: args,
+					confirmed: false,
+				});
+
+				const actionDesc = isPureImplant ? `установка импланта на зуб ${detectedTooth}` : `удаление зуба ${detectedTooth}`;
+				msg.content = `Клиническое действие требует подтверждения врача: ${actionDesc}. Нажмите «Подтвердить» в карточке действия.`;
 				this.callbacks.onConfirmationRequired?.(toolCallObj);
 			} else {
 				const actionResult = await copilotActionRunner.executeAction({
@@ -550,6 +661,39 @@ export class AIAssistantService {
 				minute: "2-digit",
 			});
 			msg.content = `Пациент предварительно записан на ${formattedDate}. Карточка записи добавлена в расписание клиники.`;
+			this.callbacks.onMessageUpdated?.({ ...msg });
+			return;
+		}
+
+		// 4.5 Cancel appointment (Destructive, 2-phase Guard)
+		if (lower.includes("отмени") && (lower.includes("запис") || lower.includes("прием") || lower.includes("приём"))) {
+			const callId = `local_cancel_${Date.now()}`;
+			const toolName = "cancel_appointment";
+			const args = {
+				appointmentId: "app_current",
+				reason: "Отменено врачом через ассистента",
+			};
+
+			const toolCallObj: AssistantToolCall = {
+				callId,
+				name: toolName,
+				arguments: args,
+				status: "confirmation_required",
+				destructive: true,
+				titleRu: getActionTitleRu(toolName),
+			};
+
+			msg.toolCalls = [toolCallObj];
+
+			await copilotActionRunner.executeAction({
+				callId,
+				name: toolName,
+				arguments: args,
+				confirmed: false,
+			});
+
+			msg.content = "Отмена приёма требует подтверждения врача (деструктивное действие). Подтвердите отмену в карточке действия.";
+			this.callbacks.onConfirmationRequired?.(toolCallObj);
 			this.callbacks.onMessageUpdated?.({ ...msg });
 			return;
 		}

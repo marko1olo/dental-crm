@@ -203,6 +203,8 @@ export function projectServiceCatalogRows(
 			durationMinutes,
 			taxDeductible: row.taxDeductible,
 			active: row.isActive,
+			order804nCode: row.order804nCode ?? (row as any).order_804n_code ?? null,
+			materialsCostRub: row.materialsCostRub !== null && row.materialsCostRub !== undefined ? Number(row.materialsCostRub) : 0,
 		});
 
 		if (!parsed.success) {
@@ -277,6 +279,8 @@ export interface ServiceCatalogItemInput {
 	readonly durationMinutes: number;
 	readonly taxDeductible: boolean;
 	readonly active: boolean;
+	readonly order804nCode?: string | null | undefined;
+	readonly materialsCostRub?: number | null | undefined;
 }
 
 /**
@@ -389,6 +393,8 @@ export async function createServiceCatalogItemInDb(
 			durationMinutes: input.durationMinutes,
 			taxDeductible: input.taxDeductible,
 			isActive: input.active,
+			order804nCode: input.order804nCode ?? null,
+			materialsCostRub: input.materialsCostRub !== undefined && input.materialsCostRub !== null ? input.materialsCostRub : 0,
 		})
 		.returning();
 	if (!row)
@@ -420,6 +426,10 @@ export async function updateServiceCatalogItemInDb(
 	if (patch.taxDeductible !== undefined)
 		updates.taxDeductible = patch.taxDeductible;
 	if (patch.active !== undefined) updates.isActive = patch.active;
+	if (patch.order804nCode !== undefined)
+		updates.order804nCode = patch.order804nCode;
+	if (patch.materialsCostRub !== undefined)
+		updates.materialsCostRub = patch.materialsCostRub !== null ? patch.materialsCostRub : 0;
 
 	const [row] = await db
 		.update(schema.serviceCatalogItems)
@@ -623,7 +633,7 @@ export async function batchRepriceServicesInDb(
 
 	const updatedItems: ServiceCatalogItem[] = [];
 
-	await db.transaction(async () => {
+	await db.transaction(async (tx) => {
 		for (const item of itemsToUpdate) {
 			const newPrice = computeRepricedAmount(
 				item.basePriceRub,
@@ -632,7 +642,7 @@ export async function batchRepriceServicesInDb(
 				options.roundMode,
 			);
 
-			const [row] = await db
+			const [row] = await tx
 				.update(schema.serviceCatalogItems)
 				.set(moneyColumns(newPrice))
 				.where(

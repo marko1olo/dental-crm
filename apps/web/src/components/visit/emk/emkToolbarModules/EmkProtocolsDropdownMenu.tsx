@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Printer, Redo2, ShieldCheck, Sparkles, Undo2 } from "lucide-react";
+import { Activity, FileText, Pill, Printer, Redo2, ShieldCheck, Sparkles, Undo2 } from "lucide-react";
 import { EmkDropdownNormItems } from "./EmkDropdownNormItems";
 
 export interface EmkProtocolsDropdownMenuProps {
@@ -41,6 +41,51 @@ export function EmkProtocolsDropdownMenu({
 				onApplyOrthoNorm={onApplyOrthoNorm}
 				onApplySurgeryNorm={onApplySurgeryNorm}
 			/>
+
+			<div className="h-px bg-[var(--line)] my-1" />
+
+			<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+				Клинические пространства
+			</div>
+
+			<button
+				type="button"
+				data-testid="btn-open-perio-chart-toolbar"
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("dente:open-perio-modal"));
+					onClose();
+				}}
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+			>
+				<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+				<span>Пародонтограмма (Florida Probe)</span>
+			</button>
+
+			<button
+				type="button"
+				data-testid="btn-open-prescriptions-toolbar"
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
+					onClose();
+				}}
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+			>
+				<Pill className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+				<span>Выписать рецепт (1094н)</span>
+			</button>
+
+			<button
+				type="button"
+				data-testid="btn-open-implant-passport-toolbar"
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("dente:open-implant-passport"));
+					onClose();
+				}}
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+			>
+				<FileText className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+				<span>Паспорт имплантата</span>
+			</button>
 
 			<div className="h-px bg-[var(--line)] my-1" />
 

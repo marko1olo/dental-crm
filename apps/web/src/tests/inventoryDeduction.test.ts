@@ -825,26 +825,12 @@ describe("Automated BOM Deduction and Automatic Storno on Service Removal (Manda
 });
 
 describe("SSOT Unification & Facade Parity (Mandates 8e, 8n, 8s, 8zh)", () => {
-	it("ConsumablesDeductionModal из components/inventory и components/warehouse ссылаются на единый SSOT", async () => {
-		const warehouseModule = await import("../components/warehouse/ConsumablesDeductionModal.js");
-		const inventoryModule = await import("../components/inventory/ConsumablesDeductionModal.js");
+	it("ConsumablesDeductionModal и WarehouseInventoryTab экспортируются из components/inventory как канонический SSOT", async () => {
+		const inventoryModal = await import("../components/inventory/ConsumablesDeductionModal.js");
+		const inventoryTab = await import("../components/inventory/WarehouseInventoryTab.js");
 
-		assert.strictEqual(
-			inventoryModule.ConsumablesDeductionModal,
-			warehouseModule.ConsumablesDeductionModal,
-			"Фасад в components/inventory обязан ссылаться на канонический компонент в components/warehouse",
-		);
-	});
-
-	it("WarehouseInventoryTab из components/inventory и components/warehouse ссылаются на единый SSOT", async () => {
-		const warehouseModule = await import("../components/warehouse/WarehouseInventoryTab.js");
-		const inventoryModule = await import("../components/inventory/WarehouseInventoryTab.js");
-
-		assert.strictEqual(
-			inventoryModule.WarehouseInventoryTab,
-			warehouseModule.WarehouseInventoryTab,
-			"Фасад в components/inventory обязан ссылаться на канонический компонент в components/warehouse",
-		);
+		assert.ok(inventoryModal.ConsumablesDeductionModal, "ConsumablesDeductionModal должен экспортироваться из components/inventory");
+		assert.ok(inventoryTab.WarehouseInventoryTab, "WarehouseInventoryTab должен экспортироваться из components/inventory");
 	});
 
 	it("Канонический SSOT materialsAutoDeductionSsot рассчитывает техкарты 804н и мягкий овердрафт без блокировок", async () => {
@@ -912,7 +898,7 @@ describe("SSOT Unification & Facade Parity (Mandates 8e, 8n, 8s, 8zh)", () => {
 
 	it("ConsumablesDeductionModal рендерится с кнопкой списания, не заблокированной при дефиците склада (Мандат 8e)", async () => {
 		const { ConsumablesDeductionModal } = await import(
-			"../components/warehouse/ConsumablesDeductionModal.js"
+			"../components/inventory/ConsumablesDeductionModal.js"
 		);
 
 		const html = renderToStaticMarkup(

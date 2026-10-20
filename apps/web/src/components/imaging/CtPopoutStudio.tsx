@@ -27,7 +27,7 @@ export interface CtPopoutStudioProps {
 
 export function CtPopoutStudio({
 	patientName = "Воронова Екатерина Сергеевна",
-	patientCardNumber = "043/у-2026/891",
+	patientCardNumber = "МК-2026/891",
 	deviceName = "Vatech Pax-i 3D Smart (FOV 12×9 см)",
 	studyDate = "08.10.2026, 14:30",
 	onClose,

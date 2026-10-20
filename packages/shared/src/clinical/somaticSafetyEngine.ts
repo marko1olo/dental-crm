@@ -7,17 +7,25 @@
 
 import {
 	type SomaticPregnancyTrimester,
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	isNegativeAllergyOrSomaticStatement,
+} from "./somaticCatalog.js";
+import {
 	type SomaticSafetyEvaluation,
 	type SomaticSafetyInput,
 	type SomaticSeverity,
 	type SomaticStopFactor,
-	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
-	CANONICAL_SOMATIC_NORM_SHORT,
 	extractFullAnamnesisText,
-	isNegativeAllergyOrSomaticStatement,
 } from "./somaticSafetyTypes.js";
 
 export * from "./somaticSafetyTypes.js";
+export {
+	type SomaticPregnancyTrimester,
+	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
+	CANONICAL_SOMATIC_NORM_SHORT,
+	isNegativeAllergyOrSomaticStatement,
+};
 
 
 /**

@@ -4,13 +4,13 @@ import { calculateSplitClipPath, calculateWiperWheelDelta, calculateKeyboardWipe
 import { DEMO_BEFORE_SMILE_SVG, DEMO_AFTER_SMILE_SVG } from './patientPresentationDemoData';
 
 export interface BeforeAfterSplitSliderProps {
-	beforeImageUrl?: string;
-	afterImageUrl?: string;
-	beforeLabel?: string;
-	afterLabel?: string;
-	beforeShade?: string;
-	afterShade?: string;
-	onSwap?: () => void;
+	beforeImageUrl?: string | undefined;
+	afterImageUrl?: string | undefined;
+	beforeLabel?: string | undefined;
+	afterLabel?: string | undefined;
+	beforeShade?: string | undefined;
+	afterShade?: string | undefined;
+	onSwap?: (() => void) | undefined;
 }
 
 export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
@@ -39,9 +39,9 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 	}, [orientation]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
-		const step = e.shiftKey ? 10 : 2;
-		if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') setSplitPercent((p) => calculateKeyboardWiperDelta(p, -step));
-		if (e.key === 'ArrowRight' || e.key === 'ArrowDown') setSplitPercent((p) => calculateKeyboardWiperDelta(p, step));
+		if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(e.key)) {
+			setSplitPercent((p) => calculateKeyboardWiperDelta(p, e.key, e.shiftKey));
+		}
 	};
 
 	const clipPathStyle = calculateSplitClipPath(splitPercent, orientation);

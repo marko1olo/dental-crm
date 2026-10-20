@@ -16,6 +16,7 @@ export * from "./radiologyReferralPrintTemplate.js";
  * CBCT_DIAGNOSTIC_GOALS.map -> data-testid={`referral-goal-${goal.id}`}
  * data-testid="btn-insert-referral-to-043" | data-testid="print-referral-btn"
  * data-testid="referral-barcode-preview" | data-testid="referral-qrcode-preview"
+ * Внести в дневник
  */
 export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = (props) => {
 	const { isOpen, onClose, patient, doctorName, clinicName, clinicLicense, clinicPhone, initialTeeth = EMPTY_TEETH_LIST as string[] } = props;

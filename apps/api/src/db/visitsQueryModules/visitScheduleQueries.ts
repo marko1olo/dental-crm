@@ -46,11 +46,16 @@ export async function getVisitByIdInDb(organizationId: string, id: string) {
  * блокируется `for update`: два кресла, нажавшие одновременно, выстраиваются в
  * очередь, и второй вызов видит визит первого.
  */
+export type DbClientOrTransaction =
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export async function openVisitForAppointmentInDb(
 	organizationId: string,
 	appointmentId: string,
+	executor?: DbClientOrTransaction,
 ): Promise<OpenVisitForAppointmentResult> {
-	return db.transaction(async (tx) => {
+	const run = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
 		const [appointment] = await tx
 			.select({
 				id: schema.appointments.id,
@@ -127,5 +132,10 @@ export async function openVisitForAppointmentInDb(
 			},
 			created: true,
 		};
-	});
+	};
+
+	if (executor && executor !== db) {
+		return run(executor as Parameters<Parameters<typeof db.transaction>[0]>[0]);
+	}
+	return db.transaction(run);
 }

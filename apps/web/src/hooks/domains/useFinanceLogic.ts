@@ -120,26 +120,6 @@ export function useFinanceLogic({
 		const explicitFiscalReceiptUrl = paymentFiscalReceiptUrl.trim();
 		const taxReadyPaymentRequested =
 			paymentTaxDeductionCode === "1" || paymentTaxDeductionCode === "2";
-		if (taxReadyPaymentRequested) {
-			const missingTaxFields = [
-				[paymentFiscalReceiptIssuedAt.trim(), "дата фискального чека"],
-				[explicitFiscalFn, "ФН"],
-				[explicitFiscalFd, "ФД"],
-				[explicitFiscalFpd, "ФПД"],
-				[paymentPayerName, "ФИО плательщика"],
-				[explicitPayerBirthDate, "дата рождения плательщика"],
-				[explicitPayerIdentityDocument, "документ плательщика"],
-				[paymentPayerRelation, "родство плательщика"],
-			]
-				.filter(([value]) => !value)
-				.map(([, label]) => label);
-			if (missingTaxFields.length) {
-				setError(
-					`Для налоговой оплаты заполните явно: ${missingTaxFields.join(", ")}. Данные из карточки пациента не подставляются автоматически.`,
-				);
-				return;
-			}
-		}
 		if (
 			explicitFiscalReceiptUrl &&
 			!/^https?:\/\/\S+$/i.test(explicitFiscalReceiptUrl)
@@ -157,9 +137,7 @@ export function useFinanceLogic({
 		const administrativePayerDocument = patientIsPayer
 			? (documentPatient.administrativeProfile?.identityDocument?.trim() ?? "")
 			: "";
-		const rawPayerInn = taxReadyPaymentRequested
-			? explicitPayerInn
-			: explicitPayerInn || administrativePayerInn;
+		const rawPayerInn = explicitPayerInn || administrativePayerInn;
 		const cleanPayerInn = rawPayerInn.replace(/\D/g, "");
 		// Мандаты 8e, 8n (54-ФЗ): с физлиц ИНН строго опционален и никогда не блокирует кассу
 		const normalizedPayerInn = /^\d{10}$|^\d{12}$/.test(cleanPayerInn) ? cleanPayerInn : null;
@@ -237,21 +215,13 @@ export function useFinanceLogic({
 							receiptUrl: explicitFiscalReceiptUrl || null,
 							operationType: "income",
 						},
-						payerFullName: taxReadyPaymentRequested
-							? paymentPayerName
-							: paymentPayerName || documentPatient.fullName,
+						payerFullName: paymentPayerName || documentPatient.fullName,
 						payerInn: normalizedPayerInn || null,
-						payerBirthDate: taxReadyPaymentRequested
-							? explicitPayerBirthDate
-							: explicitPayerBirthDate || documentPatient.birthDate,
-						payerIdentityDocument: taxReadyPaymentRequested
-							? explicitPayerIdentityDocument
-							: explicitPayerIdentityDocument ||
-								administrativePayerDocument ||
-								null,
-						payerRelationship: taxReadyPaymentRequested
-							? paymentPayerRelation
-							: paymentPayerRelation || "пациент",
+						payerBirthDate: explicitPayerBirthDate || documentPatient.birthDate || null,
+						payerIdentityDocument: explicitPayerIdentityDocument ||
+							administrativePayerDocument ||
+							null,
+						payerRelationship: paymentPayerRelation || "пациент",
 						taxDeductionCode: paymentTaxDeductionCode || null,
 						note: "Оплата из рабочего экрана CRM",
 					}),

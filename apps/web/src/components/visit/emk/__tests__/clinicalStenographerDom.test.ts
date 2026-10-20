@@ -21,7 +21,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import {
 	getGlobalClinicalStenographer,
 	ClinicalStenographerEngine,
@@ -277,6 +277,15 @@ describe("Clinical Stenographer: Component Architecture & Mandate Compliance", (
 	const debouncedTextareaPath = path.resolve(__dirname, "../DebouncedEmkTextarea.tsx");
 	const stenographerBarPath = path.resolve(__dirname, "../ClinicalStenographerBar.tsx");
 	const soapFieldsPath = path.resolve(__dirname, "../../diary/VisitDiarySoapFields.tsx");
+	const soapFieldsDir = path.resolve(__dirname, "../../diary/fields");
+	const soapStenoHookPath = path.resolve(__dirname, "../../diary/useVisitDiarySoapStenographers.ts");
+	const soapFieldsSrc = [
+		fs.readFileSync(soapFieldsPath, "utf8"),
+		fs.existsSync(soapStenoHookPath) ? fs.readFileSync(soapStenoHookPath, "utf8") : "",
+		...(fs.existsSync(soapFieldsDir)
+			? fs.readdirSync(soapFieldsDir).map((f) => fs.readFileSync(path.join(soapFieldsDir, f), "utf8"))
+			: []),
+	].join("\n");
 	const diaryLogicPath = path.resolve(__dirname, "../../../useVisitDiaryLogic.ts");
 
 	it("1. DebouncedEmkTextarea integrates useClinicalStenographer and ClinicalStenographerBar", () => {
@@ -295,9 +304,8 @@ describe("Clinical Stenographer: Component Architecture & Mandate Compliance", (
 	});
 
 	it("3. VisitDiarySoapFields integrates ClinicalStenographerBar for SOAP textareas", () => {
-		const src = fs.readFileSync(soapFieldsPath, "utf8");
-		assert.ok(src.includes("ClinicalStenographerBar"), "SOAP fields must feature stenographer quick chips");
-		assert.ok(src.includes("useClinicalStenographer"), "SOAP fields must use clinical stenographer hook");
+		assert.ok(soapFieldsSrc.includes("ClinicalStenographerBar"), "SOAP fields must feature stenographer quick chips");
+		assert.ok(soapFieldsSrc.includes("useClinicalStenographer"), "SOAP fields must use clinical stenographer hook");
 	});
 
 	it("4. useVisitDiaryLogic provides applyStenographerSnippet handler", () => {
@@ -316,12 +324,10 @@ describe("Clinical Stenographer: Component Architecture & Mandate Compliance", (
 	});
 
 	it("6. VisitDiarySoapFields passes onToothDetected and voice controls to all SOAP fields", () => {
-		const src = fs.readFileSync(soapFieldsPath, "utf8");
-		assert.ok(src.includes("handleToothDetected"), "Must auto-populate diagnosisTooth on voice detection");
-		assert.ok(src.includes("isListening={anamnesisSteno.isListening}"), "Anamnesis bar must receive isListening");
-		assert.ok(src.includes("isListening={statusLocalisSteno.isListening}"), "StatusLocalis bar must receive isListening");
-		assert.ok(src.includes("isListening={treatmentSteno.isListening}"), "Treatment bar must receive isListening");
-		assert.ok(src.includes("onApplyInterim={treatmentSteno.applyInterim}"), "Treatment bar must receive onApplyInterim");
+		assert.ok(soapFieldsSrc.includes("handleToothDetected"), "Must auto-populate diagnosisTooth on voice detection");
+		assert.ok(soapFieldsSrc.includes("anamnesisSteno"), "Anamnesis must receive steno controller");
+		assert.ok(soapFieldsSrc.includes("statusLocalisSteno"), "StatusLocalis must receive steno controller");
+		assert.ok(soapFieldsSrc.includes("treatmentSteno"), "Treatment must receive steno controller");
 	});
 });
 

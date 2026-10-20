@@ -1,10 +1,8 @@
 import type React from "react";
-import { Calendar, ChevronDown, MessageCircle } from "lucide-react";
+import { Calendar, ChevronDown, MessageCircle, Phone } from "lucide-react";
 import {
-	formatHumanRecallBadge,
-	resolveCandidateTriggerType,
-	type PatientRecallRecord,
-	type RecallContactStatus,
+	formatHumanRecallBadge, resolveCandidateTriggerType,
+	type PatientRecallRecord, type RecallContactStatus,
 } from "./patientRecallEngine";
 import { PatientRecallsKanbanDropdownMenu } from "./PatientRecallsKanbanDropdownMenu";
 
@@ -20,14 +18,7 @@ export interface PatientRecallsKanbanCardProps {
 }
 
 export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> = ({
-	candidate,
-	isMenuOpen,
-	onToggleMenu,
-	onBook,
-	onWhatsApp,
-	onCopySms,
-	onStatusUpdate,
-	onPostpone,
+	candidate, isMenuOpen, onToggleMenu, onBook, onWhatsApp, onCopySms, onStatusUpdate, onPostpone,
 }) => {
 	const triggerType = resolveCandidateTriggerType(candidate);
 	const triggerLabel =
@@ -39,10 +30,8 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 		: "Детский осмотр 3-4 мес.";
 
 	const badge = formatHumanRecallBadge({
-		urgencyStatus: candidate.urgencyStatus,
-		daysOverdue: candidate.daysOverdue,
-		dueDate: candidate.dueDate,
-		status: candidate.status,
+		urgencyStatus: candidate.urgencyStatus, daysOverdue: candidate.daysOverdue,
+		dueDate: candidate.dueDate, status: candidate.status,
 	});
 
 	const btnCls = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
@@ -51,7 +40,13 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 		<div className="recall-kanban-card" data-testid={`kanban-card-${candidate.id}`}>
 			<div className="recall-kanban-card-patient">
 				<div className="recall-kanban-card-name">{candidate.fullName}</div>
-				<div className="recall-kanban-card-phone">{candidate.phone || "телефон не указан"}</div>
+				{candidate.phone ? (
+					<a href={`tel:${candidate.phone}`} className="recall-kanban-card-phone" style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+						<Phone size={12} /> <span>{candidate.phone}</span>
+					</a>
+				) : (
+					<div className="recall-kanban-card-phone">телефон не указан</div>
+				)}
 			</div>
 
 			<div className="recall-kanban-card-meta">
@@ -103,12 +98,8 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 					</button>
 
 					<PatientRecallsKanbanDropdownMenu
-						candidate={candidate}
-						isOpen={isMenuOpen}
-						onClose={onToggleMenu}
-						onCopySms={onCopySms}
-						onStatusUpdate={onStatusUpdate}
-						onPostpone={onPostpone}
+						candidate={candidate} isOpen={isMenuOpen} onClose={onToggleMenu}
+						onCopySms={onCopySms} onStatusUpdate={onStatusUpdate} onPostpone={onPostpone}
 					/>
 				</div>
 			</div>

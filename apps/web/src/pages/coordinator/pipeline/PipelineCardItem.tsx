@@ -7,6 +7,7 @@ import {
 	Clock,
 	ExternalLink,
 	Eye,
+	FileText,
 	Link2,
 	Phone,
 } from "lucide-react";
@@ -20,6 +21,7 @@ export interface PipelineCardItemProps {
 	copiedToken: string | null;
 	isGeneratingLink: string | null;
 	onCopyOrGenerateLink: (card: PipelineCard) => void;
+	onOpenPlan?: ((card: PipelineCard) => void) | undefined;
 }
 
 function getInitials(name: string): string {
@@ -43,12 +45,24 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 	copiedToken,
 	isGeneratingLink,
 	onCopyOrGenerateLink,
+	onOpenPlan,
 }) => {
 	const isApproved = card.budgetStatus === "accepted" || card.status === "Approved";
 	const isHorizontal = viewMode === "horizontal";
 
 	return (
-		<div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:shadow-sm transition space-y-3 text-xs w-full max-w-full overflow-hidden">
+		<div
+			role="button"
+			tabIndex={0}
+			onClick={() => onOpenPlan?.(card)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onOpenPlan?.(card);
+				}
+			}}
+			className="p-3.5 sm:p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:shadow-md transition space-y-3 text-xs w-full max-w-full overflow-hidden cursor-pointer"
+		>
 			{/* Top Row: Patient Info, Phone, and Total Amount */}
 			<div className="flex items-start justify-between gap-2.5 sm:gap-3">
 				<div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
@@ -62,6 +76,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						{card.patientPhone && (
 							<a
 								href={`tel:${card.patientPhone}`}
+								onClick={(e) => e.stopPropagation()}
 								className="min-h-[32px] sm:min-h-0 py-1 sm:py-0 text-xs text-[var(--muted)] hover:text-[var(--teal,#0d9488)] transition inline-flex items-center gap-1 whitespace-nowrap shrink-0 touch-manipulation"
 								title="Позвонить пациенту"
 							>
@@ -140,21 +155,40 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 				</div>
 
 				{/* Action Buttons: Unified height 36px on desktop, >= 44px on touch, rounded-xl */}
-				<div className="grid grid-cols-2 sm:flex sm:flex-nowrap items-stretch sm:items-center gap-2 shrink-0 pt-1 lg:pt-0 w-full sm:w-auto">
+				<div className="flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-2 shrink-0 pt-1 lg:pt-0 w-full sm:w-auto">
+					<button
+						type="button"
+						data-testid="pipeline-card-open-plan-btn"
+						onClick={(e) => {
+							e.stopPropagation();
+							onOpenPlan?.(card);
+						}}
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer"
+						style={{ borderRadius: "10px" }}
+						title="Открыть студию презентации плана лечения и сметы"
+					>
+						<FileText className="w-3.5 h-3.5 shrink-0" />
+						<span>Открыть смету</span>
+					</button>
+
 					<a
 						href={`#/schedule?patientId=${card.patientId}`}
-						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border border-[var(--line)] text-[11px] sm:text-[13px] font-medium text-[var(--text)] transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap"
+						onClick={(e) => e.stopPropagation()}
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border border-[var(--line)] text-[11px] sm:text-[13px] font-medium text-[var(--text)] transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap"
 						style={{ borderRadius: "10px" }}
 					>
 						<CalendarPlus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
-						<span>Записать на приём</span>
+						<span>Записать</span>
 					</a>
 
 					<button
 						type="button"
-						onClick={() => onCopyOrGenerateLink(card)}
+						onClick={(e) => {
+							e.stopPropagation();
+							onCopyOrGenerateLink(card);
+						}}
 						disabled={isGeneratingLink === card.id}
-						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3.5 rounded-xl border text-[11px] sm:text-[13px] font-medium transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-medium transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap ${
 							copiedToken === card.id
 								? "bg-emerald-500/20 border-emerald-500/40 text-emerald-500"
 								: "bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border-[var(--line)] text-[var(--text)]"
@@ -172,7 +206,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						) : (
 							<>
 								<Link2 className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
-								<span>Смета / Подпись</span>
+								<span>Ссылка</span>
 							</>
 						)}
 					</button>
@@ -180,9 +214,10 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 					{card.budgetToken && (
 						<a
 							href={`/public/budget/${card.budgetToken}`}
+							onClick={(e) => e.stopPropagation()}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--text)] transition flex items-center justify-center shadow-sm touch-manipulation shrink-0"
+							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--text)] transition flex items-center justify-center shadow-sm touch-manipulation shrink-0"
 							style={{ borderRadius: "10px" }}
 							title="Открыть публичную смету в новой вкладке"
 						>

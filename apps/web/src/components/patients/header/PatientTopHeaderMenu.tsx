@@ -38,7 +38,7 @@ export function PatientTopHeaderMenu({
 		}
 	};
 
-	const itemCls = "w-full px-2.5 py-2 rounded-lg text-left font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors";
+	const itemCls = "w-full px-2.5 py-2.5 min-h-[44px] sm:min-h-[36px] sm:py-2 rounded-lg text-left font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors";
 
 	return (
 		<div

@@ -108,6 +108,8 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 			coverageOrthoPct = 0,
 			coverageHygienePct = 0,
 			annualLimitRub,
+			patientFranchisePct = 0,
+			requiresGuaranteeLetter = true,
 		} = parsedCreate.data;
 
 		if (!companyName?.trim()) {
@@ -131,6 +133,8 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 				coverageOrthoPct: clamp(coverageOrthoPct),
 				coverageHygienePct: clamp(coverageHygienePct),
 				annualLimitRub: annualLimitRub ?? null,
+				patientFranchisePct: clamp(patientFranchisePct),
+				requiresGuaranteeLetter,
 				isActive: true,
 			})
 			.returning();
@@ -155,6 +159,8 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 			coverageOrthoPct?: number;
 			coverageHygienePct?: number;
 			annualLimitRub?: number;
+			patientFranchisePct?: number;
+			requiresGuaranteeLetter?: boolean;
 			isActive?: boolean;
 		};
 	}>("/api/insurance/contracts/:contractId", async (request, reply) => {
@@ -198,6 +204,8 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 			coverageOrthoPct,
 			coverageHygienePct,
 			annualLimitRub,
+			patientFranchisePct,
+			requiresGuaranteeLetter,
 			isActive,
 		} = parsedUpdate.data;
 
@@ -230,6 +238,12 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 					coverageHygienePct: clamp(coverageHygienePct),
 				}),
 				...(annualLimitRub !== undefined && { annualLimitRub }),
+				...(patientFranchisePct !== undefined && {
+					patientFranchisePct: clamp(patientFranchisePct),
+				}),
+				...(requiresGuaranteeLetter !== undefined && {
+					requiresGuaranteeLetter,
+				}),
 				...(isActive !== undefined && { isActive }),
 			})
 			.where(

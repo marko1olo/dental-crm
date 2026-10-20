@@ -1,0 +1,415 @@
+/* ==========================================================================
+   DENTE CRM — CLINIC SETTINGS & STAFF WORK SCHEDULE (modules/clinic-config.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Settings tabs, clinic config, operating modes, staff hours.
+   ========================================================================== */
+.settings-heading-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.compact-top-button {
+	min-height: 38px;
+	padding-inline: 11px;
+}
+
+.settings-tabs {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+}
+
+.settings-tabs button {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink-muted, var(--muted));
+	font-weight: 600;
+	font-size: 13px;
+	min-height: 32px;
+	padding: 6px 14px;
+}
+
+.settings-tabs button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+}
+
+.settings-tab-panel {
+	position: relative;
+	display: grid;
+	gap: 14px;
+	min-width: 0;
+	padding-bottom: 96px;
+}
+
+.clinic-config {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	display: grid;
+	gap: 14px;
+	padding: 0;
+}
+
+.clinic-config-head {
+	align-items: start;
+	display: flex;
+	gap: 16px;
+	justify-content: space-between;
+}
+
+.clinic-config-head h2 {
+	font-size: 22px;
+	line-height: 1.1;
+	margin: 0;
+}
+
+.clinic-config-head p {
+	color: var(--muted);
+	margin: 7px 0 0;
+}
+
+/* --teal-fill вместо --teal и --on-teal вместо #ffffff: белый на --teal даёт
+   3.74:1 в светлой теме, 1.86:1 в тёмной (#2dd4bf) и 2.18:1 в ночной (#e0a458)
+   при норме 4.5 для 12px. --teal-fill — тот же приём, что уже применён к
+   .primary-button (см. styles/contrast-fixes.css, п. 3): в светлой теме он
+   уходит на --teal-dark, в тёмной и ночной остаётся --teal, а надпись берёт
+   --on-teal, который для этого и объявлен (#ffffff / #04211c / #231505).
+   Стало: 5.5:1 / 9.1:1 / 8.4:1. */
+.clinic-config-head > span {
+	background: var(--teal-fill);
+	border-radius: 999px;
+	color: var(--on-teal);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 8px 11px;
+}
+
+.mode-grid {
+	display: grid;
+	gap: 9px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* ЗАМЕРЕНО 28.07.2026 В ЖИВОМ БРАУЗЕРЕ: было `background: #fbfefd` при
+   `color: var(--ink)`. Фон зашит светлым, надпись берётся из темы — темы
+   разъезжаются. Тёмная: rgb(248,250,252) на rgb(251,254,253) = 1.03:1. Ночная:
+   rgb(241,232,221) на том же фоне = 1.19:1. Норма 4.5:1, кегль 16px, то есть
+   заголовки вариантов «Отдельный врач» / «1 кабинет» / «Малая клиника» / «Сеть»
+   физически не читались, а по ним выбирают режим клиники — от него зависит,
+   какие модули клиника вообще увидит.
+   --elev — токен приподнятой поверхности, объявлен для всех трёх тем
+   (#ffffff / #15211f / #231d19). Светлая тема меняется на 4 единицы яркости
+   (#fbfefd -> #ffffff) и остаётся 16.9:1; тёмная становится 15.0:1, ночная
+   13.9:1. Описания под заголовками (.mode-card span, --muted) поднимаются с
+   2.53:1 до 6.5:1 в тёмной и 4.9:1 в ночной. */
+.mode-card {
+	background: var(--elev);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	display: grid;
+	gap: 6px;
+	min-height: 112px;
+	padding: 12px;
+	text-align: left;
+}
+
+.mode-card.active {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.11);
+}
+
+.mode-card span {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.4;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.clinic-hints {
+	display: flex;
+	gap: 10px;
+	width: 100%;
+}
+
+.clinic-hints > * {
+	flex: 1;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.08));
+	border: none;
+	border-left: 4px solid var(--teal, #14b8a6);
+	border-radius: 0 8px 8px 0;
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	padding: 10px 14px;
+	line-height: 1.45;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.mode-readiness {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.mode-readiness > div {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	min-height: 74px;
+	padding: 12px;
+}
+
+[data-theme="dark"] .mode-readiness > div,
+[data-theme="night"] .mode-readiness > div,
+[data-theme="dark"] .clinic-legal-form,
+[data-theme="night"] .clinic-legal-form {
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.mode-readiness strong {
+	color: var(--teal-dark);
+	font-size: 26px;
+	line-height: 1;
+}
+
+.mode-readiness span {
+	background: #eef8f5;
+	border-radius: 9999px;
+	color: #1a564c;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 2px 9px;
+}
+
+[data-theme="dark"] .mode-readiness span,
+[data-theme="night"] .mode-readiness span {
+	background: rgba(15, 118, 110, 0.2);
+	color: #5eead4;
+}
+
+.clinic-config-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.clinic-config-grid article {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	display: grid;
+	gap: 12px;
+	padding: 14px;
+}
+
+.clinic-config-grid h3 {
+	font-size: 18px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.role-picker {
+	display: grid;
+	gap: 6px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.equipment-picker {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.role-picker button {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink-muted, var(--muted));
+	font-size: 12px;
+	font-weight: 700;
+	min-height: 34px;
+	padding: 7px;
+}
+
+.role-picker button.active {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+}
+
+.staff-list {
+	display: grid;
+	gap: 8px;
+}
+
+.staff-row {
+	align-items: center;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	min-height: 58px;
+	padding: 10px;
+}
+
+.staff-row > span {
+	border-radius: 50%;
+	height: 18px;
+	width: 18px;
+}
+
+.staff-row svg {
+	color: var(--teal);
+	height: 20px;
+	width: 20px;
+}
+
+.staff-row strong {
+	display: block;
+}
+
+.staff-row p {
+	color: var(--muted);
+	font-size: 13px;
+	margin: 3px 0 0;
+}
+
+.staff-row small {
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.staff-schedule-editor {
+	align-items: end;
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(2, minmax(88px, 120px)) minmax(0, 1fr) auto;
+}
+
+.staff-schedule-editor label {
+	color: var(--muted);
+	display: grid;
+	font-size: 11px;
+	font-weight: 900;
+	gap: 4px;
+}
+
+.staff-schedule-editor input {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	min-height: 34px;
+	padding: 6px 8px;
+}
+
+.staff-weekday-row {
+	min-height: 34px;
+	padding: 4px;
+}
+
+.staff-weekday-row button {
+	min-height: 28px;
+	min-width: 34px;
+	padding: 5px 7px;
+}
+
+.schedule-advanced-block {
+	grid-column: 1 / -1;
+}
+
+.staff-day-hours {
+	display: grid;
+	gap: 6px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+}
+
+.staff-day-hours div {
+	align-items: center;
+	display: grid;
+	gap: 6px;
+	grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.staff-day-hours span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 900;
+}
+
+.staff-schedule-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	grid-column: 1 / -1;
+	justify-content: flex-end;
+}
+
+.staff-schedule-actions .save-state {
+	min-height: 34px;
+}
+
+.onboarding-schedule-grid {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-schedule-section {
+	display: grid;
+	gap: 12px;
+}
+
+.onboarding-schedule-section h4 {
+	font-size: 15px;
+	margin: 0;
+}
+
+.onboarding-schedule-section p {
+	color: var(--muted);
+	font-size: 13px;
+	margin: 4px 0 0;
+}
+
+.onboarding-schedule-row {
+	align-items: start;
+}
+
+.onboarding-compact-schedule-editor {
+	grid-template-columns: repeat(2, minmax(80px, 1fr));
+}
+
+.onboarding-compact-schedule-editor .staff-weekday-row,
+.onboarding-compact-schedule-editor .staff-schedule-actions {
+	grid-column: 1 / -1;
+}
+
+.access-settings {
+	background:
+		linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(184, 120, 31, 0.06)),
+		var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}

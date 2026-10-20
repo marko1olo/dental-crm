@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { ClinicalAllPresetsGrid } from "../presets/ClinicalAllPresetsGrid.js";
@@ -64,8 +64,8 @@ describe("Clinical Protocols Parity & De-hardcoded Materials Specification", () 
 
 		// Header button must clearly designate Ministry of Health Registry (1 142 protocols)
 		assert.ok(
-			cleanHtml.includes("Реестр Минздрава РФ (1 142 протокола)"),
-			"Header button must say 'Реестр Минздрава РФ (1 142 протокола)'",
+			cleanHtml.includes("Реестр протоколов (1 142)"),
+			"Header button must say 'Реестр протоколов (1 142)'",
 		);
 		assert.ok(
 			cleanHtml.includes('data-testid="btn-open-soap-templates-modal-bar"'),

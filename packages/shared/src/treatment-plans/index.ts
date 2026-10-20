@@ -7,3 +7,4 @@
 
 export * from "./treatmentPlanEngine.js";
 export * from "./patientCasePresenterEngine.js";
+export * from "./consumables.js";

@@ -25,7 +25,7 @@ export function useSanPinPrintExport(
 			referenceDate: new Date().toISOString().slice(0, 10),
 		});
 
-		const snippet = `Стерилизация СанПиН 3.3686-21: крафт-пакет №${normalized} (АК-01, 134°C / 2.1 бар / 5 мин, индикатор 5 кл. норма).`;
+		const snippet = `Стерилизация инструментария: крафт-пакет №${normalized} (АК-01, 134°C / 2.1 бар / 5 мин, индикатор 5 кл. норма).`;
 		if (onAttachPouchToVisit) {
 			onAttachPouchToVisit(normalized, snippet);
 		}

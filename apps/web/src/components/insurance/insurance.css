@@ -99,23 +99,27 @@
 	transform: scale(0.98);
 }
 
-.dms-btn-primary {
+.dms-btn-primary,
+.dms-btn.primary-button {
 	background: var(--teal, #0d9488);
 	color: #ffffff;
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 }
 
-.dms-btn-primary:hover {
+.dms-btn-primary:hover,
+.dms-btn.primary-button:hover {
 	background: var(--teal-dark, #0f766e);
 }
 
-.dms-btn-secondary {
+.dms-btn-secondary,
+.dms-btn.secondary-button {
 	background: var(--surface, #f1f5f9);
 	color: var(--ink, #0f172a);
 	border-color: var(--line, #cbd5e1);
 }
 
-.dms-btn-secondary:hover {
+.dms-btn-secondary:hover,
+.dms-btn.secondary-button:hover {
 	background: var(--paper-soft, #e2e8f0);
 }
 
@@ -138,7 +142,8 @@
 	opacity: 0.9;
 }
 
-.dms-btn-icon {
+.dms-btn-icon,
+.dms-btn.icon-button {
 	min-height: 34px;
 	height: 34px;
 	min-width: 34px;
@@ -410,7 +415,8 @@
 	display: none;
 }
 
-.dms-quick-chip {
+.dms-quick-chip,
+.dms-quick-chip.dente-filter-chip {
 	height: 32px;
 	min-height: 32px;
 	padding: 0 10px;
@@ -431,12 +437,14 @@
 	user-select: none;
 }
 
-.dms-quick-chip:hover {
+.dms-quick-chip:hover,
+.dms-quick-chip.dente-filter-chip:hover {
 	background: var(--surface, #f8fafc);
 	border-color: var(--teal, #0d9488);
 }
 
-.dms-quick-chip.active {
+.dms-quick-chip.active,
+.dms-quick-chip.dente-filter-chip.active {
 	background: var(--teal, #0d9488);
 	color: #ffffff;
 	border-color: var(--teal, #0d9488);

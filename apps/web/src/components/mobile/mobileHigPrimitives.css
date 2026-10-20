@@ -83,7 +83,7 @@
 .mobile-bottom-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 10000;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -95,7 +95,7 @@
 
 .mobile-bottom-sheet-surface {
   position: relative;
-  z-index: 101;
+  z-index: 10001;
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;

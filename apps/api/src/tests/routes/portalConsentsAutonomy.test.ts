@@ -10,6 +10,11 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal.js";
+import {
+	createSignatureRecord,
+	generateFallbackTextSignatureDataUrl,
+	validateSignaturePng,
+} from "../../services/portalBudget/pepSignatureEngine.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
@@ -109,12 +114,16 @@ describe("Patient Portal Consents Autonomy (Mandates 8e, 8i, 8k)", () => {
 		assert.equal(body.status, "signed");
 		assert.equal(body.signatureMethod, "portal_pep");
 		assert.ok(
-			body.signatureSvg.includes("ПОДПИСАНО ПЭП (63-ФЗ)"),
-			"SVG stamp must contain 'ПОДПИСАНО ПЭП (63-ФЗ)'",
+			body.signatureSvg.includes("ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА"),
+			"SVG stamp must contain 'ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА'",
 		);
 		assert.ok(
-			body.signatureSvg.includes("Личный кабинет пациента"),
-			"SVG stamp must cite portal context",
+			body.signatureSvg.includes("Подтверждено в личном кабинете пациента"),
+			"SVG stamp must cite portal confirmation in human Russian",
+		);
+		assert.ok(
+			!body.signatureSvg.includes("63-ФЗ") && !body.signatureSvg.includes("323-ФЗ"),
+			"SVG stamp must not contain bureaucratic statutory ciphers",
 		);
 		assert.equal(body.integrityHash.length, 64, "Integrity hash must be 64-char hex");
 		assert.ok(body.signedAtIso);
@@ -147,7 +156,7 @@ describe("Patient Portal Consents Autonomy (Mandates 8e, 8i, 8k)", () => {
 		assert.equal(resPepExplicit.statusCode, 200);
 		const bodyPep = resPepExplicit.json() as { signatureMethod: string; signatureSvg: string };
 		assert.equal(bodyPep.signatureMethod, "portal_pep");
-		assert.ok(bodyPep.signatureSvg.includes("ПОДПИСАНО ПЭП (63-ФЗ)"));
+		assert.ok(bodyPep.signatureSvg.includes("ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА"));
 	});
 
 	test("Test 2: POST /api/portal/consents/id_treatment_general/sign with signatureMethod: 'paper_physical' signs with paper stamp", async (context) => {
@@ -185,8 +194,12 @@ describe("Patient Portal Consents Autonomy (Mandates 8e, 8i, 8k)", () => {
 			"SVG stamp must contain 'ПОДПИСАНО НА БУМАГЕ'",
 		);
 		assert.ok(
-			body.signatureSvg.includes("Подшито в карту 043/у"),
-			"SVG stamp must cite outpatient medical record 043/u",
+			body.signatureSvg.includes("Оригинал хранится в медицинской карте клиники"),
+			"SVG stamp must state that original is stored in clinic medical record",
+		);
+		assert.ok(
+			!body.signatureSvg.includes("043/у") && !body.signatureSvg.includes("323-ФЗ") && !body.signatureSvg.includes("736"),
+			"SVG stamp must not contain bureaucratic statutory ciphers",
 		);
 		assert.equal(body.integrityHash.length, 64, "Integrity hash must be 64-char hex");
 		assert.ok(body.signedAtIso);
@@ -230,5 +243,38 @@ describe("Patient Portal Consents Autonomy (Mandates 8e, 8i, 8k)", () => {
 			adminProfile.consentSignatures["id_treatment_general"].ipAddress,
 			"10.0.0.22",
 		);
+	});
+
+	test("Test 3: pepSignatureEngine supports both Canvas PNG and 1-click PEP SVG DataURL stamps without statutory ciphers", () => {
+		const fallbackDataUrl = generateFallbackTextSignatureDataUrl(
+			"Иванов Иван Иванович",
+			"2026-10-13T10:00:00.000Z",
+		);
+		assert.ok(fallbackDataUrl.startsWith("data:image/svg+xml;base64,"));
+
+		const validation = validateSignaturePng(fallbackDataUrl);
+		assert.equal(validation.valid, true);
+
+		const emptyValidation = validateSignaturePng("");
+		assert.equal(emptyValidation.valid, false);
+		assert.equal(emptyValidation.error, "InvalidSignature");
+
+		const decodedSvg = Buffer.from(
+			fallbackDataUrl.replace("data:image/svg+xml;base64,", ""),
+			"base64",
+		).toString("utf-8");
+		assert.ok(decodedSvg.includes("ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА"));
+		assert.ok(decodedSvg.includes("Иванов Иван Иванович"));
+		assert.ok(!decodedSvg.includes("63-ФЗ") && !decodedSvg.includes("323-ФЗ"));
+
+		const record = createSignatureRecord({
+			signaturePng: "",
+			signedByName: "Петрова Анна Сергеевна",
+			clientIp: "127.0.0.1",
+			ipHash: "abc123",
+			signedAtIso: "2026-10-13T12:00:00.000Z",
+			documentHash: "deadbeef",
+		});
+		assert.ok(record.signaturePng.startsWith("data:image/svg+xml;base64,"));
 	});
 });

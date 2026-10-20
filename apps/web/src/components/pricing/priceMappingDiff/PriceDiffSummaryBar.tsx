@@ -19,7 +19,7 @@ export const PriceDiffSummaryBar: React.FC<PriceDiffSummaryBarProps> = ({
 	return (
 		<footer className="pricelist-diff-footer">
 			<div className="pricelist-diff-footer-summary">
-				{`Будет добавлено / обновлено ${approvedCount} услуг по стандарту Минздрава России`}
+				{`Будет добавлено / обновлено ${approvedCount} услуг в каталог клиники`}
 			</div>
 
 			<div className="pricelist-diff-footer-actions">

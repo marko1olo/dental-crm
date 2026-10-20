@@ -46,6 +46,8 @@ export interface PatientPassportAddressStepProps {
 	readonly onInsurancePolicyNumberChange: (policy: string) => void;
 	readonly identityDocument: string;
 	readonly onIdentityDocumentChange: (passport: string) => void;
+	readonly registrationAddress?: string | undefined;
+	readonly onRegistrationAddressChange?: ((address: string) => void) | undefined;
 }
 
 export interface PatientContactsRepresentativeStepProps {

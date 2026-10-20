@@ -1,14 +1,17 @@
-# Progress — Survey Explorer 1 (R1 Backend API & Contract Synchronization)
+# Progress Log — Survey Explorer 1
 
-Last visited: 2026-09-24T17:51:00Z
-Status: Complete
+Last visited: 2026-10-19T22:17:15Z
 
-- [x] Read THE_HAMMER_MASTER_PROMPT.md completely (lines 1 to 977)
-- [x] Read ORIGINAL_REQUEST.md
-- [x] Initialized DISPATCH.md and BRIEFING.md
-- [x] Investigate files: patientDebt.ts, patientRecall.ts, pricelist.ts
-- [x] Investigate Drizzle schemas in apps/api/src/db/
-- [x] Investigate packages/shared/ contracts
-- [x] Check frontend callers in apps/web/
-- [x] Synthesize findings into survey_r1.md
-- [x] Write handoff.md and send completion message to parent
+## Status: Deep Reconnaissance of Preview HTMLs, Entrypoints, main.tsx Bypasses, and Vite Config
+
+### Steps:
+- [x] Received dispatch, initialized DISPATCH.md and BRIEFING.md
+- [x] Read mandatory constitutional documents (THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, ORIGINAL_REQUEST.md)
+- [ ] Scan and catalog all standalone HTML preview sandboxes in `apps/web/` and root
+- [ ] Scan and catalog all `*_preview_main.tsx` and standalone entry points
+- [ ] Deep inspect `apps/web/src/main.tsx` for all query-param bypass switches and mounted components
+- [ ] Inspect `apps/web/vite.config.ts`, `package.json`, and scripts for rollupOptions/preview scripts
+- [ ] Design reference clean `main.tsx`
+- [ ] Write `survey_report.md`
+- [ ] Write `handoff.md`
+- [ ] Notify orchestrator via `send_message`

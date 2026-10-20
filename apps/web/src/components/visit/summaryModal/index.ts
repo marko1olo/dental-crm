@@ -5,3 +5,4 @@ export { VisitRecommendationsSection, type VisitRecommendationsSectionProps } fr
 export { VisitBillingSummarySection, type VisitBillingSummarySectionProps } from "./VisitBillingSummarySection";
 export { VisitSummaryModalContent, type VisitSummaryModalContentProps } from "./VisitSummaryModalContent";
 export { useVisitSummaryModalState } from "./useVisitSummaryModalState";
+export { VisitSummarySequentialFlow } from "./VisitSummarySequentialFlow";

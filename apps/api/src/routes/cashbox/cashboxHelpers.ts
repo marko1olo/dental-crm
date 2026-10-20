@@ -83,9 +83,16 @@ export function buildZReportDataPayload(params: {
 	incomeElectronicRub?: number | null | undefined;
 	incomeSbpRub?: number | null | undefined;
 	advanceOffsetRub?: number | null | undefined;
+	insuranceTotalRub?: number | null | undefined;
+	returnTotalRub?: number | null | undefined;
 	netRevenueRub?: number | null | undefined;
+	expectedCashInDrawerRub?: number | undefined;
 	differenceRub?: number | undefined;
 	isBalanced?: boolean | undefined;
+	discrepancyType?: "balanced" | "excess" | "shortage" | undefined;
+	fiscalDocNumber?: string | null | undefined;
+	fiscalSign?: string | null | undefined;
+	qrString?: string | null | undefined;
 	reconciliation?: Record<string, unknown> | null | undefined;
 }): ZReportDataPayload {
 	return {
@@ -101,9 +108,16 @@ export function buildZReportDataPayload(params: {
 		incomeElectronicRub: params.incomeElectronicRub ?? null,
 		incomeSbpRub: params.incomeSbpRub ?? null,
 		advanceOffsetRub: params.advanceOffsetRub ?? null,
+		insuranceTotalRub: params.insuranceTotalRub ?? null,
+		returnTotalRub: params.returnTotalRub ?? null,
 		netRevenueRub: params.netRevenueRub ?? null,
+		expectedCashInDrawerRub: params.expectedCashInDrawerRub ?? params.finalBalanceRub,
 		differenceRub: params.differenceRub !== undefined ? params.differenceRub : 0,
 		isBalanced: params.isBalanced !== undefined ? params.isBalanced : true,
+		discrepancyType: params.discrepancyType ?? "balanced",
+		fiscalDocNumber: params.fiscalDocNumber ?? null,
+		fiscalSign: params.fiscalSign ?? null,
+		qrString: params.qrString ?? null,
 		reconciliation: params.reconciliation ?? null,
 	};
 }

@@ -179,10 +179,61 @@ export function useFiscalTenderAllocation({
 		}
 	};
 
-	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит) с точностью до копейки
+	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит / Сплит ДМС) с точностью до копейки
 	const applyCombinedPaymentPreset = (
-		mode: "advance_card" | "advance_cash" | "split_cash_card" | "advance_cash_card" | "exact_cash" | "full_card",
+		mode:
+			| "advance_card"
+			| "advance_cash"
+			| "split_cash_card"
+			| "advance_cash_card"
+			| "exact_cash"
+			| "full_card"
+			| "split_dms"
+			| "split_dms_card"
+			| "split_dms_cash",
 	) => {
+		if (mode === "split_dms" || mode === "split_dms_card") {
+			const totalKop = rubToKopecks(totalSumRub);
+			if (totalKop === 0) return;
+			const dmsKop =
+				insuranceAmount > 0 && rubToKopecks(insuranceAmount) < totalKop
+					? rubToKopecks(insuranceAmount)
+					: Math.round((totalKop * 80) / 100);
+			const safeDmsKop = Math.min(totalKop, Math.max(0, dmsKop));
+			const patientKop = totalKop - safeDmsKop;
+			const dmsRub = kopecksToRub(safeDmsKop);
+			const cardRub = kopecksToRub(patientKop);
+			setInsuranceAmount(dmsRub);
+			setCardAmount(cardRub);
+			setCashAmount(0);
+			setDepositAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Сплит ДМС: страховая ${formatMoneyRu(dmsRub)} + доплата картой ${formatMoneyRu(cardRub)}`, "success", 2000);
+			return;
+		}
+
+		if (mode === "split_dms_cash") {
+			const totalKop = rubToKopecks(totalSumRub);
+			if (totalKop === 0) return;
+			const dmsKop =
+				insuranceAmount > 0 && rubToKopecks(insuranceAmount) < totalKop
+					? rubToKopecks(insuranceAmount)
+					: Math.round((totalKop * 80) / 100);
+			const safeDmsKop = Math.min(totalKop, Math.max(0, dmsKop));
+			const patientKop = totalKop - safeDmsKop;
+			const dmsRub = kopecksToRub(safeDmsKop);
+			const cashRub = kopecksToRub(patientKop);
+			setInsuranceAmount(dmsRub);
+			setCashAmount(cashRub);
+			setCardAmount(0);
+			setDepositAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Сплит ДМС: страховая ${formatMoneyRu(dmsRub)} + доплата наличными ${formatMoneyRu(cashRub)}`, "success", 2000);
+			return;
+		}
+
 		const targetTotalKop = Math.max(0, rubToKopecks(totalSumRub) - rubToKopecks(insuranceAmount));
 		if (targetTotalKop === 0) return;
 

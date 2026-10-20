@@ -1,0 +1,110 @@
+{
+  "subagent_id": "clinical_core_inquisitor",
+  "scope": "Clinical Core 1: Odontogram, EMR & Visit Diary 043/u, Diagnostics & Visiograph",
+  "app_view": "visit",
+  "hash": "#visit",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-10T17:12:00+04:00",
+  "invariants_audited": {
+    "zero_potemkin_mockups": true,
+    "zero_preview_files": true,
+    "anti_color_confetti": true,
+    "seven_deadly_sins_ui": true,
+    "twelve_question_visual_audit": true,
+    "ram_guard": true,
+    "doctor_autonomy_mandate_8e": true,
+    "fold_line_compliance": true
+  },
+  "defects_resolved": [
+    {
+      "id": "DEF-CLIN-01",
+      "title": "Odontogram Hover Trap & Raw English Enum Leak",
+      "resolution": "Fixed label mapping in toothChartTypes.ts and ToothCardHud.tsx; eradicated parent hover trap in odontogram.css."
+    },
+    {
+      "id": "DEF-CLIN-02",
+      "title": "Visit Diary Header & Fold Line 900px",
+      "resolution": "Unified button geometry to 36px in visit-diary-043.css; reduced tooth-chart-arch-container min-height to 220px; collapsed fast-clinical-presets-bar by default so SOAP notes are visible without scrolling."
+    },
+    {
+      "id": "DEF-CLIN-03",
+      "title": "Clinical Presets Bar & Tooth Selector Ellipsis",
+      "resolution": "Added .clinical-tooth-btn, .clinical-protocol-card, .clinical-fdi-select in components.css; shortened preset titles to guarantee zero '...' text cutoff."
+    },
+    {
+      "id": "DEF-CLIN-04",
+      "title": "EMR Diary Naked Text Buttons (Sin #3)",
+      "resolution": "Applied dente-filter-chip with tactile borders and icons across EmkComplaintsSection, EmkObjectiveStatusSection, and EmkDiaryProtocolSection."
+    },
+    {
+      "id": "DEF-CLIN-05",
+      "title": "Visiograph Toolbar 2D HUD Dev-Slang",
+      "resolution": "Renamed '2D HUD' to clean '2D Разметка' in VisiographToolbarControls.tsx; purged dev-slang."
+    },
+    {
+      "id": "DEF-CLIN-06",
+      "title": "Infinite Re-render Loop on Tooth Selection",
+      "resolution": "Guarded setLocalSelectedTooth and setSelectedIntactQuadrant in ClinicalQuickPresetsBar.tsx with strict equality checks."
+    },
+    {
+      "id": "DEF-CLIN-07",
+      "title": "Tooth Context Drawer Raw English Status Leak",
+      "resolution": "Integrated getToothStateLabelRu in ToothContextDrawer.tsx header pill; converted English enums (Healthy, Missing) to clean Russian clinical terms."
+    },
+    {
+      "id": "DEF-CLIN-08",
+      "title": "Tier 2/3 Dev-Slang in UI Buttons",
+      "resolution": "Purged '(Tier 2)' and '(Tier 3)' from ToothActionMenuPortal.tsx, FastCheckoutFamilyBalance.tsx, PerioArchGrid.tsx, and PerioExpressBanner.tsx."
+    }
+  ],
+  "screenshots_captured": [
+    {
+      "file": "01_odontogram_pc_light.png",
+      "path": "docs/screenshots/clinical_core_inquisition/01_odontogram_pc_light.png",
+      "size_bytes": 272294,
+      "verified_view_file": true
+    },
+    {
+      "file": "01_odontogram_pc_dark.png",
+      "path": "docs/screenshots/clinical_core_inquisition/01_odontogram_pc_dark.png",
+      "size_bytes": 272203,
+      "verified_view_file": true
+    },
+    {
+      "file": "02_tooth_drawer_pc_light.png",
+      "path": "docs/screenshots/clinical_core_inquisition/02_tooth_drawer_pc_light.png",
+      "size_bytes": 290388,
+      "verified_view_file": true
+    },
+    {
+      "file": "02_tooth_drawer_pc_dark.png",
+      "path": "docs/screenshots/clinical_core_inquisition/02_tooth_drawer_pc_dark.png",
+      "size_bytes": 289405,
+      "verified_view_file": true
+    },
+    {
+      "file": "03_emk_diary_pc_light.png",
+      "path": "docs/screenshots/clinical_core_inquisition/03_emk_diary_pc_light.png",
+      "size_bytes": 177579,
+      "verified_view_file": true
+    },
+    {
+      "file": "03_emk_diary_pc_dark.png",
+      "path": "docs/screenshots/clinical_core_inquisition/03_emk_diary_pc_dark.png",
+      "size_bytes": 179710,
+      "verified_view_file": true
+    },
+    {
+      "file": "04_diagnostics_pc_light.png",
+      "path": "docs/screenshots/clinical_core_inquisition/04_diagnostics_pc_light.png",
+      "size_bytes": 411327,
+      "verified_view_file": true
+    },
+    {
+      "file": "04_diagnostics_pc_dark.png",
+      "path": "docs/screenshots/clinical_core_inquisition/04_diagnostics_pc_dark.png",
+      "size_bytes": 413147,
+      "verified_view_file": true
+    }
+  ]
+}

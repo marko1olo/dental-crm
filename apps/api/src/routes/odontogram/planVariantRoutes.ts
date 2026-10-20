@@ -20,7 +20,11 @@ import { withTenantCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import { ensurePatientInOrganization } from "./planHelpers.js";
+import {
+	ensurePatientInOrganization,
+	verifyPlanReadAccess,
+	verifyPlanWriteAccess,
+} from "./planHelpers.js";
 import { UUID_SHAPE } from "./types.js";
 
 export function registerPlanVariantRoutes(app: FastifyInstance) {
@@ -39,17 +43,14 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanWriteAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в утверждении плана лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в утверждении плана лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 
@@ -110,17 +111,14 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanWriteAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в создании группы планов лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в создании группы планов лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 
@@ -231,17 +229,14 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const access = verifyPlanReadAccess(staffRole);
+			if (!access.allowed) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.read",
 					role: staffRole,
-					message: `Отказ в чтении альтернативных планов (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в чтении альтернативных планов (152-ФЗ / 323-ФЗ): ${access.reason}`,
 				});
 			}
 

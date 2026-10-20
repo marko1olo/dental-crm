@@ -1,0 +1,194 @@
+/* ==========================================================================
+   9. CANONICAL DENTE SEARCH INPUT SYSTEM (.dente-search-wrap / .dente-search-input)
+   Authority: FRONTEND RULES Section 12 & DESIGNER BIBLE Section 7
+   Guarantees: Zero search icon collision with placeholder/hint text!
+   ========================================================================== */
+
+.dente-search-wrap,
+.patients-search-box,
+.pricelist-search-wrapper,
+.pricelist-search-box,
+.pricelist-diff-search-box,
+.search-input-wrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.dente-search-icon,
+.dente-search-wrap > svg:first-child,
+.patients-search-box > svg:first-child,
+.pricelist-search-wrapper > svg:first-child,
+.pricelist-search-box > svg:first-child,
+.pricelist-diff-search-box > svg:first-child,
+.search-input-wrapper > svg:first-child {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 14px;
+	height: 14px;
+	color: var(--muted);
+	pointer-events: none;
+	flex-shrink: 0;
+	z-index: 2;
+	transition: color 0.15s ease;
+}
+
+.dente-search-input,
+.dente-search-wrap input,
+.patients-search-box input,
+.pricelist-search-wrapper input,
+.pricelist-search-box input,
+.pricelist-diff-search-box input,
+.search-input-wrapper input {
+	width: 100%;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding-left: 38px !important; /* IRONCLAD INVARIANT: Search icon never overlaps text! */
+	padding-right: 32px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	color: var(--ink) !important;
+	font-size: 13px !important;
+	line-height: 1.4 !important;
+	outline: none !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.dente-search-input::placeholder,
+.dente-search-wrap input::placeholder,
+.patients-search-box input::placeholder,
+.pricelist-search-wrapper input::placeholder,
+.pricelist-search-box input::placeholder,
+.pricelist-diff-search-box input::placeholder,
+.search-input-wrapper input::placeholder {
+	color: var(--muted) !important;
+	opacity: 0.85 !important;
+	font-size: 12.5px !important;
+}
+
+.dente-search-input:focus,
+.dente-search-wrap input:focus,
+.patients-search-box input:focus,
+.pricelist-search-wrapper input:focus,
+.pricelist-search-box input:focus,
+.pricelist-diff-search-box input:focus,
+.search-input-wrapper input:focus {
+	background: var(--paper) !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 3px var(--teal-soft, rgba(13, 148, 136, 0.15)) !important;
+}
+
+.dente-search-clear,
+.dente-search-wrap .search-clear-btn,
+.patients-search-box .patients-search-clear-btn,
+.pricelist-search-wrapper button,
+.pricelist-search-box .pricelist-search-clear,
+.pricelist-diff-search-box .pricelist-diff-search-clear {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--muted);
+	cursor: pointer;
+	z-index: 2;
+	transition: all 0.15s ease;
+}
+
+.dente-search-clear:hover,
+.patients-search-box .patients-search-clear-btn:hover,
+.pricelist-search-wrapper button:hover,
+.pricelist-search-box .pricelist-search-clear:hover,
+.pricelist-diff-search-box .pricelist-diff-search-clear:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Omnibar Search Override */
+.omnibar-search-wrap,
+.dente-search-wrap.omnibar-search-wrap {
+	display: flex !important;
+	align-items: center !important;
+	position: relative !important;
+	width: 100% !important;
+}
+
+.omnibar-search-wrap .dente-search-icon,
+.dente-search-wrap.omnibar-search-wrap > svg:first-child {
+	left: 16px !important;
+	width: 18px !important;
+	height: 18px !important;
+}
+
+.omnibar-search-wrap input,
+.dente-search-input.omnibar-search-input,
+.omnibar-input {
+	height: 56px !important;
+	min-height: 56px !important;
+	max-height: 56px !important;
+	padding-left: 48px !important;
+	padding-right: 48px !important;
+	font-size: 16px !important;
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+/* Retail Showcase Search Override (desktop 260px fixed width, mobile full width) */
+.retail-search-wrap {
+	width: 100%;
+}
+@media (min-width: 640px) {
+	.retail-search-wrap {
+		width: 260px !important;
+		min-width: 240px !important;
+		max-width: 260px !important;
+		flex-shrink: 0 !important;
+	}
+}
+
+/* Toolbar / Warehouse Search Input Override (Mandate 8am 1-line toolbars) */
+.toolbar-search-wrap,
+.inventory-search-wrap {
+	width: 105px !important;
+	min-width: 90px !important;
+	max-width: 125px !important;
+	flex: 0 0 105px !important;
+}
+
+@media (min-width: 1400px) {
+	.toolbar-search-wrap,
+	.inventory-search-wrap {
+		width: 110px !important;
+		min-width: 95px !important;
+		max-width: 130px !important;
+		flex: 0 0 110px !important;
+	}
+}
+
+.toolbar-search-wrap input,
+.inventory-search-wrap input {
+	height: 36px !important;
+	min-height: 36px !important;
+	max-height: 36px !important;
+	border-radius: 12px !important;
+}
+
+

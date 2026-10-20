@@ -56,6 +56,8 @@ before(() => {
 		globalWithWindow.window = {
 			location: { origin: "https://crm.example.ru" },
 			localStorage: { getItem: () => null, setItem: () => {} },
+			addEventListener: () => {},
+			removeEventListener: () => {},
 		};
 	}
 });

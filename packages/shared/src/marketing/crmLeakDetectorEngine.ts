@@ -55,6 +55,7 @@ export interface CrmLeakDetectorCandidate {
 	patientId: string;
 	patientFullName: string;
 	phone: string;
+	patientPhone?: string;
 	lastCompletedVisitDate: string; // ISO
 	daysSinceLastVisit: number;
 	lastDoctorId: string | null;
@@ -73,6 +74,7 @@ export interface CrmLeakLeadItem {
 	patientId: string;
 	patientFullName: string;
 	phone: string;
+	patientPhone?: string;
 	daysSinceLastVisit: number;
 	lastVisitDate: string;
 	lastDoctorId: string | null;

@@ -30,7 +30,7 @@ export const DEFAULT_EMK_PROTOCOL_STEPS: readonly EmkProtocolStep[] = [
 	},
 	{
 		id: "diagnosis",
-		titleRu: "Диагноз МКБ-10",
+		titleRu: "Клинический диагноз",
 		shortTitleRu: "Диагноз",
 		isRequired: true,
 		isCompleted: false,

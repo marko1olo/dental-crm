@@ -6,13 +6,33 @@ import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsC
 
 export type { DentitionMode };
 
+export type ActivePatientRecord = any;
+export type VisitDashboardSlice = any;
+export type VisitNoteFormValues = Record<string, any>;
+export type VisitNoteSaveHandler = () => Promise<void>;
+export interface VisitEmkTabProps {
+	visitNoteForm: Record<string, any>;
+	updateVisitNoteField: (field: string, value: any) => void;
+	[key: string]: any;
+}
+
 export interface VisitEmkOdontogramBarProps {
 	activePatient?: {
 		id?: string;
 		age?: number;
 		birthDate?: string;
 		fullName?: string;
+		toothStates?: Record<string, string> | Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+		patientHistory?: {
+			toothStates?: Record<string, string> | Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+			teeth?: Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+		} | Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+		teeth?: Array<{ toothNumber?: number | string; code?: string; state?: string }>;
 	} | null;
+	patientHistory?: {
+		toothStates?: Record<string, string> | Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+		teeth?: Array<{ toothNumber?: number | string; code?: string; state?: string }>;
+	} | Array<{ toothNumber?: number | string; code?: string; state?: string }> | null;
 	visitNoteForm: Record<string, any>;
 	updateVisitNoteField: (field: string, value: any) => void;
 	effectiveActiveTooth: number;
@@ -59,6 +79,7 @@ export interface VisitEmkCompletionSectionProps {
 	isDraftAccepting?: boolean;
 	isCompletingVisit: boolean;
 	completionResult: ClinicalVisitCompletionResult | null;
+	completionError?: string | null | undefined;
 	setIsSbpQrModalOpen: (open: boolean) => void;
 	activeEmkTab: string;
 	setActiveEmkTab: (tab: string) => void;

@@ -277,33 +277,6 @@ export const installmentTranches = pgTable(
 	}),
 );
 
-/**
- * Индивидуальные премии, надбавки и штрафы врачей.
- */
-export const doctorPaymentRewards = pgTable(
-	"doctor_payment_rewards",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		doctorId: uuid("doctor_id")
-			.notNull()
-			.references(() => users.id),
-		type: text("type").notNull(), // "bonus" | "penalty" | "allowance"
-		amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
-		reason: text("reason").notNull(),
-		payrollPeriod: text("payroll_period").notNull(), // "YYYY-MM"
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		orgIdx: index("doctor_payment_rewards_org_idx").on(t.organizationId),
-		doctorIdx: index("doctor_payment_rewards_doctor_idx").on(t.doctorId),
-		periodIdx: index("doctor_payment_rewards_period_idx").on(t.payrollPeriod),
-	}),
-);
 
 /**
  * Расчетная ведомость заработной платы врачей (Форма Т-51 по формуле Net Revenue).

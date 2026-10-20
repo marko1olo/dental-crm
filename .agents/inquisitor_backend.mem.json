@@ -1,0 +1,80 @@
+{
+  "agent": "redteam_inquisitor_backend",
+  "status": "remediation_complete_and_verified",
+  "auditScope": [
+    "apps/api/src/db",
+    "apps/api/src/routes",
+    "apps/api/src/services",
+    "packages/shared/src"
+  ],
+  "discoveredDefects": [
+    {
+      "id": "DEFECT-BACKEND-001",
+      "severity": "CRITICAL",
+      "category": "ACID_TRANSACTION_BOUNDARY_LEAK",
+      "title": "Broken transaction boundary due to missing tx argument and AsyncLocalStorage proxy disconnect",
+      "locations": [
+        "apps/api/src/db/pricelistQuery.ts:626",
+        "apps/api/src/routes/pricelist/catalogOperations.ts:153",
+        "apps/api/src/routes/pricelist/catalogOperations.ts:232",
+        "apps/api/src/routes/pricelist/catalogOperations.ts:305",
+        "apps/api/src/db/client.ts:102"
+      ],
+      "risk": "Writes execute outside transaction context directly in pooled autocommit mode. If batch operation fails, prior records are already committed and rollback is ineffective.",
+      "remediationStatus": "FIXED",
+      "remediationDetails": "Intercepted db.transaction in client.ts proxy to wrap transactionFn with transactionStorage.run(innerTx). Bound tx directly in pricelistQuery.ts and catalogOperations.ts."
+    },
+    {
+      "id": "DEFECT-BACKEND-002",
+      "severity": "HIGH",
+      "category": "TENANT_ISOLATION_AND_SILENT_FAILURE",
+      "title": "Cross-tenant mutation vulnerability and silent error swallowing in WhatsApp HitL Queue",
+      "locations": [
+        "apps/api/src/services/agent/whatsapp/whatsappMessageDispatcher.ts:201-208"
+      ],
+      "risk": "copilotHitlCards update filtered only by ID without organizationId; .catch(() => {}) silently masks database failure.",
+      "remediationStatus": "FIXED",
+      "remediationDetails": "Enforced multi-tenant isolation with and(eq(id), eq(organizationId)) and added structured error logging to console.error."
+    },
+    {
+      "id": "DEFECT-BACKEND-003",
+      "severity": "MEDIUM",
+      "category": "ZERO_SILENT_FAILURES_VIOLATION",
+      "title": "Production empty catch blocks in DICOM viewer launcher and Telegram webhook callback",
+      "locations": [
+        "apps/api/src/routes/imaging/pacsRoutes.ts:293",
+        "apps/api/src/routes/telegram/webhookCallbackHandlers.ts:113"
+      ],
+      "risk": "Filesystem and DB errors swallowed silently without observability.",
+      "remediationStatus": "FIXED",
+      "remediationDetails": "Replaced empty catch blocks with structured request.log.warn with operational context."
+    },
+    {
+      "id": "DEFECT-BACKEND-004",
+      "severity": "MEDIUM",
+      "category": "ZOD_BOUNDARY_BYPASS",
+      "title": "Unvalidated request.body as any in SanPiN autopilot routes",
+      "locations": [
+        "apps/api/src/routes/sanpin/shiftAutofillRoutes.ts:28",
+        "apps/api/src/routes/sanpin/bactericidalRoutes.ts:325, 433, 540"
+      ],
+      "risk": "Untyped payload injection bypassing runtime validation.",
+      "remediationStatus": "FIXED",
+      "remediationDetails": "Implemented strict Zod schemas (autofillShiftSchema, bactericidalAutopilotBodySchema, morningShiftBodySchema, eveningShiftBodySchema) and safe runtime parsing."
+    },
+    {
+      "id": "DEFECT-BACKEND-005",
+      "severity": "HIGH",
+      "category": "ZERO_MOCKS_AND_FACADES_VIOLATION",
+      "title": "Synthetic fiscal document number generation (FD-) in production invoice endpoints",
+      "locations": [
+        "apps/api/src/routes/invoiceRoutes/invoiceCrudHandlers.ts:107-112",
+        "apps/api/src/routes/invoiceRoutes/invoiceCrudHandlers.ts:145-146"
+      ],
+      "risk": "Invoices return fake fiscal receipt numbers (FD-XXXX) synthesized from invoice ID instead of actual fiscal receipt numbers from payments table.",
+      "remediationStatus": "FIXED",
+      "remediationDetails": "Removed fake FD- string synthesizers. Added relational queries to payments table; returns genuine fiscalReceiptNumber or null if unfiscalized."
+    }
+  ],
+  "verifiedBy": "redteam_inquisitor_backend"
+}

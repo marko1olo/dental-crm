@@ -20,14 +20,14 @@ import type {
 
 export interface VisitTabContentProps {
 	visitSubViewTab: string;
-	activeAppointment?: VisitAppointmentEntity | null;
-	activePatient?: VisitPatientEntity | null;
-	activeDoctor?: VisitDoctorEntity | null;
-	visitNoteForm?: VisitNoteFormExtended | null;
-	updateVisitNoteField?: (field: string, val: string) => void;
-	loadedTreatmentPlan?: VisitLoadedTreatmentPlan | null;
-	dashboard?: Dashboard | null;
-	selectedToothForMenu?: { code: string; label?: string } | null;
+	activeAppointment?: VisitAppointmentEntity | null | undefined;
+	activePatient?: VisitPatientEntity | null | undefined;
+	activeDoctor?: VisitDoctorEntity | null | undefined;
+	visitNoteForm?: VisitNoteFormExtended | null | undefined;
+	updateVisitNoteField?: ((field: string, val: string) => void) | undefined;
+	loadedTreatmentPlan?: VisitLoadedTreatmentPlan | null | undefined;
+	dashboard?: Dashboard | null | undefined;
+	selectedToothForMenu?: { code: string; label?: string } | null | undefined;
 	handlePrintEstimateFast: () => void;
 	handlePrintForm043uFast: () => void;
 	handlePrintInformedConsentFast: () => void;
@@ -60,11 +60,21 @@ export function VisitTabContent({
 			visitId={activeAppointment?.id ?? ""}
 		>
 			<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
-				<VisitOdontogramTab />
+				<VisitOdontogramTab
+					activePatient={activePatient as any}
+					activeAppointment={activeAppointment as any}
+					dashboard={dashboard}
+				/>
 			</div>
 
 			<div style={{ display: visitSubViewTab === "emk" ? "block" : "none" }}>
-				<VisitEmkTab />
+				<VisitEmkTab
+					dashboard={dashboard}
+					activePatient={activePatient}
+					visitNoteForm={visitNoteForm || {}}
+					updateVisitNoteField={updateVisitNoteField || (() => {})}
+					openVisitId={activeAppointment?.id}
+				/>
 			</div>
 
 			<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>

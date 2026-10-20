@@ -6,7 +6,7 @@
 
 import React from "react";
 import { PaymentModal } from "../finance/PaymentModal.js";
-import { ConsumablesDeductionModal } from "../warehouse/ConsumablesDeductionModal.js";
+import { ConsumablesDeductionModal } from "../inventory/ConsumablesDeductionModal.js";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal.js";
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";

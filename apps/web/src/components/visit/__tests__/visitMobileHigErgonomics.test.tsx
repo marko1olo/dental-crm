@@ -13,13 +13,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { MobileChairsideVisitWorkspace } from "../MobileChairsideVisitWorkspace";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
 
-test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t) => {
+describe("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", () => {
   const dummyPatient = {
     id: "pat-999",
     fullName: "Калинина София Сергеевна",
@@ -80,7 +80,7 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
     ],
   };
 
-  await t.test("1. VisitPlanStageHandoffBanner satisfies Apple HIG touch targets & 0px drift", () => {
+  it("1. VisitPlanStageHandoffBanner satisfies Apple HIG touch targets & 0px drift", () => {
     const html = renderToString(
       <VisitPlanStageHandoffBanner
         loadedTreatmentPlan={dummyTreatmentPlan}
@@ -94,7 +94,7 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
     assert.ok(html.includes("max-w-full"), "Banner must enforce max-w-full");
 
     // Human-readable CTA (No bird language)
-    assert.ok(html.includes("Взять этап"), "Banner must offer clean CTA to take stage into work");
+    assert.ok(html.includes("Взять этап") || html.includes("Взять Этап"), "Banner must offer clean CTA to take stage into work");
     assert.ok(!html.includes("54-ФЗ"), "Banner must NOT contain 54-ФЗ");
     assert.ok(!html.includes("043/у"), "Banner must NOT contain 043/у");
     assert.ok(!html.includes("804н"), "Banner must NOT contain 804н");
@@ -104,7 +104,7 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
     assert.ok(html.includes("min-h-[44px]"), "CTA button must enforce minimum 44px touch target");
   });
 
-  await t.test("2. MobileChairsideVisitWorkspace embeds Handoff Banner and renders 52px Stage CTA", () => {
+  it("2. MobileChairsideVisitWorkspace embeds Handoff Banner and renders 52px Stage CTA", () => {
     const html = renderToString(
       <MobileChairsideVisitWorkspace
         activePatient={dummyPatient}
@@ -127,7 +127,7 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
     assert.ok(html.includes("mobile-chairside-primary-cta"), "Must render primary CTA");
   });
 
-  await t.test("3. Zero dev-jargon or bird-language in user-facing workspace strings", () => {
+  it("3. Zero dev-jargon or bird-language in user-facing workspace strings", () => {
     const htmlStep1 = renderToString(
       <MobileChairsideVisitWorkspace
         activePatient={dummyPatient}
@@ -180,7 +180,7 @@ test("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", async (t
     assert.ok(htmlStep5.includes("Завершить приём и сформировать счёт"), "Must render clean checkout CTA");
   });
 
-  await t.test("4. CSS Apple HIG Invariants for Bottom Sheet & Touch Targets", () => {
+  it("4. CSS Apple HIG Invariants for Bottom Sheet & Touch Targets", () => {
     const candidate1 = path.resolve(process.cwd(), "src/styles/VisitView.css");
     const candidate2 = path.resolve(process.cwd(), "apps/web/src/styles/VisitView.css");
     const cssPath = fs.existsSync(candidate1) ? candidate1 : candidate2;

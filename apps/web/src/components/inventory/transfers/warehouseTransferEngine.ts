@@ -158,6 +158,7 @@ export function validateTransferDraft(
 	targetBranchId: WarehouseBranchId,
 	items: readonly WarehouseTransferLineItem[],
 	stockByBranch?: Record<WarehouseBranchId, Record<string, number>> | undefined,
+	allowOverdraft = false,
 ): {
 	isValid: boolean;
 	errors: string[];
@@ -194,7 +195,11 @@ export function validateTransferDraft(
 			const currentStock = stockByBranch[sourceBranchId]?.[item.itemId] ?? 0;
 			const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
 			if (requiredQty > currentStock) {
-				warnings.push(`Внимание: перемещение в овердрафт товара «${item.nameRu}» на складе ${getWarehouseBranch(sourceBranchId).nameRu}: требуется ${requiredQty}, в наличии ${currentStock}. Будет списано при поступлении накладной.`);
+				if (allowOverdraft) {
+					warnings.push(`Внимание: перемещение в овердрафт товара «${item.nameRu}» на складе ${getWarehouseBranch(sourceBranchId).nameRu}: требуется ${requiredQty}, в наличии ${currentStock}. Будет списано при поступлении накладной.`);
+				} else {
+					errors.push(`Недостаточно остатка товара «${item.nameRu}» на складе ${getWarehouseBranch(sourceBranchId).nameRu}: требуется ${requiredQty}, доступно ${currentStock}.`);
+				}
 			}
 		}
 	}

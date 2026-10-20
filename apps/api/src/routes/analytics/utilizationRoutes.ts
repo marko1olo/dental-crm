@@ -329,11 +329,7 @@ export async function calculateDoctorProfitability(
 			const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
 			const recordedPayroll = docId ? (docPayrollMap.get(docId) || 0) : 0;
-			const doctorPayrollRub = recordedPayroll > 0
-				? recordedPayroll
-				: revenue > 0
-					? Math.round(Math.max(0, revenue - labOrdersCostRub) * 0.25)
-					: 0;
+			const doctorPayrollRub = recordedPayroll;
 			const clinicMarginRub = revenue > 0
 				? revenue - labOrdersCostRub - doctorPayrollRub
 				: 0;

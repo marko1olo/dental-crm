@@ -1,0 +1,246 @@
+/* ---------- 13. АДАПТИВ ---------- */
+@media (max-width: 1140px) {
+	:root {
+		--sidebar-width: 76px;
+	}
+	.sidebar {
+		width: 76px;
+		padding: 16px 12px;
+	}
+	.nav-copy,
+	.brand-mark span {
+		display: none;
+	}
+	.nav-item {
+		justify-content: center;
+		padding: 11px 0;
+	}
+	.brand-mark {
+		justify-content: center;
+		padding: 4px 0 16px;
+	}
+	.compact-top-button,
+	.workspace-role-switcher ~ * .recent-widget {
+		display: none;
+	}
+}
+@media (max-width: 840px) {
+	:root {
+		--sidebar-width: 0px;
+	}
+	.sidebar {
+		display: none;
+	}
+	.topbar {
+		padding: 0 12px;
+		padding-top: env(safe-area-inset-top, 0px) !important;
+		padding-left: max(12px, calc(8px + env(safe-area-inset-left, 0px))) !important;
+		padding-right: max(12px, calc(8px + env(safe-area-inset-right, 0px))) !important;
+		flex-wrap: nowrap !important;
+		gap: 8px !important;
+		height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		min-height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		max-height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		background: color-mix(in srgb, var(--paper-strong, var(--paper)) 88%, transparent) !important;
+		backdrop-filter: blur(20px) !important;
+		-webkit-backdrop-filter: blur(20px) !important;
+		border-bottom: 1px solid var(--line) !important;
+		position: sticky !important;
+		top: 0 !important;
+		z-index: 40 !important;
+		box-sizing: border-box !important;
+	}
+	.topbar h1,
+	.topbar-clinic h1 {
+		font-size: clamp(12px, 3.8vw, 15px);
+		line-height: 1.25;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 220px;
+		word-break: normal;
+		display: block;
+		padding-left: 2px;
+	}
+	.topbar .eyebrow,
+	.topbar-clinic .eyebrow {
+		display: none;
+	}
+	.topbar-context {
+		gap: 6px;
+		flex-wrap: nowrap;
+		overflow: visible;
+		min-width: 0;
+		flex: 1;
+	}
+	.topbar-clinic {
+		min-width: 0;
+		flex: 1;
+		overflow: visible;
+	}
+	.compact-top-button,
+	.top-lock-button,
+	.top-dictation-button {
+		display: none;
+	}
+	/* Role switcher on mobile — collapse to compact pill */
+	.workspace-role-switcher {
+		border: none;
+		background: none;
+		padding: 0;
+	}
+	.workspace-role-switcher > summary {
+		background: var(--teal-surface);
+		color: var(--teal-dark);
+		border-radius: 999px;
+		padding: 4px 10px;
+		font-size: 11px;
+		font-weight: 700;
+		border: 1px solid var(--teal-ring);
+		white-space: nowrap;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		min-height: 44px;
+		min-width: 44px;
+		box-sizing: border-box;
+	}
+	[data-theme="dark"] .workspace-role-switcher > summary,
+	[data-theme="night"] .workspace-role-switcher > summary {
+		color: var(--teal);
+	}
+	/* Recent patients dropdown and perspective switcher on mobile — hide entirely from topbar */
+	.recent-patients-header-dropdown,
+	.workspace-perspective-switcher {
+		display: none;
+	}
+	/* Schedule View has its own dedicated quick booking button in ScheduleFilterStrip (Defect 2, Mandates 8p, 8c) */
+	.workspace.view-schedule .top-actions {
+		display: none !important;
+	}
+	/* top-actions strip */
+	.top-actions {
+		gap: 4px;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		flex-wrap: nowrap;
+	}
+	.top-actions .primary-button {
+		padding: 6px 12px;
+		font-size: 12px;
+		white-space: nowrap;
+		min-height: 36px;
+		min-width: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+	}
+	.top-actions .secondary-button,
+	.top-actions .daily-top-button,
+	.top-actions .topbar-copilot-button,
+	.top-actions .compact-top-button {
+		display: none !important;
+	}
+	@media (max-width: 768px) {
+		.top-actions {
+			display: none !important;
+		}
+
+		/* Полное скрытие десктопных онбординг-туров, коуч-марок и баннеров на мобильных экранах */
+		[data-testid="doctor-training-coach-mark-card"],
+		[data-testid="coach-mark-target-beacon"],
+		.tour-spotlight-root,
+		[data-testid="guided-tour-spotlight-overlay"],
+		.tour-backdrop-clickable-zone,
+		.onboarding-compact-strip,
+		.default-clinic-banner,
+		[data-testid="demo-mode-banner"] {
+			display: none !important;
+		}
+	}
+}
+
+/* Нижняя мобильная навигация — разметка:
+   <nav class="dnt-bottom-nav"> <a class="active">…5 пунктов…</a> </nav> */
+.dnt-bottom-nav {
+	display: none;
+}
+@media (max-width: 840px) {
+	.dnt-bottom-nav {
+		display: flex;
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 30;
+		justify-content: space-around;
+		gap: 2px;
+		background: var(--paper);
+		border-top: 1px solid var(--line);
+		padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+		box-shadow: 0 -8px 24px -12px rgba(0, 0, 0, 0.15);
+	}
+	.dnt-bottom-nav a {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		padding: 6px 4px;
+		min-width: 44px;
+		min-height: 44px;
+		flex: 1;
+		max-width: 76px;
+		border-radius: 10px;
+		color: var(--muted);
+		font-size: 10.5px;
+		font-weight: 600;
+		transition: color 0.15s;
+		box-sizing: border-box;
+	}
+	.dnt-bottom-nav a svg {
+		width: 20px;
+		height: 20px;
+	}
+	.dnt-bottom-nav a.active {
+		color: var(--teal-dark);
+		background: var(--teal-soft);
+		font-weight: 700;
+	}
+	[data-theme="dark"] .dnt-bottom-nav a.active,
+	[data-theme="night"] .dnt-bottom-nav a.active {
+		color: var(--teal);
+	}
+	/* НИЖНИЙ ОТСТУП ЗАДАЁТСЯ РОВНО ОДИН РАЗ — колонке контента (см. §17).
+     Здесь он НЕ задаётся второй раз, здесь снимается ЧУЖАЯ компенсация низа,
+     чтобы отступ остался единственным. Двойной отступ на вложенных боксах даёт
+     двойной пустой низ: при `box-sizing: border-box` внешний бокс срезает
+     видимую высоту внутреннего, а внутренний добавляет ещё столько же своего.
+
+     Что тут стояло раньше и почему это было сломано:
+     `main, .app-content { padding-bottom: var(--corner-dock-reserve-block, 100px) !important }`.
+     Селектор типа `main` имеет специфичность (0,0,1) и проигрывал
+     `main.css:13013` — `.app-shell, .workspace, .panel, .work-grid, ...
+     { padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important }`
+     (0,1,0, тот же слой, тоже !important). Правило было мертво с первого дня:
+     замер живой страницы (390x844, список пациентов) давал у
+     `main.app-shell.dente-redesign` вычисленный `padding-bottom: 96px` при
+     опубликованном резерве 144px. `.app-content` в разметке проекта не
+     существует вовсе.
+
+     Те 96px — компенсация под ЛЕГАСИ-панель: `main.css:12924-12934` на <=860px
+     превращает `.sidebar` в закреплённую полосу внизу. На <=840px этой полосы
+     нет (`.sidebar { display: none }` в §13), её роль играет `.dnt-bottom-nav`,
+     а просвет под навигацию колонка контента уже получила в §17. То
+     есть на телефоне 96px — просто второй, лишний пустой низ. Обнуляем:
+     специфичность (0,2,1) перебивает (0,1,0) при равном !important и слое.
+     Диапазон 841-860px не тронут: там легаси-полоса реальна и 96px нужны. */
+	main.app-shell.dente-redesign {
+		padding-bottom: 0;
+	}
+}
+

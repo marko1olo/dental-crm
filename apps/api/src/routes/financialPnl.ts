@@ -10,7 +10,7 @@ import {
 	type CalculateManagerialPnlInput,
 	calculateManagerialPnl,
 } from "@dental/shared";
-import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
@@ -23,6 +23,8 @@ import {
 	cashOperations,
 	chairs,
 	clinics,
+	inventoryTransactions,
+	labOrders,
 	payments,
 	services,
 	treatmentItems,
@@ -214,6 +216,56 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				reasonId: e.reasonCode || 10,
 				amountRub: e.amountRub,
 			}));
+
+			// 3a. Учитываем фактические заказы ЗТЛ (labOrders), не проведенные через кассовую операцию
+			const [unpaidLabOrders] = await tx
+				.select({
+					totalRub: sql<number>`coalesce(sum(${labOrders.priceRub}), 0)`,
+				})
+				.from(labOrders)
+				.where(
+					and(
+						eq(labOrders.organizationId, orgId),
+						ne(labOrders.status, "cancelled"),
+						sql`${labOrders.paidFromCashOperationId} IS NULL`,
+						gte(labOrders.createdAt, fromDate),
+						lte(labOrders.createdAt, toDate),
+					),
+				);
+
+			const unpaidLabRub = Number(unpaidLabOrders?.totalRub || 0);
+			if (unpaidLabRub > 0) {
+				expenseRows.push({
+					reasonId: 11, // Зуботехническая лаборатория (ЗТЛ)
+					amountRub: unpaidLabRub,
+				});
+			}
+
+			// 3b. Учитываем фактические списания материалов (inventoryTransactions)
+			const [materialsUsage] = await tx
+				.select({
+					totalCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
+				})
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, orgId),
+						inArray(inventoryTransactions.transactionType, ["usage", "write_off"]),
+						gte(inventoryTransactions.createdAt, fromDate),
+						lte(inventoryTransactions.createdAt, toDate),
+					),
+				);
+
+			const cashMaterialsRub = expenseRows
+				.filter((e) => e.reasonId === 4 || e.reasonId === 5)
+				.reduce((acc, e) => acc + Number(e.amountRub || 0), 0);
+			const actualMaterialsCostRub = Number(materialsUsage?.totalCostRub || 0);
+			if (actualMaterialsCostRub > cashMaterialsRub) {
+				expenseRows.push({
+					reasonId: 4, // Стоматологические материалы
+					amountRub: Number((actualMaterialsCostRub - cashMaterialsRub).toFixed(2)),
+				});
+			}
 
 			// 4. Юнит-экономика кресел: запрашиваем активные кресла и приемы за период
 			const activeChairs = await tx

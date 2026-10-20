@@ -108,3 +108,29 @@ export async function postEmergencyAntishockWriteoff(visitId?: string): Promise<
 		}),
 	});
 }
+
+export async function postQuickCarpuleWriteoff(params: {
+	visitId?: string | null | undefined;
+	patientId?: string | null | undefined;
+	count: number;
+	drugId?: string | undefined;
+}): Promise<void> {
+	try {
+		await fetch('/api/inventory/quick-writeoff-carpules', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				visitId: params.visitId || null,
+				patientId: params.patientId || null,
+				count: params.count,
+				drugId: params.drugId || 'articaine_1_100k',
+				category: 'anesthetic_carpule',
+			}),
+		});
+	} catch (err) {
+		console.warn('[Anesthesia] Carpule writeoff error:', err);
+	}
+}

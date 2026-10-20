@@ -4,8 +4,8 @@
  * и стандартных стерильных лотков без бюрократии.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	AUTOCLAVE_CYCLE_PRESETS,
 	CHEMICAL_DISINFECTION_PRESETS,
@@ -28,7 +28,7 @@ import {
 describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () => {
 	it("содержит стандартные пресеты лотков (терапия, хирургия, эндодонтия)", () => {
 		assert.equal(STANDARD_TRAY_OPTIONS.length, 3);
-		
+
 		const therapy = STANDARD_TRAY_OPTIONS.find((t) => t.id === "therapy");
 		assert.ok(therapy);
 		assert.equal(therapy.toolSetCode, "set_therapeutic_tray");
@@ -45,7 +45,11 @@ describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () =
 
 	it("генерирует 1-кликовый крафт-пакет со свежей датой и индикатором 5 класса", () => {
 		const fixedDate = new Date("2026-09-04T08:00:00.000Z");
-		const tray = createStandardSterileTrayBarcode("therapy", fixedDate, "Смирнова А.В.");
+		const tray = createStandardSterileTrayBarcode(
+			"therapy",
+			fixedDate,
+			"Смирнова А.В.",
+		);
 
 		assert.equal(tray.isValid, true);
 		assert.equal(tray.isExpired, false);
@@ -106,19 +110,25 @@ describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () =
 		assert.equal(SANPIN_AUTOCLAVE_VACUUM_TEST_PRESET.bowieDickResult, "passed");
 
 		assert.ok(CHEMICAL_DISINFECTION_PRESETS.length >= 6);
-		const alaminol = getChemicalDisinfectionPresetById("alaminol_instruments_immersion");
+		const alaminol = getChemicalDisinfectionPresetById(
+			"alaminol_instruments_immersion",
+		);
 		assert.ok(alaminol);
 		assert.equal(alaminol.concentrationPercent, 1.5);
 		assert.equal(alaminol.exposureMinutes, 60);
 
-		const ultrasonicBurs = getChemicalDisinfectionPresetById("optimax_pro_rotary_ultrasonic");
+		const ultrasonicBurs = getChemicalDisinfectionPresetById(
+			"optimax_pro_rotary_ultrasonic",
+		);
 		assert.ok(ultrasonicBurs);
 		assert.equal(ultrasonicBurs.methodRu, "ультразвуковая_ванна");
 		assert.equal(ultrasonicBurs.exposureMinutes, 15);
 
 		assert.equal(PSO_QUALITY_CONTROL_PRESETS.length, 2);
 		assert.equal(SANPIN_AZOPYRAM_TEST_PRESET.azopyramResult, "negative");
-		assert.equal(SANPIN_PHENOLPHTHALEIN_TEST_PRESET.phenolphthaleinResult, "negative");
+		assert.equal(
+			SANPIN_PHENOLPHTHALEIN_TEST_PRESET.phenolphthaleinResult,
+			"negative",
+		);
 	});
 });
-

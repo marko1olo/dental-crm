@@ -279,10 +279,12 @@ describe("выданное заявление на возврат снимает
 				on conflict (id) do nothing`);
 			await tx.execute(sql`
 				insert into clinics (id, organization_id, name, timezone)
-				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')`);
+				values (${CLINIC_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Кабинет сторожа возврата"}, 'Europe/Moscow')
+				on conflict (id) do nothing`);
 			await tx.execute(sql`
 				insert into users (id, organization_id, full_name, role, is_active)
-				values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа возврата"}, 'owner', true)`);
+				values (${OWNER_ID}::uuid, ${ORGANIZATION_ID}::uuid, ${"Владелец сторожа возврата"}, 'owner', true)
+				on conflict (id) do update set organization_id = excluded.organization_id, full_name = excluded.full_name`);
 			/*
 			 * ДАТА РОЖДЕНИЯ И ТЕЛЕФОН В КАРТЕ ОБЯЗАТЕЛЬНЫ. Шапка документа печатает их, а
 			 * при пустом значении подставляет «не указана»/«не указан» — ровно те строки,
@@ -292,11 +294,13 @@ describe("выданное заявление на возврат снимает
 			await tx.execute(sql`
 				insert into patients (id, organization_id, full_name, birth_date, phone, status)
 				values (${PATIENT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Плательщик сторожа возврата"}, '1990-05-17', '+79000000021', 'active'),
-				       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Плательщик сторожа возврата"}, '1988-02-03', '+79000000022', 'active')`);
+				       (${PATIENT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${"Плательщик сторожа возврата"}, '1988-02-03', '+79000000022', 'active')
+				on conflict (id) do nothing`);
 			await tx.execute(sql`
 				insert into visits (id, organization_id, patient_id, status)
 				values (${VISIT_FULL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_FULL}::uuid, 'draft'),
-				       (${VISIT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_PARTIAL}::uuid, 'draft')`);
+				       (${VISIT_PARTIAL}::uuid, ${ORGANIZATION_ID}::uuid, ${PATIENT_PARTIAL}::uuid, 'draft')
+				on conflict (id) do nothing`);
 		});
 
 		const staffToken = signToken(

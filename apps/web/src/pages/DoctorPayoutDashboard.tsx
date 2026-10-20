@@ -37,10 +37,10 @@ export {
 
 export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardProps = {}) {
 	const isMobile = useIsMobile(768);
-	const branding = useDocumentBrandingStore((s) => s.branding);
+	const branding = useDocumentBrandingStore();
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedClinicName = branding?.clinicName
-		|| branding?.legalEntityName
+		|| branding?.clinicLegalName
 		|| appLogic?.dashboard?.organization?.name
 		|| appLogic?.dashboard?.clinicSettings?.clinicName
 		|| "";
@@ -75,15 +75,16 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 	} = usePayoutDashboard(initialReport);
 
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = React.useState<boolean>(false);
+	const [showDoctorSelectionNotice, setShowDoctorSelectionNotice] = React.useState<boolean>(false);
 
 	const allReportDoctors = React.useMemo(() => {
-		if (!report?.doctors) return [];
-		return report.doctors.map((d) => ({
+		if (!report?.rows) return [];
+		return report.rows.map((d) => ({
 			id: d.doctorUserId,
 			name: d.doctorName,
 			specialtyId: mapRoleToSpecialtyId(d.role),
 		}));
-	}, [report?.doctors]);
+	}, [report?.rows]);
 
 	React.useEffect(() => {
 		const handleOpenPayroll = (e: Event) => {
@@ -97,8 +98,8 @@ export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardPr
 				return;
 			}
 
-			if (passedDoctorId && report?.doctors) {
-				const found = report.doctors.find((d) => d.doctorUserId === passedDoctorId);
+			if (passedDoctorId && report?.rows) {
+				const found = report.rows.find((d) => d.doctorUserId === passedDoctorId);
 				if (found) {
 					setPayrollModalDoctor(found);
 					setIsPayrollModalOpen(true);

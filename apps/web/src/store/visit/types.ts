@@ -22,7 +22,9 @@ export type VisitToothUiState =
 	| "treatment"
 	| "caries"
 	| "pulpitis"
-	| "crown";
+	| "crown"
+	| "Planned_Crown"
+	| "planned_crown";
 
 export type ToothState = VisitToothUiState;
 

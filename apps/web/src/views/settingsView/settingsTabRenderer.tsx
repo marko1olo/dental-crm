@@ -99,7 +99,7 @@ export const SettingsTabRenderer: React.FC<SettingsTabRendererProps> = ({
 
 	return (
 		<>
-			{settingsTab !== "telegram" && (
+			{settingsTab === "access" && (
 				<SettingsSecurityAndBackupTab
 					settingsProps={settingsProps}
 					telegramAdminSecretSession={telegramAdminSecretSession}

@@ -14,6 +14,7 @@ import { resolveEgiszIntegrationStatus, verifyDoctorSnilsForFrmr } from "./egisz
 import {
 	egiszBlankPermissionsPatchSchema,
 	egiszLogsParamsSchema,
+	egiszMultipleDiagnosesQuerySchema,
 	egiszSendBodySchema,
 	validateDoctorSnilsBodySchema,
 } from "./egiszTypes.js";
@@ -114,7 +115,26 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalReadAccess(request, reply, "egisz multiple diagnoses read"))) return;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		return reply.send(await db.select().from(schema.egiszMultipleDiagnoses).where(eq(schema.egiszMultipleDiagnoses.organizationId, orgId)));
+
+		const parsedQuery = egiszMultipleDiagnosesQuerySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Параметр patientId обязателен и должен быть валидным UUID.",
+			});
+		}
+
+		// Запрещаем утечку врачебной тайны: строгая изоляция по organizationId и patientId
+		const diagnoses = await db
+			.select()
+			.from(schema.egiszMultipleDiagnoses)
+			.where(
+				and(
+					eq(schema.egiszMultipleDiagnoses.organizationId, orgId),
+					eq(schema.egiszMultipleDiagnoses.patientId, parsedQuery.data.patientId),
+				),
+			);
+		return reply.send(diagnoses);
 	});
 
 	registerVisitCdaExportRoute(app);
@@ -145,6 +165,9 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		if (visit.patientId !== body.patientId) return reply.status(400).send({ error: "VisitPatientMismatch", message: "Указанный приём принадлежит другому пациенту." });
 
 		const [inserted] = await db.insert(schema.egiszLogs).values({ organizationId: orgId, patientId: body.patientId, visitId: body.visitId, status: "Pending" }).returning();
+		if (!inserted) {
+			return reply.status(500).send({ error: "DbInsertError", message: "Не удалось создать запись в журнале ЕГИСЗ." });
+		}
 		return reply.status(200).send({ success: true, logId: inserted.id });
 	});
 
@@ -189,7 +212,7 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 			visitId: visit.id,
 			doctorId: identity.userId || visit.patientId,
 			pkg,
-			actorUserId: identity.userId,
+			actorUserId: identity.userId || undefined,
 			isSync,
 		});
 

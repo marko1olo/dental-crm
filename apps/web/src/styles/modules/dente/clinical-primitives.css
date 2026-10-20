@@ -1,0 +1,136 @@
+/* ---------- 9. РАСПИСАНИЕ ДНЯ (Смена) ---------- */
+.today-schedule-item {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	transition: all 0.15s;
+}
+.today-schedule-item:hover {
+	border-color: var(--teal-ring);
+	box-shadow: var(--shadow-1);
+	transform: translateY(-1px);
+}
+.today-schedule-item.current-active {
+	background: var(--teal-surface);
+	border: 1px solid var(--teal-ring);
+	border-left: 3px solid var(--teal);
+}
+.today-schedule-time {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 10. АВАТАРЫ ---------- */
+.avatar {
+	width: 48px;
+	height: 48px;
+	border-radius: 13px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(145deg, var(--teal), var(--teal-dark));
+	color: var(--on-teal);
+	font-size: 19px;
+	font-weight: 800;
+	box-shadow: 0 8px 18px -8px var(--teal-ring);
+}
+
+/* ---------- 11. ДИКТОВКА ---------- */
+.dictation-box textarea {
+	min-height: 120px;
+	width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+	padding: 12px 14px;
+	border: 1px solid var(--line-strong);
+	border-radius: 11px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 13.5px;
+	line-height: 1.55;
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
+}
+.dictation-quick-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.dictation-quick-row button,
+.quick-chip {
+	padding: 5px 12px;
+	border: 1px dashed var(--line-strong);
+	border-radius: 999px;
+	background: var(--paper-soft);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+.dictation-quick-row button:hover,
+.quick-chip:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	background: var(--teal-surface);
+}
+.recording-icon-pulse {
+	color: var(--bad-fg);
+}
+.skeleton-wave {
+	animation: dntWave 1s ease-in-out infinite;
+	background: var(--bad-fg);
+}
+
+/* ---------- 12. ЗУБНАЯ КАРТА (если рендер кнопками с data-tooth-state) ---------- */
+.tooth-map button[data-tooth-state] {
+	width: 36px;
+	height: 46px;
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	background: var(--paper);
+	color: var(--ink-2);
+	font-size: 11.5px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	transition: all 0.12s;
+}
+.tooth-map button[data-tooth-state]:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-1);
+}
+button[data-tooth-state="planned"] {
+	background: var(--info-bg);
+	color: var(--info-fg);
+	border-color: var(--info-fg);
+}
+button[data-tooth-state="treatment"] {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
+}
+button[data-tooth-state="watch"] {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
+}
+button[data-tooth-state="done"] {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--ok-fg);
+}
+button[data-tooth-state="missing"] {
+	background: transparent;
+	color: var(--muted);
+	border-style: dashed;
+	border-color: var(--line-strong);
+	opacity: 0.55;
+}
+.stamp-btn.active {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border-color: var(--teal-ring);
+}
+

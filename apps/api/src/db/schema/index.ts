@@ -23,3 +23,4 @@ export * from "./treatmentConsumables.js";
 export * from "./doctorPreferences.js";
 export * from "./staffChat.js";
 export * from "./idempotency.js";
+export * from "./warranties.js";

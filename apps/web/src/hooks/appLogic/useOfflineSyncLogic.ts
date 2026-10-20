@@ -294,8 +294,18 @@ export function useOfflineSyncLogic({
 
 	useEffect(() => {
 		ensureCrossTabSyncInitialized();
-		const unSubVisit = onCrossTabVisitStatusChange(() => {});
-		const unSubBal = onCrossTabPatientBalanceChange(() => {});
+		const unSubVisit = onCrossTabVisitStatusChange((payload) => {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:visit-status-changed", { detail: payload }));
+				window.dispatchEvent(new CustomEvent("dente:refresh-appointments", { detail: payload }));
+			}
+		});
+		const unSubBal = onCrossTabPatientBalanceChange((payload) => {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:patient-balance-changed", { detail: payload }));
+				window.dispatchEvent(new CustomEvent("dente:refresh-billing", { detail: payload }));
+			}
+		});
 		const unSubEntity = onCrossTabClinicalEntityChange(() => {});
 		return () => {
 			unSubVisit();

@@ -325,4 +325,51 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "CannotDiscardClosedSnapshot");
 	});
+
+	it("GET /api/periodontogram/:patientId rejects malformed UUID (400)", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/periodontogram/invalid-uuid",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+		});
+
+		assert.equal(res.statusCode, 400);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "InvalidPatientId");
+	});
+
+	it("POST /api/periodontogram/:patientId rejects non-staff call (401)", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/periodontogram/${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+			payload: {
+				notes: "Клинический осмотр",
+			},
+		});
+
+		assert.equal(res.statusCode, 401);
+	});
+
+	it("POST /api/periodontogram/:patientId rejects malformed UUID (400)", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/periodontogram/invalid-uuid",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Клинический осмотр",
+			},
+		});
+
+		assert.equal(res.statusCode, 400);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "InvalidPatientId");
+	});
 });

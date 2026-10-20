@@ -123,6 +123,51 @@ export const PaymentSplitPresetsToolbar: React.FC<PaymentSplitPresetsToolbarProp
 				<span>Всё наличными</span>
 			</button>
 
+			{availableDmsCoverageRub !== undefined && availableDmsCoverageRub > 0 && (
+				<>
+					<button
+						type="button"
+						onClick={() => {
+							const totalKop = rubToKopecks(totalDueRub);
+							const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
+							const remKop = Math.max(0, totalKop - dmsKop);
+							setSplitDmsRub?.(kopecksToRub(dmsKop));
+							setSplitCardRub(kopecksToRub(remKop));
+							setSplitCashRub(0);
+							setSplitDepositRub(0);
+							setSplitSbpRub(0);
+							setSplitCertificateRub(0);
+							setSplitBonusRub(0);
+						}}
+						className="split-remainder-chip bg-teal-50 dark:bg-teal-950/40 border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold"
+						data-testid="btn-payment-combo-dms-card"
+					>
+						<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
+						<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Карта</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							const totalKop = rubToKopecks(totalDueRub);
+							const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
+							const remKop = Math.max(0, totalKop - dmsKop);
+							setSplitDmsRub?.(kopecksToRub(dmsKop));
+							setSplitCashRub(kopecksToRub(remKop));
+							setSplitCardRub(0);
+							setSplitDepositRub(0);
+							setSplitSbpRub(0);
+							setSplitCertificateRub(0);
+							setSplitBonusRub(0);
+						}}
+						className="split-remainder-chip bg-teal-50 dark:bg-teal-950/40 border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold"
+						data-testid="btn-payment-combo-dms-cash"
+					>
+						<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
+						<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Нал</span>
+					</button>
+				</>
+			)}
+
 			{/* Full automated testing parity chips (preserved in sr-only container to maintain 1-row layout) */}
 			<div className="sr-only">
 				<button
@@ -144,50 +189,6 @@ export const PaymentSplitPresetsToolbar: React.FC<PaymentSplitPresetsToolbarProp
 				>
 					<span>Округлить сотни</span>
 				</button>
-				{availableDmsCoverageRub !== undefined && availableDmsCoverageRub > 0 && (
-					<>
-						<button
-							type="button"
-							onClick={() => {
-								const totalKop = rubToKopecks(totalDueRub);
-								const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
-								const remKop = Math.max(0, totalKop - dmsKop);
-								setSplitDmsRub?.(kopecksToRub(dmsKop));
-								setSplitCardRub(kopecksToRub(remKop));
-								setSplitCashRub(0);
-								setSplitDepositRub(0);
-								setSplitSbpRub(0);
-								setSplitCertificateRub(0);
-								setSplitBonusRub(0);
-							}}
-							className="split-remainder-chip"
-							data-testid="btn-payment-combo-dms-card"
-						>
-							<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
-							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Карта</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								const totalKop = rubToKopecks(totalDueRub);
-								const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
-								const remKop = Math.max(0, totalKop - dmsKop);
-								setSplitDmsRub?.(kopecksToRub(dmsKop));
-								setSplitCashRub(kopecksToRub(remKop));
-								setSplitCardRub(0);
-								setSplitDepositRub(0);
-								setSplitSbpRub(0);
-								setSplitCertificateRub(0);
-								setSplitBonusRub(0);
-							}}
-							className="split-remainder-chip"
-							data-testid="btn-payment-combo-dms-cash"
-						>
-							<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
-							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Нал</span>
-						</button>
-					</>
-				)}
 				{patientDepositRub > 0 && (
 					<button
 						type="button"

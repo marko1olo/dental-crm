@@ -228,11 +228,11 @@ export const PatientBillingFooter: React.FC<PatientBillingFooterProps> = ({
 					onClick={onFiscalizeAction}
 					className="flex-1 sm:flex-initial min-h-[44px] px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 					data-testid="btn-fiscalize-54fz"
-					title="Пробить чек"
-					aria-label="Фискализировать (54-ФЗ)"
+					title="Пробить фискальный чек"
+					aria-label="Пробить фискальный чек"
 				>
 					<Receipt className="w-4 h-4 text-white shrink-0" />
-					<span className="whitespace-nowrap">Пробить чек</span>
+					<span className="whitespace-nowrap">Фискальный чек</span>
 				</button>
 
 				{/* Secondary: Desktop Close */}

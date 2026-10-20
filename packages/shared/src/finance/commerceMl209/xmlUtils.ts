@@ -1,7 +1,8 @@
 import { escapeXml } from "../../cda/c14n.js";
 import { canonicalJsonStringify, sha256Hex } from "../../sync/hashing.js";
 import { validateRussianInn, validateRussianKpp, validateRussianOgrn } from "../tax/index.js";
-import type { OneCClinicProfile, OneCCommerceMlPackage } from "./types.js";
+import type { OneCClinicProfile, OneCCommerceMlPackage, OneCPackageIntegrityResult } from "./types.js";
+export type { OneCPackageIntegrityResult };
 
 export function computeCommerceMlSha256(payload: unknown): string {
 	if (typeof payload !== "object" || payload === null) return sha256Hex(String(payload));
@@ -36,22 +37,6 @@ export function validateOneCClinicCredentials(profile: OneCClinicProfile): OneCC
 	if (profile.bankAccount && !/^\d{20}$/.test(profile.bankAccount.trim())) errors.push("Расчетный счет организации должен состоять строго из 20 цифр");
 	if (profile.bankCorrAccount && !/^\d{20}$/.test(profile.bankCorrAccount.trim())) errors.push("Корреспондентский счет банка должен состоять строго из 20 цифр");
 	return { isValid: errors.length === 0, errors };
-}
-
-export interface OneCPackageIntegrityResult {
-	readonly isValid: boolean;
-	readonly errors: readonly string[];
-	readonly totalsKop: {
-		readonly salesGross: number;
-		readonly salesPayments: number;
-		readonly actsTotal: number;
-		readonly materialsCost: number;
-		readonly payrollGross: number;
-		readonly payrollNdfl: number;
-		readonly payrollSocial: number;
-		readonly payrollNet: number;
-	};
-	readonly sha256: string;
 }
 
 export function validatePackageIntegrity(pkg: OneCCommerceMlPackage): OneCPackageIntegrityResult {

@@ -676,7 +676,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 					<div className="px-4 py-2.5 border-t border-[var(--glass-border)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] shrink-0">
 						<div className="flex items-center gap-2">
 							<ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-							<span>Стандарты СтАР & Минздрава РФ • Полный массив 1 142 клинических протокола</span>
+							<span>Федеральные клинические стандарты • 1 142 протокола лечения</span>
 						</div>
 
 						<button

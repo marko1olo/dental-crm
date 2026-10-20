@@ -13,7 +13,7 @@
  * 6. Eradication of COMMON_FDI_TEETH.slice(0, 8) in ClinicalQuickPresetsBar.
  */
 
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

@@ -27,6 +27,7 @@ export interface OdontogramFindingInput {
 		| "Gingivitis"
 		| "Filled"
 		| "Crown"
+		| "Planned_Crown"
 		| "Implant"
 		| "Planned_Implant"
 		| "Missing"

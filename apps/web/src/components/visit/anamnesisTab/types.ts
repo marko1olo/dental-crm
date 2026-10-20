@@ -14,105 +14,23 @@ export interface VisitAnamnesisTabProps {
 	readonly onOpenStomxTemplates?: (() => void) | undefined;
 }
 
-// ─── 1. АЛЛЕРГОЛОГИЧЕСКИЙ КАТАЛОГ СТОМАТОЛОГА ─────────────────────────────
+// ─── 1. АЛЛЕРГОЛОГИЧЕСКИЙ КАТАЛОГ СТОМАТОЛОГА (SSOT ИЗ @dental/shared) ──────
 
-export interface AllergenItem {
-	readonly id: string;
-	readonly name: string;
-	readonly category: "anesthetics" | "antibiotics" | "materials";
-	readonly isCritical: boolean;
-	readonly tradeNamesHint?: string;
-}
+import {
+	ALLERGY_REACTIONS,
+	DENTAL_ALLERGEN_CATALOG,
+	DENTAL_SOMATIC_STOP_FACTOR_CATALOG,
+	type DentalAllergenDefinition,
+	type SomaticStopFactorDefinition,
+} from "@dental/shared";
 
-export const DENTAL_ALLERGENS: readonly AllergenItem[] = [
-	{
-		id: "articaine",
-		name: "Артикаин",
-		category: "anesthetics",
-		isCritical: true,
-		tradeNamesHint: "Ультракаин, Убистезин, Септанест",
-	},
-	{
-		id: "mepivacaine",
-		name: "Мепивакаин",
-		category: "anesthetics",
-		isCritical: false,
-		tradeNamesHint: "Скандонест, Мепивастезин",
-	},
-	{
-		id: "lidocaine",
-		name: "Лидокаин",
-		category: "anesthetics",
-		isCritical: true,
-		tradeNamesHint: "Ксилокаин, спреи, инфильтрация",
-	},
-	{
-		id: "novocaine",
-		name: "Новокаин / Прокаин",
-		category: "anesthetics",
-		isCritical: false,
-		tradeNamesHint: "Эфирные анестетики",
-	},
-	{
-		id: "penicillin",
-		name: "Пенициллиновый ряд",
-		category: "antibiotics",
-		isCritical: true,
-		tradeNamesHint: "Амоксиклав, Аугментин, Флемоксин",
-	},
-	{
-		id: "macrolides",
-		name: "Макролиды",
-		category: "antibiotics",
-		isCritical: false,
-		tradeNamesHint: "Кларитромицин, Азитромицин",
-	},
-	{
-		id: "lincosamides",
-		name: "Линкозамиды",
-		category: "antibiotics",
-		isCritical: false,
-		tradeNamesHint: "Клиндамицин, Линкомицин",
-	},
-	{
-		id: "latex",
-		name: "Латекс",
-		category: "materials",
-		isCritical: false,
-		tradeNamesHint: "Коффердам, перчатки — нитриловый протокол",
-	},
-	{
-		id: "metals",
-		name: "Металлы / Никель",
-		category: "materials",
-		isCritical: false,
-		tradeNamesHint: "КХС, НХС, коронки, брекеты",
-	},
-	{
-		id: "iodine",
-		name: "Йод / Йодоформ",
-		category: "materials",
-		isCritical: false,
-		tradeNamesHint: "Альвожил, Метапекс, Бетадин",
-	},
-	{
-		id: "nsaid",
-		name: "НПВП / Аспирин",
-		category: "materials",
-		isCritical: true,
-		tradeNamesHint: "Аспириновая триада, Кеторол, Ибупрофен",
-	},
-] as const;
+export { ALLERGY_REACTIONS };
 
-export const ALLERGY_REACTIONS = [
-	"Крапивница / кожный зуд",
-	"Отёк Квинке",
-	"Анафилактический шок",
-	"Бронхоспазм / удушье",
-	"Местная гиперемия",
-] as const;
+export type AllergenItem = DentalAllergenDefinition;
 
-// ─── 2. КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ И СОМАТИКА ─────────────────────────────
+export const DENTAL_ALLERGENS: readonly AllergenItem[] = DENTAL_ALLERGEN_CATALOG;
+
+// ─── 2. КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ И СОМАТИКА (SSOT ИЗ @dental/shared) ────────
 
 export interface SomaticStopFactorItem {
 	readonly id: string;
@@ -121,68 +39,13 @@ export interface SomaticStopFactorItem {
 	readonly hint: string;
 }
 
-export const SOMATIC_STOP_FACTORS: readonly SomaticStopFactorItem[] = [
-	{
-		id: "infarction_recent",
-		label: "Инфаркт / Инсульт (< 6 мес)",
-		isCritical: true,
-		hint: "Противопоказание к плановым стоматологическим вмешательствам!",
-	},
-	{
-		id: "pacemaker",
-		label: "Кардиостимулятор (ЭКС / ИКД)",
-		isCritical: true,
-		hint: "Абсолютный запрет УЗ-скейлеров и монополярной электрокоагуляции!",
-	},
-	{
-		id: "anticoagulants",
-		label: "Приём антикоагулянтов",
-		isCritical: true,
-		hint: "Варфарин, Ксарелто, Эликвис — высокий риск кровотечения при удалении",
-	},
-	{
-		id: "bisphosphonates",
-		label: "Приём бисфосфонатов",
-		isCritical: true,
-		hint: "Акласта, Зомета, Пролиа — критический риск остеонекроза челюсти (MRONJ)",
-	},
-	{
-		id: "hypertension",
-		label: "Гипертоническая болезнь / ИБС",
-		isCritical: false,
-		hint: "Лимит адреналина <= 1:200 000, запрет 1:100 000",
-	},
-	{
-		id: "diabetes",
-		label: "Сахарный диабет",
-		isCritical: false,
-		hint: "Риск гипогликемии, контроль гликемии перед операцией",
-	},
-	{
-		id: "pregnancy",
-		label: "Беременность / Лактация",
-		isCritical: false,
-		hint: "Безопасные анестетики без вазоконстриктора, рентген-защита",
-	},
-	{
-		id: "asthma",
-		label: "Бронхиальная астма",
-		isCritical: false,
-		hint: "Запрет сульфитов (E223 консервант эпинефрина), ингалятор у кресла",
-	},
-	{
-		id: "epilepsy",
-		label: "Эпилепсия",
-		isCritical: false,
-		hint: "Риск судорожного приступа на стресс/свет",
-	},
-	{
-		id: "infections",
-		label: "Инфекции (Гепатит B/C, ВИЧ) со слов",
-		isCritical: false,
-		hint: "Повышенный инфекционный контроль",
-	},
-] as const;
+export const SOMATIC_STOP_FACTORS: readonly SomaticStopFactorItem[] =
+	DENTAL_SOMATIC_STOP_FACTOR_CATALOG.map((item) => ({
+		id: item.id,
+		label: item.label,
+		isCritical: item.isCritical,
+		hint: item.hint,
+	}));
 
 // ─── 3. СТОМАТОЛОГИЧЕСКИЙ АНАМНЕЗ ────────────────────────────────────────
 

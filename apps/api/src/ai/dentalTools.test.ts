@@ -183,6 +183,7 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 				toothNumber: 16,
 				diagnosisMkb: "K02.1",
 				anestheticTradeName: "Ультракаин Д-С",
+				anestheticVolumeMl: 1.7,
 				anesthesiaTechnique: "infiltration",
 				fillingMaterial: "Estelite Asteria A2",
 				useCofferdam: true,
@@ -208,12 +209,12 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 		);
 
 		assert.strictEqual(res.totalStagesCount, 6);
-		assert.ok(res.stages[0].stageName.includes("Неотложный"));
-		assert.ok(res.stages[1].stageName.includes("Пародонтологический"));
-		assert.ok(res.stages[2].stageName.includes("Терапевтическая"));
-		assert.ok(res.stages[3].stageName.includes("Хирургический"));
-		assert.ok(res.stages[4].stageName.includes("Ортопедический"));
-		assert.ok(res.stages[5].stageName.includes("Диспансерный"));
+		assert.ok(res.stages[0]?.stageName.includes("Неотложный"));
+		assert.ok(res.stages[1]?.stageName.includes("Пародонтологический"));
+		assert.ok(res.stages[2]?.stageName.includes("Терапевтическая"));
+		assert.ok(res.stages[3]?.stageName.includes("Хирургический"));
+		assert.ok(res.stages[4]?.stageName.includes("Ортопедический"));
+		assert.ok(res.stages[5]?.stageName.includes("Диспансерный"));
 	});
 
 	test("chairside_emergency_rescue: анафилактический шок требует немедленный адреналин 0.5 мг в бедро", async () => {
@@ -264,14 +265,14 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 			{ complaintText: "зуб сильно ноет по ночам, от горячего спать невозможно", toothMentioned: 24 },
 			{ organizationId: TEST_ORG_ID },
 		);
-		assert.strictEqual(pulpRes.suspectedNosologies[0].codeMkb, "K04.0");
+		assert.strictEqual(pulpRes.suspectedNosologies[0]?.codeMkb, "K04.0");
 
 		const perioRes = await handleTranslatePatientComplaint(
 			{ complaintText: "больно жевать и стучать по зубу, как будто вырос", toothMentioned: 46 },
 			{ organizationId: TEST_ORG_ID },
 		);
-		assert.strictEqual(pulpRes.suspectedNosologies[0].codeMkb, "K04.0");
-		assert.strictEqual(perioRes.suspectedNosologies[0].codeMkb, "K04.5");
+		assert.strictEqual(pulpRes.suspectedNosologies[0]?.codeMkb, "K04.0");
+		assert.strictEqual(perioRes.suspectedNosologies[0]?.codeMkb, "K04.5");
 	});
 
 	test("compare_dental_materials: Bulk Fill vs layering", async () => {
@@ -305,8 +306,8 @@ describe("Dental Tool Arsenal — CRM, База данных и Номенкла
 		assert.strictEqual(res.found, true);
 		assert.ok(res.results.some((r) => r.code === "A16.07.002"));
 		// В нормативном фолбеке цены честно null (без выдуманных хардкодов)
-		assert.strictEqual(res.results[0].priceRub, null);
-		assert.strictEqual(res.results[0].source, "order_804n_standard_catalog");
+		assert.strictEqual(res.results[0]?.priceRub, null);
+		assert.strictEqual(res.results[0]?.source, "order_804n_standard_catalog");
 	});
 
 	test("get_patient_emr_and_odontogram: при отсутствии пациента возвращает честное found: false", async () => {
@@ -320,10 +321,10 @@ describe("Dental Tool Arsenal — CRM, База данных и Номенкла
 			}),
 		};
 
-		const res = await getPatientEmrTool.handler(
+		const res = (await getPatientEmrTool.handler(
 			{ patientId: "22222222-2222-2222-2222-222222222222" },
 			{ organizationId: TEST_ORG_ID, db: mockDb },
-		);
+		)) as any;
 
 		assert.strictEqual(res.found, false);
 		assert.ok(res.message?.includes("не найден в базе данных"));
@@ -384,7 +385,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Номенкла
 			}),
 		};
 
-		const res = await createInvoiceDraftTool.handler(
+		const res = (await createInvoiceDraftTool.handler(
 			{
 				patientId: "22222222-2222-2222-2222-222222222222",
 				items: [
@@ -394,7 +395,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Номенкла
 				discountRub: 300,
 			},
 			{ organizationId: TEST_ORG_ID, db: mockDb },
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.subtotalRub, 5300);
@@ -432,21 +433,30 @@ describe("Dental Tool Arsenal — Матрица рантаймов web_browser 
 		const webTools = getDentalTools("web_browser");
 		const deskTools = getDentalTools("desktop_native");
 
-		// В браузере ровно 13 клинических/CRM инструментов
-		assert.strictEqual(webTools.length, 13);
+		// В браузере 16 инструментов (15 клинических/CRM + manage_task_plan)
+		assert.strictEqual(webTools.length, 16);
+		assert.ok(webTools.some((t) => t.function.name === "manage_task_plan"));
 		assert.ok(webTools.some((t) => t.function.name === "calculate_anesthesia"));
 		assert.ok(webTools.some((t) => t.function.name === "get_patient_emr_and_odontogram"));
 		assert.ok(webTools.some((t) => t.function.name === "create_appointment"));
 		assert.ok(!webTools.some((t) => t.function.name === "launch_workstation_app"));
 		assert.ok(!webTools.some((t) => t.function.name === "read_local_clinical_file"));
 
-		// На десктопе все 18 инструментов доступны
-		assert.strictEqual(deskTools.length, 18);
+		// На десктопе все 31 инструмент доступны (16 веб/CRM/план + 15 нативных десктопных)
+		assert.strictEqual(deskTools.length, 31);
+		assert.ok(deskTools.some((t) => t.function.name === "manage_task_plan"));
 		assert.ok(deskTools.some((t) => t.function.name === "launch_workstation_app"));
 		assert.ok(deskTools.some((t) => t.function.name === "open_patient_dropzone_folder"));
-		assert.ok(deskTools.some((t) => t.function.name === "read_local_clinical_file"));
+		assert.ok(deskTools.some((t) => t.function.name === "read_clinical_file"));
+		assert.ok(deskTools.some((t) => t.function.name === "write_clinical_file"));
+		assert.ok(deskTools.some((t) => t.function.name === "list_patient_study_directory"));
 		assert.ok(deskTools.some((t) => t.function.name === "run_workstation_command"));
+		assert.ok(deskTools.some((t) => t.function.name === "manage_task"));
+		assert.ok(deskTools.some((t) => t.function.name === "schedule"));
 		assert.ok(deskTools.some((t) => t.function.name === "capture_workstation_screen"));
+		assert.ok(deskTools.some((t) => t.function.name === "call_local_mcp_tool"));
+		assert.ok(deskTools.some((t) => t.function.name === "list_local_mcp_tools"));
+		assert.ok(deskTools.some((t) => t.function.name === "read_local_mcp_resource"));
 	});
 
 	test("executeDentalTool: отказ при вызове desktop_native инструмента в режиме web_browser", async () => {
@@ -474,5 +484,77 @@ describe("Dental Tool Arsenal — Матрица рантаймов web_browser 
 
 		assert.strictEqual(res.safeToProceed, true);
 		assert.strictEqual(res.absoluteMaxCarpules, 7);
+	});
+
+	test("executeDentalTool: manage_task_plan создает план, отслеживает шаги и предотвращает зацикливание", async () => {
+		// 1. Создание плана
+		const createRes = (await executeDentalTool(
+			"manage_task_plan",
+			{
+				action: "create",
+				goal: "Комплексная санация и финансовый аудит",
+				items: [
+					{ id: "step_check", title: "Проверка зубной формулы" },
+					{
+						id: "step_invoice",
+						title: "Формирование предварительной сметы",
+						blockedBy: ["step_check"],
+					},
+				],
+			},
+			{ organizationId: TEST_ORG_ID, runtimeMode: "web_browser" },
+		)) as {
+			success: boolean;
+			isComplete: boolean;
+			actionableItems: Array<{ id: string; title: string }>;
+			directive?: string;
+		};
+
+		assert.strictEqual(createRes.success, true);
+		assert.strictEqual(createRes.isComplete, false);
+		assert.strictEqual(createRes.actionableItems.length, 1);
+		assert.strictEqual(createRes.actionableItems[0].id, "step_check");
+		assert.ok(createRes.directive?.includes("НЕ ВЫЗЫВАЙ manage_task_plan повторно"));
+
+		// 2. Обновление статуса первого шага
+		const updateRes = (await executeDentalTool(
+			"manage_task_plan",
+			{
+				action: "update_status",
+				itemId: "step_check",
+				status: "completed",
+				notes: "Зубная формула актуальна",
+			},
+			{ organizationId: TEST_ORG_ID, runtimeMode: "web_browser" },
+		)) as {
+			success: boolean;
+			isComplete: boolean;
+			actionableItems: Array<{ id: string; title: string }>;
+		};
+
+		assert.strictEqual(updateRes.success, true);
+		assert.strictEqual(updateRes.isComplete, false);
+		assert.strictEqual(updateRes.actionableItems.length, 1);
+		assert.strictEqual(updateRes.actionableItems[0].id, "step_invoice");
+
+		// 3. Завершение последнего шага
+		const finishRes = (await executeDentalTool(
+			"manage_task_plan",
+			{
+				action: "update_status",
+				itemId: "step_invoice",
+				status: "completed",
+				notes: "Смета согласована с пациентом",
+			},
+			{ organizationId: TEST_ORG_ID, runtimeMode: "web_browser" },
+		)) as {
+			success: boolean;
+			isComplete: boolean;
+			directive?: string;
+		};
+
+		assert.strictEqual(finishRes.success, true);
+		assert.strictEqual(finishRes.isComplete, true);
+		assert.ok(finishRes.directive?.includes("Все шаги плана завершены"));
 	});
 });

@@ -178,13 +178,15 @@
    ============================================================================= */
 .document-primary-intake-banner {
 	display: flex !important;
-	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	flex-wrap: wrap !important;
 	gap: 8px !important;
-	padding: 10px 14px !important;
+	padding: 6px 12px !important;
 	border-radius: 8px !important;
 	background: var(--paper) !important;
 	border: 1px solid var(--line) !important;
-	border-left: 3px solid var(--teal) !important;
+	border-left: 3px solid var(--primary, var(--teal)) !important;
 	margin-bottom: 4px !important;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
@@ -192,7 +194,6 @@
 .document-primary-intake-heading {
 	display: flex !important;
 	align-items: center !important;
-	justify-content: space-between !important;
 	flex-wrap: wrap !important;
 	gap: 6px !important;
 }
@@ -200,16 +201,16 @@
 .document-primary-intake-badge-title {
 	display: flex !important;
 	align-items: center !important;
-	gap: 10px !important;
+	gap: 8px !important;
 	flex-wrap: wrap !important;
 }
 
 .document-primary-intake-pill {
 	display: inline-flex !important;
 	align-items: center !important;
-	padding: 3px 10px !important;
+	padding: 2px 8px !important;
 	border-radius: 6px !important;
-	font-size: 12px !important;
+	font-size: 11.5px !important;
 	font-weight: 700 !important;
 	background: var(--teal-soft) !important;
 	color: var(--teal-dark) !important;
@@ -227,7 +228,7 @@
 }
 
 .document-primary-intake-hint {
-	font-size: 12px !important;
+	font-size: 11.5px !important;
 	color: var(--muted) !important;
 	line-height: 1.3 !important;
 }
@@ -237,6 +238,34 @@
 	flex-wrap: wrap !important;
 	align-items: center !important;
 	gap: 8px !important;
+}
+
+.doc-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 6px 10px;
+	font-size: 12.5px;
+	font-weight: 500;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: left;
+	min-height: 36px;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.doc-dropdown-item:hover {
+	background: var(--paper-soft);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.doc-dropdown-item {
+		min-height: 44px;
+	}
 }
 
 .document-intake-quick-print-btn {

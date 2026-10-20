@@ -1,3 +1,4 @@
+import React from "react";
 import { SHADE_SWATCH_MAP, VITA_3D_MASTER_GROUPS } from "../labShadesData";
 
 interface DentalLab3dMasterGridProps {

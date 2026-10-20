@@ -22,11 +22,11 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 		return (
 			<div style={{ maxWidth: "800px", margin: "0 auto" }}>
 				<h3 style={{ fontSize: "16px", marginBottom: "12px", color: "var(--ink)" }}>
-					Индивидуальный график контрольных осмотров и профгигиены
+					График бесплатных контрольных осмотров и профгигиены
 				</h3>
 				<p style={{ fontSize: "13px", color: "var(--ink-2)", marginBottom: "16px" }}>
-					Периодичность контрольных визитов: каждые {calculation.checkupIntervalMonths} мес. для сохранения
-					гарантийных обязательств клиники.
+					Рекомендуемая периодичность визитов: каждые {calculation.checkupIntervalMonths} мес. Врач бесплатно
+					проверит состояние реставраций и проведёт профилактический осмотр.
 				</p>
 
 				<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -40,7 +40,7 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 								padding: "12px 16px",
 								background: "var(--paper-soft)",
 								border: "1px solid var(--line)",
-								borderRadius: "8px",
+								borderRadius: "10px",
 							}}
 						>
 							<div>
@@ -51,7 +51,7 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 							</div>
 							<div style={{ textAlign: "right" }}>
 								<strong style={{ fontSize: "15px", color: "var(--ink)" }}>{chk.formattedDate}</strong>
-								<div style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>ОБЯЗАТЕЛЬНЫЙ ВИЗИТ</div>
+								<div style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>БЕСПЛАТНЫЙ ОСМОТР</div>
 							</div>
 						</div>
 					))}
@@ -63,11 +63,10 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 	return (
 		<div style={{ maxWidth: "860px", margin: "0 auto" }}>
 			<h3 style={{ fontSize: "16px", marginBottom: "8px", color: "var(--ink)" }}>
-				Обязательные условия сохранения гарантийных обязательств (Закон РФ № 2300-1 & СтАР)
+				Правила ухода и гарантии клиники
 			</h3>
 			<p style={{ fontSize: "13px", color: "var(--ink-2)", marginBottom: "16px" }}>
-				Гарантия клиники действует при строгом соблюдении пациентом следующих медицинских и эксплуатационных
-				требований:
+				Для сохранения надёжности реставраций и долговечной гарантии клиники рекомендуем соблюдать простые правила:
 			</p>
 
 			<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -78,7 +77,7 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 							padding: "12px 16px",
 							background: "var(--paper-soft)",
 							border: "1px solid var(--line)",
-							borderRadius: "8px",
+							borderRadius: "10px",
 						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -88,7 +87,7 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 									height: "22px",
 									borderRadius: "50%",
 									background: "var(--teal)",
-									color: "var(--on-teal)",
+									color: "var(--on-teal, #ffffff)",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -103,8 +102,8 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 						<p style={{ fontSize: "12.5px", color: "var(--ink-2)", margin: "4px 0 6px 30px" }}>
 							{cond.description}
 						</p>
-						<div style={{ fontSize: "11.5px", color: "var(--bad-fg)", marginLeft: "30px" }}>
-							<strong>Последствия нарушения:</strong> {cond.penaltyDescription}
+						<div style={{ fontSize: "11.5px", color: "var(--teal)", marginLeft: "30px" }}>
+							<strong>Рекомендация врача:</strong> {cond.penaltyDescription}
 						</div>
 					</div>
 				))}

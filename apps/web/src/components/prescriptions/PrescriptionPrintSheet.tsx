@@ -4,26 +4,26 @@
  * Architecture: Decomposed module <= 120 lines
  */
 
-import React from "react";
 import { CheckCircle2 } from "lucide-react";
+import type React from "react";
 import type { PrescriptionDrugItem } from "./PrescriptionPrintModal";
 
 export interface PrescriptionPrintSheetProps {
 	readonly seriesNumber: string;
 	readonly clinicName: string;
-	readonly clinicAddress?: string | undefined;
-	readonly clinicPhone?: string | undefined;
+	readonly clinicAddress?: string;
+	readonly clinicPhone?: string;
 	readonly doctorName: string;
-	readonly doctorSpecialty?: string | undefined;
+	readonly doctorSpecialty?: string;
 	readonly patientName: string;
-	readonly patientBirthDate?: string | undefined;
-	readonly medicalCardNumber?: string | undefined;
+	readonly patientBirthDate?: string;
+	readonly medicalCardNumber?: string;
 	readonly prescriptionDate: string;
 	readonly items: readonly PrescriptionDrugItem[];
-	readonly validityDays?: string | undefined;
-	readonly isMemoMode?: boolean | undefined;
-	readonly isUkepSigned?: boolean | undefined;
-	readonly className?: string | undefined;
+	readonly validityDays?: string;
+	readonly isMemoMode?: boolean;
+	readonly isUkepSigned?: boolean;
+	readonly className?: string;
 }
 
 export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
@@ -51,34 +51,63 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 			{/* Stamp Header */}
 			<div className="flex items-start justify-between border-b border-[var(--line)] pb-3 gap-2">
 				<div className="min-w-0">
-					<div className="text-xs font-bold text-[var(--teal)] uppercase tracking-wider">{clinicName}</div>
-					<div className="text-[11px] text-[var(--muted)] truncate">{clinicAddress} {clinicPhone ? `· Тел: ${clinicPhone}` : ""}</div>
-					<div className="text-[11px] font-semibold text-[var(--ink-secondary)] mt-0.5">Врач: {doctorName} ({doctorSpecialty})</div>
+					<div className="text-xs font-bold text-[var(--teal)] uppercase tracking-wider">
+						{clinicName}
+					</div>
+					<div className="text-[11px] text-[var(--muted)] truncate">
+						{clinicAddress} {clinicPhone ? `· Тел: ${clinicPhone}` : ""}
+					</div>
+					<div className="text-[11px] font-semibold text-[var(--ink-secondary)] mt-0.5">
+						Врач: {doctorName} ({doctorSpecialty})
+					</div>
 				</div>
 				<div className="text-right shrink-0">
-					<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]">{seriesNumber}</span>
-					<div className="text-[10px] text-[var(--muted)] mt-1">{isMemoMode ? "Памятка пациента" : `Срок: ${validityDays} дней`}</div>
+					<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]">
+						{seriesNumber}
+					</span>
+					<div className="text-[10px] text-[var(--muted)] mt-1">
+						{isMemoMode ? "Памятка пациента" : `Срок: ${validityDays} дней`}
+					</div>
 				</div>
 			</div>
 
 			{/* Patient Box */}
 			<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex flex-wrap items-center justify-between gap-1.5">
-				<div><strong>Пациент:</strong> {patientName || "—"} {patientBirthDate ? `(${patientBirthDate})` : ""}</div>
-				<div><strong>Карта:</strong> {medicalCardNumber || "—"} · <strong>Дата:</strong> {prescriptionDate}</div>
+				<div>
+					<strong>Пациент:</strong> {patientName || "—"}{" "}
+					{patientBirthDate ? `(${patientBirthDate})` : ""}
+				</div>
+				<div>
+					<strong>Карта:</strong> {medicalCardNumber || "—"} ·{" "}
+					<strong>Дата:</strong> {prescriptionDate}
+				</div>
 			</div>
 
 			{/* Drug List */}
 			<div className="flex flex-col gap-2.5 min-h-[140px]">
 				{items.length === 0 ? (
-					<div className="py-8 text-center text-xs text-[var(--muted)] italic">Препараты не выбраны. Нажмите на экспресс-набор выше.</div>
+					<div className="py-8 text-center text-xs text-[var(--muted)] italic">
+						Препараты не выбраны. Нажмите на экспресс-набор выше.
+					</div>
 				) : (
 					items.map((item, idx) => (
-						<div key={item.id || idx} className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs flex flex-col gap-1">
+						<div
+							key={item.id || idx}
+							className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs flex flex-col gap-1"
+						>
 							<div className="flex items-center justify-between gap-2">
-								<span className="font-bold text-[var(--ink)]">{idx + 1}. {item.tradeName}</span>
-								<span className="text-[11px] font-mono text-[var(--muted)]">{item.dispenseLatin}</span>
+								<span className="font-bold text-[var(--ink)]">
+									{idx + 1}. {item.tradeName}
+								</span>
+								<span className="text-[11px] font-mono text-[var(--muted)]">
+									{item.dispenseLatin}
+								</span>
 							</div>
-							{!isMemoMode && <div className="font-mono text-[11px] text-[var(--teal)] italic">{item.latinName}</div>}
+							{!isMemoMode && (
+								<div className="font-mono text-[11px] text-[var(--teal)] italic">
+									{item.latinName}
+								</div>
+							)}
 							<div className="text-[11.5px] text-[var(--ink-secondary)] bg-[var(--paper-soft)] p-1.5 rounded-lg border border-[var(--line-subtle,var(--line))]">
 								<strong>Назначение:</strong> {item.signaRussian}
 							</div>

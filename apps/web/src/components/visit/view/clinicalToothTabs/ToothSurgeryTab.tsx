@@ -25,7 +25,7 @@ export interface ToothSurgeryTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: preset
 	handleAdd804nService: (preset: any) => void;
 	closeClinicalModal: () => void;
-	setLabOrderModalToothNumber: (v: string | undefined) => void;
+	setLabOrderModalToothNumber: (v: number | string | null) => void;
 	setIsLabOrderModalOpen: (v: boolean) => void;
 }
 

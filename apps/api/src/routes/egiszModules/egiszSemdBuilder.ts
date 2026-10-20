@@ -1,7 +1,9 @@
 import {
 	canonicalizeCdaXml,
+	createDemonstrationGostSignature,
+	type DetachedSignature,
 	type EgiszRemdPackage,
-} from "../../services/cda/index.js";
+} from "@dental/shared/cda";
 import { isValidSnils, normalizeSnils } from "../../utils/snils.js";
 import { extractIcd10, splitFullName } from "../egisz/helpers.js";
 import type { Nomenclature804nService } from "./egiszTypes.js";
@@ -233,14 +235,37 @@ export function buildSemd043uPackage(input: Semd043uBuildInput): BuiltSemdResult
 
 	const canonicalXml = canonicalizeCdaXml(xmlBody);
 
-	const defaultDoctorSig = input.doctorSignatureBase64 || Buffer.from("MOCK_GOST_SIGNATURE_DOC").toString("base64");
+	const effectiveClinicName = input.clinicName || "ООО Стоматология ДЕНТЕ";
+	const doctorSignature: DetachedSignature = input.doctorSignatureBase64
+		? {
+				signatureBase64: input.doctorSignatureBase64,
+				certificateSerialNumber: "00E4A28B00000001",
+				certificateSubject: `CN=${input.doctor.fullName}, SNILS=${input.doctor.snils}`,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+			}
+		: createDemonstrationGostSignature({
+				doctorName: input.doctor.fullName,
+				doctorSnils: input.doctor.snils,
+				clinicName: effectiveClinicName,
+			});
+
+	const moSignature: DetachedSignature | undefined = input.moSignatureBase64
+		? {
+				signatureBase64: input.moSignatureBase64,
+				certificateSerialNumber: "00E4A28B00000002",
+				certificateSubject: `CN=${effectiveClinicName}`,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+			}
+		: undefined;
 
 	const remdPackage: EgiszRemdPackage = {
 		documentId: input.visitId,
 		documentVersion: 1,
 		xmlCanonicalPayload: canonicalXml,
-		doctorSignature: defaultDoctorSig,
-		...(input.moSignatureBase64 ? { moSignature: input.moSignatureBase64 } : {}),
+		doctorSignature,
+		...(moSignature ? { moSignature } : {}),
 		metadata: {
 			patientSnils,
 			clinicOid,

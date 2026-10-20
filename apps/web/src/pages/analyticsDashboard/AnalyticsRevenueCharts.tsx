@@ -339,3 +339,20 @@ export function AnalyticsRevenueCharts({ data }: AnalyticsRevenueChartsProps) {
 		</>
 	);
 }
+
+export function AnalyticsChartsSkeleton() {
+	return (
+		<div
+			className="analytics-chart-skeleton"
+			aria-label="Загрузка графиков выручки"
+			aria-busy="true"
+		>
+			<div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-[var(--muted)]">
+				<div className="w-8 h-8 rounded-full border-2 border-[var(--teal,#0d9488)] border-t-transparent animate-spin" />
+				<p className="text-sm font-medium">Подготовка аналитических графиков...</p>
+			</div>
+		</div>
+	);
+}
+
+export default AnalyticsRevenueCharts;

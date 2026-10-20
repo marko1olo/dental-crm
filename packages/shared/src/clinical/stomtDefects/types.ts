@@ -7,8 +7,9 @@
  * Compliant with:
  * - Supreme Law: THE HAMMER (Zero Mocks, Absolute Parity)
  * - Mandate 8b: File Line Count Limit <= 800 lines
- * - Mandate 8e: Doctor Autonomy & Clinical ICD-10 (МКБ-10 K02..K05) / 804n integration
- */
+ *  */
+
+import type { CanonicalToothState } from "../dentalFormulaStates.js";
 
 export type StomxDefectColor =
 	| "green"
@@ -47,18 +48,7 @@ export type StomxDefectCategory =
 	| "radiology"
 	| "surgery";
 
-export type CrmToothState =
-	| "Caries"
-	| "Pulpitis"
-	| "Periodontitis"
-	| "Missing"
-	| "Crown"
-	| "Implant"
-	| "Filled"
-	| "Healthy"
-	| "Planned_Implant"
-	| "Retained"
-	| "Root";
+export type CrmToothState = CanonicalToothState;
 
 export interface StomxToothDefectItem {
 	id: number;

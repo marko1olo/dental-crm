@@ -2,6 +2,7 @@ import type { Dashboard, Patient } from "@dental/shared";
 import { CashShiftWidget } from "../../components/finance/CashShiftWidget";
 import { FinanceToolbar } from "../../components/finance/FinanceToolbar";
 import type { PendingCheckout } from "./types.js";
+import { PendingCheckoutBanner } from "./PendingCheckoutBanner.js";
 
 export interface FinanceOperationsToolbarProps {
 	pendingCheckout: PendingCheckout | null;
@@ -26,6 +27,7 @@ export interface FinanceOperationsToolbarProps {
 	onOpenT13Timesheet?: (() => void) | undefined;
 	onOpenFamilyBilling?: (() => void) | undefined;
 	onOpenSplitPayment?: (() => void) | undefined;
+	onOpenDoctorPayroll?: (() => void) | undefined;
 	shiftNumber: number;
 	paymentFiscalCashierName: string;
 	cashInDrawerRub: number;
@@ -39,79 +41,26 @@ export interface FinanceOperationsToolbarProps {
 	onPrintXReport: () => Promise<void>;
 }
 
-export function FinanceOperationsToolbar({
-	pendingCheckout,
-	onResetPendingCheckout,
-	effectivePatient,
-	effectiveBillingSummary,
-	isCashShiftOpen,
-	onToggleCashShift,
-	isShiftOpen,
-	onPayDebtQuick,
-	money,
-	onOpenInvoices,
-	isFinanceOptionsOpen,
-	onToggleFinanceOptions,
-	onCloseFinanceOptions,
-	onOpenPnl,
-	onGoToDocuments,
-	onOpenCashbox,
-	onOpenBillingAct,
-	onOpenQuickExpense,
-	onOpenTaxCertificate,
-	onOpenT13Timesheet,
-	onOpenFamilyBilling,
-	onOpenSplitPayment,
-	shiftNumber,
-	paymentFiscalCashierName,
-	cashInDrawerRub,
-	cardSumRub,
-	sbpSumRub,
-	advanceOffsetRub,
-	onOpenShift,
-	onCloseShift,
-	onCashIn,
-	onCashOut,
-	onPrintXReport,
-}: FinanceOperationsToolbarProps) {
+export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
+	const {
+		pendingCheckout, onResetPendingCheckout, effectivePatient, effectiveBillingSummary,
+		isCashShiftOpen, onToggleCashShift, isShiftOpen, onPayDebtQuick, money,
+		onOpenInvoices, isFinanceOptionsOpen, onToggleFinanceOptions, onCloseFinanceOptions,
+		onOpenPnl, onGoToDocuments, onOpenCashbox, onOpenBillingAct, onOpenQuickExpense,
+		onOpenTaxCertificate, onOpenT13Timesheet, onOpenFamilyBilling, onOpenSplitPayment,
+		shiftNumber, paymentFiscalCashierName, cashInDrawerRub, cardSumRub, sbpSumRub,
+		advanceOffsetRub, onOpenShift, onCloseShift, onCashIn, onCashOut, onPrintXReport,
+	} = props;
+
 	return (
 		<>
 			{pendingCheckout && (
-				<div
-					className="clinical-checkout-handoff-banner rounded-xl border border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 p-2.5 text-xs flex items-center justify-between gap-2 mb-2 sm:mb-3 shadow-xs animate-in fade-in"
-					data-testid="clinical-checkout-handoff-banner"
-				>
-					<div className="flex items-center gap-2 min-w-0">
-						<div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-						<div className="flex items-center gap-1.5 min-w-0">
-							<span className="font-bold text-teal-900 dark:text-teal-100 shrink-0">
-								Счёт по приёму ({pendingCheckout.patientName}):
-							</span>
-							<span className="text-[var(--ink)] font-medium truncate">
-								{(() => {
-									const list = (pendingCheckout.services || []).map((s: any) => s.name || s.title).filter(Boolean);
-									if (list.length === 0) return "Консультация и обследование";
-									if (list.length === 1) return list[0];
-									const count = list.length;
-									const word = count === 1 ? "услуга" : (count >= 2 && count <= 4 ? "услуги" : "услуг");
-									return `${count} ${word}`;
-								})()}
-							</span>
-						</div>
-					</div>
-					<div className="flex items-center gap-2 shrink-0">
-						<span className="font-mono font-extrabold text-teal-800 dark:text-teal-200 text-sm">
-							{money(pendingCheckout.totalDueRub)}
-						</span>
-						<button
-							type="button"
-							onClick={onResetPendingCheckout}
-							className="text-[11px] text-[var(--muted)] hover:text-rose-500 underline ml-1 cursor-pointer"
-						>
-							Сбросить
-						</button>
-					</div>
-				</div>
+				<PendingCheckoutBanner
+					pendingCheckout={pendingCheckout}
+					onResetPendingCheckout={onResetPendingCheckout}
+					onOpenSplitPayment={onOpenSplitPayment}
+					money={money}
+				/>
 			)}
 
 			<FinanceToolbar

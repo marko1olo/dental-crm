@@ -223,6 +223,16 @@ const undeclaredTables = new Map([
 		},
 	],
 	[
+		"doctor_payment_rewards",
+		{
+			reason: featureNeverFinished(
+				"понятие премий и надбавок не имеет писателей в приложении (0 строк по замеру); " +
+					"начисление сдельной оплаты и зарплаты ведётся через doctor_payroll_statements (Т-51)",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
 		"document_templates",
 		{
 			reason: twinAccepted(

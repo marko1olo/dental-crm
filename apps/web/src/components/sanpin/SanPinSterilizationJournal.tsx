@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
-import { SterilizationCycleModal } from "./SterilizationCycleModal";
+import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
 import {
 	useSanPinJournalLogic,
 	SanPinJournalToolbar,
@@ -92,7 +92,11 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 			/>
 
 			<SterilizerEquipmentModal isOpen={internalEquipmentModalOpen} onClose={() => setInternalEquipmentModalOpen(false)} />
-			<SterilizationCycleModal isOpen={internalNewCycleModalOpen} onClose={() => setInternalNewCycleModalOpen(false)} onCycleCreated={fetchCyclesFromDb} />
+			<SterilizationCycleDrawer
+				isOpen={internalNewCycleModalOpen}
+				onClose={() => setInternalNewCycleModalOpen(false)}
+				onCycleApproved={() => void fetchCyclesFromDb()}
+			/>
 		</div>
 	);
 };

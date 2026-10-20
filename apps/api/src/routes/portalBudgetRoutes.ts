@@ -52,13 +52,10 @@ const generateTokenBodySchema = z.object({
 });
 
 export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
-	// Determines base sub-path depending on whether plugin is mounted under /api/portal or root
-	const basePath = server.prefix.endsWith("/portal") ? "/budget" : "/api/portal/budget";
-
 	// 1. GET /api/portal/budget/:token — публичные данные сметы
 	// (список услуг с номерами зубов, итоговая сумма в рублях, скидка, название клиники, ФИО врача)
 	server.get<{ Params: { token: string } }>(
-		`${basePath}/:token`,
+		"/budget/:token",
 		async (request, reply) => {
 			const token = request.params.token?.trim();
 			if (!token) {
@@ -114,7 +111,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 	// 2. POST /api/portal/budget/:token/view — фиксация первого открытия сметы пациентом (budget.viewed)
 	server.post<{ Params: { token: string } }>(
-		`${basePath}/:token/view`,
+		"/budget/:token/view",
 		async (request, reply) => {
 			const token = request.params.token?.trim();
 			if (!token) {
@@ -144,7 +141,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 	// 3. POST /api/portal/budget/:token/verify — подтверждение личности без паролей (phone_last4 или dob, лимит 5 попыток)
 	server.post<{ Params: { token: string } }>(
-		`${basePath}/:token/verify`,
+		"/budget/:token/verify",
 		async (request, reply) => {
 			const token = request.params.token?.trim();
 			if (!token) {
@@ -196,7 +193,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 	// 4. POST /api/portal/budget/:token/sign — сохранение цифровой подписи пациента (Canvas PNG, хеш IP, дата/время, UA)
 	server.post<{ Params: { token: string } }>(
-		`${basePath}/:token/sign`,
+		"/budget/:token/sign",
 		async (request, reply) => {
 			const token = request.params.token?.trim();
 			if (!token) {
@@ -260,7 +257,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 	// 5. POST /api/portal/budget/generate-token — выпуск токена согласования сметы клиникой
 	server.post(
-		`${basePath}/generate-token`,
+		"/budget/generate-token",
 		async (request, reply) => {
 			const parsed = generateTokenBodySchema.safeParse(request.body);
 			if (!parsed.success) {

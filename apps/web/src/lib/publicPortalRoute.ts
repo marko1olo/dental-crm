@@ -67,6 +67,12 @@ export type PublicPortalRoute =
 			readonly organizationId: string | null;
 			/** Идентификатор пациента (опционален). */
 			readonly patientId?: string | null;
+	  }
+	| {
+			/** Публичная верификация гарантийного паспорта по QR-коду */
+			readonly kind: "warranty";
+			readonly certificateNumber: string | null;
+			readonly cardNumber?: string | null;
 	  };
 
 /**
@@ -112,6 +118,12 @@ export const PATIENT_PORTAL_PATH = "/portal/patient/";
  */
 export const TGAPP_PORTAL_PATH = "/portal/tgapp/";
 export const TGAPP_SHORT_PATH = "/tgapp";
+
+/**
+ * Пути публичной проверки гарантийного паспорта по QR-коду:
+ * `#/portal/warranty?cert=WAR-2026-XXXX` или `#/portal/warranty/WAR-2026-XXXX`.
+ */
+export const WARRANTY_PORTAL_PATH = "/portal/warranty/";
 
 /**
  * Снимает процентное кодирование с одного сегмента адреса.
@@ -166,21 +178,30 @@ export function publicPortalRouteFromHash(
 	 * ПАЦИЕНТУ рабочее место клиники — тот самый дефект, из-за которого эта
 	 * развилка и появилась, только теперь с клинической частью наружу.
 	 */
-	const bookingBase = PUBLIC_BOOKING_PORTAL_PATH.replace(/\/$/, "");
-	if (
-		path === bookingBase ||
-		path.startsWith(`${bookingBase}/`) ||
-		path.startsWith(`${bookingBase}?`)
-	) {
-		const rawOrganizationId =
-			path
-				.slice(bookingBase.length)
-				.replace(/^\//, "")
-				.split(/[/?#&]/)[0] ?? "";
-		return {
-			kind: "booking",
-			organizationId: decodeSegment(rawOrganizationId) || null,
-		};
+	const bookingPaths = [
+		PUBLIC_BOOKING_PORTAL_PATH,
+		"/booking/",
+		"/book/",
+		"/portal/book/",
+		"/portal/booking/",
+	];
+	for (const bPath of bookingPaths) {
+		const bookingBase = bPath.replace(/\/$/, "");
+		if (
+			path === bookingBase ||
+			path.startsWith(`${bookingBase}/`) ||
+			path.startsWith(`${bookingBase}?`)
+		) {
+			const rawOrganizationId =
+				path
+					.slice(bookingBase.length)
+					.replace(/^\//, "")
+					.split(/[/?#&]/)[0] ?? "";
+			return {
+				kind: "booking",
+				organizationId: decodeSegment(rawOrganizationId) || null,
+			};
+		}
 	}
 
 	for (const kioskPath of [KIOSK_PORTAL_PATH, CHECKIN_PORTAL_PATH]) {
@@ -257,6 +278,33 @@ export function publicPortalRouteFromHash(
 		}
 	}
 
+	for (const wPath of [WARRANTY_PORTAL_PATH, "/portal/warranty", "/warranty"]) {
+		const wBase = wPath.replace(/\/$/, "");
+		if (
+			path === wBase ||
+			path.startsWith(`${wBase}/`) ||
+			path.startsWith(`${wBase}?`)
+		) {
+			const queryIndex = path.indexOf("?");
+			let certNum: string | null = null;
+			let cardNum: string | null = null;
+			if (queryIndex !== -1) {
+				const params = new URLSearchParams(path.slice(queryIndex));
+				certNum = params.get("cert") || params.get("certificateNumber") || params.get("c");
+				cardNum = params.get("card");
+			}
+			if (!certNum) {
+				const segment = path.slice(wBase.length).replace(/^\//, "").split(/[/?#&]/)[0] ?? "";
+				certNum = segment || null;
+			}
+			return {
+				kind: "warranty",
+				certificateNumber: certNum ? decodeSegment(certNum) : null,
+				cardNumber: cardNum ? decodeSegment(cardNum) : null,
+			};
+		}
+	}
+
 	if (!path.startsWith(LAB_ORDER_PORTAL_PATH)) return null;
 
 	// Хвост после токена отбрасывается: ссылку копируют в мессенджер, и он умеет
@@ -330,4 +378,23 @@ export function buildBudgetPortalUrl(
 	if (!tok || !base) return null;
 	const path = `${BUDGET_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(tok)}`;
 	return `${base}/#${path}`;
+}
+
+/**
+ * Полный URL публичной проверки гарантийного паспорта по QR-коду.
+ */
+export function buildWarrantyPortalUrl(
+	certificateNumber?: string | null,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+	cardNumber?: string | null,
+): string {
+	const base = origin.trim().replace(/\/$/, "");
+	const cert = (certificateNumber || "").trim();
+	const card = (cardNumber || "").trim();
+	const queryParts: string[] = [];
+	if (cert) queryParts.push(`cert=${encodeURIComponent(cert)}`);
+	if (card) queryParts.push(`card=${encodeURIComponent(card)}`);
+	const qs = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+	const path = `${WARRANTY_PORTAL_PATH.replace(/\/$/, "")}${qs}`;
+	return base ? `${base}/#${path}` : `/#${path}`;
 }

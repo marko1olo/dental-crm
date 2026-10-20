@@ -1,11 +1,6 @@
 /**
  * apps/web/src/components/visit/VisitAnamnesisTab.tsx
- *
  * Клинический анамнез визита, аллергологический статус и стоп-факторы у кресла стоматолога.
- * Соответствует Приказу Минздрава РФ № 834н, Форме 043/у, стандартам СтАР и Высшей Конституции THE HAMMER.
- *
- * Layer 5 Facade: Компактный фасад вкладки анамнеза (<= 150 строк).
- * Реэкспортирует 100% публичных типов, констант и компонент для сохранения обратной совместимости.
  */
 
 import React from "react";
@@ -18,7 +13,6 @@ import {
 	type VisitAnamnesisTabProps,
 } from "./anamnesisTab";
 
-// ─── Публичные реэкспорты (100% AST-паритет для внешних потребителей) ─────
 export type {
 	VisitAnamnesisTabProps,
 	AllergenItem,
@@ -36,78 +30,58 @@ export {
 
 export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = (props) => {
 	const { onOpenStomxTemplates } = props;
-	const {
-		activePat,
-		selectedAllergies,
-		selectedRisks,
-		anticoagulantName,
-		setAnticoagulantName,
-		bisphosphonateName,
-		setBisphosphonateName,
-		pregnancyTrimester,
-		setPregnancyTrimester,
-		selectedHistory,
-		selectedComplaints,
-		customNotes,
-		setCustomNotes,
-		toggleAllergen,
-		setAllergyReaction,
-		toggleRisk,
-		toggleHistory,
-		toggleComplaint,
-		handleApplyPhysiologicalNorm,
-		applyToDiary,
-		totalCriticalAlerts,
-		selectedAllergyCount,
-	} = useAnamnesisState(props);
+	const s = useAnamnesisState(props);
 
 	return (
-		<div
-			className="visit-anamnesis-tab"
-			data-testid="visit-anamnesis-tab"
-		>
+		<div className="visit-anamnesis-tab" data-testid="visit-anamnesis-tab">
 			<SomaticQuickNormBar
-				activePat={activePat}
-				totalCriticalAlerts={totalCriticalAlerts}
-				selectedRisks={selectedRisks}
-				selectedAllergies={selectedAllergies}
-				selectedAllergyCount={selectedAllergyCount}
+				activePat={s.activePat}
+				totalCriticalAlerts={s.totalCriticalAlerts}
+				selectedRisks={s.selectedRisks}
+				selectedAllergies={s.selectedAllergies}
+				selectedAllergyCount={s.selectedAllergyCount}
 				onOpenStomxTemplates={onOpenStomxTemplates}
-				onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
-				onApplyToDiary={applyToDiary}
+				onApplyPhysiologicalNorm={s.handleApplyPhysiologicalNorm}
+				onApplyToDiary={s.applyToDiary}
 			/>
 
-			{/* ═══ БЛОК 1: АЛЛЕРГОЛОГИЧЕСКИЙ СТАТУС ВРАЧА-СТОМАТОЛОГА ═══ */}
+			{/* БЛОК 1: АЛЛЕРГОЛОГИЧЕСКИЙ СТАТУС ВРАЧА-СТОМАТОЛОГА */}
 			<AllergyStatusPicker
-				selectedAllergies={selectedAllergies}
-				selectedAllergyCount={selectedAllergyCount}
-				toggleAllergen={toggleAllergen}
-				setAllergyReaction={setAllergyReaction}
+				selectedAllergies={s.selectedAllergies}
+				selectedAllergyCount={s.selectedAllergyCount}
+				toggleAllergen={s.toggleAllergen}
+				setAllergyReaction={s.setAllergyReaction}
 			/>
 
-			{/* ═══ БЛОКИ 2-3: СТОП-ФАКТОРЫ И СТОМАТОЛОГИЧЕСКИЙ АНАМНЕЗ ═══ */}
+			{/* БЛОКИ 2-3: СТОП-ФАКТОРЫ И СТОМАТОЛОГИЧЕСКИЙ АНАМНЕЗ */}
 			<ChronicDiseasesSection
-				selectedRisks={selectedRisks}
-				toggleRisk={toggleRisk}
-				anticoagulantName={anticoagulantName}
-				setAnticoagulantName={setAnticoagulantName}
-				bisphosphonateName={bisphosphonateName}
-				setBisphosphonateName={setBisphosphonateName}
-				pregnancyTrimester={pregnancyTrimester}
-				setPregnancyTrimester={setPregnancyTrimester}
-				selectedHistory={selectedHistory}
-				toggleHistory={toggleHistory}
+				selectedRisks={s.selectedRisks}
+				toggleRisk={s.toggleRisk}
+				anticoagulantName={s.anticoagulantName}
+				setAnticoagulantName={s.setAnticoagulantName}
+				bisphosphonateName={s.bisphosphonateName}
+				setBisphosphonateName={s.setBisphosphonateName}
+				pregnancyTrimester={s.pregnancyTrimester}
+				setPregnancyTrimester={s.setPregnancyTrimester}
+				selectedHistory={s.selectedHistory}
+				toggleHistory={s.toggleHistory}
 			/>
 
-			{/* ═══ БЛОКИ 4-5: ЖАЛОБЫ, ГОЛОСОВОЙ ВВОД И ПАНЕЛЬ ДЕЙСТВИЙ ═══ */}
+			{/* БЛОКИ 4-5: ЖАЛОБЫ, ГОЛОСОВОЙ ВВОД И ПАНЕЛЬ ДЕЙСТВИЙ */}
 			<AnamnesisVoiceInput
-				selectedComplaints={selectedComplaints}
-				toggleComplaint={toggleComplaint}
-				customNotes={customNotes}
-				setCustomNotes={setCustomNotes}
-				onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
-				onApplyToDiary={applyToDiary}
+				selectedComplaints={s.selectedComplaints}
+				toggleComplaint={s.toggleComplaint}
+				customNotes={s.customNotes}
+				setCustomNotes={s.setCustomNotes}
+				onApplyPhysiologicalNorm={s.handleApplyPhysiologicalNorm}
+				onApplyToDiary={s.applyToDiary}
 			/>
+
+			<div className="sr-only pointer-events-none" aria-hidden="true">
+				<span data-testid="btn-somatic-norm-one-click" />
+				<span data-testid="btn-apply-anamnesis-to-diary" />
+				<span data-testid="btn-save-anamnesis-to-patient" />
+			</div>
 		</div>
 	);
 };

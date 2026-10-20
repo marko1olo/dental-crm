@@ -7,22 +7,10 @@ import { z } from "zod";
  * Применяются ненаркотические анальгетики (НПВП: Нимесил/Нимесулид, Кеторолак/Кетанов, Декскетопрофен/Дексалгин).
  */
 export const FORBIDDEN_NARCOTIC_INN_PATTERNS = [
-	/morphin/i,
-	/морфин/i,
-	/trimeperidin/i,
-	/тримеперидин/i,
-	/promedol/i,
-	/промедол/i,
-	/fentanyl/i,
-	/фентанил/i,
-	/buprenorphin/i,
-	/бупренорфин/i,
-	/methadon/i,
-	/метадон/i,
-	/oxycodon/i,
-	/оксикодон/i,
-	/omnopon/i,
-	/омнопон/i,
+	/morphin/i, /морфин/i, /trimeperidin/i, /тримеперидин/i,
+	/promedol/i, /промедол/i, /fentanyl/i, /фентанил/i,
+	/buprenorphin/i, /бупренорфин/i, /methadon/i, /метадон/i,
+	/oxycodon/i, /оксикодон/i, /omnopon/i, /омнопон/i,
 ];
 
 /** Schema for creating a prescription through the statutory API */

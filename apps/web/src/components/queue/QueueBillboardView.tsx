@@ -121,6 +121,94 @@ export const DEFAULT_BILLBOARD_QUEUE_ITEMS: readonly QueueBillboardItem[] = [
 	},
 ];
 
+/**
+ * Maps raw CRM shift appointments to 152-FZ sanitized QueueBillboardItems using @dental/shared SSOT.
+ */
+export function mapShiftAppointmentsToBillboard(
+	appointments: Array<Partial<Appointment> & Record<string, any>>,
+): QueueBillboardItem[] {
+	if (!appointments || appointments.length === 0) return [];
+	const queueData = buildPatientShiftQueue(appointments);
+	const mapped: QueueBillboardItem[] = [];
+
+	// Helper to sanitize patient initials for 152-FZ privacy
+	const toInitials = (name?: string | null): string => {
+		if (!name || !name.trim()) return "Пациент";
+		const parts = name.trim().split(/\s+/).filter(Boolean);
+		if (parts.length >= 2 && parts[1]) {
+			return `${parts[0]} ${parts[1][0] || ""}.`;
+		}
+		return parts[0] || "Пациент";
+	};
+
+	// 1. In-chair / invited patients (Column 1)
+	queueData.itemsByTab.in_chair.forEach((item, idx) => {
+		const isInvited =
+			item.rawStatus === "invited" ||
+			(item.operationalStatus as string) === "invited" ||
+			(item.comment && item.comment.toLowerCase().includes("[invited]"));
+
+		mapped.push({
+			id: `billboard-chair-${item.id}`,
+			ticketNumber: `К-${String(idx + 1).padStart(2, "0")}`,
+			patientInitials: toInitials(item.patientName),
+			doctorName: item.doctorName,
+			doctorSpecialty: item.doctorSpecialty ?? undefined,
+			cabinetName: item.chairName,
+			status: isInvited ? "invited" : "in_chair",
+			timeInfo: isInvited
+				? "Приглашается"
+				: item.chairDurationFormatted || "Идет прием",
+		});
+	});
+
+	// 2. Waiting in lobby patients (Column 2)
+	if (queueData.itemsByTab.waiting.length > 0) {
+		queueData.itemsByTab.waiting.forEach((item, idx) => {
+			const isInvited =
+				item.rawStatus === "invited" ||
+				(item.operationalStatus as string) === "invited" ||
+				(item.comment && item.comment.toLowerCase().includes("[invited]"));
+
+			mapped.push({
+				id: `billboard-wait-${item.id}`,
+				ticketNumber: `А-${String(idx + 1).padStart(2, "0")}`,
+				patientInitials: toInitials(item.patientName),
+				doctorName: item.doctorName,
+				doctorSpecialty: item.doctorSpecialty ?? undefined,
+				cabinetName: item.chairName,
+				status: isInvited ? "invited" : "waiting",
+				timeInfo: isInvited
+					? "Приглашается"
+					: item.waitFormatted
+						? `Ожидание: ${item.waitFormatted}`
+						: "~10 мин",
+			});
+		});
+	} else {
+		// If no one is actively marked "arrived", show upcoming shift appointments so the board is active
+		const upcoming = queueData.itemsByTab.all.filter(
+			(item) =>
+				item.operationalStatus === "planned" ||
+				item.operationalStatus === "confirmed",
+		);
+		upcoming.slice(0, 6).forEach((item, idx) => {
+			mapped.push({
+				id: `billboard-wait-${item.id}`,
+				ticketNumber: `А-${String(idx + 1).padStart(2, "0")}`,
+				patientInitials: toInitials(item.patientName),
+				doctorName: item.doctorName,
+				doctorSpecialty: item.doctorSpecialty ?? undefined,
+				cabinetName: item.chairName,
+				status: "waiting",
+				timeInfo: item.timeRange || "~15 мин",
+			});
+		});
+	}
+
+	return mapped;
+}
+
 export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
 	clinicSubtitle = "Электронная очередь холла ожидания",
@@ -164,55 +252,13 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 
 	// SSOT Shift Queue Mapping from appointments prop (when provided by TodayQueueBoard)
 	const appointmentsMappedItems = useMemo(() => {
-		if (!appointments || appointments.length === 0) return null;
-		const queueData = buildPatientShiftQueue(appointments);
-		const mapped: QueueBillboardItem[] = [];
-
-		// Helper to sanitize patient initials for 152-FZ privacy
-		const toInitials = (name?: string | null): string => {
-			if (!name || !name.trim()) return "Пациент";
-			const parts = name.trim().split(/\s+/).filter(Boolean);
-			if (parts.length >= 2 && parts[1]) {
-				return `${parts[0]} ${parts[1][0] || ""}.`;
-			}
-			return parts[0] || "Пациент";
-		};
-
-		// 1. In-chair / invited patients
-		queueData.itemsByTab.in_chair.forEach((item, idx) => {
-			mapped.push({
-				id: `billboard-chair-${item.id}`,
-				ticketNumber: `К-${String(idx + 1).padStart(2, "0")}`,
-				patientInitials: toInitials(item.patientName),
-				doctorName: item.doctorName,
-				doctorSpecialty: item.doctorSpecialty ?? undefined,
-				cabinetName: item.chairName,
-				status: "in_chair",
-				timeInfo: item.chairDurationFormatted || "Идет прием",
-			});
-		});
-
-		// 2. Waiting in lobby patients
-		queueData.itemsByTab.waiting.forEach((item, idx) => {
-			const isInvited = (item.operationalStatus as string) === "invited";
-			mapped.push({
-				id: `billboard-wait-${item.id}`,
-				ticketNumber: `А-${String(idx + 1).padStart(2, "0")}`,
-				patientInitials: toInitials(item.patientName),
-				doctorName: item.doctorName,
-				doctorSpecialty: item.doctorSpecialty ?? undefined,
-				cabinetName: item.chairName,
-				status: isInvited ? "invited" : "waiting",
-				timeInfo: isInvited ? "Приглашается" : item.waitFormatted ? `Ожидание: ${item.waitFormatted}` : "~10 мин",
-			});
-		});
-
-		return mapped;
+		if (!appointments) return null;
+		return mapShiftAppointmentsToBillboard(appointments);
 	}, [appointments]);
 
-	// Live queue polling from PostgreSQL 18 in production
+	// Live queue polling from PostgreSQL 18 & Fastify API /api/dashboard
 	useEffect(() => {
-		if (isDemo || (initialItems && initialItems.length > 0) || (appointments && appointments.length > 0)) return;
+		if (initialItems !== undefined || appointments !== undefined) return;
 
 		let isMounted = true;
 		const fetchQueue = async () => {
@@ -220,59 +266,21 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 				const res = await fetch("/api/dashboard");
 				if (!res.ok) return;
 				const data = await res.json();
-				if (!isMounted) return;
+				if (!isMounted || !data) return;
 
-				const appointmentsList: Array<{
-					id?: string;
-					patientName?: string;
-					patientInitials?: string;
-					doctorName?: string;
-					doctorSpecialty?: string;
-					cabinet?: string;
-					status?: string;
-				}> = Array.isArray(data?.appointments)
-					? data.appointments
-					: Array.isArray(data?.queue)
-					? data.queue
-					: [];
+				const rawList: Array<Partial<Appointment> & Record<string, any>> =
+					Array.isArray(data.appointments)
+						? data.appointments
+						: Array.isArray(data.queue)
+							? data.queue
+							: [];
 
-				const mapped: QueueBillboardItem[] = appointmentsList
-					.filter((apt) => ["in_treatment", "in_chair", "invited", "planned", "waiting"].includes(apt.status || ""))
-					.map((apt, idx) => {
-						const isInvited = apt.status === "invited";
-						const isInChair = apt.status === "in_treatment" || apt.status === "in_chair";
-						const queueStatus: QueueBillboardItem["status"] = isInvited
-							? "invited"
-							: isInChair
-							? "in_chair"
-							: "waiting";
-
-						const initials =
-							apt.patientInitials ||
-							(apt.patientName
-								? apt.patientName
-										.split(" ")
-										.filter(Boolean)
-										.map((p, i) => (i === 0 ? p : `${p[0]}.`))
-										.join(" ")
-								: `Пациент ${idx + 1}`);
-
-						const letter = String.fromCharCode(65 + (idx % 6));
-						const ticketNumber = `${letter}-${String(idx + 1).padStart(2, "0")}`;
-
-						return {
-							id: apt.id || `queue-${idx}`,
-							ticketNumber,
-							patientInitials: initials,
-							doctorName: apt.doctorName || "Дежурный врач",
-							doctorSpecialty: apt.doctorSpecialty,
-							cabinetName: apt.cabinet || "Кабинет 1",
-							status: queueStatus,
-							timeInfo: isInChair ? "Идет прием" : isInvited ? "Приглашается" : "~10 мин",
-						};
-					});
-
-				setLiveItems(mapped);
+				if (rawList.length > 0) {
+					const mapped = mapShiftAppointmentsToBillboard(rawList);
+					if (mapped.length > 0) {
+						setLiveItems(mapped);
+					}
+				}
 			} catch {
 				// Non-blocking for lobby billboard
 			}
@@ -284,14 +292,15 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 			isMounted = false;
 			clearInterval(interval);
 		};
-	}, [isDemo, initialItems, appointments]);
+	}, [initialItems, appointments]);
 
 	const effectiveItems = useMemo(() => {
-		if (initialItems && initialItems.length > 0) return initialItems;
+		if (initialItems !== undefined) return initialItems;
 		if (appointmentsMappedItems !== null) return appointmentsMappedItems;
+		if (liveItems.length > 0) return liveItems;
 		if (isDemo) return DEFAULT_BILLBOARD_QUEUE_ITEMS;
-		return liveItems;
-	}, [initialItems, appointmentsMappedItems, isDemo, liveItems]);
+		return [];
+	}, [initialItems, appointmentsMappedItems, liveItems, isDemo]);
 
 	// Partition items into Invited/In-chair and Waiting
 	const invitedOrInChairItems = useMemo(
@@ -341,7 +350,7 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shadow-xs select-none"
+							className="inline-flex h-9 min-h-[36px] items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shadow-xs select-none"
 							aria-label="Закрыть режим ТВ-табло"
 							data-testid="queue-billboard-close-btn"
 						>

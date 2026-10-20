@@ -6,9 +6,11 @@ export interface ServiceFormMetaFieldsProps {
 	readonly editServiceForm: {
 		title: string;
 		code: string;
+		order804nCode?: string;
 		category: ServiceCategory;
 		specialty: DentalSpecialty;
 		basePriceRub: number;
+		materialsCostRub?: number;
 		durationMinutes: number;
 		taxDeductible: boolean;
 		vatRate: "vat_exempt" | "vat_0" | "vat_20";
@@ -18,9 +20,11 @@ export interface ServiceFormMetaFieldsProps {
 		React.SetStateAction<{
 			title: string;
 			code: string;
+			order804nCode?: string;
 			category: ServiceCategory;
 			specialty: DentalSpecialty;
 			basePriceRub: number;
+			materialsCostRub?: number;
 			durationMinutes: number;
 			taxDeductible: boolean;
 			vatRate: "vat_exempt" | "vat_0" | "vat_20";

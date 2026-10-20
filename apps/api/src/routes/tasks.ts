@@ -8,6 +8,7 @@
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { clinicalTaskStatusSchema } from "@dental/shared";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -110,7 +111,7 @@ const createTaskBodySchema = z.object({
 });
 
 const updateTaskStatusBodySchema = z.object({
-	status: z.enum(["pending", "completed"]),
+	status: clinicalTaskStatusSchema,
 });
 
 export async function registerTasksRoutes(app: FastifyInstance) {

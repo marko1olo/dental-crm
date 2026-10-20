@@ -82,7 +82,7 @@ export const DepositMethodAndOptionsSection: React.FC<DepositMethodAndOptionsSec
 
 			<div className="space-y-1.5">
 				<label className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider block">
-					Чек аванса 54-ФЗ (Тег 1213)
+					Кассовый чек аванса (внесение на депозит)
 				</label>
 				<div className="payment-doc-segmented-bar w-full">
 					<button

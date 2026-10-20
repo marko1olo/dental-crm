@@ -34,7 +34,7 @@ import {
 	organizationScopedLocalStorageKey,
 } from "../utils/localStorageHelpers";
 import { money, moneyUnknownLabel } from "../utils/financeUtils";
-import { countLabel } from "../lib/russianPlural.js";
+import { countLabel, pluralizeRu, pluralizeRussian } from "../lib/russianPlural.js";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { actionFailureToast } from "../lib/panelStateText";
 import {
@@ -77,7 +77,7 @@ export function offlineDraftOrganizationKey(
 
 export { money, moneyUnknownLabel };
 
-export { countLabel };
+export { countLabel, pluralizeRu, pluralizeRussian };
 
 export function localQueueOrganizationMatches(
 	itemOrganizationId: string | null | undefined,

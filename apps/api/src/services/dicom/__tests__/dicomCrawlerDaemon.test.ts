@@ -35,6 +35,7 @@ import {
 import { db } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 import { eq, like } from "drizzle-orm";
+import { fixtureUuid, withFixtureTenant } from "../../../tests/support/fixtureOrganizations.js";
 
 /**
  * Создание валидного бинарного буфера среза DICOM Part 10 с явным Meta-заголовком (Group 0002)
@@ -157,20 +158,13 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 		cacheDir = path.join(tempDir, "cache");
 		await mkdir(cacheDir, { recursive: true });
 
-		const [existingOrg] = await db
-			.select({ id: schema.organizations.id })
-			.from(schema.organizations)
-			.limit(1);
-
-		if (existingOrg) {
-			testOrgId = existingOrg.id;
-		} else {
-			const [created] = await db
+		testOrgId = fixtureUuid("dicomCrawlerDaemon", 1);
+		await withFixtureTenant(testOrgId, async (tx) => {
+			await tx
 				.insert(schema.organizations)
-				.values({ name: "Тестовая Клиника КТ Инспектора" })
-				.returning({ id: schema.organizations.id });
-			testOrgId = created!.id;
-		}
+				.values({ id: testOrgId, name: "Тестовая Клиника КТ Инспектора" })
+				.onConflictDoNothing();
+		});
 
 		crawler = new DicomCrawlerDaemon({
 			enabled: false,
@@ -183,9 +177,11 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 
 	after(async () => {
 		try {
-			await db
-				.delete(schema.imagingStudies)
-				.where(like(schema.imagingStudies.studyInstanceUid, "1.2.840.113619.2.55.1.%"));
+			await withFixtureTenant(testOrgId, async (tx) => {
+				await tx
+					.delete(schema.imagingStudies)
+					.where(like(schema.imagingStudies.studyInstanceUid, "1.2.840.113619.2.55.1.%"));
+			});
 		} catch {
 			// игнорируем
 		}
@@ -365,13 +361,17 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			await writeFile(archivePath, zipBuffer);
 
 			// Шаг 1: Обрабатываем распакованную папку
-			const folderResult = await crawler.processFolderCandidate(folderPath, testOrgId);
+			const folderResult = await withFixtureTenant(testOrgId, async () => {
+				return crawler.processFolderCandidate(folderPath, testOrgId);
+			});
 			assert.ok(folderResult, "Папка должна быть зарегистрирована");
 			assert.equal(folderResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(folderResult?.status, "registered");
 
 			// Шаг 2: Обрабатываем архив с тем же UID
-			const archiveResult = await crawler.processArchiveCandidate(archivePath, testOrgId);
+			const archiveResult = await withFixtureTenant(testOrgId, async () => {
+				return crawler.processArchiveCandidate(archivePath, testOrgId);
+			});
 			assert.ok(archiveResult, "Архив должен быть обработан");
 			assert.equal(archiveResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(archiveResult?.status, "duplicate_resolved", "Статус должен быть duplicate_resolved");
@@ -379,10 +379,12 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			assert.equal(archiveResult?.unpackedFolderPath, folderPath, "Папка связана с записью");
 
 			// Шаг 3: Проверяем базу данных PostgreSQL — ровно 1 строка!
-			const dbRecords = await db
-				.select()
-				.from(schema.imagingStudies)
-				.where(eq(schema.imagingStudies.studyInstanceUid, sharedStudyUid));
+			const dbRecords = await withFixtureTenant(testOrgId, async () => {
+				return db
+					.select()
+					.from(schema.imagingStudies)
+					.where(eq(schema.imagingStudies.studyInstanceUid, sharedStudyUid));
+			});
 
 			assert.equal(dbRecords.length, 1, "В базе данных ОБЯЗАНА быть ровно 1 запись исследования без дубликатов!");
 		});
@@ -402,21 +404,27 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			await writeFile(path.join(folderPath, "CT_0001.dcm"), slice);
 
 			// Шаг 1: Обрабатываем архив
-			const archiveResult = await crawler.processArchiveCandidate(archivePath, testOrgId);
+			const archiveResult = await withFixtureTenant(testOrgId, async () => {
+				return crawler.processArchiveCandidate(archivePath, testOrgId);
+			});
 			assert.ok(archiveResult, "Архив должен быть успешно обработан и распакован");
 			assert.equal(archiveResult?.studyInstanceUid, sharedStudyUid);
 
 			// Шаг 2: Обрабатываем появившуюся позже папку
-			const folderResult = await crawler.processFolderCandidate(folderPath, testOrgId);
+			const folderResult = await withFixtureTenant(testOrgId, async () => {
+				return crawler.processFolderCandidate(folderPath, testOrgId);
+			});
 			assert.ok(folderResult, "Папка должна быть обработана");
 			assert.equal(folderResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(folderResult?.status, "duplicate_resolved", "Статус папки должен стать duplicate_resolved");
 
 			// Шаг 3: Проверяем БД — ровно 1 строка!
-			const dbRecords = await db
-				.select()
-				.from(schema.imagingStudies)
-				.where(eq(schema.imagingStudies.studyInstanceUid, sharedStudyUid));
+			const dbRecords = await withFixtureTenant(testOrgId, async () => {
+				return db
+					.select()
+					.from(schema.imagingStudies)
+					.where(eq(schema.imagingStudies.studyInstanceUid, sharedStudyUid));
+			});
 
 			assert.equal(dbRecords.length, 1, "В базе данных ОБЯЗАНА быть ровно 1 запись исследования!");
 		});
@@ -439,7 +447,9 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			const archivePath = path.join(tempDir, "Morozov_New_CT.zip");
 			await writeFile(archivePath, zipBuffer);
 
-			const study = await crawler.processArchiveCandidate(archivePath, testOrgId);
+			const study = await withFixtureTenant(testOrgId, async () => {
+				return crawler.processArchiveCandidate(archivePath, testOrgId);
+			});
 
 			assert.ok(study, "Исследование должно быть зарегистрировано");
 			assert.equal(study?.status, "unpacked", "Статус исследования должен быть 'unpacked'");
@@ -460,7 +470,9 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 	// ─── РАЗДЕЛ 6: СКВОЗНОЕ СКАНИРОВАНИЕ scanNow И ТЕЛЕМЕТРИЯ ───────────────────
 	describe("6. Full Directory Scan & Operational Telemetry", () => {
 		it("scanNow обходит директорию, формирует отчет и собирает телеметрию", async () => {
-			const report = await crawler.scanNow([tempDir]);
+			const report = await withFixtureTenant(testOrgId, async () => {
+				return crawler.scanNow([tempDir]);
+			});
 
 			assert.ok(report.scannedDirectoriesCount >= 1, "Должен быть просканирован минимум 1 каталог");
 			assert.ok(report.durationMs >= 0, "Длительность сканирования должна быть измерена");

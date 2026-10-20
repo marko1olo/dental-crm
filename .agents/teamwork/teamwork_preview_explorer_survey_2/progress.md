@@ -1,12 +1,14 @@
-# Progress - Survey Explorer 2 (R2 Recalls & Leads)
+# Progress — Survey Explorer 2
 
-- Last visited: 2026-09-24T17:45:30Z
-- Status: Investigation and audit complete. Reports delivered.
-- Completed tasks:
-  1. Full reading of THE_HAMMER_MASTER_PROMPT.md & ORIGINAL_REQUEST.md.
-  2. Deep dive into Recalls backend & frontend (`PatientRecallsHubModal`, `patientRecallEngine`, `RecallListPanel`, `recallCandidates.ts`).
-  3. Deep dive into Leads conversion pipeline (`LeadsKanbanView`, `leadsFunnelEngine`, `POST /api/leads/:id/convert`).
-  4. Visual multimodal inspection across PC Light, PC Dark, and Mobile screenshots.
-  5. Written `survey_r2.md` with complete 7 Deadly Sins analysis and 6-phase surgical plan.
-  6. Written `handoff.md` (5-Component Hard Handoff).
-  7. Updated persistent memory `BRIEFING.md`.
+Last visited: 2026-10-20T02:33:00Z
+Status: Survey completed successfully. Reports generated: survey_report.md and handoff.md.
+
+- [x] Step 0: Dispatch logged and Briefing initialized
+- [x] Step 1: Cold start reading of constitutional documents & ORIGINAL_REQUEST.md
+- [x] Step 2: Investigation of 9 Orphaned Clinical Workspaces (files, props, hooks, state)
+- [x] Step 3: Investigation of UI Navigation trees (PatientCard, VisitModal/ChairsideEHR, TreatmentPlan, Sidebar/AppShell)
+- [x] Step 4: Investigation of Fastify API routes and Drizzle schemas in apps/api
+- [x] Step 5: Investigation of labScanDirectUpload.ts and mock-storage endpoint fallback
+- [x] Step 6: Investigation of dead actions (onClick={() => {}} in MobileChairsideEHR, AddServiceToothSelector, etc.)
+- [x] Step 7: Authoring comprehensive survey_report.md and handoff.md
+- [x] Step 8: Send completion notification to parent orchestrator

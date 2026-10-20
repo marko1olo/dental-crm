@@ -4,8 +4,9 @@
  */
 
 import assert from "node:assert/strict";
-import test, { beforeEach, describe } from "node:test";
+import test from "node:test";
 import { SoundFeedbackService } from "../SoundFeedbackService.js";
+import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage.js";
 
 // Mock localStorage if in node environment
 const mockStorage = new Map<string, string>();
@@ -30,14 +31,15 @@ const fakeLocalStorage: Storage = {
 	localStorage: fakeLocalStorage,
 };
 
-describe("SoundFeedbackService Core & Chime Lifecycle", () => {
-	beforeEach(() => {
-		mockStorage.clear();
-		SoundFeedbackService.resetInstance();
-	});
+function resetSoundFeedbackEnv(): void {
+	mockStorage.clear();
+	clearInMemoryStorageCache();
+	SoundFeedbackService.resetInstance();
+}
 
-	test("singleton initializes with sane defaults and persists volume", () => {
-		const service = SoundFeedbackService.getInstance();
+test("SoundFeedbackService: singleton initializes with sane defaults and persists volume", () => {
+	resetSoundFeedbackEnv();
+	const service = SoundFeedbackService.getInstance();
 		assert.equal(service.isEnabled(), true);
 		assert.equal(service.isHapticsEnabled(), true);
 		assert.equal(service.getVolume(), 0.7);
@@ -74,6 +76,7 @@ describe("SoundFeedbackService Core & Chime Lifecycle", () => {
 	});
 
 	test("synthesizes accurate tones when mock AudioContext is supplied", async () => {
+		resetSoundFeedbackEnv();
 		let createdOscillators = 0;
 		let startedOscillators = 0;
 		let stoppedOscillators = 0;
@@ -143,4 +146,3 @@ describe("SoundFeedbackService Core & Chime Lifecycle", () => {
 
 		customService.dispose();
 	});
-});

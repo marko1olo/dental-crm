@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
+import { isMicroConsumable } from "./consumables.js";
 
 // ─── 1. DICTIONARY: MEDICAL JARGON ➔ HUMAN RUSSIAN ──────────────────────────
 
@@ -264,49 +265,57 @@ export function generatePatientCasePresentation(
 	if (therapyItems.length > 0 || otherItems.length > 0) {
 		const combined = [...therapyItems, ...otherItems];
 		const stageSum = combined.reduce((s, x) => s + x.priceRub * x.quantity, 0);
+		const visibleItems = combined.filter((x) => !isMicroConsumable(x));
+		const summaryItems = visibleItems.length > 0 ? visibleItems : combined;
 		stages.push({
 			stageNumber: stageCounter++,
 			stageTitleRu: "Подготовка и здоровье (Санация)",
 			durationRu: "1–2 недели (1–2 визита)",
 			goalRu: "Устраняем воспаление, делаем гигиену и лечим кариес, создавая стерильную среду.",
 			costRub: stageSum,
-			itemsSummaryRu: combined.map((x) => `${x.name} (${x.quantity} шт.)`),
+			itemsSummaryRu: summaryItems.map((x) => `${x.name} (${x.quantity} шт.)`),
 		});
 	}
 
 	if (surgeryItems.length > 0) {
 		const stageSum = surgeryItems.reduce((s, x) => s + x.priceRub * x.quantity, 0);
+		const visibleItems = surgeryItems.filter((x) => !isMicroConsumable(x));
+		const summaryItems = visibleItems.length > 0 ? visibleItems : surgeryItems;
 		stages.push({
 			stageNumber: stageCounter++,
 			stageTitleRu: "Установка надежной основы (Имплантация)",
 			durationRu: "1 день операция + приживление 3–4 мес.",
 			goalRu: "Бережно устанавливаем титановые корни под надежной анестезией без боли и стресса.",
 			costRub: stageSum,
-			itemsSummaryRu: surgeryItems.map((x) => `${x.name} (${x.quantity} шт.)`),
+			itemsSummaryRu: summaryItems.map((x) => `${x.name} (${x.quantity} шт.)`),
 		});
 	}
 
 	if (prostheticsItems.length > 0) {
 		const stageSum = prostheticsItems.reduce((s, x) => s + x.priceRub * x.quantity, 0);
+		const visibleItems = prostheticsItems.filter((x) => !isMicroConsumable(x));
+		const summaryItems = visibleItems.length > 0 ? visibleItems : prostheticsItems;
 		stages.push({
 			stageNumber: stageCounter++,
 			stageTitleRu: "Постоянная эстетика и жевание (Коронки)",
 			durationRu: "1–2 недели (2 визита: скан и фиксация)",
 			goalRu: "Фиксируем анатомические керамические коронки идеального цвета натурального зуба.",
 			costRub: stageSum,
-			itemsSummaryRu: prostheticsItems.map((x) => `${x.name} (${x.quantity} шт.)`),
+			itemsSummaryRu: summaryItems.map((x) => `${x.name} (${x.quantity} шт.)`),
 		});
 	}
 
 	// Если этапы не разбились, формируем один единый этап
 	if (stages.length === 0) {
+		const visibleItems = parsed.items.filter((x) => !isMicroConsumable(x));
+		const summaryItems = visibleItems.length > 0 ? visibleItems : parsed.items;
 		stages.push({
 			stageNumber: 1,
 			stageTitleRu: "Клиническое лечение",
 			durationRu: "По согласованию с доктором",
 			goalRu: "Выполнение запланированных процедур.",
 			costRub: totalCostRub,
-			itemsSummaryRu: parsed.items.map((x) => x.name),
+			itemsSummaryRu: summaryItems.map((x) => x.name),
 		});
 	}
 

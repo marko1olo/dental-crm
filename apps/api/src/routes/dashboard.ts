@@ -4,6 +4,10 @@ import {
 	getDashboardFromDb,
 } from "../db/dashboardQuery.js";
 import { requireOrganizationId } from "../security/identity.js";
+import {
+	DEMO_SHOWCASE_ORG_ID,
+	ensureDemoShowcaseTenant,
+} from "../services/demo/deepDemoSeeder.js";
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
 	app.get("/api/dashboard", async (request, reply) => {
@@ -35,6 +39,21 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			 * годится. Клиника и её идентификатор в ответ не попадают.
 			 */
 			if (error instanceof ClinicOrganizationMissingError) {
+				if (orgId === DEMO_SHOWCASE_ORG_ID) {
+					request.log.info(
+						{ organizationId: orgId },
+						"[Dashboard] Изолированный демо-тенант ещё не засеян в БД: выполняем идемпотентный авто-засев",
+					);
+					try {
+						await ensureDemoShowcaseTenant(undefined, { forceReset: false });
+						return await getDashboardFromDb(orgId);
+					} catch (seedErr) {
+						request.log.error(
+							{ err: seedErr },
+							"[Dashboard] Ошибка авто-засева изолированного демо-тенанта",
+						);
+					}
+				}
 				request.log.warn(
 					{ organizationId: orgId },
 					"[Dashboard] Клиника из сессии отсутствует в базе: отдан отказ вместо пустой сводки",

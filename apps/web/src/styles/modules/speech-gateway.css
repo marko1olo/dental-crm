@@ -1,0 +1,396 @@
+/* ==========================================================================
+   DENTE CRM — CLINICAL SPEECH RECOGNITION & VOICE GATEWAY (modules/speech-gateway.css)
+   ==========================================================================
+   CSS Layer 4 (View & Domain Assemblies). Authority: decomposer/SKILL.md & frontend.md
+   Strictly <= 800 lines. Speech providers, gateway strip, dictation results.
+   ========================================================================== */
+.speech-provider-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.speech-provider-head h3 {
+	font-size: 16px;
+	line-height: 1.25;
+	margin: 0;
+}
+
+.speech-provider-head span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 900;
+	padding: 6px 9px;
+}
+
+.speech-gateway-strip {
+	align-items: center;
+	background: #f5faf8;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(130px, 1fr) repeat(6, minmax(76px, auto)) auto;
+	padding: 8px;
+}
+
+.speech-gateway-strip strong {
+	color: var(--teal-dark);
+}
+
+.speech-gateway-strip span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.speech-gateway-strip .speech-prompt-chip {
+	background: #e7f1eb;
+	border-radius: 999px;
+	color: var(--teal-dark);
+	padding: 5px 8px;
+}
+
+.speech-gateway-hint {
+	color: var(--muted);
+	font-size: 12px;
+	grid-column: 1 / -2;
+	line-height: 1.35;
+}
+
+.speech-gateway-strip .secondary-button {
+	min-height: 34px;
+	padding: 7px 10px;
+}
+
+.speech-health-strip {
+	align-items: center;
+	background: #f7fbff;
+	border: 1px solid #c9d9e8;
+	border-left: 4px solid #2f80a8;
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(150px, 1fr) repeat(5, minmax(80px, auto));
+	padding: 8px;
+}
+
+.speech-health-strip div {
+	display: grid;
+	gap: 2px;
+}
+
+.speech-health-strip strong {
+	color: #1f526b;
+	line-height: 1.25;
+}
+
+.speech-health-strip span,
+.speech-health-strip small {
+	color: #57656d;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+}
+
+.speech-health-strip small {
+	grid-column: 1 / -1;
+}
+
+.speech-health-ready {
+	border-left-color: #2f8f5b;
+}
+
+.speech-health-degraded,
+.speech-health-setup_required {
+	border-left-color: #b86b2b;
+}
+
+.speech-health-planned,
+.speech-health-offline {
+	border-left-color: #8b9a96;
+}
+
+.speech-strategy-strip {
+	align-items: center;
+	background: #fffaf1;
+	border: 1px solid #ead8b8;
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(150px, 0.8fr) auto auto minmax(220px, 1.4fr);
+	padding: 8px;
+}
+
+.speech-strategy-strip strong {
+	color: #7a4b12;
+	text-transform: lowercase;
+}
+
+.speech-strategy-strip span,
+.speech-strategy-strip small {
+	color: #6b5f55;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+}
+
+.speech-recovery-list {
+	display: grid;
+	gap: 6px;
+}
+
+.speech-recovery-row {
+	align-items: start;
+	border: 1px solid var(--line);
+	border-left: 4px solid #2f8f5b;
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(140px, 0.65fr) minmax(220px, 1fr) minmax(
+			180px,
+			0.8fr
+		);
+	padding: 8px;
+}
+
+.speech-recovery-row.recovery-missing_chunks,
+.speech-recovery-row.recovery-failed_chunks,
+.speech-recovery-row.recovery-quality_review {
+	border-left-color: #b86b2b;
+}
+
+.speech-recovery-row strong {
+	color: var(--ink);
+	display: block;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.speech-recovery-row span,
+.speech-recovery-row p,
+.speech-recovery-row small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.speech-provider-list {
+	display: grid;
+	gap: 8px;
+}
+
+.speech-provider-row {
+	align-items: start;
+	border: 1px solid var(--line);
+	border-left: 4px solid #8b9a96;
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(150px, 0.85fr) minmax(160px, 1fr) minmax(
+			180px,
+			1.1fr
+		) minmax(170px, 0.9fr);
+	padding: 10px;
+}
+
+.speech-provider-needs_server_key {
+	border-left-color: var(--teal);
+}
+
+.speech-provider-usable_without_key {
+	border-left-color: #2f8f5b;
+}
+
+.speech-provider-planned_local {
+	border-left-color: #8a6d2f;
+}
+
+.speech-provider-row strong {
+	color: var(--ink);
+	display: block;
+	line-height: 1.25;
+}
+
+.speech-provider-row p {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+	margin: 4px 0 0;
+}
+
+.speech-provider-tags,
+.speech-provider-foot {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.speech-provider-tags span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 11px;
+	font-weight: 900;
+	padding: 5px 7px;
+}
+
+.speech-provider-row ul {
+	color: #4e463f;
+	display: grid;
+	gap: 4px;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.speech-provider-row li {
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.speech-provider-foot {
+	align-content: start;
+}
+
+.speech-provider-foot span,
+.speech-provider-foot small {
+	color: var(--muted);
+	flex-basis: 100%;
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1.35;
+}
+
+.speech-provider-foot small {
+	color: #6b5f55;
+}
+
+.speech-provider-foot .speech-runtime-ready,
+.speech-provider-foot .speech-runtime-missing {
+	border-radius: 999px;
+	flex-basis: auto;
+	padding: 4px 7px;
+}
+
+.speech-provider-foot .speech-runtime-ready {
+	background: #e4f6ef;
+	color: #1f6f4d;
+}
+
+.speech-provider-foot .speech-runtime-missing {
+	background: #fff1e8;
+	color: #8a3f18;
+}
+
+.speech-health-chip {
+	border-radius: 999px;
+	flex-basis: auto;
+	padding: 4px 7px;
+}
+
+.speech-health-chip-ready {
+	background: #e4f6ef;
+	color: #1f6f4d;
+}
+
+.speech-health-chip-degraded,
+.speech-health-chip-setup_required {
+	background: #fff1e8;
+	color: #8a3f18;
+}
+
+.speech-health-chip-planned,
+.speech-health-chip-offline {
+	background: #eef2f1;
+	color: #56645f;
+}
+
+.speech-provider-foot a {
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	text-decoration: none;
+}
+
+.speech-provider-foot a:hover {
+	text-decoration: underline;
+}
+
+.recognition-preset-row {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.recognition-workbench {
+	display: grid;
+	gap: 10px;
+}
+
+.recognition-workbench textarea {
+	min-height: 112px;
+}
+
+.recognition-target {
+	align-self: center;
+	color: var(--teal-dark);
+	font-size: 13px;
+	font-weight: 900;
+}
+
+.recognition-result {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.recognition-result > div:first-child {
+	align-items: start;
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+}
+
+.recognition-result strong {
+	color: var(--teal-dark);
+}
+
+.recognition-result span {
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.recognition-result p {
+	margin: 0;
+}
+
+.settings-heading {
+	align-items: center;
+	display: flex;
+	gap: 16px;
+	justify-content: space-between;
+}
+
+.settings-heading h2 {
+	font-size: 22px;
+	line-height: 1.1;
+	margin: 0;
+}
+
+.settings-heading span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 7px 10px;
+}

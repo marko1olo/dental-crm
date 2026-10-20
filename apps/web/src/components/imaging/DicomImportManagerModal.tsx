@@ -203,7 +203,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 								Автодетект КТ и очередей томографов
 							</h2>
 							<p className="text-xs opacity-65">
-								Мониторинг папок Vatech, Planmeca, Sidexis, KaVo, Morita со стохастической привязкой к ЭМК 043/у
+								Мониторинг папок Vatech, Planmeca, Sidexis, KaVo, Morita с автоматической привязкой к медицинской карте
 							</p>
 						</div>
 					</div>

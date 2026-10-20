@@ -9,8 +9,12 @@ import {
 	ShieldCheck,
 	Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter.js";
+import {
+	chairsideMemoryShield,
+	type MemoryShieldMetrics,
+} from "../../../services/storage/chairsideMemoryShield.js";
 import { showToast } from "../../GlobalToast.js";
 import { LanQrConnectionModal } from "../../network/LanQrConnectionModal.js";
 
@@ -27,6 +31,13 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 	const [hotFolderLoading, setHotFolderLoading] = useState(false);
 	const [telephonyStatus, setTelephonyStatus] = useState<string | null>(null);
 	const [telephonyLoading, setTelephonyLoading] = useState(false);
+	const [metrics, setMetrics] = useState<MemoryShieldMetrics>(() => chairsideMemoryShield.getMetrics());
+
+	useEffect(() => {
+		chairsideMemoryShield.initialize();
+		const unsubscribe = chairsideMemoryShield.subscribe(setMetrics);
+		return () => unsubscribe();
+	}, []);
 
 	const handleTestKkt = async () => {
 		setKktLoading(true);
@@ -123,6 +134,14 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 		}
 	};
 
+	const handlePurgeMemory = () => {
+		const res = chairsideMemoryShield.purgeAllVramAndCache();
+		showToast(
+			`Видеопамять очищена: сброшено холстов: ${res.freedCanvases}, снимков RVG: ${res.freedRvgItems}`,
+			"success",
+		);
+	};
+
 	return (
 		<div
 			className="hw-cockpit-bar"
@@ -140,11 +159,35 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 				fontSize: "12px",
 			}}
 		>
-			<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
 				<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 				<span style={{ fontWeight: 600, color: "var(--ink)" }}>
 					Экспресс-диагностика оборудования:
 				</span>
+				<div
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "4px",
+						padding: "2px 8px",
+						borderRadius: "12px",
+						background: metrics.isLowSpec ? "rgba(16, 185, 129, 0.12)" : "var(--paper)",
+						border: "1px solid var(--line)",
+						color: "var(--ink)",
+						fontSize: "11px",
+						fontWeight: 500,
+					}}
+					title="Защита от переполнения видеопамяти Intel HD Graphics на 12-часовой смене (4GB RAM)"
+					data-testid="cockpit-badge-vram-shield"
+				>
+					<Zap size={12} className="text-amber-500 shrink-0" />
+					<span>{metrics.isLowSpec ? "Low-Spec VRAM Shield: 60 FPS" : "VRAM Shield: 60 FPS"}</span>
+					{metrics.rvgCacheItemCount > 0 && (
+						<span style={{ color: "var(--muted)", marginLeft: "4px" }}>
+							(RVG: {(metrics.rvgCacheSizeBytes / (1024 * 1024)).toFixed(1)} МБ)
+						</span>
+					)}
+				</div>
 			</div>
 
 			<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
@@ -211,6 +254,18 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 				>
 					<QrCode size={13} />
 					<span>LAN планшет (PIN/QR)</span>
+				</button>
+
+				{/* 6. VRAM Shield Manual Purge Button */}
+				<button
+					type="button"
+					className="hw-btn-compact"
+					onClick={handlePurgeMemory}
+					title="Мгновенно освободить видеопамять холстов и кэш снимков RVG для моноблока"
+					data-testid="cockpit-btn-purge-vram"
+				>
+					<Zap size={13} className="text-amber-500" />
+					<span>Освободить память</span>
 				</button>
 			</div>
 

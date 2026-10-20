@@ -1,0 +1,185 @@
+{
+  "subagent": "crm_admin_inquisitor",
+  "role": "Lead UI/UX Engineer & Red Team Inquisitor for CRM Admin Tabs",
+  "caller": "2d41233f-cb42-451b-b625-8a85401ad490",
+  "completedAt": "2026-10-10T18:32:00+04:00",
+  "status": "VERIFIED_CLEAN",
+  "scope": [
+    "communications",
+    "leads",
+    "marketing",
+    "analytics",
+    "settings_clinic",
+    "settings_prices",
+    "settings_staff"
+  ],
+  "invariants_enforced": [
+    "Anti-Ghost-Tiles & Delimited Interactive Tiles Law (DESIGNER_VISUAL_INQUISITION_BIBLE.md §9, frontend.md §17.5)",
+    "Anti-Dev-Slang Purge ('в 1 клик', '1-клик', 'Мандат 8e', raw code identifiers)",
+    "WCAG AAA / High Contrast & Anti-Color-Confetti (Monochrome medical base + single brand accent)",
+    "Miller & Hick Laws (1 primary CTA + secondary dropdown, single row toolbars)",
+    "Anti-Blank & Anti-Splash Artifact Gate (>=20KB floor, live captures >=400KB without splash artifacts)"
+  ],
+  "code_fixes": [
+    {
+      "file": "apps/web/src/components/settings/SovereignScalePresetsCard.tsx",
+      "description": "Purged dev-slang ('Экспресс-старт в 3 клика' -> 'Быстрый старт профиля клиники', 'Выбрать в 1 клик' -> 'Выбрать пресет'), unified delimited tile design."
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+      "description": "Fixed TypeError null safety on legalName and organization metadata fallback."
+    },
+    {
+      "file": "apps/web/src/components/settings/clinic/SettingsClinicChairsSection.tsx",
+      "description": "Fixed TypeError null safety on chair working schedule intervals."
+    },
+    {
+      "file": "apps/web/src/components/settings/doctor/DoctorSpecialtyPresetsCard.tsx",
+      "description": "Converted translucent glass panel to solid bg-[var(--paper)] border border-[var(--line)] tile, purged dev-slang."
+    },
+    {
+      "file": "apps/web/src/components/settings/AdminSettingsSection.tsx",
+      "description": "Converted all 4 smart communications toggles into solid delimited tile cards with distinct ВКЛ/ВЫКЛ status badges."
+    },
+    {
+      "file": "apps/web/src/components/settings/clinic/TaxationAndFiscalizationCard.tsx",
+      "description": "Converted taxation and fiscalization selectors into solid delimited interactive tiles, purged dev-slang."
+    },
+    {
+      "file": "apps/web/src/hooks/settingsDerivations/useSettingsPricesLogic.ts",
+      "description": "Added safe fallback (s.title || s.name || '') to prevent runtime crashes during price list sorting."
+    },
+    {
+      "file": "scripts/capture_redteam_crm_admin_suite.cjs",
+      "description": "Implemented rock-solid DOM hydration waiting (.boot-state detached, tab container guards) to guarantee 100% splash-free live screen captures."
+    }
+  ],
+  "visual_proof_suite": [
+    {
+      "id": "01_communications_desktop_light",
+      "tab": "communications",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/01_communications_desktop_light.png",
+      "size_bytes": 460718,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "01_communications_desktop_dark",
+      "tab": "communications",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/01_communications_desktop_dark.png",
+      "size_bytes": 460424,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "02_leads_desktop_light",
+      "tab": "leads",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/02_leads_desktop_light.png",
+      "size_bytes": 478794,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "02_leads_desktop_dark",
+      "tab": "leads",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/02_leads_desktop_dark.png",
+      "size_bytes": 479216,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "03_marketing_desktop_light",
+      "tab": "marketing",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/03_marketing_desktop_light.png",
+      "size_bytes": 456637,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "03_marketing_desktop_dark",
+      "tab": "marketing",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/03_marketing_desktop_dark.png",
+      "size_bytes": 454848,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "04_analytics_desktop_light",
+      "tab": "analytics",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/04_analytics_desktop_light.png",
+      "size_bytes": 483549,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "04_analytics_desktop_dark",
+      "tab": "analytics",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/04_analytics_desktop_dark.png",
+      "size_bytes": 482436,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "05_settings_clinic_desktop_light",
+      "tab": "settings_clinic",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/05_settings_clinic_desktop_light.png",
+      "size_bytes": 427754,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "05_settings_clinic_desktop_dark",
+      "tab": "settings_clinic",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/05_settings_clinic_desktop_dark.png",
+      "size_bytes": 425026,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "06_settings_prices_desktop_light",
+      "tab": "settings_prices",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/06_settings_prices_desktop_light.png",
+      "size_bytes": 426514,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "06_settings_prices_desktop_dark",
+      "tab": "settings_prices",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/06_settings_prices_desktop_dark.png",
+      "size_bytes": 423985,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "07_settings_staff_desktop_light",
+      "tab": "settings_staff",
+      "theme": "light",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/07_settings_staff_desktop_light.png",
+      "size_bytes": 427715,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    },
+    {
+      "id": "07_settings_staff_desktop_dark",
+      "tab": "settings_staff",
+      "theme": "dark",
+      "resolution": "1440x900",
+      "file": "docs/screenshots/redteam_inquisition/07_settings_staff_desktop_dark.png",
+      "size_bytes": 425141,
+      "verdict": "[ПРОВЕРЕНО: ЧИСТО]"
+    }
+  ]
+}

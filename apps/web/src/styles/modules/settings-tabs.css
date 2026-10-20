@@ -1,0 +1,83 @@
+.settings-zone {
+	position: relative;
+	overflow-y: auto;
+	grid-template-columns: 260px minmax(0, 1fr);
+	align-items: start;
+	gap: 24px;
+	padding: 24px;
+	background: var(--glass-bg);
+	backdrop-filter: var(--glass-blur);
+	border-radius: 16px;
+	box-shadow: var(--shadow-premium);
+	border: 1px solid var(--glass-border);
+}
+
+.settings-heading {
+	grid-column: 1 / -1;
+	margin-bottom: 8px;
+}
+.settings-tabs {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	position: sticky;
+	top: 100px;
+	max-height: calc(100vh - 140px);
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	scrollbar-width: thin;
+	padding-bottom: 48px;
+}
+.settings-tabs button {
+	text-align: left;
+	justify-content: flex-start;
+	padding: 6px 14px;
+	border: none;
+	background: transparent;
+	border-radius: 8px;
+	transition: all 0.2s ease;
+	font-weight: 500;
+	font-size: 13px;
+	color: var(--ink);
+	min-height: 32px;
+}
+.settings-tabs button:hover {
+	background: rgba(13, 148, 136, 0.08);
+	transform: translateX(4px);
+}
+.settings-tabs button.active {
+	background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
+	color: white;
+	box-shadow: 0 4px 12px var(--teal-glow);
+	transform: translateX(6px);
+	font-weight: 600;
+}
+.settings-tab-panel {
+	position: relative;
+	background: var(--paper);
+	border-radius: 16px;
+	padding: 32px 32px 96px;
+	box-shadow: 0 2px 24px rgba(0, 0, 0, 0.03);
+	border: 1px solid var(--line);
+}
+/* SIDEBAR LEGACY OVERRIDES - moved to @layer legacy */
+@layer legacy {
+	.app-shell {
+		background-color: var(--paper-soft);
+	}
+	@media (min-width: 861px) {
+		.sidebar {
+			background: var(--side-bg);
+			padding: 16px 14px;
+			gap: 20px;
+		}
+		.nav-item {
+			border-radius: 10px;
+			padding: 9px 10px;
+			transition:
+				background 0.15s,
+				color 0.15s;
+			font-weight: 500;
+		}
+	}
+}

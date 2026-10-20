@@ -1,7 +1,9 @@
 /**
- * @file sterilization.ts
- * @description Canonical thin facade for SanPiN 3.3686-21 Central Sterilization & Kraft Package Routes.
- * Decomposed per Mandate 8b into apps/api/src/routes/sterilizationRoutes/.
+ * apps/api/src/routes/sterilization.ts
+ *
+ * Единый канонический фасад домена стерилизации и автоклавирования.
+ * Делегирует единому SSOT в routes/sanpin/sterilizationRoutes.js.
+ * Мандат 8b: строго <= 120 строк.
  */
 
-export * from "./sterilizationRoutes/index.js";
+export * from "./sanpin/sterilizationRoutes.js";

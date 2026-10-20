@@ -3,19 +3,21 @@
  * EGISZ CRYPTOPRO & UKEP GOST R 34.10-2012 / CAdES-BES SIGNING ENGINE
  * (МИНЗДРАВ РФ / 63-ФЗ / 911Н / ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012)
  *
- * Provides statutory implementation of Russian Qualified Electronic Signature (УКЭП):
- * 1. GOST R 34.10-2012 (256/512 bit) and GOST R 34.11-2012 (Streebog) algorithms.
- * 2. X.509 Certificate parser and validator (SNILS 11 digits, OGRN 13/15 digits).
- * 3. Detached CAdES-BES (PKCS#7 / .p7s) digital signature generator and verifier.
- * 4. Dual UKEP signing protocol (Лечащий врач + Медицинская организация / Главный врач).
- * 5. SEMD 105 (Протокол консультации амбулаторный) CDA R2 generator.
+ * Архитектура двух контуров:
+ * 1. Аппаратный контур (`HARDWARE_CADES_CSP`):
+ *    В браузере/ОС закрытые ключи ГОСТ Р 34.10-2012 неизвлекаемы из СКЗИ
+ *    (Рутокен ЭЦП 3.0 / JaCarta / КриптоПро CSP) и вызываются через `window.cadesplugin`.
+ * 2. Детерминированный проверочный и тестовый контур (`DETERMINISTIC_TEST_ENVELOPE`):
+ *    Обеспечивает валидацию X.509 сертификатов (СНИЛС, ОГРН), проверку целостности
+ *    открепленных подписей CAdES-BES (.p7s / .sig), двухфакторный и одношаговый (1-клик)
+ *    протокол подписания (Врач + МО) и генерацию СЭМД 105 CDA R2 без физического токена в CI.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import { canonicalizeCdaXml, computeCdaSha256Hex } from "../cda/c14n.js";
 import { sha256Hex } from "../sync/hashing.js";
 import {
-	buildGenuineGostCmsPkcs7Der,
+	buildDeterministicGostCmsTestContainer,
 	validateGostCmsPkcs7Signature,
 } from "../crypto/index.js";
 
@@ -41,10 +43,11 @@ import {
 	validateClinicCertificate,
 } from "./x509CertificateValidator.js";
 
-// ─── 3. ГОСТ Р 34.11-2012 (Стрибог) 256/512 Чистая TS Реализация ───────────
+// ─── 3. Детерминированный дайджест для офлайн-верификации и песочницы CAdES-BES ──
 
 /**
- * Нелинейная таблица подстановок Pi ГОСТ Р 34.11-2012
+ * Таблица нелинейного биективного преобразования Pi для детерминированного
+ * каскадного дайджеста в офлайн-контуре и автотестах СЭМД (без аппаратного СКЗИ).
  */
 const STREEBOG_PI = new Uint8Array([
 	252, 238, 248, 17, 38, 65, 159, 77, 40, 139, 218, 35, 10, 214, 171, 131,
@@ -66,16 +69,16 @@ const STREEBOG_PI = new Uint8Array([
 ]);
 
 /**
- * Вспомогательное детерминированное вычисление хэша ГОСТ Р 34.11-2012 (Стрибог 256)
- * В тестовом окружении обеспечивает соответствие спецификации RFC 6986 и валидацию CAdES-BES.
+ * Вычисляет детерминированный 256-битный (64 hex-символа) дайджест сообщения
+ * для офлайн-контура контроля целостности CAdES-BES и тестовых конвертов СЭМД.
+ * В боевом контуре с физическим токеном вычисление ГОСТ Р 34.11-2012 выполняется
+ * непосредственно внутри сертифицированного СКЗИ КриптоПро CSP (`cadesplugin`).
  */
 export function computeGost3411_2012_256Hex(data: string | Uint8Array): string {
 	const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
-	// Реализация Стрибог-256 через детерминированный каскадный алгоритм ГОСТ
 	const state = new Uint8Array(64);
-	state.fill(0x01); // Начальный вектор для 256 бит
+	state.fill(0x01);
 
-	// Преобразование блоков
 	for (let i = 0; i < bytes.length; i++) {
 		const idx = i % 64;
 		const byteVal = bytes[i] ?? 0;
@@ -83,7 +86,6 @@ export function computeGost3411_2012_256Hex(data: string | Uint8Array): string {
 		state[idx] = (subVal + ((state[(idx + 1) % 64] ?? 0) ^ byteVal)) & 0xff;
 	}
 
-	// Финализация
 	const sha = sha256Hex(typeof data === "string" ? data : new TextDecoder().decode(bytes));
 	const result = new Uint8Array(32);
 	for (let i = 0; i < 32; i++) {
@@ -105,7 +107,8 @@ export function computeGost3411_2012_512Hex(data: string | Uint8Array): string {
 // ─── 5. Формирование открепленной подписи CAdES-BES (PKCS#7 / .p7s) ──────────
 
 /**
- * Создает открепленную цифровую подпись CAdES-BES по ГОСТ Р 34.10-2012
+ * Создает детерминированный открепленный контейнер подписи CAdES-BES (CMS / PKCS#7)
+ * над канонизированным XML для проверочного/песочничного контура ЕГИСЗ РЭМД.
  */
 export function createCadesBesDetachedSignature(params: {
 	canonicalXml: string;
@@ -119,18 +122,16 @@ export function createCadesBesDetachedSignature(params: {
 	const signedDate = params.signingTime ?? new Date();
 	const signedAt = signedDate.toISOString();
 
-	// Вычисление дайджеста сообщения по ГОСТ Р 34.11-2012
 	const messageDigestHex = computeGost3411_2012_256Hex(canonical);
 
-	// Формирование значения подписи
 	const sigHex =
 		params.customSignatureValueHex ||
 		computeGost3411_2012_512Hex(
 			`CADES_BES_GOST3410_${cert.serialNumber}_${messageDigestHex}_${signedAt}`,
 		);
 
-	// Формирование CMS / PKCS#7 SignedData структуры в Base64 (ASN.1 DER по ГОСТ Р 34.10-2012 / 34.11-2012)
-	const derBuffer = buildGenuineGostCmsPkcs7Der({
+	// Формирование CMS / PKCS#7 SignedData структуры в Base64 через единый ASN.1 DER движок
+	const derBuffer = buildDeterministicGostCmsTestContainer({
 		documentHashSha256Hex: messageDigestHex,
 		doctorFullName: cert.commonName || cert.rawSubject,
 		certificateSerialNumber: cert.serialNumber,
@@ -192,9 +193,10 @@ export function verifyCadesBesDetachedSignature(params: {
 	}
 
 	const sig = parseRes.data;
+	const expectedDigestHex = computeGost3411_2012_256Hex(canonical).toUpperCase();
 
-	// 2. Валидация ASN.1 DER CMS (PKCS#7) бинарного контейнера подписи
-	const cmsRes = validateGostCmsPkcs7Signature(sig.signatureBase64);
+	// 2. Валидация ASN.1 DER CMS (PKCS#7) бинарного контейнера подписи через единый движок
+	const cmsRes = validateGostCmsPkcs7Signature(sig.signatureBase64, expectedDigestHex);
 	if (!cmsRes.valid) {
 		errors.push(`Контейнер подписи CAdES-BES не валиден: ${cmsRes.error}`);
 	}
@@ -207,8 +209,7 @@ export function verifyCadesBesDetachedSignature(params: {
 		errors.push(`Алгоритм подписи ${sig.algorithmOid} не соответствует ГОСТ Р 34.10-2012.`);
 	}
 
-	// 3. Проверка дайджеста документа
-	const expectedDigestHex = computeGost3411_2012_256Hex(canonical).toUpperCase();
+	// 4. Проверка дайджеста документа
 	const digestMatches = sig.messageDigestHex.toUpperCase() === expectedDigestHex;
 	if (!digestMatches) {
 		errors.push(
@@ -216,7 +217,7 @@ export function verifyCadesBesDetachedSignature(params: {
 		);
 	}
 
-	// 4. Проверка сертификата подписанта
+	// 5. Проверка сертификата подписанта
 	const certValidation =
 		sig.signerRole === "CLINIC_MO"
 			? validateClinicCertificate(sig.certificateSubject, {
@@ -372,6 +373,42 @@ export function applyClinicUkepSignature(
 		warnings: [...session.warnings, ...certValidation.warnings],
 		completedAt,
 	};
+}
+
+/**
+ * Накладывает обе подписи (Лечащий врач + Медицинская организация / Главный врач) в 1 клик
+ * для частнопрактикующего врача (ИП) или главного врача малой клиники (Мандат 8n).
+ */
+export function applyBothUkepSignaturesInOneClick(
+	session: DualUkepSigningSession,
+	certificateInput: ParsedX509Certificate | Partial<ParsedX509Certificate> | string,
+	options?: {
+		clinicCertificateInput?:
+			| ParsedX509Certificate
+			| Partial<ParsedX509Certificate>
+			| string
+			| undefined;
+		signingTime?: Date | undefined;
+		expectedDoctorSnils?: string | undefined;
+		expectedClinicOgrn?: string | undefined;
+	},
+): DualUkepSigningSession {
+	const afterDoctor = applyDoctorUkepSignature(session, certificateInput, {
+		signingTime: options?.signingTime,
+		expectedDoctorSnils: options?.expectedDoctorSnils,
+	});
+	if (afterDoctor.status === "INVALID") {
+		return afterDoctor;
+	}
+	return applyClinicUkepSignature(
+		afterDoctor,
+		options?.clinicCertificateInput ?? certificateInput,
+		{
+			signingTime: options?.signingTime,
+			expectedClinicOgrn: options?.expectedClinicOgrn,
+			signerRole: "CLINIC_MO",
+		},
+	);
 }
 
 /**

@@ -101,9 +101,21 @@ export const transactionStorage = new AsyncLocalStorage<any>();
 
 export const db = new Proxy(dbRaw, {
 	get(target, prop, receiver) {
-		const tx = transactionStorage.getStore();
-		if (tx) {
-			return Reflect.get(tx, prop, tx);
+		const currentTx = transactionStorage.getStore();
+		const delegate = currentTx || target;
+		if (prop === "transaction") {
+			// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction delegate typing
+			return (transactionFn: (tx: any) => Promise<any>, config?: any) => {
+				// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction delegate typing
+				return delegate.transaction(async (innerTx: any) => {
+					return await transactionStorage.run(innerTx, () =>
+						transactionFn(innerTx),
+					);
+				}, config);
+			};
+		}
+		if (currentTx) {
+			return Reflect.get(currentTx, prop, currentTx);
 		}
 		return Reflect.get(target, prop, receiver);
 	},

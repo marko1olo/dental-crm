@@ -82,7 +82,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 
 	try {
 		for (const mat of materials) {
-			fetch("/api/warehouse/soft-overdraft-deduct", {
+			fetch("/api/inventory/soft-overdraft-deduct", {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",

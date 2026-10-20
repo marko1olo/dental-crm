@@ -20,11 +20,17 @@ export interface CertificateInfo {
 	validTo: string;
 	provider: "cryptopro" | "rutoken";
 	deviceId?: number; // Only for Rutoken
+	serialNumber?: string | undefined;
+	algorithmOid?: string | undefined;
 }
 
 export class DigitalSignatureService {
 	private isCryptoProAvailable: boolean = false;
 	private isRutokenAvailable: boolean = false;
+	private readonly inflightSigns = new Map<
+		string,
+		Promise<{ signatureBase64: string; provider: string }>
+	>();
 
 	/**
 	 * Промис инициализации.
@@ -84,6 +90,8 @@ export class DigitalSignatureService {
 						validFrom: c.validFrom,
 						validTo: c.validTo,
 						provider: "cryptopro" as const,
+						serialNumber: c.serialNumber,
+						algorithmOid: c.algorithmOid,
 					})),
 				);
 			} catch (error) {
@@ -136,39 +144,55 @@ export class DigitalSignatureService {
 	): Promise<{ signatureBase64: string; provider: string }> {
 		// Подпись тоже не должна выполняться до окончания инициализации.
 		await this.ready;
-		const isRutoken = deviceId !== undefined || thumbprint.length < 20; // Basic heuristic if deviceId wasn't passed directly but we know it's rutoken
-		const provider = isRutoken ? "rutoken" : "cryptopro";
 
-		if (provider === "rutoken") {
-			if (!this.isRutokenAvailable)
-				throw new Error("Rutoken plugin is not available.");
-			if (deviceId === undefined)
-				throw new Error("Device ID is required for Rutoken signing");
-			if (!pin) throw new Error("PIN code is required for Rutoken signing");
+		const dedupeKey = `${deviceId ?? "cp"}:${thumbprint}:${data}`;
+		const existingInflight = this.inflightSigns.get(dedupeKey);
+		if (existingInflight) {
+			return existingInflight;
+		}
 
-			const signatureBase64 = await signDataWithRutoken(
-				deviceId,
-				thumbprint,
-				data,
-				pin,
-			);
-			return { signatureBase64, provider: "rutoken" };
-		} else {
-			if (!this.isCryptoProAvailable)
-				throw new Error("CryptoPro plugin is not available.");
+		const signPromise = (async () => {
+			const isRutoken = deviceId !== undefined || thumbprint.length < 20;
+			const provider = isRutoken ? "rutoken" : "cryptopro";
 
-			const utf8Bytes = new TextEncoder().encode(data);
-			let binary = "";
-			for (let i = 0; i < utf8Bytes.byteLength; i++) {
-				binary += String.fromCharCode(utf8Bytes[i]!);
+			if (provider === "rutoken") {
+				if (!this.isRutokenAvailable)
+					throw new Error("Rutoken plugin is not available.");
+				if (deviceId === undefined)
+					throw new Error("Device ID is required for Rutoken signing");
+				if (!pin) throw new Error("PIN code is required for Rutoken signing");
+
+				const signatureBase64 = await signDataWithRutoken(
+					deviceId,
+					thumbprint,
+					data,
+					pin,
+				);
+				return { signatureBase64, provider: "rutoken" };
+			} else {
+				if (!this.isCryptoProAvailable)
+					throw new Error("CryptoPro plugin is not available.");
+
+				const utf8Bytes = new TextEncoder().encode(data);
+				let binary = "";
+				for (let i = 0; i < utf8Bytes.byteLength; i++) {
+					binary += String.fromCharCode(utf8Bytes[i]!);
+				}
+				const base64Data = btoa(binary);
+				const signatureBase64 = await signBase64WithCertificate(
+					base64Data,
+					thumbprint,
+					pin,
+				);
+				return { signatureBase64, provider: "cryptopro" };
 			}
-			const base64Data = btoa(binary);
-			const signatureBase64 = await signBase64WithCertificate(
-				base64Data,
-				thumbprint,
-				pin,
-			);
-			return { signatureBase64, provider: "cryptopro" };
+		})();
+
+		this.inflightSigns.set(dedupeKey, signPromise);
+		try {
+			return await signPromise;
+		} finally {
+			this.inflightSigns.delete(dedupeKey);
 		}
 	}
 }

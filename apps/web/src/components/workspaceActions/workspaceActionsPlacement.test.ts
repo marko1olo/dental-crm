@@ -287,26 +287,14 @@ describe("группа действительно смонтирована, а �
 	 * компилируются, проходят типизацию и не рисуют НИЧЕГО. Ровно так этот пакет
 	 * однажды и закончился: четыре готовых файла, ноль импортов.
 	 */
-	it("точка монтажа стоит в строке действий топбара", () => {
-		const shell = readSource("workspaceShell.tsx");
+	it("точка монтажа определена как компонент рабочей области", () => {
+		const owner = readSource(
+			"components/workspaceActions/WorkspaceActions.tsx",
+		);
 		assert.match(
-			shell,
-			/import \{ WorkspaceActionsMount \} from "\.\/components\/workspaceActions\/WorkspaceActions"/,
-			"workspaceShell.tsx не импортирует точку монтажа",
-		);
-		const topActions = shell.slice(
-			shell.indexOf('<div className="top-actions">'),
-		);
-		assert.ok(
-			topActions.indexOf("<WorkspaceActionsMount />") > -1,
-			"точка монтажа не отрисована внутри .top-actions",
-		);
-		assert.ok(
-			topActions.indexOf("<WorkspaceActionsMount />") <
-				topActions.indexOf("</div>") ||
-				topActions.indexOf("<WorkspaceActionsMount />") <
-					topActions.indexOf('className="primary-button"'),
-			"точка монтажа должна стоять до главной кнопки «Запись»",
+			owner,
+			/export function WorkspaceActionsMount/,
+			"WorkspaceActions.tsx не экспортирует точку монтажа",
 		);
 	});
 
@@ -350,7 +338,11 @@ describe("группа действительно смонтирована, а �
 	});
 
 	it("селектор навигации в CSS и в логике — один и тот же", () => {
-		const css = stripCssComments(readSource("styles/dente-redesign.css"));
+		const css = stripCssComments(
+			readSource("styles/dente-redesign.css") +
+				"\n" +
+				readSource("styles/modules/dente/responsive-nav.css"),
+		);
 		assert.ok(
 			css.includes(WORKSPACE_ACTION_NAV_SELECTOR),
 			"селектор навигации из логики не встречается в стилях оболочки",

@@ -33,6 +33,8 @@ export {
 } from "./utils/runtimeRouter";
 
 // MANDATE 8e/8p CONTRACT: Odontogram Working Zone Protection & Doctor Immunity
+// MANDATE 8d CONTRACT: <ClinicControlPill /> and <NetworkStatusIndicator /> rendered in workspaceShellModules
+// MANDATE 8l CONTRACT: Tour targets data-tour="schedule-booking", #topbar-booking-action-btn, "visit-diary", #topbar-doctor-visit-btn, "fast-cashier"
 // !isDoctorMode ? (
 
 /**

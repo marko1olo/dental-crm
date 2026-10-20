@@ -155,6 +155,48 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 		assert.equal(payment.status, "paid");
 	});
 
+	it("complexity surcharge: doctor charges 5500 ₽ for 5000 ₽ catalog service without 422 error (Mandate 8e/8n)", async () => {
+		const orgId = ORG_ID;
+		let patientId = "";
+		let catalogItemId = "";
+
+		await withFixtureTenant(orgId, async () => {
+			const [patient] = await db
+				.insert(patients)
+				.values({
+					organizationId: orgId,
+					fullName: "Пациент со Сложностью",
+				})
+				.returning();
+			assert(patient);
+			patientId = patient.id;
+
+			const [catalogItem] = await db
+				.insert(serviceCatalogItems)
+				.values({
+					organizationId: orgId,
+					code: `A16.07.${Date.now().toString().slice(-4)}`,
+					title: "Сложное удаление зуба с разъединением корней",
+					basePriceRub: 5000,
+					priceRub: 5000,
+				})
+				.returning();
+			assert(catalogItem);
+			catalogItemId = catalogItem.id;
+		});
+
+		// Doctor takes 5500 ₽ (+500 ₽ complexity surcharge)
+		const payment = await createPaymentInDb(orgId, {
+			patientId,
+			serviceId: catalogItemId,
+			amountRub: 5500,
+			method: "cash",
+		});
+
+		assert.equal(payment.amountRub, 5500);
+		assert.equal(payment.status, "paid");
+	});
+
 	it("upsell non-blocking: service outside treatment plan accepts payment with warning instead of 422 error", async () => {
 		const orgId = ORG_ID;
 		let patientId = "";

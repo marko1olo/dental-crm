@@ -12,7 +12,7 @@ export interface ShiftDesktopViewWrapProps {
 	isShiftOpen: boolean;
 	handleToggleShift: () => void;
 	setIsPayrollModalOpen: (open: boolean) => void;
-	setIsTimesheetT13ModalOpen: (open: boolean) => void;
+	setIsTimesheetT13ModalOpen?: ((open: boolean) => void) | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: generic
 	shiftData: any;
 	shiftFinancialMode: ShiftFinancialMode;
@@ -47,7 +47,7 @@ export const ShiftDesktopViewWrap: React.FC<ShiftDesktopViewWrapProps> = (p) => 
 			isShiftOpen={p.isShiftOpen}
 			onToggleShift={p.handleToggleShift}
 			onOpenPayrollModal={() => p.setIsPayrollModalOpen(true)}
-			onOpenT13Timesheet={() => p.setIsTimesheetT13ModalOpen(true)}
+			onOpenT13Timesheet={() => p.setIsPayrollModalOpen(true)}
 			shiftStats={p.shiftData.shiftStats}
 			financialMode={p.shiftFinancialMode}
 			onChangeFinancialMode={p.handleChangeFinancialMode}

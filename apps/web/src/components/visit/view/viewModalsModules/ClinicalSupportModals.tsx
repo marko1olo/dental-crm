@@ -362,24 +362,21 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 					clinicName={
 						(dashboard as any)?.clinicSettings?.profile?.brandName ||
 						dashboard?.organization?.name ||
-						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+						"Медицинская организация"
 					}
 					clinicAddress={
-						(dashboard as any)?.clinicSettings?.profile?.address ||
-						"г. Москва, ул. Клиническая, д. 10"
+						(dashboard as any)?.clinicSettings?.profile?.address || ""
 					}
 					clinicPhone={
-						(dashboard as any)?.clinicSettings?.profile?.phone ||
-						"+7 (495) 000-00-00"
+						(dashboard as any)?.clinicSettings?.profile?.phone || ""
 					}
-					clinicOgrn={(dashboard as any)?.clinicSettings?.profile?.ogrn || "1127746000000"}
-					clinicInn={(dashboard as any)?.clinicSettings?.profile?.inn || "7701000000"}
+					clinicOgrn={(dashboard as any)?.clinicSettings?.profile?.ogrn || ""}
+					clinicInn={(dashboard as any)?.clinicSettings?.profile?.inn || ""}
 					medicalLicenseNumber={
-						(dashboard as any)?.clinicSettings?.profile?.medicalLicenseNumber ||
-						"ЛО41-01137-77/00368421"
+						(dashboard as any)?.clinicSettings?.profile?.medicalLicenseNumber || ""
 					}
 					diary={{
-						diagnosisIcd10: visitNoteForm?.diagnosis || "K02.1",
+						diagnosisIcd10: visitNoteForm?.diagnosis || "",
 						treatmentDescription: visitNoteForm?.treatmentDescription || visitNoteForm?.diary,
 						anamnesis: visitNoteForm?.anamnesis,
 						statusLocalis: visitNoteForm?.statusLocalis,

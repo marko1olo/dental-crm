@@ -1,13 +1,7 @@
 /**
  * apps/web/src/components/cashbox/cashboxViewModules/index.ts
  *
- * Public API for CashboxView decomposed modules.
+ * Re-export of canonical SSOT cashboxViewModules from finance domain.
  */
 
-export type * from "./types.js";
-export * from "./cashboxConstants.js";
-export * from "./useCashboxViewController.js";
-export * from "./CashboxShiftStatusCard.js";
-export * from "./CashboxQuickActionsBar.js";
-export * from "./UnpaidInvoicesQueue.js";
-export * from "./CashboxOperationsTable.js";
+export * from "../../finance/cashboxViewModules/index.js";

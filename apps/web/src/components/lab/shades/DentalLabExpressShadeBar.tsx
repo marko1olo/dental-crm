@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { SHADE_SWATCH_MAP, VITA_CLASSICAL_GROUPS } from "../labMath";
 
 export interface DentalLabExpressShadeBarProps {

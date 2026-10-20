@@ -21,6 +21,7 @@ import { describe, it } from "node:test";
 import {
 	CADESCOM_CONSTANTS,
 	GOST_CRYPTO_OIDS,
+	applyBothUkepSignaturesInOneClick,
 	applyClinicUkepSignature,
 	applyDoctorUkepSignature,
 	cadesBesSignatureSchema,
@@ -427,6 +428,41 @@ describe("EGISZ CryptoPro & REMD Statutory Signing Engine (Wave 15)", () => {
 			const failedSession = applyDoctorUkepSignature(session0, badCert);
 			assert.equal(failedSession.status, "INVALID");
 			assert.ok(failedSession.errors.some((e) => e.includes("отсутствует обязательный атрибут СНИЛС")));
+		});
+
+		it("выполняет совмещенное подписание в 1 клик для соло-врача / главного врача (Mandate 8n)", () => {
+			const session0 = initializeDualUkepSigningSession({
+				documentId: "DUAL-ONE-CLICK-001",
+				docTypeNsiCode: "105",
+				rawXml: docXml,
+			});
+
+			const soloCert = parseX509Certificate({
+				commonName: "Иванов Сергей Павлович (ИП)",
+				snils: "12345678964",
+				ogrn: "1157746123457",
+				inn: "7701234560",
+				serialNumber: "00SOLO1122334455",
+			});
+
+			const completedSession = applyBothUkepSignaturesInOneClick(session0, soloCert, {
+				expectedDoctorSnils: "123-456-789 64",
+				expectedClinicOgrn: "1157746123457",
+			});
+
+			assert.equal(completedSession.status, "FULLY_SIGNED");
+			assert.ok(completedSession.doctorSignature);
+			assert.ok(completedSession.clinicSignature);
+			assert.equal(completedSession.doctorSignature?.signerRole, "DOCTOR");
+			assert.equal(completedSession.clinicSignature?.signerRole, "CLINIC_MO");
+			assert.ok(completedSession.completedAt);
+
+			const verification = verifyDualUkepSession(completedSession, {
+				expectedDoctorSnils: "123-456-789 64",
+				expectedClinicOgrn: "1157746123457",
+			});
+			assert.equal(verification.isFullySigned, true);
+			assert.equal(verification.valid, true);
 		});
 	});
 

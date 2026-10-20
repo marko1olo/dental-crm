@@ -42,6 +42,15 @@ interface OpenAiCompletionResponse {
 	}>;
 }
 
+export interface ClinicalScenarioPlan {
+	readonly title: string;
+	readonly description: string;
+	readonly materials: string;
+	readonly estimatedTotalRub: number;
+	readonly warrantyYears: number;
+	readonly advantages: readonly string[];
+}
+
 export interface PersonalizedPlanResult {
 	patientFriendlyExplanation: string;
 	patientHygieneAdvice: string;
@@ -49,6 +58,66 @@ export interface PersonalizedPlanResult {
 	risksAndLimitations?: string[];
 	prognosisAndLimits?: string;
 	controlPlan?: string;
+	scenarios?: {
+		readonly economy: ClinicalScenarioPlan;
+		readonly optimum: ClinicalScenarioPlan;
+		readonly premium: ClinicalScenarioPlan;
+	};
+}
+
+export function buildDeterministicClinicalScenarios(
+	baseTotalRub: number | undefined,
+): {
+	readonly economy: ClinicalScenarioPlan;
+	readonly optimum: ClinicalScenarioPlan;
+	readonly premium: ClinicalScenarioPlan;
+} {
+	const validBase = Math.max(0, Math.round(baseTotalRub || 100000));
+	const economyTotal = Math.round(validBase * 0.7);
+	const optimumTotal = validBase;
+	const premiumTotal = Math.round(validBase * 1.5);
+
+	return {
+		economy: {
+			title: "Эконом: Базовая функциональная реабилитация",
+			description:
+				"Функциональное восстановление жевания: проверенная металлокерамика, стандартные светоотверждаемые композиты, базовые имплантаты Osstem/Dentium.",
+			materials: "КХС, керамическая масса Duceram Plus, композит Filtek Z250, титан Grade 4",
+			estimatedTotalRub: economyTotal,
+			warrantyYears: 1,
+			advantages: [
+				"Доступная стоимость при 100% санации полости рта",
+				"Проверенные временем надежные материалы",
+				"Полное устранение очагов инфекции и боли",
+			],
+		},
+		optimum: {
+			title: "Оптимум: Золотой стандарт доказательной стоматологии",
+			description:
+				"Высокоточное лечение по европейским протоколам: цельный диоксид циркония Katana STML CAD/CAM, эндодонтия под микроскопом, гидрофильные имплантаты SLA.",
+			materials: "Диоксид циркония Katana STML multi-layer, нанокомпозит Estelite Asteria, SLA титан",
+			estimatedTotalRub: optimumTotal,
+			warrantyYears: 3,
+			advantages: [
+				"Идеальное краевое прилегание коронок на фрезерном станке (до 15 мкм)",
+				"Биоинертность и отсутствие аллергических реакций десны",
+				"Оптимальный баланс прочности, долговечности и эстетики",
+			],
+		},
+		premium: {
+			title: "Премиум: Бескомпромиссная эстетика и цифровая навигация",
+			description:
+				"Премиальная цифровая реабилитация: виниры и коронки E.max Press с индивидуальным нанесением Vita VM9, навигационные 3D шаблоны, имплантаты Straumann BLX / Nobel Active.",
+			materials: "Пресс-керамика Ivoclar E.max Press, индивидуальный циркониевый абатмент, сплав Roxolid SLActive",
+			estimatedTotalRub: premiumTotal,
+			warrantyYears: 5,
+			advantages: [
+				"Максимальная оптическая глубина цвета, неотличимая от живой эмали",
+				"3D навигационный хирургический шаблон для точности имплантации 0.1 мм",
+				"Ускоренная гидрофильная остеоинтеграция за 3-4 недели",
+			],
+		},
+	};
 }
 
 // ============================================================
@@ -283,6 +352,9 @@ ${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedService
 			parsed.patientFriendlyExplanation ?? "",
 		).trim(),
 		patientHygieneAdvice: String(parsed.patientHygieneAdvice ?? "").trim(),
+		scenarios: parsed.scenarios && typeof parsed.scenarios === "object"
+			? parsed.scenarios
+			: buildDeterministicClinicalScenarios(input.payload.estimatedTotalRub),
 	};
 }
 
@@ -311,6 +383,7 @@ export async function personalizeTreatmentPlan(
 		return {
 			patientFriendlyExplanation: `**Почему важно провести лечение:**\nВаш диагноз (${payload.clinicalReason}) требует лечения (${payload.diagnosisSummary}). Откладывание ведёт к осложнениям и значительно большим затратам. Обратитесь к врачу за разъяснениями.`,
 			patientHygieneAdvice: `**Базовые правила домашней гигиены от DENTE:**\n\n${DEFAULT_HYGIENE_GUIDELINES}`,
+			scenarios: buildDeterministicClinicalScenarios(payload.estimatedTotalRub),
 		};
 	}
 
@@ -405,5 +478,6 @@ export async function personalizeTreatmentPlan(
 	return {
 		patientFriendlyExplanation: `**Ваш план лечения:**\n${payload.plannedStages.map((s, i) => `${i + 1}. **${s.stageName}** — ${s.plannedServices} (${s.plannedTiming})`).join("\n")}\n\nОбратитесь к врачу для подробного разъяснения плана.`,
 		patientHygieneAdvice: `**Базовые правила домашней гигиены от DENTE:**\n\n${DEFAULT_HYGIENE_GUIDELINES}`,
+		scenarios: buildDeterministicClinicalScenarios(payload.estimatedTotalRub),
 	};
 }

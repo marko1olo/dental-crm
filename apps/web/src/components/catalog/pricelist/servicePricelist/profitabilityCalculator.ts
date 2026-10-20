@@ -1,6 +1,17 @@
-import type { PriceTierKind, ServicePricelistItem } from '../servicePricelistPresets';
-import { calculateTierPrice, roundPrice, rublesToKopecks } from './currencyMath';
-import type { BatchMarkupOptions, ProfitabilityLevel, ServiceProfitability } from './types';
+import type {
+	PriceTierKind,
+	ServicePricelistItem,
+} from "../servicePricelistPresets";
+import {
+	calculateTierPrice,
+	roundPrice,
+	rublesToKopecks,
+} from "./currencyMath";
+import type {
+	BatchMarkupOptions,
+	ProfitabilityLevel,
+	ServiceProfitability,
+} from "./types";
 
 // =============================================================================
 // LAYER 1: PROFITABILITY, MARGIN & BATCH MARKUP CALCULATOR
@@ -11,7 +22,7 @@ import type { BatchMarkupOptions, ProfitabilityLevel, ServiceProfitability } fro
  */
 export function calculateServiceProfitability(
 	item: ServicePricelistItem,
-	tier: PriceTierKind = 'standard',
+	tier: PriceTierKind = "standard",
 ): ServiceProfitability {
 	const sellingPriceRub = calculateTierPrice(
 		item.basePriceRub,
@@ -25,19 +36,23 @@ export function calculateServiceProfitability(
 	const grossProfitKopecks = rublesToKopecks(grossProfitRub);
 
 	const marginPercent =
-		sellingPriceRub > 0 ? Math.round(((grossProfitRub / sellingPriceRub) * 100) * 10) / 10 : 0;
+		sellingPriceRub > 0
+			? Math.round((grossProfitRub / sellingPriceRub) * 100 * 10) / 10
+			: 0;
 	const markupPercent =
-		totalCostRub > 0 ? Math.round(((grossProfitRub / totalCostRub) * 100) * 10) / 10 : 0;
+		totalCostRub > 0
+			? Math.round((grossProfitRub / totalCostRub) * 100 * 10) / 10
+			: 0;
 
-	let level: ProfitabilityLevel = 'loss';
+	let level: ProfitabilityLevel = "loss";
 	if (grossProfitRub <= 0) {
-		level = 'loss';
+		level = "loss";
 	} else if (marginPercent >= 70) {
-		level = 'high';
+		level = "high";
 	} else if (marginPercent >= 40) {
-		level = 'medium';
+		level = "medium";
 	} else {
-		level = 'low';
+		level = "low";
 	}
 
 	return {
@@ -60,45 +75,80 @@ export function applyBatchPriceMarkup(
 	items: readonly ServicePricelistItem[],
 	options: BatchMarkupOptions,
 ): ServicePricelistItem[] {
-	const roundMode = options.roundMode ?? 'none';
-	const targetIdsSet = options.targetItemIds ? new Set(options.targetItemIds) : null;
-	const applyTiers = options.applyToTiers ?? ['standard', 'vip', 'dms', 'promo', 'night_weekend'];
+	const roundMode = options.roundMode ?? "none";
+	const targetIdsSet = options.targetItemIds
+		? new Set(options.targetItemIds)
+		: null;
+	const applyTiers = options.applyToTiers ?? [
+		"standard",
+		"vip",
+		"dms",
+		"promo",
+		"night_weekend",
+	];
 
 	return items.map((item) => {
 		if (targetIdsSet && !targetIdsSet.has(item.id)) {
 			return item;
 		}
-		if (options.categoryFilter && options.categoryFilter !== 'all' && item.category !== options.categoryFilter) {
+		if (
+			options.categoryFilter &&
+			options.categoryFilter !== "all" &&
+			item.category !== options.categoryFilter
+		) {
 			return item;
 		}
-		if (options.specialtyFilter && options.specialtyFilter !== 'all' && item.specialty !== options.specialtyFilter) {
+		if (
+			options.specialtyFilter &&
+			options.specialtyFilter !== "all" &&
+			item.specialty !== options.specialtyFilter
+		) {
 			return item;
 		}
 
 		let updatedBasePrice = item.basePriceRub;
-		if (applyTiers.includes('standard')) {
-			if (options.percentChange !== undefined && Number.isFinite(options.percentChange)) {
+		if (applyTiers.includes("standard")) {
+			if (
+				options.percentChange !== undefined &&
+				Number.isFinite(options.percentChange)
+			) {
 				updatedBasePrice = updatedBasePrice * (1 + options.percentChange / 100);
 			}
-			if (options.fixedRubChange !== undefined && Number.isFinite(options.fixedRubChange)) {
+			if (
+				options.fixedRubChange !== undefined &&
+				Number.isFinite(options.fixedRubChange)
+			) {
 				updatedBasePrice = updatedBasePrice + options.fixedRubChange;
 			}
 			updatedBasePrice = Math.max(0, roundPrice(updatedBasePrice, roundMode));
 		}
 
-		const updatedTierPrices: Partial<Record<PriceTierKind, number>> = { ...(item.tierPrices ?? {}) };
+		const updatedTierPrices: Partial<Record<PriceTierKind, number>> = {
+			...(item.tierPrices ?? {}),
+		};
 
-		for (const tier of ['vip', 'dms', 'promo', 'night_weekend'] as const) {
+		for (const tier of ["vip", "dms", "promo", "night_weekend"] as const) {
 			if (applyTiers.includes(tier)) {
-				const currentPrice = item.tierPrices?.[tier] ?? calculateTierPrice(item.basePriceRub, tier);
+				const currentPrice =
+					item.tierPrices?.[tier] ??
+					calculateTierPrice(item.basePriceRub, tier);
 				let newTierPrice = currentPrice;
-				if (options.percentChange !== undefined && Number.isFinite(options.percentChange)) {
+				if (
+					options.percentChange !== undefined &&
+					Number.isFinite(options.percentChange)
+				) {
 					newTierPrice = newTierPrice * (1 + options.percentChange / 100);
 				}
-				if (options.fixedRubChange !== undefined && Number.isFinite(options.fixedRubChange)) {
+				if (
+					options.fixedRubChange !== undefined &&
+					Number.isFinite(options.fixedRubChange)
+				) {
 					newTierPrice = newTierPrice + options.fixedRubChange;
 				}
-				updatedTierPrices[tier] = Math.max(0, roundPrice(newTierPrice, roundMode));
+				updatedTierPrices[tier] = Math.max(
+					0,
+					roundPrice(newTierPrice, roundMode),
+				);
 			}
 		}
 

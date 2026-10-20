@@ -50,7 +50,7 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	};
 }
 
-export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance";
+export type PatientCardTab = "general" | "formula" | "perio" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;

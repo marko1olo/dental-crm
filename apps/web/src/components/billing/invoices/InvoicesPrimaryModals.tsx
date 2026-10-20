@@ -83,7 +83,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 								paymentMethod: receipt.method,
 							});
 						}
-						showToast(`Оплата по счёту ${inv?.number || ""} (${receipt.totalRub} ₽) успешно зафиксирована в 54-ФЗ`, "success");
+						showToast(`Оплата по счёту ${inv?.number || ""} (${receipt.totalRub} ₽) успешно зафиксирована, чек сформирован`, "success");
 					}}
 					onOpenPaymentModal={() => {
 						if (invoices.length > 0 && invoices[0]) setActivePaymentInvoice(invoices[0]);

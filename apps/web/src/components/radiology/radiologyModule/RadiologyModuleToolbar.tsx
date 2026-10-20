@@ -75,7 +75,7 @@ export function RadiologyModuleToolbar({
 				<button type="button" onClick={onOpenRvgCapture} className="secondary-button" data-testid="btn-open-rvg-capture" title="Снимок с датчика">
 					<Camera className="w-3.5 h-3.5" /> <span>Снимок с датчика</span>
 				</button>
-				<button type="button" onClick={onOpenDoseSheet} className="secondary-button" data-testid="btn-open-dose-sheet" title="Архив доз">
+				<button type="button" onClick={onOpenDoseSheet} className="secondary-button" data-testid="btn-open-dose-sheet" title="Архив лучевой нагрузки (для проверок)">
 					<ShieldCheck className="w-3.5 h-3.5 text-[var(--muted)]" /> <span>Архив доз</span>
 				</button>
 				<button type="button" onClick={onOpenHotFolder} className="secondary-button" data-testid="btn-open-hot-folder" title="Hot Folder">

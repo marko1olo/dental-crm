@@ -17,7 +17,14 @@ import {
 	FFD12_TAG_2108_MEASURE_CODES,
 } from "../fiscal/ffd12Types.js";
 import { kopecksToNumericString, kopecksToRub } from "../fiscal/kopecksArithmetic.js";
+import { type CanonicalTenderType, normalizeTenderType } from "../fiscal/tenderTypes.js";
 import { generatePartialRefundOperationNumber } from "../utils/idGenerators.js";
+
+export type PartialRefundPaymentMethod =
+	| CanonicalTenderType
+	| "advance_deposit"
+	| "bank_transfer"
+	| (string & {});
 
 export type RefundReasonCategory =
 	| "warranty_case" // Гарантийный случай (переделка/возврат)
@@ -66,7 +73,7 @@ export interface PartialRefundCalculationInput {
 	readonly patientName: string;
 	readonly cashierFullName: string;
 	readonly cashierInn?: string | undefined;
-	readonly paymentMethod: "cash" | "card" | "sbp" | "advance_deposit" | "bank_transfer";
+	readonly paymentMethod: PartialRefundPaymentMethod;
 	readonly items: readonly RefundableInvoiceItem[];
 	readonly refundRequests: readonly PartialRefundRequestItem[];
 	readonly defaultDoctorCommissionPct?: number | undefined;
@@ -121,7 +128,7 @@ export interface PartialRefundCalculationResult {
 	readonly reasonCategory: RefundReasonCategory;
 	readonly reasonLabelRu: string;
 	readonly reasonDetailsRu: string;
-	readonly paymentMethod: "cash" | "card" | "sbp" | "advance_deposit" | "bank_transfer";
+	readonly paymentMethod: string;
 	readonly totalOriginalInvoiceKop: number;
 	readonly totalOriginalInvoiceRub: number;
 	readonly totalRefundKop: number;
@@ -150,8 +157,11 @@ export interface PartialRefundCalculationResult {
 		readonly totalRub: number;
 		readonly totalRubString: string;
 		readonly tag1031_cashRub: number;
+		readonly tag1031_cashKopecks?: number;
 		readonly tag1081_electronicRub: number;
+		readonly tag1081_electronicKopecks?: number;
 		readonly tag1215_advanceOffsetRub: number;
+		readonly tag1215_advanceOffsetKopecks?: number;
 		readonly positions: readonly {
 			readonly tag1030_name: string;
 			readonly priceRub: number;
@@ -313,18 +323,29 @@ export function calculatePartialRefund(
 	const remainingActiveCount = Math.max(0, input.items.length - refundedPositions.length);
 
 	// Tender breakdown for 54-FZ Return
+	const normalizedTender = normalizeTenderType(input.paymentMethod);
 	let cashRub = 0;
 	let electronicRub = 0;
 	let advanceOffsetRub = 0;
+	let cashKopecks = 0;
+	let electronicKopecks = 0;
+	let advanceOffsetKopecks = 0;
 	const totalRefundRub = kopecksToRub(totalRefundKop);
 
-	if (input.paymentMethod === "cash") {
+	if (normalizedTender === "cash") {
 		cashRub = totalRefundRub;
-	} else if (input.paymentMethod === "advance_deposit") {
+		cashKopecks = totalRefundKop;
+	} else if (
+		normalizedTender === "deposit" ||
+		normalizedTender === "family_wallet" ||
+		input.paymentMethod === "advance_deposit"
+	) {
 		advanceOffsetRub = totalRefundRub;
+		advanceOffsetKopecks = totalRefundKop;
 	} else {
-		// card, sbp, bank_transfer -> electronic
+		// card, sbp, insurance, bank_transfer, other -> electronic
 		electronicRub = totalRefundRub;
+		electronicKopecks = totalRefundKop;
 	}
 
 	// Doctor clawback summaries
@@ -384,8 +405,11 @@ export function calculatePartialRefund(
 			totalRub: totalRefundRub,
 			totalRubString: kopecksToNumericString(totalRefundKop),
 			tag1031_cashRub: cashRub,
+			tag1031_cashKopecks: cashKopecks,
 			tag1081_electronicRub: electronicRub,
+			tag1081_electronicKopecks: electronicKopecks,
 			tag1215_advanceOffsetRub: advanceOffsetRub,
+			tag1215_advanceOffsetKopecks: advanceOffsetKopecks,
 			positions: refundedPositions.map((pos) => ({
 				tag1030_name: pos.tag1030_subjectName,
 				priceRub: pos.unitPriceRub,

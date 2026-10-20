@@ -1,0 +1,165 @@
+/* ---------- 17. БАЗОВЫЙ LAYOUT SHELL, DEMO BANNER И OMNIBAR ---------- */
+.app-shell.dente-redesign {
+	display: flex;
+	flex-direction: row;
+	height: 100dvh;
+	width: 100%;
+	max-width: 100%;
+	overflow-x: hidden;
+	background: var(--bg);
+}
+
+.app-shell.dente-redesign .workspace {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	/* Низ задан ОТДЕЛЬНЫМ правилом ниже и больше не входит в этот shorthand.
+     Пока он входил, у `.workspace` было два конкурирующих объявления
+     `padding-bottom` при равной специфичности, и победитель определялся порядком
+     строк в файле — так и вышло, что на <=840px резерв проигрывал зашитому
+     числу. Долгота вместо shorthand убирает саму возможность спора. */
+	padding-top: 20px;
+	padding-inline: 24px;
+	max-width: 1560px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* НИЗ КОЛОНКИ КОНТЕНТА. РЕЗЕРВА ПОД ПЛАВАЮЩИЙ УГОЛ ЗДЕСЬ БОЛЬШЕ НЕТ.
+
+   Что стояло здесь раньше:
+   `padding-bottom: var(--corner-dock-reserve-block, 48px)`, где переменную
+   публиковал из JS владелец плавающего угла, измеряя собственную панель. Резерв
+   существовал ровно для того, чтобы последний блок страницы можно было
+   прокрутить выше панели, которая висела над контентом.
+
+   Панель больше над контентом не висит: её действия переехали в топбар и в
+   нижнюю навигацию (`components/workspaceActions/`), а сам механизм — выборка
+   помех, подъём и порог перекрытия — удалён как арифметически неисполнимый.
+   Резервировать нечего, поэтому переменной не существует ни здесь, ни в JS, и
+   хвостовой пустой низ уменьшился на её величину (замер — в отчёте пакета X1).
+
+   48px — исходное значение отступа, то же, что стояло в shorthand до разделения
+   на longhand. Низ остаётся ОТДЕЛЬНЫМ объявлением намеренно: пока он входил в
+   shorthand, у `.workspace` было два конкурирующих `padding-bottom` при равной
+   специфичности, и победитель определялся порядком строк в файле. */
+.app-shell.dente-redesign .workspace {
+	padding-bottom: 48px;
+}
+
+.default-clinic-banner {
+	background: var(--paper);
+	border: 1px solid var(--warn-fg);
+	border-radius: 12px;
+	padding: 10px 16px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	color: var(--ink);
+	box-shadow: var(--shadow-1);
+}
+
+.default-clinic-banner .banner-content {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+}
+
+.default-clinic-banner p {
+	margin: 0;
+	color: var(--ink-2);
+}
+
+.default-clinic-banner .banner-btn {
+	min-height: 32px;
+	padding: 0 14px;
+	font-size: 12px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+/* ПЛАВАЮЩЕГО УГЛА БОЛЬШЕ НЕ СУЩЕСТВУЕТ.
+
+   Здесь по очереди жили три поколения одной и той же ошибки:
+   1. `.omnibar-trigger-btn` прибивалась к экрану прямо в этом файле, а кнопки
+      диктовки — своим инлайновым `position: fixed` в VoiceAssistantUI.tsx. Два
+      независимых острова, два z-index (9998 и 50), ни один не знал о другом.
+   2. Просвет над нижней навигацией задавался числом
+      `--floating-corner-bottom: 4.5rem`. Число угадывало высоту навигации и на
+      720x1100 угадывало неверно: плашка поиска садилась на панель навигации.
+   3. Владелец угла измерял навигацию по живому элементу и «уступал» контенту,
+      поднимаясь, когда накрыл мишень не меньше чем на половину её площади.
+      Порог недостижим арифметически: накрытая доля равна `ширина панели /
+      ширина мишени`, поэтому у главной кнопки продукта «Запись» (364x44)
+      максимум был 0.4615. Механизм не срабатывал на кнопках, зато сам садился
+      на `<label>Email</label>` формы пациента.
+
+   Общее у всех трёх — элемент висел над контентом. Поэтому он больше над ним не
+   висит: действия переехали в существующую фурнитуру экрана
+   (`components/workspaceActions/`), в обычный поток. Вместе с плаванием удалены
+   подъём, компактный режим, выборка помех и резерв `--corner-dock-reserve-block`.
+
+   Ниже — просвет под нижнюю навигацию. Он нужен и без всякого плавающего угла:
+   `.dnt-bottom-nav` сама `position: fixed`, и без просвета последний блок
+   страницы уезжает под неё.
+
+   ПОЧЕМУ ЗДЕСЬ px, А НЕ rem. Высота навигации задана в этом же файле в
+   пикселях (`padding: 8px 12px …`, иконка 20px, кегль подписи 10.5px), то есть
+   от базового кегля браузера она НЕ зависит. Замерено ревьюером V1 на живой
+   странице: 64px при 390x844 и при 840x900. Просвет в rem при мелком базовом
+   кегле стал бы меньше 64px, и контент ушёл бы под навигацию; 72px перекрывают
+   замеренные 64px с запасом 8px и не зависят от настроек шрифта. */
+@media (max-width: 840px) {
+	.app-shell.dente-redesign {
+		display: flex !important;
+		flex-direction: column !important;
+		height: 100dvh !important;
+		min-height: 100dvh !important;
+		max-height: 100dvh !important;
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+		width: 100% !important;
+	}
+	.app-shell.dente-redesign .workspace {
+		flex: 1 1 auto !important;
+		min-height: 0 !important;
+		overflow-y: auto !important;
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+		width: 100% !important;
+		-webkit-overflow-scrolling: touch !important;
+		overscroll-behavior-y: contain !important;
+		padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px) !important;
+	}
+	.app-shell.dente-redesign .workspace > *,
+	.work-grid,
+	.page-grid,
+	.finance-panel {
+		animation: none !important;
+		transform: none !important;
+	}
+	.dnt-bottom-nav {
+		display: flex;
+		position: relative;
+		left: auto;
+		right: auto;
+		bottom: auto;
+		z-index: 25;
+		grid-row: 2;
+		background: var(--paper-strong);
+		border-top: 1px solid var(--line-subtle, var(--line));
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+	}
+}
+
+@media (min-width: 841px) {
+	.dnt-bottom-nav {
+		display: none;
+	}
+}
+

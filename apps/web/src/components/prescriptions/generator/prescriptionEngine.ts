@@ -3,11 +3,17 @@
  */
 
 import {
-	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 	calculatePrescriptionExpiration,
+	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 } from "@dental/shared";
+
 export { calculatePrescriptionExpiration };
-import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./prescriptionPresets";
+
+import {
+	DENTAL_MEDICATIONS_CATALOG,
+	type DentalMedicationPreset,
+} from "./prescriptionPresets";
+
 export * from "./prescriptionMnnCatalog";
 
 export interface Form107PrescriptionInput {
@@ -69,17 +75,22 @@ export interface Form107PrescriptionDocument {
 		readonly snils?: string | undefined;
 	};
 	readonly items: readonly Form107RenderedItem[];
-	readonly ukepSignature?: {
-		certificateSerialNumber?: string | undefined;
-		certificateIssuer?: string | undefined;
-		signedAt?: string | undefined;
-		cryptoSignaturePkcs7?: string | undefined;
-	} | null | undefined;
+	readonly ukepSignature?:
+		| {
+				certificateSerialNumber?: string | undefined;
+				certificateIssuer?: string | undefined;
+				signedAt?: string | undefined;
+				cryptoSignaturePkcs7?: string | undefined;
+		  }
+		| null
+		| undefined;
 	readonly isChronicSpecialCare?: boolean | undefined;
 	readonly chronicPeriodicity?: string | undefined;
 }
 
-export function generateForm107Prescription(input: Form107PrescriptionInput): Form107PrescriptionDocument {
+export function generateForm107Prescription(
+	input: Form107PrescriptionInput,
+): Form107PrescriptionDocument {
 	const items: Form107RenderedItem[] = [];
 
 	let count = 1;
@@ -107,7 +118,10 @@ export function generateForm107Prescription(input: Form107PrescriptionInput): Fo
 					? "1 год (Хронические / По спец. назначению)"
 					: "60 дней (Стандарт)";
 
-	const expiresAtIso = calculatePrescriptionExpiration(input.dateIso, input.validityDays);
+	const expiresAtIso = calculatePrescriptionExpiration(
+		input.dateIso,
+		input.validityDays,
+	);
 
 	return {
 		header: {
@@ -119,7 +133,9 @@ export function generateForm107Prescription(input: Form107PrescriptionInput): Fo
 			clinicOgrn: input.clinicOgrn,
 			clinicAddress: input.clinicAddress,
 			...(input.clinicInn ? { clinicInn: input.clinicInn } : {}),
-			...(input.medicalLicenseNumber ? { medicalLicenseNumber: input.medicalLicenseNumber } : {}),
+			...(input.medicalLicenseNumber
+				? { medicalLicenseNumber: input.medicalLicenseNumber }
+				: {}),
 		},
 		patient: {
 			fullName: input.patientFullName,
@@ -135,7 +151,9 @@ export function generateForm107Prescription(input: Form107PrescriptionInput): Fo
 		items,
 		ukepSignature: input.ukepSignature || null,
 		isChronicSpecialCare: input.isChronicSpecialCare || false,
-		...(input.chronicPeriodicity ? { chronicPeriodicity: input.chronicPeriodicity } : {}),
+		...(input.chronicPeriodicity
+			? { chronicPeriodicity: input.chronicPeriodicity }
+			: {}),
 	};
 }
 
@@ -147,32 +165,33 @@ export interface PatientPrescriptionMemoParams {
 	doctorName?: string;
 	doctorFullName?: string;
 	prescriptionDate?: string | undefined;
-	medications: readonly (DentalMedicationPreset | {
-		id: string;
-		nameRu?: string;
-		tradeNameRu?: string;
-		activeSubstanceRu?: string;
-		formRu?: string;
-		signaRu: string;
-	})[];
+	medications: readonly (
+		| DentalMedicationPreset
+		| {
+				id: string;
+				nameRu?: string;
+				tradeNameRu?: string;
+				activeSubstanceRu?: string;
+				formRu?: string;
+				signaRu: string;
+		  }
+	)[];
 }
 
 export function formatPatientPrescriptionMemo(
 	params: PatientPrescriptionMemoParams,
 ): string {
-	const {
-		clinicName,
-		clinicPhone,
-		prescriptionDate,
-		medications,
-	} = params;
+	const { clinicName, clinicPhone, prescriptionDate, medications } = params;
 
 	const patient = params.patientName || params.patientFullName || "";
 	const doctor = params.doctorName || params.doctorFullName || "";
 	const dateStr = prescriptionDate || new Date().toLocaleDateString("ru-RU");
 
 	const medsList = medications.map((med, idx) => {
-		const tradeName = med.tradeNameRu || (med as any).nameRu || med.id;
+		const tradeName =
+			med.tradeNameRu ||
+			("nameRu" in med ? String(med.nameRu) : undefined) ||
+			med.id;
 		const details = med.activeSubstanceRu
 			? ` (${med.activeSubstanceRu}${med.formRu ? `, ${med.formRu}` : ""})`
 			: "";
@@ -246,8 +265,15 @@ export function calculateMedicationDosage(
 
 	const isChild = patientAgeYears !== undefined && patientAgeYears < 12;
 	const isAdolescent =
-		patientAgeYears !== undefined && patientAgeYears >= 12 && patientAgeYears < 16;
-	const weight = patientWeightKg && patientWeightKg > 0 ? patientWeightKg : isChild ? 25 : 70;
+		patientAgeYears !== undefined &&
+		patientAgeYears >= 12 &&
+		patientAgeYears < 16;
+	const weight =
+		patientWeightKg && patientWeightKg > 0
+			? patientWeightKg
+			: isChild
+				? 25
+				: 70;
 
 	if (
 		normId === "amoxiclav_875" ||
@@ -268,7 +294,8 @@ export function calculateMedicationDosage(
 		}
 		return {
 			drugNameRu: "Амоксиклав 875+125 мг",
-			recommendedDosageRu: "1 таблетка (875/125 мг) 2 раза в сутки во время еды",
+			recommendedDosageRu:
+				"1 таблетка (875/125 мг) 2 раза в сутки во время еды",
 			standardFrequencyRu: "Каждые 12 часов во время еды, курс 5–7 дней",
 			maxDailyDoseRu: "1750/250 мг в сутки (2 таблетки)",
 			isPediatric: false,
@@ -283,7 +310,8 @@ export function calculateMedicationDosage(
 		if (isChild) {
 			return {
 				drugNameRu: "Нимесил (Нимесулид)",
-				recommendedDosageRu: "ПРОТИВОПОКАЗАН детям до 12 лет (ГРЛС Минздрава РФ)",
+				recommendedDosageRu:
+					"ПРОТИВОПОКАЗАН детям до 12 лет (ГРЛС Минздрава РФ)",
 				standardFrequencyRu: "Не назначать детям < 12 лет",
 				maxDailyDoseRu: "0 мг (применяйте Ибупрофен или Парацетамол)",
 				isPediatric: true,
@@ -294,7 +322,8 @@ export function calculateMedicationDosage(
 		return {
 			drugNameRu: "Нимесил (Нимесулид 100 мг)",
 			recommendedDosageRu: "1 пакетик (100 мг) 2 раза в сутки после еды",
-			standardFrequencyRu: "Каждые 12 часов после еды, растворив в 100 мл воды (курс 3–5 дней)",
+			standardFrequencyRu:
+				"Каждые 12 часов после еды, растворив в 100 мл воды (курс 3–5 дней)",
 			maxDailyDoseRu: "200 мг в сутки (2 пакетика)",
 			isPediatric: false,
 		};
@@ -307,7 +336,8 @@ export function calculateMedicationDosage(
 			return {
 				drugNameRu: "Ибупрофен (суспензия/таблетки)",
 				recommendedDosageRu: `Детская дозировка: ~${singleMg} мг на разовый приём (10 мг/кг, при массе ${weight} кг)`,
-				standardFrequencyRu: "3 раза в сутки после еды с интервалом не менее 6–8 часов",
+				standardFrequencyRu:
+					"3 раза в сутки после еды с интервалом не менее 6–8 часов",
 				maxDailyDoseRu: `${maxDailyMg} мг в сутки (макс 30 мг/кг/сут)`,
 				isPediatric: true,
 			};
@@ -321,7 +351,11 @@ export function calculateMedicationDosage(
 		};
 	}
 
-	if (drugId.includes("ketorolac") || drugId.includes("ketanov") || drugId.includes("ketorol")) {
+	if (
+		drugId.includes("ketorolac") ||
+		drugId.includes("ketanov") ||
+		drugId.includes("ketorol")
+	) {
 		if (isChild || isAdolescent) {
 			return {
 				drugNameRu: "Кеторолак (Кеторол / Кетанов 10 мг)",
@@ -355,7 +389,8 @@ export function calculateMedicationDosage(
 		if (isUnder18) {
 			return {
 				drugNameRu: "Ципролет (Ципрофлоксацин 500 мг)",
-				recommendedDosageRu: "ПРОТИВОПОКАЗАН детям и подросткам до 18 лет (ГРЛС Минздрава РФ)",
+				recommendedDosageRu:
+					"ПРОТИВОПОКАЗАН детям и подросткам до 18 лет (ГРЛС Минздрава РФ)",
 				standardFrequencyRu: "Не назначать лицам младше 18 лет",
 				maxDailyDoseRu: "0 мг (применяйте Амоксиклав или Кларитромицин)",
 				isPediatric: true,
@@ -368,8 +403,10 @@ export function calculateMedicationDosage(
 		}
 		return {
 			drugNameRu: "Ципролет 500 мг (Ципрофлоксацин)",
-			recommendedDosageRu: "1 таблетка (500 мг) 2 раза в сутки за 30 мин до еды",
-			standardFrequencyRu: "Каждые 12 часов до еды, запивая водой (курс 5–7 дней)",
+			recommendedDosageRu:
+				"1 таблетка (500 мг) 2 раза в сутки за 30 мин до еды",
+			standardFrequencyRu:
+				"Каждые 12 часов до еды, запивая водой (курс 5–7 дней)",
 			maxDailyDoseRu: "1000 мг в сутки (2 таблетки)",
 			isPediatric: false,
 		};
@@ -379,26 +416,32 @@ export function calculateMedicationDosage(
 		if (patientAgeYears !== undefined && patientAgeYears < 1) {
 			return {
 				drugNameRu: "Холисал гель",
-				recommendedDosageRu: "С осторожностью / по согласованию с педиатром (до 1 года)",
-				standardFrequencyRu: "Не применять у детей младше 1 года без назначения педиатра",
+				recommendedDosageRu:
+					"С осторожностью / по согласованию с педиатром (до 1 года)",
+				standardFrequencyRu:
+					"Не применять у детей младше 1 года без назначения педиатра",
 				maxDailyDoseRu: "Местно, минимальное количество",
 				isPediatric: true,
-				warningRu: "Применение у детей первого года жизни только по жизненным показаниям под контролем врача.",
+				warningRu:
+					"Применение у детей первого года жизни только по жизненным показаниям под контролем врача.",
 			};
 		}
 		if (isChild) {
 			return {
 				drugNameRu: "Холисал гель (детская дозировка)",
 				recommendedDosageRu: "Полоска геля 0.5 см на пораженную область десны",
-				standardFrequencyRu: "2–3 раза в день чистым пальцем за 15 минут до еды",
+				standardFrequencyRu:
+					"2–3 раза в день чистым пальцем за 15 минут до еды",
 				maxDailyDoseRu: "Местно, до 3 раз в день",
 				isPediatric: true,
 			};
 		}
 		return {
 			drugNameRu: "Холисал гель",
-			recommendedDosageRu: "Полоска геля 1 см на пораженную область десны/слизистой",
-			standardFrequencyRu: "2–3 раза в день чистым пальцем за 15 минут до еды или на ночь",
+			recommendedDosageRu:
+				"Полоска геля 1 см на пораженную область десны/слизистой",
+			standardFrequencyRu:
+				"2–3 раза в день чистым пальцем за 15 минут до еды или на ночь",
 			maxDailyDoseRu: "Местно, полоска 1 см 2–3 раза в день",
 			isPediatric: false,
 		};
@@ -407,8 +450,10 @@ export function calculateMedicationDosage(
 	if (drugId.includes("solcoseryl")) {
 		return {
 			drugNameRu: "Солкосерил дентальная адгезивная паста 5 г",
-			recommendedDosageRu: "Полоска пасты около 0.5 см тонким слоем на высушенный дефект слизистой",
-			standardFrequencyRu: "3–5 раз в сутки после еды и перед сном (не втирать!)",
+			recommendedDosageRu:
+				"Полоска пасты около 0.5 см тонким слоем на высушенный дефект слизистой",
+			standardFrequencyRu:
+				"3–5 раз в сутки после еды и перед сном (не втирать!)",
 			maxDailyDoseRu: "Местно, полоска 0.5 см 3–5 раз в сутки",
 			isPediatric: isChild,
 		};
@@ -421,7 +466,9 @@ export function calculateMedicationDosage(
 					? "1/4 таблетки (6.25 мг) 2–3 раза в день во время еды"
 					: "1/2 таблетки (12.5 мг) 2–3 раза в день во время еды";
 			const maxDose =
-				patientAgeYears && patientAgeYears < 6 ? "18.75 мг/сутки" : "37.5 мг/сутки";
+				patientAgeYears && patientAgeYears < 6
+					? "18.75 мг/сутки"
+					: "37.5 мг/сутки";
 			return {
 				drugNameRu: "Супрастин (Хлоропирамин 25 мг)",
 				recommendedDosageRu: doseLabel,
@@ -459,9 +506,11 @@ export function calculateMedicationDosage(
 		if (patientAgeYears !== undefined && patientAgeYears < 4) {
 			return {
 				drugNameRu: "Артикаин + Эпинефрин 4%",
-				recommendedDosageRu: "ПРОТИВОПОКАЗАН детям до 4 лет (ГРЛС Минздрава РФ)",
+				recommendedDosageRu:
+					"ПРОТИВОПОКАЗАН детям до 4 лет (ГРЛС Минздрава РФ)",
 				standardFrequencyRu: "Не применять у детей младше 4 лет",
-				maxDailyDoseRu: "0 мг (применяйте общую седацию или разрешенные возрастные препараты)",
+				maxDailyDoseRu:
+					"0 мг (применяйте общую седацию или разрешенные возрастные препараты)",
 				isPediatric: true,
 				isContraindicated: true,
 				contraindicationReason:
@@ -480,7 +529,8 @@ export function calculateMedicationDosage(
 			return {
 				drugNameRu: "Артикаин 4% с эпинефрином (детская дозировка)",
 				recommendedDosageRu: `Инфильтрация/проводниковая: 0.5–1 карпула (макс. доза ${maxMg} мг, ~${(maxMg / 68).toFixed(1)} карп. по 1.7 мл при массе ${weight} кг)`,
-				standardFrequencyRu: "Однократно местно при стоматологическом вмешательстве",
+				standardFrequencyRu:
+					"Однократно местно при стоматологическом вмешательстве",
 				maxDailyDoseRu: `${maxMg} мг (макс. 5 мг/кг)`,
 				isPediatric: true,
 				isContraindicated: false,
@@ -497,7 +547,8 @@ export function calculateMedicationDosage(
 		return {
 			drugNameRu: "Артикаин 4% с эпинефрином (взрослая дозировка)",
 			recommendedDosageRu: "1–2 карпулы (1.7–3.4 мл) на рутинное вмешательство",
-			standardFrequencyRu: "Однократно местно (инфильтрационная/проводниковая анестезия)",
+			standardFrequencyRu:
+				"Однократно местно (инфильтрационная/проводниковая анестезия)",
 			maxDailyDoseRu: `${maxAdultMg} мг (макс. 7 мг/кг, не более ~${(maxAdultMg / 68).toFixed(1)} карпул по 1.7 мл)`,
 			isPediatric: false,
 			isContraindicated: false,
@@ -550,14 +601,19 @@ export function validatePrescriptionDosage(
 	if (!calc) {
 		return {
 			isValid: true,
-			isPediatric: params.patientAgeYears !== undefined && params.patientAgeYears < 18,
+			isPediatric:
+				params.patientAgeYears !== undefined && params.patientAgeYears < 18,
 			status: "normal",
-			messageRu: "Дозировка в пределах стандартной клинической практики стоматологии.",
+			messageRu:
+				"Дозировка в пределах стандартной клинической практики стоматологии.",
 			errors: [],
 		};
 	}
 
-	if (calc.isContraindicated || (calc.warningRu && /противопоказан/i.test(calc.warningRu))) {
+	if (
+		calc.isContraindicated ||
+		(calc.warningRu && /противопоказан/i.test(calc.warningRu))
+	) {
 		const reason =
 			calc.contraindicationReason ||
 			calc.warningRu ||
@@ -574,7 +630,10 @@ export function validatePrescriptionDosage(
 	}
 
 	if (prescribedMg !== undefined) {
-		if (calc.maxDailyDoseMg !== undefined && prescribedMg > calc.maxDailyDoseMg) {
+		if (
+			calc.maxDailyDoseMg !== undefined &&
+			prescribedMg > calc.maxDailyDoseMg
+		) {
 			errors.push(
 				`Назначенная доза ${prescribedMg} мг превышает максимально допустимую (${calc.maxDailyDoseMg} мг).`,
 			);
@@ -619,9 +678,18 @@ export function validatePrescriptionDosage(
 		}
 	}
 
-	if (params.carpulesCount !== undefined && (drugId.includes("articaine") || drugId.includes("ultracain"))) {
-		const weight = params.patientWeightKg && params.patientWeightKg > 0 ? params.patientWeightKg : 70;
-		const maxMg = params.patientAgeYears !== undefined && params.patientAgeYears < 12 ? weight * 5 : Math.min(500, weight * 7);
+	if (
+		params.carpulesCount !== undefined &&
+		(drugId.includes("articaine") || drugId.includes("ultracain"))
+	) {
+		const weight =
+			params.patientWeightKg && params.patientWeightKg > 0
+				? params.patientWeightKg
+				: 70;
+		const maxMg =
+			params.patientAgeYears !== undefined && params.patientAgeYears < 12
+				? weight * 5
+				: Math.min(500, weight * 7);
 		const maxCarp = maxMg / 68;
 		if (params.carpulesCount > maxCarp) {
 			return {
@@ -639,7 +707,8 @@ export function validatePrescriptionDosage(
 		isValid: errors.length === 0,
 		isPediatric: calc.isPediatric,
 		status: errors.length > 0 ? "contraindicated" : "normal",
-		messageRu: errors.length > 0 ? errors.join("; ") : "Дозировка подтверждена.",
+		messageRu:
+			errors.length > 0 ? errors.join("; ") : "Дозировка подтверждена.",
 		calculatedMaxDoseRu: calc.maxDailyDoseRu,
 		errors,
 	};

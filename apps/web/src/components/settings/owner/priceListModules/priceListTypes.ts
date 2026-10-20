@@ -8,7 +8,7 @@
 import type {
 	Order804nCategory,
 	ServicePricelistItem,
-} from "../../catalog/pricelist/servicePricelistPresets";
+} from "../../../catalog/pricelist/servicePricelistPresets";
 
 export interface CustomServicePriceOverride {
 	readonly serviceId: string;

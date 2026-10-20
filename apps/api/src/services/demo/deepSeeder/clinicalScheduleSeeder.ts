@@ -83,7 +83,12 @@ export async function seedClinicalSchedule(
 	tomorrow12.setHours(12, 0, 0, 0);
 	const tomorrow13 = new Date(tomorrow12.getTime() + 60 * 60 * 1000);
 
-	// 1. Засеваем или обновляем визиты в расписании на сегодня и завтра
+	// 1. Очищаем существующие демо-записи канонической демо-организации во избежание конфликта интервалов
+	if (isCanonicalDemoOrg) {
+		await tx.delete(appointments).where(eq(appointments.organizationId, organizationId));
+	}
+
+	// 2. Засеваем или обновляем визиты в расписании на сегодня и завтра
 	const insertedAppointments = await tx
 		.insert(appointments)
 		.values([

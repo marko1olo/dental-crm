@@ -1,0 +1,601 @@
+.schedule-command-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin-bottom: 12px;
+}
+
+.schedule-command-grid article {
+	display: grid;
+	gap: 5px;
+	min-height: 92px;
+	padding: 12px;
+}
+
+.schedule-command-grid span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 900;
+}
+
+.schedule-command-grid strong {
+	font-size: 24px;
+	line-height: 1;
+}
+
+.schedule-command-grid p {
+	color: var(--muted);
+	margin: 0;
+}
+
+.schedule-shift-summary {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+	margin-bottom: 12px;
+	padding: 10px 14px;
+}
+
+.schedule-shift-summary:empty {
+	display: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: none !important;
+}
+
+.schedule-shift-summary > strong {
+	color: var(--teal-dark);
+	font-size: 13px;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.schedule-shift-summary-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.schedule-shift-summary-grid article {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 4px;
+	min-height: 86px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.schedule-shift-summary-grid span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 900;
+	line-height: 1.25;
+	text-transform: uppercase;
+}
+
+.schedule-shift-summary-grid strong {
+	font-size: 20px;
+	line-height: 1.1;
+	overflow-wrap: anywhere;
+}
+
+.schedule-shift-summary-grid p {
+	color: var(--muted);
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+
+.schedule-filter-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.schedule-suggestion-strip {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.schedule-suggestion {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	display: grid;
+	gap: 5px;
+	min-height: 112px;
+	padding: 12px;
+	text-align: left;
+}
+
+.schedule-suggestion.priority-important {
+	border-color: rgba(184, 120, 31, 0.45);
+}
+
+.schedule-suggestion.priority-urgent {
+	border-color: rgba(179, 38, 30, 0.48);
+	box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.07);
+}
+
+.schedule-suggestion > span {
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 950;
+	text-transform: uppercase;
+}
+
+.schedule-suggestion.priority-important > span {
+	color: #744d18;
+}
+
+.schedule-suggestion.priority-urgent > span {
+	color: var(--red);
+}
+
+.schedule-suggestion strong {
+	font-size: 15px;
+	line-height: 1.2;
+}
+
+.schedule-suggestion p,
+.schedule-suggestion small {
+	color: var(--muted);
+	line-height: 1.35;
+	margin: 0;
+}
+
+.schedule-empty-state {
+	align-items: center;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding: 18px;
+}
+
+.schedule-empty-state strong {
+	display: block;
+	font-size: 15px;
+	line-height: 1.25;
+	margin-bottom: 4px;
+	color: var(--ink);
+}
+
+.schedule-empty-state p {
+	color: var(--muted);
+	line-height: 1.4;
+	margin: 0;
+}
+
+.schedule-empty-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.timeline,
+.patient-list,
+.document-list,
+.visit-fields {
+	display: grid;
+	gap: 10px;
+}
+
+/*
+ * Строки списка прижаты к верху и остаются высотой по содержимому.
+ *
+ * БЫЛО: список пациентов — левая колонка сетки, а правая колонка с карточкой и
+ * виджетами уходит вниз на шесть тысяч пикселей. Колонка растягивается по
+ * соседке, а `align-content: stretch` — значение по умолчанию у grid — раздувал
+ * автоматические строки на всю эту высоту. Одна строка из трёх занимала около
+ * тысячи пикселей: имя пациента висело посреди пустого мятного прямоугольника,
+ * и чтобы увидеть второго пациента, надо было листать экран.
+ */
+.patient-list,
+.document-list,
+.timeline {
+	align-content: start;
+}
+
+.appointment-row,
+.patient-row,
+.document-row {
+	align-items: center;
+	border: 1px solid #e8ded2;
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	min-height: 72px;
+	padding: 12px;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 72px;
+	contain: paint layout;
+}
+
+.appointment-row {
+	grid-template-columns: 70px minmax(0, 1fr) auto auto;
+}
+
+.appointment-row.readiness-needs_attention {
+	border-left: 5px solid var(--amber);
+}
+
+.appointment-row.readiness-blocked {
+	border-left: 5px solid var(--amber);
+}
+
+.appointment-row:hover,
+.patient-row:hover,
+.document-row:hover {
+	border-color: var(--line-strong);
+}
+
+.appointment-row time {
+	color: var(--ink);
+	font-weight: 900;
+}
+
+.appointment-row time span {
+	color: var(--muted);
+	display: block;
+	font-size: 13px;
+	font-weight: 700;
+	margin-top: 2px;
+}
+
+.appointment-row h3,
+.patient-row h3,
+.document-row h3,
+.dictation-header h3 {
+	font-size: 15px;
+	line-height: 1.25;
+	margin: 0;
+}
+
+.appointment-row p,
+.patient-row p,
+.document-row p,
+.dictation-header p {
+	color: var(--muted);
+	margin: 4px 0 0;
+}
+
+.patient-admin-panel {
+	background: var(--paper, #fbfefd);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	margin-top: 12px;
+	padding: 12px;
+}
+
+[data-theme="dark"] .patient-admin-panel,
+[data-theme="night"] .patient-admin-panel {
+	background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.patient-doc-heading {
+	border-top: 1px solid var(--line);
+	padding-top: 12px;
+}
+
+.patient-admin-validation {
+	margin: 0;
+}
+
+.patient-save-guidance {
+	background: var(--paper-soft, #fff8ef);
+	border: 1px solid var(--line-strong, #e7c68e);
+	border-left: 4px solid var(--teal, #e7c68e);
+	border-radius: 8px;
+	color: var(--ink, #744d18);
+	font-size: 13px;
+	font-weight: 850;
+	margin: -4px 0 0;
+	padding: 9px 10px;
+}
+
+.compact-heading {
+	margin-bottom: 0;
+}
+
+.patient-admin-actions {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.patient-admin-actions p {
+	color: var(--muted);
+	margin: 0;
+}
+
+.appointment-readiness {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.appointment-readiness span {
+	background: #f7fbf9;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	padding: 5px 8px;
+}
+
+.appointment-readiness .readiness-pill {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.appointment-readiness .readiness-needs_attention {
+	background: #f4ead8;
+	color: #744d18;
+}
+
+.appointment-readiness .readiness-blocked {
+	background: #f4ead8;
+	color: #744d18;
+}
+
+.appointment-readiness .check-ready {
+	color: var(--green);
+}
+
+.appointment-readiness .check-missing {
+	color: var(--rust);
+}
+
+.appointment-readiness .check-warning {
+	background: #fff8e7;
+	color: #8a5a12;
+}
+
+.appointment-edit-button {
+	min-height: 34px;
+}
+
+.appointment-editor {
+	background: #fbfefd;
+	border: 1px solid var(--line-strong);
+	border-radius: 12px;
+	display: grid;
+	gap: 12px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	padding: 16px;
+}
+
+.timeline-content .appointment-editor {
+	position: absolute;
+	top: calc(100% - 20px);
+	left: 0;
+	right: 0;
+	z-index: 100;
+	box-shadow: 0 10px 30px -5px rgba(13, 148, 136, 0.2);
+}
+
+.appointment-create-editor {
+	margin: 12px 0;
+}
+
+.appointment-editor label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 6px;
+	min-width: 0;
+}
+
+.appointment-editor input,
+.appointment-editor select,
+.appointment-editor textarea {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-sizing: border-box;
+	color: var(--ink);
+	min-height: 38px;
+	min-width: 0;
+	padding: 8px 10px;
+	width: 100%;
+}
+
+.appointment-editor textarea {
+	resize: vertical;
+}
+
+.schedule-create-missing {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	display: grid;
+	gap: 6px;
+	grid-column: 1 / -1;
+	padding: 10px 12px;
+}
+
+.schedule-create-missing strong {
+	color: #744d18;
+	font-size: 13px;
+}
+
+.schedule-create-missing ul {
+	color: #744d18;
+	font-size: 13px;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.schedule-save-missing {
+	flex: 1 0 100%;
+}
+
+.appointment-editor-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	grid-column: 1 / -1;
+	justify-content: flex-end;
+}
+
+.status-pill {
+	align-items: center;
+	border-radius: 999px;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 850;
+	min-height: 26px;
+	padding: 0 10px;
+	white-space: nowrap;
+}
+
+.status-planned {
+	background: #f3eadb;
+	color: #74501c;
+}
+
+.status-needs_review {
+	background: #fff3d7;
+	color: #744d18;
+}
+
+.status-confirmed,
+.status-completed {
+	background: #dfeee3;
+	color: #26562f;
+}
+
+.status-arrived,
+.status-in_treatment {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.status-cancelled,
+.status-no_show {
+	background: #f5e0dc;
+	color: #7d2c25;
+}
+
+.status-neutral,
+.status-empty {
+	background: #f1f5f9;
+	color: #475569;
+	border: 1px solid #cbd5e1;
+}
+
+:root[data-theme="dark"] .status-neutral,
+:root[data-theme="dark"] .status-empty,
+:root[data-theme="night"] .status-neutral,
+:root[data-theme="night"] .status-empty,
+[data-theme="dark"] .status-neutral,
+[data-theme="dark"] .status-empty,
+[data-theme="night"] .status-neutral,
+[data-theme="night"] .status-empty,
+.dark .status-neutral,
+.dark .status-empty {
+	background: rgba(30, 41, 59, 0.8);
+	color: #94a3b8;
+	border: 1px solid #334155;
+}
+
+:root[data-theme="dark"] .status-in_treatment,
+:root[data-theme="dark"] .status-arrived,
+[data-theme="dark"] .status-in_treatment,
+[data-theme="dark"] .status-arrived,
+.dark .status-in_treatment,
+.dark .status-arrived {
+	background: rgba(45, 212, 191, 0.18) !important;
+	color: var(--teal, #2dd4bf) !important;
+	border: 1px solid rgba(45, 212, 191, 0.35) !important;
+}
+
+.search-box,
+.quick-create {
+	align-items: center;
+	background: #faf7f1;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	gap: 8px;
+	min-height: 42px;
+	padding: 0 10px;
+}
+
+.search-box svg {
+	color: var(--muted);
+	height: 17px;
+	width: 17px;
+}
+
+.search-box input,
+.quick-create input {
+	background: transparent;
+	border: 0;
+	min-width: 0;
+	outline: 0;
+	width: 100%;
+}
+
+.quick-create {
+	margin-bottom: 12px;
+	padding-right: 4px;
+}
+
+.patients-panel .quick-create {
+	display: grid;
+	grid-template-columns: minmax(180px, 2fr) minmax(120px, 1fr) minmax(
+			130px,
+			1fr
+		) minmax(112px, auto);
+}
+
+.quick-create .icon-button {
+	min-height: 34px;
+	width: 34px;
+}
+
+.quick-create .quick-create-action {
+	min-height: 34px;
+	padding-inline: 12px;
+	white-space: nowrap;
+}
+
+.quick-create-guidance {
+	background: var(--paper-soft, #fff8ef);
+	border: 1px solid var(--line-strong, #e7c68e);
+	border-left: 4px solid var(--teal, #e7c68e);
+	border-radius: 8px;
+	color: var(--ink, #744d18);
+	font-size: 13px;
+	font-weight: 850;
+	margin: -4px 0 12px;
+	padding: 9px 10px;
+}

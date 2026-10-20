@@ -1,0 +1,653 @@
+@media (max-width: 860px) {
+	.app-shell {
+		display: block;
+		padding-bottom: calc(68px + env(safe-area-inset-bottom));
+	}
+
+	.sidebar {
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 60px;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+		position: fixed;
+		z-index: 100;
+		overflow: hidden;
+		background: var(--paper-strong, #0f172a);
+		border-top: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
+	}
+
+	.brand-mark {
+		display: none;
+	}
+
+	.sidebar nav {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		gap: 4px;
+		width: 100%;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.sidebar nav::-webkit-scrollbar {
+		display: none;
+	}
+
+	.nav-item {
+		flex: 0 0 auto;
+		min-width: 60px;
+		height: 52px;
+		min-height: 52px;
+		flex-direction: column;
+		font-size: 10px;
+		gap: 2px;
+		justify-content: center;
+		align-items: center;
+		padding: 3px 4px;
+		text-align: center;
+	}
+
+	.nav-item svg {
+		height: 18px;
+		width: 18px;
+	}
+
+	.nav-label {
+		display: block;
+		font-size: 10px;
+		font-weight: 600;
+		line-height: 1.05;
+		color: inherit;
+		max-width: 56px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.nav-copy {
+		display: block;
+	}
+
+	.nav-copy small {
+		display: none;
+	}
+
+	.app-shell,
+	.workspace,
+	.panel,
+	.work-grid,
+	.imaging-layout,
+	.patients-panel,
+	.visit-panel,
+	.schedule-panel {
+		padding-bottom: calc(96px + env(safe-area-inset-bottom));
+	}
+
+	.finance-panel {
+		padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+	}
+
+	.workspace {
+		max-width: 100%;
+		width: 100%;
+	}
+
+	.workspace.view-visit {
+		gap: 10px;
+		padding-top: 10px;
+	}
+
+	.workspace.view-visit .topbar {
+		gap: 8px;
+	}
+
+	.workspace.view-visit .topbar .eyebrow,
+	.workspace.view-visit .workspace-role-switcher,
+	.workspace.view-visit .top-actions {
+		display: none;
+	}
+
+	.workspace.view-visit .topbar h1 {
+		font-size: 20px;
+		line-height: 1.15;
+	}
+
+	.role-switcher-options {
+		flex-wrap: wrap;
+		overflow-x: visible;
+	}
+
+	.onboarding-fast-start {
+		align-items: stretch;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.onboarding-fast-start .primary-button,
+	.onboarding-fast-start .secondary-button {
+		justify-content: center;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.onboarding-compact-strip {
+		align-items: stretch;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.onboarding-compact-strip .primary-button,
+	.onboarding-compact-strip .secondary-button {
+		justify-content: center;
+		width: 100%;
+	}
+
+	.dictation-actions {
+		align-items: stretch;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dictation-live-meter {
+		align-items: stretch;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dictation-live-meter div:first-child {
+		justify-content: space-between;
+		white-space: normal;
+	}
+
+	.dictation-queue-card {
+		align-items: stretch;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dictation-queue-card .secondary-button {
+		justify-content: center;
+		width: 100%;
+	}
+
+	.dictation-system-status summary {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.dictation-system-status summary strong {
+		text-align: left;
+	}
+
+	.dictation-system-status dl > div {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dictation-more-actions summary,
+	.dictation-more-actions .secondary-button,
+	.dictation-actions > .primary-button,
+	.dictation-actions > .secondary-button {
+		justify-content: center;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.dictation-more-actions > div {
+		box-shadow: none;
+		position: static;
+		width: 100%;
+	}
+
+	.next-actions,
+	.app-notice,
+	.workspace-continuity-strip,
+	.onboarding-head,
+	.onboarding-step-list,
+	.onboarding-form-grid,
+	.onboarding-source-config,
+	.onboarding-source-grid,
+	.onboarding-source-url-grid,
+	.onboarding-readiness-grid,
+	.onboarding-telegram-status,
+	.onboarding-feature-list,
+	.clinic-profile-form-grid,
+	.clinic-legal-summary,
+	.care-path,
+	.role-focus-strip,
+	.future-strip,
+	.role-queue-grid,
+	.visit-focus-bar,
+	.visit-next-step-main,
+	.visit-progress-strip,
+	.visit-work-status,
+	.specialty-focus-bar,
+	.specialty-focus-options,
+	.schedule-command-grid,
+	.schedule-shift-summary-grid,
+	.schedule-suggestion-strip,
+	.plan-scenario-grid,
+	.clinical-rule-grid,
+	.finance-split,
+	.payment-capture,
+	.payment-capture-detail-grid,
+	.service-catalog-strip,
+	.communications-summary-grid,
+	.communication-note-row,
+	.communication-layout,
+	.patient-admin-actions,
+	.patient-feature-grid,
+	.imaging-patient-strip,
+	.viewer-session-strip,
+	.clinical-mpr-summary-grid,
+	.clinical-mpr-grid,
+	.mpr-clinical-roadmap-steps,
+	.mpr-operator-summary,
+	.ct-planning-workflow,
+	.ct-planning-plan-board,
+	.ct-planning-metric-grid,
+	.ct-planning-task-board,
+	.ct-planning-task-list,
+	.ct-planning-geometry-grid,
+	.ct-planning-validation-grid,
+	.ct-planning-measurement-grid,
+	.ct-planning-implant-fit-grid,
+	.ct-planning-implant-grid,
+	.ct-planning-reconstruction-grid,
+	.ct-planning-export-facts,
+	.ct-planning-export-lanes,
+	.ct-planning-artifact-grid,
+	.ct-planning-quick-actions,
+	.ct-planning-tool-grid,
+	.ct-implant-library-grid,
+	.clinical-mpr-safety,
+	.mode-grid,
+	.clinic-hints,
+	.mode-readiness,
+	.clinic-config-grid,
+	.active-workspace-card,
+	.workspace-profile-grid,
+	.access-policy-grid,
+	.access-column-row,
+	.telegram-status-grid,
+	.telegram-workbench,
+	.telegram-link-controls,
+	.telegram-link-result,
+	.telegram-link-ledger-row,
+	.telegram-outbox-controls,
+	.telegram-outbox-item,
+	.onboarding-telegram-visual-cards,
+	.preset-grid,
+	.protocol-settings-grid,
+	.rule-studio-summary,
+	.rule-studio-layout,
+	.rule-form-grid,
+	.speech-gateway-strip,
+	.speech-health-strip,
+	.speech-strategy-strip,
+	.speech-recovery-row,
+	.speech-provider-row,
+	.browser-continuity-grid,
+	.local-bridge-grid,
+	.local-bridge-plan-grid,
+	.pricelist-controls,
+	.pricelist-image-row,
+	.pricelist-status,
+	.pricelist-summary,
+	.pricelist-row,
+	.taxonomy-grid,
+	.recognition-preset-row,
+	.connector-grid,
+	.dicom-resource-policy,
+	.dicomweb-input-grid,
+	.dicomweb-status-grid,
+	.dicom-discovery-grid,
+	.migration-progress-strip,
+	.migration-kickstart-grid,
+	.migration-source-workup-lanes,
+	.local-imaging-case-grid,
+	.dicom-folder-workup-plans,
+	.dicom-first-frame-head,
+	.dicomweb-manifest-result,
+	.dicom-toolstate-result,
+	.dicom-workbench-bundle-result,
+	.dicom-cache-plan-result,
+	.dicom-workstation-result,
+	.dicom-workstation-checks,
+	.dicom-mpr-layout,
+	.dicom-capability-grid,
+	.dicom-series-lab,
+	.dicom-series-row,
+	.import-source-grid,
+	.document-ingestion-stats,
+	.import-stats,
+	.import-tool-row,
+	.folder-scan-row,
+	.document-factory,
+	.document-payload-forms,
+	.document-payload-row,
+	.document-quality > div:first-child,
+	.telegram-settings-form,
+	.telegram-feature-grid,
+	.telegram-visual-card-fields,
+	.telegram-checkup-delay-fields,
+	.telegram-checkup-delay-fields.full,
+	.telegram-external-links,
+	.visit-fields,
+	.compliance-bar div {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.finance-summary-grid {
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 4px !important;
+		padding: 6px !important;
+		margin-bottom: 6px !important;
+	}
+
+	.finance-summary-grid article {
+		min-height: 48px !important;
+		max-height: none !important;
+		padding: 4px 6px !important;
+		gap: 1px !important;
+	}
+
+	.finance-summary-grid span {
+		font-size: 10px !important;
+		line-height: 1.1 !important;
+	}
+
+	.finance-summary-grid strong {
+		font-size: 14px !important;
+		line-height: 1.15 !important;
+	}
+
+	.finance-summary-grid p {
+		font-size: 9.5px !important;
+		line-height: 1.25 !important;
+		white-space: normal !important;
+		word-break: break-word !important;
+		overflow: hidden !important;
+		text-overflow: clip !important;
+	}
+
+	.finance-summary-grid .finance-tax-deduction-card {
+		padding-bottom: 4px !important;
+	}
+
+	/* PaymentCapture mobile above-the-fold squeeze (T.A.R.S. Mandate 8p & 8c Hot Path) */
+	.payment-capture {
+		padding: 4px 6px !important;
+		gap: 2.5px !important;
+	}
+	.payment-smart-ai-booking {
+		margin-bottom: 2px !important;
+		padding: 3px 6px !important;
+		border-radius: 8px !important;
+	}
+	.payment-smart-chips {
+		margin-bottom: 2px !important;
+		gap: 3px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.payment-smart-chips::-webkit-scrollbar {
+		display: none !important;
+	}
+	.payment-smart-chips .quick-chip {
+		min-height: 26px !important;
+		height: 26px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
+	}
+	.payment-amount-presets {
+		margin-top: 2px !important;
+		gap: 3px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.payment-amount-presets::-webkit-scrollbar {
+		display: none !important;
+	}
+	.payment-amount-presets .quick-chip {
+		min-height: 26px !important;
+		height: 26px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
+	}
+	.doctor-discounts-section {
+		margin-top: 2px !important;
+		margin-bottom: 2px !important;
+	}
+	.doctor-discounts-section span {
+		margin-bottom: 1px !important;
+		font-size: 9.5px !important;
+	}
+	.doctor-discount-chips {
+		gap: 3px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+	.doctor-discount-chips::-webkit-scrollbar {
+		display: none !important;
+	}
+	.doctor-discount-chips .quick-chip {
+		min-height: 26px !important;
+		height: 26px !important;
+		padding: 2px 6px !important;
+		font-size: 10.5px !important;
+		flex-shrink: 0 !important;
+	}
+	.payment-methods-toolbar {
+		margin-bottom: 6px !important;
+		display: grid !important;
+		grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+		gap: 4px !important;
+	}
+	.payment-methods-toolbar .quick-chip {
+		min-height: 42px !important;
+		height: 42px !important;
+		padding: 2px 4px !important;
+		font-size: 11px !important;
+		justify-content: center !important;
+		text-align: center !important;
+	}
+	#payment-capture #payment-checkout-bar,
+	#payment-checkout-bar,
+	.payment-checkout-bar {
+		position: fixed !important;
+		bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+		left: 0 !important;
+		right: 0 !important;
+		background: var(--paper) !important;
+		padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px)) 14px !important;
+		margin: 0 !important;
+		border-top: 1px solid var(--line) !important;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
+		z-index: 45 !important;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 8px !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
+	}
+
+	#payment-capture {
+		padding-bottom: 112px !important;
+	}
+	#payment-checkout-bar .payment-total-due-banner,
+	.payment-total-due-banner {
+		padding: 0 !important;
+		margin: 0 !important;
+		background: transparent !important;
+		border: none !important;
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 4px !important;
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+	}
+	#payment-checkout-bar .payment-total-due-banner span:first-child,
+	.payment-total-due-banner span:first-child {
+		font-size: 11px !important;
+		line-height: 1.1 !important;
+		color: var(--muted) !important;
+		white-space: nowrap !important;
+	}
+	#payment-checkout-bar .payment-total-due-banner span:last-child,
+	.payment-total-due-banner span:last-child {
+		font-size: 15px !important;
+		line-height: 1.15 !important;
+		font-weight: 900 !important;
+		white-space: nowrap !important;
+	}
+	#payment-capture .payment-actions,
+	#payment-checkout-bar .payment-actions,
+	.payment-actions {
+		position: static !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		border: none !important;
+		box-shadow: none !important;
+		background: transparent !important;
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: flex-end !important;
+		gap: 6px !important;
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		width: auto !important;
+		max-width: 100% !important;
+	}
+	#payment-capture .payment-actions .primary-button,
+	#payment-checkout-bar .payment-actions .primary-button,
+	.payment-actions .primary-button {
+		flex: 1 1 auto !important;
+		min-height: 44px !important;
+		height: 44px !important;
+		font-size: 12px !important;
+		font-weight: 800 !important;
+		min-width: 0 !important;
+		width: auto !important;
+		padding: 0 10px !important;
+		white-space: nowrap !important;
+		justify-content: center !important;
+	}
+	#payment-capture .payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]),
+	#payment-checkout-bar .payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]),
+	.payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]) {
+		display: none !important;
+	}
+	#payment-capture .payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"],
+	#payment-checkout-bar .payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"],
+	.payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"] {
+		flex: 0 0 44px !important;
+		min-height: 44px !important;
+		height: 44px !important;
+		width: 44px !important;
+		min-width: 44px !important;
+		max-width: 44px !important;
+		padding: 0 !important;
+		justify-content: center !important;
+		align-items: center !important;
+	}
+	.clinical-recommendations-accordion {
+		margin: 2px 0 !important;
+		padding: 3px 6px !important;
+	}
+
+	.folder-scan-row label {
+		grid-column: 1;
+	}
+
+	.visit-primary-action {
+		justify-content: center;
+		width: 100%;
+	}
+
+	.workspace-continuity-actions {
+		align-items: stretch;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-content: stretch;
+	}
+
+	.workspace-continuity-actions .secondary-button {
+		justify-content: center;
+		white-space: normal;
+		width: 100%;
+	}
+
+	.telegram-outbox-actions {
+		align-items: start;
+		justify-items: start;
+	}
+
+	.document-factory-tax-year,
+	.document-factory-tax-payer,
+	.document-factory-selected-kind {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.import-row {
+		align-items: start;
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.import-actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.dicom-workbench-actions {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 6px;
+		justify-content: flex-start;
+	}
+
+	.dicom-workbench-actions > span {
+		flex: 0 1 auto;
+	}
+
+	.import-actions span {
+		text-align: left;
+	}
+
+	.speech-provider-head {
+		display: grid;
+	}
+
+	.speech-provider-head span {
+		justify-self: start;
+	}
+
+	.document-quality > div:first-child {
+		align-items: start;
+		display: grid;
+	}
+
+	.document-quality > div:first-child span {
+		text-align: left;
+	}
+}

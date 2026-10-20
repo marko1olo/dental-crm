@@ -13,17 +13,34 @@
  */
 
 import {
+	formatPhoneDisplay,
+	formatPhoneNumber,
+	formatPhoneRu,
+	formatRussianPhone,
 	getNationalPhoneDigits,
 	isValidRussianInn as isValidInnShared,
 	isValidRussianPassport as isValidPassportShared,
+	isValidRussianPhone,
 	isValidSnils as isValidSnilsShared,
 	normalizePhoneDigits as normalizePhoneDigitsShared,
+	normalizePhoneToE164,
+	normalizePhoneToNational,
 	normalizeSnils as normalizeSnilsShared,
 } from "@dental/shared";
 
 // ============================================================================
-// 1. PHONE SANITATION & FORMATTING
+// 1. PHONE SANITATION & FORMATTING (DELEGATED TO @dental/shared SSOT)
 // ============================================================================
+
+export {
+	formatPhoneDisplay,
+	formatPhoneNumber,
+	formatPhoneRu,
+	formatRussianPhone,
+	normalizePhoneToNational,
+	normalizePhoneToE164,
+	isValidRussianPhone,
+};
 
 /**
  * Очищает номер телефона от всех нечисловых символов.
@@ -39,108 +56,6 @@ export function cleanPhoneDigits(value: string | null | undefined): string {
 	return digits;
 }
 
-/**
- * Нормализует телефонный номер к 10-значному национальному номеру (без кода страны).
- * Пример: "+7 (912) 345-67-89" -> "9123456789"
- */
-export function normalizePhoneToNational(value: string | null | undefined): string {
-	return getNationalPhoneDigits(value);
-}
-
-/**
- * Нормализует телефонный номер к международному формату E.164 (+7XXXXXXXXXX).
- * Пример: "89123456789" -> "+79123456789"
- */
-export function normalizePhoneToE164(value: string | null | undefined): string | null {
-	if (!value) return null;
-	const digits = cleanPhoneDigits(value);
-	if (!digits) return null;
-	if (digits.length === 10) return `+7${digits}`;
-	if (digits.length === 11 && digits.startsWith("7")) return `+${digits}`;
-	if (digits.length >= 7 && digits.length <= 15) return `+${digits}`;
-	return null;
-}
-
-/**
- * Проверяет, является ли строка валидным российским номером мобильного телефона.
- * Корректный номер содержит 10 национальных цифр (после 7 или 8) и начинается с девятки (9XX).
- */
-export function isValidRussianPhone(value: string | null | undefined): boolean {
-	if (!value) return false;
-	const nat = normalizePhoneToNational(value);
-	return nat.length === 10 && nat.startsWith("9");
-}
-
-/**
- * Автоформатирование номера телефона в реальном времени при вводе в инпут:
- * Формат: +7 (XXX) XXX-XX-XX
- *
- * Edge cases:
- * - Ввод "8" или "7" -> автодополнение префикса "+7 "
- * - Ввод "9" (быстрый ввод с мобилок без префикса) -> автодополнение "+7 (9"
- * - Вставка номера с скобками/пробелами/дефисами -> корректный разбор и маскирование
- * - Ограничение длины 10 национальными цифрами (защита от переполнения)
- */
-export function formatPhoneNumber(value: string | null | undefined): string {
-	if (!value) return "";
-
-	// Remove all non-digits
-	const rawDigits = String(value).replace(/\D/g, "");
-	if (rawDigits.length === 0) return "";
-
-	let prefix = "+7 ";
-	let rest = rawDigits;
-
-	if (rawDigits.startsWith("7") || rawDigits.startsWith("8")) {
-		rest = rawDigits.substring(1);
-	} else if (rawDigits.startsWith("9")) {
-		// Quick typing mobile UX: starting directly with 9xx
-		rest = rawDigits;
-	} else if (rawDigits.length >= 10) {
-		// Pasted international without leading + (or 10 digits national)
-		if (rawDigits.length === 11 && (rawDigits.startsWith("7") || rawDigits.startsWith("8"))) {
-			rest = rawDigits.substring(1);
-		} else {
-			rest = rawDigits.slice(-10);
-		}
-	} else {
-		// Non-standard partial prefix (e.g. single digit other than 7, 8, 9)
-		prefix = "+";
-	}
-
-	// Clamp national digits to maximum 10
-	rest = rest.slice(0, 10);
-
-	if (rest.length === 0) return prefix;
-
-	let formatted = `${prefix}(${rest.substring(0, 3)}`;
-
-	if (rest.length >= 4) {
-		formatted += `) ${rest.substring(3, 6)}`;
-	}
-	if (rest.length >= 7) {
-		formatted += `-${rest.substring(6, 8)}`;
-	}
-	if (rest.length >= 9) {
-		formatted += `-${rest.substring(8, 10)}`;
-	}
-
-	return formatted;
-}
-
-/** Алиасы для единообразия и обратной совместимости */
-export const formatRussianPhone = formatPhoneNumber;
-export const formatPhoneRu = formatPhoneNumber;
-
-/**
- * Форматирует телефон для статического клинического отображения в UI.
- * Возвращает "—", если телефон не указан.
- */
-export function formatPhoneDisplay(phone: string | null | undefined): string {
-	if (!phone || !String(phone).trim()) return "—";
-	const formatted = formatPhoneNumber(phone);
-	return formatted || String(phone).trim();
-}
 
 /**
  * Маскирует номер телефона для соблюдения 152-ФЗ РФ (скрывает средние цифры):

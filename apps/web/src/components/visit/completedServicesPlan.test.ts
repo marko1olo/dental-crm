@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it  } from "vitest";
 import {
 	ALL_FDI_TEETH,
 	CHAIRSIDE_EXPRESS_SERVICES,

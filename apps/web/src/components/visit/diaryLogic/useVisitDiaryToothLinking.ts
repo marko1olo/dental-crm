@@ -18,6 +18,7 @@ import {
 	type Template,
 } from "../clinicalSoapPresets";
 import { showToast } from "../../GlobalToast";
+import { useVisitStore } from "../../../store/visitStore";
 
 export interface UseVisitDiaryToothLinkingParams {
 	readonly diaryRef: React.MutableRefObject<DiaryState>;
@@ -48,6 +49,21 @@ export function useVisitDiaryToothLinking({
 	setIcdSearch,
 	scheduleDebouncedSave,
 }: UseVisitDiaryToothLinkingParams) {
+	// ── Bidirectional Odontogram FDI Sync (SSOT)
+	const storeActiveTooth = useVisitStore((s) => s.activeToothNumber);
+	useEffect(() => {
+		if (storeActiveTooth && (!isLocked || isRevising)) {
+			const toothStr = String(storeActiveTooth);
+			setDiary((prev) => {
+				if (prev.diagnosisTooth === toothStr) return prev;
+				return {
+					...prev,
+					diagnosisTooth: toothStr,
+				};
+			});
+		}
+	}, [storeActiveTooth, isLocked, isRevising, setDiary]);
+
 	// ── Non-destructive Odontogram Findings & Template Application
 	const applyOdontogramFinding = useCallback(
 		(finding: OdontogramFindingInput, mode: MergeStrategy = "smart_append") => {
@@ -153,7 +169,7 @@ export function useVisitDiaryToothLinking({
 		}
 		setPendingSoapSuggestion(null);
 		scheduleDebouncedSave();
-		showToast(`Применен протокол СтАР: «${title}»`, "success", 4000);
+		showToast(`Применен клинический протокол: «${title}»`, "success", 4000);
 	}, [pendingSoapSuggestion, isLocked, isRevising, scheduleDebouncedSave, setDiary, setIcdSearch]);
 
 	const dismissPendingSoapSuggestion = useCallback(() => {
@@ -188,8 +204,8 @@ export function useVisitDiaryToothLinking({
 			if (!targetSoap) return;
 
 			const title = finding
-				? `Зуб ${finding.toothNumber} (${targetSoap.diagnosisIcd10 || "СтАР"})`
-				: targetSoap.diagnosisIcd10 || "Клинический протокол СтАР";
+				? `Зуб ${finding.toothNumber} (${targetSoap.diagnosisIcd10 || "Клинический протокол"})`
+				: targetSoap.diagnosisIcd10 || "Клинический протокол";
 			const source = finding ? `Зубная формула (Зуб ${finding.toothNumber})` : "Клинический автопилот";
 
 			if (immediate) {

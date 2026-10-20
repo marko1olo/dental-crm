@@ -67,6 +67,9 @@ function createStaffHeaders(
 
 describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 	it("processes status transitions and automatically triggers intercom broadcast on patient arrival", async () => {
+		const prevPersistence = process.env.DENTAL_STATE_PERSISTENCE;
+		const prevUnguarded = process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS;
+		process.env.DENTAL_STATE_PERSISTENCE = "on";
 		process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS = "1";
 		const app = createTenantTestApp();
 		await registerAppointmentsRoutes(app);
@@ -79,32 +82,32 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 				await tx.insert(organizations).values({
 					id: ORG_ID,
 					name: "Клиника ДенталПРО Реалтайм",
-				});
+				}).onConflictDoNothing();
 				await tx.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Центральное отделение",
-				});
+				}).onConflictDoNothing();
 				await tx.insert(users).values({
 					id: DOCTOR_ID,
 					organizationId: ORG_ID,
 					fullName: "Д-р Кузнецов Павел",
 					role: "doctor",
 					isActive: true,
-				});
+				}).onConflictDoNothing();
 				await tx.insert(chairs).values({
 					id: CHAIR_ID,
 					organizationId: ORG_ID,
 					clinicId: CLINIC_ID,
 					name: "Кабинет 1 (Терапия)",
 					isActive: true,
-				});
+				}).onConflictDoNothing();
 				await tx.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Соколова Марина Юрьевна",
 					phone: "+79991234567",
-				});
+				}).onConflictDoNothing();
 				await tx.insert(appointments).values({
 					id: APPOINTMENT_ID,
 					organizationId: ORG_ID,
@@ -115,7 +118,17 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 					startsAt: new Date(Date.now() + 3600000),
 					endsAt: new Date(Date.now() + 5400000),
 					reason: "Первичный осмотр",
-				});
+				}).onConflictDoNothing();
+				await tx
+					.update(appointments)
+					.set({ status: "planned" })
+					.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)));
+				await tx
+					.delete(staffChatMessages)
+					.where(eq(staffChatMessages.organizationId, ORG_ID));
+				await tx
+					.delete(visits)
+					.where(eq(visits.organizationId, ORG_ID));
 			});
 		} catch (err) {
 			if (isDatabaseUnavailable(err)) {
@@ -124,6 +137,7 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 			throw err;
 		}
 
+		try {
 		const headers = createStaffHeaders(ORG_ID, DOCTOR_ID, "admin", "Администратор Ресепшен");
 
 		// 1. Пациент пришёл: администратор шлет статус "waiting" (алиас "arrived")
@@ -139,24 +153,27 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 		assert.equal(resArrived.statusCode, 200, `Expected 200, got: ${resArrived.body}`);
 
 		// Проверяем статус в БД: должен стать "arrived"
-		const [apptArrived] = await db
-			.select()
-			.from(appointments)
-			.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
-			.limit(1);
-
+		const [apptArrived] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(appointments)
+				.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
+				.limit(1),
+		);
 		assert.equal(apptArrived?.status, "arrived", "Status alias 'waiting' should normalize to 'arrived'");
 
 		// Проверяем, что в шину интеркома отправлено сообщение с пресетом 'patient_arrived'
-		const intercomMessages = await db
-			.select()
-			.from(staffChatMessages)
-			.where(
-				and(
-					eq(staffChatMessages.organizationId, ORG_ID),
-					eq(staffChatMessages.intercomPreset, "patient_arrived"),
+		const intercomMessages = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(staffChatMessages)
+				.where(
+					and(
+						eq(staffChatMessages.organizationId, ORG_ID),
+						eq(staffChatMessages.intercomPreset, "patient_arrived"),
+					),
 				),
-			);
+		);
 
 		assert.ok(
 			intercomMessages.length >= 1,
@@ -179,20 +196,24 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 
 		assert.equal(resChair.statusCode, 200, `Expected 200, got: ${resChair.body}`);
 
-		const [apptChair] = await db
-			.select()
-			.from(appointments)
-			.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
-			.limit(1);
+		const [apptChair] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(appointments)
+				.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
+				.limit(1),
+		);
 
 		assert.equal(apptChair?.status, "in_treatment", "Status alias 'in_chair' should normalize to 'in_treatment'");
 
 		// Проверяем, что открыт визит для приёма
-		const [visitRow] = await db
-			.select()
-			.from(visits)
-			.where(and(eq(visits.appointmentId, APPOINTMENT_ID), eq(visits.organizationId, ORG_ID)))
-			.limit(1);
+		const [visitRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(visits)
+				.where(and(eq(visits.appointmentId, APPOINTMENT_ID), eq(visits.organizationId, ORG_ID)))
+				.limit(1),
+		);
 
 		assert.ok(visitRow, "Visit must be automatically opened when status becomes in_treatment");
 
@@ -208,12 +229,27 @@ describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 
 		assert.equal(resCompleted.statusCode, 200, `Expected 200, got: ${resCompleted.body}`);
 
-		const [apptCompleted] = await db
-			.select()
-			.from(appointments)
-			.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
-			.limit(1);
+		const [apptCompleted] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(appointments)
+				.where(and(eq(appointments.id, APPOINTMENT_ID), eq(appointments.organizationId, ORG_ID)))
+				.limit(1),
+		);
 
 		assert.equal(apptCompleted?.status, "completed", "Status alias 'finished' should normalize to 'completed'");
+		} finally {
+			await purgeFixtureOrganizations([ORG_ID]).catch(() => {});
+			if (prevPersistence !== undefined) {
+				process.env.DENTAL_STATE_PERSISTENCE = prevPersistence;
+			} else {
+				delete process.env.DENTAL_STATE_PERSISTENCE;
+			}
+			if (prevUnguarded !== undefined) {
+				process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS = prevUnguarded;
+			} else {
+				delete process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS;
+			}
+		}
 	});
 });

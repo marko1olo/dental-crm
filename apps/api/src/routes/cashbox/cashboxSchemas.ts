@@ -27,9 +27,15 @@ export const closeShiftBodySchema = z.object({
 	incomeElectronicRub: z.number().optional(),
 	incomeSbpRub: z.number().optional(),
 	advanceOffsetRub: z.number().optional(),
+	insuranceTotalRub: z.number().optional(),
+	returnTotalRub: z.number().optional(),
 	netRevenueRub: z.number().optional(),
 	differenceRub: z.number().optional(),
 	isBalanced: z.boolean().optional(),
+	force: z.boolean().optional(),
+	allowUnfinishedVisits: z.boolean().optional(),
+	idempotencyKey: z.string().trim().max(128).optional(),
+	clientMutationId: z.string().trim().max(128).optional(),
 	reconciliation: z.record(z.any()).optional(),
 });
 
@@ -40,6 +46,8 @@ export const cashIntroductionBodySchema = z.object({
 	operatorId: z.string().uuid().optional(),
 	cashierFullName: z.string().trim().optional(),
 	typeAlias: z.string().trim().optional(),
+	idempotencyKey: z.string().trim().max(128).optional(),
+	clientMutationId: z.string().trim().max(128).optional(),
 });
 
 export const cashWithdrawalBodySchema = z.object({
@@ -50,6 +58,8 @@ export const cashWithdrawalBodySchema = z.object({
 	recipientFio: z.string().trim().optional(),
 	cashierFullName: z.string().trim().optional(),
 	typeAlias: z.string().trim().optional(),
+	idempotencyKey: z.string().trim().max(128).optional(),
+	clientMutationId: z.string().trim().max(128).optional(),
 });
 
 export const xReportQueryOrBodySchema = z.object({

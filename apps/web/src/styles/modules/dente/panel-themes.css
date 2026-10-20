@@ -1,0 +1,222 @@
+/* ---------- 18. ТЕМАТИЧЕСКИЕ ПЕРЕОПРЕДЕЛЕНИЯ ДЛЯ CHIPS, SELECT И DETAILS ---------- */
+.quick-chip.active {
+	background: var(--teal-soft);
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+	box-shadow: 0 4px 12px var(--teal-surface);
+	font-weight: 700;
+}
+
+/* Активный чип: непрозрачная подложка и явный светлый текст.
+ *
+ * Было только `color: var(--teal)`, а фон оставался полупрозрачным
+ * (--teal-soft, alpha 0.15). Что окажется под ним, зависит от предка, и
+ * там, где предок сам бирюзовый, получался бирюзовый текст на бирюзовом
+ * фоне: чип «0%» в рассрочке на экране оплат, тёмная тема, контраст по
+ * пикселям 1.13 — надпись не видна.
+ *
+ * Непрозрачный --elev убирает зависимость от предка, --teal-2 на нём
+ * даёт контраст около 11:1, бирюзовая рамка сохраняет смысл «выбрано». */
+[data-theme="dark"] .quick-chip.active,
+[data-theme="night"] .quick-chip.active {
+	background: var(--elev);
+	border-color: var(--teal);
+	color: var(--teal-2);
+}
+
+/* Чипы специализации врача — тот же дефект, что у .quick-chip выше, но зашитый
+ * с обеих сторон и потому нарушающий норму во ВСЕХ ТРЁХ темах, а не только в
+ * тёмных.
+ *
+ * ЧТО ЛОМАЛОСЬ. main.css:9745-9755 задаёт
+ *   .specialty-strip button        { background: #ffffff; color: var(--muted) }
+ *   .specialty-strip button.active { background: var(--teal); color: #ffffff }
+ * Фон выбранного чипа берётся из темы, а надпись на нём зашита белым — то есть
+ * при смене темы фон уезжает, а текст остаётся. По этой полосе сверяют, какие
+ * специализации отмечены у врача, и состояние «выбрано» передаётся только
+ * цветом плашки: нечитаемая надпись означает, что состав специализаций
+ * сверяют вслепую. Она же управляет тем, какие протоколы и шаблоны врач видит.
+ *
+ * ЗАМЕРЕНО 28.07.2026 В ЖИВОМ БРАУЗЕРЕ (Настройки, три темы, 768/1024/1600,
+ * композит фона по цепочке предков), норма для 12px — 4.5:1:
+ *   выбранный чип   светлая 3.74 / тёмная 1.86 / ночная 2.18
+ *   невыбранный чип светлая 4.76 / тёмная 2.56 / ночная 3.39
+ *
+ * ЧЕМ ЛЕЧИТСЯ. Обе пары уже существуют в палитре как токены, и ровно этим
+ * приёмом в main.css починены соседние узлы (.emk-tab-button.active:15557,
+ * .clinic-config-head > span:6292):
+ *   --teal-fill — заливка под сплошную надпись: #0f766e в светлой (белый на
+ *     #0d9488 даёт 3.74, на #0f766e — 5.5) и --teal в тёмных, где текст тёмный;
+ *   --on-teal   — надпись на бирюзе/янтаре: #ffffff / #04211c / #231505,
+ *     объявлен ровно для этого (dente-redesign.css:23, 78, 126);
+ *   --paper     — поверхность невыбранного чипа: #ffffff / #0f172a / #1c1714,
+ *     в светлой теме совпадает с прежним литералом байт в байт.
+ *
+ * Правка стоит в этом файле, а не в main.css: main.css держит другой инженер, а
+ * здесь у чипов уже есть свой раздел, специфичность та же ((0,1,1) и (0,2,1)) и
+ * файл импортируется позже (main.tsx:13 против main.tsx:9), поэтому !important
+ * не нужен — у конкурирующих объявлений его тоже нет. */
+.specialty-strip button {
+	background: var(--paper);
+}
+
+.specialty-strip button.active {
+	background: var(--teal-fill);
+	border-color: var(--teal-fill);
+	color: var(--on-teal);
+}
+
+select {
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235d746f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 16px;
+	padding-right: 36px;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 10px;
+}
+
+details.schedule-secret-collapsible {
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	padding: 10px 14px;
+	color: var(--ink);
+}
+
+details.workspace-role-switcher,
+details.recent-patients-header-dropdown {
+	padding: 0 !important;
+	border: none !important;
+	background: transparent !important;
+	margin: 0 !important;
+}
+
+details.workspace-role-switcher summary,
+details.recent-patients-header-dropdown summary {
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+details.workspace-role-switcher summary::-webkit-details-marker,
+details.recent-patients-header-dropdown summary::-webkit-details-marker {
+	display: none !important;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+details.schedule-secret-collapsible summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--ink);
+	user-select: none;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+details.schedule-secret-collapsible summary:hover {
+	color: var(--teal-dark);
+}
+
+/* ---------- 19. ТЕМАТИЧЕСКИЕ И СЕТОЧНЫЕ ПРАВИЛА ДЛЯ ВСЕХ ПАНЕЛЕЙ ---------- */
+.topbar-context {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: nowrap;
+	min-width: fit-content !important;
+	flex-shrink: 0 !important;
+	overflow: visible;
+}
+
+.topbar-clinic h1 {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.topbar-clinic .eyebrow {
+	margin: 0 0 2px 0;
+	font-size: 11px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+/* Принудительная нейтрализация жестких Tailwind карт и фона блоков.
+ *
+ * Кнопки исключены. Правило подбирает элементы по подстроке в списке
+ * классов, поэтому `bg-sky-600` и даже `hover:bg-sky-700` заставляли
+ * элемент навсегда получить color: var(--teal). У .primary-button фон —
+ * градиент (background-image), а background-color градиент не
+ * перекрывает: получался бирюзовый текст на бирюзовом градиенте.
+ *
+ * Замерено на «Создать запись» в записях, тёмная тема: color
+ * rgb(45,212,191) на rgb(45,212,191), контраст 1.00, подтверждено по
+ * пикселям (1.27). Кнопка была не видна.
+ *
+ * У .primary-button и .secondary-button есть свои согласованные пары
+ * фон+текст, перекрашивать их не нужно. */
+[data-theme="dark"]
+	[class*="bg-sky-"]:not(.primary-button):not(.secondary-button),
+[data-theme="night"]
+	[class*="bg-sky-"]:not(.primary-button):not(.secondary-button) {
+	background-color: var(--teal-surface);
+	color: var(--teal);
+	border-color: var(--teal-ring);
+}
+
+[data-theme="dark"] [class*="text-sky-"],
+[data-theme="night"] [class*="text-sky-"] {
+	color: var(--teal);
+}
+
+/* Единые адаптивные формы и карточки во всех видах */
+.patients-panel,
+.documents-panel,
+.settings-panel,
+.visit-panel,
+.schedule-panel,
+#patients,
+#documents,
+#settings,
+#visit,
+#schedule,
+#finance {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: var(--shadow-1);
+	scroll-margin-top: 68px;
+}
+
+.finance-panel {
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	box-shadow: none !important;
+}
+
+input,
+textarea {
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 10px;
+	padding: 8px 12px;
+	font-size: 13px;
+}
+
+input:focus,
+textarea:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+

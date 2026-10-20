@@ -1,5 +1,5 @@
 import React from "react";
-import { FileCheck, FileText, HeartPulse, History, Scan, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Activity, FileCheck, FileText, HeartPulse, History, Scan, ShieldCheck, Users, Wallet } from "lucide-react";
 import { ToothMolar } from "../../icons/DentalIcons";
 import type { PatientCardTab } from "./patientCardModalTypes";
 
@@ -12,6 +12,7 @@ interface PatientCardModalTabsBarProps {
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Основные", Icon: FileText },
 	{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
+	{ id: "perio", testId: "tab-patient-perio", label: "Пародонтология", Icon: Activity },
 	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Соматика", Icon: HeartPulse },
 	{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
 	{ id: "documents", testId: "tab-patient-documents", label: "Документы", Icon: FileCheck },

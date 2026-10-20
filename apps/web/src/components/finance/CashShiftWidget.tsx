@@ -320,7 +320,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					onCashOut={onCashOut}
 				/>
 
-				{/* Модальное окно АРМ кассового аппарата 54-ФЗ */}
+				{/* Модальное окно кассового аппарата и чеков */}
 				<CashRegisterModal
 					isOpen={isCashRegisterModalOpen}
 					onClose={() => setIsCashRegisterModalOpen(false)}
@@ -456,7 +456,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				</div>
 			)}
 
-			{/* Сетка финансовых показателей смены (54-ФЗ) */}
+			{/* Сетка финансовых показателей кассовой смены */}
 			<div className="cash-shift-grid">
 				<div className="cash-shift-card">
 					<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] mb-1 font-semibold uppercase tracking-wider">

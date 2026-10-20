@@ -1,4 +1,5 @@
 import React from "react";
+import { ServicePricelistManagerModal } from "../../catalog/pricelist/ServicePricelistManagerModal";
 import { PriceImportModal } from "./PriceImportModal";
 import { PricesCatalogTable } from "./PricesCatalogTable";
 import { PricesFilterToolbar } from "./PricesFilterToolbar";
@@ -30,7 +31,7 @@ export const PricesCatalogSection: React.FC<Props> = ({ prices, serviceCategoryL
 				onExportCsv={prices.handleExportCsv}
 				isNativeScannerDropzoneOpen={prices.isNativeScannerDropzoneOpen}
 				onToggleNativeScannerDropzone={() => prices.setIsNativeScannerDropzoneOpen((p) => !p)}
-				onOpenServicePricelistModal={prices.handlePrintPricelist}
+				onOpenServicePricelistModal={() => prices.setIsServicePricelistModalOpen(true)}
 				onOpenNewServiceModal={prices.openNewServiceModal}
 			/>
 
@@ -77,6 +78,16 @@ export const PricesCatalogSection: React.FC<Props> = ({ prices, serviceCategoryL
 				onSeedBaseline={() => prices.handleSeedBaseline804n(false)}
 				onAddNewService={prices.openNewServiceModal}
 				onOpenScannerDropzone={() => prices.setIsNativeScannerDropzoneOpen(true)}
+			/>
+
+			<ServicePricelistManagerModal
+				isOpen={prices.isServicePricelistModalOpen}
+				onClose={() => prices.setIsServicePricelistModalOpen(false)}
+				initialItems={prices.modalInitialItems}
+				onSaveCatalog={prices.handleSaveCatalog}
+				clinicName={prices.dashboard?.clinic?.name}
+				clinicAddress={prices.dashboard?.clinic?.address}
+				clinicPhone={prices.dashboard?.clinic?.phone}
 			/>
 		</section>
 	);

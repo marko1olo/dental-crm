@@ -1,0 +1,39 @@
+{
+  "checkpointId": "subagent-treatment-plan-copilot-804n",
+  "timestamp": "2026-10-15T01:10:45+04:00",
+  "status": "COMPLETED",
+  "author": "Antigravity Subagent (Treatment Plan Copilot & Pricing 804N)",
+  "scope": [
+    "apps/web/src/components/treatment-plans/TreatmentPlanCopilotModal.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanToolbar.tsx",
+    "apps/web/src/services/ai/treatmentPlanCopilot.ts",
+    "apps/web/src/services/ai/treatmentPlanCopilotTypes.ts",
+    "apps/web/src/services/ai/treatmentPlanScenarios.ts",
+    "apps/web/src/services/ai/treatmentPlanCopilotModifiers.ts",
+    "apps/api/src/ai/treatmentPlanPersonalize.ts",
+    "apps/api/src/ai/treatmentPlanValidatorAndCommenter.ts",
+    "packages/shared/src/treatment-plans/consumables.ts",
+    "packages/shared/src/treatment-plans/patientCasePresenterEngine.ts"
+  ],
+  "invariantsVerified": {
+    "zeroMocks": true,
+    "integerKopecksAndRubles": true,
+    "order804nBinding": true,
+    "threeClinicalScenarios": {
+      "economy": "Base functional rehabilitation (metal-ceramic standard 16 000 ₽, Osstem 32 000 ₽, composite 4 500 ₽)",
+      "optimum": "Gold standard evidence-based (zirconia Katana STML 26 000 ₽, SLA implants 38 000 ₽, Estelite Asteria 7 500 ₽)",
+      "premium": "Uncompromising aesthetics & digital navigation (E.max Press 45 000 ₽, Straumann BLX Roxolid 65 000 ₽, Leica micro-restoration 12 000 ₽)"
+    },
+    "microConsumablesPresentationVsBOM": {
+      "patientFacingPresentation": "Hidden from chairside presentation slides (cotton rolls, napkins, gloves, saliva ejector)",
+      "warehouseBOM": "Strictly preserved in stage items for automated warehouse write-off"
+    },
+    "missingPriceAlerts": "PRICE_CATALOG_VERIFICATION warning rendered when requiresManualPricing=true or priceRub<=0 without inventing fake prices",
+    "doctorAutonomyMandate8e": "Discounts and plan adjustments allowed in 1 click without disabling buttons"
+  },
+  "testResults": {
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanCopilotAndMissingPrice.test.tsx": "22/22 PASS",
+    "apps/api/src/ai/treatmentPlanPersonalize.test.ts": "6/6 PASS",
+    "packages/shared/src/treatment-plans/patientCasePresenterEngine.test.ts": "2/2 PASS"
+  }
+}

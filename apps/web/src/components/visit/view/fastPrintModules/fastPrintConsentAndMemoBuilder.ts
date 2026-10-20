@@ -323,6 +323,7 @@ export function executeFastPrintTreatmentPlanEstimate({
 	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id || "001";
 	const doctorName = activeDoctor?.fullName || "Лечащий врач";
 	const currentDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
+	const planName = (activePlan as any)?.title || (activePlan as any)?.name || "Основной план лечения";
 
 	const items = Array.isArray(activePlan?.items) ? activePlan.items : [];
 

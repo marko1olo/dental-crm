@@ -54,7 +54,7 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 						body: JSON.stringify({
 							familyGroupId, patientId: sponsorPatientId || patientId, amountRub,
 							method: methodMappedForApi, clientMutationId,
-							comment: `Пополнение семейного депозита (Тег 1213) на ${formatDisplayCurrency(amountRub)}`,
+							comment: `Пополнение семейного депозита на ${formatDisplayCurrency(amountRub)}`,
 						}),
 				  })
 				: await fetch("/api/billing/payments", {
@@ -63,7 +63,7 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 							patientId, amountRub, method: methodMappedForApi, clientMutationId,
 							payerFullName: patientName, fiscalReceiptNumber: `АВАНС-${Date.now().toString().slice(-6)}`,
 							fiscalReceiptIssuedAt: new Date().toISOString(),
-							note: `Внесение аванса (Тег 1213, ${isFamilyWallet ? "Семейный депозит" : "Личный депозит"}) на ${formatDisplayCurrency(amountRub)}`,
+							note: `Внесение аванса (${isFamilyWallet ? "Семейный депозит" : "Личный депозит"}) на ${formatDisplayCurrency(amountRub)}`,
 						}),
 				  });
 
@@ -75,7 +75,7 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 			}
 
 			setIsCompleted(true);
-			showToast(`Депозит пополнен на ${formatDisplayCurrency(amountRub)}! Чек аванса 54-ФЗ пробит.`, "success");
+			showToast(`Депозит пополнен на ${formatDisplayCurrency(amountRub)}! Кассовый чек аванса пробит.`, "success");
 			onSuccess?.(payload);
 		} catch (err: any) {
 			console.error("[DepositTopupModal] Network error during deposit topup:", err);

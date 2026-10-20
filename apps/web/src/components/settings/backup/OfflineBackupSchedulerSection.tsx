@@ -90,7 +90,16 @@ export const OfflineBackupSchedulerSection: React.FC<
 						value={schedulerIntervalMin}
 						onChange={(e) => setSchedulerIntervalMin(Number(e.target.value))}
 						disabled={schedulerStatus.isRunning}
-						className="min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+						style={{
+							minHeight: "40px",
+							padding: "0 12px",
+							borderRadius: "8px",
+							border: "1px solid var(--line)",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							fontSize: "13px",
+							cursor: "pointer",
+						}}
 					>
 						<option value={15}>Каждые 15 минут</option>
 						<option value={30}>Каждые 30 минут</option>
@@ -103,8 +112,8 @@ export const OfflineBackupSchedulerSection: React.FC<
 						type="button"
 						onClick={handleToggleScheduler}
 						style={{
-							minHeight: "44px",
-							padding: "0 20px",
+							minHeight: "40px",
+							padding: "0 18px",
 							borderRadius: "8px",
 							background: schedulerStatus.isRunning
 								? "var(--bad-fg)"
@@ -112,7 +121,7 @@ export const OfflineBackupSchedulerSection: React.FC<
 							color: "var(--on-teal, #ffffff)",
 							border: "none",
 							fontWeight: "600",
-							fontSize: "14px",
+							fontSize: "13px",
 							cursor: "pointer",
 							display: "flex",
 							alignItems: "center",
@@ -167,7 +176,7 @@ export const OfflineBackupSchedulerSection: React.FC<
 							marginBottom: "12px",
 						}}
 					>
-						Недавние локальные снимки Vault ({vaultSnapshots.length})
+						Недавние резервные копии ({vaultSnapshots.length})
 					</h4>
 					<div
 						style={{ display: "flex", flexDirection: "column", gap: "8px" }}

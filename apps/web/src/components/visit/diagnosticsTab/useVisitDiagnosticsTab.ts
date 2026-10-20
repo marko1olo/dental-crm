@@ -165,18 +165,31 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		};
 
 		const handleOpenDirectRvg = (e: Event) => {
-			const custom = e as CustomEvent<{ imageUrl?: string; tooth?: string }>;
+			const custom = e as CustomEvent<{ imageUrl?: string; tooth?: string; toothFdiCode?: string; toothNumber?: number }>;
 			if (custom.detail?.imageUrl) {
 				setSelectedDicomImageSrc(custom.detail.imageUrl);
+			}
+			const t = custom.detail?.tooth || custom.detail?.toothFdiCode || (custom.detail?.toothNumber ? String(custom.detail.toothNumber) : undefined);
+			if (t && Number(t)) {
+				try {
+					useVisitStore.getState().setActiveToothNumber(Number(t));
+				} catch {
+					// outside visit store context
+				}
+				setSelectedToothForPhoto(Number(t));
 			}
 			setIsDirectRvgModalOpen(true);
 		};
 
 		window.addEventListener("dente:attach-photo-to-visit", handleAttachPastedPhoto);
 		window.addEventListener("dente:open-direct-rvg", handleOpenDirectRvg);
+		window.addEventListener("dente-open-rvg-capture", handleOpenDirectRvg);
+		window.addEventListener("dente-open-rvg-capture-modal", handleOpenDirectRvg);
 		return () => {
 			window.removeEventListener("dente:attach-photo-to-visit", handleAttachPastedPhoto);
 			window.removeEventListener("dente:open-direct-rvg", handleOpenDirectRvg);
+			window.removeEventListener("dente-open-rvg-capture", handleOpenDirectRvg);
+			window.removeEventListener("dente-open-rvg-capture-modal", handleOpenDirectRvg);
 		};
 	}, [selectedToothForPhoto, selectedPhotoType, props?.onInsertToProtocol]);
 

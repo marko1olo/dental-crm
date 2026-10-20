@@ -237,10 +237,9 @@ export const documentKindBaseMetadata = {
 		requiresPaidRecord: false,
 	},
 	outpatient_medical_card_025u: {
-		title:
-			"[ЛИКВИДИРОВАНО] Медицинская карта 025/у (заменена на 043/у per Mandates 8i, 8s)",
-		label: "Карта 025/у (ликвидирована)",
-		actionLabel: "Карта 025/у (ликвидирована)",
+		title: "Медицинская карта приёма (архивный шаблон)",
+		label: "Архивная медкарта",
+		actionLabel: "Архивная медкарта",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,

@@ -1,0 +1,118 @@
+.chip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	text-align: left;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 6px;
+	border: 1px solid var(--slate-200);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--slate-600);
+	white-space: nowrap;
+}
+/*
+ * ЧИПЫ КАРТОЧКИ ЗАПИСИ СИДЕЛИ НА ЛЕСТНИЦАХ, КОТОРЫХ НЕТ НИ В ОДНОМ ФАЙЛЕ.
+ *
+ * --indigo-50/200/700, --teal-50/200/700, --amber-50/200/700 не объявлены
+ * нигде, поэтому всегда побеждали резервные литералы, и три чипа причины,
+ * врача и кресла были почти белыми плашками в любой теме. Это та же
+ * необъявленная лестница, что у .handoff-lock выше в этом файле, и её видно в
+ * выводе scripts/check-css-tokens.mjs, но она осталась незакрытой.
+ *
+ * Порядок тем: светлая / «Ночь» (data-theme="dark") / «Тепло»
+ * (data-theme="night"). Текст на своей же плашке норму держал (7.07 / 5.25 /
+ * 4.84 — литералы ездят парой, поэтому во всех темах одинаково). Промах был не
+ * в тексте, а в самой плашке: #eef2ff / #f0fdfa / #fffbeb против --paper дают
+ * в светлой 1.12 / 1.04 / 1.04, а в «Ночи» 15.97 / 17.12 / 17.22 и в «Тепле»
+ * 15.89 / 17.03 / 17.13 — то есть три белых пятна на тёмной карточке записи.
+ *
+ * Правится по образцу .handoff-lock: смысл цвета уходит в подложку и рамку
+ * (--info-bg/--info-fg, --teal-surface/--teal-dark, --warn-bg/--warn-fg —
+ * объявлены во всех трёх темах), текст на --ink.
+ * Стало по тексту: причина 15.46 / 13.24 / 10.85, врач 16.69 / 14.19 / 12.81,
+ * кресло 15.93 / 12.89 / 10.56.
+ *
+ * Подложка против --paper: здесь стояла одна строка «1.15 / 1.29 / 1.35» на все
+ * три плашки; перемерено — это ряд только у причины (--info-bg). У врача
+ * (--teal-surface) 1.06 / 1.20 / 1.14, у кресла (--warn-bg) 1.11 / 1.32 / 1.39.
+ * Плашка везде остаётся плашкой, но самая слабая — врач в светлой теме, 1.06:
+ * её от карточки отличает не фон, а рамка на --teal-dark (5.47 против --paper).
+ * Это осознанно: подложка чипа не текст, порог 4.5 к ней не применяется.
+ *
+ * Почему не собственный цвет текста на цветной подложке: --warn-fg на
+ * --warn-bg даёт в светлой ровно 4.42 при норме 4.5 для 12px, то есть
+ * «цветной текст на цветной плашке» здесь недобирает, а --ink добирает.
+ */
+.chip-reason {
+	background: var(--info-bg);
+	color: var(--ink);
+	border-color: var(--info-fg);
+	justify-content: flex-start;
+	text-align: left;
+	max-width: 100%;
+}
+.chip-doctor {
+	background: var(--teal-surface);
+	color: var(--ink);
+	border-color: var(--teal-dark);
+}
+.chip-chair {
+	background: var(--warn-bg);
+	color: var(--ink);
+	border-color: var(--warn-fg);
+}
+
+.quick-chip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 999px;
+	border: 1px solid var(--slate-200);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--slate-600);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+	user-select: none;
+}
+.quick-chip:hover {
+	background: var(--slate-100);
+	border-color: var(--slate-300);
+	color: var(--slate-800);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 6px rgba(15, 23, 42, 0.06);
+}
+.quick-chip:active {
+	transform: translateY(0);
+}
+.quick-chip.active {
+	background: var(--brand-500, #0ea5e9);
+	border-color: var(--brand-600, #0284c7);
+	color: #fff;
+	box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+.quick-chip.active:hover {
+	background: var(--brand-600, #0284c7);
+	box-shadow: 0 6px 14px rgba(14, 165, 233, 0.3);
+}
+.quick-chip:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
+.quick-chips-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.quick-chip--sm {
+	padding: 4px 10px;
+	font-size: 11px;
+}

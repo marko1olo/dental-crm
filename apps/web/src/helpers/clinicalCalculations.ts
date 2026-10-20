@@ -4,6 +4,8 @@
  */
 
 import {
+	CANONICAL_TOOTH_STATUS_ALIASES,
+	type CanonicalToothState,
 	type Dashboard,
 	type OdontogramViewMode,
 	type TreatmentPlanAcceptanceVariant,
@@ -19,7 +21,6 @@ import {
 	isStringUnionValue,
 } from "./guardUtils";
 import {
-	type ClinicalToothStatus,
 	type ClinicalToothSurface,
 	type VisitNoteField,
 	type VisitNoteForm,
@@ -64,15 +65,12 @@ export const toothRows = [
 	],
 ] as const;
 
-export const toothStateByCode: Record<
-	string,
-	"watch" | "planned" | "done" | "missing"
-> = {
-	"16": "watch",
-	"26": "done",
-	"36": "planned",
-	"46": "watch",
-	"48": "missing",
+export const toothStateByCode: Record<string, CanonicalToothState> = {
+	"16": "Caries",
+	"26": "Filled",
+	"36": "Caries",
+	"46": "Caries",
+	"48": "Missing",
 };
 
 export const visitNoteFieldDefinitions: Array<{
@@ -203,38 +201,39 @@ export const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> =
 		"-": "not_applicable",
 	};
 
-export const clinicalToothStatusAliases: Record<string, ClinicalToothStatus> = {
-	норма: "sound",
-	"без патологии": "sound",
-	наблюдение: "watch",
-	контроль: "watch",
-	кариес: "caries",
-	caries: "caries",
-	пульпит: "pulpitis_periodontitis",
-	периодонтит: "pulpitis_periodontitis",
-	эндо: "pulpitis_periodontitis",
-	пародонт: "periodontal",
-	пародонтология: "periodontal",
-	отсутствует: "missing",
-	удален: "missing",
-	удаленый: "missing",
-	удаленный: "missing",
-	имплант: "implant",
-	имплантат: "implant",
-	ортопедия: "prosthetic",
-	коронка: "prosthetic",
-	протез: "prosthetic",
-	ортодонтия: "orthodontic",
-	брекеты: "orthodontic",
-	элайнеры: "orthodontic",
-	план: "planned",
-	planned: "planned",
-	запланировано: "planned",
-	выполнено: "completed",
-	completed: "completed",
-	готово: "completed",
-	иное: "other",
-	другое: "other",
+export const clinicalToothStatusAliases: Record<string, CanonicalToothState> = {
+	...CANONICAL_TOOTH_STATUS_ALIASES,
+	норма: "Healthy",
+	"без патологии": "Healthy",
+	наблюдение: "Caries",
+	контроль: "Caries",
+	кариес: "Caries",
+	caries: "Caries",
+	пульпит: "Pulpitis",
+	периодонтит: "Periodontitis",
+	эндо: "Pulpitis",
+	пародонт: "Periodontitis",
+	пародонтология: "Periodontitis",
+	отсутствует: "Missing",
+	удален: "Missing",
+	удаленый: "Missing",
+	удаленный: "Missing",
+	имплант: "Implant",
+	имплантат: "Implant",
+	ортопедия: "Crown",
+	коронка: "Crown",
+	протез: "Crown",
+	ортодонтия: "Crown",
+	брекеты: "Crown",
+	элайнеры: "Crown",
+	план: "Caries",
+	planned: "Caries",
+	запланировано: "Caries",
+	выполнено: "Filled",
+	completed: "Filled",
+	готово: "Filled",
+	иное: "Caries",
+	другое: "Caries",
 };
 
 export function isOdontogramViewModePreference(

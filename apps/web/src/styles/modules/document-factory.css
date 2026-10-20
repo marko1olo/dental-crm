@@ -1,0 +1,312 @@
+.document-row {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.document-factory {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-bottom: 12px;
+}
+
+.document-factory-group {
+	background: var(--paper-soft, #fbfefd);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-factory-tax-year,
+.document-factory-tax-payer {
+	align-items: center;
+	background: var(--paper-soft, #f4fbf8);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	grid-column: 1 / -1;
+	padding: 10px;
+}
+
+.document-factory-tax-year input,
+.document-factory-tax-payer select {
+	background: var(--paper, #fff);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	color: var(--ink);
+	font: inherit;
+	font-weight: 800;
+	min-height: 34px;
+	min-width: 0;
+	padding: 0 9px;
+}
+
+.document-factory-tax-year span,
+.document-factory-tax-payer span {
+	color: var(--muted);
+	min-width: 0;
+}
+
+.document-factory-tax-payments {
+	background: var(--paper-soft, #f8fcfb);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-factory-tax-payments-heading {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	min-width: 0;
+}
+
+.document-factory-tax-payments-heading > div {
+	display: flex;
+	gap: 8px;
+	min-width: 0;
+}
+
+.document-factory-tax-payments-heading > div:first-child {
+	flex-direction: column;
+	gap: 2px;
+}
+
+.document-factory-tax-payments-heading strong {
+	color: var(--ink);
+	font-size: 13px;
+}
+
+.document-factory-tax-payments-heading span,
+.tax-payment-selection-empty {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.tax-payment-selection-list {
+	display: grid;
+	gap: 6px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	min-width: 0;
+}
+
+.tax-payment-selection-item {
+	align-items: flex-start;
+	background: var(--paper, #fff);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: auto minmax(0, 1fr);
+	min-width: 0;
+	padding: 8px;
+}
+
+.tax-payment-selection-item input {
+	margin-top: 3px;
+}
+
+.tax-payment-selection-item span {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+
+.tax-payment-selection-item strong,
+.tax-payment-selection-item small {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.tax-payment-selection-item strong {
+	color: var(--ink);
+	font-size: 12px;
+}
+
+.tax-payment-selection-item small {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.document-factory-selected-kind {
+	background: var(--paper-soft, #f4fbf8);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px;
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+}
+
+.document-factory-selected-kind label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 850;
+	gap: 4px;
+	min-width: 0;
+}
+
+.document-factory-selected-kind select {
+	background: var(--paper, #fff);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	color: var(--ink);
+	font: inherit;
+	font-weight: 800;
+	min-height: 36px;
+	padding: 0 9px;
+}
+
+.document-factory-selected-kind .primary-button {
+	min-height: 36px;
+}
+
+.document-source-card {
+	background: var(--paper, #fff);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	grid-column: 1 / -1;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-source-card-heading {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	min-width: 0;
+}
+
+.document-source-card-heading strong {
+	color: var(--ink);
+	font-size: 13px;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.document-source-card p,
+.document-source-card small {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.document-source-card p {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.document-source-card small {
+	color: var(--teal-dark);
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.document-source-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	min-width: 0;
+}
+
+.document-source-links .doc-link {
+	font-size: 12px;
+	min-height: 30px;
+}
+
+.document-source-badge {
+	align-items: center;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 900;
+	line-height: 1;
+	min-height: 22px;
+	padding: 0 8px;
+	white-space: nowrap;
+}
+
+.document-source-badge.official-form {
+	/* Было #e5f4ee / #b9ddcf при color: var(--green-dark). Переменной
+     --green-dark не существовало ни в одной таблице стилей, объявление
+     цвета было недействительным, текст наследовался от кнопки и в
+     тёмной теме давал контраст 1.08. Теперь --green-dark объявлен в
+     token-aliases.css как var(--ok-fg). */
+	background: var(--srf-badge-official);
+	border-color: var(--srf-badge-official-line);
+	color: var(--green-dark);
+}
+
+.document-source-badge.official-workflow {
+	background: #e7eefb;
+	border-color: #c7d7f3;
+	color: #244f8f;
+}
+
+.document-source-badge.clinic-template {
+	background: #f7f1dc;
+	border-color: #eadba6;
+	color: #7a5b00;
+}
+
+.document-source-badge.internal-register {
+	background: #f0edf8;
+	border-color: #d5caeb;
+	color: #533c83;
+}
+
+.document-factory-kind-button {
+	align-items: flex-start;
+	gap: 7px;
+}
+
+.document-factory-kind-button-text {
+	align-items: flex-start;
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+	text-align: left;
+}
+
+.document-factory-kind-button-text > span {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.document-factory-kind-button-text .document-source-badge {
+	font-size: 10px;
+	min-height: 18px;
+	padding: 0 6px;
+}
+
+.document-row p .document-source-badge {
+	margin-left: 6px;
+	vertical-align: middle;
+}
+
+.document-row-guidance {
+	color: var(--muted);
+	display: block;
+	font-size: 12px;
+	font-weight: 760;
+	line-height: 1.35;
+	margin-top: 6px;
+	max-width: 74ch;
+	overflow-wrap: anywhere;
+}

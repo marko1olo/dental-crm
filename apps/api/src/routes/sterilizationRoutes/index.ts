@@ -1,15 +1,9 @@
-import type { FastifyInstance } from "fastify";
-import { registerSanpinSterilizationRoutes } from "../sanpin/sterilizationRoutes.js";
-
-export * from "./types.js";
-export * from "./sterilizationHelpers.js";
-export * from "./sterilizationLogHandlers.js";
-export * from "./sterilizationKraftHandlers.js";
-
 /**
- * Fastify plugin: Регистрация маршрутов контроля стерилизации (СанПиН 2.1.3678-20, СанПиН 3.3686-21).
- * Делегирует единому SSOT в registerSanpinSterilizationRoutes.
+ * apps/api/src/routes/sterilizationRoutes/index.ts
+ *
+ * Единый канонический фасад стерилизации.
+ * Делегирует в apps/api/src/routes/sanpin/sterilizationRoutes.js.
+ * Мандат 8b: строго <= 120 строк.
  */
-export async function registerSterilizationRoutes(app: FastifyInstance): Promise<void> {
-	registerSanpinSterilizationRoutes(app);
-}
+
+export * from "../sanpin/sterilizationRoutes.js";

@@ -1,0 +1,182 @@
+/* ==========================================================================
+   14. CLINICAL QUICK PRESETS & TOOTH SELECTOR CONTROLS
+   ========================================================================== */
+
+.clinical-presets-title-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+.clinical-active-tooth-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-dark, var(--teal, #0f766e));
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .clinical-active-tooth-badge,
+.dark .clinical-active-tooth-badge {
+	color: #2dd4bf;
+}
+
+.clinical-tooth-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 26px;
+	padding: 0 9px;
+	border-radius: 9999px;
+	font-size: 11.5px;
+	font-weight: 600;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.clinical-tooth-btn,
+button.clinical-tooth-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 5px !important;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 9px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.clinical-tooth-btn:hover:not(.active):not([data-active="true"]) {
+	background: var(--paper-soft) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+}
+
+.clinical-tooth-btn.active,
+.clinical-tooth-btn[data-active="true"] {
+	background: var(--teal, #0d9488) !important;
+	border-color: var(--teal-dark, #0f766e) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+}
+
+.clinical-fdi-select {
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 8px !important;
+	border-radius: 7px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	outline: none !important;
+}
+
+.clinical-protocol-card,
+button.clinical-protocol-card {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: flex-start !important;
+	justify-content: center !important;
+	gap: 4px !important;
+	min-height: 48px !important;
+	padding: 8px 12px !important;
+	border-radius: 10px !important;
+	background: var(--paper) !important;
+	border: 1.5px solid var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+	text-align: left !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+.clinical-protocol-card:hover {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--paper-strong, var(--paper)) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 3px 8px rgba(13, 148, 136, 0.12) !important;
+}
+
+.clinical-protocol-icd-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1px 6px;
+	border-radius: 5px;
+	font-size: 10.5px;
+	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	color: var(--teal-dark, var(--teal, #0f766e));
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .clinical-protocol-icd-badge,
+.dark .clinical-protocol-icd-badge {
+	color: #2dd4bf;
+}
+
+/* ==========================================================================
+   GLOBAL OPTIMISTIC DESTRUCTIVE ACTION COLLAPSE ANIMATION
+   Smooth collapse of row before/during deletion (Anti-jank & 60fps)
+   ========================================================================== */
+@keyframes collapseHeight {
+	0% {
+		max-height: 250px;
+		opacity: 1;
+		transform: scaleY(1);
+		margin-top: inherit;
+		margin-bottom: inherit;
+		padding-top: inherit;
+		padding-bottom: inherit;
+	}
+	100% {
+		max-height: 0;
+		opacity: 0;
+		transform: scaleY(0.85);
+		margin-top: 0 !important;
+		margin-bottom: 0 !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+		border-width: 0 !important;
+		overflow: hidden;
+	}
+}
+
+.animate-collapse {
+	animation: collapseHeight 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+	overflow: hidden;
+	pointer-events: none;
+}
+

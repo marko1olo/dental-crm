@@ -45,13 +45,14 @@ export async function registerLeadBatchOperationsRoutes(app: FastifyInstance): P
 						inArray(crmLeads.id, leadIds),
 					),
 				)
+				.orderBy(crmLeads.id)
 				.for("update");
 
 			if (leadsToUpdate.length === 0) {
 				return [];
 			}
 
-			const results: (typeof crmLeads.$inferSelect)[] = [];
+			const historyToInsert: (typeof crmLeadStageHistory.$inferInsert)[] = [];
 			for (const lead of leadsToUpdate) {
 				const fromStage = lead.status;
 				const stageStart = lead.stageEnteredAt || lead.createdAt;
@@ -60,7 +61,7 @@ export async function registerLeadBatchOperationsRoutes(app: FastifyInstance): P
 					Math.floor((now.getTime() - stageStart.getTime()) / 1000),
 				);
 
-				await tx.insert(crmLeadStageHistory).values({
+				historyToInsert.push({
 					organizationId,
 					leadId: lead.id,
 					fromStage,
@@ -69,7 +70,14 @@ export async function registerLeadBatchOperationsRoutes(app: FastifyInstance): P
 					durationSeconds,
 					createdAt: now,
 				});
+			}
 
+			if (historyToInsert.length > 0) {
+				await tx.insert(crmLeadStageHistory).values(historyToInsert);
+			}
+
+			const results: (typeof crmLeads.$inferSelect)[] = [];
+			for (const lead of leadsToUpdate) {
 				const updateFields: Partial<typeof crmLeads.$inferInsert> = {
 					status: toStage,
 					stageEnteredAt: now,

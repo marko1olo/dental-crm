@@ -18,7 +18,7 @@ export const PriceDiffBatchGroup: React.FC<PriceDiffBatchGroupProps> = ({
 					className="pricelist-diff-batch-label"
 					title="Пакетные операции с ценами выбранных позиций"
 				>
-					Пакетно:
+					Пакетное изменение цен:
 				</span>
 				<button
 					type="button"

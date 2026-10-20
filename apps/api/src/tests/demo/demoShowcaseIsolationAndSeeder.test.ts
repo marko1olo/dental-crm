@@ -5,15 +5,24 @@ import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
+	cashBoxes,
+	cashBoxShifts,
+	cashOperations,
 	chairs,
 	clinics,
 	crmLeads,
+	dmsGuaranteeLetters,
+	doctorCommissions,
+	egiszBlankPermissions,
+	insuranceContracts,
 	inventoryItems,
 	labItems,
 	labOrderEvents,
 	labOrders,
 	organizations,
+	patientInvoices,
 	patients,
+	payments,
 	stockBatches,
 	toothStates,
 	users,
@@ -149,6 +158,9 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 				.from(appointments)
 				.where(eq(appointments.organizationId, DEMO_SHOWCASE_ORG_ID));
 			assert.equal(appts.length, 6, "Must have 6 appointments across chairs");
+			const apptIds = new Set(appts.map((a) => a.id));
+			assert.ok(apptIds.has("01a00000-0000-0000-0001-000000000001"));
+			assert.ok(apptIds.has("01a00000-0000-0000-0001-000000000002"));
 
 			// Заказ в ЗТЛ (lab_orders + lab_items + lab_order_events)
 			const [labOrder] = await tx
@@ -207,6 +219,87 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 				.where(eq(crmLeads.organizationId, DEMO_SHOWCASE_ORG_ID));
 			assert.equal(leads.length, 4, "Must have 4 CRM leads");
 			assert.ok(leads.some((l) => l.name === "Ковалев Роман Викторович" && l.status === "new"));
+
+			// ДМС договоры и гарантийные письма
+			const dmsContracts = await tx
+				.select()
+				.from(insuranceContracts)
+				.where(eq(insuranceContracts.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.equal(dmsContracts.length, 3, "Must have 3 DMS insurance contracts");
+			assert.ok(dmsContracts.some((c) => c.companyName.includes("СОГАЗ")));
+			assert.ok(dmsContracts.some((c) => c.companyName.includes("Альфа")));
+			assert.ok(dmsContracts.some((c) => c.companyName.includes("РЕСО")));
+
+			const letters = await tx
+				.select()
+				.from(dmsGuaranteeLetters)
+				.where(eq(dmsGuaranteeLetters.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.equal(letters.length, 3, "Must have 3 DMS guarantee letters");
+			assert.ok(letters.some((l) => l.insurerKey === "sogaz"));
+
+			// Права бланков ЕГИСЗ (очищенные от СЭМД шифров)
+			const egiszPerms = await tx
+				.select()
+				.from(egiszBlankPermissions)
+				.where(eq(egiszBlankPermissions.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.ok(egiszPerms.length >= 5, "Must have at least 5 EGISZ blank permissions");
+			const blankCodes = new Set(egiszPerms.map((p) => p.blankCode));
+			assert.ok(blankCodes.has("Форма 043/у"), "Must have clean Форма 043/у blank code");
+			assert.ok(blankCodes.has("Протокол осмотра"), "Must have clean Протокол осмотра blank code");
+			assert.ok(blankCodes.has("Лучевая диагностика"), "Must have clean Лучевая диагностика blank code");
+			assert.ok(blankCodes.has("Выписной эпикриз"), "Must have clean Выписной эпикриз blank code");
+
+			// Финансовый контур и сквозная цепочка оплат (Mandate 8e, 8n)
+			const commissions = await tx
+				.select()
+				.from(doctorCommissions)
+				.where(eq(doctorCommissions.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.equal(commissions.length, 3, "Must have 3 doctor commission rates seeded");
+			const therapistComm = commissions.find((c) => c.userId === DEMO_DOCTOR_1_ID);
+			assert.ok(therapistComm, "Therapist commission must exist");
+			assert.equal(Number(therapistComm.commissionPct), 30, "Therapist commission must be 30%");
+
+			const invoices = await tx
+				.select()
+				.from(patientInvoices)
+				.where(eq(patientInvoices.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.ok(invoices.length >= 1, "Must have settled invoices for demo patients");
+			const therapyInvoice = invoices.find((inv) => Number(inv.totalAmountRub) === 18500);
+			assert.ok(therapyInvoice, "Therapy invoice for 18 500 ₽ must exist");
+			assert.equal(therapyInvoice.status, "paid");
+
+			const pmts = await tx
+				.select()
+				.from(payments)
+				.where(eq(payments.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.ok(pmts.length >= 1, "Must have completed payments for demo patients");
+			const therapyPayment = pmts.find((p) => Number(p.amountRub) === 18500);
+			assert.ok(therapyPayment, "Therapy payment for 18 500 ₽ must exist");
+			assert.equal(therapyPayment.status, "paid");
+
+			const boxes = await tx
+				.select()
+				.from(cashBoxes)
+				.where(eq(cashBoxes.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.equal(boxes.length, 6, "Must have 6 canonical cash boxes seeded");
+
+			const openShifts = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, DEMO_SHOWCASE_ORG_ID),
+						eq(cashBoxShifts.status, "open"),
+					),
+				);
+			assert.ok(openShifts.length >= 1, "Must have at least 1 open cash box shift");
+
+			const ops = await tx
+				.select()
+				.from(cashOperations)
+				.where(eq(cashOperations.organizationId, DEMO_SHOWCASE_ORG_ID));
+			assert.ok(ops.length >= 1, "Must have at least 1 cash operation recorded");
+			assert.equal(Number(ops[0]!.amountRub), 18500);
 		});
 	});
 
@@ -240,18 +333,26 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 		const prodOrgId = "dce70000-7777-4000-8000-000000000001";
 		const prodClinicId = "dce70000-7777-4000-8000-000000000002";
 
-		// Гарантируем наличие тестовой непривилегированной роли без BYPASSRLS
-		// (в dev PostgreSQL роль dental имеет SUPERUSER, который обходит RLS по стандарту PG)
-		await db.execute(sql`
-			DO $$ BEGIN
-				IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dente_rls_tester') THEN
-					CREATE ROLE dente_rls_tester NOSUPERUSER NOBYPASSRLS;
-				END IF;
-			END $$;
-			GRANT ALL ON ALL TABLES IN SCHEMA public TO dente_rls_tester;
-			GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO dente_rls_tester;
-			GRANT USAGE ON SCHEMA public TO dente_rls_tester;
-		`);
+		// Проверяем, является ли текущее соединение SUPERUSER/BYPASSRLS
+		const roleInfo = await db.execute(
+			sql`SELECT (rolsuper OR rolbypassrls) AS needs_role_switch FROM pg_roles WHERE rolname = current_user`,
+		);
+		const needsRoleSwitch = Boolean(
+			(roleInfo.rows[0] as { needs_role_switch?: boolean } | undefined)?.needs_role_switch,
+		);
+
+		if (needsRoleSwitch) {
+			await db.execute(sql`
+				DO $$ BEGIN
+					IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dente_rls_tester') THEN
+						CREATE ROLE dente_rls_tester NOSUPERUSER NOBYPASSRLS;
+					END IF;
+				END $$;
+				GRANT ALL ON ALL TABLES IN SCHEMA public TO dente_rls_tester;
+				GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO dente_rls_tester;
+				GRANT USAGE ON SCHEMA public TO dente_rls_tester;
+			`);
+		}
 
 		// Создаем тестовую боевую организацию
 		await withTenantCtx(prodOrgId, async (tx) => {
@@ -273,8 +374,9 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 				})
 				.onConflictDoNothing();
 
-			// Активируем непривилегированную роль dente_rls_tester для активации FORCE RLS
-			await tx.execute(sql`SET LOCAL ROLE dente_rls_tester`);
+			if (needsRoleSwitch) {
+				await tx.execute(sql`SET LOCAL ROLE dente_rls_tester`);
+			}
 
 			// Делаем выборки ВСЕХ доменов под контекстом боевой клиники (prodOrgId)
 			// PostgreSQL FORCE RLS обязан отфильтровать все демо-строки!
@@ -285,6 +387,9 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 			const prodLeads = await tx.select().from(crmLeads);
 			const prodChairs = await tx.select().from(chairs);
 			const prodUsers = await tx.select().from(users);
+			const prodPayments = await tx.select().from(payments);
+			const prodInvoices = await tx.select().from(patientInvoices);
+			const prodCommissions = await tx.select().from(doctorCommissions);
 
 			// Ни одна запись демо-тенанта НЕ МОЖЕТ присутствовать в выборке прод-клиники!
 			const demoPatientLeak = prodPatients.some((p) => p.organizationId === DEMO_SHOWCASE_ORG_ID);
@@ -307,6 +412,15 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 
 			const demoUserLeak = prodUsers.some((u) => u.organizationId === DEMO_SHOWCASE_ORG_ID);
 			assert.equal(demoUserLeak, false, "ZERO LEAK: Prod clinic must not see demo staff users");
+
+			const demoPaymentLeak = prodPayments.some((p) => p.organizationId === DEMO_SHOWCASE_ORG_ID);
+			assert.equal(demoPaymentLeak, false, "ZERO LEAK: Prod clinic must not see demo payments");
+
+			const demoInvoiceLeak = prodInvoices.some((i) => i.organizationId === DEMO_SHOWCASE_ORG_ID);
+			assert.equal(demoInvoiceLeak, false, "ZERO LEAK: Prod clinic must not see demo invoices");
+
+			const demoCommLeak = prodCommissions.some((c) => c.organizationId === DEMO_SHOWCASE_ORG_ID);
+			assert.equal(demoCommLeak, false, "ZERO LEAK: Prod clinic must not see demo commissions");
 
 			// Возвращаем роль для очистки
 			await tx.execute(sql`RESET ROLE`);

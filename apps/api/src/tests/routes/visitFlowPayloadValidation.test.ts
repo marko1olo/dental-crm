@@ -124,10 +124,29 @@ describe("visitFlowRequestSchema Payload Validation Unit Tests", () => {
 describe("POST /api/ai/visit-flow Fastify Route HTTP Integration Tests", () => {
 	let app: FastifyInstance;
 	const TEST_ADMIN_SECRET = "visit-flow-test-secret";
+	const savedEnv: Record<string, string | undefined> = {};
+	const isolatedEnvKeys = [
+		"DENTE_CLINICAL_ADMIN_SECRET",
+		"DENTE_DEV_ALLOW_HEADER_ORG",
+		"DENTAL_AI_NEURAL_DRAFT",
+		"DENTAL_CLINICAL_AI_PROVIDER",
+		"OPENAI_API_KEY",
+		"DEEPGRAM_API_KEY",
+		"ANTHROPIC_API_KEY",
+	];
 
 	before(async () => {
+		for (const key of isolatedEnvKeys) {
+			savedEnv[key] = process.env[key];
+		}
 		process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_ADMIN_SECRET;
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
+		process.env.DENTAL_AI_NEURAL_DRAFT = "0";
+		process.env.DENTAL_CLINICAL_AI_PROVIDER = "none";
+		delete process.env.OPENAI_API_KEY;
+		delete process.env.DEEPGRAM_API_KEY;
+		delete process.env.ANTHROPIC_API_KEY;
+
 		app = await createDenteApiApp({
 			startTelegramWorker: false,
 			startCommunicationWorker: false,
@@ -137,8 +156,14 @@ describe("POST /api/ai/visit-flow Fastify Route HTTP Integration Tests", () => {
 
 	after(async () => {
 		await app.close();
-		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
-		delete process.env.DENTE_DEV_ALLOW_HEADER_ORG;
+		for (const key of isolatedEnvKeys) {
+			const val = savedEnv[key];
+			if (val === undefined) {
+				delete process.env[key];
+			} else {
+				process.env[key] = val;
+			}
+		}
 	});
 
 	const TEST_AUTH_HEADERS = {
@@ -195,7 +220,7 @@ describe("POST /api/ai/visit-flow Fastify Route HTTP Integration Tests", () => {
 		assert.equal(body.error, "VisitFlowValidationError");
 	});
 
-	test("HTTP validation passes (non-400) on valid body with null planPayload & recommendationsPayload", async () => {
+	test("HTTP validation passes (200) on valid body with null planPayload & recommendationsPayload under isolated AI env", async () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/ai/visit-flow",
@@ -208,7 +233,8 @@ describe("POST /api/ai/visit-flow Fastify Route HTTP Integration Tests", () => {
 			},
 		});
 
-		// Validation MUST pass — so response is NOT 400 (400 would indicate schema validation failed)
-		assert.notEqual(response.statusCode, 400, "Validation should have passed!");
+		assert.equal(response.statusCode, 200, "Valid payload with isolated AI fallback must return HTTP 200");
+		const body = response.json();
+		assert.ok(body.draft, "Response must contain deterministic visit draft");
 	});
 });

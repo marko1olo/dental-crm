@@ -3,9 +3,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const todayDate = new Date().toLocaleDateString("en-CA");
-const brainDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\7cd67b6c-4183-463f-a1cc-73d6eff523bf";
+const brainDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\c0809c16-b935-4720-ad84-a457c9a6b2cd";
 const outDir = path.resolve(__dirname, "..", "docs", "screenshots", "inquisition_live");
 fs.mkdirSync(outDir, { recursive: true });
+if (!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
 
 const mockDashboard = {
   clinicName: "Стоматология ДЕНТЕ Премиум",
@@ -222,42 +223,6 @@ async function main() {
   const baseUrl = "http://127.0.0.1:5173";
 
   try {
-    // 1. MOBILE CONTEXT (390x844)
-    console.log("\n--- TESTING MOBILE 390x844 ---");
-    const mContext = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-    await addInitStorage(mContext);
-    const mPage = await mContext.newPage();
-    await setupPageRoutes(mPage);
-
-    await mPage.goto(`${baseUrl}/#visit`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await mPage.waitForTimeout(3000);
-
-    // Wait for treatment module tabs to mount
-    console.log("[Playwright] Waiting for tp-tab-phased4...");
-    await mPage.waitForSelector('[data-testid="tp-tab-phased4"]', { timeout: 20000 });
-    console.log("[Playwright] Clicking '4 Фазы' tab button...");
-    await mPage.click('[data-testid="tp-tab-phased4"]');
-    await mPage.waitForTimeout(1000);
-
-    // Wait for phased 4 stage view
-    await mPage.waitForSelector('[data-testid="treatment-plan-phased-4stage-view"]', { timeout: 15000 });
-    console.log("[Playwright] Found treatment-plan-phased-4stage-view!");
-
-    // Capture Mobile Light
-    await setTheme(mPage, "light");
-    await captureScreen(mPage, "proof_mobile_treatment_plan_4stage_light.png");
-
-    // Capture Mobile Dark
-    await setTheme(mPage, "dark");
-    await captureScreen(mPage, "proof_mobile_treatment_plan_4stage_dark.png");
-
-    await mContext.close();
-
     // 2. PC CONTEXT (1440x900)
     console.log("\n--- TESTING PC 1440x900 ---");
     const pcContext = await browser.newContext({
@@ -288,9 +253,48 @@ async function main() {
     await setTheme(pcPage, "dark");
     await captureScreen(pcPage, "proof_pc_treatment_plan_4stage_dark.png");
 
+    // 3. Switch to 3-Tier Variant Comparison ([Базовый], [Оптимальный], [Премиум])
+    console.log("[Playwright] PC: Switching to 3-Tier Comparison tab...");
+    const tab3tier = await pcPage.$('button:has-text("3 Варианта")');
+    if (tab3tier) {
+      await tab3tier.click();
+      await pcPage.waitForTimeout(1000);
+    }
+
+    // Capture PC 3-Tier Light (1440x900)
+    await setTheme(pcPage, "light");
+    await captureScreen(pcPage, "proof_pc_treatment_plan_3tier_light.png");
+
+    // Capture PC 3-Tier Dark (1440x900)
+    await setTheme(pcPage, "dark");
+    await captureScreen(pcPage, "proof_pc_treatment_plan_3tier_dark.png");
+
+    // 4. Open Presenter Modal
+    console.log("[Playwright] PC: Opening options menu to launch Presenter Modal...");
+    const optionsBtn = await pcPage.$('[data-testid="treatment-plan-options-menu-btn"]');
+    if (optionsBtn) {
+      await optionsBtn.click();
+      await pcPage.waitForTimeout(500);
+
+      const presenterBtn = await pcPage.$('[data-testid="options-menu-presenter-btn"]');
+      if (presenterBtn) {
+        console.log("[Playwright] PC: Launching TreatmentPlanPresenterModal...");
+        await presenterBtn.click();
+        await pcPage.waitForTimeout(1500);
+
+        // Capture Presenter Dark (1440x900)
+        await setTheme(pcPage, "dark");
+        await captureScreen(pcPage, "proof_pc_treatment_presenter_modal_dark.png");
+
+        // Capture Presenter Light (1440x900)
+        await setTheme(pcPage, "light");
+        await captureScreen(pcPage, "proof_pc_treatment_presenter_modal_light.png");
+      }
+    }
+
     await pcContext.close();
 
-    console.log("\n[Playwright] All 4-stage screenshots successfully captured!");
+    console.log("\n[Playwright] All canonical treatment plan screenshots successfully captured!");
   } finally {
     await browser.close();
   }

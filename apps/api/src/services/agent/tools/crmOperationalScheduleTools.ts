@@ -24,7 +24,7 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { appointments, chairs, patients, users } from "../../../db/schema.js";
+import { appointments, chairs, doctorShiftRosters, patients, users } from "../../../db/schema.js";
 import type { AgentContext } from "../context.js";
 import type { ToolDefinition } from "./tool.js";
 
@@ -505,19 +505,28 @@ const DAY_NAMES_RU = [
 	"Суббота",
 ];
 
-function getShiftsFromDisk(): Array<Record<string, unknown>> {
-	const dataDir = path.resolve(process.cwd(), ".data");
-	const filePath = path.join(dataDir, "doctor-shifts.json");
-	if (fs.existsSync(filePath)) {
-		try {
-			const content = fs.readFileSync(filePath, "utf-8");
-			const parsed = JSON.parse(content);
-			if (Array.isArray(parsed)) return parsed;
-		} catch {
-			// ignore
-		}
+async function getShiftsFromDb(targetDb: any, orgId: string): Promise<Array<Record<string, unknown>>> {
+	if (!targetDb || !orgId) return [];
+	try {
+		const rows = await targetDb
+			.select()
+			.from(doctorShiftRosters)
+			.where(eq(doctorShiftRosters.organizationId, orgId));
+		return rows.map((r: any) => ({
+			id: r.id,
+			doctorId: r.doctorId,
+			doctorName: r.doctorName,
+			cabinetId: r.cabinetId,
+			chairId: r.chairId,
+			dateIso: r.dateIso,
+			startTime: r.startTime,
+			endTime: r.endTime,
+			role: r.role,
+			specialty: r.specialty,
+		}));
+	} catch {
+		return [];
 	}
-	return [];
 }
 
 export const getDoctorShiftsAndChairsTool: ToolDefinition<
@@ -582,8 +591,8 @@ export const getDoctorShiftsAndChairsTool: ToolDefinition<
 			}
 		}
 
-		// Load disk / cache shifts
-		const diskShifts = getShiftsFromDisk();
+		// Load shifts from PostgreSQL 18
+		const diskShifts = await getShiftsFromDb(targetDb, orgId);
 		const weeklyShifts: DoctorShiftDayDetail[] = [];
 		let doctorName = "Д-р Смирнов А.В.";
 

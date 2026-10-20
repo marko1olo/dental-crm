@@ -1,7 +1,6 @@
 import React from "react";
 import type { Dashboard } from "@dental/shared";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
-import { TimesheetT13Modal } from "../components/payroll/TimesheetT13Modal";
 import { DoctorShiftCloseModal } from "../components/shift";
 import { QueueBoardModal } from "./QueueBoardModal";
 
@@ -17,8 +16,8 @@ export interface ShiftViewModalsProps {
 	shiftCompletedServices: readonly any[];
 	isPayrollModalOpen: boolean;
 	onClosePayrollModal: () => void;
-	isTimesheetT13ModalOpen: boolean;
-	onCloseTimesheetT13Modal: () => void;
+	isTimesheetT13ModalOpen?: boolean;
+	onCloseTimesheetT13Modal?: () => void;
 	isShiftCloseModalOpen: boolean;
 	onCloseShiftCloseModal: () => void;
 	onConfirmCloseShift: () => void;
@@ -64,13 +63,6 @@ export const ShiftViewModals: React.FC<ShiftViewModalsProps> = ({
 				initialPeriodEnd={todayIso}
 				initialBasePercentage={30}
 				useClinicalCategoryRates={true}
-			/>
-		)}
-		{isTimesheetT13ModalOpen && (
-			<TimesheetT13Modal
-				isOpen={isTimesheetT13ModalOpen}
-				onClose={onCloseTimesheetT13Modal}
-				clinicName={dashboard?.clinicName}
 			/>
 		)}
 		{isShiftCloseModalOpen && (

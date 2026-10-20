@@ -164,7 +164,8 @@ export const createFiscalReceiptPayloadSchema = z
 		}
 	});
 
-export type CreateFiscalReceiptPayloadInput = z.infer<typeof createFiscalReceiptPayloadSchema>;
+export type CreateFiscalReceiptPayloadInput = z.input<typeof createFiscalReceiptPayloadSchema>;
+export type CreateFiscalReceiptPayloadOutput = z.infer<typeof createFiscalReceiptPayloadSchema>;
 
 /**
  * Schema for 54-FZ Return Receipt (Возврат прихода / Возврат расхода).

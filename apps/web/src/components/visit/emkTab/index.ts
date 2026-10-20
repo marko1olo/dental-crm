@@ -5,3 +5,5 @@ export * from "./VisitEmkCompletionSection";
 export * from "./VisitEmkServicesBilling";
 export * from "./VisitEmkCanvas";
 export * from "./useVisitCompletionWorkflow";
+export { VisitFlowProgress } from "../VisitFlowProgress";
+export { VisitSpecialtyFocus } from "../VisitSpecialtyFocus";
