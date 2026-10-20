@@ -9,6 +9,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { verifySbpWebhookSignature } from "./bankGatewaySecurity.js";
+import { FiscalInvoiceError } from "./fiscalReceiptService.js";
 import {
 	executeFiscalizeReceiptTransaction,
 	generateSbpDynamicQrService,
@@ -136,12 +137,22 @@ export async function handleFiscalizeReceipt(
 				});
 		}
 	} catch (err: unknown) {
-		// biome-ignore lint/suspicious/noExplicitAny: error mapping from transaction
-		const errorObj = err as any;
-		if (errorObj?.statusCode) {
+		if (err instanceof FiscalInvoiceError) {
+			return reply.code(err.statusCode).send({
+				error: err.errorCode || "FiscalizationError",
+				message: err.message,
+			});
+		}
+		if (
+			typeof err === "object" &&
+			err !== null &&
+			"statusCode" in err &&
+			typeof (err as { statusCode: unknown }).statusCode === "number"
+		) {
+			const errorObj = err as { statusCode: number; errorCode?: string; message?: string };
 			return reply.code(errorObj.statusCode).send({
 				error: errorObj.errorCode || "FiscalizationError",
-				message: errorObj.message,
+				message: errorObj.message || "Ошибка фискализации",
 			});
 		}
 		throw err;

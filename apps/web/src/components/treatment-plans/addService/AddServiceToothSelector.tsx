@@ -33,13 +33,13 @@ export const AddServiceToothSelector: React.FC<AddServiceToothSelectorProps> = (
 					<>
 						<span className="text-[10px] sm:text-[11px] font-mono font-bold leading-none">{t}</span>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => {}} />
+							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => onSelectTooth(isCurrent ? null : t)} />
 						</div>
 					</>
 				) : (
 					<>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => {}} />
+							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => onSelectTooth(isCurrent ? null : t)} />
 						</div>
 						<span className="text-[10px] sm:text-[11px] font-mono font-bold leading-none">{t}</span>
 					</>

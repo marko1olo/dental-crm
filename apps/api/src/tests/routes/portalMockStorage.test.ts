@@ -69,6 +69,27 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 		assert.deepStrictEqual(onDisk, sampleStlData);
 	});
 
+	test("успешно загружает 3D PLY скан на диск через PUT с Content-Type model/ply (200)", async () => {
+		const samplePlyData = Buffer.from("ply\nformat ascii 1.0\nelement vertex 3\nproperty float x\nproperty float y\nproperty float z\nend_header\n0 0 0\n1 0 0\n0 1 0\n");
+		const res = await app.inject({
+			method: "PUT",
+			url: `/api/portal/mock-storage/upload?key=${encodeURIComponent(testKeyPly)}`,
+			payload: samplePlyData,
+			headers: { "content-type": "model/ply" },
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.success, true);
+		assert.strictEqual(json.storageKey, testKeyPly);
+		assert.strictEqual(json.bytesWritten, samplePlyData.length);
+
+		const expectedPath = path.resolve(process.cwd(), ".data", "lab_scans", testKeyPly);
+		assert.strictEqual(fs.existsSync(expectedPath), true);
+		const onDisk = fs.readFileSync(expectedPath);
+		assert.deepStrictEqual(onDisk, samplePlyData);
+	});
+
 	test("успешно скачивает ранее сохраненный 3D скан через GET (200)", async () => {
 		const res = await app.inject({
 			method: "GET",

@@ -26,7 +26,8 @@ export function resolveSafeStoragePath(key: string): string | null {
 	}
 	// Валидация расширения файла (только стоматологические 3D форматы: stl, ply, obj, dcm, zip)
 	const extMatch = /\.([a-zA-Z0-9]+)$/.exec(key);
-	const ext = extMatch?.[1]?.toLowerCase();
+	const rawExt = extMatch?.[1];
+	const ext = typeof rawExt === "string" ? rawExt.toLowerCase() : undefined;
 	if (!ext || !ALLOWED_SCAN_EXTENSIONS.has(ext)) {
 		return null;
 	}
@@ -44,6 +45,7 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 	for (const ct of [
 		"application/octet-stream",
 		"model/stl",
+		"model/ply",
 		"application/x-ply",
 		"model/obj",
 		"application/dicom",

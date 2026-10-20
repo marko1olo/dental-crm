@@ -814,10 +814,10 @@ export async function handleGetBillingInvoices(
 		.orderBy(desc(patientInvoices.createdAt))
 		.limit(500);
 
-	const data = rows.map((row: any) => ({
+	const data = rows.map((row) => ({
 		id: row.id,
-		totalRub: Number(row.totalAmountRub || row.totalRub || 0),
-		totalAmountRub: Number(row.totalAmountRub || row.totalRub || 0),
+		totalRub: Number(row.totalAmountRub || 0),
+		totalAmountRub: Number(row.totalAmountRub || 0),
 		paidRub: Number(row.paidAmountRub || 0),
 		paidAmountRub: Number(row.paidAmountRub || 0),
 		status: row.status,

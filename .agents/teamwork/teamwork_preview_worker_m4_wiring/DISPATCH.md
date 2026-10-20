@@ -48,6 +48,11 @@ DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results,
    `node --test apps/api/src/tests/routes/portalMockStorage.test.ts`
    `node --test apps/api/src/services/__tests__/labScanDirectUpload.test.ts`
    `node --test apps/api/src/tests/compliance/decree659AnesthesiaBillingAudit.test.ts`
-2. Зафиксируй изменения атомарным коммитом `feat(backend-wiring): real lab scan uploads, acid transactions and strict fiscal typing`.
-3. Запуши в `origin` и `gitlab`.
-4. Сформируй `handoff.md` в своей директории и отправь сообщение оркестратору (1dba1dd3-1b54-431d-9253-a722303ba51f).
+
+## 2026-10-20T06:45:11Z
+СИСТЕМНОЕ ПРОБУЖДЕНИЕ ПОСЛЕ РЕСТАРТА СЕРВЕРА (КВОТА ВОСПОЛНЕНА).
+Сырые слова Создателя: "возроди субагентво отправь им сообщение!!! квота восполнена"
+Твой статус: Worker M4 Wiring (teamwork_preview_worker).
+Продолжай выполнение своего фронта работ: Milestone 4 (R4: Real Backend Wiring & Uploads & Audit Remediation).
+Устранение TS2532 в portalMockStorageRoutes, добавление model/ply, ликвидация any в кассе/финансах, атомарные транзакции в visitQuickRoutes (tx: DatabaseTransaction), WebGL teardown в viewer3d.html.
+Гейты: Exit Code 0 на точечных тестах, ноль моков, честный продакшен! Не останавливайся!

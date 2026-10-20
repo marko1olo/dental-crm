@@ -317,7 +317,8 @@ export async function createAppointmentInDb(
 		return createAppointmentInMemory(input as unknown as CreateAppointmentInput);
 	}
 	if (input.patientId) {
-		const [patient] = await db
+		const client = tx || db;
+		const [patient] = await client
 			.select({ id: schema.patients.id, status: schema.patients.status })
 			.from(schema.patients)
 			.where(

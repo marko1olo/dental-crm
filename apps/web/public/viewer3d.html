@@ -330,8 +330,33 @@ function init() {
       disposeMesh(currentMesh);
       currentMesh = null;
     }
-    if (renderer && typeof renderer.dispose === 'function') {
-      renderer.dispose();
+    if (scene) {
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          disposeMesh(child);
+        }
+      });
+      if (typeof scene.clear === 'function') {
+        scene.clear();
+      }
+    }
+    if (controls && typeof controls.dispose === 'function') {
+      controls.dispose();
+      controls = null;
+    }
+    if (renderer) {
+      if (typeof renderer.dispose === 'function') {
+        renderer.dispose();
+      }
+      if (typeof renderer.forceContextLoss === 'function') {
+        try {
+          renderer.forceContextLoss();
+        } catch (_) {}
+      }
+      if (renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
+      renderer = null;
     }
   }
 

@@ -49,7 +49,7 @@ export const ChairsideToothFdiGrid: React.FC<ChairsideToothFdiGridProps> = ({
 								showPeriodontalBoneLoss={false}
 								showPulpAndCanals={state === "treatment" || state === "pulpitis"}
 								showPeriapicalHalos={false}
-								onClick={() => {}}
+								onClick={() => onToothClick(t)}
 							/>
 						</div>
 						<div className="h-1 flex items-center justify-center">
