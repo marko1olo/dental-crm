@@ -1,8 +1,8 @@
 /**
- * anesthesiaAndProceduresParser.ts — Распознавание анестетиков (дозировка/техника) и манипуляций Номенклатуры 804н
+ * anesthesiaAndProceduresParser.ts — Семантическое распознавание анестетиков и клинических процедур прайс-листа
  */
 
-import type { AnesthesiaResult, Procedure804nResult } from "./clinicalGrammarTypes.js";
+import type { AnesthesiaResult, ClinicalProcedureResult, Procedure804nResult } from "./clinicalGrammarTypes.js";
 
 // ----------------------------------------------------------------------------
 // ANESTHESIA EXTRACTION
@@ -200,6 +200,13 @@ export function extractDentalAnesthesia(text: string): AnesthesiaResult | null {
 					? "интралигаментарная"
 					: "инфильтрационная";
 
+	const serviceCode =
+		technique === "conduction"
+			? "A11.07.013"
+			: technique === "application"
+				? "A11.07.011"
+				: "A11.07.012";
+
 	return {
 		drugKey: matchedConfig.drugKey,
 		tradeName: matchedConfig.tradeName,
@@ -208,28 +215,28 @@ export function extractDentalAnesthesia(text: string): AnesthesiaResult | null {
 		cartridgeCount,
 		technique,
 		concentration: matchedConfig.concentration,
-		code804n: technique === "conduction" ? "A11.07.013" : technique === "application" ? "A11.07.011" : "A11.07.012",
+		serviceCode,
+		code804n: serviceCode,
 	};
 }
 
 // ----------------------------------------------------------------------------
-// ORDER 804N PROCEDURES & CONSUMABLES
+// CLINICAL PROCEDURES & MANIPULATIONS CATALOG (SEMANTIC EXTRACTION)
 // ----------------------------------------------------------------------------
 
 interface ManipulationRule {
-	readonly code804n: string;
+	readonly serviceCode?: string;
+	readonly code804n?: string;
 	readonly name: string;
-	readonly category: Procedure804nResult["category"];
-	readonly priceRub: number;
+	readonly category: ClinicalProcedureResult["category"];
 	readonly patterns: readonly string[];
 }
 
-const MANIPULATIONS_804N: readonly ManipulationRule[] = [
+const CANONICAL_MANIPULATIONS: readonly ManipulationRule[] = [
 	{
-		code804n: "A16.07.002.001",
+		serviceCode: "A16.07.002.001",
 		name: "Наложение коффердама (раббердама) / Оптрагейт",
 		category: "isolation",
-		priceRub: 850,
 		patterns: [
 			"коффердам",
 			"раббердам",
@@ -240,10 +247,9 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.002",
+		serviceCode: "A16.07.002",
 		name: "Препарирование и некрэктомия кариозной полости зуба",
 		category: "therapy",
-		priceRub: 1500,
 		patterns: [
 			"некрэктомия",
 			"препарирование",
@@ -253,10 +259,9 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.002.010",
+		serviceCode: "A16.07.002.010",
 		name: "Восстановление зуба пломбой светоотверждаемым композитом (Gradia Direct / Estelite / Filtek)",
 		category: "therapy",
-		priceRub: 4500,
 		patterns: [
 			"пломба эстет икс",
 			"эстелайт",
@@ -275,10 +280,21 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.030",
+		serviceCode: "A16.07.002.011",
+		name: "Шлифовка и полировка пломбы / реставрации",
+		category: "therapy",
+		patterns: [
+			"полировка",
+			"шлифовка",
+			"полировочные диски",
+			"окклюзионная коррекция",
+			"финишная обработка",
+		],
+	},
+	{
+		serviceCode: "A16.07.030",
 		name: "Инструментальная и медикаментозная обработка корневого канала",
 		category: "endodontics",
-		priceRub: 3500,
 		patterns: [
 			"обработка корневого канала",
 			"обработка каналов",
@@ -294,10 +310,9 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.008",
+		serviceCode: "A16.07.008",
 		name: "Пломбирование корневого канала гуттаперчей / силером",
 		category: "endodontics",
-		priceRub: 4000,
 		patterns: [
 			"пломбирование корневого канала",
 			"пломбирование каналов",
@@ -308,13 +323,13 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.020",
+		serviceCode: "A16.07.020",
 		name: "Ультразвуковое удаление зубных отложений и Air-Flow",
 		category: "hygiene",
-		priceRub: 5000,
 		patterns: [
 			"ультразвук",
 			"air flow",
+			"air-flow",
 			"снятие зубных отложений",
 			"профгигиена",
 			"профессиональная гигиена",
@@ -323,10 +338,9 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 		],
 	},
 	{
-		code804n: "A16.07.001",
+		serviceCode: "A16.07.001",
 		name: "Удаление зуба (простое / сложное)",
 		category: "surgery",
-		priceRub: 3500,
 		patterns: [
 			"удаление зуба",
 			"экстракция зуба",
@@ -335,12 +349,72 @@ const MANIPULATIONS_804N: readonly ManipulationRule[] = [
 			"наложение шва",
 		],
 	},
+	{
+		serviceCode: "A16.07.004",
+		name: "Восстановление зуба коронкой",
+		category: "orthopedics",
+		patterns: [
+			"коронка",
+			"диоксид циркония",
+			"e.max",
+			"металлокерамика",
+			"временная коронка",
+			"препарирование под коронку",
+		],
+	},
+	{
+		serviceCode: "A16.07.054",
+		name: "Внутрикостная дентальная имплантация",
+		category: "surgery",
+		patterns: [
+			"установка импланта",
+			"дентальная имплантация",
+			"имплантат",
+			"формирователь десны",
+		],
+	},
+	{
+		serviceCode: "A06.07.007",
+		name: "Внутриротовая прицельная радиовизиография",
+		category: "hygiene",
+		patterns: [
+			"прицельный снимок",
+			"визиография",
+			"рентген зуба",
+			"rvg",
+		],
+	},
+	{
+		serviceCode: "A11.07.024",
+		name: "Местное применение реминерализующих препаратов (фторирование)",
+		category: "hygiene",
+		patterns: [
+			"фторирование",
+			"ремотерапия",
+			"фторлак",
+			"глуфторекс",
+		],
+	},
+	{
+		serviceCode: "A16.07.019",
+		name: "Вскрытие поднадкостничного очага воспаления (периостотомия)",
+		category: "surgery",
+		patterns: [
+			"периостотомия",
+			"послабляющий разрез",
+			"дренирование абсцесса",
+		],
+	},
 ];
 
-export function extractDentalProcedures(text: string, primaryTooth?: number): Procedure804nResult[] {
+export function extractDentalProcedures(
+	text: string,
+	primaryTooth?: number,
+	priceResolver?: ((serviceCode: string) => number | undefined) | Record<string, number>,
+): ClinicalProcedureResult[] {
 	if (!text) return [];
 	const norm = text.toLowerCase().replace(/ё/g, "е");
-	const results: Procedure804nResult[] = [];
+	const results: ClinicalProcedureResult[] = [];
 
 	let shade: string | undefined;
 	if (norm.includes("а два") || norm.includes("а2") || norm.includes("a2")) shade = "A2";
@@ -348,20 +422,30 @@ export function extractDentalProcedures(text: string, primaryTooth?: number): Pr
 	else if (norm.includes("а один") || norm.includes("а1") || norm.includes("a1")) shade = "A1";
 	else if (norm.includes("б два") || norm.includes("b2")) shade = "B2";
 
-	for (const rule of MANIPULATIONS_804N) {
+	for (const rule of CANONICAL_MANIPULATIONS) {
 		const matched = rule.patterns.some((p) => norm.includes(p));
 		if (matched) {
 			let name = rule.name;
 			if (shade && rule.category === "therapy") {
 				name += ` (оттенок ${shade})`;
 			}
+
+			const code = rule.serviceCode || rule.code804n || "";
+			let priceRub: number | undefined;
+			if (typeof priceResolver === "function") {
+				priceRub = priceResolver(code);
+			} else if (priceResolver && typeof priceResolver === "object") {
+				priceRub = priceResolver[code];
+			}
+
 			results.push({
-				code804n: rule.code804n,
+				serviceCode: code,
+				code804n: code,
 				name,
 				category: rule.category,
 				quantity: 1,
 				toothNumber: primaryTooth,
-				priceRub: rule.priceRub,
+				priceRub,
 				shade,
 			});
 		}
