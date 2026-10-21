@@ -1,24 +1,29 @@
 import React, { useRef } from "react";
 import { createPortal } from "react-dom";
-import { QrCode, X, ShieldCheck, ArrowRight, Layers, Sparkles, Building2, User, FileText } from "lucide-react";
 import { type CanonicalTenderType } from "@dental/shared";
-import { type CheckoutPaymentMethodType, toCanonicalCheckoutTender } from "../payments/checkout/fastCheckoutPresets";
-import { type Ffd12FiscalPayload, type TreatmentPlanStageOption } from "../payments/checkout/fastCheckoutEngine";
-import { useModalA11y } from "../../hooks/useModalA11y";
-
-import { FastCheckoutPaymentSplit } from "./FastCheckoutPaymentSplit";
-import { FastCheckoutFamilyBalance } from "./FastCheckoutFamilyBalance";
-import { FastCheckoutReceiptPreview } from "./FastCheckoutReceiptPreview";
-import { FastCheckoutPresetsAndDiscounts } from "./FastCheckoutPresetsAndDiscounts";
-import { useFastCheckoutLogic } from "./useFastCheckoutLogic";
+import { type CheckoutPaymentMethodType, toCanonicalCheckoutTender } from "../payments/checkout/fastCheckoutPresets.js";
+import { type Ffd12FiscalPayload, type TreatmentPlanStageOption } from "../payments/checkout/fastCheckoutEngine.js";
+import { useModalA11y } from "../../hooks/useModalA11y.js";
+import { FastCheckoutPaymentSplit } from "./FastCheckoutPaymentSplit.js";
+import { FastCheckoutFamilyBalance } from "./FastCheckoutFamilyBalance.js";
+import { FastCheckoutReceiptPreview } from "./FastCheckoutReceiptPreview.js";
+import { FastCheckoutPresetsAndDiscounts } from "./FastCheckoutPresetsAndDiscounts.js";
+import { useFastCheckoutLogic } from "./useFastCheckoutLogic.js";
+import {
+	FastCheckoutModalHeader,
+	FastCheckoutGuidanceRibbon,
+	FastCheckoutStageSelector,
+	FastCheckoutStageAdvanceMode,
+	FastCheckoutPayerTypePanel,
+} from "./fastCheckoutModalModules/index.js";
 
 export { type CanonicalTenderType, toCanonicalCheckoutTender };
-export * from "./FastCheckoutPaymentSplit";
-export * from "./FastCheckoutFamilyBalance";
-export * from "./FastCheckoutReceiptPreview";
-export * from "./FastCheckoutPresetsAndDiscounts";
-export * from "./fastCheckoutFiscalHandlers";
-export * from "./useFastCheckoutLogic";
+export * from "./FastCheckoutPaymentSplit.js";
+export * from "./FastCheckoutFamilyBalance.js";
+export * from "./FastCheckoutReceiptPreview.js";
+export * from "./FastCheckoutPresetsAndDiscounts.js";
+export * from "./fastCheckoutFiscalHandlers.js";
+export * from "./useFastCheckoutLogic.js";
 
 export interface FastCheckoutModalProps {
 	readonly isOpen: boolean;
@@ -44,549 +49,40 @@ export interface FastCheckoutModalProps {
 }
 
 export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
-	const {
-		isOpen,
-		onClose,
-		patientName = "",
-		patientPhone = "",
-		patientEmail = "",
-		patientDepositRub = 0,
-		patientFamilyBalanceRub = 0,
-		familyPayerName = "",
-		orderId = "",
-	} = props;
-
-	const {
-		stages,
-		selectedStageId,
-		stagePaymentMode,
-		setStagePaymentMode,
-		activeMethod,
-		cardAmountRub,
-		setCardAmountRub,
-		cashAmountRub,
-		setCashAmountRub,
-		sbpAmountRub,
-		setSbpAmountRub,
-		sbpStatus,
-		isCheckingSbp,
-		sbpCheckMessage,
-		depositAmountRub,
-		setDepositAmountRub,
-		loyaltyAmountRub,
-		setLoyaltyAmountRub,
-		cashTenderedRub,
-		setCashTenderedRub,
-		isPrinting,
-		pendingOfflineCount,
-		isFlushingQueue,
-		interruptedPaymentState,
-		setInterruptedPaymentState,
-		isSubmittingManualCard,
-		kktHardwareStatus,
-		isTier2Open,
-		setIsTier2Open,
-		isSimpleCashierMode,
-		setIsSimpleCashierMode,
-		clientType,
-		setClientType,
-		buyerInn,
-		setBuyerInn,
-		buyerName,
-		setBuyerName,
-		isElectronicReceiptOnly,
-		setIsElectronicReceiptOnly,
-		discountPreset,
-		setDiscountPreset,
-		customDiscountPercent,
-		setCustomDiscountPercent,
-		baseStageAmountKop,
-		discountCalc,
-		stageCalc,
-		effectiveBillKop,
-		targetBillKop,
-		targetBillRub,
-		effectiveSbpAmountRub,
-		sbpQrData,
-		remainingKop,
-		remainingRub,
-		cashChange,
-		validation,
-		handleQuickPreset,
-		handleStageSelect,
-		handleSingle100Percent,
-		handleAddRemainingToCard,
-		handleAddRemainingToCash,
-		handleAddRemainingToSbp,
-		handleAddRemainingToDeposit,
-		handleAddRemainingDepositPlusCard,
-		handleAddRemainingToLoyalty,
-		handleAddRemaining5050,
-		handleAddRemainingToFamily,
-		handleExecutePayment,
-		handleCheckSbpStatus,
-		handleConfirmSbpManual,
-		handleManualCardTerminalConfirm,
-		handleAcceptPaymentOfflineFallback,
-		handleRetryFiscalizationDirect,
-		handleFlushQueue,
-	} = useFastCheckoutLogic(props);
-
+	const { isOpen, onClose, patientName = "", patientPhone = "", patientEmail = "", patientDepositRub = 0, patientFamilyBalanceRub = 0, familyPayerName = "", orderId = "" } = props;
+	const c = useFastCheckoutLogic(props);
 	const primaryInputRef = useRef<HTMLInputElement | null>(null);
 
 	const { modalRef, handleInputEnterKeyDown } = useModalA11y<HTMLDivElement>({
-		isOpen,
-		onClose,
-		onSubmit: () => {
-			if (!isPrinting) {
-				void handleExecutePayment();
-			}
-		},
-		autoFocusRef: primaryInputRef,
-		initialFocusSelector:
-			'[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], [data-testid="simple-deposit-btn"], input, button',
+		isOpen, onClose, onSubmit: () => { if (!c.isPrinting) void c.handleExecutePayment(); }, autoFocusRef: primaryInputRef,
+		initialFocusSelector: '[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], [data-testid="simple-deposit-btn"], input, button',
 	});
 
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div
-			ref={modalRef}
-			className="fast-checkout-modal-overlay"
-			data-testid={props.containerTestId || (props.initialSimpleCashierMode === false ? "split-payment-modal" : "fast-checkout-modal")}
-			tabIndex={-1}
-		>
-			<div className="fast-checkout-modal-container max-w-3xl">
-				{/* Header */}
-				<div className="p-3 sm:py-2.5 sm:px-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
-					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30 shrink-0">
-							<QrCode className="w-4 h-4" />
-						</div>
-						<div className="min-w-0">
-							<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] truncate flex items-center gap-2 m-0">
-								Оплата приёма и кассовый чек
-							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 truncate">
-								{patientName} • Заказ #{orderId} • К оплате:{" "}
-								<span className="font-bold font-mono text-teal-700 dark:text-teal-300">
-									{(effectiveBillKop / 100).toLocaleString("ru-RU", {
-										minimumFractionDigits: 2,
-									})}{" "}
-									₽
-								</span>
-							</p>
-						</div>
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer shrink-0 ml-2"
-						aria-label="Закрыть быструю кассу"
-						data-testid="btn-close-fast-checkout-modal"
-					>
-						<X className="w-4 h-4" />
-					</button>
-				</div>
-
-				{/* Body Content */}
+		<div ref={modalRef} className="fast-checkout-modal-overlay overflow-x-clip max-w-[100vw]" data-testid={props.containerTestId || (props.initialSimpleCashierMode === false ? "split-payment-modal" : "fast-checkout-modal")} tabIndex={-1}>
+			<div className="fast-checkout-modal-container max-w-3xl overflow-x-clip">
+				<FastCheckoutModalHeader patientName={patientName} orderId={orderId} effectiveBillKop={c.effectiveBillKop} onClose={onClose} />
 				<div className="p-3 sm:p-4 pb-28 sm:pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
-					{/* Mobile Hero Amount Panel (Apple HIG / POS Chairside 32-36px bold font-mono) */}
 					<div className="sm:hidden p-3.5 rounded-2xl bg-gradient-to-b from-teal-500/15 to-teal-500/5 border border-teal-500/30 text-center shadow-xs space-y-1">
-						<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 block">
-							Итого к оплате
-						</span>
-						<div className="text-3xl font-black font-mono tracking-tight text-[var(--ink,#0f172a)] leading-tight">
-							{(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-						</div>
+						<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 block">Итого к оплате</span>
+						<div className="text-[34px] font-black font-mono tracking-tight text-[var(--ink,#0f172a)] leading-tight">{(c.effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</div>
 						<div className="text-xs text-[var(--muted,#64748b)] truncate flex items-center justify-center gap-1.5 pt-0.5">
 							<span className="font-semibold text-[var(--ink,#0f172a)] truncate">{patientName || "Пациент"}</span>
 							{orderId && <span>• Заказ #{orderId}</span>}
-							{discountCalc.discountRub > 0 && (
-								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200">
-									Скидка -{discountCalc.discountRub.toLocaleString("ru-RU")} ₽
-								</span>
-							)}
+							{c.discountCalc.discountRub > 0 && <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200">Скидка -{c.discountCalc.discountRub.toLocaleString("ru-RU")} ₽</span>}
 						</div>
 					</div>
-
-					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
-					<div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
-							<span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-600 text-white text-[9px] shrink-0">
-								1
-							</span>
-							<span className="truncate">Способ</span>
-						</div>
-						<ArrowRight size={12} className="text-[var(--muted,#64748b)] shrink-0" />
-						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
-							<span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-600 text-white text-[9px] shrink-0">
-								2
-							</span>
-							<span className="truncate">Сумма</span>
-						</div>
-						<ArrowRight size={12} className="text-[var(--muted,#64748b)] shrink-0" />
-						<div
-							className={`flex items-center gap-1.5 font-bold min-w-0 ${
-								validation.isValid
-									? "text-emerald-700 dark:text-emerald-300"
-									: "text-amber-600"
-							}`}
-						>
-							<span
-								className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${
-									validation.isValid ? "bg-emerald-600" : "bg-amber-500"
-								} text-white text-[9px] shrink-0`}
-							>
-								3
-							</span>
-							<span className="truncate">Кассовый чек</span>
-						</div>
-						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0">
-							<ShieldCheck size={13} className="inline mr-1 shrink-0 text-emerald-500" />
-							<span className="truncate">Для пациентов-физлиц ИНН не требуется</span>
-						</span>
-						<button
-							type="button"
-							onClick={() => setIsSimpleCashierMode((prev) => !prev)}
-							className={`min-h-[44px] sm:min-h-[30px] sm:h-7.5 px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ml-auto flex items-center gap-1.5 shrink-0 ${
-								isSimpleCashierMode
-									? "bg-teal-600 text-white shadow-xs ring-2 ring-teal-500/30"
-									: "bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-500"
-							}`}
-							title="Переключить крупный режим «Простая касса» для врача/кассира"
-							data-testid="toggle-simple-cashier-btn"
-						>
-							<span>Простая касса</span>
-							<span className="text-[10px] opacity-90 font-mono">
-								[{isSimpleCashierMode ? "Крупно" : "Сплит"}]
-							</span>
-						</button>
-					</div>
-
-					{/* Presets and Discounts */}
-					<FastCheckoutPresetsAndDiscounts
-						familyPayerName={familyPayerName}
-						patientFamilyBalanceRub={patientFamilyBalanceRub}
-						onQuickPreset={handleQuickPreset}
-						discountPreset={discountPreset}
-						onSetDiscountPreset={setDiscountPreset}
-						customDiscountPercent={customDiscountPercent}
-						onSetCustomDiscountPercent={setCustomDiscountPercent}
-						discountCalc={discountCalc}
-					/>
-
-					{/* Treatment Stage Selector */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-								<Layers size={14} className="text-teal-600" />
-								Выбор этапа сметы / плана лечения:
-							</span>
-							<span className="text-xs text-[var(--muted,#64748b)]">
-								{stages.length}{" "}
-								{stages.length === 1
-									? "этап"
-									: stages.length < 5
-									? "этапа"
-									: "этапов"}{" "}
-								в плане
-							</span>
-						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-							{stages.map((st) => {
-								const isSelected = selectedStageId === st.id;
-								return (
-									<button
-										key={st.id}
-										type="button"
-										onClick={() => handleStageSelect(st.id)}
-										className={`min-h-[48px] p-2.5 rounded-xl border-2 text-left flex flex-col justify-between transition-all cursor-pointer ${
-											isSelected
-												? "border-teal-600 bg-teal-500/10 text-teal-900 dark:text-teal-200 shadow-sm"
-												: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
-										}`}
-									>
-										<span className="text-xs font-bold truncate">{st.titleRu}</span>
-										<span className="text-xs font-mono font-extrabold text-teal-700 dark:text-teal-300">
-											{(st.amountKop / 100).toLocaleString("ru-RU")} ₽
-										</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					{/* Stage Advance Mode Selection */}
-					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2">
-						<div className="flex items-center justify-between flex-wrap gap-1">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-								<Sparkles size={14} className="text-teal-600" />
-								Режим чека для этапа:
-							</span>
-							<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
-								{stageCalc.ffdTag1214NameRu}
-							</span>
-						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-							<button
-								type="button"
-								onClick={() => setStagePaymentMode("full")}
-								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
-									stagePaymentMode === "full"
-										? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]"
-								}`}
-							>
-								<span>100% Оплата</span>
-								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
-									{(baseStageAmountKop / 100).toLocaleString("ru-RU")} ₽
-								</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setStagePaymentMode("advance_30")}
-								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
-									stagePaymentMode === "advance_30"
-										? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
-								}`}
-							>
-								<span>Аванс 30%</span>
-								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
-									{Math.round((baseStageAmountKop * 30) / 10000).toLocaleString("ru-RU")} ₽
-								</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setStagePaymentMode("advance_50")}
-								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
-									stagePaymentMode === "advance_50"
-										? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
-								}`}
-							>
-								<span>Аванс 50%</span>
-								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
-									{Math.round((baseStageAmountKop * 50) / 10000).toLocaleString("ru-RU")} ₽
-								</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setStagePaymentMode("advance_offset_tag1215")}
-								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
-									stagePaymentMode === "advance_offset_tag1215"
-										? "border-purple-500 bg-purple-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-purple-500"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
-								}`}
-							>
-								<span>Зачет аванса</span>
-								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
-									Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
-								</span>
-							</button>
-						</div>
-
-						{stagePaymentMode === "advance_offset_tag1215" && (
-							<div className="mt-1 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between flex-wrap gap-2 text-purple-950 dark:text-purple-100">
-								<div>
-									<strong>Зачет ранее внесенного аванса:</strong>{" "}
-									{(stageCalc.advanceOffsetTag1215Kop / 100).toLocaleString("ru-RU")} ₽
-									(зачет аванса)
-								</div>
-								<div className="font-mono font-bold">
-									К доплате сейчас:{" "}
-									{(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
-								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Payer Type & INN Panel */}
-					<div
-						className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2"
-						data-testid="payer-type-section"
-					>
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-								<Building2 size={14} className="text-teal-600" />
-								Тип плательщика (реквизиты чека):
-							</span>
-							{clientType === "physical_person" && (
-								<span
-									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0"
-									data-testid="inn-physical-not-required-badge"
-									aria-label="ИНН с пациентов-физлиц не требуется"
-									title="ИНН с пациентов-физлиц не требуется"
-								>
-									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									Для пациентов-физлиц ИНН не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
-								</span>
-							)}
-						</div>
-						<div className="dente-segmented-bar inline-flex" role="tablist" aria-label="Тип плательщика">
-							<button
-								type="button"
-								role="tab"
-								aria-selected={clientType === "physical_person"}
-								onClick={() => setClientType("physical_person")}
-								className={`dente-segmented-item ${clientType === "physical_person" ? "active" : ""}`}
-								data-testid="tab-payer-physical"
-							>
-								<User size={13} className="shrink-0" />
-								<span>Физическое лицо (пациент)</span>
-							</button>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={clientType === "legal_entity"}
-								onClick={() => setClientType("legal_entity")}
-								className={`dente-segmented-item ${clientType === "legal_entity" ? "active" : ""}`}
-								data-testid="tab-payer-legal"
-							>
-								<Building2 size={13} className="shrink-0" />
-								<span>Юрлицо / ИП</span>
-							</button>
-						</div>
-
-						{clientType === "physical_person" ? (
-							<details className="group space-y-1" open={Boolean(buyerInn) || undefined}>
-								<summary className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-teal-700 dark:hover:text-teal-400 cursor-pointer select-none list-none flex items-center gap-1 transition-colors">
-									<span className="text-[10px] text-teal-600 font-bold group-open:rotate-90 transition-transform">▶</span>
-									<span>Указать ИНН (опционально для 13% вычета НДФЛ)</span>
-								</summary>
-								<div className="pt-1 space-y-1">
-									<input
-										type="text"
-										maxLength={12}
-										value={buyerInn}
-										onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
-										onKeyDown={handleInputEnterKeyDown}
-										placeholder="Не требуется (пациент-физлицо)"
-										className="min-h-[44px] sm:min-h-0 sm:h-8 w-full max-w-sm px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
-										data-testid="input-buyer-inn-physical"
-									/>
-									{buyerInn && buyerInn.length !== 12 && (
-										<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 mt-0.5 flex items-center gap-1 font-medium">
-											<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-											<span>ИНН физлица обычно 12 цифр (для чека опционально, оплата не блокируется)</span>
-										</p>
-									)}
-								</div>
-							</details>
-						) : (
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								<div className="space-y-1">
-									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
-										<FileText size={12} className="text-teal-600" />
-										<span>ИНН организации / ИП (10 или 12 цифр): *</span>
-									</label>
-									<input
-										type="text"
-										maxLength={12}
-										value={buyerInn}
-										onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
-										placeholder="ИНН (10 или 12 цифр)"
-										className="min-h-[44px] sm:min-h-0 sm:h-8 w-full px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
-										data-testid="input-buyer-inn-legal"
-									/>
-								</div>
-								<div className="space-y-1">
-									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
-										<span>Наименование организации / ИП:</span>
-									</label>
-									<input
-										type="text"
-										value={buyerName}
-										onChange={(e) => setBuyerName(e.target.value)}
-										placeholder="ООО «Компания» или ИП Иванов"
-										className="min-h-[44px] sm:min-h-0 sm:h-8 w-full px-2.5 text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
-										data-testid="input-buyer-name-legal"
-									/>
-								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Split Payment Section (Selector, SBP QR, Cash Tender) */}
-					<FastCheckoutPaymentSplit
-						isSimpleCashierMode={isSimpleCashierMode}
-						activeMethod={activeMethod}
-						onSelectMethod={handleSingle100Percent}
-						targetBillRub={targetBillRub}
-						targetBillKop={targetBillKop}
-						cardAmountRub={cardAmountRub}
-						setCardAmountRub={setCardAmountRub}
-						cashAmountRub={cashAmountRub}
-						setCashAmountRub={setCashAmountRub}
-						sbpAmountRub={sbpAmountRub}
-						setSbpAmountRub={setSbpAmountRub}
-						depositAmountRub={depositAmountRub}
-						setDepositAmountRub={setDepositAmountRub}
-						loyaltyAmountRub={loyaltyAmountRub}
-						setLoyaltyAmountRub={setLoyaltyAmountRub}
-						cashTenderedRub={cashTenderedRub}
-						setCashTenderedRub={setCashTenderedRub}
-						remainingRub={remainingRub}
-						remainingKop={remainingKop}
-						cashChange={cashChange}
-						patientDepositRub={patientDepositRub}
-						patientFamilyBalanceRub={patientFamilyBalanceRub}
-						familyPayerName={familyPayerName}
-						sbpStatus={sbpStatus}
-						isCheckingSbp={isCheckingSbp}
-						sbpCheckMessage={sbpCheckMessage}
-						sbpQrData={sbpQrData}
-						effectiveSbpAmountRub={effectiveSbpAmountRub}
-						onCheckSbpStatus={handleCheckSbpStatus}
-						onConfirmSbpManual={handleConfirmSbpManual}
-						onInputEnterKeyDown={handleInputEnterKeyDown}
-						onAddRemainingToCard={handleAddRemainingToCard}
-						onAddRemainingToCash={handleAddRemainingToCash}
-						onAddRemainingToSbp={handleAddRemainingToSbp}
-						onAddRemainingToDeposit={handleAddRemainingToDeposit}
-						onAddRemainingDepositPlusCard={handleAddRemainingDepositPlusCard}
-						onAddRemainingToLoyalty={handleAddRemainingToLoyalty}
-						onAddRemainingToFamily={handleAddRemainingToFamily}
-						onAddRemaining5050={handleAddRemaining5050}
-						onSwitchToSplitMode={() => setIsSimpleCashierMode(false)}
-					/>
-
-					{/* Family Balance Section */}
-					<FastCheckoutFamilyBalance
-						patientDepositRub={patientDepositRub}
-						patientFamilyBalanceRub={patientFamilyBalanceRub}
-						familyPayerName={familyPayerName}
-						isTier2Open={isTier2Open}
-						onToggleTier2={() => setIsTier2Open((prev) => !prev)}
-					/>
+					<FastCheckoutGuidanceRibbon isValid={c.validation.isValid} isSimpleCashierMode={c.isSimpleCashierMode} setIsSimpleCashierMode={c.setIsSimpleCashierMode} />
+					<FastCheckoutPresetsAndDiscounts familyPayerName={familyPayerName} patientFamilyBalanceRub={patientFamilyBalanceRub} onQuickPreset={c.handleQuickPreset} discountPreset={c.discountPreset} onSetDiscountPreset={c.setDiscountPreset} customDiscountPercent={c.customDiscountPercent} onSetCustomDiscountPercent={c.setCustomDiscountPercent} discountCalc={c.discountCalc} />
+					<FastCheckoutStageSelector stages={c.stages} selectedStageId={c.selectedStageId} onSelectStage={c.handleStageSelect} />
+					<FastCheckoutStageAdvanceMode ffdTag1214NameRu={c.stageCalc.ffdTag1214NameRu} stagePaymentMode={c.stagePaymentMode} setStagePaymentMode={c.setStagePaymentMode} baseStageAmountKop={c.baseStageAmountKop} stageCalc={c.stageCalc} />
+					<FastCheckoutPayerTypePanel clientType={c.clientType} setClientType={c.setClientType} buyerInn={c.buyerInn} setBuyerInn={c.setBuyerInn} buyerName={c.buyerName} setBuyerName={c.setBuyerName} onInputEnterKeyDown={handleInputEnterKeyDown} />
+					<FastCheckoutPaymentSplit isSimpleCashierMode={c.isSimpleCashierMode} activeMethod={c.activeMethod} onSelectMethod={c.handleSingle100Percent} targetBillRub={c.targetBillRub} targetBillKop={c.targetBillKop} cardAmountRub={c.cardAmountRub} setCardAmountRub={c.setCardAmountRub} cashAmountRub={c.cashAmountRub} setCashAmountRub={c.setCashAmountRub} sbpAmountRub={c.sbpAmountRub} setSbpAmountRub={c.setSbpAmountRub} depositAmountRub={c.depositAmountRub} setDepositAmountRub={c.setDepositAmountRub} loyaltyAmountRub={c.loyaltyAmountRub} setLoyaltyAmountRub={c.setLoyaltyAmountRub} cashTenderedRub={c.cashTenderedRub} setCashTenderedRub={c.setCashTenderedRub} remainingRub={c.remainingRub} remainingKop={c.remainingKop} cashChange={c.cashChange} patientDepositRub={patientDepositRub} patientFamilyBalanceRub={patientFamilyBalanceRub} familyPayerName={familyPayerName} sbpStatus={c.sbpStatus} isCheckingSbp={c.isCheckingSbp} sbpCheckMessage={c.sbpCheckMessage} sbpQrData={c.sbpQrData} effectiveSbpAmountRub={c.effectiveSbpAmountRub} onCheckSbpStatus={c.handleCheckSbpStatus} onConfirmSbpManual={c.handleConfirmSbpManual} onInputEnterKeyDown={handleInputEnterKeyDown} onAddRemainingToCard={c.handleAddRemainingToCard} onAddRemainingToCash={c.handleAddRemainingToCash} onAddRemainingToSbp={c.handleAddRemainingToSbp} onAddRemainingToDeposit={c.handleAddRemainingToDeposit} onAddRemainingDepositPlusCard={c.handleAddRemainingDepositPlusCard} onAddRemainingToLoyalty={c.handleAddRemainingToLoyalty} onAddRemainingToFamily={c.handleAddRemainingToFamily} onAddRemaining5050={c.handleAddRemaining5050} onSwitchToSplitMode={() => c.setIsSimpleCashierMode(false)} />
+					<FastCheckoutFamilyBalance patientDepositRub={patientDepositRub} patientFamilyBalanceRub={patientFamilyBalanceRub} familyPayerName={familyPayerName} isTier2Open={c.isTier2Open} onToggleTier2={() => c.setIsTier2Open((prev) => !prev)} />
 				</div>
-
-				{/* Receipt Preview, Banners, and Sticky Footer */}
-				<FastCheckoutReceiptPreview
-					kktHardwareStatus={kktHardwareStatus}
-					interruptedPaymentState={interruptedPaymentState}
-					setInterruptedPaymentState={setInterruptedPaymentState}
-					isPrinting={isPrinting}
-					isFlushingQueue={isFlushingQueue}
-					isSubmittingManualCard={isSubmittingManualCard}
-					pendingOfflineCount={pendingOfflineCount}
-					validation={validation}
-					activeMethod={activeMethod}
-					targetBillKop={targetBillKop}
-					targetBillRub={targetBillRub}
-					patientPhone={patientPhone}
-					patientEmail={patientEmail}
-					isElectronicReceiptOnly={isElectronicReceiptOnly}
-					setIsElectronicReceiptOnly={setIsElectronicReceiptOnly}
-					onClose={onClose}
-					onExecutePayment={handleExecutePayment}
-					onAcceptPaymentOfflineFallback={handleAcceptPaymentOfflineFallback}
-					onManualCardTerminalConfirm={handleManualCardTerminalConfirm}
-					onRetryFiscalizationDirect={handleRetryFiscalizationDirect}
-					onFlushQueue={handleFlushQueue}
-					onFixValidationError={() => handleSingle100Percent(activeMethod || "bank_card")}
-				/>
+				<FastCheckoutReceiptPreview kktHardwareStatus={c.kktHardwareStatus} interruptedPaymentState={c.interruptedPaymentState} setInterruptedPaymentState={c.setInterruptedPaymentState} isPrinting={c.isPrinting} isFlushingQueue={c.isFlushingQueue} isSubmittingManualCard={c.isSubmittingManualCard} pendingOfflineCount={c.pendingOfflineCount} validation={c.validation} activeMethod={c.activeMethod} targetBillKop={c.targetBillKop} targetBillRub={c.targetBillRub} patientPhone={patientPhone} patientEmail={patientEmail} isElectronicReceiptOnly={c.isElectronicReceiptOnly} setIsElectronicReceiptOnly={c.setIsElectronicReceiptOnly} onClose={onClose} onExecutePayment={c.handleExecutePayment} onAcceptPaymentOfflineFallback={c.handleAcceptPaymentOfflineFallback} onManualCardTerminalConfirm={c.handleManualCardTerminalConfirm} onRetryFiscalizationDirect={c.handleRetryFiscalizationDirect} onFlushQueue={c.handleFlushQueue} onFixValidationError={() => c.handleSingle100Percent(c.activeMethod || "bank_card")} />
 			</div>
 		</div>
 	);

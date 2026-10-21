@@ -184,4 +184,6 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 
 	app.get("/api/cash/shift-reconciliation", handleShiftReconciliation);
 	app.post("/api/cash/shift-reconciliation", handleShiftReconciliation);
+	app.get("/api/cashbox/shift", handleShiftReconciliation);
+	app.post("/api/cashbox/shift", handleShiftReconciliation);
 }

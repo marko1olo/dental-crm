@@ -64,11 +64,9 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 			if (!selectedDoctorId) return null;
 			return params.doctorsList.find((d) => d.id === selectedDoctorId) ?? null;
 		}
-		if (params.initialDoctorId) {
-			const specId = soloSpecialtyId === "solo-doctor" || !soloSpecialtyId ? DEFAULT_SOLO_DOCTOR.specialtyId : soloSpecialtyId;
-			return { id: params.initialDoctorId, name: DEFAULT_SOLO_DOCTOR.name, specialtyId: specId };
-		}
-		return null;
+		const docId = params.initialDoctorId || DEFAULT_SOLO_DOCTOR.id;
+		const specId = soloSpecialtyId === "solo-doctor" || !soloSpecialtyId ? DEFAULT_SOLO_DOCTOR.specialtyId : soloSpecialtyId;
+		return { id: docId, name: DEFAULT_SOLO_DOCTOR.name, specialtyId: specId };
 	}, [params.doctorsList, selectedDoctorId, params.initialDoctorId, soloSpecialtyId]);
 
 	useEffect(() => {

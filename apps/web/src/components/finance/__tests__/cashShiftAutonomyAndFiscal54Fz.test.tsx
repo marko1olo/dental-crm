@@ -283,7 +283,7 @@ describe("CashShiftWidget — Wave 118 StomX Cash-In / Cash-Out Presets & 54-FZ 
 		assert.ok(html.includes('data-testid="cash-flow-modal"'));
 		assert.ok(html.includes('data-testid="tab-cash-in-mode"'));
 		assert.ok(html.includes('data-testid="tab-cash-out-mode"'));
-		assert.ok(html.includes("Кассовое внесение наличных (Приход)"));
+		assert.ok(html.includes("Внесение наличных в кассу (Приход)"));
 
 		// Verify 9 receipt presets
 		const receiptAliases = [
@@ -301,9 +301,9 @@ describe("CashShiftWidget — Wave 118 StomX Cash-In / Cash-Out Presets & 54-FZ 
 			assert.ok(html.includes(`data-testid="preset-receipt-${alias}"`), `Must render preset-receipt-${alias}`);
 		}
 
-		// Verify 54-FZ Tag 1054 indicator
-		assert.ok(html.includes("54-ФЗ: Тег 1054 = 1 (приход)"));
-		assert.ok(html.includes("Нефискально"));
+		// Verify human-friendly cash order indicator
+		assert.ok(html.includes("Кассовый ордер (приход)"));
+		assert.ok(html.includes("Внутренний ордер"));
 
 		// Verify inputs and confirm button
 		assert.ok(html.includes('data-testid="input-cash-flow-amount"'));
@@ -326,7 +326,7 @@ describe("CashShiftWidget — Wave 118 StomX Cash-In / Cash-Out Presets & 54-FZ 
 		);
 
 		assert.ok(html.includes('data-testid="cash-flow-modal"'));
-		assert.ok(html.includes("Кассовое изъятие наличных (Расход)"));
+		assert.ok(html.includes("Инкассация / Выемка из кассы (Расход)"));
 
 		// Verify 14 expense presets
 		const expenseAliases = [
@@ -349,9 +349,9 @@ describe("CashShiftWidget — Wave 118 StomX Cash-In / Cash-Out Presets & 54-FZ 
 			assert.ok(html.includes(`data-testid="preset-expense-${alias}"`), `Must render preset-expense-${alias}`);
 		}
 
-		// Verify 54-FZ Tag 1054 return_income (2) and expense (3) indicators
-		assert.ok(html.includes("54-ФЗ: Тег 1054 = 2 (возврат_прихода)"));
-		assert.ok(html.includes("54-ФЗ: Тег 1054 = 3 (расход)"));
+		// Verify cash order return_income and expense indicators
+		assert.ok(html.includes("Кассовый ордер (возврат_прихода)"));
+		assert.ok(html.includes("Кассовый ордер (расход)"));
 
 		// Quick chip for all drawer cash
 		assert.ok(html.includes("Вся наличность"));

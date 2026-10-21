@@ -853,8 +853,10 @@ export async function handleGetBillingInvoices(
 export async function registerBillingRoutes(app: FastifyInstance) {
 	app.get("/api/billing/payouts", handleGetPayouts);
 	app.get("/api/billing/payments", handleGetBillingPayments);
+	app.get("/api/payments", handleGetBillingPayments);
 	app.get("/api/billing/invoices", handleGetBillingInvoices);
 	app.post("/api/billing/payments", handleCreatePayment);
+	app.post("/api/payments", handleCreatePayment);
 	app.post("/api/finance/payments", handleCreatePayment);
 	app.post("/api/v1/billing/payments", handleCreatePayment);
 	app.post("/api/v1/finance/payments", handleCreatePayment);

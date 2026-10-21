@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import type { CashBoxSummary } from "./types.js";
 import { useCashboxCashMovement } from "./useCashboxCashMovement.js";
@@ -11,6 +11,8 @@ export function useCashboxShiftAndBoxes(initialShiftOpen: boolean, cashierName: 
 	const [cashBoxes, setCashBoxes] = useState<readonly CashBoxSummary[]>([]);
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(initialShiftOpen);
 	const [mainCashBoxId, setMainCashBoxId] = useState<string | null>(null);
+	const inFlightRef = useRef(false);
+	const lastClickTimeRef = useRef(0);
 
 	const loadCashBoxes = useCallback(async () => {
 		try {
@@ -36,41 +38,65 @@ export function useCashboxShiftAndBoxes(initialShiftOpen: boolean, cashierName: 
 	}, [loadCashBoxes]);
 
 	const handleOpenShift = async () => {
-		const res = await fetch("/api/cash/cash-box-all-open", {
-			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify({ cashierFullName: cashierName }),
-		});
-		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			throw new Error(err.message || "Ошибка открытия смены");
+		const now = Date.now();
+		if (inFlightRef.current || now - lastClickTimeRef.current < 600) return;
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
+		try {
+			const res = await fetch("/api/cash/cash-box-all-open", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({ cashierFullName: cashierName }),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка открытия смены");
+			}
+			setIsShiftOpen(true);
+			void loadCashBoxes();
+		} finally {
+			inFlightRef.current = false;
 		}
-		setIsShiftOpen(true);
-		void loadCashBoxes();
 	};
 
 	const handleCloseShift = async () => {
-		const res = await fetch("/api/cash/cash-box-all-closing", {
-			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify({ zReportNumber: `Z-DAILY-${Date.now()}` }),
-		});
-		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			throw new Error(err.message || "Ошибка закрытия смены");
+		const now = Date.now();
+		if (inFlightRef.current || now - lastClickTimeRef.current < 600) return;
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
+		try {
+			const res = await fetch("/api/cash/cash-box-all-closing", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({ zReportNumber: `Z-DAILY-${Date.now()}` }),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка закрытия смены");
+			}
+			setIsShiftOpen(false);
+			void loadCashBoxes();
+		} finally {
+			inFlightRef.current = false;
 		}
-		setIsShiftOpen(false);
-		void loadCashBoxes();
 	};
 
 	const handlePrintXReport = async () => {
-		const res = await fetch("/api/cash/x-report", {
-			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-		});
-		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			throw new Error(err.message || "Ошибка печати X-отчета");
+		const now = Date.now();
+		if (inFlightRef.current || now - lastClickTimeRef.current < 600) return;
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
+		try {
+			const res = await fetch("/api/cash/x-report", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка печати X-отчета");
+			}
+		} finally {
+			inFlightRef.current = false;
 		}
 	};
 

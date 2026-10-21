@@ -155,6 +155,7 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	};
 
 	app.post("/api/cash/cash-box-all-open", handleOpenCashShift);
+	app.post("/api/cashbox/shift/open", handleOpenCashShift);
 	app.post("/api/fiscal/shift/open", handleOpenCashShift);
 	app.post("/api/finance/shift/open", handleOpenCashShift);
 
@@ -326,6 +327,7 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	};
 
 	app.post("/api/cash/cash-box-all-closing", handleCloseCashShift);
+	app.post("/api/cashbox/shift/close", handleCloseCashShift);
 	app.post("/api/fiscal/shift/close", handleCloseCashShift);
 	app.post("/api/finance/shift/close", handleCloseCashShift);
 	app.post("/api/cashbox/shifts/close", handleCloseCashShift);

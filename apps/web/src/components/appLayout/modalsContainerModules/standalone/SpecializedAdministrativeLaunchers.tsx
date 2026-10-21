@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AppLoadingState } from "../../../../AppBootState";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
+import { useAppStore } from "../../../../store/appStore";
 import type { StandaloneLaunchersProps } from "../modalsContainerTypes";
 
 const EgiszRemdHubModal = lazyWithRetry(() =>
@@ -62,6 +63,12 @@ const FamilyCombinedBillingModal = lazyWithRetry(() =>
 const CashReceiptPrintModal = lazyWithRetry(() =>
 	import("../../../finance/CashReceiptPrintModal").then((module) => ({
 		default: module.CashReceiptPrintModal,
+	})),
+);
+
+const CashFlowModal = lazyWithRetry(() =>
+	import("../../../finance/CashFlowModal").then((module) => ({
+		default: module.CashFlowModal,
 	})),
 );
 
@@ -305,7 +312,8 @@ export function renderSpecializedAdministrativeLaunchers({
 				>
 					<TreatmentPlanModule
 						patientId="pat-demo-01"
-						patientName="Волков Дмитрий Андреевич"
+						patientName="Пациент"
+						teethData={[]}
 					/>
 				</div>
 			</Suspense>
@@ -318,6 +326,11 @@ export function renderSpecializedAdministrativeLaunchers({
 		((window.location.search || "").includes("family_billing") ||
 			(window.location.hash || "").includes("family-billing"));
 	if (isFamilyBillingRoute) {
+		const clinicProfile = useAppStore.getState().clinicProfileDraft;
+		const clinicLegalName =
+			clinicProfile?.legalName || clinicProfile?.clinicName || "Стоматология DENTE";
+		const clinicInn = clinicProfile?.inn || "";
+
 		return (
 			<Suspense
 				fallback={<AppLoadingState message="Загрузка семейного биллинга..." />}
@@ -326,10 +339,12 @@ export function renderSpecializedAdministrativeLaunchers({
 					isOpen={true}
 					familyGroupName="Семья Михайловых"
 					availableFamilyWalletRub={18500}
+					clinicName={clinicLegalName}
+					clinicInn={clinicInn}
 					initialPayer={{
 						payerId: "pat_mikhailov",
 						payerFullName: "Михайлов Артем Евгеньевич",
-						payerInn: "770123456789",
+						payerInn: "",
 						payerPhone: "+7 (926) 345-67-89",
 						payerPassport: "45 12 789456",
 					}}
@@ -431,6 +446,12 @@ export function renderSpecializedAdministrativeLaunchers({
 
 	// 54-FZ FISCAL RECEIPT PRINT MODAL STANDALONE LAUNCHER (?receipt=1, ?receipt=demo, #receipt)
 	if (isReceiptDirectModalOpen) {
+		const clinicProfile = useAppStore.getState().clinicProfileDraft;
+		const clinicLegalName =
+			clinicProfile?.legalName || clinicProfile?.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
+		const clinicInn = clinicProfile?.inn || "";
+		const clinicAddress = clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
+
 		const sampleInvoice = {
 			id: "inv-2026-089",
 			number: "ЧЕК-089-2026",
@@ -472,9 +493,9 @@ export function renderSpecializedAdministrativeLaunchers({
 				<CashReceiptPrintModal
 					isOpen={true}
 					invoice={sampleInvoice}
-					clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-					clinicInn="7707083893"
-					clinicAddress="г. Москва, ул. Профсоюзная, д. 42"
+					clinicName={clinicLegalName}
+					clinicInn={clinicInn}
+					clinicAddress={clinicAddress}
 					cashierFullName="Воронова А. В."
 					attendingDoctorName="Д-р Воронов Алексей Владимирович"
 					defaultFormat="80mm"
@@ -490,6 +511,44 @@ export function renderSpecializedAdministrativeLaunchers({
 								(url.hash && !url.hash.includes("receipt") ? url.hash : ""),
 						);
 					}}
+				/>
+			</Suspense>
+		);
+	}
+
+	// CASH FLOW & CASH ORDER STANDALONE LAUNCHER (?cashflow=1, ?cashflow=out, #cashflow)
+	const isCashFlowDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("cashflow") ||
+			new URLSearchParams(window.location.search).has("cash_flow") ||
+			window.location.hash.toLowerCase().includes("cashflow") ||
+			window.location.hash.toLowerCase().includes("cash_flow"));
+
+	if (isCashFlowDirect) {
+		const searchParams =
+			typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+		const isOut =
+			searchParams?.get("cashflow") === "out" ||
+			searchParams?.get("type") === "out" ||
+			window.location.hash.toLowerCase().includes("out");
+
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка кассового ордера..." />}>
+				<CashFlowModal
+					isOpen={true}
+					initialMode={isOut ? "cash_out" : "cash_in"}
+					cashInDrawerRub={38500}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("cashflow");
+						url.searchParams.delete("cash_flow");
+						url.searchParams.delete("type");
+						const cleanHash =
+							url.hash.includes("cashflow") || url.hash.includes("cash_flow") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					onCashIn={async () => {}}
+					onCashOut={async () => {}}
 				/>
 			</Suspense>
 		);

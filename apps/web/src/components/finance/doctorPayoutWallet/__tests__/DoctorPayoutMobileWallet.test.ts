@@ -15,6 +15,7 @@ import {
 	formatMonthLabel,
 	formatShiftDate,
 	DEMO_SHOWCASE_DOCTOR,
+	DEMO_SHOWCASE_SOLO_DOCTOR,
 } from "../index.js";
 
 describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
@@ -68,21 +69,28 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			// Check therapy, ortho, surgery, hygiene items
 			const therapy = categories.find((c) => c.id === "cat-therapy");
 			assert.ok(therapy, "Must have therapy category");
-			assert.equal(therapy.ratePct, 40);
+			assert.equal(therapy.ratePct, 30);
 
 			const ortho = categories.find((c) => c.id === "cat-orthopedics");
 			assert.ok(ortho, "Must have orthopedics category");
-			assert.equal(ortho.ratePct, 40);
+			assert.equal(ortho.ratePct, 30);
 
 			// Check lab deduction item
-			const lab = categories.find((c) => c.id === "cat-lab-deduction");
+			const categoriesKovalev = computeCategoryCards(DEMO_SHOWCASE_SOLO_DOCTOR);
+			const lab = categoriesKovalev.find((c) => c.id === "cat-lab-deduction");
 			assert.ok(lab, "Must have lab deduction category");
 			assert.equal(lab.isDeduction, true);
-			assert.equal(lab.amountRub, 14000);
+			assert.equal(lab.amountRub, 45000);
 			assert.equal(lab.ratePct, 100);
 
 			// Check material deduction item
-			const mat = categories.find((c) => c.id === "cat-material-deduction");
+			const docWithMat = {
+				...DEMO_SHOWCASE_DOCTOR,
+				withheldMaterialRub: 700,
+				materialCostRub: 700,
+				materialDeductionPct: 25,
+			};
+			const mat = computeCategoryCards(docWithMat).find((c) => c.id === "cat-material-deduction");
 			assert.ok(mat, "Must have material deduction category");
 			assert.equal(mat.isDeduction, true);
 			assert.equal(mat.amountRub, 700);
@@ -109,10 +117,10 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			// First shift is 2026-10-22
 			const s1 = shifts[0];
 			assert.ok(s1);
-			assert.equal(s1.date, "2026-10-22");
+			assert.equal(s1.date, "2026-10-27");
 			assert.equal(s1.patientCount, 1);
-			assert.equal(s1.shiftRevenueRub, 68000);
-			assert.equal(s1.shiftEarnedRub, Math.round(68000 * 0.4)); // 27200
+			assert.equal(s1.shiftRevenueRub, 32000);
+			assert.equal(s1.shiftEarnedRub, Math.round(32000 * 0.3)); // 9600
 		});
 
 		it("formats month and shift date correctly", () => {
@@ -149,6 +157,7 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 				isEmpty: false,
 				rows: [
 					DEMO_SHOWCASE_DOCTOR,
+	DEMO_SHOWCASE_SOLO_DOCTOR,
 					{
 						...DEMO_SHOWCASE_DOCTOR,
 						doctorUserId: "demo_doc_ivanov",
@@ -174,7 +183,7 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			assert.ok(html.includes('id="wallet-shifts-heading"'), "Anchor 2: wallet-shifts-heading");
 			assert.ok(html.includes('aria-label="Выбор врача"'), "Anchor 3: Выбор врача");
 			assert.ok(html.includes('aria-label="Карточка начислений врача"'), "Anchor 4: Карточка начислений врача");
-			assert.ok(html.includes('aria-label="Открыть расчётную ведомость Т-51"'), "Anchor 6: Ведомость Т-51");
+			assert.ok(html.includes('aria-label="Открыть расчётную ведомость"'), "Anchor 6: Ведомость");
 			assert.ok(html.includes('aria-label="Обновить расчёт выплат"'), "Anchor 7: Обновить расчёт выплат");
 		});
 

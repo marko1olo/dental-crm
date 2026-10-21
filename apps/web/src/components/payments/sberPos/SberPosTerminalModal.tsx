@@ -1,405 +1,54 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React from "react";
+import { AlertCircle } from "lucide-react";
+import { buildPilotNtCommandPacket } from "@dental/shared";
 import {
-	CreditCard,
-	QrCode,
-	Smile,
-	RotateCcw,
-	Ban,
-	FileText,
-	Printer,
-	AlertCircle,
-	X,
-	RefreshCw,
-	Sliders,
-	Wifi,
-	Copy,
-	CheckCheck,
-	Radio,
-} from "lucide-react";
-import {
-	type SberPosOperationType,
-	type SberPosTerminalStatus,
-	type SberPosTerminalConfig,
-	type SberPosTransactionResponse,
-	type SberPosHardwareModel,
-	getPilotNtCommandCode,
-	buildPilotNtCommandPacket,
-} from "@dental/shared";
-import { showToast } from "../../GlobalToast";
-import { sberbankTerminal } from "../../../services/hardware/sberbankTerminal";
-import { hardwarePrinter } from "../../../services/hardware/HardwarePrinter.js";
-import {
-	DEFAULT_SBER_TERMINAL_CONFIG,
-	SBER_HARDWARE_PROFILES,
-	loadSavedSberTerminalConfig,
-	saveSberTerminalConfig,
-} from "./sberPosPresets";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+	type SberPosTerminalModalProps,
+	useSberPosTerminalLogic,
+	SberPosTerminalHeader,
+	SberPosTerminalSettingsPanel,
+	SberPosTerminalOperationsBar,
+	SberPosTerminalLcdPanel,
+	SberPosTerminalSlipPanel,
+} from "./terminalModalModules/index.js";
+
 if (typeof window !== "undefined") {
 	void import("./sberPos.css");
 }
 
-export interface SberPosTerminalModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly totalBillKop?: number | undefined;
-	readonly patientName?: string | undefined;
-	readonly patientPhone?: string | undefined;
-	readonly orderId?: string | undefined;
-	readonly initialOperation?: SberPosOperationType | undefined;
-	readonly onTransactionSuccess?: ((response: SberPosTransactionResponse) => void) | undefined;
-	readonly onSelectAlternativeMethod?: ((method: "sbp" | "cash" | "deposit") => void) | undefined;
-	readonly terminalConfig?: SberPosTerminalConfig | undefined;
-	readonly forceUnconfigured?: boolean | undefined;
-}
+export type { SberPosTerminalModalProps };
 
-export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
-	isOpen,
-	onClose,
-	totalBillKop = 0,
-	patientName = "Пациент",
-	patientPhone = "",
-	orderId = "",
-	initialOperation = "sale",
-	onTransactionSuccess,
-	onSelectAlternativeMethod,
-	terminalConfig: propTerminalConfig,
-	forceUnconfigured = false,
-}) => {
-	const isDemo = isDemoShowcaseMode();
-	const isTestMock =
-		typeof process !== "undefined" &&
-		Boolean((sberbankTerminal.executeTransaction as unknown as { mock?: unknown })?.mock);
+export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = (props) => {
+	const {
+		isOpen, onClose, totalBillKop = 0, patientName = "Пациент", orderId = "",
+		onSelectAlternativeMethod,
+	} = props;
 
-	const [savedConfig, setSavedConfig] = useState<SberPosTerminalConfig | null>(() => {
-		if (propTerminalConfig) return propTerminalConfig;
-		return loadSavedSberTerminalConfig();
-	});
-
-	const isConfigured = Boolean(
-		!forceUnconfigured && (propTerminalConfig || savedConfig || isDemo || isTestMock),
-	);
-
-	const initialEffectiveConfig = useMemo(() => {
-		if (propTerminalConfig) return propTerminalConfig;
-		if (savedConfig) return savedConfig;
-		return DEFAULT_SBER_TERMINAL_CONFIG;
-	}, [propTerminalConfig, savedConfig]);
-
-	const [operation, setOperation] = useState<SberPosOperationType>(initialOperation);
-	const [config, setConfig] = useState<SberPosTerminalConfig>(initialEffectiveConfig);
-	const [status, setStatus] = useState<SberPosTerminalStatus>("ready");
-	const [statusMessage, setStatusMessage] = useState<string>("Ожидание карты на терминале Сбербанк...");
-	const [timerSeconds, setTimerSeconds] = useState<number>(45);
-	const [lastResponse, setLastResponse] = useState<SberPosTransactionResponse | null>(null);
-	const [activeSlipTab, setActiveSlipTab] = useState<"customer" | "merchant">("customer");
-	const [isCopied, setIsCopied] = useState<boolean>(false);
-	const [isPrinting, setIsPrinting] = useState<boolean>(false);
-	const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-
-	// Refund / Void custom inputs
-	const [originalRrnInput, setOriginalRrnInput] = useState<string>("423891028471");
-	const [originalAuthInput, setOriginalAuthInput] = useState<string>("982310");
-
-	const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-	const activeProfile = useMemo(() => {
-		const found = SBER_HARDWARE_PROFILES.find((p) => p.id === config.hardwareModel);
-		return found || SBER_HARDWARE_PROFILES[0]!;
-	}, [config.hardwareModel]);
-
-	useEffect(() => {
-		if (isOpen) {
-			setOperation(initialOperation);
-			if (!isConfigured) {
-				setStatus("communication_error");
-				setStatusMessage("Терминал Сбербанк POS не настроен в системе.");
-				setLastResponse(null);
-				setIsSettingsOpen(true);
-				return;
-			}
-			setStatus("ready");
-			setStatusMessage("Ожидание карты на терминале Сбербанк...");
-			setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 45);
-			setLastResponse(null);
-			setIsSettingsOpen(false);
-			void handleStartOperation(initialOperation);
-		}
-	}, [isOpen, initialOperation, isConfigured]);
-
-	// Auto-countdown when in active transaction state
-	useEffect(() => {
-		if (
-			status === "card_wait" ||
-			status === "processing_card" ||
-			status === "pin_entry" ||
-			status === "biometry_scan" ||
-			status === "qr_displayed" ||
-			status === "authorizing" ||
-			status === "connecting"
-		) {
-			timerRef.current = setInterval(() => {
-				setTimerSeconds((prev) => {
-					if (prev <= 1) {
-						setStatus("pin_timeout");
-						setStatusMessage("Время ожидания действия клиента истекло (Таймаут).");
-						return 0;
-					}
-					return prev - 1;
-				});
-			}, 1000);
-		} else {
-			if (timerRef.current) clearInterval(timerRef.current);
-		}
-		return () => {
-			if (timerRef.current) clearInterval(timerRef.current);
-		};
-	}, [status]);
+	const ctrl = useSberPosTerminalLogic(props);
 
 	if (!isOpen) return null;
 
-	const handleStartOperation = async (targetOp: SberPosOperationType = operation) => {
-		if (!isConfigured) {
-			setStatus("communication_error");
-			setStatusMessage("Терминал Сбербанк POS не настроен. Задайте параметры оборудования в настройках.");
-			setIsSettingsOpen(true);
-			return;
-		}
-		setOperation(targetOp);
-		setStatus("connecting");
-		setStatusMessage(`Подключение к терминалу Сбербанк (${config.hostIp}:${config.hostPort}, ${config.protocol})...`);
-		setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 60);
-		setLastResponse(null);
-
-		try {
-			// Update terminal config
-			sberbankTerminal.setConfig({
-				terminalId: config.terminalId,
-				merchantId: config.merchantId,
-				hostIp: config.hostIp,
-				hostPort: config.hostPort,
-				protocol: config.protocol,
-				hardwareModel: config.hardwareModel,
-				timeoutMs: config.timeoutMs,
-				clinicName: config.clinicName,
-				clinicAddress: config.clinicAddress,
-				clinicInn: config.clinicInn,
-			});
-
-			const res = await sberbankTerminal.executeTransaction({
-				amountKopecks: targetOp === "settlement" ? 0 : totalBillKop,
-				patientId: orderId,
-				patientName,
-				patientPhone,
-				orderId,
-				operation: targetOp,
-				originalRrn: originalRrnInput || undefined,
-				originalAuthCode: originalAuthInput || undefined,
-				autoPrintSlip: false,
-				onStatusUpdate: (st, msg) => {
-					setStatus(st);
-					setStatusMessage(msg);
-				},
-			});
-			setLastResponse(res);
-			if (res.success) {
-				setStatus("success");
-				setStatusMessage("Оплата через терминал Сбербанк успешно авторизована банком!");
-				if (onTransactionSuccess) onTransactionSuccess(res);
-			} else {
-				const isTimeout = res.responseCode === "99";
-				setStatus(isTimeout ? "pin_timeout" : "card_declined");
-				setStatusMessage(res.responseMessageRu || "Транзакция отклонена банком");
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Сбой связи с терминалом Сбербанк";
-			setStatus("communication_error");
-			setStatusMessage(msg);
-		}
-	};
-
-	const handleCancelOperation = () => {
-		sberbankTerminal.cancelCurrentOperation();
-		setStatus("user_cancelled");
-		setStatusMessage("Операция отменена оператором.");
-	};
-
-	const handleCopySlip = () => {
-		if (!lastResponse) {
-			showToast("Слип-чек будет доступен после авторизации платежа на терминале", "info");
-			return;
-		}
-		const text = activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip;
-		navigator.clipboard.writeText(text);
-		setIsCopied(true);
-		setTimeout(() => setIsCopied(false), 2000);
-	};
-
-	const handlePrintSlip = async () => {
-		if (!lastResponse) {
-			showToast("Слип-чек будет доступен после авторизации платежа на терминале", "info");
-			return;
-		}
-		const slipText = activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip;
-		if (!slipText || !slipText.trim()) {
-			showToast("Текст слип-чека пуст", "warning");
-			return;
-		}
-		setIsPrinting(true);
-		try {
-			const res = await hardwarePrinter.printBankSlip(slipText, {
-				title: `Банковский слип #${lastResponse.rrn || lastResponse.authCode || ""}`,
-			});
-			if (res.success) {
-				showToast("Слип-чек отправлен на термопринтер", "success");
-			} else {
-				showToast(res.error || "Сбой вывода слип-чека на печать", "warning");
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Ошибка печати банковского слипа";
-			showToast(msg, "error");
-		} finally {
-			setIsPrinting(false);
-		}
-	};
-
-	const pilotCommandText = buildPilotNtCommandPacket(config, {
-		operation,
-		amountKop: totalBillKop,
-		orderId,
-		originalRrn: originalRrnInput,
-		originalAuthCode: originalAuthInput,
+	const pilotCommandText = buildPilotNtCommandPacket(ctrl.config, {
+		operation: ctrl.operation, amountKop: totalBillKop, orderId,
+		originalRrn: ctrl.originalRrnInput, originalAuthCode: ctrl.originalAuthInput,
 	});
 
 	return (
 		<div className="sber-pos-modal-overlay" data-testid="sber-pos-terminal-modal">
 			<div className="sber-pos-modal-container">
-				{/* Top Navigation / Header */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
-					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-							<CreditCard className="w-5 h-5" />
-						</div>
-						<div>
-							<div className="flex items-center gap-2">
-								<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
-									Сбербанк POS Терминал & SberPay
-								</h2>
-								<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-									Pilot-NT TCP:4000
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted,#64748b)]">
-								{patientName} • Заказ #{orderId} • К оплате: <span className="font-bold text-[var(--ink,#0f172a)]">{(totalBillKop / 100).toLocaleString("ru-RU")} ₽</span>
-								{!isConfigured && (
-									<span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-										Не настроен
-									</span>
-								)}
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-							className={"h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-colors " + (
-								isSettingsOpen
-									? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-									: "border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							)}
-						>
-							<Sliders className="w-3.5 h-3.5" />
-							<span>Профиль</span>
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
-						>
-							<X className="w-5 h-5" />
-						</button>
-					</div>
-				</div>
+				<SberPosTerminalHeader
+					patientName={patientName} orderId={orderId} totalBillKop={totalBillKop}
+					isConfigured={ctrl.isConfigured} isSettingsOpen={ctrl.isSettingsOpen}
+					onToggleSettings={() => ctrl.setIsSettingsOpen(!ctrl.isSettingsOpen)} onClose={onClose}
+				/>
 
-				{/* Settings Drawer (Collapsible) */}
-				{isSettingsOpen && (
-					<div className="p-4 border-b border-[var(--line,#e2e8f0)] bg-emerald-500/5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-						<div>
-							<label className="font-semibold text-[var(--ink,#0f172a)] block mb-1">Модель терминала:</label>
-							<select
-								value={config.hardwareModel}
-								onChange={(e) => setConfig((prev) => ({ ...prev, hardwareModel: e.target.value as SberPosHardwareModel }))}
-								className="w-full h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2 text-xs font-medium text-[var(--ink,#0f172a)]"
-							>
-								{SBER_HARDWARE_PROFILES.map((p) => (
-									<option key={p.id} value={p.id}>
-										{p.modelName}
-									</option>
-								))}
-							</select>
-						</div>
-						<div>
-							<label className="font-semibold text-[var(--ink,#0f172a)] block mb-1">Хост и Порт драйвера:</label>
-							<div className="flex gap-2">
-								<input
-									type="text"
-									value={config.hostIp}
-									onChange={(e) => setConfig((prev) => ({ ...prev, hostIp: e.target.value }))}
-									className="flex-1 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2 text-xs font-mono"
-								/>
-								<input
-									type="number"
-									value={config.hostPort}
-									onChange={(e) => setConfig((prev) => ({ ...prev, hostPort: Number(e.target.value) }))}
-									className="w-20 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2 text-xs font-mono"
-								/>
-							</div>
-						</div>
-						<div>
-							<label className="font-semibold text-[var(--ink,#0f172a)] block mb-1">TID / MID Сбербанка:</label>
-							<div className="flex gap-2">
-								<input
-									type="text"
-									value={config.terminalId}
-									onChange={(e) => setConfig((prev) => ({ ...prev, terminalId: e.target.value }))}
-									placeholder="TID"
-									className="w-24 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2 text-xs font-mono"
-								/>
-								<input
-									type="text"
-									value={config.merchantId}
-									onChange={(e) => setConfig((prev) => ({ ...prev, merchantId: e.target.value }))}
-									placeholder="MID"
-									className="flex-1 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2 text-xs font-mono"
-								/>
-							</div>
-						</div>
-						<div className="col-span-1 sm:col-span-3 flex items-center justify-between pt-2 border-t border-[var(--line,#e2e8f0)]">
-							<span className="text-[11px] text-[var(--muted,#64748b)]">
-								Параметры сохраняются локально для текущего рабочего места кассира.
-							</span>
-							<button
-								type="button"
-								data-testid="save-sber-config-btn"
-								onClick={() => {
-									saveSberTerminalConfig(config);
-									setSavedConfig(config);
-									showToast("Параметры терминала Сбербанк сохранены", "success");
-								}}
-								className="min-h-[36px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-							>
-								<CheckCheck className="w-3.5 h-3.5" />
-								<span>Сохранить параметры терминала</span>
-							</button>
-						</div>
-					</div>
+				{ctrl.isSettingsOpen && (
+					<SberPosTerminalSettingsPanel
+						config={ctrl.config} setConfig={ctrl.setConfig} setSavedConfig={ctrl.setSavedConfig}
+					/>
 				)}
 
-				{/* Body */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
-					{/* Unconfigured Notice (Mandate 8y Production Integrity) */}
-					{!isConfigured && (
+					{!ctrl.isConfigured && (
 						<div
 							className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
 							data-testid="sber-pos-unconfigured-notice"
@@ -409,339 +58,58 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 								<div>
 									<p className="font-bold text-sm">Терминал Сбербанк POS не настроен</p>
 									<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-										В промышленном контуре клиники необходимо указать IP-адрес драйвера Pilot-NT, порт (по умолч. 4000) и TID эквайринга в разделе «Настройки клиники → Оборудование» или заполнить параметры в панели выше.
+										В промышленном контуре клиники необходимо указать IP-адрес драйвера Pilot-NT, порт (по умолч. 4000) и TID эквайринга.
 									</p>
 								</div>
 							</div>
 							<button
 								type="button"
-								onClick={() => setIsSettingsOpen(true)}
+								onClick={() => ctrl.setIsSettingsOpen(true)}
 								className="min-h-[44px] px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 transition-colors cursor-pointer"
 							>
 								Настроить параметры
 							</button>
 						</div>
 					)}
-					{/* Operation Tabs */}
-					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-						<button
-							type="button"
-							onClick={() => handleStartOperation("sale")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "sale"
-									? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-emerald-400"
-							)}
-						>
-							<CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-							<span className="text-xs">Оплата картой</span>
-						</button>
 
-						<button
-							type="button"
-							onClick={() => handleStartOperation("sberpay_qr")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "sberpay_qr"
-									? "border-[var(--ok-fg,#059669)] bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--ok-fg,#059669)]"
-							)}
-						>
-							<QrCode className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-							<span className="text-xs">SberPay QR</span>
-						</button>
+					<SberPosTerminalOperationsBar
+						operation={ctrl.operation} status={ctrl.status}
+						onStartOperation={ctrl.handleStartOperation}
+						originalRrnInput={ctrl.originalRrnInput} setOriginalRrnInput={ctrl.setOriginalRrnInput}
+						originalAuthInput={ctrl.originalAuthInput} setOriginalAuthInput={ctrl.setOriginalAuthInput}
+					/>
 
-						<button
-							type="button"
-							onClick={() => handleStartOperation("biometry_facepay")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "biometry_facepay"
-									? "border-[var(--ok-fg,#059669)] bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--ok-fg,#059669)]"
-							)}
-						>
-							<Smile className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
-							<span className="text-xs">FacePay Улыбкой</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => handleStartOperation("refund")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "refund"
-									? "border-[var(--warn-fg,#d97706)] bg-[var(--warn-bg,#fef3c7)] text-[var(--warn-fg,#d97706)] shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--warn-fg,#d97706)]"
-							)}
-						>
-							<RotateCcw className="w-4 h-4 text-[var(--warn-fg,#d97706)]" />
-							<span className="text-xs">Возврат</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => handleStartOperation("void")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "void"
-									? "border-[var(--bad-fg,#dc2626)] bg-[var(--bad-bg,#fee2e2)] text-[var(--bad-fg,#dc2626)] shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--bad-fg,#dc2626)]"
-							)}
-						>
-							<Ban className="w-4 h-4 text-[var(--bad-fg,#dc2626)]" />
-							<span className="text-xs">Отмена</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => handleStartOperation("settlement")}
-							className={"min-h-[48px] p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 font-bold transition-all cursor-pointer " + (
-								operation === "settlement"
-									? "border-[var(--brand-primary,#0d9488)] bg-[var(--brand-primary-soft,#f0fdfa)] text-[var(--brand-primary,#0d9488)] shadow-sm"
-									: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--brand-primary,#0d9488)]"
-							)}
-						>
-							<FileText className="w-4 h-4 text-[var(--brand-primary,#0d9488)]" />
-							<span className="text-xs">Сверка итогов (Z)</span>
-						</button>
-					</div>
-
-					{/* Custom Refund / Void RRN & AuthCode Fields */}
-					{(operation === "refund" || operation === "void") && status === "ready" && (
-						<div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row gap-3 items-center text-xs">
-							<span className="font-bold text-amber-800 dark:text-amber-200 shrink-0">Данные чека для возврата:</span>
-							<div className="flex gap-2 w-full">
-								<input
-									type="text"
-									value={originalRrnInput}
-									onChange={(e) => setOriginalRrnInput(e.target.value)}
-									placeholder="RRN (12 цифр)"
-									className="flex-1 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2.5 font-mono text-xs"
-								/>
-								<input
-									type="text"
-									value={originalAuthInput}
-									onChange={(e) => setOriginalAuthInput(e.target.value)}
-									placeholder="Код авториз. (6 знаков)"
-									className="w-36 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-2.5 font-mono text-xs"
-								/>
-							</div>
-						</div>
-					)}
-
-					{/* Main Grid: Terminal LCD Display & Bank Slip / Receipt */}
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-						{/* POS Terminal Interface (Left side: 7 cols) */}
-						<div className="lg:col-span-7 flex flex-col gap-4">
-							<div className="sber-pos-lcd-screen p-5 min-h-[220px] flex flex-col justify-between" data-testid="sber-pos-status-panel">
-								{/* Terminal Status Header */}
-								<div className="flex items-center justify-between text-xs border-b border-[var(--line,#e2e8f0)] pb-2.5 text-[var(--muted,#64748b)]">
-									<div className="flex items-center gap-1.5 font-semibold">
-										<Radio className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-										<span className="font-bold uppercase tracking-wider text-[var(--ink,#0f172a)]">{activeProfile?.modelName ? activeProfile.modelName.split(" ")[0] : "SBER-POS"}</span>
-										<span>• TID {isConfigured ? config.terminalId : "НЕ НАСТРОЕН"}</span>
-									</div>
-									<div className="flex items-center gap-2">
-										<span>Таймаут: <strong className="text-[var(--ink,#0f172a)]">{timerSeconds}с</strong></span>
-										<Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-									</div>
-								</div>
-
-								{/* Terminal Display Message / Interactive center */}
-								<div className="my-auto py-4 text-center flex flex-col items-center justify-center gap-2">
-									{status === "qr_displayed" ? (
-										<div className="flex flex-col items-center gap-2">
-											<div className="w-28 h-28 bg-[var(--paper,#ffffff)] p-2 rounded-xl border-2 border-emerald-500 flex items-center justify-center shadow-lg">
-												<QrCode className="w-full h-full text-[var(--ink,#0f172a)]" />
-											</div>
-											<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">ПЛАТИ QR / СБЕРБАНК ОНЛАЙН</span>
-										</div>
-									) : status === "biometry_scan" ? (
-										<div className="flex flex-col items-center gap-2">
-											<div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center sber-facepay-active-ring">
-												<Smile className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
-											</div>
-											<span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">3D FacePay: Ожидание сканирования лица...</span>
-										</div>
-									) : (
-										<p className="text-sm sm:text-base font-bold tracking-wide text-[var(--ink,#0f172a)] leading-snug max-w-md">
-											{statusMessage}
-										</p>
-									)}
-
-									<p className="text-sm sm:text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-										СУММА: {((totalBillKop || 1960000) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-									</p>
-								</div>
-
-								{/* Protocol Command Info */}
-								<div className="text-[10px] text-[var(--muted,#64748b)] font-mono pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
-									<span>Pilot-NT: CMD {getPilotNtCommandCode(operation)}</span>
-									<span className="truncate max-w-[200px] text-[var(--ink,#0f172a)] font-medium">{pilotCommandText}</span>
-								</div>
-							</div>
-
-							{/* Terminal Action Buttons */}
-							<div className="flex items-center gap-2 flex-wrap">
-								<button
-									type="button"
-									onClick={() => handleStartOperation(operation)}
-									disabled={status === "connecting" || status === "authorizing"}
-									className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
-								>
-									<RefreshCw className="w-3.5 h-3.5" />
-									<span>Повторить запрос (Retry)</span>
-								</button>
-
-								{(status === "card_wait" || status === "processing_card" || status === "pin_entry" || status === "biometry_scan" || status === "qr_displayed" || status === "connecting" || status === "authorizing") && (
-									<button
-										type="button"
-										onClick={handleCancelOperation}
-										className="min-h-[44px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5 transition-colors cursor-pointer"
-									>
-										<Ban className="w-3.5 h-3.5" />
-										<span>Отменить операцию</span>
-									</button>
-								)}
-							</div>
-
-							{/* Fallback: Automated Alternative Payment Suggestions upon Timeout / Decline */}
-							{(status === "pin_timeout" || status === "card_declined" || status === "communication_error") && (
-								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-amber-500/30 space-y-2.5">
-									<div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
-										<AlertCircle size={16} className="text-amber-600 shrink-0" />
-										<span>Таймаут или отказ терминала Сбербанк. Выберите альтернативную оплату:</span>
-									</div>
-									<div className="flex items-center gap-2 flex-wrap">
-										<button
-											type="button"
-											onClick={() => handleStartOperation("sberpay_qr")}
-											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 text-[var(--teal,#0d9488)] font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition-colors"
-										>
-											<QrCode size={16} />
-											<span>SberPay / СБП QR</span>
-										</button>
-										{onSelectAlternativeMethod && (
-											<>
-												<button
-													type="button"
-													onClick={() => {
-														onSelectAlternativeMethod("cash");
-														onClose();
-													}}
-													className="min-h-[44px] px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-colors"
-												>
-													<CreditCard size={16} />
-													<span>Наличные в кассу</span>
-												</button>
-												<button
-													type="button"
-													onClick={() => {
-														onSelectAlternativeMethod("deposit");
-														onClose();
-													}}
-													className="min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-amber-500/20 transition-colors"
-												>
-													<RotateCcw size={16} />
-													<span>Семейный баланс / депозит</span>
-												</button>
-											</>
-										)}
-									</div>
-								</div>
-							)}
+						<div className="lg:col-span-7">
+							<SberPosTerminalLcdPanel
+								activeModelName={ctrl.activeProfile?.modelName || "SBER-POS"}
+								terminalId={ctrl.config.terminalId} isConfigured={ctrl.isConfigured}
+								timerSeconds={ctrl.timerSeconds} status={ctrl.status} statusMessage={ctrl.statusMessage}
+								totalBillKop={totalBillKop} operation={ctrl.operation} pilotCommandText={pilotCommandText}
+								onStartOperation={ctrl.handleStartOperation} onCancelOperation={ctrl.handleCancelOperation}
+								onSelectAlternativeMethod={onSelectAlternativeMethod} onClose={onClose}
+							/>
 						</div>
-
-						{/* Bank Slip & Details (Right side: 5 cols) */}
-						<div className="lg:col-span-5 flex flex-col gap-3">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-1 bg-[var(--paper-soft,#f8fafc)] p-0.5 rounded-xl border border-[var(--line,#e2e8f0)]">
-									<button
-										type="button"
-										onClick={() => setActiveSlipTab("customer")}
-										className={"px-3 py-1.5 rounded-lg text-xs font-bold transition-all " + (
-											activeSlipTab === "customer"
-												? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-sm"
-												: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-										)}
-									>
-										Чек клиента
-									</button>
-									<button
-										type="button"
-										onClick={() => setActiveSlipTab("merchant")}
-										className={"px-3 py-1.5 rounded-lg text-xs font-bold transition-all " + (
-											activeSlipTab === "merchant"
-												? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-sm"
-												: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-										)}
-									>
-										Чек клиники
-									</button>
-								</div>
-								<div className="flex items-center gap-1">
-									<button
-										type="button"
-										onClick={handleCopySlip}
-										disabled={false}
-										title="Скопировать слип-чек"
-										data-testid="sber-copy-slip-btn"
-										className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
-									>
-										{isCopied ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-									</button>
-									<button
-										type="button"
-										onClick={handlePrintSlip}
-										disabled={isPrinting}
-										title="Распечатать чек на терминале"
-										data-testid="sber-print-slip-btn"
-										className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
-									>
-										<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin text-[var(--ok-fg,#059669)]" : "")} />
-									</button>
-								</div>
-							</div>
-
-							{/* Monospace Slip Box */}
-							<div className="sber-slip-box p-3 max-h-[300px] overflow-y-auto select-all">
-								{lastResponse ? (
-									activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip
-								) : (
-									<div className="py-12 text-center text-[var(--muted,#64748b)] font-sans text-xs">
-										<p className="font-semibold">Банковский слип еще не сформирован</p>
-										<p className="text-[10px] mt-1 opacity-75">Запустите операцию на терминале для получения чека</p>
-									</div>
-								)}
-							</div>
+						<div className="lg:col-span-5">
+							<SberPosTerminalSlipPanel lastResponse={ctrl.lastResponse} />
 						</div>
 					</div>
 				</div>
 
-				{/* Footer */}
 				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between flex-wrap gap-3">
 					<div className="text-xs text-[var(--muted,#64748b)]">
 						Сбербанк Эквайринг • MCC 8021 • ПАО Сбербанк Генеральная лицензия ЦБ РФ №1481
 					</div>
-					<div className="flex items-center gap-2">
-						{lastResponse?.success && (
-							<button
-								type="button"
-								onClick={handlePrintSlip}
-								disabled={isPrinting}
-								className="h-11 px-4 rounded-xl border border-[var(--ok-fg,#059669)]/40 bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ok-fg,#059669)] hover:bg-[var(--ok-bg,#f0fdf4)] flex items-center gap-2 cursor-pointer shadow-sm"
-							>
-								<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin" : "")} />
-								<span>{isPrinting ? "Печать чека..." : "Печать банковского чека"}</span>
-							</button>
-						)}
-						<button
-							type="button"
-							onClick={onClose}
-							className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-						>
-							<span>Закрыть</span>
-						</button>
-					</div>
+					<button
+						type="button" onClick={onClose}
+						className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+					>
+						<span>Закрыть</span>
+					</button>
 				</div>
 			</div>
 		</div>
 	);
 };
+
+export default SberPosTerminalModal;

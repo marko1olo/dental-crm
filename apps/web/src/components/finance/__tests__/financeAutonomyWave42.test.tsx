@@ -17,7 +17,7 @@ import { renderToString } from "react-dom/server";
 import { validateBuyerInn54Fz } from "../cashboxOperations";
 import { PaymentModal } from "../PaymentModal";
 import { FiscalReceiptModal } from "../FiscalReceipt54FzModal";
-import { ProcedureMaterialDeductionModal } from "../../inventory/ProcedureMaterialDeductionModal";
+import { WarehousePackageWriteOffBar } from "../../inventory/WarehousePackageWriteOffBar";
 import { AutoclaveLog257Modal } from "../../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import {
 	generateKraftBarcode,
@@ -170,22 +170,15 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 			];
 
 			const html = renderToString(
-				<ProcedureMaterialDeductionModal
-					isOpen={true}
-					onClose={() => {}}
-					warehouseItems={sampleEmptyWarehouse}
-					initialTechMapCodes={["A16.07.004"]}
+				<WarehousePackageWriteOffBar
+					warehouseItems={sampleEmptyWarehouse as any}
+					allowSoftOverdraft={true}
 				/>,
 			);
 
-			assert.ok(html.includes("procedure-material-deduction-modal"), "Must render material deduction modal");
-			assert.ok(
-				html.includes("preset-btn-anesthesia") || html.includes("btn-dispense-standard-anesthesia-kit"),
-				"Must render standard anesthesia kit preset button",
-			);
-			assert.ok(html.includes("confirm-deduction-btn"), "Must render confirm deduction button");
+			assert.ok(html.includes("btn-writeoff-anesthesia-packet"), "Must render standard anesthesia kit preset button");
 			// Button must NEVER be disabled by stock = 0
-			assert.ok(!html.includes("data-testid=\"confirm-deduction-btn\" disabled"), "Confirm deduction button must NOT be disabled on zero stock");
+			assert.ok(!html.includes("disabled"), "Confirm deduction button must NOT be disabled on zero stock");
 		});
 	});
 

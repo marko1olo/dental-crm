@@ -2,7 +2,7 @@
  * CashShiftWidget.tsx — Компонент управления кассовой сменой ККТ 54-ФЗ (Открытие/Закрытие, X/Z-отчеты, Офлайн-очередь, Сверка эквайринга).
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	AlertTriangle,
 	Banknote,
@@ -107,9 +107,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const [isBottomActionsMenuOpen, setIsBottomActionsMenuOpen] = useState<boolean>(false);
 	const [isCashRegisterModalOpen, setIsCashRegisterModalOpen] = useState<boolean>(false);
 
-	// StomX Cash Flow State (Wave 118: 54-FZ Tag 1054 cash in/out presets)
+	// Cash Flow State
 	const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState<boolean>(initialCashFlowModalOpen);
 	const [cashFlowMode, setCashFlowMode] = useState<"cash_in" | "cash_out">(initialCashFlowMode);
+	const inFlightRef = useRef(false);
+	const lastClickTimeRef = useRef(0);
 
 	const handleOpenCashInModal = () => {
 		setCashFlowMode("cash_in");
@@ -171,7 +173,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const netBankDepositRub = netBankDepositKopecks / 100;
 
 	const handleToggleShift = async () => {
-		if (isProcessing) return;
+		const now = Date.now();
+		if (inFlightRef.current || isProcessing || now - lastClickTimeRef.current < 600) return;
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
 		setIsProcessing(true);
 		try {
 			if (isShiftOpen) {
@@ -191,15 +196,19 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 			showToast("Ошибка связи с фискальным регистратором", "error");
 		} finally {
 			setIsProcessing(false);
+			inFlightRef.current = false;
 		}
 	};
 
 	const handleXReport = async () => {
-		if (isProcessing) return;
+		const now = Date.now();
+		if (inFlightRef.current || isProcessing || now - lastClickTimeRef.current < 600) return;
 		if (!isShiftOpen) {
 			showToast("Смена закрыта. Для снятия промежуточного отчета откройте смену", "info", 4000);
 			return;
 		}
+		inFlightRef.current = true;
+		lastClickTimeRef.current = now;
 		setIsProcessing(true);
 		try {
 			if (onPrintXReport) await onPrintXReport();
@@ -212,6 +221,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 			showToast("Не удалось распечатать X-отчет", "error");
 		} finally {
 			setIsProcessing(false);
+			inFlightRef.current = false;
 		}
 	};
 
