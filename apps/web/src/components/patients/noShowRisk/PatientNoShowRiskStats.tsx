@@ -14,7 +14,11 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 			{history && (
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Неявки</div>
+						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Визитов</div>
+						<div className="text-base font-black text-emerald-600 dark:text-emerald-400">{history.attended}</div>
+					</div>
+					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Неявок</div>
 						<div
 							className={`text-base font-black ${
 								history.noShows > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
@@ -24,15 +28,11 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 						</div>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Отмены</div>
+						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Отмен</div>
 						<div className="text-base font-black text-[var(--ink)]">{history.cancellations}</div>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Приёмов состоялось</div>
-						<div className="text-base font-black text-emerald-600 dark:text-emerald-400">{history.attended}</div>
-					</div>
-					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Посещаемость</div>
+						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Дисциплина</div>
 						<div className="text-base font-black text-[var(--teal,var(--brand-primary))]">
 							{history.consideredAppointments > 0
 								? `${Math.round((history.attended / history.consideredAppointments) * 100)}%`
@@ -50,9 +50,7 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 					</span>
 				</div>
 				<div className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)]">
-					{history?.noShows && history.noShows > 0
-						? `Зафиксировано неявок: ${history.noShows}`
-						: "Без зафиксированных неявок"}
+					{`Визитов: ${history?.attended ?? 0}, неявок: ${history?.noShows ?? 0}, отмен: ${history?.cancellations ?? 0}`}
 				</div>
 			</div>
 

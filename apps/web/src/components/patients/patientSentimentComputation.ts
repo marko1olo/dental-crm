@@ -44,9 +44,24 @@ export function computePatientSentiment(
 		typeof patient?.totalPaidKopecks === "number" ? kopecksToRub(patient.totalPaidKopecks) : 0
 	);
 	const tier = String(patient?.loyaltyTier || patient?.administrativeProfile?.loyaltyTier || patient?.tier || "").toLowerCase();
-	const notes = String(patient?.notes || patient?.clinicalSafetyNotes || patient?.allergies || "").toLowerCase();
-	const hasSevereAllergies = !isNegativeAllergyStatement(notes) && (notes.includes("отек квинке") || notes.includes("анафилак") || notes.includes("новокаин") || notes.includes("аллергоанамнез"));
-	const hasCancelRisk = (typeof patient?.noShowProbability === "number" && patient.noShowProbability > 0.3) || (typeof patient?.noShowsCount === "number" && patient.noShowsCount >= 2);
+
+	// Mandate 8ao: Расчет строго по нормализованным клиническим полям, ноль парсинга заметок регулярками
+	const rawAllergies = patient?.allergies ?? patient?.clinicalSafety?.allergies ?? patient?.allergiesList;
+	const hasNormalizedAllergies = Array.isArray(rawAllergies)
+		? rawAllergies.length > 0
+		: typeof rawAllergies === "string" && rawAllergies.trim().length > 0 && !isNegativeAllergyStatement(rawAllergies);
+
+	const hasSafetyStopFlags = Boolean(
+		patient?.hasSevereAllergies ||
+		patient?.requiresStrictInformedConsent ||
+		patient?.clinicalSafetyProfile?.hasCriticalStopFlags ||
+		(Array.isArray(patient?.clinicalSafetyProfile?.activeFlags) && patient.clinicalSafetyProfile.activeFlags.length > 0),
+	);
+	const hasSevereAllergies = hasNormalizedAllergies || hasSafetyStopFlags;
+
+	const noShows = typeof patient?.noShowsCount === "number" ? patient.noShowsCount : typeof patient?.history?.noShows === "number" ? patient.history.noShows : 0;
+	const cancellations = typeof patient?.cancellationsCount === "number" ? patient.cancellationsCount : typeof patient?.history?.cancellations === "number" ? patient.history.cancellations : 0;
+	const hasCancelRisk = (typeof patient?.noShowProbability === "number" && patient.noShowProbability > 0.3) || noShows >= 2 || (noShows >= 1 && cancellations >= 2);
 
 	let type: PatientSentimentType = "standard";
 	if (forcedType) type = forcedType;

@@ -102,7 +102,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 				<AnamnesisActionsFooter
 					onSave={() => { onSaveProfile?.(profile); showToast("Анкета соматического здоровья сохранена", "success"); onClose(); }}
 					onClose={onClose}
-					onSyncDiary={() => { const snippet = formatSafetyProfileToDiaryText(profile); onSyncToEmkDiary?.(snippet); navigator.clipboard.writeText(snippet); showToast("Текст анамнеза скопирован в буфер для карты 043/у", "success"); }}
+					onSyncDiary={() => { const snippet = formatSafetyProfileToDiaryText(profile); onSyncToEmkDiary?.(snippet); navigator.clipboard.writeText(snippet); showToast("Текст анамнеза скопирован в буфер для медицинской карты", "success"); }}
 				/>
 			</div>
 		</div>

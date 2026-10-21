@@ -47,12 +47,27 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 					if (cancelled) return;
 					if (data) setRiskData(data);
 					else setFailure({ status: res.status });
+				} else if (res.status === 422) {
+					// 422: мало завершенных визитов — это нормальное состояние нового пациента, а не сбой!
+					const data = await res.json().catch(() => null);
+					if (cancelled) return;
+					setRiskData({
+						history: {
+							consideredAppointments: data?.consideredAppointments ?? 0,
+							attended: data?.consideredAppointments ?? 0,
+							noShows: 0,
+							cancellations: 0,
+						},
+						riskLevel: "low",
+						factors: ["Новый пациент: формируется история посещений"],
+						recommendedAction: "Подтвердить запись за 24 часа телефонным звонком или сообщением",
+					});
 				} else {
 					setFailure({ status: res.status });
 				}
 			} catch (e) {
 				if (cancelled || (e as Error)?.name === "AbortError") return;
-				logger.error("Failed to fetch AI no-show risk", e);
+				logger.error("Failed to fetch no-show discipline statistics", e);
 				setFailure({ status: null });
 			} finally {
 				if (!cancelled) setLoading(false);
@@ -77,11 +92,11 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 				title="Дисциплина визитов и статистика неявок пациента"
 			>
 				<CalendarClock size={16} className="text-emerald-600 dark:text-emerald-400" />
-				<span className="text-sm font-semibold">Дисциплина посещений и неявки</span>
+				<span className="text-sm font-semibold">Дисциплина визитов и статистика неявок</span>
 			</h3>
 
 			{loading ? (
-				<div className="text-xs text-[var(--muted)] py-3">Анализируем журнал посещений пациента…</div>
+				<div className="text-xs text-[var(--muted)] py-3">Загрузка статистики визитов пациента…</div>
 			) : failure ? (
 				<PanelLoadFailure
 					subject={NO_SHOW_SUBJECT}
@@ -99,7 +114,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 						disabled={loading}
 						className="px-3.5 py-1.5 min-h-[34px] text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors shadow-2xs cursor-pointer"
 					>
-						{loading ? "Анализируем…" : "Проверить историю"}
+						{loading ? "Загрузка…" : "Обновить статистику"}
 					</button>
 				</div>
 			)}

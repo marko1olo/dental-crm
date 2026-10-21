@@ -237,10 +237,10 @@ export function PatientMedicalFlagsStep({
 								? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 								: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] shadow-2xs"
 						}`}
-						title="Заполнить нормой (соматически здоров)"
+						title="✓ Соматически здоров / Аллергий нет (1 клик)"
 					>
 						<Check size={13} className="shrink-0" />
-						<span>{isSomaticNorm ? "Норма" : "Применить норму"}</span>
+						<span>✓ Соматически здоров / Аллергий нет</span>
 					</button>
 				</div>
 			</div>

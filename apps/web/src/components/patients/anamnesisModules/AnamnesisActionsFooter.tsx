@@ -24,7 +24,7 @@ export const AnamnesisActionsFooter: React.FC<AnamnesisActionsFooterProps> = Rea
 						data-testid="btn-anamnesis-sync-emk"
 					>
 						<Copy size={13} className="text-[var(--teal)]" />
-						<span>В дневник карты (043/у)</span>
+						<span>В медицинскую карту приёма</span>
 					</button>
 				)}
 				<button
