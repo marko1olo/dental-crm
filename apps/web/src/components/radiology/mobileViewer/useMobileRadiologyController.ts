@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { ImagingStudy } from "../../../types.js";
+import type { ImagingStudy } from "../../imaging/types.js";
 import { showToast } from "../../GlobalToast.js";
 import {
 	findComparisonStudy,

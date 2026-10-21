@@ -6,7 +6,7 @@ import { KIND_LABELS } from "./imagingStudyListConstants.js";
 import type { ImagingStudy } from "./types.js";
 
 export interface ImagingStudyListEmptyStateProps {
-	activePatient?: { fullName?: string; name?: string } | null;
+	activePatient?: { fullName?: string; name?: string } | null | undefined;
 	activeImagingStudies: ImagingStudy[];
 	effectiveToothFilter: string;
 	imagingKindFilter: string;

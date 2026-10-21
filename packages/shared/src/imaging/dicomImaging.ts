@@ -139,7 +139,8 @@ export interface CalibratedRulerMeasurement {
 	readonly lengthMm: number;
 	readonly calibrationMmPerPixel: number;
 	readonly labelRu: string;
-	readonly clinicalType?: "bone_height" | "bone_width" | "root_canal_length" | "implant_site" | "general";
+	readonly clinicalType?: "bone_height" | "bone_width" | "root_canal_length" | "implant_site" | "general" | undefined;
+	readonly colorHex?: string | undefined;
 }
 
 export function calibrateMmPerPixel(

@@ -11,7 +11,7 @@ import { type ImagingStudy, imagingStudyHasFile } from "./types.js";
 
 export interface ImagingStudyRowProps {
 	study: ImagingStudy;
-	selectedImagingStudy?: ImagingStudy | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
 	previewSrc?: string | undefined;
 	imagingKindLabels: Record<string, string>;
 	imagingSourceLabels: Record<string, string>;

@@ -1,9 +1,9 @@
 import { RefreshCw } from "lucide-react";
 import type React from "react";
 
-export const MobileAiAnalyzingModal: React.FC<{ isAnalyzingAI?: boolean }> = ({
-	isAnalyzingAI,
-}) => {
+export const MobileAiAnalyzingModal: React.FC<{
+	isAnalyzingAI?: boolean | undefined;
+}> = ({ isAnalyzingAI }) => {
 	if (!isAnalyzingAI) return null;
 	return (
 		<div

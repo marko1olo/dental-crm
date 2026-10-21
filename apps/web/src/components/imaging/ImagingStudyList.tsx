@@ -14,12 +14,12 @@ export * from "./useImagingStudyFilter.js";
 export interface ImagingStudyListProps {
 	visibleImagingStudies: ImagingStudy[];
 	activeImagingStudies: ImagingStudy[];
-	selectedImagingStudy?: ImagingStudy | null;
-	activePatient?: { fullName?: string; name?: string } | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	activePatient?: { fullName?: string; name?: string } | null | undefined;
 	imagingKindFilter: string;
 	setImagingKindFilter: (filter: string) => void;
-	imagingToothFilter?: string;
-	setImagingToothFilter?: (filter: string) => void;
+	imagingToothFilter?: string | undefined;
+	setImagingToothFilter?: ((filter: string) => void) | undefined;
 	imagingKindLabels: Record<string, string>;
 	imagingSourceLabels: Record<string, string>;
 	imagingPreviewSource: (study: ImagingStudy) => string | undefined;

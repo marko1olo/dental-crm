@@ -3,9 +3,9 @@ import type React from "react";
 import type { MobileChairsideStudyItem } from "./types.js";
 
 export const MobileRvgPlaceholder: React.FC<{
-	study: MobileChairsideStudyItem | null;
-	hasFile: boolean;
-	onPickFiles: () => void;
+	study?: MobileChairsideStudyItem | null | undefined;
+	hasFile?: boolean | undefined;
+	onPickFiles?: (() => void) | undefined;
 }> = ({ study, hasFile, onPickFiles }) => {
 	return (
 		<div

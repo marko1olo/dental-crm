@@ -5,6 +5,7 @@ export interface DoseSheetHtmlOptions {
 	clinicName?: string | null | undefined;
 	patientFullName?: string | null | undefined;
 	medicalCardNumber?: string | null | undefined;
+	patientBirthDate?: string | null | undefined;
 	reportingYear?: number | undefined;
 	paperFormat?: "A4" | "A5" | undefined;
 }
@@ -64,7 +65,7 @@ th { background: #f8fafc; font-weight: 600; }
 <body>
 <div class="header">
 	<h2>ЛИСТ УЧЕТА ДОЗОВЫХ НАГРУЗОК ПАЦИЕНТА</h2>
-	<p>Клиника: ${escapeHtml(clinicName)} | Карта: ${escapeHtml(cardNum)} | Пациент: ${escapeHtml(patientName)} | Год: ${reportingYear}</p>
+	<p>Клиника: ${escapeHtml(clinicName)} | Карта: ${escapeHtml(cardNum)} | Пациент: ${escapeHtml(patientName)}${options.patientBirthDate ? ` (${escapeHtml(options.patientBirthDate)})` : ""} | Год: ${reportingYear}</p>
 	<p>Норматив: СанПиН 2.6.1.1192-03 (предел 1.0 мЗв/год). Автономия врача: без стационарных комиссий.</p>
 </div>
 <table>

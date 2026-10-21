@@ -1,12 +1,12 @@
 import { Sparkles } from "lucide-react";
 import type React from "react";
-import type { MobileChairsideStudyItem } from "./types.js";
+import type { ImagingStudy } from "../../imaging/types.js";
 
 export interface MobileShowcaseCanvasProps {
 	comparisonMode: "single" | "split";
-	effectivePreviewUrl: string | null;
+	effectivePreviewUrl?: string | null | undefined;
 	computedFilter: string;
-	comparisonStudy?: MobileChairsideStudyItem | null;
+	comparisonStudy?: ImagingStudy | null | undefined;
 }
 
 export const MobileShowcaseCanvas: React.FC<MobileShowcaseCanvasProps> = ({

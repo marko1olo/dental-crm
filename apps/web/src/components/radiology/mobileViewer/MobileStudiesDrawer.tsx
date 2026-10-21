@@ -61,9 +61,7 @@ export const MobileStudiesDrawer: React.FC<MobileStudiesDrawerProps> = ({
 							Снимки пациента ({studies.length})
 						</h3>
 						<p className="text-xs text-[var(--muted)] truncate max-w-[260px]">
-							{activePatient?.fullName ||
-								activePatient?.name ||
-								"Пациент не выбран"}
+							{activePatient?.fullName || "Пациент не выбран"}
 						</p>
 					</div>
 					<button

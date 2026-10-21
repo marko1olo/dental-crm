@@ -2,7 +2,7 @@ import { mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "7495a530-4b20-4812-b3f3-a4a8d392f5a1";
+const CURRENT_CONV_ID = "c7bd8513-e728-4b46-86df-54740b24e458";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/radiology";
 const API_URL = "http://127.0.0.1:4100";
@@ -109,10 +109,13 @@ async function prepareAndCapture(browser, { name, filename, description, width, 
 	});
 	page.on("pageerror", (e) => console.error(`[UNCAUGHT]`, e.message));
 
-	await page.goto(`${WEB_URL}/#imaging`, { waitUntil: "networkidle" });
+	await page.goto(`${WEB_URL}/#imaging`, { waitUntil: "domcontentloaded", timeout: 30000 });
 	
-	// Apply theme to DOM
+	// Ensure hash is #imaging and apply theme to DOM
 	await page.evaluate((th) => {
+		if (window.location.hash !== "#imaging") {
+			window.location.hash = "#imaging";
+		}
 		if (document.documentElement) {
 			document.documentElement.classList.remove("light", "dark");
 			document.documentElement.classList.add(th);
@@ -122,12 +125,13 @@ async function prepareAndCapture(browser, { name, filename, description, width, 
 
 	// Wait for lazy-loaded imaging view to mount
 	if (isMobile) {
-		await page.waitForSelector('[data-testid="mobile-chairside-radiology-container"], .mobile-radiology-container', { timeout: 15000 });
+		await page.waitForSelector('[data-testid="mobile-chairside-radiology-container"], .mobile-radiology-container', { timeout: 35000 });
 	} else {
-		await page.waitForSelector('.imaging-workspace-root, .imaging-panel:not([aria-busy="true"])', { timeout: 15000 });
+		await page.waitForSelector('.imaging-workspace-root, .imaging-panel:not([aria-busy="true"])', { timeout: 35000 });
 	}
 
-	await page.waitForTimeout(1500);
+	await page.waitForLoadState("networkidle").catch(() => {});
+	await page.waitForTimeout(2500);
 	await suppressOverlays(page);
 	await captureProof(page, filename, description);
 	await context.close();
@@ -144,6 +148,19 @@ async function captureProof(page, filename, description) {
 	copyFileSync(outPath, path.join(OUT_CONV, filename));
 }
 
+async function captureWithRetry(browser, config, maxRetries = 2) {
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			await prepareAndCapture(browser, config);
+			return;
+		} catch (err) {
+			console.warn(`[RETRY] Attempt ${attempt} failed for ${config.name}: ${err.message}`);
+			if (attempt === maxRetries) throw err;
+			await new Promise((r) => setTimeout(r, 2000));
+		}
+	}
+}
+
 async function main() {
 	console.log("=== STARTING 4-STATE RADIOLOGY PROOF CAPTURE ===");
 	const auth = await provisionSession();
@@ -157,7 +174,7 @@ async function main() {
 
 	try {
 		// 1. PC Light (1440x900)
-		await prepareAndCapture(browser, {
+		await captureWithRetry(browser, {
 			name: "PC Light",
 			filename: "radiology_pc_light_1440x900.png",
 			description: "PC Light 1440x900 Desktop RVG / OPG Radiology Workspace",
@@ -168,7 +185,7 @@ async function main() {
 		});
 
 		// 2. PC Dark (1440x900)
-		await prepareAndCapture(browser, {
+		await captureWithRetry(browser, {
 			name: "PC Dark",
 			filename: "radiology_pc_dark_1440x900.png",
 			description: "PC Dark 1440x900 High-Contrast Diagnostic Radiology Workspace",
@@ -179,7 +196,7 @@ async function main() {
 		});
 
 		// 3. Mobile Light (390x844)
-		await prepareAndCapture(browser, {
+		await captureWithRetry(browser, {
 			name: "Mobile Light",
 			filename: "radiology_mobile_light_390x844.png",
 			description: "Mobile Light 390x844 Chairside Radiology Viewer (Apple HIG)",
@@ -190,7 +207,7 @@ async function main() {
 		});
 
 		// 4. Mobile Dark (390x844)
-		await prepareAndCapture(browser, {
+		await captureWithRetry(browser, {
 			name: "Mobile Dark",
 			filename: "radiology_mobile_dark_390x844.png",
 			description: "Mobile Dark 390x844 High-Contrast Diagnostic Chairside Viewer",

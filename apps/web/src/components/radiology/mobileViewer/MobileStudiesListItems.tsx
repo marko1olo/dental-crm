@@ -1,12 +1,12 @@
 import { Calendar, ChevronRight } from "lucide-react";
 import type React from "react";
 import { formatShortDate } from "../../../AppHelpers.js";
-import type { ImagingStudy } from "../../../types.js";
+import type { ImagingStudy } from "../../imaging/types.js";
 
 export interface MobileStudiesListItemsProps {
 	studies: ImagingStudy[];
-	selectedStudyId?: string;
-	imagingKindLabels?: Record<string, string>;
+	selectedStudyId?: string | undefined;
+	imagingKindLabels?: Record<string, string> | undefined;
 	onSelectStudy: (id: string) => void;
 	onClose: () => void;
 	triggerHaptic: () => void;

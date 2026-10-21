@@ -144,7 +144,10 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 		const demoDir = path.resolve(process.cwd(), "apps/web/public/radiology/demo_cbct");
 		const hasDemoData = fs.existsSync(demoDir) && fs.existsSync(path.join(demoDir, "manifest.json"));
 
-		it("reconstructs real Zakharov CBCT panorama with crisp Quadrant 4 tooth voxels (> 200 brightness)", async () => {
+		it(
+			"reconstructs real Zakharov CBCT panorama with crisp Quadrant 4 tooth voxels (> 200 brightness)",
+			{ timeout: 15000 },
+			async () => {
 			if (!hasDemoData) {
 				console.log("Demo CBCT directory not found, skipping real dataset test.");
 				return;
@@ -222,7 +225,7 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 				q4MaxBrightness > oldMax * 2,
 				`New MIP engine (${q4MaxBrightness}) must deliver >2x clinical brightness vs legacy (${oldMax})`,
 			);
-		}, 15000);
+		});
 	});
 
 	// ─── 4. MANDIBULAR NERVE VERTICAL ALIGNMENT ───────────────────────────────

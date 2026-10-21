@@ -187,7 +187,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(header.windowWidth > 0);
 	});
 
-	it("renders DicomViewerModal with patient header and touch targets", async () => {
+	it("renders DicomViewerModal with patient header and touch targets", { timeout: 15000 }, async () => {
 		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
@@ -205,9 +205,9 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(html.includes("Смирнова Елена Васильевна"), "Renders patient name");
 		assert.ok(html.includes("Зуб 16"), "Renders tooth FDI code");
 		assert.ok(html.includes("btn-dicom-norma-043"), "Contains 1-click Norma button");
-	}, 15000);
+	});
 
-	it("synchronizes studyDate in DicomViewerModal header", async () => {
+	it("synchronizes studyDate in DicomViewerModal header", { timeout: 15000 }, async () => {
 		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
@@ -221,9 +221,9 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		);
 
 		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized studyDate into header");
-	}, 15000);
+	});
 
-	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", async () => {
+	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", { timeout: 15000 }, async () => {
 		const { CbctMprImplantStudioModal } = await import("../CbctMprImplantStudioModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
@@ -253,6 +253,6 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(!html.includes("✅"), "Zero raw checkmark emoji in sinus notes");
 		assert.ok(!html.includes("⚠️"), "Zero raw warning emoji");
 		assert.ok(!html.includes("⛔"), "Zero raw no-entry emoji");
-	}, 15000);
+	});
 });
 

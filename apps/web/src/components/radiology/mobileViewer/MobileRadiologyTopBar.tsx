@@ -9,8 +9,8 @@ export interface MobileRadiologyTopBarProps {
 	onOpenStudiesSheet: () => void;
 	onOpenShowcase: () => void;
 	onResetTransform: () => void;
-	onCaptureCamera?: () => void;
-	onClose?: () => void;
+	onCaptureCamera?: (() => void) | undefined;
+	onClose?: (() => void) | undefined;
 }
 
 export const MobileRadiologyTopBar: React.FC<MobileRadiologyTopBarProps> = ({

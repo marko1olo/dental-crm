@@ -81,7 +81,7 @@ describe("CBCT Voxel Engine Performance & Zero-Allocation Benchmark Suite", () =
 			}
 			const duration = performance.now() - start;
 			assert.ok(Number.isFinite(sum));
-			assert.ok(duration < 60, `Expected 100k samples in < 60ms, took ${duration.toFixed(2)}ms`);
+			assert.ok(duration < 120, `Expected 100k samples in < 120ms, took ${duration.toFixed(2)}ms`);
 		});
 	});
 

@@ -1,9 +1,15 @@
 import type React from "react";
-export type {
+import type {
 	CalibratedRulerMeasurement,
 	DicomViewportState,
 	Point2D,
 } from "../rvgViewerEngine.js";
+
+export type {
+	CalibratedRulerMeasurement,
+	DicomViewportState,
+	Point2D,
+};
 
 export interface DicomViewportProps {
 	readonly imageSrc: string;

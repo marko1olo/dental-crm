@@ -3,10 +3,10 @@ import type { TouchGestureState } from "./gestureTypes.js";
 import type { MobileChairsideStudyItem } from "./types.js";
 
 export interface MobileGestureViewportProps {
-	selectedImagingStudy: MobileChairsideStudyItem | null;
-	effectivePreviewUrl: string | null;
-	previewLoadError: boolean;
-	selectedStudyHasFile: boolean;
+	selectedImagingStudy?: MobileChairsideStudyItem | null | undefined;
+	effectivePreviewUrl?: string | null | undefined;
+	previewLoadError?: boolean | undefined;
+	selectedStudyHasFile?: boolean | undefined;
 	zoom: number;
 	pan: { x: number; y: number };
 	rotationDeg: number;
@@ -17,7 +17,7 @@ export interface MobileGestureViewportProps {
 	rulerCurrent: { x: number; y: number } | null;
 	savedRulerDistanceMm: number | null;
 	pixelSpacingMm: number;
-	isAnalyzingAI: boolean;
+	isAnalyzingAI?: boolean | undefined;
 	viewportRef: React.RefObject<HTMLDivElement | null>;
 	touchStartRef: React.MutableRefObject<TouchGestureState>;
 	setZoom: React.Dispatch<React.SetStateAction<number>>;
@@ -26,5 +26,5 @@ export interface MobileGestureViewportProps {
 	setRulerCurrent: (pt: { x: number; y: number } | null) => void;
 	setSavedRulerDistanceMm: (dist: number | null) => void;
 	triggerHaptic: () => void;
-	onPickFiles: () => void;
+	onPickFiles?: (() => void) | undefined;
 }

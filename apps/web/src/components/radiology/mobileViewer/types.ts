@@ -1,42 +1,29 @@
+import type { Patient } from "@dental/shared";
+import type { ImagingStudy } from "../../imaging/types.js";
+
 export * from "./gestureTypes.js";
 export * from "./viewportTypes.js";
 
-export interface MobileChairsideStudyItem {
-	id: string;
-	title: string;
-	kind: string;
-	region?: string | null;
-	toothCode?: string | null;
-	capturedAt: string;
-	previewUrl?: string | null;
-	storagePath?: string | null;
-	sourceKind?: string | null;
-	sourceName?: string | null;
-	aiSummary?: string | null;
-}
+export type MobileChairsideStudyItem = ImagingStudy;
 
 export interface MobileChairsideRadiologyViewerProps {
-	selectedImagingStudy: MobileChairsideStudyItem | null;
-	activeImagingStudies: MobileChairsideStudyItem[];
-	activePatient: {
-		id?: string | null;
-		fullName?: string | null;
-		name?: string | null;
-	} | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	activeImagingStudies: ImagingStudy[];
+	activePatient?: Partial<Patient> | null | undefined;
 	onSelectStudy: (studyId: string) => void;
-	effectivePreviewUrl: string | null;
-	isPreviewLoading: boolean;
-	previewLoadError: boolean;
-	selectedStudyHasFile: boolean;
-	imagingKindLabels: Record<string, string>;
-	onCaptureCamera: () => void;
-	onPickFiles: () => void;
-	onAnalyzeAI: () => void;
-	isAnalyzingAI: boolean;
-	onOpenCbctStudio?: () => void;
-	onOpenPanoramic?: () => void;
-	onOpenRadiologyModule?: () => void;
-	onClose?: () => void;
+	effectivePreviewUrl?: string | null | undefined;
+	isPreviewLoading?: boolean | undefined;
+	previewLoadError?: boolean | undefined;
+	selectedStudyHasFile?: boolean | undefined;
+	imagingKindLabels?: Record<string, string> | undefined;
+	onCaptureCamera?: (() => void) | undefined;
+	onPickFiles?: (() => void) | undefined;
+	onAnalyzeAI?: (() => void) | undefined;
+	isAnalyzingAI?: boolean | undefined;
+	onOpenCbctStudio?: (() => void) | undefined;
+	onOpenPanoramic?: (() => void) | undefined;
+	onOpenRadiologyModule?: (() => void) | undefined;
+	onClose?: (() => void) | undefined;
 }
 
 export interface MobileRadiologyFilterToolbarProps {
@@ -64,38 +51,30 @@ export interface MobileRadiologyFilterToolbarProps {
 export interface MobileStudiesDrawerProps {
 	isOpen: boolean;
 	onClose: () => void;
-	studies: MobileChairsideStudyItem[];
-	selectedStudyId?: string;
-	activePatient: {
-		id?: string | null;
-		fullName?: string | null;
-		name?: string | null;
-	} | null;
-	imagingKindLabels?: Record<string, string>;
+	studies: ImagingStudy[];
+	selectedStudyId?: string | undefined;
+	activePatient?: Partial<Patient> | null | undefined;
+	imagingKindLabels?: Record<string, string> | undefined;
 	onSelectStudy: (studyId: string) => void;
-	onCaptureCamera: () => void;
-	onPickFiles: () => void;
+	onCaptureCamera?: (() => void) | undefined;
+	onPickFiles?: (() => void) | undefined;
 	triggerHaptic: () => void;
 }
 
 export interface MobilePatientShowcaseOverlayProps {
 	isOpen: boolean;
 	onClose: () => void;
-	selectedStudy?: MobileChairsideStudyItem | null;
-	activePatient: {
-		id?: string | null;
-		fullName?: string | null;
-		name?: string | null;
-	} | null;
-	effectivePreviewUrl: string | null;
+	selectedStudy?: ImagingStudy | null | undefined;
+	activePatient?: Partial<Patient> | null | undefined;
+	effectivePreviewUrl?: string | null | undefined;
 	computedFilter: string;
 	modalityTitle: string;
 	toothBadge: string;
 	studyDateStr: string;
-	comparisonStudy: MobileChairsideStudyItem | null;
-	allStudies?: MobileChairsideStudyItem[];
-	onSelectComparisonStudy?: (studyId: string) => void;
-	isProtocol043Attached?: boolean;
-	onToggleProtocol043Attach?: () => void;
+	comparisonStudy?: ImagingStudy | null | undefined;
+	allStudies?: ImagingStudy[] | undefined;
+	onSelectComparisonStudy?: ((studyId: string) => void) | undefined;
+	isProtocol043Attached?: boolean | undefined;
+	onToggleProtocol043Attach?: (() => void) | undefined;
 	triggerHaptic: () => void;
 }

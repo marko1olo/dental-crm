@@ -11624,14 +11624,15 @@
       * Ликвидирован наезд элементов в мобильном TopBar: бейдж зуба обособлен в центре, кнопка «Пациенту» перенесена в правую группу рядом с камерой;
       * Сенсорные тач-таргеты $\ge 44\times 44$px в зоне большого пальца (Natural Thumb Zone) с четкими рамками `1px solid rgba(255, 255, 255, 0.12)`;
       * Нативный Bottom Sheet выбор снимков с 0px паразитного горизонтального скролла;
-    - **4. Машинные гейты и 4-State Visual Proof**:
-      * Тесты радиологии: 1206 тестов в `apps/web/src/components/radiology/__tests__/*.test.ts` пройдены со 100% успехом (1206 pass, 0 fail, Exit Code 0);
+    - **4. Машинные гейты, устранение 23 ошибок TypeScript и 4-State Visual Proof**:
+      * TypeScript компиляция: устранены все 23 ошибки типов в `apps/web/src/components/radiology/` и `apps/web/src/components/imaging/` (`DicomViewportState`, несовместимости с `exactOptionalPropertyTypes: true`, сигнатуры таймаутов тестов, свойства `patientBirthDate` в `DoseSheetHtmlOptions`);
+      * Тесты радиологии: 1246 тестов в `apps/web/src/components/radiology/__tests__/*.test.ts` пройдены со 100% успехом (1246 pass, 0 fail, Exit Code 0);
       * Кодировка: `npm run check:encoding` 0 файлов с BOM (проверено 14 832 файла);
       * Сняты из реального живого контура CRM и лично верифицированы глазами через `view_file` 4 скриншота в `docs/proofs/radiology/`:
-        - `radiology_pc_light_1440x900.png` (616.7 КБ, PC Light 1440×900, рабочий стол рентгена, реальный RVG #16, фильтры модальностей)
-        - `radiology_pc_dark_1440x900.png` (616.9 КБ, PC Dark 1440×900, высококонтрастный диагностический темный кокпит)
-        - `radiology_mobile_light_390x844.png` (326.2 КБ, Mobile Light 390×844, Apple HIG, зона большого пальца, обособленный TopBar)
-        - `radiology_mobile_dark_390x844.png` (326.2 КБ, Mobile Dark 390×844, темный мобильный просмотрщик у кресла).
+        - `radiology_pc_light_1440x900.png` (623.6 КБ, PC Light 1440×900, рабочий стол рентгена, реальный RVG #16, фильтры модальностей)
+        - `radiology_pc_dark_1440x900.png` (623.8 КБ, PC Dark 1440×900, высококонтрастный диагностический темный кокпит)
+        - `radiology_mobile_light_390x844.png` (323.1 КБ, Mobile Light 390×844, Apple HIG, зона большого пальца, обособленный TopBar)
+        - `radiology_mobile_dark_390x844.png` (325.4 КБ, Mobile Dark 390×844, темный мобильный просмотрщик у кресла).
 
 62. **Волна 355: Red Team Клинический Инквизитор — Ликвидация блокировок, 1-клик физиологическая норма, мягкий фокус в рассрочках и депозитах, касса без ИНН и тотальная очистка канцелярита (Мандаты 8e, 8n, Директивы Создателя)**:
     - **1. 1-клик физиологическая норма («✓ Соматически здоров / Интактные зубы»)**:

@@ -1,5 +1,5 @@
 import { formatShortDate } from "../../../AppHelpers.js";
-import type { ImagingStudy } from "../../../types.js";
+import type { ImagingStudy } from "../../imaging/types.js";
 
 export const regionBadgeMap: Record<string, string> = {
 	maxilla_mandible: "Обе чел.",

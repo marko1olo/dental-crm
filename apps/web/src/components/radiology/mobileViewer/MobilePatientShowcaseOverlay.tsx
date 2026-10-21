@@ -68,9 +68,7 @@ export const MobilePatientShowcaseOverlay: React.FC<
 						</span>
 					</div>
 					<h2 className="text-lg font-bold text-white mt-1">
-						{activePatient?.fullName ||
-							activePatient?.name ||
-							"Презентация пациенту"}
+						{activePatient?.fullName || "Презентация пациенту"}
 					</h2>
 					<p className="text-xs text-slate-400">
 						{modalityTitle} · Наглядная демонстрация состояния

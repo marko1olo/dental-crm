@@ -80,6 +80,19 @@ export const STATUTORY_RADIATION_DOSE_PRESETS: Record<
 		defaultMa: 7,
 		defaultExposureSec: 0.08,
 	},
+	film_intraoral_legacy: {
+		id: "film_intraoral_legacy",
+		nameRu: "Плёночная прицельная рентгенография",
+		shortNameRu: "Плёнка",
+		categoryRu: "Интраоральные (архив)",
+		typicalDoseMsv: 0.015,
+		typicalDoseMicrosv: 15.0,
+		minDoseMsv: 0.01,
+		maxDoseMsv: 0.03,
+		defaultKv: 65,
+		defaultMa: 7,
+		defaultExposureSec: 0.5,
+	},
 };
 
 export function getStatutoryDosePreset(

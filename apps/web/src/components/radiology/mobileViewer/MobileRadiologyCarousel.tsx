@@ -1,10 +1,10 @@
 import type React from "react";
-import type { ImagingStudy } from "../../../types.js";
+import type { ImagingStudy } from "../../imaging/types.js";
 import { kindShortMap, regionBadgeMap } from "./mobileRadiologyHelpers.js";
 
 export interface MobileRadiologyCarouselProps {
 	activeImagingStudies: ImagingStudy[];
-	selectedStudyId?: string;
+	selectedStudyId?: string | undefined;
 	onSelectStudy: (id: string) => void;
 	triggerHaptic: () => void;
 }

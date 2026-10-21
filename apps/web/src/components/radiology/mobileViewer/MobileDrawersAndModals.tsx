@@ -1,5 +1,6 @@
 import type React from "react";
-import type { ImagingStudy, Patient } from "../../../types.js";
+import type { Patient } from "@dental/shared";
+import type { ImagingStudy } from "../../imaging/types.js";
 import { MobilePatientShowcaseOverlay } from "./MobilePatientShowcaseOverlay.js";
 import { MobileStudiesDrawer } from "./MobileStudiesDrawer.js";
 
@@ -7,23 +8,23 @@ export interface MobileDrawersAndModalsProps {
 	isStudiesSheetOpen: boolean;
 	onCloseStudiesSheet: () => void;
 	studies: ImagingStudy[];
-	selectedStudy?: ImagingStudy | null;
-	activePatient?: Patient | null;
-	imagingKindLabels?: Record<string, string>;
+	selectedStudy?: ImagingStudy | null | undefined;
+	activePatient?: Partial<Patient> | null | undefined;
+	imagingKindLabels?: Record<string, string> | undefined;
 	onSelectStudy: (id: string) => void;
-	onCaptureCamera?: () => void;
-	onPickFiles?: () => void;
+	onCaptureCamera?: (() => void) | undefined;
+	onPickFiles?: (() => void) | undefined;
 	triggerHaptic: () => void;
 	isShowcaseOpen: boolean;
 	onCloseShowcase: () => void;
-	effectivePreviewUrl?: string | null;
+	effectivePreviewUrl?: string | null | undefined;
 	computedFilter: string;
 	modalityTitle: string;
 	toothBadge: string;
 	studyDateStr: string;
-	comparisonStudy: ImagingStudy | null;
-	isProtocol043Attached: boolean;
-	onToggleProtocol043Attach: () => void;
+	comparisonStudy?: ImagingStudy | null | undefined;
+	isProtocol043Attached?: boolean | undefined;
+	onToggleProtocol043Attach?: (() => void) | undefined;
 }
 
 export const MobileDrawersAndModals: React.FC<MobileDrawersAndModalsProps> = (

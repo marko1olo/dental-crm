@@ -3,8 +3,8 @@ import type React from "react";
 
 export const MobileStudiesDrawerFooter: React.FC<{
 	onClose: () => void;
-	onCaptureCamera?: () => void;
-	onPickFiles?: () => void;
+	onCaptureCamera?: (() => void) | undefined;
+	onPickFiles?: (() => void) | undefined;
 }> = ({ onClose, onCaptureCamera, onPickFiles }) => {
 	return (
 		<div className="mobile-radiology-drawer-footer">
