@@ -1,5 +1,4 @@
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46Container } from "./Tooth46Container";
 import { Tooth46StandHeader } from "./Tooth46StandHeader";

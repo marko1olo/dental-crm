@@ -71,6 +71,9 @@ export function computePeriodMetricsFromPayload(
 				sbpRub: k.paymentBreakdown.sbpRub,
 				sbpPercent: k.paymentBreakdown.sbpPercent,
 				sbpFormatted: formatRubles(k.paymentBreakdown.sbpRub),
+				depositRub: k.paymentBreakdown.depositRub ?? 0,
+				depositPercent: k.paymentBreakdown.depositPercent ?? 0,
+				depositFormatted: formatRubles(k.paymentBreakdown.depositRub ?? 0),
 				totalRub: k.paymentBreakdown.totalRub,
 			} : undefined,
 		};

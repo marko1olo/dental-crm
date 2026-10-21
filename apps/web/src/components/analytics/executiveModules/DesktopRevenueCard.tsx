@@ -43,9 +43,16 @@ export function DesktopRevenueCard({ kpis }: DesktopRevenueCardProps) {
 			</div>
 			{kpis.paymentBreakdown && (
 				<div className="mt-2 pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between text-[11px] text-[var(--muted,#64748b)]">
-					<span>Касса: {kpis.paymentBreakdown.cashPercent}%</span>
-					<span>Безнал: {kpis.paymentBreakdown.cardDmsPercent}%</span>
-					<span>СБП: {kpis.paymentBreakdown.sbpPercent}%</span>
+					{kpis.paymentBreakdown.totalRub > 0 ? (
+						<>
+							<span>Касса: {kpis.paymentBreakdown.cashPercent}%</span>
+							<span>Безнал: {kpis.paymentBreakdown.cardDmsPercent}%</span>
+							<span>СБП: {kpis.paymentBreakdown.sbpPercent}%</span>
+							<span>Депозиты: {kpis.paymentBreakdown.depositPercent ?? 0}%</span>
+						</>
+					) : (
+						<span>Оплат за выбранный период пока нет</span>
+					)}
 				</div>
 			)}
 		</div>

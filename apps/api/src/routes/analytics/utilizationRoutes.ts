@@ -488,12 +488,14 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			let startDate: Date | undefined;
 			const now = new Date();
 
-			if (range === "today") {
+			if (range === "today" || range === "day") {
 				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+			} else if (range === "yesterday") {
+				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
 			} else if (range === "week") {
 				const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
 				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-			} else if (range === "month" || range === "last_month") {
+			} else if (range === "month" || range === "last_month" || range === "this_month") {
 				startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 			} else if (range === "quarter" || range === "last_3_months") {
 				const quarterMonth = Math.floor(now.getMonth() / 3) * 3;

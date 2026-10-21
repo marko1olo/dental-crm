@@ -6,7 +6,6 @@
 import type React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
-import { TournamentArena } from "../../odontogram/tournament/TournamentArena";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./standalone/SpecializedAdministrativeLaunchers";
@@ -28,15 +27,6 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("odontogram-gate0"))
 	) {
 		return <Tooth46InspectionStand />;
-	}
-
-	// 0. Odontogram Tournament Arena Launcher (#tournament, ?tournament)
-	if (
-		typeof window !== "undefined" &&
-		(window.location.hash.includes("tournament") ||
-			window.location.search.includes("tournament"))
-	) {
-		return <TournamentArena />;
 	}
 
 	// 0. Doctor Payroll & Commission Launcher (?payroll=1, ?payout=1, #payroll)

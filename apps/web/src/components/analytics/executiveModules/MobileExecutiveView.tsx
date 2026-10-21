@@ -2,6 +2,7 @@ import React from "react";
 import { Download, Printer, RefreshCw } from "lucide-react";
 import { MobileExecutiveKpiTiles } from "./ExecutiveChairUtilizationChart";
 import { MobileExecutiveDoctorsAndFunnels } from "./ExecutiveDoctorPerformanceTable";
+import { MobileExecutiveEmptyStateBanner } from "./MobileExecutiveEmptyStateBanner";
 import { MobileExecutiveKpiCards } from "./ExecutiveKpiSummaryCards";
 import type { TopDoctorPerformanceRow } from "./executiveAnalyticsTypes";
 import type { UseExecutiveDashboardDataResult } from "./useExecutiveDashboardData";
@@ -31,6 +32,14 @@ export function MobileExecutiveView({
 			data-testid="mobile-executive-dashboard"
 		>
 			{toolbar}
+
+			{/* Баннер пустого состояния для новой клиники или соло-врача */}
+			<MobileExecutiveEmptyStateBanner
+				isEmpty={Boolean(data.payload?.isEmpty)}
+				period={data.period}
+				onSelectPeriod={data.setPeriod}
+				onNavigateToSection={onNavigateToSection}
+			/>
 
 			{/* 3 доминантные KPI-карточки */}
 			<MobileExecutiveKpiCards

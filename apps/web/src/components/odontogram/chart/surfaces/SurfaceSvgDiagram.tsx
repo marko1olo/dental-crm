@@ -1,5 +1,4 @@
-import type React from "react";
-import { memo } from "react";
+import React, { memo } from "react";
 
 export interface SurfaceSvgDiagramProps {
 	size: number;

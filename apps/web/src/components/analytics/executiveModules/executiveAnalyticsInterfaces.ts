@@ -87,6 +87,9 @@ export interface ExecutivePeriodComputedMetrics {
 		readonly sbpRub: number;
 		readonly sbpPercent: number;
 		readonly sbpFormatted?: string | undefined;
+		readonly depositRub?: number | undefined;
+		readonly depositPercent?: number | undefined;
+		readonly depositFormatted?: string | undefined;
 		readonly totalRub: number;
 	} | undefined;
 }

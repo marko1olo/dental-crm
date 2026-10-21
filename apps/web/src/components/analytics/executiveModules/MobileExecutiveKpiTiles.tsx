@@ -17,13 +17,15 @@ export function MobileExecutiveKpiTiles({
 }: MobileExecutiveKpiTilesProps) {
 	const totalChairsCount = kpis?.totalChairsCount ?? 1;
 	const pb = periodMetrics.paymentBreakdown ?? {
-		cashRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.28),
-		cashPercent: 28,
-		cardDmsRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.54),
-		cardDmsPercent: 54,
-		sbpRub: Math.round((kpis?.totalRevenueRub ?? 0) * 0.18),
-		sbpPercent: 18,
-		totalRub: kpis?.totalRevenueRub ?? 0,
+		cashRub: 0,
+		cashPercent: 0,
+		cardDmsRub: 0,
+		cardDmsPercent: 0,
+		sbpRub: 0,
+		sbpPercent: 0,
+		depositRub: 0,
+		depositPercent: 0,
+		totalRub: 0,
 	};
 
 	const planPercent = Number.isFinite(periodMetrics.revenuePercent)

@@ -253,20 +253,23 @@ export async function queryExecutiveKpiAndFunnel(
 	let cashRevenueRub = 0;
 	let cardDmsRevenueRub = 0;
 	let sbpRevenueRub = 0;
+	let depositRevenueRub = 0;
 
 	for (const pm of paymentMethodRows) {
 		const amt = Math.max(0, Number(pm.revenueRub || 0));
 		const m = (pm.method || "").toLowerCase();
 		if (m === "cash") {
 			cashRevenueRub += amt;
-		} else if (m === "sbp") {
+		} else if (m === "sbp" || m === "online") {
 			sbpRevenueRub += amt;
+		} else if (m === "deposit" || m === "family_wallet" || m === "advance") {
+			depositRevenueRub += amt;
 		} else {
 			cardDmsRevenueRub += amt;
 		}
 	}
 
-	const totalMethodsRub = cashRevenueRub + cardDmsRevenueRub + sbpRevenueRub;
+	const totalMethodsRub = cashRevenueRub + cardDmsRevenueRub + sbpRevenueRub + depositRevenueRub;
 	const paymentBreakdown = {
 		cashRub: Math.round(cashRevenueRub),
 		cashPercent: totalMethodsRub > 0 ? Number(((cashRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
@@ -274,6 +277,8 @@ export async function queryExecutiveKpiAndFunnel(
 		cardDmsPercent: totalMethodsRub > 0 ? Number(((cardDmsRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
 		sbpRub: Math.round(sbpRevenueRub),
 		sbpPercent: totalMethodsRub > 0 ? Number(((sbpRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
+		depositRub: Math.round(depositRevenueRub),
+		depositPercent: totalMethodsRub > 0 ? Number(((depositRevenueRub / totalMethodsRub) * 100).toFixed(1)) : 0,
 		totalRub: Math.round(totalMethodsRub),
 	};
 

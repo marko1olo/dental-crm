@@ -1,4 +1,5 @@
-import type React from "react";
+import React from "react";
+import type { Tooth46ContainerProps } from "./tooth46Types";
 import { Tooth46CariesOverlay } from "./Tooth46CariesOverlay";
 import { Tooth46EnamelCrown } from "./Tooth46EnamelCrown";
 import { Tooth46EndoCanals } from "./Tooth46EndoCanals";

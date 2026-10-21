@@ -63,4 +63,5 @@ export async function registerExecutiveRoutes(app: FastifyInstance) {
 
 	app.get("/api/analytics/executive", getExecutiveSummary);
 	app.get("/api/analytics/executive/summary", getExecutiveSummary);
+	app.get("/api/analytics/executive-summary", getExecutiveSummary);
 }

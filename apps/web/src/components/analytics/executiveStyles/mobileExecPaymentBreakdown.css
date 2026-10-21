@@ -44,9 +44,13 @@
 	background: var(--ok-fg, #10b981);
 }
 
+.segment-deposit {
+	background: var(--warn-fg, #f59e0b);
+}
+
 .exec-payments-legend {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(4, 1fr);
 	gap: 8px;
 	padding-top: 4px;
 }
@@ -80,6 +84,10 @@
 
 .dot-sbp {
 	background: var(--ok-fg, #10b981);
+}
+
+.dot-deposit {
+	background: var(--warn-fg, #f59e0b);
 }
 
 .exec-legend-label {
