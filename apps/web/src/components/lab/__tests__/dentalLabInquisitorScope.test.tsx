@@ -119,15 +119,15 @@ describe("RED TEAM DENTAL LAB INQUISITOR: SCOPE AUDIT & ZERO-DEFECT GATE", () =>
 		});
 	});
 
-	// ─── 4. Курьерская доставка ────────────────────
-	describe("4. Курьерская доставка", () => {
-		it("Список курьерских служб включает доступные варианты", () => {
+	// ─── 4. Доставка нарядов в лабораторию ────────────────────
+	describe("4. Доставка нарядов в лабораторию", () => {
+		it("Список каналов доставки включает штатную ЗТЛ и клинику без симуляторов", () => {
 			const services = COURIER_SERVICES.map((s) => s.id);
-			assert.ok(services.includes("lab_in_house"), "Должен быть штатный курьер ЗТЛ");
-			assert.ok(services.includes("yandex_med"), "Должен быть Яндекс Доставка");
+			assert.ok(services.includes("lab_in_house"), "Должна быть доставка зуботехнической лаборатории");
+			assert.ok(services.includes("clinic_express"), "Должна быть собственная доставка клиники");
 		});
 
-		it("Интервалы доставки включают утро, день, вечер и экспресс", () => {
+		it("Интервалы доставки включают утро, день, вечер и срочно", () => {
 			const windows = DELIVERY_WINDOWS.map((w) => w.id);
 			assert.deepEqual(windows, ["morning", "afternoon", "evening", "express_urgent"]);
 		});

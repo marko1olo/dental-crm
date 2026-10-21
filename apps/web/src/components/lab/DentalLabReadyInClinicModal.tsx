@@ -53,33 +53,45 @@ export function DentalLabReadyInClinicModal({
 	};
 
 	const handleSchedule = () => {
-		onScheduleAppointment?.({
+		const draft = {
 			patientId: order.patientId,
 			patientName: order.patientName,
 			doctorId: order.doctorId,
 			doctorName: order.doctorName,
-			title: `Примерка: ${order.material || "коронка"} (зуб ${order.toothFdi || "челюсть"})`,
+			title: `Примерка / фиксация: ${order.material || "ортопедия"} (зуб ${order.toothFdi || "челюсть"})`,
 			durationMinutes: 45,
-		});
+			orderId: order.id,
+			orderNumber: order.orderNumber,
+		};
+		if (typeof window !== "undefined") {
+			try {
+				window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(draft));
+				window.dispatchEvent(new CustomEvent("dente-quick-appointment-draft", { detail: draft }));
+				window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: draft }));
+			} catch {}
+		}
+		onScheduleAppointment?.(draft);
+		showToast("Открыта запись на примерку / фиксацию", "success");
 		onClose();
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" data-testid="dental-lab-ready-in-clinic-modal">
-			<div className="relative w-full max-w-lg bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-5 shadow-2xl space-y-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" data-testid="dental-lab-ready-in-clinic-modal">
+			<div className="relative w-full max-w-lg bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none p-4 sm:p-5 shadow-2xl space-y-4 max-sm:max-h-[92vh] overflow-y-auto">
+				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-1 shrink-0" aria-hidden="true" />
 				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
 					<div>
 						<h3 className="text-base font-bold text-[var(--ink)]">Работа доставлена в клинику</h3>
 						<p className="text-xs text-[var(--muted)]">Наряд #{order.orderNumber} · {order.patientName}</p>
 					</div>
-					<button type="button" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть">
+					<button type="button" onClick={onClose} className="w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть">
 						<X size={18} />
 					</button>
 				</div>
 
 				<div className="flex gap-2 border-b border-[var(--line)] pb-2">
-					<button type="button" onClick={() => setChannel("whatsapp")} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${channel === "whatsapp" ? "bg-emerald-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>WhatsApp</button>
-					<button type="button" onClick={() => setChannel("sms")} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${channel === "sms" ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>SMS</button>
+					<button type="button" onClick={() => setChannel("whatsapp")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "whatsapp" ? "bg-emerald-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>WhatsApp</button>
+					<button type="button" onClick={() => setChannel("sms")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "sms" ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>SMS</button>
 				</div>
 
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs text-[var(--ink)] whitespace-pre-wrap font-sans max-h-40 overflow-y-auto">
@@ -88,16 +100,16 @@ export function DentalLabReadyInClinicModal({
 
 				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={handleCopy} className="px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer">
+						<button type="button" onClick={handleCopy} className="px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer">
 							<Copy size={14} /><span>Копировать</span>
 						</button>
 						{channel === "whatsapp" && (
-							<button type="button" onClick={handleSendWhatsApp} className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 cursor-pointer">
+							<button type="button" onClick={handleSendWhatsApp} className="px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 cursor-pointer">
 								<Send size={14} /><span>Открыть чат</span>
 							</button>
 						)}
 					</div>
-					<button type="button" onClick={handleSchedule} className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-lab-schedule-appointment">
+					<button type="button" onClick={handleSchedule} className="px-4 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-lab-schedule-appointment">
 						<CalendarCheck size={14} /><span>Записать на примерку</span>
 					</button>
 				</div>

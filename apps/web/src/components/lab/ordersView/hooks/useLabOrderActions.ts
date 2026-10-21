@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../DentalLabOrderModal";
@@ -8,7 +8,12 @@ export function useLabOrderActions(
 	fetchOrders: () => Promise<void>,
 	onOpenReadyPrompt: (order: DentalLabOrderData) => void,
 ) {
+	const inFlightSetRef = useRef(new Set<string>());
+
 	const handleStatusChange = useCallback(async (orderId: string, newStatus: string, notes?: string) => {
+		const lockKey = `status-${orderId}`;
+		if (inFlightSetRef.current.has(lockKey)) return;
+		inFlightSetRef.current.add(lockKey);
 		try {
 			const payload: Record<string, any> = { status: newStatus, stage: newStatus };
 			if (notes) {
@@ -34,11 +39,16 @@ export function useLabOrderActions(
 			}
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Ошибка смены статуса", "error");
+		} finally {
+			inFlightSetRef.current.delete(lockKey);
 		}
 	}, [fetchOrders, onOpenReadyPrompt]);
 
 	const handlePayFromCashbox = useCallback(async (order: DentalLabOrderData) => {
 		if (!order.id) return;
+		const lockKey = `pay-${order.id}`;
+		if (inFlightSetRef.current.has(lockKey)) return;
+		inFlightSetRef.current.add(lockKey);
 		try {
 			const res = await fetch(`/api/lab-orders/${order.id}/pay`, {
 				method: "POST",
@@ -50,11 +60,16 @@ export function useLabOrderActions(
 			void fetchOrders();
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось оплатить наряд", "error");
+		} finally {
+			inFlightSetRef.current.delete(lockKey);
 		}
 	}, [fetchOrders]);
 
 	const handleMarkInstalled = useCallback(async (order: DentalLabOrderData) => {
 		if (!order.id) return;
+		const lockKey = `install-${order.id}`;
+		if (inFlightSetRef.current.has(lockKey)) return;
+		inFlightSetRef.current.add(lockKey);
 		try {
 			const res = await fetch(`/api/lab-orders/${order.id}/mark-installed`, {
 				method: "POST",
@@ -72,10 +87,15 @@ export function useLabOrderActions(
 			void fetchOrders();
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось зафиксировать установку", "error");
+		} finally {
+			inFlightSetRef.current.delete(lockKey);
 		}
 	}, [fetchOrders]);
 
 	const handleSaveAttachedFile = useCallback(async (orderId: string, url: string, onCloseModal: () => void) => {
+		const lockKey = `attach-${orderId}`;
+		if (inFlightSetRef.current.has(lockKey)) return;
+		inFlightSetRef.current.add(lockKey);
 		try {
 			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
 				method: "PUT",
@@ -88,6 +108,8 @@ export function useLabOrderActions(
 			void fetchOrders();
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Ошибка прикрепления", "error");
+		} finally {
+			inFlightSetRef.current.delete(lockKey);
 		}
 	}, [fetchOrders]);
 

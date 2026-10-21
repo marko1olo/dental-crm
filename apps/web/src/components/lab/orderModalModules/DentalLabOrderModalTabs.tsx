@@ -26,7 +26,8 @@ export function DentalLabOrderModalTabs({ activeTab, setActiveTab }: DentalLabOr
 						key={t.id}
 						type="button"
 						onClick={() => setActiveTab(t.id)}
-						className={`min-h-[34px] h-[34px] px-3 rounded-lg flex items-center gap-1.5 font-bold transition cursor-pointer ${
+						data-testid={`tab-${t.id}`}
+						className={`min-h-[44px] sm:min-h-[34px] h-11 sm:h-[34px] px-3 rounded-xl sm:rounded-lg flex items-center gap-1.5 font-bold transition cursor-pointer ${
 							isActive
 								? "bg-[var(--paper)] text-[var(--primary)] border border-[var(--line)] shadow-2xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"

@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { DentalLabCreateOrderModalProps } from "./orderCreateModules/labOrderCreateTypes";
-import { DentalLabOrderModal } from "./DentalLabOrderModal";
+import { DentalLabOrderDrawer } from "./DentalLabOrderDrawer";
 import type { DentalLabOrderData } from "./dentalLabDefinitions";
 
 export type { DentalLabCreateOrderModalProps };
@@ -31,7 +31,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 	};
 
 	return (
-		<DentalLabOrderModal
+		<DentalLabOrderDrawer
 			isOpen={isOpen}
 			onClose={onClose}
 			doctorName={currentDoctorName}
@@ -47,3 +47,4 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 		/>
 	);
 };
+

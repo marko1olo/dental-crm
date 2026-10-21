@@ -68,7 +68,7 @@ export function LabOrderCardDropdownMenu({
 				<RotateCcw className="w-3.5 h-3.5 text-amber-500" /><span>Повторная примерка</span>
 			</button>
 			<button type="button" onClick={() => { onCloseMenu(); handleReclamation(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-rose-500/10 font-bold text-rose-700 dark:text-rose-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-reclamation-btn-${order.id}`}>
-				<span>Рекламация ЗТЛ (0 ₽)</span>
+				<span>Отправить на переделку (0 ₽)</span>
 			</button>
 			<button type="button" onClick={() => { onCloseMenu(); handleOpenEditOrder(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">
 				<DentalLabOrder className="w-3.5 h-3.5 text-indigo-500" /><span>Подробные параметры</span>

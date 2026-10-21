@@ -35,11 +35,11 @@ export function DentalLabOrderModalHeader({
 						<h2 id="dental-lab-modal-title" className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
 							Заказ в лабораторию (ЗТЛ)
 						</h2>
-						<span className="px-2 py-0.5 text-xs font-bold rounded-md bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline-block px-2 py-0.5 text-xs font-bold rounded-md bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 							CAD/CAM Pro
 						</span>
 						{(treatmentPlanId || stageTitle || stageNumber != null) && (
-							<span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30" data-testid="lab-order-treatment-stage-chip">
+							<span className="whitespace-nowrap shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30" data-testid="lab-order-treatment-stage-chip">
 								Этап {stageNumber ?? 1} · {stageTitle || "Ортопедия"}
 							</span>
 						)}
@@ -50,13 +50,13 @@ export function DentalLabOrderModalHeader({
 				</div>
 			</div>
 			<div className="flex items-center gap-1.5 shrink-0">
-				<button type="button" onClick={onApplyDefaults} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition cursor-pointer" data-testid="lab-order-apply-defaults-btn">
+				<button type="button" onClick={onApplyDefaults} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition cursor-pointer max-sm:!hidden" data-testid="lab-order-apply-defaults-btn">
 					<Sparkles className="w-3.5 h-3.5 text-amber-500" /><span>Шаблон (ZrO2 A2)</span>
 				</button>
-				<button type="button" onClick={onPrint} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--ink)] transition cursor-pointer">
+				<button type="button" onClick={onPrint} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--ink)] transition cursor-pointer max-sm:!hidden">
 					<Printer className="w-3.5 h-3.5" /><span>Печать</span>
 				</button>
-				<button type="button" onClick={onClose} data-testid="lab-order-modal-close-btn" className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer" aria-label="Закрыть">
+				<button type="button" onClick={onClose} data-testid="lab-order-modal-close-btn" className="w-10 h-10 min-w-[40px] min-h-[40px] sm:w-8 sm:h-8 sm:min-w-0 sm:min-h-0 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer" aria-label="Закрыть">
 					<X className="w-5 h-5" />
 				</button>
 			</div>

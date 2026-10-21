@@ -84,25 +84,25 @@ export const DentalLabKanbanCardMenu: React.FC<
 			{order.selectedTeeth.length > 1 && (
 				<DentalLabKanbanCardMenuItem
 					icon={<CheckCircle2 size={14} className="text-teal-600" />}
-					label="Частичная сдача / Рекламация (0 руб)"
+					label="Частичная сдача / Переделка (0 ₽)"
 					onClick={() => {
 						onCloseMenu();
 						if (onPartialDelivery) onPartialDelivery(order);
 						else onRequestWarrantyRework(order);
 					}}
-					title="Оформить частичную приемку и гарантийную переделку дефектной единицы (0 руб)"
+					title="Оформить частичную приемку и гарантийную переделку дефектной единицы (0 ₽)"
 					testId={`ztl-card-partial-delivery-${order.id}`}
 					textColor="var(--teal, #0d9488)"
 				/>
 			)}
 			<DentalLabKanbanCardMenuItem
 				icon={<RotateCcw size={14} className="text-rose-600" />}
-				label="Рекламация (0 руб)"
+				label="Отправить на переделку (0 ₽)"
 				onClick={() => {
 					onRequestWarrantyRework(order);
 					onCloseMenu();
 				}}
-				title="Оформить гарантийную переделку / рекламацию"
+				title="Отправить наряд в ЗТЛ на повторную переделку по гарантии (0 ₽)"
 				textColor="var(--bad-fg, #e11d48)"
 			/>
 		</div>

@@ -16,6 +16,7 @@ export interface DentalLabRestorationTabProps {
 	clinicalNotes: string; setClinicalNotes: (notes: string) => void;
 	impressionType?: string | undefined; setImpressionType?: ((type: string) => void) | undefined;
 	includeImpressionBilling?: boolean | undefined; setIncludeImpressionBilling?: ((val: boolean) => void) | undefined;
+	impressionPriceRub?: number | undefined;
 	jawScope?: JawScope | null | undefined; setJawScope?: ((scope: JawScope | null) => void) | undefined;
 	shadeSystem?: ("classical" | "3d_master" | "bleach") | undefined; setShadeSystem?: ((system: "classical" | "3d_master" | "bleach") => void) | undefined;
 	shadeClassical?: string | undefined; setShadeClassical?: ((shade: string) => void) | undefined;
@@ -38,6 +39,7 @@ export function DentalLabRestorationTab({
 	dueDate, setDueDate, clinicalNotes, setClinicalNotes,
 	impressionType = "a_silicone", setImpressionType,
 	includeImpressionBilling = true, setIncludeImpressionBilling,
+	impressionPriceRub,
 	jawScope, setJawScope, shadeSystem, setShadeSystem,
 	shadeClassical, setShadeClassical, shadeBleach, setShadeBleach,
 	shadeBody, setShadeBody, onOpenAdvancedShades,
@@ -83,7 +85,9 @@ export function DentalLabRestorationTab({
 						/>
 						<span className="font-bold text-[var(--ink)]">Включить снятие слепка (оттиска) в счёт</span>
 					</label>
-					<span className="text-xs font-extrabold text-[var(--teal,#0d9488)]">2 500 ₽</span>
+					<span className="text-xs font-extrabold text-[var(--teal,#0d9488)]" data-testid="lab-order-impression-price-badge">
+						{impressionPriceRub ? `${impressionPriceRub.toLocaleString("ru-RU")} ₽` : "2 500 ₽"}
+					</span>
 				</div>
 			</div>
 			<div>

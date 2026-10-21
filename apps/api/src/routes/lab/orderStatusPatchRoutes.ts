@@ -101,25 +101,28 @@ export async function registerOrderStatusPatchRoutes(app: FastifyInstance) {
 				return { kind: "locked_installed" as const };
 			}
 
-			// Проверка автомата состояний при смене статуса
+			// Проверка автомата состояний при смене статуса (Мандат 8e: автономия врача)
 			if (targetStatus && targetStatus !== currentOrder.status) {
 				const currentStatus = currentOrder.status as LabOrderStatus;
 				const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
 
 				const isPermittedShortcut =
 					(currentStatus === "in_progress" &&
-						["received", "refitting", "completed", "shipped", "cancelled"].includes(targetStatus)) ||
+						["received", "refitting", "completed", "shipped", "cancelled", "sent"].includes(targetStatus)) ||
 					(currentStatus === "received" &&
-						["completed", "refitting", "in_progress", "cancelled"].includes(targetStatus)) ||
+						["completed", "refitting", "in_progress", "sent", "cancelled"].includes(targetStatus)) ||
 					(currentStatus === "refitting" &&
-						["in_progress", "received", "completed", "cancelled"].includes(targetStatus)) ||
+						["in_progress", "received", "completed", "sent", "cancelled"].includes(targetStatus)) ||
 					(currentStatus === "sent" &&
-						["in_progress", "shipped", "received", "cancelled"].includes(targetStatus)) ||
+						["in_progress", "shipped", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
+					(currentStatus === "draft" &&
+						["sent", "in_progress", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
 					(currentStatus === "completed" &&
-						["refitting"].includes(targetStatus)) ||
+						["refitting", "received", "in_progress"].includes(targetStatus)) ||
 					targetStatus === "cancelled";
 
-				if ((!allowed || !allowed.includes(targetStatus)) && !isPermittedShortcut) {
+				// Разрешаем любые валидные статусы ЗТЛ без блокировок врача
+				if (!allowed && !isPermittedShortcut && !["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) {
 					return {
 						kind: "invalid_transition" as const,
 						currentStatus,

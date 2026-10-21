@@ -117,8 +117,8 @@ export interface LabTrackingDrawerProps {
 	readonly stageTotalRub?: number | undefined;
 	readonly stagePaidRub?: number | undefined;
 	readonly chiefDoctorName?: string | undefined;
-	readonly onStageUpdate?: ((orderId: string, newStage: LabOrderStageKey, note?: string) => Promise<void> | void) | undefined;
-	readonly onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string; ceramicTrialDate?: string; deliveryDate?: string }) => Promise<void> | void) | undefined;
+	readonly onStageUpdate?: ((orderId: string, newStage: LabOrderStageKey, note?: string | undefined) => Promise<void> | void) | undefined;
+	readonly onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => Promise<void> | void) | undefined;
 }
 
 // ─── CONSTANTS & DICTIONARIES ──────────────────────────────────────────────────

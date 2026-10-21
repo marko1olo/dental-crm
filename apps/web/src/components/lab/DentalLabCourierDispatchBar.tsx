@@ -1,5 +1,5 @@
 import { Loader2, Package, Send } from "lucide-react";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import {
@@ -28,6 +28,7 @@ export function DentalLabCourierDispatchBar({
 	onDispatchUpdated,
 }: DentalLabCourierDispatchBarProps) {
 	const [isSending, setIsSending] = useState(false);
+	const inFlightRef = useRef(false);
 
 	const pendingOrders = orders.filter((o) => {
 		const s = o.status || "";
@@ -35,6 +36,7 @@ export function DentalLabCourierDispatchBar({
 	});
 
 	const handleBatchSendToLab = async () => {
+		if (inFlightRef.current) return;
 		if (pendingOrders.length === 0) {
 			showToast(
 				"Нет подготовленных нарядов для отправки в лабораторию",
@@ -42,6 +44,7 @@ export function DentalLabCourierDispatchBar({
 			);
 			return;
 		}
+		inFlightRef.current = true;
 		setIsSending(true);
 		try {
 			await Promise.all(
@@ -67,6 +70,7 @@ export function DentalLabCourierDispatchBar({
 		} catch {
 			showToast("Ошибка при отправке нарядов в лабораторию", "error");
 		} finally {
+			inFlightRef.current = false;
 			setIsSending(false);
 		}
 	};
@@ -88,15 +92,15 @@ export function DentalLabCourierDispatchBar({
 				type="button"
 				onClick={handleBatchSendToLab}
 				disabled={isSending}
-				className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 shadow-2xs transition cursor-pointer disabled:opacity-60"
+				className="px-3.5 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 shadow-2xs transition cursor-pointer disabled:opacity-60"
 				data-testid="btn-dispatch-call-courier"
 			>
 				{isSending ? (
-					<Loader2 size={13} className="animate-spin" />
+					<Loader2 size={14} className="animate-spin" />
 				) : (
-					<Send size={13} />
+					<Send size={14} />
 				)}
-				<span>Передать наряды в лабораторию</span>
+				<span>Отправить в лабораторию</span>
 			</button>
 		</div>
 	);

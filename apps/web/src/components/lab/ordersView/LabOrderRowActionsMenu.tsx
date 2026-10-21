@@ -96,7 +96,7 @@ export function LabOrderRowActionsMenu(props: LabOrderRowActionsMenuProps): Reac
 					</button>
 					<button type="button" onClick={() => onReclamation(order)} className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-rose-600 dark:text-rose-400">
 						<AlertOctagon className="w-3.5 h-3.5" />
-						<span>Рекламация (доработка 0 ₽)</span>
+						<span>Отправить на переделку (0 ₽)</span>
 					</button>
 					<button type="button" onClick={() => onOpenEditOrder(order)} className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]">
 						<ExternalLink className="w-3.5 h-3.5" />

@@ -59,7 +59,7 @@ export function MobileSheetStatusButtons({
 				>
 					<div className="flex items-center gap-2.5">
 						<RotateCcw size={18} />
-						<span>Коррекция в ЗТЛ (Рекламация)</span>
+						<span>Отправить на переделку (0 ₽)</span>
 					</div>
 					<ChevronRight size={16} />
 				</button>

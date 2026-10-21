@@ -28,6 +28,7 @@ export const DentalLabExpressShadeBar: React.FC<
 									? "border-teal-600 bg-teal-600 text-white"
 									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
 							}`}
+							id={`vita-tab-${sys === "3d_master" ? "3dmaster" : sys}`}
 						>
 							{sys === "classical"
 								? "VITA Classical"
