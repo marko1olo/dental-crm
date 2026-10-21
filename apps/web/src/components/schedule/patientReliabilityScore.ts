@@ -1,443 +1,64 @@
-/**
- * patientReliabilityScore.ts — Patient Discipline & Reliability Assessment Engine.
- *
- * Evaluates patient visit history, attendance rates, lateness, unexcused no-shows,
- * and financial balances to provide instant receptionist guidance during appointment scheduling:
- *  - Надежный пациент (>90% вовремя, 0 срывов)
- *  - Зона внимания (1-2 пропуска без предупреждения или частые опоздания >15 мин)
- *  - Риск неявки (>2 неявок подряд, «Требуется подтверждение за 2 часа»)
- *  - Баланс: Финансовый долг / Депозит (отображение точного баланса)
- */
+import type { Appointment, Patient } from "@dental/shared";
+import { formatPatientBalanceBadge } from "./patientReliabilityBalance";
+import { classifyReliability } from "./patientReliabilityClassifier";
+import { computePatientVisitStats } from "./patientReliabilityHistory";
+import type {
+	PatientReliabilityAssessment,
+	PatientReliabilityBadge,
+	ReliabilityCalculationOptions,
+} from "./patientReliabilityTypes";
 
-import type { Appointment, Patient, PatientInsight } from "@dental/shared";
-import { money } from "../../utils/financeUtils";
+export * from "./patientReliabilityTypes";
+export * from "./patientReliabilityBalance";
+export * from "./patientReliabilityHistory";
+export * from "./patientReliabilityClassifier";
+export * from "./patientReliabilityStreak";
 
-export type ReliabilityCategory = "reliable" | "attention" | "risk" | "new";
-export type ReliabilityStatus = "reliable" | "new" | "high_risk" | "attention" | "debt";
-
-export interface PatientReliabilityBadge {
-	readonly category: ReliabilityCategory;
-	readonly status: ReliabilityStatus;
-	readonly badgeText: string;
-	readonly shortLabel: string;
-	readonly emoji: string;
-	readonly recommendation: string;
-	readonly summary: string;
-	readonly badgeClass: string;
-	readonly requiresTwoHourConfirmation: boolean;
-}
-
-export interface PatientFinancialBadge {
-	readonly balanceRub: number;
-	readonly status: "debt" | "deposit" | "settled";
-	readonly label: string;
-	readonly shortLabel: string;
-	readonly formattedAmount: string;
-	readonly badgeClass: string;
-	readonly isDebt: boolean;
-	readonly isDeposit: boolean;
-}
-
-export interface PatientVisitHistoryStats {
-	readonly totalAppointments: number;
-	readonly completedCount: number;
-	readonly noShowCount: number;
-	readonly cancelledCount: number;
-	readonly lateCount: number;
-	readonly consecutiveNoShows: number;
-	readonly maxConsecutiveNoShows: number;
-	readonly onTimeRatePercent: number;
-	readonly attendanceRatePercent: number;
-}
-
-export interface PatientReliabilityAssessment {
-	readonly patientId: string;
-	readonly score: number; // 0..100
-	readonly category: ReliabilityCategory;
-	readonly stats: PatientVisitHistoryStats;
-	readonly reliabilityBadge: PatientReliabilityBadge;
-	readonly financialBadge: PatientFinancialBadge;
-	readonly flags: readonly string[];
-	readonly receptionistAlert?: string | undefined;
-}
-
-export interface ReliabilityCalculationOptions {
-	readonly referenceTimeIso?: string | undefined;
-	readonly latenessThresholdMinutes?: number | undefined;
-	readonly overrideInsight?: PatientInsight | null | undefined;
-}
-
-/**
- * Calculates lateness in minutes strictly from structured appointment timestamp fields.
- * Compares actual start time against scheduled start time.
- * If either field is missing or invalid, returns null (zero fabrication).
- */
-export function calculateAppointmentLatenessMinutes(
-	appt: Appointment | Record<string, unknown> | null | undefined,
-): number | null {
-	if (!appt || typeof appt !== "object") return null;
-
-	const record = appt as Record<string, unknown>;
-	const rawActual = record.actualStartTime ?? record.actualStartsAt;
-	const rawPlanned = record.startTime ?? (record as { startsAt?: unknown }).startsAt;
-
-	if (!rawActual || !rawPlanned) return null;
-
-	const actualMs =
-		typeof rawActual === "number" ? rawActual : Date.parse(String(rawActual));
-	const plannedMs =
-		typeof rawPlanned === "number" ? rawPlanned : Date.parse(String(rawPlanned));
-
-	if (Number.isNaN(actualMs) || Number.isNaN(plannedMs)) return null;
-
-	const diffMinutes = Math.round((actualMs - plannedMs) / 60_000);
-	return diffMinutes > 0 ? diffMinutes : 0;
-}
-
-
-/**
- * Determines if an appointment belongs to past finalized visit history.
- */
-export function isAppointmentFinalizedOrPast(
-	appointment: Appointment,
-	referenceTimeMs: number,
-): boolean {
-	const status = appointment.status;
-
-	// Completed, no-show, or cancelled are always finalized
-	if (status === "completed" || status === "no_show" || status === "arrived" || status === "in_treatment") {
-		return true;
-	}
-
-	if (status === "cancelled") {
-		return true;
-	}
-
-	// For planned or confirmed appointments, only count if start time has already passed
-	if (appointment.startsAt) {
-		const startMs = Date.parse(appointment.startsAt);
-		if (!Number.isNaN(startMs) && startMs < referenceTimeMs) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-/**
- * Determines whether an appointment is an unexcused missed visit (no-show).
- * Strictly checks the relational appointment status without parsing free-text notes.
- */
-export function isUnexcusedNoShow(appt: Appointment): boolean {
-	return appt.status === "no_show";
-}
-
-/**
- * Computes the streak of consecutive trailing no-shows and the max historical streak.
- */
-export function calculateConsecutiveNoShows(
-	appointments: readonly Appointment[],
-	patientId: string,
-	referenceTimeIso?: string,
-): { currentStreak: number; maxStreak: number } {
-	const refMs = referenceTimeIso ? Date.parse(referenceTimeIso) : Date.now();
-
-	const relevant = appointments
-		.filter((a) => a.patientId === patientId && isAppointmentFinalizedOrPast(a, refMs))
-		.sort((a, b) => {
-			const timeA = a.startsAt ? Date.parse(a.startsAt) : 0;
-			const timeB = b.startsAt ? Date.parse(b.startsAt) : 0;
-			return timeA - timeB;
-		});
-
-	if (relevant.length === 0) {
-		return { currentStreak: 0, maxStreak: 0 };
-	}
-
-	let currentStreak = 0;
-	// Walk backwards from latest appointment
-	for (let i = relevant.length - 1; i >= 0; i--) {
-		const appt = relevant[i];
-		if (!appt) continue;
-		if (isUnexcusedNoShow(appt)) {
-			currentStreak++;
-		} else if (appt.status === "completed" || appt.status === "arrived" || appt.status === "in_treatment") {
-			// Attended appointment breaks the current no-show streak
-			break;
-		}
-	}
-
-	let maxStreak = 0;
-	let tempStreak = 0;
-	for (const appt of relevant) {
-		if (isUnexcusedNoShow(appt)) {
-			tempStreak++;
-			if (tempStreak > maxStreak) {
-				maxStreak = tempStreak;
-			}
-		} else if (appt.status === "completed" || appt.status === "arrived" || appt.status === "in_treatment") {
-			tempStreak = 0;
-		}
-	}
-
-	return { currentStreak, maxStreak };
-}
-
-/**
- * Checks if the patient has a streak of consecutive unexcused no-shows meeting or exceeding threshold.
- */
-export function hasConsecutiveNoShows(
-	appointments: readonly Appointment[],
-	patientId: string,
-	threshold: number = 2,
-	referenceTimeIso?: string,
-): boolean {
-	const { currentStreak, maxStreak } = calculateConsecutiveNoShows(appointments, patientId, referenceTimeIso);
-	return currentStreak >= threshold || maxStreak >= threshold;
-}
-
-/**
- * Formats financial status (debt, deposit, zero balance) for quick receptionist badge.
- */
-export function formatPatientBalanceBadge(
-	rawBalance: number | string | null | undefined,
-): PatientFinancialBadge {
-	const parsed =
-		typeof rawBalance === "string"
-			? rawBalance.trim() === ""
-				? 0
-				: Number(rawBalance)
-			: typeof rawBalance === "number"
-				? rawBalance
-				: 0;
-
-	const balanceRub = Number.isFinite(parsed) ? parsed : 0;
-	const formatted = money(balanceRub);
-	const absAmount = Math.abs(balanceRub);
-	const absFormatted = money(absAmount);
-
-	if (balanceRub < 0) {
-		return {
-			balanceRub,
-			status: "debt",
-			label: `Долг: ${absFormatted}`,
-			shortLabel: `-${absFormatted}`,
-			formattedAmount: absFormatted,
-			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40",
-			isDebt: true,
-			isDeposit: false,
-		};
-	}
-
-	if (balanceRub > 0) {
-		return {
-			balanceRub,
-			status: "deposit",
-			label: `Депозит: ${formatted}`,
-			shortLabel: `+${formatted}`,
-			formattedAmount: formatted,
-			badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40",
-			isDebt: false,
-			isDeposit: true,
-		};
-	}
-
-	return {
-		balanceRub: 0,
-		status: "settled",
-		label: "Баланс: 0 ₽",
-		shortLabel: "0 ₽",
-		formattedAmount: "0 ₽",
-		badgeClass: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20",
-		isDebt: false,
-		isDeposit: false,
-	};
-}
-
-/**
- * Core Reliability Assessment Engine.
- * Analyzes patient attendance, no-shows, lateness, cancellations, and balances.
- */
 export function calculatePatientReliability(
 	patient: Patient | null | undefined,
 	appointments?: readonly Appointment[] | null | undefined,
 	options?: ReliabilityCalculationOptions,
 ): PatientReliabilityAssessment {
 	const patientId = patient?.id || "";
-	const refMs = options?.referenceTimeIso ? Date.parse(options.referenceTimeIso) : Date.now();
-	const latenessThreshold = options?.latenessThresholdMinutes ?? 15;
-
-	const rawBalance = patient?.balanceRub ?? 0;
-	const financialBadge = formatPatientBalanceBadge(rawBalance);
-
 	const allAppts = appointments ?? [];
-	const patientAppts = patientId
-		? allAppts.filter((a) => a.patientId === patientId && isAppointmentFinalizedOrPast(a, refMs))
-		: [];
+	const stats = computePatientVisitStats(patientId, allAppts, options);
+	const financialBadge = formatPatientBalanceBadge(patient?.balanceRub);
 
-	// Chronological sorting
-	const sortedAppts = [...patientAppts].sort((a, b) => {
-		const timeA = a.startsAt ? Date.parse(a.startsAt) : 0;
-		const timeB = b.startsAt ? Date.parse(b.startsAt) : 0;
-		return timeA - timeB;
-	});
+	const isInsightHighRisk = options?.overrideInsight?.riskLevel === "high";
 
-	let completedCount = 0;
-	let noShowCount = 0;
-	let cancelledCount = 0;
-	let lateCount = 0;
-
-	for (const appt of sortedAppts) {
-		const st = appt.status;
-		if (st === "completed" || st === "arrived" || st === "in_treatment") {
-			completedCount++;
-			const latenessMin = calculateAppointmentLatenessMinutes(appt);
-			if (latenessMin !== null && latenessMin >= latenessThreshold) {
-				lateCount++;
-			}
-		} else if (isUnexcusedNoShow(appt)) {
-			noShowCount++;
-		} else if (st === "cancelled") {
-			cancelledCount++;
-		}
-	}
-
-	const totalAppointments = sortedAppts.length;
-	const totalFinished = completedCount + noShowCount + cancelledCount;
-
-	const { currentStreak: consecutiveNoShows, maxStreak: maxConsecutiveNoShows } =
-		patientId ? calculateConsecutiveNoShows(allAppts, patientId, options?.referenceTimeIso) : { currentStreak: 0, maxStreak: 0 };
-
-	const attendanceRatePercent =
-		totalFinished > 0 ? Math.round((completedCount / totalFinished) * 100) : 100;
-
-	const onTimeCount = Math.max(0, completedCount - lateCount);
-	const onTimeRatePercent =
-		totalFinished > 0 ? Math.round((onTimeCount / totalFinished) * 100) : 100;
-
-	const stats: PatientVisitHistoryStats = {
-		totalAppointments,
-		completedCount,
-		noShowCount,
-		cancelledCount,
-		lateCount,
-		consecutiveNoShows,
-		maxConsecutiveNoShows,
-		onTimeRatePercent,
-		attendanceRatePercent,
-	};
+	const { category, status, score, badge, receptionistAlert: baseAlert } =
+		classifyReliability({
+			totalFinished: stats.totalAppointments,
+			completedCount: stats.completedCount,
+			noShowCount: stats.noShowCount,
+			consecutiveNoShows: stats.consecutiveNoShows,
+			maxConsecutiveNoShows: stats.maxConsecutiveNoShows,
+			lateCount: stats.lateCount,
+			cancelledCount: stats.cancelledCount,
+			attendanceRatePercent: stats.attendanceRatePercent,
+			onTimeRatePercent: stats.onTimeRatePercent,
+			isInsightHighRisk,
+		});
 
 	const flags: string[] = [];
-
-	if (consecutiveNoShows >= 2) {
-		flags.push(`${consecutiveNoShows} неявки подряд («Требуется подтверждение за 2 часа»)`);
-	} else if (noShowCount > 0) {
-		flags.push(`${noShowCount} неявка(и) без предупреждения`);
+	if (stats.consecutiveNoShows >= 2) {
+		flags.push(`${stats.consecutiveNoShows} неявки подряд («Требуется подтверждение за 2 часа»)`);
+	} else if (stats.noShowCount > 0) {
+		flags.push(`${stats.noShowCount} неявка(и) без предупреждения`);
 	}
-
-	if (lateCount > 0) {
-		flags.push(`Опоздания >15 мин: ${lateCount} раз(а)`);
+	if (stats.lateCount > 0) {
+		flags.push(`Опоздания >15 мин: ${stats.lateCount} раз(а)`);
 	}
-
-	if (cancelledCount >= 2) {
-		flags.push(`Отмен визитов: ${cancelledCount}`);
+	if (stats.cancelledCount >= 2) {
+		flags.push(`Отмен визитов: ${stats.cancelledCount}`);
 	}
-
 	if (financialBadge.isDebt) {
 		flags.push(`Задолженность: ${financialBadge.formattedAmount}`);
 	} else if (financialBadge.isDeposit) {
 		flags.push(`Депозит: ${financialBadge.formattedAmount}`);
 	}
 
-	// Determine category and scoring
-	let category: ReliabilityCategory = "reliable";
-	let status: ReliabilityStatus = "reliable";
-	let score = 100;
-	let badgeText = "Надежный пациент";
-	let shortLabel = "Надежный";
-	let emoji = "reliable";
-	let recommendation = "Высокая дисциплина визитов. Стандартное подтверждение.";
-	let summary = "100% визитов вовремя, 0 срывов";
-	let badgeClass = "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40";
-	let requiresTwoHourConfirmation = false;
-	let receptionistAlert: string | undefined = undefined;
-
-	// Check if insight overrides
-	const isInsightHighRisk = options?.overrideInsight?.riskLevel === "high";
-
-	if (totalFinished === 0) {
-		// New patient with no historical visits — zero fabrication, status 'new'
-		category = "new";
-		status = "new";
-		score = 0;
-		badgeText = "Новый пациент (история визитов формируется)";
-		shortLabel = "Новый";
-		emoji = "new";
-		recommendation = "Первичный прием: запросить паспорт и оформить согласие на лечение.";
-		summary = "История визитов формируется";
-		badgeClass = "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40";
-		requiresTwoHourConfirmation = false;
-		receptionistAlert = "Первичный визит. Оформить договор и согласие на лечение (или распечатать бланк со строками _______).";
-	} else if (
-		consecutiveNoShows >= 2 ||
-		noShowCount >= 3 ||
-		(maxConsecutiveNoShows >= 2 && attendanceRatePercent < 60) ||
-		(isInsightHighRisk && noShowCount >= 2)
-	) {
-		// High Risk Category
-		category = "risk";
-		status = "high_risk";
-		score = Math.max(0, Math.min(45, 100 - noShowCount * 30 - consecutiveNoShows * 15 - lateCount * 10));
-		badgeText = "Риск неявки";
-		shortLabel = "Риск неявки";
-		emoji = "high_risk";
-		recommendation = "Требуется подтверждение за 2 часа";
-		requiresTwoHourConfirmation = true;
-		summary =
-			consecutiveNoShows >= 2
-				? `${consecutiveNoShows} неявки подряд. Высокий риск отмены.`
-				: `${noShowCount} неявок из ${totalFinished} визитов.`;
-		badgeClass = "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40";
-		receptionistAlert = `[Внимание] Рекомендуется подтвердить визит за 2 часа до приема: у пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`;
-	} else if (
-		noShowCount >= 1 ||
-		lateCount >= 2 ||
-		(lateCount === 1 && noShowCount === 1) ||
-		attendanceRatePercent < 90 ||
-		onTimeRatePercent < 90 ||
-		cancelledCount >= 3
-	) {
-		// Attention Zone Category
-		category = "attention";
-		status = "attention";
-		score = Math.max(46, Math.min(80, 100 - noShowCount * 25 - lateCount * 15 - cancelledCount * 8));
-		badgeText = "Зона внимания";
-		shortLabel = "Внимание";
-		emoji = "attention";
-		recommendation = "Рекомендуется контрольный звонок накануне визита";
-		requiresTwoHourConfirmation = false;
-		const reasonParts: string[] = [];
-		if (noShowCount > 0) reasonParts.push(`${noShowCount} пропуск(а)`);
-		if (lateCount > 0) reasonParts.push(`${lateCount} опоздани(е/й) >15м`);
-		if (cancelledCount >= 2) reasonParts.push(`${cancelledCount} отмен`);
-		summary = reasonParts.join(", ") || `${onTimeRatePercent}% визитов вовремя`;
-		badgeClass = "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40";
-		receptionistAlert = `Рекомендуется контрольный звонок накануне: ${summary}.`;
-	} else {
-		// Reliable Category (>90% on-time, 0 no-shows)
-		category = "reliable";
-		status = "reliable";
-		score = Math.min(100, Math.max(90, 95 + completedCount));
-		badgeText = "Надежный пациент";
-		shortLabel = "Надежный";
-		emoji = "reliable";
-		recommendation = "Высокая дисциплина визитов. Стандартная запись.";
-		requiresTwoHourConfirmation = false;
-		summary = `${onTimeRatePercent}% визитов вовремя (${completedCount}/${totalFinished}), 0 срывов`;
-		badgeClass = "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40";
-	}
-
-	// Financial debt adjustments to alert
+	let receptionistAlert = baseAlert;
 	if (financialBadge.isDebt) {
 		if (receptionistAlert) {
 			receptionistAlert += ` Долг: ${financialBadge.formattedAmount}.`;
@@ -446,101 +67,27 @@ export function calculatePatientReliability(
 		}
 	}
 
-	const reliabilityBadge: PatientReliabilityBadge = {
-		category,
-		status,
-		badgeText,
-		shortLabel,
-		emoji,
-		recommendation,
-		summary,
-		badgeClass,
-		requiresTwoHourConfirmation,
-	};
-
 	return {
 		patientId,
 		score,
 		category,
 		stats,
-		reliabilityBadge,
+		reliabilityBadge: badge,
 		financialBadge,
 		flags,
 		receptionistAlert,
 	};
 }
 
-/**
- * Formats a quick 1-line HTML/JSX summary for schedule tooltips.
- */
+export const calculatePatientReliabilityScore = (
+	patientId: string,
+	appointments: readonly Appointment[] = [],
+	patient?: Patient | null,
+	options?: ReliabilityCalculationOptions,
+) => calculatePatientReliability(patient ? { ...patient, id: patientId } : ({ id: patientId } as Patient), appointments, options);
+
 export function getReliabilityBadgeConfig(
 	assessment: PatientReliabilityAssessment,
 ): PatientReliabilityBadge {
 	return assessment.reliabilityBadge;
 }
-
-export interface DurationPreset {
-	readonly minutes: number;
-	readonly label: string;
-	readonly serviceHint: string;
-}
-
-/**
- * Receptionist fast booking duration presets:
- *  - 15 мин (Осмотр)
- *  - 30 мин (Гигиена/Швы)
- *  - 60 мин (Лечение)
- *  - 90 мин (Хирургия)
- *  - 120 мин (Ортопедия)
- */
-export const DURATION_PRESETS: readonly DurationPreset[] = [
-	{ minutes: 15, label: "15 мин", serviceHint: "Осмотр" },
-	{ minutes: 30, label: "30 мин", serviceHint: "Гигиена/Швы" },
-	{ minutes: 45, label: "45 мин", serviceHint: "Терапия" },
-	{ minutes: 60, label: "60 мин", serviceHint: "Лечение" },
-	{ minutes: 90, label: "90 мин", serviceHint: "Хирургия" },
-	{ minutes: 120, label: "120 мин", serviceHint: "Ортопедия" },
-];
-
-export type QuickBookingAppointmentType = "primary" | "secondary" | "emergency";
-
-export interface AppointmentTypePreset {
-	readonly type: QuickBookingAppointmentType;
-	readonly label: string;
-	readonly description: string;
-	readonly defaultReason: string;
-	readonly defaultDurationMinutes: number;
-	readonly defaultStatus: Appointment["status"];
-	readonly isEmergency: boolean;
-}
-
-export const APPOINTMENT_TYPE_PRESETS: readonly AppointmentTypePreset[] = [
-	{
-		type: "primary",
-		label: "Первичный",
-		description: "Осмотр и консультация",
-		defaultReason: "Первичный осмотр",
-		defaultDurationMinutes: 30,
-		defaultStatus: "planned",
-		isEmergency: false,
-	},
-	{
-		type: "secondary",
-		label: "Повторный",
-		description: "Лечение по плану",
-		defaultReason: "Повторный прием (Лечение)",
-		defaultDurationMinutes: 60,
-		defaultStatus: "planned",
-		isEmergency: false,
-	},
-	{
-		type: "emergency",
-		label: "Острая боль",
-		description: "Срочный приём (CITO)",
-		defaultReason: "Срочно! Острая боль",
-		defaultDurationMinutes: 30,
-		defaultStatus: "confirmed",
-		isEmergency: true,
-	},
-];
-

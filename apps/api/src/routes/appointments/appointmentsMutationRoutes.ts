@@ -195,7 +195,7 @@ export const updateAppointmentHandler = async (
 			);
 		}
 
-		// DentalPRO expo26 Realtime Schedule Bar: при прибытии пациента ("arrived") шлем сигнал в #ресепшен и #интерком-ассистенты
+		// Realtime Schedule Bar: при прибытии пациента ("arrived") шлем сигнал в #ресепшен и #интерком-ассистенты
 		if (input.status === "arrived") {
 			await dispatchPatientArrivedIntercom(
 				db,

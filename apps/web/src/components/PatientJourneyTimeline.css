@@ -1,275 +1,54 @@
-/*
- * Лента приёмов — обычная панель приложения, а не отдельная тёмная вставка.
- *
- * БЫЛО: фон брался из `var(--glass-bg, rgba(24,24,27,0.85))`, а переменной
- * `--glass-bg` в проекте нет вовсе — как и `--glass-border`. Значит запасное
- * значение действовало всегда, и на светлой теме посреди белой страницы стоял
- * чёрный прямоугольник. У пациента без приёмов он был ещё и пустым: выглядел
- * как блок, который не загрузился.
- */
+/* DENTE CRM — Patient Journey Timeline Styles (macOS Clinical HIG) */
+
 .patient-journey-timeline {
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	box-shadow: var(--shadow-1);
-	padding: 24px;
+	box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.05));
+	padding: 16px;
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: 14px;
 	color: var(--ink);
 	max-width: 100%;
 }
 
-.timeline-empty {
-	border: 1px dashed var(--line);
-	border-radius: 12px;
-	padding: 20px 16px;
-	text-align: center;
-	display: grid;
-	gap: 6px;
-}
-
-.timeline-empty p {
-	color: var(--ink);
-	font-size: 14px;
-	font-weight: 700;
-	margin: 0;
-}
-
-.timeline-empty span {
-	color: var(--muted);
-	font-size: 12.5px;
-}
-
-.timeline-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border-bottom: 1px solid var(--line);
-	padding-bottom: 16px;
-}
-
-.timeline-header h3 {
-	margin: 0;
-	font-size: 1.4rem;
-	color: var(--ink);
-	font-weight: 300;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.patient-id-badge {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	padding: 6px 12px;
-	border-radius: 8px;
-	font-family: monospace;
-	font-size: 0.9rem;
-	color: var(--muted);
-}
-
-.timeline-track {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-}
-
 .timeline-item {
-	display: flex;
-	gap: 20px;
-	content-visibility: auto;
-	contain-intrinsic-size: 1px 80px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.timeline-marker {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	width: 40px;
+.timeline-item:hover {
+	border-color: var(--line-strong, rgba(0, 0, 0, 0.15));
+	box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
-.marker-icon {
-	width: 40px;
-	height: 40px;
-	background: var(--paper);
-	border: 1px solid var(--line);
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 1.2rem;
-	z-index: 2;
-	box-shadow: var(--shadow-1);
-	transition: all 0.3s ease;
+.timeline-item.highlight-item {
+	border-color: var(--teal, #0d9488);
 }
 
-.marker-line {
-	width: 2px;
-	flex: 1;
-	background: var(--line);
-	margin: 8px 0;
-	min-height: 40px;
+.timeline-item.medical_alert {
+	border-left: 3px solid #f59e0b;
 }
 
-.timeline-item:hover .marker-icon {
-	transform: scale(1.1);
+.timeline-item.appointment {
+	border-left: 3px solid #3b82f6;
 }
 
-.timeline-item.medical_alert .marker-icon {
-	border-color: var(--bad-fg);
+.timeline-item.transaction {
+	border-left: 3px solid #10b981;
 }
 
-.timeline-item.transaction .marker-icon {
-	border-color: var(--ok-fg);
+.timeline-item.lab_order {
+	border-left: 3px solid #0d9488;
 }
 
-.timeline-item.inventory_depletion .marker-icon {
-	border-color: var(--warn-fg);
+.timeline-item.inventory_depletion {
+	border-left: 3px solid #8b5cf6;
 }
 
-.timeline-content {
-	flex: 1;
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 12px;
-	padding: 16px 20px;
-	margin-bottom: 24px;
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.timeline-content:hover {
-	background: var(--paper-strong);
-	border-color: var(--line-strong);
-}
-
-.content-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.timestamp {
-	font-size: 0.85rem;
-	color: var(--muted);
-	font-family: monospace;
-}
-
-.timeline-content h4 {
-	margin: 0;
-	font-size: 1.15rem;
-	color: var(--ink);
-	font-weight: 500;
-}
-
-.timeline-content p {
-	margin: 0;
-	color: var(--ink-2, var(--muted));
-	font-size: 0.95rem;
-	line-height: 1.5;
-}
-
-.amount-highlight {
-	font-size: 1.2rem;
-	font-family: monospace;
-	color: var(--ok-fg);
-	font-weight: bold;
-	margin-top: 4px;
-}
-
-.timeline-action-btn {
-	align-self: flex-start;
-	margin-top: 8px;
-	background: var(--info-bg);
-	color: var(--info-fg);
-	border: 1px solid var(--info-fg);
-	padding: 6px 12px;
-	min-height: 44px;
-	display: inline-flex;
-	align-items: center;
-	border-radius: 6px;
-	font-size: 0.85rem;
-	cursor: pointer;
-	transition: background 0.15s ease;
-}
-
-.timeline-action-btn:hover {
-	background: var(--info-bg);
-	opacity: 0.9;
-}
-
-@media (max-width: 480px) {
+@media (max-width: 640px) {
 	.patient-journey-timeline {
-		padding: 16px;
+		padding: 12px;
+		border-radius: 12px;
 	}
-	.timeline-item {
-		gap: 12px;
-	}
-	.timeline-content {
-		padding: 12px 16px;
-	}
-	.marker-icon {
-		width: 32px;
-		height: 32px;
-		font-size: 1rem;
-	}
-	.timeline-marker {
-		width: 32px;
-	}
-}
-
-/* Zeigarnik Effect Progress Bar */
-.zeigarnik-progress-container {
-	background: var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 12px;
-	padding: 16px;
-	margin-bottom: 24px;
-}
-
-.progress-header {
-	display: flex;
-	justify-content: space-between;
-	margin-bottom: 8px;
-	font-weight: 600;
-	font-size: 0.95rem;
-}
-
-.progress-bar-bg {
-	width: 100%;
-	height: 8px;
-	background: var(--line);
-	border-radius: 4px;
-	overflow: hidden;
-	margin-bottom: 8px;
-}
-
-.progress-bar-fill {
-	height: 100%;
-	background: var(--ok-fg);
-	border-radius: 4px;
-	transition: width 0.5s ease;
-}
-
-.progress-hint {
-	font-size: 0.8rem;
-	color: var(--muted);
-	margin: 0;
-}
-
-/* Highlights */
-.highlight-item .timeline-content {
-	background: var(--paper-strong);
-	border-color: var(--teal);
-	box-shadow: var(--shadow-1);
-}
-
-.highlight-item .marker-icon-large {
-	width: 50px;
-	height: 50px;
-	font-size: 1.5rem;
-	border-color: var(--teal);
-	z-index: 3;
 }

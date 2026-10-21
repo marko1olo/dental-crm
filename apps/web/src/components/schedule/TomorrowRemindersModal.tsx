@@ -1,35 +1,16 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
-import {
-	AlertTriangle,
-	Check,
-	CheckCircle2,
-	Clock,
-	Copy,
-	ExternalLink,
-	MessageCircle,
-	MessageSquare,
-	Moon,
-	MoreVertical,
-	Phone,
-	Search,
-	Send,
-	ThumbsDown,
-	ThumbsUp,
-	User,
-	X,
-	Zap,
-} from "lucide-react";
 import type { Dashboard } from "@dental/shared";
-import {
-	compileTomorrowReminders,
-	dispatchBatchReminders,
-	formatAllRemindersClipboardBuffer,
-	type ReminderChannel,
-	type TomorrowReminderItem,
-} from "./tomorrowRemindersEngine";
-import { openWhatsAppChat } from "../../store/telephonyStore";
+import { useEffect } from "react";
 import { showToast } from "../GlobalToast";
+import { dispatchBatchReminders } from "./tomorrowRemindersEngine";
+import {
+	TomorrowReminderCard,
+	TomorrowRemindersBatchFooter,
+	TomorrowRemindersFilterBar,
+	TomorrowRemindersHeader,
+	useTomorrowRemindersLogic,
+} from "./tomorrowRemindersModules";
+
+export * from "./tomorrowRemindersModules";
 
 export interface TomorrowRemindersModalProps {
 	dashboard: Dashboard;
@@ -44,703 +25,96 @@ export function TomorrowRemindersModal({
 	onClose,
 	targetDateIso,
 }: TomorrowRemindersModalProps) {
-	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedChannelFilter, setSelectedChannelFilter] = useState<"all" | ReminderChannel>("all");
-	const [sentAppointmentIds, setSentAppointmentIds] = useState<Set<string>>(new Set());
-	const [isDispatching, setIsDispatching] = useState(false);
-	const [dispatchProgress, setDispatchProgress] = useState<{ current: number; total: number } | null>(null);
-	const [allowQuietHoursOverride, setAllowQuietHoursOverride] = useState(false);
-	const [activeMenuAppointmentId, setActiveMenuAppointmentId] = useState<string | null>(null);
+	const logic = useTomorrowRemindersLogic(dashboard, targetDateIso);
 
-	// Close menu on click outside
 	useEffect(() => {
-		if (!activeMenuAppointmentId) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			const target = e.target as HTMLElement | null;
-			if (!target?.closest(`[data-reminder-menu="${activeMenuAppointmentId}"]`)) {
-				setActiveMenuAppointmentId(null);
-			}
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) onClose();
 		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [activeMenuAppointmentId]);
-
-	// Reset open menu if modal is closed
-	useEffect(() => {
-		if (!isOpen) {
-			setActiveMenuAppointmentId(null);
-		}
-	}, [isOpen]);
-
-	const summary = useMemo(() => {
-		return compileTomorrowReminders(dashboard, targetDateIso);
-	}, [dashboard, targetDateIso]);
-
-	const filteredReminders = useMemo(() => {
-		let list = summary.reminders;
-
-		if (selectedChannelFilter !== "all") {
-			list = list.filter((r) => r.availableChannels.includes(selectedChannelFilter));
-		}
-
-		if (!searchQuery.trim()) return list;
-		const q = searchQuery.toLowerCase().trim();
-		return list.filter(
-			(r) =>
-				r.patientName.toLowerCase().includes(q) ||
-				(r.patientPhone && r.patientPhone.includes(q)) ||
-				(r.telegramUsername && r.telegramUsername.toLowerCase().includes(q)) ||
-				(r.doctorName && r.doctorName.toLowerCase().includes(q)) ||
-				(r.treatmentReason && r.treatmentReason.toLowerCase().includes(q)),
-		);
-	}, [summary.reminders, searchQuery, selectedChannelFilter]);
-
-	const handleCopyAll = useCallback(() => {
-		const buffer = formatAllRemindersClipboardBuffer(summary);
-		navigator.clipboard?.writeText(buffer);
-		showToast(
-			`Скопировано ${summary.totalAppointmentsCount} напоминаний в буфер обмена`,
-			"success",
-		);
-	}, [summary]);
-
-	const handleCopySingle = useCallback((reminder: TomorrowReminderItem) => {
-		navigator.clipboard?.writeText(reminder.reminderText);
-		showToast(`Текст для «${reminder.patientName}» скопирован`, "success");
-	}, []);
-
-	const handleCopyLink = useCallback((url: string, label: string) => {
-		navigator.clipboard?.writeText(url);
-		showToast(`Ссылка «${label}» скопирована в буфер`, "success");
-	}, []);
-
-	const handleSendWhatsApp = useCallback((reminder: TomorrowReminderItem) => {
-		if (!reminder.patientPhone) {
-			showToast("У пациента не указан номер телефона", "error");
-			return;
-		}
-		if (reminder.whatsAppUrl) {
-			window.open(reminder.whatsAppUrl, "_blank", "noopener,noreferrer");
-		} else {
-			openWhatsAppChat(reminder.patientPhone, reminder.reminderText);
-		}
-		setSentAppointmentIds((prev) => new Set(prev).add(reminder.appointmentId));
-		showToast(`WhatsApp открыт для «${reminder.patientName}»`, "success");
-	}, []);
-
-	const handleSendTelegram = useCallback((reminder: TomorrowReminderItem) => {
-		if (!reminder.telegramUrl) {
-			showToast("У пациента не привязан Telegram", "error");
-			return;
-		}
-		window.open(reminder.telegramUrl, "_blank", "noopener,noreferrer");
-		setSentAppointmentIds((prev) => new Set(prev).add(reminder.appointmentId));
-		showToast(`Telegram открыт для «${reminder.patientName}»`, "success");
-	}, []);
-
-	const handleSendSms = useCallback((reminder: TomorrowReminderItem) => {
-		if (!reminder.smsUrl) {
-			showToast("У пациента нет номера для SMS", "error");
-			return;
-		}
-		window.open(reminder.smsUrl, "_self");
-		setSentAppointmentIds((prev) => new Set(prev).add(reminder.appointmentId));
-		showToast(`SMS-клиент открыт для «${reminder.patientName}»`, "success");
-	}, []);
-
-	const handleMarkAllSent = useCallback(() => {
-		const allIds = new Set((summary?.reminders ?? []).map((r) => r.appointmentId));
-		setSentAppointmentIds(allIds);
-		showToast(`Все ${summary?.totalAppointmentsCount ?? 0} напоминаний отмечены отправленными`, "success");
-	}, [summary?.reminders, summary?.totalAppointmentsCount]);
-
-	const handleBatchDispatch = useCallback(async () => {
-		if (isDispatching) return;
-		if ((summary?.reminders ?? []).length === 0) {
-			showToast("Нет записей для рассылки", "info");
-			return;
-		}
-
-		setIsDispatching(true);
-		try {
-			const res = await dispatchBatchReminders(summary?.reminders ?? [], {
-				allowQuietHoursOverride,
-				onProgress: (current, total) => setDispatchProgress({ current, total }),
-			});
-
-			const newSent = new Set(sentAppointmentIds);
-			for (const r of (res?.results ?? [])) {
-				if (r.status === "dispatched") {
-					newSent.add(r.appointmentId);
-				}
-			}
-			setSentAppointmentIds(newSent);
-
-			if (res.skippedQuietHours > 0 && !allowQuietHoursOverride) {
-				showToast(
-					`Отправлено: ${res.dispatched}, пропущено из-за тихого часа (21:00-08:00): ${res.skippedQuietHours}`,
-					"warning",
-				);
-			} else {
-				showToast(
-					`Успешно обработано ${res.dispatched} из ${res.total} напоминаний!`,
-					"success",
-				);
-			}
-		} catch (err) {
-			showToast("Ошибка пакетной рассылки", "error");
-		} finally {
-			setIsDispatching(false);
-			setDispatchProgress(null);
-		}
-	}, [summary.reminders, allowQuietHoursOverride, sentAppointmentIds]);
+		if (isOpen) window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
 
-	const modalElement = (
+	const handleBatchDispatch = async () => {
+		logic.setIsDispatching(true);
+		logic.setDispatchProgress({
+			current: 0,
+			total: logic.summary.dispatchableCount,
+		});
+		try {
+			await dispatchBatchReminders(
+				logic.summary.reminders,
+				(current, total) => logic.setDispatchProgress({ current, total }),
+				logic.allowQuietHoursOverride,
+			);
+			showToast(
+				`Отправлено ${logic.summary.dispatchableCount} напоминаний`,
+				"success",
+			);
+			onClose();
+		} catch {
+			showToast("Ошибка пакетной отправки напоминаний", "error");
+		} finally {
+			logic.setIsDispatching(false);
+			logic.setDispatchProgress(null);
+		}
+	};
+
+	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
-			data-testid="tomorrow-reminders-modal"
+			className="tomorrow-reminders-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
 			role="dialog"
 			aria-modal="true"
-			aria-labelledby="tomorrow-reminders-title"
 		>
-			<div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper)] rounded-3xl border-2 border-[var(--teal,var(--brand-primary))]/40 shadow-2xl overflow-hidden">
-				{/* Modal Header */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-gradient-to-r from-[var(--teal)]/10 via-[var(--teal)]/5 to-transparent shrink-0">
-					<div className="flex items-center gap-3">
-						<div className="w-12 h-12 rounded-2xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shadow-sm shrink-0">
-							<Send className="w-6 h-6" />
-						</div>
-						<div>
-							<h2
-								id="tomorrow-reminders-title"
-								className="text-lg sm:text-xl font-black text-[var(--ink)] flex items-center gap-2 flex-wrap"
-							>
-								<span>Напоминания на завтра</span>
-								<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/40">
-									{summary.targetDateFormatted}
-								</span>
-							</h2>
-							<p className="text-xs text-[var(--muted)] mt-0.5">
-								Отказоустойчивая рассылка Telegram · WhatsApp · SMS с быстрым подтверждением визита
-							</p>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-						aria-label="Закрыть"
-					>
-						<X className="w-6 h-6" />
-					</button>
-				</div>
-
-				{/* Quiet Hours Warning Banner per 152-FZ / 38-FZ */}
-				{summary.isQuietHoursActive && (
-					<div className="px-4 py-2.5 bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-amber-900 dark:text-amber-200">
-						<div className="flex items-center gap-2">
-							<Moon className="w-4 h-4 text-amber-600 shrink-0" />
-							<span>{summary.quietHoursAlertText}</span>
-						</div>
-						<label className="flex items-center gap-1.5 cursor-pointer font-bold select-none text-amber-950 dark:text-amber-100">
-							<input
-								type="checkbox"
-								checked={allowQuietHoursOverride}
-								onChange={(e) => setAllowQuietHoursOverride(e.target.checked)}
-								className="rounded text-[var(--teal)] focus:ring-[var(--teal)]"
-							/>
-							<span>Разрешить экстренную отправку (срочно)</span>
-						</label>
-					</div>
-				)}
-
-				{/* Summary Bar & Action Strip */}
-				<div className="px-4 sm:px-5 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
-					<div className="flex items-center gap-3 flex-wrap">
-						<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
-							<span className="w-2 h-2 rounded-full bg-[var(--teal,var(--brand-primary))]" />
-							<span>Всего: <strong>{summary.totalAppointmentsCount}</strong></span>
-						</div>
-						<div className="flex items-center gap-1.5 font-bold text-sky-700 dark:text-sky-300">
-							<MessageCircle size={14} className="text-sky-600" />
-							<span>Telegram: <strong>{summary.telegramAvailableCount}</strong></span>
-						</div>
-						<div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
-							<CheckCircle2 size={14} className="text-emerald-600" />
-							<span>WhatsApp: <strong>{summary.whatsAppAvailableCount}</strong></span>
-						</div>
-						{summary.missingPhoneCount > 0 && (
-							<div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
-								<AlertTriangle size={14} className="text-amber-600" />
-								<span>Без телефона: <strong>{summary.missingPhoneCount}</strong></span>
-							</div>
-						)}
-					</div>
-
-					<div className="flex items-center gap-2 flex-wrap">
-						<button
-							type="button"
-							onClick={handleCopyAll}
-							className="min-h-[44px] px-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold hover:bg-[var(--paper-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-							title="Скопировать все тексты для ручной рассылки"
-						>
-							<Copy size={14} />
-							<span>Копировать все</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleBatchDispatch}
-							aria-busy={isDispatching}
-							className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-							title="Запустить умную рассылку по доступным каналам"
-							data-testid="btn-cascade-dispatch-all"
-						>
-							<Zap size={14} className={isDispatching ? "animate-spin" : ""} />
-							<span>{isDispatching ? "Рассылка..." : "Разослать все (Каскад)"}</span>
-						</button>
-					</div>
-				</div>
-
-				{/* Filter Tabs & Search Row */}
-				<div className="p-3 sm:px-5 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
-					{/* Channel Filter Chips */}
-					<div className="dente-segmented-bar overflow-x-auto max-w-full scrollbar-none">
-						<button
-							type="button"
-							onClick={() => setSelectedChannelFilter("all")}
-							className={`dente-segmented-item ${
-								selectedChannelFilter === "all" ? "active" : ""
-							}`}
-						>
-							Все каналы ({summary.totalAppointmentsCount})
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedChannelFilter("telegram")}
-							className={`dente-segmented-item ${
-								selectedChannelFilter === "telegram" ? "active" : ""
-							}`}
-						>
-							<MessageCircle size={14} />
-							<span>Telegram ({summary.telegramAvailableCount})</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedChannelFilter("whatsapp")}
-							className={`dente-segmented-item ${
-								selectedChannelFilter === "whatsapp" ? "active" : ""
-							}`}
-						>
-							<MessageSquare size={14} />
-							<span>WhatsApp ({summary.whatsAppAvailableCount})</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedChannelFilter("sms")}
-							className={`dente-segmented-item ${
-								selectedChannelFilter === "sms" ? "active" : ""
-							}`}
-						>
-							<Phone size={14} />
-							<span>SMS ({summary.smsAvailableCount})</span>
-						</button>
-					</div>
-
-					{/* Search Input */}
-					<div className="dente-search-wrap flex-1 min-w-[200px]">
-						<Search className="dente-search-icon" />
-						<input
-							type="text"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Поиск по пациенту, телефону, Telegram или врачу..."
-							className="dente-search-input"
-						/>
-						{searchQuery && (
-							<button
-								type="button"
-								onClick={() => setSearchQuery("")}
-								className="dente-search-clear"
-								aria-label="Очистить поиск"
-							>
-								<X size={12} />
-							</button>
-						)}
-					</div>
-				</div>
-
-				{/* Reminders List */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 min-h-[260px]">
-					{filteredReminders.length === 0 ? (
-						<div className="p-8 text-center text-[var(--muted)] space-y-2">
-							<Clock className="w-10 h-10 mx-auto text-[var(--muted)] opacity-60" />
-							<p className="font-semibold text-sm">
-								{summary.totalAppointmentsCount === 0
-									? `На ${summary.targetDateFormatted} нет запланированных приёмов`
-									: "Ничего не найдено по вашим критериям фильтрации"}
-							</p>
+			<div
+				className="tomorrow-reminders-modal w-full max-w-2xl rounded-2xl sm:rounded-3xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-[var(--ink,#0f172a)] animate-in zoom-in-95 duration-150"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<TomorrowRemindersHeader
+					summary={logic.summary}
+					onCopyAll={logic.handleCopyAll}
+					onClose={onClose}
+				/>
+				<TomorrowRemindersFilterBar
+					searchQuery={logic.searchQuery}
+					setSearchQuery={logic.setSearchQuery}
+					selectedChannel={logic.selectedChannelFilter}
+					setSelectedChannel={logic.setSelectedChannelFilter}
+				/>
+				<div className="p-4 sm:p-6 overflow-y-auto space-y-2.5 flex-1">
+					{logic.filteredReminders.length === 0 ? (
+						<div className="py-12 text-center text-xs text-[var(--muted,#64748b)]">
+							Нет записей, соответствующих критериям поиска
 						</div>
 					) : (
-						filteredReminders.map((reminder) => {
-							const isSent = sentAppointmentIds.has(reminder.appointmentId);
-							const primaryChannel: ReminderChannel | "copy" =
-								reminder.availableChannels.includes(reminder.preferredChannel)
-									? reminder.preferredChannel
-									: (reminder.availableChannels[0] ?? "copy");
-							const secondaryChannels = reminder.availableChannels.filter(
-								(c) => c !== primaryChannel,
-							);
-
-							return (
-								<div
-									key={reminder.appointmentId}
-									className={`p-3.5 sm:p-4 rounded-2xl border transition-all space-y-3 ${
-										isSent
-											? "bg-[var(--paper-soft)]/80 border-[var(--line)] opacity-80"
-											: "bg-[var(--paper)] border-[var(--line)] shadow-xs hover:border-[var(--teal,var(--brand-primary))]/60"
-									}`}
-								>
-									{/* Top Row: Time, Patient, Doctor, Status Badges */}
-									<div className="flex flex-wrap items-center justify-between gap-2">
-										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-base font-black font-mono px-2.5 py-0.5 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30">
-												{reminder.timeFormatted}
-											</span>
-											<span className="text-base font-extrabold text-[var(--ink)] flex items-center gap-1.5">
-												<User size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-												{reminder.patientName}
-											</span>
-											{reminder.isCito && (
-												<span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white animate-pulse">
-													СРОЧНО
-												</span>
-											)}
-											{/* Channel Preference Badge */}
-											<span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
-												Канал: {reminder.preferredChannel.toUpperCase()}
-											</span>
-										</div>
-
-										<div className="flex items-center gap-2">
-											{isSent ? (
-												<span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-													<Check size={14} />
-													<span>Отправлено</span>
-												</span>
-											) : reminder.isQuietHours ? (
-												<span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1">
-													<Moon size={13} />
-													<span>Тихий час</span>
-												</span>
-											) : (
-												<span className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/40">
-													К отправке
-												</span>
-											)}
-										</div>
-									</div>
-
-									{/* Middle Info: Contacts, Doctor, Chair, Reason */}
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-[var(--muted)]">
-										<div className="flex items-center gap-1.5 font-mono">
-											<Phone size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-											<strong className="text-[var(--ink)]">
-												{reminder.patientPhone || "Телефон не указан"}
-											</strong>
-											{reminder.telegramUsername && (
-												<span className="text-sky-600 font-bold">@{reminder.telegramUsername}</span>
-											)}
-										</div>
-										<div className="truncate">
-											Врач: <strong className="text-[var(--ink)]">{reminder.doctorName || "Любой врач"}</strong>
-										</div>
-										<div className="truncate">
-											Прием: <strong className="text-[var(--ink)]">{reminder.treatmentReason || "Консультация"}</strong>
-										</div>
-									</div>
-
-									{/* Allergy Alert if present */}
-									{reminder.hasAllergyWarning && (
-										<div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center gap-2">
-											<AlertTriangle size={14} className="text-amber-600 shrink-0" />
-											<span>{reminder.allergyWarningText}</span>
-										</div>
-									)}
-
-									{/* Reminder Text Box Preview */}
-									<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed relative group">
-										{reminder.reminderText}
-									</div>
-
-									{/* Action Links & Channel Buttons Row: Law of Miller (<= 2 primary buttons) */}
-									<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
-										{/* Channel Indicator */}
-										<div className="text-xs text-[var(--muted)] flex items-center gap-1.5">
-											<span>Основной канал:</span>
-											<strong className="text-[var(--ink)] uppercase font-semibold">
-												{primaryChannel === "copy" ? "Текст" : primaryChannel}
-											</strong>
-										</div>
-
-										{/* Direct Action Controls: Primary Channel + MoreVertical */}
-										<div
-											className="flex items-center gap-2 shrink-0 justify-end relative"
-											data-reminder-menu={reminder.appointmentId}
-										>
-											{/* Button 1 (Main): Primary Channel Dispatch / Copy */}
-											{primaryChannel === "telegram" && (
-												<button
-													type="button"
-													onClick={() => handleSendTelegram(reminder)}
-													className="min-h-[44px] px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-													title="Открыть диалог Telegram"
-												>
-													<MessageCircle size={15} className="shrink-0" />
-													<span>Отправить в Telegram</span>
-													<ExternalLink size={12} className="opacity-70 shrink-0" />
-												</button>
-											)}
-											{primaryChannel === "whatsapp" && (
-												<button
-													type="button"
-													onClick={() => handleSendWhatsApp(reminder)}
-													className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-													title="Открыть диалог WhatsApp"
-												>
-													<MessageSquare size={15} className="shrink-0" />
-													<span>Отправить в WhatsApp</span>
-													<ExternalLink size={12} className="opacity-70 shrink-0" />
-												</button>
-											)}
-											{primaryChannel === "sms" && (
-												<button
-													type="button"
-													onClick={() => handleSendSms(reminder)}
-													className="min-h-[44px] px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-													title="Открыть SMS-клиент"
-												>
-													<Phone size={14} className="shrink-0" />
-													<span>Отправить по SMS</span>
-												</button>
-											)}
-											{primaryChannel === "copy" && (
-												<button
-													type="button"
-													onClick={() => handleCopySingle(reminder)}
-													className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-													title="Скопировать текст"
-												>
-													<Copy size={14} className="shrink-0" />
-													<span>Скопировать текст</span>
-												</button>
-											)}
-
-											{/* Button 2: Secondary Channels & Action Links Dropdown (MoreVertical) */}
-											<div className="relative">
-												<button
-													type="button"
-													onClick={() =>
-														setActiveMenuAppointmentId((prev) =>
-															prev === reminder.appointmentId
-																? null
-																: reminder.appointmentId,
-														)
-													}
-													className="p-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs"
-													title="Другие каналы и ссылки"
-													aria-label="Другие каналы и ссылки"
-													aria-haspopup="true"
-													aria-expanded={
-														activeMenuAppointmentId === reminder.appointmentId
-													}
-													data-testid={`btn-reminder-more-${reminder.appointmentId}`}
-												>
-													<MoreVertical size={16} className="shrink-0" />
-												</button>
-
-												{activeMenuAppointmentId === reminder.appointmentId && (
-													<div className="absolute right-0 top-full mt-1.5 min-w-[260px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
-														{/* Copy reminder text (if not already primary) */}
-														{primaryChannel !== "copy" && (
-															<button
-																type="button"
-																onClick={() => {
-																	handleCopySingle(reminder);
-																	setActiveMenuAppointmentId(null);
-																}}
-																className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer"
-																title="Скопировать текст напоминания"
-															>
-																<Copy
-																	size={15}
-																	className="text-[var(--muted)] shrink-0"
-																/>
-																<span>Скопировать текст</span>
-															</button>
-														)}
-
-														{/* Alternative Channels */}
-														{secondaryChannels.map((channel) => {
-															if (channel === "telegram") {
-																return (
-																	<button
-																		key="telegram"
-																		type="button"
-																		onClick={() => {
-																			handleSendTelegram(reminder);
-																			setActiveMenuAppointmentId(null);
-																		}}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-[var(--paper-soft)] text-sky-700 dark:text-sky-300 transition-all text-left cursor-pointer"
-																		title="Открыть диалог Telegram"
-																	>
-																		<span className="flex items-center gap-2.5">
-																			<MessageCircle
-																				size={15}
-																				className="text-sky-600 shrink-0"
-																			/>
-																			<span>Отправить в Telegram</span>
-																		</span>
-																		<ExternalLink
-																			size={12}
-																			className="opacity-70 shrink-0"
-																		/>
-																	</button>
-																);
-															}
-															if (channel === "whatsapp") {
-																return (
-																	<button
-																		key="whatsapp"
-																		type="button"
-																		onClick={() => {
-																			handleSendWhatsApp(reminder);
-																			setActiveMenuAppointmentId(null);
-																		}}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 transition-all text-left cursor-pointer"
-																		title="Открыть диалог WhatsApp"
-																	>
-																		<span className="flex items-center gap-2.5">
-																			<MessageSquare
-																				size={15}
-																				className="text-emerald-600 shrink-0"
-																			/>
-																			<span>Отправить в WhatsApp</span>
-																		</span>
-																		<ExternalLink
-																			size={12}
-																			className="opacity-70 shrink-0"
-																		/>
-																	</button>
-																);
-															}
-															if (channel === "sms") {
-																return (
-																	<button
-																		key="sms"
-																		type="button"
-																		onClick={() => {
-																			handleSendSms(reminder);
-																			setActiveMenuAppointmentId(null);
-																		}}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-indigo-700 dark:text-indigo-300 transition-all text-left cursor-pointer"
-																		title="Открыть SMS-клиент"
-																	>
-																		<Phone
-																			size={15}
-																			className="text-indigo-600 shrink-0"
-																		/>
-																		<span>Отправить по SMS</span>
-																	</button>
-																);
-															}
-															return null;
-														})}
-
-														{/* 1-Click Interactive Action Links */}
-														{(reminder.confirmUrl ||
-															reminder.rescheduleUrl) && (
-															<div className="pt-1 mt-1 border-t border-[var(--line)] flex flex-col gap-1">
-																{reminder.confirmUrl && (
-																	<button
-																		type="button"
-																		onClick={() => {
-																			handleCopyLink(
-																				reminder.confirmUrl!,
-																				"Подтверждение",
-																			);
-																			setActiveMenuAppointmentId(null);
-																		}}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 transition-all text-left cursor-pointer"
-																		title="Скопировать ссылку подтверждения визита"
-																	>
-																		<ThumbsUp
-																			size={14}
-																			className="text-emerald-600 shrink-0"
-																		/>
-																		<span>Ссылка «Подтвердить»</span>
-																	</button>
-																)}
-																{reminder.rescheduleUrl && (
-																	<button
-																		type="button"
-																		onClick={() => {
-																			handleCopyLink(
-																				reminder.rescheduleUrl!,
-																				"Перенос",
-																			);
-																			setActiveMenuAppointmentId(null);
-																		}}
-																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-rose-500/10 text-rose-800 dark:text-rose-300 transition-all text-left cursor-pointer"
-																		title="Скопировать ссылку переноса визита"
-																	>
-																		<ThumbsDown
-																			size={14}
-																			className="text-rose-600 shrink-0"
-																		/>
-																		<span>Ссылка «Перенести»</span>
-																	</button>
-																)}
-															</div>
-														)}
-													</div>
-												)}
-											</div>
-										</div>
-									</div>
-								</div>
-							);
-						})
+						logic.filteredReminders.map((reminder) => (
+							<TomorrowReminderCard
+								key={reminder.appointmentId}
+								reminder={reminder}
+								isSent={logic.sentAppointmentIds.has(reminder.appointmentId)}
+								onCopy={logic.handleCopySingle}
+								onSendWhatsApp={logic.handleSendWhatsApp}
+								onSendTelegram={logic.handleSendTelegram}
+								onSendSms={logic.handleSendSms}
+							/>
+						))
 					)}
 				</div>
-
-				{/* Modal Footer */}
-				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
-					<div className="text-xs text-[var(--muted)] flex items-center gap-3">
-						<span>Отправлено: <strong className="text-[var(--ink)]">{sentAppointmentIds.size}</strong> из {summary.validPhoneCount}</span>
-						<button
-							type="button"
-							onClick={handleMarkAllSent}
-							className="text-[var(--teal)] hover:underline font-bold cursor-pointer"
-						>
-							Отметить все отправленными
-						</button>
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="px-5 py-2 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs sm:text-sm font-bold transition-all cursor-pointer min-h-[44px]"
-					>
-						Закрыть
-					</button>
-				</div>
+				<TomorrowRemindersBatchFooter
+					summary={logic.summary}
+					isDispatching={logic.isDispatching}
+					dispatchProgress={logic.dispatchProgress}
+					allowQuietHoursOverride={logic.allowQuietHoursOverride}
+					setAllowQuietHoursOverride={logic.setAllowQuietHoursOverride}
+					onBatchDispatch={handleBatchDispatch}
+					onClose={onClose}
+				/>
 			</div>
 		</div>
 	);
-
-	return typeof document !== "undefined"
-		? createPortal(modalElement, document.body)
-		: modalElement;
 }

@@ -1,638 +1,101 @@
-import type {
-	Appointment,
-	AppointmentReadiness,
-	Dashboard,
-	ScheduleSuggestion,
-} from "@dental/shared";
 import {
-	AlertTriangle,
-	Clock,
-	Plus,
-} from "lucide-react";
-import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { AppointmentCard } from "./AppointmentCard";
-import {
-	type ScheduleDayGroup,
-	formatMinutesForHumans,
-} from "./scheduleDayGrouping";
+	type ScheduleTimelineProps,
+	TimelineDayGroup,
+	TimelineEmptyState,
+	useTimelineNavigation,
+} from "./timelineModules";
 
-import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
+export * from "./timelineModules";
 
-export interface ScheduleTimelineProps {
-	visibleDayGroups: ScheduleDayGroup[];
-	dashboard: Dashboard;
-	visibleScheduleSuggestions: ScheduleSuggestion[];
-	appointmentReadinessById: Map<string, AppointmentReadiness>;
-	appointmentLabels: Record<Appointment["status"], string>;
-	appointmentScheduleDrafts: Record<
-		string,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		any
-	>;
-	appointmentScheduleSaveStates: Record<string, string>;
-	appointmentScheduleErrors: Record<string, string | null>;
-	appointmentScheduleDirtyIds: Set<string>;
-	editingAppointmentId: string | null;
-	appointmentDraftFromAppointment: (
-		appointment: Appointment,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	) => any;
-	appointmentDraftMissingSteps: (
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		draft: any,
-	) => string[];
-	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
-	openScheduleSuggestion: (section: string) => void;
-	formatTime: (value: string) => string;
-	patientName: (
-		patients: Dashboard["patients"],
-		patientId: string | null,
-	) => string;
-	openAppointmentEditor: (appointment: Appointment) => void;
-	repeatAppointment: (appointment: Appointment) => void;
-	copyAppointmentToBuffer?:
-		| ((appointment: Appointment) => void)
-		| undefined;
-	closeAppointmentEditor: (appointmentId: string) => void;
-	updateAppointmentScheduleDraft: (
-		appointmentId: string,
-		key: string,
-		value: unknown,
-	) => void;
-	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
-	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
-	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	useManualSelects: boolean;
-	onEmptySlotClick?:
-		| ((slot: QuickBookingSlotInfo) => void)
-		| undefined;
-	onNewAppointmentClick?: (() => void) | undefined;
-	stepScheduleDay?: ((delta: number) => void) | undefined;
-	scheduleDateFilter?: string | undefined;
-	clinicToday?: string | undefined;
-	activeScheduleFilterCount?: number | undefined;
-	resetScheduleFilters?: (() => void) | undefined;
-	setScheduleDateFilter?: ((date: string) => void) | undefined;
-	todayScheduleDate?: (() => string) | undefined;
-	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
-}
-
-interface TimelineDayGroupProps {
-	group: ScheduleDayGroup;
-	rowLimit: number;
-	onRowLimitIncrease: () => void;
-	onRowLimitShowAll: () => void;
-	onEmptySlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
-	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
-	dashboard: Dashboard;
-	appointmentScheduleDrafts: Record<string, any>;
-	appointmentScheduleSaveStates: Record<string, string>;
-	appointmentScheduleErrors: Record<string, string | null>;
-	appointmentScheduleDirtyIds: Set<string>;
-	editingAppointmentId: string | null;
-	appointmentDraftFromAppointment: (appointment: Appointment) => any;
-	appointmentDraftMissingSteps: (draft: any) => string[];
-	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
-	visibleScheduleSuggestions: ScheduleSuggestion[];
-	appointmentReadinessById: Map<string, AppointmentReadiness>;
-	appointmentLabels: Record<Appointment["status"], string>;
-	openScheduleSuggestion: (section: string) => void;
-	formatTime: (time: string) => string;
-	patientName: (
-		patients: Dashboard["patients"],
-		patientId: string | null,
-	) => string;
-	openAppointmentEditor: (appointment: Appointment) => void;
-	repeatAppointment: (appointment: Appointment) => void;
-	copyAppointmentToBuffer?: ((appointment: Appointment) => void) | undefined;
-	closeAppointmentEditor: (appointmentId: string) => void;
-	updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: unknown) => void;
-	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
-	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
-	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	useManualSelects: boolean;
-}
-
-const TimelineDayGroup = React.memo(function TimelineDayGroup({
-	group,
-	rowLimit,
-	onRowLimitIncrease,
-	onRowLimitShowAll,
-	onEmptySlotClick,
-	dashboard,
-	appointmentScheduleDrafts,
-	appointmentScheduleSaveStates,
-	appointmentScheduleErrors,
-	appointmentScheduleDirtyIds,
-	editingAppointmentId,
-	appointmentDraftFromAppointment,
-	appointmentDraftMissingSteps,
-	activeVisitLockedAppointmentStatuses,
-	visibleScheduleSuggestions,
-	appointmentReadinessById,
-	appointmentLabels,
-	openScheduleSuggestion,
-	formatTime,
-	patientName,
-	openAppointmentEditor,
-	repeatAppointment,
-	copyAppointmentToBuffer,
-	closeAppointmentEditor,
-	updateAppointmentScheduleDraft,
-	saveAppointmentSchedule,
-	normalizedAppointmentStatus,
-	toDateTimeLocalValue,
-	fromDateTimeLocalValue,
-	useManualSelects,
-	onOpenVisit,
-}: TimelineDayGroupProps) {
-	const allRows = group?.rows ?? [];
-	const visibleRows = allRows.slice(0, rowLimit);
-	const hasMoreRows = allRows.length > rowLimit;
-
-	return (
-		<Fragment key={group.dateKey}>
-			{/* Day Header */}
-			<div
-				className="schedule-day-heading"
-				data-testid="schedule-day-heading"
-				style={{
-					display: "flex",
-					flexWrap: "wrap",
-					alignItems: "baseline",
-					gap: "8px",
-					margin: "18px 0 10px",
-					paddingTop: "4px",
-					paddingBottom: "6px",
-					borderBottom: "1px solid var(--line)",
-				}}
-			>
-				<strong
-					style={{
-						fontSize: "15px",
-						lineHeight: "1.4",
-						paddingTop: "2px",
-						display: "inline-block",
-						color: "var(--ink)",
-						textTransform: "capitalize",
-					}}
-				>
-					{group.title}
-				</strong>
-				{group.relativeLabel ? (
-					<span
-						className={`status-pill ${group.relation === "today" ? "status-confirmed" : "status-planned"}`}
-					>
-						{group.relativeLabel}
-					</span>
-				) : null}
-				<span style={{ fontSize: "12px", color: "var(--muted)" }}>
-					записей: {group.appointmentCount} · занято{" "}
-					{formatMinutesForHumans(group.bookedMinutes)}
-					{group.freeGapMinutes > 0
-						? ` · свободно ${formatMinutesForHumans(group.freeGapMinutes)}`
-						: ""}
-				</span>
-			</div>
-
-			{/* Rows: gaps, overlaps, appointments */}
-			{visibleRows.map((row) => {
-				// 1. Free Slot / Gap
-				if (row.kind === "gap") {
-					const gapStartLabel = row.startsAt
-						? toDateTimeLocalValue(
-								row.startsAt,
-								dashboard?.clinicSettings?.profile?.timezone,
-							).slice(11, 16)
-						: null;
-					const gapEndLabel = row.endsAt
-						? toDateTimeLocalValue(
-								row.endsAt,
-								dashboard?.clinicSettings?.profile?.timezone,
-							).slice(11, 16)
-						: null;
-
-					return (
-						<div
-							key={`gap-${group.dateKey}-${row.afterAppointmentId ?? "start"}-${row.minutes}`}
-							data-timeline-focusable="true"
-							tabIndex={0}
-							role="button"
-							onClick={() => {
-								if (typeof onEmptySlotClick === "function") {
-									const slotPayload: { dateKey: string; startsAt?: string; endsAt?: string; durationMinutes?: number } = {
-										dateKey: group.dateKey,
-									};
-									if (row.startsAt) slotPayload.startsAt = row.startsAt;
-									if (row.endsAt) slotPayload.endsAt = row.endsAt;
-									if (row.minutes) slotPayload.durationMinutes = row.minutes;
-									onEmptySlotClick(slotPayload);
-								}
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									if (typeof onEmptySlotClick === "function") {
-										const slotPayload: { dateKey: string; startsAt?: string; endsAt?: string; durationMinutes?: number } = {
-											dateKey: group.dateKey,
-										};
-										if (row.startsAt) slotPayload.startsAt = row.startsAt;
-										if (row.endsAt) slotPayload.endsAt = row.endsAt;
-										if (row.minutes) slotPayload.durationMinutes = row.minutes;
-										onEmptySlotClick(slotPayload);
-									}
-								}
-							}}
-							className="schedule-day-gap group my-2 ml-3 pr-2 sm:pr-0 p-2.5 rounded-xl border border-dashed border-[var(--teal)]/40 hover:border-[var(--teal)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center justify-between gap-3 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
-							data-testid="schedule-day-gap"
-							aria-label={`Свободное окно: ${formatMinutesForHumans(row.minutes)}. Нажмите для быстрой записи`}
-							style={{
-								contentVisibility: "auto",
-								containIntrinsicSize: "1px 48px",
-							}}
-						>
-							<div className="flex items-center gap-2 min-w-0 flex-1">
-								<Clock size={14} className="text-[var(--teal)] shrink-0" />
-								<div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center">
-									<span className="whitespace-nowrap">
-										Свободно {formatMinutesForHumans(row.minutes)}
-									</span>
-									{gapStartLabel && gapEndLabel ? (
-										<span className="text-[11px] sm:text-xs text-[var(--muted)] sm:ml-1 whitespace-nowrap">
-											({gapStartLabel} – {gapEndLabel})
-										</span>
-									) : null}
-								</div>
-							</div>
-							<span className="min-h-[36px] min-w-[76px] px-2.5 py-1 rounded-lg bg-[var(--teal-dark)] text-white text-xs font-bold flex items-center justify-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity shrink-0 whitespace-nowrap">
-								<Plus size={14} className="shrink-0" />
-								<span>Записать</span>
-							</span>
-						</div>
-					);
-				}
-
-				// 2. Overlap warning
-				if (row.kind === "overlap") {
-					const overlapReason =
-						row.sameDoctor && row.sameChair
-							? "один врач и одно кресло"
-							: row.sameDoctor
-								? "один и тот же врач"
-								: row.sameChair
-									? "одно и то же кресло"
-									: row.sameAssistant
-										? "один и тот же ассистент"
-										: "один и тот же пациент";
-
-					return (
-						<div
-							key={`overlap-${group.dateKey}-${row.withAppointmentId}`}
-							className="schedule-day-overlap my-2 ml-3 pr-2 sm:pr-0 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
-							data-testid="schedule-day-overlap"
-							role="alert"
-							style={{
-								contentVisibility: "auto",
-								containIntrinsicSize: "1px 48px",
-							}}
-						>
-							<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
-							<span>
-								Две записи на одно время ({overlapReason}), пересечение{" "}
-								{formatMinutesForHumans(row.minutes)}. Кого-то придётся перенести.
-							</span>
-						</div>
-					);
-				}
-
-				// 3. Appointment Card
-				const appointment = row.appointment as Appointment;
-				const draft =
-					appointmentScheduleDrafts[appointment.id] ||
-					appointmentDraftFromAppointment(appointment);
-				const saveState =
-					appointmentScheduleSaveStates[appointment.id] || "idle";
-				const error = appointmentScheduleErrors[appointment.id] || null;
-				const dirty = appointmentScheduleDirtyIds.has(appointment.id);
-				const isEditing = editingAppointmentId === appointment.id;
-				const hasOpenVisit =
-					dashboard.activeVisit &&
-					dashboard.activeVisit.appointmentId === appointment.id;
-
-				const missingSteps = appointmentDraftMissingSteps(draft);
-				const readyToSave = missingSteps?.length === 0 && dirty;
-
-				return (
-					<div
-						key={appointment.id}
-						data-timeline-focusable="true"
-						tabIndex={-1}
-						className="focus:outline-none schedule-timeline-item"
-						style={{
-							contentVisibility: "auto",
-							containIntrinsicSize: "1px 48px",
-						}}
-					>
-						<AppointmentCard
-							appointment={appointment}
-							dashboard={dashboard}
-							visibleScheduleSuggestions={visibleScheduleSuggestions}
-							appointmentReadinessById={appointmentReadinessById}
-							appointmentLabels={appointmentLabels}
-							appointmentDraft={draft}
-							appointmentSaveState={saveState}
-							appointmentSaveError={error}
-							appointmentDirty={dirty}
-							appointmentEditing={isEditing}
-							appointmentHasOpenVisit={Boolean(hasOpenVisit)}
-							appointmentActiveVisitStatusLocked={Boolean(
-								hasOpenVisit &&
-									activeVisitLockedAppointmentStatuses.has(draft.status),
-							)}
-							appointmentMissingSteps={missingSteps as string[]}
-							appointmentReadyToSave={readyToSave}
-							openScheduleSuggestion={openScheduleSuggestion}
-							formatTime={formatTime}
-							patientName={patientName}
-							openAppointmentEditor={openAppointmentEditor}
-							repeatAppointment={repeatAppointment}
-							{...(copyAppointmentToBuffer ? { copyAppointmentToBuffer } : {})}
-							closeAppointmentEditor={closeAppointmentEditor}
-							updateAppointmentScheduleDraft={
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								updateAppointmentScheduleDraft as any
-							}
-							saveAppointmentSchedule={saveAppointmentSchedule}
-							normalizedAppointmentStatus={normalizedAppointmentStatus}
-							toDateTimeLocalValue={toDateTimeLocalValue}
-							fromDateTimeLocalValue={fromDateTimeLocalValue}
-							useManualSelects={useManualSelects}
-							activeVisitLockedAppointmentStatuses={
-								activeVisitLockedAppointmentStatuses
-							}
-							onOpenVisit={() => onOpenVisit?.(appointment)}
-						/>
-					</div>
-				);
-			})}
-
-			{hasMoreRows && (
-				<div className="schedule-day-more my-2 ml-3 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
-					<span>Показано {visibleRows.length} из {allRows.length} записей и окон</span>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
-							onClick={onRowLimitIncrease}
-						>
-							Загрузить ещё 30
-						</button>
-						<button
-							type="button"
-							className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
-							onClick={onRowLimitShowAll}
-						>
-							Все ({allRows.length})
-						</button>
-					</div>
-				</div>
-			)}
-		</Fragment>
-	);
-});
-TimelineDayGroup.displayName = "TimelineDayGroup";
-
-function ScheduleTimelineInner(props: ScheduleTimelineProps) {
+export function ScheduleTimeline(props: ScheduleTimelineProps) {
 	const {
 		visibleDayGroups,
-		dashboard,
-		visibleScheduleSuggestions,
-		appointmentReadinessById,
-		appointmentLabels,
-		appointmentScheduleDrafts,
-		appointmentScheduleSaveStates,
-		appointmentScheduleErrors,
-		appointmentScheduleDirtyIds,
-		editingAppointmentId,
-		appointmentDraftFromAppointment,
-		appointmentDraftMissingSteps,
-		activeVisitLockedAppointmentStatuses,
-		openScheduleSuggestion,
-		formatTime,
-		patientName,
-		openAppointmentEditor,
-		repeatAppointment,
-		copyAppointmentToBuffer,
-		closeAppointmentEditor,
-		updateAppointmentScheduleDraft,
-		saveAppointmentSchedule,
-		normalizedAppointmentStatus,
-		toDateTimeLocalValue,
-		fromDateTimeLocalValue,
-		useManualSelects,
 		onEmptySlotClick,
 		onNewAppointmentClick,
 		stepScheduleDay,
-		scheduleDateFilter = "",
-		clinicToday = "",
-		activeScheduleFilterCount = 0,
+		clinicToday,
+		activeScheduleFilterCount,
 		resetScheduleFilters,
 		setScheduleDateFilter,
 		todayScheduleDate,
 		onOpenVisit,
 	} = props;
 
-	const timelineContainerRef = useRef<HTMLDivElement>(null);
-	const [dayRowLimits, setDayRowLimits] = useState<Record<string, number>>({});
+	const {
+		rowLimitByDay,
+		containerRef,
+		handleRowLimitIncrease,
+		handleRowLimitShowAll,
+	} = useTimelineNavigation(visibleDayGroups);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limits when date filter changes
-	useEffect(() => {
-		setDayRowLimits({});
-	}, [scheduleDateFilter]);
-
-	// Global keyboard shortcuts for timeline
-	const handleGlobalKeyDown = useCallback(
-		(e: KeyboardEvent) => {
-			const activeTag = document.activeElement?.tagName.toLowerCase();
-			if (
-				activeTag === "input" ||
-				activeTag === "textarea" ||
-				activeTag === "select" ||
-				document.activeElement?.getAttribute("contenteditable") === "true"
-			) {
-				return;
-			}
-
-			// Key 'N' or 'n' or 'т' or 'Т': open new appointment
-			if ((e.key === "n" || e.key === "N" || e.key === "т" || e.key === "Т") && !e.ctrlKey && !e.metaKey && !e.altKey) {
-				e.preventDefault();
-				if (typeof onNewAppointmentClick === "function") {
-					onNewAppointmentClick();
-				}
-				return;
-			}
-
-			// Arrow Left: Previous Day
-			if (e.key === "ArrowLeft" && typeof stepScheduleDay === "function") {
-				e.preventDefault();
-				stepScheduleDay(-1);
-				return;
-			}
-
-			// Arrow Right: Next Day
-			if (e.key === "ArrowRight" && typeof stepScheduleDay === "function") {
-				e.preventDefault();
-				stepScheduleDay(1);
-				return;
-			}
-
-			// Arrow Down / Arrow Up: sequential item focus in timeline
-			if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-				if (!timelineContainerRef.current) return;
-				const focusables = Array.from(
-					timelineContainerRef.current.querySelectorAll<HTMLElement>(
-						'[data-timeline-focusable="true"]',
-					),
-				);
-				if (focusables.length === 0) return;
-
-				const currentFocusedIndex = focusables.findIndex(
-					(el) => el === document.activeElement || el.contains(document.activeElement),
-				);
-
-				e.preventDefault();
-				if (currentFocusedIndex === -1) {
-					if (e.key === "ArrowDown") {
-						focusables[0]?.focus();
-					} else {
-						focusables[focusables.length - 1]?.focus();
-					}
-					return;
-				}
-
-				if (e.key === "ArrowDown") {
-					const nextIndex =
-						currentFocusedIndex < focusables.length - 1
-							? currentFocusedIndex + 1
-							: 0;
-					focusables[nextIndex]?.focus();
-				} else {
-					const prevIndex =
-						currentFocusedIndex > 0
-							? currentFocusedIndex - 1
-							: focusables.length - 1;
-					focusables[prevIndex]?.focus();
-				}
-			}
-		},
-		[onNewAppointmentClick, stepScheduleDay],
-	);
-
-	useEffect(() => {
-		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleGlobalKeyDown);
-		};
-	}, [handleGlobalKeyDown]);
-
-	const visibleAppointmentCount = visibleDayGroups.reduce(
-		(sum, group) => sum + group.appointmentCount,
-		0,
-	);
+	if (!visibleDayGroups || visibleDayGroups.length === 0) {
+		return (
+			<TimelineEmptyState
+				onNewAppointmentClick={onNewAppointmentClick}
+				activeScheduleFilterCount={activeScheduleFilterCount}
+				resetScheduleFilters={resetScheduleFilters}
+				stepScheduleDay={stepScheduleDay}
+				setScheduleDateFilter={setScheduleDateFilter}
+				todayScheduleDate={todayScheduleDate}
+				clinicToday={clinicToday}
+			/>
+		);
+	}
 
 	return (
 		<div
-			ref={timelineContainerRef}
-			className="schedule-timeline timeline focus:outline-none pt-2 sm:pt-1 pb-36 sm:pb-20 pr-2 sm:pr-0"
+			ref={containerRef}
+			className="schedule-timeline-container space-y-4 px-2 sm:px-4 py-2 pb-36"
 			style={{ scrollPaddingBottom: "144px" }}
-			data-testid="schedule-timeline-container"
-			tabIndex={-1}
+			data-testid="schedule-timeline"
 		>
-			{(visibleDayGroups ?? []).map((group) => (
-				<TimelineDayGroup
-					key={group.dateKey}
-					group={group}
-					rowLimit={dayRowLimits[group.dateKey] ?? 30}
-					onRowLimitIncrease={() =>
-						setDayRowLimits((prev) => ({
-							...prev,
-							[group.dateKey]: (prev[group.dateKey] ?? 30) + 30,
-						}))
-					}
-					onRowLimitShowAll={() =>
-						setDayRowLimits((prev) => ({
-							...prev,
-							[group.dateKey]: group.rows?.length ?? 30,
-						}))
-					}
-					onEmptySlotClick={onEmptySlotClick}
-					dashboard={dashboard}
-					appointmentScheduleDrafts={appointmentScheduleDrafts}
-					appointmentScheduleSaveStates={appointmentScheduleSaveStates}
-					appointmentScheduleErrors={appointmentScheduleErrors}
-					appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
-					editingAppointmentId={editingAppointmentId}
-					appointmentDraftFromAppointment={appointmentDraftFromAppointment}
-					appointmentDraftMissingSteps={appointmentDraftMissingSteps}
-					activeVisitLockedAppointmentStatuses={
-						activeVisitLockedAppointmentStatuses
-					}
-					visibleScheduleSuggestions={visibleScheduleSuggestions}
-					appointmentReadinessById={appointmentReadinessById}
-					appointmentLabels={appointmentLabels}
-					openScheduleSuggestion={openScheduleSuggestion}
-					formatTime={formatTime}
-					patientName={patientName}
-					openAppointmentEditor={openAppointmentEditor}
-					repeatAppointment={repeatAppointment}
-					copyAppointmentToBuffer={copyAppointmentToBuffer}
-					closeAppointmentEditor={closeAppointmentEditor}
-					updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
-					saveAppointmentSchedule={saveAppointmentSchedule}
-					normalizedAppointmentStatus={normalizedAppointmentStatus}
-					toDateTimeLocalValue={toDateTimeLocalValue}
-					fromDateTimeLocalValue={fromDateTimeLocalValue}
-					useManualSelects={useManualSelects}
-					onOpenVisit={onOpenVisit}
-				/>
-			))}
-
-			{/* Empty State when no appointments found */}
-			{visibleAppointmentCount === 0 && (
-				<div className="py-3 px-4 text-xs max-w-sm mx-auto text-center text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] mt-4 shadow-sm">
-					<p className="font-medium mb-3 text-[var(--ink)]">
-						{(dashboard.appointments ?? []).length === 0
-							? "Записей пока нет ни одной"
-							: activeScheduleFilterCount > 0
-								? scheduleDateFilter.trim()
-									? "На этот день записей нет"
-									: "Всё скрыто фильтрами"
-								: "На выбранный день записей нет"}
-					</p>
-					<div className="schedule-empty-actions flex flex-wrap gap-2 justify-center">
-						{scheduleDateFilter.trim() && clinicToday && scheduleDateFilter.trim() !== clinicToday && typeof setScheduleDateFilter === "function" && typeof todayScheduleDate === "function" ? (
-							<button className="secondary-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
-								На сегодня
-							</button>
-						) : null}
-						{activeScheduleFilterCount > 0 && typeof resetScheduleFilters === "function" ? (
-							<button className="secondary-button min-h-[36px] px-3 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
-								Снять фильтры
-							</button>
-						) : null}
-						<button className="primary-button min-h-[36px] px-3 flex items-center justify-center gap-1.5 focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors font-bold shadow-sm" type="button" onClick={onNewAppointmentClick} data-testid="btn-create-first-appointment">
-							<Plus aria-hidden="true" size={14} />
-							<span>Записать пациента</span>
-						</button>
-					</div>
-				</div>
-			)}
+			{visibleDayGroups.map((group) => {
+				const rowLimit = rowLimitByDay[group.dateKey] ?? 30;
+				return (
+					<TimelineDayGroup
+						key={group.dateKey}
+						group={group}
+						rowLimit={rowLimit}
+						onRowLimitIncrease={() => handleRowLimitIncrease(group.dateKey)}
+						onRowLimitShowAll={() =>
+							handleRowLimitShowAll(group.dateKey, group.rows?.length ?? 0)
+						}
+						onEmptySlotClick={onEmptySlotClick}
+						onOpenVisit={onOpenVisit}
+						dashboard={props.dashboard}
+						appointmentScheduleDrafts={props.appointmentScheduleDrafts}
+						appointmentScheduleSaveStates={props.appointmentScheduleSaveStates}
+						appointmentScheduleErrors={props.appointmentScheduleErrors}
+						appointmentScheduleDirtyIds={props.appointmentScheduleDirtyIds}
+						editingAppointmentId={props.editingAppointmentId}
+						appointmentDraftFromAppointment={
+							props.appointmentDraftFromAppointment
+						}
+						appointmentDraftMissingSteps={props.appointmentDraftMissingSteps}
+						activeVisitLockedAppointmentStatuses={
+							props.activeVisitLockedAppointmentStatuses
+						}
+						visibleScheduleSuggestions={props.visibleScheduleSuggestions}
+						appointmentReadinessById={props.appointmentReadinessById}
+						appointmentLabels={props.appointmentLabels}
+						openScheduleSuggestion={props.openScheduleSuggestion}
+						formatTime={props.formatTime}
+						patientName={props.patientName}
+						openAppointmentEditor={props.openAppointmentEditor}
+						repeatAppointment={props.repeatAppointment}
+						copyAppointmentToBuffer={props.copyAppointmentToBuffer}
+						closeAppointmentEditor={props.closeAppointmentEditor}
+						updateAppointmentScheduleDraft={
+							props.updateAppointmentScheduleDraft
+						}
+						saveAppointmentSchedule={props.saveAppointmentSchedule}
+						normalizedAppointmentStatus={props.normalizedAppointmentStatus}
+						toDateTimeLocalValue={props.toDateTimeLocalValue}
+						fromDateTimeLocalValue={props.fromDateTimeLocalValue}
+						useManualSelects={props.useManualSelects}
+					/>
+				);
+			})}
 		</div>
 	);
 }
-
-export const ScheduleTimeline = React.memo(ScheduleTimelineInner);
-ScheduleTimeline.displayName = "ScheduleTimeline";
-

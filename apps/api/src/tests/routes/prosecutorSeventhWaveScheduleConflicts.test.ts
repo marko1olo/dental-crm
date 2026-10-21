@@ -92,21 +92,19 @@ describe("PROSECUTOR 2: СЕДЬМАЯ ВОЛНА (SCHEDULE CONFLICTS, RESERVES 
 					.where(eq(appointments.organizationId, ORG_ID));
 				await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-				await db.delete(users).where(eq(users.organizationId, ORG_ID));
 			});
-			await purgeFixtureOrganizations([ORG_ID]);
 
 			await withFixtureTenant(ORG_ID, async () => {
 				await db.insert(organizations).values({
 					id: ORG_ID,
 					name: "Клиника точного расписания (Wave 7 Conflicts)",
-				});
+				}).onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Главный корпус",
 					timezone: "Europe/Moscow",
-				});
+				}).onConflictDoNothing();
 				// 2 кресла
 				await db.insert(chairs).values([
 					{
@@ -121,7 +119,7 @@ describe("PROSECUTOR 2: СЕДЬМАЯ ВОЛНА (SCHEDULE CONFLICTS, RESERVES 
 						clinicId: CLINIC_ID,
 						name: "Кресло 2 (Терапия)",
 					},
-				]);
+				]).onConflictDoNothing();
 				// 2 врача
 				await db.insert(users).values([
 					{
@@ -136,7 +134,7 @@ describe("PROSECUTOR 2: СЕДЬМАЯ ВОЛНА (SCHEDULE CONFLICTS, RESERVES 
 						fullName: "Доктор Терапевтов Т.Т.",
 						role: "doctor",
 					},
-				]);
+				]).onConflictDoNothing();
 				// 3 пациента
 				await db.insert(patients).values([
 					{
@@ -157,7 +155,7 @@ describe("PROSECUTOR 2: СЕДЬМАЯ ВОЛНА (SCHEDULE CONFLICTS, RESERVES 
 						fullName: "[Служебный] Технический Блок / Резерв",
 						phone: "+7 (926) 000-00-00",
 					},
-				]);
+				]).onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
