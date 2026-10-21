@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { MessageSquare, Phone, PhoneCall } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
 import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
@@ -13,7 +13,9 @@ interface LeadCardContactBarProps {
 	lead: Lead;
 }
 
-export const LeadCardContactBar: React.FC<LeadCardContactBarProps> = ({ lead }) => {
+export const LeadCardContactBar: React.FC<LeadCardContactBarProps> = ({
+	lead,
+}) => {
 	return (
 		<div className="flex items-center justify-between mb-1.5 gap-1.5 min-w-0">
 			{lead.phone ? (

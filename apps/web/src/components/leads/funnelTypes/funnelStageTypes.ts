@@ -80,7 +80,8 @@ export const FUNNEL_STAGES: readonly FunnelStageConfig[] = [
 	},
 ] as const;
 
-export interface FunnelLead extends Omit<Partial<Lead>, "status" | "expectedRevenue" | "createdAt"> {
+export interface FunnelLead
+	extends Omit<Partial<Lead>, "status" | "expectedRevenue" | "createdAt"> {
 	id: string;
 	name: string;
 	phone?: string | undefined;

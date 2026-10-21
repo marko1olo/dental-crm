@@ -2,11 +2,14 @@
  * DENTE Dental CRM — Leads Leak & Revenue Loss Calculations
  */
 
-import { detectLeadStage, extractLeadRevenueRub } from "./funnelConversionCalculator.js";
 import {
-	type FunnelLead,
+	detectLeadStage,
+	extractLeadRevenueRub,
+} from "./funnelConversionCalculator.js";
+import {
 	type CrmFunnelLeak,
 	type CrmFunnelLeakReport,
+	type FunnelLead,
 	type LeadFunnelStageKey,
 	normalizeMarketingChannel,
 } from "./types.js";
@@ -24,13 +27,28 @@ export function extractPotentialLeadRevenueRub(
 
 export function detectCrmFunnelLeaks(
 	leads: readonly FunnelLead[],
-	options: { maxIdleHoursNew?: number; maxIdleHoursContacted?: number; defaultEstimatedTicketRub?: number; now?: Date } = {},
+	options: {
+		maxIdleHoursNew?: number;
+		maxIdleHoursContacted?: number;
+		defaultEstimatedTicketRub?: number;
+		now?: Date;
+	} = {},
 ): CrmFunnelLeakReport {
-	const { maxIdleHoursNew = 2, maxIdleHoursContacted = 24, defaultEstimatedTicketRub = 0, now = new Date() } = options;
+	const {
+		maxIdleHoursNew = 2,
+		maxIdleHoursContacted = 24,
+		defaultEstimatedTicketRub = 0,
+		now = new Date(),
+	} = options;
 	const nowMs = now.getTime();
 	const leaks: CrmFunnelLeak[] = [];
 	const leaksByStage: Record<LeadFunnelStageKey, number> = {
-		new: 0, contacted: 0, consult_booked: 0, showed_up: 0, treatment_plan_accepted: 0, paid: 0,
+		new: 0,
+		contacted: 0,
+		consult_booked: 0,
+		showed_up: 0,
+		treatment_plan_accepted: 0,
+		paid: 0,
 	};
 	let totalLeakedRevenueRub = 0;
 	let criticalLeaksCount = 0;
@@ -43,9 +61,15 @@ export function detectCrmFunnelLeaks(
 		const leadTime = rawDate ? new Date(rawDate).getTime() : NaN;
 		if (Number.isNaN(leadTime)) continue;
 
-		const hoursStalled = Math.max(0, Math.floor((nowMs - leadTime) / (3600 * 1000)));
+		const hoursStalled = Math.max(
+			0,
+			Math.floor((nowMs - leadTime) / (3600 * 1000)),
+		);
 		const channelKey = normalizeMarketingChannel(lead.source);
-		const potentialRevenueRub = extractPotentialLeadRevenueRub(lead, defaultEstimatedTicketRub);
+		const potentialRevenueRub = extractPotentialLeadRevenueRub(
+			lead,
+			defaultEstimatedTicketRub,
+		);
 
 		let isLeak = false;
 		let severity: "critical" | "warning" = "warning";
@@ -56,17 +80,20 @@ export function detectCrmFunnelLeaks(
 			isLeak = true;
 			severity = hoursStalled >= 12 ? "critical" : "warning";
 			reason = `Новое обращение без первичного звонка уже ${hoursStalled} ч.`;
-			suggestedAction = "Связаться с пациентом в течение 10 минут либо передать дежурному администратору.";
+			suggestedAction =
+				"Связаться с пациентом в течение 10 минут либо передать дежурному администратору.";
 		} else if (stage === "contacted" && hoursStalled >= maxIdleHoursContacted) {
 			isLeak = true;
 			severity = hoursStalled >= 48 ? "critical" : "warning";
 			reason = `Лид в работе без назначенной консультации более ${hoursStalled} ч.`;
-			suggestedAction = "Повторный звонок администратора для согласования удобного времени визита.";
+			suggestedAction =
+				"Повторный звонок администратора для согласования удобного времени визита.";
 		} else if (stage === "treatment_plan_accepted" && hoursStalled >= 72) {
 			isLeak = true;
 			severity = "critical";
 			reason = `План лечения согласован, но нет записи на приём и оплаты более ${hoursStalled} ч.`;
-			suggestedAction = "Связаться куратору лечения для бронирования даты первого визита.";
+			suggestedAction =
+				"Связаться куратору лечения для бронирования даты первого визита.";
 		}
 
 		if (isLeak) {
@@ -91,11 +118,20 @@ export function detectCrmFunnelLeaks(
 	}
 
 	const totalLeakedCount = leaks.length;
-	const summaryText = totalLeakedCount > 0
-		? `Обнаружено ${totalLeakedCount} зависших лидов (${criticalLeaksCount} критических). Потенциальная утечка: ${totalLeakedRevenueRub.toLocaleString("ru-RU")} ₽.`
-		: "Утечек воронки не обнаружено. Все лиды в активной работе.";
+	const summaryText =
+		totalLeakedCount > 0
+			? `Обнаружено ${totalLeakedCount} зависших лидов (${criticalLeaksCount} критических). Потенциальная утечка: ${totalLeakedRevenueRub.toLocaleString("ru-RU")} ₽.`
+			: "Утечек воронки не обнаружено. Все лиды в активной работе.";
 
-	return { totalLeakedCount, totalLeakedRevenueRub, criticalLeaksCount, warningLeaksCount, leaksByStage, leaks, summaryText };
+	return {
+		totalLeakedCount,
+		totalLeakedRevenueRub,
+		criticalLeaksCount,
+		warningLeaksCount,
+		leaksByStage,
+		leaks,
+		summaryText,
+	};
 }
 
 export function calculateAdminLeakImpact(leaks: readonly CrmFunnelLeak[]): {
@@ -104,14 +140,20 @@ export function calculateAdminLeakImpact(leaks: readonly CrmFunnelLeak[]): {
 	stageBreakdown: Record<LeadFunnelStageKey, number>;
 } {
 	const stageBreakdown: Record<LeadFunnelStageKey, number> = {
-		new: 0, contacted: 0, consult_booked: 0, showed_up: 0, treatment_plan_accepted: 0, paid: 0,
+		new: 0,
+		contacted: 0,
+		consult_booked: 0,
+		showed_up: 0,
+		treatment_plan_accepted: 0,
+		paid: 0,
 	};
 	let totalLossRub = 0;
 	let criticalCount = 0;
 	for (const leak of leaks) {
 		totalLossRub += leak.potentialRevenueRub;
 		if (leak.severity === "critical") criticalCount += 1;
-		stageBreakdown[leak.currentStage] = (stageBreakdown[leak.currentStage] ?? 0) + 1;
+		stageBreakdown[leak.currentStage] =
+			(stageBreakdown[leak.currentStage] ?? 0) + 1;
 	}
 	return { totalLossRub, criticalCount, stageBreakdown };
 }

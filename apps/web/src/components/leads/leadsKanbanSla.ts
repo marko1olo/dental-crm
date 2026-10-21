@@ -25,7 +25,11 @@ function formatHoursMins(mins: number): string {
 }
 
 export function getLeadSlaStatus(
-	lead: { status?: LeadStatus | string | null | undefined; createdAt?: string | Date | null | undefined; stageEnteredAt?: string | Date | null | undefined },
+	lead: {
+		status?: LeadStatus | string | null | undefined;
+		createdAt?: string | Date | null | undefined;
+		stageEnteredAt?: string | Date | null | undefined;
+	},
 	now?: Date,
 ): LeadSlaInfo {
 	const rawDate = lead.stageEnteredAt || lead.createdAt;
@@ -34,8 +38,14 @@ export function getLeadSlaStatus(
 
 	if (Number.isNaN(refTime) || refTime <= 0) {
 		return {
-			urgency: "fresh", minutesElapsed: 0, label: "Свежий (< 15м)", badgeColor: "var(--ok-fg)",
-			badgeBg: "var(--ok-bg)", badgeBorder: "var(--line)", isBreached: false, formattedDuration: "< 1м",
+			urgency: "fresh",
+			minutesElapsed: 0,
+			label: "Свежий (< 15м)",
+			badgeColor: "var(--ok-fg)",
+			badgeBg: "var(--ok-bg)",
+			badgeBorder: "var(--line)",
+			isBreached: false,
+			formattedDuration: "< 1м",
 		};
 	}
 
@@ -47,24 +57,44 @@ export function getLeadSlaStatus(
 	if (minutesElapsed < warnThreshold) {
 		const dur = minutesElapsed > 0 ? `${minutesElapsed}м` : "< 1м";
 		return {
-			urgency: "fresh", minutesElapsed, label: `Свежий (${dur})`, badgeColor: "var(--ok-fg)",
-			badgeBg: "var(--ok-bg)", badgeBorder: "var(--line)", isBreached: false, formattedDuration: dur,
+			urgency: "fresh",
+			minutesElapsed,
+			label: `Свежий (${dur})`,
+			badgeColor: "var(--ok-fg)",
+			badgeBg: "var(--ok-bg)",
+			badgeBorder: "var(--line)",
+			isBreached: false,
+			formattedDuration: dur,
 		};
 	}
 
 	if (minutesElapsed < breachThreshold) {
 		const dur = `${minutesElapsed}м`;
 		return {
-			urgency: "warning", minutesElapsed, label: `Внимание (${dur})`, badgeColor: "var(--amber-dark, var(--amber))",
-			badgeBg: "var(--amber-soft)", badgeBorder: "var(--amber)", isBreached: false, formattedDuration: dur,
+			urgency: "warning",
+			minutesElapsed,
+			label: `Внимание (${dur})`,
+			badgeColor: "var(--amber-dark, var(--amber))",
+			badgeBg: "var(--amber-soft)",
+			badgeBorder: "var(--amber)",
+			isBreached: false,
+			formattedDuration: dur,
 		};
 	}
 
 	const timeStr = formatHoursMins(minutesElapsed);
-	const label = isNew ? `SLA просрочен (> 15м: +${timeStr})` : `SLA просрочен (+${timeStr})`;
+	const label = isNew
+		? `SLA просрочен (> 15м: +${timeStr})`
+		: `SLA просрочен (+${timeStr})`;
 
 	return {
-		urgency: "breached", minutesElapsed, label, badgeColor: "var(--rust)", badgeBg: "var(--rust-soft)",
-		badgeBorder: "var(--rust)", isBreached: true, formattedDuration: `+${timeStr}`,
+		urgency: "breached",
+		minutesElapsed,
+		label,
+		badgeColor: "var(--rust)",
+		badgeBg: "var(--rust-soft)",
+		badgeBorder: "var(--rust)",
+		isBreached: true,
+		formattedDuration: `+${timeStr}`,
 	};
 }

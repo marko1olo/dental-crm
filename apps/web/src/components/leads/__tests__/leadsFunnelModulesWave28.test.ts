@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import {
-	// Re-exported from facade:
-	predictShowUpBySource,
-	calculateFirstResponseTimeMinutes,
-	isLeadSlaBreached,
-	getLeadSlaStatus,
-	calculateSlaPenaltyPoints,
+	calculateAdminLeakImpact,
 	calculateAdminSlaRating,
+	calculateFirstResponseTimeMinutes,
+	calculateSlaPenaltyPoints,
 	calculateSpeedToLeadMetrics,
 	detectCrmFunnelLeaks,
-	calculateAdminLeakImpact,
 	type FunnelLead,
+	getLeadSlaStatus,
+	isLeadSlaBreached,
+	// Re-exported from facade:
+	predictShowUpBySource,
 } from "../leadsFunnelEngine.js";
 
 describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", () => {
@@ -23,14 +23,18 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 					id: `yandex-hist-${i}`,
 					name: `Пациент ${i}`,
 					source: "Яндекс.Директ",
-					status: (i < 8 ? "showed_up" : "consult_booked") as FunnelLead["status"],
+					status: (i < 8
+						? "showed_up"
+						: "consult_booked") as FunnelLead["status"],
 				})),
 				// 2GIS: 5 booked, 2 showed up = 40%
 				...Array.from({ length: 5 }, (_, i) => ({
 					id: `2gis-hist-${i}`,
 					name: `Пациент ${i}`,
 					source: "2ГИС",
-					status: (i < 2 ? "showed_up" : "consult_booked") as FunnelLead["status"],
+					status: (i < 2
+						? "showed_up"
+						: "consult_booked") as FunnelLead["status"],
 				})),
 			];
 
@@ -54,7 +58,9 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 			const predictions = predictShowUpBySource(historicalLeads, currentBooked);
 			assert.ok(Array.isArray(predictions));
 
-			const yandexPred = predictions.find((p) => p.channelKey === "yandex_direct");
+			const yandexPred = predictions.find(
+				(p) => p.channelKey === "yandex_direct",
+			);
 			assert.ok(yandexPred);
 			assert.strictEqual(yandexPred.bookedCount, 5);
 			assert.strictEqual(yandexPred.predictedShowUpRatePercent, 80);
@@ -70,9 +76,17 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 		});
 
 		it("handles zero historical data gracefully with honest 0% default", () => {
-			const predictions = predictShowUpBySource([], [
-				{ id: "lead-1", name: "Лид", source: "prodoctorov", status: "consult_booked" },
-			]);
+			const predictions = predictShowUpBySource(
+				[],
+				[
+					{
+						id: "lead-1",
+						name: "Лид",
+						source: "prodoctorov",
+						status: "consult_booked",
+					},
+				],
+			);
 			const prodoc = predictions.find((p) => p.channelKey === "prodoctorov");
 			assert.ok(prodoc);
 			assert.strictEqual(prodoc.bookedCount, 1);
@@ -102,7 +116,10 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 				status: "new",
 				createdAt: new Date("2026-10-10T11:30:00Z").toISOString(), // 30 min ago
 			};
-			assert.strictEqual(calculateFirstResponseTimeMinutes(warningLead, now), 30);
+			assert.strictEqual(
+				calculateFirstResponseTimeMinutes(warningLead, now),
+				30,
+			);
 			assert.strictEqual(isLeadSlaBreached(warningLead, now), true);
 			assert.strictEqual(getLeadSlaStatus(warningLead, now), "warning");
 
@@ -112,7 +129,10 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 				status: "new",
 				createdAt: new Date("2026-10-10T10:00:00Z").toISOString(), // 120 min ago
 			};
-			assert.strictEqual(calculateFirstResponseTimeMinutes(breachedLead, now), 120);
+			assert.strictEqual(
+				calculateFirstResponseTimeMinutes(breachedLead, now),
+				120,
+			);
 			assert.strictEqual(isLeadSlaBreached(breachedLead, now), true);
 			assert.strictEqual(getLeadSlaStatus(breachedLead, now), "breached");
 		});
@@ -136,10 +156,30 @@ describe("Wave 28: Funnel Engine Decomposed Modules — Extended Domain Tests", 
 		it("calculates comprehensive SpeedToLeadMetrics summary", () => {
 			const now = new Date("2026-10-10T12:00:00Z");
 			const leads: FunnelLead[] = [
-				{ id: "1", name: "Лид 1", status: "new", createdAt: new Date("2026-10-10T11:55:00Z").toISOString() }, // 5 min -> fresh
-				{ id: "2", name: "Лид 2", status: "new", createdAt: new Date("2026-10-10T11:52:00Z").toISOString() }, // 8 min -> fresh
-				{ id: "3", name: "Лид 3", status: "new", createdAt: new Date("2026-10-10T11:40:00Z").toISOString() }, // 20 min -> warning
-				{ id: "4", name: "Лид 4", status: "new", createdAt: new Date("2026-10-10T10:30:00Z").toISOString() }, // 90 min -> breached
+				{
+					id: "1",
+					name: "Лид 1",
+					status: "new",
+					createdAt: new Date("2026-10-10T11:55:00Z").toISOString(),
+				}, // 5 min -> fresh
+				{
+					id: "2",
+					name: "Лид 2",
+					status: "new",
+					createdAt: new Date("2026-10-10T11:52:00Z").toISOString(),
+				}, // 8 min -> fresh
+				{
+					id: "3",
+					name: "Лид 3",
+					status: "new",
+					createdAt: new Date("2026-10-10T11:40:00Z").toISOString(),
+				}, // 20 min -> warning
+				{
+					id: "4",
+					name: "Лид 4",
+					status: "new",
+					createdAt: new Date("2026-10-10T10:30:00Z").toISOString(),
+				}, // 90 min -> breached
 			];
 
 			const metrics = calculateSpeedToLeadMetrics(leads, now);

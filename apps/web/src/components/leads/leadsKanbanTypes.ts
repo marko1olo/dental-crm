@@ -6,11 +6,11 @@
 import type { Lead, LeadStatus } from "../../store/leadsStore";
 import { COLUMNS, type ColumnConfig } from "./leadsKanbanConstants";
 
-export type { Lead, LeadStatus };
 export * from "./leadsKanbanBooking";
 export * from "./leadsKanbanConstants";
 export * from "./leadsKanbanSla";
 export * from "./leadsKanbanSorting";
+export type { Lead, LeadStatus };
 
 /**
  * Проверяет принадлежность статуса лида к одной из 4 канонических колонок клинического канбана:
@@ -57,4 +57,3 @@ export function getKanbanColumnForLeadStatus(
 	}
 	return COLUMNS[3];
 }
-

@@ -4,8 +4,9 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React, { useEffect, useRef, useState } from "react";
 import { BarChart3, MoreHorizontal, RotateCcw } from "lucide-react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface LeadsKanbanMoreMenuProps {
 	onOpenAnalytics: () => void;
@@ -30,7 +31,10 @@ export const LeadsKanbanMoreMenu: React.FC<LeadsKanbanMoreMenuProps> = ({
 	}, [isMenuOpen]);
 
 	return (
-		<div className="leads-more-menu-container relative inline-flex" ref={menuRef}>
+		<div
+			className="leads-more-menu-container relative inline-flex"
+			ref={menuRef}
+		>
 			<button
 				className="leads-more-menu-btn h-9 w-9 min-h-[36px] min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all flex items-center justify-center cursor-pointer"
 				onClick={() => setIsMenuOpen((prev) => !prev)}

@@ -1,6 +1,11 @@
-import { motion } from "framer-motion";
-import { ArrowRight, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
-import React from "react";
+/**
+ * DENTE Dental CRM — Funnel Waterfall Section Component
+ * Mandate 8b (<= 120 lines)
+ */
+
+import { BarChart3, ChevronDown, ChevronUp } from "lucide-react";
+import type React from "react";
+import { FunnelWaterfallStageItem } from "./FunnelWaterfallStageItem";
 import type { FunnelStageMetric } from "./leadsFunnelTypes";
 
 export interface FunnelWaterfallSectionProps {
@@ -96,7 +101,6 @@ export const FunnelWaterfallSection: React.FC<FunnelWaterfallSectionProps> = ({
 				</div>
 			</div>
 
-			{/* Compact Funnel Strip (Frontend Rule 3.1 & Mandate 8d) */}
 			{!isOpen && (
 				<div
 					style={{
@@ -114,7 +118,23 @@ export const FunnelWaterfallSection: React.FC<FunnelWaterfallSectionProps> = ({
 					data-testid="leads-waterfall-compact-strip"
 				>
 					<span style={{ color: "var(--muted)" }}>
-						6 клинических этапов: <strong style={{ color: "var(--ink)" }}>{stages[0]?.count ?? 0}</strong> лидов → <strong style={{ color: "var(--teal)" }}>{stages[2]?.count ?? 0}</strong> записей → <strong style={{ color: "var(--warn-fg)" }}>{stages[3]?.count ?? 0}</strong> явок (Show-up) → <strong style={{ color: "var(--ok-fg)" }}>{stages[5]?.count ?? 0}</strong> оплат в кассу.
+						6 клинических этапов:{" "}
+						<strong style={{ color: "var(--ink)" }}>
+							{stages[0]?.count ?? 0}
+						</strong>{" "}
+						лидов →{" "}
+						<strong style={{ color: "var(--teal)" }}>
+							{stages[2]?.count ?? 0}
+						</strong>{" "}
+						записей →{" "}
+						<strong style={{ color: "var(--warn-fg)" }}>
+							{stages[3]?.count ?? 0}
+						</strong>{" "}
+						явок (Show-up) →{" "}
+						<strong style={{ color: "var(--ok-fg)" }}>
+							{stages[5]?.count ?? 0}
+						</strong>{" "}
+						оплат в кассу.
 					</span>
 					<button
 						type="button"
@@ -137,137 +157,20 @@ export const FunnelWaterfallSection: React.FC<FunnelWaterfallSectionProps> = ({
 				</div>
 			)}
 
-			{/* Expanded Waterfall Breakdown */}
 			{isOpen && (
 				<div
 					style={{ display: "flex", flexDirection: "column", gap: "10px" }}
 					data-testid="leads-waterfall-expanded"
 				>
-					{stages.map((st, idx) => {
-						const maxCount = totalLeads > 0 ? totalLeads : 1;
-						const barWidthPercent = Math.max(
-							8,
-							Math.round((st.count / maxCount) * 100),
-						);
-
-						return (
-							<div
-								key={st.key}
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: 4,
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-										fontSize: 12,
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: 8,
-											fontWeight: 600,
-											color: "var(--ink)",
-										}}
-									>
-										<span
-											style={{
-												width: 10,
-												height: 10,
-												borderRadius: "50%",
-												background: st.color,
-												display: "inline-block",
-											}}
-										/>
-										{st.label}
-									</div>
-									<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-										<span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 13 }}>
-											{st.count} чел.
-										</span>
-										<span
-											style={{
-												fontSize: 11,
-												fontWeight: 600,
-												color: "var(--teal)",
-												background: st.badgeColor,
-												padding: "2px 6px",
-												borderRadius: 6,
-											}}
-										>
-											{st.conversionFromFirstPercent}% от входа
-										</span>
-										{idx > 0 && (
-											<span
-												style={{
-													fontSize: 11,
-													color: "var(--muted)",
-													minWidth: 100,
-													textAlign: "right",
-												}}
-											>
-												Шаг: {st.conversionFromPrevPercent}%
-											</span>
-										)}
-									</div>
-								</div>
-
-								{/* Progress Track */}
-								<div
-									style={{
-										width: "100%",
-										height: 24,
-										background: "var(--paper-soft)",
-										borderRadius: 6,
-										overflow: "hidden",
-										position: "relative",
-										border: "1px solid var(--line)",
-									}}
-								>
-									<motion.div
-										initial={{ width: 0 }}
-										animate={{ width: `${barWidthPercent}%` }}
-										transition={{ duration: 0.4, delay: idx * 0.05 }}
-										style={{
-											height: "100%",
-											background: st.color,
-											opacity: 0.85,
-											borderRadius: 5,
-											display: "flex",
-											alignItems: "center",
-											paddingLeft: 8,
-											color: "var(--on-teal, var(--paper))",
-											fontSize: 11,
-											fontWeight: 600,
-										}}
-									/>
-								</div>
-
-								{/* Drop-off notice if applicable */}
-								{st.dropCount > 0 && idx < stages.length - 1 && (
-									<div
-										style={{
-											fontSize: 11,
-											color: "var(--rust)",
-											paddingLeft: 18,
-											display: "flex",
-											alignItems: "center",
-											gap: 4,
-										}}
-									>
-										<ArrowRight size={11} />
-										Отвал на этапе: {st.dropCount} чел. ({st.dropRatePercent}%)
-									</div>
-								)}
-							</div>
-						);
-					})}
+					{stages.map((st, idx) => (
+						<FunnelWaterfallStageItem
+							key={st.key}
+							st={st}
+							idx={idx}
+							totalLeads={totalLeads}
+							stagesLength={stages.length}
+						/>
+					))}
 				</div>
 			)}
 		</div>

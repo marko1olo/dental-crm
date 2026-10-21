@@ -51,7 +51,9 @@
 	min-height: 520px;
 	padding: 12px;
 	box-sizing: border-box;
-	transition: border-color 0.2s ease, background 0.2s ease;
+	transition:
+		border-color 0.2s ease,
+		background 0.2s ease;
 }
 
 .leads-kanban-column:hover {
@@ -99,7 +101,10 @@
 	cursor: grab;
 	user-select: none;
 	box-sizing: border-box;
-	transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.15s ease,
+		border-color 0.2s ease;
 }
 
 .lead-kanban-card:hover {
@@ -114,25 +119,27 @@
 /* Card buttons with firm visible borders */
 .lead-card-action-btn,
 .lead-kanban-card button.secondary-button {
-	border: 1px solid var(--line) !important;
-	border-radius: 8px !important;
-	background: var(--paper) !important;
-	color: var(--ink) !important;
-	transition: all 0.15s ease !important;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	transition: all 0.15s ease;
 }
 
 .lead-card-action-btn:hover,
 .lead-kanban-card button.secondary-button:hover {
-	border-color: var(--teal) !important;
-	background: var(--paper-hover, var(--paper-soft)) !important;
+	border-color: var(--teal);
+	background: var(--paper-hover, var(--paper-soft));
 }
 
 .lead-kanban-card button.primary-button {
-	border: 1px solid var(--teal) !important;
-	border-radius: 8px !important;
-	background: var(--teal) !important;
-	color: #ffffff !important;
-	transition: opacity 0.15s ease, transform 0.1s ease !important;
+	border: 1px solid var(--teal);
+	border-radius: 8px;
+	background: var(--teal);
+	color: #ffffff;
+	transition:
+		opacity 0.15s ease,
+		transform 0.1s ease;
 }
 
 .lead-kanban-card button.primary-button:hover {

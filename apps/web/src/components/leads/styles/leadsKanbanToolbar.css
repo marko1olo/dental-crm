@@ -12,7 +12,8 @@
 /* -------------------------------------------------------------------------- */
 
 @keyframes slaBreachPulse {
-	0%, 100% {
+	0%,
+	100% {
 		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
 		transform: scale(1);
 	}
@@ -79,9 +80,9 @@
 .leads-desktop-toolbar select,
 .leads-desktop-toolbar .primary-button,
 .leads-desktop-toolbar .leads-more-menu-btn {
-	height: 36px !important;
-	min-height: 36px !important;
-	border-radius: 12px !important;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
 }
 
 .leads-toolbar-left {

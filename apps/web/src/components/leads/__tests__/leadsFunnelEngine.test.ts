@@ -1,28 +1,27 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	type FunnelLead,
 	calculateFunnelAnalysis,
+	checkNotificationSpamCollision,
+	createPatientAttributionRecord,
 	detectLeadStage,
 	evaluateChannelEfficiency,
 	exportFunnelReportCsv,
 	exportFunnelReportSummaryText,
-	extractLeadRevenueRub,
-	filterLeadsByPeriod,
-	getDefaultChannelSpendMap,
-	getMarketingChannelLabel,
-	hasLeadPassedStage,
-	normalizeMarketingChannel,
-	parseUtmParameters,
 	extractLeadAttribution,
-	createPatientAttributionRecord,
-	linkPatientRevenueToLeadAttribution,
-	isPatientEligibleForMarketing,
+	extractLeadRevenueRub,
+	type FunnelLead,
+	filterLeadsByPeriod,
 	filterMarketingEligibleLeads,
-	checkNotificationSpamCollision,
 	formatChannelStatusRu,
 	formatLeadSlaBreachSummary,
+	getMarketingChannelLabel,
+	hasLeadPassedStage,
+	isPatientEligibleForMarketing,
+	linkPatientRevenueToLeadAttribution,
 	MIN_MARKETING_INTERVAL_HOURS,
+	normalizeMarketingChannel,
+	parseUtmParameters,
 	safeDivide,
 	safePercent,
 } from "../leadsFunnelEngine";
@@ -58,19 +57,37 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			assert.equal(normalizeMarketingChannel("SEO поиск"), "site_seo");
 			assert.equal(normalizeMarketingChannel("Органика Google"), "site_seo");
 			assert.equal(normalizeMarketingChannel("Веб-сайт"), "site_seo");
-			assert.equal(normalizeMarketingChannel("Лендинг Имплантация"), "site_seo");
+			assert.equal(
+				normalizeMarketingChannel("Лендинг Имплантация"),
+				"site_seo",
+			);
 		});
 
 		it("1.5. Recognizes Recommendations / Word of Mouth", () => {
-			assert.equal(normalizeMarketingChannel("Сарафанное радио"), "recommendations");
-			assert.equal(normalizeMarketingChannel("Рекомендация друга"), "recommendations");
-			assert.equal(normalizeMarketingChannel("По совету врача"), "recommendations");
-			assert.equal(normalizeMarketingChannel("Пациент Иванов И.И."), "recommendations");
+			assert.equal(
+				normalizeMarketingChannel("Сарафанное радио"),
+				"recommendations",
+			);
+			assert.equal(
+				normalizeMarketingChannel("Рекомендация друга"),
+				"recommendations",
+			);
+			assert.equal(
+				normalizeMarketingChannel("По совету врача"),
+				"recommendations",
+			);
+			assert.equal(
+				normalizeMarketingChannel("Пациент Иванов И.И."),
+				"recommendations",
+			);
 		});
 
 		it("1.6. Recognizes Social Media & Messengers", () => {
 			assert.equal(normalizeMarketingChannel("VK Реклама"), "social_media");
-			assert.equal(normalizeMarketingChannel("Вконтакте группа"), "social_media");
+			assert.equal(
+				normalizeMarketingChannel("Вконтакте группа"),
+				"social_media",
+			);
 			assert.equal(normalizeMarketingChannel("Telegram канал"), "social_media");
 			assert.equal(normalizeMarketingChannel("Instagram блог"), "social_media");
 		});
@@ -86,7 +103,10 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 		it("1.8. Resolves human-readable labels", () => {
 			assert.equal(getMarketingChannelLabel("yandex_direct"), "Яндекс.Директ");
 			assert.equal(getMarketingChannelLabel("gis_2"), "2ГИС Карты");
-			assert.equal(getMarketingChannelLabel("recommendations"), "Рекомендации / Сарафан");
+			assert.equal(
+				getMarketingChannelLabel("recommendations"),
+				"Рекомендации / Сарафан",
+			);
 		});
 	});
 
@@ -95,13 +115,28 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 	// -----------------------------------------------------------------------
 	describe("2. Lead Stage Detection & Transitive Progression", () => {
 		it("2.1. Detects paid stage via explicit or financial indicators", () => {
-			const lead1: FunnelLead = { id: "1", name: "Пациент 1", status: "consult_booked", isPaid: true };
+			const lead1: FunnelLead = {
+				id: "1",
+				name: "Пациент 1",
+				status: "consult_booked",
+				isPaid: true,
+			};
 			assert.equal(detectLeadStage(lead1), "paid");
 
-			const lead2: FunnelLead = { id: "2", name: "Пациент 2", status: "new", paidAmountRub: 15000 };
+			const lead2: FunnelLead = {
+				id: "2",
+				name: "Пациент 2",
+				status: "new",
+				paidAmountRub: 15000,
+			};
 			assert.equal(detectLeadStage(lead2), "paid");
 
-			const lead3: FunnelLead = { id: "3", name: "Пациент 3", status: "contacted", paidAmountKopecks: 2500000 };
+			const lead3: FunnelLead = {
+				id: "3",
+				name: "Пациент 3",
+				status: "contacted",
+				paidAmountKopecks: 2500000,
+			};
 			assert.equal(detectLeadStage(lead3), "paid");
 		});
 
@@ -133,13 +168,25 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 		});
 
 		it("2.4. Detects consult_booked and contacted stages from status", () => {
-			const leadBooked: FunnelLead = { id: "6", name: "Пациент 6", status: "consult_booked" };
+			const leadBooked: FunnelLead = {
+				id: "6",
+				name: "Пациент 6",
+				status: "consult_booked",
+			};
 			assert.equal(detectLeadStage(leadBooked), "consult_booked");
 
-			const leadContacted: FunnelLead = { id: "7", name: "Пациент 7", status: "contacted" };
+			const leadContacted: FunnelLead = {
+				id: "7",
+				name: "Пациент 7",
+				status: "contacted",
+			};
 			assert.equal(detectLeadStage(leadContacted), "contacted");
 
-			const leadNoAnswer: FunnelLead = { id: "8", name: "Пациент 8", status: "no_answer" };
+			const leadNoAnswer: FunnelLead = {
+				id: "8",
+				name: "Пациент 8",
+				status: "no_answer",
+			};
 			assert.equal(detectLeadStage(leadNoAnswer), "contacted");
 
 			const leadNew: FunnelLead = { id: "9", name: "Пациент 9", status: "new" };
@@ -168,7 +215,10 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			// Booked lead passed new, contacted, consult_booked, but NOT showed_up or paid
 			assert.equal(hasLeadPassedStage("consult_booked", "new"), true);
 			assert.equal(hasLeadPassedStage("consult_booked", "contacted"), true);
-			assert.equal(hasLeadPassedStage("consult_booked", "consult_booked"), true);
+			assert.equal(
+				hasLeadPassedStage("consult_booked", "consult_booked"),
+				true,
+			);
 			assert.equal(hasLeadPassedStage("consult_booked", "showed_up"), false);
 			assert.equal(hasLeadPassedStage("consult_booked", "paid"), false);
 		});
@@ -249,20 +299,66 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 	describe("4. End-to-End Funnel Calculation", () => {
 		const sampleLeads: FunnelLead[] = [
 			// Яндекс: 3 лида (1 оплатил 50 000, 1 дошел, 1 записан)
-			{ id: "L1", name: "Алексей Я.", source: "Яндекс.Директ", status: "consult_booked", isPaid: true, actualRevenueRub: 50000 },
-			{ id: "L2", name: "Борис Я.", source: "Яндекс.Директ", status: "consult_booked", showedUp: true },
-			{ id: "L3", name: "Виктор Я.", source: "Яндекс.Директ", status: "consult_booked" },
+			{
+				id: "L1",
+				name: "Алексей Я.",
+				source: "Яндекс.Директ",
+				status: "consult_booked",
+				isPaid: true,
+				actualRevenueRub: 50000,
+			},
+			{
+				id: "L2",
+				name: "Борис Я.",
+				source: "Яндекс.Директ",
+				status: "consult_booked",
+				showedUp: true,
+			},
+			{
+				id: "L3",
+				name: "Виктор Я.",
+				source: "Яндекс.Директ",
+				status: "consult_booked",
+			},
 
 			// 2ГИС: 2 лида (1 согласовал план 120 000, 1 в работе)
-			{ id: "L4", name: "Галина Д.", source: "2ГИС", status: "consult_booked", treatmentPlanAgreed: true, expectedRevenue: "120000" },
+			{
+				id: "L4",
+				name: "Галина Д.",
+				source: "2ГИС",
+				status: "consult_booked",
+				treatmentPlanAgreed: true,
+				expectedRevenue: "120000",
+			},
 			{ id: "L5", name: "Дмитрий Д.", source: "2ГИС", status: "contacted" },
 
 			// Сайт / SEO: 2 лида (2 оплатили по 30 000 и 40 000)
-			{ id: "L6", name: "Елена С.", source: "Сайт клиники", status: "consult_booked", isPaid: true, actualRevenueRub: 30000 },
-			{ id: "L7", name: "Жанна С.", source: "SEO", status: "consult_booked", isPaid: true, actualRevenueRub: 40000 },
+			{
+				id: "L6",
+				name: "Елена С.",
+				source: "Сайт клиники",
+				status: "consult_booked",
+				isPaid: true,
+				actualRevenueRub: 30000,
+			},
+			{
+				id: "L7",
+				name: "Жанна С.",
+				source: "SEO",
+				status: "consult_booked",
+				isPaid: true,
+				actualRevenueRub: 40000,
+			},
 
 			// Сарафан: 1 лид (оплатил 80 000)
-			{ id: "L8", name: "Игорь Р.", source: "Рекомендация друга", status: "consult_booked", isPaid: true, actualRevenueRub: 80000 },
+			{
+				id: "L8",
+				name: "Игорь Р.",
+				source: "Рекомендация друга",
+				status: "consult_booked",
+				isPaid: true,
+				actualRevenueRub: 80000,
+			},
 
 			// Новые / Отказ: 2 лида
 			{ id: "L9", name: "Константин Н.", source: "Звонок", status: "new" },
@@ -386,7 +482,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				other: 0,
 			});
 
-			const yandex = result.channels.find((c) => c.channelKey === "yandex_direct");
+			const yandex = result.channels.find(
+				(c) => c.channelKey === "yandex_direct",
+			);
 			assert.ok(yandex);
 			assert.equal(yandex.leadsCount, 3);
 			assert.equal(yandex.bookedCount, 3);
@@ -408,7 +506,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			assert.equal(seo.romiPercent, 250);
 			assert.equal(seo.efficiencyRating, "good");
 
-			const recs = result.channels.find((c) => c.channelKey === "recommendations");
+			const recs = result.channels.find(
+				(c) => c.channelKey === "recommendations",
+			);
 			assert.ok(recs);
 			assert.equal(recs.leadsCount, 1);
 			assert.equal(recs.paidCount, 1);
@@ -450,11 +550,36 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 	describe("5. Time Period Filtering", () => {
 		const fixedNow = new Date("2026-08-28T12:00:00.000Z");
 		const leadsWithDates: FunnelLead[] = [
-			{ id: "T1", name: "Сегодня", status: "new", createdAt: "2026-08-28T09:00:00.000Z" },
-			{ id: "T2", name: "3 дня назад", status: "new", createdAt: "2026-08-25T10:00:00.000Z" },
-			{ id: "T3", name: "20 дней назад", status: "new", createdAt: "2026-08-08T10:00:00.000Z" },
-			{ id: "T4", name: "60 дней назад", status: "new", createdAt: "2026-06-29T10:00:00.000Z" },
-			{ id: "T5", name: "200 дней назад", status: "new", createdAt: "2026-02-09T10:00:00.000Z" },
+			{
+				id: "T1",
+				name: "Сегодня",
+				status: "new",
+				createdAt: "2026-08-28T09:00:00.000Z",
+			},
+			{
+				id: "T2",
+				name: "3 дня назад",
+				status: "new",
+				createdAt: "2026-08-25T10:00:00.000Z",
+			},
+			{
+				id: "T3",
+				name: "20 дней назад",
+				status: "new",
+				createdAt: "2026-08-08T10:00:00.000Z",
+			},
+			{
+				id: "T4",
+				name: "60 дней назад",
+				status: "new",
+				createdAt: "2026-06-29T10:00:00.000Z",
+			},
+			{
+				id: "T5",
+				name: "200 дней назад",
+				status: "new",
+				createdAt: "2026-02-09T10:00:00.000Z",
+			},
 		];
 
 		it("5.1. Filters by today", () => {
@@ -479,7 +604,11 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 		});
 
 		it("5.5. Filters by year (365 days) and all", () => {
-			const filteredYear = filterLeadsByPeriod(leadsWithDates, "year", fixedNow);
+			const filteredYear = filterLeadsByPeriod(
+				leadsWithDates,
+				"year",
+				fixedNow,
+			);
 			assert.equal(filteredYear.length, 5);
 
 			const filteredAll = filterLeadsByPeriod(leadsWithDates, "all", fixedNow);
@@ -516,7 +645,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			const text = exportFunnelReportSummaryText(analysis);
 			const normalizedText = text.replace(/[\u00A0\u202F]/g, " ");
 
-			assert.ok(normalizedText.includes("ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ"));
+			assert.ok(
+				normalizedText.includes("ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ"),
+			);
 			assert.ok(normalizedText.includes("Лидов получено: 1"));
 			assert.ok(normalizedText.includes("Выручка: 55 000 ₽"));
 			assert.ok(normalizedText.includes("ROMI:"));
@@ -529,8 +660,14 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 	describe("7. Channel Efficiency Evaluation", () => {
 		it("7.1. Evaluates ratings accurately", () => {
 			assert.equal(evaluateChannelEfficiency(0, 5, 0).rating, "organic");
-			assert.equal(evaluateChannelEfficiency(50000, 0, -100).rating, "critical");
-			assert.equal(evaluateChannelEfficiency(50000, 10, 350).rating, "excellent");
+			assert.equal(
+				evaluateChannelEfficiency(50000, 0, -100).rating,
+				"critical",
+			);
+			assert.equal(
+				evaluateChannelEfficiency(50000, 10, 350).rating,
+				"excellent",
+			);
 			assert.equal(evaluateChannelEfficiency(50000, 5, 120).rating, "good");
 			assert.equal(evaluateChannelEfficiency(50000, 2, 20).rating, "warning");
 			assert.equal(evaluateChannelEfficiency(50000, 1, -40).rating, "critical");
@@ -578,13 +715,16 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				utm_content: null,
 				utm_term: null,
 			});
-			assert.deepEqual(parseUtmParameters("Обычный комментарий администратора"), {
-				utm_source: null,
-				utm_medium: null,
-				utm_campaign: null,
-				utm_content: null,
-				utm_term: null,
-			});
+			assert.deepEqual(
+				parseUtmParameters("Обычный комментарий администратора"),
+				{
+					utm_source: null,
+					utm_medium: null,
+					utm_campaign: null,
+					utm_content: null,
+					utm_term: null,
+				},
+			);
 		});
 
 		it("8.4. extractLeadAttribution produces canonical Russian labels and preserves notes as primary inquiry", () => {
@@ -593,8 +733,7 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				name: "Мария Смирнова",
 				status: "new",
 				phone: "+7 (999) 111-22-33",
-				source:
-					"Яндекс.Директ ?utm_source=yandex&utm_campaign=dental_implants",
+				source: "Яндекс.Директ ?utm_source=yandex&utm_campaign=dental_implants",
 				notes: "Консультация хирурга-имплантолога, болит 46 зуб",
 			};
 
@@ -703,9 +842,7 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 		});
 
 		it("9.2. Links payments by normalized phone number fallback", () => {
-			const payments = [
-				{ phone: "8 (905) 765-43-21", paidAmountRub: 85000 },
-			];
+			const payments = [{ phone: "8 (905) 765-43-21", paidAmountRub: 85000 }];
 
 			const updated = linkPatientRevenueToLeadAttribution(
 				sampleLeads,
@@ -734,7 +871,7 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				[existingPaidLead],
 				payments,
 			);
-			assert.equal(updated[0]!.actualRevenueRub, 120000);
+			assert.equal(updated[0]?.actualRevenueRub, 120000);
 		});
 
 		it("9.4. Leaves unrelated leads unchanged", () => {
@@ -744,8 +881,8 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				payments,
 			);
 
-			assert.equal(updated[0]!.actualRevenueRub, 0);
-			assert.equal(updated[0]!.isPaid, false);
+			assert.equal(updated[0]?.actualRevenueRub, 0);
+			assert.equal(updated[0]?.isPaid, false);
 		});
 	});
 
@@ -821,8 +958,8 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 
 			const filtered = filterMarketingEligibleLeads(mixedAudience);
 			assert.equal(filtered.length, 2);
-			assert.equal(filtered[0]!.id, "1");
-			assert.equal(filtered[1]!.id, "4");
+			assert.equal(filtered[0]?.id, "1");
+			assert.equal(filtered[1]?.id, "4");
 		});
 	});
 
@@ -870,13 +1007,8 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			});
 
 			assert.equal(res.allowed, false);
-			assert.equal(
-				res.suppressionType,
-				"service_priority_suppression",
-			);
-			assert.ok(
-				res.reason?.includes("у пациента сегодня запланирован приём"),
-			);
+			assert.equal(res.suppressionType, "service_priority_suppression");
+			assert.ok(res.reason?.includes("у пациента сегодня запланирован приём"));
 		});
 
 		it("11.4. Enforces 24-hour rate limit between marketing contacts", () => {
@@ -947,18 +1079,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				formatChannelStatusRu("recommendations"),
 				"Рекомендации / Сарафан",
 			);
-			assert.equal(
-				formatChannelStatusRu("site_seo"),
-				"Сайт / SEO",
-			);
-			assert.equal(
-				formatChannelStatusRu("social_media"),
-				"Соцсети / VK / TG",
-			);
-			assert.equal(
-				formatChannelStatusRu(null),
-				"Прямой звонок / Регистратура",
-			);
+			assert.equal(formatChannelStatusRu("site_seo"), "Сайт / SEO");
+			assert.equal(formatChannelStatusRu("social_media"), "Соцсети / VK / TG");
+			assert.equal(formatChannelStatusRu(null), "Прямой звонок / Регистратура");
 			assert.equal(formatChannelStatusRu(""), "Прямой звонок / Регистратура");
 		});
 
@@ -1017,4 +1140,3 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 		});
 	});
 });
-

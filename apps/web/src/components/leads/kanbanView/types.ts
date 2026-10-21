@@ -96,7 +96,9 @@ export function resolveLeadDefaultScheduleWindow(
 	const clinicTimeZone = dashboard?.clinicSettings?.profile?.timezone ?? null;
 	const targetDate =
 		appointmentDate || dateInputValuePlusDays(1, clinicTimeZone);
-	const startDateTime = new Date(`${targetDate}T${appointmentTime || "10:00"}:00`);
+	const startDateTime = new Date(
+		`${targetDate}T${appointmentTime || "10:00"}:00`,
+	);
 	const effectiveVisitMins = resolveLeadVisitMinutes(
 		dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null,
 	);

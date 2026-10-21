@@ -19,7 +19,6 @@ export {
 	getDefaultChannelSpendMap,
 };
 
-
 /**
  * Pure mapper converting live `/api/marketing/attribution` response payload
  * into canonical channel spend overrides in rubles.

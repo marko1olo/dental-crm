@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Plus, Sparkles } from "lucide-react";
+import type React from "react";
 import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { LeadMobileFeedCard } from "../LeadMobileFeedCard";
 import { STAGE_DISPLAY_LABELS } from "../leadsKanbanTypes";
@@ -20,8 +20,17 @@ interface LeadsMobileCardsSectionProps {
 	activeTab: LeadStatus | "all";
 }
 
-export const LeadsMobileCardsSection: React.FC<LeadsMobileCardsSectionProps> = ({
-	leads, onSelect, onSchedule, onQuickSchedule, onOpenPatientCard, onNewLead, searchQuery, activeTab,
+export const LeadsMobileCardsSection: React.FC<
+	LeadsMobileCardsSectionProps
+> = ({
+	leads,
+	onSelect,
+	onSchedule,
+	onQuickSchedule,
+	onOpenPatientCard,
+	onNewLead,
+	searchQuery,
+	activeTab,
 }) => {
 	if (leads.length > 0) {
 		return (
@@ -51,7 +60,11 @@ export const LeadsMobileCardsSection: React.FC<LeadsMobileCardsSectionProps> = (
 						? "Список входящих обращений пока пуст."
 						: `В этапе «${STAGE_DISPLAY_LABELS[activeTab] || activeTab}» нет активных лидов.`}
 			</p>
-			<button type="button" onClick={onNewLead} className="leads-mobile-new-lead-btn mt-2">
+			<button
+				type="button"
+				onClick={onNewLead}
+				className="leads-mobile-new-lead-btn mt-2"
+			>
 				<Plus size={16} />
 				<span>Добавить обращение</span>
 			</button>

@@ -4,8 +4,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Check } from "lucide-react";
+import type React from "react";
 import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { COLUMNS, isLeadInKanbanColumn } from "../leadsKanbanTypes";
 
@@ -18,14 +18,23 @@ interface LeadMobileSheetStagesAndNotesProps {
 	onStageClick: (e: React.MouseEvent, status: LeadStatus) => void;
 }
 
-export const LeadMobileSheetStagesAndNotes: React.FC<LeadMobileSheetStagesAndNotesProps> = ({
-	lead, notesText, setNotesText, isSavingNotes, onSaveNotes, onStageClick,
+export const LeadMobileSheetStagesAndNotes: React.FC<
+	LeadMobileSheetStagesAndNotesProps
+> = ({
+	lead,
+	notesText,
+	setNotesText,
+	isSavingNotes,
+	onSaveNotes,
+	onStageClick,
 }) => {
 	return (
 		<>
 			<div className="rounded-[16px] bg-[var(--paper-soft)] border border-[var(--line)] p-3.5 space-y-2">
 				<div className="flex items-center justify-between">
-					<span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">Заметки куратора</span>
+					<span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+						Заметки куратора
+					</span>
 					<button
 						type="button"
 						onClick={onSaveNotes}
@@ -45,7 +54,9 @@ export const LeadMobileSheetStagesAndNotes: React.FC<LeadMobileSheetStagesAndNot
 			</div>
 
 			<div className="rounded-[16px] bg-[var(--paper-soft)] border border-[var(--line)] p-3.5 space-y-2.5">
-				<div className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">Перевести на этап воронки (1 тап)</div>
+				<div className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+					Перевести на этап воронки (1 тап)
+				</div>
 				<div className="grid grid-cols-2 gap-2">
 					{COLUMNS.map((col) => {
 						const isCurrent = isLeadInKanbanColumn(lead.status, col.id);
@@ -62,10 +73,15 @@ export const LeadMobileSheetStagesAndNotes: React.FC<LeadMobileSheetStagesAndNot
 								data-testid={`stage-switch-btn-${col.id}`}
 							>
 								<div className="flex items-center gap-2 truncate">
-									<span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col.color }} />
+									<span
+										className="w-2.5 h-2.5 rounded-full shrink-0"
+										style={{ background: col.color }}
+									/>
 									<span className="truncate">{col.label}</span>
 								</div>
-								{isCurrent && <Check size={15} className="shrink-0 text-[var(--teal)]" />}
+								{isCurrent && (
+									<Check size={15} className="shrink-0 text-[var(--teal)]" />
+								)}
 							</button>
 						);
 					})}

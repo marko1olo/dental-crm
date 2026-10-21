@@ -5,8 +5,8 @@
 
 import type { Lead, LeadStatus } from "../../store/leadsStore";
 
-export type { Lead, LeadStatus };
+export * from "./funnelTypes/attributionTypes";
 export * from "./funnelTypes/funnelStageTypes";
 export * from "./funnelTypes/marketingChannelTypes";
 export * from "./funnelTypes/metricTypes";
-export * from "./funnelTypes/attributionTypes";
+export type { Lead, LeadStatus };

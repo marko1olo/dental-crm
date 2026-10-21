@@ -52,7 +52,9 @@ export function isLeadBookingDisabled(isBooking: boolean): boolean {
 	return isBooking;
 }
 
-export async function bookingFailureMessage(response: Response): Promise<string> {
+export async function bookingFailureMessage(
+	response: Response,
+): Promise<string> {
 	let payload: { error?: unknown; message?: unknown } = {};
 	try {
 		payload = (await response.json()) as typeof payload;

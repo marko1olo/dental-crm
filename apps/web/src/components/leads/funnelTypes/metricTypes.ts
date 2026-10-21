@@ -2,8 +2,8 @@
  * DENTE Dental CRM — Leads Funnel Metric Types
  */
 
-import type { CanonicalMarketingChannelKey } from "./marketingChannelTypes";
 import type { FunnelTimePeriod, LeadFunnelStageKey } from "./funnelStageTypes";
+import type { CanonicalMarketingChannelKey } from "./marketingChannelTypes";
 
 export interface FunnelStageMetric {
 	readonly key: LeadFunnelStageKey;

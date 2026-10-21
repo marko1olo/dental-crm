@@ -10,28 +10,28 @@
  */
 
 import assert from "node:assert/strict";
-import test, { describe, it, beforeEach, afterEach } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import {
+	LEAD_STATUS_VALUES,
 	type Lead,
 	type LeadStatus,
-	LEAD_STATUS_VALUES,
 	useLeadsStore,
 } from "../../../store/leadsStore";
 import {
+	detectLeadStage,
+	type FunnelLead,
+	filterLeadsByPeriod,
+} from "../leadsFunnelEngine";
+import {
+	bookingFailureMessage,
 	COLUMNS,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
-	bookingFailureMessage,
 	isLeadBookingDisabled,
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
 } from "../leadsKanbanTypes";
-import {
-	type FunnelLead,
-	detectLeadStage,
-	filterLeadsByPeriod,
-} from "../leadsFunnelEngine";
 
 describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verification", () => {
 	describe("1. SSOT Schema & Types Parity", () => {
@@ -51,7 +51,12 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 		it("Kanban COLUMNS IDs exactly match canonical funnel LeadStatus values", () => {
 			const columnIds = COLUMNS.map((c) => c.id);
 			assert.strictEqual(columnIds.length, 4);
-			for (const status of ["new", "consult_booked", "showed_up", "trash"] as const) {
+			for (const status of [
+				"new",
+				"consult_booked",
+				"showed_up",
+				"trash",
+			] as const) {
 				assert.ok(
 					columnIds.includes(status),
 					`Kanban COLUMNS must include status "${status}"`,
@@ -136,7 +141,10 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 		});
 
 		it("updateLeadDetails calls real PATCH /api/leads/:id with partial payload", async () => {
-			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			globalThis.fetch = (async (
+				input: RequestInfo | URL,
+				init?: RequestInit,
+			) => {
 				const url = input.toString();
 				const method = init?.method ?? "GET";
 				const body = init?.body ? JSON.parse(init.body.toString()) : undefined;
@@ -163,8 +171,8 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 
 			assert.strictEqual(fetchCalls.length, 1);
 			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123$/);
-			assert.strictEqual(fetchCalls[0]!.method, "PATCH");
-			assert.deepStrictEqual(fetchCalls[0]!.body, {
+			assert.strictEqual(fetchCalls[0]?.method, "PATCH");
+			assert.deepStrictEqual(fetchCalls[0]?.body, {
 				name: "Петр Васильев (Обновлен)",
 				status: "contacted",
 				expectedRevenue: "15000",
@@ -179,7 +187,10 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 		});
 
 		it("convertLeadToAppointment calls real POST /api/leads/:id/convert and updates store status to consult_booked", async () => {
-			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			globalThis.fetch = (async (
+				input: RequestInfo | URL,
+				init?: RequestInit,
+			) => {
 				const url = input.toString();
 				const method = init?.method ?? "GET";
 				const body = init?.body ? JSON.parse(init.body.toString()) : undefined;
@@ -199,19 +210,18 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 				);
 			}) as typeof fetch;
 
-			const result = await useLeadsStore.getState().convertLeadToAppointment(
-				"lead-123",
-				{
+			const result = await useLeadsStore
+				.getState()
+				.convertLeadToAppointment("lead-123", {
 					appointmentStart: "2026-09-26T10:00:00.000Z",
 					appointmentEnd: "2026-09-26T10:30:00.000Z",
 					chairId: FALLBACK_DEFAULT_CHAIR.id,
 					doctorId: FALLBACK_SOLO_DOCTOR.id,
-				},
-			);
+				});
 
 			assert.strictEqual(fetchCalls.length, 1);
 			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123\/convert$/);
-			assert.strictEqual(fetchCalls[0]!.method, "POST");
+			assert.strictEqual(fetchCalls[0]?.method, "POST");
 			assert.ok(result.patient);
 			assert.ok(result.appointment);
 
@@ -223,7 +233,10 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 		});
 
 		it("updateLeadStatus calls real PATCH /api/leads/:id/status and handles rollback on network failure", async () => {
-			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			globalThis.fetch = (async (
+				input: RequestInfo | URL,
+				init?: RequestInit,
+			) => {
 				const url = input.toString();
 				const method = init?.method ?? "GET";
 				fetchCalls.push({ url, method });
@@ -245,7 +258,7 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 
 			assert.strictEqual(fetchCalls.length, 1);
 			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123\/status$/);
-			assert.strictEqual(fetchCalls[0]!.method, "PATCH");
+			assert.strictEqual(fetchCalls[0]?.method, "PATCH");
 
 			// Rolled back to "new"
 			const leadInStore = useLeadsStore
@@ -258,8 +271,10 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 	describe("3. Doctor Autonomy & <= 2 Clicks Lead Conversion (Mandate 8e & 8n)", () => {
 		it("Conversion requires <= 2 user actions: opening dialog (1) and submitting with defaults (2)", () => {
 			// Zero configured staff and chairs
-			const unconfiguredStaff: Parameters<typeof resolveLeadBookingStaff>[0] = [];
-			const unconfiguredChairs: Parameters<typeof resolveLeadBookingChairs>[0] = [];
+			const unconfiguredStaff: Parameters<typeof resolveLeadBookingStaff>[0] =
+				[];
+			const unconfiguredChairs: Parameters<typeof resolveLeadBookingChairs>[0] =
+				[];
 
 			// 1. System resolves defaults automatically without forcing operator to configure chairs/assistants
 			const effectiveDoctors = resolveLeadBookingStaff(unconfiguredStaff);
@@ -272,18 +287,27 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 
 			// 2. Submit button is never blocked by lack of configured staff/chairs
 			const disabledWhenIdle = isLeadBookingDisabled(false);
-			assert.strictEqual(disabledWhenIdle, false, "Submit must NOT be disabled");
+			assert.strictEqual(
+				disabledWhenIdle,
+				false,
+				"Submit must NOT be disabled",
+			);
 
 			// 3. Submit button is disabled only during active in-flight request
 			const disabledWhenBooking = isLeadBookingDisabled(true);
-			assert.strictEqual(disabledWhenBooking, true, "Submit must be disabled while booking");
+			assert.strictEqual(
+				disabledWhenBooking,
+				true,
+				"Submit must be disabled while booking",
+			);
 		});
 
 		it("bookingFailureMessage extracts server Russian message and formats error codes", async () => {
 			const res409 = new Response(
 				JSON.stringify({
 					error: "LeadAlreadyConverted",
-					message: "Лид уже был сконвертирован в запись другим администратором.",
+					message:
+						"Лид уже был сконвертирован в запись другим администратором.",
 				}),
 				{ status: 409 },
 			);
@@ -293,10 +317,9 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 				"Лид уже был сконвертирован в запись другим администратором.",
 			);
 
-			const res404 = new Response(
-				JSON.stringify({ error: "Lead not found" }),
-				{ status: 404 },
-			);
+			const res404 = new Response(JSON.stringify({ error: "Lead not found" }), {
+				status: 404,
+			});
 			const msg404 = await bookingFailureMessage(res404);
 			assert.match(msg404, /Обращение уже удалено или записано кем-то другим/);
 

@@ -17,6 +17,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	type BookableChair,
+	type BookableDoctor,
 	DEFAULT_LEAD_VISIT_MINUTES,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
@@ -24,8 +26,6 @@ import {
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
-	type BookableChair,
-	type BookableDoctor,
 } from "../leadsKanbanTypes.js";
 
 describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandates 8e, 8n, 8k)", () => {
@@ -137,8 +137,12 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			];
 
 			for (const state of unconfiguredStates) {
-				const effectiveStaff = resolveLeadBookingStaff(state.staffCount === 0 ? [] : [FALLBACK_SOLO_DOCTOR]);
-				const effectiveChairs = resolveLeadBookingChairs(state.chairCount === 0 ? [] : [FALLBACK_DEFAULT_CHAIR]);
+				const effectiveStaff = resolveLeadBookingStaff(
+					state.staffCount === 0 ? [] : [FALLBACK_SOLO_DOCTOR],
+				);
+				const effectiveChairs = resolveLeadBookingChairs(
+					state.chairCount === 0 ? [] : [FALLBACK_DEFAULT_CHAIR],
+				);
 				const effectiveMins = resolveLeadVisitMinutes(state.visitMinutes);
 				const disabled = isLeadBookingDisabled(state.isBooking);
 
@@ -163,8 +167,10 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			const selectedDoctorId = "";
 			const selectedChairId = "";
 
-			const finalDoctorId = selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
-			const finalChairId = selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
+			const finalDoctorId =
+				selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
+			const finalChairId =
+				selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
 			assert.equal(finalDoctorId, "default-doctor");
 			assert.equal(finalChairId, "default-chair");
@@ -172,7 +178,9 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 
 			const appointmentDate = "2026-09-07";
 			const appointmentTime = "14:00";
-			const startDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
+			const startDateTime = new Date(
+				`${appointmentDate}T${appointmentTime}:00`,
+			);
 			const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
 
 			assert.equal(endDateTime.getTime() - startDateTime.getTime(), 30 * 60000);

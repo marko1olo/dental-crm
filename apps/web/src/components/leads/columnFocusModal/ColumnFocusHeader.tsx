@@ -1,11 +1,8 @@
 /**
  * DENTE Dental CRM — Column Focus Workspace Header (Layer 1)
- *
- * Mandate 8n (Clinical Ergonomics, Scale Sovereignty & Solo Doctor Autonomy)
- * Top header containing stage identity, clinical telemetry metrics, view toggles, and dismiss button.
+ * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import {
 	AlertTriangle,
 	Clock,
@@ -15,6 +12,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import type React from "react";
 import type { ColumnFocusHeaderProps } from "./types";
 
 export const ColumnFocusHeader: React.FC<ColumnFocusHeaderProps> = ({
@@ -46,9 +44,11 @@ export const ColumnFocusHeader: React.FC<ColumnFocusHeaderProps> = ({
 				</div>
 			</div>
 
-			{/* Clinical Telemetry / Metrics */}
 			<div className="expanded-focus-metrics-cluster">
-				<div className="expanded-focus-metric-pill" title="Всего лидов на этапе">
+				<div
+					className="expanded-focus-metric-pill"
+					title="Всего лидов на этапе"
+				>
 					<Users size={12} className="text-[var(--muted)]" />
 					<span>
 						Лидов: <strong>{metrics.totalCount}</strong>
@@ -85,7 +85,6 @@ export const ColumnFocusHeader: React.FC<ColumnFocusHeaderProps> = ({
 				)}
 			</div>
 
-			{/* View Toggle & Close */}
 			<div className="expanded-focus-header-actions">
 				<div className="leads-viewmode-segmented dente-segmented-bar">
 					<button

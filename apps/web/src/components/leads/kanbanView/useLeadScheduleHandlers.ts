@@ -4,8 +4,8 @@
  */
 
 import { dateInputValuePlusDays } from "../../../AppHelpers";
-import { showToast } from "../../GlobalToast";
 import type { Lead } from "../../../store/leadsStore";
+import { showToast } from "../../GlobalToast";
 import {
 	type BookableChair,
 	type BookableDoctor,
@@ -34,22 +34,34 @@ interface ScheduleHandlersOptions {
 
 export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 	const handleQuickSchedule = async (leadId: string) => {
-		const targetDate = opts.appointmentDate || dateInputValuePlusDays(1, opts.clinicTimeZone);
-		const startDateTime = new Date(`${targetDate}T${opts.appointmentTime || "10:00"}:00`);
+		const targetDate =
+			opts.appointmentDate || dateInputValuePlusDays(1, opts.clinicTimeZone);
+		const startDateTime = new Date(
+			`${targetDate}T${opts.appointmentTime || "10:00"}:00`,
+		);
 		const effectiveVisitMins = resolveLeadVisitMinutes(opts.visitMinutes);
-		const endDateTime = new Date(startDateTime.getTime() + effectiveVisitMins * 60000);
+		const endDateTime = new Date(
+			startDateTime.getTime() + effectiveVisitMins * 60000,
+		);
 
 		const effectiveStaff = resolveLeadBookingStaff(opts.staff);
 		const effectiveChairs = resolveLeadBookingChairs(opts.chairs);
-		const doctorIdToBook = opts.selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
-		const chairIdToBook = opts.selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
+		const doctorIdToBook =
+			opts.selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
+		const chairIdToBook =
+			opts.selectedChairId ||
+			effectiveChairs[0]?.id ||
+			FALLBACK_DEFAULT_CHAIR.id;
 
 		const targetLead = opts.leads.find((l) => l.id === leadId);
-		const quickReason = targetLead && Array.isArray(targetLead.clinicalTags) && targetLead.clinicalTags.length > 0
-			? `Первичная консультация: ${targetLead.clinicalTags.join(", ")}`
-			: targetLead?.notes
-				? `Первичная консультация: ${targetLead.notes.slice(0, 100)}`
-				: "Первичная консультация";
+		const quickReason =
+			targetLead &&
+			Array.isArray(targetLead.clinicalTags) &&
+			targetLead.clinicalTags.length > 0
+				? `Первичная консультация: ${targetLead.clinicalTags.join(", ")}`
+				: targetLead?.notes
+					? `Первичная консультация: ${targetLead.notes.slice(0, 100)}`
+					: "Первичная консультация";
 
 		try {
 			const res = await opts.convertLeadToAppointment(leadId, {
@@ -66,10 +78,17 @@ export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 			showToast(successMsg, "success");
 			opts.fetchLeads();
 
-			const createdPatient = res?.patient as { id?: string; fullName?: string; phone?: string } | undefined;
+			const createdPatient = res?.patient as
+				| { id?: string; fullName?: string; phone?: string }
+				| undefined;
 			opts.navigateToScheduleWithBooking({
-				patientId: createdPatient?.id || targetLead?.existingPatient?.id || null,
-				patientName: createdPatient?.fullName || targetLead?.existingPatient?.fullName || targetLead?.name || null,
+				patientId:
+					createdPatient?.id || targetLead?.existingPatient?.id || null,
+				patientName:
+					createdPatient?.fullName ||
+					targetLead?.existingPatient?.fullName ||
+					targetLead?.name ||
+					null,
 				patientPhone: createdPatient?.phone || targetLead?.phone || null,
 				dateKey: targetDate,
 				reason: quickReason,
@@ -77,7 +96,10 @@ export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 				chairId: chairIdToBook || null,
 			});
 		} catch (err: unknown) {
-			const text = err instanceof Error && err.message.trim() ? err.message : "Не удалось записать пациента на приём.";
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Не удалось записать пациента на приём.";
 			showToast(text, "error");
 		}
 	};

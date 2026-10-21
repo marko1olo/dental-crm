@@ -55,7 +55,15 @@
 	color: var(--teal);
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-mobile-action-btn--whatsapp {
+:is(
+		[data-theme="dark"],
+		[data-theme="night"],
+		[data-theme="ocean"],
+		[data-theme="emerald"],
+		[data-theme="cyber_xray"],
+		html.dark
+	)
+	.leads-mobile-action-btn--whatsapp {
 	color: #25d366;
 	background: rgba(37, 211, 102, 0.18);
 }

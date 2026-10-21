@@ -1,12 +1,11 @@
-import React from "react";
+import { FunnelBudgetAdjuster } from "../FunnelBudgetAdjuster";
+import { FunnelChannelsTableSection } from "../FunnelChannelsTableSection";
 import type {
 	CanonicalMarketingChannelKey,
 	ChannelFunnelMetrics,
 	ChannelSpendMap,
 	FunnelSummaryMetrics,
 } from "./types";
-import { FunnelBudgetAdjuster } from "../FunnelBudgetAdjuster";
-import { FunnelChannelsTableSection } from "../FunnelChannelsTableSection";
 
 export interface FunnelBudgetAdjusterPanelProps {
 	readonly isOpen: boolean;

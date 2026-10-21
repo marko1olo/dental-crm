@@ -3,13 +3,15 @@
  * Mandate 8s (Modular Architecture & Anti-Bloat), Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Filter, Plus, Search, X } from "lucide-react";
-import type { LeadsKanbanHeaderToolbarProps } from "./types";
-import { LeadsKanbanToolbarLeft } from "./LeadsKanbanToolbarLeft";
+import type React from "react";
 import { LeadsKanbanMoreMenu } from "./LeadsKanbanMoreMenu";
+import { LeadsKanbanToolbarLeft } from "./LeadsKanbanToolbarLeft";
+import type { LeadsKanbanHeaderToolbarProps } from "./types";
 
-export const LeadsKanbanHeaderToolbar: React.FC<LeadsKanbanHeaderToolbarProps> = ({
+export const LeadsKanbanHeaderToolbar: React.FC<
+	LeadsKanbanHeaderToolbarProps
+> = ({
 	searchQuery,
 	setSearchQuery,
 	sourceFilter,
@@ -68,7 +70,9 @@ export const LeadsKanbanHeaderToolbar: React.FC<LeadsKanbanHeaderToolbarProps> =
 					>
 						<option value="">Все каналы</option>
 						{uniqueSources.map((s) => (
-							<option key={s} value={s}>{s}</option>
+							<option key={s} value={s}>
+								{s}
+							</option>
 						))}
 					</select>
 				</div>

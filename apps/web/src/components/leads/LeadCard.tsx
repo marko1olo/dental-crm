@@ -3,18 +3,18 @@
  * Mandate 8s (SSOT Componentization), Mandate 8n, Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { motion } from "framer-motion";
-import type { Lead } from "../../store/leadsStore";
+import type React from "react";
 import { useAppStore } from "../../store/appStore";
+import type { Lead } from "../../store/leadsStore";
 import { usePatientStore } from "../../store/patientStore";
-import { getLeadSlaStatus } from "./leadsKanbanSla";
-import { LeadCardHeader } from "./card/LeadCardHeader";
+import { LeadCardActionButtons } from "./card/LeadCardActionButtons";
 import { LeadCardBadges } from "./card/LeadCardBadges";
 import { LeadCardContactBar } from "./card/LeadCardContactBar";
+import { LeadCardHeader } from "./card/LeadCardHeader";
 import { LeadCardStageSelect } from "./card/LeadCardStageSelect";
-import { LeadCardActionButtons } from "./card/LeadCardActionButtons";
 import { formatLeadTimestamp } from "./card/leadCardFormatters";
+import { getLeadSlaStatus } from "./leadsKanbanSla";
 
 export interface LeadCardProps {
 	lead: Lead;
@@ -85,16 +85,24 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				padding: "12px 14px",
 				borderRadius: "10px",
 				cursor: "grab",
-				border: sla.isBreached ? "1px solid var(--rust-soft, rgba(239, 68, 68, 0.4))" : `1px solid ${borderColor}`,
-				borderLeft: sla.isBreached ? "4px solid var(--rust, #ef4444)" : `1px solid ${borderColor}`,
-				boxShadow: sla.isBreached ? "0 2px 12px rgba(239, 68, 68, 0.12)" : "0 2px 8px rgba(0,0,0,0.05)",
+				border: sla.isBreached
+					? "1px solid var(--rust-soft, rgba(239, 68, 68, 0.4))"
+					: `1px solid ${borderColor}`,
+				borderLeft: sla.isBreached
+					? "4px solid var(--rust, #ef4444)"
+					: `1px solid ${borderColor}`,
+				boxShadow: sla.isBreached
+					? "0 2px 12px rgba(239, 68, 68, 0.12)"
+					: "0 2px 8px rgba(0,0,0,0.05)",
 				opacity: isDragged ? 0.5 : 1,
 				transform: isDragged ? "scale(0.98)" : "scale(1)",
 				transition: "box-shadow 0.2s, border 0.2s",
 			}}
 			whileHover={{
 				y: -2,
-				boxShadow: sla.isBreached ? "0 8px 18px rgba(239, 68, 68, 0.18)" : "0 8px 16px rgba(0,0,0,0.08)",
+				boxShadow: sla.isBreached
+					? "0 8px 18px rgba(239, 68, 68, 0.18)"
+					: "0 8px 16px rgba(0,0,0,0.08)",
 			}}
 		>
 			<LeadCardHeader lead={lead} onEdit={onEdit} />
@@ -106,7 +114,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				formatTimestamp={formatLeadTimestamp}
 			/>
 			<LeadCardContactBar lead={lead} />
-			<LeadCardStageSelect lead={lead} borderColor={borderColor} onStatusChange={onStatusChange} />
+			<LeadCardStageSelect
+				lead={lead}
+				borderColor={borderColor}
+				onStatusChange={onStatusChange}
+			/>
 			<LeadCardActionButtons
 				lead={lead}
 				creatingPatientLeadId={creatingPatientLeadId}

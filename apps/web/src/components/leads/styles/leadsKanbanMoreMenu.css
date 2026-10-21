@@ -4,11 +4,11 @@
 }
 
 .leads-more-menu-btn {
-	width: 36px !important;
-	height: 36px !important;
-	min-width: 36px !important;
-	min-height: 36px !important;
-	border-radius: 12px !important;
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 12px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);

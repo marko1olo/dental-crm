@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Edit2 } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadCardHeaderProps {
@@ -12,7 +12,10 @@ interface LeadCardHeaderProps {
 	onEdit: (lead: Lead) => void;
 }
 
-export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, onEdit }) => {
+export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({
+	lead,
+	onEdit,
+}) => {
 	return (
 		<div
 			style={{
@@ -38,7 +41,9 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, onEdit }) 
 			>
 				{lead.name}
 			</strong>
-			<div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+			<div
+				style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}
+			>
 				<button
 					type="button"
 					onClick={(e) => {

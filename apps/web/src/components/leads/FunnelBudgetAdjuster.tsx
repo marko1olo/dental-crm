@@ -1,6 +1,12 @@
+/**
+ * DENTE Dental CRM — Funnel Budget Adjuster Component
+ * Mandate 8b (<= 120 lines)
+ */
+
 import { AnimatePresence, motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
-import React from "react";
+import type React from "react";
+import { FunnelBudgetChannelInput } from "./FunnelBudgetChannelInput";
 import {
 	type CanonicalMarketingChannelKey,
 	type ChannelSpendMap,
@@ -48,16 +54,13 @@ export const FunnelBudgetAdjuster: React.FC<FunnelBudgetAdjusterProps> = ({
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
 							<span
-								style={{
-									fontSize: 13,
-									fontWeight: 600,
-									color: "var(--ink)",
-								}}
+								style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
 							>
 								Маркетинговые расходы за период (₽)
 							</span>
 							<span style={{ fontSize: 11, color: "var(--muted)" }}>
-								— введите реальные затраты клиники для точного расчета CAC и ROMI
+								— введите реальные затраты клиники для точного расчета CAC и
+								ROMI
 							</span>
 						</div>
 						<button
@@ -85,80 +88,14 @@ export const FunnelBudgetAdjuster: React.FC<FunnelBudgetAdjusterProps> = ({
 							gap: "10px",
 						}}
 					>
-						{MARKETING_CHANNELS.map((ch) => {
-							const currentVal = customSpends[ch.key] ?? 0;
-							return (
-								<div
-									key={ch.key}
-									style={{
-										background: "var(--paper)",
-										border: "1px solid var(--line)",
-										borderRadius: 8,
-										padding: "8px 10px",
-										display: "flex",
-										flexDirection: "column",
-										gap: 4,
-									}}
-								>
-									<label
-										htmlFor={`budget-input-${ch.key}`}
-										style={{
-											fontSize: 11,
-											fontWeight: 600,
-											color: "var(--muted)",
-											display: "flex",
-											alignItems: "center",
-											gap: 4,
-										}}
-									>
-										<span
-											style={{
-												width: 8,
-												height: 8,
-												borderRadius: "50%",
-												background: ch.color,
-												display: "inline-block",
-											}}
-										/>
-										{ch.label}
-									</label>
-									<div style={{ position: "relative" }}>
-										<input
-											id={`budget-input-${ch.key}`}
-											type="text"
-											value={currentVal.toLocaleString("ru-RU")}
-											onChange={(e) =>
-												onBudgetChange(ch.key, e.target.value)
-											}
-											style={{
-												width: "100%",
-												padding: "4px 24px 4px 8px",
-												borderRadius: 6,
-												border: "1px solid var(--line)",
-												background: "var(--paper-soft)",
-												color: "var(--ink)",
-												fontSize: 13,
-												fontWeight: 600,
-												boxSizing: "border-box",
-											}}
-										/>
-										<span
-											style={{
-												position: "absolute",
-												right: 8,
-												top: "50%",
-												transform: "translateY(-50%)",
-												fontSize: 12,
-												color: "var(--muted)",
-												pointerEvents: "none",
-											}}
-										>
-											₽
-										</span>
-									</div>
-								</div>
-							);
-						})}
+						{MARKETING_CHANNELS.map((ch) => (
+							<FunnelBudgetChannelInput
+								key={ch.key}
+								ch={ch}
+								currentVal={customSpends[ch.key] ?? 0}
+								onBudgetChange={onBudgetChange}
+							/>
+						))}
 					</div>
 				</motion.div>
 			)}

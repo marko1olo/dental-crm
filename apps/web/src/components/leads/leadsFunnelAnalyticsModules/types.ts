@@ -6,9 +6,9 @@ import type {
 	FunnelAnalysisResult,
 	FunnelLead,
 	FunnelStageMetric,
-	MarketingMetricsSummary,
 	FunnelTimePeriod,
 	LeadFunnelStageKey,
+	MarketingMetricsSummary,
 } from "../leadsFunnelEngine";
 import { FUNNEL_PERIOD_OPTIONS } from "../leadsFunnelEngine";
 
@@ -24,9 +24,9 @@ export {
 	type FunnelAnalysisResult,
 	type FunnelLead,
 	type FunnelStageMetric,
-	type MarketingMetricsSummary,
 	type FunnelTimePeriod,
 	type LeadFunnelStageKey,
+	type MarketingMetricsSummary,
 };
 
 export interface LeadsFunnelAnalyticsModalProps {
@@ -110,4 +110,3 @@ export const FUNNEL_MODAL_BODY_STYLE: React.CSSProperties = {
 	flexDirection: "column",
 	gap: "24px",
 };
-

@@ -1,14 +1,14 @@
 /**
  * DENTE Dental CRM — Lead Card Badges & Indicators
- * SLA Urgency, Existing Patient, Drop Reason, Source, Revenue, Tags, Notes
+ * SLA Urgency, Existing Patient, Drop Reason, Tags, Notes
+ * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
-import { Clock, FileText, Globe, Tag, UserCheck } from "lucide-react";
+import { Clock, FileText, Tag, UserCheck } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import type { LeadSlaInfo } from "../leadsKanbanSla";
-import { CHANNEL_BADGE_COLORS, CHANNEL_DISPLAY_NAMES } from "../../telephony/telephonyAttribution";
-import { normalizeMarketingChannel } from "../leadsFunnelTypes";
+import { LeadCardSourceRevenue } from "./LeadCardSourceRevenue";
 
 interface LeadCardBadgesProps {
 	lead: Lead;
@@ -19,25 +19,29 @@ interface LeadCardBadgesProps {
 }
 
 export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
-	lead, sla, dropReasonMatch, onOpenPatient, formatTimestamp,
+	lead,
+	sla,
+	dropReasonMatch,
+	onOpenPatient,
+	formatTimestamp,
 }) => {
-	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
-	const channelBadge = channelKey && CHANNEL_BADGE_COLORS[channelKey]
-		? CHANNEL_BADGE_COLORS[channelKey]
-		: { bg: "var(--teal-soft)", color: "var(--teal-dark, var(--teal))", border: "var(--teal)" };
-	const channelLabel = channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-		? CHANNEL_DISPLAY_NAMES[channelKey]
-		: lead.source;
-
 	return (
 		<>
 			<div className="flex items-center gap-1.5 flex-wrap mb-1.5">
 				<div
 					className={`lead-card-sla-badge ${sla.isBreached ? "lead-sla-breached-pulse" : ""}`}
 					style={{
-						background: sla.badgeBg, color: sla.badgeColor, border: `1px solid ${sla.badgeBorder}`,
-						fontSize: 10.5, fontWeight: 600, padding: "1px 6px", borderRadius: 5,
-						display: "inline-flex", alignItems: "center", gap: 3.5, width: "fit-content",
+						background: sla.badgeBg,
+						color: sla.badgeColor,
+						border: `1px solid ${sla.badgeBorder}`,
+						fontSize: 10.5,
+						fontWeight: 600,
+						padding: "1px 6px",
+						borderRadius: 5,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 3.5,
+						width: "fit-content",
 					}}
 					title={`SLA: ${sla.formattedDuration}`}
 					data-testid={`lead-sla-badge-${lead.id}`}
@@ -46,7 +50,10 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 					<span>{sla.label}</span>
 				</div>
 				{lead.createdAt && (
-					<span className="text-[10.5px] text-[var(--muted)] font-mono flex items-center gap-1 shrink-0" data-testid={`lead-timestamp-${lead.id}`}>
+					<span
+						className="text-[10.5px] text-[var(--muted)] font-mono flex items-center gap-1 shrink-0"
+						data-testid={`lead-timestamp-${lead.id}`}
+					>
 						<span>{formatTimestamp(lead.createdAt)}</span>
 					</span>
 				)}
@@ -81,9 +88,18 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 			{lead.status === "trash" && dropReasonMatch && (
 				<div
 					style={{
-						display: "inline-flex", alignItems: "center", gap: 4, background: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
-						color: "var(--rust, #ef4444)", border: "1px solid var(--rust-soft, rgba(239, 68, 68, 0.35))",
-						borderRadius: 5, padding: "1px 6px", fontSize: 10.5, fontWeight: 600, marginBottom: 6, marginLeft: 4,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 4,
+						background: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
+						color: "var(--rust, #ef4444)",
+						border: "1px solid var(--rust-soft, rgba(239, 68, 68, 0.35))",
+						borderRadius: 5,
+						padding: "1px 6px",
+						fontSize: 10.5,
+						fontWeight: 600,
+						marginBottom: 6,
+						marginLeft: 4,
 					}}
 					title={`Причина срыва: ${dropReasonMatch}`}
 					data-testid={`lead-drop-reason-badge-${lead.id}`}
@@ -93,7 +109,9 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 			)}
 
 			{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
-				<div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+				<div
+					style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}
+				>
 					{lead.clinicalTags.map((tag) => (
 						<span
 							key={tag}
@@ -119,23 +137,40 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 			)}
 
 			{lead.notes && (
-				<div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--muted)", background: "var(--paper-soft)", padding: "3px 7px", borderRadius: 6, marginBottom: 6, minWidth: 0 }} title={`Примечание: ${lead.notes}`}>
-					<FileText size={11} className="shrink-0" style={{ color: "var(--teal)" }} />
-					<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{lead.notes}</span>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: 5,
+						fontSize: 11.5,
+						color: "var(--muted)",
+						background: "var(--paper-soft)",
+						padding: "3px 7px",
+						borderRadius: 6,
+						marginBottom: 6,
+						minWidth: 0,
+					}}
+					title={`Примечание: ${lead.notes}`}
+				>
+					<FileText
+						size={11}
+						className="shrink-0"
+						style={{ color: "var(--teal)" }}
+					/>
+					<span
+						style={{
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+							minWidth: 0,
+						}}
+					>
+						{lead.notes}
+					</span>
 				</div>
 			)}
 
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "4px", marginBottom: "8px", gap: 6 }}>
-				<div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: channelBadge.color, background: channelBadge.bg, border: `1px solid ${channelBadge.border}`, padding: "2px 6px", borderRadius: 4, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={`Источник: ${channelLabel || "Прямое обращение"}`} data-testid={`lead-channel-badge-${lead.id}`}>
-					<Globe size={10} className="shrink-0" />
-					<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{channelLabel || "Прямой звонок"}</span>
-				</div>
-				{lead.expectedRevenue ? (
-					<div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", background: "var(--paper-soft)", padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
-						{Number(lead.expectedRevenue).toLocaleString("ru-RU")} ₽
-					</div>
-				) : null}
-			</div>
+			<LeadCardSourceRevenue lead={lead} />
 		</>
 	);
 };

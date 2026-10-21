@@ -41,9 +41,14 @@ export function sortLeads(
 				return tA - tB;
 			});
 		case "revenue_desc":
-			return cloned.sort((a, b) => (Number(b.expectedRevenue) || 0) - (Number(a.expectedRevenue) || 0));
+			return cloned.sort(
+				(a, b) =>
+					(Number(b.expectedRevenue) || 0) - (Number(a.expectedRevenue) || 0),
+			);
 		case "name_asc":
-			return cloned.sort((a, b) => (a.name || "").localeCompare(b.name || "", "ru"));
+			return cloned.sort((a, b) =>
+				(a.name || "").localeCompare(b.name || "", "ru"),
+			);
 		default:
 			return cloned;
 	}
@@ -59,22 +64,39 @@ export function formatAudioDuration(seconds?: number | null): string {
 export function exportLeadsToCsv(leads: Lead[], columnTitle?: string): string {
 	const BOM = "\uFEFF";
 	const header = [
-		"ID", "Имя пациента", "Телефон", "Источник рекламы", "Статус",
-		"Выручка (₽)", "Время ожидания (SLA)", "Примечания / Жалобы", "Клинические теги", "Запись звонка (URL)",
+		"ID",
+		"Имя пациента",
+		"Телефон",
+		"Источник рекламы",
+		"Статус",
+		"Выручка (₽)",
+		"Время ожидания (SLA)",
+		"Примечания / Жалобы",
+		"Клинические теги",
+		"Запись звонка (URL)",
 	].join(";");
 
 	const rows = leads.map((lead) => {
 		const sla = getLeadSlaStatus(lead);
-		const tags = Array.isArray(lead.clinicalTags) ? lead.clinicalTags.join(", ") : "";
+		const tags = Array.isArray(lead.clinicalTags)
+			? lead.clinicalTags.join(", ")
+			: "";
 		const sanitize = (val: string | null | undefined) =>
 			`"${(val || "").replace(/"/g, '""').replace(/[\r\n]+/g, " ")}"`;
 		return [
-			sanitize(lead.id), sanitize(lead.name), sanitize(lead.phone), sanitize(lead.source),
-			sanitize(lead.status), lead.expectedRevenue ? Number(lead.expectedRevenue) : 0,
-			sanitize(sla.label), sanitize(lead.notes), sanitize(tags), sanitize(lead.audioRecordUrl),
+			sanitize(lead.id),
+			sanitize(lead.name),
+			sanitize(lead.phone),
+			sanitize(lead.source),
+			sanitize(lead.status),
+			lead.expectedRevenue ? Number(lead.expectedRevenue) : 0,
+			sanitize(sla.label),
+			sanitize(lead.notes),
+			sanitize(tags),
+			sanitize(lead.audioRecordUrl),
 		].join(";");
 	});
 
 	const meta = columnTitle ? `# Выгрузка этапа: ${columnTitle}\n` : "";
-	return BOM + meta + header + "\n" + rows.join("\n");
+	return `${BOM + meta + header}\n${rows.join("\n")}`;
 }

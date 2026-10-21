@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { ArrowRight, Check } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { NEXT_STAGE_MAP } from "../leadsKanbanConstants";
 
@@ -74,12 +74,15 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
-						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
+						const nextStatus = NEXT_STAGE_MAP[lead.status]?.status;
+						if (nextStatus) {
+							onStatusChange(e, lead.id, nextStatus);
+						}
 					}}
 					className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] px-0 rounded-lg text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--teal-dark, var(--teal))] border border-[var(--line)] inline-flex items-center justify-center cursor-pointer transition-all hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-[0.95] shrink-0"
-					title={`Перевести на этап: ${NEXT_STAGE_MAP[lead.status]!.label}`}
+					title={`Перевести на этап: ${NEXT_STAGE_MAP[lead.status]?.label}`}
 					data-testid={`advance-stage-btn-${lead.id}`}
-					aria-label={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
+					aria-label={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]?.label}`}
 				>
 					<ArrowRight size={13} className="shrink-0" />
 				</button>

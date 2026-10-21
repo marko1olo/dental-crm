@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { type ColumnConfig, isLeadInKanbanColumn } from "../leadsKanbanTypes";
 import { LeadKanbanColumn } from "./LeadKanbanColumn";
@@ -51,9 +51,14 @@ export const LeadsKanbanBoardGrid: React.FC<LeadsKanbanBoardGridProps> = ({
 	onOpenPatientCard,
 }) => {
 	return (
-		<div className="leads-kanban-board leads-kanban-board--funnel" data-testid="leads-kanban-board">
+		<div
+			className="leads-kanban-board leads-kanban-board--funnel"
+			data-testid="leads-kanban-board"
+		>
 			{activeColumns.map((col) => {
-				const columnLeads = filteredLeads.filter((l) => isLeadInKanbanColumn(l.status, col.id));
+				const columnLeads = filteredLeads.filter((l) =>
+					isLeadInKanbanColumn(l.status, col.id),
+				);
 				return (
 					<LeadKanbanColumn
 						key={col.id}

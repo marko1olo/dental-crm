@@ -1,9 +1,7 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
-	type LeadsFunnelAnalyticsModalProps,
 	FUNNEL_MODAL_BODY_STYLE,
 	FUNNEL_MODAL_CONTAINER_STYLE,
 	FUNNEL_MODAL_OVERLAY_STYLE,
@@ -13,17 +11,20 @@ import {
 	FunnelModalHeaderBar,
 	FunnelSourcesBreakdownTable,
 	FunnelStagesOverviewSection,
+	type LeadsFunnelAnalyticsModalProps,
 	useLeadsFunnelAnalyticsController,
 } from "./leadsFunnelAnalyticsModules";
 
-export type { LeadsFunnelAnalyticsModalProps };
 export * from "./leadsFunnelAnalyticsModules";
+export type { LeadsFunnelAnalyticsModalProps };
 
 /**
  * Модальное окно сквозной воронки лидов CRM ДЕНТЕ, юнит-экономики CAC/ROMI
  * и конверсии планов на консультации врача у кресла.
  */
-export function LeadsFunnelAnalyticsModal(props: LeadsFunnelAnalyticsModalProps) {
+export function LeadsFunnelAnalyticsModal(
+	props: LeadsFunnelAnalyticsModalProps,
+) {
 	const ctrl = useLeadsFunnelAnalyticsController({
 		...props,
 		attributionEndpoint: "/api/marketing/attribution",

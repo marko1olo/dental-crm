@@ -3,8 +3,8 @@
  * Mandate 8n (Anti-Landfill & Solo Doctor Autonomy), Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Calendar, UserCheck, UserPlus, Zap } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadCardActionButtonsProps {
@@ -43,7 +43,13 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 						title="Выбрать слот в расписании и записать пациента"
 					>
 						<Calendar size={13} className="shrink-0" />
-						<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+						<span
+							style={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
 							Записать на приём
 						</span>
 					</button>
@@ -64,7 +70,6 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 					)}
 				</div>
 			)}
-
 
 			{/* Действие 2: Создать амбулаторную карту пациента или открыть существующую (Secondary CTA) */}
 			{lead.existingPatient ? (
@@ -92,7 +97,9 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 				>
 					<UserPlus size={13} className="shrink-0 text-[var(--teal)]" />
 					<span className="truncate">
-						{creatingPatientLeadId === lead.id ? "Создаём карту…" : "Создать карту пациента"}
+						{creatingPatientLeadId === lead.id
+							? "Создаём карту…"
+							: "Создать карту пациента"}
 					</span>
 				</button>
 			)}

@@ -4,8 +4,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Calendar, MessageSquare, Phone } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
 
@@ -16,16 +16,19 @@ interface LeadMobileCardActionButtonsProps {
 	onQuickSchedule?: ((id: string) => Promise<void> | void) | undefined;
 }
 
-export const LeadMobileCardActionButtons: React.FC<LeadMobileCardActionButtonsProps> = ({
-	lead, rawPhone, onSchedule, onQuickSchedule,
-}) => {
+export const LeadMobileCardActionButtons: React.FC<
+	LeadMobileCardActionButtonsProps
+> = ({ lead, rawPhone, onSchedule, onQuickSchedule }) => {
 	const handleScheduleClick = () => {
 		if (onQuickSchedule) onQuickSchedule(lead.id);
 		else onSchedule(lead.id);
 	};
 
 	return (
-		<div className="leads-mobile-actions-bar" onClick={(e) => e.stopPropagation()}>
+		<div
+			className="leads-mobile-actions-bar"
+			onClick={(e) => e.stopPropagation()}
+		>
 			{lead.phone ? (
 				<a
 					href={`tel:${rawPhone}`}
@@ -37,7 +40,11 @@ export const LeadMobileCardActionButtons: React.FC<LeadMobileCardActionButtonsPr
 					<span>Звонок</span>
 				</a>
 			) : (
-				<button type="button" disabled className="leads-mobile-action-btn opacity-40 cursor-not-allowed">
+				<button
+					type="button"
+					disabled
+					className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
+				>
 					<Phone size={15} />
 					<span>Звонок</span>
 				</button>
@@ -45,7 +52,10 @@ export const LeadMobileCardActionButtons: React.FC<LeadMobileCardActionButtonsPr
 
 			{lead.phone ? (
 				<a
-					href={formatWhatsAppUrl(lead.phone, `Здравствуйте, ${lead.name}! Вас беспокоит стоматология DENTE.`)}
+					href={formatWhatsAppUrl(
+						lead.phone,
+						`Здравствуйте, ${lead.name}! Вас беспокоит стоматология DENTE.`,
+					)}
 					target="_blank"
 					rel="noopener noreferrer"
 					className="leads-mobile-action-btn leads-mobile-action-btn--whatsapp"
@@ -56,7 +66,11 @@ export const LeadMobileCardActionButtons: React.FC<LeadMobileCardActionButtonsPr
 					<span>Чат</span>
 				</a>
 			) : (
-				<button type="button" disabled className="leads-mobile-action-btn opacity-40 cursor-not-allowed">
+				<button
+					type="button"
+					disabled
+					className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
+				>
 					<MessageSquare size={15} />
 					<span>Чат</span>
 				</button>

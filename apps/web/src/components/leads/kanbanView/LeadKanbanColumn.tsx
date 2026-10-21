@@ -3,8 +3,8 @@
  * Mandate 8s (Modular Architecture & Verbatim Extraction), Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { AnimatePresence } from "framer-motion";
+import type React from "react";
 import { getLeadSlaStatus } from "../leadsKanbanTypes";
 import { LeadKanbanCard } from "./LeadKanbanCard";
 import { LeadKanbanColumnHeader } from "./LeadKanbanColumnHeader";
@@ -28,8 +28,13 @@ export const LeadKanbanColumn: React.FC<LeadKanbanColumnProps> = ({
 	onQuickSchedule,
 	onOpenPatientCard,
 }) => {
-	const columnRevenue = columnLeads.reduce((acc, l) => acc + (Number(l.expectedRevenue) || 0), 0);
-	const breachedLeadsCount = columnLeads.filter((l) => getLeadSlaStatus(l).isBreached).length;
+	const columnRevenue = columnLeads.reduce(
+		(acc, l) => acc + (Number(l.expectedRevenue) || 0),
+		0,
+	);
+	const breachedLeadsCount = columnLeads.filter(
+		(l) => getLeadSlaStatus(l).isBreached,
+	).length;
 
 	return (
 		<section
@@ -69,9 +74,7 @@ export const LeadKanbanColumn: React.FC<LeadKanbanColumnProps> = ({
 				</AnimatePresence>
 
 				{columnLeads.length === 0 && (
-					<div className="leads-kanban-empty-dropzone">
-						Перетащите сюда
-					</div>
+					<div className="leads-kanban-empty-dropzone">Перетащите сюда</div>
 				)}
 			</div>
 		</section>

@@ -4,12 +4,16 @@
  */
 
 import { useState } from "react";
-import { showToast } from "../../GlobalToast";
 import type { Lead } from "../../../store/leadsStore";
+import { showToast } from "../../GlobalToast";
 import { STAGE_DISPLAY_LABELS } from "../leadsKanbanConstants";
 
 export function useLeadDragAndDrop(
-	updateLeadStatus: (leadId: string, nextStatus: Lead["status"], options?: any) => Promise<any>,
+	updateLeadStatus: (
+		leadId: string,
+		nextStatus: Lead["status"],
+		options?: any,
+	) => Promise<any>,
 ) {
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
@@ -26,13 +30,20 @@ export function useLeadDragAndDrop(
 		e.preventDefault();
 		const id = e.dataTransfer?.getData("leadId") || draggedLeadId;
 		if (id) {
-			const options = status === "trash" ? { dropReason: "Отказ / Неактуально" } : undefined;
+			const options =
+				status === "trash" ? { dropReason: "Отказ / Неактуально" } : undefined;
 			void updateLeadStatus(id, status, options)
 				.then(() => {
-					showToast(`Обращение переведено в ${STAGE_DISPLAY_LABELS[status] || status}.`, "success");
+					showToast(
+						`Обращение переведено в ${STAGE_DISPLAY_LABELS[status] || status}.`,
+						"success",
+					);
 				})
 				.catch((err: unknown) => {
-					const text = err instanceof Error && err.message.trim() ? err.message : "Статус обращения не изменён.";
+					const text =
+						err instanceof Error && err.message.trim()
+							? err.message
+							: "Статус обращения не изменён.";
 					showToast(text, "error");
 				});
 		}
@@ -48,9 +59,15 @@ export function useLeadDragAndDrop(
 		e.stopPropagation();
 		try {
 			await updateLeadStatus(leadId, nextStatus, options);
-			showToast(`Статус изменен на ${STAGE_DISPLAY_LABELS[nextStatus] || nextStatus}`, "success");
+			showToast(
+				`Статус изменен на ${STAGE_DISPLAY_LABELS[nextStatus] || nextStatus}`,
+				"success",
+			);
 		} catch (err: unknown) {
-			const text = err instanceof Error && err.message.trim() ? err.message : "Статус обращения не изменён.";
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Статус обращения не изменён.";
 			showToast(text, "error");
 		}
 	};

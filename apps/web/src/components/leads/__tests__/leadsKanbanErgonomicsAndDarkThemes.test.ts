@@ -7,15 +7,23 @@
  * Mandate 8p: Zero Dead-Ends & Zero Bureaucratic Ciphers
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { COLUMNS, CORE_FUNNEL_COLUMNS, FALLBACK_DEFAULT_CHAIR, FALLBACK_SOLO_DOCTOR } from "../leadsKanbanTypes";
-import { normalizeMarketingChannel } from "../leadsFunnelTypes";
-import { CHANNEL_BADGE_COLORS, CHANNEL_DISPLAY_NAMES } from "../../telephony/telephonyAttribution";
-import { LeadsKanbanHeaderToolbar } from "../kanbanView/LeadsKanbanHeaderToolbar";
 import type { Lead } from "../../../store/leadsStore";
+import {
+	CHANNEL_BADGE_COLORS,
+	CHANNEL_DISPLAY_NAMES,
+} from "../../telephony/telephonyAttribution";
+import { LeadsKanbanHeaderToolbar } from "../kanbanView/LeadsKanbanHeaderToolbar";
+import { normalizeMarketingChannel } from "../leadsFunnelTypes";
+import {
+	COLUMNS,
+	CORE_FUNNEL_COLUMNS,
+	FALLBACK_DEFAULT_CHAIR,
+	FALLBACK_SOLO_DOCTOR,
+} from "../leadsKanbanTypes";
 
 describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification", () => {
 	describe("1. Kanban Funnel & Drag-and-Drop / Button-Based Stage Transfer", () => {
@@ -27,7 +35,12 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
-				["Новые обращения", "Записаны на приём", "Дошли до клиники", "Архив / Спам"],
+				[
+					"Новые обращения",
+					"Записаны на приём",
+					"Дошли до клиники",
+					"Архив / Спам",
+				],
 			);
 		});
 
@@ -114,8 +127,14 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			for (const ch of canonicalChannels) {
 				const badge = CHANNEL_BADGE_COLORS[ch];
 				assert.ok(badge, `Missing badge color for channel ${ch}`);
-				assert.ok(badge.bg.startsWith("var(--"), `Channel ${ch} bg must use design token`);
-				assert.ok(badge.border.startsWith("var(--"), `Channel ${ch} border must use design token`);
+				assert.ok(
+					badge.bg.startsWith("var(--"),
+					`Channel ${ch} bg must use design token`,
+				);
+				assert.ok(
+					badge.border.startsWith("var(--"),
+					`Channel ${ch} border must use design token`,
+				);
 				assert.ok(
 					CHANNEL_DISPLAY_NAMES[ch],
 					`Channel ${ch} must have a Cyrillic human-readable display name`,
@@ -130,7 +149,10 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(normalizeMarketingChannel("НаПоправку"), "napopravku");
 			assert.equal(normalizeMarketingChannel("Официальный сайт"), "site_seo");
 			assert.equal(normalizeMarketingChannel("ВКонтакте"), "social_media");
-			assert.equal(normalizeMarketingChannel("Сарафанное радио"), "recommendations");
+			assert.equal(
+				normalizeMarketingChannel("Сарафанное радио"),
+				"recommendations",
+			);
 		});
 	});
 
@@ -168,7 +190,9 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			const startTime = "11:00";
 			const startDateTime = new Date(`${startDate}T${startTime}:00`);
 			const durationMinutes = 30;
-			const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60000);
+			const endDateTime = new Date(
+				startDateTime.getTime() + durationMinutes * 60000,
+			);
 
 			assert.equal(startDateTime.getHours(), 11);
 			assert.equal(startDateTime.getMinutes(), 0);
@@ -179,7 +203,16 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 
 	describe("4. Complete Absence of Bureaucratic Ciphers & Technical Noise", () => {
 		it("Ensures column labels contain zero bureaucratic or technical codes", () => {
-			const forbiddenTokens = ["МКБ", "043/у", "СНИЛС", "ОМС", "ЕГИСЗ", "UUID", "ID:", "CRUD"];
+			const forbiddenTokens = [
+				"МКБ",
+				"043/у",
+				"СНИЛС",
+				"ОМС",
+				"ЕГИСЗ",
+				"UUID",
+				"ID:",
+				"CRUD",
+			];
 			for (const col of COLUMNS) {
 				for (const forbidden of forbiddenTokens) {
 					assert.ok(
@@ -217,11 +250,26 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 				}),
 			);
 
-			assert.ok(!html.includes("style="), "Toolbar HTML must contain zero inline style attributes");
-			assert.ok(html.includes("!pl-[38px]"), "Search input must enforce !pl-[38px] icon clearance");
-			assert.ok(html.includes("h-9 min-h-[36px] rounded-xl"), "Toolbar controls must use 36px (h-9) and rounded-xl (12px)");
-			assert.ok(html.includes("h-8 rounded-lg"), "Segmented toggle must use 32px (h-8) and rounded-lg (8px)");
-			assert.ok(html.includes("bg-[var(--primary)]"), "Primary CTA must use canonical var(--primary) token");
+			assert.ok(
+				!html.includes("style="),
+				"Toolbar HTML must contain zero inline style attributes",
+			);
+			assert.ok(
+				html.includes("!pl-[38px]"),
+				"Search input must enforce !pl-[38px] icon clearance",
+			);
+			assert.ok(
+				html.includes("h-9 min-h-[36px] rounded-xl"),
+				"Toolbar controls must use 36px (h-9) and rounded-xl (12px)",
+			);
+			assert.ok(
+				html.includes("h-8 rounded-lg"),
+				"Segmented toggle must use 32px (h-8) and rounded-lg (8px)",
+			);
+			assert.ok(
+				html.includes("bg-[var(--primary)]"),
+				"Primary CTA must use canonical var(--primary) token",
+			);
 		});
 	});
 });

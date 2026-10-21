@@ -4,8 +4,8 @@
  */
 
 import { useState } from "react";
-import { showToast } from "../../GlobalToast";
 import type { Lead } from "../../../store/leadsStore";
+import { showToast } from "../../GlobalToast";
 
 interface LeadFormStateOptions {
 	addLead: (payload: any) => Promise<any>;
@@ -18,7 +18,10 @@ export function useLeadFormState(opts: LeadFormStateOptions) {
 	const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [editForm, setEditForm] = useState<Partial<Lead>>({
-		name: "", phone: "", source: "", expectedRevenue: "",
+		name: "",
+		phone: "",
+		source: "",
+		expectedRevenue: "",
 	});
 
 	const openEditModal = (lead?: Lead) => {
@@ -42,7 +45,9 @@ export function useLeadFormState(opts: LeadFormStateOptions) {
 				name: editForm.name || "Без имени",
 				phone: editForm.phone || "",
 				source: editForm.source || "",
-				expectedRevenue: editForm.expectedRevenue ? String(editForm.expectedRevenue) : "",
+				expectedRevenue: editForm.expectedRevenue
+					? String(editForm.expectedRevenue)
+					: "",
 				notes: editForm.notes || "",
 				dropReason: editForm.dropReason || undefined,
 			};
@@ -59,7 +64,8 @@ export function useLeadFormState(opts: LeadFormStateOptions) {
 			}
 			setIsEditOpen(false);
 		} catch (e: unknown) {
-			const text = e instanceof Error && e.message.trim() ? e.message : "Лид не сохранён.";
+			const text =
+				e instanceof Error && e.message.trim() ? e.message : "Лид не сохранён.";
 			showToast(text, "error");
 		}
 	};
@@ -73,7 +79,10 @@ export function useLeadFormState(opts: LeadFormStateOptions) {
 			setIsEditOpen(false);
 			setEditingLeadId(null);
 		} catch (e: unknown) {
-			const text = e instanceof Error && e.message.trim() ? e.message : "Обращение не удалено.";
+			const text =
+				e instanceof Error && e.message.trim()
+					? e.message
+					: "Обращение не удалено.";
 			showToast(text, "error");
 		} finally {
 			setIsDeleting(false);

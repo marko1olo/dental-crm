@@ -4,10 +4,10 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { AlertTriangle, DollarSign, Maximize2 } from "lucide-react";
-import type { ColumnConfig } from "../leadsKanbanConstants";
+import type React from "react";
 import type { LeadStatus } from "../../../store/leadsStore";
+import type { ColumnConfig } from "../leadsKanbanConstants";
 
 interface LeadKanbanColumnHeaderProps {
 	column: ColumnConfig;
@@ -27,15 +27,32 @@ export const LeadKanbanColumnHeader: React.FC<LeadKanbanColumnHeaderProps> = ({
 	return (
 		<div className="leads-kanban-column-header">
 			<div className="leads-kanban-column-title-row">
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-					<div className="leads-kanban-column-icon" style={{ background: col.color }}>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "8px",
+						minWidth: 0,
+					}}
+				>
+					<div
+						className="leads-kanban-column-icon"
+						style={{ background: col.color }}
+					>
 						{col.icon}
 					</div>
 					<h3 className="leads-kanban-column-title" title={col.label}>
 						{col.label}
 					</h3>
 				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: 5,
+						flexShrink: 0,
+					}}
+				>
 					<span className="leads-kanban-column-count">{count}</span>
 					<button
 						type="button"
@@ -49,14 +66,27 @@ export const LeadKanbanColumnHeader: React.FC<LeadKanbanColumnHeaderProps> = ({
 					</button>
 				</div>
 			</div>
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginTop: revenue > 0 || breachedCount > 0 ? 2 : 0 }}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: 6,
+					marginTop: revenue > 0 || breachedCount > 0 ? 2 : 0,
+				}}
+			>
 				{revenue > 0 ? (
 					<div className="leads-kanban-column-revenue">
 						<DollarSign size={13} /> {revenue.toLocaleString("ru-RU")} ₽
 					</div>
-				) : <div />}
+				) : (
+					<div />
+				)}
 				{breachedCount > 0 && (
-					<div className="leads-column-sla-breach-indicator lead-sla-breached-pulse" title={`Просрочен регламент ответа у ${breachedCount} обращений`}>
+					<div
+						className="leads-column-sla-breach-indicator lead-sla-breached-pulse"
+						title={`Просрочен регламент ответа у ${breachedCount} обращений`}
+					>
 						<AlertTriangle size={11} className="shrink-0" />
 						<span>SLA: {breachedCount}</span>
 					</div>

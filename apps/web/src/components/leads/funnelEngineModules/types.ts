@@ -5,13 +5,12 @@
  * детектора утечек воронки и трекера скорости первого контакта.
  */
 
-export * from "../leadsFunnelTypes.js";
 export * from "../leadsFunnelExport.js";
+export * from "../leadsFunnelTypes.js";
 
 import type {
-	FunnelLead,
-	LeadFunnelStageKey,
 	CanonicalMarketingChannelKey,
+	LeadFunnelStageKey,
 } from "../leadsFunnelTypes.js";
 
 /**

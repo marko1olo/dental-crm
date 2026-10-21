@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines), Apple HIG
  */
 
-import React from "react";
 import { AlertTriangle } from "lucide-react";
+import type React from "react";
 import type { LeadStatus } from "../../../store/leadsStore";
 
 interface LeadsMobileSegmentedBarProps {
@@ -17,18 +17,25 @@ interface LeadsMobileSegmentedBarProps {
 const TABS: { id: LeadStatus | "all"; label: string; testId: string }[] = [
 	{ id: "all", label: "Все", testId: "mobile-tab-all" },
 	{ id: "new", label: "Новые", testId: "mobile-tab-new" },
-	{ id: "consult_booked", label: "Записаны", testId: "mobile-tab-consult_booked" },
+	{
+		id: "consult_booked",
+		label: "Записаны",
+		testId: "mobile-tab-consult_booked",
+	},
 	{ id: "showed_up", label: "Дошли", testId: "mobile-tab-showed_up" },
 	{ id: "trash", label: "Архив", testId: "mobile-tab-trash" },
 ];
 
-
-export const LeadsMobileSegmentedBar: React.FC<LeadsMobileSegmentedBarProps> = ({
-	activeTab, setActiveTab, counts, breachedCount,
-}) => {
+export const LeadsMobileSegmentedBar: React.FC<
+	LeadsMobileSegmentedBarProps
+> = ({ activeTab, setActiveTab, counts, breachedCount }) => {
 	return (
 		<>
-			<div className="leads-mobile-segmented-wrap dente-segmented-bar" role="tablist" aria-label="Статусы воронки">
+			<div
+				className="leads-mobile-segmented-wrap dente-segmented-bar"
+				role="tablist"
+				aria-label="Статусы воронки"
+			>
 				<div className="leads-mobile-segmented-scroller">
 					{TABS.map((t) => (
 						<button
@@ -41,7 +48,9 @@ export const LeadsMobileSegmentedBar: React.FC<LeadsMobileSegmentedBarProps> = (
 							data-testid={t.testId}
 						>
 							<span>{t.label}</span>
-							<span className="leads-mobile-seg-count">{counts[t.id] || 0}</span>
+							<span className="leads-mobile-seg-count">
+								{counts[t.id] || 0}
+							</span>
 						</button>
 					))}
 				</div>
@@ -56,7 +65,9 @@ export const LeadsMobileSegmentedBar: React.FC<LeadsMobileSegmentedBarProps> = (
 				>
 					<div className="leads-mobile-sla-alert-text">
 						<AlertTriangle size={16} className="shrink-0" />
-						<span>Внимание: {breachedCount} обр. ждут ответа {">"} 15 мин!</span>
+						<span>
+							Внимание: {breachedCount} обр. ждут ответа {">"} 15 мин!
+						</span>
 					</div>
 					<span className="text-[12px] underline shrink-0">Открыть →</span>
 				</div>

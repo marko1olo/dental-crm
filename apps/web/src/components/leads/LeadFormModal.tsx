@@ -3,15 +3,15 @@
  * Mandate 8s (SSOT Componentization), Mandate 8b (<= 120 lines), Anti-Matryoshka
  */
 
+import { motion } from "framer-motion";
 import type React from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
-import type { Lead } from "../../store/leadsStore";
 import { useAppStore } from "../../store/appStore";
+import type { Lead } from "../../store/leadsStore";
 import { usePatientStore } from "../../store/patientStore";
-import { LeadFormHeader } from "./leadForm/LeadFormHeader";
 import { LeadFormFields } from "./leadForm/LeadFormFields";
 import { LeadFormFooterActions } from "./leadForm/LeadFormFooterActions";
+import { LeadFormHeader } from "./leadForm/LeadFormHeader";
 
 export interface LeadFormModalProps {
 	isOpen: boolean;
@@ -49,7 +49,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 	if (!isOpen) return null;
 
 	const isNew = editingLeadId === "new";
-	const currentLead = !isNew && editingLeadId ? leads.find((l) => l.id === editingLeadId) || null : null;
+	const currentLead =
+		!isNew && editingLeadId
+			? leads.find((l) => l.id === editingLeadId) || null
+			: null;
 
 	const handleOpenPatient = (patientId: string) => {
 		try {
@@ -105,8 +108,16 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 					onClose={onClose}
 					onOpenPatient={handleOpenPatient}
 				/>
-				<form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
-					<LeadFormFields editForm={editForm} setEditForm={setEditForm} borderColor={borderColor} colBg={colBg} />
+				<form
+					onSubmit={onSubmit}
+					style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1 }}
+				>
+					<LeadFormFields
+						editForm={editForm}
+						setEditForm={setEditForm}
+						borderColor={borderColor}
+						colBg={colBg}
+					/>
 					<LeadFormFooterActions
 						isNew={isNew}
 						editingLeadId={editingLeadId}
@@ -122,5 +133,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 		</div>
 	);
 
-	return typeof document !== "undefined" ? createPortal(drawerContent, document.body) : drawerContent;
+	return typeof document !== "undefined"
+		? createPortal(drawerContent, document.body)
+		: drawerContent;
 };

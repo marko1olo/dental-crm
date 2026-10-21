@@ -12,17 +12,16 @@
  */
 
 import assert from "node:assert/strict";
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import {
-	normalizeMarketingChannel,
-	MARKETING_CHANNELS,
-	LEAD_DROP_REASONS,
-} from "../leadsFunnelTypes.js";
-import {
-	CHANNEL_DISPLAY_NAMES,
 	CHANNEL_BADGE_COLORS,
+	CHANNEL_DISPLAY_NAMES,
 	detectMarketingAttribution,
 } from "../../telephony/telephonyAttribution.js";
+import {
+	LEAD_DROP_REASONS,
+	normalizeMarketingChannel,
+} from "../leadsFunnelTypes.js";
 
 describe("1. Marketing Channels Normalization & Drop Reasons", () => {
 	it("normalizes Avito variants to avito", () => {
@@ -69,7 +68,9 @@ describe("2. Telephony & Marketing Channel Attribution", () => {
 		assert.equal(avitoRes.channel, "avito");
 		assert.equal(avitoRes.channelLabel, "Авито");
 
-		const yandexMapsRes = detectMarketingAttribution({ utm_source: "yandex_maps" });
+		const yandexMapsRes = detectMarketingAttribution({
+			utm_source: "yandex_maps",
+		});
 		assert.equal(yandexMapsRes.channel, "yandex_maps");
 		assert.equal(yandexMapsRes.channelLabel, "Яндекс.Карты");
 
@@ -79,7 +80,9 @@ describe("2. Telephony & Marketing Channel Attribution", () => {
 	});
 
 	it("detectMarketingAttribution detects advertising_channel overrides", () => {
-		const res = detectMarketingAttribution({ advertising_channel: "Авито контекст" });
+		const res = detectMarketingAttribution({
+			advertising_channel: "Авито контекст",
+		});
 		assert.equal(res.channel, "avito");
 		assert.equal(res.channelLabel, "Авито");
 	});
@@ -99,7 +102,10 @@ describe("3. Lead Existing Patient Duplicate Contract", () => {
 		};
 
 		assert.equal(leadWithPatient.existingPatient?.id, "patient-123");
-		assert.equal(leadWithPatient.existingPatient?.fullName, "Иванов Иван Иванович");
+		assert.equal(
+			leadWithPatient.existingPatient?.fullName,
+			"Иванов Иван Иванович",
+		);
 
 		const leadWithoutPatient = {
 			id: "lead-2",

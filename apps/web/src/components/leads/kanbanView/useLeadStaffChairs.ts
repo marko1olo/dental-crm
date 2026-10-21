@@ -20,10 +20,14 @@ export function useLeadStaffChairs(dashboard: any) {
 	const [selectedChairId, setSelectedChairId] = useState("");
 
 	useEffect(() => {
-		const clinicStaff = (dashboard?.clinicSettings?.staff ?? []) as BookableDoctor[];
-		const clinicChairs = (dashboard?.clinicSettings?.chairs ?? []) as BookableChair[];
+		const clinicStaff = (dashboard?.clinicSettings?.staff ??
+			[]) as BookableDoctor[];
+		const clinicChairs = (dashboard?.clinicSettings?.chairs ??
+			[]) as BookableChair[];
 		const doctors = clinicStaff.filter(
-			(member) => member.active !== false && (member.role === "doctor" || member.role === "owner"),
+			(member) =>
+				member.active !== false &&
+				(member.role === "doctor" || member.role === "owner"),
 		);
 		const effectiveDoctors = resolveLeadBookingStaff(doctors);
 		const effectiveChairsList = resolveLeadBookingChairs(clinicChairs);

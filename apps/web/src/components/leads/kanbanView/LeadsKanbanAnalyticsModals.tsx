@@ -3,7 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React, { lazy, Suspense } from "react";
+import type React from "react";
+import { lazy, Suspense } from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 const LeadsFunnelAnalyticsModal = lazy(() =>
@@ -27,7 +28,9 @@ interface LeadsKanbanAnalyticsModalsProps {
 	onOpenLeakDetector: () => void;
 }
 
-export const LeadsKanbanAnalyticsModals: React.FC<LeadsKanbanAnalyticsModalsProps> = ({
+export const LeadsKanbanAnalyticsModals: React.FC<
+	LeadsKanbanAnalyticsModalsProps
+> = ({
 	leads,
 	isAnalyticsOpen,
 	onCloseAnalytics,

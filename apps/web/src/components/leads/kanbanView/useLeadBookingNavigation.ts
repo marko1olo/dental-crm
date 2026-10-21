@@ -20,8 +20,10 @@ export interface PendingBookingInfo {
 export function useLeadBookingNavigation() {
 	const navigateToScheduleWithBooking = (booking: PendingBookingInfo) => {
 		try {
-			if (booking.patientId) usePatientStore.getState().setSelectedPatientId(booking.patientId);
-			if (booking.dateKey) useScheduleStore.getState().setScheduleDateFilter(booking.dateKey);
+			if (booking.patientId)
+				usePatientStore.getState().setSelectedPatientId(booking.patientId);
+			if (booking.dateKey)
+				useScheduleStore.getState().setScheduleDateFilter(booking.dateKey);
 			useScheduleStore.getState().setPendingStageBooking?.(booking);
 			useAppStore.getState().setCurrentView("schedule");
 			if (typeof window !== "undefined") window.location.hash = "schedule";

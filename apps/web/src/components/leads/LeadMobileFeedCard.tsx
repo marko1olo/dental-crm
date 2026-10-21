@@ -3,16 +3,24 @@
  * Mandate 8b (<= 120 lines), Touch Targets >= 44x44px, Natural Thumb Zone
  */
 
-import React, { useState } from "react";
-import { motion, useAnimation, type PanInfo } from "framer-motion";
+import { motion, type PanInfo, useAnimation } from "framer-motion";
 import { Calendar, Phone } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 import type { Lead } from "../../store/leadsStore";
-import { CHANNEL_BADGE_COLORS, CHANNEL_DISPLAY_NAMES } from "../telephony/telephonyAttribution";
+import {
+	CHANNEL_BADGE_COLORS,
+	CHANNEL_DISPLAY_NAMES,
+} from "../telephony/telephonyAttribution";
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
-import { COLUMNS, getKanbanColumnForLeadStatus, getLeadSlaStatus } from "./leadsKanbanTypes";
-import { LeadMobileCardTopBadges } from "./mobile/LeadMobileCardTopBadges";
-import { LeadMobileCardBodyContent } from "./mobile/LeadMobileCardBodyContent";
+import {
+	COLUMNS,
+	getKanbanColumnForLeadStatus,
+	getLeadSlaStatus,
+} from "./leadsKanbanTypes";
 import { LeadMobileCardActionButtons } from "./mobile/LeadMobileCardActionButtons";
+import { LeadMobileCardBodyContent } from "./mobile/LeadMobileCardBodyContent";
+import { LeadMobileCardTopBadges } from "./mobile/LeadMobileCardTopBadges";
 
 export interface LeadMobileFeedCardProps {
 	lead: Lead;
@@ -23,21 +31,35 @@ export interface LeadMobileFeedCardProps {
 }
 
 export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
-	lead, onSelect, onSchedule, onQuickSchedule, onOpenPatientCard,
+	lead,
+	onSelect,
+	onSchedule,
+	onQuickSchedule,
+	onOpenPatientCard,
 }) => {
 	const controls = useAnimation();
 	const [dragOffset, setDragOffset] = useState(0);
 
 	const sla = getLeadSlaStatus(lead);
-	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
-	const channelBadge = channelKey && CHANNEL_BADGE_COLORS[channelKey]
-		? CHANNEL_BADGE_COLORS[channelKey]
-		: { bg: "var(--teal-soft)", color: "var(--teal-dark, var(--teal))", border: "var(--teal)" };
-	const channelLabel = channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-		? CHANNEL_DISPLAY_NAMES[channelKey]
-		: (lead.source || "Прямой звонок");
+	const channelKey = lead.source
+		? normalizeMarketingChannel(lead.source)
+		: null;
+	const channelBadge =
+		channelKey && CHANNEL_BADGE_COLORS[channelKey]
+			? CHANNEL_BADGE_COLORS[channelKey]
+			: {
+					bg: "var(--teal-soft)",
+					color: "var(--teal-dark, var(--teal))",
+					border: "var(--teal)",
+				};
+	const channelLabel =
+		channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
+			? CHANNEL_DISPLAY_NAMES[channelKey]
+			: lead.source || "Прямой звонок";
 	const rawPhone = lead.phone ? lead.phone.replace(/[^\d+]/g, "") : "";
-	const col = COLUMNS.find((c) => c.id === lead.status) || getKanbanColumnForLeadStatus(lead.status);
+	const col =
+		COLUMNS.find((c) => c.id === lead.status) ||
+		getKanbanColumnForLeadStatus(lead.status);
 
 	const handleDragEnd = async (_: unknown, info: PanInfo) => {
 		if (info.offset.x > 75) {
@@ -47,7 +69,10 @@ export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
 			else onSchedule(lead.id);
 		}
 		setDragOffset(0);
-		controls.start({ x: 0, transition: { type: "spring", stiffness: 450, damping: 30 } });
+		controls.start({
+			x: 0,
+			transition: { type: "spring", stiffness: 450, damping: 30 },
+		});
 	};
 
 	const handleCardClick = () => {
@@ -57,11 +82,17 @@ export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
 	return (
 		<div className="leads-mobile-card-swipe-wrap">
 			<div className="leads-mobile-card-swipe-background" aria-hidden="true">
-				<div className="leads-mobile-swipe-action leads-mobile-swipe-action--call" style={{ opacity: dragOffset > 25 ? 1 : 0 }}>
+				<div
+					className="leads-mobile-swipe-action leads-mobile-swipe-action--call"
+					style={{ opacity: dragOffset > 25 ? 1 : 0 }}
+				>
 					<Phone size={17} />
 					<span>Звонок</span>
 				</div>
-				<div className="leads-mobile-swipe-action leads-mobile-swipe-action--schedule" style={{ opacity: dragOffset < -25 ? 1 : 0 }}>
+				<div
+					className="leads-mobile-swipe-action leads-mobile-swipe-action--schedule"
+					style={{ opacity: dragOffset < -25 ? 1 : 0 }}
+				>
 					<span>Записать</span>
 					<Calendar size={17} />
 				</div>
@@ -81,7 +112,11 @@ export const LeadMobileFeedCard: React.FC<LeadMobileFeedCardProps> = ({
 			>
 				<div
 					className="leads-mobile-card-stripe"
-					style={{ background: sla.isBreached ? "var(--rust, #ef4444)" : (col?.color || "var(--teal)") }}
+					style={{
+						background: sla.isBreached
+							? "var(--rust, #ef4444)"
+							: col?.color || "var(--teal)",
+					}}
 				/>
 
 				<LeadMobileCardTopBadges

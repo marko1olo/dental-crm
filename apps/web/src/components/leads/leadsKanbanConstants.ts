@@ -3,8 +3,8 @@
  * Clean clinical Russian language per Mandate 8x & Creator's Law
  */
 
-import React from "react";
 import { CalendarClock, Plus, Trash2, UserCheck } from "lucide-react";
+import React from "react";
 import type { LeadStatus } from "../../store/leadsStore";
 
 export type ColumnConfig = {
@@ -70,4 +70,3 @@ export const NEXT_STAGE_MAP: Partial<
 	no_answer: { status: "new", label: "Вернуть в новые →" },
 	trash: { status: "new", label: "Вернуть в новые →" },
 };
-

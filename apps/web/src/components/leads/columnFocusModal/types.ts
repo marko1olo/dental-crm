@@ -28,9 +28,18 @@ export interface ExpandedColumnFocusModalProps {
 	column: ColumnFocusColumnInfo;
 	leads: Lead[];
 	staff: BookableDoctor[];
-	onStatusChange: (leadId: string, nextStatus: LeadStatus) => Promise<void> | void;
-	onBatchStatusChange: (leadIds: string[], nextStatus: LeadStatus) => Promise<void> | void;
-	onBatchAssignDoctor: (leadIds: string[], doctorId: string) => Promise<void> | void;
+	onStatusChange: (
+		leadId: string,
+		nextStatus: LeadStatus,
+	) => Promise<void> | void;
+	onBatchStatusChange: (
+		leadIds: string[],
+		nextStatus: LeadStatus,
+	) => Promise<void> | void;
+	onBatchAssignDoctor: (
+		leadIds: string[],
+		doctorId: string,
+	) => Promise<void> | void;
 	onEditLead: (lead: Lead) => void;
 	onScheduleLead: (leadId: string) => void;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
@@ -89,7 +98,10 @@ export interface ColumnFocusListBaseProps {
 	selectedLeadIds: Set<string>;
 	onToggleSelectLead: (id: string, e?: React.MouseEvent) => void;
 	onEditLead: (lead: Lead) => void;
-	onStatusChange: (leadId: string, nextStatus: LeadStatus) => Promise<void> | void;
+	onStatusChange: (
+		leadId: string,
+		nextStatus: LeadStatus,
+	) => Promise<void> | void;
 	onScheduleLead: (leadId: string) => void;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
 	onClose: () => void;

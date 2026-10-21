@@ -4,8 +4,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { ChevronRight, Phone, UserCheck } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadMobileCardBodyContentProps {
@@ -13,7 +13,9 @@ interface LeadMobileCardBodyContentProps {
 	onOpenPatientCard?: ((patientId: string) => void) | undefined;
 }
 
-export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps> = ({ lead, onOpenPatientCard }) => {
+export const LeadMobileCardBodyContent: React.FC<
+	LeadMobileCardBodyContentProps
+> = ({ lead, onOpenPatientCard }) => {
 	return (
 		<div className="leads-mobile-card-body">
 			<div className="flex items-center justify-between gap-2">
@@ -31,7 +33,9 @@ export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps>
 			{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
 				<div className="leads-mobile-tags-row">
 					{lead.clinicalTags.map((tag) => (
-						<span key={tag} className="leads-mobile-tag">Услуга: {tag}</span>
+						<span key={tag} className="leads-mobile-tag">
+							Услуга: {tag}
+						</span>
 					))}
 				</div>
 			)}
@@ -42,7 +46,8 @@ export const LeadMobileCardBodyContent: React.FC<LeadMobileCardBodyContentProps>
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							if (onOpenPatientCard) onOpenPatientCard(lead.existingPatient!.id);
+							if (onOpenPatientCard)
+								onOpenPatientCard(lead.existingPatient!.id);
 						}}
 						className="leads-mobile-existing-patient"
 						style={{

@@ -1,4 +1,3 @@
-
 .expanded-focus-card-notes {
 	font-size: 12px;
 	line-height: 1.4;
@@ -82,7 +81,21 @@
 	border: 1px solid var(--teal);
 	flex: 1;
 }
-.expanded-focus-action-btn--advance:hover { background: var(--teal); color: var(--paper-strong, #ffffff); }
-.expanded-focus-action-btn--schedule { background: var(--paper-soft); color: var(--ink); border: 1px solid var(--line); }
-.expanded-focus-action-btn--schedule:hover { border-color: var(--teal); color: var(--teal); }
-.expanded-focus-action-btn--patient { background: var(--ok-bg); color: var(--ok-fg); border: 1px solid var(--line); }
+.expanded-focus-action-btn--advance:hover {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+}
+.expanded-focus-action-btn--schedule {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+.expanded-focus-action-btn--schedule:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+.expanded-focus-action-btn--patient {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--line);
+}

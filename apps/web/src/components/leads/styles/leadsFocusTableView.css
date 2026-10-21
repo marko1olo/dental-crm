@@ -45,10 +45,19 @@
 	white-space: nowrap;
 }
 
-.expanded-focus-tr { transition: background 0.15s ease; cursor: pointer; }
-.expanded-focus-tr:hover { background: var(--paper-soft); }
-.expanded-focus-tr.is-selected { background: var(--teal-soft); }
-.expanded-focus-tr.is-breached-row { border-left: 3px solid var(--rust); }
+.expanded-focus-tr {
+	transition: background 0.15s ease;
+	cursor: pointer;
+}
+.expanded-focus-tr:hover {
+	background: var(--paper-soft);
+}
+.expanded-focus-tr.is-selected {
+	background: var(--teal-soft);
+}
+.expanded-focus-tr.is-breached-row {
+	border-left: 3px solid var(--rust);
+}
 
 .expanded-focus-table-name {
 	font-weight: 600;

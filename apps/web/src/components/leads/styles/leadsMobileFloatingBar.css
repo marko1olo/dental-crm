@@ -48,7 +48,15 @@
 	box-sizing: border-box;
 }
 
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-mobile-floating-bar {
+:is(
+		[data-theme="dark"],
+		[data-theme="night"],
+		[data-theme="ocean"],
+		[data-theme="emerald"],
+		[data-theme="cyber_xray"],
+		html.dark
+	)
+	.leads-mobile-floating-bar {
 	background: var(--paper-strong);
 }
 
@@ -68,7 +76,9 @@
 	gap: 8px;
 	cursor: pointer;
 	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.24);
-	transition: transform 0.15s ease, opacity 0.15s ease;
+	transition:
+		transform 0.15s ease,
+		opacity 0.15s ease;
 	box-sizing: border-box;
 }
 

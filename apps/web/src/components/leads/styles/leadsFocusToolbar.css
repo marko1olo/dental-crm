@@ -1,4 +1,3 @@
-
 .expanded-focus-urgency-tabs {
 	display: inline-flex;
 	align-items: center;
@@ -43,11 +42,17 @@
 }
 
 .expanded-focus-tab--fresh.is-active,
-.expanded-focus-tab--fresh.active { color: var(--ok-fg); }
+.expanded-focus-tab--fresh.active {
+	color: var(--ok-fg);
+}
 .expanded-focus-tab--warning.is-active,
-.expanded-focus-tab--warning.active { color: var(--amber-dark, var(--amber)); }
+.expanded-focus-tab--warning.active {
+	color: var(--amber-dark, var(--amber));
+}
 .expanded-focus-tab--breached.is-active,
-.expanded-focus-tab--breached.active { color: var(--rust); }
+.expanded-focus-tab--breached.active {
+	color: var(--rust);
+}
 
 .expanded-focus-sort-cluster {
 	display: flex;

@@ -5,10 +5,10 @@
  * Re-exports all domain types, subcomponents, hooks, and workspace modal.
  */
 
-export type * from "./types";
-export * from "./ColumnFocusHeader";
 export * from "./ColumnFocusBatchToolbar";
 export * from "./ColumnFocusCardsList";
+export * from "./ColumnFocusHeader";
 export * from "./ColumnFocusTableView";
-export * from "./useColumnFocusModalLogic";
 export * from "./ColumnFocusWorkspaceModal";
+export type * from "./types";
+export * from "./useColumnFocusModalLogic";

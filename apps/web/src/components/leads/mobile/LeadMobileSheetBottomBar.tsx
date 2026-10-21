@@ -4,8 +4,8 @@
  * Mandate 8b (<= 120 lines), Natural Thumb Zone
  */
 
-import React from "react";
 import { Calendar, UserPlus } from "lucide-react";
+import type React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadMobileSheetBottomBarProps {
@@ -17,8 +17,15 @@ interface LeadMobileSheetBottomBarProps {
 	creatingPatientLeadId?: string | null | undefined;
 }
 
-export const LeadMobileSheetBottomBar: React.FC<LeadMobileSheetBottomBarProps> = ({
-	lead, onClose, onSchedule, onQuickSchedule, onCreatePatient, creatingPatientLeadId,
+export const LeadMobileSheetBottomBar: React.FC<
+	LeadMobileSheetBottomBarProps
+> = ({
+	lead,
+	onClose,
+	onSchedule,
+	onQuickSchedule,
+	onCreatePatient,
+	creatingPatientLeadId,
 }) => {
 	const handleScheduleClick = () => {
 		onClose();
@@ -33,7 +40,8 @@ export const LeadMobileSheetBottomBar: React.FC<LeadMobileSheetBottomBarProps> =
 				onClick={handleScheduleClick}
 				className="w-full min-h-[50px] rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer"
 				style={{
-					background: "linear-gradient(135deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e))",
+					background:
+						"linear-gradient(135deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e))",
 					color: "#ffffff",
 				}}
 				data-testid="bottom-sheet-schedule-cta"
@@ -52,7 +60,9 @@ export const LeadMobileSheetBottomBar: React.FC<LeadMobileSheetBottomBarProps> =
 				>
 					<UserPlus size={16} />
 					<span>
-						{creatingPatientLeadId === lead.id ? "Создание карты..." : "Создать карту пациента (без записи)"}
+						{creatingPatientLeadId === lead.id
+							? "Создание карты..."
+							: "Создать карту пациента (без записи)"}
 					</span>
 				</button>
 			)}

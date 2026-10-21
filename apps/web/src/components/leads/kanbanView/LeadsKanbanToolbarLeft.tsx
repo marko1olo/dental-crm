@@ -4,7 +4,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
+import type React from "react";
 
 interface LeadsKanbanToolbarLeftProps {
 	totalLeadsCount?: number | undefined;
@@ -24,7 +24,10 @@ export const LeadsKanbanToolbarLeft: React.FC<LeadsKanbanToolbarLeftProps> = ({
 			<h2 className="m-0 text-base font-bold text-[var(--ink)] flex items-center gap-2 whitespace-nowrap">
 				<span>Воронка обращений</span>
 				{totalLeadsCount !== undefined && (
-					<span className="leads-header-count-badge" title="Всего обращений в базе">
+					<span
+						className="leads-header-count-badge"
+						title="Всего обращений в базе"
+					>
 						{totalLeadsCount}
 					</span>
 				)}
@@ -57,9 +60,7 @@ export const LeadsKanbanToolbarLeft: React.FC<LeadsKanbanToolbarLeftProps> = ({
 				>
 					<span>Все этапы (6)</span>
 					{secondaryLeadsCount > 0 && (
-						<span className="leads-viewmode-badge">
-							{secondaryLeadsCount}
-						</span>
+						<span className="leads-viewmode-badge">{secondaryLeadsCount}</span>
 					)}
 				</button>
 			</div>

@@ -1,27 +1,26 @@
-import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+	buildFunnelCsvFilename,
 	LeadsFunnelAnalyticsModal,
 	mapLiveAttributionToChannelSpends,
 	parseSanitizedBudgetRub,
-	buildFunnelCsvFilename,
-	resolveShowUpToneColor,
 	resolveRomiToneColor,
+	resolveShowUpToneColor,
 } from "../LeadsFunnelAnalyticsModal";
 
-const leadsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const leadsDir = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+);
 
 describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural Decomposition", () => {
 	it("1. Facade line count budget (Mandate 8b: <= 120 lines)", () => {
-		const facadePath = path.join(
-			leadsDir,
-			"LeadsFunnelAnalyticsModal.tsx",
-		);
+		const facadePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
 		const content = fs.readFileSync(facadePath, "utf8");
 		const lineCount = content.split("\n").length;
 		assert.ok(
@@ -31,12 +30,12 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 	});
 
 	it("2. Module line count budgets (Mandate 8b: each file <= 800 lines)", () => {
-		const modulesDir = path.join(
-			leadsDir,
-			"leadsFunnelAnalyticsModules",
-		);
+		const modulesDir = path.join(leadsDir, "leadsFunnelAnalyticsModules");
 		const files = fs.readdirSync(modulesDir);
-		assert.ok(files.length >= 6, "Expected at least 6 module files in leadsFunnelAnalyticsModules");
+		assert.ok(
+			files.length >= 6,
+			"Expected at least 6 module files in leadsFunnelAnalyticsModules",
+		);
 		for (const file of files) {
 			const filePath = path.join(modulesDir, file);
 			const lines = fs.readFileSync(filePath, "utf8").split("\n").length;
@@ -91,10 +90,7 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 	});
 
 	it("5. Static Invariants & Anti-Matryoshka Portals", () => {
-		const facadePath = path.join(
-			leadsDir,
-			"LeadsFunnelAnalyticsModal.tsx",
-		);
+		const facadePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
 		const content = fs.readFileSync(facadePath, "utf8");
 
 		assert.ok(
@@ -136,13 +132,18 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 			/>,
 		);
 
-		assert.ok(openHtml.includes('data-testid="btn-analytics-open-leak-detector"'));
+		assert.ok(
+			openHtml.includes('data-testid="btn-analytics-open-leak-detector"'),
+		);
 		assert.ok(openHtml.includes('data-testid="funnel-open-leak-detector-btn"'));
 		assert.ok(openHtml.includes('aria-label="Детектор утечек"'));
 		assert.ok(openHtml.includes('aria-label="Скопировать сводку"'));
 		assert.ok(openHtml.includes('aria-label="Экспорт в CSV"'));
 		assert.ok(openHtml.includes('aria-label="Закрыть окно"'));
-		assert.ok(openHtml.includes("Сквозная Воронка &amp; Маркетинг") || openHtml.includes("Сквозная Воронка & Маркетинг"));
+		assert.ok(
+			openHtml.includes("Сквозная Воронка &amp; Маркетинг") ||
+				openHtml.includes("Сквозная Воронка & Маркетинг"),
+		);
 		assert.ok(openHtml.includes("CRM Intelligence"));
 	});
 });

@@ -6,10 +6,10 @@
  * детекторов утечек воронки и утилит экспорта.
  */
 
-// Layer 0: Types & Schemas
-export * from "./types.js";
+export * from "./crmLeakDetectorEngine.js";
 
 // Layer 1 & 2: Pure Calculators & Engines
 export * from "./funnelConversionCalculator.js";
 export * from "./speedToLeadSlaTracker.js";
-export * from "./crmLeakDetectorEngine.js";
+// Layer 0: Types & Schemas
+export * from "./types.js";

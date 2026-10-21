@@ -279,20 +279,32 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 			assert.equal(csv.includes("+7 999 123-45-67"), true);
 			assert.equal(csv.includes("45000"), true);
 			assert.equal(csv.includes("Острая боль ⚡, Имплантация"), true);
-			assert.equal(csv.includes("https://telephony.clinic.ru/rec/001.mp3"), true);
+			assert.equal(
+				csv.includes("https://telephony.clinic.ru/rec/001.mp3"),
+				true,
+			);
 		});
 	});
 
 	describe("5. Funnel Stage Transitions SSOT (NEXT_STAGE_MAP)", () => {
 		it("provides unbroken progressive stages for all canonical columns", () => {
 			assert.equal(NEXT_STAGE_MAP.new?.status, "consult_booked");
-			assert.equal(NEXT_STAGE_MAP.new?.label.includes("Записать на приём"), true);
+			assert.equal(
+				NEXT_STAGE_MAP.new?.label.includes("Записать на приём"),
+				true,
+			);
 
 			assert.equal(NEXT_STAGE_MAP.contacted?.status, "consult_booked");
-			assert.equal(NEXT_STAGE_MAP.contacted?.label.includes("Записать на приём"), true);
+			assert.equal(
+				NEXT_STAGE_MAP.contacted?.label.includes("Записать на приём"),
+				true,
+			);
 
 			assert.equal(NEXT_STAGE_MAP.consult_booked?.status, "showed_up");
-			assert.equal(NEXT_STAGE_MAP.consult_booked?.label.includes("Отметить визит"), true);
+			assert.equal(
+				NEXT_STAGE_MAP.consult_booked?.label.includes("Отметить визит"),
+				true,
+			);
 
 			assert.equal(NEXT_STAGE_MAP.showed_up?.status, "trash");
 			assert.equal(NEXT_STAGE_MAP.showed_up?.label.includes("В архив"), true);

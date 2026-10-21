@@ -4,8 +4,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { X } from "lucide-react";
+import type React from "react";
 
 interface LeadMobileSheetHeaderProps {
 	name: string;
@@ -14,7 +14,9 @@ interface LeadMobileSheetHeaderProps {
 }
 
 export const LeadMobileSheetHeader: React.FC<LeadMobileSheetHeaderProps> = ({
-	name, stageColor = "var(--teal)", onClose,
+	name,
+	stageColor = "var(--teal)",
+	onClose,
 }) => {
 	return (
 		<>
@@ -24,8 +26,15 @@ export const LeadMobileSheetHeader: React.FC<LeadMobileSheetHeaderProps> = ({
 
 			<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--line-subtle)] shrink-0">
 				<div className="flex items-center gap-2 min-w-0 pr-2">
-					<span className="w-3 h-3 rounded-full shrink-0" style={{ background: stageColor }} />
-					<h3 id="lead-bottom-sheet-title" className="text-[17px] font-semibold text-[var(--ink)] truncate" title={name}>
+					<span
+						className="w-3 h-3 rounded-full shrink-0"
+						style={{ background: stageColor }}
+					/>
+					<h3
+						id="lead-bottom-sheet-title"
+						className="text-[17px] font-semibold text-[var(--ink)] truncate"
+						title={name}
+					>
 						{name}
 					</h3>
 				</div>
