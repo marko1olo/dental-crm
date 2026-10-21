@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — Chair Utilization, StomX Parity Presets & Shift Allocation (utilizationCalculator.ts)
+ * DENTE Dental CRM — Chair Utilization, Presets & Shift Allocation (utilizationCalculator.ts)
  *
  * Principles & Compliance:
  * - Mandate 8e: Doctor & Staff Autonomy (0 disabled buttons, non-blocking 1-tap actions)
@@ -40,7 +40,7 @@ export {
 };
 
 /**
- * 1-Click Fast Cell Shift Assignment for matrix grids (StomX / DentalPRO parity).
+ * 1-Click Fast Cell Shift Assignment for matrix grids (DENTE Architecture).
  */
 export function applyCellShiftPreset(
 	currentShifts: DoctorShift[],
@@ -145,7 +145,7 @@ export function applyCellShiftPreset(
 }
 
 /**
- * Multi-day date range shift assignment (StomX / DentalPRO parity).
+ * Multi-day date range shift assignment (DENTE Architecture).
  */
 export function applyDoctorChairDateRange(
 	currentShifts: DoctorShift[],

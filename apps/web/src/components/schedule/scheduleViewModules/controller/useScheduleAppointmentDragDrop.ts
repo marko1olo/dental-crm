@@ -25,7 +25,7 @@ export function useScheduleAppointmentDragDrop({
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [waitlistQuickFillSlot, setWaitlistQuickFillSlot] = useState<TargetSlotInfo | null>(null);
 
-  // DentalPRO Parity: Обработка входящего бронирования этапа из плана лечения
+  // Обработка входящего бронирования этапа из плана лечения
   useEffect(() => {
     if (pendingStageBooking) {
       setQuickBookingSlot(pendingStageBooking);

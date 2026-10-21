@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Multi-Day Date Range Shift Binding
- * Compliance: StomX / DentalPRO Parity, Mandates 8e, 8k, 8n
+ * Compliance: DENTE Architecture, Mandates 8e, 8k, 8n
  */
 
 import {
@@ -15,7 +15,7 @@ import type { DoctorShift } from "./doctorShiftRosterEngine";
 import { addDaysToDateIso } from "./rosterWeekCopyAndRotate";
 
 /**
- * Supported shift presets for multi-day date range shift binding (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * Supported shift presets for multi-day date range shift binding (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export type DateRangeShiftPreset =
 	| "morning"
@@ -41,7 +41,7 @@ export interface DateRangeShiftBindingParams {
 }
 
 /**
- * 1-Click Fast Multi-Day Date Range Doctor-to-Chair Shift Binding (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Fast Multi-Day Date Range Doctor-to-Chair Shift Binding (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export function applyDoctorChairDateRange(
 	currentShifts: DoctorShift[],

@@ -1,7 +1,7 @@
 /**
  * DENTE Dental CRM — useSchedule Custom Hook (useSchedule.ts)
  *
- * Centralized Schedule, Chairs & Shifts Architecture Hook (StomX / IDENT parity).
+ * Centralized Schedule, Chairs & Shifts Architecture Hook (DENTE Architecture).
  *
  * Mandate Compliance:
  * - Mandate 8e: Doctor & Staff Autonomy (0 disabled buttons, frictionless shift & chair management)
@@ -158,7 +158,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		return externalChairAssignments ?? localAssignments;
 	}, [externalChairAssignments, localAssignments]);
 
-	// 1-Click Shift Assignment with Presets (StomX / IDENT parity)
+	// 1-Click Shift Assignment with Presets (DENTE Architecture)
 	const assignShift = useCallback(
 		(
 			chair: ScheduleChair,
@@ -251,7 +251,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		],
 	);
 
-	// Fast Binding of Chairs to Doctors via Date Range (StomX Parity)
+	// Fast Binding of Chairs to Doctors via Date Range (DENTE Architecture)
 	const assignDateRange = useCallback(
 		(params: {
 			startDateIso: string;

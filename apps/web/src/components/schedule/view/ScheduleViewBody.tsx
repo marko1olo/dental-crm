@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useCallback } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { ChairScheduleView } from "../ChairScheduleView";
 import { ScheduleGrid } from "../ScheduleGrid";
@@ -126,6 +126,8 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   } = props;
 
   const isMobile = useIsMobile(768);
+  const inFlightStatusChangeRef = useRef<Record<string, boolean>>({});
+  const inFlightMoveRef = useRef<Record<string, boolean>>({});
 
   const handleOpenVisit = (appointment?: Appointment) => {
     if (appointment) {
@@ -141,40 +143,95 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     appointmentId: string,
     status: Appointment["status"],
   ) => {
-    updateAppointmentScheduleDraft(appointmentId, "status", status);
-    const success = await saveAppointmentSchedule(appointmentId);
-    if (success) {
-      const p = dashboard?.appointments?.find((a) => a.id === appointmentId);
-      if (status === "in_treatment" && p) {
-        void openVisitWithBackendSync(p, null);
-      }
-      const pName =
-        p && patientName
-          ? patientName(dashboard?.patients ?? [], p.patientId)
-          : "Пациент";
-      const label = appointmentLabels[status] || status;
-      showToast(`«${pName}» — статус «${label}»`, "success", 3000);
+    if (inFlightStatusChangeRef.current[appointmentId]) return;
+    inFlightStatusChangeRef.current[appointmentId] = true;
+    try {
+      updateAppointmentScheduleDraft(appointmentId, "status", status);
+      const success = await saveAppointmentSchedule(appointmentId);
+      if (success) {
+        const p = dashboard?.appointments?.find((a) => a.id === appointmentId);
+        if (status === "in_treatment" && p) {
+          void openVisitWithBackendSync(p, null);
+        }
+        const pName =
+          p && patientName
+            ? patientName(dashboard?.patients ?? [], p.patientId)
+            : "Пациент";
+        const label = appointmentLabels[status] || status;
+        showToast(`«${pName}» — статус «${label}»`, "success", 3000);
 
-      if ((status === "cancelled" || status === "no_show") && p && p.startsAt) {
-        const isFutureOrToday =
-          new Date(p.startsAt).getTime() >= Date.now() - 3600000;
-        if (isFutureOrToday && typeof handleOpenWaitlistForSlot === "function") {
-          handleOpenWaitlistForSlot({
-            appointmentId: p.id,
-            startsAt: p.startsAt,
-            endsAt: p.endsAt,
-            doctorUserId: p.doctorUserId ?? null,
-            chairId: p.chairId ?? null,
-            patientId: p.patientId ?? null,
-            patientName: pName,
-            reason: p.reason ?? null,
-            freedBecause:
-              status === "cancelled" ? "Отмена визита" : "Неявка пациента",
-          });
+        if ((status === "cancelled" || status === "no_show") && p && p.startsAt) {
+          const isFutureOrToday =
+            new Date(p.startsAt).getTime() >= Date.now() - 3600000;
+          if (isFutureOrToday && typeof handleOpenWaitlistForSlot === "function") {
+            handleOpenWaitlistForSlot({
+              appointmentId: p.id,
+              startsAt: p.startsAt,
+              endsAt: p.endsAt,
+              doctorUserId: p.doctorUserId ?? null,
+              chairId: p.chairId ?? null,
+              patientId: p.patientId ?? null,
+              patientName: pName,
+              reason: p.reason ?? null,
+              freedBecause:
+                status === "cancelled" ? "Отмена визита" : "Неявка пациента",
+            });
+          }
         }
       }
+    } finally {
+      inFlightStatusChangeRef.current[appointmentId] = false;
     }
   };
+
+  const handleAppointmentMove = useCallback(
+    async (
+      appointmentId: string,
+      updates: {
+        startsAt?: string;
+        endsAt?: string;
+        chairId?: string;
+        doctorUserId?: string;
+        allowOverbooking?: boolean;
+      },
+    ) => {
+      if (inFlightMoveRef.current[appointmentId]) return false;
+      inFlightMoveRef.current[appointmentId] = true;
+      try {
+        if (updates.startsAt)
+          updateAppointmentScheduleDraft(
+            appointmentId,
+            "startsAt",
+            updates.startsAt,
+          );
+        if (updates.endsAt)
+          updateAppointmentScheduleDraft(
+            appointmentId,
+            "endsAt",
+            updates.endsAt,
+          );
+        if (updates.chairId !== undefined)
+          updateAppointmentScheduleDraft(
+            appointmentId,
+            "chairId",
+            updates.chairId,
+          );
+        if (updates.doctorUserId !== undefined)
+          updateAppointmentScheduleDraft(
+            appointmentId,
+            "doctorUserId",
+            updates.doctorUserId,
+          );
+        return await saveAppointmentSchedule(appointmentId, {
+          allowOverbooking: updates.allowOverbooking ?? true,
+          allowEmergencyOverride: true,
+        });
+      } finally {
+        inFlightMoveRef.current[appointmentId] = false;
+      }
+    },
+    [updateAppointmentScheduleDraft, saveAppointmentSchedule],
+  );
 
   const handleOpenAppointmentInQuickBooking = (appointment: Appointment) => {
     setQuickBookingSlot({
@@ -219,36 +276,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
         onAppointmentClick={handleOpenAppointmentInQuickBooking}
         onQuickStatusChange={handleQuickStatusChangeWithWaitlistAutoFill}
         onOpenVisit={handleOpenVisit}
-        onAppointmentMove={async (appointmentId, updates) => {
-          if (updates.startsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "startsAt",
-              updates.startsAt,
-            );
-          if (updates.endsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "endsAt",
-              updates.endsAt,
-            );
-          if (updates.chairId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "chairId",
-              updates.chairId,
-            );
-          if (updates.doctorUserId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "doctorUserId",
-              updates.doctorUserId,
-            );
-          return await saveAppointmentSchedule(appointmentId, {
-            allowOverbooking: updates.allowOverbooking ?? true,
-            allowEmergencyOverride: true,
-          });
-        }}
+        onAppointmentMove={handleAppointmentMove}
         patientName={patientName}
         formatTime={formatTime}
         toDateTimeLocalValue={toDateTimeLocalValue}
@@ -302,36 +330,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
           setQuickBookingOpen(true);
         }}
         onAppointmentClick={handleOpenAppointmentInQuickBooking}
-        onAppointmentMove={async (appointmentId, updates) => {
-          if (updates.startsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "startsAt",
-              updates.startsAt,
-            );
-          if (updates.endsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "endsAt",
-              updates.endsAt,
-            );
-          if (updates.chairId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "chairId",
-              updates.chairId,
-            );
-          if (updates.doctorUserId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "doctorUserId",
-              updates.doctorUserId,
-            );
-          return await saveAppointmentSchedule(appointmentId, {
-            allowOverbooking: updates.allowOverbooking ?? true,
-            allowEmergencyOverride: true,
-          });
-        }}
+        onAppointmentMove={handleAppointmentMove}
         onQuickStatusChange={handleQuickStatusChangeWithWaitlistAutoFill}
         patientName={patientName}
         formatTime={formatTime}
@@ -358,36 +357,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
           setQuickBookingOpen(true);
         }}
         onAppointmentClick={handleOpenAppointmentInQuickBooking}
-        onAppointmentMove={async (appointmentId, updates) => {
-          if (updates.startsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "startsAt",
-              updates.startsAt,
-            );
-          if (updates.endsAt)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "endsAt",
-              updates.endsAt,
-            );
-          if (updates.chairId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "chairId",
-              updates.chairId,
-            );
-          if (updates.doctorUserId !== undefined)
-            updateAppointmentScheduleDraft(
-              appointmentId,
-              "doctorUserId",
-              updates.doctorUserId,
-            );
-          return await saveAppointmentSchedule(appointmentId, {
-            allowOverbooking: updates.allowOverbooking ?? true,
-            allowEmergencyOverride: true,
-          });
-        }}
+        onAppointmentMove={handleAppointmentMove}
         onQuickStatusChange={handleQuickStatusChangeWithWaitlistAutoFill}
         patientName={patientName}
         formatTime={formatTime}

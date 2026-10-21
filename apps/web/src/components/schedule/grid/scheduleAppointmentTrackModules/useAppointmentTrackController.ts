@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useRef } from "react";
 import { safeBuildSlotIso } from "../gridSlotMath";
 import {
   checkAppointmentResourceCollision,
@@ -40,9 +40,11 @@ export function useAppointmentTrackController(
   const { densityMode: storedDensityMode } = useScheduleDensity();
   const effectiveDensityMode = propDensityMode ?? storedDensityMode;
   const baseSlotHeightPx = calcBaseSlotHeightPx(gridStep);
+  const inFlightDropRef = useRef(false);
 
   // Slot drop helper for Drag-and-Drop & Waitlist items
   const handleSlotDrop = (e: React.DragEvent, chair: any, hour: string) => {
+    if (inFlightDropRef.current) return;
     try {
       dragGhostManager.endDrag();
       const rawData = e.dataTransfer.getData("application/json");
@@ -111,6 +113,7 @@ export function useAppointmentTrackController(
         const prevDoctorUserId = sourceAppt.doctorUserId;
 
         if (typeof onAppointmentMove === "function") {
+          inFlightDropRef.current = true;
           void Promise.resolve(
             onAppointmentMove(sourceAppt.id, {
               startsAt: targetStartIso,
@@ -143,6 +146,8 @@ export function useAppointmentTrackController(
                 "Отменить",
               );
             }
+          }).finally(() => {
+            inFlightDropRef.current = false;
           });
         } else {
           onSlotClick({

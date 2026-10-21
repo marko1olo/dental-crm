@@ -293,27 +293,27 @@ describe("Expo26 Schedule Innovations Suite", () => {
 
     // 1. Stage "planned": кнопка [🛎️ Прибыл]
     const htmlPlanned = renderToStaticMarkup(<GridAppointmentCard {...baseProps} />);
-    assert.match(htmlPlanned, /data-testid="dentalpro-quick-arrived-appt-bar-1"/);
+    assert.match(htmlPlanned, /data-testid="dente-quick-arrived-appt-bar-1"/);
     assert.match(htmlPlanned, /Прибыл/);
 
     // 2. Stage "arrived": янтарная подсветка + кнопка [🪑 В кресло]
     const apptArrived = { ...baseAppt, status: "arrived" as const };
     const htmlArrived = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptArrived} />);
-    assert.match(htmlArrived, /data-testid="dentalpro-quick-in-chair-appt-bar-1"/);
+    assert.match(htmlArrived, /data-testid="dente-quick-in-chair-appt-bar-1"/);
     assert.match(htmlArrived, /В кресло/);
     assert.match(htmlArrived, /border-l-amber-500/);
 
     // 3. Stage "in_treatment": неоново-зеленый оттенок + бейдж "В кресле" + кнопка [✓ Завершить]
     const apptTreatment = { ...baseAppt, status: "in_treatment" as const };
     const htmlTreatment = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptTreatment} />);
-    assert.match(htmlTreatment, /data-testid="dentalpro-quick-complete-appt-bar-1"/);
+    assert.match(htmlTreatment, /data-testid="dente-quick-complete-appt-bar-1"/);
     assert.match(htmlTreatment, /Завершить/);
     assert.match(htmlTreatment, /border-l-emerald-500/);
 
     // 4. Stage "completed": кнопка [💳 Касса]
     const apptCompleted = { ...baseAppt, status: "completed" as const };
     const htmlCompleted = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptCompleted} />);
-    assert.match(htmlCompleted, /data-testid="dentalpro-quick-pay-appt-bar-1"/);
+    assert.match(htmlCompleted, /data-testid="dente-quick-pay-appt-bar-1"/);
     assert.match(htmlCompleted, /Касса/);
   });
 });

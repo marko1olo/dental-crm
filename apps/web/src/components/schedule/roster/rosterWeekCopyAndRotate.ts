@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Week Copy, Clear & Rotation Operations
- * Compliance: StomX / DentalPRO Parity, Mandates 8e, 8k, 8n
+ * Compliance: DENTE Architecture, Mandates 8e, 8k, 8n
  */
 
 import type { DoctorShift } from "./doctorShiftRosterEngine";
@@ -29,7 +29,7 @@ export function getWeekDaysIso(weekStartDateIso: string): string[] {
 }
 
 /**
- * 1-Click Copy Week Shifts to Target Week (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Copy Week Shifts to Target Week (DENTE Architecture, Mandates 8e, 8k, 8n)
  *
  * Copies all shifts of source week to target week (+7 days or arbitrary target week Monday).
  * Preserves doctorId, doctorName, doctorRole, assistantId, assistantName,
@@ -80,7 +80,7 @@ export function copyWeekShiftsToTargetWeek(
 }
 
 /**
- * 1-Click Copy Week Shifts to Next 4 Weeks / Month (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Copy Week Shifts to Next 4 Weeks / Month (DENTE Architecture, Mandates 8e, 8k, 8n)
  *
  * Iteratively copies the source week shifts across the next `weeksCount` (default: 4) weeks.
  */
@@ -102,7 +102,7 @@ export function copyWeekShiftsToMonth(
 }
 
 /**
- * 1-Click Clear Week Shifts (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Clear Week Shifts (DENTE Architecture, Mandates 8e, 8k, 8n)
  *
  * Removes all shifts in the specified week, returning a clean slate for the week.
  */
@@ -118,7 +118,7 @@ export function clearWeekShifts(
 }
 
 /**
- * 1-Click Shift Rotation (Утро ⇄ Вечер) (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Shift Rotation (Утро ⇄ Вечер) (DENTE Architecture, Mandates 8e, 8k, 8n)
  *
  * Rotates morning shifts to evening shifts, and evening shifts to morning shifts
  * for the specified week (and optionally restricted to a specific chairId).

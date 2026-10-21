@@ -409,7 +409,7 @@ export function checkQuietHoursPolicy(
 	const isQuietHours = hour >= 21 || hour < 8;
 	const allowedWindowRu = "08:00 – 21:00";
 	const warningRu = isQuietHours
-		? `[Информация] Тихий час активен (${hour}:00). Согласно 152-ФЗ и 38-ФЗ отправка нерекламных сообщений разрешена с 08:00 до 21:00.`
+		? `[Информация] В клинике действует тихий час с 21:00 до 08:00 (сейчас ${hour}:00). Отправка сообщений разрешена с 08:00 до 21:00.`
 		: undefined;
 
 	return {

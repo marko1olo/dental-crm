@@ -1,7 +1,7 @@
 /**
  * DENTE Dental CRM — Doctor-to-Chair Schedule Assignment Modal Facade (DoctorChairScheduleModal.tsx)
  *
- * StomX / DentalPRO Parity:
+ * DENTE Advanced Shift & Chair Roster Architecture:
  * - 1-Click shift assignment (Morning 08–14, Morning-9 09–15, Evening 14–20, Evening-15 15–21, Full 08–20, 2 Shifts)
  * - 1-Click multi-day rotation templates (2/2, 5/2, Even/Odd, Full week)
  * - Solo Doctor & Small Clinic Sovereignty (Mandate 8n): 1-click default anchor button

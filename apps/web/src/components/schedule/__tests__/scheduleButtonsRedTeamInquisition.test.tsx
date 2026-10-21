@@ -157,9 +157,9 @@ describe("Schedule, Chair Grid & Quick Booking Button Primitives Inquisition (Re
       />
     );
 
-    expect(html).toContain('data-testid="dentalpro-realtime-bar-appt-100"');
-    expect(html).toContain('data-testid="dentalpro-quick-arrived-appt-100"');
-    expect(html).toContain('data-testid="dentalpro-quick-start-treatment-appt-100"');
+    expect(html).toContain('data-testid="dente-realtime-bar-appt-100"');
+    expect(html).toContain('data-testid="dente-quick-arrived-appt-100"');
+    expect(html).toContain('data-testid="dente-quick-start-treatment-appt-100"');
     expect(html).toContain("var(--teal)");
   });
 });

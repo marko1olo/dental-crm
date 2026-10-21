@@ -430,7 +430,7 @@ export function useDoctorShiftRosterOperations({
 		handleApplyPreset("five_day", "Пятидневка (базовый)");
 	};
 
-	// 1-Click shift preset application in cell (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click shift preset application in cell (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleApplyCellPreset = (
 		dateIso: string,
 		cabinetId: string,
@@ -466,7 +466,7 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 3000);
 	};
 
-	// 1-Click Doctor-to-Chair Weekly Shift Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click Doctor-to-Chair Weekly Shift Binding Templates (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleApplyDoctorChairWeeklyTemplate = (
 		doctorId: string,
 		chairId: string,
@@ -493,7 +493,7 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 3500);
 	};
 
-	// 1-Click Copy week to next week (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click Copy week to next week (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleCopyWeekToNextWeek = () => {
 		const nextMondayIso = addDaysToDateIso(weekStartDateIso, 7);
 		const nextShifts = copyWeekShiftsToTargetWeek(
@@ -515,7 +515,7 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 3500);
 	};
 
-	// 1-Click Copy week to 4 weeks / month (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click Copy week to 4 weeks / month (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleCopyWeekToMonth = () => {
 		const nextShifts = copyWeekShiftsToMonth(shifts, weekStartDateIso, 4);
 		setShifts(nextShifts);
@@ -532,7 +532,7 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 4000);
 	};
 
-	// 1-Click Clear current week shifts (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click Clear current week shifts (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleClearWeek = () => {
 		const nextShifts = clearWeekShifts(shifts, weekStartDateIso);
 		setShifts(nextShifts);
@@ -543,7 +543,7 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 3000);
 	};
 
-	// 1-Click Shift Rotation (Утро ⇄ Вечер) (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	// 1-Click Shift Rotation (Утро ⇄ Вечер) (DENTE Architecture, Mandates 8e, 8k, 8n)
 	const handleRotateShifts = () => {
 		const nextShifts = rotateWeekShifts(shifts, weekStartDateIso);
 		setShifts(nextShifts);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -21,10 +21,12 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
   } = params;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inFlightRef = useRef(false);
 
   const handleSubmitBooking = async (e?: React.FormEvent, opts?: { overbookOverride?: boolean }) => {
     if (e) e.preventDefault();
-    if (isSubmitting) return;
+    if (inFlightRef.current || isSubmitting) return;
+    inFlightRef.current = true;
 
     const activePatientId = await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
     if (!activePatientId && appointmentType !== "emergency") {
@@ -145,6 +147,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       setSubmitError("Не удалось связаться с сервером клиники. Повторите попытку.");
       showToast("Не удалось связаться с сервером клиники. Повторите попытку.", "error");
     } finally {
+      inFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

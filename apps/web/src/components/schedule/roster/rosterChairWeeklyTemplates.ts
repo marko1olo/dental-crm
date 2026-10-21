@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Doctor-to-Chair Weekly Template Application
- * Compliance: StomX / DentalPRO Parity, Mandates 8e, 8k, 8n
+ * Compliance: DENTE Architecture, Mandates 8e, 8k, 8n
  */
 
 import {
@@ -16,7 +16,7 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
 /**
- * 1-Click Apply Doctor-to-Chair Weekly Shift Template (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Apply Doctor-to-Chair Weekly Shift Template (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export function applyDoctorChairWeeklyTemplate(
 	currentShifts: DoctorShift[],
@@ -229,7 +229,7 @@ export function applyDoctorChairWeeklyTemplate(
 }
 
 /**
- * 1-Click Generate Weekly Shifts for Doctor and Chair from Template (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Generate Weekly Shifts for Doctor and Chair from Template (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export function generateWeeklyDoctorSchedule(params: {
 	weekStartDateIso: string;

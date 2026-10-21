@@ -47,9 +47,11 @@ export function TodayQueueItemActionButtons({
       {item.primaryAction && (
         <button
           type="button"
-          disabled={isPrimaryBusy}
           data-testid={`queue-primary-action-${item.id}`}
-          onClick={() => handleActionClick(item, item.primaryAction!)}
+          onClick={() => {
+            if (isPrimaryBusy) return;
+            handleActionClick(item, item.primaryAction!);
+          }}
           className={`inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all shadow-2xs select-none ${
             item.primaryAction.buttonVariant === "primary"
               ? "bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90"

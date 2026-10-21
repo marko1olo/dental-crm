@@ -5,7 +5,7 @@ import { resolveBadgesPart2 } from "./clinicalBadgeRulesPart2";
 import { resolveBadgesPart3 } from "./clinicalBadgeRulesPart3";
 
 /**
- * Resolves canonical clinical badges from DentalPRO expo26 (schi-1 .. schi-17).
+ * Resolves canonical DENTE clinical badges (schi-1 .. schi-17).
  */
 export function resolveAppointmentClinicalBadges(
 	appointment?: Appointment | null,

@@ -21,7 +21,7 @@ export function GridAppointmentQuickActions({
 	return (
 		<div
 			className={`items-center gap-1 shrink-0 ${isHovered ? "flex" : "hidden"}`}
-			data-testid={`dentalpro-realtime-bar-${a.id}`}
+			data-testid={`dente-realtime-bar-${a.id}`}
 		>
 			<GridAppointmentPlannedActions
 				appointment={a}

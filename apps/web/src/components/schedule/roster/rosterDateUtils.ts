@@ -55,7 +55,7 @@ export function getMondayOfWeekIso(dateIso?: string): string {
 }
 
 /**
- * 1-Click Chair-Doctor Shift Preset Application Engine (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ * 1-Click Chair-Doctor Shift Preset Application Engine (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export function applyCellShiftPreset(
 	currentShifts: DoctorShift[],

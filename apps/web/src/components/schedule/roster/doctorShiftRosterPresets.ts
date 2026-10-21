@@ -571,7 +571,7 @@ export const DEFAULT_CLINIC_STAFF: StaffMember[] = [
 ];
 
 /**
- * 1-Click Doctor-to-Chair Weekly Shift Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+ * 1-Click Doctor-to-Chair Weekly Shift Binding Templates (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
 export type DoctorChairRosterTemplateId =
 	| "mon_wed_fri_morning"

@@ -378,7 +378,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 				</div>
 			</div>
 
-			{/* 6. Оперативная очередь StomX: быстрое перемещение между этапами и главные действия */}
+			{/* 6. Оперативная очередь: быстрое перемещение между этапами и главные действия */}
 			{onQuickStatusChange && (
 				<div className="pt-2 border-t border-[var(--line)]">
 					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
@@ -490,7 +490,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 						</button>
 					</div>
 
-					{/* DentalPRO expo26: 6-Action Clinical Micro-HUD */}
+					{/* DENTE 6-Action Clinical Micro-HUD */}
 					<div className="pt-2 border-t border-[var(--line)] space-y-1.5" data-testid={`clinical-micro-hud-${a.id}`}>
 						<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
 							<span>Клинические действия</span>

@@ -90,7 +90,7 @@ export interface QuickAddDoctorModalProps {
 }
 
 /**
- * QuickAddDoctorModal component (StomX & DentalPRO Parity, Feature 246 / Wave 57).
+ * QuickAddDoctorModal component (DENTE Architecture, Feature 246 / Wave 57).
  *
  * Mandate 8c: Touch targets >= 44x44px.
  * Mandate 8d: 0 cartoon emojis (Lucide vector icons only), Anti-Matryoshka (max modal depth 1).

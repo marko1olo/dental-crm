@@ -129,7 +129,7 @@ export interface QuickAddChairModalProps {
 }
 
 /**
- * QuickAddChairModal component (StomX / DentalPRO parity).
+ * QuickAddChairModal component (DENTE Architecture).
  *
  * Mandate 8d (Anti-Matryoshka, max modal depth 1).
  * Mandate 8e (Doctor & Staff Autonomy: submit button NEVER disabled, auto-generates safe defaults).

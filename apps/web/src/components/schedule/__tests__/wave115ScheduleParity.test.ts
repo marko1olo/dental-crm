@@ -22,13 +22,12 @@ import {
 	STOMX_REFUSE_REASONS_CATALOG,
 	STOMX_WORKPLACE_PALETTES,
 	STOMX_WORKPLACE_PALETTES_MAP,
-	stomxWorkplacePaletteSchema,
-	type StomxWorkplacePalette,
 	DEFAULT_WORKPLACE_CHAIR_PALETTE,
 	getWorkplaceChairPalette,
 	WORKPLACE_CHAIR_PALETTES,
 	WORKPLACE_CHAIR_PALETTES_MAP,
 	workplaceChairPaletteSchema,
+	APPOINTMENT_REFUSAL_REASONS_CATALOG,
 	type WorkplaceChairPalette,
 } from "@dental/shared";
 
@@ -36,12 +35,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Wave 115: 4-State Workplace Palettes Parity", () => {
-	it("exposes clean canonical DENTE chair palette aliases", () => {
-		assert.strictEqual(WORKPLACE_CHAIR_PALETTES, STOMX_WORKPLACE_PALETTES);
-		assert.strictEqual(getWorkplaceChairPalette, getStomxWorkplacePalette);
-		assert.strictEqual(DEFAULT_WORKPLACE_CHAIR_PALETTE, DEFAULT_STOMX_WORKPLACE_PALETTE);
-		assert.strictEqual(WORKPLACE_CHAIR_PALETTES_MAP, STOMX_WORKPLACE_PALETTES_MAP);
-		assert.strictEqual(workplaceChairPaletteSchema, stomxWorkplacePaletteSchema);
+	it("exposes clean canonical DENTE chair palette definitions", () => {
+		assert.ok(Array.isArray(WORKPLACE_CHAIR_PALETTES));
+		assert.ok(typeof getWorkplaceChairPalette === "function");
+		assert.ok(DEFAULT_WORKPLACE_CHAIR_PALETTE);
+		assert.ok(WORKPLACE_CHAIR_PALETTES_MAP);
+		assert.ok(workplaceChairPaletteSchema);
 	});
 
 	it("should have exactly 5 canonical StomX workplace palettes", () => {
@@ -99,8 +98,8 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 	});
 
 	it("should validate each palette against Zod schema", () => {
-		for (const palette of STOMX_WORKPLACE_PALETTES) {
-			const parsed = stomxWorkplacePaletteSchema.safeParse(palette);
+		for (const palette of WORKPLACE_CHAIR_PALETTES) {
+			const parsed = workplaceChairPaletteSchema.safeParse(palette);
 			assert.equal(parsed.success, true, `Palette ${palette.nameRu} failed Zod validation`);
 		}
 	});

@@ -46,7 +46,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 		const missingSolo = appointmentScheduleMissingFields(
 			draftWithoutAssistant,
 			"solo_doctor",
-			staff,
+			staff as any,
 			resources,
 		);
 		assert.deepEqual(missingSolo, [], "Must have 0 missing fields without assistant in solo_doctor mode");
@@ -55,7 +55,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 		const missingOneChair = appointmentScheduleMissingFields(
 			draftWithoutAssistant,
 			"one_chair",
-			staff,
+			staff as any,
 			resources,
 		);
 		assert.deepEqual(missingOneChair, [], "Must have 0 missing fields without assistant in one_chair mode");
@@ -64,7 +64,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 		const missingSmallClinic = appointmentScheduleMissingFields(
 			draftWithoutAssistant,
 			"small_clinic",
-			staff,
+			staff as any,
 			resources,
 		);
 		assert.deepEqual(missingSmallClinic, [], "Must have 0 missing fields without assistant in small_clinic mode");

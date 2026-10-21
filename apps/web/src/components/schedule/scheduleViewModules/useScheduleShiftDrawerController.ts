@@ -41,7 +41,7 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
     handleSaveDoctorShifts,
   } = props;
 
-  // DoctorShiftDrawer state (Mandate 8e / StomX Parity)
+  // DoctorShiftDrawer state (Mandate 8e / DENTE Architecture)
   const [editingDrawerShift, setEditingDrawerShift] = useState<Partial<DoctorShift> | null>(null);
   const [isNewDrawerShift, setIsNewDrawerShift] = useState(false);
 

@@ -26,7 +26,6 @@ export function StatusFilterToggleGroup({
 		<div
 			className="schedule-day-queue-segmented-tabs dente-segmented-bar flex items-center p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-0.5 select-none h-8 min-h-[32px] max-h-8"
 			data-testid="schedule-day-queue-tabs"
-			data-queue-group="stomx-4-stage"
 			role="group"
 			aria-label="Оперативная очередь смены"
 		>

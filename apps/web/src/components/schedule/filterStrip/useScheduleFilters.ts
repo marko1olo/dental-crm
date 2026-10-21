@@ -49,7 +49,7 @@ export function useScheduleFilters({
 	const hasMultipleDoctors = activeDoctors.length > 1 && !isSoloDoctor;
 	const hasMultipleChairs = displayChairs.length > 1 && !isSoloDoctor;
 
-	// Doctor's on-duty chair detection for 1-click "Моё кресло" filter (StomX / DentalPRO parity, Mandates 8e, 8n)
+	// Doctor's on-duty chair detection for 1-click "Моё кресло" filter (Mandates 8e, 8n)
 	const effectiveDoctorIdForMyChair =
 		currentDoctorId ||
 		scheduleDoctorFilterId ||

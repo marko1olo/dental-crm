@@ -1,7 +1,7 @@
 /**
  * DENTE Dental CRM — scheduleShiftHelpers.ts
  *
- * Mathematical and state calculation helpers for chair doctor shifts (StomX / IDENT parity).
+ * Mathematical and state calculation helpers for chair doctor shifts (DENTE Architecture).
  * Mandate 8e (Doctor Autonomy), Mandate 8k (Frictionless Presets), Mandate 8n (Solo Doctor).
  */
 

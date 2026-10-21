@@ -56,7 +56,7 @@ export function GridAppointmentInChairActions({
 						onClick={handleOpenVisit}
 						className="icon-button primary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white border border-[var(--teal)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-xs shrink-0"
 						title="Открыть карту приёма пациента у кресла (#visit)"
-						data-testid={`dentalpro-quick-open-visit-${a.id}`}
+						data-testid={`dente-quick-open-visit-${a.id}`}
 					>
 						<Stethoscope size={12} className="shrink-0" />
 						<span className="sr-only">Приём</span>
@@ -66,7 +66,7 @@ export function GridAppointmentInChairActions({
 						onClick={handleComplete}
 						className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
 						title="Завершить приём у кресла и отправить на оплату"
-						data-testid={`dentalpro-quick-complete-${a.id}`}
+						data-testid={`dente-quick-complete-${a.id}`}
 					>
 						<Check size={12} className="stroke-[3]" />
 						<span className="sr-only">Завершить</span>
@@ -79,7 +79,7 @@ export function GridAppointmentInChairActions({
 					onClick={handleOpenFinance}
 					className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal-dark)] hover:text-white border border-[var(--teal)]/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
 					title="Перейти к оплате на кассе"
-					data-testid={`dentalpro-quick-pay-${a.id}`}
+					data-testid={`dente-quick-pay-${a.id}`}
 				>
 					<CreditCard size={12} />
 					<span className="sr-only">Касса</span>
