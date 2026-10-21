@@ -321,10 +321,11 @@ describe("Wave 224 Inquisition: Real Diagnostic Engines, DICOM P10 & Outpatient 
 		});
 
 		it("4.5 CephalometricCanvas displays honest dropzone when no lateral ceph image is loaded", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../../orthodontics/CephalometricCanvas.tsx"),
-				"utf-8",
-			);
+			const canvasPath = path.resolve(__dirname, "../../orthodontics/CephalometricCanvas.tsx");
+			const dropzonePath = path.resolve(__dirname, "../../orthodontics/cephalometricCanvas/CephDropzone.tsx");
+			const source = fs.existsSync(dropzonePath)
+				? `${fs.readFileSync(canvasPath, "utf-8")}\n${fs.readFileSync(dropzonePath, "utf-8")}`
+				: fs.readFileSync(canvasPath, "utf-8");
 
 			assert.ok(
 				source.includes("data-testid=\"ceph-dropzone\""),

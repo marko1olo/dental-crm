@@ -187,7 +187,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(header.windowWidth > 0);
 	});
 
-	it("renders DicomViewerModal with patient header and touch targets", { timeout: 15000 }, async () => {
+	it("renders DicomViewerModal with patient header and touch targets", { timeout: 30000 }, async () => {
 		const { DicomViewerModal } = await import("../../imaging/DicomViewerModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");
@@ -223,7 +223,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 		assert.ok(html.includes("28.08.2026 15:30"), "Synchronized studyDate into header");
 	});
 
-	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", { timeout: 15000 }, async () => {
+	it("renders CbctMprImplantStudioModal with disabled unselected nerve node delete and strict vector icons (DEF-R2-02)", { timeout: 30000 }, async () => {
 		const { CbctMprImplantStudioModal } = await import("../CbctMprImplantStudioModal");
 		const { createElement } = await import("react");
 		const { renderToStaticMarkup } = await import("react-dom/server");

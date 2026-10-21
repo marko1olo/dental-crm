@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
 import { globalDentalVoiceEngine } from "../../../services/voice";
@@ -89,13 +89,22 @@ export function useCephLandmarks({
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [copied, setCopied] = useState<boolean>(false);
+	const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+			}
+		};
+	}, []);
 
 	const [aiBackendPref, setAiBackendPref] = useState<CephAiBackendPreference>("auto");
 	const [isAiInferring, setIsAiInferring] = useState<boolean>(false);
 	const [aiStats, setAiStats] = useState<CephAiStats | null>(() => {
 		if (latestSavedStudy?.isCalibratedFallback !== undefined) {
 			return {
-				latencyMs: 15,
+				latencyMs: latestSavedStudy.latencyMs ?? 0,
 				placedCount: latestSavedStudy.placedCount,
 				isCalibratedFallback: latestSavedStudy.isCalibratedFallback,
 			};
@@ -395,7 +404,10 @@ export function useCephLandmarks({
 			await navigator.clipboard.writeText(currentEffectiveProtocolText);
 			setCopied(true);
 			showToast("Протокол скопирован в буфер обмена", "success");
-			setTimeout(() => setCopied(false), 2000);
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+			}
+			copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
 		} catch {
 			showToast("Не удалось скопировать текст", "error");
 		}

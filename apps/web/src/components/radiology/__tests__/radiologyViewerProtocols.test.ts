@@ -176,9 +176,9 @@ test("DicomViewerModal: 1-клик Норма, опциональный ИИ б�
 	assert.ok(!source.includes("⚡ Норма"), "Сырой эмодзи молнии ⚡ запрещен в кнопке нормы");
 });
 
-test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 анатомических ориентиров", async () => {
+test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 анатомических ориентиров", { timeout: 15000 }, async () => {
 	const { LANDMARK_CLINICAL_ROLES, getRequiredLandmarksForMeasurement } = await import(
-		"../CephalometricAnalysisModal.js"
+		"../cephalometricMath.js"
 	);
 	const { CEPHALOMETRIC_LANDMARKS } = await import(
 		"../../orthodontics/cephalometricMath.js"

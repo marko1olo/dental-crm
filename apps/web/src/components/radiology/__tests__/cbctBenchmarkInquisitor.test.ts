@@ -24,6 +24,7 @@ import {
 	slicePxToWorldMm,
 	clampCoordinateToVolume,
 	generate16BitLut,
+	get16BitLut,
 	huToGrayscale,
 	getViewportOrientationLabels,
 	DEFAULT_VIEWPORT_TRANSFORM,
@@ -302,7 +303,7 @@ describe("CBCT Benchmark Inquisitor — 3D Slicer & ITK-SNAP Parity Suite", () =
 		it("guarantees LUT caching sub-millisecond execution (< 0.05ms) without reallocation", () => {
 			const start = performance.now();
 			for (let i = 0; i < 1000; i++) {
-				generate16BitLut(4400, 1300, false);
+				get16BitLut(4400, 1300, false);
 			}
 			const duration = performance.now() - start;
 			assert.ok(duration < 200, "1000 LUT evaluations must execute smoothly under 200ms");

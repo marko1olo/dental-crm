@@ -764,6 +764,28 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 		} catch { /* ignore */ }
 	}
 
+	// 4. Update tooth state in odontogram (CBCT to Odontogram Bridge)
+	if (typeof window !== "undefined") {
+		try {
+			const setToothState = useVisitStore.getState().setToothState;
+			if (typeof setToothState === "function") {
+				setToothState(toothCode, "implant");
+			}
+			window.dispatchEvent(
+				new CustomEvent("dente-update-tooth-state", {
+					detail: {
+						toothNumber: params.toothFdi,
+						toothCode,
+						state: "Implant",
+						brand: params.implantSpec.brand,
+						diameterMm: params.implantSpec.diameterMm,
+						lengthMm: params.implantSpec.lengthMm,
+					},
+				}),
+			);
+		} catch { /* ignore */ }
+	}
+
 	showToast(
 		`Операция имплантации #${params.toothFdi} (${brandTitle}) и костная пластика (${totalRub.toLocaleString("ru-RU")} ₽) добавлены в смету визита!`,
 		"success",

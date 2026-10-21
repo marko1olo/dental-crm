@@ -63,18 +63,18 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
  * Returns instant health status (<20ms response time per Mandate 8e).
  */
 export async function testSensorConnection(sensorModelId: string): Promise<SensorConnectionStatus> {
+	const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
 	const sensor = UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === sensorModelId) || UNIVERSAL_SENSOR_CATALOG[0]!;
+	const elapsedMs = Math.max(1, Math.round((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0));
 
-	// Instant simulated hardware loopback check
 	return {
 		isReady: true,
 		statusText: "Статус: Сенсор готов к экспозиции",
-		latencyMs: Math.floor(Math.random() * 8) + 4,
+		latencyMs: elapsedMs,
 		timestampIso: new Date().toISOString(),
 		calibratedPixelSpacingMm: sensor.pixelSpacing,
 		calibratedResolution: sensor.resolution,
 		bitDepth: sensor.bitDepth,
-		temperatureCelsius: 24.5,
 		intakeChannel: "hot_folder",
 		nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
 	};
