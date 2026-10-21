@@ -78,6 +78,9 @@ describe("DmsGuaranteeLetterModal Decomposition & Clinical Invariants", () => {
 			}),
 		);
 		assert.ok(html.includes("dms-coverage-summary-banner"));
+		assert.ok(html.includes("15.04.1990"), "Must render Russian clinical date 15.04.1990");
+		assert.ok(!html.includes("1990-04-15"), "Must not leak raw ISO date 1990-04-15");
+		assert.ok(html.includes("Активно"), "Must render sentence-case 'Активно' badge");
 		assert.ok(html.includes("dms-insurer-policy-form"));
 		assert.ok(html.includes("dms-approved-teeth-selector"));
 		assert.ok(html.includes("dms-guarantee-modal-footer"));

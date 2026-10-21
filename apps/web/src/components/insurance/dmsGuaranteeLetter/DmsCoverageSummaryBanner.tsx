@@ -3,6 +3,7 @@
  * (Мандат 8b: <= 120 строк)
  */
 
+import { formatDateRu } from "@dental/shared";
 import { CheckCircle2, Percent, ShieldCheck } from "lucide-react";
 import React from "react";
 import { formatRubKopecks } from "../insuranceMath.js";
@@ -60,7 +61,7 @@ export function DmsCoverageSummaryBanner({
 						</div>
 					)}
 					{patient?.birthDate && (
-						<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>Дата рождения: {patient.birthDate}</div>
+						<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>Дата рождения: {formatDateRu(patient.birthDate)}</div>
 					)}
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>

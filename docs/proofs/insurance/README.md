@@ -14,13 +14,13 @@
 Скриншоты сняты в живом браузере Chromium через Playwright (`scripts/capture-insurance-4state-proofs.mjs`) и лично проверены аудитором:
 
 1. **☀️ PC Light (1440x900)**: `01_insurance_dms_guarantee_letter_pc_light.png`
-   - Чистая типографика, сводный баннер покрытия, быстрые чипы страховых (СОГАЗ, Ингосстрах, РЕСО, Альфа, ВСК, Согласие), 1 Primary CTA.
+   - Чистая типографика, формат даты рождения РФ «15.04.1990», аккуратный sentence-case бейдж «Активно», сводный баннер покрытия, быстрые чипы страховых (СОГАЗ, Ингосстрах, РЕСО, Альфа, ВСК, Согласие), 1 Primary CTA.
 2. **🌙 PC Dark (1440x900)**: `02_insurance_dms_guarantee_letter_pc_dark.png`
    - Полная поддержка системных токенов темной темы без белых пятен, акцентные янтарные и циан индикаторы.
 3. **📱 Mobile Light (390x844)**: `03_insurance_dms_guarantee_letter_mobile_light.png`
    - Нативный Apple iOS Bottom Sheet: Drag handle 36x5px, `rounded-t-[24px]`, безопасная зона `env(safe-area-inset-bottom)`, тач-таргеты $\ge 44$px, кнопки в Natural Thumb Zone.
 4. **📱 Mobile Dark (390x844)**: `04_insurance_dms_guarantee_letter_mobile_dark.png`
-   - Идеальная ночная эргономика на смартфоне, перенос бейджей без обрезания слов, четкий контраст.
+   - Идеальная ночная эргономика на смартфоне, перенос бейджей без обрезания слов, четкий контраст, бейдж «Активно».
 
 ## 4. Тестовый гейт
 - **64 теста из 64 успешно пройдены** (`node --import tsx --test`).

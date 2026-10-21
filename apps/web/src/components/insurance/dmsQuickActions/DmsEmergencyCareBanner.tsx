@@ -32,7 +32,7 @@ export function DmsEmergencyCareBanner({ isEmergencyCare, onActivateEmergency }:
 					</strong>
 					{isEmergencyCare && (
 						<span style={{ fontSize: "0.6875rem", fontWeight: 800, padding: "2px 8px", borderRadius: "6px", background: "var(--ok-fg, #10b981)", color: "#ffffff" }}>
-							АКТИВНО
+							Активно
 						</span>
 					)}
 				</div>
