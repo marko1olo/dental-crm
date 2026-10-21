@@ -5,31 +5,13 @@ import type { EnrichedBatch } from "./batchTrackingTypes.js";
 
 export interface BatchTrackingItemCardProps {
 	readonly batch: EnrichedBatch;
-	readonly onDeductBatch?:
-		| ((
-				item: InventoryItem,
-				qty: number,
-				lotNumber: string,
-		  ) => void | Promise<void>)
-		| undefined;
-	readonly onReceiveBatch?:
-		| ((
-				item: InventoryItem,
-				qty: number,
-				lotNumber: string,
-				expirationDate: string,
-		  ) => void | Promise<void>)
-		| undefined;
-	readonly onWriteOffExpired?:
-		| ((item: InventoryItem, lotNumber: string) => void)
-		| undefined;
+	readonly onDeductBatch?: ((item: InventoryItem, qty: number, lotNumber: string) => void | Promise<void>) | undefined;
+	readonly onReceiveBatch?: ((item: InventoryItem, qty: number, lotNumber: string, expirationDate: string) => void | Promise<void>) | undefined;
+	readonly onWriteOffExpired?: ((item: InventoryItem, lotNumber: string) => void) | undefined;
 }
 
 export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
-	batch,
-	onDeductBatch,
-	onReceiveBatch,
-	onWriteOffExpired,
+	batch, onDeductBatch, onReceiveBatch, onWriteOffExpired,
 }) => {
 	const isExpired = batch.fefoStatus === "red";
 	const isWarning = batch.fefoStatus === "yellow";
@@ -48,50 +30,25 @@ export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
 		>
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2 flex-wrap mb-1">
-					<span className="font-bold text-xs text-[var(--ink)] truncate">
-						{batch.item.name}
-					</span>
+					<span className="font-bold text-xs text-[var(--ink)] truncate">{batch.item.name}</span>
 					<span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
 						Серия: {batch.lotNumber}
 					</span>
-					{batch.item.sku && (
-						<span className="text-[11px] text-[var(--muted)]">
-							{batch.item.sku}
-						</span>
-					)}
+					{batch.item.sku && <span className="text-[11px] text-[var(--muted)]">{batch.item.sku}</span>}
 				</div>
 				<div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap">
 					<span className="flex items-center gap-1 font-medium">
-						<Clock
-							size={13}
-							className={
-								isExpired
-									? "text-rose-600"
-									: isWarning
-										? "text-amber-600"
-										: "text-teal-600"
-							}
-						/>
+						<Clock size={13} className={isExpired ? "text-rose-600" : isWarning ? "text-amber-600" : "text-teal-600"} />
 						Срок годности: <strong>{batch.expirationDate}</strong>
 					</span>
-					<span
-						className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-							isExpired
-								? "bg-rose-500/20 text-rose-800 dark:text-rose-200"
-								: isWarning
-									? "bg-amber-500/20 text-amber-800 dark:text-amber-200"
-									: "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
-						}`}
-					>
+					<span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+						isExpired ? "bg-rose-500/20 text-rose-800 dark:text-rose-200" : isWarning ? "bg-amber-500/20 text-amber-800 dark:text-amber-200" : "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
+					}`}>
 						{batch.fefoBadge}
 					</span>
 					<span className="font-semibold text-[var(--ink)]">
 						Остаток:{" "}
-						<span
-							className={
-								isOverdraft ? "text-amber-600 dark:text-amber-400" : ""
-							}
-						>
+						<span className={isOverdraft ? "text-amber-600 dark:text-amber-400" : ""}>
 							{batch.quantity} {batch.item.unit || "шт."}
 						</span>
 						{isOverdraft && " (расход сверх остатка)"}
@@ -119,22 +76,12 @@ export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
 							data-testid={`btn-deduct-batch-${batch.item.id}`}
 							title="Списать 1 ед. из этой серии по регламенту FEFO"
 						>
-							<ArrowDownToLine
-								size={13}
-								className="text-teal-600 dark:text-teal-400"
-							/>
+							<ArrowDownToLine size={13} className="text-teal-600 dark:text-teal-400" />
 							<span>Списать по FEFO</span>
 						</button>
 						<button
 							type="button"
-							onClick={() =>
-								onReceiveBatch?.(
-									batch.item,
-									10,
-									batch.lotNumber,
-									batch.expirationDate,
-								)
-							}
+							onClick={() => onReceiveBatch?.(batch.item, 10, batch.lotNumber, batch.expirationDate)}
 							className="h-8 min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center gap-1 cursor-pointer"
 							data-testid={`btn-receive-batch-${batch.item.id}`}
 							title="Оприходовать партию (+10 ед.)"

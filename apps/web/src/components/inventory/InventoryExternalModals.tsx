@@ -1,49 +1,9 @@
-import React, { lazy, Suspense } from "react";
-import { showToast } from "../GlobalToast.js";
+import React from "react";
 import type { InventoryItem } from "./useInventoryLogic.js";
 import type { WarehouseInventoryAuditDocument } from "./warehouseInventoryEngine.js";
-import { InventoryInboundInvoiceModal } from "../InventoryInboundInvoiceModal.js";
-
-const WarehouseTransferModal = lazy(() =>
-	import("./transfers/WarehouseTransferModal.js").then((module) => ({
-		default: module.WarehouseTransferModal,
-	})),
-);
-const ClinicalWriteoffModal = lazy(() =>
-	import("./writeoff/ClinicalWriteoffModal.js").then((module) => ({
-		default: module.ClinicalWriteoffModal,
-	})),
-);
-const ProcedureMaterialDeductionModal = lazy(() =>
-	import("./ProcedureMaterialDeductionModal.js").then((module) => ({
-		default: module.ProcedureMaterialDeductionModal,
-	})),
-);
-const WarehouseInventoryAuditModal = lazy(() =>
-	import("./WarehouseInventoryAuditModal.js").then((module) => ({
-		default: module.WarehouseInventoryAuditModal,
-	})),
-);
-const MdlpDisposalQueueModal = lazy(() =>
-	import("./mdlp/index.js").then((module) => ({
-		default: module.MdlpDisposalQueueModal,
-	})),
-);
-const WarehouseManagerModal = lazy(() =>
-	import("./WarehouseManagerModal.js").then((module) => ({
-		default: module.WarehouseManagerModal,
-	})),
-);
-const MdlpScanningModal = lazy(() =>
-	import("../mdlp/MdlpScanningModal.js").then((module) => ({
-		default: module.MdlpScanningModal,
-	})),
-);
-const AcceptanceWaybillsModal = lazy(() =>
-	import("./AcceptanceWaybillsModal.js").then((module) => ({
-		default: module.AcceptanceWaybillsModal,
-	})),
-);
+import { InventoryClinicalModals } from "./externalModals/InventoryClinicalModals.js";
+import { InventoryRegulatoryModals } from "./externalModals/InventoryRegulatoryModals.js";
+import { useExternalModalsHandlers } from "./externalModals/useExternalModalsHandlers.js";
 
 export interface InventoryExternalModalsProps {
 	readonly organizationId: string;
@@ -51,8 +11,8 @@ export interface InventoryExternalModalsProps {
 	readonly auditInitialDoc: WarehouseInventoryAuditDocument;
 	readonly isClinicalWriteoffOpen: boolean;
 	readonly onCloseClinicalWriteoff: () => void;
-	readonly isProcedureDeductionOpen: boolean;
-	readonly onCloseProcedureDeduction: () => void;
+	readonly isProcedureDeductionOpen?: boolean;
+	readonly onCloseProcedureDeduction?: () => void;
 	readonly isWarehouseTransferOpen: boolean;
 	readonly onCloseWarehouseTransfer: () => void;
 	readonly isInventoryAuditOpen: boolean;
@@ -79,7 +39,7 @@ export interface InventoryExternalModalsProps {
 
 /**
  * Контейнер модальных окон складского учета (Мандаты 8b, 8d, 8e).
- * Изолирует lazy-загрузку тяжелых окон (МДЛП, ИНВ-3, ТОРГ-13, ТОРГ-12).
+ * Декомпозирован до <= 120 строк.
  */
 export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = ({
 	organizationId,
@@ -87,8 +47,6 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 	auditInitialDoc,
 	isClinicalWriteoffOpen,
 	onCloseClinicalWriteoff,
-	isProcedureDeductionOpen,
-	onCloseProcedureDeduction,
 	isWarehouseTransferOpen,
 	onCloseWarehouseTransfer,
 	isInventoryAuditOpen,
@@ -100,350 +58,55 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 	onCloseWarehouseManager,
 	isMdlpScanningOpen,
 	onCloseMdlpScanning,
-	isNurseCarpuleModalOpen,
-	onCloseNurseCarpuleModal,
 	isAcceptanceWaybillsOpen,
 	onCloseAcceptanceWaybills,
 	isInboundInvoiceModalOpen,
 	onCloseInboundInvoiceModal,
-	isDeductingMaterials,
-	setIsDeductingMaterials,
 	fetchItems,
 	getHeaders,
-	onQuickWriteoffCarpules,
 }) => {
+	const handlers = useExternalModalsHandlers(organizationId, items, fetchItems, getHeaders);
+
 	return (
 		<>
-			{/* Новая модалка приходной накладной поставщика */}
-			{isInboundInvoiceModalOpen && (
-				<InventoryInboundInvoiceModal
-					isOpen={isInboundInvoiceModalOpen}
-					onClose={onCloseInboundInvoiceModal}
-					organizationId={organizationId}
-					inventoryItems={items}
-					onInvoicePosted={async () => {
-						fetchItems();
-					}}
-					getHeaders={getHeaders}
-				/>
-			)}
+			<InventoryClinicalModals
+				isClinicalWriteoffOpen={isClinicalWriteoffOpen}
+				onCloseClinicalWriteoff={onCloseClinicalWriteoff}
+				onConfirmClinicalWriteoff={(doc) => handlers.handleClinicalWriteoff(doc, onCloseClinicalWriteoff)}
+				isWarehouseTransferOpen={isWarehouseTransferOpen}
+				onCloseWarehouseTransfer={onCloseWarehouseTransfer}
+				onDocumentSavedWarehouseTransfer={async () => {
+					onCloseWarehouseTransfer();
+					fetchItems();
+				}}
+				onConfirmWarehouseTransfer={async (doc) => {
+					if (doc) await handlers.handleWarehouseTransfer(doc);
+				}}
+				isInventoryAuditOpen={isInventoryAuditOpen}
+				onCloseInventoryAudit={onCloseInventoryAudit}
+				auditInitialDoc={auditInitialDoc}
+				onApplyInventoryAudit={(doc) => handlers.handleInventoryAudit(doc, onCloseInventoryAudit)}
+				onDocumentSavedInventoryAudit={fetchItems}
+			/>
 
-			{isClinicalWriteoffOpen && (
-				<Suspense fallback={null}>
-					<ClinicalWriteoffModal
-						isOpen={isClinicalWriteoffOpen}
-						onClose={onCloseClinicalWriteoff}
-						onConfirmWriteoff={async (doc) => {
-							try {
-								let deductedCount = 0;
-								for (const line of doc.lines) {
-									if (line.actualQuantity <= 0) continue;
-									const matchingItem = items.find(
-										(it) => it.name.toLowerCase() === line.nameRu.toLowerCase(),
-									);
-									if (matchingItem) {
-										const res = await fetch(
-											`/api/inventory/${organizationId}/${matchingItem.id}/stock`,
-											{
-												method: "PATCH",
-												headers: getHeaders({ "Content-Type": "application/json" }),
-												body: JSON.stringify({
-													adjustment: -line.actualQuantity,
-													allowOverdraft: true,
-													reason: `Акт ${doc.actNumber}: ${line.nameRu}`,
-												}),
-											},
-										);
-										if (res.ok) deductedCount++;
-									}
-								}
-								showToast(
-									`Акт списания зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
-									"success",
-								);
-							} catch (e) {
-								console.error(e);
-								showToast("Ошибка при фиксации акта списания", "error");
-							} finally {
-								onCloseClinicalWriteoff();
-								fetchItems();
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isProcedureDeductionOpen && (
-				<Suspense fallback={null}>
-					<ProcedureMaterialDeductionModal
-						isOpen={isProcedureDeductionOpen}
-						onClose={onCloseProcedureDeduction}
-						warehouseItems={items}
-						isDeducting={isDeductingMaterials}
-						onConfirmDeduction={async (lines, summary) => {
-							try {
-								setIsDeductingMaterials(true);
-								const res = await fetch(`/api/inventory/${organizationId}/deduct`, {
-									method: "POST",
-									headers: getHeaders({ "Content-Type": "application/json" }),
-									body: JSON.stringify({
-										organizationId,
-										items: lines
-											.filter((line) => line.quantity > 0)
-											.map((line) => ({
-												inventoryItemId: line.inventoryItemId || undefined,
-												name: line.materialName,
-												quantity: line.quantity,
-												allowOverdraft: true,
-												reason: `Списание по техкарте: ${line.materialName} (${line.quantity} ${line.unit})`,
-											})),
-										reason: "Списание материалов по техкартам процедур",
-										allowOverdraft: true,
-									}),
-								});
-								if (!res.ok) {
-									const errData = await res.json().catch(() => ({}));
-									throw new Error(errData.message || `Ошибка списания (${res.status})`);
-								}
-								showToast(
-									`Списано материалов по техкартам: ${lines.length} поз. на сумму ${summary.totalCostFormatted} (мягкий овердрафт разрешен)`,
-									"success",
-								);
-								if (typeof window !== "undefined") {
-									window.dispatchEvent(new CustomEvent("dente-inventory-reload"));
-								}
-							} catch (e) {
-								console.error(e);
-								showToast(
-									e instanceof Error ? e.message : "Ошибка при списании материалов",
-									"error",
-								);
-							} finally {
-								setIsDeductingMaterials(false);
-								onCloseProcedureDeduction();
-								fetchItems();
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isWarehouseTransferOpen && (
-				<Suspense fallback={null}>
-					<WarehouseTransferModal
-						isOpen={isWarehouseTransferOpen}
-						onClose={onCloseWarehouseTransfer}
-						onDocumentSaved={async () => {
-							onCloseWarehouseTransfer();
-							fetchItems();
-						}}
-						onConfirmTransfer={async (doc) => {
-							if (!doc || !doc.items || doc.items.length === 0) return;
-							try {
-								const headers = getHeaders({ "Content-Type": "application/json" });
-								const deductItems = doc.items
-									.filter(
-										(line) =>
-											(line.dispatchedQuantity ?? line.requestedQuantity ?? 0) >
-											0,
-									)
-									.map((line) => {
-										const matchingItem = items.find(
-											(it) =>
-												it.id === line.itemId ||
-												it.name.trim().toLowerCase() ===
-													line.nameRu.trim().toLowerCase(),
-										);
-										return {
-											inventoryItemId: matchingItem?.id || line.itemId,
-											name: line.nameRu,
-											quantity:
-												line.dispatchedQuantity > 0
-													? line.dispatchedQuantity
-													: line.requestedQuantity,
-											allowOverdraft: true,
-											reason: `Перемещение ТОРГ-13 №${doc.documentNumber} (${doc.sourceBranchId} → ${doc.targetBranchId})`,
-											notes: doc.notes,
-											lotNumber: line.batchNumber,
-											expirationDate: line.expiryDate,
-										};
-									});
-
-								if (deductItems.length > 0) {
-									await fetch(`/api/inventory/${organizationId}/deduct`, {
-										method: "POST",
-										headers,
-										body: JSON.stringify({
-											items: deductItems,
-											allowOverdraft: true,
-											reason: `Перемещение ТОРГ-13 №${doc.documentNumber}`,
-											notes: doc.notes,
-										}),
-									});
-								}
-							} catch (err) {
-								console.error("Ошибка списания при перемещении со склада:", err);
-							} finally {
-								fetchItems();
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isInventoryAuditOpen && (
-				<Suspense fallback={null}>
-					<WarehouseInventoryAuditModal
-						isOpen={isInventoryAuditOpen}
-						onClose={onCloseInventoryAudit}
-						initialDocument={auditInitialDoc}
-						onApplyAudit={async (doc) => {
-							try {
-								const discrepancyItems = doc.items.filter(
-									(it) => it.discrepancyQuantity !== 0,
-								);
-								if (discrepancyItems.length > 0) {
-									const headers = getHeaders({
-										"Content-Type": "application/json",
-									});
-									for (const it of discrepancyItems) {
-										await fetch(
-											`/api/inventory/${organizationId}/${it.itemId}/stock`,
-											{
-												method: "PATCH",
-												headers,
-												body: JSON.stringify({
-													adjustment: it.discrepancyQuantity,
-													reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
-													allowOverdraft: true,
-												}),
-											},
-										);
-									}
-									showToast(
-										`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`,
-										"info",
-									);
-								} else {
-									showToast(
-										"Инвентаризация утверждена: расхождений по остаткам не выявлено",
-										"info",
-									);
-								}
-							} catch (err) {
-								const message =
-									err instanceof Error
-										? err.message
-										: "Не удалось провести списание/оприходование по инвентаризации";
-								showToast(message, "error");
-							} finally {
-								onCloseInventoryAudit();
-								fetchItems();
-							}
-						}}
-						onDocumentSaved={() => {
-							fetchItems();
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isMdlpDisposalOpen && (
-				<Suspense fallback={null}>
-					<MdlpDisposalQueueModal
-						isOpen={isMdlpDisposalOpen}
-						onClose={onCloseMdlpDisposal}
-						onConfirmDisposal={async () => {
-							onCloseMdlpDisposal();
-							fetchItems();
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isWarehouseManagerOpen && (
-				<Suspense fallback={null}>
-					<WarehouseManagerModal
-						isOpen={isWarehouseManagerOpen}
-						onClose={onCloseWarehouseManager}
-						onOpenInventoryAudit={() => {
-							onCloseWarehouseManager();
-							onOpenInventoryAudit?.();
-						}}
-						initialItems={items}
-						onConfirmWriteoff={async (writeoffLines) => {
-							try {
-								const res = await fetch(`/api/inventory/${organizationId}/deduct`, {
-									method: "POST",
-									headers: getHeaders({ "Content-Type": "application/json" }),
-									body: JSON.stringify({
-										organizationId,
-										items: (writeoffLines || []).map((line) => ({
-											id: line.id,
-											inventoryItemId: line.id,
-											name: line.name,
-											quantity: line.writeoffQuantity,
-											unitCostRub: line.unitCostRub,
-											allowOverdraft: true,
-											reason: `Ручное списание: ${line.name}`,
-										})),
-										reason: "Ручное списание со склада",
-										allowOverdraft: true,
-									}),
-								});
-								if (!res.ok) {
-									const errData = await res.json().catch(() => ({}));
-									throw new Error(errData.message || `Ошибка списания (${res.status})`);
-								}
-								showToast(
-									`Списание материалов успешно проведено (${writeoffLines?.length ?? 0} поз.)`,
-									"success",
-								);
-							} catch (e) {
-								console.error(e);
-								showToast(
-									e instanceof Error ? e.message : "Не удалось провести списание материалов на сервере",
-									"error",
-								);
-							} finally {
-								onCloseWarehouseManager();
-								fetchItems();
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{isMdlpScanningOpen && (
-				<Suspense fallback={null}>
-					<MdlpScanningModal
-						isOpen={isMdlpScanningOpen}
-						onClose={onCloseMdlpScanning}
-						initialMode="disposal_531"
-					/>
-				</Suspense>
-			)}
-
-			{isAcceptanceWaybillsOpen && (
-				<Suspense fallback={null}>
-					<AcceptanceWaybillsModal
-						isOpen={isAcceptanceWaybillsOpen}
-						onClose={onCloseAcceptanceWaybills}
-						organizationId={organizationId}
-						inventoryItems={items.map((it) => ({
-							id: it.id,
-							name: it.name,
-							stockQuantity: Number(it.stockQuantity) || 0,
-							unitCostRub: it.unitCostRub != null ? String(it.unitCostRub) : undefined,
-							unit: it.unit || "уп",
-						}))}
-						onWaybillPosted={async () => {
-							fetchItems();
-						}}
-						getHeaders={getHeaders}
-					/>
-				</Suspense>
-			)}
+			<InventoryRegulatoryModals
+				organizationId={organizationId}
+				items={items}
+				isInboundInvoiceModalOpen={isInboundInvoiceModalOpen}
+				onCloseInboundInvoiceModal={onCloseInboundInvoiceModal}
+				fetchItems={fetchItems}
+				getHeaders={getHeaders}
+				isMdlpDisposalOpen={isMdlpDisposalOpen}
+				onCloseMdlpDisposal={onCloseMdlpDisposal}
+				isWarehouseManagerOpen={isWarehouseManagerOpen}
+				onCloseWarehouseManager={onCloseWarehouseManager}
+				onOpenInventoryAudit={onOpenInventoryAudit}
+				onConfirmManagerWriteoff={(lines) => handlers.handleWarehouseManagerWriteoff(lines, onCloseWarehouseManager)}
+				isMdlpScanningOpen={isMdlpScanningOpen}
+				onCloseMdlpScanning={onCloseMdlpScanning}
+				isAcceptanceWaybillsOpen={isAcceptanceWaybillsOpen}
+				onCloseAcceptanceWaybills={onCloseAcceptanceWaybills}
+			/>
 		</>
 	);
 };

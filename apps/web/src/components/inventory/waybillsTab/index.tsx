@@ -14,10 +14,7 @@ export * from "./types.js";
 export { useWarehouseWaybills } from "./useWarehouseWaybills.js";
 export { WaybillDetailsEmpty } from "./WaybillDetailsEmpty.js";
 export { WaybillDetailsView } from "./WaybillDetailsView.js";
-export {
-	ExpressWaybillModal,
-	WaybillEditorModal,
-} from "./WaybillEditorModal.js";
+export { ExpressWaybillModal, WaybillEditorModal } from "./WaybillEditorModal.js";
 export { WaybillItemsGrid } from "./WaybillItemsGrid.js";
 export { WaybillsListTable } from "./WaybillsListTable.js";
 export { WaybillsToolbar } from "./WaybillsToolbar.js";
@@ -26,46 +23,19 @@ export { WaybillsToolbar } from "./WaybillsToolbar.js";
  * Вкладка приходных накладных ТОРГ-12 и оприходования партий ТМЦ (Мандаты 8e, 8n).
  * Декомпозирована строго <= 120 строк в соответствии с Мандатом 8b.
  */
-export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (
-	props,
-) => {
+export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props) => {
 	const {
-		waybillsList,
-		selectedWaybill,
-		setSelectedWaybill,
-		isCreatingNew,
-		setIsCreatingNew,
-		searchQuery,
-		setSearchQuery,
-		draftWaybill,
-		isExpressModalOpen,
-		setIsExpressModalOpen,
-		expressSupplierId,
-		setExpressSupplierId,
-		expressWaybillNum,
-		setExpressWaybillNum,
-		expressDate,
-		setExpressDate,
-		expressAmountRub,
-		setExpressAmountRub,
-		handlePostExpressWaybill,
-		handleAddTemplateItem,
-		handleRemoveDraftItem,
-		handlePostWaybill,
-		handlePrintTorg12,
-		handleExportCsv,
-		handleStartCreateNew,
-		filteredWaybills,
-		handleChangeSupplier,
-		handleChangeWaybillNumber,
-		handleChangeReceiptDate,
+		waybillsList, selectedWaybill, setSelectedWaybill, isCreatingNew, setIsCreatingNew,
+		searchQuery, setSearchQuery, draftWaybill, isExpressModalOpen, setIsExpressModalOpen,
+		expressSupplierId, setExpressSupplierId, expressWaybillNum, setExpressWaybillNum,
+		expressDate, setExpressDate, expressAmountRub, setExpressAmountRub,
+		handlePostExpressWaybill, handleAddTemplateItem, handleRemoveDraftItem, handlePostWaybill,
+		handlePrintTorg12, handleExportCsv, handleStartCreateNew, filteredWaybills,
+		handleChangeSupplier, handleChangeWaybillNumber, handleChangeReceiptDate,
 	} = useWarehouseWaybills(props);
 
 	return (
-		<div
-			className="warehouse-waybills-tab flex-1 flex flex-col min-h-0 overflow-hidden w-full gap-2.5"
-			data-testid="warehouse-waybills-tab"
-		>
+		<div className="warehouse-waybills-tab flex-1 flex flex-col min-h-0 overflow-hidden w-full gap-2.5" data-testid="warehouse-waybills-tab">
 			<WaybillsToolbar
 				searchQuery={searchQuery}
 				onSearchChange={setSearchQuery}
@@ -79,10 +49,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (
 					totalWaybillsCount={waybillsList.length}
 					selectedWaybillId={selectedWaybill?.id ?? null}
 					isCreatingNew={isCreatingNew}
-					onSelectWaybill={(wb) => {
-						setSelectedWaybill(wb);
-						setIsCreatingNew(false);
-					}}
+					onSelectWaybill={(wb) => { setSelectedWaybill(wb); setIsCreatingNew(false); }}
 					onStartCreateNew={handleStartCreateNew}
 				/>
 
@@ -99,16 +66,9 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (
 							onSubmit={handlePostWaybill}
 						/>
 					) : selectedWaybill ? (
-						<WaybillDetailsView
-							waybill={selectedWaybill}
-							onPrintTorg12={handlePrintTorg12}
-							onExportCsv={handleExportCsv}
-						/>
+						<WaybillDetailsView waybill={selectedWaybill} onPrintTorg12={handlePrintTorg12} onExportCsv={handleExportCsv} />
 					) : (
-						<WaybillDetailsEmpty
-							totalWaybillsCount={waybillsList.length}
-							onStartCreateNew={handleStartCreateNew}
-						/>
+						<WaybillDetailsEmpty totalWaybillsCount={waybillsList.length} onStartCreateNew={handleStartCreateNew} />
 					)}
 				</div>
 			</div>

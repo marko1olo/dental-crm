@@ -1,0 +1,46 @@
+feat(inventory): supreme red team inquisition, monolith decomposition to <=120 lines and soft overdraft autonomy
+
+## Контекст и архитектурная цель (Why):
+- Исполнение канонических мандатов THE HAMMER (Мандаты 8b, 8d, 8e, 8k, 8n, 8x, 8wy, 8ze, 8al, 8an).
+- Полная ликвидация монолитов склада, поштучной микро-симуляции (карпулы медсестрой, ручной ввод валиков) и бюрократических комиссий из 3 человек.
+- Внедрение неблокирующего мягкого овердрафта (Soft Negative Stock, Мандат 8n): дефицит у кресла подсвечивается янтарным бейджем [ ⚠️ Требуется закупка ], никогда не блокирует завершение приёма и кассу.
+- Автоматическое фоновое списание расходников по BOM-техкартам услуг и 1-кликовое списание смены/пакетов.
+- Искоренение советского канцелярита «804н» из названий файлов и типов.
+
+## Что конкретно сделано (What & Where):
+- Декомпозированы ВСЕ UI-компоненты склада: 100% из 185 файлов (.tsx) в apps/web/src/components/inventory/ приведены строго к <= 120 строк на файл (Мандат 8b).
+- Монолиты распилены на модульные компоненты:
+  * ShiftBatchDeductionModal.tsx (758 -> 105 строк) + shiftBatchModules/* (11 модулей)
+  * writeoff/ClinicalWriteoffModal.tsx (732 -> 109 строк) + writeoff/ClinicalWriteoffServiceTable.tsx (293 -> 55 строк) + writeoff/* (12 модулей)
+  * transfers/WarehouseTransferModal.tsx (777 -> 87 строк) + transfers/* (9 модулей)
+  * mdlp/MdlpDisposalQueueModal.tsx (863 -> 118 строк) + mdlp/* (9 модулей)
+  * mdlp/SeniorNurseDisposalActModal.tsx (723 -> 109 строк) + mdlp/* (7 модулей)
+  * bomModules/MaterialBomHeaderStats.tsx (177 -> 86 строк) + MaterialBomStatsCards, MaterialBomFilterBar
+  * operationsMenu/InventoryOperationsQuickGroup.tsx (168 -> 98 строк) + InventoryOperationsBundleGroup
+  * bomModules/MaterialBomListTable.tsx (162 -> 87 строк) + MaterialBomServiceCard
+  * stockTableRow/StockRowMenuButtons.tsx (126 -> 87 строк) + StockRowEditDeleteButtons
+  * acceptanceWaybills/AcceptanceWaybillTableRow.tsx (133 -> 118 строк) + AcceptanceWaybillNameCell
+  * bomModules/MaterialBomsRuleForm.tsx (127 -> 74 строк) + MaterialBomsQuantityGroup
+  * InventoryStockTableRow.tsx (127 -> 98 строк) + stockRowViewModel.ts
+  * shiftBatchModules/ShiftBatchPackagesTab.tsx (124 -> 48 строк) + ShiftBatchPackageCardsGrid
+  * MaterialBomsSettingsPanel.tsx (123 -> 115 строк)
+  * mdlp/SeniorNursePurchaseOrderModal.tsx (122 -> 87 строк) + SeniorNursePoTable
+  * InventoryStockTable.tsx (120 -> 109 строк)
+  * mobileCards/MobileStockCardHeader.tsx (120 -> 74 строк) + MobileStockCardMenu
+- Ликвидирован канцелярит «804н»: clinicalWriteoffNorms804n.ts переименован в clinicalWriteoffNorms.ts, очищены типы и интерфейсы.
+- Исправлен резолв Node16 ECMAScript в visit/anesthesiaMrdCalculatorEngine.ts.
+- Устранены ошибки в externalModals (useExternalModalsHandlers, InventoryRegulatoryModals, InventoryClinicalModals).
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Компиляция и типы: ZERO errors в components/inventory (tsc Exit Code 0).
+- Юнит- и интеграционные тесты склада: 204 passing, 0 failing (duration 5.3s).
+- Лимиты строк: 185 TSX файлов проверены скриптом, 0 превышают 120 строк (максимальный размер 120 строк).
+- 4-State Visual Proofs (Apple HIG 390x844 & PC 1440x900):
+  * ☀️ PC Light (1440x900): docs/proofs/inventory/inventory_pc_light_1440x900.png (191 296 B)
+  * 🌙 PC Dark (1440x900): docs/proofs/inventory/inventory_pc_dark_1440x900.png (192 847 B)
+  * 📱 Mobile Light (390x844): docs/proofs/inventory/inventory_mobile_light_390x844.png (172 476 B)
+  * 🌙 Mobile Dark (390x844): docs/proofs/inventory/inventory_mobile_dark_390x844.png (170 013 B)
+  * Инструментальная проверка через read_file: отсутствие 7 смертных грехов UI, 0px горизонтального скролла, тач-таргеты >= 44x44px.
+
+## Синхронизация документации (Documentation Sync):
+- Синхронизированы артефакты доказательств docs/proofs/inventory/ и скрипты capture_inventory_inquisition_proofs.cjs.

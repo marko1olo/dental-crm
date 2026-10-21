@@ -1,13 +1,14 @@
 /**
- * MaterialBomsRuleModal.tsx — Модальное окно создания и редактирования нормы списания BOM (804н).
- * (Мандаты 8b <= 800 строк, 8d 0 эмодзи, 8e Doctor Autonomy).
+ * MaterialBomsRuleModal.tsx — Модальное окно создания и редактирования нормы списания BOM.
+ * (Мандаты 8b <= 120 строк, 8d 0 эмодзи, 8e Doctor Autonomy).
  */
 
 import { type ClinicalMarketMaterialItem } from "@dental/shared";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
 import { MaterialBomsQuickCatalogModal } from "./MaterialBomsQuickCatalogModal.js";
+import { MaterialBomsRuleForm } from "./bomModules/MaterialBomsRuleForm.js";
 import type { InventoryItem } from "./useInventoryLogic.js";
 
 export interface ProcedureRuleModalState {
@@ -28,16 +29,6 @@ export interface MaterialBomsRuleModalProps {
 	readonly onChangeModalState: (next: ProcedureRuleModalState) => void;
 }
 
-const QUICK_CHIPS: readonly { readonly label: string; readonly val: string }[] = [
-	{ label: "0.1 г/мл", val: "0.1" },
-	{ label: "0.35 г (пломба)", val: "0.35" },
-	{ label: "0.5 мл", val: "0.5" },
-	{ label: "1 шт/карп.", val: "1" },
-	{ label: "2 шт", val: "2" },
-	{ label: "15 мл (ирригация)", val: "15" },
-	{ label: "25 г (Air-Flow)", val: "25" },
-];
-
 export function MaterialBomsRuleModal({
 	modalState,
 	availableServices,
@@ -52,7 +43,6 @@ export function MaterialBomsRuleModal({
 	if (!modalState?.isOpen) return null;
 
 	const handleSelectFromMarketCatalog = (material: ClinicalMarketMaterialItem) => {
-		// Try to find matching warehouse item by id, name or brand
 		const query = material.nameRu.toLowerCase();
 		const brand = material.brandName.toLowerCase();
 		const matchedItem = warehouseItems.find((it) => {
@@ -93,137 +83,19 @@ export function MaterialBomsRuleModal({
 						</button>
 					</div>
 
-					<form onSubmit={onSave}>
-						<div className="material-boms-modal-body">
-							{/* Quick pick button for 90% Market Catalog */}
-							<div style={{ marginBottom: "12px" }}>
-								<button
-									type="button"
-									className="material-boms-btn material-boms-btn-secondary"
-									style={{
-										width: "100%",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "8px",
-										padding: "9px 14px",
-									}}
-									onClick={() => setIsCatalogOpen(true)}
-								>
-									<Sparkles size={15} className="text-teal-600" />
-									<span>Каталог 90% рынка РФ (Osstem, Bio-Oss, ProTaper, RelyX)</span>
-								</button>
-							</div>
-
-							<div className="material-boms-form-group">
-								<label className="material-boms-form-label">Услуга прейскуранта *</label>
-								<select
-									className="material-boms-form-select"
-									value={modalState.serviceId}
-									onChange={(e) =>
-										onChangeModalState({ ...modalState, serviceId: e.target.value })
-									}
-									required
-								>
-									{availableServices.length > 0 ? (
-										availableServices.map((s) => (
-											<option key={s.id} value={s.id}>
-												{s.code ? `[${s.code}] ` : ""}{s.title}
-											</option>
-										))
-									) : (
-										<option value="">Выберите услугу из прейскуранта</option>
-									)}
-								</select>
-							</div>
-
-							<div className="material-boms-form-group">
-								<label className="material-boms-form-label">Складской материал *</label>
-								<select
-									className="material-boms-form-select"
-									value={modalState.inventoryItemId}
-									onChange={(e) =>
-										onChangeModalState({
-											...modalState,
-											inventoryItemId: e.target.value,
-										})
-									}
-									required
-								>
-									{warehouseItems.length > 0 ? (
-										warehouseItems.map((it) => (
-											<option key={it.id} value={it.id}>
-												{it.name} (остаток: {it.stockQuantity} {it.unit || "шт."}, {Number(it.unitCostRub || 0)} ₽)
-											</option>
-										))
-									) : (
-										<option value="">Выберите материал на складе</option>
-									)}
-								</select>
-							</div>
-
-							<div className="material-boms-form-group">
-								<label className="material-boms-form-label">
-									Норма расхода на 1 услугу (в граммах, мл или штуках) *
-								</label>
-								<input
-									type="number"
-									step="0.0001"
-									min="0.0001"
-									className="material-boms-form-input"
-									value={modalState.quantityToDeduct}
-									onChange={(e) =>
-										onChangeModalState({
-											...modalState,
-											quantityToDeduct: e.target.value,
-										})
-									}
-									placeholder="например: 0.35"
-									required
-								/>
-
-								{/* Quick Chips */}
-								<div className="material-boms-chips-row">
-									{QUICK_CHIPS.map((chip) => (
-										<button
-											key={chip.label}
-											type="button"
-											className="material-boms-chip"
-											onClick={() =>
-												onChangeModalState({
-													...modalState,
-													quantityToDeduct: chip.val,
-												})
-											}
-										>
-											+{chip.label}
-										</button>
-									))}
-								</div>
-							</div>
-						</div>
-
-						<div className="material-boms-modal-footer">
-							<button
-								type="button"
-								className="material-boms-btn material-boms-btn-secondary"
-								onClick={onClose}
-							>
-								Отмена
-							</button>
-							<button
-								type="submit"
-								className="material-boms-btn material-boms-btn-primary"
-								disabled={isSaving}
-							>
-								{isSaving ? "Сохраняем..." : "Сохранить норму"}
-							</button>
-						</div>
-					</form>
+					<MaterialBomsRuleForm
+						modalState={modalState}
+						availableServices={availableServices}
+						warehouseItems={warehouseItems}
+						isSaving={isSaving}
+						onSave={onSave}
+						onClose={onClose}
+						onChangeModalState={onChangeModalState}
+						onOpenCatalog={() => setIsCatalogOpen(true)}
+					/>
 				</div>
 			</div>
 
-			{/* Sub-modal: 90% Market Materials Catalog */}
 			<MaterialBomsQuickCatalogModal
 				isOpen={isCatalogOpen}
 				onClose={() => setIsCatalogOpen(false)}
@@ -232,3 +104,5 @@ export function MaterialBomsRuleModal({
 		</>
 	);
 }
+
+export default MaterialBomsRuleModal;

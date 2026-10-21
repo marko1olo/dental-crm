@@ -1,57 +1,22 @@
 /**
- * ============================================================================
  * WAREHOUSE INVENTORY AUDIT MODAL (ИНВ-3, ИНВ-19, ТОРГ-16 & FEFO)
- * Интерактивный HUD управления инвентаризацией стоматологических расходных материалов,
- * формирования описей ИНВ-3, сличительных ведомостей ИНВ-19, партионного контроля
- * сроков годности FEFO и актов списания ТОРГ-16.
- * ============================================================================
+ * HUD управления инвентаризацией стоматологических расходных материалов,
+ * формирования описей ИНВ-3, сличительных ведомостей ИНВ-19 и списания ТОРГ-16.
+ * Декомпозирован до <= 120 строк (Мандаты 8b, 8d, 8e).
  */
 
-import {
-	Boxes,
-	Check,
-	CheckCircle2,
-	Download,
-	FileCode,
-	FileSpreadsheet,
-	PackageCheck,
-	PackageX,
-	Printer,
-	Search,
-	SlidersHorizontal,
-	X,
-} from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-	DEFAULT_COMMISSION_MEMBERS,
-	DEFAULT_INVENTORY_ITEMS_PRESET,
-	SOLO_DOCTOR_COMMISSION_MEMBERS,
-	type InventoryAuditTotals,
-	type WarehouseAuditItemLine,
-	type WarehouseInventoryAuditDocument,
-	type WarehouseInventoryCommissionMember,
-	type WarehouseInventoryStatus,
-	type WarehouseTorg16WriteoffAct,
-	calculateInventoryAuditTotals,
-	computeAuditLineItem,
-	exportInv19DiscrepanciesToCsv,
-	exportInventoryTo1C,
-	exportInventoryToCsv,
-	formatRubCurrency,
-	generateInv19Html,
-	generateInv3Html,
-	generateTorg16ActFromInventory,
-	generateTorg16Html,
-	kopecksToRubles,
-	sortAuditItemsByFefo,
-	validateInventoryAuditDraft,
+import type {
+	WarehouseInventoryAuditDocument,
+	WarehouseTorg16WriteoffAct,
 } from "./warehouseInventoryEngine.js";
-import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
-
+import { WarehouseAuditCategoryBar } from "./auditTab/WarehouseAuditCategoryBar.js";
+import { WarehouseAuditFooter } from "./auditTab/WarehouseAuditFooter.js";
+import { WarehouseAuditModalHeader } from "./auditTab/WarehouseAuditModalHeader.js";
+import { WarehouseAuditToolbar } from "./auditTab/WarehouseAuditToolbar.js";
+import { useWarehouseAuditState, type InventoryCategoryFilter } from "./auditTab/useWarehouseAuditState.js";
 import { WarehouseInventoryAuditTable } from "./WarehouseInventoryAuditTable.js";
-import { WarehouseInventoryCommissionDrawer } from "./WarehouseInventoryCommissionDrawer.js";
 import { WarehouseInventoryKpisGrid } from "./WarehouseInventoryKpisGrid.js";
 import "./warehouseInventory.css";
 
@@ -64,12 +29,7 @@ export interface WarehouseInventoryAuditModalProps {
 	readonly onTorg16Generated?: ((act: WarehouseTorg16WriteoffAct) => void) | undefined;
 }
 
-export type InventoryCategoryFilter =
-	| "all"
-	| "anesthetics"
-	| "filling"
-	| "sterilization"
-	| "disposables";
+export type { InventoryCategoryFilter };
 
 export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModalProps> = ({
 	isOpen,
@@ -79,843 +39,68 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 	onApplyAudit,
 	onTorg16Generated,
 }) => {
-	// 1. Шапка документа инвентаризации
-	const [docNumber, setDocNumber] = useState<string>(
-		() => initialDocument?.documentNumber || `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
-	);
-	const [orderNumber, setOrderNumber] = useState<string>(
-		initialDocument?.orderNumber || "ПР-44/ИНВ",
-	);
-	const [orderDate, setOrderDate] = useState<string>(
-		initialDocument?.orderDate || new Date().toISOString().slice(0, 10),
-	);
-	const [auditDate, setAuditDate] = useState<string>(
-		initialDocument?.auditDate || new Date().toISOString().slice(0, 10),
-	);
-	const [branchNameRu, setBranchNameRu] = useState<string>(
-		initialDocument?.branchNameRu || "Центральный распределительный склад (ЦС)",
-	);
-	const [warehouseNameRu, setWarehouseNameRu] = useState<string>(
-		initialDocument?.warehouseNameRu || "Главный склад расходных материалов",
-	);
-	const [molFullName, setMolFullName] = useState<string>(
-		initialDocument?.molFullName || "Ответственный сотрудник",
-	);
-	const [molPosition, setMolPosition] = useState<string>(
-		initialDocument?.molPosition || "Ответственный сотрудник",
-	);
-	const [status, setStatus] = useState<WarehouseInventoryStatus>(
-		initialDocument?.status || "reconciliation",
-	);
-	const [commission, setCommission] = useState<readonly WarehouseInventoryCommissionMember[]>(
-		initialDocument?.commission || (isDemoShowcaseMode() ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS),
-	);
-
-	// 2. Строки инвентаризации
-	const [items, setItems] = useState<readonly WarehouseAuditItemLine[]>([]);
-	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [filterTab, setFilterTab] = useState<"all" | "discrepancies" | "expired" | "risk">("all");
-	const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryFilter>("all");
-	const [sortOrder, setSortOrder] = useState<"default" | "fefo" | "discrepancy" | "name">("default");
-	const [showMetaDrawer, setShowMetaDrawer] = useState<boolean>(false);
-	const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-	// Инициализация строк
-	useEffect(() => {
-		if (isOpen) {
-			if (initialDocument && initialDocument.items.length > 0) {
-				setItems([...initialDocument.items]);
-			} else if (isDemoShowcaseMode()) {
-				setItems([...DEFAULT_INVENTORY_ITEMS_PRESET]);
-			} else {
-				setItems([]);
-			}
-		}
-	}, [isOpen, initialDocument]);
-
-	// Показ тоста
-	const showToast = useCallback((msg: string) => {
-		setToastMessage(msg);
-		setTimeout(() => {
-			setToastMessage(null);
-		}, 3500);
-	}, []);
-
-	// Единоличная инвентаризация (Соло-врач / Ответственный)
-	const handleSetSoloCommission = useCallback(() => {
-		const currentName = molFullName.trim() || "Ответственный сотрудник";
-		const currentPos = molPosition.trim() || "Ответственный сотрудник";
-		setCommission([
-			{
-				fullName: currentName,
-				position: currentPos,
-				role: "chairman",
-				roleRu: "Председатель комиссии (МОЛ / Единолично)",
-			},
-		]);
-		showToast("Установлена единоличная инвентаризация (Соло-врач / Ответственный).");
-	}, [molFullName, molPosition, showToast]);
-
-	// Восстановление стандартной комиссии из 4 человек
-	const handleSetStandardCommission = useCallback(() => {
-		setCommission(DEFAULT_COMMISSION_MEMBERS);
-		showToast("Восстановлен стандартный состав комиссии (4 человека).");
-	}, [showToast]);
-
-	// Изменение члена комиссии
-	const handleCommissionMemberChange = useCallback(
-		(index: number, field: "fullName" | "position", value: string) => {
-			setCommission((prev) =>
-				prev.map((m, i) => {
-					if (i !== index) return m;
-					return {
-						...m,
-						[field]: value,
-					};
-				}),
-			);
-			if (commission.length === 1) {
-				if (field === "fullName") setMolFullName(value);
-				if (field === "position") setMolPosition(value);
-			}
-		},
-		[commission.length],
-	);
-
-	// Удаление члена комиссии (если их больше одного)
-	const handleRemoveCommissionMember = useCallback((index: number) => {
-		setCommission((prev: readonly WarehouseInventoryCommissionMember[]): readonly WarehouseInventoryCommissionMember[] => {
-			if (prev.length <= 1) return prev;
-			const next: WarehouseInventoryCommissionMember[] = prev.filter((_, i) => i !== index);
-			const first = next[0];
-			if (next.length === 1 && first && first.role !== "chairman") {
-				const singleMember: WarehouseInventoryCommissionMember = {
-					fullName: first.fullName,
-					position: first.position,
-					role: "chairman",
-					roleRu: "Председатель комиссии (МОЛ / Единолично)",
-				};
-				return [singleMember];
-			}
-			return next;
-		});
-	}, []);
-
-	// Изменение ФИО МОЛ с синхронизацией единоличной комиссии
-	const handleMolFullNameChange = useCallback(
-		(val: string) => {
-			setMolFullName(val);
-			if (commission.length === 1) {
-				setCommission((prev) =>
-					prev.map((m, i) =>
-						i === 0
-							? {
-									...m,
-									fullName: val,
-								}
-							: m,
-					),
-				);
-			}
-		},
-		[commission.length],
-	);
-
-	// Изменение должности МОЛ с синхронизацией единоличной комиссии
-	const handleMolPositionChange = useCallback(
-		(val: string) => {
-			setMolPosition(val);
-			if (commission.length === 1) {
-				setCommission((prev) =>
-					prev.map((m, i) =>
-						i === 0
-							? {
-									...m,
-									position: val,
-								}
-							: m,
-					),
-				);
-			}
-		},
-		[commission.length],
-	);
-
-	// Сводные итоги
-	const totals: InventoryAuditTotals = useMemo(() => {
-		return calculateInventoryAuditTotals(items);
-	}, [items]);
-
-	// Подсчет количества позиций по ключевым категориям стоматологического склада
-	const categoryCounts = useMemo(() => {
-		let anesthetics = 0;
-		let filling = 0;
-		let sterilization = 0;
-		let disposables = 0;
-		for (const it of items) {
-			const cat = it.category.toLowerCase();
-			const name = it.nameRu.toLowerCase();
-			if (
-				cat.includes("анест") ||
-				name.includes("анест") ||
-				name.includes("каин") ||
-				name.includes("септанест")
-			) {
-				anesthetics++;
-			}
-			if (
-				cat.includes("пломб") ||
-				cat.includes("композ") ||
-				cat.includes("адгез") ||
-				name.includes("композит") ||
-				name.includes("filtek")
-			) {
-				filling++;
-			}
-			if (
-				cat.includes("стерил") ||
-				cat.includes("дезинф") ||
-				name.includes("дезинф") ||
-				name.includes("сурфаниос")
-			) {
-				sterilization++;
-			}
-			if (
-				cat.includes("однораз") ||
-				cat.includes("расход") ||
-				cat.includes("перчат") ||
-				cat.includes("салфет") ||
-				cat.includes("шовн") ||
-				name.includes("vicryl") ||
-				name.includes("маска") ||
-				name.includes("перчатки")
-			) {
-				disposables++;
-			}
-		}
-		return {
-			all: items.length,
-			anesthetics,
-			filling,
-			sterilization,
-			disposables,
-		};
-	}, [items]);
-
-	// Сборка текущего документа
-	const currentDocument: WarehouseInventoryAuditDocument = useMemo(() => {
-		return {
-			id: initialDocument?.id || `inv_doc_${Date.now()}`,
-			documentNumber: docNumber,
-			orderNumber,
-			orderDate,
-			auditStartDate: orderDate,
-			auditEndDate: auditDate,
-			auditDate,
-			branchId: initialDocument?.branchId || "central_hub",
-			branchNameRu,
-			warehouseNameRu,
-			molFullName,
-			molPosition,
-			status,
-			commission,
-			items,
-			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
-			organizationOkpo: "49201948",
-			organizationInn: "7701984512",
-		};
-	}, [
+	const state = useWarehouseAuditState({
+		isOpen,
 		initialDocument,
-		docNumber,
-		orderNumber,
-		orderDate,
-		auditDate,
-		branchNameRu,
-		warehouseNameRu,
-		molFullName,
-		molPosition,
-		status,
-		commission,
-		items,
-	]);
-
-	// Изменение фактического количества строки
-	const handleQuantityChange = useCallback(
-		(itemId: string, newActualQty: number) => {
-			const sanitizedQty = Math.max(0, Math.round(newActualQty));
-			setItems((prev) =>
-				prev.map((it) => {
-					if (it.itemId !== itemId) return it;
-					return computeAuditLineItem(
-						{
-							...it,
-							actualQuantity: sanitizedQty,
-						},
-						auditDate,
-					);
-				}),
-			);
-		},
-		[auditDate],
-	);
-
-	// Заполнение факта по учетным данным
-	const handleAutofillFactByBook = useCallback(() => {
-		setItems((prev) =>
-			prev.map((it) =>
-				computeAuditLineItem(
-					{
-						...it,
-						actualQuantity: it.bookQuantity,
-					},
-					auditDate,
-				),
-			),
-		);
-		showToast("Фактические остатки заполнены по учетным данным.");
-	}, [auditDate, showToast]);
-
-	// Печать документа в отдельном окне браузера
-	const handlePrintDocument = useCallback((htmlContent: string) => {
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.open();
-			printWin.document.write(htmlContent);
-			printWin.document.close();
-			printWin.focus();
-			printWin.print();
-		}
-	}, []);
-
-	// Скачивание файла
-	const handleDownloadFile = useCallback((content: string, filename: string, mimeType: string) => {
-		const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = filename;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-	}, []);
-
-	// Списание просроченных позиций по акту списания
-	const handleCreateTorg16 = useCallback(() => {
-		const act = generateTorg16ActFromInventory(currentDocument);
-		if (act.items.length === 0) {
-			showToast("В описи нет просроченных позиций для формирования акта списания.");
-			return;
-		}
-		if (onTorg16Generated) {
-			onTorg16Generated(act);
-		}
-		const html = generateTorg16Html(act);
-		handlePrintDocument(html);
-		showToast(`Сформирован акт списания на ${act.items.length} позиций.`);
-	}, [currentDocument, onTorg16Generated, handlePrintDocument, showToast]);
-
-	// Экспорт в CSV
-	const handleExportCsv = useCallback(() => {
-		const csv = exportInventoryToCsv(currentDocument);
-		handleDownloadFile(csv, `Инвентаризация_${docNumber}_${auditDate}.csv`, "text/csv");
-		showToast("Инвентаризационная опись успешно выгружена в CSV.");
-	}, [currentDocument, docNumber, auditDate, handleDownloadFile, showToast]);
-
-	// Экспорт в CommerceML XML
-	const handleExport1C = useCallback(() => {
-		const xml = exportInventoryTo1C(currentDocument);
-		handleDownloadFile(xml, `Инвентаризация_CommerceML_${docNumber}.xml`, "application/xml");
-		showToast("Документ инвентаризации выгружен в формате CommerceML XML.");
-	}, [currentDocument, docNumber, handleDownloadFile, showToast]);
-
-	// Экспорт сличительной ведомости в CSV
-	const handleExportInv19Csv = useCallback(() => {
-		const csv = exportInv19DiscrepanciesToCsv(currentDocument);
-		handleDownloadFile(csv, `Сличительная_ведомость_${docNumber}.csv`, "text/csv");
-		showToast("Сличительная ведомость остатков выгружена в CSV.");
-	}, [currentDocument, docNumber, handleDownloadFile, showToast]);
-
-	// Сохранение описи
-	const handleSave = useCallback(() => {
-		const validation = validateInventoryAuditDraft(currentDocument);
-		if (!validation.isValid) {
-			showToast(`Ошибка сохранения: ${validation.errors.join("; ")}`);
-			return;
-		}
-		if (onDocumentSaved) {
-			onDocumentSaved(currentDocument);
-		}
-		showToast("Инвентаризационная опись сохранена в журнале.");
-	}, [currentDocument, onDocumentSaved, showToast]);
-
-	// Проведение инвентаризации
-	const handleApply = useCallback(async () => {
-		const validation = validateInventoryAuditDraft(currentDocument);
-		if (!validation.isValid) {
-			showToast(`Ошибка проведения: ${validation.errors.join("; ")}`);
-			return;
-		}
-		setStatus("applied");
-		const appliedDoc = { ...currentDocument, status: "applied" as const };
-		if (onApplyAudit) {
-			await onApplyAudit(appliedDoc);
-		}
-		if (onDocumentSaved) {
-			onDocumentSaved(appliedDoc);
-		}
-		showToast("Инвентаризация утверждена и проведена по складскому балансу.");
-	}, [currentDocument, onApplyAudit, onDocumentSaved, showToast]);
-
-	// Фильтрация и сортировка строк
-	const filteredItems = useMemo(() => {
-		let result = [...items];
-
-		// 1. Поисковый запрос
-		if (searchQuery.trim().length > 0) {
-			const query = searchQuery.toLowerCase().trim();
-			result = result.filter(
-				(it) =>
-					it.nameRu.toLowerCase().includes(query) ||
-					it.sku.toLowerCase().includes(query) ||
-					it.batchNumber.toLowerCase().includes(query) ||
-					it.category.toLowerCase().includes(query),
-			);
-		}
-
-		// 2. Вкладки фильтрации
-		if (filterTab === "discrepancies") {
-			result = result.filter((it) => it.discrepancyType !== "match");
-		} else if (filterTab === "expired") {
-			result = result.filter((it) => it.fefoStatus === "expired");
-		} else if (filterTab === "risk") {
-			result = result.filter(
-				(it) => it.fefoStatus === "warning_30" || it.fefoStatus === "warning_60",
-			);
-		}
-
-		// 2.5 Фильтрация по категориям расходных материалов (Apple HIG)
-		if (categoryFilter === "anesthetics") {
-			result = result.filter((it) => {
-				const cat = it.category.toLowerCase();
-				const name = it.nameRu.toLowerCase();
-				return (
-					cat.includes("анест") ||
-					name.includes("анест") ||
-					name.includes("каин") ||
-					name.includes("септанест")
-				);
-			});
-		} else if (categoryFilter === "filling") {
-			result = result.filter((it) => {
-				const cat = it.category.toLowerCase();
-				const name = it.nameRu.toLowerCase();
-				return (
-					cat.includes("пломб") ||
-					cat.includes("композ") ||
-					cat.includes("адгез") ||
-					name.includes("композит") ||
-					name.includes("filtek")
-				);
-			});
-		} else if (categoryFilter === "sterilization") {
-			result = result.filter((it) => {
-				const cat = it.category.toLowerCase();
-				const name = it.nameRu.toLowerCase();
-				return (
-					cat.includes("стерил") ||
-					cat.includes("дезинф") ||
-					name.includes("дезинф") ||
-					name.includes("сурфаниос")
-				);
-			});
-		} else if (categoryFilter === "disposables") {
-			result = result.filter((it) => {
-				const cat = it.category.toLowerCase();
-				const name = it.nameRu.toLowerCase();
-				return (
-					cat.includes("однораз") ||
-					cat.includes("расход") ||
-					cat.includes("перчат") ||
-					cat.includes("салфет") ||
-					cat.includes("шовн") ||
-					name.includes("vicryl") ||
-					name.includes("маска") ||
-					name.includes("перчатки")
-				);
-			});
-		}
-
-		// 3. Сортировка
-		if (sortOrder === "fefo") {
-			result = sortAuditItemsByFefo(result);
-		} else if (sortOrder === "discrepancy") {
-			result.sort(
-				(a, b) =>
-					Math.abs(b.discrepancyCostKopecks) - Math.abs(a.discrepancyCostKopecks),
-			);
-		} else if (sortOrder === "name") {
-			result.sort((a, b) => a.nameRu.localeCompare(b.nameRu, "ru"));
-		}
-
-		return result;
-	}, [items, searchQuery, filterTab, categoryFilter, sortOrder]);
+		onDocumentSaved,
+		onApplyAudit,
+		onTorg16Generated,
+	});
 
 	if (!isOpen) return null;
 
 	const modalContent = (
 		<div className="warehouse-inventory-overlay" role="dialog" aria-modal="true">
 			<div className="warehouse-inventory-modal">
-				{/* 1. Header */}
-				<header className="warehouse-inventory-header">
-					<div className="warehouse-inventory-title-group">
-						<div className="warehouse-inventory-icon-box">
-							<Boxes size={20} />
-						</div>
-						<div className="min-w-0">
-							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-								<h2 className="warehouse-inventory-title truncate">Складская инвентаризация и контроль сроков</h2>
-								<span
-									style={{
-										fontSize: "0.75rem",
-										fontWeight: 700,
-										padding: "2px 8px",
-										borderRadius: 4,
-										background: status === "applied" ? "var(--ok-bg, #ecfdf5)" : "var(--info-bg, #eff6ff)",
-										color: status === "applied" ? "var(--ok-fg, #047857)" : "var(--info-fg, #1d4ed8)",
-										border: `1px solid ${status === "applied" ? "var(--ok-border, #a7f3d0)" : "var(--info-border, #bfdbfe)"}`,
-										flexShrink: 0,
-									}}
-								>
-									{status === "applied"
-										? "Проведена"
-										: status === "approved"
-											? "Утверждена"
-											: status === "reconciliation"
-												? "Сверка расхождений"
-												: "Черновик"}
-								</span>
-							</div>
-							<p className="warehouse-inventory-subtitle truncate">
-								Опись № {docNumber} • Приказ № {orderNumber} от {orderDate} • {warehouseNameRu}
-							</p>
-						</div>
-					</div>
-
-					<div className="warehouse-inventory-header-actions">
-						<button
-							type="button"
-							className={`warehouse-btn ${showMetaDrawer ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
-							onClick={() => setShowMetaDrawer((v) => !v)}
-							title="Реквизиты описи и приказа (опционально для сетевых клиник)"
-							data-testid="btn-toggle-meta-drawer"
-						>
-							<SlidersHorizontal size={14} />
-							<span>Реквизиты описи / приказа</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={() => handlePrintDocument(generateInv3Html(currentDocument))}
-							title="Печать инвентаризационной описи"
-						>
-							<Printer size={14} />
-							<span>Инвентаризационная опись</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">Опись</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={() => handlePrintDocument(generateInv19Html(currentDocument))}
-							title="Печать сличительной ведомости остатков"
-						>
-							<FileSpreadsheet size={14} />
-							<span>Сличительная ведомость</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">Сличительная</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-ghost"
-							onClick={onClose}
-							aria-label="Закрыть модальное окно"
-						>
-							<X size={20} />
-						</button>
-					</div>
-				</header>
-
-				{/* 2. Top Summary KPI Cards */}
-				<WarehouseInventoryKpisGrid totals={totals} />
-
-				{/* 2.1 Meta & Commission Drawer */}
-				<WarehouseInventoryCommissionDrawer
-					showMetaDrawer={showMetaDrawer}
-					docNumber={docNumber}
-					setDocNumber={setDocNumber}
-					auditDate={auditDate}
-					setAuditDate={setAuditDate}
-					orderNumber={orderNumber}
-					setOrderNumber={setOrderNumber}
-					orderDate={orderDate}
-					setOrderDate={setOrderDate}
-					molFullName={molFullName}
-					onMolFullNameChange={handleMolFullNameChange}
-					molPosition={molPosition}
-					onMolPositionChange={handleMolPositionChange}
-					warehouseNameRu={warehouseNameRu}
-					setWarehouseNameRu={setWarehouseNameRu}
-					commission={commission}
-					onSetSoloCommission={handleSetSoloCommission}
-					onSetStandardCommission={handleSetStandardCommission}
-					onCommissionMemberChange={handleCommissionMemberChange}
-					onRemoveCommissionMember={handleRemoveCommissionMember}
+				<WarehouseAuditModalHeader
+					docNumber={state.docNumber}
+					orderNumber={state.orderNumber}
+					orderDate={state.orderDate}
+					warehouseNameRu={state.warehouseNameRu}
+					status={state.status}
+					currentDocument={state.currentDocument}
+					onPrintDocument={state.handlePrintDocument}
+					onClose={onClose}
 				/>
 
-				{/* 2.2 Category Pills Row */}
-				<div className="warehouse-inventory-category-bar">
-					<span className="warehouse-inventory-category-label">
-						Категории ТМЦ:
-					</span>
-					<div className="warehouse-category-pills" role="radiogroup" aria-label="Фильтр по категориям ТМЦ">
-						<button
-							type="button"
-							className={`warehouse-category-pill ${categoryFilter === "all" ? "active" : ""}`}
-							onClick={() => setCategoryFilter("all")}
-							data-testid="filter-category-all"
-						>
-							<span>Все категории</span>
-							<span className="warehouse-category-badge">{categoryCounts.all}</span>
-						</button>
-						<button
-							type="button"
-							className={`warehouse-category-pill ${categoryFilter === "anesthetics" ? "active" : ""}`}
-							onClick={() => setCategoryFilter("anesthetics")}
-							data-testid="filter-category-anesthetics"
-						>
-							<span>💉 Анестетики</span>
-							<span className="warehouse-category-badge">{categoryCounts.anesthetics}</span>
-						</button>
-						<button
-							type="button"
-							className={`warehouse-category-pill ${categoryFilter === "filling" ? "active" : ""}`}
-							onClick={() => setCategoryFilter("filling")}
-							data-testid="filter-category-filling"
-						>
-							<span>🦷 Пломбировочные</span>
-							<span className="warehouse-category-badge">{categoryCounts.filling}</span>
-						</button>
-						<button
-							type="button"
-							className={`warehouse-category-pill ${categoryFilter === "sterilization" ? "active" : ""}`}
-							onClick={() => setCategoryFilter("sterilization")}
-							data-testid="filter-category-sterilization"
-						>
-							<span>🧼 Стерилизация</span>
-							<span className="warehouse-category-badge">{categoryCounts.sterilization}</span>
-						</button>
-						<button
-							type="button"
-							className={`warehouse-category-pill ${categoryFilter === "disposables" ? "active" : ""}`}
-							onClick={() => setCategoryFilter("disposables")}
-							data-testid="filter-category-disposables"
-						>
-							<span>🧤 Одноразовые</span>
-							<span className="warehouse-category-badge">{categoryCounts.disposables}</span>
-						</button>
-					</div>
-				</div>
+				<WarehouseInventoryKpisGrid totals={state.totals} />
 
-				{/* 3. Toolbar & Filters */}
-				<div className="warehouse-inventory-toolbar">
-					<div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-						<div className="dente-search-wrap" style={{ maxWidth: 320 }}>
-							<Search size={14} className="dente-search-icon" />
-							<input
-								type="text"
-								className="dente-search-input"
-								placeholder="Поиск по названию, артикулу, LOT..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-							/>
-							{searchQuery && (
-								<button
-									type="button"
-									className="dente-search-clear"
-									onClick={() => setSearchQuery("")}
-									aria-label="Очистить поиск"
-								>
-									<X size={14} />
-								</button>
-							)}
-						</div>
+				<WarehouseAuditCategoryBar
+					categoryFilter={state.categoryFilter}
+					onSelectCategory={state.setCategoryFilter}
+					categoryCounts={state.categoryCounts}
+				/>
 
-						<div className="dente-segmented-bar" role="tablist">
-							<button
-								type="button"
-								role="tab"
-								aria-selected={filterTab === "all"}
-								className={`dente-segmented-item ${filterTab === "all" ? "active" : ""}`}
-								onClick={() => setFilterTab("all")}
-							>
-								Все ({items.length})
-							</button>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={filterTab === "discrepancies"}
-								className={`dente-segmented-item ${filterTab === "discrepancies" ? "active" : ""}`}
-								onClick={() => setFilterTab("discrepancies")}
-							>
-								Расхождения ({totals.surplusItemsCount + totals.shortageItemsCount})
-							</button>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={filterTab === "expired"}
-								className={`dente-segmented-item ${filterTab === "expired" ? "active" : ""}`}
-								onClick={() => setFilterTab("expired")}
-							>
-								Просрочено ({totals.expiredItemsCount})
-							</button>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={filterTab === "risk"}
-								className={`dente-segmented-item ${filterTab === "risk" ? "active" : ""}`}
-								onClick={() => setFilterTab("risk")}
-							>
-								Риск &lt;60д ({totals.warningItemsCount})
-							</button>
-						</div>
+				<WarehouseAuditToolbar
+					searchQuery={state.searchQuery}
+					onSearchChange={state.setSearchQuery}
+					filterTab={state.filterTab}
+					onFilterTabChange={state.setFilterTab}
+					totalItemsCount={state.items.length}
+					totals={state.totals}
+					sortOrder={state.sortOrder}
+					onSortOrderChange={state.setSortOrder}
+					onAutofillFactByBook={state.handleAutofillFactByBook}
+					onCreateTorg16={state.handleCreateTorg16}
+				/>
 
-						<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-							<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>
-								Сортировка:
-							</span>
-							<select
-								value={sortOrder}
-								onChange={(e) => setSortOrder(e.target.value as any)}
-								style={{
-									fontSize: "0.8125rem",
-									padding: "4px 8px",
-									borderRadius: 6,
-									border: "1px solid var(--border)",
-									background: "var(--paper-strong)",
-									color: "var(--ink)",
-								}}
-							>
-								<option value="default">По умолчанию</option>
-								<option value="fefo">Сначала истекающие (FEFO)</option>
-								<option value="discrepancy">По сумме расхождения</option>
-								<option value="name">По наименованию</option>
-							</select>
-						</div>
-					</div>
-
-					<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={handleAutofillFactByBook}
-							title="Приравнять фактическое количество к учетному (все совпадают с учётом)"
-							data-testid="btn-match-all-book-quantities"
-						>
-							<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
-							<span>✓ Все совпадают с учётом</span>
-						</button>
-
-						{totals.expiredItemsCount > 0 && (
-							<button
-								type="button"
-								className="warehouse-btn warehouse-btn-danger"
-								onClick={handleCreateTorg16}
-								title="Сформировать акт списания просроченных материалов"
-							>
-								<PackageX size={14} />
-								<span>Акт списания просрочки ({totals.expiredItemsCount})</span>
-								<span className="text-[10px] opacity-60 ml-1 font-mono">Акт списания</span>
-							</button>
-						)}
-					</div>
-				</div>
-
-				{/* 4. Table Container */}
 				<WarehouseInventoryAuditTable
-					filteredItems={filteredItems}
-					onQuantityChange={handleQuantityChange}
+					filteredItems={state.filteredItems}
+					onQuantityChange={state.handleQuantityChange}
 				/>
 
-				{/* 5. Footer */}
-				<footer className="warehouse-inventory-footer">
-					<div className="warehouse-inventory-footer-left">
-						{toastMessage && (
-							<div style={{ color: "var(--info-fg, #2563eb)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-								<Check size={16} />
-								<span>{toastMessage}</span>
-							</div>
-						)}
-						{!toastMessage && (
-							<span>
-								МОЛ: <b>{molFullName}</b> ({molPosition}) • {commission.length === 1 ? "Комиссия: Единолично (Соло-врач)" : `Комиссия: ${commission.length} чел.`} • Статус: <b>{status}</b>
-							</span>
-						)}
-					</div>
-
-					<div className="warehouse-inventory-footer-right">
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={handleExportCsv}
-							title="Выгрузить полную опись в CSV (UTF-8 BOM)"
-						>
-							<Download size={14} />
-							<span>CSV (Опись)</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={handleExportInv19Csv}
-							title="Выгрузить сличительную ведомость расхождений в CSV"
-						>
-							<FileSpreadsheet size={14} />
-							<span>CSV (Расхождения)</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={handleExport1C}
-							title="Выгрузить документ инвентаризации в формате CommerceML XML"
-						>
-							<FileCode size={14} />
-							<span>CommerceML XML</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
-							onClick={handleSave}
-							title="Сохранить черновик описи"
-						>
-							<Check size={14} />
-							<span>Сохранить</span>
-						</button>
-
-						<button
-							type="button"
-							className="warehouse-btn warehouse-btn-primary"
-							onClick={handleApply}
-							title="Утвердить результаты и провести инвентаризацию"
-						>
-							<PackageCheck size={14} />
-							<span>Провести инвентаризацию</span>
-						</button>
-					</div>
-				</footer>
+				<WarehouseAuditFooter
+					toastMessage={state.toastMessage}
+					molFullName={state.molFullName}
+					molPosition={state.molPosition}
+					commission={state.commission}
+					status={state.status}
+					onExportCsv={state.handleExportCsv}
+					onExportInv19Csv={state.handleExportInv19Csv}
+					onExport1C={state.handleExport1C}
+					onSave={state.handleSave}
+					onApply={state.handleApply}
+				/>
 			</div>
 		</div>
 	);
@@ -926,3 +111,5 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 
 	return createPortal(modalContent, document.body);
 };
+
+export default WarehouseInventoryAuditModal;

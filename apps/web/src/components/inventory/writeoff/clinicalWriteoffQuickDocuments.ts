@@ -21,8 +21,12 @@ import {
 export interface QuickCarpuleWriteoffParams {
 	readonly cabinetId?: string | undefined;
 	readonly cabinetNameRu?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
 	readonly nurseFullName?: string | undefined;
 	readonly nurseRole?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
 	readonly count?: number | undefined;
 	readonly materialId?: string | undefined;
 	readonly lotNumber?: string | undefined;

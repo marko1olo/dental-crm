@@ -1,51 +1,15 @@
-/**
- * ============================================================================
- * WAREHOUSE TRANSFER & TORG-13 MODAL (МЕЖФИЛИАЛЬНЫЕ ПЕРЕМЕЩЕНИЯ ТМЦ)
- * Сенсорный HUD управления межскладской логистикой, формирования накладных ТОРГ-13,
- * фиксации приемки и актирования расхождений ТОРГ-2.
- * ============================================================================
- */
-
-import {
-	AlertCircle,
-	AlertTriangle,
-	Boxes,
-	Check,
-	FileText,
-	PackageCheck,
-	Plus,
-	Printer,
-	Trash2,
-	Truck,
-	X,
-	Zap,
-} from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { showToast } from "../../GlobalToast.js";
-import {
-	calculateTransferTotals,
-	formatRubCurrency,
-	generateDiscrepancyAct,
-	generateTorg13Html,
-	generateTorg2Html,
-	kopecksToRubles,
-	validateTransferDraft,
-	type WarehouseDiscrepancyAct,
-	type WarehouseTransferDocument,
-	type WarehouseTransferLineItem,
-} from "./warehouseTransferEngine.js";
+import type { WarehouseDiscrepancyAct, WarehouseTransferDocument } from "./warehouseTransferEngine.js";
+import { WarehouseTransferAddBar } from "./WarehouseTransferAddBar.js";
+import { WarehouseTransferAlerts } from "./WarehouseTransferAlerts.js";
 import { WarehouseTransferFooter } from "./WarehouseTransferFooter.js";
+import { WarehouseTransferHeader } from "./WarehouseTransferHeader.js";
+import { WarehouseTransferRouteBar } from "./WarehouseTransferRouteBar.js";
+import { WarehouseTransferSummaryBar } from "./WarehouseTransferSummaryBar.js";
+import { WarehouseTransferTable } from "./WarehouseTransferTable.js";
+import { useWarehouseTransferLogic } from "./useWarehouseTransferLogic.js";
 import "./warehouseTransfer.css";
-import {
-	getWarehouseItemCatalogPreset,
-	TRANSFER_STATUS_PIPELINE,
-	WAREHOUSE_BRANCHES,
-	WAREHOUSE_CATALOG_PRESETS,
-	type WarehouseBranchId,
-	type WarehouseTransferStatus,
-} from "./warehouseTransferPresets.js";
 
 export interface WarehouseTransferModalProps {
 	readonly isOpen: boolean;
@@ -56,707 +20,65 @@ export interface WarehouseTransferModalProps {
 	readonly onDiscrepancyActGenerated?: ((act: WarehouseDiscrepancyAct) => void) | undefined;
 }
 
-export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
-	isOpen,
-	onClose,
-	initialDocument,
-	onDocumentSaved,
-	onConfirmTransfer,
-	onDiscrepancyActGenerated,
-}) => {
-	// 1. Шапка накладной
-	const [docNumber, setDocNumber] = useState<string>(
-		initialDocument?.documentNumber ||
-			`ПЕРЕМ-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${Date.now().toString().slice(-4)}`,
-	);
-	const [docDate, setDocDate] = useState<string>(
-		initialDocument?.documentDate || new Date().toISOString().slice(0, 10),
-	);
-	const [sourceBranchId, setSourceBranchId] = useState<WarehouseBranchId>(
-		initialDocument?.sourceBranchId || "central_hub",
-	);
-	const [targetBranchId, setTargetBranchId] = useState<WarehouseBranchId>(
-		initialDocument?.targetBranchId || "branch_center",
-	);
-	const [status, setStatus] = useState<WarehouseTransferStatus>(
-		initialDocument?.status || "draft",
-	);
-
-	// 2. Лица и транспортировка
-	const [dispatchedBy, setDispatchedBy] = useState<string>(
-		initialDocument?.dispatchedByFullName || "",
-	);
-	const [dispatchedPosition, setDispatchedPosition] = useState<string>(
-		initialDocument?.dispatchedByPosition || "Материально ответственное лицо",
-	);
-	const [receivedBy, setReceivedBy] = useState<string>(
-		initialDocument?.receivedByFullName || "",
-	);
-	const [receivedPosition, setReceivedPosition] = useState<string>(
-		initialDocument?.receivedByPosition || "Получатель ТМЦ",
-	);
-	const [driverName, setDriverName] = useState<string>(
-		initialDocument?.transportDriverFullName || "",
-	);
-	const [vehiclePlate, setVehiclePlate] = useState<string>(
-		initialDocument?.transportVehiclePlate || "",
-	);
-	const [notes, setNotes] = useState<string>(initialDocument?.notes || "");
-
-	// 3. Строки товаров
-	const [items, setItems] = useState<WarehouseTransferLineItem[]>([]);
-	const [selectedCatalogItemId, setSelectedCatalogItemId] = useState<string>(
-		WAREHOUSE_CATALOG_PRESETS[0]?.id || "mat_ultracain_forte",
-	);
-	const [addQuantity, setAddQuantity] = useState<number>(5);
-
-	// Инициализация строк при открытии
-	useEffect(() => {
-		if (isOpen) {
-			if (initialDocument && initialDocument.items.length > 0) {
-				setItems([...initialDocument.items]);
-			} else {
-				// Демо-набор позиций перемещения
-				setItems([
-					{
-						itemId: "mat_ultracain_forte",
-						sku: "AN-ULTRA-01",
-						nameRu: "Ультракаин Д-С Форте (100 карпул/уп)",
-						unitRu: "упак",
-						okeiCode: "778",
-						batchNumber: "LOT-2026A44",
-						expiryDate: "2027-12-31",
-						requestedQuantity: 10,
-						dispatchedQuantity: 10,
-						receivedQuantity: 10,
-						unitCostKopecks: 650000, // 6 500 руб
-						discrepancyType: "none",
-					},
-					{
-						itemId: "mat_impl_osstem_40_10",
-						sku: "IMP-OSST-4010",
-						nameRu: "Дентальный имплантат Osstem TS III SA Ø4.0 x 10 мм",
-						unitRu: "шт",
-						okeiCode: "796",
-						batchNumber: "LOT-OS-5541",
-						expiryDate: "2029-06-30",
-						requestedQuantity: 5,
-						dispatchedQuantity: 5,
-						receivedQuantity: 5,
-						unitCostKopecks: 1250000, // 12 500 руб
-						discrepancyType: "none",
-					},
-					{
-						itemId: "mat_filtek_ultimate_a2",
-						sku: "COMP-FILT-A2",
-						nameRu: "Композит Filtek Ultimate шприц 4г (Enamel A2)",
-						unitRu: "шт",
-						okeiCode: "796",
-						batchNumber: "LOT-FLT-772",
-						expiryDate: "2027-05-15",
-						requestedQuantity: 4,
-						dispatchedQuantity: 4,
-						receivedQuantity: 4,
-						unitCostKopecks: 420000, // 4 200 руб
-						discrepancyType: "none",
-					},
-				]);
-			}
-		}
-	}, [isOpen, initialDocument]);
-
-	// Наличие на складе-отправителе по позициям каталога
-	const getAvailableStock = useCallback(
-		(itemId: string): number => {
-			const preset = getWarehouseItemCatalogPreset(itemId);
-			return preset?.initialStockByBranch[sourceBranchId] ?? 0;
-		},
-		[sourceBranchId],
-	);
-
-	// Определение позиций, уходящих в овердрафт склада (Мандаты 8e п. 10, 8n)
-	const overdraftItems = useMemo(() => {
-		return items.filter((item) => {
-			const stock = getAvailableStock(item.itemId);
-			const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
-			return requiredQty > stock;
-		});
-	}, [items, getAvailableStock]);
-
-	const hasOverdraft = overdraftItems.length > 0;
-
-	const stockByBranchMap = useMemo(() => {
-		const map: Record<WarehouseBranchId, Record<string, number>> = {
-			central_hub: {},
-			branch_center: {},
-			branch_north: {},
-			branch_south: {},
-		};
-		for (const preset of WAREHOUSE_CATALOG_PRESETS) {
-			for (const bId of Object.keys(preset.initialStockByBranch) as WarehouseBranchId[]) {
-				map[bId][preset.id] = preset.initialStockByBranch[bId];
-			}
-		}
-		return map;
-	}, []);
-
-	// Сводные суммы и валидация
-	const totals = useMemo(() => calculateTransferTotals(items), [items]);
-	const validation = useMemo(() => {
-		return validateTransferDraft(sourceBranchId, targetBranchId, items, stockByBranchMap);
-	}, [sourceBranchId, targetBranchId, items, stockByBranchMap]);
-
-	// Добавление товара из каталога
-	const handleAddItem = () => {
-		const preset = getWarehouseItemCatalogPreset(selectedCatalogItemId);
-		if (!preset) return;
-
-		// Проверка на дубликат в таблице
-		const existingIndex = items.findIndex((i) => i.itemId === preset.id);
-		if (existingIndex >= 0) {
-			const updated = [...items];
-			const current = updated[existingIndex]!;
-			updated[existingIndex] = {
-				...current,
-				requestedQuantity: current.requestedQuantity + addQuantity,
-				dispatchedQuantity: current.dispatchedQuantity + addQuantity,
-				receivedQuantity: current.receivedQuantity + addQuantity,
-			};
-			setItems(updated);
-			return;
-		}
-
-		const newItem: WarehouseTransferLineItem = {
-			itemId: preset.id,
-			sku: preset.sku,
-			nameRu: preset.nameRu,
-			unitRu: preset.unitRu,
-			okeiCode: preset.okeiCode,
-			batchNumber: preset.defaultBatchNumber,
-			expiryDate: "2027-12-31",
-			requestedQuantity: addQuantity,
-			dispatchedQuantity: addQuantity,
-			receivedQuantity: addQuantity,
-			unitCostKopecks: preset.unitCostKopecks,
-			discrepancyType: "none",
-		};
-
-		setItems((prev) => [...prev, newItem]);
-		setAddQuantity(1);
-	};
-
-	// Удаление строки
-	const handleRemoveItem = (index: number) => {
-		setItems((prev) => prev.filter((_, i) => i !== index));
-	};
-
-	// Изменение количества или данных строки
-	const handleUpdateItem = (index: number, patch: Partial<WarehouseTransferLineItem>) => {
-		setItems((prev) => {
-			const updated = [...prev];
-			const current = updated[index];
-			if (current) {
-				updated[index] = { ...current, ...patch };
-			}
-			return updated;
-		});
-	};
-
-	// Сохранение документа
-	const handleSaveDocument = (newStatus?: WarehouseTransferStatus) => {
-		const effectiveStatus = newStatus || status;
-		const doc: WarehouseTransferDocument = {
-			id: initialDocument?.id || `doc-${Date.now()}`,
-			documentNumber: docNumber,
-			documentDate: docDate,
-			sourceBranchId,
-			targetBranchId,
-			status: effectiveStatus,
-			items,
-			dispatchedByFullName: dispatchedBy,
-			dispatchedByPosition: dispatchedPosition,
-			receivedByFullName: receivedBy,
-			receivedByPosition: receivedPosition,
-			transportDriverFullName: driverName || undefined,
-			transportVehiclePlate: vehiclePlate || undefined,
-			notes: notes.trim()
-				? `${notes.trim()}${hasOverdraft ? " [Внимание: списание с дефицитом]" : ""}`
-				: hasOverdraft
-					? "Внимание: списание с дефицитом (расход сверх остатка)"
-					: undefined,
-		};
-
-		if (onConfirmTransfer && effectiveStatus === "dispatched") {
-			void onConfirmTransfer(doc);
-		}
-		if (onDocumentSaved) {
-			onDocumentSaved(doc);
-		}
-		onClose();
-	};
-
-	// Быстрое прямое списание / утилизация ТМЦ единолично медсестрой без комиссии из 3 человек (Мандаты 8e п. 10, 8n)
-	const handleOneClickWriteOff = () => {
-		const doc: WarehouseTransferDocument = {
-			id: initialDocument?.id || `doc-${Date.now()}`,
-			documentNumber: docNumber,
-			documentDate: docDate,
-			sourceBranchId,
-			targetBranchId,
-			status: "dispatched",
-			items,
-			dispatchedByFullName: dispatchedBy || "Дежурная медсестра",
-			dispatchedByPosition: dispatchedPosition || "Материально ответственное лицо",
-			receivedByFullName: receivedBy || "Дежурная медсестра",
-			receivedByPosition: receivedPosition || "Получатель ТМЦ",
-			transportDriverFullName: driverName || undefined,
-			transportVehiclePlate: vehiclePlate || undefined,
-			notes: `${notes ? `${notes}. ` : ""}Списание материалов дежурной медсестрой (СанПиН 3.3686-21)${hasOverdraft ? ". Внимание: расход сверх остатка (списание с дефицитом)." : ""}`,
-		};
-
-		if (onConfirmTransfer) {
-			void onConfirmTransfer(doc);
-		} else if (onDocumentSaved) {
-			onDocumentSaved(doc);
-		}
-
-		if (hasOverdraft) {
-			showToast("Быстрое списание выполнено (расход сверх остатка, списание с дефицитом)", "warning");
-		} else {
-			showToast("Списание ТМЦ успешно оформлено медсестрой без комиссии из 3 человек", "success");
-		}
-
-		onClose();
-	};
-
-	// Печать накладной ТОРГ-13
-	const handlePrintTorg13 = () => {
-		const doc: WarehouseTransferDocument = {
-			id: initialDocument?.id || `doc-${Date.now()}`,
-			documentNumber: docNumber,
-			documentDate: docDate,
-			sourceBranchId,
-			targetBranchId,
-			status,
-			items,
-			dispatchedByFullName: dispatchedBy,
-			dispatchedByPosition: dispatchedPosition,
-			receivedByFullName: receivedBy,
-			receivedByPosition: receivedPosition,
-			transportDriverFullName: driverName || undefined,
-			transportVehiclePlate: vehiclePlate || undefined,
-		};
-
-		const html = generateTorg13Html(doc);
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(html);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => {
-				printWin.print();
-			}, 250);
-		}
-	};
-
-	// Печать Акта расхождений ТОРГ-2 (единолично медсестрой/завскладом без комиссии из 3 человек по Мандату 8e п. 10)
-	const handlePrintTorg2 = () => {
-		const doc: WarehouseTransferDocument = {
-			id: initialDocument?.id || `doc-${Date.now()}`,
-			documentNumber: docNumber,
-			documentDate: docDate,
-			sourceBranchId,
-			targetBranchId,
-			status,
-			items,
-			dispatchedByFullName: dispatchedBy,
-			dispatchedByPosition: dispatchedPosition,
-			receivedByFullName: receivedBy,
-			receivedByPosition: receivedPosition,
-			transportDriverFullName: driverName || undefined,
-			transportVehiclePlate: vehiclePlate || undefined,
-		};
-
-		// Единоличное оформление медсестрой/завскладом без созыва комиссии из 3 человек
-		const soloCommission = [
-			{
-				name: receivedBy || dispatchedBy || "Дежурная медсестра / Завскладом",
-				position: receivedPosition || dispatchedPosition || "Материально ответственное лицо",
-			},
-		];
-
-		const act = generateDiscrepancyAct(doc, soloCommission);
-		if (onDiscrepancyActGenerated) {
-			onDiscrepancyActGenerated(act);
-		}
-
-		const html = generateTorg2Html(act);
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(html);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => {
-				printWin.print();
-			}, 250);
-		}
-	};
+export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = (props) => {
+	const { isOpen, onClose } = props;
+	const {
+		docNumber, setDocNumber, docDate, setDocDate, sourceBranchId, setSourceBranchId, targetBranchId, setTargetBranchId,
+		status, setStatus, items, selectedCatalogItemId, setSelectedCatalogItemId, addQuantity, setAddQuantity,
+		getAvailableStock, overdraftItems, hasOverdraft, totals, validation,
+		handleAddItem, handleRemoveItem, handleUpdateItem, handleSaveDocument, handleOneClickWriteOff, handlePrintTorg13, handlePrintTorg2,
+	} = useWarehouseTransferLogic(props);
 
 	if (!isOpen) return null;
 
 	const modalContent = (
 		<div className="wh-transfer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="wh-modal-title">
 			<div className="wh-transfer-container" onClick={(e) => e.stopPropagation()}>
-				{/* Header */}
-				<header className="wh-transfer-header">
-					<div className="wh-transfer-title" id="wh-modal-title">
-						<Truck size={24} className="text-teal-600" />
-						<div className="min-w-0">
-							<div
-								className="font-bold text-lg leading-tight truncate"
-								title="Межфилиальное перемещение материалов"
-							>
-								Перемещение материалов
-							</div>
-							<div className="text-xs font-normal text-muted truncate">
-								Складская логистика • Партионный учет • Сверка расхождений
-							</div>
-						</div>
-					</div>
+				<WarehouseTransferHeader
+					status={status}
+					onStatusChange={setStatus}
+					onClose={onClose}
+				/>
 
-					<button
-						type="button"
-						className="wh-btn wh-btn-ghost !min-h-[32px] !min-w-[32px] h-8 w-8 p-1.5 rounded-lg"
-						onClick={onClose}
-						aria-label="Закрыть окно перемещения"
-					>
-						<X size={18} />
-					</button>
-				</header>
-
-				{/* Stepper статусов */}
-				<div className="px-6 pt-3 bg-paper-strong border-b border-line">
-					<div className="wh-stepper">
-						{(["draft", "requested", "dispatched", "in_transit", "received_ok"] as const).map((st, idx) => {
-							const def = TRANSFER_STATUS_PIPELINE[st];
-							const currentIdx = TRANSFER_STATUS_PIPELINE[status]?.stepIndex || 1;
-							const isCompleted = currentIdx > def.stepIndex;
-							const isActive = status === st;
-
-							return (
-								<div
-									key={st}
-									className={`wh-step-item cursor-pointer ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}
-									onClick={() => setStatus(st)}
-								>
-									<div className="wh-step-circle">
-										{isCompleted ? <Check size={14} /> : def.stepIndex}
-									</div>
-									<span>{def.labelRu}</span>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-
-				{/* Body */}
 				<div className="wh-transfer-body">
-					{/* 1. Маршрут: Отправитель -> Получатель */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-xl border border-line bg-paper-soft">
-						<div>
-							<label htmlFor="wh-source-branch" className="text-xs font-semibold text-muted block mb-1">
-								Склад-отправитель (Списание)
-							</label>
-							<select
-								id="wh-source-branch"
-								value={sourceBranchId}
-								onChange={(e) => setSourceBranchId(e.target.value as WarehouseBranchId)}
-								className="w-full h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
-							>
-								{WAREHOUSE_BRANCHES.map((b) => (
-									<option key={b.id} value={b.id}>
-										{b.nameRu}
-									</option>
-								))}
-							</select>
-						</div>
+					<WarehouseTransferRouteBar
+						sourceBranchId={sourceBranchId}
+						targetBranchId={targetBranchId}
+						onSourceBranchChange={setSourceBranchId}
+						onTargetBranchChange={setTargetBranchId}
+						docNumber={docNumber}
+						onDocNumberChange={setDocNumber}
+						docDate={docDate}
+						onDocDateChange={setDocDate}
+					/>
 
-						<div>
-							<label htmlFor="wh-target-branch" className="text-xs font-semibold text-muted block mb-1">
-								Склад-получатель (Оприходование)
-							</label>
-							<select
-								id="wh-target-branch"
-								value={targetBranchId}
-								onChange={(e) => setTargetBranchId(e.target.value as WarehouseBranchId)}
-								className="w-full h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
-							>
-								{WAREHOUSE_BRANCHES.map((b) => (
-									<option key={b.id} value={b.id}>
-										{b.nameRu}
-									</option>
-								))}
-							</select>
-						</div>
+					<WarehouseTransferAlerts
+						isValid={validation.isValid}
+						validationErrors={validation.errors}
+						hasOverdraft={hasOverdraft}
+						overdraftItems={overdraftItems}
+						getAvailableStock={getAvailableStock}
+					/>
 
-						<div>
-							<label htmlFor="wh-doc-number" className="text-xs font-semibold text-muted block mb-1">
-								Номер накладной и Дата
-							</label>
-							<div className="flex gap-2">
-								<input
-									id="wh-doc-number"
-									type="text"
-									value={docNumber}
-									onChange={(e) => setDocNumber(e.target.value)}
-									className="flex-1 h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-mono font-bold"
-								/>
-								<input
-									type="date"
-									value={docDate}
-									onChange={(e) => setDocDate(e.target.value)}
-									className="w-36 h-9 sm:h-9 px-2 rounded-lg border border-line bg-paper text-ink text-sm"
-								/>
-							</div>
-						</div>
-					</div>
+					<WarehouseTransferTable
+						items={items}
+						getAvailableStock={getAvailableStock}
+						onUpdateItem={handleUpdateItem}
+						onRemoveItem={handleRemoveItem}
+					/>
 
-					{/* Ошибки валидации */}
-					{!validation.isValid && (
-						<div className="p-3 rounded-lg bg-bad-bg text-bad-fg text-xs flex items-center gap-2">
-							<AlertTriangle size={16} className="shrink-0" />
-							<span>{validation.errors.join("; ")}</span>
-						</div>
-					)}
+					<WarehouseTransferAddBar
+						sourceBranchId={sourceBranchId}
+						selectedCatalogItemId={selectedCatalogItemId}
+						onSelectCatalogItem={setSelectedCatalogItemId}
+						addQuantity={addQuantity}
+						onAddQuantityChange={setAddQuantity}
+						onAddItem={handleAddItem}
+					/>
 
-					{/* Визуальное предупреждение об отрицательном остатке */}
-					{hasOverdraft && (
-						<div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
-							<AlertCircle size={16} className="shrink-0 text-amber-600 mt-0.5" />
-							<div className="flex-1">
-								<div className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-1.5 flex-wrap">
-									<span>Внимание: остаток отрицательный, требуется оприходование накладной</span>
-									<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200">
-										Списание с дефицитом
-									</span>
-								</div>
-								<div className="text-muted mt-0.5 leading-relaxed">
-									Позиции с дефицитом:{" "}
-									{overdraftItems.map((it) => {
-										const stock = getAvailableStock(it.itemId);
-										const req = it.dispatchedQuantity > 0 ? it.dispatchedQuantity : it.requestedQuantity;
-										return `«${it.nameRu}» (в наличии ${stock} ${it.unitRu}, требуется ${req} ${it.unitRu}, дефицит ${req - stock} ${it.unitRu})`;
-									}).join("; ")}
-									. Перемещение учтено с дефицитом для последующего оприходования.
-								</div>
-							</div>
-						</div>
-					)}
-
-					{/* 2. Таблица позиций */}
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<div className="font-bold text-sm flex items-center gap-1.5">
-								<Boxes size={18} className="text-teal-600" />
-								<span>Товарно-материальные ценности к перемещению</span>
-							</div>
-							<div className="text-xs text-muted">
-								Позиций: <span className="font-bold text-ink">{items.length}</span>
-							</div>
-						</div>
-
-						<div className="wh-table-container">
-							<table className="wh-table">
-								<thead>
-									<tr>
-										<th>Товар / Артикул</th>
-										<th>Серия (LOT)</th>
-										<th>Срок годности</th>
-										<th className="text-center">Запрошено</th>
-										<th className="text-center">Отпущено</th>
-										<th className="text-center">Принято</th>
-										<th className="text-right">Цена, ₽</th>
-										<th className="text-right">Сумма, ₽</th>
-										<th className="text-center">Расхождение</th>
-										<th></th>
-									</tr>
-								</thead>
-								<tbody>
-									{items.map((item, index) => {
-										const unitRub = kopecksToRubles(item.unitCostKopecks);
-										const totalRub = (item.dispatchedQuantity * item.unitCostKopecks) / 100;
-										const diff = item.dispatchedQuantity - item.receivedQuantity;
-										const currentStock = getAvailableStock(item.itemId);
-										const requiredQty = item.dispatchedQuantity > 0 ? item.dispatchedQuantity : item.requestedQuantity;
-										const isOverdraftItem = requiredQty > currentStock;
-										const deficit = Math.max(0, requiredQty - currentStock);
-
-										return (
-											<tr key={item.itemId}>
-												<td className="min-w-0 max-w-xs">
-													<div className="font-semibold text-ink leading-tight truncate" title={item.nameRu}>{item.nameRu}</div>
-													<div className="flex items-center gap-2 mt-0.5 flex-wrap">
-														<span className="text-xs text-muted font-mono">{item.sku}</span>
-														<span className="text-[11px] text-muted">
-															(Остаток: <span className={currentStock <= 0 ? "text-amber-600 font-bold" : "font-semibold text-ink"}>{currentStock} {item.unitRu}</span>)
-														</span>
-														{isOverdraftItem && (
-															<span
-																className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded"
-																title="Списание с дефицитом (мягкий учет)"
-															>
-																Дефицит -{deficit} {item.unitRu}
-															</span>
-														)}
-													</div>
-												</td>
-												<td>
-													<input
-														type="text"
-														value={item.batchNumber}
-														onChange={(e) => handleUpdateItem(index, { batchNumber: e.target.value })}
-														className="w-24 h-8 px-2 rounded border border-line bg-paper text-xs font-mono"
-													/>
-												</td>
-												<td>
-													<input
-														type="date"
-														value={item.expiryDate}
-														onChange={(e) => handleUpdateItem(index, { expiryDate: e.target.value })}
-														className="w-32 h-8 px-2 rounded border border-line bg-paper text-xs"
-													/>
-												</td>
-												<td className="text-center font-semibold">
-													{item.requestedQuantity} {item.unitRu}
-												</td>
-												<td className="text-center">
-													<input
-														type="number"
-														min={0}
-														value={item.dispatchedQuantity}
-														onChange={(e) =>
-															handleUpdateItem(index, {
-																dispatchedQuantity: Number(e.target.value),
-															})
-														}
-														className="w-16 h-8 text-center font-bold rounded border border-line bg-paper text-xs"
-													/>
-												</td>
-												<td className="text-center">
-													<input
-														type="number"
-														min={0}
-														value={item.receivedQuantity}
-														onChange={(e) =>
-															handleUpdateItem(index, {
-																receivedQuantity: Number(e.target.value),
-															})
-														}
-														className="w-16 h-8 text-center font-bold rounded border border-line bg-paper text-xs"
-													/>
-												</td>
-												<td className="text-right font-medium text-muted">
-													{unitRub.toFixed(2)}
-												</td>
-												<td className="text-right font-black text-ink">
-													{totalRub.toFixed(2)}
-												</td>
-												<td className="text-center">
-													{diff !== 0 ? (
-														<span className="text-xs font-bold text-bad-fg bg-bad-bg px-2 py-0.5 rounded-full">
-															{diff > 0 ? `Недостача -${diff}` : `Излишек +${Math.abs(diff)}`}
-														</span>
-													) : (
-														<span className="text-xs font-semibold text-ok-fg">ОК</span>
-													)}
-												</td>
-												<td className="text-center">
-													<button
-														type="button"
-														onClick={() => handleRemoveItem(index)}
-														className="text-muted hover:text-bad-fg p-1.5 rounded transition-colors"
-														title="Удалить позицию"
-													>
-														<Trash2 size={16} />
-													</button>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
-
-						{/* Строка быстрого добавления из каталога */}
-						<div className="p-3 rounded-xl border border-line bg-paper-soft flex flex-wrap gap-2 items-center">
-							<select
-								value={selectedCatalogItemId}
-								onChange={(e) => setSelectedCatalogItemId(e.target.value)}
-								className="flex-1 min-w-[280px] h-9 sm:h-9 px-3 rounded-lg border border-line bg-paper text-ink text-sm"
-							>
-								{WAREHOUSE_CATALOG_PRESETS.map((p) => {
-									const sourceStock = p.initialStockByBranch[sourceBranchId] ?? 0;
-									return (
-										<option key={p.id} value={p.id}>
-											{p.nameRu} (Остаток на складе: {sourceStock} {p.unitRu})
-										</option>
-									);
-								})}
-							</select>
-
-							<input
-								type="number"
-								min={1}
-								value={addQuantity}
-								onChange={(e) => setAddQuantity(Number(e.target.value))}
-								className="w-20 h-9 sm:h-9 px-2 rounded-lg border border-line bg-paper text-ink text-sm text-center font-bold"
-							/>
-
-							<button
-								type="button"
-								onClick={handleAddItem}
-								className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1 px-3 text-xs"
-							>
-								<Plus size={16} /> Добавить в накладную
-							</button>
-						</div>
-					</div>
-
-					{/* 3. Сводная плашка сумм */}
-					<div className="wh-summary-bar">
-						<div className="flex flex-col">
-							<span className="text-xs font-semibold text-muted uppercase">Всего отпущено</span>
-							<span className="text-lg font-black text-ink">
-								{totals.totalDispatchedQuantity} ед.
-							</span>
-						</div>
-
-						<div className="flex flex-col">
-							<span className="text-xs font-semibold text-muted uppercase">Сумма по накладной</span>
-							<span className="text-xl font-extrabold text-teal-dark">
-								{formatRubCurrency(totals.totalDispatchedCostKopecks, true)}
-							</span>
-						</div>
-
-						<div className="flex flex-col">
-							<span className="text-xs font-semibold text-muted uppercase">Фактически принято</span>
-							<span className="text-lg font-black text-ink">
-								{totals.totalReceivedQuantity} ед.
-							</span>
-						</div>
-
-						<div className="flex flex-col">
-							<span className="text-xs font-semibold uppercase text-bad-fg">Сумма расхождений</span>
-							<span className="text-lg font-black text-bad-fg">
-								{totals.hasDiscrepancy
-									? formatRubCurrency(totals.totalDiscrepancyDamageKopecks, true)
-									: "0,00 ₽"}
-							</span>
-						</div>
-					</div>
+					<WarehouseTransferSummaryBar totals={totals} />
 				</div>
 
-				{/* Footer */}
 				<WarehouseTransferFooter
 					hasDiscrepancy={totals.hasDiscrepancy}
 					onPrintTorg13={handlePrintTorg13}
@@ -769,9 +91,9 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 		</div>
 	);
 
-	if (typeof document === "undefined" || !document.body) {
-		return modalContent;
-	}
-
-	return createPortal(modalContent, document.body);
+	return typeof document !== "undefined" && document.body
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
+
+export default WarehouseTransferModal;

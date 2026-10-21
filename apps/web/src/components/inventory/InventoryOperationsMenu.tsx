@@ -1,17 +1,7 @@
-import {
-	ChevronDown,
-	FileText,
-	Flame,
-	Package,
-	PackageCheck,
-	QrCode,
-	ShieldCheck,
-	Sparkles,
-	Syringe,
-	Truck,
-	Warehouse,
-} from "lucide-react";
+import { ChevronDown, PackageCheck } from "lucide-react";
 import React, { useEffect, useRef } from "react";
+import { InventoryOperationsDocsGroup } from "./operationsMenu/InventoryOperationsDocsGroup.js";
+import { InventoryOperationsQuickGroup } from "./operationsMenu/InventoryOperationsQuickGroup.js";
 
 export interface InventoryOperationsMenuProps {
 	readonly isOpen: boolean;
@@ -21,7 +11,7 @@ export interface InventoryOperationsMenuProps {
 	readonly onOpenWarehouseManager: () => void;
 	readonly onOpenMdlpScanning: () => void;
 	readonly onOpenClinicalWriteoff: () => void;
-	readonly onOpenProcedureDeduction: () => void;
+	readonly onOpenProcedureDeduction?: (() => void) | undefined;
 	readonly onOpenWarehouseTransfer: () => void;
 	readonly onOpenInventoryAudit: () => void;
 	readonly onOpenMdlpDisposal: () => void;
@@ -40,6 +30,7 @@ export interface InventoryOperationsMenuProps {
  * Выпадающее меню складских операций (Мандаты 8b, 8d, 8e).
  * Инкапсулирует группировку редких и специализированных операций склада
  * по закону Хика (единая кнопка «Операции» в 1-строчном тулбаре).
+ * Декомпозирован до <= 120 строк.
  */
 export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = ({
 	isOpen,
@@ -49,17 +40,13 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 	onOpenWarehouseManager,
 	onOpenMdlpScanning,
 	onOpenClinicalWriteoff,
-	onOpenProcedureDeduction,
 	onOpenWarehouseTransfer,
 	onOpenInventoryAudit,
 	onOpenMdlpDisposal,
-	onOpenNurseCarpuleModal,
 	onOpenShiftDeductionModal,
 	onOpenSterilizationCycleModal,
 	onQuickWriteoffStandardKit,
-	onQuickWriteoffAnestheticCarpule,
 	onQuickWriteoffSterilizationKit,
-	onQuickWriteoffCarpules,
 	onQuickWriteoffVisitBundle,
 	onQuickWriteoffShiftBundle,
 }) => {
@@ -99,269 +86,28 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 					className="warehouse-ops-menu absolute right-0 top-[calc(100%+4px)] bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 z-50 min-w-[280px] flex flex-col gap-0.5 text-xs text-[var(--ink)]"
 					role="menu"
 				>
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer transition-colors"
-						data-testid="acceptance-waybills-trigger"
-						onClick={() => {
-							onOpenAcceptanceWaybills();
-							onClose();
-						}}
-						role="menuitem"
-						title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии по срокам годности и оприходование"
-					>
-						<FileText size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Оприходование накладной</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="warehouse-manager-trigger"
-						onClick={() => {
-							onOpenWarehouseManager();
-							onClose();
-						}}
-						role="menuitem"
-						title="Управление складами и остатками: экспресс-пресеты, расход сверх остатка и списание"
-					>
-						<Warehouse size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Управление складами и остатками</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="mdlp-scanning-trigger"
-						onClick={() => {
-							onOpenMdlpScanning();
-							onClose();
-						}}
-						role="menuitem"
-						title="Сканирование маркировки препаратов (DataMatrix)"
-					>
-						<QrCode size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Маркировка препаратов</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="clinical-writeoff-trigger"
-						onClick={() => {
-							onOpenClinicalWriteoff();
-							onClose();
-						}}
-						role="menuitem"
-						title="Клиническое списание расходников по нормам приёма и актам списания"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списание по наряду</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="procedure-deduction-trigger"
-						onClick={() => {
-							onOpenProcedureDeduction();
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание расходных материалов по технологическим картам процедур и нормам расхода"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списание расходников по приёму</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="warehouse-transfer-trigger"
-						onClick={() => {
-							onOpenWarehouseTransfer();
-							onClose();
-						}}
-						role="menuitem"
-						title="Межфилиальное перемещение материалов и препаратов"
-					>
-						<Truck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Перемещение материалов</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="warehouse-inventory-audit-trigger"
-						onClick={() => {
-							onOpenInventoryAudit();
-							onClose();
-						}}
-						role="menuitem"
-						title="Складская инвентаризация: опись остатков, сличительная ведомость и контроль сроков годности"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Инвентаризация склада</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="mdlp-disposal-trigger"
-						onClick={() => {
-							onOpenMdlpDisposal();
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание и вывод из оборота маркированных лекарственных препаратов"
-					>
-						<Package size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списание маркированных препаратов</span>
-					</button>
+					<InventoryOperationsDocsGroup
+						onClose={onClose}
+						onOpenAcceptanceWaybills={onOpenAcceptanceWaybills}
+						onOpenWarehouseManager={onOpenWarehouseManager}
+						onOpenMdlpScanning={onOpenMdlpScanning}
+						onOpenClinicalWriteoff={onOpenClinicalWriteoff}
+						onOpenWarehouseTransfer={onOpenWarehouseTransfer}
+						onOpenInventoryAudit={onOpenInventoryAudit}
+						onOpenMdlpDisposal={onOpenMdlpDisposal}
+					/>
 
 					<div className="my-1 border-t border-[var(--line)]" />
 
-					{/* 1-Клик списание расходников смены по техкартам (BOM) */}
-					{onOpenShiftDeductionModal && (
-						<button
-							type="button"
-							className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--primary)]/10 text-xs font-bold text-[var(--primary)] cursor-pointer transition-colors"
-							data-testid="nurse-menu-shift-batch-deduction-btn"
-							onClick={() => {
-								onOpenShiftDeductionModal();
-								onClose();
-							}}
-							role="menuitem"
-							title="Списание расходников смены по оказанным услугам в 1 клик"
-						>
-							<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-							<span>Списать расходники смены</span>
-						</button>
-					)}
-
-					{/* 1-Клик запуск цикла автоклавирования со списанием расходников со склада */}
-					{onOpenSterilizationCycleModal && (
-						<button
-							type="button"
-							className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--teal,#0d9488)]/10 text-xs font-bold text-[var(--teal,#0d9488)] cursor-pointer transition-colors"
-							data-testid="nurse-menu-sterilization-batch-cycle-btn"
-							onClick={() => {
-								onOpenSterilizationCycleModal();
-								onClose();
-							}}
-							role="menuitem"
-							title="1-кликовый цикл автоклавирования: списание крафт-пакетов и индикаторов 5 класса со склада"
-						>
-							<Flame size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Стерилизация в автоклаве (1 клик)</span>
-						</button>
-					)}
-
-					{/* Быстрые списания расходников (СанПиН / Сестра / Врач) */}
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-standard-kit-btn"
-						onClick={() => {
-							onQuickWriteoffStandardKit();
-							onClose();
-						}}
-						role="menuitem"
-						title="Быстрое списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать базовый набор</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-sterilization-kit-btn"
-						onClick={() => {
-							onQuickWriteoffSterilizationKit();
-							onClose();
-						}}
-						role="menuitem"
-						title="Быстрое списание набора стерилизации: 1 лоток в крафт-пакете + перчатки"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Набор стерилизации (1 лоток + перчатки)</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-visit-therapy-btn"
-						onClick={() => {
-							onQuickWriteoffVisitBundle("therapy");
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание набора визита «Терапия»"
-					>
-						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать визит: Терапия</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-visit-surgery-btn"
-						onClick={() => {
-							onQuickWriteoffVisitBundle("surgery");
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание набора визита «Хирургия»"
-					>
-						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать визит: Хирургия</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-shift-therapy-btn"
-						onClick={() => {
-							onQuickWriteoffShiftBundle("therapy");
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание расхода смены (Терапия)"
-					>
-						<Sparkles size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать смену: Терапия</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-shift-ortho-btn"
-						onClick={() => {
-							onQuickWriteoffShiftBundle("orthopedics");
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание расхода смены (Ортопедия)"
-					>
-						<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать смену: Ортопедия</span>
-					</button>
-
-					<button
-						type="button"
-						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-						data-testid="nurse-menu-quick-shift-surgery-btn"
-						onClick={() => {
-							onQuickWriteoffShiftBundle("surgery");
-							onClose();
-						}}
-						role="menuitem"
-						title="Списание расхода смены (Хирургия)"
-					>
-						<ShieldCheck size={15} className="text-[var(--primary)] shrink-0" />
-						<span>Списать смену: Хирургия</span>
-					</button>
+					<InventoryOperationsQuickGroup
+						onClose={onClose}
+						onOpenShiftDeductionModal={onOpenShiftDeductionModal}
+						onOpenSterilizationCycleModal={onOpenSterilizationCycleModal}
+						onQuickWriteoffStandardKit={onQuickWriteoffStandardKit}
+						onQuickWriteoffSterilizationKit={onQuickWriteoffSterilizationKit}
+						onQuickWriteoffVisitBundle={onQuickWriteoffVisitBundle}
+						onQuickWriteoffShiftBundle={onQuickWriteoffShiftBundle}
+					/>
 				</div>
 			)}
 		</div>

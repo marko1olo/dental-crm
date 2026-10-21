@@ -1,12 +1,6 @@
-import {
-	CheckCircle2,
-	Copy,
-	Download,
-	MoreVertical,
-	Printer,
-} from "lucide-react";
+import { CheckCircle2, MoreVertical, Printer } from "lucide-react";
 import type React from "react";
-import { showToast } from "../../GlobalToast.js";
+import { SeniorNurseDisposalActMoreMenu } from "./SeniorNurseDisposalActMoreMenu.js";
 
 export interface SeniorNurseDisposalActFooterProps {
 	readonly onClose: () => void;
@@ -20,9 +14,7 @@ export interface SeniorNurseDisposalActFooterProps {
 	readonly setShowMoreActions: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SeniorNurseDisposalActFooter: React.FC<
-	SeniorNurseDisposalActFooterProps
-> = ({
+export const SeniorNurseDisposalActFooter: React.FC<SeniorNurseDisposalActFooterProps> = ({
 	onClose,
 	onApproveAct,
 	onPrint,
@@ -36,11 +28,7 @@ export const SeniorNurseDisposalActFooter: React.FC<
 	return (
 		<footer className="mdlp-modal-footer">
 			<div className="flex items-center gap-2">
-				<button
-					type="button"
-					className="mdlp-btn mdlp-btn-secondary"
-					onClick={onClose}
-				>
+				<button type="button" className="mdlp-btn mdlp-btn-secondary" onClick={onClose}>
 					Закрыть
 				</button>
 				<button
@@ -57,16 +45,10 @@ export const SeniorNurseDisposalActFooter: React.FC<
 			</div>
 
 			<div className="flex items-center gap-2 relative">
-				{/* Secondary: Печать акта списания */}
-				<button
-					type="button"
-					className="mdlp-btn mdlp-btn-secondary"
-					onClick={onPrint}
-				>
+				<button type="button" className="mdlp-btn mdlp-btn-secondary" onClick={onPrint}>
 					<Printer size={18} /> Печать акта списания
 				</button>
 
-				{/* Secondary menu ... */}
 				<div className="relative">
 					<button
 						type="button"
@@ -79,42 +61,14 @@ export const SeniorNurseDisposalActFooter: React.FC<
 					</button>
 
 					{showMoreActions && (
-						<div
-							className="absolute bottom-full right-0 mb-2 w-48 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1"
-							onClick={() => setShowMoreActions(false)}
-						>
-							<button
-								type="button"
-								onClick={onDownloadHtml}
-								className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
-							>
-								<Download size={14} className="text-teal-600" />
-								<span>Скачать HTML</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									if (
-										typeof navigator !== "undefined" &&
-										navigator.clipboard
-									) {
-										navigator.clipboard.writeText(actNumber);
-										showToast(
-											`Номер акта ${actNumber} скопирован`,
-											"success",
-										);
-									}
-								}}
-								className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
-							>
-								<Copy size={14} className="text-teal-600" />
-								<span>Копировать № акта</span>
-							</button>
-						</div>
+						<SeniorNurseDisposalActMoreMenu
+							actNumber={actNumber}
+							onDownloadHtml={onDownloadHtml}
+							onCloseMenu={() => setShowMoreActions(false)}
+						/>
 					)}
 				</div>
 
-				{/* Primary: Утвердить списание */}
 				<button
 					type="button"
 					className="mdlp-btn mdlp-btn-primary font-bold"
@@ -140,3 +94,5 @@ export const SeniorNurseDisposalActFooter: React.FC<
 		</footer>
 	);
 };
+
+export default SeniorNurseDisposalActFooter;

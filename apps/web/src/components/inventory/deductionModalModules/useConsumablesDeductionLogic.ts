@@ -10,6 +10,7 @@ import type {
 	ConsumablesDeductionModalProps,
 	DeductionTotals,
 } from "./deductionModalTypes.js";
+export type { ConsumablesDeductionModalItem, ConsumablesDeductionModalItem as ConsumableDeductionItem, ConsumablesDeductionModalProps, DeductionTotals };
 import {
 	computeDeductionTotals,
 	resolveStockForMaterial,

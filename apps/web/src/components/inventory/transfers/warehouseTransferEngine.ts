@@ -88,6 +88,8 @@ export interface TransferTotalsSummary {
 	readonly hasDiscrepancy: boolean;
 }
 
+export type WarehouseTransferTotals = TransferTotalsSummary;
+
 import { formatCurrencyRu, formatKopecksRu } from "@dental/shared";
 export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 

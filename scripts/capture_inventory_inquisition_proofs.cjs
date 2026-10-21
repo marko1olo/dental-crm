@@ -2,7 +2,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { chromium } = require("playwright");
 
-const ARTIFACT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\6a3f4e3b-f7f0-4c64-a2a5-fb7cbdee4082";
+const ARTIFACT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\f5567aa7-7a85-4a0b-bc63-ab85eba75607";
 const DOCS_DIR = "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\inventory";
 const APP_BASE = "http://127.0.0.1:5173";
 

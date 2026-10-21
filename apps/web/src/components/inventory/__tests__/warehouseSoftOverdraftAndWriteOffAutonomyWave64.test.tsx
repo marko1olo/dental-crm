@@ -27,7 +27,6 @@ import {
 	type OneClickPackageWriteOffResult,
 } from "../warehousePackageWriteOffEngine";
 import { WarehousePackageWriteOffBar } from "../WarehousePackageWriteOffBar";
-import { ProcedureMaterialDeductionModal } from "../ProcedureMaterialDeductionModal";
 import type { InventoryItem } from "../useInventoryLogic";
 
 describe("Wave 64 (Feature 253): Warehouse Package Write-off Engine & Catalog", () => {
@@ -348,16 +347,15 @@ describe("Wave 64 (Feature 253): UI Components, Touch Targets & Zero Emojis (Man
 		assert.ok(!emojiRegex.test(html), "В панели пакетов списания запрещены любые эмодзи!");
 	});
 
-	it("16. ProcedureMaterialDeductionModal содержит кнопки btn-writeoff-anesthesia-packet и btn-writeoff-hygiene-packet", () => {
-		const html = renderToStaticMarkup(
-			createElement(ProcedureMaterialDeductionModal, {
-				isOpen: true,
-				onClose: () => {},
-				warehouseItems: [],
-			}),
-		);
+	it("16. Фоновое пакетное списание при пустом складе не блокирует работу клиники (Soft Negative Stock)", async () => {
+		const result = await handleOneClickPackageWriteOff({
+			packageId: "anesthesia",
+			currentStockMap: {}, // Пустой склад
+			allowSoftOverdraft: true,
+		});
 
-		assert.ok(html.includes("btn-writeoff-anesthesia-packet"));
-		assert.ok(html.includes("btn-writeoff-hygiene-packet"));
+		assert.equal(result.success, true);
+		assert.equal(result.isOverdraft, true);
+		assert.ok(result.deductedItems.length > 0);
 	});
 });

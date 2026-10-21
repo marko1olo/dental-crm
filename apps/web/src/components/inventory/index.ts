@@ -25,17 +25,13 @@ export {
 export * from "./autoBomDeductionEngine.js";
 export * from "./batchTrackingModules/index.js";
 export * from "./ConsumablesDeductionModal.js";
+export { ConsumablesDeductionModal as ProcedureMaterialDeductionModal } from "./ConsumablesDeductionModal.js";
 export * from "./fefoTrafficLight.js";
 export * from "./InventoryConfirmDialog.js";
 export * from "./inventoryDataMappers.js";
 export * from "./inventoryMath.js";
 export * from "./MaterialBomsSettingsPanel.js";
 export * from "./mdlp/index.js";
-export * from "./ProcedureMaterialAddCustomBar.js";
-export * from "./ProcedureMaterialDeductionModal.js";
-export * from "./ProcedureMaterialPackagesBar.js";
-export * from "./ProcedureMaterialPoModal.js";
-export * from "./ProcedureMaterialTable.js";
 export * from "./ShiftBatchDeductionModal.js";
 // Модули стерилизации, накладных, партий и складского учета (SSOT)
 export * from "./sterilizationCycle/index.js";
@@ -53,7 +49,6 @@ export {
 	type WarehouseInventoryAuditModalProps,
 } from "./WarehouseInventoryAuditModal.js";
 export * from "./WarehouseInventoryAuditTable.js";
-export * from "./WarehouseInventoryCommissionDrawer.js";
 export * from "./WarehouseInventoryKpisGrid.js";
 export * from "./WarehouseInventoryTab.js";
 export * from "./WarehouseManagerModal.js";

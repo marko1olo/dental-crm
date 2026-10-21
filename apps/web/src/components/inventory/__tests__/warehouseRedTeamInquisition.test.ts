@@ -2,7 +2,7 @@
  * warehouseRedTeamInquisition.test.ts
  *
  * БЕСПОЩАДНЫЙ ИНКВИЗИЦИОННЫЙ ТЕСТОВЫЙ СЬЮТ:
- * RED TEAM INQUISITOR BETA — WAREHOUSE 804N AUTO-BOM DEDUCTION, OVERDRAFT & FEFO.
+ * RED TEAM INQUISITOR — WAREHOUSE AUTO-BOM DEDUCTION, OVERDRAFT & FEFO.
  *
  * Мандаты:
  * - 8e: Врачебная автономия (мягкий овердрафт не блокирует врача и списание)
@@ -11,7 +11,8 @@
  * - 8n: Суверенитет масштаба и погашение дефицита при первой приходной накладной
  */
 
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	calculateAutoVisitConsumables,
 	executeAutoVisitBomDeduction,
@@ -27,8 +28,10 @@ import {
 	sortAuditItemsByFefo,
 } from "../warehouseInventoryEngine.js";
 
-describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Suite", () => {
-	describe("1. Авто-списание расходников по Приказу МЗ РФ 804н (Мандат 8e / 8v)", () => {
+const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+
+describe("RED TEAM INQUISITOR: Warehouse Auto-BOM, Overdraft & FEFO Suite", () => {
+	describe("1. Авто-списание расходников по технологическим картам (Мандат 8e / 8v)", () => {
 		it("корректно формирует комплект расходных материалов для услуги восстановления зуба", () => {
 			const services = [
 				{
@@ -43,7 +46,7 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 				includeStandardPpe: true,
 			});
 
-			expect(consumables.length).toBeGreaterThanOrEqual(3);
+			assert.ok(consumables.length >= 3);
 
 			// Должны присутствовать композит/адгезив и СИЗ
 			const hasCompositeOrAdhesive = consumables.some(
@@ -52,7 +55,7 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 					c.itemName.toLowerCase().includes("пломб") ||
 					c.itemName.toLowerCase().includes("адгезив"),
 			);
-			expect(hasCompositeOrAdhesive).toBe(true);
+			assert.equal(hasCompositeOrAdhesive, true);
 
 			const hasPpe = consumables.some(
 				(c) =>
@@ -60,7 +63,7 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 					c.itemName.toLowerCase().includes("маска") ||
 					c.itemName.toLowerCase().includes("сиз"),
 			);
-			expect(hasPpe).toBe(true);
+			assert.equal(hasPpe, true);
 		});
 
 		it("автоматически рассчитывает отходы класса Б (СанПиН 2.1.3684-21) без комиссий", () => {
@@ -90,14 +93,13 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 
 			const result = executeAutoVisitBomDeduction(deductionInput);
 
-			expect(result.classBWaste).toBeDefined();
-			expect(result.classBWaste.wasteClass).toBe("class_B");
-			expect(result.classBWaste.singlePersonApproval).toBe(true);
-			expect(result.classBWaste.sanpinStandard).toContain("2.1.3684-21");
-			expect(result.statutoryActText).toContain("САНПИН");
+			assert.ok(result.classBWaste);
+			assert.equal(result.classBWaste.wasteClass, "class_B");
+			assert.equal(result.classBWaste.singlePersonApproval, true);
+			assert.ok(result.classBWaste.sanpinStandard.includes("2.1.3684-21"));
+			assert.ok(result.statutoryActText.includes("САНПИН"));
 			// Строгая проверка Мандата 8d: 0 мультяшных эмодзи
-			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-			expect(emojiRegex.test(result.statutoryActText)).toBe(false);
+			assert.equal(emojiRegex.test(result.statutoryActText), false);
 		});
 	});
 
@@ -121,13 +123,13 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 
 			const result = executeAutoVisitBomDeduction(deductionInput);
 
-			expect(result.hasOverdraft).toBe(true);
-			expect(result.softOverdrafts.length).toBeGreaterThan(0);
+			assert.equal(result.hasOverdraft, true);
+			assert.ok(result.softOverdrafts.length > 0);
 			// Врач не заблокирован — результат списания успешен
-			expect(result.items.length).toBeGreaterThan(0);
+			assert.ok(result.items.length > 0);
 			for (const item of result.items) {
-				expect(item.remainingQty).toBeLessThan(0);
-				expect(item.isOverdraft).toBe(true);
+				assert.ok(item.remainingQty < 0);
+				assert.equal(item.isOverdraft, true);
 			}
 		});
 
@@ -139,8 +141,8 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 			const incomingQty = 10;
 			stockBalance += incomingQty;
 
-			expect(stockBalance).toBe(8);
-			expect(stockBalance).toBeGreaterThan(0);
+			assert.equal(stockBalance, 8);
+			assert.ok(stockBalance > 0);
 		});
 	});
 
@@ -156,23 +158,23 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 			const sorted = sortBatchesByFefo(batches, new Date("2026-10-08"));
 
 			// Самый близкий к истечению срок расходуется первым
-			expect(sorted[0]?.id).toBe("batch-1");
-			expect(sorted[1]?.id).toBe("batch-2");
-			expect(sorted[2]?.id).toBe("batch-3");
+			assert.equal(sorted[0]?.id, "batch-1");
+			assert.equal(sorted[1]?.id, "batch-2");
+			assert.equal(sorted[2]?.id, "batch-3");
 		});
 
 		it("присваивает строгие медицинские статусы партий без мультяшных эмодзи", () => {
 			// Просроченная партия
 			const expiredStatus = calculateFefoStatus("2024-01-01", "2026-10-08");
-			expect(expiredStatus.fefoStatus).toBe("expired");
-			expect(expiredStatus.badgeLabelRu).toBe("Просрочен");
-			expect(expiredStatus.badgeLabelRu).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
+			assert.equal(expiredStatus.fefoStatus, "expired");
+			assert.equal(expiredStatus.badgeLabelRu, "Просрочен");
+			assert.equal(emojiRegex.test(expiredStatus.badgeLabelRu), false);
 
 			// Партия со сроком в далеком будущем
 			const freshStatus = calculateFefoStatus("2029-12-31", "2026-10-08");
-			expect(freshStatus.fefoStatus).toBe("fresh");
-			expect(freshStatus.badgeLabelRu).toContain("Свежий");
-			expect(freshStatus.badgeLabelRu).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
+			assert.equal(freshStatus.fefoStatus, "fresh");
+			assert.ok(freshStatus.badgeLabelRu.includes("Свежий"));
+			assert.equal(emojiRegex.test(freshStatus.badgeLabelRu), false);
 		});
 	});
 
@@ -196,9 +198,9 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 				"2026-10-08",
 			);
 
-			expect(lineShortage.discrepancyType).toBe("shortage");
-			expect(lineShortage.discrepancyQuantity).toBe(-2);
-			expect(lineShortage.discrepancyCostKopecks).toBe(-300000); // -3000 руб
+			assert.equal(lineShortage.discrepancyType, "shortage");
+			assert.equal(lineShortage.discrepancyQuantity, -2);
+			assert.equal(lineShortage.discrepancyCostKopecks, -300000); // -3000 руб
 
 			const lineSurplus = computeAuditLineItem(
 				{
@@ -218,16 +220,16 @@ describe("RED TEAM INQUISITOR BETA: Warehouse 804n Auto-BOM, Overdraft & FEFO Su
 				"2026-10-08",
 			);
 
-			expect(lineSurplus.discrepancyType).toBe("surplus");
-			expect(lineSurplus.discrepancyQuantity).toBe(2);
-			expect(lineSurplus.discrepancyCostKopecks).toBe(90000); // +900 руб
+			assert.equal(lineSurplus.discrepancyType, "surplus");
+			assert.equal(lineSurplus.discrepancyQuantity, 2);
+			assert.equal(lineSurplus.discrepancyCostKopecks, 90000); // +900 руб
 
 			const totals = calculateInventoryAuditTotals([lineShortage, lineSurplus]);
-			expect(totals.totalItemsCount).toBe(2);
-			expect(totals.shortageItemsCount).toBe(1);
-			expect(totals.surplusItemsCount).toBe(1);
-			expect(totals.totalShortageCostKopecks).toBe(300000);
-			expect(totals.totalSurplusCostKopecks).toBe(90000);
+			assert.equal(totals.totalItemsCount, 2);
+			assert.equal(totals.shortageItemsCount, 1);
+			assert.equal(totals.surplusItemsCount, 1);
+			assert.equal(totals.totalShortageCostKopecks, 300000);
+			assert.equal(totals.totalSurplusCostKopecks, 90000);
 		});
 	});
 });

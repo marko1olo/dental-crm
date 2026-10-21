@@ -1,34 +1,20 @@
 /**
- * ============================================================================
  * WAREHOUSE PACKAGE WRITE-OFF BAR (МАНДАТЫ 8e, 8k, 8n)
  * Сенсорная панель 1-кликового пакетного списания клинических расходников
  * с мягким овердрафтом склада (без комиссии из 3 человек и без блокировки приёма).
- *
- * ТРЕБОВАНИЯ И ИНВАРИАНТЫ:
- * - Быстрые кнопки: btn-writeoff-anesthesia-packet, btn-writeoff-hygiene-packet,
- *   btn-writeoff-filling-packet, btn-writeoff-surgery-packet.
- * - Тач-таргеты >= 44x44px.
- * - 0 мультяшных эмодзи (строго векторные Lucide-иконки: Syringe, PackageCheck, Sparkles, ShieldCheck).
- * - 0 disabled кнопок без причины: дефицит на складе не блокирует кнопку (мягкий овердрафт).
- * ============================================================================
+ * Декомпозирован до <= 120 строк.
  */
 
 import React, { useState } from "react";
-import {
-	AlertTriangle,
-	CheckCircle2,
-	PackageCheck,
-	ShieldCheck,
-	Sparkles,
-	Syringe,
-	Zap,
-} from "lucide-react";
-import type { InventoryItem } from "./useInventoryLogic";
+import { ShieldCheck, Zap } from "lucide-react";
+import type { InventoryItem } from "./useInventoryLogic.js";
+import { WarehousePackageButtons } from "./WarehousePackageButtons.js";
+import { WarehousePackageResultAlert } from "./WarehousePackageResultAlert.js";
 import {
 	type ClinicalPackageId,
 	handleOneClickPackageWriteOff,
 	type OneClickPackageWriteOffResult,
-} from "./warehousePackageWriteOffEngine";
+} from "./warehousePackageWriteOffEngine.js";
 
 export interface WarehousePackageWriteOffBarProps {
 	readonly warehouseItems?: readonly InventoryItem[] | undefined;
@@ -102,7 +88,6 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 			className={`warehouse-package-writeoff-bar p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col gap-2.5 ${className}`}
 			data-testid="warehouse-package-writeoff-bar"
 		>
-			{/* HEADER & GUARANTEE LABEL */}
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink,#0f172a)] min-w-0">
 					<Zap size={16} className="text-teal-600 shrink-0" />
@@ -118,121 +103,12 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 				</div>
 			</div>
 
-			{/* FAST ACTION BUTTONS STRIP */}
-			<div className="flex items-center gap-2 flex-wrap">
-				{/* 1. КАРПУЛА АНЕСТЕТИКА (СЕПТАНЕСТ/УБИСТЕЗИН) */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("carpule_quick")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-anesthetic-carpule min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-anesthetic-carpule"
-					title="Списание использованных карпул анестетика медсестрой без комиссии"
-				>
-					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "carpule_quick"
-							? "Списание..."
-							: "Списать препарат"}
-					</span>
-				</button>
+			<WarehousePackageButtons
+				submittingPackageId={submittingPackageId}
+				onPackageClick={handlePackageClick}
+			/>
 
-				{/* 2. НАБОР СТЕРИЛИЗАЦИИ: 1 ЛОТОК + ПЕРЧАТКИ */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("sterilization_kit")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-sterilization-kit min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-sterilization-kit"
-					title="Списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
-				>
-					<PackageCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "sterilization_kit"
-							? "Списание..."
-							: "Набор стерилизации: 1 лоток + перчатки"}
-					</span>
-				</button>
-
-				{/* 3. АНЕСТЕЗИЯ */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("anesthesia")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-anesthesia-packet"
-					title="Списание пакета: Артикаин 1.7 мл + карпульная игла 30G + ватные валики (4 шт.)"
-				>
-					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "anesthesia" ? "Списание..." : "Стандартная анестезия"}
-					</span>
-				</button>
-
-				{/* 4. ПРОФГИГИЕНА */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("hygiene")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-hygiene-packet"
-					title="Списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка + валики"
-				>
-					<PackageCheck size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "hygiene" ? "Списание..." : "Профгигиена"}
-					</span>
-				</button>
-
-				{/* 5. ПЛОМБА СВЕТОВАЯ (ТЕРАПИЯ) */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("filling")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-filling-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-filling-packet"
-					title="Списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
-				>
-					<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "filling" ? "Списание..." : "Пломба световая"}
-					</span>
-				</button>
-
-				{/* 6. ХИРУРГИЯ */}
-				<button
-					type="button"
-					onClick={() => handlePackageClick("surgery")}
-					disabled={Boolean(submittingPackageId)}
-					className="btn-writeoff-surgery-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
-					data-testid="btn-writeoff-surgery-packet"
-					title="Списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
-				>
-					<ShieldCheck size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
-					<span className="truncate min-w-0">
-						{submittingPackageId === "surgery" ? "Списание..." : "Хирургический пакет"}
-					</span>
-				</button>
-			</div>
-
-			{/* LAST WRITE-OFF STATUS TOAST / BADGE */}
-			{lastResult && !compact && (
-				<div
-					className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 min-w-0 ${
-						lastResult.isOverdraft
-							? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
-							: "bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200"
-					}`}
-					data-testid="warehouse-writeoff-last-result"
-				>
-					{lastResult.isOverdraft ? (
-						<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
-					) : (
-						<CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					)}
-					<span className="font-semibold truncate min-w-0">{lastResult.toastMessage}</span>
-				</div>
-			)}
+			<WarehousePackageResultAlert lastResult={lastResult} compact={compact} />
 		</div>
 	);
 };

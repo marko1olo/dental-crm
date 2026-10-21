@@ -68,9 +68,7 @@ export interface ServiceMaterialNormItem {
 	readonly clinicalRationaleRu: string;
 }
 
-export type ProcedureCatalogServiceNorm = Order804nServiceNorm;
-
-export interface Order804nServiceNorm {
+export interface ProcedureCatalogServiceNorm {
 	readonly serviceCode: string;
 	readonly serviceTitle: string;
 	readonly specialty: DentalServiceSpecialty;
@@ -78,6 +76,8 @@ export interface Order804nServiceNorm {
 	readonly standardDurationMinutes: number;
 	readonly materials: readonly ServiceMaterialNormItem[];
 }
+
+export type Order804nServiceNorm = ProcedureCatalogServiceNorm;
 
 export interface CabinetStockBatch {
 	readonly batchId: string;
@@ -191,5 +191,5 @@ export function getDiscrepancyReason(code: DiscrepancyReasonCode): DiscrepancyRe
 
 
 export * from "./clinicalWriteoffMaterials.js";
-export * from "./clinicalWriteoffNorms804n.js";
+export * from "./clinicalWriteoffNorms.js";
 export * from "./clinicalWriteoffCabinetStock.js";
