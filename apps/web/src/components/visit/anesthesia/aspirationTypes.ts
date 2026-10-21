@@ -1,6 +1,6 @@
 /**
  * aspirationTypes.ts — Electronic Aspiration Test Protocol Types
- * Standards: Минздрав РФ, СтАР. Mandate 8b (<= 120 lines).
+ * Standards: Минздрав РФ, СтАР. Mandates: 8e, 8n, 8x/8ao, 8b (<= 120 lines).
  */
 import type {
 	AnestheticDrugKey,
@@ -41,22 +41,11 @@ export interface AspirationAttemptRecord {
 export interface VascularRiskAssessment {
 	readonly techniqueId: ConductionTechniqueId;
 	readonly needleId: NeedleGaugeId;
-	readonly baseVascularHitRiskPercent: number;
-	readonly adjustedVascularRiskPercent: number;
-	readonly falseNegativeAspirationRiskPercent: number;
 	readonly riskTier: VascularRiskTier;
 	readonly isTwoPlaneAspirationMandatory: boolean;
 	readonly needleGaugeAppropriate: boolean;
 	readonly safetyWarningsRu: readonly string[];
 	readonly clinicalRecommendationsRu: string;
-}
-
-export interface InjectionVelocityPlan {
-	readonly volumeMl: number;
-	readonly maxSafeVelocityMlPerMinute: number;
-	readonly minRecommendedDurationSeconds: number;
-	readonly absoluteFastestDurationSeconds: number;
-	readonly safeInjectionInstructionsRu: string;
 }
 
 export interface AnesthesiaSessionData {
@@ -78,9 +67,12 @@ export interface AnesthesiaSessionData {
 	readonly notesRu?: string | undefined;
 }
 
-export interface Form043ExportResult {
-	readonly diaryText043: string;
+export interface AspirationProtocolResult {
+	readonly diaryProtocolText: string;
+	readonly diaryText043?: string;
 	readonly isLegalSafe: boolean;
 	readonly complianceCheckPassed: boolean;
 	readonly warningsRu: readonly string[];
 }
+
+export type Form043ExportResult = AspirationProtocolResult;

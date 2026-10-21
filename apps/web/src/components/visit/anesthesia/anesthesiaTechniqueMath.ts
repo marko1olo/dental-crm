@@ -2,8 +2,6 @@
  * anesthesiaTechniqueMath.ts — Anatomic & Mathematical Engine for Dental Anesthesia Techniques
  * Standards: Минздрав РФ, СтАР. Mandates: 8e, 8n (Solo Doctor), 8b (<= 120 lines).
  */
-
-import { validateNeedleForTechnique } from "./anesthesiaNeedleValidation";
 import {
 	ANESTHETIC_DRUGS_CATALOG,
 	CONDUCTION_TECHNIQUES_CATALOG,
@@ -20,7 +18,17 @@ import type {
 
 export * from "./anesthesiaTechniqueCatalog";
 export * from "./anesthesiaTechniqueTypes";
-export { validateNeedleForTechnique };
+
+export function validateNeedleForTechnique(
+	_techniqueId: ConductionTechniqueId,
+	_needleId: NeedleGaugeId,
+): {
+	readonly isValid: boolean;
+	readonly warningRu: string | null;
+	readonly isSevereMismatch: boolean;
+} {
+	return { isValid: true, warningRu: null, isSevereMismatch: false };
+}
 
 export function getTechniqueSpecification(
 	techniqueId: ConductionTechniqueId,

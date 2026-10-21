@@ -2,7 +2,6 @@
  * anesthesiaExpressPresets.ts — 1-Click Chairside Express Anesthesia Presets
  * Standards: Минздрав РФ, СтАР. Mandates: 8e (Doctor Autonomy), 8b (<= 120 lines).
  */
-
 import { EXPRESS_ANESTHESIA_PRESETS } from "./anesthesiaExpressPresetsData";
 import type {
 	ExpressAnesthesiaPreset,
@@ -15,8 +14,8 @@ import {
 import {
 	type AnesthesiaSessionData,
 	type AspirationAttemptRecord,
-	type Form043ExportResult,
-	generateAspirationJournalEntry043,
+	type AspirationProtocolResult,
+	generateAspirationProtocolEntry,
 } from "./aspirationSafetyEngine";
 
 export * from "./anesthesiaExpressTypes";
@@ -91,9 +90,9 @@ export function applyExpressPresetToSession(
 export function generateExpressPresetDiaryText(
 	preset: ExpressAnesthesiaPreset,
 	overrides?: Partial<AnesthesiaSessionData>,
-): Form043ExportResult {
+): AspirationProtocolResult {
 	const session = applyExpressPresetToSession(overrides ?? {}, preset);
-	return generateAspirationJournalEntry043(session);
+	return generateAspirationProtocolEntry(session);
 }
 
 export function validateAllExpressPresets(): {

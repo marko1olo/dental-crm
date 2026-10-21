@@ -1,6 +1,6 @@
 /**
  * anesthesiaExpressPresetsSession.test.ts — Unit Tests for Express Anesthesia Presets (Session & Journal)
- * Standards: Минздрав РФ, СтАР. Mandates: 8e, 8k, 8n, 8b (<= 120 lines).
+ * Standards: Минздрав РФ, СтАР. Mandates: 8e, 8k, 8n, 8x/8ao, 8b (<= 120 lines).
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -14,7 +14,7 @@ import {
 	validateAllExpressPresets,
 } from "../anesthesiaExpressPresets";
 
-describe("Anesthesia Express Presets Session & Diary (Mandates 8e, 8n)", () => {
+describe("Anesthesia Express Presets Session & Protocol (Mandates 8e, 8n, 8x)", () => {
 	it("should correctly configure Preset 6 and Preset 7", () => {
 		const p6 = getExpressPresetById(
 			"mandibular_plus_infiltration_ultracaine_forte",
@@ -29,7 +29,7 @@ describe("Anesthesia Express Presets Session & Diary (Mandates 8e, 8n)", () => {
 		assert.equal(p7.techniqueId, "infiltration_supraperiosteal");
 	});
 
-	it("should anatomically validate all presets without any clinical warnings", () => {
+	it("should clinically validate all presets without any warnings", () => {
 		const validation = validateAllExpressPresets();
 		assert.equal(validation.allValid, true);
 		assert.equal(validation.results.length, 7);
@@ -43,7 +43,7 @@ describe("Anesthesia Express Presets Session & Diary (Mandates 8e, 8n)", () => {
 		}
 	});
 
-	it("should generate complete, legally compliant Form 043/u text for all presets", () => {
+	it("should generate complete clinical protocol text for all presets", () => {
 		for (const preset of EXPRESS_ANESTHESIA_PRESETS) {
 			const exportResult = generateExpressPresetDiaryText(preset, {
 				patientFullName: "Смирнова Екатерина Васильевна",
@@ -55,7 +55,7 @@ describe("Anesthesia Express Presets Session & Diary (Mandates 8e, 8n)", () => {
 			assert.equal(exportResult.complianceCheckPassed, true);
 			assert.equal(exportResult.warningsRu.length, 0);
 
-			const text = exportResult.diaryText043;
+			const text = exportResult.diaryProtocolText;
 			assert.ok(
 				text.includes("ПРОТОКОЛ МЕСТНОЙ АНЕСТЕЗИИ И АСПИРАЦИОННОЙ ПРОБЫ"),
 			);
@@ -67,7 +67,7 @@ describe("Anesthesia Express Presets Session & Diary (Mandates 8e, 8n)", () => {
 	it("should apply preset to existing session and preserve patient demographics", () => {
 		const initialSession = {
 			patientFullName: "Иванов Иван Иванович",
-			medCardNumber: "043-2026/001",
+			medCardNumber: "К-2026/001",
 			patientAgeYears: 42,
 			toothNumber: "36",
 			side: "left" as const,

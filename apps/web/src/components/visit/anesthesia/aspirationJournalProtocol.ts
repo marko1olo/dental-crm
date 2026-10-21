@@ -1,6 +1,7 @@
 /**
- * aspirationJournal043.ts — Clinical Medical Diary Protocol Serializer
- * Standards: СтАР, Минздрав РФ. Mandate 8b (<= 120 lines).
+ * aspirationJournalProtocol.ts — Clinical Medical Diary Protocol Serializer
+ * Clean clinical entity for local anesthesia and aspiration test.
+ * Mandates: 8e (Doctor Autonomy), 8n (Solo Doctor), 8x/8ao (Domain Purity), 8b (<= 120 lines).
  */
 import {
 	getAnestheticDrugSpecification,
@@ -9,29 +10,12 @@ import {
 } from "./anesthesiaTechniqueMath";
 import type {
 	AnesthesiaSessionData,
-	Form043ExportResult,
-	InjectionVelocityPlan,
-} from "./aspirationSafetyEngine";
+	AspirationProtocolResult,
+} from "./aspirationTypes";
 
-export function calculateInjectionSpeedProfile(
-	volumeMl: number,
-): InjectionVelocityPlan {
-	const vol = Math.max(0.1, volumeMl);
-	const minRecommendedDurationSeconds = Math.round((vol / 1.0) * 60);
-	const absoluteFastestDurationSeconds = Math.round((vol / 1.7) * 60);
-
-	return {
-		volumeMl: vol,
-		maxSafeVelocityMlPerMinute: 1.0,
-		minRecommendedDurationSeconds,
-		absoluteFastestDurationSeconds,
-		safeInjectionInstructionsRu: `Рекомендуемая скорость введения: не более 1.0 мл/мин (минимальное время введения ${minRecommendedDurationSeconds} сек).`,
-	};
-}
-
-export function generateAspirationJournalEntry043(
+export function generateAspirationProtocolEntry(
 	session: AnesthesiaSessionData,
-): Form043ExportResult {
+): AspirationProtocolResult {
 	const technique = getTechniqueSpecification(session.techniqueId);
 	const needle = getNeedleSpecification(session.needleId);
 	const drug = getAnestheticDrugSpecification(session.drugKey);
@@ -51,21 +35,22 @@ export function generateAspirationJournalEntry043(
 		? "в 2-х плоскостях (0° и 180°)"
 		: "в 1-й плоскости";
 	const aspirationStatusText = isNegative
-		? "ОТРИЦАТЕЛЬНАЯ (кровь в карпуле отсутствует)"
-		: "ПОЛОЖИТЕЛЬНАЯ";
+		? "ОТРИЦАТЕЛЬНАЯ (кровь в карпуле отсутствует, норма)"
+		: "ПОЛОЖИТЕЛЬНАЯ (требуется репозиция)";
 
-	const diaryText043 = [
+	const diaryProtocolText = [
 		`ПРОТОКОЛ МЕСТНОЙ АНЕСТЕЗИИ И АСПИРАЦИОННОЙ ПРОБЫ:`,
 		`Метод: ${technique.nameRu} ${sideRu}${toothStr}.`,
 		`Препарат: ${drug.tradeNamesRu[0]} (${drug.activeSubstanceRu} ${drug.vasoconstrictorRatio !== "none" ? `вазоконстриктор ${drug.vasoconstrictorRatio}` : "без вазоконстриктора"}), объем ${session.volumeMl} мл (${carpules} карп.).`,
 		`Инструмент: игла стоматологическая карпульная ${needle.gauge} × ${needle.lengthMm} мм.`,
 		`Аспирационная проба ${planesText}: ${aspirationStatusText}.`,
-		`Введение раствора: медленное (скорость не более 1.0 мл/мин), безболезненное, без сопротивления.`,
+		`Введение раствора: медленное, безболезненное, без сопротивления.`,
 		`Оценка эффективности и безопасности: обезболивание глубокое, наступило через ${session.onsetDurationMinutesActual ?? 2} мин. Токсических и аллергических реакций не выявлено.`,
 	].join(" ");
 
 	return {
-		diaryText043,
+		diaryProtocolText,
+		diaryText043: diaryProtocolText,
 		isLegalSafe: isNegative,
 		complianceCheckPassed: isNegative,
 		warningsRu: isNegative
@@ -75,3 +60,6 @@ export function generateAspirationJournalEntry043(
 				],
 	};
 }
+
+export const generateAspirationJournalEntry043 =
+	generateAspirationProtocolEntry;

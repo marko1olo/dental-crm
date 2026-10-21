@@ -1,6 +1,7 @@
 /**
  * aspirationSafetyEngine.ts — Electronic Aspiration Test Protocol & Safety Engine
- * Standards: Минздрав РФ, СтАР. Mandate 8b (<= 120 lines).
+ * Clean clinical safety rules without reality simulation or arbitrary percentages.
+ * Mandates: 8e (Doctor Autonomy), 8n (Solo Doctor), 8x/8ao, 8b (<= 120 lines).
  */
 import {
 	type ConductionTechniqueId,
@@ -11,9 +12,9 @@ import {
 import type { VascularRiskAssessment } from "./aspirationTypes";
 
 export {
-	calculateInjectionSpeedProfile,
 	generateAspirationJournalEntry043,
-} from "./aspirationJournal043";
+	generateAspirationProtocolEntry,
+} from "./aspirationJournalProtocol";
 export * from "./aspirationTypes";
 
 export function evaluateVascularRisk(params: {
@@ -25,27 +26,19 @@ export function evaluateVascularRisk(params: {
 	const technique = getTechniqueSpecification(params.techniqueId);
 	const needle = getNeedleSpecification(params.needleId);
 	const warnings: string[] = [];
-	let adjustedRisk = technique.baseVascularHitRiskPercent;
-	const falseNegativeRisk = needle.gauge === "30G" ? 12.0 : 1.0;
 
 	if (
 		needle.gauge === "30G" &&
 		technique.vascularRiskTier === "critical_high"
 	) {
 		warnings.push(
-			"Узкий просвет 30G: риск ложноотрицательной аспирации. Рекомендуется 27G 35 мм.",
+			"Узкий просвет 30G: риск ложноотрицательной аспирации при проводниковой блокаде. Рекомендуется 27G 35 мм.",
 		);
-	}
-	if (params.patientAgeYears !== undefined && params.patientAgeYears < 12) {
-		adjustedRisk += 3.0;
 	}
 
 	return {
 		techniqueId: params.techniqueId,
 		needleId: params.needleId,
-		baseVascularHitRiskPercent: technique.baseVascularHitRiskPercent,
-		adjustedVascularRiskPercent: adjustedRisk,
-		falseNegativeAspirationRiskPercent: falseNegativeRisk,
 		riskTier: technique.vascularRiskTier,
 		isTwoPlaneAspirationMandatory: technique.aspirationPlanesRequired >= 2,
 		needleGaugeAppropriate: !(

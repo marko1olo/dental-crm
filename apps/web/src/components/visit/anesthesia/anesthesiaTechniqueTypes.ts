@@ -77,18 +77,36 @@ export interface TechniqueSpecification {
 	readonly targetNervesRu: readonly string[];
 	readonly recommendedNeedle: NeedleGaugeId;
 	readonly allowedNeedles: readonly NeedleGaugeId[];
-	readonly insertionDepthMm: { readonly min: number; readonly max: number; readonly target: number };
+	readonly insertionDepthMm: {
+		readonly min: number;
+		readonly max: number;
+		readonly target: number;
+	};
 	readonly requiresBoneContact: boolean;
 	readonly typicalVolumeCarpules: number;
 	readonly typicalVolumeMl: number;
 	readonly minVolumeMl: number;
 	readonly maxVolumeMl: number;
-	readonly targetPressureAtm: { readonly min: number; readonly max: number; readonly isHighPressure: boolean };
+	readonly targetPressureAtm: {
+		readonly min: number;
+		readonly max: number;
+		readonly isHighPressure: boolean;
+	};
 	readonly baseVascularHitRiskPercent: number;
 	readonly vascularRiskTier: VascularRiskTier;
-	readonly onsetMinutes: { readonly min: number; readonly max: number; readonly defaultWaitTimeSec: number };
-	readonly pulpalDurationMinutes: { readonly min: number; readonly max: number };
-	readonly softTissueDurationMinutes: { readonly min: number; readonly max: number };
+	readonly onsetMinutes: {
+		readonly min: number;
+		readonly max: number;
+		readonly defaultWaitTimeSec: number;
+	};
+	readonly pulpalDurationMinutes: {
+		readonly min: number;
+		readonly max: number;
+	};
+	readonly softTissueDurationMinutes: {
+		readonly min: number;
+		readonly max: number;
+	};
 	readonly anatomicZones: AnatomicNumbnessZones;
 	readonly aspirationPlanesRequired: number;
 	readonly clinicalRecommendationsRu: string;
