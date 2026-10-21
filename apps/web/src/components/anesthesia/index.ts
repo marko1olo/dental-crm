@@ -1,14 +1,15 @@
-export * from "../visit/anesthesiaMrdMath";
-export * from "./AnesthesiaQuickBar";
-export * from "./anesthesiaCatalog";
-export * from "./anesthesiaEngine";
+export * from "./mrd/anesthesiaMrdCalculatorEngine.js";
+export * from "./mrd/anesthesiaMrdMath.js";
+export * from "./AnesthesiaQuickBar.js";
+export * from "./anesthesiaCatalog.js";
+export * from "./anesthesiaEngine.js";
 export {
 	type AnesthesiaCalculationResult,
 	type AnesthesiaPatientMemoParams,
 	calculateAnesthesiaSafety,
 	formatAnesthesiaPatientMemo,
 	resolveClinicalDefaultWeightKg,
-} from "./anesthesiaEngine";
+} from "./anesthesiaEngine.js";
 export {
 	ANESTHESIA_DRUG_CATALOG,
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,
@@ -16,4 +17,36 @@ export {
 	isGeriatricPatient,
 	isPediatricPatient,
 	screenPatientContraindications,
-} from "./anesthesiaSafetyEngine";
+} from "./anesthesiaSafetyEngine.js";
+export {
+	ANESTHESIA_DRUGS,
+	ANESTHESIA_METHODS,
+	ANESTHESIA_PKU_PRESETS,
+	CARDIO_LIMIT_BADGE_TEXT,
+	CARDIO_MAX_EPINEPHRINE_MG,
+	EPINEPHRINE_BLOCKED_BADGE_TEXT,
+	HEALTHY_MAX_EPINEPHRINE_MG,
+	calculatePatientMrd,
+	calculateVisitAnesthesiaSafety,
+	checkAnesthesiaSomaticContraindications,
+	create1ClickAnesthesiaPkuDisposalRecord,
+	createAnesthesiaPkuFromPreset,
+	extractSomaticRiskProfileFromText,
+	formatAnesthesiaSoapText,
+	generateAnesthesiaPkuDisposalAct,
+	resolveAutopilotAnesthesia,
+	validateCarpuleExpirationDate,
+	type AnesthesiaDrugDefinition,
+	type AnesthesiaDrugKey,
+	type AnesthesiaMethodKey,
+	type AnesthesiaSafetyLevel,
+	type AnesthesiaSafetyParams,
+	type AnesthesiaSoapRecordParams,
+	type AnesthesiaSomaticAlert,
+	type AutopilotResolutionResult,
+	type PatientMrdCalculation,
+	type SomaticAlertSeverity,
+	type SomaticCrossCheckResult,
+	type SomaticRiskProfile,
+	type VisitAnesthesiaCalculationResult,
+} from "@dental/shared";

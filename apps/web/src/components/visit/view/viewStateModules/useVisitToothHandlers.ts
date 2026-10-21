@@ -23,6 +23,7 @@ import type { VisitViewProps } from "../types";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { logger } from "../../../../utils/logger";
 import { toCanonicalDbToothState } from "../../../../utils/dentalFormulaFdi";
+import { triggerHaptic } from "../../../../native/mobileBridge";
 
 export interface UseVisitToothHandlersParams {
 	activePatient: VisitViewProps["activePatient"];
@@ -69,6 +70,7 @@ export function useVisitToothHandlers({
 	}, [appendToEMKField]);
 
 	const handleToothClick = useCallback((code: string, currentState: string) => {
+		triggerHaptic("light");
 		const num = Number(code) || null;
 		useVisitStore.getState().setActiveToothNumber(num);
 		if (activeStamp && activeStamp !== "idle") {
@@ -123,6 +125,7 @@ export function useVisitToothHandlers({
 	}, [setToothState, toothStateByCode, setSelectedToothForMenu]);
 
 	const handleToothDiagnosisSelect = useCallback((state: string, text?: string, field?: string) => {
+		triggerHaptic("selection");
 		if (selectedToothForMenu?.code) {
 			const toothNum = Number.parseInt(selectedToothForMenu.code, 10);
 			const cavityStr = selectedSurfaces.length > 0 ? selectedSurfaces.join("") : undefined;

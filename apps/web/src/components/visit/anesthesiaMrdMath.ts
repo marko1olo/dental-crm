@@ -1,10 +1,8 @@
 /**
- * anesthesiaMrdMath.ts — Mathematical Engine for Dental Anesthesia Maximum Recommended Dose (MRD)
+ * apps/web/src/components/visit/anesthesiaMrdMath.ts
  *
- * NOTE: Consolidated into single SSOT facade over anesthesiaCalculatorEngine.ts
- * per Mandates 8s, 8e, 8n (Anti-Duplication and Universal SSOT Architecture).
- *
- * Standards: Минздрав РФ, СтАР, AHA/ADA, Malamed's Handbook of Local Anesthesia.
+ * @deprecated Use apps/web/src/components/anesthesia directly.
+ * Canonical unified anesthesia domain facade (Мандат 8s: Anti-Duplication SSOT).
  */
 
-export * from "./anesthesiaCalculatorEngine";
+export * from "../anesthesia";

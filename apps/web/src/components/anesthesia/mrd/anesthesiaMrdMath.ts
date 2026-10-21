@@ -7,4 +7,4 @@
  * Standards: Минздрав РФ, СтАР, AHA/ADA, Malamed's Handbook of Local Anesthesia.
  */
 
-export * from "./anesthesiaCalculatorEngine";
+export * from "./anesthesiaMrdCalculatorEngine.js";

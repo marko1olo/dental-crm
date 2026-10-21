@@ -178,10 +178,10 @@ export function VisitActionFooter({
 							setIsFastPrintModalOpen(true);
 						}}
 						className="h-10 px-3.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-						title="Распечатать вкладыш в медицинскую карту (A5 / A4 с линией отреза)"
+						title="Распечатать дневник визита в медицинскую карту (A5 / A4 с линией отреза)"
 					>
 						<Printer size={15} />
-						<span>Вкладыш в карту (вклейка)</span>
+						<span>Дневник визита (вклейка)</span>
 					</button>
 					<button
 						type="button"

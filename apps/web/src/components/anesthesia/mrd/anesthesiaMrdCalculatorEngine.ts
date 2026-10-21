@@ -19,7 +19,7 @@ export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalcula
 	const vol = params.carpuleVolumeMl && params.carpuleVolumeMl > 0 ? params.carpuleVolumeMl : drug.defaultVolumeMl;
 	const isPedia = Boolean(params.isPediatric || (params.patientAgeYears != null && params.patientAgeYears < 18) || (typeof params.patientWeightKg === "number" && params.patientWeightKg < 40));
 	const weight = resolveClinicalDefaultWeightKg(params.patientWeightKg, params.patientAgeYears, isPedia);
-	const carp = Math.max(0, Number.isFinite(params.carpulesCount) ? params.carpulesCount! : 1);
+	const carp = Math.max(0, Number.isFinite(params.carpulesCount) ? (params.carpulesCount ?? 1) : 1);
 
 	const mgActive = Math.round(vol * drug.mgPerMlActive * 100) / 100;
 	const mgEpi = Math.round(vol * drug.epinephrineMgPerMl * 10000) / 10000;

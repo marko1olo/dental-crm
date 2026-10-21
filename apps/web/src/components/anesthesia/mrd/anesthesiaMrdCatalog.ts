@@ -4,7 +4,7 @@
  * Standards: Минздрав РФ, СтАР, AHA/ADA, Malamed.
  */
 
-import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog.js";
+import { DENTAL_ANESTHETICS } from "../anesthesiaCatalog.js";
 
 export type MrdDrugId =
 	| "articaine_1_100k"

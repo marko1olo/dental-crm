@@ -1,4 +1,4 @@
-import { describe, it, beforeEach  } from "vitest";
+import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
 	mergeMultiToothDiagnoses,

@@ -34,7 +34,7 @@ export function evaluateSafeDose(p: DoseEvalParams): {
 			limitingFactor = "pediatric_clark";
 			limitingDesc = `Педиатрический расчет по Кларку (${p.weight} кг / 70 кг = ${Math.round(factor * 100)}%).`;
 		} else if (formula === "young" && p.age && p.age > 0) {
-			const factor = calculateYoungFactor(p.age);
+			const _factor = calculateYoungFactor(p.age);
 			maxSafeActiveMg = Math.min(calculateYoungDose(p.drug.absoluteMaxDoseMgAdult, p.age), Math.round(p.weight * p.drug.maxDoseMgPerKgPediatric * 10) / 10);
 			limitingFactor = "pediatric_young";
 			limitingDesc = `Педиатрический расчет по Янгу (${p.age} лет).`;
