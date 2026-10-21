@@ -1,11 +1,11 @@
 /**
- * soapRecordSynthesizer.ts — Синтез клинического дневника 043/у по стандарту SOAP на основе диктовки
+ * soapRecordSynthesizer.ts — Синтез дневника визита / медицинской карты приёма по стандарту SOAP на основе диктовки
  */
 
 import type {
 	AnesthesiaResult,
+	ClinicalProcedureResult,
 	DiagnosisRule,
-	Procedure804nResult,
 	SoapRecordResult,
 } from "./clinicalGrammarTypes.js";
 
@@ -15,7 +15,7 @@ export function synthesizeSoapRecord(
 	surfaces: string[],
 	diagRule: DiagnosisRule | null,
 	anesthesia: AnesthesiaResult | null,
-	procedures: Procedure804nResult[],
+	procedures: ClinicalProcedureResult[],
 ): SoapRecordResult {
 	const primaryTooth = teeth[0];
 	const toothStr = primaryTooth ? `зуба ${primaryTooth}` : "";
@@ -53,16 +53,16 @@ export function synthesizeSoapRecord(
 	if (procedures.some((p) => p.category === "isolation")) {
 		treatmentSteps.push("2. Изоляция рабочего поля коффердамом.");
 	}
-	if (procedures.some((p) => p.code804n === "A16.07.002")) {
+	if (procedures.some((p) => p.serviceCode === "A16.07.002" || p.code804n === "A16.07.002")) {
 		treatmentSteps.push("3. Препарирование кариозной полости, некрэктомия твердых тканей, формирование полости.");
 	}
-	if (procedures.some((p) => p.code804n === "A16.07.030")) {
+	if (procedures.some((p) => p.serviceCode === "A16.07.030" || p.code804n === "A16.07.030")) {
 		treatmentSteps.push("4. Механическая и медикаментозная обработка корневых каналов (эндомотор, ProTaper, 3% гипохлорит натрия, ультразвуковая активация).");
 	}
-	if (procedures.some((p) => p.code804n === "A16.07.008")) {
+	if (procedures.some((p) => p.serviceCode === "A16.07.008" || p.code804n === "A16.07.008")) {
 		treatmentSteps.push("5. Обтурация корневых каналов гуттаперчевыми штифтами и силером методом латеральной конденсации.");
 	}
-	if (procedures.some((p) => p.category === "therapy" && p.code804n === "A16.07.002.010")) {
+	if (procedures.some((p) => p.category === "therapy" && (p.serviceCode === "A16.07.002.010" || p.code804n === "A16.07.002.010"))) {
 		const shadeText = procedures.find((p) => p.shade)?.shade ? ` (оттенок ${procedures.find((p) => p.shade)?.shade})` : "";
 		treatmentSteps.push(`6. Адгезивная подготовка (самопротравливающий адгезив), послойное восстановление анатомической формы зуба светоотверждаемым композитом${shadeText}.`);
 		treatmentSteps.push("7. Шлифовка и полировка пломбы по окклюзии (диски, полировочные головки Enhance, паста).");

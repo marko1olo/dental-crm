@@ -1,5 +1,5 @@
 import { Clock, WifiOff } from "lucide-react";
-import React from "react";
+import type React from "react";
 
 export const digitsOnly = (value: string, maxLength: number) =>
 	value.replace(/[^\d]/g, "").slice(0, maxLength);
@@ -12,7 +12,11 @@ export type DigitsInputProps = Omit<
 	onChange: (value: string) => void;
 };
 
-export function DigitsInput({ maxLength, onChange, ...props }: DigitsInputProps) {
+export function DigitsInput({
+	maxLength,
+	onChange,
+	...props
+}: DigitsInputProps) {
 	return (
 		<input
 			inputMode="numeric"
@@ -68,7 +72,7 @@ export function FiscalDetails({
 			className="payment-capture-detail-section"
 			open={fiscalDetailsOpen}
 		>
-			<summary>Фискальный чек и кассир</summary>
+			<summary>Параметры чека и кассир</summary>
 			<div className="smart-details-content">
 				<div className="payment-capture-detail-grid">
 					<div className="smart-field">
@@ -191,8 +195,13 @@ export function PaymentFiscalCashierBar({
 					role="status"
 				>
 					<div className="flex items-center gap-1.5">
-						<Clock size={14} className="shrink-0 text-[var(--teal)] animate-pulse" />
-						<span>Оплата зафиксирована, чек в очереди фискализации ({pendingCount})</span>
+						<Clock
+							size={14}
+							className="shrink-0 text-[var(--teal)] animate-pulse"
+						/>
+						<span>
+							Оплата зафиксирована, чек в очереди фискализации ({pendingCount})
+						</span>
 					</div>
 					{isOnline && (
 						<button
@@ -213,8 +222,13 @@ export function PaymentFiscalCashierBar({
 					data-testid="offline-cash-mode-banner"
 					role="status"
 				>
-					<WifiOff size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
-					<span>Офлайн-режим кассы: чеки автоматически буферизуются в 54-ФЗ очередь</span>
+					<WifiOff
+						size={13}
+						className="shrink-0 text-amber-600 dark:text-amber-400"
+					/>
+					<span>
+						Офлайн-режим кассы: чеки автоматически сохраняются в очереди
+					</span>
 				</div>
 			)}
 

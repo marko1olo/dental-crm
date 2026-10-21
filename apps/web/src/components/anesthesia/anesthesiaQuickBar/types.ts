@@ -37,6 +37,7 @@ export interface AnesthesiaQuickBarProps {
 	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	onDisposalCarpules?: ((carpulesCount: number, drugId?: AnestheticDrugId | undefined) => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
+	servicePriceRub?: number | undefined;
 	disabled?: boolean | undefined;
 }
 

@@ -50,7 +50,7 @@ export function evaluateSafetyAdvisories(
 
 	if (drug.containsSulfites && (input.hasSulfiteAllergy || input.hasBronchialAsthma)) {
 		contraindicationsTriggered.push(
-			'ПРЕПАРАТ СОДЕРЖИТ СУЛЬФИТЫ (метабисульфит E223). Высокий риск бронхоспазма. Рекомендован Скандонест 3% (Мепивакаин без адреналина).'
+			'Препарат содержит сульфиты (метабисульфит E223). Рекомендован Скандонест 3% (Мепивакаин без адреналина).'
 		);
 	}
 	if (!drug.isAdrenalineFree && input.asaStatus === 'asa_4') {
@@ -83,11 +83,11 @@ export function evaluateSafetyAdvisories(
 	}
 	if (isOverdose) {
 		warnings.push(
-			`ПРЕВЫШЕНИЕ МАКСИМАЛЬНОЙ СУТОЧНОЙ ДОЗЫ (МРД): превышена рекомендуемая доза (${metrics.injectedActiveMg} мг > ${metrics.maxSafeActiveMg} мг).`
+			`Превышение максимальной суточной дозы (МРД): превышена рекомендуемая доза (${metrics.injectedActiveMg} мг > ${metrics.maxSafeActiveMg} мг).`
 		);
 	}
-	if (!input.aspirationNegativeConfirmed && INJECTION_TECHNIQUES[input.techniqueId]?.aspirationCheckMandatory) {
-		warnings.push('Аспирационная проба обязательна перед введением проводниковой анестезии.');
+	if (input.aspirationNegativeConfirmed === false && INJECTION_TECHNIQUES[input.techniqueId]?.aspirationCheckMandatory) {
+		warnings.push('Аспирационная проба не подтверждена перед введением проводниковой анестезии.');
 	}
 
 	return {

@@ -242,15 +242,23 @@ export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps>
 								usePatientStore
 									.getState()
 									.setSelectedPatientId(resolvedPatient.id);
-								useAppStore.getState().setCurrentView("finance");
-								showToast(`Открыта касса и счета: ${fullName}`, "info");
+								window.dispatchEvent(
+									new CustomEvent("dente:open-payment-modal", {
+										detail: {
+											patientId: resolvedPatient.id,
+											patientName: fullName,
+											patientPhone: resolvedPatient.phone,
+											amountRub: 15400,
+										},
+									}),
+								);
 							}}
 							className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-							title="Выписка счёта, услуги и касса"
+							title="Принять оплату и выдать кассовый чек"
 							data-testid="header-finance-btn"
 						>
-							<FileText size={13} className="text-emerald-600 shrink-0" />
-							<span className="truncate">Счета и касса</span>
+							<CreditCard size={13} className="text-emerald-600 shrink-0" />
+							<span className="truncate">Принять оплату (Касса)</span>
 						</button>
 
 						{/* 3. Семейный баланс */}

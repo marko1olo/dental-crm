@@ -67,12 +67,26 @@ export function usePaymentCaptureShortcuts(
 
 	const applyPatientTaxDefaults = () => {
 		const d = props.patientDefaults;
+		const hasAnyData = Boolean(
+			d?.fullName?.trim() || d?.birthDate?.trim() || d?.identityDocument?.trim() || d?.taxpayerInn?.trim(),
+		);
+		if (!hasAnyData) {
+			showToast("В карточке пациента отсутствуют ФИО и реквизиты плательщика", "warning");
+			return;
+		}
 		if (d.fullName?.trim() && !props.payerFullName.trim()) props.onPayerFullNameChange(d.fullName.trim());
 		if (d.birthDate?.trim() && !props.payerBirthDate.trim()) props.onPayerBirthDateChange(d.birthDate.trim());
 		if (d.identityDocument?.trim() && !props.payerIdentityDocument.trim()) props.onPayerIdentityDocumentChange(d.identityDocument.trim());
 		if (d.taxpayerInn?.trim() && !props.payerInn.trim()) props.onPayerInnChange(digitsOnly(d.taxpayerInn, 12));
 		if (!props.payerRelationship.trim()) props.onPayerRelationshipChange("пациент");
-		showToast("Заполнены данные пациента", "info");
+		const isFullyPopulated = Boolean(
+			d.fullName?.trim() && d.birthDate?.trim() && d.identityDocument?.trim() && d.taxpayerInn?.trim(),
+		);
+		if (isFullyPopulated) {
+			showToast("Заполнены данные пациента", "info");
+		} else {
+			showToast("Заполнены доступные данные пациента. Недостающие реквизиты можно внести вручную", "info");
+		}
 	};
 
 	return { applyDoctorDiscount, applySplit5050Preset, applyPatientTaxDefaults };

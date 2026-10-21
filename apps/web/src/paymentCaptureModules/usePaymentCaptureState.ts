@@ -59,7 +59,7 @@ export function usePaymentCaptureState(props: PaymentCaptureProps) {
 		}
 	};
 
-	const handlePrimarySubmit = (validations: { paymentReadyToSubmit: boolean; paymentMissingSteps: string[] }) => {
+	const handlePrimarySubmit = (validations: { paymentReadyToSubmit: boolean; paymentMissingSteps: string[]; isTaxDeductionDraft?: boolean }) => {
 		if (props.isSaving) return;
 		if (!props.patientId) {
 			showToast("Выберите пациента для проведения платежа", "warning");
@@ -79,6 +79,12 @@ export function usePaymentCaptureState(props: PaymentCaptureProps) {
 			const firstMissing = validations.paymentMissingSteps[0];
 			showToast(firstMissing ? `Для проведения платежа: ${firstMissing}` : "Укажите сумму платежа или выберите услугу из плана", "warning");
 			return;
+		}
+		if (validations.isTaxDeductionDraft) {
+			showToast(
+				"Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
+				"info",
+			);
 		}
 		playTactileEarcon("pay");
 		props.onSubmit();

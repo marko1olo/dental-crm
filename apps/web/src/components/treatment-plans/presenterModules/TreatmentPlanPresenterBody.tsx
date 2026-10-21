@@ -1,25 +1,24 @@
-import React from "react";
+import type React from "react";
 import { TreatmentPlanPresenterComparisonTab } from "../TreatmentPlanPresenterComparisonTab";
+import { TreatmentPlanPresenterFinanceTab } from "../TreatmentPlanPresenterFinanceTab";
 import { TreatmentPlanPresenterStagesTab } from "../TreatmentPlanPresenterStagesTab";
 import { TreatmentPlanRoadmap } from "../TreatmentPlanRoadmap";
-import { TreatmentPlanPresenterFinanceTab } from "../TreatmentPlanPresenterFinanceTab";
 import { TreatmentPlanPresenterPrintTab } from "./TreatmentPlanPresenterPrintTab";
+import type { TreatmentPlanPresenterModalProps } from "./treatmentPlanPresenterTypes";
 import {
-	getTierLetter,
 	formatRubles,
+	getTierLetter,
 	type useTreatmentPlanPresenterState,
 } from "./useTreatmentPlanPresenterState";
-import type { TreatmentPlanPresenterModalProps } from "./treatmentPlanPresenterTypes";
 
 export interface TreatmentPlanPresenterBodyProps {
 	readonly s: ReturnType<typeof useTreatmentPlanPresenterState>;
 	readonly props: TreatmentPlanPresenterModalProps;
 }
 
-export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProps> = ({
-	s,
-	props,
-}) => {
+export const TreatmentPlanPresenterBody: React.FC<
+	TreatmentPlanPresenterBodyProps
+> = ({ s, props }) => {
 	const {
 		patientName = "",
 		patientId = "",
@@ -34,7 +33,10 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 	} = props;
 
 	return (
-		<main className="treatment-presenter-body" data-testid="treatment-presenter-body">
+		<main
+			className="treatment-presenter-body"
+			data-testid="treatment-presenter-body"
+		>
 			{s.activeTab === "comparison" && (
 				<TreatmentPlanPresenterComparisonTab
 					allTiers={s.allTiers}
@@ -70,6 +72,7 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 					onUpdateItemPrice={s.handleUpdateItemPrice}
 					onSendStageToVisit={onSendStageToVisit}
 					onSendStageToInvoice={onSendStageToInvoice}
+					onPayStage={props.onPayStage}
 					patientId={patientId}
 					patientName={patientName}
 				/>
@@ -87,7 +90,9 @@ export const TreatmentPlanPresenterBody: React.FC<TreatmentPlanPresenterBodyProp
 					todayRu={s.todayRu}
 					getTierLetter={getTierLetter}
 					onPrint={s.handlePrintAppendix}
-					onConfirmPatientChoice={() => s.handleConfirmPatientChoice(s.selectedTier)}
+					onConfirmPatientChoice={() =>
+						s.handleConfirmPatientChoice(s.selectedTier)
+					}
 				/>
 			)}
 

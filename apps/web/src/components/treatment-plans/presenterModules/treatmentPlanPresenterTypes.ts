@@ -8,31 +8,31 @@
 import type {
 	PatientCasePresentation,
 	PatientCasePresenterInput,
-	RoadmapStage,
 	RawPlanItem,
+	RoadmapStage,
 } from "@dental/shared";
+import type { ToothData } from "../../odontogram/ToothChart";
 import type {
+	NdflDeductionResult,
+	TreatmentPlanItem,
+	TreatmentPlanStage,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
-	TreatmentPlanStage,
-	TreatmentPlanItem,
 	TreatmentPlanWorkflowStatus,
-	NdflDeductionResult,
 } from "../types";
-import type { ToothData } from "../../odontogram/ToothChart";
 
-export {
-	type PatientCasePresentation,
-	type PatientCasePresenterInput,
-	type RoadmapStage,
-	type RawPlanItem,
-	type TreatmentPlanTier,
-	type TreatmentPlanTierId,
-	type TreatmentPlanStage,
-	type TreatmentPlanItem,
-	type TreatmentPlanWorkflowStatus,
-	type NdflDeductionResult,
-	type ToothData,
+export type {
+	NdflDeductionResult,
+	PatientCasePresentation,
+	PatientCasePresenterInput,
+	RawPlanItem,
+	RoadmapStage,
+	ToothData,
+	TreatmentPlanItem,
+	TreatmentPlanStage,
+	TreatmentPlanTier,
+	TreatmentPlanTierId,
+	TreatmentPlanWorkflowStatus,
 };
 
 /** Категория клинического этапа по номенклатуре СтАР / 804н */
@@ -129,9 +129,12 @@ export interface TreatmentPlanPresenterBaseProps {
 	onConfirmSelection?: ((tier: TreatmentPlanTier) => void) | undefined;
 	onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
 	onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
-	onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
+	onUpdateItemPrice?:
+		| ((itemId: string, newPriceRub: number) => void)
+		| undefined;
 	onSendStageToVisit?: ((stage: TreatmentPlanStage) => void) | undefined;
 	onSendStageToInvoice?: ((stage: TreatmentPlanStage) => void) | undefined;
+	onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	planCreatedAtIso?: string | undefined;
 	isClosed?: boolean | undefined;
 	isDraft?: boolean | undefined;

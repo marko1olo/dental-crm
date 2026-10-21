@@ -12,6 +12,15 @@ import type {
 	MrdDrugSpecification,
 } from "./anesthesiaMrdCatalog.js";
 
+export type {
+	MrdDrugId,
+	CarpuleVolumeMl,
+	PediatricFormula,
+	SafetyZone,
+	LimitingFactor,
+	MrdDrugSpecification,
+};
+
 export interface MrdCalculationParams {
 	readonly drugId: MrdDrugId;
 	readonly patientWeightKg?: number | null;

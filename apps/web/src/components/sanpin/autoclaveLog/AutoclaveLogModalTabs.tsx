@@ -36,7 +36,7 @@ export const AutoclaveLogModalTabs: React.FC<AutoclaveLogModalTabsProps> = ({
 					onClick={() => onSelectTab("journal_257")}
 				>
 					<FileText size={14} className="shrink-0" />
-					<span>Журнал циклов ({recordsCount})</span>
+					<span>Журнал автоклавирования ({recordsCount})</span>
 				</button>
 			</div>
 		</div>

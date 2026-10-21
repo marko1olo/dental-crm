@@ -19,8 +19,15 @@ export function CompletedActions({
 					e.stopPropagation();
 					const pid = appointmentPatient?.id || appointment.patientId;
 					if (pid) usePatientStore.getState().setSelectedPatientId(pid);
-					useAppStore.getState().setCurrentView("finance");
-					showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
+					window.dispatchEvent(
+						new CustomEvent("dente:open-payment-modal", {
+							detail: {
+								patientId: pid,
+								patientName: appointmentPatientName,
+								amountRub: 15400,
+							},
+						}),
+					);
 				}}
 				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
 				title="Принять оплату"

@@ -126,7 +126,9 @@ export async function postQuickCarpuleWriteoff(params: {
 				visitId: params.visitId || null,
 				patientId: params.patientId || null,
 				count: params.count,
+				carpulesCount: params.count,
 				drugId: params.drugId || 'articaine_1_100k',
+				drugName: params.drugId || 'articaine_1_100k',
 				category: 'anesthetic_carpule',
 			}),
 		});

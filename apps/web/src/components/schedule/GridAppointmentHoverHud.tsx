@@ -660,14 +660,21 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								if (patObj?.id) {
 									usePatientStore.getState().setSelectedPatientId(patObj.id);
 								}
-								useAppStore.getState().setCurrentView("finance");
-								showToast(`Быстрый расчёт: ${pName}`, "info");
+								window.dispatchEvent(
+									new CustomEvent("dente:open-payment-modal", {
+										detail: {
+											patientId: patObj?.id || a.patientId,
+											patientName: pName,
+											amountRub: 15400,
+										},
+									}),
+								);
 							}}
 							className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-							title="Быстрый расчёт: перейти к кассовому расчёту"
+							title="Быстрый чек и приём оплаты"
 						>
 							<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span className="whitespace-nowrap">Быстрый расчёт</span>
+							<span className="whitespace-nowrap">Быстрый чек</span>
 						</button>
 					</div>
 				</div>

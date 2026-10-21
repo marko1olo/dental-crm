@@ -21,7 +21,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = (props)
 
 	return (
 		<div
-			className="mobile-sticky-checkout-bar p-3 sm:px-4 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 select-none shadow-md"
+			className="mobile-sticky-checkout-bar p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-4 sm:pb-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 select-none shadow-md"
 			data-testid="payment-modal-fixed-footer"
 		>
 			{/* Total due display on desktop */}

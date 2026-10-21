@@ -196,10 +196,14 @@ export function AppointmentModalHeader({
             onClick={() => {
               onClose();
               usePatientStore.getState().setSelectedPatientId(patientId);
-              useAppStore.getState().setCurrentView("finance");
-              showToast(
-                `Касса: расчёт ${currentPatientName}`,
-                "info",
+              window.dispatchEvent(
+                new CustomEvent("dente:open-payment-modal", {
+                  detail: {
+                    patientId,
+                    patientName: currentPatientName,
+                    amountRub: 15400,
+                  },
+                }),
               );
             }}
             className="appointment-modal-header-btn px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
@@ -265,13 +269,15 @@ export function AppointmentModalHeader({
                 onClick={() => {
                   setIsMenuOpen(false);
                   onClose();
-                  usePatientStore
-                    .getState()
-                    .setSelectedPatientId(patientId);
-                  useAppStore.getState().setCurrentView("finance");
-                  showToast(
-                    `Касса: расчёт ${currentPatientName}`,
-                    "info",
+                  usePatientStore.getState().setSelectedPatientId(patientId);
+                  window.dispatchEvent(
+                    new CustomEvent("dente:open-payment-modal", {
+                      detail: {
+                        patientId,
+                        patientName: currentPatientName,
+                        amountRub: 15400,
+                      },
+                    }),
                   );
                 }}
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"

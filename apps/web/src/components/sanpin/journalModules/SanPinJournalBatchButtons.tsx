@@ -77,7 +77,7 @@ export const SanPinJournalBatchButtons: React.FC<SanPinJournalBatchButtonsProps>
 					data-testid="quick-pso-norm-btn"
 				>
 					<ShieldCheck size={14} />
-					<span>Предстерилизационная очистка (азопирам): норма</span>
+					<span>Предстерилизационная очистка: норма</span>
 				</button>
 			)}
 		</div>

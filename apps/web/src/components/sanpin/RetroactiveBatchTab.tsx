@@ -179,7 +179,7 @@ export function RetroactiveBatchTab({
 
 		const batchStats = calculateRetroactiveBatchStats(days);
 		showToast(
-			`Журналы СанПиН рассчитаны за период: ${days.length} смен (${batchStats.workingDaysCount} рабочих), ${batchStats.totalTraysProcessed} лотков, ${batchStats.totalPsoSamplesTested} проб ПСО, ${batchStats.totalAutoclaveCycles} циклов автоклава.`,
+			`Журналы СанПиН рассчитаны за период: ${days.length} смен (${batchStats.workingDaysCount} рабочих), ${batchStats.totalTraysProcessed} лотков, ${batchStats.totalPsoSamplesTested} проб предстерилизационной очистки, ${batchStats.totalAutoclaveCycles} циклов автоклава.`,
 			"success",
 		);
 	};
@@ -388,7 +388,7 @@ export function RetroactiveBatchTab({
 					<div className="sanpin-kpi-card" style={{ minHeight: "88px" }}>
 						<span className="sanpin-kpi-label">Лотков и наборов</span>
 						<span className="sanpin-kpi-value">{stats.totalTraysProcessed} шт.</span>
-						<span className="sanpin-kpi-subtext">ПСО: {stats.totalPsoSamplesTested} проб (1% min 3-5)</span>
+						<span className="sanpin-kpi-subtext">Очистка: {stats.totalPsoSamplesTested} проб (1% min 3-5)</span>
 					</div>
 
 					<div className="sanpin-kpi-card" style={{ minHeight: "88px" }}>

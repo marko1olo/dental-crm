@@ -21,6 +21,7 @@ export interface UseAnesthesiaApplyActionProps {
 	hasLidocaineAllergy?: boolean | undefined;
 	hasArticaineAllergy?: boolean | undefined;
 	targetToothNumberFdi?: number | string | undefined;
+	servicePriceRub?: number | undefined;
 	selectedDrugId: AnestheticDrugId;
 	selectedDrugInfo: AnestheticDrugInfo;
 	techniqueId: InjectionTechniqueId;
@@ -73,7 +74,7 @@ export function resolveAnesthesiaApplicationConflicts(
 
 	const diaryEntry =
 		bypassCheck || isCardioConflict || isCriticalConflict || isLidocaineAllergyConflict || isArticaineAllergyConflict
-			? `${result.diaryEntryRu} (Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)`
+			? `${result.diaryEntryRu} (Введено по клиническому решению лечащего врача)`
 			: result.diaryEntryRu;
 
 	let toastMessage = `Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в медицинскую карту`;

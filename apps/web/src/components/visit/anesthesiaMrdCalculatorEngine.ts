@@ -7,7 +7,7 @@
 import { resolveClinicalDefaultWeightKg } from "@dental/shared";
 import { MRD_DRUG_CATALOG, EPINEPHRINE_LIMITS_MG } from "./anesthesiaMrdCatalog.js";
 import { evaluateSafeDose, evaluateSafetyZone } from "./anesthesiaMrdDoseEval.js";
-import type { MrdCalculationParams, MrdCalculationResult } from "./anesthesiaMrdTypes.js";
+import type { MrdCalculationParams, MrdCalculationResult, LimitingFactor } from "./anesthesiaMrdTypes.js";
 
 export * from "./anesthesiaMrdCatalog.js";
 export * from "./anesthesiaMrdFormulas.js";
@@ -15,7 +15,7 @@ export * from "./anesthesiaCarpulePresets.js";
 export * from "./anesthesiaMrdTypes.js";
 
 export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalculationResult {
-	const drug = MRD_DRUG_CATALOG[params.drugId] ?? MRD_DRUG_CATALOG.articaine_1_100k;
+	const drug = (MRD_DRUG_CATALOG as Record<string, typeof MRD_DRUG_CATALOG.articaine_1_100k>)[params.drugId] ?? MRD_DRUG_CATALOG.articaine_1_100k;
 	const vol = params.carpuleVolumeMl && params.carpuleVolumeMl > 0 ? params.carpuleVolumeMl : drug.defaultVolumeMl;
 	const isPedia = Boolean(params.isPediatric || (params.patientAgeYears != null && params.patientAgeYears < 18) || (typeof params.patientWeightKg === "number" && params.patientWeightKg < 40));
 	const weight = resolveClinicalDefaultWeightKg(params.patientWeightKg, params.patientAgeYears, isPedia);

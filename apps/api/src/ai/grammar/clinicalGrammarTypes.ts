@@ -40,11 +40,15 @@ export interface AnesthesiaResult {
 	cartridgeCount: number;
 	technique: "infiltration" | "conduction" | "application" | "intraligamentary";
 	concentration?: string | undefined;
+	serviceCode?: string | undefined;
+	/** @deprecated use serviceCode */
 	code804n?: string | undefined;
 }
 
-export interface Procedure804nResult {
-	code804n: string;
+export interface ClinicalProcedureResult {
+	serviceCode: string;
+	/** @deprecated use serviceCode */
+	code804n?: string | undefined;
 	name: string;
 	category: "therapy" | "surgery" | "endodontics" | "hygiene" | "orthopedics" | "anesthesia" | "isolation";
 	quantity: number;
@@ -52,6 +56,8 @@ export interface Procedure804nResult {
 	priceRub?: number | undefined;
 	shade?: string | undefined;
 }
+
+export type Procedure804nResult = ClinicalProcedureResult;
 
 export interface SoapRecordResult {
 	complaint?: string | undefined;

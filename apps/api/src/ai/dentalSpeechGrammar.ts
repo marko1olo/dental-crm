@@ -6,8 +6,8 @@
  * - clinicalGrammarTypes: Типы данных и структуры (ToothUpdateResult, AnesthesiaResult, SoapRecordResult)
  * - toothSpeechParser: FDI/ISO распознавание зубов и поверхностей (Black/FDI)
  * - diagnosisSpeechParser: МКБ-10 и клинические нозологии (K02.1, K04.0, K04.5...)
- * - anesthesiaAndProceduresParser: Анестетики (дозировки, техники) и Номенклатура 804н
- * - soapRecordSynthesizer: Синтез медицинской карты Форма 043/у (SOAP протокол)
+ * - anesthesiaAndProceduresParser: Анестетики (дозировки, техники) и каталог процедур прайс-листа
+ * - soapRecordSynthesizer: Синтез медицинской карты приёма и дневника визита (SOAP протокол)
  */
 
 export * from "./grammar/clinicalGrammarTypes.js";

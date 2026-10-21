@@ -1,6 +1,7 @@
 import React from "react";
 import { DentalLabCreateOrderModal } from "../../lab/DentalLabCreateOrderModal";
 import { DoctorPrivacyShield } from "../../auth/DoctorPrivacyShield";
+import { GlobalPaymentModalLauncher } from "../../billing/GlobalPaymentModalLauncher";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
 import type { AdministrativeModalsSubcontainerProps } from "./modalsContainerTypes";
 
@@ -26,6 +27,7 @@ export function AdministrativeModalsSubcontainer({
 }: AdministrativeModalsSubcontainerProps) {
 	return (
 		<>
+			<GlobalPaymentModalLauncher activeStaffUser={activeStaffUser} />
 			{isGlobalLabCreateOrderOpen && (
 				<DentalLabCreateOrderModal
 					isOpen={isGlobalLabCreateOrderOpen}

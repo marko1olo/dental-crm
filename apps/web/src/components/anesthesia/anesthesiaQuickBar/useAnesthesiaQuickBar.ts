@@ -102,6 +102,7 @@ export function useAnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 		singleCarpuleResult,
 		maxSafeCarpules,
 		activeToastMessage,
+		showQuickToast,
 		safetyWarning,
 		handleSelectDrug,
 		handleDismissWarning: () => setSafetyWarning(null),

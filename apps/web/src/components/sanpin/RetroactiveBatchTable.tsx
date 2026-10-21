@@ -51,7 +51,7 @@ export function RetroactiveBatchTable({
 						<th style={{ minWidth: "110px" }}>Дата / День</th>
 						<th style={{ minWidth: "140px" }}>Кабинеты</th>
 						<th style={{ minWidth: "110px" }}>Лотков / Приемов</th>
-						<th style={{ minWidth: "120px" }}>ПСО (Азопирам)</th>
+						<th style={{ minWidth: "120px" }}>Очистка (Азопирам)</th>
 						<th style={{ minWidth: "150px" }}>Автоклавирование</th>
 						<th style={{ minWidth: "120px" }}>Рециркуляторы</th>
 						<th style={{ minWidth: "130px" }}>Уборка</th>

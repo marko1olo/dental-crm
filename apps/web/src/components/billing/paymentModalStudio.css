@@ -764,21 +764,21 @@
 }
 
 .payment-footer-submit-btn {
-	min-height: 38px;
-	height: 38px;
-	padding: 0 18px;
-	border-radius: 12px;
-	font-size: 12px;
+	min-height: 48px;
+	height: 48px;
+	padding: 0 20px;
+	border-radius: 14px;
+	font-size: 13.5px;
 	font-weight: 800;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
+	gap: 8px;
 	cursor: pointer;
 	border: 1px solid transparent !important;
 	color: #ffffff !important;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
 	user-select: none;
 }
 

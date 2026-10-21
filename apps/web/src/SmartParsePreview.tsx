@@ -4,47 +4,24 @@ import React, { useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
 	type DictationContext,
+	dictationComplexHint,
+	dictationEmptyHint,
 	dictationFailureText,
+	isDictationResultEmpty,
 	serverParsesDictation,
 } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
 
 /**
- * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО В ТЕКСТАХ (правится вместе с packet W4).
+ * SmartParsePreview.tsx — Компонент предпросмотра результатов голосового ввода
+ * и клинического разбора речи за креслом врача (MANDATES 8e, 8l, 8y).
  *
- * 1. Любой отказ разбора речи объяснялся врачу так:
- *    «Ошибка API (Локальный режим): Подключите ключи в .env для реального
- *    LLM-парсинга». Три беды в одной строке: слова `.env`, «API» и
- *    «LLM-парсинг» врачу не значат ничего; причина ВЫДУМАНА — эта же строка
- *    показывалась при обрыве сети и при отказе сервера, где ключи ни при чём;
- *    и что делать дальше, регистратор из неё узнать не мог.
- *
- * 2. «Пусто...» вместо состояния. Ни что случилось, ни что сказать в микрофон.
- *
- * 3. «Llama-3 анализирует...» — название чужой модели как индикатор загрузки.
- *    Оно меняется вместе с настройкой провайдера и врачу ничего не сообщает.
- *
- * ЧТО ОСТАЛОСЬ СЛОМАННЫМ ПОСЛЕ ТОЙ ПРАВКИ И ЗАКРЫВАЕТСЯ ЗДЕСЬ (packet X4).
- *
- * 4. Кнопка «ИИ-Анализ» в прайс-листе была тупиком по построению: сервер
- *    контекст «prices» не принимает вообще (проверено живым запросом, отказ
- *    разбора запроса на любой текст), а новый текст отказа предлагал «обновите
- *    страницу и повторите» — обновление не помогало никогда. Кнопки там больше
- *    нет; разбор цен целиком клиентский.
- *
- * 5. Отказ и пустота показывались ОДНОВРЕМЕННО: строка отказа шла выше
- *    содержимого, а содержимое при пустом результате давало «назовите услугу и
- *    цену». Два разных «что делать дальше» в один момент — та же болезнь, из-за
- *    которой этот пакет и существует. Теперь состояние ровно одно.
- *
- * 6. При сложной фразе на экран выводился текст запроса к языковой модели
- *    шрифтом пишущей машинки, под заголовком «Сгенерированный промпт (Готов к
- *    отправке)». Четыре копии одного блока, ни одна ничего не сообщала
- *    пользователю. Заменено одной строкой о том, что делать дальше.
- *
- * 7. Английские плашки «Action» рядом с «ОТМЕНА ЗАПИСИ», «ПЕРЕНОС ЗАПИСИ» и
- *    «ДОБАВИТЬ В ПРАЙС» — слово, которое повторяет соседнюю подпись и при этом
- *    не по-русски.
+ * Инварианты чистоты клинического интерфейса:
+ * 1. Никакого технического дев-жаргона (.env, LLM-парсинг, промпты в font-mono).
+ * 2. Живой русский язык врача и администратора без англицизмов («Отмена записи», «Новая услуга»).
+ * 3. Отсутствие слепящих белых пятен в Dark Mode: все плашки согласованы в обеих темах.
+ * 4. Ошибка сервера и честная пустота не сливаются на одном экране.
+ * 5. Кнопка «Применить» не блокируется из-за опциональных полей (Мандат 8e).
  */
 export type SmartParsedPayload = {
 	isAiTask?: boolean;
@@ -74,13 +51,8 @@ export type SmartParsedPayload = {
 
 export interface SmartParsePreviewProps {
 	isVisible: boolean;
-	parsedData: SmartParsedPayload | null; // e.g. from smartBookingParser
+	parsedData: SmartParsedPayload | null;
 	rawText: string;
-	/**
-	 * Контекст диктовки. Союз не переписан вручную, а взят из словаря состояний:
-	 * там же лежит список контекстов, которые умеет сервер, и оба списка обязаны
-	 * расходиться только в одну сторону.
-	 */
 	type: DictationContext;
 	onApply: (data: SmartParsedPayload) => void;
 	onManual: () => void;
@@ -96,12 +68,6 @@ export function SmartParsePreview({
 	onManual,
 	onClose,
 }: SmartParsePreviewProps) {
-	/*
-	 * Доступ к клинике берётся ИЗ КОНТЕКСТА, и только оттуда. Одноимённый `auth` в
-	 * `AppHelpers.tsx` подставляет секрет лишь тогда, когда его передали вторым
-	 * аргументом: с ним файл собрался бы, проверка заголовков замолчала бы, а в
-	 * клинике разбор диктовки остался бы с ответом 403.
-	 */
 	const { auth } = useAppLogicContext();
 	const [internalData, setInternalData] = useState<SmartParsedPayload | null>(
 		null,
@@ -118,31 +84,10 @@ export function SmartParsePreview({
 	}, [isVisible, parsedData]);
 
 	const handleAiParse = async () => {
-		/*
-		 * Контекста, которого сервер не разбирает, здесь быть не может: кнопки
-		 * «ИИ-Анализ» для него нет (см. подвал). Проверка стоит потому, что список
-		 * серверных контекстов — зеркало чужого файла: когда там появится разбор
-		 * цен, ветка станет живой сама, а до тех пор запрос-заведомо-отказ не уйдёт.
-		 */
 		if (!serverParsesDictation(type)) return;
 		setIsAiLoading(true);
 		setAiError(null);
 		try {
-			/*
-			 * БЫЛО: заголовки — только `Content-Type`. Маршрут закрыт охраной
-			 * `requireClinicalReadAccess` (apps/api/src/routes/ai.ts), то есть без
-			 * `x-dente-admin-secret` сервер отвечает 403, и кнопка «ИИ-Анализ» у
-			 * заказчика не работала вовсе. На этой машине это не видно: в корневом
-			 * `.env` секрет закомментирован, зато включены лазейки
-			 * `DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS` — а живут они только
-			 * пока `NODE_ENV !== "production"`, и у заказчика их нет.
-			 *
-			 * Помощник взят ЧИТАЮЩИЙ, хотя запрос POST: охрана на маршруте читающая —
-			 * разбор диктовки ничего не меняет в данных. Секрет у обоих помощников
-			 * один и тот же (`clinicalAdminSecretSession`), поэтому выбор здесь —
-			 * про смысл, а не про поведение. `Content-Type` идёт первым аргументом:
-			 * помощник дописывает к нему секрет и токены кабинета и сотрудника.
-			 */
 			const response = await fetch("/api/ai/parse-dictation", {
 				method: "POST",
 				headers: auth.denteClinicalReadHeaders({
@@ -151,8 +96,6 @@ export function SmartParsePreview({
 				body: JSON.stringify({ text: rawText, type }),
 			});
 			if (!response.ok) {
-				// Код состояния нужен поддержке и остаётся в консоли; человеку идёт
-				// причина словами. Причину не выдумываем: она берётся из ответа.
 				logger.error(
 					`[SmartParsePreview] /api/ai/parse-dictation ответил ${response.status}`,
 				);
@@ -192,48 +135,52 @@ export function SmartParsePreview({
 		}
 	};
 
-	// Render logic depending on type
+	const renderComplexNotice = () => (
+		<div className="space-y-2 text-sm">
+			<div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
+				<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded-lg text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800 flex items-center gap-1.5">
+					<Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					Требуется клинический разбор
+				</span>
+				<p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mb-2">
+					{dictationComplexHint(type)}
+				</p>
+				{rawText && (
+					<div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300">
+						<span className="text-slate-400 dark:text-slate-500 block text-[11px] font-medium mb-1">
+							Надиктованный текст:
+						</span>
+						<span className="italic">«{rawText}»</span>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+
 	const renderSchedulePreview = (data: SmartParsedPayload | null) => {
-		if (data?.isAiTask)
-			return (
-				<div className="space-y-2 text-sm">
-					{data.isAiTask && (
-						<div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
-								Сложный запрос. Требуется ИИ
-							</span>
-							<span className="text-slate-500 dark:text-slate-400 text-xs mb-1">
-								Сгенерированный промпт (Готов к отправке):
-							</span>
-							<span className="text-slate-800 dark:text-slate-200 text-[11px] font-mono leading-tight bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">
-								{data.prompt}
-							</span>
-						</div>
-					)}
-				</div>
-			);
+		if (data?.isAiTask) return renderComplexNotice();
 		if (!data || Object.keys(data).length === 0) {
 			return (
-				<div className="text-sm text-slate-500 dark:text-slate-400 italic">
-					Не удалось распознать детали. Попробуйте еще раз или используйте ИИ.
+				<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+					{dictationEmptyHint("schedule")}
 				</div>
 			);
 		}
 		return (
 			<div className="space-y-2 text-sm">
 				{data.action === "cancel" && (
-					<div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-2 rounded text-xs font-semibold flex justify-between items-center">
+					<div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-2 rounded-lg text-xs font-semibold flex justify-between items-center">
 						ОТМЕНА ЗАПИСИ
 						<span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px]">
-							Action
+							Отмена записи
 						</span>
 					</div>
 				)}
 				{data.action === "reschedule" && (
-					<div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-2 rounded text-xs font-semibold flex justify-between items-center">
+					<div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-2 rounded-lg text-xs font-semibold flex justify-between items-center">
 						ПЕРЕНОС ЗАПИСИ
 						<span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[10px]">
-							Action
+							Перенос записи
 						</span>
 					</div>
 				)}
@@ -245,7 +192,7 @@ export function SmartParsePreview({
 				)}
 				{data.patientName && !data.patientId && (
 					<div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
-						<span className="text-slate-500 dark:text-slate-400">Пациент (ИИ):</span>
+						<span className="text-slate-500 dark:text-slate-400">Пациент:</span>
 						<span className="font-medium text-slate-800 dark:text-slate-200">
 							{data.patientName}
 						</span>
@@ -267,9 +214,9 @@ export function SmartParsePreview({
 				)}
 				{data.timeStr && !data.startsAt && (
 					<div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
-						<span className="text-slate-500 dark:text-slate-400">Время (ИИ):</span>
+						<span className="text-slate-500 dark:text-slate-400">Время:</span>
 						<span className="font-medium text-slate-800 dark:text-slate-200">
-							{data.dateStr} в {data.timeStr}
+							{data.dateStr ? `${data.dateStr} в ` : ""}{data.timeStr}
 						</span>
 					</div>
 				)}
@@ -284,7 +231,7 @@ export function SmartParsePreview({
 				{(data.comment || data.note) && (
 					<div className="flex flex-col pt-1">
 						<span className="text-slate-500 dark:text-slate-400 text-xs mb-1">Заметка:</span>
-						<span className="bg-amber-50 dark:bg-amber-950/40 p-2 rounded text-amber-900 dark:text-amber-200 italic text-xs">
+						<span className="bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg text-amber-900 dark:text-amber-200 italic text-xs">
 							{data.comment || data.note}
 						</span>
 					</div>
@@ -294,37 +241,20 @@ export function SmartParsePreview({
 	};
 
 	const renderPricesPreview = (data: SmartParsedPayload | null) => {
-		if (data?.isAiTask)
-			return (
-				<div className="space-y-2 text-sm">
-					{data.isAiTask && (
-						<div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
-							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
-								Сложный запрос. Требуется ИИ
-							</span>
-							<span className="text-slate-500 text-xs mb-1">
-								Сгенерированный промпт (Готов к отправке):
-							</span>
-							<span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">
-								{data.prompt}
-							</span>
-						</div>
-					)}
-				</div>
-			);
-		if (!data?.serviceName)
+		if (data?.isAiTask) return renderComplexNotice();
+		if (!data?.serviceName) {
 			return (
 				<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-					Название услуги не распознано. Скажите название и цену одной фразой —
-					например: «Лечение кариеса, 4500».
+					{dictationEmptyHint("prices")}
 				</div>
 			);
+		}
 		return (
 			<div className="space-y-2 text-sm">
-				<div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-2 rounded text-xs font-semibold flex justify-between items-center mb-2">
-					ДОБАВИТЬ В ПРАЙС
-					<span className="bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px]">
-						Action
+				<div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 p-2 rounded-lg text-xs font-semibold flex justify-between items-center mb-2">
+					ДОБАВИТЬ В ПРАЙС-ЛИСТ
+					<span className="bg-emerald-600 dark:bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px]">
+						Новая услуга
 					</span>
 				</div>
 				<div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
@@ -350,31 +280,14 @@ export function SmartParsePreview({
 	};
 
 	const renderPatientPreview = (data: SmartParsedPayload | null) => {
-		if (data?.isAiTask)
-			return (
-				<div className="space-y-2 text-sm">
-					{data.isAiTask && (
-						<div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
-								Сложный запрос. Требуется ИИ
-							</span>
-							<span className="text-slate-500 dark:text-slate-400 text-xs mb-1">
-								Сгенерированный промпт (Готов к отправке):
-							</span>
-							<span className="text-slate-800 dark:text-slate-200 text-[11px] font-mono leading-tight bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">
-								{data.prompt}
-							</span>
-						</div>
-					)}
-				</div>
-			);
-		if (!data || Object.keys(data).length === 0)
+		if (data?.isAiTask) return renderComplexNotice();
+		if (!data || Object.keys(data).length === 0) {
 			return (
 				<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-					Данные пациента не распознаны. Скажите фамилию, имя и телефон —
-					например: «Иванова Мария Петровна, 9271234567».
+					{dictationEmptyHint("patient")}
 				</div>
 			);
+		}
 		return (
 			<div className="space-y-2 text-sm">
 				{data.fullName && (
@@ -398,7 +311,7 @@ export function SmartParsePreview({
 				{data.notes && (
 					<div className="flex flex-col pt-1">
 						<span className="text-slate-500 dark:text-slate-400 text-xs mb-1">Заметки:</span>
-						<span className="bg-amber-50 dark:bg-amber-950/40 p-2 rounded text-amber-900 dark:text-amber-200 italic text-xs">
+						<span className="bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg text-amber-900 dark:text-amber-200 italic text-xs">
 							{data.notes}
 						</span>
 					</div>
@@ -408,32 +321,14 @@ export function SmartParsePreview({
 	};
 
 	const renderVisitPreview = (data: SmartParsedPayload | null) => {
-		if (data?.isAiTask)
-			return (
-				<div className="space-y-2 text-sm">
-					{data.isAiTask && (
-						<div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-							<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800">
-								Сложный запрос. Требуется ИИ
-							</span>
-							<span className="text-slate-500 dark:text-slate-400 text-xs mb-1">
-								Сгенерированный промпт (Готов к отправке):
-							</span>
-							<span className="text-slate-800 dark:text-slate-200 text-[11px] font-mono leading-tight bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">
-								{data.prompt}
-							</span>
-						</div>
-					)}
-				</div>
-			);
+		if (data?.isAiTask) return renderComplexNotice();
 		if (
 			!data ||
 			(!data.toothUpdates?.length && !Object.keys(data.emkUpdates || {}).length)
 		) {
 			return (
 				<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-					Ни зубов, ни записей приёма не распознано. Назовите номер зуба и что с
-					ним сделано — например: «Двадцать шестой, пломба».
+					{dictationEmptyHint("visit")}
 				</div>
 			);
 		}
@@ -498,6 +393,10 @@ export function SmartParsePreview({
 			);
 		}
 
+		if (aiError && isDictationResultEmpty(type, internalData)) {
+			return null;
+		}
+
 		switch (type) {
 			case "schedule":
 				return renderSchedulePreview(internalData);
@@ -507,16 +406,13 @@ export function SmartParsePreview({
 				return renderVisitPreview(internalData);
 			case "prices":
 				return renderPricesPreview(internalData);
-			// Внутреннее имя контекста наружу не показываем: оператору оно ничего не
-			// говорит. Оно уходит в консоль, а на экран — что делать дальше.
 			default:
 				logger.error(
 					`[SmartParsePreview] неизвестный контекст диктовки: ${type}`,
 				);
 				return (
 					<div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-						Здесь диктовка пока не работает. Заполните поля вручную и сообщите
-						администратору клиники.
+						Здесь диктовка пока не поддерживается. Заполните поля вручную или выберите из каталога.
 					</div>
 				);
 		}
@@ -547,8 +443,9 @@ export function SmartParsePreview({
 
 					<div className="p-4">
 						{aiError && (
-							<div className="bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 p-2 rounded mb-3 text-xs flex items-center gap-1 border border-red-200 dark:border-red-800">
-								<AlertTriangle size={14} /> {aiError}
+							<div className="bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 p-2.5 rounded-lg mb-3 text-xs flex items-start gap-2 border border-red-200 dark:border-red-800">
+								<AlertTriangle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+								<span>{aiError}</span>
 							</div>
 						)}
 						{renderContent()}
@@ -560,26 +457,28 @@ export function SmartParsePreview({
 							onClick={() =>
 								internalData && onApply(internalData as SmartParsedPayload)
 							}
-							disabled={isAiLoading}
-							className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
+							disabled={isAiLoading || !internalData}
+							className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 shadow-sm"
 						>
 							<Check className="w-4 h-4" />
 							Применить
 						</button>
-						<button
-							type="button"
-							onClick={handleAiParse}
-							disabled={isAiLoading}
-							className="flex-1 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 dark:text-teal-300 text-teal-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1 border border-teal-200 dark:border-teal-800"
-						>
-							<Zap className="w-4 h-4" />
-							ИИ-Анализ
-						</button>
+						{serverParsesDictation(type) && (
+							<button
+								type="button"
+								onClick={handleAiParse}
+								disabled={isAiLoading}
+								className="flex-1 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 dark:text-teal-300 text-teal-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 border border-teal-200 dark:border-teal-800"
+							>
+								<Zap className="w-4 h-4" />
+								ИИ-Анализ
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={onManual}
 							disabled={isAiLoading}
-							className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-medium text-sm py-2 px-3 rounded-lg transition-colors"
+							className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-medium text-sm py-2 px-3 rounded-lg transition-colors"
 						>
 							Вручную
 						</button>

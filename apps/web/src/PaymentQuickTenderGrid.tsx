@@ -4,7 +4,6 @@ import {
 	type PaymentMethod,
 } from "@dental/shared";
 import { Coins, X } from "lucide-react";
-import React from "react";
 import { money } from "./AppHelpers";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
 import { normalizeRubAmountInput } from "./rubAmountInput";
@@ -68,7 +67,8 @@ export function PaymentQuickTenderGrid({
 								<button
 									type="button"
 									onClick={() => onAmountChange("")}
-									className="icon-button absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 min-w-0 min-h-0 border-none bg-transparent hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									style={{ minHeight: "44px" }}
+									className="icon-button min-h-[44px] min-w-[44px] absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center border-none bg-transparent hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 									title="Очистить сумму"
 								>
 									<X size={16} aria-hidden="true" />

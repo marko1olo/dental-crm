@@ -27,6 +27,7 @@ export function useAnesthesiaApplyAction({
 	hasLidocaineAllergy,
 	hasArticaineAllergy,
 	targetToothNumberFdi,
+	servicePriceRub,
 	selectedDrugId,
 	selectedDrugInfo,
 	techniqueId,
@@ -94,7 +95,8 @@ export function useAnesthesiaApplyAction({
 
 		if (typeof window !== 'undefined') {
 			const code804n = techniqueId?.includes('mandibular') ? 'A11.07.011' : 'A11.07.010';
-			const priceRub = 950 * Math.ceil(carpulesCount);
+			const unitPrice = servicePriceRub ?? 950;
+			const priceRub = unitPrice * Math.ceil(carpulesCount);
 			const drugName = drugInfo?.tradeNamesRu?.[0] ?? drugInfo?.activeSubstanceRu ?? 'Артикаин';
 			window.dispatchEvent(new CustomEvent('dente-add-services-to-invoice', {
 				detail: {

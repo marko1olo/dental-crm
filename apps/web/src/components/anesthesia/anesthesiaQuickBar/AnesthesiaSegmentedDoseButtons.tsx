@@ -2,9 +2,9 @@ import React from 'react';
 
 export interface AnesthesiaSegmentedDoseButtonsProps {
 	disabled: boolean;
-	selectedCarpulesCount?: number;
+	selectedCarpulesCount?: number | undefined;
 	onApplyCarpules: (count: number) => void;
-	onChangeSelectedCarpulesCount?: (count: number) => void;
+	onChangeSelectedCarpulesCount?: ((count: number) => void) | undefined;
 }
 
 const CARPULE_CHIPS: readonly { count: number; label: string; testId: string; title: string }[] = [

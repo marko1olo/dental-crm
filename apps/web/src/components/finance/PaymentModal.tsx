@@ -46,8 +46,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/50 p-0 md:p-3 payment-modal-backdrop animate-in fade-in duration-150"
-			style={{ zIndex: 100 }}
+			className="fixed inset-0 z-[10050] flex flex-col justify-end md:items-center md:justify-center bg-black/60 p-0 md:p-3 payment-modal-backdrop animate-in fade-in duration-150"
+			style={{ zIndex: 10050 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"

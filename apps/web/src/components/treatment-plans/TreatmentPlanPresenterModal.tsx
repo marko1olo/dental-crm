@@ -5,31 +5,45 @@
  * Декомпозирован строго по Мандату 8b (лимит <= 120 строк).
  */
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import "./treatmentPlans.css";
-import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
-import { TreatmentPlanPresenterHeader } from "./TreatmentPlanPresenterHeader";
-import { TreatmentPlanPresenterToolsStrip } from "./TreatmentPlanPresenterToolsStrip";
-import { TreatmentPlanPresenterFooter } from "./TreatmentPlanPresenterFooter";
 import { TreatmentPlanPresenterBody } from "./presenterModules/TreatmentPlanPresenterBody";
-import {
-	useTreatmentPlanPresenterState,
-	getTierLetter,
-	formatRubles,
-} from "./presenterModules/useTreatmentPlanPresenterState";
+import { TreatmentPlanPresenterConnectedTools } from "./presenterModules/TreatmentPlanPresenterConnectedTools";
+import { TreatmentPlanStagePaymentModal } from "./presenterModules/TreatmentPlanStagePaymentModal";
 import type { TreatmentPlanPresenterModalProps } from "./presenterModules/treatmentPlanPresenterTypes";
+import {
+	formatRubles,
+	getTierLetter,
+	useTreatmentPlanPresenterState,
+} from "./presenterModules/useTreatmentPlanPresenterState";
+import { TreatmentPlanPresenterFooter } from "./TreatmentPlanPresenterFooter";
+import { TreatmentPlanPresenterHeader } from "./TreatmentPlanPresenterHeader";
+import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
+import type { TreatmentPlanStage } from "./types";
 
-export { isMicroConsumable, type PlanItemLike };
-export { TreatmentPlanStagesList } from "./presenterModules/TreatmentPlanStagesList";
-export { TreatmentPlanPaymentSchedule } from "./presenterModules/TreatmentPlanPaymentSchedule";
-export { TreatmentPlanAcceptanceFooter } from "./presenterModules/TreatmentPlanAcceptanceFooter";
-export { useTreatmentPlanPresenterState, getTierLetter, formatRubles };
 export type { TreatmentPlanPresenterModalProps };
+export {
+	formatRubles,
+	getTierLetter,
+	isMicroConsumable,
+	type PlanItemLike,
+	useTreatmentPlanPresenterState,
+};
 
 export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = (props) => {
 	const { isOpen, onClose, patientName = "", doctorFullName = "", teeth, onSelectPlan, onApproveAndSign, className = "" } = props;
-	const s = useTreatmentPlanPresenterState(props);
+	const [stageForPayment, setStageForPayment] = useState<TreatmentPlanStage | null>(null);
+
+	const effectiveProps = useMemo(
+		() => ({
+			...props,
+			onPayStage: props.onPayStage || ((st: TreatmentPlanStage) => setStageForPayment(st)),
+		}),
+		[props],
+	);
+
+	const s = useTreatmentPlanPresenterState(effectiveProps);
 
 	if (!isOpen) return null;
 
@@ -42,10 +56,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 			aria-labelledby="treatment-presenter-modal-title"
 		>
 			<div className={`treatment-presenter-modal treatment-presenter-container ${s.isFullscreen ? "treatment-presenter-fullscreen " : ""}${className}`}>
-				{/* Apple HIG Drag Handle for Mobile Viewports (<= 768px) */}
 				<div className="treatment-presenter-drag-handle sm:hidden" />
-
-				{/* Top Header */}
 				<TreatmentPlanPresenterHeader
 					patientName={patientName}
 					doctorFullName={doctorFullName}
@@ -61,44 +72,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					isAiAuditing={s.isAiAuditing}
 					onRunAiAudit={s.handleRunAiAudit}
 				/>
-
-				{/* Chairside Assistant & Clinical Tools Strip */}
-				<TreatmentPlanPresenterToolsStrip
-					activeToolsPanel={s.activeToolsPanel}
-					setActiveToolsPanel={s.setActiveToolsPanel}
-					isCopilotExecuting={s.isCopilotExecuting}
-					onExecuteCopilot={s.handleExecuteCopilot}
-					onApplyClinicalBundle={s.handleApplyClinicalBundle}
-					copilotFeedback={s.copilotFeedback}
-					setCopilotFeedback={s.setCopilotFeedback}
-					doctorDiscountPercent={s.doctorDiscountPercent}
-					setDoctorDiscountPercent={s.setDoctorDiscountPercent}
-					onApplyDoctorDiscount={s.handleApplyDoctorDiscount}
-					doctorDiscountRub={s.doctorDiscountRub}
-					setDoctorDiscountRub={s.setDoctorDiscountRub}
-					doctorDiscountMode={s.doctorDiscountMode}
-					setDoctorDiscountMode={s.setDoctorDiscountMode}
-					doctorDiscountTargetStage={s.doctorDiscountTargetStage}
-					setDoctorDiscountTargetStage={s.setDoctorDiscountTargetStage}
-					onApplyDoctorFixedDiscount={s.handleApplyDoctorFixedDiscount}
-					showMicroConsumables={s.showMicroConsumables}
-					setShowMicroConsumables={s.setShowMicroConsumables}
-					selectedTier={s.selectedTier}
-					allTiers={s.allTiers}
-					onSelectPlan={onSelectPlan}
-					teeth={teeth}
-					patientChoiceBtnText={s.patientChoiceBtnText}
-					choiceConfirmedBtnText={s.choiceConfirmedBtnText}
-					isChoiceConfirmed={s.isChoiceConfirmed}
-					confirmedNotice={s.confirmedNotice}
-					onConfirmPatientChoice={s.handleConfirmPatientChoice}
-					onApproveAndSign={onApproveAndSign}
-				/>
-
-				{/* Main Body */}
-				<TreatmentPlanPresenterBody s={s} props={props} />
-
-				{/* Sticky Bottom Action Footer */}
+				<TreatmentPlanPresenterConnectedTools s={s} teeth={teeth} />
+				<TreatmentPlanPresenterBody s={s} props={effectiveProps} />
 				<TreatmentPlanPresenterFooter
 					selectedTier={s.selectedTier}
 					getTierLetter={getTierLetter}
@@ -108,6 +83,15 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					isChoiceConfirmed={s.isChoiceConfirmed}
 					patientChoiceBtnText={s.patientChoiceBtnText}
 					choiceConfirmedBtnText={s.choiceConfirmedBtnText}
+				/>
+				<TreatmentPlanStagePaymentModal
+					stage={stageForPayment}
+					patientId={props.patientId}
+					patientName={props.patientName}
+					patientPhone={props.patientPhone}
+					doctorFullName={props.doctorFullName}
+					clinicName={props.clinicName}
+					onClose={() => setStageForPayment(null)}
 				/>
 			</div>
 		</div>

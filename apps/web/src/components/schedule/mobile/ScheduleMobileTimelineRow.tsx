@@ -82,11 +82,15 @@ export const ScheduleMobileTimelineRow: React.FC<ScheduleMobileTimelineRowProps>
     if (pid) {
       usePatientStore.getState().setSelectedPatientId(pid);
     }
-    if (typeof window !== "undefined") {
-      window.location.hash = "#finance";
-    }
-    useAppStore.getState().setCurrentView("finance");
-    showToast(`Касса: расчёт «${pName}»`, "info");
+    window.dispatchEvent(
+      new CustomEvent("dente:open-payment-modal", {
+        detail: {
+          patientId: pid,
+          patientName: pName,
+          amountRub: 15400,
+        },
+      }),
+    );
   };
 
   return (

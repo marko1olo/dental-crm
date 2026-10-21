@@ -7,8 +7,8 @@
  * 2. Распознавание поверхностей зуба (MOD, MO, OD, вестибулярная, язычная, небная, пришеечная).
  * 3. Распознавание МКБ-10 нозологий (K02.1, K02.0, K04.0, K04.5, K05.3, K03.1, K08.1, S02.5).
  * 4. Распознавание анестетиков (Убистезин, Ультракаин, Скандонест, дозы мл, карпулы, техники).
- * 5. Распознавание услуг 804н (коффердам, некрэктомия, световая пломба, обработка и обтурация каналов).
- * 6. Автоматическая генерация протокола SOAP Формы 043/у.
+ * 5. Распознавание клинических услуг прайс-листа (коффердам, некрэктомия, световая пломба, обработка и обтурация каналов).
+ * 6. Автоматическая генерация протокола SOAP медицинской карты приёма.
  * 7. Реальные фразы у кресла врача с подтверждением точности >= 95%.
  */
 
@@ -226,32 +226,32 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 		});
 	});
 
-	describe("5. Order 804n Manipulations & Consumables Recognition", () => {
+	describe("5. Clinical Procedures & Price List Catalog Recognition", () => {
 		it("recognizes Cofferdam, Necrectomy, and Gradia Direct light composite", () => {
 			const procs = extractDentalProcedures("коффердам, препарирование, пломба световая Градиа а2", 36);
 			assert.strictEqual(procs.length, 3);
-			assert.ok(procs.some((p) => p.code804n === "A16.07.002.001")); // Cofferdam
-			assert.ok(procs.some((p) => p.code804n === "A16.07.002")); // Necrectomy
-			assert.ok(procs.some((p) => p.code804n === "A16.07.002.010")); // Composite restoration
-			assert.strictEqual(procs.find((p) => p.code804n === "A16.07.002.010")?.shade, "A2");
+			assert.ok(procs.some((p) => p.serviceCode === "A16.07.002.001" || p.code804n === "A16.07.002.001")); // Cofferdam
+			assert.ok(procs.some((p) => p.serviceCode === "A16.07.002" || p.code804n === "A16.07.002")); // Necrectomy
+			assert.ok(procs.some((p) => p.serviceCode === "A16.07.002.010" || p.code804n === "A16.07.002.010")); // Composite restoration
+			assert.strictEqual(procs.find((p) => (p.serviceCode || p.code804n) === "A16.07.002.010")?.shade, "A2");
 		});
 
 		it("recognizes Endodontic canal treatment and obturation", () => {
 			const procs = extractDentalProcedures("обработка корневого канала эндомотором, пломбирование каналов гуттаперчей силер ah plus", 47);
 			assert.strictEqual(procs.length, 2);
-			assert.ok(procs.some((p) => p.code804n === "A16.07.030")); // Canal instrumentation
-			assert.ok(procs.some((p) => p.code804n === "A16.07.008")); // Canal obturation
+			assert.ok(procs.some((p) => p.serviceCode === "A16.07.030" || p.code804n === "A16.07.030")); // Canal instrumentation
+			assert.ok(procs.some((p) => p.serviceCode === "A16.07.008" || p.code804n === "A16.07.008")); // Canal obturation
 		});
 
 		it("recognizes Ultrasound prophylaxis and Air-Flow", () => {
 			const procs = extractDentalProcedures("ультразвуковое удаление зубных отложений и air flow");
 			assert.strictEqual(procs.length, 1);
-			assert.strictEqual(procs[0]?.code804n, "A16.07.020");
+			assert.strictEqual(procs[0]?.serviceCode || procs[0]?.code804n, "A16.07.020");
 		});
 	});
 
-	describe("6. SOAP Form 043/u Clinical Draft Generation", () => {
-		it("synthesizes complete, clinically valid Form 043/u record", () => {
+	describe("6. SOAP Medical Card Visit Diary Generation", () => {
+		it("synthesizes complete, clinically valid medical card visit record", () => {
 			const teeth = [36];
 			const surfaces = ["O", "D"];
 			const diag = matchDentalDiagnosis("глубокий кариес дентина");

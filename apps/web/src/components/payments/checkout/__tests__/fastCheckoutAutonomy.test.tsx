@@ -304,14 +304,21 @@ function teardownMockDom() {
 	// Keep window/document alive so trailing async timers/promises don't throw ReferenceError
 }
 
-function findNodeByTestId(node: MockDomNode | null, testId: string): MockDomNode | null {
+function findNodeByTestId(
+	node: MockDomNode | null,
+	testId: string,
+	searchBody = true,
+): MockDomNode | null {
 	if (!node) return null;
 	if (node.getAttribute?.("data-testid") === testId) return node;
 	if (node.children) {
 		for (const child of node.children) {
-			const res = findNodeByTestId(child, testId);
+			const res = findNodeByTestId(child, testId, false);
 			if (res) return res;
 		}
+	}
+	if (searchBody && (node as any)?.ownerDocument?.body && (node as any).ownerDocument.body !== node) {
+		return findNodeByTestId((node as any).ownerDocument.body, testId, false);
 	}
 	return null;
 }
@@ -638,8 +645,10 @@ describe("Fast Checkout 54-FZ Cashier Autonomy & 1-Click Discrepancy Resolver (M
 		const originalFetch = globalThis.fetch;
 		// biome-ignore lint/suspicious/noExplicitAny: test spy
 		globalThis.fetch = (async (url: any, options: any) => {
-			fetchedUrl = String(url);
-			fetchedOptions = options;
+			if (String(url).includes("/api/billing/payments") || !fetchedUrl) {
+				fetchedUrl = String(url);
+				fetchedOptions = options;
+			}
 			return {
 				ok: true,
 				status: 200,
