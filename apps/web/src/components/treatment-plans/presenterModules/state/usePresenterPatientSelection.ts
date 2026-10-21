@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "../../types";
 import { parseKopecks, sumKopecks, type Kopecks } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
@@ -31,6 +31,7 @@ export function usePresenterPatientSelection({
 	const [isChoiceConfirmed, setIsChoiceConfirmed] = useState<boolean>(false);
 	const [confirmedTierId, setConfirmedTierId] = useState<TreatmentPlanTierId | null>(null);
 	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
+	const inFlightRef = useRef(false);
 
 	const handleUpdateItemPrice = useCallback((itemId: string, newPriceRub: number) => {
 		setAllTiers((prev) =>
@@ -65,31 +66,37 @@ export function usePresenterPatientSelection({
 	}, [selectedTierId, propOnUpdateItemPrice, setAllTiers]);
 
 	const handleConfirmPatientChoice = useCallback((targetTier?: TreatmentPlanTier) => {
-		const effectiveTier = targetTier ?? selectedTier;
-		setIsChoiceConfirmed(true);
-		setConfirmedTierId(effectiveTier.tierId);
-		const variantTitle = getTierLetter(effectiveTier.tierId);
-		const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(effectiveTier.totalRub);
-		setConfirmedNotice(message);
-		showToast(message, "success");
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const effectiveTier = targetTier ?? selectedTier;
+			setIsChoiceConfirmed(true);
+			setConfirmedTierId(effectiveTier.tierId);
+			const variantTitle = getTierLetter(effectiveTier.tierId);
+			const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(effectiveTier.totalRub);
+			setConfirmedNotice(message);
+			showToast(message, "success");
 
-		if (patientId && planId) {
-			fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans/${encodeURIComponent(planId)}/approve-variant`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ reason: `Пациент выбрал тариф «${effectiveTier.title}»` }),
-			}).catch((err) => logger.warn("Не удалось сохранить выбор варианта на сервере:", err));
+			if (patientId && planId) {
+				fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans/${encodeURIComponent(planId)}/approve-variant`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({ reason: `Пациент выбрал тариф «${effectiveTier.title}»` }),
+				}).catch((err) => logger.warn("Не удалось сохранить выбор варианта на сервере:", err));
+			}
+
+			const stage1 = effectiveTier.stages.find((s) => s.stageNumber === 1) || effectiveTier.stages[0];
+			if (stage1 && stage1.items && stage1.items.length > 0 && typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-take-stage-to-visit", {
+					detail: { stage: { title: `Этап 1: ${stage1.title || "Терапия и санация"}`, stageNumber: stage1.stageNumber || 1, items: stage1.items }, items: stage1.items, patientId },
+				}));
+			}
+
+			if (onConfirmSelection) onConfirmSelection(effectiveTier);
+			if (onSelectPlan) onSelectPlan(effectiveTier);
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
-
-		const stage1 = effectiveTier.stages.find((s) => s.stageNumber === 1) || effectiveTier.stages[0];
-		if (stage1 && stage1.items && stage1.items.length > 0 && typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-take-stage-to-visit", {
-				detail: { stage: { title: `Этап 1: ${stage1.title || "Терапия и санация"}`, stageNumber: stage1.stageNumber || 1, items: stage1.items }, items: stage1.items, patientId },
-			}));
-		}
-
-		if (onConfirmSelection) onConfirmSelection(effectiveTier);
-		if (onSelectPlan) onSelectPlan(effectiveTier);
 	}, [selectedTier, onConfirmSelection, onSelectPlan, patientId, planId]);
 
 	return {

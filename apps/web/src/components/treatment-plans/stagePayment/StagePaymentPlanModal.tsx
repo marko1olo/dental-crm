@@ -81,6 +81,10 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = (prop
 					{...state}
 					onToggleStageMenu={(id) => state.setActiveStageMenuId(state.activeStageMenuId === id ? null : id)}
 					onPayAdvance={state.handlePayAdvanceForStage}
+					onStageStatusChange={state.handleStageStatusChange}
+					onTopUpAmountChange={state.setTopUpAmountRub}
+					onTopUpDeposit={state.handleTopUpDeposit}
+					onAutoAllocateDeposit={state.handleAutoAllocateDeposit}
 					onOpenActTab={(id) => { state.setSelectedStageForActId(id); state.setActiveTab("act"); }}
 					onOpenInstallmentModal={(stg) => { state.setSelectedStageForInstallment(stg); state.setIsInstallmentModalOpen(true); }}
 					onOpenFiscalTab={(id) => { state.setSelectedStageForFiscalId(id); state.setActiveTab("fiscal54fz"); }}

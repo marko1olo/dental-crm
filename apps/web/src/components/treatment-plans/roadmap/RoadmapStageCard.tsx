@@ -55,69 +55,88 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 	onSendStageToInvoice,
 }) => {
 	const meta = CANONICAL_ROADMAP_META[stage.stageKind] || CANONICAL_ROADMAP_META.stage_2_therapy;
+	const inFlightRef = React.useRef(false);
 
 	const handleSendStageToVisit = () => {
-		const services = (stage.procedures || []).map((p) => ({
-			code804n: p.code804n,
-			name: p.titleRu,
-			title: p.titleRu,
-			priceRub: p.priceRub || 0,
-			unitPriceRub: p.priceRub || 0,
-			quantity: 1,
-			toothNumber: p.toothNumber,
-			toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
-		}));
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const services = (stage.procedures || []).map((p) => {
+				const procTitle = p.title ?? p.titleRu ?? p.patientFriendlyTitleRu ?? p.medicalTitleRu;
+				return {
+					code804n: p.code804n,
+					name: procTitle,
+					title: procTitle,
+					priceRub: p.priceRub || 0,
+					unitPriceRub: p.priceRub || 0,
+					quantity: p.quantity || 1,
+					toothNumber: p.toothNumber,
+					toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
+				};
+			});
 
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-add-services-to-invoice", {
-					detail: {
-						services,
-						items: services,
-						stageNumber: stage.stageNumber,
-						stageTitle: stage.titleRu,
-						patientId,
-						patientName: effectivePatientName,
-						target: "visit",
-					},
-				}),
-			);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services,
+							items: services,
+							stageNumber: stage.stageNumber,
+							stageTitle: stage.titleRu,
+							patientId,
+							patientName: effectivePatientName,
+							target: "visit",
+						},
+					}),
+				);
+			}
+
+			onSendStageToVisit?.(stage);
+			showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в приём врача`, "success");
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
-
-		onSendStageToVisit?.(stage);
-		showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в приём врача`, "success");
 	};
 
 	const handleSendStageToInvoice = () => {
-		const services = (stage.procedures || []).map((p) => ({
-			code804n: p.code804n,
-			name: p.titleRu,
-			title: p.titleRu,
-			priceRub: p.priceRub || 0,
-			unitPriceRub: p.priceRub || 0,
-			quantity: 1,
-			toothNumber: p.toothNumber,
-			toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
-		}));
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const services = (stage.procedures || []).map((p) => {
+				const procTitle = p.title ?? p.titleRu ?? p.patientFriendlyTitleRu ?? p.medicalTitleRu;
+				return {
+					code804n: p.code804n,
+					name: procTitle,
+					title: procTitle,
+					priceRub: p.priceRub || 0,
+					unitPriceRub: p.priceRub || 0,
+					quantity: p.quantity || 1,
+					toothNumber: p.toothNumber,
+					toothCode: p.toothNumber ? String(p.toothNumber) : undefined,
+				};
+			});
 
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-add-services-to-invoice", {
-					detail: {
-						services,
-						items: services,
-						stageNumber: stage.stageNumber,
-						stageTitle: stage.titleRu,
-						patientId,
-						patientName: effectivePatientName,
-						target: "invoice",
-					},
-				}),
-			);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services,
+							items: services,
+							stageNumber: stage.stageNumber,
+							stageTitle: stage.titleRu,
+							patientId,
+							patientName: effectivePatientName,
+							target: "invoice",
+						},
+					}),
+				);
+			}
+
+			onSendStageToInvoice?.(stage);
+			showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в кассовый счёт`, "success");
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
-
-		onSendStageToInvoice?.(stage);
-		showToast(`Этап ${stage.stageNumber} («${stage.titleRu}») передан в кассовый счёт`, "success");
 	};
 
 	return (
@@ -347,7 +366,7 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 						<button
 							type="button"
 							onClick={handleSendStageToVisit}
-							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] border border-[var(--line-subtle,rgba(255,255,255,0.08))] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+							className="min-h-[44px] md:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] border border-[var(--line-subtle,rgba(255,255,255,0.08))] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 							data-testid={`roadmap-send-to-visit-${stage.stageNumber}`}
 							title="Перенести услуги этапа в текущий приём врача"
 						>
@@ -357,7 +376,7 @@ export const RoadmapStageCard: React.FC<RoadmapStageCardProps> = ({
 						<button
 							type="button"
 							onClick={handleSendStageToInvoice}
-							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+							className="min-h-[44px] md:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 							data-testid={`roadmap-send-to-invoice-${stage.stageNumber}`}
 							title="Перенести услуги этапа в кассовый счёт на оплату"
 						>

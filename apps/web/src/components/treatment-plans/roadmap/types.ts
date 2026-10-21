@@ -15,11 +15,18 @@ export type RoadmapStageKind =
 	| "stage_2_therapy"
 	| "stage_3_surgery"
 	| "stage_4_orthopedics"
-	| "stage_5_hygiene_checkup";
+	| "stage_5_hygiene_checkup"
+	| "urgent"
+	| "sanitation"
+	| "reconstruction"
+	| "maintenance"
+	| "therapy";
 
 export interface RoadmapProcedureItem {
 	id: string;
 	code804n?: string | undefined;
+	title?: string | undefined;
+	titleRu?: string | undefined;
 	medicalTitleRu: string;
 	patientFriendlyTitleRu: string;
 	toothNumber?: number | string | undefined;

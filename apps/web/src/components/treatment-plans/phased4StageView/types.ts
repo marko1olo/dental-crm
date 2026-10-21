@@ -67,6 +67,8 @@ export interface PhasedStageCategoryBucket {
 	subtotalRub: number;
 }
 
+export type CategorizedStageData = PhasedStageCategoryBucket;
+
 export interface CategorizedPhasedPlanData {
 	map: Record<TreatmentPlanStageCategory, PhasedStageCategoryBucket>;
 	grandTotalKopecks: Kopecks;

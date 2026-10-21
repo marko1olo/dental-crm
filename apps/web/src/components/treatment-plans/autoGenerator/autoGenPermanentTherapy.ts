@@ -17,8 +17,8 @@ export function buildPermanentToothItems(
 	stage1: TreatmentPlanItem[];
 	stage2: TreatmentPlanItem[];
 	stage3: TreatmentPlanItem[];
-	missingUpperTooth?: number;
-	missingLowerTooth?: number;
+	missingUpperTooth?: number | undefined;
+	missingLowerTooth?: number | undefined;
 } {
 	const stage1: TreatmentPlanItem[] = [];
 	const stage2: TreatmentPlanItem[] = [];

@@ -26,21 +26,29 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 	onExecuteStage,
 	onOpenStagePayment,
 }) => {
+	const inFlightRef = React.useRef(false);
+
 	const handleBook = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		if (onBookStageToVisit) {
-			onBookStageToVisit(category, stageData.items);
-		} else if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-book-stage-appointment", {
-					detail: {
-						category,
-						title: STAGE_TITLES[category],
-						items: stageData.items,
-						subtotalRub: stageData.subtotalRub,
-					},
-				}),
-			);
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			if (onBookStageToVisit) {
+				onBookStageToVisit(category, stageData.items);
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-book-stage-appointment", {
+						detail: {
+							category,
+							title: STAGE_TITLES[category],
+							items: stageData.items,
+							subtotalRub: stageData.subtotalRub,
+						},
+					}),
+				);
+			}
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
 	};
 
@@ -65,10 +73,16 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 					data-testid={`phased-approve-stage-${category}`}
 					onClick={(e) => {
 						e.stopPropagation();
-						onSetStageAgreed(category);
-						showToast(`Этап «${STAGE_TITLES[category]}» (${stageData.subtotalRub.toLocaleString("ru-RU")} ₽) согласован с пациентом`, "success", 3000);
+						if (inFlightRef.current) return;
+						inFlightRef.current = true;
+						try {
+							onSetStageAgreed(category);
+							showToast(`Этап «${STAGE_TITLES[category]}» (${stageData.subtotalRub.toLocaleString("ru-RU")} ₽) согласован с пациентом`, "success", 3000);
+						} finally {
+							setTimeout(() => { inFlightRef.current = false; }, 300);
+						}
 					}}
-					className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer min-h-[36px]"
+					className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer min-h-[44px] md:min-h-[36px]"
 				>
 					<svg className="w-3.5 h-3.5 text-[var(--teal)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -80,7 +94,7 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 					type="button"
 					data-testid={`phased-book-stage-${category}`}
 					onClick={handleBook}
-					className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
+					className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[44px] md:min-h-[36px]"
 				>
 					<svg className="w-3.5 h-3.5 text-[var(--teal)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -91,8 +105,17 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 				{onExecuteStage && (
 					<button
 						type="button"
-						onClick={(e) => { e.stopPropagation(); onExecuteStage(category); }}
-						className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-opacity cursor-pointer min-h-[36px]"
+						onClick={(e) => {
+							e.stopPropagation();
+							if (inFlightRef.current) return;
+							inFlightRef.current = true;
+							try {
+								onExecuteStage(category);
+							} finally {
+								setTimeout(() => { inFlightRef.current = false; }, 300);
+							}
+						}}
+						className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-95 transition-opacity cursor-pointer min-h-[44px] md:min-h-[36px]"
 					>
 						<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -104,8 +127,17 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 				{onOpenStagePayment && (
 					<button
 						type="button"
-						onClick={(e) => { e.stopPropagation(); onOpenStagePayment(category, stageData.subtotalRub); }}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[36px]"
+						onClick={(e) => {
+							e.stopPropagation();
+							if (inFlightRef.current) return;
+							inFlightRef.current = true;
+							try {
+								onOpenStagePayment(category, stageData.subtotalRub);
+							} finally {
+								setTimeout(() => { inFlightRef.current = false; }, 300);
+							}
+						}}
+						className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer min-h-[44px] md:min-h-[36px]"
 					>
 						<svg className="w-3.5 h-3.5 text-[var(--teal)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />

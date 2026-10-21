@@ -21,14 +21,14 @@ import { handleTransitionStageStatus, handlePayAdvance } from "./stagePaymentSta
 import { handleAddCustomExpenseHelper, handleGenerateFiscalReceiptHelper } from "./stagePaymentExpenseHandlers";
 
 export interface StagePaymentPlanStateParams {
-	readonly initialStages?: readonly MilestoneStage[];
-	readonly initialDepositKopecks?: Kopecks;
-	readonly initialTab?: StagePaymentModalTab;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly planTitle?: string;
-	readonly clinicName?: string;
-	readonly clinicInn?: string;
+	readonly initialStages?: readonly MilestoneStage[] | undefined;
+	readonly initialDepositKopecks?: Kopecks | undefined;
+	readonly initialTab?: StagePaymentModalTab | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly planTitle?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicInn?: string | undefined;
 }
 
 export function useStagePaymentPlanState(params: StagePaymentPlanStateParams) {

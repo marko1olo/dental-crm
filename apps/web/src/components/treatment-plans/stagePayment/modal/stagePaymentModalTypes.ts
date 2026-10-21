@@ -20,16 +20,16 @@ export type StagePaymentModalTab =
 export interface StagePaymentPlanModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly planTitle?: string;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly clinicName?: string;
-	readonly clinicInn?: string;
-	readonly doctorFullName?: string;
-	readonly initialStages?: readonly MilestoneStage[];
-	readonly initialDepositKopecks?: Kopecks;
-	readonly initialTab?: StagePaymentModalTab;
-	readonly onSaveStages?: (stages: readonly MilestoneStage[]) => void;
+	readonly planTitle?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly initialStages?: readonly MilestoneStage[] | undefined;
+	readonly initialDepositKopecks?: Kopecks | undefined;
+	readonly initialTab?: StagePaymentModalTab | undefined;
+	readonly onSaveStages?: ((stages: readonly MilestoneStage[]) => void) | undefined;
 }
 
 export interface StagePaymentModalBodyProps {

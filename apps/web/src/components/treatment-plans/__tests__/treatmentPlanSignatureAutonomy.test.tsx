@@ -268,7 +268,7 @@ async function clickNode(node: MockDomNode) {
 const sampleTier: TreatmentPlanTier = {
 	tierId: "standard",
 	title: "Комплексный стандартный план",
-	subtitle: "Оптимальный клинический протокол по приказу 804н",
+	subtitle: "Оптимальный клинический протокол лечения",
 	badge: "Рекомендуемый",
 	badgeClass: "badge-teal",
 	borderClass: "border-teal",
