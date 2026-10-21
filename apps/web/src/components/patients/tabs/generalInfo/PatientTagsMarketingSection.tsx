@@ -1,11 +1,11 @@
-import React from "react";
-import { ChevronDown, Megaphone, Stethoscope, Tag } from "lucide-react";
 import { STOMX_MARKETING_SOURCES_CATALOG } from "@dental/shared";
+import { ChevronDown, Megaphone, Stethoscope, Tag } from "lucide-react";
+import React from "react";
 import { DOCTOR_CLINICAL_TAGS, REGISTRY_SERVICE_TAGS } from "./constants";
 import type { PatientTagsMarketingSectionProps } from "./types";
 
-export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionProps> = React.memo(
-	function PatientTagsMarketingSection({
+export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionProps> =
+	React.memo(function PatientTagsMarketingSection({
 		patient,
 		onUpdatePatient,
 		disabled = false,
@@ -79,14 +79,17 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 										Служебная заметка для регистратуры:
 									</span>
 								</div>
-								<span className="text-[10px] text-[var(--muted)] font-medium">Администраторы</span>
+								<span className="text-[10px] text-[var(--muted)] font-medium">
+									Администраторы
+								</span>
 							</div>
 
 							{/* Быстрые чипы тегов для регистратуры */}
 							<div className="flex items-center gap-1.5 flex-wrap">
 								{REGISTRY_SERVICE_TAGS.map((tag) => {
 									const active =
-										Array.isArray(patient?.serviceAlertTags) && patient.serviceAlertTags.includes(tag);
+										Array.isArray(patient?.serviceAlertTags) &&
+										patient.serviceAlertTags.includes(tag);
 									return (
 										<button
 											key={tag}
@@ -129,7 +132,9 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 										Клинические особенности (Врач):
 									</span>
 								</div>
-								<span className="text-[10px] text-[var(--muted)] font-medium">Кресло & ЭМК</span>
+								<span className="text-[10px] text-[var(--muted)] font-medium">
+									Кресло & ЭМК
+								</span>
 							</div>
 
 							{/* Быстрые клинические маркеры */}
@@ -151,7 +156,9 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 								rows={2}
 								className="w-full p-2.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 								value={patient?.doctorClinicalNotes ?? ""}
-								onChange={(e) => onUpdatePatient?.("doctorClinicalNotes", e.target.value)}
+								onChange={(e) =>
+									onUpdatePatient?.("doctorClinicalNotes", e.target.value)
+								}
 								placeholder="Страх лечения, седация, аллерго-настороженность, особенности артикуляции..."
 								disabled={disabled}
 								data-testid="textarea-doctor-notes"
@@ -159,7 +166,7 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 						</div>
 					</div>
 
-					{/* Канал привлечения пациента (Маркетинг / StomX) */}
+					{/* Канал привлечения пациента (Маркетинг) */}
 					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--glass-border)] shadow-2xs flex flex-col gap-2">
 						<div className="flex items-center justify-between gap-2 flex-wrap">
 							<div className="flex items-center gap-2">
@@ -190,7 +197,10 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 										}`}
 										onClick={() => {
 											if (disabled) return;
-											onUpdatePatient?.("acquisitionSource", isSelected ? "" : src.nameRu);
+											onUpdatePatient?.(
+												"acquisitionSource",
+												isSelected ? "" : src.nameRu,
+											);
 										}}
 										disabled={disabled}
 									>
@@ -203,7 +213,6 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 				</div>
 			</div>
 		);
-	},
-);
+	});
 
 export default PatientTagsMarketingSection;

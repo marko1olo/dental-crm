@@ -1,29 +1,14 @@
 /**
- * apps/web/src/components/patient/familyWalletModal/FamilyWalletTransferSection.tsx
- *
- * Layer 4: Intra-family balance transfer section.
- * Features:
- * - 0% clinic commission intra-family funds transfer.
- * - Selection of sender and recipient within family group.
- * - Non-blocking submit with Lucide icons (Mandates 8d, 8e).
+ * apps/web/src/components/patients/family/familyWalletModal/FamilyWalletTransferSection.tsx
+ * Intra-family balance transfer section.
+ * Mandate 8b: strictly <= 120 lines.
  */
 
-import React from "react";
 import { ArrowRightLeft, ShieldCheck } from "lucide-react";
-import type { FamilyMemberItem } from "./types";
+import React from "react";
+import type { FamilyWalletTransferSectionProps } from "./types";
 
-export interface FamilyWalletTransferSectionProps {
-	readonly transferSourceId: string;
-	readonly setTransferSourceId: (val: string) => void;
-	readonly transferTargetId: string;
-	readonly setTransferTargetId: (val: string) => void;
-	readonly transferAmount: string;
-	readonly setTransferAmount: (val: string) => void;
-	readonly membersList: readonly FamilyMemberItem[];
-	readonly submitting: boolean;
-	readonly transferAmountInputId: string;
-	readonly onSubmitTransfer: () => void;
-}
+export type { FamilyWalletTransferSectionProps } from "./types";
 
 export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionProps> =
 	React.memo(function FamilyWalletTransferSection({
@@ -38,26 +23,33 @@ export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionPr
 		transferAmountInputId,
 		onSubmitTransfer,
 	}) {
+		const transferSourceSelectId = `${transferAmountInputId}-source`;
+		const transferTargetSelectId = `${transferAmountInputId}-target`;
+
 		return (
 			<div className="flex flex-col gap-4">
-				{/* Инфо баннер о едином депозите */}
-				<div className="p-3 rounded-lg bg-teal-500/10 border border-teal-500/20 text-xs text-teal-950 dark:text-teal-200 flex items-start gap-2 shadow-2xs">
+				<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs text-teal-950 dark:text-teal-200 flex items-start gap-2 shadow-2xs">
 					<ShieldCheck className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400 mt-0.5" />
 					<span>
-						<strong>Единый семейный депозит.</strong> Все средства семейного счёта находятся в общем котле семьи и напрямую доступны каждому члену семьи при оплате лечения у кресла (ст. 64 СК РФ).
+						<strong>Единый семейный депозит.</strong> Средства семейного счёта
+						находятся в общем фонде и доступны каждому члену семьи при оплате
+						лечения.
 					</span>
 				</div>
 
-				{/* От кого и кому */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					<div>
-						<label className="text-xs font-semibold text-[var(--ink)] block mb-1">
+						<label
+							htmlFor={transferSourceSelectId}
+							className="text-xs font-semibold text-[var(--ink)] block mb-1"
+						>
 							Отправитель:
 						</label>
 						<select
+							id={transferSourceSelectId}
 							value={transferSourceId}
 							onChange={(e) => setTransferSourceId(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--teal)] cursor-pointer shadow-2xs"
+							className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--teal)] cursor-pointer shadow-2xs"
 						>
 							{membersList.map((m) => (
 								<option key={m.id} value={m.id}>
@@ -68,13 +60,17 @@ export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionPr
 					</div>
 
 					<div>
-						<label className="text-xs font-semibold text-[var(--ink)] block mb-1">
+						<label
+							htmlFor={transferTargetSelectId}
+							className="text-xs font-semibold text-[var(--ink)] block mb-1"
+						>
 							Получатель:
 						</label>
 						<select
+							id={transferTargetSelectId}
 							value={transferTargetId}
 							onChange={(e) => setTransferTargetId(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--teal)] cursor-pointer shadow-2xs"
+							className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--teal)] cursor-pointer shadow-2xs"
 						>
 							{membersList.map((m) => (
 								<option key={m.id} value={m.id}>
@@ -85,7 +81,6 @@ export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionPr
 					</div>
 				</div>
 
-				{/* Сумма перевода */}
 				<div>
 					<label
 						htmlFor={transferAmountInputId}
@@ -101,26 +96,18 @@ export const FamilyWalletTransferSection: React.FC<FamilyWalletTransferSectionPr
 						placeholder="Например, 3000"
 						value={transferAmount}
 						onChange={(e) => setTransferAmount(e.target.value)}
-						className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold outline-none focus:border-[var(--teal)] shadow-2xs"
+						className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold outline-none focus:border-[var(--teal)] shadow-2xs"
 					/>
 				</div>
 
-				{/* Кнопка перевода (0 disabled buttons) */}
 				<button
 					type="button"
 					data-testid="family-transfer-submit-btn"
 					onClick={onSubmitTransfer}
-					style={{
-						backgroundColor: "var(--teal)",
-						color: "var(--on-teal, #ffffff)",
-						borderColor: "var(--teal)",
-					}}
-					className="min-h-[44px] w-full px-4 bg-[var(--teal)] text-white text-xs font-bold rounded-xl shadow-xs hover:opacity-95 transition-all cursor-pointer inline-flex items-center justify-center gap-2 active:scale-98"
+					className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 w-full px-4 bg-[var(--teal)] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs hover:opacity-95 transition-all cursor-pointer inline-flex items-center justify-center gap-2 active:scale-98"
 				>
 					<ArrowRightLeft className="w-4 h-4" />
-					<span>
-						{submitting ? "Перевод..." : "Перевести без комиссии"}
-					</span>
+					<span>{submitting ? "Перевод..." : "Перевести без комиссии"}</span>
 				</button>
 			</div>
 		);

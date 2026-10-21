@@ -4,42 +4,34 @@
  * Master barrel export for Family Wallet decomposition.
  */
 
-export type {
-	FamilyMemberItem,
-	FamilyGroupDetails,
-	FamilyTransactionItem,
-	FamilyCertificateItem,
-	FamilySpendingPermission,
-	FamilyWalletTab,
-	TopupPaymentMethod,
-	FamilyWalletModalProps,
-} from "./types";
-export { PRESET_AMOUNTS } from "./types";
-
-export {
-	useFamilyWalletLogic,
-	type FamilyWalletLogic,
-} from "./useFamilyWalletLogic";
-
-export {
-	FamilyWalletModalHeader,
-	type FamilyWalletModalHeaderProps,
-} from "./FamilyWalletModalHeader";
-
-export {
-	FamilyWalletNavTabs,
-	type FamilyWalletNavTabsProps,
-} from "./FamilyWalletNavTabs";
-
-export {
-	FamilyMembersBalanceList,
-	type FamilyMembersBalanceListProps,
-} from "./FamilyMembersBalanceList";
-
 export {
 	FamilyDepositTopupSection,
 	type FamilyDepositTopupSectionProps,
 } from "./FamilyDepositTopupSection";
+export {
+	FamilyMembersBalanceList,
+	type FamilyMembersBalanceListProps,
+} from "./FamilyMembersBalanceList";
+export {
+	FamilyWalletHistoryTable,
+	type FamilyWalletHistoryTableProps,
+} from "./FamilyWalletHistoryTable";
+export {
+	FamilyWalletModalFooterActions,
+	type FamilyWalletModalFooterActionsProps,
+} from "./FamilyWalletModalFooterActions";
+export {
+	FamilyWalletModalHeader,
+	type FamilyWalletModalHeaderProps,
+} from "./FamilyWalletModalHeader";
+export {
+	FamilyWalletModalView,
+	type FamilyWalletModalViewProps,
+} from "./FamilyWalletModalView";
+export {
+	FamilyWalletNavTabs,
+	type FamilyWalletNavTabsProps,
+} from "./FamilyWalletNavTabs";
 
 export {
 	FamilyWalletSpendSection,
@@ -50,18 +42,18 @@ export {
 	FamilyWalletTransferSection,
 	type FamilyWalletTransferSectionProps,
 } from "./FamilyWalletTransferSection";
-
+export type {
+	FamilyCertificateItem,
+	FamilyGroupDetails,
+	FamilyMemberItem,
+	FamilySpendingPermission,
+	FamilyTransactionItem,
+	FamilyWalletModalProps,
+	FamilyWalletTab,
+	TopupPaymentMethod,
+} from "./types";
+export { PRESET_AMOUNTS } from "./types";
 export {
-	FamilyWalletHistoryTable,
-	type FamilyWalletHistoryTableProps,
-} from "./FamilyWalletHistoryTable";
-
-export {
-	FamilyWalletModalFooterActions,
-	type FamilyWalletModalFooterActionsProps,
-} from "./FamilyWalletModalFooterActions";
-
-export {
-	FamilyWalletModalView,
-	type FamilyWalletModalViewProps,
-} from "./FamilyWalletModalView";
+	type FamilyWalletLogic,
+	useFamilyWalletLogic,
+} from "./useFamilyWalletLogic";

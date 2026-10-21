@@ -16,8 +16,6 @@
  * 8. Ноль эмодзи — строго векторные иконки Lucide.
  */
 
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertOctagon,
@@ -37,20 +35,22 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { showToast } from "../GlobalToast";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import {
-	type PatientClinicalSafetyProfile,
-	DEFAULT_SOMATIC_HEALTHY_NORM,
-	createHealthySomaticNormProfile,
-	evaluatePatientSafetyFlags,
-} from "../patients/safetyMath";
-import type { PatientGeneralInfo } from "../patients/tabs/PatientGeneralInfoTab";
-import { PatientAnamnesisTab } from "./PatientAnamnesisTab";
-import { FamilyWalletModal } from "./FamilyWalletModal";
-import { PatientFinanceTab } from "../patients/tabs/PatientFinanceTab";
-import { PatientFamilyCard } from "../patients/PatientFamilyCard";
 import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
+import { PatientFamilyCard } from "../patients/PatientFamilyCard";
+import {
+	createHealthySomaticNormProfile,
+	DEFAULT_SOMATIC_HEALTHY_NORM,
+	evaluatePatientSafetyFlags,
+	type PatientClinicalSafetyProfile,
+} from "../patients/safetyMath";
+import { PatientFinanceTab } from "../patients/tabs/PatientFinanceTab";
+import type { PatientGeneralInfo } from "../patients/tabs/PatientGeneralInfoTab";
+import { FamilyWalletModal } from "./FamilyWalletModal";
+import { PatientAnamnesisTab } from "./PatientAnamnesisTab";
 
 export type PatientDetailsTab = "general" | "anamnesis" | "family" | "finance";
 
@@ -61,15 +61,20 @@ export interface PatientDetailsModalProps {
 	readonly patientId?: string | null | undefined;
 	readonly initialTab?: PatientDetailsTab | undefined;
 	readonly safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
-	readonly onSave?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void) | undefined;
+	readonly onSave?:
+		| ((
+				patient: PatientGeneralInfo,
+				safetyProfile: PatientClinicalSafetyProfile,
+		  ) => void)
+		| undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
 	readonly className?: string | undefined;
 }
 
-export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.memo(
-	function PatientDetailsModal({
+export const PatientDetailsModal: React.FC<PatientDetailsModalProps> =
+	React.memo(function PatientDetailsModal({
 		isOpen,
 		onClose,
 		patient: initialPatient,
@@ -115,7 +120,8 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 		// biome-ignore lint/suspicious/noExplicitAny: family payload
 		const [familyData, setFamilyData] = useState<any | null>(null);
 
-		const effectivePatientId = patientData.id || explicitPatientId || initialPatient?.id || null;
+		const effectivePatientId =
+			patientData.id || explicitPatientId || initialPatient?.id || null;
 
 		// Загрузка данных пациента с сервера при открытии
 		useEffect(() => {
@@ -147,9 +153,12 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 		const loadFamily = useCallback(async () => {
 			if (!effectivePatientId) return;
 			try {
-				const res = await fetch(`/api/finance/family/patient/${effectivePatientId}`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
+				const res = await fetch(
+					`/api/finance/family/patient/${effectivePatientId}`,
+					{
+						headers: denteAdminSecretRequestHeaders(),
+					},
+				);
 				if (res.ok) {
 					const data = await res.json();
 					setFamilyData(data);
@@ -188,16 +197,22 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 			const cleanNorm = createHealthySomaticNormProfile();
 			setSafety(cleanNorm);
 			onApplySomaticNorm?.();
-			showToast("Применена физиологическая норма: соматически здоров", "success");
+			showToast(
+				"Применена физиологическая норма: соматически здоров",
+				"success",
+			);
 		}, [onApplySomaticNorm]);
 
 		// Обновление полей пациента
-		const handleUpdateField = useCallback((field: keyof PatientGeneralInfo, value: unknown) => {
-			setPatientData((prev) => ({
-				...prev,
-				[field]: value,
-			}));
-		}, []);
+		const handleUpdateField = useCallback(
+			(field: keyof PatientGeneralInfo, value: unknown) => {
+				setPatientData((prev) => ({
+					...prev,
+					[field]: value,
+				}));
+			},
+			[],
+		);
 
 		// Сохранение без блокировок (Мандат 8e: Zero Blocked Buttons)
 		const handleSave = useCallback(async () => {
@@ -280,9 +295,13 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 									{patientData.fullName || "Новый пациент"}
 								</h2>
 								<p className="text-xs text-[var(--muted)] m-0 truncate">
-									{patientData.phone ? `Тел: ${patientData.phone}` : "Медицинская карта и паспортный профиль"}
+									{patientData.phone
+										? `Тел: ${patientData.phone}`
+										: "Медицинская карта и паспортный профиль"}
 									{patientData.birthDate ? ` • ${patientData.birthDate}` : ""}
-									{patientData.medicalCardNumber ? ` • Карта №${patientData.medicalCardNumber}` : ""}
+									{patientData.medicalCardNumber
+										? ` • Карта №${patientData.medicalCardNumber}`
+										: ""}
 								</p>
 							</div>
 						</div>
@@ -427,7 +446,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 											type="text"
 											placeholder="Фамилия Имя Отчество"
 											value={patientData.fullName || ""}
-											onChange={(e) => handleUpdateField("fullName", e.target.value)}
+											onChange={(e) =>
+												handleUpdateField("fullName", e.target.value)
+											}
 											className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold outline-none focus:border-[var(--teal)] transition-colors"
 										/>
 									</div>
@@ -446,7 +467,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 											type="tel"
 											placeholder="+7 (___) ___-__-__"
 											value={patientData.phone || ""}
-											onChange={(e) => handleUpdateField("phone", e.target.value)}
+											onChange={(e) =>
+												handleUpdateField("phone", e.target.value)
+											}
 											className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-mono outline-none focus:border-[var(--teal)] transition-colors"
 										/>
 									</div>
@@ -464,7 +487,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 											data-testid="patient-input-birthdate"
 											type="date"
 											value={patientData.birthDate || ""}
-											onChange={(e) => handleUpdateField("birthDate", e.target.value)}
+											onChange={(e) =>
+												handleUpdateField("birthDate", e.target.value)
+											}
 											className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:border-[var(--teal)] transition-colors"
 										/>
 									</div>
@@ -480,7 +505,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 										<select
 											id={genderSelectId}
 											value={patientData.gender || "other"}
-											onChange={(e) => handleUpdateField("gender", e.target.value)}
+											onChange={(e) =>
+												handleUpdateField("gender", e.target.value)
+											}
 											className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:border-[var(--teal)] transition-colors cursor-pointer"
 										>
 											<option value="male">Мужской</option>
@@ -504,7 +531,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 										type="text"
 										placeholder="г. Москва, ул. Ленина, д. 10, кв. 5"
 										value={patientData.address || ""}
-										onChange={(e) => handleUpdateField("address", e.target.value)}
+										onChange={(e) =>
+											handleUpdateField("address", e.target.value)
+										}
 										className="w-full min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:border-[var(--teal)] transition-colors"
 									/>
 								</div>
@@ -556,7 +585,9 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 						{activeTab === "finance" && (
 							<PatientFinanceTab
 								patient={patientData}
-								onUpdateBalance={(bal) => handleUpdateField("patientBalanceRub", bal)}
+								onUpdateBalance={(bal) =>
+									handleUpdateField("patientBalanceRub", bal)
+								}
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
 							/>
@@ -566,7 +597,8 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 					{/* Modal Footer with ZERO BLOCKED BUTTONS (Мандат 8e) */}
 					<div className="flex items-center justify-between px-4 py-3.5 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] shrink-0 gap-3 print:hidden">
 						<span className="text-[11px] text-[var(--muted)]">
-							Автономия врача: сохранение доступно в любой момент без блокирующих полей
+							Автономия врача: сохранение доступно в любой момент без
+							блокирующих полей
 						</span>
 
 						<div className="flex items-center gap-2">
@@ -597,7 +629,6 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.mem
 		return typeof document !== "undefined" && document.body
 			? createPortal(modalContent, document.body)
 			: modalContent;
-	},
-);
+	});
 
 export default PatientDetailsModal;

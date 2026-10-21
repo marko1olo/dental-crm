@@ -1,12 +1,11 @@
 /**
- * apps/web/src/components/patient/familyWalletModal/FamilyWalletModalHeader.tsx
- *
- * Layer 4: Header for Family Wallet Modal.
- * Clean clinical typography, 0% cartoon emojis, Lucide icons only.
+ * apps/web/src/components/patients/family/familyWalletModal/FamilyWalletModalHeader.tsx
+ * Header for Family Wallet Modal with Lucide icons.
+ * Mandate 8b: strictly <= 120 lines.
  */
 
-import React from "react";
 import { Users, X } from "lucide-react";
+import React from "react";
 import type { FamilyGroupDetails } from "./types";
 
 export interface FamilyWalletModalHeaderProps {
@@ -39,7 +38,9 @@ export const FamilyWalletModalHeader: React.FC<FamilyWalletModalHeaderProps> =
 						>
 							{title}
 						</h2>
-						<p className="text-xs text-[var(--muted)] m-0 truncate">{subtitle}</p>
+						<p className="text-xs text-[var(--muted)] m-0 truncate">
+							{subtitle}
+						</p>
 					</div>
 				</div>
 
@@ -47,7 +48,7 @@ export const FamilyWalletModalHeader: React.FC<FamilyWalletModalHeaderProps> =
 					type="button"
 					data-testid="family-wallet-close-btn"
 					onClick={onClose}
-					className="border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] h-9 w-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
 					aria-label="Закрыть окно"
 				>
 					<X className="w-4 h-4" />

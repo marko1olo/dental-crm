@@ -5,7 +5,6 @@
  * Канонический экспорт для путей модулей в единственном числе (components/patient/PatientWorkspace).
  * Мандат 8za (Anti-Duplicates SSOT) и Мандат 8e (Автономия врача).
  */
-import React from "react";
 import {
 	PatientWorkspaceView,
 	type PatientWorkspaceViewProps,

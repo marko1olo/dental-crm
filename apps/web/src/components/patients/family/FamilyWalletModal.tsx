@@ -9,17 +9,17 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
-	FamilyWalletModalView,
-	useFamilyWalletLogic,
 	type FamilyGroupDetails,
 	type FamilyMemberItem,
 	type FamilyWalletModalProps,
+	FamilyWalletModalView,
 	type FamilyWalletTab,
+	useFamilyWalletLogic,
 } from "./familyWalletModal/index";
 
 export type {
-	FamilyMemberItem,
 	FamilyGroupDetails,
+	FamilyMemberItem,
 	FamilyWalletModalProps,
 	FamilyWalletTab,
 };
@@ -44,7 +44,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = React.memo(
 
 		const modalContent = (
 			<div
-				className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs"
+				className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs"
 				style={{
 					backgroundColor: "rgba(15, 23, 42, 0.45)",
 					backdropFilter: "blur(3px)",
@@ -54,6 +54,9 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = React.memo(
 				aria-labelledby="family-wallet-modal-title"
 				onClick={(e) => {
 					if (e.target === e.currentTarget) onClose();
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Escape") onClose();
 				}}
 				data-testid="family-wallet-modal-backdrop"
 			>

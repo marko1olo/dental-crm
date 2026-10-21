@@ -1,7 +1,7 @@
 /**
  * patientFieldRequirementsConfig.ts — Настраиваемая обязательность полей карточки пациента (Фича №35).
  *
- * КОНТЕКСТ (IDENT / DentalPRO паритет):
+ * КОНТЕКСТ (Клинический стандарт):
  * Руководитель клиники в настройках может включить обязательность:
  * 1. «Телефон» — обязателен для связи и СМС-оповещений.
  * 2. «Рекламный источник» — обязателен для 100% точности сквозной аналитики и ROMI.
@@ -12,8 +12,8 @@
 import {
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
-	patientFieldRequirementsSchema,
 	type PatientFieldRequirements,
+	patientFieldRequirementsSchema,
 	validateStaffSnils,
 } from "@dental/shared";
 import {
@@ -24,8 +24,8 @@ import {
 export {
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
-	patientFieldRequirementsSchema,
 	type PatientFieldRequirements,
+	patientFieldRequirementsSchema,
 };
 
 /**
@@ -267,8 +267,7 @@ export function validatePatientDraftWithRequirements(
 	const birthDateTrimmed = (draft.birthDate || "").trim();
 	if (requirements.requireBirthDate && !draft.isEmergencyOrPrimary) {
 		if (!birthDateTrimmed) {
-			errors.birthDate =
-				"Дата рождения обязательна для медицинской карты";
+			errors.birthDate = "Дата рождения обязательна для медицинской карты";
 			missingRequiredLabels.push("Дата рождения");
 		}
 	}

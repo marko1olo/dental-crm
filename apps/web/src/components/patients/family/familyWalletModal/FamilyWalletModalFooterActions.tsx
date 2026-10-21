@@ -1,12 +1,11 @@
 /**
- * apps/web/src/components/patient/familyWalletModal/FamilyWalletModalFooterActions.tsx
- *
- * Layer 4: Footer bar and action controls for Family Wallet Modal.
- * Touch targets >= 44x44px on mobile, dense desktop styling.
+ * apps/web/src/components/patients/family/familyWalletModal/FamilyWalletModalFooterActions.tsx
+ * Footer bar and action controls for Family Wallet Modal.
+ * Mandate 8b: strictly <= 120 lines.
  */
 
-import React from "react";
 import { Check, Plus, X } from "lucide-react";
+import React from "react";
 import type { FamilyWalletTab } from "./types";
 
 export interface FamilyWalletModalFooterActionsProps {
@@ -29,14 +28,13 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 					Семейная группа • Точный финансовый учет без копеечного дрифта
 				</span>
 
-				<div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 whitespace-nowrap">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end shrink-0">
 					{activeTab === "overview" && (
-						<>
+						<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
 							<button
 								type="button"
 								onClick={onSavePermissions}
-								style={{ padding: "0 12px" }}
-								className="min-h-[44px] sm:min-h-[32px] h-8 px-3 border border-[var(--glass-border)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-lg cursor-pointer transition-colors inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+								className="min-h-[44px] sm:min-h-[36px] h-9 px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
 							>
 								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 								<span>Сохранить права</span>
@@ -45,25 +43,21 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 							<button
 								type="button"
 								onClick={() => onNavigateTab("topup")}
-								style={{
-									backgroundColor: "#0d9488",
-									color: "#ffffff",
-									borderColor: "#0d9488",
-									padding: "0 14px",
-								}}
-								className="min-h-[44px] sm:min-h-[32px] h-8 text-xs font-semibold rounded-lg cursor-pointer hover:opacity-95 transition-opacity inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap"
+								className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 bg-[var(--teal)] text-white text-xs font-semibold rounded-xl cursor-pointer hover:opacity-95 transition-opacity inline-flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 							>
 								<Plus className="w-3.5 h-3.5 shrink-0" />
-								<span>Пополнить семейный счет</span>
+								<span className="hidden sm:inline">
+									Пополнить семейный счет
+								</span>
+								<span className="sm:hidden inline">Пополнить</span>
 							</button>
-						</>
+						</div>
 					)}
 
 					<button
 						type="button"
 						onClick={onClose}
-						style={{ padding: "0 12px" }}
-						className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 border border-[var(--glass-border)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-lg cursor-pointer transition-colors inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto whitespace-nowrap"
 					>
 						<X className="w-3.5 h-3.5 shrink-0" />
 						<span>Закрыть</span>

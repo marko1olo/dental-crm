@@ -70,4 +70,40 @@ export interface FamilyWalletModalProps {
 	readonly className?: string | undefined;
 }
 
+export interface UseFamilySpendMutationArgs {
+	readonly patientId: string;
+	readonly familyData: FamilyGroupDetails | null;
+	readonly familyBalanceNumeric: number;
+	readonly spendingPermissions: Record<string, boolean>;
+	readonly notifyChanged: () => Promise<void>;
+}
+
+export interface FamilyWalletTransferSectionProps {
+	readonly transferSourceId: string;
+	readonly setTransferSourceId: (val: string) => void;
+	readonly transferTargetId: string;
+	readonly setTransferTargetId: (val: string) => void;
+	readonly transferAmount: string;
+	readonly setTransferAmount: (val: string) => void;
+	readonly membersList: readonly FamilyMemberItem[];
+	readonly submitting: boolean;
+	readonly transferAmountInputId: string;
+	readonly onSubmitTransfer: () => void;
+}
+
+export interface FamilyDepositTopupSectionProps {
+	readonly topupAmount: string;
+	readonly setTopupAmount: (val: string) => void;
+	readonly topupPayerId: string;
+	readonly setTopupPayerId: (val: string) => void;
+	readonly topupMethod: TopupPaymentMethod;
+	readonly setTopupMethod: (val: TopupPaymentMethod) => void;
+	readonly topupComment: string;
+	readonly setTopupComment: (val: string) => void;
+	readonly membersList: readonly FamilyMemberItem[];
+	readonly submitting: boolean;
+	readonly topupAmountInputId: string;
+	readonly onSubmitTopup: () => void;
+}
+
 export const PRESET_AMOUNTS = [1000, 3000, 5000, 10000, 20000] as const;

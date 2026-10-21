@@ -11,8 +11,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,15 +22,24 @@ const patientDir = path.resolve(familyDir, "../../patient");
 describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
 	it("verifies canonical FamilyWalletModal exists in components/patients/family/", () => {
 		const modalPath = path.resolve(familyDir, "FamilyWalletModal.tsx");
-		assert.ok(fs.existsSync(modalPath), "Canonical FamilyWalletModal.tsx must exist in components/patients/family/");
+		assert.ok(
+			fs.existsSync(modalPath),
+			"Canonical FamilyWalletModal.tsx must exist in components/patients/family/",
+		);
 
 		const content = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(content.includes("FamilyWalletModal"), "Must export FamilyWalletModal component");
+		assert.ok(
+			content.includes("FamilyWalletModal"),
+			"Must export FamilyWalletModal component",
+		);
 	});
 
 	it("verifies clean backward-compatible shim in components/patient/FamilyWalletModal.tsx", () => {
 		const shimPath = path.resolve(patientDir, "FamilyWalletModal.tsx");
-		assert.ok(fs.existsSync(shimPath), "Shim FamilyWalletModal.tsx must exist in components/patient/");
+		assert.ok(
+			fs.existsSync(shimPath),
+			"Shim FamilyWalletModal.tsx must exist in components/patient/",
+		);
 
 		const content = fs.readFileSync(shimPath, "utf-8");
 		assert.ok(
@@ -60,19 +69,32 @@ describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
 
 		const momKopecks = toKopecks(momBalanceRub);
 		const costKopecks = toKopecks(childTreatmentCostRub);
-		const commissionKopecks = Math.round(costKopecks * (commissionPercent / 100));
+		const commissionKopecks = Math.round(
+			costKopecks * (commissionPercent / 100),
+		);
 
-		assert.equal(commissionKopecks, 0, "Intra-family commission must be exactly 0%");
+		assert.equal(
+			commissionKopecks,
+			0,
+			"Intra-family commission must be exactly 0%",
+		);
 
 		const remainingKopecks = momKopecks - costKopecks;
 		const remainingRub = toRubles(remainingKopecks);
 
-		assert.equal(remainingKopecks, 1074975, "Remaining kopecks must be exact integer");
+		assert.equal(
+			remainingKopecks,
+			1074975,
+			"Remaining kopecks must be exact integer",
+		);
 		assert.equal(remainingRub, 10749.75, "Remaining rubles must be 10749.75");
 	});
 
 	it("verifies PatientSearchAutocomplete displays explicit 'Депозит:' and 'Долг:' badges", () => {
-		const autocompletePath = path.resolve(familyDir, "../PatientSearchAutocomplete.tsx");
+		const autocompletePath = path.resolve(
+			familyDir,
+			"../PatientSearchAutocomplete.tsx",
+		);
 		const content = fs.readFileSync(autocompletePath, "utf-8");
 
 		assert.ok(
