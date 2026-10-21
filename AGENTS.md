@@ -1,13 +1,14 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM
 
-> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):**  
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW) & 9 ДЕМОТИРОВАННЫХ ФАЙЛОВ:**  
 > 1. [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) — Абсолютная Высшая Конституция (THE HAMMER Master Prompt).  
-> 2. [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) — Каноническая Архитектурная Конституция проекта (Мандаты 8d..8an).  
-> 3. [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md) — Проектный операционный шим и 26 пронумерованных правил.  
+> 2. [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) — Каноническая Архитектурная Конституция проекта (Мандаты 8d..8an). [7 740 токенов, ДЕМОТИРОВАН!]  
+> 3. [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md) — Проектный операционный шим и 26 пронумерованных правил. [7 680 токенов, ДЕМОТИРОВАН!]  
+> 4. [`.agents/rules/ai_assistant.md`](file:///C:/Clinic_MVP/dental-crm/.agents/rules/ai_assistant.md) — Проектные правила ИИ-ассистента и роя. [5 322 токена, ДЕМОТИРОВАН!]  
 >  
 > 🛑 **АРХИТЕКТУРНЫЙ ИНВАРИАНТ ЕДИНОГО АВТОРИТЕТА (SINGLE CANONICAL CONSTITUTION):**  
 > Данный файл (`/AGENTS.md`) является входным навигационным шлюзом рабочей области (Workspace Authority Router).  
-> Во избежание дублирования токенов и рассинхронизации правил, полный свод архитектурных мандатов, гейтов компиляции, протоколов реанимации субагентов и клинических стандартов сконцентрирован в:  
+> Из-за переполнения системного лимита правил (81 082 токена / 405.4%) ключевые файлы проекта demoted и требуют первичного чтения через `read_file` порциями по 800 строк. Полный свод архитектурных мандатов, гейтов компиляции, протоколов реанимации субагентов и клинических стандартов сконцентрирован в:  
 > **👉 [`C:\Clinic_MVP\dental-crm\.agents\AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**.  
 > Все агенты и субагенты при холодном старте и работе в монорепозитории обязаны руководствоваться каноническим `.agents/AGENTS.md`!
 
