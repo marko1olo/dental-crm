@@ -2,7 +2,7 @@
  * scripts/safe_playwright.cjs
  *
  * Centralized, leak-proof Playwright browser launcher.
- * - Hardware Protection (Mandate 8x): strict RAM ceiling (1024MB on Chrome V8).
+ * - Hardware Protection (Mandate 8wx): strict RAM ceiling (1024MB on Chrome V8).
  * - Concurrency Pool: allows up to 6 concurrent browsers (strictly capped at 6).
  * - Anti-Zombie Invariant: guaranteed browser.close() on process exit, crash, SIGINT, or SIGTERM.
  * - Ephemeral Profile Cleanup: deletes temp profiles so Windows Defender doesn't thrash disk/RAM.

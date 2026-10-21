@@ -9,7 +9,7 @@
  *    - Loyalty: /api/loyalty/balance, /api/loyalty/transactions, /api/loyalty/redeem, /api/loyalty/accrue
  *    - Orthodontics: /api/orthodontics/:patientId/progress, issue-set, archwire-change, ligatures-activate
  *    - Dental Lab (ЗТЛ): /api/clinical/lab-orders (GET & POST)
- * 3. NO RECURSIVE MOCK DOMS (Mandate 8x, Anti-RAM-Hog ceiling)
+ * 3. NO RECURSIVE MOCK DOMS (Mandate 8wx, Anti-RAM-Hog ceiling)
  * 4. T.A.R.S. 100% / Brutal Honesty: verified byte-for-byte on live files.
  */
 

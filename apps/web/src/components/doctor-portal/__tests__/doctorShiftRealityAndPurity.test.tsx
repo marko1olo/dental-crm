@@ -9,7 +9,7 @@
  * - Mandate 8c: Zero Mocks / Synthetic Data in Production mode.
  * - Mandate 8e: Doctor Autonomy & Non-blocking Clinical Workflows.
  * - Mandate 8k: CRM != Reality Simulator (Honest Dual-Circuit Separation).
- * - Mandate 8x: Anti-RAM-Hog (Pure SSR / Node Test Runner).
+ * - Mandate 8wx: Anti-RAM-Hog (Pure SSR / Node Test Runner).
  */
 
 import React from "react";

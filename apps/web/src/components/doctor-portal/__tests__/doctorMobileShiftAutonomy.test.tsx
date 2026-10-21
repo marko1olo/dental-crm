@@ -3,7 +3,7 @@
  *
  * DENTE Dental CRM — Doctor Mobile Shift Autonomy & Non-Blocking SMS Confirmation Suite
  *
- * Mandate 8x (Anti-RAM-Hog): Zero createRoot / setupMockDom / setInterval leaks.
+ * Mandate 8wx (Anti-RAM-Hog): Zero createRoot / setupMockDom / setInterval leaks.
  * All tests run on pure @dental/shared engine logic + SSR renderToString.
  * No DOM mounting. No cyclic mock objects. No infinite Fiber allocations.
  *
@@ -14,7 +14,7 @@
  * - Mandate 8k (CRM != Reality Simulator): 1-click fallback to session PEP
  *   (63-FZ Art. 9 & Order 947n) when cell reception drops or SMS is delayed.
  * - Mandate 8n (Solo Doctor & Small Clinic Sovereignty): Immediate unblocked workflow.
- * - Mandate 8x (Anti-RAM-Hog): No createRoot / setupMockDom / setInterval in tests.
+ * - Mandate 8wx (Anti-RAM-Hog): No createRoot / setupMockDom / setInterval in tests.
  */
 
 import { describe, it } from "vitest";

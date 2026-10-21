@@ -1,7 +1,7 @@
 /**
  * scripts/check-test-safety.mjs
  *
- * THE ANTI-RAM-HOG & HOST PROTECTION GATE (Mandate 8x & Rule 13)
+ * THE ANTI-RAM-HOG & HOST PROTECTION GATE (Mandate 8wx & Rule 16)
  *
  * Scans all test files and package.json configurations to prevent:
  * 1. Recursive/cyclic handmade mock-DOM implementations (setupMockDom, createMockElement)
@@ -19,15 +19,15 @@ const SCAN_DIRS = ["apps", "packages", "scripts"];
 const FORBIDDEN_TEST_PATTERNS = [
 	{
 		pattern: /setupMockDom\s*\(/i,
-		rule: "Handmade recursive mock-DOM (setupMockDom) is strictly forbidden. Use SSR renderToString or pure logic tests (Mandate 8x)."
+		rule: "Handmade recursive mock-DOM (setupMockDom) is strictly forbidden. Use SSR renderToString or pure logic tests (Mandate 8wx)."
 	},
 	{
 		pattern: /function\s+createMockElement\s*\(/i,
-		rule: "Handmade cyclic mock DOM node factory (createMockElement) is forbidden (Mandate 8x)."
+		rule: "Handmade cyclic mock DOM node factory (createMockElement) is forbidden (Mandate 8wx)."
 	},
 	{
 		pattern: /createRoot\s*\(/,
-		rule: "createRoot in Node test runner triggers infinite Fiber allocations on mock DOMs. Use SSR renderToString from react-dom/server or pure logic tests (Mandate 8x)."
+		rule: "createRoot in Node test runner triggers infinite Fiber allocations on mock DOMs. Use SSR renderToString from react-dom/server or pure logic tests (Mandate 8wx)."
 	}
 ];
 
@@ -91,7 +91,7 @@ for (const pkgPath of packageJsonFiles) {
 						file: pkgPath,
 						line: 0,
 						text: `"${name}": "${cmd}"`,
-						rule: "Infinite test timeout (--test-timeout=0) is strictly forbidden (Mandate 8x)."
+						rule: "Infinite test timeout (--test-timeout=0) is strictly forbidden (Mandate 8wx)."
 					});
 				}
 				if (cmd.includes("node ") && cmd.includes("--test")) {
@@ -100,7 +100,7 @@ for (const pkgPath of packageJsonFiles) {
 							file: pkgPath,
 							line: 0,
 							text: `"${name}": "${cmd}"`,
-							rule: "Node test script must enforce a V8 memory ceiling (--max-old-space-size=2048) (Mandate 8x)."
+							rule: "Node test script must enforce a V8 memory ceiling (--max-old-space-size=2048) (Mandate 8wx)."
 						});
 					}
 					if (!cmd.includes("--test-timeout")) {
@@ -108,7 +108,7 @@ for (const pkgPath of packageJsonFiles) {
 							file: pkgPath,
 							line: 0,
 							text: `"${name}": "${cmd}"`,
-							rule: "Node test script must enforce an explicit timeout ceiling (--test-timeout=10000) (Mandate 8x)."
+							rule: "Node test script must enforce an explicit timeout ceiling (--test-timeout=10000) (Mandate 8wx)."
 						});
 					}
 				}
@@ -128,7 +128,7 @@ console.log(`[check:test-safety] Проверено тестовых файло�
 console.log(`[check:test-safety] Проверено package.json файлов: ${packageJsonFiles.length}`);
 
 if (violations.length > 0) {
-	console.error(`\n❌ НАЙДЕНО ${violations.length} НАРУШЕНИЙ МАНДАТА 8x (ЗАЩИТА ОТ ЖОРА ОЗУ И ЗАВИСАНИЯ ХОСТА):`);
+	console.error(`\n❌ НАЙДЕНО ${violations.length} НАРУШЕНИЙ МАНДАТА 8wx (ЗАЩИТА ОТ ЖОРА ОЗУ И ЗАВИСАНИЯ ХОСТА):`);
 	for (const v of violations) {
 		console.error(`  - ${v.file}${v.line > 0 ? `:${v.line}` : ""}`);
 		console.error(`    Фрагмент: ${v.text}`);
@@ -137,5 +137,5 @@ if (violations.length > 0) {
 	process.exit(1);
 }
 
-console.log("✅ Все тесты и конфигурации соответствуют Мандату 8x. Жор ОЗУ и зависания исключены.");
+console.log("✅ Все тесты и конфигурации соответствуют Мандату 8wx. Жор ОЗУ и зависания исключены.");
 process.exit(0);

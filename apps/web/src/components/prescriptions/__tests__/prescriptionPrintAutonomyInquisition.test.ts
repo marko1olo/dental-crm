@@ -13,7 +13,7 @@
  * - Mandate 8e: Doctor Autonomy (Zero disabled buttons, non-blocking clinical workflows).
  * - Mandate 8k: Friction-Killer Law (1-click presets and patient messenger memo).
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty (robust fallbacks for missing backoffice fields).
- * - Mandate 8x: Anti-RAM-hog law (pure logic + SSR via renderToString, strict execution bounds).
+ * - Mandate 8wx: Anti-RAM-hog law (pure logic + SSR via renderToString, strict execution bounds).
  */
 
 import assert from "node:assert/strict";

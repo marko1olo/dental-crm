@@ -108,13 +108,13 @@ function parseTranscript(conversationId) {
           const entry = summary ? `${name}: ${summary}` : name;
           allActions.push({ step: i, name, entry, args: tc.args });
 
-          if (name === "write_to_file" || name === "replace_file_content") {
-            const target = cleanPath(tc.args?.TargetFile);
+          if (name === "write_to_file" || name === "replace_file_content" || name === "write_file" || name === "edit_file") {
+            const target = cleanPath(tc.args?.TargetFile || tc.args?.Path);
             if (target) modifiedFiles.add(target);
           }
 
-          if (name === "view_file" && tc.args?.AbsolutePath) {
-            inspectedFiles.add(cleanPath(tc.args.AbsolutePath));
+          if ((name === "view_file" || name === "read_file") && (tc.args?.AbsolutePath || tc.args?.Path)) {
+            inspectedFiles.add(cleanPath(tc.args?.AbsolutePath || tc.args?.Path));
           }
 
           if (name === "run_command" && tc.args?.CommandLine) {

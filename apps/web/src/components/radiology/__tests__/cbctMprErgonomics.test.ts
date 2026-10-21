@@ -343,7 +343,7 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 		});
 	});
 
-	describe("8. WebGL Deterministic Teardown & Context Disposal (Mandate 8x & Frontend Rules)", () => {
+	describe("8. WebGL Deterministic Teardown & Context Disposal (Mandate 8wx & Frontend Rules)", () => {
 		it("provides disposeSharedCbctGlContext without throwing when called", async () => {
 			const { disposeSharedCbctGlContext, getSharedCbctGlContext } = await import("../mpr/webgl/CbctVolumeGlContext");
 			assert.equal(typeof disposeSharedCbctGlContext, "function");

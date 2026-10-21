@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-	// Hard kill: whole test ≤ 30 s, single action ≤ 10 s (Mandate 8x: hardware protection)
+	// Hard kill: whole test ≤ 30 s, single action ≤ 10 s (Mandate 8wx: hardware protection)
 	timeout: 30_000,
 	actionTimeout: 10_000,
 	navigationTimeout: 15_000,
