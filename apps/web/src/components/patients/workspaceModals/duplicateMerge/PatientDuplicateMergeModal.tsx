@@ -1,13 +1,13 @@
-import React from "react";
 import { CheckCircle2, GitMerge, Loader2, X } from "lucide-react";
+import React from "react";
+import { DuplicateComparisonCard } from "./DuplicateComparisonCard";
+import { DuplicateMergeFooter } from "./DuplicateMergeFooter";
+import { DuplicateSafetyChecklist } from "./DuplicateSafetyChecklist";
 import type { PatientDuplicateMergeModalProps } from "./types";
 import { useDuplicateMergeLogic } from "./useDuplicateMergeLogic";
-import { DuplicateComparisonCard } from "./DuplicateComparisonCard";
-import { DuplicateSafetyChecklist } from "./DuplicateSafetyChecklist";
-import { DuplicateMergeFooter } from "./DuplicateMergeFooter";
 
-export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProps> = React.memo(
-	function PatientDuplicateMergeModal(props) {
+export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProps> =
+	React.memo(function PatientDuplicateMergeModal(props) {
 		const { isOpen, onClose, patientId, patientName } = props;
 		const {
 			isLoading,
@@ -37,9 +37,12 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 								<GitMerge size={16} />
 							</div>
 							<div>
-								<h2 className="text-sm sm:text-base font-black leading-tight">Слияние дубликатов медицинских карт</h2>
+								<h2 className="text-sm sm:text-base font-black leading-tight">
+									Слияние дубликатов медицинских карт
+								</h2>
 								<p className="text-[11px] text-[var(--muted)]">
-									Неразрушающее объединение: баланс с точностью до копейки, строгое объединение аллергий
+									Неразрушающее объединение: баланс с точностью до копейки,
+									строгое объединение аллергий
 								</p>
 							</div>
 						</div>
@@ -63,8 +66,13 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 						) : !target ? (
 							<div className="py-8 text-center flex flex-col items-center gap-2 text-[var(--muted)]">
 								<CheckCircle2 size={32} className="text-emerald-500" />
-								<p className="font-semibold text-[var(--ink)]">Потенциальных дубликатов для данного пациента не найдено.</p>
-								<p className="text-[11px]">Картотека клиники проверена: совпадений по ФИО, телефону, дате рождения и СНИЛС нет.</p>
+								<p className="font-semibold text-[var(--ink)]">
+									Потенциальных дубликатов для данного пациента не найдено.
+								</p>
+								<p className="text-[11px]">
+									Картотека клиники проверена: совпадений по ФИО, телефону, дате
+									рождения и СНИЛС нет.
+								</p>
 							</div>
 						) : (
 							<>
@@ -89,7 +97,6 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 				</div>
 			</div>
 		);
-	},
-);
+	});
 
 PatientDuplicateMergeModal.displayName = "PatientDuplicateMergeModal";

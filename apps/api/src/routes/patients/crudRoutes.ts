@@ -39,7 +39,7 @@ import { filterPatientsBySearchQuery } from "./patientSearchFilter.js";
 import { registerPatientRecordsRoutes } from "./patientRecordsRoutes.js";
 
 export function registerPatientCrudRoutes(app: FastifyInstance) {
-	// Регистрация суб-маршрутов клинических записей формы 043/у
+	// Регистрация суб-маршрутов клинических записей медицинской карты приёма
 	registerPatientRecordsRoutes(app);
 
 	app.get("/api/patients", async (request, reply) => {

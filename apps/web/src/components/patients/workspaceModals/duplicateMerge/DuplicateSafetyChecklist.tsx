@@ -1,5 +1,5 @@
-import React from "react";
 import { Check } from "lucide-react";
+import type React from "react";
 
 export const DuplicateSafetyChecklist: React.FC = () => {
 	return (
@@ -11,25 +11,29 @@ export const DuplicateSafetyChecklist: React.FC = () => {
 				<div className="flex items-start gap-1.5">
 					<Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
 					<span>
-						<strong>Балансы и авансы:</strong> суммируются с точностью до копейки (0% потерь).
+						<strong>Балансы и авансы:</strong> суммируются с точностью до
+						копейки (0% потерь).
 					</span>
 				</div>
 				<div className="flex items-start gap-1.5">
 					<Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
 					<span>
-						<strong>Аллергии и анамнез:</strong> строгое объединение (Strict UNION, ни один риск не теряется).
+						<strong>Аллергии и анамнез:</strong> строгое объединение (Strict
+						UNION, ни один риск не теряется).
 					</span>
 				</div>
 				<div className="flex items-start gap-1.5">
 					<Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
 					<span>
-						<strong>Приёмы и КТ:</strong> все визиты, снимки и планы лечения переносятся в основную карту.
+						<strong>Приёмы и КТ:</strong> все визиты, снимки и планы лечения
+						переносятся в основную карту.
 					</span>
 				</div>
 				<div className="flex items-start gap-1.5">
 					<Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
 					<span>
-						<strong>Неразрушающий аудит:</strong> карта дубликата архивируется с сохранением полной истории (ничего не удаляется).
+						<strong>Неразрушающий аудит:</strong> карта дубликата архивируется с
+						сохранением полной истории (ничего не удаляется).
 					</span>
 				</div>
 			</div>

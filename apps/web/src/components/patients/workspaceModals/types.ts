@@ -20,6 +20,8 @@ export interface PatientWorkspaceModalsProps {
 	readonly clinicName?: string | undefined;
 	readonly isMergeModalOpen?: boolean | undefined;
 	readonly setIsMergeModalOpen?: ((open: boolean) => void) | undefined;
+	readonly isFamilyWalletOpen?: boolean | undefined;
+	readonly setIsFamilyWalletOpen?: ((open: boolean) => void) | undefined;
 	readonly duplicatePatient?: any;
 	readonly onMergeSuccess?: ((result: any) => void) | undefined;
 }

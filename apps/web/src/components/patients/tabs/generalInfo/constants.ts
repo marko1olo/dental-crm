@@ -1,10 +1,12 @@
 import {
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 } from "@dental/shared";
 import type { IdentityDocType } from "./types";
 
 export {
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 };

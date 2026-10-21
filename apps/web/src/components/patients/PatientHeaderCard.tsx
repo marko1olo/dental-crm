@@ -6,7 +6,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { evaluatePatientSafetyFlags, isNegativeAllergyStatement } from "./safetyMath";
-import { FamilyWalletModal } from "../patient/FamilyWalletModal";
+import { FamilyWalletModal } from "./family/FamilyWalletModal";
 
 import {
 	type PatientHeaderCardProps,

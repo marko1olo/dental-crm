@@ -42,6 +42,7 @@ export type AnamnesisPresetType =
 	| "anticoag"
 	| "bisphosphonate"
 	| "pregnant_2"
+	| "diabetes"
 	| "allergy_articaine"
 	| "allergy_penicillin"
 	| "allergy_nsaid"
@@ -53,6 +54,7 @@ export const ANAMNESIS_PRESETS: readonly AnamnesisPresetType[] = [
 	"anticoag",
 	"bisphosphonate",
 	"pregnant_2",
+	"diabetes",
 	"allergy_articaine",
 	"allergy_penicillin",
 	"allergy_nsaid",
@@ -120,6 +122,16 @@ export function applyAnamnesisPreset(
 				},
 				toastMessage: "Применен шаблон: Беременность 2 триместр (Безопасное окно)",
 				toastType: "info",
+			};
+		case "diabetes":
+			return {
+				updatedProfile: {
+					...current,
+					hasDiabetesMellitus: true,
+					diabetesType: "2",
+				},
+				toastMessage: "Применен шаблон: Сахарный диабет (Контроль гликемии и регенерации)",
+				toastType: "warning",
 			};
 		case "allergy_articaine":
 			return {

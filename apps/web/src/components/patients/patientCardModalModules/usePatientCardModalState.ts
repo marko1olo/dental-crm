@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { type PatientClinicalSafetyProfile, createHealthySomaticNormProfile, evaluatePatientSafetyFlags } from "../safetyMath";
 import { mapPatientToGeneralInfo, persistPatientCardModalToApi, resolveInitialSafetyProfile } from "../patientAutonomyActions";
@@ -34,6 +34,9 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
 	const [isTaxDeductionModalOpen, setIsTaxDeductionModalOpen] = useState(false);
 
+	// Synchronous lock against double clicks and rapid fire requests (Apple HIG / Mandate 8e)
+	const inFlightRef = useRef(false);
+
 	useEffect(() => {
 		if (isOpen && effP.id) StaffActionAuditService.logEmrOpen({ patientId: effP.id, cardId: effP.id });
 	}, [isOpen, effP.id, effP.fullName]);
@@ -54,6 +57,26 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		}
 	}, [initP, initPAlias, effS]);
 
+	// Restore draft from localStorage on modal open if available (Zero Keystroke Loss)
+	useEffect(() => {
+		if (!isOpen || !patientData.id || typeof window === "undefined") return;
+		try {
+			const raw = localStorage.getItem(`dente_patient_card_draft_${patientData.id}`);
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (parsed?.patientData) {
+					setPatientData((prev) => ({ ...prev, ...parsed.patientData }));
+					if (parsed.safetyProfile) {
+						setSafetyProfile(parsed.safetyProfile);
+					}
+					setIsDirty(true);
+				}
+			}
+		} catch {
+			// ignore localStorage issues
+		}
+	}, [isOpen, patientData.id]);
+
 	const safetyEvaluation = useMemo(() => evaluatePatientSafetyFlags(safetyProfile), [safetyProfile]);
 	const [isDirty, setIsDirty] = useState(false);
 	const [saveState, setSaveState] = useState<PatientSectionSaveState>("idle");
@@ -72,18 +95,63 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 
 	const handlePrint = useCallback(() => { if (typeof window !== "undefined") window.print(); }, []);
 
+	// Debounced autosave to localStorage and Fastify API (Zero Data Loss)
+	useEffect(() => {
+		if (!isDirty || !patientData.id || typeof window === "undefined") return;
+
+		try {
+			localStorage.setItem(
+				`dente_patient_card_draft_${patientData.id}`,
+				JSON.stringify({ patientData, safetyProfile, savedAt: Date.now() })
+			);
+		} catch {
+			// ignore storage quota
+		}
+
+		const timer = setTimeout(async () => {
+			if (inFlightRef.current) return;
+			inFlightRef.current = true;
+			try {
+				if (onSavePatient) {
+					await onSavePatient(patientData, safetyProfile);
+				} else {
+					await persistPatientCardModalToApi(patientData, safetyProfile, patientData.id || "");
+				}
+				setIsDirty(false);
+				setSaveState("saved");
+			} catch {
+				setSaveState("idle");
+			} finally {
+				inFlightRef.current = false;
+			}
+		}, 1200);
+
+		return () => clearTimeout(timer);
+	}, [isDirty, patientData, safetyProfile, onSavePatient]);
+
 	const handleSave = useCallback(async () => {
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		setSaveState("saving");
 		try {
 			if (onSavePatient) await onSavePatient(patientData, safetyProfile);
-			else await persistPatientCardModalToApi(patientData, safetyProfile, DEMO_SHOWCASE_MODAL_PATIENT.id || "");
+			else await persistPatientCardModalToApi(patientData, safetyProfile, patientData.id || DEMO_SHOWCASE_MODAL_PATIENT.id || "");
 			setIsDirty(false);
 			setSaveState("saved");
 			showToast("Данные пациента сохранены", "success", 3000);
+			if (typeof window !== "undefined" && patientData.id) {
+				try {
+					localStorage.removeItem(`dente_patient_card_draft_${patientData.id}`);
+				} catch {
+					// ignore
+				}
+			}
 			onClose();
 		} catch (err: any) {
 			setSaveState("error");
 			showToast(err?.message || "Ошибка при сохранении карты", "error", 4000);
+		} finally {
+			inFlightRef.current = false;
 		}
 	}, [patientData, safetyProfile, onSavePatient, onClose]);
 

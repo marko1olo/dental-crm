@@ -22,7 +22,7 @@ export const PatientMasterEmptyState: React.FC<PatientMasterEmptyStateProps> = (
 			title={!isSearching ? "В картотеке пока нет пациентов" : "Пациент не найден"}
 			description={
 				!isSearching
-					? "Создайте медицинскую карту первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
+					? "Создайте медицинскую карту первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или внешних файлов."
 					: `По запросу «${query.trim()}» ничего не найдено. Проверьте правильность написания ФИО или номера телефона.`
 			}
 			action={
@@ -30,7 +30,7 @@ export const PatientMasterEmptyState: React.FC<PatientMasterEmptyStateProps> = (
 					<div className="patient-empty-actions flex flex-col sm:flex-row flex-wrap gap-2 justify-center mt-2 w-full">
 						<button
 							type="button"
-							className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold shadow-sm"
+							className="primary-button min-h-[44px] sm:min-h-[36px] h-9 px-4 flex items-center justify-center gap-1.5 font-bold rounded-xl shadow-sm"
 							onClick={onOpenCreatePatient}
 							data-testid="empty-state-create-patient-btn"
 						>
@@ -39,15 +39,15 @@ export const PatientMasterEmptyState: React.FC<PatientMasterEmptyStateProps> = (
 						</button>
 						<button
 							type="button"
-							className="secondary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-semibold"
+							className="secondary-button min-h-[44px] sm:min-h-[36px] h-9 px-4 flex items-center justify-center gap-1.5 font-semibold rounded-xl"
 							onClick={() => {
 								window.location.hash = "#settings";
-								showToast("Переход в настройки клиники: раздел «Импорт баз данных из Excel / 1C / IDENT»", "info", 4000);
+								showToast("Переход в настройки клиники: раздел «Импорт баз данных из Excel / 1C»", "info", 4000);
 							}}
 							data-testid="empty-state-import-patients-btn"
 						>
 							<Upload size={16} aria-hidden="true" />
-							<span>Импорт базы из Excel / 1С / IDENT</span>
+							<span>Импорт базы из Excel / 1С</span>
 						</button>
 					</div>
 				) : (

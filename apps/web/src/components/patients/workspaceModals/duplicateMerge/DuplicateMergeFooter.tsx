@@ -1,5 +1,5 @@
-import React from "react";
 import { GitMerge, Loader2 } from "lucide-react";
+import type React from "react";
 
 export interface DuplicateMergeFooterProps {
 	readonly target: any;

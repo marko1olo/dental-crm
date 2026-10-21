@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { logger } from "../../utils/logger";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { NO_SHOW_SUBJECT } from "./noShowRisk/patientNoShowTypes";
+import {
+	createNewPatientFallbackRisk,
+	NO_SHOW_SUBJECT,
+	type PatientNoShowRiskProps,
+} from "./noShowRisk/patientNoShowTypes";
 import { PatientNoShowRiskStats } from "./noShowRisk/PatientNoShowRiskStats";
 
-export type PatientNoShowRiskProps = {
-	readonly patientId: string | null;
-};
+export { type PatientNoShowRiskProps };
 
 export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId }) => {
 	const [loading, setLoading] = useState(false);
@@ -48,20 +50,9 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 					if (data) setRiskData(data);
 					else setFailure({ status: res.status });
 				} else if (res.status === 422) {
-					// 422: мало завершенных визитов — это нормальное состояние нового пациента, а не сбой!
 					const data = await res.json().catch(() => null);
 					if (cancelled) return;
-					setRiskData({
-						history: {
-							consideredAppointments: data?.consideredAppointments ?? 0,
-							attended: data?.consideredAppointments ?? 0,
-							noShows: 0,
-							cancellations: 0,
-						},
-						riskLevel: "low",
-						factors: ["Новый пациент: формируется история посещений"],
-						recommendedAction: "Подтвердить запись за 24 часа телефонным звонком или сообщением",
-					});
+					setRiskData(createNewPatientFallbackRisk(data?.consideredAppointments ?? 0));
 				} else {
 					setFailure({ status: res.status });
 				}
@@ -83,14 +74,8 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 	if (!patientId) return null;
 
 	return (
-		<div
-			data-testid="patient-no-show-risk"
-			className="panel p-3.5 rounded-xl border bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] shadow-2xs"
-		>
-			<h3
-				className="panel-heading compact-heading flex items-center gap-2 mb-3 pb-2 border-b border-[var(--line)]"
-				title="Дисциплина визитов и статистика неявок пациента"
-			>
+		<div data-testid="patient-no-show-risk" className="panel p-3.5 rounded-xl border bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] shadow-2xs">
+			<h3 className="panel-heading compact-heading flex items-center gap-2 mb-3 pb-2 border-b border-[var(--line)]" title="Дисциплина визитов и статистика неявок пациента">
 				<CalendarClock size={16} className="text-emerald-600 dark:text-emerald-400" />
 				<span className="text-sm font-semibold">Дисциплина визитов и статистика неявок</span>
 			</h3>
@@ -98,11 +83,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 			{loading ? (
 				<div className="text-xs text-[var(--muted)] py-3">Загрузка статистики визитов пациента…</div>
 			) : failure ? (
-				<PanelLoadFailure
-					subject={NO_SHOW_SUBJECT}
-					status={failure.status}
-					onRetry={() => setReloadToken((token) => token + 1)}
-				/>
+				<PanelLoadFailure subject={NO_SHOW_SUBJECT} status={failure.status} onRetry={() => setReloadToken((t) => t + 1)} />
 			) : riskData ? (
 				<PatientNoShowRiskStats riskData={riskData} />
 			) : (
@@ -110,7 +91,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 					<span className="text-xs text-[var(--muted)]">Статистика посещаемости по журналу приёмов</span>
 					<button
 						type="button"
-						onClick={() => setReloadToken((token) => token + 1)}
+						onClick={() => setReloadToken((t) => t + 1)}
 						disabled={loading}
 						className="px-3.5 py-1.5 min-h-[34px] text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors shadow-2xs cursor-pointer"
 					>

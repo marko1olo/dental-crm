@@ -10,14 +10,14 @@ interface PatientCardModalTabsBarProps {
 }
 
 const TABS = [
-	{ id: "general", testId: "tab-patient-general", label: "Основные", Icon: FileText },
+	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
+	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Анамнез", Icon: HeartPulse },
+	{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
+	{ id: "finance", testId: "tab-patient-finance", label: "Счета и баланс", Icon: Wallet },
+	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
 	{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
 	{ id: "perio", testId: "tab-patient-perio", label: "Пародонтология", Icon: Activity },
-	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Соматика", Icon: HeartPulse },
-	{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
 	{ id: "documents", testId: "tab-patient-documents", label: "Документы", Icon: FileCheck },
-	{ id: "finance", testId: "tab-patient-finance", label: "Финансы и аванс", Icon: Wallet },
-	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
 	{ id: "family", testId: "tab-patient-family", label: "Семья", Icon: Users },
 ] as const;
 

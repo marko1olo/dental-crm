@@ -65,4 +65,6 @@ export interface PatientCardModalProps {
 	readonly disabled?: boolean | undefined;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
+	readonly dashboard?: any | undefined;
+	readonly visits?: any[] | undefined;
 }

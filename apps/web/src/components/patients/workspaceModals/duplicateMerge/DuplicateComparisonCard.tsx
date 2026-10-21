@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 export interface DuplicateComparisonCardProps {
 	readonly patientName?: string | undefined;
@@ -7,12 +7,9 @@ export interface DuplicateComparisonCardProps {
 	readonly confidencePercent: number;
 }
 
-export const DuplicateComparisonCard: React.FC<DuplicateComparisonCardProps> = ({
-	patientName,
-	patientId,
-	target,
-	confidencePercent,
-}) => {
+export const DuplicateComparisonCard: React.FC<
+	DuplicateComparisonCardProps
+> = ({ patientName, patientId, target, confidencePercent }) => {
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			{/* Left: Primary / Kept Card */}
@@ -25,8 +22,12 @@ export const DuplicateComparisonCard: React.FC<DuplicateComparisonCardProps> = (
 						Primary
 					</span>
 				</div>
-				<p className="text-sm font-bold text-[var(--ink)]">{patientName || "Текущий пациент"}</p>
-				<p className="text-[11px] text-[var(--muted)] font-mono">ID: {patientId.slice(0, 13)}...</p>
+				<p className="text-sm font-bold text-[var(--ink)]">
+					{patientName || "Текущий пациент"}
+				</p>
+				<p className="text-[11px] text-[var(--muted)] font-mono">
+					ID: {patientId.slice(0, 13)}...
+				</p>
 			</div>
 
 			{/* Right: Duplicate Candidate */}
@@ -39,7 +40,9 @@ export const DuplicateComparisonCard: React.FC<DuplicateComparisonCardProps> = (
 						{confidencePercent}% совпадение
 					</span>
 				</div>
-				<p className="text-sm font-bold text-[var(--ink)]">{target.fullName || target.name || "Дублирующая карта"}</p>
+				<p className="text-sm font-bold text-[var(--ink)]">
+					{target.fullName || target.name || "Дублирующая карта"}
+				</p>
 				<p className="text-[11px] text-[var(--muted)]">
 					{target.phone ? `Тел: ${target.phone}` : "Телефон не указан"}
 					{target.birthDate ? ` • ${target.birthDate}` : ""}

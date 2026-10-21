@@ -32,13 +32,10 @@ describe("Red Team Inquisitor: Patient Registry, Family Deposit & Somatic Autono
 		const htmlClosed = renderToStaticMarkup(
 			React.createElement(PatientPassportAddressStep, {
 				fieldRequirements: {
-					requireFullName: true,
 					requirePhone: true,
 					requireBirthDate: false,
-					requireGender: false,
 					requireSnils: false,
 					requireIdentityDocument: false,
-					requireResidentialAddress: false,
 					requireAdvertisingSource: false,
 				},
 				validationErrors: {},
@@ -67,13 +64,10 @@ describe("Red Team Inquisitor: Patient Registry, Family Deposit & Somatic Autono
 		const htmlOpen = renderToStaticMarkup(
 			React.createElement(PatientPassportAddressStep, {
 				fieldRequirements: {
-					requireFullName: true,
 					requirePhone: true,
 					requireBirthDate: false,
-					requireGender: false,
 					requireSnils: false,
 					requireIdentityDocument: false,
-					requireResidentialAddress: false,
 					requireAdvertisingSource: false,
 				},
 				validationErrors: {},
@@ -148,7 +142,10 @@ describe("Red Team Inquisitor: Patient Registry, Family Deposit & Somatic Autono
 
 	it("4. PatientCreationModalView never disables primary save buttons (Mandate 8e)", () => {
 		const modalViewPath = path.resolve(patientsDir, "patientCreation/PatientCreationModalView.tsx");
-		const content = fs.readFileSync(modalViewPath, "utf-8");
+		const footerPath = path.resolve(patientsDir, "patientCreation/PatientCreationModalFooter.tsx");
+		const content =
+			fs.readFileSync(modalViewPath, "utf-8") +
+			(fs.existsSync(footerPath) ? "\n" + fs.readFileSync(footerPath, "utf-8") : "");
 
 		assert.ok(
 			content.includes('data-testid="patient-creation-submit-btn"'),

@@ -165,6 +165,8 @@ export type {
 	PatientSafetyEvaluationResult,
 	ClinicalSafetyFlag,
 } from "./patientSafetyEvaluation";
+export type EvaluatedSafetyFlagsResult = import("./patientSafetyEvaluation").PatientSafetyEvaluationResult;
+export type EvaluatedSafetyFlag = import("./patientSafetyEvaluation").ClinicalSafetyFlag;
 
 export function parseSafetyProfileFromText(text?: string | null | undefined): PatientClinicalSafetyProfile {
 	const raw = (text ?? "").toLowerCase();

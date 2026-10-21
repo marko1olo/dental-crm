@@ -13,7 +13,7 @@ import { useAppStore } from "../../store/appStore";
 import { formatOmsPolicy } from "../../utils/inputSanitation";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-import { FamilyWalletModal } from "../patient/FamilyWalletModal";
+import { FamilyWalletModal } from "./family/FamilyWalletModal";
 
 export interface PatientFamilyAndInsuranceWidgetProps {
 	readonly patient: Patient;

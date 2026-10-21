@@ -232,7 +232,7 @@ export function evaluatePatientSafetyFlags(
 
 /**
  * Форматирует структурированный профиль безопасности в юридически и клинически выверенную
- * текстовую запись для Дневника приёма (форма 043/у).
+ * текстовую запись для Дневника приёма медицинской карты.
  */
 export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinicalSafetyProfile> | null | undefined): string {
 	if (!profile) return "Аллергологический и соматический статус не отягощен.";

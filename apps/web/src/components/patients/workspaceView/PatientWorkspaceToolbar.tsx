@@ -155,7 +155,7 @@ export const PatientWorkspaceToolbar: React.FC<PatientWorkspaceToolbarProps> = R
 								title="Открыть медицинскую карту пациента"
 								data-testid="patient-workspace-open-043u-btn"
 							>
-								{/* Карта пациента (043/у) - амбулаторный стандарт стоматологии */}
+								{/* Медицинская карта пациента - амбулаторный стандарт стоматологии */}
 								<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
 								<span>Медицинская карта</span>
 							</button>

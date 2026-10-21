@@ -1,13 +1,13 @@
 /**
  * apps/web/src/components/patients/VisitProtocolView.tsx
  *
- * DENTE Dental CRM — Клинический протокол визита (Медицинская карта стоматологического больного Форма № 043/у)
+ * DENTE Dental CRM — Клинический протокол визита (Медицинская карта приёма)
  *
  * МАНДАТЫ КЛИНИЧЕСКОГО UX И АВТОНОМИИ ВРАЧА (8e, 8i, 8k, 8v):
  * 1. Мандат 8e: «Норма соматики» строго в 1 клик (без опросников на 50 пунктов).
  * 2. Автоматическая генерация клинического SOAP-дневника по выбранным диагнозам МКБ-10 (K02.1, K04.0, K04.5, K05.3, Z01.2).
  * 3. Мандат 8v: 1-клик списание анестезии и материалов по техкарте без медсестринских квестов и комиссий.
- * 4. Мандат 8e п. 5: Печать протокола 043/у в любой момент (со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ»).
+ * 4. Мандат 8e п. 5: Печать протокола приёма в любой момент (со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ»).
  * 5. Мандат 8d п. 7: СТРОГО 0 эмодзи — только строгие векторные иконки Lucide и DentalIcons.
  * 6. Мандат 8b: Размер модуля строго <= 800 строк.
  */
@@ -53,7 +53,7 @@ import {
 	calculateAnesthesiaCarpulesSafety,
 	evaluateAnesthesiaRisk,
 } from "../../lib/clinicalProtocols";
-import { ToothMolar, DentalForm043 } from "../icons/DentalIcons";
+import { ToothMolar } from "../icons/DentalIcons";
 
 export interface VisitProtocolData {
 	visitId?: string | null | undefined;
@@ -313,7 +313,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 				<div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[var(--glass-border)] print:hidden">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
-							<DentalForm043 className="w-4 h-4" />
+							<FileText className="w-4 h-4" />
 						</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">

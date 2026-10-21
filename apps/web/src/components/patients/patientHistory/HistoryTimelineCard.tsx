@@ -2,7 +2,7 @@
  * apps/web/src/components/patients/patientHistory/HistoryTimelineCard.tsx
  *
  * DENTE Dental CRM — Компонент отдельного визита/события в клиническом таймлайне.
- * Layer 1: Десктопная строка, мобильная Apple Health карточка и аккордеон протокола ЭМК 043/у.
+ * Layer 1: Десктопная строка, мобильная Apple Health карточка и аккордеон протокола медицинской карты приёма.
  */
 
 import React from "react";
@@ -238,7 +238,7 @@ export const HistoryTimelineCard: React.FC<HistoryTimelineCardProps> = React.mem
 						className="clinical-visit-details-pane"
 						data-testid={`timeline-visit-details-${visit.id}`}
 					>
-						{/* SOAP Сетка клинических данных Формы 043/у */}
+						{/* SOAP Сетка клинических данных медицинской карты приёма */}
 						<div className="clinical-soap-grid">
 							{/* Жалобы */}
 							<div className="clinical-soap-card">

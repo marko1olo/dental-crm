@@ -306,7 +306,7 @@ export function VisitActionFooter({
 								birthDate: activePatient.birthDate,
 								phone: activePatient.phone,
 								address: activePatient.address,
-								cardNumber: activePatient.id ? `043/${activePatient.id.slice(0, 8)}` : "043/2026-01",
+								cardNumber: (activePatient as any).cardNumber || (activePatient.id ? `МК-${activePatient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01"),
 								allergies: activePatient.allergies || activePatient.allergyHistory,
 								somaticNotes: activePatient.somaticHistory || activePatient.chronicDiseases,
 							}

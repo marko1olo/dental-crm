@@ -51,3 +51,21 @@ export function getRiskIcon(level: string, noShows = 0): React.ReactElement {
 			return React.createElement(CalendarClock, { size: 16, className: "text-slate-400" });
 	}
 }
+
+export type PatientNoShowRiskProps = {
+	readonly patientId: string | null;
+};
+
+export function createNewPatientFallbackRisk(considered = 0) {
+	return {
+		history: {
+			consideredAppointments: considered,
+			attended: considered,
+			noShows: 0,
+			cancellations: 0,
+		},
+		riskLevel: "low",
+		factors: ["Новый пациент: формируется история посещений"],
+		recommendedAction: "Подтвердить запись за 24 часа телефонным звонком или сообщением",
+	};
+}

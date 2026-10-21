@@ -218,7 +218,7 @@ export function generateTransferActHtml(
 <html lang="ru">
 <head>
 	<meta charset="UTF-8">
-	<title>Передаточный акт медицинской карты 043/у — ${snapshot.patientFullName}</title>
+	<title>Передаточный акт медицинской карты — ${snapshot.patientFullName}</title>
 	<style>
 		@page { size: A4; margin: 15mm 15mm 15mm 15mm; }
 		body {
@@ -328,7 +328,7 @@ export function generateTransferActHtml(
 </head>
 <body>
 	<div class="act-header">
-		<div class="act-title">АКТ ПРИЕМА-ПЕРЕДАЧИ МЕДИЦИНСКОЙ КАРТЫ (Ф. 043/у)</div>
+		<div class="act-title">АКТ ПРИЕМА-ПЕРЕДАЧИ МЕДИЦИНСКОЙ КАРТЫ</div>
 		<div class="act-subtitle">между структурными подразделениями и филиалами сети стоматологических клиник DENTE</div>
 		<div style="font-size: 9pt; color: #64748b; margin-top: 4px;">
 			№ АКТ-TRF-${snapshot.snapshotId.slice(5, 15).toUpperCase()} от ${formatDateRu(snapshot.exportedAtIso)} г.
@@ -367,7 +367,7 @@ export function generateTransferActHtml(
 			<td colspan="3">${snapshot.transferReasonRu}</td>
 		</tr>
 		<tr>
-			<td><strong>Согласие 152-ФЗ:</strong></td>
+			<td><strong>Согласие на обработку данных:</strong></td>
 			<td colspan="3">
 				<span class="badge badge-success">ПОДПИСАНО И ВЕРИФИЦИРОВАНО</span>
 				(Идентификатор: ${snapshot.consent152Fz.consentId}, Тип подписи: ${snapshot.consent152Fz.signatureType})
@@ -388,7 +388,7 @@ export function generateTransferActHtml(
 		<tbody>
 			<tr>
 				<td>1</td>
-				<td>Медицинская карта стоматологического больного ф. 043/у (Дневники)</td>
+				<td>Медицинская карта пациента (Дневники приёма)</td>
 				<td>${visitsCount} протоколов визитов</td>
 				<td><span class="badge badge-blue">Передано в полном объеме</span></td>
 			</tr>
@@ -474,10 +474,10 @@ export function generateTransferActCsv(snapshot: PatientClinicalSnapshot): strin
 		["Документ личности", snapshot.demographics.identityDocument || ""],
 		["СНИЛС", snapshot.demographics.snils || ""],
 		["ИНН", snapshot.demographics.taxpayerInn || ""],
-		["Согласие 152-ФЗ", snapshot.consent152Fz.consentId],
-		["Тип подписи 152-ФЗ", snapshot.consent152Fz.signatureType],
+		["Согласие на обработку данных", snapshot.consent152Fz.consentId],
+		["Тип подписи согласия", snapshot.consent152Fz.signatureType],
 		["Хеш подписи", snapshot.consent152Fz.signatureHash],
-		["Количество визитов 043/у", snapshot.medicalHistory043u.totalVisitsCount.toString()],
+		["Количество визитов в медкарте", snapshot.medicalHistory043u.totalVisitsCount.toString()],
 		["Исследований рентген/КЛКТ", snapshot.imagingArchive.studies.length.toString()],
 		["Суммарная доза (мкЗв)", snapshot.imagingArchive.totalAccumulatedDoseMicroSv.toString()],
 		["Активных нарядов ЗТЛ", snapshot.activeLabOrders.length.toString()],

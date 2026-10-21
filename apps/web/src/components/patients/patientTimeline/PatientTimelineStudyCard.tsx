@@ -38,8 +38,8 @@ export const PatientTimelineStudyCard: React.FC<PatientTimelineStudyCardProps> =
 		(study.viewerUrl && is3DScanUrl(study.viewerUrl)) ||
 		/\.(stl|ply|obj)($|[?#])/i.test(study.title || "")
 	);
-	const isCbct = !is3DScan && (study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1));
-	const { timeStr, formattedDate } = formatStudyDateKey(study.capturedAt || study.studyDate);
+	const isCbct = !is3DScan && Boolean(study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1));
+	const { timeStr, formattedDate } = formatStudyDateKey(study.capturedAt || study.studyDate || undefined);
 	const badge = getModalityColor(study.modality || study.kind);
 
 	return (

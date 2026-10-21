@@ -325,7 +325,7 @@ export function mergePatientRecordsNonDestructive(
 	// 5. Заметки
 	const primNotes = primary.notes?.trim() || "";
 	const dupNotes = duplicate.notes?.trim() || "";
-	const auditNote = `[152-ФЗ Аудит слияния: ${new Date().toISOString()}] Карточка объединена с дубликатом «${duplicate.fullName}» (ID: ${duplicate.id}). Причина: ${reason}.`;
+	const auditNote = `[Аудит объединения карт: ${new Date().toISOString()}] Карточка объединена с дубликатом «${duplicate.fullName}» (ID: ${duplicate.id}). Причина: ${reason}.`;
 	const combinedNotes = [primNotes, dupNotes ? `Заметки из дубликата: ${dupNotes}` : "", auditNote]
 		.filter(Boolean)
 		.join("\n\n");
@@ -349,7 +349,7 @@ export function mergePatientRecordsNonDestructive(
 		...duplicate,
 		status: "archived" as any,
 		mergedIntoPatientId: primary.id,
-		notes: `[152-ФЗ] Карточка объединена в основную карту «${primary.fullName}» (ID: ${primary.id}).`,
+		notes: `[Объединение] Карточка объединена в основную карту «${primary.fullName}» (ID: ${primary.id}).`,
 	};
 
 	const summary = `Слияние завершено: Баланс объединен (${combinedBalanceRub.toFixed(2)} ₽). Аллергии и соматические риски объединены (${unitedSafetyFlags.length} факторов). Карта «${duplicate.fullName}» переведена в архив как merged_into.`;

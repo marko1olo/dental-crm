@@ -6,9 +6,13 @@ export interface ModalCloseActions {
 	closeMerge: () => void;
 	closePhotoProtocol: () => void;
 	closeOrthoPhoto: () => void;
+	closeFamily?: () => void;
 }
 
-export function closeOtherModals(activeModal: string | null, actions: ModalCloseActions): void {
+export function closeOtherModals(
+	activeModal: string | null,
+	actions: ModalCloseActions,
+): void {
 	if (!activeModal) return;
 	if (activeModal !== "cbct_implant_studio") actions.closeCbct();
 	if (activeModal !== "dms_letter") actions.closeDmsLetter();
@@ -17,4 +21,5 @@ export function closeOtherModals(activeModal: string | null, actions: ModalClose
 	if (activeModal !== "duplicate_merge") actions.closeMerge();
 	if (activeModal !== "photo_protocol") actions.closePhotoProtocol();
 	if (activeModal !== "ortho_photo") actions.closeOrthoPhoto();
+	if (activeModal !== "family_wallet") actions.closeFamily?.();
 }

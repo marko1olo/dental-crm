@@ -533,7 +533,7 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 						birthDate: patient.birthDate,
 						phone: patient.phone,
 						address: (patient as any).address || undefined,
-						cardNumber: patient.id ? `043/${patient.id.slice(0, 8)}` : "043/2026-01",
+						cardNumber: (patient as any).cardNumber || (patient.id ? `МК-${patient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01"),
 						allergies: (patient as any).allergies || (patient as any).allergyHistory,
 						somaticNotes: (patient as any).somaticHistory || (patient as any).chronicDiseases,
 					}}

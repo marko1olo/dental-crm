@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from "react";
 import {
 	Archive,
 	Calendar,
+	CreditCard,
 	Edit3,
 	FileText,
 	GitMerge,

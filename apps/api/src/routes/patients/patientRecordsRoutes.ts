@@ -20,7 +20,7 @@ import {
 export function registerPatientRecordsRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/patients/:patientId/records
-	 * Медицинские записи, протоколы приёмов и дневники формы 043/у пациента
+	 * Медицинские записи, протоколы приёмов и дневники медицинской карты приёма пациента
 	 * с соблюдением 152-ФЗ / 323-ФЗ ст. 13 (врачебная тайна).
 	 */
 	app.get("/api/patients/:patientId/records", async (request, reply) => {
