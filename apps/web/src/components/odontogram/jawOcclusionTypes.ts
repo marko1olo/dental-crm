@@ -22,3 +22,20 @@ export interface JawOcclusionModalProps {
 		mkb10Code?: string;
 	}) => void;
 }
+
+export function resolveJawTargetLabels(target: JawOrOcclusionTarget) {
+	return {
+		targetLabelRu:
+			target === "JU"
+				? "Верхняя челюсть (JU / Maxilla)"
+				: target === "JL"
+					? "Нижняя челюсть (JL / Mandibula)"
+					: "Центральное соотношение / Прикус (C)",
+		targetShortTitle:
+			target === "JU"
+				? "Верхняя челюсть"
+				: target === "JL"
+					? "Нижняя челюсть"
+					: "Прикус",
+	};
+}
