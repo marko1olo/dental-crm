@@ -1,0 +1,104 @@
+{
+  "taskId": "RED_TEAM_INQUISITOR_ANESTHESIA_CLINICAL",
+  "taskName": "Red Team audit and purification of clinical dictation grammar, anesthesia safety advisor, conflict resolution, express 1-click presets and mobile Apple HIG ergonomics",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-20T11:05:00Z",
+  "invariantsPreserved": [
+    "THE_HAMMER Master Prompt (Single-Compiler Lockout, Swarm RAM Guard <=2048 MB)",
+    "Mandate 8e (Doctor Autonomy: Primary CTA 'Применить анестезию' is NEVER disabled for secondary fields)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty: No forced nurse disposal paperwork or bureaucratic blocks)",
+    "Mandate 8y (Zero Pharmacological Paranoia: Allergies displayed as passive warnings, 1-click confirmation)",
+    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication: Instrumentally verified by code, tests and PNGs)",
+    "Mandate 8x & 8ao (Clean Semantic Domain Language: Removed 'ст. 70 Федерального закона № 323-ФЗ' from diary, pure clinical records, catalog-driven pricing)",
+    "Mandate 8ze/8al & Apple HIG (Touch targets >= 44x44px, Natural Thumb Zone, 0px horizontal scroll, 4-state visual proof)"
+  ],
+  "inspectedSubsystems": [
+    {
+      "subsystem": "Clinical Dictation Voice Parser & Semantic Extraction",
+      "files": [
+        "apps/api/src/ai/grammar/anesthesiaAndProceduresParser.ts",
+        "apps/api/src/ai/clinicalDictationVoiceInquisition.test.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Eradicated hardcoded prices (priceRub: 850, 1500, 4500, 3500, 4000, 5000) from internal manipulation rules. Refactored into a pure semantic procedure extractor accepting optional priceResolver. Expanded catalog from 7 to 13 canonical dental manipulations (isolation, prep, composites, polishing, endo canal shaping, obturation, hygiene/ultrasound/air-flow, extractions, crowns, implants, RVG, rem-therapy, perio-incision). Verified with 39/39 passing tests (100% scenario accuracy)."
+    },
+    {
+      "subsystem": "Anesthesia Clinical Safety Advisor & Tone of Voice",
+      "files": [
+        "apps/web/src/components/anesthesia/engine/anesthesiaSafetyAdvisor.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Removed screaming uppercase warnings ('ПРЕПАРАТ СОДЕРЖИТ СУЛЬФИТЫ', 'ПРЕВЫШЕНИЕ МАКСИМАЛЬНОЙ СУТОЧНОЙ ДОЗЫ'). Replaced with calm, professional, non-blocking clinical advisories. Fixed annoying false positive warning about missing aspiration check on initial selection."
+    },
+    {
+      "subsystem": "Conflict Resolver & Legal Citation Cleanup",
+      "files": [
+        "apps/web/src/components/anesthesia/anesthesiaQuickBar/anesthesiaConflictResolver.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Cleaned up clinical diary entry formatting: replaced raw statutory citation '(Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)' with clean clinical record '(Введено по клиническому решению лечащего врача)'. In accordance with Mandate 8x, clinical documentation reflects medical reality without reciting legal statute numbers."
+    },
+    {
+      "subsystem": "QuickBar Express Presets & Carpule Stepper UI/UX",
+      "files": [
+        "apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx",
+        "apps/web/src/components/anesthesia/anesthesiaQuickBar/useAnesthesiaApplyAction.ts",
+        "apps/web/src/components/anesthesia/anesthesiaQuickBar/types.ts"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Ensured 1-click express presets for daily clinical practice: Ultracain D-S 1:200k, Ultracain D-S Forte 1:100k, Scandonest plain 3% (1.8 ml), and No anesthesia / Intact. Parameterized service pricing via servicePriceRub prop instead of fixed hardcoded ruble constants. Fixed stepper button dark mode rendering clash by assigning semantic bg-[var(--paper)] and border-[var(--line-subtle)] keycaps."
+    },
+    {
+      "subsystem": "Test Runner Migration & Suite Stability",
+      "files": [
+        "apps/web/src/components/anesthesia/__tests__/anesthesiaClinicalFastPresetsRedTeam.test.tsx"
+      ],
+      "status": "AUDITED_AND_REMEDIATED",
+      "findings": "Eliminated orphaned vitest imports in anesthesiaClinicalFastPresetsRedTeam.test.tsx and migrated to native node:test. All 58 web anesthesia tests now run cleanly under Node test runner without requiring synthetic global DOM or heavy Jest/Vitest setups."
+    }
+  ],
+  "verificationProof": {
+    "apiTests": {
+      "command": "npx tsx --test apps/api/src/ai/clinicalDictationVoiceInquisition.test.ts",
+      "passing": 39,
+      "failing": 0,
+      "exitCode": 0
+    },
+    "webTests": {
+      "command": "node --max-old-space-size=2048 --import ./apps/web/testCssStub.mjs --test \"apps/web/src/components/anesthesia/__tests__/*.test.ts\" \"apps/web/src/components/anesthesia/__tests__/*.test.tsx\"",
+      "passing": 58,
+      "failing": 0,
+      "exitCode": 0
+    },
+    "visualProofScreenshots": [
+      {
+        "file": "screenshots/anesthesia_pc_light.png",
+        "resolution": "1440x900",
+        "theme": "Light",
+        "status": "VERIFIED_CLEAN",
+        "notes": "Crisp 1-click express presets, noble teal action, stepper buttons, 0px horizontal overflow."
+      },
+      {
+        "file": "screenshots/anesthesia_pc_dark.png",
+        "resolution": "1440x900",
+        "theme": "Dark",
+        "status": "VERIFIED_CLEAN",
+        "notes": "Pure semantic dark tokens (var(--paper), var(--ink)), passive allergen and cardio badge alerts, zero blinding glare."
+      },
+      {
+        "file": "screenshots/anesthesia_mobile_light.png",
+        "resolution": "390x844",
+        "theme": "Light",
+        "status": "VERIFIED_CLEAN",
+        "notes": "Apple HIG touch targets >= 44x44px, Natural Thumb Zone, vertical preset stack, full width primary action."
+      },
+      {
+        "file": "screenshots/anesthesia_mobile_dark.png",
+        "resolution": "390x844",
+        "theme": "Dark",
+        "status": "VERIFIED_CLEAN",
+        "notes": "Dark mode keycap buttons for [-] and [+] stepper with high contrast text, perfect mobile view."
+      }
+    ]
+  }
+}
