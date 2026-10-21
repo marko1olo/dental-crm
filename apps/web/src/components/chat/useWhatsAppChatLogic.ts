@@ -188,6 +188,11 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		showToast(`Открыт диалог в WhatsApp (${effectiveName})`, "info");
 	};
 
+	const handleAttachFile = (file: File) => {
+		setInputText((prev) => (prev ? `${prev}\n[Вложение: ${file.name}]` : `[Вложение: ${file.name}]`));
+		showToast(`Файл «${file.name}» (${Math.round(file.size / 1024)} КБ) прикреплен к сообщению`, "info");
+	};
+
 	const handleCallPatient = () => {
 		const cleanDigits = effectivePhone.replace(/[^\d+]/g, "");
 		if (cleanDigits) {
@@ -232,6 +237,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		handleApplyTemplate,
 		handleDirectSendTemplate,
 		handleSendMessage,
+		handleAttachFile,
 		handleLaunchWhatsAppNative,
 		handleCallPatient,
 		filteredMessages,

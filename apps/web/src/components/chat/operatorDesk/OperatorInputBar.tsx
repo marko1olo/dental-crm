@@ -18,6 +18,17 @@ export function OperatorInputBar({
 	onOperatorNameChange,
 	onSendMessage,
 }: OperatorInputBarProps) {
+	const handleSend = () => {
+		if (isSending) return;
+		if (!inputText.trim()) {
+			onInputChange(
+				"Здравствуйте! Напоминаем о вашей записи на консультацию в клинику ДЕНТЕ. Если возникли вопросы или нужно скорректировать время — напишите нам.",
+			);
+			return;
+		}
+		onSendMessage();
+	};
+
 	return (
 		<div className="p-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-2">
 			<div className="flex items-end gap-2">
@@ -29,7 +40,7 @@ export function OperatorInputBar({
 					onKeyDown={(e) => {
 						if (e.key === "Enter" && !e.shiftKey) {
 							e.preventDefault();
-							onSendMessage();
+							handleSend();
 						}
 					}}
 					className="flex-1 p-2.5 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
@@ -37,10 +48,11 @@ export function OperatorInputBar({
 				/>
 				<button
 					type="button"
-					onClick={onSendMessage}
-					disabled={!inputText.trim() || isSending}
-					className="min-h-[44px] px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+					onClick={handleSend}
+					disabled={isSending}
+					className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
 					data-testid="operator-send-btn"
+					aria-label="Отправить сообщение"
 				>
 					{isSending ? (
 						<RefreshCw size={15} className="animate-spin" />
@@ -54,7 +66,7 @@ export function OperatorInputBar({
 			<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] px-1 flex-wrap gap-1">
 				<div className="flex items-center gap-1 shrink-0">
 					<Shield size={12} className="text-teal-600 shrink-0" />
-					<span className="truncate max-w-[210px] sm:max-w-none">152-ФЗ / 323-ФЗ: Защита тайны</span>
+					<span className="truncate max-w-[210px] sm:max-w-none">Медицинская тайна и диалоги защищены</span>
 				</div>
 				<div className="flex items-center gap-1 shrink-0">
 					<span>Оператор:</span>

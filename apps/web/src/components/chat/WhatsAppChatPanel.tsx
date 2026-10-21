@@ -17,11 +17,11 @@ export interface ChatMessage {
 }
 
 export interface WhatsAppChatPanelProps {
-	patientId?: string | null;
-	patientPhone?: string | null;
-	patientName?: string | null;
-	onClose?: () => void;
-	className?: string;
+	patientId?: string | null | undefined;
+	patientPhone?: string | null | undefined;
+	patientName?: string | null | undefined;
+	onClose?: (() => void) | undefined;
+	className?: string | undefined;
 }
 
 /**
@@ -59,6 +59,7 @@ export function WhatsAppChatPanel(props: WhatsAppChatPanelProps) {
 		handleApplyTemplate,
 		handleDirectSendTemplate,
 		handleSendMessage,
+		handleAttachFile,
 		handleLaunchWhatsAppNative,
 		handleCallPatient,
 		filteredMessages,
@@ -117,6 +118,7 @@ export function WhatsAppChatPanel(props: WhatsAppChatPanelProps) {
 				isSending={isSending}
 				onChangeText={setInputText}
 				onSendMessage={() => void handleSendMessage()}
+				onAttachFile={handleAttachFile}
 				textareaRef={textareaRef}
 			/>
 		</div>

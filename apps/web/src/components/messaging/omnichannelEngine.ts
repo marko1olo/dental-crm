@@ -349,7 +349,7 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "QR-код и ссылка СБП",
 		description: "Быстрая оплата услуг без комиссии через Систему Быстрых Платежей НСПК",
 		templateText:
-			"Здравствуйте, {patientName}!\nСчет на оплату медицинских услуг в {clinicName}:\nЗаказ №{orderId}\nСумма: {treatmentSum}\nСсылка для оплаты через СБП:\n{paymentLink}\n\nЭлектронный кассовый чек 54-ФЗ поступит сразу после оплаты.",
+			"Здравствуйте, {patientName}!\nСчет на оплату медицинских услуг в {clinicName}:\nЗаказ №{orderId}\nСумма: {treatmentSum}\nСсылка для оплаты через СБП:\n{paymentLink}\n\nЭлектронный кассовый чек поступит сразу после оплаты.",
 		interactiveButtons: [
 			{ id: "btn-open-sbp", title: "Оплатить в приложении банка (СБП)", action: "open_bank", variant: "primary" },
 		],

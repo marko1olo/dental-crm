@@ -246,7 +246,7 @@ export function useOmnichannelHubState({
 			timestamp: new Date().toISOString(),
 			body: `Поступила оплата заказа №${res.orderId} на сумму ${formatCurrencyRu(res.sumRub)} через СБП.\n${
 				res.fiscalReceiptId
-					? `Электронный фискальный чек 54-ФЗ: #${res.fiscalReceiptId}`
+					? `Электронный фискальный кассовый чек: #${res.fiscalReceiptId}`
 					: "Ручная сверка (без чека ККТ)"
 			}`,
 			status: "delivered",

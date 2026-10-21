@@ -64,11 +64,14 @@ describe("SbpPaymentQrModal Component Suite", () => {
 		assert.ok(html.includes("Отправить в Telegram"), "Contains Telegram share button");
 		assert.ok(html.includes("Печать QR для стойки"), "Contains print button");
 
-		// 54-ФЗ и ГОСТ
-		assert.ok(html.includes("ФЗ-54"), "Contains 54-FZ legal notice");
+		// Касса, чеки и ГОСТ (Мандат 8x & 8ap: естественный язык)
+		assert.ok(
+			html.includes("фискального кассового чека") || html.includes("кассового чека"),
+			"Contains fiscal receipt notice in natural clinical language",
+		);
 		assert.ok(html.includes("ГОСТ Р 56042"), "Contains GOST reference");
 
-		// Запрет на случайные фискальные чеки (54-ФЗ и Мандат 8b)
+		// Запрет на случайные фискальные чеки (Мандат 8b)
 		assert.ok(!html.includes("FD-"), "No fake random FD- receipt ID is generated");
 	});
 
@@ -89,7 +92,7 @@ describe("SbpPaymentQrModal Component Suite", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Покрыто семейным депозитом (Тег 1215)"), "Contains Tag 1215 split row");
+		assert.ok(html.includes("Покрыто семейным депозитом:"), "Contains family deposit split row");
 		assert.ok(html.includes("9 500") || html.includes("9 500"), "Contains deposit amount");
 		assert.ok(html.includes("5 000") || html.includes("5 000"), "Contains SBP remaining charge");
 	});

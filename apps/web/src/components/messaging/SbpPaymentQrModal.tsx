@@ -211,7 +211,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 					setStatus("paid_success");
 					setStatusCheckMessage({
 						text: receiptId
-							? "Эквайринговый шлюз подтвердил зачисление средств! Чек 54-ФЗ сформирован."
+							? "Эквайринговый шлюз подтвердил зачисление средств! Фискальный кассовый чек сформирован."
 							: "Эквайринговый шлюз подтвердил зачисление средств.",
 						type: "success",
 					});
@@ -242,7 +242,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 							setStatus("paid_success");
 							setStatusCheckMessage({
 								text: receiptId
-									? "Банковский шлюз подтвердил оплату счета! Чек 54-ФЗ сформирован."
+									? "Банковский шлюз подтвердил оплату счета! Фискальный кассовый чек сформирован."
 									: "Банковский шлюз подтвердил оплату счета!",
 								type: "success",
 							});
@@ -534,7 +534,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 								</button>
 							</div>
 
-							{/* Кассовый контроль и ручная сверка поступления средств (54-ФЗ) */}
+							{/* Кассовый контроль и ручная сверка поступления средств */}
 							{status !== "paid_success" && (
 								<div
 									style={{
@@ -567,7 +567,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 											}}
 										>
 											<ShieldCheck size={14} style={{ color: "var(--teal, #0d9488)" }} />
-											Контроль кассира (54-ФЗ / СБП):
+											Контроль кассира (Касса и чеки / СБП):
 										</span>
 
 										{/* Кнопка ручного обновления статуса платежа через API шлюза */}
@@ -738,7 +738,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 					<div className="sbp-footer-legal">
 						<ShieldCheck size={16} className="text-ok" />
 						<span>
-							Безопасный эквайринг через АО «НСПК» и ЦБ РФ. Соответствует 54-ФЗ (Безналичная оплата).
+							Безопасный эквайринг через АО «НСПК» и ЦБ РФ. Безналичная оплата с формированием фискального кассового чека.
 						</span>
 					</div>
 

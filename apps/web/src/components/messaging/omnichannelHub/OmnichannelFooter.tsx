@@ -120,14 +120,14 @@ export const OmnichannelFooter: React.FC<OmnichannelFooterProps> = ({
 };
 
 /**
- * OmnichannelModalFooter — Базовый футер модалки со статусом 152-ФЗ и кнопкой закрытия.
+ * OmnichannelModalFooter — Базовый футер модалки с защитой тайны и кнопкой закрытия.
  */
 export const OmnichannelModalFooter: React.FC<OmnichannelModalFooterProps> = ({ onClose }) => {
 	return (
 		<footer className="omnichannel-modal-footer">
 			<div className="hub-footer-status">
 				<ShieldCheck size={16} className="text-ok" />
-				<span>Все сообщения шифруются и архивируются в соответствии с 152-ФЗ и СанПиН.</span>
+				<span>Все сообщения защищены шифрованием и сохраняются в защищенном контуре клиники.</span>
 			</div>
 
 			<button

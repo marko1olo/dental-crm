@@ -18,6 +18,7 @@ import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHu
 import { TelegramBotIntegrationModal } from "../TelegramBotIntegrationModal";
 import { WhatsAppChatPanel } from "../WhatsAppChatPanel";
 import { WhatsAppChatView } from "../WhatsAppChatView";
+import { OperatorInputBar } from "../operatorDesk/OperatorInputBar";
 
 const mockAppLogicContext = {
 	dashboard: {
@@ -83,6 +84,11 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 			const closeBtnMatch = html.match(/<button[^>]*aria-label="Назад \/ Закрыть чат"[^>]*>/);
 			assert.ok(closeBtnMatch, "Close button markup must be present");
 			assert.ok(closeBtnMatch[0].includes("min-h-[44px]") && closeBtnMatch[0].includes("min-w-[44px]"), "Close button touch target must be >= 44x44px");
+
+			// Check attachment button touch targets
+			const attachBtnMatch = html.match(/<button[^>]*data-testid="whatsapp-attach-file-btn"[^>]*>/);
+			assert.ok(attachBtnMatch, "Attachment button markup must be present");
+			assert.ok(attachBtnMatch[0].includes("min-h-[44px]") && attachBtnMatch[0].includes("min-w-[44px]"), "Attachment button touch target must be >= 44x44px");
 		});
 
 		it("renders multichannel selector (WhatsApp, Telegram, SMS) and Apple HIG mobile layout", () => {
@@ -187,6 +193,43 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 			assert.ok(html.includes("min-h-[44px]"), "Touch targets must enforce min-h-[44px]");
 			assert.ok(html.includes("rounded-t-[24px]"), "Mobile sheet must use rounded-t-[24px]");
 			assert.ok(html.includes("Смирнова Анна Сергеевна"), "Must prefill patient name");
+		});
+	});
+
+	describe("5. OperatorInputBar Doctor & Staff Autonomy & Clean Clinical Russian", () => {
+		it("send button is NOT disabled on empty input and meets >= 44x44px", () => {
+			const html = renderToString(
+				<OperatorInputBar
+					inputText=""
+					isSending={false}
+					operatorName="Администратор"
+					onInputChange={() => {}}
+					onOperatorNameChange={() => {}}
+					onSendMessage={() => {}}
+				/>,
+			);
+
+			const sendBtnMatch = html.match(/<button[^>]*data-testid="operator-send-btn"[^>]*>/);
+			assert.ok(sendBtnMatch, "Operator send button markup must be present");
+			assert.ok(!/\sdisabled(?:[=>\s]|$)/.test(sendBtnMatch[0]), "Operator send button must NOT have disabled attribute on empty text (Mandate 8e)");
+			assert.ok(sendBtnMatch[0].includes("min-h-[44px]") && sendBtnMatch[0].includes("min-w-[44px]"), "Operator send button must be >= 44x44px");
+		});
+
+		it("contains no raw regulatory codes (no 152-ФЗ or 323-ФЗ) in UI", () => {
+			const html = renderToString(
+				<OperatorInputBar
+					inputText=""
+					isSending={false}
+					operatorName="Администратор"
+					onInputChange={() => {}}
+					onOperatorNameChange={() => {}}
+					onSendMessage={() => {}}
+				/>,
+			);
+
+			assert.ok(!html.includes("152-ФЗ"), "Must NOT contain raw 152-ФЗ code");
+			assert.ok(!html.includes("323-ФЗ"), "Must NOT contain raw 323-ФЗ code");
+			assert.ok(html.includes("Медицинская тайна"), "Must use clean clinical phrasing");
 		});
 	});
 });
