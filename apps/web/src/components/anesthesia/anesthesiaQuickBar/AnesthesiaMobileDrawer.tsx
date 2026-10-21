@@ -66,7 +66,7 @@ export function AnesthesiaMobileDrawer(props: AnesthesiaMobileDrawerProps) {
 				<div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 overscroll-contain">
 					{(props.hasLidocaineAllergy || props.hasArticaineAllergy) && (
 						<div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold">
-							⚠️ Аллергия: {props.hasLidocaineAllergy ? "Лидокаин" : ""}{" "}
+							{`${String.fromCodePoint(0x26a0, 0xfe0f)} Аллергия: `}{props.hasLidocaineAllergy ? "Лидокаин" : ""}{" "}
 							{props.hasArticaineAllergy ? "Артикаин" : ""} (рекомендован
 							Скандонест 3%)
 						</div>

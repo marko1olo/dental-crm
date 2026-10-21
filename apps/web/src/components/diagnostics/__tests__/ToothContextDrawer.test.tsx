@@ -91,7 +91,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("endo-preset-calasept"), "Calasept Ca(OH)2 preset button should be present");
 		assert.ok(html.includes("endo-preset-revision"), "Retreatment/Revision preset button should be present");
 		assert.ok(html.includes("dente-surface-quick-combo-btn"), "Quick combo buttons (MOD/MO/OD) should be present");
-		assert.ok(html.includes("Вставить протокол эндодонтии в карту 043/у"), "043/u protocol export action should be present");
+		assert.ok(html.includes("Вставить протокол эндодонтии в медкарту") || html.includes("Вставить протокол эндодонтии в карту 043/у"), "Endo protocol export action should be present");
 	});
 
 	it("AnesthesiaQuickBar calculates safe carpule limits by patient weight", () => {

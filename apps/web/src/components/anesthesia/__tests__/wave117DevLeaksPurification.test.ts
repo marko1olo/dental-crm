@@ -4,7 +4,7 @@
  * DENTE Dental CRM — Unit tests for Wave 117 Dev Leaks & Synthetic Mocks Purification (Mandates 8a–8q).
  * Ensures zero internal prompt references ("Мандат 8e") in client-facing UI and production engines,
  * eliminates synthetic staff mocks in App, PatientBillingModal, AnesthesiaProtocolModal, and sickLeaveElnEngine,
- * and standardizes document titles to dental Form 043/u.
+ * and standardizes document titles to dental medical record (Медицинская карта приёма).
  */
 
 import assert from "node:assert/strict";
@@ -205,7 +205,7 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 		);
 	});
 
-	it("7. documentQuery.ts: absence of «003-В/у» and presence of dental Form 043/u extract title", () => {
+	it("7. documentQuery.ts: absence of «003-В/у» and presence of dental extract title without hospital bureaucracy", () => {
 		const filePath = path.join(repoRoot, "apps/api/src/db/documentQuery.ts");
 		const content = fs.readFileSync(filePath, "utf-8");
 
@@ -214,29 +214,32 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 			"documentQuery.ts must not contain hospital form code '003-В/у'",
 		);
 		assert.ok(
-			content.includes(
-				'medical_record_extract: "Выписка из медицинской карты стоматологического пациента (Форма 043/у)"',
-			),
-			"documentQuery.ts must use standard dental extract title 'Выписка из медицинской карты стоматологического пациента (Форма 043/у)'",
+			content.includes("Выписка из медицинской карты стоматологического пациента"),
+			"documentQuery.ts must use semantic dental extract title",
 		);
 	});
 
-	it("8. forms003vu.ts: top comment specifies dental Form 043/u applicability (USSR Order 1030 / RF regulations)", () => {
+	it("8. forms003vu.ts: absence of Soviet order 1030 and presence of clean clinical standard", () => {
 		const filePath = path.join(
 			repoRoot,
 			"packages/shared/src/documents/forms003vu.ts",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
+		// Total ban on Soviet Order 1030 (Mandates 8x, 8ao)
 		assert.ok(
-			content.includes(
-				"ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО (ФОРМА 043/у)",
-			),
-			"forms003vu.ts header must state Form 043/u applicability",
+			!content.includes("Приказ Минздрава СССР № 1030"),
+			"forms003vu.ts must NOT reference USSR MoH Order 1030",
 		);
 		assert.ok(
-			content.includes("Приказ Минздрава СССР № 1030 / регламенты РФ"),
-			"forms003vu.ts must reference USSR MoH Order 1030 / RF regulations",
+			!content.includes("USSR Order 1030"),
+			"forms003vu.ts must NOT reference USSR Order 1030",
+		);
+		assert.ok(
+			content.includes(
+				"ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА",
+			),
+			"forms003vu.ts header must state clean dental patient extract title",
 		);
 		assert.ok(
 			content.includes("а не госпитальная форма 003/у"),

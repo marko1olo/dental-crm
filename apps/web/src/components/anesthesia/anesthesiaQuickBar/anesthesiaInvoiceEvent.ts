@@ -7,7 +7,7 @@ export function dispatchAnesthesiaInvoiceEvent(params: {
 	if (typeof window === "undefined") return;
 	const count = Math.ceil(params.carpulesCount);
 	const priceRub = (params.servicePriceRub ?? 950) * count;
-	const code804n = params.techniqueId?.includes("mandibular")
+	const serviceCode = params.techniqueId?.includes("mandibular")
 		? "A11.07.011"
 		: "A11.07.010";
 
@@ -17,7 +17,8 @@ export function dispatchAnesthesiaInvoiceEvent(params: {
 				service: {
 					id: `anes-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
 					title: `Анестезия местная (${params.drugName}) — ${params.carpulesCount} карп.`,
-					code804n,
+					code: serviceCode,
+					serviceCode,
 					priceRub,
 					amountKopecks: priceRub * 100,
 					quantity: count,

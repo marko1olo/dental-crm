@@ -1,8 +1,15 @@
+/**
+ * useAnesthesiaDisposalActions.ts
+ *
+ * Ликвидировано микро-списание карпул и отходов Класса Б из тулбара врача (Мандаты 8e, 8k, 8y).
+ * Врач у кресла лечит зубы, а не заведует складом или утилизацией отходов.
+ * Списание расходных материалов выполняется фоновым складским пакетом за смену.
+ */
+
 import type {
 	AnestheticDrugId,
 	AnestheticDrugInfo,
 } from "../anesthesiaCatalog";
-import { postEmergencyAntishockWriteoff } from "./anesthesiaApiPersistence";
 
 export interface UseAnesthesiaDisposalActionsProps {
 	disabled: boolean;
@@ -15,53 +22,12 @@ export interface UseAnesthesiaDisposalActionsProps {
 		| undefined;
 }
 
-export function useAnesthesiaDisposalActions({
-	disabled,
-	visitId,
-	selectedDrugId,
-	selectedDrugInfo,
-	showQuickToast,
-	onDisposalCarpules,
-}: UseAnesthesiaDisposalActionsProps) {
-	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
-		if (disabled) return;
-		showQuickToast(
-			`Списана карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б, списание по FEFO (расход сверх остатка)`,
-			4000,
-		);
-		onDisposalCarpules?.(carpulesCount, selectedDrugId);
-	};
-
-	const handleNursePacketDisposal = () => {
-		if (disabled) return;
-		showQuickToast(
-			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: списание по FEFO (расход сверх остатка)",
-			4000,
-		);
-		onDisposalCarpules?.(1.0, "articaine_1_100k");
-	};
-
-	const handleNurseSeptanestDisposal = () => {
-		if (disabled) return;
-		showQuickToast(
-			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б, списание выполнено",
-			4000,
-		);
-		onDisposalCarpules?.(1.0, "septanest_1_100k");
-	};
-
-	const handleWriteoffAntishockKit = async () => {
-		if (disabled) return;
-		try {
-			await postEmergencyAntishockWriteoff(visitId);
-			showQuickToast(
-				"Укладка «Антишок» списана: Адреналин 0.1%, Преднизолон 30 мг, Супрастин 2% (мягкий овердрафт)",
-				5000,
-			);
-		} catch {
-			showQuickToast("Экстренная укладка «Антишок» списана", 4000);
-		}
-	};
+export function useAnesthesiaDisposalActions(_props: UseAnesthesiaDisposalActionsProps) {
+	// Чистые no-op методы без микро-дроча и симуляции отходов
+	const handleNurseQuickDisposal = () => {};
+	const handleNursePacketDisposal = () => {};
+	const handleNurseSeptanestDisposal = () => {};
+	const handleWriteoffAntishockKit = async () => {};
 
 	return {
 		handleNurseQuickDisposal,

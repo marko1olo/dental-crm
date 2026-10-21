@@ -1,3 +1,5 @@
+import { CheckCircle2, ShieldAlert, Sparkles } from "lucide-react";
+
 export interface AnesthesiaSegmentedDoseButtonsProps {
 	disabled: boolean;
 	selectedCarpulesCount?: number | undefined;
@@ -5,41 +7,45 @@ export interface AnesthesiaSegmentedDoseButtonsProps {
 	onChangeSelectedCarpulesCount?: ((count: number) => void) | undefined;
 }
 
-const CARPULE_CHIPS: readonly {
+const CLINICAL_PRESETS: readonly {
 	count: number;
 	label: string;
+	badge: string;
 	testId: string;
 	title: string;
+	icon: "norm" | "gentle" | "cardio";
 }[] = [
 	{
-		count: 0.5,
-		label: "0.5 карп. (0.85 мл)",
-		testId: "anesthesia-dose-halfcarp",
-		title: "0.5 карпулы (0.85 мл)",
+		count: 1.0,
+		label: "Норма: Артикаин 1:100 000 (1 карп.)",
+		badge: "1.7 мл",
+		testId: "anesthesia-dose-1carp",
+		title: "Норма: Артикаин 1:100 000 (1 карпула 1.7 мл)",
+		icon: "norm",
 	},
 	{
 		count: 1.0,
-		label: "1 карп. (1.7 мл)",
-		testId: "anesthesia-dose-1carp",
-		title: "1 карпула (1.7 мл)",
+		label: "Щадящий адреналин: Артикаин 1:200 000",
+		badge: "1.7 мл",
+		testId: "anesthesia-dose-200k",
+		title: "Щадящий адреналин: Артикаин 1:200 000 (1 карпула 1.7 мл)",
+		icon: "gentle",
 	},
 	{
-		count: 1.5,
-		label: "1.5 карп. (2.55 мл)",
-		testId: "anesthesia-dose-1-5carp",
-		title: "1.5 карпулы (2.55 мл)",
+		count: 1.0,
+		label: "Кардио-защита: Мепивакаин без адреналина",
+		badge: "1.7 мл",
+		testId: "anesthesia-dose-cardio",
+		title: "Кардио-защита: Мепивакаин 3% без адреналина (1 карпула 1.7 мл)",
+		icon: "cardio",
 	},
 	{
 		count: 2.0,
-		label: "2 карп. (3.4 мл)",
+		label: "2 карпулы (3.4 мл)",
+		badge: "Усиленная",
 		testId: "anesthesia-dose-2carp",
-		title: "2 карпулы (3.4 мл)",
-	},
-	{
-		count: 3.0,
-		label: "3 карп. (5.1 мл)",
-		testId: "anesthesia-dose-3carp",
-		title: "3 карпулы (5.1 мл)",
+		title: "Усиленная анестезия (2 карпулы 3.4 мл)",
+		icon: "gentle",
 	},
 ];
 
@@ -51,29 +57,32 @@ export function AnesthesiaSegmentedDoseButtons({
 }: AnesthesiaSegmentedDoseButtonsProps) {
 	return (
 		<fieldset
-			className="m-0 inline-flex items-center gap-1 p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shadow-2xs flex-wrap"
-			aria-label="Выбор дозы карпул"
+			className="m-0 inline-flex items-center gap-1.5 p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shadow-2xs flex-wrap"
+			aria-label="Клинические экспресс-пресеты анестезии"
 		>
-			{CARPULE_CHIPS.map((chip) => {
-				const isSelected = selectedCarpulesCount === chip.count;
+			{CLINICAL_PRESETS.map((preset) => {
+				const isSelected = selectedCarpulesCount === preset.count;
 				return (
 					<button
-						key={chip.count}
+						key={preset.testId}
 						type="button"
 						disabled={disabled}
 						onClick={() => {
-							onChangeSelectedCarpulesCount?.(chip.count);
-							onApplyCarpules(chip.count);
+							onChangeSelectedCarpulesCount?.(preset.count);
+							onApplyCarpules(preset.count);
 						}}
-						className={`secondary-button px-2.5 py-1 min-h-[44px] sm:min-h-[32px] sm:h-7.5 rounded-md text-xs font-bold transition-all cursor-pointer active:scale-98 border touch-manipulation whitespace-nowrap ${
+						className={`secondary-button px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-98 border touch-manipulation whitespace-nowrap inline-flex items-center gap-1.5 ${
 							isSelected
-								? "is-selected bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] ring-1 ring-[var(--teal)]"
-								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)]"
+								? "is-selected bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal-strong)] ring-1 ring-[var(--teal)] shadow-2xs"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)]"
 						}`}
-						title={chip.title}
-						data-testid={chip.testId}
+						title={preset.title}
+						data-testid={preset.testId}
 					>
-						{chip.label}
+						{preset.icon === "norm" && <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />}
+						{preset.icon === "gentle" && <Sparkles size={14} className="text-teal-600 shrink-0" />}
+						{preset.icon === "cardio" && <ShieldAlert size={14} className="text-amber-600 shrink-0" />}
+						<span>{preset.label}</span>
 					</button>
 				);
 			})}

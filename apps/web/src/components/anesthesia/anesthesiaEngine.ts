@@ -1,6 +1,6 @@
 /**
  * Clinical Anesthesiology & Pharmacology Safety Engine (Минздрав РФ / СтАР / AHA)
- * Maximum dose calculation, Epinephrine cardiac limits, Pediatric/Geriatric scaling, Form 043/u diary.
+ * Maximum dose calculation, Epinephrine cardiac limits, Pediatric/Geriatric scaling, clinical diary protocol.
  * Modular facade compliant with submodules <= 120 lines invariant.
  */
 

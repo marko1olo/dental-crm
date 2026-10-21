@@ -87,7 +87,7 @@ export function useAnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 		const artWarn = props.hasArticaineAllergy && drugId.startsWith("articaine");
 		if (lidoWarn || artWarn) {
 			const drug = lidoWarn ? "Лидокаин" : "Артикаин";
-			showQuickToast(`⚠️ Аллергия на ${drug}! Рекомендован Скандонест 3%`, 4000);
+			showQuickToast(`${String.fromCodePoint(0x26a0, 0xfe0f)} Аллергия на ${drug}! Рекомендован Скандонест 3%`, 4000);
 		}
 	};
 

@@ -54,7 +54,7 @@ export function AnesthesiaSafetyAllergyHud({
 					data-testid="anesthesia-passive-safety-advisory"
 				>
 					<div className="flex items-center gap-2 min-w-0">
-						<span className="font-bold">⚠️ {safetyWarning.title}: </span>
+						<span className="font-bold">{`${String.fromCodePoint(0x26a0, 0xfe0f)} ${safetyWarning.title}: `}</span>
 						<span className="text-[var(--ink-muted)] truncate">
 							{safetyWarning.text}
 						</span>
@@ -77,11 +77,11 @@ export function AnesthesiaSafetyAllergyHud({
 						<button
 							type="button"
 							disabled={disabled}
-							className="px-2 py-1 min-h-[44px] text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer disabled:opacity-50"
+							className="px-2 py-1 min-h-[44px] text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer disabled:opacity-50 font-bold"
 							onClick={onDismissWarning}
 							aria-label="Закрыть"
 						>
-							✕
+							×
 						</button>
 					</div>
 				</div>

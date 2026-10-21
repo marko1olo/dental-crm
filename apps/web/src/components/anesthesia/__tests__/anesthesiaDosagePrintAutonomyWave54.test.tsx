@@ -9,7 +9,7 @@
  * - Mandate 8c: Universal 3-Tier Architecture & Ergonomic Invariants (touch target >= 44x44px)
  * - Mandate 8d (pt 2, 7): Hick's Density & Zero cartoon emojis in medical documents
  * - Mandate 8e (pt 1, 5): Doctor Autonomy & Print on Demand (Лист анестезиологического пособия)
- * - Mandate 8i: Specialized Outpatient Context (Form 043/u)
+ * - Mandate 8i: Specialized Outpatient Context (Медицинская карта приёма)
  * - Mandate 8k: CRM != Reality Simulator (1-click patient memo for messengers)
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty
  */

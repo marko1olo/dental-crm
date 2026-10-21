@@ -1,6 +1,6 @@
 /**
  * DENTE CRM — Unit Tests for Anesthesia Dosage Calculator & Safety Engine
- * (Минздрав РФ / СтАР / AHA Guidelines / Form 043/u Clinical Compliance)
+ * (Минздрав РФ / СтАР / AHA Guidelines / Clinical Diary Compliance)
  */
 
 import assert from "node:assert/strict";
@@ -192,8 +192,8 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 		assert.equal(cardioResult.safetyZone, "overdose_danger");
 	});
 
-	// ── 6. Form 043/u Diary Formatting ───────────────────────────────────────
-	it("7. Generates complete, compliant Form 043/u clinical diary record", () => {
+	// ── 6. Clinical Diary Formatting ───────────────────────────────────────
+	it("7. Generates complete, compliant clinical diary record", () => {
 		const result = calculateAnesthesiaSafety({
 			drugId: "articaine_1_100k",
 			carpulesCount: 1.0,

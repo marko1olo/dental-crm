@@ -229,6 +229,27 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 				},
 			},
 			{
+				id: "cmd-anesthesia-norm",
+				title: "✓ Анестезия норма (Артикаин 1:100 000)",
+				subtitle: "1 карпула 1.7 мл: мгновенное добавление в протокол приёма",
+				category: "clinical",
+				categoryLabel: "Приём у кресла",
+				shortcut: "Анестезия",
+				action: () => {
+					playTactileEarcon("norm");
+					window.dispatchEvent(
+						new CustomEvent("dente:apply-anesthesia-preset", {
+							detail: { preset: "articaine_1_100k" },
+						}),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente:show-toast", {
+							detail: { message: "Анестезия: Артикаин 1:100 000 внесена в карту" },
+						}),
+					);
+				},
+			},
+			{
 				id: "cmd-prescriptions-rx",
 				title: "Выписать рецепт (Каталог Rx)",
 				subtitle: "Амоксиклав, Нимесил, Хлоргексидин по протоколам СтАР",
