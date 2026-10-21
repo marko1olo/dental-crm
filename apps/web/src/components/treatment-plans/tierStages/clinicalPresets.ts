@@ -174,6 +174,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 3000000 as Kopecks,
 			estimatedVisits: 2,
 			estimatedWeeks: 2,
+			serviceCatalogCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 		};
 
@@ -188,6 +189,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 500000 as Kopecks,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
+			serviceCatalogCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 		};
 
@@ -202,6 +204,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 1000000 as Kopecks,
 			estimatedVisits: 0,
 			estimatedWeeks: 0,
+			serviceCatalogCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 		};
 
@@ -402,6 +405,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 6500000 as Kopecks,
 			estimatedVisits: 2,
 			estimatedWeeks: 2,
+			serviceCatalogCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 		};
 
@@ -416,6 +420,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 1500000 as Kopecks,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
+			serviceCatalogCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 		};
 
@@ -430,6 +435,7 @@ export function getDefaultClinicalPresetStages(
 			totalKopecks: 6500000 as Kopecks,
 			estimatedVisits: 2,
 			estimatedWeeks: 3,
+			serviceCatalogCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 			order804nCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 		};
 
@@ -648,6 +654,7 @@ export function getDefaultClinicalPresetStages(
 		totalKopecks: 5500000 as Kopecks,
 		estimatedVisits: 2,
 		estimatedWeeks: 2,
+		serviceCatalogCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(s1Items.map((i) => i.code804n))),
 	};
 
@@ -662,6 +669,7 @@ export function getDefaultClinicalPresetStages(
 		totalKopecks: 19500000 as Kopecks,
 		estimatedVisits: 3,
 		estimatedWeeks: 10,
+		serviceCatalogCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(s2Items.map((i) => i.code804n))),
 	};
 
@@ -676,6 +684,7 @@ export function getDefaultClinicalPresetStages(
 		totalKopecks: 13000000 as Kopecks,
 		estimatedVisits: 3,
 		estimatedWeeks: 4,
+		serviceCatalogCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(s3Items.map((i) => i.code804n))),
 	};
 

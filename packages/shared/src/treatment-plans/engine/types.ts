@@ -225,6 +225,7 @@ export interface TreatmentPlanStageSummary {
 	readonly stageCostKopecks: Kopecks; // netCostKopecks sum
 	readonly estimatedVisits: number;
 	readonly estimatedDurationDays: number;
+	readonly serviceCatalogCodes?: readonly string[];
 	readonly order804nCodes: readonly string[];
 	readonly treatedTeeth: readonly number[];
 	readonly isPennyExact: boolean;

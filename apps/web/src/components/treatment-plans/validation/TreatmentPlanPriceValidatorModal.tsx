@@ -235,6 +235,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			totalKopecks: 0 as any,
 			estimatedVisits: 3,
 			estimatedWeeks: 4,
+			serviceCatalogCodes: payloadItems.map((i) => i.code804n),
 			order804nCodes: payloadItems.map((i) => i.code804n),
 		};
 		return validateTreatmentPlanStarProtocols([syntheticStage]);

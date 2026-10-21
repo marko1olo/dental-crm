@@ -2,7 +2,7 @@ import type { DocumentTemplateVariableSpec } from "./types.js";
 
 /**
  * Токены домена patient: ФИО, паспорт, СНИЛС, полис ОМС/ДМС, контакты, адрес,
- * плоские теги IDENT/DentalPRO и соматический статус.
+ * стандартные плоские теги и соматический статус.
  * Layer 1: Domain Variable Token Group.
  */
 export const PATIENT_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVariableSpec[] = [
@@ -249,7 +249,7 @@ export const PATIENT_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVaria
 	},
 
 
-	// ─── ИДЕНТ (IDENT) & DENTALPRO СОВМЕСТИМОСТЬ: ПЛОСКИЕ ТЕГИ ПАЦИЕНТА ───
+	// ─── СОВМЕСТИМОСТЬ: ПЛОСКИЕ ТЕГИ ПАЦИЕНТА ───
 	{
 		token: "ФАМИЛИЯИмяОтчество",
 		domain: "patient",

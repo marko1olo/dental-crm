@@ -240,6 +240,7 @@ export function addItemToPlanStages(
 				items: updatedItems,
 				totalKopecks,
 				totalRub: totalKopecks / 100,
+				serviceCatalogCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 				order804nCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 			};
 		});
@@ -256,6 +257,7 @@ export function addItemToPlanStages(
 		totalKopecks: netKopecks as Kopecks,
 		estimatedVisits: 1,
 		estimatedWeeks: 2,
+		serviceCatalogCodes: [newItem.code804n],
 		order804nCodes: [newItem.code804n],
 		status: "agreed",
 	};
@@ -311,6 +313,7 @@ export function createNewStageInPlan(
 		totalKopecks: 0 as Kopecks,
 		estimatedVisits: 1,
 		estimatedWeeks: 2,
+		serviceCatalogCodes: [],
 		order804nCodes: [],
 		status: "agreed",
 	};
@@ -387,12 +390,15 @@ export function mergeIncomingPlanItem(
 			}
 			const updatedItems = [...st.items, newItem];
 			const totalKopecks = computeStageItemsTotalKopecks(updatedItems);
+			const existingCodes = st.serviceCatalogCodes || st.order804nCodes || [];
+			const nextCodes = Array.from(new Set([...existingCodes, newItem.code804n]));
 			return {
 				...st,
 				items: updatedItems,
 				totalRub: totalKopecks / 100,
 				totalKopecks,
-				order804nCodes: Array.from(new Set([...st.order804nCodes, newItem.code804n])),
+				serviceCatalogCodes: nextCodes,
+				order804nCodes: nextCodes,
 			};
 		}
 		return st;
@@ -414,12 +420,15 @@ export function mergePersistedPlanItems(
 		changed = true;
 		const updatedItems = [...st.items, ...newUnique];
 		const totalKopecks = computeStageItemsTotalKopecks(updatedItems);
+		const existingCodes = st.serviceCatalogCodes || st.order804nCodes || [];
+		const nextCodes = Array.from(new Set([...existingCodes, ...newUnique.map((it) => it.code804n)]));
 		return {
 			...st,
 			items: updatedItems,
 			totalRub: totalKopecks / 100,
 			totalKopecks,
-			order804nCodes: Array.from(new Set([...st.order804nCodes, ...newUnique.map((it) => it.code804n)])),
+			serviceCatalogCodes: nextCodes,
+			order804nCodes: nextCodes,
 		};
 	});
 	return { updatedStages, changed };

@@ -6,3 +6,4 @@ export * from "./TreatmentPlanSheet";
 export * from "./ConsentSheet";
 export * from "./PersonalDataSheet";
 export * from "./MedicalCardSheet";
+export * from "./ProfessionalA4PaperContent";

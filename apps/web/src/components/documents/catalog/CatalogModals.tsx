@@ -1,14 +1,10 @@
-import React from "react";
-import type { Patient, GeneratedDocument, DocumentKind } from "@dental/shared";
+import type React from "react";
+import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
-import type { TaxPaymentRecord } from "../taxCertificateEngine";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
-import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
-import { ConsentModal } from "../../consents/ConsentModal";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
-import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
-import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal";
-import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
+import type { TaxPaymentRecord } from "../taxCertificateEngine";
+import { CatalogPrimaryModals } from "./CatalogPrimaryModals";
+import { CatalogUtilityModals } from "./CatalogUtilityModals";
 import { useCatalogModalsData } from "./useCatalogModalsData";
 
 export interface CatalogModalsProps {
@@ -41,15 +37,34 @@ export interface CatalogModalsProps {
 	handleOpenKind: (kind: DocumentKind) => void;
 }
 
-export function CatalogModals(props: CatalogModalsProps) {
+export function CatalogModals(props: CatalogModalsProps): React.JSX.Element {
 	const {
-		patient, effectivePatientName, patientAgeYears, doctorName, clinicName,
-		clinicProfileDraft, existingDocuments, mappedTaxPayments, isDiplomaModalOpen,
-		setIsDiplomaModalOpen, isConsentModalOpen, setIsConsentModalOpen,
-		isLocalTaxModalOpen, setIsLocalTaxModalOpen, taxInitialTab, isLocalIntakeModalOpen,
-		setIsLocalIntakeModalOpen, isOutpatientCardModalOpen, setIsOutpatientCardModalOpen,
-		isContractModalOpen, setIsContractModalOpen, selectedA4Tab, setSelectedA4Tab,
-		onCreateDocument, onOpenIssuedDocumentHtml, handleOpenKind,
+		patient,
+		effectivePatientName,
+		patientAgeYears,
+		doctorName,
+		clinicName,
+		clinicProfileDraft,
+		existingDocuments,
+		mappedTaxPayments,
+		isDiplomaModalOpen,
+		setIsDiplomaModalOpen,
+		isConsentModalOpen,
+		setIsConsentModalOpen,
+		isLocalTaxModalOpen,
+		setIsLocalTaxModalOpen,
+		taxInitialTab,
+		isLocalIntakeModalOpen,
+		setIsLocalIntakeModalOpen,
+		isOutpatientCardModalOpen,
+		setIsOutpatientCardModalOpen,
+		isContractModalOpen,
+		setIsContractModalOpen,
+		selectedA4Tab,
+		setSelectedA4Tab,
+		onCreateDocument,
+		onOpenIssuedDocumentHtml,
+		handleOpenKind,
 	} = props;
 
 	const { effectivePatientInn, effectivePatientSnils, sanitizedPayments } =
@@ -57,58 +72,42 @@ export function CatalogModals(props: CatalogModalsProps) {
 
 	return (
 		<>
-			{isDiplomaModalOpen && (
-				<PediatricBraveryDiplomaModal
-					isOpen={isDiplomaModalOpen} onClose={() => setIsDiplomaModalOpen(false)}
-					patientName={effectivePatientName} patientAgeYears={patientAgeYears}
-					doctorName={doctorName} clinicName={clinicName}
-				/>
-			)}
-			{isConsentModalOpen && (
-				<ConsentModal
-					isOpen={isConsentModalOpen} onClose={() => setIsConsentModalOpen(false)}
-					patient={{ fullName: effectivePatientName, phone: patient?.phone, birthDate: patient?.birthDate }}
-					doctorName={doctorName} clinicName={clinicName} isMinorPatient={patientAgeYears < 15}
-				/>
-			)}
-			{isLocalTaxModalOpen && (
-				<TaxDeductionCertificateModal
-					isOpen={isLocalTaxModalOpen} onClose={() => setIsLocalTaxModalOpen(false)}
-					initialTab={taxInitialTab} patientName={effectivePatientName}
-					patientBirthDate={patient?.birthDate ?? undefined} patientInn={effectivePatientInn}
-					patientSnils={effectivePatientSnils} patientId={patient?.id}
-					clinicName={clinicProfileDraft?.legalEntityName || clinicProfileDraft?.name || clinicName || ""}
-					clinicInn={clinicProfileDraft?.inn || ""} clinicKpp={clinicProfileDraft?.kpp || ""}
-					clinicOgrn={clinicProfileDraft?.ogrn || ""} clinicLicenseNumber={clinicProfileDraft?.licenseNumber || clinicProfileDraft?.medicalLicenseNumber || ""}
-					clinicLicenseDate={clinicProfileDraft?.licenseDate || clinicProfileDraft?.medicalLicenseIssuedAt || ""} clinicAddress={clinicProfileDraft?.address || ""}
-					chiefDoctorName={doctorName || ""} payments={sanitizedPayments ?? mappedTaxPayments}
-				/>
-			)}
-			{isLocalIntakeModalOpen && (
-				<PrimaryIntakePackageModal
-					isOpen={isLocalIntakeModalOpen} onClose={() => setIsLocalIntakeModalOpen(false)}
-					patient={patient ?? null} existingDocuments={existingDocuments ? [...existingDocuments] : []}
-					onCreateDocument={(kind) => (onCreateDocument ? void onCreateDocument(kind) : handleOpenKind(kind))}
-					onOpenDocument={(id) => (onOpenIssuedDocumentHtml ? void onOpenIssuedDocumentHtml(id) : undefined)}
-					onSelectDocumentKind={(kind) => handleOpenKind(kind)}
-					doctorFullName={doctorName} clinicProfileDraft={clinicProfileDraft}
-				/>
-			)}
-			{isOutpatientCardModalOpen && (
-				<OutpatientCardPrintModal
-					isOpen={isOutpatientCardModalOpen} onClose={() => setIsOutpatientCardModalOpen(false)}
-					patient={patient ?? null} doctorFullName={doctorName ?? null} clinicProfileDraft={clinicProfileDraft}
-				/>
-			)}
-			{(selectedA4Tab || isContractModalOpen) && (
-				<DocumentA4PrintPreviewModal
-					isOpen={Boolean(selectedA4Tab || isContractModalOpen)}
-					onClose={() => { setSelectedA4Tab(null); setIsContractModalOpen(false); }}
-					initialTab={selectedA4Tab || "contract"} patient={patient ?? null}
-					doctorFullName={doctorName ?? null} clinicProfileDraft={clinicProfileDraft}
-					existingDocuments={existingDocuments}
-				/>
-			)}
+			<CatalogUtilityModals
+				patient={patient}
+				effectivePatientName={effectivePatientName}
+				patientAgeYears={patientAgeYears}
+				doctorName={doctorName}
+				clinicName={clinicName}
+				clinicProfileDraft={clinicProfileDraft}
+				mappedTaxPayments={mappedTaxPayments}
+				effectivePatientInn={effectivePatientInn}
+				effectivePatientSnils={effectivePatientSnils}
+				sanitizedPayments={sanitizedPayments}
+				isDiplomaModalOpen={isDiplomaModalOpen}
+				setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+				isConsentModalOpen={isConsentModalOpen}
+				setIsConsentModalOpen={setIsConsentModalOpen}
+				isLocalTaxModalOpen={isLocalTaxModalOpen}
+				setIsLocalTaxModalOpen={setIsLocalTaxModalOpen}
+				taxInitialTab={taxInitialTab}
+			/>
+			<CatalogPrimaryModals
+				patient={patient}
+				doctorName={doctorName}
+				clinicProfileDraft={clinicProfileDraft}
+				existingDocuments={existingDocuments}
+				isLocalIntakeModalOpen={isLocalIntakeModalOpen}
+				setIsLocalIntakeModalOpen={setIsLocalIntakeModalOpen}
+				isOutpatientCardModalOpen={isOutpatientCardModalOpen}
+				setIsOutpatientCardModalOpen={setIsOutpatientCardModalOpen}
+				isContractModalOpen={isContractModalOpen}
+				setIsContractModalOpen={setIsContractModalOpen}
+				selectedA4Tab={selectedA4Tab}
+				setSelectedA4Tab={setSelectedA4Tab}
+				onCreateDocument={onCreateDocument}
+				onOpenIssuedDocumentHtml={onOpenIssuedDocumentHtml}
+				handleOpenKind={handleOpenKind}
+			/>
 		</>
 	);
 }

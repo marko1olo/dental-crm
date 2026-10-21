@@ -32,6 +32,7 @@ export interface StarProtocolRuleCheck {
 	readonly messageRu: string;
 	readonly recommendationRu?: string | undefined;
 	readonly normativeRefRu: string;
+	readonly serviceCatalogCodesRelated?: readonly string[];
 	readonly order804nCodesRelated: readonly string[];
 }
 

@@ -16,7 +16,7 @@ import {
 	type ConsentTemplateKey,
 } from "../consentTemplates.js";
 
-describe("Extended StomX Statutory & Legal Templates Suite (All 16 Templates)", () => {
+describe("Extended Statutory & Legal Templates Suite (All 16 Templates)", () => {
 	it("returns 9 templates by default for backward compatibility and 16 when extended", () => {
 		const standard = getAllConsentTemplates();
 		assert.equal(standard.length, 9, "Standard call must return 9 core statutory templates");
@@ -113,7 +113,7 @@ describe("Extended StomX Statutory & Legal Templates Suite (All 16 Templates)", 
 		}
 	});
 
-	it("StomX #80 EGISZ refusal protects medical secrecy under 323-FZ art. 13", () => {
+	it("EGISZ refusal protects medical secrecy under 323-FZ art. 13", () => {
 		const rendered = renderConsentTemplate(CONSENT_EGISZ_REFUSAL, {
 			patientName: "Иванов И.И.",
 			snils: "123-456-789 00",
@@ -123,7 +123,7 @@ describe("Extended StomX Statutory & Legal Templates Suite (All 16 Templates)", 
 		assert.ok(rendered.fullTextContent.includes("ЕГИСЗ"));
 	});
 
-	it("StomX #54 Warranty passport guarantees clear operational conditions and 6-month checks", () => {
+	it("Warranty passport guarantees clear operational conditions and 6-month checks", () => {
 		const rendered = renderConsentTemplate(CONSENT_WARRANTY_PASSPORT, {
 			patientName: "Петров П.П.",
 			doctorName: "Доктор Д.Д.",

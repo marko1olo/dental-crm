@@ -1,5 +1,5 @@
-import type React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type React from "react";
 
 export type DocumentCatalogCategory =
 	| "all"
@@ -36,8 +36,12 @@ export interface DocumentsCatalogViewProps {
 	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: eligibleTaxPayments
 	readonly eligibleTaxPayments?: readonly any[] | undefined;
-	readonly onCreateDocument?: ((kind: DocumentKind) => void | Promise<void>) | undefined;
-	readonly onOpenIssuedDocumentHtml?: ((id: string) => void | Promise<void>) | undefined;
+	readonly onCreateDocument?:
+		| ((kind: DocumentKind) => void | Promise<void>)
+		| undefined;
+	readonly onOpenIssuedDocumentHtml?:
+		| ((id: string) => void | Promise<void>)
+		| undefined;
 	readonly onOpenDocument?: ((kind: DocumentKind) => void) | undefined;
 	readonly onOpenPrimaryIntakePackage?: (() => void) | undefined;
 	readonly onOpenTaxCertificate?: (() => void) | undefined;

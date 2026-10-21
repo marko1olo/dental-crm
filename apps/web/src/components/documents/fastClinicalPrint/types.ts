@@ -55,27 +55,31 @@ export interface FastClinicalPrintEngineProps {
 	patient?: FastPrintPatientInfo | undefined;
 	clinic?: FastPrintClinicInfo | undefined;
 	doctor?: FastPrintDoctorInfo | undefined;
-	visitData?: {
-		date?: string | undefined;
-		time?: string | undefined;
-		toothNumber?: string | undefined;
-		cavityLocalization?: string | undefined;
-		diagnosis?: string | undefined;
-		complaints?: string | undefined;
-		objective?: string | undefined;
-		treatment?: string | undefined;
-		recommendations?: string | undefined;
-		warrantyPeriod?: string | undefined;
-	} | undefined;
+	visitData?:
+		| {
+				date?: string | undefined;
+				time?: string | undefined;
+				toothNumber?: string | undefined;
+				cavityLocalization?: string | undefined;
+				diagnosis?: string | undefined;
+				complaints?: string | undefined;
+				objective?: string | undefined;
+				treatment?: string | undefined;
+				recommendations?: string | undefined;
+				warrantyPeriod?: string | undefined;
+		  }
+		| undefined;
 	services?: FastPrintServiceItem[] | undefined;
 	planStages?: FastPrintPlanStage[] | undefined;
-	fiscalData?: {
-		receiptNumber?: string | undefined;
-		paymentType?: ("card" | "cash" | "sbp") | undefined;
-		totalRub?: number | undefined;
-		fiscalSign?: string | undefined;
-		dateTime?: string | undefined;
-	} | undefined;
+	fiscalData?:
+		| {
+				receiptNumber?: string | undefined;
+				paymentType?: ("card" | "cash" | "sbp") | undefined;
+				totalRub?: number | undefined;
+				fiscalSign?: string | undefined;
+				dateTime?: string | undefined;
+		  }
+		| undefined;
 	onAfterPrint?: (() => void) | undefined;
 }
 

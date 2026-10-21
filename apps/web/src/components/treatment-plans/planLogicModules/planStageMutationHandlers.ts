@@ -296,6 +296,7 @@ export function createPlanStageMutationHandlers(
 				totalKopecks: Math.round(stageTotalRub * 100) as any,
 				estimatedVisits: Math.max(1, Math.ceil(items.length / 2)),
 				estimatedWeeks: 2,
+				serviceCatalogCodes: items.map((it) => it.code804n),
 				order804nCodes: items.map((it) => it.code804n),
 			};
 			updated = [...stages, newStage].sort(
@@ -316,8 +317,11 @@ export function createPlanStageMutationHandlers(
 					items: updatedItems,
 					totalRub,
 					totalKopecks: Math.round(totalRub * 100) as any,
+					serviceCatalogCodes: Array.from(
+						new Set([...(st.serviceCatalogCodes || st.order804nCodes || []), ...items.map((it) => it.code804n)]),
+					),
 					order804nCodes: Array.from(
-						new Set([...st.order804nCodes, ...items.map((it) => it.code804n)]),
+						new Set([...(st.serviceCatalogCodes || st.order804nCodes || []), ...items.map((it) => it.code804n)]),
 					),
 				};
 			});

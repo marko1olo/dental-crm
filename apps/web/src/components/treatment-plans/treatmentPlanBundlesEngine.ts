@@ -216,7 +216,8 @@ export function createBundlePlanItems(
 			id: uniqueId,
 			priceId,
 			toothNumber: effectiveTooth,
-			code804n: item.code804n,
+			serviceCode: item.serviceCode || item.code804n || "",
+			code804n: item.code804n || item.serviceCode || "",
 			name: `${toothPrefix}${item.name}`,
 			category: item.category,
 			priceRub: finalPriceRub,
@@ -292,6 +293,7 @@ export function applyClinicalBundleToStages(
 			totalKopecks: stageTotalKopecks,
 			estimatedVisits: Math.max(1, Math.ceil(newItems.length / 2)),
 			estimatedWeeks: bundle.stageNumber === 2 ? 12 : 2,
+			serviceCatalogCodes: newItems.map((it) => it.code804n),
 			order804nCodes: newItems.map((it) => it.code804n),
 		};
 
@@ -306,8 +308,9 @@ export function applyClinicalBundleToStages(
 		const updatedItems = [...stage.items, ...newItems];
 		const updatedTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
 		const updatedTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
-		const updated804nCodes = Array.from(
-			new Set([...stage.order804nCodes, ...newItems.map((it) => it.code804n)]),
+		const existingCodes = stage.serviceCatalogCodes || stage.order804nCodes || [];
+		const updatedCatalogCodes = Array.from(
+			new Set([...existingCodes, ...newItems.map((it) => it.code804n)]),
 		);
 
 		return {
@@ -316,7 +319,8 @@ export function applyClinicalBundleToStages(
 			totalRub: updatedTotalRub,
 			totalKopecks: updatedTotalKopecks,
 			estimatedVisits: Math.max(stage.estimatedVisits, Math.ceil(updatedItems.length / 2)),
-			order804nCodes: updated804nCodes,
+			serviceCatalogCodes: updatedCatalogCodes,
+			order804nCodes: updatedCatalogCodes,
 		};
 	});
 }

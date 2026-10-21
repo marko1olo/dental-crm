@@ -148,7 +148,7 @@ export function RenderPartisanInsert043u({
 					{/* Клинический дневник приёма (SOAP) */}
 					<div className="partisan-section-bar">
 						<Stethoscope size={12} className="partisan-section-icon" />
-						<span>ПРОТОКОЛ СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (SOAP / 834н)</span>
+						<span>ПРОТОКОЛ СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ДНЕВНИК ВИЗИТА)</span>
 					</div>
 
 					<table className="partisan-meta-table">
@@ -211,7 +211,7 @@ export function RenderPartisanInsert043u({
 					<div className="partisan-signature-row">
 						<div className="partisan-sign-block">
 							<div className="partisan-sign-role">
-								Лечащий врач: <strong>{doctor.fullName}</strong> ({doctor.specialty})
+								Лечащий врач: <strong>{doctor?.fullName || "Лечащий врач"}</strong> ({doctor?.specialty || "Врач-стоматолог"})
 							</div>
 							<div className="partisan-sign-line" />
 							<div className="partisan-sign-caption">(подпись / личная печать врача)</div>

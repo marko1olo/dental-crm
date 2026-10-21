@@ -1,10 +1,19 @@
-import { useState } from "react";
 import type { DocumentKind, GeneratedDocument } from "@dental/shared";
+import { useState } from "react";
 import { printClinicalPackage } from "../clinicalPackagePrintEngine";
-import { CLINICAL_STATUTORY_ITEMS, type ClinicalVisitPackageModalProps } from "./types";
+import {
+	CLINICAL_STATUTORY_ITEMS,
+	type ClinicalVisitPackageModalProps,
+} from "./types";
 
 export function useClinicalVisitPackage(props: ClinicalVisitPackageModalProps) {
-	const { patient, doctorFullName, existingDocuments, onCreateDocument, clinicProfileDraft } = props;
+	const {
+		patient,
+		doctorFullName,
+		existingDocuments,
+		onCreateDocument,
+		clinicProfileDraft,
+	} = props;
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
 	const documentsByKind = new Map<DocumentKind, GeneratedDocument[]>();
@@ -49,8 +58,10 @@ export function useClinicalVisitPackage(props: ClinicalVisitPackageModalProps) {
 		if (!clinicProfileDraft) return null;
 		return {
 			clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
-			legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
-			fullName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+			legalName:
+				clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+			fullName:
+				clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
 			shortName: clinicProfileDraft.clinicName || "",
 			inn: clinicProfileDraft.inn || "",
 			kpp: clinicProfileDraft.kpp || "",

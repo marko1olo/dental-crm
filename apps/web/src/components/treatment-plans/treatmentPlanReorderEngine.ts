@@ -30,6 +30,7 @@ export function recalculateStageTotals(stage: TreatmentPlanStage): TreatmentPlan
 		...stage,
 		totalRub,
 		totalKopecks,
+		serviceCatalogCodes: codes,
 		order804nCodes: codes,
 	};
 }

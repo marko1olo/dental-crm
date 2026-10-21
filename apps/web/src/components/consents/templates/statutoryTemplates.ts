@@ -194,7 +194,7 @@ export const CONSENT_PEDIATRIC: ConsentTemplate = {
 
 /**
  * 10. ОТКАЗ ОТ ПЕРЕДАЧИ ДАННЫХ В ЕГИСЗ (CONSENT_EGISZ_REFUSAL)
- * Ст. 13 323-ФЗ, 152-ФЗ, ПП РФ № 140 (StomX № 80)
+ * Ст. 13 323-ФЗ, 152-ФЗ, ПП РФ № 140
  */
 export const CONSENT_EGISZ_REFUSAL: ConsentTemplate = {
 	key: "CONSENT_EGISZ_REFUSAL",
@@ -244,7 +244,7 @@ export const CONSENT_EGISZ_REFUSAL: ConsentTemplate = {
 
 /**
  * 11. ОТКАЗ ОТ МЕДИЦИНСКОГО ВМЕШАТЕЛЬСТВА (CONSENT_TREATMENT_REFUSAL)
- * Ч. 3 ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н (StomX № 81)
+ * Ч. 3 ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н
  */
 export const CONSENT_TREATMENT_REFUSAL: ConsentTemplate = {
 	key: "CONSENT_TREATMENT_REFUSAL",
@@ -304,7 +304,7 @@ export const CONSENT_TREATMENT_REFUSAL: ConsentTemplate = {
 
 /**
  * 12. ГАРАНТИЙНЫЙ ПАСПОРТ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (CONSENT_WARRANTY_PASSPORT)
- * Закон РФ № 2300-1, ст. 720-725 ГК РФ, ПП РФ № 736 (StomX № 54)
+ * Закон РФ № 2300-1, ст. 720-725 ГК РФ, ПП РФ № 736
  */
 export const CONSENT_WARRANTY_PASSPORT: ConsentTemplate = {
 	key: "CONSENT_WARRANTY_PASSPORT",
@@ -362,7 +362,7 @@ export const CONSENT_WARRANTY_PASSPORT: ConsentTemplate = {
 
 /**
  * 13. ПОЛОЖЕНИЕ О ГАРАНТИЯХ (CONSENT_WARRANTY_POLICY)
- * ПП РФ № 736, ст. 720-725 ГК РФ (StomX № 82)
+ * ПП РФ № 736, ст. 720-725 ГК РФ
  */
 export const CONSENT_WARRANTY_POLICY: ConsentTemplate = {
 	key: "CONSENT_WARRANTY_POLICY",
@@ -408,7 +408,7 @@ export const CONSENT_WARRANTY_POLICY: ConsentTemplate = {
 
 /**
  * 14. ИДС НА СЕДАЦИЮ (CONSENT_SEDATION)
- * Ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н (StomX № 72)
+ * Ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н
  */
 export const CONSENT_SEDATION: ConsentTemplate = {
 	key: "CONSENT_SEDATION",
@@ -463,7 +463,7 @@ export const CONSENT_SEDATION: ConsentTemplate = {
 
 /**
  * 15. СОГЛАСИЕ НА ФОТОПРОТОКОЛ (CONSENT_PHOTOPROTOCOL)
- * Ст. 13 323-ФЗ, ст. 152.1 ГК РФ, 152-ФЗ (StomX № 77)
+ * Ст. 13 323-ФЗ, ст. 152.1 ГК РФ, 152-ФЗ
  */
 export const CONSENT_PHOTOPROTOCOL: ConsentTemplate = {
 	key: "CONSENT_PHOTOPROTOCOL",
@@ -511,7 +511,7 @@ export const CONSENT_PHOTOPROTOCOL: ConsentTemplate = {
 
 /**
  * 16. АНКЕТА ЗДОРОВЬЯ И СОМАТИЧЕСКОГО СТАТУСА (CONSENT_HEALTH_QUESTIONNAIRE)
- * Ст. 19-22 323-ФЗ, Приказ МЗ РФ № 834н / 043/у (StomX № 53)
+ * Ст. 19-22 323-ФЗ, Приказ МЗ РФ № 834н / 043/у
  */
 export const CONSENT_HEALTH_QUESTIONNAIRE: ConsentTemplate = {
 	key: "CONSENT_HEALTH_QUESTIONNAIRE",

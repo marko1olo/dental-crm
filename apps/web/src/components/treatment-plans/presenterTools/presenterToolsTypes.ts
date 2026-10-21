@@ -36,4 +36,5 @@ export interface TreatmentPlanPresenterToolsStripProps {
 	readonly confirmedNotice?: string | null;
 	readonly onConfirmPatientChoice: () => void;
 	readonly onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly hideButtonsBar?: boolean | undefined;
 }

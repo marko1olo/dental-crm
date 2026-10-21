@@ -1,13 +1,13 @@
+import type { Patient } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
-import type { Patient } from "@dental/shared";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 
 export interface FastPrintIntakeParams {
-	patient?: Patient | null;
+	patient?: Patient | null | undefined;
 	clinicProfileDraft?: any;
-	clinicName?: string;
-	doctorName?: string;
+	clinicName?: string | undefined;
+	doctorName?: string | undefined;
 }
 
 export function executeFastPrintPrimaryIntake({
@@ -21,7 +21,8 @@ export function executeFastPrintPrimaryIntake({
 	const p = patient as any;
 	const adminProfile = p?.administrativeProfile;
 	const repFullName =
-		adminProfile?.legalRepresentativeFullName || docStore.minorRepresentativeFullName;
+		adminProfile?.legalRepresentativeFullName ||
+		docStore.minorRepresentativeFullName;
 	const representative = repFullName
 		? {
 				fullName: repFullName,
@@ -44,8 +45,10 @@ export function executeFastPrintPrimaryIntake({
 
 	const clinicPrintPayload = clinicProfileDraft
 		? {
-				clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
-				legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
+				clinicName:
+					clinicProfileDraft.clinicName || "Стоматологическая клиника",
+				legalName:
+					clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
 				inn: clinicProfileDraft.inn || "",
 				kpp: clinicProfileDraft.kpp || "",
 				ogrn: clinicProfileDraft.ogrn || "",

@@ -1,19 +1,33 @@
-import React from "react";
 import { Stethoscope, X } from "lucide-react";
+import type React from "react";
+import { ClinicalPackageChecklist } from "./clinicalPackageModal/ClinicalPackageChecklist";
+import { ClinicalPackageFooter } from "./clinicalPackageModal/ClinicalPackageFooter";
+import { ClinicalPackagePatientCard } from "./clinicalPackageModal/ClinicalPackagePatientCard";
 import {
-	type ClinicalItem,
 	CLINICAL_STATUTORY_ITEMS,
+	type ClinicalItem,
 	type ClinicalVisitPackageModalProps,
 } from "./clinicalPackageModal/types";
 import { useClinicalVisitPackage } from "./clinicalPackageModal/useClinicalVisitPackage";
-import { ClinicalPackagePatientCard } from "./clinicalPackageModal/ClinicalPackagePatientCard";
-import { ClinicalPackageChecklist } from "./clinicalPackageModal/ClinicalPackageChecklist";
-import { ClinicalPackageFooter } from "./clinicalPackageModal/ClinicalPackageFooter";
 
-export { type ClinicalItem, CLINICAL_STATUTORY_ITEMS, type ClinicalVisitPackageModalProps };
+export {
+	CLINICAL_STATUTORY_ITEMS,
+	type ClinicalItem,
+	type ClinicalVisitPackageModalProps,
+};
 
-export function ClinicalVisitPackageModal(props: ClinicalVisitPackageModalProps): React.JSX.Element | null {
-	const { isOpen, onClose, patient, doctorFullName, onOpenDocument, onSelectDocumentKind, onCreateDocument } = props;
+export function ClinicalVisitPackageModal(
+	props: ClinicalVisitPackageModalProps,
+): React.JSX.Element | null {
+	const {
+		isOpen,
+		onClose,
+		patient,
+		doctorFullName,
+		onOpenDocument,
+		onSelectDocumentKind,
+		onCreateDocument,
+	} = props;
 	const {
 		documentsByKind,
 		missingKinds,
@@ -27,6 +41,7 @@ export function ClinicalVisitPackageModal(props: ClinicalVisitPackageModalProps)
 	if (!isOpen) return null;
 
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: backdrop overlay click
 		<div
 			className="document-package-modal-overlay"
 			role="dialog"
@@ -38,8 +53,15 @@ export function ClinicalVisitPackageModal(props: ClinicalVisitPackageModalProps)
 		>
 			<div className="document-package-modal-content">
 				<div className="document-package-modal-header">
-					<h3 className="document-package-modal-title" id="clinical-package-modal-title">
-						<Stethoscope size={18} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+					<h3
+						className="document-package-modal-title"
+						id="clinical-package-modal-title"
+					>
+						<Stethoscope
+							size={18}
+							className="text-teal-600 dark:text-teal-400"
+							aria-hidden="true"
+						/>
 						<span>Клинический пакет приёма врача</span>
 					</h3>
 					<button

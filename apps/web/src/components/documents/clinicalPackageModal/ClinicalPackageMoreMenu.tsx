@@ -1,12 +1,17 @@
-import React from "react";
+import type React from "react";
 import { FileText, MoreHorizontal, X } from "lucide-react";
 
 export interface ClinicalPackageMoreMenuProps {
 	readonly isMoreMenuOpen: boolean;
-	readonly setIsMoreMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+	readonly setIsMoreMenuOpen: (
+		open: boolean | ((prev: boolean) => boolean),
+	) => void;
 	readonly onPrintBlank: () => void;
 	readonly onClose: () => void;
 }
+
+const menuItemClass =
+	"secondary-button w-full border-none bg-transparent flex items-center justify-start gap-2 px-3 py-2 text-[13px] font-semibold cursor-pointer min-h-[36px]";
 
 export function ClinicalPackageMoreMenu({
 	isMoreMenuOpen,
@@ -18,12 +23,11 @@ export function ClinicalPackageMoreMenu({
 		<div className="relative inline-flex items-center">
 			<button
 				type="button"
-				className="secondary-button"
+				className="secondary-button inline-flex items-center justify-center min-h-[36px] px-2.5"
 				onClick={() => setIsMoreMenuOpen((v) => !v)}
 				title="Дополнительные действия"
 				aria-label="Дополнительные действия"
 				data-testid="clinical-more-btn"
-				style={{ minHeight: "36px", padding: "0 10px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 			>
 				<MoreHorizontal size={18} aria-hidden="true" />
 			</button>
@@ -37,62 +41,35 @@ export function ClinicalPackageMoreMenu({
 			)}
 
 			<div
-				className={`absolute right-0 bottom-full mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
+				className={`absolute right-0 bottom-full mb-2 w-64 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xl z-40 py-1.5 ${
 					isMoreMenuOpen ? "block" : "hidden"
 				}`}
-				style={{ background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)" }}
 				data-testid="clinical-more-menu"
 			>
 				<button
 					type="button"
-					className="secondary-button w-full"
+					className={`${menuItemClass} text-[var(--ink,#0f172a)]`}
 					data-testid="print-blank-clinical-package-btn"
 					onClick={() => {
 						setIsMoreMenuOpen(false);
 						onPrintBlank();
 					}}
-					style={{
-						width: "100%",
-						border: "none",
-						background: "transparent",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "flex-start",
-						gap: "8px",
-						padding: "8px 12px",
-						fontSize: "13px",
-						fontWeight: 600,
-						color: "var(--ink, #0f172a)",
-						cursor: "pointer",
-						minHeight: "36px",
-					}}
 					title="Печать чистых бланков терапевтического пакета со строками «________» для ручного заполнения"
 				>
-					<FileText size={15} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+					<FileText
+						size={15}
+						className="text-[var(--muted)] shrink-0"
+						aria-hidden="true"
+					/>
 					<span>Печать чистых бланков («________»)</span>
 				</button>
-				<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "4px 0" }} />
+				<div className="h-px bg-[var(--line,#e2e8f0)] my-1" />
 				<button
 					type="button"
-					className="secondary-button w-full"
+					className={`${menuItemClass} text-[var(--muted,#64748b)]`}
 					onClick={() => {
 						setIsMoreMenuOpen(false);
 						onClose();
-					}}
-					style={{
-						width: "100%",
-						border: "none",
-						background: "transparent",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "flex-start",
-						gap: "8px",
-						padding: "8px 12px",
-						fontSize: "13px",
-						fontWeight: 600,
-						color: "var(--muted, #64748b)",
-						cursor: "pointer",
-						minHeight: "36px",
 					}}
 				>
 					<X size={15} className="shrink-0" aria-hidden="true" />

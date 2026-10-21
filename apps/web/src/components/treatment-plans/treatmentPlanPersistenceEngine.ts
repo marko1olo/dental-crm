@@ -219,6 +219,7 @@ export function buildStagesFromPlanItems(
 			totalKopecks,
 			estimatedVisits: Math.max(1, Math.ceil(mappedItems.length / 2)),
 			estimatedWeeks: phaseNumber === 2 ? 12 : phaseNumber === 3 ? 4 : 2,
+			serviceCatalogCodes: order804nCodes,
 			order804nCodes,
 			status: stageStatus,
 			doctorId: stageDoctor?.doctorId ?? null,

@@ -511,6 +511,7 @@ export function generateCbctAutoPlanScenarios(
 				totalKopecks: parseKopecks(totalRub),
 				estimatedVisits: Math.max(1, Math.ceil(items.length / 2)),
 				estimatedWeeks: stageNum === 3 ? 16 : stageNum === 4 ? 4 : 2,
+				serviceCatalogCodes: Array.from(new Set(items.map((i) => i.code804n))),
 				order804nCodes: Array.from(new Set(items.map((i) => i.code804n))),
 			};
 		}

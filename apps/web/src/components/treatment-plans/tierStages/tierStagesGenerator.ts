@@ -632,6 +632,7 @@ export function generateTierPlanStages(
 		totalKopecks: s1TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage1Items.length / 2)),
 		estimatedWeeks: 2,
+		serviceCatalogCodes: Array.from(new Set(stage1Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(stage1Items.map((i) => i.code804n))),
 	};
 
@@ -648,6 +649,7 @@ export function generateTierPlanStages(
 		totalKopecks: s2TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage2Items.length / 2)),
 		estimatedWeeks: hasImplants ? 16 : 2,
+		serviceCatalogCodes: Array.from(new Set(stage2Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(stage2Items.map((i) => i.code804n))),
 	};
 
@@ -665,6 +667,7 @@ export function generateTierPlanStages(
 		totalKopecks: s3TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage3Items.length / 2)),
 		estimatedWeeks: 4,
+		serviceCatalogCodes: Array.from(new Set(stage3Items.map((i) => i.code804n))),
 		order804nCodes: Array.from(new Set(stage3Items.map((i) => i.code804n))),
 	};
 

@@ -7,6 +7,7 @@
 
 import { type Kopecks, parseKopecks, percentageOfKopecks } from "@dental/shared";
 import type {
+	ClinicalProcedureDefinition,
 	Order804nProcedureDefinition,
 	TreatmentPlanItem,
 	TreatmentPlanStage,
@@ -35,7 +36,7 @@ export function createPlanItem(
 	id: string,
 	phase: number,
 	stageKind: TreatmentPlanStageKind,
-	def: Order804nProcedureDefinition,
+	def: ClinicalProcedureDefinition,
 	toothNumber: number | undefined,
 	catalog: readonly CatalogServiceLookupItem[] | undefined,
 	discountPercent: number,
@@ -86,6 +87,7 @@ export function createPlanItem(
 		id,
 		toothNumber,
 		relatedToothNumbers: overrides?.relatedToothNumbers,
+		serviceCode: def.code,
 		code804n: def.code,
 		name: overrides?.customTitle || (matched.fromCatalog && matched.title ? matched.title : def.title),
 		category: def.category,
@@ -125,6 +127,7 @@ export function makeEmptyStage(
 		totalKopecks: 0 as Kopecks,
 		estimatedVisits: 0,
 		estimatedWeeks: 0,
+		serviceCatalogCodes: [],
 		order804nCodes: [],
 	};
 }

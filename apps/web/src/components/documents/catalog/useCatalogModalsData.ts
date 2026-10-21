@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import type { Patient } from "@dental/shared";
+import { useMemo } from "react";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 
 export function useCatalogModalsData(
@@ -9,13 +9,15 @@ export function useCatalogModalsData(
 	const effectivePatientInn =
 		patient?.administrativeProfile?.taxpayerInn ??
 		(patient as { inn?: string | null } | null | undefined)?.inn ??
-		(patient as { details?: { inn?: string | null } } | null | undefined)?.details?.inn ??
+		(patient as { details?: { inn?: string | null } } | null | undefined)
+			?.details?.inn ??
 		"";
 
 	const effectivePatientSnils =
 		patient?.administrativeProfile?.snils ??
 		(patient as { snils?: string | null } | null | undefined)?.snils ??
-		(patient as { details?: { snils?: string | null } } | null | undefined)?.details?.snils ??
+		(patient as { details?: { snils?: string | null } } | null | undefined)
+			?.details?.snils ??
 		"";
 
 	const sanitizedPayments = useMemo(() => {

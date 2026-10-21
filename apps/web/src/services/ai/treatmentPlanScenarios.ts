@@ -61,7 +61,7 @@ export function applyEconomyScenarioToPlan(
 			// Ортопедия: коронки и мосты -> металлокерамика 16 000 ₽
 			if (
 				item.category === "Ортопедия" &&
-				(item.code804n.startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|керамич/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|керамич/i.test(item.name))
 			) {
 				const economyPrice = 16000;
 				if (item.priceRub !== economyPrice) {
@@ -94,7 +94,7 @@ export function applyEconomyScenarioToPlan(
 			// Хирургия: имплантаты -> Osstem 32 000 ₽
 			if (
 				item.category === "Хирургия" &&
-				(item.code804n.startsWith("A16.07.054") || /имплант/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const economyPrice = 32000;
 				if (item.priceRub !== economyPrice) {
@@ -126,7 +126,7 @@ export function applyEconomyScenarioToPlan(
 			// Терапия: пломбы -> стандартный световой композит 4 500 ₽
 			if (
 				item.category === "Терапия" &&
-				(item.code804n.startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
+				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const economyPrice = 4500;
@@ -196,7 +196,7 @@ export function applyOptimumScenarioToPlan(
 			// Ортопедия: цельный диоксид циркония Katana STML 26 000 ₽
 			if (
 				item.category === "Ортопедия" &&
-				(item.code804n.startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
 				const optimumPrice = 26000;
 				if (item.priceRub !== optimumPrice) {
@@ -229,7 +229,7 @@ export function applyOptimumScenarioToPlan(
 			// Хирургия: имплантаты Osstem/Dentium SLA 38 000 ₽
 			if (
 				item.category === "Хирургия" &&
-				(item.code804n.startsWith("A16.07.054") || /имплант/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const optimumPrice = 38000;
 				if (item.priceRub !== optimumPrice) {
@@ -261,7 +261,7 @@ export function applyOptimumScenarioToPlan(
 			// Терапия: высокоэстетичный нанокомпозит Estelite Asteria 7 500 ₽
 			if (
 				item.category === "Терапия" &&
-				(item.code804n.startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
+				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const optimumPrice = 7500;
@@ -331,7 +331,7 @@ export function applyPremiumScenarioToPlan(
 			// Ортопедия: E.max Press с индивидуальным нанесением Vita VM9 45 000 ₽
 			if (
 				item.category === "Ортопедия" &&
-				(item.code804n.startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
 				const premiumPrice = 45000;
 				if (item.priceRub !== premiumPrice) {
@@ -364,7 +364,7 @@ export function applyPremiumScenarioToPlan(
 			// Хирургия: имплантаты Straumann BLX / Nobel Active 65 000 ₽
 			if (
 				item.category === "Хирургия" &&
-				(item.code804n.startsWith("A16.07.054") || /имплант/i.test(item.name))
+				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
 				const premiumPrice = 65000;
 				if (item.priceRub !== premiumPrice) {
@@ -396,7 +396,7 @@ export function applyPremiumScenarioToPlan(
 			// Терапия: художественная реставрация под микроскопом Leica 12 000 ₽
 			if (
 				item.category === "Терапия" &&
-				(item.code804n.startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
+				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
 				const premiumPrice = 12000;

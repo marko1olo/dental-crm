@@ -12,17 +12,19 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 	onApplyClinicalBundle, copilotFeedback, setCopilotFeedback, doctorDiscountPercent,
 	onApplyDoctorDiscount, doctorDiscountRub = 0, doctorDiscountMode = "percent",
 	setDoctorDiscountMode, doctorDiscountTargetStage = 0, setDoctorDiscountTargetStage,
-	onApplyDoctorFixedDiscount, selectedTier, teeth, confirmedNotice,
+	onApplyDoctorFixedDiscount, selectedTier, teeth, confirmedNotice, hideButtonsBar = false,
 }) => {
 	return (
 		<>
-			<PresenterToolsButtonsBar
-				activeToolsPanel={activeToolsPanel}
-				setActiveToolsPanel={setActiveToolsPanel}
-				doctorDiscountPercent={doctorDiscountPercent}
-				doctorDiscountRub={doctorDiscountRub}
-				doctorDiscountMode={doctorDiscountMode}
-			/>
+			{!hideButtonsBar && (
+				<PresenterToolsButtonsBar
+					activeToolsPanel={activeToolsPanel}
+					setActiveToolsPanel={setActiveToolsPanel}
+					doctorDiscountPercent={doctorDiscountPercent}
+					doctorDiscountRub={doctorDiscountRub}
+					doctorDiscountMode={doctorDiscountMode}
+				/>
+			)}
 
 			<PresenterCopilotPanel
 				isActive={activeToolsPanel === "copilot"}

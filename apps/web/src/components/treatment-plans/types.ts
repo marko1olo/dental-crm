@@ -42,7 +42,7 @@ export interface TreatmentPlanDoctorOption {
 	readonly specialty?: string | undefined;
 }
 
-export interface Order804nProcedureDefinition {
+export interface ClinicalProcedureDefinition {
 	readonly code: string;
 	readonly title: string;
 	readonly category: string;
@@ -55,10 +55,17 @@ export interface Order804nProcedureDefinition {
 	readonly uetNurse?: number;
 }
 
+export type ServiceCatalogProcedureDefinition = ClinicalProcedureDefinition;
+/** Алиас для обратной совместимости (Мандат 8x / 8ao: используйте ClinicalProcedureDefinition) */
+export type Order804nProcedureDefinition = ClinicalProcedureDefinition;
+
 export interface TreatmentPlanItem {
 	readonly id: string;
 	readonly toothNumber?: number | undefined;
 	readonly relatedToothNumbers?: readonly number[] | undefined;
+	/** Семантический код услуги (Мандат 8x / 8ao: основной идентификатор) */
+	readonly serviceCode?: string | undefined;
+	/** Алиас для обратной совместимости (всегда строка) */
 	readonly code804n: string;
 	readonly name: string;
 	readonly category: string;
@@ -151,7 +158,8 @@ export interface TreatmentPlanStage {
 	readonly totalKopecks: Kopecks;
 	readonly estimatedVisits: number;
 	readonly estimatedWeeks: number;
-	readonly order804nCodes: readonly string[];
+	readonly serviceCatalogCodes?: readonly string[] | undefined;
+	readonly order804nCodes?: readonly string[] | undefined;
 	readonly status?: TreatmentPlanStageStatus | undefined;
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;

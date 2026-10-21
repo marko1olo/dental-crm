@@ -137,7 +137,7 @@ export function buildTemplateVariablesMap(
 	map["Пациент.Паспорт.КемВыдан"] = pPassport.issuedBy || "";
 	map["Пациент.Паспорт.КодПодразделения"] = pPassport.divisionCode || "";
 
-	// Плоские теги пациента (IDENT / DentalPRO)
+	// Плоские теги пациента
 	map["ФАМИЛИЯИмяОтчество"] = pLastNameUpperFullName || "";
 	map["ФамилияИмяОтчество"] = pFullName || "";
 	map["ФамилияИО"] = pInitials || "";

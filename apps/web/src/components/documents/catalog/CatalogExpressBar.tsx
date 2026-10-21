@@ -1,5 +1,5 @@
-import React from "react";
 import { Printer } from "lucide-react";
+import type React from "react";
 
 export interface CatalogExpressBarProps {
 	onFastPrintPrimaryIntake: () => void;
@@ -17,7 +17,8 @@ export function CatalogExpressBar({
 					Экспресс-оформление пациента:
 				</span>
 				<span className="text-xs text-[var(--muted,#64748b)]">
-					Формирование комплекта для ручной или электронной подписи без лишних переходов
+					Формирование комплекта для ручной или электронной подписи без лишних
+					переходов
 				</span>
 			</div>
 			<div className="flex items-center gap-2 flex-wrap">

@@ -1,5 +1,5 @@
-import React from "react";
 import { CheckCircle2, Printer, Zap } from "lucide-react";
+import type React from "react";
 import { ClinicalPackageMoreMenu } from "./ClinicalPackageMoreMenu";
 
 export interface ClinicalPackageFooterProps {
@@ -9,7 +9,9 @@ export interface ClinicalPackageFooterProps {
 	readonly onPrintBlank: () => void;
 	readonly onClose: () => void;
 	readonly isMoreMenuOpen: boolean;
-	readonly setIsMoreMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+	readonly setIsMoreMenuOpen: (
+		open: boolean | ((prev: boolean) => boolean),
+	) => void;
 }
 
 export function ClinicalPackageFooter({
@@ -23,20 +25,40 @@ export function ClinicalPackageFooter({
 }: ClinicalPackageFooterProps): React.JSX.Element {
 	return (
 		<div className="document-package-modal-footer">
-			<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: "8px",
+					flexWrap: "wrap",
+				}}
+			>
 				{missingCount > 0 ? (
 					<button
 						type="button"
 						className="secondary-button"
 						onClick={onBatchCreate}
 						data-testid="clinical-batch-create-btn"
-						style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", fontWeight: 600 }}
+						style={{
+							minHeight: "36px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							fontWeight: 600,
+						}}
 					>
 						<Zap size={15} aria-hidden="true" />
 						<span>Сформировать в базе ({missingCount})</span>
 					</button>
 				) : (
-					<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
+					<span
+						className="inline-flex items-center gap-1.5"
+						style={{
+							fontSize: "13px",
+							color: "var(--success-fg, #10b981)",
+							fontWeight: 600,
+						}}
+					>
 						<CheckCircle2 size={15} aria-hidden="true" />
 						Комплект в базе оформлен
 					</span>

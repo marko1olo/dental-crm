@@ -164,6 +164,39 @@ export function translate804nToPatientDescription(code804n?: string, rawMedicalT
 }
 
 /**
+ * Единый канонический нормализатор ключей этапов (SSOT Roadmap Stage Normalizer)
+ * Устраняет рассинхрон между legacy-алиасами (urgent, sanitation, reconstruction...)
+ * и каноническими этапами (stage_1_emergency, stage_2_therapy...).
+ */
+export function normalizeRoadmapStageKind(kind: string | RoadmapStageKind | undefined): RoadmapStageKind {
+	if (!kind) return "stage_2_therapy";
+	const clean = String(kind).trim();
+	switch (clean) {
+		case "urgent":
+		case "stage_1_emergency":
+			return "stage_1_emergency";
+		case "therapy":
+		case "sanitation":
+		case "stage_1_therapy":
+		case "stage_2_therapy":
+			return "stage_2_therapy";
+		case "stage_2_surgery":
+		case "stage_3_surgery":
+			return "stage_3_surgery";
+		case "reconstruction":
+		case "stage_3_orthopedics":
+		case "stage_4_orthopedics":
+			return "stage_4_orthopedics";
+		case "maintenance":
+		case "stage_5_periodontics":
+		case "stage_5_hygiene_checkup":
+			return "stage_5_hygiene_checkup";
+		default:
+			return clean in CANONICAL_ROADMAP_META ? (clean as RoadmapStageKind) : "stage_2_therapy";
+	}
+}
+
+/**
  * 5 Canonical Roadmap Stage Metadata with Timelines, Preparation & Warranty
  */
 export const CANONICAL_ROADMAP_META: Record<RoadmapStageKind, RoadmapStageMeta> = {

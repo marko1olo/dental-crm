@@ -55,7 +55,7 @@ export function replaceImplantationWithBridge(
 		stages.forEach((stage) => {
 			stage.items.forEach((item) => {
 				if (
-					(item.code804n.startsWith("A16.07.054") || /имплант/i.test(item.name)) &&
+					((item.code804n && item.code804n.startsWith("A16.07.054")) || /имплант/i.test(item.name)) &&
 					typeof item.toothNumber === "number"
 				) {
 					targetTeeth.push(item.toothNumber);
@@ -77,8 +77,7 @@ export function replaceImplantationWithBridge(
 		if (stage.stageNumber === 2) {
 			const filteredItems = stage.items.filter((item) => {
 				const isImplant =
-					item.code804n.startsWith("A16.07.054") ||
-					item.code804n.startsWith("A16.07.041") ||
+					(item.code804n && (item.code804n.startsWith("A16.07.054") || item.code804n.startsWith("A16.07.041"))) ||
 					/имплант|синус|костн.*пласт/i.test(item.name);
 
 				const matchesTooth =
@@ -369,13 +368,15 @@ export function recalculateAnesthesiaAndIsolation(
 		// Проверяем наличие анестезии для инвазивных процедур
 		const hasInvasiveProcedures = stage.items.some(
 			(it) =>
-				it.code804n.startsWith("A16.07.001") ||
-				it.code804n.startsWith("A16.07.002") ||
-				it.code804n.startsWith("A16.07.004") ||
-				it.code804n.startsWith("A16.07.006") ||
-				it.code804n.startsWith("A16.07.008") ||
-				it.code804n.startsWith("A16.07.030") ||
-				it.code804n.startsWith("A16.07.054") ||
+				(it.code804n && (
+					it.code804n.startsWith("A16.07.001") ||
+					it.code804n.startsWith("A16.07.002") ||
+					it.code804n.startsWith("A16.07.004") ||
+					it.code804n.startsWith("A16.07.006") ||
+					it.code804n.startsWith("A16.07.008") ||
+					it.code804n.startsWith("A16.07.030") ||
+					it.code804n.startsWith("A16.07.054")
+				)) ||
 				it.category === "Ортопедия" ||
 				it.category === "Хирургия" ||
 				it.category === "Терапия",
@@ -417,9 +418,11 @@ export function recalculateAnesthesiaAndIsolation(
 		if (stage.stageNumber === 1) {
 			const hasTherapy = stage.items.some(
 				(it) =>
-					it.code804n.startsWith("A16.07.002") ||
-					it.code804n.startsWith("A16.07.008") ||
-					it.code804n.startsWith("A16.07.030") ||
+					(it.code804n && (
+						it.code804n.startsWith("A16.07.002") ||
+						it.code804n.startsWith("A16.07.008") ||
+						it.code804n.startsWith("A16.07.030")
+					)) ||
 					/кариес|пульпит|периодонтит|пломб|эндо/i.test(it.name),
 			);
 

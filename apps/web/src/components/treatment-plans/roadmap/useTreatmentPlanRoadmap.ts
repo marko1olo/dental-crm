@@ -18,6 +18,7 @@ import type {
 import {
 	translate804nToPatientDescription,
 	CANONICAL_ROADMAP_META,
+	normalizeRoadmapStageKind,
 } from "./roadmapPriceHelpers.js";
 
 export function useTreatmentPlanRoadmap(props: TreatmentPlanRoadmapProps) {
@@ -176,12 +177,12 @@ export function useTreatmentPlanRoadmap(props: TreatmentPlanRoadmapProps) {
 				status = "in_progress";
 			}
 
-			// Проверяем статус в исходных stages плана
-			const matchingInputStage = stages.find(
-				(s) =>
-					(s.stageKind as string) === (kind as string) ||
-					s.stageNumber === meta.stageNumber,
-			);
+			// Проверяем статус в исходных stages плана через канонический SSOT нормализатор
+			const matchingInputStage = stages.find((s) => {
+				const normS = normalizeRoadmapStageKind(s.stageKind);
+				const normK = normalizeRoadmapStageKind(kind);
+				return normS === normK || s.stageNumber === meta.stageNumber;
+			});
 			const isFullyPaid =
 				matchingInputStage?.status === "completed" ||
 				Boolean((matchingInputStage as { isFullyPaid?: boolean })?.isFullyPaid) ||

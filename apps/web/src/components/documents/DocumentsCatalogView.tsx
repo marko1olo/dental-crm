@@ -1,9 +1,9 @@
-import React from "react";
-import type { DocumentsCatalogViewProps } from "./catalog/types";
-import { CatalogToolbar } from "./catalog/CatalogToolbar";
+import type React from "react";
 import { CatalogCard } from "./catalog/CatalogCard";
-import { CatalogModals } from "./catalog/CatalogModals";
 import { CatalogExpressBar } from "./catalog/CatalogExpressBar";
+import { CatalogModals } from "./catalog/CatalogModals";
+import { CatalogToolbar } from "./catalog/CatalogToolbar";
+import type { DocumentsCatalogViewProps } from "./catalog/types";
 import { useDocumentsCatalogState } from "./catalog/useDocumentsCatalogState";
 
 export * from "./catalog/types";
@@ -18,11 +18,23 @@ export * from "./catalog/types";
  * 3. Кнопки «Печать» и «Сохранить» никогда не блокируются (disabled).
  * 4. Незаполненные реквизиты честно печатаются строками "___________" для ручного заполнения.
  */
-export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (props) => {
+export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (
+	props,
+) => {
 	const {
-		patient, patientName = "Пациент", patientAgeYears = 6, doctorName, clinicName,
-		clinicProfileDraft, existingDocuments, onCreateDocument, onOpenIssuedDocumentHtml,
-		onSelectRegistryTab, onOpenFocusEditor, onOpenAutoclaveLog, className = "",
+		patient,
+		patientName = "Пациент",
+		patientAgeYears = 6,
+		doctorName,
+		clinicName,
+		clinicProfileDraft,
+		existingDocuments,
+		onCreateDocument,
+		onOpenIssuedDocumentHtml,
+		onSelectRegistryTab,
+		onOpenFocusEditor,
+		onOpenAutoclaveLog,
+		className = "",
 	} = props;
 
 	const s = useDocumentsCatalogState(props);

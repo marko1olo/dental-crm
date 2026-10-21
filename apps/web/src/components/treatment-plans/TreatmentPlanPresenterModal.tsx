@@ -13,23 +13,14 @@ import { TreatmentPlanPresenterBody } from "./presenterModules/TreatmentPlanPres
 import { TreatmentPlanPresenterConnectedTools } from "./presenterModules/TreatmentPlanPresenterConnectedTools";
 import { TreatmentPlanStagePaymentModal } from "./presenterModules/TreatmentPlanStagePaymentModal";
 import type { TreatmentPlanPresenterModalProps } from "./presenterModules/treatmentPlanPresenterTypes";
-import {
-	getTierLetter,
-	useTreatmentPlanPresenterState,
-} from "./presenterModules/useTreatmentPlanPresenterState";
+import { getTierLetter, useTreatmentPlanPresenterState } from "./presenterModules/useTreatmentPlanPresenterState";
+import { PresenterToolsButtonsBar } from "./presenterTools/PresenterToolsButtonsBar";
 import { TreatmentPlanPresenterFooter } from "./TreatmentPlanPresenterFooter";
 import { TreatmentPlanPresenterHeader } from "./TreatmentPlanPresenterHeader";
 import type { TreatmentPlanStage } from "./types";
 
-export {
-	formatRubles,
-	getTierLetter,
-	useTreatmentPlanPresenterState,
-} from "./presenterModules/useTreatmentPlanPresenterState";
-export {
-	isMicroConsumable,
-	type PlanItemLike,
-} from "./treatmentPlanConsumables";
+export { formatRubles, getTierLetter, useTreatmentPlanPresenterState } from "./presenterModules/useTreatmentPlanPresenterState";
+export { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
 export type { TreatmentPlanPresenterModalProps };
 
 export const TreatmentPlanPresenterModal: React.FC<
@@ -44,15 +35,12 @@ export const TreatmentPlanPresenterModal: React.FC<
 		onApproveAndSign,
 		className = "",
 	} = props;
-	const [stageForPayment, setStageForPayment] =
-		useState<TreatmentPlanStage | null>(null);
+	const [stageForPayment, setStageForPayment] = useState<TreatmentPlanStage | null>(null);
 
 	const effectiveProps = useMemo(
 		() => ({
 			...props,
-			onPayStage:
-				props.onPayStage ||
-				((st: TreatmentPlanStage) => setStageForPayment(st)),
+			onPayStage: props.onPayStage || ((st: TreatmentPlanStage) => setStageForPayment(st)),
 		}),
 		[props],
 	);
@@ -87,8 +75,18 @@ export const TreatmentPlanPresenterModal: React.FC<
 					aiAuditResult={s.aiAuditResult}
 					isAiAuditing={s.isAiAuditing}
 					onRunAiAudit={s.handleRunAiAudit}
+					toolsBarSlot={
+						<PresenterToolsButtonsBar
+							embedded
+							activeToolsPanel={s.activeToolsPanel}
+							setActiveToolsPanel={s.setActiveToolsPanel}
+							doctorDiscountPercent={s.doctorDiscountPercent}
+							doctorDiscountRub={s.doctorDiscountRub}
+							doctorDiscountMode={s.doctorDiscountMode}
+						/>
+					}
 				/>
-				<TreatmentPlanPresenterConnectedTools s={s} teeth={teeth} />
+				<TreatmentPlanPresenterConnectedTools s={s} teeth={teeth} hideButtonsBar />
 				<TreatmentPlanPresenterBody s={s} props={effectiveProps} />
 				<TreatmentPlanPresenterFooter
 					selectedTier={s.selectedTier}

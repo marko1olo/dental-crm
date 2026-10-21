@@ -113,11 +113,11 @@ function buildStructuredPayloadForConsent(
 				operatorLegalName:
 					effectiveContext.clinicLegalName ||
 					effectiveContext.clinicName ||
-					"ООО «Стоматологическая клиника ДЕНТЕ»",
-				operatorInn: "7701234567",
+					"",
+				operatorInn: (effectiveContext as { clinicInn?: string }).clinicInn || "",
 				operatorAddress:
 					effectiveContext.clinicAddress ||
-					"г. Москва, ул. Большая Стоматологическая, д. 12",
+					"",
 				processingPurposes: [
 					"Оказание специализированной медицинской стоматологической помощи",
 					"Ведение медицинской карты стоматологического пациента по форме № 043/у",

@@ -137,7 +137,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		assert.ok(html.includes("________________________"), "Production primary intake package must render signature underline for missing director");
 	});
 
-	test("StomX documentPrintFormatters: exact sum in words and safe rubles formatting", () => {
+	test("DENTE documentPrintFormatters: exact sum in words and safe rubles formatting", () => {
 		assert.equal(
 			formatRublesExactRu(15450.5).replace(/\u00a0/g, " "),
 			"15 450,50 ₽",
@@ -160,7 +160,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("StomX clinicalPackagePrintEngine: signatures-grid has break-inside avoid protection", () => {
+	test("DENTE clinicalPackagePrintEngine: signatures-grid has break-inside avoid protection", () => {
 		const html = generateClinicalPackageHtml({
 			patient: { fullName: "Петров Петр Петрович" },
 			clinic: { fullName: "ДЕНТЕ Клиника" },
@@ -169,7 +169,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		assert.ok(html.includes("page-break-inside: avoid;"), "signatures-grid must include page-break-inside: avoid;");
 	});
 
-	test("StomX primaryIntakePackagePrintEngine: no double underline when patient name is empty", () => {
+	test("DENTE primaryIntakePackagePrintEngine: no double underline when patient name is empty", () => {
 		const html = generatePrimaryIntakePackageHtml({
 			clinic: { fullName: "ДЕНТЕ Клиника" },
 			patient: { fullName: "" },
@@ -178,7 +178,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		assert.ok(html.includes("break-inside: avoid;"), "signatures-row must include break-inside: avoid;");
 	});
 
-	test("StomX warrantyCertificateHtml: zero undefined leaks and signature break-inside protection", () => {
+	test("DENTE warrantyCertificateHtml: zero undefined leaks and signature break-inside protection", () => {
 		const htmlCert = generateWarrantyCertificateHtml({
 			certificateId: "WAR-2026-001",
 			issueDate: "2026-09-29",
@@ -214,7 +214,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		assert.ok(htmlAct.includes("break-inside: avoid;"), "signatures in remediation act must include break-inside: avoid;");
 	});
 
-	test("StomX treatmentPlanActFormatters: numberToWordsRu delegates accurately to SSOT", () => {
+	test("DENTE treatmentPlanActFormatters: numberToWordsRu delegates accurately to SSOT", () => {
 		assert.equal(
 			numberToWordsRu(19600, 0),
 			"Девятнадцать тысяч шестьсот рублей 00 копеек",
@@ -227,7 +227,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("StomX TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", () => {
+	test("DENTE TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", () => {
 		const actSignaturesPath = path.join(
 			webSrcDir,
 			"components/treatment-plans/TreatmentPlanActSignatures.tsx",
@@ -243,7 +243,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("StomX TreatmentPlanContractPrint: sum in words banner and print:grid-cols-3 protection", () => {
+	test("DENTE TreatmentPlanContractPrint: sum in words banner and print:grid-cols-3 protection", () => {
 		const contractPrintPath = path.join(
 			webSrcDir,
 			"components/treatment-plans/TreatmentPlanContractPrint.tsx",
@@ -274,7 +274,7 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("StomX PremiumDocumentPrintSheet: break-inside avoid and standard signature slashes", () => {
+	test("DENTE PremiumDocumentPrintSheet: break-inside avoid and standard signature slashes", () => {
 		const sheetPath = path.join(
 			webSrcDir,
 			"components/documents/PremiumDocumentPrintSheet.tsx",

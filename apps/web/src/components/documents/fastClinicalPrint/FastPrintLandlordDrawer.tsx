@@ -1,7 +1,14 @@
 import React from "react";
-import { Building2, ChevronDown, ChevronUp, FileText, Scissors } from "lucide-react";
+import {
+	Building2,
+	ChevronDown,
+	ChevronUp,
+	FileText,
+	Scissors,
+} from "lucide-react";
 import type { FastPrintClinicInfo } from "./types";
 import type { InsertCutLayout } from "../partisanMedicalInsertTemplate";
+import { FastPrintLandlordForm } from "./FastPrintLandlordForm";
 
 interface FastPrintLandlordDrawerProps {
 	readonly cutLayout: InsertCutLayout;
@@ -9,10 +16,14 @@ interface FastPrintLandlordDrawerProps {
 	readonly showLandlordEdit: boolean;
 	readonly setShowLandlordEdit: (val: boolean) => void;
 	readonly effectiveClinic: FastPrintClinicInfo;
-	readonly setCustomClinic: React.Dispatch<React.SetStateAction<FastPrintClinicInfo>>;
+	readonly setCustomClinic: React.Dispatch<
+		React.SetStateAction<FastPrintClinicInfo>
+	>;
 }
 
-export const FastPrintLandlordDrawer: React.FC<FastPrintLandlordDrawerProps> = ({
+export const FastPrintLandlordDrawer: React.FC<
+	FastPrintLandlordDrawerProps
+> = ({
 	cutLayout,
 	setCutLayout,
 	showLandlordEdit,
@@ -59,40 +70,10 @@ export const FastPrintLandlordDrawer: React.FC<FastPrintLandlordDrawerProps> = (
 		</div>
 
 		{showLandlordEdit && (
-			<div className="fast-print-landlord-drawer fast-print-no-print" data-testid="landlord-override-drawer">
-				<div className="fast-print-landlord-grid">
-					<div className="fast-print-field">
-						<label className="fast-print-field-label">Название клиники в шапке карты</label>
-						<input
-							type="text"
-							data-testid="input-landlord-name"
-							value={effectiveClinic.name || ""}
-							onChange={(e) => setCustomClinic((prev) => ({ ...prev, name: e.target.value }))}
-							className="fast-print-input"
-						/>
-					</div>
-					<div className="fast-print-field">
-						<label className="fast-print-field-label">ИНН организации</label>
-						<input
-							type="text"
-							data-testid="input-landlord-inn"
-							value={effectiveClinic.inn || ""}
-							onChange={(e) => setCustomClinic((prev) => ({ ...prev, inn: e.target.value }))}
-							className="fast-print-input"
-						/>
-					</div>
-					<div className="fast-print-field">
-						<label className="fast-print-field-label">Номер медицинской лицензии</label>
-						<input
-							type="text"
-							data-testid="input-landlord-license"
-							value={effectiveClinic.licenseNumber || ""}
-							onChange={(e) => setCustomClinic((prev) => ({ ...prev, licenseNumber: e.target.value }))}
-							className="fast-print-input"
-						/>
-					</div>
-				</div>
-			</div>
+			<FastPrintLandlordForm
+				effectiveClinic={effectiveClinic}
+				setCustomClinic={setCustomClinic}
+			/>
 		)}
 	</>
 );

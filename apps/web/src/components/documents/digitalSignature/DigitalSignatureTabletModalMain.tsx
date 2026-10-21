@@ -75,7 +75,7 @@ export const DigitalSignatureTabletModal: React.FC<DigitalSignatureTabletModalPr
 
 					{activeTab === "sms" && (
 						<SignatureSmsPanel
-							patientPhone={patient?.phone}
+							patientPhone={patient?.phone || undefined}
 							smsCode={smsCode}
 							setSmsCode={setSmsCode}
 							smsCountdown={smsCountdown}

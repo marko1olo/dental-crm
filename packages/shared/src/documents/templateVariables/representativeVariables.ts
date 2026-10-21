@@ -1,7 +1,7 @@
 import type { DocumentTemplateVariableSpec } from "./types.js";
 
 /**
- * Токены законных представителей и полномочных лиц (включая алиасы IDENT).
+ * Токены законных представителей и полномочных лиц (включая стандартные алиасы).
  * Layer 1: Domain Variable Token Group.
  */
 export const REPRESENTATIVE_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTemplateVariableSpec[] = [
@@ -329,7 +329,7 @@ export const REPRESENTATIVE_DOCUMENT_TEMPLATE_VARIABLES: readonly DocumentTempla
 		domain: "representative",
 		name: "Email представителя",
 		description: "Адрес электронной почты представителя",
-		exampleValue: "representative@ident.ru",
+		exampleValue: "representative@dente-clinic.ru",
 		resolverPath: "representative.email",
 	},
 	{

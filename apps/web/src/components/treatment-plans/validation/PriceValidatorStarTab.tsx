@@ -136,9 +136,9 @@ export const PriceValidatorStarTab: React.FC<PriceValidatorStarTabProps> = ({
 
 						<div className="flex justify-between items-center text-[10px] text-[var(--muted)] pt-1">
 							<span>Норматив: {check.normativeRefRu}</span>
-							{check.order804nCodesRelated.length > 0 && (
+							{(check.serviceCatalogCodesRelated || check.order804nCodesRelated).length > 0 && (
 								<span className="font-mono">
-									Коды услуг: {check.order804nCodesRelated.join(", ")}
+									Коды услуг: {(check.serviceCatalogCodesRelated || check.order804nCodesRelated).join(", ")}
 								</span>
 							)}
 						</div>

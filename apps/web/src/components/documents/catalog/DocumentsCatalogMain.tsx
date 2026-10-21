@@ -1,1 +1,4 @@
-export { DocumentsCatalogView, DocumentsCatalogView as default } from "../DocumentsCatalogView";
+export {
+	DocumentsCatalogView,
+	DocumentsCatalogView as default,
+} from "../DocumentsCatalogView";

@@ -174,6 +174,7 @@ export function calculateSingleTierEstimate(
 			stageCostKopecks,
 			estimatedVisits,
 			estimatedDurationDays,
+			serviceCatalogCodes: Array.from(orderCodesSet),
 			order804nCodes: Array.from(orderCodesSet),
 			treatedTeeth: Array.from(treatedTeethSet).sort((a, b) => a - b),
 			isPennyExact,

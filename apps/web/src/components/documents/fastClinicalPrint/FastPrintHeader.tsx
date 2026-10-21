@@ -1,5 +1,12 @@
 import React from "react";
-import { Printer, X, FileText, ShieldCheck, Receipt, Scissors } from "lucide-react";
+import {
+	Printer,
+	X,
+	FileText,
+	ShieldCheck,
+	Receipt,
+	Scissors,
+} from "lucide-react";
 import type { FastPrintDocType } from "./types";
 
 interface FastPrintHeaderProps {
@@ -18,14 +25,21 @@ export const FastPrintHeader: React.FC<FastPrintHeaderProps> = ({
 	onClose,
 }) => (
 	<>
-		<div className="fast-print-mobile-handle-wrap fast-print-no-print" aria-hidden="true">
+		<div
+			className="fast-print-mobile-handle-wrap fast-print-no-print"
+			aria-hidden="true"
+		>
 			<div className="fast-print-mobile-handle" />
 		</div>
 
 		<div className="fast-print-header fast-print-no-print">
 			<div className="fast-print-brand-group">
 				<Printer size={16} className="fast-print-brand-icon" />
-				<span id={titleId} className="fast-print-title" data-statutory="Приказ 834н">
+				<span
+					id={titleId}
+					className="fast-print-title"
+					data-statutory="Приказ 834н"
+				>
 					Медицинская карта приёма
 				</span>
 			</div>

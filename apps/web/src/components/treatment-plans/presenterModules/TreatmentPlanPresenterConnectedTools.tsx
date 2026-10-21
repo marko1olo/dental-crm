@@ -10,11 +10,12 @@ import type { useTreatmentPlanPresenterState } from "./useTreatmentPlanPresenter
 interface TreatmentPlanPresenterConnectedToolsProps {
 	readonly s: ReturnType<typeof useTreatmentPlanPresenterState>;
 	readonly teeth?: readonly ToothData[] | readonly { toothNumber?: number }[] | undefined;
+	readonly hideButtonsBar?: boolean | undefined;
 }
 
 export const TreatmentPlanPresenterConnectedTools: React.FC<
 	TreatmentPlanPresenterConnectedToolsProps
-> = ({ s, teeth }) => {
+> = ({ s, teeth, hideButtonsBar }) => {
 	const normalizedTeeth: readonly ToothData[] | undefined = teeth?.map((t) => ({
 		toothNumber: t.toothNumber ?? 11,
 		state: "state" in t && t.state ? t.state : ("Healthy" as const),
@@ -43,6 +44,7 @@ export const TreatmentPlanPresenterConnectedTools: React.FC<
 			selectedTier={s.selectedTier}
 			teeth={normalizedTeeth}
 			confirmedNotice={s.confirmedNotice}
+			hideButtonsBar={hideButtonsBar}
 		/>
 	);
 };

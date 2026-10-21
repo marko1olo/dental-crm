@@ -7,6 +7,7 @@ export interface PresenterToolsButtonsBarProps {
 	readonly doctorDiscountPercent: number;
 	readonly doctorDiscountRub: number;
 	readonly doctorDiscountMode: "percent" | "fixed";
+	readonly embedded?: boolean | undefined;
 }
 
 export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> = ({
@@ -15,6 +16,7 @@ export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> =
 	doctorDiscountPercent,
 	doctorDiscountRub,
 	doctorDiscountMode,
+	embedded = false,
 }) => {
 	const isDiscountActive = (doctorDiscountMode === "fixed" && doctorDiscountRub > 0) || doctorDiscountPercent > 0;
 	const discountLabel =
@@ -25,7 +27,7 @@ export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> =
 				: "Скидка врача";
 
 	return (
-		<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs overflow-x-auto scrollbar-none">
+		<div className={embedded ? "flex items-center gap-1.5 flex-wrap no-print text-xs" : "flex items-center justify-between gap-2 px-3 sm:px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs overflow-x-auto scrollbar-none"}>
 			<div className="flex items-center gap-1.5 flex-wrap">
 				<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline">Инструменты врача:</span>
 

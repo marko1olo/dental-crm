@@ -1,7 +1,7 @@
 import { parseKopecks, sumKopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../treatmentPlanServicesCatalog";
+import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 
 /**
@@ -18,7 +18,7 @@ export function assembleTreatmentPlanStages(
 ): [TreatmentPlanStage, TreatmentPlanStage, TreatmentPlanStage] {
 	// Добавляем 3D-сканирование в начало Этапа 3, если есть ортопедия
 	if (stage3Items.length > 0) {
-		const defScan = ORDER_804N_DICTIONARY.IntraoralScanning3D!;
+		const defScan = DENTAL_SERVICES_CATALOG.IntraoralScanning3D!;
 		stage3Items.unshift(
 			createPlanItem("s3-intraoral-scan", 3, "stage_3_orthopedics", defScan, undefined, catalog, validDiscountPct, {
 				customTitle: "Оптическое внутриротовое 3D-сканирование зубных рядов и регистрация прикуса",
@@ -45,7 +45,8 @@ export function assembleTreatmentPlanStages(
 		totalKopecks: s1TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage1Items.length / 2)),
 		estimatedWeeks: 2,
-		order804nCodes: Array.from(new Set(stage1Items.map((i) => i.code804n))),
+		serviceCatalogCodes: Array.from(new Set(stage1Items.map((i) => i.serviceCode || i.code804n || ""))),
+		order804nCodes: Array.from(new Set(stage1Items.map((i) => i.code804n || i.serviceCode || ""))),
 	};
 
 	const stage2: TreatmentPlanStage = {
@@ -63,7 +64,8 @@ export function assembleTreatmentPlanStages(
 		totalKopecks: s2TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage2Items.length / 2)),
 		estimatedWeeks: hasImplants ? 16 : 2, // 16 недель = 4 месяца (3–6 мес интервал)
-		order804nCodes: Array.from(new Set(stage2Items.map((i) => i.code804n))),
+		serviceCatalogCodes: Array.from(new Set(stage2Items.map((i) => i.serviceCode || i.code804n || ""))),
+		order804nCodes: Array.from(new Set(stage2Items.map((i) => i.code804n || i.serviceCode || ""))),
 	};
 
 	const stage3: TreatmentPlanStage = {
@@ -77,7 +79,8 @@ export function assembleTreatmentPlanStages(
 		totalKopecks: s3TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage3Items.length / 2)),
 		estimatedWeeks: 4,
-		order804nCodes: Array.from(new Set(stage3Items.map((i) => i.code804n))),
+		serviceCatalogCodes: Array.from(new Set(stage3Items.map((i) => i.serviceCode || i.code804n || ""))),
+		order804nCodes: Array.from(new Set(stage3Items.map((i) => i.code804n || i.serviceCode || ""))),
 	};
 
 	return [stage1, stage2, stage3];

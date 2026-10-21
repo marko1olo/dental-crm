@@ -142,7 +142,7 @@ export function recalculateStage(stage: TreatmentPlanStage): TreatmentPlanStage 
 	const kopecksArray = stage.items.map((it) => parseKopecks(it.priceRub));
 	const totalKopecks: Kopecks = sumKopecks(kopecksArray);
 	const order804nCodes = Array.from(
-		new Set(stage.items.map((it) => it.code804n).filter(Boolean)),
+		new Set(stage.items.map((it) => it.code804n).filter((c): c is string => Boolean(c))),
 	);
 
 	// Оценка визитов и недель по числу процедур
@@ -154,6 +154,7 @@ export function recalculateStage(stage: TreatmentPlanStage): TreatmentPlanStage 
 		items: stage.items,
 		totalRub,
 		totalKopecks,
+		serviceCatalogCodes: order804nCodes,
 		order804nCodes,
 		estimatedVisits,
 		estimatedWeeks,

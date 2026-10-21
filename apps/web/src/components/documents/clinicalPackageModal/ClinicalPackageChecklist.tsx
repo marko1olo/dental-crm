@@ -1,6 +1,6 @@
-import React from "react";
 import type { DocumentKind, GeneratedDocument } from "@dental/shared";
 import { CheckCircle2, Clock, PlusCircle, Zap } from "lucide-react";
+import type React from "react";
 import { CLINICAL_STATUTORY_ITEMS } from "./types";
 
 export interface ClinicalPackageChecklistProps {
@@ -29,15 +29,31 @@ export function ClinicalPackageChecklist({
 				return (
 					<div className="document-package-item-card" key={item.kind}>
 						<div className="document-package-item-info">
-							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<div
+								style={{ display: "flex", alignItems: "center", gap: "8px" }}
+							>
 								{isIssued ? (
-									<CheckCircle2 size={18} color="var(--success-fg, #10b981)" aria-hidden="true" />
+									<CheckCircle2
+										size={18}
+										color="var(--success-fg, #10b981)"
+										aria-hidden="true"
+									/>
 								) : isDraft ? (
-									<Clock size={18} color="var(--warn-fg, #f59e0b)" aria-hidden="true" />
+									<Clock
+										size={18}
+										color="var(--warn-fg, #f59e0b)"
+										aria-hidden="true"
+									/>
 								) : (
-									<PlusCircle size={18} color="var(--muted, #94a3b8)" aria-hidden="true" />
+									<PlusCircle
+										size={18}
+										color="var(--muted, #94a3b8)"
+										aria-hidden="true"
+									/>
 								)}
-								<span className="document-package-item-title">{item.title}</span>
+								<span className="document-package-item-title">
+									{item.title}
+								</span>
 							</div>
 							<span className="document-package-item-sub">
 								<strong>{item.statutoryRef}</strong> — {item.description}

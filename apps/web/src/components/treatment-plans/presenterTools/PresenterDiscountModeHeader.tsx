@@ -66,7 +66,7 @@ export const PresenterDiscountModeHeader: React.FC<PresenterDiscountModeHeaderPr
 		</div>
 
 		<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
-			Мандат 8e: Свобода скидок врача до 100% без пароля администратора
+			Свобода скидок врача до 100% (гарантийные случаи и персонал)
 		</div>
 	</div>
 );
