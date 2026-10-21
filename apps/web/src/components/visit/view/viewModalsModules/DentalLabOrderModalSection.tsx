@@ -87,6 +87,19 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 			stageNumber={effectiveStageNumber}
 			stageTitle={effectiveStageTitle}
 			initialToothFdi={labOrderModalToothNumber ?? undefined}
+			initialTeeth={
+				typeof labOrderModalToothNumber === "string" &&
+				(labOrderModalToothNumber.includes(",") ||
+					labOrderModalToothNumber.includes(" ") ||
+					labOrderModalToothNumber.includes(";"))
+					? labOrderModalToothNumber
+							.split(/[\s,;-]+/)
+							.map((t) => Number.parseInt(t, 10))
+							.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85)
+					: labOrderModalToothNumber
+						? [Number(labOrderModalToothNumber)]
+						: undefined
+			}
 			scheduledVisitDate={
 				activeAppointment?.startTime ||
 				activeAppointment?.startAt ||
@@ -104,7 +117,10 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 					Array.isArray(order.selectedTeeth) && order.selectedTeeth.length > 0
 						? order.selectedTeeth
 						: order.toothFdi
-							? [Number(order.toothFdi)]
+							? String(order.toothFdi)
+									.split(/[\s,;-]+/)
+									.map((t) => Number.parseInt(t, 10))
+									.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85)
 							: [];
 
 				if (targetTeeth.length > 0 && order.material) {

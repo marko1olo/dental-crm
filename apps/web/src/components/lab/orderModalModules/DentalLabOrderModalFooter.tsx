@@ -41,10 +41,10 @@ export function DentalLabOrderModalFooter({
 					<button type="button" onClick={onPrint} data-testid="lab-order-footer-print-btn" className="secondary-button min-h-[44px] h-11 px-3.5 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer shadow-2xs">
 						<Printer className="w-3.5 h-3.5 text-teal-600" /><span>Печать (А4)</span>
 					</button>
-					<button type="button" onClick={onClose} disabled={isSubmitting} className="h-9 min-h-[36px] px-4 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer">
+					<button type="button" onClick={onClose} disabled={isSubmitting} className="min-h-[44px] h-11 px-4 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer">
 						Отмена
 					</button>
-					<button type="button" onClick={onSubmit} disabled={isSubmitting} className="h-9 min-h-[36px] px-5 text-xs font-bold rounded-xl bg-[var(--teal,#0d9488)] text-white shadow-xs hover:opacity-90 flex items-center gap-1.5 cursor-pointer" data-testid="submit-lab-order-btn">
+					<button type="button" onClick={onSubmit} disabled={isSubmitting} className="min-h-[44px] h-11 px-5 text-xs font-bold rounded-xl bg-[var(--teal,#0d9488)] text-white shadow-xs hover:opacity-90 flex items-center gap-1.5 cursor-pointer" data-testid="submit-lab-order-btn">
 						{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
 						<span>{isEdit ? "Сохранить изменения" : "Создать наряд"}</span>
 					</button>

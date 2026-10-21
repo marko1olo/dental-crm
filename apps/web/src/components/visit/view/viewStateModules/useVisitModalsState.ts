@@ -45,11 +45,13 @@ export function useVisitModalsState({
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
 
-	const handleOpenLabOrder = useCallback((targetTooth?: string | number | null | unknown) => {
+	const handleOpenLabOrder = useCallback((targetTooth?: string | number | (string | number)[] | null | unknown) => {
 		if (typeof onOpenLabOrderModal === "function") {
 			onOpenLabOrderModal();
 		}
-		const toothStr = (targetTooth && (typeof targetTooth === "string" || typeof targetTooth === "number"))
+		const toothStr = (Array.isArray(targetTooth) && targetTooth.length > 0)
+			? targetTooth.join(", ")
+			: (targetTooth && (typeof targetTooth === "string" || typeof targetTooth === "number"))
 			? String(targetTooth)
 			: selectedToothForMenu?.code
 			? String(selectedToothForMenu.code)
@@ -64,8 +66,17 @@ export function useVisitModalsState({
 
 	useEffect(() => {
 		const handleLabOrderEvent = (e: Event) => {
-			const customEvent = e as CustomEvent<{ toothNumber?: number | string; toothFdi?: number | string }>;
-			const customTooth = customEvent?.detail?.toothNumber || customEvent?.detail?.toothFdi;
+			const customEvent = e as CustomEvent<{
+				toothNumber?: number | string;
+				toothFdi?: number | string;
+				teeth?: (number | string)[];
+				selectedTeeth?: (number | string)[];
+			}>;
+			const customTooth =
+				customEvent?.detail?.selectedTeeth ??
+				customEvent?.detail?.teeth ??
+				customEvent?.detail?.toothNumber ??
+				customEvent?.detail?.toothFdi;
 			handleOpenLabOrder(customTooth);
 		};
 		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);

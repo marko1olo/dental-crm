@@ -11,7 +11,9 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 	const editingOrder = props.editingOrder ?? props.initialOrder ?? null;
 	const resolvedPatient = editingOrder?.patientName ?? props.patientName ?? props.currentPatientName ?? "";
 	const resolvedDoctor = editingOrder?.doctorName ?? props.doctorName ?? props.currentDoctorName ?? "Д-р Орлов А.В. (Ортопед)";
-	const resolvedTooth = editingOrder ? (Array.isArray(editingOrder.teethFdi) ? editingOrder.teethFdi.join(", ") : String(editingOrder.teethFdi || "16")) : props.currentToothNumber ?? props.initialToothFdi ?? "16";
+	const resolvedTooth = editingOrder
+		? (Array.isArray(editingOrder.teethFdi) ? editingOrder.teethFdi.join(", ") : String(editingOrder.teethFdi || "16"))
+		: props.currentToothNumber ?? props.initialToothFdi ?? (props.initialTeeth && props.initialTeeth.length > 0 ? props.initialTeeth.join(", ") : "16");
 
 	const [patientName, setPatientName] = useState(resolvedPatient);
 	const [doctorName, setDoctorName] = useState(resolvedDoctor);
@@ -38,7 +40,11 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		setDoctorName(editingOrder?.doctorName ?? props.doctorName ?? props.currentDoctorName ?? "Д-р Орлов А.В. (Ортопед)");
 		setLabName(editingOrder?.labName || "Основная лаборатория");
 		setTechnicianName(editingOrder?.technicianName ?? "");
-		setTeethInput(editingOrder ? (Array.isArray(editingOrder.teethFdi) ? editingOrder.teethFdi.join(", ") : String(editingOrder.teethFdi || "16")) : String(props.currentToothNumber ?? props.initialToothFdi ?? "16"));
+		setTeethInput(
+			editingOrder
+				? (Array.isArray(editingOrder.teethFdi) ? editingOrder.teethFdi.join(", ") : String(editingOrder.teethFdi || "16"))
+				: String(props.currentToothNumber ?? props.initialToothFdi ?? (props.initialTeeth && props.initialTeeth.length > 0 ? props.initialTeeth.join(", ") : "16")),
+		);
 		setConstruction(editingOrder?.constructionType ?? "crown_zirconia");
 		setVitaShade(editingOrder?.vitaShade ?? editingOrder?.colorVita ?? "A2");
 		setTranslucency((editingOrder?.translucency as any) || "MT");
