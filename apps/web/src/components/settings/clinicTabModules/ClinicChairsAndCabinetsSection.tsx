@@ -31,7 +31,7 @@ export interface ClinicChairsAndCabinetsSectionProps {
 	typedChairs: Chair[];
 	newChairName?: string;
 	setNewChairName?: (name: string) => void;
-	handleAddChair: () => void;
+	handleAddChair: (overrideName?: string) => void;
 	newChairReadyToCreate?: boolean;
 	newChairHasXraySensor?: boolean;
 	setNewChairHasXraySensor?: React.Dispatch<React.SetStateAction<boolean>> | ((val: any) => void);
@@ -154,6 +154,7 @@ export const ClinicChairsAndCabinetsSection: React.FC<ClinicChairsAndCabinetsSec
 					<button
 						aria-label="Добавить сотрудника"
 						className="icon-button flex items-center justify-center rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors cursor-pointer shrink-0 h-8 min-h-[32px] w-8 min-w-[32px]"
+						style={{ minHeight: "44px", minWidth: "44px" }}
 						type="button"
 						onClick={handleAddStaff}
 					>

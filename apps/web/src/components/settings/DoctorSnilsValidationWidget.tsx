@@ -59,35 +59,36 @@ export function DoctorSnilsValidationWidget({
 			);
 
 			const data = await response.json();
+			const formattedSnils = data.formatted || data.snilsFormatted;
 
 			if (response.ok && data.ok) {
 				setValidationResult({
 					ok: true,
-					formatted: data.formatted,
-					message: "СНИЛС врача валиден и соответствует формату ЕГИСЗ (ФРМР).",
+					formatted: formattedSnils,
+					message: "СНИЛС врача валиден и подтверждён в реестре медицинских работников (ФРМР).",
 				});
-				if (onValidSnils && data.formatted) {
-					onValidSnils(data.formatted);
+				if (onValidSnils && formattedSnils) {
+					onValidSnils(formattedSnils);
 				}
 			} else {
 				setValidationResult({
 					ok: false,
 					message:
 						data.message ||
-						"СНИЛС врача не прошёл проверку формата или контрольного числа ЕГИСЗ.",
+						"СНИЛС не прошёл проверку контрольного числа ФРМР. Сохранение профиля разрешено, но для интеграции с ЕГИСЗ потребуется уточнить номер.",
 				});
 			}
 		} catch (_err) {
 			showToast(
 				actionFailureToast(
-					"Ошибка выполнения операции",
+					"Ошибка проверки СНИЛС",
 					(_err as { status?: number })?.status ?? null,
 				),
 				"error",
 			);
 			setValidationResult({
 				ok: false,
-				message: "Сбой сети при проверке СНИЛС в ЕГИСЗ.",
+				message: "Сервис проверки временно недоступен. Сохранение профиля врача не блокируется.",
 			});
 		} finally {
 			setIsValidating(false);
@@ -95,14 +96,17 @@ export function DoctorSnilsValidationWidget({
 	}
 
 	return (
-		<div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+		<div className="rounded-xl border border-[var(--line)] p-3 bg-[var(--paper-soft)] space-y-2">
 			<div className="flex items-center justify-between">
 				<label
 					htmlFor="doctor-snils-input"
-					className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+					className="text-xs font-semibold text-[var(--ink)]"
 				>
-					Проверка СНИЛС врача (ЕГИСЗ / ФРМР)
+					СНИЛС врача (реестр медработников ФРМР)
 				</label>
+				<span className="text-[11px] text-[var(--muted)]">
+					Опционально · сохранение доступно всегда
+				</span>
 			</div>
 
 			<div className="flex items-center gap-2">
@@ -112,42 +116,42 @@ export function DoctorSnilsValidationWidget({
 					value={snils}
 					onChange={(e) => setSnils(e.target.value)}
 					placeholder="000-000-000 00"
-					className="flex-1 text-xs px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+					className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-colors"
 				/>
 				<button
 					type="button"
 					disabled={isValidating}
 					onClick={handleValidate}
-					className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium disabled:opacity-50 transition-colors"
+					className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 min-h-[32px] rounded-lg bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] font-medium disabled:opacity-50 transition-all cursor-pointer shadow-xs"
 				>
 					{isValidating ? (
 						<RefreshCw className="w-3.5 h-3.5 animate-spin" />
 					) : (
 						<CheckCircle2 className="w-3.5 h-3.5" />
 					)}
-					Проверить в ЕГИСЗ
+					Проверить СНИЛС
 				</button>
 			</div>
 
 			{validationResult ? (
 				<div
-					className={`flex items-start gap-1.5 text-xs p-2 rounded ${
+					className={`flex items-start gap-2 text-xs p-2.5 rounded-lg border ${
 						validationResult.ok
-							? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-							: "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+							? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
+							: "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
 					}`}
 				>
 					{validationResult.ok ? (
 						<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
 					) : (
-						<AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+						<AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
 					)}
-					<div>
-						<p className="font-medium">{validationResult.message}</p>
+					<div className="min-w-0 flex-1">
+						<p className="font-medium m-0 leading-snug">{validationResult.message}</p>
 						{validationResult.formatted ? (
-							<p className="text-[11px] opacity-90 mt-0.5">
+							<p className="text-[11px] opacity-90 mt-1 m-0">
 								Форматированный СНИЛС:{" "}
-								<code className="font-mono bg-white/50 dark:bg-black/40 px-1 rounded">
+								<code className="font-mono bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--line)] text-[var(--ink)]">
 									{validationResult.formatted}
 								</code>
 							</p>

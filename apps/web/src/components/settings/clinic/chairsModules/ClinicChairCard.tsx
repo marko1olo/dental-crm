@@ -60,7 +60,7 @@ export const ClinicChairCard: React.FC<ClinicChairCardProps> = ({
 						<span
 							className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm border border-white/50"
 							style={{ backgroundColor: (chair as any).color || "#AEA7D3" }}
-							title={`Цветовой маркер StomX: ${(chair as any).color || "Лаванда (#AEA7D3)"}`}
+							title={`Цветовой маркер в расписании: ${(chair as any).color || "Лаванда (#AEA7D3)"}`}
 						/>
 					</div>
 					<div>

@@ -29,7 +29,7 @@ export interface SettingsClinicChairsSectionProps {
 	typedChairs: Chair[];
 	newChairName: string;
 	setNewChairName?: (name: string) => void;
-	handleAddChair: () => void;
+	handleAddChair: (overrideName?: string) => void;
 	newChairReadyToCreate?: boolean;
 	newChairHasXraySensor: boolean;
 	// biome-ignore lint/suspicious/noExplicitAny: state setter

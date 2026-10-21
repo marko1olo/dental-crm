@@ -105,7 +105,7 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					},
 					{
 						id: "clinic_fiscal",
-						title: "Касса и 54-ФЗ",
+						title: "Касса и чеки",
 						subtitle: "ККТ, фискальные чеки, НДС",
 						icon: CreditCard,
 						iconBg: "var(--paper-muted)",
@@ -232,7 +232,7 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 					{
 						id: "imports",
 						title: "Перенос данных",
-						subtitle: "Импорт из IDENT, DentalPRO, Инфодент",
+						subtitle: "Импорт базы пациентов и каталога услуг",
 						icon: HardDriveDownload,
 						iconBg: "var(--paper-muted)",
 						iconColor: "var(--ink)",

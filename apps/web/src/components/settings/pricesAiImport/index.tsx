@@ -59,7 +59,7 @@ export const SettingsPricesAiImportSection: React.FC<
 						<h3>Пакетный импорт прейскуранта (Excel & CSV)</h3>
 						<p>
 							Автоматическое сопоставление с каталогом медицинских услуг, защита от дубликатов и
-							поддержка форматов IDENT, DentalPRO, iStom, 1С:Медицина.
+							поддержка форматов Excel, CSV, XML и таблиц МИС.
 						</p>
 					</div>
 				</div>

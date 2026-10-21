@@ -25,10 +25,11 @@ export async function createStaffMemberInDb(
 ): Promise<StaffMember> {
 	if (useInMemory()) return createStaffMemberInMemory(input);
 
+	let snilsToSave = input.snils || null;
 	if (input.snils) {
 		const snilsCheck = validateStaffSnils(input.snils);
-		if (!snilsCheck.isValid) {
-			throw new Error(snilsCheck.error || "Невалидный СНИЛС сотрудника.");
+		if (snilsCheck.isValid && snilsCheck.formatted) {
+			snilsToSave = snilsCheck.formatted;
 		}
 	}
 
@@ -63,7 +64,7 @@ export async function createStaffMemberInDb(
 			role: input.role,
 			phone: input.phone || null,
 			email: input.email || null,
-			snils: input.snils || null,
+			snils: snilsToSave,
 			isActive: true,
 			workingHours: input.workingHours,
 		})
@@ -133,22 +134,43 @@ export async function updateStaffMemberProfileInDb(
 		phone?: string | null;
 		email?: string | null;
 		isActive?: boolean;
+		specialties?: string[];
+		snils?: string | null;
+		canSignMedicalRecords?: boolean;
+		canManageMoney?: boolean;
+		canManageImports?: boolean;
 	} = {};
 	if (input.fullName !== undefined) updateData.fullName = input.fullName;
 	if (input.role !== undefined) updateData.role = input.role;
 	if (input.phone !== undefined) updateData.phone = input.phone;
 	if (input.email !== undefined) updateData.email = input.email;
 	if (input.active !== undefined) updateData.isActive = input.active;
-	if (Object.keys(updateData).length === 0) return;
-	await db
-		.update(schema.users)
-		.set(updateData)
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		);
+	if (input.specialties !== undefined) updateData.specialties = input.specialties;
+	if (input.snils !== undefined) updateData.snils = input.snils;
+	if (input.canSignMedicalRecords !== undefined) updateData.canSignMedicalRecords = input.canSignMedicalRecords;
+	if (input.canManageMoney !== undefined) updateData.canManageMoney = input.canManageMoney;
+	if (input.canManageImports !== undefined) updateData.canManageImports = input.canManageImports;
+	if (Object.keys(updateData).length > 0) {
+		await db
+			.update(schema.users)
+			.set(updateData)
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			);
+	}
+	if (input.commissionPct !== undefined) {
+		try {
+			await setDoctorCommissionRateInDb(organizationId, staffId, input.commissionPct, {
+				materialCostDeductionPct: input.materialCostDeductionPct,
+				labCostDeductionPct: input.labCostDeductionPct,
+			});
+		} catch (commErr) {
+			console.warn("[staffQueries] Не удалось синхронизировать ставку врача при обновлении профиля:", commErr);
+		}
+	}
 }
 
 /**

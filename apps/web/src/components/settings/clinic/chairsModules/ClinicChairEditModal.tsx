@@ -14,7 +14,7 @@ import type { Chair } from "@dental/shared";
 import type { ClinicChairEditModalProps } from "./clinicChairsTypes";
 
 const CHAIR_PALETTE = [
-	{ name: "Лаванда (StomX)", value: "#AEA7D3" },
+	{ name: "Лаванда", value: "#AEA7D3" },
 	{ name: "Небо (Терапия)", value: "#91B9E9" },
 	{ name: "Мята (Гигиена)", value: "#7EC8BA" },
 	{ name: "Коралл (Хирургия)", value: "#FFB5A7" },

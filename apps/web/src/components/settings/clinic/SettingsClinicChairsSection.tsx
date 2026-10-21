@@ -101,7 +101,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				<div>
 					<h3 className="font-bold text-base text-[var(--ink)] m-0">Кресла и стоматологические установки</h3>
 					<p className="text-xs text-[var(--ink-muted)] m-0 mt-0.5">
-						Оснащение установок (RVG, микроскоп, хирургия), маркеры StomX и индивидуальные графики смен
+						Оснащение установок (RVG, микроскоп, хирургия), цветовые маркеры и индивидуальные графики смен
 					</p>
 				</div>
 				<span className="status-pill status-confirmed px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--primary)] border border-[var(--line)]">
@@ -123,8 +123,9 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				<button
 					aria-label="Добавить кресло или кабинет"
 					className="icon-button h-9 min-h-[36px] w-9 min-w-[36px] flex items-center justify-center rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] shadow-xs transition-colors cursor-pointer shrink-0"
+					style={{ minHeight: "44px", minWidth: "44px" }}
 					type="button"
-					onClick={handleAddChair}
+					onClick={() => handleAddChair()}
 				>
 					<Plus aria-hidden="true" size={18} />
 				</button>
@@ -139,8 +140,8 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 					type="button"
 					className="compact-button secondary-button h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--primary)] bg-[var(--teal-surface)] text-xs font-bold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5"
 					onClick={() => {
-						setNewChairName?.(`Кресло / Кабинет ${typedChairs.length + 1}`);
-						handleAddChair();
+						const chairName = `Кресло / Кабинет ${typedChairs.length + 1}`;
+						handleAddChair(chairName);
 					}}
 					title="Мгновенно добавить кресло / кабинет"
 				>

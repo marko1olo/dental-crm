@@ -55,7 +55,7 @@ export const ClinicRequisitesCard: React.FC<ClinicRequisitesCardProps> = ({
 							Юридические и банковские реквизиты
 						</h4>
 						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-							Данные для автоматической генерации договоров, актов, счетов и фискальных чеков 54-ФЗ
+							Данные для автоматической генерации договоров, актов, счетов и фискальных чеков
 						</p>
 					</div>
 				</div>

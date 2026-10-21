@@ -140,9 +140,12 @@ export function SettingsClinicTab({
 		addStaffMember?.(role, name);
 	};
 
-	const handleAddChair = () => {
-		const name = newChairName?.trim() || `Кресло ${(typedChairs.length || 0) + 1}`;
+	const handleAddChair = (overrideName?: string) => {
+		const name = (typeof overrideName === "string" && overrideName.trim())
+			? overrideName.trim()
+			: (newChairName?.trim() || `Кресло ${(typedChairs.length || 0) + 1}`);
 		addChair?.(name);
+		setNewChairName?.("");
 	};
 
 	return (

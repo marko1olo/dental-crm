@@ -36,27 +36,29 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 
 		const data = parsed.data;
 
-		// 1. Валидация СНИЛС (если передан)
+		// 1. Валидация и автоформатирование СНИЛС (Мандат 8e: ошибки не блокируют сохранение)
+		let snilsToSave = data.snils ?? null;
 		if (data.snils) {
 			const snilsValidation = validateStaffSnils(data.snils);
-			if (!snilsValidation.isValid) {
-				reply.code(400);
-				return {
-					error: "InvalidSnils",
-					message: snilsValidation.error || "Указан невалидный СНИЛС.",
-				};
+			if (snilsValidation.isValid && snilsValidation.formatted) {
+				snilsToSave = snilsValidation.formatted;
+			} else {
+				console.warn(
+					`[Кадры: СНИЛС] СНИЛС сотрудника ${params.staffId} сохранён с предупреждением: ${snilsValidation.error || "контрольная сумма не совпадает"}.`,
+				);
 			}
 		}
 
-		// 2. Валидация ИНН (если передан)
+		// 2. Валидация и автоформатирование ИНН (Мандат 8e: ошибки не блокируют сохранение)
+		let innToSave = data.inn ?? null;
 		if (data.inn) {
 			const innValidation = validateStaffInn(data.inn);
-			if (!innValidation.isValid) {
-				reply.code(400);
-				return {
-					error: "InvalidInn",
-					message: innValidation.error || "Указан невалидный ИНН.",
-				};
+			if (innValidation.isValid && innValidation.formatted) {
+				innToSave = innValidation.formatted;
+			} else {
+				console.warn(
+					`[Кадры: ИНН] ИНН сотрудника ${params.staffId} сохранён с предупреждением: ${innValidation.error || "неверный формат"}.`,
+				);
 			}
 		}
 
@@ -223,7 +225,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		// 7. Сборка обновленного хранилища HR
 		const updatedHrProfile: ExtendedHrProfileStorage = {
 			...existingHr,
-			inn: data.inn !== undefined ? data.inn : (existingHr.inn || null),
+			inn: data.inn !== undefined ? innToSave : (existingHr.inn || null),
 			medicalBookNumber:
 				data.medicalBookNumber !== undefined
 					? data.medicalBookNumber
@@ -285,7 +287,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (data.phone !== undefined) userUpdates.phone = data.phone;
 		if (data.email !== undefined) userUpdates.email = data.email;
 		if (data.active !== undefined) userUpdates.isActive = data.active;
-		if (data.snils !== undefined) userUpdates.snils = data.snils;
+		if (data.snils !== undefined) userUpdates.snils = snilsToSave;
 		if (data.specialties !== undefined) userUpdates.specialties = data.specialties;
 		if (data.canSignMedicalRecords !== undefined)
 			userUpdates.canSignMedicalRecords = data.canSignMedicalRecords;
