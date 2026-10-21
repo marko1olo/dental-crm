@@ -17,7 +17,9 @@ import type {
 	ViewMode,
 } from "./types";
 import { useColumnFocusBatchActions } from "./useColumnFocusBatchActions";
+import { useColumnFocusDisplayLeads } from "./useColumnFocusDisplayLeads";
 import { useColumnFocusMetrics } from "./useColumnFocusMetrics";
+import { useColumnFocusSelection } from "./useColumnFocusSelection";
 
 export function useColumnFocusModalLogic(props: ExpandedColumnFocusModalProps) {
 	const {
@@ -31,13 +33,8 @@ export function useColumnFocusModalLogic(props: ExpandedColumnFocusModalProps) {
 
 	const [viewMode, setViewMode] = useState<ViewMode>("cards");
 	const [searchQuery, setSearchQuery] = useState("");
-	const [urgencyFilter, setUrgencyFilter] = useState<"all" | LeadSlaUrgency>(
-		"all",
-	);
+	const [urgencyFilter, setUrgencyFilter] = useState<"all" | LeadSlaUrgency>("all");
 	const [sortOption, setSortOption] = useState<LeadSortOption>("sla_urgent");
-	const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
-		new Set(),
-	);
 	const [visibleLimit, setVisibleLimit] = useState(60);
 
 	useEffect(() => {
@@ -54,26 +51,12 @@ export function useColumnFocusModalLogic(props: ExpandedColumnFocusModalProps) {
 		[leads, column.id],
 	);
 	const metrics = useColumnFocusMetrics(columnLeads);
-
-	const displayLeads = useMemo(() => {
-		const result = columnLeads.filter((lead) => {
-			const q = searchQuery.toLowerCase().trim();
-			const matches =
-				!q ||
-				lead.name?.toLowerCase().includes(q) ||
-				lead.phone?.includes(q) ||
-				lead.notes?.toLowerCase().includes(q) ||
-				lead.source?.toLowerCase().includes(q);
-			if (!matches) return false;
-			if (
-				urgencyFilter !== "all" &&
-				getLeadSlaStatus(lead).urgency !== urgencyFilter
-			)
-				return false;
-			return true;
-		});
-		return sortLeads(result, sortOption);
-	}, [columnLeads, searchQuery, urgencyFilter, sortOption]);
+	const displayLeads = useColumnFocusDisplayLeads(
+		columnLeads,
+		searchQuery,
+		urgencyFilter,
+		sortOption,
+	);
 
 	useEffect(() => {
 		setVisibleLimit(60);
@@ -83,26 +66,12 @@ export function useColumnFocusModalLogic(props: ExpandedColumnFocusModalProps) {
 		[displayLeads, visibleLimit],
 	);
 
-	const toggleSelectLead = (id: string, e?: React.MouseEvent) => {
-		if (e) e.stopPropagation();
-		setSelectedLeadIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			return next;
-		});
-	};
-
-	const toggleSelectAll = () => {
-		if (
-			selectedLeadIds.size >= displayLeads.length &&
-			displayLeads.length > 0
-		) {
-			setSelectedLeadIds(new Set());
-		} else {
-			setSelectedLeadIds(new Set(displayLeads.map((l) => l.id)));
-		}
-	};
+	const {
+		selectedLeadIds,
+		setSelectedLeadIds,
+		toggleSelectLead,
+		toggleSelectAll,
+	} = useColumnFocusSelection(displayLeads);
 
 	const nextStageInfo: NextStageInfo | undefined = NEXT_STAGE_MAP[column.id] as
 		| NextStageInfo

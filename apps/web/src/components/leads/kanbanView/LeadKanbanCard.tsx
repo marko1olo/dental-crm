@@ -3,7 +3,7 @@
  * Mandate 8s: Single Source of Truth, no duplicate card implementations.
  */
 
-import type React from "react";
+import React from "react";
 import { LeadCard } from "../LeadCard";
 import type { LeadKanbanCardProps } from "./types";
 

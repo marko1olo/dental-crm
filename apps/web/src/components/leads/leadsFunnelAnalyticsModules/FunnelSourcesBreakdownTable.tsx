@@ -1,3 +1,4 @@
+import React from "react";
 import { FunnelBudgetAdjuster } from "../FunnelBudgetAdjuster";
 import { FunnelChannelsTableSection } from "../FunnelChannelsTableSection";
 import type {

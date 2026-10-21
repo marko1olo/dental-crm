@@ -4,28 +4,13 @@
  */
 
 import type { Lead } from "../../store/leadsStore";
+import type {
+	ChannelPerformanceMetric,
+	FunnelLeakWarning,
+} from "./funnelEngineModules/types";
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
 
-export interface ChannelPerformanceMetric {
-	channelKey: string;
-	channelLabel: string;
-	leadCount: number;
-	bookedCount: number;
-	showedUpCount: number;
-	conversionRatePct: number;
-	pipelineRevenue: number;
-	realizedRevenue: number;
-}
-
-export interface FunnelLeakWarning {
-	leadId: string;
-	leadName: string;
-	leadPhone?: string | undefined;
-	leakType: "stale_new" | "unconfirmed_appointment" | "unrecorded_drop_reason";
-	severity: "high" | "medium" | "low";
-	message: string;
-	detectedAtIso: string;
-}
+export type { ChannelPerformanceMetric, FunnelLeakWarning };
 
 /**
  * Расчет эффективности рекламных каналов привлечения (Яндекс, 2ГИС, ПроДокторов, Сайт)

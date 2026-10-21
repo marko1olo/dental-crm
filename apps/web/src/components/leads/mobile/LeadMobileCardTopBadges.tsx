@@ -5,7 +5,7 @@
  */
 
 import { AlertTriangle, Clock } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { LeadSlaInfo } from "../leadsKanbanSla";
 
 interface LeadMobileCardTopBadgesProps {

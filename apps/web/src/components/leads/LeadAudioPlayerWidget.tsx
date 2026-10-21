@@ -4,7 +4,7 @@
  */
 
 import { MessageSquareQuote, Pause, Play } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatAudioDuration } from "./leadsKanbanTypes";
 import { useLeadAudioPlayer } from "./useLeadAudioPlayer";
 

@@ -4,18 +4,13 @@
  */
 
 import { motion } from "framer-motion";
-import type React from "react";
-import { useState } from "react";
-import { isLeadBookingDisabled } from "./LeadsKanbanView";
-import {
-	LeadConvertAppointmentFields,
-	type LeadConvertModalProps,
-	type LeadConvertMode,
-	LeadConvertPatientFields,
-	type LeadConvertSubmitOptions,
-} from "./leadConvertModules";
-import { LeadConvertModalHeader } from "./leadConvertModules/LeadConvertModalHeader";
-import { useLeadConvertDefaults } from "./leadConvertModules/useLeadConvertDefaults";
+import React from "react";
+import { LeadConvertDialogForm } from "./leadConvertModules/LeadConvertDialogForm";
+import type {
+	LeadConvertModalProps,
+	LeadConvertMode,
+	LeadConvertSubmitOptions,
+} from "./leadConvertModules/leadConvertTypes";
 
 export type {
 	LeadConvertModalProps,
@@ -23,86 +18,14 @@ export type {
 	LeadConvertSubmitOptions,
 };
 
-export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
-	isOpen,
-	onClose,
-	onSubmit,
-	staff,
-	chairs,
-	effectiveStaff,
-	effectiveChairs,
-	selectedDoctorId,
-	setSelectedDoctorId,
-	selectedChairId,
-	setSelectedChairId,
-	appointmentDate,
-	setAppointmentDate,
-	appointmentTime,
-	setAppointmentTime,
-	isBooking,
-	lead = null,
-	consentMedical: controlledConsentMedical,
-	setConsentMedical: controlledSetConsentMedical,
-	consentMarketing: controlledConsentMarketing,
-	setConsentMarketing: controlledSetConsentMarketing,
-	cardBg = "var(--paper)",
-	colBg = "var(--paper-soft)",
-	borderColor = "var(--line)",
-}) => {
-	const [mode, setMode] = useState<LeadConvertMode>("patient_and_appointment");
-	const [localConsentMedical, setLocalConsentMedical] = useState(true);
-	const [localConsentMarketing, setLocalConsentMarketing] = useState(false);
-
-	const { reason, setReason, comment, setComment } = useLeadConvertDefaults({
+export const LeadConvertModal: React.FC<LeadConvertModalProps> = (props) => {
+	const {
 		isOpen,
-		lead,
-		appointmentDate,
-		setAppointmentDate,
-		appointmentTime,
-		setAppointmentTime,
-		selectedDoctorId,
-		setSelectedDoctorId,
-		selectedChairId,
-		setSelectedChairId,
-		effectiveStaff,
-		effectiveChairs,
-	});
-
-	const consentMedical =
-		controlledConsentMedical !== undefined
-			? controlledConsentMedical
-			: localConsentMedical;
-	const setConsentMedical =
-		controlledSetConsentMedical || setLocalConsentMedical;
-	const consentMarketing =
-		controlledConsentMarketing !== undefined
-			? controlledConsentMarketing
-			: localConsentMarketing;
-	const setConsentMarketing =
-		controlledSetConsentMarketing || setLocalConsentMarketing;
+		cardBg = "var(--paper)",
+		borderColor = "var(--line)",
+	} = props;
 
 	if (!isOpen) return null;
-
-	const handleFormSubmit = (e: React.FormEvent) => {
-		onSubmit(e, {
-			mode,
-			consentMedical,
-			consentMarketing,
-			reason:
-				mode === "patient_and_appointment"
-					? reason.trim() || undefined
-					: undefined,
-			comment: comment.trim() || undefined,
-		});
-	};
-
-	const submitTitle = isBooking
-		? "Сохраняем..."
-		: mode === "patient_only"
-			? "Создать карту пациента"
-			: lead?.existingPatient
-				? "Подтвердить запись на приём"
-				: "Подтвердить запись и создать карту";
 
 	return (
 		<div
@@ -132,60 +55,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 					boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
 				}}
 			>
-				<LeadConvertModalHeader
-					mode={mode}
-					setMode={setMode}
-					onClose={onClose}
-					borderColor={borderColor}
-				/>
-
-				<form
-					onSubmit={handleFormSubmit}
-					style={{ display: "flex", flexDirection: "column", gap: 14 }}
-				>
-					<LeadConvertPatientFields
-						lead={lead}
-						borderColor={borderColor}
-						consentMedical={consentMedical}
-						setConsentMedical={setConsentMedical}
-						consentMarketing={consentMarketing}
-						setConsentMarketing={setConsentMarketing}
-					/>
-
-					{mode === "patient_and_appointment" && (
-						<LeadConvertAppointmentFields
-							staff={staff}
-							chairs={chairs}
-							effectiveStaff={effectiveStaff}
-							effectiveChairs={effectiveChairs}
-							selectedDoctorId={selectedDoctorId}
-							setSelectedDoctorId={setSelectedDoctorId}
-							selectedChairId={selectedChairId}
-							setSelectedChairId={setSelectedChairId}
-							reason={reason}
-							setReason={setReason}
-							comment={comment}
-							setComment={setComment}
-							appointmentDate={appointmentDate}
-							setAppointmentDate={setAppointmentDate}
-							appointmentTime={appointmentTime}
-							setAppointmentTime={setAppointmentTime}
-							colBg={colBg}
-							borderColor={borderColor}
-						/>
-					)}
-
-					<button
-						type="submit"
-						className="primary-button"
-						data-testid="lead-convert-submit-btn"
-						disabled={isLeadBookingDisabled(isBooking)}
-						title={submitTitle}
-						style={{ marginTop: 8, width: "100%", justifyContent: "center" }}
-					>
-						{submitTitle}
-					</button>
-				</form>
+				<LeadConvertDialogForm {...props} />
 			</motion.div>
 		</div>
 	);

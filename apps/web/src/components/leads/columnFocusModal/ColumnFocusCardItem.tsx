@@ -3,26 +3,13 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import {
-	CheckSquare,
-	Clock,
-	Globe,
-	MessageSquare,
-	Phone,
-	Square,
-	Tag,
-} from "lucide-react";
-import type React from "react";
+import { CheckSquare, Clock, Square } from "lucide-react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
-import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
-import {
-	CHANNEL_BADGE_COLORS,
-	CHANNEL_DISPLAY_NAMES,
-} from "../../telephony/telephonyAttribution";
-import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
-import { normalizeMarketingChannel } from "../leadsFunnelTypes";
 import { getLeadSlaStatus } from "../leadsKanbanTypes";
 import { ColumnFocusCardActions } from "./ColumnFocusCardActions";
+import { ColumnFocusCardMetaRow } from "./ColumnFocusCardMetaRow";
+import { ColumnFocusCardPhoneRow } from "./ColumnFocusCardPhoneRow";
 import { ColumnFocusPatientBadges } from "./ColumnFocusPatientBadges";
 
 interface ColumnFocusCardItemProps {
@@ -49,21 +36,6 @@ export const ColumnFocusCardItem: React.FC<ColumnFocusCardItemProps> = ({
 	onClose,
 }) => {
 	const sla = getLeadSlaStatus(lead);
-	const channelKey = lead.source
-		? normalizeMarketingChannel(lead.source)
-		: null;
-	const channelBadge =
-		channelKey && CHANNEL_BADGE_COLORS[channelKey]
-			? CHANNEL_BADGE_COLORS[channelKey]
-			: {
-					bg: "var(--teal-soft)",
-					color: "var(--teal-dark, var(--teal))",
-					border: "var(--teal)",
-				};
-	const channelLabel =
-		channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-			? CHANNEL_DISPLAY_NAMES[channelKey]
-			: lead.source;
 
 	return (
 		<div
@@ -103,41 +75,7 @@ export const ColumnFocusCardItem: React.FC<ColumnFocusCardItemProps> = ({
 			</div>
 
 			<ColumnFocusPatientBadges lead={lead} onClose={onClose} />
-
-			<div className="expanded-focus-card-phone-row">
-				{lead.phone ? (
-					<div className="flex items-center gap-1.5 text-[12px] text-[var(--muted)]">
-						<Phone size={12} className="shrink-0" />
-						<a
-							href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
-							onClick={(e) => e.stopPropagation()}
-							className="expanded-focus-phone-link"
-						>
-							{lead.phone}
-						</a>
-						<a
-							href={formatWhatsAppUrl(
-								lead.phone,
-								`Здравствуйте, ${lead.name}! Вас беспокоит клиника DENTE.`,
-							)}
-							target="_blank"
-							rel="noopener noreferrer"
-							onClick={(e) => e.stopPropagation()}
-							className="expanded-focus-whatsapp-link"
-							title="Написать в WhatsApp"
-						>
-							<MessageSquare size={11} />
-						</a>
-					</div>
-				) : (
-					<div />
-				)}
-				<LeadAudioPlayerWidget
-					audioUrl={lead.audioRecordUrl}
-					transcriptionSnippet={lead.transcriptionSnippet}
-					durationSeconds={lead.audioDurationSeconds}
-				/>
-			</div>
+			<ColumnFocusCardPhoneRow lead={lead} />
 
 			{lead.notes && (
 				<div className="expanded-focus-card-notes" title={lead.notes}>
@@ -146,35 +84,7 @@ export const ColumnFocusCardItem: React.FC<ColumnFocusCardItemProps> = ({
 				</div>
 			)}
 
-			<div className="expanded-focus-card-meta-row">
-				<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-					{lead.source && (
-						<span
-							className="expanded-focus-channel-badge"
-							style={{
-								background: channelBadge.bg,
-								color: channelBadge.color,
-								borderColor: channelBadge.border,
-							}}
-						>
-							<Globe size={10} className="shrink-0" />
-							<span>{channelLabel}</span>
-						</span>
-					)}
-					{Array.isArray(lead.clinicalTags) &&
-						lead.clinicalTags.map((tag) => (
-							<span key={tag} className="expanded-focus-clinical-tag">
-								<Tag size={10} className="shrink-0" />
-								<span>{tag}</span>
-							</span>
-						))}
-				</div>
-				{lead.expectedRevenue ? (
-					<span className="expanded-focus-revenue-badge">
-						{Number(lead.expectedRevenue).toLocaleString("ru-RU")} ₽
-					</span>
-				) : null}
-			</div>
+			<ColumnFocusCardMetaRow lead={lead} />
 
 			<ColumnFocusCardActions
 				lead={lead}

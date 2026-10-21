@@ -5,7 +5,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { FunnelStageMetric } from "./leadsFunnelTypes";
 
 interface FunnelWaterfallStageItemProps {
@@ -15,6 +15,11 @@ interface FunnelWaterfallStageItemProps {
 	stagesLength: number;
 }
 
+const headerRowStyle: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 };
+const titleWrapStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: "var(--ink)" };
+const barTrackStyle: React.CSSProperties = { width: "100%", height: 24, background: "var(--paper-soft)", borderRadius: 6, overflow: "hidden", position: "relative", border: "1px solid var(--line)" };
+const dropRowStyle: React.CSSProperties = { fontSize: 11, color: "var(--rust)", paddingLeft: 18, display: "flex", alignItems: "center", gap: 4 };
+
 export const FunnelWaterfallStageItem: React.FC<
 	FunnelWaterfallStageItemProps
 > = ({ st, idx, totalLeads, stagesLength }) => {
@@ -23,23 +28,8 @@ export const FunnelWaterfallStageItem: React.FC<
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					fontSize: 12,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 8,
-						fontWeight: 600,
-						color: "var(--ink)",
-					}}
-				>
+			<div style={headerRowStyle}>
+				<div style={titleWrapStyle}>
 					<span
 						style={{
 							width: 10,
@@ -68,31 +58,14 @@ export const FunnelWaterfallStageItem: React.FC<
 						{st.conversionFromFirstPercent}% от входа
 					</span>
 					{idx > 0 && (
-						<span
-							style={{
-								fontSize: 11,
-								color: "var(--muted)",
-								minWidth: 100,
-								textAlign: "right",
-							}}
-						>
+						<span style={{ fontSize: 11, color: "var(--muted)", minWidth: 100, textAlign: "right" }}>
 							Шаг: {st.conversionFromPrevPercent}%
 						</span>
 					)}
 				</div>
 			</div>
 
-			<div
-				style={{
-					width: "100%",
-					height: 24,
-					background: "var(--paper-soft)",
-					borderRadius: 6,
-					overflow: "hidden",
-					position: "relative",
-					border: "1px solid var(--line)",
-				}}
-			>
+			<div style={barTrackStyle}>
 				<motion.div
 					initial={{ width: 0 }}
 					animate={{ width: `${barWidthPercent}%` }}
@@ -113,16 +86,7 @@ export const FunnelWaterfallStageItem: React.FC<
 			</div>
 
 			{st.dropCount > 0 && idx < stagesLength - 1 && (
-				<div
-					style={{
-						fontSize: 11,
-						color: "var(--rust)",
-						paddingLeft: 18,
-						display: "flex",
-						alignItems: "center",
-						gap: 4,
-					}}
-				>
+				<div style={dropRowStyle}>
 					<ArrowRight size={11} />
 					Отвал на этапе: {st.dropCount} чел. ({st.dropRatePercent}%)
 				</div>

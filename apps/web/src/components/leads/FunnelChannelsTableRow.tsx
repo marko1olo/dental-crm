@@ -3,7 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
+import { ChannelEfficiencyBadge } from "./ChannelEfficiencyBadge";
 import type { ChannelFunnelMetric } from "./leadsFunnelTypes";
 
 export const FunnelChannelsTableRow: React.FC<{ ch: ChannelFunnelMetric }> = ({
@@ -71,74 +72,10 @@ export const FunnelChannelsTableRow: React.FC<{ ch: ChannelFunnelMetric }> = ({
 				</span>
 			</td>
 			<td style={{ padding: "10px 8px", fontSize: 11 }}>
-				<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-					{ch.efficiencyRating === "excellent" && (
-						<span
-							style={{
-								background: "rgba(16, 185, 129, 0.15)",
-								color: "var(--ok-fg)",
-								padding: "2px 6px",
-								borderRadius: 4,
-								fontWeight: 700,
-							}}
-						>
-							ТОП
-						</span>
-					)}
-					{ch.efficiencyRating === "good" && (
-						<span
-							style={{
-								background: "rgba(59, 130, 246, 0.15)",
-								color: "var(--accent)",
-								padding: "2px 6px",
-								borderRadius: 4,
-								fontWeight: 600,
-							}}
-						>
-							В плюсе
-						</span>
-					)}
-					{ch.efficiencyRating === "warning" && (
-						<span
-							style={{
-								background: "rgba(245, 158, 11, 0.15)",
-								color: "var(--warn-fg)",
-								padding: "2px 6px",
-								borderRadius: 4,
-								fontWeight: 600,
-							}}
-						>
-							В ноль
-						</span>
-					)}
-					{ch.efficiencyRating === "critical" && (
-						<span
-							style={{
-								background: "rgba(239, 68, 68, 0.15)",
-								color: "var(--rust)",
-								padding: "2px 6px",
-								borderRadius: 4,
-								fontWeight: 600,
-							}}
-						>
-							Убыток
-						</span>
-					)}
-					{ch.efficiencyRating === "organic" && (
-						<span
-							style={{
-								background: "rgba(139, 92, 246, 0.15)",
-								color: "var(--accent)",
-								padding: "2px 6px",
-								borderRadius: 4,
-								fontWeight: 600,
-							}}
-						>
-							Органика / Сарафан
-						</span>
-					)}
-					<span style={{ color: "var(--muted)" }}>{ch.recommendation}</span>
-				</div>
+				<ChannelEfficiencyBadge
+					rating={ch.efficiencyRating}
+					recommendation={ch.recommendation}
+				/>
 			</td>
 		</tr>
 	);

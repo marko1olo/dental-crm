@@ -16,7 +16,9 @@ export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
 	const bom = "\uFEFF";
 
 	lines.push("ОТЧЕТ СКВОЗНОЙ ВОРОНКИ И МАРКЕТИНГОВОЙ АНАЛИТИКИ CRM ДЕНТЕ");
-	lines.push(`Период:;${result.period};Всего обращений в выборке:;${result.filteredLeadsCount}`);
+	lines.push(
+		`Период:;${result.period};Всего обращений в выборке:;${result.filteredLeadsCount}`,
+	);
 	lines.push("");
 
 	// 1. Сводные метрики
@@ -26,18 +28,32 @@ export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
 	lines.push(`Записано на консультацию;${result.summary.bookedLeads};шт.`);
 	lines.push(`Конверсия в запись;${result.summary.bookingRatePercent}%;%`);
 	lines.push(`Дошли до клиники (Show-up);${result.summary.showUpLeads};шт.`);
-	lines.push(`Доходимость (Show-up rate);${result.summary.showUpRatePercent}%;%`);
+	lines.push(
+		`Доходимость (Show-up rate);${result.summary.showUpRatePercent}%;%`,
+	);
 	lines.push(`Согласован план лечения;${result.summary.agreedPlanLeads};шт.`);
-	lines.push(`Принятие плана лечения;${result.summary.planAcceptanceRatePercent}%;%`);
+	lines.push(
+		`Принятие плана лечения;${result.summary.planAcceptanceRatePercent}%;%`,
+	);
 	lines.push(`Оплатившие клиенты;${result.summary.paidLeads};пациентов`);
-	lines.push(`Итоговая конверсия в оплату;${result.summary.overallConversionPercent}%;%`);
-	lines.push(`Рекламный бюджет (Маркетинг);${result.summary.totalMarketingSpendRub};руб.`);
+	lines.push(
+		`Итоговая конверсия в оплату;${result.summary.overallConversionPercent}%;%`,
+	);
+	lines.push(
+		`Рекламный бюджет (Маркетинг);${result.summary.totalMarketingSpendRub};руб.`,
+	);
 	lines.push(`Фактическая выручка;${result.summary.totalRevenueRub};руб.`);
-	lines.push(`Чистая прибыль от маркетинга;${result.summary.netMarketingProfitRub};руб.`);
-	lines.push(`Средний чек первичного пациента;${result.summary.avgBillRub};руб.`);
+	lines.push(
+		`Чистая прибыль от маркетинга;${result.summary.netMarketingProfitRub};руб.`,
+	);
+	lines.push(
+		`Средний чек первичного пациента;${result.summary.avgBillRub};руб.`,
+	);
 	lines.push(`Стоимость лида (CPL);${result.summary.cplRub};руб.`);
 	lines.push(`Стоимость дошедшего (CPS);${result.summary.cpsRub};руб.`);
-	lines.push(`Стоимость привлечения клиента (CAC);${result.summary.cacRub};руб.`);
+	lines.push(
+		`Стоимость привлечения клиента (CAC);${result.summary.cacRub};руб.`,
+	);
 	lines.push(`Возврат инвестиций (ROMI);${result.summary.romiPercent}%;%`);
 	lines.push(`Фактический LTV;${result.summary.ltvEstimatedRub};руб.`);
 	lines.push(`Отношение LTV / CAC;${result.summary.ltvToCacRatio};x`);
@@ -45,7 +61,9 @@ export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
 
 	// 2. Этапы воронки
 	lines.push("2. ЭТАПЫ СКВОЗНОЙ ВОРОНКИ ПАЦИЕНТОВ");
-	lines.push("Этап;Количество;Конверсия от входа (%);Пошаговая конверсия (%);Отвал (Drop-off шт);Отвал (%)");
+	lines.push(
+		"Этап;Количество;Конверсия от входа (%);Пошаговая конверсия (%);Отвал (Drop-off шт);Отвал (%)",
+	);
 	for (const st of result.stages) {
 		lines.push(
 			`"${st.label}";${st.count};${st.conversionFromFirstPercent}%;${st.conversionFromPrevPercent}%;${st.dropCount};${st.dropRatePercent}%`,

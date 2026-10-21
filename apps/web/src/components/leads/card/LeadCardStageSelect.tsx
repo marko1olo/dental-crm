@@ -4,7 +4,7 @@
  */
 
 import { ArrowRight, Check } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { NEXT_STAGE_MAP } from "../leadsKanbanConstants";
 

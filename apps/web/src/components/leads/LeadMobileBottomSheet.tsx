@@ -3,44 +3,18 @@
  * Mandate 8b (<= 120 lines), Apple HIG Natural Thumb Zone First
  */
 
-import type React from "react";
+import React from "react";
 import { useEffect, useState } from "react";
-import type { Lead, LeadStatus } from "../../store/leadsStore";
-import {
-	CHANNEL_BADGE_COLORS,
-	CHANNEL_DISPLAY_NAMES,
-} from "../telephony/telephonyAttribution";
-import { normalizeMarketingChannel } from "./leadsFunnelTypes";
-import {
-	COLUMNS,
-	getKanbanColumnForLeadStatus,
-	getLeadSlaStatus,
-} from "./leadsKanbanTypes";
+import type { LeadStatus } from "../../store/leadsStore";
 import { LeadMobileSheetBottomBar } from "./mobile/LeadMobileSheetBottomBar";
 import { LeadMobileSheetClinicalCard } from "./mobile/LeadMobileSheetClinicalCard";
 import { LeadMobileSheetContactCard } from "./mobile/LeadMobileSheetContactCard";
 import { LeadMobileSheetHeader } from "./mobile/LeadMobileSheetHeader";
 import { LeadMobileSheetStagesAndNotes } from "./mobile/LeadMobileSheetStagesAndNotes";
+import type { LeadMobileBottomSheetProps } from "./mobile/mobileSheetTypes";
+import { useMobileSheetLeadData } from "./mobile/useMobileSheetLeadData";
 
-export interface LeadMobileBottomSheetProps {
-	lead: Lead | null;
-	isOpen: boolean;
-	onClose: () => void;
-	onStatusChange: (
-		e: React.MouseEvent,
-		leadId: string,
-		nextStatus: LeadStatus,
-		options?: { reason?: string; dropReason?: string },
-	) => void;
-	onSchedule?: ((leadId: string) => void) | undefined;
-	onQuickSchedule?: ((leadId: string) => Promise<void> | void) | undefined;
-	onCreatePatient?: ((lead: Lead) => Promise<void> | void) | undefined;
-	onUpdateNotes?:
-		| ((leadId: string, notes: string) => Promise<void> | void)
-		| undefined;
-	onOpenPatientCard?: ((patientId: string) => void) | undefined;
-	creatingPatientLeadId?: string | null | undefined;
-}
+export type { LeadMobileBottomSheetProps };
 
 export const LeadMobileBottomSheet = ({
 	lead,
@@ -62,35 +36,14 @@ export const LeadMobileBottomSheet = ({
 	}, [lead]);
 
 	useEffect(() => {
-		if (isOpen) document.body.style.overflow = "hidden";
-		else document.body.style.overflow = "";
-		return () => {
-			document.body.style.overflow = "";
-		};
+		document.body.style.overflow = isOpen ? "hidden" : "";
+		return () => { document.body.style.overflow = ""; };
 	}, [isOpen]);
 
 	if (!isOpen || !lead) return null;
 
-	const sla = getLeadSlaStatus(lead);
-	const channelKey = lead.source
-		? normalizeMarketingChannel(lead.source)
-		: null;
-	const channelBadge =
-		channelKey && CHANNEL_BADGE_COLORS[channelKey]
-			? CHANNEL_BADGE_COLORS[channelKey]
-			: {
-					bg: "var(--teal-soft)",
-					color: "var(--teal-dark, var(--teal))",
-					border: "var(--teal)",
-				};
-	const channelLabel =
-		channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-			? CHANNEL_DISPLAY_NAMES[channelKey]
-			: lead.source || "Прямое обращение";
-	const rawPhone = lead.phone ? lead.phone.replace(/[^\d+]/g, "") : "";
-	const currentColumn =
-		COLUMNS.find((c) => c.id === lead.status) ||
-		getKanbanColumnForLeadStatus(lead.status);
+	const { sla, channelBadge, channelLabel, rawPhone, currentColumn } =
+		useMobileSheetLeadData(lead);
 
 	const handleSaveNotes = async () => {
 		if (!onUpdateNotes || notesText === (lead.notes || "")) return;
@@ -104,11 +57,8 @@ export const LeadMobileBottomSheet = ({
 
 	const handleStageClick = (e: React.MouseEvent, targetStatus: LeadStatus) => {
 		if (targetStatus === lead.status) return;
-		if (targetStatus === "trash")
-			onStatusChange(e, lead.id, targetStatus, {
-				dropReason: lead.dropReason || "Отказ / Неактуально",
-			});
-		else onStatusChange(e, lead.id, targetStatus);
+		const dropReason = targetStatus === "trash" ? (lead.dropReason || "Отказ / Неактуально") : undefined;
+		onStatusChange(e, lead.id, targetStatus, dropReason ? { dropReason } : undefined);
 	};
 
 	return (

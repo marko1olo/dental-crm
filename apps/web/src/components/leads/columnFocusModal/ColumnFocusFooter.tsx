@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 
 interface ColumnFocusFooterProps {
 	visibleCount: number;

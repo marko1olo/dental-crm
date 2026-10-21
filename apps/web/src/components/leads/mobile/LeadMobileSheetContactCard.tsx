@@ -5,7 +5,7 @@
  */
 
 import { MessageSquare, Phone } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
 
 interface LeadMobileSheetContactCardProps {

@@ -3,9 +3,9 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import { BarChart3, MoreVertical, RotateCcw, Search, X } from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { Search, X } from "lucide-react";
+import React from "react";
+import { LeadsMobileMenuDropdown } from "./LeadsMobileMenuDropdown";
 
 interface LeadsMobileTopBarProps {
 	isSearchOpen: boolean;
@@ -24,23 +24,6 @@ export const LeadsMobileTopBar: React.FC<LeadsMobileTopBarProps> = ({
 	onOpenAnalytics,
 	onOpenLeakDetector,
 }) => {
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				mobileMenuRef.current &&
-				!mobileMenuRef.current.contains(e.target as Node)
-			) {
-				setIsMobileMenuOpen(false);
-			}
-		};
-		if (isMobileMenuOpen)
-			document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isMobileMenuOpen]);
-
 	return (
 		<>
 			<div className="leads-mobile-header">
@@ -71,59 +54,10 @@ export const LeadsMobileTopBar: React.FC<LeadsMobileTopBarProps> = ({
 						<Search size={18} />
 					</button>
 
-					{(onOpenAnalytics || onOpenLeakDetector) && (
-						<div className="relative inline-flex" ref={mobileMenuRef}>
-							<button
-								type="button"
-								onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-								className="leads-mobile-icon-btn"
-								aria-label="Дополнительные функции воронки"
-								data-testid="mobile-leads-more-btn"
-								title="Дополнительные функции"
-							>
-								<MoreVertical size={18} />
-							</button>
-
-							{isMobileMenuOpen && (
-								<div className="leads-mobile-menu-dropdown" role="menu">
-									{onOpenAnalytics && (
-										<button
-											type="button"
-											className="leads-mobile-menu-item"
-											onClick={() => {
-												setIsMobileMenuOpen(false);
-												onOpenAnalytics();
-											}}
-											data-testid="mobile-open-analytics-btn"
-										>
-											<BarChart3
-												size={16}
-												className="text-[var(--teal)] shrink-0"
-											/>
-											<span>Аналитика воронки</span>
-										</button>
-									)}
-									{onOpenLeakDetector && (
-										<button
-											type="button"
-											className="leads-mobile-menu-item"
-											onClick={() => {
-												setIsMobileMenuOpen(false);
-												onOpenLeakDetector();
-											}}
-											data-testid="mobile-open-leak-detector-btn"
-										>
-											<RotateCcw
-												size={16}
-												className="text-[var(--teal)] shrink-0"
-											/>
-											<span>Детектор оттока (&gt;210 дней)</span>
-										</button>
-									)}
-								</div>
-							)}
-						</div>
-					)}
+					<LeadsMobileMenuDropdown
+						onOpenAnalytics={onOpenAnalytics}
+						onOpenLeakDetector={onOpenLeakDetector}
+					/>
 				</div>
 			</div>
 

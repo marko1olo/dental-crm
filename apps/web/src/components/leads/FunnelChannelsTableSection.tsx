@@ -4,7 +4,8 @@
  */
 
 import { ChevronDown, ChevronUp, Globe } from "lucide-react";
-import type React from "react";
+import React from "react";
+import { FunnelChannelsCompactStrip } from "./FunnelChannelsCompactStrip";
 import { FunnelChannelsTableExpanded } from "./FunnelChannelsTableExpanded";
 import type {
 	ChannelFunnelMetric,
@@ -30,28 +31,9 @@ export const FunnelChannelsTableSection: React.FC<
 				padding: "20px",
 			}}
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 16,
-					flexWrap: "wrap",
-					gap: 8,
-				}}
-			>
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
 				<div>
-					<h3
-						style={{
-							margin: 0,
-							fontSize: 15,
-							fontWeight: 700,
-							color: "var(--ink)",
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-						}}
-					>
+					<h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
 						<Globe size={18} color="var(--brand-500)" />
 						Эффективность Рекламных Каналов
 					</h3>
@@ -102,60 +84,11 @@ export const FunnelChannelsTableSection: React.FC<
 			</div>
 
 			{!isOpen && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						fontSize: 12,
-						padding: "10px 14px",
-						background: "var(--paper-soft)",
-						borderRadius: 10,
-						border: "1px solid var(--line)",
-						flexWrap: "wrap",
-						gap: 8,
-					}}
-					data-testid="channels-compact-strip"
-				>
-					<span style={{ color: "var(--muted)" }}>
-						Рекламных каналов:{" "}
-						<strong style={{ color: "var(--ink)" }}>{channels.length}</strong> •
-						Бюджет:{" "}
-						<strong style={{ color: "var(--ink)" }}>
-							{summary.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽
-						</strong>{" "}
-						• CPL:{" "}
-						<strong style={{ color: "var(--teal)" }}>
-							{summary.cplRub.toLocaleString("ru-RU")} ₽
-						</strong>{" "}
-						• CAC:{" "}
-						<strong style={{ color: "var(--accent)" }}>
-							{summary.cacRub.toLocaleString("ru-RU")} ₽
-						</strong>{" "}
-						• Выручка:{" "}
-						<strong style={{ color: "var(--ok-fg)" }}>
-							{summary.totalRevenueRub.toLocaleString("ru-RU")} ₽
-						</strong>
-					</span>
-					<button
-						type="button"
-						onClick={onToggle}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--teal)",
-							fontWeight: 600,
-							cursor: "pointer",
-							fontSize: 12,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 4,
-						}}
-					>
-						<span>Развернуть таблицу каналов</span>
-						<ChevronDown size={13} />
-					</button>
-				</div>
+				<FunnelChannelsCompactStrip
+					channelsLength={channels.length}
+					summary={summary}
+					onToggle={onToggle}
+				/>
 			)}
 
 			{isOpen && (

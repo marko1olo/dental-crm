@@ -106,11 +106,7 @@ export type FunnelTimePeriod =
 	| "year"
 	| "all";
 
-export const FUNNEL_PERIOD_OPTIONS: readonly {
-	id: FunnelTimePeriod;
-	label: string;
-	days: number;
-}[] = [
+export const FUNNEL_PERIOD_OPTIONS: readonly { id: FunnelTimePeriod; label: string; days: number }[] = [
 	{ id: "today", label: "Сегодня", days: 1 },
 	{ id: "week", label: "7 дней", days: 7 },
 	{ id: "month", label: "Месяц (30 дн.)", days: 30 },

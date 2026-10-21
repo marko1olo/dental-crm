@@ -4,7 +4,8 @@
  */
 
 import { BarChart3, ChevronDown, ChevronUp } from "lucide-react";
-import type React from "react";
+import React from "react";
+import { FunnelWaterfallCompactStrip } from "./FunnelWaterfallCompactStrip";
 import { FunnelWaterfallStageItem } from "./FunnelWaterfallStageItem";
 import type { FunnelStageMetric } from "./leadsFunnelTypes";
 
@@ -30,28 +31,9 @@ export const FunnelWaterfallSection: React.FC<FunnelWaterfallSectionProps> = ({
 				padding: "20px",
 			}}
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 16,
-					flexWrap: "wrap",
-					gap: 8,
-				}}
-			>
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
 				<div>
-					<h3
-						style={{
-							margin: 0,
-							fontSize: 15,
-							fontWeight: 700,
-							color: "var(--ink)",
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-						}}
-					>
+					<h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
 						<BarChart3 size={18} color="var(--brand-500)" />
 						Клиническая Сквозная Воронка Пациентов
 					</h3>
@@ -102,59 +84,7 @@ export const FunnelWaterfallSection: React.FC<FunnelWaterfallSectionProps> = ({
 			</div>
 
 			{!isOpen && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						fontSize: 12,
-						padding: "10px 14px",
-						background: "var(--paper-soft)",
-						borderRadius: 10,
-						border: "1px solid var(--line)",
-						flexWrap: "wrap",
-						gap: 8,
-					}}
-					data-testid="leads-waterfall-compact-strip"
-				>
-					<span style={{ color: "var(--muted)" }}>
-						6 клинических этапов:{" "}
-						<strong style={{ color: "var(--ink)" }}>
-							{stages[0]?.count ?? 0}
-						</strong>{" "}
-						лидов →{" "}
-						<strong style={{ color: "var(--teal)" }}>
-							{stages[2]?.count ?? 0}
-						</strong>{" "}
-						записей →{" "}
-						<strong style={{ color: "var(--warn-fg)" }}>
-							{stages[3]?.count ?? 0}
-						</strong>{" "}
-						явок (Show-up) →{" "}
-						<strong style={{ color: "var(--ok-fg)" }}>
-							{stages[5]?.count ?? 0}
-						</strong>{" "}
-						оплат в кассу.
-					</span>
-					<button
-						type="button"
-						onClick={onToggle}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--teal)",
-							fontWeight: 600,
-							cursor: "pointer",
-							fontSize: 12,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 4,
-						}}
-					>
-						<span>Развернуть воронку</span>
-						<ChevronDown size={13} />
-					</button>
-				</div>
+				<FunnelWaterfallCompactStrip stages={stages} onToggle={onToggle} />
 			)}
 
 			{isOpen && (

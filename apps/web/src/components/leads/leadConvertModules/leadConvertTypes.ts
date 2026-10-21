@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Leads Conversion Modal Types (Layer 0)
- * 
+ *
  * Mandate 8s (SSOT Componentization), Mandate 8e & 8n (Solo Doctor Autonomy & Zero Dead-Ends)
  */
 
@@ -21,10 +21,7 @@ export interface LeadConvertSubmitOptions {
 export interface LeadConvertModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (
-		e: React.FormEvent,
-		options?: LeadConvertSubmitOptions,
-	) => void;
+	onSubmit: (e: React.FormEvent, options?: LeadConvertSubmitOptions) => void;
 	staff: BookableDoctor[];
 	chairs: BookableChair[];
 	effectiveStaff: BookableDoctor[];

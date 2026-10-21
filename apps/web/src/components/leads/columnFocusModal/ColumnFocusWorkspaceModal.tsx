@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 import { ColumnFocusBatchToolbar } from "./ColumnFocusBatchToolbar";
 import { ColumnFocusContent } from "./ColumnFocusContent";
 import { ColumnFocusFooter } from "./ColumnFocusFooter";
@@ -14,112 +14,69 @@ import { useColumnFocusModalLogic } from "./useColumnFocusModalLogic";
 export const ColumnFocusWorkspaceModal: React.FC<
 	ExpandedColumnFocusModalProps
 > = (props) => {
-	const {
-		isOpen,
-		onClose,
-		column,
-		staff,
-		onStatusChange,
-		onEditLead,
-		onScheduleLead,
-		onCreatePatient,
-	} = props;
-
-	const {
-		viewMode,
-		setViewMode,
-		searchQuery,
-		setSearchQuery,
-		urgencyFilter,
-		setUrgencyFilter,
-		sortOption,
-		setSortOption,
-		selectedLeadIds,
-		batchTargetDoctorId,
-		setBatchTargetDoctorId,
-		isProcessingBatch,
-		columnLeads,
-		metrics,
-		displayLeads,
-		visibleLimit,
-		visibleLeads,
-		nextStageInfo,
-		toggleSelectLead,
-		toggleSelectAll,
-		handleBatchAdvance,
-		handleBatchMoveToStage,
-		handleBatchAssign,
-		handleExportCsv,
-		handleLoadMore,
-	} = useColumnFocusModalLogic(props);
+	const { isOpen, onClose, column, staff, onStatusChange, onEditLead, onScheduleLead, onCreatePatient } = props;
+	const l = useColumnFocusModalLogic(props);
 
 	if (!isOpen) return null;
 
 	return (
-		<div
-			className="expanded-focus-modal-overlay"
-			onClick={onClose}
-			data-testid="expanded-column-modal"
-		>
-			<div
-				className="expanded-focus-modal-container"
-				onClick={(e) => e.stopPropagation()}
-			>
+		<div className="expanded-focus-modal-overlay" onClick={onClose} data-testid="expanded-column-modal">
+			<div className="expanded-focus-modal-container" onClick={(e) => e.stopPropagation()}>
 				<ColumnFocusHeader
 					column={column}
-					metrics={metrics}
-					viewMode={viewMode}
-					onViewModeChange={setViewMode}
+					metrics={l.metrics}
+					viewMode={l.viewMode}
+					onViewModeChange={l.setViewMode}
 					onClose={onClose}
 				/>
 
 				<ColumnFocusBatchToolbar
-					searchQuery={searchQuery}
-					onSearchQueryChange={setSearchQuery}
-					urgencyFilter={urgencyFilter}
-					onUrgencyFilterChange={setUrgencyFilter}
-					metrics={metrics}
-					sortOption={sortOption}
-					onSortOptionChange={setSortOption}
-					onExportCsv={handleExportCsv}
-					selectedLeadIds={selectedLeadIds}
-					totalDisplayLeads={displayLeads.length}
-					onToggleSelectAll={toggleSelectAll}
-					nextStageInfo={nextStageInfo}
-					isProcessingBatch={isProcessingBatch}
-					onBatchAdvance={handleBatchAdvance}
-					onBatchMoveToStage={handleBatchMoveToStage}
+					searchQuery={l.searchQuery}
+					onSearchQueryChange={l.setSearchQuery}
+					urgencyFilter={l.urgencyFilter}
+					onUrgencyFilterChange={l.setUrgencyFilter}
+					metrics={l.metrics}
+					sortOption={l.sortOption}
+					onSortOptionChange={l.setSortOption}
+					onExportCsv={l.handleExportCsv}
+					selectedLeadIds={l.selectedLeadIds}
+					totalDisplayLeads={l.displayLeads.length}
+					onToggleSelectAll={l.toggleSelectAll}
+					nextStageInfo={l.nextStageInfo}
+					isProcessingBatch={l.isProcessingBatch}
+					onBatchAdvance={l.handleBatchAdvance}
+					onBatchMoveToStage={l.handleBatchMoveToStage}
 					staff={staff}
-					batchTargetDoctorId={batchTargetDoctorId}
-					onBatchTargetDoctorIdChange={setBatchTargetDoctorId}
-					onBatchAssign={handleBatchAssign}
-					onClearSelection={() => toggleSelectAll()}
+					batchTargetDoctorId={l.batchTargetDoctorId}
+					onBatchTargetDoctorIdChange={l.setBatchTargetDoctorId}
+					onBatchAssign={l.handleBatchAssign}
+					onClearSelection={() => l.toggleSelectAll()}
 				/>
 
 				<div className="expanded-focus-content-scroll">
 					<ColumnFocusContent
-						displayLeads={displayLeads}
-						visibleLeads={visibleLeads}
-						columnLeads={columnLeads}
-						viewMode={viewMode}
-						selectedLeadIds={selectedLeadIds}
-						nextStageInfo={nextStageInfo}
-						visibleLimit={visibleLimit}
-						onToggleSelectLead={toggleSelectLead}
-						onToggleSelectAll={toggleSelectAll}
+						displayLeads={l.displayLeads}
+						visibleLeads={l.visibleLeads}
+						columnLeads={l.columnLeads}
+						viewMode={l.viewMode}
+						selectedLeadIds={l.selectedLeadIds}
+						nextStageInfo={l.nextStageInfo}
+						visibleLimit={l.visibleLimit}
+						onToggleSelectLead={l.toggleSelectLead}
+						onToggleSelectAll={l.toggleSelectAll}
 						onEditLead={onEditLead}
 						onStatusChange={onStatusChange}
 						onScheduleLead={onScheduleLead}
 						onCreatePatient={onCreatePatient}
 						onClose={onClose}
-						onLoadMore={handleLoadMore}
+						onLoadMore={l.handleLoadMore}
 					/>
 				</div>
 
 				<ColumnFocusFooter
-					visibleCount={visibleLeads.length}
-					displayCount={displayLeads.length}
-					totalCount={columnLeads.length}
+					visibleCount={l.visibleLeads.length}
+					displayCount={l.displayLeads.length}
+					totalCount={l.columnLeads.length}
 					onClose={onClose}
 				/>
 			</div>

@@ -3,8 +3,8 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import React from "react";
 import { Trash2, UserCheck, UserPlus } from "lucide-react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadFormFooterActionsProps {
@@ -17,6 +17,27 @@ interface LeadFormFooterActionsProps {
 	onCreatePatient: (lead: Lead) => void;
 	onDelete: () => void;
 }
+
+const secondaryBtnStyle: React.CSSProperties = {
+	justifyContent: "center",
+	color: "var(--teal)",
+	borderColor: "var(--line)",
+	minHeight: 40,
+	display: "flex",
+	alignItems: "center",
+	gap: 6,
+	fontWeight: 600,
+};
+const deleteBtnStyle: React.CSSProperties = {
+	justifyContent: "center",
+	color: "var(--rust)",
+	borderColor: "var(--rust)",
+	minWidth: 44,
+	minHeight: 40,
+	display: "flex",
+	alignItems: "center",
+	gap: 6,
+};
 
 export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 	isNew,
@@ -48,10 +69,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 						disabled={isDeleting}
 						onClick={() => onOpenPatient(currentLead.existingPatient!.id)}
 						title={`Открыть карту постоянного пациента ${currentLead.existingPatient.fullName}`}
-						style={{
-							justifyContent: "center", color: "var(--teal)", borderColor: "var(--line)",
-							minHeight: 40, display: "flex", alignItems: "center", gap: 6, fontWeight: 600,
-						}}
+						style={secondaryBtnStyle}
 					>
 						<UserCheck size={16} />
 						Карточка пациента
@@ -64,10 +82,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 						disabled={isDeleting || creatingPatientLeadId === editingLeadId}
 						onClick={() => onCreatePatient(currentLead)}
 						title="Создать карту пациента из обращения"
-						style={{
-							justifyContent: "center", color: "var(--teal)", borderColor: "var(--line)",
-							minHeight: 40, display: "flex", alignItems: "center", gap: 6, fontWeight: 600,
-						}}
+						style={secondaryBtnStyle}
 					>
 						<UserPlus size={16} />
 						{creatingPatientLeadId === editingLeadId ? "Создаём…" : "Создать пациента"}
@@ -84,10 +99,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 					onClick={onDelete}
 					title="Удалить обращение из базы навсегда"
 					aria-label="Удалить обращение навсегда"
-					style={{
-						justifyContent: "center", color: "var(--rust)", borderColor: "var(--rust)",
-						minWidth: 44, minHeight: 40, display: "flex", alignItems: "center", gap: 6,
-					}}
+					style={deleteBtnStyle}
 				>
 					<Trash2 size={16} />
 					{isDeleting ? " Удаляем…" : " Удалить"}

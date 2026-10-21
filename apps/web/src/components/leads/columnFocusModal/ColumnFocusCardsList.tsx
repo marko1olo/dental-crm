@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 import { ColumnFocusCardItem } from "./ColumnFocusCardItem";
 import type { ColumnFocusCardsListProps } from "./types";
 

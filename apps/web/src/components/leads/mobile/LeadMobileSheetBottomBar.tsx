@@ -5,7 +5,7 @@
  */
 
 import { Calendar, UserPlus } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 
 interface LeadMobileSheetBottomBarProps {

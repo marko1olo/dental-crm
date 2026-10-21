@@ -4,7 +4,7 @@
  */
 
 import { AlertTriangle } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { LeadStatus } from "../../../store/leadsStore";
 
 interface LeadsMobileSegmentedBarProps {

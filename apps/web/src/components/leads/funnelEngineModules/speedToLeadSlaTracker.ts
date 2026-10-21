@@ -4,13 +4,22 @@
  */
 
 import { safePercent } from "./funnelConversionCalculator.js";
-import {
-	calculateAdminSlaRating,
-	evaluateLeadSla,
-} from "./speedToLeadSlaEvaluator.js";
+import { evaluateLeadSla } from "./speedToLeadSlaEvaluator.js";
 import type { FunnelLead, SpeedToLeadMetrics } from "./types.js";
 
 export * from "./speedToLeadSlaEvaluator.js";
+
+/**
+ * Оценка рейтинга соблюдения регламента
+ */
+export function calculateAdminSlaRating(
+	complianceRatePercent: number,
+): "excellent" | "good" | "warning" | "critical" {
+	if (complianceRatePercent >= 95) return "excellent";
+	if (complianceRatePercent >= 85) return "good";
+	if (complianceRatePercent >= 70) return "warning";
+	return "critical";
+}
 
 /**
  * Комплексный расчет метрик скорости ответа и штрафов администраторов

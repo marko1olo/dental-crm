@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * DENTE Dental CRM — Funnel Modal Header Bar
  * Mandate 8b (<= 120 lines)
@@ -19,6 +20,37 @@ export interface FunnelModalHeaderBarProps {
 	readonly onOpenLeakDetector?: (() => void) | undefined;
 }
 
+const headerStyle: React.CSSProperties = {
+	padding: "18px 24px",
+	borderBottom: "1px solid var(--line)",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	flexWrap: "wrap",
+	gap: "12px",
+	background: "var(--paper-soft)",
+};
+const iconBoxStyle: React.CSSProperties = {
+	width: 40,
+	height: 40,
+	borderRadius: 10,
+	background: "rgba(15, 118, 110, 0.15)",
+	color: "var(--teal)",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+};
+const titleBadgeStyle: React.CSSProperties = {
+	fontSize: 10,
+	fontWeight: 700,
+	padding: "2px 8px",
+	borderRadius: 12,
+	background: "var(--teal)",
+	color: "var(--on-teal, var(--paper))",
+	textTransform: "uppercase",
+	letterSpacing: "0.05em",
+};
+
 export function FunnelModalHeaderBar({
 	period,
 	onSelectPeriod,
@@ -32,70 +64,22 @@ export function FunnelModalHeaderBar({
 	return (
 		<>
 			{/* 1. HEADER & ACTIONS */}
-			<header
-				style={{
-					padding: "18px 24px",
-					borderBottom: "1px solid var(--line)",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					flexWrap: "wrap",
-					gap: "12px",
-					background: "var(--paper-soft)",
-				}}
-			>
+			<header style={headerStyle}>
 				<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-					<div
-						style={{
-							width: 40,
-							height: 40,
-							borderRadius: 10,
-							background: "rgba(15, 118, 110, 0.15)",
-							color: "var(--teal)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					>
+					<div style={iconBoxStyle}>
 						<BarChart3 size={22} />
 					</div>
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-							<h2
-								style={{
-									margin: 0,
-									fontSize: 18,
-									fontWeight: 700,
-									color: "var(--ink)",
-									letterSpacing: "-0.01em",
-								}}
-							>
+							<h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
 								Сквозная Воронка & Маркетинг
 							</h2>
-							<span
-								style={{
-									fontSize: 10,
-									fontWeight: 700,
-									padding: "2px 8px",
-									borderRadius: 12,
-									background: "var(--teal)",
-									color: "var(--on-teal, var(--paper))",
-									textTransform: "uppercase",
-									letterSpacing: "0.05em",
-								}}
-							>
+							<span style={titleBadgeStyle}>
 								CRM Intelligence
 							</span>
 						</div>
-						<p
-							style={{
-								margin: "2px 0 0",
-								fontSize: 12,
-								color: "var(--muted)",
-							}}
-						>
-							Конверсии от лида до оплаты в кассу • Юнит-экономика CAC/LTV •
-							Маркетинговые каналы
+						<p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
+							Конверсии от лида до оплаты в кассу • Юнит-экономика CAC/LTV • Маркетинговые каналы
 						</p>
 					</div>
 				</div>

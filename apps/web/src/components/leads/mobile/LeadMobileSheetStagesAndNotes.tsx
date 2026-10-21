@@ -5,7 +5,7 @@
  */
 
 import { Check } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { COLUMNS, isLeadInKanbanColumn } from "../leadsKanbanTypes";
 

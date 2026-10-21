@@ -5,7 +5,6 @@
 
 import { dateInputValuePlusDays } from "../../../AppHelpers";
 import type { Lead } from "../../../store/leadsStore";
-import { usePatientStore } from "../../../store/patientStore";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import type { LeadConvertSubmitOptions } from "../LeadConvertModal";
@@ -18,27 +17,10 @@ import {
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
 } from "../leadsKanbanTypes";
-import type { PendingBookingInfo } from "./useLeadBookingNavigation";
+import { submitPatientOnlyConversion } from "./submitPatientOnlyConversion";
+import type { ConvertSubmitOptions } from "./convertSubmitTypes";
 
-interface ConvertSubmitOptions {
-	convertingLeadId: string | null;
-	isBooking: boolean;
-	setIsBooking: (b: boolean) => void;
-	leads: Lead[];
-	staff: BookableDoctor[];
-	chairs: BookableChair[];
-	selectedDoctorId: string;
-	selectedChairId: string;
-	appointmentDate: string;
-	appointmentTime: string;
-	visitMinutes: number | null | undefined;
-	clinicTimeZone: string | null | undefined;
-	convertLeadToAppointment: (id: string, payload: any) => Promise<any>;
-	fetchLeads: () => void;
-	setIsConvertOpen: (b: boolean) => void;
-	setConvertingLeadId: (id: string | null) => void;
-	navigateToScheduleWithBooking: (b: PendingBookingInfo) => void;
-}
+export type { ConvertSubmitOptions };
 
 export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 	const handleConvertSubmit = async (
@@ -49,46 +31,20 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 		if (!opts.convertingLeadId || opts.isBooking) return;
 
 		if (options?.mode === "patient_only") {
-			opts.setIsBooking(true);
-			try {
-				const res = await opts.convertLeadToAppointment(opts.convertingLeadId, {
-					comment: options?.comment,
-				});
-				const activeLead = opts.leads.find(
-					(l) => l.id === opts.convertingLeadId,
-				);
-				const src = activeLead?.source
-					? ` (источник: ${activeLead.source})`
-					: "";
-				const consent = options?.consentMarketing
-					? " [рассылки: разрешены]"
-					: " [рассылки: отключены]";
-				const msg = activeLead?.existingPatient
-					? `Обращение сопоставлено с постоянным пациентом (${activeLead.existingPatient.fullName})${src}${consent}`
-					: `Создана амбулаторная карта пациента${src}${consent}`;
-				showToast(msg, "success");
-				opts.setIsConvertOpen(false);
-				opts.setConvertingLeadId(null);
-				opts.fetchLeads();
-				const createdPatient = res?.patient as { id?: string } | undefined;
-				if (createdPatient?.id)
-					usePatientStore.getState().setSelectedPatientId(createdPatient.id);
-			} catch (err: unknown) {
-				logger.error(err);
-				showToast(
-					err instanceof Error && err.message.trim()
-						? err.message
-						: "Карта не создана",
-					"error",
-				);
-			} finally {
-				opts.setIsBooking(false);
-			}
+			await submitPatientOnlyConversion({
+				convertingLeadId: opts.convertingLeadId,
+				options,
+				leads: opts.leads,
+				convertLeadToAppointment: opts.convertLeadToAppointment,
+				fetchLeads: opts.fetchLeads,
+				setIsConvertOpen: opts.setIsConvertOpen,
+				setConvertingLeadId: opts.setConvertingLeadId,
+				setIsBooking: opts.setIsBooking,
+			});
 			return;
 		}
 
-		const targetDate =
-			opts.appointmentDate || dateInputValuePlusDays(1, opts.clinicTimeZone);
+		const targetDate = opts.appointmentDate || dateInputValuePlusDays(1, opts.clinicTimeZone);
 		const targetTime = opts.appointmentTime || "10:00";
 		const startDateTime = new Date(`${targetDate}T${targetTime}:00`);
 		if (Number.isNaN(startDateTime.getTime())) {
@@ -96,9 +52,7 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 			return;
 		}
 		const effectiveVisitMins = resolveLeadVisitMinutes(opts.visitMinutes);
-		const endDateTime = new Date(
-			startDateTime.getTime() + effectiveVisitMins * 60000,
-		);
+		const endDateTime = new Date(startDateTime.getTime() + effectiveVisitMins * 60000);
 		const doctorIdToBook =
 			opts.selectedDoctorId ||
 			resolveLeadBookingStaff(opts.staff)[0]?.id ||

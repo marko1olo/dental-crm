@@ -4,7 +4,7 @@
  */
 
 import { CheckSquare, Square } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { ColumnFocusTableRow } from "./ColumnFocusTableRow";
 import type { ColumnFocusTableViewProps } from "./types";
 

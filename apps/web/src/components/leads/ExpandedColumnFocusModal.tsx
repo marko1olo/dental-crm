@@ -15,7 +15,7 @@
  * - index.ts (Layer 5: Barrel export)
  */
 
-import type React from "react";
+import React from "react";
 import type { ExpandedColumnFocusModalProps } from "./columnFocusModal";
 import { ColumnFocusWorkspaceModal } from "./columnFocusModal";
 

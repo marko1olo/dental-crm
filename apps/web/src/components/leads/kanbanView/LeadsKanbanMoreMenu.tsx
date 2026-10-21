@@ -5,8 +5,7 @@
  */
 
 import { BarChart3, MoreHorizontal, RotateCcw } from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface LeadsKanbanMoreMenuProps {
 	onOpenAnalytics: () => void;

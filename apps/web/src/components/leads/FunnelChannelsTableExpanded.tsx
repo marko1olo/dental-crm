@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 import { FunnelChannelsTableRow } from "./FunnelChannelsTableRow";
 import type { ChannelFunnelMetric } from "./leadsFunnelTypes";
 

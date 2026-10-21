@@ -5,7 +5,7 @@
  */
 
 import { AlertTriangle, Clock, UserCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
 import type { LeadSlaInfo } from "../leadsKanbanSla";

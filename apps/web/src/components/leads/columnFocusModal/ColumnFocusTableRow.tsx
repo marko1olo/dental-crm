@@ -4,7 +4,7 @@
  */
 
 import { CheckSquare, Square } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { CHANNEL_DISPLAY_NAMES } from "../../telephony/telephonyAttribution";
 import { normalizeMarketingChannel } from "../leadsFunnelTypes";
@@ -38,13 +38,8 @@ export const ColumnFocusTableRow: React.FC<ColumnFocusTableRowProps> = ({
 }) => {
 	const sla = getLeadSlaStatus(lead);
 	const dropReasonMatch = lead.dropReason || null;
-	const channelKey = lead.source
-		? normalizeMarketingChannel(lead.source)
-		: null;
-	const channelLabel =
-		channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
-			? CHANNEL_DISPLAY_NAMES[channelKey]
-			: lead.source || "—";
+	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
+	const channelLabel = (channelKey && CHANNEL_DISPLAY_NAMES[channelKey]) || lead.source || "—";
 
 	return (
 		<tr

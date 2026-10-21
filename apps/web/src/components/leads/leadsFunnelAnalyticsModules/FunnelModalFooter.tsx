@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * DENTE Dental CRM — Funnel Modal Footer
  * Mandate 8b (<= 120 lines)

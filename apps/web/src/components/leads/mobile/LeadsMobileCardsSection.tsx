@@ -4,7 +4,7 @@
  */
 
 import { Plus, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { LeadMobileFeedCard } from "../LeadMobileFeedCard";
 import { STAGE_DISPLAY_LABELS } from "../leadsKanbanTypes";

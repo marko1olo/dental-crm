@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 import { ColumnFocusBulkActionBar } from "./ColumnFocusBulkActionBar";
 import { ColumnFocusFilterRow } from "./ColumnFocusFilterRow";
 import type { ColumnFocusBatchToolbarProps } from "./types";

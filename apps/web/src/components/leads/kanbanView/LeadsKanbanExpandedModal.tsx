@@ -3,7 +3,7 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type React from "react";
+import React from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { ExpandedColumnFocusModal } from "../ExpandedColumnFocusModal";
 import { COLUMNS } from "../leadsKanbanConstants";

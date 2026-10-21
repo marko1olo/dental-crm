@@ -23,14 +23,25 @@ interface UseLeadConvertDefaultsProps {
 }
 
 export function useLeadConvertDefaults({
-	isOpen, lead, appointmentDate, setAppointmentDate, appointmentTime, setAppointmentTime,
-	selectedDoctorId, setSelectedDoctorId, selectedChairId, setSelectedChairId,
-	effectiveStaff, effectiveChairs,
+	isOpen,
+	lead,
+	appointmentDate,
+	setAppointmentDate,
+	appointmentTime,
+	setAppointmentTime,
+	selectedDoctorId,
+	setSelectedDoctorId,
+	selectedChairId,
+	setSelectedChairId,
+	effectiveStaff,
+	effectiveChairs,
 }: UseLeadConvertDefaultsProps) {
 	const defaultReason = lead
-		? (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+		? Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
 			? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
-			: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"))
+			: lead.notes
+				? `Первичная консультация: ${lead.notes.slice(0, 100)}`
+				: "Первичная консультация"
 		: "Первичная консультация";
 
 	const [reason, setReason] = useState(defaultReason);
@@ -38,13 +49,16 @@ export function useLeadConvertDefaults({
 
 	useEffect(() => {
 		if (lead) {
-			const initialReason = Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
-				? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
-				: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация");
+			const initialReason =
+				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+					? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
+					: lead.notes
+						? `Первичная консультация: ${lead.notes.slice(0, 100)}`
+						: "Первичная консультация";
 			setReason(initialReason);
 			setComment(lead.notes || "");
 		}
-	}, [lead?.id, lead?.notes, lead?.clinicalTags]);
+	}, [lead?.id, lead?.notes, lead?.clinicalTags, lead]);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -57,10 +71,24 @@ export function useLeadConvertDefaults({
 				setAppointmentDate(`${yyyy}-${mm}-${dd}`);
 			}
 			if (!appointmentTime) setAppointmentTime("10:00");
-			if (!selectedDoctorId && effectiveStaff.length > 0) setSelectedDoctorId(effectiveStaff[0]?.id || "");
-			if (!selectedChairId && effectiveChairs.length > 0) setSelectedChairId(effectiveChairs[0]?.id || "");
+			if (!selectedDoctorId && effectiveStaff.length > 0)
+				setSelectedDoctorId(effectiveStaff[0]?.id || "");
+			if (!selectedChairId && effectiveChairs.length > 0)
+				setSelectedChairId(effectiveChairs[0]?.id || "");
 		}
-	}, [isOpen, appointmentDate, appointmentTime, selectedDoctorId, selectedChairId, effectiveStaff, effectiveChairs, setAppointmentDate, setAppointmentTime, setSelectedDoctorId, setSelectedChairId]);
+	}, [
+		isOpen,
+		appointmentDate,
+		appointmentTime,
+		selectedDoctorId,
+		selectedChairId,
+		effectiveStaff,
+		effectiveChairs,
+		setAppointmentDate,
+		setAppointmentTime,
+		setSelectedDoctorId,
+		setSelectedChairId,
+	]);
 
 	return { reason, setReason, comment, setComment };
 }

@@ -89,3 +89,24 @@ export interface SourceShowUpPrediction {
 	predictedShowUpRatePercent: number;
 	confidence: "high" | "medium" | "low";
 }
+
+export interface ChannelPerformanceMetric {
+	channelKey: string;
+	channelLabel: string;
+	leadCount: number;
+	bookedCount: number;
+	showedUpCount: number;
+	conversionRatePct: number;
+	pipelineRevenue: number;
+	realizedRevenue: number;
+}
+
+export interface FunnelLeakWarning {
+	leadId: string;
+	leadName: string;
+	leadPhone?: string | undefined;
+	leakType: "stale_new" | "unconfirmed_appointment" | "unrecorded_drop_reason";
+	severity: "high" | "medium" | "low";
+	message: string;
+	detectedAtIso: string;
+}

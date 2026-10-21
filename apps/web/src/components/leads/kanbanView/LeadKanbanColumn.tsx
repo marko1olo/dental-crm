@@ -4,7 +4,7 @@
  */
 
 import { AnimatePresence } from "framer-motion";
-import type React from "react";
+import React from "react";
 import { getLeadSlaStatus } from "../leadsKanbanTypes";
 import { LeadKanbanCard } from "./LeadKanbanCard";
 import { LeadKanbanColumnHeader } from "./LeadKanbanColumnHeader";

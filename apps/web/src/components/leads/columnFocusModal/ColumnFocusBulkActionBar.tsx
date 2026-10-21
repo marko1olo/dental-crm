@@ -4,25 +4,10 @@
  */
 
 import { ArrowRight, Download, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { LeadStatus } from "../../../store/leadsStore";
-import type { BookableDoctor } from "../leadsKanbanBooking";
-
-interface ColumnFocusBulkActionBarProps {
-	selectedLeadIds: Set<string>;
-	totalDisplayLeads: number;
-	onToggleSelectAll: () => void;
-	nextStageInfo?: { status: LeadStatus; label: string } | null | undefined;
-	isProcessingBatch: boolean;
-	onBatchAdvance: () => void;
-	onBatchMoveToStage: (status: LeadStatus) => void;
-	staff: BookableDoctor[];
-	batchTargetDoctorId: string;
-	onBatchTargetDoctorIdChange: (id: string) => void;
-	onBatchAssign: () => void;
-	onExportCsv: (onlySelected?: boolean) => void;
-	onClearSelection: () => void;
-}
+import { ColumnFocusBatchDoctorAssign } from "./ColumnFocusBatchDoctorAssign";
+import type { ColumnFocusBulkActionBarProps } from "./filterTypes";
 
 export const ColumnFocusBulkActionBar: React.FC<
 	ColumnFocusBulkActionBarProps
@@ -99,33 +84,13 @@ export const ColumnFocusBulkActionBar: React.FC<
 					<option value="trash">Отказ</option>
 				</select>
 
-				{staff.length > 0 && (
-					<div className="flex items-center gap-1.5">
-						<select
-							value={batchTargetDoctorId}
-							onChange={(e) => onBatchTargetDoctorIdChange(e.target.value)}
-							disabled={isProcessingBatch}
-							className="expanded-focus-bulk-select"
-						>
-							<option value="">Назначить врача...</option>
-							{staff.map((doc) => (
-								<option key={doc.id} value={doc.id}>
-									{doc.fullName || doc.name}
-								</option>
-							))}
-						</select>
-						{batchTargetDoctorId && (
-							<button
-								type="button"
-								onClick={onBatchAssign}
-								disabled={isProcessingBatch}
-								className="expanded-focus-bulk-confirm-btn"
-							>
-								Применить
-							</button>
-						)}
-					</div>
-				)}
+				<ColumnFocusBatchDoctorAssign
+					staff={staff}
+					batchTargetDoctorId={batchTargetDoctorId}
+					onBatchTargetDoctorIdChange={onBatchTargetDoctorIdChange}
+					onBatchAssign={onBatchAssign}
+					isProcessingBatch={isProcessingBatch}
+				/>
 
 				<button
 					type="button"

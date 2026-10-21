@@ -4,7 +4,7 @@
  */
 
 import { motion } from "framer-motion";
-import type React from "react";
+import React from "react";
 import { useAppStore } from "../../store/appStore";
 import type { Lead } from "../../store/leadsStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -13,28 +13,11 @@ import { LeadCardBadges } from "./card/LeadCardBadges";
 import { LeadCardContactBar } from "./card/LeadCardContactBar";
 import { LeadCardHeader } from "./card/LeadCardHeader";
 import { LeadCardStageSelect } from "./card/LeadCardStageSelect";
+import type { LeadCardProps } from "./card/cardTypes";
 import { formatLeadTimestamp } from "./card/leadCardFormatters";
 import { getLeadSlaStatus } from "./leadsKanbanSla";
 
-export interface LeadCardProps {
-	lead: Lead;
-	isDragged: boolean;
-	creatingPatientLeadId: string | null;
-	borderColor: string;
-	cardBg: string;
-	onDragStart: (e: React.DragEvent, id: string) => void;
-	onEdit: (lead: Lead) => void;
-	onStatusChange: (
-		e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,
-		leadId: string,
-		nextStatus: Lead["status"],
-		options?: { reason?: string; dropReason?: string },
-	) => void;
-	onCreatePatient: (lead: Lead) => Promise<void> | void;
-	onSchedule: (leadId: string) => void;
-	onQuickSchedule?: (leadId: string) => Promise<void> | void;
-	onOpenPatientCard?: (patientId: string) => void;
-}
+export type { LeadCardProps };
 
 export const LeadCard: React.FC<LeadCardProps> = ({
 	lead,

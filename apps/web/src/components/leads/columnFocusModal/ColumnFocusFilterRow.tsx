@@ -4,20 +4,9 @@
  */
 
 import { Download, Search, X } from "lucide-react";
-import type React from "react";
-import type { LeadSlaUrgency, LeadSortOption } from "../leadsKanbanTypes";
-import type { ColumnMetrics } from "./types";
-
-interface ColumnFocusFilterRowProps {
-	searchQuery: string;
-	onSearchQueryChange: (q: string) => void;
-	urgencyFilter: "all" | LeadSlaUrgency;
-	onUrgencyFilterChange: (u: "all" | LeadSlaUrgency) => void;
-	metrics: ColumnMetrics;
-	sortOption: LeadSortOption;
-	onSortOptionChange: (s: LeadSortOption) => void;
-	onExportCsv: (onlySelected?: boolean) => void;
-}
+import React from "react";
+import type { LeadSortOption } from "../leadsKanbanTypes";
+import type { ColumnFocusFilterRowProps } from "./filterTypes";
 
 export const ColumnFocusFilterRow: React.FC<ColumnFocusFilterRowProps> = ({
 	searchQuery,

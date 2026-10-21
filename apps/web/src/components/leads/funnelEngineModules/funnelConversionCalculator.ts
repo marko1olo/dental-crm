@@ -3,6 +3,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8s (Modular Architecture)
  */
 
+import { buildChannelMetricsList } from "./buildChannelMetricsList.js";
 import {
 	detectLeadStage,
 	filterLeadsByPeriod,
@@ -94,41 +95,7 @@ export function calculateFunnelAnalysis(
 		totalMarketingSpendRub,
 	});
 
-	const channels: ChannelFunnelMetric[] = MARKETING_CHANNELS.map((ch) => {
-		const channelLeads = leadsWithStages.filter((l) => l.channel === ch.key);
-		const spendRub = channelSpends[ch.key] ?? 0;
-		let leadsCount = 0;
-		let bookedCount = 0;
-		let showUpCount = 0;
-		let agreedCount = 0;
-		let paidCount = 0;
-		let revenueRub = 0;
-
-		for (const item of channelLeads) {
-			leadsCount += 1;
-			if (hasLeadPassedStage(item.stage, "consult_booked")) bookedCount += 1;
-			if (hasLeadPassedStage(item.stage, "showed_up")) showUpCount += 1;
-			if (hasLeadPassedStage(item.stage, "treatment_plan_accepted"))
-				agreedCount += 1;
-			if (hasLeadPassedStage(item.stage, "paid")) {
-				paidCount += 1;
-				revenueRub += item.revenueRub;
-			}
-		}
-
-		return buildChannelFunnelMetric({
-			channelKey: ch.key,
-			channelLabel: ch.label,
-			color: ch.color,
-			spendRub,
-			leadsCount,
-			bookedCount,
-			showUpCount,
-			agreedCount,
-			paidCount,
-			revenueRub,
-		});
-	});
+	const channels = buildChannelMetricsList(leadsWithStages, channelSpends);
 
 	return {
 		period,

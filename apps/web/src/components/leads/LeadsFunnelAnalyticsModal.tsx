@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";

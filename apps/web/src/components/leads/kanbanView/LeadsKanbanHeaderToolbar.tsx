@@ -4,7 +4,7 @@
  */
 
 import { Filter, Plus, Search, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { LeadsKanbanMoreMenu } from "./LeadsKanbanMoreMenu";
 import { LeadsKanbanToolbarLeft } from "./LeadsKanbanToolbarLeft";
 import type { LeadsKanbanHeaderToolbarProps } from "./types";

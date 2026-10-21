@@ -4,7 +4,7 @@
  */
 
 import { motion } from "framer-motion";
-import type React from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../../store/appStore";
 import type { Lead } from "../../store/leadsStore";
@@ -12,23 +12,19 @@ import { usePatientStore } from "../../store/patientStore";
 import { LeadFormFields } from "./leadForm/LeadFormFields";
 import { LeadFormFooterActions } from "./leadForm/LeadFormFooterActions";
 import { LeadFormHeader } from "./leadForm/LeadFormHeader";
+import type { LeadFormModalProps } from "./leadForm/leadFormTypes";
 
-export interface LeadFormModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	editingLeadId: string | null;
-	editForm: Partial<Lead>;
-	setEditForm: React.Dispatch<React.SetStateAction<Partial<Lead>>>;
-	onSubmit: (e: React.FormEvent) => void;
-	isDeleting: boolean;
-	onDelete: () => void;
-	creatingPatientLeadId: string | null;
-	onCreatePatient: (lead: Lead) => void;
-	leads: Lead[];
-	cardBg?: string;
-	colBg?: string;
-	borderColor?: string;
-}
+export type { LeadFormModalProps };
+
+const backdropStyle: React.CSSProperties = {
+	position: "fixed",
+	inset: 0,
+	zIndex: 10050,
+	display: "flex",
+	justifyContent: "flex-end",
+	background: "rgba(0,0,0,0.45)",
+	backdropFilter: "blur(4px)",
+};
 
 export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 	isOpen,
@@ -66,19 +62,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 	};
 
 	const drawerContent = (
-		<div
-			style={{
-				position: "fixed",
-				inset: 0,
-				zIndex: 10050,
-				display: "flex",
-				justifyContent: "flex-end",
-				background: "rgba(0,0,0,0.45)",
-				backdropFilter: "blur(4px)",
-			}}
-			onClick={onClose}
-			data-testid="lead-drawer-backdrop"
-		>
+		<div style={backdropStyle} onClick={onClose} data-testid="lead-drawer-backdrop">
 			<motion.div
 				initial={{ x: "100%" }}
 				animate={{ x: 0 }}
@@ -88,17 +72,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 				className="lead-details-drawer"
 				data-testid="lead-details-drawer"
 				style={{
-					background: cardBg,
-					width: 480,
-					maxWidth: "100vw",
-					height: "100%",
-					borderLeft: `1px solid ${borderColor}`,
-					boxShadow: "-8px 0 32px rgba(0,0,0,0.2)",
-					display: "flex",
-					flexDirection: "column",
-					padding: "20px 24px",
-					overflowY: "auto",
-					boxSizing: "border-box",
+					background: cardBg, width: 480, maxWidth: "100vw", height: "100%",
+					borderLeft: `1px solid ${borderColor}`, boxShadow: "-8px 0 32px rgba(0,0,0,0.2)",
+					display: "flex", flexDirection: "column", padding: "20px 24px",
+					overflowY: "auto", boxSizing: "border-box",
 				}}
 			>
 				<LeadFormHeader

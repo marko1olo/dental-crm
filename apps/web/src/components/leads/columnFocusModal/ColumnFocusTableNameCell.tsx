@@ -4,7 +4,7 @@
  */
 
 import { Edit2, UserCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useAppStore } from "../../../store/appStore";
 import type { Lead } from "../../../store/leadsStore";
 import { usePatientStore } from "../../../store/patientStore";

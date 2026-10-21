@@ -39,12 +39,11 @@ export function formatLeadSlaBreachSummary(
 		else breachedCount += 1;
 	}
 
-	const summaryText =
-		breachedCount > 0
-			? `Внимание: просрочен регламент ответа у ${breachedCount} обращений! Требуется реакция администратора.`
-			: warningCount > 0
-				? `Внимание: ${warningCount} обращений ожидают ответа от 15 до 60 минут.`
-				: "Все обращения обработаны вовремя (SLA в норме).";
+	const summaryText = breachedCount > 0
+		? `Внимание: просрочен регламент ответа у ${breachedCount} обращений! Требуется реакция администратора.`
+		: warningCount > 0
+			? `Внимание: ${warningCount} обращений ожидают ответа от 15 до 60 минут.`
+			: "Все обращения обработаны вовремя (SLA в норме).";
 
 	return { breachedCount, warningCount, freshCount, summaryText };
 }
@@ -93,21 +92,9 @@ export function calculateSlaPenaltyPoints(minutesElapsed: number): number {
 	if (minutesElapsed < 15) return 0;
 	if (minutesElapsed < 30) return 1;
 	if (minutesElapsed < 60) return 3;
-	const extraHours = Math.floor((minutesElapsed - 60) / 60);
-	return 5 + Math.min(10, extraHours);
+	return 5 + Math.min(10, Math.floor((minutesElapsed - 60) / 60));
 }
 
-/**
- * Оценка рейтинга соблюдения регламента
- */
-export function calculateAdminSlaRating(
-	complianceRatePercent: number,
-): "excellent" | "good" | "warning" | "critical" {
-	if (complianceRatePercent >= 95) return "excellent";
-	if (complianceRatePercent >= 85) return "good";
-	if (complianceRatePercent >= 70) return "warning";
-	return "critical";
-}
 
 /**
  * Проверка отдельного лида по шкале SLA с расчетом штрафов

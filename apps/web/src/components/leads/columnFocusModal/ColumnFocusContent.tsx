@@ -4,7 +4,7 @@
  */
 
 import { Filter } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { ColumnFocusCardsList } from "./ColumnFocusCardsList";
 import { ColumnFocusTableView } from "./ColumnFocusTableView";
