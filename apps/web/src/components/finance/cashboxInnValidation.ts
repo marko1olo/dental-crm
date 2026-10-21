@@ -41,7 +41,7 @@ export function validateBuyerInn54Fz(params: {
 			cleanInn,
 			errorRu: isStandardLength
 				? undefined
-				: "ИНН физлица обычно состоит из 12 цифр (поле опционально и не блокирует печать чека)",
+				: "ИНН физлица обычно состоит из 12 цифр (для 54-ФЗ поле опционально и не блокирует чек)",
 		};
 	}
 

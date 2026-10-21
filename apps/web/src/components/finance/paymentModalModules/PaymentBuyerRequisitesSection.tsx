@@ -56,7 +56,7 @@ export const PaymentBuyerRequisitesSection: React.FC<
 						title="По 54-ФЗ для физлиц не требуется"
 					>
 						<ShieldCheck size={12} className="inline mr-1 text-emerald-600" />
-						Для пациентов-физлиц не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
+						Для физлиц не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
 					</span>
 				) : (
 					<span
