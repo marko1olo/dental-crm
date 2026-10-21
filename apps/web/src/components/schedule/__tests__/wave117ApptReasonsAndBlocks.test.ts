@@ -1,8 +1,8 @@
 /**
- * wave117StomxApptReasonsAndBlocks.test.ts
+ * wave117ApptReasonsAndBlocks.test.ts
  *
  * Verification suite for Wave 117:
- * StomX Catalogs Export, Appointment 1-Click Visit Reasons & Doctor Blocking Intervals
+ * Appointment Catalogs Export, Appointment 1-Click Visit Reasons & Doctor Blocking Intervals
  * (Supreme Law: THE HAMMER, Mandates 8a-8q).
  *
  * Scope:
@@ -73,8 +73,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () => {
-	describe("1. Export of all StomX catalogs in @dental/shared", () => {
+describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
+	describe("1. Export of appointment catalogs in @dental/shared", () => {
 		it("1.1 Patient tags catalog & codes are fully exported and valid", () => {
 			assert.ok(Array.isArray(PATIENT_TAG_CATEGORIES), "PATIENT_TAG_CATEGORIES must be an array");
 			assert.ok(PATIENT_TAG_CATEGORIES.includes("clinical"), "Must contain clinical category");
@@ -193,7 +193,7 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 			assert.ok(labels.some((l) => l.includes("Другое")), "Must contain Другое");
 		});
 
-		it("2.3 isTechnicalBreakAppointment predicate recognizes all StomX doctor blocks", () => {
+		it("2.3 isTechnicalBreakAppointment predicate recognizes all doctor technical blocks", () => {
 			// All 6 doctor blocking reasons
 			assert.equal(isTechnicalBreakAppointment({ reason: "Служебный перерыв: Обед" }), true);
 			assert.equal(isTechnicalBreakAppointment({ reason: "Обед (60 мин)" }), true);
@@ -217,8 +217,10 @@ describe("Wave 117: StomX Catalogs Export & Appointment Blocking Intervals", () 
 			const detailsPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentDetailsSection.tsx");
 			const patientPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentPatientSection.tsx");
 			const reasonsPath = path.resolve(__dirname, "../AppointmentModalQuickReasons.tsx");
+			const breakChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentTechnicalBreakChips.tsx");
+			const reasonChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentReasonChips.tsx");
 			const statePath = path.resolve(__dirname, "../useAppointmentModalState.ts");
-			const content = [modalPath, detailsPath, patientPath, reasonsPath, statePath]
+			const content = [modalPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath]
 				.filter((p) => fs.existsSync(p))
 				.map((p) => fs.readFileSync(p, "utf-8"))
 				.join("\n");

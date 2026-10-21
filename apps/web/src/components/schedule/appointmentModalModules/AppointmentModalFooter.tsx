@@ -98,7 +98,7 @@ export function AppointmentModalFooter({
         <button
           type="button"
           onClick={onClose}
-          disabled={isSaving}
+          disabled={false}
           className="appointment-modal-cta-cancel h-11 px-5 rounded-[14px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-sm font-medium transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center select-none"
         >
           Отмена
@@ -106,8 +106,9 @@ export function AppointmentModalFooter({
         <button
           type="button"
           onClick={(e) => handleSave(e)}
-          disabled={isSaving}
-          className={`appointment-modal-cta-save h-11 px-6 font-medium rounded-[14px] text-sm transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer select-none ${
+          disabled={false}
+          aria-busy={isSaving}
+          className={`appointment-modal-cta-save h-11 px-6 font-medium rounded-[14px] text-sm transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer select-none ${
             collision.isCitoOverbooking || isCito
               ? "!bg-rose-600 hover:!bg-rose-700 !text-white shadow-rose-500/25"
               : collision.hasCollision

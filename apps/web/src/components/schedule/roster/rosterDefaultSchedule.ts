@@ -9,7 +9,7 @@ import {
 	type StaffMember,
 } from "./doctorShiftRosterPresets";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
-import type { DoctorShift } from "./rosterLaborComplianceT13";
+import type { DoctorShift } from "./doctorShiftRosterEngine";
 
 /**
  * Generate a realistic initial weekly schedule

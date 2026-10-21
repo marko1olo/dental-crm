@@ -1,7 +1,7 @@
 /**
- * dentalProExpo26Innovations.test.tsx
+ * scheduleTouchInnovations.test.tsx
  *
- * Targeted Unit & Integration Test Suite for DentalPRO Expo26 Schedule Innovations:
+ * Targeted Unit & Integration Test Suite for Schedule Touch Innovations:
  * 1. Lateral Quick Booking Drawer with Segmented Status Header [Плановый | Внеплановый (CITO) | Утверждённый]
  * 2. "Найти варианты" smart free slot search calling doctorFreeSlotsEngine
  * 3. 6-Action Clinical Micro-HUD on appointment cards
@@ -172,7 +172,7 @@ describe("Expo26 Schedule Innovations Suite", () => {
     assert.ok(html.includes('data-testid="hud-action-waitlist-appt-99"'), "Waitlist action must render");
   });
 
-  it("4. Matrix of 17 DentalPRO Expo26 Badges (schi-1 to schi-17) resolves correctly", () => {
+  it("4. Matrix of 17 Clinical Badges (schi-1 to schi-17) resolves correctly", () => {
     const comprehensivePatient = {
       id: "pat-full",
       fullName: "Тестовый Пациент",
@@ -210,7 +210,7 @@ describe("Expo26 Schedule Innovations Suite", () => {
 
     const schiCodes = badges.map((b) => b.schiCode);
 
-    // Verify key badges from DentalPRO Expo26
+    // Verify key clinical badges
     assert.ok(schiCodes.includes("schi-1"), "Should contain schi-1: somatic/allergy");
     assert.ok(schiCodes.includes("schi-2"), "Should contain schi-2: primary consultation");
     assert.ok(schiCodes.includes("schi-3"), "Should contain schi-3: contract signed");
@@ -228,7 +228,7 @@ describe("Expo26 Schedule Innovations Suite", () => {
     assert.ok(schiCodes.includes("schi-17"), "Should contain schi-17: in chair active");
   });
 
-  it("5. DentalPRO expo26 Realtime Schedule Bar: renders 1-click stage buttons and live styling across all stages", () => {
+  it("5. Realtime Schedule Bar: renders 1-click stage buttons and live styling across all stages", () => {
     const baseAppt: Appointment = {
       id: "appt-bar-1",
       doctorUserId: "doc-1",

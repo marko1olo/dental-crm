@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — StomX & DentalPRO Parity Test Suite
+ * DENTE Dental CRM — Doctor-to-Chair Roster Parity Test Suite
  * Tests:
  * 1. 1-Click Chair Archetype Presets in QuickAddChairModal
  * 2. 1-Click Weekly Doctor-to-Chair Shift Binding Templates (applyDoctorChairWeeklyTemplate)
@@ -129,7 +129,7 @@ const mockWeekDays = [
 	{ dateIso: "2026-09-13", dayName: "Вс", dayNumber: "13", isWeekend: true },
 ];
 
-describe("StomX & DentalPRO Doctor-to-Chair Roster Parity Suite", () => {
+describe("Doctor-to-Chair Roster Parity Suite", () => {
 	describe("1. QuickAddChairModal: 1-Click Chair Archetype Presets", () => {
 		it("exports all 5 canonical chair archetypes with distinct colors and specializations", () => {
 			assert.strictEqual(CHAIR_ARCHETYPE_PRESETS.length, 5);
@@ -175,7 +175,7 @@ describe("StomX & DentalPRO Doctor-to-Chair Roster Parity Suite", () => {
 		});
 	});
 
-	describe("2. Pure Engine: applyDoctorChairWeeklyTemplate (StomX / DentalPRO parity)", () => {
+	describe("2. Pure Engine: applyDoctorChairWeeklyTemplate (Roster parity)", () => {
 		it("applies 'mon_wed_fri_morning' template correctly across Mon, Wed, Fri", () => {
 			const result = applyDoctorChairWeeklyTemplate([], {
 				weekStartDateIso: "2026-09-07",

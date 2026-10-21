@@ -7,7 +7,7 @@ export * from "./doctorShiftRosterEngine";
 export * from "./DoctorShiftRosterModal";
 export * from "./rosterDateUtils";
 export * from "./useDoctorShiftRosterOperations";
-export * from "./rosterLaborComplianceT13";
+export * from "./printableRosterSchedule";
 export * from "./rosterDefaultSchedule";
 export * from "./rosterWeekCopyAndRotate";
 export * from "./rosterChairWeeklyTemplates";

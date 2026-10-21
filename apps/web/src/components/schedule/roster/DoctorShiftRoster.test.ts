@@ -11,8 +11,6 @@ import {
 	detectRosterConflicts,
 	doIntervalsOverlap,
 	type DoctorShift,
-	exportFormT13ToCsv,
-	generateFormT13Matrix,
 	generatePrintableRosterHtml,
 	getIsoWeekKey,
 	minutesToTimeString,
@@ -397,39 +395,15 @@ describe("DoctorShiftRoster — Staff Statistics & T-13 Matrix", () => {
 		assert.ok(typeof firstDoc.totalScheduledHours === "number");
 	});
 
-	it("generates complete Form T-13 matrix with half-month and monthly totals", () => {
+	it("verifies schedule roster autonomy: clean schedule without bureaucratic Soviet Goskomstat T-13 simulation", () => {
 		const staff = DEFAULT_CLINIC_STAFF.slice(0, 3);
 		const defaultShifts = createDefaultWeeklySchedule("2026-08-24", staff, CLINIC_CABINETS_CATALOG);
-		const matrix = generateFormT13Matrix(staff, defaultShifts, 2026, 8);
-
-		assert.equal(matrix.length, 3);
-		for (const row of matrix) {
-			assert.equal(row.days.length, 31, "August has 31 calendar days");
-			assert.ok(row.totalMonthDays >= 0);
-			assert.ok(row.totalMonthHours >= 0);
-			assert.equal(
-				row.totalMonthDays,
-				row.firstHalfDays + row.secondHalfDays,
-				"Total month days must equal first half + second half",
-			);
-			assert.equal(
-				row.totalMonthHours,
-				row.firstHalfHours + row.secondHalfHours,
-				"Total month hours must equal first half + second half",
-			);
+		assert.ok(defaultShifts.length > 0);
+		for (const shift of defaultShifts) {
+			assert.ok(shift.doctorId);
+			assert.ok(shift.dateIso);
+			assert.ok(shift.startTime && shift.endTime);
 		}
-	});
-
-	it("exports Form T-13 to valid CSV format with Russian headers", () => {
-		const staff = DEFAULT_CLINIC_STAFF.slice(0, 2);
-		const defaultShifts = createDefaultWeeklySchedule("2026-08-24", staff, CLINIC_CABINETS_CATALOG);
-		const matrix = generateFormT13Matrix(staff, defaultShifts, 2026, 8);
-		const csv = exportFormT13ToCsv(matrix, 2026, 8, 'ООО "Денте"');
-
-		assert.ok(csv.includes("ТАБЕЛЬ УЧЕТА РАБОЧЕГО ВРЕМЕНИ"));
-		assert.ok(csv.includes("Таб. №"));
-		assert.ok(csv.includes("ФИО сотрудника"));
-		assert.ok(csv.includes("Итого часов"));
 	});
 
 	it("calculates chair utilization metrics and heat levels accurately", () => {

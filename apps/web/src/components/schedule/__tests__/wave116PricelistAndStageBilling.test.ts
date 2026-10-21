@@ -1,7 +1,7 @@
 /**
- * wave116StomxPricelistAndStageBilling.test.ts
+ * wave116PricelistAndStageBilling.test.ts
  *
- * Verification suite for Wave 116 (StomX Parity & Phased Treatment Plan Stage Checkout):
+ * Verification suite for Wave 116 (Clinical Pricelist & Phased Treatment Plan Stage Checkout):
  * 1. 21 Canonical StomX pricelist categories in @dental/shared
  * 2. Zod validation for categories and category items
  * 3. PatientBillingModal.tsx contract audit:
@@ -32,7 +32,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Wave 116: StomX 21 Pricelist Categories & Treatment Plan Stage Billing", () => {
+describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () => {
 	it("0. CLINICAL_PRICELIST_CATEGORIES is the clean canonical source of truth for DENTE", () => {
 		assert.strictEqual(CLINICAL_PRICELIST_CATEGORIES, STOMX_PRICELIST_CATEGORIES);
 		assert.strictEqual(CLINICAL_PRICELIST_CATEGORY_ITEMS, STOMX_PRICELIST_CATEGORY_ITEMS);

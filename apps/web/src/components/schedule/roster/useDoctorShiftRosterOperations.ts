@@ -29,8 +29,6 @@ import {
 	calculateStaffRosterStats,
 	detectRosterConflicts,
 	type DoctorShift,
-	exportFormT13ToCsv,
-	generateFormT13Matrix,
 	generatePrintableRosterHtml,
 } from "./doctorShiftRosterEngine";
 import {
@@ -197,15 +195,8 @@ export function useDoctorShiftRosterOperations({
 		);
 	}, [staffList, shifts, selectedYear, selectedMonth]);
 
-	// Run Form T-13 matrix
-	const t13Matrix = useMemo(() => {
-		return generateFormT13Matrix(
-			staffList,
-			shifts,
-			selectedYear,
-			selectedMonth,
-		);
-	}, [staffList, shifts, selectedYear, selectedMonth]);
+	// Clean empty matrix (Soviet T-13 simulation amputated per Mandate 8e/8n)
+	const t13Matrix = useMemo(() => [] as any[], []);
 
 	// Form T-13 Employees mapped from real roster staffList (Mandate 8e, 8n)
 	const t13Employees: EmployeeInfo[] = useMemo(() => {
@@ -380,31 +371,13 @@ export function useDoctorShiftRosterOperations({
 		setTimeout(() => setNotification(null), 3000);
 	};
 
-	// Export Form T-13 to CSV
+	// Export Schedule handler
 	const handleExportT13 = () => {
-		const csvContent = exportFormT13ToCsv(
-			t13Matrix,
-			selectedYear,
-			selectedMonth,
-			clinicName,
-		);
-		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.setAttribute("href", url);
-		link.setAttribute(
-			"download",
-			`Form_T13_Tabele_${selectedYear}_${String(selectedMonth).padStart(2, "0")}.csv`,
-		);
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
 		setNotification({
-			type: "success",
-			message: "Табель учёта рабочего времени успешно экспортирован в CSV (UTF-8 BOM)",
+			type: "info",
+			message: "Экспорт расписания смен формируется через печать графика (А4)",
 		});
-		setTimeout(() => setNotification(null), 4000);
+		setTimeout(() => setNotification(null), 3000);
 	};
 
 	// Print Official Schedule (A4 Landscape)

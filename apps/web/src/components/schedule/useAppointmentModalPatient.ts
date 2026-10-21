@@ -71,6 +71,7 @@ export function useAppointmentModalPatient({
       fullName: string;
       phone?: string | null;
     } | null> => {
+      if (isCreatingInlinePatient) return null;
       const rawName = (override?.fullName ?? newPatientFullName).trim();
       const rawPhone = (override?.phone ?? newPatientPhone).trim();
       let effectiveName = rawName;

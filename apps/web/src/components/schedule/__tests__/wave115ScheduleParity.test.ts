@@ -1,7 +1,7 @@
 /**
- * wave115StomxParity.test.ts
+ * wave115ScheduleParity.test.ts
  *
- * Wave 115: StomX Desktop Parity & Clinical Ergonomics Test Suite
+ * Wave 115: Schedule Desktop Parity & Clinical Ergonomics Test Suite
  *
  * Scope:
  * 1. 4-State Workplace Palettes from StomX depot (Lavender, Blue, Rose, Olive, Sand).
@@ -35,7 +35,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Wave 115: StomX 4-State Workplace Palettes Parity", () => {
+describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 	it("exposes clean canonical DENTE chair palette aliases", () => {
 		assert.strictEqual(WORKPLACE_CHAIR_PALETTES, STOMX_WORKPLACE_PALETTES);
 		assert.strictEqual(getWorkplaceChairPalette, getStomxWorkplacePalette);

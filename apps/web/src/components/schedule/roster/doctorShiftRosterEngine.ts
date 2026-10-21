@@ -16,7 +16,7 @@ import {
 import { clockTimeToMinutes, minutesToClockTime } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
-export * from "./rosterLaborComplianceT13";
+export * from "./printableRosterSchedule";
 export * from "./rosterDefaultSchedule";
 
 export interface DoctorShift {

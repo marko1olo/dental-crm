@@ -354,8 +354,9 @@ export function AppointmentPatientSection({
               <button
                 type="button"
                 onClick={() => handleCreateInlinePatient()}
-                disabled={isCreatingInlinePatient}
-                className="h-8.5 min-h-[34px] px-4 rounded-xl bg-[var(--teal)] text-white hover:brightness-105 active:scale-95 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50"
+                disabled={false}
+                aria-busy={isCreatingInlinePatient}
+                className="h-8.5 min-h-[34px] px-4 rounded-xl bg-[var(--teal)] text-white hover:brightness-105 active:scale-95 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all"
                 data-testid="appointment-quick-patient-save-btn"
               >
                 <Check size={14} className="stroke-[2.5]" />

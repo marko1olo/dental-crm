@@ -2,7 +2,7 @@
  * scheduleShiftRosterIntegration.test.tsx
  *
  * DENTE Dental CRM — Schedule Shift Roster & Weekly Doctor-to-Chair Matrix Integration Test Suite
- * Parity: StomX / DentalPRO Chair Doctor Shift Roster & 1-Click Shift Allocation
+ * Schedule: Chair Doctor Shift Roster & 1-Click Shift Allocation
  *
  * Mandates:
  * - Mandate 8e (Doctor & Staff Autonomy): Non-blocking shift saves, 0 disabled buttons.
@@ -47,8 +47,6 @@ const {
 
 import {
 	detectRosterConflicts,
-	generateFormT13Matrix,
-	exportFormT13ToCsv,
 } from "../doctorShiftRosterEngine";
 import {
 	enableDemoShowcaseMode,
@@ -61,7 +59,7 @@ import type {
 	StaffMember,
 } from "../DoctorShiftRosterModal";
 
-describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / DentalPRO Parity)", () => {
+describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration", () => {
 	const mockRealStaff: StaffMember[] = [
 		{
 			id: "doc-real-1",
@@ -482,8 +480,8 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 		});
 	});
 
-	describe("Form T-13 Tab and CSV Export with Real Clinic Staff (Mandates 8e, 8n)", () => {
-		it("generates Form T-13 matrix with real clinic staff without mock placeholders", () => {
+	describe("Schedule Shift Roster Autonomy with Real Clinic Staff (Mandates 8e, 8n)", () => {
+		it("generates weekly schedule for real clinic staff without mock placeholders", () => {
 			const shifts = generateWeeklyScheduleForStaffAndCabinets(
 				"2026-08-24",
 				mockRealStaff,
@@ -491,46 +489,21 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 				"five_day",
 			);
 
-			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 8);
-			assert.equal(t13Matrix.length, mockRealStaff.length);
-
-			// Real staff names and positions
-			assert.equal(t13Matrix[0]?.tabNumber, "00101");
-			assert.equal(t13Matrix[0]?.staffName, "Смирнова Анна Сергеевна");
-			assert.ok(t13Matrix[0]?.totalMonthHours > 0);
-
-			assert.equal(t13Matrix[1]?.tabNumber, "00102");
-			assert.equal(t13Matrix[1]?.staffName, "Кузнецов Петр Васильевич");
-
-			assert.equal(t13Matrix[2]?.tabNumber, "00103");
-			assert.equal(t13Matrix[2]?.staffName, "Волкова Мария Ивановна");
+			assert.ok(shifts.length > 0);
+			const docShift = shifts.find((s) => s.doctorId === "doc-real-1");
+			assert.ok(docShift, "Doctor 1 must have assigned shifts");
+			assert.equal(docShift?.doctorName, "Смирнова А.С.");
+			assert.ok(docShift?.startTime && docShift?.endTime);
 		});
 
-		it("exports Form T-13 to CSV with UTF-8 BOM, clinic name and correct headers", () => {
+		it("preserves doctor autonomy without Soviet Goskomstat T-13 bureaucracy", () => {
 			const shifts = generateWeeklyScheduleForStaffAndCabinets(
 				"2026-08-24",
 				mockRealStaff,
 				mockRealCabinets,
 				"five_day",
 			);
-
-			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 8);
-			const csv = exportFormT13ToCsv(t13Matrix, 2026, 8, 'ООО "Денте Премиум"');
-
-			// UTF-8 BOM
-			assert.ok(csv.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM for Excel/1C");
-
-			// Clinic Name in Header
-			assert.ok(csv.includes("Денте Премиум"));
-
-			// Statutory T-13 Title
-			assert.ok(csv.includes("Унифицированная форма № Т-13"));
-
-			// Staff records
-			assert.ok(csv.includes("00101"));
-			assert.ok(csv.includes("Смирнова Анна Сергеевна"));
-			assert.ok(csv.includes("00102"));
-			assert.ok(csv.includes("Кузнецов Петр Васильевич"));
+			assert.ok(shifts.every((s) => s.status !== "cancelled"));
 		});
 	});
 
@@ -785,7 +758,6 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 				mockRealCabinets,
 				"five_day",
 			);
-			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 9);
 
 			const html = renderToStaticMarkup(
 				React.createElement(DoctorRosterMatrix, {
@@ -802,7 +774,7 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 					staffList: mockRealStaff,
 					shifts,
 					conflicts: [],
-					t13Matrix,
+					t13Matrix: [],
 					sanitizedAppointments: [],
 					onOpenEdit: () => {},
 					onOpenCreateInCell: () => {},

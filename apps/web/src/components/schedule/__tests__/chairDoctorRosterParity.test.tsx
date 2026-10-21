@@ -1,7 +1,7 @@
 /**
- * chairDoctorRosterStomXParity.test.tsx
+ * chairDoctorRosterParity.test.tsx
  *
- * Comprehensive Unit & Integration Test Suite for StomX / DentalPRO Parity:
+ * Comprehensive Unit & Integration Test Suite for Schedule Parity:
  * - Quick chair addition with name suggestions and 14 authentic color presets
  * - Solo doctor & small clinic 1-chair default (Mandate 8n)
  * - 1-click doctor-to-chair shift binding (08-14, 09-15, 14-20, 15-21, full day, 2/2, even/odd)
@@ -596,7 +596,7 @@ function getMockDashboard(): Dashboard {
 	} as unknown as Dashboard;
 }
 
-describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", () => {
+describe("Schedule Parity: Chair Roster, Doctor Shifts & Week Copy", () => {
 	let container: MockDomNode;
 	let root: Root;
 
@@ -618,7 +618,7 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 			assert.ok(CHAIR_NAME_SUGGESTIONS.includes("Кабинет 1"));
 		});
 
-		it("CHAIR_COLOR_PRESETS export has 14 authentic StomX color palettes with lightHex & darkHex", () => {
+		it("CHAIR_COLOR_PRESETS export has 14 authentic color palettes with lightHex & darkHex", () => {
 			assert.strictEqual(CHAIR_COLOR_PRESETS.length, 14, "Must have exactly 14 color palettes");
 			for (const cp of CHAIR_COLOR_PRESETS) {
 				assert.ok(cp.id, "Preset must have id");
@@ -838,7 +838,7 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 		});
 	});
 
-	// --- 4. Multi-Day Date Range Shift Assignment (StomX / DentalPRO parity) ---
+	// --- 4. Multi-Day Date Range Shift Assignment ---
 	describe("4. Multi-Day Date Range Shift Assignment", () => {
 		it("applyDoctorChairDateRange generates shifts for all days in date range", () => {
 			const initialShifts: DoctorShift[] = [];
@@ -926,7 +926,7 @@ describe("StomX / DentalPRO Parity: Chair Roster, Doctor Shifts & Week Copy", ()
 	});
 
 	// --- 5. 1-Click Week Copy and Month Copy ---
-	describe("5. 1-Click Week Copy & Month Copy (StomX Parity)", () => {
+	describe("5. 1-Click Week Copy & Month Copy", () => {
 		it("copyWeekShiftsToTargetWeek correctly shifts dates by 7 days", () => {
 			const week1Shifts: DoctorShift[] = [
 				{

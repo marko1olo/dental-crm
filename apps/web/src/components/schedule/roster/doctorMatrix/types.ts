@@ -12,8 +12,25 @@ import type {
 	calculateChairUtilization,
 	DoctorShift,
 	RosterConflict,
-	T13RowData,
 } from "../doctorShiftRosterEngine";
+
+export interface T13DayData {
+	dayOfMonth: number;
+	code: string;
+	hours: number;
+}
+
+export interface T13RowData {
+	tabNumber?: string | number;
+	staffName?: string;
+	position?: string;
+	days: T13DayData[];
+	totalMonthDays?: number;
+	totalMonthHours: number;
+	totalNightHours: number;
+	overtimeHours: number;
+	[key: string]: unknown;
+}
 
 export interface ActivePopoverCell {
 	dateIso: string;
