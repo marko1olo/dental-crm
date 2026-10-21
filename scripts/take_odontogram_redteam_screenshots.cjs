@@ -114,6 +114,7 @@ const mockDashboard = {
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
   path.resolve("docs/proofs/odontogram"),
+  "C:/Users/Admin/.gemini/antigravity/brain/7767a456-9606-4400-a560-692c86dcd4a1",
   "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
   "C:/Users/Admin/.gemini/antigravity/brain/9ea21f87-962f-4962-8237-a01bee2ebf13",
   "C:/Users/Admin/.gemini/antigravity/brain/8c13fca0-8160-48cc-95c0-54805cda73b5",
