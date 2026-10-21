@@ -314,7 +314,7 @@ export const TreatmentPipeline: React.FC = () => {
 								className={`min-h-[48px] px-1 py-1 rounded-lg text-[10px] font-semibold transition flex flex-col items-center justify-center gap-0.5 touch-manipulation ${
 									isActive
 										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm border border-[var(--line)]"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--muted)] hover:bg-[var(--paper-hover)]/30 hover:text-[var(--ink)] border border-transparent"
 								}`}
 								style={isActive ? { borderBottom: `2.5px solid ${cfg.accentColor}` } : undefined}
 							>

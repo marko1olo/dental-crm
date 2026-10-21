@@ -1,4 +1,5 @@
 import React from "react";
+import { parseKopecks, type Kopecks } from "@dental/shared";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
@@ -12,14 +13,18 @@ describe("Treatment Plan Stages Transfer & PEP Signature (Mandates 8e, 8k, 8n)",
 	const sampleStage: TreatmentPlanStage = {
 		id: "stage-1",
 		stageNumber: 1,
+		stageKind: "stage_1_therapy",
 		title: "Профессиональная гигиена и санация полости рта",
+		subtitle: "Гигиенический протокол",
 		clinicalGoal: "Устранение наддесневых и поддесневых зубных отложений",
 		estimatedWeeks: 1,
 		estimatedVisits: 1,
 		totalRub: 6500,
+		totalKopecks: parseKopecks(6500),
 		items: [
 			{
 				id: "item-1",
+				serviceCode: "A16.07.051",
 				code804n: "A16.07.051",
 				name: "Профессиональная гигиена полости рта и ультразвуковое удаление зубных отложений",
 				category: "hygiene",

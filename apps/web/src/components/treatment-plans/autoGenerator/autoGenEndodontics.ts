@@ -2,7 +2,7 @@ import type { ToothData } from "../../odontogram/ToothChart";
 import type { TreatmentPlanItem } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
 import {
-	ORDER_804N_DICTIONARY,
+	DENTAL_SERVICES_CATALOG,
 	extractCanalCount,
 	getEndoPreparationProcedure,
 	getEndoObturationProcedure,
@@ -23,7 +23,7 @@ export function buildEndodonticTherapyItems(
 	const stage3: TreatmentPlanItem[] = [];
 	const num = tooth.toothNumber;
 
-	const defCofferdam = ORDER_804N_DICTIONARY.CofferdamIsolation!;
+	const defCofferdam = DENTAL_SERVICES_CATALOG.CofferdamIsolation!;
 	stage1.push(
 		createPlanItem("s1-cofferdam-" + num, 1, "stage_1_therapy", defCofferdam, num, catalog, validDiscountPct, {
 			customTitle: "Наложение коффердама для изоляции зуба №" + num,
@@ -49,7 +49,7 @@ export function buildEndodonticTherapyItems(
 		}),
 	);
 
-	const defBuildup = ORDER_804N_DICTIONARY.BuildupFiberPost!;
+	const defBuildup = DENTAL_SERVICES_CATALOG.BuildupFiberPost!;
 	stage1.push(
 		createPlanItem("s1-buildup-" + num, 1, "stage_1_therapy", defBuildup, num, catalog, validDiscountPct, {
 			customTitle: "Восстановление культи зуба №" + num + " под коронку (Build-up со стекловолоконным штифтом)",
@@ -58,7 +58,7 @@ export function buildEndodonticTherapyItems(
 	);
 
 	if (isMolarOrPremolar(num)) {
-		const defCrown = ORDER_804N_DICTIONARY.CrownZirconia!;
+		const defCrown = DENTAL_SERVICES_CATALOG.CrownZirconia!;
 		stage3.push(
 			createPlanItem("s3-crown-endo-" + num, 3, "stage_3_orthopedics", defCrown, num, catalog, validDiscountPct, {
 				customTitle: "Ортопедическая защита депульпированного зуба №" + num + " коронкой из диоксида циркония",

@@ -72,6 +72,7 @@ import { portalRoutes } from "../routes/portal.js";
 import { portalBudgetRoutes } from "../routes/portalBudgetRoutes.js";
 import { publicBudgetRoutes } from "../routes/publicBudgetRoutes.js";
 import { treatmentPlanRoutes } from "../routes/treatmentPlanRoutes.js";
+import { clinicalBundlesRoutes } from "../routes/clinicalBundlesRoutes.js";
 import { registerPricelistRoutes } from "../routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "../routes/publicAppointmentActions.js";
 import { registerPublicBookingRoutes } from "../routes/publicBooking.js";
@@ -258,6 +259,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await app.register(portalBudgetRoutes, { prefix: "/api/portal" });
 	await app.register(publicBudgetRoutes);
 	await app.register(treatmentPlanRoutes);
+	await app.register(clinicalBundlesRoutes);
 	await app.register(registerExpensesRoutes);
 	await registerCashboxRoutes(app);
 	await registerCrmLeakDetectorRoutes(app);

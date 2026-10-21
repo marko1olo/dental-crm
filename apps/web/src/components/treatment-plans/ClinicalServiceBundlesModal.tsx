@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { PackagePlus } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { CLINICAL_BUNDLES, type ClinicalBundleCategory, type ClinicalBundleDefinition, type ClinicalBundleId, createBundleInvoiceItems, createBundlePlanItems, getClinicalBundleById } from "./treatmentPlanBundlesEngine";
@@ -61,25 +61,45 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 		if (selectedCategory !== "all" && b.category !== selectedCategory) return false;
 		if (!searchQuery.trim()) return true;
 		const q = searchQuery.toLowerCase().trim();
-		return b.title.toLowerCase().includes(q) || b.shortTitle.toLowerCase().includes(q) || b.description.toLowerCase().includes(q) || b.items.some((it) => it.name.toLowerCase().includes(q) || it.code804n.toLowerCase().includes(q));
+		return b.title.toLowerCase().includes(q) || b.shortTitle.toLowerCase().includes(q) || b.description.toLowerCase().includes(q) || b.items.some((it) => it.name.toLowerCase().includes(q) || (it.serviceCode || it.code804n || "").toLowerCase().includes(q));
 	}), [selectedCategory, searchQuery]);
 
+	const inFlightRef = useRef(false);
+
 	const handleApplyPlan = (b: ClinicalBundleDefinition) => {
-		const items = createBundlePlanItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
-		if (!items.length) return showToast("Выберите хотя бы одну позицию из пакета", "warning");
-		onApplyToPlan?.(items, b, b.requiresTooth ? selectedTooth : undefined);
-		setJustAddedBundleId(b.id);
-		setTimeout(() => setJustAddedBundleId(null), 2500);
-		showToast(`Пакет «${b.shortTitle}» добавлен в план: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const items = createBundlePlanItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
+			if (!items.length) {
+				showToast("Выберите хотя бы одну позицию из пакета", "warning");
+				return;
+			}
+			onApplyToPlan?.(items, b, b.requiresTooth ? selectedTooth : undefined);
+			setJustAddedBundleId(b.id);
+			setTimeout(() => setJustAddedBundleId(null), 2500);
+			showToast(`Пакет «${b.shortTitle}» добавлен в план: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 350);
+		}
 	};
 
 	const handleApplyInvoice = (b: ClinicalBundleDefinition) => {
-		const items = createBundleInvoiceItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
-		if (!items.length) return showToast("Выберите хотя бы одну позицию из пакета", "warning");
-		onApplyToInvoice?.(items, b, b.requiresTooth ? selectedTooth : undefined);
-		setJustAddedBundleId(b.id);
-		setTimeout(() => setJustAddedBundleId(null), 2500);
-		showToast(`Пакет «${b.shortTitle}» добавлен в счет: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const items = createBundleInvoiceItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
+			if (!items.length) {
+				showToast("Выберите хотя бы одну позицию из пакета", "warning");
+				return;
+			}
+			onApplyToInvoice?.(items, b, b.requiresTooth ? selectedTooth : undefined);
+			setJustAddedBundleId(b.id);
+			setTimeout(() => setJustAddedBundleId(null), 2500);
+			showToast(`Пакет «${b.shortTitle}» добавлен в счет: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 350);
+		}
 	};
 
 	if (!isOpen) return null;

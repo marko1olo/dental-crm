@@ -3,15 +3,16 @@
  * Декомпозирован строго по Мандату 8b (лимит строк <= 120).
  */
 
-import type { Order804nProcedureDefinition } from "./types";
+import type { ClinicalProcedureDefinition, Order804nProcedureDefinition } from "./types";
 import { THERAPY_DIAGNOSTIC_SERVICES } from "./catalog/therapyDiagnosticServices";
 import { ENDO_SERVICES } from "./catalog/endoServices";
 import { SURGERY_SERVICES } from "./catalog/surgeryServices";
 import { ORTHO_SERVICES } from "./catalog/orthoServices";
 
 export * from "./catalog/catalogPredicates";
+export type { ClinicalProcedureDefinition, Order804nProcedureDefinition };
 
-export const DENTAL_SERVICES_CATALOG: Record<string, Order804nProcedureDefinition> = {
+export const DENTAL_SERVICES_CATALOG: Record<string, ClinicalProcedureDefinition> = {
 	...THERAPY_DIAGNOSTIC_SERVICES,
 	...ENDO_SERVICES,
 	...SURGERY_SERVICES,

@@ -10,6 +10,7 @@ export * from "./treatmentPlanStagesEngine";
 export * from "./treatmentPlanMaterialEngine";
 export * from "./TreatmentPlanStageCard";
 export * from "./MissingPriceAlert";
+export * from "./MissingPriceAlertHub";
 export * from "./TreatmentPlan3TierComparison";
 export * from "./TreatmentPlanSignatureModal";
 export * from "./TreatmentPlanContractPrint";

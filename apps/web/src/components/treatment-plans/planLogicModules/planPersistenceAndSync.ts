@@ -6,7 +6,7 @@
  * Выделено из useTreatmentPlanLogic.ts строго по Мандату 8b (лимит строк <= 800).
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { showToast } from "../../GlobalToast";
 import { logger } from "../../../utils/logger";
 import { loadPersistedCustomPlanItems } from "../ctImplantIntegrationBridge";
@@ -229,11 +229,14 @@ export function createPlanPersistenceAndSyncHandlers(
 		});
 	};
 
+	const saveInFlightRef = useRef(false);
+
 	const handleSavePlanToDatabase = async () => {
-		if (isSaving) {
+		if (isSaving || saveInFlightRef.current) {
 			showToast("Сохранение плана уже выполняется...", "info");
 			return;
 		}
+		saveInFlightRef.current = true;
 		setIsSaving(true);
 		try {
 			const savedId = await savePlanToPostgres({
@@ -252,6 +255,9 @@ export function createPlanPersistenceAndSyncHandlers(
 			}
 		} finally {
 			setIsSaving(false);
+			setTimeout(() => {
+				saveInFlightRef.current = false;
+			}, 350);
 		}
 	};
 

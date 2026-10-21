@@ -1,7 +1,7 @@
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { TreatmentPlanItem } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../treatmentPlanServicesCatalog";
+import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 
 /**
@@ -24,7 +24,7 @@ export function buildPeriodontalAndHygieneItems(
 
 		if (hasBoneLoss || hasMobility || hasFurcation) {
 			hasPeriodontalNeeds = true;
-			const defSrp = ORDER_804N_DICTIONARY.PeriodontalScalingSRP!;
+			const defSrp = DENTAL_SERVICES_CATALOG.PeriodontalScalingSRP!;
 			stage1PerioItems.push(
 				createPlanItem(
 					"s1-perio-srp-" + tooth.toothNumber,
@@ -42,7 +42,7 @@ export function buildPeriodontalAndHygieneItems(
 			);
 
 			if (hasBoneLoss && (tooth.boneLossLevel ?? 0) >= 2) {
-				const defCurettage = ORDER_804N_DICTIONARY.PeriodontalClosedCurettage!;
+				const defCurettage = DENTAL_SERVICES_CATALOG.PeriodontalClosedCurettage!;
 				stage1PerioItems.push(
 					createPlanItem(
 						"s1-perio-curettage-" + tooth.toothNumber,
@@ -61,7 +61,7 @@ export function buildPeriodontalAndHygieneItems(
 			}
 
 			if (hasMobility && (tooth.mobility ?? 0) >= 2) {
-				const defSplint = ORDER_804N_DICTIONARY.PeriodontalSplinting!;
+				const defSplint = DENTAL_SERVICES_CATALOG.PeriodontalSplinting!;
 				stage1PerioItems.push(
 					createPlanItem(
 						"s1-perio-splint-" + tooth.toothNumber,
@@ -82,12 +82,12 @@ export function buildPeriodontalAndHygieneItems(
 	}
 
 	// 2. Базовая гигиена и 3D КЛКТ диагностика
-	const defCT = ORDER_804N_DICTIONARY.DiagnosticsCT!;
+	const defCT = DENTAL_SERVICES_CATALOG.DiagnosticsCT!;
 	stage1PerioItems.unshift(
 		createPlanItem("s1-ct-diag", 1, "stage_1_therapy", defCT, undefined, catalog, validDiscountPct, { isDemoMode: isDemo }),
 	);
 
-	const defHygiene = ORDER_804N_DICTIONARY.HygieneComplex!;
+	const defHygiene = DENTAL_SERVICES_CATALOG.HygieneComplex!;
 	stage1PerioItems.push(
 		createPlanItem(
 			"s1-hygiene",

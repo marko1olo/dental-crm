@@ -29,7 +29,8 @@ export type ClinicalBundleCategory =
 
 export interface ClinicalBundleItemTemplate {
 	readonly id: string;
-	readonly code804n: string;
+	readonly serviceCode: string;
+	readonly code804n?: string;
 	readonly name: string;
 	readonly category: string;
 	readonly defaultPriceRub: number;
@@ -63,7 +64,7 @@ export interface ClinicalBundleDefinition {
 
 function item(
 	id: string,
-	code804n: string,
+	serviceCode: string,
 	name: string,
 	category: string,
 	defaultPriceRub: number,
@@ -73,7 +74,8 @@ function item(
 ): ClinicalBundleItemTemplate {
 	return {
 		id,
-		code804n,
+		serviceCode,
+		code804n: serviceCode,
 		name,
 		category,
 		defaultPriceRub,

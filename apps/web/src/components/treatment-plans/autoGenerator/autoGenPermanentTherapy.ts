@@ -1,7 +1,7 @@
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import type { TreatmentPlanItem } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../treatmentPlanServicesCatalog";
+import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 import { buildEndodonticTherapyItems } from "./autoGenEndodontics";
 
@@ -37,7 +37,7 @@ export function buildPermanentToothItems(
 	}
 
 	if (state === "Root") {
-		const defExt = ORDER_804N_DICTIONARY.SimpleExtraction!;
+		const defExt = DENTAL_SERVICES_CATALOG.SimpleExtraction!;
 		stage2.push(
 			createPlanItem("s2-root-extract-" + num, 2, "stage_2_surgery", defExt, num, catalog, validDiscountPct, {
 				customTitle: "Атравматичное удаление разрушенного корня зуба №" + num + " с консервацией лунки",
@@ -50,7 +50,7 @@ export function buildPermanentToothItems(
 	}
 
 	if (state === "Impacted" || state === "Retained") {
-		const defComplexExt = ORDER_804N_DICTIONARY.ComplexExtraction!;
+		const defComplexExt = DENTAL_SERVICES_CATALOG.ComplexExtraction!;
 		stage2.push(
 			createPlanItem("s2-impacted-extract-" + num, 2, "stage_2_surgery", defComplexExt, num, catalog, validDiscountPct, {
 				customTitle: "Сложное хирургическое удаление ретенированного/дистопированного зуба №" + num,
@@ -61,7 +61,7 @@ export function buildPermanentToothItems(
 	}
 
 	if (state === "Caries") {
-		const defCaries = ORDER_804N_DICTIONARY.CariesTherapy!;
+		const defCaries = DENTAL_SERVICES_CATALOG.CariesTherapy!;
 		stage1.push(
 			createPlanItem("s1-caries-" + num, 1, "stage_1_therapy", defCaries, num, catalog, validDiscountPct, {
 				customTitle: "Лечение кариеса зуба №" + num + " нанокомпозитом Estelite / Filtek",
@@ -73,7 +73,7 @@ export function buildPermanentToothItems(
 		stage1.push(...endo.stage1);
 		stage3.push(...endo.stage3);
 	} else if (state === "Crown" || state === "CrownNeeded") {
-		const defCrown = ORDER_804N_DICTIONARY.CrownZirconia!;
+		const defCrown = DENTAL_SERVICES_CATALOG.CrownZirconia!;
 		stage3.push(
 			createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defCrown, num, catalog, validDiscountPct, {
 				customTitle: "Восстановление зуба №" + num + " коронкой из диоксида циркония Prettau",

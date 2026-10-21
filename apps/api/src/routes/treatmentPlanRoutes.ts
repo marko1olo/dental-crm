@@ -55,6 +55,8 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	};
 	server.post("/api/treatment-plans", createPlanHandler);
 	server.post("/api/v1/treatment-plans", createPlanHandler);
+	server.post("/api/treatment-plan", createPlanHandler);
+	server.post("/api/v1/treatment-plan", createPlanHandler);
 
 	// 4. PATCH /api/treatment-plans/:id/stages/:stageId — Обновление этапа плана лечения
 	const updateStageHandler = async (request: any, reply: any) => {

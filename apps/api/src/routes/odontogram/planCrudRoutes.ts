@@ -1,6 +1,6 @@
 import { sumKopecks } from "@dental/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -41,9 +41,10 @@ import {
 } from "./types.js";
 
 export function registerPlanCrudRoutes(app: FastifyInstance) {
-	app.get(
-		"/api/treatment-plans/:id",
-		async (request, reply) => {
+	const getPlanByIdHandler = async (
+		request: FastifyRequest<{ Params: { id: string } }>,
+		reply: FastifyReply,
+	) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -197,6 +198,7 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 					return {
 						itemId: item.id,
 						toothNumber: item.toothNumber ?? undefined,
+						serviceCode: priceId || "A16.07.002",
 						code804n: priceId || "A16.07.002",
 						serviceTitle: name || "Медицинская услуга",
 						category: "therapy",
@@ -216,8 +218,12 @@ export function registerPlanCrudRoutes(app: FastifyInstance) {
 				plan: serialized,
 				validationPayload,
 			});
-		},
-	);
+	};
+
+	app.get("/api/treatment-plans/:id", getPlanByIdHandler);
+	app.get("/api/treatment-plan/:id", getPlanByIdHandler);
+	app.get("/api/v1/treatment-plans/:id", getPlanByIdHandler);
+	app.get("/api/v1/treatment-plan/:id", getPlanByIdHandler);
 
 	app.get(
 		"/api/patients/:patientId/treatment-plans",

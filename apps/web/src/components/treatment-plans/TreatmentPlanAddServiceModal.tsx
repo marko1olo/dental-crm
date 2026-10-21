@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { FolderPlus, Plus, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
@@ -44,22 +44,38 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 		});
 	}, [effectiveCatalog, searchQuery, categoryFilter]);
 
+	const inFlightRef = useRef(false);
+
 	const handleConfirm = () => {
-		if (!selectedItem) return showToast("Выберите услугу из каталога", "warning");
-		const basePrice = selectedItem.basePriceRub || 0;
-		const qty = Math.max(1, quantity);
-		const discRub = Math.round((basePrice * qty * Math.max(0, Math.min(100, discountPercent))) / 100);
-		onAddService(targetStageNumber, {
-			code804n: selectedItem.order804nCode || selectedItem.code || selectedItem.id,
-			name: selectedItem.title, category: selectedItem.category || "Общее",
-			...(selectedTooth ? { toothNumber: selectedTooth } : {}),
-			quantity: qty, unitPriceRub: basePrice, discountRub: discRub,
-		});
-		onClose();
-		setSelectedItem(null);
-		setSelectedTooth(null);
-		setQuantity(1);
-		setDiscountPercent(0);
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			if (!selectedItem) {
+				showToast("Выберите услугу из каталога", "warning");
+				return;
+			}
+			const basePrice = selectedItem.basePriceRub || 0;
+			const qty = Math.max(1, quantity);
+			const discRub = Math.round((basePrice * qty * Math.max(0, Math.min(100, discountPercent))) / 100);
+			const itemCode = selectedItem.order804nCode || selectedItem.code || selectedItem.id;
+			onAddService(targetStageNumber, {
+				serviceCode: itemCode,
+				code804n: itemCode,
+				name: selectedItem.title,
+				category: selectedItem.category || "Общее",
+				...(selectedTooth ? { toothNumber: selectedTooth } : {}),
+				quantity: qty,
+				unitPriceRub: basePrice,
+				discountRub: discRub,
+			});
+			onClose();
+			setSelectedItem(null);
+			setSelectedTooth(null);
+			setQuantity(1);
+			setDiscountPercent(0);
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 350);
+		}
 	};
 
 	if (!isOpen) return null;

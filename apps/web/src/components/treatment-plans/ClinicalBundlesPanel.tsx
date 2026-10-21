@@ -73,11 +73,19 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 		}
 	};
 
+	const inFlightRef = React.useRef(false);
+
 	const handleApply = (bundle: ClinicalBundleDefinition) => {
-		const tooth = bundle.requiresTooth ? selectedTooth : undefined;
-		onApplyBundle(bundle.id, tooth);
-		setLastAddedBundleId(bundle.id);
-		setTimeout(() => setLastAddedBundleId(null), 2000);
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			const tooth = bundle.requiresTooth ? selectedTooth : undefined;
+			onApplyBundle(bundle.id, tooth);
+			setLastAddedBundleId(bundle.id);
+			setTimeout(() => setLastAddedBundleId(null), 2000);
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 350);
+		}
 	};
 
 	const filteredBundles = useMemo(() => {
@@ -94,7 +102,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 				const matchesItems = bundle.items.some(
 					(it) =>
 						it.name.toLowerCase().includes(q) ||
-						it.code804n.toLowerCase().includes(q),
+						(it.serviceCode || it.code804n || "").toLowerCase().includes(q),
 				);
 				if (!matchesTitle && !matchesDesc && !matchesItems) return false;
 			}

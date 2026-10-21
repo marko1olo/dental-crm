@@ -1,7 +1,7 @@
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import type { TreatmentPlanItem } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../treatmentPlanServicesCatalog";
+import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 
 /**
@@ -21,7 +21,7 @@ export function buildDeciduousToothItems(
 	const state: ToothState | string = tooth.state || "Healthy";
 
 	if (state === "Caries") {
-		const defPedCaries = ORDER_804N_DICTIONARY.PediatricCariesTherapy!;
+		const defPedCaries = DENTAL_SERVICES_CATALOG.PediatricCariesTherapy!;
 		stage1.push(
 			createPlanItem(
 				"s1-ped-caries-" + num,
@@ -38,7 +38,7 @@ export function buildDeciduousToothItems(
 			),
 		);
 	} else if (state === "Pulpitis") {
-		const defPulpotomy = ORDER_804N_DICTIONARY.PediatricPulpitisPulpotomy!;
+		const defPulpotomy = DENTAL_SERVICES_CATALOG.PediatricPulpitisPulpotomy!;
 		stage1.push(
 			createPlanItem(
 				"s1-ped-pulpotomy-" + num,
@@ -54,7 +54,7 @@ export function buildDeciduousToothItems(
 				},
 			),
 		);
-		const defPedCrown = ORDER_804N_DICTIONARY.PediatricCrownSSC!;
+		const defPedCrown = DENTAL_SERVICES_CATALOG.PediatricCrownSSC!;
 		stage3.push(
 			createPlanItem(
 				"s3-ped-crown-" + num,
@@ -77,7 +77,7 @@ export function buildDeciduousToothItems(
 		state === "Retained" ||
 		state === "Missing"
 	) {
-		const defPedExt = ORDER_804N_DICTIONARY.PediatricExtraction!;
+		const defPedExt = DENTAL_SERVICES_CATALOG.PediatricExtraction!;
 		stage2.push(
 			createPlanItem(
 				"s2-ped-extract-" + num,

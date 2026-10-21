@@ -59,9 +59,9 @@ describe("treatmentPlanBundlesEngine — 10 эталонных клиничес�
 			assert.ok(bundle.items.length > 0, `Пакет ${bundle.id} должен содержать элементы`);
 			for (const item of bundle.items) {
 				assert.match(
-					item.code804n,
+					(item.serviceCode || item.code804n || ""),
 					/^[AB]\d{2}\.\d{2}\.\d{3}(\.\d{3})?$/,
-					`Некорректный код 804н у "${item.name}" в пакете ${bundle.id}: ${item.code804n}`,
+					`Некорректный код у "${item.name}" в пакете ${bundle.id}: ${item.serviceCode || item.code804n}`,
 				);
 				assert.ok(
 					item.materials.length > 5,
@@ -230,7 +230,7 @@ describe("treatmentPlanBundlesEngine — применение пакета к э
 		assert.equal(stage.items.length, 4);
 		assert.equal(stage.totalRub, 7500);
 		assert.equal(stage.totalKopecks, parseKopecks(7500));
-		assert.equal(stage.order804nCodes.length, 4);
+		assert.equal(stage.order804nCodes?.length, 4);
 	});
 
 	test("добавляет позиции в существующий этап и корректно суммирует рубли и копейки", () => {
@@ -274,8 +274,8 @@ describe("treatmentPlanBundlesEngine — применение пакета к э
 		assert.equal(stage.items.length, 5);
 		assert.equal(stage.totalRub, 1000 + 7500);
 		assert.equal(stage.totalKopecks, parseKopecks(8500));
-		assert.ok(stage.order804nCodes.includes("A16.07.002.001"));
-		assert.ok(stage.order804nCodes.includes("A16.07.050"));
+		assert.ok(stage.order804nCodes?.includes("A16.07.002.001"));
+		assert.ok(stage.order804nCodes?.includes("A16.07.050"));
 	});
 
 	test("корректно сортирует этапы по stageNumber при добавлении ортопедии к существующей хирургии", () => {

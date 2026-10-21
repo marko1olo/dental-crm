@@ -188,12 +188,13 @@ export function createBundlePlanItems(
 			priceId = `custom-${bundle.id}-${item.id}`;
 			fromCatalog = false;
 		} else if (catalogPricelist && catalogPricelist.length > 0) {
+			const itemServiceCode = item.serviceCode || item.code804n || "";
 			const matched = matchCatalogService(
 				catalogPricelist,
 				item.category,
-				[item.name, item.code804n],
+				[item.name, itemServiceCode],
 				item.defaultPriceRub,
-				item.code804n,
+				itemServiceCode,
 				isDemoMode !== undefined ? { isDemoMode } : undefined,
 			);
 			finalPriceRub = matched.priceRub;
