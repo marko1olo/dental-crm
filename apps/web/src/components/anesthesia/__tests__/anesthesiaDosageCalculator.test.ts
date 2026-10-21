@@ -8,9 +8,7 @@ import { describe, it } from "node:test";
 import {
 	calculateAnesthesiaSafety,
 	EPINEPHRINE_CEILINGS_MG,
-	ASA_CLASSIFICATIONS,
 } from "../anesthesiaEngine";
-import { DENTAL_ANESTHETICS } from "../anesthesiaCatalog";
 
 describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended Dose (MRD)", () => {
 	// ── 1. Adult Weight-Based Articaine 4% Calculations ──────────────────────
@@ -185,7 +183,10 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 		});
 
 		// Epinephrine limit for ASA III is 0.04 mg
-		assert.equal(cardioResult.maxSafeEpinephrineMg, EPINEPHRINE_CEILINGS_MG.cardiovascularRisk);
+		assert.equal(
+			cardioResult.maxSafeEpinephrineMg,
+			EPINEPHRINE_CEILINGS_MG.cardiovascularRisk,
+		);
 		assert.equal(cardioResult.injectedEpinephrineMg, 0.051);
 		assert.equal(cardioResult.isEpinephrineOverdose, true);
 		assert.equal(cardioResult.safetyZone, "overdose_danger");

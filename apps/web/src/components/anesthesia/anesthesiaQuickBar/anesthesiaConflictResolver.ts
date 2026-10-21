@@ -1,6 +1,13 @@
-import type { Dispatch, SetStateAction } from 'react';
-import type { AnestheticDrugId, AnestheticDrugInfo, InjectionTechniqueId } from '../anesthesiaCatalog';
-import type { AnesthesiaCalculationResult, AsaPhysicalStatus } from '../anesthesiaEngine';
+import type { Dispatch, SetStateAction } from "react";
+import type {
+	AnestheticDrugId,
+	AnestheticDrugInfo,
+	InjectionTechniqueId,
+} from "../anesthesiaCatalog";
+import type {
+	AnesthesiaCalculationResult,
+	AsaPhysicalStatus,
+} from "../anesthesiaEngine";
 
 export interface UseAnesthesiaApplyActionProps {
 	disabled: boolean;
@@ -27,7 +34,9 @@ export interface UseAnesthesiaApplyActionProps {
 	techniqueId: InjectionTechniqueId;
 	setSessionInjectedCarpules: Dispatch<SetStateAction<number>>;
 	showQuickToast: (msg: string, durationMs?: number | undefined) => void;
-	onApplyAnesthesia?: ((diaryEntry: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	onApplyAnesthesia?:
+		| ((diaryEntry: string, result: AnesthesiaCalculationResult) => void)
+		| undefined;
 }
 
 export interface AnesthesiaConflictCheckParams {
@@ -62,18 +71,26 @@ export function resolveAnesthesiaApplicationConflicts(
 	} = params;
 
 	const isCardioConflict =
-		isCardioRisk && (targetDrugId === 'articaine_1_100k' || targetDrugId === 'lidocaine_1_100k');
+		isCardioRisk &&
+		(targetDrugId === "articaine_1_100k" ||
+			targetDrugId === "lidocaine_1_100k");
 	const isLidocaineAllergyConflict =
 		Boolean(hasLidocaineAllergy) &&
-		(targetDrugId === 'lidocaine_1_100k' || targetDrugId === 'lidocaine_plain');
+		(targetDrugId === "lidocaine_1_100k" || targetDrugId === "lidocaine_plain");
 	const isArticaineAllergyConflict =
 		Boolean(hasArticaineAllergy) &&
-		(targetDrugId === 'articaine_1_100k' || targetDrugId === 'articaine_1_200k');
+		(targetDrugId === "articaine_1_100k" ||
+			targetDrugId === "articaine_1_200k");
 	const isCriticalConflict =
-		result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0);
+		result.contraindicationsTriggered.length > 0 ||
+		(result.isOverdose && carpulesCount > 2.0);
 
 	const diaryEntry =
-		bypassCheck || isCardioConflict || isCriticalConflict || isLidocaineAllergyConflict || isArticaineAllergyConflict
+		bypassCheck ||
+		isCardioConflict ||
+		isCriticalConflict ||
+		isLidocaineAllergyConflict ||
+		isArticaineAllergyConflict
 			? `${result.diaryEntryRu} (Введено по клиническому решению лечащего врача)`
 			: result.diaryEntryRu;
 

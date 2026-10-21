@@ -15,6 +15,7 @@
  */
 
 import assert from "node:assert/strict";
+
 const { describe, it } = await (async () => {
 	try {
 		// @ts-ignore
@@ -23,12 +24,11 @@ const { describe, it } = await (async () => {
 		return await import("node:test");
 	}
 })();
-import React from "react";
+
 import { renderToString } from "react-dom/server";
 import {
 	AnesthesiaQuickBar,
 	formatAnesthesiaPatientMemo,
-	type AnesthesiaPatientMemoParams,
 } from "../AnesthesiaQuickBar";
 
 describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient Memo", () => {
@@ -46,7 +46,9 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 				date: "08.09.2026",
 			});
 
-			assert.ok(memo.includes("Памятка пациенту после проведения местной анестезии"));
+			assert.ok(
+				memo.includes("Памятка пациенту после проведения местной анестезии"),
+			);
 			assert.ok(memo.includes("Стоматологическая клиника DENTE"));
 			assert.ok(memo.includes("Иванов Иван Иванович"));
 			assert.ok(memo.includes("Д-р Петров П.П."));
@@ -72,7 +74,11 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 			});
 
 			const emojiRegex = /[🌀-🧿]|[☀-⛿]|[✀-➿]/u;
-			assert.equal(emojiRegex.test(memo), false, "Memo must not contain cartoon emojis");
+			assert.equal(
+				emojiRegex.test(memo),
+				false,
+				"Memo must not contain cartoon emojis",
+			);
 		});
 
 		it("falls back to robust clinical defaults when optional parameters are omitted", () => {
@@ -113,7 +119,8 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 				"Must render anesthesia-dose-norm-preset button",
 			);
 			assert.ok(
-				html.includes("Убистезин форте") || html.includes("Норма: Артикаин 1:100k"),
+				html.includes("Убистезин форте") ||
+					html.includes("Норма: Артикаин 1:100k"),
 				"Must show standard norm preset label",
 			);
 			assert.ok(
@@ -124,12 +131,12 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 
 		it("renders disabled state cleanly when disabled prop is set", () => {
 			const html = renderToString(
-				<AnesthesiaQuickBar
-					disabled={true}
-					onApplyAnesthesia={() => {}}
-				/>,
+				<AnesthesiaQuickBar disabled={true} onApplyAnesthesia={() => {}} />,
 			);
-			assert.ok(html.includes("disabled"), "Buttons must receive disabled attribute");
+			assert.ok(
+				html.includes("disabled"),
+				"Buttons must receive disabled attribute",
+			);
 		});
 
 		it("renders 1-click carpule buttons with compliant touch target (min-height >= 44px)", () => {

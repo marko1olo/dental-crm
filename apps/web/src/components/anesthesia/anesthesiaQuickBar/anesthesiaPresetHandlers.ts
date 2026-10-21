@@ -60,11 +60,15 @@ export function createAnesthesiaPresetHandlers(
 			if (props.disabled || !guardDoubleTap()) return;
 			bar.handleSelectDrug("articaine_1_100k");
 			bar.handleApplyStandardNormPreset();
-			dispatch(
-				"Анестезия инфильтрационная (Ультракаин Д-С Форте 1:100 000)",
-				1100,
-			);
-			setLastAppliedText("Ультракаин Д-С Форте 1:100 000 (1.7 мл)");
+			dispatch("Анестезия инфильтрационная (Убистезин форте 1:100 000)", 1100);
+			setLastAppliedText("Убистезин форте 1:100 000 (1.7 мл)");
+		},
+		handleApplySeptanest100k: () => {
+			if (props.disabled || !guardDoubleTap()) return;
+			bar.handleSelectDrug("septanest_1_100k");
+			bar.handleApplySeptanestInfiltration();
+			dispatch("Анестезия инфильтрационная (Септанест 1:100 000)", 1050);
+			setLastAppliedText("Септанест 1:100 000 (1.7 мл)");
 		},
 		handleApplyScandonestCardio: () => {
 			if (props.disabled || !guardDoubleTap()) return;

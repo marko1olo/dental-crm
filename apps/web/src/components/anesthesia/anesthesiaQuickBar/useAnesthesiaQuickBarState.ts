@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import type { AnestheticDrugId, InjectionTechniqueId } from '../anesthesiaCatalog';
-import { resolveClinicalDefaultWeightKg } from '../anesthesiaEngine';
-import type { SafetyWarningState } from './types';
+import { useEffect, useRef, useState } from "react";
+import type {
+	AnestheticDrugId,
+	InjectionTechniqueId,
+} from "../anesthesiaCatalog";
+import { resolveClinicalDefaultWeightKg } from "../anesthesiaEngine";
+import type { SafetyWarningState } from "./types";
 
 export interface UseAnesthesiaQuickBarStateProps {
 	initialWeightKg?: number | null | undefined;
@@ -43,25 +46,30 @@ export function useAnesthesiaQuickBarState({
 
 	const isCardioRisk = Boolean(
 		hasCardiovascularRisk ||
-		hasHypertension ||
-		hasCardiacArrhythmia ||
-		hasIschemicHeartDisease ||
-		hasMyocardialInfarctionHistory ||
-		takesBetaBlockers,
+			hasHypertension ||
+			hasCardiacArrhythmia ||
+			hasIschemicHeartDisease ||
+			hasMyocardialInfarctionHistory ||
+			takesBetaBlockers,
 	);
 
-	const [sessionInjectedCarpules, setSessionInjectedCarpules] = useState<number>(0);
-	const [selectedCarpulesCount, setSelectedCarpulesCount] = useState<number>(1.0);
+	const [sessionInjectedCarpules, setSessionInjectedCarpules] =
+		useState<number>(0);
+	const [selectedCarpulesCount, setSelectedCarpulesCount] =
+		useState<number>(1.0);
 
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
-		if (hasLidocaineAllergy || hasArticaineAllergy) return 'mepivacaine_plain';
-		if (hasSulfiteAllergy || hasBronchialAsthma) return 'mepivacaine_plain';
-		if (isCardioRisk) return 'mepivacaine_plain';
-		return 'articaine_1_100k';
+		if (hasLidocaineAllergy || hasArticaineAllergy) return "mepivacaine_plain";
+		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
+		if (isCardioRisk) return "mepivacaine_plain";
+		return "articaine_1_100k";
 	});
 
-	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>('infiltration');
-	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
+	const [techniqueId, setTechniqueId] =
+		useState<InjectionTechniqueId>("infiltration");
+	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(
+		null,
+	);
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const showQuickToast = (msg: string, durationMs = 3500) => {
@@ -84,7 +92,9 @@ export function useAnesthesiaQuickBarState({
 		};
 	}, []);
 
-	const [safetyWarning, setSafetyWarning] = useState<SafetyWarningState | null>(null);
+	const [safetyWarning, setSafetyWarning] = useState<SafetyWarningState | null>(
+		null,
+	);
 
 	return {
 		patientWeightKg,

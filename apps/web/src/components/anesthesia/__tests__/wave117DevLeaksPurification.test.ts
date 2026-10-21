@@ -26,7 +26,10 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 		);
 		if (!fs.existsSync(filePath)) {
 			// Successfully eradicated micro-tracking antipattern modal per Mandate 8k (CRM != Reality Simulator)
-			assert.ok(!fs.existsSync(filePath), "NurseCarpuleDisposalModal has been completely eradicated");
+			assert.ok(
+				!fs.existsSync(filePath),
+				"NurseCarpuleDisposalModal has been completely eradicated",
+			);
 			return;
 		}
 		const content = fs.readFileSync(filePath, "utf-8");
@@ -39,12 +42,16 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 
 		// Clean medical regulatory citations
 		assert.ok(
-			content.includes("СанПиН 3.3686-21 • Врачом, администратором или медсестрой (без комиссии из 3 человек)"),
+			content.includes(
+				"СанПиН 3.3686-21 • Врачом, администратором или медсестрой (без комиссии из 3 человек)",
+			),
 			"NurseCarpuleDisposalModal must use pure regulatory citation",
 		);
 
 		assert.ok(
-			content.includes("СанПиН 3.3686-21 Быстрая утилизация врачом/админом (без комиссии из 3 человек)"),
+			content.includes(
+				"СанПиН 3.3686-21 Быстрая утилизация врачом/админом (без комиссии из 3 человек)",
+			),
 			"Disposal title must be clean without mandate references",
 		);
 	});
@@ -63,7 +70,7 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 
 		assert.ok(
 			content.includes(
-				'ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)',
+				"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)",
 			),
 			"legalStampText must strictly follow official regulatory citation without prompt references",
 		);
@@ -72,9 +79,14 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 	it("3. App.tsx / AppTopBar.tsx: absence of synthetic doctor mocks «Смирнов Олег Игоревич» and «Смирнов Алексей Петрович»", () => {
 		const filePath = path.join(repoRoot, "apps/web/src/App.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
-		const topBarPath = path.join(repoRoot, "apps/web/src/components/appLayout/AppTopBar.tsx");
-		const topBarContent = fs.existsSync(topBarPath) ? fs.readFileSync(topBarPath, "utf-8") : "";
-		const combined = content + "\n" + topBarContent;
+		const topBarPath = path.join(
+			repoRoot,
+			"apps/web/src/components/appLayout/AppTopBar.tsx",
+		);
+		const topBarContent = fs.existsSync(topBarPath)
+			? fs.readFileSync(topBarPath, "utf-8")
+			: "";
+		const combined = `${content}\n${topBarContent}`;
 
 		assert.ok(
 			!combined.includes("Смирнов Олег Игоревич"),
@@ -177,7 +189,10 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 			repoRoot,
 			"apps/web/src/components/anesthesia/AnesthesiaProtocolModal.tsx",
 		);
-		assert.ok(!fs.existsSync(modalPath), "AnesthesiaProtocolModal.tsx must be eradicated (Wave 197)");
+		assert.ok(
+			!fs.existsSync(modalPath),
+			"AnesthesiaProtocolModal.tsx must be eradicated (Wave 197)",
+		);
 
 		const quickBarPath = path.join(
 			repoRoot,
@@ -214,7 +229,9 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 		const content = fs.readFileSync(filePath, "utf-8");
 
 		assert.ok(
-			content.includes("ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО (ФОРМА 043/у)"),
+			content.includes(
+				"ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО (ФОРМА 043/у)",
+			),
 			"forms003vu.ts header must state Form 043/u applicability",
 		);
 		assert.ok(

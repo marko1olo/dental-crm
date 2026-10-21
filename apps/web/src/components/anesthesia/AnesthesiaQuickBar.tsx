@@ -1,7 +1,9 @@
-import { CheckCircle2, Syringe } from "lucide-react";
+import { Syringe } from "lucide-react";
 import { useState } from "react";
 import { AnesthesiaHeaderRow } from "./anesthesiaQuickBar/AnesthesiaHeaderRow";
-import { AnesthesiaPresetsRow } from "./anesthesiaQuickBar/AnesthesiaPresetsRow";
+import { AnesthesiaMobileDrawer } from "./anesthesiaQuickBar/AnesthesiaMobileDrawer";
+import { AnesthesiaPresetsActionBar } from "./anesthesiaQuickBar/AnesthesiaPresetsActionBar";
+import { AnesthesiaStatusFooter } from "./anesthesiaQuickBar/AnesthesiaStatusFooter";
 import { AnesthesiaVolumeSelector } from "./anesthesiaQuickBar/AnesthesiaVolumeSelector";
 import { createAnesthesiaPresetHandlers } from "./anesthesiaQuickBar/anesthesiaPresetHandlers";
 import type { AnesthesiaQuickBarProps } from "./anesthesiaQuickBar/types";
@@ -23,9 +25,8 @@ export {
 export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 	const bar = useAnesthesiaQuickBar(props);
 	const [lastAppliedText, setLastAppliedText] = useState<string | null>(null);
-	const [isAspirationNegative, setIsAspirationNegative] =
-		useState<boolean>(true);
-
+	const [isAspirationNegative, setIsAspirationNegative] = useState(true);
+	const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 	const presets = createAnesthesiaPresetHandlers(
 		bar,
 		props,
@@ -55,13 +56,15 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 				onSelectTechnique={bar.setTechniqueId}
 				onOpenEmergencyProtocol={props.onOpenEmergencyProtocol}
 			/>
-			<AnesthesiaPresetsRow
+			<AnesthesiaPresetsActionBar
 				disabled={props.disabled}
 				selectedDrugId={bar.selectedDrugId}
 				onApplyUltracain200k={presets.handleApplyUltracain200k}
 				onApplyUltracainForte={presets.handleApplyUltracainForte}
+				onApplySeptanest100k={presets.handleApplySeptanest100k}
 				onApplyScandonestCardio={presets.handleApplyScandonestCardio}
 				onApplyNoAnesthesia={presets.handleApplyNoAnesthesia}
+				onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
 			/>
 			<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
 				<AnesthesiaVolumeSelector
@@ -83,23 +86,26 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 					<span>Применить анестезию</span>
 				</button>
 			</div>
-			<div className="flex items-center justify-between gap-2 pt-0.5 text-[11px] text-[var(--muted)]">
-				<span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
-					<CheckCircle2 size={12} className="shrink-0" />
-					<span>Стандартная терапевтическая дозировка — безопасно</span>
-				</span>
-				{lastAppliedText && (
-					<span className="truncate max-w-[400px] text-[var(--ink-secondary)] italic">
-						Внесено в протокол: {lastAppliedText}
-					</span>
-				)}
-			</div>
-			{bar.activeToastMessage && (
-				<div className="anesthesia-quick-toast" role="status">
-					<CheckCircle2 size={16} />
-					<span>{bar.activeToastMessage}</span>
-				</div>
-			)}
+			<AnesthesiaStatusFooter
+				lastAppliedText={lastAppliedText}
+				activeToastMessage={bar.activeToastMessage}
+			/>
+			<AnesthesiaMobileDrawer
+				isOpen={isMobileDrawerOpen}
+				onClose={() => setIsMobileDrawerOpen(false)}
+				disabled={props.disabled}
+				selectedDrugId={bar.selectedDrugId}
+				selectedCarpulesCount={bar.selectedCarpulesCount}
+				onSelectCarpulesCount={bar.setSelectedCarpulesCount}
+				onApplyUltracainForte={presets.handleApplyUltracainForte}
+				onApplySeptanest100k={presets.handleApplySeptanest100k}
+				onApplyUltracain200k={presets.handleApplyUltracain200k}
+				onApplyScandonestCardio={presets.handleApplyScandonestCardio}
+				onApplyNoAnesthesia={presets.handleApplyNoAnesthesia}
+				onApplyCurrent={handleApplyCurrentSelection}
+				hasLidocaineAllergy={props.hasLidocaineAllergy}
+				hasArticaineAllergy={props.hasArticaineAllergy}
+			/>
 		</div>
 	);
 }

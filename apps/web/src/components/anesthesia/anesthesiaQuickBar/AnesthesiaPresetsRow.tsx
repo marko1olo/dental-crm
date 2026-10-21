@@ -6,6 +6,7 @@ export interface AnesthesiaPresetsRowProps {
 	readonly selectedDrugId: AnestheticDrugId | string;
 	readonly onApplyUltracain200k: () => void;
 	readonly onApplyUltracainForte: () => void;
+	readonly onApplySeptanest100k?: (() => void) | undefined;
 	readonly onApplyScandonestCardio: () => void;
 	readonly onApplyNoAnesthesia: () => void;
 }
@@ -15,11 +16,46 @@ export function AnesthesiaPresetsRow({
 	selectedDrugId,
 	onApplyUltracain200k,
 	onApplyUltracainForte,
+	onApplySeptanest100k,
 	onApplyScandonestCardio,
 	onApplyNoAnesthesia,
 }: AnesthesiaPresetsRowProps) {
 	return (
 		<div className="flex items-center gap-2 flex-wrap pt-0.5">
+			<button
+				type="button"
+				disabled={disabled}
+				onClick={onApplyUltracainForte}
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+					selectedDrugId === "articaine_1_100k"
+						? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600"
+						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
+				}`}
+				title="Норма: Ультракаин Д-С Форте 1:100 000 / Убистезин форте (1 карпула 1.7 мл)"
+				data-testid="anesthesia-dose-norm-preset"
+			>
+				<CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+				<span>Убистезин форте 1:100 000 (1.7 мл)</span>
+			</button>
+
+			{onApplySeptanest100k && (
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={onApplySeptanest100k}
+					className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+						selectedDrugId === "septanest_1_100k"
+							? "border-2 border-teal-600 bg-teal-500/10 text-[var(--ink)] font-bold ring-1 ring-teal-600"
+							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-600"
+					}`}
+					title="Септанест 1:100 000 (1 карпула 1.7 мл)"
+					data-testid="anesthesia-preset-septanest-100k"
+				>
+					<Syringe size={13} className="text-teal-600 shrink-0" />
+					<span>Септанест 1:100 000 (1.7 мл)</span>
+				</button>
+			)}
+
 			<button
 				type="button"
 				disabled={disabled}
@@ -34,22 +70,6 @@ export function AnesthesiaPresetsRow({
 			>
 				<Syringe size={13} className="text-teal-600 shrink-0" />
 				<span>Ультракаин Д-С 1:200 000 (1.7 мл)</span>
-			</button>
-
-			<button
-				type="button"
-				disabled={disabled}
-				onClick={onApplyUltracainForte}
-				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-					selectedDrugId === "articaine_1_100k"
-						? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600"
-						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
-				}`}
-				title="Норма: Артикаин 1:100k — Ультракаин Д-С Форте 1:100 000 (1 карпула 1.7 мл)"
-				data-testid="anesthesia-dose-norm-preset"
-			>
-				<CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-				<span>Ультракаин Д-С Форте 1:100 000 (1.7 мл)</span>
 			</button>
 
 			<button

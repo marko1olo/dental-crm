@@ -5,32 +5,32 @@
  */
 
 export type AnestheticDrugId =
-	| 'articaine_1_100k'
-	| 'articaine_1_200k'
-	| 'septanest_1_100k'
-	| 'mepivacaine_plain'
-	| 'lidocaine_1_100k'
-	| 'lidocaine_plain'
-	| 'bupivacaine_05';
+	| "articaine_1_100k"
+	| "articaine_1_200k"
+	| "septanest_1_100k"
+	| "mepivacaine_plain"
+	| "lidocaine_1_100k"
+	| "lidocaine_plain"
+	| "bupivacaine_05";
 
-export type VasoconstrictorRatio = '1:100000' | '1:200000' | 'none';
+export type VasoconstrictorRatio = "1:100000" | "1:200000" | "none";
 
 export type NeedleGaugeType =
-	| 'g27_long_35mm'
-	| 'g30_short_21mm'
-	| 'g30_ultrashort_12mm'
-	| 'g30_extrashort_8mm';
+	| "g27_long_35mm"
+	| "g30_short_21mm"
+	| "g30_ultrashort_12mm"
+	| "g30_extrashort_8mm";
 
 export type InjectionTechniqueId =
-	| 'infiltration'
-	| 'mandibular_torus'
-	| 'mental_incisive'
-	| 'tuberal'
-	| 'palatal_greater'
-	| 'incisive_canal'
-	| 'intraligamentary_sta'
-	| 'intraseptal'
-	| 'application_topical';
+	| "infiltration"
+	| "mandibular_torus"
+	| "mental_incisive"
+	| "tuberal"
+	| "palatal_greater"
+	| "incisive_canal"
+	| "intraligamentary_sta"
+	| "intraseptal"
+	| "application_topical";
 
 export interface AnestheticDrugInfo {
 	readonly id: AnestheticDrugId;

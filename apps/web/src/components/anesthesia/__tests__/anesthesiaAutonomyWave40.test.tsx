@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import React from "react";
 import { renderToString } from "react-dom/server";
-import { STANDARD_ANESTHESIA_PRESETS } from "../anesthesiaCatalog";
-import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
 import { EmergencyRescueModal } from "../../emergency/EmergencyRescueModal";
 import { OrthodonticVisitProtocolWidget } from "../../orthodontics/OrthodonticVisitProtocolWidget";
+import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
+import { STANDARD_ANESTHESIA_PRESETS } from "../anesthesiaCatalog";
 
 describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k, 8n)", () => {
 	describe("1. Anesthesia & Emergency Protocols 1-Click Autonomy", () => {
@@ -27,7 +26,9 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 			);
 			assert.ok(
 				html.includes('data-testid="anesthesia-dose-norm-preset"') ||
-				html.includes('data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"'),
+					html.includes(
+						'data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"',
+					),
 				"Must render 1-click anesthesia preset buttons",
 			);
 			assert.ok(

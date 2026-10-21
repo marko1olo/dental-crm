@@ -8,6 +8,13 @@ export interface AnesthesiaVolumeSelectorProps {
 	readonly onToggleAspirationNegative: () => void;
 }
 
+const CARPULE_PRESETS = [
+	{ count: 0.5, label: "0.5 карп.", id: "anesthesia-dose-05carp" },
+	{ count: 1.0, label: "1 карп. (1.7 мл)", id: "anesthesia-dose-1carp" },
+	{ count: 2.0, label: "2 карп. (3.4 мл)", id: "anesthesia-dose-2carp" },
+	{ count: 3.0, label: "3 карп. (5.1 мл)", id: "anesthesia-dose-3carp" },
+];
+
 export function AnesthesiaVolumeSelector({
 	disabled,
 	selectedCarpulesCount,
@@ -15,13 +22,12 @@ export function AnesthesiaVolumeSelector({
 	isAspirationNegative,
 	onToggleAspirationNegative,
 }: AnesthesiaVolumeSelectorProps) {
-	const stepDown = () =>
+	const step = (delta: number) =>
 		onSelectCarpulesCount(
-			Math.max(0.5, Math.round((selectedCarpulesCount - 0.5) * 10) / 10),
-		);
-	const stepUp = () =>
-		onSelectCarpulesCount(
-			Math.min(6.0, Math.round((selectedCarpulesCount + 0.5) * 10) / 10),
+			Math.min(
+				6.0,
+				Math.max(0.5, Math.round((selectedCarpulesCount + delta) * 10) / 10),
+			),
 		);
 
 	return (
@@ -30,24 +36,7 @@ export function AnesthesiaVolumeSelector({
 				className="inline-flex items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shadow-2xs m-0"
 				aria-label="Объём анестезии"
 			>
-				{[
-					{ count: 0.5, label: "0.5 карп.", id: "anesthesia-dose-05carp" },
-					{
-						count: 1.0,
-						label: "1 карп. (1.7 мл)",
-						id: "anesthesia-dose-1carp",
-					},
-					{
-						count: 2.0,
-						label: "2 карп. (3.4 мл)",
-						id: "anesthesia-dose-2carp",
-					},
-					{
-						count: 3.0,
-						label: "3 карп. (5.1 мл)",
-						id: "anesthesia-dose-3carp",
-					},
-				].map((preset) => (
+				{CARPULE_PRESETS.map((preset) => (
 					<button
 						key={preset.count}
 						type="button"
@@ -72,7 +61,7 @@ export function AnesthesiaVolumeSelector({
 				<button
 					type="button"
 					disabled={disabled || selectedCarpulesCount <= 0.5}
-					onClick={stepDown}
+					onClick={() => step(-0.5)}
 					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
 					title="Уменьшить дозу на 0.5 карпулы"
 					data-testid="btn-decrease-carpules"
@@ -90,7 +79,7 @@ export function AnesthesiaVolumeSelector({
 				<button
 					type="button"
 					disabled={disabled || selectedCarpulesCount >= 6.0}
-					onClick={stepUp}
+					onClick={() => step(0.5)}
 					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
 					title="Увеличить дозу на 0.5 карпулы"
 					data-testid="btn-increase-carpules"

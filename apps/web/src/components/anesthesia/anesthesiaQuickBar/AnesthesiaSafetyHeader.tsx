@@ -1,6 +1,5 @@
-import React from 'react';
-import { Activity, AlertTriangle, Heart, ShieldAlert } from 'lucide-react';
-import { DentalSyringe } from '../../icons/DentalIcons';
+import { Activity, AlertTriangle, Heart, ShieldAlert } from "lucide-react";
+import { DentalSyringe } from "../../icons/DentalIcons";
 
 export interface AnesthesiaSafetyHeaderProps {
 	patientWeightKg: number;
@@ -27,7 +26,9 @@ export function AnesthesiaSafetyHeader({
 		<div className="anesthesia-quick-bar-header">
 			<div className="anesthesia-quick-bar-title">
 				<DentalSyringe size={16} className="anesthesia-icon-accent shrink-0" />
-				<span className="font-bold text-xs sm:text-sm">Местная анестезия у кресла</span>
+				<span className="font-bold text-xs sm:text-sm">
+					Местная анестезия у кресла
+				</span>
 				<span className="text-[11px] font-semibold text-[var(--muted)] px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] shadow-2xs">
 					{`МДД по массе тела ${patientWeightKg} кг`}
 				</span>
@@ -37,7 +38,10 @@ export function AnesthesiaSafetyHeader({
 						title="Аллергия на лидокаин / амидные анестетики. Рекомендован Скандонест 3%. Решение принимает врач."
 						data-testid="allergy-passive-badge"
 					>
-						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<ShieldAlert
+							size={12}
+							className="text-rose-600 dark:text-rose-400 shrink-0"
+						/>
 						<span>{`${String.fromCodePoint(0x26a0, 0xfe0f)} Аллергия: Лидокаин`}</span>
 					</span>
 				)}
@@ -47,12 +51,18 @@ export function AnesthesiaSafetyHeader({
 						title="Аллергия на артикаин / амидные анестетики. Рекомендован Скандонест 3%. Решение принимает врач."
 						data-testid="allergy-passive-badge-articaine"
 					>
-						<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<ShieldAlert
+							size={12}
+							className="text-rose-600 dark:text-rose-400 shrink-0"
+						/>
 						<span>{`${String.fromCodePoint(0x26a0, 0xfe0f)} Аллергия: Артикаин`}</span>
 					</span>
 				)}
 				{isCardioRisk && (
-					<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
+					<span
+						className="anesthesia-cardio-tag"
+						title="Кардиоваскулярный риск: лимит адреналина 0.04 мг"
+					>
 						<Heart size={12} className="text-amber-500" />
 						<span>ССЗ: Скандонест / лимит 0.04 мг</span>
 					</span>

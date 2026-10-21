@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface AnesthesiaSegmentedDoseButtonsProps {
 	disabled: boolean;
 	selectedCarpulesCount?: number | undefined;
@@ -7,12 +5,42 @@ export interface AnesthesiaSegmentedDoseButtonsProps {
 	onChangeSelectedCarpulesCount?: ((count: number) => void) | undefined;
 }
 
-const CARPULE_CHIPS: readonly { count: number; label: string; testId: string; title: string }[] = [
-	{ count: 0.5, label: "0.5 карп. (0.85 мл)", testId: "anesthesia-dose-halfcarp", title: "0.5 карпулы (0.85 мл)" },
-	{ count: 1.0, label: "1 карп. (1.7 мл)", testId: "anesthesia-dose-1carp", title: "1 карпула (1.7 мл)" },
-	{ count: 1.5, label: "1.5 карп. (2.55 мл)", testId: "anesthesia-dose-1-5carp", title: "1.5 карпулы (2.55 мл)" },
-	{ count: 2.0, label: "2 карп. (3.4 мл)", testId: "anesthesia-dose-2carp", title: "2 карпулы (3.4 мл)" },
-	{ count: 3.0, label: "3 карп. (5.1 мл)", testId: "anesthesia-dose-3carp", title: "3 карпулы (5.1 мл)" },
+const CARPULE_CHIPS: readonly {
+	count: number;
+	label: string;
+	testId: string;
+	title: string;
+}[] = [
+	{
+		count: 0.5,
+		label: "0.5 карп. (0.85 мл)",
+		testId: "anesthesia-dose-halfcarp",
+		title: "0.5 карпулы (0.85 мл)",
+	},
+	{
+		count: 1.0,
+		label: "1 карп. (1.7 мл)",
+		testId: "anesthesia-dose-1carp",
+		title: "1 карпула (1.7 мл)",
+	},
+	{
+		count: 1.5,
+		label: "1.5 карп. (2.55 мл)",
+		testId: "anesthesia-dose-1-5carp",
+		title: "1.5 карпулы (2.55 мл)",
+	},
+	{
+		count: 2.0,
+		label: "2 карп. (3.4 мл)",
+		testId: "anesthesia-dose-2carp",
+		title: "2 карпулы (3.4 мл)",
+	},
+	{
+		count: 3.0,
+		label: "3 карп. (5.1 мл)",
+		testId: "anesthesia-dose-3carp",
+		title: "3 карпулы (5.1 мл)",
+	},
 ];
 
 export function AnesthesiaSegmentedDoseButtons({
@@ -22,7 +50,10 @@ export function AnesthesiaSegmentedDoseButtons({
 	onChangeSelectedCarpulesCount,
 }: AnesthesiaSegmentedDoseButtonsProps) {
 	return (
-		<div className="inline-flex items-center gap-1 p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shadow-2xs flex-wrap" role="group" aria-label="Выбор дозы карпул">
+		<fieldset
+			className="m-0 inline-flex items-center gap-1 p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shadow-2xs flex-wrap"
+			aria-label="Выбор дозы карпул"
+		>
 			{CARPULE_CHIPS.map((chip) => {
 				const isSelected = selectedCarpulesCount === chip.count;
 				return (
@@ -46,6 +77,6 @@ export function AnesthesiaSegmentedDoseButtons({
 					</button>
 				);
 			})}
-		</div>
+		</fieldset>
 	);
 }

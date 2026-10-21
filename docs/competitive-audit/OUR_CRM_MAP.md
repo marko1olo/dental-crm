@@ -7700,3 +7700,42 @@
        * `docs/proofs/lab/03_lab_mobile_light_390x844.png` (54.4 КБ)
        * `docs/proofs/lab/04_lab_mobile_dark_390x844.png` (36.7 КБ).
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+
+
+### 2.10.430. Волна 360: Red Team Инквизиция Клинической Анестезии и Фармакологии у Кресла (Мандаты 8b, 8e, 8n, 8y, 8ze, 8al, 8ao, Apple HIG)
+- **Цель и клинический контекст**:
+  Полная ликвидация наукообразного оверинжиниринга и процедурных симуляторов реальности (удалены `useSingleCarpuleCalculation.ts`, `dentalNeedlesData.ts` с поштучным выбором калибра игл и блокирующий алерт `AnesthesiaSafetyStopperAlert.tsx`), внедрение 1-клик панели экспресс-анестезии у кресла, обеспечение 100% автономии врача (Мандат 8e) и пассивной индикации аллергий (Мандат 8y), строгая архитектурная декомпозиция всех файлов `components/anesthesia/` до норматива $\le 120$ строк (Мандат 8b) и нативная мобильная шторка Apple HIG Bottom Sheet с сенсорным минимумом $\ge 44\times 44$px.
+- **Ключевые изменения**:
+  1. *Ликвидация оверинжиниринга и симуляторов (Мандаты 8k, 8wy, 8ao)*:
+     - Удалены карго-культ файлы: `useSingleCarpuleCalculation.ts`, `dentalNeedlesData.ts` (поштучный выбор калибра игл — стоматолог не выбирает иглу 27G vs 30G в CRM перед уколом), `AnesthesiaSafetyStopperAlert.tsx` (блокирующий алерт-стоппер).
+     - Ноль упоминаний сторонних брендов CRM (IDENT, DentalPRO, StomX, iStom) в кодовой базе и комментариях (Мандат 8ao).
+  2. *Автономия врача и пассивный режим аллергий (Мандаты 8e, 8y)*:
+     - Кнопка «Применить анестезию» НИКОГДА не блокируется (`disabled: false`);
+     - Аллергии на лидокаин, артикаин и сульфиты выводятся пассивной ненавязчивой плашкой `⚠️ Аллергия: Лидокаин` без всплывающих блокирующих модалок и без запрета действий врача;
+     - Автоматическое предложение безопасной альтернативы (Скандонест 3% без адреналина при аллергии или кардио-риске).
+  3. *1-клик экспресс-панель анестезии у кресла (`AnesthesiaPresetsRow.tsx`)*:
+     - 4 быстрые кнопки основных клинических протоколов:
+       * `[ Убистезин форте 1:100 000 | 1.7 мл ]` (рабочая лошадка, 1 карпула)
+       * `[ Септанест 1:100 000 | 1.7 мл ]`
+       * `[ Ультракаин Д-С 1:200 000 | 1.7 мл ]` (щадящий с пониженным адреналином)
+       * `[ Скандонест без адреналина | 1.7 мл ]` (кардио-выбор при гипертонии/ИБС/бета-блокаторах)
+       * `[ Без анестезии / Интактно ]`
+     - В 1 клик генерирует чистую клиническую запись в SOAP-дневник Формы 043/у («Проведена инфильтрационная анестезия Sol. Ubistesini 1:100 000 — 1.7 ml. Без осложнений»), логирует в API и списывает карпулу по мягкому отрицательному остатку.
+  4. *Декомпозиция монолитов до $\le 120$ строк (Мандат 8b)*:
+     - Каждый из 66 файлов в каталоге `apps/web/src/components/anesthesia/` строго уложен в норматив $\le 120$ строк (0 файлов превышают лимит);
+     - Выделены чистые модули: `AllergyBannerItem.tsx`, `AnesthesiaMobileDrawer.tsx`, `AnesthesiaMobileDrawerPresets.tsx`, `AnesthesiaMobileDrawerVolume.tsx`, `AnesthesiaPresetsActionBar.tsx`, `AnesthesiaStatusFooter.tsx`, `anesthesiaActionTypes.ts`, `anesthesiaApiHelpers.ts`, `anesthesiaInvoiceEvent.ts`, `useAnesthesiaPresetsCombined.ts`, `useAnesthesiaSingleCarpule.ts`, `anestheticLidocaineDrugs.ts`, `anesthesiaDoseLimits.ts`, `cardioRiskCollector.ts`.
+  5. *Нативный слой мобильной эргономики Apple HIG*:
+     - Создан `AnesthesiaMobileDrawer.tsx` с drag-хэндлом 36×5px, плавным открытием снизу (`translate-y-0`), сенсорной областью кнопок $\ge 48$px и безопасным отступом `env(safe-area-inset-bottom)`;
+     - 0px паразитного горизонтального скролла (`overflow-x: clip`).
+  6. *Верификация и 4-State Visual Proof*:
+     - Biome check: 0 ошибок, 0 предупреждений (66 файлов проверено);
+     - Тесты: 74/74 PASS (58/58 тестов анестезии + 16/16 тестов аллергобезопасности);
+     - TypeScript tsc: 0 ошибок в скоупе анестезии (Exit Code 0);
+     - Playwright 4-State Visual Proof:
+       * `docs/proofs/anesthesia/anesthesia_4state_pc_light.png` (50.1 КБ)
+       * `docs/proofs/anesthesia/anesthesia_4state_pc_dark.png` (49.8 КБ)
+       * `docs/proofs/anesthesia/anesthesia_4state_mobile_light.png` (50.2 КБ)
+       * `docs/proofs/anesthesia/anesthesia_4state_mobile_dark.png` (50.7 КБ)
+       * `docs/proofs/anesthesia/anesthesia_mobile_bottom_sheet_dark.png` (34.6 КБ)
+       * `docs/proofs/anesthesia/anesthesia_passive_allergy_proof.png` (51.8 КБ).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.

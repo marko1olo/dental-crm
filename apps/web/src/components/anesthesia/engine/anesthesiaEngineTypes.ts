@@ -3,13 +3,17 @@ import type {
 	AnestheticDrugInfo,
 	InjectionTechniqueId,
 	NeedleGaugeType,
-} from '../anesthesiaCatalog.js';
+} from "../anesthesiaCatalog.js";
 
-export type AsaPhysicalStatus = 'asa_1' | 'asa_2' | 'asa_3' | 'asa_4';
+export type AsaPhysicalStatus = "asa_1" | "asa_2" | "asa_3" | "asa_4";
 
-export type PatientAgeCategory = 'adult' | 'pediatric' | 'geriatric';
+export type PatientAgeCategory = "adult" | "pediatric" | "geriatric";
 
-export type AnesthesiaSafetyZone = 'safe' | 'caution' | 'warning' | 'overdose_danger';
+export type AnesthesiaSafetyZone =
+	| "safe"
+	| "caution"
+	| "warning"
+	| "overdose_danger";
 
 export interface AnesthesiaCalculationInput {
 	drugId: AnestheticDrugId;
@@ -82,24 +86,26 @@ export const ASA_CLASSIFICATIONS: Record<
 	{ nameRu: string; epiLimitMg: number; descriptionRu: string }
 > = {
 	asa_1: {
-		nameRu: 'ASA I: Здоровый пациент',
+		nameRu: "ASA I: Здоровый пациент",
 		epiLimitMg: 0.2,
-		descriptionRu: 'Без системных патологий, физиологическая норма.',
+		descriptionRu: "Без системных патологий, физиологическая норма.",
 	},
 	asa_2: {
-		nameRu: 'ASA II: Легкое системное заболевание',
+		nameRu: "ASA II: Легкое системное заболевание",
 		epiLimitMg: 0.2,
-		descriptionRu: 'Компенсированная гипертония, легкая астма, курение, контролируемый диабет 2 типа.',
+		descriptionRu:
+			"Компенсированная гипертония, легкая астма, курение, контролируемый диабет 2 типа.",
 	},
 	asa_3: {
-		nameRu: 'ASA III: Тяжелое системное заболевание',
-		epiLimitMg: 0.04,
-		descriptionRu: 'ИБС, стенокардия напряжения, перенесенный инфаркт (>6 мес), ХОБЛ, инсулинозависимый диабет.',
-	},
-	asa_4: {
-		nameRu: 'ASA IV: Заболевание, угрожающее жизни',
+		nameRu: "ASA III: Тяжелое системное заболевание",
 		epiLimitMg: 0.04,
 		descriptionRu:
-			'Нестабильная стенокардия, недавний инфаркт (<6 мес), декомпенсированная сердечная недостаточность.',
+			"ИБС, стенокардия напряжения, перенесенный инфаркт (>6 мес), ХОБЛ, инсулинозависимый диабет.",
+	},
+	asa_4: {
+		nameRu: "ASA IV: Заболевание, угрожающее жизни",
+		epiLimitMg: 0.04,
+		descriptionRu:
+			"Нестабильная стенокардия, недавний инфаркт (<6 мес), декомпенсированная сердечная недостаточность.",
 	},
 };

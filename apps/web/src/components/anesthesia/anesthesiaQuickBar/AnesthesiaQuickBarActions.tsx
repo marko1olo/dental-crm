@@ -1,9 +1,8 @@
-import React from 'react';
-import type { AnesthesiaQuickBarActionsProps } from './types';
-import { AnesthesiaDoseStepper } from './AnesthesiaDoseStepper';
-import { AnesthesiaExpressPresets } from './AnesthesiaExpressPresets';
-import { AnesthesiaMoreActionsMenu } from './AnesthesiaMoreActionsMenu';
-import { AnesthesiaDoseBalanceSummary } from './AnesthesiaDoseBalanceSummary';
+import { AnesthesiaDoseBalanceSummary } from "./AnesthesiaDoseBalanceSummary";
+import { AnesthesiaDoseStepper } from "./AnesthesiaDoseStepper";
+import { AnesthesiaExpressPresets } from "./AnesthesiaExpressPresets";
+import { AnesthesiaMoreActionsMenu } from "./AnesthesiaMoreActionsMenu";
+import type { AnesthesiaQuickBarActionsProps } from "./types";
 
 export function AnesthesiaQuickBarActions({
 	patientWeightKg,

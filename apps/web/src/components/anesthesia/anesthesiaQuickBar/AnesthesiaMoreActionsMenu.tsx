@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
-import { DentalSyringe } from '../../icons/DentalIcons';
-import type { AnestheticDrugId } from '../anesthesiaCatalog';
+import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+import { DentalSyringe } from "../../icons/DentalIcons";
+import type { AnestheticDrugId } from "../anesthesiaCatalog";
 
 export interface AnesthesiaMoreActionsMenuProps {
 	disabled: boolean;
 	onSelectDrug: (drugId: AnestheticDrugId) => void;
-	onApplyCarpules: (count: number, bypassCheck?: boolean, overrideDrugId?: AnestheticDrugId) => void;
+	onApplyCarpules: (
+		count: number,
+		bypassCheck?: boolean,
+		overrideDrugId?: AnestheticDrugId,
+	) => void;
 	onApplySeptanestInfiltration?: () => void;
 	onNurseSeptanestDisposal?: () => void;
 	onNursePacketDisposal?: () => void;
@@ -40,8 +44,8 @@ export function AnesthesiaMoreActionsMenu({
 						disabled={disabled}
 						onClick={() => {
 							setIsMoreMenuOpen(false);
-							onSelectDrug('articaine_1_100k');
-							onApplyCarpules(1.0, false, 'articaine_1_100k');
+							onSelectDrug("articaine_1_100k");
+							onApplyCarpules(1.0, false, "articaine_1_100k");
 						}}
 						className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
 						data-testid="anesthesia-dose-1carp-articaine-100k"

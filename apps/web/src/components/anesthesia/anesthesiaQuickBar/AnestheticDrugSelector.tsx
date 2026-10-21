@@ -1,7 +1,6 @@
-import React from "react";
 import {
-	PRIMARY_ANESTHETIC_DRUGS,
 	type AnestheticDrugSelectorProps,
+	PRIMARY_ANESTHETIC_DRUGS,
 } from "./types";
 
 export function AnestheticDrugSelector({
@@ -15,13 +14,20 @@ export function AnestheticDrugSelector({
 	disabled = false,
 }: AnestheticDrugSelectorProps) {
 	return (
-		<div className="anesthesia-quick-drugs-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2" role="group" aria-label="Выбор местного анестетика">
+		<fieldset
+			className="anesthesia-quick-drugs-grid m-0 border-0 p-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2"
+			aria-label="Выбор местного анестетика"
+		>
 			{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
 				const isSelected = selectedDrugId === drug.id;
 				const isCardioSuggested = isCardioRisk && drug.isAdrenalineFree;
-				const isSulfiteRisky = (hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
-				const isLidocaineAllergic = hasLidocaineAllergy && drug.id.startsWith("lidocaine");
-				const isArticaineAllergic = hasArticaineAllergy && (drug.id.startsWith("articaine") || drug.id.startsWith("septanest"));
+				const isSulfiteRisky =
+					(hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
+				const isLidocaineAllergic =
+					hasLidocaineAllergy && drug.id.startsWith("lidocaine");
+				const isArticaineAllergic =
+					hasArticaineAllergy &&
+					(drug.id.startsWith("articaine") || drug.id.startsWith("septanest"));
 				const isAllergyRisky = isLidocaineAllergic || isArticaineAllergic;
 
 				return (
@@ -60,6 +66,6 @@ export function AnestheticDrugSelector({
 					</button>
 				);
 			})}
-		</div>
+		</fieldset>
 	);
 }

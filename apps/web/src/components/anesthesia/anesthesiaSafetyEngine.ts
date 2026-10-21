@@ -1,43 +1,41 @@
 /**
- * anesthesiaSafetyEngine.ts — Clinical Anesthesia Safety & Maximum Recommended Dose (MRD) Engine
- * Re-exported from canonical @dental/shared/anesthesia module.
+ * anesthesiaSafetyEngine.ts — Clinical Anesthesia Safety & MRD Engine
  */
-
 import {
 	ANESTHESIA_DRUG_CATALOG,
-	EPINEPHRINE_CEILINGS_MG,
-	calculateComprehensiveAnesthesiaSafety,
-	calculateEffectiveMgPerKg,
-	isGeriatricPatient,
-	isPediatricPatient,
-	screenPatientContraindications as sharedScreenPatientContraindications,
 	type AnesthesiaCalculationInput,
 	type AnesthesiaDrugSpec,
 	type AnesthesiaSafetyZone,
 	type AnestheticDrugId,
 	type ComprehensiveAnesthesiaCalculationResult,
+	calculateComprehensiveAnesthesiaSafety,
+	calculateEffectiveMgPerKg,
+	EPINEPHRINE_CEILINGS_MG,
+	isGeriatricPatient,
+	isPediatricPatient,
 	type PatientAnesthesiaProfile,
+	screenPatientContraindications as sharedScreenPatientContraindications,
 } from "@dental/shared";
 
 export type {
-	AnestheticDrugId,
+	AnesthesiaCalculationInput,
 	AnesthesiaDrugSpec,
 	AnesthesiaSafetyZone,
+	AnestheticDrugId,
 	PatientAnesthesiaProfile,
-	AnesthesiaCalculationInput,
 };
-
 export type AnestheticDrugKey = AnestheticDrugId;
 export type VasoconstrictorRatio = "1:100000" | "1:200000" | "none";
 export type AsaClassification = "asa_1" | "asa_2" | "asa_3" | "asa_4";
-export type AnesthesiaCalculationResult = ComprehensiveAnesthesiaCalculationResult;
+export type AnesthesiaCalculationResult =
+	ComprehensiveAnesthesiaCalculationResult;
 
 export {
 	ANESTHESIA_DRUG_CATALOG,
-	EPINEPHRINE_CEILINGS_MG,
-	isPediatricPatient,
-	isGeriatricPatient,
 	calculateEffectiveMgPerKg,
+	EPINEPHRINE_CEILINGS_MG,
+	isGeriatricPatient,
+	isPediatricPatient,
 };
 
 export function screenPatientContraindications(
@@ -49,39 +47,37 @@ export function screenPatientContraindications(
 	drugId: AnestheticDrugId = "articaine_4_epi_100k",
 ) {
 	const base = sharedScreenPatientContraindications(profile, drugId);
-	const drug = ANESTHESIA_DRUG_CATALOG[drugId] || ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k;
-	const blockingContraindications = [...base.blockingContraindications];
+	const drug =
+		ANESTHESIA_DRUG_CATALOG[drugId] ||
+		ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k;
 	const warnings = [...base.warnings];
-	let recommendedAlternativeId = base.recommendedAlternativeId;
+	let recAltId = base.recommendedAlternativeId;
 
-	// Cardiovascular risk & Beta-blockers guidance (Mandate 8e: Doctor Autonomy — non-blocking warning, never block!)
 	if (profile.takesBetaBlockers) {
-		if (drug.vasoconstrictorRatio === "1:100000") {
-			warnings.push(
-				"ВНИМАНИЕ (Бета-блокаторы): Прием бета-блокаторов при высокой концентрации адреналина 1:100 000 повышает риск прессорной реакции. Рекомендован Скандонест (Мепивакаин 3% без адреналина). Решение принимает лечащий врач.",
-			);
-			recommendedAlternativeId = "mepivacaine_3_plain";
-		} else if (!drug.isAdrenalineFree) {
-			warnings.push(
-				"КАРДИОРИСК (Бета-блокаторы): Лимит адреналина строго ограничен 0.04 мг (максимум 4 карпулы 1:200 000). Необходим контроль АД и ЧСС. Рекомендован Скандонест (Мепивакаин 3% без адреналина).",
-			);
-			recommendedAlternativeId = "mepivacaine_3_plain";
-		}
+		const is100k = drug.vasoconstrictorRatio === "1:100000";
+		warnings.push(
+			is100k
+				? "ВНИМАНИЕ (Бета-блокаторы): адреналин 1:100 000 повышает риск прессорной реакции. Рекомендован Скандонест."
+				: "КАРДИОРИСК: Лимит адреналина 0.04 мг. Контроль АД/ЧСС. Рекомендован Скандонест.",
+		);
+		recAltId = "mepivacaine_3_plain";
 	}
 
-	if ((profile.hasIschemicHeartDisease || profile.hasMyocardialInfarctionHistory) && drug.vasoconstrictorRatio === "1:100000") {
+	const hasIhd =
+		profile.hasIschemicHeartDisease || profile.hasMyocardialInfarctionHistory;
+	if (hasIhd && drug.vasoconstrictorRatio === "1:100000") {
 		warnings.push(
 			"КАРДИОРИСК: Ишемическая болезнь сердца (ИБС) / перенесенный инфаркт миокарда. Рекомендован Скандонест (Мепивакаин 3% без адреналина). Решение принимает лечащий врач.",
 		);
-		recommendedAlternativeId = "mepivacaine_3_plain";
+		recAltId = "mepivacaine_3_plain";
 	}
 
 	return {
-		isBlocked: blockingContraindications.length > 0,
-		blockingContraindications,
+		isBlocked: base.blockingContraindications.length > 0,
+		blockingContraindications: base.blockingContraindications,
 		warnings,
-		recommendedAlternativeId,
-		recommendedAlternativeKey: recommendedAlternativeId,
+		recommendedAlternativeId: recAltId,
+		recommendedAlternativeKey: recAltId,
 	};
 }
 
@@ -92,25 +88,25 @@ export function calculateAnesthesiaSafety(
 		hasMyocardialInfarctionHistory?: boolean | undefined;
 	},
 ): ComprehensiveAnesthesiaCalculationResult {
-	const enrichedInput: AnesthesiaCalculationInput = {
-		...input,
-		hasCardiovascularRisk: Boolean(
-			input.hasCardiovascularRisk ||
+	const hasCardio = Boolean(
+		input.hasCardiovascularRisk ||
 			input.takesBetaBlockers ||
 			input.hasIschemicHeartDisease ||
 			input.hasMyocardialInfarctionHistory ||
-			(typeof input.bpDiastolic === "number" && input.bpDiastolic >= 90)
-		),
-	};
-	return calculateComprehensiveAnesthesiaSafety(enrichedInput);
+			(input.bpDiastolic ?? 0) >= 90,
+	);
+	return calculateComprehensiveAnesthesiaSafety({
+		...input,
+		hasCardiovascularRisk: hasCardio,
+	});
 }
 
 export function formatAnesthesiaRemainingDoseRu(
-	injectedCarpules: number,
-	maxSafeCarpules: number,
-	volumeMlPerCarpule = 1.7,
+	injected: number,
+	maxSafe: number,
+	volMl = 1.7,
 ): string {
-	const remaining = Math.max(0, Math.floor((maxSafeCarpules - injectedCarpules) * 10) / 10);
-	const injectedVolumeMl = (injectedCarpules * volumeMlPerCarpule).toFixed(1);
-	return `Введено: ${injectedVolumeMl} мл (${injectedCarpules} карп.) · Безопасный остаток: ${remaining} карп. (предел: ${maxSafeCarpules} карп.)`;
+	const remaining = Math.max(0, Math.floor((maxSafe - injected) * 10) / 10);
+	const vol = (injected * volMl).toFixed(1);
+	return `Введено: ${vol} мл (${injected} карп.) · Безопасный остаток: ${remaining} карп. (предел: ${maxSafe} карп.)`;
 }

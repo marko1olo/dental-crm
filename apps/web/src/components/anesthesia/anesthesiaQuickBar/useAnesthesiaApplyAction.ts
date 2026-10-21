@@ -1,41 +1,22 @@
-import { useRef } from 'react';
-import { type AnestheticDrugId, DENTAL_ANESTHETICS } from '../anesthesiaCatalog';
-import { calculateAnesthesiaSafety, resolveClinicalDefaultWeightKg } from '../anesthesiaEngine';
-import { persistAnesthesiaLog } from './anesthesiaApiPersistence';
+import { useRef } from "react";
 import {
-	type UseAnesthesiaApplyActionProps,
+	type AnestheticDrugId,
+	DENTAL_ANESTHETICS,
+} from "../anesthesiaCatalog";
+import {
+	calculateAnesthesiaSafety,
+	resolveClinicalDefaultWeightKg,
+} from "../anesthesiaEngine";
+import { persistAnesthesiaLog } from "./anesthesiaApiPersistence";
+import {
 	resolveAnesthesiaApplicationConflicts,
-} from './anesthesiaConflictResolver';
+	type UseAnesthesiaApplyActionProps,
+} from "./anesthesiaConflictResolver";
+import { dispatchAnesthesiaInvoiceEvent } from "./anesthesiaInvoiceEvent";
 
 export type { UseAnesthesiaApplyActionProps };
 
-export function useAnesthesiaApplyAction({
-	disabled,
-	patientId,
-	visitId,
-	patientWeightKg,
-	patientAgeYears,
-	asaStatus,
-	isCardioRisk,
-	hasHypertension,
-	hasCardiacArrhythmia,
-	hasIschemicHeartDisease,
-	hasMyocardialInfarctionHistory,
-	takesBetaBlockers,
-	hasSulfiteAllergy,
-	hasBronchialAsthma,
-	isPregnantOrLactating,
-	hasLidocaineAllergy,
-	hasArticaineAllergy,
-	targetToothNumberFdi,
-	servicePriceRub,
-	selectedDrugId,
-	selectedDrugInfo,
-	techniqueId,
-	setSessionInjectedCarpules,
-	showQuickToast,
-	onApplyAnesthesia,
-}: UseAnesthesiaApplyActionProps) {
+export function useAnesthesiaApplyAction(props: UseAnesthesiaApplyActionProps) {
 	const inFlightRef = useRef(false);
 
 	const handleApplyCarpules = (
@@ -43,82 +24,83 @@ export function useAnesthesiaApplyAction({
 		bypassCheck = false,
 		overrideDrugId?: AnestheticDrugId,
 	) => {
-		if (disabled || inFlightRef.current) return;
+		if (props.disabled || inFlightRef.current) return;
 		inFlightRef.current = true;
 
 		try {
-			const targetDrugId = overrideDrugId ?? selectedDrugId;
-			const drugInfo = DENTAL_ANESTHETICS[targetDrugId] ?? selectedDrugInfo;
-			const effectiveWeight = resolveClinicalDefaultWeightKg(patientWeightKg, patientAgeYears, patientAgeYears < 18);
+			const targetDrugId = overrideDrugId ?? props.selectedDrugId;
+			const drugInfo =
+				DENTAL_ANESTHETICS[targetDrugId] ?? props.selectedDrugInfo;
+			const effectiveWeight = resolveClinicalDefaultWeightKg(
+				props.patientWeightKg,
+				props.patientAgeYears,
+				props.patientAgeYears < 18,
+			);
 
 			const result = calculateAnesthesiaSafety({
 				drugId: targetDrugId,
 				carpulesCount,
 				patientWeightKg: effectiveWeight,
-				patientAgeYears,
-				asaStatus,
-				hasCardiovascularRisk: isCardioRisk,
-				hasHypertension: Boolean(hasHypertension),
-				hasCardiacArrhythmia: Boolean(hasCardiacArrhythmia),
-				hasIschemicHeartDisease: Boolean(hasIschemicHeartDisease),
-				hasMyocardialInfarctionHistory: Boolean(hasMyocardialInfarctionHistory),
-				takesBetaBlockers: Boolean(takesBetaBlockers),
-				hasSulfiteAllergy: Boolean(hasSulfiteAllergy),
-				hasBronchialAsthma: Boolean(hasBronchialAsthma),
-				isPregnantOrLactating: Boolean(isPregnantOrLactating),
-				techniqueId,
-				needleType: 'g30_short_21mm',
-				targetToothNumberFdi,
+				patientAgeYears: props.patientAgeYears,
+				asaStatus: props.asaStatus,
+				hasCardiovascularRisk: props.isCardioRisk,
+				hasHypertension: Boolean(props.hasHypertension),
+				hasCardiacArrhythmia: Boolean(props.hasCardiacArrhythmia),
+				hasIschemicHeartDisease: Boolean(props.hasIschemicHeartDisease),
+				hasMyocardialInfarctionHistory: Boolean(
+					props.hasMyocardialInfarctionHistory,
+				),
+				takesBetaBlockers: Boolean(props.takesBetaBlockers),
+				hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy),
+				hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
+				isPregnantOrLactating: Boolean(props.isPregnantOrLactating),
+				techniqueId: props.techniqueId,
+				needleType: "g30_short_21mm",
+				targetToothNumberFdi: props.targetToothNumberFdi,
 				aspirationNegativeConfirmed: true,
 			});
 
-			setSessionInjectedCarpules((prev) => prev + carpulesCount);
+			props.setSessionInjectedCarpules((prev) => prev + carpulesCount);
 
-			const { diaryEntry, toastMessage, toastDurationMs } = resolveAnesthesiaApplicationConflicts({
-				targetDrugId,
-				drugInfo,
-				carpulesCount,
-				isCardioRisk,
-				hasLidocaineAllergy: Boolean(hasLidocaineAllergy),
-				hasArticaineAllergy: Boolean(hasArticaineAllergy),
-				result,
-				bypassCheck,
-			});
+			const { diaryEntry, toastMessage, toastDurationMs } =
+				resolveAnesthesiaApplicationConflicts({
+					targetDrugId,
+					drugInfo,
+					carpulesCount,
+					isCardioRisk: props.isCardioRisk,
+					hasLidocaineAllergy: Boolean(props.hasLidocaineAllergy),
+					hasArticaineAllergy: Boolean(props.hasArticaineAllergy),
+					result,
+					bypassCheck,
+				});
 
 			persistAnesthesiaLog({
-				patientId,
-				visitId,
+				patientId: props.patientId,
+				visitId: props.visitId,
 				drugId: targetDrugId,
-				techniqueId,
+				techniqueId: props.techniqueId,
 				carpulesCount,
-				patientWeightKg,
-				patientAgeYears,
-				isCardioRisk,
-				targetToothNumberFdi,
+				patientWeightKg: props.patientWeightKg,
+				patientAgeYears: props.patientAgeYears,
+				isCardioRisk: props.isCardioRisk,
+				targetToothNumberFdi: props.targetToothNumberFdi,
 				diaryEntry,
 			});
 
-			if (typeof window !== 'undefined') {
-				const code804n = techniqueId?.includes('mandibular') ? 'A11.07.011' : 'A11.07.010';
-				const unitPrice = servicePriceRub ?? 950;
-				const priceRub = unitPrice * Math.ceil(carpulesCount);
-				const drugName = drugInfo?.tradeNamesRu?.[0] ?? drugInfo?.activeSubstanceRu ?? 'Артикаин';
-				window.dispatchEvent(new CustomEvent('dente-add-services-to-invoice', {
-					detail: {
-						service: {
-							id: `anes-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-							title: `Анестезия местная (${drugName}) — ${carpulesCount} карп.`,
-							code804n,
-							priceRub,
-							amountKopecks: priceRub * 100,
-							quantity: Math.ceil(carpulesCount),
-						},
-					},
-				}));
-			}
+			const drugName =
+				drugInfo?.tradeNamesRu?.[0] ??
+				drugInfo?.activeSubstanceRu ??
+				"Артикаин";
 
-			onApplyAnesthesia?.(diaryEntry, result);
-			showQuickToast(toastMessage, toastDurationMs);
+			dispatchAnesthesiaInvoiceEvent({
+				servicePriceRub: props.servicePriceRub,
+				carpulesCount,
+				drugName,
+				techniqueId: props.techniqueId,
+			});
+
+			props.onApplyAnesthesia?.(diaryEntry, result);
+			props.showQuickToast(toastMessage, toastDurationMs);
 		} finally {
 			setTimeout(() => {
 				inFlightRef.current = false;

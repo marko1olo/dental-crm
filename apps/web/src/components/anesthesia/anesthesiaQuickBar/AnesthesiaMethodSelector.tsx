@@ -1,5 +1,7 @@
-import React from "react";
-import type { AnesthesiaMethodSelectorProps, InjectionTechniqueId } from "./types";
+import type {
+	AnesthesiaMethodSelectorProps,
+	InjectionTechniqueId,
+} from "./types";
 
 interface TechniqueOption {
 	readonly id: InjectionTechniqueId;
@@ -11,12 +13,14 @@ const PRIMARY_TECHNIQUES: readonly TechniqueOption[] = [
 	{
 		id: "infiltration",
 		labelRu: "Инфильтрационная",
-		titleRu: "Инфильтрационная наднадкостничная анестезия (депо в переходной складке)",
+		titleRu:
+			"Инфильтрационная наднадкостничная анестезия (депо в переходной складке)",
 	},
 	{
 		id: "mandibular_torus",
 		labelRu: "Проводниковая (мандибулярная/торусальная)",
-		titleRu: "Проводниковая анестезия нижнечелюстного нерва (торусальная / мандибулярная)",
+		titleRu:
+			"Проводниковая анестезия нижнечелюстного нерва (торусальная / мандибулярная)",
 	},
 	{
 		id: "intraligamentary_sta",
@@ -26,12 +30,14 @@ const PRIMARY_TECHNIQUES: readonly TechniqueOption[] = [
 	{
 		id: "application_topical",
 		labelRu: "Аппликационная (Лидокаин-спрей / Дисилан гель)",
-		titleRu: "Аппликационная поверхностная анестезия (Лидокаин-спрей 10% / Дисилан гель)",
+		titleRu:
+			"Аппликационная поверхностная анестезия (Лидокаин-спрей 10% / Дисилан гель)",
 	},
 	{
 		id: "tuberal",
 		labelRu: "Туберальная",
-		titleRu: "Туберальная анестезия верхнечелюстного бугра (моляры верхней челюсти)",
+		titleRu:
+			"Туберальная анестезия верхнечелюстного бугра (моляры верхней челюсти)",
 	},
 ];
 
@@ -42,9 +48,8 @@ export function AnesthesiaMethodSelector({
 	disabled = false,
 }: AnesthesiaMethodSelectorProps) {
 	return (
-		<div
-			className="flex items-center gap-1.5 flex-wrap py-1 text-xs"
-			role="group"
+		<fieldset
+			className="m-0 border-0 p-0 flex items-center gap-1.5 flex-wrap py-1 text-xs"
 			aria-label="Выбор методики анестезии"
 		>
 			<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 mr-1">
@@ -79,6 +84,6 @@ export function AnesthesiaMethodSelector({
 					{`Зуб: ${targetToothNumberFdi}`}
 				</span>
 			)}
-		</div>
+		</fieldset>
 	);
 }

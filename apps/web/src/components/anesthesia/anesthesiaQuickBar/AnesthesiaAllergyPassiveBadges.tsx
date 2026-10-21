@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface AnesthesiaAllergyPassiveBadgesProps {
 	readonly hasLidocaineAllergy?: boolean | undefined;
 	readonly hasArticaineAllergy?: boolean | undefined;

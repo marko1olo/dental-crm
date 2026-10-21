@@ -1,10 +1,14 @@
-import type { AnestheticDrugId, InjectionTechniqueId, NeedleGaugeType } from '../anesthesiaCatalog';
+import type {
+	AnestheticDrugId,
+	InjectionTechniqueId,
+	NeedleGaugeType,
+} from "../anesthesiaCatalog";
 import {
-	calculateAnesthesiaSafety,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
-} from '../anesthesiaEngine';
-import { persistAnesthesiaLog } from './anesthesiaApiPersistence';
+	calculateAnesthesiaSafety,
+} from "../anesthesiaEngine";
+import { persistAnesthesiaLog } from "./anesthesiaApiPersistence";
 
 export interface DispatchPresetParams {
 	drugId: AnestheticDrugId;
@@ -26,7 +30,9 @@ export interface DispatchPresetParams {
 	diaryText: string;
 	toastText: string;
 	showQuickToast: (msg: string, durationMs?: number) => void;
-	onApplyAnesthesia?: ((diaryEntry: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	onApplyAnesthesia?:
+		| ((diaryEntry: string, result: AnesthesiaCalculationResult) => void)
+		| undefined;
 }
 
 export function dispatchAnesthesiaPreset(params: DispatchPresetParams): void {
