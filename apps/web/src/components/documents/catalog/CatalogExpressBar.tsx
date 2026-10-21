@@ -37,9 +37,9 @@ export function CatalogExpressBar({
 					data-testid="btn-catalog-open-tax-quick"
 					onClick={onOpenTax}
 					className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold hover:border-[var(--teal,#0d9488)] transition-colors cursor-pointer"
-					title="Открыть форму справки об оплате медицинских услуг для налогового вычета (13% НДФЛ)"
+					title="Открыть форму справки об оплате медицинских услуг для налогового вычета в ФНС"
 				>
-					<span>Справка в ФНС (вычет 13%)</span>
+					<span>Справка для налогового вычета (ФНС)</span>
 				</button>
 			</div>
 		</div>

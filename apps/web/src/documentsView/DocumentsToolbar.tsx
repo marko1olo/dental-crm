@@ -19,11 +19,11 @@ import type { DocumentsToolbarProps } from "./types";
 import type { DocumentCategoryTab } from "../components/documents/DocumentNavTabs";
 
 const CATEGORY_TABS: Array<{ key: DocumentCategoryTab; label: string }> = [
-	{ key: "all", label: "Все бланки" },
-	{ key: "intake", label: "Договоры и ИДС" },
-	{ key: "clinical", label: "Клинические" },
-	{ key: "finance_tax", label: "Финансы и 3-НДФЛ" },
-	{ key: "certificates_sanpin", label: "СанПиН и справки" },
+	{ key: "all", label: "Все документы" },
+	{ key: "intake", label: "Договоры и согласия" },
+	{ key: "clinical", label: "Архив карт" },
+	{ key: "finance_tax", label: "Справки в налоговую" },
+	{ key: "certificates_sanpin", label: "Акты и счета" },
 ];
 
 export const DocumentsToolbar: React.FC<DocumentsToolbarProps> = ({

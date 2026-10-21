@@ -19,10 +19,6 @@ import {
 	Printer,
 	Download,
 	Receipt,
-	CheckCircle2,
-	AlertCircle,
-	Calendar,
-	User,
 	FileCheck,
 } from "lucide-react";
 import type { Patient } from "@dental/shared";
@@ -31,10 +27,10 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js
 import {
 	validateRussianInn,
 	aggregatePatientPaymentsForTaxYear,
-	generateTaxCertificateKnd1151156Html,
-	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	printTaxCertificate,
 	type TaxDeductionRelationship,
 	type TaxPaymentRecord,
+	type TaxCertificateDocumentData,
 } from "./taxCertificateEngine";
 
 export interface FnsTaxCertificateModalProps {
@@ -72,6 +68,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 
 	const patientInn =
 		(patient as { inn?: string | null })?.inn ||
+		// biome-ignore lint/suspicious/noExplicitAny: patient admin profile
 		((patient as any)?.administrativeProfile?.inn as string | undefined) ||
 		"";
 	const effectiveInn =
@@ -175,13 +172,46 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 		};
 	}, [clinicProfileDraft]);
 
+	const buildTaxDocumentData = (): TaxCertificateDocumentData => {
+		const certNum = `С-${selectedYear}/${patient?.id ? patient.id.slice(0, 6) : "001"}`;
+		return {
+			certificateNumber: certNum,
+			issueDateIso: new Date().toISOString(),
+			taxYear: selectedYear,
+			clinic,
+			taxpayer: {
+				fullName:
+					relationship === "patient"
+						? patient?.fullName || "Пациент клиники"
+						: taxpayerFullName || "Налогоплательщик (указан в заявлении)",
+				birthDate:
+					relationship === "patient"
+						? patient?.birthDate
+							? new Date(patient.birthDate).toLocaleDateString("ru-RU")
+							: undefined
+						: taxpayerBirthDate || undefined,
+				inn: effectiveInn || undefined,
+				relationship,
+			},
+			patient: {
+				fullName: patient?.fullName || "Пациент клиники",
+				birthDate: patient?.birthDate
+					? new Date(patient.birthDate).toLocaleDateString("ru-RU")
+					: undefined,
+				inn: patientInn || undefined,
+			},
+			aggregation: aggregated,
+		};
+	};
+
 	const handlePrint = () => {
 		setIsPrinting(true);
 		try {
 			if (onPrint) {
 				onPrint();
 			} else if (typeof window !== "undefined") {
-				window.print();
+				const docData = buildTaxDocumentData();
+				printTaxCertificate(docData);
 			}
 		} finally {
 			setIsPrinting(false);
@@ -266,9 +296,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 			onDownloadPdf();
 			return;
 		}
-		if (typeof window !== "undefined") {
-			window.print();
-		}
+		handlePrint();
 	};
 
 	if (!isOpen) return null;
@@ -279,7 +307,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 			data-testid="fns-tax-certificate-modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Справка для налогового вычета 13%"
+			aria-label="Справка для налогового вычета (ФНС)"
 		>
 			<div className="relative w-full max-w-[880px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Header */}
@@ -290,7 +318,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight">
-								Справка для налогового вычета 13%
+								Справка для налогового вычета (ФНС)
 							</h2>
 							<p className="text-[12px] text-[var(--muted)]">
 								{patient?.fullName || "Пациент"} · Налоговый период: {selectedYear} год
@@ -317,8 +345,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrint}
-							disabled={isPrinting}
-							className="primary-button h-9 min-h-[36px] px-3.5 text-xs inline-flex items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+							className="primary-button h-9 min-h-[36px] px-3.5 text-xs inline-flex items-center gap-1.5 rounded-xl cursor-pointer"
 							data-testid="tax-cert-print-btn"
 							title={
 								aggregated.totalNetRub === 0
@@ -333,7 +360,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						<button
 							type="button"
 							onClick={handleDownloadPdf}
-							className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl hover:bg-[var(--paper-soft)]"
+							className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl hover:bg-[var(--paper-soft)] cursor-pointer"
 							data-testid="tax-cert-pdf-btn"
 							title={
 								aggregated.totalNetRub === 0
@@ -414,6 +441,37 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							</span>
 						)}
 					</div>
+
+					{/* Поля заявителя, если платит родственник (Мандат 8e) */}
+					{relationship !== "patient" && (
+						<>
+							<div>
+								<label className="text-[12px] font-semibold text-[var(--muted)] block mb-1">
+									ФИО налогоплательщика:
+								</label>
+								<input
+									type="text"
+									value={taxpayerFullName}
+									onChange={(e) => setTaxpayerFullName(e.target.value)}
+									placeholder="ФИО плательщика (супруг, родитель)"
+									className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+									data-testid="tax-cert-taxpayer-name-input"
+								/>
+							</div>
+							<div>
+								<label className="text-[12px] font-semibold text-[var(--muted)] block mb-1">
+									Дата рождения плательщика:
+								</label>
+								<input
+									type="date"
+									value={taxpayerBirthDate}
+									onChange={(e) => setTaxpayerBirthDate(e.target.value)}
+									className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+									data-testid="tax-cert-taxpayer-birthdate-input"
+								/>
+							</div>
+						</>
+					)}
 				</div>
 
 				{/* Financial Summary */}

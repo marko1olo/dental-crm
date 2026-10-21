@@ -164,25 +164,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 				>
 					<PenTool size={14} className="shrink-0" />
 					<span className="whitespace-nowrap">
-						<span className="sm:hidden">Роспись</span>
-						<span className="hidden sm:inline">Роспись пальцем</span>
-					</span>
-				</button>
-
-				<button
-					type="button"
-					data-testid="tab-method-sms"
-					role="tab"
-					aria-selected={verificationMethod === "sms_otp"}
-					className={`dente-segmented-item flex-1 ${
-						verificationMethod === "sms_otp" ? "active" : ""
-					}`}
-					onClick={() => setVerificationMethod("sms_otp")}
-				>
-					<Smartphone size={14} className="shrink-0" />
-					<span className="whitespace-nowrap">
-						<span className="sm:hidden">СМС-код</span>
-						<span className="hidden sm:inline">Код из СМС</span>
+						<span className="sm:hidden">Планшет</span>
+						<span className="hidden sm:inline">Подписать на планшете</span>
 					</span>
 				</button>
 
@@ -199,7 +182,24 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					<Printer size={14} className="shrink-0" />
 					<span className="whitespace-nowrap">
 						<span className="sm:hidden">Бумага</span>
-						<span className="hidden sm:inline">Бумажный бланк</span>
+						<span className="hidden sm:inline">Распечатать на бумаге</span>
+					</span>
+				</button>
+
+				<button
+					type="button"
+					data-testid="tab-method-sms"
+					role="tab"
+					aria-selected={verificationMethod === "sms_otp"}
+					className={`dente-segmented-item flex-1 ${
+						verificationMethod === "sms_otp" ? "active" : ""
+					}`}
+					onClick={() => setVerificationMethod("sms_otp")}
+				>
+					<Smartphone size={14} className="shrink-0" />
+					<span className="whitespace-nowrap">
+						<span className="sm:hidden">СМС</span>
+						<span className="hidden sm:inline">Код из СМС</span>
 					</span>
 				</button>
 			</div>

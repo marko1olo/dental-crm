@@ -2,8 +2,8 @@
  * OutpatientCardPrintModal.tsx
  *
  * Каноническое модальное окно просмотра, печати и экспорта
- * Медицинской карты стоматологического пациента / выписки из формы 043/у.
- * Соответствует стандартам СтАР и Приказу Минздрава РФ.
+ * Медицинской карты приёма стоматологического пациента.
+ * Соответствует стандартам СтАР и клиническим рекомендациям.
  *
  * Мандат 8e: Печать в любой момент со статусом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ».
  * Никаких эмодзи, только векторные иконки Lucide.
@@ -79,7 +79,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 				: "01.01.1990",
 			gender: (patient?.gender as "male" | "female") || "male",
 			phone: patient?.phone || "+7 (999) 000-00-00",
-			cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "МК-2026/043",
+			cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "МК-2026/001",
 		};
 	}, [patient]);
 
@@ -168,7 +168,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 			data-testid="outpatient-card-print-modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Печать медицинской карты пациента"
+			aria-label="Печать медицинской карты пациента (карта приёма)"
 		>
 			<div className="relative w-full max-w-[1020px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Header */}
@@ -179,7 +179,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight flex items-center gap-2">
-								<span>Медицинская карта пациента</span>
+								<span>Медицинская карта пациента · Медицинская карта приёма</span>
 								<span
 									className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
 										isClosedOrSigned
@@ -203,10 +203,10 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 							disabled={isPrinting}
 							className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5"
 							data-testid="outpatient-card-print-btn"
-							title="Распечатать медицинскую карту"
+							title="Распечатать медицинскую карту приёма"
 						>
 							<Printer size={15} />
-							<span>Печать карты</span>
+							<span>Печать карты приёма</span>
 						</button>
 
 						<button
