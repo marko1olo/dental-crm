@@ -115,11 +115,15 @@
 		font-weight: 700;
 	}
 	.btn-patient-choice {
+		order: -1;
 		min-height: 48px;
-		height: 48px;
+		height: auto;
+		padding: 10px 14px;
 		border: 1px solid var(--primary, var(--teal-dark));
 		border-radius: 14px;
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 800;
+		white-space: normal;
+		text-align: center;
 	}
 }

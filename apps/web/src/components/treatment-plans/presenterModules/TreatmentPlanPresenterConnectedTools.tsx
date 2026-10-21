@@ -8,7 +8,7 @@ import type { useTreatmentPlanPresenterState } from "./useTreatmentPlanPresenter
 
 interface TreatmentPlanPresenterConnectedToolsProps {
 	readonly s: ReturnType<typeof useTreatmentPlanPresenterState>;
-	readonly teeth?: readonly any[] | undefined;
+	readonly teeth?: readonly { toothNumber?: number }[] | undefined;
 }
 
 export const TreatmentPlanPresenterConnectedTools: React.FC<

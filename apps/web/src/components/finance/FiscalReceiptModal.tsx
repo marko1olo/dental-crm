@@ -30,6 +30,7 @@ export const FiscalReceiptModal: React.FC<FiscalReceiptModalProps> = (
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="fiscal-receipt-modal-title"
+			data-testid="fiscal-receipt-modal"
 		>
 			<div className="bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-150">
 				<FiscalHeaderAndTabs

@@ -1256,6 +1256,14 @@ export function App() {
 			"dente-open-case-presenter",
 			handleOpenCasePresenter,
 		);
+		window.addEventListener(
+			"dente-open-treatment-plan-presenter",
+			handleOpenCasePresenter,
+		);
+		window.addEventListener(
+			"dente:open-treatment-plan-presenter",
+			handleOpenCasePresenter,
+		);
 		window.addEventListener("dente-open-emergency-rescue", handleOpenEmergency);
 		window.addEventListener("dente:open-emergency-rescue", handleOpenEmergency);
 		const handleOpenImplantPassport = (e?: Event) => {
@@ -1316,6 +1324,14 @@ export function App() {
 			);
 			window.removeEventListener(
 				"dente-open-case-presenter",
+				handleOpenCasePresenter,
+			);
+			window.removeEventListener(
+				"dente-open-treatment-plan-presenter",
+				handleOpenCasePresenter,
+			);
+			window.removeEventListener(
+				"dente:open-treatment-plan-presenter",
 				handleOpenCasePresenter,
 			);
 			window.removeEventListener(

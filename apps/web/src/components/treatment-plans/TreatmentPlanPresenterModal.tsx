@@ -5,7 +5,8 @@
  * Декомпозирован строго по Мандату 8b (лимит <= 120 строк).
  */
 
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import "./treatmentPlans.css";
 import { TreatmentPlanPresenterBody } from "./presenterModules/TreatmentPlanPresenterBody";
@@ -13,32 +14,45 @@ import { TreatmentPlanPresenterConnectedTools } from "./presenterModules/Treatme
 import { TreatmentPlanStagePaymentModal } from "./presenterModules/TreatmentPlanStagePaymentModal";
 import type { TreatmentPlanPresenterModalProps } from "./presenterModules/treatmentPlanPresenterTypes";
 import {
-	formatRubles,
 	getTierLetter,
 	useTreatmentPlanPresenterState,
 } from "./presenterModules/useTreatmentPlanPresenterState";
 import { TreatmentPlanPresenterFooter } from "./TreatmentPlanPresenterFooter";
 import { TreatmentPlanPresenterHeader } from "./TreatmentPlanPresenterHeader";
-import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
 import type { TreatmentPlanStage } from "./types";
 
-export type { TreatmentPlanPresenterModalProps };
 export {
 	formatRubles,
 	getTierLetter,
+	useTreatmentPlanPresenterState,
+} from "./presenterModules/useTreatmentPlanPresenterState";
+export {
 	isMicroConsumable,
 	type PlanItemLike,
-	useTreatmentPlanPresenterState,
-};
+} from "./treatmentPlanConsumables";
+export type { TreatmentPlanPresenterModalProps };
 
-export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = (props) => {
-	const { isOpen, onClose, patientName = "", doctorFullName = "", teeth, onSelectPlan, onApproveAndSign, className = "" } = props;
-	const [stageForPayment, setStageForPayment] = useState<TreatmentPlanStage | null>(null);
+export const TreatmentPlanPresenterModal: React.FC<
+	TreatmentPlanPresenterModalProps
+> = (props) => {
+	const {
+		isOpen,
+		onClose,
+		patientName = "",
+		doctorFullName = "",
+		teeth,
+		onApproveAndSign,
+		className = "",
+	} = props;
+	const [stageForPayment, setStageForPayment] =
+		useState<TreatmentPlanStage | null>(null);
 
 	const effectiveProps = useMemo(
 		() => ({
 			...props,
-			onPayStage: props.onPayStage || ((st: TreatmentPlanStage) => setStageForPayment(st)),
+			onPayStage:
+				props.onPayStage ||
+				((st: TreatmentPlanStage) => setStageForPayment(st)),
 		}),
 		[props],
 	);
@@ -49,13 +63,15 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const modalContent = (
 		<div
-			className={"treatment-presenter-backdrop " + (s.isFullscreen ? "fullscreen-mode" : "")}
+			className={`treatment-presenter-backdrop ${s.isFullscreen ? "fullscreen-mode" : ""}`}
 			data-testid="treatment-plan-presenter-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="treatment-presenter-modal-title"
 		>
-			<div className={`treatment-presenter-modal treatment-presenter-container ${s.isFullscreen ? "treatment-presenter-fullscreen " : ""}${className}`}>
+			<div
+				className={`treatment-presenter-modal treatment-presenter-container ${s.isFullscreen ? "treatment-presenter-fullscreen " : ""}${className}`}
+			>
 				<div className="treatment-presenter-drag-handle sm:hidden" />
 				<TreatmentPlanPresenterHeader
 					patientName={patientName}
@@ -97,5 +113,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		</div>
 	);
 
-	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

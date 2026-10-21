@@ -1,14 +1,8 @@
-import React from "react";
-import {
-	AlertTriangle,
-	CheckCircle2,
-	Printer,
-	Receipt,
-	X,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Printer, Receipt, X } from "lucide-react";
+import type React from "react";
+import { useFiscalOperations } from "../../../../hooks/useFiscalOperations";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 import type { FiscalModalTab } from "./fiscalModalTypes";
-import { useFiscalOperations } from "../../../../hooks/useFiscalOperations";
 
 export interface FiscalHeaderAndTabsProps {
 	readonly activeTab: FiscalModalTab;
@@ -101,7 +95,9 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							</strong>{" "}
 							· Итого:{" "}
 							<strong className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-								{formatMoneyRu(activeTab === "refund" ? refundTotalRub : totalSumRub)}
+								{formatMoneyRu(
+									activeTab === "refund" ? refundTotalRub : totalSumRub,
+								)}
 							</strong>
 						</p>
 					</div>
@@ -112,6 +108,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 					onClick={onClose}
 					className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-8 sm:w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--line)] shrink-0"
 					aria-label="Закрыть модальное окно"
+					data-testid="fiscal-modal-close-btn"
 				>
 					<X size={18} />
 				</button>
@@ -125,7 +122,12 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 				>
 					<AlertTriangle size={14} className="shrink-0 text-amber-600" />
 					<span>
-						Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽. Долг не блокирует печать чека на фактически вносимую сумму.
+						Задолженность пациента:{" "}
+						{(patientDebtRub > 0
+							? patientDebtRub
+							: Math.abs(patientDepositRub)
+						).toLocaleString("ru-RU")}{" "}
+						₽. Долг не блокирует печать чека на фактически вносимую сумму.
 					</span>
 				</div>
 			)}
@@ -138,13 +140,18 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 				>
 					<div className="flex items-start justify-between gap-2">
 						<div className="flex items-center gap-2">
-							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<AlertTriangle
+								size={18}
+								className="shrink-0 text-amber-600 dark:text-amber-400"
+							/>
 							<div>
 								<h4 className="font-bold text-amber-900 dark:text-amber-200 m-0">
 									Внимание: сбой связи с кассовым аппаратом / терминалом
 								</h4>
 								<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
-									{interruptedFiscalState.reason}. Если терминал уже списал средства с карты или требуется повторить печать чека без изменения баланса пациента, выберите действие:
+									{interruptedFiscalState.reason}. Если терминал уже списал
+									средства с карты или требуется повторить печать чека без
+									изменения баланса пациента, выберите действие:
 								</p>
 							</div>
 						</div>
@@ -161,7 +168,11 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							type="button"
 							onClick={handleManualCardTerminalConfirm}
 							disabled={isSubmittingManualCard}
-							title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+							title={
+								isSubmittingManualCard
+									? "Фиксация..."
+									: "Зафиксировать оплату в CRM без повторного списания с карты"
+							}
 							className="primary-button h-8 px-3 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 							data-testid="btn-fiscal-manual-card-confirm"
 						>
@@ -172,11 +183,18 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							type="button"
 							onClick={handleRetryFiscalizationWithoutBalanceImpact}
 							disabled={isFiscalizing}
-							title={isFiscalizing ? "Отправка на кассу..." : "Повторно напечатать чек на кассе без изменения баланса пациента"}
+							title={
+								isFiscalizing
+									? "Отправка на кассу..."
+									: "Повторно напечатать чек на кассе без изменения баланса пациента"
+							}
 							className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
 							data-testid="btn-fiscal-retry-direct"
 						>
-							<Printer size={14} className={isFiscalizing ? "animate-spin" : ""} />
+							<Printer
+								size={14}
+								className={isFiscalizing ? "animate-spin" : ""}
+							/>
 							<span>Повторить печать чека</span>
 						</button>
 					</div>

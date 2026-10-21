@@ -3,8 +3,8 @@
  * с кнопками фиксации выбора пациента, печати и подписания.
  */
 
-import React from "react";
 import { Check, CheckCircle2, FileSignature, Printer } from "lucide-react";
+import type React from "react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 
 export interface TreatmentPlanPresenterFooterProps {
@@ -18,7 +18,9 @@ export interface TreatmentPlanPresenterFooterProps {
 	readonly choiceConfirmedBtnText: string;
 }
 
-export const TreatmentPlanPresenterFooter: React.FC<TreatmentPlanPresenterFooterProps> = ({
+export const TreatmentPlanPresenterFooter: React.FC<
+	TreatmentPlanPresenterFooterProps
+> = ({
 	selectedTier,
 	getTierLetter,
 	onPrintAppendix,
@@ -68,7 +70,14 @@ export const TreatmentPlanPresenterFooter: React.FC<TreatmentPlanPresenterFooter
 					) : (
 						<>
 							<Check size={18} />
-							<span>{patientChoiceBtnText}</span>
+							<span className="hidden sm:inline">{patientChoiceBtnText}</span>
+							<span className="sm:hidden">
+								Выбрать{" "}
+								{selectedTier.badge ||
+									selectedTier.title.split("(")[0]?.trim() ||
+									selectedTier.title}{" "}
+								({(selectedTier.totalRub || 0).toLocaleString("ru-RU")} ₽)
+							</span>
 						</>
 					)}
 				</button>

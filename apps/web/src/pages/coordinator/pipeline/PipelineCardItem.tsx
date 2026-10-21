@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
 	AlertTriangle,
 	Calendar,
@@ -7,10 +6,11 @@ import {
 	Clock,
 	ExternalLink,
 	Eye,
-	FileText,
 	Link2,
 	Phone,
+	Tablet,
 } from "lucide-react";
+import type * as React from "react";
 import type { PipelineCard, PipelineStage, PipelineViewMode } from "./types";
 import { formatRub } from "./types";
 
@@ -47,10 +47,12 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 	onCopyOrGenerateLink,
 	onOpenPlan,
 }) => {
-	const isApproved = card.budgetStatus === "accepted" || card.status === "Approved";
+	const isApproved =
+		card.budgetStatus === "accepted" || card.status === "Approved";
 	const isHorizontal = viewMode === "horizontal";
 
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: pipeline card container has click-to-open with keyboard navigation
 		<div
 			role="button"
 			tabIndex={0}
@@ -114,14 +116,20 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 					</span>
 					<span className="text-[var(--line-strong)]">•</span>
 					<span className="text-[var(--muted)]">
-						Врач: <strong className="font-medium text-[var(--text)]">{card.doctorName || "Не назначен"}</strong>
+						Врач:{" "}
+						<strong className="font-medium text-[var(--text)]">
+							{card.doctorName || "Не назначен"}
+						</strong>
 					</span>
 
 					{/* Status & Visit Badges */}
 					{card.hasFutureAppointment && card.nextAppointmentDate && (
 						<span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-medium flex items-center gap-1 shrink-0">
 							<Calendar className="w-3 h-3 shrink-0" />
-							<span>Запись: {new Date(card.nextAppointmentDate).toLocaleDateString("ru-RU")}</span>
+							<span>
+								Запись:{" "}
+								{new Date(card.nextAppointmentDate).toLocaleDateString("ru-RU")}
+							</span>
 						</span>
 					)}
 
@@ -161,14 +169,24 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						data-testid="pipeline-card-open-plan-btn"
 						onClick={(e) => {
 							e.stopPropagation();
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(
+									new CustomEvent("dente-open-treatment-plan-presenter", {
+										detail: {
+											patientId: card.patientId,
+											planId: card.id,
+										},
+									}),
+								);
+							}
 							onOpenPlan?.(card);
 						}}
 						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer"
 						style={{ borderRadius: "10px" }}
 						title="Открыть студию презентации плана лечения и сметы"
 					>
-						<FileText className="w-3.5 h-3.5 shrink-0" />
-						<span>Открыть смету</span>
+						<Tablet className="w-3.5 h-3.5 shrink-0" />
+						<span>Презентация (3-Tier)</span>
 					</button>
 
 					<a

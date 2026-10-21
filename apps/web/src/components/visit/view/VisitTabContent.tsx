@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import type { Dashboard } from "@dental/shared";
 import { Calculator, Tablet } from "lucide-react";
+import { useState } from "react";
 import { ClinicalErrorBoundary } from "../../common/ClinicalErrorBoundary";
 import { TreatmentPlanPresenterModal } from "../../treatment-plans/TreatmentPlanPresenterModal";
-import { VisitOdontogramTab } from "../VisitOdontogramTab";
-import { VisitEmkTab } from "../VisitEmkTab";
-import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
 import { VisitAnamnesisTab } from "../VisitAnamnesisTab";
 import { VisitConsentsTab } from "../VisitConsentsTab";
+import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
+import { VisitEmkTab } from "../VisitEmkTab";
+import { VisitOdontogramTab } from "../VisitOdontogramTab";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
-
-import type { Dashboard } from "@dental/shared";
 import type {
 	VisitAppointmentEntity,
 	VisitDoctorEntity,
@@ -59,7 +58,9 @@ export function VisitTabContent({
 			workspaceKey="visit"
 			visitId={activeAppointment?.id ?? ""}
 		>
-			<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
+			<div
+				style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}
+			>
 				<VisitOdontogramTab
 					activePatient={activePatient as any}
 					activeAppointment={activeAppointment as any}
@@ -77,7 +78,11 @@ export function VisitTabContent({
 				/>
 			</div>
 
-			<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>
+			<div
+				style={{
+					display: visitSubViewTab === "diagnostics" ? "block" : "none",
+				}}
+			>
 				<VisitDiagnosticsTab />
 			</div>
 
@@ -93,7 +98,19 @@ export function VisitTabContent({
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
-								onClick={() => setIsPresenterModalOpen(true)}
+								onClick={() => {
+									if (typeof window !== "undefined") {
+										window.dispatchEvent(
+											new CustomEvent("dente-open-treatment-plan-presenter", {
+												detail: {
+													patientId: activePatient?.id,
+													planId: loadedTreatmentPlan?.id,
+												},
+											}),
+										);
+									}
+									setIsPresenterModalOpen(true);
+								}}
 								className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
 								data-testid="btn-open-treatment-presenter-from-visit"
 							>
@@ -128,7 +145,9 @@ export function VisitTabContent({
 				)}
 			</div>
 
-			<div style={{ display: visitSubViewTab === "anamnesis" ? "block" : "none" }}>
+			<div
+				style={{ display: visitSubViewTab === "anamnesis" ? "block" : "none" }}
+			>
 				<VisitAnamnesisTab
 					onAppendAnamnesis={(text) => {
 						if (updateVisitNoteField) {
@@ -139,7 +158,12 @@ export function VisitTabContent({
 					onAppendComorbidities={(text) => {
 						if (updateVisitNoteField) {
 							const cur = visitNoteForm?.anamnesis || "";
-							updateVisitNoteField("anamnesis", cur ? `${cur}\nСопутствующие: ${text}` : `Сопутствующие: ${text}`);
+							updateVisitNoteField(
+								"anamnesis",
+								cur
+									? `${cur}\nСопутствующие: ${text}`
+									: `Сопутствующие: ${text}`,
+							);
 						}
 					}}
 				/>

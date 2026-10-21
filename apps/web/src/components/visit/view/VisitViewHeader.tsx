@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	AlertOctagon,
 	AlertTriangle,
@@ -14,13 +13,14 @@ import {
 	Printer,
 	ShieldCheck,
 	Sparkles,
+	Tablet,
 	UserCheck,
 } from "lucide-react";
-import { PatientAvatar } from "../../PatientAvatar";
-import { VisitTimer } from "../VisitTimer";
-import { SoftPresenceIndicator } from "../../presence/SoftPresenceIndicator";
 import { SomaticSafetyAlertWidget } from "../../clinical/SomaticSafetyAlertWidget";
 import { showToast } from "../../GlobalToast";
+import { PatientAvatar } from "../../PatientAvatar";
+import { SoftPresenceIndicator } from "../../presence/SoftPresenceIndicator";
+import { VisitTimer } from "../VisitTimer";
 import type { VisitViewHeaderProps } from "./types";
 
 export function VisitViewHeader({
@@ -58,8 +58,12 @@ export function VisitViewHeader({
 }: VisitViewHeaderProps) {
 	return (
 		<div className="min-h-[44px] h-[44px] flex items-center justify-between gap-1 px-2 py-1 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
-			<div className="flex items-center gap-1 shrink min-w-0 overflow-hidden">
-				<PatientAvatar fullName={activePatient?.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
+			<div className="flex items-center gap-1.5 shrink-0 min-w-0">
+				<PatientAvatar
+					fullName={activePatient?.fullName}
+					size={22}
+					className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0"
+				/>
 				<span
 					className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 flex-shrink-0 whitespace-nowrap"
 					title={activePatient?.fullName || activePatient?.name}
@@ -69,20 +73,38 @@ export function VisitViewHeader({
 							const fn = activePatient?.fullName || activePatient?.name || "";
 							const parts = fn.trim().split(/\s+/);
 							if (parts.length >= 2) {
-								return `${parts[0]} ${parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).join("")}`;
+								return `${parts[0]} ${parts
+									.slice(1)
+									.map((p: string) => (p[0] ? `${p[0]}.` : ""))
+									.join("")}`;
 							}
 							return fn;
 						})()}
 					</span>
 					<span className="hidden sm:inline">
-						{activePatient.fullName || activePatient.name}
+						{activePatient?.fullName || activePatient?.name}
 					</span>
 				</span>
-				{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
+				{patientAge && (
+					<span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">
+						· {patientAge}
+					</span>
+				)}
 				<span className="hidden sm:inline-flex shrink-0">
-					<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
+					<VisitTimer
+						createdAt={
+							activeAppointment?.startTime ||
+							activeAppointment?.startAt ||
+							activeAppointment?.createdAt ||
+							null
+						}
+					/>
 				</span>
-				<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText} className="hidden sm:inline-flex shrink-0" />
+				<SoftPresenceIndicator
+					activePeers={activePeers}
+					summaryText={summaryText}
+					className="hidden sm:inline-flex shrink-0"
+				/>
 
 				{/* Единый компактный и яркий чип аллергии (Tier 1) */}
 				{activePatientCriticalBadges.length > 0 ? (
@@ -92,12 +114,17 @@ export function VisitViewHeader({
 						role="alert"
 						title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 					>
-						<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<AlertOctagon
+							size={13}
+							className="text-rose-600 dark:text-rose-400 shrink-0"
+						/>
 						<span className="sm:hidden text-[10px] whitespace-nowrap">
-							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.shortLabel}
+							{consolidatedAllergyChip ||
+								activePatientCriticalBadges[0]?.shortLabel}
 						</span>
 						<span className="hidden sm:inline whitespace-nowrap">
-							{consolidatedAllergyChip || activePatientCriticalBadges[0]?.fullLabel}
+							{consolidatedAllergyChip ||
+								activePatientCriticalBadges[0]?.fullLabel}
 						</span>
 					</span>
 				) : (
@@ -106,9 +133,13 @@ export function VisitViewHeader({
 						data-testid="visit-focus-allergy-clean"
 						title="Отягощенный аллергоанамнез не выявлен"
 					>
-						<ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<ShieldCheck
+							size={13}
+							className="text-emerald-600 dark:text-emerald-400 shrink-0"
+						/>
 						<span className="text-[11px] whitespace-nowrap">
-							Аллергии не выявлены
+							<span className="sr-only">Аллергии не выявлены</span>
+							<span>Аллергий нет</span>
 						</span>
 					</span>
 				)}
@@ -117,7 +148,9 @@ export function VisitViewHeader({
 				<span className="sr-only" aria-hidden="true">
 					{activePatientCriticalBadges.map((badge) => (
 						<span key={badge.id} data-testid={badge.testId}>
-							<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
+							<span className="hidden sm:inline whitespace-nowrap shrink-0">
+								{badge.fullLabel}
+							</span>
 						</span>
 					))}
 				</span>
@@ -134,7 +167,10 @@ export function VisitViewHeader({
 						onSyncToDiary={(text) => {
 							if (updateVisitNoteField) {
 								const current = visitNoteForm?.anamnesis || "";
-								updateVisitNoteField("anamnesis", current ? `${current}\n${text}` : text);
+								updateVisitNoteField(
+									"anamnesis",
+									current ? `${current}\n${text}` : text,
+								);
 							}
 						}}
 					/>
@@ -146,13 +182,30 @@ export function VisitViewHeader({
 					onClick={() => {
 						handleApplySomaticNormQuick();
 						if (typeof updateVisitNoteField === "function") {
-							if (!visitNoteForm?.diagnosis) updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
-							if (!visitNoteForm?.complaint && !(visitNoteForm as any)?.complaints) {
-								updateVisitNoteField("complaint", "Жалоб на момент осмотра активно не предъявляет.");
-								updateVisitNoteField("complaints", "Жалоб на момент осмотра активно не предъявляет.");
+							if (!visitNoteForm?.diagnosis)
+								updateVisitNoteField(
+									"diagnosis",
+									"Z01.2 Стоматологическое обследование (Здоров)",
+								);
+							if (
+								!visitNoteForm?.complaint &&
+								!(visitNoteForm as any)?.complaints
+							) {
+								updateVisitNoteField(
+									"complaint",
+									"Жалоб на момент осмотра активно не предъявляет.",
+								);
+								updateVisitNoteField(
+									"complaints",
+									"Жалоб на момент осмотра активно не предъявляет.",
+								);
 							}
-							if (!visitNoteForm?.treatmentPlan && !(visitNoteForm as any)?.treatment) {
-								const plan = "Осмотр полости рта проведен, патологий не выявлено. Полость рта здорова, гигиена удовлетворительная.";
+							if (
+								!visitNoteForm?.treatmentPlan &&
+								!(visitNoteForm as any)?.treatment
+							) {
+								const plan =
+									"Осмотр полости рта проведен, патологий не выявлено. Полость рта здорова, гигиена удовлетворительная.";
 								updateVisitNoteField("treatmentPlan", plan);
 								updateVisitNoteField("treatment", plan);
 							}
@@ -164,7 +217,10 @@ export function VisitViewHeader({
 					title="Заполнить дневник физиологической нормой (здоров)"
 					aria-label="Физиологическая норма"
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<Sparkles
+						className="w-4 h-4 text-[var(--teal)] shrink-0"
+						aria-hidden="true"
+					/>
 					<span>✓ Норма</span>
 				</button>
 
@@ -181,6 +237,7 @@ export function VisitViewHeader({
 				</button>
 
 				{/* Единый кластер быстрой печати документов (Мандат 8e, Мандат 8am: 36px, rounded-xl) */}
+				{/* biome-ignore lint/a11y/useSemanticElements: toolbar button group */}
 				<div
 					className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0 shrink-0 gap-0.5 h-9 min-h-[36px] shadow-xs"
 					role="group"
@@ -232,7 +289,10 @@ export function VisitViewHeader({
 					title="Оформить заказ-наряд в зуботехническую лабораторию (ЗТЛ)"
 					aria-label="Наряд в ЗТЛ"
 				>
-					<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<FlaskConical
+						className="w-4 h-4 text-[var(--teal)] shrink-0"
+						aria-hidden="true"
+					/>
 					<span className="hidden sm:inline">+ Наряд в ЗТЛ</span>
 					<span className="sm:hidden">+ ЗТЛ</span>
 				</button>
@@ -263,7 +323,10 @@ export function VisitViewHeader({
 					className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
 					title="Открыть клинический ассистент у кресла"
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<Sparkles
+						className="w-4 h-4 text-[var(--teal)] shrink-0"
+						aria-hidden="true"
+					/>
 					<span className="hidden lg:inline">Ассистент</span>
 				</button>
 
@@ -283,7 +346,10 @@ export function VisitViewHeader({
 					className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
 					title="Открыть очередь смены и список пациентов"
 				>
-					<UserCheck className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
+					<UserCheck
+						className="w-4 h-4 text-[var(--ink-muted)] shrink-0"
+						aria-hidden="true"
+					/>
 					<span>Очередь смены</span>
 				</button>
 
@@ -295,7 +361,10 @@ export function VisitViewHeader({
 					className="primary-button h-9 min-h-[36px] px-3 py-0 text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white !hidden sm:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-all active:scale-[0.98]"
 					title="Завершить приём и сформировать чек"
 				>
-					<CheckCircle2 className="w-4 h-4 shrink-0 text-white" aria-hidden="true" />
+					<CheckCircle2
+						className="w-4 h-4 shrink-0 text-white"
+						aria-hidden="true"
+					/>
 					<span>Завершить приём и чек</span>
 				</button>
 
@@ -310,7 +379,10 @@ export function VisitViewHeader({
 						aria-label="Дополнительные действия"
 						aria-expanded={isHeaderMoreMenuOpen}
 					>
-						<MoreHorizontal className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
+						<MoreHorizontal
+							className="w-4 h-4 text-[var(--ink-muted)] shrink-0"
+							aria-hidden="true"
+						/>
 					</button>
 
 					{isHeaderMoreMenuOpen && (
@@ -326,7 +398,9 @@ export function VisitViewHeader({
 									setIsQueueCockpitForced(true);
 									if (typeof setSelectedPatientId === "function") {
 										setSelectedPatientId(null);
-									} else if (typeof appLogic?.setSelectedPatientId === "function") {
+									} else if (
+										typeof appLogic?.setSelectedPatientId === "function"
+									) {
 										appLogic.setSelectedPatientId(null);
 									}
 								}}
@@ -335,10 +409,17 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<UserCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<UserCheck
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold">Сменить пациента / Очередь</span>
-									<span className="text-[10px] text-[var(--muted)]">Открыть клинический кокпит смены</span>
+									<span className="font-semibold">
+										Сменить пациента / Очередь
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Открыть клинический кокпит смены
+									</span>
 								</div>
 							</button>
 							<button
@@ -351,10 +432,17 @@ export function VisitViewHeader({
 								className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+								<AlertTriangle
+									className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold text-rose-700 dark:text-rose-300">Экстренная помощь у кресла</span>
-									<span className="text-[10px] text-[var(--muted)]">Шпаргалка 112, аптечка первой линии</span>
+									<span className="font-semibold text-rose-700 dark:text-rose-300">
+										Экстренная помощь у кресла
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Шпаргалка 112, аптечка первой линии
+									</span>
 								</div>
 							</button>
 							<button
@@ -367,10 +455,15 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Printer className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<Printer
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
 									<span className="font-semibold">Печать дневника приёма</span>
-									<span className="text-[10px] text-[var(--muted)]">Амбулаторная карта, статус, зубная формула</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Амбулаторная карта, статус, зубная формула
+									</span>
 								</div>
 							</button>
 							<button
@@ -383,10 +476,17 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<FileText className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<FileText
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold">Печать Акта выполненных работ</span>
-									<span className="text-[10px] text-[var(--muted)]">Реестр оказанных медицинских услуг</span>
+									<span className="font-semibold">
+										Печать Акта выполненных работ
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Реестр оказанных медицинских услуг
+									</span>
 								</div>
 							</button>
 							<button
@@ -399,10 +499,17 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Calculator className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<Calculator
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold">Печать Сметы и плана лечения</span>
-									<span className="text-[10px] text-[var(--muted)]">Финансовый расчёт и гарантийные сроки</span>
+									<span className="font-semibold">
+										Печать Сметы и плана лечения
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Финансовый расчёт и гарантийные сроки
+									</span>
 								</div>
 							</button>
 							<button
@@ -415,10 +522,17 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<FlaskConical className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<FlaskConical
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold">Наряд в зуботехническую лабораторию (ЗТЛ)</span>
-									<span className="text-[10px] text-[var(--muted)]">Заказ коронок, мостов, вкладок, All-on-4</span>
+									<span className="font-semibold">
+										Наряд в зуботехническую лабораторию (ЗТЛ)
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Заказ коронок, мостов, вкладок, All-on-4
+									</span>
 								</div>
 							</button>
 							<button
@@ -430,17 +544,26 @@ export function VisitViewHeader({
 									} else if (setIsVisiographComparisonModalOpen) {
 										setIsVisiographComparisonModalOpen(true);
 									} else if (typeof window !== "undefined") {
-										window.dispatchEvent(new CustomEvent("dente-open-visiograph-comparison"));
+										window.dispatchEvent(
+											new CustomEvent("dente-open-visiograph-comparison"),
+										);
 									}
 								}}
 								data-testid="visit-more-action-compare-visiograph"
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Columns2 className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<Columns2
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
-									<span className="font-semibold">Сравнить снимки визиографа (До/После)</span>
-									<span className="text-[10px] text-[var(--muted)]">Сплит-контроль эндодонтии и пломбировки каналов</span>
+									<span className="font-semibold">
+										Сравнить снимки визиографа (До/После)
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Сплит-контроль эндодонтии и пломбировки каналов
+									</span>
 								</div>
 							</button>
 							<button
@@ -453,7 +576,10 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<ShieldCheck
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<span className="font-semibold">Печать согласия</span>
 							</button>
 							{setIsWarrantyModalOpen && (
@@ -467,10 +593,15 @@ export function VisitViewHeader({
 									className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 									role="menuitem"
 								>
-									<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+									<ShieldCheck
+										className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+										aria-hidden="true"
+									/>
 									<div className="flex flex-col">
 										<span className="font-semibold">Гарантийный паспорт</span>
-										<span className="text-[10px] text-[var(--muted)]">Оформить гарантию на лечение</span>
+										<span className="text-[10px] text-[var(--muted)]">
+											Оформить гарантию на лечение
+										</span>
 									</div>
 								</button>
 							)}
@@ -484,7 +615,10 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Clock className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<Clock
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<span className="font-semibold">Смена врача</span>
 							</button>
 							<button
@@ -497,7 +631,10 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Lock className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<Lock
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<span className="font-semibold">Контроль цен</span>
 							</button>
 							<button
@@ -510,8 +647,42 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<CheckCircle2 className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
+								<CheckCircle2
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0"
+									aria-hidden="true"
+								/>
 								<span className="font-semibold">Поэтапная оплата</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsHeaderMoreMenuOpen(false);
+									if (typeof window !== "undefined") {
+										window.dispatchEvent(
+											new CustomEvent("dente-open-treatment-plan-presenter", {
+												detail: {
+													patientId: activePatient?.id,
+												},
+											}),
+										);
+									}
+								}}
+								data-testid="visit-more-action-treatment-presenter"
+								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
+								role="menuitem"
+							>
+								<Tablet
+									className="w-4 h-4 text-[var(--teal)] shrink-0"
+									aria-hidden="true"
+								/>
+								<div className="flex flex-col">
+									<span className="font-semibold">
+										Презентация планов (3-Tier)
+									</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Студия у кресла: 3 тарифа, одонтограмма, смета
+									</span>
+								</div>
 							</button>
 							<button
 								type="button"
@@ -523,10 +694,15 @@ export function VisitViewHeader({
 								className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 								role="menuitem"
 							>
-								<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0" aria-hidden="true" />
+								<Pill
+									className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0"
+									aria-hidden="true"
+								/>
 								<div className="flex flex-col">
 									<span className="font-semibold">Выписать рецепт</span>
-									<span className="text-[10px] text-[var(--muted)]">Бланки 107-1/у и 148-1/у-88, антибиотики, НПВС</span>
+									<span className="text-[10px] text-[var(--muted)]">
+										Бланки 107-1/у и 148-1/у-88, антибиотики, НПВС
+									</span>
 								</div>
 							</button>
 						</div>
