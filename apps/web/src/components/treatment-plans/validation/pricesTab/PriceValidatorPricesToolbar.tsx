@@ -5,6 +5,7 @@ import {
 	type PlanPricePolicyPresetId,
 } from "../planPriceValidationPresets.js";
 import type { AdminOverrideMetadata } from "../planPriceValidationEngine.js";
+import { PriceValidatorAdminDrawer } from "./PriceValidatorAdminDrawer.js";
 
 interface ToolbarProps {
 	readonly selectedPresetId: PlanPricePolicyPresetId;
@@ -87,43 +88,15 @@ export const PriceValidatorPricesToolbar: React.FC<ToolbarProps> = ({
 			</div>
 
 			{showAdminDrawer && (
-				<div className="price-validator-admin-box">
-					<div className="price-validator-admin-header">
-						<span>
-							<ShieldCheck size={16} /> Автономия лечащего врача / Подтверждение цен
-						</span>
-						{adminOverride.isAuthorized && (
-							<button type="button" className="pv-res-btn" onClick={onRevokeAdminOverride}>
-								Сбросить согласование
-							</button>
-						)}
-					</div>
-					<div className="price-validator-admin-inputs">
-						<button
-							type="button"
-							className="price-validator-btn-brand"
-							onClick={onAuthorizeDoctorAutonomy}
-							data-testid="btn-doctor-autonomy-approve"
-							style={{ background: "var(--pv-ok)", borderColor: "var(--pv-ok)" }}
-						>
-							<Check size={16} /> Подтвердить (без PIN-кода)
-						</button>
-						<input
-							type="text"
-							className="price-validator-input"
-							placeholder="Основание / Причина фиксации"
-							value={adminReasonInput}
-							onChange={(e) => onAdminReasonChange(e.target.value)}
-						/>
-						<input
-							type="password"
-							className="price-validator-input"
-							placeholder="PIN-код (необязательно)"
-							value={adminPinInput}
-							onChange={(e) => onAdminPinChange(e.target.value)}
-						/>
-					</div>
-				</div>
+				<PriceValidatorAdminDrawer
+					adminOverride={adminOverride}
+					onRevokeAdminOverride={onRevokeAdminOverride}
+					onAuthorizeDoctorAutonomy={onAuthorizeDoctorAutonomy}
+					adminReasonInput={adminReasonInput}
+					onAdminReasonChange={onAdminReasonChange}
+					adminPinInput={adminPinInput}
+					onAdminPinChange={onAdminPinChange}
+				/>
 			)}
 		</>
 	);

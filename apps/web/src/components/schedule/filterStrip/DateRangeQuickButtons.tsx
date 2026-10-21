@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import type React from "react";
 import type { ReactElement } from "react";
 
@@ -28,15 +28,23 @@ export function DateRangeQuickButtons({
 			>
 				<ChevronLeft size={16} aria-hidden="true" />
 			</button>
-			<input
-				type="date"
-				aria-label="Фильтр расписания по дате"
-				value={currentDateIso}
-				onChange={(event) => setScheduleDateFilter(event.target.value)}
-				placeholder={formattedCurrentDate}
-				title={`Выбранная дата: ${formattedCurrentDate}`}
-				className="schedule-date-input h-8 min-h-[32px] px-2 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] min-w-[86px] sm:w-[104px] sm:min-w-[104px] text-center tracking-tight"
-			/>
+			<div className="relative inline-flex items-center w-[86px] min-w-[86px] sm:w-[104px] sm:min-w-[104px]">
+				<div
+					className="schedule-date-display w-full h-8 min-h-[32px] px-2 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] transition-all flex items-center justify-center gap-1 select-none pointer-events-none"
+					aria-hidden="true"
+				>
+					<Calendar size={13} className="text-[var(--muted,#64748b)] shrink-0" />
+					<span className="font-semibold tracking-tight">{formattedCurrentDate}</span>
+				</div>
+				<input
+					type="date"
+					aria-label="Фильтр расписания по дате"
+					value={currentDateIso}
+					onChange={(event) => setScheduleDateFilter(event.target.value)}
+					title={`Выбранная дата: ${formattedCurrentDate}`}
+					className="schedule-date-input absolute inset-0 w-[86px] min-w-[86px] sm:w-[104px] sm:min-w-[104px] h-full opacity-0 cursor-pointer"
+				/>
+			</div>
 			<button
 				type="button"
 				className="secondary-button schedule-day-step-next h-8 min-h-[32px] w-8 min-w-[38px] sm:min-w-[32px] inline-flex items-center justify-center cursor-pointer rounded-lg font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
