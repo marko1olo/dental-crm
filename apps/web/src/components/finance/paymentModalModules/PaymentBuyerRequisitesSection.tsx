@@ -9,6 +9,8 @@ export interface PaymentBuyerRequisitesSectionProps {
 export const PaymentBuyerRequisitesSection: React.FC<
 	PaymentBuyerRequisitesSectionProps
 > = ({ tendersHook }) => {
+	const isLegal = tendersHook.payerType === "legal_entity";
+
 	return (
 		<div
 			className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs"
@@ -18,10 +20,10 @@ export const PaymentBuyerRequisitesSection: React.FC<
 				<button
 					type="button"
 					onClick={() => tendersHook.setPayerType("physical")}
-					aria-pressed={tendersHook.payerType === "physical"}
+					aria-pressed={!isLegal}
 					className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors ${
-						tendersHook.payerType === "physical"
-							? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+						!isLegal
+							? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] shadow-2xs"
 							: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 					}`}
 					data-testid="tab-payer-physical"
@@ -31,10 +33,10 @@ export const PaymentBuyerRequisitesSection: React.FC<
 				<button
 					type="button"
 					onClick={() => tendersHook.setPayerType("legal_entity")}
-					aria-pressed={tendersHook.payerType === "legal_entity"}
+					aria-pressed={isLegal}
 					className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors ${
-						tendersHook.payerType === "legal_entity"
-							? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+						isLegal
+							? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] shadow-2xs"
 							: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 					}`}
 					data-testid="tab-payer-legal"
@@ -47,35 +49,70 @@ export const PaymentBuyerRequisitesSection: React.FC<
 					<User size={14} className="text-teal-600" />
 					<span>Реквизиты плательщика чека:</span>
 				</div>
-				<span
-					className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center"
-					data-testid="inn-physical-not-required-badge"
-					title="ИНН с пациентов-физлиц не требуется"
-				>
-					<ShieldCheck size={12} className="inline mr-1 text-emerald-600" />
-					Для физлиц не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
-				</span>
+				{!isLegal ? (
+					<span
+						className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center"
+						data-testid="inn-physical-not-required-badge"
+						title="По 54-ФЗ для физлиц не требуется"
+					>
+						<ShieldCheck size={12} className="inline mr-1 text-emerald-600" />
+						Для пациентов-физлиц не требуется <span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
+					</span>
+				) : (
+					<span
+						className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700 flex items-center"
+						data-testid="inn-legal-required-badge"
+					>
+						ИНН обязателен (10 или 12 цифр)
+					</span>
+				)}
 			</div>
 
-			<div className="flex items-center gap-2">
-				<input
-					type="text"
-					value={tendersHook.buyerInn}
-					onChange={(e) => tendersHook.handleInnChange(e.target.value)}
-					placeholder={
-						tendersHook.payerType === "legal_entity"
-							? "ИНН организации или ИП (10 или 12 цифр для юрлиц)"
-							: "ИНН пациента (необязательно, для справки налогового вычета 13%)"
-					}
-					maxLength={12}
-					className="h-8 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 shadow-2xs"
-					data-testid="input-buyer-inn-physical"
-				/>
-			</div>
-			{tendersHook.buyerInnError && (
-				<div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-					{tendersHook.buyerInnError}
+			{isLegal ? (
+				<div className="space-y-1.5 pt-1">
+					<div className="flex items-center gap-2">
+						<input
+							type="text"
+							value={tendersHook.buyerInn}
+							onChange={(e) => tendersHook.handleInnChange(e.target.value.replace(/\D/g, ""))}
+							placeholder="ИНН организации или ИП (10 или 12 цифр для юрлиц) *"
+							maxLength={12}
+							className="h-8 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 shadow-2xs"
+							data-testid="input-buyer-inn-physical"
+						/>
+					</div>
+					{tendersHook.buyerInnError && (
+						<div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+							{tendersHook.buyerInnError}
+						</div>
+					)}
 				</div>
+			) : (
+				<details className="group space-y-1 pt-0.5" open={Boolean(tendersHook.buyerInn) || undefined}>
+					<summary className="text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-teal-700 dark:hover:text-teal-400 cursor-pointer select-none list-none flex items-center gap-1 transition-colors">
+						<span className="text-[10px] text-teal-600 font-bold group-open:rotate-90 transition-transform">
+							▶
+						</span>
+						<span>Указать ИНН (опционально для налогового вычета 13%)</span>
+					</summary>
+					<div className="pt-1 space-y-1">
+						<input
+							type="text"
+							value={tendersHook.buyerInn}
+							onChange={(e) => tendersHook.handleInnChange(e.target.value.replace(/\D/g, ""))}
+							placeholder="ИНН пациента (необязательно, для справки налогового вычета 13%)"
+							maxLength={12}
+							className="h-8 w-full max-w-sm px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 shadow-2xs"
+							data-testid="input-buyer-inn-physical"
+						/>
+						{tendersHook.buyerInn && tendersHook.buyerInn.length !== 12 && (
+							<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 mt-0.5 flex items-center gap-1 font-medium">
+								<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+								<span>ИНН физлица обычно 12 цифр (для чека опционально, оплата не блокируется)</span>
+							</p>
+						)}
+					</div>
+				</details>
 			)}
 		</div>
 	);

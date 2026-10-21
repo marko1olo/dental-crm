@@ -36,31 +36,36 @@ export function QuickBookingDrawerFooter({
       >
         <Plus size={16} className="shrink-0" />
         <span className="whitespace-nowrap">
-          {isSubmitting
-            ? "Сохраняю запись…"
-            : hasCollision
-              ? "Записать на это время (острая боль)"
-              : "Записать на приём (Создать запись Ctrl+Enter)"}
+          {isSubmitting ? (
+            "Сохраняю запись…"
+          ) : hasCollision ? (
+            "Записать на это время (острая боль)"
+          ) : (
+            <>
+              Записать на приём
+              <span className="hidden sm:inline"> (Создать запись Ctrl+Enter)</span>
+            </>
+          )}
         </span>
       </button>
 
-      <div className="flex items-center justify-between gap-2 w-full">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
         <button
           type="button"
           onClick={onRequestClose}
           aria-busy={isSubmitting}
           data-testid="quick-booking-cancel-btn"
-          className="secondary-button min-h-[44px] bg-[var(--paper)] text-[var(--ink)]"
+          className="secondary-button min-h-[44px] px-2.5 sm:px-3 bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm shrink-0"
         >
-          Отмена (Esc)
+          Отмена<span className="hidden sm:inline"> (Esc)</span>
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {isDirty && (
             <button
               type="button"
               onClick={onDiscardDraft}
               aria-busy={isSubmitting}
-              className="danger-button min-h-[44px] text-xs"
+              className="danger-button min-h-[44px] px-2.5 sm:px-3 text-xs shrink-0"
               title="Сбросить все введенные данные без сохранения черновика"
               data-testid="quick-booking-discard-draft-btn"
             >
@@ -71,11 +76,11 @@ export function QuickBookingDrawerFooter({
             type="button"
             onClick={onCopyConfirmation}
             data-testid="quick-booking-copy-confirmation-btn"
-            className="secondary-button min-h-[44px] inline-flex items-center gap-1.5 text-xs"
+            className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0"
             title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
           >
             <Copy size={14} className="text-[var(--teal)] shrink-0" />
-            <span>Скопировать для пациента</span>
+            <span>Скопировать<span className="hidden sm:inline"> для пациента</span></span>
           </button>
         </div>
       </div>

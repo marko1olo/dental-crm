@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, Sparkles, UserX, XCircle } from "lucide-react";
-import { STOMX_REFUSE_REASONS_CATALOG, type Appointment } from "@dental/shared";
+import { APPOINTMENT_REFUSAL_REASONS_CATALOG, type Appointment } from "@dental/shared";
 
 export function CancellationMenuSection({
 	appointment,
@@ -40,7 +40,7 @@ export function CancellationMenuSection({
 			{isRefusalReasonsOpen && (
 				<div className="p-1 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-0.5 my-1 max-h-[190px] overflow-y-auto [scrollbar-width:thin]" data-testid="appointment-card-refusal-reasons-dropdown">
 					<div className="text-[10px] font-bold text-rose-800 dark:text-rose-200 uppercase tracking-wider px-1">Причины отмены:</div>
-					{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => (
+					{APPOINTMENT_REFUSAL_REASONS_CATALOG.map((refuse) => (
 						<button
 							key={refuse.id}
 							type="button"

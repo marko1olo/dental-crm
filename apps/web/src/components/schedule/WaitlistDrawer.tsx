@@ -8,7 +8,6 @@ import {
   detectWaitlistUrgency,
   extractPatientPoliteName,
   generateWaitlistOfferMessage,
-  generate152FzWaitlistOfferMessage,
   openWhatsAppChat,
   openTelegramChat,
 } from "./waitlistCancellationEngine";
@@ -28,7 +27,6 @@ import { WaitlistDrawerSurface } from "./waitlistDrawer/WaitlistDrawerSurface";
 export type { TargetSlotInfo, WaitlistCandidateItem, WaitlistUrgency };
 export {
   generateWaitlistOfferMessage,
-  generate152FzWaitlistOfferMessage,
   detectWaitlistUrgency,
   extractPatientPoliteName,
   openWhatsAppChat,

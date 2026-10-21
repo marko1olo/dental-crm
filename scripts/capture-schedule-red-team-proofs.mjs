@@ -116,8 +116,16 @@ async function main() {
     localStorage.setItem("dente_clinic_token", tokens.clinicToken);
     localStorage.setItem("dente_staff_token", tokens.staffToken);
     localStorage.setItem("dente_demo_showcase", "true");
-    localStorage.setItem("dente_theme", "light");
+    localStorage.setItem("dente_offline_autonomy_mode", "true");
+    localStorage.setItem("dente_onboarding_completed", "true");
+    localStorage.setItem("dente_tour_completed", "true");
+    localStorage.setItem("dente_tour_dismissed", "true");
+    localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+    localStorage.setItem("dente_doctor_training_completed", "true");
+    localStorage.setItem("dente_training_dismissed", "true");
+    localStorage.setItem("dente_active_nav", "schedule");
     localStorage.setItem("dente_last_view", "schedule");
+    localStorage.setItem("dente_theme", "light");
   }, { clinicToken, staffToken });
 
   console.log("[PC] Navigating to http://127.0.0.1:5173/?demo=true#schedule ...");
@@ -192,8 +200,16 @@ async function main() {
     localStorage.setItem("dente_clinic_token", tokens.clinicToken);
     localStorage.setItem("dente_staff_token", tokens.staffToken);
     localStorage.setItem("dente_demo_showcase", "true");
-    localStorage.setItem("dente_theme", "light");
+    localStorage.setItem("dente_offline_autonomy_mode", "true");
+    localStorage.setItem("dente_onboarding_completed", "true");
+    localStorage.setItem("dente_tour_completed", "true");
+    localStorage.setItem("dente_tour_dismissed", "true");
+    localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+    localStorage.setItem("dente_doctor_training_completed", "true");
+    localStorage.setItem("dente_training_dismissed", "true");
+    localStorage.setItem("dente_active_nav", "schedule");
     localStorage.setItem("dente_last_view", "schedule");
+    localStorage.setItem("dente_theme", "light");
   }, { clinicToken, staffToken });
 
   console.log("[MOBILE] Navigating to http://127.0.0.1:5173/?demo=true#schedule ...");

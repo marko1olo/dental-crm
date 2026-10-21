@@ -56,7 +56,7 @@ async function initContextStorage(context, theme) {
 }
 
 async function run() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ channel: "msedge", headless: true });
 
   try {
     // 1. PC Light (1440x900)
