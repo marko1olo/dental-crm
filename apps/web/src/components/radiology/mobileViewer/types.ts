@@ -1,8 +1,6 @@
-import type React from "react";
+export * from "./gestureTypes.js";
+export * from "./viewportTypes.js";
 
-/**
- * Mobile chairside study item representation.
- */
 export interface MobileChairsideStudyItem {
 	id: string;
 	title: string;
@@ -17,9 +15,6 @@ export interface MobileChairsideStudyItem {
 	aiSummary?: string | null;
 }
 
-/**
- * Props for the master MobileChairsideRadiologyViewer component.
- */
 export interface MobileChairsideRadiologyViewerProps {
 	selectedImagingStudy: MobileChairsideStudyItem | null;
 	activeImagingStudies: MobileChairsideStudyItem[];
@@ -44,52 +39,6 @@ export interface MobileChairsideRadiologyViewerProps {
 	onClose?: () => void;
 }
 
-/**
- * Touch coordinates and gestures state.
- */
-export interface TouchGestureState {
-	x: number;
-	y: number;
-	panX: number;
-	panY: number;
-	dist: number;
-	initialZoom: number;
-	lastTapTime: number;
-}
-
-/**
- * Props for MobileGestureViewport presentation layer.
- */
-export interface MobileGestureViewportProps {
-	selectedImagingStudy: MobileChairsideStudyItem | null;
-	effectivePreviewUrl: string | null;
-	previewLoadError: boolean;
-	selectedStudyHasFile: boolean;
-	zoom: number;
-	pan: { x: number; y: number };
-	rotationDeg: number;
-	computedFilter: string;
-	computedTransform: string;
-	isRulerActive: boolean;
-	rulerStart: { x: number; y: number } | null;
-	rulerCurrent: { x: number; y: number } | null;
-	savedRulerDistanceMm: number | null;
-	pixelSpacingMm: number;
-	isAnalyzingAI: boolean;
-	viewportRef: React.RefObject<HTMLDivElement | null>;
-	touchStartRef: React.MutableRefObject<TouchGestureState>;
-	setZoom: React.Dispatch<React.SetStateAction<number>>;
-	setPan: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
-	setRulerStart: (pt: { x: number; y: number } | null) => void;
-	setRulerCurrent: (pt: { x: number; y: number } | null) => void;
-	setSavedRulerDistanceMm: (dist: number | null) => void;
-	triggerHaptic: () => void;
-	onPickFiles: () => void;
-}
-
-/**
- * Props for MobileRadiologyFilterToolbar thumb actions.
- */
 export interface MobileRadiologyFilterToolbarProps {
 	inverted: boolean;
 	contrast: number;
@@ -112,34 +61,29 @@ export interface MobileRadiologyFilterToolbarProps {
 	onCloseFilterPopover: () => void;
 }
 
-/**
- * Props for MobileStudiesDrawer bottom sheet.
- */
 export interface MobileStudiesDrawerProps {
 	isOpen: boolean;
 	onClose: () => void;
 	studies: MobileChairsideStudyItem[];
-	selectedStudyId: string | null | undefined;
+	selectedStudyId?: string;
 	activePatient: {
 		id?: string | null;
 		fullName?: string | null;
 		name?: string | null;
 	} | null;
-	imagingKindLabels: Record<string, string>;
-	onSelectStudy: (id: string) => void;
+	imagingKindLabels?: Record<string, string>;
+	onSelectStudy: (studyId: string) => void;
 	onCaptureCamera: () => void;
 	onPickFiles: () => void;
 	triggerHaptic: () => void;
 }
 
-/**
- * Props for MobilePatientShowcaseOverlay (1-click patient demonstration).
- */
 export interface MobilePatientShowcaseOverlayProps {
 	isOpen: boolean;
 	onClose: () => void;
-	selectedStudy: MobileChairsideStudyItem | null;
+	selectedStudy?: MobileChairsideStudyItem | null;
 	activePatient: {
+		id?: string | null;
 		fullName?: string | null;
 		name?: string | null;
 	} | null;
@@ -148,7 +92,7 @@ export interface MobilePatientShowcaseOverlayProps {
 	modalityTitle: string;
 	toothBadge: string;
 	studyDateStr: string;
-	comparisonStudy?: MobileChairsideStudyItem | null;
+	comparisonStudy: MobileChairsideStudyItem | null;
 	allStudies?: MobileChairsideStudyItem[];
 	onSelectComparisonStudy?: (studyId: string) => void;
 	isProtocol043Attached?: boolean;
