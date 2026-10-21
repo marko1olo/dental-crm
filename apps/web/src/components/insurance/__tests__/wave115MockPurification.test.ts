@@ -1,15 +1,12 @@
 /**
  * wave115MockPurification.test.ts — Wave 115 Mock Purity Verification Suite
- *
- * Verifies strict eradication of synthetic names, developer leaks, fake requisites,
- * and emojis according to Supreme Law: THE HAMMER (Mandates 8a–8q).
  */
 
-import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { describe, it } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,149 +14,60 @@ const webSrcRoot = path.resolve(__dirname, "../../..");
 
 describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 	it("1. DmsGuaranteeLetterModal.tsx: must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
-		const filePath = path.resolve(
-			webSrcRoot,
-			"components/insurance/DmsGuaranteeLetterModal.tsx",
-		);
+		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsGuaranteeLetterModal.tsx");
 		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
 		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.equal(
-			content.includes("Иванова Елена"),
-			false,
-			"DmsGuaranteeLetterModal.tsx must NOT contain synthetic curator name 'Иванова Елена'",
-		);
-		assert.equal(
-			content.includes("Иванов И.И."),
-			false,
-			"DmsGuaranteeLetterModal.tsx must NOT contain fallback patient name 'Иванов И.И.'",
-		);
+		assert.equal(content.includes("Иванова Елена"), false);
+		assert.equal(content.includes("Иванов И.И."), false);
 	});
 
-	it("2. ChairsidePreFlightChecklist.tsx: purged per Reality Simulator & Mandate 8e purge (no synthetic mock defaults)", () => {
-		const filePath = path.resolve(
-			webSrcRoot,
-			"components/chairside/ChairsidePreFlightChecklist.tsx",
-		);
+	it("2. ChairsidePreFlightChecklist.tsx: purged per Reality Simulator & Mandate 8e purge", () => {
+		const filePath = path.resolve(webSrcRoot, "components/chairside/ChairsidePreFlightChecklist.tsx");
 		if (!fs.existsSync(filePath)) {
-			// Purged per Reality Simulator & Mandate 8e (Boeing-747 pre-flight checklist purge)
-			assert.ok(true, "ChairsidePreFlightChecklist.tsx successfully purged per Mandate 8e");
+			assert.ok(true, "Purged per Mandate 8e");
 			return;
 		}
 		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.equal(
-			content.includes("Смирнова Е. В."),
-			false,
-			"ChairsidePreFlightChecklist.tsx must NOT contain synthetic doctorName default 'Смирнова Е. В.'",
-		);
-		assert.equal(
-			content.includes("Иванова М. А."),
-			false,
-			"ChairsidePreFlightChecklist.tsx must NOT contain synthetic assistantName default 'Иванова М. А.'",
-		);
+		assert.equal(content.includes("Смирнова Е. В."), false);
+		assert.equal(content.includes("Иванова М. А."), false);
 	});
 
-	it("3. DmsGuaranteeLetterModal.tsx: must NOT contain 'Иванов Сергей Александрович'", () => {
-		const filePath = path.resolve(
-			webSrcRoot,
-			"components/insurance/DmsGuaranteeLetterModal.tsx",
-		);
-		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
+	it("3. DmsGuaranteeLetterModal.tsx: must NOT contain synthetic names", () => {
+		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsGuaranteeLetterModal.tsx");
+		assert.ok(fs.existsSync(filePath));
 		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.equal(
-			content.includes("Иванов Сергей Александрович"),
-			false,
-			"DmsGuaranteeLetterModal.tsx must NOT contain synthetic patient name 'Иванов Сергей Александрович'",
-		);
-		assert.equal(
-			content.includes("Кузнецова Ольга Дмитриевна"),
-			false,
-			"DmsGuaranteeLetterModal.tsx must NOT contain sample visit patient 'Кузнецова Ольга Дмитриевна'",
-		);
-		assert.equal(
-			content.includes("Петров Василий Николаевич"),
-			false,
-			"DmsGuaranteeLetterModal.tsx must NOT contain sample visit patient 'Петров Василий Николаевич'",
-		);
+		assert.equal(content.includes("Иванов Сергей Александрович"), false);
+		assert.equal(content.includes("Кузнецова Ольга Дмитриевна"), false);
+		assert.equal(content.includes("Петров Василий Николаевич"), false);
 	});
 
-	it("4. PrescriptionPrintModal.tsx: must NOT contain emojis ⚠️ or ⚖️", () => {
-		const filePath = path.resolve(
-			webSrcRoot,
-			"components/prescriptions/PrescriptionPrintModal.tsx",
-		);
-		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
+	it("4. PrescriptionPrintModal.tsx: must NOT contain emojis", () => {
+		const filePath = path.resolve(webSrcRoot, "components/prescriptions/PrescriptionPrintModal.tsx");
+		assert.ok(fs.existsSync(filePath));
 		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.equal(
-			content.includes("⚠️"),
-			false,
-			"PrescriptionPrintModal.tsx must NOT contain emoji ⚠️",
-		);
-		assert.equal(
-			content.includes("⚖️"),
-			false,
-			"PrescriptionPrintModal.tsx must NOT contain emoji ⚖️",
-		);
+		assert.equal(content.includes("⚠️"), false);
+		assert.equal(content.includes("⚖️"), false);
 	});
 
 	it("5. PublicBookingWidget.tsx: must NOT contain '+7 (999) 123-45-67'", () => {
-		const filePath = path.resolve(
-			webSrcRoot,
-			"pages/PublicBookingWidget.tsx",
-		);
-		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
+		const filePath = path.resolve(webSrcRoot, "pages/PublicBookingWidget.tsx");
+		assert.ok(fs.existsSync(filePath));
 		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.equal(
-			content.includes("+7 (999) 123-45-67"),
-			false,
-			"PublicBookingWidget.tsx must NOT contain synthetic demo phone '+7 (999) 123-45-67'",
-		);
+		assert.equal(content.includes("+7 (999) 123-45-67"), false);
 	});
 
 	it("6. PatientBillingModal.tsx & dmsSplitEngine.ts: must NOT contain fake requisites", () => {
-		const billingPath = path.resolve(
-			webSrcRoot,
-			"components/finance/PatientBillingModal.tsx",
-		);
-		assert.ok(fs.existsSync(billingPath), `File must exist at ${billingPath}`);
+		const billingPath = path.resolve(webSrcRoot, "components/finance/PatientBillingModal.tsx");
+		assert.ok(fs.existsSync(billingPath));
 		const billingContent = fs.readFileSync(billingPath, "utf-8");
+		assert.equal(billingContent.includes("7701234567"), false);
+		assert.equal(billingContent.includes("1027700132195"), false);
+		assert.equal(billingContent.includes("Ломоносовский проспект"), false);
+		assert.equal(billingContent.includes("ОВД Хамовники"), false);
 
-		assert.equal(
-			billingContent.includes("7701234567"),
-			false,
-			"PatientBillingModal.tsx must NOT contain hardcoded INN '7701234567'",
-		);
-		assert.equal(
-			billingContent.includes("1027700132195"),
-			false,
-			"PatientBillingModal.tsx must NOT contain hardcoded OGRN '1027700132195'",
-		);
-		assert.equal(
-			billingContent.includes("Ломоносовский проспект"),
-			false,
-			"PatientBillingModal.tsx must NOT contain hardcoded address 'Ломоносовский проспект'",
-		);
-		assert.equal(
-			billingContent.includes("ОВД Хамовники"),
-			false,
-			"PatientBillingModal.tsx must NOT contain synthetic passport data with 'ОВД Хамовники'",
-		);
-
-		const splitEnginePath = path.resolve(
-			webSrcRoot,
-			"components/insurance/dmsSplitEngine.ts",
-		);
-		assert.ok(fs.existsSync(splitEnginePath), `File must exist at ${splitEnginePath}`);
+		const splitEnginePath = path.resolve(webSrcRoot, "components/insurance/dmsSplitEngine.ts");
+		assert.ok(fs.existsSync(splitEnginePath));
 		const splitEngineContent = fs.readFileSync(splitEnginePath, "utf-8");
-
-		assert.equal(
-			splitEngineContent.includes("7701234567"),
-			false,
-			"dmsSplitEngine.ts must NOT contain hardcoded INN fallback '7701234567'",
-		);
+		assert.equal(splitEngineContent.includes("7701234567"), false);
 	});
 });
