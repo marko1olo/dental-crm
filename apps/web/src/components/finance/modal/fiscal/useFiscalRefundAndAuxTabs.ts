@@ -16,7 +16,7 @@ import {
 	mapTreatmentItemsToFiscalReceipt,
 	type SplitPaymentInput,
 	type TaxDeductionRelationship,
-} from "../../order804nFiscalEngine";
+} from "../../fiscalReceiptEngine";
 import { numberToWordsRu, generateCompletedActAndWarrantyHtml, type CompletedWorksActParams } from "../../invoiceEngine";
 import { renderOfficialTaxCertificateKnd1151156Html, type TaxDeductionCertificateParams } from "../../taxDeductionEngine";
 import { hardwarePrinter } from "../../../../services/hardware/HardwarePrinter";

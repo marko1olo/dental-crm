@@ -1,16 +1,20 @@
 import React from "react";
-import { FlaskConical, Printer, ShieldCheck, X } from "lucide-react";
+import { FlaskConical, Pill, Printer, ShieldCheck, X } from "lucide-react";
 
 export interface ChairsidePatientHeaderActionsProps {
 	handlePrintForm043uFast?: (() => void) | undefined;
+	handleOpenPrescription?: (() => void) | undefined;
 	handleOpenLabOrder?: (() => void) | undefined;
 	onOpenWarrantyModal?: (() => void) | undefined;
 	onClose?: (() => void) | undefined;
 	testId?: string;
 }
 
-export const ChairsidePatientHeaderActions: React.FC<ChairsidePatientHeaderActionsProps> = ({
+export const ChairsidePatientHeaderActions: React.FC<
+	ChairsidePatientHeaderActionsProps
+> = ({
 	handlePrintForm043uFast,
+	handleOpenPrescription,
 	handleOpenLabOrder,
 	onOpenWarrantyModal,
 	onClose,
@@ -18,6 +22,19 @@ export const ChairsidePatientHeaderActions: React.FC<ChairsidePatientHeaderActio
 }) => {
 	return (
 		<div className="mobile-chairside-hud-actions">
+			{handleOpenPrescription && (
+				<button
+					type="button"
+					onClick={handleOpenPrescription}
+					className="mobile-chairside-icon-btn text-emerald-600 dark:text-emerald-400"
+					aria-label="Рецептурный бланк на лекарства"
+					title="Рецепты на лекарства (бланки 107-1/у и 148)"
+					data-testid={`${testId}-prescription-btn`}
+				>
+					<Pill size={18} />
+				</button>
+			)}
+
 			{handlePrintForm043uFast && (
 				<button
 					type="button"

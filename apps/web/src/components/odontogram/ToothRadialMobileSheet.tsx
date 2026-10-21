@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import {
 	DentalCrown,
 	DentalHandpiece,

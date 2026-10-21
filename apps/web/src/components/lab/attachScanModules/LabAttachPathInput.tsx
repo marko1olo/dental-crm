@@ -1,5 +1,5 @@
+import React from "react";
 import { Upload } from "lucide-react";
-import type React from "react";
 
 export interface LabAttachPathInputProps {
 	readonly inputRef: React.RefObject<HTMLInputElement | null>;

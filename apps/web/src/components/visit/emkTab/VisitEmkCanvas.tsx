@@ -6,7 +6,7 @@ import {
 	getUnfinishedEndoSnapshot,
 	transformEndoStage1ToStage2,
 	type LastVisitSoapSnapshot,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import { useVisitStore } from "../../../store/visitStore";
 import { playTactileEarcon } from "../../../lib/intercomSound";
 import { VisitEmkSomaticSummaryBar } from "./canvasModules/VisitEmkSomaticSummaryBar";

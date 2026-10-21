@@ -90,7 +90,7 @@ describe("DentalLabReadyInClinicModal — Связка ЗТЛ с расписа�
 		assert.strictEqual(typeof DentalLabReadyInClinicModal, "function", "DentalLabReadyInClinicModal должен быть функцией-компонентом");
 	});
 
-	it("5. Формирование черновика записи в расписание соответствует Приказу 804н и Ортопедии (Этап 3)", () => {
+	it("5. Формирование черновика записи в расписание соответствует прейскуранту ортопедии (Этап 3)", () => {
 		const order = sampleOrder;
 		const teethStr = Array.isArray(order.toothFdi) ? order.toothFdi.join(", ") : String(order.toothFdi || "16");
 		const mat = order.material || "Ортопедическая конструкция";
@@ -103,14 +103,14 @@ describe("DentalLabReadyInClinicModal — Связка ЗТЛ с расписа�
 			doctorId: order.doctorId || "",
 			doctorName: order.doctorName || "Врач-ортопед",
 			serviceTitle: "Примерка и фиксация ортопедической конструкции",
-			serviceCode: "A16.07.004", // 804н
+			serviceCode: "A16.07.004", // Прейскурант ортопедии
 			durationMinutes: 45,
 			stageKind: "stage_3_orthopedics",
 			orderNumber: order.orderNumber,
 			notes: `Готовая работа ЗТЛ № ${order.orderNumber} (${mat}, зуб ${teethStr}, оттенок ${shade}). Поступила в клинику.`,
 		};
 
-		assert.strictEqual(draft.serviceCode, "A16.07.004", "Код услуги соответствует номенклатуре Минздрава 804н");
+		assert.strictEqual(draft.serviceCode, "A16.07.004", "Код услуги соответствует прейскуранту ортопедии");
 		assert.strictEqual(draft.durationMinutes, 45, "Стандартное время приема под фиксацию — 45 минут");
 		assert.strictEqual(draft.stageKind, "stage_3_orthopedics", "Привязка к Этапу 3 комплексного плана лечения");
 		assert.strictEqual(draft.orderNumber, "ЗТЛ-2026-88", "Привязан номер наряда ЗТЛ");

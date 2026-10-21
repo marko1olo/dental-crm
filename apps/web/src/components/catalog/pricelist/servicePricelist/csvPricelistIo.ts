@@ -254,11 +254,11 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		};
 	}
 
-	const headers = rawRows[0]!.map((h) => h.toLowerCase().trim());
+	const headers = (rawRows[0] ?? []).map((h) => h.toLowerCase().trim());
 	const findCol = (keys: string[]) =>
 		headers.findIndex((h) => keys.some((k) => h.includes(k)));
 
-	// Enhanced multi-vendor column recognition (IDENT, DentalPRO, iStom, 1C:Медицина, StomX, Order 804n)
+	// Enhanced multi-vendor column recognition (Russian Dental CRM & 1C spreadsheets)
 	const colCode = findCol([
 		"код 804",
 		"804н",
@@ -320,8 +320,8 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 	const invalidRows: CsvRowError[] = [];
 
 	for (let rowIndex = 1; rowIndex < rawRows.length; rowIndex++) {
-		const row = rawRows[rowIndex]!;
-		if (row.length === 0 || row.every((c) => c === "")) continue;
+		const row = rawRows[rowIndex];
+		if (!row || row.length === 0 || row.every((c) => c === "")) continue;
 
 		const rawCode = (colCode >= 0 ? row[colCode] : "")?.trim() || "";
 		const commercialTitle =
@@ -354,14 +354,12 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 			continue;
 		}
 
-		const category =
-			colCat >= 0 && row[colCat]
-				? parseCategoryFromLabel(row[colCat]!)
-				: detectCategoryFrom804nCode(rawCode);
-		const specialty =
-			colSpec >= 0 && row[colSpec]
-				? parseSpecialtyFromLabel(row[colSpec]!)
-				: "general";
+		const catVal = colCat >= 0 ? row[colCat] : undefined;
+		const category = catVal
+			? parseCategoryFromLabel(catVal)
+			: detectCategoryFrom804nCode(rawCode);
+		const specVal = colSpec >= 0 ? row[colSpec] : undefined;
+		const specialty = specVal ? parseSpecialtyFromLabel(specVal) : "general";
 
 		// ZERO MOCKS: never generate fake A16.07.999.xxx!
 		// Use real Order 804n statutory nomenclature code:
@@ -427,7 +425,8 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 
 		const icdRaw =
 			colIcd >= 0 && row[colIcd]
-				? row[colIcd]!.split(/[,;]+/)
+				? row[colIcd]
+						?.split(/[,;]+/)
 						.map((s) => s.trim())
 						.filter(Boolean)
 				: [];

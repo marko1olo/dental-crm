@@ -1,3 +1,4 @@
+import React from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import type { DentalLabFinancialGateResult } from "../dentalLabFinancialGateEngine";
 

@@ -53,7 +53,7 @@ export interface PaymentBannersProps {
 	readonly execHook: PaymentLogicResult["execHook"];
 	readonly tendersHook?: PaymentLogicResult["tendersHook"] | undefined;
 	readonly onClose: () => void;
-	readonly onSuccess?: ((payload: unknown) => void) | undefined;
+	readonly onSuccess?: ((payload: any) => void) | undefined;
 }
 
 /** 4. PaymentCashCalculator Props */
@@ -105,5 +105,5 @@ export interface PaymentFooterActionsProps {
 	readonly tendersHook: PaymentLogicResult["tendersHook"];
 	readonly execHook: PaymentLogicResult["execHook"];
 	readonly onClose: () => void;
-	readonly onSuccess?: ((payload: unknown) => void) | undefined;
+	readonly onSuccess?: ((payload: any) => void) | undefined;
 }

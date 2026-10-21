@@ -80,11 +80,7 @@ export const ColumnFocusTableView: React.FC<ColumnFocusTableViewProps> = ({
 					{visibleLeads.map((lead) => {
 						const sla = getLeadSlaStatus(lead);
 						const isSelected = selectedLeadIds.has(lead.id);
-						const dropReasonMatch =
-							lead.dropReason ||
-							(lead.notes
-								? lead.notes.match(/\[Причина срыва\]:\s*([^\n\r]+)/)?.[1]
-								: null);
+						const dropReasonMatch = lead.dropReason || null;
 						const channelKey = lead.source
 							? normalizeMarketingChannel(lead.source)
 							: null;

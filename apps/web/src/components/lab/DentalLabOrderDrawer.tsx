@@ -47,13 +47,9 @@ export function DentalLabOrderDrawer(props: DentalLabOrderDrawerProps) {
 				</div>
 
 				<DentalLabDrawerHeader
-					isEditing={Boolean(form.editingOrder)}
-					orderNumber={form.editingOrder?.orderNumber}
-					treatmentPlanId={props.treatmentPlanId}
-					stageNumber={props.stageNumber}
-					stageTitle={props.stageTitle}
-					currentStatus={form.status}
-					onMarkReadyInClinic={form.editingOrder ? form.handleMarkReadyInClinic : undefined}
+					isEditing={Boolean(form.editingOrder)} orderNumber={form.editingOrder?.orderNumber}
+					treatmentPlanId={props.treatmentPlanId} stageNumber={props.stageNumber} stageTitle={props.stageTitle}
+					currentStatus={form.status} onMarkReadyInClinic={form.editingOrder ? form.handleMarkReadyInClinic : undefined}
 					onClose={props.onClose}
 				/>
 

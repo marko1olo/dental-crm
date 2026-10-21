@@ -338,7 +338,7 @@ export function filterServiceCatalog(
 		if (matchCode || matchTitle) {
 			results.push({
 				id: String(anyItem.id || code || title),
-				code: code || "804н",
+				code: code || "Услуга",
 				title: title || "Услуга без названия",
 				priceRub,
 				category:
@@ -399,8 +399,8 @@ export function calculateCompletedServicesSummary(
 
 		const unitPrice = parsed.priceRub ?? 0;
 		servicesForInvoice.push({
-			code: parsed.code804n || "804н",
-			code804n: parsed.code804n || "804н",
+			code: parsed.code804n || "Услуга",
+			code804n: parsed.code804n || "Услуга",
 			title: parsed.title,
 			price: unitPrice,
 			priceRub: unitPrice,

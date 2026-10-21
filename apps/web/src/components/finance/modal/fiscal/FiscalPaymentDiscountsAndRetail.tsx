@@ -28,7 +28,7 @@ import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 import {
 	mapTreatmentItemsToFiscalReceipt,
 	TREATMENT_STAGE_LABELS,
-} from "../../order804nFiscalEngine";
+} from "../../fiscalReceiptEngine";
 import type { LoyaltyDiscountPreset } from "../../fiscal/fiscal54fzEngine";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 

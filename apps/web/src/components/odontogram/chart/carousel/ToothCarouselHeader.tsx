@@ -1,6 +1,6 @@
 import type React from "react";
 import { memo } from "react";
-import { getToothFolkAndAnatomicalNameRu } from "../../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../../lib/clinicalProtocols";
 import { type ToothState, TOOTH_STATE_LABELS } from "../toothChartTypes";
 
 export interface ToothCarouselHeaderProps {

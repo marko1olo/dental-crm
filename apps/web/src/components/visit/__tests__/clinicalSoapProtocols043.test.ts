@@ -34,7 +34,7 @@ import {
 	ENDO_SEALER_OPTIONS,
 	ENDO_OBTURATION_METHOD_OPTIONS,
 	type EndoWorkingLengthEntry,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import { CLINICAL_PRESETS } from "../ClinicalQuickPresetsBar";
 import {
 	getNextFocusedTooth,
@@ -53,7 +53,7 @@ import {
 import type { PlanPriceCatalogItem } from "../../treatment-plans/planPricing";
 import type { DiaryState } from "../../useVisitDiaryLogic";
 
-describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", () => {
+describe("Clinical SOAP Diary & Medical Card Protocols (clinicalProtocols)", () => {
 	describe("1. Anatomical & Surface Formatting", () => {
 		it("correctly formats adult and primary tooth anatomical names in Russian", () => {
 			assert.equal(

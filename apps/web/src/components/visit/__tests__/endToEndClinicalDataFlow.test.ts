@@ -12,7 +12,7 @@ import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
 	type OdontogramFindingInput,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import {
 	mergeMultiToothDiagnoses,
 	mergeMultiToothObjective,

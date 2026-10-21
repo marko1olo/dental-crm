@@ -3,7 +3,7 @@
  *
  * WAVE 63 (FEATURE 252) TEST SUITE:
  * «одонтограмма_автономия::двухслойное_хранилище_защита_от_потери_данных_пакетные_пресеты_санации_и_1_клик_синхронизация_с_дневником_043у»
- * (StomX / DentalPRO Parity, Mandates 8c, 8d, 8e, 8k, 8n)
+ * Clinical Parity Test Suite (Mandates 8c, 8d, 8e, 8k, 8n)
  *
  * Invariants Verified:
  * 1. Two-tier localStorage caching and hydration during offline/server failures (loadStoredTeethData, saveStoredTeethData, getOdontogramStorageKey).
@@ -32,7 +32,7 @@ import {
 	type ToothData,
 } from "../ToothChart";
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
-import { generateSoapFromOdontogramStates } from "../../../lib/clinicalProtocols043";
+import { generateSoapFromOdontogramStates } from "../../../lib/clinicalProtocols";
 
 // In-memory localStorage mock for node test runner
 class MockLocalStorage {

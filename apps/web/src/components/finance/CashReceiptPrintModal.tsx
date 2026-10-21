@@ -21,12 +21,12 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
-import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint.js";
+import { FiscalReceiptPrintView, Order804nFiscalReceiptPrint } from "./FiscalReceiptPrintView.js";
 import {
 	generateFiscalReceipt54Fz,
 	type FiscalReceipt54FzResult,
 	type Order804nFiscalReceiptItem,
-} from "./order804nFiscalEngine.js";
+} from "./fiscalReceiptEngine.js";
 import type { TreatmentPlanItem } from "../treatment-plans/types.js";
 import type { BillingInvoice } from "../billing/invoiceTypes.js";
 import { rubToKopecks, type Kopecks } from "@dental/shared";
@@ -147,8 +147,8 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 				customerContact: invoice.patientPhone || "",
 				cashierFullName,
 				clinicLegalName: clinicName,
-				clinicInn: clinicInn || "7707083893",
-				clinicAddress: clinicAddress || "г. Москва, ул. Профсоюзная, д. 42",
+				clinicInn: clinicInn || "",
+				clinicAddress: clinicAddress || "",
 				customReceiptNumber: invoice.number,
 			});
 		}
@@ -162,8 +162,8 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 			customerContact: "",
 			cashierFullName,
 			clinicLegalName: clinicName,
-			clinicInn: clinicInn || "7707083893",
-			clinicAddress: clinicAddress || "г. Москва, ул. Профсоюзная, д. 42",
+			clinicInn: clinicInn || "",
+			clinicAddress: clinicAddress || "",
 			customReceiptNumber: "ЧЕК-0001",
 		});
 	}, [receipt, invoice, cashierFullName, clinicName, clinicInn, clinicAddress]);
@@ -303,7 +303,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 											{effectiveReceipt.clinicLegalName}
 										</h2>
 										<p className="text-[11px] text-[var(--muted)]">
-											ИНН: {effectiveReceipt.clinicInn} · {effectiveReceipt.clinicAddress}
+											{effectiveReceipt.clinicInn ? `ИНН: ${effectiveReceipt.clinicInn} · ` : ""}{effectiveReceipt.clinicAddress}
 										</p>
 									</div>
 									<div className="text-right">

@@ -33,7 +33,7 @@ export const SoapTemplatesDrawer: React.FC<SoapTemplatesDrawerProps> = ({
 
 	return (
 		<>
-			{/* ── ВЫПАДАЮЩАЯ ПАНЕЛЬ ШАБЛОНОВ STOMX ── */}
+			{/* ── ВЫПАДАЮЩАЯ ПАНЕЛЬ КЛИНИЧЕСКИХ ШАБЛОНОВ ── */}
 			{isTemplatesOpen && (
 				<div className="bg-[var(--paper-soft)] border-b border-[var(--line)] p-3 transition-all">
 					<div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[var(--line)]">
@@ -45,7 +45,7 @@ export const SoapTemplatesDrawer: React.FC<SoapTemplatesDrawerProps> = ({
 								title="Клинические протоколы (448 шаблонов)"
 								data-catalog-source="Клинические протоколы СтАР"
 							>
-								Клинические протоколы StomX (448 протоколов)
+								Клинические протоколы приёма (448 шаблонов)
 							</span>
 						</div>
 						<button

@@ -10,6 +10,10 @@ import { InstallmentsActionBar } from "../../billing/installments/InstallmentsAc
 import { DepositFooterActions } from "../../billing/depositModal/DepositFooterActions.js";
 import { PaymentBuyerRequisitesSection } from "../../finance/paymentModalModules/PaymentBuyerRequisitesSection.js";
 
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const WEB_SRC = path.resolve(__dirname, "../../../");
 
 describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {

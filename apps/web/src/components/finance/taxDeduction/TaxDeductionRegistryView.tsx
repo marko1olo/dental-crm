@@ -28,8 +28,8 @@ export interface TaxDeductionRegistryViewProps {
 export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> = ({
 	onOpenNewCertificate,
 	selectedPatientId,
-	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
+	clinicName = "",
+	clinicInn = "",
 }) => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [yearFilter, setYearFilter] = useState<number | "ALL">("ALL");

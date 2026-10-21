@@ -13,7 +13,7 @@ import {
 	generateFiscalReceipt54Fz,
 	calculateSplitPaymentAllocation,
 	type FiscalReceipt54FzResult,
-} from "../order804nFiscalEngine.js";
+} from "../fiscalReceiptEngine.js";
 import { CashReceiptPrintModal } from "../CashReceiptPrintModal.js";
 import { InvoiceCardItem } from "../../billing/InvoiceCardItem.js";
 import { PatientInstallmentsModal } from "../../billing/PatientInstallmentsModal.js";

@@ -1,3 +1,4 @@
+import React from "react";
 import { LabAttachFooter } from "./attachScanModules/LabAttachFooter";
 import { LabAttachHeader } from "./attachScanModules/LabAttachHeader";
 import { LabAttachPathInput } from "./attachScanModules/LabAttachPathInput";

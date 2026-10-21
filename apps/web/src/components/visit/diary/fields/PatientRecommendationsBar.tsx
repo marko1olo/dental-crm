@@ -3,7 +3,7 @@ import { Sparkles, Plus } from "lucide-react";
 import {
 	appendRecommendationToSoap,
 	PATIENT_RECOMMENDATIONS,
-} from "../../../../lib/clinicalProtocols043";
+} from "../../../../lib/clinicalProtocols";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
 
 export interface PatientRecommendationsBarProps {

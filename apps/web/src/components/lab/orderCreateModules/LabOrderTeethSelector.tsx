@@ -1,14 +1,12 @@
-/**
- * LabOrderTeethSelector.tsx — Интерактивный селектор зубов FDI для зуботехнического наряда.
- * 
- * Врачебные инварианты:
- * 1. Планшетная эргономика у кресла (хитбоксы >= 44x44px для работы в перчатках).
- * 2. Визуальная маркировка мостовидных конструкций (опоры и понтик) vs одиночные коронки.
- * 3. Двусторонняя синхронизация: клик по одонтограмме <-> текстовый ввод FDI.
- */
-
 import React, { useMemo } from "react";
-import { Link2, Sparkles, Check } from "lucide-react";
+import { Link2, Check } from "lucide-react";
+import {
+	FDI_UPPER_RIGHT,
+	FDI_UPPER_LEFT,
+	FDI_LOWER_LEFT,
+	FDI_LOWER_RIGHT,
+} from "./teethSelectorModules/teethConstants";
+import { FdiQuadrantRow } from "./teethSelectorModules/FdiQuadrantRow";
 
 export interface LabOrderTeethSelectorProps {
 	readonly value: string;
@@ -17,19 +15,9 @@ export interface LabOrderTeethSelectorProps {
 	readonly onToggleBridge: (isBridge: boolean) => void;
 }
 
-// Постоянный прикус: квадранты FDI
-const FDI_UPPER_RIGHT = [18, 17, 16, 15, 14, 13, 12, 11];
-const FDI_UPPER_LEFT = [21, 22, 23, 24, 25, 26, 27, 28];
-const FDI_LOWER_LEFT = [31, 32, 33, 34, 35, 36, 37, 38];
-const FDI_LOWER_RIGHT = [48, 47, 46, 45, 44, 43, 42, 41];
-
 export const LabOrderTeethSelector: React.FC<LabOrderTeethSelectorProps> = ({
-	value,
-	onChange,
-	isBridge,
-	onToggleBridge,
+	value, onChange, isBridge, onToggleBridge,
 }) => {
-	// Парсинг выбранных зубов из строки
 	const selectedTeethSet = useMemo(() => {
 		const numbers = value
 			.split(",")
@@ -40,51 +28,17 @@ export const LabOrderTeethSelector: React.FC<LabOrderTeethSelectorProps> = ({
 
 	const toggleTooth = (tooth: number) => {
 		const nextSet = new Set(selectedTeethSet);
-		if (nextSet.has(tooth)) {
-			nextSet.delete(tooth);
-		} else {
-			nextSet.add(tooth);
-		}
+		if (nextSet.has(tooth)) nextSet.delete(tooth); else nextSet.add(tooth);
 		const sorted = Array.from(nextSet).sort((a, b) => a - b);
 		onChange(sorted.join(", "), sorted);
 	};
 
-	const selectAllInQuadrant = (quadrant: number[]) => {
+	const selectAllInQuadrant = (quadrant: readonly number[]) => {
 		const allSelected = quadrant.every((t) => selectedTeethSet.has(t));
 		const nextSet = new Set(selectedTeethSet);
-		for (const t of quadrant) {
-			if (allSelected) {
-				nextSet.delete(t);
-			} else {
-				nextSet.add(t);
-			}
-		}
+		for (const t of quadrant) { if (allSelected) nextSet.delete(t); else nextSet.add(t); }
 		const sorted = Array.from(nextSet).sort((a, b) => a - b);
 		onChange(sorted.join(", "), sorted);
-	};
-
-	const renderToothButton = (tooth: number) => {
-		const isSelected = selectedTeethSet.has(tooth);
-		return (
-			<button
-				key={tooth}
-				type="button"
-				onClick={() => toggleTooth(tooth)}
-				className={`relative flex flex-col items-center justify-center min-w-[34px] sm:min-w-[40px] h-[44px] px-1 rounded-md text-xs font-semibold transition-all select-none cursor-pointer border ${
-					isSelected
-						? "bg-teal-600 dark:bg-teal-700 text-white border-teal-700 dark:border-teal-500 shadow-sm scale-102"
-						: "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#1e293b)] dark:text-slate-200 border-[var(--line,#e2e8f0)] dark:border-slate-700 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-slate-800"
-				}`}
-				data-testid={`tooth-btn-${tooth}`}
-				aria-pressed={isSelected}
-				title={`Зуб ${tooth} (${isSelected ? "Выбран" : "Не выбран"})`}
-			>
-				<span>{tooth}</span>
-				{isSelected && (
-					<span className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-400 mt-0.5" />
-				)}
-			</button>
-		);
 	};
 
 	return (
@@ -111,23 +65,15 @@ export const LabOrderTeethSelector: React.FC<LabOrderTeethSelectorProps> = ({
 				</div>
 			</div>
 
-			{/* Текстовое поле ввода для быстрого ввода с клавиатуры */}
 			<div className="relative">
 				<input
-					id="teeth-input-field"
-					type="text"
-					className="ztl-form-input w-full"
-					placeholder="например: 14, 15, 16"
-					value={value}
+					id="teeth-input-field" type="text" className="ztl-form-input w-full"
+					placeholder="например: 14, 15, 16" value={value} data-testid="teeth-input"
 					onChange={(e) => {
 						const raw = e.target.value;
-						const parsed = raw
-							.split(",")
-							.map((s) => Number.parseInt(s.trim(), 10))
-							.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 48);
+						const parsed = raw.split(",").map((s) => Number.parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n) && n >= 11 && n <= 48);
 						onChange(raw, parsed);
 					}}
-					data-testid="teeth-input"
 				/>
 				{selectedTeethSet.size > 0 && (
 					<span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--muted,#64748b)] dark:text-slate-400 pointer-events-none">
@@ -136,69 +82,21 @@ export const LabOrderTeethSelector: React.FC<LabOrderTeethSelectorProps> = ({
 				)}
 			</div>
 
-			{/* Интерактивная формула FDI с поддержкой сенсорных тач-таргетов >= 44x44px */}
 			<div className="p-2 sm:p-3 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/60 select-none">
-				<div className="text-[11px] font-medium text-[var(--muted,#64748b)] dark:text-slate-400 mb-2 flex items-center justify-between">
-					<span>Верхняя челюсть (18..11 · 21..28)</span>
-					<div className="flex gap-1.5">
-						<button
-							type="button"
-							onClick={() => selectAllInQuadrant(FDI_UPPER_RIGHT)}
-							className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--line,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800"
-						>
-							Q1 (18..11)
-						</button>
-						<button
-							type="button"
-							onClick={() => selectAllInQuadrant(FDI_UPPER_LEFT)}
-							className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--line,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800"
-						>
-							Q2 (21..28)
-						</button>
-					</div>
-				</div>
-
-				{/* Верхний ряд (18..28) */}
-				<div className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto pb-2">
-					<div className="flex gap-1">
-						{FDI_UPPER_RIGHT.map(renderToothButton)}
-					</div>
-					<div className="w-[2px] h-9 bg-slate-300 dark:bg-slate-700 mx-0.5 shrink-0" />
-					<div className="flex gap-1">
-						{FDI_UPPER_LEFT.map(renderToothButton)}
-					</div>
-				</div>
-
-				<div className="text-[11px] font-medium text-[var(--muted,#64748b)] dark:text-slate-400 my-2 flex items-center justify-between border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 pt-2">
-					<span>Нижняя челюсть (48..41 · 31..38)</span>
-					<div className="flex gap-1.5">
-						<button
-							type="button"
-							onClick={() => selectAllInQuadrant(FDI_LOWER_RIGHT)}
-							className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--line,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800"
-						>
-							Q4 (48..41)
-						</button>
-						<button
-							type="button"
-							onClick={() => selectAllInQuadrant(FDI_LOWER_LEFT)}
-							className="text-[10px] px-1.5 py-0.5 rounded border border-[var(--line,#e2e8f0)] hover:bg-slate-200 dark:hover:bg-slate-800"
-						>
-							Q3 (31..38)
-						</button>
-					</div>
-				</div>
-
-				{/* Нижний ряд (48..38) */}
-				<div className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto">
-					<div className="flex gap-1">
-						{FDI_LOWER_RIGHT.map(renderToothButton)}
-					</div>
-					<div className="w-[2px] h-9 bg-slate-300 dark:bg-slate-700 mx-0.5 shrink-0" />
-					<div className="flex gap-1">
-						{FDI_LOWER_LEFT.map(renderToothButton)}
-					</div>
-				</div>
+				<FdiQuadrantRow
+					title="Верхняя челюсть (18..11 · 21..28)"
+					leftQuadrant={FDI_UPPER_RIGHT} rightQuadrant={FDI_UPPER_LEFT}
+					leftLabel="Q1 (18..11)" rightLabel="Q2 (21..28)"
+					selectedTeethSet={selectedTeethSet} toggleTooth={toggleTooth}
+					selectAllInQuadrant={selectAllInQuadrant}
+				/>
+				<FdiQuadrantRow
+					title="Нижняя челюсть (48..41 · 31..38)"
+					leftQuadrant={FDI_LOWER_RIGHT} rightQuadrant={FDI_LOWER_LEFT}
+					leftLabel="Q4 (48..41)" rightLabel="Q3 (31..38)"
+					selectedTeethSet={selectedTeethSet} toggleTooth={toggleTooth}
+					selectAllInQuadrant={selectAllInQuadrant} isLower
+				/>
 			</div>
 
 			{isBridge && selectedTeethSet.size >= 2 && (

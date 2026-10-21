@@ -1,3 +1,4 @@
+import React from "react";
 export interface LabAttachPresetItem {
 	readonly label: string;
 	readonly path: string;

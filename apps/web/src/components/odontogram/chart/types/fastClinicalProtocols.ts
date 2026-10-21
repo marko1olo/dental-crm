@@ -1,4 +1,4 @@
-import { getToothFolkAndAnatomicalNameRu } from "../../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../../lib/clinicalProtocols";
 
 export function applyFastCariesK021Protocol(toothNumber: number) {
 	const toothName = getToothFolkAndAnatomicalNameRu(toothNumber);

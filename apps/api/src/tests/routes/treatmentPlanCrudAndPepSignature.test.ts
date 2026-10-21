@@ -66,7 +66,7 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 			}).onConflictDoNothing();
 		});
 
-		app = await createTenantTestApp(ORG_ID);
+		app = createTenantTestApp();
 		await app.register(treatmentPlanRoutes);
 		await app.ready();
 

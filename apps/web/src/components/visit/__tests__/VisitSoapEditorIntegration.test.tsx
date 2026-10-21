@@ -7,7 +7,7 @@ import { VisitAnamnesisTab } from "../VisitAnamnesisTab";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 import { STOMX_KEY_CLINICAL_PROTOCOLS, populateOutpatientTemplateText } from "@dental/shared";
 
-describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
+describe("VisitSoapEditor & Medical Card 448 Protocols Integration", () => {
 	it("verifies STOMX_KEY_CLINICAL_PROTOCOLS catalog completeness across 5 specialties", () => {
 		assert.ok(
 			STOMX_KEY_CLINICAL_PROTOCOLS.length >= 25,
@@ -50,14 +50,14 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 
 		assert.ok(html.includes("Медицинская карта • Дневник приёма"), "Renders title");
 		assert.ok(html.includes("btn-soap-physio-norm"), "Renders 1-click physiological norm button (Mandate 8e)");
-		assert.ok(html.includes("btn-open-stomt-templates"), "Renders StomX 448 templates toggle button");
+		assert.ok(html.includes("btn-open-stomt-templates"), "Renders 448 templates toggle button");
 		assert.ok(html.includes("soap-select-tooth"), "Renders FDI tooth selector");
 		assert.ok(html.includes("36 зуб"), "Option 36 tooth is present");
 		assert.ok(html.includes("Кровоточивость десен при чистке"), "Renders initial complaint");
 		assert.ok(html.includes("K05.0"), "Renders ICD-10");
 	});
 
-	it("renders StomX 448 drawer when isTemplatesOpen is true", () => {
+	it("renders 448 protocols drawer when isTemplatesOpen is true", () => {
 		const html = renderToStaticMarkup(
 			createElement(VisitSoapEditor, {
 				activeTooth: 26,
@@ -74,7 +74,7 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 		assert.ok(html.includes("Пародонтология"), "Renders Periodontics category filter");
 	});
 
-	it("renders VisitAnamnesisTab with StomX 448 header button and activeTooth support", () => {
+	it("renders VisitAnamnesisTab with 448 templates header button and activeTooth support", () => {
 		const html = renderToStaticMarkup(
 			<AppLogicProvider value={{} as any}>
 				<VisitAnamnesisTab
@@ -86,8 +86,8 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 			</AppLogicProvider>,
 		);
 
-		assert.ok(html.includes("btn-open-stomt-templates-anamnesis"), "Renders StomX templates button in header");
-		assert.ok(html.includes("Клинические шаблоны StomX (448)"), "Button contains descriptive text");
+		assert.ok(html.includes("btn-open-stomt-templates-anamnesis"), "Renders templates button in header");
+		assert.ok(html.includes("Клинические шаблоны (448)"), "Button contains descriptive text");
 	});
 
 	it("verifies Mandate 8e: VisitSoapEditor never blocks buttons with disabled when isLocked=true and renders revision button", () => {

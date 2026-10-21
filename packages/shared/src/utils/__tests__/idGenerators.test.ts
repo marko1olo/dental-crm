@@ -19,6 +19,9 @@ import {
 	generateSecureUuid,
 	generateBridgeId,
 	resetSequenceCounter,
+	isValidUuid,
+	isValidUuidV7,
+	generateUuidV7,
 } from "../idGenerators.js";
 
 test("packages/shared/utils/idGenerators: generateSecureAlphanumericId generates proper length and chars", () => {
@@ -138,4 +141,36 @@ test("packages/shared/utils/idGenerators: generateBridgeId formats deterministic
 	// CSPRNG without patientId
 	const bRand = generateBridgeId([24, 25, 26]);
 	assert.match(bRand, /^bridge_24_25_26_[a-z0-9]{6}$/);
+});
+
+test("packages/shared/utils/idGenerators: isValidUuid & isValidUuidV7 validation", () => {
+	assert.equal(isValidUuid("not-a-uuid"), false);
+	assert.equal(isValidUuid(""), false);
+	assert.equal(isValidUuid(null), false);
+	assert.equal(isValidUuid(undefined), false);
+
+	const v4 = generateSecureUuid();
+	assert.equal(isValidUuid(v4), true);
+	assert.equal(isValidUuidV7(v4), false, "v4 is not v7");
+
+	const v7 = generateUuidV7();
+	assert.equal(isValidUuid(v7), true);
+	assert.equal(isValidUuidV7(v7), true);
+
+	// Case insensitivity & whitespace trimming
+	assert.equal(isValidUuid(`  ${v7.toUpperCase()}  `), true);
+	assert.equal(isValidUuidV7(`  ${v7.toUpperCase()}  `), true);
+});
+
+test("packages/shared/utils/idGenerators: generateUuidV7 creates monotonically ordered RFC 9562 identifiers", () => {
+	const fixedTime = 1774000000000;
+	const id1 = generateUuidV7(fixedTime);
+	const id2 = generateUuidV7(fixedTime + 1000);
+
+	assert.equal(isValidUuidV7(id1), true);
+	assert.equal(isValidUuidV7(id2), true);
+	assert.notEqual(id1, id2);
+
+	// Lexicographical time ordering of UUIDv7
+	assert.ok(id1 < id2, "Earlier timestamp UUIDv7 must be lexicographically less than later timestamp");
 });

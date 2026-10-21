@@ -8,7 +8,7 @@ import { showToast } from "../../../GlobalToast";
 import {
 	mapTreatmentItemsToFiscalReceipt,
 	TREATMENT_STAGE_LABELS,
-} from "../../order804nFiscalEngine";
+} from "../../fiscalReceiptEngine";
 import {
 	distributeLoyaltyDiscountAcrossItems,
 	type LoyaltyDiscountPreset,

@@ -45,13 +45,13 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	},
 	{
 		mode: "classic_gost",
-		label: "Классический ГОСТ",
-		shortLabel: "ГОСТ",
-		compactLabel: "ГОСТ",
-		mobileLabel: "ГОСТ",
+		label: "Табличный вид",
+		shortLabel: "Таблица",
+		compactLabel: "Таблица",
+		mobileLabel: "Таблица",
 		icon: <FileText size={13} className="shrink-0" />,
-		tooltip: "Табличная форма карты стоматологического пациента (Минздрав РФ)",
-		badge: "ГОСТ",
+		tooltip: "Табличная сетка карты стоматологического приёма",
+		badge: "Таблица",
 	},
 ] as const;
 

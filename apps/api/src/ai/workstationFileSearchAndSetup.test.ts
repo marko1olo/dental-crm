@@ -153,13 +153,13 @@ describe("Инструмент search_workstation_files — Рекурсивны
 	});
 
 	test("Находит все файлы в указанной директории рекурсивно", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				category: "all",
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.ok(res.totalFound >= 5);
@@ -173,30 +173,30 @@ describe("Инструмент search_workstation_files — Рекурсивны
 	});
 
 	test("Фильтрует по расширению файла (extensions: ['dcm', 'rvg'])", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				extensions: ["dcm", "rvg"],
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.totalFound, 2);
-		const fileNames = res.files.map((f) => f.fileName);
+		const fileNames = res.files.map((f: any) => f.fileName);
 		assert.ok(fileNames.includes("tooth_16.dcm"));
 		assert.ok(fileNames.includes("panoramic_study.rvg"));
 		assert.ok(!fileNames.includes("clinic_pricelist_2026.csv"));
 	});
 
 	test("Фильтрует по текстовому запросу query ('*price*')", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				query: "*price*",
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.totalFound, 1);
@@ -206,13 +206,13 @@ describe("Инструмент search_workstation_files — Рекурсивны
 	});
 
 	test("Определяет категорию и модальность файлов (xray_study vs pricelist vs patient_database)", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				category: "xray_study",
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.totalFound, 2);
@@ -220,28 +220,28 @@ describe("Инструмент search_workstation_files — Рекурсивны
 	});
 
 	test("Ограничивает глубину сканирования (maxDepth: 1)", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				maxDepth: 1,
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
-		const fileNames = res.files.map((f) => f.fileName);
+		const fileNames = res.files.map((f: any) => f.fileName);
 		// old_contracts.txt находится на глубине 2 (docs/archive/old_contracts.txt)
 		assert.ok(!fileNames.includes("old_contracts.txt"));
 	});
 
 	test("Учитывает ограничение maxResults", async () => {
-		const res = await handleSearchWorkstationFiles(
+		const res = (await handleSearchWorkstationFiles(
 			{
 				searchRoots: [SCRATCH_SEARCH_DIR],
 				maxResults: 2,
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.totalFound, 2);
@@ -307,14 +307,14 @@ describe("Инструмент replace_file_content — Точечное ред�
 	});
 
 	test("Успешно заменяет одиночный уникальный фрагмент текста", async () => {
-		const res = await handleReplaceFileContent(
+		const res = (await handleReplaceFileContent(
 			{
 				targetFile: patchFile,
 				targetContent: "Стоимость приема 3000 руб.",
 				replacementContent: "Стоимость приема 4500 руб.",
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.replacementsCount, 1);
@@ -326,7 +326,7 @@ describe("Инструмент replace_file_content — Точечное ред�
 
 	test("Ограничивает область замены диапазоном строк (startLine, endLine)", async () => {
 		// "Врач терапевт Сидоров" встречается на линиях 2 и 4
-		const res = await handleReplaceFileContent(
+		const res = (await handleReplaceFileContent(
 			{
 				targetFile: patchFile,
 				targetContent: "Врач терапевт Сидоров",
@@ -335,7 +335,7 @@ describe("Инструмент replace_file_content — Точечное ред�
 				endLine: 3,
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.replacementsCount, 1);
@@ -362,7 +362,7 @@ describe("Инструмент replace_file_content — Точечное ред�
 	});
 
 	test("Успешно заменяет все вхождения при allowMultiple: true", async () => {
-		const res = await handleReplaceFileContent(
+		const res = (await handleReplaceFileContent(
 			{
 				targetFile: patchFile,
 				targetContent: "Врач терапевт Сидоров",
@@ -370,7 +370,7 @@ describe("Инструмент replace_file_content — Точечное ред�
 				allowMultiple: true,
 			},
 			DESKTOP_CTX,
-		);
+		)) as any;
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.replacementsCount, 2);
@@ -683,7 +683,7 @@ describe("Инструмент import_clinic_data_file — Пакетный им
 		assert.strictEqual(res.importedCount, 3);
 		assert.strictEqual(res.skippedCount, 1); // 1 строка без наименования пропущена
 		assert.strictEqual(res.errors.length, 1);
-		assert.ok(res.errors[0].includes("отсутствует название услуги"));
+		assert.ok(res.errors[0]!.includes("отсутствует название услуги"));
 		assert.strictEqual(mockDb.store.serviceCatalogItems.length, 3);
 	});
 

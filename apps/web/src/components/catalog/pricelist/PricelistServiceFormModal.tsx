@@ -1,33 +1,42 @@
-import React from 'react';
-import { X } from 'lucide-react';
-import { PricelistServiceFormBasicFields } from './PricelistServiceFormBasicFields';
-import { PricelistServiceFormFooter } from './PricelistServiceFormFooter';
-import { PricelistServiceFormIcdFields } from './PricelistServiceFormIcdFields';
-import { PricelistServiceFormPriceFields } from './PricelistServiceFormPriceFields';
-import { PricelistServiceFormTierFields } from './PricelistServiceFormTierFields';
-import type { ServicePricelistItem } from './servicePricelistPresets';
-import { usePricelistServiceForm } from './usePricelistServiceForm';
+import { X } from "lucide-react";
+import type React from "react";
+import { PricelistServiceFormBasicFields } from "./PricelistServiceFormBasicFields";
+import { PricelistServiceFormFooter } from "./PricelistServiceFormFooter";
+import { PricelistServiceFormIcdFields } from "./PricelistServiceFormIcdFields";
+import type { PricelistServiceFormModalProps } from "./PricelistServiceFormModalProps";
+import { PricelistServiceFormPriceFields } from "./PricelistServiceFormPriceFields";
+import { PricelistServiceFormTierFields } from "./PricelistServiceFormTierFields";
+import { usePricelistServiceForm } from "./usePricelistServiceForm";
 
-export interface PricelistServiceFormModalProps {
-	readonly isOpen: boolean;
-	readonly editingItem: ServicePricelistItem | null;
-	readonly onClose: () => void;
-	readonly onSave: (item: ServicePricelistItem) => void;
-}
+export type { PricelistServiceFormModalProps };
 
-export const PricelistServiceFormModal: React.FC<PricelistServiceFormModalProps> = ({
-	isOpen, editingItem, onClose, onSave,
-}) => {
+export const PricelistServiceFormModal: React.FC<
+	PricelistServiceFormModalProps
+> = ({ isOpen, editingItem, onClose, onSave }) => {
 	const form = usePricelistServiceForm(editingItem, isOpen, onSave);
 	if (!isOpen) return null;
 
 	return (
-		<div className="pricelist-modal-overlay" style={{ zIndex: 10005 }} role="dialog" aria-modal="true">
-			<div className="pricelist-modal-container" style={{ maxWidth: '640px', width: '100%' }}>
+		<div
+			className="pricelist-modal-overlay pricelist-bottom-sheet-overlay"
+			style={{ zIndex: 10005 }}
+			role="dialog"
+			aria-modal="true"
+		>
+			<div
+				className="pricelist-modal-container pricelist-service-form-sheet"
+				style={{ maxWidth: "640px", width: "100%" }}
+			>
+				<div className="pricelist-bottom-sheet-handle-bar">
+					<div className="pricelist-bottom-sheet-drag-handle" />
+				</div>
+
 				<header className="pricelist-modal-header">
 					<div className="pricelist-header-left">
 						<div className="pricelist-header-title">
-							{editingItem ? 'Редактирование услуги' : 'Добавление услуги в прейскурант'}
+							{editingItem
+								? "Редактирование услуги"
+								: "Добавление услуги в прейскурант"}
 						</div>
 					</div>
 					<button
@@ -40,10 +49,15 @@ export const PricelistServiceFormModal: React.FC<PricelistServiceFormModalProps>
 					</button>
 				</header>
 
-				<form onSubmit={form.handleSubmit}>
+				<form onSubmit={form.handleSubmit} className="pricelist-service-form">
 					<div
 						className="pricelist-form-body"
-						style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+						style={{
+							padding: "1.25rem",
+							display: "flex",
+							flexDirection: "column",
+							gap: "0.75rem",
+						}}
 					>
 						<PricelistServiceFormBasicFields
 							code={form.formCode804n}
@@ -75,7 +89,9 @@ export const PricelistServiceFormModal: React.FC<PricelistServiceFormModalProps>
 							dmsPrice={form.formDmsPrice}
 							promoPrice={form.formPromoPrice}
 							nightPrice={form.formNightPrice}
-							onToggleShowTiers={() => form.setShowTiersSection((prev) => !prev)}
+							onToggleShowTiers={() =>
+								form.setShowTiersSection((prev) => !prev)
+							}
 							onVipPriceChange={form.setFormVipPrice}
 							onDmsPriceChange={form.setFormDmsPrice}
 							onPromoPriceChange={form.setFormPromoPrice}
@@ -89,7 +105,10 @@ export const PricelistServiceFormModal: React.FC<PricelistServiceFormModalProps>
 						/>
 					</div>
 
-					<PricelistServiceFormFooter isEditing={Boolean(editingItem)} onClose={onClose} />
+					<PricelistServiceFormFooter
+						isEditing={Boolean(editingItem)}
+						onClose={onClose}
+					/>
 				</form>
 			</div>
 		</div>

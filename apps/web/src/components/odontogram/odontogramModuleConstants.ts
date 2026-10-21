@@ -14,7 +14,7 @@ import {
 import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 
 import { useVisitStore } from "../../store/visitStore";
 import { toVisitToothUiState } from "../visit/useVisitEmkToothSync";

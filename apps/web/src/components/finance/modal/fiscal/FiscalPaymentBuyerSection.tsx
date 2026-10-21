@@ -7,7 +7,7 @@ import {
 	User,
 } from "lucide-react";
 import { kopecksToRub } from "@dental/shared";
-import { mapTreatmentItemsToFiscalReceipt } from "../../order804nFiscalEngine";
+import { mapTreatmentItemsToFiscalReceipt } from "../../fiscalReceiptEngine";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 
 export interface FiscalPaymentBuyerSectionProps {

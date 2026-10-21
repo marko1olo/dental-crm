@@ -1,3 +1,4 @@
+import React from "react";
 import { Camera, Eye, MessageSquare, Printer } from "lucide-react";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 import { DentalLabKanbanCardMenuItem } from "./DentalLabKanbanCardMenuItem";

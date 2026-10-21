@@ -5,4 +5,4 @@
 export {
 	ServicePricelistManagerModal,
 	type ServicePricelistManagerModalProps,
-} from './pricelist/ServicePricelistManagerModal';
+} from "./pricelist/ServicePricelistManagerModal";

@@ -3,7 +3,7 @@ import { Copy, FileCheck, Printer } from "lucide-react";
 import type {
 	calculateTaxDeductionBreakdown,
 	TaxDeductionRelationship,
-} from "../../order804nFiscalEngine";
+} from "../../fiscalReceiptEngine";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 
 export interface FiscalCertificateTabProps {

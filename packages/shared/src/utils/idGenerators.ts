@@ -404,3 +404,51 @@ export function generateBridgeId(teethNumbers: readonly number[], patientId?: st
 	return `bridge_${sorted.join("_")}_${generateSecureAlphanumericId(6)}`;
 }
 
+/**
+ * Validates whether a string matches standard UUID format (8-4-4-4-12 hex characters).
+ */
+export function isValidUuid(id: unknown): boolean {
+	if (typeof id !== "string") return false;
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+}
+
+/**
+ * Validates whether a string matches RFC 9562 UUIDv7 format (version 7, variant 10xx).
+ */
+export function isValidUuidV7(id: unknown): boolean {
+	if (typeof id !== "string") return false;
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id.trim());
+}
+
+/**
+ * Generates an RFC 9562 UUIDv7 without Math.random() using timestamp and CSPRNG.
+ */
+export function generateUuidV7(timestampMs: number = Date.now()): string {
+	const bytes = new Uint8Array(16);
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+		globalThis.crypto.getRandomValues(bytes);
+	} else {
+		for (let i = 0; i < 16; i++) {
+			bytes[i] = generateDeterministicOrSecureInteger(0, 255);
+		}
+	}
+
+	// 48-bit timestamp in milliseconds (big-endian)
+	const ts = BigInt(Math.max(0, Math.floor(timestampMs)));
+	bytes[0] = Number((ts >> 40n) & 0xffn);
+	bytes[1] = Number((ts >> 32n) & 0xffn);
+	bytes[2] = Number((ts >> 24n) & 0xffn);
+	bytes[3] = Number((ts >> 16n) & 0xffn);
+	bytes[4] = Number((ts >> 8n) & 0xffn);
+	bytes[5] = Number(ts & 0xffn);
+
+	// Version 7: 0b0111 (bits 48-51)
+	bytes[6] = (bytes[6]! & 0x0f) | 0x70;
+
+	// Variant: RFC 4122 / 9562 0b10 (bits 64-65)
+	bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+
+	const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+

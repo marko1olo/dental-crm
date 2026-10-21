@@ -51,6 +51,18 @@ export function CatalogModals(props: CatalogModalsProps) {
 		onCreateDocument, onOpenIssuedDocumentHtml, handleOpenKind,
 	} = props;
 
+	const effectivePatientInn =
+		patient?.administrativeProfile?.taxpayerInn ??
+		(patient as { inn?: string | null } | null | undefined)?.inn ??
+		(patient as { details?: { inn?: string | null } } | null | undefined)?.details?.inn ??
+		"";
+
+	const effectivePatientSnils =
+		patient?.administrativeProfile?.snils ??
+		(patient as { snils?: string | null } | null | undefined)?.snils ??
+		(patient as { details?: { snils?: string | null } } | null | undefined)?.details?.snils ??
+		"";
+
 	return (
 		<>
 			{isDiplomaModalOpen && (
@@ -71,13 +83,13 @@ export function CatalogModals(props: CatalogModalsProps) {
 				<TaxDeductionCertificateModal
 					isOpen={isLocalTaxModalOpen} onClose={() => setIsLocalTaxModalOpen(false)}
 					initialTab={taxInitialTab} patientName={effectivePatientName}
-					patientBirthDate={patient?.birthDate} patientInn={patient?.inn}
-					patientSnils={patient?.snils} patientId={patient?.id}
-					clinicName={clinicProfileDraft?.legalEntityName || clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					clinicInn={clinicProfileDraft?.inn || "7701234567"} clinicKpp={clinicProfileDraft?.kpp || "770101001"}
-					clinicOgrn={clinicProfileDraft?.ogrn || "1237700123456"} clinicLicenseNumber={clinicProfileDraft?.licenseNumber || "ЛО-77-01-012345"}
-					clinicLicenseDate={clinicProfileDraft?.licenseDate || "01.01.2020"} clinicAddress={clinicProfileDraft?.address || "г. Москва, ул. Клиническая, д. 10"}
-					chiefDoctorName={doctorName || "Главный врач"} payments={mappedTaxPayments}
+					patientBirthDate={patient?.birthDate ?? undefined} patientInn={effectivePatientInn}
+					patientSnils={effectivePatientSnils} patientId={patient?.id}
+					clinicName={clinicProfileDraft?.legalEntityName || clinicProfileDraft?.name || clinicName || ""}
+					clinicInn={clinicProfileDraft?.inn || ""} clinicKpp={clinicProfileDraft?.kpp || ""}
+					clinicOgrn={clinicProfileDraft?.ogrn || ""} clinicLicenseNumber={clinicProfileDraft?.licenseNumber || clinicProfileDraft?.medicalLicenseNumber || ""}
+					clinicLicenseDate={clinicProfileDraft?.licenseDate || clinicProfileDraft?.medicalLicenseIssuedAt || ""} clinicAddress={clinicProfileDraft?.address || ""}
+					chiefDoctorName={doctorName || ""} payments={mappedTaxPayments}
 				/>
 			)}
 			{isLocalIntakeModalOpen && (

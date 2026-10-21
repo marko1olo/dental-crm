@@ -247,7 +247,7 @@ export function buildFittingAppointmentDraft({
 		doctorId: formDoctorId || "doc-current",
 		doctorName: formDoctorName || "Врач-ортопед",
 		serviceTitle: `Примерка и фиксация: ${matTitle} (зуб ${toothLabel})`,
-		serviceCode: "A16.07.004", // Номенклатура 804н
+		serviceCode: "A16.07.004", // Прейскурант ортопедии
 		durationMinutes: 45,
 		scheduledDate: effectiveFittingDate,
 		targetDate: effectiveFittingDate,

@@ -3,7 +3,7 @@ import { Play, HeartPulse, UserCheck, UserPlus } from "lucide-react";
 import type { IntakeDoctorInfo } from "./intakeCockpitTypes";
 
 export interface IntakeCockpitHeaderProps {
-	readonly activeDoctor?: IntakeDoctorInfo | undefined;
+	readonly activeDoctor?: IntakeDoctorInfo | null | undefined;
 	readonly hasAppointments: boolean;
 	readonly onStartNextInQueue: () => void;
 	readonly isChairsideTriageOpen: boolean;

@@ -12,9 +12,9 @@ import type {
 } from "./clinicalSoapTypes.js";
 
 export interface DoctorAutopilotPreset extends ClinicalSoapPreset {
-	readonly surfaces?: string;
-	readonly informedConsent?: string;
-	readonly postOpMemo?: string;
+	readonly surfaces?: string | null | undefined;
+	readonly informedConsent?: string | undefined;
+	readonly postOpMemo?: string | undefined;
 	readonly is1ClickAutopilot: true;
 }
 
@@ -52,21 +52,21 @@ export type CanonicalSoapTemplateKey =
 export type Canonical043TemplateKey = CanonicalSoapTemplateKey;
 
 export interface Apply1ClickAutopilotOptions {
-	toothNumber?: number | null;
-	surfaces?: string;
-	currentDiary?: Partial<DiaryState>;
-	mode?: "clean_replace" | "smart_append";
+	toothNumber?: number | null | undefined;
+	surfaces?: string | null | undefined;
+	currentDiary?: Partial<DiaryState> | undefined;
+	mode?: "clean_replace" | "smart_append" | undefined;
 }
 
 export interface Apply1ClickAutopilotResult {
 	diary: DiaryState;
 	preset: DoctorAutopilotPreset;
-	service804n?: ClinicalService804n;
-	additionalServices804n?: readonly ClinicalService804n[];
+	service804n?: ClinicalService804n | null | undefined;
+	additionalServices804n?: readonly ClinicalService804n[] | undefined;
 	materials: readonly ClinicalMaterialDeduction[];
 	recommendations: string;
-	informedConsent?: string;
-	postOpMemo?: string;
-	toothNumber?: number;
-	odontogramState?: ToothClinicalState;
+	informedConsent?: string | undefined;
+	postOpMemo?: string | undefined;
+	toothNumber?: number | null | undefined;
+	odontogramState?: ToothClinicalState | undefined;
 }

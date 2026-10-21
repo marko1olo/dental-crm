@@ -123,6 +123,7 @@ export const crmLeads = pgTable(
 		status: text("status").notNull().default("new"),
 		assignedDoctorId: uuid("assigned_doctor_id"),
 		notes: text("notes"),
+		dropReason: text("drop_reason"),
 		/**
 		 * ОЖИДАЕМАЯ ВЫРУЧКА ПО ЛИДУ — принималась маршрутом и терялась молча.
 		 *

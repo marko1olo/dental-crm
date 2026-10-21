@@ -1,5 +1,4 @@
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { LabPromptHeader } from "./actionPromptModules/LabPromptHeader";
 import { LabPromptInput } from "./actionPromptModules/LabPromptInput";
 import { LabPromptQuickPresets } from "./actionPromptModules/LabPromptQuickPresets";

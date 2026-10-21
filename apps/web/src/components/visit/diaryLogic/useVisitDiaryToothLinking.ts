@@ -9,7 +9,7 @@ import {
 	type MergeStrategy,
 	mergeSoapDiaryState,
 	type OdontogramFindingInput,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import {
 	CLINICAL_SOAP_PRESETS,
 	CANONICAL_SOAP_TEMPLATES,
@@ -261,9 +261,9 @@ export function useVisitDiaryToothLinking({
 		(
 			presetId: string,
 			options?: {
-				toothNumber?: number | null;
-				surfaces?: string;
-				mode?: "clean_replace" | "smart_append";
+				toothNumber?: number | null | undefined;
+				surfaces?: string | null | undefined;
+				mode?: "clean_replace" | "smart_append" | undefined;
 			},
 		) => {
 			if (isLocked && !isRevising) {
@@ -407,9 +407,9 @@ export function useVisitDiaryToothLinking({
 		(
 			presetId: string,
 			options?: {
-				toothNumber?: number | null;
-				surfaces?: string;
-				mode?: "clean_replace" | "smart_append";
+				toothNumber?: number | null | undefined;
+				surfaces?: string | null | undefined;
+				mode?: "clean_replace" | "smart_append" | undefined;
 			},
 		) => {
 			if (isLocked && !isRevising) {

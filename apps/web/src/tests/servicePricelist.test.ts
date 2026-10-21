@@ -470,8 +470,8 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 				'standard',
 			);
 
-			assert.ok(html.includes('ПРЕЙСКУРАНТ ЦЕН НА МЕДИЦИНСКИЕ СТОМАТОЛОГИЧЕСКИЕ УСЛУГИ'));
-			assert.ok(html.includes('Приказом Минздрава России № 804н'));
+			assert.ok(html.includes('ПРЕЙСКУРАНТ СТОМАТОЛОГИЧЕСКИХ УСЛУГ КЛИНИКИ'));
+			assert.ok(html.includes('Прейскурант стоматологических услуг клиники'));
 			assert.ok(html.includes('подпункта 2 пункта 2 статьи 149 Налогового кодекса Российской Федерации'));
 			assert.ok(html.includes('НДС не облагаются (0%)'));
 			assert.ok(html.includes('Стоматологическая клиника «DENTE»'));

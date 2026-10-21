@@ -1,5 +1,5 @@
 import { Check, Clock } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { DentalLabPriceMatrixHeader } from "./priceMatrixModules/DentalLabPriceMatrixHeader";
 import {

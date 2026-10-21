@@ -87,16 +87,17 @@ export const DentalLabDrawerDatesSection: React.FC<DentalLabDrawerDatesSectionPr
 			)}
 
 			<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] space-y-1.5">
-				<label className="font-semibold block text-xs">Статус наряда (4 канонических жизненных этапа):</label>
+				<label className="font-semibold block text-xs">Статус наряда (5 канонических этапов):</label>
 				<select
 					value={formStatus} onChange={(e) => setFormStatus(e.target.value as DentalLabOrderStatus)}
 					className="w-full h-9 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold focus:ring-1 focus:ring-teal-500"
 					data-testid="form-status-select"
 				>
-					<option value="sent_to_lab">Отправлен в ЗТЛ</option>
-					<option value="in_progress">В работе</option>
-					<option value="ready_in_clinic">Готов / В клинике</option>
-					<option value="delivered_to_patient">Установлен пациенту</option>
+					<option value="draft">Черновик</option>
+					<option value="sent_to_lab">Отправлен технику</option>
+					<option value="in_progress">В работе у техника</option>
+					<option value="ready_in_clinic">Поступил в клинику (Готов к примерке)</option>
+					<option value="delivered_to_patient">Сдан пациенту</option>
 				</select>
 			</div>
 		</div>

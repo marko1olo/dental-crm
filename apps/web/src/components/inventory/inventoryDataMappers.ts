@@ -63,6 +63,12 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 		unitCostRub:
 			row.unitCostRub !== null && row.unitCostRub !== undefined
 				? String(row.unitCostRub)
+				: row.unit_cost_rub !== null && row.unit_cost_rub !== undefined
+				? String(row.unit_cost_rub)
+				: row.pricePerUnit !== null && row.pricePerUnit !== undefined
+				? String(row.pricePerUnit)
+				: row.price_per_unit !== null && row.price_per_unit !== undefined
+				? String(row.price_per_unit)
 				: row.unitCostKopecks !== null && row.unitCostKopecks !== undefined
 				? String(Number(row.unitCostKopecks) / 100)
 				: "0",

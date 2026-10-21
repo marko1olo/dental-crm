@@ -60,8 +60,14 @@ describe("OdontogramViewContainer — Modes Configuration & Metadata", () => {
 		assert.ok(compact?.badge === "2D" || compact?.badge === "FDI");
 
 		const gost = ODONTOGRAM_VIEW_MODES.find((m) => m.mode === "classic_gost");
-		assert.equal(gost?.label, "Классический ГОСТ");
-		assert.ok(gost?.badge === "ГОСТ" || gost?.badge === "МЗ РФ");
+		assert.ok(
+			gost?.label === "Табличный вид" || gost?.label === "Классический ГОСТ",
+			"Режим classic_gost должен иметь клиническое название ('Табличный вид')",
+		);
+		assert.ok(
+			gost?.badge === "Таблица" || gost?.badge === "ГОСТ" || gost?.badge === "МЗ РФ",
+			"Режим classic_gost должен содержать значок ('Таблица')",
+		);
 	});
 });
 

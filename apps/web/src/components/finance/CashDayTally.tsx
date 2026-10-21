@@ -30,7 +30,7 @@ import { localDayKey, summarizeCashDay } from "./cashDaySummary";
 import {
 	generateShiftCloseZReport54Fz,
 	type ShiftCloseZReport54FzResult,
-} from "./order804nFiscalEngine";
+} from "./fiscalReceiptEngine";
 import { OfflineFiscalBatchModal } from "./fiscal/OfflineFiscalBatchModal";
 import { FiscalReceiptQueueManager } from "../../services/hardware/fiscalReceiptQueueManager";
 import {

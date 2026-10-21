@@ -3,7 +3,7 @@ import { Sparkles, ChevronDown } from "lucide-react";
 import {
 	PERIO_PATHOLOGY_PRESETS,
 	type PerioPathologyPreset,
-} from "../../../../lib/clinicalProtocols043";
+} from "../../../../lib/clinicalProtocols";
 
 export interface PerioPillWithDropdownProps {
 	readonly perioMenuRef: React.RefObject<HTMLDivElement | null>;

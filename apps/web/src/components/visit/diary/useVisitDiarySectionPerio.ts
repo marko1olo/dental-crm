@@ -1,6 +1,6 @@
 import type React from "react";
 import type { DiaryState } from "../../useVisitDiaryLogic";
-import type { PerioPathologyPreset } from "../../../lib/clinicalProtocols043";
+import type { PerioPathologyPreset } from "../../../lib/clinicalProtocols";
 import { showToast } from "../../GlobalToast";
 import { buildPerioStatusText, buildPediatricStatusText } from "./perioDiaryTemplates";
 

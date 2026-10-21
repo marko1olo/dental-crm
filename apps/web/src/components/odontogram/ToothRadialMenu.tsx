@@ -13,7 +13,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { triggerHaptic } from "../../native/mobileBridge";
 import { usePatientStore } from "../../store/patientStore";

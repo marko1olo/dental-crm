@@ -47,20 +47,20 @@ export interface ClinicalSoapPreset {
 	readonly anamnesis: string;
 	readonly statusLocalis: string;
 	readonly treatmentDescription: string;
-	readonly toothState?: ToothClinicalState;
-	readonly defaultTooth?: number;
+	readonly toothState?: ToothClinicalState | undefined;
+	readonly defaultTooth?: number | null | undefined;
 	readonly anesthetic?: {
 		readonly drugKey: "ultracain_ds_forte" | "ultracain_ds" | "scandonest_3" | "septanest_100";
 		readonly drugName: string;
 		readonly carpulesCount: number;
 		readonly volumeMl: number;
-	};
-	readonly service804n?: ClinicalService804n;
-	readonly additionalServices804n?: readonly ClinicalService804n[];
-	readonly materialsToDeduct?: readonly ClinicalMaterialDeduction[];
-	readonly recommendations?: string;
-	readonly warrantyMonths?: number;
-	readonly serviceLifeMonths?: number;
+	} | undefined;
+	readonly service804n?: ClinicalService804n | null | undefined;
+	readonly additionalServices804n?: readonly ClinicalService804n[] | undefined;
+	readonly materialsToDeduct?: readonly ClinicalMaterialDeduction[] | undefined;
+	readonly recommendations?: string | undefined;
+	readonly warrantyMonths?: number | undefined;
+	readonly serviceLifeMonths?: number | undefined;
 }
 
 export type ClinicalQuickPreset = ClinicalSoapPreset;
@@ -71,8 +71,9 @@ export interface FormattedSoapResult {
 	readonly objectiveStatus: string;
 	readonly diagnosis: string;
 	readonly treatmentPlan: string;
+	readonly recommendations?: string | undefined;
 	readonly billLine: string;
 	readonly materialsSummary: string;
-	readonly service804n?: ClinicalService804n;
+	readonly service804n?: ClinicalService804n | null | undefined;
 	readonly materialsToDeduct: readonly ClinicalMaterialDeduction[];
 }

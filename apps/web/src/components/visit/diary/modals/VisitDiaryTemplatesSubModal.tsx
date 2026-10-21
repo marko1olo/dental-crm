@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
-import { mergeSoapDiaryState } from "../../../../lib/clinicalProtocols043";
+import { mergeSoapDiaryState } from "../../../../lib/clinicalProtocols";
 import { buildProtocolTreatmentText, dispatchProtocolServices } from "./templatesModalHelpers";
 
 const ClinicalDiaryTemplatesModal = lazy(() =>

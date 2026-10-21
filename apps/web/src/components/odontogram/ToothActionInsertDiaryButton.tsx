@@ -3,7 +3,7 @@ import type React from "react";
 import {
 	generateSoapFromOdontogramFinding,
 	getToothAnatomicalNameRu,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { CLINICAL_SERVICE_BUNDLES } from "../visit/clinicalServiceBundles";
 import type { ToothData, ToothState } from "./ToothChart";

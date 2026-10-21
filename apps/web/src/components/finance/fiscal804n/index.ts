@@ -1,8 +1,7 @@
 /**
- * index.ts — Layer 5: Barrel реэкспорта всех модулей Номенклатуры 804н по 54-ФЗ (ФФД 1.2).
+ * apps/web/src/components/finance/fiscal804n/index.ts
+ * Обратная совместимость с каноническим fiscalEngine.
+ * Mandate 8b: <10 lines facade.
  */
 
-export * from "./types";
-export * from "./taxAndMathHelpers";
-export * from "./receiptBuilders";
-export * from "./refundAndCorrectionEngine";
+export * from "../fiscalEngine/index.js";

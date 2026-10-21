@@ -331,7 +331,7 @@ export interface ComprehensiveAnesthesiaCalculationResult {
 
 export interface AnesthesiaSafetyParams {
 	readonly drugKey: AnesthesiaDrugKey;
-	readonly patientWeightKg: number;
+	readonly patientWeightKg?: number | undefined;
 	readonly carpulesCount: number;
 	readonly customVolumeMl?: number | undefined;
 	readonly patientAgeYears?: number | null | undefined;

@@ -150,6 +150,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				source: data.source,
 				expectedRevenue: data.expectedRevenue,
 				notes: data.notes,
+				dropReason: data.dropReason,
 				assignedDoctorId: data.assignedDoctorId,
 				priority: data.priority || "normal",
 				clinicalTags: data.clinicalTags ?? [],
@@ -268,9 +269,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			};
 			if (notes !== undefined) updateFields.notes = notes;
 			if (toStage === "trash" && dropReason) {
-				updateFields.notes = updateFields.notes
-					? `${updateFields.notes}\n[Причина срыва]: ${dropReason}`
-					: (lead.notes ? `${lead.notes}\n[Причина срыва]: ${dropReason}` : `[Причина срыва]: ${dropReason}`);
+				updateFields.dropReason = dropReason;
 			}
 			if (priority !== undefined) updateFields.priority = priority;
 			if (clinicalTags !== undefined) updateFields.clinicalTags = clinicalTags;
@@ -390,9 +389,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				stageEnteredAt: now,
 			};
 			if (status === "trash" && dropReason) {
-				updateFields.notes = lead.notes
-					? `${lead.notes}\n[Причина срыва]: ${dropReason}`
-					: `[Причина срыва]: ${dropReason}`;
+				updateFields.dropReason = dropReason;
 			}
 
 			const [updated] = await tx
@@ -463,6 +460,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			if (data.expectedRevenue !== undefined) updatePayload.expectedRevenue = data.expectedRevenue;
 			if (data.status !== undefined) updatePayload.status = data.status;
 			if (data.notes !== undefined) updatePayload.notes = data.notes;
+			if (data.dropReason !== undefined) updatePayload.dropReason = data.dropReason;
 			if (data.assignedDoctorId !== undefined) updatePayload.assignedDoctorId = data.assignedDoctorId;
 			if (data.priority !== undefined) updatePayload.priority = data.priority;
 			if (data.clinicalTags !== undefined) updatePayload.clinicalTags = data.clinicalTags;

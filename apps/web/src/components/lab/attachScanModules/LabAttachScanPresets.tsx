@@ -1,3 +1,4 @@
+import React from "react";
 import { Box, Camera } from "lucide-react";
 import { LabAttachPresetList } from "./LabAttachPresetList";
 import { is3DScanUrl } from "./labScanUrlUtils";

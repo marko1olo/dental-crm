@@ -263,7 +263,7 @@ export function executeFastPrintCompletedAct({
 		<thead>
 			<tr>
 				<th style="width: 5%;">№</th>
-				<th style="width: 15%;">Код 804н</th>
+				<th style="width: 15%;">Код услуги</th>
 				<th>Наименование медицинской услуги</th>
 				<th style="width: 8%;">Кол-во</th>
 				<th style="width: 15%;">Цена (руб.)</th>

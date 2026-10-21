@@ -25,7 +25,7 @@ import {
 	SAMPLE_CURRENT_PRICELIST,
 	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
 } from "../../treatment-plans/validation/planPriceValidationPresets";
-import { generateInformedConsent1051nHtml } from "../../../lib/clinicalProtocols043";
+import { generateInformedConsent1051nHtml } from "../../../lib/clinicalProtocols";
 import { renderForm043uHtml } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);

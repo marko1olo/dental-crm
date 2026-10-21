@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback, memo } from "react";
 import { getToothConfig, getToothPath } from "../../../utils/math/toothGeometry";
-import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { useIsTouchScreen } from "../useIsTouchScreen";
 import { isPrimaryTooth, getPrimaryToothResorptionVisual } from "../pediatricDentitionEngine";
 import { getPeriodontalBoneLevelPath } from "../anatomicalToothGeometries";

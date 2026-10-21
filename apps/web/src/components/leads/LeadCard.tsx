@@ -51,8 +51,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onOpenPatientCard,
 }) => {
 	const sla = getLeadSlaStatus(lead);
-	const dropReasonMatch =
-		lead.dropReason || (lead.notes ? lead.notes.match(/\[Причина срыва\]:\s*([^\n\r]+)/)?.[1] : null);
+	const dropReasonMatch = lead.dropReason || null;
 
 	const handleOpenPatient = (e: React.MouseEvent, patientId: string) => {
 		e.stopPropagation();

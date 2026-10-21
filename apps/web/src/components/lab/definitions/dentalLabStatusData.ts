@@ -3,9 +3,10 @@
  */
 
 export type DentalLabOrderStatus =
-	| "sent_to_lab"          // 1. «Отправлен в ЗТЛ»
-	| "in_progress"          // 2. «В работе»
-	| "ready_in_clinic"      // 3. «Готов / В клинике»
+	| "draft"                // 0. «Черновик»
+	| "sent_to_lab"          // 1. «Отправлен технику»
+	| "in_progress"          // 2. «В работе у техника»
+	| "ready_in_clinic"      // 3. «Поступил в клинику (Готов к примерке)»
 	| "try_in"               // 4. «Примерка»
 	| "delivered_to_patient" // 5. «Сдан пациенту»
 	| "warranty_rework"      // 6. «Переделка (гарантия)»
@@ -22,6 +23,15 @@ export interface DentalLabStatusDef {
 }
 
 export const DENTAL_LAB_STATUSES: Record<DentalLabOrderStatus, DentalLabStatusDef> = {
+	draft: {
+		id: "draft",
+		stepIndex: 0,
+		labelRu: "Черновик",
+		shortLabelRu: "Черновик",
+		descriptionRu: "Черновик наряда формируется врачом в кабинете.",
+		badgeClass: "bg-slate-100 text-slate-800 dark:bg-slate-950/40 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+		colorHex: "#64748b",
+	},
 	sent_to_lab: {
 		id: "sent_to_lab",
 		stepIndex: 1,
@@ -35,7 +45,7 @@ export const DENTAL_LAB_STATUSES: Record<DentalLabOrderStatus, DentalLabStatusDe
 		id: "in_progress",
 		stepIndex: 2,
 		labelRu: "В работе",
-		shortLabelRu: "В производстве",
+		shortLabelRu: "В работе",
 		descriptionRu: "Конструкция моделируется и фрезеруется зубным техником в CAD/CAM лаборатории.",
 		badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-700",
 		colorHex: "#f59e0b",

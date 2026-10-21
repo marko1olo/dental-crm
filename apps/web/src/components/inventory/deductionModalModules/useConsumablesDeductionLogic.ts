@@ -17,6 +17,64 @@ import {
 
 const EMPTY_STOCK_MAP: Readonly<Record<string, number>> = Object.freeze({});
 
+export const STANDARD_THERAPIST_KIT_ITEMS: readonly Omit<ConsumablesDeductionModalItem, "currentStock" | "isOverdraft">[] = [
+	{
+		id: "std-kit-gloves",
+		inventoryItemId: "inv-std-gloves",
+		itemName: "Перчатки нитриловые неопудренные (пара)",
+		category: "ppe",
+		unit: "пары",
+		standardQty: 2,
+		deductedQty: 2,
+		unitCostRub: 35,
+		isMandatory: true,
+	},
+	{
+		id: "std-kit-mask",
+		inventoryItemId: "inv-std-mask",
+		itemName: "Маска медицинская защитная трехслойная",
+		category: "ppe",
+		unit: "шт.",
+		standardQty: 2,
+		deductedQty: 2,
+		unitCostRub: 15,
+		isMandatory: true,
+	},
+	{
+		id: "std-kit-saliva",
+		inventoryItemId: "inv-std-saliva",
+		itemName: "Слюноотсос одноразовый с гибким наконечником",
+		category: "ppe",
+		unit: "шт.",
+		standardQty: 1,
+		deductedQty: 1,
+		unitCostRub: 12,
+		isMandatory: true,
+	},
+	{
+		id: "std-kit-bib",
+		inventoryItemId: "inv-std-bib",
+		itemName: "Салфетка-нагрудник стоматологическая",
+		category: "ppe",
+		unit: "шт.",
+		standardQty: 1,
+		deductedQty: 1,
+		unitCostRub: 8,
+		isMandatory: true,
+	},
+	{
+		id: "std-kit-cotton-rolls",
+		inventoryItemId: "inv-std-cotton-rolls",
+		itemName: "Валики ватные стоматологические",
+		category: "ppe",
+		unit: "шт.",
+		standardQty: 6,
+		deductedQty: 6,
+		unitCostRub: 3,
+		isMandatory: true,
+	},
+];
+
 export function useConsumablesDeductionLogic(props: ConsumablesDeductionModalProps) {
 	const {
 		serviceCode,
@@ -69,11 +127,24 @@ export function useConsumablesDeductionLogic(props: ConsumablesDeductionModalPro
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const handleApplyStandardTherapistKit = () => {
+		const newItems: ConsumablesDeductionModalItem[] = STANDARD_THERAPIST_KIT_ITEMS.map((link) => {
+			const currentStock = resolveStockForMaterial(link.inventoryItemId, currentStockMap);
+			return {
+				...link,
+				currentStock,
+				isOverdraft: currentStock - link.deductedQty < 0,
+			};
+		});
+		setDeductionItems(newItems);
+	};
+
 	const handleUpdateQty = (itemId: string, delta: number) => {
 		setDeductionItems((prev) =>
 			prev.map((it) => {
 				if (it.id !== itemId) return it;
-				const step = it.unit === "шприц_гр" || it.unit === "ml" ? 0.1 : 1;
+				// Клинический закон: исключаем микро-валидацию (шаг 0.5 для жидкостей/паст, 1 для штук)
+				const step = it.unit === "шприц_гр" || it.unit === "ml" || it.unit === "г" ? 0.5 : 1;
 				const newQty = Math.max(0, Math.round((it.deductedQty + delta * step) * 10) / 10);
 				return { ...it, deductedQty: newQty, isOverdraft: it.currentStock - newQty < 0 };
 			}),
@@ -119,5 +190,12 @@ export function useConsumablesDeductionLogic(props: ConsumablesDeductionModalPro
 		}
 	};
 
-	return { deductionItems, totals, isSubmitting, handleUpdateQty, handleConfirm };
+	return {
+		deductionItems,
+		totals,
+		isSubmitting,
+		handleUpdateQty,
+		handleConfirm,
+		handleApplyStandardTherapistKit,
+	};
 }

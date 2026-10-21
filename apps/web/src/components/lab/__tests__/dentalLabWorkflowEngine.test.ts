@@ -279,7 +279,7 @@ describe("6. Lab Order Factory & 4-Stage Transitions", () => {
 		const order = createDentalLabOrder({
 			patientId: "pat-1",
 			patientName: "Смирнова Е. А.",
-			patientChartNumber: "043/у-100",
+			patientChartNumber: "МК-100",
 			doctorId: "doc-1",
 			doctorName: "Д-р Ковалев С. П.",
 			clinicName: "Клиника DENTE",
@@ -373,7 +373,7 @@ describe("8. A4 Printable Blank for Courier & CSV Export", () => {
 	const sampleOrder = createDentalLabOrder({
 		patientId: "pat-1",
 		patientName: "Барабаш Сергей Владимирович",
-		patientChartNumber: "043/у-7711",
+		patientChartNumber: "МК-7711",
 		doctorId: "doc-1",
 		doctorName: "Д-р Ковалев С. П.",
 		clinicName: "Клиника DENTE",

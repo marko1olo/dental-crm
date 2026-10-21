@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { Check } from "lucide-react";
 import { DeductionModalContextBar } from "./deductionModalModules/DeductionModalContextBar.js";
 import { DeductionModalFooter } from "./deductionModalModules/DeductionModalFooter.js";
 import { DeductionModalHeader } from "./deductionModalModules/DeductionModalHeader.js";
@@ -39,8 +40,14 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 
 	const effectiveServiceCode = serviceCode || service804nCode;
 
-	const { deductionItems, totals, isSubmitting, handleUpdateQty, handleConfirm } =
-		useConsumablesDeductionLogic({ ...props, serviceCode: effectiveServiceCode });
+	const {
+		deductionItems,
+		totals,
+		isSubmitting,
+		handleUpdateQty,
+		handleConfirm,
+		handleApplyStandardTherapistKit,
+	} = useConsumablesDeductionLogic({ ...props, serviceCode: effectiveServiceCode });
 
 	if (!isOpen) return null;
 
@@ -68,9 +75,18 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 					overdraftCount={totals.overdraftCount}
 				/>
 				<div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-[220px]">
-					<div className="text-xs font-semibold text-[var(--muted)] mb-1 flex items-center justify-between">
-						<span>Материалы по клиническому протоколу</span>
-						<span>Позиций: {deductionItems.length}</span>
+					<div className="text-xs font-semibold text-[var(--muted)] mb-1 flex items-center justify-between flex-wrap gap-2">
+						<span>Материалы по клиническому протоколу ({deductionItems.length} поз.)</span>
+						<button
+							type="button"
+							onClick={handleApplyStandardTherapistKit}
+							className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-bold border border-teal-600/40 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
+							data-testid="btn-quick-standard-kit"
+							title="1-клик списание стандартного набора терапевта (СИЗ, слюноотсос, салфетка, валики)"
+						>
+							<Check size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>✓ Списать стандартный набор терапевта</span>
+						</button>
 					</div>
 					{deductionItems.map((item) => (
 						<DeductionModalItemRow

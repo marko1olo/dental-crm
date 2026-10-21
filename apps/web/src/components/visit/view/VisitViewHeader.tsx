@@ -148,9 +148,7 @@ export function VisitViewHeader({
 				<span className="sr-only" aria-hidden="true">
 					{activePatientCriticalBadges.map((badge) => (
 						<span key={badge.id} data-testid={badge.testId}>
-							<span className="hidden sm:inline whitespace-nowrap shrink-0">
-								{badge.fullLabel}
-							</span>
+							<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
 						</span>
 					))}
 				</span>

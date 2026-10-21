@@ -12,7 +12,7 @@ import {
 	calculateTaxDeductionBreakdown,
 	generateFiscalReceipt54Fz,
 	mapTreatmentItemsToFiscalReceipt,
-} from "../order804nFiscalEngine.js";
+} from "../fiscalReceiptEngine.js";
 import type { TreatmentPlanItem } from "../../treatment-plans/types.js";
 
 describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {

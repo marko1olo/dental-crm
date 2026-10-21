@@ -1,7 +1,7 @@
 /**
- * DENTE Dental CRM — Statutory Minzdrav Order № 804n Service Catalog & Nomenclature Presets
+ * DENTE Dental CRM — Service Catalog & Pricing Presets
  *
- * Layer 0: Constants, Labels & Statutory Metadata
+ * Layer 0: Constants, Labels & Pricing Metadata
  *
  * Tax compliance: пп. 2 п. 2 ст. 149 НК РФ — медицинские услуги, оказываемые медицинскими
  * организациями, не подлежат налогообложению (освобождаются от налогообложения) НДС (0%).
@@ -51,7 +51,6 @@ export const PRICE_TIER_LABELS: Record<PriceTierKind, string> = {
 export const STATUTORY_VAT_EXEMPTION_NOTE =
 	"НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ)";
 
-export const STATUTORY_ORDER_NUMBER = "804н";
 export const STATUTORY_TAX_CODE_ARTICLE = "пп. 2 п. 2 ст. 149 НК РФ";
 export const DEFAULT_VAT_RATE = 0 as const;
 export const DEFAULT_SERVICE_UNIT = "усл.";

@@ -3,7 +3,7 @@ import { EMPTY_DIARY } from "../../useVisitDiaryLogic";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { routeOpenCbctPopout } from "../../../utils/runtimeRouter";
 import type { DiagnosticStudy } from "./types";

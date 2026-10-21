@@ -1,3 +1,4 @@
+import React from "react";
 import { Box, X } from "lucide-react";
 import type { DentalLabOrderData } from "../DentalLabOrderModal";
 

@@ -1,13 +1,13 @@
 /**
- * apps/web/src/components/visit/__tests__/stomxClinicalTemplatesDeepAudit.test.ts
+ * apps/web/src/components/visit/__tests__/clinicalTemplatesDeepAudit.test.ts
  *
- * Inquisitor Deep Audit Suite for StomX Clinical Templates, Protocols & Tooth Defects.
+ * Inquisitor Deep Audit Suite for Clinical Templates, Protocols & Tooth Defects.
  *
  * Inquisitor Mandate Checklist:
- * 1. Inventory & Specialty Distribution: 448 StomX templates metadata across 5 specialties.
+ * 1. Inventory & Specialty Distribution: 448 clinical templates metadata across 5 specialties.
  * 2. Key Structured Protocols: 45 bespoke clinical protocols with complete SOAP blocks.
  * 3. Reverse-Engineered Defects: 49 tooth defects + 10 position anomalies.
- * 4. Pricelist 804n Harmonization: 176 core procedures across 3 major surgical/therapeutic/ortho domains.
+ * 4. Pricelist Harmonization: 176 core procedures across 3 major surgical/therapeutic/ortho domains.
  * 5. 1-Click Chairside Cockpit: VisitSoapEditor wiring, instant template population, zero manual typing.
  * 6. Doctor Autonomy (Mandates 8e, 8n): Non-blocking buttons, versioned audit ("Исправленному верить").
  * 7. Disconnects & Gaps Discovery: Exact documentation of 45 bespoke vs 403 synthesized templates.
@@ -48,7 +48,7 @@ import {
 	apply1ClickClinicalAutopilot,
 } from "../clinicalSoapPresets";
 
-describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
+describe("Clinical Templates & Protocols Inquisitor Audit", () => {
 	// =========================================================================
 	// 1. INVENTORY & METADATA AUDIT (448 TEMPLATES ACROSS 5 SPECIALTIES)
 	// =========================================================================
@@ -57,7 +57,7 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 			assert.strictEqual(
 				STOMX_ALL_448_TEMPLATES_INDEX.length,
 				448,
-				`Ожидалось ровно 448 шаблонов StomX, получено ${STOMX_ALL_448_TEMPLATES_INDEX.length}`,
+				`Ожидалось ровно 448 шаблонов, получено ${STOMX_ALL_448_TEMPLATES_INDEX.length}`,
 			);
 		});
 
@@ -70,14 +70,14 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 				);
 				assert.ok(
 					!idSet.has(tpl.id),
-					`Обнаружен дубликат ID шаблона StomX: ${tpl.id}`,
+					`Обнаружен дубликат ID шаблона: ${tpl.id}`,
 				);
 				idSet.add(tpl.id);
 			}
 			assert.strictEqual(idSet.size, 448);
 		});
 
-		it("распределение по специальностям строго соответствует балансу StomX", () => {
+		it("распределение по специальностям строго соответствует балансу шаблонов", () => {
 			const specCounts: Record<string, number> = {
 				therapy: 0,
 				orthopedics: 0,
@@ -90,7 +90,7 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 				specCounts[tpl.specialty] = (specCounts[tpl.specialty] || 0) + 1;
 			}
 
-			// Точные числа Нового Завоза StomX:
+			// Точные числа клинического каталога шаблонов:
 			assert.strictEqual(specCounts.therapy, 226, "Терапия должна содержать 226 шаблонов");
 			assert.strictEqual(specCounts.orthopedics, 134, "Ортопедия должна содержать 134 шаблона");
 			assert.strictEqual(specCounts.surgery, 74, "Хирургия должна содержать 74 шаблона");
@@ -394,7 +394,7 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 				}),
 			);
 
-			assert.ok(html.includes("Клинические протоколы StomX (448 протоколов)"));
+			assert.ok(html.includes("Клинические протоколы приёма (448 шаблонов)"));
 			assert.ok(html.includes("Все протоколы (448)"));
 			assert.ok(html.includes("Терапия"));
 			assert.ok(html.includes("Ортопедия"));

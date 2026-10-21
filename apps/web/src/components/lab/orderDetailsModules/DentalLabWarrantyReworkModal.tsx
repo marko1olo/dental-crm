@@ -1,6 +1,5 @@
 import { RotateCcw, X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 import { DentalLabWarrantyReworkFields } from "./DentalLabWarrantyReworkFields";
 

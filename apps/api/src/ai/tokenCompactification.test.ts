@@ -494,7 +494,7 @@ describe("6. runAgentHarness E2E — Интеграция Автокомпакт
 		const result = await runAgentHarness({
 			messages: [{ role: "user", content: "Покажи медицинскую карту пациента" }],
 			context: MOCK_TOOL_CONTEXT,
-			client: mockClient,
+			client: mockClient as unknown as AgentRouterClient,
 			onEvent: (event) => {
 				events.push(event);
 				if (event.type === "tool_start") {
@@ -505,7 +505,7 @@ describe("6. runAgentHarness E2E — Интеграция Автокомпакт
 
 		assert.strictEqual(result.iterations, 2);
 		assert.strictEqual(result.toolCalls.length, 1);
-		assert.strictEqual(result.toolCalls[0].tool, "get_patient_card");
+		assert.strictEqual(result.toolCalls[0]!.tool, "get_patient_card");
 		assert.ok(result.text.includes("Зуб 16 требует лечения кариеса"));
 	});
 });

@@ -71,7 +71,7 @@ export function EmkProtocolsDropdownMenu({
 				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 			>
 				<Pill className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-				<span>Выписать рецепт (1094н)</span>
+				<span>Выписать рецепт на лекарства</span>
 			</button>
 
 			<button

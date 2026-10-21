@@ -16,7 +16,7 @@ import {
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { showToast } from "../GlobalToast";
-import { generateSoapFromOdontogramStates } from "../../lib/clinicalProtocols043";
+import { generateSoapFromOdontogramStates } from "../../lib/clinicalProtocols";
 
 export interface UseOdontogramQuickActionsProps {
 	patientId: string;

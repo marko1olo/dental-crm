@@ -16,7 +16,7 @@ import {
 	generatePatientMemoText,
 	renderPatientMemoPrintHtml,
 	type PostOpMemoId,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 
 export interface PatientMemoPrintModalProps {

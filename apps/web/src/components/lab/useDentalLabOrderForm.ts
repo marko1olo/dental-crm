@@ -3,10 +3,7 @@ import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { rublesToKopecks, formatLabOrderFormZtl1A4Protocol } from "@dental/shared";
-import {
-	checkDentalLabFinancialGate,
-	createDoctorClinicalOverride,
-} from "./dentalLabFinancialGateEngine";
+import { checkDentalLabFinancialGate, createDoctorClinicalOverride } from "./dentalLabFinancialGateEngine";
 import {
 	type DentalLabOrderData,
 	type DentalLabOrderModalProps,
@@ -24,11 +21,7 @@ import {
 	formatJawScopeLabel,
 } from "./labMath";
 import { checkFittingAppointmentCollision } from "./dentalLabOrderEngine";
-import {
-	executeSaveLabOrder,
-	copyLabOrderZtl1Protocol,
-	copyLabOrderMessengerSummary,
-} from "./dentalLabOrderSaveHelper";
+import { executeSaveLabOrder, copyLabOrderZtl1Protocol, copyLabOrderMessengerSummary } from "./dentalLabOrderSaveHelper";
 
 export type LabModalTabKey = "main" | "shades" | "stages" | "print";
 

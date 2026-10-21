@@ -11,7 +11,7 @@ import {
 	loadStoredTeethData,
 	saveStoredTeethData,
 } from "../../odontogram/odontogramStorage";
-import { generateSoapFromOdontogramFinding } from "../../../lib/clinicalProtocols043";
+import { generateSoapFromOdontogramFinding } from "../../../lib/clinicalProtocols";
 import {
 	mergeMultiToothDiagnoses,
 	mergeMultiToothObjective,

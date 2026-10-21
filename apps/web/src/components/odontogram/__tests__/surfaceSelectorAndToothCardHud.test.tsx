@@ -7,7 +7,7 @@ import { ToothCardHud } from "../chart/ToothCardHud";
 import {
 	generateSoapFromOdontogramFinding,
 	type OdontogramFindingInput,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 
 describe("SurfaceSelector & Black Cavity Class Presets", () => {
 	it("renders all 6 anatomical surface segments and labels without crashes", () => {

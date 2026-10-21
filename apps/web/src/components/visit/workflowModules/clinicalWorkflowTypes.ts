@@ -139,7 +139,7 @@ export interface ChairsideSmartProtocolResult {
 	readonly objectiveStatus: string;
 	readonly treatmentPlan: string;
 	readonly recommendations: string;
-	readonly targetTooth?: number | undefined;
+	readonly targetTooth?: number | null | undefined;
 }
 
 /**

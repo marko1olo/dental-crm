@@ -1,7 +1,7 @@
 import type React from "react";
 import { useRef, useState } from "react";
 import { FileText, Sparkles } from "lucide-react";
-import type { PerioPathologyPreset } from "../../../../lib/clinicalProtocols043";
+import type { PerioPathologyPreset } from "../../../../lib/clinicalProtocols";
 import { VisitDiaryPerioPediatricPresets } from "../VisitDiaryPerioPediatricPresets";
 
 export interface VisitDiaryPresetsAccordionProps {

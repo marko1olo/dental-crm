@@ -6,7 +6,7 @@
  * 1. Расчет рабочих дней ЗТЛ с пропуском суббот/воскресений (5-10 раб. дней по конструкциям).
  * 2. Автоматический расчет даты примерки (следующий рабочий день после готовности ЗТЛ).
  * 3. Защита от коллизий графика (Fitting Appointment Collision Guard).
- * 4. Формирование черновика бронирования слота примерки (dente-quick-appointment-draft, Приказ 804н A16.07.004).
+ * 4. Формирование черновика бронирования слота примерки (dente-quick-appointment-draft, Прейскурант ортопедии A16.07.004).
  * 5. Железобетонный целочисленный учет себестоимости ЗТЛ и ЗП врача в копейках (Zero Penny-Drift).
  * 6. Честный пустой продакшн без синтетических мок-массивов (Мандат 8y / isDemoShowcaseMode).
  */
@@ -154,7 +154,7 @@ describe("Chairside Lab Order & Auto-Booking Inquisitor", () => {
 			assert.equal(order.fittingDateIso, "2026-10-13");
 		});
 
-		test("Черновик записи на примерку соответствует Приказу Минздрава 804н", () => {
+		test("Черновик записи на примерку соответствует прейскуранту ортопедии", () => {
 			const order = createDentalLabOrder({
 				patientId: "pat-99",
 				patientName: "Сидоров К.М.",
@@ -175,7 +175,7 @@ describe("Chairside Lab Order & Auto-Booking Inquisitor", () => {
 				doctorId: order.doctorId,
 				doctorName: order.doctorName,
 				serviceTitle: `Примерка и фиксация: ${workTypeTitle} (зуб ${teethLabel})`,
-				serviceCode: "A16.07.004", // Ортопедия 804н
+				serviceCode: "A16.07.004", // Прейскурант ортопедии
 				durationMinutes: 45,
 				scheduledDate: order.fittingDateIso,
 				targetDate: order.fittingDateIso,

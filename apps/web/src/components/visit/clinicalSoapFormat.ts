@@ -4,20 +4,7 @@
  */
 
 import { getToothAnatomicalDescription } from "../emr/templates/clinicalDiaryTemplatesEngine";
-import type { ClinicalSoapPreset, ClinicalService804n, ClinicalMaterialDeduction } from "./clinicalSoapTypes.js";
-
-export interface FormattedSoapResult {
-	readonly complaint: string;
-	readonly anamnesis: string;
-	readonly objectiveStatus: string;
-	readonly diagnosis: string;
-	readonly treatmentPlan: string;
-	readonly recommendations?: string;
-	readonly billLine: string;
-	readonly materialsSummary: string;
-	readonly service804n?: ClinicalService804n;
-	readonly materialsToDeduct: readonly ClinicalMaterialDeduction[];
-}
+import type { ClinicalSoapPreset, ClinicalService804n, ClinicalMaterialDeduction, FormattedSoapResult } from "./clinicalSoapTypes.js";
 
 export function formatSoapFromPreset(
 	preset: ClinicalSoapPreset,

@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import type { CrmToothState } from "@dental/shared";
 import type { ToothData, ToothState } from "./ToothChart";
 import {

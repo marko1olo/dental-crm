@@ -1,10 +1,7 @@
 /**
- * DENTE Dental CRM — Statutory Minzdrav Order № 804n Service Catalog & Nomenclature Presets
+ * DENTE Dental CRM — Service Catalog & Pricing Presets
  *
- * Layer 0: Domain Types, Contracts & Statutory Nomenclature Links
- *
- * Statutory reference: Приказ Минздрава России от 13.10.2017 N 804н
- * "Об утверждении номенклатуры медицинских услуг" (с изменениями и дополнениями).
+ * Layer 0: Domain Types, Contracts & Nomenclature Links
  */
 
 export type Order804nCategory =

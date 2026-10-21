@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { DentalLabFinancialGateResult } from "./dentalLabFinancialGateEngine";
 import { DentalLabFinancialGateBanner } from "./financialGateModules/DentalLabFinancialGateBanner";
 import { DentalLabFinancialGateModal } from "./financialGateModules/DentalLabFinancialGateModal";

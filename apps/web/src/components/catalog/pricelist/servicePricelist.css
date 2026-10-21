@@ -785,67 +785,308 @@
 	.category-nav-btn,
 	.pricelist-btn,
 	.tier-segment-btn {
-		min-height: 44px !important;
+		min-height: 44px;
 	}
 
 	.pricelist-modal-overlay {
-		padding: 0 !important;
+		padding: 0;
 	}
 
 	.pricelist-modal-container {
-		height: 100dvh !important;
-		max-height: 100dvh !important;
-		border-radius: 0 !important;
-		border: none !important;
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: none;
 	}
 
 	.pricelist-modal-header {
-		flex-direction: column !important;
-		align-items: stretch !important;
-		gap: 0.5rem !important;
-		padding: 0.5rem 0.75rem !important;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
 	}
 
 	.csv-import-modal .pricelist-modal-header {
-		flex-direction: row !important;
-		align-items: center !important;
-		justify-content: space-between !important;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
 	}
 
 	.pricelist-header-left {
-		width: 100% !important;
-		justify-content: space-between !important;
+		width: 100%;
+		justify-content: space-between;
 	}
 
 	.pricelist-header-actions {
-		width: 100% !important;
-		overflow-x: auto !important;
-		flex-wrap: nowrap !important;
-		justify-content: flex-start !important;
-		padding-bottom: 4px !important;
-		scrollbar-width: thin !important;
-		-webkit-overflow-scrolling: touch !important;
+		width: 100%;
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		padding-bottom: 4px;
+		scrollbar-width: thin;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.pricelist-header-actions .pricelist-btn {
-		flex-shrink: 0 !important;
-		white-space: nowrap !important;
-		padding: 0 0.75rem !important;
-		font-size: 0.8125rem !important;
+		flex-shrink: 0;
+		white-space: nowrap;
+		padding: 0 0.75rem;
+		font-size: 0.8125rem;
 	}
 
 	.pricelist-toolbar {
-		flex-direction: column !important;
-		height: auto !important;
-		min-height: auto !important;
-		align-items: stretch !important;
-		gap: 0.5rem !important;
-		padding: 0.5rem 0.75rem !important;
+		flex-direction: column;
+		height: auto;
+		min-height: auto;
+		align-items: stretch;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
 	}
 
 	.pricelist-search-box {
-		max-width: 100% !important;
-		width: 100% !important;
-		min-width: 0 !important;
+		max-width: 100%;
+		width: 100%;
+		min-width: 0;
 	}
+
+	.pricelist-desktop-table-view {
+		display: none;
+	}
+
+	.pricelist-mobile-cards-view {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.pricelist-bottom-sheet-overlay {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.pricelist-service-form-sheet {
+		border-radius: 24px 24px 0 0;
+		max-height: 90dvh;
+		height: auto;
+		width: 100%;
+		margin: 0;
+	}
+
+	.pricelist-bottom-sheet-handle-bar {
+		display: flex;
+		justify-content: center;
+		padding-top: 10px;
+		padding-bottom: 4px;
+	}
+}
+
+/* Desktop Defaults */
+.pricelist-desktop-table-view {
+	display: block;
+	width: 100%;
+}
+
+.pricelist-mobile-cards-view {
+	display: none;
+}
+
+.pricelist-bottom-sheet-handle-bar {
+	display: none;
+}
+
+.pricelist-bottom-sheet-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, #94a3b8);
+	opacity: 0.6;
+}
+
+/* Mobile Grouped Cards */
+.pricelist-mobile-grouped-list {
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+}
+
+.pricelist-mobile-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 0.875rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+}
+
+.pricelist-mobile-card.selected {
+	border-color: var(--brand-500, #3b82f6);
+	background: rgba(59, 130, 246, 0.04);
+}
+
+.pricelist-mobile-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.pricelist-mobile-card-check {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.75rem;
+	cursor: pointer;
+}
+
+.pricelist-mobile-card-code {
+	background: rgba(2, 132, 199, 0.1);
+	color: #0284c7;
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+	font-weight: 700;
+	font-family: monospace;
+}
+
+.pricelist-mobile-card-cat {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	font-weight: 500;
+}
+
+.pricelist-mobile-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	cursor: pointer;
+}
+
+.pricelist-mobile-card-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	line-height: 1.35;
+}
+
+.pricelist-mobile-card-statutory {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	line-height: 1.25;
+}
+
+.pricelist-mobile-card-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding-top: 0.375rem;
+	border-top: 1px solid var(--line-subtle, #f1f5f9);
+}
+
+.pricelist-mobile-card-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.pricelist-mobile-card-price-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.pricelist-mobile-card-price {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-variant-numeric: tabular-nums;
+}
+
+.pricelist-mobile-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.pricelist-mobile-action-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0 0.5rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	color: var(--ink, #0f172a);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pricelist-mobile-action-btn:hover {
+	background: var(--surface, #f1f5f9);
+}
+
+.pricelist-mobile-action-btn.active {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--ok-fg, #10b981);
+	border-color: rgba(16, 185, 129, 0.3);
+}
+
+.pricelist-mobile-action-btn.danger {
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.2);
+}
+
+.pricelist-mobile-action-btn.danger:hover {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.pricelist-mobile-more-wrap {
+	padding: 0.5rem 0 1rem 0;
+}
+
+.pricelist-mobile-empty-state {
+	padding: 3rem 1.5rem;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--muted, #64748b);
+}
+
+/* Dark theme card overrides */
+[data-theme="dark"] .pricelist-mobile-card,
+[data-theme="night"] .pricelist-mobile-card,
+[data-theme="cyber_xray"] .pricelist-mobile-card,
+[data-theme="contrast"] .pricelist-mobile-card {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-mobile-card-footer,
+[data-theme="night"] .pricelist-mobile-card-footer,
+[data-theme="cyber_xray"] .pricelist-mobile-card-footer,
+[data-theme="contrast"] .pricelist-mobile-card-footer {
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-mobile-action-btn,
+[data-theme="night"] .pricelist-mobile-action-btn,
+[data-theme="cyber_xray"] .pricelist-mobile-action-btn,
+[data-theme="contrast"] .pricelist-mobile-action-btn {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
 }

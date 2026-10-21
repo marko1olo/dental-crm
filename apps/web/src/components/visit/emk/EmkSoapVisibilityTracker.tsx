@@ -4,7 +4,7 @@ import type { VisitNoteForm } from "../../../utils/draftDefaults";
 import {
 	type LastVisitSoapSnapshot,
 	getUnfinishedEndoSnapshot,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 
 export interface EmkSoapVisibilityTrackerProps {
 	readonly visitNoteForm?: VisitNoteForm | Record<string, any> | null | undefined;

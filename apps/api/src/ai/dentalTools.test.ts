@@ -513,7 +513,7 @@ describe("Dental Tool Arsenal — Матрица рантаймов web_browser 
 		assert.strictEqual(createRes.success, true);
 		assert.strictEqual(createRes.isComplete, false);
 		assert.strictEqual(createRes.actionableItems.length, 1);
-		assert.strictEqual(createRes.actionableItems[0].id, "step_check");
+		assert.strictEqual(createRes.actionableItems[0]!.id, "step_check");
 		assert.ok(createRes.directive?.includes("НЕ ВЫЗЫВАЙ manage_task_plan повторно"));
 
 		// 2. Обновление статуса первого шага
@@ -535,7 +535,7 @@ describe("Dental Tool Arsenal — Матрица рантаймов web_browser 
 		assert.strictEqual(updateRes.success, true);
 		assert.strictEqual(updateRes.isComplete, false);
 		assert.strictEqual(updateRes.actionableItems.length, 1);
-		assert.strictEqual(updateRes.actionableItems[0].id, "step_invoice");
+		assert.strictEqual(updateRes.actionableItems[0]!.id, "step_invoice");
 
 		// 3. Завершение последнего шага
 		const finishRes = (await executeDentalTool(

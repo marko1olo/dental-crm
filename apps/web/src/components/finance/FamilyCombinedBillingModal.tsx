@@ -4,7 +4,7 @@
  * и генерацией динамического QR-кода СБП на сумму со сплитом (депозит + доплата по СБП).
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Award,
@@ -25,6 +25,8 @@ import {
 	type FamilyMemberBillingItem,
 	FAMILY_RELATIONSHIP_RU,
 	compileFamilyBillingDraft,
+	createCompositeIdempotencyKey,
+	generateUuidV7,
 } from "@dental/shared";
 import { FamilyBillingPaymentTab } from "./FamilyBillingPaymentTab";
 import { printSbpQrReceipt, printTaxCertificates } from "./familyBillingPrint";
@@ -92,6 +94,7 @@ export function FamilyCombinedBillingModal({
 	const [cashReceivedRub, setCashReceivedRub] = useState<number>(0);
 	const [isCopiedSbpLink, setIsCopiedSbpLink] = useState(false);
 	const [isFiscalizing, setIsFiscalizing] = useState(false);
+	const isFiscalizingRef = useRef(false);
 
 	const activeItems = useMemo(() => {
 		return initialItems.filter((i) => selectedItemIds.has(i.id));
@@ -166,33 +169,67 @@ export function FamilyCombinedBillingModal({
 	};
 
 	const handleExecuteFiscalization = async () => {
+		if (isFiscalizingRef.current || isFiscalizing) return;
 		if (activeItems.length === 0) {
 			showToast("Выберите хотя бы одну позицию для формирования чека", "warning", 3500);
 			return;
 		}
+		isFiscalizingRef.current = true;
 		setIsFiscalizing(true);
 		try {
 			const targetPatientId = initialPayer.payerId || activeItems[0]?.patientId || "";
-			if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPatientId) && typeof fetch === "function") {
+			if (!targetPatientId) {
+				throw new Error("Не указан идентификатор пациента для проведения семейной оплаты");
+			}
+			if (typeof fetch === "function") {
 				const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
 				const walletOffsetRub = useFamilyWallet ? billingResult.defaultSplit.familyWalletOffsetRub : 0;
 				const remainingRub = billingResult.defaultSplit.remainingDueRub;
 				if (_familyGroupId && walletOffsetRub > 0) {
-					const mutId = `fambill_w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-					await fetch("/api/finance/family/pay", {
+					const payerId = initialPayer.payerId || targetPatientId;
+					const mutId = createCompositeIdempotencyKey(
+						`fambill-w:${_familyGroupId}:${targetPatientId}:${generateUuidV7()}`,
+						{ familyGroupId: _familyGroupId, amountRub: walletOffsetRub, payerId },
+					);
+					const walletRes = await fetch("/api/finance/family/pay", {
 						method: "POST",
 						headers: { ...headers, "Idempotency-Key": mutId },
-						body: JSON.stringify({ familyGroupId: _familyGroupId, patientId: targetPatientId, payerPatientId: initialPayer.payerId || targetPatientId, amountRub: walletOffsetRub, clientMutationId: mutId }),
+						body: JSON.stringify({
+							familyGroupId: _familyGroupId,
+							patientId: targetPatientId,
+							payerPatientId: payerId,
+							amountRub: walletOffsetRub,
+							clientMutationId: mutId,
+						}),
 					});
+					if (!walletRes.ok) {
+						const errJson = (await walletRes.json().catch(() => null)) as { message?: string; error?: string } | null;
+						throw new Error(errJson?.message || errJson?.error || `Ошибка списания с семейного счёта (${walletRes.status})`);
+					}
 				}
 				if (remainingRub > 0) {
-					const mutId = `fambill_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+					const mutId = createCompositeIdempotencyKey(
+						`fambill-p:${targetPatientId}:${generateUuidV7()}`,
+						{ patientId: targetPatientId, amountRub: remainingRub, method: additionalPaymentMethod },
+					);
 					const method = additionalPaymentMethod === "sbp" ? "online" : additionalPaymentMethod === "card" ? "card" : "cash";
-					await fetch("/api/billing/payments", {
+					const payRes = await fetch("/api/billing/payments", {
 						method: "POST",
 						headers: { ...headers, "Idempotency-Key": mutId },
-						body: JSON.stringify({ patientId: targetPatientId, amountRub: remainingRub, method, clientMutationId: mutId, payerFullName: initialPayer.payerFullName || undefined, payerInn: initialPayer.payerInn || undefined, note: `Семейный расчет (${familyGroupName})` }),
+						body: JSON.stringify({
+							patientId: targetPatientId,
+							amountRub: remainingRub,
+							method,
+							clientMutationId: mutId,
+							payerFullName: initialPayer.payerFullName || undefined,
+							payerInn: initialPayer.payerInn || undefined,
+							note: `Семейный расчет (${familyGroupName})`,
+						}),
 					});
+					if (!payRes.ok) {
+						const errJson = (await payRes.json().catch(() => null)) as { message?: string; error?: string } | null;
+						throw new Error(errJson?.message || errJson?.error || `Ошибка фискализации доплаты (${payRes.status})`);
+					}
 				}
 			}
 			onCheckoutComplete?.(billingResult);
@@ -201,6 +238,7 @@ export function FamilyCombinedBillingModal({
 		} catch (e: any) {
 			showToast(`Ошибка фискализации: ${e?.message || e}`, "error");
 		} finally {
+			isFiscalizingRef.current = false;
 			setIsFiscalizing(false);
 		}
 	};
@@ -218,7 +256,7 @@ export function FamilyCombinedBillingModal({
 		>
 			<div className="w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
 				{/* Шапка модального окна */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div className="flex items-center gap-3">
 						<div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
 							<Users size={22} />
@@ -260,8 +298,8 @@ export function FamilyCombinedBillingModal({
 
 				{/* Навигационные вкладки */}
 				<div
-					className="flex border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] px-4 sm:px-5"
-					style={{ display: "flex", gap: 12, padding: "0 16px", borderBottom: "1px solid var(--line)", background: "var(--paper)" }}
+					className="flex shrink-0 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] px-4 sm:px-5 overflow-x-auto no-scrollbar"
+					style={{ display: "flex", flexShrink: 0, gap: 8, padding: "0 16px", borderBottom: "1px solid var(--line)", background: "var(--paper)", overflowX: "auto", whiteSpace: "nowrap", WebkitOverflowScrolling: "touch" }}
 				>
 					<button
 						type="button"
@@ -280,6 +318,8 @@ export function FamilyCombinedBillingModal({
 							borderLeft: "none",
 							borderRight: "none",
 							cursor: "pointer",
+							flexShrink: 0,
+							whiteSpace: "nowrap",
 						}}
 					>
 						<Layers size={16} />
@@ -303,6 +343,8 @@ export function FamilyCombinedBillingModal({
 							borderLeft: "none",
 							borderRight: "none",
 							cursor: "pointer",
+							flexShrink: 0,
+							whiteSpace: "nowrap",
 						}}
 					>
 						<QrCode size={16} />
@@ -326,6 +368,8 @@ export function FamilyCombinedBillingModal({
 							borderLeft: "none",
 							borderRight: "none",
 							cursor: "pointer",
+							flexShrink: 0,
+							whiteSpace: "nowrap",
 						}}
 					>
 						<ShieldCheck size={16} />
@@ -480,7 +524,7 @@ export function FamilyCombinedBillingModal({
 						<div className="space-y-4">
 							<div className="p-4 rounded-xl bg-[var(--teal-soft)] border border-[var(--teal)]/30 text-xs text-[var(--ink)] flex items-start justify-between gap-3 flex-wrap">
 								<div>
-									<strong>Справка для налогового вычета (Приказ ФНС России № ЕД-7-11/824@):</strong>
+									<strong>Справка для налогового вычета:</strong>
 									<div className="mt-1">
 										Справки оформляются на имя плательщика (<strong>{initialPayer.payerFullName}</strong>{initialPayer.payerInn ? `, ИНН: ${initialPayer.payerInn}` : ""}) с автоматическим указанием кода родства:
 										1 = лично, 2 = супруг, 3 = родитель, 4 = ребенок.
@@ -541,7 +585,7 @@ export function FamilyCombinedBillingModal({
 				</div>
 
 				{/* Футер с итогом и кнопкой фискализации */}
-				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between flex-wrap gap-3 bg-[var(--paper,#ffffff)]">
+				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between flex-wrap gap-3 bg-[var(--paper,#ffffff)] shrink-0">
 					<div className="flex items-center gap-3">
 						<div>
 							<span className="text-[11px] text-[var(--muted,#64748b)] font-bold uppercase">Итого к фискализации:</span>

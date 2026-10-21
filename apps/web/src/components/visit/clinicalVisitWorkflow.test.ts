@@ -16,7 +16,7 @@ import {
 	generateSoapFromOdontogramStates,
 	mergeSoapDiaryState,
 	PATIENT_RECOMMENDATIONS,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 import {
 	estimatorDismissalKeys,
 	type EstimatorToothInput,

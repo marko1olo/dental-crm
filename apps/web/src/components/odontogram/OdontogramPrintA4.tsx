@@ -8,7 +8,7 @@ import {
 import {
 	getToothAnatomicalNameRu,
 	getToothFolkAndAnatomicalNameRu,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 
 export interface OdontogramPrintA4Props {
 	patientId: string;

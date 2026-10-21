@@ -1,35 +1,27 @@
-import { describe, it  } from "vitest";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { infer804nServiceFromStamp } from "../infer804nService";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", () => {
-	const toolbarPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/visit/emk/EmkToolbar.tsx",
-	);
-	const emkTabPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/visit/VisitEmkTab.tsx",
-	);
-	const toothSyncPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/visit/useVisitEmkToothSync.ts",
-	);
-	const visitViewPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/VisitView.tsx",
-	);
+	const toolbarPath = path.resolve(__dirname, "../emk/EmkToolbar.tsx");
+	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
+	const toothSyncPath = path.resolve(__dirname, "../useVisitEmkToothSync.ts");
+	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
 
 	it("1. EmkToolbar primary row contains <= 7 buttons and no confusing gray 'Отменить' or pulsating pimple", () => {
 		const quickButtonsPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx",
+			__dirname,
+			"../emk/emkToolbarModules/EmkQuickActionButtons.tsx",
 		);
 		const protocolsMenuPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/visit/emk/emkToolbarModules/EmkProtocolsDropdownMenu.tsx",
+			__dirname,
+			"../emk/emkToolbarModules/EmkProtocolsDropdownMenu.tsx",
 		);
 		const content = fs.readFileSync(toolbarPath, "utf-8") +
 			(fs.existsSync(quickButtonsPath) ? "\n" + fs.readFileSync(quickButtonsPath, "utf-8") : "") +
@@ -123,8 +115,8 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 
 	it("4. VisitView listens to 'dente:visit-tab-change' event for seamless cross-component tab switching", () => {
 		const statePath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/visit/view/useVisitViewState.ts",
+			__dirname,
+			"../view/useVisitViewState.ts",
 		);
 		const content = fs.readFileSync(visitViewPath, "utf-8") +
 			(fs.existsSync(statePath) ? "\n" + fs.readFileSync(statePath, "utf-8") : "");

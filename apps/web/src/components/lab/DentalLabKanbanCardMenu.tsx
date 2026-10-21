@@ -1,5 +1,5 @@
+import React from "react";
 import { Calendar, CheckCircle2, RotateCcw } from "lucide-react";
-import type React from "react";
 import type { CanonicalKanbanStageId } from "./DentalLabKanbanCard";
 import type { DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
 import { DentalLabKanbanCardMenuItem } from "./kanbanModules/DentalLabKanbanCardMenuItem";

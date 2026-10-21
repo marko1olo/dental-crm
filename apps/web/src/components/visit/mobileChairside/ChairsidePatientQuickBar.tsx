@@ -10,6 +10,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 	patientAge,
 	consolidatedAllergyChip,
 	handlePrintForm043uFast,
+	handleOpenPrescription,
 	handleOpenLabOrder,
 	onOpenWarrantyModal,
 	onClose,
@@ -53,6 +54,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 
 				<ChairsidePatientHeaderActions
 					handlePrintForm043uFast={handlePrintForm043uFast}
+					handleOpenPrescription={handleOpenPrescription}
 					handleOpenLabOrder={handleOpenLabOrder}
 					onOpenWarrantyModal={onOpenWarrantyModal}
 					onClose={onClose}

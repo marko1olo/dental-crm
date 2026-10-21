@@ -1,3 +1,4 @@
+import React from "react";
 import { DentalLabOrderModal } from "../DentalLabOrderModal";
 import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";

@@ -19,7 +19,7 @@ import {
 	type OdontogramFindingInput,
 	type ClinicalProtocolSoap,
 	type DiaryState,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 import {
 	mergeMultiToothDiagnoses,
 	mergeMultiToothObjective,

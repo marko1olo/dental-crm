@@ -23,7 +23,7 @@ export interface PaymentModalBodyProps {
 	readonly showReceiptSidePanel: boolean;
 	readonly mobileTab: "checkout" | "receipt";
 	readonly onClose: () => void;
-	readonly onSuccess: (receipt: unknown) => void;
+	readonly onSuccess: (receipt: any) => void;
 }
 
 /**

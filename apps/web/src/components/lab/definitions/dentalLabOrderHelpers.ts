@@ -30,6 +30,38 @@ export function formatLabConstructionTitle(type?: string | null, material?: stri
 }
 
 /**
+ * Форматирует идентификатор материала ЗТЛ в понятный клинический термин на русском языке.
+ * Запрещает утечку сырых dev-enum вроде crown_emax, pfm_cocr в интерфейс.
+ */
+export function formatLabMaterial(material?: string | null): string {
+	const raw = (material || "").trim();
+	if (!raw) return "";
+	if (raw in DENTAL_LAB_CONSTRUCTIONS) {
+		return (
+			DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].defaultMaterialRu ||
+			DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].nameRu ||
+			DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].shortNameRu
+		);
+	}
+	const map: Record<string, string> = {
+		crown_emax: "Керамика IPS e.max Press",
+		emax_lithium_disilicate: "Прессованная керамика IPS e.max",
+		crown_zirconia: "Диоксид циркония ZrO2",
+		zirconia_multilayer: "Диоксид циркония Multi-layer",
+		metal_ceramic: "Металлокерамика",
+		pfm_cocr: "Металлокерамика CoCr",
+		clasp_denture: "Бюгельный сплав CoCr",
+		aligner_splint: "Биосовместимый полимер",
+		surgical_guide: "Фотополимер 3D",
+		crown_temporary: "Временный полимер PMMA",
+		pmma_temporary: "Временный полимер PMMA",
+		inlay_onlay: "Керамика IPS e.max",
+		veneer: "Керамика полевошпатная / e.max",
+	};
+	return map[raw] || raw;
+}
+
+/**
  * Валидатор URL или имени файла 3D-скана интраорального сканера или фото прикуса
  */
 export function is3DScanUrl(url?: string | null): boolean {

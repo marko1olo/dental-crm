@@ -12,6 +12,9 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+
+process.env.NODE_ENV = "test";
+process.env.KKT_MODEL = "emulator";
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
@@ -51,7 +54,7 @@ const PATIENT_ID = fixtureUuid(NAMESPACE, 10);
 const USER_ID = fixtureUuid(NAMESPACE, 30);
 const FAMILY_ID = fixtureUuid(NAMESPACE, 40);
 
-describe("FINANCIAL PRECISION & BACKEND IDEMPOTENCY HARDENING STRESS SUITE", () => {
+describe("FINANCIAL PRECISION & BACKEND IDEMPOTENCY HARDENING STRESS SUITE", { concurrency: false }, () => {
 	let app: FastifyInstance;
 	let clinicToken: string;
 	let staffToken: string;
@@ -76,31 +79,32 @@ describe("FINANCIAL PRECISION & BACKEND IDEMPOTENCY HARDENING STRESS SUITE", () 
 		await purgeFixtureOrganizations([ORG_ID]);
 
 		await withFixtureTenant(ORG_ID, async () => {
+			await db.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника Финансовой Точности и Идемпотентности",
 				inn: "7701999777",
-			});
+			}).onConflictDoNothing();
 			await db.insert(users).values({
 				id: USER_ID,
 				organizationId: ORG_ID,
 				fullName: "Главный Кассир-Аудитор",
 				role: "admin",
 				isActive: true,
-			});
+			}).onConflictDoNothing();
 			await db.insert(familyGroups).values({
 				id: FAMILY_ID,
 				organizationId: ORG_ID,
 				name: "Семья Ивановых",
 				balance: "50000.00",
-			});
+			}).onConflictDoNothing();
 			await db.insert(patients).values({
 				id: PATIENT_ID,
 				organizationId: ORG_ID,
 				familyGroupId: FAMILY_ID,
 				fullName: "Иванов Иван Иванович",
 				phone: "+79997776655",
-			});
+			}).onConflictDoNothing();
 		});
 	});
 
@@ -395,6 +399,11 @@ describe("FINANCIAL PRECISION & BACKEND IDEMPOTENCY HARDENING STRESS SUITE", () 
 	// 4. KKT HARDWARE DISCONNECTION & AUTO-RETRY RECOVERY
 	// =========================================================================
 	describe("4. KKT Hardware Offline State Machine & Auto-Dofiscalization", () => {
+		before(async () => {
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.delete(fiscalReceiptQueue).where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
+			});
+		});
 		it("4.1 Buffers receipts into offline_pending/hardware_offline on network drop without failing customer checkout", async () => {
 			process.env.KKM_FORCE_OFFLINE = "1";
 

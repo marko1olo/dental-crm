@@ -1,3 +1,4 @@
+import React from "react";
 export interface LabPromptQuickPresetsProps {
 	readonly quickPresets: string[];
 	readonly value: string;

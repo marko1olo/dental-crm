@@ -203,7 +203,7 @@ export function detectFunnelLeaks(leads: Lead[]): FunnelLeakWarning[] {
 		}
 
 		// 2. Лид отправлен в архив/спам без указания причины срыва
-		if (lead.status === "trash" && !lead.dropReason && (!lead.notes || !lead.notes.includes("[Причина срыва]"))) {
+		if (lead.status === "trash" && !lead.dropReason) {
 			warnings.push({
 				leadId: lead.id,
 				leadName: lead.name,

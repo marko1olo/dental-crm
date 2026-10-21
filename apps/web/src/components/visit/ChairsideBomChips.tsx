@@ -12,7 +12,7 @@ interface ChairsideBomChipsProps {
 	item: VisitBillingServiceItem;
 	materials: ServiceBomMaterial[];
 	showOverdraft: boolean;
-	onOpenMaterialDeduction?: (item: VisitBillingServiceItem) => void;
+	onOpenMaterialDeduction?: ((item: VisitBillingServiceItem) => void) | undefined;
 }
 
 export const ChairsideBomChips: React.FC<ChairsideBomChipsProps> = ({

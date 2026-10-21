@@ -79,18 +79,10 @@ export function useInvoicesData({
 						};
 					}
 
-					const numMatch =
-						typeof raw.notes === "string"
-							? raw.notes.match(
-									/(?:Наряд|Счет|СЧТ|НРД|АКТ)[\s-]*([A-ZА-Я0-9-]+)/i,
-								)
-							: null;
 					const invoiceNumber = String(
 						raw.number ||
 							raw.invoiceNumber ||
-							(numMatch
-								? numMatch[1]
-								: `СЧ-${(raw.id || idx).toString().slice(-6)}`),
+							`СЧ-${(raw.id || idx).toString().slice(-6)}`,
 					);
 					const total = resolvedTotal;
 					const paid =

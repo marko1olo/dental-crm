@@ -10,7 +10,7 @@ import { showToast } from "../../../GlobalToast";
 import {
 	calculateSplitPaymentAllocation,
 	type SplitPaymentInput,
-} from "../../order804nFiscalEngine";
+} from "../../fiscalReceiptEngine";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 
 export interface UseFiscalTenderAllocationParams {

@@ -1,5 +1,5 @@
 import type { TreatmentPlanItem } from "../../../treatment-plans/types";
-import { mapTreatmentItemsToFiscalReceipt } from "../../order804nFiscalEngine";
+import { mapTreatmentItemsToFiscalReceipt } from "../../fiscalReceiptEngine";
 
 /**
  * Безупречное форматирование денежных сумм в рублях с копейками без артефактов округления.

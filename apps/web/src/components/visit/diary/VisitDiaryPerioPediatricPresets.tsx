@@ -1,6 +1,6 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
-import type { PerioPathologyPreset } from "../../../lib/clinicalProtocols043";
+import type { PerioPathologyPreset } from "../../../lib/clinicalProtocols";
 import { ClinicalQuickPresetsBar } from "../ClinicalQuickPresetsBar";
 import type { DiaryState } from "../../useVisitDiaryLogic";
 import { PerioPillWithDropdown } from "./section/PerioPillWithDropdown";

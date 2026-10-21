@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
-import { kopecksToRub, rubToKopecks } from "@dental/shared";
+import { generateUuidV7, kopecksToRub, rubToKopecks } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { generateFiscalReceipt54Fz } from "../../order804nFiscalEngine";
+import { generateFiscalReceipt54Fz } from "../../fiscalReceiptEngine";
 import { printThermalReceipt } from "../../../../lib/hardwarePrinting";
 import type { FiscalReceiptPrintPayload } from "../../../../services/hardware/hardwareTypes";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
@@ -72,6 +72,7 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 		lastReceiptNumber?: string;
 	} | null>(null);
 	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
+	const isSubmittingManualCardRef = useRef<boolean>(false);
 
 	const auxHook = useFiscalRefundAndAuxTabs({
 		items: itemsHook.items,
@@ -273,7 +274,7 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 				visitId: patientId,
 				payload: receiptToFiscalize,
 				lastError: errMsg,
-				idempotencyKey: `fiscal-modal-${receiptToFiscalize.receiptNumber || Date.now()}`,
+				idempotencyKey: `fiscal-modal-${receiptToFiscalize.receiptNumber || generateUuidV7()}`,
 			});
 
 			showToast(
@@ -339,7 +340,7 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 					visitId: patientId,
 					payload: printPayload,
 					lastError: printRes.error || "Кассовое устройство недоступно",
-					idempotencyKey: `fiscal-retry-${Date.now()}`,
+					idempotencyKey: `fiscal-retry-${generateUuidV7()}`,
 				});
 				showToast(
 					"Оплата зафиксирована, чек в очереди фискализации",
@@ -364,7 +365,7 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 					totalRub: itemsHook.totalSumRub,
 				},
 				lastError: errMsg,
-				idempotencyKey: `fiscal-retry-err-${Date.now()}`,
+				idempotencyKey: `fiscal-retry-err-${generateUuidV7()}`,
 			});
 			showToast("Оплата зафиксирована, чек в очереди фискализации", "info", 5000);
 		} finally {
@@ -373,6 +374,8 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 	};
 
 	const handleManualCardTerminalConfirm = async () => {
+		if (isSubmittingManualCardRef.current || isSubmittingManualCard) return;
+		isSubmittingManualCardRef.current = true;
 		setIsSubmittingManualCard(true);
 		try {
 			const randomSuffix =
@@ -417,6 +420,7 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 			const errMsg = err instanceof Error ? err.message : "Ошибка ручного подтверждения карты";
 			showToast(errMsg, "error");
 		} finally {
+			isSubmittingManualCardRef.current = false;
 			setIsSubmittingManualCard(false);
 		}
 	};

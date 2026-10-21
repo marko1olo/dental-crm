@@ -129,7 +129,7 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 				/>
 			)}
 
-			{/* 1-Click Treatment Plan Wizard (StomX/IDENT Parity) */}
+			{/* 1-Click Treatment Plan Wizard (Mandates 8e, 8n) */}
 			{isPlanWizardOpen && (
 				<React.Suspense fallback={null}>
 					<TreatmentPlanWizard

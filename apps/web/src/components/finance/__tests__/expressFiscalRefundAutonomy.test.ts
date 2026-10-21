@@ -22,7 +22,7 @@ import {
 	calculateRefundActiveItems,
 	calculateRefundFiscalSummary,
 } from "../FiscalReceipt54FzModal";
-import { generateFiscalRefundReceipt54Fz } from "../order804nFiscalEngine";
+import { generateFiscalRefundReceipt54Fz } from "../fiscalReceiptEngine.js";
 
 const SAMPLE_TREATMENT_ITEMS: readonly TreatmentPlanItem[] = [
 	{

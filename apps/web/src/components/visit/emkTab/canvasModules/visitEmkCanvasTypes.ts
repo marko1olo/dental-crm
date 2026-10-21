@@ -1,5 +1,5 @@
 import type { VisitEmkCanvasProps } from "../types";
-import type { LastVisitSoapSnapshot } from "../../../../lib/clinicalProtocols043";
+import type { LastVisitSoapSnapshot } from "../../../../lib/clinicalProtocols";
 
 export type { VisitEmkCanvasProps };
 

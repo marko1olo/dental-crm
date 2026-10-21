@@ -2,7 +2,8 @@ import React from "react";
 import { AppointmentModal } from "../../schedule/AppointmentModal";
 import { EmrProtocolGeneratorModal, type ToothSurface } from "../../emr";
 import { PaymentModal } from "../../finance/PaymentModal.js";
-import type { VisitSummaryModalProps, useVisitSummaryModalState } from "./types";
+import type { VisitSummaryModalProps } from "./types";
+import type { useVisitSummaryModalState } from "./useVisitSummaryModalState";
 import { buildEnrichedReceiptItems } from "./summaryReceiptEnricher";
 
 export interface VisitSummarySequentialFlowProps {

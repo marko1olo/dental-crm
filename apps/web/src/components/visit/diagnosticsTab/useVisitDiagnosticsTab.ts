@@ -5,7 +5,7 @@ import { useVisitStore } from "../../../store/visitStore";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { subscribeCbctSyncEvents } from "../../radiology/mpr/cbctStudioSyncChannel";
 import { showToast } from "../../GlobalToast";

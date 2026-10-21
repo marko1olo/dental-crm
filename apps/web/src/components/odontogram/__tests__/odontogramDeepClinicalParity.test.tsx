@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx
  *
- * Deep Clinical Parity Test Suite (StomX / IDENT / Mandates 8d, 8e, 8k)
+ * Deep Clinical Parity Test Suite (Mandates 8d, 8e, 8k, 8n)
  *
  * 1. 1-Click Adult / Child dentition switch (FDI 11..48 <-> 51..85)
  * 2. 1-Click Total Sanitation ("Санирован") & Wisdom Absence ("Без 8-ок")

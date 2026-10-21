@@ -1,155 +1,21 @@
 import type React from "react";
-import { createPortal } from "react-dom";
-import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols";
-import { MobileBottomSheet } from "../mobile/MobileBottomSheet";
-import { ToothActionMenuCaret } from "./ToothActionMenuCaret";
-import { ToothActionSecondaryButtons } from "./ToothActionSecondaryButtons";
-import { ToothActionStatusGrid } from "./ToothActionStatusGrid";
-import { ToothActionSurfacesAccordion } from "./ToothActionSurfacesAccordion";
+import { ToothActionDesktopMenu } from "./ToothActionDesktopMenu";
+import { ToothActionMobileSheet } from "./ToothActionMobileSheet";
 import type { ToothActionMenuPortalProps } from "./toothActionMenuTypes";
 
 export * from "./toothActionMenuTypes";
 
-export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
-	menuConfig,
-	onClose,
-	selectedTeeth,
-	activeSurfaces,
-	setActiveSurfaces,
-	onApplyToothState,
-	onOpenContextDrawer,
-	onOpenHistory,
-	onOpenEndo,
-	onOneClickLabOrder,
-	teethData,
-}) => {
-	if (!menuConfig || typeof document === "undefined") return null;
+export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = (
+	props,
+) => {
+	if (!props.menuConfig || typeof document === "undefined") return null;
 
 	const vw = typeof window !== "undefined" ? window.innerWidth : 1440;
-	const vh = typeof window !== "undefined" ? window.innerHeight : 900;
 
 	// Mobile Native Bottom Sheet per Apple HIG & Mandate 8c (< 768px)
 	if (vw < 768) {
-		const title =
-			selectedTeeth.length > 1
-				? `Выбрано: ${selectedTeeth.length} зубов`
-				: `Зуб #${menuConfig.toothNumber}`;
-		const subtitle =
-			selectedTeeth.length === 1
-				? getToothFolkAndAnatomicalNameRu(menuConfig.toothNumber)
-				: undefined;
-
-		return (
-			<MobileBottomSheet
-				isOpen={true}
-				onClose={onClose}
-				title={title}
-				subtitle={subtitle}
-				testId="mobile-tooth-action-bottom-sheet"
-			>
-				<div className="space-y-3 pb-6">
-					<div className="grid grid-cols-2 gap-2">
-						<ToothActionStatusGrid onApplyToothState={onApplyToothState} />
-					</div>
-					<ToothActionSurfacesAccordion
-						activeSurfaces={activeSurfaces}
-						setActiveSurfaces={setActiveSurfaces}
-					/>
-					<div className="flex flex-col gap-2 pt-1">
-						<ToothActionSecondaryButtons
-							toothNumber={menuConfig.toothNumber}
-							selectedTeeth={selectedTeeth}
-							activeSurfaces={activeSurfaces}
-							teethData={teethData}
-							onClose={onClose}
-							onOpenContextDrawer={onOpenContextDrawer}
-							onOpenHistory={onOpenHistory}
-							onOpenEndo={onOpenEndo}
-							onOneClickLabOrder={onOneClickLabOrder}
-						/>
-					</div>
-				</div>
-			</MobileBottomSheet>
-		);
+		return <ToothActionMobileSheet {...props} />;
 	}
 
-	const clampedX = Math.max(12, Math.min(vw - 282, menuConfig.x));
-	const clampedY = Math.max(12, Math.min(vh - 412, menuConfig.y));
-	const safeCaretOffset = Math.max(12, Math.min(88, menuConfig.caretOffset));
-
-	return createPortal(
-		<>
-			<button
-				type="button"
-				style={{
-					position: "fixed",
-					inset: 0,
-					zIndex: 99998,
-					background: "transparent",
-					border: "none",
-					cursor: "default",
-				}}
-				onClick={onClose}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
-						e.preventDefault();
-						onClose();
-					}
-				}}
-			/>
-			<div
-				role="menu"
-				className="tooth-radial-menu"
-				style={{
-					position: "fixed",
-					left: clampedX,
-					top: clampedY,
-					zIndex: 99999,
-				}}
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => {
-					if (e.key === "Escape") {
-						e.preventDefault();
-						onClose();
-					}
-				}}
-			>
-				<ToothActionMenuCaret
-					position={menuConfig.position}
-					safeCaretOffset={safeCaretOffset}
-				/>
-
-				<div className="col-span-2 text-center mb-2">
-					<div className="text-sm font-black text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-100">
-						{selectedTeeth.length > 1
-							? `Выбрано: ${selectedTeeth.length} зубов`
-							: `Зуб #${menuConfig.toothNumber}`}
-					</div>
-					{selectedTeeth.length === 1 && (
-						<div className="text-xs font-semibold text-[var(--odontogram-ink-muted,#64748b)]">
-							{getToothFolkAndAnatomicalNameRu(menuConfig.toothNumber)}
-						</div>
-					)}
-				</div>
-
-				<ToothActionStatusGrid onApplyToothState={onApplyToothState} />
-				<ToothActionSurfacesAccordion
-					activeSurfaces={activeSurfaces}
-					setActiveSurfaces={setActiveSurfaces}
-				/>
-				<ToothActionSecondaryButtons
-					toothNumber={menuConfig.toothNumber}
-					selectedTeeth={selectedTeeth}
-					activeSurfaces={activeSurfaces}
-					teethData={teethData}
-					onClose={onClose}
-					onOpenContextDrawer={onOpenContextDrawer}
-					onOpenHistory={onOpenHistory}
-					onOpenEndo={onOpenEndo}
-					onOneClickLabOrder={onOneClickLabOrder}
-				/>
-			</div>
-		</>,
-		document.body,
-	);
+	return <ToothActionDesktopMenu {...props} />;
 };

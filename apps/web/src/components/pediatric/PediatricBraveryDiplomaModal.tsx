@@ -6,9 +6,13 @@ import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { PediatricBraveryDiplomaPreview } from "./diploma/PediatricBraveryDiplomaPreview";
 
 export interface PediatricBraveryDiplomaModalProps {
-	readonly isOpen: boolean; readonly onClose: () => void;
-	readonly patientName?: string; readonly patientAgeYears?: number;
-	readonly doctorName?: string; readonly clinicName?: string; readonly visitDate?: string;
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly patientName?: string | undefined;
+	readonly patientAgeYears?: number | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly visitDate?: string | undefined;
 }
 
 export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModalProps> = ({

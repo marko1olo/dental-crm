@@ -287,6 +287,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					verticalAlign: "middle",
 					textAlign: "right",
 					whiteSpace: "nowrap",
+					width: 110,
+					minWidth: 110,
 				}}
 			>
 				<div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
@@ -309,6 +311,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					verticalAlign: "middle",
 					textAlign: "right",
 					whiteSpace: "nowrap",
+					width: 285,
+					minWidth: 285,
 				}}
 			>
 				<div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">

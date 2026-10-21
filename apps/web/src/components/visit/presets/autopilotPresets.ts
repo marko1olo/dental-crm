@@ -29,7 +29,7 @@ export * from "./autopilotPresetsData";
  */
 export function build1ClickCariesPreset(
 	toothNumber?: number | null,
-	surfaces?: string,
+	surfaces?: string | null,
 ): DoctorAutopilotPreset {
 	const tooth = toothNumber ?? 16;
 	const trimmed = (surfaces ?? "").trim();

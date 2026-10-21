@@ -12,6 +12,7 @@ export function registerVisitDraftRoutes(app: FastifyInstance) {
 	app.get("/api/v1/visits/:visitId/diary", handleGetVisitDraft);
 
 	app.put("/api/visits/:visitId/draft/autosave", handlePutVisitDraft);
+	app.post("/api/visits/:visitId/draft/autosave", handlePutVisitDraft);
 	app.put("/api/v1/visits/:visitId/diary", handlePutVisitDraft);
 	app.post("/api/v1/visits/:visitId/diary", handlePutVisitDraft);
 

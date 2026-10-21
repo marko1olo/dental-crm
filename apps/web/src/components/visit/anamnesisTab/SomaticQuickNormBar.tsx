@@ -86,7 +86,7 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 						data-catalog-source="Клинические шаблоны DENTE"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>Клинические шаблоны StomX (448)</span>
+						<span>Клинические шаблоны (448)</span>
 					</button>
 
 					{/* 1-Click Кнопка соматической нормы */}
@@ -120,7 +120,7 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 					className="flex items-center gap-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-100 text-xs shadow-xs select-none"
 					data-testid="visit-anamnesis-critical-alert"
 					role="alert"
-					title="Клинические стоп-факторы безопасности у кресла (Форма 043/у)"
+					title="Клинические стоп-факторы безопасности у кресла (Медицинская карта приёма)"
 				>
 					<AlertOctagon className="w-5 h-5 text-[#ef4444] shrink-0" />
 					<div className="flex flex-col gap-0.5 min-w-0">

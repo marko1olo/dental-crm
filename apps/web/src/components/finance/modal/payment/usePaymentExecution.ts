@@ -6,7 +6,7 @@
  * Architecturally decomposed into ./executionModules/ with strict file line boundaries (facade <= 250 LOC).
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { broadcastPatientBalanceChange } from "../../../../services/storage";
 import { showToast } from "../../../GlobalToast";
@@ -38,6 +38,9 @@ export function usePaymentExecution(params: UsePaymentExecutionParams): PaymentE
 	} = params;
 
 
+	const isSubmittingCashRef = useRef<boolean>(false);
+	const isSubmittingSplitRef = useRef<boolean>(false);
+	const isSubmittingDepositRef = useRef<boolean>(false);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
@@ -135,31 +138,37 @@ export function usePaymentExecution(params: UsePaymentExecutionParams): PaymentE
 
 
 	const handleCashSubmit = async () => {
-		if (isSubmittingCash) return;
+		if (isSubmittingCashRef.current || isSubmittingCash) return;
+		isSubmittingCashRef.current = true;
 		setIsSubmittingCash(true);
 		try {
 			await executeCashSubmit(params, executorContext);
 		} finally {
+			isSubmittingCashRef.current = false;
 			setIsSubmittingCash(false);
 		}
 	};
 
 	const handleSplitSubmit = async () => {
-		if (isSubmittingSplit) return;
+		if (isSubmittingSplitRef.current || isSubmittingSplit) return;
+		isSubmittingSplitRef.current = true;
 		setIsSubmittingSplit(true);
 		try {
 			await executeSplitSubmit(params, executorContext);
 		} finally {
+			isSubmittingSplitRef.current = false;
 			setIsSubmittingSplit(false);
 		}
 	};
 
 	const handleDepositSubmit = async (source: "deposit" | "family") => {
-		if (isSubmittingDeposit) return;
+		if (isSubmittingDepositRef.current || isSubmittingDeposit) return;
+		isSubmittingDepositRef.current = true;
 		setIsSubmittingDeposit(true);
 		try {
 			await executeDepositSubmit(params, source, executorContext);
 		} finally {
+			isSubmittingDepositRef.current = false;
 			setIsSubmittingDeposit(false);
 		}
 	};

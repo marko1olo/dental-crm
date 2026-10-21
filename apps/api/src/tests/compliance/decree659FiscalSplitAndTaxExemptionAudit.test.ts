@@ -86,7 +86,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника Аудита Кассы 54-ФЗ и Вычетов",
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(users).values([
 				{
@@ -101,7 +101,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 					fullName: "Старший Кассир-Администратор",
 					role: "admin",
 				},
-			]);
+			]).onConflictDoNothing();
 
 			// 1. Идентифицированный пациент со всеми паспортными данными
 			await db.insert(patients).values({
@@ -119,7 +119,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 					registrationAddress: "г. Москва, ул. Ленина, д. 10",
 					isAnonymous: false,
 				} as unknown as PatientAdministrativeProfile,
-			});
+			}).onConflictDoNothing();
 
 			// 2. Анонимный пациент (UUID_ANON) по Постановлению Правительства РФ №659
 			await db.insert(patients).values({
@@ -135,7 +135,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 					snils: null,
 					taxpayerInn: null,
 				} as unknown as PatientAdministrativeProfile,
-			});
+			}).onConflictDoNothing();
 
 			// Услуга коронки керамической: 50 000 ₽
 			await db.insert(serviceCatalogItems).values({
@@ -147,7 +147,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				priceRub: 50000,
 				category: "prosthetics",
 				isActive: true,
-			});
+			}).onConflictDoNothing();
 
 			// План лечения на 50 000 ₽
 			await db.insert(treatmentPlans).values({
@@ -162,7 +162,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				totalPrice: "50000",
 				totalPriceRub: "50000",
 				version: 1,
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(treatmentPlanItemsNew).values({
 				organizationId: ORG_ID,
@@ -174,7 +174,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				discount: "0",
 				phase: 1,
 				isBundle: false,
-			});
+			}).onConflictDoNothing();
 
 			// Документ-счет (generatedDocuments) на 50 000 ₽ для сплит-оплаты
 			await db.insert(generatedDocuments).values({
@@ -186,7 +186,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				title: "Счет на оплату № СЧ-50К (ортопедическая коронка)",
 				totalAmountRub: 50000,
 				issuedAt: new Date(),
-			});
+			}).onConflictDoNothing();
 
 			// Счет patientInvoices для возвратов
 			await db.insert(patientInvoices).values({
@@ -196,7 +196,7 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				totalRub: "50000.00",
 				totalAmountRub: 50000,
 				status: "issued",
-			});
+			}).onConflictDoNothing();
 		});
 
 		clinicToken = signToken({ organizationId: ORG_ID }, authTokenSecret());
