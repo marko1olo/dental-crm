@@ -4,12 +4,12 @@
  */
 
 import React, { useMemo } from "react";
-import { Coins, Percent, X, Calculator, ShieldCheck } from "lucide-react";
+import { Percent, X } from "lucide-react";
 import type { Kopecks } from "@dental/shared";
-import {
-	calculateLoyaltyBonusDeduction,
-	formatChairsidePrice,
-} from "./treatmentPlanPricingEngine";
+import { calculateLoyaltyBonusDeduction } from "./treatmentPlanPricingEngine.js";
+import { DoctorDiscountsSelector } from "./discountsModal/DoctorDiscountsSelector.js";
+import { PatientLoyaltySection } from "./discountsModal/PatientLoyaltySection.js";
+import { DiscountsSummaryBox } from "./discountsModal/DiscountsSummaryBox.js";
 
 export interface TreatmentPlanDiscountsModalProps {
 	readonly isOpen: boolean;
@@ -78,123 +78,21 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 					</button>
 				</div>
 
-				{/* Quick Discounts */}
-				<div className="space-y-2">
-					<label className="text-xs font-bold text-[var(--muted,#64748b)] block">
-						Скидка врача на план лечения:
-					</label>
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
-							<button
-								key={pct}
-								type="button"
-								onClick={() => setDiscountPercent(pct)}
-								className={`px-3 py-1.5 min-h-[36px] rounded-xl font-mono font-bold text-xs cursor-pointer transition-all ${
-									discountPercent === pct
-										? pct === 100
-											? "bg-emerald-600 text-white shadow-xs"
-											: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: pct === 100
-											? "bg-[var(--paper-soft)] text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-											: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-								}`}
-							>
-								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
-							</button>
-						))}
-					</div>
-					<div className="flex items-center gap-2 pt-1">
-						<span className="text-xs text-[var(--muted,#64748b)] font-semibold">Произвольный %:</span>
-						<input
-							type="number"
-							min="0"
-							max="100"
-							value={discountPercent}
-							onChange={(e) => {
-								const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-								setDiscountPercent(val);
-							}}
-							className="w-20 h-8 px-2 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-center focus:ring-1 focus:ring-[var(--teal)]"
-							placeholder="%"
-						/>
-						<span className="text-xs text-[var(--muted)] font-bold">%</span>
-					</div>
-				</div>
+				<DoctorDiscountsSelector
+					discountPercent={discountPercent}
+					setDiscountPercent={setDiscountPercent}
+				/>
 
-				{/* Patient Loyalty Balance / Deposit */}
-				<div className="space-y-2 pt-2 border-t border-[var(--line,var(--border,#cbd5e1))]">
-					<div className="flex items-center justify-between text-xs">
-						<span className="font-bold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-							<Coins size={15} className="text-amber-500" />
-							Доступный баланс / бонусы:
-						</span>
-						<strong className="font-mono text-[var(--ink,#0f172a)]">
-							{patientBalanceRub.toLocaleString("ru-RU")} ₽
-						</strong>
-					</div>
+				<PatientLoyaltySection
+					patientBalanceRub={patientBalanceRub}
+					bonusPointsToUseRub={bonusPointsToUseRub}
+					setBonusPointsToUseRub={setBonusPointsToUseRub}
+				/>
 
-					{patientBalanceRub > 0 ? (
-						<div className="flex items-center gap-2 pt-1">
-							<input
-								type="number"
-								min={0}
-								max={patientBalanceRub}
-								value={bonusPointsToUseRub || ""}
-								onChange={(e) => {
-									const val = Math.max(0, Math.min(patientBalanceRub, Number(e.target.value) || 0));
-									setBonusPointsToUseRub(val);
-								}}
-								placeholder="Списать ₽"
-								className="w-32 h-8 px-2 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-							/>
-							<span className="text-xs text-[var(--muted)]">₽ к списанию</span>
-							{bonusPointsToUseRub > 0 && (
-								<button
-									type="button"
-									onClick={() => setBonusPointsToUseRub(0)}
-									className="text-xs font-bold text-rose-500 hover:underline cursor-pointer ml-auto"
-								>
-									Сбросить
-								</button>
-							)}
-						</div>
-					) : (
-						<p className="text-xs text-[var(--muted,#64748b)] m-0">
-							У пациента пока нет накопленных бонусов или депозита.
-						</p>
-					)}
-				</div>
-
-				{/* Live Pricing Breakdown via treatmentPlanPricingEngine SSOT */}
 				{summary && (
-					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] space-y-1.5 text-xs font-mono">
-						<div className="flex items-center justify-between text-[var(--muted)]">
-							<span>Базовая смета плана:</span>
-							<span className="font-bold">{formatChairsidePrice(Math.round(summary.grossKopecks / 100))}</span>
-						</div>
-						{summary.discountKopecks > 0 && (
-							<div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-								<span>Скидка врача ({discountPercent}%):</span>
-								<span className="font-bold">−{formatChairsidePrice(Math.round(summary.discountKopecks / 100))}</span>
-							</div>
-						)}
-						{summary.appliedBonusRub > 0 && (
-							<div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-								<span>Оплата бонусами/депозитом:</span>
-								<span className="font-bold">−{formatChairsidePrice(summary.appliedBonusRub)}</span>
-							</div>
-						)}
-						<div className="pt-1.5 border-t border-[var(--line)] flex items-center justify-between font-bold text-sm text-[var(--ink)]">
-							<span className="flex items-center gap-1 font-sans">
-								<Calculator size={14} className="text-[var(--teal)]" />
-								Итого к оплате пациентом:
-							</span>
-							<span className="text-[var(--teal)]">{formatChairsidePrice(summary.netPayableRub)}</span>
-						</div>
-					</div>
+					<DiscountsSummaryBox summary={summary} discountPercent={discountPercent} />
 				)}
 
-				{/* Footer */}
 				<div className="pt-3 border-t border-[var(--line,var(--border,#cbd5e1))] flex justify-end">
 					<button
 						type="button"

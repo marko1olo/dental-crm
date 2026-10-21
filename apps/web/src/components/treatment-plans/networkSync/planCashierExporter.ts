@@ -1,9 +1,8 @@
 import type { CashierInvoiceExportData } from "../types";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import { logger } from "../../../utils/logger";
 import { prepareCashierExportPlanId } from "./planCashierExportPayload";
 import type { ExportCashierParams } from "./types";
+import { callGenerateInvoiceFromPlanApi } from "./generateInvoiceFromPlanApi";
 
 export async function exportPlanToCashier({
 	patientId,
@@ -40,47 +39,18 @@ export async function exportPlanToCashier({
 		loyaltyDeduction.appliedBonusRub > 0 ? ` (Списано бонусов: ${loyaltyDeduction.appliedBonusRub} ₽)` : ""
 	}`;
 
-	try {
-		const res = await fetch("/api/invoices/generate-from-plan", {
-			method: "POST",
-			headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" },
-			body: JSON.stringify({
-				patientId,
-				planId: resolvedPlanId,
-				planNumber: resolvedPlanId ? `ПЛАН-№${resolvedPlanId.slice(0, 8).toUpperCase()}` : undefined,
-				planTitle: currentTier.title,
-				documentType: "invoice",
-				items: allItems.map((it, idx) => ({
-					itemId: it.id || `item-${idx}`,
-					toothNumber: it.toothNumber ?? null,
-					nameRu: it.name,
-					quantity: it.quantity || 1,
-					unitPriceRub: it.unitPriceRub || 0,
-					discountRub: it.discountRub || 0,
-					code804n: it.code804n || undefined,
-					doctorId: it.doctorId ?? null,
-				})),
-				allowUnplannedServices: true,
-				notes,
-			}),
-		});
+	const apiResult = await callGenerateInvoiceFromPlanApi({
+		patientId,
+		resolvedPlanId,
+		planTitle: currentTier.title,
+		allItems,
+		notes,
+	});
 
-		if (!res.ok) {
-			const errJson = await res.json().catch(() => ({}));
-			const errorMsg = errJson.message || `Ошибка сервера (HTTP ${res.status})`;
-			showToast(`Ошибка отправки счета в кассу: ${errorMsg}`, "error", 5000);
-			return null;
-		}
-
-		const createdData = await res.json();
-		if (createdData?.invoiceId) invoiceId = createdData.invoiceId;
-		if (createdData?.invoiceNumber) invoiceNumber = createdData.invoiceNumber;
-		if (typeof createdData?.totalNetRub === "number") finalNetTotalRub = createdData.totalNetRub;
-	} catch (networkErr: any) {
-		logger.error("[treatmentPlanNetworkSync] Ошибка сети при генерации счёта", networkErr);
-		showToast(`Сетевая ошибка при отправке счета в кассу: ${networkErr?.message || networkErr}`, "error", 5000);
-		return null;
-	}
+	if (apiResult === null) return null;
+	if (apiResult.invoiceId) invoiceId = apiResult.invoiceId;
+	if (apiResult.invoiceNumber) invoiceNumber = apiResult.invoiceNumber;
+	if (apiResult.finalNetTotalRub !== undefined) finalNetTotalRub = apiResult.finalNetTotalRub;
 
 	const exportData: CashierInvoiceExportData = {
 		patientId,

@@ -16,15 +16,15 @@ export type TreatmentPlanSpecialtyFilter =
 
 export interface UseTreatmentPlanLogicProps {
 	readonly patientId: string;
-	readonly patientName?: string;
+	readonly patientName?: string | undefined;
 	readonly teethData: readonly ToothData[];
-	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
-	readonly onPlanSaved?: (planId: string) => void;
-	readonly planCreatedAtIso?: string;
-	readonly initialStatus?: TreatmentPlanStatus;
-	readonly onStatusChange?: (status: TreatmentPlanStatus) => void;
-	readonly initialPlanId?: string | null;
-	readonly initialViewTab?: TreatmentPlanViewTab;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
+	readonly onPlanSaved?: ((planId: string) => void) | undefined;
+	readonly planCreatedAtIso?: string | undefined;
+	readonly initialStatus?: TreatmentPlanStatus | undefined;
+	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
+	readonly initialPlanId?: string | null | undefined;
+	readonly initialViewTab?: TreatmentPlanViewTab | undefined;
 }
 
 export interface PatientFinancialContextSummary {

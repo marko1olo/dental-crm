@@ -1,0 +1,99 @@
+/**
+ * apps/web/src/components/treatment-plans/stagePayment/styles/stagePaymentModal.css
+ *
+ * Базовые стили модального окна и таб-бара Stage Payment Studio.
+ */
+
+.stage-payment-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.stage-payment-modal-container {
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 1.25rem;
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 68rem;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: stagePaymentFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes stagePaymentFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98) translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.stage-payment-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper-strong);
+}
+
+.stage-payment-tabs-bar {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper-soft);
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.stage-payment-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0 0.875rem;
+	border-radius: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	min-height: 36px;
+	height: 36px;
+	transition: all 0.15s ease-in-out;
+	white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+	.stage-payment-tab-btn {
+		min-height: 44px;
+		height: 44px;
+	}
+}
+
+.stage-payment-tab-btn:hover {
+	color: var(--ink);
+	background-color: var(--paper-soft);
+}
+
+.stage-payment-tab-btn.active {
+	background-color: var(--paper);
+	color: var(--teal);
+	border-color: var(--line);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}

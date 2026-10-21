@@ -2,6 +2,8 @@ export * from "./types/planCoreTypes.js";
 export * from "./types/planMutationTypes.js";
 export * from "./types/planPersistenceTypes.js";
 
+export type { LoyaltyBonusCalculationResult } from "../treatmentPlanStagesEngine.js";
+
 export type {
 	CashierInvoiceExportData,
 	CatalogServiceLookupItem,
@@ -11,7 +13,6 @@ export type {
 	CopilotCommandType,
 	DigitalSignatureAgreementData,
 	InventoryItemLookup,
-	LoyaltyBonusCalculationResult,
 	ToothData,
 	TreatmentPlanDoctorOption,
 	TreatmentPlanItem,

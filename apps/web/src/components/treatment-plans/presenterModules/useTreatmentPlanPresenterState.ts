@@ -13,6 +13,7 @@ import { usePresenterAiAudit } from "./state/usePresenterAiAudit";
 import { usePresenterToolsState } from "./state/usePresenterToolsState";
 import { usePresenterNavigationState } from "./state/usePresenterNavigationState";
 import { usePresenterPatientSelection } from "./state/usePresenterPatientSelection";
+import { usePresenterModalEffects } from "./state/usePresenterModalEffects";
 
 export { DEFAULT_SAMPLE_TEETH, getTierLetter, formatRubles };
 
@@ -57,18 +58,7 @@ export function useTreatmentPlanPresenterState(props: TreatmentPlanPresenterModa
 		if (propTiers && propTiers.length > 0) setAllTiers(propTiers);
 	}, [propTiers]);
 
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && isOpen) onClose();
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, onClose]);
-
-	useEffect(() => {
-		document.body.style.overflow = isOpen ? "hidden" : "";
-		return () => { document.body.style.overflow = ""; };
-	}, [isOpen]);
+	usePresenterModalEffects(isOpen, onClose);
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;

@@ -1,3 +1,5 @@
+@import "./mobilePresenterFooterOverrides.css";
+
 @media (max-width: 768px) {
 	.treatment-presenter-backdrop {
 		padding: 0;
@@ -82,48 +84,5 @@
 	/* Apple HIG: Elimination of 2500px scroll-tunnel on mobile. Show ONLY active selected tier */
 	.treatment-3tier-grid .treatment-tier-card:not(.selected) {
 		display: none !important;
-	}
-	.treatment-presenter-footer {
-		position: sticky;
-		bottom: 0;
-		width: 100%;
-		flex-direction: column-reverse;
-		align-items: stretch;
-		padding: 12px 16px max(12px, env(safe-area-inset-bottom)) 16px;
-		gap: 10px;
-		background: color-mix(in srgb, var(--tp-surface, var(--paper-strong)) 94%, transparent);
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
-		border-top: 1px solid var(--line);
-		z-index: 40;
-	}
-	.treatment-footer-actions {
-		flex-direction: column;
-		width: 100%;
-		gap: 8px;
-	}
-	.btn-treatment-action {
-		width: 100%;
-		min-height: 48px;
-		height: 48px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 14px;
-		border: 1px solid var(--line);
-		font-size: 14px;
-		font-weight: 700;
-	}
-	.btn-patient-choice {
-		order: -1;
-		min-height: 48px;
-		height: auto;
-		padding: 10px 14px;
-		border: 1px solid var(--primary, var(--teal-dark));
-		border-radius: 14px;
-		font-size: 14px;
-		font-weight: 800;
-		white-space: normal;
-		text-align: center;
 	}
 }

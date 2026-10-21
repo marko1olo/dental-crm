@@ -1,3 +1,4 @@
+import { standardRecommendedProcedures, standardRecommendedStages } from "./standardStagesAndProcedures.js";
 import type { ComprehensivePlanVariant } from "./types.js";
 
 export const standardRecommendedPreset: ComprehensivePlanVariant = {
@@ -31,101 +32,6 @@ export const standardRecommendedPreset: ComprehensivePlanVariant = {
 		"Меньший гарантийный срок по сравнению со Straumann (3 года против 10 лет)",
 		"Композитные реставрации требуют полировки раз в 6 месяцев",
 	],
-	stages: [
-		{
-			stageIndex: 1,
-			title: "Этап 1: Терапия & Гигиена",
-			subtitle: "Санация кариозных полостей и профчистка",
-			durationWeeks: 2,
-			visitsCount: 2,
-			costRub: 38000,
-			keyProcedures: [
-				"Профгигиена Air-Flow + ультразвук",
-				"Лечение 2 кариесов композитом Estelite",
-			],
-		},
-		{
-			stageIndex: 2,
-			title: "Этап 2: Дентальная имплантация",
-			subtitle: "Установка имплантатов Osstem TS III",
-			durationWeeks: 8,
-			visitsCount: 2,
-			costRub: 165000,
-			keyProcedures: [
-				"Установка 3 имплантатов Osstem TS III SA",
-				"Установка формирователей десны",
-			],
-		},
-		{
-			stageIndex: 3,
-			title: "Этап 3: Протезирование на цирконии",
-			subtitle: "Коронки из диоксида циркония",
-			durationWeeks: 3,
-			visitsCount: 2,
-			costRub: 125000,
-			keyProcedures: [
-				"Снятие слепков / интраоральное сканирование",
-				"Изготовление индивидуальных титановых абатментов",
-				"Фиксация 3 циркониевых коронок",
-			],
-		},
-		{
-			stageIndex: 4,
-			title: "Этап 4: Ортодонтия & Профконтроль",
-			subtitle: "Окклюзионная стабилизация, ретенция и контрольный осмотр",
-			durationWeeks: 1,
-			visitsCount: 1,
-			costRub: 12000,
-			keyProcedures: [
-				"Контрольная КЛКТ-томография остеоинтеграции",
-				"Окклюзионная юстировка и полировка контактов",
-				"График профгигиены и контрольных осмотров раз в 6 месяцев",
-			],
-		},
-	],
-	procedures: [
-		{
-			id: "std-1",
-			code804n: "A16.07.051",
-			name: "Профессиональная гигиена полости рта",
-			category: "hygiene_perio",
-			quantity: 1,
-			unitPriceRub: 8000,
-			totalCostRub: 8000,
-			clinicalRationale: "Подготовка полости рта к имплантации",
-		},
-		{
-			id: "std-2",
-			code804n: "A16.07.002",
-			name: "Лечение кариеса с реставрацией Estelite",
-			category: "therapy_endo",
-			toothFdi: "1.4, 2.5",
-			quantity: 2,
-			unitPriceRub: 15000,
-			totalCostRub: 30000,
-			clinicalRationale: "Санация опорных зубов",
-		},
-		{
-			id: "std-3",
-			code804n: "A16.07.054",
-			name: "Установка имплантата Osstem TS III",
-			category: "surgery_implant",
-			toothFdi: "1.6, 2.6, 4.6",
-			quantity: 3,
-			unitPriceRub: 55000,
-			totalCostRub: 165000,
-			clinicalRationale: "Восстановление утраченных жевательных зубов",
-		},
-		{
-			id: "std-4",
-			code804n: "A16.07.004",
-			name: "Коронка из диоксида циркония с абатментом",
-			category: "orthopedics_prosthetics",
-			toothFdi: "1.6, 2.6, 4.6",
-			quantity: 3,
-			unitPriceRub: 45666.67,
-			totalCostRub: 137000,
-			clinicalRationale: "Анатомическое восстановление жевательной функции",
-		},
-	],
+	stages: standardRecommendedStages,
+	procedures: standardRecommendedProcedures,
 };

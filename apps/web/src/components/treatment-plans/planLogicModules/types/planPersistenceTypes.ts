@@ -51,9 +51,9 @@ export interface PlanPersistenceAndSyncContext {
 	readonly totalItemsCount: number;
 	readonly isSaving: boolean;
 	readonly completedActData: CompletedWorksActResult | null;
-	readonly onStatusChange?: (status: TreatmentPlanStatus) => void;
-	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
-	readonly onPlanSaved?: (planId: string) => void;
+	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
+	readonly onPlanSaved?: ((planId: string) => void) | undefined;
 	readonly setPlanStatus: Dispatch<SetStateAction<TreatmentPlanStatus>>;
 	readonly setSelectedLabTeeth: Dispatch<SetStateAction<number[] | undefined>>;
 	readonly setLabOrderPrefill: Dispatch<SetStateAction<LabOrderPrefillContext | null>>;

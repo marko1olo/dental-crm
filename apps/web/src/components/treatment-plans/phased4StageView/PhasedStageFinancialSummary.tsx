@@ -10,7 +10,9 @@ import {
 	type CategorizedPhasedPlanData,
 	type InstallmentMonthsOption,
 	type PhasedStageStatus,
-} from "./types";
+} from "./types.js";
+import { PhasedFinancialMetricsGrid } from "./financialSummary/PhasedFinancialMetricsGrid.js";
+import { PhasedInstallmentPartnersGrid } from "./financialSummary/PhasedInstallmentPartnersGrid.js";
 
 export interface PhasedStageFinancialSummaryProps {
 	readonly categorized: CategorizedPhasedPlanData;
@@ -45,12 +47,6 @@ export const PhasedStageFinancialSummary: React.FC<PhasedStageFinancialSummaryPr
 	}, 0);
 
 	const remainingRub = Math.max(0, categorized.grandTotalRub - completedTotalRub);
-	const stageSplit30 = Math.round(categorized.grandTotalRub * 0.3);
-	const stageSplit40 = Math.round(categorized.grandTotalRub * 0.4);
-	const stageSplitFinal30 = Math.max(
-		0,
-		categorized.grandTotalRub - stageSplit30 - stageSplit40,
-	);
 
 	return (
 		<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4 shadow-sm space-y-3">
@@ -82,76 +78,18 @@ export const PhasedStageFinancialSummary: React.FC<PhasedStageFinancialSummaryPr
 				</div>
 			</div>
 
-			{/* 4 ключевых финансовых показателя по плану */}
-			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="text-[11px] font-medium text-[var(--ink-muted)]">
-						Общий бюджет 4 фаз
-					</div>
-					<div className="mt-0.5 text-sm font-extrabold text-[var(--ink)] tabular-nums">
-						{categorized.grandTotalRub.toLocaleString("ru-RU")} ₽
-					</div>
-				</div>
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="text-[11px] font-medium text-[var(--ink-muted)]">
-						Согласовано этапов
-					</div>
-					<div className="mt-0.5 text-sm font-extrabold text-[var(--teal)] tabular-nums">
-						{agreedTotalRub.toLocaleString("ru-RU")} ₽
-					</div>
-				</div>
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="text-[11px] font-medium text-[var(--ink-muted)]">
-						Остаток к оплате
-					</div>
-					<div className="mt-0.5 text-sm font-extrabold text-[var(--ink)] tabular-nums">
-						{remainingRub.toLocaleString("ru-RU")} ₽
-					</div>
-				</div>
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="text-[11px] font-medium text-[var(--ink-muted)]">
-						Платёж ({installmentMonths} мес, 0%)
-					</div>
-					<div className="mt-0.5 text-sm font-extrabold text-[var(--teal)] tabular-nums">
-						{installmentMonthlyRub.toLocaleString("ru-RU")} ₽/мес
-					</div>
-				</div>
-			</div>
+			<PhasedFinancialMetricsGrid
+				grandTotalRub={categorized.grandTotalRub}
+				agreedTotalRub={agreedTotalRub}
+				remainingRub={remainingRub}
+				installmentMonths={installmentMonths}
+				installmentMonthlyRub={installmentMonthlyRub}
+			/>
 
-			{/* Партнерские программы и схема 30/40/30 */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="font-bold text-[var(--ink)]">Т-Банк Рассрочка 0%</div>
-					<div className="text-[var(--teal)] font-extrabold text-sm mt-0.5 tabular-nums">
-						{installmentMonthlyRub.toLocaleString("ru-RU")} ₽ / мес
-					</div>
-					<div className="text-[10px] text-[var(--ink-muted)] mt-0.5">
-						Решение по СМС за 2 минуты без визита в банк
-					</div>
-				</div>
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="font-bold text-[var(--ink)]">Сбер Покупай 0%</div>
-					<div className="text-[var(--teal)] font-extrabold text-sm mt-0.5 tabular-nums">
-						{installmentMonthlyRub.toLocaleString("ru-RU")} ₽ / мес
-					</div>
-					<div className="text-[10px] text-[var(--ink-muted)] mt-0.5">
-						Одобрение в СберБанк Онлайн в 1 клик
-					</div>
-				</div>
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">
-					<div className="font-bold text-[var(--ink)]">
-						Внутренняя рассрочка клиники (30/40/30)
-					</div>
-					<div className="text-[var(--ink)] font-extrabold text-xs mt-1 tabular-nums">
-						Аванс 30%: {stageSplit30.toLocaleString("ru-RU")} ₽ · Хирургия 40%:{" "}
-						{stageSplit40.toLocaleString("ru-RU")} ₽ · Финал 30%:{" "}
-						{stageSplitFinal30.toLocaleString("ru-RU")} ₽
-					</div>
-					<div className="text-[10px] text-[var(--ink-muted)] mt-0.5">
-						Прямой договор с клиникой без участия банка
-					</div>
-				</div>
-			</div>
+			<PhasedInstallmentPartnersGrid
+				installmentMonthlyRub={installmentMonthlyRub}
+				grandTotalRub={categorized.grandTotalRub}
+			/>
 		</div>
 	);
 };

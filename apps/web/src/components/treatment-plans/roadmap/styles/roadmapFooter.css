@@ -1,0 +1,79 @@
+/**
+ * apps/web/src/components/treatment-plans/roadmap/styles/roadmapFooter.css
+ *
+ * Стили подвала карточек этапов и действий записи / подтверждения.
+ */
+
+.roadmap-stage-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-top: 0.625rem;
+	border-top: 1px solid var(--line);
+}
+
+.roadmap-stage-total-label {
+	font-size: 0.75rem;
+	color: var(--muted);
+	text-transform: uppercase;
+}
+
+.roadmap-stage-total-sum {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.roadmap-book-stage-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0.375rem 1rem;
+	border-radius: 0.5rem;
+	background: var(--teal);
+	color: var(--paper-strong);
+	font-size: 0.75rem;
+	font-weight: 600;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: opacity 0.15s ease, transform 0.1s ease;
+	touch-action: manipulation;
+}
+
+.roadmap-book-stage-btn:hover {
+	background: var(--teal-dark);
+	opacity: 0.95;
+}
+
+.roadmap-book-stage-btn:active {
+	transform: scale(0.98);
+}
+
+.roadmap-stage-completed-badge {
+	height: 32px;
+	min-height: 32px;
+	padding: 0.375rem 0.875rem;
+	border-radius: 0.5rem;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	box-sizing: border-box;
+}
+
+.roadmap-stage-progress-indicator {
+	margin-bottom: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}

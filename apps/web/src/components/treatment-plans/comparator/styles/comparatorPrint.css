@@ -1,0 +1,35 @@
+/* ==========================================================================
+   Treatment Plan Comparator: Print Styles
+   ========================================================================== */
+
+@media print {
+	.plan-comparator-backdrop {
+		position: static;
+		background: transparent;
+		padding: 0;
+	}
+
+	.plan-comparator-modal {
+		border: none;
+		box-shadow: none;
+		height: auto;
+		max-width: 100%;
+	}
+
+	.plan-header-actions,
+	.plan-comparator-footer,
+	.plan-btn-icon,
+	.plan-comparator-segmented-control {
+		display: none !important;
+	}
+
+	.plan-card {
+		break-inside: avoid;
+		border: 1px solid var(--line-strong) !important;
+		display: flex !important;
+	}
+
+	.plan-cards-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}

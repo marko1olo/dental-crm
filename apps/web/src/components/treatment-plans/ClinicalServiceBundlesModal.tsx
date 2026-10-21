@@ -1,113 +1,44 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React from "react";
 import { PackagePlus } from "lucide-react";
-import { showToast } from "../GlobalToast";
-import { CLINICAL_BUNDLES, type ClinicalBundleCategory, type ClinicalBundleDefinition, type ClinicalBundleId, createBundleInvoiceItems, createBundlePlanItems, getClinicalBundleById } from "./treatmentPlanBundlesEngine";
+import { CLINICAL_BUNDLES } from "./treatmentPlanBundlesEngine";
 import { BundleCardItem } from "./bundles/BundleCardItem";
 import { BundleCategoryFilter } from "./bundles/BundleCategoryFilter";
 import { BundleToothSelector } from "./bundles/BundleToothSelector";
 import { BundlesModalHeader } from "./bundles/BundlesModalHeader";
 import { BundlesModalFooter } from "./bundles/BundlesModalFooter";
 import type { ClinicalServiceBundlesModalProps } from "./bundles/bundlesModalTypes";
+import { useClinicalBundlesModalState } from "./bundles/useClinicalBundlesModalState";
 
 export { type ClinicalServiceBundlesModalProps } from "./bundles/bundlesModalTypes";
 
-export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalProps> = ({
-	isOpen, onClose, onApplyToPlan, onApplyToInvoice, initialToothNumber = 16, targetMode = "both",
-}) => {
-	const [selectedCategory, setSelectedCategory] = useState<ClinicalBundleCategory | "all">("all");
-	const [selectedTooth, setSelectedTooth] = useState<number>(initialToothNumber);
-	const [customToothInput, setCustomToothInput] = useState<string>(String(initialToothNumber));
-	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [selectedItemsMap, setSelectedItemsMap] = useState<Record<string, string[]>>(() => {
-		const m: Record<string, string[]> = {};
-		for (const b of CLINICAL_BUNDLES) m[b.id] = b.items.map((it) => it.id);
-		return m;
-	});
-	const [expandedBundleIds, setExpandedBundleIds] = useState<Record<string, boolean>>({});
-	const [justAddedBundleId, setJustAddedBundleId] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (initialToothNumber >= 11 && initialToothNumber <= 85) {
-			setSelectedTooth(initialToothNumber);
-			setCustomToothInput(String(initialToothNumber));
-		}
-	}, [initialToothNumber]);
-
-	useEffect(() => {
-		if (!isOpen) return;
-		const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [isOpen, onClose]);
-
-	const handleCustomToothChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const val = e.target.value.replace(/\D/g, "").slice(0, 2);
-		setCustomToothInput(val);
-		const num = parseInt(val, 10);
-		if (num >= 11 && num <= 85) setSelectedTooth(num);
-	};
-
-	const toggleItem = (bundleId: string, itemId: string) => setSelectedItemsMap((prev) => {
-		const cur = prev[bundleId] ?? [];
-		return { ...prev, [bundleId]: cur.includes(itemId) ? cur.filter((id) => id !== itemId) : [...cur, itemId] };
-	});
-
-	const resetBundle = (bundleId: ClinicalBundleId) => {
-		const b = getClinicalBundleById(bundleId);
-		if (b) setSelectedItemsMap((p) => ({ ...p, [bundleId]: b.items.map((it) => it.id) }));
-	};
-
-	const filteredBundles = useMemo(() => CLINICAL_BUNDLES.filter((b) => {
-		if (selectedCategory !== "all" && b.category !== selectedCategory) return false;
-		if (!searchQuery.trim()) return true;
-		const q = searchQuery.toLowerCase().trim();
-		return b.title.toLowerCase().includes(q) || b.shortTitle.toLowerCase().includes(q) || b.description.toLowerCase().includes(q) || b.items.some((it) => it.name.toLowerCase().includes(q) || (it.serviceCode || it.code804n || "").toLowerCase().includes(q));
-	}), [selectedCategory, searchQuery]);
-
-	const inFlightRef = useRef(false);
-
-	const handleApplyPlan = (b: ClinicalBundleDefinition) => {
-		if (inFlightRef.current) return;
-		inFlightRef.current = true;
-		try {
-			const items = createBundlePlanItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
-			if (!items.length) {
-				showToast("Выберите хотя бы одну позицию из пакета", "warning");
-				return;
-			}
-			onApplyToPlan?.(items, b, b.requiresTooth ? selectedTooth : undefined);
-			setJustAddedBundleId(b.id);
-			setTimeout(() => setJustAddedBundleId(null), 2500);
-			showToast(`Пакет «${b.shortTitle}» добавлен в план: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
-		} finally {
-			setTimeout(() => { inFlightRef.current = false; }, 350);
-		}
-	};
-
-	const handleApplyInvoice = (b: ClinicalBundleDefinition) => {
-		if (inFlightRef.current) return;
-		inFlightRef.current = true;
-		try {
-			const items = createBundleInvoiceItems(b.id, { toothNumber: b.requiresTooth ? selectedTooth : undefined, selectedItemIds: selectedItemsMap[b.id] ?? b.items.map((it) => it.id) });
-			if (!items.length) {
-				showToast("Выберите хотя бы одну позицию из пакета", "warning");
-				return;
-			}
-			onApplyToInvoice?.(items, b, b.requiresTooth ? selectedTooth : undefined);
-			setJustAddedBundleId(b.id);
-			setTimeout(() => setJustAddedBundleId(null), 2500);
-			showToast(`Пакет «${b.shortTitle}» добавлен в счет: ${items.reduce((s, it) => s + it.priceRub, 0).toLocaleString("ru-RU")} ₽!`, "success");
-		} finally {
-			setTimeout(() => { inFlightRef.current = false; }, 350);
-		}
-	};
+export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalProps> = (props) => {
+	const { isOpen, onClose, targetMode = "both" } = props;
+	const {
+		selectedCategory,
+		setSelectedCategory,
+		selectedTooth,
+		setSelectedTooth,
+		customToothInput,
+		setCustomToothInput,
+		handleCustomToothChange,
+		searchQuery,
+		setSearchQuery,
+		selectedItemsMap,
+		toggleItem,
+		resetBundle,
+		expandedBundleIds,
+		setExpandedBundleIds,
+		justAddedBundleId,
+		filteredBundles,
+		handleApplyPlan,
+		handleApplyInvoice,
+	} = useClinicalBundlesModalState(props);
 
 	if (!isOpen) return null;
 
 	return (
 		<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" role="dialog" aria-modal="true" data-testid="clinical-service-bundles-modal">
 			<div className="relative w-full max-w-5xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] shadow-2xl flex flex-col max-h-[88dvh] sm:max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-				{/* Tactile drag handle for mobile bottom sheet */}
 				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
 					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
 				</div>

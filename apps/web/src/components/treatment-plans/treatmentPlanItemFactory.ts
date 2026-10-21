@@ -5,12 +5,9 @@
  * скидкам и номенклатуре Минздрава РФ № 804н.
  */
 
-import { type Kopecks, parseKopecks, percentageOfKopecks } from "@dental/shared";
 import type {
 	ClinicalProcedureDefinition,
-	Order804nProcedureDefinition,
 	TreatmentPlanItem,
-	TreatmentPlanStage,
 	TreatmentPlanStageKind,
 } from "./types";
 import {
@@ -18,6 +15,9 @@ import {
 	type MatchCatalogServiceResult,
 	matchCatalogService,
 } from "./treatmentPlanPricingEngine";
+import { calculateItemPricing } from "./itemFactory/planItemPriceCalculation";
+
+export { makeEmptyStage } from "./itemFactory/makeEmptyStage";
 
 export interface CreatePlanItemOverrides {
 	readonly quantity?: number;
@@ -43,7 +43,6 @@ export function createPlanItem(
 	overrides?: CreatePlanItemOverrides,
 ): TreatmentPlanItem {
 	const quantity = overrides?.quantity ?? 1;
-	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 
 	let matched: MatchCatalogServiceResult;
 	if (typeof overrides?.customPriceRub === "number") {
@@ -67,21 +66,7 @@ export function createPlanItem(
 		);
 	}
 
-	const unitPriceKopecks = parseKopecks(matched.priceRub);
-	const discountKopecksPerUnit =
-		validDiscountPct > 0
-			? percentageOfKopecks(unitPriceKopecks, validDiscountPct * 100)
-			: (0 as Kopecks);
-	const finalUnitPriceKopecks = Math.max(
-		0,
-		unitPriceKopecks - discountKopecksPerUnit,
-	) as Kopecks;
-	const totalKopecks = (finalUnitPriceKopecks * quantity) as Kopecks;
-	const totalDiscountKopecks = (discountKopecksPerUnit * quantity) as Kopecks;
-
-	const unitPriceRub = Math.round(unitPriceKopecks / 100);
-	const totalPriceRub = Math.round(totalKopecks / 100);
-	const discountRub = Math.round(totalDiscountKopecks / 100);
+	const pricing = calculateItemPricing(matched.priceRub, quantity, discountPercent);
 
 	return {
 		id,
@@ -91,9 +76,9 @@ export function createPlanItem(
 		code804n: def.code,
 		name: overrides?.customTitle || (matched.fromCatalog && matched.title ? matched.title : def.title),
 		category: def.category,
-		priceRub: totalPriceRub,
-		unitPriceRub,
-		discountRub,
+		priceRub: pricing.totalPriceRub,
+		unitPriceRub: pricing.unitPriceRub,
+		discountRub: pricing.discountRub,
 		quantity,
 		phase,
 		stageKind,
@@ -104,30 +89,5 @@ export function createPlanItem(
 		clinicalRationale: overrides?.clinicalRationale,
 		isDraft: matched.isDraft,
 		requiresManualPricing: matched.requiresManualPricing,
-	};
-}
-
-/**
- * Создание пустого этапа плана.
- */
-export function makeEmptyStage(
-	stageNumber: number,
-	stageKind: TreatmentPlanStageKind,
-	title: string,
-	subtitle: string,
-): TreatmentPlanStage {
-	return {
-		stageNumber,
-		stageKind,
-		title,
-		subtitle,
-		clinicalGoal: subtitle,
-		items: [],
-		totalRub: 0,
-		totalKopecks: 0 as Kopecks,
-		estimatedVisits: 0,
-		estimatedWeeks: 0,
-		serviceCatalogCodes: [],
-		order804nCodes: [],
 	};
 }

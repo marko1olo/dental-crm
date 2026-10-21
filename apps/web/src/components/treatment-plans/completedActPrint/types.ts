@@ -5,9 +5,14 @@
  */
 
 import type { Kopecks } from "@dental/shared";
-import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore";
-import type { CompletedWorksActAndWriteOffData } from "../types";
+import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore.js";
+import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../types.js";
 
+export type { ActPrintHeaderProps } from "./types/actPrintHeaderTypes.js";
+
+export type { CompletedWorksActAndWriteOffData };
+export type CompletedActProcedureItem = TreatmentPlanItem;
+export type ActPalette = DocumentBrandColorPalette;
 export type TreatmentPlanActPrintData = CompletedWorksActAndWriteOffData;
 
 export interface TreatmentPlanCompletedActPrintProps {
@@ -36,37 +41,6 @@ export interface TreatmentPlanCompletedActPrintProps {
 	readonly onClose: () => void;
 	readonly onConfirmExecuteWriteOff?: (() => void) | undefined;
 	readonly isExecuting?: boolean | undefined;
-}
-
-export interface ActPrintHeaderProps {
-	readonly actData: CompletedWorksActAndWriteOffData;
-	readonly palette: DocumentBrandColorPalette;
-	readonly headerStyle: "modern_split" | "classic_centered" | "minimal_clean";
-	readonly showClinicLogo: boolean;
-	readonly logoUrl?: string | null | undefined;
-	readonly showClinicRequisites: boolean;
-	readonly clinicName: string;
-	readonly slogan?: string;
-	readonly legalName: string;
-	readonly inn: string;
-	readonly kpp: string;
-	readonly ogrn: string;
-	readonly address: string;
-	readonly license: string;
-	readonly phone: string;
-	readonly website: string;
-	readonly email: string;
-	readonly patientDob: string;
-	readonly patientGenderText: string;
-	readonly patientPass: string;
-	readonly patientRegAddress: string;
-	readonly patientContactPhone: string;
-	readonly patientSnilsVal: string;
-	readonly patientOmsVal: string;
-	readonly patientMedCard: string;
-	readonly doctorSpec: string;
-	readonly doctorSnilsVal: string;
-	readonly contractDateFormatted: string;
 }
 
 export interface ActPrintServicesTableProps {

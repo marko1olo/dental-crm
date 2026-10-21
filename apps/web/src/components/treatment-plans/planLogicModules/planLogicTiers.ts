@@ -7,6 +7,7 @@ import {
 } from "../treatmentPlanStagesEngine.js";
 import { filterStagesBySpecialty } from "../treatmentPlanStageMutations.js";
 import type {
+	ToothData,
 	TreatmentPlanSpecialtyFilter,
 	TreatmentPlanStage,
 	TreatmentPlanTier,
@@ -21,8 +22,8 @@ import {
 
 interface TiersParams {
 	readonly cbctAutoPlanTiers: [TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] | null;
-	readonly effectiveTeethData: Record<number, any>;
-	readonly catalog?: CatalogServiceLookupItem[];
+	readonly effectiveTeethData: readonly ToothData[];
+	readonly catalog?: CatalogServiceLookupItem[] | undefined;
 	readonly discountPercent: number;
 	readonly selectedTierId: TreatmentPlanTierId;
 	readonly customStages: TreatmentPlanStage[] | null;

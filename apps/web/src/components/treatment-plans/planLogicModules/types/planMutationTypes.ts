@@ -32,7 +32,7 @@ export interface PlanStageMutationContext {
 	readonly discountPercent: number;
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly currentPlanId: string | null;
-	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
 	readonly setCbctAutoPlanTiers: Dispatch<
 		SetStateAction<[TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] | null>
 	>;

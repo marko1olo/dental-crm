@@ -1,0 +1,119 @@
+/**
+ * apps/web/src/components/treatment-plans/roadmap/styles/roadmapCards.css
+ *
+ * Стили карточек этапов лечения и статусов.
+ */
+
+.roadmap-stages-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.roadmap-stage-card {
+	border-radius: 1.25rem;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	padding: 1.125rem;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.roadmap-stage-card.completed {
+	border-color: var(--ok-fg);
+}
+
+.roadmap-stage-card.in_progress {
+	border-color: var(--teal);
+	box-shadow: 0 0 16px -4px rgba(6, 182, 212, 0.2);
+}
+
+.roadmap-stage-card.planned {
+	border-color: var(--line);
+	opacity: 0.95;
+}
+.roadmap-stage-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+
+.roadmap-stage-num-badge {
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.625rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.roadmap-stage-num-badge.completed {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.roadmap-stage-num-badge.in_progress {
+	background: var(--teal-surface);
+	color: var(--teal);
+}
+
+.roadmap-stage-num-badge.planned {
+	background: var(--paper-soft);
+	color: var(--muted);
+}
+
+.roadmap-stage-title-wrap {
+	flex: 1;
+	min-width: 0;
+}
+
+.roadmap-stage-name {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.35;
+}
+
+.roadmap-stage-desc {
+	font-size: 0.75rem;
+	color: var(--muted);
+	margin-top: 0.125rem;
+	line-height: 1.4;
+}
+
+.roadmap-stage-status-badge {
+	padding: 0.25rem 0.625rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	flex-shrink: 0;
+}
+
+.roadmap-stage-status-badge.completed {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
+}
+
+.roadmap-stage-status-badge.in_progress {
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal);
+}
+
+.roadmap-stage-status-badge.planned {
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+}

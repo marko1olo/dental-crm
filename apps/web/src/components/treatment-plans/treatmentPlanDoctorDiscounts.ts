@@ -8,10 +8,13 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 	sumKopecks,
-	multiplyKopecks,
 } from "@dental/shared";
 import type { TreatmentPlanStage } from "./types";
-import { safeKopecks, calculateStageTotals } from "./treatmentPlanPricingEngine";
+import { calculateStageTotals } from "./treatmentPlanPricingEngine";
+import {
+	calculateItemDiscountedState,
+	getItemBaseUnitPriceKopecks,
+} from "./doctorDiscounts/applyItemDiscountHelper";
 
 /**
  * Применяет свободную скидку врача (0-100%) к процедурам этапа (Мандат 8e).
@@ -31,28 +34,10 @@ export function applyDoctorDiscountToStages(
 		}
 
 		const updatedItems = stage.items.map((it) => {
-			const baseUnitPriceRub =
-				typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
-					? it.unitPriceRub
-					: it.priceRub && it.quantity
-						? Math.round(it.priceRub / it.quantity)
-						: 0;
-
-			const baseUnitPriceKop = safeKopecks(baseUnitPriceRub, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
+			const baseUnitPriceKop = getItemBaseUnitPriceKopecks(it);
 			const discountKopPerUnit =
 				validPct > 0 ? percentageOfKopecks(baseUnitPriceKop, validPct * 100) : (0 as Kopecks);
-			const finalUnitPriceKop = Math.max(0, baseUnitPriceKop - discountKopPerUnit) as Kopecks;
-
-			const qty = Math.max(1, it.quantity || 1);
-			const lineTotalKop = multiplyKopecks(finalUnitPriceKop, qty);
-			const lineDiscountKop = multiplyKopecks(discountKopPerUnit, qty);
-
-			return {
-				...it,
-				unitPriceRub: Math.round(baseUnitPriceKop / 100),
-				priceRub: Math.round(lineTotalKop / 100),
-				discountRub: Math.round(lineDiscountKop / 100),
-			};
+			return calculateItemDiscountedState(it, discountKopPerUnit);
 		});
 
 		const stageTotals = calculateStageTotals(updatedItems);
@@ -76,9 +61,7 @@ export function applyDoctorFixedDiscountToStages(
 	targetStageNumber?: number,
 ): readonly TreatmentPlanStage[] {
 	const validDiscountRub = Math.max(0, discountRub);
-	if (validDiscountRub === 0) {
-		return stages;
-	}
+	if (validDiscountRub === 0) return stages;
 
 	const targetStages = targetStageNumber && targetStageNumber > 0
 		? stages.filter((s) => s.stageNumber === targetStageNumber)
@@ -96,27 +79,9 @@ export function applyDoctorFixedDiscountToStages(
 		}
 
 		const updatedItems = stage.items.map((it) => {
-			const baseUnitPriceRub =
-				typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
-					? it.unitPriceRub
-					: it.priceRub && it.quantity
-						? Math.round(it.priceRub / it.quantity)
-						: 0;
-
-			const baseUnitPriceKop = safeKopecks(baseUnitPriceRub, { allowEmptyAsZero: true }) ?? (0 as Kopecks);
+			const baseUnitPriceKop = getItemBaseUnitPriceKopecks(it);
 			const discountKopPerUnit = Math.round(baseUnitPriceKop * discountRatio) as Kopecks;
-			const finalUnitPriceKop = Math.max(0, baseUnitPriceKop - discountKopPerUnit) as Kopecks;
-
-			const qty = Math.max(1, it.quantity || 1);
-			const lineTotalKop = multiplyKopecks(finalUnitPriceKop, qty);
-			const lineDiscountKop = multiplyKopecks(discountKopPerUnit, qty);
-
-			return {
-				...it,
-				unitPriceRub: Math.round(baseUnitPriceKop / 100),
-				priceRub: Math.round(lineTotalKop / 100),
-				discountRub: Math.round(lineDiscountKop / 100),
-			};
+			return calculateItemDiscountedState(it, discountKopPerUnit);
 		});
 
 		const stageTotals = calculateStageTotals(updatedItems);

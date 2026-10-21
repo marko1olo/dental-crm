@@ -1,16 +1,12 @@
 /**
  * StagePaymentActTab.tsx — Вкладка закрытия этапа актом выполненных работ (DENTE CRM).
- *
- * Содержит:
- * 1. Форму выбора этапа, номера акта и даты подписания (ст. 720 ГК РФ).
- * 2. Детальную карточку выбранного этапа (суммы, аванс, замороженный эскроу, прямые затраты).
- * 3. Кнопку подписания Акта и перевода эскроу в признанную выручку клиники.
  */
 
 import React from "react";
 import { FileCheck } from "lucide-react";
-import { formatKopecksRu } from "@dental/shared";
 import type { MilestoneStage } from "./stagePaymentEngine.js";
+import { StageActFormInputs } from "./actTab/StageActFormInputs.js";
+import { SelectedStageDetailCard } from "./actTab/SelectedStageDetailCard.js";
 
 export interface StagePaymentActTabProps {
 	readonly stages: readonly MilestoneStage[];
@@ -50,92 +46,17 @@ export const StagePaymentActTab: React.FC<StagePaymentActTabProps> = ({
 					</span>
 				</div>
 
-				{/* Stage Selector */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div>
-						<label className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1.5">
-							Выберите закрываемый этап:
-						</label>
-						<select
-							value={selectedStageForActId}
-							onChange={(e) => onSelectStageForAct(e.target.value)}
-							className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
-						>
-							{stages.map((s) => (
-								<option key={s.id} value={s.id}>
-									Этап №{s.stageNumber}: {s.title} ({formatKopecksRu(s.totalKopecks)})
-								</option>
-							))}
-						</select>
-					</div>
+				<StageActFormInputs
+					stages={stages}
+					selectedStageForActId={selectedStageForActId}
+					onSelectStageForAct={onSelectStageForAct}
+					actNumberInput={actNumberInput}
+					onActNumberChange={onActNumberChange}
+					actSignDate={actSignDate}
+					onActSignDateChange={onActSignDateChange}
+				/>
 
-					<div>
-						<label className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1.5">
-							Номер Акта:
-						</label>
-						<input
-							type="text"
-							value={actNumberInput}
-							onChange={(e) => onActNumberChange(e.target.value)}
-							className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
-						/>
-					</div>
-
-					<div>
-						<label className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1.5">
-							Дата подписания:
-						</label>
-						<input
-							type="date"
-							value={actSignDate}
-							onChange={(e) => onActSignDateChange(e.target.value)}
-							className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-transparent px-3 py-2 text-sm text-[var(--ink,#0f172a)] font-medium focus:border-[var(--teal,var(--brand-primary))] focus:outline-none"
-						/>
-					</div>
-				</div>
-
-				{/* Selected Stage Detail Card */}
-				{selectedStage && (
-					<div className="rounded-xl border border-[var(--line-subtle)] bg-[var(--paper-soft)] p-4 text-xs flex flex-col gap-3">
-						<div className="flex justify-between items-center">
-							<span className="font-bold text-sm text-[var(--ink)]">
-								{selectedStage.title}
-							</span>
-							<span className="font-extrabold text-sm text-[var(--teal,var(--brand-primary))]">
-								{formatKopecksRu(selectedStage.totalKopecks)}
-							</span>
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[var(--muted,#64748b)]">
-							<div>
-								<span>Внесено аванса: </span>
-								<strong className="text-[var(--ink,#0f172a)]">
-									{formatKopecksRu(selectedStage.advancePaidKopecks)}
-								</strong>
-							</div>
-							<div>
-								<span>Зарезервировано в эскроу: </span>
-								<strong className="text-[var(--teal,var(--brand-primary))]">
-									{formatKopecksRu(selectedStage.escrowLockedKopecks)}
-								</strong>
-							</div>
-							<div>
-								<span>Прямые затраты (Lab/BOM): </span>
-								<strong className="text-[var(--ink,#0f172a)]">
-									{formatKopecksRu(
-										selectedStage.directExpensesKopecks.labKopecks +
-											selectedStage.directExpensesKopecks.materialsKopecks +
-											selectedStage.directExpensesKopecks.otherKopecks,
-									)}
-								</strong>
-							</div>
-						</div>
-
-						<div className="border-t border-[var(--border,#cbd5e1)] pt-2 text-[11px] text-[var(--muted,#64748b)]">
-							При подписании Акта средства из эскроу ({formatKopecksRu(selectedStage.escrowLockedKopecks)}) переводятся в признанную выручку клиники, а гарантийные обязательства вступают в силу.
-						</div>
-					</div>
-				)}
+				{selectedStage && <SelectedStageDetailCard stage={selectedStage} />}
 
 				<div className="flex justify-end gap-3">
 					<button

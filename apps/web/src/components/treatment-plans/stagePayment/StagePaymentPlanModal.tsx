@@ -18,17 +18,9 @@ export type { StagePaymentModalTab, StagePaymentPlanModalProps };
 
 export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = (props) => {
 	const {
-		isOpen,
-		onClose,
-		planTitle = "Комплексный план лечения",
-		patientName = "",
-		patientId = "",
-		clinicName = "Стоматологическая клиника",
-		clinicInn = "",
-		doctorFullName = "Лечащий врач",
-		initialStages,
-		initialDepositKopecks,
-		initialTab = "schedule",
+		isOpen, onClose, planTitle = "Комплексный план лечения", patientName = "", patientId = "",
+		clinicName = "Стоматологическая клиника", clinicInn = "", doctorFullName = "Лечащий врач",
+		initialStages, initialDepositKopecks, initialTab = "schedule",
 	} = props;
 
 	if (!isOpen) return null;
@@ -111,10 +103,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = (prop
 		</div>
 	);
 
-	if (typeof document !== "undefined") {
-		return createPortal(modalContent, document.body);
-	}
-	return modalContent;
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default StagePaymentPlanModal;

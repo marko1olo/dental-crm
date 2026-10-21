@@ -1,0 +1,71 @@
+/* ==========================================================================
+   Treatment Plan Price Validator: Header Styling
+   ========================================================================== */
+
+.price-validator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--pv-border);
+	background: var(--pv-surface);
+	flex-shrink: 0;
+}
+
+.price-validator-header-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.price-validator-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: var(--pv-radius-md);
+	background: var(--pv-brand-light);
+	color: var(--pv-brand);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.price-validator-title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.price-validator-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--pv-text-main);
+}
+
+.price-validator-subtitle {
+	margin: 2px 0 0 0;
+	font-size: 0.85rem;
+	color: var(--pv-text-muted);
+}
+
+.price-validator-close-btn {
+	background: transparent;
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	border-radius: var(--pv-radius-sm);
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.price-validator-close-btn:hover {
+	background: var(--pv-surface-hover);
+	color: var(--pv-text-main);
+	border-color: var(--pv-border-focus);
+}

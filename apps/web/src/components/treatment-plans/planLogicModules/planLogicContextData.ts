@@ -9,7 +9,7 @@ import {
 import type { TreatmentPlanStage, TreatmentPlanTier } from "./types.js";
 
 interface ContextDataParams {
-	readonly planCreatedAtIso?: string;
+	readonly planCreatedAtIso?: string | undefined;
 	readonly dashboard: any;
 	readonly auth: any;
 	readonly patientId: string;

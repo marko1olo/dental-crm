@@ -13,10 +13,10 @@ export interface BuildValidationPayloadParams {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly currentTierTitle: string;
-	readonly doctorId?: string;
-	readonly doctorFullName?: string;
+	readonly doctorId?: string | undefined;
+	readonly doctorFullName?: string | undefined;
 	readonly discountPercent: number;
-	readonly planCreatedAtIso?: string;
+	readonly planCreatedAtIso?: string | undefined;
 }
 
 export function buildTreatmentPlanValidationPayload({
@@ -62,8 +62,8 @@ export interface BuildStageCompletedActDataParams {
 	readonly contractNumber: string;
 	readonly patientId: string;
 	readonly patientName: string;
-	readonly doctorFullName?: string;
-	readonly clinicName?: string;
+	readonly doctorFullName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	readonly inventoryItems?: unknown;
 }
 

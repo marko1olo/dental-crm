@@ -4,15 +4,14 @@
  */
 
 import React from "react";
-import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
-import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
-import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
+import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison.js";
+import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap.js";
 import type {
 	TreatmentPlanStage,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
-} from "./types";
-import { showToast } from "../GlobalToast";
+} from "./types.js";
+import { Phased4StageViewWrapper } from "./scenarioSelector/Phased4StageViewWrapper.js";
 
 export interface TreatmentPlanScenarioSelectorProps {
 	readonly activeViewTab: "3tier" | "stages" | "phased4" | "roadmap";
@@ -83,65 +82,18 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 
 	if (activeViewTab === "phased4") {
 		return (
-			<TreatmentPlanPhased4StageView
+			<Phased4StageViewWrapper
 				stages={stages}
 				patientName={patientName}
+				patientId={patientId}
 				planAgeDays={planAgeDays}
 				planCreatedAtIso={planCreatedAtIso}
-				onExecuteStage={(category) => {
-					const matchingStage =
-						stages.find((s) => {
-							if (category === "hygiene_sanitation" || category === "endo_therapy") {
-								return s.stageKind === "stage_1_therapy";
-							}
-							if (category === "surgery_implant") {
-								return s.stageKind === "stage_2_surgery";
-							}
-							if (category === "ortho_prosthetics") {
-								return s.stageKind === "stage_3_orthopedics";
-							}
-							return false;
-						}) || stages[0];
-					if (matchingStage) {
-						onExecuteWriteOffStage(matchingStage);
-					}
-				}}
-				onBookStageToVisit={(_category, items) => {
-					showToast(
-						`Запись на приём: сформирован визит для этапа (${items.length} услуг)`,
-						"info",
-						3000,
-					);
-					if (typeof window !== "undefined") {
-						window.dispatchEvent(
-							new CustomEvent("dente-book-stage-appointment", {
-								detail: { patientId, patientName, items },
-							}),
-						);
-					}
-				}}
-				onOpenStagePayment={onOpenFiscalPayment}
-				onOpenInstallment={onOpenInstallmentModal}
-				onApproveAndSign={onOpenSignModal}
-				onPrintContract={onOpenContractPrint}
-				onChangeStageStatus={(category, newStatus) => {
-					const matchingStage =
-						stages.find((s) => {
-							if (category === "hygiene_sanitation" || category === "endo_therapy") {
-								return s.stageKind === "stage_1_therapy";
-							}
-							if (category === "surgery_implant") {
-								return s.stageKind === "stage_2_surgery";
-							}
-							if (category === "ortho_prosthetics") {
-								return s.stageKind === "stage_3_orthopedics";
-							}
-							return false;
-						}) || stages[0];
-					if (matchingStage && onChangeStageStatus) {
-						onChangeStageStatus(matchingStage, newStatus);
-					}
-				}}
+				onExecuteWriteOffStage={onExecuteWriteOffStage}
+				onOpenFiscalPayment={onOpenFiscalPayment}
+				onOpenInstallmentModal={onOpenInstallmentModal}
+				onOpenSignModal={onOpenSignModal}
+				onOpenContractPrint={onOpenContractPrint}
+				onChangeStageStatus={onChangeStageStatus}
 			/>
 		);
 	}

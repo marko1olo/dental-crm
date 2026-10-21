@@ -1,7 +1,6 @@
 import type React from "react";
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
-import { LabWorkOrderModal } from "../../lab/orders/LabWorkOrderModal.js";
 import type { TreatmentPlanStage } from "../types.js";
 import type {
 	CatalogServiceItem,
@@ -12,6 +11,8 @@ import type { WorkOrderValidatedExport } from "./planPriceValidationEngine.js";
 import { PriceValidatorModalView } from "./modal/PriceValidatorModalView.js";
 import { usePriceValidatorActions } from "./modal/usePriceValidatorActions.js";
 import { usePriceValidatorData } from "./modal/usePriceValidatorData.js";
+import { PriceValidatorLabOrderWrapper } from "./modal/PriceValidatorLabOrderWrapper.js";
+
 if (typeof document !== "undefined") {
 	void import("./planPriceValidation.css");
 }
@@ -69,15 +70,11 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 
 	if (actions.isLabOrderModalOpen) {
 		return (
-			<LabWorkOrderModal
+			<PriceValidatorLabOrderWrapper
 				isOpen={actions.isLabOrderModalOpen}
 				onClose={() => actions.setIsLabOrderModalOpen(false)}
-				patientId={planPayload?.patientId || undefined}
-				patientName={planPayload?.patientName || "Пациент не указан"}
-				patientChartNumber={planPayload?.planNumber || (planPayload?.patientId ? `К-${planPayload.patientId.slice(0, 5)}` : undefined)}
-				doctorId={planPayload?.doctorId || undefined}
-				doctorName={planPayload?.doctorFullName || undefined}
-				initialTeeth={labTeeth}
+				planPayload={planPayload}
+				labTeeth={labTeeth}
 			/>
 		);
 	}

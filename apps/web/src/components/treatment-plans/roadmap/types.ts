@@ -10,6 +10,8 @@ import type {
 	TreatmentPlanTierId,
 } from "../types.js";
 
+export type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId };
+
 export type RoadmapStageKind =
 	| "stage_1_emergency"
 	| "stage_2_therapy"
