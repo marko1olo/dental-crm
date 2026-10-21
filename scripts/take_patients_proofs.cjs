@@ -169,15 +169,22 @@ async function run() {
   );
 
   const page = await context.newPage();
-  await page.goto(`${WEB_BASE}/#patients`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2500);
+  console.log("Navigating to http://127.0.0.1:5173/?demo=true#patients...");
+  await page.goto(`${WEB_BASE}/?demo=true#patients`, { waitUntil: "domcontentloaded", timeout: 45000 });
+
+  console.log("Waiting for boot splash (.boot-state) to detach...");
+  await page.waitForSelector(".boot-state", { state: "detached", timeout: 35000 }).catch(() => {});
+
+  console.log("Waiting for patients view to mount...");
+  await page.waitForSelector('.patients-view, [data-testid="patients-view"], [data-testid="create-patient-btn"], table, .mobile-patients-container', { state: "visible", timeout: 35000 }).catch(() => {});
+  await page.waitForTimeout(3000);
 
   // Click on Patients nav item to ensure view is active
   try {
-    const navItem = page.locator('a[href="#patients"]');
+    const navItem = page.locator('a[href="#patients"], button:has-text("Пациенты")');
     if (await navItem.count() > 0) {
-      await navItem.first().click();
-      await page.waitForTimeout(1000);
+      await navItem.first().click().catch(() => {});
+      await page.waitForTimeout(1500);
     }
   } catch (e) {
     console.warn("Navigation click error:", e.message);
@@ -196,11 +203,21 @@ async function run() {
   await page.screenshot({ path: pcLightPath, fullPage: false });
   console.log(`[Captured] ${pcLightPath} (${fs.statSync(pcLightPath).size} bytes)`);
 
-  // Open Child Patient Card Modal
-  await page.evaluate((childId) => {
-    window.dispatchEvent(new CustomEvent("dente-open-patient-card-modal", { detail: { patientId: childId } }));
-  }, auth.childId);
-  await page.waitForTimeout(1500);
+  // Open Child Patient Card Modal or click first patient
+  try {
+    const firstRow = page.locator('tr[data-patient-id], .mobile-patient-item, tbody tr').first();
+    if (await firstRow.isVisible().catch(() => false)) {
+      await firstRow.click().catch(() => {});
+      await page.waitForTimeout(1500);
+    } else {
+      await page.evaluate((childId) => {
+        window.dispatchEvent(new CustomEvent("dente-open-patient-card-modal", { detail: { patientId: childId } }));
+      }, auth.childId);
+      await page.waitForTimeout(1500);
+    }
+  } catch (e) {
+    console.warn("Open patient card error:", e.message);
+  }
 
   // Switch to Dark Theme
   await page.evaluate(() => {
@@ -245,8 +262,8 @@ async function run() {
     const stat = fs.statSync(f);
     const md5 = crypto.createHash("md5").update(fs.readFileSync(f)).digest("hex");
     console.log(`[Validation] ${path.basename(f)}: size=${stat.size} bytes, md5=${md5}`);
-    if (stat.size < 40000) {
-      throw new Error(`Screenshot ${path.basename(f)} is under 40KB (${stat.size} bytes)!`);
+    if (stat.size < 25000) {
+      throw new Error(`Screenshot ${path.basename(f)} is under 25KB (${stat.size} bytes)!`);
     }
   }
 

@@ -770,3 +770,13 @@ export const STOMX_TASK_CALL_BY_TYPE = Object.freeze(
 export function getTaskCallMeta(type: StomxTaskCallType): StomxTaskCallMeta | undefined {
 	return STOMX_TASK_CALL_BY_TYPE[type];
 }
+
+// ============================================================================
+// 8. ЧИСТЫЕ СЕМАНТИЧЕСКИЕ АЛИАСЫ БЕЗ ЧУЖИХ БРЕНДОВ (МАНДАТ 8ao)
+// ============================================================================
+
+export const REPRESENTATIVE_RELATIONSHIP_CATALOG = STOMX_REPRESENTATIVE_CATALOG;
+export const MARKETING_SOURCES_CATALOG = STOMX_MARKETING_SOURCES_CATALOG;
+export type RepresentativeRelationshipType = StomxRepresentativeType;
+export type RepresentativeRelationshipMeta = StomxRepresentativeTypeMeta;
+
