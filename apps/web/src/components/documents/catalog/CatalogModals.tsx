@@ -9,6 +9,7 @@ import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertific
 import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal";
 import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
+import { useCatalogModalsData } from "./useCatalogModalsData";
 
 export interface CatalogModalsProps {
 	patient?: Patient | null | undefined;
@@ -51,17 +52,8 @@ export function CatalogModals(props: CatalogModalsProps) {
 		onCreateDocument, onOpenIssuedDocumentHtml, handleOpenKind,
 	} = props;
 
-	const effectivePatientInn =
-		patient?.administrativeProfile?.taxpayerInn ??
-		(patient as { inn?: string | null } | null | undefined)?.inn ??
-		(patient as { details?: { inn?: string | null } } | null | undefined)?.details?.inn ??
-		"";
-
-	const effectivePatientSnils =
-		patient?.administrativeProfile?.snils ??
-		(patient as { snils?: string | null } | null | undefined)?.snils ??
-		(patient as { details?: { snils?: string | null } } | null | undefined)?.details?.snils ??
-		"";
+	const { effectivePatientInn, effectivePatientSnils, sanitizedPayments } =
+		useCatalogModalsData(patient, mappedTaxPayments);
 
 	return (
 		<>
@@ -89,7 +81,7 @@ export function CatalogModals(props: CatalogModalsProps) {
 					clinicInn={clinicProfileDraft?.inn || ""} clinicKpp={clinicProfileDraft?.kpp || ""}
 					clinicOgrn={clinicProfileDraft?.ogrn || ""} clinicLicenseNumber={clinicProfileDraft?.licenseNumber || clinicProfileDraft?.medicalLicenseNumber || ""}
 					clinicLicenseDate={clinicProfileDraft?.licenseDate || clinicProfileDraft?.medicalLicenseIssuedAt || ""} clinicAddress={clinicProfileDraft?.address || ""}
-					chiefDoctorName={doctorName || ""} payments={mappedTaxPayments}
+					chiefDoctorName={doctorName || ""} payments={sanitizedPayments ?? mappedTaxPayments}
 				/>
 			)}
 			{isLocalIntakeModalOpen && (

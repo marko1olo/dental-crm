@@ -42,14 +42,14 @@ export {
 } from "./gost/gostHistoryTypes";
 
 export interface ClassicGostOdontogramProps {
-	teethData: ToothData[];
+	teethData: readonly ToothData[];
 	pediatricMode?: boolean | undefined;
 	mixedDentition?: boolean | undefined;
 	topTeeth?: number[] | undefined;
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
-	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
+	onToothClick?: ((num: number, rect?: DOMRect, surface?: string) => void) | undefined;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;

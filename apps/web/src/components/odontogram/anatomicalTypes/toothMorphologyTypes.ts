@@ -39,7 +39,8 @@ export type RestorativeMaterialKey =
 	| "zirconia"
 	| "pfm_crown"
 	| "gold"
-	| "titanium_implant";
+	| "titanium_implant"
+	| "titanium";
 
 export type PostCoreType = "fiber" | "cast_core" | "titanium";
 

@@ -74,7 +74,7 @@ export interface ToothData {
 }
 
 export interface ToothChartProps {
-	teethData?: ToothData[] | undefined;
+	teethData?: readonly ToothData[] | undefined;
 	patientId?: string | undefined;
 	pediatricMode?: boolean | undefined;
 	mixedDentition?: boolean | undefined;

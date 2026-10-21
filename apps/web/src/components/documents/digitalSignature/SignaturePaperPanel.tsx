@@ -4,7 +4,7 @@ import { CheckSquare, FileText, Printer } from "lucide-react";
 interface SignaturePaperPanelProps {
 	readonly paperSigned: boolean;
 	readonly setPaperSigned: (val: boolean) => void;
-	readonly onPrintArchiveA4?: () => void;
+	readonly onPrintArchiveA4?: (() => void) | undefined;
 	readonly patientName: string;
 }
 

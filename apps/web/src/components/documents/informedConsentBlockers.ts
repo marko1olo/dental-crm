@@ -15,7 +15,7 @@ export interface InformedConsentBlocker {
 	label: string;
 	hint: string;
 	/** Всегда true: подсказка мягкая, печать не блокируется */
-	isSoftGuide?: boolean;
+	isSoftGuide?: boolean | undefined;
 }
 
 export interface InformedConsentBlockersReview {

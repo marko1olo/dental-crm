@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Check, Sparkles } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
 import {
 	type PediatricVisitAdaptationTabProps,
 	ADAPTATION_STAGES,

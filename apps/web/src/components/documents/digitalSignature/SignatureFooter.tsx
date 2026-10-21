@@ -5,7 +5,7 @@ interface SignatureFooterProps {
 	readonly isSubmitting: boolean;
 	readonly onClose: () => void;
 	readonly onConfirm: () => void;
-	readonly onPrintArchiveA4?: () => void;
+	readonly onPrintArchiveA4?: (() => void) | undefined;
 }
 
 export const SignatureFooter: React.FC<SignatureFooterProps> = ({
@@ -34,24 +34,24 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 					onClick={onPrintArchiveA4}
 					className="secondary-button"
 					style={{
-						height: "36px",
-						minHeight: "36px",
-						padding: "0 14px",
+						minHeight: "44px",
+						padding: "0 16px",
 						borderRadius: "8px",
 						border: "1px solid var(--line, #cbd5e1)",
 						background: "var(--paper, #ffffff)",
 						color: "var(--ink, #0f172a)",
-						fontSize: "12.5px",
+						fontSize: "13px",
 						fontWeight: 600,
 						display: "inline-flex",
 						alignItems: "center",
 						gap: "6px",
 						cursor: "pointer",
+						touchAction: "manipulation",
 					}}
 					title="Распечатать двусторонний официальный бланк А4"
 					data-testid="btn-print-archive-blank"
 				>
-					<Printer size={14} color="var(--teal, #0d9488)" />
+					<Printer size={15} color="var(--teal, #0d9488)" />
 					<span>Печать для архива (А4)</span>
 				</button>
 			)}
@@ -63,16 +63,16 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 				onClick={onClose}
 				className="secondary-button"
 				style={{
-					height: "36px",
-					minHeight: "36px",
-					padding: "0 14px",
+					minHeight: "44px",
+					padding: "0 16px",
 					borderRadius: "8px",
 					border: "1px solid var(--line, #cbd5e1)",
 					background: "var(--paper, #ffffff)",
 					color: "var(--ink, #0f172a)",
-					fontSize: "12.5px",
+					fontSize: "13px",
 					fontWeight: 600,
 					cursor: "pointer",
+					touchAction: "manipulation",
 				}}
 				data-testid="btn-cancel-signature"
 			>
@@ -85,9 +85,8 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 				onClick={onConfirm}
 				className="primary-button"
 				style={{
-					height: "36px",
-					minHeight: "36px",
-					padding: "0 16px",
+					minHeight: "44px",
+					padding: "0 18px",
 					borderRadius: "8px",
 					border: "1px solid var(--teal, #0d9488)",
 					background: "var(--teal, #0d9488)",

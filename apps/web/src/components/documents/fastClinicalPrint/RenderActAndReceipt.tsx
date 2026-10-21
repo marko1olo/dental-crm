@@ -17,16 +17,16 @@ export function RenderActAndReceipt({
 	fiscalData,
 }: {
 	clinic: FastPrintClinicInfo;
-	doctor: FastPrintDoctorInfo;
+	doctor?: FastPrintDoctorInfo | undefined;
 	patient: FastPrintPatientInfo;
-	services: FastPrintServiceItem[];
+	services?: FastPrintServiceItem[] | undefined;
 	totalAmount: number;
 	fiscalData?: FastClinicalPrintEngineProps["fiscalData"];
 }) {
 	const todayStr = new Date().toLocaleDateString("ru-RU");
 	const effClinic = getEffectiveClinic(clinic);
 	const effDoctor = getEffectiveDoctor(doctor);
-	const effectiveServices: FastPrintServiceItem[] = services.length > 0
+	const effectiveServices: FastPrintServiceItem[] = (services && services.length > 0)
 		? services
 		: [
 			{ code: "A16.07.002.001", name: "Восстановление зуба пломбой с нарушением формы (глубокий кариес)", tooth: "16", quantity: 1, price: 3800, amount: 3800 },

@@ -86,8 +86,15 @@ export function useDicomViewportMouse({
 			const m = measureDistanceMm(draftRulerStart, draftRulerCurrent, viewportState.calibrationMmPerPixel);
 			if (m.distanceMm > 0.5) {
 				onAddMeasurement({
-					id: `ruler-${Date.now()}`, p1: draftRulerStart, p2: draftRulerCurrent,
-					lengthMm: m.distanceMm, clinicalType: "general", labelRu: `${m.distanceMm.toFixed(1)} мм`, colorHex: "#06b6d4",
+					id: `ruler-${Date.now()}`,
+					p1: draftRulerStart,
+					p2: draftRulerCurrent,
+					lengthPx: m.distancePx,
+					lengthMm: m.distanceMm,
+					calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
+					clinicalType: "general",
+					labelRu: `${m.distanceMm.toFixed(1)} мм`,
+					colorHex: "#06b6d4",
 				});
 			}
 			setDraftRulerStart(null);

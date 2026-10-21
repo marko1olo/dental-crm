@@ -106,7 +106,7 @@ describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () =>
 
 		const consentItem = items.find((i) => i.id === "consent_medical_intervention");
 		assert.ok(consentItem, "Consent item must be present");
-		consentItem?.onQuickAction();
+		consentItem?.onQuickAction?.();
 		assert.strictEqual(chosenTab, "informed_consent", "Quick action must select canonical informed_consent tab");
 	});
 });

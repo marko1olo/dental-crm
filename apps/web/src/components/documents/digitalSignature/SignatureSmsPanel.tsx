@@ -2,7 +2,7 @@ import React from "react";
 import { Lock, Smartphone } from "lucide-react";
 
 interface SignatureSmsPanelProps {
-	readonly patientPhone?: string;
+	readonly patientPhone?: string | undefined;
 	readonly smsCode: string;
 	readonly setSmsCode: (code: string) => void;
 	readonly smsCountdown: number;

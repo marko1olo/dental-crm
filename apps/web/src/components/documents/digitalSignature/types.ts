@@ -15,11 +15,11 @@ export interface DigitalSignatureData {
 export interface DigitalSignatureTabletModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly document?: GeneratedDocument | null;
-	readonly documentsPackageTitle?: string;
-	readonly patient?: Patient | null;
-	readonly doctorFullName?: string | null;
-	readonly clinicName?: string;
+	readonly document?: GeneratedDocument | null | undefined;
+	readonly documentsPackageTitle?: string | undefined;
+	readonly patient?: Patient | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly clinicName?: string | undefined;
 	readonly onConfirmSignature: (signatureData: DigitalSignatureData) => Promise<void> | void;
-	readonly onPrintArchiveA4?: () => void;
+	readonly onPrintArchiveA4?: (() => void) | undefined;
 }

@@ -14,7 +14,7 @@ export function RenderForm043u({
 	visitData,
 }: {
 	clinic: FastPrintClinicInfo;
-	doctor: FastPrintDoctorInfo;
+	doctor?: FastPrintDoctorInfo | undefined;
 	patient: FastPrintPatientInfo;
 	visitData?: FastClinicalPrintEngineProps["visitData"];
 }) {

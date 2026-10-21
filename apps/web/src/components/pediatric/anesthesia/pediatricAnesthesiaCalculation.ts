@@ -4,6 +4,8 @@ import type {
 	PediatricAnestheticDrugId,
 } from "./pediatricAnesthesiaSpecs";
 
+export type { PediatricAnesthesiaCalculationResult };
+
 export interface CalculatePediatricAnesthesiaParams {
 	readonly drug: PediatricAnestheticSpec;
 	readonly selectedDrugId: PediatricAnestheticDrugId;

@@ -59,10 +59,7 @@ export function PsoMobileCards({
 			{logs.map((log) => {
 				const isApproved = log.isBatchApproved ?? true;
 				const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
-				const reagentLotMatch = log.notes?.match(/Серия:\s*([^,\]|]+)/);
-				const reagentLot = reagentLotMatch
-					? reagentLotMatch[1]?.trim()
-					: STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber;
+				const reagentLot = STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber;
 				const rawDate = log.timestamp || log.createdAt;
 				const safeDate =
 					rawDate && !isNaN(new Date(rawDate).getTime())

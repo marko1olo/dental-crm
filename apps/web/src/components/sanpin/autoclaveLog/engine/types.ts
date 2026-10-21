@@ -100,6 +100,12 @@ export interface Form257Record {
 	readonly verificationTimestamp?: string | undefined;
 	readonly digitalStampHash: string;
 	readonly notes?: string | undefined;
+	readonly barcode?: string | undefined;
+	readonly sensors?: {
+		readonly actualTemperatureCelsius: number;
+		readonly actualPressureBar: number;
+		readonly actualExposureMinutes: number;
+	} | undefined;
 	readonly createdAt: string;
 }
 

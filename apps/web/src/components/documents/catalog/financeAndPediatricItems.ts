@@ -1,6 +1,4 @@
-import {
-	Award, ClipboardList, FileCheck, Heart, Receipt, ShieldAlert, Zap,
-} from "lucide-react";
+import { Award, ClipboardList, FileCheck, Heart, Receipt, ShieldAlert, Zap } from "lucide-react";
 import { ToothDeciduous } from "../../icons/DentalIcons";
 import type { DocumentCatalogItem } from "./types";
 import type { DocumentKind } from "@dental/shared";

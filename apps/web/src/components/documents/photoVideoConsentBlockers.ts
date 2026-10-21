@@ -12,7 +12,7 @@ export interface PhotoVideoConsentBlocker {
 	field: string;
 	label: string;
 	hint: string;
-	isSoftGuide?: boolean;
+	isSoftGuide?: boolean | undefined;
 }
 
 export interface PhotoVideoConsentBlockersReview {

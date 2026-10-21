@@ -5,10 +5,10 @@ import { formatShortDate } from "../../../AppHelpers";
 
 interface SignatureContextCardProps {
 	readonly titleText: string;
-	readonly patient?: Patient | null;
+	readonly patient?: Patient | null | undefined;
 	readonly patientName: string;
 	readonly clinicName: string;
-	readonly doctorFullName?: string | null;
+	readonly doctorFullName?: string | null | undefined;
 	readonly docFingerprint: string;
 }
 

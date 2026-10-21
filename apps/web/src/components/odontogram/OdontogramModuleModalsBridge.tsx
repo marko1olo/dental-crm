@@ -37,7 +37,7 @@ export const OdontogramModuleModalsBridge: React.FC<
 				onOpenHistory={(num) => modals.setHistoryTooth(num)}
 				onOpenEndo={(num) => modals.setEndoTooth(num)}
 				onOneClickLabOrder={quickActions.handleOneClickLabOrder}
-				teethData={[...sync.teethData]}
+				teethData={sync.teethData}
 			/>
 
 			<OdontogramRadialMenuSlot

@@ -12,11 +12,11 @@ export interface SterilizationJournalToolbarProps {
 	readonly onSearchQueryChange: (query: string) => void;
 	readonly selectedDevice: string;
 	readonly onSelectedDeviceChange: (dev: string) => void;
-	readonly onQuickBatchShift?: () => void;
-	readonly onOpenNewCycle?: () => void;
-	readonly onPrintJournal?: () => void;
-	readonly onExportCsv?: () => void;
-	readonly isAutofilling?: boolean;
+	readonly onQuickBatchShift?: (() => void) | undefined;
+	readonly onOpenNewCycle?: (() => void) | undefined;
+	readonly onPrintJournal?: (() => void) | undefined;
+	readonly onExportCsv?: (() => void) | undefined;
+	readonly isAutofilling?: boolean | undefined;
 }
 
 export function SterilizationJournalToolbar({

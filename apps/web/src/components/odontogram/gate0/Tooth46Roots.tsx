@@ -2,11 +2,11 @@ import type React from "react";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 
 export interface Tooth46RootsProps {
-	showGrooves?: boolean;
-	showCej?: boolean;
-	isDark?: boolean;
-	isEndo?: boolean;
-	className?: string;
+	showGrooves?: boolean | undefined;
+	showCej?: boolean | undefined;
+	isDark?: boolean | undefined;
+	isEndo?: boolean | undefined;
+	className?: string | undefined;
 }
 
 /**

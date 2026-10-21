@@ -34,6 +34,7 @@ export interface PrescriptionBlankModalProps {
 	readonly onClose: () => void;
 	readonly patient?: Patient | null | undefined;
 	readonly doctorName?: string | undefined;
+	readonly doctorFullName?: string | undefined;
 	readonly doctorSpecialty?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: Clinic profile draft object
 	readonly clinicProfileDraft?: any | undefined;
@@ -50,11 +51,13 @@ export const PrescriptionBlankModal: React.FC<PrescriptionBlankModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
-	doctorName,
+	doctorName: propDoctorName,
+	doctorFullName,
 	doctorSpecialty,
 	clinicProfileDraft,
 	initialMedicationId,
 }) => {
+	const doctorName = propDoctorName ?? doctorFullName;
 	if (!isOpen) return null;
 	const draft = clinicProfileDraft || {};
 

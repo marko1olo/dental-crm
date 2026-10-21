@@ -21,5 +21,5 @@ export interface ToothActionMenuPortalProps {
 	onOpenHistory: (toothNumber: number) => void;
 	onOpenEndo: (toothNumber: number) => void;
 	onOneClickLabOrder: (targetTeeth: number[]) => void;
-	teethData: ToothData[];
+	teethData: readonly ToothData[];
 }

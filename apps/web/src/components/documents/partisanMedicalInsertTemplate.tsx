@@ -11,7 +11,7 @@ export type InsertCutLayout = "a4_cut" | "a5_direct";
 
 export interface PartisanInsert043uProps {
 	clinic: FastPrintClinicInfo;
-	doctor: FastPrintDoctorInfo;
+	doctor?: FastPrintDoctorInfo | undefined;
 	patient: FastPrintPatientInfo;
 	visitData?: FastClinicalPrintEngineProps["visitData"];
 	cutLayout?: InsertCutLayout;

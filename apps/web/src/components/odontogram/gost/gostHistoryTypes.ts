@@ -127,7 +127,7 @@ export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
  * Экспорт зубной формулы по ГОСТ в структурированный текстовый протокол визита / дневник приёма.
  */
 export function formatOdontogramTo043ProtocolText(
-	teethData: ToothData[],
+	teethData: readonly ToothData[],
 	pediatricMode = false,
 ): string {
 	const map = new Map<number, ToothData>();

@@ -14,13 +14,13 @@ import type { SanPinCycleEntry } from "../sanpin/journalModules/sanpinJournalTyp
 import { SterilizationJournalToolbar } from "./SterilizationJournalToolbar";
 
 export interface SterilizationJournalTableProps {
-	readonly cycles?: readonly SanPinCycleEntry[];
-	readonly onOpenNewCycle?: () => void;
-	readonly onQuickBatchShift?: () => void;
-	readonly onPrintJournal?: () => void;
-	readonly onExportCsv?: () => void;
-	readonly isAutofilling?: boolean;
-	readonly className?: string;
+	readonly cycles?: readonly SanPinCycleEntry[] | undefined;
+	readonly onOpenNewCycle?: (() => void) | undefined;
+	readonly onQuickBatchShift?: (() => void) | undefined;
+	readonly onPrintJournal?: (() => void) | undefined;
+	readonly onExportCsv?: (() => void) | undefined;
+	readonly isAutofilling?: boolean | undefined;
+	readonly className?: string | undefined;
 }
 
 export function SterilizationJournalTable({

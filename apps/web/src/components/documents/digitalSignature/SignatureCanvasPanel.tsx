@@ -68,12 +68,12 @@ export const SignatureCanvasPanel: React.FC<SignatureCanvasPanelProps> = ({
 				<span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>
 					Поле личной подписи пациента (касание экрана или стилус):
 				</span>
-				<button type="button" onClick={clearCanvas} className="secondary-button" style={{ height: "32px", padding: "0 10px", borderRadius: "8px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer" }} data-testid="btn-clear-canvas">
-					<RotateCcw size={13} />
+				<button type="button" onClick={clearCanvas} className="secondary-button" style={{ minHeight: "44px", padding: "0 14px", borderRadius: "8px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", touchAction: "manipulation" }} data-testid="btn-clear-canvas">
+					<RotateCcw size={14} />
 					<span>Очистить росчерк</span>
 				</button>
 			</div>
-			<div style={{ position: "relative", width: "100%", height: "180px", borderRadius: "12px", border: hasStroke ? "2px dashed var(--teal, #0d9488)" : "2px dashed var(--line, #cbd5e1)", background: "var(--paper, #ffffff)", overflow: "hidden", cursor: "crosshair", touchAction: "none" }}>
+			<div style={{ position: "relative", width: "100%", height: "220px", borderRadius: "12px", border: hasStroke ? "2px dashed var(--teal, #0d9488)" : "2px dashed var(--line, #cbd5e1)", background: "var(--paper, #ffffff)", overflow: "hidden", cursor: "crosshair", touchAction: "none" }}>
 				<canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} data-testid="digital-signature-canvas" />
 				{!hasStroke && (
 					<div style={{ position: "absolute", inset: 0, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--muted, #64748b)" }}>

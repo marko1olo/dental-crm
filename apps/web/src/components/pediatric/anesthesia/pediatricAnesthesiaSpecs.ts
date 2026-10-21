@@ -1,4 +1,4 @@
-import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
+import type { SomaticRiskProfile } from "../../visit/anesthesiaCalculatorEngine";
 
 export type PediatricAnestheticDrugId = "articaine_4" | "mepivacaine_3";
 

@@ -28,13 +28,13 @@ const DEFAULT_STAGES: FastPrintPlanStage[] = [
 export function RenderTreatmentEstimate({
 	clinic, doctor, patient, planStages, totalAmount: _totalAmount,
 }: {
-	clinic: FastPrintClinicInfo; doctor: FastPrintDoctorInfo; patient: FastPrintPatientInfo;
-	planStages: FastPrintPlanStage[]; totalAmount: number;
+	clinic: FastPrintClinicInfo; doctor?: FastPrintDoctorInfo | undefined; patient: FastPrintPatientInfo;
+	planStages?: FastPrintPlanStage[] | undefined; totalAmount: number;
 }) {
 	const todayStr = new Date().toLocaleDateString("ru-RU");
 	const effClinic = getEffectiveClinic(clinic);
 	const effDoctor = getEffectiveDoctor(doctor);
-	const effectiveStages = planStages.length > 0 ? planStages : DEFAULT_STAGES;
+	const effectiveStages = (planStages && planStages.length > 0) ? planStages : DEFAULT_STAGES;
 	const planGrandTotal = effectiveStages.reduce((acc, st) => acc + st.total, 0);
 
 	return (

@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertOctagon, Droplets, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { PediatricAnesthesiaCalculationResult } from "./pediatricAnesthesiaCalculation";
+import type { PediatricAnesthesiaCalculationResult } from "./pediatricAnesthesiaSpecs";
 
 interface PediatricAnesthesiaHeaderProps {
 	readonly calculation: PediatricAnesthesiaCalculationResult;

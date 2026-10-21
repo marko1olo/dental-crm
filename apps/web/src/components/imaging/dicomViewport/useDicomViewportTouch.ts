@@ -54,8 +54,8 @@ export function useDicomViewportTouch({
 			const currentDist = calculatePinchDistance(p1, p2);
 			const nextZoom = calculatePinchZoom(touchStartDistanceRef.current, currentDist, touchStartZoomRef.current);
 
-			const currentMidX = (p1.x + p2.x) / 2;
-			const currentMidY = (p1.y + p2.y) / 2;
+			const currentMidX = (p1.clientX + p2.clientX) / 2;
+			const currentMidY = (p1.clientY + p2.clientY) / 2;
 			const dx = currentMidX - touchStartPosRef.current.x;
 			const dy = currentMidY - touchStartPosRef.current.y;
 			const nextWwWl = calculate2FingerWindowLevel(dx, dy, touchStartWwWlRef.current.ww, touchStartWwWlRef.current.wl);

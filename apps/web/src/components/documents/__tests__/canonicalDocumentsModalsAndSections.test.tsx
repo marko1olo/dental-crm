@@ -125,7 +125,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient}
-				doctorFullName="Воронов А.В."
+				doctorName="Воронов А.В."
 				clinicProfileDraft={mockClinicProfile}
 			/>,
 		);

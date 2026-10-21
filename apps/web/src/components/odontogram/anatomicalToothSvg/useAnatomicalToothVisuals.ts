@@ -49,7 +49,7 @@ export function useAnatomicalToothVisuals(props: AnatomicalToothSVGProps) {
 	const effectiveRootPath = resorptionGeom.isResorbed ? resorptionGeom.rootPath : geom.rootPath;
 	const effectiveCanals = resorptionGeom.showCanals ? resorptionGeom.canals : geom.canals;
 	const effectiveCanalObturation = canalObturation ?? (state === "Root_Canal_Treated" ? "gutta_percha" : "unfilled");
-	const isPulpitis = state === "Pulpitis" || state === "pulpitis" || state === "treatment";
+	const isPulpitis = state === "Pulpitis";
 	const shouldRenderCanals = showPulpAndCanals || isPulpitis || Boolean(hasPost || canalObturation || state === "Root_Canal_Treated");
 
 	const { boneLine, resorptionArea } = useMemo(
