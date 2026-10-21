@@ -5,7 +5,7 @@ import {
 	PhoneCall,
 	UserCheck,
 } from "lucide-react";
-import type React from "react";
+import { type FC, useRef } from "react";
 import { isAppointmentInChair } from "../../GridAppointmentCard";
 
 export interface ScheduleMobileSheetStatusButtonsProps {
@@ -16,10 +16,10 @@ export interface ScheduleMobileSheetStatusButtonsProps {
 	onClose: () => void;
 }
 
-export const ScheduleMobileSheetStatusButtons: React.FC<
+export const ScheduleMobileSheetStatusButtons: FC<
 	ScheduleMobileSheetStatusButtonsProps
 > = ({ selectedMobileAppt, onQuickStatusChange, onClose }) => {
-	const inFlightRef = React.useRef(false);
+	const inFlightRef = useRef(false);
 	if (!onQuickStatusChange) return null;
 
 	const handleStatusClick = (status: Appointment["status"]) => {

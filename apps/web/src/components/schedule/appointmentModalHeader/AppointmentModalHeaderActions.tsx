@@ -56,7 +56,7 @@ export function AppointmentModalHeaderActions({
 					type="button"
 					onClick={onConvertToCito}
 					className="appointment-modal-header-btn h-8 min-h-[32px] px-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0 hover:bg-rose-500/20 active:scale-95"
-					title="Пациент обратился с острой болью: перевести в срочную запись"
+					title="Перевести в срочный приём (острая боль)"
 					data-testid="convert-to-cito-btn"
 				>
 					<Zap
@@ -65,6 +65,7 @@ export function AppointmentModalHeaderActions({
 					/>
 					<span className="hidden sm:inline">Острая боль</span>
 					<span className="sm:hidden">Срочно</span>
+					<span className="sr-only">Перевести в срочный приём (острая боль)</span>
 				</button>
 			)}
 

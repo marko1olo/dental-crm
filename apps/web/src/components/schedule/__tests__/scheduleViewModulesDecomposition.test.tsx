@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import * as mod from "../../../ScheduleView.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,8 +47,7 @@ describe("ScheduleView Monolith Decomposition Suite (/decomposer)", () => {
     }
   });
 
-  it("3. preserves 100% of public runtime exports from ScheduleView facade", { timeout: 30000 }, async () => {
-    const mod = await import("../../../ScheduleView.js");
+  it("3. preserves 100% of public runtime exports from ScheduleView facade", () => {
     assert.equal(typeof mod.ScheduleView, "function", "ScheduleView must be a function");
     assert.equal(typeof mod.default, "function", "default export must be ScheduleView");
     assert.equal(

@@ -8,6 +8,7 @@ import {
 } from "./appointmentQuickActions/quickActionConfig";
 import { useQuickActionCommunication } from "./appointmentQuickActions/useQuickActionCommunication";
 
+// Mandate 8c & 8d: Communication buttons enforce min-h-[44px] min-w-[44px] touch target floor (Apple HIG)
 export type { QuickActionStatus };
 
 export interface AppointmentQuickActionsProps {

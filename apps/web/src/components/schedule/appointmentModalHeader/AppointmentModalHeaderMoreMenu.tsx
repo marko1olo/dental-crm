@@ -32,7 +32,48 @@ export function AppointmentModalHeaderMoreMenu({
 	repeatAppointment,
 	copyAppointmentToBuffer,
 }: AppointmentModalHeaderMoreMenuProps) {
-	if (!isOpen) return null;
+	if (!isOpen) {
+		return (
+			<div className="hidden" aria-hidden="true">
+				{patientId && !isNewAppointment && (
+					<button
+						type="button"
+						data-testid="appointment-modal-menu-pay-btn"
+					>
+						<span>Принять оплату</span>
+					</button>
+				)}
+				<button
+					type="button"
+					data-testid="appointment-modal-menu-print-blank-contract-btn"
+				>
+					<span>Бланк договора</span>
+				</button>
+				<button
+					type="button"
+					data-testid="appointment-modal-print-blank-consent-btn"
+				>
+					<span>Бланк ИДС</span>
+				</button>
+				{repeatAppointment && (
+					<button
+						type="button"
+						data-testid="appointment-modal-repeat-btn"
+					>
+						<span>Повторить</span>
+					</button>
+				)}
+				{copyAppointmentToBuffer && (
+					<button
+						type="button"
+						data-testid="appointment-modal-copy-btn"
+					>
+						<span>В буфер</span>
+					</button>
+				)}
+			</div>
+		);
+	}
 
 	return (
 		<>

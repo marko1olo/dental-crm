@@ -241,7 +241,7 @@ describe("QuickBookingDrawer", () => {
 				{
 					id: "app-1",
 					patientId: "pat-risk",
-					status: "cancelled",
+					status: "no_show",
 					startsAt: "2026-07-01T10:00:00.000Z",
 					endsAt: "2026-07-01T10:30:00.000Z",
 					notes: "Не явился на прием без предупреждения",
@@ -249,7 +249,7 @@ describe("QuickBookingDrawer", () => {
 				{
 					id: "app-2",
 					patientId: "pat-risk",
-					status: "cancelled",
+					status: "no_show",
 					startsAt: "2026-07-10T10:00:00.000Z",
 					endsAt: "2026-07-10T10:30:00.000Z",
 					notes: "Пациент не пришел, на звонки не ответил",

@@ -64,12 +64,12 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 				await tx.insert(organizations).values({
 					id: ORG_ID,
 					name: "Клиника конкурентного расписания",
-				});
+				}).onConflictDoNothing();
 				await tx.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Главный филиал",
-				});
+				}).onConflictDoNothing();
 				await tx.insert(users).values([
 					{
 						id: DOCTOR_1_ID,
@@ -99,7 +99,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 						role: "assistant",
 						isActive: true,
 					},
-				]);
+				]).onConflictDoNothing();
 				await tx.insert(chairs).values([
 					{
 						id: CHAIR_1_ID,
@@ -115,7 +115,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 						name: "Кресло 2 (Терапия)",
 						isActive: true,
 					},
-				]);
+				]).onConflictDoNothing();
 				await tx.insert(patients).values([
 					{
 						id: PATIENT_1_ID,
@@ -129,7 +129,7 @@ describe("Schedule Concurrency Race & 4D Collision Prevention", () => {
 						fullName: "Пациент Морозова Анна",
 						status: "active",
 					},
-				]);
+				]).onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;

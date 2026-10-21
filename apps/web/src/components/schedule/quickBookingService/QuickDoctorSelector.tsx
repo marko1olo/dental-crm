@@ -63,7 +63,7 @@ export function QuickDoctorSelector({
           data-testid="duty-doctor-override-note"
         >
           <span>
-            На кресле «{currentChair?.name || "Кресло"}» по графику дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создаётся к выбранному врачу (выбор врача не блокируется).
+            На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением к выбранному врачу (выбор врача не блокируется).
           </span>
         </div>
       )}

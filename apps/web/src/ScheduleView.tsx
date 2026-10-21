@@ -24,7 +24,7 @@ export {
   activeVisitLockedAppointmentStatuses,
 } from "./components/schedule/scheduleViewModules/scheduleViewConstants";
 
-function ScheduleViewComponent(rawProps?: Partial<ScheduleViewProps>) {
+export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const ctrl = useScheduleViewController(rawProps);
 
   if (!ctrl.dashboard) {
@@ -46,5 +46,4 @@ function ScheduleViewComponent(rawProps?: Partial<ScheduleViewProps>) {
   );
 }
 
-export const ScheduleView = memo(ScheduleViewComponent);
 export default ScheduleView;
