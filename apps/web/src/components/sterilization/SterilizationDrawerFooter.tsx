@@ -5,6 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import React from "react";
 import { CheckCircle2 } from "lucide-react";
 
 export interface SterilizationDrawerFooterProps {

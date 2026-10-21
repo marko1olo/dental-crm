@@ -5,8 +5,10 @@
  * и автономии врача (Мандат 8e / 8x / Apple HIG).
  */
 
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
 import { SanPinJournalView } from "../../sanpin/SanPinJournalView";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../../sanpin/sterilizationModules/sterilizationCycleTypes";
 import { SterilizationCycleDrawer } from "../SterilizationCycleDrawer";
@@ -14,42 +16,42 @@ import { SterilizationJournalTable } from "../SterilizationJournalTable";
 
 describe("Sterilization Presets & Red Team Jargon Purge", () => {
 	it("provides 3 standard 1-click clinical presets for autoclaves with correct parameters", () => {
-		expect(CLINICAL_AUTOCLAVE_1CLICK_PRESETS).toHaveLength(3);
+		assert.equal(CLINICAL_AUTOCLAVE_1CLICK_PRESETS.length, 3);
 
 		const standard = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[0];
 		const delicate = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[1];
 		const quick = CLINICAL_AUTOCLAVE_1CLICK_PRESETS[2];
-		expect(standard).toBeDefined();
-		expect(delicate).toBeDefined();
-		expect(quick).toBeDefined();
+		assert.ok(standard);
+		assert.ok(delicate);
+		assert.ok(quick);
 		if (!standard || !delicate || !quick) return;
 
 		// 1. Стандарт 134°C / 2.1 бар — 5 мин (Упакованные инструменты)
-		expect(standard.id).toBe("standard_134_5");
-		expect(standard.temperatureC).toBe(134);
-		expect(standard.pressureBar).toBe(2.1);
-		expect(standard.durationMin).toBe(5);
-		expect(standard.title).toContain("134°C");
-		expect(standard.title).toContain("5 мин");
-		expect(standard.subtitle).toContain("Упакованные инструменты");
+		assert.equal(standard.id, "standard_134_5");
+		assert.equal(standard.temperatureC, 134);
+		assert.equal(standard.pressureBar, 2.1);
+		assert.equal(standard.durationMin, 5);
+		assert.ok(standard.title.includes("134°C"));
+		assert.ok(standard.title.includes("5 мин"));
+		assert.ok(standard.subtitle.includes("Упакованные инструменты"));
 
 		// 2. Деликатный 121°C / 1.1 бар — 20 мин (Резина, оптика, наконечники)
-		expect(delicate.id).toBe("delicate_121_20");
-		expect(delicate.temperatureC).toBe(121);
-		expect(delicate.pressureBar).toBe(1.1);
-		expect(delicate.durationMin).toBe(20);
-		expect(delicate.title).toContain("121°C");
-		expect(delicate.title).toContain("20 мин");
-		expect(delicate.subtitle).toContain("Резина, оптика, наконечники");
+		assert.equal(delicate.id, "delicate_121_20");
+		assert.equal(delicate.temperatureC, 121);
+		assert.equal(delicate.pressureBar, 1.1);
+		assert.equal(delicate.durationMin, 20);
+		assert.ok(delicate.title.includes("121°C"));
+		assert.ok(delicate.title.includes("20 мин"));
+		assert.ok(delicate.subtitle.includes("Резина, оптика, наконечники"));
 
 		// 3. Быстрый 134°C / 2.1 бар — 3 мин (Неупакованный инструмент)
-		expect(quick.id).toBe("quick_134_3");
-		expect(quick.temperatureC).toBe(134);
-		expect(quick.pressureBar).toBe(2.1);
-		expect(quick.durationMin).toBe(3);
-		expect(quick.title).toContain("134°C");
-		expect(quick.title).toContain("3 мин");
-		expect(quick.subtitle).toContain("Неупакованный инструмент");
+		assert.equal(quick.id, "quick_134_3");
+		assert.equal(quick.temperatureC, 134);
+		assert.equal(quick.pressureBar, 2.1);
+		assert.equal(quick.durationMin, 3);
+		assert.ok(quick.title.includes("134°C"));
+		assert.ok(quick.title.includes("3 мин"));
+		assert.ok(quick.subtitle.includes("Неупакованный инструмент"));
 	});
 
 	it("SterilizationCycleDrawer renders all 3 presets and unblocked approval CTA", () => {
@@ -58,23 +60,23 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		);
 
 		// Header is clean clinical
-		expect(html).toContain("Утверждение цикла автоклава");
-		expect(html).toContain(
-			"Журнал работы стерилизаторов • 1-Click пресеты смены",
+		assert.ok(html.includes("Утверждение цикла автоклава"));
+		assert.ok(
+			html.includes("Журнал работы стерилизаторов • 1-Click пресеты смены"),
 		);
 
 		// Check all 3 presets in rendered output
-		expect(html).toContain("drawer-preset-btn-standard_134_5");
-		expect(html).toContain("drawer-preset-btn-delicate_121_20");
-		expect(html).toContain("drawer-preset-btn-quick_134_3");
+		assert.ok(html.includes("drawer-preset-btn-standard_134_5"));
+		assert.ok(html.includes("drawer-preset-btn-delicate_121_20"));
+		assert.ok(html.includes("drawer-preset-btn-quick_134_3"));
 
 		// Primary CTA button is never blocked (disabled=false)
-		expect(html).toContain("approve-cycle-primary-cta");
-		expect(html).toContain("✓ Утвердить цикл стерилизации");
-		expect(html).not.toMatch(/id="approve-cycle-primary-cta"[^>]*disabled/);
+		assert.ok(html.includes("approve-cycle-primary-cta"));
+		assert.ok(html.includes("✓ Утвердить цикл стерилизации"));
+		assert.ok(!html.match(/id="approve-cycle-primary-cta"[^>]*disabled/));
 
 		// Automatic indicator 5 class verification is visible
-		expect(html).toContain("Химический индикатор 5 класса пройден");
+		assert.ok(html.includes("Химический индикатор 5 класса пройден"));
 	});
 
 	it("SterilizationJournalTable renders clean clinical table and action controls", () => {
@@ -87,27 +89,27 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 			/>,
 		);
 
-		expect(html).toContain("sterilization-journal-search-input");
-		expect(html).toContain("sterilization-journal-device-filter");
-		expect(html).toContain("sterilization-journal-new-cycle-btn");
-		expect(html).toContain("sterilization-journal-quick-shift-btn");
-		expect(html).toContain("+ Новый цикл");
-		expect(html).toContain("Сдать смену ЦСО");
-		expect(html).toContain("Печать");
-		expect(html).toContain("CSV");
+		assert.ok(html.includes("sterilization-journal-search-input"));
+		assert.ok(html.includes("sterilization-journal-device-filter"));
+		assert.ok(html.includes("sterilization-journal-new-cycle-btn"));
+		assert.ok(html.includes("sterilization-journal-quick-shift-btn"));
+		assert.ok(html.includes("+ Новый цикл"));
+		assert.ok(html.includes("Сдать смену ЦСО"));
+		assert.ok(html.includes("Печать"));
+		assert.ok(html.includes("CSV"));
 	});
 
 	it("SanPinJournalView displays clean title without soviet decree numbers", () => {
 		const html = renderToStaticMarkup(<SanPinJournalView />);
 
 		// Screen title must be "Журнал стерилизации и автоклава"
-		expect(html).toContain("Журнал стерилизации и автоклава");
+		assert.ok(html.includes("Журнал стерилизации и автоклава"));
 
 		// Header must not contain bureaucratic codes in titles
-		expect(html).not.toContain("СанПиН 3.3686-21");
-		expect(html).not.toContain("Форма 257/у");
+		assert.ok(!html.includes("СанПиН 3.3686-21"));
+		assert.ok(!html.includes("Форма 257/у"));
 
 		// New cycle CTA
-		expect(html).toContain("journal-view-new-cycle-cta");
+		assert.ok(html.includes("journal-view-new-cycle-cta"));
 	});
 });

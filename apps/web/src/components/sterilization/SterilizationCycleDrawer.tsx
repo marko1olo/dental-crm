@@ -7,6 +7,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import React from "react";
 import { ShieldCheck, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { SterilizationDrawerBody } from "./SterilizationDrawerBody";
@@ -40,6 +41,7 @@ export function SterilizationCycleDrawer({
 	const drawerElement = (
 		<div
 			className="sanpin-drawer-overlay fixed inset-0 z-[1200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+			data-testid="sterilization-cycle-drawer"
 			onClick={onClose}
 			onKeyDown={(e) => e.key === "Escape" && onClose()}
 			role="dialog"

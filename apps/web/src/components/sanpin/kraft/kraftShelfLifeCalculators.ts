@@ -6,7 +6,7 @@
  */
 
 import { SANPIN_PACKAGING_TYPES, type SanpinPackagingTypeId, type SanpinPackagingTypeDefinition } from "./kraftPackagingTypes";
-import { STERILIZATION_REGIMES, type SterilizationRegimeId } from "./kraftSterilizationRegimes";
+import { STERILIZATION_REGIMES, type SterilizationRegimeId } from "@dental/shared";
 
 export type PackageSterilityStatus = "valid" | "expiring_soon" | "expired";
 

@@ -5,6 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import React from "react";
 import { Download, Plus, Printer, Search, Sparkles } from "lucide-react";
 
 export interface SterilizationJournalToolbarProps {

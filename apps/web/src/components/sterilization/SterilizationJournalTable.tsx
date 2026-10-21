@@ -7,7 +7,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { SanPinCyclesTable } from "../sanpin/journalModules/SanPinCyclesTable";
 import { DEFAULT_CYCLES } from "../sanpin/journalModules/sanpinDefaultCycles";
 import type { SanPinCycleEntry } from "../sanpin/journalModules/sanpinJournalTypes";

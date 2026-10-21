@@ -5,7 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import type { SterilizationRegimeId } from "./kraftSterilizationRegimes";
+import type { SterilizationRegimeId } from "@dental/shared";
 import {
 	CHEMICAL_INTEGRATORS_CATALOG,
 	type ChemicalIndicatorClassType,

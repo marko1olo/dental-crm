@@ -5,6 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import React from "react";
 import { SterilizationDrawerParams } from "./SterilizationDrawerParams";
 import { SterilizationDrawerPresets } from "./SterilizationDrawerPresets";
 

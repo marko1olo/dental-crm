@@ -30,10 +30,10 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 				<CheckCircle2 size={18} color="var(--teal, #0d9488)" className="shrink-0" />
 				<div>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-						Проверка качества очистки инструментов (азопирам и фенолфталеин)
+						Предстерилизационная очистка инструментов
 					</div>
 					<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)" }}>
-						Азопирамовая проба (скрытая кровь) и фенолфталеиновая (остатки моющих средств): <strong>Отрицательно, 100% норма</strong>
+						Контроль чистоты инструментов: <strong>Отрицательно, норма 100%</strong> (скрытая кровь и остатки моющих средств отсутствуют)
 					</div>
 				</div>
 			</div>
@@ -59,7 +59,7 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 					title="Зафиксировать нормативные результаты проб смены в 1 клик"
 				>
 					<FlaskConical size={14} />
-					<span>{submitting ? "Фиксация..." : "Отметка смены в 1 клик"}</span>
+					<span>{submitting ? "Фиксация..." : "Предстерилизационная очистка пройдена"}</span>
 				</button>
 			</div>
 		</div>

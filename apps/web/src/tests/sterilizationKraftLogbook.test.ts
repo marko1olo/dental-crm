@@ -11,15 +11,19 @@ import assert from "node:assert/strict";
 import test, { describe, it } from "node:test";
 import {
 	SANPIN_PACKAGING_TYPES,
-	STERILIZATION_REGIMES,
+	type SanpinPackagingTypeId,
+} from "../components/sanpin/kraft/kraftPackagingTypes";
+import {
 	calculatePackageExpiryDate,
 	calculateSanpinShelfLifeDays,
 	formatDaysRussian,
 	getSanpinPackagingTypeDefinition,
 	validateSterilizationCycleParameters,
-	type SanpinPackagingTypeId,
+} from "../components/sanpin/kraft/kraftShelfLifeCalculators";
+import {
+	STERILIZATION_REGIMES,
 	type SterilizationRegimeId,
-} from "../components/sanpin/kraft/index";
+} from "@dental/shared";
 import {
 	CHEMICAL_INTEGRATORS_CATALOG,
 	evaluateChemicalIntegratorColorMatch,

@@ -5,6 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import React from "react";
 import { Check, Clock, Flame, Zap } from "lucide-react";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sanpin/sterilizationModules/sterilizationCycleTypes";
 

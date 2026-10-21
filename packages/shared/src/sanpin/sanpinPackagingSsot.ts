@@ -259,6 +259,8 @@ export const SANPIN_STERILIZATION_REGIMES: readonly SanpinSterilizationRegimeDef
 	},
 ];
 
+export const STERILIZATION_REGIMES = SANPIN_STERILIZATION_REGIMES;
+
 // ─── 4. ХИМИЧЕСКИЕ ИНДИКАТОРЫ 4, 5 И 6 КЛАССОВ ──────────────────────────────
 
 export type ChemicalIndicatorClass = 4 | 5 | 6;
