@@ -4,17 +4,17 @@
  */
 
 export type MappingConfidenceKind =
-	| 'exact_code'
-	| 'high_keyword'
-	| 'medium_keyword'
-	| 'low_keyword'
-	| 'fallback';
+	| "exact_code"
+	| "high_keyword"
+	| "medium_keyword"
+	| "low_keyword"
+	| "fallback";
 
 export type MappingSuggestedAction =
-	| 'create_new'
-	| 'update_existing'
-	| 'link_existing'
-	| 'identical';
+	| "create_new"
+	| "update_existing"
+	| "link_existing"
+	| "identical";
 
 export interface IngestedMappingItem {
 	id: string;
@@ -43,7 +43,7 @@ export interface ExistingCatalogReference {
 	readonly basePriceRub?: number;
 }
 
-export type PriceMappingDiffFilterTab = 'all' | 'new' | 'update' | 'attention';
+export type PriceMappingDiffFilterTab = "all" | "new" | "update" | "attention";
 
 export interface PriceDiffStats {
 	total: number;

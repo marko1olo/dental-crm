@@ -1,6 +1,6 @@
-import React from 'react';
-import { CheckCheck, Search, X } from 'lucide-react';
-import type { PriceDiffStats } from './itemTypes';
+import { CheckCheck, Search, X } from "lucide-react";
+import type React from "react";
+import type { PriceDiffStats } from "./itemTypes";
 
 export interface PriceDiffSearchActionsProps {
 	readonly searchTerm: string;
@@ -22,7 +22,10 @@ export const PriceDiffSearchActions: React.FC<PriceDiffSearchActionsProps> = ({
 	return (
 		<div className="pricelist-diff-toolbar-right">
 			<div className="dente-search-wrap pricelist-diff-search-box">
-				<Search size={14} className="dente-search-icon pricelist-diff-search-icon" />
+				<Search
+					size={14}
+					className="dente-search-icon pricelist-diff-search-icon"
+				/>
 				<input
 					id={searchInputId}
 					type="text"
@@ -35,7 +38,7 @@ export const PriceDiffSearchActions: React.FC<PriceDiffSearchActionsProps> = ({
 					<button
 						type="button"
 						className="dente-search-clear pricelist-diff-search-clear"
-						onClick={() => onSearchTermChange('')}
+						onClick={() => onSearchTermChange("")}
 						aria-label="Очистить поиск"
 					>
 						<X size={12} />

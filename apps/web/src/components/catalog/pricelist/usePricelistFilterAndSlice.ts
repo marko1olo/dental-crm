@@ -41,14 +41,7 @@ export function usePricelistFilterAndSlice(
 
 	useEffect(() => {
 		setDisplayLimit(40);
-	}, [
-		debouncedSearch,
-		selectedCategory,
-		selectedSpecialty,
-		activeTier,
-		sortField,
-		sortDirection,
-	]);
+	}, []);
 
 	const filteredItems = useMemo(() => {
 		const searchResults = searchPricelistItems(items, {

@@ -3,15 +3,15 @@
  * Layer 3: Reactive State, Proportional Scroll Synchronization & Business Logic
  */
 
-import { useId, useState } from 'react';
+import { useId, useState } from "react";
 import type {
 	PriceListMappingDiffViewProps,
 	PriceMappingDiffFilterTab,
-} from './types';
-import { useSynchronizedScroll } from './useSynchronizedScroll';
-import { usePriceDiffStats } from './usePriceDiffStats';
-import { usePriceBatchModifiers } from './usePriceBatchModifiers';
-import { usePriceRowActions } from './usePriceRowActions';
+} from "./types";
+import { usePriceBatchModifiers } from "./usePriceBatchModifiers";
+import { usePriceDiffStats } from "./usePriceDiffStats";
+import { usePriceRowActions } from "./usePriceRowActions";
+import { useSynchronizedScroll } from "./useSynchronizedScroll";
 
 export function usePriceMappingDiff({
 	items,
@@ -20,14 +20,18 @@ export function usePriceMappingDiff({
 	onApply,
 	existingCatalog = [],
 }: PriceListMappingDiffViewProps) {
-	const [filterTab, setFilterTab] = useState<PriceMappingDiffFilterTab>('all');
-	const [searchTerm, setSearchTerm] = useState('');
+	const [filterTab, setFilterTab] = useState<PriceMappingDiffFilterTab>("all");
+	const [searchTerm, setSearchTerm] = useState("");
 	const searchInputId = useId();
 
 	const scrollState = useSynchronizedScroll();
 	const statsState = usePriceDiffStats(items, filterTab, searchTerm);
 	const modifiersState = usePriceBatchModifiers(items, onItemsChange);
-	const rowActionsState = usePriceRowActions(items, existingCatalog, onItemsChange);
+	const rowActionsState = usePriceRowActions(
+		items,
+		existingCatalog,
+		onItemsChange,
+	);
 
 	const handleAcceptAllClick = () => {
 		if (onAcceptAll) {

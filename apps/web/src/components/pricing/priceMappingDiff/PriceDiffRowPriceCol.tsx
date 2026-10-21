@@ -1,5 +1,5 @@
-import React from 'react';
-import type { IngestedMappingItem } from './itemTypes';
+import type React from "react";
+import type { IngestedMappingItem } from "./itemTypes";
 
 export interface PriceDiffRowPriceColProps {
 	readonly item: IngestedMappingItem;
@@ -39,23 +39,29 @@ export const PriceDiffRowPriceCol: React.FC<PriceDiffRowPriceColProps> = ({
 						className="pricelist-diff-price-input"
 						autoFocus
 						value={editingPriceBuffer}
-						onChange={(e) => onPriceBufferChange(e.target.value.replace(/[^\d]/g, ''))}
+						onChange={(e) =>
+							onPriceBufferChange(e.target.value.replace(/[^\d]/g, ""))
+						}
 						onKeyDown={(e) => {
-							if (e.key === 'Enter') onCommitPrice(editingPriceBuffer);
-							else if (e.key === 'Escape') onCancelEditPrice();
+							if (e.key === "Enter") onCommitPrice(editingPriceBuffer);
+							else if (e.key === "Escape") onCancelEditPrice();
 						}}
 						onBlur={() => onCommitPrice(editingPriceBuffer)}
 					/>
-					<span style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>₽</span>
+					<span style={{ fontSize: "0.6875rem", color: "var(--muted)" }}>
+						₽
+					</span>
 				</div>
 			) : (
 				<button
 					type="button"
-					className={`pricelist-diff-price-btn ${isWarranty ? 'warranty' : ''}`}
+					className={`pricelist-diff-price-btn ${isWarranty ? "warranty" : ""}`}
 					onClick={onStartEditPrice}
 					title="Кликните для изменения цены вручную"
 				>
-					<span>{isWarranty ? '0 ₽ (Гарантия)' : formatPrice(item.priceRub)}</span>
+					<span>
+						{isWarranty ? "0 ₽ (Гарантия)" : formatPrice(item.priceRub)}
+					</span>
 				</button>
 			)}
 
@@ -94,7 +100,7 @@ export const PriceDiffRowPriceCol: React.FC<PriceDiffRowPriceColProps> = ({
 				</button>
 				<button
 					type="button"
-					className={`pricelist-diff-delta-btn warranty ${isWarranty ? 'active' : ''}`}
+					className={`pricelist-diff-delta-btn warranty ${isWarranty ? "active" : ""}`}
 					onClick={onSetZeroPrice}
 					title="Установить 0 ₽ (Гарантия / Бесплатно)"
 				>

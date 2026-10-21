@@ -1,11 +1,11 @@
-import React from 'react';
-import { PriceListMappingDiffView } from '../../pricing/PriceListMappingDiffView';
-import { PricelistImportDropzone } from './PricelistImportDropzone';
-import { PricelistImportModalFooter } from './PricelistImportModalFooter';
-import { PricelistImportModalHeader } from './PricelistImportModalHeader';
-import { downloadPricelistCsv } from './pricelistCsvDownloader';
-import type { ServicePricelistItem } from './servicePricelistPresets';
-import { usePricelistImportState } from './usePricelistImportState';
+import type React from "react";
+import { PriceListMappingDiffView } from "../../pricing/PriceListMappingDiffView";
+import { PricelistImportDropzone } from "./PricelistImportDropzone";
+import { PricelistImportModalFooter } from "./PricelistImportModalFooter";
+import { PricelistImportModalHeader } from "./PricelistImportModalHeader";
+import { downloadPricelistCsv } from "./pricelistCsvDownloader";
+import type { ServicePricelistItem } from "./servicePricelistPresets";
+import { usePricelistImportState } from "./usePricelistImportState";
 
 export { downloadPricelistCsv };
 
@@ -13,13 +13,16 @@ export interface PricelistImportExportModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly items: readonly ServicePricelistItem[];
-	readonly onApplyImported: (updatedItems: readonly ServicePricelistItem[], message: string) => void;
+	readonly onApplyImported: (
+		updatedItems: readonly ServicePricelistItem[],
+		message: string,
+	) => void;
 	readonly adminSecret?: string | undefined;
 }
 
-export const PricelistImportExportModal: React.FC<PricelistImportExportModalProps> = ({
-	isOpen, onClose, items, onApplyImported, adminSecret,
-}) => {
+export const PricelistImportExportModal: React.FC<
+	PricelistImportExportModalProps
+> = ({ isOpen, onClose, items, onApplyImported, adminSecret }) => {
 	const imp = usePricelistImportState(items, onApplyImported, adminSecret);
 	if (!isOpen) return null;
 
@@ -30,19 +33,27 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 
 	const hasDiff = imp.ingestedMappingItems.length > 0;
 	const catalogRefs = items.map((it) => ({
-		id: it.id, code: it.code804n, title: it.commercialTitle, basePriceRub: it.basePriceRub,
+		id: it.id,
+		code: it.code804n,
+		title: it.commercialTitle,
+		basePriceRub: it.basePriceRub,
 	}));
 
 	return (
-		<div className="pricelist-modal-overlay" style={{ zIndex: 10004 }} role="dialog" aria-modal="true">
+		<div
+			className="pricelist-modal-overlay"
+			style={{ zIndex: 10004 }}
+			role="dialog"
+			aria-modal="true"
+		>
 			<div
 				className="pricelist-modal-container"
 				style={{
-					maxWidth: hasDiff ? '1180px' : '680px',
-					width: '100%',
-					maxHeight: '92vh',
-					display: 'flex',
-					flexDirection: 'column',
+					maxWidth: hasDiff ? "1180px" : "680px",
+					width: "100%",
+					maxHeight: "92vh",
+					display: "flex",
+					flexDirection: "column",
 				}}
 			>
 				<PricelistImportModalHeader
@@ -54,11 +65,22 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 				/>
 
 				{hasDiff ? (
-					<div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+					<div
+						style={{
+							flex: 1,
+							minHeight: 0,
+							display: "flex",
+							flexDirection: "column",
+						}}
+					>
 						<PriceListMappingDiffView
 							items={imp.ingestedMappingItems}
 							onItemsChange={imp.setIngestedMappingItems}
-							onAcceptAll={() => imp.setIngestedMappingItems((prev) => prev.map((i) => ({ ...i, isApproved: true })))}
+							onAcceptAll={() =>
+								imp.setIngestedMappingItems((prev) =>
+									prev.map((i) => ({ ...i, isApproved: true })),
+								)
+							}
 							onApply={imp.handleApplyIngestedMapping}
 							onCancel={() => imp.setIngestedMappingItems([])}
 							existingCatalog={catalogRefs}
@@ -73,7 +95,7 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 							importErrors={imp.importErrors}
 							onSmartTextChange={(val) => {
 								imp.setSmartTextInput(val);
-								imp.handleIngestPriceList(val, 'text');
+								imp.handleIngestPriceList(val, "text");
 							}}
 							onFileUpload={imp.handleFileUpload}
 						/>
@@ -82,7 +104,9 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 							smartTextInput={imp.smartTextInput}
 							isIngestingApi={imp.isIngestingApi}
 							onClose={handleClose}
-							onIngest={() => imp.handleIngestPriceList(imp.smartTextInput, 'text')}
+							onIngest={() =>
+								imp.handleIngestPriceList(imp.smartTextInput, "text")
+							}
 						/>
 					</>
 				)}

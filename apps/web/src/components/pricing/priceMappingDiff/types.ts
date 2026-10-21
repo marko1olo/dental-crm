@@ -3,21 +3,25 @@
  * Layer 0: Component Props & Re-exports
  */
 
-import type { RefObject } from 'react';
+import type { RefObject } from "react";
 import type {
-	IngestedMappingItem,
 	ExistingCatalogReference,
-	PriceMappingDiffFilterTab,
+	IngestedMappingItem,
 	PriceDiffStats,
-} from './itemTypes';
+	PriceMappingDiffFilterTab,
+} from "./itemTypes";
 
-export * from './itemTypes';
+export * from "./itemTypes";
 
 export interface PriceListMappingDiffViewProps {
 	readonly items: readonly IngestedMappingItem[];
-	readonly onItemsChange?: ((items: readonly IngestedMappingItem[]) => void) | undefined;
+	readonly onItemsChange?:
+		| ((items: readonly IngestedMappingItem[]) => void)
+		| undefined;
 	readonly onAcceptAll?: (() => void) | undefined;
-	readonly onApply?: ((approvedItems: readonly IngestedMappingItem[]) => void) | undefined;
+	readonly onApply?:
+		| ((approvedItems: readonly IngestedMappingItem[]) => void)
+		| undefined;
 	readonly onCancel?: (() => void) | undefined;
 	readonly existingCatalog?: readonly ExistingCatalogReference[] | undefined;
 	readonly isLoading?: boolean | undefined;

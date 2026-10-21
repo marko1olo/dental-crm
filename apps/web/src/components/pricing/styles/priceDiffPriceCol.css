@@ -22,7 +22,9 @@
 	color: var(--ink);
 	display: inline-flex;
 	align-items: center;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 	white-space: nowrap;
 }
 
@@ -75,7 +77,10 @@
 	background: var(--paper);
 	color: var(--muted);
 	cursor: pointer;
-	transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+	transition:
+		background-color 0.12s ease,
+		border-color 0.12s ease,
+		color 0.12s ease;
 	min-width: 24px;
 	white-space: nowrap;
 }

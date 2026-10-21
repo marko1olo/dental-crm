@@ -5,24 +5,29 @@
  * Coordinating Toolbar, Dual-Pane Table, Item Rows and Summary Bar.
  */
 
-import React from 'react';
-import './PriceListMappingDiffView.css';
+import type React from "react";
+import "./PriceListMappingDiffView.css";
 import {
 	PriceDiffSummaryBar,
 	PriceDiffTable,
 	PriceDiffToolbar,
 	usePriceMappingDiff,
-} from './priceMappingDiff';
-import type { PriceListMappingDiffViewProps } from './priceMappingDiff/types';
+} from "./priceMappingDiff";
+import type { PriceListMappingDiffViewProps } from "./priceMappingDiff/types";
 
-export * from './priceMappingDiff';
+export * from "./priceMappingDiff";
 
-export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> = (props) => {
+export const PriceListMappingDiffView: React.FC<
+	PriceListMappingDiffViewProps
+> = (props) => {
 	const { existingCatalog = [], isLoading = false, onCancel } = props;
 	const diff = usePriceMappingDiff(props);
 
 	return (
-		<div className="pricelist-diff-container" data-testid="pricelist-diff-container">
+		<div
+			className="pricelist-diff-container"
+			data-testid="pricelist-diff-container"
+		>
 			<PriceDiffToolbar
 				stats={diff.stats}
 				filterTab={diff.filterTab}

@@ -51,8 +51,7 @@ export function parseUnstructuredPriceText(
 		const codeMatch = line.match(
 			/\b([AB]\d{2}\.\d{2}\.\d{3}(?:\.\d{3})?|[AB]\d{2}\.\d{3}(?:\.\d{3})?)\b/i,
 		);
-		const detectedCode =
-			codeMatch && codeMatch[1] ? codeMatch[1].toUpperCase() : null;
+		const detectedCode = codeMatch?.[1] ? codeMatch[1].toUpperCase() : null;
 
 		// 2. Extract price from line
 		// Handles formats: "4 500 руб", "3500 р", "12500,00 ₽", " - 4500", "	4500"
@@ -64,7 +63,7 @@ export function parseUnstructuredPriceText(
 		const priceRegexMid = /\b(\d[\d\s]*(?:[.,]\d{1,2})?)\s*(?:руб|р|₽)\b/i;
 
 		const endMatch = line.match(priceRegexEnd);
-		if (endMatch && endMatch[1]) {
+		if (endMatch?.[1]) {
 			const cleanDigits = endMatch[1].replace(/\s+/g, "").replace(",", ".");
 			const parsed = parseFloat(cleanDigits);
 			if (Number.isFinite(parsed) && parsed > 0 && parsed <= 5000000) {
@@ -73,7 +72,7 @@ export function parseUnstructuredPriceText(
 			}
 		} else {
 			const midMatch = line.match(priceRegexMid);
-			if (midMatch && midMatch[1]) {
+			if (midMatch?.[1]) {
 				const cleanDigits = midMatch[1].replace(/\s+/g, "").replace(",", ".");
 				const parsed = parseFloat(cleanDigits);
 				if (Number.isFinite(parsed) && parsed > 0 && parsed <= 5000000) {
@@ -86,7 +85,7 @@ export function parseUnstructuredPriceText(
 		// If no price found, check if line ends with a plain number >= 50
 		if (priceRub === 0) {
 			const fallbackNumMatch = line.match(/\s+(\d{2,7})\s*$/);
-			if (fallbackNumMatch && fallbackNumMatch[1]) {
+			if (fallbackNumMatch?.[1]) {
 				const parsed = parseInt(fallbackNumMatch[1], 10);
 				if (parsed >= 50 && parsed <= 5000000) {
 					priceRub = parsed;

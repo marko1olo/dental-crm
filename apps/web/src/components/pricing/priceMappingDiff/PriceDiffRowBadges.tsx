@@ -1,5 +1,8 @@
-import React from 'react';
-import type { MappingConfidenceKind, MappingSuggestedAction } from './itemTypes';
+import type React from "react";
+import type {
+	MappingConfidenceKind,
+	MappingSuggestedAction,
+} from "./itemTypes";
 
 export interface PriceDiffRowBadgesProps {
 	readonly confidence: number;
@@ -15,7 +18,7 @@ export const PriceDiffRowBadges: React.FC<PriceDiffRowBadgesProps> = ({
 	const percent = Math.round(confidence * 100);
 
 	const renderConfidenceBadge = () => {
-		if (kind === 'exact_code') {
+		if (kind === "exact_code") {
 			return (
 				<span
 					className="pricelist-diff-confidence-badge exact"
@@ -25,7 +28,7 @@ export const PriceDiffRowBadges: React.FC<PriceDiffRowBadgesProps> = ({
 				</span>
 			);
 		}
-		if (confidence >= 0.85 || kind === 'high_keyword') {
+		if (confidence >= 0.85 || kind === "high_keyword") {
 			return (
 				<span
 					className="pricelist-diff-confidence-badge high"
@@ -35,7 +38,7 @@ export const PriceDiffRowBadges: React.FC<PriceDiffRowBadgesProps> = ({
 				</span>
 			);
 		}
-		if (confidence >= 0.70 || kind === 'medium_keyword') {
+		if (confidence >= 0.7 || kind === "medium_keyword") {
 			return (
 				<span
 					className="pricelist-diff-confidence-badge medium"
@@ -57,13 +60,21 @@ export const PriceDiffRowBadges: React.FC<PriceDiffRowBadgesProps> = ({
 
 	const renderActionBadge = () => {
 		switch (action) {
-			case 'create_new':
-				return <span className="pricelist-diff-action-tag create">+ Новая</span>;
-			case 'update_existing':
-				return <span className="pricelist-diff-action-tag update">Обновить цену</span>;
-			case 'link_existing':
-				return <span className="pricelist-diff-action-tag link">Привязана</span>;
-			case 'identical':
+			case "create_new":
+				return (
+					<span className="pricelist-diff-action-tag create">+ Новая</span>
+				);
+			case "update_existing":
+				return (
+					<span className="pricelist-diff-action-tag update">
+						Обновить цену
+					</span>
+				);
+			case "link_existing":
+				return (
+					<span className="pricelist-diff-action-tag link">Привязана</span>
+				);
+			case "identical":
 				return <span className="pricelist-diff-action-tag">Без изменений</span>;
 			default:
 				return null;

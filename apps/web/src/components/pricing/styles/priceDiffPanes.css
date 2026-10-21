@@ -86,7 +86,9 @@
 	line-height: 1.35;
 	min-height: 52px;
 	box-sizing: border-box;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .pricelist-diff-line-number {

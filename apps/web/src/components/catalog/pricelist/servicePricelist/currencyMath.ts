@@ -72,7 +72,6 @@ export function roundPrice(price: number, mode: PriceRoundingMode): number {
 			return Math.round(price / 100) * 100;
 		case "round_500":
 			return Math.round(price / 500) * 500;
-		case "none":
 		default:
 			return Math.round(price);
 	}

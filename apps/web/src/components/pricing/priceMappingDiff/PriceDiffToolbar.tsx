@@ -3,11 +3,11 @@
  * Layer 4: Presentation Subcomponent (Hick's Law 32-36px, Mandates 8d & 8p)
  */
 
-import React from 'react';
-import type { PriceDiffToolbarProps } from './types';
-import { PriceDiffFilterNav } from './PriceDiffFilterNav';
-import { PriceDiffBatchGroup } from './PriceDiffBatchGroup';
-import { PriceDiffSearchActions } from './PriceDiffSearchActions';
+import type React from "react";
+import { PriceDiffBatchGroup } from "./PriceDiffBatchGroup";
+import { PriceDiffFilterNav } from "./PriceDiffFilterNav";
+import { PriceDiffSearchActions } from "./PriceDiffSearchActions";
+import type { PriceDiffToolbarProps } from "./types";
 
 export const PriceDiffToolbar: React.FC<PriceDiffToolbarProps> = ({
 	stats,
@@ -23,7 +23,10 @@ export const PriceDiffToolbar: React.FC<PriceDiffToolbarProps> = ({
 	onDeselectAll,
 }) => {
 	return (
-		<header className="pricelist-diff-toolbar" data-testid="pricelist-diff-toolbar">
+		<header
+			className="pricelist-diff-toolbar"
+			data-testid="pricelist-diff-toolbar"
+		>
 			<PriceDiffFilterNav
 				stats={stats}
 				filterTab={filterTab}

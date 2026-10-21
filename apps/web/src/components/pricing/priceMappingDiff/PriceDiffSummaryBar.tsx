@@ -3,9 +3,9 @@
  * Layer 4: Presentation Subcomponent (Summary Counters, Primary CTA, Mandate 8e)
  */
 
-import React from 'react';
-import { Check } from 'lucide-react';
-import type { PriceDiffSummaryBarProps } from './types';
+import { Check } from "lucide-react";
+import type React from "react";
+import type { PriceDiffSummaryBarProps } from "./types";
 
 export const PriceDiffSummaryBar: React.FC<PriceDiffSummaryBarProps> = ({
 	approvedCount,
@@ -44,9 +44,7 @@ export const PriceDiffSummaryBar: React.FC<PriceDiffSummaryBarProps> = ({
 						<span>Загрузка...</span>
 					) : (
 						<span>
-							<span className="sm:hidden">
-								{`Загрузить (${countToLoad})`}
-							</span>
+							<span className="sm:hidden">{`Загрузить (${countToLoad})`}</span>
 							<span className="hidden sm:inline">
 								{`Загрузить в прейскурант (${countToLoad})`}
 							</span>

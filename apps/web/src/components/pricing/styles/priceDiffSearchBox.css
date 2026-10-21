@@ -25,7 +25,9 @@
 	border-radius: 6px !important;
 	outline: none;
 	box-sizing: border-box;
-	transition: width 0.2s ease, border-color 0.15s ease;
+	transition:
+		width 0.2s ease,
+		border-color 0.15s ease;
 }
 
 .pricelist-diff-search-input:focus {

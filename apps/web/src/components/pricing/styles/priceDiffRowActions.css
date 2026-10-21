@@ -22,7 +22,10 @@
 	background: var(--paper);
 	color: var(--ink);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
 }
 
 .pricelist-diff-action-btn:hover {
@@ -48,7 +51,10 @@
 	background: var(--paper);
 	color: var(--muted);
 	cursor: pointer;
-	transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .pricelist-diff-icon-btn:hover {

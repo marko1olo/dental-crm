@@ -37,7 +37,10 @@
 	background: var(--paper);
 	color: var(--ink);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
 	white-space: nowrap;
 }
 
@@ -72,7 +75,9 @@
 	background: var(--paper);
 	color: var(--ink);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 	white-space: nowrap;
 	box-sizing: border-box;
 }

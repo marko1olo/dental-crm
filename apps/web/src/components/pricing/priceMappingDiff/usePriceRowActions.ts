@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import type { ExistingCatalogReference, IngestedMappingItem } from './itemTypes';
+import { useState } from "react";
+import type {
+	ExistingCatalogReference,
+	IngestedMappingItem,
+} from "./itemTypes";
 
 export function usePriceRowActions(
 	items: readonly IngestedMappingItem[],
@@ -23,10 +26,10 @@ export function usePriceRowActions(
 			it.id === rowId
 				? {
 						...it,
-						suggestedAction: 'create_new' as const,
+						suggestedAction: "create_new" as const,
 						matchedExistingServiceId: null,
 						isApproved: true,
-				  }
+					}
 				: it,
 		);
 		onItemsChange(updated);
@@ -44,13 +47,14 @@ export function usePriceRowActions(
 			it.id === rowId
 				? {
 						...it,
-						suggestedAction: 'link_existing' as const,
+						suggestedAction: "link_existing" as const,
 						matchedExistingServiceId: targetServiceId,
-						matchedExistingTitle: targetService?.title ?? it.matchedExistingTitle,
+						matchedExistingTitle:
+							targetService?.title ?? it.matchedExistingTitle,
 						matchedExistingPriceRub:
 							targetService?.basePriceRub ?? it.matchedExistingPriceRub,
 						isApproved: true,
-				  }
+					}
 				: it,
 		);
 		onItemsChange(updated);

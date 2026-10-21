@@ -1,6 +1,9 @@
-import React from 'react';
-import { X } from 'lucide-react';
-import type { IngestedMappingItem, ExistingCatalogReference } from './itemTypes';
+import { X } from "lucide-react";
+import type React from "react";
+import type {
+	ExistingCatalogReference,
+	IngestedMappingItem,
+} from "./itemTypes";
 
 export interface PriceDiffRowLinkDrawerProps {
 	readonly item: IngestedMappingItem;
@@ -22,7 +25,7 @@ export const PriceDiffRowLinkDrawer: React.FC<PriceDiffRowLinkDrawerProps> = ({
 			{existingCatalog.length > 0 ? (
 				<select
 					className="pricelist-diff-link-select"
-					defaultValue={item.matchedExistingServiceId ?? ''}
+					defaultValue={item.matchedExistingServiceId ?? ""}
 					onChange={(e) => {
 						if (e.target.value) {
 							onLinkExisting(e.target.value);
@@ -32,14 +35,15 @@ export const PriceDiffRowLinkDrawer: React.FC<PriceDiffRowLinkDrawerProps> = ({
 					<option value="">Выберите существующую услугу клиники...</option>
 					{existingCatalog.map((catItem) => (
 						<option key={catItem.id} value={catItem.id}>
-							{catItem.code ? `[${catItem.code}] ` : ''}
+							{catItem.code ? `[${catItem.code}] ` : ""}
 							{catItem.title} ({formatPrice(catItem.basePriceRub ?? 0)})
 						</option>
 					))}
 				</select>
 			) : (
-				<div style={{ fontSize: '0.75rem', color: 'var(--muted)', flex: 1 }}>
-					В каталоге клиники пока нет сохранённых услуг. Будет создана как новая.
+				<div style={{ fontSize: "0.75rem", color: "var(--muted)", flex: 1 }}>
+					В каталоге клиники пока нет сохранённых услуг. Будет создана как
+					новая.
 				</div>
 			)}
 			<button

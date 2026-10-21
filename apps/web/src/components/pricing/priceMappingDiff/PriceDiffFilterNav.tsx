@@ -1,6 +1,6 @@
-import React from 'react';
-import { AlertTriangle, Sparkles } from 'lucide-react';
-import type { PriceDiffStats, PriceMappingDiffFilterTab } from './itemTypes';
+import { AlertTriangle, Sparkles } from "lucide-react";
+import type React from "react";
+import type { PriceDiffStats, PriceMappingDiffFilterTab } from "./itemTypes";
 
 export interface PriceDiffFilterNavProps {
 	readonly stats: PriceDiffStats;
@@ -40,30 +40,30 @@ export const PriceDiffFilterNav: React.FC<PriceDiffFilterNavProps> = ({
 			>
 				<button
 					type="button"
-					className={`pricelist-diff-filter-btn ${filterTab === 'all' ? 'active' : ''}`}
-					onClick={() => onFilterTabChange('all')}
+					className={`pricelist-diff-filter-btn ${filterTab === "all" ? "active" : ""}`}
+					onClick={() => onFilterTabChange("all")}
 				>
 					{`Все (${stats.total})`}
 				</button>
 				<button
 					type="button"
-					className={`pricelist-diff-filter-btn ${filterTab === 'new' ? 'active' : ''}`}
-					onClick={() => onFilterTabChange('new')}
+					className={`pricelist-diff-filter-btn ${filterTab === "new" ? "active" : ""}`}
+					onClick={() => onFilterTabChange("new")}
 				>
 					{`Новые (${stats.newCount})`}
 				</button>
 				<button
 					type="button"
-					className={`pricelist-diff-filter-btn ${filterTab === 'update' ? 'active' : ''}`}
-					onClick={() => onFilterTabChange('update')}
+					className={`pricelist-diff-filter-btn ${filterTab === "update" ? "active" : ""}`}
+					onClick={() => onFilterTabChange("update")}
 				>
 					{`Обновление (${stats.updateCount})`}
 				</button>
 				{stats.attentionCount > 0 && (
 					<button
 						type="button"
-						className={`pricelist-diff-filter-btn ${filterTab === 'attention' ? 'active' : ''}`}
-						onClick={() => onFilterTabChange('attention')}
+						className={`pricelist-diff-filter-btn ${filterTab === "attention" ? "active" : ""}`}
+						onClick={() => onFilterTabChange("attention")}
 					>
 						{`Проверить (${stats.attentionCount})`}
 					</button>

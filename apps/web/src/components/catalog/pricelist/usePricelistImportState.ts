@@ -1,29 +1,50 @@
-import React, { useState } from 'react';
-import type { IngestedMappingItem } from '../../pricing/PriceListMappingDiffView';
-import { requestPricelistIngestApi } from './pricelistIngestionApi';
-import { mapProposalsToDiffItems, mergeApprovedDiffItems } from './pricelistImportMappingHelper';
-import { importPricelistFromCsv, parseUnstructuredPriceText } from './servicePricelistEngine';
-import type { ServicePricelistItem } from './servicePricelistPresets';
+import type React from "react";
+import { useState } from "react";
+import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import {
+	mapProposalsToDiffItems,
+	mergeApprovedDiffItems,
+} from "./pricelistImportMappingHelper";
+import { requestPricelistIngestApi } from "./pricelistIngestionApi";
+import {
+	importPricelistFromCsv,
+	parseUnstructuredPriceText,
+} from "./servicePricelistEngine";
+import type { ServicePricelistItem } from "./servicePricelistPresets";
 
 export function usePricelistImportState(
 	items: readonly ServicePricelistItem[],
-	onApplyImported: (updated: readonly ServicePricelistItem[], msg: string) => void,
+	onApplyImported: (
+		updated: readonly ServicePricelistItem[],
+		msg: string,
+	) => void,
 	adminSecret?: string,
 ) {
-	const [importMode, setImportMode] = useState<'smart_text' | 'csv'>('smart_text');
-	const [smartTextInput, setSmartTextInput] = useState('');
-	const [ingestedMappingItems, setIngestedMappingItems] = useState<readonly IngestedMappingItem[]>([]);
+	const [importMode, setImportMode] = useState<"smart_text" | "csv">(
+		"smart_text",
+	);
+	const [smartTextInput, setSmartTextInput] = useState("");
+	const [ingestedMappingItems, setIngestedMappingItems] = useState<
+		readonly IngestedMappingItem[]
+	>([]);
 	const [isIngestingApi, setIsIngestingApi] = useState(false);
 	const [importErrors, setImportErrors] = useState<string[]>([]);
 
-	const handleIngestPriceList = async (contentToParse: string, sourceType: 'text' | 'csv' = 'text') => {
+	const handleIngestPriceList = async (
+		contentToParse: string,
+		sourceType: "text" | "csv" = "text",
+	) => {
 		const text = contentToParse.trim();
 		if (!text) {
 			setIngestedMappingItems([]);
 			return;
 		}
 		setIsIngestingApi(true);
-		const apiProposals = await requestPricelistIngestApi(text, sourceType, adminSecret);
+		const apiProposals = await requestPricelistIngestApi(
+			text,
+			sourceType,
+			adminSecret,
+		);
 		if (apiProposals) {
 			setIngestedMappingItems(apiProposals);
 			setIsIngestingApi(false);
@@ -40,31 +61,49 @@ export function usePricelistImportState(
 		const reader = new FileReader();
 		reader.onload = async (ev) => {
 			const content = ev.target?.result as string;
-			if (file.name.toLowerCase().endsWith('.csv') || file.type.includes('csv')) {
+			if (
+				file.name.toLowerCase().endsWith(".csv") ||
+				file.type.includes("csv")
+			) {
 				const parseRes = importPricelistFromCsv(content);
-				if (parseRes.invalidRows.length > 0) setImportErrors(parseRes.invalidRows.map((r) => r.error));
+				if (parseRes.invalidRows.length > 0)
+					setImportErrors(parseRes.invalidRows.map((r) => r.error));
 				if (parseRes.validItems.length > 0) {
-					onApplyImported([...parseRes.validItems, ...items], `Импортировано ${parseRes.validItems.length} услуг из CSV`);
+					onApplyImported(
+						[...parseRes.validItems, ...items],
+						`Импортировано ${parseRes.validItems.length} услуг из CSV`,
+					);
 				}
 			} else {
 				setSmartTextInput(content);
-				await handleIngestPriceList(content, 'text');
+				await handleIngestPriceList(content, "text");
 			}
 		};
-		reader.readAsText(file, 'utf-8');
+		reader.readAsText(file, "utf-8");
 	};
 
 	const handleApplyIngestedMapping = () => {
 		const approved = ingestedMappingItems.filter((i) => i.isApproved);
 		if (approved.length === 0) return;
 		const updated = mergeApprovedDiffItems(approved, items);
-		onApplyImported(updated, `Успешно сохранено ${approved.length} услуг в каталог`);
+		onApplyImported(
+			updated,
+			`Успешно сохранено ${approved.length} услуг в каталог`,
+		);
 		setIngestedMappingItems([]);
 	};
 
 	return {
-		importMode, setImportMode, smartTextInput, setSmartTextInput,
-		ingestedMappingItems, setIngestedMappingItems, isIngestingApi, importErrors,
-		handleIngestPriceList, handleFileUpload, handleApplyIngestedMapping,
+		importMode,
+		setImportMode,
+		smartTextInput,
+		setSmartTextInput,
+		ingestedMappingItems,
+		setIngestedMappingItems,
+		isIngestingApi,
+		importErrors,
+		handleIngestPriceList,
+		handleFileUpload,
+		handleApplyIngestedMapping,
 	};
 }

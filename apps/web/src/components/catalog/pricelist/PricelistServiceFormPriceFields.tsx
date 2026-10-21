@@ -1,15 +1,10 @@
 import type React from "react";
+import {
+	DURATION_OPTIONS,
+	type PricelistServiceFormPriceFieldsProps,
+} from "./PricelistServiceFormPriceFieldsProps";
 
-export interface PricelistServiceFormPriceFieldsProps {
-	readonly priceRub: string;
-	readonly materialCostRub: string;
-	readonly labCostRub: string;
-	readonly durationMin: number;
-	readonly onPriceChange: (val: string) => void;
-	readonly onMaterialCostChange: (val: string) => void;
-	readonly onLabCostChange: (val: string) => void;
-	readonly onDurationChange: (val: number) => void;
-}
+export type { PricelistServiceFormPriceFieldsProps };
 
 export const PricelistServiceFormPriceFields: React.FC<
 	PricelistServiceFormPriceFieldsProps
@@ -40,8 +35,11 @@ export const PricelistServiceFormPriceFields: React.FC<
 				}}
 			>
 				<div>
-					<label className="pricelist-form-label">Базовая цена (₽) *</label>
+					<label htmlFor="price-field-base" className="pricelist-form-label">
+						Базовая цена (₽) *
+					</label>
 					<input
+						id="price-field-base"
 						type="text"
 						inputMode="numeric"
 						className="pricelist-search-input"
@@ -53,8 +51,14 @@ export const PricelistServiceFormPriceFields: React.FC<
 					/>
 				</div>
 				<div>
-					<label className="pricelist-form-label">Расходники (₽)</label>
+					<label
+						htmlFor="price-field-material"
+						className="pricelist-form-label"
+					>
+						Расходники (₽)
+					</label>
 					<input
+						id="price-field-material"
 						type="text"
 						inputMode="numeric"
 						className="pricelist-search-input"
@@ -65,8 +69,11 @@ export const PricelistServiceFormPriceFields: React.FC<
 					/>
 				</div>
 				<div>
-					<label className="pricelist-form-label">Лаборатория (₽)</label>
+					<label htmlFor="price-field-lab" className="pricelist-form-label">
+						Лаборатория (₽)
+					</label>
 					<input
+						id="price-field-lab"
 						type="text"
 						inputMode="numeric"
 						className="pricelist-search-input"
@@ -77,19 +84,24 @@ export const PricelistServiceFormPriceFields: React.FC<
 					/>
 				</div>
 				<div>
-					<label className="pricelist-form-label">Длительность</label>
+					<label
+						htmlFor="price-field-duration"
+						className="pricelist-form-label"
+					>
+						Длительность
+					</label>
 					<select
+						id="price-field-duration"
 						className="pricelist-search-input"
 						style={{ height: "36px" }}
 						value={durationMin}
 						onChange={(e) => onDurationChange(parseInt(e.target.value, 10))}
 					>
-						<option value={15}>15 мин</option>
-						<option value={30}>30 мин</option>
-						<option value={45}>45 мин</option>
-						<option value={60}>60 мин (1 ч)</option>
-						<option value={90}>90 мин (1.5 ч)</option>
-						<option value={120}>120 мин (2 ч)</option>
+						{DURATION_OPTIONS.map((opt) => (
+							<option key={opt.value} value={opt.value}>
+								{opt.label}
+							</option>
+						))}
 					</select>
 				</div>
 			</div>

@@ -13,9 +13,9 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { describe, it } from "vitest";
 import {
 	type ExistingCatalogReference,
 	type IngestedMappingItem,
@@ -143,7 +143,9 @@ describe("PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)", () =
 
 		// Left Raw Document lines
 		assert.ok(html.includes("Filtek Z250 4500 руб"));
-		assert.ok(html.includes("Лечение глубокого кариеса жевательного зуба - 6800"));
+		assert.ok(
+			html.includes("Лечение глубокого кариеса жевательного зуба - 6800"),
+		);
 		assert.ok(html.includes("#1"));
 		assert.ok(html.includes("#2"));
 
@@ -310,7 +312,10 @@ describe("PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)", () =
 			const hasApproved = items.some((i) => i.isApproved);
 			const updated = items.map((it) => {
 				if (hasApproved && !it.isApproved) return it;
-				const nextPrice = Math.max(0, Math.round(it.priceRub * (1 + percent / 100)));
+				const nextPrice = Math.max(
+					0,
+					Math.round(it.priceRub * (1 + percent / 100)),
+				);
 				return {
 					...it,
 					priceRub: nextPrice,
@@ -338,7 +343,10 @@ describe("PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)", () =
 			const hasApproved = items.some((i) => i.isApproved);
 			const updated = items.map((it) => {
 				if (hasApproved && !it.isApproved) return it;
-				const nextPrice = Math.max(0, Math.round(it.priceRub / roundTo) * roundTo);
+				const nextPrice = Math.max(
+					0,
+					Math.round(it.priceRub / roundTo) * roundTo,
+				);
 				return {
 					...it,
 					priceRub: nextPrice,

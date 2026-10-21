@@ -1,11 +1,11 @@
-import React from 'react';
-import { ShieldCheck } from 'lucide-react';
-import { PriceDiffItemRow } from './PriceDiffItemRow';
-import type { PriceDiffTableProps } from './types';
+import { ShieldCheck } from "lucide-react";
+import type React from "react";
+import { PriceDiffItemRow } from "./PriceDiffItemRow";
+import type { PriceDiffTableProps } from "./types";
 
 export type PriceDiffRightPaneProps = Omit<
 	PriceDiffTableProps,
-	'leftBodyRef' | 'onLeftScroll'
+	"leftBodyRef" | "onLeftScroll"
 >;
 
 export const PriceDiffRightPane: React.FC<PriceDiffRightPaneProps> = ({
@@ -39,7 +39,10 @@ export const PriceDiffRightPane: React.FC<PriceDiffRightPaneProps> = ({
 		>
 			<header className="pricelist-diff-pane-header">
 				<div className="pricelist-diff-pane-title">
-					<ShieldCheck size={13} style={{ color: 'var(--ok-fg)', flexShrink: 0 }} />
+					<ShieldCheck
+						size={13}
+						style={{ color: "var(--ok-fg)", flexShrink: 0 }}
+					/>
 					<span
 						className="pricelist-diff-pane-title-text"
 						title="2. Сопоставление со стандартной номенклатурой"
@@ -89,10 +92,10 @@ export const PriceDiffRightPane: React.FC<PriceDiffRightPaneProps> = ({
 				{filteredItems.length === 0 && (
 					<div
 						style={{
-							textAlign: 'center',
-							padding: '2rem',
-							color: 'var(--muted)',
-							fontSize: '0.8125rem',
+							textAlign: "center",
+							padding: "2rem",
+							color: "var(--muted)",
+							fontSize: "0.8125rem",
 						}}
 					>
 						Нет позиций для сопоставления

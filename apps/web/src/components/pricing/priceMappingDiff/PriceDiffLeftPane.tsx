@@ -1,6 +1,7 @@
-import React, { type RefObject } from 'react';
-import { FileText } from 'lucide-react';
-import type { IngestedMappingItem } from './itemTypes';
+import { FileText } from "lucide-react";
+import type React from "react";
+import type { RefObject } from "react";
+import type { IngestedMappingItem } from "./itemTypes";
 
 export interface PriceDiffLeftPaneProps {
 	readonly filteredItems: readonly IngestedMappingItem[];
@@ -18,7 +19,10 @@ export const PriceDiffLeftPane: React.FC<PriceDiffLeftPaneProps> = ({
 	onHoverRow,
 }) => {
 	return (
-		<section className="pricelist-diff-pane left-pane" aria-label="Исходный прейскурант клиники">
+		<section
+			className="pricelist-diff-pane left-pane"
+			aria-label="Исходный прейскурант клиники"
+		>
 			<header className="pricelist-diff-pane-header">
 				<div className="pricelist-diff-pane-title">
 					<FileText size={13} style={{ flexShrink: 0 }} />
@@ -38,7 +42,7 @@ export const PriceDiffLeftPane: React.FC<PriceDiffLeftPaneProps> = ({
 				{filteredItems.map((item) => (
 					<div
 						key={`raw-${item.id}`}
-						className={`pricelist-diff-raw-row ${hoveredRowId === item.id ? 'is-hovered' : ''}`}
+						className={`pricelist-diff-raw-row ${hoveredRowId === item.id ? "is-hovered" : ""}`}
 						onMouseEnter={() => onHoverRow(item.id)}
 						onMouseLeave={() => onHoverRow(null)}
 						data-testid={`diff-raw-row-${item.id}`}
@@ -51,10 +55,10 @@ export const PriceDiffLeftPane: React.FC<PriceDiffLeftPaneProps> = ({
 				{filteredItems.length === 0 && (
 					<div
 						style={{
-							textAlign: 'center',
-							padding: '2rem',
-							color: 'var(--muted)',
-							fontSize: '0.8125rem',
+							textAlign: "center",
+							padding: "2rem",
+							color: "var(--muted)",
+							fontSize: "0.8125rem",
 						}}
 					>
 						Нет строк, соответствующих выбранному фильтру

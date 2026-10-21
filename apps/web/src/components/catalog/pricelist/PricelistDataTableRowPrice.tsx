@@ -40,7 +40,6 @@ export const PricelistDataTableRowPrice: React.FC<
 						padding: "0 6px",
 						borderRadius: "6px",
 					}}
-					autoFocus
 					value={editingPriceBuffer}
 					onChange={(e) =>
 						onPriceBufferChange(e.target.value.replace(/[^\d]/g, ""))

@@ -3,10 +3,10 @@
  * Layer 4: Presentation Subcomponent (Synchronized Scroll, Raw vs 804n Columns)
  */
 
-import React from 'react';
-import { PriceDiffLeftPane } from './PriceDiffLeftPane';
-import { PriceDiffRightPane } from './PriceDiffRightPane';
-import type { PriceDiffTableProps } from './types';
+import type React from "react";
+import { PriceDiffLeftPane } from "./PriceDiffLeftPane";
+import { PriceDiffRightPane } from "./PriceDiffRightPane";
+import type { PriceDiffTableProps } from "./types";
 
 // Anchor for health check: data-testid="pricelist-diff-container"
 

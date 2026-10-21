@@ -138,7 +138,9 @@ export function findPresetsByComplaint(
 	for (const [kw, meta] of Object.entries(COMPLAINT_KEYWORDS_MAP)) {
 		if (query.includes(kw)) {
 			matchedCategories.add(meta.category);
-			meta.tags.forEach((t) => matchedTags.add(t));
+			for (const t of meta.tags) {
+				matchedTags.add(t);
+			}
 		}
 	}
 

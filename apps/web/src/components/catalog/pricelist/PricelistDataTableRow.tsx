@@ -1,9 +1,16 @@
-import React from 'react';
-import { PricelistDataTableRowActions } from './PricelistDataTableRowActions';
-import { PricelistDataTableRowPrice } from './PricelistDataTableRowPrice';
-import { PricelistDataTableRowTitle } from './PricelistDataTableRowTitle';
-import { calculateServiceProfitability, calculateTierPrice } from './servicePricelistEngine';
-import { type PriceTierKind, type ServicePricelistItem, SPECIALTY_LABELS } from './servicePricelistPresets';
+import type React from "react";
+import { PricelistDataTableRowActions } from "./PricelistDataTableRowActions";
+import { PricelistDataTableRowPrice } from "./PricelistDataTableRowPrice";
+import { PricelistDataTableRowTitle } from "./PricelistDataTableRowTitle";
+import {
+	calculateServiceProfitability,
+	calculateTierPrice,
+} from "./servicePricelistEngine";
+import {
+	type PriceTierKind,
+	type ServicePricelistItem,
+	SPECIALTY_LABELS,
+} from "./servicePricelistPresets";
 
 export interface PricelistDataTableRowProps {
 	readonly item: ServicePricelistItem;
@@ -22,24 +29,48 @@ export interface PricelistDataTableRowProps {
 	readonly onDeleteItem: (id: string) => void;
 }
 
-export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (props) => {
+export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
+	props,
+) => {
 	const {
-		item, isSelected, activeTier, isEditingPrice, editingPriceBuffer,
-		onToggleSelectItem, onStartEditPrice, onPriceBufferChange, onCommitPrice,
-		onCancelEditPrice, onSetZeroWarrantyPrice, onEditItem, onDuplicateItem, onDeleteItem,
+		item,
+		isSelected,
+		activeTier,
+		isEditingPrice,
+		editingPriceBuffer,
+		onToggleSelectItem,
+		onStartEditPrice,
+		onPriceBufferChange,
+		onCommitPrice,
+		onCancelEditPrice,
+		onSetZeroWarrantyPrice,
+		onEditItem,
+		onDuplicateItem,
+		onDeleteItem,
 	} = props;
 	const prof = calculateServiceProfitability(item, activeTier);
-	const curPrice = calculateTierPrice(item.basePriceRub, activeTier, item.tierPrices?.[activeTier]);
+	const curPrice = calculateTierPrice(
+		item.basePriceRub,
+		activeTier,
+		item.tierPrices?.[activeTier],
+	);
 
 	return (
-		<tr style={{ background: isSelected ? 'rgba(59, 130, 246, 0.05)' : undefined, contain: 'content', contentVisibility: 'auto', containIntrinsicSize: '1px 64px' }}>
-			<td style={{ textAlign: 'center' }}>
+		<tr
+			style={{
+				background: isSelected ? "rgba(59, 130, 246, 0.05)" : undefined,
+				contain: "content",
+				contentVisibility: "auto",
+				containIntrinsicSize: "1px 64px",
+			}}
+		>
+			<td style={{ textAlign: "center" }}>
 				<input
 					type="checkbox"
 					checked={isSelected}
 					aria-label={`Выбрать услугу ${item.commercialTitle}`}
 					onChange={(e) => onToggleSelectItem(item.id, e.target.checked)}
-					style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+					style={{ cursor: "pointer", width: "18px", height: "18px" }}
 				/>
 			</td>
 			<td>
@@ -47,11 +78,11 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (prop
 			</td>
 			<PricelistDataTableRowTitle item={item} onEditItem={onEditItem} />
 			<td>
-				<span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+				<span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 					{SPECIALTY_LABELS[item.specialty] ?? item.specialty}
 				</span>
 			</td>
-			<td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+			<td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
 				<PricelistDataTableRowPrice
 					isEditing={isEditingPrice}
 					currentPrice={curPrice}
@@ -63,13 +94,21 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (prop
 					onSetZeroWarrantyPrice={() => onSetZeroWarrantyPrice(item.id)}
 				/>
 			</td>
-			<td style={{ textAlign: 'center' }}>
-				<span className={`margin-badge ${prof.level}`}>{prof.marginPercent}%</span>
+			<td style={{ textAlign: "center" }}>
+				<span className={`margin-badge ${prof.level}`}>
+					{prof.marginPercent}%
+				</span>
 			</td>
-			<td style={{ textAlign: 'center', fontSize: '0.8125rem', color: 'var(--muted)' }}>
+			<td
+				style={{
+					textAlign: "center",
+					fontSize: "0.8125rem",
+					color: "var(--muted)",
+				}}
+			>
 				{item.estimatedDurationMin} мин
 			</td>
-			<td style={{ textAlign: 'center', width: '100px', whiteSpace: 'nowrap' }}>
+			<td style={{ textAlign: "center", width: "100px", whiteSpace: "nowrap" }}>
 				<PricelistDataTableRowActions
 					item={item}
 					onEditItem={onEditItem}

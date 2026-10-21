@@ -1,19 +1,22 @@
-import { useState } from 'react';
-import type { IngestedMappingItem } from './itemTypes';
+import { useState } from "react";
 import {
 	applyDeltaToItem,
-	applyPriceToItem,
 	applyMarkupToItems,
+	applyPriceToItem,
 	applyRoundingToItems,
 	applyZeroToItems,
-} from './batchPriceHelpers';
+} from "./batchPriceHelpers";
+import type { IngestedMappingItem } from "./itemTypes";
 
 export function usePriceBatchModifiers(
 	items: readonly IngestedMappingItem[],
 	onItemsChange?: ((items: readonly IngestedMappingItem[]) => void) | undefined,
 ) {
-	const [editingRowPriceId, setEditingRowPriceId] = useState<string | null>(null);
-	const [editingRowPriceBuffer, setEditingRowPriceBuffer] = useState<string>('');
+	const [editingRowPriceId, setEditingRowPriceId] = useState<string | null>(
+		null,
+	);
+	const [editingRowPriceBuffer, setEditingRowPriceBuffer] =
+		useState<string>("");
 
 	const handleModifyRowDelta = (rowId: string, deltaRub: number) => {
 		if (onItemsChange) {
@@ -41,7 +44,7 @@ export function usePriceBatchModifiers(
 			setEditingRowPriceId(null);
 			return;
 		}
-		const cleanDigits = rawVal.replace(/\s+/g, '').replace(/[^\d]/g, '');
+		const cleanDigits = rawVal.replace(/\s+/g, "").replace(/[^\d]/g, "");
 		const parsed = parseInt(cleanDigits, 10);
 		if (!Number.isNaN(parsed) && parsed >= 0) {
 			onItemsChange(applyPriceToItem(items, rowId, parsed));

@@ -1,4 +1,4 @@
-import type { IngestedMappingItem } from './itemTypes';
+import type { IngestedMappingItem } from "./itemTypes";
 
 export function applyDeltaToItem(
 	items: readonly IngestedMappingItem[],
@@ -38,7 +38,10 @@ export function applyMarkupToItems(
 	const hasApproved = items.some((i) => i.isApproved);
 	return items.map((it) => {
 		if (hasApproved && !it.isApproved) return it;
-		const nextPrice = Math.max(0, Math.round(it.priceRub * (1 + percent / 100)));
+		const nextPrice = Math.max(
+			0,
+			Math.round(it.priceRub * (1 + percent / 100)),
+		);
 		return {
 			...it,
 			priceRub: nextPrice,

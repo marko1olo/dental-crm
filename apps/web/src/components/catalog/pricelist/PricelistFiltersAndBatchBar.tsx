@@ -1,33 +1,51 @@
-import React from 'react';
-import { Sparkles } from 'lucide-react';
-import { PricelistToolbarBatchBar } from './PricelistToolbarBatchBar';
-import { PricelistToolbarSearchSelect } from './PricelistToolbarSearchSelect';
-import { PricelistToolbarSpecialtySelect } from './PricelistToolbarSpecialtySelect';
-import { PricelistToolbarTierControl } from './PricelistToolbarTierControl';
-import type { PriceRoundingMode } from './servicePricelistEngine';
-import type { DoctorSpecialty, Order804nCategory, PriceTierKind } from './servicePricelistPresets';
+import { Sparkles } from "lucide-react";
+import type React from "react";
+import { PricelistToolbarBatchBar } from "./PricelistToolbarBatchBar";
+import { PricelistToolbarSearchSelect } from "./PricelistToolbarSearchSelect";
+import { PricelistToolbarSpecialtySelect } from "./PricelistToolbarSpecialtySelect";
+import { PricelistToolbarTierControl } from "./PricelistToolbarTierControl";
+import type { PriceRoundingMode } from "./servicePricelistEngine";
+import type {
+	DoctorSpecialty,
+	Order804nCategory,
+	PriceTierKind,
+} from "./servicePricelistPresets";
 
 export interface PricelistFiltersAndBatchBarProps {
 	readonly searchTerm: string;
 	readonly onSearchChange: (value: string) => void;
-	readonly selectedCategory: Order804nCategory | 'all';
-	readonly onCategoryChange: (category: Order804nCategory | 'all') => void;
-	readonly selectedSpecialty: DoctorSpecialty | 'all';
-	readonly onSpecialtyChange: (specialty: DoctorSpecialty | 'all') => void;
+	readonly selectedCategory: Order804nCategory | "all";
+	readonly onCategoryChange: (category: Order804nCategory | "all") => void;
+	readonly selectedSpecialty: DoctorSpecialty | "all";
+	readonly onSpecialtyChange: (specialty: DoctorSpecialty | "all") => void;
 	readonly activeTier: PriceTierKind;
 	readonly onTierChange: (tier: PriceTierKind) => void;
 	readonly isBatchBarOpen: boolean;
 	readonly onToggleBatchBar: () => void;
 	readonly batchRounding: PriceRoundingMode;
-	readonly onApplyBatchMarkup: (percent: number, rounding: PriceRoundingMode) => void;
+	readonly onApplyBatchMarkup: (
+		percent: number,
+		rounding: PriceRoundingMode,
+	) => void;
 	readonly onApplyBatchRounding: (rounding: PriceRoundingMode) => void;
 }
 
-export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarProps> = (props) => {
+export const PricelistFiltersAndBatchBar: React.FC<
+	PricelistFiltersAndBatchBarProps
+> = (props) => {
 	const {
-		searchTerm, onSearchChange, onCategoryChange, selectedSpecialty, onSpecialtyChange,
-		activeTier, onTierChange, isBatchBarOpen, onToggleBatchBar, batchRounding,
-		onApplyBatchMarkup, onApplyBatchRounding,
+		searchTerm,
+		onSearchChange,
+		onCategoryChange,
+		selectedSpecialty,
+		onSpecialtyChange,
+		activeTier,
+		onTierChange,
+		isBatchBarOpen,
+		onToggleBatchBar,
+		batchRounding,
+		onApplyBatchMarkup,
+		onApplyBatchRounding,
 	} = props;
 
 	return (
@@ -35,14 +53,14 @@ export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarPr
 			<div
 				className="pricelist-toolbar"
 				style={{
-					padding: '0.35rem 1rem',
-					gap: '0.5rem',
-					display: 'flex',
-					alignItems: 'center',
-					minHeight: '40px',
-					height: '40px',
-					flexWrap: 'nowrap',
-					overflowX: 'auto',
+					padding: "0.35rem 1rem",
+					gap: "0.5rem",
+					display: "flex",
+					alignItems: "center",
+					minHeight: "40px",
+					height: "40px",
+					flexWrap: "nowrap",
+					overflowX: "auto",
 				}}
 			>
 				<PricelistToolbarSearchSelect
@@ -50,11 +68,14 @@ export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarPr
 					onSearchChange={onSearchChange}
 					onSelectPopularService={(val) => {
 						onSearchChange(val);
-						onCategoryChange('all');
+						onCategoryChange("all");
 					}}
 				/>
 
-				<PricelistToolbarTierControl activeTier={activeTier} onTierChange={onTierChange} />
+				<PricelistToolbarTierControl
+					activeTier={activeTier}
+					onTierChange={onTierChange}
+				/>
 
 				<PricelistToolbarSpecialtySelect
 					selectedSpecialty={selectedSpecialty}
@@ -63,14 +84,14 @@ export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarPr
 
 				<button
 					type="button"
-					className={`pricelist-btn ${isBatchBarOpen ? 'pricelist-btn-primary' : ''}`}
+					className={`pricelist-btn ${isBatchBarOpen ? "pricelist-btn-primary" : ""}`}
 					style={{
-						minHeight: '36px',
-						height: '36px',
-						padding: '0 0.75rem',
-						fontSize: '0.8125rem',
-						gap: '0.375rem',
-						marginLeft: 'auto',
+						minHeight: "36px",
+						height: "36px",
+						padding: "0 0.75rem",
+						fontSize: "0.8125rem",
+						gap: "0.375rem",
+						marginLeft: "auto",
 					}}
 					onClick={onToggleBatchBar}
 					title="Пакетная индексация цен (+5%, +10%, скидки, округление)"

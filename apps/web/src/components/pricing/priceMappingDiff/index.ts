@@ -3,22 +3,21 @@
  * Barrel exports for types, hook, subcomponents and coordinator
  */
 
+export { PriceDiffItemRow } from "./PriceDiffItemRow";
+export { PriceDiffSummaryBar } from "./PriceDiffSummaryBar";
+export { PriceDiffTable } from "./PriceDiffTable";
+export { PriceDiffToolbar } from "./PriceDiffToolbar";
 export type {
+	ExistingCatalogReference,
+	IngestedMappingItem,
 	MappingConfidenceKind,
 	MappingSuggestedAction,
-	IngestedMappingItem,
-	ExistingCatalogReference,
+	PriceDiffItemRowProps,
+	PriceDiffStats,
+	PriceDiffSummaryBarProps,
+	PriceDiffTableProps,
+	PriceDiffToolbarProps,
 	PriceListMappingDiffViewProps,
 	PriceMappingDiffFilterTab,
-	PriceDiffStats,
-	PriceDiffToolbarProps,
-	PriceDiffItemRowProps,
-	PriceDiffTableProps,
-	PriceDiffSummaryBarProps,
-} from './types';
-
-export { usePriceMappingDiff } from './usePriceMappingDiff';
-export { PriceDiffToolbar } from './PriceDiffToolbar';
-export { PriceDiffItemRow } from './PriceDiffItemRow';
-export { PriceDiffTable } from './PriceDiffTable';
-export { PriceDiffSummaryBar } from './PriceDiffSummaryBar';
+} from "./types";
+export { usePriceMappingDiff } from "./usePriceMappingDiff";

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Check, Link2, Plus } from 'lucide-react';
-import type { IngestedMappingItem } from './itemTypes';
+import { Check, Link2, Plus } from "lucide-react";
+import type React from "react";
+import type { IngestedMappingItem } from "./itemTypes";
 
 export interface PriceDiffRowActionsProps {
 	readonly item: IngestedMappingItem;
@@ -23,7 +23,7 @@ export const PriceDiffRowActions: React.FC<PriceDiffRowActionsProps> = ({
 		<div className="pricelist-diff-row-actions">
 			<button
 				type="button"
-				className={`pricelist-diff-action-btn ${item.suggestedAction === 'create_new' ? 'active' : ''}`}
+				className={`pricelist-diff-action-btn ${item.suggestedAction === "create_new" ? "active" : ""}`}
 				onClick={onSetCreateNew}
 				title="Создать новую услугу в прейскуранте"
 			>
@@ -33,7 +33,7 @@ export const PriceDiffRowActions: React.FC<PriceDiffRowActionsProps> = ({
 
 			<button
 				type="button"
-				className={`pricelist-diff-action-btn ${item.suggestedAction === 'link_existing' ? 'active' : ''}`}
+				className={`pricelist-diff-action-btn ${item.suggestedAction === "link_existing" ? "active" : ""}`}
 				onClick={isLinking ? onCancelLinking : onStartLinking}
 				title="Привязать к существующей позиции каталога"
 			>
@@ -43,14 +43,14 @@ export const PriceDiffRowActions: React.FC<PriceDiffRowActionsProps> = ({
 
 			<button
 				type="button"
-				className={`pricelist-diff-icon-btn ${item.isApproved ? 'approved' : ''}`}
+				className={`pricelist-diff-icon-btn ${item.isApproved ? "approved" : ""}`}
 				onClick={onToggleApprove}
 				title={
 					item.isApproved
-						? 'Услуга будет загружена (нажмите, чтобы исключить)'
-						: 'Исключено из загрузки (нажмите, чтобы включить)'
+						? "Услуга будет загружена (нажмите, чтобы исключить)"
+						: "Исключено из загрузки (нажмите, чтобы включить)"
 				}
-				aria-label={item.isApproved ? 'Исключить услугу' : 'Включить услугу'}
+				aria-label={item.isApproved ? "Исключить услугу" : "Включить услугу"}
 			>
 				<Check size={13} />
 			</button>
