@@ -17,7 +17,7 @@ export interface VisitShiftQueueControlsProps {
 }
 
 /**
- * 3-Стадийная оперативная очередь смены StomX / DENTE
+ * 3-Стадийная оперативная очередь смены DENTE
  * [ Ожидает в холле | На приёме в кресле | Готов к оплате в кассе ]
  */
 export function VisitShiftQueueControls({

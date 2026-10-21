@@ -51,33 +51,20 @@ export { isValidFdiTooth, parseToothNumber, getFdiToothDescription };
 /**
  * Выбор и фокус зуба в зубной формуле приёма
  */
-export function focusAndSelectTooth(
-	toothNumber: number,
-	onNavigate?: (view: string) => void,
-): void {
+export function focusAndSelectTooth(toothNumber: number, onNavigate?: (view: string) => void): void {
 	playTactileEarcon("norm");
 	useVisitStore.getState().setActiveToothNumber(toothNumber);
 
-	if (onNavigate) {
-		onNavigate("visit");
-	}
+	if (onNavigate) onNavigate("visit");
 	if (typeof window !== "undefined") {
 		window.location.hash = "visit";
-		window.dispatchEvent(
-			new CustomEvent("dente:select-tooth", { detail: { toothNumber } }),
-		);
+		window.dispatchEvent(new CustomEvent("dente:select-tooth", { detail: { toothNumber } }));
 
 		// Мягкий плавный скролл к целевому зубу в DOM
 		setTimeout(() => {
-			const el = document.querySelector<HTMLElement>(
-				`[data-tooth-id="${toothNumber}"]`,
-			);
+			const el = document.querySelector<HTMLElement>(`[data-tooth-id="${toothNumber}"]`);
 			if (el) {
-				el.scrollIntoView({
-					behavior: "smooth",
-					block: "center",
-					inline: "center",
-				});
+				el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
 				el.classList.add("dente-tooth-hud-focus");
 				setTimeout(() => el.classList.remove("dente-tooth-hud-focus"), 2000);
 				el.focus?.();
@@ -96,29 +83,23 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 	const appStoreSetCurrentView = useAppStore((s) => s.setCurrentView);
 	const dashboard = appLogic?.dashboard ?? useAppStore.getState().dashboard;
 
-	const navigate = useCallback(
-		(view: string) => {
-			if (options.onNavigate) {
-				options.onNavigate(view);
-			} else if (appLogic?.setCurrentView && isAppView(view)) {
-				appLogic.setCurrentView(view);
-			} else if (appStoreSetCurrentView && isAppView(view)) {
-				appStoreSetCurrentView(view);
-			}
-			if (typeof window !== "undefined") {
-				window.location.hash = view;
-			}
-		},
-		[options.onNavigate, appLogic?.setCurrentView, appStoreSetCurrentView],
-	);
+	const navigate = useCallback((view: string) => {
+		if (options.onNavigate) {
+			options.onNavigate(view);
+		} else if (appLogic?.setCurrentView && isAppView(view)) {
+			appLogic.setCurrentView(view);
+		} else if (appStoreSetCurrentView && isAppView(view)) {
+			appStoreSetCurrentView(view);
+		}
+		if (typeof window !== "undefined") {
+			window.location.hash = view;
+		}
+	}, [options.onNavigate, appLogic?.setCurrentView, appStoreSetCurrentView]);
 
 	// Глобальное переключение HUD (Ctrl+K, Cmd+K, кастомные события)
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (
-				(e.ctrlKey || e.metaKey) &&
-				(e.key === "k" || e.key === "K" || e.key === "л" || e.key === "Л")
-			) {
+			if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K" || e.key === "л" || e.key === "Л")) {
 				e.preventDefault();
 				setIsOpen((prev) => !prev);
 			} else if (e.key === "Escape") {
@@ -139,10 +120,7 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("dente:open-command-hud", handleCustomOpen);
 			window.removeEventListener("dente:close-command-hud", handleCustomClose);
-			window.removeEventListener(
-				"dente:toggle-command-hud",
-				handleCustomToggle,
-			);
+			window.removeEventListener("dente:toggle-command-hud", handleCustomToggle);
 		};
 	}, []);
 
@@ -186,7 +164,7 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 			{
 				id: "cmd-cashbox",
 				title: "Касса и оплата",
-				subtitle: "Принять оплату, фискальный чек 54-ФЗ, СБП QR и терминал",
+				subtitle: "Принять оплату, фискальный чек, СБП QR и терминал",
 				category: "clinical",
 				categoryLabel: "Финансы",
 				shortcut: "F9",
@@ -301,7 +279,7 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 			{
 				id: "cmd-documents-hub",
 				title: "Медицинские документы и согласия",
-				subtitle: "Форма 043/у, печать ИДС, договоры и акты",
+				subtitle: "Медицинская карта приёма, печать согласий, договоры и акты",
 				category: "nav",
 				categoryLabel: "Документооборот",
 				shortcut: "F10",

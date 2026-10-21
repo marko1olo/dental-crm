@@ -11,7 +11,7 @@ import type { VisitActionButtonsToolbarProps } from "./types";
 /**
  * Панель быстрых клинических действий врача:
  * 1-клик соматическая норма, кластер печати бланков, наряд ЗТЛ, аптечка анти-шок,
- * оперативная очередь смены StomX, сохранение/завершение приёма и расширенное меню «...»
+ * оперативная очередь смены, сохранение/завершение приёма и расширенное меню «...»
  */
 export function VisitActionButtonsToolbar({
 	handleApplySomaticNormQuick,
@@ -160,7 +160,7 @@ export function VisitActionButtonsToolbar({
 				<span>Экстренная помощь</span>
 			</button>
 
-			{/* 3-Стадийная оперативная очередь смены StomX */}
+			{/* 3-Стадийная оперативная очередь смены */}
 			<VisitShiftQueueControls
 				shiftDayQueue={shiftDayQueue}
 				isQueueLobbyDropdownOpen={isQueueLobbyDropdownOpen}

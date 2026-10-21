@@ -86,7 +86,7 @@ export function useChairsideVisitWorkspace({
       const it = detail.item || detail;
       if (!it) return;
       const newItem: MobileChairsideBillingItem = {
-        id: it.id || `billing-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: it.id || `billing-${it.toothNumber || it.toothCode || "gen"}-${String(it.code || it.code804n || "srv").replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}`,
         code804n: it.code || it.code804n || "A16.07.002",
         title: it.title || it.name || "Услуга приёма",
         priceRub: Number(it.unitPriceRub || it.priceRub || it.price || 0),

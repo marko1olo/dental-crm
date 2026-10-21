@@ -4,7 +4,7 @@ import type { VisitSubViewTab } from "../../VisitMainTabs";
 export type { VisitSubViewTab };
 
 /**
- * Очередь смены врача по стадиям (StomX / DENTE)
+ * Очередь смены врача по стадиям (DENTE)
  */
 export interface ShiftDayQueue {
 	arrived: number;

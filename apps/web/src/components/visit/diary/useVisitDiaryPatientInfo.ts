@@ -29,6 +29,7 @@ export function useVisitDiaryPatientInfo({
 	diaryDoctorSpecialty,
 	ctxDashboard,
 }: UseVisitDiaryPatientInfoParams) {
+	const effectiveScopeId = visitId || patientId;
 	const { activeTeeth, setActiveTeeth } = useVisitDiaryPatientTeeth(patientId, initialTeethData);
 	const { radiologySnapshots } = useVisitDiaryRadiology(patientId, visitId);
 
