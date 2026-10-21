@@ -11,7 +11,7 @@ export function MaterialBomStatsCards({ stats }: MaterialBomStatsCardsProps) {
 			<div className="material-boms-stat-card">
 				<span className="material-boms-stat-label">Охвачено услуг</span>
 				<span className="material-boms-stat-value">{stats.totalServices}</span>
-				<span className="material-boms-stat-desc">с настроенными техкартами</span>
+				<span className="material-boms-stat-desc">с настроенными нормами расхода</span>
 			</div>
 
 			<div className="material-boms-stat-card">

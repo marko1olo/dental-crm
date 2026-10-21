@@ -582,6 +582,66 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		});
 	});
 
+	// Алиасы для пакетного списания расходников за смену (/shift-deduction)
+	server.post<{
+		Params: { organizationId?: string };
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/:organizationId/shift-deduction", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift deduction alias",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params.organizationId || request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
+
+	server.post<{
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/shift-deduction", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory shift deduction alias fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
+
 	// SOFT OVERDRAFT DEDUCT & QUICK CARPULE DISPOSAL (Bidirectional Parity with /api/warehouse)
 	const registerSoftOverdraft = (path: string) => {
 		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {

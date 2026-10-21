@@ -21,7 +21,7 @@ export { matchesCategory, getItemCategoryType, MOBILE_INVENTORY_CATEGORIES };
 
 export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProps> = (props) => {
 	const { items, organizationId, searchQuery, onSearchChange, onClearSearch, selectedCategory, onSelectCategory } = props;
-	const { onQuickDeduct, onReceiveItem, onSelectItem, onEditItem, onOpenInboundInvoice, onRefresh } = props;
+	const { onQuickDeduct, onReceiveItem, onSelectItem, onEditItem, onOpenInboundInvoice, onOpenShiftDeduction, onRefresh } = props;
 	const logic = useMobileInventoryLogic(items, organizationId, searchQuery, selectedCategory, onQuickDeduct, onReceiveItem, onRefresh);
 
 	const handleSubmitInbound = async (e: React.FormEvent) => {
@@ -91,6 +91,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 			<MobileInventoryBottomBar
 				onOpenInboundDrawer={() => logic.handleOpenInboundDrawer()}
 				onOpenInboundInvoice={onOpenInboundInvoice}
+				onOpenShiftDeduction={onOpenShiftDeduction}
 			/>
 
 			<MobileInventoryInboundDrawer

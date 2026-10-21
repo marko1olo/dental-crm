@@ -1,16 +1,19 @@
-import { ArrowDownToLine, Plus } from "lucide-react";
+import { ArrowDownToLine, PackageCheck, Plus } from "lucide-react";
 import React from "react";
+import { createPortal } from "react-dom";
 
 export interface MobileInventoryBottomBarProps {
 	readonly onOpenInboundDrawer: () => void;
 	readonly onOpenInboundInvoice?: (() => void) | undefined;
+	readonly onOpenShiftDeduction?: (() => void) | undefined;
 }
 
 export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> = ({
 	onOpenInboundDrawer,
 	onOpenInboundInvoice,
+	onOpenShiftDeduction,
 }) => {
-	return (
+	const barElement = (
 		<div className="mobile-inventory-bottom-bar" data-testid="mobile-inventory-bottom-bar">
 			<button
 				type="button"
@@ -20,8 +23,22 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 				aria-label="Оприходовать партию материалов (+ Приход)"
 			>
 				<Plus size={20} aria-hidden="true" />
-				<span>+ Приход (Оприходовать партию)</span>
+				<span>+ Приход</span>
 			</button>
+
+			{onOpenShiftDeduction && (
+				<button
+					type="button"
+					className="mobile-inventory-shift-btn cursor-pointer"
+					onClick={onOpenShiftDeduction}
+					title="Пакетное списание расходников за смену в 1 клик"
+					aria-label="Списать смену"
+					data-testid="mobile-btn-shift-deduction"
+				>
+					<PackageCheck size={18} aria-hidden="true" />
+					<span>Смена</span>
+				</button>
+			)}
 
 			{onOpenInboundInvoice && (
 				<button
@@ -38,4 +55,10 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 			)}
 		</div>
 	);
+
+	if (typeof document !== "undefined" && document.body) {
+		return createPortal(barElement, document.body);
+	}
+
+	return barElement;
 };

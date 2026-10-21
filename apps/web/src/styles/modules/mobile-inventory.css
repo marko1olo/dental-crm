@@ -448,7 +448,7 @@
 	-webkit-backdrop-filter: blur(20px);
 	border-top: 1px solid var(--line);
 	padding: 10px 16px;
-	z-index: 40;
+	z-index: 9990;
 	box-sizing: border-box;
 	display: flex;
 	align-items: center;
@@ -505,6 +505,32 @@
 .mobile-inventory-secondary-btn:active {
 	transform: scale(0.96);
 	background: var(--paper);
+}
+
+.mobile-inventory-shift-btn {
+	min-height: 50px;
+	height: 50px;
+	min-width: 50px;
+	padding: 0 12px;
+	border-radius: 14px;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	border: 1px solid var(--teal-soft, rgba(20, 184, 166, 0.3));
+	color: var(--teal-dark, #0f766e);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-shift-btn:active {
+	transform: scale(0.96);
+	background: var(--teal-soft, rgba(20, 184, 166, 0.2));
 }
 
 /* 6. Native iOS Bottom Sheet Drawer */

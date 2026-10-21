@@ -382,6 +382,8 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 	server.post("/acceptance-waybill", handlePostWaybill);
 	server.post("/:organizationId/waybills", handlePostWaybill);
 	server.post("/waybills", handlePostWaybill);
+	server.post("/:organizationId/invoices", handlePostWaybill);
+	server.post("/invoices", handlePostWaybill);
 
 	// GET /:organizationId/waybills & GET /waybills
 	const registerGetWaybills = (path: string) => {
@@ -562,4 +564,6 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 
 	registerGetWaybills("/:organizationId/waybills");
 	registerGetWaybills("/waybills");
+	registerGetWaybills("/:organizationId/invoices");
+	registerGetWaybills("/invoices");
 };

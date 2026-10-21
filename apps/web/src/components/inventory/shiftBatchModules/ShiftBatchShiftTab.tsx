@@ -72,7 +72,7 @@ export const ShiftBatchShiftTab: React.FC<ShiftBatchShiftTabProps> = ({
 
 			<div className="space-y-2">
 				<div className="flex items-center justify-between text-xs text-[var(--muted)] px-1 font-semibold">
-					<span>Материалы по техкартам ({summaryData.totalItemsCount} поз.)</span>
+					<span>Расход материалов по процедурам ({summaryData.totalItemsCount} поз.)</span>
 					<span>Расход за смену → Остаток</span>
 				</div>
 				<div className="rounded-xl border border-[var(--line)] overflow-hidden divide-y divide-[var(--line)] bg-[var(--paper)]">

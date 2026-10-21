@@ -4,8 +4,8 @@ import {
 	DEFAULT_804N_BOM_SEEDS,
 } from "../../services/inventory/defaultBomSeeds.js";
 
-describe("Inventory 804n Material BOM Auto-Deduction Engine", () => {
-	it("содержит валидные технологические карты 804н для ключевых клинических процедур", () => {
+describe("Inventory Clinical Material BOM Auto-Deduction Engine", () => {
+	it("содержит валидные нормы расхода материалов для ключевых клинических процедур", () => {
 		assert.ok(DEFAULT_804N_BOM_SEEDS.length >= 7, "Должно быть не менее 7 базовых процедур");
 
 		const filling = DEFAULT_804N_BOM_SEEDS.find((s) => s.serviceCode === "A16.07.002.001");

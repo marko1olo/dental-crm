@@ -32,7 +32,7 @@ export const ShiftBatchModalFooter: React.FC<ShiftBatchModalFooterProps> = ({
 							<CheckCircle2 className="w-3.5 h-3.5 inline shrink-0" /> Смена за сегодня уже списана
 						</span>
 					) : (
-						<span>Списание по техкартам за смену в 1 клик • Мягкий овердрафт активен</span>
+						<span>Списание расходников за смену в 1 клик • Мягкий овердрафт активен</span>
 					)
 				)}
 				{activeMode === "packages" && (

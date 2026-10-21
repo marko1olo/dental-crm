@@ -244,7 +244,7 @@ export const PROCEDURE_CATALOG_SERVICE_NORMS: readonly ProcedureCatalogServiceNo
 		],
 	},
 
-	// A16.07.030.001 — Анестезия инфильтрационная (Приказ Минздрава РФ № 804н)
+	// A16.07.030.001 — Анестезия инфильтрационная (базовая клиническая норма)
 	{
 		serviceCode: "A16.07.030.001",
 		serviceTitle: "Анестезия инфильтрационная в стоматологии",

@@ -38,7 +38,7 @@ export function MaterialBomHeaderStats({
 					</div>
 					<div>
 						<h2 className="material-boms-title">
-							Технологические карты расхода материалов
+							Нормы расхода материалов по процедурам
 						</h2>
 						<p className="material-boms-subtitle">
 							Нормы автоматического списания расходников со склада при завершении приёма

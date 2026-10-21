@@ -10,7 +10,7 @@ import {
 	Truck,
 	X,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { money } from "../AppHelpers.js";
 import { showToast } from "./GlobalToast.js";
 import type { InventoryItem } from "./inventory/useInventoryLogic.js";
@@ -63,6 +63,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 	const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
 	const [supplierName, setSupplierName] = useState("ООО «Стомторг»");
 	const [isPosting, setIsPosting] = useState(false);
+	const inFlightRef = useRef(false);
 
 	const [lines, setLines] = useState<InboundInvoiceItemLine[]>([
 		{
@@ -153,6 +154,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 
 	const handlePostInvoice = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (inFlightRef.current || isPosting) return;
 		if (lines.length === 0) {
 			showToast("Добавьте позиции в накладную", "warning");
 			return;
@@ -170,6 +172,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 			}
 		}
 
+		inFlightRef.current = true;
 		setIsPosting(true);
 		try {
 			const headers = getHeaders
@@ -290,6 +293,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 			console.error("Ошибка при оприходовании накладной:", error);
 			showToast("Не удалось оприходовать накладную на складе", "error");
 		} finally {
+			inFlightRef.current = false;
 			setIsPosting(false);
 		}
 	};

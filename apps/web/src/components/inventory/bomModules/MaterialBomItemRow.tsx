@@ -85,7 +85,7 @@ export function MaterialBomItemRow({
 					<button
 						type="button"
 						className="material-boms-icon-btn material-boms-icon-btn-danger"
-						title="Удалить материал из техкарты"
+						title="Удалить материал из нормы расхода"
 						onClick={() => onDelete(rule.id)}
 					>
 						<Trash2 size={15} />

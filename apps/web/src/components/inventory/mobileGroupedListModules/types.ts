@@ -82,6 +82,7 @@ export interface MobileInventoryGroupedListProps {
 	readonly onOpenAddModal?: () => void;
 	readonly onOpenInboundInvoice?: () => void;
 	readonly onOpenWaybills?: () => void;
+	readonly onOpenShiftDeduction?: () => void;
 	readonly onQuickWriteoffCarpules?: () => void;
 	readonly isWritingOffCarpules?: boolean;
 	readonly onRefresh?: () => void;

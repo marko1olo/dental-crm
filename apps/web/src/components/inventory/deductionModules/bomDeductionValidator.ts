@@ -83,7 +83,7 @@ export function validateDeductionBalances(
 		toastMessage = `Мягкий овердрафт. ${overdraftNotice} (${overdraftItems.length} поз., накладная в пути). Приём сохранён.`;
 	} else {
 		toastType = "success";
-		toastMessage = `Автосписание расходников: ${deductedItems.length} поз. по клиническим техкартам списано со склада (${meta.totalCostPriceRub || "0 ₽"}).`;
+		toastMessage = `Автосписание расходников: ${deductedItems.length} поз. по нормам процедур списано со склада (${meta.totalCostPriceRub || "0 ₽"}).`;
 	}
 
 	// Calculate deterministic SSOT reconciliation summary

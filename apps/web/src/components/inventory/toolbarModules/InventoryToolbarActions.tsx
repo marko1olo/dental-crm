@@ -98,9 +98,9 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 			)}
 
 			{onOpenProtocolDeduction && (
-				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenProtocolDeduction} title="Техкарта списания" data-testid="btn-open-protocol-deduction">
+				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenProtocolDeduction} title="Нормы списания по процедурам" data-testid="btn-open-protocol-deduction">
 					<Zap className="w-4 h-4 shrink-0 text-[var(--teal)]" />
-					<span>Техкарта</span>
+					<span>Нормы расхода</span>
 				</button>
 			)}
 

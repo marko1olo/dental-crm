@@ -7,6 +7,7 @@ import {
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
+import { ShiftBatchDeductionModal } from "../ShiftBatchDeductionModal.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
 
@@ -36,6 +37,9 @@ export interface InventoryViewMobileLayoutProps {
 	readonly setConfirmDialog: any;
 	readonly externalModalsProps: any;
 	readonly auditInitialDoc: WarehouseInventoryAuditDocument;
+	readonly isShiftDeductionOpen?: boolean;
+	readonly setIsShiftDeductionOpen?: (open: boolean) => void;
+	readonly onOpenShiftDeduction?: () => void;
 }
 
 export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps> = (props) => {
@@ -45,6 +49,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 		handleQuickWriteoffCarpules, isWritingOffCarpules, fetchItems, getHeaders,
 		showModal, setShowModal, editingItem, formData, setFormData, handleSaveItem, isSavingItem,
 		confirmDialog, setConfirmDialog, externalModalsProps, auditInitialDoc,
+		isShiftDeductionOpen, setIsShiftDeductionOpen, onOpenShiftDeduction,
 	} = props;
 
 	return (
@@ -76,6 +81,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				onOpenAddModal={openAddModal}
 				onOpenInboundInvoice={() => setIsInboundInvoiceModalOpen(true)}
 				onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
+				onOpenShiftDeduction={onOpenShiftDeduction || (() => setIsShiftDeductionOpen?.(true))}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
 				isWritingOffCarpules={isWritingOffCarpules}
 				onRefresh={() => fetchItems()}
@@ -99,6 +105,13 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				organizationId={organizationId} items={items} auditInitialDoc={auditInitialDoc}
 				{...externalModalsProps} fetchItems={fetchItems} getHeaders={getHeaders}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+			/>
+
+			<ShiftBatchDeductionModal
+				isOpen={Boolean(isShiftDeductionOpen)}
+				onClose={() => setIsShiftDeductionOpen?.(false)}
+				organizationId={organizationId}
+				onCompleted={() => fetchItems()}
 			/>
 		</div>
 	);

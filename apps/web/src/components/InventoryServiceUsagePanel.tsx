@@ -32,9 +32,9 @@ export interface InventoryServiceUsagePanelProps {
 }
 
 /**
- * Панель технологических карт и автоматического списания расходных материалов под услуги (Мандаты 8b, 8e, 8n).
+ * Панель норм расхода и автоматического списания расходных материалов под процедуры (Мандаты 8b, 8e, 8n).
  * Применяется для нормирования списания расходников (анестезия, карпулы, пломбировочные материалы)
- * при завершении приёма пациента по Номенклатуре 804н.
+ * при завершении приёма пациента по каталогу процедур.
  */
 export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProps> = ({
 	organizationId,
@@ -120,7 +120,7 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 						allowOverdraft: true,
 						reason: `Списание по услуге ${selectedService.code} ${selectedService.name}`,
 					})),
-					reason: `Автоматическое списание по техкарте услуги ${selectedService.code}`,
+					reason: `Автоматическое списание по нормам расхода процедуры ${selectedService.code}`,
 					allowOverdraft: true,
 				}),
 			});
@@ -204,7 +204,7 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 						data-testid="subtab-bom-editor"
 					>
 						<FileText size={13} />
-						<span>Справочник техкарт</span>
+						<span>Нормы расхода материалов (Справочник техкарт)</span>
 					</button>
 
 					<button
