@@ -17,9 +17,10 @@ export function GridAppointmentHudTimeAdjusters({
 			<span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
 				Корректировка времени
 			</span>
-			<div className="flex items-center gap-1.5">
+			<div className="flex items-center gap-1.5 flex-wrap">
 				<button
 					type="button"
+					data-testid={`hover-duration-plus-15-${a.id}`}
 					onClick={(e) => {
 						e.stopPropagation();
 						onAdjustDuration(a, 15);
@@ -28,10 +29,24 @@ export function GridAppointmentHudTimeAdjusters({
 					title="Продлить приём на 15 минут"
 				>
 					<Clock className="w-3 h-3 text-[var(--teal,#0d9488)]" />
-					<span>+15 мин</span>
+					<span>+15</span>
 				</button>
 				<button
 					type="button"
+					data-testid={`hover-duration-plus-30-${a.id}`}
+					onClick={(e) => {
+						e.stopPropagation();
+						onAdjustDuration(a, 30);
+					}}
+					className="flex-1 min-h-[30px] px-2 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer transition-all"
+					title="Продлить приём на 30 минут"
+				>
+					<Clock className="w-3 h-3 text-[var(--teal,#0d9488)]" />
+					<span>+30</span>
+				</button>
+				<button
+					type="button"
+					data-testid={`hover-duration-minus-15-${a.id}`}
 					onClick={(e) => {
 						e.stopPropagation();
 						onAdjustDuration(a, -15);
@@ -40,10 +55,11 @@ export function GridAppointmentHudTimeAdjusters({
 					title="Сократить приём на 15 минут"
 				>
 					<Clock className="w-3 h-3 text-[var(--muted)]" />
-					<span>-15 мин</span>
+					<span>-15</span>
 				</button>
 				<button
 					type="button"
+					data-testid={`hover-shift-late-15-${a.id}`}
 					onClick={(e) => {
 						e.stopPropagation();
 						onShiftLateness(a, 15);

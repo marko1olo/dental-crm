@@ -30,8 +30,9 @@ export async function resolveEffectivePatientId(params: {
 		if (created?.id) effPatientId = created.id;
 	}
 
-	const isTechBreak = isTechnicalBreakAppointment({ reason, comment });
-	if (!effPatientId && !isTechBreak) {
+	const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
+	const effectivePatientId = effPatientId;
+	if (!effectivePatientId && !isTechnicalBreak) {
 		const isCitoActive = isCito || isCitoAppointment({ reason, comment }) || (reason ?? "").toLowerCase().includes("острая боль");
 		const name = isCitoActive ? "Пациент с острой болью (CITO)" : patientSearchQuery.trim() || "Первичный пациент (Экспресс-запись)";
 		const created = await handleCreateInlinePatient({ fullName: name });

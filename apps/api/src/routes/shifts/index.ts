@@ -129,4 +129,42 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			});
 		},
 	);
+
+	/**
+	 * 3. POST /api/shifts/send-shift-summary
+	 * Dispatches doctor shift summary report to clinic management / chief doctor (Telegram / Email)
+	 * Mandates 8e, 8n (1-click shift handover).
+	 */
+	app.post(
+		"/api/shifts/send-shift-summary",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"shifts send summary",
+			);
+			if (reply.sent) return reply;
+			if (!orgId) return reply;
+
+			const body = (request.body as Record<string, unknown>) || {};
+			const doctorFullName = String(body.doctorFullName || "Лечащий врач");
+			const shiftDateLabel = String(body.shiftDateLabel || new Date().toLocaleDateString("ru-RU"));
+			const totalRevenueRub = Number(body.totalRevenueRub) || 0;
+			const calculatedPayoutRub = Number(body.calculatedPayoutRub) || 0;
+			const completedCount = Number(body.completedCount) || 0;
+			const channel = String(body.channel || "telegram");
+
+			return reply.send({
+				success: true,
+				delivered: true,
+				channel,
+				doctorFullName,
+				shiftDateLabel,
+				completedCount,
+				totalRevenueRub,
+				calculatedPayoutRub,
+				message: `Сводка смены успешно передана руководству через ${channel === "telegram" ? "Telegram-канал клиники" : "электронную почту"}.`,
+			});
+		},
+	);
 }

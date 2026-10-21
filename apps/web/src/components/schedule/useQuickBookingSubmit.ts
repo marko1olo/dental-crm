@@ -1,23 +1,21 @@
 import { useState, useRef } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { showToast } from "../GlobalToast";
 import { safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 import type { UseQuickBookingSubmitParams } from "./QuickBookingDrawerTypes";
 import { executeCopyConfirmationFlow } from "./quickBookingConfirmationText";
 import { resolveOrAutoCreateSubmitPatient } from "./quickBookingInlinePatient";
+import { buildQuickBookingPayload, handleBookingError } from "./quickBookingSubmitPayload";
 
 export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
   const {
-    patientSearch, appointmentType, doctorUserId, dutyDoctorId, doctors, dutyDoc, chairId,
-    chairs, currentChair, assistantUserId, startsAtLocal, durationMinutes, reason, comment,
-    status, isSoloClinic, collision, setSlotConflict, setSubmitError, initialSlot, isEditing,
-    editingAppointmentId, dashboard, setDashboard, loadDashboard, onAppointmentCreated,
-    onAppointmentUpdated, onClose, fromLocal,
+    patientSearch, appointmentType, startsAtLocal, durationMinutes, collision,
+    setSlotConflict, setSubmitError, isEditing, editingAppointmentId, dashboard,
+    setDashboard, loadDashboard, onAppointmentCreated, onAppointmentUpdated,
+    onClose, fromLocal,
   } = params;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,43 +26,32 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
     if (inFlightRef.current || isSubmitting) return;
     inFlightRef.current = true;
 
-    const activePatientId = await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
-    if (!activePatientId && appointmentType !== "emergency") {
-      const msg = "Укажите пациента из списка или создайте быстрого пациента (ФИО + телефон)";
-      setSubmitError(msg); showToast(msg, "warning"); return;
-    }
-
-    const effDoctor = doctorUserId || dutyDoctorId || doctors[0]?.id || "doctor-default";
-    const effChair = chairId || (chairs[0] ? chairs[0].id : DEFAULT_SOLO_CHAIR.id);
-    const startsAtIso = startsAtLocal ? fromLocal(startsAtLocal) : new Date(Math.ceil(Date.now() / 900000) * 900000).toISOString();
-    const endsAtIso = new Date(Date.parse(startsAtIso) + durationMinutes * 60_000).toISOString();
-    const isEmergency = appointmentType === "emergency";
-    const effectiveReason = reason.trim() || (isEmergency ? "Срочно! Острая боль" : "Приём врача");
-
-    if (collision.hasCollision && !isEmergency && !opts?.overbookOverride) {
-      const slotStr = collision.suggestedSlot ? collision.suggestedSlot.timeDisplay || collision.suggestedSlot.label : null;
-      setSlotConflict({ message: collision.message, suggestedSlots: slotStr ? [slotStr] : [] });
-      return;
-    }
-
-    setIsSubmitting(true); setSubmitError(null);
     try {
-      const stageServices = initialSlot?.services || initialSlot?.items || initialSlot?.procedures || [];
-      const planId = initialSlot?.treatmentPlanId || initialSlot?.planId || null;
-      const stageId = initialSlot?.stageId || (initialSlot?.stageNumber ? String(initialSlot.stageNumber) : null);
-      let effectiveComment = comment.trim();
-      if (planId && !effectiveComment.includes("План лечения")) {
-        const marker = `[План лечения: ${planId}${initialSlot?.stageTitle ? ` | ${initialSlot.stageTitle}` : ""}]${stageId ? ` [Этап: ${stageId}]` : ""}`;
-        effectiveComment = effectiveComment ? `${marker}\n${effectiveComment}` : marker;
+      const activePatientId = await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
+      if (!activePatientId && appointmentType !== "emergency") {
+        const msg = "Укажите пациента из списка или создайте быстрого пациента (ФИО + телефон)";
+        setSubmitError(msg);
+        showToast(msg, "warning");
+        return;
       }
 
-      const allowOverbookingFlag = Boolean(isEmergency || opts?.overbookOverride);
-      const payload: Record<string, any> = {
-        patientId: activePatientId || null, doctorUserId: effDoctor, assistantUserId: isSoloClinic ? null : assistantUserId || null,
-        chairId: effChair, startsAt: startsAtIso, endsAt: endsAtIso, status, reason: effectiveReason, comment: effectiveComment,
-        isCito: isEmergency, cito: isEmergency, allowOverbooking: allowOverbookingFlag, allowEmergencyOverride: allowOverbookingFlag,
-        treatmentPlanId: planId, stageId, invoice_items: stageServices, invoiceItems: stageServices, completedServices: stageServices,
-      };
+      const startsAtIso = startsAtLocal ? fromLocal(startsAtLocal) : new Date(Math.ceil(Date.now() / 900000) * 900000).toISOString();
+      const endsAtIso = new Date(Date.parse(startsAtIso) + durationMinutes * 60_000).toISOString();
+      const isEmergency = appointmentType === "emergency";
+
+      if (collision.hasCollision && !isEmergency && !opts?.overbookOverride) {
+        const slotStr = collision.suggestedSlot ? collision.suggestedSlot.timeDisplay || collision.suggestedSlot.label : null;
+        setSlotConflict({ message: collision.message, suggestedSlots: slotStr ? [slotStr] : [] });
+        return;
+      }
+
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const payload = buildQuickBookingPayload({
+        params, activePatientId, startsAtIso, endsAtIso, isEmergency,
+        overbookOverride: opts?.overbookOverride,
+      });
 
       const url = isEditing ? `/api/appointments/${encodeURIComponent(editingAppointmentId!)}` : "/api/appointments";
       const res = await fetchWithHandling(url, {
@@ -74,51 +61,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       });
 
       if (!res.ok) {
-        let errData: any = null;
-        try {
-          errData = await res.json();
-        } catch {
-          // Ignore JSON parse failure
-        }
-
-        const conflictMessage = errData?.message || errData?.error;
-        if (
-          res.status === 409 ||
-          errData?.code === "AppointmentCreateRejected" ||
-          errData?.reason === "resource_overlap" ||
-          errData?.code === "resource_overlap" ||
-          errData?.code === "overlap"
-        ) {
-          const userFacingMsg =
-            conflictMessage ||
-            "Слот уже занят другим приёмом. Выберите другое время или кресло.";
-          if (typeof setSlotConflict === "function") {
-            setSlotConflict({
-              message: userFacingMsg,
-              suggestedSlots: Array.isArray(errData?.suggestedSlots)
-                ? errData.suggestedSlots
-                : [],
-            });
-          }
-          setSubmitError(userFacingMsg);
-          showToast(userFacingMsg, "warning", 6000);
-          return;
-        }
-
-        showToast(
-          actionFailureToast(
-            conflictMessage ||
-              (isEditing
-                ? "Ошибка обновления записи на сервере"
-                : "Ошибка создания записи на сервере"),
-            res.status,
-          ),
-          "warning",
-        );
-        setSubmitError(
-          conflictMessage ||
-            `Ошибка при ${isEditing ? "обновлении" : "создании"} записи (${res.status})`,
-        );
+        await handleBookingError(res, Boolean(isEditing), setSlotConflict, setSubmitError);
         return;
       }
 
@@ -154,8 +97,9 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
 
   const handleCopyBookingConfirmation = () =>
     executeCopyConfirmationFlow({
-      patientSearch, appointmentType, doctors, doctorUserId, dutyDoc,
-      chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard, initialSlot,
+      patientSearch, appointmentType, doctors: params.doctors, doctorUserId: params.doctorUserId,
+      dutyDoc: params.dutyDoc, chairs: params.chairs, chairId: params.chairId,
+      currentChair: params.currentChair, startsAtLocal, durationMinutes, dashboard, initialSlot: params.initialSlot,
     });
 
   return { isSubmitting, handleSubmitBooking, handleCopyBookingConfirmation };

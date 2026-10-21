@@ -3,7 +3,7 @@
  *
  * Targeted Unit & Integration Test Suite for Feature 248 (Wave 59):
  * «расписание_кресла_смены::двухсменное_закрепление_subshifts_серверная_синхронизация_и_hig_рефакторинг_тулбаров»
- * (StomX / DentalPRO / IDENT Parity)
+ * (Schedule & Chair Grid Comprehensive Parity)
  *
  * CONSTITUTIONAL MANDATES TESTED:
  * - Mandate 8c: Dominant Workspace & touch targets floor (>= 36-44px in day cells / toolbars).

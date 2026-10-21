@@ -2,7 +2,7 @@
  * newAppointmentFormWave45.test.tsx
  *
  * Targeted Unit & Integration Test Suite for Feature 222:
- * Express Slots and Appointment Reasons in Schedule (StomX / DentalPRO Parity)
+ * Express Slots and Appointment Reasons in Schedule (Schedule & Chair Grid Parity)
  * in NewAppointmentForm (Wave 45 — Schedule Reception Ergonomics Lead).
  *
  * CONSTITUTIONAL MANDATES TESTED:
@@ -259,7 +259,7 @@ describe("Wave 45: Express Slots & Appointment Reasons in Schedule (Feature 222)
 		});
 	});
 
-	describe("2. Express Appointment Reasons (StomX / DentalPRO Parity, Feature 222)", () => {
+	describe("2. Express Appointment Reasons (Schedule & Chair Grid Parity, Feature 222)", () => {
 		it("2.1. exports QUICK_APPOINTMENT_REASON_PRESETS with 7 canonical dental presets", () => {
 			assert.strictEqual(QUICK_APPOINTMENT_REASON_PRESETS.length, 7);
 

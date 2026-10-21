@@ -70,7 +70,7 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
 		patientState.setIsInlineNewPatient(false);
 		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
-		setChairId(defaultChair);
+		setChairId(defaultChair || DEFAULT_SOLO_CHAIR.id);
 		timeSync.setStartsAtLocal(timeSync.safeToDateTimeLocalValue(appointment.startsAt, timezone));
 		timeSync.setEndsAtLocal(timeSync.safeToDateTimeLocalValue(appointment.endsAt, timezone));
 		setStatus(appointment.status || "planned");

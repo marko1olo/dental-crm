@@ -1,7 +1,7 @@
 /**
  * scheduleChairsAndShiftsParity.test.tsx
  *
- * Targeted Comprehensive Test Suite for Schedule, Chairs & Shifts Architecture (StomX / IDENT parity).
+ * Targeted Comprehensive Test Suite for Schedule, Chairs & Shifts Architecture (Schedule & Chair Parity).
  *
  * CONSTITUTIONAL MANDATES TESTED:
  * - Mandate 8e: Doctor & Staff Autonomy (0 disabled buttons, non-blocking 1-tap shift presets, 5-second booking).
@@ -595,7 +595,7 @@ const mockDashboard: any = {
 	],
 };
 
-describe("Schedule, Chairs & Shifts Architecture Parity (StomX / IDENT)", () => {
+describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () => {
 	beforeEach(() => {
 		setupMockDom();
 	});

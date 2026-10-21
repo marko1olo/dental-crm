@@ -3,7 +3,7 @@
  *
  * Targeted Unit & Integration Test Suite for Feature 247 (Wave 58):
  * «расписание_прием::1_клик_быстрое_изменение_длительности_сдвиг_при_опоздании_и_возврат_в_лист_ожидания»
- * (StomX / DentalPRO / IDENT Parity)
+ * (Schedule & Chair Grid Comprehensive Parity)
  *
  * CONSTITUTIONAL MANDATES TESTED:
  * - Mandate 8c: Dominant Workspace & touch targets floor (>= 44x44px in menus and drawers).

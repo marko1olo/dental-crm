@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { showToast } from "../../GlobalToast";
-import { submitChairData } from "./quickAddChairApi";
+import { duplicateChairData, submitChairData } from "./quickAddChairApi";
 import type {
 	ChairArchetypePreset,
 	QuickAddChairData,
@@ -96,12 +96,33 @@ export function useQuickAddChairForm(props: QuickAddChairModalProps) {
 		}
 	};
 
+	const handleDuplicate = async () => {
+		if (isSubmitting) return;
+		setIsSubmitting(true);
+		try {
+			await duplicateChairData({
+				baseName: chairName.trim() || defaultChairName,
+				roomNumber,
+				defaultRoomName,
+				selectedSpecialty,
+				selectedColor,
+				isActive,
+				defaultDoctorId,
+				branchId,
+				onAddChair,
+				onClose,
+			});
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
 	return {
 		isEditMode, defaultChairName, defaultRoomName,
 		chairName, setChairName, roomNumber, setRoomNumber,
 		selectedSpecialty, setSelectedSpecialty, selectedColor, setSelectedColor,
 		selectedArchetypeId, setSelectedArchetypeId, isActive, setIsActive,
 		branchId, setBranchId, defaultDoctorId, setDefaultDoctorId,
-		isSubmitting, handleSelectArchetype, handleSubmit,
+		isSubmitting, handleSelectArchetype, handleSubmit, handleDuplicate,
 	};
 }

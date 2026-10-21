@@ -43,8 +43,10 @@ export function TomorrowRemindersModal({
 		try {
 			await dispatchBatchReminders(
 				logic.summary.reminders,
-				(current, total) => logic.setDispatchProgress({ current, total }),
-				logic.allowQuietHoursOverride,
+				{
+					onProgress: (current, total) => logic.setDispatchProgress({ current, total }),
+					allowQuietHoursOverride: logic.allowQuietHoursOverride,
+				},
 			);
 			showToast(`Отправлено ${logic.summary.dispatchableCount} напоминаний`, "success");
 			onClose();
@@ -66,6 +68,7 @@ export function TomorrowRemindersModal({
 			aria-modal="true"
 		>
 			<div
+				data-testid="tomorrow-reminders-modal"
 				className="tomorrow-reminders-modal w-full max-w-2xl rounded-2xl sm:rounded-3xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-[var(--ink,#0f172a)] animate-in zoom-in-95 duration-150"
 				onClick={(e) => e.stopPropagation()}
 			>

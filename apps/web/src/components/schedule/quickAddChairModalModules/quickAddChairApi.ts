@@ -39,3 +39,52 @@ export async function submitChairData(params: {
 		onClose();
 	}
 }
+
+export async function duplicateChairData(params: {
+	baseName: string;
+	roomNumber: string;
+	defaultRoomName: string;
+	selectedSpecialty: string;
+	selectedColor: string;
+	isActive: boolean;
+	defaultDoctorId: string;
+	branchId?: string;
+	onAddChair?: (chairData: QuickAddChairData) => Promise<void> | void;
+	onClose: () => void;
+}) {
+	const {
+		baseName, roomNumber, defaultRoomName, selectedSpecialty,
+		selectedColor, isActive, defaultDoctorId, branchId, onAddChair, onClose,
+	} = params;
+	const duplicatedName = `${baseName} (копия)`;
+	const finalRoom = roomNumber.trim() || defaultRoomName;
+	const payload: QuickAddChairData = {
+		name: duplicatedName,
+		room: finalRoom,
+		specialization: selectedSpecialty,
+		color: selectedColor,
+		isActive,
+		defaultDoctorId: defaultDoctorId.trim() || null,
+		...(branchId ? { branchId } : {}),
+	};
+	try {
+		if (onAddChair) {
+			await Promise.resolve(onAddChair(payload));
+		} else {
+			await fetch("/api/settings/chairs", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					name: payload.name,
+					room: payload.room,
+					specialization: payload.specialization,
+					color: payload.color,
+					active: payload.isActive,
+					defaultDoctorId: payload.defaultDoctorId,
+				}),
+			}).catch(() => {});
+		}
+	} finally {
+		onClose();
+	}
+}

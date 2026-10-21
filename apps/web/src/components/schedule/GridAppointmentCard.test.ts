@@ -6,7 +6,7 @@ import {
 	resolveAppointmentClinicalBadges,
 } from "./GridAppointmentCard";
 
-describe("GridAppointmentCard — IDENT Doctor Specialty Color Coding (WCAG AAA)", () => {
+describe("GridAppointmentCard — Doctor Specialty Color Coding (WCAG AAA)", () => {
 	it("resolves therapy specialty to blue/indigo pastel classes", () => {
 		const theme = getDoctorSpecialtyTheme("therapist");
 		assert.ok(theme !== null, "Therapist theme should not be null");

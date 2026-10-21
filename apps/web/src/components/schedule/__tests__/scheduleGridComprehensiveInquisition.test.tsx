@@ -416,7 +416,7 @@ const mockAppointmentLabels = {
 	no_show: "Не явился",
 };
 
-describe("ScheduleGrid & QuickBookingDrawer StomX Parity Inquisition (Mandates 8d, 8e, 8k, 8n, 8o)", () => {
+describe("ScheduleGrid & QuickBookingDrawer Comprehensive Parity Inquisition (Mandates 8d, 8e, 8k, 8n, 8o)", () => {
 	let container: MockDomNode;
 	let root: Root;
 

@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — Wave 40 StomX Parity Test Suite
+ * DENTE Dental CRM — Wave 40 Comprehensive Parity Test Suite
  * Features 190, 191, 192:
  * - Feature 190: 14 StomX palettes & Chair top accent strip in ScheduleGrid / ChairScheduleView
  * - Feature 191: Even/Odd month shift generator & 1-click chair sanitation / technical break
@@ -150,7 +150,7 @@ const mockDashboard = {
 	],
 } as unknown as Dashboard;
 
-describe("Wave 40 — StomX Parity Suite (Features 190, 191, 192)", () => {
+describe("Wave 40 — Comprehensive Parity Suite (Features 190, 191, 192)", () => {
 	describe("Feature 190: 14 StomX Palettes & Chair Top Accent Strip", () => {
 		it("CHAIR_COLOR_PRESETS contains exactly 14 authentic StomX palettes with paired light/dark tokens", () => {
 			assert.strictEqual(CHAIR_COLOR_PRESETS.length, 14);

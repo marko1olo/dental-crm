@@ -31,16 +31,19 @@ export function QuickAddChairColorPicker({
 							key={preset.id}
 							type="button"
 							onClick={() => onSelectColor(preset.hex)}
-							className={`h-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer relative ${
+							className={`min-h-[44px] min-w-[44px] h-11 w-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer relative ${
 								isSelected
 									? "scale-110 shadow-md ring-2 ring-[var(--teal,#0d9488)] ring-offset-1"
 									: "hover:scale-105"
 							}`}
 							style={{
+								minHeight: "44px",
+								minWidth: "44px",
 								backgroundColor: preset.hex,
 								borderColor: preset.darkHex,
 							}}
 							title={preset.label}
+							data-testid={`quick-add-chair-color-${preset.id}`}
 							role="radio"
 							aria-checked={isSelected}
 						>

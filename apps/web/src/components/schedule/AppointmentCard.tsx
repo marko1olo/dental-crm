@@ -19,7 +19,7 @@ export {
 } from "./appointmentCardModules/AppointmentCardTeethList";
 
 /**
- * Invariant test references for wave115StomxParity:
+ * Invariant test references for wave115ScheduleParity:
  * appointment-card-refusal-menu-trigger
  * appointment-card-refusal-reasons-dropdown
  * appointment-card-refusal-reason-

@@ -34,6 +34,7 @@ export function QuickAddChairArchetypes({
 						<button
 							key={arch.id}
 							type="button"
+							data-testid={`quick-add-chair-archetype-${arch.id}`}
 							onClick={() => onSelectArchetype(arch)}
 							className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
 								isSelected

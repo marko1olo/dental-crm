@@ -4,7 +4,7 @@
  * DENTE Dental CRM — Wave 43 StomX & IDENT Parity Test Suite
  *
  * Scope:
- * 1. ChairScheduleView: 1-Click Doctor Shift Binding on Dental Chair (StomX / IDENT Parity).
+ * 1. ChairScheduleView: 1-Click Doctor Shift Binding on Dental Chair (Schedule & Chair Parity).
  *    - Presets: Morning (08-14), Evening (14-20), Full Day (08-20), 2x2 (08-20, two_shifts).
  *    - Doctor Selection in Popover + Instant Toast.
  *    - Unassign doctor shift.
@@ -510,7 +510,7 @@ const mockDashboard = {
 	activeVisit: null,
 } as unknown as Dashboard;
 
-describe("Wave 43 StomX Parity: Chair Roster, Duty Doctor Forwarding & Zero-Blocker Booking", () => {
+describe("Wave 43 Comprehensive Parity: Chair Roster, Duty Doctor Forwarding & Zero-Blocker Booking", () => {
 	setupMockDom();
 
 	beforeEach(() => {

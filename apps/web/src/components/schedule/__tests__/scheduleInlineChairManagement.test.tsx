@@ -378,7 +378,7 @@ function createDefaultFilterStripProps(
 	};
 }
 
-describe("Schedule Inline Chair Management & Quick Add Modal (StomX / DentalPRO parity)", () => {
+describe("Schedule Inline Chair Management & Quick Add Modal (Schedule & Chair Grid Parity)", () => {
 	setupMockDom();
 
 	it("1. renders '+ Кресло' button in ScheduleFilterStrip with >= 44px touch target", async () => {

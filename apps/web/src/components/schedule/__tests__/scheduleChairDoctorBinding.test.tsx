@@ -2,7 +2,7 @@
  * scheduleChairDoctorBinding.test.tsx
  *
  * DENTE Dental CRM — Schedule Chair Doctor Binding & 1-Click Shift Allocation Test Suite
- * Parity: StomX / DentalPRO Chair Doctor Duty & Shift Assignment
+ * Schedule Chair Doctor Duty & Shift Assignment
  *
  * Mandates:
  * - Mandate 8e (Doctor & Staff Autonomy): Non-blocking doctor assignment, 0 disabled buttons.
@@ -911,7 +911,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		expect(assistantSelect).toBeNull();
 	});
 
-	it("6. ScheduleGrid renders inline '+ Кресло' header button with >= 44px touch target (StomX parity) and triggers onOpenAddChair", async () => {
+	it("6. ScheduleGrid renders inline '+ Кресло' header button with >= 44px touch target (Comprehensive Parity) and triggers onOpenAddChair", async () => {
 		const onOpenAddChair = vi.fn();
 		const container = document.createElement("div") as unknown as MockDomNode;
 		const root: Root = createRoot(container as unknown as HTMLElement);
@@ -1097,7 +1097,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		expect(html).toContain("Петров П.С.");
 	});
 
-	it("10. 2-shift chair doctor allocation supports morning + evening doctors with 1-tap quick pills (StomX / DentalPRO parity)", async () => {
+	it("10. 2-shift chair doctor allocation supports morning + evening doctors with 1-tap quick pills (Schedule & Chair Grid Parity)", async () => {
 		const container = document.createElement("div") as unknown as MockDomNode;
 		const root: Root = createRoot(container as unknown as HTMLElement);
 
@@ -1788,7 +1788,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		expect(overrideNote?.textContent).toContain("не блокируется");
 	});
 
-	it("23. Chair header doctor popover renders all 4 shift presets with >= 44px touch targets and supports 1-click week binding (StomX parity)", async () => {
+	it("23. Chair header doctor popover renders all 4 shift presets with >= 44px touch targets and supports 1-click week binding (Comprehensive Parity)", async () => {
 		const container = document.createElement("div") as unknown as MockDomNode;
 		const root: Root = createRoot(container as unknown as HTMLElement);
 

@@ -1,6 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { DoctorSpecialtyTheme } from "./appointmentCardHelpers";
 import {
+	GridAppointmentHudClinicalActions,
 	GridAppointmentHudCommunication,
 	GridAppointmentHudDetails,
 	GridAppointmentHudHeader,
@@ -83,6 +84,14 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 			<GridAppointmentHudStatusActions
 				appointment={a}
 				onQuickStatusChange={onQuickStatusChange}
+			/>
+
+			<GridAppointmentHudClinicalActions
+				appointment={a}
+				patObj={patObj}
+				pName={pName}
+				onMouseLeave={onMouseLeave}
+				onFreeSlotToWaitlist={onFreeSlotToWaitlist}
 			/>
 
 			<GridAppointmentHudTimeAdjusters

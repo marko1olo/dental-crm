@@ -5,6 +5,7 @@ import {
 	QuickAddChairColorPicker,
 	QuickAddChairFields,
 	QuickAddChairFooter,
+	QuickAddChairPreview,
 	type QuickAddChairModalProps,
 	useQuickAddChairForm,
 } from "./quickAddChairModalModules";
@@ -74,12 +75,22 @@ export function QuickAddChairModal(props: QuickAddChairModalProps): React.ReactE
 						selectedColor={form.selectedColor}
 						onSelectColor={form.setSelectedColor}
 					/>
+					<QuickAddChairPreview
+						chairName={form.chairName}
+						defaultChairName={form.defaultChairName}
+						roomNumber={form.roomNumber}
+						defaultRoomName={form.defaultRoomName}
+						selectedColor={form.selectedColor}
+						defaultDoctorId={form.defaultDoctorId}
+						doctors={props.doctors}
+					/>
 				</form>
 				<QuickAddChairFooter
 					isEditMode={form.isEditMode}
 					isSubmitting={form.isSubmitting}
 					onClose={onClose}
 					onSubmit={form.handleSubmit}
+					onDuplicate={form.handleDuplicate}
 				/>
 			</div>
 		</div>

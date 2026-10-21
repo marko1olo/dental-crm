@@ -57,7 +57,7 @@ export function QuickBookingDrawerFooter({
           data-testid="quick-booking-cancel-btn"
           className="secondary-button min-h-[44px] px-2.5 sm:px-3 bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm shrink-0"
         >
-          Отмена<span className="hidden sm:inline"> (Esc)</span>
+          Отмена (Esc)
         </button>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {isDirty && (

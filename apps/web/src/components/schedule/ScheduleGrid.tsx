@@ -29,7 +29,7 @@ import type { ScheduleGridProps } from "./grid/gridTypes";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 /**
- * Invariant test references for wave115StomxParity:
+ * Invariant test references for wave115ScheduleParity:
  * getStomxWorkplacePalette
  * data-chair-palette
  * chair-palette-badge-

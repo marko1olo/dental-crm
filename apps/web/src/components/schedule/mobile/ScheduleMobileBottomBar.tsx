@@ -1,5 +1,4 @@
 import React from "react";
-import { Plus } from "lucide-react";
 
 export interface ScheduleMobileBottomBarProps {
   isVisible: boolean;
@@ -20,8 +19,7 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
         onClick={onAction}
         data-testid="schedule-mobile-add-btn"
       >
-        <Plus size={18} />
-        <span>Записать визит</span>
+        <span>+ Записать визит</span>
       </button>
     </div>
   );

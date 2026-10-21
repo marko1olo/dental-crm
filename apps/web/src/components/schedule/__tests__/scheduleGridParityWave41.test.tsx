@@ -1,7 +1,7 @@
 /**
  * scheduleWave41StomxParity.test.tsx
  *
- * DENTE Dental CRM — Wave 41 StomX Parity Test Suite
+ * DENTE Dental CRM — Wave 41 Comprehensive Parity Test Suite
  *
  * Mandates:
  * - Mandate 8e (Doctor & Staff Autonomy): Unblocked status selector on open visit, inline quick patient creation.
@@ -562,7 +562,7 @@ const defaultAppointmentLabels: Record<Appointment["status"], string> = {
 	no_show: "Не явился",
 };
 
-describe("Wave 41 StomX Parity: Schedule Quick Patient, Unblocked Status, Chair-Doctor Binding", () => {
+describe("Wave 41 Comprehensive Parity: Schedule Quick Patient, Unblocked Status, Chair-Doctor Binding", () => {
 	setupMockDom();
 
 	beforeEach(() => {
@@ -958,7 +958,7 @@ describe("Wave 41 StomX Parity: Schedule Quick Patient, Unblocked Status, Chair-
 		});
 	});
 
-	describe("4. QuickAddChairModal: Default Doctor Selector and Live Preview (StomX / DentalPRO Parity)", () => {
+	describe("4. QuickAddChairModal: Default Doctor Selector and Live Preview (Schedule & Chair Grid Parity)", () => {
 		it("renders quick-add-chair-doctor-select and preview card reflects doctor", () => {
 			const html = renderToString(
 				<QuickAddChairModal

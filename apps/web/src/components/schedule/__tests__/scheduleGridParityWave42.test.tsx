@@ -4,9 +4,9 @@
  * DENTE Dental CRM — Wave 42 StomX & IDENT Parity Test Suite
  *
  * Scope:
- * 1. ScheduleFilterStrip: Dedicated "По креслам" mode switch (StomX / IDENT Parity).
+ * 1. ScheduleFilterStrip: Dedicated "По креслам" mode switch (Schedule & Chair Parity).
  * 2. ChairScheduleView: Unified Compact Toolbar (32-36px, Hick's Law & Mandate 8d).
- * 3. ChairScheduleView: 1-Click Doctor Shift Binding Popover & Presets (Mandate 8e, StomX Parity).
+ * 3. ChairScheduleView: 1-Click Doctor Shift Binding Popover & Presets (Mandate 8e, Comprehensive Parity).
  * 4. ChairScheduleView: Doctor Name without Truncation (Russian Long Surnames).
  * 5. AppointmentModal: Unblocked Patient Select on Active Visit (Mandate 8e Doctor Autonomy).
  */
@@ -452,7 +452,7 @@ const mockDashboard = {
 	activeVisit: null,
 } as unknown as Dashboard;
 
-describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding, Unblocked Patient Select", () => {
+describe("Wave 42 Comprehensive Parity: Dedicated Chair View Mode, Doctor Shift Binding, Unblocked Patient Select", () => {
 	setupMockDom();
 
 	beforeEach(() => {
@@ -464,7 +464,7 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 		}
 	});
 
-	describe("1. ScheduleFilterStrip: Dedicated 'По креслам' View Mode Switch (StomX / IDENT)", () => {
+	describe("1. ScheduleFilterStrip: Dedicated 'По креслам' View Mode Switch (Schedule & Chair)", () => {
 		it("renders segmented control with 'По креслам' option and fires setScheduleViewMode('chairs')", async () => {
 			const container = document.createElement("div") as unknown as MockDomNode;
 			const root: Root = createRoot(container as unknown as HTMLElement);

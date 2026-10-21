@@ -220,7 +220,8 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			const breakChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentTechnicalBreakChips.tsx");
 			const reasonChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentReasonChips.tsx");
 			const statePath = path.resolve(__dirname, "../useAppointmentModalState.ts");
-			const content = [modalPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath]
+			const submitEntitiesPath = path.resolve(__dirname, "../appointmentModalStateModules/useAppointmentModalSubmitEntities.ts");
+			const content = [modalPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath, submitEntitiesPath]
 				.filter((p) => fs.existsSync(p))
 				.map((p) => fs.readFileSync(p, "utf-8"))
 				.join("\n");

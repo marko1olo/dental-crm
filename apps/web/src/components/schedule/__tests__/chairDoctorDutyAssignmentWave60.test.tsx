@@ -1,6 +1,6 @@
 /**
  * Wave 60 Test Suite: Chair Management, Shift Rostering and Duty Doctor Auto-Assignment
- * Parity with StomX and DentalPRO, enforcing Mandates 8d, 8e, 8k, 8n.
+ * Comprehensive Schedule & Chair Duty Assignment, enforcing Mandates 8d, 8e, 8k, 8n.
  */
 
 import { describe, it, beforeEach } from "node:test";
@@ -406,7 +406,7 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 		});
 	});
 
-	describe("6. StomX / IDENT Shift Presets Coverage & Calculation", () => {
+	describe("6. Schedule & Chair Shift Presets Coverage & Calculation", () => {
 		it("6.1. computeShiftAssignment calculates 'full_9_21' preset as 09:00–21:00", () => {
 			const res = computeShiftAssignment({
 				chair: mockChairs[0] as any,
@@ -530,7 +530,7 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			expect(html).toContain("quick-drawer-save-btn");
 		});
 
-		it("7.3. 1-Click Duty Badge in Chair Header and 1-Click Status Badge on Appointment Card (StomX / IDENT)", () => {
+		it("7.3. 1-Click Duty Badge in Chair Header and 1-Click Status Badge on Appointment Card (Schedule & Chair)", () => {
 			const mockAppt: Appointment = {
 				id: "appt-test-1",
 				chairId: "chair-1",

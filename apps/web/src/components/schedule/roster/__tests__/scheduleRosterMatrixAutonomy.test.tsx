@@ -2,7 +2,7 @@
  * scheduleRosterMatrixAutonomy.test.tsx
  *
  * DENTE Dental CRM — Schedule Shift Matrix & 1-Click Chair-Doctor Binding Test Suite
- * Parity: StomX / DentalPRO Quick Shift Presets & Autonomy (Mandates 8e, 8k, 8n, 8d)
+ * Quick Shift Presets & Autonomy (Mandates 8e, 8k, 8n, 8d)
  *
  * Requirements:
  * - Mandate 8e: Doctor & staff autonomy — Save/Apply buttons NEVER disabled, auto-fill fallback on empty shifts.
