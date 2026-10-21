@@ -21,7 +21,7 @@ import {
 	createQuickDryHeat180Cycle,
 	createQuickDryHeat160Cycle,
 	createQuickCombinedPsoRecord,
-} from "../../sterilization/sterilizationPresets";
+} from "../sterilization/sterilizationPresets";
 import {
 	SANPIN_WASTE_PACKAGING_TYPES,
 	SANPIN_MEDICAL_WASTE_CLASSES,

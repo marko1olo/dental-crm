@@ -9,7 +9,7 @@ import {
 	STANDARD_TRAY_OPTIONS,
 	SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET,
 	createQuickStandard132Cycle,
-} from "../../sterilization/sterilizationPresets.js";
+} from "../sterilization/sterilizationPresets.js";
 import { CHEMICAL_INTEGRATORS_CATALOG } from "../kraft/chemicalIntegratorsCatalog.js";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
 
