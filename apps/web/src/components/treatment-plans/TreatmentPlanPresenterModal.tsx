@@ -86,7 +86,7 @@ export const TreatmentPlanPresenterModal: React.FC<
 						/>
 					}
 				/>
-				<TreatmentPlanPresenterConnectedTools s={s} teeth={teeth} hideButtonsBar />
+				<TreatmentPlanPresenterConnectedTools s={s} teeth={teeth} hideButtonsBar onApproveAndSign={onApproveAndSign} />
 				<TreatmentPlanPresenterBody s={s} props={effectiveProps} />
 				<TreatmentPlanPresenterFooter
 					selectedTier={s.selectedTier}

@@ -20,6 +20,7 @@ import {
 	isDeciduousTooth,
 	isMolarOrPremolar,
 	matchCatalogService,
+	SERVICES_CATALOG_DICTIONARY,
 	ORDER_804N_DICTIONARY,
 	setDemoShowcaseMode,
 } from "../treatmentPlanStagesEngine";
@@ -67,8 +68,8 @@ const MOCK_CLINIC_CATALOG: readonly CatalogServiceLookupItem[] = [
 	},
 ];
 
-describe("treatmentPlanStagesEngine: Order 804n Nomenclature & Clinical Stages", () => {
-	test("Все процедуры Номенклатуры 804н имеют валидный код, категорию, этап и материалы", () => {
+describe("treatmentPlanStagesEngine: Service Catalog & Clinical Stages", () => {
+	test("Все процедуры каталога услуг имеют валидный код, категорию, этап и материалы", () => {
 		const expectedCodes: Record<string, string> = {
 			DiagnosticsCT: "A06.07.004",
 			HygieneComplex: "A16.07.050",
@@ -507,7 +508,7 @@ describe("treatmentPlanStagesEngine: Orthopedic Laboratory Work Order Extraction
 		assert.ok(stageTeeth.includes(36), "Зуб 36 должен быть в ортопедическом этапе");
 	});
 
-	test("Определяет ортопедические номенклатурные коды Приказа 804н (коронки, мосты, вкладки, абатменты)", () => {
+	test("Определяет ортопедические процедуры семантического каталога услуг (коронки, мосты, вкладки, абатменты)", () => {
 		const orthoCodes = [
 			"A16.07.003", // Вкладка Inlay/Onlay
 			"A16.07.004.001", // Коронка из диоксида циркония
@@ -518,8 +519,8 @@ describe("treatmentPlanStagesEngine: Orthopedic Laboratory Work Order Extraction
 		];
 
 		for (const code of orthoCodes) {
-			const matching = Object.values(ORDER_804N_DICTIONARY).find((d) => d.code === code);
-			assert.ok(matching, "Процедура " + code + " должна присутствовать в словаре 804н");
+			const matching = Object.values(SERVICES_CATALOG_DICTIONARY).find((d) => d.code === code);
+			assert.ok(matching, "Процедура " + code + " должна присутствовать в каталоге услуг");
 			assert.equal(matching.stageKind, "stage_3_orthopedics");
 			assert.equal(matching.stageNumber, 3);
 		}

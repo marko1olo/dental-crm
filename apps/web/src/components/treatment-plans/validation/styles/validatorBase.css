@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Treatment Plan Price Validator: Base Modal & Header
+   ========================================================================== */
+
+.price-validator-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1050;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.price-validator-modal {
+	--pv-bg: var(--paper);
+	--pv-surface: var(--paper-strong);
+	--pv-surface-hover: var(--paper-soft);
+	--pv-border: var(--line);
+	--pv-border-focus: var(--teal);
+	--pv-text-main: var(--ink);
+	--pv-text-muted: var(--muted);
+	--pv-brand: var(--teal);
+	--pv-brand-hover: var(--teal-dark);
+	--pv-brand-light: var(--teal-surface);
+	--pv-ok: var(--ok-fg);
+	--pv-ok-bg: var(--ok-bg);
+	--pv-warn: var(--warn-fg);
+	--pv-warn-bg: var(--warn-bg);
+	--pv-danger: var(--bad-fg);
+	--pv-danger-bg: var(--bad-bg);
+	--pv-radius-lg: 16px;
+	--pv-radius-md: 10px;
+	--pv-radius-sm: 6px;
+	--pv-shadow: var(--shadow-3);
+
+	background: var(--pv-bg);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-lg);
+	box-shadow: var(--pv-shadow);
+	width: 100%;
+	max-width: 1240px;
+	height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.price-validator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--pv-border);
+	background: var(--pv-surface);
+	flex-shrink: 0;
+}
+
+.price-validator-header-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.price-validator-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: var(--pv-radius-md);
+	background: var(--pv-brand-light);
+	color: var(--pv-brand);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.price-validator-title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.price-validator-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--pv-text-main);
+}
+
+.price-validator-subtitle {
+	margin: 2px 0 0 0;
+	font-size: 0.85rem;
+	color: var(--pv-text-muted);
+}
+
+.price-validator-close-btn {
+	background: transparent;
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	border-radius: var(--pv-radius-sm);
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.price-validator-close-btn:hover {
+	background: var(--pv-surface-hover);
+	color: var(--pv-text-main);
+	border-color: var(--pv-border-focus);
+}

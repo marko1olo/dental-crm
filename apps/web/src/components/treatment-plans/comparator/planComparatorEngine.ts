@@ -64,6 +64,8 @@ export interface PaymentSchedulesSummary {
 	readonly ndflRefund: NdflTaxDeductionInfo;
 }
 
+export type PaymentSchedulesResult = PaymentSchedulesSummary;
+
 export interface PlanPairDifferential {
 	readonly baseTier: PlanTierCode;
 	readonly targetTier: PlanTierCode;

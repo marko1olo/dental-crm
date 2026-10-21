@@ -1,0 +1,108 @@
+import type { TreatmentPlanItem } from "../../types";
+import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
+import { ORDER_804N_DICTIONARY } from "../../treatmentPlanServicesCatalog";
+import { createPlanItem } from "../../treatmentPlanItemFactory";
+
+export function getEconomyTherapyItems(
+	catalog?: readonly CatalogServiceLookupItem[],
+	validDiscountPct: number = 0,
+	isDemo: boolean = false,
+): TreatmentPlanItem[] {
+	return [
+		createPlanItem(
+			"eco-diag-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.DiagnosticsXray ?? {
+				code: "A06.07.012",
+				title: "Прицельная рентгенография и радиовизиография",
+				category: "Диагностика",
+				defaultPriceRub: 3500,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["рентген", "визиография"],
+				materialsDefault: "Цифровой радиовизиограф",
+			},
+			undefined,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Прицельная рентгенография и радиовизиография", customPriceRub: 3500, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"eco-hyg-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.HygieneComplex ?? {
+				code: "A16.07.051",
+				title: "Базовая ультразвуковая гигиена и снятие зубного камня",
+				category: "Гигиена",
+				defaultPriceRub: 4500,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["гигиена", "ультразвук"],
+				materialsDefault: "Ультразвуковой скейлер EMS",
+			},
+			undefined,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Базовая ультразвуковая гигиена и снятие зубного камня", customPriceRub: 4500, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"eco-car16-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.TherapyCaries ?? {
+				code: "A16.07.002.001",
+				title: "Лечение глубокого кариеса световым композитом Gradia Direct",
+				category: "Терапия",
+				defaultPriceRub: 7000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["кариес", "пломба"],
+				materialsDefault: "GC Gradia Direct",
+			},
+			16,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Лечение глубокого кариеса световым композитом Gradia Direct (зуб 16)", customPriceRub: 7000, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"eco-car26-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.TherapyCaries ?? {
+				code: "A16.07.002.001",
+				title: "Лечение кариеса световым композитом Gradia Direct",
+				category: "Терапия",
+				defaultPriceRub: 7000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["кариес", "пломба"],
+				materialsDefault: "GC Gradia Direct",
+			},
+			26,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Лечение кариеса световым композитом Gradia Direct (зуб 26)", customPriceRub: 7000, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"eco-car35-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.TherapyCaries ?? {
+				code: "A16.07.002.001",
+				title: "Восстановление контактного пункта световым композитом Charisma",
+				category: "Терапия",
+				defaultPriceRub: 8000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["кариес", "пломба"],
+				materialsDefault: "Heraeus Charisma Opal",
+			},
+			35,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Восстановление контактного пункта световым композитом Charisma (зуб 35)", customPriceRub: 8000, isDemoMode: isDemo },
+		),
+	];
+}

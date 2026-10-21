@@ -1,33 +1,15 @@
-/**
- * PriceValidatorPricesTab.tsx — Вкладка сверки цен и прайс-листа клиники (DENTE CRM).
- *
- * Содержит:
- * 1. Тулбар с селектором политики и пакетными действиями (фиксация гарантии / обновление до прайса).
- * 2. Информационное предупреждение о 30-дневном сроке действия сметы.
- * 3. Баннер валидационных сообщений.
- * 4. Дровер автономии врача / подтверждения цен в 1 клик.
- * 5. Таблицу построчной сверки сметы с текущим каталогом.
- */
-
 import type React from "react";
-import {
-	AlertTriangle,
-	Check,
-	CheckCircle2,
-	Clock,
-	Lock,
-	RefreshCw,
-	ShieldCheck,
-} from "lucide-react";
-import {
-	PLAN_PRICE_POLICY_PRESETS,
-	type PlanPricePolicyPresetId,
-	type PriceLockResolutionPolicy,
-} from "./planPriceValidationPresets";
+import type {
+	PlanPricePolicyPresetId,
+	PriceLockResolutionPolicy,
+} from "./planPriceValidationPresets.js";
 import type {
 	AdminOverrideMetadata,
 	PlanPriceValidationReport,
-} from "./planPriceValidationEngine";
+} from "./planPriceValidationEngine.js";
+import { PriceValidatorPricesBanners } from "./pricesTab/PriceValidatorPricesBanners.js";
+import { PriceValidatorPricesTableRow } from "./pricesTab/PriceValidatorPricesTableRow.js";
+import { PriceValidatorPricesToolbar } from "./pricesTab/PriceValidatorPricesToolbar.js";
 
 export interface PriceValidatorPricesTabProps {
 	readonly report: PlanPriceValidationReport;
@@ -69,167 +51,24 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 }) => {
 	return (
 		<>
-			{/* Toolbar & Policy Selector */}
-			<div className="price-validator-toolbar">
-				<div className="price-validator-policy-selector">
-					<span
-						style={{
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							color: "var(--pv-text-muted)",
-						}}
-					>
-						Политика фиксации:
-					</span>
-					<select
-						className="price-validator-policy-select"
-						value={selectedPresetId}
-						onChange={(e) =>
-							onPresetChange(e.target.value as PlanPricePolicyPresetId)
-						}
-					>
-						{Object.values(PLAN_PRICE_POLICY_PRESETS).map((p) => (
-							<option key={p.id} value={p.id}>
-								{p.title} (пороговый лимит {p.inflationThresholdPercent}%)
-							</option>
-						))}
-					</select>
-				</div>
+			<PriceValidatorPricesToolbar
+				selectedPresetId={selectedPresetId}
+				onPresetChange={onPresetChange}
+				onBatchLockOriginal={onBatchLockOriginal}
+				onBatchUpdateToCurrent={onBatchUpdateToCurrent}
+				showAdminDrawer={showAdminDrawer}
+				onToggleAdminDrawer={onToggleAdminDrawer}
+				adminOverride={adminOverride}
+				onRevokeAdminOverride={onRevokeAdminOverride}
+				onAuthorizeDoctorAutonomy={onAuthorizeDoctorAutonomy}
+				adminReasonInput={adminReasonInput}
+				onAdminReasonChange={onAdminReasonChange}
+				adminPinInput={adminPinInput}
+				onAdminPinChange={onAdminPinChange}
+			/>
 
-				<div className="price-validator-batch-actions">
-					<button
-						type="button"
-						className="price-validator-btn-secondary"
-						onClick={onBatchLockOriginal}
-						title="Зафиксировать оригинальные цены плана лечения"
-					>
-						<Lock size={15} /> Зафиксировать цены плана
-					</button>
-					<button
-						type="button"
-						className="price-validator-btn-secondary"
-						onClick={onBatchUpdateToCurrent}
-						title="Обновить все позиции до актуального прайса клиники"
-					>
-						<RefreshCw size={15} /> Обновить до прайса
-					</button>
-					<button
-						type="button"
-						className={`price-validator-btn-secondary ${adminOverride.isAuthorized ? "pv-badge-ok" : ""}`}
-						onClick={onToggleAdminDrawer}
-						title="Подтверждение цен плана лечащим врачом"
-					>
-						{adminOverride.isAuthorized ? <Check size={15} /> : <ShieldCheck size={15} />}{" "}
-						{adminOverride.isAuthorized
-							? "Согласовано врачом"
-							: "Подтвердить цены"}
-					</button>
-				</div>
-			</div>
+			<PriceValidatorPricesBanners report={report} />
 
-			{/* Soft warning for 30-day expiration */}
-			{report.isPlanExpired && (
-				<div
-					className="price-validator-banner status-info"
-					data-testid="validator-plan-expired-soft-banner"
-					style={{
-						background: "rgba(245, 158, 11, 0.08)",
-						borderColor: "rgba(245, 158, 11, 0.3)",
-						color: "var(--ink)",
-						marginBottom: "0.75rem",
-					}}
-				>
-					<Clock size={20} className="text-[var(--warn-fg,var(--warn,#d97706))] shrink-0" />
-					<div>
-						<strong>Мягкое предупреждение: срок составления сметы превысил 30 дней</strong>
-						<div style={{ marginTop: 2, fontSize: "0.85rem" }}>
-							Истечение 30 дней с момента составления плана лечения не блокирует оказание услуг, создание нарядов ЗТЛ или проведение оплаты. Цены зафиксированы по согласованию с лечащим врачом.
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Validation Messages Banner */}
-			{report.validationMessages.length > 0 && (
-				<div
-					className={`price-validator-banner ${
-						report.overallStatus === "BLOCKED_ARCHIVED_SERVICE"
-							? "status-warn"
-							: report.overallStatus === "PENDING_ADMIN_OVERRIDE"
-								? "status-warn"
-								: "status-ok"
-					}`}
-				>
-					{report.overallStatus === "BLOCKED_ARCHIVED_SERVICE" ? (
-						<AlertTriangle size={20} />
-					) : report.overallStatus === "PENDING_ADMIN_OVERRIDE" ? (
-						<AlertTriangle size={20} />
-					) : (
-						<CheckCircle2 size={20} />
-					)}
-					<div>
-						<strong>
-							{report.overallStatus === "BLOCKED_ARCHIVED_SERVICE"
-								? "Архивная позиция в плане (разрешено врачом)"
-								: report.overallStatus === "PENDING_ADMIN_OVERRIDE"
-									? "Индивидуальная скидка согласована врачом"
-									: "Проверка успешно завершена"}
-						</strong>
-						{report.validationMessages.map((msg, idx) => (
-							<div key={idx} style={{ marginTop: 2 }}>
-								{msg}
-							</div>
-						))}
-					</div>
-				</div>
-			)}
-
-			{/* Admin Override Drawer */}
-			{showAdminDrawer && (
-				<div className="price-validator-admin-box">
-					<div className="price-validator-admin-header">
-						<span>
-							<ShieldCheck size={16} /> Автономия лечащего врача / Подтверждение цен
-						</span>
-						{adminOverride.isAuthorized && (
-							<button
-								type="button"
-								className="pv-res-btn"
-								onClick={onRevokeAdminOverride}
-							>
-								Сбросить согласование
-							</button>
-						)}
-					</div>
-					<div className="price-validator-admin-inputs">
-						<button
-							type="button"
-							className="price-validator-btn-brand"
-							onClick={onAuthorizeDoctorAutonomy}
-							data-testid="btn-doctor-autonomy-approve"
-							style={{ background: "var(--pv-ok)", borderColor: "var(--pv-ok)" }}
-						>
-							<Check size={16} /> Подтвердить (без PIN-кода)
-						</button>
-						<input
-							type="text"
-							className="price-validator-input"
-							placeholder="Основание / Причина фиксации"
-							value={adminReasonInput}
-							onChange={(e) => onAdminReasonChange(e.target.value)}
-						/>
-						<input
-							type="password"
-							className="price-validator-input"
-							placeholder="PIN-код (необязательно)"
-							value={adminPinInput}
-							onChange={(e) => onAdminPinChange(e.target.value)}
-						/>
-					</div>
-				</div>
-			)}
-
-			{/* Comparison Table */}
 			<div className="price-validator-table-container">
 				<table className="price-validator-table">
 					<thead>
@@ -246,118 +85,12 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 					</thead>
 					<tbody>
 						{report.items.map((item, idx) => (
-							<tr key={item.itemId}>
-								<td>
-									<span style={{ fontWeight: 700, marginRight: 6 }}>
-										{idx + 1}
-									</span>
-									{item.toothNumber ? (
-										<span className="pv-badge pv-badge-tooth">
-											#{item.toothNumber}
-										</span>
-									) : (
-										<span className="pv-badge pv-badge-tooth">—</span>
-									)}
-								</td>
-								<td>
-									<span className="pv-badge pv-badge-code">
-										{item.code804n}
-									</span>
-								</td>
-								<td>
-									<div style={{ fontWeight: 600 }}>{item.serviceTitle}</div>
-									<div
-										style={{
-											fontSize: "0.75rem",
-											color: "var(--pv-text-muted)",
-										}}
-									>
-										{item.category}
-									</div>
-								</td>
-								<td style={{ fontWeight: 700 }}>{item.quantity}</td>
-								<td>
-									<div style={{ fontWeight: 700 }}>
-										{item.planUnitPriceRub.toLocaleString("ru-RU")} ₽
-									</div>
-									{item.planDiscountRub > 0 && (
-										<div
-											style={{
-												fontSize: "0.75rem",
-												color: "var(--pv-ok)",
-											}}
-										>
-											Скидка {item.planDiscountPercent}% (-
-											{item.planDiscountRub.toLocaleString("ru-RU")} ₽)
-										</div>
-									)}
-								</td>
-								<td>
-									<div style={{ fontWeight: 700 }}>
-										{item.currentCatalogPriceRub.toLocaleString("ru-RU")} ₽
-									</div>
-									{item.isArchived && (
-										<span className="pv-badge pv-badge-danger">
-											В архиве
-										</span>
-									)}
-									{item.isNotFound && (
-										<span className="pv-badge pv-badge-warn">
-											Нет в прайсе
-										</span>
-									)}
-								</td>
-								<td>
-									<span
-										className={`pv-badge ${
-											item.severity === "error"
-												? "pv-badge-danger"
-												: item.severity === "warning"
-													? "pv-badge-warn"
-													: item.severity === "info"
-														? "pv-badge-info"
-														: "pv-badge-ok"
-										}`}
-									>
-										{item.statusBadgeText}
-									</span>
-								</td>
-								<td>
-									<div className="pv-resolution-selector">
-										<button
-											type="button"
-											className={`pv-res-btn ${item.selectedResolution === "LOCK_ORIGINAL_PRICE" ? "active-lock" : ""}`}
-											onClick={() =>
-												onItemResolutionChange(
-													item.itemId,
-													"LOCK_ORIGINAL_PRICE",
-												)
-											}
-											title="Фиксация цены плана"
-										>
-											План
-										</button>
-										<button
-											type="button"
-											className={`pv-res-btn ${item.selectedResolution === "UPDATE_TO_CURRENT_PRICE" ? "active-current" : ""}`}
-											onClick={() =>
-												onItemResolutionChange(
-													item.itemId,
-													"UPDATE_TO_CURRENT_PRICE",
-												)
-											}
-											title={
-												item.isArchived
-													? "Услуга выведена в архив прайс-листа клиники (пересчет по новому прайсу недоступен)"
-													: "Пересчет по текущему прайсу клиники"
-											}
-											disabled={item.isArchived}
-										>
-											Прайс
-										</button>
-									</div>
-								</td>
-							</tr>
+							<PriceValidatorPricesTableRow
+								key={item.itemId}
+								item={item}
+								index={idx}
+								onItemResolutionChange={onItemResolutionChange}
+							/>
 						))}
 					</tbody>
 				</table>

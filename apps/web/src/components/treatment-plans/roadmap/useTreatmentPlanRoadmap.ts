@@ -106,6 +106,11 @@ export function useTreatmentPlanRoadmap(props: TreatmentPlanRoadmapProps) {
 			stage_3_surgery: [],
 			stage_4_orthopedics: [],
 			stage_5_hygiene_checkup: [],
+			urgent: [],
+			sanitation: [],
+			reconstruction: [],
+			maintenance: [],
+			therapy: [],
 		};
 
 		// Teeth map per stage
@@ -115,6 +120,11 @@ export function useTreatmentPlanRoadmap(props: TreatmentPlanRoadmapProps) {
 			stage_3_surgery: new Set(),
 			stage_4_orthopedics: new Set(),
 			stage_5_hygiene_checkup: new Set(),
+			urgent: new Set(),
+			sanitation: new Set(),
+			reconstruction: new Set(),
+			maintenance: new Set(),
+			therapy: new Set(),
 		};
 
 		for (const it of allItems) {

@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Treatment Plan Price Validator: Badges & Resolution Buttons
+   ========================================================================== */
+
+.pv-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: var(--pv-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.pv-badge-tooth {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-brand);
+	font-family: monospace;
+	font-size: 0.85rem;
+	padding: 2px 6px;
+}
+
+.pv-badge-code {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	font-family: monospace;
+	font-size: 0.75rem;
+}
+
+.pv-badge-ok {
+	background: var(--pv-ok-bg);
+	color: var(--pv-ok);
+	border: 1px solid var(--pv-ok);
+}
+
+.pv-badge-warn {
+	background: var(--pv-warn-bg);
+	color: var(--pv-warn);
+	border: 1px solid var(--pv-warn);
+}
+
+.pv-badge-danger {
+	background: var(--pv-danger-bg);
+	color: var(--pv-danger);
+	border: 1px solid var(--pv-danger);
+}
+
+.pv-badge-info {
+	background: var(--pv-brand-light);
+	color: var(--pv-brand);
+	border: 1px solid var(--pv-brand);
+}
+
+.pv-resolution-selector {
+	display: flex;
+	gap: 4px;
+}
+
+.pv-res-btn {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-border);
+	color: var(--pv-text-muted);
+	padding: 4px 8px;
+	border-radius: var(--pv-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pv-res-btn:hover {
+	border-color: var(--pv-brand);
+	color: var(--pv-text-main);
+}
+
+.pv-res-btn.active-lock {
+	background: var(--pv-brand-light);
+	border-color: var(--pv-brand);
+	color: var(--pv-brand);
+	font-weight: 700;
+}
+
+.pv-res-btn.active-current {
+	background: var(--pv-ok-bg);
+	border-color: var(--pv-ok);
+	color: var(--pv-ok);
+	font-weight: 700;
+}
+
+.pv-res-btn.active-override {
+	background: var(--pv-warn-bg);
+	border-color: var(--pv-warn);
+	color: var(--pv-warn);
+	font-weight: 700;
+}

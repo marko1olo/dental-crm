@@ -1,0 +1,80 @@
+/* ==========================================================================
+   Treatment Plan Comparator: Header & Actions
+   ========================================================================== */
+
+.plan-comparator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--plan-border);
+	background: var(--plan-surface);
+	flex-shrink: 0;
+}
+
+.plan-comparator-header-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.plan-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: var(--plan-radius-sm);
+	background: var(--plan-primary-light);
+	color: var(--plan-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.plan-header-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--plan-text-main);
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.plan-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--plan-text-muted);
+	margin: 2px 0 0 0;
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.plan-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.plan-btn-icon {
+	min-width: 36px;
+	min-height: 36px;
+	width: 36px;
+	height: 36px;
+	border-radius: var(--plan-radius-sm);
+	border: 1px solid var(--plan-border);
+	background: var(--plan-bg);
+	color: var(--plan-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.plan-btn-icon:hover {
+	background: var(--plan-surface-hover);
+	color: var(--plan-text-main);
+}

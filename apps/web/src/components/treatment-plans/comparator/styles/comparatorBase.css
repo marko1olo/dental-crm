@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Treatment Plan Comparator: Base Modal & Body
+   ========================================================================== */
+
+.plan-comparator-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.plan-comparator-modal {
+	--plan-bg: var(--paper);
+	--plan-surface: var(--paper-strong);
+	--plan-surface-hover: var(--paper-soft);
+	--plan-border: var(--line);
+	--plan-border-focus: var(--teal);
+	--plan-text-main: var(--ink);
+	--plan-text-muted: var(--muted);
+	--plan-primary: var(--teal);
+	--plan-primary-hover: var(--teal-dark);
+	--plan-primary-light: var(--teal-surface);
+	--plan-success: var(--ok-fg);
+	--plan-success-light: var(--ok-bg);
+	--plan-warning: var(--warn-fg);
+	--plan-warning-light: var(--warn-bg);
+	--plan-radius-lg: 16px;
+	--plan-radius-md: 10px;
+	--plan-radius-sm: 6px;
+	--plan-shadow: var(--shadow-3);
+
+	background: var(--plan-bg);
+	color: var(--plan-text-main);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-lg);
+	box-shadow: var(--plan-shadow);
+	width: 100%;
+	max-width: 1380px;
+	height: 92vh;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.plan-comparator-body {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}

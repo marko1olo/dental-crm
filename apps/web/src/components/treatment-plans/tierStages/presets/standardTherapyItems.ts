@@ -1,0 +1,108 @@
+import type { TreatmentPlanItem } from "../../types";
+import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
+import { ORDER_804N_DICTIONARY } from "../../treatmentPlanServicesCatalog";
+import { createPlanItem } from "../../treatmentPlanItemFactory";
+
+export function getStandardTherapyItems(
+	catalog?: readonly CatalogServiceLookupItem[],
+	validDiscountPct: number = 0,
+	isDemo: boolean = false,
+): TreatmentPlanItem[] {
+	return [
+		createPlanItem(
+			"opt-diag-ct-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.DiagnosticsCT ?? {
+				code: "A06.07.012",
+				title: "КЛКТ 3D-диагностика челюстно-лицевой области высокого разрешения",
+				category: "Диагностика",
+				defaultPriceRub: 4500,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["клкт", "кт"],
+				materialsDefault: "Vatech PaX-i3D Green",
+			},
+			undefined,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "КЛКТ 3D-диагностика челюстно-лицевой области высокого разрешения", customPriceRub: 4500, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"opt-hyg-airflow-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.HygieneComplex ?? {
+				code: "A16.07.051",
+				title: "Комплексная гигиена Air-Flow Plus с глицином и фторированием Clinpro",
+				category: "Гигиена",
+				defaultPriceRub: 7500,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["гигиена", "airflow"],
+				materialsDefault: "EMS Air-Flow Plus, 3M Clinpro",
+			},
+			undefined,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Комплексная гигиена Air-Flow Plus с глицином и фторированием Clinpro", customPriceRub: 7500, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"opt-endo-micro-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.EndoObturation3Canal ?? {
+				code: "A16.07.008",
+				title: "Эндодонтическое лечение 3-канального зуба под микроскопом Leica",
+				category: "Терапия",
+				defaultPriceRub: 28000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["эндодонтия", "микроскоп"],
+				materialsDefault: "Микроскоп Leica M320, BioRoot RCS",
+			},
+			46,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Эндодонтическое лечение 3-канального зуба под микроскопом Leica (зуб 46)", customPriceRub: 28000, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"opt-buildup-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.TherapyBuildUp ?? {
+				code: "A16.07.030",
+				title: "Анатомический Core Build-up со стекловолоконным штифтом RelyX",
+				category: "Терапия",
+				defaultPriceRub: 15000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["штифт", "билдап"],
+				materialsDefault: "Стекловолоконный штифт 3M RelyX Fiber Post",
+			},
+			46,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Анатомический Core Build-up со стекловолоконным штифтом RelyX (зуб 46)", customPriceRub: 15000, isDemoMode: isDemo },
+		),
+		createPlanItem(
+			"opt-resto24-preset",
+			1,
+			"stage_1_therapy",
+			ORDER_804N_DICTIONARY.TherapyCaries ?? {
+				code: "A16.07.002.001",
+				title: "Высокоэстетичная реставрация нанокомпозитом Estelite Asteria",
+				category: "Терапия",
+				defaultPriceRub: 10000,
+				stageKind: "stage_1_therapy",
+				stageNumber: 1,
+				keywords: ["реставрация", "эстетика"],
+				materialsDefault: "Tokuyama Estelite Asteria",
+			},
+			24,
+			catalog,
+			validDiscountPct,
+			{ customTitle: "Высокоэстетичная реставрация нанокомпозитом Estelite Asteria (зуб 24)", customPriceRub: 10000, isDemoMode: isDemo },
+		),
+	];
+}

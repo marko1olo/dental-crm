@@ -1,0 +1,114 @@
+/* ==========================================================================
+   Treatment Plan Price Validator: Admin Override Box, Footer & Responsive
+   ========================================================================== */
+
+.price-validator-admin-box {
+	background: var(--pv-surface);
+	border: 1px solid var(--pv-warn);
+	border-radius: var(--pv-radius-md);
+	padding: 14px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.price-validator-admin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--pv-warn);
+}
+
+.price-validator-admin-inputs {
+	display: grid;
+	grid-template-columns: 1fr 1.5fr auto;
+	gap: 10px;
+	align-items: center;
+}
+
+.price-validator-input {
+	background: var(--pv-bg);
+	color: var(--pv-text-main);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-sm);
+	padding: 8px 12px;
+	font-size: 0.85rem;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.price-validator-input:focus {
+	border-color: var(--pv-brand);
+}
+
+.price-validator-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-top: 1px solid var(--pv-border);
+	background: var(--pv-surface);
+	gap: 12px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.price-validator-footer-summary {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	font-size: 0.9rem;
+}
+
+.price-validator-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+	.price-validator-metrics-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.price-validator-admin-inputs {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.price-validator-backdrop {
+		padding: 0;
+	}
+	.price-validator-modal {
+		height: 100vh;
+		width: 100%;
+		max-width: 100%;
+		border-radius: 0;
+		border: none;
+	}
+	.price-validator-metrics-grid {
+		grid-template-columns: 1fr;
+		padding: 10px 14px;
+	}
+	.price-validator-toolbar {
+		padding: 10px 14px;
+	}
+	.price-validator-body {
+		padding: 10px 14px;
+	}
+	.price-validator-footer {
+		padding: 12px 14px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.price-validator-footer-actions {
+		width: 100%;
+		justify-content: stretch;
+	}
+	.price-validator-footer-actions button {
+		flex: 1;
+	}
+}

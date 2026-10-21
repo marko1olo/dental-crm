@@ -7,7 +7,10 @@ import { treatmentPlanQuerySchema } from "./treatmentPlan/pipelineTypes.js";
 import { aggregatePipelineData } from "./treatmentPlan/pipelineDataAggregator.js";
 import { handleCreateBudgetLink } from "./treatmentPlan/budgetLinkHandler.js";
 import {
+	handleApproveTreatmentPlan,
 	handleCreateTreatmentPlan,
+	handleListTreatmentPlans,
+	handleUpdateTreatmentPlan,
 	handleUpdateTreatmentPlanStage,
 } from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 import { handleSignTreatmentPlanPep } from "./treatmentPlan/treatmentPlanPepHandler.js";
@@ -17,6 +20,15 @@ export * from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 export * from "./treatmentPlan/treatmentPlanPepHandler.js";
 
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
+	// 0. GET /api/treatment-plans — Список планов лечения клиники
+	const listPlansHandler = async (request: any, reply: any) => {
+		const context = await requireClinicalReadContext(request, reply, "list treatment plans");
+		if (!context) return;
+		return handleListTreatmentPlans(request, reply, context.organizationId);
+	};
+	server.get("/api/treatment-plans", listPlansHandler);
+	server.get("/api/v1/treatment-plans", listPlansHandler);
+
 	// 1. GET /api/v1/treatment-plans/pipeline — 5-колоночная оперативная воронка координатора
 	server.get("/api/v1/treatment-plans/pipeline", async (request, reply) => {
 		const context = await requireClinicalReadContext(request, reply, "treatment plan pipeline");
@@ -81,4 +93,22 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	};
 	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/sign-pep", signPepHandler);
 	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/sign-pep", signPepHandler);
+
+	// 6. PATCH /api/treatment-plans/:id — Обновление плана лечения
+	const updatePlanHandler = async (request: any, reply: any) => {
+		const context = await requireClinicalMutationContext(request, reply, "update treatment plan");
+		if (!context) return;
+		return handleUpdateTreatmentPlan(request, reply, context.organizationId);
+	};
+	server.patch<{ Params: { id: string } }>("/api/treatment-plans/:id", updatePlanHandler);
+	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id", updatePlanHandler);
+
+	// 7. POST /api/treatment-plans/:id/approve — Утверждение плана лечения
+	const approvePlanHandler = async (request: any, reply: any) => {
+		const context = await requireClinicalMutationContext(request, reply, "approve treatment plan");
+		if (!context) return;
+		return handleApproveTreatmentPlan(request, reply, context.organizationId);
+	};
+	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/approve", approvePlanHandler);
+	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/approve", approvePlanHandler);
 };

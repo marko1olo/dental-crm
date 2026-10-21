@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Treatment Plan Comparator: Payment Grid & Sticky Footer
+   ========================================================================== */
+
+.plan-payment-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+.plan-payment-card {
+	background: var(--plan-bg);
+	border: 1px solid var(--plan-border);
+	border-radius: var(--plan-radius-sm);
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.plan-payment-card.active {
+	border-color: var(--plan-primary);
+}
+
+.plan-comparator-footer {
+	position: sticky;
+	bottom: 0;
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-top: 1px solid var(--plan-border);
+	background: var(--plan-surface);
+	flex-shrink: 0;
+	box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+	backdrop-filter: blur(8px);
+}
+
+.plan-action-btn-primary {
+	min-height: 36px;
+	height: 36px;
+	padding: 6px 18px;
+	border-radius: var(--plan-radius-sm);
+	border: none;
+	background: var(--plan-primary);
+	color: #ffffff;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+	white-space: nowrap;
+}
+
+.plan-action-btn-primary:hover {
+	background: var(--plan-primary-hover);
+}
+
+.plan-action-btn-secondary {
+	min-height: 32px;
+	height: 32px;
+	padding: 5px 12px;
+	border-radius: var(--plan-radius-sm);
+	border: 1px solid var(--plan-border);
+	background: var(--plan-bg);
+	color: var(--plan-text-main);
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+	white-space: nowrap;
+}
+
+.plan-action-btn-secondary:hover {
+	background: var(--plan-surface-hover);
+}

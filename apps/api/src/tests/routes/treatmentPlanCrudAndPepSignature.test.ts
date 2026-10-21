@@ -253,4 +253,82 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(confirmBody.signature.signerName, "Смирнов Алексей Павлович");
 		assert.equal(confirmBody.treatmentPlan.status, "Approved");
 	});
+
+	test("4. GET /api/treatment-plans lists plans with patientId filter and organization isolation", async () => {
+		if (!databaseReady) return;
+
+		const listRes = await app.inject({
+			method: "GET",
+			url: `/api/treatment-plans?patientId=${PATIENT_ID}`,
+			headers: testHeaders,
+		});
+
+		assert.equal(listRes.statusCode, 200);
+		const listBody = JSON.parse(listRes.body);
+		assert.equal(listBody.success, true);
+		assert.ok(Array.isArray(listBody.plans));
+		assert.ok(listBody.plans.length >= 1);
+		assert.ok(listBody.plans.every((p: any) => p.patientId === PATIENT_ID));
+	});
+
+	test("5. PATCH /api/treatment-plans/:id updates plan fields", async () => {
+		if (!databaseReady) return;
+
+		const createRes = await app.inject({
+			method: "POST",
+			url: "/api/treatment-plans",
+			headers: testHeaders,
+			payload: {
+				patientId: PATIENT_ID,
+				name: "План для редактирования",
+			},
+		});
+		assert.equal(createRes.statusCode, 201);
+		const planId = JSON.parse(createRes.body).treatmentPlan.id;
+
+		const updateRes = await app.inject({
+			method: "PATCH",
+			url: `/api/treatment-plans/${planId}`,
+			headers: testHeaders,
+			payload: {
+				name: "Обновленный план лечения",
+				planDiscountPercent: 10,
+				planDiscountRub: 1500,
+			},
+		});
+
+		assert.equal(updateRes.statusCode, 200);
+		const updateBody = JSON.parse(updateRes.body);
+		assert.equal(updateBody.success, true);
+		assert.equal(updateBody.plan.name, "Обновленный план лечения");
+		assert.equal(updateBody.plan.planDiscountPercent, 10);
+	});
+
+	test("6. POST /api/treatment-plans/:id/approve marks plan as Approved", async () => {
+		if (!databaseReady) return;
+
+		const createRes = await app.inject({
+			method: "POST",
+			url: "/api/treatment-plans",
+			headers: testHeaders,
+			payload: {
+				patientId: PATIENT_ID,
+				name: "План для согласования",
+			},
+		});
+		assert.equal(createRes.statusCode, 201);
+		const planId = JSON.parse(createRes.body).treatmentPlan.id;
+
+		const approveRes = await app.inject({
+			method: "POST",
+			url: `/api/treatment-plans/${planId}/approve`,
+			headers: testHeaders,
+		});
+
+		assert.equal(approveRes.statusCode, 200);
+		const approveBody = JSON.parse(approveRes.body);
+		assert.equal(approveBody.success, true);
+		assert.equal(approveBody.plan.status, "Approved");
+		assert.ok(approveBody.plan.approvedAt);
+	});
 });

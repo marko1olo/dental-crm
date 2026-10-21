@@ -1,0 +1,63 @@
+/* ==========================================================================
+   Treatment Plan Price Validator: Metrics Grid
+   ========================================================================== */
+
+.price-validator-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 14px 24px;
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-border);
+	flex-shrink: 0;
+}
+
+.price-validator-metric-card {
+	background: var(--pv-bg);
+	border: 1px solid var(--pv-border);
+	border-radius: var(--pv-radius-md);
+	padding: 10px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.price-validator-metric-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--pv-text-muted);
+	margin-bottom: 4px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.price-validator-metric-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--pv-text-main);
+	line-height: 1.2;
+}
+
+.price-validator-metric-sub {
+	font-size: 0.75rem;
+	color: var(--pv-text-muted);
+	margin-top: 2px;
+}
+
+.price-validator-metric-card.highlight-ok {
+	border-color: var(--pv-ok);
+	background: var(--pv-ok-bg);
+}
+
+.price-validator-metric-card.highlight-warn {
+	border-color: var(--pv-warn);
+	background: var(--pv-warn-bg);
+}
+
+.price-validator-metric-card.highlight-danger {
+	border-color: var(--pv-danger);
+	background: var(--pv-danger-bg);
+}

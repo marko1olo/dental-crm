@@ -3,7 +3,7 @@
  *
  * Wave 62 / Feature 251 Test Suite:
  * «планы_лечения_касса::сохранение_счетов_в_хранилище_при_экспорте_кассиру_и_интеграция_с_invoices_view»
- * (StomX / DentalPRO / IDENT Parity, Mandates 2, 8c, 8d, 8e, 8k, 8n)
+ * (DENTE Clinical Billing Parity, Mandates 2, 8c, 8d, 8e, 8k, 8n)
  *
  * Requirements:
  * 1. 1-Click Export to Cashier from TreatmentPlanModule:

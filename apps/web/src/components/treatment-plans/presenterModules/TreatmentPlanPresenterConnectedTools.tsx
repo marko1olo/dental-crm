@@ -11,11 +11,12 @@ interface TreatmentPlanPresenterConnectedToolsProps {
 	readonly s: ReturnType<typeof useTreatmentPlanPresenterState>;
 	readonly teeth?: readonly ToothData[] | readonly { toothNumber?: number }[] | undefined;
 	readonly hideButtonsBar?: boolean | undefined;
+	readonly onApproveAndSign?: ((tier: any) => void) | undefined;
 }
 
 export const TreatmentPlanPresenterConnectedTools: React.FC<
 	TreatmentPlanPresenterConnectedToolsProps
-> = ({ s, teeth, hideButtonsBar }) => {
+> = ({ s, teeth, hideButtonsBar, onApproveAndSign }) => {
 	const normalizedTeeth: readonly ToothData[] | undefined = teeth?.map((t) => ({
 		toothNumber: t.toothNumber ?? 11,
 		state: "state" in t && t.state ? t.state : ("Healthy" as const),
@@ -41,8 +42,17 @@ export const TreatmentPlanPresenterConnectedTools: React.FC<
 			doctorDiscountTargetStage={s.doctorDiscountTargetStage}
 			setDoctorDiscountTargetStage={s.setDoctorDiscountTargetStage}
 			onApplyDoctorFixedDiscount={s.handleApplyDoctorFixedDiscount}
+			showMicroConsumables={s.showMicroConsumables}
+			setShowMicroConsumables={s.setShowMicroConsumables}
 			selectedTier={s.selectedTier}
+			allTiers={s.allTiers}
+			onSelectPlan={s.handleSelectTier}
 			teeth={normalizedTeeth}
+			patientChoiceBtnText={s.patientChoiceBtnText}
+			choiceConfirmedBtnText={s.choiceConfirmedBtnText}
+			isChoiceConfirmed={s.isChoiceConfirmed}
+			onConfirmPatientChoice={s.handleConfirmPatientChoice}
+			onApproveAndSign={onApproveAndSign}
 			confirmedNotice={s.confirmedNotice}
 			hideButtonsBar={hideButtonsBar}
 		/>

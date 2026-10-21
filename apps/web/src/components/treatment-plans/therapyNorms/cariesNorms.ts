@@ -1,0 +1,71 @@
+import type { ProcedureMaterialNorm } from "../types";
+
+export const CARIES_NORMS: Record<string, readonly ProcedureMaterialNorm[]> = {
+	// A16.07.002.001: Лечение кариеса фотополимером
+	"A16.07.002.001": [
+		{
+			id: "norm-caries-composite",
+			materialName: "Нанокомпозит светоотверждаемый (Estelite Asteria / Filtek)",
+			category: "Терапия",
+			quantityPerProcedure: 0.4,
+			unitOfMeasure: "г",
+			defaultUnitCostRub: 1250,
+			mandatory: true,
+		},
+		{
+			id: "norm-caries-adhesive",
+			materialName: "Самопротравливающий адгезив 7-го поколения (Single Bond / Tokuyama EE)",
+			category: "Терапия",
+			quantityPerProcedure: 0.1,
+			unitOfMeasure: "мл",
+			defaultUnitCostRub: 1800,
+			mandatory: true,
+		},
+		{
+			id: "norm-caries-etching",
+			materialName: "Гель травильный 37% ортофосфорная кислота",
+			category: "Терапия",
+			quantityPerProcedure: 0.2,
+			unitOfMeasure: "мл",
+			defaultUnitCostRub: 150,
+			mandatory: true,
+		},
+		{
+			id: "norm-caries-matrix",
+			materialName: "Секционная контурная матрица + деревянный клин Tor VM",
+			category: "Расходные материалы",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "компл.",
+			defaultUnitCostRub: 85,
+			mandatory: true,
+		},
+		{
+			id: "norm-caries-anesthesia",
+			materialName: "Анестетик артикаиновый 4% с эпинефрином 1:100000 (Убистезин / Септонест)",
+			category: "Анестезия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "карп.",
+			defaultUnitCostRub: 195,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-caries-needle",
+			materialName: "Игла карпульная 30G евростандарт",
+			category: "Расходные материалы",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 25,
+			mandatory: true,
+		},
+		{
+			id: "norm-caries-cofferdam",
+			materialName: "Платок латексный коффердама Sanctuary Dental Dam",
+			category: "Изоляция",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 110,
+			mandatory: true,
+		},
+	],
+};

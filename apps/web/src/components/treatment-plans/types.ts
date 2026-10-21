@@ -166,6 +166,8 @@ export interface TreatmentPlanStage {
 	readonly doctorSpecialty?: string | null | undefined;
 }
 
+export type TreatmentPlanStageItem = TreatmentPlanItem;
+
 export interface TierInstallmentPlan {
 	readonly months: 3 | 6 | 12 | 24;
 	readonly monthlyPaymentKopecks: Kopecks;

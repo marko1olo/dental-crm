@@ -1,0 +1,131 @@
+/* ==========================================================================
+   Treatment Plan Comparator: Mobile Segmented Control & Print Styles
+   ========================================================================== */
+
+.plan-comparator-segmented-control {
+	display: none;
+}
+
+@media (max-width: 960px) {
+	.plan-comparator-segmented-control {
+		display: flex;
+		gap: 6px;
+		padding: 4px;
+		background: var(--plan-surface-hover);
+		border-radius: var(--plan-radius-md);
+		border: 1px solid var(--plan-border);
+		width: 100%;
+		box-sizing: border-box;
+		margin-bottom: 8px;
+	}
+
+	.plan-segmented-tab {
+		flex: 1;
+		min-height: 44px;
+		padding: 6px 8px;
+		border-radius: var(--plan-radius-sm);
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--plan-text-muted);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition: all 0.2s ease;
+	}
+
+	.plan-segmented-tab.active {
+		background: var(--plan-surface);
+		color: var(--plan-text-main);
+		font-weight: 700;
+		border-color: var(--plan-border);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.plan-segmented-tab-title {
+		font-size: 0.75rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+
+	.plan-segmented-tab-price {
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--plan-primary);
+		font-family: monospace;
+	}
+
+	.plan-cards-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plan-cards-grid .plan-card:not(.selected) {
+		display: none;
+	}
+
+	.plan-payment-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.plan-comparator-footer {
+		flex-direction: column-reverse;
+		align-items: stretch;
+		gap: 10px;
+		padding: 10px 14px;
+	}
+
+	.plan-comparator-footer > div {
+		width: 100%;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.plan-action-btn-primary,
+	.plan-action-btn-secondary {
+		min-height: 44px;
+		height: auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+}
+
+@media print {
+	.plan-comparator-backdrop {
+		position: static;
+		background: transparent;
+		padding: 0;
+	}
+
+	.plan-comparator-modal {
+		border: none;
+		box-shadow: none;
+		height: auto;
+		max-width: 100%;
+	}
+
+	.plan-header-actions,
+	.plan-comparator-footer,
+	.plan-btn-icon,
+	.plan-comparator-segmented-control {
+		display: none !important;
+	}
+
+	.plan-card {
+		break-inside: avoid;
+		border: 1px solid var(--line-strong) !important;
+		display: flex !important;
+	}
+
+	.plan-cards-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
