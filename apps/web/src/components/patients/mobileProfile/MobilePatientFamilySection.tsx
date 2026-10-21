@@ -73,7 +73,7 @@ export function MobilePatientFamilySection({
 
 			{familyData?.members && familyData.members.length > 0 ? (
 				<div className="flex flex-col gap-1.5 pt-1">
-					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--muted)]">
 						Члены семьи (тап для переключения карты):
 					</span>
 					<div className="mobile-family-members-scroller" role="tablist" data-testid="mobile-family-members-list">

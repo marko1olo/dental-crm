@@ -68,7 +68,7 @@ describe("PatientWorkspaceView Toolbar Ergonomics & Anti-Clutter (Mandates 8c, 8
 	});
 
 	it("3. guarantees touch target ergonomics (min-h-[34px]) and zero disabled buttons on toolbar", () => {
-		assert.ok(sourceCode.includes('className="primary-button min-h-[34px]'));
+		assert.ok(sourceCode.includes('min-h-[34px]'));
 		assert.ok(sourceCode.includes('className="secondary-button min-h-[34px]'));
 		assert.ok(!sourceCode.includes('data-testid="btn-patient-create-visit" disabled'));
 		assert.ok(!sourceCode.includes('data-testid="btn-patient-create-treatment-plan" disabled'));

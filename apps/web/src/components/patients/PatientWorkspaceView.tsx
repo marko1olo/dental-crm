@@ -34,31 +34,35 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 					/>
 				)}
 
-				<div className="flex items-center justify-between gap-2 flex-wrap w-full">
-					<PatientWorkspaceTabsNav
-						activeTab={logic.activeTab}
-						setActiveTab={logic.setActiveTab}
-						plansCount={logic.patientPlanItems.length}
-						visitsCount={logic.patientAppointments.length}
-						scansCount={logic.patientStudies.length}
-					/>
+				<div className="flex flex-col gap-2 w-full">
+					<div className="w-full overflow-x-auto scrollbar-none py-0.5">
+						<PatientWorkspaceTabsNav
+							activeTab={logic.activeTab}
+							setActiveTab={logic.setActiveTab}
+							plansCount={logic.patientPlanItems.length}
+							visitsCount={logic.patientAppointments.length}
+							scansCount={logic.patientStudies.length}
+						/>
+					</div>
 
-					<PatientWorkspaceToolbar
-						patientId={patientId}
-						patientName={patientName ?? undefined}
-						dashboard={logic.dashboard}
-						onOpenPlan={onOpenPlan}
-						handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
-						setActiveTab={logic.setActiveTab}
-						setIsCbctModalOpen={logic.setIsCbctModalOpen}
-						setIsPhotoProtocolOpen={logic.setIsPhotoProtocolOpen}
-						setIsOrthoPhotoModalOpen={logic.setIsOrthoPhotoModalOpen}
-						setIsLoyaltyModalOpen={logic.setIsLoyaltyModalOpen}
-						setIsDmsLetterOpen={logic.setIsDmsLetterOpen}
-						setIsDmsRegistryOpen={logic.setIsDmsRegistryOpen}
-						setIsPrescriptionModalOpen={logic.setIsPrescriptionModalOpen}
-						setIsTaxCertificateOpen={logic.setIsTaxCertificateOpen}
-					/>
+					<div className="flex items-center justify-end gap-2 flex-wrap py-0.5 w-full">
+						<PatientWorkspaceToolbar
+							patientId={patientId}
+							patientName={patientName ?? undefined}
+							dashboard={logic.dashboard}
+							onOpenPlan={onOpenPlan}
+							handleCreateNewPlanCallback={logic.handleCreateNewPlanCallback}
+							setActiveTab={logic.setActiveTab}
+							setIsCbctModalOpen={logic.setIsCbctModalOpen}
+							setIsPhotoProtocolOpen={logic.setIsPhotoProtocolOpen}
+							setIsOrthoPhotoModalOpen={logic.setIsOrthoPhotoModalOpen}
+							setIsLoyaltyModalOpen={logic.setIsLoyaltyModalOpen}
+							setIsDmsLetterOpen={logic.setIsDmsLetterOpen}
+							setIsDmsRegistryOpen={logic.setIsDmsRegistryOpen}
+							setIsPrescriptionModalOpen={logic.setIsPrescriptionModalOpen}
+							setIsTaxCertificateOpen={logic.setIsTaxCertificateOpen}
+						/>
+					</div>
 				</div>
 			</div>
 

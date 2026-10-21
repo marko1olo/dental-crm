@@ -43,7 +43,7 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 		<div className="flex flex-col gap-3" data-testid="mobile-panel-finance">
 			{/* Balance Hero Card */}
 			<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs flex flex-col gap-2">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+				<span className="text-xs font-semibold text-[var(--muted)]">
 					Текущий баланс пациента:
 				</span>
 				<div className="flex items-baseline justify-between">
@@ -79,7 +79,7 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 
 			{/* Invoices List */}
 			<div className="flex flex-col gap-2">
-				<h3 className="text-xs font-black uppercase tracking-wider text-[var(--muted)] m-0">
+				<h3 className="text-xs font-bold text-[var(--muted)] m-0">
 					История счетов и платежей ({patientInvoices.length})
 				</h3>
 

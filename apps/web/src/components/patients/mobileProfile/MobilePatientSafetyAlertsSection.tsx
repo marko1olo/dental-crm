@@ -24,16 +24,16 @@ export function MobilePatientSafetyAlertsSection({
 		<div className="px-3.5 pt-2 flex flex-col gap-2" data-testid="mobile-safety-alerts-section">
 			{allergyText ? (
 				<div
-					className="p-3 rounded-2xl bg-rose-500/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 flex items-start gap-2.5 shadow-xs"
+					className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-950 dark:text-rose-100 flex items-start gap-2.5 shadow-2xs"
 					role="alert"
 					data-testid="mobile-allergy-alert"
 				>
-					<AlertOctagon size={20} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5 animate-pulse" />
+					<AlertOctagon size={18} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
 					<div className="flex-1 min-w-0">
-						<div className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
-							СТОП-ФАКТОР / АЛЛЕРГИЯ:
+						<div className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+							Аллергический статус:
 						</div>
-						<div className="text-sm font-black text-rose-950 dark:text-rose-100 break-words mt-0.5">
+						<div className="text-xs font-bold text-rose-950 dark:text-rose-100 break-words mt-0.5">
 							{allergyText}
 						</div>
 					</div>
@@ -42,20 +42,20 @@ export function MobilePatientSafetyAlertsSection({
 
 			{somaticRiskFlags.length > 0 ? (
 				<div
-					className="p-3 rounded-2xl bg-purple-500/15 border border-purple-500/40 text-purple-950 dark:text-purple-100 flex items-start gap-2.5 shadow-xs"
+					className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-950 dark:text-purple-100 flex items-start gap-2.5 shadow-2xs"
 					role="alert"
 					data-testid="mobile-somatic-alert"
 				>
-					<HeartPulse size={20} className="text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+					<HeartPulse size={18} className="text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
 					<div className="flex-1 min-w-0">
-						<div className="text-[10px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
-							СОМАТИЧЕСКИЙ СТАТУС:
+						<div className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+							Соматический статус:
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap mt-1">
 							{somaticRiskFlags.map((flag: any) => (
 								<span
 									key={flag.id}
-									className="px-2 py-0.5 rounded-lg bg-purple-600/20 text-purple-950 dark:text-purple-100 border border-purple-500/40 text-xs font-bold"
+									className="px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-900 dark:text-purple-200 border border-purple-500/25 text-xs font-medium"
 									title={flag.desc || flag.description}
 								>
 									{flag.title || flag.titleRu}

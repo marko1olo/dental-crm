@@ -44,11 +44,26 @@ export const PatientWorkspaceToolbar: React.FC<PatientWorkspaceToolbarProps> = R
 
 	return (
 		<div className="flex items-center gap-2 flex-wrap">
-			<button type="button" className="primary-button min-h-[34px] h-9 px-3.5 text-xs font-semibold rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 shadow-2xs" onClick={() => { selectPatient(); window.location.hash = "visit"; }} title="Создать новый визит" data-testid="btn-patient-create-visit">
+			{/* Single Primary CTA Mandate: Toolbar buttons use secondary neutral styling, leaving [Начать приём] as sole primary CTA */}
+			<button
+				type="button"
+				className="secondary-button min-h-[34px] h-9 px-3.5 text-xs font-semibold rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 shadow-2xs"
+				style={{ background: "var(--paper)", backgroundImage: "none", color: "var(--ink)", borderColor: "var(--line)", boxShadow: "none" }}
+				onClick={() => { selectPatient(); window.location.hash = "visit"; }}
+				title="Создать новый визит"
+				data-testid="btn-patient-create-visit"
+			>
 				<Plus className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 				<span>Новый визит</span>
 			</button>
-			<button type="button" className="secondary-button min-h-[34px] h-9 px-3.5 text-xs font-semibold rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 shadow-2xs" onClick={() => { setActiveTab("plans"); if (onOpenPlan) onOpenPlan("new"); else handleCreateNewPlanCallback(); }} title="Составить план лечения" data-testid="btn-patient-create-treatment-plan">
+			<button
+				type="button"
+				className="secondary-button min-h-[34px] h-9 px-3.5 text-xs font-semibold rounded-xl border border-[var(--line)] transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 shadow-2xs hover:bg-[var(--paper-soft)]"
+				style={{ backgroundColor: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+				onClick={() => { setActiveTab("plans"); if (onOpenPlan) onOpenPlan("new"); else handleCreateNewPlanCallback(); }}
+				title="Составить план лечения"
+				data-testid="btn-patient-create-treatment-plan"
+			>
 				<Plus className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 				<span>План лечения</span>
 			</button>

@@ -36,7 +36,7 @@ describe("Patient Studio Clinical HIG — Supreme Red Team Audit", () => {
 		const html = renderToString(
 			<PatientJourneyTimeline
 				patientId="pat-uuid-123"
-				dashboard={{ appointments: [], payments: [], patientInsights: [] }}
+				dashboard={{ appointments: [], payments: [], patientInsights: [] } as any}
 			/>,
 		);
 

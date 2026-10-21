@@ -75,7 +75,7 @@ export const MobilePatientProfileWorkspace: React.FC<MobilePatientProfileWorkspa
 				visitsCount={patientAppointments.length}
 				scansCount={patientStudies.length}
 			/>
-			<main className="px-3.5 flex flex-col gap-3 pb-24" data-testid="mobile-tab-content-panel">
+			<main className="px-3.5 flex flex-col gap-3 pb-36" data-testid="mobile-tab-content-panel">
 				{activeTab === "card" && (
 					<MobilePatientInfoTab
 						patient={patient}

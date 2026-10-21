@@ -9,18 +9,7 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function ensureLoggedInAndOnPatients(page, isMobile = false) {
-	await sleep(2500);
-
-	// Check for offline/fallback banner button
-	try {
-		const offlineBtn = await page.$('button:has-text("Перейти в автономный режим")');
-		if (offlineBtn) {
-			await offlineBtn.click();
-			await sleep(1500);
-		}
-	} catch (_) {}
-
+async function ensureLoggedIn(page) {
 	const hasPassword = await page.$('input[type="password"]');
 	if (hasPassword) {
 		console.log("[Auth] Found login form, logging in...");
@@ -38,33 +27,6 @@ async function ensureLoggedInAndOnPatients(page, isMobile = false) {
 			}
 		}
 	}
-
-	await page.evaluate(() => {
-		window.location.hash = "patients";
-		window.dispatchEvent(new HashChangeEvent("hashchange"));
-	});
-	await sleep(2000);
-
-	// Check again for fallback button if server slow
-	try {
-		const offlineBtn = await page.$('button:has-text("Перейти в автономный режим")');
-		if (offlineBtn) {
-			await offlineBtn.click();
-			await sleep(1500);
-		}
-	} catch (_) {}
-
-	// Click first patient in list (e.g. Смирнова Анна Сергеевна)
-	try {
-		const patientRow = await page.$(
-			'[data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Смирнова Анна")'
-		);
-		if (patientRow) {
-			console.log("[Patient] Clicking patient item...");
-			await patientRow.click();
-			await sleep(1500);
-		}
-	} catch (_) {}
 }
 
 async function preparePage(page, theme) {
@@ -86,7 +48,12 @@ async function preparePage(page, theme) {
 			[data-testid="guided-tour-spotlight-overlay"],
 			[data-testid="guided-tour-coach-mark-card"],
 			[data-testid="demo-mode-banner"],
-			.shepherd-element {
+			.shepherd-element,
+			.splash,
+			#splash-root,
+			[data-testid="splash-loader"],
+			.splash-screen,
+			#loading-screen {
 				display: none !important;
 				pointer-events: none !important;
 				opacity: 0 !important;
@@ -98,11 +65,11 @@ async function preparePage(page, theme) {
 		`;
 		document.head.appendChild(style);
 	}, theme);
-	await sleep(800);
+	await sleep(600);
 }
 
 async function capture() {
-	console.log("=== Launching Chrome for Patient Studio 4-State Proofs ===");
+	console.log("=== Capturing 4-State Patient Studio Proofs (Red Team Audit) ===");
 	const browser = await chromium.launch({
 		headless: true,
 		executablePath: browserExecutable,
@@ -126,13 +93,33 @@ async function capture() {
 		});
 
 		const page = await context.newPage();
+		await page.goto(`${WEB_URL}/?demo=true#patients`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
+		await sleep(2000);
+
+		await ensureLoggedIn(page);
+
 		try {
-			await page.goto(`${WEB_URL}/?demo=true#patients`, { waitUntil: "domcontentloaded", timeout: 15000 });
+			await page.waitForSelector('.boot-offline-action-button, button:has-text("Перейти в автономный режим"), [data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Воронов"), div:has-text("Смирнова")', { timeout: 15000 });
+			const fallbackBtn = await page.$('.boot-offline-action-button, button:has-text("Перейти в автономный режим")');
+			if (fallbackBtn) {
+				console.log("[Boot] Clicking offline mode fallback...");
+				await fallbackBtn.click();
+				await sleep(2500);
+			}
+		} catch (_) {}
+
+		try {
+			await page.waitForSelector('[data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Воронов"), div:has-text("Смирнова")', { timeout: 15000 });
+			const patientRow = await page.$('[data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Воронов"), div:has-text("Смирнова")');
+			if (patientRow) {
+				console.log("[Patient] Selecting patient item...");
+				await patientRow.click();
+				await sleep(2000);
+			}
 		} catch (e) {
-			console.warn("[Capture] goto notice:", e.message);
+			console.log("[Patient] Notice selecting patient:", e.message);
 		}
 
-		await ensureLoggedInAndOnPatients(page, state.isMobile);
 		await preparePage(page, state.theme);
 
 		const outPath = `${OUT_DIR}/${state.name}.png`;
@@ -145,10 +132,10 @@ async function capture() {
 	}
 
 	await browser.close();
-	console.log("=== All 4 Patient Studio states successfully captured! ===");
+	console.log("=== All 4 Patient Studio states captured! ===");
 }
 
-capture().catch((err) => {
-	console.error("[Capture] Error:", err);
+capture().catch((e) => {
+	console.error(e);
 	process.exit(1);
 });

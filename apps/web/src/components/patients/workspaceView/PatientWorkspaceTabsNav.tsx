@@ -30,7 +30,7 @@ export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = R
 
 		return (
 			<nav
-				className="flex items-center gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto max-w-full scrollbar-none shadow-2xs"
+				className="flex items-center gap-0.5 p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto max-w-full scrollbar-none shadow-2xs shrink-0"
 				aria-label="Вкладки клинической карты"
 			>
 				{tabs.map((tab) => {
@@ -42,7 +42,7 @@ export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = R
 							type="button"
 							onClick={() => setActiveTab(tab.id)}
 							data-testid={tab.testId}
-							className={`min-h-[36px] h-9 px-3.5 rounded-lg text-xs font-semibold inline-flex items-center gap-2 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+							className={`min-h-[34px] h-8.5 px-2 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
 								isActive
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line-strong,rgba(0,0,0,0.08))] font-bold"
 									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60"

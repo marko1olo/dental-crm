@@ -18,7 +18,7 @@ export const MobilePatientScansTab: React.FC<MobilePatientScansTabProps> = ({
 	return (
 		<div className="flex flex-col gap-3" data-testid="mobile-panel-scans">
 			<div className="flex items-center justify-between">
-				<h3 className="text-xs font-black uppercase tracking-wider text-[var(--muted)] m-0">
+				<h3 className="text-xs font-bold text-[var(--muted)] m-0">
 					Рентгенологические снимки и КТ ({patientStudies.length})
 				</h3>
 			</div>

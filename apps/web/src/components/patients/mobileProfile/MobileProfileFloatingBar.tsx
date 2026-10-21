@@ -11,11 +11,14 @@ export const MobileProfileFloatingBar: React.FC<MobileProfileFloatingBarProps> =
 	onBookAppointment,
 }) => {
 	return (
-		<div className="mobile-profile-floating-bar" data-testid="mobile-profile-floating-bar">
+		<div
+			className="mobile-profile-floating-bar fixed left-0 right-0 bottom-14 z-30 px-3.5 py-2.5 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] flex items-center gap-2 shadow-lg max-w-[480px] mx-auto"
+			data-testid="mobile-profile-floating-bar"
+		>
 			<button
 				type="button"
 				onClick={onStartVisit}
-				className="flex-1 min-h-[48px] h-12 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer"
+				className="flex-1 min-h-[44px] h-11 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
 				data-testid="mobile-floating-start-visit-btn"
 			>
 				<Stethoscope size={18} />
@@ -24,10 +27,10 @@ export const MobileProfileFloatingBar: React.FC<MobileProfileFloatingBarProps> =
 			<button
 				type="button"
 				onClick={onBookAppointment}
-				className="min-h-[48px] h-12 px-4 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-sm inline-flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer"
+				className="min-h-[44px] h-11 px-4 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] font-semibold text-sm inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
 				data-testid="mobile-floating-book-btn"
 			>
-				<Calendar size={18} className="text-teal-600 dark:text-teal-400" />
+				<Calendar size={18} className="text-[var(--teal,#0d9488)]" />
 				<span>Запись</span>
 			</button>
 		</div>

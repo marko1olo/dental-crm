@@ -26,23 +26,21 @@ export const PatientJourneyHeader: React.FC<PatientJourneyHeaderProps> = ({
 						{totalEventsCount} {totalEventsCount === 1 ? "запись" : "записей"}
 					</span>
 				</div>
-				<span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
-					ID: {typeof patientId === "string" ? patientId.slice(0, 8) : "—"}
-				</span>
 			</div>
 
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 				<div className="relative flex items-center w-full">
 					<Search
 						size={15}
-						className="absolute left-3 text-[var(--muted)] pointer-events-none"
+						className="absolute left-3 text-[var(--muted)] pointer-events-none z-10"
 					/>
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Поиск по записям приёма..."
-						className="w-full min-h-[38px] h-9.5 pl-9 pr-9 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal-soft)] transition-all font-medium"
+						style={{ paddingLeft: "38px", paddingRight: "38px" }}
+						className="w-full min-h-[38px] h-9.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal-soft)] transition-all font-medium"
 					/>
 					{searchQuery && (
 						<button
