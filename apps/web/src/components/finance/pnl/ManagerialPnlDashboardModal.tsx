@@ -358,7 +358,7 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 								</div>
 							</div>
 
-							{/* Секция 2: Расходы по 12 регламентированным статьям StomX */}
+							{/* Секция 2: Расходы по регламентированным статьям клиники */}
 							<div>
 								<h3 className="pnl-section-title">
 									<TrendingDown size={15} className="text-red-600" />

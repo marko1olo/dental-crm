@@ -62,6 +62,14 @@ const FastCheckoutModal = lazyWithRetry(() =>
 	})),
 );
 
+const DoctorPayoutMobileWallet = lazyWithRetry(() =>
+	import("../../../finance/DoctorPayoutMobileWallet").then((module) => ({
+		default: module.DoctorPayoutMobileWallet,
+	})),
+);
+
+import { DEMO_SHOWCASE_DOCTOR } from "../../../finance/doctorPayoutWallet/types";
+
 const ImplantPassportModal = lazyWithRetry(() =>
 	import("../../../implants/ImplantPassportModal").then((module) => ({
 		default: module.ImplantPassportModal,
@@ -540,6 +548,53 @@ export function renderSpecializedClinicalLaunchers({
 					initialPaymentMethod="sbp_qr"
 					initialSimpleCashierMode={false}
 				/>
+			</Suspense>
+		);
+	}
+
+	// DOCTOR PAYOUT MOBILE WALLET STANDALONE LAUNCHER (?wallet=1, ?payout=1, #wallet, #payout)
+	const isPayoutWalletDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("wallet") ||
+			new URLSearchParams(window.location.search).has("payout") ||
+			window.location.hash.toLowerCase().includes("wallet") ||
+			window.location.hash.toLowerCase().includes("payout"));
+
+	if (isPayoutWalletDirect) {
+		const dummyReport = {
+			period: {
+				from: "2026-10-01",
+				to: "2026-10-31",
+			},
+			rows: [DEMO_SHOWCASE_DOCTOR],
+			totals: {
+				totalRevenueRub: 184000,
+				totalAccruedRub: 55200,
+				totalWithheldMaterialRub: 0,
+				totalWithheldLabRub: 0,
+				totalPayoutRub: 55200,
+				totalVisitsCount: 3,
+				totalPaymentsCount: 3,
+				totalDoctorsCount: 1,
+			},
+		};
+
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка кошелька врача..." />}>
+				<div
+					className="w-full min-h-screen bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] p-2 sm:p-4 overflow-y-auto"
+					data-testid="doctor-wallet-standalone-workspace"
+				>
+					<DoctorPayoutMobileWallet
+						report={dummyReport as any}
+						month="2026-10"
+						onMonthChange={() => {}}
+						onRefresh={() => {}}
+						onOpenPayrollModal={() => {}}
+						canEditRates={false}
+						isLoading={false}
+					/>
+				</div>
 			</Suspense>
 		);
 	}

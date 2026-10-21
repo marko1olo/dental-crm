@@ -1,5 +1,5 @@
 /**
- * CashShiftWidget.tsx — Компонент управления кассовой сменой ККТ 54-ФЗ (Открытие/Закрытие, X/Z-отчеты, Офлайн-очередь, Сверка эквайринга).
+ * CashShiftWidget.tsx — Компонент управления кассовой сменой (Открытие/Закрытие, X/Z-отчеты, Офлайн-очередь, Сверка эквайринга).
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -320,7 +320,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					}}
 				/>
 
-				{/* Модальное окно кассовых операций (Внесение/Изъятие StomX) */}
+				{/* Модальное окно кассовых операций (Внесение/Изъятие наличных) */}
 				<CashFlowModal
 					isOpen={isCashFlowModalOpen}
 					onClose={() => setIsCashFlowModalOpen(false)}
@@ -693,7 +693,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				}}
 			/>
 
-			{/* Модальное окно кассовых операций (Внесение/Изъятие StomX) */}
+			{/* Модальное окно кассовых операций (Внесение/Изъятие наличных) */}
 			<CashFlowModal
 				isOpen={isCashFlowModalOpen}
 				onClose={() => setIsCashFlowModalOpen(false)}
@@ -703,7 +703,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				onCashOut={onCashOut}
 			/>
 
-			{/* Модальное окно АРМ кассового аппарата 54-ФЗ */}
+			{/* Модальное окно АРМ кассового аппарата */}
 			<CashRegisterModal
 				isOpen={isCashRegisterModalOpen}
 				onClose={() => setIsCashRegisterModalOpen(false)}

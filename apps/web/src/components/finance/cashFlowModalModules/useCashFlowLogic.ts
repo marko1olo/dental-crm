@@ -1,7 +1,7 @@
 import {
 	getFfd1054Label,
-	STOMX_CASH_EXPENSE_CATALOG,
-	STOMX_CASH_RECEIPT_CATALOG,
+	CASH_EXPENSE_CATALOG,
+	CASH_RECEIPT_CATALOG,
 } from "@dental/shared";
 import { useState } from "react";
 import { showToast } from "../../GlobalToast";
@@ -26,13 +26,13 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 
 	const handleSelectReceiptPreset = (alias: string) => {
 		setSelectedTypeAlias(alias);
-		const preset = STOMX_CASH_RECEIPT_CATALOG.find((r) => r.alias === alias);
+		const preset = CASH_RECEIPT_CATALOG.find((r) => r.alias === alias);
 		if (preset) setCashFlowBasis(preset.name);
 	};
 
 	const handleSelectExpensePreset = (alias: string) => {
 		setSelectedTypeAlias(alias);
-		const preset = STOMX_CASH_EXPENSE_CATALOG.find((e) => e.alias === alias);
+		const preset = CASH_EXPENSE_CATALOG.find((e) => e.alias === alias);
 		if (preset) setCashFlowBasis(preset.name);
 	};
 
@@ -53,7 +53,7 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 						cashFlowBasis || "Внесение наличных",
 						selectedTypeAlias,
 					);
-				const item = STOMX_CASH_RECEIPT_CATALOG.find(
+				const item = CASH_RECEIPT_CATALOG.find(
 					(r) => r.alias === selectedTypeAlias,
 				);
 				const ffdLabel =
@@ -73,7 +73,7 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 						cashFlowPerson || undefined,
 						selectedTypeAlias,
 					);
-				const item = STOMX_CASH_EXPENSE_CATALOG.find(
+				const item = CASH_EXPENSE_CATALOG.find(
 					(e) => e.alias === selectedTypeAlias,
 				);
 				const ffdLabel =

@@ -1,6 +1,6 @@
 import {
-	STOMX_CASH_EXPENSE_CATALOG,
-	STOMX_CASH_RECEIPT_CATALOG,
+	CASH_EXPENSE_CATALOG,
+	CASH_RECEIPT_CATALOG,
 } from "@dental/shared";
 import { Check } from "lucide-react";
 import type React from "react";
@@ -33,7 +33,7 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-[var(--line,rgba(0,0,0,0.06))] rounded-xl bg-[var(--paper-soft,#f8fafc)]">
 				{isCashIn
-					? STOMX_CASH_RECEIPT_CATALOG.map((receipt) => {
+					? CASH_RECEIPT_CATALOG.map((receipt) => {
 							const isSelected = selectedTypeAlias === receipt.alias;
 							return (
 								<button
@@ -65,7 +65,7 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 								</button>
 							);
 						})
-					: STOMX_CASH_EXPENSE_CATALOG.map((expense) => {
+					: CASH_EXPENSE_CATALOG.map((expense) => {
 							const isSelected = selectedTypeAlias === expense.alias;
 							return (
 								<button

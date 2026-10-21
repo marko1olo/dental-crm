@@ -380,7 +380,8 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-						<span className="truncate">Оплата через автономный терминал (без ККТ)</span>
+						<span className="truncate sm:hidden">Автономный терминал (без ККТ)</span>
+						<span className="truncate hidden sm:inline">Оплата через автономный терминал (без ККТ)</span>
 					</button>
 					<button
 						type="button"

@@ -89,7 +89,8 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						title="Оплатить 100% наличными ровно в кассу без сдачи"
 					>
 						<Banknote size={14} className="shrink-0 text-emerald-600" />
-						<span className="truncate">Без сдачи (Нал 100%)</span>
+						<span className="truncate sm:hidden">Наличные 100%</span>
+						<span className="truncate hidden sm:inline">Без сдачи (Нал 100%)</span>
 					</button>
 					<button
 						type="button"
@@ -129,7 +130,8 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
 					>
 						<Layers size={14} className="shrink-0 text-purple-600" />
-						<span className="truncate">50% Карта + 50% Нал</span>
+						<span className="truncate sm:hidden">50% Карта / Нал</span>
+						<span className="truncate hidden sm:inline">50% Карта + 50% Нал</span>
 					</button>
 					<button
 						type="button"
@@ -139,7 +141,8 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						title={`Комбинированная оплата: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
 					>
 						<Users size={14} className="shrink-0 text-indigo-600" />
-						<span className="truncate">Нал + Карта + Аванс</span>
+						<span className="truncate sm:hidden">Сплит: 3 способа</span>
+						<span className="truncate hidden sm:inline">Нал + Карта + Аванс</span>
 					</button>
 					<button
 						type="button"
@@ -149,7 +152,8 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						title="100% гарантийная переделка (к оплате 0 ₽)"
 					>
 						<ShieldCheck size={14} className="shrink-0 text-blue-600" />
-						<span className="truncate">100% Гарантия (0 ₽)</span>
+						<span className="truncate sm:hidden">Гарантия (0 ₽)</span>
+						<span className="truncate hidden sm:inline">100% Гарантия (0 ₽)</span>
 					</button>
 				</div>
 			</details>

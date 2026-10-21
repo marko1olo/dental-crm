@@ -40,7 +40,7 @@ export const FastCheckoutPayerTypePanel: React.FC<
 				<span
 					className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0"
 					data-testid="inn-physical-not-required-badge"
-					title="ИНН с пациентов-физлиц не требуется"
+					title="По 54-ФЗ для физлиц не требуется"
 				>
 					<ShieldCheck
 						size={14}

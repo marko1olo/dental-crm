@@ -116,7 +116,7 @@ export interface PatientBillingModalProps {
 
 /**
  * Wave 115 & 116 Touch Target & Subcomponent Delegation Contracts (Mandate 8c, 8s):
- * The following delegated subcomponents enforce min-h-[44px] touch targets and StomX parity:
+ * The following delegated subcomponents enforce min-h-[44px] touch targets and clinic ergonomic parity:
  * - data-testid="select-loyalty-discount" min-h-[44px]
  * - data-testid="btn-round-hundreds" min-h-[44px]
  * - data-testid="btn-discount-3" min-h-[44px]

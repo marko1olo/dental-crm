@@ -385,7 +385,7 @@ export function generate54FzZReportReceiptTapeText(params: ZReportPrintTapeParam
 /**
  * Distributes discount across multiple receipt items with exact integer kopeck precision (Largest Remainder Method).
  * Eliminates penny rounding errors so that: sum(item.effectivePrice * item.quantity) === totalNet EXACTLY.
- * Seamlessly integrates StomX warranty reworks: warranty items receive 100% discount, zeroing out net price,
+ * Seamlessly integrates clinic warranty reworks: warranty items receive 100% discount, zeroing out net price,
  * while loyalty presets apply proportionally across the remaining non-warranty positions.
  */
 export function distributeLoyaltyDiscountAcrossItems<T extends {
