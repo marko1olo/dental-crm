@@ -25,7 +25,7 @@ import {
 import {
 	generatePhotoProtocolAttachmentsStatement,
 	type ClinicalPhotoAttachment,
-} from "../lib/clinicalProtocols043";
+} from "../lib/clinicalProtocols";
 
 // 2. Mobile Camera, Tablet Ergonomics & Native Bridge
 import {

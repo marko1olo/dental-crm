@@ -39,7 +39,7 @@ import { ToothMolar, ToothDeciduous } from "../../icons/DentalIcons";
 import {
 	generateSoapFromOdontogramFinding,
 	type OdontogramFindingInput,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import { useVisitStore } from "../../../store/visitStore";
 
 export interface PatientDentalFormulaTabProps {

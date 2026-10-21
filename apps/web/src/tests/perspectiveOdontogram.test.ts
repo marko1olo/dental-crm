@@ -10,7 +10,7 @@ import {
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	PERMANENT_TO_PRIMARY_PREDECESSOR_MAP,
 } from "@dental/shared";
-import { getToothAnatomicalNameRu } from "../lib/clinicalProtocols043";
+import { getToothAnatomicalNameRu } from "../lib/clinicalProtocols";
 import {
 	TOOTH_STATE_LABELS,
 	type ToothData,

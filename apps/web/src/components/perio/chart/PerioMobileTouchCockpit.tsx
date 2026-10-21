@@ -34,7 +34,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { DentalForm043, UltrasonicScaler } from "../../icons/DentalIcons";
 import { probingDepthClinicalClasses, probingDepthClinicalHex } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";

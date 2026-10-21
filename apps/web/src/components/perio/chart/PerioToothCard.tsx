@@ -8,7 +8,7 @@ import {
 	MOBILITY_GRADES,
 	isFurcationEligibleTooth,
 } from "@dental/shared";
-import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { probingDepthClinicalClasses } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";
 

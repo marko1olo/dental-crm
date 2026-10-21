@@ -69,7 +69,7 @@ import {
 	createWisdomExtractedOdontogramRecords,
 	calculateCompositeRestorationWarranty,
 	PERIO_PATHOLOGY_PRESETS,
-} from "../lib/clinicalProtocols043.js";
+} from "../lib/clinicalProtocols.js";
 import { completeClinicalVisitAndAssembleEstimate } from "../components/visit/clinicalVisitWorkflow.js";
 import {
 	FAST_TOOTH_PRESETS,

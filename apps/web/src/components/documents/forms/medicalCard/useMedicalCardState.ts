@@ -12,7 +12,7 @@ import {
 import {
 	createForm043PhysiologicalNorm,
 	createIntactOdontogramRecords,
-} from "../../../../lib/clinicalProtocols043";
+} from "../../../../lib/clinicalProtocols";
 import { showToast } from "../../../GlobalToast";
 import { DEFAULT_CPITN, DEFAULT_ORAL_MUCOSA } from "../form043Utils";
 import type { MedicalCardSnapshot } from "./useMedicalCardRevision";

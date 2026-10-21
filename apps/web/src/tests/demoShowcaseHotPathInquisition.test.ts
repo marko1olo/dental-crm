@@ -41,7 +41,7 @@ import {
 	extractProceduresFromDiary,
 } from "../components/visit/clinicalVisitWorkflow.js";
 import { CLINICAL_SOAP_PRESETS } from "../components/visit/clinicalSoapPresets.js";
-import { generateSoapFromOdontogramStates } from "../lib/clinicalProtocols043.js";
+import { generateSoapFromOdontogramStates } from "../lib/clinicalProtocols.js";
 
 describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () => {
 	it("1. SSOT TYPE-SAFETY: guards against non-string inputs with zero TypeErrors", () => {

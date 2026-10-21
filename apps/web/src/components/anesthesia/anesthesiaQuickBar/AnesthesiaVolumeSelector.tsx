@@ -42,6 +42,11 @@ export function AnesthesiaVolumeSelector({
 						label: "2 карп. (3.4 мл)",
 						id: "anesthesia-dose-2carp",
 					},
+					{
+						count: 3.0,
+						label: "3 карп. (5.1 мл)",
+						id: "anesthesia-dose-3carp",
+					},
 				].map((preset) => (
 					<button
 						key={preset.count}

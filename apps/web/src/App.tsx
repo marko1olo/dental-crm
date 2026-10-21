@@ -1552,7 +1552,8 @@ export function App() {
 	 * currentView === "inventory" ||
 	 * currentView === "scanner" ||
 	 * currentView === "leads" ||
-	 * currentView === "lab"
+	 * currentView === "lab" ||
+	 * currentView === "pipeline"
 	 */
 
 	const topBarProps = {

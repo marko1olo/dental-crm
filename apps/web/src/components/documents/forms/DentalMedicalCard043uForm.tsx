@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { renderForm043uHtml, type FullForm043uPayload, type ToothClinicalStatusCode, type ToothSurface, type FdiToothRecord } from "@dental/shared";
-import { createIntactOdontogramRecords } from "../../../lib/clinicalProtocols043";
+import { createIntactOdontogramRecords } from "../../../lib/clinicalProtocols";
 import { showToast } from "../../GlobalToast";
 import { openPrintWindow } from "./form043Utils";
 import { useMedicalCardState } from "./medicalCard/useMedicalCardState";

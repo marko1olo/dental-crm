@@ -9,10 +9,12 @@ import {
 	normalizeFdiToothList,
 	FORM_043_PHYSIOLOGICAL_NORM,
 	createForm043PhysiologicalNorm,
+	MEDICAL_CARD_PHYSIOLOGICAL_NORM,
+	createMedicalCardPhysiologicalNorm,
 	createIntactOdontogramRecords,
 	createSanitizedOdontogramRecords,
 	createWisdomExtractedOdontogramRecords,
-} from "./clinicalProtocols043";
+} from "./clinicalProtocols";
 
 const EMPTY_DIARY: DiaryState = {
 	anamnesis: "",
@@ -347,5 +349,11 @@ describe("clinicalProtocols043 — Form 043/u Physiological Norm & Presets (Mand
 		assert.equal(records[38]?.statusCode, "extracted_absent");
 		assert.equal(records[48]?.statusCode, "extracted_absent");
 		assert.equal(records[17]?.statusCode, "healthy");
+	});
+
+	it("provides canonical medical card aliases matching Form 043/u data", () => {
+		const normFromAlias = createMedicalCardPhysiologicalNorm();
+		assert.deepEqual(normFromAlias, createForm043PhysiologicalNorm());
+		assert.deepEqual(MEDICAL_CARD_PHYSIOLOGICAL_NORM, FORM_043_PHYSIOLOGICAL_NORM);
 	});
 });

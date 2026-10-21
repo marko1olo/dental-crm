@@ -34,7 +34,7 @@ import {
 import {
 	createForm043PhysiologicalNorm,
 	createIntactOdontogramRecords,
-} from "../lib/clinicalProtocols043.js";
+} from "../lib/clinicalProtocols.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -243,9 +243,10 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			assert.equal(emojiCount, 0, `В Form043PrintModal.tsx обнаружено ${emojiCount} эмодзи! Должно быть 0.`);
 		});
 
-		it("4.2. Order804nFiscalReceiptPrint.tsx и FiscalReceipt54FzModal.tsx (Чеки 54-ФЗ) содержат 0 мультяшных эмодзи", () => {
+		it("4.2. Order804nFiscalReceiptPrint.tsx, FiscalReceiptPrintView.tsx и FiscalReceipt54FzModal.tsx (Чеки 54-ФЗ) содержат 0 мультяшных эмодзи", () => {
 			const files = [
 				path.join(webSrcRoot, "components/finance/Order804nFiscalReceiptPrint.tsx"),
+				path.join(webSrcRoot, "components/finance/FiscalReceiptPrintView.tsx"),
 				path.join(webSrcRoot, "components/finance/FiscalReceipt54FzModal.tsx"),
 			];
 

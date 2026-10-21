@@ -20,7 +20,7 @@ import {
 } from "@dental/shared";
 import { Check, X, Droplets } from "lucide-react";
 import { PerioProbe } from "../icons/DentalIcons";
-import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { probingDepthTone, probingDepthClasses } from "./perioHeatmap";
 import { showToast } from "../GlobalToast";
 

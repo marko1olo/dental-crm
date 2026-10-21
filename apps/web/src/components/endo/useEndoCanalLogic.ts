@@ -33,7 +33,7 @@ import {
 	updateVisitStoreWithEndoProtocol,
 	applyEndoBillingAndInventoryDeductions,
 } from "./endoPersistenceBridge";
-import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import { loadPersistedEndoCanals } from "../radiology/endoClinicalIntegrationBridge";

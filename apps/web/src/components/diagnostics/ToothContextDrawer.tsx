@@ -12,7 +12,7 @@ import {
 import { ToothMolar, DentalSyringe, ToothDeciduous } from "../icons/DentalIcons";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import { getToothStateLabelRu } from "../odontogram/chart/toothChartTypes";
-import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
 import { ToothRvgThumbnail } from "./ToothRvgThumbnail";
 import { ToothFamilyLoyaltyAccordion } from "./ToothFamilyLoyaltyAccordion";

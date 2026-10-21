@@ -10,7 +10,7 @@ import {
 } from "@dental/shared";
 import { Check } from "lucide-react";
 import React from "react";
-import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
+import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { probingDepthClinicalTone, probingDepthTone } from "../perioHeatmap";
 
 export interface PerioToothInspectorProps {

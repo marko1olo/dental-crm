@@ -10,7 +10,7 @@ import {
 import {
 	PERIO_PATHOLOGY_PRESETS,
 	type PerioPathologyPreset,
-} from "../../../lib/clinicalProtocols043";
+} from "../../../lib/clinicalProtocols";
 import {
 	deductPeriodontalConsumablesSoftOverdraft,
 	PERIODONTAL_CONSUMABLES_CATALOG,

@@ -18,7 +18,7 @@ import {
 	evaluateAnesthesiaRisk,
 	formatSurfacesRu,
 	calculateCompositeRestorationWarranty,
-} from "../lib/clinicalProtocols043";
+} from "../lib/clinicalProtocols";
 
 import {
 	build1ClickCariesPreset,

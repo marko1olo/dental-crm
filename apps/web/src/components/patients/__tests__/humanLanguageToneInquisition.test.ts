@@ -371,8 +371,8 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 		assert.ok(soapContent.includes('values.treatmentPlan || "Лечение и гигиена"'));
 	});
 
-	it("19. clinicalProtocols043.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {
-		const filePath = path.join(webSrcRoot, "lib/clinicalProtocols043.ts");
+	it("19. clinicalProtocols.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {
+		const filePath = path.join(webSrcRoot, "lib/clinicalProtocols.ts");
 		const memoPath = path.join(webSrcRoot, "lib/protocols/patientMemosAndPhoto.ts");
 		const perioPath = path.join(webSrcRoot, "lib/protocols/perioAndHygieneProtocols.ts");
 		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(memoPath, "utf-8")}\n${fs.readFileSync(perioPath, "utf-8")}`;

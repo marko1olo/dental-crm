@@ -32,7 +32,7 @@ import { executeApplySomaticNormAutonomy } from "../components/visit/view/visitV
 import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
-} from "../lib/clinicalProtocols043";
+} from "../lib/clinicalProtocols";
 import {
 	mergeMultiToothDiagnoses,
 	mergeMultiToothObjective,

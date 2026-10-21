@@ -5,7 +5,7 @@ import {
 	createIntactOdontogramRecords,
 	createSanitizedOdontogramRecords,
 	createWisdomExtractedOdontogramRecords,
-} from "../../../../lib/clinicalProtocols043";
+} from "../../../../lib/clinicalProtocols";
 
 export interface OdontogramDmftBannerProps {
 	readonly dmftResult: {

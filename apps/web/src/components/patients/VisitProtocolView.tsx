@@ -52,7 +52,7 @@ import {
 import {
 	calculateAnesthesiaCarpulesSafety,
 	evaluateAnesthesiaRisk,
-} from "../../lib/clinicalProtocols043";
+} from "../../lib/clinicalProtocols";
 import { ToothMolar, DentalForm043 } from "../icons/DentalIcons";
 
 export interface VisitProtocolData {

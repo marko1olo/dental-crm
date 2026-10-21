@@ -290,8 +290,7 @@ export function DoctorMaterialsCatalogSection({
 					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Sparkles size={14} className="text-teal-600" />
 						<span>
-							Автоматический фрагмент протокола для медкарты с вашими
-							материалами
+							{"Автоматический фрагмент протокола для медкарты с вашими материалами"}
 						</span>
 					</span>
 					<button

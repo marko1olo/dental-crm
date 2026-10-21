@@ -15,7 +15,7 @@ import {
 import type { EndoCanalData } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { getDefaultCanalsForTooth } from "./endoCanalConstants";
 
 export interface ChairsideEndoQuickBarProps {
