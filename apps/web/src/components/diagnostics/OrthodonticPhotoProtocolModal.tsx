@@ -54,6 +54,7 @@ export interface OrthodonticPhotoProtocolModalProps {
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
 	initialSession?: OrthodonticPhotoSession;
+	previousSession?: OrthodonticPhotoSession | null | undefined;
 	treatmentPlanId?: string;
 	treatmentPlanStageId?: string;
 	treatmentStageTitle?: string;
@@ -69,6 +70,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	doctorName: propDoctorName,
 	clinicName: propClinicName,
 	initialSession,
+	previousSession,
 	treatmentPlanId,
 	treatmentPlanStageId,
 	treatmentStageTitle = "Этап 1: Нивелирование и выравнивание зубных рядов",
@@ -591,6 +593,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					{isCompareMode && (
 						<OrthoBeforeAfterComparison
 							session={session}
+							previousSession={previousSession}
 							onUploadAngle={(angleId) => triggerUploadForAngle(angleId)}
 							onCloseCompare={() => setIsCompareMode(false)}
 						/>

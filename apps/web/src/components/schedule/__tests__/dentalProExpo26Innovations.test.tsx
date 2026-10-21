@@ -21,7 +21,7 @@ import {
 } from "../appointmentCardHelpers";
 import type { Appointment, Dashboard } from "@dental/shared";
 
-describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
+describe("Expo26 Schedule Innovations Suite", () => {
   const mockDashboard: Dashboard = {
     appointments: [
       {
@@ -97,7 +97,7 @@ describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
     dashboard: mockDashboard,
   };
 
-  it("1. Renders DentalPRO Expo26 Segmented Status with [Плановый | Внеплановый (срочно) | Утверждённый]", () => {
+  it("1. Renders Expo26 Segmented Status with [Плановый | Срочно | Подтверждён]", () => {
     const html = renderToStaticMarkup(
       <QuickBookingServiceSection
         {...defaultServiceProps}
@@ -110,8 +110,8 @@ describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
     assert.ok(html.includes('data-testid="expo26-status-emergency"'), "expo26-status-emergency button must render");
     assert.ok(html.includes('data-testid="expo26-status-confirmed"'), "expo26-status-confirmed button must render");
     assert.ok(html.includes("Плановый"), "Must include 'Плановый' text");
-    assert.ok(html.includes("Внеплановый (срочно)"), "Must include 'Внеплановый (срочно)' text");
-    assert.ok(html.includes("Утверждённый"), "Must include 'Утверждённый' text");
+    assert.ok(html.includes("Срочно"), "Must include 'Срочно' text");
+    assert.ok(html.includes("Подтверждён"), "Must include 'Подтверждён' text");
   });
 
   it("2. Smart Free Slots Search («Найти варианты») button renders in QuickBookingServiceSection", () => {

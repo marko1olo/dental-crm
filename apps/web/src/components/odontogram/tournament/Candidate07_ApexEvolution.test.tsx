@@ -1,5 +1,5 @@
 /**
- * DENTE Odontogram Tournament — Competitor 07: DentalPRO Evolution V3 Unit Tests
+ * DENTE Odontogram Tournament — Competitor 07: Apex Evolution V3 Unit Tests
  */
 
 import { describe, it } from "node:test";
@@ -11,9 +11,9 @@ import {
 	Candidate07_Premolar,
 	Candidate07_Molar,
 	Candidate07_Implant,
-} from "./Candidate07_DentalProEvolution";
+} from "./Candidate07_ApexEvolution";
 
-describe("Odontogram Tournament — Competitor 07 (DentalPRO Evolution V3)", () => {
+describe("Odontogram Tournament — Competitor 07 (Apex Evolution V3)", () => {
 	it("renders Candidate07_Incisor in light and dark themes with golden ratio enamel and mamelons", () => {
 		const htmlLight = renderToString(React.createElement(Candidate07_Incisor, { theme: "light" }));
 		const htmlDark = renderToString(React.createElement(Candidate07_Incisor, { theme: "dark" }));
@@ -50,7 +50,7 @@ describe("Odontogram Tournament — Competitor 07 (DentalPRO Evolution V3)", () 
 
 		assert.ok(html.includes("dp7-implant-grad-light"), "Should render titanium fixture gradient");
 		assert.ok(html.includes("dp7-abutment-gold-light"), "Should render gold anodized TiN abutment");
-		assert.ok(html.includes("polygon"), "Should render internal hex torque socket");
+		assert.ok(html.includes("polygon"), "Should render internal hex socket");
 		assert.ok(html.includes("Ø4.2 SLA"), "Should render laser marking");
 	});
 });

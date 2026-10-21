@@ -192,9 +192,14 @@ describe("CLIN-03: Radial Menu Height Calibration & 7 Compact Surface Row", () =
 			__dirname,
 			"../../../../src/components/odontogram/ToothActionMenuPortal.tsx",
 		);
+		const accordionPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/ToothActionSurfacesAccordion.tsx",
+		);
 		const content =
 			fs.readFileSync(modulePath, "utf-8") +
-			(fs.existsSync(menuPath) ? fs.readFileSync(menuPath, "utf-8") : "");
+			(fs.existsSync(menuPath) ? fs.readFileSync(menuPath, "utf-8") : "") +
+			(fs.existsSync(accordionPath) ? fs.readFileSync(accordionPath, "utf-8") : "");
 
 		const requiredSurfaces = ["O", "M", "D", "V", "L", "К", "А"];
 		for (const surf of requiredSurfaces) {

@@ -43,7 +43,7 @@ const mockDashboard: any = {
 	},
 };
 
-describe("Stage Booking from Treatment Plan Integration (DentalPRO Parity)", () => {
+describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Schedule)", () => {
 	it("renders stage booking banner with stage number, title, and estimated duration badge", () => {
 		const stageSlot: QuickBookingSlotInfo = {
 			dateKey: "2026-08-25",
@@ -76,7 +76,7 @@ describe("Stage Booking from Treatment Plan Integration (DentalPRO Parity)", () 
 		assert.ok(html.includes("Привязка к плану лечения"), "должна быть отметка привязки к плану");
 	});
 
-	it("renders detailed list of 804n procedures assigned to stage with tooth and price", () => {
+	it("renders detailed list of clinical procedures assigned to stage with tooth and price", () => {
 		const stageSlot: QuickBookingSlotInfo = {
 			dateKey: "2026-08-25",
 			startTime: "12:00",
@@ -118,10 +118,10 @@ describe("Stage Booking from Treatment Plan Integration (DentalPRO Parity)", () 
 
 		const normalizedHtml = html.replace(/\u00a0/g, " ");
 		assert.ok(normalizedHtml.includes("data-testid=\"stage-booking-services-list\""), "должен отображать список процедур этапа");
-		assert.ok(normalizedHtml.includes("A16.07.002"), "должен содержать код 804н первой процедуры");
+		assert.ok(normalizedHtml.includes("A16.07.002"), "должен содержать код первой процедуры");
 		assert.ok(normalizedHtml.includes("Восстановление зуба пломбой"), "должен отображать название первой процедуры");
 		assert.ok(normalizedHtml.includes("4 500 ₽"), "должен отображать цену первой процедуры");
-		assert.ok(normalizedHtml.includes("A16.07.008"), "должен содержать код 804н второй процедуры");
+		assert.ok(normalizedHtml.includes("A16.07.008"), "должен содержать код второй процедуры");
 		assert.ok(normalizedHtml.includes("3 200 ₽"), "должен отображать цену второй процедуры");
 		assert.ok(normalizedHtml.includes("зуб 16"), "должен отображать номер зуба");
 	});

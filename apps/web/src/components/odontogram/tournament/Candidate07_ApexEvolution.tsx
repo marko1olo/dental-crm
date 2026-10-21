@@ -1,5 +1,5 @@
 /**
- * Candidate07_DentalProEvolution.tsx — Style #7: DentalPRO Evolution V3
+ * Candidate07_ApexEvolution.tsx — Style #7: Apex Evolution V3
  * Master Tournament Competitor: Semi-3D vector precision, golden ratio, fiery halo.
  * Mandate 8b: strictly <= 120 lines.
  */
@@ -8,7 +8,7 @@ import React from "react";
 import type { BenchmarkToothProps } from "./tournamentTypes";
 import { Candidate07Defs } from "./Candidate07_Defs";
 import {
-	DP_THEMES,
+	APEX_THEMES,
 	DP_INCISOR_PATHS,
 	DP_PREMOLAR_PATHS,
 	DP_MOLAR_PATHS,
@@ -24,7 +24,7 @@ const SvgWrap: React.FC<{ theme?: "light" | "dark"; scale?: number; className?: 
 );
 
 export const Candidate07_Incisor: React.FC<BenchmarkToothProps> = ({ theme = "light", scale, className }) => {
-	const c = DP_THEMES[theme];
+	const c = APEX_THEMES[theme];
 	return (
 		<SvgWrap theme={theme} scale={scale} className={className}>
 			<path d={DP_INCISOR_PATHS.root} fill={c.rootFill} stroke={c.rootStroke} strokeWidth="1.2" />
@@ -40,7 +40,7 @@ export const Candidate07_Incisor: React.FC<BenchmarkToothProps> = ({ theme = "li
 };
 
 export const Candidate07_Premolar: React.FC<BenchmarkToothProps> = ({ theme = "light", scale, className }) => {
-	const c = DP_THEMES[theme];
+	const c = APEX_THEMES[theme];
 	return (
 		<SvgWrap theme={theme} scale={scale} className={className}>
 			<path d={DP_PREMOLAR_PATHS.roots} fill={c.rootFill} stroke={c.rootStroke} strokeWidth="1.2" />
@@ -59,7 +59,7 @@ export const Candidate07_Premolar: React.FC<BenchmarkToothProps> = ({ theme = "l
 };
 
 export const Candidate07_Molar: React.FC<BenchmarkToothProps> = ({ theme = "light", scale, className }) => {
-	const c = DP_THEMES[theme];
+	const c = APEX_THEMES[theme];
 	return (
 		<SvgWrap theme={theme} scale={scale} className={className}>
 			<circle cx="24" cy="20" r="22" fill={c.haloShockwave} />
@@ -83,7 +83,7 @@ export const Candidate07_Molar: React.FC<BenchmarkToothProps> = ({ theme = "ligh
 };
 
 export const Candidate07_Implant: React.FC<BenchmarkToothProps> = ({ theme = "light", scale, className }) => {
-	const c = DP_THEMES[theme];
+	const c = APEX_THEMES[theme];
 	return (
 		<SvgWrap theme={theme} scale={scale} className={className}>
 			<path d={DP_IMPLANT_PATHS.body} fill={c.implantBody} stroke={c.accentStroke} strokeWidth="1.2" />

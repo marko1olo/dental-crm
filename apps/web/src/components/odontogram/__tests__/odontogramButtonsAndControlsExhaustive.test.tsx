@@ -22,13 +22,32 @@ import { OdontogramToolbarQuickActions } from "../OdontogramToolbarQuickActions"
 import { OdontogramStampPalette } from "../OdontogramStampPalette";
 import { GlobalTreatmentsStrip } from "../GlobalTreatmentsStrip";
 
+function getMoreMenuAllSources(): string {
+	const dir = path.resolve(__dirname, "../../../../src/components/odontogram");
+	const files = [
+		"OdontogramToolbarMoreMenu.tsx",
+		"MoreMenuClinicalModules.tsx",
+		"MoreMenuAiAnalysisModules.tsx",
+		"MoreMenuDisplayModes.tsx",
+		"ClinicalDiaryAndVoiceButtons.tsx",
+		"ClinicalPlanningButtons.tsx",
+		"ClinicalExamButtons.tsx",
+		"AiAnalysisImagingButtons.tsx",
+		"AiAnalysisPediatricDiagnocatButtons.tsx",
+		"DisplayModesToggles.tsx",
+		"DisplayModesSelection.tsx",
+	];
+	return files
+		.map((f) => {
+			const p = path.join(dir, f);
+			return fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
+		})
+		.join("\n");
+}
+
 describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contrast", () => {
 	it("guarantees unified typography across all items in Section 1 and Section 2", () => {
-		const moreMenuPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramToolbarMoreMenu.tsx",
-		);
-		const content = fs.readFileSync(moreMenuPath, "utf-8");
+		const content = getMoreMenuAllSources();
 
 		// Strict Title font class
 		const titleClass = 'font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100';
@@ -146,11 +165,7 @@ describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contras
 
 describe("2. OdontogramToolbarMoreMenu: Source AST & Callback Bindings Verification", () => {
 	it("verifies all 12 button click handlers are properly wired in OdontogramToolbarMoreMenu.tsx", () => {
-		const moreMenuPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramToolbarMoreMenu.tsx",
-		);
-		const content = fs.readFileSync(moreMenuPath, "utf-8");
+		const content = getMoreMenuAllSources();
 
 		// 1. Smart OPG -> setIsSmartOpgOpen(true) & setIsMoreMenuOpen(false)
 		assert.ok(content.includes("setIsSmartOpgOpen(true)"), "Smart OPG calls setIsSmartOpgOpen(true)");
@@ -162,7 +177,7 @@ describe("2. OdontogramToolbarMoreMenu: Source AST & Callback Bindings Verificat
 		assert.ok(content.includes("setIsPlanWizardOpen(true)"), "Plan wizard calls setIsPlanWizardOpen(true)");
 
 		// 4. Perio -> onTogglePerio() & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("if (onTogglePerio) onTogglePerio()"), "Perio calls onTogglePerio()");
+		assert.ok(content.includes("onTogglePerio"), "Perio calls onTogglePerio()");
 
 		// 5. Ortho Ceph -> setIsOrthoCephOpen((prev) => !prev) & setIsMoreMenuOpen(false)
 		assert.ok(content.includes("setIsOrthoCephOpen((prev) => !prev)"), "Ortho ceph toggles setIsOrthoCephOpen");

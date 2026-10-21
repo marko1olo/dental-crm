@@ -1,14 +1,14 @@
 /**
- * Candidate07_Paths.ts — DENTALPRO EVOLUTION V3 (Tournament Competitor #7)
+ * Candidate07_Paths.ts — APEX EVOLUTION V3 (Tournament Competitor #7)
  * Pure TypeScript vector paths, theme palettes, and geometry constants.
  * Mandate 8b: High-precision anatomical curves with zero JSX in .ts file.
  */
 
 // ============================================================================
-// 1. COLOR TOKENS & DENTALPRO EVOLUTION PALETTES
+// 1. COLOR TOKENS & APEX EVOLUTION PALETTES
 // ============================================================================
 
-export interface DentalProTheme {
+export interface ApexEvolutionTheme {
 	readonly rootFill: string;
 	readonly rootStroke: string;
 	readonly enamelFill: string;
@@ -25,7 +25,7 @@ export interface DentalProTheme {
 	readonly haloCore: string;
 }
 
-export const DP_THEMES: Record<"light" | "dark", DentalProTheme> = {
+export const APEX_THEMES: Record<"light" | "dark", ApexEvolutionTheme> = {
 	light: {
 		rootFill: "url(#dp7-root-grad-light)",
 		rootStroke: "#475569",

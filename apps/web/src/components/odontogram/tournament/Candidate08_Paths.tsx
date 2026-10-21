@@ -1,6 +1,6 @@
 /**
  * Candidate 08: Multi-Layer SVG Shader — Paths, Defs & Theme Palettes
- * Physical specular relief, feSpecularLighting surgical lamp simulation & titanium chrome.
+ * Clean vector gradients and subtle lighting effects without GPU-choking simulation filters.
  */
 
 import React from "react";
@@ -85,67 +85,38 @@ export function getC08Colors(theme: "light" | "dark" = "light") {
 
 export const Candidate08ShaderDefs: React.FC = () => (
 	<defs>
-		{/* 1. Incisor Vestibular Specular Shader (feSpecularLighting with shadowless point light) */}
-		<filter id="c08-incisor-specular" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur in="SourceAlpha" stdDeviation="2.2" result="blurAlpha" />
-			<feSpecularLighting in="blurAlpha" surfaceScale="3" specularConstant="1.6" specularExponent="26" lightingColor="#ffffff" result="specular">
-				<fePointLight x="50" y="112" z="65" />
-			</feSpecularLighting>
-			<feComposite in="specular" in2="SourceAlpha" operator="in" result="specularClipped" />
-			<feComposite in="SourceGraphic" in2="specularClipped" operator="arithmetic" k1="0" k2="1" k3="1.1" k4="0" />
+		{/* 1. Incisor Vestibular Subtle Depth */}
+		<filter id="c08-incisor-specular" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+			<feDropShadow dx="0" dy="1" stdDeviation="1.2" floodColor="#000000" floodOpacity="0.12" />
 		</filter>
 
-		{/* 2. Premolar Cusp Bump Relief Shader */}
-		<filter id="c08-premolar-relief" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur in="SourceAlpha" stdDeviation="1.8" result="blur" />
-			<feDiffuseLighting in="blur" surfaceScale="2" diffuseConstant="1.1" lightingColor="#ffffff" result="diffuse">
-				<feDistantLight azimuth="225" elevation="60" />
-			</feDiffuseLighting>
-			<feSpecularLighting in="blur" surfaceScale="3.2" specularConstant="1.4" specularExponent="28" lightingColor="#ffffff" result="spec">
-				<fePointLight x="48" y="118" z="55" />
-			</feSpecularLighting>
-			<feComposite in="SourceGraphic" in2="diffuse" operator="arithmetic" k1="0.8" k2="0.3" k3="0" k4="0" result="litBase" />
-			<feComposite in="spec" in2="SourceAlpha" operator="in" result="specClip" />
-			<feComposite in="litBase" in2="specClip" operator="arithmetic" k1="0" k2="1" k3="0.9" k4="0" />
+		{/* 2. Premolar Cusp Relief */}
+		<filter id="c08-premolar-relief" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+			<feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.12" />
 		</filter>
 
-		{/* 3. Molar Occlusal Cusps Specular Shader */}
-		<filter id="c08-molar-specular" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="blurAlpha" />
-			<feSpecularLighting in="blurAlpha" surfaceScale="3.5" specularConstant="1.7" specularExponent="30" lightingColor="#ffffff" result="specular">
-				<fePointLight x="50" y="38" z="50" />
-			</feSpecularLighting>
-			<feComposite in="specular" in2="SourceAlpha" operator="in" result="specularClipped" />
-			<feComposite in="SourceGraphic" in2="specularClipped" operator="arithmetic" k1="0" k2="1" k3="1.2" k4="0" />
+		{/* 3. Molar Occlusal Cusps Relief */}
+		<filter id="c08-molar-specular" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+			<feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.12" />
 		</filter>
 
 		{/* 4. Granuloma Inflammatory Radiant Halo */}
-		<filter id="c08-granuloma-glow" x="-50%" y="-50%" width="200%" height="200%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur stdDeviation="3.2" result="blur" />
+		<filter id="c08-granuloma-glow" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
+			<feGaussianBlur stdDeviation="2.5" result="blur" />
 			<feMerge>
 				<feMergeNode in="blur" />
 				<feMergeNode in="SourceGraphic" />
 			</feMerge>
 		</filter>
 
-		{/* 5. Titanium Fixture Specular Metal Shader */}
-		<filter id="c08-titanium-specular" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="blurAlpha" />
-			<feSpecularLighting in="blurAlpha" surfaceScale="4" specularConstant="2.4" specularExponent="42" lightingColor="#f8fafc" result="specular">
-				<fePointLight x="40" y="60" z="55" />
-			</feSpecularLighting>
-			<feComposite in="specular" in2="SourceAlpha" operator="in" result="specularClipped" />
-			<feComposite in="SourceGraphic" in2="specularClipped" operator="arithmetic" k1="0" k2="1" k3="1.3" k4="0" />
+		{/* 5. Titanium Fixture Metallic Shadow */}
+		<filter id="c08-titanium-specular" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+			<feDropShadow dx="0" dy="1" stdDeviation="0.8" floodColor="#000000" floodOpacity="0.15" />
 		</filter>
 
-		{/* 6. High-Polish Chrome Mirror Shader (Healing Abutment) */}
-		<filter id="c08-mirror-chrome" x="-25%" y="-25%" width="150%" height="150%" colorInterpolationFilters="sRGB">
-			<feGaussianBlur in="SourceAlpha" stdDeviation="0.9" result="blurAlpha" />
-			<feSpecularLighting in="blurAlpha" surfaceScale="5" specularConstant="3.2" specularExponent="65" lightingColor="#ffffff" result="specular">
-				<fePointLight x="44" y="24" z="40" />
-			</feSpecularLighting>
-			<feComposite in="specular" in2="SourceAlpha" operator="in" result="specularClipped" />
-			<feComposite in="SourceGraphic" in2="specularClipped" operator="arithmetic" k1="0" k2="1" k3="1.6" k4="0" />
+		{/* 6. Chrome Mirror Highlight */}
+		<filter id="c08-mirror-chrome" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB">
+			<feDropShadow dx="0" dy="0.8" stdDeviation="0.8" floodColor="#000000" floodOpacity="0.15" />
 		</filter>
 
 		{/* Enamel Gradients */}

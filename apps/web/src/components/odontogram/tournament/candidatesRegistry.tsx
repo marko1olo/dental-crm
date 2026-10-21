@@ -28,7 +28,7 @@ import {
 	Candidate07_Premolar,
 	Candidate07_Molar,
 	Candidate07_Implant,
-} from "./Candidate07_DentalProEvolution";
+} from "./Candidate07_ApexEvolution";
 import {
 	Candidate05_Incisor,
 	Candidate05_Premolar,
@@ -149,10 +149,10 @@ export const COMPETITOR_STYLES: CompetitorStyleDefinition[] = [
 	},
 	{
 		id: 7,
-		slug: "dentalpro-evolution",
-		nameRu: "№7: DentalPRO Evolution V3",
-		subtitleRu: "Доведенный до идеала реверс-инжиниринг, золотое сечение 1:1.618",
-		aestheticConcept: "Устранение всех дефектов DentalPRO: строгие пропорции корней и коронки по золотому сечению, выразительное сияющее гало.",
+		slug: "apex-evolution",
+		nameRu: "№7: Apex Evolution V3",
+		subtitleRu: "Доведенный до идеала векторный рендеринг, золотое сечение 1:1.618",
+		aestheticConcept: "Строгие клинические пропорции корней и коронки по золотому сечению, выразительное сияющее гало.",
 		authorAgent: "Competitor-07",
 		IncisorComponent: Candidate07_Incisor,
 		PremolarComponent: Candidate07_Premolar,
@@ -163,7 +163,7 @@ export const COMPETITOR_STYLES: CompetitorStyleDefinition[] = [
 		id: 8,
 		slug: "svg-specular-shader",
 		nameRu: "№8: Multi-Layer SVG Shader",
-		subtitleRu: "Спекулярный свет feSpecularLighting, физический микрорельеф",
+		subtitleRu: "Анатомический векторный шейдер, мягкий градиентный рельеф",
 		aestheticConcept: "Нативные SVG фильтры рельефа бугров и бликов, эффект объемной керамики под бестеневым хирургическим светильником.",
 		authorAgent: "Competitor-08",
 		IncisorComponent: Candidate08_Incisor,

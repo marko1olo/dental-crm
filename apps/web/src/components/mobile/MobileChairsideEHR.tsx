@@ -49,6 +49,7 @@ export interface MobileChairsideEHRProps {
   allergyNotice?: string | null | undefined;
   visitReason?: string | undefined;
   toothCode?: string | undefined;
+  totalDueRub?: number | undefined;
   initialDiagnosis?: string | undefined;
   initialTreatmentPlan?: string | undefined;
   initialPaymentMethod?: MobilePaymentMethod | undefined;
@@ -317,7 +318,11 @@ export const MobileChairsideEHR: React.FC<MobileChairsideEHRProps> = ({
       {/* ─── 4. NATURAL THUMB ZONE FLOATING BOTTOM BAR ─── */}
       <MobileFloatingBottomBar
         primaryLabel={
-          currentStep === "plan" ? "Завершить приём и чек" : "Далее к следующему этапу"
+          currentStep === "plan"
+            ? totalDueRub !== undefined && totalDueRub > 0
+              ? `Завершить приём и чек — ${totalDueRub.toLocaleString("ru-RU")} ₽`
+              : "Завершить приём и чек"
+            : "Далее к следующему этапу"
         }
         primaryIcon={currentStep === "plan" ? <CreditCard size={18} /> : <ArrowRight size={18} />}
         onPrimaryClick={handleNextStep}

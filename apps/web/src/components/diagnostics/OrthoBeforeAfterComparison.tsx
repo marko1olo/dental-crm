@@ -6,35 +6,41 @@ import {
 	type OrthodonticPhotoSession,
 } from "@dental/shared";
 
-interface OrthoBeforeAfterComparisonProps {
+export interface OrthoBeforeAfterComparisonProps {
 	session: OrthodonticPhotoSession;
+	previousSession?: OrthodonticPhotoSession | null | undefined;
 	onUploadAngle: (angleId: OrthodonticAngleId) => void;
 	onCloseCompare: () => void;
 }
 
 export const OrthoBeforeAfterComparison: React.FC<OrthoBeforeAfterComparisonProps> = ({
 	session,
+	previousSession,
 	onUploadAngle,
 	onCloseCompare,
 }) => {
-	const [selectedAngleId, setSelectedAngleId] = useState<OrthodonticAngleId>("extraoral_smile");
+	const [selectedAngleId, setSelectedAngleId] = useState<OrthodonticAngleId>("extraoral_face_smile");
 	const [compareViewMode, setCompareViewMode] = useState<"side_by_side" | "slider">("side_by_side");
 	const [sliderPosition, setSliderPosition] = useState<number>(50);
 
-	// Key comparison angles
+	// Key comparison angles with canonical IDs from ORTHODONTIC_8_ANGLES
 	const comparisonAngles = ORTHODONTIC_8_ANGLES.filter((a) =>
-		["extraoral_smile", "intraoral_frontal", "extraoral_profile", "intraoral_right", "intraoral_left"].includes(a.id),
+		[
+			"extraoral_face_smile",
+			"intraoral_frontal_occlusion",
+			"extraoral_profile",
+			"intraoral_right_lateral",
+			"intraoral_left_lateral",
+		].includes(a.id),
 	);
 
 	const activeAngle = ORTHODONTIC_8_ANGLES.find((a) => a.id === selectedAngleId) || ORTHODONTIC_8_ANGLES[1]!;
 	const slot = session.slots[selectedAngleId];
 	const currentImageUrl = slot?.imageUrl || null;
 
-	// In production, beforeImageUrl comes from pre-treatment session slot
-	// If only 1 image exists, provide clean placeholder or demo comparison
-	const beforeImageUrl = slot?.metadata?.notes?.includes("data:image")
-		? slot.metadata.notes
-		: null;
+	// In clinical production, beforeImageUrl comes from the pre-treatment / baseline session slot
+	const previousSlot = previousSession?.slots?.[selectedAngleId];
+	const beforeImageUrl = previousSlot?.imageUrl || null;
 
 	return (
 		<div
@@ -141,17 +147,6 @@ export const OrthoBeforeAfterComparison: React.FC<OrthoBeforeAfterComparisonProp
 									alt="До лечения"
 									className="w-full h-full object-cover"
 								/>
-							) : currentImageUrl ? (
-								<div className="relative w-full h-full">
-									<img
-										src={currentImageUrl}
-										alt="До лечения (архив)"
-										className="w-full h-full object-cover filter contrast-125 grayscale-30"
-									/>
-									<span className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-										Архивный снимок
-									</span>
-								</div>
 							) : (
 								<div className="flex flex-col items-center gap-2 p-4 text-[var(--muted)]">
 									<Upload size={24} />
@@ -210,14 +205,14 @@ export const OrthoBeforeAfterComparison: React.FC<OrthoBeforeAfterComparisonProp
 				<div className="relative w-full h-72 sm:h-80 rounded-2xl bg-[var(--paper)] border border-[var(--line)] overflow-hidden select-none">
 					{/* Before background */}
 					<div className="absolute inset-0 flex items-center justify-center bg-[var(--paper-soft)]">
-						{beforeImageUrl || currentImageUrl ? (
+						{beforeImageUrl ? (
 							<img
-								src={beforeImageUrl || currentImageUrl!}
+								src={beforeImageUrl}
 								alt="До"
-								className="w-full h-full object-cover filter contrast-125 grayscale-20"
+								className="w-full h-full object-cover"
 							/>
 						) : (
-							<span className="text-xs text-[var(--muted)]">Загрузите снимки для сравнения</span>
+							<span className="text-xs text-[var(--muted)]">Загрузите снимок «До» для сравнения</span>
 						)}
 						<span className="absolute top-3 left-3 bg-amber-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xs">
 							ДО ЛЕЧЕНИЯ

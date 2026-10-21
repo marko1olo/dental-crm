@@ -1,5 +1,5 @@
 /**
- * Candidate07_Defs.tsx — DENTALPRO EVOLUTION V3 Shared SVG Defs & Filters
+ * Candidate07_Defs.tsx — APEX EVOLUTION V3 Shared SVG Defs & Filters
  */
 
 import React from "react";

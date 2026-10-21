@@ -53,6 +53,9 @@ const TELEGRAM_PATH = join(webSrcRoot, "hooks", "useTelegramSettings.ts");
 const AUTH_PATH = join(webSrcRoot, "hooks", "domains", "useAuthLogic.ts");
 const SETTINGS_STORE_PATH = join(webSrcRoot, "store", "settingsStore.ts");
 const DOMAINS_DIR = join(webSrcRoot, "hooks", "domains");
+const APP_LOGIC_DIR = join(webSrcRoot, "hooks", "appLogic");
+const APP_LOGIC_MODULES_DIR = join(APP_LOGIC_DIR, "appLogicModules");
+const COMPAT_DIR = join(APP_LOGIC_MODULES_DIR, "compatibility");
 
 /**
  * Спреды в return useAppLogic, которые разворачиваются из доменных хуков.
@@ -71,6 +74,20 @@ const DOMAIN_SPREADS: ReadonlyMap<string, { file: string; fn: string }> = new Ma
 	["patientIntakeLogic", { file: join(DOMAINS_DIR, "usePatientIntakeLogic.ts"), fn: "usePatientIntakeLogic" }],
 	["scheduleFilterController", { file: join(DOMAINS_DIR, "useScheduleFilterController.ts"), fn: "useScheduleFilterController" }],
 	["staffSettingsLogic", { file: join(DOMAINS_DIR, "useStaffSettingsLogic.ts"), fn: "useStaffSettingsLogic" }],
+	["billingModal", { file: join(APP_LOGIC_DIR, "useBillingModalLogic.ts"), fn: "useBillingModalLogic" }],
+	["emergencyTriage", { file: join(APP_LOGIC_MODULES_DIR, "useAppEmergencyHandlers.ts"), fn: "useAppEmergencyHandlers" }],
+	["imagingSlice", { file: join(APP_LOGIC_MODULES_DIR, "appLogicImagingCompatibility.ts"), fn: "buildAppLogicImagingCompatibility" }],
+	["legacyAppStore", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyAppStoreBindings" }],
+	["legacyFieldBindings", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyFieldBindings" }],
+	["legacyNavigation", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyNavigationAndClinicalBindings" }],
+	["legacyNormalizers", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyNormalizers" }],
+	["legacyPatient", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyPatientFields" }],
+	["legacyStubs", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildLegacyStubsAndFallbacks" }],
+	["navigationSync", { file: join(APP_LOGIC_MODULES_DIR, "useAppNavigationSync.ts"), fn: "useAppNavigationSync" }],
+	["patientSelection", { file: join(APP_LOGIC_DIR, "usePatientSelectionState.ts"), fn: "usePatientSelectionState" }],
+	["profileAndLegal", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildProfileAndLegalHelpers" }],
+	["scheduleLogic", { file: join(APP_LOGIC_DIR, "useScheduleLogic.ts"), fn: "useScheduleLogic" }],
+	["workflowSlice", { file: join(APP_LOGIC_MODULES_DIR, "appLogicWorkflowCompatibility.ts"), fn: "buildAppLogicWorkflowCompatibility" }],
 ]);
 
 /**
@@ -144,19 +161,33 @@ const DANGLING_BACKLOG: ReadonlyArray<{
 /** Подмешивания в `return` useAppLogic, источники которых страж разбирает сам. */
 const RESOLVED_SPREADS = [
 	"auth",
+	"billingModal",
 	"clinicalVisitLogic",
 	"communicationsQueries",
 	"dicomWorkbenchModule",
 	"documentWorkflow",
+	"emergencyTriage",
 	"imagingQueries",
+	"imagingSlice",
+	"legacyAppStore",
+	"legacyFieldBindings",
+	"legacyNavigation",
+	"legacyNormalizers",
+	"legacyPatient",
+	"legacyStubs",
 	"migrationQueries",
 	"modalOrchestrator",
 	"navigationRouter",
+	"navigationSync",
 	"patientIntakeLogic",
+	"patientSelection",
+	"profileAndLegal",
 	"scheduleFilterController",
+	"scheduleLogic",
 	"staffSettingsLogic",
 	"telegram",
 	"telegramSettingsModule",
+	"workflowSlice",
 ] as const;
 
 /** Подмешивания внутри useTelegramSettings, источники которых страж разбирает сам. */
@@ -214,6 +245,12 @@ function shapeOfObjectExpression(objectExpression: BabelNode): ObjectShape {
 				typeof argument.name === "string"
 			) {
 				spreads.push(argument.name);
+			} else if (
+				argument?.type === "MemberExpression" &&
+				(argument.property as BabelNode)?.type === "Identifier" &&
+				typeof (argument.property as BabelNode).name === "string"
+			) {
+				spreads.push(((argument.property as BabelNode).name as string));
 			} else {
 				spreads.push("<не идентификатор>");
 			}
@@ -276,9 +313,55 @@ function returnedObjectShape(
 							const innerArg = inner.argument as BabelNode | undefined;
 							if (innerArg?.type === "ObjectExpression")
 								shape = shapeOfObjectExpression(innerArg);
+							if (
+								innerArg?.type === "CallExpression" &&
+								(innerArg.callee as BabelNode)?.type === "Identifier" &&
+								(innerArg.callee as BabelNode).name === "buildAppLogicCompatibilityBag"
+							) {
+								const bagPath = join(
+									webSrcRoot,
+									"hooks",
+									"appLogic",
+									"appLogicModules",
+									"compatibility",
+									"appLogicCompatibilityBag.ts",
+								);
+								return returnedObjectShape(bagPath, "buildAppLogicCompatibilityBag");
+							}
 						}
 					}
+					// Поддержка: useMemo(() => buildAppLogicCompatibilityBag(...))
+					if (
+						factoryBody?.type === "CallExpression" &&
+						(factoryBody.callee as BabelNode)?.type === "Identifier" &&
+						(factoryBody.callee as BabelNode).name === "buildAppLogicCompatibilityBag"
+					) {
+						const bagPath = join(
+							webSrcRoot,
+							"hooks",
+							"appLogic",
+							"appLogicModules",
+							"compatibility",
+							"appLogicCompatibilityBag.ts",
+						);
+						return returnedObjectShape(bagPath, "buildAppLogicCompatibilityBag");
+					}
 				}
+			}
+			// Поддержка прямого вызова: return buildAppLogicCompatibilityBag(...)
+			if (
+				callee?.type === "Identifier" &&
+				callee.name === "buildAppLogicCompatibilityBag"
+			) {
+				const bagPath = join(
+					webSrcRoot,
+					"hooks",
+					"appLogic",
+					"appLogicModules",
+					"compatibility",
+					"appLogicCompatibilityBag.ts",
+				);
+				return returnedObjectShape(bagPath, "buildAppLogicCompatibilityBag");
 			}
 		}
 	}

@@ -10,8 +10,12 @@
 
 /* 1. Sidebar Container */
 .sidebar {
+	display: flex !important;
+	flex-direction: column !important;
+	height: 100% !important;
+	max-height: 100vh !important;
 	width: var(--sidebar-width, 200px) !important;
-	padding: 12px 6px 8px !important;
+	padding: 10px 6px 6px !important;
 	box-sizing: border-box !important;
 	overflow: hidden !important;
 }
@@ -20,6 +24,8 @@
 .sidebar nav {
 	display: flex !important;
 	flex-direction: column !important;
+	flex: 1 1 0% !important;
+	min-height: 0 !important;
 	gap: 2px !important;
 	width: 100% !important;
 	max-width: 100% !important;
@@ -420,19 +426,44 @@ html.dark .sidebar .nav-item.active,
 
 @media (max-height: 960px) {
 	.sidebar {
-		padding: 8px 8px 6px !important;
+		padding: 6px 6px 4px !important;
 	}
 	.sidebar .brand-mark {
-		padding: 2px 4px 6px !important;
+		padding: 2px 4px 4px !important;
+		margin-bottom: 2px !important;
+	}
+	.sidebar nav {
+		gap: 1px !important;
 	}
 	.sidebar .nav-item {
-		padding: 5px 8px !important;
+		padding: 4px 6px !important;
+		min-height: 34px !important;
 	}
 	.sidebar .nav-label {
-		font-size: 13px !important;
+		font-size: 12.5px !important;
+	}
+	.sidebar .nav-hint {
+		font-size: 10px !important;
+	}
+	.sidebar-quick-tools {
+		padding: 4px 4px !important;
+		gap: 3px !important;
 	}
 	.sidebar-footer {
-		padding-top: 6px !important;
-		padding-bottom: 4px !important;
+		padding-top: 4px !important;
+		padding-bottom: 2px !important;
+		gap: 4px !important;
+	}
+}
+
+@media (max-width: 840px) {
+	.sidebar {
+		display: none !important;
+		width: 0 !important;
+		min-width: 0 !important;
+		max-width: 0 !important;
+		padding: 0 !important;
+		border: none !important;
+		overflow: hidden !important;
 	}
 }

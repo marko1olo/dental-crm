@@ -1,6 +1,6 @@
 /**
- * Candidate 08: Multi-Layer SVG Shader (Физический Спекулярный Рельеф)
- * Benchmark competitor with native feSpecularLighting / feDiffuseLighting surgical shading.
+ * Candidate 08: Multi-Layer SVG Shader (Анатомический Векторный Стиль)
+ * Benchmark competitor with clean vector gradients and lightweight SVG relief.
  * Mandate 8b compliant: <= 120 lines.
  */
 
