@@ -49,21 +49,21 @@
 
 .leads-mobile-feed .leads-mobile-seg-btn,
 .leads-mobile-seg-btn {
-	min-height: 36px;
-	padding: 4px 5px;
+	min-height: 38px;
+	padding: 4px 10px;
 	border-radius: 10px;
 	border: none;
 	background: transparent;
 	color: var(--ink-muted, var(--muted));
-	font-size: 11.5px;
+	font-size: 12px;
 	font-weight: 500;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 3px;
+	gap: 4px;
 	cursor: pointer;
 	white-space: nowrap;
-	flex: 0 0 calc(25% - 1.5px);
+	flex: 0 0 auto;
 	box-sizing: border-box;
 	transition: all 0.15s ease;
 }

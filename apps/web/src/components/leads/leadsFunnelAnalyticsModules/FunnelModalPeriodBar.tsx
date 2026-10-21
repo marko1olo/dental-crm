@@ -71,36 +71,6 @@ export function FunnelModalPeriodBar({
 					</button>
 				))}
 			</div>
-
-			<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-				<button
-					type="button"
-					onClick={onToggleBudgetDrawer}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 6,
-						fontSize: 12,
-						fontWeight: 600,
-						padding: "6px 12px",
-						borderRadius: 8,
-						border: "1px solid var(--line)",
-						background: isBudgetDrawerOpen
-							? "rgba(59, 130, 246, 0.1)"
-							: "var(--paper-soft)",
-						color: isBudgetDrawerOpen ? "var(--accent)" : "var(--ink)",
-						cursor: "pointer",
-					}}
-				>
-					<Sliders size={14} />
-					Настроить рекламные бюджеты
-					{isBudgetDrawerOpen ? (
-						<ChevronUp size={14} />
-					) : (
-						<ChevronDown size={14} />
-					)}
-				</button>
-			</div>
 		</div>
 	);
 }

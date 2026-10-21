@@ -35,6 +35,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 }) => {
 	const sla = getLeadSlaStatus(lead);
 	const dropReasonMatch = lead.dropReason || null;
+	const targetPatientId = lead.patientId || lead.existingPatient?.id;
 
 	const handleOpenPatient = (e: React.MouseEvent, patientId: string) => {
 		e.stopPropagation();
@@ -51,6 +52,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 		}
 	};
 
+	const handleCardClick = (e: React.MouseEvent) => {
+		if (targetPatientId) {
+			handleOpenPatient(e, targetPatientId);
+		} else {
+			onEdit(lead);
+		}
+	};
+
 	return (
 		<motion.div
 			className="lead-kanban-card"
@@ -62,7 +71,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			draggable
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			onDragStart={(e: any) => onDragStart(e, lead.id)}
-			onClick={() => onEdit(lead)}
+			onClick={handleCardClick}
+			title={targetPatientId ? "Открыть карту пациента в 1 клик" : "Открыть детали обращения"}
 			style={{
 				background: cardBg,
 				padding: "12px 14px",

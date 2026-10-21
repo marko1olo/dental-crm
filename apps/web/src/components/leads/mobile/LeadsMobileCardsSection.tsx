@@ -60,14 +60,6 @@ export const LeadsMobileCardsSection: React.FC<
 						? "Список входящих обращений пока пуст."
 						: `В этапе «${STAGE_DISPLAY_LABELS[activeTab] || activeTab}» нет активных лидов.`}
 			</p>
-			<button
-				type="button"
-				onClick={onNewLead}
-				className="leads-mobile-new-lead-btn mt-2"
-			>
-				<Plus size={16} />
-				<span>Добавить обращение</span>
-			</button>
 		</div>
 	);
 };

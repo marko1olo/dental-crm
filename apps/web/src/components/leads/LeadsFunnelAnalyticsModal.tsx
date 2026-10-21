@@ -59,12 +59,6 @@ export function LeadsFunnelAnalyticsModal(
 					onClose={props.onClose}
 					onOpenLeakDetector={props.onOpenLeakDetector}
 				/>
-				<FunnelBudgetAdjusterPanel
-					isOpen={ctrl.isBudgetDrawerOpen}
-					customSpends={ctrl.customSpends}
-					onBudgetChange={ctrl.handleBudgetChange}
-					onResetBudgets={ctrl.handleResetBudgets}
-				/>
 				<div style={FUNNEL_MODAL_BODY_STYLE}>
 					<FunnelStagesOverviewSection
 						summary={summary}

@@ -5,6 +5,7 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { LeadStatus } from "../../store/leadsStore";
 import { LeadMobileSheetBottomBar } from "./mobile/LeadMobileSheetBottomBar";
 import { LeadMobileSheetClinicalCard } from "./mobile/LeadMobileSheetClinicalCard";
@@ -61,7 +62,7 @@ export const LeadMobileBottomSheet = ({
 		onStatusChange(e, lead.id, targetStatus, dropReason ? { dropReason } : undefined);
 	};
 
-	return (
+	const sheet = (
 		<div
 			className="fixed inset-0 z-[10050] flex flex-col justify-end"
 			role="dialog"
@@ -115,4 +116,9 @@ export const LeadMobileBottomSheet = ({
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined") {
+		return createPortal(sheet, document.body);
+	}
+	return sheet;
 };

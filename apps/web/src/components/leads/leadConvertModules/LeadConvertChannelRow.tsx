@@ -103,7 +103,7 @@ export const LeadConvertChannelRow: React.FC<LeadConvertChannelRowProps> = ({
 				}}
 			>
 				<ShieldCheck size={12} className="shrink-0" />
-				<span>Zero Attribution Loss: источник и запрос сохраняются в карте</span>
+				<span>Источник обращения и первичные жалобы прикрепляются к карте</span>
 			</div>
 		</>
 	);

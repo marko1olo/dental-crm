@@ -3,8 +3,8 @@
 > ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW) & 9 ДЕМОТИРОВАННЫХ ФАЙЛОВ:**  
 > 1. [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) — Абсолютная Высшая Конституция (THE HAMMER Master Prompt).  
 > 2. [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) — Каноническая Архитектурная Конституция проекта (Мандаты 8d..8an). [7 740 токенов, ДЕМОТИРОВАН!]  
-> 3. [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md) — Проектный операционный шим и 26 пронумерованных правил. [7 680 токенов, ДЕМОТИРОВАН!]  
-> 4. [`.agents/rules/ai_assistant.md`](file:///C:/Clinic_MVP/dental-crm/.agents/rules/ai_assistant.md) — Проектные правила ИИ-ассистента и роя. [5 322 токена, ДЕМОТИРОВАН!]  
+> 3. [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md) — Проектный операционный шим и 26 пронумерованных правил (~2 000 токенов).  
+> 4. [`.agents/rules/ai_assistant.md`](file:///C:/Clinic_MVP/dental-crm/.agents/rules/ai_assistant.md) — Проектные правила ИИ-ассистента и роя (~1 800 токенов).  
 >  
 > 🛑 **АРХИТЕКТУРНЫЙ ИНВАРИАНТ ЕДИНОГО АВТОРИТЕТА (SINGLE CANONICAL CONSTITUTION):**  
 > Данный файл (`/AGENTS.md`) является входным навигационным шлюзом рабочей области (Workspace Authority Router).  

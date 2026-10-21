@@ -47,7 +47,7 @@ export const LeadConvertConsentSection: React.FC<
 				}}
 			>
 				<ShieldCheck size={13} style={{ color: "var(--teal)" }} />
-				<span>Разделение согласий (152-ФЗ и ст. 18 ФЗ «О рекламе»)</span>
+				<span>Согласия и уведомления пациента</span>
 			</div>
 
 			<label
@@ -70,11 +70,10 @@ export const LeadConvertConsentSection: React.FC<
 				/>
 				<div>
 					<span style={{ fontWeight: 600 }}>
-						Согласие на обработку персданных (152-ФЗ)
+						Медицинская карта и обслуживание
 					</span>
 					<p className="m-0 text-[10.5px] leading-tight text-[var(--muted)]">
-						Обязательно для оказания медицинской помощи, амбулаторной карты и
-						договора.
+						Оформление амбулаторной карты приёма и согласия на осмотр.
 					</p>
 				</div>
 			</label>
@@ -99,12 +98,12 @@ export const LeadConvertConsentSection: React.FC<
 				/>
 				<div>
 					<span style={{ fontWeight: 600 }}>
-						Согласие на рекламные рассылки и акции (ФЗ-38)
+						Рекламные предложения и акции
 					</span>
 					<p className="m-0 text-[10.5px] leading-tight text-[var(--muted)]">
 						{consentMarketing
-							? "Пациент дал согласие на рекламные SMS и маркетинговые спецпредложения."
-							: "Отказ от рекламы: пациент исключается из промо-рассылок (защита от штрафов ФАС). Сервисные напоминания сохраняются."}
+							? "Пациент согласен получать спецпредложения и информацию об акциях."
+							: "Отключено: отправляются только сервисные напоминания о времени приёма."}
 					</p>
 				</div>
 			</label>

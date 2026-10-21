@@ -23,25 +23,25 @@ export const COLUMNS: readonly [
 ] = [
 	{
 		id: "new",
-		label: "Новые обращения",
+		label: "Новые",
 		color: "var(--teal-soft)",
 		icon: React.createElement(Plus, { size: 15 }),
 	},
 	{
 		id: "consult_booked",
-		label: "Записаны на приём",
+		label: "Назначен приём",
 		color: "var(--teal-soft)",
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
 	{
 		id: "showed_up",
-		label: "Дошли до клиники",
+		label: "Дошли",
 		color: "var(--teal-soft)",
 		icon: React.createElement(UserCheck, { size: 15 }),
 	},
 	{
 		id: "trash",
-		label: "Архив / Спам",
+		label: "Отказ/Архив",
 		color: "var(--paper)",
 		icon: React.createElement(Trash2, { size: 15 }),
 	},
@@ -50,13 +50,13 @@ export const COLUMNS: readonly [
 export const CORE_FUNNEL_COLUMNS = COLUMNS;
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
-	new: "«Новые обращения»",
-	contacted: "«Новые обращения»",
-	consult_booked: "«Записаны на приём»",
-	showed_up: "«Дошли до клиники»",
-	converted: "«Дошли до клиники»",
-	no_answer: "«Архив / Спам»",
-	trash: "«Архив / Спам»",
+	new: "«Новые»",
+	contacted: "«Новые»",
+	consult_booked: "«Назначен приём»",
+	showed_up: "«Дошли»",
+	converted: "«Дошли»",
+	no_answer: "«Отказ/Архив»",
+	trash: "«Отказ/Архив»",
 };
 
 export const NEXT_STAGE_MAP: Partial<
