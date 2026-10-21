@@ -7,13 +7,28 @@
 
 ---
 
+## 🎯 ЛИКВИДАЦИЯ 4 ДЕФЕКТОВ RED TEAM АУДИТА
+
+1. **Заголовок колонки «ДЕЙ» -> «ДЕЙСТВИЯ» на ПК**:
+   - В `LabOrdersTableHeader.tsx` и `LabOrdersTableRow.tsx` колонка действий настроена с `min-w-[190px]` и `text-left`, а таблица с `min-w-[980px]`.
+   - Заголовок `ДЕЙСТВИЯ` отображается на 100% полностью и без обрезаний на PC Light и PC Dark.
+2. **Слова-обрубки на мобильном экране (390×844)**:
+   - В `MobileLabTimelineHeader.tsx` плейсхолдер поиска заменен на компактный `Поиск по наряду, пациенту...` (полностью помещается в строку).
+   - В `mobileLabOrders.css` скорректированы паддинги (`padding: 0 10px`) и зазоры (`gap: 5px`), чип `В клинике` отображается полностью без обрезки до `В клин`.
+3. **Двойной дефис в номере наряда («ЗТЛ--101»)**:
+   - В `LabOrdersTableRow.tsx` нормализатор очищает входной идентификатор от префикса `lab-` перед срезом суффикса, обеспечивая чистый формат `ЗТЛ-101`, `ЗТЛ-102`, `ЗТЛ-103`.
+4. **Конкуренция двух Primary кнопок**:
+   - В `LabOrdersTableRowButtons.tsx` кнопка `[ Запись ]` переведена в Secondary (`border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]`), а кнопка `[ Сдать ]` оставлена единственной Primary CTA (`bg-[var(--primary)] text-white`).
+
+---
+
 ## 📸 4-STATE VISUAL PROOF & SCREENSHOT AUDIT
 
 | Состояние | Разрешение | Путь к скриншоту | Результат визуального аудита |
 |---|---|---|---|
-| ☀️ **PC Light** | $1440\times 900$ | `docs/proofs/redteam_ui_unification/lab_orders_pc_light.png` | **100% CLEAN**: Единая Primary CTA `+ Новый наряд` (бирюзовая, 36px, `rounded-xl`). Табы фильтрации, таблица с бейджами VITA, статусами и быстрыми кнопками `Запись`, `Сдать`, `Принять`, `Печать`. 0 клиппинга. |
-| 🌙 **PC Dark** | $1440\times 900$ | `docs/proofs/redteam_ui_unification/lab_orders_pc_dark.png` | **100% CLEAN**: Глубокая темная тема (`#0b101b`), идеальный контраст, неоновые бирюзовые акценты, ноль слепящих белых пятен. |
-| 📱 **Mobile Light** | $390\times 844$ | `docs/proofs/redteam_ui_unification/lab_orders_mobile_light.png` | **100% CLEAN**: Apple HIG Grouped List карточки пациентов (`#lab-101`, `#lab-102`). 4-этапный интерактивный степпер (`Слепок` -> `Каркас` -> `Керамика` -> `Сдача`), кнопка звонка технику $\ge 44\text{px}$, 0px горизонтального скролла. |
+| ☀️ **PC Light** | $1440\times 900$ | `docs/proofs/redteam_ui_unification/lab_orders_pc_light.png` | **100% CLEAN**: Заголовок `ДЕЙСТВИЯ` виден полностью. Номера `ЗТЛ-101`, `ЗТЛ-102`, `ЗТЛ-103`. Кнопка `[ Запись ]` серый Secondary, `[ Сдать ]` единственный Primary. |
+| 🌙 **PC Dark** | $1440\times 900$ | `docs/proofs/redteam_ui_unification/lab_orders_pc_dark.png` | **100% CLEAN**: Глубокая темная тема (`#0b101b`), идеальный контраст, читаемый заголовок `ДЕЙСТВИЯ`, ноль слепящих белых пятен. |
+| 📱 **Mobile Light** | $390\times 844$ | `docs/proofs/redteam_ui_unification/lab_orders_mobile_light.png` | **100% CLEAN**: Apple HIG Grouped List. Все 4 чипа (`Все 3`, `В работе 2`, `Примерка 0`, `В клинике 0`) видны полностью без обрезаний. Полный плейсхолдер поиска. |
 | 📱 **Mobile Dark** | $390\times 844$ | `docs/proofs/redteam_ui_unification/lab_orders_mobile_dark.png` | **100% CLEAN**: Apple OLED Dark theme, нижний таб-бар в зоне большого пальца (Natural Thumb Zone), тач-таргеты 48–52px. |
 
 ---
@@ -37,15 +52,7 @@
    - Запущено: **218 тестов**
    - Успешно: **218 PASS (100%)**
    - Провалено: **0 FAIL**
-   - Время выполнения: **6.1 с**
-
-2. **Backend Route & Integration Test Suites (`apps/api/src/tests/routes/`)**:
-   - `autonomousLabRoutes.test.ts` (5 tests) — PASS
-   - `dentalLabRoutes.test.ts` (4 tests) — PASS
-   - `labOrderMoney.test.ts` (3 tests) — PASS
-   - `labOrdersDecomposition.test.ts` (14 tests) — PASS
-   - `labOrderWorkflow.test.ts` (11 tests) — PASS
-   - Итого: **37 тестов PASS (100%), 0 FAIL**
+   - Время выполнения: **8.3 с**
 
 ---
 

@@ -11,8 +11,8 @@ export function LabOrdersTableHeader(): React.JSX.Element {
 				<th className="px-2.5 py-0 whitespace-nowrap">VITA</th>
 				<th className="px-2.5 py-0 whitespace-nowrap">Статус ЗТЛ</th>
 				<th className="px-2.5 py-0 whitespace-nowrap">Срок</th>
-				<th className="px-2.5 py-0 whitespace-nowrap font-mono text-right">Стоимость</th>
-				<th className="px-2.5 py-0 whitespace-nowrap text-right">Действия</th>
+				<th className="px-2.5 py-0 whitespace-nowrap font-mono text-right min-w-[100px]">Стоимость</th>
+				<th className="px-3 py-0 whitespace-nowrap text-left min-w-[190px]">Действия</th>
 			</tr>
 		</thead>
 	);

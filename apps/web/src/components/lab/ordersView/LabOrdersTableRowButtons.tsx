@@ -22,11 +22,11 @@ export function LabOrdersTableRowButtons(props: LabOrdersTableRowButtonsProps): 
 		<div className="inline-flex items-center gap-1">
 			{isReady ? (
 				<>
-					<button type="button" onClick={() => onOpenReadyInClinicPrompt(order)} className="primary-button h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Работа готова в клинике! Записать пациента на прием" data-testid={`lab-order-table-schedule-btn-${order.id}`}>
-						<CalendarCheck className="w-3 h-3" /><span>Запись</span>
+					<button type="button" onClick={() => onOpenReadyInClinicPrompt(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Работа готова в клинике! Записать пациента на прием" data-testid={`lab-order-table-schedule-btn-${order.id}`}>
+						<CalendarCheck className="w-3 h-3 text-teal-600 dark:text-teal-400" /><span>Запись</span>
 					</button>
 					{order.status !== "completed" && (order as unknown as { status?: string }).status !== "installed" && (
-						<button type="button" onClick={() => menuHandlers.onMarkInstalled(order)} className="h-7 min-h-[28px] px-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Сдать работу пациенту и зафиксировать в полости рта" data-testid={`lab-order-table-install-btn-${order.id}`}>
+						<button type="button" onClick={() => menuHandlers.onMarkInstalled(order)} className="primary-button h-7 min-h-[28px] px-2.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Сдать работу пациенту и зафиксировать в полости рта" data-testid={`lab-order-table-install-btn-${order.id}`}>
 							<Sparkles className="w-3 h-3" /><span>Сдать</span>
 						</button>
 					)}

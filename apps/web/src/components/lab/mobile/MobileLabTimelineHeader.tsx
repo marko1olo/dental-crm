@@ -55,7 +55,7 @@ export function MobileLabTimelineHeader(props: MobileLabTimelineHeaderProps): Re
 					<Search size={16} className="mobile-lab-search-icon" />
 					<input
 						type="text"
-						placeholder="Поиск по пациенту, зубу, лаборатории..."
+						placeholder="Поиск по наряду, пациенту..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="mobile-lab-search-input"

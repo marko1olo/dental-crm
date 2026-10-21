@@ -23,7 +23,8 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 		onOpenReadyInClinicPrompt, onOpenPrintOrder, onOpenTracking, onView3DScan,
 		getStatusBadge, ...menuHandlers
 	} = props;
-	const num = (order as unknown as { orderNumber?: string }).orderNumber || (order.id ? `ЗТЛ-${order.id.slice(-4).toUpperCase()}` : "ЗТЛ");
+	const rawIdClean = order.id ? order.id.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
+	const num = (order as unknown as { orderNumber?: string }).orderNumber || (rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ");
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 	const title = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
 	const displayMaterial = formatLabMaterial(order.material);
@@ -85,7 +86,7 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 					</div>
 				) : "—"}
 			</td>
-			<td className="px-2.5 py-0 whitespace-nowrap align-middle text-right" onClick={(e) => e.stopPropagation()}>
+			<td className="px-3 py-0 whitespace-nowrap align-middle text-left min-w-[190px]" onClick={(e) => e.stopPropagation()}>
 				<LabOrdersTableRowButtons
 					order={order} openMenuOrderId={openMenuOrderId} setOpenMenuOrderId={setOpenMenuOrderId}
 					onOpenReadyInClinicPrompt={onOpenReadyInClinicPrompt} onOpenPrintOrder={onOpenPrintOrder}

@@ -145,12 +145,12 @@
 .mobile-lab-chips-scroller {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: 5px;
 	overflow-x: auto;
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	padding: 6px 12px 8px;
+	padding: 6px 10px 8px;
 	width: 100%;
 }
 
@@ -159,18 +159,18 @@
 }
 
 .mobile-lab-chip {
-	height: 38px;
-	min-height: 38px;
-	padding: 0 14px;
-	border-radius: 10px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 10px;
+	border-radius: 9px;
 	background: var(--paper);
 	border: 1px solid var(--line);
 	color: var(--muted);
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	gap: 4px;
 	white-space: nowrap;
 	cursor: pointer;
 	flex-shrink: 0;
