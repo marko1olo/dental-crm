@@ -8,7 +8,7 @@ import {
 } from "../index.js";
 
 describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () => {
-	it("MdlpDisposalQueueModal renders static markup with scanner inputs and action buttons", () => {
+	it("MdlpDisposalQueueModal renders static markup with batch inputs and action buttons", () => {
 		const html = renderToStaticMarkup(
 			createElement(MdlpDisposalQueueModal, {
 				isOpen: true,
@@ -21,7 +21,7 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 		assert.ok(html.includes("data-testid=\"mdlp-disposal-queue-modal\""));
 		assert.ok(html.includes("Списание анестетиков и медикаментов в Честный ЗНАК"));
 		assert.ok(html.includes("МДЛП Схема 10560"));
-		assert.ok(html.includes("Сканирование 2D DataMatrix"));
+		assert.ok(html.includes("Пакетное списание без поштучного сканирования"));
 		assert.ok(html.includes("Очередь карпул на списание"));
 		assert.ok(html.includes("Списать по Схеме 10560 МДЛП"));
 		assert.ok(html.includes("Печать акта списания"));

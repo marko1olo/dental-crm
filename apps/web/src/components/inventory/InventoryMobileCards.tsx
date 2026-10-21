@@ -19,7 +19,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { money } from "../../AppHelpers.js";
 import { showToast } from "../GlobalToast.js";
 import type { InventoryItem } from "./inventoryDataMappers.js";
@@ -111,19 +111,23 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 	// Bottom Sheet состояние для выбранного товара
 	const [activeSheetItem, setActiveSheetItem] = useState<InventoryItem | null>(null);
 	const [sheetQuantity, setSheetQuantity] = useState<number>(1);
-	const [isScannerActive, setIsScannerActive] = useState<boolean>(false);
 	const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+	const [barcodeInputValue, setBarcodeInputValue] = useState<string>("");
+	const [isScanInputOpen, setIsScanInputOpen] = useState<boolean>(false);
+	const scanInputRef = useRef<HTMLInputElement>(null);
 
 	const openSheet = useCallback((item: InventoryItem) => {
 		setActiveSheetItem(item);
 		setSheetQuantity(1);
-		setIsScannerActive(false);
+		setIsScanInputOpen(false);
+		setBarcodeInputValue("");
 		setActiveMenuId(null);
 	}, []);
 
 	const closeSheet = useCallback(() => {
 		setActiveSheetItem(null);
-		setIsScannerActive(false);
+		setIsScanInputOpen(false);
+		setBarcodeInputValue("");
 	}, []);
 
 	const handleStepQuantity = useCallback((delta: number) => {
@@ -157,15 +161,41 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 		closeSheet();
 	}, [activeSheetItem, sheetQuantity, onReceiveItem, closeSheet]);
 
-	const handleSimulateScan = useCallback(() => {
-		setIsScannerActive(true);
-		setTimeout(() => {
-			if (activeSheetItem) {
-				showToast(`Штрихкод ${activeSheetItem.barcode || "460700123456"} успешно распознан`, "success");
+	const handleBarcodeInputKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				const raw = barcodeInputValue.trim();
+				if (!raw) return;
+				if (activeSheetItem) {
+					if (
+						activeSheetItem.barcode &&
+						(activeSheetItem.barcode === raw || raw.includes(activeSheetItem.barcode))
+					) {
+						showToast(`Штрихкод ${raw} успешно подтверждён для «${activeSheetItem.name}»`, "success");
+					} else {
+						const found = items.find((it) => it.barcode === raw || it.sku === raw);
+						if (found) {
+							setActiveSheetItem(found);
+							showToast(`Найден материал «${found.name}» по штрихкоду ${raw}`, "info");
+						} else {
+							showToast(`Штрихкод ${raw} сопоставлен с «${activeSheetItem.name}»`, "info");
+						}
+					}
+				}
+				setBarcodeInputValue("");
+				setIsScanInputOpen(false);
 			}
-			setIsScannerActive(false);
-		}, 800);
-	}, [activeSheetItem]);
+		},
+		[activeSheetItem, barcodeInputValue, items],
+	);
+
+	const handleOpenScanInput = useCallback(() => {
+		setIsScanInputOpen(true);
+		setTimeout(() => {
+			scanInputRef.current?.focus();
+		}, 50);
+	}, []);
 
 	const now = useMemo(() => new Date(), []);
 
@@ -568,23 +598,48 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 							</div>
 						</div>
 
-						{/* Сканер штрихкода */}
-						<div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
-							<div className="flex items-center gap-2 min-w-0">
-								<QrCode size={16} className="text-teal-600 shrink-0" />
-								<span className="text-[var(--ink)] font-semibold truncate">
-									Штрихкод: {activeSheetItem.barcode || "б/ш"}
-								</span>
-							</div>
-							<button
-								type="button"
-								onClick={handleSimulateScan}
-								disabled={isScannerActive}
-								className="min-h-[36px] px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold hover:border-[var(--teal)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
-							>
-								<Camera size={13} className={isScannerActive ? "animate-pulse text-teal-600" : ""} />
-								<span>{isScannerActive ? "Сканирование..." : "Сканировать ШК"}</span>
-							</button>
+						{/* Сканер штрихкода (Аппаратный USB/Bluetooth HID-сканер) */}
+						<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
+							{isScanInputOpen ? (
+								<div className="flex items-center gap-2 w-full">
+									<input
+										ref={scanInputRef}
+										type="text"
+										value={barcodeInputValue}
+										onChange={(e) => setBarcodeInputValue(e.target.value)}
+										onKeyDown={handleBarcodeInputKeyDown}
+										placeholder="Штрихкод / DataMatrix + Enter..."
+										className="h-9 min-h-[36px] w-full px-3 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)]"
+										data-testid="input-barcode-hid"
+										autoFocus
+									/>
+									<button
+										type="button"
+										onClick={() => setIsScanInputOpen(false)}
+										className="h-9 min-h-[36px] px-2.5 rounded-lg border border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] cursor-pointer shrink-0"
+									>
+										Отмена
+									</button>
+								</div>
+							) : (
+								<div className="flex items-center justify-between gap-2">
+									<div className="flex items-center gap-2 min-w-0">
+										<QrCode size={16} className="text-teal-600 shrink-0" />
+										<span className="text-[var(--ink)] font-semibold truncate">
+											Штрихкод: {activeSheetItem.barcode || "б/ш"}
+										</span>
+									</div>
+									<button
+										type="button"
+										onClick={handleOpenScanInput}
+										className="min-h-[36px] px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold hover:border-[var(--teal)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+										data-testid="btn-scan-barcode-hid"
+									>
+										<Camera size={13} />
+										<span>Сканировать ШК</span>
+									</button>
+								</div>
+							)}
 						</div>
 
 						{/* Главные действия (Primary Actions >= 48px) */}

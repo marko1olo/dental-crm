@@ -64,6 +64,13 @@ export interface WarehouseInventoryAuditModalProps {
 	readonly onTorg16Generated?: ((act: WarehouseTorg16WriteoffAct) => void) | undefined;
 }
 
+export type InventoryCategoryFilter =
+	| "all"
+	| "anesthetics"
+	| "filling"
+	| "sterilization"
+	| "disposables";
+
 export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModalProps> = ({
 	isOpen,
 	onClose,
@@ -108,6 +115,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 	const [items, setItems] = useState<readonly WarehouseAuditItemLine[]>([]);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [filterTab, setFilterTab] = useState<"all" | "discrepancies" | "expired" | "risk">("all");
+	const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryFilter>("all");
 	const [sortOrder, setSortOrder] = useState<"default" | "fefo" | "discrepancy" | "name">("default");
 	const [showMetaDrawer, setShowMetaDrawer] = useState<boolean>(false);
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -236,6 +244,62 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 	// Сводные итоги
 	const totals: InventoryAuditTotals = useMemo(() => {
 		return calculateInventoryAuditTotals(items);
+	}, [items]);
+
+	// Подсчет количества позиций по ключевым категориям стоматологического склада
+	const categoryCounts = useMemo(() => {
+		let anesthetics = 0;
+		let filling = 0;
+		let sterilization = 0;
+		let disposables = 0;
+		for (const it of items) {
+			const cat = it.category.toLowerCase();
+			const name = it.nameRu.toLowerCase();
+			if (
+				cat.includes("анест") ||
+				name.includes("анест") ||
+				name.includes("каин") ||
+				name.includes("септанест")
+			) {
+				anesthetics++;
+			}
+			if (
+				cat.includes("пломб") ||
+				cat.includes("композ") ||
+				cat.includes("адгез") ||
+				name.includes("композит") ||
+				name.includes("filtek")
+			) {
+				filling++;
+			}
+			if (
+				cat.includes("стерил") ||
+				cat.includes("дезинф") ||
+				name.includes("дезинф") ||
+				name.includes("сурфаниос")
+			) {
+				sterilization++;
+			}
+			if (
+				cat.includes("однораз") ||
+				cat.includes("расход") ||
+				cat.includes("перчат") ||
+				cat.includes("салфет") ||
+				cat.includes("шовн") ||
+				name.includes("vicryl") ||
+				name.includes("маска") ||
+				name.includes("перчатки")
+			) {
+				disposables++;
+			}
+		}
+		return {
+			all: items.length,
+			anesthetics,
+			filling,
+			sterilization,
+			disposables,
+		};
 	}, [items]);
 
 	// Сборка текущего документа
@@ -430,6 +494,58 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 			);
 		}
 
+		// 2.5 Фильтрация по категориям расходных материалов (Apple HIG)
+		if (categoryFilter === "anesthetics") {
+			result = result.filter((it) => {
+				const cat = it.category.toLowerCase();
+				const name = it.nameRu.toLowerCase();
+				return (
+					cat.includes("анест") ||
+					name.includes("анест") ||
+					name.includes("каин") ||
+					name.includes("септанест")
+				);
+			});
+		} else if (categoryFilter === "filling") {
+			result = result.filter((it) => {
+				const cat = it.category.toLowerCase();
+				const name = it.nameRu.toLowerCase();
+				return (
+					cat.includes("пломб") ||
+					cat.includes("композ") ||
+					cat.includes("адгез") ||
+					name.includes("композит") ||
+					name.includes("filtek")
+				);
+			});
+		} else if (categoryFilter === "sterilization") {
+			result = result.filter((it) => {
+				const cat = it.category.toLowerCase();
+				const name = it.nameRu.toLowerCase();
+				return (
+					cat.includes("стерил") ||
+					cat.includes("дезинф") ||
+					name.includes("дезинф") ||
+					name.includes("сурфаниос")
+				);
+			});
+		} else if (categoryFilter === "disposables") {
+			result = result.filter((it) => {
+				const cat = it.category.toLowerCase();
+				const name = it.nameRu.toLowerCase();
+				return (
+					cat.includes("однораз") ||
+					cat.includes("расход") ||
+					cat.includes("перчат") ||
+					cat.includes("салфет") ||
+					cat.includes("шовн") ||
+					name.includes("vicryl") ||
+					name.includes("маска") ||
+					name.includes("перчатки")
+				);
+			});
+		}
+
 		// 3. Сортировка
 		if (sortOrder === "fefo") {
 			result = sortAuditItemsByFefo(result);
@@ -443,7 +559,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		}
 
 		return result;
-	}, [items, searchQuery, filterTab, sortOrder]);
+	}, [items, searchQuery, filterTab, categoryFilter, sortOrder]);
 
 	if (!isOpen) return null;
 
@@ -557,6 +673,60 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 					onCommissionMemberChange={handleCommissionMemberChange}
 					onRemoveCommissionMember={handleRemoveCommissionMember}
 				/>
+
+				{/* 2.2 Category Pills Row */}
+				<div className="warehouse-inventory-category-bar">
+					<span className="warehouse-inventory-category-label">
+						Категории ТМЦ:
+					</span>
+					<div className="warehouse-category-pills" role="radiogroup" aria-label="Фильтр по категориям ТМЦ">
+						<button
+							type="button"
+							className={`warehouse-category-pill ${categoryFilter === "all" ? "active" : ""}`}
+							onClick={() => setCategoryFilter("all")}
+							data-testid="filter-category-all"
+						>
+							<span>Все категории</span>
+							<span className="warehouse-category-badge">{categoryCounts.all}</span>
+						</button>
+						<button
+							type="button"
+							className={`warehouse-category-pill ${categoryFilter === "anesthetics" ? "active" : ""}`}
+							onClick={() => setCategoryFilter("anesthetics")}
+							data-testid="filter-category-anesthetics"
+						>
+							<span>💉 Анестетики</span>
+							<span className="warehouse-category-badge">{categoryCounts.anesthetics}</span>
+						</button>
+						<button
+							type="button"
+							className={`warehouse-category-pill ${categoryFilter === "filling" ? "active" : ""}`}
+							onClick={() => setCategoryFilter("filling")}
+							data-testid="filter-category-filling"
+						>
+							<span>🦷 Пломбировочные</span>
+							<span className="warehouse-category-badge">{categoryCounts.filling}</span>
+						</button>
+						<button
+							type="button"
+							className={`warehouse-category-pill ${categoryFilter === "sterilization" ? "active" : ""}`}
+							onClick={() => setCategoryFilter("sterilization")}
+							data-testid="filter-category-sterilization"
+						>
+							<span>🧼 Стерилизация</span>
+							<span className="warehouse-category-badge">{categoryCounts.sterilization}</span>
+						</button>
+						<button
+							type="button"
+							className={`warehouse-category-pill ${categoryFilter === "disposables" ? "active" : ""}`}
+							onClick={() => setCategoryFilter("disposables")}
+							data-testid="filter-category-disposables"
+						>
+							<span>🧤 Одноразовые</span>
+							<span className="warehouse-category-badge">{categoryCounts.disposables}</span>
+						</button>
+					</div>
+				</div>
 
 				{/* 3. Toolbar & Filters */}
 				<div className="warehouse-inventory-toolbar">

@@ -22,7 +22,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast.js";
 import {
@@ -71,8 +71,9 @@ export type ShiftBatchMode = "shift" | "packages" | "procedure";
 export interface ShiftBatchDeductionModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly organizationId: string;
+	readonly organizationId?: string | undefined;
 	readonly onDeductionComplete?: () => void;
+	readonly onConfirmDeduction?: () => void;
 	readonly initialMode?: ShiftBatchMode | undefined;
 	readonly procedureTitle?: string | undefined;
 	readonly serviceCode?: string | undefined;
@@ -175,8 +176,9 @@ const getDemoShiftSummary = (): ShiftSummaryData => {
 export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> = ({
 	isOpen,
 	onClose,
-	organizationId,
+	organizationId = "org-default",
 	onDeductionComplete,
+	onConfirmDeduction,
 	initialMode = "shift",
 	procedureTitle = "Препарирование и пломба светового отверждения (Filtek / Estelite)",
 	serviceCode,
@@ -190,6 +192,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 	const [activeMode, setActiveMode] = useState<ShiftBatchMode>(initialMode);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const inFlightRef = useRef(false);
 	const [summaryData, setSummaryData] = useState<ShiftSummaryData | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -288,7 +291,8 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 
 	// 1-клик проведение списания за смену (Батч дня)
 	const handleExecuteShiftDeduction = async () => {
-		if (isSubmitting) return;
+		if (inFlightRef.current || isSubmitting) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 
 		try {
@@ -352,13 +356,15 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 				);
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};
 
 	// Списание клинического пакета (1 клик)
 	const handlePackageClick = async (packageId: ClinicalPackageId) => {
-		if (submittingPackageId) return;
+		if (inFlightRef.current || submittingPackageId) return;
+		inFlightRef.current = true;
 		setSubmittingPackageId(packageId);
 
 		try {
@@ -381,6 +387,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 		} catch (err) {
 			showToast(err instanceof Error ? err.message : "Ошибка списания пакета", "error");
 		} finally {
+			inFlightRef.current = false;
 			setTimeout(() => {
 				setSubmittingPackageId(null);
 			}, 300);
@@ -389,7 +396,8 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 
 	// 1-клик списание по протоколу процедуры
 	const handleConfirmProcedureDeduction = async () => {
-		if (isSubmitting) return;
+		if (inFlightRef.current || isSubmitting) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 
 		try {
@@ -430,6 +438,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 				"error",
 			);
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};
@@ -704,7 +713,10 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 								) : (
 									<>
 										<PackageCheck className="w-4 h-4 shrink-0" />
-										<span>Списать расходники смены по оказанным услугам</span>
+										<span>
+											Списать расходники за смену (
+											{summaryData?.shiftStats?.completedVisitsCount ?? 0} визитов)
+										</span>
 									</>
 								)}
 							</button>

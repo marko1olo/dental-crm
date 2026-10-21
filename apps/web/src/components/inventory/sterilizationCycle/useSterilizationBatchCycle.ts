@@ -102,7 +102,10 @@ export function useSterilizationBatchCycle({
 				if (res.ok) {
 					const data = (await res.json().catch(() => null)) as { log?: { id?: string } } | null;
 					if (data?.log?.id) {
-						(result.cycleLog as { id: string }).id = data.log.id;
+						(result.cycleRecord as { id: string }).id = data.log.id;
+						if (result.cycleLog) {
+							(result.cycleLog as { id: string }).id = data.log.id;
+						}
 					}
 				}
 			} catch {

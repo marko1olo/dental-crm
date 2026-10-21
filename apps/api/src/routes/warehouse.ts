@@ -250,6 +250,24 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 		return handleWarehouseDeductRequest(targetOrgId, request.body, request, reply);
 	});
 
+	// POST /api/warehouse/:organizationId/writeoff & /writeoff (Aliasing for writeoff parity)
+	server.post<{ Params: { organizationId: string } }>("/:organizationId/writeoff", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "warehouse writeoff");
+		if (!resolvedOrgId) return;
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+		return handleWarehouseDeductRequest(organizationId, request.body, request, reply);
+	});
+
+	server.post("/writeoff", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "warehouse writeoff");
+		if (!resolvedOrgId) return;
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+		return handleWarehouseDeductRequest(targetOrgId, request.body, request, reply);
+	});
+
 	// POST /api/warehouse/:organizationId/deduct/visit (Мандаты 8e, 8n, 8v)
 	server.post<{
 		Params: { organizationId: string };
@@ -469,6 +487,8 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 	};
 	server.post<{ Params: { organizationId?: string }; Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/:organizationId/shift-deduct", handleShiftDeduct);
 	server.post<{ Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/shift-deduct", handleShiftDeduct);
+	server.post<{ Params: { organizationId?: string }; Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/:organizationId/batch-shift-writeoff", handleShiftDeduct);
+	server.post<{ Body?: { date?: string; organizationId?: string; items?: Array<{ itemId: string; qty: number; name?: string }>; notes?: string } }>("/batch-shift-writeoff", handleShiftDeduct);
 };
 
 export default warehouseRoutes;

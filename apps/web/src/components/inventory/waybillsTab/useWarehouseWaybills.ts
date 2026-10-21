@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -38,50 +38,58 @@ export function useWarehouseWaybills({
 		},
 	);
 
+	const inFlightRef = useRef(false);
+
 	const handlePostWaybill = async (
 		waybillToPost: AcceptanceWaybillDocument,
 	) => {
+		if (inFlightRef.current) return;
 		if (waybillToPost.items.length === 0) {
 			showToast("Добавьте хотя бы одну позицию в накладную", "warning");
 			return;
 		}
-		const postedDoc: AcceptanceWaybillDocument = {
-			...waybillToPost,
-			status: "posted",
-			postedAt: new Date().toISOString(),
-		};
-		const overdraftItems = inventoryItems.filter(
-			(inv) => Number(inv.stockQuantity) < 0,
-		);
-		let resolvedCount = 0;
-		for (const wbItem of postedDoc.items) {
-			const matching = overdraftItems.find((d) =>
-				d.name.toLowerCase().includes(wbItem.name.toLowerCase().slice(0, 15)),
+		inFlightRef.current = true;
+		try {
+			const postedDoc: AcceptanceWaybillDocument = {
+				...waybillToPost,
+				status: "posted",
+				postedAt: new Date().toISOString(),
+			};
+			const overdraftItems = inventoryItems.filter(
+				(inv) => Number(inv.stockQuantity) < 0,
 			);
-			if (
-				matching &&
-				reconcileOverdraftOnReceipt(
-					Number(matching.stockQuantity),
-					wbItem.quantity,
-				).clearedDeficit > 0
-			) {
-				resolvedCount++;
+			let resolvedCount = 0;
+			for (const wbItem of postedDoc.items) {
+				const matching = overdraftItems.find((d) =>
+					d.name.toLowerCase().includes(wbItem.name.toLowerCase().slice(0, 15)),
+				);
+				if (
+					matching &&
+					reconcileOverdraftOnReceipt(
+						Number(matching.stockQuantity),
+						wbItem.quantity,
+					).clearedDeficit > 0
+				) {
+					resolvedCount++;
+				}
 			}
+			setWaybillsList((prev) => [
+				postedDoc,
+				...prev.filter((w) => w.id !== postedDoc.id),
+			]);
+			setSelectedWaybill(postedDoc);
+			setIsCreatingNew(false);
+			if (onWaybillPosted) await onWaybillPosted(postedDoc);
+			if (onRefreshStock) onRefreshStock();
+			showToast(
+				resolvedCount > 0
+					? `Накладная №${postedDoc.waybillNumber} успешно проведена. Погашен овердрафт: ${resolvedCount} поз.`
+					: `Накладная №${postedDoc.waybillNumber} проведена. Склад пополнен.`,
+				"success",
+			);
+		} finally {
+			inFlightRef.current = false;
 		}
-		setWaybillsList((prev) => [
-			postedDoc,
-			...prev.filter((w) => w.id !== postedDoc.id),
-		]);
-		setSelectedWaybill(postedDoc);
-		setIsCreatingNew(false);
-		if (onWaybillPosted) await onWaybillPosted(postedDoc);
-		if (onRefreshStock) onRefreshStock();
-		showToast(
-			resolvedCount > 0
-				? `Накладная №${postedDoc.waybillNumber} успешно проведена. Погашен овердрафт: ${resolvedCount} поз.`
-				: `Накладная №${postedDoc.waybillNumber} проведена. Склад пополнен.`,
-			"success",
-		);
 	};
 
 	const handlePrintTorg12 = (wb: AcceptanceWaybillDocument) => {

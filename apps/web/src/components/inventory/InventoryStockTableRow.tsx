@@ -287,11 +287,11 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					verticalAlign: "middle",
 					textAlign: "right",
 					whiteSpace: "nowrap",
-					width: 110,
-					minWidth: 110,
+					width: 130,
+					minWidth: 130,
 				}}
 			>
-				<div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
+				<div className="flex flex-col items-end gap-0.5 whitespace-nowrap w-full">
 					<span className="font-mono text-xs font-semibold text-[var(--ink)]">
 						{unitCost !== null ? money(unitCost) : "—"}
 					</span>
@@ -311,8 +311,8 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 					verticalAlign: "middle",
 					textAlign: "right",
 					whiteSpace: "nowrap",
-					width: 285,
-					minWidth: 285,
+					width: 270,
+					minWidth: 270,
 				}}
 			>
 				<div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">

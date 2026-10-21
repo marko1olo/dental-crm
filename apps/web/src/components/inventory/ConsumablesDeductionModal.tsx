@@ -22,7 +22,7 @@ export {
  *
  * Мандаты 8e (Врачебная автономия), 8n (Масштаб), 8s (Анти-блоат), СанПиН 2.1.3684-21 / 3.3686-21.
  * - Чистый клинический язык без бухгалтерского птичьего языка.
- * - Автоматический подбор комплекта материалов по номенклатуре услуги в 1 клик.
+ * - Автоматический подбор комплекта материалов по номенклатуре услуги.
  * - Мягкий овердрафт: нулевой остаток предупреждает, но кнопка подтверждения НИКОГДА не блокируется.
  * - Все модули строго <= 120 строк.
  */
@@ -82,7 +82,7 @@ export const ConsumablesDeductionModal: React.FC<ConsumablesDeductionModalProps>
 							onClick={handleApplyStandardTherapistKit}
 							className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-bold border border-teal-600/40 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
 							data-testid="btn-quick-standard-kit"
-							title="1-клик списание стандартного набора терапевта (СИЗ, слюноотсос, салфетка, валики)"
+							title="Быстрое списание стандартного набора терапевта (СИЗ, слюноотсос, салфетка, валики)"
 						>
 							<Check size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>✓ Списать стандартный набор терапевта</span>

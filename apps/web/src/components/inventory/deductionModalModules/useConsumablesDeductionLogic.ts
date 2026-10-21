@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import {
 	DEFAULT_804N_CONSUMABLE_LINKS,
@@ -156,7 +156,11 @@ export function useConsumablesDeductionLogic(props: ConsumablesDeductionModalPro
 		[deductionItems],
 	);
 
+	const inFlightRef = useRef(false);
+
 	const handleConfirm = async () => {
+		if (inFlightRef.current || isSubmitting) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 		try {
 			if (onConfirmDeduction) await onConfirmDeduction(deductionItems);
@@ -186,6 +190,7 @@ export function useConsumablesDeductionLogic(props: ConsumablesDeductionModalPro
 		} catch {
 			// Ошибки логируются, врач не блокируется
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};

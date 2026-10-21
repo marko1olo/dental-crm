@@ -49,16 +49,20 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 		typeof value === "string" ? value.trim() : "";
 	const sku = asText(row.sku);
 	const barcode = asText(row.barcode);
-	const lotNumber = asText(row.lotNumber);
-	const expiration = asText(row.expirationDate);
+	const lotNumber = asText(row.lotNumber ?? row.lot_number ?? row.batchNumber ?? row.batch_number);
+	const expiration = asText(row.expirationDate ?? row.expiration_date);
 	const category = asText(row.category);
 	const supplier = asText(row.supplier);
 	const unit = asText(row.unit || row.unitOfMeasure);
 	return {
 		id: String(row.id ?? ""),
 		name: typeof row.name === "string" ? row.name : "",
-		stockQuantity: asNumber(row.stockQuantity),
-		criticalThreshold: asNumber(row.criticalThreshold),
+		stockQuantity: asNumber(
+			row.stockQuantity ?? row.stock_quantity ?? row.currentQty ?? row.current_qty,
+		),
+		criticalThreshold: asNumber(
+			row.criticalThreshold ?? row.critical_threshold ?? row.minQty ?? row.min_qty,
+		),
 		// Цена остаётся строкой: так объявлен тип, и её везде читают через Number().
 		unitCostRub:
 			row.unitCostRub !== null && row.unitCostRub !== undefined

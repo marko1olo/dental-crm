@@ -33,6 +33,7 @@ export interface AcceptanceSupplier {
 	readonly phone?: string | undefined;
 	readonly email?: string | undefined;
 	readonly isPreferred?: boolean | undefined;
+	readonly isPrimary?: boolean | undefined;
 }
 
 export interface AcceptanceWaybillItem {

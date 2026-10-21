@@ -46,6 +46,46 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 
 		try {
 			const result = await db.transaction(async (tx) => {
+				// Идемпотентность складских операций (Мандаты 8e, 8n, 8s):
+				// Защита от дублирования при повторном клике по кнопке проведения
+				if (data.waybillNumber && data.supplierName) {
+					const existingTransactions = await tx
+						.select({
+							id: inventoryTransactions.id,
+							notes: inventoryTransactions.notes,
+						})
+						.from(inventoryTransactions)
+						.where(
+							and(
+								eq(inventoryTransactions.organizationId, targetOrgId),
+								eq(inventoryTransactions.transactionType, "receipt"),
+								sql`${inventoryTransactions.notes} LIKE ${`%накладной №${data.waybillNumber} от ${data.supplierName}%`}`,
+							),
+						)
+						.limit(1);
+
+					if (existingTransactions.length > 0) {
+						return {
+							success: true,
+							alreadyProcessed: true,
+							waybillNumber: data.waybillNumber,
+							supplierName: data.supplierName,
+							supplierInn: data.supplierInn ?? null,
+							receiptDate: data.receiptDate,
+							warehouseId: data.warehouseId ?? null,
+							warehouseName: data.warehouseName ?? "Основной склад",
+							totalPositions: data.items.length,
+							totalQuantity: data.items.reduce((acc, it) => acc + it.quantity, 0),
+							totalCostKopecks: 0,
+							totalVatKopecks: 0,
+							totalCostRubles: 0,
+							overdraftResolvedCount: 0,
+							items: [],
+							message: `Накладная №${data.waybillNumber} от ${data.supplierName} уже была проведена ранее (идемпотентный ответ)`,
+						};
+					}
+				}
+
 				const processedItems: Array<{
 					inventoryItemId: string;
 					name: string;
@@ -424,7 +464,9 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 				let supplierName = "Стоматологический поставщик";
 				let supplierInn: string | null = null;
 
-				const wbMatch = notesStr.match(/Накладная №([^ ]+) от ([^•(]+)(?:\(ИНН ([^)]+)\))?/);
+				const wbMatch = notesStr.match(
+					/(?:Приход по накладной|Накладная) №(.+?) от (.+?)(?:\s*\(ИНН\s*([^)]+)\))?(?:\s*•|\s*$)/i,
+				);
 				if (wbMatch) {
 					waybillNumber = wbMatch[1]?.trim() || waybillNumber;
 					supplierName = wbMatch[2]?.trim() || supplierName;

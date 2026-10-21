@@ -544,6 +544,12 @@ describe("WarehouseInventoryAuditModal React Component Rendering", () => {
 		assert.ok(markup.includes("Опись"));
 		assert.ok(markup.includes("Сличительная"));
 		assert.ok(markup.includes("Провести инвентаризацию"));
+		assert.ok(markup.includes("Категории ТМЦ:"));
+		assert.ok(markup.includes("Все категории"));
+		assert.ok(markup.includes("Анестетики"));
+		assert.ok(markup.includes("Пломбировочные"));
+		assert.ok(markup.includes("Стерилизация"));
+		assert.ok(markup.includes("Одноразовые"));
 	});
 
 	it("Возвращает пустую разметку при isOpen = false", () => {

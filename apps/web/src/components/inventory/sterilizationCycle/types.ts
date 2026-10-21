@@ -36,6 +36,7 @@ export interface StockDeductionSummaryItem {
 export interface SterilizationBatchCycleResult {
 	readonly success: boolean;
 	readonly cycleRecord: SterilizationLogRecord;
+	readonly cycleLog?: SterilizationLogRecord | undefined;
 	readonly deductions: readonly StockDeductionSummaryItem[];
 	readonly overdraftItems: readonly StockDeductionSummaryItem[];
 	readonly isSoftOverdraft: boolean;

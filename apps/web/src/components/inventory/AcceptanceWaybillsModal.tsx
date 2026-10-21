@@ -20,7 +20,7 @@ import {
 	Plus, Printer, Sparkles, Trash2, X,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
@@ -68,6 +68,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 		() => initialWaybill?.supplier.id || CANONICAL_DENTAL_SUPPLIERS[0]!.id,
 	);
 	const [isPosting, setIsPosting] = useState<boolean>(false);
+	const inFlightRef = useRef(false);
 	const [validationErrors, setValidationErrors] = useState<readonly string[]>([]);
 	const [validationWarnings, setValidationWarnings] = useState<readonly string[]>([]);
 
@@ -284,6 +285,8 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 
 	// Проведение накладной (зачисление на склад)
 	const handlePostWaybill = useCallback(async () => {
+		if (inFlightRef.current || isPosting) return;
+
 		const validation = validateWaybillDraft(waybill);
 		setValidationErrors(validation.errors);
 		setValidationWarnings(validation.warnings);
@@ -293,6 +296,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 			return;
 		}
 
+		inFlightRef.current = true;
 		setIsPosting(true);
 		try {
 			// Вызов API эндпоинта если передан organizationId
@@ -355,6 +359,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 			const msg = err instanceof Error ? err.message : "Не удалось провести накладную";
 			showToast(msg, "error");
 		} finally {
+			inFlightRef.current = false;
 			setIsPosting(false);
 		}
 	}, [waybill, organizationId, onWaybillPosted, onClose]);

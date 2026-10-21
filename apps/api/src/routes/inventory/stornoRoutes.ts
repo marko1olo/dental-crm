@@ -490,7 +490,7 @@ export const stornoRoutes: FastifyPluginAsync = async (
 						notes:
 							data.notes ||
 							data.reason ||
-							`Списание материалов по услуге отменено: автоматическое сторно при отмене услуги «${m.serviceTitle || "услуга"}» (+${m.quantity} ${targetItem.unit ?? "ед."})`,
+							`Списание материалов по услуге отменено: возврат материалов на склад при отмене услуги «${m.serviceTitle || "услуга"}» (+${m.quantity} ${targetItem.unit ?? "ед."})`,
 						userId: effectiveUserId,
 					});
 
@@ -513,13 +513,13 @@ export const stornoRoutes: FastifyPluginAsync = async (
 				restoredItems: stornoResult,
 				message:
 					stornoResult.length > 0
-						? `Сторно выполнено: ${stornoResult.length} позиций материалов возвращены на склад`
-						: "Нет материалов для сторнирования",
+						? `Отмена ошибочного списания: ${stornoResult.length} позиций материалов возвращены на склад`
+						: "Нет материалов для отмены списания",
 			});
 		} catch (error) {
 			request.log.error(error, "Failed to execute inventory storno");
 			const msg =
-				error instanceof Error ? error.message : "Не удалось провести сторно материалов";
+				error instanceof Error ? error.message : "Не удалось выполнить отмену ошибочного списания материалов";
 			return reply.status(400).send({
 				error: "StornoFailed",
 				message: msg,

@@ -94,6 +94,8 @@ describe("Red Team: Warehouse & Procedure Catalog Write-off Invariants", () => {
 				materialName: "Композит Filtek Ultimate",
 				category: "composite" as const,
 				quantity: 2,
+				standardQuantity: 2,
+				source: "manual" as const,
 				unit: "шприц",
 				stockQuantity: 0,
 				criticalThreshold: 3,

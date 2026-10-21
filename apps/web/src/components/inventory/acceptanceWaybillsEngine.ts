@@ -18,7 +18,7 @@
 
 export * from "./acceptanceWaybillsTypes.js";
 export * from "./acceptanceWaybillsTemplates.js";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 
 import type {
@@ -166,16 +166,20 @@ export function calculateWaybillTotals(
 let _waybillItemCounter = 1;
 
 /**
- * Детерминированный генератор ID позиции накладной.
- * Исключает случайные числа; использует crypto.randomUUID() или монотонный счетчик времени.
+ * Генератор ID позиции накладной в стандарте RFC 9562 UUIDv7 (Мандат 8e, 8n).
  */
 export function generateDeterministicWaybillItemId(prefix = "item"): string {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-		return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+	try {
+		const v7 = generateUuidV7();
+		return prefix ? `${prefix}_${v7}` : v7;
+	} catch {
+		if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+			return `${prefix}_${crypto.randomUUID()}`;
+		}
+		const timestamp = Date.now().toString(36);
+		const seq = (_waybillItemCounter++).toString(36);
+		return `${prefix}_${timestamp}_${seq}`;
 	}
-	const timestamp = Date.now().toString(36);
-	const seq = (_waybillItemCounter++).toString(36);
-	return `${prefix}_${timestamp}_${seq}`;
 }
 
 /**

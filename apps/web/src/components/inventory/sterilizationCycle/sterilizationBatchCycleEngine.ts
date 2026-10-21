@@ -141,6 +141,7 @@ export function executeSterilizationBatchCycle(
 	return {
 		success: true,
 		cycleRecord,
+		cycleLog: cycleRecord,
 		deductions,
 		overdraftItems,
 		isSoftOverdraft,

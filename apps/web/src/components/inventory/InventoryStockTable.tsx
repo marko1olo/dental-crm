@@ -340,11 +340,12 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 110,
+								width: 130,
+								minWidth: 130,
 								textAlign: "right",
 							}}
 						>
-							<div className="leading-tight">
+							<div className="leading-tight inline-block text-right w-full">
 								<div>Себестоимость</div>
 								<div className="text-[10px] opacity-75 font-normal tracking-normal">за единицу</div>
 							</div>
@@ -362,7 +363,8 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								textAlign: "right",
-								width: 285,
+								width: 270,
+								minWidth: 270,
 								whiteSpace: "nowrap",
 							}}
 						>

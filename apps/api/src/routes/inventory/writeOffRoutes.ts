@@ -397,6 +397,8 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 	registerDeductRoute("/deduct");
 	registerDeductRoute("/:organizationId/write-off");
 	registerDeductRoute("/write-off");
+	registerDeductRoute("/:organizationId/writeoff");
+	registerDeductRoute("/writeoff");
 	registerDeductRoute("/:organizationId/transactions");
 	registerDeductRoute("/transactions");
 	registerDeductRoute("/:organizationId/quick-deduct-surgical");
@@ -503,6 +505,66 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 			request,
 			reply,
 			"inventory shift batch deduct fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
+
+	// Алиасы для пакетного списания расходников за смену (/batch-shift-writeoff)
+	server.post<{
+		Params: { organizationId?: string };
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/:organizationId/batch-shift-writeoff", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory batch shift writeoff",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.params.organizationId || request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+				organizationId: targetOrgId,
+				date: body.date,
+				userId: request.user?.id ?? null,
+				items: body.items,
+				notes: body.notes,
+			});
+		});
+	});
+
+	server.post<{
+		Body?: {
+			date?: string;
+			organizationId?: string;
+			items?: Array<{ itemId: string; qty: number; name?: string }>;
+			notes?: string;
+		};
+	}>("/batch-shift-writeoff", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory batch shift writeoff fallback",
 		);
 		if (!resolvedOrgId) return;
 		const targetOrgId = request.body?.organizationId || resolvedOrgId;
