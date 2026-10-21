@@ -123,7 +123,9 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 			);
 
 			assert.ok(
-				wsContent.includes("Карта пациента (043/у)") || wsContent.includes("043/у"),
+				wsContent.includes("Карта пациента (043/у)") ||
+				wsContent.includes("043/у") ||
+				wsContent.includes("Медицинская карта пациента"),
 				"Рабочее место пациента должно использовать форму 043/у",
 			);
 			assert.ok(

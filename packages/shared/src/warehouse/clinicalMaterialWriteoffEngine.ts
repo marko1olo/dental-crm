@@ -299,7 +299,7 @@ export function formatClinicalMaterialWriteoffAct(
 	return lines.join("\n");
 }
 
-// ─── 3. BACKWARD-COMPATIBILITY ALIASES (MANDATE 8ao DEPRECATION) ──────────────
+// ─── 3. BACKWARD-COMPATIBILITY ALIASES (MANDATE 8ap DEPRECATION) ──────────────
 
 /** @deprecated Use clinicalConsumableNormSchema (DENTE Domain Purity) */
 export const identConsumableNormSchema = clinicalConsumableNormSchema;

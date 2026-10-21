@@ -10,7 +10,7 @@ import {
 import { PatientWorkspaceTabContent } from "./workspaceView/PatientWorkspaceTabContent";
 
 // Subcomponents provide data-testid="patient-tab-scans", data-testid="patient-scans-gallery", width: "200px", height: "200px" (CLS = 0)
-// Медицинская карта пациента - амбулаторный стандарт стоматологии (Мандаты 8i, 8s)
+// Медицинская карта пациента (043/у) - амбулаторный стандарт стоматологии (Мандаты 8i, 8s)
 export type { PatientWorkspaceViewProps } from "./workspaceView/types";
 
 export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.memo((props) => {

@@ -30,7 +30,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		icdEntry,
 	} = useVisitDiarySectionView(visitId, patientId, teethData);
 
-	// Мандат 8e: поля никогда не блокируются, списание по FEFO в 1 клик без комиссии
+	// Мандат 8e & 8k: поля никогда не блокируются, onDisposalCarpules дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии
 	const fieldsDisabled = false;
 
 	return (

@@ -8,7 +8,7 @@ import type { DentalMedicalCard043uPayload } from "./schemas/index.js";
 
 // --- Core Domain Schemas & DTOs ---
 export * from "./schemas/index.js";
-// ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s)
+// ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s): dental_medical_card_043u
 export type OutpatientMedicalCard025uPayload = DentalMedicalCard043uPayload;
 export type PatientRecord = import("./patients/patientSchemas.js").Patient;
 export type DashboardResponse = import("./schemas/documentChainAndDmsSchemas.js").Dashboard;

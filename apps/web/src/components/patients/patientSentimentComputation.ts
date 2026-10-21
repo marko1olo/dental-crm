@@ -45,7 +45,7 @@ export function computePatientSentiment(
 	);
 	const tier = String(patient?.loyaltyTier || patient?.administrativeProfile?.loyaltyTier || patient?.tier || "").toLowerCase();
 
-	// Mandate 8ao: Расчет строго по нормализованным клиническим полям, ноль парсинга заметок регулярками
+	// Mandate 8ap: Расчет строго по нормализованным клиническим полям, ноль парсинга заметок регулярками
 	const rawAllergies = patient?.allergies ?? patient?.clinicalSafety?.allergies ?? patient?.allergiesList;
 	const hasNormalizedAllergies = Array.isArray(rawAllergies)
 		? rawAllergies.length > 0

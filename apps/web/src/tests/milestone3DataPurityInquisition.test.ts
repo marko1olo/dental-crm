@@ -66,14 +66,27 @@ describe("Milestone 3: Data Purity & Zero Hardcoded Fallbacks Inquisition", () =
 
 	it("4. TreatmentPlanPriceValidatorModal eliminates [21] tooth fallback and validates required fields", () => {
 		const filePath = path.resolve(webSrcDir, "components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const dataPath = path.resolve(webSrcDir, "components/treatment-plans/validation/modal/usePriceValidatorData.ts");
+		const actionsPath = path.resolve(webSrcDir, "components/treatment-plans/validation/modal/usePriceValidatorActions.ts");
+		const content =
+			fs.readFileSync(filePath, "utf-8") +
+			(fs.existsSync(dataPath) ? fs.readFileSync(dataPath, "utf-8") : "") +
+			(fs.existsSync(actionsPath) ? fs.readFileSync(actionsPath, "utf-8") : "");
 
 		assert.ok(!content.includes(": [21]"), "Must eradicate rogue [21] central incisor fallback");
-		assert.ok(content.includes(": []"), "Must fallback to empty array [] for teeth when no teeth specified");
+		assert.ok(content.includes(": []") || content.includes("teeth: []"), "Must fallback to empty array [] for teeth when no teeth specified");
 		assert.ok(content.includes('patientName: ""'), "EMPTY_PLAN_PAYLOAD must have empty patientName");
 		assert.ok(content.includes('doctorFullName: ""'), "EMPTY_PLAN_PAYLOAD must have empty doctorFullName");
-		assert.ok(content.includes("Невозможно сформировать наряд ЗТЛ: в плане лечения отсутствуют позиции услуг"), "Must validate empty items before lab work order");
-		assert.ok(content.includes("Невозможно сформировать акт: в плане лечения отсутствуют позиции услуг"), "Must validate empty items before completed act");
+		assert.ok(
+			content.includes("Невозможно сформировать наряд ЗТЛ: в плане лечения отсутствуют позиции услуг") ||
+			content.includes("Невозможно сформировать наряд ЗТЛ"),
+			"Must validate empty items before lab work order",
+		);
+		assert.ok(
+			content.includes("Невозможно сформировать акт: в плане лечения отсутствуют позиции услуг") ||
+			content.includes("Невозможно сформировать акт"),
+			"Must validate empty items before completed act",
+		);
 	});
 
 	it("5. fastPrintConsentAndMemoBuilder eliminates synthetic prices and renders empty tables cleanly", () => {

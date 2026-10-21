@@ -28,7 +28,7 @@ import {
 export type { DmsRegistryExportModalProps } from "./dmsRegistryExport/types.js";
 
 export function DmsRegistryExportModal(props: DmsRegistryExportModalProps) {
-	const { isOpen, onClose, patientId, patientName } = props;
+	const { isOpen, onClose, patientId, patientName, records = [], } = props;
 	const state = useDmsRegistryExportState(props);
 
 	if (!isOpen) return null;

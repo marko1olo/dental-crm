@@ -524,7 +524,7 @@ export const STOMX_REFUSE_REASON_BY_CODE = Object.freeze(
 
 export const STOMX_APPT_REFUSE_REASONS_CATALOG = STOMX_REFUSE_REASONS_CATALOG;
 
-// Canonical domain aliases (Mandate 8ao - zero brand names in domain logic)
+// Canonical domain aliases (Mandate 8ap - zero brand names in domain logic)
 export const APPOINTMENT_REFUSAL_REASONS_CATALOG = STOMX_REFUSE_REASONS_CATALOG;
 export const APPOINTMENT_REFUSAL_REASON_BY_CODE = STOMX_REFUSE_REASON_BY_CODE;
 export const APPOINTMENT_REASONS_CATALOG = STOMX_APPT_REASONS_CATALOG;

@@ -3,7 +3,7 @@
  *
  * RED TEAM INQUISITOR DELTA: Schedule of Visits, Chair Grid & Operational Timeline
  * Ruthless verification of:
- * 1. Production Isolation (Mandates 8c, 8k, 8ae): Zero ghost appointments in production with empty DB.
+ * 1. Production Isolation (Mandates 8c, 8k, 8wy): Zero ghost appointments in production with empty DB.
  * 2. Hick's Law & Toolbar Density (Sin #2): Schedule toolbar is strictly 1 compact row (<= 36px).
  * 3. Miller's Law for Appointment Cards (Sin #3): At most 1-2 primary CTAs per card; secondary actions in "...".
  * 4. Zero Cartoon Emojis (Mandate 8d, Sin #7): Zero unicode emojis (⚡, 📅, 🦷, etc.) in status & CITO badges.
@@ -87,7 +87,7 @@ const mockAppointmentLabels: Record<Appointment["status"], string> = {
 };
 
 describe("Red Team Inquisitor Delta — Schedule & Chair Grid Inquisition", () => {
-	describe("1. Production Isolation & Zero Ghost Appointments (Mandates 8c, 8k, 8ae)", () => {
+	describe("1. Production Isolation & Zero Ghost Appointments (Mandates 8c, 8k, 8wy)", () => {
 		it("renders honest Day 0 empty state banner when appointments array is empty", () => {
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleDayZeroBanner, {

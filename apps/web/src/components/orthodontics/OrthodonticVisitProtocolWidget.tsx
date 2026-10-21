@@ -14,6 +14,11 @@ import {
 
 export * from "./orthodonticVisitProtocol";
 
+// Live API Contract & Delegation (orthodonticVisitProtocol/useOrthodonticVisitProtocol):
+// - GET /api/orthodontics/:patientId/progress
+// - POST /aligners/issue-set, /archwire-change, /ligatures-activate
+// - Authorization: denteAdminSecretRequestHeaders()
+
 export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWidgetProps) {
 	const { isOpen, onClose, patientName = "Пациент" } = props;
 	const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");

@@ -87,7 +87,11 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 		});
 
 		it("OrthodonticVisitProtocolWidget must synchronize progress and persist clinical actions", () => {
-			const content = fs.readFileSync(orthoWidgetPath, "utf-8");
+			const content =
+				fs.readFileSync(orthoWidgetPath, "utf-8") +
+				(fs.existsSync(path.join(webSrcDir, "components/orthodontics/orthodonticVisitProtocol/useOrthodonticVisitProtocol.ts"))
+					? fs.readFileSync(path.join(webSrcDir, "components/orthodontics/orthodonticVisitProtocol/useOrthodonticVisitProtocol.ts"), "utf-8")
+					: "");
 
 			// Must fetch live progress
 			assert.ok(
@@ -135,7 +139,11 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 		});
 
 		it("DentalLabOrdersHubModal must synchronize and persist lab orders to backend", () => {
-			const content = fs.readFileSync(labHubPath, "utf-8");
+			const content =
+				fs.readFileSync(labHubPath, "utf-8") +
+				(fs.existsSync(path.join(webSrcDir, "components/lab/hub/useDentalLabHubActions.ts"))
+					? fs.readFileSync(path.join(webSrcDir, "components/lab/hub/useDentalLabHubActions.ts"), "utf-8")
+					: "");
 
 			// Must fetch live orders from /api/clinical/lab-orders
 			assert.ok(

@@ -252,7 +252,7 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
 	});
 }
 
-test.describe('Dental Lab Orders Live Interface Integration Proof (Mandate 8ae Anti-Vacuum)', () => {
+test.describe('Dental Lab Orders Live Interface Integration Proof (Mandate 8wy Anti-Vacuum)', () => {
 	test.beforeAll(() => {
 		fs.mkdirSync(OUT_DIR, { recursive: true });
 		fs.mkdirSync(DOCS_OUT_DIR, { recursive: true });

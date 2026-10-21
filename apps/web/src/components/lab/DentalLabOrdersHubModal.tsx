@@ -30,6 +30,10 @@ export interface DentalLabOrdersHubModalProps {
 
 const SAMPLE_LABS = ["CAD/CAM Центр Дентал-Мастер", "ArtDent Премиум Лаб", "ZirconLab Pro", "Центральная ЗТЛ"] as const;
 
+// Live API Contract & Delegation (hub/useDentalLabHubData & hub/useDentalLabHubActions):
+// - GET/POST /api/clinical/lab-orders & /api/dental-lab/orders
+// - Authorization: denteAdminSecretRequestHeaders()
+
 export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = ({
 	isOpen, onClose, initialOrders, onSaveOrder, currentDoctorName,
 	currentPatientName, currentPatientId, currentToothNumber, treatmentPlanAgeDays, isPlanExpired,

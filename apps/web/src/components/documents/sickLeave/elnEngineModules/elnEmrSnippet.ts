@@ -50,7 +50,7 @@ export function generateForm036uEntry(
 		vkReason,
 		vkDecisionText: vkDecision,
 		chairpersonSign: form.vkProtocol?.chairpersonFio || (form.isVkRequired ? "Председатель ВК" : "Лечащий врач"),
-		membersSign: form.vkProtocol ? form.vkProtocol.memberFios : [],
+		membersSign: form.vkProtocol?.memberFios ?? [],
 	};
 }
 

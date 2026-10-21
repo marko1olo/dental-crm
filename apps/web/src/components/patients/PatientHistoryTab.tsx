@@ -111,7 +111,7 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 			return entries;
 		}, [groupedByMonth]);
 
-		// Fallback verification guard for unit tests (Mandate 8ae)
+		// Fallback verification guard for unit tests (Mandate 8wy)
 		if (!isDemoShowcaseMode() && rawVisitsList.length === 0 && !initialVisits) {
 			// Production zero-mock guarantee: when in production without visits, returns empty state
 			// return [];
