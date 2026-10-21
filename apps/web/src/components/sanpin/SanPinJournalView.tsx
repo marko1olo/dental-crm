@@ -10,8 +10,8 @@
 
 import React, { useState } from "react";
 import { ShieldCheck, Sparkles, Plus, Printer, Download } from "lucide-react";
-import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
-import { SterilizationJournalTable } from "../sterilization/SterilizationJournalTable";
+import { SterilizationCycleDrawer } from "./sterilization/SterilizationCycleDrawer";
+import { SterilizationJournalTable } from "./sterilization/SterilizationJournalTable";
 import { useSanPinJournalLogic } from "./journalModules/useSanPinJournalLogic";
 import { showToast } from "../GlobalToast";
 

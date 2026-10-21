@@ -9,10 +9,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SanPinJournalView } from "../../sanpin/SanPinJournalView";
-import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../../sanpin/sterilizationModules/sterilizationCycleTypes";
-import { SterilizationCycleDrawer } from "../SterilizationCycleDrawer";
-import { SterilizationJournalTable } from "../SterilizationJournalTable";
+import { SanPinJournalView } from "../SanPinJournalView";
+import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sterilizationModules/sterilizationCycleTypes";
+import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
+import { SterilizationJournalTable } from "../sterilization/SterilizationJournalTable";
 
 describe("Sterilization Presets & Red Team Jargon Purge", () => {
 	it("provides 3 standard 1-click clinical presets for autoclaves with correct parameters", () => {
@@ -72,7 +72,7 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 
 		// Primary CTA button is never blocked (disabled=false)
 		assert.ok(html.includes("approve-cycle-primary-cta"));
-		assert.ok(html.includes("✓ Утвердить цикл стерилизации"));
+		assert.ok(html.includes("Утвердить цикл стерилизации"));
 		assert.ok(!html.match(/id="approve-cycle-primary-cta"[^>]*disabled/));
 
 		// Automatic indicator 5 class verification is visible

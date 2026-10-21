@@ -21,7 +21,7 @@ import {
 	ALL_PROCEDURE_TECH_MAPS,
 	calculateTotalDeductionCostKopecks,
 } from "../components/inventory/inventoryMath";
-import { SAMPLE_TEST_BARCODES } from "../components/sterilization/sterilizationPresets";
+import { SAMPLE_TEST_BARCODES } from "../components/sanpin/sterilization/sterilizationPresets";
 
 describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () => {
 	describe("1. Kraft Package Barcode Parsing & Expiration Validation", () => {

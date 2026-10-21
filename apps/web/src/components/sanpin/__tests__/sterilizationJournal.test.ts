@@ -23,7 +23,7 @@ import {
 	SANPIN_AZOPYRAM_TEST_PRESET,
 	SANPIN_PHENOLPHTHALEIN_TEST_PRESET,
 	STANDARD_TRAY_OPTIONS,
-} from "../sterilizationPresets";
+} from "../sterilization/sterilizationPresets";
 
 describe("SterilizationSanPiN — 1-Click Presets & Quick Tray Generation", () => {
 	it("содержит стандартные пресеты лотков (терапия, хирургия, эндодонтия)", () => {

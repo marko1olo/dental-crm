@@ -5,7 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import type { ClinicalAutoclavePreset } from "../sanpin/sterilizationModules/sterilizationCycleTypes";
+import type { ClinicalAutoclavePreset } from "../sterilizationModules/sterilizationCycleTypes";
 
 export interface BuildSterilizationPayloadArgs {
 	readonly deviceId: string;
@@ -57,6 +57,6 @@ export function buildSterilizationCyclePayload({
 		psoAzopyramNegative: true,
 		psoPhenolphthaleinNegative: true,
 		notes:
-			"✓ Автоматическая фиксация: Индикатор 5 класса пройден. Азопирам отрицательный. Пакеты списаны со склада.",
+			"Автоматическая фиксация: Индикатор 5 класса пройден. Азопирам отрицательный. Пакеты списаны со склада.",
 	};
 }

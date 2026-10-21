@@ -41,6 +41,6 @@ export { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Moda
 export { KraftPackageBarcodeModal } from "../sanpin/kraft/KraftPackageBarcodeModal";
 export { PsoRegisterTab } from "../sanpin/PsoRegisterTab";
 export { SanPinSterilizationJournal } from "../sanpin/SanPinSterilizationJournal";
-export * from "./SterilizationCycleDrawer";
-export * from "./SterilizationJournalTable";
-export * from "./sterilizationPresets";
+export * from "../sanpin/sterilization/SterilizationCycleDrawer";
+export * from "../sanpin/sterilization/SterilizationJournalTable";
+export * from "../sanpin/sterilization/sterilizationPresets";

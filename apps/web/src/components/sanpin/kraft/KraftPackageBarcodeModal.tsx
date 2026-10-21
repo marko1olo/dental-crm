@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Printer, X, ShieldCheck } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { generateThermalStickerHtml, generateKraftBatchRecords } from "./kraftPackageEngine";
@@ -30,9 +30,12 @@ export function KraftPackageBarcodeModal({
 	initialOperatorName = "Персонал ЦСО",
 }: KraftPackageBarcodeModalProps) {
 	const [submitting, setSubmitting] = useState(false);
+	const inFlightRef = useRef(false);
 	if (!isOpen) return null;
 
 	const handleRunBatchAndPrint = async () => {
+		if (inFlightRef.current || submitting) return;
+		inFlightRef.current = true;
 		try {
 			setSubmitting(true);
 			await fetch("/api/sanpin/sterilization/quick-norm-cycle", {
@@ -67,6 +70,7 @@ export function KraftPackageBarcodeModal({
 		} catch {
 			showToast("Ошибка при фиксации партии стерилизации", "error");
 		} finally {
+			inFlightRef.current = false;
 			setSubmitting(false);
 		}
 	};

@@ -10,6 +10,11 @@ export * from "./calculations.js";
 export * from "./generators.js";
 export * from "./csvExporters.js";
 export * from "./htmlRenderers.js";
+export * from "./SterilizationCycleDrawer.js";
+export * from "./SterilizationJournalTable.js";
+export * from "./SterilizationJournalToolbar.js";
+export * from "./sterilizationPresets.js";
+export * from "./useSterilizationDrawerLogic.js";
 
 export {
 	detectMissingSterilizationDays,

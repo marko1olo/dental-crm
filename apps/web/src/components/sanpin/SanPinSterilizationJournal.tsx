@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
-import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
+import { SterilizationCycleDrawer } from "./sterilization/SterilizationCycleDrawer";
 import {
 	useSanPinJournalLogic,
 	SanPinJournalToolbar,

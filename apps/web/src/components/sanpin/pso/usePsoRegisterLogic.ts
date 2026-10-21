@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { PsoCleaningLog } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
@@ -37,8 +37,11 @@ export function usePsoRegisterLogic(appLogic: any) {
 		fetchLogs();
 	}, []);
 
+	const inFlightRef = useRef(false);
+
 	const handleQuickMarkBatchNorm = async () => {
-		if (submitting) return;
+		if (inFlightRef.current || submitting) return;
+		inFlightRef.current = true;
 		try {
 			setSubmitting(true);
 			const payload = {
@@ -73,6 +76,7 @@ export function usePsoRegisterLogic(appLogic: any) {
 		} catch {
 			showToast("Сетевая ошибка при отметке партии", "error");
 		} finally {
+			inFlightRef.current = false;
 			setSubmitting(false);
 		}
 	};

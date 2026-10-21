@@ -5,7 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
@@ -19,8 +19,11 @@ export function useSanPinBatchActions(
 	setCycles: React.Dispatch<React.SetStateAction<SanPinCycleEntry[]>>,
 ) {
 	const [isAutofilling, setIsAutofilling] = useState(false);
+	const inFlightRef = useRef(false);
 
 	const handleAutofillNorms = async (targetPeriod: "month" | "shift" = "month") => {
+		if (inFlightRef.current || isAutofilling) return;
+		inFlightRef.current = true;
 		try {
 			setIsAutofilling(true);
 			const url = targetPeriod === "month" ? "/api/registers/autofill-month" : "/api/registers/sterilization/shift-batch";
@@ -29,8 +32,7 @@ export function useSanPinBatchActions(
 				: { cyclesCount: 3, deviceName: "Melag Vacuklav 23B+ (ЦСО №1)", packagingType: "kraft_pouch", itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)" };
 
 			const res = await fetch(url, {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(body),
 			}).catch(() => null);
 
@@ -44,11 +46,14 @@ export function useSanPinBatchActions(
 				showToast("Ошибка при сохранении смены в базе данных", "error");
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsAutofilling(false);
 		}
 	};
 
 	const handleQuickBatchNorm = async (batchSize = 27, regime: "134" | "121" = "134", cycleName?: string) => {
+		if (inFlightRef.current || isAutofilling) return;
+		inFlightRef.current = true;
 		try {
 			setIsAutofilling(true);
 			const isDelicate = regime === "121";
@@ -76,8 +81,7 @@ export function useSanPinBatchActions(
 			};
 
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			}).catch(() => null);
 
@@ -88,16 +92,18 @@ export function useSanPinBatchActions(
 				showToast(`${cycleLabel} автоклавирования проведён (${autoId}): ${tempC}°C (норма, расходники списаны)`, "success");
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsAutofilling(false);
 		}
 	};
 
 	const handleQuickPsoNorm = async () => {
+		if (inFlightRef.current || isAutofilling) return;
+		inFlightRef.current = true;
 		try {
 			setIsAutofilling(true);
 			const res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
 			}).catch(() => null);
 
@@ -108,6 +114,7 @@ export function useSanPinBatchActions(
 				showToast("Предстерилизационная очистка: норма (азопирам отрицательно)", "success");
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsAutofilling(false);
 		}
 	};

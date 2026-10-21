@@ -37,7 +37,7 @@ export function SterilizationDrawerFooter({
 			>
 				<CheckCircle2 size={18} />
 				<span>
-					{isSubmitting ? "Утверждение..." : "✓ Утвердить цикл стерилизации"}
+					{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}
 				</span>
 			</button>
 		</div>

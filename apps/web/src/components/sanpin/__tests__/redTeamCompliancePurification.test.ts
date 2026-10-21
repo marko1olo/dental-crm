@@ -39,7 +39,7 @@ import {
 	getSampleKraftBarcodes,
 	saveQuickAutoclaveCycleToApi,
 	saveQuickPsoRecordToApi,
-} from "../sterilizationPresets";
+} from "../sterilization/sterilizationPresets";
 
 describe("Red Team Compliance: Sterilization SanPiN 3.3686-21 Zero-Mocks Isolation", () => {
 	it("в боевом режиме (isDemo = false) список тестовых крафт-штрихкодов строго пуст (0% моков)", () => {

@@ -3,7 +3,7 @@ import { KraftPackageBarcodeModal } from "../kraft/KraftPackageBarcodeModal";
 import { AutoclaveLog257Modal } from "../autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "../waste/MedicalWasteJournalModal";
 import { SterilizerEquipmentModal } from "../SterilizerEquipmentModal";
-import { SterilizationCycleDrawer } from "../../sterilization/SterilizationCycleDrawer";
+import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
 import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 
 export interface AutoclaveRegisterModalsProps {

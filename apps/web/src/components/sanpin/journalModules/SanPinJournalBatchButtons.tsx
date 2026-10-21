@@ -1,12 +1,13 @@
 /**
  * apps/web/src/components/sanpin/journalModules/SanPinJournalBatchButtons.tsx
  *
- * Кнопки быстрого пакетного запуска автоклава и ПСО по стандарту DENTE.
+ * Кнопки быстрого пакетного запуска автоклава и предстерилизационной очистки по стандарту DENTE.
+ * 1-клик запуск цикла автоклава 134°C и пакетное закрытие смены по норме.
  * Мандат 8b: строго <= 120 строк.
  */
 
 import React from "react";
-import { CheckCircle2, Layers, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Layers, ShieldCheck, Zap } from "lucide-react";
 
 export interface SanPinJournalBatchButtonsProps {
 	readonly isAutofilling: boolean;
@@ -14,11 +15,11 @@ export interface SanPinJournalBatchButtonsProps {
 	readonly onQuickPsoNorm?: (() => void) | undefined;
 }
 
-export const SanPinJournalBatchButtons: React.FC<SanPinJournalBatchButtonsProps> = ({
+export function SanPinJournalBatchButtons({
 	isAutofilling,
 	onQuickBatchNorm,
 	onQuickPsoNorm,
-}) => {
+}: SanPinJournalBatchButtonsProps) {
 	const currentHour = new Date().getHours();
 	const defaultCycle = currentHour < 12 ? "Утренний цикл" : currentHour < 17 ? "Дневной цикл" : "Вечерний цикл";
 
@@ -28,15 +29,31 @@ export const SanPinJournalBatchButtons: React.FC<SanPinJournalBatchButtonsProps>
 				<>
 					<button
 						type="button"
-						onClick={() => onQuickBatchNorm(27, "134", defaultCycle)}
+						onClick={() => onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`)}
 						aria-busy={isAutofilling}
 						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
-						title={`Пакетная стерилизация: зафиксировать ${defaultCycle} автоклавирования (134°C, 2.1 бар, 5 мин, индикатор 5 класса норма, списание расходников)`}
-						aria-label="Подтвердить цикл стерилизации смены"
+						title="Пакетная стерилизация смены: Автоклав №1, 134°C, 2.1 бар, 5 мин, индикаторы норма, списание расходников со склада"
+						aria-label="Пакетная стерилизация смены"
 						data-testid="quick-shift-batch-btn"
 					>
-						<CheckCircle2 size={15} />
+						<Zap size={15} />
 						<span>Пакетная стерилизация смены</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							onQuickBatchNorm(27, "134", "Смена по норме: Автоклав №1 (134°C)");
+							if (onQuickPsoNorm) onQuickPsoNorm();
+						}}
+						aria-busy={isAutofilling}
+						className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+						title="Заполнить смену по норме: Автоклав №1, 134°C, 2.1 бар, индикаторы стерильно, предстерилизационная очистка: отрицательно"
+						aria-label="Заполнить смену по норме"
+						data-testid="fill-shift-norm-btn"
+					>
+						<CheckCircle2 size={15} />
+						<span>Заполнить смену по норме</span>
 					</button>
 
 					<div className="inline-flex rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 gap-1">
@@ -82,6 +99,6 @@ export const SanPinJournalBatchButtons: React.FC<SanPinJournalBatchButtonsProps>
 			)}
 		</div>
 	);
-};
+}
 
 export default SanPinJournalBatchButtons;

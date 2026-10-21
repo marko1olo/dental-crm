@@ -81,7 +81,7 @@ export function SterilizationDrawerParams({
 			<div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col gap-1.5">
 				<div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
 					<CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
-					<span>✓ Автоматический контроль параметров и индикаторов:</span>
+					<span>Автоматический контроль параметров и индикаторов:</span>
 				</div>
 				<ul className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80 m-0 pl-5 space-y-0.5 list-disc">
 					<li>

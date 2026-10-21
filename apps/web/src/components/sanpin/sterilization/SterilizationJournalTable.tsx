@@ -8,9 +8,9 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { SanPinCyclesTable } from "../sanpin/journalModules/SanPinCyclesTable";
-import { DEFAULT_CYCLES } from "../sanpin/journalModules/sanpinDefaultCycles";
-import type { SanPinCycleEntry } from "../sanpin/journalModules/sanpinJournalTypes";
+import { SanPinCyclesTable } from "../journalModules/SanPinCyclesTable";
+import { DEFAULT_CYCLES } from "../journalModules/sanpinDefaultCycles";
+import type { SanPinCycleEntry } from "../journalModules/sanpinJournalTypes";
 import { SterilizationJournalToolbar } from "./SterilizationJournalToolbar";
 
 export interface SterilizationJournalTableProps {

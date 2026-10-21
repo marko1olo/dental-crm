@@ -7,7 +7,7 @@
 
 import React from "react";
 import { Check, Clock, Flame, Zap } from "lucide-react";
-import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sanpin/sterilizationModules/sterilizationCycleTypes";
+import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sterilizationModules/sterilizationCycleTypes";
 
 export interface SterilizationDrawerPresetsProps {
 	readonly selectedPresetId: string;

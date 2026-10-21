@@ -5,14 +5,14 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { useMemo, useState } from "react";
-import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
-import { showToast } from "../GlobalToast";
+import { useMemo, useRef, useState } from "react";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { showToast } from "../../GlobalToast";
 import {
 	CLINICAL_AUTOCLAVE_1CLICK_PRESETS,
 	type ClinicalAutoclavePreset,
-} from "../sanpin/sterilizationModules/sterilizationCycleTypes";
+} from "../sterilizationModules/sterilizationCycleTypes";
 import { buildSterilizationCyclePayload } from "./sterilizationDrawerPayload";
 
 export function useSterilizationDrawerLogic(
@@ -35,6 +35,7 @@ export function useSterilizationDrawerLogic(
 		clinicDevices[0]?.id || "АК-01",
 	);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const inFlightRef = useRef(false);
 
 	const activePreset: ClinicalAutoclavePreset = useMemo(() => {
 		const found = CLINICAL_AUTOCLAVE_1CLICK_PRESETS.find(
@@ -59,7 +60,8 @@ export function useSterilizationDrawerLogic(
 	}, [selectedPresetId]);
 
 	const handleApprove = async () => {
-		if (isSubmitting) return;
+		if (inFlightRef.current || isSubmitting) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 
 		const payload = buildSterilizationCyclePayload({
@@ -95,6 +97,7 @@ export function useSterilizationDrawerLogic(
 			if (onCycleApproved) onCycleApproved(payload);
 			onClose?.();
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};

@@ -1,14 +1,13 @@
 /**
- * apps/web/src/components/sterilization/sterilizationPresetsModules/chemicalDisinfectionPresetsData.ts
+ * apps/web/src/components/sterilization/sterilizationPresetsModules/disinfectionPresets.ts
  *
- * Реестр пресетов химической дезинфекции и очистки.
- * Мандат 8b: строго <= 120 строк.
+ * Нормативные пресеты химической дезинфекции и холодной стерилизации.
+ * DENTE Clean Architecture.
  */
 
-import { CHEMICAL_COLD_STERILIZATION_PRESETS } from "./chemicalSterilizationColdData.js";
 import type { ChemicalDisinfectionPreset } from "./types.js";
 
-const BASE_DISINFECTION_PRESETS: readonly ChemicalDisinfectionPreset[] = [
+export const CHEMICAL_DISINFECTION_PRESETS: readonly ChemicalDisinfectionPreset[] = [
 	{
 		id: "alaminol_instruments_immersion",
 		tradeNameRu: "Аламинол (водный раствор 1.5%)",
@@ -79,26 +78,46 @@ const BASE_DISINFECTION_PRESETS: readonly ChemicalDisinfectionPreset[] = [
 		testStripBrandRu:
 			"Заводской готовый состав (активность подтверждена паспортом)",
 		instructionsRu:
-			"2-кратное протирание наружного корпуса салфеткой, смоченной неразбавленным средством, с интервалом 15 минут. Продувка внутренних каналов спреем-лубрикантом перед автоклавированием в крафт-пакете при 121°C/134°C.",
+			"Двукратное протирание чистой салфеткой, обильно смоченной средством, с интервалом 15 минут. Удаление масляной пленки и дезинфекция ротора наконечника без повреждения оптических световодов.",
 	},
 	{
-		id: "optimax_pro_impressions",
-		tradeNameRu: "Оптимакс Про (раствор 1.0% для слепков)",
-		activeSubstanceRu: "Комплекс третичных аминов и ЧАС с нейтральным pH",
-		concentrationPercent: 1.0,
-		exposureMinutes: 10,
+		id: "hydrogen_peroxide_cold_sterilization",
+		tradeNameRu: "Перекись водорода 6% (химическая стерилизация)",
+		activeSubstanceRu: "Водорода пероксид медицинской чистоты 6.0%",
+		concentrationPercent: 6.0,
+		exposureMinutes: 360,
 		targetGroupRu:
-			"Оттиски силиконовые (А-силикон, С-силикон), альгинатные, полиэфирные, зуботехнические ложки",
+			"Термолабильные полимерные изделия, оптика, датчики визиографа без автоклавирования",
 		methodRu: "погружение",
 		temperatureC: 20,
+		shelfLifeSolutionDays: 1,
+		sanpinClause:
+			"СанПиН 3.3686-21 п. 3638, МУ 287-113 (Химический метод стерилизации растворами)",
+		testStripBrandRu: "Химический тест концентрации перекиси водорода 6%",
+		instructionsRu:
+			"Полное погружение в стеклянную или эмалированную емкость при температуре не менее 20°C на 360 мин (6 часов) либо при 50°C на 180 мин (3 часа). 2-кратное промывание стерильной дистиллированной водой в асептических условиях.",
+	},
+	{
+		id: "glutaraldehyde_bianol_cold_sterilization",
+		tradeNameRu: "Бианол / Сайдекс 2.0% (глутаровый альдегид)",
+		activeSubstanceRu: "Глутаровый альдегид (2.0%) + глиоксаль + ЧАС",
+		concentrationPercent: 2.0,
+		exposureMinutes: 600,
+		targetGroupRu:
+			"Жесткие эндоскопы, оптоволоконные световоды, микрохирургический инструментарий",
+		methodRu: "погружение",
+		temperatureC: 21,
 		shelfLifeSolutionDays: 14,
 		sanpinClause:
-			"СанПиН 3.3686-21 п. 3594 (Обеззараживание слепков и зубопротезных заготовок)",
-		testStripBrandRu: "Дезиконт-Оптимакс 1.0%",
+			"СанПиН 3.3686-21 п. 3639 (Стерилизация растворами альдегидсодержащих средств)",
+		testStripBrandRu: "Индикаторные полоски Бианол-2%",
 		instructionsRu:
-			"Предварительное промывание проточной водой от слюны и крови, погружение в 1.0% раствор на 10 минут в закрытой кювете. Не вызывает усадки и деформации слепочных масс.",
+			"Химическая стерилизация в плотно закрытой стерильной емкости. Экспозиция 10 часов (600 мин). Извлечение стерильным пинцетом в стерильную простыню с последующей отмывкой стерильной водой.",
 	},
 ];
 
-export const CHEMICAL_DISINFECTION_PRESETS: readonly ChemicalDisinfectionPreset[] =
-	[...BASE_DISINFECTION_PRESETS, ...CHEMICAL_COLD_STERILIZATION_PRESETS];
+export function getChemicalDisinfectionPresetById(
+	id: string,
+): ChemicalDisinfectionPreset | undefined {
+	return CHEMICAL_DISINFECTION_PRESETS.find((p) => p.id === id);
+}

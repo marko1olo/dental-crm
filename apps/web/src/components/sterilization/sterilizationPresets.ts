@@ -8,4 +8,4 @@
  * ============================================================================
  */
 
-export * from "./sterilizationPresetsModules/index.js";
+export * from "../sanpin/sterilization/sterilizationPresets.js";
