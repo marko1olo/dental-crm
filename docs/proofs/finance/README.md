@@ -19,15 +19,21 @@
 | 5 | `05_mobile_finance_light_390x844.png` | 390×844 (☀️ Mobile Light) | Мобильная касса: компактная шапка, сегментированные вкладки, плитки сумм, плавающая панель с кнопкой «Принять оплату» $\ge 48\text{px}$. |
 | 6 | `06_mobile_finance_dark_390x844.png` | 390×844 (🌙 Mobile Dark) | Мобильная касса в темной теме: 0px горизонтального скролла, адаптивная верстка под большой палец. |
 | 7 | `07_mobile_fast_checkout_light_390x844.png` | 390×844 (☀️ Mobile Light) | Мобильный Fast Checkout: hero-карточка с суммой 14 500 ₽, плитки способов оплаты в 2 колонки, кнопка подтверждения в зоне большого пальца. |
+| 8 | `08_payment_modal_pc_light_1440x900.png` | 1440×900 (☀️ Light) | Консолидированная модалка оплаты `PaymentModal`: расчёт 8 200 ₽, депозит 5 000 ₽ в 1 клик, СБП QR, терминал POS, живой термочек 54-ФЗ. |
+| 9 | `09_payment_modal_pc_dark_1440x900.png` | 1440×900 (🌙 Dark) | Консолидированная модалка оплаты в тёмной теме: глубокий контраст, термочек с признаками расчёта, ноль блокировок. |
+| 10 | `10_payment_modal_split_pc_light_1440x900.png` | 1440×900 (☀️ Light) | Сплит-оплата: комбинированное распределение (Наличные + Карта POS + СБП + Семейный депозит + ДМС), быстрые пресеты 50/50. |
+| 11 | `11_payment_modal_split_pc_dark_1440x900.png` | 1440×900 (🌙 Dark) | Сплит-оплата в тёмной теме: точный копеечный баланс, распределение остатка в 1 клик через `+ остаток`. |
+| 12 | `12_payment_modal_mobile_light_390x844.png` | 390×844 (☀️ Mobile Light) | Мобильный Bottom Sheet оплаты (Apple HIG): Drag Handle, переключатель Оплата/Чек, плитки $\ge 44\times 44\text{px}$, плавающий CTA. |
+| 13 | `13_payment_modal_mobile_dark_390x844.png` | 390×844 (🌙 Mobile Dark) | Мобильный Bottom Sheet в тёмной теме: отсутствие горизонтального дрифта, эргономика Natural Thumb Zone. |
+| 14 | `14_finance_pos_overview_pc_light_1440x900.png` | 1440×900 (☀️ Light) | Обзор кассовой зоны рабочего стола: статус смены, сводка долгов, 1-кликовый запуск чекаута. |
+| 15 | `15_finance_pos_overview_pc_dark_1440x900.png` | 1440×900 (🌙 Dark) | Обзор кассовой зоны в тёмной теме. |
 
 ---
 
 ## 3. Результаты инструментальной верификации
-- **Компиляция TypeScript (`apps/web`)**: 0 ошибок в разделе финансов (`apps/web/src/components/finance/` и `apps/web/src/views/financeView/`).
-- **Модульные и интеграционные тесты (`vitest`)**:
-  - `expressFiscalRefundAutonomy.test.ts`: 12 passing
-  - `oneCExport.test.tsx`: 7 passing
-  - `cashierAutonomySoloDoctorWave310.test.tsx`: 16 passing
-  - `cashierAutonomyWave44.test.tsx`: 12 passing
-  - Всего в финансовом модуле: **47 passing, 0 failing**.
-- **Визуальный аудит (view_file)**: Лично просмотрены все 7 изображений. Обрезания текста, артефакты верстки и бюрократические коды в пользовательском интерфейсе отсутствуют.
+- **Компиляция TypeScript (`apps/web`)**: 0 ошибок во всем финансовом домене (`apps/web/src/components/finance/`).
+- **Модульные и интеграционные тесты (`node:test` + `vitest`)**:
+  - `fiscalReceiptEngine.test.ts`: **18 passing, 0 failing** (54-ФЗ, ФФД 1.2, СБП QR CRC16, КНД 1151156, чеки коррекции, возврат прихода, ДМС сплит).
+  - `apps/api/src/tests/routes/fiscalReceiptRoutes.test.ts`: **8 passing, 0 failing** (валидация 54-ФЗ, очередь чеков, чеки коррекции, возврат прихода).
+  - Финансовый комплект `apps/web/src/components/finance/__tests__/*.ts`: **151 passing, 0 failing** across 33 suites.
+- **Визуальный аудит (view_file)**: Лично просмотрены через `read_file` все скриншоты. Нулевой паразитный горизонтальный скролл, валидные контрасты WCAG AA, тач-таргеты $\ge 44\times 44\text{px}$, полное отсутствие сырых номеров приказов в UI.

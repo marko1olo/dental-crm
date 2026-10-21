@@ -4,6 +4,7 @@ import {
 	CANONICAL_LAB_WORK_TYPES,
 	type DentalLabConstructionType,
 	formatLabConstructionTitle,
+	formatLabMaterial,
 	is3DScanUrl,
 	type LabPromptDialogState,
 	type ReadyInClinicLabOrder,
@@ -13,6 +14,7 @@ import { LabOrderCard } from "../components/lab/LabOrderCard";
 
 export {
 	formatLabConstructionTitle,
+	formatLabMaterial,
 	is3DScanUrl,
 	type LabPromptDialogState,
 	type ReadyInClinicLabOrder,
