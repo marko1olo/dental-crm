@@ -61,6 +61,46 @@ export function executeSterilizationBatchCycle(
 	deductions.push(indDeduction);
 	if (indOverdraft) overdraftItems.push(indDeduction);
 
+	// 3. Списание перчаток смотровых (2 пары на смену стерилизации)
+	const glovesItem = warehouseItems.find(
+		(it) =>
+			it.id === "nitrile_gloves_pair" ||
+			it.name.toLowerCase().includes("перчатк"),
+	);
+	const glovesStock = glovesItem ? glovesItem.stockQuantity : 0;
+	const glovesAfter = glovesStock - 2;
+	const glovesOverdraft = glovesAfter < 0;
+	const glovesDeduction: StockDeductionSummaryItem = {
+		id: glovesItem?.id || "nitrile_gloves_pair",
+		name: glovesItem?.name || "Перчатки нитриловые смотровые (2 пары)",
+		quantity: 2,
+		currentStock: glovesStock,
+		afterStock: glovesAfter,
+		isOverdraft: glovesOverdraft,
+	};
+	deductions.push(glovesDeduction);
+	if (glovesOverdraft) overdraftItems.push(glovesDeduction);
+
+	// 4. Списание дезинфицирующей салфетки для лотков (1 шт)
+	const wipeItem = warehouseItems.find(
+		(it) =>
+			it.id === "antiseptic_alcohol_wipe" ||
+			it.name.toLowerCase().includes("салфетк"),
+	);
+	const wipeStock = wipeItem ? wipeItem.stockQuantity : 0;
+	const wipeAfter = wipeStock - 1;
+	const wipeOverdraft = wipeAfter < 0;
+	const wipeDeduction: StockDeductionSummaryItem = {
+		id: wipeItem?.id || "antiseptic_alcohol_wipe",
+		name: wipeItem?.name || "Салфетка дезинфицирующая для поверхностей",
+		quantity: 1,
+		currentStock: wipeStock,
+		afterStock: wipeAfter,
+		isOverdraft: wipeOverdraft,
+	};
+	deductions.push(wipeDeduction);
+	if (wipeOverdraft) overdraftItems.push(wipeDeduction);
+
 	const isSoftOverdraft = overdraftItems.length > 0;
 	const nurseWarningBanner = isSoftOverdraft
 		? `⚠️ Требуется закупка: расходники списаны в мягкий минус (${overdraftItems.map((o) => `${o.name}: ${o.afterStock} шт`).join(", ")})`

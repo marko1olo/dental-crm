@@ -52,6 +52,16 @@ export async function executeQuickPackageWriteOff(
 		});
 	}
 
+	if (packageId === "sterilization_kit") {
+		return TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
+			organizationId,
+			count: multiplier,
+			userId: effectiveUserId,
+			visitId,
+			notes: notes ?? `Списание расходников стерилизации лотка/набора x${multiplier}`,
+		});
+	}
+
 	if (packageId === "surgery") {
 		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 			organizationId,

@@ -54,6 +54,57 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 		});
 	});
 
+	// 1-клик списание комплекта стерилизации лотков/инструментов ЦСО
+	server.post<{
+		Params: { organizationId: string };
+		Body?: { count?: number; visitId?: string | null; notes?: string | null };
+	}>("/:organizationId/quick-writeoff-sterilization-kit", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff sterilization kit",
+		);
+		if (!resolvedOrgId) return;
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
+				organizationId,
+				count: body.count ?? 1,
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
+	// Dual-Route Parity: непараметризованный роут списания комплекта стерилизации ЦСО
+	server.post<{
+		Body?: { count?: number; visitId?: string | null; notes?: string | null; organizationId?: string };
+	}>("/quick-writeoff-sterilization-kit", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff sterilization kit fallback",
+		);
+		if (!resolvedOrgId) return;
+		const targetOrgId = request.body?.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+
+		const body = request.body ?? {};
+		return withTenantCtx(targetOrgId, async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
+				organizationId: targetOrgId,
+				count: body.count ?? 1,
+				userId: request.user?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+	});
+
 	// 1-клик списание пустых карпул анестетиков медсестрой (СанПиН 3.3686-21, отходы Класса Б)
 	server.post<{
 		Params: { organizationId: string };

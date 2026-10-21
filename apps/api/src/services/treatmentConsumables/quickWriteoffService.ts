@@ -475,3 +475,209 @@ export async function quickWriteoffCarpules(
 		message,
 	};
 }
+
+/**
+ * 1-клик списание набора расходников стерилизации лотков/инструментов ЦСО:
+ * крафт-пакет (1 шт.), индикатор 5 класса (1 шт.), перчатки (2 пары), дезсалфетка (1 шт.) на каждый лоток.
+ * Реализует мягкий овердрафт склада без блокировки работы ЦСО (Мандаты 8e и 8n).
+ */
+export async function quickWriteoffSterilizationKit(
+	tx: DbExecutor,
+	params: {
+		organizationId: string;
+		count?: number | undefined;
+		userId?: string | null | undefined;
+		visitId?: string | null | undefined;
+		notes?: string | null | undefined;
+	},
+): Promise<{
+	success: boolean;
+	isOverdraft?: boolean;
+	warning?: string | undefined;
+	deductedItems: Array<{
+		itemId: string;
+		itemName: string;
+		quantity: number;
+		unit: string;
+		remainingStock: number;
+		isOverdraft: boolean;
+	}>;
+	warnings: string[];
+	message: string;
+}> {
+	const { organizationId, count = 1, userId = null, visitId = null, notes = null } = params;
+	const kitMultiplier = Math.max(1, Math.min(100, count));
+
+	const kitDefinitions = [
+		{
+			patterns: ["крафт-пакет", "крафт пакет", "пакет для стерилизации", "pouch", "kraft"],
+			defaultName: "Крафт-пакеты самоклеящиеся 100х200 мм",
+			category: "consumable",
+			unit: "шт.",
+			qty: 1 * kitMultiplier,
+			defaultCost: "12",
+		},
+		{
+			patterns: ["индикатор 5", "индикатор стерилизации", "медис", "интест", "индикатор"],
+			defaultName: "Индикаторы стерилизации 5 класс (Винар МедИС / ИнТест)",
+			category: "consumable",
+			unit: "шт.",
+			qty: 1 * kitMultiplier,
+			defaultCost: "8",
+		},
+		{
+			patterns: ["перчатк", "gloves"],
+			defaultName: "Перчатки нитриловые смотровые (пара)",
+			category: "ppe",
+			unit: "пары",
+			qty: 2 * kitMultiplier,
+			defaultCost: "35",
+		},
+		{
+			patterns: ["салфетка дезинфицирующая", "салфетки дезинфицирующие", "дез салфетк", "аламинол", "дезинфекц"],
+			defaultName: "Салфетки дезинфицирующие спиртовые для поверхностей",
+			category: "consumable",
+			unit: "шт.",
+			qty: 1 * kitMultiplier,
+			defaultCost: "6",
+		},
+	];
+
+	// 1. Получаем существующую номенклатуру организации
+	const allOrgItems = await tx
+		.select()
+		.from(inventoryItems)
+		.where(eq(inventoryItems.organizationId, organizationId));
+
+	const resolvedItems: Array<{
+		item: typeof inventoryItems.$inferSelect;
+		qty: number;
+	}> = [];
+
+	for (const def of kitDefinitions) {
+		let matched = allOrgItems.find((inv) =>
+			def.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
+		);
+
+		// Если позиция отсутствует, мгновенно создаем (Zero-friction / Zero Dead-Ends)
+		if (!matched) {
+			const [created] = await tx
+				.insert(inventoryItems)
+				.values({
+					organizationId,
+					name: def.defaultName,
+					category: def.category,
+					unit: def.unit,
+					stockQuantity: "0",
+					currentQty: "0",
+					criticalThreshold: "10",
+					unitCostRub: def.defaultCost,
+				})
+				.returning();
+			if (created) {
+				matched = created;
+				allOrgItems.push(created);
+			}
+		}
+
+		if (matched) {
+			resolvedItems.push({ item: matched, qty: def.qty });
+		}
+	}
+
+	// 2. Блокируем строки FOR UPDATE в сортированном порядке ID (deadlock-free)
+	const sortedIds = resolvedItems.map((r) => r.item.id).sort();
+	const lockedRows = await tx
+		.select()
+		.from(inventoryItems)
+		.where(
+			and(
+				inArray(inventoryItems.id, sortedIds),
+				eq(inventoryItems.organizationId, organizationId),
+			),
+		)
+		.for("update");
+
+	const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));
+
+	const deductedItems: Array<{
+		itemId: string;
+		itemName: string;
+		quantity: number;
+		unit: string;
+		remainingStock: number;
+		isOverdraft: boolean;
+	}> = [];
+	const warnings: string[] = [];
+	const txRows: Array<typeof inventoryTransactions.$inferInsert> = [];
+	let hasAnyOverdraft = false;
+
+	for (const target of resolvedItems) {
+		const inv = lockedMap.get(target.item.id);
+		if (!inv) continue;
+
+		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+		const newStock = Number((baseStock - target.qty).toFixed(4));
+		const isOverdraft = newStock < 0;
+		if (isOverdraft) hasAnyOverdraft = true;
+
+		await tx
+			.update(inventoryItems)
+			.set({
+				stockQuantity: String(newStock),
+				currentQty: String(newStock),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(inventoryItems.id, inv.id),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			);
+
+		txRows.push({
+			organizationId,
+			visitId,
+			itemId: inv.id,
+			inventoryItemId: inv.id,
+			quantityChanged: String(-target.qty),
+			qty: String(-target.qty),
+			unitCostRub: inv.unitCostRub ?? "0",
+			transactionType: isOverdraft ? "emergency_overdraft" : "sterilization_kit_writeoff",
+			isOverdraft,
+			userId,
+			notes: isOverdraft
+				? `Списано под операцию, требуется оприходование (набор стерилизации ЦСО x${kitMultiplier}: дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."})`
+				: (notes || `Списание комплекта стерилизации ЦСО (лотков: ${kitMultiplier} шт.)`),
+		});
+
+		if (isOverdraft) {
+			warnings.push(
+				`Позиция «${inv.name}»: списано под операцию, требуется оприходование (остаток: ${newStock} ${inv.unit ?? "ед."}).`,
+			);
+		}
+
+		deductedItems.push({
+			itemId: inv.id,
+			itemName: inv.name,
+			quantity: target.qty,
+			unit: inv.unit ?? "шт.",
+			remainingStock: newStock,
+			isOverdraft,
+		});
+	}
+
+	if (txRows.length > 0) {
+		await tx.insert(inventoryTransactions).values(txRows);
+	}
+
+	return {
+		success: true,
+		isOverdraft: hasAnyOverdraft,
+		...(hasAnyOverdraft ? { warning: "soft_overdraft" } : {}),
+		deductedItems,
+		warnings,
+		message: `Комплект стерилизации ЦСО списан (обработано лотков/наборов: ${kitMultiplier} шт.).`,
+	};
+}

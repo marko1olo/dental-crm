@@ -33,6 +33,7 @@ import {
 import {
 	quickWriteoffCarpules,
 	quickWriteoffStandardKit,
+	quickWriteoffSterilizationKit,
 } from "./quickWriteoffService.js";
 import {
 	quickWriteoffShiftBundle,
@@ -68,6 +69,7 @@ export class TreatmentConsumablesService {
 	static getInventoryAlerts = getInventoryAlerts;
 
 	static quickWriteoffStandardKit = quickWriteoffStandardKit;
+	static quickWriteoffSterilizationKit = quickWriteoffSterilizationKit;
 	static quickWriteoffCarpules = quickWriteoffCarpules;
 	static quickWriteoffShiftBundle = quickWriteoffShiftBundle;
 	static quickWriteoffVisitBundle = quickWriteoffVisitBundle;

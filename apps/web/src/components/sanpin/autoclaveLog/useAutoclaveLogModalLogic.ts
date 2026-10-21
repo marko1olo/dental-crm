@@ -54,6 +54,36 @@ export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 	const handleSaveNewRecord = async (newRec: Form257Record) => {
 		setRecords((prev) => [newRec, ...prev]);
 		setActiveTab("journal_257");
+
+		try {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			};
+			await fetch("/api/sanpin/sterilization", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					deviceName: newRec.sterilizerId || "Melag Vacuklav 23 B+",
+					autoclaveId: newRec.sterilizerId || "АК-01",
+					cycleNumber: newRec.cycleNumber,
+					itemsDescription: newRec.itemsDescriptionRu || "Стоматологический инструментарий",
+					packagingType: newRec.packagingType === "kraft_pouch_sealed" ? "kraft_heat_sealed" : "kraft_self_adhesive",
+					temperatureCelsius: Number(newRec.sensors.actualTemperatureCelsius || 134),
+					pressureBar: Number(newRec.sensors.actualPressureBar || 2.1),
+					durationMin: Number(newRec.sensors.actualExposureMinutes || 5),
+					indicatorType: "class5_integrating",
+					passedIndicator: true,
+					notes: newRec.notes || undefined,
+					barcode: newRec.barcode || undefined,
+				}),
+			});
+		} catch (err) {
+			console.warn("Failed to persist autoclave cycle to backend", err);
+		}
 	};
 	const handleDeleteRecord = (id: string) => setRecords((prev) => prev.filter((r) => r.id !== id));
 	const handleVerifyRecord = (id: string, headNurseName: string) => {

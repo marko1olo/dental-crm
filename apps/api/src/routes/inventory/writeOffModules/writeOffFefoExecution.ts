@@ -7,6 +7,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
+import { isValidUuid } from "@dental/shared";
 import { withTenantCtx } from "../../../db/rls.js";
 import { inventoryItems } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -138,6 +139,27 @@ export async function handleDeductRequest(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
+	// Валидация Idempotency-Key / X-Idempotency-Key (UUID / UUIDv7) от даблкликов медперсонала
+	const rawIdemKey =
+		request.headers["idempotency-key"] ??
+		request.headers["x-idempotency-key"] ??
+		request.headers["x-idempotence-key"] ??
+		(rawBody && typeof rawBody === "object"
+			? (rawBody as Record<string, unknown>).idempotencyKey ??
+			  (rawBody as Record<string, unknown>).clientMutationId
+			: null);
+
+	const idemKeyStr = Array.isArray(rawIdemKey) ? rawIdemKey[0] : rawIdemKey;
+	if (idemKeyStr && typeof idemKeyStr === "string" && idemKeyStr.trim()) {
+		const trimmedKey = idemKeyStr.trim();
+		if (!isValidUuid(trimmedKey)) {
+			return reply.status(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Заголовок Idempotency-Key / X-Idempotency-Key должен содержать валидный UUID (рекомендуется UUIDv7)",
+			});
+		}
+	}
+
 	const parsed = inventoryDeductBatchBodySchema.safeParse(rawBody);
 	if (!parsed.success) {
 		return reply.status(400).send({
@@ -208,6 +230,10 @@ export async function handleDeductRequest(
 			count: deductionResults.length,
 			items: deductionResults,
 			hasOverdraft,
+			isOverdraft: hasOverdraft,
+			warning: hasOverdraft
+				? "Зафиксирован технический перерасход (мягкий овердрафт). Клинический процесс не блокируется."
+				: undefined,
 			message: hasOverdraft
 				? `Списано позиций по FEFO: ${deductionResults.length} (зафиксирован мягкий овердрафт, клинический процесс не блокируется)`
 				: `Списано позиций по FEFO: ${deductionResults.length}`,

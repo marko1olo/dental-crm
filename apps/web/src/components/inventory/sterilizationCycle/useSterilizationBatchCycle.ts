@@ -4,6 +4,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import { showToast } from "../../GlobalToast.js";
 import { executeSterilizationBatchCycle } from "./sterilizationBatchCycleEngine.js";
@@ -81,10 +82,48 @@ export function useSterilizationBatchCycle({
 			await deductStock(organizationId, stockDeductions, {
 				allowOverdraft: true,
 			});
-			showToast(
-				`Цикл зафиксирован: ${totalPackages} лотков/пакетов обработано. Расходники списаны со склада!`,
-				"success",
-			);
+
+			try {
+				const activeDesc = packages
+					.filter((p) => p.count > 0)
+					.map((p) => `${p.name} x${p.count}`)
+					.join(", ");
+				const res = await fetch("/api/sanpin/sterilization/quick-norm", {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						batchSize: totalPackages,
+						regime: "standard_134",
+						packagingType: "kraft_self_adhesive",
+						operatorName,
+						itemsDescription: `Партия автоклавирования (${totalPackages} шт.): ${activeDesc}`,
+					}),
+				});
+				if (res.ok) {
+					const data = (await res.json().catch(() => null)) as { log?: { id?: string } } | null;
+					if (data?.log?.id) {
+						(result.cycleLog as { id: string }).id = data.log.id;
+					}
+				}
+			} catch {
+				// Фоновое сохранение не должно прерывать интерфейс медсестры
+			}
+
+			void useInventoryStore.getState().fetchItems(organizationId).catch(() => {});
+
+			const hasOverdraft = result.deductions.some((d) => d.isOverdraft);
+			if (hasOverdraft) {
+				showToast(
+					`Цикл зафиксирован: ${totalPackages} лотков/пакетов обработано. Внимание: расходники списаны в дефицит (требуется оприходование).`,
+					"info",
+				);
+			} else {
+				showToast(
+					`Цикл зафиксирован: ${totalPackages} лотков/пакетов обработано. Расходники списаны со склада!`,
+					"success",
+				);
+			}
+
 			if (onCycleCompleted) onCycleCompleted(result);
 			onClose();
 		} catch (err) {
