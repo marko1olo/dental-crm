@@ -192,8 +192,9 @@ scripts/*.bak
 proof_*.png
 schedule_pc_*.png
 visit_diary_pc_*.png
-screenshots/
-!screenshots/migration-wizard/
+/screenshots/
+!/screenshots/migration-wizard/
+!docs/screenshots/
 
 # Файл с именем NUL — всегда следствие ошибки, а не чей-то замысел.
 #

@@ -114,15 +114,16 @@ export function usePatientLogic({
 	} = mutations;
 
 	useEffect(() => {
-		if (!dashboard) return;
+		if (!dashboard || !dashboard.patients || dashboard.patients.length === 0) return;
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setSelectedPatientId((current: any) =>
-			current &&
-			(dashboard?.patients ?? []).some((patient) => patient.id === current)
-				? current
-				: (activePatient?.id ?? null),
-		);
-	}, [activePatient?.id, dashboard?.patients, setSelectedPatientId, dashboard]);
+		setSelectedPatientId((current: any) => {
+			if (current && (dashboard.patients ?? []).some((patient: any) => patient.id === current)) {
+				return current;
+			}
+			const target = activePatient?.id ?? null;
+			return current === target ? current : target;
+		});
+	}, [activePatient?.id, dashboard?.patients, setSelectedPatientId]);
 
 	const paymentComposerPatientIdRef = useRef<TrackedComposerPatientId>(
 		PAYMENT_COMPOSER_PATIENT_UNTRACKED,

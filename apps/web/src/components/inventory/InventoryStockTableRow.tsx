@@ -307,15 +307,15 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 			<td
 				className="inventory-col-actions"
 				style={{
-					padding: "8px 12px 8px 8px",
+					padding: "8px 10px 8px 4px",
 					verticalAlign: "middle",
 					textAlign: "right",
 					whiteSpace: "nowrap",
-					width: 270,
-					minWidth: 270,
+					width: 280,
+					minWidth: 280,
 				}}
 			>
-				<div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">
+				<div className="flex items-center justify-end gap-1 whitespace-nowrap shrink-0">
 					{expiryTraffic.isBlocked ? (
 						/* Красный: блокировка отпуска пациентам + Акт утилизации */
 						<button
@@ -333,11 +333,11 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 						/* Разрешено: списание по FEFO с поддержкой мягкого овердрафта */
 						<>
 							{/* Компактный степпер количества: [-] [qty] [+] */}
-							<div className="inline-flex items-center border border-[var(--line)] rounded-lg bg-[var(--paper)] h-7 overflow-hidden shrink-0 shadow-xs mr-1">
+							<div className="inline-flex items-center border border-[var(--line)] rounded-lg bg-[var(--paper)] h-7 overflow-hidden shrink-0 shadow-xs mr-0.5">
 								<button
 									type="button"
 									onClick={() => onStepQuantity?.(-1)}
-									className="w-6 h-full flex items-center justify-center hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer text-xs font-bold transition-colors select-none"
+									className="w-5 h-full flex items-center justify-center hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer text-xs font-bold transition-colors select-none"
 									title="Уменьшить количество на 1"
 									data-testid={`btn-qty-minus-${item.id}`}
 								>
@@ -352,14 +352,14 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 											Math.max(1, parseInt(e.target.value, 10) || 1),
 										)
 									}
-									className="w-10 h-full text-center text-xs font-bold bg-transparent text-[var(--ink)] border-x border-[var(--line)] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+									className="w-8 h-full text-center text-xs font-bold bg-transparent text-[var(--ink)] border-x border-[var(--line)] outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
 									title="Количество для списания или оприходования"
 									data-testid={`input-qty-${item.id}`}
 								/>
 								<button
 									type="button"
 									onClick={() => onStepQuantity?.(1)}
-									className="w-6 h-full flex items-center justify-center hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer text-xs font-bold transition-colors select-none"
+									className="w-5 h-full flex items-center justify-center hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer text-xs font-bold transition-colors select-none"
 									title="Увеличить количество на 1"
 									data-testid={`btn-qty-plus-${item.id}`}
 								>
@@ -370,7 +370,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							<button
 								type="button"
 								onClick={() => onDeductItem(item, writeQty, isOverdraft)}
-								className="h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+								className="h-7 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 								title={
 									isOverdraft
 										? "Списать расход сверх остатка (мягкий овердрафт): клинический процесс не блокируется"
@@ -388,7 +388,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 							<button
 								type="button"
 								onClick={() => onReceiveItem(item, writeQty)}
-								className="h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+								className="h-7 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 								title="Оприходовать материал на склад"
 								data-testid={`btn-item-arrival-${item.id}`}
 							>

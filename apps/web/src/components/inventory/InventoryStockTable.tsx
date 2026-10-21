@@ -363,8 +363,8 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								textAlign: "right",
-								width: 270,
-								minWidth: 270,
+								width: 280,
+								minWidth: 280,
 								whiteSpace: "nowrap",
 							}}
 						>
