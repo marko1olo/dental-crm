@@ -9,7 +9,10 @@ import type { IncomingCallPopupController } from "./types";
 import { useIncomingCallQuickActions } from "./useIncomingCallQuickActions";
 import { usePopupKeyboardAndClickOutside } from "./usePopupKeyboardAndClickOutside";
 
-export function useIncomingCallPopupController(initialExpanded = false): IncomingCallPopupController {
+export function useIncomingCallPopupController(
+	initialExpanded = false,
+	suppressCallModal = false,
+): IncomingCallPopupController {
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
@@ -26,7 +29,15 @@ export function useIncomingCallPopupController(initialExpanded = false): Incomin
 	const dashboard = ctx?.dashboard;
 	const currentView = useAppStore((s) => s.currentView);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
-	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
+	const hash = typeof window !== "undefined" ? window.location.hash : "";
+	const isSterileClinicalScreen =
+		(currentView as string) === "visit" ||
+		(currentView as string) === "odontogram" ||
+		(currentView as string) === "periodontics" ||
+		hash.includes("#visit") ||
+		hash.includes("#odontogram") ||
+		hash.includes("#periodontics");
+	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit" || isSterileClinicalScreen || Boolean(suppressCallModal);
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	const isDndActive = agentState === "dnd";
 	const isConnected = useTelephonyStore((s) => s.isWsConnected);
@@ -64,7 +75,8 @@ export function useIncomingCallPopupController(initialExpanded = false): Incomin
 	return {
 		...incomingData, ...quickActions,
 		activeCall, activeLineId, secondaryLine, isMuted, isDndActive,
-		isConnected, isDoctorMode, isFullScreenStudioActive, isCallDrawerOpen,
+		isConnected, isDoctorMode, suppressCallModal: Boolean(suppressCallModal),
+		isFullScreenStudioActive, isCallDrawerOpen,
 		isPopupExpanded, isCallAnswered, isCallEnded, newPatientNameInput,
 		showTransferPanel, transferType, showBadgeMoreMenu, showQuickBooking,
 		showOutcomePanel, currentView, selectedWorkspaceRole, setIsExpanded,

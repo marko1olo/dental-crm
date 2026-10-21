@@ -27,11 +27,11 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 		setShowTransferPanel, setShowOutcomePanel, isCapturingLead, smsCopied,
 	} = ctrl;
 
-	if (typeof document === "undefined" || !isDrawerOpen || hasPrimaryModal || isFullScreenStudioActive) {
+	if (!isDrawerOpen || hasPrimaryModal || isFullScreenStudioActive) {
 		return null;
 	}
 
-	return createPortal(
+	const content = (
 		<>
 			<section
 				className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[9995] bg-[var(--paper-strong)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
@@ -88,9 +88,14 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 			</section>
 
 			<TelephonyDialerModal isOpen={isDialerOpen} onClose={() => setIsDialerOpen(false)} />
-		</>,
-		document.body,
+		</>
 	);
+
+	if (typeof document === "undefined") {
+		return content;
+	}
+
+	return createPortal(content, document.body);
 }
 
 export default TelephonyDrawer;

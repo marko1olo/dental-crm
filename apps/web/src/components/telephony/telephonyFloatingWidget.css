@@ -38,6 +38,12 @@
 		box-sizing: border-box;
 		overflow-x: clip;
 	}
+	.dnt-telephony-island-pill {
+		padding: 4px 8px;
+		gap: 4px;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
 }
 
 /* Incoming Call Popup Badge Container: Desktop bottom-right, Mobile top sheet */

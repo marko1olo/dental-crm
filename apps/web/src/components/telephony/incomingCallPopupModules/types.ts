@@ -15,6 +15,7 @@ export interface IncomingCallPopupController extends IncomingCallDataResult {
 	isDndActive: boolean;
 	isConnected: boolean;
 	isDoctorMode: boolean;
+	suppressCallModal: boolean;
 	isFullScreenStudioActive: boolean;
 	isCallDrawerOpen: boolean;
 	isPopupExpanded: boolean;

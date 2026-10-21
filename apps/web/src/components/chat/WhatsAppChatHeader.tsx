@@ -28,7 +28,7 @@ export interface WhatsAppChatHeaderProps {
 	onRefresh: () => void;
 	onCallPatient: () => void;
 	onLaunchWhatsAppNative: () => void;
-	onClose?: () => void;
+	onClose?: (() => void) | undefined;
 	upcomingAppointment?: {
 		formattedDate: string;
 		formattedTime: string;

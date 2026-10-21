@@ -50,7 +50,15 @@ export function useTelephonyFloatingState({
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const crmCurrentView = useAppStore((s) => s.currentView);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
-	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
+	const currentHash = typeof window !== "undefined" ? window.location.hash : "";
+	const isSterileClinicalScreen =
+		(crmCurrentView as string) === "visit" ||
+		(crmCurrentView as string) === "odontogram" ||
+		(crmCurrentView as string) === "periodontics" ||
+		currentHash.includes("#visit") ||
+		currentHash.includes("#odontogram") ||
+		currentHash.includes("#periodontics");
+	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || isSterileClinicalScreen;
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
 

@@ -1,6 +1,7 @@
 import { ChevronDown, Headphones, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
 import React, { useRef } from "react";
 import { formatDurationTimer } from "../../store/telephonyStore";
+import { formatShortCallerName } from "./incomingCallPopupModules/incomingCallUtils";
 import { showToast } from "../GlobalToast";
 import { TelephonyWidgetHeader } from "./TelephonyWidgetHeader";
 import { TelephonyActiveCallHud } from "./telephonyFloatingWidget/TelephonyActiveCallHud";
@@ -38,25 +39,27 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 					<div className={`dnt-pill-icon ${s.activeCall ? "dnt-pill-icon--active" : ""}`}>
 						{s.activeCall ? <PhoneIncoming size={14} /> : <Headphones size={14} />}
 					</div>
-					<div className="flex items-center gap-2 min-w-0 pr-1">
-						<div className="min-w-0 flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<span className="truncate max-w-[160px] sm:max-w-[220px]" title={s.activeCall ? s.callerName : "Софтфон клиники"}>{s.activeCall ? s.callerName : "Софтфон клиники"}</span>
-							{s.activeCall && <span className="dnt-widget-timer-pill">{formatDurationTimer(s.elapsedSeconds)}</span>}
+					<div className="flex items-center gap-1.5 min-w-0 pr-0.5">
+						<div className="min-w-0 flex items-center gap-1 text-xs font-bold text-[var(--ink,#0f172a)]">
+							<span className="truncate max-w-[70px] sm:max-w-[220px]" title={s.activeCall ? s.callerName : "Софтфон клиники"}>
+								{s.activeCall ? formatShortCallerName(s.callerName) : "Софтфон клиники"}
+							</span>
+							{s.activeCall && <span className="dnt-widget-timer-pill text-[11px] px-1.5">{formatDurationTimer(s.elapsedSeconds)}</span>}
 						</div>
 					</div>
-					<div className="flex items-center gap-1.5 shrink-0 ml-1">
+					<div className="flex items-center gap-1 shrink-0 ml-0.5">
 						{s.activeCall && !s.isCallAnswered && (
-							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600" title="Ответить на звонок">
-								<PhoneCall size={13} /><span>Ответить</span>
+							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[30px] sm:min-h-[34px] px-2 sm:px-3 rounded-full bg-emerald-600 text-xs" title="Ответить на звонок">
+								<PhoneCall size={13} /><span className="hidden xs:inline sm:inline">Ответить</span>
 							</button>
 						)}
 						{s.activeCall && (
-							<button type="button" onClick={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} className="dnt-btn-hangup" title="Сбросить вызов">
-								<PhoneOff size={13} /><span>Сброс</span>
+							<button type="button" onClick={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} className="dnt-btn-hangup min-h-[30px] sm:min-h-[34px] px-2 sm:px-2.5 text-xs" title="Сбросить вызов">
+								<PhoneOff size={13} /><span className="hidden xs:inline sm:inline">Сброс</span>
 							</button>
 						)}
-						<button type="button" onClick={() => s.setIsExpanded(true)} className="dnt-btn-icon" title="Развернуть детали вызова" aria-label="Развернуть детали вызова">
-							<ChevronDown size={16} />
+						<button type="button" onClick={() => s.setIsExpanded(true)} className="dnt-btn-icon min-h-[30px] min-w-[30px]" title="Развернуть детали вызова" aria-label="Развернуть детали вызова">
+							<ChevronDown size={15} />
 						</button>
 						<button type="button" onClick={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }} className="dnt-btn-icon" title="Закрыть уведомление" aria-label="Закрыть уведомление">
 							<X size={15} />

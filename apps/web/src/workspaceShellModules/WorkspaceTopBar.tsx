@@ -11,6 +11,7 @@ import {
 	IncomingCallPopup,
 	resolveTelephonyWsUrl,
 } from "../components/telephony/IncomingCallPopup";
+import { IncomingCallModal } from "../components/telephony/IncomingCallModal";
 import { useWebsocket } from "../hooks/useWebsocket";
 import { staffRoleChoices } from "../lib/clinicCapabilities";
 import { useAppStore } from "../store/appStore";
@@ -29,6 +30,7 @@ import {
 export {
 	formatDisplayClinicName,
 	IncomingCallPopup,
+	IncomingCallModal,
 	PerspectiveSwitcher,
 	resolveTelephonyWsUrl,
 };
@@ -89,8 +91,16 @@ export function WorkspaceTopbar({
 		return () => window.removeEventListener("dente:open-lan-qr", handleOpen);
 	}, []);
 
-	const isDoctorMode =
-		selectedWorkspaceRole === "doctor" || effectiveView === "visit";
+	const hash = typeof window !== "undefined" ? window.location.hash : "";
+	const isSterileZone =
+		selectedWorkspaceRole === "doctor" ||
+		(effectiveView as string) === "visit" ||
+		(effectiveView as string) === "odontogram" ||
+		(effectiveView as string) === "periodontics" ||
+		hash.includes("#visit") ||
+		hash.includes("#odontogram") ||
+		hash.includes("#periodontics");
+	const isDoctorMode = isSterileZone;
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
 		(activeCall || isCallDrawerOpen) &&

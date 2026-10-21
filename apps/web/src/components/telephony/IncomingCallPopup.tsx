@@ -24,8 +24,13 @@ export * from "./initiateOutboundCall";
 export * from "./incomingCallPopupModules";
 export { resolveTelephonyWsUrl } from "../../store/telephonyStore";
 
-export function IncomingCallPopup(props?: { defaultExpanded?: boolean }): React.JSX.Element | null {
-	const ctrl = useIncomingCallPopupController(props?.defaultExpanded);
+export interface IncomingCallPopupProps {
+	defaultExpanded?: boolean;
+	suppressCallModal?: boolean;
+}
+
+export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Element | null {
+	const ctrl = useIncomingCallPopupController(props?.defaultExpanded, props?.suppressCallModal);
 	const {
 		activeCall,
 		currentCall,
