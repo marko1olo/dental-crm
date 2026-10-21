@@ -13,7 +13,8 @@ export {
 
 export interface FallbackStatutoryTemplateRecord {
 	id: null;
-	stomxId: number | null;
+	externalTemplateId?: number | null;
+	stomxId?: number | null; // Совместимость с внешними интеграциями
 	systemAlias: string;
 	name: string;
 	categoryId: number;
@@ -71,12 +72,12 @@ export function resolveFallbackStatutoryTemplateByIdentifier(
 	identifier: string,
 ): FallbackStatutoryTemplateRecord | null {
 	const isNumeric = /^\d+$/.test(identifier);
-	const stomxIdNum = isNumeric ? Number.parseInt(identifier, 10) : undefined;
+	const externalTemplateIdNum = isNumeric ? Number.parseInt(identifier, 10) : undefined;
 	const alias = !isNumeric ? identifier : undefined;
 	const knownHtml =
 		(alias ? ALL_DEFAULT_TEMPLATES_BY_ALIAS[alias] : undefined) ??
-		(stomxIdNum
-			? ALL_DEFAULT_TEMPLATES_BY_ALIAS[getDefaultTemplateContentHtml(stomxIdNum)]
+		(externalTemplateIdNum
+			? ALL_DEFAULT_TEMPLATES_BY_ALIAS[getDefaultTemplateContentHtml(externalTemplateIdNum)]
 			: undefined);
 
 	if (!knownHtml) {
@@ -85,7 +86,8 @@ export function resolveFallbackStatutoryTemplateByIdentifier(
 
 	return {
 		id: null,
-		stomxId: stomxIdNum ?? null,
+		externalTemplateId: externalTemplateIdNum ?? null,
+		stomxId: externalTemplateIdNum ?? null,
 		systemAlias: identifier,
 		name: identifier,
 		categoryId: 1,
@@ -98,7 +100,7 @@ export function resolveFallbackStatutoryTemplateByIdentifier(
 }
 
 /**
- * Возвращает HTML-контент шаблона из БД либо нормативный эталон по stomxId / systemAlias.
+ * Возвращает HTML-контент шаблона из БД либо нормативный эталон по externalTemplateId / systemAlias.
  */
 export function resolveRenderTemplateContentHtml(
 	identifier: string,

@@ -6,6 +6,5 @@
 
 export * from "./sterilizationCycleTypes";
 export * from "./CycleParametersForm";
-export * from "./PouchBarcodeScanner";
-export * from "./CycleChemicalIndicatorSelect";
+export * from "./CyclePresetsSelector";
 export { SterilizationCycleModal } from "./SterilizationCycleModal";

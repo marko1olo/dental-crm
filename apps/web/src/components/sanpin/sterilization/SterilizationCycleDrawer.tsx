@@ -17,9 +17,9 @@ import { useSterilizationDrawerLogic } from "./useSterilizationDrawerLogic";
 export interface SterilizationCycleDrawerProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly onCycleApproved?: (record?: unknown) => void;
-	readonly defaultBatchSize?: number;
-	readonly clinicDevices?: readonly { id: string; brandModelRu: string }[];
+	readonly onCycleApproved?: ((record?: unknown) => void) | undefined;
+	readonly defaultBatchSize?: number | undefined;
+	readonly clinicDevices?: readonly { id: string; brandModelRu: string }[] | undefined;
 }
 
 export function SterilizationCycleDrawer({

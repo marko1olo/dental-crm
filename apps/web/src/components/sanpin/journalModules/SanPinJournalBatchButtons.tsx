@@ -37,7 +37,7 @@ export function SanPinJournalBatchButtons({
 						data-testid="quick-shift-batch-btn"
 					>
 						<Zap size={15} />
-						<span>Пакетная стерилизация смены</span>
+						<span>Запустить цикл автоклава (134°C)</span>
 					</button>
 
 					<button

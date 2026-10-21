@@ -162,7 +162,7 @@ export async function registerTemplateCrudRoutes(
 
 	/**
 	 * GET /api/document-templates/:id
-	 * Получение одного шаблона по UUID, stomxId или systemAlias
+	 * Получение одного шаблона по UUID, числовому externalTemplateId или systemAlias
 	 */
 	app.get(
 		"/api/document-templates/:id",

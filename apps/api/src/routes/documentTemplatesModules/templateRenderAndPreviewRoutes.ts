@@ -484,6 +484,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				ok: true,
 				template: {
 					id: templateRecord?.id ?? null,
+					externalTemplateId: templateRecord?.stomxId ?? null,
 					stomxId: templateRecord?.stomxId ?? null,
 					name: templateName,
 					systemAlias,

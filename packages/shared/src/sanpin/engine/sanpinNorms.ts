@@ -36,6 +36,18 @@ export const STATUTORY_STERILIZATION_REGIMES: readonly SterilizationRegimeDefini
 		sanpinStandardClauseRu: "СанПиН 3.3686-21 п. 3624 / Режим I усиленный",
 	},
 	{
+		id: "steam_132_20min",
+		nameRu: "Паровой 132°C / 20 мин (2.0 атм / бар) — Базовый паровой (ГОСТ / СанПиН)",
+		methodType: "steam_autoclave",
+		targetTemperatureCelsius: 132,
+		targetPressureBar: 2.0,
+		exposureTimeMinutes: 20,
+		tempToleranceCelsius: { min: 132, max: 136 },
+		pressureToleranceBar: { min: 1.9, max: 2.2 },
+		recommendedUsageRu: "Изделия из коррозионностойких металлов, стекла, текстиля",
+		sanpinStandardClauseRu: "СанПиН 3.3686-21 Таблица 3.12 (Паровой метод, режим 2)",
+	},
+	{
 		id: "steam_121_20min",
 		nameRu: "Паровой 121°C / 20 мин (1.1 атм / бар) — Щадящий для термолабильных изделий",
 		methodType: "steam_autoclave",

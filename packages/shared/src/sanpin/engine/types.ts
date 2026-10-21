@@ -41,6 +41,7 @@ export interface PsoJournalRecord {
 export type SterilizationRegimeId =
 	| "steam_134_5min"
 	| "steam_134_20min"
+	| "steam_132_20min"
 	| "steam_121_20min"
 	| "dry_heat_180_60min";
 

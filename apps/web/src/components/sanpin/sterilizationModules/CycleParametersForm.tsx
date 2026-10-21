@@ -1,8 +1,9 @@
 import React from "react";
-import { CheckCircle2, Flame, Clock, Zap } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import type { ClinicAutoclaveDevice } from "../autoclave/autoclaveDeviceTypes";
 import type { SterilizationRegimeOption } from "./sterilizationCycleTypes";
-import { STATUTORY_REGIMES_OPTIONS, CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "./sterilizationCycleTypes";
+import { STATUTORY_REGIMES_OPTIONS } from "./sterilizationCycleTypes";
+import { CyclePresetsSelector } from "./CyclePresetsSelector";
 
 export interface CycleParametersFormProps {
 	readonly cycleDate: string;
@@ -35,160 +36,73 @@ export function CycleParametersForm({
 }: CycleParametersFormProps) {
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-			{/* Top row: Date, Time, Cycle # */}
 			<div className="sanpin-form-row">
 				<div className="sanpin-form-group">
 					<label className="sanpin-form-label">Дата проведения</label>
-					<input
-						type="date" required value={cycleDate}
-						onChange={(e) => onCycleDateChange(e.target.value)}
-						className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem" }}
-					/>
+					<input type="date" required value={cycleDate} onChange={(e) => onCycleDateChange(e.target.value)} className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem" }} />
 				</div>
 				<div className="sanpin-form-group">
 					<label className="sanpin-form-label">Время цикла</label>
-					<input
-						type="time" required value={cycleTime}
-						onChange={(e) => onCycleTimeChange(e.target.value)}
-						className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem" }}
-					/>
+					<input type="time" required value={cycleTime} onChange={(e) => onCycleTimeChange(e.target.value)} className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem" }} />
 				</div>
 				<div className="sanpin-form-group">
 					<label className="sanpin-form-label">№ цикла за смену</label>
-					<input
-						type="number" min={1} max={30} required value={cycleNumber}
-						onChange={(e) => onCycleNumberChange(parseInt(e.target.value, 10) || 1)}
-						className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem", fontWeight: 700 }}
-					/>
+					<input type="number" min={1} max={30} required value={cycleNumber} onChange={(e) => onCycleNumberChange(parseInt(e.target.value, 10) || 1)} className="sanpin-input" style={{ minHeight: "36px", fontSize: "0.85rem", fontWeight: 700 }} />
 				</div>
 			</div>
 
-			{/* 3 эталонных клинических пресета в 1 клик */}
-			<div className="sanpin-form-group" style={{ margin: 0 }}>
-				<label className="sanpin-form-label" style={{ margin: "0 0 0.35rem 0", fontWeight: 700 }}>
-					Клинические пресеты цикла (выбор в 1 клик)
-				</label>
-				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.5rem" }}>
-					{CLINICAL_AUTOCLAVE_1CLICK_PRESETS.map((p, idx) => {
-						const isSelected = selectedRegimeId === p.regimeOptionId;
-						const IconComponent = idx === 0 ? Flame : idx === 1 ? Clock : Zap;
-						return (
-							<button
-								key={p.id}
-								type="button"
-								onClick={() => {
-									onRegimeChange(p.regimeOptionId);
-									onActualTempChange(p.temperatureC);
-									onActualPressureChange(p.pressureBar);
-									onActualDurationChange(p.durationMin);
-								}}
-								className={`touch-manipulation ${isSelected ? "border-[var(--teal,#0d9488)] ring-2 ring-[var(--teal,#0d9488)]/20" : "border-[var(--line,#e2e8f0)]"}`}
-								style={{
-									display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.55rem 0.7rem",
-									borderRadius: "10px", border: isSelected ? "2px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
-									background: isSelected ? "color-mix(in srgb, var(--teal,#0d9488) 8%, var(--paper,#ffffff))" : "var(--paper-soft, #f8fafc)",
-									cursor: "pointer", textAlign: "left", transition: "all 0.15s ease",
-								}}
-								data-testid={`preset-click-${p.id}`}
-							>
-								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.35rem" }}>
-									<span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-										<IconComponent size={13} color="var(--teal, #0d9488)" />
-										<span>{p.title}</span>
-									</span>
-									{isSelected && <CheckCircle2 size={13} color="var(--teal, #0d9488)" style={{ flexShrink: 0 }} />}
-								</div>
-								<span style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)" }}>{p.subtitle}</span>
-							</button>
-						);
-					})}
-				</div>
-			</div>
+			<CyclePresetsSelector
+				selectedRegimeId={selectedRegimeId}
+				onSelectPreset={(p) => {
+					onRegimeChange(p.regimeOptionId);
+					onActualTempChange(p.temperatureC);
+					onActualPressureChange(p.pressureBar);
+					onActualDurationChange(p.durationMin);
+				}}
+			/>
 
-			{/* Apparatus selector */}
 			<div className="sanpin-form-group">
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-					<label className="sanpin-form-label" style={{ margin: 0, fontWeight: 700 }}>
-						Стерилизационный аппарат клиники
-					</label>
-					<button
-						type="button" onClick={onFillNormIn1Click} className="sanpin-btn sanpin-btn-secondary"
-						style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
-					>
+					<label className="sanpin-form-label" style={{ margin: 0, fontWeight: 700 }}>Стерилизационный аппарат клиники</label>
+					<button type="button" onClick={onFillNormIn1Click} className="sanpin-btn sanpin-btn-secondary" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
 						<CheckCircle2 size={13} color="#16a34a" /> <span>Заполнить нормой</span>
 					</button>
 				</div>
-
 				<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.5rem" }}>
-					<select
-						value={selectedDeviceId} onChange={(e) => onDeviceChange(e.target.value)}
-						className="sanpin-select" style={{ minHeight: "36px", fontSize: "0.85rem" }}
-					>
-						{clinicDevices.length > 0 ? (
-							clinicDevices.map((d) => (
-								<option key={d.id} value={d.id}>
-									{d.brandModelRu} {d.serialNumber ? `(№${d.serialNumber})` : ""}
-								</option>
-							))
-						) : (
+					<select value={selectedDeviceId} onChange={(e) => onDeviceChange(e.target.value)} className="sanpin-select" style={{ minHeight: "36px", fontSize: "0.85rem" }}>
+						{clinicDevices.length > 0 ? clinicDevices.map((d) => (
+							<option key={d.id} value={d.id}>{d.brandModelRu} {d.serialNumber ? `(№${d.serialNumber})` : ""}</option>
+						)) : (
 							<>
 								<option value="melag_vacuklav_23b">Melag Vacuklav 23 B+ (Автоклав B-класса, 22 л)</option>
 								<option value="euronda_e9">Euronda E9 Next Med (Автоклав B-класса, 24 л)</option>
 								<option value="gp20_spu">ГП-20 СПУ (Сухожаровой шкаф 180°C, 20 л)</option>
-								<option value="glassperlen_bead">Гласперленовый стерилизатор (шариковый 240°C)</option>
 							</>
 						)}
 					</select>
-
-					<select
-						value={selectedRegimeId} onChange={(e) => onRegimeChange(e.target.value)}
-						className="sanpin-select" style={{ minHeight: "36px", fontSize: "0.85rem" }}
-					>
+					<select value={selectedRegimeId} onChange={(e) => onRegimeChange(e.target.value)} className="sanpin-select" style={{ minHeight: "36px", fontSize: "0.85rem" }}>
 						{STATUTORY_REGIMES_OPTIONS.map((reg) => (
 							<option key={reg.id} value={reg.id}>{reg.nameRu}</option>
 						))}
 					</select>
 				</div>
-
-				<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-					{selectedRegime.descriptionRu}
-				</div>
+				<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>{selectedRegime.descriptionRu}</div>
 			</div>
 
-			{/* Physical parameters row: Temperature, Pressure, Duration */}
-			<div
-				style={{
-					display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem", padding: "0.75rem",
-					borderRadius: "8px", background: "var(--paper-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)",
-				}}
-			>
+			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem", padding: "0.75rem", borderRadius: "8px", background: "var(--paper-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)" }}>
 				<div className="sanpin-form-group" style={{ margin: 0 }}>
 					<label className="sanpin-form-label" style={{ fontSize: "0.75rem" }}>Температура (°C)</label>
-					<input
-						type="number" step={0.1} required value={actualTemp}
-						onChange={(e) => onActualTempChange(parseFloat(e.target.value) || 0)}
-						className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }}
-					/>
+					<input type="number" step={0.1} required value={actualTemp} onChange={(e) => onActualTempChange(parseFloat(e.target.value) || 0)} className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }} />
 					<span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>Норма: {selectedRegime.targetTemperature}°C</span>
 				</div>
-
 				<div className="sanpin-form-group" style={{ margin: 0 }}>
-					<label className="sanpin-form-label" style={{ fontSize: "0.75rem" }}>Давление (атм / бар)</label>
-					<input
-						type="number" step={0.05} required value={actualPressure}
-						onChange={(e) => onActualPressureChange(parseFloat(e.target.value) || 0)}
-						className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }}
-					/>
-					<span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>Норма: {selectedRegime.targetPressure} атм</span>
+					<label className="sanpin-form-label" style={{ fontSize: "0.75rem" }}>Давление (бар)</label>
+					<input type="number" step={0.05} required value={actualPressure} onChange={(e) => onActualPressureChange(parseFloat(e.target.value) || 0)} className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }} />
+					<span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>Норма: {selectedRegime.targetPressure} бар</span>
 				</div>
-
 				<div className="sanpin-form-group" style={{ margin: 0 }}>
-					<label className="sanpin-form-label" style={{ fontSize: "0.75rem" }}>Время выдержки (мин)</label>
-					<input
-						type="number" step={0.5} required value={actualDuration}
-						onChange={(e) => onActualDurationChange(parseFloat(e.target.value) || 0)}
-						className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }}
-					/>
+					<label className="sanpin-form-label" style={{ fontSize: "0.75rem" }}>Выдержка (мин)</label>
+					<input type="number" step={0.5} required value={actualDuration} onChange={(e) => onActualDurationChange(parseFloat(e.target.value) || 0)} className="sanpin-input" style={{ minHeight: "34px", fontWeight: 700 }} />
 					<span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>Норма: {selectedRegime.exposureMinutes} мин</span>
 				</div>
 			</div>

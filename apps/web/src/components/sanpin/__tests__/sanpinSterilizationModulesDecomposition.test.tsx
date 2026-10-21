@@ -15,8 +15,7 @@ import {
 
 import {
 	CycleParametersForm,
-	PouchBarcodeScanner,
-	CycleChemicalIndicatorSelect,
+	CyclePresetsSelector,
 	SterilizationCycleModal as ModularSterilizationModal,
 	STATUTORY_REGIMES_OPTIONS,
 	STATUTORY_PACKAGING_PRESETS,
@@ -36,8 +35,7 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 		assert.equal(typeof SterilizationCycleModal, "function");
 		assert.equal(typeof ModularSterilizationModal, "function");
 		assert.equal(typeof CycleParametersForm, "function");
-		assert.equal(typeof PouchBarcodeScanner, "function");
-		assert.equal(typeof CycleChemicalIndicatorSelect, "function");
+		assert.equal(typeof CyclePresetsSelector, "function");
 		assert.equal(typeof AutoclaveCycleRowItem, "function");
 		assert.equal(typeof AutoclaveIndicatorBadge, "function");
 		assert.equal(typeof AutoclaveRegisterRows, "function");
@@ -51,7 +49,7 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 		assert.ok(lineCount <= 50, `Facade must be <= 50 lines, got ${lineCount}`);
 	});
 
-	it("verifies all decomposed modules in sterilizationModules are strictly <= 250 lines", () => {
+	it("verifies all decomposed modules in sterilizationModules are strictly <= 120 lines (Mandate 8b)", () => {
 		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizationModules");
 		assert.ok(fs.existsSync(decomposedDir), "Decomposed directory must exist");
 		const files = fs.readdirSync(decomposedDir);
@@ -59,7 +57,7 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 			if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
 			const filePath = path.join(decomposedDir, file);
 			const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/).length;
-			assert.ok(lines <= 250, `Module ${file} exceeds 250 lines limit (${lines} lines)`);
+			assert.ok(lines <= 120, `Module ${file} exceeds 120 lines limit (${lines} lines)`);
 		}
 	});
 
@@ -107,55 +105,30 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 		assert.ok(html.includes("Заполнить нормой"), "Must have fill norm action");
 	});
 
-	it("renders PouchBarcodeScanner with kraft packaging and barcode controls", () => {
-		const packaging = STATUTORY_PACKAGING_PRESETS[0]!;
+	it("renders CyclePresetsSelector with 1-click clinical presets", () => {
 		const html = renderToStaticMarkup(
-			<PouchBarcodeScanner
-				itemsDescription="Базовый набор терапевта"
-				onItemsDescriptionChange={() => {}}
-				packsCount={10}
-				onPacksCountChange={() => {}}
-				packagingPresetId={packaging.id}
-				onPackagingPresetIdChange={() => {}}
-				selectedPackaging={packaging}
-				expiryDateStr="11.11.2026 (до 30 сут.)"
-				scannedBarcode="KP-20261012-004"
-				onScannedBarcodeChange={() => {}}
-				operatorName="Иванова А. С."
-				onOperatorNameChange={() => {}}
+			<CyclePresetsSelector
+				selectedRegimeId="steam_134_5min"
+				onSelectPreset={() => {}}
 			/>
 		);
 
-		assert.ok(html.includes("Стерилизуемые изделия"), "Must have items section");
-		assert.ok(html.includes("KP-20261012-004"), "Must render current barcode");
-		assert.ok(html.includes("Сгенерировать"), "Must render barcode generation button");
-		assert.ok(html.includes("Иванова А. С."), "Must render operator name");
+		assert.ok(html.includes("Клинические пресеты цикла"), "Must render presets title");
+		assert.ok(html.includes("134"), "Must render 134 deg preset");
+		assert.ok(html.includes("121"), "Must render 121 deg preset");
 	});
 
-	it("renders CycleChemicalIndicatorSelect with 5-point chamber and PSO controls", () => {
+	it("renders SterilizationCycleModal as clean 1-click Drawer (Mandate 8e / HIG)", () => {
 		const html = renderToStaticMarkup(
-			<CycleChemicalIndicatorSelect
-				recommendedIndicatorName="Медтест ВИНАР КТ-5 (134°C / 5 мин)"
-				indicatorExternalPassed={true}
-				onIndicatorExternalPassedChange={() => {}}
-				chamberPoints={INITIAL_5_POINTS}
-				onToggleChamberPoint={() => {}}
-				psoAzopyramNegative={true}
-				onPsoAzopyramChange={() => {}}
-				psoPhenolphthaleinNegative={true}
-				onPsoPhenolphthaleinChange={() => {}}
-				psoSampleSize={3}
-				onPsoSampleSizeChange={() => {}}
-				isCycleSterileCompliant={true}
+			<ModularSterilizationModal
+				isOpen={true}
+				onClose={() => {}}
 			/>
 		);
 
-		assert.ok(html.includes("Предстерилизационная очистка") || html.includes("Контроль ПСО"), "Must have PSO section");
-		assert.ok(html.includes("Азопирам"), "Must have azopyram indicator");
-		assert.ok(html.includes("Фенолфталеин"), "Must have phenolphthalein indicator");
-		assert.ok(html.includes("КТ-1"), "Must have 5 chamber test points KT-1");
-		assert.ok(html.includes("КТ-5"), "Must have 5 chamber test points KT-5");
-		assert.ok(html.includes("контроль качества") || html.includes("СанПиН 3.3686-21"), "Must reference quality control or statutory rule");
+		assert.ok(html.includes("Утверждение цикла"), "Must render drawer title");
+		assert.ok(html.includes("data-testid=\"sterilization-cycle-drawer\""), "Must have drawer testid");
+		assert.ok(!html.includes("КТ-1"), "Must not have 5-point camera simulation");
 	});
 
 	it("renders AutoclaveIndicatorBadge and AutoclaveCycleRowItem correctly", () => {
