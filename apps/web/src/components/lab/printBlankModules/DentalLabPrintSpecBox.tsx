@@ -6,13 +6,13 @@ export interface DentalLabPrintSpecBoxProps {
 	shadeIncisal: string;
 	translucency: string;
 	mamelons: boolean;
-	opalescence?: boolean;
+	opalescence?: boolean | undefined;
 	calcifications: boolean;
-	frameworkTrialDate?: string | null;
-	ceramicTrialDate?: string | null;
-	dueDate?: string | null;
+	frameworkTrialDate?: string | null | undefined;
+	ceramicTrialDate?: string | null | undefined;
+	dueDate?: string | null | undefined;
 	deliveryTimeSlot: string;
-	clinicalNotes?: string | null;
+	clinicalNotes?: string | null | undefined;
 }
 
 export function DentalLabPrintSpecBox({

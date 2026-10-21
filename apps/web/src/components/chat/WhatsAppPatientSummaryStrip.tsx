@@ -4,8 +4,8 @@ export interface WhatsAppPatientSummaryStripProps {
 	upcomingAppointment?: {
 		formattedDate: string;
 		formattedTime: string;
-		doctorName?: string;
-	} | null;
+		doctorName?: string | null | undefined;
+	} | null | undefined;
 	financialSummary: {
 		hasDebt?: boolean;
 		formattedDebt?: string;

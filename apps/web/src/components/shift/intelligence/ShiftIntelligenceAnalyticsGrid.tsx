@@ -8,7 +8,7 @@ export interface ShiftIntelligenceAnalyticsGridProps {
 		title?: string;
 		fitScore?: number;
 		lowFrictionNextStep?: string;
-	};
+	} | undefined;
 	readonly mostLoadedResource?: any;
 }
 

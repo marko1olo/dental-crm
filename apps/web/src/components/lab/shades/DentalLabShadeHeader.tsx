@@ -36,7 +36,7 @@ export function DentalLabShadeHeader({
 						type="button"
 						onClick={() => onSystemChange("classical")}
 						data-active={currentSystem === "classical" ? "true" : "false"}
-						className={`dente-segmented-item min-h-[36px] ${currentSystem === "classical" ? "active" : ""}`}
+						className={`dente-segmented-item min-h-[44px] sm:min-h-[36px] ${currentSystem === "classical" ? "active" : ""}`}
 						data-testid="vita-classical-tab"
 					>
 						VITA Classical
@@ -45,7 +45,7 @@ export function DentalLabShadeHeader({
 						type="button"
 						onClick={() => onSystemChange("3d_master")}
 						data-active={currentSystem === "3d_master" ? "true" : "false"}
-						className={`dente-segmented-item min-h-[36px] ${currentSystem === "3d_master" ? "active" : ""}`}
+						className={`dente-segmented-item min-h-[44px] sm:min-h-[36px] ${currentSystem === "3d_master" ? "active" : ""}`}
 						data-testid="vita-3d-master-tab"
 					>
 						VITA 3D-Master
@@ -55,7 +55,7 @@ export function DentalLabShadeHeader({
 							type="button"
 							onClick={() => onSystemChange("bleach")}
 							data-active={currentSystem === "bleach" ? "true" : "false"}
-							className={`dente-segmented-item min-h-[36px] ${currentSystem === "bleach" ? "active" : ""}`}
+							className={`dente-segmented-item min-h-[44px] sm:min-h-[36px] ${currentSystem === "bleach" ? "active" : ""}`}
 							data-testid="vita-bleach-tab"
 						>
 							Bleach
@@ -65,7 +65,7 @@ export function DentalLabShadeHeader({
 						type="button"
 						onClick={() => onSystemChange("stump")}
 						data-active={currentSystem === "stump" ? "true" : "false"}
-						className={`dente-segmented-item min-h-[36px] ${currentSystem === "stump" ? "active" : ""}`}
+						className={`dente-segmented-item min-h-[44px] sm:min-h-[36px] ${currentSystem === "stump" ? "active" : ""}`}
 						data-testid="vita-stump-tab"
 					>
 						Культя (ND)

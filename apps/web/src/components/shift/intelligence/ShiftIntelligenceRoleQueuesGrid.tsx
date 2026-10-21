@@ -3,9 +3,9 @@ import { UserCheck } from "lucide-react";
 import { countLabel } from "../../../lib/russianPlural";
 
 export interface ShiftIntelligenceRoleQueuesGridProps {
-	readonly roleQueues?: any[];
+	readonly roleQueues?: any[] | undefined;
 	readonly activeQueueRole?: any;
-	readonly staffRoleLabels?: Record<string, string>;
+	readonly staffRoleLabels?: Record<string, string> | undefined;
 }
 
 export const ShiftIntelligenceRoleQueuesGrid: React.FC<ShiftIntelligenceRoleQueuesGridProps> = ({

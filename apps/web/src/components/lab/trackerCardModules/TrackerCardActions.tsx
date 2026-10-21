@@ -15,6 +15,19 @@ export interface TrackerCardActionsProps {
 	handleWarrantyRework: (orderId: string) => void;
 }
 
+function getAlertBadgeClass(severity: LabDeadlineAlertResult["severity"]): string {
+	switch (severity) {
+		case "CRITICAL_TODAY":
+		case "OVERDUE":
+		case "VISIT_CONFLICT":
+			return "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300";
+		case "URGENT_TODAY":
+			return "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300";
+		default:
+			return "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300";
+	}
+}
+
 export function TrackerCardActions({
 	order, alert, nextStatus, openActionMenuId, setOpenActionMenuId,
 	handleOpenReadyInClinicPrompt, handleAdvanceStatus, handleOpenEditOrder, handleWarrantyRework,
@@ -25,7 +38,7 @@ export function TrackerCardActions({
 		<div className="space-y-2 pt-1 border-t border-[var(--line-subtle,#e2e8f0)]">
 			{/* Alert Banner */}
 			{alert.hasAlert && (
-				<div className={`p-2 rounded-lg text-[11px] font-bold border flex items-center gap-1.5 ${alert.badgeClass}`}>
+				<div className={`p-2 rounded-lg text-[11px] font-bold border flex items-center gap-1.5 ${getAlertBadgeClass(alert.severity)}`}>
 					<AlertOctagon className="w-3.5 h-3.5 shrink-0" />
 					<span className="truncate">{alert.messageRu}</span>
 				</div>

@@ -7,15 +7,15 @@ import {
 import { useChairRentalSessionTimer } from "./useChairRentalSessionTimer";
 
 export interface UseChairRentalWidgetLogicParams {
-	initialGrossRevenueRub?: number;
-	initialHoursWorked?: number;
-	initialLabExpensesRub?: number;
-	initialConsumablesRub?: number;
-	initialRentalActive?: boolean;
-	initialChairId?: string;
-	externalOpenActTrigger?: number;
-	onEconomicsChange?: (econ: ChairRentalResult) => void;
-	onRentalSessionChange?: (session: { isActive: boolean; chairId: string; startedAt?: string }) => void;
+	initialGrossRevenueRub?: number | undefined;
+	initialHoursWorked?: number | undefined;
+	initialLabExpensesRub?: number | undefined;
+	initialConsumablesRub?: number | undefined;
+	initialRentalActive?: boolean | undefined;
+	initialChairId?: string | undefined;
+	externalOpenActTrigger?: number | undefined;
+	onEconomicsChange?: ((econ: ChairRentalResult) => void) | undefined;
+	onRentalSessionChange?: ((session: { isActive: boolean; chairId: string; startedAt?: string }) => void) | undefined;
 }
 
 export function useChairRentalWidgetLogic(params: UseChairRentalWidgetLogicParams) {

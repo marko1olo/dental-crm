@@ -6,8 +6,8 @@ export interface FdiPickerHeaderProps {
 	setSelectedTeeth: (teeth: number[]) => void;
 	selectQuadrant: (teeth: number[]) => void;
 	handleConnectBridgeSpan: () => void;
-	jawScope?: JawScope | null;
-	constructionType?: string;
+	jawScope?: JawScope | null | undefined;
+	constructionType?: string | undefined;
 }
 
 export function FdiPickerHeader({

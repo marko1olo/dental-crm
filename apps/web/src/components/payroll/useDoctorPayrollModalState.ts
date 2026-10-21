@@ -12,14 +12,14 @@ import { fetchDoctorEarningsApi } from "./fetchDoctorEarningsApi";
 
 export interface UseDoctorPayrollModalParams {
 	readonly isOpen: boolean;
-	readonly clinicName?: string;
-	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[];
-	readonly initialDoctorId?: string;
-	readonly initialServices?: readonly DoctorCompletedServiceItem[];
-	readonly initialPeriodStart?: string;
-	readonly initialPeriodEnd?: string;
-	readonly initialBasePercentage?: number;
-	readonly useClinicalCategoryRates?: boolean;
+	readonly clinicName?: string | undefined;
+	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[] | undefined;
+	readonly initialDoctorId?: string | undefined;
+	readonly initialServices?: readonly DoctorCompletedServiceItem[] | undefined;
+	readonly initialPeriodStart?: string | undefined;
+	readonly initialPeriodEnd?: string | undefined;
+	readonly initialBasePercentage?: number | undefined;
+	readonly useClinicalCategoryRates?: boolean | undefined;
 }
 
 export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) {

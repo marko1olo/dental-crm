@@ -7,9 +7,9 @@ import { ScheduleMobileSheetPatientContact } from "./ScheduleMobileSheetPatientC
 export interface ScheduleMobileSheetPatientInfoProps {
 	selectedMobileAppt: Appointment;
 	mPatName: string;
-	mPatObj?: Dashboard["patients"][number] | null;
-	mDocObj?: Dashboard["clinicSettings"]["staff"][number] | null;
-	mChairObj?: { id: string; name: string; color?: string } | null;
+	mPatObj?: Dashboard["patients"][number] | null | undefined;
+	mDocObj?: Dashboard["clinicSettings"]["staff"][number] | null | undefined;
+	mChairObj?: { id: string; name: string; color?: string | null | undefined } | null | undefined;
 	mBalance: number | null;
 	mAllergyAlert: string | null;
 	mTeeth: string[];

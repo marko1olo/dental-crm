@@ -16,10 +16,10 @@ export interface LabOrderCardActionsProps {
 	handleReclamation: (order: DentalLabOrderData) => void;
 	handleOpenEditOrder: (order: DentalLabOrderData) => void;
 	copyPortalLink: (token?: string) => void;
-	handleOpenReadyInClinicPrompt?: (order: DentalLabOrderData) => void;
-	handlePayFromCashbox?: (order: DentalLabOrderData) => void;
-	handleMarkInstalled?: (order: DentalLabOrderData) => void;
-	handleView3DScan?: (order: DentalLabOrderData) => void;
+	handleOpenReadyInClinicPrompt?: ((order: DentalLabOrderData) => void) | undefined;
+	handlePayFromCashbox?: ((order: DentalLabOrderData) => void) | undefined;
+	handleMarkInstalled?: ((order: DentalLabOrderData) => void) | undefined;
+	handleView3DScan?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
 export function LabOrderCardActions({

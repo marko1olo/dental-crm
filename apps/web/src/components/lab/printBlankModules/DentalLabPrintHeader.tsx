@@ -5,9 +5,9 @@ export interface DentalLabPrintHeaderProps {
 	clinicName: string;
 	gostOrderNumber: string;
 	formattedOrderDate: string;
-	dueDate?: string | null;
+	dueDate?: string | null | undefined;
 	deliveryTimeSlot: string;
-	deadlineInfo?: { badgeClass: string; labelRu: string } | null;
+	deadlineInfo?: { badgeClass: string; labelRu: string } | null | undefined;
 	isDraft: boolean;
 	isSigned: boolean;
 	handlePrint: () => void;

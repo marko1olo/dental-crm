@@ -30,7 +30,7 @@ export function FdiPickerMobileView({
 									key={t}
 									type="button"
 									onClick={() => toggleTooth(t)}
-									className={`lab-tooth-btn !min-w-[28px] xs:!min-w-[32px] sm:!min-w-[34px] !min-h-[38px] !w-full !px-0 text-xs font-bold ${
+									className={`lab-tooth-btn !min-w-[34px] xs:!min-w-[38px] sm:!min-w-[44px] !min-h-[44px] !w-full !px-0 text-xs font-bold ${
 										selectedTeeth.includes(t) ? "is-selected" : ""
 									}`}
 									title={`Зуб ${t}`}

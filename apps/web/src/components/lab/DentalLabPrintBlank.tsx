@@ -8,16 +8,16 @@ import { DentalLabPrintSignaturesAndQr } from "./printBlankModules/DentalLabPrin
 
 export interface DentalLabPrintBlankProps {
 	gostOrderNumber: string; secureToken: string; formPatientName: string; formDoctorName: string;
-	clinicName?: string; clinicPhone?: string; doctorPhone?: string; deliveryTimeSlot?: string;
-	selectedTeeth: number[]; jawScope?: JawScope | null; constructionType: string; material: string;
+	clinicName?: string | undefined; clinicPhone?: string | undefined; doctorPhone?: string | undefined; deliveryTimeSlot?: string | undefined;
+	selectedTeeth: number[]; jawScope?: JawScope | null | undefined; constructionType: string; material: string;
 	shadeSystem: "classical" | "3d_master" | "bleach"; shadeClassical: string; shade3dMaster: string;
 	shadeBleach: string; shadeCervical: string; shadeBody: string; shadeIncisal: string; shadeStump: string;
-	translucency: string; mamelons: boolean; calcifications: boolean; opalescence?: boolean;
-	impressionType?: string; impressionDate?: string | null; frameworkTrialDate?: string | null;
-	ceramicTrialDate?: string | null; dueDate?: string | null; clinicalNotes: string;
-	totalLabPriceRub?: number; portalUrl: string; handlePrint: () => void;
-	isDraft?: boolean; isSigned?: boolean; currentStage?: string; status?: string;
-	occlusalScheme?: string; contactTightness?: string; surfaceTexture?: string; cementGapMicrons?: number;
+	translucency: string; mamelons: boolean; calcifications: boolean; opalescence?: boolean | undefined;
+	impressionType?: string | undefined; impressionDate?: string | null | undefined; frameworkTrialDate?: string | null | undefined;
+	ceramicTrialDate?: string | null | undefined; dueDate?: string | null | undefined; clinicalNotes: string;
+	totalLabPriceRub?: number | undefined; portalUrl: string; handlePrint: () => void;
+	isDraft?: boolean | undefined; isSigned?: boolean | undefined; currentStage?: string | undefined; status?: string | undefined;
+	occlusalScheme?: string | undefined; contactTightness?: string | undefined; surfaceTexture?: string | undefined; cementGapMicrons?: number | undefined;
 }
 
 const PRINT_CSS = `@media print { @page { size: A4 portrait; margin: 8mm 10mm; } html, body { background: #ffffff !important; color: #000000 !important; } .print\\:hidden, button { display: none !important; } #printable-lab-order-sheet { border: none !important; box-shadow: none !important; background: #ffffff !important; } #printable-lab-order-sheet .bg-slate-50 { background-color: transparent !important; } .break-inside-avoid { break-inside: avoid !important; } }`;

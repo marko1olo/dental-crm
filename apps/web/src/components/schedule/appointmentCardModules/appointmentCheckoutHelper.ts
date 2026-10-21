@@ -8,7 +8,7 @@ interface ExtendedAppointment extends Appointment {
 	amountRub?: number | string | null;
 	totalRub?: number | string | null;
 	serviceTitle?: string | null;
-	comment?: string | null;
+	comment: string | null;
 }
 
 export function triggerAppointmentCheckout(

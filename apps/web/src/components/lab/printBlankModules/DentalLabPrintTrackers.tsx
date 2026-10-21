@@ -8,8 +8,8 @@ import {
 export interface DentalLabPrintTrackersProps {
 	active5Stage: string;
 	currentStep: number;
-	currentStage?: string;
-	status?: string;
+	currentStage?: string | undefined;
+	status?: string | undefined;
 	deliveryTimeSlot: string;
 }
 

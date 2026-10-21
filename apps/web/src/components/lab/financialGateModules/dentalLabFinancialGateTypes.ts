@@ -6,6 +6,15 @@ export type DentalLabGateStatus =
 	| "CHIEF_DOCTOR_OVERRIDE" // Одобрено главным врачом под личную ответственность
 	| "DOCTOR_OVERRIDE"; // Согласовано лечащим врачом (клиническая необходимость / срочно)
 
+export interface DoctorClinicalOverride {
+	readonly authorized: boolean;
+	readonly doctorName: string;
+	readonly timestampIso: string;
+	readonly reason: string;
+}
+
+export type FinancialGateCheckResult = DentalLabFinancialGateResult;
+
 export interface DentalLabFinancialGateParams {
 	readonly stageTotalKopecks: Kopecks;
 	readonly paidKopecks: Kopecks;

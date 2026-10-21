@@ -44,7 +44,9 @@ export const StaffAuthorityRow: React.FC<StaffAuthorityRowProps> = ({ row, save,
 							<div className="flex items-center justify-between w-full mb-1">
 								<span className="text-xs font-semibold">{FLAG_TITLES[flag]}</span>
 								{isDerived ? (
-									<Lock size={12} className="text-[var(--muted)]" title="Задано ролью" />
+									<span title="Задано ролью" className="inline-flex items-center">
+										<Lock size={12} className="text-[var(--muted)]" />
+									</span>
 								) : isEffective ? (
 									<ShieldCheck size={14} className="text-[var(--teal)]" />
 								) : (

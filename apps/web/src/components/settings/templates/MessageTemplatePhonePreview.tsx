@@ -4,7 +4,7 @@ import React from "react";
 import { CHANNEL_BADGES } from "./templateConstants";
 
 interface Props {
-	template?: MessageTemplate;
+	template?: MessageTemplate | undefined;
 }
 
 export const MessageTemplatePhonePreview: React.FC<Props> = ({ template }) => {
@@ -27,7 +27,8 @@ export const MessageTemplatePhonePreview: React.FC<Props> = ({ template }) => {
 		payment_link: "https://sbp.nspk.ru/pay/dente",
 		debt_amount: "4 500 ₽",
 	};
-	const previewText = interpolateTemplateText(template.templateText, sampleData);
+	const previewResult = interpolateTemplateText(template.templateText, sampleData);
+	const previewText = previewResult.text;
 
 	return (
 		<div className="phone-mockup-wrapper flex justify-center py-2">

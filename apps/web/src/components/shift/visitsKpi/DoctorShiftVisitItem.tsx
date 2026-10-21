@@ -7,9 +7,9 @@ export interface DoctorShiftVisitItemProps {
 	readonly patient: any;
 	readonly doctor?: any;
 	readonly isCurrent: boolean;
-	readonly manyDoctors?: boolean;
-	readonly onOpenAppointmentEmk?: (patientId: string) => void;
-	readonly onOpenCashier?: (patientId: string) => void;
+	readonly manyDoctors?: boolean | undefined;
+	readonly onOpenAppointmentEmk?: ((patientId: string) => void) | undefined;
+	readonly onOpenCashier?: ((patientId: string) => void) | undefined;
 }
 
 export const DoctorShiftVisitItem: React.FC<DoctorShiftVisitItemProps> = ({

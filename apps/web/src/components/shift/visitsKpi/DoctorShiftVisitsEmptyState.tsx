@@ -5,7 +5,7 @@ export interface DoctorShiftVisitsEmptyStateProps {
 	readonly hasAnyAppointments: boolean;
 	readonly totalCount: number;
 	readonly onResetFilter: () => void;
-	readonly onOpenSchedule?: () => void;
+	readonly onOpenSchedule?: (() => void) | undefined;
 }
 
 export const DoctorShiftVisitsEmptyState: React.FC<DoctorShiftVisitsEmptyStateProps> = ({

@@ -1,5 +1,5 @@
-import type { LinkedChairsideLabOrderInfo } from "./OrthopedicsChairsideLabOrderBanner.js";
-import type { Order804nServiceItem } from "./orthopedicProtocols.js";
+import type { LinkedChairsideLabOrderInfo } from "../OrthopedicsChairsideLabOrderBanner";
+import type { Order804nServiceItem } from "../orthopedicProtocols";
 
 export interface OrthopedicsChairsidePanelProps {
 	readonly patientId?: string | undefined;

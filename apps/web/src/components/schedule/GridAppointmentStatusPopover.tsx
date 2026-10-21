@@ -8,7 +8,7 @@ import { GridAppointmentStatusPopoverItems } from "./GridAppointmentStatusPopove
 export interface GridAppointmentStatusPopoverProps {
 	appointmentId: string;
 	currentStatus: Appointment["status"];
-	patientId?: string | null;
+	patientId?: string | null | undefined;
 	patientName: string;
 	isOpen: boolean;
 	onClose: () => void;

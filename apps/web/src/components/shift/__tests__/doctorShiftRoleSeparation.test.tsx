@@ -57,7 +57,6 @@ describe("Mandate 8e & 8n: Doctor Shift Role Separation Invariant", () => {
 					cardRub: 75000,
 					sbpRub: 30000,
 					depositRub: 0,
-					debtRepayRub: 0,
 				}}
 			/>
 		);

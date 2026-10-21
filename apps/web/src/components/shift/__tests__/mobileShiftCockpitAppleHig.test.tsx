@@ -112,6 +112,8 @@ describe("MobileShiftCockpit Apple iOS HIG & Anti-Desktop-Squeeze Invariants", (
 	it("3. MobileShiftCockpitUI: renders with safe-area padding-bottom to prevent navbar overlap", () => {
 		const rawHtml = renderToString(
 			React.createElement(MobileShiftCockpitUI, {
+				isShiftOpen: true,
+				onToggleShift: () => {},
 				doctorName: "Д-р Барабаш С.В.",
 				totalRevenueRub: 50000,
 				totalAppointmentsCount: 4,

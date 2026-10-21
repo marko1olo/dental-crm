@@ -1,16 +1,18 @@
-import { useCallback } from "react";
-import { showToast } from "../../GlobalToast.js";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { useCallback, useRef } from "react";
+import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	applyOrthopedicProtocolToVisit, createDoctorClinicalOverride,
 	type OrthopedicProtocolPreset, type FormatOrthopedicProtocolOptions,
-} from "../orthopedicProtocols.js";
-import type { StandardZtlPreset } from "../orthopedicsPresets.js";
-import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "../orthopedicsPresets.js";
-import { CANONICAL_MANUFACTURING_5_STAGES, type CanonicalManufacturing5StageItem } from "../../lab/labMath.js";
-import { calculateDueDateStr } from "./orthopedicsChairsideTypes.js";
+} from "../orthopedicProtocols";
+import type { StandardZtlPreset } from "../orthopedicsPresets";
+import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "../orthopedicsPresets";
+import { CANONICAL_MANUFACTURING_5_STAGES, type CanonicalManufacturing5StageItem } from "../../lab/labMath";
+import { calculateDueDateStr } from "./orthopedicsChairsideTypes";
 
 export function useOrthopedicsChairsideActions(state: any, props: any) {
+	const inFlightRef = useRef(false);
+
 	const handleSelectZtlPreset = useCallback((preset: StandardZtlPreset) => {
 		state.setActiveZtlPresetId(preset.id);
 		state.setSelectedMaterial(preset.material);
@@ -33,9 +35,14 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 	}, [state]);
 
 	const handleImmediateSendToLab = useCallback(async () => {
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		const teethParts = state.activeTeethInput.split(/[\s,;-]+/).map((p: string) => p.trim()).filter(Boolean);
 		const preset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === state.activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
-		if (!preset) return;
+		if (!preset) {
+			inFlightRef.current = false;
+			return;
+		}
 		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
 		state.setIsLabOrderSending(true);
 		const labOrderPayload = {
@@ -64,6 +71,7 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 				if (json?.id) state.setActiveOrderId(json.id);
 			}
 		} catch {} finally {
+			inFlightRef.current = false;
 			state.setIsLabOrderSending(false);
 			state.setLabOrderSentNumber(orderNumber);
 			showToast(`Наряд ${orderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
@@ -84,7 +92,7 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 			labOrderId: props.initialLabOrder?.id ?? state.activeOrderId ?? undefined,
 		};
 		const result = applyOrthopedicProtocolToVisit({ protocol, options, copyToClipboard: true, showNotification: true });
-		if (result.servicesToAdd && props.onAddToInvoice) props.onAddToInvoice(result.servicesToAdd);
+		if (result.services && props.onAddToInvoice) props.onAddToInvoice(result.services);
 		state.setAppliedProtocolId(protocol.id);
 	}, [state, props]);
 

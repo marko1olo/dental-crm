@@ -13,9 +13,9 @@ import type { useWaitlistDrawerController } from "./useWaitlistDrawerController"
 export interface WaitlistDrawerListProps {
   ops: ReturnType<typeof useWaitlistDrawerOperations>;
   ctrl: ReturnType<typeof useWaitlistDrawerController>;
-  targetSlot?: TargetSlotInfo | null;
-  updateNewAppointmentDraft?: (key: any, value: any) => void;
-  focusNewAppointmentEditor?: () => void;
+  targetSlot?: TargetSlotInfo | null | undefined;
+  updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
+  focusNewAppointmentEditor?: (() => void) | undefined;
   onClose: () => void;
 }
 

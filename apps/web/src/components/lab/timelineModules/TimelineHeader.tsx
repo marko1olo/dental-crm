@@ -4,7 +4,7 @@ import type { DentalLabOrderData } from "../DentalLabOrderModal";
 
 export interface TimelineHeaderProps {
 	order: DentalLabOrderData;
-	collision: { hasCollision: boolean; warningRu?: string };
+	collision: { hasCollision: boolean; warningRu?: string | null | undefined };
 }
 
 export function TimelineHeader({ order, collision }: TimelineHeaderProps): React.JSX.Element {

@@ -7,8 +7,8 @@ import type { SettingsAccessHeaders } from "../staffMutationRequest";
 import { useStaffAddForm } from "./useStaffAddForm";
 
 interface StaffAddFormProps {
-	accessHeaders?: SettingsAccessHeaders;
-	loadDashboard?: () => Promise<unknown>;
+	accessHeaders?: SettingsAccessHeaders | undefined;
+	loadDashboard?: (() => Promise<unknown>) | undefined;
 }
 
 export const StaffAddForm: React.FC<StaffAddFormProps> = ({ accessHeaders, loadDashboard }) => {

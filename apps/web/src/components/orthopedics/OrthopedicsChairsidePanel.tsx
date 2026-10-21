@@ -1,16 +1,16 @@
 import React, { useId } from "react";
-import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState.js";
-import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions.js";
-import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes.js";
-import { OrthopedicsChairsideTopBar, OrthopedicsChairsideLabOrderBanner, OrthopedicsChairsideFooterBar, type LinkedChairsideLabOrderInfo } from "./OrthopedicsChairsideLabOrderBanner.js";
-import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid.js";
-import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker.js";
-import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors.js";
-import { OrthopedicPassportA4Modal } from "./OrthopedicPassportA4Modal.js";
-import { DentalLabReadyInClinicModal } from "../lab/DentalLabReadyInClinicModal.js";
-import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets.js";
+import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState";
+import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions";
+import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes";
+import { OrthopedicsChairsideTopBar, OrthopedicsChairsideLabOrderBanner, OrthopedicsChairsideFooterBar, type LinkedChairsideLabOrderInfo } from "./OrthopedicsChairsideLabOrderBanner";
+import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid";
+import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker";
+import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors";
+import { OrthopedicPassportA4Modal } from "./OrthopedicPassportA4Modal";
+import { DentalLabReadyInClinicModal } from "../lab/DentalLabReadyInClinicModal";
+import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
 
-export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets.js";
+export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
 export type { LinkedChairsideLabOrderInfo, OrthopedicsChairsidePanelProps };
 
 export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps) {
@@ -75,11 +75,11 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				passport={{
 					orderNumber: effectiveOrderNum, passportNumber: `ГП-${effectiveOrderNum}`, patientName: props.patientName || "Пациент",
 					doctorName: props.doctorName || "Лечащий врач", technicianName: props.initialLabOrder?.technicianName || "Смирнов А.В.",
-					toothFdi: state.activeTeethInput, constructionName: activePreset.name, material: state.selectedMaterial,
+					toothFdi: state.activeTeethInput, constructionName: activePreset?.name ?? "Коронка", material: state.selectedMaterial,
 					colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
 					preparationMarginLabel: PREPARATION_MARGIN_PRESETS.find((m) => m.id === state.preparationMargin)?.labelRu ?? state.preparationMargin,
 					fixationTypeLabel: FIXATION_TYPE_PRESETS.find((f) => f.id === state.fixationType)?.labelRu ?? state.fixationType,
-					warrantyMonths: activePreset.warrantyMonths ?? 60, warrantyLabelRu: activePreset.warrantyLabelRu ?? "60 месяцев",
+					warrantyMonths: activePreset?.warrantyMonths ?? 60, warrantyLabelRu: activePreset?.warrantyLabelRu ?? "60 месяцев",
 				}}
 			/>
 		</div>

@@ -17,7 +17,11 @@ export function useMessageTemplateEditor(
 	const auth = appLogic?.auth;
 	const [title, setTitle] = useState(template?.title || "");
 	const [channel, setChannel] = useState<MessageTemplateChannel>(template?.channel || "telegram");
-	const [scenario, setScenario] = useState<MessageTemplateScenario>(template?.scenario || "appointment_reminder_24h");
+	const [scenario, setScenario] = useState<MessageTemplateScenario>(
+		((template as any)?.scenario as MessageTemplateScenario) ||
+		(template?.intent as MessageTemplateScenario) ||
+		"appointment_reminder_24h",
+	);
 	const [text, setText] = useState(template?.templateText || "");
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -36,7 +40,14 @@ export function useMessageTemplateEditor(
 			const res = await fetch(url, {
 				method: template ? "PUT" : "POST",
 				headers,
-				body: JSON.stringify({ title: title.trim(), channel, scenario, templateText: text.trim(), isActive: true }),
+				body: JSON.stringify({
+					title: title.trim(),
+					channel,
+					intent: scenario,
+					scenario,
+					templateText: text.trim(),
+					isActive: true,
+				}),
 			});
 			if (!res.ok) {
 				showToast("Не удалось сохранить шаблон", "error");

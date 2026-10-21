@@ -9,8 +9,14 @@ interface Props {
 	onSelectTab: (tabId: string) => void;
 }
 
+const DEFAULT_THEME = {
+	iconColor: "var(--teal, #0d9488)",
+	bgSoft: "rgba(13, 148, 136, 0.1)",
+	defaultIcon: "bot" as const,
+};
+
 export const MessengerChannelGridItem: React.FC<Props> = ({ channel, isTesting, onTest, onSelectTab }) => {
-	const theme = CHANNEL_THEMES[channel.id] ?? CHANNEL_THEMES.tg_bot;
+	const theme = CHANNEL_THEMES[channel.id] ?? CHANNEL_THEMES.tg_bot ?? DEFAULT_THEME;
 
 	return (
 		<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 flex flex-col justify-between gap-3 shadow-xs">

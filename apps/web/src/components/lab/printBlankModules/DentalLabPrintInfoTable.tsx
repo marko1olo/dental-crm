@@ -9,16 +9,16 @@ import {
 export interface DentalLabPrintInfoTableProps {
 	patientFio: { fullName: string; courierMaskedName: string };
 	formDoctorName: string;
-	doctorPhone?: string;
+	doctorPhone?: string | undefined;
 	clinicName: string;
-	clinicPhone?: string;
-	jawScope?: JawScope | null;
+	clinicPhone?: string | undefined;
+	jawScope?: JawScope | null | undefined;
 	selectedTeeth: number[];
 	impressionType: string;
 	constructionType: string;
 	material: string;
 	finalShade: string;
-	shadeStump?: string;
+	shadeStump?: string | undefined;
 }
 
 const IMPRESSION_LABELS: Record<string, string> = {

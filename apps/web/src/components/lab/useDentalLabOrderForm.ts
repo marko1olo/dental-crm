@@ -140,6 +140,7 @@ export function useDentalLabOrderForm({
 
 	// Loading & Status
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const inFlightRef = React.useRef(false);
 
 	// ─── INITIALIZATION EFFECT ─────────────────────────────────────────────────
 	useEffect(() => {
@@ -406,6 +407,8 @@ export function useDentalLabOrderForm({
 	// ─── SUBMIT HANDLER ────────────────────────────────────────────────────────
 	const handleSaveOrder = async (e?: React.FormEvent, forceSaveWithOverride = false) => {
 		if (e) e.preventDefault();
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 
 		const effectivePatientId = formPatientId.trim() || (patientId ? patientId.trim() : `pat-solo-${Date.now()}`);
 		const isWarrantyOrder = Boolean(initialOrder?.isWarrantyRework || totalLabPriceRub === 0 || Number(priceRubInput) === 0);
@@ -479,6 +482,7 @@ export function useDentalLabOrderForm({
 		} catch (err: any) {
 			showToast(err.message || "Ошибка сохранения наряда ЗТЛ", "error");
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};

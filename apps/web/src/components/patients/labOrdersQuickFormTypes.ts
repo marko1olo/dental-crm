@@ -1,6 +1,6 @@
 import type React from "react";
 
-export type ShadeGuideSystem = "classical" | "3d_master" | "bleach";
+export type ShadeGuideSystem = "classical" | "3d_master" | "bleach" | "stump";
 
 export const RESTORATION_TYPES = [
 	{ value: "single_crown", label: "Коронка анатомическая" },

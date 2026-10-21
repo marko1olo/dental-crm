@@ -10,7 +10,7 @@ import { CHANNEL_BADGES, SCENARIO_LABELS } from "./templateConstants";
 import { useMessageTemplateEditor } from "./useMessageTemplateEditor";
 
 interface Props {
-	template?: MessageTemplate | null;
+	template?: MessageTemplate | null | undefined;
 	isOpen: boolean;
 	onClose: () => void;
 	onSaved: () => void;

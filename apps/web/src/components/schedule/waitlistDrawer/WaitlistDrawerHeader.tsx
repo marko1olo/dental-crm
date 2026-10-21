@@ -3,7 +3,7 @@ import { Calendar, Minus, UserPlus, X } from "lucide-react";
 import type { TargetSlotInfo } from "../waitlistCancellationEngine";
 
 export interface WaitlistDrawerHeaderProps {
-  targetSlot?: TargetSlotInfo | null;
+  targetSlot?: TargetSlotInfo | null | undefined;
   itemsCount: number;
   isAddFormOpen: boolean;
   onToggleAddForm: () => void;

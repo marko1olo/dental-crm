@@ -6,16 +6,17 @@ import {
 	type LabOrderStageKey,
 	LAB_ORDER_STAGES,
 	calculateLabFinancialSplit,
-	type DentalLabOrder,
+	type DentalLabOrderData,
 } from "../labMath";
 
 export interface UseLabTrackingStateProps {
-	order: DentalLabOrder | null;
-	patientDepositRub?: number;
-	stageTotalRub?: number;
-	stagePaidRub?: number;
-	onStageUpdate?: (orderId: string, stage: LabOrderStageKey, note?: string) => Promise<void>;
-	onFittingDateUpdate?: (orderId: string, dates: { frameworkTrialDate?: string; ceramicTrialDate?: string; deliveryDate?: string }) => Promise<void>;
+	order: DentalLabOrderData | null;
+	patientDepositRub?: number | undefined;
+	stageTotalRub?: number | undefined;
+	stagePaidRub?: number | undefined;
+	chiefDoctorName?: string | undefined;
+	onStageUpdate?: ((orderId: string, stage: LabOrderStageKey, note?: string | undefined) => Promise<void> | void) | undefined;
+	onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => Promise<void> | void) | undefined;
 }
 
 export function useLabTrackingState({

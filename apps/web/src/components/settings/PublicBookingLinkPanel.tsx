@@ -26,7 +26,7 @@ export const PublicBookingLinkPanel: React.FC = () => {
 	const clinicName = dashboard?.clinicSettings?.profile?.clinicName || "Клиника DENTE";
 
 	const bookingUrl = useMemo(
-		() => buildPublicBookingPortalUrl(organizationId || undefined),
+		() => buildPublicBookingPortalUrl(organizationId) ?? "",
 		[organizationId],
 	);
 

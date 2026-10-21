@@ -11,14 +11,14 @@ import type {
 import { printDoctorShiftStatement } from "./printDoctorShiftStatement";
 
 export interface UseDoctorShiftCloseModalLogicParams {
-	readonly doctorFullName?: string;
-	readonly doctorSpecialtyRu?: string;
-	readonly clinicName?: string;
-	readonly shiftDateLabel?: string;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialtyRu?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly shiftDateLabel?: string | undefined;
 	readonly shiftStats: DoctorShiftStats;
-	readonly cashSummary?: DoctorShiftCashSummary;
-	readonly emrSummary?: DoctorShiftEmrSummary;
-	readonly cashboxName?: string;
+	readonly cashSummary?: DoctorShiftCashSummary | undefined;
+	readonly emrSummary?: DoctorShiftEmrSummary | undefined;
+	readonly cashboxName?: string | undefined;
 	readonly onConfirmClose: (summary: {
 		countedCashRub: number;
 		printZReport: boolean;

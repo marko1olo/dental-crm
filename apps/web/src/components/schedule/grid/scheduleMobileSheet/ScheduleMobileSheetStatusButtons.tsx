@@ -19,7 +19,19 @@ export interface ScheduleMobileSheetStatusButtonsProps {
 export const ScheduleMobileSheetStatusButtons: React.FC<
 	ScheduleMobileSheetStatusButtonsProps
 > = ({ selectedMobileAppt, onQuickStatusChange, onClose }) => {
+	const inFlightRef = React.useRef(false);
 	if (!onQuickStatusChange) return null;
+
+	const handleStatusClick = (status: Appointment["status"]) => {
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			onQuickStatusChange(selectedMobileAppt.id, status);
+			onClose();
+		} finally {
+			inFlightRef.current = false;
+		}
+	};
 
 	return (
 		<div className="space-y-2">
@@ -30,10 +42,7 @@ export const ScheduleMobileSheetStatusButtons: React.FC<
 				<button
 					type="button"
 					data-testid={`mobile-status-confirmed-${selectedMobileAppt.id}`}
-					onClick={() => {
-						onQuickStatusChange(selectedMobileAppt.id, "confirmed");
-						onClose();
-					}}
+					onClick={() => handleStatusClick("confirmed")}
 					className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 				>
 					<PhoneCall size={14} />
@@ -42,10 +51,7 @@ export const ScheduleMobileSheetStatusButtons: React.FC<
 				<button
 					type="button"
 					data-testid={`mobile-status-arrived-${selectedMobileAppt.id}`}
-					onClick={() => {
-						onQuickStatusChange(selectedMobileAppt.id, "arrived");
-						onClose();
-					}}
+					onClick={() => handleStatusClick("arrived")}
 					className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 				>
 					<UserCheck size={14} />
@@ -54,10 +60,7 @@ export const ScheduleMobileSheetStatusButtons: React.FC<
 				<button
 					type="button"
 					data-testid={`mobile-status-in-treatment-${selectedMobileAppt.id}`}
-					onClick={() => {
-						onQuickStatusChange(selectedMobileAppt.id, "in_treatment");
-						onClose();
-					}}
+					onClick={() => handleStatusClick("in_treatment")}
 					className={`min-h-[44px] px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all ${
 						isAppointmentInChair(selectedMobileAppt.status)
 							? "bg-[var(--teal,var(--brand-primary))] text-white border border-[var(--teal)] font-bold shadow-xs"
@@ -70,10 +73,7 @@ export const ScheduleMobileSheetStatusButtons: React.FC<
 				<button
 					type="button"
 					data-testid={`mobile-status-completed-${selectedMobileAppt.id}`}
-					onClick={() => {
-						onQuickStatusChange(selectedMobileAppt.id, "completed");
-						onClose();
-					}}
+					onClick={() => handleStatusClick("completed")}
 					className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-slate-500/15 border border-slate-500/40 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 				>
 					<CheckCircle2 size={14} />

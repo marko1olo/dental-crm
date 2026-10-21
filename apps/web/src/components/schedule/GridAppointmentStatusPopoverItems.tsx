@@ -1,3 +1,4 @@
+import React, { useRef } from "react";
 import type { Appointment } from "@dental/shared";
 import { playIntercomChime } from "../../lib/intercomSound";
 import { usePatientStore } from "../../store/patientStore";
@@ -8,7 +9,7 @@ import { APPOINTMENT_STATUS_CONFIG } from "./appointmentStatusConfig";
 export interface StatusItemProps {
 	appointmentId: string;
 	currentStatus: Appointment["status"];
-	patientId?: string | null;
+	patientId?: string | null | undefined;
 	patientName: string;
 	onClose: () => void;
 	onQuickStatusChange: (id: string, status: Appointment["status"]) => void;
@@ -22,19 +23,27 @@ export function GridAppointmentStatusPopoverItems({
 	onClose,
 	onQuickStatusChange,
 }: StatusItemProps) {
+	const inFlightRef = useRef(false);
+
 	const handleSelect = (status: Appointment["status"]) => {
-		onQuickStatusChange(appointmentId, status);
-		if (status === "arrived") {
-			playIntercomChime("urgent");
-			showToast(`Пациент ${patientName} в холле клиники`, "info");
-		} else if (status === "in_treatment") {
-			playIntercomChime("normal");
-			if (patientId) usePatientStore.getState().setSelectedPatientId(patientId);
-			showToast(`Пациент ${patientName} в кресле`, "info");
-		} else if (status === "completed") {
-			showToast(`Приём ${patientName} завершён`, "success");
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			onQuickStatusChange(appointmentId, status);
+			if (status === "arrived") {
+				playIntercomChime("urgent");
+				showToast(`Пациент ${patientName} в холле клиники`, "info");
+			} else if (status === "in_treatment") {
+				playIntercomChime("normal");
+				if (patientId) usePatientStore.getState().setSelectedPatientId(patientId);
+				showToast(`Пациент ${patientName} в кресле`, "info");
+			} else if (status === "completed") {
+				showToast(`Приём ${patientName} завершён`, "success");
+			}
+			onClose();
+		} finally {
+			inFlightRef.current = false;
 		}
-		onClose();
 	};
 
 	return (

@@ -3,12 +3,12 @@ import { money } from "../../../AppHelpers";
 import { generateBarcodeSvg, generateQrCodeSvg } from "../labMath";
 
 export interface DentalLabPrintSignaturesAndQrProps {
-	totalLabPriceRub?: number;
+	totalLabPriceRub?: number | undefined;
 	secureToken: string;
 	portalUrl: string;
 	formDoctorName: string;
-	doctorPhone?: string;
-	clinicPhone?: string;
+	doctorPhone?: string | undefined;
+	clinicPhone?: string | undefined;
 	deliveryTimeSlot: string;
 }
 

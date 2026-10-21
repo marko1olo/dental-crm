@@ -44,11 +44,11 @@ export {
 export interface WaitlistDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  targetSlot?: TargetSlotInfo | null;
-  onBookSlot?: (patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void;
-  updateNewAppointmentDraft?: (key: any, value: any) => void;
-  focusNewAppointmentEditor?: () => void;
-  onAppointmentCreated?: () => void;
+  targetSlot?: TargetSlotInfo | null | undefined;
+  onBookSlot?: ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void) | undefined;
+  updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
+  focusNewAppointmentEditor?: (() => void) | undefined;
+  onAppointmentCreated?: (() => void) | undefined;
   dashboard?: any;
   auth?: any;
 }

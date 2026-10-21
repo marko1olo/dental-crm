@@ -4,7 +4,7 @@ import { openWhatsAppChat } from "../../../../store/telephonyStore";
 import { showToast } from "../../../GlobalToast";
 
 export interface ScheduleMobileSheetPatientContactProps {
-	phone?: string | null;
+	phone?: string | null | undefined;
 	balance: number | null;
 	getReminderText: () => string;
 }

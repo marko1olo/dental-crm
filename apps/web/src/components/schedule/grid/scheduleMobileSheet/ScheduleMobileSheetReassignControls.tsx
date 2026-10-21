@@ -5,7 +5,7 @@ import { formatDoctorShortName } from "../../GridAppointmentCard";
 export interface MobileChairItem {
 	id: string;
 	name: string;
-	color?: string;
+	color?: string | null | undefined;
 }
 
 export interface MobileDoctorItem {
@@ -73,7 +73,7 @@ export const ScheduleMobileSheetReassignControls: React.FC<
 						Сменить врача:
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
-						{doctors.slice(0, 4).map((doc) => (
+						{doctors.map((doc) => (
 							<button
 								key={doc.id}
 								type="button"

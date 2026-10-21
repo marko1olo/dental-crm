@@ -9,12 +9,12 @@ import { WaitlistToolbar } from "../WaitlistToolbar";
 import { WaitlistDrawerList } from "./WaitlistDrawerList";
 
 export interface WaitlistDrawerSurfaceProps {
-  targetSlot?: TargetSlotInfo | null;
+  targetSlot?: TargetSlotInfo | null | undefined;
   ops: ReturnType<typeof useWaitlistDrawerOperations>;
   ctrl: ReturnType<typeof useWaitlistDrawerController>;
   onClose: () => void;
-  updateNewAppointmentDraft?: (key: any, value: any) => void;
-  focusNewAppointmentEditor?: () => void;
+  updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
+  focusNewAppointmentEditor?: (() => void) | undefined;
 }
 
 export function WaitlistDrawerSurface({

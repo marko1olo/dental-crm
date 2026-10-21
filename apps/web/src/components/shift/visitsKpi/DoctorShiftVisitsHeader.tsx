@@ -4,8 +4,8 @@ import { appointmentsCountLabel } from "./visitsKpiTypes";
 
 export interface DoctorShiftVisitsHeaderProps {
 	readonly count: number;
-	readonly onOpenQueueBoardModal?: () => void;
-	readonly onOpenSchedule?: () => void;
+	readonly onOpenQueueBoardModal?: (() => void) | undefined;
+	readonly onOpenSchedule?: (() => void) | undefined;
 }
 
 export const DoctorShiftVisitsHeader: React.FC<DoctorShiftVisitsHeaderProps> = ({

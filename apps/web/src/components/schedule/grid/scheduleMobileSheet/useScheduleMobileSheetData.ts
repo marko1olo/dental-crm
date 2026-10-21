@@ -7,7 +7,7 @@ export interface MobileSheetResolvedData {
 	mPatName: string;
 	mPatObj: Dashboard["patients"][number] | undefined;
 	mDocObj: Dashboard["clinicSettings"]["staff"][number] | undefined;
-	mChairObj: { id: string; name: string; color?: string } | undefined;
+	mChairObj: { id: string; name: string; color?: string | null | undefined } | undefined;
 	mBalance: number | null;
 	mTeeth: string[];
 	mStart: string;

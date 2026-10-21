@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes.js";
-import { calculateDueDateStr } from "./orthopedicsChairsideTypes.js";
+import type { OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
+import { calculateDueDateStr } from "./orthopedicsChairsideTypes";
 
 export function useOrthopedicsChairsideState({
 	patientId, activeToothFdi, selectedTeeth = [], recentToothXrayUrl, initialLabOrder,
@@ -33,7 +33,7 @@ export function useOrthopedicsChairsideState({
 	const [overrideActive, setOverrideActive] = useState<boolean>(false);
 	const [overrideReason, setOverrideReason] = useState<string>("Клиническое решение врача");
 	const [isWarrantyRework, setIsWarrantyRework] = useState<boolean>(false);
-	const [warrantyLiabilityType, setWarrantyLiabilityType] = useState<"clinic" | "lab_defect">("clinic");
+	const [warrantyLiabilityType, setWarrantyLiabilityType] = useState<"clinic_warranty" | "lab_defect">("clinic_warranty");
 	const [isLabOrderSending, setIsLabOrderSending] = useState<boolean>(false);
 	const [labOrderSentNumber, setLabOrderSentNumber] = useState<string | null>(null);
 	const [activeOrderId, setActiveOrderId] = useState<string | null>(initialLabOrder?.id ?? null);

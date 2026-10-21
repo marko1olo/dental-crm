@@ -5,7 +5,7 @@ import type { TargetSlotInfo } from "../waitlistCancellationEngine";
 
 export interface WaitlistDrawerMinimizedCapsuleProps {
   itemsCount: number;
-  targetSlot?: TargetSlotInfo | null;
+  targetSlot?: TargetSlotInfo | null | undefined;
   onExpand: () => void;
 }
 

@@ -6,11 +6,11 @@ import { is3DScanUrl } from "../LabAttachScanModal";
 
 export interface LabOrderCardDropdownMenuProps {
 	order: DentalLabOrderData;
-	handleOpenReadyInClinicPrompt?: (order: DentalLabOrderData) => void;
-	handlePayFromCashbox?: (order: DentalLabOrderData) => void;
-	handleMarkInstalled?: (order: DentalLabOrderData) => void;
+	handleOpenReadyInClinicPrompt?: ((order: DentalLabOrderData) => void) | undefined;
+	handlePayFromCashbox?: ((order: DentalLabOrderData) => void) | undefined;
+	handleMarkInstalled?: ((order: DentalLabOrderData) => void) | undefined;
 	handleOpenTracking: (order: DentalLabOrderData) => void;
-	handleView3DScan?: (order: DentalLabOrderData) => void;
+	handleView3DScan?: ((order: DentalLabOrderData) => void) | undefined;
 	handleAttach3DScan: (order: DentalLabOrderData) => void;
 	handleAttachBitePhoto: (order: DentalLabOrderData) => void;
 	handleTechnicianComment: (order: DentalLabOrderData) => void;

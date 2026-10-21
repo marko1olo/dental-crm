@@ -43,7 +43,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	initialBasePercentage,
 	useClinicalCategoryRates,
 }) => {
-	const branding = useDocumentBrandingStore((s) => s.branding);
+	const branding = useDocumentBrandingStore();
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedClinicName = (clinicName && clinicName.trim())
 		|| branding?.clinicName

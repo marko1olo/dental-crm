@@ -3,6 +3,7 @@ import type {
 	AssistantRatesConfig,
 } from "./staffPayrollRoleTypes";
 
+export type { StaffRole } from "./staffPayrollRoleTypes";
 export * from "./consolidatedPayrollTypes";
 
 export interface AssistantShiftItem {

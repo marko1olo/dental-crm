@@ -1,4 +1,10 @@
 import type { StaffProfileExtended } from "@dental/shared";
+import {
+	validateStaffSnils,
+	validateStaffInn,
+	validateMedicalBook,
+	validateMinzdravAccreditation,
+} from "@dental/shared";
 import React, { useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { StaffProfilePayrollSection } from "./StaffProfilePayrollSection";
@@ -66,10 +72,10 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 						managementNotes={form.managementNotes}
 						setManagementNotes={form.setManagementNotes}
 						canSeeManagementNotes={callerRole === "owner" || callerRole === "head_doctor"}
-						snilsValidation={{ isValid: true, isComplete: Boolean(form.snils) }}
-						innValidation={{ isValid: true, isComplete: Boolean(form.inn) }}
-						medicalBookValidation={{ isValid: true, isCheckupOverdue: false }}
-						accreditationValidation={{ isValid: true, isOverdue: false }}
+						snilsValidation={form.snils ? validateStaffSnils(form.snils) : null}
+						innValidation={form.inn ? validateStaffInn(form.inn) : null}
+						medicalBookValidation={form.medicalBookCheckupDate ? validateMedicalBook(form.medicalBookCheckupDate) : null}
+						accreditationValidation={form.minzdravAccreditationDate ? validateMinzdravAccreditation(form.minzdravAccreditationDate) : null}
 						activeTabMobile={activeTabMobile}
 					/>
 

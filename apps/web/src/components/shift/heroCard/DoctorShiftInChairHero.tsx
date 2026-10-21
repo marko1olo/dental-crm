@@ -10,7 +10,7 @@ export interface DoctorShiftInChairHeroProps {
 	readonly currentAppointmentReason: string;
 	readonly onOpenVisit: (patientId: string) => void;
 	readonly onOpenImaging: (patientId: string) => void;
-	readonly onCallPatientError?: (msg: string) => void;
+	readonly onCallPatientError?: ((msg: string) => void) | undefined;
 }
 
 export const DoctorShiftInChairHero: React.FC<DoctorShiftInChairHeroProps> = ({

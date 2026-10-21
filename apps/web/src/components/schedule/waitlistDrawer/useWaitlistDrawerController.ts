@@ -9,7 +9,7 @@ import type { useWaitlistDrawerOperations } from "../useWaitlistDrawerOperations
 export interface UseWaitlistDrawerControllerParams {
   isOpen: boolean;
   onClose: () => void;
-  targetSlot?: TargetSlotInfo | null;
+  targetSlot?: TargetSlotInfo | null | undefined;
   ops: ReturnType<typeof useWaitlistDrawerOperations>;
   dashboard: any;
 }

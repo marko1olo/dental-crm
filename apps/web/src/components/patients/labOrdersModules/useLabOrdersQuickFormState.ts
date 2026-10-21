@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import {
@@ -14,6 +14,7 @@ export function useLabOrdersQuickFormState(
 	activeDoctorId: string | undefined,
 	onCreated: () => void,
 ) {
+	const inFlightRef = useRef(false);
 	const [showQuickForm, setShowQuickForm] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [restorationType, setRestorationType] = useState("single_crown");
@@ -33,6 +34,8 @@ export function useLabOrdersQuickFormState(
 
 	const handleOneClickCreate = async () => {
 		if (!patientId) return;
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		setSubmitting(true);
 		try {
 			const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
@@ -57,12 +60,15 @@ export function useLabOrdersQuickFormState(
 		} catch {
 			showToast("Ошибка создания наряда", "error");
 		} finally {
+			inFlightRef.current = false;
 			setSubmitting(false);
 		}
 	};
 
 	const handleExpressPresetCreate = async (preset: ExpressLabPreset) => {
 		if (!patientId) return;
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		setSubmitting(true);
 		try {
 			const due = addWorkingDays(new Date(), preset.workingDays);
@@ -86,6 +92,7 @@ export function useLabOrdersQuickFormState(
 		} catch {
 			showToast("Ошибка создания экспресс-наряда", "error");
 		} finally {
+			inFlightRef.current = false;
 			setSubmitting(false);
 		}
 	};

@@ -23,7 +23,7 @@ export interface LabOrderCardItemProps {
 	onReclamation: (order: LabOrder) => void;
 	onCopyPortalLink: (token: string) => void;
 	onDeleteOrder: (id: string) => void;
-	onView3DScan?: (order: LabOrder) => void;
+	onView3DScan?: ((order: LabOrder) => void) | undefined;
 }
 
 export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({

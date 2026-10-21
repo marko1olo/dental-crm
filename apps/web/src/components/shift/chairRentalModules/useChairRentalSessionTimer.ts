@@ -10,9 +10,9 @@ import { useState } from "react";
 import type { ChairRentalModel } from "@dental/shared";
 
 export interface UseChairRentalSessionTimerParams {
-	initialRentalActive?: boolean;
-	initialChairId?: string;
-	onRentalSessionChange?: (session: { isActive: boolean; chairId: string; startedAt?: string }) => void;
+	initialRentalActive?: boolean | undefined;
+	initialChairId?: string | undefined;
+	onRentalSessionChange?: ((session: { isActive: boolean; chairId: string; startedAt?: string }) => void) | undefined;
 }
 
 export function useChairRentalSessionTimer(params: UseChairRentalSessionTimerParams) {

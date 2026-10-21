@@ -47,7 +47,7 @@ export function useStaffProfileForm(
 				phone: phone.trim() || null,
 				email: email.trim() || null,
 				color,
-				specialties,
+				specialties: specialties as StaffProfileExtended["specialties"],
 				snils: snils.trim() || null,
 				inn: inn.trim() || null,
 				medicalBookNumber: medicalBookNumber.trim() || null,
