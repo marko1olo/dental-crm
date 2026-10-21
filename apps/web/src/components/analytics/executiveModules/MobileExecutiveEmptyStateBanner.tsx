@@ -1,4 +1,3 @@
-import React from "react";
 import type { ExecutivePeriod } from "@dental/shared";
 import { AlertCircle, Calendar, CalendarPlus, CreditCard } from "lucide-react";
 
@@ -41,7 +40,8 @@ export function MobileExecutiveEmptyStateBanner({
 						За выбранный период данных нет
 					</div>
 					<div className="text-[12px] text-[var(--muted)] mt-1 leading-normal">
-						Запишите первых пациентов в расписание клиники или оформите приём оплаты в кассе.
+						Запишите первых пациентов в расписание клиники или оформите приём
+						оплаты в кассе.
 					</div>
 				</div>
 			</div>
@@ -62,7 +62,11 @@ export function MobileExecutiveEmptyStateBanner({
 						className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[12px] font-medium flex items-center justify-center gap-1.5 active:bg-[var(--paper-soft)]"
 						onClick={() => handleNav("shift")}
 					>
-						<CreditCard size={15} className="text-teal-600" aria-hidden="true" />
+						<CreditCard
+							size={15}
+							className="text-teal-600"
+							aria-hidden="true"
+						/>
 						<span>Касса и чеки</span>
 					</button>
 
@@ -72,7 +76,11 @@ export function MobileExecutiveEmptyStateBanner({
 							className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[12px] font-medium flex items-center justify-center gap-1.5 active:bg-[var(--paper-soft)]"
 							onClick={() => onSelectPeriod("month")}
 						>
-							<Calendar size={15} className="text-teal-600" aria-hidden="true" />
+							<Calendar
+								size={15}
+								className="text-teal-600"
+								aria-hidden="true"
+							/>
 							<span>За месяц</span>
 						</button>
 					)}

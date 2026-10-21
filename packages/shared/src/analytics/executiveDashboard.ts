@@ -333,7 +333,7 @@ export interface ExecutiveKpis {
 	readonly totalLeadsCount: number;
 	readonly totalSanitationCount: number;
 
-	// Структура оплат (Касса 54-ФЗ / Карты и ДМС / СБП QR)
+	// Структура оплат (Касса 54-ФЗ / Карты и ДМС / СБП QR / Депозиты семьи)
 	readonly paymentBreakdown?: ExecutivePaymentBreakdown | undefined;
 }
 
@@ -344,6 +344,8 @@ export interface ExecutivePaymentBreakdown {
 	readonly cardDmsPercent: number;
 	readonly sbpRub: number;
 	readonly sbpPercent: number;
+	readonly depositRub?: number | undefined;
+	readonly depositPercent?: number | undefined;
 	readonly totalRub: number;
 }
 

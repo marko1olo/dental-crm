@@ -1,6 +1,6 @@
-import React from "react";
 import type { ExecutiveKpisSummary } from "@dental/shared";
 import { Coins } from "lucide-react";
+import type React from "react";
 import { formatRublesClean } from "./executiveAnalyticsTypes";
 
 interface DesktopRevenueCardProps {
@@ -16,7 +16,10 @@ export function DesktopRevenueCard({ kpis }: DesktopRevenueCardProps) {
 		>
 			<div>
 				<div className="executive-kpi-header">
-					<span className="executive-kpi-label" title="Сколько заработано за период (Касса + безнал + СБП)">
+					<span
+						className="executive-kpi-label"
+						title="Сколько заработано за период (Касса + безнал + СБП)"
+					>
 						1. Выручка за период
 					</span>
 					<div className="executive-kpi-icon-wrap executive-kpi-icon-teal">
@@ -24,7 +27,9 @@ export function DesktopRevenueCard({ kpis }: DesktopRevenueCardProps) {
 					</div>
 				</div>
 				<div className="executive-kpi-main-val font-mono text-[28px] font-bold text-[var(--ink,#0f172a)]">
-					{formatRublesClean(kpis.totalRevenueRub ?? kpis.totalRevenueFormatted)}
+					{formatRublesClean(
+						kpis.totalRevenueRub ?? kpis.totalRevenueFormatted,
+					)}
 				</div>
 			</div>
 			<div className="executive-kpi-subtext">
@@ -48,7 +53,9 @@ export function DesktopRevenueCard({ kpis }: DesktopRevenueCardProps) {
 							<span>Касса: {kpis.paymentBreakdown.cashPercent}%</span>
 							<span>Безнал: {kpis.paymentBreakdown.cardDmsPercent}%</span>
 							<span>СБП: {kpis.paymentBreakdown.sbpPercent}%</span>
-							<span>Депозиты: {kpis.paymentBreakdown.depositPercent ?? 0}%</span>
+							<span>
+								Депозиты: {kpis.paymentBreakdown.depositPercent ?? 0}%
+							</span>
 						</>
 					) : (
 						<span>Оплат за выбранный период пока нет</span>

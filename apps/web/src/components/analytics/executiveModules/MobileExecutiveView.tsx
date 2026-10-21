@@ -1,10 +1,10 @@
-import React from "react";
 import { Download, Printer, RefreshCw } from "lucide-react";
+import type React from "react";
 import { MobileExecutiveKpiTiles } from "./ExecutiveChairUtilizationChart";
 import { MobileExecutiveDoctorsAndFunnels } from "./ExecutiveDoctorPerformanceTable";
-import { MobileExecutiveEmptyStateBanner } from "./MobileExecutiveEmptyStateBanner";
 import { MobileExecutiveKpiCards } from "./ExecutiveKpiSummaryCards";
 import type { TopDoctorPerformanceRow } from "./executiveAnalyticsTypes";
+import { MobileExecutiveEmptyStateBanner } from "./MobileExecutiveEmptyStateBanner";
 import type { UseExecutiveDashboardDataResult } from "./useExecutiveDashboardData";
 
 export interface MobileExecutiveViewProps {
@@ -25,9 +25,8 @@ export function MobileExecutiveView({
 	onPrintPdf,
 }: MobileExecutiveViewProps) {
 	return (
-		<div
+		<main
 			className="mobile-exec-dashboard"
-			role="main"
 			aria-label="Мобильный рабочий стол Генерального директора"
 			data-testid="mobile-executive-dashboard"
 		>
@@ -56,11 +55,17 @@ export function MobileExecutiveView({
 			/>
 
 			{/* Топ врачей, направления и 8-этапная воронка */}
-			<MobileExecutiveDoctorsAndFunnels topDoctors={topDoctors} payload={data.payload} />
+			<MobileExecutiveDoctorsAndFunnels
+				topDoctors={topDoctors}
+				payload={data.payload}
+			/>
 
 			{/* Фиксированный bottom bar в Natural Thumb Zone */}
 			{!hideBottomBar && (
-				<nav className="mobile-exec-bottom-bar" aria-label="Действия с отчетом аналитики">
+				<nav
+					className="mobile-exec-bottom-bar"
+					aria-label="Действия с отчетом аналитики"
+				>
 					<button
 						type="button"
 						className="primary-button mobile-exec-btn-primary"
@@ -99,6 +104,6 @@ export function MobileExecutiveView({
 					</button>
 				</nav>
 			)}
-		</div>
+		</main>
 	);
 }

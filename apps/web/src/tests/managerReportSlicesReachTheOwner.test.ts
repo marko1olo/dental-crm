@@ -439,13 +439,17 @@ describe("разрезы отчётов управляющего доходят 
 		const app = withoutComments(
 			readFileSync(path.join(webSrc, "App.tsx"), "utf8"),
 		);
+		const appRouter = withoutComments(
+			readFileSync(path.join(webSrc, "components", "appLayout", "AppViewRouter.tsx"), "utf8"),
+		);
+		const combined = `${app}\n${appRouter}`;
 		assert.match(
-			app,
-			/import\("\.\/components\/reports\/ManagerReportsPanel"\)/,
-			"App.tsx больше не подгружает панель отчётов",
+			combined,
+			/import\("(\.\.\/reports\/|\.\/components\/reports\/)ManagerReportsPanel"\)/,
+			"AppViewRouter.tsx / App.tsx больше не подгружает панель отчётов",
 		);
 		assert.match(
-			app,
+			combined,
 			/<ManagerReportsPanel\s/,
 			"панель отчётов больше не отрисовывается ни на одном экране",
 		);
