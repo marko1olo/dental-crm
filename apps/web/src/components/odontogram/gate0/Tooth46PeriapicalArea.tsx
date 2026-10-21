@@ -4,9 +4,9 @@ import { Tooth46ResorptionOverlay } from "./Tooth46ResorptionOverlay";
 import type { PeriapicalCondition } from "./tooth46Types";
 
 export interface Tooth46PeriapicalAreaProps {
-	condition?: PeriapicalCondition;
-	halo?: boolean;
-	isDark?: boolean;
+	condition?: PeriapicalCondition | undefined;
+	halo?: boolean | undefined;
+	isDark?: boolean | undefined;
 }
 
 /**

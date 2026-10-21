@@ -80,6 +80,14 @@ export const RESTORATIVE_MATERIALS: Record<
 		strokeColor: "#334155",
 		badgeColor: "#6366f1",
 	},
+	titanium: {
+		nameRu: "Биосовместимый титан (Grade 4/5)",
+		descriptionRu: "Фрезерованный биосовместимый титан для балок, каркасов и индивидуальных абатментов",
+		shaderId: "titanium-implant-gradient",
+		shaderAliasId: "dente-shader-titanium",
+		strokeColor: "#334155",
+		badgeColor: "#6366f1",
+	},
 };
 
 export const ANATOMICAL_SURFACE_LABELS_RU: Record<

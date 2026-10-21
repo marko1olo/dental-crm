@@ -26,7 +26,7 @@ import {
 import { DEFAULT_GLOBAL_PRESETS, type GlobalTreatmentItem } from "../GlobalTreatmentsStrip";
 import type { ToothData } from "../ToothChart";
 
-describe("DentalPin Odontogram Adapter — Napkin Unfolding Quadrant Symmetry", () => {
+describe("Clinical Odontogram Adapter — Napkin Unfolding Quadrant Symmetry", () => {
 	test("Q1 (11-18) maintains original orientation without transform", () => {
 		for (let pos = 1; pos <= 8; pos++) {
 			const toothNum = 10 + pos;
@@ -104,7 +104,7 @@ describe("DentalPin Odontogram Adapter — Napkin Unfolding Quadrant Symmetry", 
 	});
 });
 
-describe("DentalPin Odontogram Adapter — Endodontic Canal Obturation Levels (Pulp Fill)", () => {
+describe("Clinical Odontogram Adapter — Endodontic Canal Obturation Levels (Pulp Fill)", () => {
 	test("Full obturation (100% apex) requires no clipping", () => {
 		const clipFull = getCanalObturationClipConfig(11, "full");
 		assert.equal(clipFull.needsClip, false);
@@ -139,7 +139,7 @@ describe("DentalPin Odontogram Adapter — Endodontic Canal Obturation Levels (P
 	});
 });
 
-describe("DentalPin Odontogram Adapter — Lateral Pathology Anchors", () => {
+describe("Clinical Odontogram Adapter — Lateral Pathology Anchors", () => {
 	test("All 8 permanent tooth positions provide complete icon anchors", () => {
 		for (let pos = 1; pos <= 8; pos++) {
 			const anchors = getIconAnchors(10 + pos);
@@ -178,7 +178,7 @@ describe("DentalPin Odontogram Adapter — Lateral Pathology Anchors", () => {
 	});
 });
 
-describe("DentalPin Odontogram Adapter — Fixed Bridge Pillars & Pontics", () => {
+describe("Clinical Odontogram Adapter — Fixed Bridge Pillars & Pontics", () => {
 	test("isToothAbutment correctly identifies bridge pillar role", () => {
 		const pillarTooth: ToothData = {
 			toothNumber: 14,
@@ -241,7 +241,7 @@ describe("DentalPin Odontogram Adapter — Fixed Bridge Pillars & Pontics", () =
 	});
 });
 
-describe("DentalPin Odontogram Adapter — Global Treatments Strip", () => {
+describe("Clinical Odontogram Adapter — Global Treatments Strip", () => {
 	test("DEFAULT_GLOBAL_PRESETS contains standard full-mouth and full-arch items", () => {
 		assert.ok(DEFAULT_GLOBAL_PRESETS.length >= 4);
 

@@ -32,7 +32,7 @@ export interface DmftCalculationResult {
 	};
 }
 
-export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
+export function calculateDmft(teethData: readonly ToothData[]): DmftCalculationResult {
 	const map = new Map<number, ToothState>();
 	for (const t of teethData) {
 		map.set(t.toothNumber, t.state);
@@ -124,9 +124,9 @@ export function calculateDmft(teethData: ToothData[]): DmftCalculationResult {
 }
 
 /**
- * Экспорт зубной формулы по ГОСТ в структурированный текстовый протокол визита / дневник приёма.
+ * Экспорт истории одонтограммы в структурированный текстовый протокол визита / дневник приёма.
  */
-export function formatOdontogramTo043ProtocolText(
+export function formatOdontogramToClinicalProtocolText(
 	teethData: readonly ToothData[],
 	pediatricMode = false,
 ): string {
@@ -168,3 +168,5 @@ export function formatOdontogramTo043ProtocolText(
 		`Индекс КПУ = ${dmft.dmftTotal} (К:${dmft.decayed}, П:${dmft.filled}, У:${dmft.missing}) — ${dmft.severityLabel}`,
 	].join("\n");
 }
+
+export const formatOdontogramTo043ProtocolText = formatOdontogramToClinicalProtocolText;

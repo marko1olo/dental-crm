@@ -16,7 +16,7 @@ export interface ClassicGostToothCellProps {
 	readonly isSelected: boolean;
 	readonly selectedTeeth: readonly number[];
 	readonly activeStamp?: ToothState | null | undefined;
-	readonly onToothClick: (toothNumber: number, rect: DOMRect) => void;
+	readonly onToothClick?: ((toothNumber: number, rect?: DOMRect, surface?: string) => void) | undefined;
 	readonly onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[]) => void) | undefined;
 	readonly useSurfaces?: boolean | undefined;
 	readonly pediatricMode?: boolean | undefined;
@@ -124,7 +124,7 @@ export const ClassicGostToothCell: React.FC<ClassicGostToothCellProps> = memo(({
 					return;
 				}
 				const rect = e.currentTarget.getBoundingClientRect();
-				onToothClick(toothNumber, rect);
+				onToothClick?.(toothNumber, rect);
 			}}
 			onContextMenu={(e) => {
 				e.preventDefault();

@@ -55,6 +55,7 @@ export const DenteRestorationGradientDefs: React.FC = () => (
 			<stop offset="100%" stopColor="#1e293b" />
 		</linearGradient>
 		<linearGradient id="dente-shader-titanium-implant" href="#titanium-implant-gradient" />
+		<linearGradient id="dente-shader-titanium" href="#titanium-implant-gradient" />
 		<linearGradient id="dente-implant-titanium" href="#titanium-implant-gradient" />
 
 		<linearGradient id="implant-hex-gradient" x1="0%" y1="0%" x2="100%" y2="100%">

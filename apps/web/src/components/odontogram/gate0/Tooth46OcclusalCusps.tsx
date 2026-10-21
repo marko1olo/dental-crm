@@ -3,11 +3,11 @@ import { Tooth46SingleCusp } from "./Tooth46SingleCusp";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 
 export interface Tooth46OcclusalCuspsProps {
-	showCusps?: boolean;
-	showFissures?: boolean;
-	renderBaseCrown?: boolean;
-	isDark?: boolean;
-	className?: string;
+	showCusps?: boolean | undefined;
+	showFissures?: boolean | undefined;
+	renderBaseCrown?: boolean | undefined;
+	isDark?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({

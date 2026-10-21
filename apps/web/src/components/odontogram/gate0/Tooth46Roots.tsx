@@ -30,7 +30,7 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	const rootOpacity = isEndo ? "0.48" : "1.0";
 
 	return (
-		<g id="tooth46-roots" className={className}>
+		<g id="tooth46-roots" {...(className ? { className } : {})}>
 			{/* Monolithic Root Mass with Cylindrical Volume */}
 			<path
 				d={TOOTH46_GEOMETRY.rootMonolithPath}

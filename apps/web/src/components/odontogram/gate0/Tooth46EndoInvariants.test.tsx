@@ -12,9 +12,15 @@ describe("Gate 0 Red Team — Tooth 46 Pulp & Endodontic System Invariants", () 
 	it("satisfies 0px seamless continuity between pulpal floor and canal orifices", () => {
 		const p = TOOTH46_PULP_GEOMETRY;
 		assert.equal(p.canals.length, 3, "Exactly 3 root canals (MB, ML, D)");
-		assert.equal(p.canals[0].orifice.y, 71.5);
-		assert.equal(p.canals[1].orifice.y, 68.0);
-		assert.equal(p.canals[2].orifice.y, 71.5);
+		const canal0 = p.canals[0];
+		const canal1 = p.canals[1];
+		const canal2 = p.canals[2];
+		assert.ok(canal0);
+		assert.ok(canal1);
+		assert.ok(canal2);
+		assert.equal(canal0.orifice.y, 71.5);
+		assert.equal(canal1.orifice.y, 68.0);
+		assert.equal(canal2.orifice.y, 71.5);
 
 		// Verify 0px junction points in unified path
 		for (const pt of "32.5,71.5 35.5,71.5 39.2,68.0 41.8,68.0 57.0,71.5 61.0,71.5".split(

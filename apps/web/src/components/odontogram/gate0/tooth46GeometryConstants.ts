@@ -35,6 +35,12 @@ export const TOOTH46_GEOMETRY = {
 		"C 80,75.5 68,76.2 50,76.5 " +
 		"C 32,76.2 20,75.5 16,74 Z",
 	cejPath: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
+	cejCurve: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
+	mesialSulcusLobeWest: "M 16,74 C 13,88 12,108 14,124 C 15,134 18,144 23,149",
+	mesialLongitudinalGroove: "M 21,78 C 19.5,96 18.5,118 23,145",
+	distalLongitudinalGroove: "M 78,80 C 78,100 77,122 76,139",
+	bifurcationShadowPath:
+		"M 42,106 C 47,98 50,96 50,96 C 50,96 53,98 58,106 C 54,103 46,103 42,106 Z",
 	furcationApex: { x: 50, y: 97 },
 	bifurcationCrotch: { x: 50, y: 96 },
 	mesialApex: { x: 23, y: 149 },

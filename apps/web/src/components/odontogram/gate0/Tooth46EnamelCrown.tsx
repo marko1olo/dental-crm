@@ -5,9 +5,9 @@ import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 export interface Tooth46EnamelCrownProps {
 	stroke: string;
 	crownOpacity: string;
-	showCusps?: boolean;
-	showFissures?: boolean;
-	isDark?: boolean;
+	showCusps?: boolean | undefined;
+	showFissures?: boolean | undefined;
+	isDark?: boolean | undefined;
 }
 
 /**

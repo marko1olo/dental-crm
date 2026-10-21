@@ -22,7 +22,7 @@ export * from "./classicGostTypes";
 export * from "./ClassicGostToothCell";
 
 export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(({
-	teethData = [],
+	teethData = [] as readonly ToothData[],
 	pediatricMode,
 	mixedDentition,
 	topTeeth: customTopTeeth,

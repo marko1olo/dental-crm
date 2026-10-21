@@ -38,6 +38,7 @@ export {
 export {
 	type DmftCalculationResult,
 	calculateDmft,
+	formatOdontogramToClinicalProtocolText,
 	formatOdontogramTo043ProtocolText,
 } from "./gost/gostHistoryTypes";
 

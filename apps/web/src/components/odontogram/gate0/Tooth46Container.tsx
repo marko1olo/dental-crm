@@ -37,8 +37,8 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 			viewBox={TOOTH46_GEOMETRY.viewBox}
 			width={100 * zoom}
 			height={170 * zoom}
-			className={className}
-			style={{ display: "block", ...style }}
+			{...(className ? { className } : {})}
+			style={{ display: "block", ...(style ?? {}) }}
 			aria-label="Анатомический нижний первый моляр 46"
 			role="img"
 		>

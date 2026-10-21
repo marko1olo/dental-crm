@@ -5,13 +5,13 @@ import { Tooth46PostCoreOverlay } from "./Tooth46PostCoreOverlay";
 import type { PostCoreType } from "./tooth46Types";
 
 export interface Tooth46PathologyOverlayProps {
-	showAbfraction?: boolean;
-	showPostCore?: boolean;
-	postCoreType?: PostCoreType;
-	showCalculus?: boolean;
-	showCrack?: boolean;
-	isDark?: boolean;
-	className?: string;
+	showAbfraction?: boolean | undefined;
+	showPostCore?: boolean | undefined;
+	postCoreType?: PostCoreType | undefined;
+	showCalculus?: boolean | undefined;
+	showCrack?: boolean | undefined;
+	isDark?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth46PathologyOverlay: React.FC<

@@ -5,15 +5,15 @@ import { TOOTH46_RESTORATION_GEOMETRY } from "./Tooth46RestorationGeometry";
 import type { CrownMaterial, RestorationCondition } from "./tooth46Types";
 
 export interface Tooth46RestorationOverlayProps {
-	showComposite?: boolean;
-	showZirconiaCrown?: boolean;
-	crownMaterial?: CrownMaterial;
-	compositeCondition?: RestorationCondition;
-	crownCondition?: RestorationCondition;
-	translucent?: boolean;
-	isDark?: boolean;
-	isImplant?: boolean;
-	className?: string;
+	showComposite?: boolean | undefined;
+	showZirconiaCrown?: boolean | undefined;
+	crownMaterial?: CrownMaterial | undefined;
+	compositeCondition?: RestorationCondition | undefined;
+	crownCondition?: RestorationCondition | undefined;
+	translucent?: boolean | undefined;
+	isDark?: boolean | undefined;
+	isImplant?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth46RestorationOverlay: React.FC<

@@ -21,7 +21,7 @@ import {
 import type { ToothData, ToothState } from "../ToothChart";
 import type { CrmToothState } from "@dental/shared";
 
-describe("Classic GOST Tooth Formula 043/u — FDI Dual-Jaw Grid Architecture", () => {
+describe("Classic Tooth Formula — FDI Dual-Jaw Grid Architecture", () => {
 	test("Взрослая зубная формула содержит ровно 32 зуба (16 верхняя челюсть, 16 нижняя челюсть)", () => {
 		assert.equal(UPPER_TEETH_ADULT.length, 16);
 		assert.equal(LOWER_TEETH_ADULT.length, 16);
@@ -52,8 +52,8 @@ describe("Classic GOST Tooth Formula 043/u — FDI Dual-Jaw Grid Architecture", 
 	});
 });
 
-describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mappings", () => {
-	test("Все официальные буквенные обозначения ГОСТ 043/у соответствуют клиническим состояниям", () => {
+describe("Classic Odontogram — Clinical Status Abbreviations & Mappings", () => {
+	test("Все официальные буквенные обозначения одонтограммы соответствуют клиническим состояниям", () => {
 		const expectedMappings: Record<CrmToothState, GostToothAbbreviation> = {
 			Caries: "К",
 			Filled: "П",
@@ -81,7 +81,7 @@ describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mapping
 		}
 	});
 
-	test("Обратная таблица GOST_ABBREVIATIONS корректно преобразует ГОСТ-код в ToothState", () => {
+	test("Обратная таблица GOST_ABBREVIATIONS корректно преобразует буквенный код в ToothState", () => {
 		assert.equal(GOST_ABBREVIATIONS["К"], "Caries");
 		assert.equal(GOST_ABBREVIATIONS["П"], "Filled");
 		assert.equal(GOST_ABBREVIATIONS["Пт"], "Pulpitis");
@@ -247,7 +247,7 @@ describe("Classic GOST 043/u — Single-Key & Sequence Hotkey Parser", () => {
 	});
 });
 
-describe("Classic GOST 043/u — DMFT / КПУ Calculator ($КПУ = К + П + У$)", () => {
+describe("Tooth Formula — DMFT / КПУ Calculator ($КПУ = К + П + У$)", () => {
 	test("Идеально здоровая полость рта: КПУ = 0 (Очень низкая интенсивность)", () => {
 		const emptyTeeth: ToothData[] = [];
 		const result = calculateDmft(emptyTeeth);
@@ -375,8 +375,8 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 	});
 });
 
-describe("Classic GOST 043/u — Mobile (390x844) & Tablet (1024x768) Touch Keypad Interactions", () => {
-	test("Сенсорный пульт быстрого ввода содержит все официальные состояния ГОСТ", () => {
+describe("Classic Odontogram — Mobile (390x844) & Tablet (1024x768) Touch Keypad Interactions", () => {
+	test("Сенсорный пульт быстрого ввода содержит все клинические статусы одонтограммы", () => {
 		const requiredStates: ToothState[] = [
 			"Caries",
 			"Filled",

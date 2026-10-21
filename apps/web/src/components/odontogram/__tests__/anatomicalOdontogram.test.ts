@@ -191,6 +191,7 @@ describe("Anatomical Tooth Geometries & SVG Morphology Suite", () => {
 			"pfm_crown",
 			"gold",
 			"titanium_implant",
+			"titanium",
 		]);
 
 		for (const matKey of materials) {
