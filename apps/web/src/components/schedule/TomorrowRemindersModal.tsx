@@ -39,20 +39,14 @@ export function TomorrowRemindersModal({
 
 	const handleBatchDispatch = async () => {
 		logic.setIsDispatching(true);
-		logic.setDispatchProgress({
-			current: 0,
-			total: logic.summary.dispatchableCount,
-		});
+		logic.setDispatchProgress({ current: 0, total: logic.summary.dispatchableCount });
 		try {
 			await dispatchBatchReminders(
 				logic.summary.reminders,
 				(current, total) => logic.setDispatchProgress({ current, total }),
 				logic.allowQuietHoursOverride,
 			);
-			showToast(
-				`Отправлено ${logic.summary.dispatchableCount} напоминаний`,
-				"success",
-			);
+			showToast(`Отправлено ${logic.summary.dispatchableCount} напоминаний`, "success");
 			onClose();
 		} catch {
 			showToast("Ошибка пакетной отправки напоминаний", "error");
