@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const OUT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/f7540ef9-0c8f-4137-b8e1-a84293efd674";
+const OUT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/0b5a7d39-4a2f-4c18-84ae-31eee41bdf43";
 const DOCS_DIR = "C:/Clinic_MVP/dental-crm/docs/screenshots";
 
 for (const d of [OUT_DIR, DOCS_DIR]) {
@@ -262,7 +262,7 @@ for (const cfg of configs) {
     );
   }, { theme: cfg.theme });
 
-  await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 15000 });
+  await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
   await applyTheme(page, cfg.theme);
   await page.waitForTimeout(600);
 

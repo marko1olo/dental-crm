@@ -112,7 +112,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 								<span>!</span>
 							</>
 						) : (
-							"Добро пожаловать в клинику ДЕНТЕ"
+							"Добро пожаловать в клинику!"
 						)}
 					</div>
 					<div className="selfcheckin-welcome-sub">

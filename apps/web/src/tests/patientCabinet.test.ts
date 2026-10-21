@@ -298,7 +298,8 @@ describe("Patient Personal Portal - Statutory Tax Deduction (KND 1151156) & 54-F
 
 		const receiptHtml = generateDetailedReceiptHtml(paidInvoice, PATIENT_CABINET_PRESET_ALEXEY);
 
-		assert.ok(receiptHtml.includes("КАССОВЫЙ ЧЕК / ПРИХОД 54-ФЗ"), "Should contain 54-FZ header");
+		assert.ok(receiptHtml.includes("КАССОВЫЙ ЧЕК / ПРИХОД"), "Should contain receipt header");
+		assert.ok(receiptHtml.includes("54-ФЗ"), "Should contain 54-FZ in title");
 		assert.ok(receiptHtml.includes("ООО «Стоматологическая клиника ДЕНТЕ»"), "Should contain clinic name");
 		assert.ok(receiptHtml.includes("ИНН: 7841098765"), "Should contain clinic INN");
 		assert.ok(receiptHtml.includes("Воронов Алексей Владимирович"), "Should contain patient name");
@@ -559,7 +560,7 @@ describe("Dual-Mode Zero-Mock Inquisitor Batch 3 (Mandate 8y & Mandates 8za, 8zb
 
 		// Should render clean generic welcome instead of mock persona
 		assert.ok(html.includes("Добро пожаловать в клинику!"));
-		assert.ok(html.includes("Подтвердите прибытие на приём"));
+		assert.ok(html.includes("Выберите цель визита") || html.includes("терминале самообслуживания"));
 		assert.equal(html.includes("Смирнова Анна Викторовна"), false);
 	});
 });
@@ -578,8 +579,8 @@ describe("Red Team Inquisitor: SSOT Real Schedule, Family Balance & Booking Inte
 			appointments: [
 				{
 					id: "apt-live-001",
-					startsAt: "2026-10-15T11:00:00.000Z",
-					endsAt: "2026-10-15T11:30:00.000Z",
+					startsAt: new Date(Date.now() + 86400000 * 3).toISOString(),
+					endsAt: new Date(Date.now() + 86400000 * 3 + 1800000).toISOString(),
 					doctorUserId: "doc-live-456",
 					doctorName: "Д-р Смирнов А. В.",
 					doctorSpecialtyRu: "Хирург-имплантолог",

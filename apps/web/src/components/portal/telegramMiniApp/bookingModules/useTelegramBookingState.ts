@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { isDemoShowcaseMode } from "../../../../lib/demoMode";
+import { isDemoShowcaseMode, isDemoTenant } from "../../../../lib/demoMode";
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
 import {
 	type SpecialistCategory,
@@ -45,24 +45,28 @@ export function useTelegramBookingState({
 	attachedComplaints,
 	onBookingComplete,
 }: UseTelegramBookingStateProps) {
-	const isDemo = isDemoShowcaseMode();
+	const isDemo = isDemoShowcaseMode() || isDemoTenant(organizationId);
 
 	// Категория врача
 	const [activeCategory, setActiveCategory] = useState<SpecialistCategory>("therapist");
 
 	// Список врачей
-	const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>(() => DEFAULT_DOCTORS_LIST);
+	const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>(() =>
+		isDemo ? DEFAULT_DOCTORS_LIST : [],
+	);
 
 	// Выбранный врач
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() =>
-		DEFAULT_DOCTORS_LIST[0]?.id || "doc-1",
+		isDemo ? (DEFAULT_DOCTORS_LIST[0]?.id || "doc-1") : "",
 	);
 
 	// Индекс выбранного дня (0 - сегодня, 1 - завтра, ...)
 	const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
 
 	// Выбранный временной слот
-	const [selectedSlot, setSelectedSlot] = useState<string>("10:30");
+	const [selectedSlot, setSelectedSlot] = useState<string>(() =>
+		isDemo ? "10:30" : "",
+	);
 
 	// Данные пациента для записи
 	const [patientFullName, setPatientFullName] = useState<string>(() =>
@@ -179,8 +183,7 @@ export function useTelegramBookingState({
 
 	// Фильтрация врачей по выбранной категории
 	const filteredDoctors = useMemo(() => {
-		const docs = doctorsList.filter((d) => d.category === activeCategory);
-		return docs.length > 0 ? docs : doctorsList;
+		return doctorsList.filter((d) => d.category === activeCategory);
 	}, [doctorsList, activeCategory]);
 
 	// Текущий выбранный доктор
@@ -188,10 +191,9 @@ export function useTelegramBookingState({
 		return (
 			filteredDoctors.find((d) => d.id === selectedDoctorId) ||
 			filteredDoctors[0] ||
-			doctorsList[0] ||
-			(isDemo ? DEFAULT_DOCTORS_LIST[0] || null : null)
+			null
 		);
-	}, [filteredDoctors, selectedDoctorId, doctorsList, isDemo]);
+	}, [filteredDoctors, selectedDoctorId]);
 
 	// Переключение категории
 	const handleSelectCategory = (cat: SpecialistCategory) => {
@@ -200,6 +202,8 @@ export function useTelegramBookingState({
 		const firstDoc = doctorsList.find((d) => d.category === cat);
 		if (firstDoc) {
 			setSelectedDoctorId(firstDoc.id);
+		} else {
+			setSelectedDoctorId("");
 		}
 	};
 
@@ -208,8 +212,8 @@ export function useTelegramBookingState({
 		if (liveSchedule.length > selectedDateIndex && liveSchedule[selectedDateIndex]?.slots) {
 			return liveSchedule[selectedDateIndex]!.slots;
 		}
-		return ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
-	}, [liveSchedule, selectedDateIndex]);
+		return isDemo ? ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"] : [];
+	}, [liveSchedule, selectedDateIndex, isDemo]);
 
 	// Текстовая сводка по прикрепленным зубам
 	const teethSummaryText = useMemo(() => {

@@ -157,7 +157,9 @@ export function isDemoTenant(organizationId?: string | null): boolean {
 		lower.startsWith("demo_") ||
 		lower.startsWith("demo-") ||
 		lower.startsWith("sample_") ||
-		lower.startsWith("test_org")
+		lower.startsWith("test_org") ||
+		lower.startsWith("org-test") ||
+		lower.includes("test")
 	);
 }
 

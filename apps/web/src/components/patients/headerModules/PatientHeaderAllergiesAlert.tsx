@@ -60,7 +60,7 @@ export const PatientHeaderAllergiesAlert: React.FC<
 									className="px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/25 text-[11px] font-semibold"
 									title={flag.description}
 								>
-									{flag.titleRu || flag.title || flag.id}
+									{flag.titleRu || flag.shortBadge || (flag as { title?: string }).title || flag.id}
 								</span>
 							))}
 						</div>

@@ -112,9 +112,15 @@ export function mapServerPortalMeToCabinetData(
 						? "cancelled"
 						: apt.status === "completed"
 							? "completed"
-							: isPast
-								? "completed"
-								: "scheduled",
+							: apt.status === "confirmed"
+								? "confirmed"
+								: apt.status === "planned" || apt.status === "scheduled"
+									? "scheduled"
+									: apt.status === "reschedule_requested"
+										? "reschedule_requested"
+										: isPast
+											? "completed"
+											: "scheduled",
 				priceRub: apt.priceRub ? Number(apt.priceRub) : undefined,
 				reminderSent: true,
 				reminderChannel: "sms",

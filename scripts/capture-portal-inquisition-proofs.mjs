@@ -88,7 +88,7 @@ async function run() {
 
 		// 1. TELEGRAM MINI APP BOOKING - LIGHT & DARK
 		console.log(`[CAPTURE] Navigating to Telegram Mini App Booking...`);
-		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=booking`, { waitUntil: "networkidle" });
+		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=booking`, { waitUntil: "domcontentloaded" });
 		await page.waitForSelector(".tg-booking-container", { timeout: 10000 });
 		await wait(800);
 
@@ -106,7 +106,7 @@ async function run() {
 
 		// 2. TELEGRAM INTERACTIVE TOOTH PICKER - LIGHT & DARK
 		console.log(`[CAPTURE] Navigating to Telegram Tooth Picker...`);
-		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=odontogram`, { waitUntil: "networkidle" });
+		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=odontogram`, { waitUntil: "domcontentloaded" });
 		await page.waitForSelector(".tg-tooth-picker-container", { timeout: 10000 });
 		await wait(800);
 
@@ -149,7 +149,7 @@ async function run() {
 
 		// 4. SCROLLED BOOKING WITH FLOATING BOTTOM BAR CTA
 		console.log(`[CAPTURE] Navigating back to booking for scrolled CTA proofs...`);
-		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=booking`, { waitUntil: "networkidle" });
+		await page.goto(`${APP_BASE}/tgapp?org=${ORG_ID}&tab=booking`, { waitUntil: "domcontentloaded" });
 		await page.waitForSelector(".tg-booking-container", { timeout: 10000 });
 		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 		await wait(500);

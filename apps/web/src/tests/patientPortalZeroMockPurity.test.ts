@@ -15,7 +15,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
 	isDemoShowcaseMode,
 	setRuntimeDemoMode,
-} from "../utils/demoModeEngine.js";
+} from "../lib/demoMode.js";
 
 import {
 	getSafePortalProfile,
