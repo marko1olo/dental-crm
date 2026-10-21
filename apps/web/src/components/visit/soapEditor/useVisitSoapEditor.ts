@@ -656,12 +656,21 @@ export function useVisitSoapEditor({
 		],
 	);
 
-	// Ручное сохранение дневника (Мандат 8e: никогда не disabled)
+	// Ручное сохранение дневника (Мандат 8e: никогда не disabled, синхронный замок от двойных кликов)
+	const inFlightExplicitSaveRef = useRef(false);
 	const handleExplicitSave = useCallback(() => {
-		onChange?.(values);
-		onSave?.(values);
-		saveDraftToStorage(values);
-		setSaveStatus("saved");
+		if (inFlightExplicitSaveRef.current) return;
+		inFlightExplicitSaveRef.current = true;
+		try {
+			onChange?.(values);
+			onSave?.(values);
+			saveDraftToStorage(values);
+			setSaveStatus("saved");
+		} finally {
+			setTimeout(() => {
+				inFlightExplicitSaveRef.current = false;
+			}, 300);
+		}
 	}, [saveDraftToStorage, setSaveStatus, values, onChange, onSave]);
 
 	// Копирование целостной записи в буфер

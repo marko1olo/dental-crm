@@ -59,7 +59,7 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		max-width: 220px;
+		max-width: 100%;
 		word-break: normal;
 		display: block;
 		padding-left: 2px;

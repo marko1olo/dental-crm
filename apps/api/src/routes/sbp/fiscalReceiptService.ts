@@ -260,15 +260,22 @@ export async function executeFiscalizeReceiptTransaction(params: {
 		}
 	}
 
+	const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
+	const now = new Date();
+	const effectiveMutationId =
+		input.clientMutationId?.trim() ||
+		headerIdempotencyKey?.trim() ||
+		`fiscal:${fiscalReceiptNumber}`;
+
 	// Idempotency check with payload integrity verification
-	if (input.clientMutationId) {
+	if (effectiveMutationId && !effectiveMutationId.startsWith("fiscal:")) {
 		const [existingPayment] = await db
 			.select()
 			.from(payments)
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(payments.clientMutationId, input.clientMutationId),
+					eq(payments.clientMutationId, effectiveMutationId),
 				),
 			)
 			.limit(1);
@@ -291,13 +298,6 @@ export async function executeFiscalizeReceiptTransaction(params: {
 			};
 		}
 	}
-
-	const fiscalReceiptNumber = `FD-${Date.now().toString().slice(-6)}`;
-	const now = new Date();
-	const effectiveMutationId =
-		input.clientMutationId?.trim() ||
-		headerIdempotencyKey?.trim() ||
-		`fiscal:${fiscalReceiptNumber}`;
 
 	const itemizedFfd12Tags = buildItemizedFfd12Tags(input.items);
 

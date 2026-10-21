@@ -1222,7 +1222,8 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 
 	.payment-modal {
 		width: 100% !important;
-		max-width: 100% !important;
+		max-width: 100vw !important;
+		overflow-x: clip !important;
 		border-radius: 24px 24px 0 0 !important;
 		max-height: 92dvh !important;
 		border-bottom: none !important;
@@ -1256,7 +1257,8 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 		border-color: #334155 !important;
 	}
 
-	.mobile-payment-hero-amount {
+	.mobile-payment-hero-amount,
+	.payment-hero-amount {
 		font-size: 38px !important;
 		line-height: 1.1;
 		font-weight: 900;
@@ -1265,7 +1267,8 @@ body:has([data-testid="split-payment-modal"]) [data-testid="modal-finance-cashbo
 		color: var(--ink, #0f172a);
 	}
 
-	[data-theme="dark"] .mobile-payment-hero-amount {
+	[data-theme="dark"] .mobile-payment-hero-amount,
+	[data-theme="dark"] .payment-hero-amount {
 		color: #f8fafc !important;
 	}
 

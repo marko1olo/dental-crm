@@ -1,4 +1,4 @@
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
 import { Check, X, Zap } from "lucide-react";
 import React from "react";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
@@ -43,6 +43,8 @@ export function VisitEmkModals({
 			window.removeEventListener("dente:open-perio-modal", handleOpenPerio);
 		};
 	}, []);
+
+	const inFlightSbpRef = React.useRef(false);
 
 	const sbpPayloadUrl =
 		completionResult?.sbpQrPayload ||
@@ -111,19 +113,32 @@ export function VisitEmkModals({
 						<div className="pt-3 border-t border-[var(--line)] flex gap-2">
 							<button
 								type="button"
-								onClick={() => {
-									fetch("/api/billing/fiscalize-receipt", {
-										method: "POST",
-										headers: { "Content-Type": "application/json" },
-										credentials: "same-origin",
-										body: JSON.stringify({
-											visitId: dashboard?.activeVisit?.id,
-											patientId: activePatient?.id,
-											receiptNumber,
-											totalRub: totalNetRub,
-											paymentMethod: "SBP_QR",
-										}),
-									}).catch(() => null);
+								onClick={async () => {
+									if (inFlightSbpRef.current) return;
+									inFlightSbpRef.current = true;
+									const mutationId = generateUuidV7();
+									try {
+										await fetch("/api/billing/fiscalize-receipt", {
+											method: "POST",
+											headers: {
+												"Content-Type": "application/json",
+												"Idempotency-Key": mutationId,
+											},
+											credentials: "same-origin",
+											body: JSON.stringify({
+												visitId: dashboard?.activeVisit?.id,
+												patientId: activePatient?.id,
+												receiptNumber,
+												totalRub: totalNetRub,
+												paymentMethod: "SBP_QR",
+												clientMutationId: mutationId,
+											}),
+										});
+									} catch {
+										// Fail-soft under Mandate 8e
+									} finally {
+										inFlightSbpRef.current = false;
+									}
 									showToast("Оплата по СБП успешно подтверждена!", "success", 4000);
 									setIsSbpQrModalOpen(false);
 								}}

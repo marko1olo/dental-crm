@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CheckCircle2,
   CreditCard,
-  ShieldCheck,
   Stethoscope,
   Trash2,
   Zap,
@@ -81,33 +80,6 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
               className="mobile-chairside-textarea"
               data-testid={`${testId}-complaint-input`}
             />
-            <div
-              className="mobile-chairside-row-item cursor-pointer bg-emerald-500/10 border-b border-[var(--line)]"
-              onClick={() => {
-                triggerHaptic("success");
-                updateVisitNoteField(
-                  "complaint",
-                  "Жалоб на момент осмотра не предъявляет. Плановый профилактический осмотр.",
-                );
-                updateVisitNoteField(
-                  "anamnesis",
-                  "Соматически здоров. Аллергологический и эпидемиологический анамнез спокойный. Хронические заболевания отрицает.",
-                );
-                showToast("✓ Соматически здоров (Норма в 1 клик)", "success");
-              }}
-              data-testid={`${testId}-btn-somatic-norm`}
-            >
-              <div className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
-                <div>
-                  <div className="text-[14px] font-bold text-emerald-800 dark:text-emerald-300">
-                    ✓ Соматически здоров / Интактная норма
-                  </div>
-                  <div className="text-[12px] text-[var(--muted)]">Заполнить статус физиологической нормы в 1 клик</div>
-                </div>
-              </div>
-              <ArrowRight size={16} className="text-[var(--muted)]" />
-            </div>
 
             <div
               className="mobile-chairside-row-item"

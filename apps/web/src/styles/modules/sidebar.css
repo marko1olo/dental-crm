@@ -301,6 +301,16 @@ html.dark .sidebar .nav-item.active,
 	border-color: var(--teal, #0d9488) !important;
 }
 
+/* 6. Quick Tools (Clinical Tasks & Recalls Hub) High-Contrast Palette */
+.sidebar-quick-tools button {
+	color: var(--ink, #111827) !important;
+}
+
+[data-theme="dark"] .sidebar-quick-tools button,
+.dark .sidebar-quick-tools button {
+	color: var(--ink, #f8fafc) !important;
+}
+
 [data-theme="dark"] .sidebar-footer .theme-footer-control,
 [data-theme="night"] .sidebar-footer .theme-footer-control,
 [data-theme="ocean"] .sidebar-footer .theme-footer-control,

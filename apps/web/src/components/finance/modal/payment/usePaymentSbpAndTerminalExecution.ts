@@ -4,9 +4,10 @@
  * Execution handlers for SBP QR (ГОСТ Р 56042-2014), Sber POS terminal, emergency manual confirm, and fiscal retry.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
 	createCompositeIdempotencyKey,
+	generateUuidV7,
 	rubToKopecks,
 	CASH_BOXES,
 	CASH_RECEIPT_CATEGORIES,
@@ -97,6 +98,7 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 		onSuccess,
 	} = params;
 
+	const inFlightRef = useRef<boolean>(false);
 	const [interruptedPaymentState, setInterruptedPaymentState] = useState<{
 		isInterrupted: boolean;
 		reason: string;
@@ -109,11 +111,13 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 	const [isRetryingFiscalization, setIsRetryingFiscalization] = useState<boolean>(false);
 
 	const handleManualCardTerminalConfirm = async (overrideAmountRub?: number) => {
+		if (inFlightRef.current || isSubmittingManualCard) return;
+		inFlightRef.current = true;
 		const amountToConfirm = overrideAmountRub ?? (interruptedPaymentState?.amountRub || totalDueRub);
 		setIsSubmittingManualCard(true);
 		try {
 			const clientMutationId = createCompositeIdempotencyKey(
-				`manual-card:${Date.now()}-${++sbpTerminalMutationSeq}`,
+				generateUuidV7(),
 				{ patientId, amountRub: amountToConfirm, method: "card", manualConfirmed: true },
 			);
 			const headers = denteAdminSecretRequestHeaders({
@@ -190,11 +194,14 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 				amountRub: amountToConfirm,
 			});
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmittingManualCard(false);
 		}
 	};
 
 	const handleRetryFiscalization = async () => {
+		if (inFlightRef.current || isRetryingFiscalization) return;
+		inFlightRef.current = true;
 		setIsRetryingFiscalization(true);
 		try {
 			const printRes = await hardwarePrinter.printFiscalReceipt({
@@ -232,11 +239,14 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 			showToast(errMsg, "error");
 			setFiscalizationRetryPending(true);
 		} finally {
+			inFlightRef.current = false;
 			setIsRetryingFiscalization(false);
 		}
 	};
 
 	const handleSbpExecutePayment = async (orderIdToConfirm?: string, receiptId?: string | null) => {
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		const effectiveOrderId = orderIdToConfirm || effectiveSbpOrderId;
 		const effectiveAmountRub = totalDueRub;
 		if (isWarranty100 || effectiveAmountRub <= 0) {
@@ -250,11 +260,12 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
 			});
 			onClose();
+			inFlightRef.current = false;
 			return;
 		}
 
 		const clientMutationId = createCompositeIdempotencyKey(
-			`sbp:${Date.now()}-${++sbpTerminalMutationSeq}`,
+			generateUuidV7(),
 			{ patientId, amountRub: effectiveAmountRub, method: "sbp_qr", cashBoxType: selectedCashBoxType },
 		);
 		const headers = denteAdminSecretRequestHeaders({
@@ -328,11 +339,14 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 		} catch (err: unknown) {
 			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при фиксации оплаты СБП";
 			showToast(errorMsg, "error");
+		} finally {
+			inFlightRef.current = false;
 		}
 	};
 
 	const handleCheckSbpStatus = async (manual = false) => {
-		if (isCheckingSbp || sbpStatus === "paid" || effectiveSbpKopecks <= 0) return;
+		if (inFlightRef.current || isCheckingSbp || sbpStatus === "paid" || effectiveSbpKopecks <= 0) return;
+		inFlightRef.current = true;
 		setIsCheckingSbp(true);
 		try {
 			const headers = denteAdminSecretRequestHeaders({ Accept: "application/json" });
@@ -366,11 +380,14 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 				setSbpCheckMessage("Шлюз СБП временно недоступен. Проверьте банковскую выписку.");
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsCheckingSbp(false);
 		}
 	};
 
 	const handleConfirmSbpManual = async () => {
+		if (inFlightRef.current || isCheckingSbp) return;
+		inFlightRef.current = true;
 		setIsCheckingSbp(true);
 		try {
 			const headers = denteAdminSecretRequestHeaders({
@@ -402,6 +419,7 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 				await handleSbpExecutePayment(effectiveSbpOrderId);
 			}
 		} finally {
+			inFlightRef.current = false;
 			setIsCheckingSbp(false);
 		}
 	};

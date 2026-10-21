@@ -116,8 +116,9 @@
 	}
 
 	.workspace.view-visit .topbar h1 {
-		font-size: 20px;
-		line-height: 1.15;
+		font-size: clamp(14px, 4vw, 16px);
+		line-height: 1.2;
+		max-width: 100%;
 	}
 
 	.role-switcher-options {

@@ -312,27 +312,47 @@ export function useChairsideVisitWorkspace({
     [currentStep, visitNoteForm, updateVisitNoteField],
   );
 
+  // Synchronous double-click / in-flight request locks (Mandate 8e & idempotency)
+  const inFlightStepRef = useRef(false);
+  const inFlightCheckoutRef = useRef(false);
+
   const handleNextStep = () => {
-    triggerHaptic("selection");
-    if (flushPendingVisitSaves) void flushPendingVisitSaves();
-    if (currentStep === "complaints") setCurrentStep("exam");
-    else if (currentStep === "exam") setCurrentStep("diagnosis");
-    else if (currentStep === "diagnosis") setCurrentStep("treatment");
-    else if (currentStep === "treatment") setCurrentStep("checkout");
-    else if (currentStep === "checkout") {
-      setIsCheckoutSheetOpen(true);
+    if (inFlightStepRef.current) return;
+    inFlightStepRef.current = true;
+    try {
+      triggerHaptic("selection");
+      if (flushPendingVisitSaves) void flushPendingVisitSaves();
+      if (currentStep === "complaints") setCurrentStep("exam");
+      else if (currentStep === "exam") setCurrentStep("diagnosis");
+      else if (currentStep === "diagnosis") setCurrentStep("treatment");
+      else if (currentStep === "treatment") setCurrentStep("checkout");
+      else if (currentStep === "checkout") {
+        setIsCheckoutSheetOpen(true);
+      }
+    } finally {
+      setTimeout(() => {
+        inFlightStepRef.current = false;
+      }, 250);
     }
   };
 
   const handlePrevStep = () => {
-    triggerHaptic("selection");
-    if (flushPendingVisitSaves) void flushPendingVisitSaves();
-    if (currentStep === "checkout") setCurrentStep("treatment");
-    else if (currentStep === "treatment") setCurrentStep("diagnosis");
-    else if (currentStep === "diagnosis") setCurrentStep("exam");
-    else if (currentStep === "exam") setCurrentStep("complaints");
-    else if (currentStep === "complaints") {
-      if (onClose) onClose();
+    if (inFlightStepRef.current) return;
+    inFlightStepRef.current = true;
+    try {
+      triggerHaptic("selection");
+      if (flushPendingVisitSaves) void flushPendingVisitSaves();
+      if (currentStep === "checkout") setCurrentStep("treatment");
+      else if (currentStep === "treatment") setCurrentStep("diagnosis");
+      else if (currentStep === "diagnosis") setCurrentStep("exam");
+      else if (currentStep === "exam") setCurrentStep("complaints");
+      else if (currentStep === "complaints") {
+        if (onClose) onClose();
+      }
+    } finally {
+      setTimeout(() => {
+        inFlightStepRef.current = false;
+      }, 250);
     }
   };
 
@@ -385,16 +405,22 @@ export function useChairsideVisitWorkspace({
   };
 
   const executeFinalCheckout = async () => {
-    triggerHaptic("success");
-    setIsCheckoutSheetOpen(false);
-    if (handleFinishVisitAction) {
-      await handleFinishVisitAction();
+    if (inFlightCheckoutRef.current) return;
+    inFlightCheckoutRef.current = true;
+    try {
+      triggerHaptic("success");
+      setIsCheckoutSheetOpen(false);
+      if (handleFinishVisitAction) {
+        await handleFinishVisitAction();
+      }
+      if (flushPendingVisitSaves) {
+        await flushPendingVisitSaves();
+      }
+      showToast("Приём завершён, счёт сформирован", "success");
+      if (onClose) onClose();
+    } finally {
+      inFlightCheckoutRef.current = false;
     }
-    if (flushPendingVisitSaves) {
-      await flushPendingVisitSaves();
-    }
-    showToast("Приём завершён, счёт сформирован", "success");
-    if (onClose) onClose();
   };
 
   useEffect(() => {

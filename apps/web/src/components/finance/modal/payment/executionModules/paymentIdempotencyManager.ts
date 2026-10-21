@@ -29,14 +29,12 @@ export interface PaymentIdempotencyContext {
 }
 
 /**
- * Generates a unique, composite idempotency key incorporating timestamp, sequence counter, and UUIDv7.
+ * Generates a unique, composite idempotency key incorporating RFC 9562 UUIDv7.
  */
 export function generatePaymentIdempotencyKey(params: CreateIdempotencyKeyParams): PaymentIdempotencyContext {
-	const seq = ++paymentMutationSeq;
-	const timestamp = Date.now();
-	const baseKey = `${params.prefix}:${timestamp}-${seq}-${generateUuidV7().slice(0, 8)}`;
+	const uuidV7 = generateUuidV7();
 
-	const clientMutationId = createCompositeIdempotencyKey(baseKey, {
+	const clientMutationId = createCompositeIdempotencyKey(uuidV7, {
 		patientId: params.patientId,
 		amountRub: params.amountRub,
 		method: params.method,

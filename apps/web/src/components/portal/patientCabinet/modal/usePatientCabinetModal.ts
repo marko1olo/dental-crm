@@ -6,7 +6,7 @@
  * online booking, cancellations, tax calculations, and offline sync.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	calculateCabinetSummary,
 	calculateDentalHealthIndex,
@@ -115,6 +115,7 @@ export function usePatientCabinetModal({
 	const [activeSbpPayload, setActiveSbpPayload] = useState<SbpQrPayload | null>(null);
 	const [isCheckingSbpStatus, setIsCheckingSbpStatus] = useState(false);
 	const [sbpStatusMessage, setSbpStatusMessage] = useState<string | null>(null);
+	const inFlightSbpCheckRef = useRef(false);
 
 	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(initialSigningConsent);
 	const [consentSignMode, setConsentSignMode] = useState<"sms_otp" | "cabinet_pep">(initialConsentSignMode);
@@ -215,7 +216,8 @@ export function usePatientCabinetModal({
 
 	// Handle SBP Payment Check (Mandates 8e, 8k: honest /api/fiscal/sbp-status query, no fake mocks)
 	const handleCheckSbpPaymentStatus = useCallback(async () => {
-		if (!activeSbpInvoice) return;
+		if (!activeSbpInvoice || inFlightSbpCheckRef.current) return;
+		inFlightSbpCheckRef.current = true;
 		setIsCheckingSbpStatus(true);
 		setSbpStatusMessage("Запрос подтверждения транзакции в шлюзе НСПК...");
 		try {
@@ -267,6 +269,7 @@ export function usePatientCabinetModal({
 		} catch {
 			setSbpStatusMessage("Не удалось связаться со шлюзом СБП. Повторите попытку через несколько секунд.");
 		} finally {
+			inFlightSbpCheckRef.current = false;
 			setIsCheckingSbpStatus(false);
 		}
 	}, [activeSbpInvoice, activeSbpPayload, onInvoicePaid]);

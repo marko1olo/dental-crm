@@ -399,10 +399,17 @@ export async function handlePartialRefund(
 		});
 	}
 
+	const headerIdempotencyKey =
+		(request.headers["idempotency-key"] as string | undefined) ||
+		(request.headers["x-idempotency-key"] as string | undefined);
+	const effectiveMutationId =
+		parsed.data.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+
 	try {
 		const result = await PartialRefundService.executePartialRefund({
 			organizationId: orgId,
 			...parsed.data,
+			clientMutationId: effectiveMutationId,
 		});
 
 		try {
@@ -424,6 +431,14 @@ export async function handlePartialRefund(
 		return reply.code(200).send(result);
 	} catch (err) {
 		if (err instanceof PartialRefundValidationError) {
+			if (err.code === "DuplicateRefundMutation") {
+				return reply.code(200).send({
+					success: true,
+					paymentId: (err.details as any)?.paymentId,
+					isIdempotentReplay: true,
+					message: err.message,
+				});
+			}
 			const statusCode = err.code === "OverRefundExceeded" ? 422 : 400;
 			return reply.code(statusCode).send({
 				error: err.code,

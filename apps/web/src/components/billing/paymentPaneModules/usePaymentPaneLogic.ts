@@ -5,8 +5,8 @@
  * Governed by Mandate 8b (strictly <= 120 lines) and Mandates 8e, 8n.
  */
 
-import { useState, useMemo, useEffect } from "react";
-import { calculateCanonicalSplit } from "@dental/shared";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { calculateCanonicalSplit, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { playTactileEarcon } from "../../../lib/chairsideErgonomics.js";
 import { clinicalProceduralAudio } from "../../../services/audio/clinicalProceduralAudio.js";
@@ -34,6 +34,7 @@ export function usePaymentPaneLogic(props: CashRegisterPaymentPaneProps) {
 	const [activeDiscountPercent, setActiveDiscountPercent] = useState<number>(0);
 	const [isWarranty100, setIsWarranty100] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const inFlightRef = useRef<boolean>(false);
 
 	useEffect(() => {
 		const newBase = currentInvoice?.totalAmountRub ?? currentInvoice?.amountRub ?? defaultAmountRub;
@@ -64,22 +65,19 @@ export function usePaymentPaneLogic(props: CashRegisterPaymentPaneProps) {
 	const totalAvailableDepositRub = Math.max(0, patientDepositRub) + Math.max(0, patientFamilyBalanceRub);
 
 	const finalizeReceipt = async (method: ShiftReceiptEntry["method"], sum: number) => {
+		if (inFlightRef.current || isSubmitting) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 		playTactileEarcon("pay");
 		void clinicalProceduralAudio.playCashierKaching();
 		const invId = currentInvoice?.id;
+		const mutationId = generateUuidV7();
 		if (invId) {
 			try {
-				const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+				const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json", "Idempotency-Key": mutationId });
 				await fetch(`/api/invoices/${invId}/pay`, {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						amountRub: sum,
-						method: method === "split" ? "card" : method,
-						clientMutationId: `pay-${invId}-${Date.now()}`,
-						patientId: currentInvoice.patientId,
-					}),
+					method: "POST", headers,
+					body: JSON.stringify({ amountRub: sum, method: method === "split" ? "card" : method, clientMutationId: mutationId, patientId: currentInvoice.patientId }),
 				}).catch(() => null);
 			} catch {
 				// Fail-soft under Mandate 8e
@@ -90,18 +88,12 @@ export function usePaymentPaneLogic(props: CashRegisterPaymentPaneProps) {
 			number: Date.now().toString().slice(-4),
 			time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
 			patientName: currentInvoice?.patientName || "Пациент клиники",
-			totalRub: sum,
-			method,
+			totalRub: sum, method,
 			items: currentInvoice?.items?.length
-				? currentInvoice.items.map((it: any) => ({
-						name: it.name || it.title || "Стоматологическая услуга",
-						quantity: it.quantity || 1,
-						priceRub: it.priceRub || it.price || sum,
-						amountRub: it.amountRub || it.amount || sum,
-						code804n: it.code804n || "A16.07.002",
-					}))
+				? currentInvoice.items.map((it: any) => ({ name: it.name || it.title || "Стоматологическая услуга", quantity: it.quantity || 1, priceRub: it.priceRub || it.price || sum, amountRub: it.amountRub || it.amount || sum, code804n: it.code804n || "A16.07.002" }))
 				: [{ name: isWarranty100 ? "Гарантийный прием (100%)" : "Стоматологический приём", quantity: 1, priceRub: sum, amountRub: sum, code804n: "A16.07.002" }],
 		};
+		inFlightRef.current = false;
 		setIsSubmitting(false);
 		onPaymentCompleted?.(newReceipt);
 	};

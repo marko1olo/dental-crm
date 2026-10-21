@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { type ShiftReceiptEntry, DEFAULT_RECENT_RECEIPTS } from "../cashRegisterDrawerData.js";
+import { executeCashDeposit, executeCashWithdrawal, executeShiftXReport, executeShiftZReport } from "./cashRegisterOperations.js";
 
 export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: string, invoices?: readonly any[]) {
 	const [activeTab, setActiveTab] = useState<"payment" | "shift" | "receipts" | "operations">("payment");
@@ -21,8 +22,9 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 	const [cardTotalRub, setCardTotalRub] = useState<number>(0);
 	const [sbpTotalRub, setSbpTotalRub] = useState<number>(0);
 	const [grandTotalRub, setGrandTotalRub] = useState<number>(0);
-	const [receiptsCount, setReceiptsCount] = useState<number>(DEFAULT_RECENT_RECEIPTS.length);
-	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(DEFAULT_RECENT_RECEIPTS);
+	const initialReceipts = (typeof window === "undefined" || isDemoShowcaseMode()) ? DEFAULT_RECENT_RECEIPTS : [];
+	const [receiptsCount, setReceiptsCount] = useState<number>(initialReceipts.length);
+	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(initialReceipts);
 
 	const fetchShiftTelemetry = useCallback(async () => {
 		try {
@@ -50,9 +52,7 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 				const mainBox = (Array.isArray(bData.data) ? bData.data : []).find((b: any) => b.type === "main");
 				if (mainBox && typeof mainBox.balanceRub === "number") setCashInDrawerRub(mainBox.balanceRub);
 			}
-		} catch {
-			// Fail-soft under Mandate 8e
-		}
+		} catch { /* Fail-soft under Mandate 8e */ }
 	}, []);
 
 	useEffect(() => {
@@ -86,25 +86,10 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 		}
 	}, [invoices]);
 
-	const handleCashDeposit = async (amt: number) => {
-		setCashInDrawerRub((prev) => prev + amt);
-		showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
-	};
-
-	const handleCashEncashment = async () => {
-		const amt = cashInDrawerRub;
-		setCashInDrawerRub(0);
-		showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
-	};
-
-	const handleXReport = async () => {
-		showToast(`Х-отчёт (смена № ${shiftNumber}): выручка ${grandTotalRub.toLocaleString("ru-RU")} ₽ (без гашения)`, "info");
-	};
-
-	const handleZReport = async () => {
-		setIsShiftOpen(false);
-		showToast(`Z-отчёт: кассовая смена № ${shiftNumber} закрыта`, "success");
-	};
+	const handleCashDeposit = (amt: number) => executeCashDeposit(amt, (nb) => nb !== undefined ? setCashInDrawerRub(nb) : setCashInDrawerRub((p) => p + amt));
+	const handleCashEncashment = () => executeCashWithdrawal(cashInDrawerRub, (nb) => setCashInDrawerRub(nb ?? 0));
+	const handleXReport = () => executeShiftXReport(cashierFullName, (sn, gt) => { if (sn) setShiftNumber(sn); if (gt !== undefined) setGrandTotalRub(gt); });
+	const handleZReport = () => executeShiftZReport(shiftNumber, () => setIsShiftOpen(false));
 
 	return {
 		activeTab, setActiveTab, selectedReceipt, setSelectedReceipt, cashInDrawerRub, setCashInDrawerRub,

@@ -38,6 +38,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams): PaymentE
 	} = params;
 
 
+	const inFlightRef = useRef<boolean>(false);
 	const isSubmittingCashRef = useRef<boolean>(false);
 	const isSubmittingSplitRef = useRef<boolean>(false);
 	const isSubmittingDepositRef = useRef<boolean>(false);
@@ -138,36 +139,42 @@ export function usePaymentExecution(params: UsePaymentExecutionParams): PaymentE
 
 
 	const handleCashSubmit = async () => {
-		if (isSubmittingCashRef.current || isSubmittingCash) return;
+		if (inFlightRef.current || isSubmittingCashRef.current || isSubmittingCash) return;
+		inFlightRef.current = true;
 		isSubmittingCashRef.current = true;
 		setIsSubmittingCash(true);
 		try {
 			await executeCashSubmit(params, executorContext);
 		} finally {
+			inFlightRef.current = false;
 			isSubmittingCashRef.current = false;
 			setIsSubmittingCash(false);
 		}
 	};
 
 	const handleSplitSubmit = async () => {
-		if (isSubmittingSplitRef.current || isSubmittingSplit) return;
+		if (inFlightRef.current || isSubmittingSplitRef.current || isSubmittingSplit) return;
+		inFlightRef.current = true;
 		isSubmittingSplitRef.current = true;
 		setIsSubmittingSplit(true);
 		try {
 			await executeSplitSubmit(params, executorContext);
 		} finally {
+			inFlightRef.current = false;
 			isSubmittingSplitRef.current = false;
 			setIsSubmittingSplit(false);
 		}
 	};
 
 	const handleDepositSubmit = async (source: "deposit" | "family") => {
-		if (isSubmittingDepositRef.current || isSubmittingDeposit) return;
+		if (inFlightRef.current || isSubmittingDepositRef.current || isSubmittingDeposit) return;
+		inFlightRef.current = true;
 		isSubmittingDepositRef.current = true;
 		setIsSubmittingDeposit(true);
 		try {
 			await executeDepositSubmit(params, source, executorContext);
 		} finally {
+			inFlightRef.current = false;
 			isSubmittingDepositRef.current = false;
 			setIsSubmittingDeposit(false);
 		}

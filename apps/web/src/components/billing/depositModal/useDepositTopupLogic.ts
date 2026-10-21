@@ -5,10 +5,10 @@
  * Strictly <= 120 lines per Mandate 8b.
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
-import { formatDisplayCurrency, rubToKopecksStrict, type DepositTopupPayload, type ReceiptDeliveryMode } from "@dental/shared";
+import { formatDisplayCurrency, rubToKopecksStrict, generateUuidV7, type DepositTopupPayload, type ReceiptDeliveryMode } from "@dental/shared";
 import type { DepositTopupModalProps, DepositPaymentMethod } from "./depositModalTypes.js";
 
 export function useDepositTopupLogic(props: DepositTopupModalProps) {
@@ -18,18 +18,18 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 		clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", onSuccess,
 	} = props;
 
+	const inFlightRef = useRef<boolean>(false);
 	const [amountRub, setAmountRub] = useState<number>(10000);
 	const [paymentMethod, setPaymentMethod] = useState<DepositPaymentMethod>("card");
 	const [deliveryMode, setDeliveryMode] = useState<ReceiptDeliveryMode>("paper_print");
 	const [isFamilyWallet, setIsFamilyWallet] = useState<boolean>(isFamilyShared);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [isCompleted, setIsCompleted] = useState<boolean>(false);
-	const [clientMutationId] = useState<string>(
-		() => `dep_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-	);
+	const [clientMutationId] = useState<string>(() => generateUuidV7());
 
 	const handleExecuteTopup = async () => {
-		if (isSubmitting || isCompleted || amountRub <= 0) return;
+		if (inFlightRef.current || isSubmitting || isCompleted || amountRub <= 0) return;
+		inFlightRef.current = true;
 		setIsSubmitting(true);
 
 		const payload: DepositTopupPayload = {
@@ -81,6 +81,7 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 			console.error("[DepositTopupModal] Network error during deposit topup:", err);
 			showToast(`Ошибка сети при пополнении депозита: ${err?.message || "неизвестная ошибка"}`, "error");
 		} finally {
+			inFlightRef.current = false;
 			setIsSubmitting(false);
 		}
 	};

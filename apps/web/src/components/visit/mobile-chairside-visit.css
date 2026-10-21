@@ -293,7 +293,7 @@
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   padding: 12px;
-  padding-bottom: calc(76px + 56px + max(16px, env(safe-area-inset-bottom, 16px)));
+  padding-bottom: calc(90px + 64px + env(safe-area-inset-bottom, 20px));
   display: flex;
   flex-direction: column;
   gap: 14px;
