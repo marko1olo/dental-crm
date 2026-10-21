@@ -4,21 +4,22 @@
  */
 
 import type { Lead } from "../../../store/leadsStore";
+import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
 import { useLeadConvertModalSubmit } from "./useLeadConvertModalSubmit";
 import { useLeadScheduleHandlers } from "./useLeadScheduleHandlers";
 import type { useLeadsKanbanViewState } from "./useLeadsKanbanViewState";
 
 interface UseLeadAppointmentConversionBridgeProps {
 	leads: Lead[];
-	staff: Array<{ id: string; fullName: string; role?: string }>;
-	chairs: Array<{ id: string; name: string }>;
+	staff: BookableDoctor[];
+	chairs: BookableChair[];
 	selectedDoctorId: string;
 	selectedChairId: string;
 	v: ReturnType<typeof useLeadsKanbanViewState>;
-	visitMinutes: number | null;
-	clinicTimeZone: string | null;
-	convertLeadToAppointment: (params: any) => Promise<any>;
-	fetchLeads: () => Promise<void>;
+	visitMinutes: number | null | undefined;
+	clinicTimeZone: string | null | undefined;
+	convertLeadToAppointment: (id: string, payload: any) => Promise<any>;
+	fetchLeads: () => void | Promise<void>;
 	navigateToScheduleWithBooking: (data: any) => void;
 }
 

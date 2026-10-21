@@ -35,7 +35,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 }) => {
 	const sla = getLeadSlaStatus(lead);
 	const dropReasonMatch = lead.dropReason || null;
-	const targetPatientId = lead.patientId || lead.existingPatient?.id;
+	const targetPatientId =
+		lead.patientId ||
+		(lead as unknown as { patientId?: string | null }).patientId ||
+		lead.existingPatient?.id;
 
 	const handleOpenPatient = (e: React.MouseEvent, patientId: string) => {
 		e.stopPropagation();

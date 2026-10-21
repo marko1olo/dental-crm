@@ -31,6 +31,7 @@ export interface Lead {
 	organizationId?: string | undefined;
 	name: string;
 	patientName?: string | null | undefined;
+	patientId?: string | null | undefined;
 	phone?: string | undefined;
 	source?: string | undefined;
 	status: LeadStatus;

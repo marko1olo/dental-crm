@@ -5,6 +5,8 @@
 
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
+import type { LeadConvertSubmitOptions } from "../LeadConvertModal";
+import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
 import { LeadsKanbanSharedModals } from "./LeadsKanbanSharedModals";
 import type { useLeadFormState } from "./useLeadFormState";
 import type { useLeadsKanbanViewState } from "./useLeadsKanbanViewState";
@@ -13,15 +15,18 @@ interface LeadsKanbanMasterModalsProps {
 	v: ReturnType<typeof useLeadsKanbanViewState>;
 	form: ReturnType<typeof useLeadFormState>;
 	leads: Lead[];
-	staff: Array<{ id: string; fullName: string; role?: string }>;
-	chairs: Array<{ id: string; name: string }>;
+	staff: BookableDoctor[];
+	chairs: BookableChair[];
 	selectedDoctorId: string;
 	setSelectedDoctorId: (id: string) => void;
 	selectedChairId: string;
 	setSelectedChairId: (id: string) => void;
 	creatingPatientLeadId: string | null;
 	handleCreatePatientFromLead: (lead: Lead) => void;
-	handleConvertSubmit: () => Promise<void>;
+	handleConvertSubmit: (
+		e: React.FormEvent,
+		options?: LeadConvertSubmitOptions,
+	) => Promise<void> | void;
 }
 
 export const LeadsKanbanMasterModals: React.FC<LeadsKanbanMasterModalsProps> = ({
