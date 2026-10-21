@@ -14,7 +14,6 @@ import {
 	Users,
 } from "lucide-react";
 import { useOnboardingStore } from "../../store/onboardingStore";
-import { SovereignScalePresetsCard } from "./SovereignScalePresetsCard";
 import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 
 /**
@@ -92,8 +91,6 @@ export function Step1ClinicProfile() {
 				</p>
 			</div>
 
-			<SovereignScalePresetsCard />
-
 			<div className="step-section">
 				<label className="section-label" id="operational-mode-label">
 					Операционный режим работы клиники
@@ -170,11 +167,10 @@ export function Step1ClinicProfile() {
 										updateProfile({ clinicName: fallback });
 									}
 								}}
-								autoFocus
 							/>
 						</div>
 						<small className="field-hint">
-							Используется в шапке приёма, договорах и счетах 54-ФЗ. Пустое поле автоматически заменяется на «Стоматологический кабинет»
+							Используется в шапке приёма, договорах, кассовых чеках и счетах. Пустое поле автоматически заменяется на «Стоматологический кабинет»
 						</small>
 					</div>
 

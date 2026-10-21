@@ -18,6 +18,12 @@ const EgiszCertificatesHubModal = lazyWithRetry(() =>
 	})),
 );
 
+const RapidLaunchWizard = lazyWithRetry(() =>
+	import("../onboarding/RapidLaunchWizard").then((module) => ({
+		default: module.RapidLaunchWizard,
+	})),
+);
+
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
 
@@ -95,6 +101,13 @@ export function AppModalsContainer({
 		return "queue";
 	});
 
+	const [isGlobalOnboardingOpen, setIsGlobalOnboardingOpen] = React.useState(
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("onboarding") ||
+				(window.location.hash || "").includes("onboarding")),
+	);
+
 	const primaryModal = useUiSurfaceStore((s) => s.primaryModal);
 	const isLoyaltyFromStore = primaryModal?.id === "loyalty";
 	const isEffectiveLoyaltyOpen = Boolean(isGlobalLoyaltyOpen || isLoyaltyFromStore);
@@ -135,6 +148,17 @@ export function AppModalsContainer({
 			}
 			setIsEgiszCertificatesOpen(true);
 		};
+		const onOpenOnboarding = () => {
+			setIsGlobalOnboardingOpen(true);
+		};
+		const onHashChange = () => {
+			if (
+				(window.location.hash || "").includes("onboarding") ||
+				(window.location.search || "").includes("onboarding")
+			) {
+				setIsGlobalOnboardingOpen(true);
+			}
+		};
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 		window.addEventListener("dente-open-imaging-export", onOpenImagingExport);
 		window.addEventListener("dente-open-create-lab-order", onOpenLabCreate);
@@ -142,6 +166,8 @@ export function AppModalsContainer({
 		window.addEventListener("dente-open-loyalty", onOpenLoyalty);
 		window.addEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
 		window.addEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
+		window.addEventListener("dente-open-rapid-onboarding", onOpenOnboarding);
+		window.addEventListener("hashchange", onHashChange);
 
 		return () => {
 			window.removeEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
@@ -151,6 +177,8 @@ export function AppModalsContainer({
 			window.removeEventListener("dente-open-loyalty", onOpenLoyalty);
 			window.removeEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
 			window.removeEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
+			window.removeEventListener("dente-open-rapid-onboarding", onOpenOnboarding);
+			window.removeEventListener("hashchange", onHashChange);
 		};
 	}, []);
 
@@ -221,6 +249,43 @@ export function AppModalsContainer({
 									(url.search ? url.search : "") +
 									(url.hash && !url.hash.includes("certificates") ? url.hash : ""),
 							);
+						}}
+					/>
+				</React.Suspense>
+			)}
+			{isGlobalOnboardingOpen && (
+				<React.Suspense fallback={null}>
+					<RapidLaunchWizard
+						isModal={true}
+						onClose={() => {
+							setIsGlobalOnboardingOpen(false);
+							if (typeof window !== "undefined" && window.location.hash.includes("onboarding")) {
+								window.history.replaceState(
+									{},
+									"",
+									window.location.pathname + window.location.search,
+								);
+							}
+						}}
+						onFinished={() => {
+							setIsGlobalOnboardingOpen(false);
+							if (typeof window !== "undefined" && window.location.hash.includes("onboarding")) {
+								window.history.replaceState(
+									{},
+									"",
+									window.location.pathname + window.location.search,
+								);
+							}
+						}}
+						onSkipped={() => {
+							setIsGlobalOnboardingOpen(false);
+							if (typeof window !== "undefined" && window.location.hash.includes("onboarding")) {
+								window.history.replaceState(
+									{},
+									"",
+									window.location.pathname + window.location.search,
+								);
+							}
 						}}
 					/>
 				</React.Suspense>

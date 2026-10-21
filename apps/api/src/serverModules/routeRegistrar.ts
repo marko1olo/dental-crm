@@ -39,6 +39,7 @@ import { registerImagingRoutes } from "../routes/imaging.js";
 import { registerImagingPlanningRoutes } from "../routes/imaging_planning.js";
 import { registerRadiologyDicomRoutes } from "../routes/radiology/dicomReceiverRoutes.js";
 import { registerImportRoutes } from "../routes/imports.js";
+import { registerOnboardingRoutes } from "../routes/onboarding/index.js";
 import { registerIngestionRoutes } from "../routes/ingestion.js";
 import { registerInsuranceRoutes } from "../routes/insurance.js";
 import { registerInvoiceRoutes } from "../routes/invoices.js";
@@ -149,6 +150,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerRadiologyDicomRoutes(app);
 	await registerIngestionRoutes(app);
 	await registerImportRoutes(app);
+	await registerOnboardingRoutes(app);
 	// Движок переноса чужой базы: стейджинг, карантин, сверка, откат.
 	await registerMigrationRoutes(app);
 	// Оркестрация по фазам для больших выгрузок: заливка потоком, очередь, воркер.

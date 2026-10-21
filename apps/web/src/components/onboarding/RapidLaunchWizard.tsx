@@ -218,7 +218,8 @@ export function RapidLaunchWizard({
 						onClick={() => void handleSkip()}
 						title="Пропустить и настроить позже"
 					>
-						Начать приём прямо сейчас (Пропустить настройку)
+						<span className="hidden sm:inline">Начать приём прямо сейчас (Пропустить настройку)</span>
+						<span className="sm:hidden">Пропустить настройку</span>
 					</button>
 				</div>
 

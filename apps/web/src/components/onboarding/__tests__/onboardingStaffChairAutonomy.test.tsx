@@ -2,6 +2,7 @@ import React from "react";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { SettingsClinicTab } from "../../settings/SettingsClinicTab";
+import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 import {
 	OnboardingWizardModal,
 	type OnboardingWizardModalProps,
@@ -389,10 +390,14 @@ describe("Onboarding & Settings Staff/Chair Creation Autonomy (Mandates 8e, 8n)"
 			newChairReadyToCreate: false,
 		});
 		const settingsHtml = renderToStaticMarkup(
-			React.createElement(SettingsClinicTab, {
-				props: settingsProps,
-				settingsTab: "clinic",
-			}),
+			React.createElement(
+				AppLogicProvider,
+				{ value: {} as any },
+				React.createElement(SettingsClinicTab, {
+					props: settingsProps,
+					settingsTab: "clinic",
+				}),
+			),
 		);
 		assert.ok(settingsHtml.includes('aria-label="Добавить кресло или кабинет"'));
 		assert.ok(!settingsHtml.includes('aria-label="Добавить кресло или кабинет" disabled'));
@@ -425,10 +430,14 @@ describe("Onboarding & Settings Staff/Chair Creation Autonomy (Mandates 8e, 8n)"
 			newStaffRole: "doctor",
 		});
 		const settingsHtml = renderToStaticMarkup(
-			React.createElement(SettingsClinicTab, {
-				props: settingsProps,
-				settingsTab: "clinic",
-			}),
+			React.createElement(
+				AppLogicProvider,
+				{ value: {} as any },
+				React.createElement(SettingsClinicTab, {
+					props: settingsProps,
+					settingsTab: "clinic",
+				}),
+			),
 		);
 		assert.ok(settingsHtml.includes('aria-label="Добавить сотрудника"'));
 		assert.ok(!settingsHtml.includes('aria-label="Добавить сотрудника" disabled'));
@@ -560,10 +569,14 @@ describe("Onboarding & Settings Staff/Chair Creation Autonomy (Mandates 8e, 8n)"
 			newStaffName: "",
 		});
 		const settingsHtml = renderToStaticMarkup(
-			React.createElement(SettingsClinicTab, {
-				props: settingsProps,
-				settingsTab: "clinic",
-			}),
+			React.createElement(
+				AppLogicProvider,
+				{ value: {} as any },
+				React.createElement(SettingsClinicTab, {
+					props: settingsProps,
+					settingsTab: "clinic",
+				}),
+			),
 		);
 		assert.ok(settingsHtml.includes('min-height: 44px') || settingsHtml.includes('min-height:44px'));
 		assert.ok(settingsHtml.includes('min-width: 44px') || settingsHtml.includes('min-width:44px'));

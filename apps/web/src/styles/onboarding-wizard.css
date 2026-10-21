@@ -641,9 +641,9 @@ html.light .onboarding-shell {
 .rapid-onboarding-modal-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 850;
+	z-index: 99999;
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: center;
 	overflow-y: auto;
 	overflow-x: hidden;
@@ -1759,4 +1759,240 @@ html.light .rapid-onboarding-modal-overlay {
 
 @keyframes spin {
 	to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE & APPLE HIG ADAPTATION (Mandates 8al, 8am, HIG)
+   ============================================================ */
+@media (max-width: 768px) {
+	.rapid-onboarding-modal-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		padding: 0;
+		align-items: stretch;
+		background: var(--paper-strong, #121817);
+		overflow: hidden;
+	}
+
+	.rapid-launch-wizard-shell {
+		max-width: 100vw;
+		width: 100vw;
+		min-height: 100dvh;
+		height: 100dvh;
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		position: fixed;
+		inset: 0;
+		z-index: 100000;
+	}
+
+	.wizard-top-bar {
+		padding: 10px 14px;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		grid-template-areas:
+			"brand close"
+			"action action";
+		gap: 8px;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.wizard-brand-block {
+		grid-area: brand;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.wizard-headline {
+		font-size: 14px;
+		font-weight: 700;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.wizard-subheadline {
+		display: none;
+	}
+
+	.wizard-top-actions {
+		grid-area: action;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.wizard-zero-click-btn {
+		flex: 1;
+		min-height: 44px;
+		padding: 0 12px;
+		font-size: 12px;
+		justify-content: center;
+		white-space: nowrap;
+	}
+
+	.wizard-skip-top-btn {
+		display: none;
+	}
+
+	.wizard-close-x-btn {
+		grid-area: close;
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.wizard-progress-section {
+		padding: 8px 14px 0 14px;
+		flex-shrink: 0;
+	}
+
+	.wizard-step-tabs {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 4px;
+		padding-bottom: 8px;
+	}
+
+	.wizard-step-tab {
+		padding: 6px 4px;
+		gap: 4px;
+		min-height: 44px;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+	}
+
+	.step-tab-number {
+		width: 20px;
+		height: 20px;
+		font-size: 11px;
+	}
+
+	.step-tab-text {
+		align-items: center;
+	}
+
+	.step-tab-title {
+		font-size: 11px;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.step-tab-sub {
+		display: none;
+	}
+
+	.wizard-step-container {
+		padding: 16px 14px 100px 14px;
+		min-height: 0;
+		max-height: none;
+		flex: 1 1 auto;
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.step-intro-header h3 {
+		font-size: 16px;
+	}
+
+	.mode-selection-grid {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.mode-select-card {
+		min-height: 52px;
+		padding: 12px;
+	}
+
+	.profile-inputs-grid {
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+
+	.form-span-2 {
+		grid-column: span 1;
+	}
+
+	.wizard-action-footer {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		z-index: 100001;
+		background: var(--paper-strong, rgba(20, 28, 27, 0.95));
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 1px solid var(--line);
+		padding: 10px 14px calc(12px + env(safe-area-inset-bottom)) 14px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: space-between;
+		align-items: center;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+		flex-shrink: 0;
+	}
+
+	.footer-ghost-skip-btn {
+		min-height: 44px;
+		padding: 0 8px;
+		font-size: 12px;
+		text-align: left;
+		white-space: nowrap;
+	}
+
+	.footer-right-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.wizard-back-btn {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 0 12px;
+	}
+
+	.wizard-next-primary-btn {
+		min-height: 44px;
+		padding: 0 16px;
+		font-size: 13px;
+		white-space: nowrap;
+	}
+
+	.wizard-finish-primary-btn {
+		min-height: 44px;
+		padding: 0 18px;
+		font-size: 13px;
+		white-space: nowrap;
+	}
+
+	.hero-preset-banner {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+
+	.hero-seed-action-btn {
+		min-height: 44px;
+		width: 100%;
+		justify-content: center;
+	}
+
+	.service-compact-row {
+		min-height: 52px;
+		padding: 10px;
+	}
 }
