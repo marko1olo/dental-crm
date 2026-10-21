@@ -22,11 +22,13 @@ export type DbClientOrTransaction =
 	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type AppointmentIdParams = {
-	appointmentId: string;
+	appointmentId?: string;
+	id?: string;
 };
 
 export type AppointmentOptionalIdParams = {
 	appointmentId?: string;
+	id?: string;
 };
 
 export type AppointmentConflictContext = {

@@ -36,7 +36,7 @@ export function QuickSegmentedStatusHeader({
         )}
       </div>
       <div
-        className="dente-segmented-bar w-full grid grid-cols-3 rounded-xl p-1 bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 gap-1"
+        className="dente-segmented-bar w-full grid grid-cols-3 rounded-xl p-1 bg-[var(--paper-soft)] border border-[var(--line)] gap-1"
         data-testid="expo26-segmented-status"
       >
         <button
@@ -47,15 +47,15 @@ export function QuickSegmentedStatusHeader({
               handleSelectAppointmentType("secondary");
             }
           }}
-          className={`dente-segmented-item w-full h-8 min-h-[32px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+          className={`dente-segmented-item w-full min-h-[44px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
             status === "planned" && appointmentType !== "emergency"
-              ? "active !bg-white dark:!bg-slate-700 !text-slate-900 dark:!text-white font-semibold shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              ? "active !bg-[var(--paper)] !text-[var(--ink)] border border-[var(--line)] font-semibold shadow-xs"
+              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
           }`}
           data-testid="expo26-status-planned"
         >
-          <Clock size={13} className="shrink-0" />
-          <span className="truncate">Плановый</span>
+          <Clock size={15} className="shrink-0" />
+          <span className="whitespace-nowrap font-medium">Плановый</span>
         </button>
         <button
           type="button"
@@ -69,7 +69,7 @@ export function QuickSegmentedStatusHeader({
               );
             }
           }}
-          className={`dente-segmented-item w-full h-8 min-h-[32px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+          className={`dente-segmented-item w-full min-h-[44px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
             appointmentType === "emergency"
               ? "active !bg-rose-600 !text-white font-semibold shadow-xs"
               : "text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-200"
@@ -77,29 +77,29 @@ export function QuickSegmentedStatusHeader({
           data-testid="expo26-status-emergency"
         >
           <Flame
-            size={13}
+            size={15}
             className={
               appointmentType === "emergency"
                 ? "text-white animate-pulse shrink-0"
                 : "text-rose-600 shrink-0"
             }
           />
-          <span className="truncate">Внеплановый (срочно)</span>
+          <span className="whitespace-nowrap font-medium">Срочно</span>
         </button>
         <button
           type="button"
           onClick={() => {
             setStatus("confirmed");
           }}
-          className={`dente-segmented-item w-full h-8 min-h-[32px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+          className={`dente-segmented-item w-full min-h-[44px] rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none ${
             status === "confirmed"
-              ? "active !bg-white dark:!bg-slate-700 !text-slate-900 dark:!text-white font-semibold shadow-xs"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              ? "active !bg-[var(--paper)] !text-[var(--ink)] border border-[var(--line)] font-semibold shadow-xs"
+              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
           }`}
           data-testid="expo26-status-confirmed"
         >
-          <CheckCircle2 size={13} className="shrink-0" />
-          <span className="truncate">Утверждённый</span>
+          <CheckCircle2 size={15} className="shrink-0" />
+          <span className="whitespace-nowrap font-medium">Подтверждён</span>
         </button>
       </div>
     </div>

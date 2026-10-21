@@ -36,7 +36,7 @@ export function QuickBookingDrawerSurface({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex ${isMobile ? "flex-col justify-end" : "justify-end"} bg-black/25 transition-opacity quick-booking-drawer-overlay`}
+      className={`fixed inset-0 z-[10005] flex ${isMobile ? "flex-col justify-end" : "justify-end"} bg-black/25 transition-opacity quick-booking-drawer-overlay`}
       data-testid="quick-booking-drawer"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.25)" }}
       onKeyDown={onKeyDown}
@@ -82,7 +82,7 @@ export function QuickBookingDrawerSurface({
           isSubmitting={isSubmitting}
           hasCollision={collision.hasCollision}
           isDirty={isDirty}
-          onSubmit={() => void handleSubmitBooking()}
+          onSubmit={() => void handleSubmitBooking(undefined, collision.hasCollision ? { overbookOverride: true } : undefined)}
           onRequestClose={handleRequestClose}
           onDiscardDraft={handleDiscardDraftAndClose}
           onCopyConfirmation={handleCopyBookingConfirmation}

@@ -34,7 +34,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
       state.handleRequestClose();
     } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      void state.handleSubmitBooking();
+      void state.handleSubmitBooking(undefined, state.collision.hasCollision ? { overbookOverride: true } : undefined);
     }
   };
 

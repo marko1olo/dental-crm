@@ -36,13 +36,13 @@ export function QuickPresetChipsBar({
           placeholder="Например: Осмотр, Кариес, Консультация"
           className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
         />
-        <div className="dente-filter-chips gap-1.5 mt-2">
+        <div className="flex flex-wrap gap-1.5 mt-2">
           {COMMON_REASONS.map((r) => (
             <button
               key={r}
               type="button"
               onClick={() => setReason(appendReasonPreset(reason, r))}
-              className="dente-filter-chip"
+              className="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer select-none active:scale-95 transition-all inline-flex items-center"
             >
               + {r}
             </button>

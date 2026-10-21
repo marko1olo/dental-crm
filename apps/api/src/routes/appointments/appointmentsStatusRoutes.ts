@@ -188,5 +188,7 @@ export function registerAppointmentStatusRoutes(
 	) => Promise<unknown>,
 ) {
 	app.patch("/api/appointments/:appointmentId/status", statusHandler);
+	app.put("/api/appointments/:appointmentId/status", statusHandler);
 	app.put("/api/schedule/appointments/:appointmentId/status", statusHandler);
+	app.patch("/api/schedule/appointments/:appointmentId/status", statusHandler);
 }

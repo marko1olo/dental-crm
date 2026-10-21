@@ -22,79 +22,79 @@ export function QuickStatusSelector({
         <button
           type="button"
           onClick={() => setStatus("planned")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "planned"
-              ? "bg-amber-500 text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-amber-600 text-white border-amber-600 font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-planned"
         >
-          <Clock size={13} className="shrink-0" />
+          <Clock size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Ожидает</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("confirmed")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "confirmed"
-              ? "bg-emerald-600 text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-emerald-600 text-white border-emerald-600 font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-confirmed"
         >
-          <UserCheck size={13} className="shrink-0" />
+          <UserCheck size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Подтвержден</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("arrived")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "arrived"
-              ? "bg-amber-600 text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-amber-600 text-white border-amber-600 font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-arrived"
         >
-          <UserCheck size={13} className="shrink-0" />
+          <UserCheck size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Пациент пришел</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("in_treatment")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "in_treatment"
-              ? "bg-[var(--teal,#0d9488)] text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-[var(--teal-dark)] text-white border-[var(--teal-dark)] font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-in_treatment"
         >
-          <CalendarCheck size={13} className="shrink-0" />
+          <CalendarCheck size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">В кресле</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("completed")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "completed"
-              ? "bg-slate-700 text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-[var(--ink)] text-[var(--paper)] border-[var(--ink)] font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-completed"
         >
-          <CheckCircle2 size={13} className="shrink-0" />
+          <CheckCircle2 size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Прием завершен</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("no_show")}
-          className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-xl text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "no_show"
-              ? "bg-rose-600 text-white border-transparent font-semibold shadow-xs"
-              : "border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 font-medium"
+              ? "bg-rose-600 text-white border-rose-600 font-semibold shadow-sm"
+              : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-no_show"
         >
-          <UserX size={13} className="shrink-0" />
+          <UserX size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Неявка</span>
         </button>
       </div>

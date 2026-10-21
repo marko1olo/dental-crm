@@ -136,7 +136,8 @@ export const updateAppointmentHandler = async (
 	reply: FastifyReply,
 ) => {
 	const params = request.params as AppointmentOptionalIdParams;
-	if (!params?.appointmentId) {
+	const appointmentId = params?.appointmentId || params?.id;
+	if (!appointmentId) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Запись не выбрана.",
@@ -167,7 +168,7 @@ export const updateAppointmentHandler = async (
 	try {
 		const updatedAppt = await updateAppointmentInDb(
 			orgId,
-			params.appointmentId,
+			appointmentId,
 			input,
 		);
 		const identity = getRequestIdentity(request);
@@ -176,7 +177,7 @@ export const updateAppointmentHandler = async (
 			const auditAction = resolveUpdateAuditAction(input);
 			await recordAuditEventInDb(orgId, {
 				entityType: "appointment",
-				entityId: params.appointmentId,
+				entityId: appointmentId,
 				action: auditAction,
 				reason:
 					(input as { reason?: string }).reason ??
@@ -189,7 +190,7 @@ export const updateAppointmentHandler = async (
 			});
 		} catch (auditErr) {
 			request.log.warn(
-				{ err: auditErr, appointmentId: params.appointmentId, orgId },
+				{ err: auditErr, appointmentId, orgId },
 				"[appointments] Не удалось записать событие обновления приёма в журнал аудита",
 			);
 		}
@@ -200,7 +201,7 @@ export const updateAppointmentHandler = async (
 				db,
 				request,
 				orgId,
-				params.appointmentId,
+				appointmentId,
 				updatedAppt,
 				identity,
 			);
@@ -210,13 +211,13 @@ export const updateAppointmentHandler = async (
 			db,
 			request,
 			orgId,
-			params.appointmentId,
+			appointmentId,
 			input.status,
 		);
 
 		await invalidateAppointmentReminders(
 			orgId,
-			params.appointmentId,
+			appointmentId,
 			"Приём изменён администратором",
 		).catch((error: unknown) => {
 			request.log.error(
@@ -228,7 +229,7 @@ export const updateAppointmentHandler = async (
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "APPOINTMENT_UPDATED",
 			payload: {
-				appointmentId: params.appointmentId,
+				appointmentId,
 				...(input.status ? { status: input.status } : {}),
 			},
 		});
@@ -236,14 +237,14 @@ export const updateAppointmentHandler = async (
 		triggerCancellationGapFillerEffect(
 			request,
 			orgId,
-			params.appointmentId,
+			appointmentId,
 			input.status,
 		);
 
 		return await buildDashboardResponseAfterUpdate(
 			request,
 			orgId,
-			params.appointmentId,
+			appointmentId,
 		);
 	} catch (error) {
 		const conflictContext =
@@ -268,14 +269,15 @@ export const createNextStageAppointmentHandler = async (
 	const orgId = context.organizationId;
 
 	const params = request.params as AppointmentOptionalIdParams;
-	if (!params.appointmentId) {
+	const appointmentId = params?.appointmentId || params?.id;
+	if (!appointmentId) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Не указан ID родительского приёма",
 		});
 	}
 
-	const parent = await getAppointmentByIdInDb(orgId, params.appointmentId);
+	const parent = await getAppointmentByIdInDb(orgId, appointmentId);
 	if (!parent) {
 		return reply.code(404).send({
 			code: "AppointmentNotFound",
@@ -374,8 +376,13 @@ export async function registerAppointmentsRoutes(app: FastifyInstance) {
 		createNextStageAppointmentHandler,
 	);
 	app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
+	app.put("/api/appointments/:appointmentId", updateAppointmentHandler);
 	registerAppointmentStatusRoutes(app, updateAppointmentHandler);
 	app.put(
+		"/api/schedule/appointments/:appointmentId",
+		updateAppointmentHandler,
+	);
+	app.patch(
 		"/api/schedule/appointments/:appointmentId",
 		updateAppointmentHandler,
 	);

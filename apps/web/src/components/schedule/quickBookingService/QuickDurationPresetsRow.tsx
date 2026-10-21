@@ -27,10 +27,10 @@ export function QuickDurationPresetsRow({
                 key={preset.minutes}
                 type="button"
                 onClick={() => handleSelectDuration(preset.minutes)}
-                className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-medium transition-all inline-flex items-center gap-1 cursor-pointer select-none active:scale-95 ${
+                className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 border ${
                   isSelected
-                    ? "primary-button shadow-sm font-semibold"
-                    : "quick-chip text-[var(--ink)]"
+                    ? "bg-[linear-gradient(180deg,var(--teal-fill),var(--teal-dark))] text-[var(--on-teal)] border-[var(--teal-dark)] shadow-sm font-semibold"
+                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
                 }`}
                 data-testid={`duration-preset-${preset.minutes}`}
               >
@@ -39,7 +39,7 @@ export function QuickDurationPresetsRow({
                   <span
                     className={`text-[10px] ${
                       isSelected
-                        ? "text-teal-100 font-medium"
+                        ? "text-[var(--on-teal)] opacity-90 font-medium"
                         : "text-[var(--muted)]"
                     }`}
                   >

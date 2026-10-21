@@ -500,15 +500,19 @@ export async function handleGetAppointmentById(
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
 
-	const { appointmentId } = request.params as { appointmentId?: string };
-	if (!appointmentId) {
+	const { appointmentId, id } = request.params as {
+		appointmentId?: string;
+		id?: string;
+	};
+	const targetId = appointmentId || id;
+	if (!targetId) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Не указан ID приёма",
 		});
 	}
 
-	const appt = await getAppointmentByIdInDb(orgId, appointmentId);
+	const appt = await getAppointmentByIdInDb(orgId, targetId);
 	if (!appt) {
 		return reply.code(404).send({
 			code: "AppointmentNotFound",
