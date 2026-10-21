@@ -75,7 +75,7 @@ import { PeriodontalPocketDepthModal } from "../../../perio/PeriodontalPocketDep
 import { EmkPerioSection } from "../../../visit/emk/EmkPerioSection";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
-import { AnesthesiaStandaloneWorkspace } from "../../../anesthesia/AnesthesiaStandaloneWorkspace";
+
 
 function PerioStandaloneWorkspaceContent() {
 	const [diaryForm, setDiaryForm] = React.useState<Record<string, string>>({
@@ -156,14 +156,6 @@ export function renderSpecializedClinicalLaunchers({
 		);
 	}
 
-	// CHAIRSIDE ANESTHESIA COCKPIT & MRD CALIPER (?anesthesia=1, ?anesthesia=demo, #anesthesia)
-	const isAnesthesiaDirect =
-		typeof window !== "undefined" &&
-		(new URLSearchParams(window.location.search).has("anesthesia") ||
-			window.location.hash.toLowerCase().includes("anesthesia"));
-	if (isAnesthesiaDirect) {
-		return <AnesthesiaStandaloneWorkspace />;
-	}
 
 	// HYGIENE & INDICES COCKPIT (?hygiene=1, ?hygiene=demo, #hygiene)
 	const isHygieneDirect =

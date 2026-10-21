@@ -389,7 +389,9 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 		});
 
 		it("verifies ProcedureMaterialDeductionModal stepper minus button is never disabled (disabled={false})", () => {
-			const deductModalFile = path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx");
+			const deductModalFile = fs.existsSync(path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx"))
+				? path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx")
+				: path.join(WEB_SRC, "components/inventory/ShiftBatchDeductionModal.tsx");
 			const content = fs.readFileSync(deductModalFile, "utf8");
 
 			assert.ok(

@@ -75,7 +75,7 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 					type="button"
 					disabled={props.disabled}
 					onClick={handleApplyCurrentSelection}
-					className="primary-button inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
+					className="primary-button inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
 					title={`Применить анестезию (${bar.selectedCarpulesCount} карп. в карту)`}
 					data-testid="btn-apply-anesthesia-to-card"
 				>

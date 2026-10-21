@@ -57,10 +57,10 @@ export function generateAnesthesiaDiaryEntry(params: AnesthesiaDiaryParams): str
 
 	let autonomyLegalNote = '';
 	if (params.overrideReason) {
-		autonomyLegalNote = ` [Врачебное решение (ст. 70 Федерального закона № 323-ФЗ): ${params.overrideReason}].`;
+		autonomyLegalNote = ` [Клиническое решение врача: ${params.overrideReason}].`;
 	} else if (params.isOverdose || params.isEpinephrineOverdose) {
 		autonomyLegalNote =
-			' [Введено по неотложному клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ, гемодинамика под контролем].';
+			' [Введено по неотложному клиническому решению врача, гемодинамика под контролем].';
 	}
 
 	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nurseText}${autonomyLegalNote}`;

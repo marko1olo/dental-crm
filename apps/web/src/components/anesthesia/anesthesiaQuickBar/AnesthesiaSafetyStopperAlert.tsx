@@ -38,7 +38,7 @@ export function AnesthesiaSafetyStopperAlert({
 			<div className="flex items-center gap-1.5 shrink-0">
 				<button
 					type="button"
-					className="px-2.5 py-1 min-h-[36px] rounded-lg border border-amber-500/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] cursor-pointer transition-colors"
+					className="px-3 py-1.5 min-h-[44px] rounded-lg border border-amber-500/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] cursor-pointer transition-colors inline-flex items-center"
 					onClick={() => {
 						onDismissWarning();
 						onSelectDrug("mepivacaine_plain");
@@ -51,19 +51,19 @@ export function AnesthesiaSafetyStopperAlert({
 				<button
 					type="button"
 					data-testid="btn-anesthesia-confirm-override"
-					className="px-2.5 py-1 min-h-[36px] rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors"
+					className="px-3 py-1.5 min-h-[44px] rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors inline-flex items-center"
 					onClick={() => {
 						const count = safetyWarning.carpulesCount ?? 1.0;
 						onDismissWarning();
 						onConfirmWarningOverride(count);
 					}}
-					title="Подтвердить назначение врача"
+					title="Подтвердить клиническое назначение врача"
 				>
-					Всё равно внести (врачебное решение)
+					Ввести (клиническое решение врача)
 				</button>
 				<button
 					type="button"
-					className="px-2 py-1 min-h-[36px] rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+					className="px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg text-sm text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer inline-flex items-center justify-center"
 					onClick={onDismissWarning}
 				>
 					&times;

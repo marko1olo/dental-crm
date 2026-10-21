@@ -24,7 +24,7 @@ export function AnesthesiaPresetsRow({
 				type="button"
 				disabled={disabled}
 				onClick={onApplyUltracain200k}
-				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 					selectedDrugId === "articaine_1_200k"
 						? "border-2 border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold ring-1 ring-[var(--teal)]"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -40,7 +40,7 @@ export function AnesthesiaPresetsRow({
 				type="button"
 				disabled={disabled}
 				onClick={onApplyUltracainForte}
-				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 					selectedDrugId === "articaine_1_100k"
 						? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
@@ -56,23 +56,23 @@ export function AnesthesiaPresetsRow({
 				type="button"
 				disabled={disabled}
 				onClick={onApplyScandonestCardio}
-				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 					selectedDrugId === "mepivacaine_plain"
 						? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold ring-1 ring-amber-600"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-amber-600"
 				}`}
-				title="Кардио-защита: Мепивакаин 3% — Скандонест без адреналина (1 карпула 1.8 мл)"
+				title="Кардио-защита: Мепивакаин 3% — Скандонест без адреналина (1 карпула 1.7 мл)"
 				data-testid="anesthesia-preset-scandonest-cardio"
 			>
 				<Syringe size={13} className="text-amber-600 shrink-0" />
-				<span>Скандонест без адреналина (1.8 мл)</span>
+				<span>Скандонест без адреналина (1.7 мл)</span>
 			</button>
 
 			<button
 				type="button"
 				disabled={disabled}
 				onClick={onApplyNoAnesthesia}
-				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 					selectedDrugId === "none"
 						? "border-2 border-slate-600 bg-slate-500/10 text-[var(--ink)] font-bold"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)]"

@@ -54,7 +54,7 @@ export function AnesthesiaVolumeSelector({
 						disabled={disabled}
 						onClick={() => onSelectCarpulesCount(preset.count)}
 						data-testid={preset.id}
-						className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[44px] sm:min-h-[32px] ${
+						className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[44px] inline-flex items-center justify-center ${
 							selectedCarpulesCount === preset.count
 								? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)]"
 								: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)]"
@@ -73,7 +73,7 @@ export function AnesthesiaVolumeSelector({
 					type="button"
 					disabled={disabled || selectedCarpulesCount <= 0.5}
 					onClick={stepDown}
-					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
+					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
 					title="Уменьшить дозу на 0.5 карпулы"
 					data-testid="btn-decrease-carpules"
 				>
@@ -91,7 +91,7 @@ export function AnesthesiaVolumeSelector({
 					type="button"
 					disabled={disabled || selectedCarpulesCount >= 6.0}
 					onClick={stepUp}
-					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
+					className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer disabled:opacity-30 active:scale-95 transition-all"
 					title="Увеличить дозу на 0.5 карпулы"
 					data-testid="btn-increase-carpules"
 				>
@@ -101,7 +101,7 @@ export function AnesthesiaVolumeSelector({
 
 			<label
 				data-testid="label-aspiration-negative-norm"
-				className="inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[32px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors select-none"
+				className="inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors select-none"
 			>
 				<input
 					type="checkbox"

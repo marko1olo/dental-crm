@@ -31,6 +31,16 @@ export function createAnesthesiaPresetHandlers(
 	props: AnesthesiaQuickBarProps,
 	setLastAppliedText: (text: string | null) => void,
 ) {
+	let inFlight = false;
+	const guardDoubleTap = () => {
+		if (inFlight) return false;
+		inFlight = true;
+		setTimeout(() => {
+			inFlight = false;
+		}, 300);
+		return true;
+	};
+
 	const dispatch = (title: string, defaultPriceRub = 950) =>
 		dispatchAnesthesiaInvoiceService(
 			title,
@@ -40,14 +50,14 @@ export function createAnesthesiaPresetHandlers(
 
 	return {
 		handleApplyUltracain200k: () => {
-			if (props.disabled) return;
+			if (props.disabled || !guardDoubleTap()) return;
 			bar.handleSelectDrug("articaine_1_200k");
 			bar.handleApplyInfiltrationArticaine200k();
 			dispatch("Анестезия инфильтрационная (Ультракаин Д-С 1:200 000)", 950);
 			setLastAppliedText("Ультракаин Д-С 1:200 000 (1.7 мл)");
 		},
 		handleApplyUltracainForte: () => {
-			if (props.disabled) return;
+			if (props.disabled || !guardDoubleTap()) return;
 			bar.handleSelectDrug("articaine_1_100k");
 			bar.handleApplyStandardNormPreset();
 			dispatch(
@@ -57,17 +67,17 @@ export function createAnesthesiaPresetHandlers(
 			setLastAppliedText("Ультракаин Д-С Форте 1:100 000 (1.7 мл)");
 		},
 		handleApplyScandonestCardio: () => {
-			if (props.disabled) return;
+			if (props.disabled || !guardDoubleTap()) return;
 			bar.handleSelectDrug("mepivacaine_plain");
 			bar.handleApplyScandonestCardio();
 			dispatch(
 				"Анестезия инфильтрационная (Скандонест 3% без адреналина)",
 				1050,
 			);
-			setLastAppliedText("Скандонест 3% без адреналина (1.8 мл)");
+			setLastAppliedText("Скандонест 3% без адреналина (1.7 мл)");
 		},
 		handleApplyNoAnesthesia: () => {
-			if (props.disabled) return;
+			if (props.disabled || !guardDoubleTap()) return;
 			bar.handleSelectDrug("none" as unknown as AnestheticDrugId);
 			props.onApplyAnesthesia?.(
 				"Анестезия: не применялась (интактно / по согласию пациента).",
