@@ -451,7 +451,8 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="shift-deduction-title"
-			data-testid="consumables-deduction-modal"
+			data-testid="shift-batch-deduction-modal"
+			data-modal-type="shift-batch"
 			onClick={(e) => {
 				if (e.target === e.currentTarget && !isSubmitting && !submittingPackageId) {
 					onClose();
@@ -482,11 +483,11 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 
 					<div className="flex items-center gap-2">
 						{/* Сегментированный переключатель 3 режимов */}
-						<div className="inline-flex items-center gap-0.5 p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)] select-none">
+						<div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)] select-none shrink-0">
 							<button
 								type="button"
 								onClick={() => setActiveMode("shift")}
-								className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 									activeMode === "shift"
 										? "bg-teal-600 text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -500,7 +501,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveMode("packages")}
-								className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 									activeMode === "packages"
 										? "bg-teal-600 text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -514,7 +515,7 @@ export const ShiftBatchDeductionModal: React.FC<ShiftBatchDeductionModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveMode("procedure")}
-								className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+								className={`h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 									activeMode === "procedure"
 										? "bg-teal-600 text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"

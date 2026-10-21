@@ -156,7 +156,7 @@ export const ShiftBatchProcedureTab: React.FC<ShiftBatchProcedureTabProps> = ({
 									<Plus size={13} />
 								</button>
 							</div>
-							<span className="text-[11px] text-[var(--muted)] w-8 text-left">
+							<span className="text-[11px] text-[var(--muted)] min-w-[52px] whitespace-nowrap text-left">
 								{item.unit}
 							</span>
 						</div>

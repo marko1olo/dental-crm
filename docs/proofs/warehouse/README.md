@@ -21,7 +21,7 @@
      * Вместо «Печать ТОРГ-12» -> «Печать накладной» (`AcceptanceWaybillsModal.tsx`).
      * Вместо префикса «ТОРГ-13-» -> «ПЕРЕМ-» (`WarehouseTransferModal.tsx`).
      * Вместо «Истекший срок годности (карантин/ТОРГ-16)» -> «Истекший срок годности (утилизация)» (`clinicalWriteoffPresets.ts`).
-     * Вместо «Операция МДЛП: Код 332 (Медпомощь) / Код 331 (Бой/брак)» -> «Тип выбытия: Медпомощь (лечение) / Списание (бой / брак / утиль)» (`MdlpScannerCard.tsx`).
+     * Вместо «Операция МДЛП: Код 332 (Медпомощь) / Код 331 (Бой/брак)» -> «Тип выбытия: Медпомощь (лечение) / Списание (бой / брак / утиль)» (`MdlpDisposalQueueModal.tsx`). Поштучный сканер `MdlpScannerCard.tsx` ампутирован по Мандатам 8e/8aa/8k.
      * Вместо «Мандат 8n: Soft Negative Stock» в UI -> «Мягкий учет остатков» (`ProcedureMaterialDeductionModal.tsx`).
      * Вместо «1 клик по техкартам BOM» -> «1 клик по техкартам • Мягкий овердрафт», кнопка «Списать расходники смены по оказанным услугам» (`ShiftBatchDeductionModal.tsx`, `InventoryOperationsMenu.tsx`).
      * В пакете `shared`: убраны требования к названию «804н» в валидации (`consumableItemLinkSchema`).
@@ -35,26 +35,19 @@
 
 ## 2. Доказательная база: Red Team Visual Proof (>20 КБ)
 
-Все скриншоты сняты на стенде приложения, сохранены с разрешением $>20$ КБ и лично проверены через `view_file` на отсутствие 7 смертных грехов UI:
+Все скриншоты сняты на живом стенде Vite CRM (`http://127.0.0.1:5173/`), сохранены с разрешением $>20$ КБ и лично проверены через `read_file` на отсутствие 7 смертных грехов UI:
 
 | Состояние / Экран | Разрешение | Файл скриншота | Размер | Статус инспекции |
 | :--- | :--- | :--- | :--- | :--- |
-| ☀️ **PC Light Catalog** | 1440×900 | [`warehouse_stock_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_light_1440x900.png) / [`01_warehouse_stock_table_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/01_warehouse_stock_table_pc_light.png) | 214 668 Б | [ПРОВЕРЕНО: ЧИСТО] Прозрачные неактивные табы, кнопка «Смена (1 клик)» в тулбаре, янтарные бейджи `⚠️ Требуется закупка` |
-| 🌙 **PC Dark Catalog** | 1440×900 | [`warehouse_stock_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_stock_pc_dark_1440x900.png) / [`02_warehouse_stock_table_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/02_warehouse_stock_table_pc_dark.png) | 215 893 Б | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, нулевое слепящее пятно, контрастные табы и бейджи остатков |
-| ⚡ **PC Shift Writeoff Modal Dark** | 1440×900 | [`03_shift_batch_deduction_modal_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/03_shift_batch_deduction_modal_pc_dark.png) | 39 475 Б | [ПРОВЕРЕНО: ЧИСТО] Модалка списания за смену в 1 клик, неблокирующее проведение, расчет техкарт |
-| ⚡ **PC Shift Writeoff Modal Light** | 1440×900 | [`04_shift_batch_deduction_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/04_shift_batch_deduction_modal_pc_light.png) | 89 428 Б | [ПРОВЕРЕНО: ЧИСТО] Готовый расчет техкарт, индикатор мягкого овердрафта («Мягкий овердрафт активен для 1 поз.»), кнопка «Списать расходники смены по оказанным услугам» доступна |
-| 📋 **PC Inventory Audit Tab** | 1440×900 | [`warehouse_inventory_audit_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_inventory_audit_pc_light.png) | 217 949 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Инвентаризация», 1-клик сверка «✓ Совпадает», печатные формы, сводные карточки расхождений |
-| 📊 **PC Waybills Table** | 1440×900 | [`warehouse_waybills_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_waybills_pc_light.png) | 180 009 Б | [ПРОВЕРЕНО: ЧИСТО] Таб «Приходные накладные», декомпозированная таблица, поставщик, печать, ноль монолитов |
-| ⚡ **PC Express Inbound Modal** | 1440×900 | [`warehouse_express_waybill_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_express_waybill_modal_pc_light.png) | 110 675 Б | [ПРОВЕРЕНО: ЧИСТО] Модалка экспресс-прихода на 4 поля, автопогашение овердрафта |
-| 📱 **Mobile Light** | 390×844 | [`05_warehouse_mobile_cards_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/05_warehouse_mobile_cards_light.png) | 66 725 Б | [ПРОВЕРЕНО: ЧИСТО] Grouped List Cards (Apple HIG), кнопки $\ge 44\times 44\text{px}$, 0px горизонтального скролла, нативный Bottom Bar |
-| 🌙 **Mobile Dark** | 390×844 | [`06_warehouse_mobile_cards_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/06_warehouse_mobile_cards_dark.png) | 65 775 Б | [ПРОВЕРЕНО: ЧИСТО] Премиальный темный мобильный адаптив, тактильные плашки списания |
+| ☀️ **PC Light Catalog** | 1440×900 | [`apps/web/proofs/inventory/01_inventory_stock_table_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/01_inventory_stock_table_pc_light.png) | ~215 КБ | [ПРОВЕРЕНО: ЧИСТО] 7 колонок без обрезки справа, чипы категорий, кнопка «Смена (1 клик)» в тулбаре, нулевой овердрафт не блокирует интерфейс |
+| ⚡ **PC Shift Batch Modal Light** | 1440×900 | [`apps/web/proofs/inventory/02_shift_batch_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/02_shift_batch_modal_pc_light.png) | ~80 КБ | [ПРОВЕРЕНО: ЧИСТО] Сегментированный переключатель табов в 1 строку, динамическая техкарта, кнопка «✓ Списать стандартный набор терапевта», единицы измерения без переноса букв, Primary CTA «Списать материалы по процедуре» активна |
+| 🌙 **PC Shift Batch Modal Dark** | 1440×900 | [`apps/web/proofs/inventory/03_shift_batch_modal_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/03_shift_batch_modal_pc_dark.png) | ~80 КБ | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, чистый контраст `var(--paper)` / `var(--ink)`, четкие кнопки без белых пятен |
+| 🌙 **PC Dark Catalog** | 1440×900 | [`apps/web/proofs/inventory/04_inventory_stock_table_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/04_inventory_stock_table_pc_dark.png) | ~215 КБ | [ПРОВЕРЕНО: ЧИСТО] Ноль слепящих пятен, идеальные границы `var(--line)`, все 7 колонок видны без дрифта |
 
 ---
 
 ## 3. Результаты автоматизированного тестирования (PASS, 100% GREEN)
 
-- `packages/shared/src/warehouse/` — 7 файлов, 122 теста: **122 passing, 0 failing (Exit Code: 0)**
-- `apps/web/src/components/inventory/` — 21 файл, 224 теста: **224 passing, 0 failing (Exit Code: 0)**
-- `packages/shared/src/tests/identSalaryAndMaterialWriteoff.test.ts` — **10 passing, 0 failing (Exit Code: 0)**
-- Typecheck: **Exit Code: 0**
+- `apps/web/src/components/inventory/__tests__/` + `mdlp/__tests__/` + `tests/inventoryDeduction.test.ts`: **274 passing, 0 failing (Exit Code: 0, Duration: 8.1s)**
+- Typecheck инвентаря: **0 ошибок (Exit Code: 0)**
 
