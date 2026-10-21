@@ -266,11 +266,11 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 						type="button"
 						onClick={handleExportEmrAction}
 						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 hover:text-cyan-200 border border-cyan-700/60 transition-colors cursor-pointer"
-						title="Перенести данные срезов эндодонтии в медицинскую карту пациента Form 043/u"
+						title="Перенести данные срезов эндодонтии в медицинскую карту приёма"
 						data-testid="cbct-endo-copy-emr-btn"
 					>
 						{isCopied ? <Check className="w-3.5 h-3.5 text-cyan-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
-						<span>{isCopied ? "Перенесено" : "В медкарту (043/у)"}</span>
+						<span>{isCopied ? "Перенесено" : "В медкарту"}</span>
 					</button>
 				</div>
 			</div>

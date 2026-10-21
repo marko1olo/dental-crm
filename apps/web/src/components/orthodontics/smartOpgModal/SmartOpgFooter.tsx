@@ -24,7 +24,7 @@ export const SmartOpgFooter: React.FC<SmartOpgFooterProps> = ({
 					className="primary-button flex-1 min-h-[48px] py-2.5 px-4 !rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-98 cursor-pointer"
 				>
 					<Check className="w-4 h-4" />
-					<span>{isApplied ? "Внесено в формулу!" : "Принять в формулу (043/у)"}</span>
+					<span>{isApplied ? "Внесено в формулу!" : "Принять в зубную формулу"}</span>
 				</button>
 				{onSwitchToDetails && (
 					<button
@@ -53,7 +53,7 @@ export const SmartOpgFooter: React.FC<SmartOpgFooterProps> = ({
 				}`}
 			>
 				<Check className="w-4 h-4" />
-				<span>{isApplied ? "Внесено в формулу 043/у!" : "Принять в зубную формулу (Форма 043/у)"}</span>
+				<span>{isApplied ? "Внесено в зубную формулу!" : "Принять в зубную формулу"}</span>
 			</button>
 
 			<p className="text-[11px] text-center text-[var(--muted)] font-medium">

@@ -154,7 +154,7 @@ describe("TaxationAndFiscalizationCard — Statutory 54-FZ & FFD 1.2 Suite", () 
 
 		expect(html.includes('data-testid="taxation-and-fiscalization-card"')).toBe(true);
 		expect(html.includes('data-testid="btn-save-fiscal-settings"')).toBe(true);
-		expect(html.includes("Налогообложение (СНО) и касса 54-ФЗ")).toBe(true);
+		expect(html.includes("Налогообложение (СНО) и касса клиники")).toBe(true);
 		// Mandate 8d: Zero cartoon emojis
 		expect(html.includes("⚡")).toBe(false);
 		expect(html.includes("⭐")).toBe(false);

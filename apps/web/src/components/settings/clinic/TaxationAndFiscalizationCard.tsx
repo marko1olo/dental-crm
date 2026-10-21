@@ -66,7 +66,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
 							<h3 className="font-bold text-base text-[var(--ink)] m-0">
-								Налогообложение (СНО) и касса 54-ФЗ
+								Налогообложение (СНО) и касса клиники
 							</h3>
 							<span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
 								Кассовый чек ({ffdVersion}) · {kkmModel}

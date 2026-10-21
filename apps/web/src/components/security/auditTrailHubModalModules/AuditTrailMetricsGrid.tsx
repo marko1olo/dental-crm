@@ -24,7 +24,7 @@ export function AuditTrailMetricsGrid({ metrics }: AuditTrailMetricsGridProps): 
 					<Eye size={20} />
 				</div>
 				<div>
-					<div className="audit-metric-label">Просмотров 043/у</div>
+					<div className="audit-metric-label">Просмотров медкарт</div>
 					<div className="audit-metric-val">{metrics.viewCards}</div>
 				</div>
 			</div>

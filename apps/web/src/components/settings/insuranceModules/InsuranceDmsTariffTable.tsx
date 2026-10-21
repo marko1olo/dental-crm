@@ -58,7 +58,7 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 						style={{ color: "var(--ink)" }}
 					>
 						<Calculator size={16} className="text-[var(--teal, #0d9488)] shrink-0" />
-						<span>Тарифные сетки ДМС по номенклатуре 804н</span>
+						<span>Тарифные сетки ДМС по каталогу услуг</span>
 					</h3>
 					<p className="m-0 mt-0.5 text-xs" style={{ color: "var(--muted)" }}>
 						Коэффициенты покрытия и гарантийные лимиты для автоматического расчёта смет
@@ -92,8 +92,8 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 							className="border-b text-[11px] font-semibold text-[var(--muted)]"
 							style={{ borderColor: "var(--line)" }}
 						>
-							<th className="py-2 pr-3">Категория медпомощи (Приказ 804н)</th>
-							<th className="py-2 px-3">Номенклатурный раздел</th>
+							<th className="py-2 pr-3">Категория медпомощи</th>
+							<th className="py-2 px-3">Раздел процедур</th>
 							<th className="py-2 px-3 text-center">Франшиза</th>
 							<th className="py-2 pl-3 text-right">Покрытие ДМС</th>
 						</tr>

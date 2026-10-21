@@ -217,7 +217,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 							<span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
 								1
 							</span>
-							<span>Предстерилизационная очистка (ПСО)</span>
+							<span>Предстерилизационная очистка</span>
 						</div>
 						<p className="text-[var(--muted)] text-[11px] leading-relaxed">
 							Проведите дезинфекцию и мойку инструментов. Нажмите «Все пробы отрицательны / норма» для фиксации азопирамовой и фенолфталеиновой проб.

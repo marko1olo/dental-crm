@@ -61,7 +61,7 @@ export const SanPinScannerModal: React.FC<SanPinScannerModalProps> = ({
 					<div className="flex justify-between"><span className="text-[var(--muted)]">Партия:</span><strong className="text-[var(--ink)]">Смена ЦСО (АК-01)</strong></div>
 					<div className="flex justify-between"><span className="text-[var(--muted)]">Режим цикла:</span><strong className="text-[var(--ink)]">134°C / 2.15 бар / 5 мин (Режим B)</strong></div>
 					<div className="flex justify-between"><span className="text-[var(--muted)]">Химический контроль:</span><strong className="text-emerald-700 font-semibold">5 класс — Норма</strong></div>
-					<div className="flex justify-between"><span className="text-[var(--muted)]">Очистка (ПСО):</span><strong className="text-emerald-700 font-semibold">Азопирам отрицательно</strong></div>
+					<div className="flex justify-between"><span className="text-[var(--muted)]">Очистка инструментов:</span><strong className="text-emerald-700 font-semibold">Азопирам отрицательно</strong></div>
 				</div>
 
 				<div className="flex items-center justify-end gap-2.5">

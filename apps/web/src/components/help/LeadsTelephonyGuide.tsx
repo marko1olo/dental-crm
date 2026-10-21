@@ -170,7 +170,7 @@ export const LeadsTelephonyGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 							<div className="flex items-center gap-1.5 text-[11px] truncate">
 								<span className="font-bold text-[var(--ink)]">Входящий вызов:</span>
 								<span className="font-semibold text-rose-700 dark:text-rose-300">+7 (912) 345-67-89</span>
-								<span className="text-[10px] text-[var(--muted)] hidden sm:inline">• Смирнова Е.А. (Карта 043/у найдена)</span>
+								<span className="text-[10px] text-[var(--muted)] hidden sm:inline">• Смирнова Е.А. (Медкарта найдена)</span>
 							</div>
 						</div>
 

@@ -129,7 +129,7 @@ describe("InsuranceContractsPanel — Modular DMS Suite (Mandates 8b, 8d, 8e)", 
 		);
 
 		expect(html.includes('data-testid="insurance-dms-tariff-table"')).toBe(true);
-		expect(html.includes("Тарифные сетки ДМС по номенклатуре 804н")).toBe(true);
+		expect(html.includes("Тарифные сетки ДМС по каталогу услуг")).toBe(true);
 		expect(html.includes("Терапевтическая стоматология (А16.07.002)")).toBe(true);
 		expect(html.includes("Хирургическая стоматология (А16.07.001)")).toBe(true);
 		expect(html.includes("Ортопедическая помощь (А16.07.004)")).toBe(true);

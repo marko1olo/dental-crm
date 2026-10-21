@@ -68,7 +68,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 				<div className="flex items-center justify-between gap-2">
 					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
 						<MousePointer size={14} className="text-teal-500" />
-						<span>Интерактивная карта приёма стоматологического больного (043/у)</span>
+						<span>Интерактивная медицинская карта приёма</span>
 					</div>
 					<span className="text-[10px] text-teal-600 dark:text-teal-400 font-medium bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
 						Кликните «✓ Осмотр в норме»
@@ -208,7 +208,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 					{isPrintedDemo && (
 						<div className="p-2 bg-teal-500/15 border-t border-teal-500/30 flex items-center gap-2 text-[11px] text-teal-800 dark:text-teal-200">
 							<Printer size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>Бланк Формы 043/у сформирован и отправлен на печать со штампом «Подписано врачом»!</span>
+							<span>Медицинская карта приёма сформирована и отправлена на печать со штампом «Подписано врачом»!</span>
 						</div>
 					)}
 				</div>
