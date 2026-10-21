@@ -25,11 +25,11 @@ export const MobileExecutiveDoctorsAndFunnels: React.FC<MobileExecutiveDoctorsAn
 				sub: dept.departmentKey === "therapy"
 					? "Лечение кариеса, пульпита, эстетическая реставрация"
 					: dept.departmentKey === "orthopedics"
-						? "Циркониевые коронки, виниры E.max, протезирование"
+						? "Циркониевые коронки, керамические виниры, протезирование"
 						: dept.departmentKey === "surgery_implantation"
 							? "Имплантаты, синус-лифтинг, сложное удаление"
 							: dept.departmentKey === "orthodontics"
-								? "Брекеты Damon, прозрачные элайнеры"
+								? "Брекет-системы, прозрачные элайнеры"
 								: "Молочные зубы, цветные пломбы, адаптация",
 				fact: dept.factRevenueFormatted,
 				percent: dept.planFulfillmentPercent,

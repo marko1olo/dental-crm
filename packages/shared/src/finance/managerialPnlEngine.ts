@@ -239,7 +239,7 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 
 	const grossRevenueRub = kopecksToRub(grossRevenueKop);
 
-	// 2. Агрегация расходов по 12 регламентированным статьям StomX (в копейках)
+	// 2. Агрегация расходов по 12 каноническим статьям кассового учёта (в копейках)
 	const STATUTORY_NAMES: Record<number, { name: string; isLocked: boolean; costNature: "direct_cogs" | "opex" | "taxes" }> = {
 		1: { name: "Зарплата врачей и персонала", isLocked: true, costNature: "direct_cogs" },
 		2: { name: "Налоги и сборы", isLocked: false, costNature: "taxes" },

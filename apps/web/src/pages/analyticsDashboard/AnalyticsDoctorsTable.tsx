@@ -71,7 +71,7 @@ export function DoctorProfitabilityTable({
 									</span>
 								</td>
 								<td className="whitespace-nowrap font-medium text-center">
-									{doc?.services804nCount ?? 0}
+									{doc?.servicesCount ?? doc?.services804nCount ?? 0}
 								</td>
 								<td
 									className="whitespace-nowrap font-medium text-center"
@@ -127,7 +127,7 @@ export function AnalyticsDoctorsTable({ rows }: AnalyticsDoctorsTableProps) {
 				(rows ?? []).filter(
 					(x) =>
 						(x?.revenue ?? 0) > 0 ||
-						(x?.services804nCount ?? 0) > 0 ||
+						((x as any)?.servicesCount ?? x?.services804nCount ?? 0) > 0 ||
 						(x?.labOrdersCount ?? 0) > 0 ||
 						(x?.appointmentsCount ?? 0) > 0,
 				).length > 0 ? (

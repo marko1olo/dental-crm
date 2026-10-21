@@ -62,15 +62,25 @@ export function MobileExecutiveKpiCards({
 					</div>
 					<div className="kpi-mini-ring" aria-hidden="true">
 						<svg width="28" height="28" viewBox="0 0 28 28">
-							<circle cx="14" cy="14" r="11" className="ring-track ring-track-occupancy" strokeWidth="3" />
 							<circle
 								cx="14"
 								cy="14"
 								r="11"
-								className="ring-fill ring-fill-occupancy"
+								fill="none"
+								stroke="var(--line, #cbd5e1)"
 								strokeWidth="3"
+							/>
+							<circle
+								cx="14"
+								cy="14"
+								r="11"
+								fill="none"
+								stroke="var(--teal, #0d9488)"
+								strokeWidth="3"
+								strokeLinecap="round"
 								strokeDasharray={69.1}
 								strokeDashoffset={69.1 - (69.1 * periodMetrics.occupancyPercent) / 100}
+								style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
 							/>
 						</svg>
 					</div>

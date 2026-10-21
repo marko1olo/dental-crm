@@ -7739,3 +7739,32 @@
        * `docs/proofs/anesthesia/anesthesia_mobile_bottom_sheet_dark.png` (34.6 КБ)
        * `docs/proofs/anesthesia/anesthesia_passive_allergy_proof.png` (51.8 КБ).
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+
+
+### 2.10.432. Волна 362: Red Team Аудит и Рефакторинг Управленческой Аналитики Клиники, P&L Дашборда Директора и Когорт LTV (Мандаты 8e, 8n, 8x, 8ao, Apple HIG, 4-State Proof)
+- **Цель и клинический контекст**:
+  Комплексный Red Team аудит и рефакторинг управленческой аналитики клиники, директорского P&L дашборда и когортного анализа удержания пациентов. Ликвидация скрытого дефекта заливки SVG-диаграмм в мобильном интерфейсе, внедрение изолированного React-хука управленческого P&L (`useManagerialPnl`), гарантированная изоляция мультитенантности и корректный учет возвратов (`refunded`) при расчете чистой выручки когорт, устранение номеров законов и брендов конкурентов из кодовой базы, а также декомпозиция монолитов до норматива $\le 500$ строк.
+- **Ключевые механизмы и изменения**:
+  1. *Ликвидация черного диска в мобильной диаграмме загрузки кресел (Apple HIG)*:
+     - В `apps/web/src/components/analytics/executiveModules/MobileExecutiveKpiCards.tsx` в тегах `<circle>` индикатора загрузки отсутствовал атрибут `fill="none"`, что приводило к дефолтной черной заливке внутренней области (`fill: black`) в мобильном представлении. Исправлено на `fill="none"` с токенами `stroke="var(--line)"` и `stroke="var(--teal)"`.
+  2. *Декомпозиция и внедрение канонического хука P&L (`useManagerialPnl`)*:
+     - Создан `apps/web/src/components/finance/pnl/useManagerialPnl.ts` с инкапсуляцией состояний загрузки, кэширования, диапазонов дат (`getDatesForPnlPreset`) и типизации `ManagerialPnlReport`;
+     - `ManagerialPnlDashboardModal.tsx` полностью переведен на `useManagerialPnl`;
+     - Добавлен полный набор юнит-тестов `apps/web/src/components/finance/pnl/__tests__/useManagerialPnl.test.ts` (100% PASS).
+  3. *Точность когорт и мультитенантность*:
+     - В `apps/api/src/routes/analytics/cohortLtvCalculator.ts` добавлена строгая проверка организации при джойне платежей `eq(payments.organizationId, orgId)` и расчет чистой выручки за вычетом возвратов: `sum(case when status='paid' then amountRub when status='refunded' then -amountRub else 0 end)`.
+  4. *Искоренение чужих брендов и номеров законов (Мандаты 8x, 8ao)*:
+     - Вычищены упоминания StomX из `managerialPnlEngine.ts`;
+     - Удалены коммерческие торговые марки брекетов/коронок из `MobileExecutiveDoctorsAndFunnels.tsx`;
+     - В `utilizationRoutes.ts`, `AnalyticsDoctorsTable.tsx`, `types.ts` поддержано семантическое поле `servicesCount` параллельно устаревшему `services804nCount`.
+  5. *Декомпозиция бэкенд-маршрутов*:
+     - Выделен `apps/api/src/routes/analytics/noShowHeatmapCalculator.ts` (128 строк), объем `utilizationRoutes.ts` снижен с 549 до 442 строк ($\le 500$ строк).
+  6. *Верификация и 4-State Visual Proof*:
+     - Все 8 тестовых наборов (84 теста) аналитики и P&L проходят (100% PASS);
+     - Проведен 4-State скриншот-аудит на живом сервере Vite (5173):
+       * `docs/proofs/analytics/analytics_pc_light.png` (196.1 КБ)
+       * `docs/proofs/analytics/analytics_pc_dark.png` (194.6 КБ)
+       * `docs/proofs/analytics/analytics_mobile_light.png` (122.9 КБ)
+       * `docs/proofs/analytics/analytics_mobile_dark.png` (123.9 КБ)
+     - Личный визуальный просмотр через `read_file`: отсутствие черного круга, 0px горизонтального скролла, безупречный контраст в темной и светлой теме.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.

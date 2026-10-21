@@ -30,6 +30,7 @@ export interface DoctorProfitabilityRow {
 	revenue: number;
 	margin: number | null;
 	completionRate: number | null;
+	servicesCount?: number;
 	services804nCount?: number;
 	labOrdersCount?: number;
 	labOrdersCostRub?: number;

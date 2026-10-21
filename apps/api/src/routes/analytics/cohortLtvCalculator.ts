@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { patients, payments } from "../../db/schema.js";
 import {
@@ -32,15 +32,16 @@ export async function calculateCohortLtv(
 		.select({
 			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
 			patientId: payments.patientId,
-			totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+			totalRevenue: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
 		})
 		.from(payments)
 		.innerJoin(patients, eq(payments.patientId, patients.id))
 		.where(
 			and(
 				eq(patients.organizationId, orgId),
+				eq(payments.organizationId, orgId),
 				gte(patients.createdAt, ltvStartDate),
-				eq(payments.status, "paid"),
+				inArray(payments.status, ["paid", "refunded"]),
 			),
 		)
 		.groupBy(cohortMonthBucket, payments.patientId)

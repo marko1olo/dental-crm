@@ -29,11 +29,15 @@ describe("Leads & Executive Reports Visual Overhaul — Constitutional Inquisiti
 			const filePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
 			assert.ok(fs.existsSync(filePath), "LeadsFunnelAnalyticsModal.tsx must exist");
 			const waterfallPath = path.join(leadsDir, "FunnelWaterfallSection.tsx");
+			const waterfallStripPath = path.join(leadsDir, "FunnelWaterfallCompactStrip.tsx");
 			const channelsPath = path.join(leadsDir, "FunnelChannelsTableSection.tsx");
+			const channelsStripPath = path.join(leadsDir, "FunnelChannelsCompactStrip.tsx");
 			const content =
 				fs.readFileSync(filePath, "utf8") +
 				(fs.existsSync(waterfallPath) ? fs.readFileSync(waterfallPath, "utf8") : "") +
-				(fs.existsSync(channelsPath) ? fs.readFileSync(channelsPath, "utf8") : "");
+				(fs.existsSync(waterfallStripPath) ? fs.readFileSync(waterfallStripPath, "utf8") : "") +
+				(fs.existsSync(channelsPath) ? fs.readFileSync(channelsPath, "utf8") : "") +
+				(fs.existsSync(channelsStripPath) ? fs.readFileSync(channelsStripPath, "utf8") : "");
 
 			// Waterfall toggle button and compact strip
 			assert.ok(

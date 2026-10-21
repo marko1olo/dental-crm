@@ -167,6 +167,7 @@ export interface DoctorProfitabilityRow {
 	readonly hourlyRevenueRub?: number;
 	readonly margin: number | null;
 	readonly completionRate: number | null;
+	readonly servicesCount?: number;
 	readonly services804nCount?: number;
 	readonly labOrdersCount?: number;
 	readonly labOrdersCostRub?: number;

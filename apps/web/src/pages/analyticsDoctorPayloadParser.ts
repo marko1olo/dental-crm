@@ -92,6 +92,7 @@ function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 				hourlyRevenueRub: numberOr(row.hourlyRevenueRub, 0),
 				margin: nullableNumber(row.margin),
 				completionRate: nullableNumber(row.completionRate),
+				servicesCount: numberOr(row.servicesCount, numberOr(row.services804nCount, 0)),
 				services804nCount: numberOr(row.services804nCount, 0),
 				labOrdersCount: numberOr(row.labOrdersCount, 0),
 				labOrdersCostRub: numberOr(row.labOrdersCostRub, 0),

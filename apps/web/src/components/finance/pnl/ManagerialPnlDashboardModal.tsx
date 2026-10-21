@@ -19,9 +19,7 @@ import {
 	DEPARTMENT_METADATA_RU,
 	type ManagerialPnlReport,
 } from "@dental/shared";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
-import { fetchManagerialPnl } from "../../../lib/managerialPnlApi";
-import { showToast } from "../../GlobalToast";
+import { useManagerialPnl } from "./useManagerialPnl";
 import { QuickExpenseModal } from "../QuickExpenseModal";
 import "./ManagerialPnlDashboardModal.css";
 
@@ -31,59 +29,15 @@ interface Props {
 }
 
 export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }) => {
-	const appLogic = useAppLogicContext();
-	const auth = appLogic.auth;
-
-	const [report, setReport] = useState<ManagerialPnlReport | null>(null);
-	const [loading, setLoading] = useState<boolean>(false);
-	const [periodPreset, setPeriodPreset] = useState<"current_month" | "prev_month" | "quarter" | "year">("current_month");
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState<boolean>(false);
 
-	const getDatesForPreset = useCallback((preset: "current_month" | "prev_month" | "quarter" | "year") => {
-		const now = new Date();
-		const y = now.getFullYear();
-		const m = now.getMonth();
-
-		if (preset === "current_month") {
-			const from = new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0]!;
-			const to = new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0]!;
-			return { from, to };
-		}
-		if (preset === "prev_month") {
-			const from = new Date(Date.UTC(y, m - 1, 1)).toISOString().split("T")[0]!;
-			const to = new Date(Date.UTC(y, m, 0)).toISOString().split("T")[0]!;
-			return { from, to };
-		}
-		if (preset === "quarter") {
-			const quarterStartMonth = Math.floor(m / 3) * 3;
-			const from = new Date(Date.UTC(y, quarterStartMonth, 1)).toISOString().split("T")[0]!;
-			const to = new Date(Date.UTC(y, quarterStartMonth + 3, 0)).toISOString().split("T")[0]!;
-			return { from, to };
-		}
-		const from = new Date(Date.UTC(y, 0, 1)).toISOString().split("T")[0]!;
-		const to = new Date(Date.UTC(y, 11, 31)).toISOString().split("T")[0]!;
-		return { from, to };
-	}, []);
-
-	const loadPnl = useCallback(async (preset: "current_month" | "prev_month" | "quarter" | "year") => {
-		try {
-			setLoading(true);
-			const headers = auth.denteClinicalReadHeaders();
-			const dates = getDatesForPreset(preset);
-			const res = await fetchManagerialPnl(headers, dates);
-			setReport(res.data || null);
-		} catch (err: any) {
-			showToast(`Ошибка отчета P&L: ${err.message}`, "error");
-		} finally {
-			setLoading(false);
-		}
-	}, [auth, getDatesForPreset]);
-
-	useEffect(() => {
-		if (isOpen) {
-			loadPnl(periodPreset);
-		}
-	}, [isOpen, periodPreset, loadPnl]);
+	const {
+		report,
+		loading,
+		periodPreset,
+		setPeriodPreset,
+		reload: loadPnl,
+	} = useManagerialPnl({ enabled: isOpen });
 
 	if (!isOpen) return null;
 
@@ -135,7 +89,7 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 						<button
 							type="button"
 							className="pnl-date-btn"
-							onClick={() => loadPnl(periodPreset)}
+							onClick={() => void loadPnl()}
 							disabled={loading}
 							title="Обновить расчет"
 						>
@@ -611,7 +565,7 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 				<QuickExpenseModal
 					isOpen={isQuickExpenseOpen}
 					onClose={() => setIsQuickExpenseOpen(false)}
-					onSuccess={() => loadPnl(periodPreset)}
+					onSuccess={() => void loadPnl()}
 				/>
 			)}
 		</div>
