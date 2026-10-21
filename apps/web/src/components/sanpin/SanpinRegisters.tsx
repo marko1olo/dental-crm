@@ -11,17 +11,30 @@ import { SanpinRegistersHeader } from "./SanpinRegistersHeader";
 import { useSanpinRegistersLogic } from "./registers/useSanpinRegistersLogic";
 import { SanpinKpiSummaryGrid } from "./registers/SanpinKpiSummaryGrid";
 import { SanpinRegisterTabsNav } from "./registers/SanpinRegisterTabsNav";
+import { type SanpinRegisterTab } from "./sanpinNavigationConfig";
 import "./SanpinRegisters.css";
 
 export * from "./sanpinNavigationConfig";
 
-function SanpinRegistersInner() {
+export interface SanpinRegistersProps {
+	readonly initialTab?: SanpinRegisterTab | undefined;
+	readonly initialFilterAutoclave?: string | undefined;
+	readonly onAttachPouchToVisit?: ((pouchCode: string, snippet: string) => void) | undefined;
+	readonly className?: string | undefined;
+}
+
+function SanpinRegistersInner({
+	initialTab = "autoclave",
+	initialFilterAutoclave,
+	onAttachPouchToVisit,
+	className = "",
+}: SanpinRegistersProps = {}) {
 	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
-	const logic = useSanpinRegistersLogic(auth, appLogic);
+	const logic = useSanpinRegistersLogic(auth, appLogic, initialTab);
 
 	return (
-		<div className="sanpin-container">
+		<div className={`sanpin-container ${className}`}>
 			<SanpinRegistersHeader
 				summary={logic.summary}
 				showExpandedKpi={logic.showExpandedKpi}

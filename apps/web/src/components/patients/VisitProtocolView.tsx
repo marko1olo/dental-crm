@@ -54,6 +54,7 @@ import {
 	evaluateAnesthesiaRisk,
 } from "../../lib/clinicalProtocols";
 import { ToothMolar } from "../icons/DentalIcons";
+import { DentalLabOrderDrawer } from "../lab/DentalLabOrderDrawer";
 
 export interface VisitProtocolData {
 	visitId?: string | null | undefined;
@@ -144,19 +145,19 @@ const COMMON_ICD10_PRESETS: Array<{
 
 const STANDARD_ANESTHETICS = [
 	{
-		key: "ultracain_ds",
-		nameRu: "Ультракаин Д-С 1:200 000 (1 карпула 1.7 мл)",
-		material: { name: "Ультракаин Д-С 1:200 000 (Sanofi)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
+		key: "ultracain_ds_forte",
+		nameRu: "✓ Норма: Артикаин 1:100 000 (1 карпула 1.7 мл)",
+		material: { name: "Артикаин 1:100 000 (Ультракаин Форте)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
 	},
 	{
-		key: "ultracain_ds_forte",
-		nameRu: "Ультракаин Форте 1:100 000 (1 карпула 1.7 мл)",
-		material: { name: "Ультракаин Д-С Форте 1:100 000 (Sanofi)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
+		key: "ultracain_ds",
+		nameRu: "Щадящий адреналин: Артикаин 1:200 000 (1 карпула 1.7 мл)",
+		material: { name: "Артикаин 1:200 000 (Ультракаин Д-С)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
 	},
 	{
 		key: "scandonest_3",
-		nameRu: "Скандонест 3% без адреналина (1 карпула 1.7 мл)",
-		material: { name: "Скандонест 3% (Septodont)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
+		nameRu: "Кардио-защита: Мепивакаин без адреналина (1 карпула 1.7 мл)",
+		material: { name: "Мепивакаин 3% (Скандонест)", category: "anesthesia" as const, quantity: 1, unit: "карп." as const },
 	},
 ];
 
@@ -177,6 +178,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 		const [selectedTooth, setSelectedTooth] = useState<string>(
 			initialTooth ? String(initialTooth) : "16",
 		);
+		const [isLabOrderOpen, setIsLabOrderOpen] = useState(false);
 
 		const [protocol, setProtocol] = useState<VisitProtocolData>(() => ({
 			visitId,
@@ -259,30 +261,37 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 			[selectedTooth],
 		);
 
-		// 1-Click добавление анестезии и автосписание карпулы
+		// 1-Click добавление анестезии в протокол (Мандаты 8e, 8y — без списания игл у кресла)
 		const handleApplyAnesthesia = useCallback((anes: (typeof STANDARD_ANESTHETICS)[number]) => {
 			setProtocol((prev) => {
 				const existing = prev.deductedMaterials.filter(
-					(m) => !m.name.toLowerCase().includes("ультракаин") && !m.name.toLowerCase().includes("скандонест"),
+					(m) => !m.name.toLowerCase().includes("артикаин") && !m.name.toLowerCase().includes("ультракаин") && !m.name.toLowerCase().includes("скандонест") && !m.name.toLowerCase().includes("мепивакаин"),
 				);
 				existing.push(anes.material);
-				existing.push({ name: "Игла карпульная стоматологическая 30G (0.3x21 мм)", category: "anesthesia", quantity: 1, unit: "шт." });
 
 				const anesSnippet = `Анестезия: инфильтрационная/проводниковая ${anes.nameRu}. Аспирационная проба отрицательная. Обезболивание глубокое, достаточное.`;
 				const updatedProtocol = prev.treatmentProtocol.includes("Анестезия:")
 					? prev.treatmentProtocol.replace(/Анестезия:[^\n]+/, anesSnippet)
 					: `${anesSnippet}\n\n${prev.treatmentProtocol}`;
 
-				return {
+				const updated = {
 					...prev,
 					anestheticDrug: anes.nameRu,
 					anestheticCarpules: 1,
 					treatmentProtocol: updatedProtocol,
 					deductedMaterials: existing,
 				};
+
+				// Дебаунсированный автосейв выбранного пресета анестезии
+				if (onSaveProtocol) {
+					onSaveProtocol(updated);
+				}
+				setLastSaved(new Date().toLocaleTimeString("ru-RU"));
+
+				return updated;
 			});
-			showToast(`Анестезия и карпула списаны (${anes.nameRu})`, "success", 2500);
-		}, []);
+			showToast(`Анестезия добавлена в карту: ${anes.nameRu}`, "success", 2500);
+		}, [onSaveProtocol]);
 
 		// Сохранение протокола
 		const handleSave = useCallback(() => {
@@ -335,6 +344,17 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 
 					{/* Fast Action Buttons */}
 					<div className="flex items-center gap-2 shrink-0">
+						<button
+							type="button"
+							data-testid="btn-visit-lab-order"
+							onClick={() => setIsLabOrderOpen(true)}
+							className="min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-200 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+							title="Оформить наряд-заказ в зуботехническую лабораторию (ЗТЛ)"
+						>
+							<ToothMolar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>Наряд ЗТЛ</span>
+						</button>
+
 						<button
 							type="button"
 							data-testid="btn-visit-somatic-norm"
@@ -516,19 +536,19 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 								Анестезия и списание материалов:
 							</span>
 						</div>
-						<div className="flex items-center gap-1 flex-wrap">
+						<div className="flex items-center gap-1.5 flex-wrap">
 							{STANDARD_ANESTHETICS.map((anes) => (
 								<button
 									key={anes.key}
 									type="button"
 									onClick={() => handleApplyAnesthesia(anes)}
-									className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-[var(--paper)] border border-[var(--glass-border)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer transition-all"
+									className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer transition-all min-h-[36px] inline-flex items-center gap-1"
 								>
-									{anes.key === "ultracain_ds"
-										? "Ультракаин 1:200k"
-										: anes.key === "ultracain_ds_forte"
-										? "Ультракаин Форте"
-										: "Скандонест 3%"}
+									{anes.key === "ultracain_ds_forte"
+										? "✓ Норма: Артикаин 1:100 000"
+										: anes.key === "ultracain_ds"
+										? "Щадящий: Артикаин 1:200 000"
+										: "Кардио: Мепивакаин"}
 								</button>
 							))}
 						</div>
@@ -563,6 +583,42 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 						</span>
 					)}
 				</div>
+
+				{/* Канонический выдвижной Drawer наряда ЗТЛ у кресла врача */}
+				{isLabOrderOpen && (
+					<DentalLabOrderDrawer
+						isOpen={isLabOrderOpen}
+						onClose={() => setIsLabOrderOpen(false)}
+						patientId={patientId || undefined}
+						patientName={patientName || undefined}
+						doctorName={doctorName || undefined}
+						currentToothNumber={selectedTooth || initialTooth || "16"}
+						initialToothFdi={selectedTooth || initialTooth || "16"}
+						onOrderSaved={(savedOrder) => {
+							setIsLabOrderOpen(false);
+							if (savedOrder) {
+								const teeth = savedOrder.teethFdi
+									? Array.isArray(savedOrder.teethFdi)
+										? savedOrder.teethFdi.join(", ")
+										: savedOrder.teethFdi
+									: selectedTooth || "16";
+								const construction =
+									savedOrder.materialRu ||
+									savedOrder.constructionType ||
+									"Ортопедическая коронка";
+								const shade = savedOrder.vitaShade || "A2";
+								const ztlNote = `Наряд ЗТЛ оформлен: зуб ${teeth}, конструкция: ${construction}, цвет: ${shade}.`;
+								setProtocol((prev) => ({
+									...prev,
+									treatmentProtocol: prev.treatmentProtocol
+										? `${prev.treatmentProtocol}\n${ztlNote}`
+										: ztlNote,
+								}));
+								showToast("Наряд ЗТЛ привязан к протоколу визита", "success");
+							}
+						}}
+					/>
+				)}
 			</div>
 		);
 	},

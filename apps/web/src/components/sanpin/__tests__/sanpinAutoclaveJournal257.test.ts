@@ -361,8 +361,7 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 				"Август 2026",
 			);
 
-			assert.ok(html.includes("Форма № 257/у"));
-			assert.ok(html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ"));
+			assert.ok(html.includes("Журнал автоклавирования и стерилизации") || html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ"));
 			assert.ok(html.includes("Euronda"));
 			assert.ok(html.includes("ООО ДЕНТЕ КЛИНИК"));
 		});
@@ -392,8 +391,8 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			});
 
 			assert.ok(regulatoryHtml.includes("ОФИЦИАЛЬНАЯ ВЫГРУЗКА ДЛЯ ПРОВЕРОК РОСПОТРЕБНАДЗОРА"));
-			assert.ok(regulatoryHtml.includes("Форма № 257/у"));
-			assert.ok(regulatoryHtml.includes("Форма № 366/у"));
+			assert.ok(regulatoryHtml.includes("Журнал автоклавирования и стерилизации") || regulatoryHtml.includes("Форма № 257/у"));
+			assert.ok(regulatoryHtml.includes("Контроль предстерилизационной очистки") || regulatoryHtml.includes("Форма № 366/у"));
 			assert.ok(regulatoryHtml.includes("Презумпция стерильности лотка у кресла врача"));
 			assert.ok(regulatoryHtml.includes("СТЕРИЛЬНО"));
 		});

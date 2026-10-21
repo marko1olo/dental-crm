@@ -1,10 +1,15 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import type { DentalLabOrderData } from "../DentalLabOrderModal";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { useLabOrdersData } from "./hooks/useLabOrdersData";
 import { useLabOrdersFiltering } from "./hooks/useLabOrdersFiltering";
 import { useLabOrdersModals } from "./hooks/useLabOrdersModals";
 import { useLabOrderActions } from "./hooks/useLabOrderActions";
+import {
+	createTechnicianCommentPrompt,
+	createRepeatFittingPrompt,
+	createReclamationPrompt,
+} from "./hooks/useLabOrderDialogs";
 
 export interface UseDentalLabOrdersOptions {
 	readonly initialOrders?: readonly DentalLabOrderData[];
@@ -78,74 +83,27 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 		handleTechnicianComment: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
 			if (!o.id) return;
-			modals.setPromptState({
-				title: `Комментарий зубному технику · ${(o as any).orderNumber || (o.id ? `#${o.id.slice(0, 8)}` : "ЗТЛ")}`,
-				description: `Сообщение для техника ЗТЛ по наряду пациента ${o.patientName || "Пациент"}:`,
-				submitLabel: "Отправить технику",
-				submitVariant: "teal",
-				multiline: true,
-				placeholder: "Уточнение параметров препарирования, анатомии, прикуса...",
-				quickPresets: [
-					"Уточнить цвет по фото в приложении",
-					"Обратить внимание на выраженный экватор",
-					"Минимальное занижение под прикус",
-					"Срочный заказ, пациент уезжает",
-				],
-				onSubmit: async (comment) => {
-					if (!comment.trim()) {
-						modals.setPromptState(null);
-						return;
-					}
-					await actions.handleStatusChange(o.id!, o.status || "in_progress", comment.trim());
-					modals.setPromptState(null);
-				},
-			});
+			modals.setPromptState(createTechnicianCommentPrompt(o, async (comment) => {
+				if (!comment.trim()) { modals.setPromptState(null); return; }
+				await actions.handleStatusChange(o.id!, o.status || "in_progress", comment.trim());
+				modals.setPromptState(null);
+			}));
 		},
 		handleRepeatFitting: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
 			if (!o.id) return;
-			modals.setPromptState({
-				title: `Повторная примерка · ${(o as any).orderNumber || (o.id ? `#${o.id.slice(0, 8)}` : "ЗТЛ")}`,
-				description: `Укажите клинические замечания для повторной примерки конструкции:`,
-				submitLabel: "Назначить примерку",
-				submitVariant: "teal",
-				multiline: true,
-				placeholder: "Замечания по окклюзии, контактным пунктам, прилеганию...",
-				quickPresets: [
-					"Коррекция по прикусу (окклюзия)",
-					"Припасовка апроксимальных контактов",
-					"Индивидуализация мамелонов и микрорельефа",
-					"Повторная примерка после коррекции уступа",
-				],
-				onSubmit: async (reason) => {
-					await actions.handleStatusChange(o.id!, "refitting", reason.trim() || "Повторная примерка конструкции");
-					modals.setPromptState(null);
-				},
-			});
+			modals.setPromptState(createRepeatFittingPrompt(o, async (reason) => {
+				await actions.handleStatusChange(o.id!, "refitting", reason.trim() || "Повторная примерка конструкции");
+				modals.setPromptState(null);
+			}));
 		},
 		handleReclamation: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
 			if (!o.id) return;
-			modals.setPromptState({
-				title: `Рекламация / Гарантийная переделка (0 ₽) · ${(o as any).orderNumber || (o.id ? `#${o.id.slice(0, 8)}` : "ЗТЛ")}`,
-				description: `Укажите причину рекламации. Для пациента переделка бесплатна (0 ₽). Наряд передается технику без создания дубликата пациента.`,
-				submitLabel: "Оформить рекламацию (0 ₽)",
-				submitVariant: "danger",
-				multiline: true,
-				placeholder: "Причина брака или рекламации...",
-				quickPresets: [
-					"Несоответствие оттенка / цвета VITA",
-					"Завышение по прикусу / окклюзии",
-					"Неплотное краевое прилегание / балансировка",
-					"Скол керамической массы",
-					"Недосадка каркаса на уступ",
-					"Коррекция контактного пункта",
-				],
-				onSubmit: async (reason) => {
-					await actions.handleStatusChange(o.id!, "refitting", `Рекламация (0 ₽): ${reason.trim() || "Гарантийная переделка"}`);
-					modals.setPromptState(null);
-				},
-			});
+			modals.setPromptState(createReclamationPrompt(o, async (reason) => {
+				await actions.handleStatusChange(o.id!, "refitting", `Рекламация (0 ₽): ${reason.trim() || "Гарантийная переделка"}`);
+				modals.setPromptState(null);
+			}));
 		},
 		handleCreateOrderFromPriceMatrix: (item: LabPriceMatrixItem) => {
 			modals.setSelectedOrderForEdit({ patientId: "", patientName: "Пациент", material: item.material, constructionType: item.id, priceRub: item.suggestedCostRub, clinicalNotes: item.specialInstructions || "" });

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CalendarCheck, Copy, Send, X, ExternalLink } from "lucide-react";
+import { CalendarCheck, Copy, Send, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { openWhatsAppChat } from "../../store/telephonyClinical";
 import type { PartialDeliveryResult } from "./dentalLabOrderEngine";
@@ -88,16 +88,13 @@ export function DentalLabReadyInClinicModal({
 						<X size={18} />
 					</button>
 				</div>
-
 				<div className="flex gap-2 border-b border-[var(--line)] pb-2">
 					<button type="button" onClick={() => setChannel("whatsapp")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "whatsapp" ? "bg-emerald-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>WhatsApp</button>
 					<button type="button" onClick={() => setChannel("sms")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "sms" ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>SMS</button>
 				</div>
-
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs text-[var(--ink)] whitespace-pre-wrap font-sans max-h-40 overflow-y-auto">
 					{msgText}
 				</div>
-
 				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
 					<div className="flex items-center gap-2">
 						<button type="button" onClick={handleCopy} className="px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer">

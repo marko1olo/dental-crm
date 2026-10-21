@@ -191,7 +191,7 @@ export function generateForm257PrintHtml(
 <html lang="ru">
 <head>
 	<meta charset="UTF-8">
-	<title>Журнал контроля работы стерилизаторов (Форма № 257/у)</title>
+	<title>Журнал автоклавирования и стерилизации (Форма № 257/у)</title>
 	<style>
 		@page {
 			size: A4 landscape;
@@ -305,13 +305,13 @@ export function generateForm257PrintHtml(
 		</div>
 		<div class="form-stamp">
 			<strong>МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</strong><br/>
-			Форма № 257/у<br/>
+			Журнал автоклавирования и стерилизации (Форма № 257/у)<br/>
 			СанПиН 3.3686-21 (раздел III)
 		</div>
 	</div>
 
 	<div class="journal-title">
-		<h1>ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ ВОЗДУШНОГО, ПАРОВОГО (АВТОКЛАВА)</h1>
+		<h1>ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ (КОНТРОЛЬ РАБОТЫ АВТОКЛАВОВ)</h1>
 		<h2>Отчетный период: ${periodLabelRu} • Дата формирования: ${printDateStr}</h2>
 	</div>
 
@@ -567,19 +567,19 @@ export function generateRegulatorySanpinInspectionHtml(
 		<div class="form-stamp">
 			<strong>ОФИЦИАЛЬНАЯ ВЫГРУЗКА ДЛЯ ПРОВЕРОК РОСПОТРЕБНАДЗОРА</strong><br/>
 			СанПиН 3.3686-21 «Профилактика инфекционных болезней» (раздел III)<br/>
-			Форма № 257/у и Форма № 366/у (первичная медицинская документация)
+			Журнал автоклавирования и стерилизации • Контроль предстерилизационной очистки
 		</div>
 	</div>
 
 	<div style="text-align: center; margin: 8px 0 4px 0;">
 		<h1 style="font-size: 12pt; margin: 0; font-weight: bold; text-transform: uppercase;">
-			СВОДНЫЙ РЕГЛАМЕНТНЫЙ ОТЧЕТ СТЕРИЛИЗАЦИИ И ПСО
+			СВОДНЫЙ РЕГЛАМЕНТНЫЙ ОТЧЕТ СТЕРИЛИЗАЦИИ И ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ
 		</h1>
 		<div style="font-size: 9pt; color: #333;">Отчетный период: ${periodLabelRu} • Дата выгрузки: ${printDateStr}</div>
 	</div>
 
-	<!-- SECTION 1: FORM 257/U -->
-	<div class="section-header">1. ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ ВОЗДУШНОГО, ПАРОВОГО (Форма № 257/у)</div>
+	<!-- SECTION 1: AUTOCLAVE JOURNAL -->
+	<div class="section-header">1. ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ (КОНТРОЛЬ РАБОТЫ АВТОКЛАВОВ)</div>
 	<table class="form-table">
 		<thead>
 			<tr>
@@ -600,8 +600,8 @@ export function generateRegulatorySanpinInspectionHtml(
 		</tbody>
 	</table>
 
-	<!-- SECTION 2: FORM 366/U -->
-	<div class="section-header" style="margin-top: 14px;">2. ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ФОРМА № 366/у)</div>
+	<!-- SECTION 2: PSO CLEANING QUALITY -->
+	<div class="section-header" style="margin-top: 14px;">2. КОНТРОЛЬ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ЖУРНАЛ КАЧЕСТВА ОЧИСТКИ)</div>
 	<table class="form-table">
 		<thead>
 			<tr>

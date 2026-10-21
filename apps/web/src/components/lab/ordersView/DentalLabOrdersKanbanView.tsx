@@ -1,11 +1,6 @@
-import React, { lazy, Suspense } from "react";
+import React from "react";
 import type { useDentalLabOrders } from "./useDentalLabOrders";
-
-const DentalLabOrdersKanbanBoard = lazy(() =>
-	import("../DentalLabOrdersKanbanBoard").then((module) => ({
-		default: module.DentalLabOrdersKanbanBoard,
-	})),
-);
+import { DentalLabOrdersKanbanBoard } from "../DentalLabOrdersKanbanBoard";
 
 export interface DentalLabOrdersKanbanViewProps {
 	readonly logic: ReturnType<typeof useDentalLabOrders>;
@@ -24,10 +19,9 @@ export function DentalLabOrdersKanbanView({ logic }: DentalLabOrdersKanbanViewPr
 			className="w-full max-w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs"
 			data-testid="lab-orders-kanban-container"
 		>
-			<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка канбан-доски лаборатории...</div>}>
-				<DentalLabOrdersKanbanBoard
-					ordersByStage={kanbanOrdersByStage}
-					stageLimits={kanbanStageLimits}
+			<DentalLabOrdersKanbanBoard
+				ordersByStage={kanbanOrdersByStage}
+				stageLimits={kanbanStageLimits}
 					setStageLimits={setKanbanStageLimits}
 					activeCardMenuOrderId={kanbanActiveMenuId}
 					setActiveCardMenuOrderId={setKanbanActiveMenuId}
@@ -63,7 +57,6 @@ export function DentalLabOrdersKanbanView({ logic }: DentalLabOrdersKanbanViewPr
 						await handleStatusChange(orderId, targetColumnId);
 					}}
 				/>
-			</Suspense>
 		</div>
 	);
 }

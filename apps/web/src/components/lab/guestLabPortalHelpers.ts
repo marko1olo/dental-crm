@@ -1,9 +1,16 @@
 /**
  * guestLabPortalHelpers.ts
- *
  * Dedicated helper functions, labels, and types for GuestLabPortal.
  * Preserves 100% test contract and Russian medical terminology (Mandate 8d).
  */
+
+export {
+	is3DScanFile,
+	isImageFile,
+	getAttachmentFileName,
+	getAttachmentExtension,
+	getAttachmentFileSize,
+} from "./guestPortalModules/guestLabAttachmentHelpers";
 
 export interface LabOrderData {
 	id: string;
@@ -19,19 +26,9 @@ export interface LabOrderData {
 }
 
 export interface GuestLabPortalProps {
-	/**
-	 * Токен заказа из ссылки. Разбор адреса живёт в lib/publicPortalRoute.ts и
-	 * вызывается в main.tsx до рендера: держать второй разбор здесь значило бы
-	 * иметь два несогласуемых понимания одной ссылки.
-	 */
 	token: string;
 }
 
-/**
- * Текст отказа обязан называть ПРИЧИНУ и ДЕЙСТВИЕ, а не код ответа: экран
- * открывает зуботехник, у которого нет ни доступа к журналам, ни возможности
- * спросить у разработчика.
- */
 export function labOrderLoadFailureText(status: number): string {
 	if (status === 404) {
 		return (
@@ -74,10 +71,6 @@ export function statusSaveFailureText(status: number): string {
 export const NETWORK_FAILURE_TEXT =
 	"Нет связи с сервером клиники. Проверьте интернет и обновите страницу — данные заказа не загружены.";
 
-/**
- * Материал в базе хранится кодом (schema.ts labOrders.material), а выбирает его
- * врач из списка в components/schedule/LabOrdersPanel.tsx:382-386.
- */
 export const MATERIAL_LABELS: Record<string, string> = {
 	zirconia: "Диоксид циркония",
 	emax: "E.max (керамика)",
@@ -85,56 +78,3 @@ export const MATERIAL_LABELS: Record<string, string> = {
 	composite: "Композит",
 	temporary: "Временная пластмасса",
 };
-
-export function is3DScanFile(url: string): boolean {
-	return (
-		/\.(stl|ply|obj|3mf)($|[?#])/i.test(url) ||
-		/scan/i.test(url) ||
-		/model/i.test(url)
-	);
-}
-
-export function isImageFile(url: string): boolean {
-	if (is3DScanFile(url)) return false;
-	return (
-		/\.(jpe?g|png|webp|gif|svg)($|[?#])/i.test(url) ||
-		url.startsWith("data:image/")
-	);
-}
-
-export function getAttachmentFileName(url: string): string {
-	try {
-		const parsed = new URL(url, window.location.origin);
-		const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
-		if (lastSegment) return decodeURIComponent(lastSegment);
-	} catch {
-		// fallback
-	}
-	const clean = url.split("?")[0]?.split("#")[0] ?? "";
-	const last = clean.split("/").pop();
-	return last || "3d_scan.stl";
-}
-
-export function getAttachmentExtension(url: string): string {
-	const filename = getAttachmentFileName(url);
-	const ext = filename.split(".").pop()?.toUpperCase();
-	return ext || "STL";
-}
-
-export function getAttachmentFileSize(url: string): string {
-	try {
-		const parsed = new URL(url, window.location.origin);
-		const sizeParam = parsed.searchParams.get("size");
-		if (sizeParam) return decodeURIComponent(sizeParam);
-	} catch {
-		// fallback
-	}
-	if (url.startsWith("data:")) {
-		const bytes = Math.round((url.length * 3) / 4);
-		if (bytes > 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-		if (bytes > 1024) return `${Math.round(bytes / 1024)} КБ`;
-		return `${bytes} Б`;
-	}
-	const ext = getAttachmentExtension(url).toLowerCase();
-	return `CAD/CAM (${ext.toUpperCase()})`;
-}

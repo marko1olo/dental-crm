@@ -4,8 +4,8 @@ import type { SanpinRegisterTab } from "../sanpinNavigationConfig";
 import { executeShiftSanpinAutoClose } from "../autoclaveLog/shiftAutoCloserEngine.js";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
 
-export function useSanpinRegistersLogic(auth: any, appLogic: any) {
-	const [activeTab, setActiveTab] = useState<SanpinRegisterTab>("autoclave");
+export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: SanpinRegisterTab = "autoclave") {
+	const [activeTab, setActiveTab] = useState<SanpinRegisterTab>(initialTab);
 	const [showExpandedKpi, setShowExpandedKpi] = useState<boolean>(false);
 	const [summary, setSummary] = useState<any>(null);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);

@@ -12,7 +12,7 @@ import {
 	DENTAL_INSTRUMENT_CATEGORIES,
 } from "@dental/shared";
 
-describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (ПСО, Форма № 366/у)", () => {
+describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (Контроль предстерилизационной очистки)", () => {
 	describe("1. Statutory 1% Sampling Requirement Math (min 3–5 items)", () => {
 		it("calculates minimum 3 items for standard small batches (< 300 pcs)", () => {
 			const batch10 = calculatePsoSampleRequirements(10, false);
@@ -219,7 +219,11 @@ describe("SanPiN 3.3686-21 — Pre-Sterilization Cleansing Quality Control (ПС
 				},
 			});
 
-			assert.ok(html.includes("ФОРМА № 366/у"));
+			assert.ok(
+				html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ") ||
+				html.includes("Контроль предстерилизационной очистки") ||
+				html.includes("ФОРМА № 366/у"),
+			);
 			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ"));
 			assert.ok(html.includes("Турбинные наконечники"));
 			assert.ok(html.includes("Бланизол 0.5%"));

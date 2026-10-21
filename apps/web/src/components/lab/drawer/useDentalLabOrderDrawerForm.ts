@@ -1,15 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
-	type DentalLabConstructionType, type DentalLabOrderStatus, type DentalLabOrderRecord,
-	DENTAL_LAB_CONSTRUCTIONS, parseFdiTeethString,
-	calculateZtlWageFinancials, createDentalLabOrderRecord, toIsoDate,
-	addWorkingDaysRu, checkFittingAppointmentCollision,
+	type DentalLabConstructionType, type DentalLabOrderStatus,
+	DENTAL_LAB_CONSTRUCTIONS, toIsoDate, addWorkingDaysRu, checkFittingAppointmentCollision,
 } from "../dentalLabOrderEngine";
-import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
-import { showToast } from "../../GlobalToast";
 import type { DentalLabOrderDrawerProps } from "../DentalLabOrderDrawer";
+import { executeDrawerOrderSubmit, executeDrawerMarkReadyInClinic } from "./dentalLabDrawerSubmit";
 
 export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
+	const inFlightRef = useRef(false);
 	const editingOrder = props.editingOrder ?? props.initialOrder ?? null;
 	const resolvedPatient = editingOrder?.patientName ?? props.patientName ?? props.currentPatientName ?? "";
 	const resolvedDoctor = editingOrder?.doctorName ?? props.doctorName ?? props.currentDoctorName ?? "Д-р Орлов А.В. (Ортопед)";
@@ -76,49 +74,33 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 		}
 	};
 
+	const ctx = {
+		props, editingOrder, patientName, doctorName, labName, technicianName,
+		teethInput, construction, vitaShade, translucency, stumpShade, sentDate,
+		deadlineDate, scheduledVisit, patientPriceRub, ztlCostRub, doctorPercent,
+		clinicalNotes, attachedScanUrl, status,
+	};
+
 	const handleSubmit = (e?: React.FormEvent) => {
 		e?.preventDefault?.();
-		const teeth = parseFdiTeethString(teethInput);
-		const teethFinal = teeth.length > 0 ? teeth : [16];
-		const def = DENTAL_LAB_CONSTRUCTIONS[construction];
-		const fin = calculateZtlWageFinancials({ unitsCount: teethFinal.length, patientPriceRub, ztlCostRub, doctorSharePercent: doctorPercent });
-		const record = createDentalLabOrderRecord({
-			...(editingOrder || {}), patientName, doctorName, labName: labName.trim() || "Основная лаборатория",
-			technicianName, teethFdi: teethFinal, constructionType: construction, materialRu: def?.defaultMaterialRu,
-			vitaShade, translucency, stumpShade, sentDate, deadlineDate, scheduledVisitDate: scheduledVisit || undefined,
-			status, patientPriceKopecks: fin.patientPriceKopecks, ztlCostKopecks: fin.ztlCostKopecks,
-			doctorSharePercent: fin.doctorSharePercent, clinicalNotes, attachedScanUrl,
-		});
-		props.onSaveOrder?.(record, Boolean(editingOrder));
-		props.onOrderSaved?.(record);
-		showToast(editingOrder ? "Наряд-заказ сохранен" : "Наряд-заказ успешно оформлен", "success");
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: record }));
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			executeDrawerOrderSubmit(ctx);
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
-		props.onClose();
 	};
 
 	const handleMarkReadyInClinic = () => {
-		setStatus("ready_in_clinic");
-		const teeth = parseFdiTeethString(teethInput);
-		const teethFinal = teeth.length > 0 ? teeth : [16];
-		const def = DENTAL_LAB_CONSTRUCTIONS[construction];
-		const fin = calculateZtlWageFinancials({ unitsCount: teethFinal.length, patientPriceRub, ztlCostRub, doctorSharePercent: doctorPercent });
-		const record = createDentalLabOrderRecord({
-			...(editingOrder || {}), patientName, doctorName, labName: labName.trim() || "Основная лаборатория",
-			technicianName, teethFdi: teethFinal, constructionType: construction, materialRu: def?.defaultMaterialRu,
-			vitaShade, translucency, stumpShade, sentDate, deadlineDate, scheduledVisitDate: scheduledVisit || undefined,
-			status: "ready_in_clinic", patientPriceKopecks: fin.patientPriceKopecks, ztlCostKopecks: fin.ztlCostKopecks,
-			doctorSharePercent: fin.doctorSharePercent, clinicalNotes, attachedScanUrl,
-		});
-		props.onSaveOrder?.(record, Boolean(editingOrder));
-		props.onOrderSaved?.(record);
-		showToast("Работа принята в клинике! Ортопед уведомлен.", "success");
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-lab-order-ready", { detail: { ...record, status: "ready_in_clinic", stage: "fitting_scheduled" } }));
-			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: { orderId: record.id, status: "ready_in_clinic", stage: "fitting_scheduled" } }));
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		try {
+			setStatus("ready_in_clinic");
+			executeDrawerMarkReadyInClinic({ ...ctx, status: "ready_in_clinic" });
+		} finally {
+			setTimeout(() => { inFlightRef.current = false; }, 300);
 		}
-		props.onClose();
 	};
 
 	return {

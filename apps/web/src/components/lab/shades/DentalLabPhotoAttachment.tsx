@@ -1,5 +1,5 @@
 import { Camera, CheckCircle2, Trash2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface DentalLabPhotoAttachmentProps {
 	readonly currentShade: string;

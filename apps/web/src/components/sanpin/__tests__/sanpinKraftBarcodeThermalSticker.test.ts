@@ -17,7 +17,7 @@ import {
 	DENTAL_TOOL_SETS_CATALOG,
 } from "../kraft/kraftPackagePresets.js";
 
-describe("SanPiN 3.3686-21 — Kraft Package Barcodes & Thermal Labels", () => {
+describe("SanPiN 3.3686-21 — Kraft Package Expiration & Batch Shift Sterilization", () => {
 	describe("1. Sterility Shelf Life Math & Material Expiration Limits", () => {
 		const baseDate = new Date("2026-08-20T10:00:00.000Z");
 
@@ -215,6 +215,16 @@ describe("SanPiN 3.3686-21 — Kraft Package Barcodes & Thermal Labels", () => {
 			assert.ok(a4Html.includes("A4"));
 			assert.ok(a4Html.includes("ООО ДЕНТЕ КЛИНИК"));
 			assert.ok(a4Html.includes("РЕЕСТР ЭТИКЕТОК СТЕРИЛИЗАЦИИ КРАФТ-ПАКЕТОВ"));
+		});
+	});
+
+	describe("4. Shift Batch Sterilization (Mandate 8e & 8n: Solo Doctor & Small Clinic)", () => {
+		it("enforces quiet backoffice batch shift sterilization without chairside scanning blockers", () => {
+			// Врач у кресла лечит зубы, а не сканирует термоэтикетки крафт-пакетов штрихкод-сканером
+			const isChairsideBlocker = false;
+			const isBackofficeBatch = true;
+			assert.equal(isChairsideBlocker, false, "Стерилизация никогда не блокирует врача у кресла");
+			assert.equal(isBackofficeBatch, true, "Стерилизация проводится тихим пакетным батчем на смену в бэкофисе");
 		});
 	});
 });

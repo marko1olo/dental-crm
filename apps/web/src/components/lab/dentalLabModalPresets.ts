@@ -9,6 +9,11 @@ import {
 
 export type { ExpressLabPreset };
 
+export {
+	type LabOrderMessengerParams,
+	buildLabOrderMessengerSummary,
+} from "./orderModalModules/labOrderMessengerSummary";
+
 export const EXPRESS_PRESET_EMAX_CROWN: ExpressLabPreset = {
 	id: "emax_crown_express",
 	title: "Коронка E.max CAD / Press",
@@ -99,47 +104,4 @@ declare module "./labMath" {
 		readonly onSaveOrder?: ((order: DentalLabOrderData) => void) | undefined;
 		readonly [key: string]: any;
 	}
-}
-
-export interface LabOrderMessengerParams {
-	clinicName: string;
-	clinicPhone?: string | undefined;
-	gostOrderNumber: string;
-	patientName: string;
-	doctorName: string;
-	teethOrJaw: string;
-	constructionTypeTitle: string;
-	materialTitle: string;
-	shade: string;
-	dueDate: string;
-	frameworkTrialDate?: string | undefined;
-	ceramicTrialDate?: string | undefined;
-	clinicalNotes?: string | undefined;
-}
-
-export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): string {
-	const lines: string[] = [
-		`Заказ-наряд в зуботехническую лабораторию (клиника «${params.clinicName}»):`,
-		`Наряд: ${params.gostOrderNumber}`,
-		`Пациент: ${params.patientName}`,
-		`Лечащий врач: ${params.doctorName}`,
-		`Область: ${params.teethOrJaw}`,
-		`Конструкция: ${params.constructionTypeTitle}`,
-		`Материал: ${params.materialTitle}`,
-		`Цвет: ${params.shade}`,
-		`Срок сдачи (Due date): ${params.dueDate}`,
-	];
-
-	if (params.frameworkTrialDate && params.frameworkTrialDate.trim()) {
-		lines.push(`Примерка каркаса: ${params.frameworkTrialDate.trim()}`);
-	}
-	if (params.ceramicTrialDate && params.ceramicTrialDate.trim()) {
-		lines.push(`Примерка керамики: ${params.ceramicTrialDate.trim()}`);
-	}
-
-	const notes = params.clinicalNotes?.trim() || "Без особенностей";
-	lines.push(`Особые указания: ${notes}`);
-	lines.push(`Курьерская доставка / Связь с клиникой: ${params.clinicPhone?.trim() || "не указан"}.`);
-
-	return lines.join("\n");
 }
