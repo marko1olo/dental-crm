@@ -56,7 +56,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 				title="Заполнить в 1 клик физиологическую норму: соматически здоров, слизистая бледно-розовая, зубы интактны"
 			>
 				<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-				<span>✓ Норма (здоров)</span>
+				<span>Норма (здоров)</span>
 			</button>
 			<button
 				type="button"
@@ -102,7 +102,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 						title="Заполнить физиологическую норму: соматически здоров, интактные зубы"
 					>
 						<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-						<span>✓ Норма (соматически здоров)</span>
+						<span>Норма (соматически здоров)</span>
 					</button>
 				</VisitDiaryHeaderMoreMenu>
 			</div>

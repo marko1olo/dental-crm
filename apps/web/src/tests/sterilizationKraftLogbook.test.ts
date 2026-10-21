@@ -19,7 +19,7 @@ import {
 	validateSterilizationCycleParameters,
 	type SanpinPackagingTypeId,
 	type SterilizationRegimeId,
-} from "../components/sanpin/kraft/kraftBagSanpinMath";
+} from "../components/sanpin/kraft/index";
 import {
 	CHEMICAL_INTEGRATORS_CATALOG,
 	evaluateChemicalIntegratorColorMatch,

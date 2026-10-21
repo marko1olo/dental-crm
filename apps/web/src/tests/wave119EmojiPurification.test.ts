@@ -80,8 +80,14 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(!content.includes("✨"), "PatientRecallsHubModal must not contain raw ✨ emoji");
 		assert.ok(!content.includes("📅"), "PatientRecallsHubModal must not contain raw 📅 emoji");
 		assert.ok(!RAW_EMOJI_REGEX.test(content), "PatientRecallsHubModal must be free of raw emojis");
-		assert.ok(content.includes("<Phone"), "PatientRecallsHubModal must render Lucide Phone icon");
-		assert.ok(content.includes("<Lightbulb"), "PatientRecallsHubModal must render Lucide Lightbulb icon");
+
+		const headerPath = path.join(
+			repoRoot,
+			"apps/web/src/components/recalls/RecallHubHeader.tsx",
+		);
+		const headerContent = fs.readFileSync(headerPath, "utf-8");
+		assert.ok(headerContent.includes("<Phone"), "RecallHubHeader must render Lucide Phone icon");
+		assert.ok(headerContent.includes("<Lightbulb"), "RecallHubHeader must render Lucide Lightbulb icon");
 	});
 
 	it("6. OfflineBackupVaultPanel: zero raw emojis, uses Lucide AlertTriangle and XCircle icons", () => {
@@ -132,7 +138,13 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 
 		assert.ok(!content.includes("⚡"), "SanpinRegisters must not contain raw ⚡ emoji");
 		assert.ok(!RAW_EMOJI_REGEX.test(content), "SanpinRegisters must be free of raw emojis");
-		assert.ok(content.includes("<Sparkles"), "SanpinRegisters must render Lucide Sparkles vector icon");
+
+		const toolbarPath = path.join(
+			repoRoot,
+			"apps/web/src/components/sanpin/autoclave/AutoclaveRegisterToolbar.tsx",
+		);
+		const toolbarContent = fs.readFileSync(toolbarPath, "utf-8");
+		assert.ok(toolbarContent.includes("<Sparkles"), "AutoclaveRegisterToolbar must render Lucide Sparkles vector icon");
 	});
 
 	it("10. SanpinCycleModal: eradicated per Mandate 8s (no dead dummy stub in repo)", () => {
@@ -143,15 +155,12 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(!fs.existsSync(filePath), "SanpinCycleModal.tsx must be eradicated per Mandate 8s");
 	});
 
-	it("11. SeniorNurseKraftUnsealModal: zero raw emojis (Mandate 8s)", () => {
+	it("11. SeniorNurseKraftUnsealModal: eradicated from UI per Mandate 8s", () => {
 		const filePath = path.join(
 			repoRoot,
 			"apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(!content.includes("⚡"), "SeniorNurseKraftUnsealModal must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "SeniorNurseKraftUnsealModal must be free of raw emojis");
+		assert.ok(!fs.existsSync(filePath), "SeniorNurseKraftUnsealModal.tsx must be eradicated per Mandate 8s");
 	});
 
 	it("12. MedicalWasteJournalModal: zero raw emojis, uses Lucide Sparkles icon", () => {

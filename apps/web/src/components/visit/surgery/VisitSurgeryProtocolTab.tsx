@@ -585,7 +585,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						</button>
 					)}
 
-					{/* Добавление услуг 804н в смету/счет (Мандаты 8e, 8k) */}
+					{/* Добавление услуг в смету/счет (Мандаты 8e, 8k, 8x) */}
 					<button
 						type="button"
 						onClick={() => {
@@ -601,10 +601,10 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						}}
 						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation transition-all"
 						data-testid="btn-tab-add-to-invoice-804n"
-						title="Добавить услуги по Номенклатуре 804н в смету визита"
+						title="Добавить хирургические услуги в смету визита"
 					>
 						<Plus size={16} />
-						<span>+ В смету 804н</span>
+						<span>+ В смету</span>
 					</button>
 
 					<button

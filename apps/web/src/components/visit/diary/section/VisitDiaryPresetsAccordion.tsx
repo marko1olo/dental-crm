@@ -89,7 +89,7 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 							title="Заполнить дневник физиологической нормой: соматически здоров, интактные зубы"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span>✓ Физиологическая норма (соматически здоров)</span>
+							<span>Физиологическая норма (соматически здоров)</span>
 						</button>
 					</div>
 

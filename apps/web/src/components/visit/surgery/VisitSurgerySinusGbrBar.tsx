@@ -155,10 +155,10 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 						onClick={handleAddServicesToInvoice}
 						className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer min-h-[44px] px-2 touch-manipulation"
 						data-testid="btn-sinus-add-to-invoice"
-						title="Добавить услуги синус-лифтинга и аугментации по Номенклатуре 804н в смету"
+						title="Добавить услуги синус-лифтинга и аугментации в смету"
 					>
 						<Plus size={14} />
-						<span>В смету 804н</span>
+						<span>В смету</span>
 					</button>
 				</div>
 				<div className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Выбор костного материала">

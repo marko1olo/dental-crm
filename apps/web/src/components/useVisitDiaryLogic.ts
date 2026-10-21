@@ -265,8 +265,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setIsRevising,
 		beginRevise,
 		setReviseSnapshot,
-		setReviseTraySnapshot,
-		trayBarcodeRef,
 		setRevisionReason,
 		setIcdSearch,
 		scheduleDebouncedSave,

@@ -178,10 +178,10 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 						onClick={handleAddServicesToInvoice}
 						className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer min-h-[44px] px-2 touch-manipulation"
 						data-testid="btn-extraction-add-to-invoice"
-						title="Добавить хирургические услуги по Номенклатуре 804н в смету визита"
+						title="Добавить хирургические услуги в смету визита"
 					>
 						<Plus size={14} />
-						<span>В смету 804н</span>
+						<span>В смету</span>
 					</button>
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

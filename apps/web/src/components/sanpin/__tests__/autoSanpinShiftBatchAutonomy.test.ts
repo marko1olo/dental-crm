@@ -371,20 +371,18 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 9. MANDATE 8v: COLD BACKOFFICE ISOLATION AUDIT
+	// 9. MANDATE 8v & MANDATE 8s: COLD BACKOFFICE ISOLATION & KRAFT PURGE AUDIT
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("9. Mandate 8v: Pure Tier 3 Cold Backoffice Isolation Audit", () => {
-		it("confirms SanPiN operations are decoupled and do not render popup blocks on doctor screens", () => {
+	describe("9. Mandate 8v & Mandate 8s: Pure Tier 3 Cold Backoffice & Kraft Purge Audit", () => {
+		it("confirms SeniorNurseKraftUnsealModal is fully eradicated from the codebase", () => {
 			const seniorNurseModal = fs.existsSync(
 				path.resolve(process.cwd(), "apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx"),
 			)
 				? path.resolve(process.cwd(), "apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx")
 				: path.resolve(process.cwd(), "src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx");
-			assert.ok(fs.existsSync(seniorNurseModal));
-			const modalContent = fs.readFileSync(seniorNurseModal, "utf8");
 			assert.ok(
-				modalContent.includes("return null;"),
-				"SeniorNurseKraftUnsealModal must be a clean harmless facade returning null (Mandate 8v)",
+				!fs.existsSync(seniorNurseModal),
+				"SeniorNurseKraftUnsealModal must be fully eradicated per Mandate 8s",
 			);
 		});
 	});

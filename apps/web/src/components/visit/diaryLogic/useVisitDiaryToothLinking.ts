@@ -28,8 +28,6 @@ export interface UseVisitDiaryToothLinkingParams {
 	readonly setIsRevising: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly beginRevise: () => void;
 	readonly setReviseSnapshot: React.Dispatch<React.SetStateAction<DiaryState | null>>;
-	readonly setReviseTraySnapshot: React.Dispatch<React.SetStateAction<string | null>>;
-	readonly trayBarcodeRef: React.MutableRefObject<string | null>;
 	readonly setRevisionReason: React.Dispatch<React.SetStateAction<string>>;
 	readonly setIcdSearch: React.Dispatch<React.SetStateAction<string>>;
 	readonly scheduleDebouncedSave: () => void;
@@ -43,8 +41,6 @@ export function useVisitDiaryToothLinking({
 	setIsRevising,
 	beginRevise,
 	setReviseSnapshot,
-	setReviseTraySnapshot,
-	trayBarcodeRef,
 	setRevisionReason,
 	setIcdSearch,
 	scheduleDebouncedSave,
@@ -191,7 +187,6 @@ export function useVisitDiaryToothLinking({
 			if (isLocked && !isRevising) {
 				setIsRevising(true);
 				setReviseSnapshot({ ...diaryRef.current });
-				setReviseTraySnapshot(trayBarcodeRef.current);
 				setRevisionReason("Исправленному верить (синхронизация одонтограммы)");
 				showToast(
 					"Дневник визита открыт для внесения исправлений (протокол одонтограммы применён)",
@@ -239,7 +234,7 @@ export function useVisitDiaryToothLinking({
 				handleGlobalSoapEvent,
 			);
 		};
-	}, [isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setReviseTraySnapshot, trayBarcodeRef, setRevisionReason, setDiary, setIcdSearch]);
+	}, [isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setRevisionReason, setDiary, setIcdSearch]);
 
 	// ── Anesthesia Quick Logger
 	const applyAnesthesiaPreset = useCallback(
@@ -247,7 +242,6 @@ export function useVisitDiaryToothLinking({
 			if (isLocked && !isRevising) {
 				setIsRevising(true);
 				setReviseSnapshot({ ...diaryRef.current });
-				setReviseTraySnapshot(trayBarcodeRef.current);
 				setRevisionReason("Исправленному верить (добавление анестезии)");
 				showToast(
 					"Дневник визита открыт для внесения исправлений (анестезия внесена)",
@@ -259,7 +253,7 @@ export function useVisitDiaryToothLinking({
 			scheduleDebouncedSave();
 			showToast("Запись об анестезии внесена в план лечения", "success", 3000);
 		},
-		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setReviseTraySnapshot, trayBarcodeRef, setRevisionReason, setDiary],
+		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setRevisionReason, setDiary],
 	);
 
 	// ── Fast Clinical Presets & 1-Click Protocol Autopilot
@@ -275,7 +269,6 @@ export function useVisitDiaryToothLinking({
 			if (isLocked && !isRevising) {
 				setIsRevising(true);
 				setReviseSnapshot({ ...diaryRef.current });
-				setReviseTraySnapshot(trayBarcodeRef.current);
 				setRevisionReason("Исправленному верить (применение клинического протокола)");
 				showToast(
 					"Дневник визита открыт для внесения исправлений (протокол применён)",
@@ -407,7 +400,7 @@ export function useVisitDiaryToothLinking({
 				);
 			}
 		},
-		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setReviseTraySnapshot, trayBarcodeRef, setRevisionReason, setDiary, setIcdSearch],
+		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setRevisionReason, setDiary, setIcdSearch],
 	);
 
 	const apply1ClickAutopilot = useCallback(
@@ -422,7 +415,6 @@ export function useVisitDiaryToothLinking({
 			if (isLocked && !isRevising) {
 				setIsRevising(true);
 				setReviseSnapshot({ ...diaryRef.current });
-				setReviseTraySnapshot(trayBarcodeRef.current);
 				setRevisionReason("Исправленному верить (протокол)");
 				showToast(
 					"Дневник визита открыт для внесения исправлений (протокол применён)",
@@ -448,7 +440,7 @@ export function useVisitDiaryToothLinking({
 			);
 			return result;
 		},
-		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setReviseTraySnapshot, trayBarcodeRef, setRevisionReason, setDiary, setIcdSearch],
+		[isLocked, isRevising, scheduleDebouncedSave, diaryRef, setIsRevising, setReviseSnapshot, setRevisionReason, setDiary, setIcdSearch],
 	);
 
 	/**
