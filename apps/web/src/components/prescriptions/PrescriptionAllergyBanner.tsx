@@ -24,6 +24,12 @@ export interface PrescriptionAllergyBannerProps {
 	readonly onAddGastroprotection?: (() => void) | undefined;
 }
 
+const ALLERGY_TYPE_LABELS: Record<string, string> = {
+	penicillin: "пенициллины",
+	nsaid: "НПВС",
+	anesthetic: "местные анестетики",
+};
+
 export const PrescriptionAllergyBanner: React.FC<
 	PrescriptionAllergyBannerProps
 > = ({ allergyConflicts, somaticWarnings, onAddGastroprotection }) => {
@@ -41,10 +47,10 @@ export const PrescriptionAllergyBanner: React.FC<
 				>
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-						<span className="font-bold truncate">
+						<span className="font-bold whitespace-normal">
 							⚠️ Аллергия:{" "}
 							{allergyConflicts
-								.map((c) => c.matchedAllergyTerm || c.type)
+								.map((c) => ALLERGY_TYPE_LABELS[c.type] || c.matchedAllergyTerm || c.type)
 								.join(", ")}
 						</span>
 					</div>

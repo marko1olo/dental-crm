@@ -22,12 +22,13 @@ export const PrescriptionSheetPreview: React.FC<
 		<div
 			className={`w-full lg:w-1/2 p-4 sm:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-3 ${props.className || ""}`}
 		>
-			<div className="flex items-center justify-between">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-					<FileText className="w-3.5 h-3.5 text-[var(--teal)]" />
-					Живой предпросмотр (А5 / Высокая печать):
+			<div className="flex items-center justify-between gap-2">
+				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 shrink-0">
+					<FileText className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+					<span className="hidden sm:inline">Живой предпросмотр (А5 / Высокая печать):</span>
+					<span className="sm:hidden">Предпросмотр А5:</span>
 				</span>
-				<span className="text-xs font-mono font-bold text-[var(--teal)]">
+				<span className="text-xs font-mono font-bold text-[var(--teal)] shrink-0">
 					{props.customSeriesNumber}
 				</span>
 			</div>
@@ -35,7 +36,7 @@ export const PrescriptionSheetPreview: React.FC<
 			<PrescriptionAllergyConflictStrip
 				penicillinConflict={props.penicillinConflict}
 				nsaidConflict={props.nsaidConflict}
-				anestheticConflict={props.anestheticConflict}
+				anestheticConflict={props.anestheticConflict ?? false}
 			/>
 
 			{/* Printable Physical Sheet Mockup */}

@@ -56,6 +56,18 @@ export function useVisitToothHandlers({
 		}
 	}, [updateVisitNoteField, visitNoteForm]);
 
+	useEffect(() => {
+		const handleInsert = (e: Event) => {
+			const text = (e as CustomEvent<{ text?: string }>)?.detail?.text;
+			if (text) {
+				appendToEMKField("recommendations", text);
+			}
+		};
+		window.addEventListener("dente:insert-prescription-to-diary", handleInsert);
+		return () =>
+			window.removeEventListener("dente:insert-prescription-to-diary", handleInsert);
+	}, [appendToEMKField]);
+
 	const handleToothClick = useCallback((code: string, currentState: string) => {
 		const num = Number(code) || null;
 		useVisitStore.getState().setActiveToothNumber(num);

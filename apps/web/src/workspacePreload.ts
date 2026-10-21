@@ -23,6 +23,7 @@ const workspaceViewPreloaders: Partial<
 	scanner: () => import("./ScannerView"),
 	leads: () => import("./components/leads/LeadsKanbanView"),
 	lab: () => import("./pages/LabOrdersPage"),
+	pipeline: () => import("./pages/coordinator/TreatmentPipeline"),
 	/*
 	 * «Аналитика» была единственным из одиннадцати старых разделов без строки
 	 * здесь: раздел объявлен в реестре и отрисован в App.tsx, но его модуль не
@@ -52,6 +53,7 @@ const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
 	lab: ["inventory", "visit"],
 	scanner: ["inventory"],
 	leads: ["schedule", "patients"],
+	pipeline: ["patients", "visit"],
 	analytics: ["finance"],
 };
 

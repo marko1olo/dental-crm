@@ -34,7 +34,7 @@ export function buildMergedPrescriptionCatalog(): DentalPrescriptionDrugPreset[]
 			id: ssot.id,
 			tradeNameRu: ssot.tradeNameRu,
 			activeSubstanceRu: ssot.activeSubstanceRu,
-			category: ssot.category,
+			category: ssot.category as DentalPrescriptionDrugPreset["category"],
 			categoryLabel: ssot.categoryLabelRu,
 			categoryLabelRu: ssot.categoryLabelRu,
 			latinRp: ssot.latinRp,

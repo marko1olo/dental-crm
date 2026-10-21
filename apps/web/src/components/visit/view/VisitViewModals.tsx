@@ -124,6 +124,25 @@ export function VisitViewModals(props: VisitViewModalsProps) {
 		setIsPrescriptionModalOpen,
 	});
 
+	const isAnyModalActive = Boolean(
+		effectiveActiveModal ||
+		isVisiographComparisonModalOpen ||
+		isEndoModalOpen ||
+		isLabOrderModalOpen ||
+		isStagePaymentModalOpen ||
+		isPriceValidatorModalOpen ||
+		isEmergencyModalOpen ||
+		isVoiceDictationModalOpen ||
+		isWarrantyModalOpen ||
+		isDoctorShiftModalOpen ||
+		isInformedConsentModalOpen ||
+		isPrescriptionModalOpen
+	);
+
+	if (!isAnyModalActive) {
+		return null;
+	}
+
 	return (
 		<>
 			<EndoAndImagingModals

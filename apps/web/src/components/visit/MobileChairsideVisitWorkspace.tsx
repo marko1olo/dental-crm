@@ -27,7 +27,7 @@ export type { MobileChairsideStep, MobileChairsideBillingItem, MobileChairsideVi
 export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspaceProps> = (props) => {
   const {
     activePatient, activeAppointment, visitNoteForm = {}, updateVisitNoteField,
-    handlePrintForm043uFast, handleOpenLabOrder, onOpenWarrantyModal,
+    handlePrintForm043uFast, handleOpenPrescription, handleOpenLabOrder, onOpenWarrantyModal,
     consolidatedAllergyChip, patientAge, toothStateByCode = {}, setToothState,
     onClose, testId = "mobile-chairside-workspace", loadedTreatmentPlan,
   } = props;
@@ -40,6 +40,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
       <ChairsidePatientQuickBar
         activePatient={activePatient} activeAppointment={activeAppointment} patientAge={patientAge ?? null}
         consolidatedAllergyChip={consolidatedAllergyChip ?? null} handlePrintForm043uFast={handlePrintForm043uFast}
+        handleOpenPrescription={handleOpenPrescription}
         handleOpenLabOrder={handleOpenLabOrder} onOpenWarrantyModal={onOpenWarrantyModal} onClose={onClose}
         onPrevStep={ws.handlePrevStep} testId={testId}
       />

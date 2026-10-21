@@ -78,7 +78,7 @@ export const PrescriptionWorkbenchBody: React.FC<
 				phone={c.phone}
 				ogrn={c.ogrn}
 				inn={c.inn}
-				licNum={c.licNum}
+				licNum={c.licNum || ""}
 				activeForm={c.activeForm}
 				prescriptionDate={c.prescriptionDate}
 				patientName={c.patientName}

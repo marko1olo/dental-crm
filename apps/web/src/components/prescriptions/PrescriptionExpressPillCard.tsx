@@ -12,17 +12,17 @@ export interface PrescriptionExpressPillCardProps {
 	readonly preset: DentalFastPrescriptionSet;
 	readonly isSelected: boolean;
 	readonly onSelectPreset: (preset: DentalFastPrescriptionSet) => void;
-	readonly onApplyAndPrint?: (preset: DentalFastPrescriptionSet) => void;
+	readonly onApplyAndPrint?: ((preset: DentalFastPrescriptionSet) => void) | undefined;
 	readonly onApplyAndInsertToDiary?: (
-		preset: DentalFastPrescriptionSet,
-	) => void;
-	readonly patientAllergies?: string | readonly string[] | null;
+		(preset: DentalFastPrescriptionSet) => void
+	) | undefined;
+	readonly patientAllergies?: string | readonly string[] | null | undefined;
 	readonly catalogDrugs?: readonly {
 		readonly id: string;
 		readonly tradeNameRu: string;
 		readonly latinRp: string;
-		readonly category?: string;
-	}[];
+		readonly category?: string | undefined;
+	}[] | undefined;
 }
 
 export const PrescriptionExpressPillCard: React.FC<

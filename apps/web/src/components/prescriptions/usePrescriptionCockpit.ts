@@ -3,8 +3,7 @@
  * Decomposed coordinator <= 120 lines (Mandate 8b).
  */
 
-import { useCallback, useEffect, useRef } from "react";
-import { showToast } from "../GlobalToast";
+import { useEffect, useRef } from "react";
 import type { PrescriptionPrintModalProps } from "./PrescriptionPrintModal";
 import { fetchPatientPrescriptions } from "./prescriptionApiClient";
 import { usePrescriptionActions } from "./usePrescriptionActions";
@@ -12,6 +11,7 @@ import { usePrescriptionBackendSync } from "./usePrescriptionBackendSync";
 import { usePrescriptionClinicalWarnings } from "./usePrescriptionClinicalWarnings";
 import { usePrescriptionContextStrings } from "./usePrescriptionContextStrings";
 import { usePrescriptionFormMeta } from "./usePrescriptionFormMeta";
+import { usePrescriptionGastroprotection } from "./usePrescriptionGastroprotection";
 import { usePrescriptionItemsState } from "./usePrescriptionItemsState";
 import { usePrescriptionPrintCoordinator } from "./usePrescriptionPrintCoordinator";
 
@@ -35,54 +35,32 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 	const warnings = usePrescriptionClinicalWarnings({
 		patient,
 		allergies,
-		diary,
+		diary: diary as any,
 		activeItems: itemsState.activeItems,
 	});
 
-	const handleAddOmeprazoleGastroprotection = useCallback(() => {
-		if (itemsState.selectedDrugIds.includes("omeprazole_20")) {
-			showToast("Омепразол 20 мг уже добавлен в назначения", "info", 2500);
-			return;
-		}
-		if (
-			itemsState.selectedDrugIds.length >= 3 &&
-			meta.activeForm === "107-1u"
-		) {
-			showToast(
-				"На одном рецептурном бланке допускается не более 3 препаратов.",
-				"warning",
-				4000,
-			);
-			return;
-		}
-		itemsState.setSelectedDrugIds([
-			...itemsState.selectedDrugIds,
-			"omeprazole_20",
-		]);
-		showToast(
-			"Омепразол 20 мг добавлен для гастропротекции ЖКТ",
-			"success",
-			3000,
-		);
-	}, [
-		itemsState.selectedDrugIds,
-		itemsState.setSelectedDrugIds,
-		meta.activeForm,
-	]);
+	const { handleAddOmeprazoleGastroprotection } =
+		usePrescriptionGastroprotection({
+			selectedDrugIds: itemsState.selectedDrugIds,
+			setSelectedDrugIds: itemsState.setSelectedDrugIds,
+			activeForm: meta.activeForm,
+		});
 
 	const { generatePrintHtml, ukep } = usePrescriptionPrintCoordinator({
 		meta,
 		...ctx,
 		activeItems: itemsState.activeItems,
-	});
+	} as any);
 
 	const sync = usePrescriptionBackendSync({
 		patientId: patient?.id,
 		visitId:
-			patient && "visitId" in patient ? String(patient["visitId"]) : undefined,
+			patient && "visitId" in patient
+				? String((patient as { visitId?: unknown }).visitId)
+				: undefined,
 		doctorId:
 			patient && "doctorId" in patient
-				? String(patient["doctorId"])
+				? String((patient as { doctorId?: unknown }).doctorId)
 				: undefined,
 		activeForm: meta.activeForm,
 		validityDays: meta.validityDays,

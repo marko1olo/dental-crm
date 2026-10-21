@@ -24,10 +24,29 @@ export function VisitDiaryModals(props: VisitDiaryModalsProps) {
 	} = props;
 
 	useEffect(() => {
-		const handleOpenRx = () => setShowPrescriptionModal(true);
-		window.addEventListener("dente:open-prescriptions", handleOpenRx);
-		return () => window.removeEventListener("dente:open-prescriptions", handleOpenRx);
-	}, [setShowPrescriptionModal]);
+		const handleInsertToDiary = (e: Event) => {
+			const rawText = (e as CustomEvent<{ text?: string }>)?.detail?.text;
+			if (rawText) {
+				const textToInsert = String(rawText);
+				setDiary((prev) => ({
+					...prev,
+					treatmentDescription: prev.treatmentDescription
+						? `${prev.treatmentDescription}\n\n${textToInsert}`
+						: textToInsert,
+				}));
+				scheduleDebouncedSave();
+			}
+		};
+		window.addEventListener(
+			"dente:insert-prescription-to-diary",
+			handleInsertToDiary,
+		);
+		return () =>
+			window.removeEventListener(
+				"dente:insert-prescription-to-diary",
+				handleInsertToDiary,
+			);
+	}, [setDiary, scheduleDebouncedSave]);
 
 	return (
 		<>

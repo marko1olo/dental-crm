@@ -46,7 +46,7 @@ export function usePrescriptionUkepSigner(
 			);
 			const genuineUkep: PrescriptionDoctorUkep = {
 				doctorFullName: targetCert.subjectName || docName,
-				doctorSpecialty,
+				doctorSpecialty: _docSpecialty,
 				doctorSnils: docSnils,
 				certificateSerialNumber:
 					targetCert.serialNumber ||

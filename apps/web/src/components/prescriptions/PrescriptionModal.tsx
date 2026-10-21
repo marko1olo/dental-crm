@@ -72,7 +72,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 				<PrescriptionAllergyBanner
 					allergyConflicts={c.allergyConflicts}
 					somaticWarnings={c.somaticWarnings}
-					ddiInteractions={c.ddiSafetyAudit?.drugInteractions}
+					ddiInteractions={(c.ddiSafetyAudit as { drugInteractions?: any[] } | null)?.drugInteractions}
 					onAddGastroprotection={c.handleAddOmeprazoleGastroprotection}
 				/>
 

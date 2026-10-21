@@ -168,6 +168,14 @@ export function viewFromHash(customHash?: string): AppView {
 	const parts = hash.split("/").filter(Boolean);
 	const view = parts[0]?.toLowerCase() ?? "";
 	if (view === "visits") return "visit";
+	if (
+		view === "treatment-plans" ||
+		view === "treatment_plans" ||
+		view === "treatmentplans" ||
+		view === "plans"
+	) {
+		return "pipeline";
+	}
 	if (view === "sanpin" || view === "sterilization") return "scanner";
 	if (view === "cmo" || view === "payout" || view === "payouts" || view === "payroll") return "analytics";
 	if (view === "telephony") return "communications";

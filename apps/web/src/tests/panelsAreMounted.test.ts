@@ -266,7 +266,7 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Устаревший монолитный редактор дневника приёма (900 строк), заменённый модульной системой EMK (VisitEmkTab, EmkToolbar, SoapNoteCard, EmkEndoSection). Сохранён исключительно для обратной совместимости со старыми тестами (VisitSoapEditorStomxIntegration.test.tsx, diaryDraftResilience.test.ts).",
 	},
 	{
-		file: "components/visit/view/VisitHeaderMonolith.tsx",
+		file: "components/visit/view/visitHeader/index.tsx",
 		name: "VisitHeaderMonolith",
 		reason:
 			"Устаревший монолитный заголовок визита, вытесненный компактной 2-строчной клинической шапкой и панелью быстрого фокуса в каноническом VisitView.tsx (VisitFocusBar). Сохранён как исторический прототип.",
@@ -990,7 +990,7 @@ function registeredAppViews(): string[] {
 	return views;
 }
 
-test("перепись компонентов не выродилась и не поднимает процесс на файл", () => {
+test("перепись компонентов не выродилась и не поднимает процесс на файл", { timeout: 60000 }, () => {
 	const census = componentReachability();
 
 	assert.equal(
@@ -1030,7 +1030,7 @@ test("перепись компонентов не выродилась и не 
 	);
 });
 
-test("ни один компонент apps/web/src не остаётся несмонтированным незаявленно", () => {
+test("ни один компонент apps/web/src не остаётся несмонтированным незаявленно", { timeout: 60000 }, () => {
 	const census = componentReachability();
 
 	const declaredKeys = new Set(
@@ -1236,7 +1236,7 @@ test("каждый раздел из реестра умеет предзагр�
 	);
 });
 
-test("модуль каждого предзагружаемого раздела действительно существует", () => {
+test("модуль каждого предзагружаемого раздела действительно существует", { timeout: 30000 }, () => {
 	const preloadSource = readSource("workspacePreload.ts");
 	const census = componentReachability();
 

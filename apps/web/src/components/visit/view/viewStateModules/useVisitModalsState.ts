@@ -31,16 +31,19 @@ export function useVisitModalsState({
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
 	const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false);
-	const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+	const [isPrescriptionModalOpen, setIsPrescriptionModalOpenState] = useState(false);
+	const setIsPrescriptionModalOpen = useCallback((open: boolean) => {
+		if (open) {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
+			}
+		} else {
+			setIsPrescriptionModalOpenState(false);
+		}
+	}, []);
 	const [isVisiographComparisonModalOpen, setIsVisiographComparisonModalOpen] = useState(false);
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
-
-	useEffect(() => {
-		const handleOpenComp = () => setIsVisiographComparisonModalOpen(true);
-		window.addEventListener("dente-open-visiograph-comparison", handleOpenComp);
-		return () => window.removeEventListener("dente-open-visiograph-comparison", handleOpenComp);
-	}, []);
 
 	const handleOpenLabOrder = useCallback((targetTooth?: string | number | null | unknown) => {
 		if (typeof onOpenLabOrderModal === "function") {
