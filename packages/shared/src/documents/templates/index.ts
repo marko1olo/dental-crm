@@ -29,10 +29,10 @@ export const ALL_DEFAULT_TEMPLATES_BY_ALIAS: Record<string, string> = {
 };
 
 /**
- * Возвращает канонический HTML-шаблон для любого из бланков по его stomxId, alias или названию.
+ * Возвращает канонический HTML-шаблон для любого из бланков по его числовому коду, alias или названию.
  */
 export function getDefaultTemplateContentHtml(
-	stomxId?: number | null,
+	legacyNumericTemplateId?: number | null,
 	systemAlias?: string | null,
 	name?: string | null,
 ): string {
@@ -41,8 +41,8 @@ export function getDefaultTemplateContentHtml(
 		return ALL_DEFAULT_TEMPLATES_BY_ALIAS[cleanAlias];
 	}
 
-	// Поиск по stomxId
-	const stomxMap: Record<number, string> = {
+	// Поиск по числовому коду шаблона
+	const legacyNumericMap: Record<number, string> = {
 		1: "invoice-act",
 		2: "medplan",
 		3: "outpatient-card",
@@ -103,8 +103,8 @@ export function getDefaultTemplateContentHtml(
 		92: "pamyatka_ortodontiya",
 	};
 
-	if (stomxId && stomxMap[stomxId]) {
-		const alias = stomxMap[stomxId];
+	if (legacyNumericTemplateId && legacyNumericMap[legacyNumericTemplateId]) {
+		const alias = legacyNumericMap[legacyNumericTemplateId];
 		if (ALL_DEFAULT_TEMPLATES_BY_ALIAS[alias]) {
 			return ALL_DEFAULT_TEMPLATES_BY_ALIAS[alias];
 		}

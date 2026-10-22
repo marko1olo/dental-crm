@@ -1,562 +1,86 @@
-import { PEDIATRIC_MINOR_CONSENT_PRESET } from "@dental/shared";
 import React from "react";
-import { Baby, FileText, Printer } from "lucide-react";
-import { useDocumentStore } from "../../../store/documentStore";
-import { usePatientStore } from "../../../store/patientStore";
-import { showToast } from "../../GlobalToast";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import type { DocumentVisitHints } from "./documentFormTypes";
 import {
-	generateMinorConsentPrintHtml,
-	printHtmlViaWindowOrIframe,
-} from "../../consents/consentTemplates.js";
+	type MinorLegalRepresentativeConsentFormProps,
+	resolveValue,
+	useMinorConsentState,
+	MinorConsentActionsBar,
+	MinorConsentRepresentativeFields,
+	MinorConsentChildFields,
+	MinorConsentCheckboxes,
+} from "./minorConsent";
 
-export interface MinorLegalRepresentativeConsentFormProps extends DocumentVisitHints {
-	minorRepresentativeNameValue?: (() => string) | string | undefined;
-	minorRepresentativePhoneValue?: (() => string) | string | undefined;
-	minorConsentPatientFullNameValue?: (() => string) | string | undefined;
-	minorConsentPatientBirthDateValue?: (() => string) | string | undefined;
-	minorConsentInterventionScopeValue?: (() => string) | string | undefined;
-	minorConsentDiagnosisOrIndicationValue?: (() => string) | string | undefined;
-}
+export type { MinorLegalRepresentativeConsentFormProps };
 
-const MINOR_RELATION_CHIPS = [
-	{ label: "Мама", value: "Мать" },
-	{ label: "Папа", value: "Отец" },
-	{ label: "Опекун", value: "Опекун" },
-] as const;
-
-function resolveValue(v: (() => string) | string | undefined): string {
-	if (typeof v === "function") return v();
-	return v ?? "";
-}
-
-/**
- * ИДС на стоматологическое лечение несовершеннолетнего (педиатрия с законным представителем).
- * Ст. 20 ФЗ № 323-ФЗ и Приказ Минздрава № 1051н.
- */
 export const MinorLegalRepresentativeConsentForm = React.memo(
-	function MinorLegalRepresentativeConsentForm({
-		activeDoctorFullName,
-		minorRepresentativeNameValue,
-		minorRepresentativePhoneValue,
-		minorConsentPatientFullNameValue,
-		minorConsentPatientBirthDateValue,
-		minorConsentInterventionScopeValue,
-		minorConsentDiagnosisOrIndicationValue,
-	}: MinorLegalRepresentativeConsentFormProps) {
-		const minorRepresentativeName = useDocumentStore(
-			(state) => state.minorRepresentativeFullName,
-		);
-		const setMinorRepresentativeName = useDocumentStore(
-			(state) => state.setMinorRepresentativeFullName,
-		);
-		const minorRepresentativeRelation = useDocumentStore(
-			(state) => state.minorRepresentativeRelationship,
-		);
-		const setMinorRepresentativeRelation = useDocumentStore(
-			(state) => state.setMinorRepresentativeRelationship,
-		);
-		const minorRepresentativeDocument = useDocumentStore(
-			(state) => state.minorRepresentativeIdentityDocument,
-		);
-		const setMinorRepresentativeDocument = useDocumentStore(
-			(state) => state.setMinorRepresentativeIdentityDocument,
-		);
-		const minorRepresentativeAuthority = useDocumentStore(
-			(state) => state.minorRepresentativeAuthorityDocument,
-		);
-		const setMinorRepresentativeAuthority = useDocumentStore(
-			(state) => state.setMinorRepresentativeAuthorityDocument,
-		);
-		const minorRepresentativePhone = useDocumentStore(
-			(state) => state.minorRepresentativePhone,
-		);
-		const setMinorRepresentativePhone = useDocumentStore(
-			(state) => state.setMinorRepresentativePhone,
-		);
-		const minorConsentPatientFullName = useDocumentStore(
-			(state) => state.minorConsentPatientFullName,
-		);
-		const setMinorConsentPatientFullName = useDocumentStore(
-			(state) => state.setMinorConsentPatientFullName,
-		);
-		const minorConsentPatientBirthDate = useDocumentStore(
-			(state) => state.minorConsentPatientBirthDate,
-		);
-		const setMinorConsentPatientBirthDate = useDocumentStore(
-			(state) => state.setMinorConsentPatientBirthDate,
-		);
-		const minorConsentInterventionScope = useDocumentStore(
-			(state) => state.minorConsentInterventionScope,
-		);
-		const setMinorConsentInterventionScope = useDocumentStore(
-			(state) => state.setMinorConsentInterventionScope,
-		);
-		const minorConsentDiagnosisOrIndication = useDocumentStore(
-			(state) => state.minorConsentDiagnosisOrIndication,
-		);
-		const setMinorConsentDiagnosisOrIndication = useDocumentStore(
-			(state) => state.setMinorConsentDiagnosisOrIndication,
-		);
-		const minorConsentRisks = useDocumentStore(
-			(state) => state.minorConsentRisks,
-		);
-		const setMinorConsentRisks = useDocumentStore(
-			(state) => state.setMinorConsentRisks,
-		);
-		const minorConsentAlternatives = useDocumentStore(
-			(state) => state.minorConsentAlternatives,
-		);
-		const setMinorConsentAlternatives = useDocumentStore(
-			(state) => state.setMinorConsentAlternatives,
-		);
-		const minorConsentDoctorFullName = useDocumentStore(
-			(state) => state.minorConsentDoctorFullName,
-		);
-		const setMinorConsentDoctorFullName = useDocumentStore(
-			(state) => state.setMinorConsentDoctorFullName,
-		);
-		const minorConsentSignedAt = useDocumentStore(
-			(state) => state.minorConsentSignedAt,
-		);
-		const setMinorConsentSignedAt = useDocumentStore(
-			(state) => state.setMinorConsentSignedAt,
-		);
-		const minorConsentIdentityVerified = useDocumentStore(
-			(state) => state.minorConsentIdentityVerified,
-		);
-		const setMinorConsentIdentityVerified = useDocumentStore(
-			(state) => state.setMinorConsentIdentityVerified,
-		);
-		const minorConsentAuthorityVerified = useDocumentStore(
-			(state) => state.minorConsentAuthorityVerified,
-		);
-		const setMinorConsentAuthorityVerified = useDocumentStore(
-			(state) => state.setMinorConsentAuthorityVerified,
-		);
-		const minorConsentExplained = useDocumentStore(
-			(state) => state.minorConsentExplained,
-		);
-		const setMinorConsentExplained = useDocumentStore(
-			(state) => state.setMinorConsentExplained,
-		);
-		const minorConsentStored = useDocumentStore(
-			(state) => state.minorConsentStored,
-		);
-		const setMinorConsentStored = useDocumentStore(
-			(state) => state.setMinorConsentStored,
-		);
-		const minorConsentAgeExplanation = useDocumentStore(
-			(state) => state.minorConsentAgeExplanation,
-		);
-		const setMinorConsentAgeExplanation = useDocumentStore(
-			(state) => state.setMinorConsentAgeExplanation,
-		);
-
-		const patientCoreDraft = usePatientStore((state) => state.patientCoreDraft);
-		const patientAdministrativeProfileDraft = usePatientStore(
-			(state) => state.patientAdministrativeProfileDraft,
-		);
-
-		const applyPediatricPreset = () => {
-			setMinorConsentInterventionScope(PEDIATRIC_MINOR_CONSENT_PRESET.interventionScope);
-			setMinorConsentDiagnosisOrIndication(PEDIATRIC_MINOR_CONSENT_PRESET.diagnosisOrIndication);
-			setMinorConsentRisks(PEDIATRIC_MINOR_CONSENT_PRESET.explainedRisks.join("\n"));
-			setMinorConsentAlternatives(PEDIATRIC_MINOR_CONSENT_PRESET.alternativesExplained.join("\n"));
-		};
-
-		const handlePrintMinorConsent = () => {
-			const repName =
-				minorRepresentativeName ||
-				resolveValue(minorRepresentativeNameValue) ||
-				patientAdministrativeProfileDraft.legalRepresentativeFullName ||
-				"________________________________________";
-			const repRel =
-				minorRepresentativeRelation ||
-				patientAdministrativeProfileDraft.legalRepresentativeRelationship ||
-				"мать / отец / опекун / законный представитель";
-			const repDoc =
-				minorRepresentativeDocument ||
-				patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument ||
-				"паспорт серия ______ № ________ выдан ____________________";
-			const repPhone =
-				minorRepresentativePhone ||
-				resolveValue(minorRepresentativePhoneValue) ||
-				patientAdministrativeProfileDraft.legalRepresentativePhone ||
-				patientCoreDraft.phone ||
-				"+7 (___) ___-__-__";
-
-			const childName =
-				minorConsentPatientFullName ||
-				resolveValue(minorConsentPatientFullNameValue) ||
-				patientCoreDraft.fullName ||
-				"________________________________________";
-			const childBirth =
-				minorConsentPatientBirthDate ||
-				resolveValue(minorConsentPatientBirthDateValue) ||
-				patientCoreDraft.birthDate ||
-				"«___» _________ _____ г.";
-			const childDoc =
-				patientAdministrativeProfileDraft.identityDocument ||
-				(patientCoreDraft as { passport?: string }).passport ||
-				"свидетельство о рождении ребенка / паспорт";
-			const repBasis =
-				minorRepresentativeAuthority ||
-				patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument ||
-				"ст. 64 СК РФ (родитель) / свидетельство о рождении ребенка";
-
-			const html = generateMinorConsentPrintHtml({
-				representativeName: repName,
-				representativeRelation: repRel,
-				representativeDocument: repDoc,
-				representativePhone: repPhone,
-				childName: childName,
-				childBirthDate: childBirth,
-				childDocument: childDoc,
-				representativeBasis: repBasis,
-				doctorName:
-					minorConsentDoctorFullName ||
-					activeDoctorFullName ||
-					"Детский врач-стоматолог клиники",
-				interventionScope:
-					minorConsentInterventionScope ||
-					resolveValue(minorConsentInterventionScopeValue) ||
-					"Детский стоматологический осмотр, диагностика, адаптационный протокол, лечение",
-				diagnosisOrIndication:
-					minorConsentDiagnosisOrIndication ||
-					resolveValue(minorConsentDiagnosisOrIndicationValue) ||
-					"Санация полости рта ребенка, профилактика и лечение кариеса",
-				risks: minorConsentRisks,
-				alternatives: minorConsentAlternatives,
-				date: minorConsentSignedAt || new Date().toLocaleDateString("ru-RU"),
-				isBlank: false,
-			});
-			printHtmlViaWindowOrIframe(html);
-			showToast(
-				"Бланк согласия законного представителя отправлен на печать (А4)",
-				"info",
-				3000,
-			);
-		};
-
-		const handlePrintBlankMinorConsent = () => {
-			const html = generateMinorConsentPrintHtml({
-				isBlank: true,
-				date: "«___» _________ 20___ г.",
-			});
-			printHtmlViaWindowOrIframe(html);
-			showToast(
-				"Чистый бланк согласия представителя со строками «________» отправлен на печать",
-				"info",
-				3000,
-			);
-		};
+	function MinorLegalRepresentativeConsentForm(props: MinorLegalRepresentativeConsentFormProps) {
+		const s = useMinorConsentState(props);
 
 		return (
 			<DocumentPayloadCard
 				title="Согласие законного представителя (педиатрия)"
 				description="Информированное согласие на стоматологическое лечение несовершеннолетнего гражданина РФ до 15 лет (до 18 лет при наркологических расстройствах)."
 			>
-				<div
-					style={{
-						marginBottom: "14px",
-						display: "flex",
-						gap: "8px",
-						flexWrap: "wrap",
-						alignItems: "center",
-					}}
-				>
-					<button
-						type="button"
-						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
-						style={{
-							minHeight: "44px",
-							fontSize: "12px",
-							padding: "8px 14px",
-							borderRadius: "12px",
-						}}
-						onClick={applyPediatricPreset}
-					>
-						<Baby size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span>Заполнить стандартный протокол детского лечения (323-ФЗ)</span>
-					</button>
+				<MinorConsentActionsBar
+					onApplyPreset={s.applyPediatricPreset}
+					onPrintConsent={s.handlePrintMinorConsent}
+					onPrintBlank={s.handlePrintBlankMinorConsent}
+				/>
 
-					<button
-						type="button"
-						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
-						style={{
-							minHeight: "44px",
-							fontSize: "12px",
-							padding: "8px 14px",
-							borderRadius: "12px",
-						}}
-						data-testid="btn-print-minor-consent"
-						onClick={handlePrintMinorConsent}
-						title="Печать текущего заполненного согласия законного представителя на принтер (А4)"
-					>
-						<Printer size={14} className="text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
-						<span>Печать согласия представителя</span>
-					</button>
+				<MinorConsentRepresentativeFields
+					minorRepresentativeName={s.minorRepresentativeName}
+					setMinorRepresentativeName={s.setMinorRepresentativeName}
+					namePlaceholder={resolveValue(props.minorRepresentativeNameValue) || "ФИО родителя, опекуна, усыновителя"}
+					minorRepresentativeRelation={s.minorRepresentativeRelation}
+					setMinorRepresentativeRelation={s.setMinorRepresentativeRelation}
+					minorRepresentativeDocument={s.minorRepresentativeDocument}
+					setMinorRepresentativeDocument={s.setMinorRepresentativeDocument}
+					minorRepresentativeAuthority={s.minorRepresentativeAuthority}
+					setMinorRepresentativeAuthority={s.setMinorRepresentativeAuthority}
+					minorRepresentativePhone={s.minorRepresentativePhone}
+					setMinorRepresentativePhone={s.setMinorRepresentativePhone}
+					phonePlaceholder={resolveValue(props.minorRepresentativePhoneValue) || "+7 (___) ___-__-__"}
+				/>
 
-					<button
-						type="button"
-						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
-						style={{
-							minHeight: "44px",
-							fontSize: "12px",
-							padding: "8px 14px",
-							borderRadius: "12px",
-						}}
-						data-testid="btn-print-blank-minor-consent"
-						onClick={handlePrintBlankMinorConsent}
-						title="Печать чистого бланка согласия представителя со строками «________» для ручного заполнения"
-					>
-						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span>Печать чистого бланка («________»)</span>
-					</button>
-				</div>
+				<MinorConsentChildFields
+					childFullName={s.minorConsentPatientFullName}
+					setChildFullName={s.setMinorConsentPatientFullName}
+					childFullNamePlaceholder={resolveValue(props.minorConsentPatientFullNameValue) || "ФИО несовершеннолетнего пациента"}
+					childBirthDate={s.minorConsentPatientBirthDate}
+					setChildBirthDate={s.setMinorConsentPatientBirthDate}
+					childBirthDatePlaceholder={resolveValue(props.minorConsentPatientBirthDateValue) || "ГГГГ-ММ-ДД"}
+					interventionScope={s.minorConsentInterventionScope}
+					setInterventionScope={s.setMinorConsentInterventionScope}
+					interventionPlaceholder={resolveValue(props.minorConsentInterventionScopeValue) || "первичный осмотр, рентген, лечение временных/постоянных зубов, адаптация"}
+					diagnosisOrIndication={s.minorConsentDiagnosisOrIndication}
+					setDiagnosisOrIndication={s.setMinorConsentDiagnosisOrIndication}
+					diagnosisPlaceholder={resolveValue(props.minorConsentDiagnosisOrIndicationValue) || "кариес, пульпит временного зуба, профилактика"}
+					risks={s.minorConsentRisks}
+					setRisks={s.setMinorConsentRisks}
+					alternatives={s.minorConsentAlternatives}
+					setAlternatives={s.setMinorConsentAlternatives}
+					doctorFullName={s.minorConsentDoctorFullName}
+					setDoctorFullName={s.setMinorConsentDoctorFullName}
+					doctorPlaceholder={props.activeDoctorFullName ?? "детский врач-стоматолог"}
+					signedAt={s.minorConsentSignedAt}
+					setSignedAt={s.setMinorConsentSignedAt}
+				/>
 
-				<div className="document-payload-row">
-					<label>
-						Законный представитель
-						<input
-							value={minorRepresentativeName}
-							onChange={(event) =>
-								setMinorRepresentativeName(event.target.value)
-							}
-							placeholder={
-								resolveValue(minorRepresentativeNameValue) ||
-								"ФИО родителя, опекуна, усыновителя"
-							}
-						/>
-					</label>
-					<label>
-						<span className="flex items-center justify-between gap-1 flex-wrap">
-							<span>Статус / родство</span>
-						</span>
-						<div
-							className="flex items-center gap-1.5 flex-wrap my-1"
-							role="group"
-							aria-label="Быстрый выбор статуса представителя"
-						>
-							{MINOR_RELATION_CHIPS.map((chip) => {
-								const isSelected =
-									minorRepresentativeRelation === chip.value ||
-									minorRepresentativeRelation?.toLowerCase() ===
-										chip.value.toLowerCase();
-								return (
-									<button
-										key={chip.value}
-										type="button"
-										onClick={(event) => {
-											event.preventDefault();
-											setMinorRepresentativeRelation(chip.value);
-										}}
-										className={`min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
-											isSelected
-												? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
-												: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"
-										}`}
-										data-testid={`minor-rel-chip-${chip.value.toLowerCase()}`}
-									>
-										{chip.label}
-									</button>
-								);
-							})}
-						</div>
-						<input
-							value={minorRepresentativeRelation}
-							onChange={(event) =>
-								setMinorRepresentativeRelation(event.target.value)
-							}
-							placeholder="мать / отец / опекун / доверенное лицо"
-						/>
-					</label>
-				</div>
-				<div className="document-payload-row">
-					<label>
-						Паспорт представителя
-						<input
-							value={minorRepresentativeDocument}
-							onChange={(event) =>
-								setMinorRepresentativeDocument(event.target.value)
-							}
-							placeholder="паспорт серия ______ № ________ выдан кем и когда"
-						/>
-					</label>
-					<label>
-						Основание полномочий (ст. 64 СК РФ / ст. 185 ГК РФ)
-						<input
-							value={minorRepresentativeAuthority}
-							onChange={(event) =>
-								setMinorRepresentativeAuthority(event.target.value)
-							}
-							placeholder="свидетельство о рождении, ст. 64 СК РФ, акт опеки, доверенность"
-						/>
-					</label>
-				</div>
-				<div className="document-payload-row">
-					<label>
-						Пациент (ребенок)
-						<input
-							value={minorConsentPatientFullName}
-							onChange={(event) =>
-								setMinorConsentPatientFullName(event.target.value)
-							}
-							placeholder={
-								resolveValue(minorConsentPatientFullNameValue) ||
-								"ФИО несовершеннолетнего пациента"
-							}
-						/>
-					</label>
-					<label>
-						Дата рождения ребенка
-						<input
-							value={minorConsentPatientBirthDate}
-							onChange={(event) =>
-								setMinorConsentPatientBirthDate(event.target.value)
-							}
-							placeholder={
-								resolveValue(minorConsentPatientBirthDateValue) || "ГГГГ-ММ-ДД"
-							}
-						/>
-					</label>
-				</div>
-				<label>
-					Контактный телефон представителя
-					<input
-						value={minorRepresentativePhone}
-						onChange={(event) =>
-							setMinorRepresentativePhone(event.target.value)
-						}
-						placeholder={
-							resolveValue(minorRepresentativePhoneValue) || "+7 (___) ___-__-__"
-						}
-					/>
-				</label>
-				<label>
-					Объем вмешательства
-					<textarea
-						value={minorConsentInterventionScope}
-						onChange={(event) =>
-							setMinorConsentInterventionScope(event.target.value)
-						}
-						placeholder={
-							resolveValue(minorConsentInterventionScopeValue) ||
-							"первичный осмотр, рентген, лечение временных/постоянных зубов, адаптация"
-						}
-						rows={2}
-					/>
-				</label>
-				<label>
-					Диагноз или клиническое показание
-					<textarea
-						value={minorConsentDiagnosisOrIndication}
-						onChange={(event) =>
-							setMinorConsentDiagnosisOrIndication(event.target.value)
-						}
-						placeholder={
-							resolveValue(minorConsentDiagnosisOrIndicationValue) ||
-							"кариес, пульпит временного зуба, профилактика"
-						}
-						rows={2}
-					/>
-				</label>
-				<label>
-					Разъясненные риски и особенности детского возраста
-					<textarea
-						value={minorConsentRisks}
-						onChange={(event) =>
-							setMinorConsentRisks(event.target.value)
-						}
-						rows={3}
-					/>
-				</label>
-				<label>
-					Альтернативы лечения
-					<textarea
-						value={minorConsentAlternatives}
-						onChange={(event) =>
-							setMinorConsentAlternatives(event.target.value)
-						}
-						rows={2}
-					/>
-				</label>
-				<div className="document-payload-row">
-					<label>
-						Лечащий врач
-						<input
-							value={minorConsentDoctorFullName}
-							onChange={(event) =>
-								setMinorConsentDoctorFullName(event.target.value)
-							}
-							placeholder={activeDoctorFullName ?? "детский врач-стоматолог"}
-						/>
-					</label>
-					<label>
-						Дата и время оформления
-						<input
-							value={minorConsentSignedAt}
-							onChange={(event) =>
-								setMinorConsentSignedAt(event.target.value)
-							}
-						/>
-					</label>
-				</div>
-				<div className="document-payload-checkboxes">
-					<label className="document-payload-checkbox">
-						<input
-							checked={minorConsentIdentityVerified}
-							type="checkbox"
-							onChange={(event) =>
-								setMinorConsentIdentityVerified(event.target.checked)
-							}
-						/>
-						Личность законного представителя проверена по паспорту
-					</label>
-					<label className="document-payload-checkbox">
-						<input
-							checked={minorConsentAuthorityVerified}
-							type="checkbox"
-							onChange={(event) =>
-								setMinorConsentAuthorityVerified(event.target.checked)
-							}
-						/>
-						Полномочия законного представителя подтверждены документом
-					</label>
-					<label className="document-payload-checkbox">
-						<input
-							checked={minorConsentExplained}
-							type="checkbox"
-							onChange={(event) =>
-								setMinorConsentExplained(event.target.checked)
-							}
-						/>
-						Цель, риски, анестезия и уход разъяснены родителю/представителю
-					</label>
-					<label className="document-payload-checkbox">
-						<input
-							checked={minorConsentStored}
-							type="checkbox"
-							onChange={(event) =>
-								setMinorConsentStored(event.target.checked)
-							}
-						/>
-						Согласие подшивается в медицинскую карту приёма
-					</label>
-					<label className="document-payload-checkbox">
-						<input
-							checked={minorConsentAgeExplanation}
-							type="checkbox"
-							onChange={(event) =>
-								setMinorConsentAgeExplanation(event.target.checked)
-							}
-						/>
-						Ребенку даны понятные адаптационные разъяснения по возрасту
-					</label>
-				</div>
+				<MinorConsentCheckboxes
+					minorConsentIdentityVerified={s.minorConsentIdentityVerified}
+					setMinorConsentIdentityVerified={s.setMinorConsentIdentityVerified}
+					minorConsentAuthorityVerified={s.minorConsentAuthorityVerified}
+					setMinorConsentAuthorityVerified={s.setMinorConsentAuthorityVerified}
+					minorConsentExplained={s.minorConsentExplained}
+					setMinorConsentExplained={s.setMinorConsentExplained}
+					minorConsentStored={s.minorConsentStored}
+					setMinorConsentStored={s.setMinorConsentStored}
+					minorConsentAgeExplanation={s.minorConsentAgeExplanation}
+					setMinorConsentAgeExplanation={s.setMinorConsentAgeExplanation}
+				/>
 			</DocumentPayloadCard>
 		);
 	},
 );
+
+MinorLegalRepresentativeConsentForm.displayName = "MinorLegalRepresentativeConsentForm";
