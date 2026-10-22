@@ -41,7 +41,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 					</div>
 					<div className="flex items-center gap-1.5 min-w-0 pr-0.5">
 						<div className="min-w-0 flex items-center gap-1 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<span className="truncate max-w-[70px] sm:max-w-[220px]" title={s.activeCall ? s.callerName : "Софтфон клиники"}>
+							<span className="truncate max-w-[170px] sm:max-w-[240px]" title={s.activeCall ? s.callerName : "Софтфон клиники"}>
 								{s.activeCall ? formatShortCallerName(s.callerName) : "Софтфон клиники"}
 							</span>
 							{s.activeCall && <span className="dnt-widget-timer-pill text-[11px] px-1.5">{formatDurationTimer(s.elapsedSeconds)}</span>}
@@ -49,21 +49,23 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 					</div>
 					<div className="flex items-center gap-1 shrink-0 ml-0.5">
 						{s.activeCall && !s.isCallAnswered && (
-							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[30px] sm:min-h-[34px] px-2 sm:px-3 rounded-full bg-emerald-600 text-xs" title="Ответить на звонок">
+							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600 text-xs" title="Ответить на звонок">
 								<PhoneCall size={13} /><span className="hidden xs:inline sm:inline">Ответить</span>
 							</button>
 						)}
 						{s.activeCall && (
-							<button type="button" onClick={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} className="dnt-btn-hangup min-h-[30px] sm:min-h-[34px] px-2 sm:px-2.5 text-xs" title="Сбросить вызов">
+							<button type="button" onClick={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} className="dnt-btn-hangup min-h-[32px] sm:min-h-[34px] px-2 sm:px-2.5 text-xs" title="Сбросить вызов">
 								<PhoneOff size={13} /><span className="hidden xs:inline sm:inline">Сброс</span>
 							</button>
 						)}
 						<button type="button" onClick={() => s.setIsExpanded(true)} className="dnt-btn-icon min-h-[30px] min-w-[30px]" title="Развернуть детали вызова" aria-label="Развернуть детали вызова">
 							<ChevronDown size={15} />
 						</button>
-						<button type="button" onClick={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }} className="dnt-btn-icon" title="Закрыть уведомление" aria-label="Закрыть уведомление">
-							<X size={15} />
-						</button>
+						{!s.activeCall && (
+							<button type="button" onClick={() => { s.setIsOpen(false); s.setIsExpanded(false); }} className="dnt-btn-icon" title="Закрыть уведомление" aria-label="Закрыть уведомление">
+								<X size={15} />
+							</button>
+						)}
 					</div>
 				</section>
 			)}

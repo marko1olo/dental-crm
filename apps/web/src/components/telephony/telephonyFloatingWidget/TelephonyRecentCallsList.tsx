@@ -38,7 +38,7 @@ export function TelephonyRecentCallsList({
 					</div>
 					<div>
 						{callHistory.length === 0
-							? "Ожидание вебхука АТС (UIS / Mango / Zadarma / Asterisk)"
+							? "Ожидание входящих вызовов АТС клиники"
 							: "Переключите вкладку фильтра для просмотра всех вызовов"}
 					</div>
 				</div>

@@ -6,6 +6,7 @@ import {
 	IncomingCallPatientContextCard,
 	IncomingCallQuickBookingSection,
 	IncomingCallActionFooter,
+	IncomingCallDrawerPortal,
 	useIncomingCallPopupController,
 } from "./incomingCallPopupModules";
 import "./telephonyFloatingWidget.css";
@@ -16,7 +17,6 @@ export * from "./IncomingCallQuickBooking";
 export * from "./IncomingCallerCard";
 export * from "./IncomingCallPastHistory";
 export * from "./IncomingCallBadgeMoreMenu";
-import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallPatientDrawer";
 export * from "./IncomingCallEmptyDrawer";
 export * from "./useIncomingCallData";
@@ -41,7 +41,9 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 	} = ctrl;
 
 	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n):
-	if (!activeCall || isDoctorMode || isDndActive || isFullScreenStudioActive || !currentCall) return null;
+	// if (!activeCall || isDoctorMode || isDndActive) return null; — full blocking popups are suppressed
+	// Вместо перекрытия экрана вызов деликатно сворачивается в компактную капсулу Dynamic Island
+	if (!activeCall || isDndActive || isFullScreenStudioActive || !currentCall) return null;
 	if (typeof document === "undefined") return null;
 
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
@@ -69,51 +71,7 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 				)}
 			</div>
 
-			{ctrl.isCallDrawerOpen && ctrl.currentCall ? (
-				<IncomingCallPatientDrawer
-					isOpen={ctrl.isCallDrawerOpen}
-					onClose={ctrl.closeCallDrawer}
-					currentCall={ctrl.currentCall}
-					callerName={ctrl.callerName}
-					formattedPhone={ctrl.formattedPhone}
-					initials={ctrl.initials}
-					avatarColors={ctrl.avatarColors}
-					isKnownPatient={ctrl.isKnownPatient}
-					patientCategory={ctrl.patientCategory}
-					resolvedPatient={ctrl.resolvedPatient}
-					financialSummary={ctrl.financialSummary}
-					somaticAlerts={ctrl.somaticAlerts}
-					upcomingAppointment={ctrl.upcomingAppointment}
-					lastVisitSummary={ctrl.lastVisitSummary}
-					callAttribution={ctrl.callAttribution}
-					isCapturingLead={ctrl.isCapturingLead}
-					onCaptureLead={ctrl.handleCaptureLead}
-					onSendWhatsApp={ctrl.handleSendWhatsAppConfirmation}
-					onCopySms={ctrl.handleCopySmsConfirmation}
-					smsCopied={ctrl.smsCopied}
-					showQuickBooking={ctrl.showQuickBooking}
-					onToggleQuickBooking={() => ctrl.setShowQuickBooking((prev) => !prev)}
-					onQuickBook={ctrl.handleQuickBook}
-					quickSlots={ctrl.quickSlots}
-					onOpenFullPatientView={ctrl.handleOpenFullPatientView}
-					isCallAnswered={ctrl.isCallAnswered}
-					showTransferPanel={ctrl.showTransferPanel}
-					onToggleTransferPanel={() => ctrl.setShowTransferPanel((prev) => !prev)}
-					transferType={ctrl.transferType}
-					onSelectTransferType={ctrl.setTransferType}
-					onStartTransfer={(ext, type) => {
-						ctrl.setTransferType(type);
-						ctrl.handleSwitchAndAnswerSecondaryLine?.();
-					}}
-					showOutcomePanel={ctrl.showOutcomePanel}
-					onToggleOutcomePanel={() => ctrl.setShowOutcomePanel((prev) => !prev)}
-					onRecordOutcome={ctrl.handleRecordOutcome}
-					newPatientNameInput={ctrl.newPatientNameInput}
-					onChangeNewPatientNameInput={ctrl.setNewPatientNameInput}
-					isCreatingPatient={ctrl.isCreatingPatient}
-					onQuickCreatePatient={() => ctrl.handleQuickCreatePatient()}
-				/>
-			) : null}
+			<IncomingCallDrawerPortal ctrl={ctrl} />
 		</>,
 		document.body,
 	);

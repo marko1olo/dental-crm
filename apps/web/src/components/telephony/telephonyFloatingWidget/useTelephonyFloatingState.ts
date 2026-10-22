@@ -18,32 +18,7 @@ export function useTelephonyFloatingState({
 	defaultExpanded = false,
 	showDialerDefault = false,
 }: TelephonyFloatingWidgetProps) {
-	const activeCall = useTelephonyStore((s) => s.activeCall);
-	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
-	const answerCall = useTelephonyStore((s) => s.answerCall);
-	const acceptCall = useTelephonyStore((s) => s.acceptCall);
-	const connectCall = useTelephonyStore((s) => s.connectCall);
-	const rejectCall = useTelephonyStore((s) => s.rejectCall);
-	const dismissCall = useTelephonyStore((s) => s.dismissCall);
-	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
-	const callHistory = useTelephonyStore((s) => s.callHistory);
-	const isMuted = useTelephonyStore((s) => s.isMuted);
-	const toggleMute = useTelephonyStore((s) => s.toggleMute);
-	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
-	const playbackSpeed = useTelephonyStore((s) => s.playbackSpeed);
-	const setPlaybackSpeed = useTelephonyStore((s) => s.setPlaybackSpeed);
-	const agentState = useTelephonyStore((s) => s.agentState);
-	const setAgentState = useTelephonyStore((s) => s.setAgentState);
-	const activeLineId = useTelephonyStore((s) => s.activeLineId);
-	const line1 = useTelephonyStore((s) => s.line1);
-	const line2 = useTelephonyStore((s) => s.line2);
-	const switchLine = useTelephonyStore((s) => s.switchLine);
-	const isHeld = useTelephonyStore((s) => s.isHeld);
-	const toggleHold = useTelephonyStore((s) => s.toggleHold);
-	const openCallDrawer = useTelephonyStore((s) => s.openCallDrawer);
-	const isWsConnected = useTelephonyStore((s) => s.isWsConnected);
-	const isCallHistoryModalOpen = useTelephonyStore((s) => s.isCallHistoryModalOpen);
-
+	const tel = useTelephonyStore();
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -52,12 +27,8 @@ export function useTelephonyFloatingState({
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const currentHash = typeof window !== "undefined" ? window.location.hash : "";
 	const isSterileClinicalScreen =
-		(crmCurrentView as string) === "visit" ||
-		(crmCurrentView as string) === "odontogram" ||
-		(crmCurrentView as string) === "periodontics" ||
-		currentHash.includes("#visit") ||
-		currentHash.includes("#odontogram") ||
-		currentHash.includes("#periodontics");
+		["visit", "odontogram", "periodontics"].includes(crmCurrentView as string) ||
+		/#(visit|odontogram|periodontics)/.test(currentHash);
 	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || isSterileClinicalScreen;
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
@@ -65,15 +36,15 @@ export function useTelephonyFloatingState({
 	const visibility = useFloatingWidgetVisibility({
 		defaultExpanded,
 		showDialerDefault,
-		activeCall,
-		isCallHistoryModalOpen,
+		activeCall: tel.activeCall,
+		isCallHistoryModalOpen: tel.isCallHistoryModalOpen,
 	});
 
-	const timerAndAudio = useFloatingCallTimerAndAudio(activeCall, isMuted, volumeLevel, playbackSpeed);
-	const patientMatch = useFloatingPatientMatch(activeCall, dashboard, visibility.dialNumber);
+	const timerAndAudio = useFloatingCallTimerAndAudio(tel.activeCall, tel.isMuted, tel.volumeLevel, tel.playbackSpeed);
+	const patientMatch = useFloatingPatientMatch(tel.activeCall, dashboard, visibility.dialNumber);
 
 	const quickActions = useFloatingCallQuickActions({
-		activeCall,
+		activeCall: tel.activeCall,
 		resolvedPatient: patientMatch.resolvedPatient,
 		upcomingAppointment: patientMatch.upcomingAppointment,
 		callerName: patientMatch.callerName,
@@ -86,39 +57,39 @@ export function useTelephonyFloatingState({
 		setDashboard: ctx?.setDashboard,
 		setSelectedPatientId,
 		setNewPatientPhone,
-		triggerIncomingCall,
-		acceptCall,
+		triggerIncomingCall: tel.triggerIncomingCall,
+		acceptCall: tel.acceptCall,
 	});
 
 	return {
-		activeCall,
+		activeCall: tel.activeCall,
 		...patientMatch,
 		...timerAndAudio,
 		...quickActions,
 		...visibility,
-		agentState,
-		setAgentState,
-		activeLineId,
-		switchLine,
-		line1,
-		line2,
-		isHeld,
-		toggleHold,
-		isMuted,
-		toggleMute,
-		playbackSpeed,
-		setPlaybackSpeed,
-		callHistory,
-		isWsConnected,
+		agentState: tel.agentState,
+		setAgentState: tel.setAgentState,
+		activeLineId: tel.activeLineId,
+		switchLine: tel.switchLine,
+		line1: tel.line1,
+		line2: tel.line2,
+		isHeld: tel.isHeld,
+		toggleHold: tel.toggleHold,
+		isMuted: tel.isMuted,
+		toggleMute: tel.toggleMute,
+		playbackSpeed: tel.playbackSpeed,
+		setPlaybackSpeed: tel.setPlaybackSpeed,
+		callHistory: tel.callHistory,
+		isWsConnected: tel.isWsConnected,
 		isDoctorChairsideMode,
 		isFullScreenStudioActive,
 		hasPrimaryModal,
-		answerCall,
-		rejectCall,
-		dismissCall,
-		connectCall,
-		openCallDrawer,
-		startCallTransfer,
+		answerCall: tel.answerCall,
+		rejectCall: tel.rejectCall,
+		dismissCall: tel.dismissCall,
+		connectCall: tel.connectCall,
+		openCallDrawer: tel.openCallDrawer,
+		startCallTransfer: tel.startCallTransfer,
 		setSelectedPatientId,
 		setNewPatientPhone,
 	};

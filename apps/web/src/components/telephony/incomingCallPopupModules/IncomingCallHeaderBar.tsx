@@ -34,11 +34,11 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 				</div>
 				{!isCallAnswered ? (
 					<>
-						<button type="button" onClick={handleAnswerCall} className="min-h-[32px] px-2 sm:px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
+						<button type="button" onClick={handleAnswerCall} className="min-h-[32px] sm:min-h-[34px] px-2 sm:px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 shrink-0" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
 							<PhoneCall size={12} className="animate-pulse" />
 							<span className="hidden sm:inline">Ответить</span>
 						</button>
-						<button type="button" onClick={handleReject} className="min-h-[32px] px-1.5 sm:px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shrink-0" title="Отклонить звонок" data-testid="badge-header-reject-btn">
+						<button type="button" onClick={handleReject} className="min-h-[32px] sm:min-h-[34px] px-1.5 sm:px-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shrink-0" title="Отклонить звонок" data-testid="badge-header-reject-btn">
 							<PhoneOff size={12} />
 							<span className="hidden sm:inline">Сброс</span>
 						</button>

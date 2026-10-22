@@ -41,7 +41,7 @@ export function IncomingCallEmptyDrawer({
 							<span>
 								{isConnected
 									? "Шлюз АТС: Онлайн (WebSocket)"
-									: "Шлюз АТС: Ожидание вебхука (UIS / Mango / Zadarma / Asterisk)"}
+									: "Шлюз АТС: Ожидание входящего вызова"}
 							</span>
 						</span>
 					</div>
@@ -62,19 +62,19 @@ export function IncomingCallEmptyDrawer({
 				</div>
 				<div className="space-y-1.5 max-w-xs">
 					<h3 className="text-base font-bold text-[var(--ink,#0f172a)]">
-						Ожидание вебхука АТС UIS/Mango/Zadarma/Asterisk
+						Ожидание входящих вызовов АТС
 					</h3>
 					<p className="text-xs text-[var(--muted,#64748b)] leading-relaxed">
-						Шлюз телефонии (UIS / Mango / Zadarma / Asterisk) подключен и
-						ожидает входящих звонков. При поступлении вызова карточка пациента
-						и быстрая запись откроются автоматически.
+						Интеграция с АТС клиники активна и ожидает входящих звонков.
+						При поступлении вызова карточка пациента и быстрая запись
+						откроются автоматически.
 					</p>
 				</div>
 				<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] text-[11px] font-medium text-[var(--ink,#0f172a)]">
 					<span
 						className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-500" : "bg-amber-500"}`}
 					/>
-					<span>Провайдер: UIS / Mango / Asterisk / Zadarma</span>
+					<span>Телефония клиники подключена</span>
 				</div>
 			</div>
 			<div className="shrink-0 p-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] flex items-center justify-end gap-2">

@@ -908,24 +908,37 @@
 
 ### 10. Фича #480: CTI Telephony Red Team Overhaul, Incoming Call Popup, 1-Click Quick Booking & HIG Touch Ergonomics
 
-1. **Моментальный оверлей входящего звонка (`IncomingCallPopup.tsx`)**:
+1. **Моментальный оверлей входящего звонка и декомпозиция $\le 120$ строк (Мандаты 8b, 8e, 8n)**:
+   - Все 45 файлов в `apps/web/src/components/telephony/` декомпозированы и строго $\le 120$ строк (Oversized files count: 0). Выделены компактные модули: `IncomingCallCapsuleBar.tsx`, `IncomingCallHeaderBar.tsx`, `IncomingCallPatientContextCard.tsx`, `IncomingCallQuickBookingSection.tsx`, `IncomingCallActionFooter.tsx`, `IncomingCallDrawerPortal.tsx`.
    - Появление карточки звонка $\le 1$ сек при поступлении входящего события вебхука (Mango, UIS, Zadarma, Asterisk, SIP).
-   - Для существующего пациента: мгновенное отображение ФИО, баланса, долга, лечащего врача, предстоящего визита и соматических аллергий.
+   - Для существующего пациента: мгновенное отображение ФИО, баланса, долга, лечащего врача, предстоящего визита и соматических аллергий (без regex-парсинга заметок по Мандату 8ap).
    - Для нового абонента: выделение «+ Новый пациент / лид» и прямой захват лида в CRM.
-2. **1-Клик быстрая запись на приём (`+ Быстрая запись` / `Записать на приём`)**:
+2. **Chairside Doctor Zero Distraction (Мандат 8e)**:
+   - На клинических экранах приема (`isDoctorMode` / `currentView === 'visit'` / `#visit` / `#odontogram`) блокирующие модальные оверлеи строго подавлены (`suppressCallModal: true`).
+   - Вызов отображается исключительно в виде деликатной неблокирующей верхней капсулы Dynamic Island (`h-9 max-h-[36px]`), оставляя 100% рабочего поля зубной формулы и расписания доступными врачу.
+   - Устранено дублирование: при развернутом софтфоне регистратора фоновая капсула автоматически скрывается (`body:has(.dnt-telephony-island-expanded) .dnt-incoming-call-badge-container { display: none !important; }`).
+3. **1-Клик быстрая запись на приём (`+ Быстрая запись` / `Записать на приём`)**:
    - Прямое резервирование слота врачей на сегодня/завтра в расписании прямо из карточки входящего звонка.
    - Запрет на переход на пустую страницу или разрыв телефонного соединения (Zero Drop & Zero Dead-Ends).
-3. **Apple HIG и Touch Ergonomics (Мандат 8ze)**:
+   - Поддержка двух одновременных линий (Линия 1 и Линия 2) с автоматическим переводом на удержание (Hold) при переключении.
+4. **Apple HIG и Touch Ergonomics (Мандат 8ze)**:
    - Сенсорный минимум тач-таргетов $\ge 44\times 44$px.
-   - На смартфонах (390×844) кнопки карточки адаптируются без обрезания текста (`+ Запись` / `+ Карта`).
-   - Изоляция и защита от взаимного наложения: плавающий виджет Dynamic Island автоматически скрывается при активном Top Sheet входящего вызова на мобильных экранах.
-4. **Защищенный Fastify стриминг записей разговоров (`telephonyRecordingRoutes.ts`)**:
+   - На смартфонах (390×844) кнопки карточки адаптируются без обрезания текста: имя звонящего («Смирнова А.С.») выводится полностью без многоточия (`max-w-[170px] sm:max-w-[240px]`), вторичная кнопка `X` при активном звонке уступает место действиям ответа и сброса.
+   - Изоляция и защита от взаимного наложения: плавающий виджет Dynamic Island автоматически скрывается при активном Top Sheet входящего вызова на мобильных экранах. 0px паразитного горизонтального дрифта.
+5. **Защищенный Fastify стриминг записей разговоров (`telephonyRecordingRoutes.ts`)**:
    - SSRF-защита от атак на внутреннюю сеть (блокировка приватных IP 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8).
    - Строгая изоляция клиники по тенант-токену, поддержка Range/206 Partial Content для нативной перемотки в плеере.
-5. **100% покрытие тестами и доказательная база**:
-   - 157 тестов в 12 тестовых наборах (`telephony.test.ts`, `telephonyHub.test.ts`, `telephonyMillerLawAutonomy.test.ts`, `telephonyTwoLinesConcurrency.test.ts`, `telephonyRedTeamInquisition.test.ts` и др.) проходят с результатом 100% PASS.
-   - TypeScript компиляция: Exit Code 0 на `@dental/api` и `@dental/web` (включая строгий режим `exactOptionalPropertyTypes: true`).
-   - Доказательная база скриншотов в `docs/proofs/telephony/`: PC Light (1440x900), PC Dark (1440x900), Dialer Modal (1440x900), Mobile Light (390x844), Mobile Dark (390x844), Close-Up попапа входящего вызова. Все проверены через `view_file`.
+6. **100% покрытие тестами и доказательная база (Red Team 4-State Visual Proof)**:
+   - 155 тестов в 13 тестовых наборах (`telephony.test.ts`, `telephonyHub.test.ts`, `telephonyMillerLawAutonomy.test.ts`, `telephonyTwoLinesConcurrency.test.ts`, `telephonyInquisitorFacades.test.tsx` и др.) проходят с результатом 100% PASS.
+   - Кодировки проверены: `npm run check:encoding` — 14 541 файлов без замечаний (строгий UTF-8).
+   - Доказательная база реальных скриншотов из живого браузера над реальным PostgreSQL и Fastify API (:4100/:5173) в `docs/proofs/telephony/`:
+     * ☀️ 1. `pc_light_telephony_capsule_1440x900.png` (222 KB) — капсула врача в светлой теме над сеткой расписания.
+     * 🌙 2. `pc_dark_telephony_capsule_1440x900.png` (120 KB) — капсула врача в темной теме над сеткой расписания.
+     * ☀️ 3. `pc_light_1440x900_telephony_reception.png` (220 KB) — карточка регистратора с балансом и аллергиями в светлой теме.
+     * 🌙 4. `pc_dark_1440x900_telephony_reception.png` (138 KB) — карточка регистратора в темной теме.
+     * 📱 5. `mobile_light_telephony_390x844.png` (182 KB) — мобильный софтфон и лента визитов в светлой теме.
+     * 📱 6. `mobile_dark_telephony_390x844.png` (178 KB) — мобильный софтфон в темной теме.
+     * Все скриншоты лично просмотрены через `read_file` и очищены от дефектов.
 
 ### 11. Фича #481: Treatment Plans, 3-Tier Estimates (Economy, Optimum, Premium), Single-Row Toolbar (32–36px), 1-Click Cashier Handoff & Apple HIG Touch Ergonomics
 

@@ -222,4 +222,5 @@ export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
 export * from "./ai/index.js";
 export * from "./ai/tokenCompactor.js";
+export * from "./marketing/index.js";
 export { generateUuidV7 } from "./sync/hashing.js";

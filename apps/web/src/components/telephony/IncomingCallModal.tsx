@@ -10,13 +10,12 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../../store/appStore";
 import { useTelephonyStore } from "../../store/telephonyStore";
-import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";
 import {
-	IncomingCallCapsuleBar,
 	IncomingCallHeaderBar,
 	IncomingCallPatientContextCard,
 	IncomingCallQuickBookingSection,
 	IncomingCallActionFooter,
+	IncomingCallDrawerPortal,
 	useIncomingCallPopupController,
 } from "./incomingCallPopupModules";
 import "./telephonyFloatingWidget.css";
@@ -42,9 +41,7 @@ export function IncomingCallModal({
 	const [hash, setHash] = useState(() => (typeof window !== "undefined" ? window.location.hash : ""));
 
 	useEffect(() => {
-		const handleHashChange = () => {
-			setHash(window.location.hash);
-		};
+		const handleHashChange = () => setHash(window.location.hash);
 		window.addEventListener("hashchange", handleHashChange);
 		return () => window.removeEventListener("hashchange", handleHashChange);
 	}, []);
@@ -64,11 +61,6 @@ export function IncomingCallModal({
 	if (!isOpen || !activeCall || isSterileZone || ctrl.isDndActive || ctrl.isFullScreenStudioActive || !ctrl.currentCall) {
 		return null;
 	}
-
-	const handleCloseModal = () => {
-		ctrl.dismissCall();
-		onClose?.();
-	};
 
 	const content = (
 		<div className="dnt-incoming-call-modal-overlay fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm pointer-events-auto" data-testid="incoming-call-modal">
@@ -92,51 +84,7 @@ export function IncomingCallModal({
 			</section>
 
 			{/* Full details slide-over drawer if requested by receptionist */}
-			{ctrl.isCallDrawerOpen && ctrl.currentCall ? (
-				<IncomingCallPatientDrawer
-					isOpen={ctrl.isCallDrawerOpen}
-					onClose={ctrl.closeCallDrawer}
-					currentCall={ctrl.currentCall}
-					callerName={ctrl.callerName}
-					formattedPhone={ctrl.formattedPhone}
-					initials={ctrl.initials}
-					avatarColors={ctrl.avatarColors}
-					isKnownPatient={ctrl.isKnownPatient}
-					patientCategory={ctrl.patientCategory}
-					resolvedPatient={ctrl.resolvedPatient}
-					financialSummary={ctrl.financialSummary}
-					somaticAlerts={ctrl.somaticAlerts}
-					upcomingAppointment={ctrl.upcomingAppointment}
-					lastVisitSummary={ctrl.lastVisitSummary}
-					callAttribution={ctrl.callAttribution}
-					isCapturingLead={ctrl.isCapturingLead}
-					onCaptureLead={ctrl.handleCaptureLead}
-					onSendWhatsApp={ctrl.handleSendWhatsAppConfirmation}
-					onCopySms={ctrl.handleCopySmsConfirmation}
-					smsCopied={ctrl.smsCopied}
-					showQuickBooking={ctrl.showQuickBooking}
-					onToggleQuickBooking={() => ctrl.setShowQuickBooking((prev) => !prev)}
-					onQuickBook={ctrl.handleQuickBook}
-					quickSlots={ctrl.quickSlots}
-					onOpenFullPatientView={ctrl.handleOpenFullPatientView}
-					isCallAnswered={ctrl.isCallAnswered}
-					showTransferPanel={ctrl.showTransferPanel}
-					onToggleTransferPanel={() => ctrl.setShowTransferPanel((prev) => !prev)}
-					transferType={ctrl.transferType}
-					onSelectTransferType={ctrl.setTransferType}
-					onStartTransfer={(ext, type) => {
-						ctrl.setTransferType(type);
-						ctrl.handleSwitchAndAnswerSecondaryLine?.();
-					}}
-					showOutcomePanel={ctrl.showOutcomePanel}
-					onToggleOutcomePanel={() => ctrl.setShowOutcomePanel((prev) => !prev)}
-					onRecordOutcome={ctrl.handleRecordOutcome}
-					newPatientNameInput={ctrl.newPatientNameInput}
-					onChangeNewPatientNameInput={ctrl.setNewPatientNameInput}
-					isCreatingPatient={ctrl.isCreatingPatient}
-					onQuickCreatePatient={() => ctrl.handleQuickCreatePatient()}
-				/>
-			) : null}
+			<IncomingCallDrawerPortal ctrl={ctrl} />
 		</div>
 	);
 

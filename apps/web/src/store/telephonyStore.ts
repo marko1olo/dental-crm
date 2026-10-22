@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import { getSharedTelephonyAudioStreamManager } from "./telephonyModules/telephonyAudioStreamManager";
 import { createTelephonyCallActions } from "./telephonyModules/telephonyCallActions";
 import {
 	type PlaybackSpeed,
@@ -46,9 +47,20 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	toggleCallDrawer: () =>
 		set((state) => ({ isCallDrawerOpen: !state.isCallDrawerOpen })),
 
-	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
-	setVolumeLevel: (volumeLevel) =>
-		set({ volumeLevel: Math.max(0, Math.min(1, volumeLevel)) }),
+	toggleMute: () => {
+		const nextMuted = !get().isMuted;
+		try {
+			getSharedTelephonyAudioStreamManager().setMicrophoneMute(nextMuted);
+		} catch {}
+		set({ isMuted: nextMuted });
+	},
+	setVolumeLevel: (volumeLevel) => {
+		const clamped = Math.max(0, Math.min(1, volumeLevel));
+		try {
+			getSharedTelephonyAudioStreamManager().setStreamVolume(clamped);
+		} catch {}
+		set({ volumeLevel: clamped });
+	},
 	setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
 	cyclePlaybackSpeed: () => {
 		const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];

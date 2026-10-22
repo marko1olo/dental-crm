@@ -45,6 +45,11 @@ body:has(.floating-bottom-bar) .telephony-floating-softphone {
 	pointer-events: auto;
 }
 
+/* Suppress redundant incoming call capsule when expanded softphone modal/card is active */
+body:has(.dnt-telephony-island-expanded) .dnt-incoming-call-badge-container {
+	display: none !important;
+}
+
 /* On mobile viewports (<= 768px), suppress background island pill when incoming call popup is actively displayed */
 @media (max-width: 768px) {
 	body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container,

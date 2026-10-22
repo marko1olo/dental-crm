@@ -1,6 +1,7 @@
 import type { StoreApi } from "zustand";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { normalizePhone } from "../telephonyHelpers";
+import { getSharedTelephonyAudioStreamManager } from "./telephonyAudioStreamManager";
 import {
 	type CallHistoryItem,
 	type IncomingCallPayload,
@@ -22,7 +23,7 @@ type GetState = StoreApi<TelephonyStore>["getState"];
 export function createTelephonyCallActions(set: SetState, get: GetState) {
 	return {
 		switchLine: (targetLineId: 1 | 2) => {
-			const { activeLineId, line1, line2 } = get();
+			const { activeLineId, line1, line2, isMuted } = get();
 			if (activeLineId === targetLineId) return;
 
 			let updatedLine1 = { ...line1 };
@@ -35,6 +36,14 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 			}
 
 			const targetLine = targetLineId === 1 ? updatedLine1 : updatedLine2;
+			try {
+				if (targetLine.state === "held") {
+					getSharedTelephonyAudioStreamManager().setMicrophoneMute(true);
+				} else {
+					getSharedTelephonyAudioStreamManager().setMicrophoneMute(isMuted);
+				}
+			} catch {}
+
 			set({
 				activeLineId: targetLineId,
 				line1: updatedLine1,
@@ -46,6 +55,9 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 
 		holdCall: () => {
 			const { activeLineId, line1, line2 } = get();
+			try {
+				getSharedTelephonyAudioStreamManager().setMicrophoneMute(true);
+			} catch {}
 			if (activeLineId === 1 && line1.call) {
 				set({ isHeld: true, line1: { ...line1, state: "held" } });
 			} else if (activeLineId === 2 && line2.call) {
@@ -56,7 +68,10 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 		},
 
 		unholdCall: () => {
-			const { activeLineId, line1, line2 } = get();
+			const { activeLineId, line1, line2, isMuted } = get();
+			try {
+				getSharedTelephonyAudioStreamManager().setMicrophoneMute(isMuted);
+			} catch {}
 			if (activeLineId === 1 && line1.call) {
 				set({ isHeld: false, line1: { ...line1, state: "connected" } });
 			} else if (activeLineId === 2 && line2.call) {
@@ -256,10 +271,16 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 					: item,
 			);
 
+			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
+			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
+			if (nextL1.state === "idle" && nextL2.state === "idle") {
+				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+			}
+
 			set({
 				activeCall: null,
-				line1: activeLineId === 1 ? initialLine1 : line1,
-				line2: activeLineId === 2 ? initialLine2 : line2,
+				line1: nextL1,
+				line2: nextL2,
 				callHistory: updatedHistory,
 				transferState: initialTransferState,
 			});
@@ -291,10 +312,16 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 					: item,
 			);
 
+			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
+			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
+			if (nextL1.state === "idle" && nextL2.state === "idle") {
+				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+			}
+
 			set({
 				activeCall: null,
-				line1: activeLineId === 1 ? initialLine1 : line1,
-				line2: activeLineId === 2 ? initialLine2 : line2,
+				line1: nextL1,
+				line2: nextL2,
 				callHistory: updatedHistory,
 			});
 		},
@@ -311,10 +338,16 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 					: item,
 			);
 
+			const nextL1 = activeLineId === 1 ? initialLine1 : line1;
+			const nextL2 = activeLineId === 2 ? initialLine2 : line2;
+			if (nextL1.state === "idle" && nextL2.state === "idle") {
+				try { getSharedTelephonyAudioStreamManager().detachRemoteAudio(); } catch {}
+			}
+
 			set({
 				activeCall: null,
-				line1: activeLineId === 1 ? initialLine1 : line1,
-				line2: activeLineId === 2 ? initialLine2 : line2,
+				line1: nextL1,
+				line2: nextL2,
 				callHistory: updatedHistory,
 				transferState: initialTransferState,
 			});

@@ -23,13 +23,7 @@ import { useTelephonyState } from "../useTelephonyState";
 
 const mockAppLogicContext = {
 	dashboard: {
-		patients: [
-			{
-				id: "pat-101",
-				fullName: "Смирнова Анна Сергеевна",
-				phone: "+7 916 234-56-78",
-			},
-		],
+		patients: [{ id: "pat-101", fullName: "Смирнова Анна Сергеевна", phone: "+7 916 234-56-78" }],
 		patientInsights: [],
 		insuranceContracts: [],
 		appointments: [],
@@ -47,8 +41,8 @@ describe("Telephony Facades & Chairside Sterile Zone Invariants (Mandates 8e, 8n
 			useTelephonyStore.setState({
 				activeCall: {
 					id: "call-99",
-					callerNumber: "+79162345678",
 					phone: "+79162345678",
+					patientId: "patient-01",
 					patientName: "Смирнова Анна",
 					durationSeconds: 10,
 					status: "ringing",
@@ -105,7 +99,6 @@ describe("Telephony Facades & Chairside Sterile Zone Invariants (Mandates 8e, 8n
 			assert.ok(typeof html === "string", "TelephonyFloatingDialer renders cleanly");
 		});
 	});
-
 	describe("4. Human Clinical Language & Zero Soviet Bureaucratic Codes (Mandate 8x)", () => {
 		it("CallHistoryDrawer and IncomingCallModal contain zero Soviet codes (043/у, 804н, 54-ФЗ)", () => {
 			const drawerHtml = renderToString(
