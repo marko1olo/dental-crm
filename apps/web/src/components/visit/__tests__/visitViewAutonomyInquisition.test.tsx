@@ -137,6 +137,10 @@ const __dirname = path.dirname(__filename);
 describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisition", () => {
 	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
 	const headerPath = path.resolve(__dirname, "../view/VisitViewHeader.tsx");
+	const headerModulesDir = path.resolve(__dirname, "../view/visitHeaderModules");
+	const headerModulesSource = fs.existsSync(headerModulesDir)
+		? fs.readdirSync(headerModulesDir).map((f) => fs.readFileSync(path.join(headerModulesDir, f), "utf8")).join("\n")
+		: "";
 	const footerPath = path.resolve(__dirname, "../view/VisitActionFooter.tsx");
 	const modalsPath = path.resolve(__dirname, "../view/VisitViewModals.tsx");
 	const statePath = path.resolve(__dirname, "../view/useVisitViewState.ts");
@@ -147,6 +151,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	const visitViewSource = [
 		fs.readFileSync(visitViewPath, "utf8"),
 		fs.existsSync(headerPath) ? fs.readFileSync(headerPath, "utf8") : "",
+		headerModulesSource,
 		fs.existsSync(footerPath) ? fs.readFileSync(footerPath, "utf8") : "",
 		fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "",
 		fs.existsSync(statePath) ? fs.readFileSync(statePath, "utf8") : "",

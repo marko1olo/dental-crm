@@ -134,9 +134,11 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 		);
 		const headerPath = path.resolve(validatorDir, "PriceValidatorHeader.tsx");
 		const pricesPath = path.resolve(validatorDir, "PriceValidatorPricesTab.tsx");
+		const bannersPath = path.resolve(validatorDir, "pricesTab/PriceValidatorPricesBanners.tsx");
+		const adminDrawerPath = path.resolve(validatorDir, "pricesTab/PriceValidatorAdminDrawer.tsx");
 		const footerPath = path.resolve(validatorDir, "PriceValidatorFooter.tsx");
 
-		const validatorSource = [validatorPath, headerPath, pricesPath, footerPath]
+		const validatorSource = [validatorPath, headerPath, pricesPath, bannersPath, adminDrawerPath, footerPath]
 			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
 			.join("\n");
 

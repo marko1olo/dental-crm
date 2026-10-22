@@ -1,8 +1,4 @@
-import type {
-	TreatmentPlanItem,
-	TreatmentPlanScenario,
-	VisitCloseChecklistItem,
-} from "@dental/shared";
+import type { TreatmentPlanItem, TreatmentPlanScenario, VisitCloseChecklistItem } from "@dental/shared";
 import type React from "react";
 import type { SoftPeerPresence } from "../../../hooks/useSoftPresence";
 import type { VisitCriticalBadge } from "./visitCriticalBadges";
@@ -24,14 +20,7 @@ export type {
 	VisitViewProps,
 };
 
-export type VisitSubViewTabType =
-	| "odontogram"
-	| "emk"
-	| "diagnostics"
-	| "plan"
-	| "consents"
-	| "anamnesis"
-	| string;
+export type VisitSubViewTabType = "odontogram" | "emk" | "diagnostics" | "plan" | "consents" | "anamnesis" | string;
 
 export interface VisitLoadedTreatmentPlan
 	extends Omit<Partial<TreatmentPlanScenario>, "id" | "status" | "createdAt">,
@@ -55,9 +44,7 @@ export interface VisitViewHeaderProps {
 	activePeers: readonly SoftPeerPresence[];
 	summaryText: string | null;
 	visitNoteForm?: VisitNoteFormExtended | undefined;
-	updateVisitNoteField?:
-		| ((field: string, value: string) => void)
-		| undefined;
+	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
 	handleApplySomaticNormQuick: () => void;
 	handlePrintClinicalDiaryFast?: (() => void) | undefined;
 	handlePrintForm043uFast: () => void;
@@ -69,11 +56,7 @@ export interface VisitViewHeaderProps {
 	handleFinishVisitAction: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?:
-		| (Partial<VisitViewProps> & {
-				setSelectedPatientId?: ((id: string | null) => void) | undefined;
-		  })
-		| undefined;
+	appLogic?: (Partial<VisitViewProps> & { setSelectedPatientId?: ((id: string | null) => void) | undefined }) | undefined;
 	isHeaderMoreMenuOpen: boolean;
 	setIsHeaderMoreMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	headerMoreMenuRef: React.RefObject<HTMLDivElement | null>;
@@ -116,7 +99,5 @@ export interface VisitActionFooterProps {
 	handlePrintForm043uFast: () => void;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
-	openCloseChecklistSection?:
-		| ((task: VisitCloseChecklistItem) => void)
-		| undefined;
+	openCloseChecklistSection?: ((task: VisitCloseChecklistItem) => void) | undefined;
 }

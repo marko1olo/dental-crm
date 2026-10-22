@@ -221,7 +221,7 @@
   width: 100%;
   max-width: 100vw;
   overflow: hidden;
-  padding: 6px 12px 8px 12px;
+  padding: 6px 8px 8px 8px;
   background: color-mix(in srgb, var(--paper, #ffffff) 95%, transparent);
   border-bottom: 1px solid var(--line-subtle, #e2e8f0);
   box-sizing: border-box;
@@ -231,15 +231,15 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: x mandatory;
-  scroll-padding: 0 12px;
-  padding: 2px 4px;
+  scroll-padding: 0 8px;
+  padding: 2px 2px;
   box-sizing: border-box;
 }
 
@@ -249,15 +249,15 @@
 
 .mobile-chairside-step-chip {
   min-height: 34px;
-  padding: 5px 10px;
+  padding: 5px 8px;
   border-radius: 10px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff);
   color: var(--muted, #64748b);

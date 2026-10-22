@@ -10,7 +10,7 @@ export interface SoapToolbarMoreMenuProps {
 	readonly onExplicitSave: () => void;
 	readonly onCopyFullText: () => void;
 	readonly onChangeViewMode: (mode: "fields" | "full_text") => void;
-	readonly saveStatus: "idle" | "saving" | "saved";
+	readonly saveStatus: "idle" | "saving" | "saved" | "error";
 }
 
 export const SoapToolbarMoreMenu: React.FC<SoapToolbarMoreMenuProps> = ({

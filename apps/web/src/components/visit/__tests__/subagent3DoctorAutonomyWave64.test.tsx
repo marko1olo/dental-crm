@@ -49,10 +49,17 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 		__dirname,
 		"../../finance/FastCheckoutPresetsAndDiscounts.tsx",
 	);
+	const fastCheckoutPayerPanelPath = path.resolve(
+		__dirname,
+		"../../finance/fastCheckoutModalModules/FastCheckoutPayerTypePanel.tsx",
+	);
 	const fastCheckoutModalSource =
 		fs.readFileSync(fastCheckoutModalPath, "utf8") +
 		(fs.existsSync(fastCheckoutPresetsPath)
 			? fs.readFileSync(fastCheckoutPresetsPath, "utf8")
+			: "") +
+		(fs.existsSync(fastCheckoutPayerPanelPath)
+			? fs.readFileSync(fastCheckoutPayerPanelPath, "utf8")
 			: "");
 
 	it("1. guarantees VisitEmkTab Save button is NOT disabled by foreign note text (Mandate 8e)", () => {

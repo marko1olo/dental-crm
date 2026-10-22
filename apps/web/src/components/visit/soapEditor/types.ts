@@ -16,19 +16,19 @@ export interface VisitSoapNoteValues {
 }
 
 export interface VisitSoapEditorProps {
-	readonly visitId?: string;
-	readonly patientId?: string;
-	readonly initialValues?: VisitSoapNoteValues;
-	readonly activeTooth?: number | null;
-	readonly onSelectActiveTooth?: (tooth: number) => void;
-	readonly onSave?: (values: VisitSoapNoteValues) => void;
-	readonly onChange?: (values: VisitSoapNoteValues) => void;
-	readonly onApplyFullDiary?: (fullDiaryText: string) => void;
-	readonly isLocked?: boolean;
-	readonly className?: string;
-	readonly autoFocusField?: "complaint" | "treatmentPlan" | null;
-	readonly isTemplatesOpen?: boolean;
-	readonly onToggleTemplates?: (open: boolean) => void;
+	readonly visitId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly initialValues?: VisitSoapNoteValues | undefined;
+	readonly activeTooth?: number | null | undefined;
+	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
+	readonly onSave?: ((values: VisitSoapNoteValues) => void) | undefined;
+	readonly onChange?: ((values: VisitSoapNoteValues) => void) | undefined;
+	readonly onApplyFullDiary?: ((fullDiaryText: string) => void) | undefined;
+	readonly isLocked?: boolean | undefined;
+	readonly className?: string | undefined;
+	readonly autoFocusField?: "complaint" | "treatmentPlan" | null | undefined;
+	readonly isTemplatesOpen?: boolean | undefined;
+	readonly onToggleTemplates?: ((open: boolean) => void) | undefined;
 }
 
 export interface UnsavedDraftNoticeState {
@@ -55,7 +55,7 @@ export interface SoapToolbarProps {
 	isSoapMoreOpen: boolean;
 	onToggleSoapMore: (open: boolean | ((prev: boolean) => boolean)) => void;
 	soapMoreRef: React.RefObject<HTMLDivElement | null>;
-	saveStatus: "idle" | "saving" | "saved";
+	saveStatus: "idle" | "saving" | "saved" | "error";
 	unsavedDraftNotice: UnsavedDraftNoticeState | null;
 	onRestoreDraft: () => void;
 	onDiscardDraft: () => void;
