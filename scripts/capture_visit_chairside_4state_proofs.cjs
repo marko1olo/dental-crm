@@ -16,28 +16,32 @@ async function capture() {
 
   const targets = [
     {
-      name: "visit_chairside_pc_light_1440x900.png",
+      name: "chairside_visit_live_pc_light.png",
+      legacyName: "visit_chairside_pc_light_1440x900.png",
       width: 1440,
       height: 900,
       isMobile: false,
       theme: "light",
     },
     {
-      name: "visit_chairside_pc_dark_1440x900.png",
+      name: "chairside_visit_live_pc_dark.png",
+      legacyName: "visit_chairside_pc_dark_1440x900.png",
       width: 1440,
       height: 900,
       isMobile: false,
       theme: "dark",
     },
     {
-      name: "visit_chairside_mobile_light_390x844.png",
+      name: "chairside_visit_live_mobile_light.png",
+      legacyName: "visit_chairside_mobile_light_390x844.png",
       width: 390,
       height: 844,
       isMobile: true,
       theme: "light",
     },
     {
-      name: "visit_chairside_mobile_dark_390x844.png",
+      name: "chairside_visit_live_mobile_dark.png",
+      legacyName: "visit_chairside_mobile_dark_390x844.png",
       width: 390,
       height: 844,
       isMobile: true,
@@ -64,30 +68,52 @@ async function capture() {
     }, { theme: t.theme });
 
     const page = await context.newPage();
-    await page.goto("http://127.0.0.1:5173/?demo=true#visit", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000,
-    });
-    // Wait for initial boot splash to finish detaching
-    await page.waitForSelector(".boot-state", { state: "detached", timeout: 20000 }).catch(() => {});
-    await page.waitForTimeout(1500);
-
-    // Ensure theme attributes are properly stamped
-    await page.evaluate((theme) => {
-      document.documentElement.setAttribute("data-theme", theme);
-      document.body.setAttribute("data-theme", theme);
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-        document.documentElement.classList.remove("light");
-        document.body.classList.add("dark");
-        document.body.classList.remove("light");
-      } else {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
-        document.body.classList.remove("dark");
-        document.body.classList.add("light");
+    let navigated = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.goto("http://127.0.0.1:5173/?demo=true#visit", {
+          waitUntil: "commit",
+          timeout: 35000,
+        });
+        await page.waitForSelector('.workspace-shell, .app-shell, .app-mobile-shell, nav', { state: 'visible', timeout: 30000 });
+        await page.waitForFunction(
+          () => !document.querySelector('.boot-state') && !document.body.innerText.includes('Загрузка CRM') && document.body.innerText.length > 200,
+          { timeout: 30000 }
+        );
+        navigated = true;
+        break;
+      } catch (err) {
+        console.warn(`Attempt ${attempt} for ${t.name} failed: ${err.message}. Retrying in 2s...`);
+        if (attempt === 3) throw err;
+        await page.waitForTimeout(2000);
       }
-    }, t.theme);
+    }
+    await page.waitForTimeout(1000);
+
+    // Ensure theme attributes are properly stamped with retry if navigation settles
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await page.evaluate((theme) => {
+          localStorage.setItem("dente_theme_mode", theme);
+          localStorage.setItem("dente-theme", theme);
+          localStorage.setItem("theme", theme);
+          if (window.__useThemeStore) {
+            window.__useThemeStore.getState().setThemeMode(theme);
+          }
+          document.documentElement.setAttribute("data-theme", theme);
+          document.body.setAttribute("data-theme", theme);
+          const isDark = theme === "dark";
+          document.documentElement.classList.toggle("dark", isDark);
+          document.documentElement.classList.toggle("light", !isDark);
+          document.body.classList.toggle("dark", isDark);
+          document.body.classList.toggle("light", !isDark);
+          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+        }, t.theme);
+        break;
+      } catch (_) {
+        await page.waitForTimeout(1000);
+      }
+    }
     await page.waitForTimeout(500);
 
     // If intake cockpit is showing, select next or first patient
@@ -108,21 +134,41 @@ async function capture() {
     }
 
     // Ensure we are on visit view
-    await page.evaluate(() => {
-      if (window.__useAppStore) {
-        window.__useAppStore.getState().setCurrentView("visit");
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await page.evaluate(() => {
+          if (window.__useAppStore) {
+            window.__useAppStore.getState().setCurrentView("visit");
+          }
+          // Clean up any transient toast notifications
+          document.querySelectorAll('.global-toast, .toast, .sa-toast, [data-testid="global-toast"], [role="alert"]').forEach(el => el.remove());
+        });
+        break;
+      } catch (_) {
+        await page.waitForTimeout(1000);
       }
-      // Clean up any transient toast notifications
-      document.querySelectorAll('.global-toast, .toast, .sa-toast, [data-testid="global-toast"], [role="alert"]').forEach(el => el.remove());
-    });
+    }
     await page.waitForTimeout(1000);
+
+    // Ensure clinical interface is actually rendered and visible before taking the screenshot
+    try {
+      await page.waitForSelector('.odontogram-container, .mobile-chairside-container, [data-testid="mobile-chairside-layout"], .visit-view, .app-mobile-tab-bar, [data-testid="btn-complete-visit-header"]', { state: "visible", timeout: 15000 });
+    } catch (_) {}
+    await page.waitForTimeout(1500);
 
     const outPath = path.join(PROOFS_DIR, t.name);
     await page.screenshot({ path: outPath, fullPage: false });
     const stat = fs.statSync(outPath);
     console.log(`Saved ${t.name}: ${stat.size} bytes`);
-    if (stat.size < 20000) {
-      console.error(`WARNING: ${t.name} is under 20KB (${stat.size} bytes)!`);
+
+    if (t.legacyName) {
+      const legacyPath = path.join(PROOFS_DIR, t.legacyName);
+      fs.copyFileSync(outPath, legacyPath);
+      console.log(`Copied ${t.name} -> ${t.legacyName}`);
+    }
+
+    if (stat.size < 30000) {
+      throw new Error(`CRITICAL DEFECT: ${t.name} is under 30KB (${stat.size} bytes)!`);
     }
 
     await context.close();
