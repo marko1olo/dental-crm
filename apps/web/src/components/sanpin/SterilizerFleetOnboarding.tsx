@@ -1,7 +1,4 @@
-import {
-	POPULAR_STERILIZER_BRAND_PRESETS,
-	type PopularSterilizerBrandPreset,
-} from "@dental/shared";
+import { POPULAR_STERILIZER_BRAND_PRESETS, type PopularSterilizerBrandPreset } from "@dental/shared";
 import { Flame, Plus, Sparkles } from "lucide-react";
 import React from "react";
 
@@ -10,36 +7,21 @@ export interface SterilizerFleetOnboardingProps {
 	readonly onAddNew: () => void;
 }
 
-export function SterilizerFleetOnboarding({
-	onQuickAddPreset,
-	onAddNew,
-}: SterilizerFleetOnboardingProps) {
+export function SterilizerFleetOnboarding({ onQuickAddPreset, onAddNew }: SterilizerFleetOnboardingProps) {
 	return (
 		<div
 			className="sanpin-onboarding-card"
 			style={{
-				padding: "2.5rem 1.5rem",
-				borderRadius: "12px",
-				background: "var(--paper-soft, #f8fafc)",
-				border: "1.5px dashed var(--line, #cbd5e1)",
-				textAlign: "center",
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				gap: "1.25rem",
+				padding: "2.5rem 1.5rem", borderRadius: "12px", background: "var(--paper-soft, #f8fafc)",
+				border: "1.5px dashed var(--line, #cbd5e1)", textAlign: "center", display: "flex",
+				flexDirection: "column", alignItems: "center", gap: "1.25rem",
 			}}
 			data-testid="sterilizer-fleet-onboarding"
 		>
 			<div
 				style={{
-					width: "60px",
-					height: "60px",
-					borderRadius: "16px",
-					background: "rgba(13, 148, 136, 0.12)",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					color: "var(--teal-600, #0d9488)",
+					width: "60px", height: "60px", borderRadius: "16px", background: "rgba(13, 148, 136, 0.12)",
+					display: "flex", alignItems: "center", justifyContent: "center", color: "var(--teal-600, #0d9488)",
 				}}
 			>
 				<Flame size={32} />
@@ -54,7 +36,6 @@ export function SterilizerFleetOnboarding({
 				</p>
 			</div>
 
-			{/* Типовые профили оснащения */}
 			<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
 				<span style={{ fontSize: "0.775rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
 					Быстрое добавление типового аппарата:
@@ -67,18 +48,9 @@ export function SterilizerFleetOnboarding({
 							onClick={() => onQuickAddPreset(preset)}
 							className="sanpin-btn touch-manipulation"
 							style={{
-								minHeight: "36px",
-								padding: "0.35rem 0.75rem",
-								fontSize: "0.8rem",
-								fontWeight: 600,
-								background: "var(--paper, #ffffff)",
-								color: "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #cbd5e1)",
-								borderRadius: "6px",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.35rem",
+								minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.8rem", fontWeight: 600,
+								background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", border: "1px solid var(--line, #cbd5e1)",
+								borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.35rem",
 								boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
 							}}
 							title={`Добавить ${preset.brandModel} (${preset.chamberVolumeLiters} л)`}
@@ -97,18 +69,9 @@ export function SterilizerFleetOnboarding({
 					onClick={onAddNew}
 					className="sanpin-btn sanpin-btn-primary touch-manipulation"
 					style={{
-						minHeight: "42px",
-						padding: "0.5rem 1.5rem",
-						fontSize: "0.875rem",
-						fontWeight: 700,
-						background: "var(--teal)",
-						color: "var(--on-teal, #ffffff)",
-						border: "none",
-						borderRadius: "8px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.4rem",
+						minHeight: "42px", padding: "0.5rem 1.5rem", fontSize: "0.875rem", fontWeight: 700,
+						background: "var(--teal)", color: "var(--on-teal, #ffffff)", border: "none",
+						borderRadius: "8px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem",
 					}}
 				>
 					<Plus size={16} />

@@ -20,77 +20,41 @@ export interface SterilizerFleetToolbarProps {
 }
 
 export function SterilizerFleetToolbar({
-	searchQuery,
-	setSearchQuery,
-	statusFilter,
-	setStatusFilter,
-	stats,
-	onAddNew,
-	onRefresh,
-	loading,
+	searchQuery, setSearchQuery, statusFilter, setStatusFilter, stats, onAddNew, onRefresh, loading,
 }: SterilizerFleetToolbarProps) {
 	return (
 		<div
 			className="sanpin-fleet-toolbar"
 			style={{
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				gap: "0.5rem",
-				flexWrap: "wrap",
-				padding: "0.5rem 0.75rem",
-				background: "var(--paper-soft, #f8fafc)",
-				border: "1px solid var(--line, #e2e8f0)",
-				borderRadius: "8px",
+				display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap",
+				padding: "0.5rem 0.75rem", background: "var(--paper-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px",
 			}}
 		>
 			<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto" }}>
 				<div className="dente-search-wrap" style={{ minWidth: "200px", maxWidth: "340px", flex: "1 1 auto" }}>
 					<Search size={14} className="dente-search-icon" />
 					<input
-						type="text"
-						placeholder="Поиск по марке, названию, серийному №..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
+						type="text" placeholder="Поиск по марке, названию, серийному №..."
+						value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
 						className="dente-search-input !h-8"
 					/>
 					{searchQuery && (
-						<button
-							type="button"
-							className="dente-search-clear"
-							onClick={() => setSearchQuery("")}
-							aria-label="Очистить поиск"
-						>
+						<button type="button" className="dente-search-clear" onClick={() => setSearchQuery("")} aria-label="Очистить поиск">
 							<X size={12} />
 						</button>
 					)}
 				</div>
 
-				<SterilizerFleetSegmentedFilter
-					statusFilter={statusFilter}
-					setStatusFilter={setStatusFilter}
-					stats={stats}
-				/>
+				<SterilizerFleetSegmentedFilter statusFilter={statusFilter} setStatusFilter={setStatusFilter} stats={stats} />
 			</div>
 
 			<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
 				<button
-					type="button"
-					onClick={onAddNew}
-					className="sanpin-btn sanpin-btn-primary touch-manipulation"
+					type="button" onClick={onAddNew} className="sanpin-btn sanpin-btn-primary touch-manipulation"
 					style={{
-						minHeight: "34px",
-						padding: "0.3rem 0.85rem",
-						fontSize: "0.8rem",
-						fontWeight: 700,
-						background: "var(--teal)",
-						color: "var(--on-teal, #ffffff)",
-						border: "none",
-						borderRadius: "6px",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.3rem",
+						minHeight: "34px", padding: "0.3rem 0.85rem", fontSize: "0.8rem", fontWeight: 700,
+						background: "var(--teal)", color: "var(--on-teal, #ffffff)", border: "none", borderRadius: "6px",
+						cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.3rem",
 					}}
 					data-testid="add-sterilizer-btn"
 				>
@@ -99,18 +63,8 @@ export function SterilizerFleetToolbar({
 				</button>
 
 				<button
-					type="button"
-					onClick={onRefresh}
-					className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-					style={{
-						minHeight: "34px",
-						width: "34px",
-						padding: 0,
-						borderRadius: "6px",
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-					}}
+					type="button" onClick={onRefresh} className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+					style={{ minHeight: "34px", width: "34px", padding: 0, borderRadius: "6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 					title="Обновить реестр оборудования"
 				>
 					<RefreshCw size={14} className={loading ? "animate-spin" : ""} />

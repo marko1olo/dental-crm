@@ -10,10 +10,8 @@ import {
 import { computeExpressStandardCycleValues, resolveAutoclaveCycleFallbacks } from "./newCycleDefaults";
 
 export function useNewCycleState(
-	onSaveRecord: (record: Form257Record) => void,
-	defaultOperatorName = "Сотрудник клиники",
-	defaultHeadNurseName = "Старшая медицинская сестра",
-	latestCycleNumber = 1,
+	onSaveRecord: (record: Form257Record) => void, defaultOperatorName = "Сотрудник клиники",
+	defaultHeadNurseName = "Старшая медицинская сестра", latestCycleNumber = 1,
 ) {
 	const [selectedSterilizerId, setSelectedSterilizerId] = useState(STATUTORY_STERILIZERS_CATALOG[0]?.id ?? "autoclave-melag-vacuklav-23b");
 	const [selectedRegimeId, setSelectedRegimeId] = useState<SterilizationRegimeId>("steam_134_5min");
