@@ -60,7 +60,7 @@ export const OrthoMobileStickyCta: React.FC<OrthoMobileNavigationProps> = ({
 			) : (
 				<>
 					<button type="button" data-testid="ortho-mobile-btn-apply-both" onClick={onApplyBoth} className="primary-button h-[46px] min-h-[44px] flex-1 !rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
-						Внести в карту и чек ({servicesCount})
+						Зафиксировать ортодонтический протокол ({servicesCount})
 					</button>
 					<button type="button" data-testid="ortho-mobile-btn-back-controls" onClick={() => setMobileTab("controls")} className="secondary-button h-[46px] min-h-[44px] px-3.5 !rounded-xl text-xs font-semibold cursor-pointer">
 						Назад

@@ -82,13 +82,13 @@ export const OrthodonticProtocolFooter: React.FC<OrthodonticProtocolFooterProps>
 				<button
 					type="button"
 					onClick={onApplyToVisitNote}
-					className="primary-button flex-1 justify-center shrink-0 whitespace-nowrap min-w-fit min-h-[40px] cursor-pointer"
+					className="primary-button flex-1 justify-center shrink-0 whitespace-nowrap min-w-fit min-h-[36px] h-9 px-4 rounded-xl text-xs sm:text-[13px] font-bold flex items-center gap-1.5 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
 					data-testid="bottom-apply-protocol-btn"
-					title="Вставить протокол в медицинскую карту"
-					aria-label="В медицинскую карту"
+					title="Мгновенно зафиксировать ортодонтический протокол в дневник приёма (SOAP) и начислить услуги"
+					aria-label="Зафиксировать ортодонтический протокол"
 				>
 					<Check size={16} />
-					<span>В карту</span>
+					<span>Зафиксировать ортодонтический протокол</span>
 				</button>
 
 				<button

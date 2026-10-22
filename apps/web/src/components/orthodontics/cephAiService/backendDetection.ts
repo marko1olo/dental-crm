@@ -1,65 +1,39 @@
-import { getHardwareResourceTier } from "../../../utils/deviceDetection";
-import { detectGpuPerformanceTier } from "../../../utils/rafThrottler";
+/**
+ * backendDetection.ts — Информационный резолвер режима разметки ТРГ.
+ * 
+ * Выкос процедурного симулятора WebGPU/WebGL: вместо имитации нейросетевых ядер
+ * и зависания браузера возвращается безопасный профиль клинической калибровки.
+ */
+
 import type { CephAiActiveBackend, CephAiBackendPreference, CephBackendInfo } from "./types";
 
 export function detectOptimalCephBackend(
 	preference: CephAiBackendPreference = "auto",
 ): CephBackendInfo {
-	const hasNav = typeof navigator !== "undefined";
-	const hasWebGpu = hasNav && "gpu" in navigator && Boolean((navigator as unknown as { gpu?: unknown }).gpu);
-
-	let hasWebGL = false;
-	if (typeof document !== "undefined") {
-		try {
-			const c = document.createElement("canvas");
-			hasWebGL = Boolean(c.getContext("webgl2") || c.getContext("webgl"));
-		} catch {
-			hasWebGL = false;
-		}
-	}
-
-	const hardwareTier = getHardwareResourceTier();
-	const gpuTier = detectGpuPerformanceTier();
-
-	let resolvedBackend: CephAiActiveBackend = "wasm";
-	let isDiscrete = false;
-
-	if (preference === "webgpu") {
-		resolvedBackend = hasWebGpu ? "webgpu" : hasWebGL ? "webgl" : "wasm";
-		isDiscrete = hasWebGpu;
-	} else if (preference === "webgl") {
-		resolvedBackend = hasWebGL ? "webgl" : "wasm";
-	} else if (preference === "wasm") {
-		resolvedBackend = "wasm";
-	} else {
-		if (hasWebGpu && (hardwareTier === "high" || gpuTier === "high")) {
-			resolvedBackend = "webgpu";
-			isDiscrete = true;
-		} else if (hasWebGL) {
-			resolvedBackend = "webgl";
-		} else {
-			resolvedBackend = "wasm";
-		}
-	}
-
-	const labels: Record<CephAiActiveBackend, string> = {
-		webgpu: "WebGPU (Аппаратный шейдер)",
-		webgl: "WebGL (Графика)",
-		wasm: "WASM (Процессор SIMD)",
-	};
+	const backend: CephAiActiveBackend = preference === "webgpu"
+		? "webgpu"
+		: preference === "webgl"
+			? "webgl"
+			: "wasm";
 
 	const badges: Record<CephAiActiveBackend, string> = {
-		webgpu: "WebGPU",
+		webgpu: "GPU",
 		webgl: "WebGL",
 		wasm: "CPU",
 	};
 
+	const labels: Record<CephAiActiveBackend, string> = {
+		webgpu: "GPU (Калибровка)",
+		webgl: "WebGL (Калибровка)",
+		wasm: "Процессор (Калибровка)",
+	};
+
 	return {
-		backend: resolvedBackend,
+		backend,
 		preference,
-		labelRu: labels[resolvedBackend],
-		badge: badges[resolvedBackend],
-		isDiscreteGpu: isDiscrete,
-		descriptionRu: "Локальный браузерный движок разметки ТРГ",
+		labelRu: labels[backend],
+		badge: badges[backend],
+		isDiscreteGpu: backend === "webgpu",
+		descriptionRu: "2D Вьюер ТРГ с калиброванной линейкой и анатомическими ориентирами",
 	};
 }

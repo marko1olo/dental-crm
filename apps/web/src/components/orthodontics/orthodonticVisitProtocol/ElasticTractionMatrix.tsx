@@ -36,10 +36,44 @@ export const ElasticTractionMatrix: React.FC<ElasticTractionMatrixProps> = ({
 			data-testid="ortho-elastic-traction-matrix"
 			className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 		>
-			<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-				<Zap size={14} className="text-[var(--primary)]" />
-				Межчелюстные эластики (тяга)
-			</span>
+			<div className="flex items-center justify-between">
+				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+					<Zap size={14} className="text-[var(--primary)]" />
+					Межчелюстные эластики (тяга)
+				</span>
+				<span className="text-[11.5px] font-bold text-[var(--primary)]">
+					{ELASTIC_SCHEMES.find((e) => e.id === elasticScheme)?.label}
+				</span>
+			</div>
+
+			{/* Быстрый экспресс-выбор тяги в 1 клик */}
+			<div className="grid grid-cols-3 sm:grid-cols-6 gap-1" data-testid="quick-elastics-chips">
+				{[
+					{ id: "none", label: "Без тяг" },
+					{ id: "class_ii", label: "II класс" },
+					{ id: "class_iii", label: "III класс" },
+					{ id: "vertical_box", label: "Коробчатые" },
+					{ id: "cross", label: "Перекрест." },
+					{ id: "asymmetric", label: "Асимметр." },
+				].map((chip) => {
+					const isSelected = elasticScheme === chip.id;
+					return (
+						<button
+							key={chip.id}
+							type="button"
+							onClick={() => setElasticScheme(chip.id)}
+							data-testid={`quick-elastic-${chip.id}-btn`}
+							className={`h-7 px-1.5 rounded-lg text-[11.5px] font-bold border transition-all cursor-pointer truncate ${
+								isSelected
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							}`}
+						>
+							{chip.label}
+						</button>
+					);
+				})}
+			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 				<div>

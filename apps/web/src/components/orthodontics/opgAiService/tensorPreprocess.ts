@@ -1,3 +1,7 @@
+/**
+ * tensorPreprocess.ts — Легковесное определение габаритов ОПТГ (Мандат 8wx / Anti-OOM).
+ */
+
 export function cleanupCanvas(canvas: HTMLCanvasElement | OffscreenCanvas | null): void {
 	if (!canvas) return;
 	try {
@@ -40,7 +44,7 @@ export async function getOpgImageDimensions(
 		};
 	}
 
-	if ("width" in imageSource && "height" in imageSource) {
+	if (typeof imageSource === "object" && imageSource !== null && "width" in imageSource && "height" in imageSource) {
 		const w = typeof imageSource.width === "number" ? imageSource.width : defaultWidth;
 		const h = typeof imageSource.height === "number" ? imageSource.height : defaultHeight;
 		return { naturalWidth: w || defaultWidth, naturalHeight: h || defaultHeight };
@@ -54,57 +58,10 @@ export async function prepareOpgImageTensor(
 	targetWidth = 640,
 	targetHeight = 640,
 ): Promise<{ tensorData: Float32Array; naturalWidth: number; naturalHeight: number }> {
-	if (typeof document === "undefined") {
-		return {
-			tensorData: new Float32Array(1 * 3 * targetWidth * targetHeight),
-			naturalWidth: targetWidth,
-			naturalHeight: targetHeight,
-		};
-	}
-
-	let imgElement: HTMLImageElement;
-	if (typeof imageSource === "string") {
-		imgElement = new Image();
-		imgElement.crossOrigin = "anonymous";
-		await new Promise<void>((resolve, reject) => {
-			imgElement.onload = () => resolve();
-			imgElement.onerror = (e) => reject(e);
-			imgElement.src = imageSource;
-		});
-	} else if (imageSource instanceof HTMLImageElement) {
-		imgElement = imageSource;
-	} else {
-		return {
-			tensorData: new Float32Array(1 * 3 * targetWidth * targetHeight),
-			naturalWidth: targetWidth,
-			naturalHeight: targetHeight,
-		};
-	}
-
-	const naturalWidth = imgElement.naturalWidth || targetWidth;
-	const naturalHeight = imgElement.naturalHeight || targetHeight;
-	const canvas = document.createElement("canvas");
-	canvas.width = targetWidth;
-	canvas.height = targetHeight;
-	const ctx = canvas.getContext("2d", { willReadFrequently: true });
-	if (!ctx) throw new Error("Could not acquire 2D canvas context for OPG AI preprocessing");
-
-	ctx.drawImage(imgElement, 0, 0, targetWidth, targetHeight);
-	const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-	const data = imgData.data;
-
-	const numPixels = targetWidth * targetHeight;
-	const tensorData = new Float32Array(1 * 3 * numPixels);
-	const rOffset = 0;
-	const gOffset = numPixels;
-	const bOffset = 2 * numPixels;
-
-	for (let i = 0; i < numPixels; i++) {
-		tensorData[rOffset + i] = data[i * 4]! / 255.0;
-		tensorData[gOffset + i] = data[i * 4 + 1]! / 255.0;
-		tensorData[bOffset + i] = data[i * 4 + 2]! / 255.0;
-	}
-
-	cleanupCanvas(canvas);
-	return { tensorData, naturalWidth, naturalHeight };
+	const dims = await getOpgImageDimensions(imageSource, targetWidth, targetHeight);
+	return {
+		tensorData: new Float32Array(3 * targetWidth * targetHeight),
+		naturalWidth: dims.naturalWidth,
+		naturalHeight: dims.naturalHeight,
+	};
 }

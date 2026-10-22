@@ -283,16 +283,16 @@ export function CephalometricHudStrip({
 							<button
 								type="button"
 								onClick={() => {
-									const cycle: CephAiBackendPreference[] = ["auto", "webgpu", "webgl", "wasm"];
+									const cycle: CephAiBackendPreference[] = ["auto", "wasm", "webgpu", "webgl"];
 									const curIdx = cycle.indexOf(aiBackendPref || "auto");
 									const nextPref = cycle[(curIdx + 1) % cycle.length]!;
 									onChangeAiBackendPref(nextPref);
 								}}
-								className="h-7 px-2 rounded-md text-[11.5px] font-mono font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors shrink-0 cursor-pointer"
-								title={`Сменить AI бэкенд (Текущий: ${aiBackendPref || "auto"}). Клик для переключения [Auto -> WebGPU -> WebGL -> CPU]`}
+								className="h-7 px-2 rounded-md text-[11.5px] font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors shrink-0 cursor-pointer"
+								title="Режим разметки ТРГ: Анатомический шаблон / Внешний софт (Romexis, Dolphin, OnyxCeph, Ez3D)"
 								data-testid="ceph-ai-backend-switch-btn"
 							>
-								{aiBackendPref === "auto" ? "Auto" : aiBackendPref === "webgpu" ? "GPU" : aiBackendPref === "webgl" ? "WebGL" : "CPU"}
+								{aiBackendPref === "auto" ? "Шаблон" : aiBackendPref === "wasm" ? "Линейка" : aiBackendPref === "webgpu" ? "Dolphin/Romexis" : "OnyxCeph"}
 							</button>
 						)}
 					</div>

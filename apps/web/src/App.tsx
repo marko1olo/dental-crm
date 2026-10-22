@@ -85,6 +85,11 @@ const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
 		default: m.OrthodonticPhotoProtocolModal,
 	})),
 );
+const OrthodonticVisitProtocolWidget = lazyWithRetry(() =>
+	import("./components/orthodontics/OrthodonticVisitProtocolWidget").then((m) => ({
+		default: m.OrthodonticVisitProtocolWidget,
+	})),
+);
 const ToothContextDrawer = lazyWithRetry(() =>
 	import("./components/diagnostics/ToothContextDrawer").then((m) => ({
 		default: m.ToothContextDrawer,
@@ -859,6 +864,17 @@ export function App() {
 					(window.location.hash || "").includes("ortho-photo") ||
 					(window.location.search || "").includes("orthodontic-photo") ||
 					(window.location.hash || "").includes("orthodontic-photo")),
+		);
+	const [isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen] =
+		useState<boolean>(
+			() =>
+				typeof window !== "undefined" &&
+				((window.location.search || "").includes("ortho-protocol") ||
+					(window.location.hash || "").includes("ortho-protocol") ||
+					(window.location.search || "").includes("orthodontic-protocol") ||
+					(window.location.hash || "").includes("orthodontic-protocol") ||
+					(window.location.search || "").includes("ortho=protocol") ||
+					(window.location.search || "").includes("protocol=ortho")),
 		);
 	const [isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen] =
 		useState<boolean>(
@@ -1790,6 +1806,18 @@ export function App() {
 								onClose={() => setIsOrthoPhotoDirectModalOpen(false)}
 								patientName="Воронов Дмитрий Игоревич"
 								patientId="pat-demo-01"
+								doctorName="Д-р Соколов А. В."
+								clinicName="DENTE Clinic"
+							/>
+						</React.Suspense>
+					)}
+					{isOrthoProtocolDirectModalOpen && (
+						<React.Suspense fallback={null}>
+							<OrthodonticVisitProtocolWidget
+								isOpen={true}
+								onClose={() => setIsOrthoProtocolDirectModalOpen(false)}
+								patientName="Смирнова Екатерина Андреевна"
+								patientId="pat-demo-ortho-01"
 								doctorName="Д-р Соколов А. В."
 								clinicName="DENTE Clinic"
 							/>

@@ -94,51 +94,57 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					</button>
 				</div>
 
-				{/* Desktop action row; on mobile, handled by floating sticky bottom bar */}
-				<div className="!hidden sm:!flex items-center gap-2">
-					<button
-						type="button"
-						onClick={onPrintOrthodonticCard}
-						className="secondary-button shrink-0"
-						data-testid="bottom-print-protocol-btn"
-						title="Распечатать карту"
-						aria-label="Печать протокола"
-					>
-						<Printer size={15} />
-						<span>Печать</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={onAddServicesToInvoice}
-						className="secondary-button shrink-0"
-						data-testid="bottom-add-services-to-invoice-btn"
-						title="Начислить услуги в чек/смету"
-						aria-label="Начислить услуги в чек/смету"
-					>
-						<Receipt size={15} />
-						<span>Услуги ({calculatedServicesCount})</span>
-					</button>
-
+				{/* Desktop action container: 1 prominent Primary CTA row + secondary utility row */}
+				<div className="!hidden sm:!flex flex-col gap-2">
+					{/* Dedicated Full-Width Primary CTA Button */}
 					<button
 						type="button"
 						onClick={onApplyToVisitNote}
-						className="primary-button flex-1 justify-center shrink-0 whitespace-nowrap min-w-fit"
+						className="primary-button w-full h-10 min-h-[40px] px-4 rounded-xl text-xs sm:text-[13px] font-bold flex items-center justify-center gap-2 shadow-sm hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
 						data-testid="bottom-apply-protocol-btn"
-						title="Вставить протокол в медицинскую карту"
-						aria-label="В медицинскую карту"
+						title="Мгновенно зафиксировать ортодонтический протокол в дневник приёма (SOAP) и начислить услуги"
+						aria-label="Зафиксировать ортодонтический протокол"
 					>
 						<Check size={16} />
-						<span>В карту</span>
+						<span>Зафиксировать ортодонтический протокол</span>
 					</button>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="secondary-button shrink-0"
-					>
-						<span>Отмена</span>
-					</button>
+					{/* Secondary actions row */}
+					<div className="flex items-center justify-between gap-1.5">
+						<div className="flex items-center gap-1.5 min-w-0">
+							<button
+								type="button"
+								onClick={onPrintOrthodonticCard}
+								className="secondary-button h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0"
+								data-testid="bottom-print-protocol-btn"
+								title="Распечатать карту"
+								aria-label="Печать протокола"
+							>
+								<Printer size={14} />
+								<span>Печать</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={onAddServicesToInvoice}
+								className="secondary-button h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0"
+								data-testid="bottom-add-services-to-invoice-btn"
+								title="Начислить услуги в чек/смету"
+								aria-label="Начислить услуги в чек/смету"
+							>
+								<Receipt size={14} />
+								<span>Услуги ({calculatedServicesCount})</span>
+							</button>
+						</div>
+
+						<button
+							type="button"
+							onClick={onClose}
+							className="secondary-button h-8 px-3 rounded-lg text-xs font-semibold shrink-0"
+						>
+							<span>Отмена</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

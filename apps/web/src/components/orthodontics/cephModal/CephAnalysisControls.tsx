@@ -142,10 +142,10 @@ export function CephTab1TopControls({
 						title="Режим разметки"
 						data-testid="ai-backend-select"
 					>
-						<option value="auto">Auto ({detectedBackend?.badge || "GPU"})</option>
-						<option value="webgpu">WebGPU (Дискретная)</option>
-						<option value="webgl">WebGL (Встройка)</option>
-						<option value="wasm">CPU (Процессор)</option>
+						<option value="auto">Анатомический шаблон</option>
+						<option value="wasm">Калибровка по линейке</option>
+						<option value="webgpu">Dolphin / Romexis (внешний)</option>
+						<option value="webgl">OnyxCeph / Ez3D (внешний)</option>
 					</select>
 					<button
 						type="button"

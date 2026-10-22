@@ -1,3 +1,10 @@
+/**
+ * tensorPreprocess.ts — Легковесное определение габаритов снимка ТРГ (Мандат 8wx / Anti-OOM).
+ * 
+ * ПОЛНЫЙ ВЫКОС ТЯЖЕЛЫХ ТЕНЗОРОВ: Устранено выделение 1.76M Float32Array и попиксельная
+ * нормализация в 2D Canvas, приводящая к скачкам памяти хоста.
+ */
+
 export async function prepareImageTensor(
 	imageSource: CanvasImageSource | string,
 	targetWidth = 768,
@@ -5,63 +12,39 @@ export async function prepareImageTensor(
 	fallbackWidth = 1200,
 	fallbackHeight = 896,
 ): Promise<{ tensorData: Float32Array; naturalWidth: number; naturalHeight: number }> {
-	if (typeof document === "undefined" || typeof Image === "undefined") {
-		return {
-			tensorData: new Float32Array(1 * 3 * targetWidth * targetHeight),
-			naturalWidth: fallbackWidth,
-			naturalHeight: fallbackHeight,
-		};
-	}
+	let naturalWidth = fallbackWidth;
+	let naturalHeight = fallbackHeight;
 
-	let imgElement: HTMLImageElement;
 	if (typeof imageSource === "string") {
-		imgElement = new Image();
-		imgElement.crossOrigin = "anonymous";
-		await new Promise<void>((resolve, reject) => {
-			imgElement.onload = () => resolve();
-			imgElement.onerror = (e) => reject(e);
-			imgElement.src = imageSource;
-		});
-	} else if (imageSource instanceof HTMLImageElement) {
-		imgElement = imageSource;
-	} else {
-		return {
-			tensorData: new Float32Array(1 * 3 * targetWidth * targetHeight),
-			naturalWidth: fallbackWidth,
-			naturalHeight: fallbackHeight,
-		};
+		if (typeof Image !== "undefined") {
+			try {
+				await new Promise<void>((resolve, reject) => {
+					const imgElement = new Image();
+					imgElement.crossOrigin = "anonymous";
+					imgElement.onload = () => {
+						naturalWidth = imgElement.naturalWidth || fallbackWidth;
+						naturalHeight = imgElement.naturalHeight || fallbackHeight;
+						resolve();
+					};
+					imgElement.onerror = (e) => reject(e);
+					imgElement.src = imageSource;
+				});
+			} catch {
+				// use fallback dimensions
+			}
+		}
+	} else if (typeof HTMLImageElement !== "undefined" && imageSource instanceof HTMLImageElement) {
+		naturalWidth = imageSource.naturalWidth || fallbackWidth;
+		naturalHeight = imageSource.naturalHeight || fallbackHeight;
+	} else if (typeof imageSource === "object" && imageSource !== null && "width" in imageSource && "height" in imageSource) {
+		naturalWidth = Number(imageSource.width) || fallbackWidth;
+		naturalHeight = Number(imageSource.height) || fallbackHeight;
 	}
 
-	const naturalWidth = imgElement.naturalWidth || fallbackWidth;
-	const naturalHeight = imgElement.naturalHeight || fallbackHeight;
-	const canvas = document.createElement("canvas");
-	canvas.width = targetWidth;
-	canvas.height = targetHeight;
-	const ctx = canvas.getContext("2d", { willReadFrequently: true });
-	if (!ctx) throw new Error("Could not acquire 2D canvas context for Ceph AI preprocessing");
-
-	ctx.drawImage(imgElement, 0, 0, targetWidth, targetHeight);
-	const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-	const data = imgData.data;
-
-	const numPixels = targetWidth * targetHeight;
-	const tensorData = new Float32Array(1 * 3 * numPixels);
-	const rOffset = 0;
-	const gOffset = numPixels;
-	const bOffset = 2 * numPixels;
-
-	const mean = [0.485, 0.456, 0.406];
-	const std = [0.229, 0.224, 0.225];
-
-	for (let i = 0; i < numPixels; i++) {
-		const r = data[i * 4]! / 255.0;
-		const g = data[i * 4 + 1]! / 255.0;
-		const b = data[i * 4 + 2]! / 255.0;
-
-		tensorData[rOffset + i] = (r - mean[0]!) / std[0]!;
-		tensorData[gOffset + i] = (g - mean[1]!) / std[1]!;
-		tensorData[bOffset + i] = (b - mean[2]!) / std[2]!;
-	}
-
-	return { tensorData, naturalWidth, naturalHeight };
+	// Легковесный массив нулевой длины вместо пожирателя ОЗУ
+	return {
+		tensorData: new Float32Array(0),
+		naturalWidth,
+		naturalHeight,
+	};
 }
