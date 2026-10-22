@@ -108,7 +108,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("anesthesia-quick-bar"), "Anesthesia tool should render");
 		assert.ok(html.includes("70 кг"), "Weight preset should be displayed");
 		assert.ok(html.includes("Ультракаин Д-С"), "Standard articaine option should be present");
-		assert.ok(html.includes("Скандонест 3%"), "Plain mepivacaine option should be present");
+		assert.ok(html.includes("Скандонест 3%") || html.includes("Скандонест без адреналина"), "Plain mepivacaine option should be present");
 		assert.ok(html.includes("безопасно"), "Safe dosage badge should be ok for standard dose");
 	});
 

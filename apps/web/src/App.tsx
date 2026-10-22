@@ -1806,9 +1806,6 @@ export function App() {
 									state: "Healthy",
 									surfaces: ["O", "M"],
 									mobility: 0,
-									isImplant: false,
-									hasCrown: false,
-									isMissing: false,
 								}}
 							/>
 						</React.Suspense>

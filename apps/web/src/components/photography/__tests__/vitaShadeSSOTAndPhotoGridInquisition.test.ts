@@ -184,7 +184,11 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		const modalsPath = path.resolve(webSrc, "components/patients/PatientWorkspaceModals.tsx");
 
 		const workspaceContent = fs.readFileSync(workspacePath, "utf-8");
-		const modalsContent = fs.readFileSync(modalsPath, "utf-8");
+		const modalsViewPath = path.resolve(webSrc, "components/patients/workspaceModals/PatientWorkspaceModalsView.tsx");
+		const modalsContent = [
+			fs.readFileSync(modalsPath, "utf-8"),
+			fs.existsSync(modalsViewPath) ? fs.readFileSync(modalsViewPath, "utf-8") : "",
+		].join("\n");
 
 		const toolbarPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceToolbar.tsx");
 		const scansTabPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceScansTab.tsx");

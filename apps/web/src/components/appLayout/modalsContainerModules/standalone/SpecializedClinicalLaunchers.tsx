@@ -38,6 +38,12 @@ const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
 	})),
 );
 
+const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
+	import("../../../diagnostics/OrthodonticPhotoProtocolModal").then((module) => ({
+		default: module.OrthodonticPhotoProtocolModal,
+	})),
+);
+
 const CephalometricAnalysisModal = lazyWithRetry(() =>
 	import("../../../orthodontics/CephalometricAnalysisModal").then((module) => ({
 		default: module.CephalometricAnalysisModal,
@@ -514,6 +520,8 @@ export function renderSpecializedClinicalLaunchers({
 	// CLINICAL PHOTO PROTOCOL & BEFORE/AFTER STANDALONE LAUNCHER (?photo-protocol=demo, #photo-protocol, #photo)
 	const isPhotoProtocolDirect =
 		typeof window !== "undefined" &&
+		!window.location.hash.toLowerCase().includes("ortho") &&
+		!new URLSearchParams(window.location.search).has("ortho") &&
 		(new URLSearchParams(window.location.search).has("photo-protocol") ||
 			new URLSearchParams(window.location.search).has("photo") ||
 			window.location.hash.toLowerCase().includes("photo-protocol") ||
@@ -534,6 +542,34 @@ export function renderSpecializedClinicalLaunchers({
 					patientName="Ковалев Дмитрий Сергеевич"
 					patientCardNumber="К-8492"
 					doctorName="Д-р Смирнова Е. В."
+				/>
+			</Suspense>
+		);
+	}
+
+	// ORTHODONTIC 8-SLOT PHOTO PROTOCOL STANDALONE LAUNCHER (?ortho-photo=1, #ortho-photo, #orthodontic-photo)
+	const isOrthoPhotoDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("ortho-photo") ||
+			new URLSearchParams(window.location.search).has("orthodontic-photo") ||
+			window.location.hash.toLowerCase().includes("ortho-photo") ||
+			window.location.hash.toLowerCase().includes("orthodontic-photo"));
+
+	if (isOrthoPhotoDirect) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка ортодонтического фотопротокола..." />}>
+				<OrthodonticPhotoProtocolModal
+					isOpen={true}
+					onClose={() => {
+						const url = new URL(window.location.href);
+						url.searchParams.delete("ortho-photo");
+						url.searchParams.delete("orthodontic-photo");
+						const cleanHash = url.hash.includes("ortho") ? "" : url.hash;
+						window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
+					}}
+					patientName="Ковалев Дмитрий Сергеевич"
+					doctorName="Д-р Смирнова Е. В."
+					clinicName="DENTE Clinic"
 				/>
 			</Suspense>
 		);
