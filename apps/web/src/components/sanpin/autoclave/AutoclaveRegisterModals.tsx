@@ -1,6 +1,6 @@
 import React from "react";
 import { KraftPackageBarcodeModal } from "../kraft/KraftPackageBarcodeModal";
-import { AutoclaveLog257Modal } from "../autoclaveLog/AutoclaveLog257Modal";
+import { AutoclaveSterilizationLogModal } from "../autoclaveLog/AutoclaveSterilizationLogModal";
 import { MedicalWasteJournalModal } from "../waste/MedicalWasteJournalModal";
 import { SterilizerEquipmentModal } from "../SterilizerEquipmentModal";
 import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
@@ -53,7 +53,7 @@ export const AutoclaveRegisterModals: React.FC<AutoclaveRegisterModalsProps> = (
 				onClose={() => setIsKraftModalOpen(false)}
 			/>
 
-			<AutoclaveLog257Modal
+			<AutoclaveSterilizationLogModal
 				isOpen={isJournal257ModalOpen}
 				initialTab="journal_257"
 				onClose={() => setIsJournal257ModalOpen(false)}

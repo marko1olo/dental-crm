@@ -1,8 +1,9 @@
 import type { SterilizationLogRecord } from "@dental/shared";
-import { Award, CheckCircle2, MoreHorizontal, Printer, QrCode, Tag } from "lucide-react";
+import { Award, CheckCircle2 } from "lucide-react";
 import React from "react";
-import { AutoclaveIndicatorBadge } from "./AutoclaveIndicatorBadge";
-import { getPackagingLabel } from "./types";
+import { AutoclaveCycleInfoCells } from "./AutoclaveCycleInfoCells";
+import { AutoclaveCycleResultCells } from "./AutoclaveCycleResultCells";
+import { AutoclaveRowActionMenu } from "./AutoclaveRowActionMenu";
 
 export interface AutoclaveCycleRowItemProps {
 	readonly log: SterilizationLogRecord;
@@ -36,42 +37,7 @@ export function AutoclaveCycleRowItem({
 			className="sanpin-log-row"
 			style={{ minHeight: "44px", contentVisibility: "auto", containIntrinsicSize: "1px 44px", contain: "content" }}
 		>
-			<td style={{ width: "10%", whiteSpace: "nowrap" }}>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", whiteSpace: "nowrap" }}>
-					<span style={{ fontWeight: 700, fontSize: "0.78rem", color: "var(--ink)" }}>№{log.cycleNumber}</span>
-					<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
-						{safeDate.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })}{" "}
-						{safeDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-					</span>
-				</div>
-			</td>
-
-			<td style={{ width: "13%" }}>
-				<div
-					style={{ fontWeight: 600, fontSize: "0.76rem", lineHeight: 1.25, wordBreak: "break-word" }}
-					title={`${deviceName}${log.serialNumber ? ` (Зав. №${log.serialNumber})` : ""}`}
-				>
-					{deviceName}
-				</div>
-			</td>
-
-			<td style={{ width: "19%" }}>
-				<div
-					style={{ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.25, wordBreak: "break-word" }}
-					title={log.itemsDescription || "Стоматологический набор"}
-				>
-					{log.itemsDescription || "Стоматологический набор"}
-				</div>
-			</td>
-
-			<td style={{ width: "11%" }}>
-				<div
-					style={{ fontSize: "0.74rem", color: "var(--ink)", lineHeight: 1.25, wordBreak: "break-word" }}
-					title={getPackagingLabel(log.packagingType)}
-				>
-					{getPackagingLabel(log.packagingType)}
-				</div>
-			</td>
+			<AutoclaveCycleInfoCells log={log} safeDate={safeDate} deviceName={deviceName} />
 
 			<td style={{ width: "10%", whiteSpace: "nowrap" }}>
 				<div style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
@@ -84,49 +50,7 @@ export function AutoclaveCycleRowItem({
 				</div>
 			</td>
 
-			<td style={{ width: "7%", whiteSpace: "nowrap" }}>
-				<AutoclaveIndicatorBadge
-					indicatorType={log.indicatorType}
-					passed={log.passedIndicator !== false}
-				/>
-			</td>
-
-			<td style={{ width: "7%", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-				{log.expiresAt && !isNaN(new Date(log.expiresAt).getTime()) ? (
-					<span style={{ fontWeight: 600, color: "#059669" }}>
-						{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
-					</span>
-				) : (
-					<span style={{ color: "var(--muted)" }}>Сразу</span>
-				)}
-			</td>
-
-			<td style={{ width: "10%", minWidth: "110px", whiteSpace: "nowrap", overflow: "hidden" }}>
-				{log.barcode ? (
-					<span
-						style={{
-							fontSize: "0.72rem",
-							fontFamily: "monospace",
-							color: "var(--brand-primary, #2563eb)",
-							fontWeight: 700,
-							background: "rgba(37, 99, 235, 0.08)",
-							padding: "0.15rem 0.4rem",
-							borderRadius: "4px",
-							whiteSpace: "nowrap",
-							maxWidth: "100%",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-							display: "inline-block",
-							verticalAlign: "middle",
-						}}
-						title={`Штрихкод крафт-пакета: ${log.barcode}`}
-					>
-						{log.barcode}
-					</span>
-				) : (
-					<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>—</span>
-				)}
-			</td>
+			<AutoclaveCycleResultCells log={log} />
 
 			<td style={{ width: "13%", minWidth: "120px", whiteSpace: "nowrap" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", whiteSpace: "nowrap" }}>
@@ -150,68 +74,15 @@ export function AutoclaveCycleRowItem({
 						</button>
 					)}
 
-					<div style={{ position: "relative" }}>
-						<button
-							type="button"
-							onClick={onToggleMenu}
-							className="sanpin-btn sanpin-btn-secondary"
-							style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-							title="Дополнительные действия печати и этикеток"
-							aria-label="Опции этикеток"
-						>
-							<MoreHorizontal size={13} />
-						</button>
-
-						{isMenuOpen && (
-							<div
-								ref={menuRef}
-								style={{
-									position: "absolute",
-									right: 0,
-									top: "100%",
-									marginTop: "4px",
-									zIndex: 40,
-									width: "230px",
-									background: "var(--paper, #ffffff)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "8px",
-									boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
-									padding: "0.3rem",
-									display: "flex",
-									flexDirection: "column",
-									gap: "0.2rem",
-								}}
-							>
-								<button
-									type="button"
-									onClick={() => onOpenKraftForLog(log)}
-									style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", fontSize: "0.75rem", textAlign: "left", background: "none", border: "none", borderRadius: "4px", cursor: "pointer", color: "var(--ink)" }}
-									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-								>
-									<QrCode size={13} color="var(--brand-primary)" />
-									<span>Партия в студии термоэтикеток</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => onPrintSinglePouch(log)}
-									style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", fontSize: "0.75rem", textAlign: "left", background: "none", border: "none", borderRadius: "4px", cursor: "pointer", color: "var(--ink)" }}
-									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-								>
-									<Tag size={13} />
-									<span>Печать 1 этикетки (58x40 мм)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => onPrintBatchPouches(log, 10)}
-									style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.4rem 0.6rem", fontSize: "0.75rem", textAlign: "left", background: "none", border: "none", borderRadius: "4px", cursor: "pointer", color: "var(--teal, #0d9488)", fontWeight: 600 }}
-									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
-								>
-									<Printer size={13} />
-									<span>Печать пачки 10 шт (30 дней)</span>
-								</button>
-							</div>
-						)}
-					</div>
+					<AutoclaveRowActionMenu
+						log={log}
+						isMenuOpen={isMenuOpen}
+						onToggleMenu={onToggleMenu}
+						menuRef={menuRef}
+						onOpenKraftForLog={onOpenKraftForLog}
+						onPrintSinglePouch={onPrintSinglePouch}
+						onPrintBatchPouches={onPrintBatchPouches}
+					/>
 				</div>
 			</td>
 		</tr>

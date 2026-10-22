@@ -63,13 +63,13 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
+					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:opacity-90 text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
-					title="Подтвердить цикл стерилизации смены в 1 клик (автоклавы 134°C, азопирам норма, автоматическое списание пакетов со склада)"
+					title="Заполнить санитарные журналы за смену в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
 				>
 					<CheckCircle2 size={15} className="shrink-0 text-white" />
-					<span>{autoFilling ? "Сохранение смены..." : "Подтвердить цикл стерилизации смены"}</span>
+					<span>{autoFilling ? "Заполнение журналов..." : "Заполнить журналы за смену"}</span>
 				</button>
 
 				<button
@@ -78,7 +78,7 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					className="secondary-button sanpin-btn-export-cta sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
 					data-testid="sanpin-print-form257-btn"
 					data-action="print-form257"
-					title="Печать сводного журнала контроля стерилизации"
+					title="Печать сводного журнала контроля автоклавирования"
 				>
 					<Printer size={14} className="shrink-0" />
 					<span>Журнал автоклавирования</span>

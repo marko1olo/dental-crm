@@ -16,7 +16,7 @@ export const AutoclaveLogModalTabs: React.FC<AutoclaveLogModalTabsProps> = ({
 }) => {
 	return (
 		<div className="px-6 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center shrink-0">
-			<div className="dente-segmented-bar" role="tablist" aria-label="Вкладки журнала автоклава">
+			<div className="dente-segmented-bar" role="tablist" aria-label="Вкладки журнала контроля автоклавирования">
 				<button
 					type="button"
 					role="tab"

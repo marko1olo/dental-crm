@@ -94,8 +94,8 @@ export function SanpinUvAndCleaningRegisterTab({
 						data-testid="subtab-bactericidal-btn"
 					>
 						<Wind size={14} color={activeSubTab === "bactericidal" ? "var(--teal, #0d9488)" : "currentColor"} />
-						<span className="hidden md:inline">Обеззараживание воздуха (рециркуляторы)</span>
-						<span className="inline md:hidden">Дезар / Воздух</span>
+						<span className="hidden md:inline">Обеззараживание воздуха и УФ-облучатели</span>
+						<span className="inline md:hidden">УФ-воздух</span>
 					</button>
 
 					<button
@@ -130,7 +130,7 @@ export function SanpinUvAndCleaningRegisterTab({
 				</div>
 
 				<div className="text-xs text-[var(--muted,#64748b)] hidden md:block">
-					Санитарный контроль: готовность кабинета, обеззараживание воздуха и режим чистоты
+					Санитарный режим: готовность кабинета, обеззараживание воздуха и УФ-облучатели
 				</div>
 			</div>
 

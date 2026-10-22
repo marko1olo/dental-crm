@@ -4,10 +4,12 @@
  */
 
 import { calculateLampOperatingHours } from "@dental/shared";
-import { AlertTriangle, CheckCircle2, Sparkles, Wind } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import { showToast } from "../../GlobalToast";
-import type { BactericidalExposureLog, CabinetBactericidalTimerProps } from "./types";
+import { showToast } from "../../GlobalToast.js";
+import { CabinetLampDurationSelector } from "./CabinetLampDurationSelector.js";
+import { CabinetLampStatusBadge } from "./CabinetLampStatusBadge.js";
+import type { BactericidalExposureLog, CabinetBactericidalTimerProps } from "./types.js";
 
 export function CabinetBactericidalTimer({
 	selectedCabinet,
@@ -19,10 +21,9 @@ export function CabinetBactericidalTimer({
 }: CabinetBactericidalTimerProps) {
 	const [selectedDurationMinutes, setSelectedDurationMinutes] = useState<number>(30);
 	const [operatingHours, setOperatingHours] = useState<number>(initialOperatingHours);
-	const [mode, setMode] = useState<"closed_recirculator" | "open_uv">("closed_recirculator");
+	const [mode] = useState<"closed_recirculator" | "open_uv">("closed_recirculator");
 	const [lastLoggedAt, setLastLoggedAt] = useState<string | null>(null);
 
-	// Calculate statutory lamp lifecycle
 	const lampCalc = useMemo(() => {
 		return calculateLampOperatingHours(operatingHours, 0, maxLampHours);
 	}, [operatingHours, maxLampHours]);
@@ -45,9 +46,7 @@ export function CabinetBactericidalTimer({
 			mode,
 		};
 
-		if (onExposureLogged) {
-			onExposureLogged(logEntry);
-		}
+		if (onExposureLogged) onExposureLogged(logEntry);
 
 		showToast(
 			`Зафиксировано в журнале: ${selectedCabinet}, ${lampModel}, +${selectedDurationMinutes} мин (наработка ${nextHours}/${maxLampHours} ч)`,
@@ -66,60 +65,15 @@ export function CabinetBactericidalTimer({
 				padding: "0.85rem 1.1rem",
 			}}
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "1rem",
-					flexWrap: "wrap",
-					marginBottom: "0.5rem",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-					<Wind size={19} color="var(--brand-primary, #2563eb)" />
-					<div>
-						<h3 style={{ fontSize: "0.92rem", fontWeight: 700, margin: 0, color: "var(--ink, #1e293b)" }}>
-							Обеззараживание воздуха и контроль ресурса ламп (Дезар)
-						</h3>
-						<span style={{ fontSize: "0.76rem", color: "var(--muted, #64748b)" }}>
-							{lampModel} • {selectedCabinet}
-						</span>
-					</div>
-				</div>
+			<CabinetLampStatusBadge
+				lampModel={lampModel}
+				selectedCabinet={selectedCabinet}
+				operatingHours={operatingHours}
+				maxLampHours={maxLampHours}
+				lampStatus={lampCalc.lampStatus}
+				remainingPercent={lampCalc.remainingPercent}
+			/>
 
-				{/* Lamp Hours Badge */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-					<span
-						style={{
-							padding: "0.2rem 0.55rem",
-							borderRadius: "0.375rem",
-							fontSize: "0.75rem",
-							fontWeight: 700,
-							background:
-								lampCalc.lampStatus === "expired_replace_now"
-									? "rgba(239, 68, 68, 0.15)"
-									: lampCalc.lampStatus === "warning_replace_soon"
-										? "rgba(245, 158, 11, 0.15)"
-										: "rgba(16, 185, 129, 0.15)",
-							color:
-								lampCalc.lampStatus === "expired_replace_now"
-									? "var(--bad-fg, #ef4444)"
-									: lampCalc.lampStatus === "warning_replace_soon"
-										? "var(--warn-fg, #b45309)"
-										: "var(--ok-fg, #059669)",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.3rem",
-						}}
-					>
-						{lampCalc.lampStatus === "normal" ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
-						<span>Наработка: {operatingHours} / {maxLampHours} ч ({lampCalc.remainingPercent}% остаток)</span>
-					</span>
-				</div>
-			</div>
-
-			{/* Mode & 1-Click Batch Controls */}
 			<div
 				style={{
 					display: "grid",
@@ -128,37 +82,11 @@ export function CabinetBactericidalTimer({
 					alignItems: "center",
 				}}
 			>
-				{/* Preset selection */}
-				<div>
-					<label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--muted, #64748b)", display: "block", marginBottom: "0.35rem" }}>
-						Режим экспозиции:
-					</label>
-					<div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-						{[15, 30, 60].map((mins) => (
-							<button
-								key={mins}
-								type="button"
-								onClick={() => setSelectedDurationMinutes(mins)}
-								className="secondary-button"
-								style={{
-									minHeight: "40px",
-									padding: "0.35rem 0.75rem",
-									borderRadius: "0.5rem",
-									fontSize: "0.82rem",
-									fontWeight: selectedDurationMinutes === mins ? 800 : 600,
-									border: selectedDurationMinutes === mins ? "2px solid var(--teal, #0d9488)" : "1px solid var(--paper-border, #cbd5e1)",
-									background: selectedDurationMinutes === mins ? "rgba(13, 148, 136, 0.1)" : "var(--paper-subtle, #f8fafc)",
-									color: selectedDurationMinutes === mins ? "var(--teal, #0d9488)" : "inherit",
-									cursor: "pointer",
-								}}
-							>
-								{mins} минут
-							</button>
-						))}
-					</div>
-				</div>
+				<CabinetLampDurationSelector
+					selectedDurationMinutes={selectedDurationMinutes}
+					setSelectedDurationMinutes={setSelectedDurationMinutes}
+				/>
 
-				{/* 1-Click Action Button */}
 				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
 					{lastLoggedAt && (
 						<div style={{ fontSize: "0.78rem", color: "var(--ok-fg, #059669)", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}>

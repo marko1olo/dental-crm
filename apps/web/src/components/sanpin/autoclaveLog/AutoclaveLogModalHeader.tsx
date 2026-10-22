@@ -13,7 +13,7 @@ export const AutoclaveLogModalHeader: React.FC<AutoclaveLogModalHeaderProps> = (
 					<ShieldCheck size={24} />
 				</div>
 				<div className="autoclave-log-title-text">
-					<h2>Журнал работы автоклава</h2>
+					<h2>Журнал контроля автоклавирования</h2>
 					<p>Стерилизация инструментов • Паровой (Класс B) и воздушный режимы</p>
 				</div>
 			</div>
@@ -22,7 +22,7 @@ export const AutoclaveLogModalHeader: React.FC<AutoclaveLogModalHeaderProps> = (
 				type="button"
 				onClick={onClose}
 				className="autoclave-log-close-btn"
-				title="Закрыть журнал работы автоклава"
+				title="Закрыть журнал контроля автоклавирования"
 			>
 				<X size={20} />
 			</button>

@@ -37,7 +37,7 @@ export function PsoMobileCards({
 					<FlaskConical size={34} className="text-[var(--brand-primary,#0284c7)]" />
 					<div className="font-bold text-base text-[var(--ink)]">Журнал проверок чистоты пуст</div>
 					<p className="text-xs text-[var(--muted)] leading-relaxed">
-						Нет записей азопирамовых и фенолфталеиновых проб за выбранный период (СанПиН 3.3686-21, контроль предстерилизационной очистки).
+						Нет записей азопирамовых и фенолфталеиновых проб за выбранный период (контроль очистки инструментов).
 					</p>
 					<button
 						type="button"

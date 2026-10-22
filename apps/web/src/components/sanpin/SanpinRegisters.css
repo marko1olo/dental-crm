@@ -1849,6 +1849,50 @@
 	color: var(--ink, #e2e8f0);
 }
 
+/* Apple HIG Mobile Ergonomics & Anti-Desktop-Squeeze */
+@media (max-width: 768px) {
+	.sanpin-container {
+		padding: 0.5rem !important;
+		max-width: 100vw !important;
+		overflow-x: clip !important;
+		box-sizing: border-box !important;
+	}
+
+	.sanpin-header {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.5rem !important;
+	}
+
+	.sanpin-header-actions {
+		width: 100% !important;
+		display: flex !important;
+		gap: 0.5rem !important;
+	}
+
+	.sanpin-header-actions .sanpin-btn-primary-cta {
+		flex: 1 1 auto !important;
+		min-height: 44px !important;
+		height: 44px !important;
+		font-size: 14px !important;
+		border-radius: 12px !important;
+	}
+
+	.sanpin-tabs-strip {
+		width: 100% !important;
+		overflow-x: auto !important;
+		scrollbar-width: none !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.sanpin-tabs-strip .sanpin-tab-btn {
+		min-height: 44px !important;
+		height: 44px !important;
+		padding: 0 12px !important;
+	}
+}
+
+
 
 
 

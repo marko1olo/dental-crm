@@ -1,12 +1,12 @@
 // Desktop density styling contract: { height: "32px", minHeight: "32px" }
 import React from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { SanpinAutoclaveRegisterTab } from "./SanpinAutoclaveRegisterTab";
+import { AutoclaveRegisterTab } from "./AutoclaveRegisterTab";
 import { PsoRegisterTab } from "./PsoRegisterTab";
 import { SanpinUvAndCleaningRegisterTab } from "./SanpinUvAndCleaningRegisterTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
+import { AutoclaveSterilizationLogModal } from "./autoclaveLog/AutoclaveSterilizationLogModal";
 import { SanpinRegistersHeader } from "./SanpinRegistersHeader";
 import { useSanpinRegistersLogic } from "./registers/useSanpinRegistersLogic";
 import { SanpinKpiSummaryGrid } from "./registers/SanpinKpiSummaryGrid";
@@ -67,7 +67,7 @@ function SanpinRegistersInner({
 			)}
 
 			{logic.activeTab === "autoclave" && (
-				<SanpinAutoclaveRegisterTab key={`autoclave-tab-${logic.refreshCounter}`} />
+				<AutoclaveRegisterTab key={`autoclave-tab-${logic.refreshCounter}`} />
 			)}
 			{logic.activeTab === "pso" && (
 				<PsoRegisterTab key={`pso-tab-${logic.refreshCounter}`} />
@@ -80,7 +80,7 @@ function SanpinRegistersInner({
 				isOpen={logic.isKraftModalOpen}
 				onClose={() => logic.setIsKraftModalOpen(false)}
 			/>
-			<AutoclaveLog257Modal
+			<AutoclaveSterilizationLogModal
 				isOpen={logic.isJournal257ModalOpen}
 				initialTab="journal_257"
 				onClose={() => logic.setIsJournal257ModalOpen(false)}

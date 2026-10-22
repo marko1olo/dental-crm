@@ -90,11 +90,11 @@ export function SanPinJournalBatchButtons({
 					onClick={onQuickPsoNorm}
 					aria-busy={isAutofilling}
 					className="secondary-button h-9 min-h-[36px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
-					title="Предстерилизационная очистка: азопирам и фенолфталеин отрицательно (100% норма)"
+					title="Контроль очистки инструментов: азопирам и фенолфталеин отрицательно (100% норма)"
 					data-testid="quick-pso-norm-btn"
 				>
 					<ShieldCheck size={14} />
-					<span>Предстерилизационная очистка: норма</span>
+					<span>Очистка (Азопирам): норма</span>
 				</button>
 			)}
 		</div>
