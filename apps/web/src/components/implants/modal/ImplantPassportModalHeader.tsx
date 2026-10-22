@@ -1,13 +1,14 @@
 import React from "react";
 import { Printer, Sliders, X } from "lucide-react";
 import { DentalImplant } from "../../icons/DentalIcons";
+import type { ImplantModalTab } from "./useImplantPassportLogic";
 
 export interface ImplantPassportModalHeaderProps {
 	readonly titleId: string;
 	readonly toothFdi: number;
 	readonly patientName: string;
 	readonly doctorName: string;
-	readonly activeTab: "protocol" | "isq" | "diary" | "passport";
+	readonly activeTab: ImplantModalTab;
 	readonly onTogglePassportView: () => void;
 	readonly onPrintPassport: () => void;
 	readonly onClose: () => void;
@@ -33,8 +34,9 @@ export const ImplantPassportModalHeader: React.FC<ImplantPassportModalHeaderProp
 					</div>
 					<div className="min-w-0 flex-1 overflow-hidden">
 						<h2 id={titleId}>
-							<span className="title-text">Паспорт дентального имплантата</span>
-							<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shrink-0 whitespace-nowrap">
+							<span className="title-text hidden sm:inline">Протокол & Паспорт имплантата</span>
+							<span className="title-text sm:hidden">Имплантация</span>
+							<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shrink-0 whitespace-nowrap ml-2">
 								#{toothFdi}
 							</span>
 						</h2>
@@ -63,7 +65,7 @@ export const ImplantPassportModalHeader: React.FC<ImplantPassportModalHeaderProp
 						data-testid="btn-toggle-passport-view"
 					>
 						<Sliders size={15} className="shrink-0" />
-						<span>{activeTab === "passport" ? "Параметры" : "Предпросмотр карты"}</span>
+						<span>{activeTab === "passport" ? "Параметры" : "Паспорт"}</span>
 					</button>
 
 					<button
@@ -80,3 +82,5 @@ export const ImplantPassportModalHeader: React.FC<ImplantPassportModalHeaderProp
 		</>
 	);
 };
+
+export default ImplantPassportModalHeader;

@@ -4,5 +4,4 @@
 export * from "./presets/implantPresetTypes";
 export * from "./presets/implantPresetConstants";
 export * from "./presets/implantStockDefaults";
-export * from "./presets/implantBarcodeParser";
 export * from "./presets/implantDensityHelpers";

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
 	getBoneDensityByToothFdi,
+	getAnatomicalImplantDefaults,
 	type FastImplantPassportData,
 	type MischDensity,
 	type ImplantCapType,
@@ -12,10 +13,12 @@ import {
 } from "../implantQuickPresets";
 import { buildAssembledPassportData } from "./assemblePassportData";
 
+export type ImplantModalTab = "protocol" | "diary" | "passport";
+
 export interface UseImplantPassportLogicParams {
 	readonly isOpen: boolean;
 	readonly initialTooth: number;
-	readonly initialTab?: ("protocol" | "isq" | "diary" | "passport") | undefined;
+	readonly initialTab?: ImplantModalTab | undefined;
 	readonly inventoryOverdraftActive?: boolean | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | undefined;
@@ -29,7 +32,7 @@ export interface UseImplantPassportLogicParams {
 export function useImplantPassportLogic(params: {
 	isOpen: boolean;
 	initialTooth: number;
-	initialTab?: ("protocol" | "isq" | "diary" | "passport") | undefined;
+	initialTab?: ImplantModalTab | "isq" | undefined;
 	inventoryOverdraftActive?: boolean | undefined;
 	patientName: string;
 	patientId: string;
@@ -39,22 +42,23 @@ export function useImplantPassportLogic(params: {
 	onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
 	onClose: () => void;
 }) {
+	const initialDefaults = getAnatomicalImplantDefaults(params.initialTooth);
 	const [toothFdi, setToothFdi] = useState<number>(params.initialTooth);
 	const [selectedBrand, setSelectedBrand] = useState<string>("Osstem");
-	const [diameterMm, setDiameterMm] = useState<number>(4.0);
-	const [lengthMm, setLengthMm] = useState<number>(10.0);
+	const [diameterMm, setDiameterMm] = useState<number>(initialDefaults.diameterMm);
+	const [lengthMm, setLengthMm] = useState<number>(initialDefaults.lengthMm);
 	const [torqueNcm, setTorqueNcm] = useState<number>(35);
 	const [boneDensity, setBoneDensity] = useState<MischDensity>(() => getBoneDensityByToothFdi(params.initialTooth));
-	const [isqValue, setIsqValue] = useState<number>(72);
 	const [capType, setCapType] = useState<ImplantCapType>("fdm");
 	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
 	const [lotNumber, setLotNumber] = useState<string>("24C1208");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-884210");
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
 	const [isOverdraftDismissed, setIsOverdraftDismissed] = useState<boolean>(false);
-	const [activeTab, setActiveTab] = useState<"protocol" | "isq" | "diary" | "passport">(params.initialTab || "protocol");
+	const [activeTab, setActiveTab] = useState<ImplantModalTab>(
+		params.initialTab === "isq" ? "protocol" : (params.initialTab as ImplantModalTab) || "protocol",
+	);
 	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(false);
-	const [isIsqEnabled, setIsIsqEnabled] = useState<boolean>(false);
 
 	const [stockItems, setStockItems] = useState<readonly ImplantWarehouseStockItem[]>(DEFAULT_CANONICAL_IMPLANT_STOCK);
 	const [stockConsumables, setStockConsumables] = useState<ImplantConsumablesStock>(DEFAULT_CANONICAL_CONSUMABLES);
@@ -89,26 +93,26 @@ export function useImplantPassportLogic(params: {
 
 	const consumablesCostRub = isGbrPerformed ? Number(activeGraft?.unitCostRub || 0) + Number(activeMembrane?.unitCostRub || 0) + Number(activeSuture?.unitCostRub || 0) : 0;
 	const doctorGrossMarginRub = Math.max(0, operationPriceRub - (implantCostRub + consumablesCostRub));
-	const isImmediateLoadingFeasible = torqueNcm >= 35 && torqueNcm <= 55 && (isIsqEnabled ? isqValue : 72) >= 70;
+	const isImmediateLoadingFeasible = torqueNcm >= 35 && torqueNcm <= 55;
 
 	const assembledData = buildAssembledPassportData({
 		toothFdi, brand: selectedSystem.brand, model: selectedSystem.model, catalogArticle,
 		diameterMm, lengthMm, torqueNcm, lotNumber, serialNumber, boneDensity,
-		isqDay0: isIsqEnabled ? isqValue : 72, capType, patientName: params.patientName,
+		isqDay0: 72, capType, patientName: params.patientName,
 		patientId: params.patientId, doctorName: params.doctorName, doctorId: params.doctorId,
 		isWarehouseOverdraft: Boolean(params.inventoryOverdraftActive), inventoryItemId: selectedStockItemId,
 		expirationDate, operationPriceRub, implantCostRub, consumablesCostRub, doctorGrossMarginRub,
 		isImmediateLoadingFeasible, boneGraftMaterial: isGbrPerformed ? activeGraft?.name : undefined,
 		membraneUsed: isGbrPerformed ? activeMembrane?.name : undefined,
-		sutureMaterial: isGbrPerformed ? activeSuture?.name : undefined,
+		sutureMaterial: isGbrPerformed ? (activeSuture?.name || "Викрил 4-0") : "Викрил 4-0",
 	});
 
 	return {
 		toothFdi, setToothFdi, selectedBrand, setSelectedBrand, diameterMm, setDiameterMm, lengthMm, setLengthMm,
-		torqueNcm, setTorqueNcm, boneDensity, setBoneDensity, isqValue, setIsqValue, capType, setCapType,
+		torqueNcm, setTorqueNcm, boneDensity, setBoneDensity, isqValue: 72, setIsqValue: () => {}, capType, setCapType,
 		catalogArticle, setCatalogArticle, lotNumber, setLotNumber, serialNumber, setSerialNumber,
 		scannedBarcode, setScannedBarcode, isOverdraftDismissed, setIsOverdraftDismissed, activeTab, setActiveTab,
-		isGbrPerformed, setIsGbrPerformed, isIsqEnabled, setIsIsqEnabled, stockItems, stockConsumables,
+		isGbrPerformed, setIsGbrPerformed, isIsqEnabled: false, setIsIsqEnabled: () => {}, stockItems, stockConsumables,
 		selectedStockItemId, setSelectedStockItemId, expirationDate, setExpirationDate, selectedGraftId, setSelectedGraftId,
 		selectedMembraneId, setSelectedMembraneId, selectedSutureId, setSelectedSutureId, operationPriceRub, setOperationPriceRub,
 		implantCostRub, consumablesCostRub, doctorGrossMarginRub, selectedSystem, activeGraft, activeMembrane, activeSuture,

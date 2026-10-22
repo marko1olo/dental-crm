@@ -1,0 +1,47 @@
+{
+  "subagent": "Implants & Surgery Protocol Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-23T00:07:30+04:00",
+  "target": "apps/web/src/components/implants/",
+  "mandates": [
+    "Mandate 8e: Doctor Autonomy (Zero disabled buttons, physiological defaults in 1-click)",
+    "Mandate 8n: Solo Doctor Sovereignty (1-3 chairs focus, zero unnecessary paperwork)",
+    "Mandate 8am: Single Primary CTA in DENTE emerald style",
+    "Mandate 8x: Clear Clinical Russian (no raw decree codes like 804n / 043/u in UI)",
+    "Mandate 8y: Zero pharmacologic paranoia, passive allergy indicators",
+    "Apple HIG: Touch targets >= 44px, natural thumb zone, native bottom sheet",
+    "Mandate 8zk: Red Team 4-State Visual Proof personally verified via read_file"
+  ],
+  "architecture_changes": {
+    "torque_ssot": "apps/web/src/components/implants/implantTorqueCatalog.ts unified Straumann, Nobel Biocare, Osstem, Dentium, Ankylos, Astra Tech, MegaGen, MIS torque specs and Ti-Base catalog into single canonical SSOT",
+    "purged_files": [
+      "apps/web/src/components/implants/torque/implantTorqueSpecsBase.ts",
+      "apps/web/src/components/implants/torque/implantTorqueSpecs.ts",
+      "apps/web/src/components/implants/torque/implantTiBaseCatalogA.ts",
+      "apps/web/src/components/implants/torque/implantTiBaseCatalog.ts",
+      "apps/web/src/components/implants/torque/implantTorqueHelpers.ts",
+      "apps/web/src/components/implants/torque/implantTorqueTypes.ts",
+      "apps/web/src/components/implants/isq/ImplantIsqControls.tsx",
+      "apps/web/src/components/implants/isq/ImplantIsqInterpretation.tsx",
+      "apps/web/src/components/implants/ImplantIsqTab.tsx",
+      "apps/web/src/components/implants/presets/implantBarcodeParser.ts"
+    ],
+    "express_protocol": "1-click surgical protocol (tooth FDI -> anatomical sizes Ø 4.5x10 / 3.5x12 / 4.0x10, torque 35 N*cm, FDM, Vicryl 4-0 suture, SOAP diary export, official implant passport & warranty certificate)",
+    "cta_buttons": "Strictly 1 Primary CTA button '✓ Зафиксировать протокол имплантации' (desktop) / '✓ Зафиксировать' (mobile touch >= 44px) + secondary print button"
+  },
+  "verification": {
+    "tests_passing": 61,
+    "tests_failing": 0,
+    "encoding_check": "UTF-8 without BOM across 15,507 files (Exit Code 0)",
+    "screenshots_verified": [
+      "docs/proofs/implants/01_pc_light_1440x900.png",
+      "docs/proofs/implants/02_pc_dark_1440x900.png",
+      "docs/proofs/implants/03_mobile_light_390x844.png",
+      "docs/proofs/implants/04_mobile_dark_390x844.png",
+      "docs/proofs/implants/pc_light_passport.png",
+      "docs/proofs/implants/pc_dark_passport.png",
+      "docs/proofs/implants/mobile_light_passport.png",
+      "docs/proofs/implants/mobile_dark_passport.png"
+    ]
+  }
+}

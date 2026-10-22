@@ -8,8 +8,8 @@ export const ImplantPassportClinicalGrid: React.FC<{
 	readonly formattedDate: string;
 	readonly capTypeRu: string;
 }> = ({ data, displayPatientName, displayDoctor, formattedDate, capTypeRu }) => {
-	const torqueText = data.torqueNcm ? `${data.torqueNcm} Н·см` : "35 Н·см (клиническая норма)";
-	const isqText = data.isqDay0 ? `${data.isqDay0} ISQ` : "72 ISQ (первичная фиксация)";
+	const torqueText = data.torqueNcm ? `${data.torqueNcm} Н·см` : "35 Н·см (клинический оптимум)";
+	const densityText = data.boneDensity ? `${data.boneDensity} (Misch)` : "D2 (Misch)";
 
 	return (
 		<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -43,14 +43,14 @@ export const ImplantPassportClinicalGrid: React.FC<{
 			</div>
 			<div className="min-w-0">
 				<span className="text-[11px] text-[var(--muted)] block">Первичный торк:</span>
-				<strong className="font-extrabold text-[var(--ink)] block font-mono">
+				<strong className="font-extrabold text-[var(--teal,#0d9488)] block font-mono">
 					{torqueText}
 				</strong>
 			</div>
 			<div className="min-w-0">
-				<span className="text-[11px] text-[var(--muted)] block">Стабильность ISQ:</span>
-				<strong className="font-extrabold text-[var(--teal,#0d9488)] block font-mono">
-					{isqText}
+				<span className="text-[11px] text-[var(--muted)] block">Плотность кости:</span>
+				<strong className="font-extrabold text-[var(--ink)] block font-mono">
+					{densityText}
 				</strong>
 			</div>
 			<div className="min-w-0">
@@ -62,3 +62,5 @@ export const ImplantPassportClinicalGrid: React.FC<{
 		</div>
 	);
 };
+
+export default ImplantPassportClinicalGrid;

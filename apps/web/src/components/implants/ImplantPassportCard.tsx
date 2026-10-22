@@ -13,9 +13,9 @@ export { AnatomicalJawArchSchema };
 
 export interface ImplantPassportCardProps {
 	readonly data: FastImplantPassportData;
-	readonly className?: string;
-	readonly onCopySummary?: () => void;
-	readonly onPrint?: () => void;
+	readonly className?: string | undefined;
+	readonly onCopySummary?: (() => void) | undefined;
+	readonly onPrint?: (() => void) | undefined;
 }
 
 export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
@@ -31,17 +31,17 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 	const displayDoctor = data.doctorName?.trim() || "________________________";
 	const toothAnatomy = getToothAnatomicalDescription(data.toothFdi);
 	const capTypeRu = data.capType === "plug" ? "Винт-заглушка (двухэтапный протокол с ушиванием наглухо)" : "ФДМ (формирователь десны, одноэтапный протокол)";
-	const barcodeSummary = `(01)${data.catalogArticle || "REF"}(10)${displayLot}(21)${displaySn}`;
+	const barcodeSummary = `REF ${data.catalogArticle || "REF"} · LOT ${displayLot} · SN ${displaySn}`;
 
 	const handleCopy = () => {
-		const text = `ПАСПОРТ ИМПЛАНТАТА (FDI #${data.toothFdi || "___"})\nПозиция: ${toothAnatomy}\nПациент: ${displayPatientName}\nСистема: ${data.brand} ${data.model} Ø ${data.diameterMm} x ${data.lengthMm} мм\nТорк: ${data.torqueNcm || 35} Н·см | ISQ: ${data.isqDay0 ?? 72}\nLOT: ${displayLot} | SN: ${displaySn}\nДата: ${formattedDate} · Врач: ${displayDoctor}`;
+		const text = `ПАСПОРТ ИМПЛАНТАТА (FDI #${data.toothFdi || "___"})\nПозиция: ${toothAnatomy}\nПациент: ${displayPatientName}\nСистема: ${data.brand} ${data.model} Ø ${data.diameterMm} x ${data.lengthMm} мм\nТорк: ${data.torqueNcm || 35} Н·см | Плотность: ${data.boneDensity || "D2"}\nREF: ${data.catalogArticle || "TS3S4010S"} | LOT: ${displayLot} | SN: ${displaySn}\nДата: ${formattedDate} · Врач: ${displayDoctor}`;
 		navigator.clipboard?.writeText(text);
 		onCopySummary?.();
 		showToast(`Паспорт имплантата #${data.toothFdi || ""} скопирован`, "success");
 	};
 
 	const handleShareWhatsApp = () => {
-		const text = encodeURIComponent(`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм\nLOT: ${displayLot} | Торк: ${data.torqueNcm || 35} Н·см | ISQ: ${data.isqDay0 ?? 72}`);
+		const text = encodeURIComponent(`Паспорт имплантата DENTE (Зуб FDI #${data.toothFdi || "___"})\nПациент: ${displayPatientName}\nИмплантат: ${data.brand} Ø${data.diameterMm}x${data.lengthMm}мм\nLOT: ${displayLot} | Торк: ${data.torqueNcm || 35} Н·см`);
 		window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
 		showToast(`Паспорт #${data.toothFdi || ""} отправлен в WhatsApp`, "success");
 	};

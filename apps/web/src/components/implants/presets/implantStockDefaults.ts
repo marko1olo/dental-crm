@@ -2,6 +2,30 @@ import type { ImplantWarehouseStockItem } from "./implantPresetTypes";
 import { CANONICAL_EURO_ASIAN_STOCK } from "./implantPremiumStockDefaults";
 export { DEFAULT_CANONICAL_CONSUMABLES } from "./implantConsumablesDefaults";
 
+export function parseStockDimensions(name: string): {
+	brand?: string;
+	diameterMm?: number;
+	lengthMm?: number;
+} {
+	const result: { brand?: string; diameterMm?: number; lengthMm?: number } = {};
+
+	if (/osstem/i.test(name)) result.brand = "Osstem";
+	else if (/dentium/i.test(name)) result.brand = "Dentium";
+	else if (/straumann/i.test(name)) result.brand = "Straumann";
+	else if (/nobel/i.test(name)) result.brand = "Nobel Biocare";
+	else if (/ankylos/i.test(name)) result.brand = "Ankylos";
+	else if (/astra/i.test(name)) result.brand = "Astra Tech";
+	else if (/megagen/i.test(name)) result.brand = "MegaGen";
+	else if (/neodent/i.test(name)) result.brand = "Neodent";
+
+	const sizeMatch = name.match(/Ø\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+	if (sizeMatch && sizeMatch[1] && sizeMatch[2]) {
+		result.diameterMm = parseFloat(sizeMatch[1]);
+		result.lengthMm = parseFloat(sizeMatch[2]);
+	}
+	return result;
+}
+
 export const DEFAULT_CANONICAL_IMPLANT_STOCK: readonly ImplantWarehouseStockItem[] = [
 	{
 		id: "inv-oss-3510",

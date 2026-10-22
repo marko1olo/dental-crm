@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Package } from "lucide-react";
+import { Sparkles, Package, Check } from "lucide-react";
 import type { MischDensity, ImplantCapType, ImplantWarehouseStockItem, ImplantConsumablesStock } from "./presets/implantPresetTypes";
 import { DEFAULT_CANONICAL_CONSUMABLES } from "./presets/implantStockDefaults";
 import { ImplantToothPicker } from "./protocol/ImplantToothPicker";
@@ -14,15 +14,15 @@ export interface ImplantProtocolTabProps {
 	readonly handleToothSelect: (fdi: number) => void;
 	readonly boneDensity: MischDensity;
 	readonly setBoneDensity: (b: MischDensity) => void;
-	readonly scannedBarcode: string;
-	readonly setScannedBarcode: (s: string) => void;
-	readonly handleApplyBarcode: (codeOverride?: string) => void;
+	readonly scannedBarcode?: string | undefined;
+	readonly setScannedBarcode?: ((s: string) => void) | undefined;
+	readonly handleApplyBarcode?: ((codeOverride?: string) => void) | undefined;
 	readonly isGbrPerformed: boolean;
 	readonly setIsGbrPerformed: (gbr: boolean) => void;
 	readonly capType: ImplantCapType;
 	readonly setCapType: (cap: ImplantCapType) => void;
-	readonly isIsqEnabled: boolean;
-	readonly setIsIsqEnabled: (en: boolean) => void;
+	readonly isIsqEnabled?: boolean | undefined;
+	readonly setIsIsqEnabled?: ((en: boolean) => void) | undefined;
 	readonly selectedBrand: string;
 	readonly handleBrandSelect: (brand: string) => void;
 	readonly diameterMm: number;
@@ -38,41 +38,42 @@ export interface ImplantProtocolTabProps {
 	readonly serialNumber: string;
 	readonly setSerialNumber: (sn: string) => void;
 	readonly isOverdraftActive: boolean;
-	readonly stockItems?: readonly ImplantWarehouseStockItem[];
-	readonly selectedStockItemId?: string;
-	readonly onSelectStockItem?: (item: ImplantWarehouseStockItem) => void;
-	readonly stockConsumables?: ImplantConsumablesStock;
-	readonly selectedGraftId?: string;
-	readonly onSelectGraftId?: (id: string) => void;
-	readonly selectedMembraneId?: string;
-	readonly onSelectMembraneId?: (id: string) => void;
-	readonly selectedSutureId?: string;
-	readonly onSelectSutureId?: (id: string) => void;
-	readonly operationPriceRub?: number;
-	readonly setOperationPriceRub?: (price: number) => void;
-	readonly implantCostRub?: number;
-	readonly consumablesCostRub?: number;
-	readonly doctorGrossMarginRub?: number;
-	readonly expirationDate?: string;
-	readonly setExpirationDate?: (date: string) => void;
-	readonly isqValue?: number;
-	readonly setIsqValue?: (val: number) => void;
-	readonly onApplyStandardProtocol?: () => void;
-	readonly onApplyImmediateProtocol?: () => void;
-	readonly onApplyTwoStageProtocol?: () => void;
-	readonly onApplyGbrProtocol?: () => void;
+	readonly stockItems?: readonly ImplantWarehouseStockItem[] | undefined;
+	readonly selectedStockItemId?: string | undefined;
+	readonly onSelectStockItem?: ((item: ImplantWarehouseStockItem) => void) | undefined;
+	readonly stockConsumables?: ImplantConsumablesStock | undefined;
+	readonly selectedGraftId?: string | undefined;
+	readonly onSelectGraftId?: ((id: string) => void) | undefined;
+	readonly selectedMembraneId?: string | undefined;
+	readonly onSelectMembraneId?: ((id: string) => void) | undefined;
+	readonly selectedSutureId?: string | undefined;
+	readonly onSelectSutureId?: ((id: string) => void) | undefined;
+	readonly operationPriceRub?: number | undefined;
+	readonly setOperationPriceRub?: ((price: number) => void) | undefined;
+	readonly implantCostRub?: number | undefined;
+	readonly consumablesCostRub?: number | undefined;
+	readonly doctorGrossMarginRub?: number | undefined;
+	readonly expirationDate?: string | undefined;
+	readonly setExpirationDate?: ((date: string) => void) | undefined;
+	readonly isqValue?: number | undefined;
+	readonly setIsqValue?: ((val: number) => void) | undefined;
+	readonly onApplyStandardProtocol?: (() => void) | undefined;
+	readonly onApplyImmediateProtocol?: (() => void) | undefined;
+	readonly onApplyTwoStageProtocol?: (() => void) | undefined;
+	readonly onApplyGbrProtocol?: (() => void) | undefined;
 }
 
 export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => {
 	return (
 		<div className="implant-protocol-tab space-y-4" data-testid="tab-content-protocol">
-			<div className="banner-standard-protocol-preset implant-presets-section p-3 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.08))] border border-[var(--teal-soft,rgba(13,148,136,0.3))] space-y-2.5">
+			{/* 1-кликовый хирургический экспресс-протокол имплантации (Мандат 8e) */}
+			<div className="banner-standard-protocol-preset implant-presets-section p-3.5 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.08))] border border-[var(--teal-soft,rgba(13,148,136,0.3))] space-y-2.5">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2 min-w-0">
 						<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div className="text-xs">
-							<strong className="text-[var(--ink)] block">Стандартный хирургический протокол (1 клик):</strong>
-							<span className="text-[var(--muted)]">Ø 4.0×10 мм, 35 Н·см, ФДМ, охлаждение NaCl 0.9%, шов Викрил 4-0, списание со склада</span>
+							<strong className="text-[var(--ink)] block text-sm">Хирургический экспресс-протокол имплантации:</strong>
+							<span className="text-[var(--muted)]">1 клик: Ø 4.0/4.5×10 мм по зубу FDI, торк 35 Н·см, ФДМ, охлаждение 0.9% NaCl, шов Викрил 4-0</span>
 						</div>
 					</div>
 				</div>
@@ -81,12 +82,15 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 					<button
 						type="button"
 						onClick={props.onApplyStandardProtocol}
-						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
+						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full border-[var(--teal,#0d9488)] bg-[var(--paper)]"
 						data-testid="btn-apply-standard-protocol"
-						title="Стандарт: 35 Н·см, ISQ 72, формирователь десны ФДМ"
+						title="Стандарт: торк 35 Н·см, формирователь десны ФДМ, шов Викрил 4-0"
 					>
-						<span className="font-bold text-[var(--ink)] block truncate">Стандартный протокол</span>
-						<span className="text-[11px] text-[var(--muted)] block truncate">35 Н·см · ISQ 72 · ФДМ</span>
+						<span className="font-bold text-[var(--teal,#0d9488)] block truncate flex items-center gap-1.5">
+							<Check size={14} className="shrink-0" />
+							<span>Стандартный протокол</span>
+						</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">35 Н·см · ФДМ · Викрил 4-0</span>
 					</button>
 
 					<button
@@ -94,10 +98,10 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 						onClick={props.onApplyImmediateProtocol}
 						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
 						data-testid="btn-apply-immediate-protocol"
-						title="Одномоментная имплантация: лунка удаленного зуба, немедленная нагрузка (45 Н·см, ISQ 75)"
+						title="Одномоментная имплантация: лунка удаленного зуба, немедленная нагрузка (45 Н·см)"
 					>
-						<span className="font-bold text-[var(--teal,#0d9488)] block truncate">Немедленная нагрузка</span>
-						<span className="text-[11px] text-[var(--muted)] block truncate">45 Н·см · ISQ &ge; 70 · Одномоментно</span>
+						<span className="font-bold text-[var(--ink)] block truncate">Немедленная нагрузка</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">45 Н·см · Одномоментно</span>
 					</button>
 
 					<button
@@ -116,10 +120,10 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 						onClick={props.onApplyGbrProtocol}
 						className="secondary-button min-h-[44px] p-2.5 text-xs text-left flex flex-col justify-between gap-1 w-full"
 						data-testid="btn-apply-gbr-protocol"
-						title="Имплантация с НКР (GBR): Bio-Oss + Bio-Gide + пины/швы"
+						title="Имплантация с НКР (GBR): Bio-Oss + Bio-Gide + швы"
 					>
 						<span className="font-bold text-[var(--amber,#f59e0b)] block truncate">Костная пластика (НКР)</span>
-						<span className="text-[11px] text-[var(--muted)] block truncate">Bio-Oss + Bio-Gide + пины</span>
+						<span className="text-[11px] text-[var(--muted)] block truncate">Bio-Oss + Bio-Gide + швы</span>
 					</button>
 				</div>
 			</div>
@@ -131,10 +135,6 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 				setBoneDensity={props.setBoneDensity}
 				torqueNcm={props.torqueNcm}
 				setTorqueNcm={props.setTorqueNcm}
-				isIsqEnabled={props.isIsqEnabled}
-				setIsIsqEnabled={props.setIsIsqEnabled}
-				isqValue={props.isqValue}
-				setIsqValue={props.setIsqValue}
 			/>
 			<ImplantCapAndGbrSelector
 				capType={props.capType}
@@ -150,13 +150,13 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 				onSelectSutureId={props.onSelectSutureId}
 			/>
 
-			{/* Данные стерильной упаковки: прямой ввод артикула, партии и серийного номера без бутафорских задержек */}
+			{/* Идентификация изделия стерильной упаковки: прямой ввод LOT / SN / REF без процедурных симуляторов */}
 			<div className="implant-packaging-section p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Package size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<span className="text-xs font-bold text-[var(--ink)]">
-							Стерильная упаковка & Идентификация изделия (LOT / SN / REF):
+							Стерильная упаковка изделия (LOT / SN / REF):
 						</span>
 					</div>
 					<div className="flex items-center gap-2">
@@ -173,31 +173,8 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 						>
 							По умолчанию
 						</button>
-						<span className="text-[11px] text-[var(--muted)] hidden sm:inline">Быстрый ввод или склад клиники</span>
+						<span className="text-[11px] text-[var(--muted)] hidden sm:inline">Быстрое заполнение реквизитов</span>
 					</div>
-				</div>
-
-				<div className="relative">
-					<input
-						type="text"
-						value={props.scannedBarcode}
-						onChange={(e) => {
-							const val = e.target.value;
-							props.setScannedBarcode(val);
-							if (val.trim()) {
-								props.handleApplyBarcode(val);
-							}
-						}}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								e.preventDefault();
-								props.handleApplyBarcode();
-							}
-						}}
-						placeholder="Ввод маркировки упаковки (REF, LOT, SN или GS1 DataMatrix)..."
-						className="implant-input w-full min-h-[38px] px-3 text-xs font-mono"
-						data-testid="input-barcode-scanner input-scanned-barcode"
-					/>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">

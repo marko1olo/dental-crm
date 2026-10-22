@@ -22,7 +22,6 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 		handleApplyPulpitis1VisitPreset,
 		handleApplyPeriodontitisBioceramicPreset,
 		handleApplyCaOh2Preset,
-		handleApplyRetreatmentPreset,
 		handleApplyAnatomicalNorm,
 		handleTransferToDiary,
 	} = useChairsideQuickBarLogic(props);
@@ -39,7 +38,6 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 				onApplyPulpitis1Visit={handleApplyPulpitis1VisitPreset}
 				onApplyBioceramic={handleApplyPeriodontitisBioceramicPreset}
 				onApplyCaOh2={handleApplyCaOh2Preset}
-				onApplyRetreatment={handleApplyRetreatmentPreset}
 				onApplyNorm={handleApplyAnatomicalNorm}
 				onOpenFullModal={props.onOpenFullModal}
 			/>

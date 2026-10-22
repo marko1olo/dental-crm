@@ -74,18 +74,13 @@ export function useChairsideQuickBarLogic({
 	}, []);
 
 	const handleApplyPeriodontitisBioceramicPreset = useCallback(() => {
-		setCanals((prev) => prev.map((c) => ({ ...c, workingLengthMm: 21.0, masterApicalFile: "#30", taper: ".04", obturationType: "bioceramic" as const, sealer: "Биокерамика (BioRoot)", isObliterated: false, isRetreatment: false })));
+		setCanals((prev) => prev.map((c) => ({ ...c, workingLengthMm: 21.0, masterApicalFile: "#30", taper: ".04", obturationType: "bioceramic" as const, sealer: "Биокерамика (BioRoot)", isObliterated: false })));
 		showToast("Применён экспресс-пресет: Периодонтит / Биокерамика (21 мм · 30/.04 · BioRoot)", "success");
 	}, []);
 
 	const handleApplyCaOh2Preset = useCallback(() => {
-		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "temp_caoh2" as const, sealer: "Каласепт (Ca(OH)2)", isRetreatment: false })));
-		showToast("Применён экспресс-пресет: Временная повязка Ca(OH)2 (Каласепт) на 10-14 дней", "info");
-	}, []);
-
-	const handleApplyRetreatmentPreset = useCallback(() => {
-		setCanals((prev) => prev.map((c) => ({ ...c, masterApicalFile: "#25", taper: ".06", obturationType: "temp_caoh2" as const, sealer: "Каласепт (Ca(OH)2)", isObliterated: false, isRetreatment: true })));
-		showToast("Применён экспресс-пресет: Распломбировка ранее леченых каналов (резорцин/цемент) + Каласепт", "info");
+		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "temp_caoh2" as const, sealer: "Каласепт (Ca(OH)2)" })));
+		showToast("Применён экспресс-пресет: Временная обтурация Ca(OH)2 на 14 дней", "info");
 	}, []);
 
 	const handleApplyAnatomicalNorm = useCallback(() => {
@@ -97,5 +92,5 @@ export function useChairsideQuickBarLogic({
 		executeChairsideTransferToDiary({ activeTooth, toothAnatomicalName, toothState, canals, patientId, onInsertToDiary });
 	}, [activeTooth, toothAnatomicalName, toothState, canals, patientId, onInsertToDiary]);
 
-	return { activeTooth, toothAnatomicalName, canals, handleUpdateCanal, handleAdjustLength, handleToggleObliterated, handleAddCanal, handleRemoveCanal, handleApplyPulpitis1VisitPreset, handleApplyPeriodontitisBioceramicPreset, handleApplyCaOh2Preset, handleApplyRetreatmentPreset, handleApplyAnatomicalNorm, handleTransferToDiary };
+	return { activeTooth, toothAnatomicalName, canals, handleUpdateCanal, handleAdjustLength, handleToggleObliterated, handleAddCanal, handleRemoveCanal, handleApplyPulpitis1VisitPreset, handleApplyPeriodontitisBioceramicPreset, handleApplyCaOh2Preset, handleApplyAnatomicalNorm, handleTransferToDiary };
 }

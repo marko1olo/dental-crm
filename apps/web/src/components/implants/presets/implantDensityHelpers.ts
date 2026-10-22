@@ -1,6 +1,17 @@
 import type { MischDensity, FastImplantPassportData, ImplantCapType } from "./implantPresetTypes";
 import { FAST_IMPLANT_SYSTEM_PRESETS } from "./implantPresetConstants";
 
+export interface AnatomicalImplantDefaults {
+	readonly toothFdi: number;
+	readonly diameterMm: number;
+	readonly lengthMm: number;
+	readonly torqueNcm: number;
+	readonly boneDensity: MischDensity;
+	readonly capType: ImplantCapType;
+	readonly isqDay0: number;
+	readonly sutureMaterial: string;
+}
+
 export function getBoneDensityByToothFdi(toothFdi: number): MischDensity {
 	if (toothFdi >= 11 && toothFdi <= 28) {
 		if ([17, 18, 27, 28].includes(toothFdi)) return "D4";
@@ -12,6 +23,88 @@ export function getBoneDensityByToothFdi(toothFdi: number): MischDensity {
 		return "D2";
 	}
 	return "D2";
+}
+
+/**
+ * Анатомический выбор параметров имплантата по зубу FDI (11–48).
+ * Моляры (36, 46, 16, 26) -> Ø 4.5 × 10 мм;
+ * Резцы (11, 21) -> Ø 3.5 × 12 мм;
+ * Премоляры -> Ø 4.0 × 10 мм;
+ * Торк первичной стабильности 35 Н·см, ФДМ, шов Викрил 4-0.
+ */
+export function getAnatomicalImplantDefaults(toothFdi: number): AnatomicalImplantDefaults {
+	const tooth = toothFdi || 46;
+	const boneDensity = getBoneDensityByToothFdi(tooth);
+	const toothNum = tooth % 10;
+	const isUpper = tooth >= 11 && tooth <= 28;
+
+	// Моляры (16, 17, 18, 26, 27, 28, 36, 37, 38, 46, 47, 48): стандартно 4.5 x 10 мм
+	if (toothNum === 6 || toothNum === 7 || toothNum === 8) {
+		return {
+			toothFdi: tooth,
+			diameterMm: 4.5,
+			lengthMm: 10.0,
+			torqueNcm: 35,
+			boneDensity,
+			capType: "fdm",
+			isqDay0: 72,
+			sutureMaterial: "Викрил 4-0",
+		};
+	}
+
+	// Премоляры (14, 15, 24, 25, 34, 35, 44, 45): стандартно 4.0 x 10 мм
+	if (toothNum === 4 || toothNum === 5) {
+		return {
+			toothFdi: tooth,
+			diameterMm: 4.0,
+			lengthMm: 10.0,
+			torqueNcm: 35,
+			boneDensity,
+			capType: "fdm",
+			isqDay0: 72,
+			sutureMaterial: "Викрил 4-0",
+		};
+	}
+
+	// Верхние резцы (11, 21, 12, 22): 3.5 x 12.0 мм
+	if (isUpper && (toothNum === 1 || toothNum === 2)) {
+		return {
+			toothFdi: tooth,
+			diameterMm: 3.5,
+			lengthMm: 12.0,
+			torqueNcm: 35,
+			boneDensity,
+			capType: "fdm",
+			isqDay0: 72,
+			sutureMaterial: "Викрил 4-0",
+		};
+	}
+
+	// Клыки (13, 23, 33, 43): 4.0 x 11.5 мм
+	if (toothNum === 3) {
+		return {
+			toothFdi: tooth,
+			diameterMm: 4.0,
+			lengthMm: 11.5,
+			torqueNcm: 35,
+			boneDensity,
+			capType: "fdm",
+			isqDay0: 72,
+			sutureMaterial: "Викрил 4-0",
+		};
+	}
+
+	// Нижние резцы (31, 32, 41, 42): 3.5 x 10.0 мм
+	return {
+		toothFdi: tooth,
+		diameterMm: 3.5,
+		lengthMm: 10.0,
+		torqueNcm: 35,
+		boneDensity,
+		capType: "fdm",
+		isqDay0: 72,
+		sutureMaterial: "Викрил 4-0",
+	};
 }
 
 export function createDefaultPassportRecord(params: {
@@ -36,8 +129,8 @@ export function createDefaultPassportRecord(params: {
 	implantCostRub?: number;
 	consumablesCostRub?: number;
 }): FastImplantPassportData {
-	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? FAST_IMPLANT_SYSTEM_PRESETS[0]!;
 	const tooth = params.toothFdi || 46;
+	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? FAST_IMPLANT_SYSTEM_PRESETS[0]!;
 	const timestampSuffix = Date.now().toString().slice(-6);
 	const torque = params.torqueNcm ?? 35;
 	const isq = params.isqDay0 ?? 72;

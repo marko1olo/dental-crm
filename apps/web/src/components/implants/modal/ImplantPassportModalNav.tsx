@@ -1,19 +1,17 @@
 import React from "react";
+import { FileText, Award, Stethoscope } from "lucide-react";
+import type { ImplantModalTab } from "./useImplantPassportLogic";
 
 export interface ImplantPassportModalNavProps {
-	readonly activeTab: "protocol" | "isq" | "diary" | "passport";
-	readonly setActiveTab: (tab: "protocol" | "isq" | "diary" | "passport") => void;
+	readonly activeTab: ImplantModalTab;
+	readonly setActiveTab: (tab: ImplantModalTab) => void;
 	readonly torqueNcm: number;
-	readonly isIsqEnabled: boolean;
-	readonly isqValue: number;
 }
 
 export const ImplantPassportModalNav: React.FC<ImplantPassportModalNavProps> = ({
 	activeTab,
 	setActiveTab,
 	torqueNcm,
-	isIsqEnabled,
-	isqValue,
 }) => {
 	return (
 		<nav className="implant-tabs-nav" role="tablist">
@@ -22,41 +20,36 @@ export const ImplantPassportModalNav: React.FC<ImplantPassportModalNavProps> = (
 				role="tab"
 				aria-selected={activeTab === "protocol"}
 				onClick={() => setActiveTab("protocol")}
-				className={`secondary-button ${activeTab === "protocol" ? "active" : ""}`}
+				className={`secondary-button flex items-center gap-1.5 ${activeTab === "protocol" ? "active" : ""}`}
 				data-testid="implant-tab-protocol"
 			>
-				1. Протокол & Кость
-			</button>
-			<button
-				type="button"
-				role="tab"
-				aria-selected={activeTab === "isq"}
-				onClick={() => setActiveTab("isq")}
-				className={`secondary-button ${activeTab === "isq" ? "active" : ""}`}
-				data-testid="implant-tab-isq"
-			>
-				2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? ` · ${isqValue} ISQ` : " · Ключ"})
+				<Stethoscope size={14} className="shrink-0" />
+				<span>1. Протокол имплантации ({torqueNcm} Н·см)</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={activeTab === "diary"}
 				onClick={() => setActiveTab("diary")}
-				className={`secondary-button ${activeTab === "diary" ? "active" : ""}`}
+				className={`secondary-button flex items-center gap-1.5 ${activeTab === "diary" ? "active" : ""}`}
 				data-testid="implant-tab-diary"
 			>
-				3. В дневник приёма
+				<FileText size={14} className="shrink-0" />
+				<span>2. В дневник приёма (SOAP)</span>
 			</button>
 			<button
 				type="button"
 				role="tab"
 				aria-selected={activeTab === "passport"}
 				onClick={() => setActiveTab("passport")}
-				className={`secondary-button ${activeTab === "passport" ? "active" : ""}`}
+				className={`secondary-button flex items-center gap-1.5 ${activeTab === "passport" ? "active" : ""}`}
 				data-testid="implant-tab-passport"
 			>
-				4. Гарантийный паспорт
+				<Award size={14} className="shrink-0" />
+				<span>3. Паспорт имплантата</span>
 			</button>
 		</nav>
 	);
 };
+
+export default ImplantPassportModalNav;

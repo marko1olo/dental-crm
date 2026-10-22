@@ -8,7 +8,6 @@ export interface QuickBarHeaderProps {
 	readonly onApplyPulpitis1Visit: () => void;
 	readonly onApplyBioceramic: () => void;
 	readonly onApplyCaOh2: () => void;
-	readonly onApplyRetreatment: () => void;
 	readonly onApplyNorm: () => void;
 	readonly onOpenFullModal?: (() => void) | undefined;
 }
@@ -20,7 +19,6 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 	onApplyPulpitis1Visit,
 	onApplyBioceramic,
 	onApplyCaOh2,
-	onApplyRetreatment,
 	onApplyNorm,
 	onOpenFullModal,
 }) => {
@@ -52,46 +50,18 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 
 			{/* 1-Click Клинические пресеты в едином стиле DENTE (Мандат 8e, Мандат 8am: secondary-чипы) */}
 			<div className="flex items-center gap-1.5 flex-wrap">
-				{/* Пресет 1: 3 канала пройдены и обтурированы (гуттаперча + AH Plus латерально) */}
 				<button
 					type="button"
 					onClick={onApplyPulpitis1Visit}
 					data-testid="btn-quick-pulpitis-1visit"
 					className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
-					title="Экспресс-пресет: каналы пройдены и обтурированы (гуттаперча + AH Plus латерально 25/.04)"
+					title="Экспресс-пресет: ProTaper + AH Plus гуттаперча латерально (21.5 мм · 25/.04)"
 				>
 					<Check size={13} className="text-emerald-600 dark:text-emerald-400" />
-					<span className="hidden sm:inline">Обтурированы (AH Plus)</span>
-					<span className="sm:hidden">AH Plus</span>
+					<span className="hidden sm:inline">ProTaper + AH Plus</span>
+					<span className="sm:hidden">ProTaper</span>
 				</button>
 
-				{/* Пресет 2: Механическая и медикаментозная обработка, лечебная паста Ca(OH)2 под временную повязку */}
-				<button
-					type="button"
-					onClick={onApplyCaOh2}
-					data-testid="btn-quick-caoh2"
-					className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
-					title="Механическая и медикаментозная обработка, паста гидроксида кальция Ca(OH)2 (Каласепт) под временную повязку"
-				>
-					<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
-					<span className="hidden sm:inline">Временная Ca(OH)2</span>
-					<span className="sm:hidden">Ca(OH)2</span>
-				</button>
-
-				{/* Пресет 3: Распломбировка ранее леченых каналов (резорцин-формалин / фосфат-цемент) */}
-				<button
-					type="button"
-					onClick={onApplyRetreatment}
-					data-testid="btn-quick-retreatment"
-					className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg border border-purple-500/40 bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
-					title="Распломбировка ранее леченых каналов (резорцин-формалин / фосфат-цемент) + паста Каласепт под повязку"
-				>
-					<RotateCcw size={13} className="text-purple-600 dark:text-purple-400" />
-					<span className="hidden sm:inline">Распломбировка (резорцин/цемент)</span>
-					<span className="sm:hidden">Распломб.</span>
-				</button>
-
-				{/* Пресет: Биокерамика */}
 				<button
 					type="button"
 					onClick={onApplyBioceramic}
@@ -102,6 +72,18 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 					<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
 					<span className="hidden sm:inline">Биокерамика</span>
 					<span className="sm:hidden">Био</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={onApplyCaOh2}
+					data-testid="btn-quick-caoh2"
+					className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
+					title="Временная повязка гидроксида кальция Ca(OH)2 (Каласепт) на 10-14 дней"
+				>
+					<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
+					<span className="hidden sm:inline">Временная Ca(OH)2</span>
+					<span className="sm:hidden">Ca(OH)2</span>
 				</button>
 
 				<button
@@ -121,7 +103,7 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 						onClick={onOpenFullModal}
 						data-testid="btn-open-full-endo-modal"
 						className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
-						title="Открыть подробный эндодонтический журнал"
+						title="Открыть подробный эндодонтический протокол"
 					>
 						<Maximize2 size={12} />
 						<span className="hidden md:inline">Подробнее</span>

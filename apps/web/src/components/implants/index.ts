@@ -11,7 +11,6 @@ export * from "./ImplantProtocolTab";
 export * from "./ImplantEconomicsSection";
 export * from "./ImplantConsumablesSelector";
 export * from "./ImplantWarehouseSelector";
-export * from "./ImplantIsqTab";
 export * from "./ImplantDiaryTab";
 export * from "./implantCatalog";
 export * from "./implantTorqueCatalog";

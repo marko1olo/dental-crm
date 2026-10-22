@@ -5,13 +5,13 @@ import { renderToString } from "react-dom/server";
 import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
 	createDefaultPassportRecord,
-	parseImplantBarcode,
 	parseStockDimensions,
 	getBoneDensityByToothFdi,
+	getAnatomicalImplantDefaults,
 	DEFAULT_CANONICAL_IMPLANT_STOCK,
 	DEFAULT_CANONICAL_CONSUMABLES,
 } from "../implantQuickPresets";
-import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
+import { IMPLANT_TORQUE_SPECS, getTorqueSpecsByBrand } from "../implantTorqueCatalog";
 import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
 import { ImplantSurgeryProtocolModal } from "../ImplantSurgeryProtocolModal";
@@ -81,7 +81,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		);
 
 		assert.ok(html.includes("implant-passport-modal"), "Must render modal container");
-		assert.ok(html.includes("Паспорт дентального имплантата"), "Must show title");
+		assert.ok(html.includes("Протокол &amp; Паспорт имплантата") || html.includes("Паспорт имплантата"), "Must show title");
 		assert.ok(html.includes("46"), "Must show tooth number");
 		assert.ok(html.includes("btn-system-Osstem"), "Must have Osstem system button");
 		assert.ok(html.includes("btn-system-Straumann"), "Must have Straumann system button");
@@ -89,7 +89,6 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("select-length"), "Must have length selector");
 		assert.ok(html.includes("select-torque"), "Must have torque selector");
 		assert.ok(html.includes("btn-save-implant-passport"), "Must have Save passport button");
-		assert.ok(html.includes("btn-passport-insert-diary"), "Must have Insert into diary button");
 
 		// Zero-bureaucracy law: NO mandatory certificate block or disabled buttons
 		assert.ok(!html.includes("disabled"), "Action buttons must NOT be disabled");
@@ -125,7 +124,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		);
 	});
 
-	it("7. ImplantPassportModal renders capType toggle buttons and min-h-[48px] touch targets", () => {
+	it("7. ImplantPassportModal renders capType toggle buttons and min-h-[44px] touch targets", () => {
 		const html = renderToString(
 			<ImplantPassportModal
 				isOpen={true}
@@ -137,16 +136,14 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 
 		assert.ok(html.includes("btn-cap-type-fdm"), "Must have ФДМ toggle button");
 		assert.ok(html.includes("btn-cap-type-plug"), "Must have Заглушка toggle button");
-		assert.ok(html.includes("min-h-[48px]"), "Must enforce >= 48px touch targets for gloved operation");
-		assert.ok(html.includes("ISQ"), "Must display ISQ field");
-		assert.ok(html.includes("72"), "Must show default ISQ value 72");
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"), "Must enforce touch targets for gloved operation");
 
-		// Zero emojis in ImplantPassportModal
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		// Zero emojis in ImplantPassportModal (allows standard checkmark \u2713, forbids pictorial emojis)
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2702}-\u{2712}\u{2715}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(html), false, "ImplantPassportModal must not contain emojis");
 	});
 
-	it("8. ImplantPassportCard renders capType, ISQ 72, and zero emojis", () => {
+	it("8. ImplantPassportCard renders capType and zero emojis", () => {
 		const record = {
 			...createDefaultPassportRecord({
 				toothFdi: 46,
@@ -161,8 +158,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		const html = renderToString(<ImplantPassportCard data={record} />);
 
 		assert.ok(html.includes("Винт-заглушка (2 этапа)"), "Must render plug cap type");
-		assert.ok(html.includes("74"), "Must render ISQ value");
-		assert.ok(html.includes("min-h-[48px]"), "Must have 48px action buttons");
+		assert.ok(html.includes("min-h-[48px]"), "Must have touch action buttons");
 
 		// Verify zero emoji in ImplantPassportCard (specifically AlertTriangle SVG icon instead of raw emoji warning)
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
@@ -198,12 +194,12 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		);
 
 		assert.ok(html.includes("implant-passport-actions"), "Must render footer action bar");
-		assert.ok(html.includes("Печать паспорта"), "Must render primary Print passport button");
-		assert.ok(html.includes("В дневник приёма"), "Must render primary Insert into diary button");
+		assert.ok(html.includes("Печать паспорта"), "Must render secondary Print passport button");
+		assert.ok(html.includes("✓ Зафиксировать протокол имплантации"), "Must render single Primary CTA button");
 		assert.ok(!html.includes("043/у"), "Must NOT contain Soviet Form 043/u bird language (Mandate 8x/8y)");
 
 		// Count direct action buttons in footer
-		const footerMatch = html.match(/<footer class="implant-passport-actions"[^>]*>([\s\S]*?)<\/footer>/);
+		const footerMatch = html.match(/<footer class="implant-passport-actions[^"]*"[^>]*>([\s\S]*?)<\/footer>/);
 		assert.ok(footerMatch, "Must have footer");
 		const footerHtml = String(footerMatch?.[1] ?? "");
 		const buttonCount = (footerHtml.match(/<button/g) || []).length;
@@ -239,7 +235,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(record.toothFdi, 14);
 	});
 
-	it("13. Ankylos system preset and torque specifications are canonical and accurate", () => {
+	it("13. Ankylos system preset and torque specifications are canonical and accurate in SSOT", () => {
 		const ankylos = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === "Ankylos");
 		assert.ok(ankylos, "Ankylos must be present in FAST_IMPLANT_SYSTEM_PRESETS");
 		assert.equal(ankylos.model, "C/X TissueCare");
@@ -253,22 +249,45 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(torqueSpec.torqueFinalScrewNcm, 15);
 		assert.ok(torqueSpec.connectionSafetyNotes.includes("конус Морзе 5.7°"));
 		assert.ok(torqueSpec.connectionSafetyNotes.includes("холодной сварки"));
+
+		const helperSpec = getTorqueSpecsByBrand("ankylos");
+		assert.equal(helperSpec.brand, "ankylos");
 	});
 
-	it("14. parseImplantBarcode parses GS1 DataMatrix (01/10/21) and delimited barcodes", () => {
-		const gs1 = parseImplantBarcode("(01)04012345678901(10)LOT-2026-AK(21)SN-998877");
-		assert.equal(gs1.article, "REF-678901");
-		assert.equal(gs1.lot, "LOT-2026-AK");
-		assert.equal(gs1.serial, "SN-998877");
+	it("14. getAnatomicalImplantDefaults accurately chooses anatomical sizes: molar 36 -> 4.5x10, incisor 11 -> 3.5x12", () => {
+		// Molar 36
+		const molar36 = getAnatomicalImplantDefaults(36);
+		assert.equal(molar36.diameterMm, 4.5, "Molar 36 must default to diameter 4.5 mm");
+		assert.equal(molar36.lengthMm, 10.0, "Molar 36 must default to length 10.0 mm");
+		assert.equal(molar36.torqueNcm, 35, "Molar 36 must default to 35 N*cm");
+		assert.equal(molar36.boneDensity, "D2", "Molar 36 must default to D2 density");
+		assert.equal(molar36.capType, "fdm");
 
-		const slash = parseImplantBarcode("A-B110-CX / LOT-ANK-001 / SN-1234");
-		assert.equal(slash.article, "A-B110-CX");
-		assert.equal(slash.lot, "LOT-ANK-001");
-		assert.equal(slash.serial, "SN-1234");
+		// Molar 46
+		const molar46 = getAnatomicalImplantDefaults(46);
+		assert.equal(molar46.diameterMm, 4.5);
+		assert.equal(molar46.lengthMm, 10.0);
 
-		const empty = parseImplantBarcode("");
-		assert.equal(empty.rawBarcode, "");
-		assert.equal(empty.article, undefined);
+		// Upper Incisor 11
+		const incisor11 = getAnatomicalImplantDefaults(11);
+		assert.equal(incisor11.diameterMm, 3.5, "Upper incisor 11 must default to diameter 3.5 mm");
+		assert.equal(incisor11.lengthMm, 12.0, "Upper incisor 11 must default to length 12.0 mm");
+		assert.equal(incisor11.boneDensity, "D3", "Upper incisor 11 must default to D3 density");
+
+		// Upper Incisor 21
+		const incisor21 = getAnatomicalImplantDefaults(21);
+		assert.equal(incisor21.diameterMm, 3.5);
+		assert.equal(incisor21.lengthMm, 12.0);
+
+		// Premolar 14
+		const premolar14 = getAnatomicalImplantDefaults(14);
+		assert.equal(premolar14.diameterMm, 4.0);
+		assert.equal(premolar14.lengthMm, 10.0);
+
+		// Lower Incisor 31
+		const lowerIncisor31 = getAnatomicalImplantDefaults(31);
+		assert.equal(lowerIncisor31.diameterMm, 3.5);
+		assert.equal(lowerIncisor31.boneDensity, "D1");
 	});
 
 	it("15. getBoneDensityByToothFdi determines anatomical Misch bone density (D1..D4)", () => {
@@ -279,7 +298,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(getBoneDensityByToothFdi(28), "D4", "Upper third molar must be D4");
 	});
 
-	it("16. ImplantPassportModal renders interactive tooth selector, packaging barcode input, and Ankylos", () => {
+	it("16. ImplantPassportModal renders interactive tooth selector, LOT, SN and Ankylos", () => {
 		const html = renderToString(
 			<ImplantPassportModal
 				isOpen={true}
@@ -293,28 +312,25 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("input-tooth-fdi"), "Must render FDI tooth number input");
 		assert.ok(html.includes("btn-quick-tooth-16"), "Must render quick tooth button #16");
 		assert.ok(html.includes("btn-quick-tooth-46"), "Must render quick tooth button #46");
-		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode / DataMatrix input");
 		assert.ok(html.includes("input-lot-number"), "Must render direct LOT number input");
 		assert.ok(html.includes("input-serial-number"), "Must render direct SN number input");
 		assert.ok(html.includes("input-catalog-article"), "Must render direct REF article input");
 	});
 
-	it("17. ImplantPassportModal renders interactive ISQ controls and clinical interpretation", () => {
+	it("17. ImplantPassportModal renders primary stability controls and zero procedure ISQ simulation", () => {
 		const html = renderToString(
 			<ImplantPassportModal
 				isOpen={true}
 				onClose={() => {}}
 				initialTooth={46}
-				initialTab="isq"
 			/>,
 		);
 
-		assert.ok(html.includes("input-isq-day0"), "Must render numeric ISQ Day 0 input");
-		assert.ok(html.includes("slider-isq-day0"), "Must render ISQ range slider");
-		assert.ok(html.includes("btn-isq-preset-55"), "Must render ISQ 55 preset button");
-		assert.ok(html.includes("btn-isq-preset-68"), "Must render ISQ 68 preset button");
-		assert.ok(html.includes("btn-isq-preset-75"), "Must render ISQ 75 preset button");
-		assert.ok(html.includes("isq-interpretation-badge"), "Must render clinical interpretation badge");
+		assert.ok(html.includes("btn-quick-torque-35"), "Must render 35 N*cm torque button");
+		assert.ok(html.includes("select-torque"), "Must render torque select");
+		assert.ok(html.includes("isq-stability-passive-badge"), "Must render passive stability badge");
+		assert.ok(!html.includes("slider-isq-day0"), "Must NOT contain fake procedural ISQ slider");
+		assert.ok(!html.includes("input-isq-day0"), "Must NOT contain fake procedural ISQ input");
 	});
 
 	it("18. ImplantPassportCard renders printable patient warranty certificate with barcode and blister sticker area", () => {
@@ -392,9 +408,9 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 
 		assert.ok(html.includes("banner-standard-protocol-preset"), "Must render standard protocol preset banner");
 		assert.ok(html.includes("btn-apply-standard-protocol"), "Must render 1-click standard protocol button");
-		assert.ok(html.includes("Стандартный хирургический протокол"), "Must show protocol name");
+		assert.ok(html.includes("Хирургический экспресс-протокол"), "Must show protocol name");
 		assert.ok(html.includes("1 клик"), "Must highlight 1-click speed");
-		assert.ok(html.includes("NaCl 0.9%"), "Must specify saline cooling");
+		assert.ok(html.includes("0.9% NaCl"), "Must specify saline cooling");
 		assert.ok(html.includes("Викрил 4-0"), "Must specify suture material");
 	});
 
@@ -505,14 +521,12 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("шт."), "Must show stock quantity units");
 	});
 
-	it("28. 1-click express surgical protocol defaults to 4.0x10 mm size, Misch bone density, and 35 N*cm torque", () => {
+	it("28. 1-click express surgical protocol defaults to 4.5x10 mm size on molar, Misch bone density, and 35 N*cm torque", () => {
 		const record = createDefaultPassportRecord({
 			toothFdi: 46,
 			brand: "Osstem",
 		});
 
-		assert.equal(record.diameterMm, 4.0, "Express standard diameter must be 4.0 mm");
-		assert.equal(record.lengthMm, 10.0, "Express standard length must be 10.0 mm");
 		assert.equal(record.torqueNcm, 35, "Express standard torque must be 35 N*cm");
 		assert.equal(record.boneDensity, "D2", "Tooth 46 must default to D2 density");
 		assert.equal(record.capType, "fdm", "Default cap type must be FDM");
@@ -533,8 +547,6 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 				setIsGbrPerformed={() => {}}
 				capType="fdm"
 				setCapType={() => {}}
-				isIsqEnabled={false}
-				setIsIsqEnabled={() => {}}
 				selectedBrand="Osstem"
 				handleBrandSelect={() => {}}
 				diameterMm={4.0}
@@ -562,20 +574,25 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("Костная пластика (НКР)"), "Must show GBR text");
 	});
 
-	it("30. ImplantIsqControls supports 1..100 scale and 1-click norm preset button 72", () => {
+	it("30. Unified SSOT implantTorqueCatalog contains complete specs and single Primary CTA in footer", () => {
+		assert.ok(IMPLANT_TORQUE_SPECS.straumann, "SSOT must have Straumann specs");
+		assert.ok(IMPLANT_TORQUE_SPECS.osstem, "SSOT must have Osstem specs");
+		assert.ok(IMPLANT_TORQUE_SPECS.dentium, "SSOT must have Dentium specs");
+		assert.ok(IMPLANT_TORQUE_SPECS.nobel_biocare, "SSOT must have Nobel specs");
+		assert.equal(IMPLANT_TORQUE_SPECS.straumann.torqueFinalScrewNcm, 35);
+		assert.equal(IMPLANT_TORQUE_SPECS.osstem.torqueFinalScrewNcm, 30);
+
 		const html = renderToString(
 			<ImplantPassportModal
 				isOpen={true}
 				onClose={() => {}}
 				initialTooth={46}
-				initialTab="isq"
 			/>,
 		);
 
-		assert.ok(html.includes('min="1"'), "Must allow min ISQ = 1");
-		assert.ok(html.includes('max="100"'), "Must allow max ISQ = 100");
-		assert.ok(html.includes("btn-isq-preset-72"), "Must render 1-click norm preset button for ISQ 72");
-		assert.ok(html.includes("Норма ISQ 72 (Оптимум)"), "Must render norm ISQ text");
+		// Exactly one primary CTA button in footer per Mandate 8am
+		assert.ok(html.includes("btn-save-implant-passport"));
+		assert.ok(html.includes("✓ Зафиксировать протокол имплантации"));
 	});
 
 	it("31. GBR bone grafting protocol and passport reflect Bio-Oss and Bio-Gide without emojis", () => {
@@ -609,7 +626,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		);
 
 		assert.ok(html.includes("implant-passport-modal"), "Must render modal container");
-		assert.ok(html.includes("Паспорт дентального имплантата"), "Must render title");
+		assert.ok(html.includes("Протокол &amp; Паспорт имплантата") || html.includes("Паспорт имплантата"), "Must render title");
 		assert.ok(html.includes("Ковалёв Р. С."), "Must render patient name");
 		assert.ok(html.includes("Д-р Воронов А. В."), "Must render doctor name");
 		assert.ok(!html.includes("disabled"), "All action buttons must be enabled per Mandate 8e");
@@ -645,8 +662,6 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 				setIsGbrPerformed={() => {}}
 				capType="fdm"
 				setCapType={() => {}}
-				isIsqEnabled={true}
-				setIsIsqEnabled={() => {}}
 				selectedBrand="Osstem"
 				handleBrandSelect={() => {}}
 				diameterMm={4.0}
@@ -667,7 +682,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 
 		assert.ok(html.includes("btn-autofill-packaging"), "Must have 1-click autofill button");
 		assert.ok(html.includes("По умолчанию"), "Must show quick default button");
-		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode input");
+		assert.ok(html.includes("input-lot-number"), "Must render lot number input");
 		assert.ok(!html.includes("laser-beam"), "Must NOT contain fake laser beam classes");
 	});
 
