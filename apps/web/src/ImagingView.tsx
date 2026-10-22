@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { MobileChairsideRadiologyViewer } from "./components/radiology/MobileChairsideRadiologyViewer.js";
 import { isDemoShowcaseMode } from "./lib/demoMode";
@@ -73,6 +73,12 @@ export function ImagingView(props: ImagingViewProps) {
 	const browserImagingFilesInputRef = props.browserImagingFilesInputRef || localFilesInputRef;
 	const pickBrowserImagingFiles = props.pickBrowserImagingFiles || (() => browserImagingFilesInputRef.current?.click());
 
+	const [internalSelectedStudyId, setInternalSelectedStudyId] = useState<string | null>(null);
+	const handleSelectStudy = useCallback((id: string) => {
+		setInternalSelectedStudyId(id);
+		setSelectedImagingStudyId?.(id);
+	}, [setSelectedImagingStudyId]);
+
 	const hasActive = Boolean(activeImagingStudies && activeImagingStudies.length > 0);
 	const hasVisible = Boolean(visibleImagingStudies && visibleImagingStudies.length > 0);
 	const hasDashboard = Boolean(props.dashboard?.imagingStudies && props.dashboard.imagingStudies.length > 0);
@@ -128,13 +134,27 @@ export function ImagingView(props: ImagingViewProps) {
 							hasFile: true,
 							capturedAt: new Date().toISOString(),
 						} as any,
+						{
+							id: "sample_cbct_mandible",
+							patientId: activePatient?.id || "sample_patient",
+							kind: "cbct",
+							title: "Конусно-лучевая томография КЛКТ (Romexis / Ez3D)",
+							region: "mandible",
+							previewUrl: "/radiology/sample_optg_panoramic.png",
+							hasFile: true,
+							capturedAt: new Date().toISOString(),
+						} as any,
 					]
 					: [];
-	const effectiveSelectedStudy = selectedImagingStudy ?? resolvedStudies[0] ?? null;
+	const effectiveSelectedStudy =
+		(internalSelectedStudyId ? resolvedStudies.find((s) => s.id === internalSelectedStudyId) : null) ??
+		selectedImagingStudy ??
+		resolvedStudies[0] ??
+		null;
 
 	const handleStudyUploaded = (study: any) => {
-		if (study?.id && setSelectedImagingStudyId) {
-			setSelectedImagingStudyId(study.id);
+		if (study?.id) {
+			handleSelectStudy(study.id);
 		}
 	};
 
@@ -164,7 +184,7 @@ export function ImagingView(props: ImagingViewProps) {
 			<div className="block md:hidden w-full h-full">
 				<MobileChairsideRadiologyViewer
 					selectedImagingStudy={effectiveSelectedStudy} activeImagingStudies={resolvedStudies}
-					activePatient={activePatient} onSelectStudy={(id) => setSelectedImagingStudyId?.(id)}
+					activePatient={activePatient} onSelectStudy={handleSelectStudy}
 					effectivePreviewUrl={viewState.effectivePreviewUrl} isPreviewLoading={viewState.isPreviewLoading}
 					previewLoadError={viewState.previewLoadError} selectedStudyHasFile={viewState.selectedStudyHasFile}
 					imagingKindLabels={imagingKindLabels} onCaptureCamera={() => cameraCaptureInputRef.current?.click()}
@@ -189,7 +209,7 @@ export function ImagingView(props: ImagingViewProps) {
 				setLocalImageIds={setLocalImageIds} isDicomwebLoading={viewState.isDicomwebLoading}
 				dicomwebLoadProgress={viewState.dicomwebLoadProgress} handleLoadFromDicomweb={viewState.handleLoadFromDicomweb}
 				visibleImagingStudies={resolvedStudies} imagingPreviewSource={imagingPreviewSource}
-				imagingViewerHref={imagingViewerHref} setSelectedImagingStudyId={setSelectedImagingStudyId}
+				imagingViewerHref={imagingViewerHref} setSelectedImagingStudyId={handleSelectStudy}
 				formatShortDate={formatShortDate} effectiveMprProps={viewState.effectiveMprProps}
 				viewer2dProps={{
 					...viewState.viewer2dProps,
@@ -214,7 +234,7 @@ export function ImagingView(props: ImagingViewProps) {
 				selectedImagingStudy={effectiveSelectedStudy} activePatient={activePatient} activeAppointment={activeAppointment}
 				activeImagingStudies={resolvedStudies} authClinicName={auth?.clinic?.name}
 				effectivePreviewUrl={viewState.effectivePreviewUrl} selectedStudySummary={viewState.selectedStudySummary}
-				setSelectedImagingStudyId={setSelectedImagingStudyId} openPopoutStudio={openPopoutStudio}
+				setSelectedImagingStudyId={handleSelectStudy} openPopoutStudio={openPopoutStudio}
 			/>
 		</section>
 	);
