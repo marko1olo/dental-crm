@@ -62,3 +62,5 @@ export * from "./CbctColormapFlyout";
 export * from "./CbctDicomFlyout";
 export * from "./imagingUploadService";
 export * from "./ImagingEmptyStateStage";
+export * from "./imagingToothBindingHelper";
+export * from "./imagingExportPrintHelper";

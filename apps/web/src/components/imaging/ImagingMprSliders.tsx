@@ -152,7 +152,7 @@ export function ImagingMprSliders(props: ImagingMprSlidersProps) {
 				))}
 			</fieldset>
 			<fieldset className="mpr-preset-row" aria-label="Быстрые углы КТ-срезов">
-				{(mprAxisPresetDeg ?? []).map((angle: any) => (
+				{(Array.isArray(mprAxisPresetDeg) ? mprAxisPresetDeg : [-30, -15, 0, 15, 30]).map((angle: any) => (
 					<button
 						className={mprAxisDeg === angle ? "active" : ""}
 						key={angle}
@@ -204,7 +204,7 @@ export function ImagingMprSliders(props: ImagingMprSlidersProps) {
 				className="mpr-preset-row"
 				aria-label="Быстрая толщина слоя КТ-срезов"
 			>
-				{(mprSlabPresetMm ?? []).map((slab: any) => (
+				{(Array.isArray(mprSlabPresetMm) ? mprSlabPresetMm : [1, 2, 3, 5, 10, 20]).map((slab: any) => (
 					<button
 						className={mprSlabMm === slab ? "active" : ""}
 						key={slab}

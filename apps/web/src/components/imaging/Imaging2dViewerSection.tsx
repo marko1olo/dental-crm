@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { ImagingViewport } from "./ImagingViewport";
 import { ImagingToolbar } from "./ImagingToolbar";
+import { ImagingSessionNotesSection } from "./imagingToolbar/ImagingSessionNotesSection";
 import { ClinicalXrayProtocolPanel } from "./ClinicalXrayProtocolPanel";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
 import { ImagingEmptyStateStage } from "./ImagingEmptyStateStage";
@@ -149,38 +150,6 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 
 	return (
 		<>
-			<ImagingViewport
-				selectedImagingStudy={selectedImagingStudy}
-				localImageIds={localImageIds}
-				setLocalImageIds={setLocalImageIds}
-				browserPickedImagingFolder={browserPickedImagingFolder}
-				imagingViewerState={imagingViewerState}
-				setImagingViewerState={setImagingViewerState}
-				computedViewerImageStyle={computedViewerImageStyle}
-				effectivePreviewUrl={effectivePreviewUrl ?? null}
-				isPreviewLoading={isPreviewLoading}
-				previewLoadError={Boolean(previewLoadError)}
-				selectedStudyHasFile={selectedStudyHasFile}
-				imagingKindLabels={imagingKindLabels}
-				isDicomwebLoading={isDicomwebLoading}
-				dicomwebLoadProgress={dicomwebLoadProgress}
-				onOpenCbctStudio={onOpenCbctStudio}
-				onLoadFromDicomweb={onLoadFromDicomweb}
-				enhancementOn={enhancementOn}
-				isRulerActive={isRulerActive}
-				currentPixelSpacingMm={currentPixelSpacingMm}
-				rulerMeasurements={rulerMeasurements}
-				setRulerMeasurements={setRulerMeasurements}
-				isPanActive={isPanActive}
-				onAttachFile={pickBrowserImagingFiles}
-				isAnalyzingAI={isAnalyzingAI}
-				onAnalyzeAI={onAnalyzeAI}
-				selectedStudySummary={selectedStudySummary}
-				pendingAiProposal={pendingAiProposal}
-				setPendingAiProposal={setPendingAiProposal}
-				onStudyUploaded={onStudyUploaded}
-			/>
-
 			<ImagingToolbar
 				selectedImagingStudy={selectedImagingStudy}
 				imagingViewerState={imagingViewerState}
@@ -218,9 +187,60 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				imagingViewerAnnotations={imagingViewerAnnotations}
 				formatShortDate={formatShortDate}
 				activeAppointment={activeAppointment}
+				activePatient={activePatient}
+				effectivePreviewUrl={effectivePreviewUrl}
+				showNotes={false}
 				{...(onAttachToTooth ? { onAttachToTooth } : {})}
 				{...(onAttachToVisit ? { onAttachToVisit } : {})}
 			/>
+
+			<ImagingViewport
+				selectedImagingStudy={selectedImagingStudy}
+				localImageIds={localImageIds}
+				setLocalImageIds={setLocalImageIds}
+				browserPickedImagingFolder={browserPickedImagingFolder}
+				imagingViewerState={imagingViewerState}
+				setImagingViewerState={setImagingViewerState}
+				computedViewerImageStyle={computedViewerImageStyle}
+				effectivePreviewUrl={effectivePreviewUrl ?? null}
+				isPreviewLoading={isPreviewLoading}
+				previewLoadError={Boolean(previewLoadError)}
+				selectedStudyHasFile={selectedStudyHasFile}
+				imagingKindLabels={imagingKindLabels}
+				isDicomwebLoading={isDicomwebLoading}
+				dicomwebLoadProgress={dicomwebLoadProgress}
+				onOpenCbctStudio={onOpenCbctStudio}
+				onLoadFromDicomweb={onLoadFromDicomweb}
+				enhancementOn={enhancementOn}
+				isRulerActive={isRulerActive}
+				currentPixelSpacingMm={currentPixelSpacingMm}
+				rulerMeasurements={rulerMeasurements}
+				setRulerMeasurements={setRulerMeasurements}
+				isPanActive={isPanActive}
+				onAttachFile={pickBrowserImagingFiles}
+				isAnalyzingAI={isAnalyzingAI}
+				onAnalyzeAI={onAnalyzeAI}
+				selectedStudySummary={selectedStudySummary}
+				pendingAiProposal={pendingAiProposal}
+				setPendingAiProposal={setPendingAiProposal}
+				onStudyUploaded={onStudyUploaded}
+			/>
+
+			<div className="imaging-notes-dock border-t border-[var(--line)] bg-[var(--paper-soft)] p-2">
+				<ImagingSessionNotesSection
+					selectedImagingStudy={selectedImagingStudy}
+					imagingViewerNote={imagingViewerNote ?? ""}
+					setImagingViewerNote={setImagingViewerNote ?? (() => {})}
+					imagingViewerSaveState={imagingViewerSaveState ?? "saved"}
+					imagingViewerSaveTitle={imagingViewerSaveTitle ?? {}}
+					imagingViewerSaveDetail={imagingViewerSaveDetail ?? ""}
+					imagingViewerNoteReady={Boolean(imagingViewerNoteReady)}
+					imagingViewerSessionReady={Boolean(imagingViewerSessionReady)}
+					canRetryImagingViewerSave={canRetryImagingViewerSave}
+					retryImagingViewerSessionSave={retryImagingViewerSessionSave}
+					addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
+				/>
+			</div>
 
 			{selectedStudySummary && (
 				<div className="sa-report-column clinical-xray-report-column">

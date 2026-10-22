@@ -1,5 +1,5 @@
 import React from "react";
-import { RefreshCw } from "lucide-react";
+import { Download, Printer, RefreshCw } from "lucide-react";
 import type { ImagingStudy, ImagingViewerState, ViewerRulerMeasurement } from "./types.js";
 import { ImagingOrientationGroup } from "./imagingToolbar/ImagingOrientationGroup.js";
 import { ImagingZoomPanGroup } from "./imagingToolbar/ImagingZoomPanGroup.js";
@@ -7,6 +7,7 @@ import { ImagingFilterRulerGroup } from "./imagingToolbar/ImagingFilterRulerGrou
 import { ImagingToothVisitGroup } from "./imagingToolbar/ImagingToothVisitGroup.js";
 import { ImagingBrightnessContrastSliders } from "./imagingToolbar/ImagingBrightnessContrastSliders.js";
 import { ImagingSessionNotesSection } from "./imagingToolbar/ImagingSessionNotesSection.js";
+import { downloadStudyImageAsJpg, printStudyForPatient } from "./imagingExportPrintHelper.js";
 
 export interface ImagingToolbarProps {
 	selectedImagingStudy?: ImagingStudy | null | undefined;
@@ -34,8 +35,11 @@ export interface ImagingToolbarProps {
 	imagingViewerAnnotations?: Array<{ id: string; label: string; toothCode?: string | null | undefined; updatedAt: string }> | undefined;
 	formatShortDate?: ((date: string) => string) | undefined;
 	activeAppointment?: { id: string; date?: string; patientName?: string } | null | undefined;
+	activePatient?: any;
+	effectivePreviewUrl?: string | null | undefined;
 	onAttachToTooth?: ((toothCode: string) => Promise<void> | void) | undefined;
 	onAttachToVisit?: ((visitId: string) => Promise<void> | void) | undefined;
+	showNotes?: boolean;
 }
 
 export function ImagingToolbar(props: ImagingToolbarProps) {
@@ -45,11 +49,34 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 		onReset, imagingViewerNote, setImagingViewerNote, imagingViewerSaveState, imagingViewerSaveTitle,
 		imagingViewerSaveDetail, imagingViewerNoteReady, imagingViewerSessionReady, canRetryImagingViewerSave,
 		retryImagingViewerSessionSave, addImagingViewerNoteAnnotation, imagingViewerAnnotations, formatShortDate,
-		activeAppointment, onAttachToTooth, onAttachToVisit,
+		activeAppointment, activePatient, effectivePreviewUrl, onAttachToTooth, onAttachToVisit,
+		showNotes = true,
 	} = props;
 
+	const previewSrc = effectivePreviewUrl || selectedImagingStudy?.previewUrl;
+
+	const handleDownloadJpg = () => {
+		if (!previewSrc) return;
+		downloadStudyImageAsJpg(
+			previewSrc,
+			selectedImagingStudy?.kind === "opg" ? "panoramic_opg" : "dental_rvg",
+			selectedImagingStudy?.toothCode,
+		);
+	};
+
+	const handlePrint = () => {
+		if (!previewSrc) return;
+		printStudyForPatient({
+			imageUrl: previewSrc,
+			studyTitle: selectedImagingStudy?.title,
+			toothCode: selectedImagingStudy?.toothCode,
+			patientName: activePatient?.fullName || activePatient?.name || activeAppointment?.patientName,
+			measurementsCount: rulerMeasurements.length,
+		});
+	};
+
 	return (
-		<div className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-t border-[var(--line)]" role="toolbar" aria-label="Настройки снимка">
+		<div className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-b border-[var(--line)]" role="toolbar" aria-label="Настройки снимка">
 			<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[36px]">
 				<div className="flex items-center gap-1.5 flex-wrap">
 					<ImagingOrientationGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} />
@@ -59,6 +86,32 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 
 				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
 					<ImagingToothVisitGroup selectedImagingStudy={selectedImagingStudy} activeAppointment={activeAppointment} onAttachToTooth={onAttachToTooth} onAttachToVisit={onAttachToVisit} />
+					{previewSrc && (
+						<>
+							<button
+								className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
+								type="button"
+								data-testid="btn-print-xray"
+								title="Печать снимка с протоколом для пациента"
+								aria-label="Печать снимка"
+								onClick={handlePrint}
+							>
+								<Printer size={13} aria-hidden="true" />
+								<span className="text-xs font-semibold">Печать</span>
+							</button>
+							<button
+								className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
+								type="button"
+								data-testid="btn-download-jpg"
+								title="Скачать снимок в формате JPG"
+								aria-label="Скачать снимок JPG"
+								onClick={handleDownloadJpg}
+							>
+								<Download size={13} aria-hidden="true" />
+								<span className="text-xs font-semibold">JPG</span>
+							</button>
+						</>
+					)}
 					<button
 						className="viewer-tool-button h-8 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
 						type="button"
@@ -74,24 +127,28 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 
 			<ImagingBrightnessContrastSliders imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} />
 
-			<ImagingSessionNotesSection
-				selectedImagingStudy={selectedImagingStudy} imagingViewerNote={imagingViewerNote}
-				setImagingViewerNote={setImagingViewerNote} imagingViewerSaveState={imagingViewerSaveState}
-				imagingViewerSaveTitle={imagingViewerSaveTitle} imagingViewerSaveDetail={imagingViewerSaveDetail}
-				imagingViewerNoteReady={imagingViewerNoteReady} imagingViewerSessionReady={imagingViewerSessionReady}
-				canRetryImagingViewerSave={canRetryImagingViewerSave} retryImagingViewerSessionSave={retryImagingViewerSessionSave}
-				addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
-			/>
+			{showNotes ? (
+				<>
+					<ImagingSessionNotesSection
+						selectedImagingStudy={selectedImagingStudy} imagingViewerNote={imagingViewerNote}
+						setImagingViewerNote={setImagingViewerNote} imagingViewerSaveState={imagingViewerSaveState}
+						imagingViewerSaveTitle={imagingViewerSaveTitle} imagingViewerSaveDetail={imagingViewerSaveDetail}
+						imagingViewerNoteReady={imagingViewerNoteReady} imagingViewerSessionReady={imagingViewerSessionReady}
+						canRetryImagingViewerSave={canRetryImagingViewerSave} retryImagingViewerSessionSave={retryImagingViewerSessionSave}
+						addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
+					/>
 
-			{imagingViewerAnnotations && imagingViewerAnnotations.length > 0 ? (
-				<section className="viewer-annotation-list" aria-label="Разметки к снимку">
-					{imagingViewerAnnotations.slice(0, 3).map((a) => (
-						<article key={a.id}>
-							<strong>{a.label}</strong>
-							<span>{a.toothCode ?? selectedImagingStudy?.region ?? "study"} · {formatShortDate ? formatShortDate(a.updatedAt) : a.updatedAt}</span>
-						</article>
-					))}
-				</section>
+					{imagingViewerAnnotations && imagingViewerAnnotations.length > 0 ? (
+						<section className="viewer-annotation-list" aria-label="Разметки к снимку">
+							{imagingViewerAnnotations.slice(0, 3).map((a) => (
+								<article key={a.id}>
+									<strong>{a.label}</strong>
+									<span>{a.toothCode ?? selectedImagingStudy?.region ?? "study"} · {formatShortDate ? formatShortDate(a.updatedAt) : a.updatedAt}</span>
+								</article>
+							))}
+						</section>
+					) : null}
+				</>
 			) : null}
 		</div>
 	);
