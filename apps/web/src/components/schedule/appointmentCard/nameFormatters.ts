@@ -32,7 +32,7 @@ export function formatPatientDisplayFio(name: string | null | undefined): string
 		const lastName = parts[0];
 		const firstInitial = parts[1]?.charAt(0);
 		const middleInitial = parts[2]?.charAt(0);
-		return `${lastName} ${firstInitial ? `${firstInitial}.` : ""}${middleInitial ? ` ${middleInitial}.` : ""}`.trim();
+		return `${lastName} ${firstInitial ? `${firstInitial}.` : ""}${middleInitial ? `${middleInitial}.` : ""}`.trim();
 	}
 	if (parts.length === 2) {
 		const lastName = parts[0];

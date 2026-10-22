@@ -60,6 +60,8 @@ export interface BlacklistStatus {
 export interface AppointmentCollisionInfo {
 	hasCollision: boolean;
 	isCitoOverbooking?: boolean;
-	message?: string;
+	message?: string | null;
+	conflictType?: "doctor" | "chair" | "assistant" | "patient" | null;
+	conflictingAppointment?: Appointment | null;
 	overlappingAppointments?: Appointment[];
 }

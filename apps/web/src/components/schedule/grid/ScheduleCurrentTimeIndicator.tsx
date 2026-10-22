@@ -75,6 +75,9 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
     const interval = setInterval(() => {
       setTimeInfo(getCurrentTimeInfo(dateKey, timezone));
     }, 30_000);
+    if (typeof (interval as any)?.unref === "function") {
+      (interval as any).unref();
+    }
     return () => clearInterval(interval);
   }, [dateKey, timezone]);
 

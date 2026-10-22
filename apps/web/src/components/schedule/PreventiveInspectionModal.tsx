@@ -373,7 +373,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 												type="button"
 												onClick={() => handleCopyMessage(c)}
 												className="h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-												title="Скопировать вежливый текст приглашения (152-ФЗ)"
+												title="Скопировать вежливый текст приглашения (защита данных)"
 												data-testid={`btn-copy-msg-${c.patientId}`}
 											>
 												{copiedId === c.patientId ? (
@@ -416,7 +416,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 				{/* Footer */}
 				<div className="px-5 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs">
 					<div className="text-[var(--muted,#64748b)]">
-						Все приглашения составлены в строгом соответствии с 152-ФЗ (без разглашения диагнозов и зубов).
+						Все приглашения составлены с защитой врачебной тайны (без разглашения диагнозов и формулы зубов).
 					</div>
 					<button
 						type="button"

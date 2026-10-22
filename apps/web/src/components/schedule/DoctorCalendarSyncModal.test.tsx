@@ -37,7 +37,7 @@ describe("DoctorCalendarSyncModal Component", () => {
 		assert.equal(html, "");
 	});
 
-	it("renders modal structure with 152-FZ banner, doctor selector and platform links when open", () => {
+	it("renders modal structure with privacy banner, doctor selector and platform links when open", () => {
 		const html = renderToStaticMarkup(
 			<DoctorCalendarSyncModal
 				isOpen={true}
@@ -49,7 +49,7 @@ describe("DoctorCalendarSyncModal Component", () => {
 
 		assert.ok(html.includes("data-testid=\"doctor-calendar-sync-modal\""));
 		assert.ok(html.includes("Синхронизация расписания (iCal / CalDAV)"));
-		assert.ok(html.includes("152-ФЗ защита"));
+		assert.ok(html.includes("Защита персональных данных"));
 		assert.ok(html.includes("Барабаш Сергей Васильевич"));
 		assert.ok(html.includes("Смирнова Екатерина Алексеевна"));
 	});

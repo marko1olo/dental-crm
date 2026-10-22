@@ -227,13 +227,12 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 			);
 		});
 
-		it("2.2. all 8 preview buttons have disabled={isTelegramLoading}", () => {
+		it("2.2. action buttons are never blocked by disabled={isTelegramLoading} (Mandate 8e)", () => {
 			const matches = telegramTabSource.match(/disabled=\{isTelegramLoading\}/g);
-			assert.ok(matches, "Must have disabled={isTelegramLoading} buttons");
 			assert.equal(
-				matches.length,
-				8,
-				`Must have exactly 8 template preview buttons with disabled={isTelegramLoading}, found ${matches.length}`,
+				matches,
+				null,
+				"Must have zero disabled={isTelegramLoading} roadblocks per Doctor Autonomy Mandate 8e",
 			);
 		});
 
@@ -283,156 +282,10 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 			}
 		});
 
-		it("2.5. preview buttons are active when activePatient is null and isTelegramLoading is false", () => {
+		it("2.5. SettingsTelegramTab renders TelegramIntegrationHub as SSOT view", () => {
 			const mockProps = {
 				isTelegramLoading: false,
 				activePatient: null,
-				telegramPreviewLoadingGuidanceId: "loading-guide",
-				telegramPreviewPatientGuidanceId: "patient-guide",
-				typedTelegramLinkStaffOptions: [],
-				telegramVisualCardUrlDrafts: {},
-				telegramSettingsSaveState: "saved",
-				telegramTemplateLabels: {},
-				telegramClassificationLabels: {},
-				telegramHumanMessage: () => "",
-				telegramOutboxStatusFilterOptions: [],
-				telegramOutboxTemplateFilterOptions: [],
-				visibleTelegramOutboxItems: [],
-				typedTelegramLinkCodes: [],
-				typedTelegramChatLinks: [],
-				telegramModeLabels: {
-					shared_dente_bot: "Общий бот DENTE",
-					disabled: "Отключен",
-					clinic_owned_bot: "Собственный бот клиники",
-				},
-				telegramModeHints: {},
-				telegramPrivacyModeLabels: {
-					no_phi_by_default: "Без ПДн по умолчанию",
-					limited_admin_only: "Ограниченный (только для админа)",
-					consented_phi_templates: "Шаблоны с ПДн (с согласия)",
-				},
-				telegramPrivacyModeHints: {},
-				telegramPostVisitCheckupDelayFields: [],
-				typedTelegramPostVisitCheckupDelayDrafts: {},
-				telegramVisualCardFields: [],
-			};
-
-			const html = renderToString(
-				<SettingsTelegramTab props={mockProps} settingsTab="telegram" />,
-			);
-
-			// Extract telegram-preview-actions section
-			const actionsSectionMatch = html.match(
-				/<div class="telegram-preview-actions">([\s\S]*?)<\/div>/,
-			);
-			assert.ok(actionsSectionMatch, "Must render telegram-preview-actions");
-			const actionsHtml = actionsSectionMatch[1]!;
-
-			// Check that Прием, Документ, Оплата, Профилактика, Отзыв, Памятка, Контроль are NOT disabled
-			const buttonMatches = [
-				...actionsHtml.matchAll(/<button[^>]*>([\s\S]*?)<\/button>/g),
-			];
-			assert.ok(buttonMatches.length >= 7, "Must contain at least 7 buttons");
-
-			// First 7 buttons are patient template preview buttons
-			for (let i = 0; i < 7; i++) {
-				const btn = buttonMatches[i]![0];
-				assert.equal(
-					btn.includes('disabled=""') || btn.includes("disabled "),
-					false,
-					`Button ${i + 1} must not be disabled when activePatient is null`,
-				);
-			}
-		});
-
-		it("2.6. preview buttons become disabled when isTelegramLoading is true", () => {
-			const mockProps = {
-				isTelegramLoading: true,
-				activePatient: null,
-				telegramPreviewLoadingGuidanceId: "loading-guide",
-				telegramPreviewPatientGuidanceId: "patient-guide",
-				typedTelegramLinkStaffOptions: [],
-				telegramVisualCardUrlDrafts: {},
-				telegramSettingsSaveState: "saved",
-				telegramTemplateLabels: {},
-				telegramClassificationLabels: {},
-				telegramHumanMessage: () => "",
-				telegramOutboxStatusFilterOptions: [],
-				telegramOutboxTemplateFilterOptions: [],
-				visibleTelegramOutboxItems: [],
-				typedTelegramLinkCodes: [],
-				typedTelegramChatLinks: [],
-				telegramModeLabels: {
-					shared_dente_bot: "Общий бот DENTE",
-					disabled: "Отключен",
-					clinic_owned_bot: "Собственный бот клиники",
-				},
-				telegramModeHints: {},
-				telegramPrivacyModeLabels: {
-					no_phi_by_default: "Без ПДн по умолчанию",
-					limited_admin_only: "Ограниченный (только для админа)",
-					consented_phi_templates: "Шаблоны с ПДн (с согласия)",
-				},
-				telegramPrivacyModeHints: {},
-				telegramPostVisitCheckupDelayFields: [],
-				typedTelegramPostVisitCheckupDelayDrafts: {},
-				telegramVisualCardFields: [],
-			};
-
-			const html = renderToString(
-				<SettingsTelegramTab props={mockProps} settingsTab="telegram" />,
-			);
-
-			const actionsSectionMatch = html.match(
-				/<div class="telegram-preview-actions">([\s\S]*?)<\/div>/,
-			);
-			assert.ok(actionsSectionMatch, "Must render telegram-preview-actions");
-			const actionsHtml = actionsSectionMatch[1]!;
-
-			const buttonMatches = [
-				...actionsHtml.matchAll(/<button[^>]*>([\s\S]*?)<\/button>/g),
-			];
-			for (let i = 0; i < 7; i++) {
-				const btn = buttonMatches[i]![0];
-				assert.ok(
-					btn.includes("disabled"),
-					`Button ${i + 1} must be disabled while isTelegramLoading is true`,
-				);
-			}
-		});
-
-		it("2.7. guidance explains demo data usage when activePatient is null", () => {
-			const mockProps = {
-				isTelegramLoading: false,
-				activePatient: null,
-				telegramPreviewLoadingGuidanceId: "loading-guide",
-				telegramPreviewPatientGuidanceId: "patient-guide",
-				typedTelegramLinkStaffOptions: [],
-				telegramVisualCardUrlDrafts: {},
-				telegramSettingsSaveState: "saved",
-				telegramTemplateLabels: {},
-				telegramClassificationLabels: {},
-				telegramHumanMessage: () => "",
-				telegramOutboxStatusFilterOptions: [],
-				telegramOutboxTemplateFilterOptions: [],
-				visibleTelegramOutboxItems: [],
-				typedTelegramLinkCodes: [],
-				typedTelegramChatLinks: [],
-				telegramModeLabels: {
-					shared_dente_bot: "Общий бот DENTE",
-					disabled: "Отключен",
-					clinic_owned_bot: "Собственный бот клиники",
-				},
-				telegramModeHints: {},
-				telegramPrivacyModeLabels: {
-					no_phi_by_default: "Без ПДн по умолчанию",
-					limited_admin_only: "Ограниченный (только для админа)",
-					consented_phi_templates: "Шаблоны с ПДн (с согласия)",
-				},
-				telegramPrivacyModeHints: {},
-				telegramPostVisitCheckupDelayFields: [],
-				typedTelegramPostVisitCheckupDelayDrafts: {},
-				telegramVisualCardFields: [],
 			};
 
 			const html = renderToString(
@@ -440,8 +293,48 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 			);
 
 			assert.ok(
-				html.includes("демо-данные") || html.includes("Иванов И.И."),
-				"Guidance text must inform that demo data is used for instant preview",
+				html.includes('data-testid="telegram-integration-hub"'),
+				"Must render TelegramIntegrationHub as SSOT view",
+			);
+			assert.ok(
+				html.includes("Бот Telegram"),
+				"Must include Bot Telegram tab",
+			);
+			assert.ok(
+				html.includes("Личный аккаунт Telegram"),
+				"Must include Staff account tab",
+			);
+		});
+
+		it("2.6. action buttons are never disabled when isTelegramLoading is true (Mandate 8e)", () => {
+			const mockProps = {
+				isTelegramLoading: true,
+				activePatient: null,
+			};
+
+			const html = renderToString(
+				<SettingsTelegramTab props={mockProps} settingsTab="telegram" />,
+			);
+
+			// Under Mandate 8e, tab navigation and primary action buttons are never disabled
+			const tabButtonMatches = [
+				...html.matchAll(/<button[^>]*class="[^"]*tg-hub-tab-btn[^"]*"[^>]*>/g),
+			];
+			assert.ok(tabButtonMatches.length >= 4, "Must render hub tab buttons");
+			for (const match of tabButtonMatches) {
+				assert.equal(
+					match[0].includes("disabled"),
+					false,
+					"Hub tab buttons must not be disabled during loading",
+				);
+			}
+		});
+
+		it("2.7. buildDefaultTelegramPreview includes realistic demo guidance warnings", () => {
+			const preview = buildDefaultTelegramPreview("appointment_confirmation");
+			assert.ok(
+				preview.warnings.some((w) => w.includes("демонстрационные данные")),
+				"Preview warnings must indicate realistic demo data usage",
 			);
 		});
 	});

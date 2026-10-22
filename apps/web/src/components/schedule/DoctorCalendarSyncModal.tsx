@@ -100,7 +100,7 @@ export const DoctorCalendarSyncModal: React.FC<
 						/>
 						<div className="text-xs leading-relaxed">
 							<span className="font-bold">
-								152-ФЗ защита персональных данных:
+								Защита персональных данных:
 							</span>{" "}
 							во внешние календари передаются исключительно инициалы пациента,
 							номер медицинской карты и кабинет. Диагнозы и конфиденциальные

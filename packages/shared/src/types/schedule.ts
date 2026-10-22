@@ -113,14 +113,9 @@ export function getWorkplaceChairPalette(indexOrId: number | string): WorkplaceC
 	return WORKPLACE_CHAIR_PALETTES[hashIdx] ?? DEFAULT_WORKPLACE_CHAIR_PALETTE;
 }
 
-// ============================================================================
-// Обратная совместимость для плавного перехода (Backward Compatibility Aliases)
-// ============================================================================
-export const stomxWorkplacePaletteItemSchema = workplaceChairPaletteItemSchema;
-export type StomxWorkplacePaletteItem = WorkplaceChairPaletteItem;
-export const stomxWorkplacePaletteSchema = workplaceChairPaletteSchema;
+// Backward compatibility aliases for schedule workplace palettes
 export const STOMX_WORKPLACE_PALETTES = WORKPLACE_CHAIR_PALETTES;
-export type StomxWorkplacePalette = WorkplaceChairPalette;
-export const DEFAULT_STOMX_WORKPLACE_PALETTE = DEFAULT_WORKPLACE_CHAIR_PALETTE;
 export const STOMX_WORKPLACE_PALETTES_MAP = WORKPLACE_CHAIR_PALETTES_MAP;
+export const DEFAULT_STOMX_WORKPLACE_PALETTE = DEFAULT_WORKPLACE_CHAIR_PALETTE;
 export const getStomxWorkplacePalette = getWorkplaceChairPalette;
+

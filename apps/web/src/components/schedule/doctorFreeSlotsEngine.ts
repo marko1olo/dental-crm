@@ -146,7 +146,7 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 
 		// Filter appointments for this date
 		const dayAppts = activeAppointments.filter((a) => {
-			const rawDate = a.startsAt || (a as any).startTime || (a as any).startAt || "";
+			const rawDate = a.startsAt || "";
 			const apptDate = typeof rawDate === "string" ? rawDate.slice(0, 10) : "";
 			return apptDate === dateKey;
 		});
@@ -163,12 +163,12 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 
 		// Pre-parse day appointments once into numeric timestamps to eliminate thousands of Date allocations
 		const parsedDayAppts = dayAppts.map((a) => {
-			const aStart = new Date(a.startsAt || (a as any).startTime || 0).getTime();
-			const aDuration = Number((a as any).durationMinutes) || 30;
+			const aStart = new Date(a.startsAt || 0).getTime();
+			const fallbackMinutes = (a as any).durationMinutes ? Number((a as any).durationMinutes) : 30;
 			const aEnd =
 				a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
 					? new Date(a.endsAt).getTime()
-					: aStart + aDuration * 60000;
+					: aStart + (fallbackMinutes > 0 ? fallbackMinutes : 30) * 60000;
 			return {
 				doctorUserId: a.doctorUserId,
 				chairId: a.chairId,
@@ -322,7 +322,7 @@ export function calculateDailyChairDoctorTally(params: {
 
 	// Filter appointments for this date
 	const dayAppts = appointments.filter((a) => {
-		const rawDate = a.startsAt || (a as any).startTime || (a as any).startAt || "";
+		const rawDate = a.startsAt || "";
 		const apptDate = typeof rawDate === "string" ? rawDate.slice(0, 10) : "";
 		return apptDate === dateKey && a.status !== "cancelled" && a.status !== "no_show";
 	});
@@ -368,11 +368,10 @@ export function calculateDailyChairDoctorTally(params: {
 
 		for (const a of chairAppts) {
 			const sMs = new Date(a.startsAt).getTime();
-			const aDur = Number((a as any).durationMinutes) || 30;
 			const eMs =
 				a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
 					? new Date(a.endsAt).getTime()
-					: sMs + aDur * 60000;
+					: sMs + 30 * 60000;
 			const durMin = Math.max(0, Math.round((eMs - sMs) / 60000));
 			chairDurationMin += durMin;
 
@@ -421,11 +420,10 @@ export function calculateDailyChairDoctorTally(params: {
 		const dId = a.doctorUserId || "unassigned";
 		const current = doctorStatsMap.get(dId) || { count: 0, durMin: 0, revenue: 0, chairs: new Set() };
 		const sMs = new Date(a.startsAt).getTime();
-		const aDur = Number((a as any).durationMinutes) || 30;
 		const eMs =
 			a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
 				? new Date(a.endsAt).getTime()
-				: sMs + aDur * 60000;
+				: sMs + 30 * 60000;
 		const durMin = Math.max(0, Math.round((eMs - sMs) / 60000));
 		current.count++;
 		current.durMin += durMin;
