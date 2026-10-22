@@ -40,8 +40,8 @@ export function computeStageFooterActionFlags(
 	const isAction1Start = Boolean(handlers.onStartStage);
 	const isAction1WriteOff = !isAction1Start && Boolean(handlers.onExecuteWriteOffStage && stage.items.length > 0);
 
-	const isAction2Estimate = Boolean(handlers.onExportStageEstimate);
-	const isAction2Pay = !isAction2Estimate && Boolean(handlers.onPayStage && (stage.totalRub || 0) > 0);
+	const isAction2Pay = Boolean(handlers.onPayStage && (stage.totalRub || 0) > 0);
+	const isAction2Estimate = !isAction2Pay && Boolean(handlers.onExportStageEstimate);
 	const isAction2WriteOff =
 		!isAction2Estimate &&
 		!isAction2Pay &&

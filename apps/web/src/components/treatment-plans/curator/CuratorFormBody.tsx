@@ -7,7 +7,6 @@
 import React from "react";
 import { CURATOR_STAGE_DEFINITIONS, type CuratorFunnelStage } from "@dental/shared";
 import { DOCTOR_SELF_CURATOR_ID, CURATOR_ROLE_LABELS } from "./curatorConstants";
-import { CuratorCommissionField } from "./CuratorCommissionField";
 import { CuratorNotesField } from "./CuratorNotesField";
 
 export interface CuratorFormBodyProps {
@@ -84,13 +83,6 @@ export const CuratorFormBody: React.FC<CuratorFormBodyProps> = ({
 					))}
 				</select>
 			</div>
-
-			<CuratorCommissionField
-				useCustomCommission={useCustomCommission}
-				onToggleCustomCommission={onToggleCustomCommission}
-				customCommissionPercent={customCommissionPercent}
-				onChangeCommissionPercent={onChangeCommissionPercent}
-			/>
 
 			<CuratorNotesField
 				nextContactDate={nextContactDate}

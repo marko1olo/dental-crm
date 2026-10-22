@@ -35,3 +35,4 @@ export * from "./TreatmentPlanStageFooter";
 export * from "./treatmentPlanMath";
 export * from "./PlanScenarioComparisonModal";
 export * from "./comparator";
+export * from "./TreatmentPlanPrintView";

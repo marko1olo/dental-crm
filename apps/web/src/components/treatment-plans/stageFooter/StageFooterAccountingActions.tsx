@@ -1,5 +1,5 @@
 import React from "react";
-import { CreditCard, Package, Printer } from "lucide-react";
+import { CalendarPlus, CreditCard, Package, Printer } from "lucide-react";
 import type { TreatmentPlanStage } from "../types";
 import type { StageFooterActionFlags } from "./stageFooterHelpers";
 
@@ -22,6 +22,23 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 }) => {
 	return (
 		<>
+			<button
+				type="button"
+				onClick={() => {
+					onClose();
+					if (typeof window !== "undefined") {
+						window.location.hash = "#schedule";
+					}
+				}}
+				className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+				title="Перейти в расписание для записи пациента на этот этап"
+				data-testid={`stage-${stage.stageNumber}-book-slot-btn`}
+				role="menuitem"
+			>
+				<CalendarPlus size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<span>Записать на этот этап</span>
+			</button>
+
 			{flags.showWriteOffInMenu && (
 				<button
 					type="button"
@@ -52,7 +69,7 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 					role="menuitem"
 				>
 					<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<span>Оплатить этап</span>
+					<span>Создать счёт из этапа</span>
 				</button>
 			)}
 
@@ -69,7 +86,7 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 					role="menuitem"
 				>
 					<Printer size={14} className="text-[var(--muted,#64748b)] shrink-0" />
-					<span>Экспорт сметы этапа</span>
+					<span>Печать сметы этапа</span>
 				</button>
 			)}
 		</>

@@ -84,7 +84,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 						isOpen={isOptionsOpen} onToggle={() => setIsOptionsOpen((p) => !p)} onClose={() => setIsOptionsOpen(false)}
 						onExportCashier={onExportCashier} onOpenInvoiceModal={onOpenInvoiceModal} onOpenFiscalModal={onOpenFiscalModal}
 						onSavePlanToDatabase={onSavePlanToDatabase} isSaving={isSaving} onOpenStagePaymentModal={onOpenStagePaymentModal}
-						onOpenDiscountsModal={() => setIsDiscountsOpen(true)} onOpenCuratorModal={onOpenCuratorModal} curatorFullName={curatorFullName}
+						onOpenDiscountsModal={() => setIsDiscountsOpen(true)}
 						onOpenContractPrint={onOpenContractPrint} onOpenPresenterModal={onOpenPresenterModal} onOpenComparatorModal={onOpenComparatorModal}
 						onResetPlan={onResetPlan}
 					/>

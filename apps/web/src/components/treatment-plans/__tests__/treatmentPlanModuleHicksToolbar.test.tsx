@@ -45,7 +45,7 @@ describe("TreatmentPlanModule — Чистый тулбар по закону Х
 		assert.ok(!html.includes('title="Закрепить куратора лечения за пациентом и планом (Фича #27)"'));
 	});
 
-	it("renders Curator of treatment inside Options menu with UserCheck and curator badge", () => {
+	it("guarantees curator bureaucracy and broker commission are excluded from Options menu", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContextWave49}>
 				<TreatmentPlanModule
@@ -57,9 +57,10 @@ describe("TreatmentPlanModule — Чистый тулбар по закону Х
 			</AppLogicProvider>
 		);
 
-		assert.ok(html.includes("options-menu-curator-btn"));
-		assert.ok(html.includes("Куратор лечения (воронка и комиссия)"));
-		assert.ok(html.includes("Петрова"));
+		assert.ok(!html.includes("options-menu-curator-btn"));
+		assert.ok(!html.includes("Куратор лечения (воронка и комиссия)"));
+		assert.ok(html.includes("options-menu-export-cashier-btn"));
+		assert.ok(html.includes("options-menu-contract-print-btn"));
 	});
 
 	it("ensures Apple HIG touch-targets (>= 44px mobile, >= 38px desktop) for toolbar buttons", () => {

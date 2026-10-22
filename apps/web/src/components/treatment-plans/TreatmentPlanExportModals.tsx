@@ -6,7 +6,6 @@ const FiscalReceipt54FzModal = React.lazy(() => import("../finance/FiscalReceipt
 const LabWorkOrderModal = React.lazy(() => import("../lab/orders/LabWorkOrderModal").then((m) => ({ default: m.LabWorkOrderModal })));
 const InvoiceGenerationModal = React.lazy(() => import("../finance/InvoiceGenerationModal").then((m) => ({ default: m.InvoiceGenerationModal })));
 const ClinicalServiceBundlesModal = React.lazy(() => import("./ClinicalServiceBundlesModal").then((m) => ({ default: m.ClinicalServiceBundlesModal })));
-const CuratorPlanAssignmentModal = React.lazy(() => import("./CuratorPlanAssignmentModal").then((m) => ({ default: m.CuratorPlanAssignmentModal })));
 
 export interface TreatmentPlanExportModalsProps {
 	readonly logic: any;
@@ -82,14 +81,6 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 				<Suspense fallback={null}>
 					<ClinicalServiceBundlesModal
 						isOpen={logic.isChairsideBundlesModalOpen} onClose={() => logic.setIsChairsideBundlesModalOpen(false)} initialToothNumber={logic.orthopedicTeeth[0] || 16} patientId={logic.patientId} patientName={logic.patientName} onApplyToPlan={logic.handleApplyChairsideBundlePlan} onApplyToInvoice={logic.handleApplyChairsideBundleInvoice} targetMode="both"
-					/>
-				</Suspense>
-			)}
-
-			{logic.isCuratorModalOpen && (
-				<Suspense fallback={null}>
-					<CuratorPlanAssignmentModal
-						isOpen={logic.isCuratorModalOpen} onClose={() => logic.setIsCuratorModalOpen(false)} patientId={logic.patientId} patientName={logic.patientName} treatmentPlanId={`PLAN-${logic.patientId.slice(0, 6).toUpperCase()}`} treatmentPlanTitle={`${logic.currentTier.title} (${logic.grandTotalRub.toLocaleString("ru-RU")} ₽)`} currentCuratorId={logic.patient?.administrativeProfile?.curatorId} currentStage={(logic.patient?.administrativeProfile?.curatorFunnelStage as any) || "consultation"} onAssigned={(a) => showToast(`Куратор ${a.curatorFullName} успешно закреплен!`, "success")}
 					/>
 				</Suspense>
 			)}

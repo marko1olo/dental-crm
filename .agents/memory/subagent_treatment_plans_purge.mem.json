@@ -1,0 +1,38 @@
+{
+  "subagent": "Treatment Plans & Estimates Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T22:53:00+04:00",
+  "task": "Abolish franchise curator simulators, remove price drift blocking, consolidate 3-scenario treatment plans with SSOT pricing, unify Primary CTA design tokens, establish 1-click invoice & appointment flow, create A4 print view, and generate 4-state visual proof.",
+  "invariantsPreserved": {
+    "doctorAutonomyMandate8e": "Doctor approval and invoice generation are never blocked. 1-click transitions enabled without administrator PIN.",
+    "singlePrimaryCtaMandate8am": "Strictly one Primary CTA button per visible context. Desktop h-9 min-h-[36px], mobile h-11 min-h-[44px], rounded-xl.",
+    "cleanLanguageMandate8x": "Zero bureaucratic codes ('043/у', '804н') in patient-facing UI.",
+    "ssotPricing": "Clean price resolution from clinic catalog with 100% integer kopeck math.",
+    "appleHigMobileTouch": "Natural Thumb Zone bottom floating bar with touch targets >= 44x44px and native segmented control."
+  },
+  "deliveredComponents": [
+    "apps/web/src/components/treatment-plans/curator/CuratorCommissionField.tsx (purged franchise broker commission)",
+    "apps/web/src/components/treatment-plans/toolbar/TreatmentPlanOptionsMenu.tsx (removed curator button & unused icons)",
+    "apps/web/src/components/treatment-plans/TreatmentPlanExportModals.tsx (removed lazy curator assignment modal)",
+    "apps/web/src/components/treatment-plans/TreatmentPlanToolbar.tsx (unlinked curator modal triggers)",
+    "apps/web/src/components/treatment-plans/toolbar/TreatmentPlanPrimaryActions.tsx (unified h-9/h-11 rounded-xl tokens)",
+    "apps/web/src/components/treatment-plans/tierCard/TierCardFooterActions.tsx (single primary CTA per card, standardized tokens)",
+    "apps/web/src/components/treatment-plans/stageFooter/stageFooterHelpers.ts (prioritized 1-click pay action)",
+    "apps/web/src/components/treatment-plans/stageFooter/StageFooterPrimaryActions.tsx (1-click invoice creation button)",
+    "apps/web/src/components/treatment-plans/stageFooter/StageFooterAccountingActions.tsx (1-click slot booking action)",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPrintView.tsx (standalone A4 print view with warranties and NDFL)",
+    "apps/web/src/components/treatment-plans/index.ts (exported TreatmentPlanPrintView)"
+  ],
+  "verification": {
+    "vitestTreatmentPlans": "80 passed / 80 test files, 267 passed / 267 tests (Exit code 0)",
+    "vitestPlanPricing": "45 passed / 45 tests (Exit code 0)",
+    "encodingGate": "15378 files checked, 0 errors (Exit code 0)",
+    "visualProof4State": {
+      "pcLight": "docs/proofs/treatment_plans/treatment_plans_pc_light_1440x900.png (468,756 bytes)",
+      "pcDark": "docs/proofs/treatment_plans/treatment_plans_pc_dark_1440x900.png (407,234 bytes)",
+      "mobileLight": "docs/proofs/treatment_plans/treatment_plans_mobile_light_390x844.png (187,762 bytes)",
+      "mobileDark": "docs/proofs/treatment_plans/treatment_plans_mobile_dark_390x844.png (182,719 bytes)",
+      "audit8DeadlySins": "PASS: 0 bleached dark backgrounds, 0 illegible text, >=44px touch targets, 0 multi-dot clippings, 0px horizontal scroll, single Primary CTA, clean Russian typography, zero Potemkin simulators"
+    }
+  }
+}
