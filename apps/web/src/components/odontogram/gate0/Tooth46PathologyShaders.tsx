@@ -26,17 +26,18 @@ export const Tooth46PathologyShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#0284c7" stopOpacity="0.85" />
 			</linearGradient>
 
-			{/* Dental Calculus (Supragingival Chalky & Subgingival Serumal) */}
+			{/* Dental Calculus (Supragingival Mineralized Limestone & Subgingival Serumal) */}
 			<linearGradient id="dente-calculus-supra" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#fef3c7" stopOpacity="0.98" />
-				<stop offset="40%" stopColor="#e2dac6" stopOpacity="0.95" />
-				<stop offset="80%" stopColor="#cfc3a7" stopOpacity="0.95" />
-				<stop offset="100%" stopColor="#b8a885" stopOpacity="0.92" />
+				<stop offset="0%" stopColor="#dfcca8" stopOpacity="0.98" />
+				<stop offset="40%" stopColor="#c8b185" stopOpacity="0.98" />
+				<stop offset="80%" stopColor="#b59a6d" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#9e8254" stopOpacity="0.95" />
 			</linearGradient>
 			<linearGradient id="dente-calculus-sub" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#78350f" stopOpacity="0.95" />
-				<stop offset="50%" stopColor="#451a03" stopOpacity="0.98" />
-				<stop offset="100%" stopColor="#1c1917" stopOpacity="0.95" />
+				<stop offset="0%" stopColor="#8c6f44" stopOpacity="0.98" />
+				<stop offset="45%" stopColor="#6b4c27" stopOpacity="0.98" />
+				<stop offset="80%" stopColor="#4a3319" stopOpacity="0.98" />
+				<stop offset="100%" stopColor="#2e1f10" stopOpacity="0.95" />
 			</linearGradient>
 
 			{/* Grade-5 Medical Titanium Dental Implant Fixture */}

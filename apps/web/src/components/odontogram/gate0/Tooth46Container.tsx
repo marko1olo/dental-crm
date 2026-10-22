@@ -26,7 +26,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
-	const crownOpacity = isEndo && !a.zirconiaCrown ? "0.48" : "1.0";
+	const crownOpacity = "1.0";
 	const noCrown = Boolean(
 		a.implant &&
 			(a.implantStage === "pure" || a.implantStage === "healing_abutment"),
@@ -69,6 +69,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 					crownOpacity={crownOpacity}
 					showCusps={a.cusps ?? true}
 					showFissures={a.fissures ?? true}
+					showAbfraction={Boolean(a.abfraction)}
 					isDark={isDark}
 				/>
 			)}

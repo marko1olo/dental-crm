@@ -7,6 +7,7 @@ export interface Tooth46EnamelCrownProps {
 	crownOpacity: string;
 	showCusps?: boolean | undefined;
 	showFissures?: boolean | undefined;
+	showAbfraction?: boolean | undefined;
 	isDark?: boolean | undefined;
 }
 
@@ -19,12 +20,17 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 	crownOpacity,
 	showCusps = true,
 	showFissures = true,
+	showAbfraction = false,
 	isDark = false,
 }) => (
 	<g id="tooth46-natural-crown-group">
 		<path
 			id="tooth46-crown-monolith"
-			d={TOOTH46_GEOMETRY.crownMonolithPath}
+			d={
+				showAbfraction
+					? TOOTH46_GEOMETRY.crownMonolithPathWithAbfraction
+					: TOOTH46_GEOMETRY.crownMonolithPath
+			}
 			fill="url(#dente-enamel-porcelain)"
 			fillOpacity={crownOpacity}
 			stroke={stroke}

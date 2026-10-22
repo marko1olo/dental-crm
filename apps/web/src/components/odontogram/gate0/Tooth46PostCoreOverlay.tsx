@@ -21,73 +21,84 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 	className,
 }) => {
 	const g = TOOTH46_POST_CORE_GEOMETRY;
+	const ferruleStroke = isDark
+		? "rgba(203, 213, 225, 0.60)"
+		: "rgba(71, 85, 105, 0.45)";
+	const chamferStroke = isDark
+		? "rgba(148, 163, 184, 0.85)"
+		: "rgba(100, 116, 139, 0.70)";
 
-	if (type === "cast") {
-		const c = g.castPostCore;
-		const castStroke = isDark ? "#94a3b8" : "#475569";
-		return (
-			<g
-				id="tooth46-cast-post-core"
-				data-testid="tooth46-post-core-cast"
-				className={className}
-			>
-				{/* Auxiliary Mesial Anti-Rotational Pin */}
-				<path
-					d={c.mesialPin}
-					fill="url(#dente-crown-metal)"
-					stroke={castStroke}
-					strokeWidth="0.6"
-					strokeLinejoin="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-				{/* Primary Distal Canal Post */}
-				<path
-					d={c.distalPost}
-					fill="url(#dente-crown-metal)"
-					stroke={castStroke}
-					strokeWidth="0.6"
-					strokeLinejoin="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-				{/* Monolithic Cast Coronal Stump */}
-				<path
-					d={c.coreStump}
-					fill="url(#dente-crown-metal)"
-					stroke={castStroke}
-					strokeWidth="0.8"
-					strokeLinejoin="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-			</g>
-		);
-	}
-
-	const f = g.fiberPostCore;
 	return (
-		<g
-			id="tooth46-fiber-post-core"
-			data-testid="tooth46-post-core-fiber"
-			className={className}
-		>
-			{/* Translucent Quartz Fiberglass Post in Distal Canal */}
+		<g id="tooth46-post-core-assembly" className={className}>
+			{/* Natural Prepared Tooth Ferrule Collar (1.5-2mm above CEJ) */}
 			<path
-				d={f.postShaft}
-				fill="url(#dente-fiber-post)"
-				stroke="rgba(148, 163, 184, 0.85)"
-				strokeWidth="0.6"
+				id="tooth46-prep-ferrule"
+				d={g.ferruleCollar}
+				fill="url(#dente-root-dentin)"
+				stroke={ferruleStroke}
+				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Nanohybrid Composite Core Stump */}
+			{/* Circular Chamfer Margin Finish Line */}
 			<path
-				d={f.coreStump}
-				fill="url(#dente-composite-core)"
-				stroke="rgba(2, 132, 199, 0.90)"
+				id="tooth46-prep-chamfer-margin"
+				d={g.chamferMarginLine}
+				fill="none"
+				stroke={chamferStroke}
 				strokeWidth="0.7"
-				strokeDasharray="2.5 1.5"
-				strokeLinejoin="round"
+				strokeLinecap="round"
 				vectorEffect="non-scaling-stroke"
 			/>
+
+			{type === "cast" ? (
+				<g id="tooth46-cast-post-core" data-testid="tooth46-post-core-cast">
+					<path
+						d={g.castPostCore.mesialPin}
+						fill="url(#dente-crown-metal)"
+						stroke={isDark ? "#94a3b8" : "#475569"}
+						strokeWidth="0.6"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+					<path
+						d={g.castPostCore.distalPost}
+						fill="url(#dente-crown-metal)"
+						stroke={isDark ? "#94a3b8" : "#475569"}
+						strokeWidth="0.6"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+					<path
+						d={g.castPostCore.coreStump}
+						fill="url(#dente-crown-metal)"
+						stroke={isDark ? "#94a3b8" : "#475569"}
+						strokeWidth="0.8"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+				</g>
+			) : (
+				<g id="tooth46-fiber-post-core" data-testid="tooth46-post-core-fiber">
+					<path
+						d={g.fiberPostCore.postShaft}
+						fill="url(#dente-fiber-post)"
+						stroke="rgba(148, 163, 184, 0.85)"
+						strokeWidth="0.6"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+					<path
+						d={g.fiberPostCore.coreStump}
+						fill="url(#dente-composite-core)"
+						stroke="rgba(2, 132, 199, 0.90)"
+						strokeWidth="0.7"
+						strokeDasharray="2.5 1.5"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+				</g>
+			)}
 		</g>
 	);
 };

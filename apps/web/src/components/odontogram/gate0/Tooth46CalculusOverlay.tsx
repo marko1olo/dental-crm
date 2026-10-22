@@ -12,8 +12,8 @@ export const Tooth46CalculusOverlay: React.FC = () => {
 			<path
 				d={c.supragingival}
 				fill="url(#dente-calculus-supra)"
-				stroke="rgba(180, 83, 9, 0.60)"
-				strokeWidth="0.55"
+				stroke="rgba(140, 111, 68, 0.75)"
+				strokeWidth="0.5"
 				strokeLinejoin="round"
 			/>
 			{c.nodularTexture.map((n) => (
@@ -22,16 +22,17 @@ export const Tooth46CalculusOverlay: React.FC = () => {
 					d={n}
 					data-component="calculus-nodule"
 					fill="none"
-					stroke="#92400e"
+					stroke="#6b4c27"
 					strokeWidth="0.45"
-					strokeOpacity="0.7"
+					strokeOpacity="0.65"
 				/>
 			))}
 			<path
 				d={c.subgingival}
 				fill="url(#dente-calculus-sub)"
-				stroke="#1c1917"
-				strokeWidth="0.6"
+				stroke="#2e1f10"
+				strokeWidth="0.5"
+				strokeLinejoin="round"
 			/>
 		</g>
 	);
