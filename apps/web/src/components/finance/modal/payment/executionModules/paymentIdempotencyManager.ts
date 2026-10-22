@@ -8,7 +8,7 @@
 import {
 	createCompositeIdempotencyKey,
 	generateUuidV7,
-	type StomxCashBoxType,
+	type CashBoxType,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../../lib/denteRequestHeaders.js";
 
@@ -20,7 +20,7 @@ export interface CreateIdempotencyKeyParams {
 	readonly patientId: string;
 	readonly amountRub: number;
 	readonly method: string;
-	readonly cashBoxType?: StomxCashBoxType | undefined;
+	readonly cashBoxType?: CashBoxType | undefined;
 }
 
 export interface PaymentIdempotencyContext {

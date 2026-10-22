@@ -124,6 +124,9 @@ export interface ThreeSourceSplitWeights {
 	cardRatio?: number | undefined;
 	sbpRatio?: number | undefined;
 	cashRatio?: number | undefined;
+	cardPercent?: number | undefined;
+	sbpPercent?: number | undefined;
+	cashPercent?: number | undefined;
 }
 
 export interface ThreeSourceSplitResult {

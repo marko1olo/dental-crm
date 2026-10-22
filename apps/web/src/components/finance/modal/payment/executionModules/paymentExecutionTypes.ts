@@ -5,7 +5,11 @@
  * Governed by 54-FZ (FFD 1.2), Mandate 8e (Doctor Autonomy), Mandate 8i (Kopeck Precision).
  */
 
-import type { SberPosTransactionResponse, StomxCashBoxType, StomxReceiptTypeAlias } from "@dental/shared";
+import type {
+	SberPosTransactionResponse,
+	CashBoxType,
+	CashReceiptTypeAlias,
+} from "@dental/shared";
 import type { PayerType, PaymentDiscountCalculation } from "../../../cashboxOperations.js";
 import type { PaymentMethodTab, PaymentModalProps } from "../paymentModalTypes.js";
 import type { ReceiptItem } from "../../../../billing/ReceiptPreview.js";
@@ -23,8 +27,8 @@ export interface PaymentApiRequestBody {
 	readonly patientId: string;
 	readonly amountRub: number;
 	readonly method: string;
-	readonly cashBoxType?: StomxCashBoxType | undefined;
-	readonly receiptTypeAlias?: StomxReceiptTypeAlias | undefined;
+	readonly cashBoxType?: CashBoxType | undefined;
+	readonly receiptTypeAlias?: CashReceiptTypeAlias | undefined;
 	readonly cashFlowCategory?: string | undefined;
 	readonly visitId: string | null;
 	readonly documentId: string | null;
@@ -71,8 +75,8 @@ export interface UsePaymentExecutionParams {
 	readonly effectiveDiscountPercent: number;
 	readonly activeMethod: PaymentMethodTab;
 	readonly setActiveMethod: (m: PaymentMethodTab) => void;
-	readonly selectedCashBoxType: StomxCashBoxType;
-	readonly selectedReceiptAlias: StomxReceiptTypeAlias;
+	readonly selectedCashBoxType: CashBoxType;
+	readonly selectedReceiptAlias: CashReceiptTypeAlias;
 	readonly payerType: PayerType;
 	readonly buyerInn: string;
 	readonly setBuyerInnError: (err: string | null) => void;

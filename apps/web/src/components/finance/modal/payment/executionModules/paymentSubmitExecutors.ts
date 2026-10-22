@@ -10,8 +10,6 @@ import {
 	rubToKopecks,
 	CASH_BOXES,
 	CASH_RECEIPT_CATEGORIES,
-	STOMX_CASH_BOXES,
-	STOMX_CASH_RECEIPT_CATEGORIES,
 } from "@dental/shared";
 import { validate54FzBuyerInn } from "../../../cashboxOperations.js";
 import { showToast } from "../../../../GlobalToast.js";

@@ -2,9 +2,9 @@ import React, { useMemo, useState } from "react";
 import {
 	kopecksToRub,
 	rubToKopecks,
-	type StomxCashBoxType,
-	type StomxReceiptTypeAlias,
-	type StomxExpenseTypeAlias,
+	type CashBoxType,
+	type CashReceiptTypeAlias,
+	type CashExpenseTypeAlias,
 } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
 import {
@@ -49,7 +49,7 @@ export function useFiscalTenderAllocation({
 		return "card";
 	});
 	const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState<boolean>(false);
-	const [showStomxSettings, setShowStomxSettings] = useState<boolean>(false);
+	const [showCashFlowSettings, setShowCashFlowSettings] = useState<boolean>(false);
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
@@ -60,10 +60,10 @@ export function useFiscalTenderAllocation({
 	const [buyerLegalName, setBuyerLegalName] = useState<string>("");
 	const [buyerInn, setBuyerInn] = useState<string>("");
 
-	// StomX Cash Box & 54-FZ Cash Flow Categories (ДДС)
-	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
-	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<StomxReceiptTypeAlias>("appointment_payment");
-	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<StomxExpenseTypeAlias>("return_appointment");
+	// Cash Box & 54-FZ Cash Flow Categories (ДДС)
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<CashBoxType>("main");
+	const [selectedReceiptAlias, setSelectedReceiptAlias] = useState<CashReceiptTypeAlias>("appointment_payment");
+	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<CashExpenseTypeAlias>("return_appointment");
 
 	// Initial default allocation: 100% to initialMethod if all are 0
 	React.useEffect(() => {
@@ -376,8 +376,8 @@ export function useFiscalTenderAllocation({
 		setPaymentMode,
 		isOverflowMenuOpen,
 		setIsOverflowMenuOpen,
-		showStomxSettings,
-		setShowStomxSettings,
+		showCashFlowSettings,
+		setShowCashFlowSettings,
 		certificateAmount,
 		setCertificateAmount,
 		insuranceAmount,

@@ -12,7 +12,7 @@ import {
 	Wallet,
 	Zap,
 } from "lucide-react";
-import { type PatientBillingPaymentMethod } from "./PatientBillingFriendlyTab";
+import { type PatientBillingPaymentMethod } from "./PatientBillingTypes";
 
 export interface PatientBillingTenderPanelProps {
 	readonly selectedTender: PatientBillingPaymentMethod;

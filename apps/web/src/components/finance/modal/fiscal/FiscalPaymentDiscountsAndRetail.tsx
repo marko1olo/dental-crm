@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
 	Building2,
 	CheckCircle2,
@@ -18,11 +18,11 @@ import {
 import {
 	parseChestnyZnakDataMatrix,
 	RECEPTION_RETAIL_CATALOG,
-	STOMX_CASH_BOXES,
-	STOMX_CASH_RECEIPT_CATEGORIES,
+	CASH_BOXES,
+	CASH_RECEIPT_CATEGORIES,
 	type RetailProductItem,
-	type StomxCashBoxType,
-	type StomxReceiptTypeAlias,
+	type CashBoxType,
+	type CashReceiptTypeAlias,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 import {
@@ -40,14 +40,14 @@ export interface FiscalPaymentDiscountsAndRetailProps {
 	readonly isSubmittingManualCard: boolean;
 	readonly handleRetryFiscalizationWithoutBalanceImpact: () => Promise<void>;
 	readonly isFiscalizing: boolean;
-	readonly showStomxSettings: boolean;
-	readonly setShowStomxSettings: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly showCashFlowSettings?: boolean;
+	readonly setShowCashFlowSettings?: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly handleCopyActData: () => void;
 	readonly handleCopyCertData: () => void;
-	readonly selectedReceiptAlias: StomxReceiptTypeAlias;
-	readonly setSelectedReceiptAlias: (v: StomxReceiptTypeAlias) => void;
-	readonly selectedCashBoxType: StomxCashBoxType;
-	readonly setSelectedCashBoxType: (v: StomxCashBoxType) => void;
+	readonly selectedReceiptAlias: CashReceiptTypeAlias;
+	readonly setSelectedReceiptAlias: (v: CashReceiptTypeAlias) => void;
+	readonly selectedCashBoxType: CashBoxType;
+	readonly setSelectedCashBoxType: (v: CashBoxType) => void;
 	readonly setIsRetailModalOpen: (v: boolean) => void;
 	readonly handleAddRetailProduct: (product: RetailProductItem, qty: number) => void;
 	readonly additionalRetailItems: readonly TreatmentPlanItem[];
@@ -76,8 +76,8 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 	isSubmittingManualCard,
 	handleRetryFiscalizationWithoutBalanceImpact,
 	isFiscalizing,
-	showStomxSettings,
-	setShowStomxSettings,
+	showCashFlowSettings: propShowCashFlowSettings,
+	setShowCashFlowSettings: propSetShowCashFlowSettings,
 	handleCopyActData,
 	handleCopyCertData,
 	selectedReceiptAlias,
@@ -103,9 +103,16 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 	setCustomDiscountRub,
 	totalSumRub,
 }) => {
+	const [localShowSettings, setLocalShowSettings] = useState(false);
+	const showSettings = propShowCashFlowSettings ?? localShowSettings;
+	const toggleSettings = () => {
+		if (propSetShowCashFlowSettings) propSetShowCashFlowSettings((p) => !p);
+		else setLocalShowSettings((p) => !p);
+	};
+
 	return (
 		<>
-			{/* Top Bar: Operations Popover & StomX Quick Requisites */}
+			{/* Top Bar: Operations Popover & Cash Flow Quick Requisites */}
 			<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
 				<div className="text-xs text-[var(--muted,#64748b)] font-bold flex items-center gap-1.5">
 					<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -171,13 +178,13 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 							<button
 								type="button"
 								onClick={() => {
-									setShowStomxSettings((prev) => !prev);
+									toggleSettings();
 									setIsOverflowMenuOpen(false);
 								}}
 								className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 							>
 								<Settings2 size={14} className="text-amber-600 shrink-0" />
-								<span>{showStomxSettings ? "Скрыть кассу и ДДС" : "Настроить кассу и ДДС"}</span>
+								<span>{showSettings ? "Скрыть кассу и ДДС" : "Настроить кассу и ДДС"}</span>
 							</button>
 							<button
 								type="button"
@@ -206,8 +213,8 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 				</div>
 			</div>
 
-			{/* StomX Cash Flow (ДДС) & Cash Box Selector */}
-			<div className={`p-2.5 rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] ${showStomxSettings ? "space-y-2" : "flex items-center justify-between flex-wrap gap-2"}`} data-testid="stomx-cash-flow-payment-bar">
+			{/* Cash Flow (ДДС) & Cash Box Selector */}
+			<div className={`p-2.5 rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] ${showSettings ? "space-y-2" : "flex items-center justify-between flex-wrap gap-2"}`} data-testid="cash-flow-payment-bar">
 				<div className="flex items-center gap-2 flex-wrap">
 					<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] uppercase tracking-wider">
 						<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -215,11 +222,11 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 					</div>
 					<select
 						value={selectedReceiptAlias}
-						onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+						onChange={(e) => setSelectedReceiptAlias(e.target.value as CashReceiptTypeAlias)}
 						className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer max-w-[200px] truncate"
 						data-testid="select-receipt-category-all"
 					>
-						{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+						{CASH_RECEIPT_CATEGORIES.map((cat) => (
 							<option key={cat.id} value={cat.alias}>
 								{cat.name} ({cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
 							</option>
@@ -233,11 +240,11 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 						<span>Касса:</span>
 						<select
 							value={selectedCashBoxType}
-							onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+							onChange={(e) => setSelectedCashBoxType(e.target.value as CashBoxType)}
 							className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
-							data-testid="select-stomx-cashbox-payment"
+							data-testid="select-cashbox-payment"
 						>
-							{STOMX_CASH_BOXES.map((b) => (
+							{CASH_BOXES.map((b) => (
 								<option key={b.id} value={b.type}>
 									{b.name} ({b.isCashless ? "Безнал" : "Нал"})
 								</option>
@@ -247,9 +254,9 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 				</div>
 
 				{/* 1-Click Fast Category Pills when expanded */}
-				{showStomxSettings && (
+				{showSettings && (
 					<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--border,#cbd5e1)]">
-						{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 5).map((cat) => (
+						{CASH_RECEIPT_CATEGORIES.slice(0, 5).map((cat) => (
 							<button
 								key={cat.id}
 								type="button"

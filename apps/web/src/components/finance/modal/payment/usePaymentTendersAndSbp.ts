@@ -8,8 +8,8 @@ import { useState, useMemo, useEffect } from "react";
 import {
 	kopecksToRub,
 	rubToKopecks,
-	type StomxCashBoxType,
-	type StomxReceiptTypeAlias,
+	type CashBoxType,
+	type CashReceiptTypeAlias,
 } from "@dental/shared";
 import {
 	allocateRemainderToTender,
@@ -73,9 +73,9 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 	} = params;
 
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
-	const [selectedCashBoxType, setSelectedCashBoxType] = useState<StomxCashBoxType>("main");
+	const [selectedCashBoxType, setSelectedCashBoxType] = useState<CashBoxType>("main");
 	const [selectedReceiptAlias, setSelectedReceiptAlias] =
-		useState<StomxReceiptTypeAlias>("appointment_payment");
+		useState<CashReceiptTypeAlias>("appointment_payment");
 
 	const initialSplit5050Cash = initialSplit5050
 		? kopecksToRub(Math.floor(rubToKopecks(totalDueRub) / 2))

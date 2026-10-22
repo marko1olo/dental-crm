@@ -14,8 +14,6 @@ import {
 	type SberPosTransactionResponse,
 	type CashBoxType,
 	type CashReceiptTypeAlias,
-	type StomxCashBoxType,
-	type StomxReceiptTypeAlias,
 } from "@dental/shared";
 import type { PaymentDiscountCalculation } from "../../cashboxOperations.js";
 import { hardwarePrinter } from "../../../../services/hardware/HardwarePrinter.js";
@@ -42,8 +40,8 @@ export interface UsePaymentSbpAndTerminalParams {
 	readonly discountRub: number;
 	readonly effectiveDiscountPercent: number;
 	readonly activeMethod: PaymentMethodTab;
-	readonly selectedCashBoxType: StomxCashBoxType;
-	readonly selectedReceiptAlias: StomxReceiptTypeAlias;
+	readonly selectedCashBoxType: CashBoxType;
+	readonly selectedReceiptAlias: CashReceiptTypeAlias;
 	readonly buyerInn: string;
 	readonly splitSbpRub: number;
 	readonly effectiveSbpOrderId: string;

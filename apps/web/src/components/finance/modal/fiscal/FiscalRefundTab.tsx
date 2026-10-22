@@ -9,10 +9,10 @@ import {
 	X,
 } from "lucide-react";
 import {
-	STOMX_CASH_BOXES,
-	STOMX_CASH_EXPENSE_CATEGORIES,
-	type StomxCashBoxType,
-	type StomxExpenseTypeAlias,
+	CASH_BOXES,
+	CASH_EXPENSE_CATEGORIES,
+	type CashBoxType,
+	type CashExpenseTypeAlias,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
@@ -22,10 +22,10 @@ export interface FiscalRefundTabProps {
 	readonly patientDepositRub: number;
 	readonly refundMode: "items" | "advance";
 	readonly setRefundMode: (m: "items" | "advance") => void;
-	readonly selectedCashBoxType: StomxCashBoxType;
-	readonly setSelectedCashBoxType: (t: StomxCashBoxType) => void;
-	readonly selectedExpenseAlias: StomxExpenseTypeAlias;
-	readonly setSelectedExpenseAlias: (a: StomxExpenseTypeAlias) => void;
+	readonly selectedCashBoxType: CashBoxType;
+	readonly setSelectedCashBoxType: (t: CashBoxType) => void;
+	readonly selectedExpenseAlias: CashExpenseTypeAlias;
+	readonly setSelectedExpenseAlias: (a: CashExpenseTypeAlias) => void;
 	readonly isAdvanceRefund: boolean;
 	readonly refundAdvanceAmountRub: number;
 	readonly setRefundAdvanceAmountRub: (amt: number) => void;
@@ -115,8 +115,8 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 				</div>
 			)}
 
-			{/* StomX Cash Expense (ДДС) & Cash Box Selector for Refund */}
-			<div className="p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="stomx-cash-flow-refund-bar">
+			{/* Cash Expense (ДДС) & Cash Box Selector for Refund */}
+			<div className="p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="cash-flow-refund-bar">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-1.5 font-bold text-xs text-rose-950 dark:text-rose-200 uppercase tracking-wider">
 						<Coins size={14} className="text-rose-600 shrink-0" />
@@ -127,11 +127,11 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 						<span>Касса:</span>
 						<select
 							value={selectedCashBoxType}
-							onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+							onChange={(e) => setSelectedCashBoxType(e.target.value as CashBoxType)}
 							className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
-							data-testid="select-stomx-cashbox-refund"
+							data-testid="select-cashbox-refund"
 						>
-							{STOMX_CASH_BOXES.map((b) => (
+							{CASH_BOXES.map((b) => (
 								<option key={b.id} value={b.type}>
 									{b.name} ({b.isCashless ? "Безнал" : "Нал"})
 								</option>
@@ -142,7 +142,7 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 
 				{/* 1-Click Fast Expense Category Pills */}
 				<div className="flex items-center gap-1.5 flex-wrap">
-					{STOMX_CASH_EXPENSE_CATEGORIES.slice(0, 5).map((cat) => (
+					{CASH_EXPENSE_CATEGORIES.slice(0, 5).map((cat) => (
 						<button
 							key={cat.id}
 							type="button"
@@ -159,11 +159,11 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 					))}
 					<select
 						value={selectedExpenseAlias}
-						onChange={(e) => setSelectedExpenseAlias(e.target.value as StomxExpenseTypeAlias)}
+						onChange={(e) => setSelectedExpenseAlias(e.target.value as CashExpenseTypeAlias)}
 						className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
 						data-testid="select-expense-category-all"
 					>
-						{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
+						{CASH_EXPENSE_CATEGORIES.map((cat) => (
 							<option key={cat.id} value={cat.alias}>
 								{cat.name} ({cat.isFiscalRefund ? "Чек возврата" : "Без чека"})
 							</option>

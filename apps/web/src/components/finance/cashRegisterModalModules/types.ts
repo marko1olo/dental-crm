@@ -21,11 +21,11 @@ export interface CashRegisterModalProps {
 	readonly cardSumRub?: number | undefined;
 	readonly sbpSumRub?: number | undefined;
 	readonly advanceOffsetRub?: number | undefined;
-	readonly onOpenShift?: () => Promise<void> | void;
+	readonly onOpenShift?: (() => Promise<void> | void) | undefined;
 	readonly onCloseShift?: (
-		zReportSummary: Ffd12ShiftCloseZReportSummary,
-	) => Promise<void> | void;
-	readonly onPrintXReport?: () => Promise<void> | void;
-	readonly onOpenSplitPayment?: () => void;
+		(zReportSummary: Ffd12ShiftCloseZReportSummary) => Promise<void> | void
+	) | undefined;
+	readonly onPrintXReport?: (() => Promise<void> | void) | undefined;
+	readonly onOpenSplitPayment?: (() => void) | undefined;
 	readonly initialTab?: "reconciliation" | "drawer" | "tape" | undefined;
 }

@@ -330,8 +330,8 @@ export function calculateThreeSourceSplit(
 		};
 	}
 
-	const wCard = weights?.cardRatio !== undefined ? weights.cardRatio : 0.5; // default 50% card
-	const wSbp = weights?.sbpRatio !== undefined ? weights.sbpRatio : 0.25; // default 25% sbp
+	const wCard = weights?.cardRatio !== undefined ? weights.cardRatio : (weights?.cardPercent !== undefined ? weights.cardPercent / 100 : 0.5); // default 50% card
+	const wSbp = weights?.sbpRatio !== undefined ? weights.sbpRatio : (weights?.sbpPercent !== undefined ? weights.sbpPercent / 100 : 0.25); // default 25% sbp
 
 	const cardKopecks = Math.min(totalKopecks, Math.round(totalKopecks * wCard));
 	const sbpKopecks = Math.min(totalKopecks - cardKopecks, Math.round(totalKopecks * wSbp));

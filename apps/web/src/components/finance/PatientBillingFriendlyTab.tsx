@@ -18,40 +18,11 @@ import {
 	type PatientBillingTenderPanelProps,
 } from "./PatientBillingTenderPanel";
 
-export * from "./PatientBillingPlanStagePanel";
-export * from "./PatientBillingTenderPanel";
-
-export interface PatientBillingPlanStage {
-	readonly id: string;
-	readonly stageNumber?: number | undefined;
-	readonly title?: string | undefined;
-	readonly titleRu?: string | undefined;
-	readonly totalAmountRub?: number | undefined;
-	readonly totalRub?: number | undefined;
-	readonly totalPriceKopecks?: number | undefined;
-	readonly paidAmountRub?: number | undefined;
-	readonly paidAmountKopecks?: number | undefined;
-	readonly remainingAmountRub?: number | undefined;
-	readonly remainingAmountKopecks?: number | undefined;
-	readonly status?: string | undefined;
-	readonly items?: readonly any[] | undefined;
-}
-
-export interface PatientBillingTreatmentPlan {
-	readonly id?: string | undefined;
-	readonly planNumber?: string | undefined;
-	readonly title?: string | undefined;
-	readonly stages?: readonly PatientBillingPlanStage[] | undefined;
-	readonly activeStage?: PatientBillingPlanStage | undefined;
-}
-
-export type PatientBillingPaymentMethod =
-	| "card"
-	| "sbp"
-	| "cash"
-	| "family"
-	| "deposit"
-	| "installment";
+import type {
+	PatientBillingPaymentMethod,
+	PatientBillingPlanStage,
+	PatientBillingTreatmentPlan,
+} from "./PatientBillingTypes";
 
 export function renderCategoryIcon(categoryGroup: string) {
 	switch (categoryGroup) {

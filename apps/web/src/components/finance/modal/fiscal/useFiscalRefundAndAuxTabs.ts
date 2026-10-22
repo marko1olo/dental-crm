@@ -3,7 +3,7 @@ import {
 	generateOneCEnterpriseXml,
 	type OneCDocumentType,
 	type OneCExportParams,
-	type StomxExpenseTypeAlias,
+	type CashExpenseTypeAlias,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../../treatment-plans/types";
 import { showToast } from "../../../GlobalToast";
@@ -81,7 +81,7 @@ export function useFiscalRefundAndAuxTabs({
 		items.length === 0 && patientDepositRub && patientDepositRub > 0 ? patientDepositRub : 0,
 	);
 	const [refundAdvancePurpose, setRefundAdvancePurpose] = useState<string>("Возврат аванса / денежных средств");
-	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<StomxExpenseTypeAlias>("return_appointment");
+	const [selectedExpenseAlias, setSelectedExpenseAlias] = useState<CashExpenseTypeAlias>("return_appointment");
 
 	// Correction state (Чек коррекции 54-ФЗ)
 	const [correctionType, setCorrectionType] = useState<"self_initiated" | "by_instruction">("self_initiated");

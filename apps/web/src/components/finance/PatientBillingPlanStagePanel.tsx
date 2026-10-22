@@ -3,7 +3,7 @@ import { Layers, Zap } from "lucide-react";
 import {
 	type PatientBillingPlanStage,
 	type PatientBillingTreatmentPlan,
-} from "./PatientBillingFriendlyTab";
+} from "./PatientBillingTypes";
 
 export interface PatientBillingPlanStagePanelProps {
 	readonly planStages: readonly PatientBillingPlanStage[];
