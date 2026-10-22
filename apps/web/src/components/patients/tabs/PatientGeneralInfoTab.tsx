@@ -9,7 +9,7 @@ import {
 	REGISTRY_SERVICE_TAGS,
 	DOCTOR_CLINICAL_TAGS,
 	POPULAR_DMS_COMPANIES,
-	STOMX_REPRESENTATIVE_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	isStatutoryLegalRepresentative,
 } from "./generalInfo/constants";
 import type {
@@ -17,6 +17,8 @@ import type {
 	PatientGeneralInfo,
 	PatientGeneralInfoTabProps,
 	PatientVisitHistoryItem,
+	RepresentativeRelationshipType,
+	RepresentativeRelationshipMeta,
 	StomxRepresentativeType,
 	StomxRepresentativeTypeMeta,
 } from "./generalInfo/types";
@@ -32,8 +34,11 @@ import { PatientFamilyCard } from "../PatientFamilyCard";
 import { usePatientFamilyLoader } from "../overview/usePatientFamilyLoader";
 
 export {
-	STOMX_REPRESENTATIVE_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
+	type RepresentativeRelationshipType,
+	type RepresentativeRelationshipMeta,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 	type IdentityDocType,

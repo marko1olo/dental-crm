@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Users } from "lucide-react";
-import { STOMX_REPRESENTATIVE_CATALOG } from "./constants";
+import { REPRESENTATIVE_RELATIONSHIP_CATALOG } from "./constants";
 import { formatPhoneNumber } from "../../../../utils/inputSanitation";
 import type { PatientRepresentativesSectionProps } from "./types";
 
@@ -50,7 +50,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 		const selectedRep = useMemo(() => {
 			if (!patient?.representativeType) return null;
 			return (
-				STOMX_REPRESENTATIVE_CATALOG.find(
+				REPRESENTATIVE_RELATIONSHIP_CATALOG.find(
 					(r) => r.nameRu === patient.representativeType || r.code === patient.representativeType,
 				) ?? null
 			);
@@ -147,7 +147,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap py-1 min-w-0">
-							{STOMX_REPRESENTATIVE_CATALOG.map((rep) => {
+							{REPRESENTATIVE_RELATIONSHIP_CATALOG.map((rep) => {
 								const isSelected =
 									patient?.representativeType === rep.nameRu ||
 									patient?.representativeType === rep.code;
@@ -399,7 +399,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 
 				{/* Чипы представителей */}
 				<div className="flex items-center gap-1.5 flex-wrap py-0.5 min-w-0">
-					{STOMX_REPRESENTATIVE_CATALOG.map((rep) => {
+					{REPRESENTATIVE_RELATIONSHIP_CATALOG.map((rep) => {
 						const isSelected =
 							patient?.representativeType === rep.nameRu ||
 							patient?.representativeType === rep.code;

@@ -1,4 +1,4 @@
-import { STOMX_MARKETING_SOURCES_CATALOG } from "@dental/shared";
+import { MARKETING_SOURCES_CATALOG } from "@dental/shared";
 import { ChevronDown, Megaphone, Stethoscope, Tag } from "lucide-react";
 import React from "react";
 import { DOCTOR_CLINICAL_TAGS, REGISTRY_SERVICE_TAGS } from "./constants";
@@ -183,7 +183,7 @@ export const PatientTagsMarketingSection: React.FC<PatientTagsMarketingSectionPr
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap py-1 min-w-0">
-							{STOMX_MARKETING_SOURCES_CATALOG.slice(0, 9).map((src) => {
+							{MARKETING_SOURCES_CATALOG.slice(0, 9).map((src) => {
 								const isSelected = patient?.acquisitionSource === src.nameRu;
 								return (
 									<button

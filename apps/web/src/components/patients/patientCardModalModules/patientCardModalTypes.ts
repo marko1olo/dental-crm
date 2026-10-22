@@ -2,8 +2,10 @@ import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 import {
-	STOMX_REPRESENTATIVE_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	isStatutoryLegalRepresentative,
+	type RepresentativeRelationshipType,
+	type RepresentativeRelationshipMeta,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 } from "@dental/shared";
@@ -23,8 +25,11 @@ export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
 };
 
 export {
-	STOMX_REPRESENTATIVE_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG,
+	REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
+	type RepresentativeRelationshipType,
+	type RepresentativeRelationshipMeta,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 };
@@ -38,14 +43,14 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	if (!type) {
 		return { isLegalRepresentative: false, labelRu: "", idsSigningAllowed: false, descriptionRu: "Представитель не выбран" };
 	}
-	const match = STOMX_REPRESENTATIVE_CATALOG.find((r) => r.nameRu === type || r.code === type);
+	const match = REPRESENTATIVE_RELATIONSHIP_CATALOG.find((r) => r.nameRu === type || r.code === type);
 	const isLegal = match?.isLegalRepresentative ?? false;
 	return {
 		isLegalRepresentative: isLegal,
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (ст. 20 323-ФЗ, СК РФ ст. 64)"
+			? "Законный представитель: имеет право подписывать информированное согласие (ИДС) за несовершеннолетнего"
 			: "Член семьи: подписание согласий за несовершеннолетнего требует нотариальной доверенности",
 	};
 }

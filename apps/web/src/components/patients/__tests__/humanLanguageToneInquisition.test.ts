@@ -34,13 +34,14 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("2. VisitSoapEditor.tsx: SOAP labels use natural Russian instead of Latin and academic jargon", () => {
 		const filePath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
+		const soapEditorDir = path.join(webSrcRoot, "components/visit/soapEditor");
+		const soapEditorSource = fs.existsSync(soapEditorDir)
+			? fs.readdirSync(soapEditorDir).map((f) => fs.readFileSync(path.join(soapEditorDir, f), "utf-8")).join("\n")
+			: "";
 		const content =
 			fs.readFileSync(filePath, "utf-8") +
 			"\n" +
-			fs.readFileSync(
-				path.join(webSrcRoot, "components/visit/soapEditor/SoapFieldsEditor.tsx"),
-				"utf-8",
-			);
+			soapEditorSource;
 
 		// Latin and English bloat banned from labels
 		assert.ok(
@@ -337,13 +338,19 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("18. VisitView.tsx, VisitEmkTab.tsx, VisitSoapEditor.tsx: treatment plan defaults free of bare 'Санация'", () => {
 		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
+		const headerModulesDir = path.join(webSrcRoot, "components/visit/view/visitHeaderModules");
+		const headerModulesSource = fs.existsSync(headerModulesDir)
+			? fs.readdirSync(headerModulesDir).map((f) => fs.readFileSync(path.join(headerModulesDir, f), "utf-8")).join("\n")
+			: "";
 		const visitViewContent =
 			fs.readFileSync(visitViewPath, "utf-8") +
 			"\n" +
 			fs.readFileSync(
 				path.join(webSrcRoot, "components/visit/view/VisitViewHeader.tsx"),
 				"utf-8",
-			);
+			) +
+			"\n" +
+			headerModulesSource;
 		assert.ok(!visitViewContent.includes("патологий не выявлено. Санация."), "Must not use bare 'Санация' in default plan");
 		assert.ok(visitViewContent.includes("Полость рта здорова, гигиена удовлетворительная."));
 
@@ -360,13 +367,14 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 		assert.ok(emkContent.includes("Проведена профессиональная гигиена и профилактика."));
 
 		const soapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
+		const soapEditorDir = path.join(webSrcRoot, "components/visit/soapEditor");
+		const soapEditorFiles = fs.existsSync(soapEditorDir)
+			? fs.readdirSync(soapEditorDir).map((f) => fs.readFileSync(path.join(soapEditorDir, f), "utf-8")).join("\n")
+			: "";
 		const soapContent =
 			fs.readFileSync(soapPath, "utf-8") +
 			"\n" +
-			fs.readFileSync(
-				path.join(webSrcRoot, "components/visit/soapEditor/useVisitSoapEditor.ts"),
-				"utf-8",
-			);
+			soapEditorFiles;
 		assert.ok(!soapContent.includes('values.treatmentPlan || "Санация"'), "Must not use bare 'Санация' in clipboard protocol");
 		assert.ok(soapContent.includes('values.treatmentPlan || "Лечение и гигиена"'));
 	});

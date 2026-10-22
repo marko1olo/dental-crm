@@ -91,7 +91,7 @@ export const PatientCardHeader: React.FC<PatientCardHeaderProps> = React.memo(
 								{consentStatus === "issued" ? (
 									<span
 										className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 text-xs font-bold inline-flex items-center gap-1 shrink-0"
-										title="Информированное добровольное согласие (ИДС) подписано (323-ФЗ ст. 20, Приказ 1051н)"
+										title="Информированное согласие (ИДС) подписано пациентом"
 										data-testid="badge-consent-status"
 									>
 										<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -109,7 +109,7 @@ export const PatientCardHeader: React.FC<PatientCardHeaderProps> = React.memo(
 								) : (
 									<span
 										className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 text-xs font-bold inline-flex items-center gap-1 shrink-0"
-										title="Требуется оформление и подписание ИДС перед приёмом (323-ФЗ ст. 20)"
+										title="Требуется оформление и подписание информированного согласия (ИДС)"
 										data-testid="badge-consent-status"
 									>
 										<ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
