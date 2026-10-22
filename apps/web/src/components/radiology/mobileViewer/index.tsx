@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 if (typeof document !== "undefined") {
 	void import("../mobileRadiology.css");

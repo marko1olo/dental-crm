@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { MobileGestureViewport } from "./MobileGestureViewport.js";
 import { MobileRadiologyCarousel } from "./MobileRadiologyCarousel.js";
 import { MobileViewerToolbarSection } from "./MobileViewerToolbarSection.js";

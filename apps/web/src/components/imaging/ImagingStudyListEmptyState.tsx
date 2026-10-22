@@ -1,4 +1,4 @@
-import { Image as ImageIcon } from "lucide-react";
+import { Film, Image as ImageIcon } from "lucide-react";
 import type React from "react";
 import { countLabel } from "../../AppHelpers.js";
 import { EmptyState } from "../EmptyState.js";
@@ -95,9 +95,9 @@ export const ImagingStudyListEmptyState: React.FC<
 
 	return (
 		<EmptyState
-			icon={<ImageIcon size={28} />}
-			title="Снимков в карте пациента нет"
-			description="Загрузите снимки пациента (КТ, ОПТГ, прицельные RVG или фотопротокол) через верхнюю панель импорта DICOM или выберите архив исследования."
+			icon={<Film size={28} className="text-[var(--primary)]" />}
+			title="У выбранного пациента нет рентгеновских снимков"
+			description="Загрузите снимки пациента (RVG, КТ, ОПТГ, DICOM) через кнопку «+ Загрузить снимок» или перетащите файл на холст."
 		/>
 	);
 };

@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { showToast } from "../../GlobalToast.js";
 import { MobileShowcaseBottomActions } from "./MobileShowcaseBottomActions.js";
 import { MobileShowcaseCanvas } from "./MobileShowcaseCanvas.js";

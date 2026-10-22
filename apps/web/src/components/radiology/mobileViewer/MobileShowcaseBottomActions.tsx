@@ -1,5 +1,5 @@
 import { Check, FileText, Layers } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface MobileShowcaseBottomActionsProps {
 	comparisonMode: "single" | "split";

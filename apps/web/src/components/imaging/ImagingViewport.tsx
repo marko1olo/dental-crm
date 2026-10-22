@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ClinicalImageViewer } from "./ClinicalImageViewer";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
+import { uploadImagingScanFile } from "./imagingUploadService";
 import {
 	imagingStudyHasFile,
 	type AiProposal,
@@ -162,6 +163,7 @@ export interface ImagingViewportProps {
 	selectedStudySummary: string | null;
 	pendingAiProposal: AiProposal | null;
 	setPendingAiProposal: (proposal: AiProposal | null) => void;
+	onStudyUploaded?: (study: any) => void;
 }
 
 export function ImagingViewport({
@@ -193,6 +195,7 @@ export function ImagingViewport({
 	selectedStudySummary,
 	pendingAiProposal,
 	setPendingAiProposal,
+	onStudyUploaded,
 }: ImagingViewportProps) {
 	// Canvas Resource Disposal on unmount (WebGL / 2D Canvas memory leak prevention)
 	useEffect(() => {
@@ -212,12 +215,27 @@ export function ImagingViewport({
 				e.preventDefault();
 				e.stopPropagation();
 			}}
-			onDrop={(e) => {
+			onDrop={async (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				const files = e.dataTransfer.files;
-				if (files && files.length > 0 && files[0]) {
+				const files = Array.from(e.dataTransfer.files);
+				if (files.length > 0 && files[0]) {
 					const file = files[0];
+					const patientId = selectedImagingStudy?.patientId;
+					if (patientId) {
+						showToast(`Загрузка «${file.name}»...`, "info");
+						try {
+							const res = await uploadImagingScanFile(file, {
+								patientId,
+								toothCode: selectedImagingStudy?.toothCode || undefined,
+							});
+							if (res.success && res.study && onStudyUploaded) {
+								onStudyUploaded(res.study);
+							}
+						} catch (err: any) {
+							showToast(err?.message || "Ошибка загрузки снимка", "error");
+						}
+					}
 					window.dispatchEvent(
 						new CustomEvent("dente-radiology-file-dropped", {
 							detail: { file, toothCode: selectedImagingStudy?.toothCode },

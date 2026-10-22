@@ -1,5 +1,5 @@
 import { Camera, FileText, RefreshCw, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface MobileRadiologyTopBarProps {
 	activeStudiesCount: number;

@@ -27,12 +27,15 @@ export const ImagingFilterRulerGroup: React.FC<ImagingFilterRulerGroupProps> = (
 }) => {
 	const btnBase = "h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 transition-all inline-flex items-center justify-center cursor-pointer shrink-0";
 	const isInverted = Boolean(imagingViewerState.inverted);
+	const isBoneActive = Math.abs((imagingViewerState.contrast ?? 1) - 1.45) < 0.05 && Math.abs((imagingViewerState.brightness ?? 1) - 1.10) < 0.05;
+	const isEndoActive = Math.abs((imagingViewerState.contrast ?? 1) - 1.60) < 0.05 && Math.abs((imagingViewerState.brightness ?? 1) - 1.15) < 0.05;
 
 	return (
 		<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5" role="group" aria-label="Фильтры контраста и измерения">
 			<button
 				className={`${btnBase} ${isInverted ? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
 				type="button"
+				data-testid="filter-preset-invert"
 				title="Инверсия (Негатив для верхушек корней)"
 				aria-label="Инвертировать снимок в негатив"
 				aria-pressed={isInverted}
@@ -40,6 +43,36 @@ export const ImagingFilterRulerGroup: React.FC<ImagingFilterRulerGroupProps> = (
 			>
 				<Contrast size={14} aria-hidden="true" />
 				<span>Негатив</span>
+			</button>
+			<button
+				className={`${btnBase} ${isBoneActive ? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+				type="button"
+				data-testid="filter-preset-bone"
+				title="Контраст кости (145% контраст для кортикальной пластинки)"
+				aria-label="Пресет контраста костной ткани"
+				aria-pressed={isBoneActive}
+				onClick={() => setImagingViewerState((state: any) => ({
+					...state,
+					contrast: isBoneActive ? 1.0 : 1.45,
+					brightness: isBoneActive ? 1.0 : 1.10,
+				}))}
+			>
+				<span>Кость</span>
+			</button>
+			<button
+				className={`${btnBase} ${isEndoActive ? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+				type="button"
+				data-testid="filter-preset-endo"
+				title="Эндодонтия (Резкость апекса, 160% контраст для каналов)"
+				aria-label="Пресет эндодонтической резкости"
+				aria-pressed={isEndoActive}
+				onClick={() => setImagingViewerState((state: any) => ({
+					...state,
+					contrast: isEndoActive ? 1.0 : 1.60,
+					brightness: isEndoActive ? 1.0 : 1.15,
+				}))}
+			>
+				<span>Эндо</span>
 			</button>
 			<button
 				className={`${btnBase} ${enhancementOn ? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}

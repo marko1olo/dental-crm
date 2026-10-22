@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { MobileFilterPopover } from "./MobileFilterPopover.js";
 import { MobileThumbActionButtons } from "./MobileThumbActionButtons.js";
 import type { MobileRadiologyFilterToolbarProps } from "./types.js";

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { MobileRadiologyFilterToolbar } from "./MobileRadiologyFilterToolbar.js";
 import type { useMobileRadiologyController } from "./useMobileRadiologyController.js";
 

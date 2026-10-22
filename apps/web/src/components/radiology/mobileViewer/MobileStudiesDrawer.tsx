@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
-import type React from "react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { MobileStudiesDrawerFooter } from "./MobileStudiesDrawerFooter.js";
 import { MobileStudiesListItems } from "./MobileStudiesListItems.js";
 import type { MobileStudiesDrawerProps } from "./types.js";

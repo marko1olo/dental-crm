@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { MobileAiAnalyzingModal } from "./MobileAiAnalyzingModal.js";
 import { MobileRulerBanner, MobileRulerSvg } from "./MobileRulerOverlay.js";
 import { MobileRvgPlaceholder } from "./MobileRvgPlaceholder.js";

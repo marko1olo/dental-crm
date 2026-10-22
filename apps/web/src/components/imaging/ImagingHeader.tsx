@@ -160,21 +160,34 @@ export function ImagingHeader({
 				</nav>
 			)}
 
-			{/* Right Island: Streamlined Fast Actions & Overflow Menu (Mandate 8am, 36px buttons, 1-row) */}
+			{/* Right Island: Streamlined Fast Actions & Overflow Menu (Mandate 8am, exactly 1 Primary CTA) */}
 			<div className="imaging-actions flex items-center gap-1.5 shrink-0">
-				{/* 1. Primary CTA: 3D КТ */}
+				{/* 1. Exactly 1 Primary CTA per Mandate 8am: + Загрузить снимок */}
 				<button
-					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs cursor-pointer transition-colors"
+					className="primary-button h-9 min-h-[36px] px-3.5 text-xs font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs cursor-pointer transition-colors active:scale-98"
+					type="button"
+					data-testid="imaging-pick-dicom-files"
+					onClick={onPickFiles}
+					disabled={isBrowserImagingFolderPicking}
+					title="Загрузить отдельные снимки: RVG, КТ, DICOM, JPG/PNG, ZIP"
+				>
+					<UploadCloud aria-hidden="true" size={16} className="shrink-0" />
+					<span>+ Загрузить снимок</span>
+				</button>
+
+				{/* 2. Secondary: 3D КТ */}
+				<button
+					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
 					data-testid="imaging-open-3d-mpr"
 					onClick={onOpenCbctStudio}
 					title="3D КЛКТ Студия: панорама, срезы, импланты, нижнечелюстной канал"
 				>
-					<Activity aria-hidden="true" size={16} className="shrink-0" />
+					<Activity aria-hidden="true" size={16} className="shrink-0 text-[var(--primary)]" />
 					<span>3D КТ</span>
 				</button>
 
-				{/* 1b. RVG Capture: Захват RVG */}
+				{/* 3. Secondary: RVG Capture */}
 				{onOpenRvgCapture && (
 					<button
 						className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
@@ -188,7 +201,7 @@ export function ImagingHeader({
 					</button>
 				)}
 
-				{/* 2. Secondary: Camera */}
+				{/* 4. Secondary: Camera */}
 				<button
 					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
@@ -201,20 +214,7 @@ export function ImagingHeader({
 					<span>{isCapturingCameraPhoto ? "Загрузка..." : "Камера"}</span>
 				</button>
 
-				{/* 3. Secondary: Pick Files */}
-				<button
-					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
-					type="button"
-					data-testid="imaging-pick-dicom-files"
-					onClick={onPickFiles}
-					disabled={isBrowserImagingFolderPicking}
-					title="Выбрать отдельные DICOM, RVG, JPG/PNG, ZIP файлы"
-				>
-					<FileText aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
-					<span>Файлы</span>
-				</button>
-
-				{/* 4. Secondary: Pick Folder */}
+				{/* 5. Secondary: Pick Folder */}
 				<button
 					className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
 					type="button"
@@ -223,8 +223,8 @@ export function ImagingHeader({
 					disabled={isBrowserImagingFolderPicking}
 					title="Выбрать папку DICOM/КТ со снимками"
 				>
-					<UploadCloud aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
-					<span>{isBrowserImagingFolderPicking ? "Сканирую..." : "Папка"}</span>
+					<FileText aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
+					<span>{isBrowserImagingFolderPicking ? "Сканирую..." : "Папка КТ"}</span>
 				</button>
 
 				{/* 5. Overflow Menu: «··· Ещё ▾» (Hick's Law / Mandate 8am) */}

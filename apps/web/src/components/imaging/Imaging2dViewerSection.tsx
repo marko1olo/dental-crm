@@ -3,6 +3,7 @@ import { ImagingViewport } from "./ImagingViewport";
 import { ImagingToolbar } from "./ImagingToolbar";
 import { ClinicalXrayProtocolPanel } from "./ClinicalXrayProtocolPanel";
 import { DicomArchiveUploader } from "./DicomArchiveUploader";
+import { ImagingEmptyStateStage } from "./ImagingEmptyStateStage";
 import type { ViewerRulerMeasurement, AiProposal } from "./types";
 
 export interface Imaging2dViewerSectionProps {
@@ -58,8 +59,13 @@ export interface Imaging2dViewerSectionProps {
 	formatShortDate?: ((date: any) => string) | undefined;
 	isOnline?: boolean | undefined;
 	activeAppointment?: any;
+	activePatient?: any;
 	onAttachToTooth?: (toothCode: string) => Promise<void> | void;
 	onAttachToVisit?: (visitId: string) => Promise<void> | void;
+	onPickFolder?: () => void;
+	onCaptureCamera?: () => void;
+	onOpenRvgCapture?: () => void;
+	onStudyUploaded?: (study: any) => void;
 }
 
 export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
@@ -116,16 +122,27 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 		formatShortDate,
 		isOnline,
 		activeAppointment,
+		activePatient,
 		onAttachToTooth,
 		onAttachToVisit,
+		onPickFolder,
+		onCaptureCamera,
+		onOpenRvgCapture,
+		onStudyUploaded,
 	} = props;
 
 	if (!selectedImagingStudy && localImageIds.length === 0 && !browserPickedImagingFolder) {
 		return (
-			<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[420px]">
-				<Suspense fallback={null}>
-					<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
-				</Suspense>
+			<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[460px]">
+				<ImagingEmptyStateStage
+					activePatient={activePatient}
+					activeAppointment={activeAppointment}
+					onPickFiles={pickBrowserImagingFiles}
+					onPickFolder={onPickFolder}
+					onCaptureCamera={onCaptureCamera}
+					onOpenRvgCapture={onOpenRvgCapture}
+					onStudyUploaded={onStudyUploaded}
+				/>
 			</div>
 		);
 	}
@@ -161,6 +178,7 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				selectedStudySummary={selectedStudySummary}
 				pendingAiProposal={pendingAiProposal}
 				setPendingAiProposal={setPendingAiProposal}
+				onStudyUploaded={onStudyUploaded}
 			/>
 
 			<ImagingToolbar

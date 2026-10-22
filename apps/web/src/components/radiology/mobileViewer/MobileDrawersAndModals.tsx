@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { Patient } from "@dental/shared";
 import type { ImagingStudy } from "../../imaging/types.js";
 import { MobilePatientShowcaseOverlay } from "./MobilePatientShowcaseOverlay.js";

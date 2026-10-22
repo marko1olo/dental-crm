@@ -1,5 +1,5 @@
 import { Camera, UploadCloud } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export const MobileStudiesDrawerFooter: React.FC<{
 	onClose: () => void;

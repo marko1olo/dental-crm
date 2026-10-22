@@ -1,5 +1,5 @@
 import { Calendar, ChevronRight } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatShortDate } from "../../../AppHelpers.js";
 import type { ImagingStudy } from "../../imaging/types.js";
 

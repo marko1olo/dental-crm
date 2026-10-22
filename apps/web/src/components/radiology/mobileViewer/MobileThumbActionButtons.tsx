@@ -6,7 +6,7 @@ import {
 	Sparkles,
 	ZoomIn,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { MobileRadiologyFilterToolbarProps } from "./types.js";
 
 export const MobileThumbActionButtons: React.FC<
