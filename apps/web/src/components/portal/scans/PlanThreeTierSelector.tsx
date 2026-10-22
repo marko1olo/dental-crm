@@ -227,6 +227,7 @@ export const PlanThreeTierSelector: React.FC<PlanThreeTierSelectorProps> = ({
 
 			{/* 3-Tier Switcher Buttons: [Базовый] | [Оптимум (Выбор врача)] | [Премиум] */}
 			<div
+				className="three-tier-switcher-grid"
 				style={{
 					display: "grid",
 					gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",

@@ -24,59 +24,59 @@ export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> =
 			? `Скидка: ${doctorDiscountRub.toLocaleString("ru-RU")} ₽`
 			: doctorDiscountPercent > 0
 				? `Скидка: ${doctorDiscountPercent}%`
-				: "Скидка врача";
+				: "Скидка";
 
 	return (
-		<div className={embedded ? "flex items-center gap-1.5 flex-wrap no-print text-xs" : "flex items-center justify-between gap-2 px-3 sm:px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs overflow-x-auto scrollbar-none"}>
-			<div className="flex items-center gap-1.5 flex-wrap">
-				<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline">Инструменты врача:</span>
+		<div className={embedded ? "flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none max-w-full no-print text-xs py-0.5 shrink-0" : "flex items-center justify-between gap-2 px-3 sm:px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs overflow-x-auto scrollbar-none"}>
+			<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none py-0.5 max-w-full shrink-0">
+				<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline shrink-0 whitespace-nowrap">Инструменты:</span>
 
 				<button
 					type="button"
 					onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
-					className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-xl text-xs sm:text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs shrink-0 whitespace-nowrap ${
 						activeToolsPanel === "copilot"
-							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-							: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
+							? "bg-[var(--teal)] text-[var(--paper-strong)] border-[var(--teal)]"
+							: "bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal)] border-[var(--line)]"
 					}`}
 					data-testid="toggle-copilot-panel-btn"
 					title="AI Copilot у кресла: готовые сценарии и оптимизация бюджета"
 				>
-					<Sparkles size={13} className={activeToolsPanel === "copilot" ? "text-amber-300" : "text-amber-500"} />
-					<span>AI Copilot</span>
-					<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "copilot" ? "rotate-180" : ""}`} />
+					<Sparkles size={13} className={activeToolsPanel === "copilot" ? "text-amber-300 shrink-0" : "text-amber-500 shrink-0"} />
+					<span className="shrink-0 whitespace-nowrap">AI Copilot</span>
+					<ChevronDown size={12} className={`transition-transform duration-150 shrink-0 ${activeToolsPanel === "copilot" ? "rotate-180" : ""}`} />
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
-					className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-xl text-xs sm:text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs shrink-0 whitespace-nowrap ${
 						activeToolsPanel === "bundles"
-							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-							: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
+							? "bg-[var(--teal)] text-[var(--paper-strong)] border-[var(--teal)]"
+							: "bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal)] border-[var(--line)]"
 					}`}
 					data-testid="toggle-bundles-panel-btn"
 					title="Готовые клинические пакеты услуг"
 				>
-					<Package size={13} />
-					<span>Клинические пакеты</span>
-					<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "bundles" ? "rotate-180" : ""}`} />
+					<Package size={13} className="shrink-0" />
+					<span className="shrink-0 whitespace-nowrap">Пакеты</span>
+					<ChevronDown size={12} className={`transition-transform duration-150 shrink-0 ${activeToolsPanel === "bundles" ? "rotate-180" : ""}`} />
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
-					className={`min-h-[40px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs ${
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-xl text-xs sm:text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs shrink-0 whitespace-nowrap ${
 						activeToolsPanel === "doctorDiscount" || isDiscountActive
 							? "bg-emerald-600 text-white border-emerald-600"
-							: "bg-[var(--paper,var(--paper-strong,#ffffff))] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] border-[var(--line,var(--border,#cbd5e1))]"
+							: "bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal)] border-[var(--line)]"
 					}`}
 					data-testid="toggle-discount-panel-btn"
 					title="Скидка врача (% или ₽ на этапы, гарантийные переделки и персонал)"
 				>
-					<Percent size={13} />
-					<span>{discountLabel}</span>
-					<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "doctorDiscount" ? "rotate-180" : ""}`} />
+					<Percent size={13} className="shrink-0" />
+					<span className="shrink-0 whitespace-nowrap">{discountLabel}</span>
+					<ChevronDown size={12} className={`transition-transform duration-150 shrink-0 ${activeToolsPanel === "doctorDiscount" ? "rotate-180" : ""}`} />
 				</button>
 			</div>
 

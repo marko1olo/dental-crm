@@ -6,6 +6,7 @@
 import { Check, CheckCircle2, FileSignature, Printer } from "lucide-react";
 import type React from "react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
+import { getTierShortLabel } from "./TreatmentPlan3TierComparison";
 
 export interface TreatmentPlanPresenterFooterProps {
 	readonly selectedTier: TreatmentPlanTier;
@@ -30,6 +31,9 @@ export const TreatmentPlanPresenterFooter: React.FC<
 	patientChoiceBtnText,
 	choiceConfirmedBtnText,
 }) => {
+	const shortTierLabel = getTierShortLabel(selectedTier);
+	const tierPriceFormatted = (selectedTier.totalRub || 0).toLocaleString("ru-RU");
+
 	return (
 		<footer className="treatment-presenter-footer no-print">
 			<div className="treatment-footer-summary">
@@ -38,24 +42,13 @@ export const TreatmentPlanPresenterFooter: React.FC<
 						Текущий выбор: <strong>{getTierLetter(selectedTier.tierId)}</strong>
 					</span>
 					<span className="treatment-footer-amount">
-						{selectedTier.totalRub.toLocaleString("ru-RU")} ₽
+						{tierPriceFormatted} ₽
 					</span>
 				</div>
 			</div>
 
 			<div className="treatment-footer-actions">
-				{/* Print Appendix 1 Action */}
-				<button
-					type="button"
-					onClick={onPrintAppendix}
-					className="btn-treatment-action btn-treatment-print secondary-button cursor-pointer"
-					data-testid="print-contract-btn"
-				>
-					<Printer size={16} />
-					<span>Печать сметы плана</span>
-				</button>
-
-				{/* Fixate Patient Choice Action */}
+				{/* Fixate Patient Choice Action (Primary CTA per Apple HIG) */}
 				<button
 					type="button"
 					onClick={() => onConfirmPatientChoice(selectedTier)}
@@ -64,36 +57,46 @@ export const TreatmentPlanPresenterFooter: React.FC<
 				>
 					{isChoiceConfirmed ? (
 						<>
-							<CheckCircle2 size={18} />
+							<CheckCircle2 size={18} className="shrink-0" />
 							<span>{choiceConfirmedBtnText}</span>
 						</>
 					) : (
 						<>
-							<Check size={18} />
+							<Check size={18} className="shrink-0" />
 							<span className="hidden sm:inline">{patientChoiceBtnText}</span>
 							<span className="sm:hidden">
-								Выбрать{" "}
-								{selectedTier.badge ||
-									selectedTier.title.split("(")[0]?.trim() ||
-									selectedTier.title}{" "}
-								({(selectedTier.totalRub || 0).toLocaleString("ru-RU")} ₽)
+								Выбрать {shortTierLabel} ({tierPriceFormatted} ₽)
 							</span>
 						</>
 					)}
 				</button>
 
-				{/* Quick Direct Sign Action (Doctor & Patient Autonomy / Mandate 8e) */}
-				{onApproveAndSign && (
+				{/* Secondary actions container (side-by-side on mobile, inline on desktop) */}
+				<div className="treatment-footer-secondary-actions flex items-center gap-2 w-full sm:w-auto">
+					{/* Print Appendix 1 Action */}
 					<button
 						type="button"
-						onClick={() => onApproveAndSign(selectedTier)}
-						className="btn-treatment-action btn-treatment-sign secondary-button cursor-pointer"
-						data-testid="approve-and-sign-btn"
+						onClick={onPrintAppendix}
+						className="btn-treatment-action btn-treatment-print secondary-button cursor-pointer flex-1 sm:flex-initial"
+						data-testid="print-contract-btn"
 					>
-						<FileSignature size={18} />
-						<span>Подписать план лечения</span>
+						<Printer size={16} className="shrink-0" />
+						<span>Печать сметы плана</span>
 					</button>
-				)}
+
+					{/* Quick Direct Sign Action (Doctor & Patient Autonomy / Mandate 8e) */}
+					{onApproveAndSign && (
+						<button
+							type="button"
+							onClick={() => onApproveAndSign(selectedTier)}
+							className="btn-treatment-action btn-treatment-sign secondary-button cursor-pointer flex-1 sm:flex-initial"
+							data-testid="approve-and-sign-btn"
+						>
+							<FileSignature size={18} className="shrink-0" />
+							<span>Подписать план</span>
+						</button>
+					)}
+				</div>
 			</div>
 		</footer>
 	);

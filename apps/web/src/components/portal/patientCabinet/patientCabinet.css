@@ -204,8 +204,14 @@
 		touch-action: manipulation;
 	}
 
-	.pc-bank-buttons-grid {
-		grid-template-columns: 1fr;
+	.pc-bank-buttons-grid,
+	.three-tier-switcher-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	.three-tier-switcher-grid > button {
+		width: 100% !important;
+		min-height: 52px !important;
 	}
 
 	.pc-otp-digit {

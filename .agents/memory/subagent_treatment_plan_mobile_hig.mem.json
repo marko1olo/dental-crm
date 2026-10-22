@@ -1,0 +1,29 @@
+{
+  "role": "Red Team Inquisitor for Treatment Plan Mobile & Tablet Touch Ergonomics",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T13:28:00+04:00",
+  "verified_invariants": {
+    "apple_hig_touch_targets": "ALL touch targets in presenter header, nav tabs, 3-tier segmented buttons, and footer CTA meet or exceed >= 44x44px",
+    "zero_horizontal_drift": "0px parasitic horizontal scroll on 390x844 and 375x667",
+    "zero_text_truncation": "Primary CTA trimmed from 52 chars to 28 chars ('Выбрать Оптимум (190 100 ₽)'); mobile tabs shortened to concise clinical labels ('Сравнение', 'Этапы', 'Маршрут', 'Финансы', 'Договор'); duplicate percent symbol '% % Скидка' eliminated",
+    "natural_thumb_zone": "Footer compact height 130px with side-by-side secondary actions ('Печать сметы плана' & 'Подписать план') and prominent primary action CTA in bottom third with safe-area padding",
+    "css_tokens": "100% semantic CSS tokens (var(--paper), var(--ink), var(--line), var(--teal)), zero raw hardcoded hex codes",
+    "dual_mode_proof": "Both Light & Dark modes tested with zero blinding white cards or unstyled text"
+  },
+  "unit_tests": {
+    "total": 22,
+    "passing": 22,
+    "failing": 0,
+    "suites": [
+      "apps/web/src/tests/patientCabinetMobile375.test.ts",
+      "apps/web/src/components/patients/__tests__/patientTreatmentPlanDrawer.test.tsx",
+      "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModal.test.tsx"
+    ]
+  },
+  "visual_proofs": {
+    "mobile_light": "docs/proofs/treatment_plans/treatment_plans_mobile_light_390x844.png (176 KB)",
+    "mobile_dark": "docs/proofs/treatment_plans/treatment_plans_mobile_dark_390x844.png (171 KB)",
+    "pc_light": "docs/proofs/treatment_plans/treatment_plans_pc_light_1440x900.png (204 KB)",
+    "pc_dark": "docs/proofs/treatment_plans/treatment_plans_pc_dark_1440x900.png (197 KB)"
+  }
+}
