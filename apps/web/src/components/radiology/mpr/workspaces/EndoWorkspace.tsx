@@ -5,7 +5,7 @@ import type { WorkspaceCommonProps } from "./workspaceTypes";
 import { EndoCompassPanel, type EndoCompassClinicalData } from "./EndoCompassPanel";
 import { runEndoAnalysisForTooth, runEndoAnalysisForToothAsync } from "./endoCanalPipeline";
 import {
-	exportEndoToDiary043,
+	exportEndoToDiary,
 	exportEndoToTreatmentPlan,
 } from "../../endoClinicalIntegrationBridge";
 
@@ -73,7 +73,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 			handleExportToEmr();
 		}
 		if (compassData) {
-			exportEndoToDiary043({
+			exportEndoToDiary({
 				clinicalData: compassData,
 				toothFdi: selectedTooth,
 				patientId,

@@ -332,19 +332,19 @@ function normalizeExportParams(
 }
 
 /**
- * 3. 1-Click Export to EMR / Form 043/u (Мандат 8e).
+ * 3. 1-Click Export to EMR / Medical Card (Mandate 8e, Mandate 8ap).
  */
-export function exportEndoToDiary043(
+export function exportEndoToDiary(
 	params: EndoClinicalExportParams,
 	onApplyCallback?: ((text: string) => void) | undefined,
 ): EndoDiarySoapResult;
-export function exportEndoToDiary043(
+export function exportEndoToDiary(
 	compassData: EndoCompassClinicalData | null,
 	selectedTooth: number,
 	patientId?: string | undefined,
 	patientDisplayName?: string | undefined,
 ): EndoDiarySoapResult;
-export function exportEndoToDiary043(
+export function exportEndoToDiary(
 	paramsOrCompass: EndoClinicalExportParams | EndoCompassClinicalData | null,
 	toothFdiOrCallback?: number | ((text: string) => void) | undefined,
 	patientId?: string | undefined,
@@ -479,15 +479,15 @@ export function exportEndoToDiary043(
 	if (onApplyCallback) {
 		onApplyCallback(fullProtocolText);
 	}
-
 	showToast(
-		`Эндодонтический протокол 3D КЛКТ (зуб #${params.toothFdi}, ${params.clinicalData.canals.length} к.) внесен в карту 043/у!`,
+		`Эндодонтический протокол 3D КЛКТ (зуб #${params.toothFdi}, ${params.clinicalData.canals.length} к.) внесен в медицинскую карту!`,
 		"success",
 		4500,
 	);
 
 	return soap;
 }
+export const exportEndoToDiary043 = exportEndoToDiary;
 
 /**
  * 4. 1-Click Export to Treatment Plan (Мандат 8e).

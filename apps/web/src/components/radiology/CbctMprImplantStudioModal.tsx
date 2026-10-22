@@ -1,50 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useRef } from "react";
 import { createPortal } from "react-dom";
-import {
-	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles, type ViewportTransform,
-	type CbctMeasurementRuler, type CbctAngleMeasurement, type CbctProbeMarker, type CbctViewportType,
-	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM, ROMEXIS_COLORS,
-	disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
-} from "./cbctMprMath";
-import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
+import { getTissueNameFromHU } from "./cbctMprMath";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
+import { CbctLeftToolDock } from "./CbctLeftToolDock";
 import {
-	DEFAULT_MANDIBULAR_ARCH_ANCHORS, DEFAULT_MAXILLARY_ARCH_ANCHORS, type CrossSectionSliceData, type DentalArchCurve,
-	type PanoramicReconstructionResult, autoDetectDentalArch, buildDentalArchCurve, findOcclusalZPlane, generateCrossSectionSlices, reconstructPanoramicView,
-} from "./dentalCurveEngine";
-import { getSharedCbctWorkerBridge } from "./mpr/cbctWorkerBridge";
-import { getSharedCbctGlContext, disposeSharedCbctGlContext } from "./mpr/webgl/CbctVolumeGlContext";
-import {
-	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose, type MandibularCanalCrossSection,
-	type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3, STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin,
-	calculateApexCoordinates, calculateImplant3DWorldPose, computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
-} from "./implantSafetyEngine";
-import { calculateSplineLength3DMm, interpolateNerveSpline3D, project3DNerveToCrossSection, type AlveolarRidgeCaliperMeasurement } from "./cbctCaliperNerveMath";
-import { type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality } from "./boneDensityMischMath";
-import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
-import { showToast } from "../GlobalToast";
-import {
-	exportEndoToDiary043,
-	exportEndoToTreatmentPlan,
-} from "./endoClinicalIntegrationBridge";
-import { useCbctStudioExports } from "./mpr/useCbctStudioExports";
-import { type StudioMode, type ViewLayoutMode, type CbctMprImplantStudioModalProps, type NerveCanalSide, DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getDefaultViewportTransforms } from "./mpr/cbctStudioTypes";
-import { CbctNerveTracingHud } from "./CbctNerveTracingHud";
+	type StudioMode,
+	type ViewLayoutMode,
+	type CbctMprImplantStudioModalProps,
+	DEFAULT_IAN_NERVE_POINTS,
+	formatNerveNodesPlural,
+	ROTATE_CURSOR,
+} from "./mpr/cbctStudioTypes";
 import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
 import { CbctRightSidebar } from "./mpr/CbctRightSidebar";
 import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
-import { useCbctSliceRenderer } from "./mpr/useCbctSliceRenderer";
-import { useCbctInteractionHandlers } from "./mpr/useCbctInteractionHandlers";
-import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
-import { useCbctClipboardSnapshot } from "./mpr/useCbctClipboardSnapshot";
-import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
-import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
-import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
-import { DentalLabOrderModal, type DentalLabOrderData } from "../lab/DentalLabOrderModal";
-import { cacheActiveCbctVolume } from "./mpr/cbctStudioSyncChannel";
-import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
-// Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone", "Исследование КЛКТ не загружено")
+import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
+import type { CbctVoxelVolume } from "./cbctMprMath";
+import { useCbctStudioModalState } from "./studioModal/useCbctStudioModalState";
+import { useCbctStudioController } from "./studioModal/useCbctStudioController";
+
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
 
@@ -53,674 +28,27 @@ export const CbctMprImplantStudioModal: React.FC<
 		readonly initialViewLayout?: ViewLayoutMode | undefined;
 		readonly initialVolume?: CbctVoxelVolume | null | undefined;
 	}
-> = ({
-	isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
-	initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume, initialImageIds, autoLoadDemo,
-	initialTool, initialNervePoints,
-}) => {
-	const modalId = "cbct-studio-modal";
-
-	// Studio mode & layout
-	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
-	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
-	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
-	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
-	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null), [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false), studioMenuRef = useRef<HTMLDivElement | null>(null), [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false), [isComparisonSplitOpen, setIsComparisonSplitOpen] = useState<boolean>(false);
-	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState<boolean>(false), [labOrderDraft, setLabOrderDraft] = useState<DentalLabOrderData | null>(null);
-	const handleOpenLabOrder = useCallback((draft: DentalLabOrderData) => { setLabOrderDraft(draft); setIsLabOrderModalOpen(true); }, []);
-
-	const handleToggleUnsharp = useCallback(() => {
-		setIsUnsharpActive((prev) => {
-			const next = !prev;
-			try { getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0); } catch { /* safe */ }
-			showToast(next ? "Резкость трабекул: ВКЛ (SHARP ON)" : "Резкость: Исходный воксел (RAW VOXEL)", "info");
-			return next;
-		});
-	}, []);
-
-	const handleToggleMaximize = useCallback((type: CbctViewportType) => {
-		setMaximizedViewport((prev) => (prev === type ? null : type));
-	}, []);
-
-	const handleSelectStudioMode = useCallback((mode: StudioMode) => {
-		setStudioMode(mode);
-		if (mode === "panoramic") setShowDentalArch(true);
-		else if (mode === "diagnostic") setShowDentalArch(false);
-	}, []);
-
-	// Volume state
-	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
-		if (initialVolume) return initialVolume;
-		if ((isDemoShowcaseMode() || isDemoPatientId(patientId)) && typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
-			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
-		}
-		return null;
-	});
-	const [doctorDefaults] = useState(() => loadDoctorCbctSettings());
-	const [activePreset, setActivePreset] = useState<string>("standard");
-	const [windowWidth, setWindowWidth] = useState<number>(() => doctorDefaults.windowWidth), [windowLevel, setWindowLevel] = useState<number>(() => doctorDefaults.windowLevel);
-	const [invertColors, setInvertColors] = useState<boolean>(false), [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
-	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(() => doctorDefaults.mprThicknessMm), [panoThicknessMm, setPanoThicknessMm] = useState<number>(() => doctorDefaults.panoThicknessMm);
-	const [panoProjectionMode, setPanoProjectionMode] = useState<string>("average"), [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
-	const [patientDisplayName, setPatientDisplayName] = useState<string>(patientName || "3D КЛКТ исследование");
-
-	// Crosshair & oblique angles
-	const [crosshairMm, setCrosshairMm] = useState<Point3D>({ x: 0, y: 0, z: 0 });
-	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
-	const [mobileActiveTab, setMobileActiveTab] = useState<"axial" | "coronal" | "sagittal" | "panoramic" | "planner">("axial");
-
-	// Dental arch & panorama (Default false in diagnostic MPR, active in panoramic, Mandate 8l)
-	const [jawType, setJawType] = useState<"mandible" | "maxilla">("mandible");
-	const [showDentalArch, setShowDentalArch] = useState<boolean>(initialStudioMode === "panoramic");
-	const [showEdgeRulers, setShowEdgeRulers] = useState<boolean>(false);
-	const [hoveredViewport, setHoveredViewport] = useState<CbctViewportType | null>(null);
-	const [archCurve, setArchCurve] = useState<DentalArchCurve>(() =>
-		buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible"),
-	);
-	const [panoramicData, setPanoramicData] = useState<PanoramicReconstructionResult | null>(null);
-	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
-	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
-	const [crossSectionStepMm, setCrossSectionStepMm] = useState<number>(1.5);
-
-	// Implant planning & nerve safety
-	const [selectedBrand, setSelectedBrand] = useState<ImplantBrandKey>("osstem");
-	const [selectedDiameterMm, setSelectedDiameterMm] = useState<number>(4.0), [selectedLengthMm, setSelectedLengthMm] = useState<number>(10.0);
-	const [implantEntryXOffsetMm, setImplantEntryXOffsetMm] = useState<number>(0.0), [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
-	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0), [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
-	const [activeNerveSide, setActiveNerveSide] = useState<NerveCanalSide>("right");
-	const [rightNervePoints, setRightNervePoints] = useState<Point3D[]>(() => (initialNervePoints ? [...initialNervePoints] : []));
-	const [leftNervePoints, setLeftNervePoints] = useState<Point3D[]>([]);
-	const [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
-	const nervePoints = useMemo(() => (activeNerveSide === "right" ? rightNervePoints : leftNervePoints), [activeNerveSide, rightNervePoints, leftNervePoints]);
-	const setNervePoints = useCallback((action: React.SetStateAction<Point3D[]>) => {
-		if (activeNerveSide === "right") setRightNervePoints(action);
-		else setLeftNervePoints(action);
-	}, [activeNerveSide]);
-	const [dragImplantPart, setDragImplantPart] = useState<string | null>(null), [hoveredImplantPart, setHoveredImplantPart] = useState<string | null>(null);
-	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>(null);
-	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0), [canalYDepthMm, setCanalYDepthMm] = useState<number>(16.5);
-
-	// Measurement tools & transforms
-	const [activeTool, setActiveTool] = useState<CbctToolMode>(() => initialTool ?? "crosshair");
-	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
-	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]), [activeRuler, setActiveRuler] = useState<(CbctMeasurementRuler & { currentMm: Point3D }) | null>(null);
-	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]), [activeAngle, setActiveAngle] = useState<(CbctAngleMeasurement & { currentMm: Point3D }) | null>(null);
-	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]), [activeProbe, setActiveProbe] = useState<(CbctProbeMarker & { hu: number; tissueName: string }) | null>(null);
-	const [selectedMeasurement, setSelectedMeasurement] = useState<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>(null);
-	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
-	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
-	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>(getDefaultViewportTransforms);
-
-	// Canvas refs
-	const axialBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), axialOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const coronalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), coronalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const sagittalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), sagittalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const panoBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), panoOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const crossSectionBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), crossSectionOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-	// Calculations
-	const currentVoxel = useMemo(() => volume ? worldMmToVoxel(crosshairMm, volume) : { x: 0, y: 0, z: 0 }, [volume, crosshairMm]);
-	const sampledVoxelHU = useMemo(() => volume ? sampleVoxelHU(currentVoxel.x, currentVoxel.y, currentVoxel.z, volume) : 0, [volume, currentVoxel]);
-	const interpolatedNerve3D = useMemo(() => nervePoints.length < 2 ? nervePoints : interpolateNerveSpline3D(nervePoints, 12), [nervePoints]);
-	const nerveTotalLengthMm = useMemo(() => interpolatedNerve3D.length < 2 ? 0 : calculateSplineLength3DMm(interpolatedNerve3D), [interpolatedNerve3D]);
-
-	const currentImplantSpec: VirtualImplantSpec = useMemo(() => {
-		const match = STANDARD_IMPLANT_CATALOG.find(
-			(i) => i.brand === selectedBrand && Math.abs(i.diameterMm - selectedDiameterMm) <= 0.25 && Math.abs(i.lengthMm - selectedLengthMm) <= 0.5,
-		);
-		return match ?? STANDARD_IMPLANT_CATALOG[0]!;
-	}, [selectedBrand, selectedDiameterMm, selectedLengthMm]);
-
-	const activeCrossSection: CrossSectionSliceData | null = useMemo(() => {
-		if (crossSections.length === 0) return null;
-		const idx = Math.max(0, Math.min(crossSections.length - 1, activeCrossSectionIdx));
-		return crossSections[idx] ?? null;
-	}, [crossSections, activeCrossSectionIdx]);
-
-	const currentImplantPose: CrossSectionImplantPose = useMemo(() => {
-		const entry = { x: implantEntryXOffsetMm, y: implantEntryDepthMm };
-		const apex = calculateApexCoordinates(entry, implantAngulationDeg, currentImplantSpec.lengthMm);
-		return {
-			implantSpec: currentImplantSpec,
-			entryPoint: entry,
-			apexPoint: apex,
-			angulationDeg: implantAngulationDeg,
-			targetToothFdi: Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46,
-		};
-	}, [currentImplantSpec, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, activeCrossSection]);
-
-	const implant3DWorld: Implant3DWorldProjection | null = useMemo(() => {
-		if (!activeCrossSection) return null;
-		return calculateImplant3DWorldPose(currentImplantPose, activeCrossSection.centerPointMm, activeCrossSection.normalVector2D, activeCrossSection.heightMm, 4.0);
-	}, [currentImplantPose, activeCrossSection]);
-
-	const currentCanal: MandibularCanalCrossSection = useMemo(() => {
-		if (activeCrossSection && interpolatedNerve3D.length >= 2) {
-			const proj = project3DNerveToCrossSection(
-				interpolatedNerve3D, activeCrossSection.centerPointMm, activeCrossSection.normalVector2D,
-				activeCrossSection.tangentVector2D, activeCrossSection.heightMm, 4.0,
-			);
-			if (proj) return { center: { x: proj.xOffsetMm, y: proj.yDepthMm }, radiusMm: 1.4, safetyMarginMm: 2.0 };
-		}
-		return { center: { x: canalXOffsetMm, y: canalYDepthMm }, radiusMm: 1.4, safetyMarginMm: 2.0 };
-	}, [activeCrossSection, interpolatedNerve3D, canalXOffsetMm, canalYDepthMm]);
-
-	const nerveAuditResult = useMemo(() => auditNerveSafetyMargin(currentImplantPose, currentCanal), [currentImplantPose, currentCanal]);
-	const huSamplingResult: HUZoneSampling = useMemo(() => sampleCrossSectionHUProfile(volume, currentImplantPose, implant3DWorld), [volume, currentImplantPose, implant3DWorld]);
-	const mischClassification: MischClassificationResult = useMemo(() => classifyMischBoneQuality(huSamplingResult), [huSamplingResult]);
-
-	const liveImplantTelemetry: LiveImplantTelemetry | null = useMemo(() => {
-		if (!implant3DWorld && !currentImplantPose) return null;
-		const implantTarget = implant3DWorld ?? currentImplantPose;
-		const markers = interpolatedNerve3D.length > 0
-			? [{ id: "ian-nerve-spline", type: "nerve" as const, radius: 1.4, points: interpolatedNerve3D.map((p) => [p.x, p.y, p.z] as Vec3) }]
-			: [];
-		return computeLiveImplantTelemetry(implantTarget, volume, markers, []);
-	}, [implant3DWorld, currentImplantPose, volume, interpolatedNerve3D]);
-
-	const displayBoneClass = liveImplantTelemetry?.boneClass ?? (huSamplingResult.status === "measured" ? mischClassification.mischClass : "D3");
-	const displayMeanHU = liveImplantTelemetry?.meanHU ?? (huSamplingResult.status === "measured" ? huSamplingResult.overallMeanHU : null);
-	const displayTorque = liveImplantTelemetry?.recommendedTorqueNcm && liveImplantTelemetry.recommendedTorqueNcm !== "—"
-		? liveImplantTelemetry.recommendedTorqueNcm
-		: `${mischClassification.estimatedInsertionTorqueNcm.expectedNcm} Н·см`;
-	const displayNerveClearanceMm = liveImplantTelemetry?.nerveClearanceMm ?? (nerveAuditResult.safetyStatus !== "unmeasured" ? nerveAuditResult.netClearanceToCanalWallMm : null);
-	const displayDrillingProtocol = liveImplantTelemetry?.drillingProtocol ?? mischClassification.recommendedDrillingRpm;
-
-	// Audio alarm
-	useEffect(() => {
-		if (studioMode === "implant" && nerveAuditResult.shouldTriggerAudioAlarm && isAudioEnabled) {
-			playNerveSafetyAudioAlarm(nerveAuditResult.safetyStatus, isAudioEnabled);
-		}
-	}, [studioMode, nerveAuditResult.shouldTriggerAudioAlarm, nerveAuditResult.safetyStatus, isAudioEnabled]);
-
-	// 1-Click Clipboard Snapshot Sharing (Mandate 8l, Zero-Friction Sharing Ctrl+C)
-	const clipboardSnapshot = useCbctClipboardSnapshot({
-		activeViewport,
-		patientDisplayName,
-		crossSectionBaseCanvasRef,
-		crossSectionOverlayCanvasRef,
-		panoBaseCanvasRef,
-		panoOverlayCanvasRef,
-		axialBaseCanvasRef,
-		axialOverlayCanvasRef,
-		coronalBaseCanvasRef,
-		coronalOverlayCanvasRef,
-		sagittalBaseCanvasRef,
-		sagittalOverlayCanvasRef,
-		isEnabled: isOpen,
-	});
-
-	// Auto-detect dental arch (switches to panoramic if called explicitly, Mandate 8l)
-	const handleAutoDetectArch = useCallback(() => {
-		if (!volume) {
-			showToast("Для авто-поиска дуги требуется активный 3D объем КТ", "error");
-			return;
-		}
-		try {
-			const detected = autoDetectDentalArch(volume, jawType);
-			setArchCurve(detected);
-			if (studioMode !== "panoramic") handleSelectStudioMode("panoramic");
-			setShowDentalArch(true);
-			const occlusalZMm = findOcclusalZPlane(volume, jawType);
-			const midAnchor = detected.anchors[Math.floor(detected.anchors.length / 2)];
-			setCrosshairMm({ x: midAnchor?.positionMm.x ?? 0, y: midAnchor?.positionMm.y ?? 0, z: occlusalZMm });
-			showToast(`Авто-поиск дуги: выровнено ${detected.anchors.length} ориентиров`, "success");
-		} catch {
-			if (studioMode !== "panoramic") handleSelectStudioMode("panoramic");
-			setShowDentalArch(true);
-			showToast("Авто-поиск дуги активирован", "info");
-		}
-	}, [volume, jawType, studioMode, handleSelectStudioMode]);
-
-	// Physical jaw switcher callback (Switches Z-slice, recalculates arch, OPG, and cross-sections)
-	const handleSwitchJaw = useCallback((newJaw: "mandible" | "maxilla") => {
-		setJawType(newJaw);
-		if (!volume) {
-			showToast(newJaw === "maxilla" ? "Верхняя челюсть (ВЧ)" : "Нижняя челюсть (НЧ)", "info");
-			return;
-		}
-		try {
-			const detected = autoDetectDentalArch(volume, newJaw);
-			setArchCurve(detected);
-			if (studioMode === "panoramic") setShowDentalArch(true);
-			const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(volume, newJaw);
-			let archCenterX = 0, archCenterY = 0;
-			if (detected.splinePointsMm.length > 0) {
-				const midIdx = Math.floor(detected.splinePointsMm.length / 2);
-				archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
-				archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
-			}
-			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
-			showToast(newJaw === "maxilla" ? "ВЧ: Z-срез и дуга обновлены" : "НЧ: Z-срез и дуга обновлены", "success");
-		} catch {
-			showToast(`Переключено на ${newJaw === "maxilla" ? "ВЧ" : "НЧ"}`, "info");
-		}
-	}, [volume, studioMode]);
-
-	// Panoramic and cross-sections update (Asynchronous Web Worker offloading for 60 FPS fluidity)
-	useEffect(() => {
-		if (!volume || !isOpen || volume.isProgressivePreview) return;
-		let isCancelled = false;
-
-		const panoRes = reconstructPanoramicView(volume, archCurve, {
-			windowWidth,
-			windowLevel,
-			invert: invertColors,
-			heightMm: volume.physicalSizeMm?.z ? Math.min(78.0, volume.physicalSizeMm.z * 0.98) : 74.0,
-			pixelSpacingMm: 0.25,
-			focalTroughThicknessMm: panoThicknessMm,
-			projectionMode: panoProjectionMode,
-			sharpenAmount: isUnsharpActive ? 0.18 : 0.0,
-			gamma: 1.50,
-			useSoftKnee: false,
-			airCutoffHU: -500,
-		} as any);
-		setPanoramicData(panoRes);
-
-		const bridge = getSharedCbctWorkerBridge();
-		bridge
-			.requestCrossSectionSeries({
-				volume,
-				archCurve,
-				options: {
-					stepMm: crossSectionStepMm,
-					sliceCenterZMm: crosshairMm.z,
-					widthMm: 24.0,
-					heightMm: 34.0,
-					windowWidth: windowWidth ?? 4025,
-					windowLevel: windowLevel ?? 525,
-					gamma: 1.50,
-					airCutoffHU: -500,
-					softKnee: false,
-					slabThicknessMm: slabThicknessMm ?? 1.0,
-					invert: invertColors,
-				},
-			})
-			.then((crossSlices) => {
-				if (!isCancelled && crossSlices.length > 0) {
-					setCrossSections(crossSlices);
-				}
-			})
-			.catch(() => {
-				if (!isCancelled) {
-					const crossSlices = generateCrossSectionSlices(volume, archCurve, crossSectionStepMm, crosshairMm.z, {
-						widthMm: 24.0,
-						heightMm: 34.0,
-						windowWidth: windowWidth ?? 4025,
-						windowLevel: windowLevel ?? 525,
-						gamma: 1.50,
-						airCutoffHU: -500,
-						softKnee: false,
-						slabThicknessMm: slabThicknessMm ?? 1.0,
-						invert: invertColors,
-					});
-					setCrossSections(crossSlices);
-				}
-			});
-
-		return () => {
-			isCancelled = true;
-		};
-	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, crosshairMm.z, isUnsharpActive, panoThicknessMm, panoProjectionMode]);
-
-	useEffect(() => {
-		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
-		const applyVol = (vol: CbctVoxelVolume) => {
-			setVolume(vol);
-			setLoadedSliceCount(vol.dimensions.depth);
-			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
-			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			if (vol.patientName && vol.patientName.trim()) {
-				setPatientDisplayName(vol.patientName.trim());
-			} else if (patientName && patientName.trim()) {
-				setPatientDisplayName(patientName.trim());
-			} else if (isDemo) {
-				setPatientDisplayName("Демо 3D КЛКТ");
-			} else {
-				setPatientDisplayName("3D КЛКТ исследование");
-			}
-			try {
-				const detected = autoDetectDentalArch(vol, jawType);
-				setArchCurve(detected);
-				if (studioMode === "panoramic") setShowDentalArch(true);
-				const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(vol, jawType);
-				let archCenterX = 0, archCenterY = 0;
-				if (detected.splinePointsMm.length > 0) {
-					const midIdx = Math.floor(detected.splinePointsMm.length / 2);
-					archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
-					archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
-				}
-				setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
-			} catch {
-				// keep defaults
-			}
-		};
-
-		if (initialVolume && !volume) {
-			applyVol(initialVolume);
-		} else if (typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
-			if (win.__cbctDemoVolume && !volume) applyVol(win.__cbctDemoVolume);
-			const handleCustomLoad = (e: Event) => {
-				const customEvent = e as CustomEvent<CbctVoxelVolume>;
-				if (customEvent.detail) applyVol(customEvent.detail);
-			};
-			window.addEventListener("dente-load-cbct-volume", handleCustomLoad);
-			return () => {
-				window.removeEventListener("dente-load-cbct-volume", handleCustomLoad);
-			};
-		}
-	}, [initialVolume, volume, jawType, patientId, patientName]);
-
-	const handleResetAll = useCallback(() => {
-		if (volume) setCrosshairMm({ x: 0, y: 0, z: 0 });
-		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
-		setTransforms(getDefaultViewportTransforms());
-		setRulers([]);
-		setAngles([]);
-		setProbeMarkers([]);
-		setActiveTool("crosshair");
-		setSelectedMeasurement(null);
-		setWindowWidth(4400);
-		setWindowLevel(1300);
-		setSlabMode("single");
-		setSlabThicknessMm(1.0);
-		setPanoThicknessMm(3.0);
-		setPanoProjectionMode("ray_sum");
-		setActivePreset("standard");
-		showToast("Виджеты и проекции КТ сброшены", "info");
-	}, [volume]);
-
-	const handleFullResetViewport = useCallback((viewport: CbctViewportType) => {
-		setTransforms((prev) => ({ ...prev, [viewport]: { ...DEFAULT_VIEWPORT_TRANSFORM } }));
-		showToast(`Масштаб ${viewport} сброшен`, "info");
-	}, []);
-
-	const handleClearRulers = useCallback((plane?: CbctViewportType) => {
-		setRulers((prev) => (plane ? prev.filter((r) => r.plane !== plane) : []));
-		showToast(plane ? `Замеры ${plane} очищены` : "Все экранные замеры очищены", "info");
-	}, []);
-
-	const handleClearAngles = useCallback((plane?: CbctViewportType) => {
-		setAngles((prev) => (plane ? prev.filter((a) => a.plane !== plane) : []));
-		showToast(plane ? `Замеры углов ${plane} очищены` : "Все замеры углов очищены", "info");
-	}, []);
-
-	const handleSelectQuickWlPreset = useCallback((preset: { windowWidth: number; windowLevel: number }) => {
-		setWindowWidth(preset.windowWidth);
-		setWindowLevel(preset.windowLevel);
-	}, []);
-
-	// DICOM Loader hook
-	const dicomLoader = useCbctDicomLoader({
-		jawType, resolvedPatientName: patientDisplayName, setVolume, setLoadedSliceCount,
-		setPatientDisplayName, setWindowWidth, setWindowLevel, setArchCurve, setShowDentalArch, setCrosshairMm,
-	});
-
-	// Auto-load slices if initialImageIds is provided and volume is not yet set
-	useEffect(() => {
-		if (isOpen && !volume && initialImageIds && initialImageIds.length > 0) {
-			dicomLoader.handleLoadImageIds(initialImageIds);
-		}
-	}, [isOpen, volume, initialImageIds, dicomLoader.handleLoadImageIds]);
-
-	// Auto-load demo volume (Zakharov 312 slices) if requested or if patientId is demo and volume is not yet set
-	const autoLoadDemoAttemptedRef = useRef(false);
-	useEffect(() => {
-		if (isOpen && !volume && !autoLoadDemoAttemptedRef.current) {
-			const isDemoReq =
-				Boolean(autoLoadDemo) ||
-				patientId === "demo_cbct_patient" ||
-				isDemoPatientId(patientId) ||
-				(typeof window !== "undefined" &&
-					Boolean(
-						window.location?.search?.includes("cbct=") ||
-						window.location?.search?.includes("cbct") ||
-						window.location?.hash?.includes("cbct=") ||
-						window.location?.hash?.includes("cbct")
-					));
-			if (isDemoReq) {
-				autoLoadDemoAttemptedRef.current = true;
-				void dicomLoader.handleLoadDemoVolume();
-			}
-		}
-	}, [isOpen, volume, autoLoadDemo, patientId, dicomLoader.handleLoadDemoVolume]);
-
-	// Interaction handlers hook
-	const interactions = useCbctInteractionHandlers({
-		volume, crosshairMm, setCrosshairMm, obliqueAngles, setObliqueAngles, activeTool, studioMode,
-		windowWidth, setWindowWidth, windowLevel, setWindowLevel, transforms, setTransforms,
-		rulers, setRulers, activeRuler, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle,
-		probeMarkers, setProbeMarkers, activeProbe, setActiveProbe, selectedMeasurement, setSelectedMeasurement,
-		hoveredMeasurementHandle, setHoveredMeasurementHandle, draggingMeasurementHandle, setDraggingMeasurementHandle,
-		nervePoints, setNervePoints, selectedNerveNodeIdx, setSelectedNerveNodeIdx,
-		showDentalArch, archCurve, setArchCurve, panoramicData, crossSections,
-		activeCrossSection, activeCrossSectionIdx, setActiveCrossSectionIdx, currentImplantSpec,
-		implantEntryXOffsetMm, setImplantEntryXOffsetMm, implantEntryDepthMm, setImplantEntryDepthMm,
-		implantAngulationDeg, setImplantAngulationDeg, hoveredImplantPart, setHoveredImplantPart,
-		dragImplantPart, setDragImplantPart, crossSectionDragStart, setCrossSectionDragStart,
-		handleToggleMaximize, panoCanvasRef: panoBaseCanvasRef, crossSectionCanvasRef: crossSectionBaseCanvasRef,
-		axialCanvasRef: axialBaseCanvasRef, coronalCanvasRef: coronalBaseCanvasRef, sagittalCanvasRef: sagittalBaseCanvasRef,
-		jawType, onSwitchJaw: handleSwitchJaw,
-	});
-
-	// Slice renderer hook
-	useCbctSliceRenderer({
-		isOpen, volume, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm,
-		transforms, maximizedViewport, viewLayout, layoutBurstCount: 0, activeTool, studioMode,
-		rulers, activeRuler, angles, activeAngle, probeMarkers, activeProbe,
-		selectedMeasurement, hoveredMeasurementHandle, draggingMeasurementHandle,
-		implant3DWorld, currentImplantPose, nerveAuditResult, interpolatedNerve3D,
-		nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx,
-		activeRotationHandle: interactions.activeRotationHandle, hoveredHandle: interactions.hoveredHandle,
-		showDentalArch, showEdgeRulers, hoveredViewport, archCurve, activeCrossSection, currentImplantSpec,
-		selectedArchAnchorIdx: null, hoveredArchAnchorIdx: interactions.hoveredArchAnchorIdx,
-		isDraggingArchAnchor: interactions.isDraggingArchAnchor, panoramicData, crossSections,
-		activeCrossSectionIdx, currentCanal, hoveredImplantPart, dragImplantPart,
-		axialBaseCanvasRef, axialOverlayCanvasRef, coronalBaseCanvasRef, coronalOverlayCanvasRef,
-		sagittalBaseCanvasRef, sagittalOverlayCanvasRef, panoBaseCanvasRef, panoOverlayCanvasRef,
-		crossSectionBaseCanvasRef, crossSectionOverlayCanvasRef,
-	});
-
-	const handleSelectPreset = useCallback((p: string) => {
-		setActivePreset(p);
-		const clinical = CLINICAL_RADIOLOGY_PRESETS.find((pr) => pr.id === p);
-		if (clinical) {
-			setWindowWidth(clinical.windowWidth); setWindowLevel(clinical.windowLevel);
-			setSlabThicknessMm(clinical.slabThicknessMm); setSlabMode(clinical.slabMode);
-			setPanoThicknessMm(clinical.panoThicknessMm); setPanoProjectionMode(clinical.panoProjectionMode);
-			showToast(`Пресет: ${clinical.label}`, "info"); return;
-		}
-		const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
-		if (preset) { setWindowWidth(preset.windowWidth); setWindowLevel(preset.windowLevel); }
-	}, []);
-
-	const handleSelectClinicalPreset = useCallback((presetId: string) => {
-		handleSelectPreset(presetId);
-	}, [handleSelectPreset]);
-
+> = (props) => {
 	const {
-		handleExportToPlan: handleImplantExportToPlan, handleExportToSchedule,
-		handleExportToEmr: handleImplantExportToEmr, handleExportCbctToFinance,
-		handleExportToLab, handleExportPdfReport,
-	} = useCbctStudioExports({
-		patientId, patientDisplayName, study, activeCrossSection, activeCaliper,
-		currentImplantSpec, currentImplantPose, currentCanal, implantAngulationDeg,
-		displayBoneClass, displayMeanHU, displayNerveClearanceMm, displayTorque,
-		displayDrillingProtocol, nerveAuditResult, huSamplingResult, mischClassification,
-		onApplyToPlan, onApplyToDiary043, onOpenLabOrder: handleOpenLabOrder,
-	});
-
-	const handleExportToEmr = useCallback(() => {
-		if (studioMode === "endo") {
-			const toothFdi = activeCrossSection?.nearestToothFdi ? Number(activeCrossSection.nearestToothFdi) : 36;
-			const exported = exportEndoToDiary043({
-				patientId, patientDisplayName: patientName, toothFdi,
-				clinicalData: { toothFdi, vertucciType: "I", vertucciNameRu: "Тип I (1-1)", rootCount: 2, canals: [], overallRiskTier: "moderate", recommendedTaper: "0.04", reciprocatingMotion: false, clinicalSummaryRu: "Стандартный эндодонтический доступ" },
-			});
-			if (onApplyToDiary043) onApplyToDiary043(`${exported.statusLocalis}\n\n${exported.treatmentDescription}`);
-			showToast(`Эндодонтический протокол 043/у (зуб #${toothFdi}) перенесен в карту`, "success");
-			return;
-		}
-		handleImplantExportToEmr();
-	}, [studioMode, activeCrossSection, patientId, patientName, onApplyToDiary043, handleImplantExportToEmr]);
-
-	const handleExportToPlan = useCallback(() => {
-		if (studioMode === "endo") {
-			const toothFdi = activeCrossSection?.nearestToothFdi ? Number(activeCrossSection.nearestToothFdi) : 36;
-			const exportedItems = exportEndoToTreatmentPlan({
-				patientId, patientDisplayName: patientName, toothFdi,
-				clinicalData: { toothFdi, vertucciType: "I", vertucciNameRu: "Тип I (1-1)", rootCount: 2, canals: [], overallRiskTier: "moderate", recommendedTaper: "0.04", reciprocatingMotion: false, clinicalSummaryRu: "Стандартный эндодонтический доступ" },
-			});
-			if (onApplyToPlan) exportedItems.forEach((it) => onApplyToPlan(it));
-			showToast(`Эндодонтические услуги (зуб #${toothFdi}) добавлены в план лечения`, "success");
-			return;
-		}
-		handleImplantExportToPlan();
-	}, [studioMode, activeCrossSection, patientId, patientDisplayName, onApplyToPlan, handleImplantExportToPlan]);
-
-	const handleResetNerve = useCallback(() => {
-		if (activeNerveSide === "right") setRightNervePoints([]); else setLeftNervePoints([]);
-		setSelectedNerveNodeIdx(null);
-		showToast(`Трассировка (${activeNerveSide === "right" ? "Правый" : "Левый"} нерв) сброшена`, "info");
-	}, [activeNerveSide]);
-
-	const handleDeleteSelectedNode = useCallback(() => {
-		if (selectedNerveNodeIdx === null) return;
-		setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
-		setSelectedNerveNodeIdx(null);
-		showToast(`Узел нерва #${selectedNerveNodeIdx + 1} удален`, "info");
-	}, [selectedNerveNodeIdx, setNervePoints]);
-
-	const renderViewportOverlays = useCallback((viewport: CbctViewportType) => {
-		if (viewport !== activeViewport) return null;
-		return (
-			<CbctNerveTracingHud
-				activeTool={activeTool} activeSide={activeNerveSide} onSwitchSide={setActiveNerveSide}
-				nervePoints={nervePoints} nerveTotalLengthMm={nerveTotalLengthMm} selectedNerveNodeIdx={selectedNerveNodeIdx}
-				onResetNerve={handleResetNerve} onDeleteSelectedNode={handleDeleteSelectedNode}
-			/>
-		);
-	}, [activeViewport, activeTool, activeNerveSide, nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx, handleResetNerve, handleDeleteSelectedNode]);
-
+		isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
+		initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume, initialImageIds, autoLoadDemo,
+		initialTool, initialNervePoints,
+	} = props;
+	const modalId = "cbct-studio-modal";
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
-	const isExternalVolume = useCallback((vol: CbctVoxelVolume | null): boolean => {
-		if (!vol) return false;
-		if (initialVolume && vol === initialVolume) return true;
-		if (typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume; __cbctActiveVolume?: CbctVoxelVolume; __cbctSharedVolume?: CbctVoxelVolume };
-			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
-			if (win.__cbctActiveVolume && vol === win.__cbctActiveVolume) return true;
-			if (win.__cbctSharedVolume && vol === win.__cbctSharedVolume) return true;
-		}
-		return false;
-	}, [initialVolume]);
-
-	const handleOpenPopoutWindow = useCallback(async () => {
-		if (volume) {
-			cacheActiveCbctVolume(volume);
-			if (typeof window !== "undefined") {
-				const win = window as unknown as { __cbctSharedVolume?: CbctVoxelVolume; __cbctActiveVolume?: CbctVoxelVolume };
-				win.__cbctSharedVolume = volume; win.__cbctActiveVolume = volume;
-			}
-		}
-		const res = await routeOpenCbctPopout({ studyId: study?.id, patientId, patientName: patientDisplayName || patientName, mode: studioMode });
-		if (!res.success && res.error === "popup_blocked") showToast("Разрешите всплывающие окна для вывода КТ на второй монитор", "warning");
-		else if (res.success) onClose();
-	}, [volume, study?.id, patientId, patientDisplayName, patientName, studioMode, onClose]);
-
-	const handleCloseStudio = useCallback(() => {
-		if (modalContainerRef.current) {
-			teardownViewportCanvases(modalContainerRef.current);
-		}
-		disposeSharedCbctGlContext();
-		if (volume) {
-			if (!isExternalVolume(volume)) {
-				disposeCbctVolume(volume);
-			}
-			setVolume(null);
-		}
-		onClose();
-	}, [volume, onClose, isExternalVolume]);
-
-	// Deterministic teardown of WebGL & 2D canvas backing stores, GPU textures, and volume memory (Mandate 8c & Frontend Rules)
-	useEffect(() => {
-		if (!isOpen) {
-			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
-			disposeSharedCbctGlContext();
-			if (volume) {
-				if (!isExternalVolume(volume)) disposeCbctVolume(volume);
-				setVolume(null);
-			}
-		}
-		return () => {
-			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
-			disposeSharedCbctGlContext();
-			if (volume && !isExternalVolume(volume)) disposeCbctVolume(volume);
-		};
-	}, [isOpen, volume, isExternalVolume]);
-
-	// Hotkeys hook
-	useCbctKeyboardShortcuts({
-		enabled: isOpen,
-		activeViewport,
-		setActiveViewport,
-		isMaximized: maximizedViewport !== null,
-		onRestoreMaximize: () => setMaximizedViewport(null),
-		onToggleMaximize: () => handleToggleMaximize(activeViewport),
-		onScrollSlice: (direction, step) => {
-			if (!volume) return;
-			const delta = (direction === "next" ? 1 : -1) * step;
-			setCrosshairMm((prev) => ({ ...prev, z: prev.z + delta * volume.spacingMm.z }));
-		},
-		onZoom: (direction) => {
-			setTransforms((prev) => ({
-				...prev,
-				[activeViewport]: applyStepZoom(prev[activeViewport] ?? DEFAULT_VIEWPORT_TRANSFORM, direction),
-			}));
-		},
-		onResetTransform: () => handleFullResetViewport(activeViewport),
-		onSelectPreset: (preset) => {
-			const id = preset === "bone" ? "bone_dense" : preset === "endo" ? "enamel_dentin" : "soft_tissue";
-			setActivePreset(id);
-			const p = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === id);
-			if (p) {
-				setWindowWidth(p.windowWidth);
-				setWindowLevel(p.windowLevel);
-			}
-		},
-		onToggleMode: () => setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler")),
-		onTogglePanel: () => setIsSidebarOpen((prev) => !prev),
-		onClose: handleCloseStudio,
+	const state = useCbctStudioModalState({
+		initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume,
+		initialTool, initialNervePoints, patientName, patientId,
 	});
 
-	// 1-Click Keyboard Shortcuts ('M' for Ruler, 'U' for Unsharp Masking)
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.target && (e.target as HTMLElement).tagName && ["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
-			if ((e.target as HTMLElement)?.isContentEditable) return;
-			if (e.ctrlKey || e.metaKey || e.altKey) return;
-			if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
-				e.preventDefault();
-				setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler"));
-			} else if (e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") {
-				e.preventDefault();
-				setActiveTool((prev) => (prev === "angle" ? "crosshair" : "angle"));
-			} else if (e.key === "u" || e.key === "U" || e.key === "г" || e.key === "Г") {
-				e.preventDefault();
-				handleToggleUnsharp();
-			} else if (e.key === "n" || e.key === "N" || e.key === "т" || e.key === "Т") {
-				e.preventDefault();
-				setActiveTool((prev) => (prev === "nerve" ? "crosshair" : "nerve"));
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, handleToggleUnsharp]);
+	const ctrl = useCbctStudioController({
+		isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
+		initialVolume, initialImageIds, autoLoadDemo, state, modalContainerRef,
+	});
+
+	const { studioMode } = state;
+	const { handleSelectStudioMode } = ctrl;
 
 	if (!isOpen) return null;
 
@@ -732,7 +60,7 @@ export const CbctMprImplantStudioModal: React.FC<
 			data-theme="dark"
 			style={{ colorScheme: "dark" }}
 			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-300 font-sans select-none overflow-hidden cbct-dark-cockpit ${
-				isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
+				state.isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
 			}`}
 		>
 			<div
@@ -740,44 +68,302 @@ export const CbctMprImplantStudioModal: React.FC<
 				className="flex-1 flex flex-col w-full h-full min-h-0 bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden shadow-2xl relative"
 				onDragOver={(e) => {
 					e.preventDefault();
-					dicomLoader.setIsDragOverWindow(true);
+					ctrl.dicomLoader.setIsDragOverWindow(true);
 				}}
-				onDragLeave={() => dicomLoader.setIsDragOverWindow(false)}
-				onDrop={dicomLoader.handleDropFiles}
+				onDragLeave={() => ctrl.dicomLoader.setIsDragOverWindow(false)}
+				onDrop={ctrl.dicomLoader.handleDropFiles}
 			>
 				<CbctHeaderBar
-					modalId={modalId} patientDisplayName={patientDisplayName} resolvedPatientName={patientDisplayName} loadedSliceCount={loadedSliceCount} volume={volume} studioMode={studioMode} handleSelectStudioMode={handleSelectStudioMode} handleExportToEmr={handleExportToEmr} handleExportCbctToFinance={handleExportCbctToFinance} handleExportToPlan={handleExportToPlan} handleExportToLab={handleExportToLab} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} isStudioMenuOpen={isStudioMenuOpen} setIsStudioMenuOpen={setIsStudioMenuOpen} studioMenuRef={studioMenuRef} handleResetAll={handleResetAll} handleAutoDetectArch={handleAutoDetectArch} showDentalArch={showDentalArch} setShowDentalArch={setShowDentalArch} showEdgeRulers={showEdgeRulers} setShowEdgeRulers={setShowEdgeRulers} handleExportPdfReport={handleExportPdfReport} maximizedViewport={maximizedViewport} setMaximizedViewport={setMaximizedViewport} viewLayout={viewLayout} setViewLayout={setViewLayout} isFullscreen={isFullscreen} handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)} onClose={handleCloseStudio} onOpenPopoutWindow={handleOpenPopoutWindow} studyId={study?.id} patientId={patientId} activePresetId={activePreset} onSelectPreset={handleSelectPreset} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm} isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} sharpenAmount={isUnsharpActive ? 0.18 : 0.0} windowWidth={windowWidth} onChangeWindowWidth={setWindowWidth} windowLevel={windowLevel} onChangeWindowLevel={setWindowLevel} slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm} slabMode={slabMode} onChangeSlabMode={setSlabMode} panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} onSelectClinicalPreset={handleSelectClinicalPreset} onCopySnapshotToClipboard={clipboardSnapshot.copySnapshotToClipboard} onOpenComparisonSplit={() => setIsComparisonSplitOpen(true)}
+					modalId={modalId}
+					patientDisplayName={state.patientDisplayName}
+					resolvedPatientName={state.patientDisplayName}
+					loadedSliceCount={state.loadedSliceCount}
+					volume={state.volume}
+					studioMode={state.studioMode}
+					handleSelectStudioMode={ctrl.handleSelectStudioMode}
+					handleExportToEmr={ctrl.handleExportToEmr}
+					handleExportCbctToFinance={ctrl.handleExportCbctToFinance}
+					handleExportToPlan={ctrl.handleExportToPlan}
+					handleExportToLab={ctrl.handleExportToLab}
+					isSidebarOpen={state.isSidebarOpen}
+					setIsSidebarOpen={state.setIsSidebarOpen}
+					isStudioMenuOpen={state.isStudioMenuOpen}
+					setIsStudioMenuOpen={state.setIsStudioMenuOpen}
+					studioMenuRef={state.studioMenuRef}
+					handleResetAll={ctrl.handleResetAll}
+					handleAutoDetectArch={ctrl.handleAutoDetectArch}
+					showDentalArch={state.showDentalArch}
+					setShowDentalArch={state.setShowDentalArch}
+					showEdgeRulers={state.showEdgeRulers}
+					setShowEdgeRulers={state.setShowEdgeRulers}
+					handleExportPdfReport={ctrl.handleExportPdfReport}
+					maximizedViewport={state.maximizedViewport}
+					setMaximizedViewport={state.setMaximizedViewport}
+					viewLayout={state.viewLayout}
+					setViewLayout={state.setViewLayout}
+					isFullscreen={state.isFullscreen}
+					handleToggleFullscreenModal={() => state.setIsFullscreen((prev) => !prev)}
+					onClose={ctrl.handleCloseStudio}
+					onOpenPopoutWindow={ctrl.handleOpenPopoutWindow}
+					studyId={study?.id}
+					patientId={patientId}
+					activePresetId={state.activePreset}
+					onSelectPreset={ctrl.handleSelectPreset}
+					crossSectionStepMm={state.crossSectionStepMm}
+					onChangeCrossSectionStepMm={state.setCrossSectionStepMm}
+					isUnsharpActive={state.isUnsharpActive}
+					onToggleUnsharp={ctrl.handleToggleUnsharp}
+					sharpenAmount={state.isUnsharpActive ? 0.18 : 0.0}
+					windowWidth={state.windowWidth}
+					onChangeWindowWidth={state.setWindowWidth}
+					windowLevel={state.windowLevel}
+					onChangeWindowLevel={state.setWindowLevel}
+					slabThicknessMm={state.slabThicknessMm}
+					onChangeSlabThicknessMm={state.setSlabThicknessMm}
+					slabMode={state.slabMode}
+					onChangeSlabMode={state.setSlabMode}
+					panoThicknessMm={state.panoThicknessMm}
+					onChangePanoThicknessMm={state.setPanoThicknessMm}
+					onSelectClinicalPreset={ctrl.handleSelectClinicalPreset}
+					onCopySnapshotToClipboard={ctrl.clipboardSnapshot.copySnapshotToClipboard}
+					onOpenComparisonSplit={() => state.setIsComparisonSplitOpen(true)}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">
 					<CbctLeftToolDock
-						activeTool={activeTool} onSelectTool={setActiveTool} activePresetId={activePreset} onSelectPreset={handleSelectPreset} slabMode={slabMode} onSelectSlabMode={setSlabMode} slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm} invertColors={invertColors} onToggleInvertColors={() => setInvertColors((prev) => !prev)} onResetAll={handleResetAll} showDentalArch={showDentalArch} onToggleDentalArch={() => { setShowDentalArch((prev) => { const next = !prev; if (next && studioMode !== "panoramic") handleSelectStudioMode("panoramic"); return next; }); }} onAutoDetectArch={handleAutoDetectArch}
+						activeTool={state.activeTool}
+						onSelectTool={state.setActiveTool}
+						activePresetId={state.activePreset}
+						onSelectPreset={ctrl.handleSelectPreset}
+						slabMode={state.slabMode}
+						onSelectSlabMode={state.setSlabMode}
+						slabThicknessMm={state.slabThicknessMm}
+						onChangeSlabThicknessMm={state.setSlabThicknessMm}
+						invertColors={state.invertColors}
+						onToggleInvertColors={() => state.setInvertColors((prev) => !prev)}
+						onResetAll={ctrl.handleResetAll}
+						showDentalArch={state.showDentalArch}
+						onToggleDentalArch={() => {
+							state.setShowDentalArch((prev) => {
+								const next = !prev;
+								if (next && state.studioMode !== "panoramic") ctrl.handleSelectStudioMode("panoramic");
+								return next;
+							});
+						}}
+						onAutoDetectArch={ctrl.handleAutoDetectArch}
 					/>
 
 					<CbctMprViewportsGrid
-						isSidebarOpen={isSidebarOpen} mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName} patientId={patientId} onSelectMobileTab={setMobileActiveTab} volume={volume} dicomLoadingStatus={dicomLoader.dicomLoadingStatus} dicomProgress={dicomLoader.dicomProgress} maximizedViewport={maximizedViewport} viewLayout={viewLayout} studioMode={studioMode} onSelectStudioMode={handleSelectStudioMode} folderInputRef={dicomLoader.folderInputRef} zipInputRef={dicomLoader.zipInputRef} handleDicomFilesChange={dicomLoader.handleDicomFilesChange} activeViewport={activeViewport} setActiveViewport={setActiveViewport} hoveredViewport={hoveredViewport} onHoverViewport={setHoveredViewport} showEdgeRulers={showEdgeRulers} handleToggleMaximize={handleToggleMaximize} axialBaseCanvasRef={axialBaseCanvasRef} axialOverlayCanvasRef={axialOverlayCanvasRef} coronalBaseCanvasRef={coronalBaseCanvasRef} coronalOverlayCanvasRef={coronalOverlayCanvasRef} sagittalBaseCanvasRef={sagittalBaseCanvasRef} sagittalOverlayCanvasRef={sagittalOverlayCanvasRef} panoBaseCanvasRef={panoBaseCanvasRef} panoOverlayCanvasRef={panoOverlayCanvasRef} crossSectionBaseCanvasRef={crossSectionBaseCanvasRef} crossSectionOverlayCanvasRef={crossSectionOverlayCanvasRef} handleCanvasDoubleClick={interactions.handleCanvasDoubleClick} handleCanvasMouseDown={interactions.handleCanvasMouseDown} handleCanvasMouseMove={interactions.handleCanvasMouseMove} handleCanvasMouseUp={interactions.handleCanvasMouseUp} handleCanvasWheel={interactions.handleCanvasWheel} getCanvasCursor={interactions.getCanvasCursor} crosshairMm={crosshairMm} currentVoxel={currentVoxel} slabMode={slabMode} slabThicknessMm={slabThicknessMm} obliqueAngles={obliqueAngles} setObliqueAngles={setObliqueAngles} handleFullResetViewport={handleFullResetViewport} activeRotationHandle={interactions.activeRotationHandle} isShiftRotating={interactions.isShiftRotating} hoveredHandle={interactions.hoveredHandle} transforms={transforms} windowWidth={windowWidth} windowLevel={windowLevel} renderViewportOverlays={renderViewportOverlays} handlePanoMouseDown={interactions.handlePanoMouseDown} handlePanoMouseMove={interactions.handlePanoMouseMove} handlePanoMouseUp={interactions.handlePanoMouseUp} handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown} handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove} handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp} dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart} activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx} crossSections={crossSections} onLoadDemoVolume={dicomLoader.handleLoadDemoVolume} activeTool={activeTool} onSelectTool={setActiveTool} rulers={rulers} onClearRulers={handleClearRulers} angles={angles} onClearAngles={handleClearAngles} onSelectQuickWlPreset={handleSelectQuickWlPreset} handleSelectTooth={interactions.handleSelectTooth} archCurve={archCurve} jawType={jawType} onSwitchJaw={handleSwitchJaw} activeToothFdi={activeCrossSection?.nearestToothFdi} isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} onChangeCrossSectionIdx={setActiveCrossSectionIdx} selectedBrand={selectedBrand} onSelectBrand={setSelectedBrand} selectedDiameterMm={selectedDiameterMm} onSelectDiameterMm={setSelectedDiameterMm} selectedLengthMm={selectedLengthMm} onSelectLengthMm={setSelectedLengthMm} displayBoneClass={displayBoneClass} displayMeanHU={displayMeanHU} displayTorque={displayTorque} displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol} nerveSafetyStatus={nerveAuditResult.safetyStatus === "danger" ? "danger" : nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"} nervePoints={nervePoints} interpolatedNerve3D={interpolatedNerve3D} implant3DWorld={implant3DWorld} nerveAuditResult={nerveAuditResult} handleExportToEmr={handleExportToEmr} handleExportToPlan={handleExportToPlan} onChangeWindowWidth={setWindowWidth} onChangeWindowLevel={setWindowLevel} onChangeSlabThicknessMm={setSlabThicknessMm} onChangeSlabMode={setSlabMode} onSelectClinicalPreset={handleSelectClinicalPreset} activePresetId={activePreset} panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} panoProjectionMode={panoProjectionMode} onChangePanoProjectionMode={setPanoProjectionMode} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm} implantEntryXOffsetMm={implantEntryXOffsetMm} onChangeImplantEntryXOffsetMm={setImplantEntryXOffsetMm} implantEntryDepthMm={implantEntryDepthMm} onChangeImplantEntryDepthMm={setImplantEntryDepthMm} implantAngulationDeg={implantAngulationDeg} onChangeImplantAngulationDeg={setImplantAngulationDeg}
+						isSidebarOpen={state.isSidebarOpen}
+						mobileActiveTab={state.mobileActiveTab}
+						patientDisplayName={state.patientDisplayName}
+						patientId={patientId}
+						onSelectMobileTab={state.setMobileActiveTab}
+						volume={state.volume}
+						dicomLoadingStatus={ctrl.dicomLoader.dicomLoadingStatus}
+						dicomProgress={ctrl.dicomLoader.dicomProgress}
+						maximizedViewport={state.maximizedViewport}
+						viewLayout={state.viewLayout}
+						studioMode={studioMode}
+						onSelectStudioMode={handleSelectStudioMode}
+						folderInputRef={ctrl.dicomLoader.folderInputRef}
+						zipInputRef={ctrl.dicomLoader.zipInputRef}
+						handleDicomFilesChange={ctrl.dicomLoader.handleDicomFilesChange}
+						activeViewport={state.activeViewport}
+						setActiveViewport={state.setActiveViewport}
+						hoveredViewport={state.hoveredViewport}
+						onHoverViewport={state.setHoveredViewport}
+						showEdgeRulers={state.showEdgeRulers}
+						handleToggleMaximize={ctrl.handleToggleMaximize}
+						axialBaseCanvasRef={state.axialBaseCanvasRef}
+						axialOverlayCanvasRef={state.axialOverlayCanvasRef}
+						coronalBaseCanvasRef={state.coronalBaseCanvasRef}
+						coronalOverlayCanvasRef={state.coronalOverlayCanvasRef}
+						sagittalBaseCanvasRef={state.sagittalBaseCanvasRef}
+						sagittalOverlayCanvasRef={state.sagittalOverlayCanvasRef}
+						panoBaseCanvasRef={state.panoBaseCanvasRef}
+						panoOverlayCanvasRef={state.panoOverlayCanvasRef}
+						crossSectionBaseCanvasRef={state.crossSectionBaseCanvasRef}
+						crossSectionOverlayCanvasRef={state.crossSectionOverlayCanvasRef}
+						handleCanvasDoubleClick={ctrl.interactions.handleCanvasDoubleClick}
+						handleCanvasMouseDown={ctrl.interactions.handleCanvasMouseDown}
+						handleCanvasMouseMove={ctrl.interactions.handleCanvasMouseMove}
+						handleCanvasMouseUp={ctrl.interactions.handleCanvasMouseUp}
+						handleCanvasWheel={ctrl.interactions.handleCanvasWheel}
+						getCanvasCursor={ctrl.interactions.getCanvasCursor}
+						crosshairMm={state.crosshairMm}
+						currentVoxel={state.currentVoxel}
+						slabMode={state.slabMode}
+						slabThicknessMm={state.slabThicknessMm}
+						obliqueAngles={state.obliqueAngles}
+						setObliqueAngles={state.setObliqueAngles}
+						handleFullResetViewport={ctrl.handleFullResetViewport}
+						activeRotationHandle={ctrl.interactions.activeRotationHandle}
+						isShiftRotating={ctrl.interactions.isShiftRotating}
+						hoveredHandle={ctrl.interactions.hoveredHandle}
+						transforms={state.transforms}
+						windowWidth={state.windowWidth}
+						windowLevel={state.windowLevel}
+						renderViewportOverlays={ctrl.renderViewportOverlays}
+						handlePanoMouseDown={ctrl.interactions.handlePanoMouseDown}
+						handlePanoMouseMove={ctrl.interactions.handlePanoMouseMove}
+						handlePanoMouseUp={ctrl.interactions.handlePanoMouseUp}
+						handleCrossSectionMouseDown={ctrl.interactions.handleCrossSectionMouseDown}
+						handleCrossSectionMouseMove={ctrl.interactions.handleCrossSectionMouseMove}
+						handleCrossSectionMouseUp={ctrl.interactions.handleCrossSectionMouseUp}
+						dragImplantPart={state.dragImplantPart}
+						hoveredImplantPart={state.hoveredImplantPart}
+						activeCrossSection={state.activeCrossSection}
+						activeCrossSectionIdx={state.activeCrossSectionIdx}
+						crossSections={state.crossSections}
+						onLoadDemoVolume={ctrl.dicomLoader.handleLoadDemoVolume}
+						activeTool={state.activeTool}
+						onSelectTool={state.setActiveTool}
+						rulers={state.rulers}
+						onClearRulers={ctrl.handleClearRulers}
+						angles={state.angles}
+						onClearAngles={ctrl.handleClearAngles}
+						onSelectQuickWlPreset={ctrl.handleSelectQuickWlPreset}
+						handleSelectTooth={ctrl.interactions.handleSelectTooth}
+						archCurve={state.archCurve}
+						jawType={state.jawType}
+						onSwitchJaw={ctrl.handleSwitchJaw}
+						activeToothFdi={state.activeCrossSection?.nearestToothFdi}
+						isUnsharpActive={state.isUnsharpActive}
+						onToggleUnsharp={ctrl.handleToggleUnsharp}
+						onChangeCrossSectionIdx={state.setActiveCrossSectionIdx}
+						selectedBrand={state.selectedBrand}
+						onSelectBrand={state.setSelectedBrand}
+						selectedDiameterMm={state.selectedDiameterMm}
+						onSelectDiameterMm={state.setSelectedDiameterMm}
+						selectedLengthMm={state.selectedLengthMm}
+						onSelectLengthMm={state.setSelectedLengthMm}
+						displayBoneClass={state.displayBoneClass}
+						displayMeanHU={state.displayMeanHU}
+						displayTorque={state.displayTorque}
+						displayNerveClearanceMm={state.displayNerveClearanceMm}
+						displayDrillingProtocol={state.displayDrillingProtocol}
+						nerveSafetyStatus={state.nerveAuditResult.safetyStatus === "danger" ? "danger" : state.nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"}
+						nervePoints={state.nervePoints}
+						interpolatedNerve3D={state.interpolatedNerve3D}
+						implant3DWorld={state.implant3DWorld}
+						nerveAuditResult={state.nerveAuditResult}
+						handleExportToEmr={ctrl.handleExportToEmr}
+						handleExportToPlan={ctrl.handleExportToPlan}
+						onChangeWindowWidth={state.setWindowWidth}
+						onChangeWindowLevel={state.setWindowLevel}
+						onChangeSlabThicknessMm={state.setSlabThicknessMm}
+						onChangeSlabMode={state.setSlabMode}
+						onSelectClinicalPreset={ctrl.handleSelectClinicalPreset}
+						activePresetId={state.activePreset}
+						panoThicknessMm={state.panoThicknessMm}
+						onChangePanoThicknessMm={state.setPanoThicknessMm}
+						panoProjectionMode={state.panoProjectionMode}
+						onChangePanoProjectionMode={state.setPanoProjectionMode}
+						crossSectionStepMm={state.crossSectionStepMm}
+						onChangeCrossSectionStepMm={state.setCrossSectionStepMm}
+						implantEntryXOffsetMm={state.implantEntryXOffsetMm}
+						onChangeImplantEntryXOffsetMm={state.setImplantEntryXOffsetMm}
+						implantEntryDepthMm={state.implantEntryDepthMm}
+						onChangeImplantEntryDepthMm={state.setImplantEntryDepthMm}
+						implantAngulationDeg={state.implantAngulationDeg}
+						onChangeImplantAngulationDeg={state.setImplantAngulationDeg}
 					/>
 
 					<CbctRightSidebar
-						isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} mobileActiveTab={mobileActiveTab} activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx} setActiveCrossSectionIdx={setActiveCrossSectionIdx} crossSections={crossSections} studioMode={studioMode} setStudioMode={setStudioMode} implantAngulationDeg={implantAngulationDeg} setImplantAngulationDeg={setImplantAngulationDeg} volume={volume} handleToggleMaximize={handleToggleMaximize} crossSectionBaseCanvasRef={crossSectionBaseCanvasRef} crossSectionOverlayCanvasRef={crossSectionOverlayCanvasRef} handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown} handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove} handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp} dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart} handleFullResetViewport={handleFullResetViewport} maximizedViewport={maximizedViewport} windowWidth={windowWidth} windowLevel={windowLevel} renderViewportOverlays={renderViewportOverlays} sampledVoxelHU={sampledVoxelHU} handleSelectTooth={interactions.handleSelectTooth} implant3DWorld={implant3DWorld} nerveAuditResult={nerveAuditResult} huSamplingResult={huSamplingResult} currentImplantSpec={currentImplantSpec} nervePoints={nervePoints} setNervePoints={setNervePoints} nerveTotalLengthMm={nerveTotalLengthMm} selectedNerveNodeIdx={selectedNerveNodeIdx} setSelectedNerveNodeIdx={setSelectedNerveNodeIdx} activeNerveSide={activeNerveSide} onSwitchNerveSide={setActiveNerveSide} displayBoneClass={displayBoneClass} displayMeanHU={displayMeanHU} displayTorque={displayTorque} displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol} selectedBrand={selectedBrand} setSelectedBrand={setSelectedBrand} selectedDiameterMm={selectedDiameterMm} setSelectedDiameterMm={setSelectedDiameterMm} selectedLengthMm={selectedLengthMm} setSelectedLengthMm={setSelectedLengthMm} implantEntryXOffsetMm={implantEntryXOffsetMm} setImplantEntryXOffsetMm={setImplantEntryXOffsetMm} setImplantEntryDepthMm={setImplantEntryDepthMm} activeCaliper={activeCaliper} handleExportToEmr={handleExportToEmr} handleExportPdfReport={() => { void handleExportPdfReport(); }} handleExportToPlan={handleExportToPlan} handleExportToSchedule={handleExportToSchedule} handleExportToFinance={handleExportCbctToFinance}
+						isSidebarOpen={state.isSidebarOpen}
+						setIsSidebarOpen={state.setIsSidebarOpen}
+						mobileActiveTab={state.mobileActiveTab}
+						activeCrossSection={state.activeCrossSection}
+						activeCrossSectionIdx={state.activeCrossSectionIdx}
+						setActiveCrossSectionIdx={state.setActiveCrossSectionIdx}
+						crossSections={state.crossSections}
+						studioMode={state.studioMode}
+						setStudioMode={state.setStudioMode}
+						implantAngulationDeg={state.implantAngulationDeg}
+						setImplantAngulationDeg={state.setImplantAngulationDeg}
+						volume={state.volume}
+						handleToggleMaximize={ctrl.handleToggleMaximize}
+						crossSectionBaseCanvasRef={state.crossSectionBaseCanvasRef}
+						crossSectionOverlayCanvasRef={state.crossSectionOverlayCanvasRef}
+						handleCrossSectionMouseDown={ctrl.interactions.handleCrossSectionMouseDown}
+						handleCrossSectionMouseMove={ctrl.interactions.handleCrossSectionMouseMove}
+						handleCrossSectionMouseUp={ctrl.interactions.handleCrossSectionMouseUp}
+						dragImplantPart={state.dragImplantPart}
+						hoveredImplantPart={state.hoveredImplantPart}
+						handleFullResetViewport={ctrl.handleFullResetViewport}
+						maximizedViewport={state.maximizedViewport}
+						windowWidth={state.windowWidth}
+						windowLevel={state.windowLevel}
+						renderViewportOverlays={ctrl.renderViewportOverlays}
+						sampledVoxelHU={state.sampledVoxelHU}
+						handleSelectTooth={ctrl.interactions.handleSelectTooth}
+						implant3DWorld={state.implant3DWorld}
+						nerveAuditResult={state.nerveAuditResult}
+						huSamplingResult={state.huSamplingResult}
+						currentImplantSpec={state.currentImplantSpec}
+						nervePoints={state.nervePoints}
+						setNervePoints={state.setNervePoints}
+						nerveTotalLengthMm={state.nerveTotalLengthMm}
+						selectedNerveNodeIdx={state.selectedNerveNodeIdx}
+						setSelectedNerveNodeIdx={state.setSelectedNerveNodeIdx}
+						activeNerveSide={state.activeNerveSide}
+						onSwitchNerveSide={state.setActiveNerveSide}
+						displayBoneClass={state.displayBoneClass}
+						displayMeanHU={state.displayMeanHU}
+						displayTorque={state.displayTorque}
+						displayNerveClearanceMm={state.displayNerveClearanceMm}
+						displayDrillingProtocol={state.displayDrillingProtocol}
+						selectedBrand={state.selectedBrand}
+						setSelectedBrand={state.setSelectedBrand}
+						selectedDiameterMm={state.selectedDiameterMm}
+						setSelectedDiameterMm={state.setSelectedDiameterMm}
+						selectedLengthMm={state.selectedLengthMm}
+						setSelectedLengthMm={state.setSelectedLengthMm}
+						implantEntryXOffsetMm={state.implantEntryXOffsetMm}
+						setImplantEntryXOffsetMm={state.setImplantEntryXOffsetMm}
+						setImplantEntryDepthMm={state.setImplantEntryDepthMm}
+						activeCaliper={state.activeCaliper}
+						handleExportToEmr={ctrl.handleExportToEmr}
+						handleExportPdfReport={() => { void ctrl.handleExportPdfReport(); }}
+						handleExportToPlan={ctrl.handleExportToPlan}
+						handleExportToSchedule={ctrl.handleExportToSchedule}
+						handleExportToFinance={ctrl.handleExportCbctToFinance}
 					/>
 				</main>
 
 				<CbctHotkeysStatusBar
-					activeViewport={activeViewport} onToggleHelp={() => {}} isPanelOpen={isSidebarOpen} onTogglePanel={() => setIsSidebarOpen((prev) => !prev)} isMaximized={maximizedViewport !== null} onToggleMaximize={() => handleToggleMaximize(activeViewport)}
+					activeViewport={state.activeViewport}
+					onToggleHelp={() => {}}
+					isPanelOpen={state.isSidebarOpen}
+					onTogglePanel={() => state.setIsSidebarOpen((prev) => !prev)}
+					isMaximized={state.maximizedViewport !== null}
+					onToggleMaximize={() => ctrl.handleToggleMaximize(state.activeViewport)}
 				/>
 
-				{isComparisonSplitOpen && (
+				{state.isComparisonSplitOpen && (
 					<div style={{ position: "fixed", inset: 0, zIndex: 999999 }} data-testid="cbct-comparison-split-overlay">
 						<RadiologyConsultationSplit
-							patientName={patientName || patientDisplayName} initialLeftStudy={study ?? undefined} initialSplitMode="dynamics" onClose={() => setIsComparisonSplitOpen(false)} onInsertProtocol={(note) => { onApplyToDiary043?.(note); }}
+							patientName={patientName || state.patientDisplayName}
+							initialLeftStudy={study ?? undefined}
+							initialSplitMode="dynamics"
+							onClose={() => state.setIsComparisonSplitOpen(false)}
+							onInsertProtocol={(note) => { onApplyToDiary043?.(note); }}
 						/>
 					</div>
 				)}
 
-				{isLabOrderModalOpen && labOrderDraft && (
+				{ctrl.isLabOrderModalOpen && ctrl.labOrderDraft && (
 					<DentalLabOrderModal
-						isOpen={isLabOrderModalOpen} onClose={() => setIsLabOrderModalOpen(false)} initialOrder={labOrderDraft} patientId={patientId} patientName={patientDisplayName} doctorId={study?.doctorId ?? undefined} doctorName={study?.doctorName ?? undefined} initialToothFdi={labOrderDraft.toothFdi ?? undefined} onOrderSaved={() => setIsLabOrderModalOpen(false)}
+						isOpen={ctrl.isLabOrderModalOpen}
+						onClose={() => ctrl.setIsLabOrderModalOpen(false)}
+						initialOrder={ctrl.labOrderDraft}
+						patientId={patientId}
+						patientName={state.patientDisplayName}
+						doctorId={study?.doctorId ?? undefined}
+						doctorName={study?.doctorName ?? undefined}
+						initialToothFdi={ctrl.labOrderDraft.toothFdi ?? undefined}
+						onOrderSaved={() => ctrl.setIsLabOrderModalOpen(false)}
 					/>
 				)}
 			</div>

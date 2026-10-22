@@ -43,14 +43,8 @@ import {
 	CBCT_PANORAMIC_VERTEX_SHADER,
 	CBCT_PANORAMIC_FRAGMENT_SHADER,
 } from "../cbctPanoramicReconstructionMath";
-import {
-	autoDetectDentalArch,
-	findOcclusalZPlane,
-} from "../cbctAutoArchEngine";
-import {
-	createEmptyCbctVolume,
-	get16BitLut,
-} from "../cbctMprMath";
+import { autoDetectDentalArch, findOcclusalZPlane } from "../cbctAutoArchEngine";
+import { createEmptyCbctVolume, get16BitLut } from "../cbctMprMath";
 import { buildVolumeFromDicomBuffers } from "../realDicomVolumeLoader";
 
 describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {

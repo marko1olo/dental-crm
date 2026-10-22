@@ -43,11 +43,8 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 		onSendToLab,
 		onExportDicom,
 	} = props;
-
 	const modalId = useId();
-
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName);
-
 	const defaultImage = useMemo(() => {
 		if (initialImageUrl !== undefined) return initialImageUrl;
 		if (isDemo) {
@@ -63,7 +60,6 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [isDetectingSensor, setIsDetectingSensor] = useState<boolean>(false);
 	const [sensorHealthStatus, setSensorHealthStatus] = useState<string>("Ожидание снимка (Hot Folder / Автоподхват)");
-
 	const handleAutoDetectSensor = useCallback(async () => {
 		setIsDetectingSensor(true);
 		try {
@@ -313,7 +309,6 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 				}
 			}
 		};
-
 		window.addEventListener("keydown", handleKeyDown);
 		window.addEventListener("paste", handlePaste);
 		return () => {
@@ -321,7 +316,6 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 			window.removeEventListener("paste", handlePaste);
 		};
 	}, [isOpen, handleTriggerCapture, onClose, panZoom, handleProcessFile]);
-
 	// Factory for consistent canonical study records across all export paths
 	const createStudyRecord = useCallback((idSuffix: string): { study: RadiologyStudy; pixelSpacingMm: number } => {
 		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
