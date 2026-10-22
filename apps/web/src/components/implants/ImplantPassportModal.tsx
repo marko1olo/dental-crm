@@ -43,12 +43,20 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	});
 	const handlers = useImplantModalHandlers(logic, patientId, onSavePassport, onInsertIntoDiary, onClose);
 
+	const handlePrintPassport = () => {
+		logic.setActiveTab("passport");
+		setTimeout(() => {
+			window.print?.();
+			showToast(`Печать паспорта #${logic.toothFdi}`, "success");
+		}, 100);
+	};
+
 	if (!isOpen) return null;
 
 	return (
 		<div className="implant-passport-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby={titleId} data-testid="implant-passport-modal-backdrop">
 			<div className={`implant-passport-card-container implant-surgical-passport-modal ${className}`.trim()} data-testid="implant-passport-modal">
-				<ImplantPassportModalHeader titleId={titleId} toothFdi={logic.toothFdi} patientName={patientName} doctorName={doctorName} activeTab={logic.activeTab} onTogglePassportView={() => logic.setActiveTab(logic.activeTab === "passport" ? "protocol" : "passport")} onPrintPassport={() => { window.print?.(); showToast(`Печать паспорта #${logic.toothFdi}`, "success"); }} onClose={onClose} />
+				<ImplantPassportModalHeader titleId={titleId} toothFdi={logic.toothFdi} patientName={patientName} doctorName={doctorName} activeTab={logic.activeTab} onTogglePassportView={() => logic.setActiveTab(logic.activeTab === "passport" ? "protocol" : "passport")} onPrintPassport={handlePrintPassport} onClose={onClose} />
 				<ImplantPassportModalNav activeTab={logic.activeTab} setActiveTab={logic.setActiveTab} torqueNcm={logic.torqueNcm} isIsqEnabled={logic.isIsqEnabled} isqValue={logic.isqValue} />
 				<div className="implant-passport-content">
 					{Boolean(inventoryOverdraftActive) && !logic.isOverdraftDismissed && (
@@ -119,8 +127,14 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							onApplyGbrProtocol={handlers.handleApplyGbrProtocol}
 						/>
 					)}
+					{/* Гарантированный вывод паспорта на печать даже при активных вкладках протокола или ISQ */}
+					{logic.activeTab !== "passport" && (
+						<div className="hidden print:block" aria-hidden="true">
+							<ImplantPassportCard data={logic.assembledData} />
+						</div>
+					)}
 				</div>
-				<ImplantPassportModalFooter brand={logic.selectedSystem.brand} diameterMm={logic.diameterMm} lengthMm={logic.lengthMm} torqueNcm={logic.torqueNcm} onPrint={() => { window.print?.(); showToast(`Печать паспорта #${logic.toothFdi}`, "success"); }} onSave={handlers.handleSaveAndInsertDiary} />
+				<ImplantPassportModalFooter brand={logic.selectedSystem.brand} diameterMm={logic.diameterMm} lengthMm={logic.lengthMm} torqueNcm={logic.torqueNcm} onPrint={handlePrintPassport} onSave={handlers.handleSaveAndInsertDiary} />
 			</div>
 		</div>
 	);

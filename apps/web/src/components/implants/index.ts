@@ -37,6 +37,10 @@ export function getImplantPlatformById(brand: ImplantBrand, line?: string): Plat
 export {
 	ImplantPassportModal as ImplantSurgicalPassportModal,
 } from "./ImplantPassportModal";
+export { ImplantSurgeryProtocolModal } from "./ImplantSurgeryProtocolModal";
+export type { ImplantSurgeryProtocolModalProps } from "./ImplantSurgeryProtocolModal";
+export { ImplantBatchSelector } from "./ImplantBatchSelector";
+export type { ImplantBatchSelectorProps } from "./ImplantBatchSelector";
 export type {
 	FastImplantPassportData as ImplantSurgicalPassportData,
 } from "./implantQuickPresets";

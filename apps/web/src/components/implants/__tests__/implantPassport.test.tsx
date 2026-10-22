@@ -14,6 +14,8 @@ import {
 import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
 import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
+import { ImplantSurgeryProtocolModal } from "../ImplantSurgeryProtocolModal";
+import { ImplantBatchSelector } from "../ImplantBatchSelector";
 import { ImplantProtocolTab } from "../ImplantProtocolTab";
 import { ImplantEconomicsSection } from "../ImplantEconomicsSection";
 import { ImplantConsumablesSelector } from "../ImplantConsumablesSelector";
@@ -593,5 +595,95 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("Паспорт имплантата DENTE"), "Must render title");
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(html), false, "Must contain zero emojis");
+	});
+
+	it("32. ImplantSurgeryProtocolModal renders with full parity to ImplantPassportModal and zero disabled buttons", () => {
+		const html = renderToString(
+			<ImplantSurgeryProtocolModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				patientName="Ковалёв Р. С."
+				doctorName="Д-р Воронов А. В."
+			/>,
+		);
+
+		assert.ok(html.includes("implant-passport-modal"), "Must render modal container");
+		assert.ok(html.includes("Паспорт дентального имплантата"), "Must render title");
+		assert.ok(html.includes("Ковалёв Р. С."), "Must render patient name");
+		assert.ok(html.includes("Д-р Воронов А. В."), "Must render doctor name");
+		assert.ok(!html.includes("disabled"), "All action buttons must be enabled per Mandate 8e");
+	});
+
+	it("33. ImplantBatchSelector renders warehouse items with LOT, expiration and current quantity", () => {
+		const html = renderToString(
+			<ImplantBatchSelector
+				stockItems={DEFAULT_CANONICAL_IMPLANT_STOCK}
+				selectedStockItemId="inv-oss-4010"
+				lotNumber="24C1208"
+				catalogArticle="TS3S4010S"
+			/>,
+		);
+
+		assert.ok(html.includes("Партия со склада клиники"), "Must render warehouse stock section");
+		assert.ok(html.includes("24C1208"), "Must show LOT number");
+		assert.ok(html.includes("TS3S4010S"), "Must show SKU article");
+		assert.ok(html.includes("stock-item-inv-oss-4010"), "Must render stock item tile");
+	});
+
+	it("34. ImplantProtocolTab packaging section supports 1-click default autofill without laser gimmicks", () => {
+		const html = renderToString(
+			<ImplantProtocolTab
+				toothFdi={46}
+				handleToothSelect={() => {}}
+				boneDensity="D2"
+				setBoneDensity={() => {}}
+				scannedBarcode=""
+				setScannedBarcode={() => {}}
+				handleApplyBarcode={() => {}}
+				isGbrPerformed={false}
+				setIsGbrPerformed={() => {}}
+				capType="fdm"
+				setCapType={() => {}}
+				isIsqEnabled={true}
+				setIsIsqEnabled={() => {}}
+				selectedBrand="Osstem"
+				handleBrandSelect={() => {}}
+				diameterMm={4.0}
+				setDiameterMm={() => {}}
+				lengthMm={10.0}
+				setLengthMm={() => {}}
+				torqueNcm={35}
+				setTorqueNcm={() => {}}
+				lotNumber="24C1208"
+				setLotNumber={() => {}}
+				catalogArticle="TS3S4010S"
+				setCatalogArticle={() => {}}
+				serialNumber="SN-884210"
+				setSerialNumber={() => {}}
+				isOverdraftActive={false}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-autofill-packaging"), "Must have 1-click autofill button");
+		assert.ok(html.includes("По умолчанию"), "Must show quick default button");
+		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode input");
+		assert.ok(!html.includes("laser-beam"), "Must NOT contain fake laser beam classes");
+	});
+
+	it("35. ImplantPassportCardHeader hides action buttons on print for official A4 certificate integrity", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 46,
+			brand: "Dentium",
+			patientName: "Смирнов В. А.",
+		});
+
+		const html = renderToString(
+			<ImplantPassportCard data={record} />,
+		);
+
+		assert.ok(html.includes("print:hidden"), "Action buttons container must have print:hidden class");
+		assert.ok(html.includes("btn-share-whatsapp"), "Must have WhatsApp share button");
+		assert.ok(html.includes("btn-share-telegram"), "Must have Telegram share button");
 	});
 });

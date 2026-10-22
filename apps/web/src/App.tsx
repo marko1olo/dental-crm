@@ -13,6 +13,7 @@ import {
 import { PrescriptionModal } from "./components/prescriptions/PrescriptionModal";
 import { TelephonyDrawer } from "./components/telephony/TelephonyDrawer";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
+import { TelephonyToast } from "./components/telephony/TelephonyToast";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useChairsideErgonomics } from "./hooks/useChairsideErgonomics";
@@ -77,6 +78,16 @@ const PatientRecallsHubModal = lazyWithRetry(() =>
 const ClinicalTasksPanel = lazyWithRetry(() =>
 	import("./ClinicalTasksPanel").then((m) => ({
 		default: m.ClinicalTasksPanel,
+	})),
+);
+const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
+	import("./components/diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({
+		default: m.OrthodonticPhotoProtocolModal,
+	})),
+);
+const ToothContextDrawer = lazyWithRetry(() =>
+	import("./components/diagnostics/ToothContextDrawer").then((m) => ({
+		default: m.ToothContextDrawer,
 	})),
 );
 
@@ -829,7 +840,8 @@ export function App() {
 				((window.location.search || "").includes("implant_passport") ||
 					(window.location.hash || "").includes("implant_passport") ||
 					(window.location.hash || "").includes("implants") ||
-					(window.location.search || "").includes("passport=demo")),
+					(window.location.search || "").includes("passport") ||
+					(window.location.hash || "").includes("passport")),
 		);
 	const [implantPassportConfig, setImplantPassportConfig] = useState<{
 		patientName?: string;
@@ -839,6 +851,24 @@ export function App() {
 		toothNumber?: number;
 	} | null>(null);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
+	const [isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen] =
+		useState<boolean>(
+			() =>
+				typeof window !== "undefined" &&
+				((window.location.search || "").includes("ortho-photo") ||
+					(window.location.hash || "").includes("ortho-photo") ||
+					(window.location.search || "").includes("orthodontic-photo") ||
+					(window.location.hash || "").includes("orthodontic-photo")),
+		);
+	const [isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen] =
+		useState<boolean>(
+			() =>
+				typeof window !== "undefined" &&
+				((window.location.search || "").includes("tooth-drawer") ||
+					(window.location.hash || "").includes("tooth-drawer") ||
+					(window.location.search || "").includes("tooth-card") ||
+					(window.location.hash || "").includes("tooth-card")),
+		);
 	const [isClinicalTasksOpen, setIsClinicalTasksOpen] = useState(false);
 	const [clinicalTasksPatientId, setClinicalTasksPatientId] = useState<
 		string | null
@@ -1155,10 +1185,28 @@ export function App() {
 			if (
 				s.includes("implants") ||
 				s.includes("implant_passport") ||
+				s.includes("passport") ||
 				h.includes("implants") ||
-				h.includes("implant_passport")
+				h.includes("implant_passport") ||
+				h.includes("passport")
 			) {
 				setIsImplantPassportDirectOpen(true);
+			}
+			if (
+				s.includes("ortho-photo") ||
+				s.includes("orthodontic-photo") ||
+				h.includes("ortho-photo") ||
+				h.includes("orthodontic-photo")
+			) {
+				setIsOrthoPhotoDirectModalOpen(true);
+			}
+			if (
+				s.includes("tooth-drawer") ||
+				s.includes("tooth-card") ||
+				h.includes("tooth-drawer") ||
+				h.includes("tooth-card")
+			) {
+				setIsToothDrawerDirectModalOpen(true);
 			}
 			if (
 				s.includes("emergency") ||
@@ -1670,6 +1718,7 @@ export function App() {
 					/>
 					<TelephonyDrawer />
 					<TelephonyFloatingWidget defaultExpanded={false} />
+					<TelephonyToast />
 					{isPrescriptionForm107Open && (
 						<PrescriptionModal
 							isOpen={true}
@@ -1731,6 +1780,36 @@ export function App() {
 								isOpen={true}
 								onClose={() => setIsRecallsHubOpen(false)}
 								clinicName={activeWorkspaceProfile?.title || "DENTE Clinic"}
+							/>
+						</React.Suspense>
+					)}
+					{isOrthoPhotoDirectModalOpen && (
+						<React.Suspense fallback={null}>
+							<OrthodonticPhotoProtocolModal
+								isOpen={true}
+								onClose={() => setIsOrthoPhotoDirectModalOpen(false)}
+								patientName="Воронов Дмитрий Игоревич"
+								patientId="pat-demo-01"
+								doctorName="Д-р Соколов А. В."
+								clinicName="DENTE Clinic"
+							/>
+						</React.Suspense>
+					)}
+					{isToothDrawerDirectModalOpen && (
+						<React.Suspense fallback={null}>
+							<ToothContextDrawer
+								isOpen={true}
+								onClose={() => setIsToothDrawerDirectModalOpen(false)}
+								toothNumber={16}
+								toothData={{
+									toothNumber: 16,
+									state: "Healthy",
+									surfaces: ["O", "M"],
+									mobility: 0,
+									isImplant: false,
+									hasCrown: false,
+									isMissing: false,
+								}}
 							/>
 						</React.Suspense>
 					)}

@@ -159,7 +159,22 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 							Стерильная упаковка & Идентификация изделия (LOT / SN / REF):
 						</span>
 					</div>
-					<span className="text-[11px] text-[var(--muted)]">Прямой ввод или сканер штрихкодов</span>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => {
+								if (!props.catalogArticle) props.setCatalogArticle("TS3S4010S");
+								if (!props.lotNumber) props.setLotNumber("24C1208");
+								if (!props.serialNumber) props.setSerialNumber(`SN-${Date.now().toString().slice(-6)}`);
+							}}
+							className="secondary-button text-[11px] px-2.5 py-1 min-h-[30px] rounded-lg cursor-pointer"
+							title="Автозаполнение по умолчанию"
+							data-testid="btn-autofill-packaging"
+						>
+							По умолчанию
+						</button>
+						<span className="text-[11px] text-[var(--muted)] hidden sm:inline">Быстрый ввод или склад клиники</span>
+					</div>
 				</div>
 
 				<div className="relative">
@@ -179,7 +194,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 								props.handleApplyBarcode();
 							}
 						}}
-						placeholder="Штрихкод / DataMatrix с упаковки (GS1, DataMatrix, REF, LOT, SN)..."
+						placeholder="Ввод маркировки упаковки (REF, LOT, SN или GS1 DataMatrix)..."
 						className="implant-input w-full min-h-[38px] px-3 text-xs font-mono"
 						data-testid="input-barcode-scanner input-scanned-barcode"
 					/>

@@ -3,49 +3,17 @@
  *
  * Tab 6: EGISZ REMD Documents Journal & Outbox Queue.
  * Real-time monitoring of registered CDA packages, validation errors, and batch archives.
- * Synchronized with backend routes /api/clinical/egisz/outbox and /api/egisz/logs/:patientId.
  * Mandate 8e: Doctor Autonomy (Zero disabled buttons).
  */
 
 import React from "react";
-import { AlertCircle, FileArchive, RefreshCw, Send } from "lucide-react";
-import type { RemdDocumentRecord, RemdDocumentStatus } from "../egiszJournalData";
+import { JournalHeaderActions } from "./journal/JournalHeaderActions";
+import { JournalRecordsTable } from "./journal/JournalRecordsTable";
+import { JournalRemediationCard } from "./journal/JournalRemediationCard";
+import { JournalStatsRibbon } from "./journal/JournalStatsRibbon";
+import type { EgiszJournalTabProps } from "./journal/journalTypes";
 
-export interface EgiszJournalTabProps {
-	readonly records: readonly RemdDocumentRecord[];
-	readonly journalFilter: RemdDocumentStatus | "all";
-	readonly onJournalFilterChange: (status: RemdDocumentStatus | "all") => void;
-	readonly selectedJournalId: string;
-	readonly onSelectJournalId: (id: string) => void;
-	readonly onBatchZipExport: () => void;
-	readonly onSingleZipExport: (record: RemdDocumentRecord) => void;
-	readonly onSignJournalDocument?: ((record: RemdDocumentRecord) => void) | undefined;
-	readonly onExportJournalZip?: ((record: RemdDocumentRecord) => void) | undefined;
-	readonly onSwitchToSignatureTab: () => void;
-	readonly onRefreshOutbox?: (() => void) | undefined;
-	readonly onBatchSendShift?: (() => void) | undefined;
-	readonly isLoading?: boolean | undefined;
-}
-
-function getStatusBadge(status: RemdDocumentStatus): { bg: string; color: string; label: string } {
-	switch (status) {
-		case "registered":
-			return { bg: "rgba(16, 185, 129, 0.15)", color: "var(--success)", label: "Зарегистрирован" };
-		case "accepted_by_egisz":
-			return { bg: "rgba(16, 185, 129, 0.15)", color: "var(--success)", label: "Принят ЕГИСЗ" };
-		case "signed":
-			return { bg: "rgba(59, 130, 246, 0.15)", color: "var(--primary)", label: "Подписан" };
-		case "sent":
-			return { bg: "rgba(6, 182, 212, 0.15)", color: "var(--teal, #0d9488)", label: "Отправлен" };
-		case "rejected_by_egisz":
-			return { bg: "rgba(239, 68, 68, 0.15)", color: "var(--danger)", label: "Отклонен ЕГИСЗ" };
-		case "error":
-			return { bg: "rgba(239, 68, 68, 0.15)", color: "var(--danger)", label: "Ошибка" };
-		case "draft":
-		default:
-			return { bg: "rgba(245, 158, 11, 0.15)", color: "var(--warning)", label: "Черновик" };
-	}
-}
+export type { EgiszJournalTabProps } from "./journal/journalTypes";
 
 export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	records,
@@ -62,333 +30,38 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	onBatchSendShift,
 	isLoading,
 }) => {
-	const registeredCount = records.filter((r) => r.status === "registered" || r.status === "accepted_by_egisz").length;
-	const errorCount = records.filter((r) => r.status === "error" || r.status === "rejected_by_egisz").length;
-	const draftCount = records.filter((r) => r.status === "draft").length;
 	const selectedRecord = records.find((r) => r.id === selectedJournalId);
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-			{/* Journal Header */}
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-				<div>
-					<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "var(--ink)" }}>
-						Журнал медицинских документов РЭМД ЕГИСЗ
-					</h3>
-					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-						Журнал электронных медицинских карт (протоколы консультаций и вмешательств)
-					</p>
-				</div>
-				<div style={{ display: "flex", gap: "0.5rem" }}>
-					{onBatchSendShift && (
-						<button
-							type="button"
-							onClick={onBatchSendShift}
-							className="egisz-btn sm"
-							data-testid="journal-batch-send-shift-btn"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.5rem 0.9rem",
-								fontSize: "0.8125rem",
-								fontWeight: 700,
-								borderRadius: "6px",
-								background: "var(--teal)",
-								color: "var(--ink-inverse)",
-								border: "none",
-								cursor: "pointer",
-							}}
-						>
-							<Send size={15} /> ✓ Отправить пакет смены в РЭМД
-						</button>
-					)}
-					{onRefreshOutbox && (
-						<button
-							type="button"
-							onClick={onRefreshOutbox}
-							className="egisz-btn sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.5rem 0.75rem",
-								fontSize: "0.8125rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								cursor: "pointer",
-							}}
-						>
-							<RefreshCw size={14} />
-							Обновить
-						</button>
-					)}
-					<button
-						type="button"
-						onClick={onBatchZipExport}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.4rem",
-							padding: "0.5rem 1rem",
-							fontSize: "0.8125rem",
-							fontWeight: 700,
-							borderRadius: "6px",
-							background: "var(--primary)",
-							color: "var(--ink-inverse)",
-							border: "none",
-							cursor: "pointer",
-						}}
-					>
-						<FileArchive size={16} />
-						Пакетный ZIP (.xml + .p7s)
-					</button>
-				</div>
-			</div>
+			<JournalHeaderActions
+				onBatchSendShift={onBatchSendShift}
+				onRefreshOutbox={onRefreshOutbox}
+				onBatchZipExport={onBatchZipExport}
+			/>
 
-			{/* Stats Ribbon */}
-			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
-				<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
-					<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--success)", textTransform: "uppercase" }}>
-						Зарегистрировано в РЭМД
-					</div>
-					<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--success)", marginTop: "0.25rem" }}>
-						{registeredCount}
-					</div>
-				</div>
-				<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)" }}>
-					<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--danger)", textTransform: "uppercase" }}>
-						Ошибки валидации
-					</div>
-					<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--danger)", marginTop: "0.25rem" }}>
-						{errorCount}
-					</div>
-				</div>
-				<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.25)" }}>
-					<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--warning)", textTransform: "uppercase" }}>
-						Черновики
-					</div>
-					<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--warning)", marginTop: "0.25rem" }}>
-						{draftCount}
-					</div>
-				</div>
-			</div>
+			<JournalStatsRibbon
+				records={records}
+				journalFilter={journalFilter}
+				onJournalFilterChange={onJournalFilterChange}
+			/>
 
-			{/* Filter Chips */}
-			<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-				<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-					Фильтр статуса:
-				</span>
-				{(["all", "registered", "accepted_by_egisz", "signed", "sent", "rejected_by_egisz", "error", "draft"] as const).map((filterVal) => (
-					<button
-						key={filterVal}
-						type="button"
-						onClick={() => onJournalFilterChange(filterVal)}
-						style={{
-							padding: "0.3rem 0.65rem",
-							fontSize: "0.75rem",
-							fontWeight: 600,
-							borderRadius: "6px",
-							border: "1px solid var(--line)",
-							background: journalFilter === filterVal ? "var(--primary)" : "var(--paper)",
-							color: journalFilter === filterVal ? "var(--ink-inverse)" : "var(--ink)",
-							cursor: "pointer",
-						}}
-					>
-						{filterVal === "all"
-							? "Все"
-							: filterVal === "registered"
-							? "Зарегистрировано"
-							: filterVal === "accepted_by_egisz"
-							? "Принято в Минздраве"
-							: filterVal === "signed"
-							? "Подписан"
-							: filterVal === "sent"
-							? "Отправлен"
-							: filterVal === "rejected_by_egisz"
-							? "Отклонено"
-							: filterVal === "error"
-							? "Ошибка валидации"
-							: "Черновик"}
-					</button>
-				))}
-			</div>
+			<JournalRemediationCard
+				selectedRecord={selectedRecord}
+				journalFilter={journalFilter}
+			/>
 
-			{/* Error Remediation Hint Card */}
-			{(selectedRecord?.validationError || journalFilter === "error" || selectedRecord?.status === "error" || selectedRecord?.status === "rejected_by_egisz") && (
-				<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--danger)", fontSize: "0.875rem" }}>
-						<AlertCircle size={18} />
-						Ошибка валидации РЭМД: {selectedRecord?.validationError?.errorCode || "ERR_FRMR_SNILS_NOT_FOUND"}
-					</div>
-					<div style={{ fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.25rem" }}>
-						{selectedRecord?.validationError?.errorMessage || "СНИЛС врача (112-233-445 00) не найден в Федеральном регистре медицинских работников (ФРМР)."}
-					</div>
-					<div style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.35rem" }}>
-						Инструкция по устранению ошибки:
-					</div>
-					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
-						{selectedRecord?.validationError?.actionableHint || "Проверьте правильность ввода СНИЛС врача в справочнике сотрудников клиники. Врач должен быть зарегистрирован в подсистеме ФРМР ЕГИСЗ Минздрава РФ с подтвержденной специальностью."}
-					</p>
-				</div>
-			)}
-
-			{/* Documents Table */}
-			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>
-				<table className="egisz-table-fixed" style={{ borderCollapse: "collapse", fontSize: "0.8125rem" }}>
-					<thead>
-						<tr style={{ background: "var(--paper-strong)", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
-							<th style={{ width: "130px", padding: "0.6rem 0.75rem" }}>Статус</th>
-							<th style={{ width: "70px", padding: "0.6rem 0.75rem" }}>Тип</th>
-							<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Пациент</th>
-							<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Врач</th>
-							<th style={{ width: "160px", padding: "0.6rem 0.75rem" }}>Номер в Минздраве</th>
-							<th style={{ width: "95px", padding: "0.6rem 0.75rem" }}>Дата</th>
-							<th style={{ width: "175px", padding: "0.6rem 0.75rem", textAlign: "right" }}>Действия</th>
-						</tr>
-					</thead>
-					<tbody>
-						{isLoading ? (
-							<tr>
-								<td colSpan={7} style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--muted)" }}>
-									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-										<RefreshCw size={24} className="animate-spin" style={{ opacity: 0.6 }} />
-										<span style={{ fontSize: "0.875rem", fontWeight: 600 }}>Загрузка очереди РЭМД из базы данных...</span>
-									</div>
-								</td>
-							</tr>
-						) : records.filter((r) => journalFilter === "all" || r.status === journalFilter).length === 0 ? (
-							<tr>
-								<td colSpan={7} style={{ padding: "3rem 1rem", textAlign: "center", color: "var(--muted)" }}>
-									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-										<div style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--ink)" }}>
-											{journalFilter === "all"
-												? "В базе данных нет документов РЭМД"
-												: `В очереди нет документов со статусом «${journalFilter}»`}
-										</div>
-										<p style={{ margin: 0, fontSize: "0.8125rem", maxWidth: "460px", lineHeight: 1.5 }}>
-											Документы попадают в журнал после наложения УКЭП врача и клиники либо при отложенной пакетной отправке.
-										</p>
-									</div>
-								</td>
-							</tr>
-						) : (
-							records
-								.filter((r) => journalFilter === "all" || r.status === journalFilter)
-								.map((rec) => (
-								<tr
-									key={rec.id}
-									onClick={() => onSelectJournalId(rec.id)}
-									style={{
-										borderBottom: "1px solid var(--line)",
-										background: selectedJournalId === rec.id ? "rgba(0, 86, 179, 0.05)" : "transparent",
-										cursor: "pointer",
-									}}
-								>
-									<td style={{ padding: "0.6rem 0.75rem" }}>
-										{(() => {
-											const badge = getStatusBadge(rec.status);
-											return (
-												<span
-													style={{
-														padding: "0.2rem 0.5rem",
-														borderRadius: "4px",
-														fontSize: "0.75rem",
-														fontWeight: 600,
-														background: badge.bg,
-														color: badge.color,
-													}}
-												>
-													{badge.label}
-												</span>
-											);
-										})()}
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", fontWeight: 600 }}>
-										{rec.docTypeCode}
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
-										<div className="egisz-cell-truncate" title={rec.patient.fullName}>{rec.patient.fullName}</div>
-										{rec.patient.snils && (
-											<div className="egisz-cell-truncate font-mono" style={{ fontSize: "0.75rem", color: "var(--muted)" }} title={rec.patient.snils}>
-												{rec.patient.snils}
-											</div>
-										)}
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
-										<div className="egisz-cell-truncate" title={rec.doctor.fullName}>{rec.doctor.fullName}</div>
-										<div className="egisz-cell-truncate" style={{ fontSize: "0.75rem", color: "var(--muted)" }} title={rec.doctor.position}>
-											{rec.doctor.position}
-										</div>
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", minWidth: 0 }}>
-										<div className="egisz-cell-truncate font-mono" style={{ fontFamily: "monospace", fontSize: "0.75rem" }} title={rec.registrationInfo?.regNumber || "—"}>
-											{rec.registrationInfo?.regNumber || "—"}
-										</div>
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
-										{rec.encounterDate}
-									</td>
-									<td style={{ padding: "0.6rem 0.75rem", textAlign: "right" }}>
-										<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.35rem" }}>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													if (onSignJournalDocument) {
-														onSignJournalDocument(rec);
-													} else {
-														onSwitchToSignatureTab();
-													}
-												}}
-												className="egisz-btn sm"
-												style={{
-													padding: "0.25rem 0.6rem",
-													fontSize: "0.75rem",
-													fontWeight: 600,
-													borderRadius: "4px",
-													background: "var(--teal)",
-													color: "var(--ink-inverse)",
-													border: "none",
-													cursor: "pointer",
-												}}
-											>
-												Подписать
-											</button>
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													if (onExportJournalZip) {
-														onExportJournalZip(rec);
-													} else {
-														onSingleZipExport(rec);
-													}
-												}}
-												className="egisz-btn sm"
-												style={{
-													padding: "0.25rem 0.6rem",
-													fontSize: "0.75rem",
-													fontWeight: 600,
-													borderRadius: "4px",
-													background: "var(--paper-strong)",
-													color: "var(--ink)",
-													border: "1px solid var(--line)",
-													cursor: "pointer",
-												}}
-											>
-												1-Клик ZIP
-											</button>
-										</div>
-									</td>
-								</tr>
-							)))}
-					</tbody>
-				</table>
-			</div>
+			<JournalRecordsTable
+				records={records}
+				journalFilter={journalFilter}
+				selectedJournalId={selectedJournalId}
+				onSelectJournalId={onSelectJournalId}
+				onSingleZipExport={onSingleZipExport}
+				onSignJournalDocument={onSignJournalDocument}
+				onExportJournalZip={onExportJournalZip}
+				onSwitchToSignatureTab={onSwitchToSignatureTab}
+				isLoading={isLoading}
+			/>
 		</div>
 	);
 };

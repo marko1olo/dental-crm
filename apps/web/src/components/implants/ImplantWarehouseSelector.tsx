@@ -56,10 +56,11 @@ export const ImplantWarehouseSelector: React.FC<ImplantWarehouseSelectorProps> =
 								<strong className="text-xs truncate font-extrabold">{item.name}</strong>
 								{isSelected && <CheckCircle2 size={15} className="text-[var(--teal,#0d9488)] shrink-0" />}
 							</div>
-							<div className="flex items-center justify-between text-[11px] font-mono text-[var(--muted)] mt-1">
+							<div className="flex items-center justify-between text-[11px] font-mono text-[var(--muted)] mt-1 gap-2 flex-wrap">
+								<span>{`REF: ${item.sku ?? "—"}`}</span>
 								<span>{`LOT: ${item.lotNumber ?? "—"}`}</span>
 								<span>{`Годен: ${item.expirationDate ?? "—"}`}</span>
-								<span className="font-bold text-[var(--teal,#0d9488)]">
+								<span className="font-bold text-[var(--teal,#0d9488)] ml-auto">
 									{`${Number(item.currentQty).toFixed(0)} шт.`}
 								</span>
 							</div>

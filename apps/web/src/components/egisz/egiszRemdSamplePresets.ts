@@ -11,10 +11,8 @@ import {
 	SAMPLE_043U_PATIENT_PRESET,
 } from "./remdXml/egiszRemdPresets";
 
-import type {
-	EgiszDentalCdaPayload,
-	FnsTaxCertificatePayload,
-} from "./cdaR2XmlBuilder";
+import type { EgiszDentalCdaPayload } from "./cdaR2XmlBuilder";
+export { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
 
 export const SAMPLE_DENTAL_SEMD_105_PRESET: EgiszDentalCdaPayload = {
 	docTypeCode: "105",
@@ -28,38 +26,10 @@ export const SAMPLE_DENTAL_SEMD_105_PRESET: EgiszDentalCdaPayload = {
 	anamnesisMorbi: "Появление болей отмечает около двух недель назад. Ранее зуб 46 не лечился.",
 	anamnesisVitae: "Соматический анамнез не отягощен. Аллергия на медикаменты отрицается.",
 	toothStates: {
-		18: "Healthy",
-		17: "Healthy",
-		16: "Filling",
-		15: "Healthy",
-		14: "Healthy",
-		13: "Healthy",
-		12: "Healthy",
-		11: "Healthy",
-		21: "Healthy",
-		22: "Healthy",
-		23: "Healthy",
-		24: "Healthy",
-		25: "Healthy",
-		26: "Crown",
-		27: "Healthy",
-		28: "Healthy",
-		48: "Healthy",
-		47: "Healthy",
-		46: "Caries",
-		45: "Healthy",
-		44: "Healthy",
-		43: "Healthy",
-		42: "Healthy",
-		41: "Healthy",
-		31: "Healthy",
-		32: "Healthy",
-		33: "Healthy",
-		34: "Healthy",
-		35: "Healthy",
-		36: "Filling",
-		37: "Healthy",
-		38: "Healthy",
+		18: "Healthy", 17: "Healthy", 16: "Filling", 15: "Healthy", 14: "Healthy", 13: "Healthy", 12: "Healthy", 11: "Healthy",
+		21: "Healthy", 22: "Healthy", 23: "Healthy", 24: "Healthy", 25: "Healthy", 26: "Crown", 27: "Healthy", 28: "Healthy",
+		48: "Healthy", 47: "Healthy", 46: "Caries", 45: "Healthy", 44: "Healthy", 43: "Healthy", 42: "Healthy", 41: "Healthy",
+		31: "Healthy", 32: "Healthy", 33: "Healthy", 34: "Healthy", 35: "Healthy", 36: "Filling", 37: "Healthy", 38: "Healthy",
 	},
 	toothSurfaces: {
 		46: ["O", "D"],
@@ -94,54 +64,4 @@ export const SAMPLE_DENTAL_SEMD_105_PRESET: EgiszDentalCdaPayload = {
 	treatmentProtocolDescription: "Проведена инфильтрационная анестезия Sol. Ultracaini DS Forte 1.7 ml. Препарирование кариозной полости зуба 46, медикаментозная обработка 2% р-ром хлоргексидина. Наложение изолирующей прокладки, адгезивный протокол Single Bond Universal, послойная реставрация Filtek Ultimate (A3/A3.5), полировка Enhance + Prisma Gloss.",
 	recommendations: "Соблюдение гигиены полости рта, щадящий режим жевания на зубе 46 в течение 2 часов. Контрольный осмотр через 6 месяцев.",
 	nextVisitDate: "2027-02-28",
-};
-
-export const SAMPLE_FNS_TAX_1151156_PRESET: FnsTaxCertificatePayload = {
-	documentNumber: "СПР-2026/0412",
-	documentDate: "2026-08-28",
-	taxYear: 2026,
-	clinic: {
-		name: 'ООО "Стоматологический Центр ДЕНТЕ Премиум"',
-		inn: "7701234560",
-		kpp: "770101001",
-		ogrn: "1157746123457",
-		phone: "+7 (495) 789-45-60",
-		email: "buh@dente-clinic.ru",
-	},
-	taxpayer: {
-		fullName: "Соколов Владимир Николаевич",
-		inn: "772412345678",
-		snils: "123-456-789 64",
-		birthDate: "1985-04-12",
-		docTypeCode: "21",
-		docSeriesNumber: "4515 892341",
-	},
-	patient: {
-		fullName: "Соколова Анна Владимировна",
-		snils: "123-456-789 64",
-		birthDate: "2010-06-14",
-		relationshipCode: "4",
-		relationshipName: "Ребенок / Подопечный",
-	},
-	payments: [
-		{
-			id: "PAY-01",
-			date: "2026-03-15",
-			serviceCode: "1",
-			serviceDescription: "Терапевтическое лечение кариеса зуба 46 и профгигиена",
-			amountKopecks: 1250000, // 12 500.00 руб.
-		},
-		{
-			id: "PAY-02",
-			date: "2026-06-20",
-			serviceCode: "2",
-			serviceDescription: "Ортодонтическое лечение и установка брекет-системы (дорогостоящее)",
-			amountKopecks: 8500050, // 85 000.50 руб.
-		},
-	],
-	signer: {
-		fullName: "Смирнова Елена Викторовна",
-		position: "Главный врач",
-		snils: "123-456-789 64",
-	},
 };

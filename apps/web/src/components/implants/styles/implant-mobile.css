@@ -121,4 +121,29 @@
 		border-radius: 12px;
 		touch-action: manipulation;
 	}
+
+	.implant-tabs-nav {
+		padding: 6px 12px;
+		gap: 6px;
+		-webkit-overflow-scrolling: touch;
+		touch-action: pan-x;
+	}
+
+	.implant-tabs-nav .secondary-button {
+		height: 40px;
+		min-height: 40px;
+		font-size: 13px;
+		padding: 0 12px;
+	}
+
+	.implant-select,
+	.implant-input {
+		min-height: 44px;
+		height: 44px;
+		font-size: 14px;
+	}
+
+	.implant-form-row {
+		gap: 4px;
+	}
 }

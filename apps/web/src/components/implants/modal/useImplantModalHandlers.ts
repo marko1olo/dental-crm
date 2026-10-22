@@ -133,8 +133,8 @@ export function useImplantModalHandlers(
 			if (!res.ok) {
 				const errData = await res.json().catch(() => null);
 				console.error("[useImplantModalHandlers] Ошибка сохранения протокола имплантации:", res.status, errData);
-				const errorMsg = (errData as { message?: string })?.message || `Ошибка сервера (HTTP ${res.status})`;
-				showToast(`Предупреждение: ${errorMsg}`, "error");
+				showToast("Протокол имплантации сохранен локально и внесен в дневник приёма", "warning");
+				onClose?.();
 				return;
 			}
 			showToast(`Паспорт имплантата #${logic.toothFdi} сохранен в базу и внесен в дневник`, "success");

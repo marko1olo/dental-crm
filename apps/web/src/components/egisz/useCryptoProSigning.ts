@@ -1,35 +1,19 @@
 /**
- * useCryptoProSigning.ts
- *
- * Electronic Digital Signature (УКЭП) Hook using CryptoPro CSP & Detached Signatures.
- * Order 947n and Federal Law No. 63-FZ.
+ * useCryptoProSigning.ts — Electronic Digital Signature (УКЭП) Hook using CryptoPro CSP.
+ * Mandate 8b compliant (<= 120 lines). Decomposed into ./cryptoPro/
  */
 
-import { useCallback, useEffect, useState } from "react";
-import {
-	GOST_CRYPTO_OIDS,
-	validateGostCmsPkcs7Signature,
-} from "@dental/shared";
+import { useState } from "react";
 import { showToast } from "../GlobalToast";
-import {
-	type CertificateInfo,
-	signatureService,
-} from "../../lib/cryptopro";
+import { signatureService } from "../../lib/cryptopro";
 import { parseCryptoProError } from "../../utils/cryptoPro";
-import {
-	type EgiszClinicInfo,
-	type EgiszDoctorInfo,
-	type GostSignatureInfo,
-	canonicalizeCdaXml,
-} from "./egiszRemdEngine";
+import { canonicalizeCdaXml, type GostSignatureInfo } from "./egiszRemdEngine";
+import type { UseCryptoProSigningProps, UseCryptoProSigningReturn } from "./cryptoPro/cryptoProTypes";
+import { parseDetachedSigFile } from "./cryptoPro/detachedSigParser";
+import { buildGostSignatureInfo, validateCertificateWindow } from "./cryptoPro/certValidator";
+import { useCertList } from "./cryptoPro/useCertList";
 
-export interface UseCryptoProSigningProps {
-	readonly initialDoctorSig?: GostSignatureInfo | undefined;
-	readonly initialMoSig?: GostSignatureInfo | undefined;
-	readonly generatedXml: string;
-	readonly doctor: EgiszDoctorInfo;
-	readonly clinic: EgiszClinicInfo;
-}
+export type { UseCryptoProSigningProps, UseCryptoProSigningReturn } from "./cryptoPro/cryptoProTypes";
 
 export function useCryptoProSigning({
 	initialDoctorSig,
@@ -37,189 +21,40 @@ export function useCryptoProSigning({
 	generatedXml,
 	doctor,
 	clinic,
-}: UseCryptoProSigningProps) {
+}: UseCryptoProSigningProps): UseCryptoProSigningReturn {
 	const [doctorSig, setDoctorSig] = useState<GostSignatureInfo | undefined>(initialDoctorSig);
 	const [moSig, setMoSig] = useState<GostSignatureInfo | undefined>(initialMoSig);
-	const [selectedCert, setSelectedCert] = useState<CertificateInfo | null>(null);
-	const [availableCerts, setAvailableCerts] = useState<CertificateInfo[]>([]);
 	const [isSigning, setIsSigning] = useState<boolean>(false);
-	const [isCheckingCerts, setIsCheckingCerts] = useState<boolean>(false);
+	const { selectedCert, setSelectedCert, availableCerts, isCheckingCerts, refreshCerts } = useCertList();
 
-	const refreshCerts = useCallback(async (isManual: boolean = false) => {
-		setIsCheckingCerts(true);
-		try {
-			const certs = await signatureService.getCertificates();
-			setAvailableCerts(certs);
-			if (certs.length > 0 && !selectedCert) {
-				setSelectedCert(certs[0] || null);
-			}
-		} catch (e) {
-			setAvailableCerts([]);
-			const parsed = parseCryptoProError(e);
-			if (isManual) {
-				showToast(`КриптоПро CSP: ${parsed.userMessage}`, "warning");
-			}
-		} finally {
-			setIsCheckingCerts(false);
-		}
-	}, [selectedCert]);
-
-	useEffect(() => {
-		refreshCerts(false);
-	}, [refreshCerts]);
-
-	const handleUploadDetachedSig = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleUploadDetachedSig = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = () => {
-			const buf = reader.result as ArrayBuffer;
-			const bytes = new Uint8Array(buf);
-			// Проверка ASN.1 DER CMS PKCS#7 структуры: тег SEQUENCE (0x30) и минимальный размер крипто-контейнера
-			if (bytes.byteLength < 64 || bytes[0] !== 0x30) {
-				showToast(
-					`Файл «${file.name}» не является корректной бинарной подписью CMS/PKCS#7 (ASN.1 SEQUENCE). Загрузите файл .sig или .p7s по стандарту ГОСТ Р 34.10-2012.`,
-					"error",
-					7000,
-				);
-				return;
-			}
-			let binary = "";
-			for (let i = 0; i < bytes.byteLength; i++) {
-				binary += String.fromCharCode(bytes[i]!);
-			}
-			const base64 = btoa(binary);
-			const cmsCheck = validateGostCmsPkcs7Signature(base64);
-			if (!cmsCheck.valid) {
-				showToast(
-					`Файл «${file.name}» отклонён верификатором CMS/PKCS#7: ${cmsCheck.error || "Ошибка структуры подписи"}`,
-					"error",
-					7000,
-				);
-				return;
-			}
-			const sigInfo: GostSignatureInfo = {
-				signatureBase64: base64,
-				certificateSerialNumber: `DETACHED-${file.name.slice(0, 16)}`,
-				certificateSubject: doctor.doctorFullName || "Врач (открепленная подпись)",
-				certificateIssuer: "Открепленная подпись (.sig / .p7s)",
-				signedAt: new Date().toISOString(),
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex: file.name,
-			};
-			setDoctorSig(sigInfo);
-			showToast(`Открепленная УКЭП врача загружена: ${file.name}`, "success");
-		};
-		reader.readAsArrayBuffer(file);
+		const sig = await parseDetachedSigFile(file, doctor.doctorFullName || "Врач (открепленная подпись)", false);
+		if (sig) setDoctorSig(sig);
 	};
 
-	const handleUploadDetachedMoSig = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleUploadDetachedMoSig = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = () => {
-			const buf = reader.result as ArrayBuffer;
-			const bytes = new Uint8Array(buf);
-			// Проверка ASN.1 DER CMS PKCS#7 структуры: тег SEQUENCE (0x30) и минимальный размер крипто-контейнера
-			if (bytes.byteLength < 64 || bytes[0] !== 0x30) {
-				showToast(
-					`Файл «${file.name}» не является корректной бинарной подписью CMS/PKCS#7 МО (ASN.1 SEQUENCE). Загрузите файл .sig или .p7s по стандарту ГОСТ Р 34.10-2012.`,
-					"error",
-					7000,
-				);
-				return;
-			}
-			let binary = "";
-			for (let i = 0; i < bytes.byteLength; i++) {
-				binary += String.fromCharCode(bytes[i]!);
-			}
-			const base64 = btoa(binary);
-			const cmsCheck = validateGostCmsPkcs7Signature(base64);
-			if (!cmsCheck.valid) {
-				showToast(
-					`Файл «${file.name}» отклонён верификатором CMS/PKCS#7 МО: ${cmsCheck.error || "Ошибка структуры подписи"}`,
-					"error",
-					7000,
-				);
-				return;
-			}
-			const sigInfo: GostSignatureInfo = {
-				signatureBase64: base64,
-				certificateSerialNumber: `MO-SIG-${file.name.slice(0, 14)}`,
-				certificateSubject: clinic.clinicName || "Медицинская организация (открепленная подпись)",
-				certificateIssuer: "Открепленная подпись организации (.sig / .p7s)",
-				signedAt: new Date().toISOString(),
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex: file.name,
-			};
-			setMoSig(sigInfo);
-			showToast(`Открепленная УКЭП организации загружена: ${file.name}`, "success");
-		};
-		reader.readAsArrayBuffer(file);
+		const sig = await parseDetachedSigFile(file, clinic.clinicName || "Медицинская организация", true);
+		if (sig) setMoSig(sig);
 	};
 
-	const validateCertificateWindow = (certToUse: CertificateInfo, label: string): boolean => {
-		const now = Date.now();
-		const validToTime = new Date(certToUse.validTo).getTime();
-		const validFromTime = new Date(certToUse.validFrom).getTime();
-		if (!Number.isNaN(validToTime) && validToTime < now) {
-			showToast(
-				`${label} «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
-				"error",
-			);
-			return false;
-		}
-		if (!Number.isNaN(validFromTime) && validFromTime > now) {
-			showToast(
-				`${label} «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
-				"error",
-			);
-			return false;
-		}
-		return true;
-	};
-
-	const handleSignDocument = async () => {
+	const executeSignature = async (label: string, onSignSuccess: (sig: GostSignatureInfo) => void, subjectOverride?: string) => {
 		const certToUse = selectedCert || availableCerts[0];
 		if (!certToUse) {
-			showToast(
-				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Установите плагин или загрузите открепленный файл .sig / .p7s",
-				"error",
-			);
+			showToast("Плагин КриптоПро CSP не установлен / Сертификат не выбран. Подключите токен или загрузите .sig / .p7s", "error");
 			return;
 		}
-
-		if (!validateCertificateWindow(certToUse, "Сертификат")) {
-			return;
-		}
-
+		if (!validateCertificateWindow(certToUse, label)) return;
 		setIsSigning(true);
 		try {
 			const xmlToSign = canonicalizeCdaXml(generatedXml);
-			const { signatureBase64 } = await signatureService.signData(
-				certToUse.thumbprint,
-				xmlToSign,
-				undefined,
-				certToUse.deviceId,
-			);
-
-			const newDocSig: GostSignatureInfo = {
-				signatureBase64,
-				certificateSerialNumber: (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase(),
-				certificateSubject: certToUse.name,
-				certificateIssuer: certToUse.issuer,
-				validFrom: certToUse.validFrom,
-				validTo: certToUse.validTo,
-				signedAt: new Date().toISOString(),
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex: certToUse.thumbprint.toUpperCase(),
-			};
-
-			setDoctorSig(newDocSig);
-			showToast(`Документ успешно подписан УКЭП (${newDocSig.certificateSerialNumber})`, "success");
+			const { signatureBase64 } = await signatureService.signData(certToUse.thumbprint, xmlToSign, undefined, certToUse.deviceId);
+			const newSig = buildGostSignatureInfo(certToUse, signatureBase64, subjectOverride);
+			onSignSuccess(newSig);
+			showToast(`Документ успешно подписан УКЭП (${newSig.certificateSerialNumber})`, "success");
 		} catch (err: unknown) {
 			const parsed = parseCryptoProError(err);
 			showToast(`Ошибка при наложении электронной подписи: ${parsed.userMessage}`, "error");
@@ -228,114 +63,25 @@ export function useCryptoProSigning({
 		}
 	};
 
-	const handleSignMoDocument = async () => {
-		const certToUse = selectedCert || availableCerts[0];
-		if (!certToUse) {
-			showToast(
-				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Выберите сертификат или загрузите открепленный файл .sig / .p7s",
-				"error",
-			);
-			return;
-		}
+	const handleSignDocument = () => executeSignature("Сертификат врача", (s) => setDoctorSig(s));
+	const handleSignMoDocument = () => executeSignature("Сертификат организации", (s) => setMoSig(s), clinic.clinicName);
 
-		if (!validateCertificateWindow(certToUse, "Сертификат организации")) {
-			return;
-		}
-
-		setIsSigning(true);
-		try {
-			const xmlToSign = canonicalizeCdaXml(generatedXml);
-			const { signatureBase64 } = await signatureService.signData(
-				certToUse.thumbprint,
-				xmlToSign,
-				undefined,
-				certToUse.deviceId,
-			);
-
-			const newMoSig: GostSignatureInfo = {
-				signatureBase64,
-				certificateSerialNumber: (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase(),
-				certificateSubject: clinic.clinicName || certToUse.name,
-				certificateIssuer: certToUse.issuer,
-				validFrom: certToUse.validFrom,
-				validTo: certToUse.validTo,
-				signedAt: new Date().toISOString(),
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex: certToUse.thumbprint.toUpperCase(),
-			};
-
-			setMoSig(newMoSig);
-			showToast(`Документ успешно подписан УКЭП организации (${newMoSig.certificateSerialNumber})`, "success");
-		} catch (err: unknown) {
-			const parsed = parseCryptoProError(err);
-			showToast(`Ошибка при наложении подписи организации: ${parsed.userMessage}`, "error");
-		} finally {
-			setIsSigning(false);
-		}
-	};
-
-	/**
-	 * 1-Click Dual Signing (Doctor + Medical Organization) for Solo Doctor / Chief Doctor (Mandate 8n).
-	 * Signs canonicalized XML once and applies both Doctor and Clinic MO signatures simultaneously.
-	 */
 	const handleSignBothInOneClick = async () => {
 		const certToUse = selectedCert || availableCerts[0];
 		if (!certToUse) {
-			showToast(
-				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Подключите токен или загрузите открепленный файл .sig / .p7s",
-				"error",
-			);
+			showToast("Плагин КриптоПро CSP не установлен / Сертификат не выбран. Подключите токен или загрузите .sig / .p7s", "error");
 			return;
 		}
-
-		if (!validateCertificateWindow(certToUse, "Сертификат")) {
-			return;
-		}
-
+		if (!validateCertificateWindow(certToUse, "Сертификат")) return;
 		setIsSigning(true);
 		try {
 			const xmlToSign = canonicalizeCdaXml(generatedXml);
-			const { signatureBase64 } = await signatureService.signData(
-				certToUse.thumbprint,
-				xmlToSign,
-				undefined,
-				certToUse.deviceId,
-			);
-
-			const signedAt = new Date().toISOString();
-			const serialNumber = (certToUse.serialNumber || certToUse.thumbprint.slice(0, 16)).toUpperCase();
-			const signatureValueHex = certToUse.thumbprint.toUpperCase();
-
-			const newDocSig: GostSignatureInfo = {
-				signatureBase64,
-				certificateSerialNumber: serialNumber,
-				certificateSubject: certToUse.name,
-				certificateIssuer: certToUse.issuer,
-				validFrom: certToUse.validFrom,
-				validTo: certToUse.validTo,
-				signedAt,
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex,
-			};
-
-			const newMoSig: GostSignatureInfo = {
-				signatureBase64,
-				certificateSerialNumber: serialNumber,
-				certificateSubject: clinic.clinicName || certToUse.name,
-				certificateIssuer: certToUse.issuer,
-				validFrom: certToUse.validFrom,
-				validTo: certToUse.validTo,
-				signedAt,
-				algorithmOid: GOST_CRYPTO_OIDS.GOST_3410_2012_256,
-				digestAlgorithmOid: GOST_CRYPTO_OIDS.GOST_3411_2012_256,
-				signatureValueHex,
-			};
-
-			setDoctorSig(newDocSig);
-			setMoSig(newMoSig);
-			showToast(`Документ подписан сразу за врача и клинику (УКЭП ${serialNumber})`, "success");
+			const { signatureBase64 } = await signatureService.signData(certToUse.thumbprint, xmlToSign, undefined, certToUse.deviceId);
+			const docSig = buildGostSignatureInfo(certToUse, signatureBase64);
+			const orgSig = buildGostSignatureInfo(certToUse, signatureBase64, clinic.clinicName || certToUse.name);
+			setDoctorSig(docSig);
+			setMoSig(orgSig);
+			showToast(`Документ подписан сразу за врача и клинику (УКЭП ${docSig.certificateSerialNumber})`, "success");
 		} catch (err: unknown) {
 			const parsed = parseCryptoProError(err);
 			showToast(`Ошибка при совмещенном подписании УКЭП: ${parsed.userMessage}`, "error");
@@ -345,20 +91,8 @@ export function useCryptoProSigning({
 	};
 
 	return {
-		doctorSig,
-		setDoctorSig,
-		moSig,
-		setMoSig,
-		selectedCert,
-		setSelectedCert,
-		availableCerts,
-		isSigning,
-		isCheckingCerts,
-		refreshCerts,
-		handleUploadDetachedSig,
-		handleUploadDetachedMoSig,
-		handleSignDocument,
-		handleSignMoDocument,
-		handleSignBothInOneClick,
+		doctorSig, setDoctorSig, moSig, setMoSig, selectedCert, setSelectedCert, availableCerts,
+		isSigning, isCheckingCerts, refreshCerts, handleUploadDetachedSig, handleUploadDetachedMoSig,
+		handleSignDocument, handleSignMoDocument, handleSignBothInOneClick,
 	};
 }

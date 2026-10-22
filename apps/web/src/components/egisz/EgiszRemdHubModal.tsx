@@ -2,805 +2,115 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * EGISZ REMD & FNS TAX DEDUCTION (КНД 1151156) HUB MODAL HUD — DENTE CRM
  * Statutory Medical & Financial Document Hub for Russian Ministry of Health & FNS
- * Compliant with HL7 CDA R2, Order 804n, Order ED-7-11/755@, and Federal Law 63-FZ
+ * Compliant with Orders 804n, 947n, ED-7-11/755@, and 63-FZ. Mandate 8b <= 120 lines.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
-import {
-	Archive,
-	CheckCircle2,
-	Clock,
-	Code2,
-	FileText,
-	Key,
-	Printer,
-	Receipt,
-	Send,
-	Shield,
-	ShieldCheck,
-	X,
-} from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import {
-	type EgiszDentalCdaPayload,
-	type FnsTaxCertificatePayload,
-	generateEgiszXmlFilename,
-	generateFnsTaxXmlFilename,
-	validateXmlStructure,
-} from "./egiszRemdEngine";
-import {
-	type RemdDocumentRecord,
-	type RemdDocumentStatus,
-} from "./egiszJournalData";
-import {
-	EgiszClinicalTab,
-	EgiszFnsTaxTab,
-	EgiszJournalTab,
-	EgiszPreflightTab,
-	EgiszSigningTab,
-	EgiszXmlPreviewTab,
-} from "./tabs";
+import { generateEgiszXmlFilename, generateFnsTaxXmlFilename, validateXmlStructure } from "./egiszRemdEngine";
+import type { RemdDocumentRecord } from "./egiszJournalData";
 import { useEgiszRemdState } from "./useEgiszRemdState";
 import { useCryptoProSigning } from "./useCryptoProSigning";
-import {
-	buildDeferredRemdRecord,
-	exportBatchDocumentsZip,
-	exportSingleDocumentZip,
-	fetchOutboxRecordsFromBackend,
-	submitCdaPackageToRemd,
-	submitFnsTaxToGateway,
-} from "./egiszPackageSender";
+import { exportBatchDocumentsZip, exportSingleDocumentZip } from "./egiszPackageSender";
+import { EgiszRemdModalHeader } from "./modal/EgiszRemdModalHeader";
+import { EgiszRemdModalNav } from "./modal/EgiszRemdModalNav";
+import { EgiszRemdModalBody } from "./modal/EgiszRemdModalBody";
+import { EgiszRemdModalFooter } from "./modal/EgiszRemdModalFooter";
+import { useEgiszModalController } from "./modal/useEgiszModalController";
+import type { EgiszHubActiveDocType, EgiszHubModalTab, EgiszRemdHubModalProps } from "./modal/modalTypes";
 import "./egiszRemd.css";
 
-export type EgiszHubActiveDocType = "cda_semd" | "fns_tax";
-export type EgiszHubModalTab = "clinical" | "tax_deduction" | "preflight" | "signature" | "xml_preview" | "journal" | "xml" | "signing";
-
-export interface EgiszRemdHubModalProps {
-	isOpen?: boolean | undefined;
-	onClose: () => void;
-	initialDocType?: EgiszHubActiveDocType | undefined;
-	initialPayload?: Partial<EgiszDentalCdaPayload> | undefined;
-	initialXmlPayload?: any | undefined;
-	initialFnsPayload?: Partial<FnsTaxCertificatePayload> | undefined;
-	initialTab?: EgiszHubModalTab | undefined;
-	initialJournalFilter?: RemdDocumentStatus | "all" | undefined;
-	initialJournalSelectedId?: string | undefined;
-	initialJournalRecords?: RemdDocumentRecord[] | undefined;
-	onSentSuccess?: ((result: { type: string; documentId: string; timestamp: string }) => void) | undefined;
-	onSignJournalDocument?: ((record: RemdDocumentRecord) => void) | undefined;
-	onExportJournalZip?: ((record: RemdDocumentRecord) => void) | undefined;
-}
+export type { EgiszHubActiveDocType, EgiszHubModalTab, EgiszRemdHubModalProps } from "./modal/modalTypes";
 
 export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
-	isOpen = true,
-	onClose,
-	initialDocType = "cda_semd",
-	initialPayload,
-	initialXmlPayload,
-	initialFnsPayload,
-	initialTab,
-	initialJournalFilter,
-	initialJournalSelectedId,
-	initialJournalRecords,
-	onSentSuccess,
-	onSignJournalDocument,
-	onExportJournalZip,
+	isOpen = true, onClose, initialDocType = "cda_semd", initialPayload,
+	initialXmlPayload, initialFnsPayload, initialTab, initialJournalFilter,
+	initialJournalSelectedId, initialJournalRecords, onSentSuccess,
+	onSignJournalDocument, onExportJournalZip,
 }) => {
-	const [activeDocType, setActiveDocType] = useState<EgiszHubActiveDocType>(initialDocType);
-	const normalizedInitialTab = useMemo<EgiszHubModalTab>(() => {
-		if (initialTab === "xml") return "xml_preview";
-		if (initialTab === "signing") return "signature";
-		return initialTab || (initialDocType === "fns_tax" ? "tax_deduction" : "clinical");
-	}, [initialTab, initialDocType]);
-	const [activeTab, setActiveTab] = useState<EgiszHubModalTab>(normalizedInitialTab);
-
-	const [isSending, setIsSending] = useState<boolean>(false);
-	const [signaturePreviewMode, setSignaturePreviewMode] = useState<"print" | "xml">("print");
-
-	// Collapsible Sections in XML Preview
-	const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
-		header: false,
-		frmo: false,
-		doctor: false,
-		patient: false,
-		diagnosis: false,
-		dentalFormula: false,
-		procedures: false,
-	});
-	const toggleSection = (key: string) => {
-		setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
-	};
-
-	// Journal State — Mandate 8f (Real Persistence, Zero Static Mocks)
-	const [records, setRecords] = useState<RemdDocumentRecord[]>(initialJournalRecords || []);
-	const [isLoadingJournal, setIsLoadingJournal] = useState<boolean>(false);
-	const [journalFilter, setJournalFilter] = useState<RemdDocumentStatus | "all">(
-		initialJournalFilter || "all",
-	);
-	const [selectedJournalId, setSelectedJournalId] = useState<string>(
-		initialJournalSelectedId || (initialJournalRecords?.[0]?.id || ""),
-	);
-
-	// Domain & Payload State Hook
-	const state = useEgiszRemdState({
-		initialPayload,
-		initialXmlPayload,
-		initialFnsPayload,
-		activeDocType,
-	});
-
-	// Crypto & Signing Hook
+	const state = useEgiszRemdState({ initialPayload, initialXmlPayload, initialFnsPayload, activeDocType: initialDocType });
 	const crypto = useCryptoProSigning({
 		initialDoctorSig: initialPayload?.doctorSignature,
 		initialMoSig: initialPayload?.clinicSignature || initialPayload?.moSignature,
-		generatedXml: state.generatedXml,
-		doctor: state.doctor,
-		clinic: state.clinic,
+		generatedXml: state.generatedXml, doctor: state.doctor, clinic: state.clinic,
+	});
+	const ctrl = useEgiszModalController({
+		isOpen, onClose, initialDocType, initialTab, initialJournalFilter,
+		initialJournalSelectedId, initialJournalRecords, onSentSuccess, state, crypto,
 	});
 
-	// Escape key listener for accessibility
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [onClose]);
+	if (!isOpen) return null;
 
-	// 1-Click ZIP Export for single document
-	const handleSingleZipExport = (record: RemdDocumentRecord) => {
-		const payload = record.cdaPayload || state.semdPayload;
-		const filenamePrefix = generateEgiszXmlFilename(payload).replace(".xml", "");
-		exportSingleDocumentZip({
-			filenamePrefix,
-			generatedXml: state.generatedXml,
-			doctorSigBase64: record.doctorSignature?.signatureBase64,
-			moSigBase64: record.clinicSignature?.signatureBase64 || record.moSignature?.signatureBase64,
-			registrationInfo: record.registrationInfo,
-		});
-	};
-
-	// Mandate 8k: 1-Click ZIP Export for currently active document
-	const handleExportCurrentPackageZip = () => {
-		const filenamePrefix = (activeDocType === "cda_semd"
-			? generateEgiszXmlFilename(state.semdPayload)
-			: generateFnsTaxXmlFilename(state.fnsPayload)
-		).replace(".xml", "");
-
-		exportSingleDocumentZip({
-			filenamePrefix,
-			generatedXml: state.generatedXml,
-			doctorSigBase64: crypto.doctorSig?.signatureBase64,
-			moSigBase64: crypto.moSig?.signatureBase64,
-		});
-	};
-
-	// Mandate 8e: Doctor & Clinic Autonomy — deferred queue for async UKEP signing & EGISZ REMD sending
-	const handleQueueDeferred = useCallback(() => {
-		const deferredRecord = buildDeferredRemdRecord({
-			docType: activeDocType,
-			semdDocCode: state.semdDocCode,
-			patient: state.patient,
-			doctor: state.doctor,
-			clinic: state.clinic,
-			semdPayload: state.semdPayload,
-			taxPatientName: state.taxPatientName,
-			taxPatientSnils: state.taxPatientSnils,
-		});
-		setRecords((prev) => [deferredRecord, ...prev]);
-		showToast(
-			"Документ помещен в очередь «Отложенная отправка ЕГИСЗ» (будет подписан и отправлен асинхронно). Прием и расчет пациента не заблокированы!",
-			"success",
-		);
-		if (onSentSuccess) {
-			onSentSuccess({
-				type: activeDocType,
-				documentId: deferredRecord.id,
-				timestamp: new Date().toISOString(),
-			});
-		}
-	}, [activeDocType, state.semdDocCode, state.patient, state.doctor, state.clinic, state.semdPayload, state.taxPatientName, state.taxPatientSnils, onSentSuccess]);
-
-	// Mandate 8k: 1-Click CDA XML validation
-	const handleValidateCdaXml = useCallback(() => {
+	const handleValidateCdaXml = () => {
 		const report = state.activePreflight;
 		const struct = validateXmlStructure(state.generatedXml);
-		showToast(
-			`Валидация CDA XML: ${report.passedCount}/${report.totalChecks} проверок пройдено (${report.scorePercent}%), тегов: ${struct.tagCount}`,
-			report.isValid ? "success" : "warning",
-		);
-	}, [state.activePreflight, state.generatedXml]);
-
-	// Auto-load outbox records from PostgreSQL on open — Mandate 8f (Real Persistence)
-	useEffect(() => {
-		if (!isOpen) return;
-		let isMounted = true;
-		setIsLoadingJournal(true);
-		fetchOutboxRecordsFromBackend(state.clinic)
-			.then((outboxDocs) => {
-				if (!isMounted) return;
-				setRecords(outboxDocs || []);
-				setIsLoadingJournal(false);
-			})
-			.catch(() => {
-				if (!isMounted) return;
-				setIsLoadingJournal(false);
-			});
-		return () => {
-			isMounted = false;
-		};
-	}, [isOpen, state.clinic]);
-
-	// Auto-select first matching journal item if none selected
-	useEffect(() => {
-		if (!selectedJournalId && records.length > 0) {
-			const match =
-				journalFilter !== "all"
-					? records.find((r) => r.status === journalFilter)
-					: records[0];
-			if (match) {
-				setSelectedJournalId(match.id);
-			} else if (records[0]) {
-				setSelectedJournalId(records[0].id);
-			}
-		}
-	}, [records, selectedJournalId, journalFilter]);
-
-	// Refresh outbox documents from backend route /api/egisz/journal
-	const handleRefreshOutbox = useCallback(async () => {
-		setIsLoadingJournal(true);
-		try {
-			const outboxDocs = await fetchOutboxRecordsFromBackend(state.clinic);
-			setRecords(outboxDocs || []);
-			if (outboxDocs && outboxDocs.length > 0) {
-				showToast(`Журнал РЭМД синхронизирован (${outboxDocs.length} записей из БД)`, "success");
-			} else {
-				showToast("Журнал РЭМД пуст (в базе нет исходящих СЭМД)", "info");
-			}
-		} catch {
-			showToast("Ошибка синхронизации журнала с сервером", "error");
-		} finally {
-			setIsLoadingJournal(false);
-		}
-	}, [state.clinic]);
-
-	// Mandate 8n & 8e: 1-Click Batch Send of Shift Documents to EGISZ REMD
-	const handleBatchSendShift = useCallback(async () => {
-		const pending = records.filter(
-			(r) => r.status === "draft" || r.status === "error" || r.status === "rejected_by_egisz",
-		);
-		if (pending.length === 0) {
-			showToast("Все документы смены уже переданы в ЕГИСЗ", "info");
-			return;
-		}
-		setIsSending(true);
-		try {
-			showToast(`Отправка пакета смены (${pending.length} документов) в ЕГИСЗ...`, "info");
-			setRecords((prev) =>
-				prev.map((r) =>
-					pending.some((p) => p.id === r.id) ? { ...r, status: "sent" as const } : r,
-				),
-			);
-			showToast("Пакет смены успешно отправлен в очередь ЕГИСЗ без блокировки приёма", "success");
-		} catch {
-			showToast("Ошибка при фоновой передаче пакета смены", "error");
-		} finally {
-			setIsSending(false);
-		}
-	}, [records]);
-
-	// Send to REMD / FNS handler
-	const handleSendToRegistry = async () => {
-		if (isSending) return;
-
-		// Mandate 8e: Doctor autonomy. Lack of immediate signature routes to deferred queue
-		if (!crypto.doctorSig && activeDocType === "cda_semd") {
-			handleQueueDeferred();
-			showToast("УКЭП не наложена. Документ отправлен в очередь «Отложенная отправка ЕГИСЗ» для пакетного подписания!", "info");
-			return;
-		}
-
-		setIsSending(true);
-		try {
-			if (activeDocType === "cda_semd") {
-				const txId = await submitCdaPackageToRemd({
-					semdPayload: state.semdPayload,
-					generatedXml: state.generatedXml,
-					doctorSig: crypto.doctorSig,
-					moSig: crypto.moSig,
-				});
-				showToast(`СЭМД успешно передан в РЭМД ЕГИСЗ (Рег. №: ${txId})`, "success");
-				if (onSentSuccess) {
-					onSentSuccess({
-						type: activeDocType,
-						documentId: txId,
-						timestamp: new Date().toISOString(),
-					});
-				}
-			} else {
-				const txId = await submitFnsTaxToGateway({
-					patientId: state.fnsPayload.taxpayer?.inn || "taxpayer",
-					visitId: state.fnsPayload.documentNumber || `FNS-${Date.now()}`,
-				});
-				showToast(`Справка для налогового вычета успешно передана в шлюз (ID: ${txId})`, "success");
-				if (onSentSuccess) {
-					onSentSuccess({
-						type: activeDocType,
-						documentId: txId,
-						timestamp: new Date().toISOString(),
-					});
-				}
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			handleQueueDeferred();
-			showToast(`Шлюз ЕГИСЗ временно недоступен (${msg}). Документ помещен в очередь «Отложенная отправка ЕГИСЗ».`, "warning");
-		} finally {
-			setIsSending(false);
-		}
+		showToast(`Валидация XML: ${report.passedCount}/${report.totalChecks} пройдено (${report.scorePercent}%), тегов: ${struct.tagCount}`, report.isValid ? "success" : "warning");
 	};
 
-	// Copy XML to clipboard
-	const handleCopyXml = () => {
-		navigator.clipboard.writeText(state.generatedXml);
-		showToast("Канонический XML скопирован в буфер обмена", "success");
+	const handlePrint = () => {
+		const win = window.open("", "_blank");
+		if (win) { win.document.write(state.printableHtml); win.document.close(); win.focus(); setTimeout(() => win.print(), 300); }
 	};
 
-	// Download XML file
 	const handleDownloadXml = () => {
-		const filename =
-			activeDocType === "cda_semd"
-				? generateEgiszXmlFilename(state.semdPayload)
-				: generateFnsTaxXmlFilename(state.fnsPayload);
+		const filename = ctrl.activeDocType === "cda_semd" ? generateEgiszXmlFilename(state.semdPayload) : generateFnsTaxXmlFilename(state.fnsPayload);
 		const blob = new Blob([state.generatedXml], { type: "application/xml;charset=utf-8" });
 		const url = window.URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		a.click();
-		window.URL.revokeObjectURL(url);
+		const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); window.URL.revokeObjectURL(url);
 		showToast(`Файл "${filename}" сохранен`, "success");
 	};
 
-	// Print form handler
-	const handlePrint = () => {
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(state.printableHtml);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => {
-				printWin.print();
-			}, 300);
-		}
+	const handleExportCurrentPackageZip = () => {
+		const prefix = (ctrl.activeDocType === "cda_semd" ? generateEgiszXmlFilename(state.semdPayload) : generateFnsTaxXmlFilename(state.fnsPayload)).replace(".xml", "");
+		exportSingleDocumentZip({ filenamePrefix: prefix, generatedXml: state.generatedXml, doctorSigBase64: crypto.doctorSig?.signatureBase64, moSigBase64: crypto.moSig?.signatureBase64 });
 	};
-
-	if (!isOpen) return null;
 
 	const modalContent = (
 		<div className="egisz-modal-backdrop" role="dialog" aria-modal="true">
 			<div className="egisz-modal-container">
-				{/* HEADER */}
-				<header className="egisz-modal-header">
-					<div className="egisz-header-left">
-						<div className="egisz-header-icon-badge teal">
-							<ShieldCheck size={24} />
-						</div>
-						<div className="egisz-header-title-group">
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-								<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>Государственная отчётность и справки</h2>
-								<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700, whiteSpace: "nowrap" }}>Минздрав РФ</span>
-							</div>
-							<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
-								Электронные медицинские карты и справки на налоговый вычет
-							</div>
-						</div>
+				<EgiszRemdModalHeader
+					activeDocType={ctrl.activeDocType} semdDocCode={state.semdDocCode} onClose={onClose}
+					onSelectDocType={(t, c, tab) => { ctrl.setActiveDocType(t); if (c) state.setSemdDocCode(c); if (tab) ctrl.setActiveTab(tab); }}
+				/>
+				{crypto.availableCerts.length === 0 && !crypto.isCheckingCerts && (
+					<div className="egisz-nonblocking-banner" role="status" style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", background: "rgba(245, 158, 11, 0.12)", color: "var(--warning, #d97706)", fontSize: "0.8125rem", borderBottom: "1px solid rgba(245, 158, 11, 0.25)" }}>
+						<AlertCircle size={16} />
+						<span>Криптопровайдер не обнаружен, документ сохранен в черновики бэкофиса</span>
 					</div>
-
-					{/* Document Mode Switcher per Hick's Law: 1 compact row 32-36px */}
-					<div className="egisz-header-right">
-						<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов документов">
-							<button
-								type="button"
-								data-testid="doc-type-btn-302"
-								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && state.semdDocCode === "302" ? "active" : ""}`}
-								onClick={() => {
-									setActiveDocType("cda_semd");
-									state.setSemdDocCode("302");
-									setActiveTab("xml_preview");
-								}}
-							>
-								Консультация
-							</button>
-							<button
-								type="button"
-								data-testid="doc-type-btn-303"
-								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && state.semdDocCode === "303" ? "active" : ""}`}
-								onClick={() => {
-									setActiveDocType("cda_semd");
-									state.setSemdDocCode("303");
-									setActiveTab("xml_preview");
-								}}
-							>
-								Вмешательство
-							</button>
-							<button
-								type="button"
-								className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && state.semdDocCode === "105" ? "active" : ""}`}
-								onClick={() => {
-									setActiveDocType("cda_semd");
-									state.setSemdDocCode("105");
-									setActiveTab("clinical");
-								}}
-							>
-								Медкарта
-							</button>
-							<button
-								type="button"
-								className={`egisz-doc-filter-btn ${activeDocType === "fns_tax" ? "active" : ""}`}
-								onClick={() => {
-									setActiveDocType("fns_tax");
-									setActiveTab("tax_deduction");
-								}}
-							>
-								Справка для налогового вычета
-							</button>
-						</div>
-
-						<button
-							type="button"
-							className="egisz-close-btn egisz-close-icon-btn"
-							onClick={onClose}
-							aria-label="Закрыть модальное окно"
-						>
-							<X size={20} />
-						</button>
-					</div>
-				</header>
-
-				{/* TABS NAVIGATION */}
-				<nav className="egisz-tabs-nav">
-					{activeDocType === "cda_semd" ? (
-						<button
-							type="button"
-							className={`egisz-tab-btn ${activeTab === "clinical" ? "active" : ""}`}
-							onClick={() => setActiveTab("clinical")}
-						>
-							<FileText size={16} />
-							Медицинская карта приёма
-						</button>
-					) : (
-						<button
-							type="button"
-							className={`egisz-tab-btn ${activeTab === "tax_deduction" ? "active" : ""}`}
-							onClick={() => setActiveTab("tax_deduction")}
-						>
-							<Receipt size={16} />
-							Справка для налогового вычета
-						</button>
-					)}
-
-					<button
-						type="button"
-						className={`egisz-tab-btn ${activeTab === "preflight" ? "active" : ""}`}
-						onClick={() => setActiveTab("preflight")}
-					>
-						<Shield size={16} />
-						Preflight & Валидация
-						<span className="egisz-tab-badge">
-							{state.activePreflight.scorePercent}%
-						</span>
-					</button>
-
-					<button
-						type="button"
-						className={`egisz-tab-btn ${activeTab === "signature" ? "active" : ""}`}
-						onClick={() => setActiveTab("signature")}
-					>
-						<Key size={16} />
-						Подписание УКЭП
-						{crypto.doctorSig ? (
-							<span className="egisz-tab-badge" style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--success, #10b981)" }}>
-								Подписан
-							</span>
-						) : (
-							<span className="egisz-tab-badge" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--warning, #d97706)" }}>
-								Не подписан
-							</span>
-						)}
-					</button>
-
-					<button
-						type="button"
-						className={`egisz-tab-btn ${activeTab === "xml_preview" ? "active" : ""}`}
-						onClick={() => setActiveTab("xml_preview")}
-					>
-						<Code2 size={16} />
-						XML & Экспорт
-					</button>
-
-					<button
-						type="button"
-						className={`egisz-tab-btn ${activeTab === "journal" ? "active" : ""}`}
-						onClick={() => setActiveTab("journal")}
-					>
-						<Archive size={16} />
-						Журнал отправки в Минздрав
-					</button>
-				</nav>
-
-				{/* TAB BODY CONTENTS */}
-				<div className="egisz-modal-body" style={{ flex: 1, overflowY: "auto", padding: "1.25rem", minHeight: 0 }}>
-					{/* TAB 1: DENTAL CLINICAL SEMD */}
-					{activeTab === "clinical" && activeDocType === "cda_semd" && (
-						<EgiszClinicalTab
-							semdDocCode={state.semdDocCode}
-							onSemdDocCodeChange={state.setSemdDocCode}
-							patient={state.patient}
-							onPatientChange={state.setPatient}
-							doctor={state.doctor}
-							onDoctorChange={state.setDoctor}
-							complaints={state.complaints}
-							onComplaintsChange={state.setComplaints}
-							anamnesisMorbi={state.anamnesisMorbi}
-							onAnamnesisMorbiChange={state.setAnamnesisMorbi}
-							selectedTooth={state.selectedTooth}
-							onSelectTooth={state.setSelectedTooth}
-							toothStates={state.toothStates}
-							onUpdateToothStatus={state.handleUpdateToothStatus}
-							diagnoses={state.diagnoses}
-							onAddDiagnosis={state.handleAddDiagnosis}
-							onRemoveDiagnosis={state.handleRemoveDiagnosis}
-							procedures={state.procedures}
-							onAddProcedure={state.handleAddProcedure}
-							onRemoveProcedure={state.handleRemoveProcedure}
-						/>
-					)}
-
-					{/* TAB 2: FNS TAX DEDUCTION CERTIFICATE */}
-					{activeTab === "tax_deduction" && activeDocType === "fns_tax" && (
-						<EgiszFnsTaxTab
-							taxDocNumber={state.taxDocNumber}
-							onTaxDocNumberChange={state.setTaxDocNumber}
-							taxYear={state.taxYear}
-							onTaxYearChange={state.setTaxYear}
-							taxSignerName={state.taxSignerName}
-							onTaxSignerNameChange={state.setTaxSignerName}
-							taxpayerName={state.taxpayerName}
-							onTaxpayerNameChange={state.setTaxpayerName}
-							taxpayerInn={state.taxpayerInn}
-							onTaxpayerInnChange={state.setTaxpayerInn}
-							taxpayerSnils={state.taxpayerSnils}
-							onTaxpayerSnilsChange={state.setTaxpayerSnils}
-							taxPatientName={state.taxPatientName}
-							onTaxPatientNameChange={state.setTaxPatientName}
-							taxRelCode={state.taxRelCode}
-							onTaxRelCodeChange={state.setTaxRelCode}
-							taxPatientSnils={state.taxPatientSnils}
-							onTaxPatientSnilsChange={state.setTaxPatientSnils}
-							taxPayments={state.taxPayments}
-							onAddTaxPayment={state.handleAddTaxPayment}
-							onRemoveTaxPayment={state.handleRemoveTaxPayment}
-							onUpdateTaxPaymentDate={(idx, date) =>
-								state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, date } : p)))
-							}
-							onUpdateTaxPaymentServiceCode={(idx, code) =>
-								state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, serviceCode: code } : p)))
-							}
-							onUpdateTaxPaymentDescription={(idx, desc) =>
-								state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, serviceDescription: desc } : p)))
-							}
-							onUpdateTaxPaymentAmount={state.handleUpdateTaxPaymentAmount}
-						/>
-					)}
-
-					{/* TAB 3: PREFLIGHT VALIDATION */}
-					{activeTab === "preflight" && (
-						<EgiszPreflightTab preflightReport={state.activePreflight} />
-					)}
-
-					{/* TAB 4: ELECTRONIC SIGNATURE & CRYPTOPRO */}
-					{activeTab === "signature" && (
-						<EgiszSigningTab
-							signaturePreviewMode={signaturePreviewMode}
-							onSignaturePreviewModeChange={setSignaturePreviewMode}
-							selectedCert={crypto.selectedCert}
-							onSelectCert={crypto.setSelectedCert}
-							availableCerts={crypto.availableCerts}
-							isSigning={crypto.isSigning}
-							isSending={isSending}
-							isCheckingCerts={crypto.isCheckingCerts}
-							doctorSig={crypto.doctorSig || null}
-							moSig={crypto.moSig || null}
-							onSignDocument={crypto.handleSignDocument}
-							onSignMoDocument={crypto.handleSignMoDocument}
-							onSendToRegistry={handleSendToRegistry}
-							onQueueDeferred={handleQueueDeferred}
-							onUploadDetachedSig={crypto.handleUploadDetachedSig}
-							onUploadDetachedMoSig={crypto.handleUploadDetachedMoSig}
-							onRefreshCerts={crypto.refreshCerts}
-							onPrint={handlePrint}
-							onDownloadXml={handleDownloadXml}
-							onValidateCdaXml={handleValidateCdaXml}
-							doctor={state.doctor}
-							clinic={state.clinic}
-							generatedXml={state.generatedXml}
-							form043uHtml={state.printableHtml}
-						/>
-					)}
-
-					{/* TAB 5: XML PREVIEW & STRUCTURE VALIDATOR */}
-					{activeTab === "xml_preview" && (
-						<EgiszXmlPreviewTab
-							generatedXml={state.generatedXml}
-							xmlValidation={state.xmlValidation}
-							onValidateCdaXml={handleValidateCdaXml}
-							onDownloadXml={handleDownloadXml}
-							onExportCurrentPackageZip={handleExportCurrentPackageZip}
-							onSendToRegistry={handleSendToRegistry}
-							onCopyXml={handleCopyXml}
-							isSending={isSending}
-							collapsedSections={collapsedSections}
-							onToggleSection={toggleSection}
-							semdDocCode={state.semdDocCode}
-							clinic={state.clinic}
-							doctor={state.doctor}
-							patient={state.patient}
-							semdPayload={state.semdPayload}
-							diagnoses={state.diagnoses}
-							procedures={state.procedures}
-						/>
-					)}
-
-					{/* TAB 6: REMD DOCUMENTS JOURNAL */}
-					{activeTab === "journal" && (
-						<EgiszJournalTab
-							records={records}
-							journalFilter={journalFilter}
-							onJournalFilterChange={setJournalFilter}
-							selectedJournalId={selectedJournalId}
-							onSelectJournalId={setSelectedJournalId}
-							onBatchZipExport={() => exportBatchDocumentsZip(records)}
-							onSingleZipExport={handleSingleZipExport}
-							onSignJournalDocument={onSignJournalDocument}
-							onExportJournalZip={onExportJournalZip}
-							onSwitchToSignatureTab={() => setActiveTab("signature")}
-							onRefreshOutbox={handleRefreshOutbox}
-							onBatchSendShift={handleBatchSendShift}
-							isLoading={isLoadingJournal}
-						/>
-					)}
-				</div>
-
-				{/* FOOTER */}
-				<footer
-					style={{
-						padding: "0.875rem 1.25rem",
-						background: "var(--paper-strong)",
-						borderTop: "1px solid var(--line)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						flexWrap: "wrap",
-						gap: "0.5rem",
-					}}
-				>
-					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-						<button
-							type="button"
-							onClick={handlePrint}
-							className="egisz-btn sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.45rem 0.9rem",
-								fontSize: "0.8125rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								cursor: "pointer",
-							}}
-						>
-							<Printer size={16} />
-							Печать бланка
-						</button>
-						<button
-							type="button"
-							onClick={handleValidateCdaXml}
-							className="egisz-btn sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.35rem",
-								padding: "0.45rem 0.9rem",
-								fontSize: "0.8125rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--teal, #0d9488)",
-								cursor: "pointer",
-							}}
-						>
-							<CheckCircle2 size={16} />
-							1-Клик Валидация
-						</button>
-					</div>
-
-					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-						<button
-							type="button"
-							onClick={handleQueueDeferred}
-							className="egisz-btn sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.45rem 0.9rem",
-								fontSize: "0.8125rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background: "var(--paper)",
-								color: "var(--ink)",
-								cursor: "pointer",
-							}}
-						>
-							<Clock size={15} />
-							Отложить отправку
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="egisz-btn sm"
-							style={{
-								padding: "0.45rem 1rem",
-								fontSize: "0.8125rem",
-								fontWeight: 600,
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background: "transparent",
-								color: "var(--ink)",
-								cursor: "pointer",
-							}}
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={handleSendToRegistry}
-							className="egisz-btn egisz-btn-primary sm"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "0.5rem",
-								padding: "0.45rem 1.25rem",
-								fontSize: "0.8125rem",
-								fontWeight: 700,
-								borderRadius: "6px",
-								background: "var(--primary, #0ea5e9)",
-								color: "var(--paper, #ffffff)",
-								border: "none",
-								cursor: isSending ? "wait" : "pointer",
-							}}
-						>
-							<Send size={16} />
-							{isSending ? "Отправка в Минздрав..." : activeDocType === "cda_semd" ? "Отправить в Минздрав" : "Сформировать и отправить в налоговую"}
-						</button>
-					</div>
-				</footer>
+				)}
+				<EgiszRemdModalNav
+					activeDocType={ctrl.activeDocType} activeTab={ctrl.activeTab} onSelectTab={ctrl.setActiveTab}
+					scorePercent={state.activePreflight.scorePercent} isDoctorSigned={Boolean(crypto.doctorSig)}
+				/>
+				<EgiszRemdModalBody
+					activeTab={ctrl.activeTab} activeDocType={ctrl.activeDocType} state={state} crypto={crypto}
+					isSending={ctrl.isSending} signaturePreviewMode={ctrl.signaturePreviewMode}
+					onSignaturePreviewModeChange={ctrl.setSignaturePreviewMode} collapsedSections={ctrl.collapsedSections}
+					onToggleSection={ctrl.toggleSection} records={ctrl.records} journalFilter={ctrl.journalFilter}
+					onJournalFilterChange={ctrl.setJournalFilter} selectedJournalId={ctrl.selectedJournalId}
+					onSelectJournalId={ctrl.setSelectedJournalId} isLoadingJournal={ctrl.isLoadingJournal}
+					onBatchZipExport={() => exportBatchDocumentsZip(ctrl.records)}
+					onSingleZipExport={(rec: RemdDocumentRecord) => exportSingleDocumentZip({ filenamePrefix: generateEgiszXmlFilename(rec.cdaPayload || state.semdPayload).replace(".xml", ""), generatedXml: state.generatedXml, doctorSigBase64: rec.doctorSignature?.signatureBase64, moSigBase64: rec.clinicSignature?.signatureBase64 || rec.moSignature?.signatureBase64, registrationInfo: rec.registrationInfo })}
+					onSignJournalDocument={onSignJournalDocument} onExportJournalZip={onExportJournalZip}
+					onSwitchToSignatureTab={() => ctrl.setActiveTab("signature")} onRefreshOutbox={ctrl.handleRefreshOutbox}
+					onBatchSendShift={ctrl.handleBatchSendShift} onSendToRegistry={ctrl.handleSendToRegistry}
+					onQueueDeferred={ctrl.handleQueueDeferred} onPrint={handlePrint} onDownloadXml={handleDownloadXml}
+					onValidateCdaXml={handleValidateCdaXml} onExportCurrentPackageZip={handleExportCurrentPackageZip}
+					onCopyXml={() => { navigator.clipboard.writeText(state.generatedXml); showToast("Канонический XML скопирован", "success"); }}
+				/>
+				<EgiszRemdModalFooter
+					activeDocType={ctrl.activeDocType} isSending={ctrl.isSending} onPrint={handlePrint}
+					onValidateCdaXml={handleValidateCdaXml} onQueueDeferred={ctrl.handleQueueDeferred}
+					onClose={onClose} onSendToRegistry={ctrl.handleSendToRegistry}
+				/>
 			</div>
 		</div>
 	);
 
-	return typeof document !== "undefined"
-		? createPortal(modalContent, document.body)
-		: modalContent;
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default EgiszRemdHubModal;

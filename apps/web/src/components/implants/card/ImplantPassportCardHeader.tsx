@@ -38,44 +38,46 @@ export const ImplantPassportCardHeader: React.FC<ImplantPassportCardHeaderProps>
 				<span className="px-2.5 py-1 rounded-lg text-xs font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
 					{data.toothFdi ? `Зуб FDI #${data.toothFdi}` : "Зуб FDI #____"}
 				</span>
-				<button
-					type="button"
-					onClick={onShareWhatsApp}
-					className="icon-button min-h-[44px] min-w-[44px] text-[var(--teal,#0d9488)]"
-					title="Поделиться в WhatsApp"
-					data-testid="btn-share-whatsapp"
-				>
-					<Share2 size={16} />
-				</button>
-				<button
-					type="button"
-					onClick={onShareTelegram}
-					className="icon-button min-h-[44px] min-w-[44px] text-[var(--brand-primary,#0ea5e9)]"
-					title="Поделиться в Telegram"
-					data-testid="btn-share-telegram"
-				>
-					<Send size={16} />
-				</button>
-				<button
-					type="button"
-					onClick={onCopy}
-					className="icon-button min-h-[44px] min-w-[44px] text-[var(--ink)]"
-					title="Скопировать данные паспорта"
-					data-testid="btn-copy-passport-card"
-				>
-					<Copy size={16} />
-				</button>
-				<button
-					type="button"
-					onClick={onPrint}
-					className="primary-button min-h-[48px] px-4 py-2 text-xs flex items-center gap-1.5 font-bold"
-					title="Распечатать паспорт / гарантийный сертификат"
-					data-testid="btn-print-passport-card"
-				>
-					<Printer size={16} className="shrink-0" />
-					<span className="hidden sm:inline">Распечатать паспорт</span>
-					<span className="sm:hidden">Печать</span>
-				</button>
+				<div className="flex items-center gap-2 print:hidden">
+					<button
+						type="button"
+						onClick={onShareWhatsApp}
+						className="icon-button min-h-[44px] min-w-[44px] text-[var(--teal,#0d9488)]"
+						title="Поделиться в WhatsApp"
+						data-testid="btn-share-whatsapp"
+					>
+						<Share2 size={16} />
+					</button>
+					<button
+						type="button"
+						onClick={onShareTelegram}
+						className="icon-button min-h-[44px] min-w-[44px] text-[var(--brand-primary,#0ea5e9)]"
+						title="Поделиться в Telegram"
+						data-testid="btn-share-telegram"
+					>
+						<Send size={16} />
+					</button>
+					<button
+						type="button"
+						onClick={onCopy}
+						className="icon-button min-h-[44px] min-w-[44px] text-[var(--ink)]"
+						title="Скопировать данные паспорта"
+						data-testid="btn-copy-passport-card"
+					>
+						<Copy size={16} />
+					</button>
+					<button
+						type="button"
+						onClick={onPrint}
+						className="primary-button min-h-[48px] px-4 py-2 text-xs flex items-center gap-1.5 font-bold"
+						title="Распечатать паспорт / гарантийный сертификат"
+						data-testid="btn-print-passport-card"
+					>
+						<Printer size={16} className="shrink-0" />
+						<span className="hidden sm:inline">Распечатать паспорт</span>
+						<span className="sm:hidden">Печать</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	);
