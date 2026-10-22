@@ -3,16 +3,15 @@
  * Human clinical language per Mandate 8x & 8y, touch targets >= 44px on mobile.
  */
 
-import { Pill, ShieldCheck, X } from "lucide-react";
+import { Pill, X } from "lucide-react";
 import type React from "react";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionModalHeaderProps {
 	readonly patientName: string;
 	readonly patientCard: string;
 	readonly diagnosisIcd10?: string | null | undefined;
 	readonly resolvedPatientAllergies?: string | readonly string[] | undefined;
-	readonly isUkepSigned: boolean;
 	readonly activeForm: PrescriptionFormType;
 	readonly onSelectForm: (form: PrescriptionFormType) => void;
 	readonly onClose: () => void;
@@ -25,7 +24,6 @@ export const PrescriptionModalHeader: React.FC<
 	patientCard,
 	diagnosisIcd10,
 	resolvedPatientAllergies,
-	isUkepSigned,
 	activeForm,
 	onSelectForm,
 	onClose,
@@ -33,6 +31,9 @@ export const PrescriptionModalHeader: React.FC<
 	const allergiesText = Array.isArray(resolvedPatientAllergies)
 		? resolvedPatientAllergies.join(", ")
 		: resolvedPatientAllergies;
+
+	const isStandard = activeForm === "standard" || activeForm === "107-1u";
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
 
 	return (
 		<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
@@ -43,26 +44,21 @@ export const PrescriptionModalHeader: React.FC<
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap">
 						<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
-							Рецептурный модуль
+							Выписка рецептов и назначений
 						</h2>
 						<span
 							className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]"
-							data-statutory="Приказ № 1094н"
+							data-statutory="prescription-blank"
 						>
-							Рецептурный бланк на лекарства
+							{isSpecial ? "Специальный бланк" : "Рецептурный бланк"}
 						</span>
-						{isUkepSigned && (
-							<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-								<ShieldCheck className="w-3.5 h-3.5" /> УКЭП активна
-							</span>
-						)}
 					</div>
 					<p className="text-xs text-[var(--muted)] whitespace-normal break-words mt-0.5">
 						<span>{patientName}</span> · <span>Карта: {patientCard}</span> ·{" "}
 						<span>Диагноз: {diagnosisIcd10 || "K02.1"}</span>
 						{allergiesText && (
 							<span className="ml-1 text-amber-700 dark:text-amber-300 font-semibold">
-								· ⚠️ Аллергия: {allergiesText}
+								· Аллергия: {allergiesText}
 							</span>
 						)}
 					</p>
@@ -72,31 +68,29 @@ export const PrescriptionModalHeader: React.FC<
 				<div className="hidden md:flex p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-1 text-xs">
 					<button
 						type="button"
-						onClick={() => onSelectForm("107-1u")}
-						data-form="107-1u"
-						data-form-standard="№ 107-1/у"
+						onClick={() => onSelectForm("standard")}
+						data-form="standard"
 						className={`h-7 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-							activeForm === "107-1u"
+							isStandard
 								? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))] font-bold shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 						}`}
-						title="Обычный рецептурный бланк"
+						title="Стандартный рецептурный бланк"
 					>
-						Обычный рецепт
+						Рецептурный бланк
 					</button>
 					<button
 						type="button"
-						onClick={() => onSelectForm("148-1u-88")}
-						data-form="148-1u-88"
-						data-form-standard="№ 148-1/у-88"
+						onClick={() => onSelectForm("special")}
+						data-form="special"
 						className={`h-7 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-							activeForm === "148-1u-88"
+							isSpecial
 								? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))] font-bold shadow-xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 						}`}
-						title="Льготный / Учетный рецепт строгого учета"
+						title="Специальный бланк строгого учета"
 					>
-						Льготный / Учетный рецепт
+						Специальный рецепт
 					</button>
 				</div>
 				<button

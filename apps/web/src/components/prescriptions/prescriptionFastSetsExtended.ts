@@ -8,6 +8,18 @@ import type { DentalFastPrescriptionSet } from "./prescriptionFastSetsCore";
 export const EXTENDED_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] =
 	[
 		{
+			id: "pericoronitis_cyfran",
+			label: "«Периодонтит / сложная хирургия (Цифран СТ)»",
+			desc: "Цифран СТ (500+600 мг) 2 р/д (5 дн.) + Найз 100 мг при болях + Хлоргексидин 0.05%",
+			drugIds: ["cyfran_st", "nimesulide_100", "chlorhexidine_005"],
+		},
+		{
+			id: "acute_pain_relief",
+			label: "«Купирование острой боли (Кеторол Экспресс)»",
+			desc: "Кеторол Экспресс 10 мг при острой боли (до 4 таб/сут) + Хлоргексидин 0.05%",
+			drugIds: ["ketorolac_10", "chlorhexidine_005"],
+		},
+		{
 			id: "standard_anti_inflammatory_course",
 			label: "«Стандартный противовоспалительный курс»",
 			desc: "Амоксиклав 875/125 мг 2 р/д + Нимесил 100 мг + Хлоргексидин 0.05%",
@@ -87,17 +99,6 @@ export const EXTENDED_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet
 				"nimesulide_100",
 				"chlorhexidine_005",
 				"omeprazole_20",
-			],
-		},
-		{
-			id: "acute_pericoronitis_periodontitis",
-			label: "«Острый перикоронит / периодонтит»",
-			desc: "Цифран СТ + Нимесил 100 мг + Холисал гель + Хлоргексидин 0.05%",
-			drugIds: [
-				"cyfran_st",
-				"nimesulide_100",
-				"cholisal_gel",
-				"chlorhexidine_005",
 			],
 		},
 		{

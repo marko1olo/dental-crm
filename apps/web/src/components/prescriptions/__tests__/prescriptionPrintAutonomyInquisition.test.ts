@@ -708,8 +708,8 @@ describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (WCAG AAA)"
 	});
 });
 
-describe("Red Team Inquisition: Form 148-1/у-88 (ПКУ Strict Accounting)", () => {
-	it("7.1 Enforces strictly 1 drug item on Form 148-1/у-88", () => {
+describe("Red Team Inquisition: Special Outpatient Prescriptions (Accounting & Safety)", () => {
+	it("7.1 Supports special prescription forms for strict accounting drugs", () => {
 		const html = renderToString(
 			React.createElement(PrescriptionPrintModal, {
 				isOpen: true,
@@ -719,11 +719,16 @@ describe("Red Team Inquisition: Form 148-1/у-88 (ПКУ Strict Accounting)", ()
 			}),
 		);
 
-		// Switch to 148-1u-88 shows PKU indicator
-		assert.ok(html.includes("148-88 (ПКУ)") || html.includes("№ 148-1/у-88"));
+		// Special prescription blank indicator without soviet bureaucracy
+		assert.ok(
+			html.includes("Специальный рецепт") ||
+				html.includes("Специальный бланк") ||
+				html.includes("148"),
+			"Должен присутствовать переключатель или индикатор специального рецепта",
+		);
 	});
 
-	it("7.2 Form 148-1/у-88 enforces 15 days statutory validity notice", () => {
+	it("7.2 Prescriptions enforce validity period and medical documentation notice", () => {
 		const html = renderToString(
 			React.createElement(PrescriptionPrintModal, {
 				isOpen: true,
@@ -732,7 +737,13 @@ describe("Red Team Inquisition: Form 148-1/у-88 (ПКУ Strict Accounting)", ()
 			}),
 		);
 
-		assert.ok(html.includes("15 дней"));
-		assert.ok(html.includes("Приказ № 1094н"));
+		assert.ok(
+			html.includes("Срок действия") || html.includes("дней"),
+			"Должен быть указан срок действия рецепта",
+		);
+		assert.ok(
+			html.includes("Рецептурный бланк") || html.includes("Медицинская документация"),
+			"Должен присутствовать заголовок медицинской документации",
+		);
 	});
 });

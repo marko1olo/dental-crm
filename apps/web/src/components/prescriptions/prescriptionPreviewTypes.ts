@@ -1,9 +1,25 @@
 /**
- * prescriptionPreviewTypes.ts — Props Interface for Prescription Sheet Preview
+ * prescriptionPreviewTypes.ts — Canonical Types and Props Interface for Prescription Sheet Preview
+ * Mandates 8e, 8x, 8y & Apple HIG. Decomposed module <= 120 lines (Mandate 8b).
  */
 
-import type { PrescriptionDoctorUkep } from "@dental/shared";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+export type PrescriptionFormType =
+	| "standard"
+	| "special"
+	| "107-1u"
+	| "148-1u-88";
+
+export interface PrescriptionDrugItem {
+	readonly id: string;
+	readonly latinName: string;
+	readonly tradeName: string;
+	readonly form: string;
+	readonly dosage: string;
+	readonly quantity: string;
+	readonly dispenseLatin: string;
+	readonly signaRussian: string;
+	readonly category?: string | undefined;
+}
 
 export interface PrescriptionSheetPreviewProps {
 	readonly customSeriesNumber: string;
@@ -41,23 +57,11 @@ export interface PrescriptionSheetPreviewProps {
 		| { readonly diagnosisIcd10?: string | null | undefined }
 		| null
 		| undefined;
-	readonly activeItems: readonly {
-		readonly id: string;
-		readonly latinName: string;
-		readonly dispenseLatin: string;
-		readonly signaRussian: string;
-		readonly tradeName: string;
-	}[];
+	readonly activeItems: readonly PrescriptionDrugItem[];
 	readonly validityDays: string;
 	readonly isChronicSpecialCare: boolean;
 	readonly chronicPeriodicity: string;
-	readonly isUkepSigned: boolean;
-	readonly ukepSignature?:
-		| (PrescriptionDoctorUkep & {
-				readonly validFrom?: string | null | undefined;
-				readonly validTo?: string | null | undefined;
-		  })
-		| null
-		| undefined;
+	readonly isUkepSigned?: boolean | undefined;
+	readonly ukepSignature?: unknown;
 	readonly className?: string | undefined;
 }

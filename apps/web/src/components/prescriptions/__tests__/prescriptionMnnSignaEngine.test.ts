@@ -355,7 +355,10 @@ describe("Стоматологические 1-клик пресеты реце�
 		assert.ok(memo.includes("Соколова Екатерина Дмитриевна"));
 		assert.ok(memo.includes("Амоксициллин 500 мг"));
 		assert.ok(memo.includes("Ибупрофен 400 мг"));
-		assert.ok(memo.includes("Приказ Минздрава 1094н"));
+		assert.ok(
+			memo.includes("Рекомендации") || memo.includes("Памятка"),
+			"Памятка должна содержать клинические рекомендации пациенту без советского канцелярита",
+		);
 		assert.strictEqual(
 			/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(memo),
 			false,

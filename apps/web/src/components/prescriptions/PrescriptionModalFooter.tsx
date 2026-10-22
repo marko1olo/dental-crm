@@ -4,16 +4,13 @@
  * UI_STANDARDS.md: Primary CTA strictly 1 per block, rounded-xl (10-12px).
  */
 
-import { Check, Copy, Printer, ShieldCheck } from "lucide-react";
+import { Check, Copy, Printer } from "lucide-react";
 import type React from "react";
 
 export interface PrescriptionModalFooterProps {
 	readonly isMemoCopied: boolean;
-	readonly isUkepSigned: boolean;
-	readonly isSigningUkep: boolean;
 	readonly onCopyPatientMemo: () => void;
 	readonly onInsertToDiary: () => void;
-	readonly onSignUkep: () => void;
 	readonly onPrintPatientMemo: () => void;
 	readonly onPrintPrescription: () => void;
 }
@@ -22,11 +19,8 @@ export const PrescriptionModalFooter: React.FC<
 	PrescriptionModalFooterProps
 > = ({
 	isMemoCopied,
-	isUkepSigned,
-	isSigningUkep,
 	onCopyPatientMemo,
 	onInsertToDiary,
-	onSignUkep,
 	onPrintPatientMemo,
 	onPrintPrescription,
 }) => {
@@ -66,31 +60,13 @@ export const PrescriptionModalFooter: React.FC<
 				</button>
 			</div>
 
-			{/* Right Action Cluster: UKEP, Memo & Official Blank Print (Primary CTA) */}
+			{/* Right Action Cluster: Patient Memo & Official Blank Print (Primary CTA) */}
 			<div className="grid grid-cols-2 sm:flex items-center gap-2">
-				<button
-					type="button"
-					onClick={onSignUkep}
-					className={`h-9 min-h-[44px] md:min-h-[36px] px-2.5 sm:px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer inline-flex items-center gap-1.5 justify-center ${
-						isUkepSigned
-							? "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold"
-							: "secondary-button text-[var(--ink)]"
-					}`}
-				>
-					<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-					<span>
-						{isUkepSigned
-							? "УКЭП подписана"
-							: isSigningUkep
-								? "Подписание..."
-								: "Подписать УКЭП"}
-					</span>
-				</button>
 				<button
 					type="button"
 					data-testid="print-patient-memo-btn"
 					onClick={onPrintPatientMemo}
-					title="Распечатать понятную памятку со схемой приёма для пациента (без латыни)"
+					title="Распечатать понятную памятку со схемой приёма для пациента"
 					className="secondary-button h-9 min-h-[44px] md:min-h-[36px] px-2.5 sm:px-3 text-xs font-medium rounded-xl inline-flex items-center gap-1.5 cursor-pointer justify-center"
 				>
 					<Printer className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -100,10 +76,10 @@ export const PrescriptionModalFooter: React.FC<
 					type="button"
 					data-testid="print-prescription-btn"
 					onClick={onPrintPrescription}
-					className="primary-button col-span-2 sm:col-auto h-10 min-h-[44px] md:min-h-[36px] px-3 sm:px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-sm cursor-pointer justify-center"
+					className="primary-button h-9 min-h-[44px] md:min-h-[36px] px-3 sm:px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-sm cursor-pointer justify-center"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
-					<span>Печать рецепта А5</span>
+					<span>Печать рецепта</span>
 				</button>
 			</div>
 		</div>

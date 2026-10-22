@@ -1,6 +1,6 @@
 /**
- * prescriptionFastSetsCore.ts — Core 4 Express Prescription Sets
- * Conforms to Mandate 8b (<= 120 lines).
+ * prescriptionFastSetsCore.ts — Core Express Prescription Sets for 1-Click Clinic Prescribing
+ * Conforms to Mandates 8e (Doctor Autonomy), 8k (Friction-Killer) & Mandate 8b (<= 120 lines).
  */
 
 export interface DentalFastPrescriptionSet {
@@ -14,25 +14,25 @@ export const CORE_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] =
 	[
 		{
 			id: "post_surgery_periodontitis",
-			label: "«После хирургии / периодонтита»",
-			desc: "Амоксиклав 875/125 мг 2 р/д + Нимесил 100 мг + Хлоргексидин 0.05%",
+			label: "«После хирургии / периодонтита (Амоксиклав)»",
+			desc: "Амоксиклав 1000 мг 2 р/д (7 дн.) + Найз 100 мг при болях + Хлоргексидин 0.05% ванночки",
 			drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
 		},
 		{
 			id: "penicillin_allergy",
-			label: "«При аллергии на пенициллины»",
-			desc: "Ципрофлоксацин 500 мг 2 р/д + Ибупрофен 400 мг при болях",
-			drugIds: ["ciprofloxacin_500", "ibuprofen_400"],
+			label: "«При аллергии на пенициллины (Азитромицин)»",
+			desc: "Азитромицин 500 мг 1 р/д (3 дн.) + Ибупрофен 400 мг + Мирамистин 0.01%",
+			drugIds: ["azithromycin_500", "ibuprofen_400", "miramistin_001"],
 		},
 		{
 			id: "anti_inflammatory_course",
-			label: "«Противовоспалительный курс»",
-			desc: "Нимесулид 100 мг 2 р/д + Супрастин 25 мг на ночь",
-			drugIds: ["nimesulide_100", "suprastin_25"],
+			label: "«Противовоспалительный курс (Найз / НПВП)»",
+			desc: "Найз (Нимесил) 100 мг 2 р/д + Хлоргексидин 0.05% ванночки",
+			drugIds: ["nimesulide_100", "chlorhexidine_005"],
 		},
 		{
 			id: "pediatric_dental",
-			label: "«Детский стоматологический»",
+			label: "«Детский стоматологический (Ибупрофен)»",
 			desc: "Ибупрофен суспензия 100 мг/5 мл с авторасчетом по весу (10 мг/кг)",
 			drugIds: ["ibuprofen_suspension_100_5ml"],
 		},

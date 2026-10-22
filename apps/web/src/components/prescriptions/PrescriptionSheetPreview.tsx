@@ -25,8 +25,8 @@ export const PrescriptionSheetPreview: React.FC<
 			<div className="flex items-center justify-between gap-2">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 shrink-0">
 					<FileText className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-					<span className="hidden sm:inline">Живой предпросмотр (А5 / Высокая печать):</span>
-					<span className="sm:hidden">Предпросмотр А5:</span>
+					<span className="hidden sm:inline">Живой предпросмотр бланка:</span>
+					<span className="sm:hidden">Предпросмотр:</span>
 				</span>
 				<span className="text-xs font-mono font-bold text-[var(--teal)] shrink-0">
 					{props.customSeriesNumber}
@@ -71,8 +71,6 @@ export const PrescriptionSheetPreview: React.FC<
 					chronicPeriodicity={props.chronicPeriodicity}
 					withStampAndSignature={props.withStampAndSignature}
 					docName={props.docName}
-					isUkepSigned={props.isUkepSigned}
-					ukepSignature={props.ukepSignature}
 				/>
 			</div>
 

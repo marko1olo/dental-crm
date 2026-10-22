@@ -5,7 +5,7 @@
 
 import type React from "react";
 import { PrescriptionChronicOptions } from "./PrescriptionChronicOptions";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionValidityDetailsProps {
 	readonly customSeriesNumber: string;
@@ -43,6 +43,8 @@ export const PrescriptionValidityDetails: React.FC<
 	onPatientAddressChange,
 	activeForm,
 }) => {
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
+
 	return (
 		<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
 			<div className="grid grid-cols-2 gap-2">
@@ -96,7 +98,7 @@ export const PrescriptionValidityDetails: React.FC<
 				/>
 			)}
 
-			{activeForm === "148-1u-88" && (
+			{isSpecial && (
 				<div>
 					<label
 						htmlFor="prescription-address-input"

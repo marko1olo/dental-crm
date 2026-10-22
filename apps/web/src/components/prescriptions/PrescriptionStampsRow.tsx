@@ -3,7 +3,7 @@
  */
 
 import type React from "react";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionStampsRowProps {
 	readonly withStampAndSignature: boolean;
@@ -14,6 +14,8 @@ export const PrescriptionStampsRow: React.FC<PrescriptionStampsRowProps> = ({
 	withStampAndSignature,
 	activeForm,
 }) => {
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
+
 	return (
 		<div className="flex items-center gap-2 shrink-0">
 			<div
@@ -40,7 +42,7 @@ export const PrescriptionStampsRow: React.FC<PrescriptionStampsRowProps> = ({
 					рецептов
 				</span>
 			</div>
-			{activeForm === "148-1u-88" && (
+			{isSpecial && (
 				<div className="w-10 h-10 border border-dashed border-rose-600 dark:border-rose-400 clip-path-tri flex items-center justify-center font-bold text-[7.5px] text-rose-700 dark:text-rose-300 text-center">
 					СПЕЦ.
 				</div>

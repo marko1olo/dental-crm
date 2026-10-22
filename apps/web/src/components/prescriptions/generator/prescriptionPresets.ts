@@ -522,7 +522,7 @@ const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPac
 				"«Стандартный противовоспалительный курс» (Амоксиклав + Нимесил + Хлоргексидин)",
 			desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
 			drugIds: ["amoxiclav_875_125", "nimesil_100", "chlorhexidine_005"],
-			badge: "Курс 1094н",
+			badge: "Клинический курс",
 		},
 		{
 			id: "post_extraction_implant",
@@ -565,7 +565,7 @@ const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPac
 		},
 		{
 			id: "dental_statutory_express_formulary",
-			label: "«Стоматологический экспресс-формуляр (Приказ 1094н)»",
+			label: "«Стоматологический экспресс-формуляр»",
 			desc: "Амоксиклав 875/125 мг + Ципролет 500 мг + Нимесил 100 мг + Кеторол 10 мг + Хлоргексидин 0.05% + Холисал + Солкосерил",
 			drugIds: [
 				"amoxiclav_875_125",
@@ -576,7 +576,7 @@ const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPac
 				"holisal_gel",
 				"solcoseryl_dental",
 			],
-			badge: "1094н Экспресс",
+			badge: "Экспресс-формуляр",
 		},
 		{
 			id: "solcoseryl_mucosa_regeneration",

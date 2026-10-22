@@ -3,7 +3,7 @@
  */
 
 import type React from "react";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionPatientDoctorMetaProps {
 	readonly patientName: string;
@@ -28,6 +28,8 @@ export const PrescriptionPatientDoctorMeta: React.FC<
 	activeForm,
 	diagnosisIcd10,
 }) => {
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
+
 	return (
 		<div className="border-b border-[var(--line)] pb-2 flex flex-col gap-0.5 text-[11px] leading-snug text-[var(--ink)]">
 			<div>
@@ -41,7 +43,7 @@ export const PrescriptionPatientDoctorMeta: React.FC<
 					№ медкарты: <strong>{patientCard}</strong>
 				</span>
 			</div>
-			{activeForm === "148-1u-88" && (
+			{isSpecial && (
 				<div>
 					Адрес проживания: <strong>{patientAddress || "—"}</strong>
 				</div>

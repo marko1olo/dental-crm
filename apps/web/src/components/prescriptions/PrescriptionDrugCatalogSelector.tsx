@@ -43,6 +43,8 @@ export const PrescriptionDrugCatalogSelector: React.FC<
 				onApplyAndInsertToDiary={props.onApplyAndInsertToDiary}
 				patientAllergies={props.patientAllergies}
 				catalogDrugs={props.filteredCatalog}
+				selectedDrugIds={props.selectedDrugIds}
+				onToggleDrug={props.onToggleDrug}
 			/>
 
 			<PrescriptionCatalogList

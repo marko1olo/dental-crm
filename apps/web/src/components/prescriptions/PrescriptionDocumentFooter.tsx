@@ -1,13 +1,11 @@
 /**
- * PrescriptionDocumentFooter.tsx — Signatures, Stamps and Digital Certificate Stamp
+ * PrescriptionDocumentFooter.tsx — Signatures and Stamps for Prescription Blank
  * Decomposed module <= 120 lines (Mandate 8b).
  */
 
-import type { PrescriptionDoctorUkep } from "@dental/shared";
 import type React from "react";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 import { PrescriptionStampsRow } from "./PrescriptionStampsRow";
-import { PrescriptionUkepGostStamp } from "./PrescriptionUkepGostStamp";
 
 export interface PrescriptionDocumentFooterProps {
 	readonly activeForm: PrescriptionFormType;
@@ -16,14 +14,6 @@ export interface PrescriptionDocumentFooterProps {
 	readonly chronicPeriodicity: string;
 	readonly withStampAndSignature: boolean;
 	readonly docName: string;
-	readonly isUkepSigned: boolean;
-	readonly ukepSignature?:
-		| (PrescriptionDoctorUkep & {
-				readonly validFrom?: string | null | undefined;
-				readonly validTo?: string | null | undefined;
-		  })
-		| null
-		| undefined;
 }
 
 function formatDoctorHandwrittenInitials(fullName: string): string {
@@ -44,9 +34,9 @@ export const PrescriptionDocumentFooter: React.FC<
 	chronicPeriodicity,
 	withStampAndSignature,
 	docName,
-	isUkepSigned,
-	ukepSignature,
 }) => {
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
+
 	return (
 		<div className="border-t-2 border-[var(--line)] pt-2 text-[10px] flex flex-col gap-2 text-[var(--ink)]">
 			<div className="flex justify-between items-end">
@@ -55,8 +45,8 @@ export const PrescriptionDocumentFooter: React.FC<
 						Срок действия рецепта:{" "}
 						<u>
 							<strong className="text-[var(--ink)]">
-								{activeForm === "148-1u-88"
-									? "15 дней (ПКУ)"
+								{isSpecial
+									? "15 дней (учетный)"
 									: validityDays === "365"
 										? "До 1 года (По специальному назначению)"
 										: `${validityDays} дней`}
@@ -87,7 +77,7 @@ export const PrescriptionDocumentFooter: React.FC<
 						</span>
 						<span>/ {docName}</span>
 					</div>
-					{activeForm === "148-1u-88" && (
+					{isSpecial && (
 						<div className="text-[var(--ink)]">
 							Подпись зав. отделением: ____________________
 						</div>
@@ -99,10 +89,6 @@ export const PrescriptionDocumentFooter: React.FC<
 					activeForm={activeForm}
 				/>
 			</div>
-
-			{isUkepSigned && ukepSignature && (
-				<PrescriptionUkepGostStamp ukepSignature={ukepSignature} />
-			)}
 		</div>
 	);
 };

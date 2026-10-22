@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { PrescriptionPrintModalProps } from "./PrescriptionPrintModal";
+import type { PrescriptionModalProps } from "./PrescriptionModal";
 import { fetchPatientPrescriptions } from "./prescriptionApiClient";
 import { usePrescriptionActions } from "./usePrescriptionActions";
 import { usePrescriptionBackendSync } from "./usePrescriptionBackendSync";
@@ -15,7 +15,7 @@ import { usePrescriptionGastroprotection } from "./usePrescriptionGastroprotecti
 import { usePrescriptionItemsState } from "./usePrescriptionItemsState";
 import { usePrescriptionPrintCoordinator } from "./usePrescriptionPrintCoordinator";
 
-export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
+export function usePrescriptionCockpit(props: PrescriptionModalProps) {
 	const {
 		isOpen,
 		patient,
@@ -46,7 +46,7 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 			activeForm: meta.activeForm,
 		});
 
-	const { generatePrintHtml, ukep } = usePrescriptionPrintCoordinator({
+	const { generatePrintHtml } = usePrescriptionPrintCoordinator({
 		meta,
 		...ctx,
 		activeItems: itemsState.activeItems,
@@ -72,7 +72,6 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 		diagnosisIcd10: diary?.diagnosisIcd10,
 		customSeriesNumber: meta.customSeriesNumber,
 		activeItems: itemsState.activeItems,
-		ukepSignature: ukep.ukepSignature,
 		onPrescriptionCreated,
 	});
 
@@ -96,8 +95,6 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 		}
 		if (!prevIsOpenRef.current) {
 			meta.resetFormMeta(meta.activeForm);
-			ukep.setIsUkepSigned(false);
-			ukep.setUkepSignature(null);
 			if (patient?.id) fetchPatientPrescriptions(patient.id).catch(() => {});
 		}
 		prevIsOpenRef.current = true;
@@ -105,15 +102,12 @@ export function usePrescriptionCockpit(props: PrescriptionPrintModalProps) {
 		isOpen,
 		meta.resetFormMeta,
 		meta.activeForm,
-		ukep.setIsUkepSigned,
-		ukep.setUkepSignature,
 		patient?.id,
 	]);
 
 	return {
 		...meta,
 		...itemsState,
-		...ukep,
 		...actions,
 		...ctx,
 		...warnings,

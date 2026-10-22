@@ -92,8 +92,6 @@ export const PrescriptionWorkbenchBody: React.FC<
 				validityDays={c.validityDays}
 				isChronicSpecialCare={c.isChronicSpecialCare}
 				chronicPeriodicity={c.chronicPeriodicity}
-				isUkepSigned={c.isUkepSigned}
-				ukepSignature={c.ukepSignature}
 			/>
 		</div>
 	);

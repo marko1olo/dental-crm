@@ -1,10 +1,10 @@
 /**
  * PrescriptionDocumentHeader.tsx — Printable Prescription Sheet Header
- * Official clinic stamp box, Minzdrav header & Series/Number.
+ * Official clinic stamp box, statutory header & Series/Number.
  */
 
 import type React from "react";
-import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionDocumentHeaderProps {
 	readonly withStampAndSignature: boolean;
@@ -36,6 +36,8 @@ export const PrescriptionDocumentHeader: React.FC<
 	const formattedDate = new Date(
 		prescriptionDate || Date.now(),
 	).toLocaleDateString("ru-RU");
+
+	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
 
 	return (
 		<>
@@ -71,15 +73,15 @@ export const PrescriptionDocumentHeader: React.FC<
 					<div>Министерство здравоохранения РФ</div>
 					<div>Медицинская документация</div>
 					<div className="font-bold text-[10px] mt-0.5 text-[var(--ink)]">
-						{activeForm === "107-1u"
-							? "Форма бланка № 107-1/у"
-							: "Форма бланка № 148-1/у-88"}
+						{isSpecial
+							? "Специальный рецептурный бланк"
+							: "Рецептурный бланк"}
 					</div>
 					<div
 						className="text-[9px] text-[var(--muted)]"
-						data-statutory="Приказ МЗ РФ № 1094н"
+						data-statutory="prescription-blank"
 					>
-						Приказ № 1094н
+						{isSpecial ? "Учетный бланк" : "Амбулаторный бланк"}
 					</div>
 				</div>
 			</div>
@@ -87,9 +89,9 @@ export const PrescriptionDocumentHeader: React.FC<
 			{/* Title */}
 			<div className="text-center my-0.5 text-[var(--ink)]">
 				<div
-					className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}
+					className={`font-extrabold text-base tracking-widest uppercase ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}
 				>
-					РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : ""}
+					РЕЦЕПТ {isSpecial ? "(СПЕЦ. УЧЕТ)" : ""}
 				</div>
 				<div className="text-[10px] font-sans text-[var(--muted)]">
 					Серия:{" "}
