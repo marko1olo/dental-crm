@@ -1828,7 +1828,7 @@
 	}
 
 	.dbw-body {
-		padding: 12px 10px calc(88px + env(safe-area-inset-bottom)) 10px;
+		padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
 	}
 
 	.dbw-step-card {
@@ -1851,8 +1851,20 @@
 	}
 
 	.dbw-floating-bottom-bar {
-		margin: 16px -10px calc(-12px - env(safe-area-inset-bottom)) -10px;
-		padding: 10px 14px calc(10px + env(safe-area-inset-bottom)) 14px;
+		margin: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		border-radius: 0;
+		box-sizing: border-box;
+		padding: 10px 16px calc(12px + env(safe-area-inset-bottom)) 16px;
+	}
+
+	/* Mandate 8am & Apple HIG: On mobile, Floating Bottom Bar is the sole Natural Thumb Zone Primary CTA.
+	   Hide duplicate in-card submit button to prevent double-button clash. */
+	.dbw-submit-row {
+		display: none;
 	}
 
 	.dbw-calendar-container.is-compact {

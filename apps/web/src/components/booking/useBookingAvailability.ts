@@ -197,9 +197,7 @@ export function useBookingAvailability({
 				} else {
 					setSlots([]);
 					setSelectedSlot(null);
-					setSlotError(
-						"На выбранную дату нет свободных окон для записи. Выберите другой день или оставьте заявку в лист ожидания.",
-					);
+					setSlotError(null);
 				}
 			})
 			.catch((err: Error) => {

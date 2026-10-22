@@ -246,11 +246,11 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	}>("/create", async (request, reply) => {
 		const organizationId =
 			request.body?.organizationId || (await resolveDefaultClinicOrgId());
-		const reqWithOrg = {
-			...request,
-			params: { organizationId },
+		(request.params as Record<string, string>) = {
+			...(request.params as Record<string, string> || {}),
+			organizationId,
 		};
-		return handleBookAppointment(reqWithOrg as any, reply);
+		return handleBookAppointment(request as any, reply);
 	});
 
 	// 1. Get doctors for an organization
