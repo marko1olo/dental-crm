@@ -65,8 +65,8 @@ export const TOOTH46_GEOMETRY = {
 	fissures: {
 		sulcusCentralis:
 			"M 28,20.5 C 33,21.2 38,22 44,22 C 48,22 51,21.8 54,21.8 C 58,21.8 62,22 66,21.8 C 69,21.5 72,21.5 72,21.5",
-		sulcusMesiobuccalis: "M 38,22 L 38,44",
-		sulcusDistobuccalis: "M 62,22 L 62,42",
+		sulcusMesiobuccalis: "M 38,22 C 37.8,25.5 37.0,29.0 35.5,33.0",
+		sulcusDistobuccalis: "M 62,22 C 62.5,25.0 63.5,28.5 65.0,32.0",
 		sulcusLingualis: "M 48,12 C 49,15 50,18 51,21.8",
 		fossaTriangularisMesialis:
 			"M 38,22 C 34,21 30,20.5 28,20.5 C 25,20 22.5,20 20.5,21.5 M 28,20.5 C 25.5,22 23,24 22,26",
@@ -87,8 +87,8 @@ export const TOOTH46_GEOMETRY = {
 			id: "distal-fossa",
 			d: "M 62,22 C 66,22 69,21.8 72,21.5 C 75,21 78,21.5 80.5,23.5 M 72,21.5 C 74.5,22.8 77,24.5 78.5,26.5",
 		},
-		{ id: "buccal-mesial", d: "M 38,22 L 38,44" },
-		{ id: "buccal-distal", d: "M 62,22 L 62,42" },
+		{ id: "buccal-mesial", d: "M 38,22 C 37.8,25.5 37.0,29.0 35.5,33.0" },
+		{ id: "buccal-distal", d: "M 62,22 C 62.5,25.0 63.5,28.5 65.0,32.0" },
 		{ id: "lingual-groove", d: "M 48,12 C 49,15 50,18 51,21.8" },
 	],
 	cusps: TOOTH46_CUSPS,

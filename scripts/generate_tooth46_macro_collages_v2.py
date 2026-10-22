@@ -152,7 +152,7 @@ COLLAGES_V2 = [
             {"path": "gate0_tooth46_macro_post_core_fiber.png", "badge": "1. СВШ Штифт (дистальный)", "label": "Стекловолоконный штифт + культя"},
             {"path": "gate0_tooth46_macro_post_core_cast.png", "badge": "2. КШВ Вкладка (металл)", "label": "Литая разборная культевая вкладка Co-Cr"},
             {"path": "gate0_tooth46_macro_zirconia.png", "badge": "3. Цирконий (состоятельный)", "label": "CAD/CAM многослойный цирконий"},
-            {"path": "gate0_tooth46_macro_crown_defective.png", "badge": "4. Скол коронки / Щель", "label": "Скол керамики, истирание, зазор шейки"}
+            {"path": "gate0_tooth46_macro_crown_chipping.png", "badge": "4. Скол коронки / Щель", "label": "Скол керамики, истирание, зазор шейки"}
         ]
     },
     {
