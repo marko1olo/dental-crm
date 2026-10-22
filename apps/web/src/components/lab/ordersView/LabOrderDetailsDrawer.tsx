@@ -66,7 +66,7 @@ export function LabOrderDetailsDrawer({
 					doctorName={selectedOrderForEdit?.doctorName ?? undefined}
 					currentToothNumber={selectedOrderForEdit?.toothFdi ?? undefined}
 					initialToothFdi={selectedOrderForEdit?.toothFdi ?? undefined}
-					initialTeeth={selectedOrderForEdit?.selectedTeeth ?? selectedOrderForEdit?.teeth ?? undefined}
+					initialTeeth={selectedOrderForEdit?.selectedTeeth ?? (selectedOrderForEdit as { teeth?: number[] })?.teeth ?? undefined}
 					onSaveOrder={() => onOrderSaved()} onOrderSaved={onOrderSaved}
 				/>
 			)}

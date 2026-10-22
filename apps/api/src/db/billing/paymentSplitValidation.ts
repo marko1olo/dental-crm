@@ -40,8 +40,10 @@ export function validateAndResolvePaymentSplit(
 		input.cashAmountKopecks ??
 		(input.cashAmountRub != null ? Math.round(input.cashAmountRub * 100) : 0);
 	const rawElectronicKop =
-		input.electronicAmountKopecks ??
-		(input.electronicAmountRub != null ? Math.round(input.electronicAmountRub * 100) : 0);
+		(input.electronicAmountKopecks ??
+			(input.electronicAmountRub != null ? Math.round(input.electronicAmountRub * 100) : 0)) +
+		(input.sbpAmountKopecks ??
+			(input.sbpAmountRub != null ? Math.round(input.sbpAmountRub * 100) : 0));
 	const rawDmsKop =
 		input.dmsAmountKopecks ??
 		(input.dmsAmountRub != null ? Math.round(input.dmsAmountRub * 100) : 0);
@@ -53,11 +55,17 @@ export function validateAndResolvePaymentSplit(
 			: input.familyDepositAmountRub != null
 				? Math.round(input.familyDepositAmountRub * 100)
 				: 0);
+	const rawCertificateKop =
+		(input.certificateAmountKopecks ??
+			(input.certificateAmountRub != null ? Math.round(input.certificateAmountRub * 100) : 0)) +
+		(input.installmentAmountKopecks ??
+			(input.installmentAmountRub != null ? Math.round(input.installmentAmountRub * 100) : 0));
 
 	const isSplit =
 		(rawCashKop > 0 && rawElectronicKop > 0) ||
 		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDepositKop > 0)) ||
 		(rawDepositKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDmsKop > 0)) ||
+		rawCertificateKop > 0 ||
 		input.method === "split" ||
 		input.method === "mixed";
 
@@ -67,7 +75,7 @@ export function validateAndResolvePaymentSplit(
 	let resolvedDepositKop = rawDepositKop;
 
 	if (isSplit) {
-		const nonCashElectronicKop = resolvedDmsKop + resolvedDepositKop;
+		const nonCashElectronicKop = resolvedDmsKop + resolvedDepositKop + rawCertificateKop;
 		const netIncomingKop = incomingPaymentKopecks - nonCashElectronicKop;
 
 		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < netIncomingKop) {
@@ -76,13 +84,13 @@ export function validateAndResolvePaymentSplit(
 			resolvedElectronicKop = netIncomingKop - resolvedCashKop;
 		}
 
-		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop !== incomingPaymentKopecks) {
+		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + rawCertificateKop !== incomingPaymentKopecks) {
 			const hasOtherMentionedTenders = Boolean(
 				input.note && /(аванс|депозит|family|сертификат|бонус|дмс|dms)/i.test(input.note),
 			);
 			if (!hasOtherMentionedTenders) {
 				throw new Error(
-					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + rawCertificateKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
 				);
 			}
 		}

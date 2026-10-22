@@ -457,7 +457,7 @@ export function OfflineFiscalBatchModal({
 						<div className="space-y-4">
 							<div className="flex items-center justify-between">
 								<div className="text-sm text-[var(--muted)]">
-									Список чеков, накопленных во время работы без связи с ОФД / ККТ:
+									Список чеков, накопленных во время работы без связи с кассой:
 								</div>
 								<div className="flex gap-2">
 									<button
@@ -628,7 +628,7 @@ export function OfflineFiscalBatchModal({
 							<div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
 								<div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
 									<ShieldCheck className="w-5 h-5" />
-									Сверка безналичной выручки ККТ с банковским эквайрингом и СБП
+									Сверка безналичной выручки кассы с банковским эквайрингом и СБП
 								</div>
 								<p className="text-xs text-[var(--muted)]">
 									Автоматическое сопоставление сумм терминалов эквайринга с зарегистрированными в ОФД фискальными документами.
@@ -637,7 +637,7 @@ export function OfflineFiscalBatchModal({
 
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div className="p-4 rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] space-y-2 text-xs">
-									<div className="font-bold text-sm text-[var(--ink)] mb-2">Данные онлайн-кассы (ККТ)</div>
+									<div className="font-bold text-sm text-[var(--ink)] mb-2">Данные онлайн-кассы</div>
 									<div className="flex justify-between py-1 border-b border-[var(--glass-border)]">
 										<span className="text-[var(--muted)]">Банковские карты:</span>
 										<span className="font-mono font-bold">
@@ -687,7 +687,7 @@ export function OfflineFiscalBatchModal({
 				{/* Footer */}
 				<div className="flex items-center justify-between px-6 py-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)]">
 					<div className="text-xs text-[var(--muted)]">
-						Кассир: <strong>{cashierFullName}</strong> • ККТ: <strong>{clinicRequisites.kktModelName || "АТОЛ 27Ф"}</strong>
+						Кассир: <strong>{cashierFullName}</strong> • Касса: <strong>{clinicRequisites.kktModelName || "АТОЛ 27Ф"}</strong>
 					</div>
 					<button
 						onClick={onClose}

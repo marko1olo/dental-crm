@@ -23,7 +23,7 @@ export function RenderFiscalCalculationBox({
 			}}
 		>
 			<div style={{ fontWeight: 700, marginBottom: 4 }}>
-				СПРАВКА О ФИСКАЛЬНОМ РАСЧЕТЕ ПО 54-ФЗ:
+				СПРАВКА О РАСЧЕТЕ И ОПЛАТЕ:
 			</div>
 			<div
 				style={{

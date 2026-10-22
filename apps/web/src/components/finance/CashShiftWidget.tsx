@@ -190,7 +190,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 			} else {
 				if (onOpenShift) await onOpenShift();
 				setIsShiftOpen(true);
-				showToast(`Смена №${shiftNumber + 1} открыта на ККТ`, "success", 3000);
+				showToast(`Смена №${shiftNumber + 1} открыта в кассе`, "success", 3000);
 			}
 		} catch {
 			showToast("Ошибка связи с фискальным регистратором", "error");
@@ -302,7 +302,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						if (onCloseShift) await onCloseShift();
 						setIsShiftOpen(false);
 						setIsZReportModalOpen(false);
-						showToast(`Смена №${shiftNumber} закрыта на ККТ и Z-отчет отправлен в ОФД`, "success");
+						showToast(`Смена №${shiftNumber} закрыта в кассе и отчет отправлен оператору`, "success");
 					}}
 				/>
 
@@ -448,7 +448,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<div className="flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300 font-semibold">
 						<AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
 						<div>
-							<span>В офлайн-очереди накопилось <strong>{pendingOfflineCount} неотправленных чеков</strong> на сумму <strong>{formatMoneyRu(pendingOfflineAmountRub)}</strong> (обрыв связи с ККТ/ОФД).</span>
+							<span>В офлайн-очереди накопилось <strong>{pendingOfflineCount} неотправленных чеков</strong> на сумму <strong>{formatMoneyRu(pendingOfflineAmountRub)}</strong> (обрыв связи с кассой).</span>
 							<div className="text-[11px] text-[var(--muted,#64748b)] font-normal">
 								Все оплаты зафиксированы в программе. Пробейте очередь после восстановления связи.
 							</div>
@@ -675,7 +675,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					if (onCloseShift) await onCloseShift();
 					setIsShiftOpen(false);
 					setIsZReportModalOpen(false);
-					showToast(`Смена №${shiftNumber} закрыта на ККТ и Z-отчет отправлен в ОФД`, "success");
+					showToast(`Смена №${shiftNumber} закрыта в кассе и отчет отправлен оператору`, "success");
 				}}
 			/>
 

@@ -10,7 +10,7 @@
  * - Transaction client tx passed as FIRST argument to ensure single ACID boundary.
  */
 
-import type { CreatePaymentInput } from "@dental/shared";
+import { type CreatePaymentInput, normalizePaymentMethod } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import * as schema from "../schema.js";
 import type { ResolvedPaymentSplit } from "./paymentSplitValidation.js";
@@ -216,9 +216,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 
 	const effectiveMethod = (input.method === "split" || input.method === "mixed")
 		? (resolvedDmsKop > 0 ? "insurance" : resolvedCashKop > 0 ? "cash" : resolvedDepositKop > 0 ? "family_wallet" : "card")
-		: ((input.method as string) === "deposit" || (input.method as string) === "family_deposit")
-		? "family_wallet"
-		: input.method;
+		: normalizePaymentMethod(input.method as string);
 
 	if (effectiveMethod === "family_wallet") {
 		const singleDepositKop = Math.round(input.amountRub * 100);

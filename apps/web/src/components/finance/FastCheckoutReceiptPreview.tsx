@@ -152,7 +152,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 							title="Принять оплату через автономный терминал (чек ставится в очередь отложенной печати)"
 						>
 							<Check className="w-4 h-4" />
-							<span>Оплата через автономный терминал (без ККТ)</span>
+							<span>Оплата через автономный терминал</span>
 						</button>
 						<button
 							type="button"
@@ -187,7 +187,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						<WifiOff size={16} className="shrink-0" />
 						<span>
 							<strong>Офлайн-буфер чеков:</strong> {pendingOfflineCount} чеков ожидают
-							отправки на ККТ при восстановлении связи.
+							отправки в кассу при восстановлении связи.
 						</span>
 					</div>
 					<button
@@ -197,7 +197,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						title={
 							isFlushingQueue
 								? "Выполняется синхронизация очереди с ОФД..."
-								: "Отправить чеки из очереди на ККТ"
+								: "Отправить чеки из очереди в кассу"
 						}
 						className="min-h-[44px] px-3.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
 					>
@@ -347,7 +347,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 										disabled={isFlushingQueue}
 										title={
 											isFlushingQueue
-												? "Отправка на ККТ..."
+												? "Отправка в кассу..."
 												: "Повторно отправить чек на фискализацию без изменения баланса"
 										}
 										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1.5 cursor-pointer"
@@ -380,8 +380,8 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-						<span className="truncate sm:hidden">Автономный терминал (без ККТ)</span>
-						<span className="truncate hidden sm:inline">Оплата через автономный терминал (без ККТ)</span>
+						<span className="truncate sm:hidden">Автономный терминал</span>
+						<span className="truncate hidden sm:inline">Оплата через автономный терминал</span>
 					</button>
 					<button
 						type="button"

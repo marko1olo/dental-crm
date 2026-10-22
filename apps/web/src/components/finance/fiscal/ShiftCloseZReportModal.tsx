@@ -249,7 +249,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									</span>
 								</h2>
 								<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 truncate">
-									Кассир: <strong className="text-[var(--ink)]">{cashierFullName}</strong> • ККТ: {kktRegNumber}
+									Кассир: <strong className="text-[var(--ink)]">{cashierFullName}</strong> • Касса: {kktRegNumber}
 								</p>
 							</div>
 						</div>

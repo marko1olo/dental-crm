@@ -68,7 +68,7 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			title: "Оплата зафиксирована в CRM, чек поставлен в очередь отложенной фискализации",
 		},
 		offline_buffered: {
-			labelRu: "Офлайн-буфер ККТ",
+			labelRu: "Офлайн-буфер кассы",
 			bgClass: "bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30",
 			icon: Layers,
 			title: "Чек сохранён в локальном буфере кассы при отсутствии интернета",
@@ -86,7 +86,7 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			title: "Фискальный чек коррекции по предписанию ФНС или самостоятельно",
 		},
 		error: {
-			labelRu: "Ошибка ККТ",
+			labelRu: "Ошибка кассы",
 			bgClass: "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30",
 			icon: AlertTriangle,
 			title: "Ошибка связи с кассовым аппаратом или исчерпан ресурс ФН",

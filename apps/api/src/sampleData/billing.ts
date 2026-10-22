@@ -8,13 +8,14 @@ import { normalizeDateOnlyInput } from "./organizations.js";
 import { recordAuditEvent } from "./audit.js";
 
 
-import type {
-	BillingSummary,
-	CreatePaymentInput,
-	Payment,
-	TreatmentPlanItem,
-	UiPreferences,
-	Visit,
+import {
+	type BillingSummary,
+	type CreatePaymentInput,
+	type Payment,
+	type TreatmentPlanItem,
+	type UiPreferences,
+	type Visit,
+	normalizePaymentMethod,
 } from "@dental/shared";
 import type { DomainState } from "./types.js";
 import {
@@ -318,7 +319,7 @@ function _createPayment(input: CreatePaymentInput): Payment {
 	const effectiveMethod =
 		input.method === "split" || input.method === "mixed"
 			? "card"
-			: input.method;
+			: normalizePaymentMethod(input.method);
 	const payment: Payment = {
 		id: randomUUID(),
 		organizationId,

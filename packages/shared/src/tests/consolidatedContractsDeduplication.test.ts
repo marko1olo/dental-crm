@@ -76,8 +76,11 @@ describe("Consolidated Contracts & Schemas Deduplication Inquest", () => {
 			assert.throws(() => birthDateInputSchema.parse("2099-01-01"));
 		});
 
-		it("validates patientPhoneInputSchema digit check", () => {
-			assert.strictEqual(patientPhoneInputSchema.parse("+7 (999) 123-45-67"), "+7 (999) 123-45-67");
+		it("validates patientPhoneInputSchema digit check and E.164 normalization", () => {
+			assert.strictEqual(patientPhoneInputSchema.parse("+7 (999) 123-45-67"), "+79991234567");
+			assert.strictEqual(patientPhoneInputSchema.parse("89991234567"), "+79991234567");
+			// Preserves short or local phones safely
+			assert.strictEqual(patientPhoneInputSchema.parse("12345"), "12345");
 			// Rejects fewer than 5 digits
 			assert.throws(() => patientPhoneInputSchema.parse("123"));
 		});

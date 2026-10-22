@@ -191,7 +191,11 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     );
 
     assert.ok(html.includes('data-testid="billing-1c-export-modal"'));
-    assert.ok(html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ') || html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ'));
+    assert.ok(
+      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и кассовые чеки') ||
+      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ') ||
+      html.includes('1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 & 54-ФЗ')
+    );
     assert.ok(html.includes('CommerceML 2.09'));
     assert.ok(html.includes('Кассовый чек'));
     assert.ok(html.includes('Смирнова Екатерина Васильевна'));

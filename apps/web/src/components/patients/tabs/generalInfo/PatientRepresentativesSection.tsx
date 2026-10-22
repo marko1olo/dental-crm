@@ -66,7 +66,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							</div>
 							<div>
 								<h3 className="text-sm font-black m-0 text-[var(--ink)]">
-									Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)
+									Законный представитель / Член семьи
 								</h3>
 								<p className="text-[11px] text-[var(--muted)] m-0">
 									Правовая основа подписания согласий за несовершеннолетних и доступ к семейному счету
@@ -78,7 +78,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 						</span>
 					</div>
 
-					{/* 323-ФЗ Предупреждение для несовершеннолетних (<15 лет) */}
+					{/* Предупреждение для несовершеннолетних (<15 лет) */}
 					{isMinorChild && (
 						<div
 							className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-3 shadow-2xs"
@@ -87,11 +87,11 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 							<div className="flex items-center gap-2">
 								<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 								<span>
-									<strong>Законный представитель (ст. 20 и 54 323-ФЗ):</strong> Пациент младше 15 лет. Информированное добровольное согласие (ИДС) подписывает законный представитель (родитель / опекун).
+									<strong>Законный представитель:</strong> Пациент младше 15 лет. Информированное согласие (ИДС) подписывает законный представитель (родитель / опекун).
 								</span>
 							</div>
 							<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">
-								Обязательно 323-ФЗ
+								Младше 15 лет
 							</span>
 						</div>
 					)}
@@ -335,7 +335,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 					<div className="flex items-center gap-2">
 						<Users className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span className="font-bold text-xs text-[var(--ink)]">
-							Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ):
+							Законный представитель / Член семьи:
 						</span>
 					</div>
 					{patient?.representativeType && (
@@ -345,7 +345,7 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 					)}
 				</div>
 
-				{/* 323-ФЗ Предупреждение для несовершеннолетних (<15 лет) */}
+				{/* Предупреждение для несовершеннолетних (<15 лет) */}
 				{isMinorChild && (
 					<div
 						className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs"
@@ -354,11 +354,11 @@ export const PatientRepresentativesSection: React.FC<PatientRepresentativesSecti
 						<div className="flex items-center gap-2">
 							<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 							<span>
-								<strong>Законный представитель (ст. 20 и 54 323-ФЗ):</strong> Пациент младше 15 лет — обязательно указание законного представителя (родитель/опекун).
+								<strong>Законный представитель:</strong> Пациент младше 15 лет — обязательно указание законного представителя (родитель/опекун).
 							</span>
 						</div>
 						<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">
-							323-ФЗ
+							Младше 15 лет
 						</span>
 					</div>
 				)}

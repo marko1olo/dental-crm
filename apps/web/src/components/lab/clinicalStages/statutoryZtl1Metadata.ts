@@ -8,7 +8,7 @@ export const FORM_ZTL_1_METADATA = {
 	warrantyGostRu: "2 года гарантии (Стандарт клиники / Гарантия лаборатории)",
 } as const;
 
-export function formatPatientName152Fz(fullName?: string | null): {
+export function formatPatientAnonymizedName(fullName?: string | null): {
 	fullName: string;
 	courierMaskedName: string;
 } {
@@ -28,3 +28,8 @@ export function formatPatientName152Fz(fullName?: string | null): {
 	const courierMaskedName = `${surname} ${initials}`.trim();
 	return { fullName: trimmed, courierMaskedName };
 }
+
+/**
+ * @deprecated Use formatPatientAnonymizedName (Mandate 8ap)
+ */
+export const formatPatientName152Fz = formatPatientAnonymizedName;

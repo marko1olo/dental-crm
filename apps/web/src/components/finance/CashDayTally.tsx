@@ -252,8 +252,8 @@ ${zReportData.clinicLegalName}
 ----------------------------------------
 НЕПЕРЕДАННЫХ ФД В ОФД: 0
 РЕСУРС ФН: ${zReportData.fnResourceDaysRemaining} дней
-РН ККТ: ${zReportData.kktRegNumber}
-ЗН ККТ: ${zReportData.kktSerialNumber}
+Рег. номер кассы: ${zReportData.kktRegNumber}
+Заводской номер кассы: ${zReportData.kktSerialNumber}
 ФН: ${zReportData.fnSerial}
 ФПД: ${zReportData.fiscalSign}
 ОФД: ${zReportData.ofdName}
@@ -683,11 +683,11 @@ ${zReportData.clinicLegalName}
 										<span>{zReportData.fnResourceDaysRemaining} дней</span>
 									</div>
 									<div className="flex justify-between">
-										<span>РН ККТ:</span>
+										<span>Рег. номер кассы:</span>
 										<span>{zReportData.kktRegNumber}</span>
 									</div>
 									<div className="flex justify-between">
-										<span>ЗН ККТ:</span>
+										<span>Заводской номер кассы:</span>
 										<span>{zReportData.kktSerialNumber}</span>
 									</div>
 									<div className="flex justify-between">
@@ -728,7 +728,7 @@ ${zReportData.clinicLegalName}
 									className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-sm whitespace-nowrap"
 								>
 									<Printer size={16} />
-									<span>{isPrintingZReport ? "Печать..." : "Печать Z-отчета на ККТ"}</span>
+									<span>{isPrintingZReport ? "Печать..." : "Печать Z-отчета"}</span>
 								</button>
 							</div>
 

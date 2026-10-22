@@ -172,8 +172,8 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 		assert.ok(html.includes("Инфильтрационная анестезия"));
 		assert.ok(html.includes("Фиксация коффердама"));
 		assert.ok(html.includes("ИТОГО К ОПЛАТЕ:"));
-		// 54-FZ Fiscal check
-		assert.ok(html.includes("СПРАВКА О ФИСКАЛЬНОМ РАСЧЕТЕ ПО 54-ФЗ:"));
+		// Fiscal check
+		assert.ok(html.includes("СПРАВКА О РАСЧЕТЕ И ОПЛАТЕ:"));
 		assert.ok(html.includes("9876543210"));
 		assert.ok(html.includes("Банковская карта (POS)"));
 		// Consumer satisfaction note
@@ -221,7 +221,7 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 			/>
 		);
 		assert.ok(html.includes("Акт сдачи-приемки оказанных медицинских услуг №"));
-		assert.ok(html.includes("СПРАВКА О ФИСКАЛЬНОМ РАСЧЕТЕ ПО 54-ФЗ:"));
+		assert.ok(html.includes("СПРАВКА О РАСЧЕТЕ И ОПЛАТЕ:"));
 	});
 
 	it("renders initialDocType correctly when initialized with treatment_estimate", () => {

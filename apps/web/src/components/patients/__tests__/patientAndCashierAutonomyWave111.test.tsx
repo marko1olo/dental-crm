@@ -64,7 +64,7 @@ test("Wave 111 — PatientGeneralInfoTab renders statutory legal representative 
 
 	assert.ok(
 		markup.includes(
-			"Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)",
+			"Законный представитель / Член семьи",
 		),
 		"Must render statutory legal representative section",
 	);

@@ -8,4 +8,5 @@
  * `apps/web/src/utils/demoModeEngine.ts`.
  */
 
+export * from "../utils/demoModeModules/predicates.js";
 export * from "../utils/demoModeEngine.js";

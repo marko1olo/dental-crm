@@ -365,7 +365,7 @@ export const FiscalReceiptTapeViewer: React.FC<FiscalReceiptTapeViewerProps> = (
 						className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
 					>
 						<Printer size={16} />
-						<span>{printButtonLabel || `Печать на ККТ (${tapeWidth})`}</span>
+						<span>{printButtonLabel || `Печать на кассе (${tapeWidth})`}</span>
 					</button>
 				</div>
 			</div>

@@ -23,6 +23,7 @@ import {
 } from "../datetime/index.js";
 import { documentKindSchema } from "../documents/documentKind.js";
 import { moneyRubSchema, nonNegativeMoneyRubSchema } from "../money.js";
+import { normalizePhone } from "../telephony/index.js";
 
 // ─── 1. STATUS & GENDER ──────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ export const patientPhoneInputSchema = z
 		message:
 			"Телефон пациента должен содержать не меньше 5 цифр или быть пустым.",
 	})
+	.transform((value) => (value ? (normalizePhone(value) ?? value) : value))
 	.nullable()
 	.optional();
 
