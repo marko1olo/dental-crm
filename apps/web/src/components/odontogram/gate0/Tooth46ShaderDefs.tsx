@@ -90,9 +90,10 @@ export const Tooth46ShaderDefs: React.FC = () => {
 
 			{/* Triangular Ridge Directional Specular Sheen */}
 			<linearGradient id="dente-ridge-highlight" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-				<stop offset="50%" stopColor="#f8fafc" stopOpacity="0.60" />
-				<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.10" />
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.90" />
+				<stop offset="40%" stopColor="#f8fafc" stopOpacity="0.55" />
+				<stop offset="75%" stopColor="#cbd5e1" stopOpacity="0.15" />
+				<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Modular Domain Shaders */}

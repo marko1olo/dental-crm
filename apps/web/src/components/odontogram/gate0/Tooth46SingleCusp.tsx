@@ -37,7 +37,7 @@ export const Tooth46SingleCusp: React.FC<Tooth46SingleCuspProps> = ({
 					d={c.buccalRidgePath}
 					fill="none"
 					stroke="url(#dente-ridge-highlight)"
-					strokeWidth="0.75"
+					strokeWidth="0.4"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>
