@@ -40,6 +40,9 @@ export const DeductionModalContextBar: React.FC<DeductionModalContextBarProps> =
 				>
 					<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 					<div className="min-w-0">
+						<span className="inline-flex items-center px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-900 dark:text-amber-100 font-bold uppercase tracking-wider text-[9px] mr-1.5">
+							Требуется закупка
+						</span>
 						<span className="font-semibold">Ожидается поставка (мягкий овердрафт): {overdraftCount} поз.</span>{" "}
 						<span className="text-[11px] opacity-90">
 							Списание разрешено. Нулевой остаток не блокирует приём пациента.

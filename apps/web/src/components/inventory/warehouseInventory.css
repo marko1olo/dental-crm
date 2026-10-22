@@ -366,11 +366,6 @@
 	background: transparent;
 	text-align: center;
 	font-size: 0.95rem;
-	color: var(--ink, #0f172a);
-}
-	background: transparent;
-	text-align: center;
-	font-size: 0.875rem;
 	font-weight: 700;
 	color: var(--ink, #0f172a);
 	outline: none;

@@ -67,11 +67,12 @@ export const MdlpDisposalQueueFooter: React.FC<
 					{isDisposing ? (
 						<>
 							<RefreshCw size={16} className="animate-spin" />{" "}
-							Формирование Схемы 10560...
+							Списание препаратов...
 						</>
 					) : (
 						<>
-							<Check size={18} /> Списать по Схеме 10560 МДЛП
+							<Check size={18} /> <span>Списать маркированные препараты</span>
+							<span className="sr-only">Списать по Схеме 10560 МДЛП</span>
 						</>
 					)}
 				</button>

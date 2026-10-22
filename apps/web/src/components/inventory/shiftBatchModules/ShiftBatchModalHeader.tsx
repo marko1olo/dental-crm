@@ -84,7 +84,7 @@ export const ShiftBatchModalHeader: React.FC<ShiftBatchModalHeaderProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					disabled={isBlocked}
+					disabled={false}
 					className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer shrink-0 disabled:opacity-50"
 					aria-label="Закрыть"
 				>

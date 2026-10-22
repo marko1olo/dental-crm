@@ -2,6 +2,9 @@ import React from "react";
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryStockAdjustModal } from "../InventoryStockAdjustModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
+import { InboundWaybillModal } from "../InboundWaybillModal.js";
+import { WarehouseBatchWriteoffModal } from "../WarehouseBatchWriteoffModal.js";
+import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
 import { ShiftBatchDeductionModal } from "../ShiftBatchDeductionModal.js";
 import { ConsumablesDeductionModal } from "../ConsumablesDeductionModal.js";
@@ -38,8 +41,16 @@ export interface InventoryViewModalsContainerProps {
 	readonly fetchItems: () => Promise<void> | void;
 	readonly getHeaders: (h?: Record<string, string>) => Record<string, string>;
 	readonly handleQuickWriteoffCarpules: () => Promise<any> | void;
+	readonly isInboundWaybillOpen?: boolean;
+	readonly setIsInboundWaybillOpen?: (b: boolean) => void;
+	readonly isBatchWriteoffOpen?: boolean;
+	readonly setIsBatchWriteoffOpen?: (b: boolean) => void;
 }
 
+/**
+ * Контейнер модальных окон склада (Мандаты 8e, 8n, 8am, 8x).
+ * 3 Канонических SSOT: InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal.
+ */
 export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainerProps> = (props) => {
 	const {
 		organizationId, items, showModal, setShowModal, editingItem, formData, setFormData,
@@ -47,17 +58,52 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 		adjustAmount, setAdjustAmount, handleAdjustStock, isAdjustingStock, confirmDialog, setConfirmDialog,
 		auditInitialDoc, externalModalsProps, isShiftDeductionOpen, setIsShiftDeductionOpen,
 		isConsumablesDeductionOpen, setIsConsumablesDeductionOpen, stockMap, fetchItems, getHeaders,
-		handleQuickWriteoffCarpules,
+		handleQuickWriteoffCarpules, isInboundWaybillOpen, setIsInboundWaybillOpen,
+		isBatchWriteoffOpen, setIsBatchWriteoffOpen,
 	} = props;
+
+	const isWaybillOpen = Boolean(
+		isInboundWaybillOpen ||
+		externalModalsProps?.isInboundWaybillOpen ||
+		externalModalsProps?.isInboundInvoiceModalOpen ||
+		externalModalsProps?.isAcceptanceWaybillsOpen,
+	);
+
+	const handleCloseWaybill = () => {
+		if (setIsInboundWaybillOpen) setIsInboundWaybillOpen(false);
+		if (externalModalsProps?.onCloseInboundInvoiceModal) externalModalsProps.onCloseInboundInvoiceModal();
+		if (externalModalsProps?.onCloseAcceptanceWaybills) externalModalsProps.onCloseAcceptanceWaybills();
+	};
+
+	const isBatchOpen = Boolean(
+		isBatchWriteoffOpen ||
+		isShiftDeductionOpen ||
+		isConsumablesDeductionOpen ||
+		externalModalsProps?.isBatchWriteoffOpen ||
+		externalModalsProps?.isClinicalWriteoffOpen ||
+		externalModalsProps?.isProcedureDeductionOpen ||
+		externalModalsProps?.isWarehouseManagerOpen,
+	);
+
+	const handleCloseBatchWriteoff = () => {
+		if (setIsBatchWriteoffOpen) setIsBatchWriteoffOpen(false);
+		setIsShiftDeductionOpen(false);
+		setIsConsumablesDeductionOpen(false);
+		if (externalModalsProps?.onCloseClinicalWriteoff) externalModalsProps.onCloseClinicalWriteoff();
+		if (externalModalsProps?.onCloseProcedureDeduction) externalModalsProps.onCloseProcedureDeduction();
+		if (externalModalsProps?.onCloseWarehouseManager) externalModalsProps.onCloseWarehouseManager();
+	};
 
 	return (
 		<>
+			{/* CRUD номенклатуры */}
 			<InventoryItemFormModal
 				isOpen={showModal} onClose={() => setShowModal(false)}
 				editingItem={editingItem} formData={formData} setFormData={setFormData}
 				onSubmit={handleSaveItem} isSaving={isSavingItem}
 			/>
 
+			{/* Корректировка остатка */}
 			<InventoryStockAdjustModal
 				adjustingItem={adjustingItem} onClose={() => setAdjustingItem(null)}
 				adjustType={adjustType} setAdjustType={setAdjustType}
@@ -72,22 +118,59 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 				/>
 			)}
 
+			{/* 1. SSOT: Приходная накладная */}
+			{isWaybillOpen && (
+				<InboundWaybillModal
+					isOpen={isWaybillOpen}
+					onClose={handleCloseWaybill}
+					organizationId={organizationId}
+					inventoryItems={items}
+					onWaybillPosted={fetchItems}
+					onInvoicePosted={fetchItems}
+					getHeaders={getHeaders}
+				/>
+			)}
+
+			{/* 2. SSOT: Пакетное списание расходников за смену/визит */}
+			{isBatchOpen && (
+				<WarehouseBatchWriteoffModal
+					isOpen={isBatchOpen}
+					onClose={handleCloseBatchWriteoff}
+					organizationId={organizationId}
+					currentStockMap={stockMap}
+					warehouseItems={items}
+					onDeductionComplete={fetchItems}
+					procedureTitle={isConsumablesDeductionOpen ? "Препарирование и пломба светового отверждения (Filtek / Estelite)" : undefined}
+					serviceCode={isConsumablesDeductionOpen ? "A16.07.002.011" : undefined}
+				/>
+			)}
+
+			{/* 3. SSOT: Инвентаризация остатков склада */}
+			{externalModalsProps?.isInventoryAuditOpen && (
+				<WarehouseInventoryAuditModal
+					isOpen={externalModalsProps.isInventoryAuditOpen}
+					onClose={externalModalsProps.onCloseInventoryAudit}
+					initialDocument={auditInitialDoc}
+					onApplyAudit={async (doc) => {
+						if (externalModalsProps.onApplyInventoryAudit) {
+							await externalModalsProps.onApplyInventoryAudit(doc);
+						}
+					}}
+					onDocumentSaved={fetchItems}
+				/>
+			)}
+
+			{/* Редкие служебные модалки (перемещение/МДЛП) */}
 			<InventoryExternalModals
 				organizationId={organizationId} items={items} auditInitialDoc={auditInitialDoc}
-				{...externalModalsProps} fetchItems={fetchItems} getHeaders={getHeaders}
+				{...externalModalsProps}
+				isInboundInvoiceModalOpen={false}
+				isAcceptanceWaybillsOpen={false}
+				isClinicalWriteoffOpen={false}
+				isWarehouseManagerOpen={false}
+				isInventoryAuditOpen={false}
+				fetchItems={fetchItems} getHeaders={getHeaders}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
-			/>
-
-			<ShiftBatchDeductionModal
-				isOpen={isShiftDeductionOpen} onClose={() => setIsShiftDeductionOpen(false)}
-				organizationId={organizationId} onDeductionComplete={() => fetchItems()}
-			/>
-
-			<ConsumablesDeductionModal
-				isOpen={isConsumablesDeductionOpen} onClose={() => setIsConsumablesDeductionOpen(false)}
-				procedureTitle="Препарирование и пломба светового отверждения (Filtek / Estelite)"
-				serviceCode="A16.07.002.011" service804nCode="A16.07.002.011"
-				currentStockMap={stockMap} onConfirmDeduction={() => fetchItems()}
 			/>
 		</>
 	);

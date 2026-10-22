@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { money } from "../../../AppHelpers.js";
 import { MobileInventoryGroupedList, type MobileInventoryCategoryType } from "../MobileInventoryGroupedList.js";
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
-import { InventoryExternalModals } from "../InventoryExternalModals.js";
-import { ShiftBatchDeductionModal } from "../ShiftBatchDeductionModal.js";
+import { InboundWaybillModal } from "../InboundWaybillModal.js";
+import { WarehouseBatchWriteoffModal } from "../WarehouseBatchWriteoffModal.js";
+import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
 
@@ -49,58 +50,135 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 		isShiftDeductionOpen, setIsShiftDeductionOpen, onOpenShiftDeduction,
 	} = props;
 
+	const [isMobileWaybillOpen, setIsMobileWaybillOpen] = useState(false);
+	const [isMobileBatchOpen, setIsMobileBatchOpen] = useState(false);
+
+	const isWaybillActive = Boolean(
+		isMobileWaybillOpen ||
+		externalModalsProps?.isInboundWaybillOpen ||
+		externalModalsProps?.isAcceptanceWaybillsOpen ||
+		externalModalsProps?.isInboundInvoiceModalOpen,
+	);
+
+	const isBatchActive = Boolean(
+		isMobileBatchOpen ||
+		isShiftDeductionOpen ||
+		externalModalsProps?.isBatchWriteoffOpen ||
+		externalModalsProps?.isClinicalWriteoffOpen,
+	);
+
+	const handleCloseWaybill = () => {
+		setIsMobileWaybillOpen(false);
+		setIsInboundInvoiceModalOpen(false);
+		setIsAcceptanceWaybillsOpen(false);
+	};
+
+	const handleCloseBatch = () => {
+		setIsMobileBatchOpen(false);
+		if (setIsShiftDeductionOpen) setIsShiftDeductionOpen(false);
+	};
+
 	return (
 		<div className="w-full h-full flex flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
 			<MobileInventoryGroupedList
-				items={items} organizationId={organizationId} searchQuery={searchQuery}
-				onSearchChange={setSearchQuery} onClearSearch={() => setSearchQuery("")}
-				selectedCategory={selectedCategory === "therapy" || selectedCategory === "composite" ? "filling" : (selectedCategory as MobileInventoryCategoryType)}
+				items={items}
+				organizationId={organizationId}
+				searchQuery={searchQuery}
+				onSearchChange={setSearchQuery}
+				onClearSearch={() => setSearchQuery("")}
+				selectedCategory={
+					selectedCategory === "therapy" || selectedCategory === "composite"
+						? "filling"
+						: (selectedCategory as MobileInventoryCategoryType)
+				}
 				onSelectCategory={(cat) => setSelectedCategory(cat === "filling" ? "composite" : cat)}
 				onQuickDeduct={async (item, qty) => {
 					const res = await fetch(`/api/inventory/${organizationId}/${item.id}/stock`, {
-						method: "PATCH", headers: getHeaders({ "Content-Type": "application/json" }),
+						method: "PATCH",
+						headers: getHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({ adjustment: -(qty || 1), allowOverdraft: true }),
 					});
 					if (res.ok) fetchItems();
 				}}
 				onReceiveItem={async (item, qty, lotNumber, expDate) => {
 					const res = await fetch(`/api/inventory/${organizationId}/${item.id}/stock`, {
-						method: "PATCH", headers: getHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({ adjustment: qty || 1, allowOverdraft: true, lotNumber, expirationDate: expDate }),
+						method: "PATCH",
+						headers: getHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							adjustment: qty || 1,
+							allowOverdraft: true,
+							lotNumber,
+							expirationDate: expDate,
+						}),
 					});
 					if (res.ok) fetchItems();
 				}}
-				onSelectItem={(item) => openEditModal(item)} onEditItem={(item) => openEditModal(item)}
-				onOpenAddModal={openAddModal} onOpenInboundInvoice={() => setIsInboundInvoiceModalOpen(true)}
-				onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
-				onOpenShiftDeduction={onOpenShiftDeduction || (() => setIsShiftDeductionOpen?.(true))}
-				onQuickWriteoffCarpules={handleQuickWriteoffCarpules} isWritingOffCarpules={isWritingOffCarpules}
-				onRefresh={() => fetchItems()} money={money}
+				onSelectItem={(item) => openEditModal(item)}
+				onEditItem={(item) => openEditModal(item)}
+				onOpenAddModal={openAddModal}
+				onOpenInboundInvoice={() => setIsMobileWaybillOpen(true)}
+				onOpenWaybills={() => setIsMobileWaybillOpen(true)}
+				onOpenShiftDeduction={onOpenShiftDeduction || (() => setIsMobileBatchOpen(true))}
+				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				isWritingOffCarpules={isWritingOffCarpules}
+				onRefresh={() => fetchItems()}
+				money={money}
 			/>
 
+			{/* Форма товара */}
 			<InventoryItemFormModal
-				isOpen={showModal} onClose={() => setShowModal(false)}
-				editingItem={editingItem} formData={formData} setFormData={setFormData}
-				onSubmit={handleSaveItem} isSaving={isSavingItem}
+				isOpen={showModal}
+				onClose={() => setShowModal(false)}
+				editingItem={editingItem}
+				formData={formData}
+				setFormData={setFormData}
+				onSubmit={handleSaveItem}
+				isSaving={isSavingItem}
 			/>
 
+			{/* Подтверждение удаления */}
 			{confirmDialog?.isOpen && (
 				<InventoryConfirmDialog
-					title={confirmDialog.title} message={confirmDialog.message}
-					onConfirm={confirmDialog.onConfirm} onCancel={() => setConfirmDialog(null)}
+					title={confirmDialog.title}
+					message={confirmDialog.message}
+					onConfirm={confirmDialog.onConfirm}
+					onCancel={() => setConfirmDialog(null)}
 				/>
 			)}
 
-			<InventoryExternalModals
-				organizationId={organizationId} items={items} auditInitialDoc={auditInitialDoc}
-				{...externalModalsProps} fetchItems={fetchItems} getHeaders={getHeaders}
-				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
-			/>
+			{/* 1. SSOT: Приходная накладная */}
+			{isWaybillActive && (
+				<InboundWaybillModal
+					isOpen={isWaybillActive}
+					onClose={handleCloseWaybill}
+					organizationId={organizationId}
+					inventoryItems={items}
+					onWaybillPosted={fetchItems}
+					onInvoicePosted={fetchItems}
+					getHeaders={getHeaders}
+				/>
+			)}
 
-			<ShiftBatchDeductionModal
-				isOpen={Boolean(isShiftDeductionOpen)} onClose={() => setIsShiftDeductionOpen?.(false)}
-				organizationId={organizationId} onDeductionComplete={() => fetchItems()}
-			/>
+			{/* 2. SSOT: Пакетное списание смены */}
+			{isBatchActive && (
+				<WarehouseBatchWriteoffModal
+					isOpen={isBatchActive}
+					onClose={handleCloseBatch}
+					organizationId={organizationId}
+					warehouseItems={items}
+					onDeductionComplete={fetchItems}
+				/>
+			)}
+
+			{/* 3. SSOT: Инвентаризация остатков */}
+			{externalModalsProps?.isInventoryAuditOpen && (
+				<WarehouseInventoryAuditModal
+					isOpen={externalModalsProps.isInventoryAuditOpen}
+					onClose={externalModalsProps.onCloseInventoryAudit}
+					initialDocument={auditInitialDoc}
+					onDocumentSaved={fetchItems}
+				/>
+			)}
 		</div>
 	);
 };

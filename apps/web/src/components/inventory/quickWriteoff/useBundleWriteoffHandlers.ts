@@ -30,7 +30,7 @@ export function useBundleWriteoffHandlers(
 			if (res.ok) {
 				const data = await res.json();
 				const hasWarn = (Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft;
-				showToast(hasWarn ? "Расход смены списан с дефицитом" : `Расход смены успешно списан`, hasWarn ? "warning" : "success");
+				showToast(hasWarn ? "Требуется закупка: расход смены списан с мягким овердрафтом" : `Расход смены успешно списан`, hasWarn ? "warning" : "success");
 				fetchItems();
 			} else showToast(`Ошибка списания смены`, "error");
 		} catch (e) { logger.error(e); showToast("Ошибка расхода смены", "error"); }
@@ -49,7 +49,7 @@ export function useBundleWriteoffHandlers(
 			if (res.ok) {
 				const data = await res.json();
 				const hasWarn = (Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft;
-				showToast(hasWarn ? "Набор визита списан в минус" : `Набор визита успешно списан`, hasWarn ? "warning" : "success");
+				showToast(hasWarn ? "Требуется закупка: набор визита списан с мягким овердрафтом" : `Набор визита успешно списан`, hasWarn ? "warning" : "success");
 				fetchItems();
 			} else showToast(`Ошибка списания набора визита`, "error");
 		} catch (e) { logger.error(e); showToast("Ошибка списания визита", "error"); }

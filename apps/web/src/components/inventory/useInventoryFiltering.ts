@@ -1,7 +1,6 @@
 import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
 import React, { useMemo, useState } from "react";
 import type { InventoryItem } from "./inventoryDataMappers.js";
-import { useBarcodeScannerListener } from "./useBarcodeScannerListener.js";
 
 export interface UseInventoryFilteringParams {
 	readonly items: InventoryItem[];
@@ -25,29 +24,10 @@ export interface UseInventoryFilteringParams {
 
 export function useInventoryFiltering({
 	items,
-	showModal,
-	adjustingItem,
-	confirmDialogOpen,
-	setFormData,
-	setEditingItem,
-	setShowModal,
 }: UseInventoryFilteringParams) {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [scannedBarcode, setScannedBarcode] = useState<string>("");
+	const [scannedBarcode] = useState<string>("");
 	const [isScannerActive, setIsScannerActive] = useState(false);
-
-	useBarcodeScannerListener({
-		items,
-		showModal,
-		adjustingItem,
-		confirmDialogOpen,
-		setFormData,
-		setEditingItem,
-		setShowModal,
-		setScannedBarcode,
-		setIsScannerActive,
-		setSearchQuery,
-	});
 
 	const filteredItems = useMemo(() => {
 		if (!searchQuery.trim()) return items;

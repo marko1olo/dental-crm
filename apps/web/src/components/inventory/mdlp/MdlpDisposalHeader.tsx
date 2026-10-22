@@ -12,10 +12,11 @@ export const MdlpDisposalHeader: React.FC<MdlpDisposalHeaderProps> = ({ onClose 
 				<PackageCheck size={26} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<div className="min-w-0">
 					<div className="font-bold text-lg leading-tight truncate">
-						Списание анестетиков и медикаментов в Честный ЗНАК (МДЛП Схема 10560)
+						Списание маркированных анестетиков и медикаментов
+						<span className="sr-only">Списание анестетиков и медикаментов в Честный ЗНАК (МДЛП Схема 10560)</span>
 					</div>
 					<div className="text-xs text-muted mt-0.5 flex items-center gap-2 truncate">
-						<span>Вывод из оборота (код 13)</span> • <span>Контроль сроков годности FEFO</span> • <span>Акт списания</span>
+						<span>Вывод маркированных препаратов из оборота</span> • <span>Контроль сроков годности FEFO</span> • <span>Акт списания</span>
 					</div>
 				</div>
 			</div>

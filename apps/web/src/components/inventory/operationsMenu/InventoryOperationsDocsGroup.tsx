@@ -53,10 +53,10 @@ export const InventoryOperationsDocsGroup: React.FC<InventoryOperationsDocsGroup
 				data-testid="mdlp-scanning-trigger"
 				onClick={() => handleAction(onOpenMdlpScanning)}
 				role="menuitem"
-				title="Сканирование маркировки препаратов (DataMatrix)"
+				title="Учет и списание маркированных медикаментов"
 			>
 				<QrCode size={15} className="text-[var(--primary)] shrink-0" />
-				<span>Маркировка препаратов</span>
+				<span>Маркированные препараты</span>
 			</button>
 
 			<button

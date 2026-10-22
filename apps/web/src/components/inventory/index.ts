@@ -1,4 +1,6 @@
 export * from "./AcceptanceWaybillsModal.js";
+export * from "./InboundWaybillModal.js";
+export * from "./WarehouseBatchWriteoffModal.js";
 export * from "./AutoBomDeductionBanner.js";
 export * from "./AutoBomDeductionBannerActions.js";
 export {

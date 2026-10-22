@@ -37,7 +37,7 @@ export const WarehouseAuditFooter: React.FC<WarehouseAuditFooterProps> = ({
 					</div>
 				) : (
 					<span>
-						МОЛ: <b>{molFullName}</b> ({molPosition}) • {commission.length === 1 ? "Комиссия: Единолично (Соло-врач)" : `Комиссия: ${commission.length} чел.`} • Статус: <b>{status}</b>
+						Ответственный сотрудник: <b>{molFullName}</b> ({molPosition}) • {commission.length === 1 ? "Комиссия: Единолично (Соло-врач)" : `Комиссия: ${commission.length} чел.`} • Статус: <b>{status}</b>
 					</span>
 				)}
 			</div>

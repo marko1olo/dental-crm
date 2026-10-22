@@ -76,10 +76,13 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 
 			{isMdlpScanningOpen && (
 				<Suspense fallback={null}>
-					<MdlpScanningModal
+					<MdlpDisposalQueueModal
 						isOpen={isMdlpScanningOpen}
 						onClose={onCloseMdlpScanning}
-						initialMode="disposal_531"
+						onConfirmDisposal={async () => {
+							onCloseMdlpScanning();
+							fetchItems();
+						}}
 					/>
 				</Suspense>
 			)}

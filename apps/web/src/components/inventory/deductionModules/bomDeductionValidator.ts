@@ -32,6 +32,7 @@ export interface DeductionValidationSummary {
 	readonly hasOverdraft: boolean;
 	readonly overdraftItems: readonly OverdraftItemAlert[];
 	readonly overdraftNotice: string;
+	readonly procurementBadge: string;
 	readonly toastMessage: string;
 	readonly toastType: "success" | "warning";
 	readonly ssotSummary?: DeductionSummaryResult | undefined;
@@ -103,6 +104,7 @@ export function validateDeductionBalances(
 		hasOverdraft,
 		overdraftItems,
 		overdraftNotice,
+		procurementBadge: hasOverdraft ? "Требуется закупка" : "Остаток в норме",
 		toastMessage,
 		toastType,
 		ssotSummary,

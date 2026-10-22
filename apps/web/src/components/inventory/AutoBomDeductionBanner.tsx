@@ -76,7 +76,7 @@ export const AutoBomDeductionBanner: React.FC<AutoBomDeductionBannerProps> = ({
 			</div>
 			{hasOverdraft && (
 				<span
-					className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0"
+					className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0"
 					title="Позиции с нулевым остатком будут списаны с мягким овердрафтом (накладная в пути). Приём не блокируется."
 					data-testid="banner-overdraft-pill"
 				>
@@ -84,6 +84,9 @@ export const AutoBomDeductionBanner: React.FC<AutoBomDeductionBannerProps> = ({
 						size={12}
 						className="text-amber-600 dark:text-amber-400"
 					/>
+					<span className="font-bold uppercase tracking-wider text-[9px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-950 dark:text-amber-100">
+						Требуется закупка
+					</span>
 					<span>Ожидается поставка (мягкий овердрафт: {overdraftCount})</span>
 				</span>
 			)}

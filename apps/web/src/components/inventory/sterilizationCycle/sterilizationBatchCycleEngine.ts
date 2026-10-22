@@ -70,7 +70,7 @@ export function executeSterilizationBatchCycle(
 		passedIndicator: input.indicatorPassed !== false,
 		biologicalTestResult: "not_conducted",
 		status: "passed",
-		barcode: `STERIL-${Date.now().toString().slice(-8)}`,
+		barcode: `BATCH-${Date.now().toString().slice(-6)}`,
 		expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
 		operatorId: null,
 		operatorName: input.operatorName || "Медсестра ЦСО",

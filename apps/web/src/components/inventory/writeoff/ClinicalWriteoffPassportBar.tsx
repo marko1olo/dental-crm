@@ -34,7 +34,7 @@ export const ClinicalWriteoffPassportBar: React.FC<ClinicalWriteoffPassportBarPr
 			</div>
 
 			<div>
-				<span className="text-xs font-semibold text-muted block mb-1">Лечащий врач (МОЛ)</span>
+				<span className="text-xs font-semibold text-muted block mb-1">Лечащий врач</span>
 				<div className="font-bold text-sm text-ink">{doctorFullName}</div>
 				<div className="text-xs text-muted">{doctorSpecialty}</div>
 			</div>

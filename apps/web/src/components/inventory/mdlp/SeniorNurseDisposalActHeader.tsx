@@ -23,7 +23,8 @@ export const SeniorNurseDisposalActHeader: React.FC<SeniorNurseDisposalActHeader
 							: "Акт списания медикаментов и анестетиков"}
 					</div>
 					<div className="text-xs text-muted mt-0.5 truncate">
-						СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) • Позиций: {itemsCount}
+						Санитарные нормы • Учет маркированных препаратов • Позиций: {itemsCount}
+						<span className="sr-only">СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560)</span>
 					</div>
 				</div>
 			</div>

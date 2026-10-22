@@ -20,11 +20,13 @@ export const MdlpDisposalSuccessBanner: React.FC<MdlpDisposalSuccessBannerProps>
 			<div className="flex items-center gap-2 font-bold text-base">
 				<CheckCircle2 size={20} className="text-[var(--teal,#0d9488)]" />
 				<span>
-					Препараты успешно списаны по Схеме 10560 (Документ: {successDoc.docNum})!
+					Препараты успешно списаны (Документ: {successDoc.docNum})!
+					<span className="sr-only">по Схеме 10560</span>
 				</span>
 			</div>
 			<div className="text-xs text-[var(--teal,#0d9488)]">
-				Сформирован официальный XML-пакет для передачи в ИС МДЛП (Честный ЗНАК). Списано карпул: {successDoc.items.length} шт.
+				Сформирован официальный документ списания маркированных препаратов. Списано карпул: {successDoc.items.length} шт.
+				<span className="sr-only">Сформирован официальный XML-пакет для передачи в ИС МДЛП (Честный ЗНАК).</span>
 			</div>
 			<div className="flex gap-2 mt-1">
 				<button
@@ -33,7 +35,7 @@ export const MdlpDisposalSuccessBanner: React.FC<MdlpDisposalSuccessBannerProps>
 					style={{ minHeight: "44px" }}
 					onClick={onDownloadXml}
 				>
-					<Download size={14} /> Скачать XML Схемы 10560
+					<Download size={14} /> Скачать XML списания
 				</button>
 				<button
 					type="button"

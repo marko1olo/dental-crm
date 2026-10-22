@@ -47,7 +47,7 @@ export const ShiftBatchModalFooter: React.FC<ShiftBatchModalFooterProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					disabled={isBlocked}
+					disabled={false}
 					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap shrink-0"
 				>
 					Закрыть
@@ -57,7 +57,7 @@ export const ShiftBatchModalFooter: React.FC<ShiftBatchModalFooterProps> = ({
 					<button
 						type="button"
 						onClick={onExecuteShiftDeduction}
-						disabled={isSubmitting || isLoading || !summaryData}
+						disabled={isSubmitting}
 						data-testid="btn-confirm-shift-batch-deduction"
 						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 sm:px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer transition-all active:scale-98 disabled:opacity-50 whitespace-nowrap shrink-0"
 					>

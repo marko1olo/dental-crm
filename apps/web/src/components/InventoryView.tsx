@@ -12,8 +12,12 @@ import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryView
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
 import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/SterilizationBatchCycleModal.js";
+import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
+import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
+import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
+export { InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal };
 export * from "./InventoryStockTable.js";
 export * from "./InventoryBatchFefoPanel.js";
 export * from "./InventoryInboundInvoiceModal.js";
@@ -39,14 +43,18 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 		handleSaveItem, handleDeleteItem, handleAdjustStock, filteredItems, totalValue, lowStockCount,
 		totalItems, getHeaders } = inv;
 
-	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false), [isProcedureDeductionOpen, setIsProcedureDeductionOpen] = useState(false);
-	const [isDeductingMaterials, setIsDeductingMaterials] = useState(false), [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
-	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false), [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
-	const [isWarehouseManagerOpen, setIsWarehouseManagerOpen] = useState(false), [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
-	const [isNurseCarpuleModalOpen, setIsNurseCarpuleModalOpen] = useState(false), [isAcceptanceWaybillsOpen, setIsAcceptanceWaybillsOpen] = useState(false);
-	const [isInboundInvoiceModalOpen, setIsInboundInvoiceModalOpen] = useState(false), [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
-	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false), [isShiftDeductionOpen, setIsShiftDeductionOpen] = useState(false);
-	const [isConsumablesDeductionOpen, setIsConsumablesDeductionOpen] = useState(false), [isSterilizationCycleOpen, setIsSterilizationCycleOpen] = useState(false), [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
+	// 3 Канонических SSOT стейта модалок (Мандаты 8e, 8n, 8am, 8x)
+	const [isInboundWaybillOpen, setIsInboundWaybillOpen] = useState(false);
+	const [isBatchWriteoffOpen, setIsBatchWriteoffOpen] = useState(false);
+	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
+
+	// Вспомогательные переключатели
+	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
+	const [isSterilizationCycleOpen, setIsSterilizationCycleOpen] = useState(false);
+	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
+	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
+	const [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
+
 	const { auditInitialDoc, handleApplyInventoryAudit } = useInventoryViewAudit(organizationId, items, getHeaders, fetchItems);
 	const { selectedCategory, setSelectedCategory, setDisplayLimit, inventorySlice } = useInventoryViewCategories(filteredItems, searchQuery, activeSubTab);
 	const isMobile = useIsMobile(768);
@@ -58,29 +66,110 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 	}, [items]);
 
 	const extModalProps = {
-		isClinicalWriteoffOpen, onCloseClinicalWriteoff: () => setIsClinicalWriteoffOpen(false),
-		isProcedureDeductionOpen, onCloseProcedureDeduction: () => setIsProcedureDeductionOpen(false),
-		isWarehouseTransferOpen, onCloseWarehouseTransfer: () => setIsWarehouseTransferOpen(false),
-		isInventoryAuditOpen, onCloseInventoryAudit: () => setIsInventoryAuditOpen(false), onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
-		isMdlpDisposalOpen, onCloseMdlpDisposal: () => setIsMdlpDisposalOpen(false),
-		isWarehouseManagerOpen, onCloseWarehouseManager: () => setIsWarehouseManagerOpen(false),
-		isMdlpScanningOpen, onCloseMdlpScanning: () => setIsMdlpScanningOpen(false),
-		isNurseCarpuleModalOpen, onCloseNurseCarpuleModal: () => setIsNurseCarpuleModalOpen(false),
-		isAcceptanceWaybillsOpen, onCloseAcceptanceWaybills: () => setIsAcceptanceWaybillsOpen(false),
-		isInboundInvoiceModalOpen, onCloseInboundInvoiceModal: () => setIsInboundInvoiceModalOpen(false),
-		isDeductingMaterials, setIsDeductingMaterials,
+		isInboundWaybillOpen,
+		onCloseInboundWaybill: () => setIsInboundWaybillOpen(false),
+		isAcceptanceWaybillsOpen: isInboundWaybillOpen,
+		onCloseAcceptanceWaybills: () => setIsInboundWaybillOpen(false),
+		isInboundInvoiceModalOpen: isInboundWaybillOpen,
+		onCloseInboundInvoiceModal: () => setIsInboundWaybillOpen(false),
+		isBatchWriteoffOpen,
+		onCloseBatchWriteoff: () => setIsBatchWriteoffOpen(false),
+		isClinicalWriteoffOpen: isBatchWriteoffOpen,
+		onCloseClinicalWriteoff: () => setIsBatchWriteoffOpen(false),
+		isProcedureDeductionOpen: false,
+		onCloseProcedureDeduction: () => setIsBatchWriteoffOpen(false),
+		isWarehouseManagerOpen: false,
+		onCloseWarehouseManager: () => setIsBatchWriteoffOpen(false),
+		isWarehouseTransferOpen,
+		onCloseWarehouseTransfer: () => setIsWarehouseTransferOpen(false),
+		isInventoryAuditOpen,
+		onCloseInventoryAudit: () => setIsInventoryAuditOpen(false),
+		onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
+		isMdlpDisposalOpen: false,
+		onCloseMdlpDisposal: () => {},
+		isMdlpScanningOpen: false,
+		onCloseMdlpScanning: () => {},
+		isDeductingMaterials: false,
+		setIsDeductingMaterials: () => {},
 	};
 
 	if (isLoading && items.length === 0) {
 		return <div className="flex items-center justify-center h-full text-[var(--muted)] gap-3"><Package size={20} /><span>Загрузка склада...</span></div>;
 	}
 	if (isMobile) {
-		return <InventoryViewMobileLayout items={items} organizationId={organizationId} searchQuery={searchQuery} setSearchQuery={setSearchQuery} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} openEditModal={openEditModal} openAddModal={openAddModal} setIsInboundInvoiceModalOpen={setIsInboundInvoiceModalOpen} setIsAcceptanceWaybillsOpen={setIsAcceptanceWaybillsOpen} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} isWritingOffCarpules={isWritingOffCarpules} fetchItems={fetchItems} getHeaders={getHeaders} showModal={showModal} setShowModal={setShowModal} editingItem={editingItem} formData={formData} setFormData={setFormData} handleSaveItem={handleSaveItem} isSavingItem={isSavingItem} confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} externalModalsProps={extModalProps} auditInitialDoc={auditInitialDoc} isShiftDeductionOpen={isShiftDeductionOpen} setIsShiftDeductionOpen={setIsShiftDeductionOpen} onOpenShiftDeduction={() => setIsShiftDeductionOpen(true)} />;
+		return (
+			<InventoryViewMobileLayout
+				items={items}
+				organizationId={organizationId}
+				searchQuery={searchQuery}
+				setSearchQuery={setSearchQuery}
+				selectedCategory={selectedCategory}
+				setSelectedCategory={setSelectedCategory}
+				openEditModal={openEditModal}
+				openAddModal={openAddModal}
+				setIsInboundInvoiceModalOpen={setIsInboundWaybillOpen}
+				setIsAcceptanceWaybillsOpen={setIsInboundWaybillOpen}
+				handleQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				isWritingOffCarpules={isWritingOffCarpules}
+				fetchItems={fetchItems}
+				getHeaders={getHeaders}
+				showModal={showModal}
+				setShowModal={setShowModal}
+				editingItem={editingItem}
+				formData={formData}
+				setFormData={setFormData}
+				handleSaveItem={handleSaveItem}
+				isSavingItem={isSavingItem}
+				confirmDialog={confirmDialog}
+				setConfirmDialog={setConfirmDialog}
+				externalModalsProps={extModalProps}
+				auditInitialDoc={auditInitialDoc}
+				isShiftDeductionOpen={isBatchWriteoffOpen}
+				setIsShiftDeductionOpen={setIsBatchWriteoffOpen}
+				onOpenShiftDeduction={() => setIsBatchWriteoffOpen(true)}
+			/>
+		);
 	}
 
 	return (
 		<div className="w-full h-full flex flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
-			<InventoryTopToolbar activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} stockViewMode={stockViewMode} setStockViewMode={setStockViewMode} itemsCount={items.length} rulesCount={rulesList.length} totalItems={totalItems} lowStockCount={lowStockCount} totalValue={totalValue} searchQuery={searchQuery} setSearchQuery={setSearchQuery} isQuickPackagesOpen={isQuickPackagesOpen} setIsQuickPackagesOpen={setIsQuickPackagesOpen} isWritingOffCarpules={isWritingOffCarpules} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} isOpsMenuOpen={isOpsMenuOpen} setIsOpsMenuOpen={setIsOpsMenuOpen} setIsAcceptanceWaybillsOpen={setIsAcceptanceWaybillsOpen} setIsWarehouseManagerOpen={setIsWarehouseManagerOpen} setIsMdlpScanningOpen={setIsMdlpScanningOpen} setIsClinicalWriteoffOpen={setIsClinicalWriteoffOpen} setIsProcedureDeductionOpen={setIsProcedureDeductionOpen} setIsWarehouseTransferOpen={setIsWarehouseTransferOpen} setIsInventoryAuditOpen={setIsInventoryAuditOpen} setIsMdlpDisposalOpen={setIsMdlpDisposalOpen} setIsNurseCarpuleModalOpen={setIsNurseCarpuleModalOpen} onOpenShiftDeductionModal={() => setIsShiftDeductionOpen(true)} onOpenSterilizationCycleModal={() => setIsSterilizationCycleOpen(true)} onOpenProtocolDeduction={() => setIsConsumablesDeductionOpen(true)} handleQuickWriteoffStandardKit={handleQuickWriteoffStandardKit} handleQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule} handleQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit} handleQuickWriteoffVisitBundle={handleQuickWriteoffVisitBundle} handleQuickWriteoffShiftBundle={handleQuickWriteoffShiftBundle} setIsInboundInvoiceModalOpen={setIsInboundInvoiceModalOpen} openAddModal={openAddModal} />
+			<InventoryTopToolbar
+				activeSubTab={activeSubTab}
+				setActiveSubTab={setActiveSubTab}
+				stockViewMode={stockViewMode}
+				setStockViewMode={setStockViewMode}
+				itemsCount={items.length}
+				rulesCount={rulesList.length}
+				totalItems={totalItems}
+				lowStockCount={lowStockCount}
+				totalValue={totalValue}
+				searchQuery={searchQuery}
+				setSearchQuery={setSearchQuery}
+				isQuickPackagesOpen={isQuickPackagesOpen}
+				setIsQuickPackagesOpen={setIsQuickPackagesOpen}
+				isWritingOffCarpules={isWritingOffCarpules}
+				handleQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				isOpsMenuOpen={isOpsMenuOpen}
+				setIsOpsMenuOpen={setIsOpsMenuOpen}
+				setIsAcceptanceWaybillsOpen={() => setIsInboundWaybillOpen(true)}
+				setIsWarehouseManagerOpen={() => setIsBatchWriteoffOpen(true)}
+				setIsMdlpScanningOpen={() => {}}
+				setIsClinicalWriteoffOpen={() => setIsBatchWriteoffOpen(true)}
+				setIsProcedureDeductionOpen={() => setIsBatchWriteoffOpen(true)}
+				setIsWarehouseTransferOpen={setIsWarehouseTransferOpen}
+				setIsInventoryAuditOpen={setIsInventoryAuditOpen}
+				setIsMdlpDisposalOpen={() => {}}
+				onOpenShiftDeductionModal={() => setIsBatchWriteoffOpen(true)}
+				onOpenSterilizationCycleModal={() => setIsSterilizationCycleOpen(true)}
+				onOpenProtocolDeduction={() => setIsBatchWriteoffOpen(true)}
+				handleQuickWriteoffStandardKit={handleQuickWriteoffStandardKit}
+				handleQuickWriteoffAnestheticCarpule={handleQuickWriteoffAnestheticCarpule}
+				handleQuickWriteoffSterilizationKit={handleQuickWriteoffSterilizationKit}
+				handleQuickWriteoffVisitBundle={handleQuickWriteoffVisitBundle}
+				handleQuickWriteoffShiftBundle={handleQuickWriteoffShiftBundle}
+				setIsInboundInvoiceModalOpen={() => setIsInboundWaybillOpen(true)}
+				openAddModal={openAddModal}
+			/>
 
 			{activeSubTab === "inventory" && (
 				<div className="dente-filter-chips min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0" role="toolbar" aria-label="Фильтр по категориям материалов" data-testid="inventory-category-filters-row">
@@ -104,11 +193,76 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 			)}
 
 			<div className="p-2 flex-1 flex flex-col min-h-0 overflow-hidden w-full">
-				<InventoryViewContentRouter activeSubTab={activeSubTab} stockViewMode={stockViewMode} organizationId={organizationId} items={items} rulesList={rulesList} isLoading={isLoading} loadError={loadError} searchQuery={searchQuery} inventorySlice={inventorySlice} setDisplayLimit={setDisplayLimit} fetchItems={fetchItems} getHeaders={getHeaders} handleApplyInventoryAudit={handleApplyInventoryAudit} openEditModal={openEditModal} openAddModal={openAddModal} setAdjustingItem={setAdjustingItem} setAdjustType={setAdjustType} setAdjustAmount={setAdjustAmount} handleDeleteItem={handleDeleteItem} setIsAcceptanceWaybillsOpen={setIsAcceptanceWaybillsOpen} setIsWarehouseManagerOpen={setIsWarehouseManagerOpen} setIsInventoryAuditOpen={setIsInventoryAuditOpen} setIsClinicalWriteoffOpen={setIsClinicalWriteoffOpen} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} />
+				<InventoryViewContentRouter
+					activeSubTab={activeSubTab}
+					stockViewMode={stockViewMode}
+					organizationId={organizationId}
+					items={items}
+					rulesList={rulesList}
+					isLoading={isLoading}
+					loadError={loadError}
+					searchQuery={searchQuery}
+					inventorySlice={inventorySlice}
+					setDisplayLimit={setDisplayLimit}
+					fetchItems={fetchItems}
+					getHeaders={getHeaders}
+					handleApplyInventoryAudit={handleApplyInventoryAudit}
+					openEditModal={openEditModal}
+					openAddModal={openAddModal}
+					setAdjustingItem={setAdjustingItem}
+					setAdjustType={setAdjustType}
+					setAdjustAmount={setAdjustAmount}
+					handleDeleteItem={handleDeleteItem}
+					setIsAcceptanceWaybillsOpen={() => setIsInboundWaybillOpen(true)}
+					setIsWarehouseManagerOpen={() => setIsBatchWriteoffOpen(true)}
+					setIsInventoryAuditOpen={setIsInventoryAuditOpen}
+					setIsClinicalWriteoffOpen={() => setIsBatchWriteoffOpen(true)}
+					handleQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				/>
 			</div>
 
-			<InventoryViewModalsContainer organizationId={organizationId} items={items} showModal={showModal} setShowModal={setShowModal} editingItem={editingItem} formData={formData} setFormData={setFormData} handleSaveItem={handleSaveItem} isSavingItem={isSavingItem} adjustingItem={adjustingItem} setAdjustingItem={setAdjustingItem} adjustType={adjustType} setAdjustType={setAdjustType} adjustAmount={adjustAmount} setAdjustAmount={setAdjustAmount} handleAdjustStock={handleAdjustStock} isAdjustingStock={isAdjustingStock} confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} auditInitialDoc={auditInitialDoc} externalModalsProps={extModalProps} isShiftDeductionOpen={isShiftDeductionOpen} setIsShiftDeductionOpen={setIsShiftDeductionOpen} isConsumablesDeductionOpen={isConsumablesDeductionOpen} setIsConsumablesDeductionOpen={setIsConsumablesDeductionOpen} stockMap={stockMap} fetchItems={fetchItems} getHeaders={getHeaders} handleQuickWriteoffCarpules={handleQuickWriteoffCarpules} />
-			<SterilizationBatchCycleModal isOpen={isSterilizationCycleOpen} onClose={() => setIsSterilizationCycleOpen(false)} organizationId={organizationId} onCycleCompleted={() => fetchItems()} />
+			<InventoryViewModalsContainer
+				organizationId={organizationId}
+				items={items}
+				showModal={showModal}
+				setShowModal={setShowModal}
+				editingItem={editingItem}
+				formData={formData}
+				setFormData={setFormData}
+				handleSaveItem={handleSaveItem}
+				isSavingItem={isSavingItem}
+				adjustingItem={adjustingItem}
+				setAdjustingItem={setAdjustingItem}
+				adjustType={adjustType}
+				setAdjustType={setAdjustType}
+				adjustAmount={adjustAmount}
+				setAdjustAmount={setAdjustAmount}
+				handleAdjustStock={handleAdjustStock}
+				isAdjustingStock={isAdjustingStock}
+				confirmDialog={confirmDialog}
+				setConfirmDialog={setConfirmDialog}
+				auditInitialDoc={auditInitialDoc}
+				externalModalsProps={extModalProps}
+				isShiftDeductionOpen={isBatchWriteoffOpen}
+				setIsShiftDeductionOpen={setIsBatchWriteoffOpen}
+				isConsumablesDeductionOpen={false}
+				setIsConsumablesDeductionOpen={() => {}}
+				stockMap={stockMap}
+				fetchItems={fetchItems}
+				getHeaders={getHeaders}
+				handleQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				isInboundWaybillOpen={isInboundWaybillOpen}
+				setIsInboundWaybillOpen={setIsInboundWaybillOpen}
+				isBatchWriteoffOpen={isBatchWriteoffOpen}
+				setIsBatchWriteoffOpen={setIsBatchWriteoffOpen}
+			/>
+
+			<SterilizationBatchCycleModal
+				isOpen={isSterilizationCycleOpen}
+				onClose={() => setIsSterilizationCycleOpen(false)}
+				organizationId={organizationId}
+				onCycleCompleted={() => fetchItems()}
+			/>
 		</div>
 	);
 };

@@ -31,7 +31,7 @@ export const StockRowNameCell: React.FC<StockRowNameCellProps> = ({
 									? "Мягкий учет расхода при нехватке (списание с дефицитом): остаток 0 или ниже"
 									: "Критический остаток"
 							}
-							className="inline-flex shrink-0"
+							className="inline-flex items-center gap-1 shrink-0"
 						>
 							<AlertTriangle
 								size={14}
@@ -41,6 +41,14 @@ export const StockRowNameCell: React.FC<StockRowNameCellProps> = ({
 										: "text-rose-600 dark:text-rose-400 shrink-0"
 								}
 							/>
+							{isOverdraft && (
+								<span
+									className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30"
+									data-testid={`stock-overdraft-procurement-badge-${item.id}`}
+								>
+									Требуется закупка
+								</span>
+							)}
 						</span>
 					)}
 					<div className="min-w-0 flex-1" style={{ flex: "1 1 auto", minWidth: 0 }}>

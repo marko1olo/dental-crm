@@ -45,7 +45,7 @@ export function useInventoryQuickWriteoff({
 			if (res.ok) {
 				const data = await res.json();
 				const hasWarn = (Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft;
-				showToast(hasWarn ? "Внимание: расход сверх остатка (требуется накладная)" : "Базовый набор списан: СИЗ и расходники", hasWarn ? "warning" : "success");
+				showToast(hasWarn ? "Требуется закупка: расход сверх остатка (мягкий овердрафт)" : "Базовый набор списан: СИЗ и расходники", hasWarn ? "warning" : "success");
 				fetchItems();
 			} else showToast("Ошибка списания базового набора", "error");
 		} catch (e) { logger.error(e); showToast("Системная ошибка списания", "error"); }
@@ -65,7 +65,7 @@ export function useInventoryQuickWriteoff({
 			if (res.ok) {
 				const data = await res.json();
 				const hasWarn = (Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft;
-				showToast(hasWarn ? "Списание выполнено с дефицитом (накладная в пути)" : `Пустые карпулы (${options?.carpulesCount ?? 1} шт) списаны`, hasWarn ? "warning" : "success");
+				showToast(hasWarn ? "Требуется закупка: списание выполнено с дефицитом (мягкий овердрафт)" : `Пустые карпулы (${options?.carpulesCount ?? 1} шт) списаны`, hasWarn ? "warning" : "success");
 				fetchItems();
 			} else showToast("Ошибка списания карпул", "error");
 		} catch (e) { logger.error(e); showToast("Системная ошибка списания карпул", "error"); }
@@ -90,7 +90,7 @@ export function useInventoryQuickWriteoff({
 			if (res.ok) {
 				const data = await res.json();
 				const hasWarn = data.isOverdraft || (Array.isArray(data.warnings) && data.warnings.length > 0);
-				showToast(hasWarn ? "Набор стерилизации списан в минус" : "Набор стерилизации успешно списан", hasWarn ? "warning" : "success");
+				showToast(hasWarn ? "Требуется закупка: набор стерилизации списан с мягким овердрафтом" : "Набор стерилизации успешно списан", hasWarn ? "warning" : "success");
 				fetchItems();
 			} else showToast("Ошибка списания набора стерилизации", "error");
 		} catch (e) { logger.error(e); showToast("Системная ошибка стерилизации", "error"); }

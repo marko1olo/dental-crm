@@ -54,12 +54,14 @@ export function useSterilizationBatchCycle({
 	);
 
 	const handleConfirm = async () => {
-		if (submitting || totalPackages <= 0) return;
+		if (submitting) return;
 		try {
 			setSubmitting(true);
+			const effectivePackages = totalPackages > 0 ? packages : [...DEFAULT_STERILIZATION_PACKAGES];
+			const effectiveTotal = effectivePackages.reduce((sum, p) => sum + p.count, 0);
 			const result = executeSterilizationBatchCycle({
 				organizationId,
-				packages,
+				packages: effectivePackages,
 				indicatorPassed,
 				warehouseItems,
 				operatorName,
@@ -74,19 +76,19 @@ export function useSterilizationBatchCycle({
 				allowOverdraft: true,
 			});
 
-			await syncSterilizationApiRecord(result, packages, totalPackages, operatorName);
+			await syncSterilizationApiRecord(result, effectivePackages, effectiveTotal, operatorName);
 
 			void useInventoryStore.getState().fetchItems(organizationId).catch(() => {});
 
 			const hasOverdraft = result.deductions.some((d) => d.isOverdraft);
 			if (hasOverdraft) {
 				showToast(
-					`Цикл зафиксирован: ${totalPackages} лотков/пакетов обработано. Внимание: расходники списаны в дефицит (требуется оприходование).`,
+					`Цикл зафиксирован: ${effectiveTotal} лотков/пакетов обработано. Внимание: расходники списаны в дефицит (требуется оприходование).`,
 					"info",
 				);
 			} else {
 				showToast(
-					`Цикл зафиксирован: ${totalPackages} лотков/пакетов обработано. Расходники списаны со склада!`,
+					`Цикл зафиксирован: ${effectiveTotal} лотков/пакетов обработано. Расходники списаны со склада!`,
 					"success",
 				);
 			}

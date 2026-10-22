@@ -44,8 +44,8 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 .signatures td { padding: 10px 0; border: none; }
 @media print { body { margin: 10mm; } }
 </style></head><body>
-<div style="text-align:right; font-size:9pt; margin-bottom:10px;">
-Унифицированная форма № ТОРГ-12<br>Утверждена постановлением Госкомстата России от 25.12.98 № 132
+<div style="text-align:right; font-size:9pt; margin-bottom:10px; color:#666;">
+Товарная накладная (Унифицированная форма № ТОРГ-12, утв. Госкомстата России) • Приходная накладная материалов
 </div>
 <table class="header-table">
 <tr><td style="width:15%;"><strong>Грузоотправитель:</strong></td><td>${waybill.supplier.name}, ИНН ${waybill.supplier.inn || "—"}</td></tr>
@@ -71,6 +71,6 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 </tr></tbody></table>
 <table class="signatures"><tr>
 <td style="width:50%;"><strong>Отпустил (Поставщик):</strong><br><br>_________________ / _________________ /<br><span style="font-size:8pt; color:#666;">подпись, расшифровка</span></td>
-<td style="width:50%;"><strong>Принял (Получатель):</strong><br><br>${waybill.receiverPosition} ______________ / ${waybill.receiverFullName} /<br><span style="font-size:8pt; color:#666;">подпись, расшифровка (Материально ответственное лицо)</span></td>
+<td style="width:50%;"><strong>Принял (Получатель):</strong><br><br>${waybill.receiverPosition} ______________ / ${waybill.receiverFullName} /<br><span style="font-size:8pt; color:#666;">подпись, расшифровка (Ответственный сотрудник)</span></td>
 </tr></table></body></html>`;
 }

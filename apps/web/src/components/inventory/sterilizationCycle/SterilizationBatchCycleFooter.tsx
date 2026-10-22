@@ -72,10 +72,10 @@ export function SterilizationBatchCycleFooter({
 					<button
 						type="button"
 						onClick={onConfirm}
-						disabled={submitting || totalPackages <= 0}
+						disabled={submitting}
 						aria-busy={submitting}
 						data-testid="confirm-sterilization-batch-cycle-btn"
-						className="primary-button h-9 min-h-[36px] px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs inline-flex items-center gap-2 transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+						className="primary-button h-9 min-h-[36px] px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs inline-flex items-center gap-2 transition-all cursor-pointer touch-manipulation disabled:opacity-50"
 					>
 						{submitting ? (
 							<>
@@ -85,7 +85,7 @@ export function SterilizationBatchCycleFooter({
 						) : (
 							<>
 								<Check size={16} className="text-white" />
-								<span>Зафиксировать цикл стерилизации</span>
+								<span>Зафиксировать цикл стерилизации смены</span>
 							</>
 						)}
 					</button>
