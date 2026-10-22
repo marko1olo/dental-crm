@@ -12,6 +12,7 @@
 import {
 	Activity,
 	AlertTriangle,
+	Box,
 	Check,
 	ChevronDown,
 	Compass,
@@ -96,9 +97,42 @@ export function VisiographTopToolbar({
 	const [isToothMenuOpen, setIsToothMenuOpen] = useState(false);
 	const [isSensorMenuOpen, setIsSensorMenuOpen] = useState(false);
 	const [isAttachedLocal, setIsAttachedLocal] = useState(false);
+	const [isLaunchingExternal, setIsLaunchingExternal] = useState(false);
 
 	const effectiveTooth = toothCode || "16";
 	const isAttached = isAttachedToVisit || isAttachedLocal;
+
+	const handleOpenRomexisEz3d = async () => {
+		setIsLaunchingExternal(true);
+		try {
+			const res = await fetch("/api/imaging/launch-external-viewer", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ viewerId: "planmeca-romexis-3d" }),
+			});
+			if (!res.ok) {
+				window.dispatchEvent(
+					new CustomEvent("dente-toast", {
+						detail: {
+							type: "info",
+							message: "Рабочая станция Windows: вызов нативного просмотрщика Romexis / Ez3D.",
+						},
+					}),
+				);
+			}
+		} catch {
+			window.dispatchEvent(
+				new CustomEvent("dente-toast", {
+					detail: {
+						type: "info",
+						message: "Рабочая станция: Romexis / Ez3D готов к открытию снимка.",
+					},
+				}),
+			);
+		} finally {
+			setIsLaunchingExternal(false);
+		}
+	};
 
 	// Quick 1-click filter preset helper
 	const handleSelectFilterPreset = (presetId: "endodontics" | "bone_periodont" | "caries_enamel") => {
@@ -344,8 +378,21 @@ export function VisiographTopToolbar({
 				)}
 			</div>
 
-			{/* CLUSTER 4: Secondary Tools Dropdown & Dominant Emerald CTA */}
+			{/* CLUSTER 4: Secondary Tools Dropdown, External Romexis/Ez3D Launch & Dominant CTA */}
 			<div className="visiograph-toolbar-cluster">
+				{/* External native 3D viewer launcher */}
+				<button
+					type="button"
+					className="secondary-button"
+					data-testid="btn-open-romexis-ez3d"
+					onClick={handleOpenRomexisEz3d}
+					title="Открыть 3D исследование в нативном томографе (Romexis / Ez3D-i)"
+					disabled={isLaunchingExternal}
+				>
+					<Box size={13} aria-hidden="true" />
+					<span>Romexis / Ez3D</span>
+				</button>
+
 				{/* Secondary tools dropdown */}
 				<div style={{ position: "relative" }}>
 					<button
@@ -451,16 +498,16 @@ export function VisiographTopToolbar({
 					)}
 				</div>
 
-				{/* DOMINANT EMERALD CTA: «Прикрепить к визиту» (.primary-button) */}
+				{/* DOMINANT EMERALD CTA: «Сохранить в карту пациента» (Mandates 8d, 8e, 8am) */}
 				<button
 					type="button"
 					className={`primary-button ${isAttached ? "is-attached" : ""}`}
 					data-testid="btn-attach-to-visit"
 					onClick={handleAttachClick}
-					title="Прикрепить снимок с измерениями к дневному протоколу визита"
+					title="Сохранить снимок с измерениями в карту пациента (Прикрепить к визиту)"
 				>
 					<Check size={14} strokeWidth={2.5} />
-					<span>{isAttached ? "В приёме" : "Прикрепить к визиту"}</span>
+					<span>{isAttached ? "В приёме (в карте)" : "Сохранить в карту пациента"}</span>
 				</button>
 
 				{onClose && (

@@ -1,0 +1,77 @@
+{
+  "taskId": "visiograph-rvg-lightweight-streamline",
+  "completedAt": "2026-10-22T21:55:00+04:00",
+  "status": "COMPLETED",
+  "author": "Subagent Red Team Visiograph Inquisitor",
+  "summary": "Ликвидация академических 3D воксельных трилинейных симуляций в браузере (trilinearInterpolationAccuracy.test.ts), консолидация дубликатов пресетов в единый SSOT (VisiographWindowPresets.ts), внедрение легковесного 2D RVG просмотра у кресла врача с калиброванной линейкой 0.1 мм, инверсией, яркостью/контрастом, привязкой к зубам FDI (11–48), кнопкой вызова внешних тяжелых 3D вьюверов (Romexis / Ez3D), строго ОДНА Primary CTA кнопка «Сохранить в карту пациента» (Мандат 8am), тач-таргеты >= 44x44px (Мандат 8ze), 4-State Visual Proofs",
+  "targets": {
+    "visiographWindowPresetsSSOT": "apps/web/src/components/visiograph/VisiographWindowPresets.ts",
+    "dicomWindowPresetsForwarder": "apps/web/src/components/dicom/VisiographWindowPresets.ts",
+    "visiographTopToolbar": "apps/web/src/components/visiograph/VisiographTopToolbar.tsx",
+    "visiographToolbarErgonomicsTest": "apps/web/src/components/visiograph/__tests__/visiographToolbarErgonomics.test.ts",
+    "calibratedRulerAndClinicalPresetsTest": "apps/web/src/components/visiograph/__tests__/calibratedRulerAndClinicalPresets.test.ts"
+  },
+  "modifications": [
+    {
+      "file": "apps/web/src/components/visiograph/VisiographWindowPresets.ts",
+      "changes": "Канонический SSOT пресетов окна и фильтров для 2D RVG и DICOM HU: Bone, Soft Tissue, Enamel/Dentin/Metal, Endodontics, Airway, Skull, Endoscopy, Soft Tissue + Bone, а также CLINICAL_VISIOGRAPH_FILTERS (Canal/Endo, Bone, Enamel/Caries, Invert/Cracks, Relief)."
+    },
+    {
+      "file": "apps/web/src/components/dicom/VisiographWindowPresets.ts",
+      "changes": "Устранен опасный дубликат пресетов. Файл переведен в 100% чистый реэкспорт канонического SSOT: export * from '../visiograph/VisiographWindowPresets'."
+    },
+    {
+      "file": "apps/web/src/components/visiograph/VisiographTopToolbar.tsx",
+      "changes": "Интегрирована кнопка запуска внешнего 3D ПО (Romexis / Ez3D) через системный харнесс desktop (/api/imaging/launch-external-viewer). Единственная Primary CTA кнопка «Сохранить в карту пациента» (и состояние «В приёме (в карте)») строго по Мандату 8am. Тач-таргеты >= 44x44px (Мандат 8ze). 0px паразитного горизонтального скролла."
+    },
+    {
+      "file": "apps/web/src/components/visiograph/__tests__/trilinearInterpolationAccuracy.test.ts",
+      "changes": "Удален академический балласт с пожиранием ОЗУ и Float32Array 3D voxel симуляциями в браузере."
+    },
+    {
+      "file": "apps/web/src/components/visiograph/__tests__/calibratedRulerAndClinicalPresets.test.ts",
+      "changes": "Создан чистый тест клинической точности калиброванной линейки (Apex -> Orifice 0.1 мм), пересчета масштаба датчиков Vatech/Planmeca (scaleMmPerPixel), 2D RVG фильтров и DICOM HU диапазонов."
+    },
+    {
+      "file": "apps/web/src/components/visiograph/__tests__/visiographToolbarErgonomics.test.ts",
+      "changes": "Обновлены тесты на соблюдение Мандата 8am: ровно 1 Primary CTA кнопка «Сохранить в карту пациента», запрет дублирующих синих кнопок, наличие кнопки вызова внешних 3D вьюверов."
+    }
+  ],
+  "gates": {
+    "vitest": {
+      "command": "npx vitest run apps/web/src/components/visiograph/__tests__/",
+      "testFiles": 10,
+      "passed": 83,
+      "failed": 0,
+      "exitCode": 0,
+      "durationSec": 4.09
+    },
+    "checkEncoding": {
+      "command": "node scripts/check-encoding.mjs",
+      "filesChecked": 15163,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "checkCssTokens": {
+      "command": "node scripts/check-css-tokens.mjs",
+      "cssFilesChecked": 405,
+      "unresolvedVars": 0,
+      "exitCode": 0
+    }
+  },
+  "visualProofs": {
+    "engine": "Playwright on live dev server http://127.0.0.1:5173/?demo=true#visit",
+    "screenshots": [
+      "docs/proofs/visiograph/01_pc_visiograph_viewer_light_1440x900.png",
+      "docs/proofs/visiograph/02_pc_visiograph_measurement_light_1440x900.png",
+      "docs/proofs/visiograph/03_pc_visiograph_dark_1440x900.png",
+      "docs/proofs/visiograph/04_mobile_visiograph_light_390x844.png",
+      "docs/proofs/visiograph/05_mobile_visiograph_dark_390x844.png",
+      "docs/proofs/imaging/visiograph_rvg_pc_light.png",
+      "docs/proofs/imaging/visiograph_rvg_pc_dark.png",
+      "docs/proofs/imaging/visiograph_rvg_mobile_light.png",
+      "docs/proofs/imaging/visiograph_rvg_mobile_dark.png"
+    ],
+    "verificationStatus": "Все скриншоты лично проинспектированы через read_file. Тулбар строго в 1 строку, ровно 1 Primary CTA кнопка «Сохранить в карту пациента», чистая 2D RVG визуализация без паразитных белых пятен в Dark mode, кнопка Romexis / Ez3D, селектор зуба FDI 11-48, калиброванная эндо-линейка."
+  }
+}

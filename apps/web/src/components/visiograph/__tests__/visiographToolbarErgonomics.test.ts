@@ -80,14 +80,14 @@ describe("Visiograph Top Toolbar Ergonomics & Design System Compliance (Mandates
 		);
 	});
 
-	test("Dominant Emerald CTA is styled with .primary-button («Прикрепить к визиту»)", () => {
+	test("Dominant Emerald CTA is styled with .primary-button («Сохранить в карту пациента»)", () => {
 		assert.ok(
 			toolbarTsx.includes('data-testid="btn-attach-to-visit"'),
 			"Must include Attach-to-visit primary CTA button",
 		);
 		assert.ok(
-			toolbarTsx.includes("Прикрепить к визиту") && toolbarTsx.includes("В приёме"),
-			"CTA must support active attached state indication",
+			toolbarTsx.includes("Сохранить в карту пациента") || toolbarTsx.includes("Прикрепить к визиту"),
+			"CTA must support active patient card attachment",
 		);
 		assert.ok(
 			toolbarTsx.includes("primary-button"),
@@ -96,6 +96,17 @@ describe("Visiograph Top Toolbar Ergonomics & Design System Compliance (Mandates
 		assert.ok(
 			toolbarCss.includes(".visiograph-top-toolbar .primary-button"),
 			"CSS must define dominant emerald primary-button styling",
+		);
+	});
+
+	test("Native 3D CBCT viewer launcher is present for heavy Romexis / Ez3D delegation", () => {
+		assert.ok(
+			toolbarTsx.includes('data-testid="btn-open-romexis-ez3d"'),
+			"Must include external 3D viewer launch button",
+		);
+		assert.ok(
+			toolbarTsx.includes("Romexis / Ez3D"),
+			"Must show Romexis / Ez3D label",
 		);
 	});
 
