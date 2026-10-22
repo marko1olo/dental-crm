@@ -1,0 +1,96 @@
+.lead-card-action-btn:hover,
+.lead-kanban-card button.secondary-button:hover {
+	border-color: var(--teal);
+	background: var(--paper-hover, var(--paper-soft));
+}
+
+.lead-kanban-card button.primary-button {
+	border: 1px solid var(--teal);
+	border-radius: 8px;
+	background: var(--teal);
+	color: #ffffff;
+	transition:
+		opacity 0.15s ease,
+		transform 0.1s ease;
+}
+
+.lead-kanban-card button.primary-button:hover {
+	opacity: 0.92;
+}
+
+.lead-kanban-card button.primary-button:active {
+	transform: scale(0.98);
+}
+
+/* Native HTML5 Audio Player Styling */
+.lead-audio-player-wrapper {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+}
+
+.lead-audio-player-wrapper audio {
+	accent-color: var(--teal);
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+/* ========================================================================== */
+/* 5. EXPANDED COLUMN FOCUS MODAL (92vw / 90vh)                               */
+/* ========================================================================== */
+
+.expanded-focus-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.expanded-focus-modal-container {
+	width: 92vw;
+	height: 90vh;
+	max-width: 1720px;
+	background: var(--paper-strong, var(--paper));
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+:is(
+		[data-theme="dark"],
+		[data-theme="night"],
+		[data-theme="ocean"],
+		[data-theme="emerald"],
+		[data-theme="cyber_xray"],
+		html.dark
+	)
+	.expanded-focus-modal-container {
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.expanded-focus-header {
+	height: 64px;
+	padding: 12px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper);
+	flex-shrink: 0;
+	gap: 16px;
+}
+
+.expanded-focus-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}

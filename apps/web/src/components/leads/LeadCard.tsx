@@ -15,6 +15,10 @@ import { LeadCardHeader } from "./card/LeadCardHeader";
 import { LeadCardStageSelect } from "./card/LeadCardStageSelect";
 import type { LeadCardProps } from "./card/cardTypes";
 import { formatLeadTimestamp } from "./card/leadCardFormatters";
+import {
+	computeLeadCardHover,
+	computeLeadCardStyle,
+} from "./card/leadCardStyles";
 import { getLeadSlaStatus } from "./leadsKanbanSla";
 
 export type { LeadCardProps };
@@ -56,11 +60,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	};
 
 	const handleCardClick = (e: React.MouseEvent) => {
-		if (targetPatientId) {
-			handleOpenPatient(e, targetPatientId);
-		} else {
-			onEdit(lead);
-		}
+		if (targetPatientId) handleOpenPatient(e, targetPatientId);
+		else onEdit(lead);
 	};
 
 	return (
@@ -76,30 +77,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			onDragStart={(e: any) => onDragStart(e, lead.id)}
 			onClick={handleCardClick}
 			title={targetPatientId ? "Открыть карту пациента в 1 клик" : "Открыть детали обращения"}
-			style={{
-				background: cardBg,
-				padding: "12px 14px",
-				borderRadius: "10px",
-				cursor: "grab",
-				border: sla.isBreached
-					? "1px solid var(--rust-soft, rgba(239, 68, 68, 0.4))"
-					: `1px solid ${borderColor}`,
-				borderLeft: sla.isBreached
-					? "4px solid var(--rust, #ef4444)"
-					: `1px solid ${borderColor}`,
-				boxShadow: sla.isBreached
-					? "0 2px 12px rgba(239, 68, 68, 0.12)"
-					: "0 2px 8px rgba(0,0,0,0.05)",
-				opacity: isDragged ? 0.5 : 1,
-				transform: isDragged ? "scale(0.98)" : "scale(1)",
-				transition: "box-shadow 0.2s, border 0.2s",
-			}}
-			whileHover={{
-				y: -2,
-				boxShadow: sla.isBreached
-					? "0 8px 18px rgba(239, 68, 68, 0.18)"
-					: "0 8px 16px rgba(0,0,0,0.08)",
-			}}
+			style={computeLeadCardStyle({ cardBg, borderColor, sla, isDragged })}
+			whileHover={computeLeadCardHover(sla)}
 		>
 			<LeadCardHeader lead={lead} onEdit={onEdit} />
 			<LeadCardBadges

@@ -1,0 +1,101 @@
+
+.leads-toolbar-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.leads-header-count-badge {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 8px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	color: var(--primary);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	line-height: 1.2;
+}
+
+.leads-more-menu-container {
+	position: relative;
+	display: inline-flex;
+}
+
+.leads-more-menu-btn {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.leads-more-menu-btn:hover {
+	border-color: var(--primary);
+	color: var(--primary);
+	background: var(--paper-soft);
+}
+
+.leads-more-menu-dropdown {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 4px);
+	z-index: 50;
+	min-width: 210px;
+	background: var(--paper-strong, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.16));
+	padding: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.leads-more-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.leads-more-menu-item:hover {
+	background: var(--paper-soft);
+	color: var(--primary);
+}
+
+/* ========================================================================== */
+/* 3. MAIN KANBAN BOARD CONTAINER & 4-STAGE FUNNEL GRID                       */
+/* ========================================================================== */
+
+.leads-board-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-height: calc(100vh - 64px);
+	background: var(--paper);
+	padding: 16px 20px;
+	box-sizing: border-box;
+	overflow-x: auto;
+}

@@ -1,156 +1,25 @@
-import { actionFailureToast } from "../../lib/panelStateText";
-import { showToast } from "../GlobalToast";
 /**
- * Разбор дублей пациентов: найти, сверить, объединить или отклонить.
- *
- * ЧТО БЫЛО. Виджет запрашивал /api/crm/patient-duplicate-merge-queues —
- * маршрута с таким адресом не существует, проверено живым запросом: 404. То
- * есть виджет всегда показывал «Дубликаты карточек пациентов не обнаружены»
- * независимо от того, сколько их в базе, и назывался при этом «фоновый
- * склейщик», которого тоже нет. Кнопок не было: ни объединить, ни отклонить.
- *
- * ЧТО ЗДЕСЬ ТЕПЕРЬ. Запрос идёт в работающий /api/patients/duplicates, который
- * ищет дубли по текущим данным. У каждой пары есть кнопки «Объединить» и «Это
- * разные люди», и обе действительно меняют данные.
- *
- * ГЛАВНОЕ В УСТРОЙСТВЕ ЭКРАНА: объединение медицинских карт необратимо по
- * смыслу, поэтому оно не делается одним нажатием. Сначала показывается, чем
- * пары похожи и чем могут отличаться, у сомнительных стоит предупреждение
- * («скорее всего это родственники»), и только потом — подтверждение с прямым
- * указанием, какая карточка останется.
+ * DENTE Dental CRM — Patient Duplicate Merge Queues Widget
+ * Mandate 8b (<= 120 lines Facade), Mandate 8e, Mandate 8n
  */
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	DOUBTFUL_BELOW,
-	type DuplicateCandidate,
-	type DuplicateReport,
-	dismissDuplicatePair,
-	duplicatePairKey,
-	fetchDuplicateReport,
-	mergeDuplicatePair,
-} from "../../lib/patientDuplicatesApi";
-
-/** Дата рождения в человеческом виде: «10.01.1970», а не «1970-01-10». */
-function formatBirthDate(value: string | null): string {
-	if (!value) return "дата рождения не указана";
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) return value;
-	return parsed.toLocaleDateString("ru-RU");
-}
+import { DOUBTFUL_BELOW, duplicatePairKey } from "../../lib/patientDuplicatesApi";
+import { PatientDuplicateTableRow } from "./patientDuplicates/PatientDuplicateTableRow";
+import { usePatientDuplicates } from "./patientDuplicates/usePatientDuplicates";
 
 export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
-	const appLogic = useAppLogicContext();
-	const auth = appLogic?.auth;
-	const [report, setReport] = useState<DuplicateReport | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [busyPair, setBusyPair] = useState<string | null>(null);
-	const [notice, setNotice] = useState<string | null>(null);
-	/** Пара, для которой открыто подтверждение, и какая карточка останется. */
-	const [confirming, setConfirming] = useState<{
-		key: string;
-		keepLeft: boolean;
-	} | null>(null);
-
-	const load = useCallback(async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			setReport(
-				await fetchDuplicateReport(auth ? auth.denteClinicalReadHeaders() : {}),
-			);
-		} catch (loadError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(loadError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setReport(null);
-			setError(
-				loadError instanceof Error ? loadError.message : String(loadError),
-			);
-		} finally {
-			setLoading(false);
-		}
-	}, [auth]);
-
-	useEffect(() => {
-		void load();
-	}, [load]);
-
-	async function merge(candidate: DuplicateCandidate, keepLeft: boolean) {
-		const key = duplicatePairKey(candidate);
-		setBusyPair(key);
-		setNotice(null);
-		try {
-			const data = await mergeDuplicatePair(
-				{
-					keepPatientId: keepLeft
-						? candidate.leftPatientId
-						: candidate.rightPatientId,
-					mergePatientId: keepLeft
-						? candidate.rightPatientId
-						: candidate.leftPatientId,
-					reason: "Объединено в разборе дублей",
-				},
-				auth ? auth.denteClinicalMutationHeaders() : {},
-			);
-			setNotice(data.summary);
-			setConfirming(null);
-			await load();
-		} catch (mergeError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(mergeError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setNotice(
-				mergeError instanceof Error ? mergeError.message : String(mergeError),
-			);
-		} finally {
-			setBusyPair(null);
-		}
-	}
-
-	async function dismiss(candidate: DuplicateCandidate) {
-		const key = duplicatePairKey(candidate);
-		setBusyPair(key);
-		setNotice(null);
-		try {
-			const data = await dismissDuplicatePair(
-				{
-					leftPatientId: candidate.leftPatientId,
-					rightPatientId: candidate.rightPatientId,
-					reason: "Отмечено в разборе дублей",
-				},
-				auth ? auth.denteClinicalMutationHeaders() : {},
-			);
-			setNotice(data.message);
-			await load();
-		} catch (dismissError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(dismissError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setNotice(
-				dismissError instanceof Error
-					? dismissError.message
-					: String(dismissError),
-			);
-		} finally {
-			setBusyPair(null);
-		}
-	}
+	const {
+		report,
+		error,
+		loading,
+		busyPair,
+		notice,
+		confirming,
+		setConfirming,
+		merge,
+		dismiss,
+	} = usePatientDuplicates();
 
 	return (
 		<section
@@ -188,16 +57,13 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 			{report ? (
 				(report?.candidates ?? []).length === 0 ? (
 					<p className="ops-empty ops-empty--good">
-						Похожих карточек не найдено: просмотрено {report.examinedPatients}.
-						Картотека чистая.
+						Похожих карточек не найдено: просмотрено {report.examinedPatients}. Картотека чистая.
 					</p>
 				) : (
 					<>
 						<div className="ops-table-wrap">
 							<table className="ops-table">
-								<caption className="sr-only">
-									Пары похожих карточек пациентов
-								</caption>
+								<caption className="sr-only">Пары похожих карточек пациентов</caption>
 								<thead>
 									<tr>
 										<th scope="col">Первая карточка</th>
@@ -211,129 +77,20 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 										const key = duplicatePairKey(candidate);
 										const doubtful = candidate.confidence < DOUBTFUL_BELOW;
 										const isBusy = busyPair === key;
-										// Локальная переменная, а не confirming?.key === key: внутри разметки
-										// компилятор иначе не знает, что confirming уже не null.
-										const pendingConfirm =
-											confirming?.key === key ? confirming : null;
+										const pendingConfirm = confirming?.key === key ? confirming : null;
 
 										return (
-											<tr key={key}>
-												{/*
-													Телефон и дата рождения обязательны на экране: по одним
-													именам дубль от тёзки не отличить, и решение принималось
-													бы вслепую.
-												*/}
-												<td className="ops-strong" data-label="Первая карточка">
-													{candidate.leftName}
-													<span className="ops-note">
-														{formatBirthDate(candidate.left?.birthDate)}
-													</span>
-													<span className="ops-note">
-														{candidate.left?.phone ?? "телефон не указан"}
-													</span>
-													{candidate.left?.email ? (
-														<span className="ops-note">
-															{candidate.left.email}
-														</span>
-													) : null}
-												</td>
-												<td className="ops-strong" data-label="Вторая карточка">
-													{candidate.rightName}
-													<span className="ops-note">
-														{formatBirthDate(candidate.right?.birthDate)}
-													</span>
-													<span className="ops-note">
-														{candidate.right?.phone ?? "телефон не указан"}
-													</span>
-													{candidate.right?.email ? (
-														<span className="ops-note">
-															{candidate.right.email}
-														</span>
-													) : null}
-												</td>
-												<td data-label="Чем похожи">
-													<span
-														className={`ops-state ops-state--${doubtful ? "warn" : "ok"}`}
-													>
-														{Math.round(candidate.confidence * 100)} %
-														совпадения
-													</span>
-													<span className="ops-note">
-														{candidate.explanation}
-													</span>
-													{candidate.caution ? (
-														// Предупреждение обязательно: одинаковый телефон чаще всего
-														// означает родню, а не дубль.
-														<span className="ops-note">
-															<strong>Осторожно:</strong> {candidate.caution}
-														</span>
-													) : null}
-												</td>
-												<td data-label="Что делать">
-													{pendingConfirm ? (
-														<>
-															<span className="ops-note">
-																Останется карточка «
-																{pendingConfirm.keepLeft
-																	? candidate.leftName
-																	: candidate.rightName}
-																». Вторая станет архивной ссылкой, ничего не
-																удалится.
-															</span>
-															<button
-																className="primary-button"
-																type="button"
-																disabled={isBusy}
-																onClick={() =>
-																	void merge(candidate, pendingConfirm.keepLeft)
-																}
-															>
-																{isBusy
-																	? "Объединяю…"
-																	: "Подтвердить объединение"}
-															</button>
-															<button
-																className="secondary-button"
-																type="button"
-																onClick={() => setConfirming(null)}
-															>
-																Отмена
-															</button>
-														</>
-													) : (
-														<>
-															<button
-																className="secondary-button"
-																type="button"
-																disabled={isBusy}
-																onClick={() =>
-																	setConfirming({ key, keepLeft: true })
-																}
-															>
-																Оставить первую
-															</button>
-															<button
-																className="secondary-button"
-																type="button"
-																disabled={isBusy}
-																onClick={() =>
-																	setConfirming({ key, keepLeft: false })
-																}
-															>
-																Оставить вторую
-															</button>
-															<button
-																className="secondary-button"
-																type="button"
-																disabled={isBusy}
-																onClick={() => void dismiss(candidate)}
-															>
-																Это разные люди
-															</button>
-														</>
-													)}
-												</td>
-											</tr>
+											<PatientDuplicateTableRow
+												key={key}
+												candidate={candidate}
+												doubtful={doubtful}
+												isBusy={isBusy}
+												pendingConfirm={pendingConfirm}
+												onStartConfirm={(k, keepLeft) => setConfirming({ key: k, keepLeft })}
+												onCancelConfirm={() => setConfirming(null)}
+												onMerge={merge}
+												onDismiss={dismiss}
+											/>
 										);
 									})}
 								</tbody>
@@ -345,9 +102,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 							{report.dismissedPairs > 0
 								? ` Скрыто пар по решению «это разные люди»: ${report.dismissedPairs}.`
 								: ""}{" "}
-							При объединении вторая карточка не удаляется: она остаётся
-							архивной ссылкой на первую, а все записи, оплаты и снимки
-							переносятся.
+							При объединении вторая карточка не удаляется: она остаётся архивной ссылкой на первую, а все записи, оплаты и снимки переносятся.
 						</p>
 					</>
 				)

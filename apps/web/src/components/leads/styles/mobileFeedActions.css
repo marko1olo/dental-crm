@@ -1,0 +1,113 @@
+
+.leads-mobile-sla-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 7px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.leads-mobile-revenue-badge {
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--teal-dark, var(--teal));
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.leads-mobile-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-left: 2px;
+}
+
+.leads-mobile-patient-name {
+	font-size: 15.5px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+	word-break: break-word;
+}
+
+.leads-mobile-phone-link {
+	font-size: 13.5px;
+	color: var(--muted);
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.leads-mobile-tags-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 2px;
+}
+
+.leads-mobile-tag {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	white-space: nowrap;
+}
+
+.leads-mobile-existing-patient {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ok-fg, #10b981);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--ok-fg, #10b981);
+}
+
+.leads-mobile-notes-snippet {
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--muted);
+	background: var(--paper-soft);
+	padding: 6px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line-subtle);
+	margin-top: 2px;
+}
+
+.leads-mobile-actions-bar {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+	padding-top: 6px;
+	border-top: 1px solid var(--line-subtle);
+}
+
+.leads-mobile-action-btn {
+	min-height: 44px;
+	border-radius: 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	white-space: nowrap;
+	padding: 0 6px;
+	box-sizing: border-box;
+}

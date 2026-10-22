@@ -3,8 +3,7 @@
  * Mandate 8b (<= 120 lines), Apple HIG Natural Thumb Zone First
  */
 
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { LeadStatus } from "../../store/leadsStore";
 import { LeadMobileSheetBottomBar } from "./mobile/LeadMobileSheetBottomBar";
@@ -43,8 +42,7 @@ export const LeadMobileBottomSheet = ({
 
 	if (!isOpen || !lead) return null;
 
-	const { sla, channelBadge, channelLabel, rawPhone, currentColumn } =
-		useMobileSheetLeadData(lead);
+	const { sla, channelBadge, channelLabel, rawPhone, currentColumn } = useMobileSheetLeadData(lead);
 
 	const handleSaveNotes = async () => {
 		if (!onUpdateNotes || notesText === (lead.notes || "")) return;
@@ -77,25 +75,10 @@ export const LeadMobileBottomSheet = ({
 				data-testid="lead-bottom-sheet-backdrop"
 			/>
 			<div className="relative z-10 w-full max-h-[90dvh] flex flex-col rounded-t-[24px] bg-[var(--paper)] border-t border-[var(--line)] shadow-2xl text-[var(--ink)] overflow-hidden">
-				<LeadMobileSheetHeader
-					name={lead.name}
-					stageColor={currentColumn?.color}
-					onClose={onClose}
-				/>
+				<LeadMobileSheetHeader name={lead.name} stageColor={currentColumn?.color} onClose={onClose} />
 				<div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 overscroll-contain">
-					<LeadMobileSheetContactCard
-						name={lead.name}
-						phone={lead.phone}
-						rawPhone={rawPhone}
-						expectedRevenue={lead.expectedRevenue}
-					/>
-					<LeadMobileSheetClinicalCard
-						lead={lead}
-						sla={sla}
-						channelBadge={channelBadge}
-						channelLabel={channelLabel}
-						onOpenPatientCard={onOpenPatientCard}
-					/>
+					<LeadMobileSheetContactCard name={lead.name} phone={lead.phone} rawPhone={rawPhone} expectedRevenue={lead.expectedRevenue} />
+					<LeadMobileSheetClinicalCard lead={lead} sla={sla} channelBadge={channelBadge} channelLabel={channelLabel} onOpenPatientCard={onOpenPatientCard} />
 					<LeadMobileSheetStagesAndNotes
 						lead={lead}
 						notesText={notesText}
@@ -117,8 +100,5 @@ export const LeadMobileBottomSheet = ({
 		</div>
 	);
 
-	if (typeof document !== "undefined") {
-		return createPortal(sheet, document.body);
-	}
-	return sheet;
+	return typeof document !== "undefined" ? createPortal(sheet, document.body) : sheet;
 };

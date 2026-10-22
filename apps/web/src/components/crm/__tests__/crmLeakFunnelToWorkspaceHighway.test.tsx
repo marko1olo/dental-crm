@@ -173,12 +173,16 @@ describe("CRM Leak Funnel to Patient Workspace Highway & Anti-Matryoshka Portals
 			path.resolve(__dirname, "../CrmLeakDetectorDrawer.tsx"),
 			"utf8",
 		);
+		const tableRowSource = fs.existsSync(path.resolve(__dirname, "../crmLeakDetector/CrmLeakTableRow.tsx"))
+			? fs.readFileSync(path.resolve(__dirname, "../crmLeakDetector/CrmLeakTableRow.tsx"), "utf8")
+			: "";
+		const combined = drawerSource + "\n" + tableRowSource;
 		assert.ok(
-			drawerSource.includes("lead-patient-link-"),
+			combined.includes("lead-patient-link-"),
 			"Must include data-testid='lead-patient-link-${lead.id}'",
 		);
 		assert.ok(
-			drawerSource.includes("btn-open-workspace-"),
+			combined.includes("btn-open-workspace-"),
 			"Must include data-testid='btn-open-workspace-${lead.id}'",
 		);
 	});

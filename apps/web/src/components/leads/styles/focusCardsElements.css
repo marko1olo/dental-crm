@@ -1,0 +1,96 @@
+.expanded-focus-action-btn--schedule {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.expanded-focus-action-btn--schedule:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.expanded-focus-action-btn--patient {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--line);
+}
+
+/* Dense Table View */
+.expanded-focus-table-container {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: auto;
+	max-height: 100%;
+}
+
+.expanded-focus-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.expanded-focus-table th {
+	height: 34px;
+	padding: 0 10px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	font-weight: 600;
+	text-align: left;
+	border-bottom: 1px solid var(--line);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	white-space: nowrap;
+}
+
+.expanded-focus-th-checkbox {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-table td {
+	height: 32px;
+	padding: 0 10px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.expanded-focus-tr {
+	transition: background 0.15s ease;
+	cursor: pointer;
+}
+
+.expanded-focus-tr:hover {
+	background: var(--paper-soft);
+}
+
+.expanded-focus-tr.is-selected {
+	background: var(--teal-soft);
+}
+
+.expanded-focus-tr.is-breached-row {
+	border-left: 3px solid var(--rust);
+}
+
+.expanded-focus-table-name {
+	font-weight: 600;
+	color: var(--ink);
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.expanded-focus-table-source {
+	font-size: 11px;
+	color: var(--muted);
+	max-width: 120px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

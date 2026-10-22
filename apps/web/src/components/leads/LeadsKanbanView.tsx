@@ -1,5 +1,5 @@
 import React from "react";
-export * from "./kanbanView/index.js";
+export * from "./kanbanView/index";
 
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import {

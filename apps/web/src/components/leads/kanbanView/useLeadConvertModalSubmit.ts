@@ -4,13 +4,10 @@
  */
 
 import { dateInputValuePlusDays } from "../../../AppHelpers";
-import type { Lead } from "../../../store/leadsStore";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import type { LeadConvertSubmitOptions } from "../LeadConvertModal";
 import {
-	type BookableChair,
-	type BookableDoctor,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
 	resolveLeadBookingChairs,
@@ -23,10 +20,7 @@ import type { ConvertSubmitOptions } from "./convertSubmitTypes";
 export type { ConvertSubmitOptions };
 
 export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
-	const handleConvertSubmit = async (
-		e: React.FormEvent,
-		options?: LeadConvertSubmitOptions,
-	) => {
+	const handleConvertSubmit = async (e: React.FormEvent, options?: LeadConvertSubmitOptions) => {
 		e.preventDefault();
 		if (!opts.convertingLeadId || opts.isBooking) return;
 
@@ -54,13 +48,9 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 		const effectiveVisitMins = resolveLeadVisitMinutes(opts.visitMinutes);
 		const endDateTime = new Date(startDateTime.getTime() + effectiveVisitMins * 60000);
 		const doctorIdToBook =
-			opts.selectedDoctorId ||
-			resolveLeadBookingStaff(opts.staff)[0]?.id ||
-			FALLBACK_SOLO_DOCTOR.id;
+			opts.selectedDoctorId || resolveLeadBookingStaff(opts.staff)[0]?.id || FALLBACK_SOLO_DOCTOR.id;
 		const chairIdToBook =
-			opts.selectedChairId ||
-			resolveLeadBookingChairs(opts.chairs)[0]?.id ||
-			FALLBACK_DEFAULT_CHAIR.id;
+			opts.selectedChairId || resolveLeadBookingChairs(opts.chairs)[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
 		opts.setIsBooking(true);
 		try {
@@ -74,9 +64,7 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 			});
 			const activeLead = opts.leads.find((l) => l.id === opts.convertingLeadId);
 			const src = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
-			const consent = options?.consentMarketing
-				? " [рассылки: разрешены]"
-				: " [рассылки: отключены]";
+			const consent = options?.consentMarketing ? " [рассылки: разрешены]" : " [рассылки: отключены]";
 			const msg = activeLead?.existingPatient
 				? `Обращение записано на прием к пациенту (${activeLead.existingPatient.fullName})${src}${consent}`
 				: `Обращение записано на прием, создана карта пациента${src}${consent}`;
@@ -85,17 +73,10 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 			opts.setConvertingLeadId(null);
 			opts.fetchLeads();
 
-			const createdPatient = res?.patient as
-				| { id?: string; fullName?: string; phone?: string }
-				| undefined;
+			const createdPatient = res?.patient as { id?: string; fullName?: string; phone?: string } | undefined;
 			opts.navigateToScheduleWithBooking({
-				patientId:
-					createdPatient?.id || activeLead?.existingPatient?.id || null,
-				patientName:
-					createdPatient?.fullName ||
-					activeLead?.existingPatient?.fullName ||
-					activeLead?.name ||
-					null,
+				patientId: createdPatient?.id || activeLead?.existingPatient?.id || null,
+				patientName: createdPatient?.fullName || activeLead?.existingPatient?.fullName || activeLead?.name || null,
 				patientPhone: createdPatient?.phone || activeLead?.phone || null,
 				dateKey: targetDate,
 				reason: options?.reason || "Первичная консультация",
@@ -106,12 +87,7 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 			});
 		} catch (err: unknown) {
 			logger.error(err);
-			showToast(
-				err instanceof Error && err.message.trim()
-					? err.message
-					: "Запись не создана",
-				"error",
-			);
+			showToast(err instanceof Error && err.message.trim() ? err.message : "Запись не создана", "error");
 		} finally {
 			opts.setIsBooking(false);
 		}
