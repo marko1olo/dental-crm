@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Printer, X, ShieldCheck } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { generateThermalStickerHtml, generateKraftBatchRecords } from "./kraftPackageEngine";
-import { POPULAR_KRAFT_PRESETS, type QuickKraftPreset } from "./KraftToolSetSelector";
+import { POPULAR_KRAFT_PRESETS, type QuickKraftPreset } from "./kraftPackagePresets";
 import type { KraftPackageRecord } from "./kraftPackageTypes";
 import type { ParsedKraftBarcode } from "@dental/shared";
 import "./kraftPackage.css";

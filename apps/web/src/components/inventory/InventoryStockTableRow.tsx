@@ -66,6 +66,7 @@ export const InventoryStockTableRow: React.FC<InventoryStockTableRowProps> = ({
 				isOverdraft={isOverdraft}
 				unitCost={unitCost}
 				lineValue={lineValue}
+				onReceiveItem={onReceiveItem}
 			/>
 
 			<StockRowActionsCell

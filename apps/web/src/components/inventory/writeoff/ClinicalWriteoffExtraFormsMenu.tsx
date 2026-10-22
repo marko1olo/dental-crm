@@ -16,7 +16,7 @@ export const ClinicalWriteoffExtraFormsMenu: React.FC<ClinicalWriteoffExtraForms
 				type="button"
 				className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
 				onClick={() => onPrintAct("M11")}
-				title="Печать Требования-накладной на списание (форма М-11)"
+				title="Печать накладной на списание материалов"
 			>
 				<FileText size={14} className="text-teal-600" />
 				<span>Накладная на списание</span>

@@ -148,7 +148,7 @@ export const DENTAL_TOOL_SETS_CATALOG: readonly DentalToolSetDefinition[] = [
 	{
 		id: "set_surgical_extraction",
 		shortCode: "SURG-EXT",
-		nameRu: "Хирургический набор экстракционный",
+		nameRu: "Хирургический набор для удаления",
 		defaultPackageSize: "size_150x250",
 		typicalItemsRu: [
 			"Щипцы анатомические клювовидные",
