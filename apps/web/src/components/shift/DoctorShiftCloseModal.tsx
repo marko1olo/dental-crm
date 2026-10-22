@@ -112,6 +112,8 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 
 				<DoctorShiftCloseFooter
 					onPrintShiftStatement={l.handlePrint}
+					onSendTelegramSummary={l.handleSendTelegramSummary}
+					isSendingTelegram={l.isSendingTelegram}
 					onClose={onClose}
 					onConfirmClose={l.handleConfirm}
 				/>

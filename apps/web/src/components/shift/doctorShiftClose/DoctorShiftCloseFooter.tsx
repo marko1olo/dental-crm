@@ -1,14 +1,18 @@
 import React from "react";
-import { CheckCircle2, Printer } from "lucide-react";
+import { CheckCircle2, Printer, Send } from "lucide-react";
 
 export interface DoctorShiftCloseFooterProps {
 	readonly onPrintShiftStatement: () => void;
+	readonly onSendTelegramSummary?: (() => void) | undefined;
+	readonly isSendingTelegram?: boolean | undefined;
 	readonly onClose: () => void;
 	readonly onConfirmClose: () => void;
 }
 
 export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 	onPrintShiftStatement,
+	onSendTelegramSummary,
+	isSendingTelegram,
 	onClose,
 	onConfirmClose,
 }) => {
@@ -16,17 +20,34 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 		<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
 			{/* Desktop / Tablet Actions Bar */}
 			<div className="hidden sm:flex items-center justify-between gap-3">
-				<button
-					type="button"
-					onClick={onPrintShiftStatement}
-					className="secondary-button h-9 px-3.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-					style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
-					data-testid="btn-print-shift-statement"
-					title="Распечатать сводку смены врача и фискальные итоги"
-				>
-					<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-					<span>Печать сводки смены</span>
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={onPrintShiftStatement}
+						className="secondary-button h-9 px-3.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
+						data-testid="btn-print-shift-statement"
+						title="Распечатать сводку смены врача и фискальные итоги"
+					>
+						<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<span>Печать сводки смены</span>
+					</button>
+
+					{onSendTelegramSummary && (
+						<button
+							type="button"
+							onClick={onSendTelegramSummary}
+							disabled={isSendingTelegram}
+							className="secondary-button h-9 px-3.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+							style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
+							data-testid="btn-send-telegram-shift-summary"
+							title="Отправить сводный отчёт смены руководству в Telegram"
+						>
+							<Send className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span>{isSendingTelegram ? "Отправка..." : "Отправить в Telegram"}</span>
+						</button>
+					)}
+				</div>
 
 				<div className="flex items-center gap-2">
 					<button
@@ -74,8 +95,21 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "10px" }}
 					>
 						<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-						<span>Печать сводки</span>
+						<span>Печать</span>
 					</button>
+					{onSendTelegramSummary && (
+						<button
+							type="button"
+							onClick={onSendTelegramSummary}
+							disabled={isSendingTelegram}
+							className="secondary-button flex-1 min-h-[44px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+							style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "10px" }}
+							data-testid="btn-send-telegram-shift-summary-mobile"
+						>
+							<Send className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span>В Telegram</span>
+						</button>
+					)}
 					<button
 						type="button"
 						onClick={onClose}

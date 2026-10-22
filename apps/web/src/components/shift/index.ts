@@ -38,6 +38,9 @@ export { ShiftTodoListSection } from "./ShiftTodoListSection";
 export type { PatientCockpitFeatureGridProps } from "./PatientCockpitFeatureGrid";
 export { PatientCockpitFeatureGrid } from "./PatientCockpitFeatureGrid";
 
+export type { DoctorShiftSummaryCardProps } from "./DoctorShiftSummaryCard";
+export { DoctorShiftSummaryCard } from "./DoctorShiftSummaryCard";
+
 export {
 	useDoctorShiftData,
 	useShiftRealtimeTelemetry,

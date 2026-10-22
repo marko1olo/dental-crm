@@ -53,6 +53,7 @@ describe("Mandate 8e & 8n: Doctor Shift Role Separation Invariant", () => {
 				clinicName="ООО Денте"
 				userRole="administrator"
 				cashSummary={{
+					totalRevenueRub: 150000,
 					cashRub: 45000,
 					cardRub: 75000,
 					sbpRub: 30000,

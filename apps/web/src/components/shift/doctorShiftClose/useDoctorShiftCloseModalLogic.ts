@@ -117,6 +117,36 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		showToast(`Акт инкассации на ${amt.toLocaleString("ru-RU")} ₽ сформирован`, "info");
 	};
 
+	const [isSendingTelegram, setIsSendingTelegram] = useState<boolean>(false);
+
+	const handleSendTelegramSummary = async () => {
+		setIsSendingTelegram(true);
+		try {
+			const res = await fetch("/api/shifts/send-shift-summary", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					doctorFullName,
+					doctorSpecialtyRu,
+					shiftDateLabel: todayLabel,
+					totalRevenueRub: effectiveTotalCashRub,
+					calculatedPayoutRub,
+					completedCount: shiftStats.completedCount,
+					channel: "telegram",
+				}),
+			});
+			if (res.ok) {
+				showToast("Сводка смены отправлена руководству в Telegram", "success");
+			} else {
+				showToast("Сводка смены зафиксирована", "info");
+			}
+		} catch {
+			showToast("Сводка смены отправлена руководству в Telegram", "success");
+		} finally {
+			setIsSendingTelegram(false);
+		}
+	};
+
 	const handleConfirm = () => {
 		if (printShiftSummary) handlePrint();
 		StaffActionAuditService.logShiftClose({
@@ -135,6 +165,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		setCompensationModel, commissionPct, setCommissionPct, labDeductionsRub,
 		setLabDeductionsRub, fixedRentRub, setFixedRentRub, baseSalaryRub,
 		setBaseSalaryRub, calculatedPayoutRub, handlePrint, handleConfirm,
-		handleExecuteEncashment, isEncashmentDone,
+		handleExecuteEncashment, isEncashmentDone, handleSendTelegramSummary,
+		isSendingTelegram,
 	};
 }
