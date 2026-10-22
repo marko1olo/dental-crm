@@ -46,6 +46,101 @@ import {
 import { MarketingRomiTableFooter } from "./MarketingRomiTableFooter.js";
 import "./marketingRomi.css";
 
+function MarketingRomiMobileCard({
+	metric,
+	getInputValue,
+	onInputChange,
+	onInputBlur,
+	onRemoveChannel,
+}: {
+	metric: AdvertisingChannelMetric;
+	getInputValue: (id: string, field: RomiFieldKey, def: string) => string;
+	onInputChange: (id: string, field: RomiFieldKey, val: string) => void;
+	onInputBlur: (id: string, field: RomiFieldKey) => void;
+	onRemoveChannel: (id: string) => void;
+}) {
+	const spentVal = getInputValue(metric.id, "spentRub", (metric.spentKopecks / 100).toString());
+	const patientsVal = getInputValue(metric.id, "patients", metric.primaryPatientsCount.toString());
+	const revVal = getInputValue(metric.id, "revenueRub", (metric.revenueKopecks / 100).toString());
+
+	return (
+		<div className="romi-mobile-card">
+			<div className="romi-mobile-card-header">
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="romi-mobile-card-title">{metric.nameRu}</span>
+						<span className="romi-mobile-card-category">{metric.categoryRu}</span>
+					</div>
+				</div>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<span
+						className={`romi-badge ${
+							metric.romiStatus === "organic"
+								? "organic"
+								: metric.romiStatus === "super_profitable" || metric.romiStatus === "profitable"
+									? "positive"
+									: metric.romiStatus === "loss"
+										? "negative"
+										: "neutral"
+						}`}
+					>
+						ROMI: {metric.romiFormatted}
+					</span>
+					<button
+						type="button"
+						onClick={() => onRemoveChannel(metric.id)}
+						className="romi-delete-btn"
+						title="Удалить канал"
+						aria-label="Удалить канал"
+					>
+						×
+					</button>
+				</div>
+			</div>
+
+			<div className="romi-mobile-card-grid">
+				<div className="romi-mobile-field">
+					<span className="romi-mobile-field-lbl">Потрачено (₽)</span>
+					<input
+						type="number"
+						value={spentVal}
+						onChange={(e) => onInputChange(metric.id, "spentRub", e.target.value)}
+						onBlur={() => onInputBlur(metric.id, "spentRub")}
+						className="romi-table-input w-full"
+					/>
+				</div>
+				<div className="romi-mobile-field">
+					<span className="romi-mobile-field-lbl">Первичных (чел)</span>
+					<input
+						type="number"
+						value={patientsVal}
+						onChange={(e) => onInputChange(metric.id, "patients", e.target.value)}
+						onBlur={() => onInputBlur(metric.id, "patients")}
+						className="romi-table-input w-full"
+					/>
+				</div>
+				<div className="romi-mobile-field">
+					<span className="romi-mobile-field-lbl">Выручка (₽)</span>
+					<input
+						type="number"
+						value={revVal}
+						onChange={(e) => onInputChange(metric.id, "revenueRub", e.target.value)}
+						onBlur={() => onInputBlur(metric.id, "revenueRub")}
+						className="romi-table-input w-full"
+					/>
+				</div>
+				<div className="romi-mobile-field">
+					<span className="romi-mobile-field-lbl">CAC / LTV</span>
+					<div className="text-[12.5px] font-semibold text-[var(--ink)] pt-1.5">
+						CAC: {metric.cacFormatted} <br />
+						LTV: {metric.ltvFormatted}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export function MarketingRomiTable() {
 	const appLogic = useOptionalAppLogicContext();
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -387,40 +482,55 @@ export function MarketingRomiTable() {
 					onResetDefaults={handleResetDefaults}
 				/>
 			) : (
-				<div className="romi-table-container">
-					<table className="romi-table" data-testid="romi-table">
-						<thead>
-							<tr>
-								<th className="text-left">Канал рекламы</th>
-								<th className="text-right">Потрачено (₽)</th>
-								<th className="text-center">Лиды (чел)</th>
-								<th className="text-center">Доходимость</th>
-								<th className="text-center">Первичных</th>
-								<th className="text-right">Выручка (₽)</th>
-								<th className="text-right">Ср. чек (₽)</th>
-								<th className="text-center">Повторных</th>
-								<th className="text-center">Доля повт. (%)</th>
-								<th className="text-right">LTV (₽)</th>
-								<th className="text-center">ROMI (%)</th>
-								<th className="text-right">CAC (₽ / чел)</th>
-								<th className="text-center w-12"></th>
-							</tr>
-						</thead>
-						<tbody>
-							{calculatedMetrics.map((metric) => (
-								<MarketingRomiTableRow
-									key={metric.id}
-									metric={metric}
-									getInputValue={getInputValue}
-									onInputChange={handleInputChange}
-									onInputBlur={handleInputBlur}
-									onRemoveChannel={handleRemoveChannel}
-								/>
-							))}
-						</tbody>
-						<MarketingRomiTableFooter summary={summary} />
-					</table>
-				</div>
+				<>
+					<div className="romi-table-container">
+						<table className="romi-table" data-testid="romi-table">
+							<thead>
+								<tr>
+									<th className="text-left">Канал рекламы</th>
+									<th className="text-right">Потрачено (₽)</th>
+									<th className="text-center">Лиды (чел)</th>
+									<th className="text-center">Доходимость</th>
+									<th className="text-center">Первичных</th>
+									<th className="text-right">Выручка (₽)</th>
+									<th className="text-right">Ср. чек (₽)</th>
+									<th className="text-center">Повторных</th>
+									<th className="text-center">Доля повт. (%)</th>
+									<th className="text-right">LTV (₽)</th>
+									<th className="text-center">ROMI (%)</th>
+									<th className="text-right">CAC (₽ / чел)</th>
+									<th className="text-center w-12"></th>
+								</tr>
+							</thead>
+							<tbody>
+								{calculatedMetrics.map((metric) => (
+									<MarketingRomiTableRow
+										key={metric.id}
+										metric={metric}
+										getInputValue={getInputValue}
+										onInputChange={handleInputChange}
+										onInputBlur={handleInputBlur}
+										onRemoveChannel={handleRemoveChannel}
+									/>
+								))}
+							</tbody>
+							<MarketingRomiTableFooter summary={summary} />
+						</table>
+					</div>
+
+					<div className="romi-mobile-cards-list" data-testid="romi-mobile-cards-list">
+						{calculatedMetrics.map((metric) => (
+							<MarketingRomiMobileCard
+								key={metric.id}
+								metric={metric}
+								getInputValue={getInputValue}
+								onInputChange={handleInputChange}
+								onInputBlur={handleInputBlur}
+								onRemoveChannel={handleRemoveChannel}
+							/>
+						))}
+					</div>
+				</>
 			)}
 
 			{/* EXPLANATORY HINT */}
