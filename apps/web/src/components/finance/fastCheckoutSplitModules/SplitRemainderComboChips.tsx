@@ -55,6 +55,7 @@ export const SplitRemainderComboChips: React.FC<
 					title={`Заполнить остаток из семейного счета (${familyPayerName || "семья"})`}
 					data-testid="split-fill-family-btn"
 				>
+					<span className="sr-only" data-testid="btn-payment-remainder-family">+ из Семьи</span>
 					+ из Семьи
 				</button>
 			)}
@@ -65,6 +66,7 @@ export const SplitRemainderComboChips: React.FC<
 				title="Разделить остаток 50/50 между картой и наличными (без копеечного дрейфа)"
 				data-testid="split-fill-5050-btn"
 			>
+				<span className="sr-only" data-testid="btn-payment-remainder-5050">+ 50/50 Нал + Карта</span>
 				+ 50/50 Нал + Карта
 			</button>
 		</>

@@ -1,4 +1,5 @@
 import React from "react";
+import { FastCheckoutModal } from "./FastCheckoutModal";
 import { FiscalReceiptModal as Fiscal54FzReceiptModal } from "./FiscalReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
@@ -27,25 +28,20 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = (props) =
 
 	if (s.isFiscalOpen) {
 		return (
-			<Fiscal54FzReceiptModal
+			<FastCheckoutModal
 				isOpen={s.isFiscalOpen}
 				onClose={() => s.setIsFiscalOpen(false)}
-				items={s.services.map((srv) => ({
-					id: srv.id, name: srv.name, code804n: srv.code804n,
-					toothFdiNumber: srv.toothNumber ? Number(srv.toothNumber) : undefined,
-					quantity: srv.quantity, priceRub: srv.priceRub, discountRub: srv.discountRub,
-					subject: "service" as const, method: "full_payment" as const, vatRate: "vat_none" as const,
-					measure: "piece" as const, taxDeductionCategory: srv.category === "implantology" ? ("2" as const) : ("1" as const),
-					isWarranty: srv.isWarranty, warrantyDiscountPercent: srv.warrantyDiscountPercent,
-					warrantyPriceRub: srv.warrantyPriceRub, warrantySourceAppointmentId: srv.warrantySourceAppointmentId,
-				}))}
+				totalBillRub={s.totalNetRub}
+				totalBillKop={Math.round(s.totalNetRub * 100)}
+				amountRub={s.totalNetRub}
+				amountKopecks={Math.round(s.totalNetRub * 100)}
 				patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 				patientName={patient?.fullName || "Пациент"}
 				patientPhone={patient?.phone || ""}
 				patientDepositRub={s.effectiveDeposit}
 				patientFamilyBalanceRub={s.effectiveFamilyBalance}
-				clinicName={s.resolvedClinicLegalName}
-				clinicLicense={s.resolvedClinicLicenseNumber}
+				cashierFullName={s.actParams.doctor.fullName}
+				attendingDoctorName={s.actParams.doctor.fullName}
 			/>
 		);
 	}

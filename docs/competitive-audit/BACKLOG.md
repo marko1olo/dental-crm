@@ -11677,6 +11677,35 @@
         - `03_lab_mobile_light_390x844.png` (Mobile Light 390×844, мобильные карточки нарядов)
         - `04_lab_mobile_dark_390x844.png` (Mobile Dark 390×844, Bottom Sheet и экспресс-пресеты).
 
+64. **Волна 361: Red Team Инквизитор Финансов, Кассы 54-ФЗ и Экспресс-Чекаута — Консолидация единого SSOT-модала FastCheckoutModal, целочисленные копейки (amountKopecks), автономия врача и Apple HIG (Мандаты 8e, 8n, 8x, 8ap, 8ze, 8am, Фича #495)**:
+    - **1. Консолидация единого SSOT модала чекаута (`FastCheckoutModal`)**:
+      * Устранено дублирование 4 разрозненных модалок оплаты (`PatientBillingModal`, `PaymentSplitModal`, `FastCheckoutModal`, `PaymentModal`);
+      * `PaymentSplitModal.tsx` и `PatientBillingModal.tsx` преобразованы в чистые делегаты канонического `FastCheckoutModal` с сохранением всех пропсов (`amountKopecks`, `amountRub`, `defaultMethod="split"`, `initialWarranty100`, `onSuccess`);
+      * В `fastCheckoutFiscalHandlers.ts` поддержан обратный вызов `onSuccess` во всех ветках оплаты (наличные, POS-терминал, ручной терминал, СБП QR, депозит);
+    - **2. Строгие целочисленные копейки и автобалансировка остатка (Ноль float-дрифта)**:
+      * Все суммы, сдача, скидки и сплиты вычисляются строго в целых копейках (`amountKopecks`, `BIGINT`);
+      * Реализована автобалансировка остатка при расчетах сплита в 1 клик (`SplitRemainderComboChips.tsx`, `preset-three-way-split`, `btn-payment-remainder-family`, `btn-payment-remainder-5050`);
+    - **3. Искоренение номеров законов и птичьего канцелярита (Мандаты 8x, 8ap)**:
+      * В интерфейсе заменены сырые номера приказов: вместо «54-ФЗ» -> «Кассовый чек», вместо «804н» -> «Прейскурант услуг»;
+      * Для физических лиц выводится четкий статус «✓ Для пациентов-физлиц ИНН не требуется» без требований ввода ИНН и без блокировки кнопок;
+    - **4. Автономия врача и кассира (Мандаты 8e, 8n)**:
+      * Свобода скидок врача до 100% («Гарантия 100% (0 ₽)», «-50% Персонал», «-15% Комплекс», «-10% Постоянный», «-5% Пенс/Утро») без административных паролей;
+      * Появление специального баннера `data-testid="banner-payment-zero-warranty"` и кнопки `data-testid="btn-payment-close-warranty-zero"` при нулевом чеке;
+      * Кнопки сохранения и оплаты никогда не блокируются (`disabled={false}`) из-за второстепенных полей;
+    - **5. Apple HIG Touch Ergonomics (390×844) & 4-State Visual Proof Gate (Мандат 8ze)**:
+      * На смартфонах модал открывается как нативный Bottom Sheet (`fast-checkout-modal-container` с `rounded-t-[24px]` и тактильным Drag Handle `w-9 h-1 rounded-full`);
+      * Крупная итоговая сумма 36px bold по центру, плитки способов оплаты в 2 колонки с тач-таргетами $\ge 48$px;
+      * Закрепленная кнопка Primary CTA на всю ширину (52px) в Natural Thumb Zone;
+      * Все 4 скриншота отсмотрены лично через `read_file` в `docs/proofs/finance/`:
+        - `screenshot_pc_light.png` (PC Light 1440×900)
+        - `screenshot_pc_dark.png` (PC Dark 1440×900)
+        - `screenshot_mobile_light.png` (Mobile Light 390×844)
+        - `screenshot_mobile_dark.png` (Mobile Dark 390×844);
+    - **6. Машинные гейты и автотесты (100% Green)**:
+      * 54 сьюта `apps/web/src/components/finance` (407 тестов) — 100% PASS;
+      * Смежные сьюты `fastCheckoutSplit.test.ts`, `dualModeZeroMockBatch4.test.ts`, `fastCheckoutAutonomy.test.tsx` (40 тестов) — 100% PASS;
+      * Чистый TypeScript в API и Web.
+
 
 
 

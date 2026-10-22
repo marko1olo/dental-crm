@@ -43,33 +43,18 @@ export type PaymentSplitModalProps = FastCheckoutModalProps &
 	SplitPaymentModalProps;
 
 export const PaymentSplitModal: React.FC<PaymentSplitModalProps> = (props) => {
-	// If standard FastCheckoutModal props provided (e.g. initialSimpleCashierMode)
-	if ("initialSimpleCashierMode" in props || "items" in props) {
-		return (
-			<FastCheckoutModal
-				{...props}
-				initialSimpleCashierMode={false}
-				containerTestId={props.containerTestId || "split-payment-modal"}
-			/>
-		);
-	}
+	const totalBillRub = props.totalDueRub ?? props.totalBillRub ?? (props.totalBillKop ? props.totalBillKop / 100 : (props.amountKopecks ? props.amountKopecks / 100 : props.amountRub ?? 0));
+	const totalBillKop = props.totalBillKop ?? (props.amountKopecks ?? Math.round(totalBillRub * 100));
 
-	// Canonical multi-tender split payment modal delegating to PaymentModal
 	return (
-		<PaymentModal
-			isOpen={props.isOpen}
-			onClose={props.onClose}
-			amountRub={props.totalDueRub ?? 0}
-			patientId={props.patientId || "pat-walkin"}
-			patientName={props.patientName || "Пациент"}
-			patientPhone={props.patientPhone || ""}
-			patientDepositRub={props.patientDepositRub ?? 0}
-			patientFamilyBalanceRub={props.patientFamilyBalanceRub ?? 0}
-			invoiceId={props.invoiceId}
-			visitId={props.visitId}
-			cashierName={props.cashierFullName || "Администратор / Кассир"}
-			clinicLegalName={props.clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+		<FastCheckoutModal
+			{...props}
+			initialSimpleCashierMode={false}
 			defaultMethod="split"
+			totalBillRub={totalBillRub}
+			totalBillKop={totalBillKop}
+			amountRub={totalBillRub}
+			amountKopecks={totalBillKop}
 			containerTestId={props.containerTestId || "split-payment-modal"}
 			onSuccess={(data) => {
 				void clinicalProceduralAudio.playCashierKaching();

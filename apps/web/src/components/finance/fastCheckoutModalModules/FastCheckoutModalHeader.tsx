@@ -11,7 +11,8 @@ export interface FastCheckoutModalHeaderProps {
 export const FastCheckoutModalHeader: React.FC<
 	FastCheckoutModalHeaderProps
 > = ({ patientName, orderId, effectiveBillKop, onClose }) => (
-	<div className="p-3 sm:py-2.5 sm:px-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
+	<div className="relative p-3 sm:py-2.5 sm:px-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
+		<div className="sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)]" aria-hidden="true" />
 		<div className="flex items-center gap-2.5 min-w-0">
 			<div className="w-8 h-8 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30 shrink-0">
 				<QrCode className="w-4 h-4" />

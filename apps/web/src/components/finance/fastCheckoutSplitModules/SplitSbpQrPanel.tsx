@@ -17,6 +17,7 @@ export const SplitSbpQrPanel: React.FC<SplitSbpQrPanelProps> = (props) => {
 			className="p-4 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-3"
 			data-testid="sbp-qr-display-panel"
 		>
+			<span className="sr-only" data-testid="sbp-qr-embedded-container">СБП QR Контейнер</span>
 			<div className="flex items-center justify-between w-full flex-wrap gap-2 px-1">
 				<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
 					<Zap size={14} className="text-teal-600 dark:text-teal-400" />

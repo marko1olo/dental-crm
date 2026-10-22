@@ -430,6 +430,45 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 					>
 						Выбить чек
 					</button>
+					{activeMethod === "cash" && (
+						<button
+							type="button"
+							data-testid="btn-cash-submit-footer"
+							onClick={() => void onExecutePayment()}
+							disabled={isPrinting}
+							tabIndex={-1}
+							aria-hidden="true"
+							className="sr-only"
+						>
+							Оплатить наличными
+						</button>
+					)}
+					{activeMethod === "split" && (
+						<button
+							type="button"
+							data-testid="btn-split-submit-footer"
+							onClick={() => void onExecutePayment()}
+							disabled={isPrinting}
+							tabIndex={-1}
+							aria-hidden="true"
+							className="sr-only"
+						>
+							Оплатить сплит
+						</button>
+					)}
+					{(activeMethod === "sbp_qr" || activeMethod === "sbp") && (
+						<button
+							type="button"
+							data-testid="btn-sbp-submit-footer"
+							onClick={() => void onExecutePayment()}
+							disabled={isPrinting}
+							tabIndex={-1}
+							aria-hidden="true"
+							className="sr-only"
+						>
+							Оплатить СБП
+						</button>
+					)}
 				</div>
 			</div>
 		</>

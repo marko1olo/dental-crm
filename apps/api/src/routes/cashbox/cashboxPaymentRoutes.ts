@@ -291,6 +291,10 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				})
 				.returning();
 
+			if (!newPayment) {
+				throw new Error("Не удалось зафиксировать платёж в базе данных");
+			}
+
 			// 2. Инициализируем и находим кассовые счета клиники
 			await ensureOrganizationCashBoxes(tx, orgId);
 			const boxes = await tx
@@ -298,8 +302,8 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				.from(cashBoxes)
 				.where(eq(cashBoxes.organizationId, orgId));
 
-			const cashDeskBox = boxes.find((b) => b.boxType === "cash_desk") || boxes[0];
-			const cashlessBox = boxes.find((b) => b.boxType === "bank_account") || boxes[1] || cashDeskBox;
+			const cashDeskBox = boxes.find((b) => b.type === "cash_desk" || !b.isCashless) || boxes[0];
+			const cashlessBox = boxes.find((b) => b.type === "bank_account" || b.isCashless) || boxes[1] || cashDeskBox;
 
 			// 3. Кассовые проводки в cashOperations
 			const isSplit = body.method === "split";

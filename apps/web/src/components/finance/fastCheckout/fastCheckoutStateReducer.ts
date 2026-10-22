@@ -62,12 +62,13 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 		isOpen, onClose, totalBillKop: propTotalBillKop, totalBillRub: propTotalBillRub,
 		initialPaymentMethod, initialSimpleCashierMode, patientId, visitId,
 		patientPhone = "", patientEmail = "", patientDepositRub = 0, patientFamilyBalanceRub = 0,
-		orderId = "", stages: propStages, cashierFullName: propCashierFullName,
-		attendingDoctorName, onPaymentComplete,
+		orderId: propOrderId, invoiceId, stages: propStages, cashierFullName: propCashierFullName,
+		cashierName, attendingDoctorName, doctorName, onPaymentComplete, onSuccess,
 	} = props;
 
-	const initialTotalBillKop = resolveInitialTotalBillKop(propTotalBillKop, propTotalBillRub);
-	const effectiveCashierFullName = resolveEffectiveCashierFullName(propCashierFullName, attendingDoctorName);
+	const initialTotalBillKop = resolveInitialTotalBillKop(props.amountKopecks, propTotalBillKop, propTotalBillRub, props.amountRub);
+	const effectiveCashierFullName = resolveEffectiveCashierFullName(propCashierFullName || cashierName, attendingDoctorName || doctorName);
+	const orderId = propOrderId || invoiceId || "";
 
 	const stages = useMemo<readonly TreatmentPlanStageOption[]>(() => {
 		return resolveTreatmentStages(propStages, initialTotalBillKop, isDemoShowcaseMode());
@@ -76,7 +77,25 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
 	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
 	const [advanceAlreadyPaidRub] = useState<number>(0);
-	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(initialPaymentMethod ?? "sbp_qr");
+	const resolvedInitialMethod: CheckoutPaymentMethodType = initialPaymentMethod ?? (() => {
+		switch (props.defaultMethod) {
+			case "card_terminal":
+			case "card":
+				return "bank_card";
+			case "cash":
+				return "cash";
+			case "sbp_qr":
+			case "sberpay_qr":
+				return "sbp_qr";
+			case "family_deposit":
+				return "patient_deposit";
+			case "split":
+				return "bank_card";
+			default:
+				return "sbp_qr";
+		}
+	})();
+	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(resolvedInitialMethod);
 
 	const effectiveAdvanceAlreadyPaidRub = useMemo(() => {
 		const stage = stages.find((s) => s.id === selectedStageId);
@@ -129,13 +148,21 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	});
 
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
-	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(initialSimpleCashierMode ?? true);
+	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(() => {
+		if (initialSimpleCashierMode !== undefined) return initialSimpleCashierMode;
+		if (props.defaultMethod === "split" || props.initialSplit5050) return false;
+		return true;
+	});
 	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
 	const [buyerInn, setBuyerInn] = useState<string>("");
 	const [buyerName, setBuyerName] = useState<string>("");
 	const [isElectronicReceiptOnly, setIsElectronicReceiptOnly] = useState<boolean>(false);
-	const [discountPreset, setDiscountPreset] = useState<FastCheckoutDiscountPreset>("none");
-	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
+	const [discountPreset, setDiscountPreset] = useState<FastCheckoutDiscountPreset>(() => {
+		if (props.initialWarranty100) return "warranty_100";
+		if (props.initialDiscountPercent) return "manual_percent";
+		return "none";
+	});
+	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(() => props.initialDiscountPercent ?? 0);
 
 	const splitSetters: FastCheckoutSplitAmountsSetters = {
 		setCardAmountRub, setCashAmountRub, setSbpAmountRub,
@@ -145,6 +172,16 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	useEffect(() => {
 		if (isOpen) {
 			if (initialPaymentMethod) setActiveMethod(initialPaymentMethod);
+			else if (resolvedInitialMethod) setActiveMethod(resolvedInitialMethod);
+			if (props.initialWarranty100) {
+				setDiscountPreset("warranty_100");
+			} else if (props.initialDiscountPercent) {
+				setDiscountPreset("manual_percent");
+				setCustomDiscountPercent(props.initialDiscountPercent);
+			}
+			if (props.defaultMethod === "split" || props.initialSplit5050) {
+				setIsSimpleCashierMode(false);
+			}
 			setSbpStatus("awaiting");
 			setSbpCheckMessage(null);
 			const initialStageId = resolveInitialSelectedStageId(propStages, isDemoShowcaseMode());
@@ -350,7 +387,7 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 				targetBillKop, targetBillRub, effectiveTotalRub, cardAmountRub, cashAmountRub, sbpAmountRub,
 				depositAmountRub, loyaltyAmountRub, dmsAmountRub, cashTenderedRub, remainingRub, activeMethod,
 				validation, clientType, buyerInn, buyerName, isElectronicReceiptOnly, patientId, visitId,
-				patientPhone, patientEmail, orderId, effectiveCashierFullName, stageCalc, onPaymentComplete,
+				patientPhone, patientEmail, orderId, effectiveCashierFullName, stageCalc, onPaymentComplete, onSuccess,
 				onClose, inFlightRef, lastClickTimeRef, isPrinting, setIsPrinting, setIsOfflineBuffered,
 				setInterruptedPaymentState, setCardAmountRub, setCashAmountRub, setCashTenderedRub,
 				setSbpAmountRub, setDepositAmountRub, setLoyaltyAmountRub, setDmsAmountRub,
@@ -387,7 +424,7 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 		await executeManualCardTerminalConfirm({
 			targetBillRub, overrideAmountRub, patientId, visitId, patientPhone, patientEmail,
 			effectiveCashierFullName, orderId, clientType, buyerInn, buyerName, isElectronicReceiptOnly,
-			stageCalc, onPaymentComplete, onClose, setIsSubmittingManualCard, setIsOfflineBuffered,
+			stageCalc, onPaymentComplete, onSuccess, onClose, setIsSubmittingManualCard, setIsOfflineBuffered,
 			setInterruptedPaymentState,
 		});
 	};
