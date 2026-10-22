@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { CheckCircle2, Layers, ShieldCheck, Zap } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 export interface SanPinJournalBatchButtonsProps {
 	readonly isAutofilling: boolean;
@@ -26,49 +26,20 @@ export function SanPinJournalBatchButtons({
 	return (
 		<div className="flex items-center gap-2 flex-wrap">
 			{onQuickBatchNorm && (
-				<>
-					{/* Вспомогательный запуск смены: стиль secondary с акцентом бирюзы (Mandate 8am - ровно 1 Primary CTA на экран) */}
-					<button
-						type="button"
-						onClick={() => {
-							onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`);
-							if (onQuickPsoNorm) onQuickPsoNorm();
-						}}
-						aria-busy={isAutofilling}
-						className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
-						title="Пакетная стерилизация смены: Автоклав №1, 134°C, 2.1 бар, 5 мин, индикаторы норма, списание расходников со склада"
-						aria-label="Пакетная стерилизация смены"
-						data-testid="quick-shift-batch-btn"
-					>
-						<CheckCircle2 size={15} />
-						<span>{isAutofilling ? "Проведение стерилизации..." : "+ Провести стерилизацию смены"}</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => onQuickBatchNorm(15, "121", "Щадящий цикл")}
-						aria-busy={isAutofilling}
-						className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
-						title="Щадящая стерилизация: 15 наборов оптики и наконечников (121°C, 1.15 бар, 20 мин)"
-						data-testid="quick-delicate-batch-btn"
-					>
-						<Layers size={14} />
-						<span>Щадящий (121°C)</span>
-					</button>
-				</>
-			)}
-
-			{onQuickPsoNorm && (
 				<button
 					type="button"
-					onClick={onQuickPsoNorm}
+					onClick={() => {
+						onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`);
+						if (onQuickPsoNorm) onQuickPsoNorm();
+					}}
 					aria-busy={isAutofilling}
-					className="secondary-button h-9 min-h-[36px] rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
-					title="Контроль очистки инструментов: азопирам и фенолфталеин отрицательно (100% норма)"
-					data-testid="quick-pso-norm-btn"
+					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
+					title="Пакетное автоклавирование смены: 134°C, 2.1 бар, 5 мин, азопирам 100% норма, списание расходников со склада"
+					aria-label="Пакетная стерилизация смены"
+					data-testid="quick-shift-batch-btn"
 				>
-					<ShieldCheck size={14} />
-					<span>Очистка: норма</span>
+					<CheckCircle2 size={15} />
+					<span>{isAutofilling ? "Фиксация..." : "Зафиксировать цикл автоклавирования смены"}</span>
 				</button>
 			)}
 		</div>

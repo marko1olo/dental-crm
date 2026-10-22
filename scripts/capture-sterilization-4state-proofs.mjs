@@ -1,9 +1,10 @@
 import { mkdir, stat, copyFile } from "node:fs/promises";
+import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/sterilization";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/24ac26f7-6798-4304-a711-a94f274fb104/screenshots";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/6d2ac125-a489-4e87-8ab4-5cf77b495a62/screenshots";
 const WEB_URL = "http://127.0.0.1:5173";
 
 await mkdir(PROOFS_DIR, { recursive: true });
@@ -46,6 +47,10 @@ async function initContextStorage(context, theme) {
 }
 
 async function prepareAndClean(page, theme) {
+	try {
+		await page.locator(".boot-state").waitFor({ state: "detached", timeout: 20000 });
+	} catch {}
+
 	for (let i = 0; i < 40; i++) {
 		const offlineBtn = page.locator('button:has-text("Перейти в автономный режим")');
 		if (await offlineBtn.count() > 0 && await offlineBtn.isVisible()) {
@@ -57,8 +62,8 @@ async function prepareAndClean(page, theme) {
 			const text = document.body ? document.body.innerText : "";
 			return text.includes("Загрузка системы") || text.includes("Загрузка CRM");
 		}).catch(() => true);
-		if (!hasLoading) break;
-		await page.waitForTimeout(400);
+		if (!hasLoading && (await page.evaluate(() => (document.body ? document.body.innerText.length : 0))) > 200) break;
+		await page.waitForTimeout(500);
 	}
 
 	await page.evaluate((th) => {
@@ -81,8 +86,12 @@ async function prepareAndClean(page, theme) {
 		const sanpinSubTab = page.locator('[data-testid="scanner-tab-sanpin"]');
 		if (await sanpinSubTab.count() > 0 && await sanpinSubTab.isVisible()) {
 			await sanpinSubTab.click({ force: true });
-			await page.waitForTimeout(400);
+			await page.waitForTimeout(600);
 		}
+	} catch {}
+
+	try {
+		await page.waitForSelector(".sanpin-container, [data-testid='sanpin-shift-close-primary-btn']", { state: "visible", timeout: 20000 });
 	} catch {}
 }
 
@@ -105,14 +114,17 @@ async function saveProof(page, baseName) {
 
 async function run() {
 	console.log("Launching Chromium for 4-State Red Team Proofs...");
-	let browser;
-	try {
-		browser = await chromium.launch({ channel: "msedge", headless: true, args: ["--no-sandbox"] });
-	} catch {
-		browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-	}
+	const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+	const edgePath = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+	const executablePath = fs.existsSync(chromePath) ? chromePath : (fs.existsSync(edgePath) ? edgePath : undefined);
 
-	const targetUrl = `${WEB_URL}/?demo=true&tab=sanpin#scanner`;
+	const browser = await chromium.launch({
+		headless: true,
+		...(executablePath ? { executablePath } : {}),
+		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+	});
+
+	const targetUrl = `${WEB_URL}/?demo=true#sanpin`;
 
 	try {
 		// 1. PC Light (1440x900)
@@ -125,9 +137,8 @@ async function run() {
 		await initContextStorage(contextPcLight, "light");
 		const pagePcLight = await contextPcLight.newPage();
 		await pagePcLight.goto(targetUrl, { waitUntil: "commit", timeout: 45000 });
-		await pagePcLight.waitForTimeout(2000);
+		await pagePcLight.waitForTimeout(3000);
 		await prepareAndClean(pagePcLight, "light");
-		await pagePcLight.waitForSelector(".sanpin-container", { state: "visible", timeout: 20000 });
 		const autoclaveTabLight = pagePcLight.locator('[data-testid="tab-autoclave-btn"]');
 		if (await autoclaveTabLight.count() > 0) {
 			await autoclaveTabLight.click({ force: true });
@@ -146,9 +157,8 @@ async function run() {
 		await initContextStorage(contextPcDark, "dark");
 		const pagePcDark = await contextPcDark.newPage();
 		await pagePcDark.goto(targetUrl, { waitUntil: "commit", timeout: 45000 });
-		await pagePcDark.waitForTimeout(2000);
+		await pagePcDark.waitForTimeout(3000);
 		await prepareAndClean(pagePcDark, "dark");
-		await pagePcDark.waitForSelector(".sanpin-container", { state: "visible", timeout: 20000 });
 		const autoclaveTabDark = pagePcDark.locator('[data-testid="tab-autoclave-btn"]');
 		if (await autoclaveTabDark.count() > 0) {
 			await autoclaveTabDark.click({ force: true });
@@ -169,9 +179,8 @@ async function run() {
 		await initContextStorage(contextMobLight, "light");
 		const pageMobLight = await contextMobLight.newPage();
 		await pageMobLight.goto(targetUrl, { waitUntil: "commit", timeout: 45000 });
-		await pageMobLight.waitForTimeout(2000);
+		await pageMobLight.waitForTimeout(3000);
 		await prepareAndClean(pageMobLight, "light");
-		await pageMobLight.waitForSelector(".sanpin-container", { state: "visible", timeout: 20000 });
 		const autoclaveTabMobLight = pageMobLight.locator('[data-testid="tab-autoclave-btn"]');
 		if (await autoclaveTabMobLight.count() > 0) {
 			await autoclaveTabMobLight.click({ force: true });
@@ -192,9 +201,8 @@ async function run() {
 		await initContextStorage(contextMobDark, "dark");
 		const pageMobDark = await contextMobDark.newPage();
 		await pageMobDark.goto(targetUrl, { waitUntil: "commit", timeout: 45000 });
-		await pageMobDark.waitForTimeout(2000);
+		await pageMobDark.waitForTimeout(3000);
 		await prepareAndClean(pageMobDark, "dark");
-		await pageMobDark.waitForSelector(".sanpin-container", { state: "visible", timeout: 20000 });
 		const autoclaveTabMobDark = pageMobDark.locator('[data-testid="tab-autoclave-btn"]');
 		if (await autoclaveTabMobDark.count() > 0) {
 			await autoclaveTabMobDark.click({ force: true });

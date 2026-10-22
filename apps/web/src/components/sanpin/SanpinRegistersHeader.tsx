@@ -69,7 +69,8 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					title="Заполнить санитарные журналы за смену в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
 				>
 					<CheckCircle2 size={15} className="shrink-0 text-white" />
-					<span>{autoFilling ? "Проведение стерилизации..." : "+ Провести стерилизацию смены"}</span>
+					<span className="hidden sm:inline">{autoFilling ? "Фиксация..." : "Зафиксировать цикл автоклавирования смены"}</span>
+					<span className="sm:hidden">{autoFilling ? "Фиксация..." : "Зафиксировать автоклавирование"}</span>
 				</button>
 
 				<button
