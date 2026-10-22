@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FlaskConical, Plus, X, Loader2, Calendar } from "lucide-react";
 import type { DentalLabOrderRecord } from "./dentalLabOrderEngine";
-import { DentalLabOrderDrawer } from "./DentalLabOrderDrawer";
+import { DentalLabOrderModal } from "./DentalLabOrderModal";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 
@@ -95,15 +95,14 @@ export function DentalLabOrdersTrackerModal({
 				</div>
 
 				{isDrawerOpen && (
-					<DentalLabOrderDrawer
+					<DentalLabOrderModal
 						isOpen={isDrawerOpen}
 						onClose={() => setIsDrawerOpen(false)}
 						initialOrder={selectedOrder as any}
-						editingOrder={selectedOrder as any}
 						patientId={currentPatientId}
 						patientName={currentPatientName}
 						doctorName={currentDoctorName}
-						currentToothNumber={currentToothNumber}
+						initialToothFdi={currentToothNumber}
 						onOrderSaved={(saved) => {
 							setIsDrawerOpen(false);
 							void loadOrders();

@@ -62,11 +62,6 @@ export {
 } from "./DentalLabOrderModal";
 
 export {
-	DentalLabCourierDispatchBar,
-	type DentalLabCourierDispatchBarProps,
-} from "./DentalLabCourierDispatchBar";
-
-export {
 	DentalLabStageTrackingTimeline,
 	type DentalLabStageTrackingTimelineProps,
 } from "./DentalLabStageTrackingTimeline";
@@ -110,8 +105,13 @@ export {
 	VITA_CLASSICAL_SHADES,
 } from "./dentalLabDefinitions";
 export * from "./dentalLabDefinitions";
+export {
+	LAB_MATERIALS,
+	VITA_3D_MASTER_SHADES,
+	generateBarcodeSvg,
+	generateQrCodeSvg,
+} from "./labMath";
 export * from "./labMath";
-export { generateBarcodeSvg, generateQrCodeSvg } from "./labMath";
 export * from "./guestLabPortalHelpers";
 export * from "./dentalLabWorkflowEngine";
 export * from "./dentalLabApiMapper";

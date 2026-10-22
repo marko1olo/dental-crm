@@ -31,10 +31,10 @@ export interface CanonicalKanbanColumnDef {
 }
 
 export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{ id: "sent_to_lab", title: "В работе ЗТЛ", shortTitle: "В ЗТЛ", icon: <Layers size={16} />, colorHex: "#3b82f6" },
-	{ id: "in_progress", title: "Примерка", shortTitle: "Примерка", icon: <Calendar size={16} />, colorHex: "#8b5cf6" },
-	{ id: "fitting_scheduled", title: "В клинике", shortTitle: "В клинике", icon: <FileText size={16} />, colorHex: "#f59e0b" },
-	{ id: "installed_completed", title: "Зафиксировано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
+	{ id: "sent_to_lab", title: "Отправлен в лабораторию", shortTitle: "В ЗТЛ", icon: <Layers size={16} />, colorHex: "#3b82f6" },
+	{ id: "in_progress", title: "На примерке", shortTitle: "Примерка", icon: <Calendar size={16} />, colorHex: "#8b5cf6" },
+	{ id: "fitting_scheduled", title: "Готов в клинике", shortTitle: "В клинике", icon: <FileText size={16} />, colorHex: "#f59e0b" },
+	{ id: "installed_completed", title: "Зафиксирован", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
 ] as const;
 
 export const CANONICAL_5_KANBAN_COLUMNS = CANONICAL_4_KANBAN_COLUMNS;

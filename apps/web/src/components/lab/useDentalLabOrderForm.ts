@@ -82,7 +82,7 @@ export function useDentalLabOrderForm(props: DentalLabOrderModalProps) {
 	});
 
 	return {
-		activeTab, setActiveTab, gateOverride: financials.gateOverride, setGateOverride: financials.setGateOverride,
+		activeTab, setActiveTab,
 		formPatientId, setFormPatientId, formPatientName, setFormPatientName, formDoctorId, setFormDoctorId, formDoctorName, setFormDoctorName,
 		...teethState, ...shadesState, ...datesState, ...financials, ...presets, ...submit,
 		treatmentPlanId, setTreatmentPlanId, stageId, setStageId, stageNumber, setStageNumber, stageTitle, setStageTitle,

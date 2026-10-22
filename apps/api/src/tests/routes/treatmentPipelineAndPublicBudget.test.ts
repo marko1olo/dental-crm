@@ -484,7 +484,7 @@ describe("Treatment Pipeline, Remote Budget Signing & Reactive Recall", () => {
 				),
 			);
 		assert.ok(recallsInDb.length >= 1, "At least one recall task must be created for dropout plan");
-		assert.equal(recallsInDb[0].status, "pending");
+		assert.equal(recallsInDb[0]?.status, "pending");
 	});
 
 	test("8. POST /api/v1/treatment-plans/:id/create-dropout-recall — 1-click single recall task with deduplication", async () => {

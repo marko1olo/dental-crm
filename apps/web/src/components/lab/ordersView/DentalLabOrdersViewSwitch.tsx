@@ -50,7 +50,7 @@ export function DentalLabOrdersViewSwitch({ logic }: DentalLabOrdersViewSwitchPr
 			<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
 				<FlaskConical className="w-10 h-10 mx-auto text-[var(--primary)]" />
 				<p className="font-bold text-sm text-[var(--ink)]" data-testid="lab-orders-empty-state-title">
-					Нет нарядов в зуботехническую лабораторию
+					Нет активных заказов в лабораторию
 				</p>
 				<p className="max-w-md mx-auto text-[var(--muted)]">
 					Оформите новый заказ-наряд на коронки, элайнеры, бюгели или виниры с расцветкой VITA и расчетом удержания с врача.
@@ -61,7 +61,7 @@ export function DentalLabOrdersViewSwitch({ logic }: DentalLabOrdersViewSwitchPr
 					data-testid="empty-state-add-first-lab-order-btn"
 				>
 					<Plus className="w-4 h-4" />
-					<span>+ Создать наряд-заказ в лабораторию</span>
+					<span>+ Заказ в лабораторию</span>
 				</button>
 			</div>
 		);

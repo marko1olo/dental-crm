@@ -1,5 +1,5 @@
 import React from "react";
-import { DentalLabCreateOrderModal } from "../../lab/DentalLabCreateOrderModal";
+import { DentalLabOrderModal } from "../../lab/DentalLabOrderModal";
 import { DoctorPrivacyShield } from "../../auth/DoctorPrivacyShield";
 import { GlobalPaymentModalLauncher } from "../../billing/GlobalPaymentModalLauncher";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
@@ -29,20 +29,20 @@ export function AdministrativeModalsSubcontainer({
 		<>
 			<GlobalPaymentModalLauncher activeStaffUser={activeStaffUser} />
 			{isGlobalLabCreateOrderOpen && (
-				<DentalLabCreateOrderModal
+				<DentalLabOrderModal
 					isOpen={isGlobalLabCreateOrderOpen}
 					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
-					onCreateOrder={() => setIsGlobalLabCreateOrderOpen(false)}
-					currentPatientName={
+					onOrderSaved={() => setIsGlobalLabCreateOrderOpen(false)}
+					patientName={
 						labCreateOrderContext?.patientName || "Пациент"
 					}
-					currentPatientId={labCreateOrderContext?.patientId || ""}
-					currentDoctorName={
+					patientId={labCreateOrderContext?.patientId || ""}
+					doctorName={
 						activeStaffUser?.name ||
 						activeStaffUser?.fullName ||
 						"Лечащий врач"
 					}
-					currentToothNumber={labCreateOrderContext?.toothNumber || "21"}
+					initialToothFdi={labCreateOrderContext?.toothNumber || "21"}
 					treatmentPlanId={labCreateOrderContext?.treatmentPlanId}
 					stageNumber={labCreateOrderContext?.stageNumber ?? 2}
 					stageTitle={

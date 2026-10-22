@@ -8,16 +8,16 @@ import {
 	CANONICAL_LAB_PRICE_MATRIX,
 	type LabPriceMatrixItem,
 } from "../DentalLabPriceMatrixModal";
-import {
-	COURIER_SERVICES,
-	DELIVERY_WINDOWS,
-} from "../DentalLabCourierDispatchBar";
+import { CANONICAL_4_KANBAN_COLUMNS } from "../DentalLabOrdersKanbanBoard";
 import {
 	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
 	mapTo6StageOrthopedicLifecycle,
 	checkFittingAppointmentCollision,
 } from "../dentalLabOrderEngine";
-import { checkDentalLabFinancialGate } from "../dentalLabFinancialGateEngine";
+import {
+	checkDentalLabFinancialGate,
+	createDoctorClinicalOverride,
+} from "../dentalLabFinancialGateEngine";
 import { rublesToKopecks } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -119,17 +119,18 @@ describe("RED TEAM DENTAL LAB INQUISITOR: SCOPE AUDIT & ZERO-DEFECT GATE", () =>
 		});
 	});
 
-	// ─── 4. Доставка нарядов в лабораторию ────────────────────
-	describe("4. Доставка нарядов в лабораторию", () => {
-		it("Список каналов доставки включает штатную ЗТЛ и клинику без симуляторов", () => {
-			const services = COURIER_SERVICES.map((s) => s.id);
-			assert.ok(services.includes("lab_in_house"), "Должна быть доставка зуботехнической лаборатории");
-			assert.ok(services.includes("clinic_express"), "Должна быть собственная доставка клиники");
+	// ─── 4. Канонические этапы ЗТЛ и автономия врача (Мандат 8e) ────────────────────
+	describe("4. Канонические этапы ЗТЛ и автономия врача (Мандат 8e)", () => {
+		it("Канбан ЗТЛ строго следует 4 клиническим этапам без симуляторов доставки", () => {
+			const stageIds = CANONICAL_4_KANBAN_COLUMNS.map((col) => col.id);
+			assert.deepEqual(stageIds, ["sent_to_lab", "in_progress", "fitting_scheduled", "installed_completed"]);
 		});
 
-		it("Интервалы доставки включают утро, день, вечер и срочно", () => {
-			const windows = DELIVERY_WINDOWS.map((w) => w.id);
-			assert.deepEqual(windows, ["morning", "afternoon", "evening", "express_urgent"]);
+		it("Автономия врача (Мандат 8e): врач имеет безусловное право на клинический оверрайд финансового гейта", () => {
+			const override = createDoctorClinicalOverride("Иванов И.И.", "Срочная примерка перед командировкой");
+			assert.equal(override.authorized, true);
+			assert.equal(override.doctorName, "Иванов И.И.");
+			assert.equal(override.reason, "Срочная примерка перед командировкой");
 		});
 	});
 

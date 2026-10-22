@@ -6,13 +6,13 @@ import { executeSaveLabOrder, copyLabOrderZtl1Protocol, copyLabOrderMessengerSum
 export interface OrderFormSubmitContext {
 	initialOrder: any;
 	formPatientId: string;
-	patientId?: string;
+	patientId?: string | undefined;
 	formPatientName: string;
 	formDoctorId: string;
 	formDoctorName: string;
-	chiefDoctorName?: string;
-	patientChartNumber?: string;
-	skipFinancialGate?: boolean;
+	chiefDoctorName?: string | undefined;
+	patientChartNumber?: string | undefined;
+	skipFinancialGate?: boolean | undefined;
 	totalLabPriceRub: number;
 	priceRubInput: string;
 	financialGateResult: any;
@@ -56,10 +56,10 @@ export interface OrderFormSubmitContext {
 	doctorAmountRub: number;
 	fittingCollision: any;
 	gostOrderNumber: string;
-	clinicName?: string;
-	clinicPhone?: string;
-	onOrderSaved?: (order: any) => void;
-	onSaveOrder?: (order: any) => void;
+	clinicName?: string | undefined;
+	clinicPhone?: string | undefined;
+	onOrderSaved?: ((order: any) => void) | undefined;
+	onSaveOrder?: ((order: any) => void) | undefined;
 	onClose: () => void;
 }
 

@@ -1,11 +1,11 @@
 /**
  * DentalLabCreateOrderModal.tsx — Канонический фасад модального окна создания наряд-заказа в лабораторию.
- * Делегирует выполнение единому SSOT-драверу DentalLabOrderDrawer.
+ * Делегирует выполнение единому SSOT-компоненту DentalLabOrderModal.
  */
 
 import React from "react";
 import type { DentalLabCreateOrderModalProps } from "./orderCreateModules/labOrderCreateTypes";
-import { DentalLabOrderDrawer } from "./DentalLabOrderDrawer";
+import { DentalLabOrderModal } from "./DentalLabOrderModal";
 import type { DentalLabOrderData } from "./dentalLabDefinitions";
 
 export type { DentalLabCreateOrderModalProps };
@@ -31,13 +31,13 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 	};
 
 	return (
-		<DentalLabOrderDrawer
+		<DentalLabOrderModal
 			isOpen={isOpen}
 			onClose={onClose}
 			doctorName={currentDoctorName}
 			patientName={currentPatientName}
 			patientId={currentPatientId}
-			currentToothNumber={currentToothNumber}
+			initialToothFdi={currentToothNumber}
 			initialTeeth={initialTeeth}
 			treatmentPlanId={treatmentPlanId}
 			stageNumber={stageNumber}

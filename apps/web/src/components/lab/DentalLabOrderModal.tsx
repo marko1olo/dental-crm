@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-if (typeof document !== "undefined") { void import("./labOrders.css"); }
+if (typeof document !== "undefined") { void import("./dentalLab.css"); }
 import { type DentalLabOrderModalProps } from "./labMath";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";

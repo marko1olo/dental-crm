@@ -16,7 +16,7 @@ export interface DoctorClinicalOverride {
 export type FinancialGateCheckResult = DentalLabFinancialGateResult;
 
 export interface DentalLabFinancialGateParams {
-	readonly stageTotalKopecks: Kopecks;
+	readonly stageTotalKopecks?: Kopecks | undefined;
 	readonly paidKopecks: Kopecks;
 	readonly availableDepositKopecks?: Kopecks | undefined;
 	readonly labOrderPriceKopecks?: Kopecks | undefined;

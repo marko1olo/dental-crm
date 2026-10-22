@@ -80,7 +80,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 					) : filteredOrders.length === 0 ? (
 						<div className="p-8 text-center rounded-2xl border border-dashed border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] text-xs space-y-2 mt-4">
 							<FlaskConical size={32} className="mx-auto text-teal-600 dark:text-teal-400" />
-							<div className="font-bold text-sm text-[var(--ink)]">Нарядов не найдено</div>
+							<div className="font-bold text-sm text-[var(--ink)]">Нет активных заказов в лабораторию</div>
 							<div className="text-[11px]">Попробуйте изменить поисковый запрос или фильтр</div>
 						</div>
 					) : (
@@ -93,7 +93,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 				<div className="mobile-lab-thumb-bar">
 					<button type="button" onClick={onOpenNewOrder} className="mobile-lab-primary-cta" data-testid="mobile-lab-add-order-btn">
 						<Plus size={19} />
-						<span>Новый наряд в лабораторию</span>
+						<span>+ Заказ в лабораторию</span>
 					</button>
 				</div>
 

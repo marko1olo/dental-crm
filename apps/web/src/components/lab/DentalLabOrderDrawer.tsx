@@ -7,7 +7,7 @@ import { DentalLabDrawerBody } from "./drawer/DentalLabDrawerBody";
 import { DentalLabDrawerFooter } from "./drawer/DentalLabDrawerFooter";
 
 if (typeof document !== "undefined") {
-	void import("./labOrders.css");
+	void import("./dentalLab.css");
 }
 
 export interface DentalLabOrderDrawerProps {

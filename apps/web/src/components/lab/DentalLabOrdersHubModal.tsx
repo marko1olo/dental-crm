@@ -12,7 +12,7 @@ import { DentalLabHubAlerts } from "./hub/DentalLabHubAlerts";
 import { useDentalLabHubData } from "./hub/useDentalLabHubData";
 import { useDentalLabHubActions } from "./hub/useDentalLabHubActions";
 if (typeof document !== "undefined") {
-	void import("./dentalLabWorkflow.css");
+	void import("./dentalLab.css");
 }
 
 export interface DentalLabOrdersHubModalProps {

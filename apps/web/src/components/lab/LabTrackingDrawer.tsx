@@ -7,7 +7,7 @@ import { LabTrackingDrawerHeader } from "./trackingDrawerModules/LabTrackingDraw
 import { LabTrackingRestorationSummary } from "./trackingDrawerModules/LabTrackingRestorationSummary";
 import { LabTrackingPipelineStages } from "./trackingDrawerModules/LabTrackingPipelineStages";
 import { LabTrackingFittingDates } from "./trackingDrawerModules/LabTrackingFittingDates";
-import { LabTrackingQrAndBarcode } from "./trackingDrawerModules/LabTrackingQrAndBarcode";
+import { LabTrackingNotesSection } from "./trackingDrawerModules/LabTrackingNotesSection";
 import { LabTrackingDrawerFooter } from "./trackingDrawerModules/LabTrackingDrawerFooter";
 import { useLabTrackingState } from "./trackingDrawerModules/useLabTrackingState";
 
@@ -53,7 +53,7 @@ export function LabTrackingDrawer({
 						deliveryDate={state.deliveryDate} setDeliveryDate={state.setDeliveryDate}
 						handleSaveFittingDates={state.handleSaveFittingDates} isUpdating={state.isUpdating}
 					/>
-					<LabTrackingQrAndBarcode
+					<LabTrackingNotesSection
 						stageNote={state.stageNote} setStageNote={state.setStageNote} handleAdvanceStage={state.handleAdvanceStage}
 						isUpdating={state.isUpdating} secureToken={secureToken} portalUrl={portalUrl}
 					/>

@@ -61,7 +61,7 @@ export function DentalLabPhotoReference({
 							<Camera size={12} />
 							<span>Фото</span>
 							<input
-								type="file" accept="image/jpeg,image/png,image/webp" className="hidden" data-testid="shade-picker-file-input"
+								type="file" accept="image/jpeg,image/png,image/webp" className="hidden" data-testid="shade-selector-file-input"
 								onChange={(e) => {
 									const file = e.target.files?.[0];
 									if (!file) return;
@@ -75,7 +75,7 @@ export function DentalLabPhotoReference({
 							<button
 								type="button" onClick={() => onShadePhotoChange(`photos/vita_${selectedShade.toLowerCase()}_shade_reference.jpg`)}
 								className="min-h-[36px] px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-								data-testid="shade-picker-sample-photo-btn"
+								data-testid="shade-selector-sample-photo-btn"
 							>
 								Образец
 							</button>

@@ -1,7 +1,5 @@
 import React from "react";
-import { DentalLabExpressShadeBar } from "./shades/DentalLabExpressShadeBar";
-import { DentalLabPhotoAttachment } from "./shades/DentalLabPhotoAttachment";
-import { DentalLabStratificationSection } from "./shades/DentalLabStratificationSection";
+import { DentalLabShadePicker } from "./DentalLabShadePicker";
 
 export interface DentalLabShadeSelectorProps {
 	shadeSystem: "classical" | "3d_master" | "bleach";
@@ -32,9 +30,17 @@ export interface DentalLabShadeSelectorProps {
 	setAttachedImageUrl?: (url: string | null) => void;
 }
 
+/**
+ * DentalLabShadeSelector — фасад обратной совместимости,
+ * делегирующий выбор цвета VITA в канонический SSOT DentalLabShadePicker.
+ */
 export function DentalLabShadeSelector(props: DentalLabShadeSelectorProps) {
 	const currentPrimary =
-		props.shadeSystem === "3d_master" ? props.shade3dMaster : props.shadeSystem === "bleach" ? props.shadeBleach : props.shadeClassical;
+		props.shadeSystem === "3d_master"
+			? props.shade3dMaster
+			: props.shadeSystem === "bleach"
+				? props.shadeBleach
+				: props.shadeClassical;
 
 	const handleSelectShade = (shade: string) => {
 		if (props.shadeSystem === "classical") props.setShadeClassical(shade);
@@ -43,43 +49,37 @@ export function DentalLabShadeSelector(props: DentalLabShadeSelectorProps) {
 		props.setShadeBody(shade);
 	};
 
+	const handleSystemChange = (
+		sys: "classical" | "3d_master" | "bleach" | "stump",
+	) => {
+		if (sys !== "stump") props.setShadeSystem(sys);
+	};
+
 	return (
-		<div className="space-y-4">
-			<DentalLabExpressShadeBar
-				shadeSystem={props.shadeSystem} setShadeSystem={props.setShadeSystem}
-				currentShade={currentPrimary} onSelectShade={handleSelectShade}
-			/>
-
-			<DentalLabPhotoAttachment
-				currentShade={currentPrimary} attachedImageUrl={props.attachedImageUrl}
-				setAttachedImageUrl={props.setAttachedImageUrl}
-			/>
-
-			<DentalLabStratificationSection
-				currentPrimaryShade={currentPrimary}
-				shadeCervical={props.shadeCervical} setShadeCervical={props.setShadeCervical}
-				shadeBody={props.shadeBody} setShadeBody={props.setShadeBody}
-				shadeIncisal={props.shadeIncisal} setShadeIncisal={props.setShadeIncisal}
-				shadeStump={props.shadeStump} setShadeStump={props.setShadeStump}
-				translucency={props.translucency} setTranslucency={props.setTranslucency}
-			/>
-
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
-				<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-					<input type="checkbox" checked={props.mamelons} onChange={(e) => props.setMamelons(e.target.checked)} className="w-4 h-4 accent-teal-600 rounded" data-testid="mamelons-checkbox" />
-					<span className="font-semibold text-[11px]">Мамелоны края</span>
-				</label>
-				<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-					<input type="checkbox" checked={props.calcifications} onChange={(e) => props.setCalcifications(e.target.checked)} className="w-4 h-4 accent-teal-600 rounded" data-testid="calcifications-checkbox" />
-					<span className="font-semibold text-[11px]">Кальцификаты</span>
-				</label>
-				{props.setOpalescence && (
-					<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-						<input type="checkbox" checked={Boolean(props.opalescence)} onChange={(e) => props.setOpalescence?.(e.target.checked)} className="w-4 h-4 accent-teal-600 rounded" data-testid="opalescence-checkbox" />
-						<span className="font-semibold text-[11px]">Опалесценция</span>
-					</label>
-				)}
-			</div>
-		</div>
+		<DentalLabShadePicker
+			shadeSystem={props.shadeSystem}
+			onShadeSystemChange={handleSystemChange}
+			selectedShade={currentPrimary}
+			onSelectShade={handleSelectShade}
+			selectedStumpShade={props.shadeStump}
+			onSelectStumpShade={props.setShadeStump}
+			shadePhotoUrl={props.attachedImageUrl}
+			onShadePhotoChange={props.setAttachedImageUrl}
+			showStratification={true}
+			shadeCervical={props.shadeCervical}
+			onShadeCervicalChange={props.setShadeCervical}
+			shadeBody={props.shadeBody}
+			onShadeBodyChange={props.setShadeBody}
+			shadeIncisal={props.shadeIncisal}
+			onShadeIncisalChange={props.setShadeIncisal}
+			translucency={props.translucency}
+			onTranslucencyChange={props.setTranslucency}
+			mamelons={props.mamelons}
+			onMamelonsChange={props.setMamelons}
+			calcifications={props.calcifications}
+			onCalcificationsChange={props.setCalcifications}
+			opalescence={props.opalescence}
+			onOpalescenceChange={props.setOpalescence}
+		/>
 	);
 }

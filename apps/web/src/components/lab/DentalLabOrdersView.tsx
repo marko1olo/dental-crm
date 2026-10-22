@@ -5,7 +5,7 @@ import type { DentalLabOrdersViewProps } from "./ordersView/types";
 import { useDentalLabOrders } from "./ordersView/useDentalLabOrders";
 import { DentalLabOrdersMainContent } from "./ordersView/DentalLabOrdersMainContent";
 import { LabOrderDetailsDrawer } from "./ordersView/LabOrderDetailsDrawer";
-import "./dentalLabWorkflow.css";
+import "./dentalLab.css";
 
 export type { DentalLabOrdersViewProps } from "./ordersView/types";
 export * from "./ordersView";
