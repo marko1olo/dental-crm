@@ -107,6 +107,12 @@
 
 ---
 
+## 📑 4. СПЕЦИАЛИЗИРОВАННЫЕ ОТЧЁТЫ ИНКВИЗИЦИИ (DETAILED DOSSIERS)
+- [`14_COMMUNICATIONS_AND_PATIENT_PORTAL_INQUISITION.md`](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/14_COMMUNICATIONS_AND_PATIENT_PORTAL_INQUISITION.md) — Портал пациента, мессенджеры и омниканальные коммуникации
+- [`15_FINANCIAL_ANALYTICS_AND_PNL_INQUISITION.md`](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/15_FINANCIAL_ANALYTICS_AND_PNL_INQUISITION.md) — Финансовая аналитика, P&L, СанПиН-загрузка кресел, декомпозиция до 120 строк и 4-State Visual Proof
+
+---
+
 ## 🔬 5. МАШИННАЯ ВЕРИФИКАЦИЯ И РЕЗЮМЕ АУДИТА
 
 - **Кодировка файлов:** Строгий UTF-8 без BOM (`npm run check:encoding` $\rightarrow$ Exit Code 0).
