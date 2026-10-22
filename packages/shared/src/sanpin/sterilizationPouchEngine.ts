@@ -17,56 +17,10 @@ import {
 } from "./sanpinRegistryEngine.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. DATA CONTRACTS & TYPES
+// 1. DATA CONTRACTS & TYPES (CLEAN DOMAIN MODEL WITHOUT SIMULATION)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type ChemicalIndicatorClass = 4 | 5;
-
-export type IndicatorColorTransitionId =
-	| "pink_to_brown"     // ИнтеТЕСТ / Винар 5 класс (пар 134°C / 5 мин): розовый -> коричневый
-	| "yellow_to_purple"  // DGM Steriguard 5 класс (пар 134°C): желтый -> темно-фиолетовый
-	| "blue_to_brown"     // МедИС 4 класс (сухожар 180°C): синий/голубой -> коричневый
-	| "custom";
-
-export interface IndicatorColorTransitionDef {
-	readonly id: IndicatorColorTransitionId;
-	readonly indicatorClass: ChemicalIndicatorClass;
-	readonly initialColorRu: string;
-	readonly finalColorRu: string;
-	readonly labelRu: string;
-	readonly brandExampleRu: string;
-	readonly standardClauseRu: string;
-}
-
-export const STATUTORY_INDICATOR_TRANSITIONS: readonly IndicatorColorTransitionDef[] = [
-	{
-		id: "pink_to_brown",
-		indicatorClass: 5,
-		initialColorRu: "розовый",
-		finalColorRu: "коричневый",
-		labelRu: "розовый -> коричневый, стерильно",
-		brandExampleRu: "ИнтеТЕСТ-В-134/5 (Винар) / ГОСТ ISO 11140-1 Класс 5",
-		standardClauseRu: "СанПиН 3.3686-21 п. 3630",
-	},
-	{
-		id: "yellow_to_purple",
-		indicatorClass: 5,
-		initialColorRu: "желтый",
-		finalColorRu: "фиолетовый",
-		labelRu: "желтый -> фиолетовый, стерильно",
-		brandExampleRu: "DGM Steriguard Class 5 Integrator",
-		standardClauseRu: "СанПиН 3.3686-21 п. 3630",
-	},
-	{
-		id: "blue_to_brown",
-		indicatorClass: 4,
-		initialColorRu: "голубой",
-		finalColorRu: "коричневый",
-		labelRu: "голубой -> коричневый, стерильно",
-		brandExampleRu: "СтериТЕСТ-В-132 / МедИС-180 (Класс 4)",
-		standardClauseRu: "СанПиН 3.3686-21 Таблица 3.12",
-	},
-];
 
 export interface ChairsideAutoclaveParams {
 	readonly autoclaveModel: string;
@@ -83,7 +37,6 @@ export interface ChairsideAutoclaveParams {
 
 export interface ChairsideIndicatorState {
 	readonly indicatorClass: ChemicalIndicatorClass;
-	readonly transitionId: IndicatorColorTransitionId;
 	readonly colorStatusText: string;
 	readonly isPassed: boolean;
 	readonly verifiedAtIso: string;
@@ -129,7 +82,7 @@ export interface ChairsidePouchRecord {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const DEFAULT_CHAIRSIDE_AUTOCLAVE_PARAMS: ChairsideAutoclaveParams = {
-	autoclaveModel: "Автоклав B-класса D-типа (Melag Vacuklav 23 B+ / Euronda)",
+	autoclaveModel: "Melag Vacuklav 23 B+ (Класс B)",
 	autoclaveCode: "АК-01",
 	regimeName: "Режим 134°C, 2.1 бар, экспозиция 5 мин",
 	temperatureC: 134,
@@ -143,8 +96,7 @@ export const DEFAULT_CHAIRSIDE_AUTOCLAVE_PARAMS: ChairsideAutoclaveParams = {
 
 export const DEFAULT_CHAIRSIDE_INDICATOR_STATE: ChairsideIndicatorState = {
 	indicatorClass: 5,
-	transitionId: "pink_to_brown",
-	colorStatusText: "Индикатор сработал: розовый -> коричневый, стерильно",
+	colorStatusText: "Индикатор 5 класса (норма, стерильно)",
 	isPassed: true,
 	verifiedAtIso: new Date().toISOString(),
 };
@@ -418,33 +370,8 @@ export function formatPouch043FullDiaryText(params: {
 	return `${snippet}${trayPart} ${integrity} Параметры: ${autoPart}. Контроль индикатора: ${params.indicator.colorStatusText}. [СанПиН 3.3686-21, Форма 257/у: ${params.form257Link.recordId}]. Ответственная медсестра ЦСО: ${auto.operatorName}.`;
 }
 
-/**
- * 1-клик внедрение записи крафт-пакета в существующий текст дневника 043/у.
- * Защищает от дублирования при повторном нажатии.
- */
-export function insertPouchIntoDiaryText(
-	currentDiaryText: string,
-	pouchSnippet: string,
-	pouchCode: string,
-): string {
-	const cur = (currentDiaryText || "").trim();
-	const cleanCode = normalizeChairsidePouchCode(pouchCode);
-
-	// Если данный крафт-пакет уже упомянут в дневнике — не дублируем
-	if (cur && cleanCode && cur.includes(cleanCode)) {
-		return cur;
-	}
-
-	if (!cur) {
-		return pouchSnippet;
-	}
-
-	// Если есть секция протокола лечения — вставляем перед манипуляциями или в конец
-	return `${pouchSnippet}\n\n${cur}`;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. BUILD COMPLETE RECORD ENGINE
+// 5. BUILD COMPLETE RECORD ENGINE (CLEAN DOMAIN RECORD)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface CreateChairsidePouchOptions {
@@ -452,7 +379,6 @@ export interface CreateChairsidePouchOptions {
 	readonly customCode?: string | undefined;
 	readonly trayKind?: ChairsideTrayKind | undefined;
 	readonly indicatorClass?: ChemicalIndicatorClass | undefined;
-	readonly indicatorTransition?: IndicatorColorTransitionId | undefined;
 	readonly indicatorPassed?: boolean | undefined;
 	readonly autoclaveParams?: Partial<ChairsideAutoclaveParams> | undefined;
 	readonly openedInPresenceOfPatient?: boolean | undefined;
@@ -461,7 +387,7 @@ export interface CreateChairsidePouchOptions {
 }
 
 /**
- * Создает готовую запись крафт-пакета со всеми верификациями, параметрами автоклава B-класса
+ * Создает готовую запись крафт-пакета с параметрами автоклава B-класса
  * и привязкой к Журналу 257/у.
  */
 export function createChairsidePouchRecord(
@@ -496,19 +422,16 @@ export function createChairsidePouchRecord(
 		...options.autoclaveParams,
 	};
 
-	// Индикатор стерильности 4–5 класса
+	// Индикатор стерильности 4–5 класса (доказательная фиксация нормы)
 	const indClass: ChemicalIndicatorClass = options.indicatorClass ?? 5;
-	const transitionId: IndicatorColorTransitionId = options.indicatorTransition ?? (indClass === 5 ? "pink_to_brown" : "blue_to_brown");
 	const isPassed = options.indicatorPassed ?? !isExpired;
 
-	const transitionDef = STATUTORY_INDICATOR_TRANSITIONS.find((t) => t.id === transitionId) || STATUTORY_INDICATOR_TRANSITIONS[0]!;
 	const colorStatusText = isPassed
-		? `Индикатор сработал: ${transitionDef.labelRu}`
-		: `Индикатор НЕ сработал (${transitionDef.initialColorRu} не изменился)! Использование запрещено!`;
+		? `Индикатор ${indClass} класса (норма, стерильно)`
+		: `Индикатор ${indClass} класса НЕ сработал! Использование запрещено!`;
 
 	const indicator: ChairsideIndicatorState = {
 		indicatorClass: indClass,
-		transitionId,
 		colorStatusText,
 		isPassed,
 		verifiedAtIso: new Date().toISOString(),
@@ -580,13 +503,13 @@ export function exportChairsidePouchToForm257Record(
 		packsCount: 1,
 		packagingNameRu: "Крафт-пакет стерилизационный",
 		chamberPoints: [
-			{ pointIndex: 1, code: "КТ-1", nameRu: "Центральная зона камеры", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "розовый", actualColorRu: "коричневый" },
-			{ pointIndex: 2, code: "КТ-2", nameRu: "Передняя правая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "розовый", actualColorRu: "коричневый" },
-			{ pointIndex: 3, code: "КТ-3", nameRu: "Передняя левая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "розовый", actualColorRu: "коричневый" },
-			{ pointIndex: 4, code: "КТ-4", nameRu: "Зона выхода конденсата / дренаж", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "розовый", actualColorRu: "коричневый" },
-			{ pointIndex: 5, code: "КТ-5", nameRu: "Верхняя задняя зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "розовый", actualColorRu: "коричневый" },
+			{ pointIndex: 1, code: "КТ-1", nameRu: "Центральная зона камеры", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
+			{ pointIndex: 2, code: "КТ-2", nameRu: "Передняя правая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
+			{ pointIndex: 3, code: "КТ-3", nameRu: "Передняя левая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
+			{ pointIndex: 4, code: "КТ-4", nameRu: "Зона выхода конденсата / дренаж", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
+			{ pointIndex: 5, code: "КТ-5", nameRu: "Верхняя задняя зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
 		],
 		operatorStaffFullName: record.autoclave.operatorName,
-		notes: `Вскрыт на амбулаторном приеме. Привязка к Форме 043/у: ${record.statutoryDiarySnippet}`,
+		notes: `Вскрыт на амбулаторном приеме. Привязка к медицинской карте: ${record.statutoryDiarySnippet}`,
 	});
 }

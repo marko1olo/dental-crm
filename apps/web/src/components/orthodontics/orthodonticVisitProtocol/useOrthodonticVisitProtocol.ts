@@ -490,6 +490,33 @@ export function useOrthodonticVisitProtocol(props: OrthodonticVisitProtocolWidge
 		showToast("Норма: ВНЧС безболезненный, девиации нет", "success", 2500);
 	}, [setTmjStatus]);
 
+	const handleSetMasterPhysiologicalNorm = useCallback(() => {
+		setAngleClass("class_1");
+		setAnbClass("class_1");
+		setAnbAngle(2.0);
+		setSagittalAnomaly("norm");
+		setSagittalGapMm(2);
+		setVerticalAnomaly("norm");
+		setTransversalAnomaly("norm");
+		setTmjStatus("norm");
+		setElasticScheme("none");
+		setNotes(
+			"Физиологический ортогнатический прикус (Класс I по Энглю, ANB 2.0°). Сагиттальные, вертикальные и трансверзальные окклюзионные соотношения в норме (перекрытие 1/3, сагиттальная щель 2 мм). ВНЧС интактен, пальпация безболезненная, девиации нет.",
+		);
+		showToast("✓ Установлена норма: Физиологический ортогнатический прикус", "success", 3000);
+	}, [
+		setAngleClass,
+		setAnbClass,
+		setAnbAngle,
+		setSagittalAnomaly,
+		setSagittalGapMm,
+		setVerticalAnomaly,
+		setTransversalAnomaly,
+		setTmjStatus,
+		setElasticScheme,
+		setNotes,
+	]);
+
 	const calculatedServices804n = useMemo(() => {
 		return calculateOrthodonticServices804n({ selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch });
 	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch]);
@@ -781,6 +808,7 @@ export function useOrthodonticVisitProtocol(props: OrthodonticVisitProtocolWidge
 		handleCopyPatientMemo,
 		handlePrintPatientMemo,
 		handleSendAlignerReminder,
+		handleSetMasterPhysiologicalNorm,
 		nextAlignerDateStr,
 		alignerProgressPercent,
 	};

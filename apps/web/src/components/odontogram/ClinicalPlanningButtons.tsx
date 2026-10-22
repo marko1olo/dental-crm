@@ -1,5 +1,5 @@
 import { Calculator, FileText, FlaskConical } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface ClinicalPlanningButtonsProps {
 	readonly onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;

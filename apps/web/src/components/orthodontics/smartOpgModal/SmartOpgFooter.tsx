@@ -21,6 +21,7 @@ export const SmartOpgFooter: React.FC<SmartOpgFooterProps> = ({
 					type="button"
 					onClick={onApply}
 					data-testid="btn-apply-opg-odontogram-mobile"
+					aria-label="Принять в зубную формулу (Форма 043/у)"
 					className="primary-button flex-1 min-h-[48px] py-2.5 px-4 !rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-98 cursor-pointer"
 				>
 					<Check className="w-4 h-4" />
@@ -48,6 +49,7 @@ export const SmartOpgFooter: React.FC<SmartOpgFooterProps> = ({
 				type="button"
 				onClick={onApply}
 				data-testid="btn-apply-opg-odontogram"
+				aria-label="Принять в зубную формулу (Форма 043/у)"
 				className={`primary-button w-full min-h-[48px] py-3 px-4 !rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer active:scale-98 ${
 					isApplied ? "!bg-emerald-600 !text-white" : ""
 				}`}

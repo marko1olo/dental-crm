@@ -1,5 +1,5 @@
 import { SlidersHorizontal, Trash2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface DisplayModesSelectionProps {
 	readonly isFastExtractMode: boolean;

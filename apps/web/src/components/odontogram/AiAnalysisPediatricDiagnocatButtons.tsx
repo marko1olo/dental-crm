@@ -1,5 +1,5 @@
 import { Sparkles, Stethoscope } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface AiAnalysisPediatricDiagnocatButtonsProps {
 	readonly onOpenPediatricModal?: (() => void) | undefined;

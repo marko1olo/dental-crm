@@ -1,4 +1,5 @@
 import type { StaffRole } from "@dental/shared";
+import { usePerspectiveStore } from "../store/perspectiveStore";
 
 export const appViews = [
 	"shift",
@@ -167,6 +168,14 @@ export function viewFromHash(customHash?: string): AppView {
 	const hash = (raw.replace(/^#\/?/, "").split("?")[0] ?? "");
 	const parts = hash.split("/").filter(Boolean);
 	const view = parts[0]?.toLowerCase() ?? "";
+	if (view === "ortho" || view === "orthodontics") {
+		if (typeof window !== "undefined") {
+			try {
+				usePerspectiveStore.getState().setPerspective("orthodontic");
+			} catch {}
+		}
+		return "visit";
+	}
 	if (view === "visits") return "visit";
 	if (
 		view === "treatment-plans" ||

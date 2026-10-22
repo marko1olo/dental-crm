@@ -9,6 +9,7 @@ export interface OrthoProtocolModalHeaderProps {
 	onApplyToVisitNote: () => void;
 	onClose: () => void;
 	calculatedServicesCount: number;
+	onSetMasterPhysiologicalNorm?: () => void;
 }
 
 export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> = ({
@@ -18,6 +19,7 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 	onApplyToVisitNote,
 	onClose,
 	calculatedServicesCount,
+	onSetMasterPhysiologicalNorm,
 }) => {
 	return (
 		<div className="flex items-center justify-between px-4 py-2.5 bg-[var(--paper)] border-b border-[var(--line)] shrink-0">
@@ -36,6 +38,20 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 			</div>
 
 			<div className="flex items-center gap-2 shrink-0">
+				{onSetMasterPhysiologicalNorm && (
+					<button
+						type="button"
+						onClick={onSetMasterPhysiologicalNorm}
+						className="secondary-button shrink-0 flex items-center gap-1.5 border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--primary)] font-bold text-xs cursor-pointer shadow-xs min-h-[36px]"
+						data-testid="ortho-toolbar-norm-btn"
+						title="1-клик фиксация нормы (Мандат 8e): Физиологический ортогнатический прикус"
+					>
+						<CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+						<span className="hidden md:inline">Физиологический прикус (Норма)</span>
+						<span className="md:hidden">Норма</span>
+					</button>
+				)}
+
 				<button
 					type="button"
 					onClick={onPrintOrthodonticCard}

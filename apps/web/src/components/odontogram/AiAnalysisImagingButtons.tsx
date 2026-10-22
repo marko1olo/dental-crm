@@ -1,5 +1,5 @@
 import { Printer, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface AiAnalysisImagingButtonsProps {
 	readonly isSmartOpgOpen?: boolean | undefined;

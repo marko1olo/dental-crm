@@ -1,6 +1,6 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import { Activity, Eye, EyeOff } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface DisplayModesTogglesProps {
 	readonly showWisdomTeeth: boolean;

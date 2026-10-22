@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { ClinicalDiaryAndVoiceButtons } from "./ClinicalDiaryAndVoiceButtons";
 import { ClinicalExamButtons } from "./ClinicalExamButtons";
 import { ClinicalPlanningButtons } from "./ClinicalPlanningButtons";

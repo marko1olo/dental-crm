@@ -8,6 +8,47 @@ export function cleanupCanvas(canvas: HTMLCanvasElement | OffscreenCanvas | null
 	}
 }
 
+export async function getOpgImageDimensions(
+	imageSource: CanvasImageSource | string,
+	defaultWidth = 1024,
+	defaultHeight = 574,
+): Promise<{ naturalWidth: number; naturalHeight: number }> {
+	if (typeof imageSource === "string") {
+		if (typeof Image === "undefined") {
+			return { naturalWidth: defaultWidth, naturalHeight: defaultHeight };
+		}
+		return new Promise((resolve) => {
+			const img = new Image();
+			img.crossOrigin = "anonymous";
+			img.onload = () => {
+				resolve({
+					naturalWidth: img.naturalWidth || defaultWidth,
+					naturalHeight: img.naturalHeight || defaultHeight,
+				});
+			};
+			img.onerror = () => {
+				resolve({ naturalWidth: defaultWidth, naturalHeight: defaultHeight });
+			};
+			img.src = imageSource;
+		});
+	}
+
+	if (typeof HTMLImageElement !== "undefined" && imageSource instanceof HTMLImageElement) {
+		return {
+			naturalWidth: imageSource.naturalWidth || defaultWidth,
+			naturalHeight: imageSource.naturalHeight || defaultHeight,
+		};
+	}
+
+	if ("width" in imageSource && "height" in imageSource) {
+		const w = typeof imageSource.width === "number" ? imageSource.width : defaultWidth;
+		const h = typeof imageSource.height === "number" ? imageSource.height : defaultHeight;
+		return { naturalWidth: w || defaultWidth, naturalHeight: h || defaultHeight };
+	}
+
+	return { naturalWidth: defaultWidth, naturalHeight: defaultHeight };
+}
+
 export async function prepareOpgImageTensor(
 	imageSource: CanvasImageSource | string,
 	targetWidth = 640,

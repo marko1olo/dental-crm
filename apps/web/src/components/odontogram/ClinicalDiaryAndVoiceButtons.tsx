@@ -1,5 +1,5 @@
 import { FileText, Mic } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface ClinicalDiaryAndVoiceButtonsProps {
 	readonly onSyncAllToDiary?: (() => void) | undefined;

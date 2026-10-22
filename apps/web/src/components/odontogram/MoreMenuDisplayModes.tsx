@@ -1,5 +1,5 @@
 import type { OdontogramViewMode } from "@dental/shared";
-import type React from "react";
+import React from "react";
 import { DisplayModesSelection } from "./DisplayModesSelection";
 import { DisplayModesToggles } from "./DisplayModesToggles";
 

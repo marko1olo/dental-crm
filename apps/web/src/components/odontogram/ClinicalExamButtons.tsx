@@ -1,5 +1,5 @@
 import { Activity, Stethoscope } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface ClinicalExamButtonsProps {
 	readonly onTogglePerio?: (() => void) | undefined;

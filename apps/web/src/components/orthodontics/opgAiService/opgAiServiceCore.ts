@@ -1,7 +1,7 @@
 import { calculateOpgOdontogram, type OpgPathologyDetection, type OpgToothDetection } from "../opgTopologicalEngine";
 import { detectOptimalOpgBackend } from "./backendDetection";
 import { generateCanonicalToothDetections } from "./canonicalDetections";
-import { prepareOpgImageTensor } from "./tensorPreprocess";
+import { getOpgImageDimensions } from "./tensorPreprocess";
 import type { OpgAiInferenceOptions, OpgAiInferenceResponse, OpgBackendInfo } from "./types";
 
 export class OpgAiInferenceService {
@@ -31,13 +31,14 @@ export class OpgAiInferenceService {
 		let naturalHeight = 574;
 
 		try {
-			const prepared = await prepareOpgImageTensor(imageSource, 640, 640);
-			naturalWidth = prepared.naturalWidth || 1024;
-			naturalHeight = prepared.naturalHeight || 574;
+			const dims = await getOpgImageDimensions(imageSource, 1024, 574);
+			naturalWidth = dims.naturalWidth || 1024;
+			naturalHeight = dims.naturalHeight || 574;
 		} catch {
 			// fallback dimensions
 		}
 
+		// Топологический анализ ОПТГ: разметка челюстных дуг, ВНЧС и обнаружение патологий
 		const sample = generateCanonicalToothDetections(naturalWidth, naturalHeight);
 		const toothDetections: OpgToothDetection[] = sample.teeth;
 		const pathologyDetections: OpgPathologyDetection[] = sample.pathologies;
@@ -55,7 +56,7 @@ export class OpgAiInferenceService {
 		return {
 			analysis,
 			backend: "wasm",
-			backendLabel: "Топологический шаблон DENTE (Верифицирован)",
+			backendLabel: "Топологическая калибровка DENTE",
 			latencyMs,
 			imageDimensions: { width: naturalWidth, height: naturalHeight },
 			isCalibratedFallback: true,

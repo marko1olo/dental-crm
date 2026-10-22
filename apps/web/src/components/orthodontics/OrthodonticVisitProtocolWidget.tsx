@@ -46,6 +46,7 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 					onApplyToVisitNote={protocol.handleApplyToVisitNote}
 					onClose={onClose}
 					calculatedServicesCount={protocol.calculatedServices804n.length}
+					onSetMasterPhysiologicalNorm={protocol.handleSetMasterPhysiologicalNorm}
 				/>
 
 				<OrthoMobileSegmentedBar
