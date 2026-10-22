@@ -85,11 +85,11 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 						<button
 							type="button"
 							onClick={onInsertToProtocol}
-							className="primary-button !min-h-[32px] !h-8 !px-3 text-xs shrink-0"
+							className="secondary-button !min-h-[32px] !h-8 !px-3 text-xs shrink-0"
 							title="Внести текущее заключение пародонтограммы в дневник приёма"
 							data-testid="perio-express-insert-043-btn"
 						>
-							{insertStatus ? <Check size={14} className="text-white" /> : <FileText size={14} className="text-white" />}
+							{insertStatus ? <Check size={14} className="text-emerald-500" /> : <FileText size={14} className="text-teal-600 dark:text-teal-400" />}
 							<span>
 								{insertStatus ? "Внесено в дневник!" : "Внести в дневник"}
 							</span>

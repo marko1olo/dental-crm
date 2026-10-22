@@ -111,7 +111,7 @@ export const PerioKeypadDrawer: React.FC<PerioKeypadDrawerProps> = React.memo(({
 				</label>
 			</div>
 
-			{/* Large Touch/Glove NumPad 1..12 Buttons (Florida Probe 1-12 mm Range) */}
+			{/* Клинический пульт ввода глубины кармана (1–12 мм) */}
 			<div className="flex items-center gap-1 flex-wrap">
 				<span className="text-[11px] font-bold text-[var(--muted)] mr-1 hidden sm:inline">
 					NumPad (1–12 мм):

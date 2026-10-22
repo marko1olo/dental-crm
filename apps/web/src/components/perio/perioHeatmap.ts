@@ -67,7 +67,7 @@ export function probingDepthTone(
 }
 
 /**
- * Strict 4-tier clinical Florida Probe / AAP scale (User Directive & Periodontal Invariant):
+ * 4-уровневая клиническая шкала глубины пародонтальных карманов (AAP/EFP):
  * - null / undefined -> 'neutral' (#d1d5db)
  * - <= 3 mm          -> 'success' (зеленый #34d399 / норма зубодесневой борозды)
  * - 4..5 mm          -> 'warning-low' (желтый #fbbf24 / гингивит, начальный пародонтит)
@@ -95,7 +95,7 @@ export function probingDepthClasses(
 }
 
 /**
- * Returns Tailwind class names for strict 4-tier clinical Florida Probe scale.
+ * Возвращает классы Tailwind для 4-уровневой клинической шкалы.
  */
 export function probingDepthClinicalClasses(
 	pd: number | null | undefined,
@@ -104,7 +104,7 @@ export function probingDepthClinicalClasses(
 }
 
 /**
- * Returns hex color code for SVG and Canvas rendering.
+ * Возвращает hex-код цвета для SVG и Canvas рендеринга.
  */
 export function probingDepthHex(
 	pd: number | null | undefined,
@@ -114,7 +114,7 @@ export function probingDepthHex(
 }
 
 /**
- * Returns hex color code for strict 4-tier clinical Florida Probe scale.
+ * Возвращает hex-код цвета для 4-уровневой клинической шкалы.
  */
 export function probingDepthClinicalHex(
 	pd: number | null | undefined,

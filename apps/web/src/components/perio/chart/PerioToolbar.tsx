@@ -69,49 +69,49 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 	return (
 		<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
 			<div className="flex items-center gap-3 min-w-0">
-				<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 shrink-0">
-					<PerioProbe size={22} />
+				<div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 shrink-0">
+					<PerioProbe size={20} />
 				</div>
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
 						<h3 className="text-base font-bold text-[var(--ink)] truncate">
-							Пародонтологическая карта приёма
+							Карта пародонта
 						</h3>
 						<span
 							className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
 								aapDiagnosis.severity === "intact"
-									? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
 									: aapDiagnosis.severity === "gingivitis"
-										? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+										? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
 										: aapDiagnosis.severity === "moderate"
-											? "bg-orange-500/10 text-orange-400 border-orange-500/30"
-											: "bg-rose-500/15 text-rose-400 border-rose-500/30 animate-pulse"
+											? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30"
+											: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
 							{aapDiagnosis.icd10Code} •{" "}
-							{aapDiagnosis.diagnosisNameRu.split("(")[0]}
+							{aapDiagnosis.diagnosisNameRu.split("(")[0]?.trim()}
 						</span>
 						{syncStatus && syncStatus !== "idle" && (
 							<span
 								className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0 ${
 									syncStatus === "saving" || syncStatus === "loading"
-										? "bg-teal-500/10 text-teal-400 border-teal-500/30"
+										? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30"
 										: syncStatus === "synced"
-											? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+											? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
 											: syncStatus === "closed"
-												? "bg-sky-500/10 text-sky-400 border-sky-500/30"
-												: "bg-amber-500/10 text-amber-400 border-amber-500/30"
+												? "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30"
+												: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
 								}`}
 								data-testid="perio-sync-status-badge"
 							>
 								{syncStatus === "saving" || syncStatus === "loading" ? (
-									<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping shrink-0" />
+									<span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping shrink-0" />
 								) : syncStatus === "synced" ? (
-									<Check size={11} className="text-emerald-400 shrink-0" />
+									<Check size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 								) : syncStatus === "closed" ? (
-									<ShieldCheck size={11} className="text-sky-400 shrink-0" />
+									<ShieldCheck size={11} className="text-sky-600 dark:text-sky-400 shrink-0" />
 								) : (
-									<span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
 								)}
 								<span>
 									{syncStatus === "saving"
@@ -119,10 +119,10 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 										: syncStatus === "loading"
 											? "Загрузка..."
 											: syncStatus === "synced"
-												? "В ЭМК"
+												? "В карте"
 												: syncStatus === "closed"
 													? "Зафиксирован"
-													: "Офлайн"}
+													: "Черновик"}
 								</span>
 							</span>
 						)}
@@ -133,41 +133,41 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				</div>
 			</div>
 
-			{/* Клинические протоколы пародонтологии (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
+			{/* Тулбар клинических действий (Строго 1 строка 36px на десктопе, Мандат 8am: ровно 1 Primary CTA) */}
 			{!readOnly && (
-				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 min-h-[36px]">
-					{/* Протокол «Норма»: Instant PSR 0, Healthy Tissues & Clinical Protocol */}
+				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 h-9 min-h-[36px]">
+					{/* 1-клик Физиологическая норма: «Пародонт в норме» (глубина 1-2 мм, кровоточивость 0%) */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="primary-button shrink-0 font-bold"
-						title="Вся десна здорова (Норма) • 1-клик: Здоровый пародонт (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
+						className="secondary-button shrink-0 font-bold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 !h-9 !min-h-[36px]"
+						title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, кровоточивость 0%)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
-						<Check size={15} className="shrink-0 text-white" />
-						<span>Вся десна здорова (Норма)</span>
+						<ShieldCheck size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						<span>Пародонт в норме</span>
 					</button>
 
-					{/* Протокол «Профгигиена»: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
+					{/* Протокол «Профгигиена» */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-						className="secondary-button shrink-0"
-						title="Профессиональная гигиена полости рта (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
+						className="secondary-button shrink-0 !h-9 !min-h-[36px]"
+						title="Профессиональная гигиена полости рта (УЗ + Air-Flow + полировка + фторирование)"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
 						<UltrasonicScaler size={15} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
 						<span>Профгигиена</span>
 					</button>
 
+					{/* Быстрый сброс всех зубов к интактным */}
 					<button
 						type="button"
 						onClick={onSetAllIntact}
-						className="secondary-button shrink-0"
-						title="Пародонт интактен / норма (все 32 зуба: глубина 2 мм, рецессия 0 мм, BOP 0%)"
+						className="secondary-button shrink-0 !h-9 !min-h-[36px]"
+						title="Пародонт интактен / норма (все 32 зуба: глубина 1–2 мм, рецессия 0 мм, BOP 0%)"
 						data-testid="perio-healthy-norm-btn"
 					>
-						<ShieldCheck size={14} className="text-emerald-500 shrink-0" />
 						<span>Интактно</span>
 					</button>
 
@@ -175,39 +175,42 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("recession_express")}
-						className="secondary-button shrink-0"
+						className="secondary-button shrink-0 !h-9 !min-h-[36px]"
 						title="Рецессия десны (K06.0): рецессия 1–3 мм, карманы <= 2 мм, BOP 0"
 						data-testid="perio-preset-recession-toolbar-btn"
 					>
-						<span>Рецессия (K06.0)</span>
+						<span>Рецессия</span>
 					</button>
 
+					{/* Быстрая отметка патологии выбранного зуба: карман 5 мм + кровоточивость */}
 					<button
 						type="button"
 						onClick={() => onMarkSelectedToothPathology(5, true)}
-						className="secondary-button hidden md:inline-flex shrink-0"
-						title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
+						className="secondary-button hidden md:inline-flex shrink-0 !h-9 !min-h-[36px]"
+						title={`Быстрая отметка кармана 5 мм с кровоточивостью для зуба #${selectedToothNumber}`}
 						data-testid="perio-preset-tooth-pathology"
 					>
 						<Droplets size={14} className="text-rose-500 shrink-0" />
 						<span>#{selectedToothNumber} 5мм+BOP</span>
 					</button>
 
+					{/* Автоматически проставить кровоточивость на всех карманах >= 4 мм */}
 					<button
 						type="button"
 						onClick={onMarkBopOnDeepPockets}
-						className="secondary-button hidden lg:inline-flex shrink-0"
-						title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
+						className="secondary-button hidden lg:inline-flex shrink-0 !h-9 !min-h-[36px]"
+						title="Автоматически отметить кровоточивость на всех карманах глубиной ≥ 4 мм"
 						data-testid="perio-preset-bop-pockets"
 					>
 						<Droplets size={14} className="text-rose-500 shrink-0" />
 						<span>BOP ≥ 4мм</span>
 					</button>
 
+					{/* Очистить зубной налёт */}
 					<button
 						type="button"
 						onClick={onClearPlaque}
-						className="secondary-button hidden xl:inline-flex shrink-0"
+						className="secondary-button hidden xl:inline-flex shrink-0 !h-9 !min-h-[36px]"
 						title="Очистить весь зубной налет"
 						data-testid="perio-preset-clear-plaque"
 					>
@@ -215,16 +218,17 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						<span>Очистить налет</span>
 					</button>
 
+					{/* Индексы гигиены */}
 					<button
 						type="button"
 						onClick={onToggleHygieneExpanded}
-						className={`${isHygieneExpanded ? "primary-button" : "secondary-button"} shrink-0`}
-						title="Открыть экспресс-расчет индексов гигиены (OHI-S, PMA, КПИ)"
+						className={`secondary-button shrink-0 !h-9 !min-h-[36px] ${isHygieneExpanded ? "border-teal-500 text-teal-700 dark:text-teal-300 font-bold bg-teal-500/10" : ""}`}
+						title="Открыть расчет индексов гигиены (OHI-S, PMA, КПИ)"
 						data-testid="perio-hygiene-indices-btn"
 					>
 						<ShieldCheck
 							size={14}
-							className={isHygieneExpanded ? "text-white" : "text-teal-500"}
+							className={isHygieneExpanded ? "text-teal-600 dark:text-teal-400" : "text-[var(--muted)]"}
 						/>
 						<span>Индексы гигиены</span>
 						{isHygieneExpanded ? (
@@ -234,27 +238,12 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						)}
 					</button>
 
-					{/* Canonical DENTE Primary Save Button (Mandate 8e & Paragraph 3) */}
-					{onSaveDraft && (
-						<button
-							type="button"
-							onClick={onSaveDraft}
-							disabled={syncStatus === "saving"}
-							className="primary-button button-lg shrink-0"
-							title="Сохранить карту пародонта в ЭМК (PostgreSQL 18)"
-							data-testid="perio-save-draft-btn"
-						>
-							<Save size={15} className={syncStatus === "saving" ? "animate-spin text-white" : "text-white"} />
-							<span>Сохранить</span>
-						</button>
-					)}
-
-					{/* 1-Click Insert into EMR: Secondary CTA */}
+					{/* Внести в дневник визита */}
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="secondary-button shrink-0"
-						title="Сформировать и вставить протокол пародонтограммы в дневник приёма"
+						className="secondary-button shrink-0 !h-9 !min-h-[36px]"
+						title="Сформировать клиническое резюме и вставить в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
 						{insertStatus ? <Check size={14} className="text-emerald-500" /> : <FileText size={14} className="text-teal-600 dark:text-teal-400" />}
@@ -263,11 +252,26 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						</span>
 					</button>
 
-					{/* Reset to Norm Icon Button */}
+					{/* ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА (МАНДАТ 8am): «Сохранить периодонтограмму» */}
+					{onSaveDraft && (
+						<button
+							type="button"
+							onClick={onSaveDraft}
+							disabled={syncStatus === "saving"}
+							className="primary-button shrink-0 font-bold !h-9 !min-h-[36px]"
+							title="Сохранить карту пародонта в электронную медицинскую карту"
+							data-testid="perio-save-draft-btn"
+						>
+							<Save size={15} className={syncStatus === "saving" ? "animate-spin text-white" : "text-white"} />
+							<span>Сохранить периодонтограмму</span>
+						</button>
+					)}
+
+					{/* Иконка сброса */}
 					<button
 						type="button"
 						onClick={onSetAllIntact}
-						className="icon-button shrink-0"
+						className="icon-button shrink-0 !h-9 !w-9 !min-h-[36px]"
 						title="Сбросить карту к физиологической норме"
 						aria-label="Сбросить карту к норме"
 						data-testid="perio-reset-icon-btn"
@@ -275,12 +279,13 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						<RotateCcw size={15} />
 					</button>
 
+					{/* Копировать текст протокола */}
 					<button
 						type="button"
 						onClick={onCopyProtocol}
-						className="icon-button shrink-0"
-						title="Копировать текст протокола в буфер"
-						aria-label="Копировать текст протокола"
+						className="icon-button shrink-0 !h-9 !w-9 !min-h-[36px]"
+						title="Копировать текст резюме пародонта в буфер"
+						aria-label="Копировать текст резюме"
 					>
 						{copyStatus ? (
 							<Check size={15} className="text-emerald-500" />
@@ -289,12 +294,13 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						)}
 					</button>
 
+					{/* Справка */}
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="icon-button shrink-0"
-						title="Справка по горячим клавишам пародонтограммы"
-						aria-label="Справка по горячим клавишам"
+						className="icon-button shrink-0 !h-9 !w-9 !min-h-[36px]"
+						title="Справка по карте пародонта"
+						aria-label="Справка по карте пародонта"
 					>
 						<HelpCircle size={15} />
 					</button>

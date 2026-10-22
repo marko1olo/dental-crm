@@ -78,7 +78,7 @@ export function usePerioKeyboardProbing({
 				}
 			}
 
-			// Dedicated Florida Probe 11 & 12 mm hotkeys: Shift+1 (11 mm), Shift+2 (12 mm)
+			// Горячие клавиши для глубоких карманов 11 и 12 мм: Shift+1 (11 мм), Shift+2 (12 мм)
 			const isShift11 =
 				e.shiftKey &&
 				(e.code === "Digit1" || e.code === "Numpad1" || e.key === "!" || e.key === "1");
@@ -183,7 +183,7 @@ export function usePerioKeyboardProbing({
 				return;
 			}
 
-			// Spacebar or 'b' / 'B' / 'и' / 'И' toggles Bleeding on Probing (Florida Probe style)
+			// Пробел или клавиши 'b' / 'B' / 'и' / 'И' переключают кровоточивость (BOP)
 			if (
 				e.key === " " ||
 				e.key === "b" ||

@@ -574,7 +574,7 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 					})}
 				</div>
 
-				{/* Fast Depth Numeric Input for Selected Site (1-12 mm Florida Probe Range) */}
+				{/* Быстрый выбор глубины кармана для выбранной поверхности (1–12 мм) */}
 				<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
 						<span className="text-[12px]">
@@ -584,7 +584,7 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 							</strong>
 						</span>
 						<span className="text-[11.5px] text-[var(--muted)] font-normal">
-							Диапазон: 1–12 мм (Флорида-зонд)
+							Клиническая глубина: 1–12 мм
 						</span>
 					</div>
 					<div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">

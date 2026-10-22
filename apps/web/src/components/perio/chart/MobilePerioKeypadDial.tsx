@@ -1,20 +1,18 @@
 /**
  * apps/web/src/components/perio/chart/MobilePerioKeypadDial.tsx
  *
- * DENTE Dental CRM — Glove-Friendly Clinical Keypad Dial for Periodontal Probing
- * Apple HIG Thumb Zone & Florida Probe Workflow (Mandates 8b, 8d, 8e)
- *
- * - 3x3 Telephone / Calculator Keypad Dial (1..9 mm)
- * - Glove-friendly touch targets >= 48x48px
- * - Tactile auto-advance upon depth entry
- * - 0 mm physiological norm entry
- * - 1-tap bleeding (BOP), suppuration (PUS), and plaque (PLQ) toggles
- * - Zero bird language & zero cartoon emojis (Mandate 8d)
+ * DENTE Dental CRM — Сенсорный клинический пульт пародонтологии для смартфонов и планшетов
+ * Apple HIG Touch Ergonomics (Мандаты 8e, 8n, 8am):
+ * - 1-тап фиксация физиологической нормы зуба («Норма 1–2 мм»)
+ * - Быстрый ввод патологических карманов (4 мм, 5 мм, 6 мм, 7+ мм)
+ * - 1-тап переключатели кровоточивости (Кровь / BOP), гноя (Гной / PUS), налёта и рецессии
+ * - Тач-таргеты >= 44x44px (h-11..12), зона большого пальца (Natural Thumb Zone)
+ * - Чистый клинический язык без канцелярита и без процедурной симуляции 192 точек
  */
 
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import type { PerioSiteKey } from "@dental/shared";
-import { AlertCircle, ChevronLeft, ChevronRight, Droplets, ShieldCheck } from "lucide-react";
+import { AlertCircle, Check, ChevronLeft, ChevronRight, Droplets, ShieldCheck } from "lucide-react";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { SITE_SHORT_RU } from "./PerioToothCard";
 
@@ -39,8 +37,10 @@ export interface MobilePerioKeypadDialProps {
 	readonly onToggleBop: () => void;
 	readonly onTogglePlaque: () => void;
 	readonly onToggleSuppuration: () => void;
-	readonly onPrevSite: () => void;
-	readonly onNextSite: () => void;
+	readonly onPrevSite?: (() => void) | undefined;
+	readonly onNextSite?: (() => void) | undefined;
+	readonly onSetToothNorm?: (() => void) | undefined;
+	readonly onSetToothPathology?: ((depth: number, hasBop: boolean) => void) | undefined;
 }
 
 export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(({
@@ -57,106 +57,130 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 	onToggleSuppuration,
 	onPrevSite,
 	onNextSite,
+	onSetToothNorm,
+	onSetToothPathology,
 }) => {
-	const [showExtendedKeypad, setShowExtendedKeypad] = useState(false);
-
 	const handleDepthTap = (depth: number) => {
 		triggerHaptic("selection");
 		onKeypadDepth(depth);
-		onNextSite();
+	};
+
+	const handleToothNorm = () => {
+		triggerHaptic("selection");
+		if (onSetToothNorm) {
+			onSetToothNorm();
+		} else {
+			onKeypadDepth(2);
+		}
+	};
+
+	const handleFastPathology = (depth: number) => {
+		triggerHaptic("impact");
+		if (onSetToothPathology) {
+			onSetToothPathology(depth, true);
+		} else {
+			onKeypadDepth(depth);
+		}
 	};
 
 	return (
 		<div
-			className="sticky bottom-0 z-20 w-full p-2.5 sm:p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-teal-500/40 shadow-xl flex flex-col gap-2 select-none"
+			className="sticky bottom-0 z-20 w-full p-2.5 sm:p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-[var(--line)] shadow-xl flex flex-col gap-2 select-none"
 			data-testid="mobile-perio-keypad-dial"
 		>
-			{/* Active Probing Site Banner */}
+			{/* Информационная строка активного зуба и поверхности */}
 			<div className="flex items-center justify-between text-xs font-semibold px-1 pb-1 border-b border-[var(--line-subtle)]">
-				<div className="flex items-center gap-1.5 text-teal-300 min-w-0">
-					<span className="text-[var(--muted)]">Точка:</span>
+				<div className="flex items-center gap-1.5 min-w-0">
+					<span className="text-[var(--muted)]">Зуб:</span>
 					<strong className="text-[var(--ink)] font-mono text-sm truncate">
-						#{selectedToothNumber} {SITE_NAME_FULL_RU[currentFocusedSiteKey] ?? SITE_SHORT_RU[currentFocusedSiteKey]}
+						#{selectedToothNumber} ({SITE_SHORT_RU[currentFocusedSiteKey] ?? "В"})
 					</strong>
-					<span className="text-[var(--teal,#0d9488)] font-black text-xs shrink-0">
-						({currentPd} мм)
+					<span
+						className={`font-black text-xs px-2 py-0.5 rounded-full shrink-0 ${
+							currentPd <= 3
+								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+								: currentPd <= 5
+									? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+									: "bg-rose-500/20 text-rose-700 dark:text-rose-300"
+						}`}
+					>
+						{currentPd <= 3 ? `${currentPd} мм (Норма)` : `Карман ${currentPd} мм`}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-1 shrink-0">
-					{/* Prev / Next Site buttons */}
+					{/* Быстрая норма зуба */}
 					<button
 						type="button"
-						onClick={() => {
-							triggerHaptic("selection");
-							onPrevSite();
-						}}
-						className="min-h-[48px] min-w-[48px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
-						title="Предыдущая точка зондирования"
-						data-testid="perio-prev-site-btn"
+						disabled={readOnly}
+						onClick={handleToothNorm}
+						className="min-h-[44px] px-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
+						title="Зуб в норме: карманы 1–2 мм, кровоточивости нет"
+						data-testid="perio-keypad-depth-0"
 					>
-						<ChevronLeft size={20} />
+						<ShieldCheck size={16} />
+						<span>Норма</span>
 					</button>
-					<button
-						type="button"
-						onClick={() => {
-							triggerHaptic("selection");
-							onNextSite();
-						}}
-						className="min-h-[48px] min-w-[48px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
-						title="Следующая точка зондирования"
-						data-testid="perio-next-site-btn"
-					>
-						<ChevronRight size={20} />
-					</button>
+
+					{onPrevSite && (
+						<button
+							type="button"
+							onClick={() => {
+								triggerHaptic("selection");
+								onPrevSite();
+							}}
+							className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
+							title="Предыдущая поверхность"
+							data-testid="perio-prev-site-btn"
+						>
+							<ChevronLeft size={18} />
+						</button>
+					)}
+					{onNextSite && (
+						<button
+							type="button"
+							onClick={() => {
+								triggerHaptic("selection");
+								onNextSite();
+							}}
+							className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] active:scale-95 cursor-pointer shadow-2xs"
+							title="Следующая поверхность"
+							data-testid="perio-next-site-btn"
+						>
+							<ChevronRight size={18} />
+						</button>
+					)}
 				</div>
 			</div>
 
-			{/* Clinical Phone/Calculator 3x3 Keypad Dial with Auto-Advance */}
-			<div className="grid grid-cols-3 gap-1.5 w-full">
-				{[1, 2, 3, 4, 5, 6, 7, 8, 9].map((numVal) => {
-					const isNorm = numVal <= 3;
-					const isBorderline = numVal === 4;
-					const isDeep = numVal > 4;
-					return (
-						<button
-							key={numVal}
-							type="button"
-							disabled={readOnly}
-							onClick={() => handleDepthTap(numVal)}
-							className={`min-h-[48px] h-12 rounded-xl font-black text-base font-mono flex items-center justify-center gap-1 border transition-all active:scale-95 cursor-pointer touch-manipulation shadow-xs ${
-								isNorm
-									? "bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
-									: isBorderline
-										? "bg-amber-600/20 hover:bg-amber-600/35 text-amber-800 dark:text-amber-300 border-amber-500/40"
-										: "bg-rose-600/25 hover:bg-rose-600/45 text-rose-800 dark:text-rose-200 border-rose-500/50 ring-1 ring-rose-500/30 font-black"
-							}`}
-							data-testid={`perio-keypad-depth-${numVal}`}
-							title={`${numVal} мм (ввод и автопереход к следующей точке)`}
-						>
-							<span className="text-lg leading-none">{numVal}</span>
-							<span className="text-[11px] font-normal opacity-80">мм</span>
-						</button>
-					);
-				})}
+			{/* Быстрый выбор глубины кармана зуба: 2, 3, 4, 5, 6, 7+ мм */}
+			<div className="grid grid-cols-6 gap-1.5 w-full">
+				{[
+					{ val: 2, label: "2 мм", sub: "Норма", cls: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" },
+					{ val: 3, label: "3 мм", sub: "Норма", cls: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" },
+					{ val: 4, label: "4 мм", sub: "Карман", cls: "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40" },
+					{ val: 5, label: "5 мм", sub: "Карман", cls: "bg-orange-500/20 text-orange-800 dark:text-orange-300 border-orange-500/40 font-bold" },
+					{ val: 6, label: "6 мм", sub: "Глубокий", cls: "bg-rose-500/20 text-rose-800 dark:text-rose-200 border-rose-500/40 font-bold" },
+					{ val: 7, label: "7+ мм", sub: "Тяжелый", cls: "bg-red-600/25 text-red-900 dark:text-red-200 border-red-500/50 font-black ring-1 ring-red-500/30" },
+				].map((item) => (
+					<button
+						key={item.val}
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleDepthTap(item.val)}
+						className={`min-h-[48px] h-12 rounded-xl flex flex-col items-center justify-center border transition-all active:scale-95 cursor-pointer touch-manipulation shadow-xs ${item.cls}`}
+						data-testid={`perio-keypad-depth-${item.val}`}
+						title={`Глубина ${item.label} (${item.sub})`}
+					>
+						<span className="text-sm font-black leading-none">{item.label}</span>
+						<span className="text-[10px] opacity-75">{item.sub}</span>
+					</button>
+				))}
 			</div>
 
-			{/* Primary Clinical Actions: 0 mm Norm / Blood (BOP) / Pus (Suppuration) */}
+			{/* Клинические маркеры десны в 1 тап: Кровоточивость (BOP), Нагноение (PUS), Налёт (PLQ) */}
 			<div className="grid grid-cols-3 gap-1.5 w-full">
-				{/* 0 mm Norm / Sulcus */}
-				<button
-					type="button"
-					disabled={readOnly}
-					onClick={() => handleDepthTap(0)}
-					className="min-h-[48px] h-12 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 active:scale-95 cursor-pointer shadow-xs"
-					title="0 мм (физиологическая норма, автопереход)"
-					data-testid="perio-keypad-depth-0"
-				>
-					<ShieldCheck size={16} />
-					<span>0 мм (Норма)</span>
-				</button>
-
-				{/* 1-Tap Bleeding on Probing (BOP) */}
+				{/* 1-Tap Кровоточивость (BOP) */}
 				<button
 					type="button"
 					disabled={readOnly}
@@ -164,19 +188,19 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 						triggerHaptic("impact");
 						onToggleBop();
 					}}
-					className={`min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentBop
 							? "bg-rose-600 text-white border-rose-400 font-black shadow-sm"
-							: "bg-[var(--paper-soft)] text-rose-300 border-rose-500/40 hover:bg-rose-500/15"
+							: "bg-[var(--paper-soft)] text-rose-600 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/15"
 					}`}
-					title="Кровоточивость десны при зондировании (BOP)"
+					title="Кровоточивость десны при зондировании"
 					data-testid="perio-mobile-bop-btn"
 				>
-					<Droplets size={16} className={currentBop ? "text-white" : "text-rose-400"} />
-					<span>{currentBop ? "Кровь: Да" : "Кровь"}</span>
+					<Droplets size={16} className={currentBop ? "text-white" : "text-rose-500"} />
+					<span>{currentBop ? "Кровоточивость: Да" : "Кровоточивость"}</span>
 				</button>
 
-				{/* 1-Tap Pus (Suppuration) */}
+				{/* 1-Tap Нагноение (Suppuration) */}
 				<button
 					type="button"
 					disabled={readOnly}
@@ -184,22 +208,19 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 						triggerHaptic("impact");
 						onToggleSuppuration();
 					}}
-					className={`min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPus
 							? "bg-indigo-600 text-white border-indigo-400 font-black shadow-sm"
-							: "bg-[var(--paper-soft)] text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/15"
+							: "bg-[var(--paper-soft)] text-indigo-600 dark:text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/15"
 					}`}
-					title="Нагноение из пародонтального кармана (PUS)"
+					title="Гноетечение из кармана"
 					data-testid="perio-mobile-pus-btn"
 				>
-					<AlertCircle size={16} className={currentPus ? "text-white" : "text-indigo-400"} />
-					<span>{currentPus ? "Гной: Да" : "Гной"}</span>
+					<AlertCircle size={16} className={currentPus ? "text-white" : "text-indigo-500"} />
+					<span>{currentPus ? "Гной: Есть" : "Гноетечение"}</span>
 				</button>
-			</div>
 
-			{/* Secondary Clinical Row: Plaque / Extended 10-12 mm */}
-			<div className="grid grid-cols-2 gap-1.5 w-full">
-				{/* 1-Tap Plaque (PLQ) */}
+				{/* 1-Tap Зубной налёт (Plaque) */}
 				<button
 					type="button"
 					disabled={readOnly}
@@ -207,45 +228,17 @@ export const MobilePerioKeypadDial: React.FC<MobilePerioKeypadDialProps> = memo(
 						triggerHaptic("selection");
 						onTogglePlaque();
 					}}
-					className={`min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPlq
 							? "bg-amber-500 text-slate-950 font-black border-amber-400 shadow-sm"
-							: "bg-[var(--paper-soft)] text-amber-300 border-amber-500/40 hover:bg-amber-500/15"
+							: "bg-[var(--paper-soft)] text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/15"
 					}`}
-					title="Зубной налет на активной точке (Plaque)"
+					title="Зубной налёт на поверхности зуба"
 					data-testid="perio-mobile-plaque-btn"
 				>
 					<span>{currentPlq ? "Налёт: Есть" : "Зубной налёт"}</span>
 				</button>
-
-				{/* Toggle 10..12 mm deep pockets */}
-				<button
-					type="button"
-					onClick={() => setShowExtendedKeypad((prev) => !prev)}
-					className="min-h-[48px] h-12 rounded-xl font-bold text-xs flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] active:scale-95 cursor-pointer shadow-xs"
-					title="Показать глубокие карманы (10–12 мм)"
-				>
-					{showExtendedKeypad ? "Скрыть 10–12 мм" : "Глубокие 10–12 мм"}
-				</button>
 			</div>
-
-			{/* Extra Extended Depth Keys (10..12 mm) */}
-			{showExtendedKeypad && (
-				<div className="grid grid-cols-3 gap-1 w-full pt-1 border-t border-[var(--line-subtle)] animate-in fade-in">
-					{[10, 11, 12].map((numVal) => (
-						<button
-							key={numVal}
-							type="button"
-							disabled={readOnly}
-							onClick={() => handleDepthTap(numVal)}
-							className="min-h-[48px] h-12 rounded-xl font-black text-xs flex items-center justify-center bg-rose-700/30 text-rose-200 border border-rose-600/50 active:scale-95 cursor-pointer shadow-xs"
-							data-testid={`perio-keypad-depth-${numVal}`}
-						>
-							{numVal} мм
-						</button>
-					))}
-				</div>
-			)}
 		</div>
 	);
 });

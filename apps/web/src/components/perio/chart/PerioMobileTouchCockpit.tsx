@@ -1,15 +1,14 @@
 /**
  * apps/web/src/components/perio/chart/PerioMobileTouchCockpit.tsx
  *
- * Touch-First Chairside Periodontal Chart for Smartphones and Tablets (Apple HIG 390x844).
- * Dedicated mobile ergonomic layer conforming to Florida Probe workflow:
- * - 4-Quadrant Switcher: [ Q1 Верх-Пр | Q2 Верх-Лев | Q3 Низ-Лев | Q4 Низ-Пр ]
- * - 8 Teeth Selection Grid per Quadrant with instant visual risk heatmap
- * - Large Chairside Focal Tooth Cockpit with 6 Tactile Probing Sensors (DB, B, MB, DL, L, ML)
- * - Probing Depth Keypad in Natural Thumb Zone (1..7+ mm, >= 44x44px touch targets)
- * - 1-Tap Bleeding on Probing (BOP) toggle with tactile feedback
- * - 0px horizontal scroll (overflow-x: clip; max-width: 100vw)
- * - 100% real EMR connection, 0 mocks in vacuum, 0 cartoon emojis (Mandate 8d)
+ * Сенсорная карта пародонта для смартфонов и планшетов (Apple HIG 390x844).
+ * Эргономичный слой для врача у кресла (Мандаты 8e, 8n, 8am):
+ * - Физиологическая норма в 1 тап: «Пародонт в норме» (глубина 1–2 мм, BOP 0%)
+ * - 4 квадранта зубного ряда: [ Q1 Верх-Пр | Q2 Верх-Лев | Q3 Низ-Лев | Q4 Низ-Пр ]
+ * - Быстрый выбор зуба и фиксация патологии только там, где реально есть карман ≥ 4 мм
+ * - Ровно ОДНА Primary CTA кнопка: «Сохранить периодонтограмму»
+ * - Мгновенный экспорт в дневник приёма («В дневник»)
+ * - 0px паразитного горизонтального скролла (overflow-x: clip; max-width: 100vw)
  */
 
 import {
@@ -26,22 +25,19 @@ import {
 import {
 	AlertCircle,
 	Check,
-	ChevronLeft,
-	ChevronRight,
 	Droplets,
 	FileText,
-	RotateCcw,
+	Save,
+	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { UltrasonicScaler } from "../../icons/DentalIcons";
-import { probingDepthClinicalClasses, probingDepthClinicalHex } from "../perioHeatmap";
+import { probingDepthClinicalClasses } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";
 import { SITE_SHORT_RU } from "./PerioToothCard";
 import { MobilePerioKeypadDial, SITE_NAME_FULL_RU } from "./MobilePerioKeypadDial";
-import { triggerHaptic } from "../../../native/mobileBridge";
 import type { PerioExpressPresetId } from "../perioMath";
 
 export type PerioQuadrantKey = "Q1" | "Q2" | "Q3" | "Q4";
@@ -81,6 +77,8 @@ export interface PerioMobileTouchCockpitProps {
 	readonly onSetAllIntact: () => void;
 	readonly onInsertToProtocol: () => void;
 	readonly insertStatus: boolean;
+	readonly onSaveDraft?: (() => void) | undefined;
+	readonly syncStatus?: string | undefined;
 }
 
 const QUADRANT_TEETH: Record<PerioQuadrantKey, number[]> = {
@@ -145,6 +143,8 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 	onSetAllIntact,
 	onInsertToProtocol,
 	insertStatus,
+	onSaveDraft,
+	syncStatus = "idle",
 }) => {
 	const [activeQuadrant, setActiveQuadrant] = useState<PerioQuadrantKey>(() =>
 		getQuadrantForTooth(selectedToothNumber),
@@ -157,7 +157,6 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 		setActiveQuadrant(qKey);
 		const teethInQ = QUADRANT_TEETH[qKey];
 		if (!teethInQ.includes(selectedToothNumber)) {
-			// Select first available or molar
 			const defaultTooth = teethInQ.find((t) => t % 10 === 6) ?? teethInQ[0];
 			if (defaultTooth) {
 				onSelectTooth(defaultTooth);
@@ -168,7 +167,6 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 
 	const teethInCurrentQuadrant = QUADRANT_TEETH[activeQuadrant];
 
-	// Site orientation for current tooth
 	const isRightQuadrant =
 		(selectedToothNumber >= 11 && selectedToothNumber <= 18) ||
 		(selectedToothNumber >= 41 && selectedToothNumber <= 48);
@@ -198,19 +196,19 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 			data-testid="perio-mobile-cockpit"
 		>
 			{/* ═══════════════════════════════════════════════════════════════════
-			    1. MOBILE TOP BAR: DIAGNOSIS & 1-CLICK ACTIONS (Apple HIG 2 Rows)
+			    1. ВЕРХНИЙ БЛОК: СТАТУС ДЕСНЫ И БЫСТРЫЕ ДЕЙСТВИЯ (Apple HIG)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="w-full flex flex-col gap-1.5">
-				<div className="w-full">
+				<div className="w-full flex items-center justify-between gap-2">
 					<span
-						className={`block w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border text-center truncate ${
+						className={`block flex-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border text-center truncate ${
 							aapDiagnosis.severity === "intact"
-								? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+								? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
 								: aapDiagnosis.severity === "gingivitis"
-									? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+									? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
 									: aapDiagnosis.severity === "moderate"
-										? "bg-orange-500/15 text-orange-300 border-orange-500/30"
-										: "bg-rose-500/20 text-rose-300 border-rose-500/40"
+										? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30"
+										: "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40"
 						}`}
 						title={aapDiagnosis.diagnosisNameRu}
 					>
@@ -218,45 +216,46 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					</span>
 				</div>
 
+				{/* 1-клик кнопки: «Норма» • «Гигиена» • «В дневник» */}
 				<div className="grid grid-cols-3 gap-1.5 w-full">
-					{/* Протокол «Норма» */}
+					{/* Норма пародонта в 1 клик */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-						title="Вся десна здорова (Норма) • 1-клик: Здоровый пародонт (Норма)"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 active:scale-95 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, BOP 0%)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
-						<ShieldCheck size={16} className="shrink-0" />
+						<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 						<span className="whitespace-nowrap">Норма</span>
 					</button>
 
-					{/* Протокол «Профгигиена» */}
+					{/* Профгигиена */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-						className="min-h-[48px] px-2 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] active:scale-95 text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
 						title="Профессиональная гигиена полости рта"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
-						<UltrasonicScaler size={16} className="shrink-0" />
+						<UltrasonicScaler size={16} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
 						<span className="whitespace-nowrap">Гигиена</span>
 					</button>
 
-					{/* Save into Visit Diary */}
+					{/* Внести в дневник визита */}
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="min-h-[48px] px-2 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-						title="Внести протокол в дневник приёма"
+						className="min-h-[48px] px-2 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] active:scale-95 text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+						title="Внести клиническое резюме в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
-						{insertStatus ? <Check size={16} className="shrink-0" /> : <FileText size={16} className="shrink-0" />}
+						{insertStatus ? <Check size={16} className="shrink-0 text-emerald-500" /> : <FileText size={16} className="shrink-0 text-teal-600 dark:text-teal-400" />}
 						<span className="whitespace-nowrap">{insertStatus ? "Внесено!" : "В дневник"}</span>
 					</button>
 				</div>
 
-				{/* Quick Pathology Presets Row (Apple HIG Touch >= 44x44px) */}
+				{/* Пресеты патологии в 1 клик */}
 				<div className="grid grid-cols-4 gap-1.5 w-full">
 					<button
 						type="button"
@@ -305,20 +304,20 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    2. COMPACT CLINICAL METRICS (FMBS, FMPS, Pockets, Max PD)
+			    2. СВОДНЫЕ ПОКАЗАТЕЛИ ПАРОДОНТА
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="grid grid-cols-4 gap-1.5 w-full">
 				<div className="p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap" title="Кровоточивость десны при зондировании (FMBS / BOP)">
-						BOP (Кровь)
+					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap">
+						Кровь (BOP)
 					</span>
 					<span
 						className={`text-sm font-black ${
 							summary.fmbsPercent <= 10
-								? "text-emerald-400"
+								? "text-emerald-500"
 								: summary.fmbsPercent <= 25
-									? "text-amber-400"
-									: "text-rose-400"
+									? "text-amber-500"
+									: "text-rose-500"
 						}`}
 					>
 						{summary.fmbsPercent}%
@@ -326,16 +325,16 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				</div>
 
 				<div className="p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap" title="Зубной налет (FMPS / Plaque)">
-						PLQ (Налёт)
+					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap">
+						Налёт (PLQ)
 					</span>
 					<span
 						className={`text-sm font-black ${
 							summary.fmpsPercent <= 15
-								? "text-emerald-400"
+								? "text-emerald-500"
 								: summary.fmpsPercent <= 30
-									? "text-amber-400"
-									: "text-rose-400"
+									? "text-amber-500"
+									: "text-rose-500"
 						}`}
 					>
 						{summary.fmpsPercent}%
@@ -343,12 +342,12 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				</div>
 
 				<div className="p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap" title="Количество карманов глубиной 5 мм и более">
+					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap">
 						Карманы ≥5
 					</span>
 					<span
 						className={`text-sm font-black ${
-							summary.deepPocketsCount === 0 ? "text-emerald-400" : "text-rose-400"
+							summary.deepPocketsCount === 0 ? "text-emerald-500" : "text-rose-500"
 						}`}
 					>
 						{summary.deepPocketsCount}
@@ -356,17 +355,17 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				</div>
 
 				<div className="p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap" title="Максимальная глубина зондирования / потеря прикрепления (CAL)">
-						CAL / Глубина
+					<span className="text-[10px] text-[var(--muted)] font-semibold whitespace-nowrap">
+						Макс карман
 					</span>
 					<span className="text-sm font-black text-[var(--ink)]">
-						{summary.maxPocketDepthMm} / {summary.maxCalMm} мм
+						{summary.maxPocketDepthMm} мм
 					</span>
 				</div>
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    3. APPLE HIG QUADRANT SELECTOR (Segmented Control 4 Tabs)
+			    3. ПЕРЕКЛЮЧАТЕЛЬ 4 КВАДРАНТОВ (Q1–Q4)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="w-full flex flex-col gap-1.5">
 				<div className="w-full grid grid-cols-4 gap-1 p-1 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
@@ -392,9 +391,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					})}
 				</div>
 
-				{/* ═══════════════════════════════════════════════════════════════════
-				    4. 8 TEETH TOUCH SELECTOR GRID FOR ACTIVE QUADRANT
-				    ═══════════════════════════════════════════════════════════════════ */}
+				{/* 8 зубов выбранного квадранта */}
 				<div className="grid grid-cols-8 gap-1 w-full p-1.5 rounded-2xl bg-[var(--paper-soft)]/50 border border-[var(--line)]">
 					{teethInCurrentQuadrant.map((tNum) => {
 						const tRecord = toothMap.get(tNum);
@@ -415,7 +412,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 									isMissing
 										? "opacity-40 bg-[var(--paper-soft)] border-[var(--line)]"
 										: isSelected
-											? "bg-teal-500/20 text-teal-300 border-teal-500 ring-2 ring-teal-400/50 shadow-sm"
+											? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500 ring-2 ring-teal-400/50 shadow-sm"
 											: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
 								}`}
 								data-testid={`perio-quadrant-tooth-${tNum}`}
@@ -423,16 +420,15 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 							>
 								<span className="text-xs font-black font-mono leading-none">{tNum}</span>
 
-								{/* Depth Pill & BOP dot */}
 								{!isMissing && (
 									<div className="flex items-center gap-0.5 mt-0.5">
 										<span
 											className={`text-[9px] font-mono font-bold px-1 rounded-sm leading-tight ${
 												maxPd <= 3
-													? "bg-emerald-500/20 text-emerald-300"
+													? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
 													: maxPd <= 5
-														? "bg-amber-500/20 text-amber-300"
-														: "bg-rose-500/25 text-rose-300 font-black"
+														? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
+														: "bg-rose-500/25 text-rose-700 dark:text-rose-300 font-black"
 											}`}
 										>
 											{maxPd}
@@ -453,14 +449,13 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    5. FOCAL TOOTH CHAIRSIDE COCKPIT (Крупный фокусный зуб у кресла)
+			    4. ФОКУСНЫЙ ЗУБ У КРЕСЛА: ВЫБОР ПАТОЛОГИИ
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{selectedTooth && (
 				<div className="p-3 rounded-2xl bg-[var(--paper)] border border-teal-500/30 shadow-sm flex flex-col gap-3 w-full">
-					{/* Tooth Info Header & Fast Status Chips */}
 					<div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-[var(--line)]">
 						<div className="flex items-center gap-2 min-w-0">
-							<span className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 font-black text-base flex items-center justify-center border border-teal-500/40 shrink-0">
+							<span className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-700 dark:text-teal-300 font-black text-base flex items-center justify-center border border-teal-500/40 shrink-0">
 								{selectedTooth.toothNumber}
 							</span>
 							<div className="min-w-0">
@@ -477,7 +472,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 							</div>
 						</div>
 
-						{/* Quick Property Toggles */}
+						{/* Свойства зуба */}
 						{!readOnly && (
 							<div className="flex items-center gap-1.5 text-xs">
 								<button
@@ -505,54 +500,50 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 									}
 									className={`min-h-[44px] px-2.5 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
 										selectedTooth.isImplant
-											? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+											? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
 											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 									}`}
 								>
 									{selectedTooth.isImplant ? "Импл. +" : "Импл."}
 								</button>
 
-								{/* Mobility Miller Cycle */}
 								<button
 									type="button"
 									onClick={() => onCycleMobility(selectedTooth.toothNumber)}
 									className={`min-h-[44px] px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition-all ${
 										selectedTooth.mobility > 0
-											? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+											? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
 											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 									}`}
 									title="Степень подвижности зуба по Миллеру (0..III)"
 								>
-									Подвижн. ст. {selectedTooth.mobility}
+									Подвижн. {selectedTooth.mobility}
 								</button>
 
-								{/* Furcation Hamp Cycle */}
 								{isFurcationEligibleTooth(selectedTooth.toothNumber) && (
 									<button
 										type="button"
 										onClick={() => onCycleFurcation(selectedTooth.toothNumber)}
 										className={`min-h-[44px] px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition-all ${
 											selectedTooth.furcation > 0
-												? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+												? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40"
 												: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 										}`}
 										title="Степень фуркации корней по Хампу (0..IV)"
 									>
-										Фуркац. ст. {selectedTooth.furcation}
+										Фуркац. {selectedTooth.furcation}
 									</button>
 								)}
 							</div>
 						)}
 					</div>
 
-					{/* ═══════════════════════════════════════════════════════════════════
-					    6. FLORIDA PROBE 6 TACTILE SENSORS (VESTIBULAR & ORAL SITES)
-					    ═══════════════════════════════════════════════════════════════════ */}
+					{/* Клинические поверхности зуба (Вестибулярно / Орально) */}
 					{!selectedTooth.isMissing ? (
 						<div className="flex flex-col gap-2 w-full">
-							{/* Vestibular (Buccal) 3 Sites */}
+							{/* Вестибулярная сторона */}
 							<div className="flex flex-col gap-1 w-full">
-								<span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">
+								<span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
 									Вестибулярно (щечная / губная сторона)
 								</span>
 								<div className="grid grid-cols-3 gap-1.5 w-full">
@@ -580,7 +571,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 												onClick={() => onFocusSite(selectedTooth.toothNumber, sKey)}
 												className={`min-h-[56px] p-1.5 rounded-xl border flex flex-col items-center justify-between transition-all cursor-pointer ${
 													isFocused
-														? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-md scale-[1.02]"
+														? "ring-2 ring-teal-500 bg-teal-500/20 border-teal-500 shadow-md scale-[1.02]"
 														: probingDepthClinicalClasses(pd)
 												}`}
 												data-testid={`perio-sensor-${sKey}`}
@@ -591,29 +582,27 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 													<span className="text-[9px]">CAL {cal}</span>
 												</div>
 
-												{/* Big Pocket Depth MM */}
 												<span className="text-xl font-black font-mono leading-none my-0.5">
 													{pd} <span className="text-xs font-normal">мм</span>
 												</span>
 
-												{/* Status Pills */}
 												<div className="flex items-center gap-1">
 													{site.bleedingOnProbing && (
 														<span
 															className="w-2 h-2 rounded-full bg-rose-500"
-															title="Кровоточивость (BOP)"
+															title="Кровоточивость"
 														/>
 													)}
 													{site.plaque && (
 														<span
 															className="w-2 h-2 rounded-full bg-amber-400"
-															title="Зубной налет (PLQ)"
+															title="Налет"
 														/>
 													)}
 													{site.suppuration && (
 														<span
 															className="w-2 h-2 rounded-full bg-indigo-500"
-															title="Нагноение (PUS)"
+															title="Гной"
 														/>
 													)}
 												</div>
@@ -623,7 +612,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 								</div>
 							</div>
 
-							{/* Center Root & Visual Depth Indicator */}
+							{/* Анатомическая схема зуба */}
 							<div className="w-full py-1 flex items-center justify-center">
 								<PerioToothVisual
 									toothNumber={selectedTooth.toothNumber}
@@ -635,9 +624,9 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 								/>
 							</div>
 
-							{/* Oral (Lingual / Palatal) 3 Sites */}
+							{/* Оральная сторона */}
 							<div className="flex flex-col gap-1 w-full">
-								<span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">
+								<span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
 									Орально (язычная / нёбная сторона)
 								</span>
 								<div className="grid grid-cols-3 gap-1.5 w-full">
@@ -665,7 +654,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 												onClick={() => onFocusSite(selectedTooth.toothNumber, sKey)}
 												className={`min-h-[56px] p-1.5 rounded-xl border flex flex-col items-center justify-between transition-all cursor-pointer ${
 													isFocused
-														? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-md scale-[1.02]"
+														? "ring-2 ring-teal-500 bg-teal-500/20 border-teal-500 shadow-md scale-[1.02]"
 														: probingDepthClinicalClasses(pd)
 												}`}
 												data-testid={`perio-sensor-${sKey}`}
@@ -676,29 +665,27 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 													<span className="text-[9px]">CAL {cal}</span>
 												</div>
 
-												{/* Big Pocket Depth MM */}
 												<span className="text-xl font-black font-mono leading-none my-0.5">
 													{pd} <span className="text-xs font-normal">мм</span>
 												</span>
 
-												{/* Status Pills */}
 												<div className="flex items-center gap-1">
 													{site.bleedingOnProbing && (
 														<span
 															className="w-2 h-2 rounded-full bg-rose-500"
-															title="Кровоточивость (BOP)"
+															title="Кровоточивость"
 														/>
 													)}
 													{site.plaque && (
 														<span
 															className="w-2 h-2 rounded-full bg-amber-400"
-															title="Зубной налет (PLQ)"
+															title="Налет"
 														/>
 													)}
 													{site.suppuration && (
 														<span
 															className="w-2 h-2 rounded-full bg-indigo-500"
-															title="Нагноение (PUS)"
+															title="Гной"
 														/>
 													)}
 												</div>
@@ -710,14 +697,14 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 						</div>
 					) : (
 						<div className="py-6 text-center text-xs text-[var(--muted)]">
-							Зуб #{selectedTooth.toothNumber} отсутствует. Зондирование не применимо.
+							Зуб #{selectedTooth.toothNumber} отсутствует.
 						</div>
 					)}
 				</div>
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    7. NATURAL THUMB ZONE PROBING KEYPAD DIALER (Apple HIG >= 48px, Auto-Advance)
+			    5. СЕНСОРНЫЙ ПУЛЬТ ГЛУБИНЫ КАРМАНА В ЗОНЕ БОЛЬШОГО ПАЛЬЦА
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<MobilePerioKeypadDial
 				selectedToothNumber={selectedToothNumber}
@@ -733,7 +720,47 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				onToggleSuppuration={onToggleSuppuration}
 				onPrevSite={onPrevSite}
 				onNextSite={onNextSite}
+				onSetToothNorm={() => {
+					for (const key of PERIO_SITE_KEYS) {
+						updateToothSite(selectedToothNumber, key, () => ({
+							probingDepthMm: 2,
+							gingivalMarginMm: 0,
+							bleedingOnProbing: false,
+							suppuration: false,
+							plaque: false,
+							calMm: 2,
+						}));
+					}
+					updateToothProperties(selectedToothNumber, { mobility: 0, furcation: 0 });
+				}}
+				onSetToothPathology={(depth, hasBop) => {
+					for (const key of PERIO_SITE_KEYS) {
+						updateToothSite(selectedToothNumber, key, (prev) => ({
+							probingDepthMm: depth,
+							bleedingOnProbing: hasBop,
+							calMm: calculateClinicalAttachmentLevel(depth, prev.gingivalMarginMm ?? 0),
+						}));
+					}
+				}}
 			/>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    6. ЕДИНАЯ PRIMARY CTA КНОПКА СОХРАНЕНИЯ ВНИЗУ ЭКРАНА (МАНДАТ 8am)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{onSaveDraft && (
+				<div className="w-full pt-1 pb-2">
+					<button
+						type="button"
+						onClick={onSaveDraft}
+						disabled={syncStatus === "saving"}
+						className="primary-button button-lg min-h-[48px] h-12 w-full font-bold shadow-md"
+						data-testid="perio-mobile-save-primary-btn"
+					>
+						<Save size={18} className={syncStatus === "saving" ? "animate-spin text-white" : "text-white"} />
+						<span>Сохранить периодонтограмму</span>
+					</button>
+				</div>
+			)}
 		</div>
 	);
 });
