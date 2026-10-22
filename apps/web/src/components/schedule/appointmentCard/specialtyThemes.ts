@@ -84,26 +84,26 @@ export function getGridAppointmentCardContainerClasses(
 ): string {
 	const { collision, isCito } = options;
 	if (collision) {
-		return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-amber-500 text-[var(--ink)] ring-1 ring-amber-500/40 shadow-xs";
+		return "bg-amber-500/[0.08] dark:bg-amber-950/30 border-[var(--line)] border-l-[4px] border-l-amber-500 text-[var(--ink)] ring-1 ring-amber-500/40 shadow-xs";
 	}
 	if (isCito) {
-		return "bg-rose-500/[0.04] dark:bg-rose-950/20 border-[var(--line)] border-l-[4px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/50 shadow-xs";
+		return "bg-rose-500/[0.08] dark:bg-rose-950/30 border-rose-300/80 dark:border-rose-900/60 border-l-[4px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/40 shadow-xs";
 	}
 	if (isAppointmentInChair(status)) {
-		return "bg-emerald-500/[0.04] dark:bg-emerald-500/[0.12] border-[var(--line)] border-l-[4px] border-l-emerald-500 ring-1 ring-emerald-500/40 text-[var(--ink)] shadow-xs";
+		return "bg-emerald-500/[0.08] dark:bg-emerald-950/30 border-emerald-300/80 dark:border-emerald-800/60 border-l-[4px] border-l-emerald-500 ring-1 ring-emerald-500/40 text-[var(--ink)] shadow-xs";
 	}
 	const s = String(status || "").toLowerCase();
 	if (s === "arrived" || s === "in_clinic" || s === "waiting") {
-		return "bg-amber-500/[0.04] dark:bg-amber-500/[0.12] border-[var(--line)] border-l-[4px] border-l-amber-500 ring-1 ring-amber-500/40 text-[var(--ink)] shadow-xs";
+		return "bg-amber-500/[0.08] dark:bg-amber-950/30 border-amber-300/80 dark:border-amber-800/60 border-l-[4px] border-l-amber-500 ring-1 ring-amber-500/40 text-[var(--ink)] shadow-xs";
 	}
 	if (s === "completed") {
-		return "bg-violet-500/[0.04] dark:bg-violet-950/20 border-[var(--line)] border-l-[4px] border-l-violet-500 text-[var(--ink)] shadow-xs";
+		return "bg-violet-500/[0.08] dark:bg-violet-950/30 border-violet-300/80 dark:border-violet-800/60 border-l-[4px] border-l-violet-500 text-[var(--ink)] shadow-xs";
 	}
 	if (s === "cancelled" || s === "no_show") {
-		return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-slate-400 text-[var(--muted)] opacity-75";
+		return "bg-[var(--paper-soft)]/60 border-[var(--line)] border-l-[4px] border-l-slate-400 text-[var(--muted)] opacity-75";
 	}
 	if (s === "confirmed") {
-		return "bg-teal-500/[0.03] dark:bg-teal-500/[0.10] border-[var(--line)] border-l-[4px] border-l-teal-500 text-[var(--ink)] shadow-xs";
+		return "bg-teal-500/[0.08] dark:bg-teal-950/30 border-teal-300/80 dark:border-teal-800/60 border-l-[4px] border-l-teal-500 text-[var(--ink)] shadow-xs";
 	}
-	return "bg-[var(--paper-card,var(--paper))] border-[var(--line)] border-l-[4px] border-l-sky-500 text-[var(--ink)] shadow-xs";
+	return "bg-sky-500/[0.08] dark:bg-sky-950/30 border-sky-300/80 dark:border-sky-800/60 border-l-[4px] border-l-sky-500 text-[var(--ink)] shadow-xs";
 }

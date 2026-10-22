@@ -74,7 +74,7 @@ describe("Documents & FNS Tax Inquisitor Verification Suite", () => {
 			<FnsTaxCertificateModal
 				isOpen={true}
 				onClose={() => {}}
-				patient={mockPatient}
+				patient={mockPatient as any}
 				clinicProfileDraft={mockClinic}
 				initialYear={2026}
 				payments={[]}
@@ -92,7 +92,7 @@ describe("Documents & FNS Tax Inquisitor Verification Suite", () => {
 			<OutpatientCardPrintModal
 				isOpen={true}
 				onClose={() => {}}
-				patient={mockPatient}
+				patient={mockPatient as any}
 				doctorFullName="Воронов А.В."
 				clinicProfileDraft={mockClinic}
 			/>,

@@ -103,7 +103,7 @@ export function CatalogUtilityModals({
 					}
 					clinicAddress={clinicProfileDraft?.address || ""}
 					chiefDoctorName={doctorName || ""}
-					payments={sanitizedPayments ?? mappedTaxPayments}
+					payments={(sanitizedPayments ?? mappedTaxPayments) as any}
 				/>
 			)}
 		</>

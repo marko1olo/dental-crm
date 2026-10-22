@@ -10,6 +10,7 @@ import {
   calcSlotStartMin,
 } from "./appointmentTrackUtils";
 import { AppointmentTimeSlotCell } from "./AppointmentTimeSlotCell";
+import { ScheduleCurrentTimeIndicator } from "../ScheduleCurrentTimeIndicator";
 
 export interface AppointmentTrackGridLinesProps {
   props: ScheduleAppointmentTrackProps;
@@ -90,6 +91,14 @@ export function AppointmentTrackGridLines({
                   />
                 );
               })}
+              <ScheduleCurrentTimeIndicator
+                timeSlots={morningSlots}
+                gridStep={props.gridStep}
+                dateKey={props.dateKey}
+                timezone={props.timezone}
+                baseSlotHeightPx={baseSlotHeightPx}
+                leftOffset="clamp(64px, 5vw, 84px)"
+              />
             </div>
           </div>
 
@@ -144,6 +153,14 @@ export function AppointmentTrackGridLines({
                   />
                 );
               })}
+              <ScheduleCurrentTimeIndicator
+                timeSlots={eveningSlots}
+                gridStep={props.gridStep}
+                dateKey={props.dateKey}
+                timezone={props.timezone}
+                baseSlotHeightPx={baseSlotHeightPx}
+                leftOffset="clamp(64px, 5vw, 84px)"
+              />
             </div>
           </div>
         </div>
@@ -156,7 +173,7 @@ export function AppointmentTrackGridLines({
     <>
       <DecoupledDragGhost />
       <div
-        className="schedule-grid-container grid min-w-full"
+        className="schedule-grid-container grid min-w-full relative"
         style={{
           minWidth:
             props.effectiveChairs.length > 1
@@ -210,6 +227,16 @@ export function AppointmentTrackGridLines({
             );
           });
         })}
+
+        {/* 3. StomX-Parity Red Current Time Indicator Line */}
+        <ScheduleCurrentTimeIndicator
+          timeSlots={props.timeSlots}
+          gridStep={props.gridStep}
+          dateKey={props.dateKey}
+          timezone={props.timezone}
+          baseSlotHeightPx={baseSlotHeightPx}
+          leftOffset="clamp(68px, 5.5vw, 76px)"
+        />
       </div>
     </>
   );

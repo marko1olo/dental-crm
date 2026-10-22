@@ -307,7 +307,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 			data-testid="fns-tax-certificate-modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Справка для налогового вычета (ФНС)"
+			aria-label="Справка для налогового вычета (ФНС) · 13% НДФЛ"
 		>
 			<div className="relative w-full max-w-[880px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Header */}
@@ -318,7 +318,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						</div>
 						<div>
 							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight">
-								Справка для налогового вычета (ФНС)
+								Справка для налогового вычета (ФНС) · 13% НДФЛ
 							</h2>
 							<p className="text-[12px] text-[var(--muted)]">
 								{patient?.fullName || "Пациент"} · Налоговый период: {selectedYear} год

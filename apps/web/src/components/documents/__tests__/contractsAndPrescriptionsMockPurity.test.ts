@@ -232,7 +232,12 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			webSrcDir,
 			"components/treatment-plans/TreatmentPlanActSignatures.tsx",
 		);
-		const content = fs.readFileSync(actSignaturesPath, "utf-8");
+		const actGridPath = path.join(
+			webSrcDir,
+			"components/treatment-plans/actSignatures/ActSignatureGrid.tsx",
+		);
+		const content = (fs.existsSync(actSignaturesPath) ? fs.readFileSync(actSignaturesPath, "utf-8") : "") +
+			(fs.existsSync(actGridPath) ? fs.readFileSync(actGridPath, "utf-8") : "");
 		assert.ok(
 			content.includes('breakInside: "avoid"') || content.includes("break-inside-avoid"),
 			"TreatmentPlanActSignatures must have breakInside avoid",

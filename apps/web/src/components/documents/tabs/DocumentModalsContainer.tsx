@@ -9,7 +9,7 @@ import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import { SurgicalPackageModal } from "../SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
 import { FnsTaxCertificateModal } from "../FnsTaxCertificateModal";
-import { AutoclaveLog257Modal } from "../../sanpin/autoclaveLog/AutoclaveLog257Modal";
+import { AutoclaveSterilizationLogModal } from "../../sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { EgiszRemdHubModal } from "../../egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "../sickLeave/SickLeaveElnModal";
@@ -160,7 +160,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 				)}
 
 				{(isAutoclaveLogOpen || isSanpinRegistryOpen) && (
-					<AutoclaveLog257Modal
+					<AutoclaveSterilizationLogModal
 						isOpen={isAutoclaveLogOpen || isSanpinRegistryOpen}
 						onClose={() => {
 							setIsAutoclaveLogOpen(false);

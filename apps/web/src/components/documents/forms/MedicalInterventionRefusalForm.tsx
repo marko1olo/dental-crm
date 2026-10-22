@@ -193,7 +193,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 			});
 			printHtmlViaWindowOrIframe(html);
 			showToast(
-				"Официальный бланк Отказа от вмешательства (1051н, А4) отправлен на печать",
+				"Официальный бланк отказа от вмешательства (А4) отправлен на печать",
 				"info",
 				3000,
 			);
@@ -214,7 +214,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 
 		const handleCopySummary = () => {
 			const summary = [
-				"Отказ от медицинского вмешательства (Приказ МЗ РФ № 1051н, ст. 20 323-ФЗ):",
+				"Отказ от медицинского вмешательства (ИДС):",
 				`Пациент: ${patientCoreDraft.fullName?.trim() || "Пациент"}`,
 				`Вмешательство: ${refusalIntervention?.trim() || "Стоматологическое лечение"}`,
 				`Показания: ${refusalClinicalIndication?.trim() || "По клиническим показаниям"}`,
@@ -240,13 +240,13 @@ export const MedicalInterventionRefusalForm = React.memo(
 					</p>
 				</div>
 
-				{/* ═══ ОФИЦИАЛЬНЫЙ СТАТУТНЫЙ БАННЕР 1051н И 1-КЛИК ПЕЧАТЬ ═══ */}
+				{/* ═══ ОФИЦИАЛЬНЫЙ БАННЕР И 1-КЛИК ПЕЧАТЬ ═══ */}
 				<div className="flex flex-wrap items-center justify-between gap-3 my-3 p-3 bg-[var(--surface-subtle,#f1f5f9)] border border-[var(--border,#cbd5e1)] rounded-lg">
 					<div className="flex items-center gap-2">
 						<ShieldCheck size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
 						<div>
 							<div className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
-								Приказ Минздрава РФ № 1051н (Приложение № 2) • ч. 3 ст. 20 323-ФЗ
+								Бланк отказа от медицинского вмешательства (ИДС)
 							</div>
 							<div className="text-xs text-[var(--muted,#64748b)]">
 								Официальный бланк отказа от вмешательства • Защита врача и клиники

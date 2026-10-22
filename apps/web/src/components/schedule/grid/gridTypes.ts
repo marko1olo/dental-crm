@@ -80,4 +80,5 @@ export interface ScheduleGridProps {
   hideToolbar?: boolean | undefined;
   hideInlineAddChair?: boolean | undefined;
   onOpenWaitlistForSlot?: ((slot: TargetSlotInfo) => void) | undefined;
+  onDateChange?: ((dateKey: string) => void) | undefined;
 }

@@ -30,7 +30,7 @@ import {
 import { DentalForm043 } from "../../icons/DentalIcons";
 import { EmptyState } from "../../EmptyState";
 import { MobileDocumentPreviewSheet } from "./MobileDocumentPreviewSheet";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 const DEMO_SHOWCASE_DOCUMENTS: GeneratedDocument[] = [
 	{

@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarCheck, Clock, Copy, Eye, EyeOff } from "lucide-react";
+import { CalendarCheck, Clock, Copy, Eye, EyeOff, PanelRight } from "lucide-react";
 import { countLabel } from "../../../lib/russianPlural";
 
 export interface ScheduleGridFooterProps {
@@ -8,6 +8,8 @@ export interface ScheduleGridFooterProps {
   handleCopyWeekShiftsToNextWeek: () => void;
   showRevenue: boolean;
   handleToggleShowRevenue: () => void;
+  isInspectorOpen?: boolean;
+  onToggleInspector?: () => void;
 }
 
 export function ScheduleGridFooter({
@@ -16,6 +18,8 @@ export function ScheduleGridFooter({
   handleCopyWeekShiftsToNextWeek,
   showRevenue,
   handleToggleShowRevenue,
+  isInspectorOpen,
+  onToggleInspector,
 }: ScheduleGridFooterProps) {
   return (
     <div className="px-3 py-1 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-nowrap items-center justify-between gap-2 text-xs text-[var(--muted)] overflow-hidden">
@@ -27,34 +31,28 @@ export function ScheduleGridFooter({
                 size={14}
                 className="text-[var(--teal,var(--brand-primary))] shrink-0"
               />
-              Загрузка клиники:{" "}
-              {countLabel(
+              {`Загрузка клиники: ${countLabel(
                 dailyTally.totalAppointmentsCount,
                 "визит",
                 "визита",
                 "визитов",
-              )}{" "}
-              ({dailyTally.clinicOccupancyPercent}%)
+              )} (${dailyTally.clinicOccupancyPercent}%)`}
             </span>
             <span className="text-[var(--muted)] hidden 2xl:inline">·</span>
             <span className="text-[var(--muted)] whitespace-nowrap hidden 2xl:inline">
-              Общее время приема:{" "}
-              {Math.floor(dailyTally.totalDurationMinutes / 60)} ч{" "}
-              {dailyTally.totalDurationMinutes % 60} мин
+              {`Общее время приема: ${Math.floor(dailyTally.totalDurationMinutes / 60)} ч ${dailyTally.totalDurationMinutes % 60} мин`}
             </span>
           </>
         ) : (
           <span className="flex items-center gap-1.5 whitespace-nowrap">
             <Clock size={13} className="text-[var(--teal)] shrink-0" />
             <span>
-              {effectiveChairs.length}{" "}
-              {countLabel(
+              {`${effectiveChairs.length} ${countLabel(
                 effectiveChairs.length,
                 "кресло",
                 "кресла",
                 "кресел",
-              )}{" "}
-              · 08:00–20:00
+              )} · 08:00–20:00`}
             </span>
           </span>
         )}
@@ -101,6 +99,29 @@ export function ScheduleGridFooter({
                 ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽`
                 : "•••••• ₽"}
             </span>
+          </button>
+        )}
+        {onToggleInspector && (
+          <button
+            type="button"
+            onClick={onToggleInspector}
+            className={`h-6 px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-all shadow-2xs hover:border-[var(--teal)] ${
+              isInspectorOpen ? "text-[var(--teal)] border-[var(--teal)]/40 bg-[var(--teal)]/5" : ""
+            }`}
+            title={
+              isInspectorOpen
+                ? "Скрыть боковую панель инспектора"
+                : "Показать боковую панель инспектора"
+            }
+            aria-label={
+              isInspectorOpen
+                ? "Скрыть панель инспектора"
+                : "Показать панель инспектора"
+            }
+            data-testid="btn-grid-toggle-inspector"
+          >
+            <PanelRight size={12} className="shrink-0 text-[var(--teal)]" />
+            <span className="hidden sm:inline">Инспектор</span>
           </button>
         )}
       </div>

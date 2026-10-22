@@ -22,6 +22,12 @@ export function getPatientAllergyAlert(
 ): string | null {
 	if (!patient && !reason) return null;
 	const rawAllergies = patient?.allergies || patient?.anamnesis?.allergies;
+	if (Array.isArray(rawAllergies) && rawAllergies.length > 0) {
+		const joined = rawAllergies.filter(Boolean).join(", ");
+		if (joined && !isNegativeAllergyStatement(joined)) {
+			return `Внимание: ${joined}`;
+		}
+	}
 	if (
 		rawAllergies &&
 		typeof rawAllergies === "string" &&

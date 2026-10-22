@@ -380,6 +380,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
         onEditChair={handleEditChairFromSchedule}
         onAddDoctor={handleAddDoctorFromSchedule}
         onOpenWaitlistForSlot={handleOpenWaitlistForSlot}
+        onDateChange={setScheduleDateFilter}
       />
     );
   }

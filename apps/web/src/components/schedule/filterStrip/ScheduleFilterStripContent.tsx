@@ -91,8 +91,14 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 				data-testid="schedule-toolbar"
 				role="toolbar"
 			>
-				{/* 1. Левый остров (Навигация): Степер даты (< ДД.ММ.ГГГГ >) + кнопка «Сегодня» */}
-				<div className="schedule-toolbar-island-nav flex items-center gap-1 shrink-0">
+				{/* 1. Левый остров (Навигация): Заголовок «Расписание» + Степер даты (< ДД.ММ.ГГГГ >) + кнопка «Сегодня» */}
+				<div className="schedule-toolbar-island-nav flex items-center gap-1.5 shrink-0">
+					<span
+						className="font-extrabold text-[13px] sm:text-sm text-[var(--ink)] tracking-tight shrink-0 hidden sm:inline-flex items-center gap-1 mr-0.5"
+						data-testid="schedule-toolbar-title"
+					>
+						Расписание
+					</span>
 					<DateRangeQuickButtons
 						currentDateIso={currentDateIso}
 						formattedCurrentDate={formattedCurrentDate}
@@ -229,42 +235,14 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						<button
 							type="button"
 							onClick={onQuickBooking}
-							className="schedule-toolbar-primary-quick-booking-btn primary-button h-8 min-h-[32px] max-h-8 px-3 rounded-lg text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
+							className="schedule-toolbar-primary-quick-booking-btn primary-button h-8 min-h-[32px] max-h-8 px-3 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap bg-sky-600 hover:bg-sky-500 text-white"
 							data-testid="schedule-toolbar-primary-quick-booking-btn"
 							data-tour="schedule-booking"
 							title="Быстрая запись (N) / Новая запись пациента на прием"
 							aria-label="Быстрая запись (+ Запись)"
 						>
-							<Plus size={14} className="shrink-0" aria-hidden="true" />
-							<span className="whitespace-nowrap font-semibold">Запись</span>
-						</button>
-					)}
-
-					{/* 1-Click Shift & Chair Range Actions (Desktop High-Resolution View) */}
-					{onOpenDoctorShiftDrawer && (
-						<button
-							type="button"
-							onClick={onOpenDoctorShiftDrawer}
-							className="secondary-button schedule-toolbar-shift-drawer-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
-							data-testid="schedule-toolbar-doctor-shift-btn"
-							title="Назначить смену врача"
-							aria-label="График смен"
-						>
-							<Users size={13} className="text-[var(--teal)] shrink-0" aria-hidden="true" />
-							<span>График смен</span>
-						</button>
-					)}
-					{onOpenChairDateRangeModal && (
-						<button
-							type="button"
-							onClick={onOpenChairDateRangeModal}
-							className="secondary-button schedule-toolbar-chair-range-btn hidden 2xl:inline-flex items-center gap-1.5 h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
-							data-testid="schedule-toolbar-chair-range-btn"
-							title="Назначить период кресел"
-							aria-label="Период кресел"
-						>
-							<CalendarRange size={13} className="text-[var(--teal)] shrink-0" aria-hidden="true" />
-							<span>Период кресел</span>
+							<Plus size={14} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
+							<span className="whitespace-nowrap font-bold">+ Запись</span>
 						</button>
 					)}
 
