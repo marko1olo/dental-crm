@@ -1,886 +1,118 @@
-import type { ServiceCatalogItem } from "@dental/shared";
-import {
-	FileText,
-	PenTool,
-	Printer,
-	Receipt,
-	Save,
-	ShieldCheck,
-	X,
-} from "lucide-react";
+import { X } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
-import {
-	denteAdminSecretRequestHeaders,
-	operatorReadableErrorDetail,
-} from "../../AppHelpers";
+import { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	actionFailureToast,
-	requestFailureCause,
-} from "../../lib/panelStateText";
-import { pushDestructiveActionWithRollback } from "../../services/undo/globalUndoRollbackStack.js";
-import { logger } from "../../utils/logger";
-import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
-import { showRollbackToast, showToast } from "../GlobalToast.js";
+import { showToast } from "../GlobalToast.js";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import { TreatmentEstimatorAlerts } from "./TreatmentEstimatorAlerts";
-import { TreatmentEstimatorItemCard } from "./TreatmentEstimatorItemCard";
-import { TreatmentEstimatorSignModal } from "./TreatmentEstimatorSignModal";
 import {
-	convertGhostItemToImplant,
-	convertUnbilledConsumableToPlanItem,
 	detectGhostTeethConflicts,
 	detectPlanItemCollisions,
-	detectUnbilledConsumables,
-	type EstimatorContract,
-	type EstimatorToothInput,
-	estimatorContractFrom,
-	estimatorDismissalKeys,
 	estimatorIssueMessages,
-	estimatorItemForApi,
 	estimatorSaveBlock,
 	estimatorTotals,
-	exportEstimatorToCashier54Fz,
-	getGhostToothConflict,
-	type PlanItem,
-	type PlanPriceCatalogItem,
-	planItemFromServer,
-	reconcileAutoSuggestions,
+	exportEstimatorToCashier,
 } from "./treatmentEstimatorPricing";
+import { type EstimatorProps, PLAN_SUBJECT } from "./treatmentEstimatorTypes";
+import { TreatmentEstimatorBottomBar } from "./estimator/TreatmentEstimatorBottomBar";
+import { TreatmentEstimatorModals } from "./estimator/TreatmentEstimatorModals";
+import { TreatmentEstimatorPhasesList } from "./estimator/TreatmentEstimatorPhasesList";
+import { TreatmentEstimatorTopBar } from "./estimator/TreatmentEstimatorTopBar";
+import { useEstimatorActions } from "./estimator/useEstimatorActions";
+import { useEstimatorContract } from "./estimator/useEstimatorContract";
+import { useEstimatorPlanData } from "./estimator/useEstimatorPlanData";
+import { useEstimatorSave } from "./estimator/useEstimatorSave";
 
-import {
-	type EstimatorProps,
-	jsonObjectOrNull,
-	PLAN_SUBJECT,
-	type PlanLoadState,
-	rub,
-	type SavedTreatmentPlan,
-} from "./treatmentEstimatorTypes";
-
-export const TreatmentEstimator: React.FC<EstimatorProps> = ({
-	patientId,
-	currentTeeth,
-}) => {
-	const [items, setItems] = useState<PlanItem[]>([]);
-	const [isSaving, setIsSaving] = useState(false);
-	const [planId, setPlanId] = useState<string | null>(null);
-	const [showSignModal, setShowSignModal] = useState(false);
-	const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
-	const [planLoad, setPlanLoad] = useState<PlanLoadState>({ phase: "loading" });
-	const [contractFailure, setContractFailure] = useState<{
-		status: number | null;
-	} | null>(null);
-	const [reloadToken, setReloadToken] = useState(0);
-	const [dismissedSuggestions, setDismissedSuggestions] = useState<
-		ReadonlySet<string>
-	>(() => new Set<string>());
-
+export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, currentTeeth }) => {
 	const { dashboard } = useAppLogicContext();
-	const [activeContract, setActiveContract] = useState<unknown>(null);
-
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const insuranceContractId =
-		(patient as any)?.insuranceContractId ||
-		(patient?.administrativeProfile as any)?.insuranceContractId;
-
-	const [plannerTab, setPlannerTab] = useState<
-		"comprehensive_804n" | "manual_lines"
-	>("comprehensive_804n");
+	const [plannerTab, setPlannerTab] = useState<"comprehensive_804n" | "manual_lines">("comprehensive_804n");
+	const [showSignModal, setShowSignModal] = useState(false);
 	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState(false);
 
-	const treatmentPlanItemsForFiscalModal = useMemo(() => {
-		return exportEstimatorToCashier54Fz(
-			items,
-			patientId,
-			patient?.fullName || "Пациент",
-		).items;
-	}, [items, patientId, patient?.fullName]);
+	const patient = dashboard?.patients?.find((p: { id: string }) => p.id === patientId);
+	const insuranceContractId = (patient as { insuranceContractId?: string })?.insuranceContractId;
 
-	const diaryProtocolSource = useMemo(
-		() => ({
-			treatmentPlan: (dashboard?.activeVisit as any)?.treatmentPlan,
-			treatmentDescription: (dashboard?.activeVisit as any)
-				?.treatmentDescription,
-			complaint: (dashboard?.activeVisit as any)?.complaint,
-			diagnosis: (dashboard?.activeVisit as any)?.diagnosis,
-		}),
-		[dashboard?.activeVisit],
-	);
+	const { items, setItems, planId, setPlanId, signatureUrl, setSignatureUrl, planLoad, setReloadToken, setDismissedSuggestions } =
+		useEstimatorPlanData(patientId, currentTeeth, dashboard?.serviceCatalog);
+	const { contract, contractFailure } = useEstimatorContract(insuranceContractId);
+	const actions = useEstimatorActions(patientId, items, setItems, setDismissedSuggestions, dashboard?.serviceCatalog);
 
-	const estimatorConsumablesReconciliation = useMemo(() => {
-		const catalog =
-			(dashboard?.clinicSettings?.priceList as PlanPriceCatalogItem[]) || [];
-		return detectUnbilledConsumables(diaryProtocolSource, items, catalog);
-	}, [diaryProtocolSource, items, dashboard?.clinicSettings?.priceList]);
-
-	const handleAddAllUnbilledToPlan = () => {
-		if (!estimatorConsumablesReconciliation.hasUnbilled) return;
-		const newItems = estimatorConsumablesReconciliation.unbilledItems.map((c) =>
-			convertUnbilledConsumableToPlanItem(c, 0),
-		);
-		setItems((prev) => [...prev, ...newItems]);
-		showToast(
-			`В смету плана добавлено: ${estimatorConsumablesReconciliation.detectedMarkers.join(", ")} (+${estimatorConsumablesReconciliation.totalUnbilledRub.toLocaleString("ru-RU")} ₽)`,
-			"success",
-			3500,
-		);
-	};
-
-	useEffect(() => {
-		if (!insuranceContractId) {
-			setActiveContract(null);
-			setContractFailure(null);
-			return;
-		}
-		let active = true;
-		setContractFailure(null);
-
-		const loadContract = async () => {
-			try {
-				const res = await fetch(
-					`/api/insurance/contracts/${insuranceContractId}`,
-					{
-						headers: denteAdminSecretRequestHeaders(),
-					},
-				);
-				const rawBody = await res.text();
-				if (!res.ok) {
-					logger.error(
-						`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`,
-					);
-					if (!active) return;
-					setActiveContract(null);
-					setContractFailure({ status: res.status });
-					return;
-				}
-				const contractData = jsonObjectOrNull(rawBody);
-				if (!active) return;
-				if (!contractData) {
-					logger.error("[insurance contract] тело ответа не разобрано");
-					setActiveContract(null);
-					setContractFailure({ status: res.status });
-					return;
-				}
-				setActiveContract(contractData);
-			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("[insurance contract] запрос не выполнен", err);
-				if (!active) return;
-				setActiveContract(null);
-				setContractFailure({ status: null });
-			}
-		};
-
-		void loadContract();
-		return () => {
-			active = false;
-		};
-	}, [insuranceContractId, reloadToken]);
-
-	// Reactive state hydration without manual F5 when plans are created or modified elsewhere
-	useEffect(() => {
-		const handleReload = () => {
-			setReloadToken((t) => t + 1);
-		};
-		window.addEventListener("dente-treatment-plans-reload", handleReload);
-		return () => {
-			window.removeEventListener("dente-treatment-plans-reload", handleReload);
-		};
-	}, []);
-
-	const contract: EstimatorContract = useMemo(
-		() => estimatorContractFrom(activeContract),
-		[activeContract],
-	);
-
-	useEffect(() => {
-		let active = true;
-		setPlanId(null);
-		setItems([]);
-		setSignatureUrl(null);
-		setPlanLoad({ phase: "loading" });
-		setDismissedSuggestions(new Set<string>());
-		setShowSignModal(false);
-
-		const loadPlan = async () => {
-			let status: number | null = null;
-			try {
-				const origin =
-					typeof window !== "undefined" && window.location?.origin
-						? window.location.origin
-						: "http://localhost:5173";
-				const response = await fetch(
-					`${origin}/api/patients/${encodeURIComponent(patientId)}/treatment-plans`,
-					{
-						headers: denteAdminSecretRequestHeaders(),
-					},
-				);
-				status = response.status;
-				const rawBody = await response.text();
-				if (!response.ok) {
-					logger.error(
-						`[treatment plan load] ${status} ${rawBody.slice(0, 300)}`,
-					);
-					if (active) setPlanLoad({ phase: "failed", status });
-					return;
-				}
-				const payload = jsonObjectOrNull(rawBody);
-				if (!payload || !Array.isArray(payload.plans)) {
-					logger.error(
-						`[treatment plan load] ${status}: в ответе нет списка планов`,
-					);
-					if (active) setPlanLoad({ phase: "failed", status });
-					return;
-				}
-				if (!active) return;
-				const latestPlan = payload.plans[0] as SavedTreatmentPlan | undefined;
-				setPlanLoad({ phase: "ready" });
-				if (!latestPlan) return;
-				setPlanId(latestPlan.id);
-				setItems(
-					Array.isArray(latestPlan.items)
-						? latestPlan.items
-								.map(planItemFromServer)
-								.filter((item): item is PlanItem => item !== null)
-						: [],
-				);
-				setSignatureUrl(latestPlan.patientSignature ?? null);
-			} catch (error) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(error as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("[treatment plan load] запрос не выполнен", error);
-				if (active) setPlanLoad({ phase: "failed", status });
-			}
-		};
-
-		void loadPlan();
-
-		return () => {
-			active = false;
-		};
-	}, [patientId, reloadToken]);
-
-	useEffect(() => {
-		const catalogSource = dashboard?.serviceCatalog;
-		if (!Array.isArray(catalogSource)) return;
-		const catalog: ServiceCatalogItem[] = catalogSource;
-		setItems((prevItems) => {
-			const { items: nextItems, changed } = reconcileAutoSuggestions(
-				prevItems,
-				currentTeeth,
-				catalog as unknown as readonly PlanPriceCatalogItem[],
-				dismissedSuggestions,
-			);
-			return changed ? nextItems : prevItems;
-		});
-	}, [currentTeeth, dashboard?.serviceCatalog, dismissedSuggestions]);
-
-	const totals = useMemo(
-		() => estimatorTotals(items, contract),
-		[items, contract],
-	);
+	const totals = useMemo(() => estimatorTotals(items, contract), [items, contract]);
 	const issueMessages = useMemo(() => estimatorIssueMessages(items), [items]);
 	const saveBlock = useMemo(() => estimatorSaveBlock(items), [items]);
+	const ghostConflicts = useMemo(() => detectGhostTeethConflicts(items, currentTeeth), [items, currentTeeth]);
+	const planCollisions = useMemo(() => detectPlanItemCollisions(items), [items]);
+	const cashierItems = useMemo(() => exportEstimatorToCashier(items, patientId, patient?.fullName || "Пациент").items, [items, patientId, patient?.fullName]);
 
-	const ghostConflicts = useMemo(() => {
-		const toothInputs: EstimatorToothInput[] = currentTeeth.map((t) => ({
-			toothNumber: t.toothNumber,
-			state: t.state,
-			surfaces: t.surfaces,
-		}));
-		return detectGhostTeethConflicts(items, toothInputs);
-	}, [items, currentTeeth]);
-
-	const planCollisions = useMemo(
-		() => detectPlanItemCollisions(items),
-		[items],
-	);
-
-	const handleReplaceWithImplant = (toothNumber: number) => {
-		const catalogSource = dashboard?.serviceCatalog;
-		const catalog: readonly PlanPriceCatalogItem[] = Array.isArray(
-			catalogSource,
-		)
-			? catalogSource
-			: [];
-		setItems((prev) =>
-			prev.map((it) => {
-				if (it.toothNumber === toothNumber) {
-					return convertGhostItemToImplant(it, catalog);
-				}
-				return it;
-			}),
-		);
-		showToast(
-			`Позиция по зубу #${toothNumber} заменена на имплантацию`,
-			"success",
-			3500,
-		);
-	};
-
-	const handleRestoreToothStatus = (toothNumber: number) => {
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-odontogram-update", {
-					detail: {
-						patientId,
-						states: [{ toothNumber, state: "Caries" }],
-					},
-				}),
-			);
-		}
-		showToast(
-			`Статус зуба #${toothNumber} восстановлен на формуле (врачебная автономия)`,
-			"success",
-			3500,
-		);
-	};
-
-	const handleRemoveItemByTooth = (toothNumber: number) => {
-		const removed = items.filter((it) => it.toothNumber === toothNumber);
-		setItems((prev) => prev.filter((it) => it.toothNumber !== toothNumber));
-		for (const r of removed) {
-			const keys = estimatorDismissalKeys(r);
-			if (keys.length > 0) {
-				setDismissedSuggestions((prev) => {
-					const next = new Set(prev);
-					for (const k of keys) next.add(k);
-					return next;
-				});
-			}
-		}
-		showToast(
-			`Услуги по зубу #${toothNumber} удалены из плана лечения`,
-			"info",
-			3000,
-		);
-	};
-
-	const savePlan = async () => {
-		if (planLoad.phase !== "ready") {
-			showToast(
-				planLoad.phase === "loading"
-					? "План лечения ещё читается с сервера. Подождите пару секунд и сохраните снова — набранные позиции останутся на месте."
-					: `План не сохранён: ${requestFailureCause(planLoad.status)}. Сохранённый план не прочитан, а сохранение поверх непрочитанного создало бы второй план — нажмите «Повторить», а если не поможет, обновите страницу.`,
-				planLoad.phase === "loading" ? "info" : "error",
-				12000,
-			);
-			return;
-		}
-
-		if (saveBlock) {
-			showToast(
-				"В смете есть позиции без цены в прайсе — план сохраняется с пометкой «Цена уточняется» (0 ₽).",
-				"warning",
-				8000,
-			);
-		}
-		const itemsForApi = items
-			.map((item) => {
-				const apiItem = estimatorItemForApi(item);
-				if (apiItem) return apiItem;
-				return {
-					...(item.toothNumber !== undefined
-						? { toothNumber: item.toothNumber }
-						: {}),
-					priceId:
-						item.priceId ||
-						`custom_${item.id || item.toothNumber || "service"}`,
-					name: item.name
-						? item.price === null
-							? `${item.name} (Цена уточняется)`
-							: item.name
-						: "Услуга (цена уточняется)",
-					quantity: Math.max(1, item.quantity || 1),
-					price:
-						item.price !== null &&
-						Number.isFinite(item.price) &&
-						item.price >= 0
-							? item.price
-							: 0,
-					discount: item.discount || 0,
-					phase: item.phase || 1,
-					...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),
-				};
-			})
-			.filter((item): item is NonNullable<typeof item> => item !== null);
-		setIsSaving(true);
-		try {
-			const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					id: planId,
-					name: "Комплексный план лечения (КТ)",
-					patientSignature: signatureUrl,
-					items: itemsForApi,
-				}),
-			});
-			const rawBody = await res.text();
-			const data = jsonObjectOrNull(rawBody);
-			if (!res.ok || data?.success !== true) {
-				logger.error(
-					`[treatment plan save] ${res.status} ${rawBody.slice(0, 300)}`,
-				);
-				const detail = operatorReadableErrorDetail(
-					typeof data?.message === "string" ? data.message : null,
-				);
-				showToast(
-					detail ??
-						`${actionFailureToast("План лечения не сохранён", res.status)} Позиции остались на экране.`,
-					"error",
-					12000,
-				);
-				return;
-			}
-			if (typeof data.planId === "string") setPlanId(data.planId);
-			const savedPlan =
-				data.plan && typeof data.plan === "object"
-					? (data.plan as Record<string, unknown>)
-					: null;
-			if (Array.isArray(savedPlan?.items)) {
-				setItems(
-					savedPlan.items
-						.map(planItemFromServer)
-						.filter((item): item is PlanItem => item !== null),
-				);
-			}
-			if (savedPlan && savedPlan.patientSignature !== undefined) {
-				setSignatureUrl(
-					typeof savedPlan.patientSignature === "string"
-						? savedPlan.patientSignature
-						: null,
-				);
-			}
-			if (saveBlock) {
-				showToast(
-					"План лечения успешно сохранен с пометкой «Цена уточняется»!",
-					"warning",
-					6000,
-				);
-			} else {
-				showToast("План лечения успешно сохранен!", "success");
-			}
-		} catch (e) {
-			logger.error("[treatment plan save] запрос не выполнен", e);
-			showToast(
-				`${actionFailureToast("План лечения не сохранён", null)} Позиции остались на экране.`,
-				"error",
-				12000,
-			);
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const removeItem = (idx: number) => {
-		const removed = items[idx];
-		if (!removed) return;
-		setItems((prev) => prev.filter((_, i) => i !== idx));
-		const keys = estimatorDismissalKeys(removed);
-		if (keys.length > 0) {
-			setDismissedSuggestions((prev) => {
-				const next = new Set(prev);
-				for (const key of keys) next.add(key);
-				return next;
-			});
-		}
-
-		const toothBadge = removed.toothNumber
-			? ` [зуб ${removed.toothNumber}]`
-			: "";
-		pushDestructiveActionWithRollback({
-			entityType: "estimator_item",
-			description: `Услуга «${removed.name}»${toothBadge} удалена из сметы`,
-			item: removed,
-			index: idx,
-			onRollback: (item, index) => {
-				setItems((prev) => {
-					const next = [...prev];
-					next.splice(index, 0, item as PlanItem);
-					return next;
-				});
-				if (keys.length > 0) {
-					setDismissedSuggestions((prev) => {
-						const next = new Set(prev);
-						for (const key of keys) next.delete(key);
-						return next;
-					});
-				}
-			},
-		});
-	};
-
-	const setPhase = (idx: number, phase: number) => {
-		const n = [...items];
-		if (n[idx]) n[idx].phase = phase;
-		setItems(n);
-	};
-
-	const handlePriceChange = (idx: number, newPrice: number | null) => {
-		setItems((prev) => {
-			const next = [...prev];
-			const current = next[idx];
-			if (!current) return prev;
-			next[idx] = {
-				...current,
-				price: newPrice,
-				issue: newPrice !== null ? null : (current.issue ?? null),
-			};
-			return next;
-		});
-		if (newPrice === 0) {
-			showToast("Установлена гарантийная цена 0 ₽ (Мандат 8e)", "info", 2500);
-		} else if (newPrice !== null) {
-			showToast(`Установлена цена врача: ${newPrice} ₽`, "success", 2500);
-		}
-	};
-
-	const phases = [1, 2, 3];
-
-	const unpricedWarning = saveBlock
-		? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»"
-		: null;
+	const { isSaving, savePlan } = useEstimatorSave(patientId, planId, setPlanId, signatureUrl, items, planLoad, Boolean(saveBlock));
 
 	return (
-		<div
-			className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100"
-			data-testid="treatment-estimator-container"
-		>
-			{/* Hidden X icon reference for static icon suite assertion */}
+		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100" data-testid="treatment-estimator-container">
 			<X size={16} className="hidden" aria-hidden="true" />
-			<div
-				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)]"
-				style={{ padding: "12px 16px", gap: "12px" }}
-			>
-				<div
-					className="flex flex-wrap items-center gap-3 min-w-0"
-					style={{ gap: "12px" }}
-				>
-					<h2
-						className="flex items-center gap-2 text-base font-bold truncate whitespace-nowrap"
-						style={{ gap: "8px" }}
-					>
-						<FileText
-							size={16}
-							className="text-teal-600 dark:text-teal-400 shrink-0"
-						/>
-						<span className="truncate">План лечения</span>
-					</h2>
-					<div
-						className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] p-1 rounded-lg text-xs font-bold flex-wrap"
-						style={{ padding: "3px", gap: "4px" }}
-					>
-						<button
-							type="button"
-							onClick={() => setPlannerTab("comprehensive_804n")}
-							style={
-								plannerTab === "comprehensive_804n"
-									? {
-											padding: "5px 12px",
-											backgroundColor: "#0d9488",
-											color: "#ffffff",
-											borderRadius: "6px",
-										}
-									: {
-											padding: "5px 12px",
-											color: "var(--muted)",
-											borderRadius: "6px",
-										}
-							}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
-								plannerTab === "comprehensive_804n"
-									? "bg-teal-600 text-white shadow-xs font-black"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
-							aria-label="3 Варианта плана"
-						>
-							3 Варианта плана
-						</button>
-						<button
-							type="button"
-							onClick={() => setPlannerTab("manual_lines")}
-							style={
-								plannerTab === "manual_lines"
-									? {
-											padding: "5px 12px",
-											backgroundColor: "#0d9488",
-											color: "#ffffff",
-											borderRadius: "6px",
-										}
-									: {
-											padding: "5px 12px",
-											color: "var(--muted)",
-											borderRadius: "6px",
-										}
-							}
-							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${
-								plannerTab === "manual_lines"
-									? "bg-teal-600 text-white shadow-xs font-black"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
-						>
-							Построчная смета
-						</button>
-					</div>
-				</div>
-				<div
-					className="flex gap-2 flex-wrap sm:flex-nowrap shrink-0"
-					style={{ gap: "8px" }}
-				>
-					{signatureUrl && (
-						<span
-							className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center"
-							style={{ padding: "4px 10px" }}
-						>
-							ПОДПИСАНО
-						</span>
-					)}
-					<button
-						type="button"
-						onClick={() => {
-							setSignatureUrl("paper_confirmed_" + Date.now());
-							showToast("План лечения подтвержден на бумаге", "success");
-						}}
-						style={{ padding: "6px 12px", gap: "6px" }}
-						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-colors cursor-pointer"
-						title="Пациент подписал распечатанную смету — подтвердить"
-						data-testid="estimator-paper-confirm-btn"
-					>
-						<ShieldCheck
-							size={14}
-							className="text-emerald-600 dark:text-emerald-400 shrink-0"
-						/>
-						<span>На бумаге</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => window.print()}
-						style={{ padding: "6px 12px", gap: "6px" }}
-						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded-lg hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-						title="Распечатать смету плана лечения для согласования с пациентом"
-						data-testid="estimator-direct-print-btn"
-					>
-						<Printer size={14} className="shrink-0" />
-						<span>Печать сметы</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setShowSignModal(true)}
-						disabled={planLoad.phase === "loading"}
-						title={unpricedWarning ?? "Подписать план у пациента"}
-						style={{ padding: "6px 12px", gap: "6px" }}
-						className="dente-filter-chip flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded-lg hover:bg-[var(--paper-soft)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation cursor-pointer"
-						data-testid="estimator-open-sign-modal-btn"
-					>
-						<PenTool size={14} className="shrink-0" />
-						<span>Подписать</span>
-					</button>
-					<button
-						type="button"
-						onClick={savePlan}
-						disabled={isSaving || planLoad.phase === "loading"}
-						title={unpricedWarning ?? "Сохранить план лечения"}
-						style={{
-							padding: "6px 14px",
-							gap: "6px",
-							backgroundColor: "#0d9488",
-							color: "#ffffff",
-							borderColor: "#0f766e",
-						}}
-						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-white bg-teal-600 border border-teal-500 rounded-lg shadow-xs hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation cursor-pointer"
-					>
-						<Save size={14} className="shrink-0" />
-						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
-					</button>
-				</div>
-			</div>
-
+			<TreatmentEstimatorTopBar
+				plannerTab={plannerTab}
+				setPlannerTab={setPlannerTab}
+				signatureUrl={signatureUrl}
+				onPaperConfirm={() => { setSignatureUrl("paper_confirmed_" + Date.now()); showToast("План лечения подтвержден на бумаге", "success"); }}
+				onDirectPrint={() => window.print()}
+				onOpenSignModal={() => setShowSignModal(true)}
+				onSavePlan={savePlan}
+				isSaving={isSaving}
+				planLoadPhase={planLoad.phase}
+				unpricedWarning={saveBlock ? "Внимание: в смете есть позиции без цены — сохраняются с пометкой «Цена уточняется»" : null}
+			/>
 			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
 				{plannerTab === "comprehensive_804n" ? (
-					<TreatmentPlanModule
-						patientId={patientId}
-						patientName={patient?.fullName || "Пациент"}
-						teethData={currentTeeth}
-					/>
+					<TreatmentPlanModule patientId={patientId} patientName={patient?.fullName || "Пациент"} teethData={currentTeeth} />
 				) : (
 					<>
 						<TreatmentEstimatorAlerts
 							planLoadPhase={planLoad.phase}
-							planLoadStatus={
-								planLoad.phase === "failed" ? planLoad.status : null
-							}
+							planLoadStatus={planLoad.phase === "failed" ? (planLoad.status ?? null) : null}
 							planSubject={PLAN_SUBJECT}
 							contractFailure={contractFailure}
 							issueMessages={issueMessages}
 							itemsCount={items.length}
-							onRetryPlan={() => setReloadToken((token) => token + 1)}
-							onRetryContract={() => setReloadToken((token) => token + 1)}
+							onRetryPlan={() => setReloadToken((t) => t + 1)}
+							onRetryContract={() => setReloadToken((t) => t + 1)}
 							ghostConflicts={ghostConflicts}
 							collisions={planCollisions}
-							onReplaceWithImplant={handleReplaceWithImplant}
-							onRestoreToothStatus={handleRestoreToothStatus}
-							onRemoveItemByTooth={handleRemoveItemByTooth}
-							consumablesReconciliation={estimatorConsumablesReconciliation}
-							onAddAllUnbilledToPlan={handleAddAllUnbilledToPlan}
+							onReplaceWithImplant={actions.handleReplaceWithImplant}
+							onRestoreToothStatus={actions.handleRestoreToothStatus}
+							onRemoveItemByTooth={actions.handleRemoveItemByTooth}
 						/>
-
-						{phases.map((phase) => {
-							const phaseItems = items.filter((i) => i.phase === phase);
-							if (phaseItems.length === 0) return null;
-
-							return (
-								<div key={phase} className="phase-section">
-									<h3 className="phase-title">
-										{phase === 1 && "I. Терапия (Санация)"}
-										{phase === 2 && "II. Хирургия и Имплантация"}
-										{phase === 3 && "III. Ортопедия (Протезирование)"}
-									</h3>
-
-									<div className="phase-items-list">
-										{phaseItems.map((item) => {
-											const globalIdx = items.indexOf(item);
-											const itemGhostConflict = getGhostToothConflict(
-												item,
-												currentTeeth,
-											);
-											const itemCollision =
-												item.toothNumber !== undefined
-													? planCollisions.find(
-															(c) => c.toothNumber === item.toothNumber,
-														)
-													: null;
-											return (
-												<TreatmentEstimatorItemCard
-													key={globalIdx}
-													item={item}
-													globalIdx={globalIdx}
-													contract={contract}
-													onRemove={removeItem}
-													onSetPhase={setPhase}
-													formatRub={rub}
-													ghostConflict={itemGhostConflict}
-													collision={itemCollision}
-													onReplaceWithImplant={handleReplaceWithImplant}
-													onRestoreToothStatus={handleRestoreToothStatus}
-													onPriceChange={handlePriceChange}
-												/>
-											);
-										})}
-									</div>
-								</div>
-							);
-						})}
+						<TreatmentEstimatorPhasesList
+							items={items}
+							currentTeeth={currentTeeth}
+							contract={contract}
+							planCollisions={planCollisions}
+							onRemoveItem={actions.removeItem}
+							onSetPhase={actions.setPhase}
+							onReplaceWithImplant={actions.handleReplaceWithImplant}
+							onRestoreToothStatus={actions.handleRestoreToothStatus}
+							onPriceChange={actions.handlePriceChange}
+						/>
 					</>
 				)}
 			</div>
-
 			{plannerTab === "manual_lines" && (
-				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-3 px-4 py-3 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-					<div className="flex items-center gap-2 flex-wrap">
-						<button
-							type="button"
-							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
-						>
-							<Printer size={14} />
-							<span>Печать сметы</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => {
-								if (treatmentPlanItemsForFiscalModal.length === 0) {
-									showToast(
-										"В смете нет позиций с подтвержденной ценой",
-										"warning",
-										3000,
-									);
-									return;
-								}
-								setIsFiscalModalOpen(true);
-							}}
-							disabled={false}
-							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer"
-						>
-							<Receipt size={14} />
-							<span>В кассу</span>
-						</button>
-					</div>
-
-					<div className="flex flex-col items-end min-w-0">
-						<div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-							{totals.incompleteRows > 0
-								? "Итого, без непосчитанного:"
-								: "Итого по плану:"}
-						</div>
-						{totals.pricedRows === 0 && totals.incompleteRows > 0 ? (
-							<div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-								Считать пока нечего
-							</div>
-						) : (
-							<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1 font-mono">
-								{rub(totals.payableKopecks)}
-							</div>
-						)}
-						{totals.incompleteRows > 0 && (
-							<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 text-right break-words">
-								{totals.pricedRows === 0
-									? "Ни у одной строки плана нет цены из вашего прайса"
-									: "Итог неполный: в плане есть лечение без цены из прайса"}
-							</div>
-						)}
-					</div>
-				</div>
-			)}
-
-			{isFiscalModalOpen && (
-				<FiscalReceipt54FzModal
-					isOpen={isFiscalModalOpen}
-					items={treatmentPlanItemsForFiscalModal}
-					patientId={patientId}
-					patientName={patient?.fullName || "Пациент"}
-					patientPhone={patient?.phone || undefined}
-					patientDepositRub={Number(patient?.depositRub) || 0}
-					onClose={() => setIsFiscalModalOpen(false)}
-					onReceiptFiscalized={(receiptNum) => {
-						showToast(
-							`Чек №${receiptNum} успешно фискализирован`,
-							"success",
-							4000,
-						);
-						setIsFiscalModalOpen(false);
+				<TreatmentEstimatorBottomBar
+					onDirectPrint={() => window.print()}
+					onOpenCashier={() => {
+						if (cashierItems.length === 0) { showToast("В смете нет позиций с подтвержденной ценой", "warning", 3000); return; }
+						setIsFiscalModalOpen(true);
 					}}
+					payableKopecks={totals.payableKopecks}
+					pricedRows={totals.pricedRows}
+					incompleteRows={totals.incompleteRows}
 				/>
 			)}
-
-			<TreatmentEstimatorSignModal
-				isOpen={showSignModal}
-				onClose={() => setShowSignModal(false)}
-				onConfirmPaper={() => {
-					setSignatureUrl(
-						"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>",
-					);
-					setShowSignModal(false);
-					showToast("План лечения и смета подтверждены на бумаге", "success");
-				}}
-				onPrint={() => window.print()}
+			<TreatmentEstimatorModals
+				isFiscalModalOpen={isFiscalModalOpen} setIsFiscalModalOpen={setIsFiscalModalOpen}
+				cashierItems={cashierItems} patientId={patientId}
+				patientName={patient?.fullName || "Пациент"} patientPhone={patient?.phone || undefined}
+				patientDepositRub={Number(patient?.depositRub) || 0}
+				showSignModal={showSignModal} setShowSignModal={setShowSignModal} setSignatureUrl={setSignatureUrl}
 			/>
 		</div>
 	);

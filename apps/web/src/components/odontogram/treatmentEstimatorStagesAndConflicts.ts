@@ -272,7 +272,7 @@ export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInf
 	};
 }
 
-export interface Cashier54FzExportPayload {
+export interface CashierExportPayload {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly items: readonly TreatmentPlanItem[];
@@ -282,12 +282,14 @@ export interface Cashier54FzExportPayload {
 	readonly createdAtIso: string;
 }
 
-export function exportEstimatorToCashier54Fz(
+export type Cashier54FzExportPayload = CashierExportPayload;
+
+export function exportEstimatorToCashier(
 	items: readonly PlanItem[],
 	patientId: string,
 	patientName: string,
 	discountPercent = 0,
-): Cashier54FzExportPayload {
+): CashierExportPayload {
 	const validItems = items.filter((it) => it.price !== null && it.price > 0);
 	const mapped: TreatmentPlanItem[] = validItems.map((it, idx) => {
 		const unitPrice = it.price ?? 0;
@@ -346,6 +348,8 @@ export function exportEstimatorToCashier54Fz(
 		createdAtIso: new Date().toISOString(),
 	};
 }
+
+export const exportEstimatorToCashier54Fz = exportEstimatorToCashier;
 
 export function isToothMissingOrExtracted(state?: string | null): boolean {
 	if (!state) return false;

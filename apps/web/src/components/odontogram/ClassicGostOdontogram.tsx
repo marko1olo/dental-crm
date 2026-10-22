@@ -1,4 +1,5 @@
 import React, { useMemo, memo } from "react";
+import type { ToothData } from "./ToothChart";
 import { ClassicGostToothCell } from "./ClassicGostToothCell";
 import {
 	TOP_TEETH_MIXED,
