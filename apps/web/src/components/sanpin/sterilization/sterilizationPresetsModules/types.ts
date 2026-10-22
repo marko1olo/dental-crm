@@ -1,8 +1,6 @@
 /**
  * apps/web/src/components/sterilization/sterilizationPresetsModules/types.ts
- *
  * Единые типизированные интерфейсы стерилизации, автоклавирования и контроля ПСО.
- * DENTE Clean Architecture & Apple HIG.
  */
 
 export interface AutoclaveCycleRecord {
@@ -33,10 +31,7 @@ export interface AutoclaveCycleRecord {
 	readonly isQuickPreset?: boolean;
 }
 
-export type SterilizationCyclePreset = Omit<
-	AutoclaveCycleRecord,
-	"id" | "cycleNumber" | "timestamp"
-> & {
+export type SterilizationCyclePreset = Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> & {
 	readonly id?: string;
 };
 
@@ -60,10 +55,7 @@ export interface PsoQualityRecord {
 	readonly notes: string;
 }
 
-export type PsoQualityControlPreset = Omit<
-	PsoQualityRecord,
-	"id" | "timestamp"
-> & {
+export type PsoQualityControlPreset = Omit<PsoQualityRecord, "id" | "timestamp"> & {
 	readonly id?: string;
 };
 
@@ -113,11 +105,7 @@ export interface ChemicalDisinfectionPreset {
 	readonly concentrationPercent: number;
 	readonly exposureMinutes: number;
 	readonly targetGroupRu: string;
-	readonly methodRu:
-		| "погружение"
-		| "ультразвуковая_ванна"
-		| "2-кратное_протирание"
-		| "орошение";
+	readonly methodRu: "погружение" | "ультразвуковая_ванна" | "2-кратное_протирание" | "орошение";
 	readonly temperatureC?: number;
 	readonly ultrasonicFrequencyKhz?: number;
 	readonly shelfLifeSolutionDays: number;

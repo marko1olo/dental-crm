@@ -28,6 +28,7 @@ import {
 	getShiftSterilizationRecords,
 	normalizePackagingType,
 } from "./shiftAutofillCalculators.js";
+import { executeSterilizationConsumablesDeduction } from "../sterilizationModules/sterilizationStockDeduction.js";
 
 export type DatabaseTransaction = TenantDb;
 
@@ -334,6 +335,19 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 			todayStr,
 		});
 	});
+
+	// Пакетное списание расходников стерилизации со склада клиники (Мандаты 8e, 8n, 8k)
+	for (const steril of insertedSteril) {
+		void executeSterilizationConsumablesDeduction({
+			organizationId,
+			userId: req.user?.id || null,
+			count: 14,
+			packagingType: steril.packagingType,
+			indicatorType: steril.indicatorType,
+			cycleNumber: steril.cycleNumber,
+			barcode: steril.barcode,
+		}).catch(() => null);
+	}
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",

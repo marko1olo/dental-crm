@@ -79,7 +79,7 @@ export const GeneralCleaningOptionsMenu: React.FC<GeneralCleaningOptionsMenuProp
 
 					<button
 						type="button"
-						onClick={() => { setIsOpen(false); exportGeneralCleaningLogsCsv(filteredLogs); }}
+						onClick={() => { setIsOpen(false); exportGeneralCleaningLogsCsv([...filteredLogs]); }}
 						className="flex items-center gap-2 p-2 text-xs text-left bg-transparent border-0 rounded cursor-pointer text-ink hover:bg-paper-soft"
 					>
 						<Download size={14} />
@@ -88,7 +88,7 @@ export const GeneralCleaningOptionsMenu: React.FC<GeneralCleaningOptionsMenuProp
 
 					<button
 						type="button"
-						onClick={() => { setIsOpen(false); printGeneralCleaningJournal(logs, appLogic); }}
+						onClick={() => { setIsOpen(false); printGeneralCleaningJournal([...logs], appLogic); }}
 						className="flex items-center gap-2 p-2 text-xs text-left bg-transparent border-0 rounded cursor-pointer text-ink hover:bg-paper-soft"
 						data-testid="print-general-cleaning-journal-btn"
 					>

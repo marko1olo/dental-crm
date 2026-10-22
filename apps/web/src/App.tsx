@@ -1144,6 +1144,15 @@ export function App() {
 			if (s.includes("receipt") || h.includes("receipt"))
 				setIsReceiptDirectModalOpen(true);
 			if (
+				s.includes("recalls") ||
+				s.includes("prophylaxis") ||
+				h.includes("recalls") ||
+				h.includes("prophylaxis") ||
+				h.includes("preventive")
+			) {
+				setIsRecallsHubOpen(true);
+			}
+			if (
 				s.includes("implants") ||
 				s.includes("implant_passport") ||
 				h.includes("implants") ||

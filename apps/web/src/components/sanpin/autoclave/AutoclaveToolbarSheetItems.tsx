@@ -1,12 +1,5 @@
 import type { SterilizationLogRecord } from "@dental/shared";
-import {
-	FileSpreadsheet,
-	Plus,
-	Printer,
-	QrCode,
-	ShieldCheck,
-	Sparkles,
-} from "lucide-react";
+import { FileSpreadsheet, Plus, Printer, QrCode, ShieldCheck, Sparkles } from "lucide-react";
 import React from "react";
 import { showToast } from "../../GlobalToast.js";
 import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes.js";
@@ -19,48 +12,37 @@ export interface AutoclaveToolbarSheetItemsProps {
 	readonly onQuickShiftBatch: () => void;
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onOpenEquipmentModal: () => void;
-	readonly onOpenNewCycleModal?: () => void;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
 	readonly onGenerateMonthlyForm257: () => void;
 	readonly onOpenKraftModal: () => void;
 }
 
 export function AutoclaveToolbarSheetItems({
-	logs,
-	clinicDevices,
-	isLoggingBatch,
-	onClose,
-	onQuickShiftBatch,
-	onPrintBatchPouches,
-	onOpenEquipmentModal,
-	onOpenNewCycleModal,
-	onGenerateMonthlyForm257,
-	onOpenKraftModal,
+	logs, clinicDevices, isLoggingBatch, onClose,
+	onQuickShiftBatch, onPrintBatchPouches, onOpenEquipmentModal,
+	onOpenNewCycleModal, onGenerateMonthlyForm257, onOpenKraftModal,
 }: AutoclaveToolbarSheetItemsProps) {
 	return (
 		<>
 			<button
-				type="button"
-				onClick={() => { onClose(); onQuickShiftBatch(); }}
-				aria-busy={isLoggingBatch}
-				className="sanpin-bottom-sheet-item"
+				type="button" onClick={() => { onClose(); onQuickShiftBatch(); }}
+				aria-busy={isLoggingBatch} className="sanpin-bottom-sheet-item"
 				data-testid="sheet-quick-shift-batch-btn"
 			>
 				<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<div className="flex flex-col text-left">
 					<span className="font-bold text-sm">Провести цикл автоклавирования на смену</span>
-					<span className="text-xs text-[var(--muted)]">134°C, 2.1 бар, 5 мин • азопирам/фенолфталеин норма</span>
+					<span className="text-xs text-[var(--muted)]">134°C, 2.1 бар, 5 мин • норма</span>
 				</div>
 			</button>
 
 			<button
-				type="button"
-				onClick={() => {
+				type="button" onClick={() => {
 					onClose();
 					if (logs.length > 0 && logs[0]) onPrintBatchPouches(logs[0], 10);
 					else showToast("Сначала зафиксируйте цикл стерилизации смены", "warning");
 				}}
-				className="sanpin-bottom-sheet-item"
-				data-testid="sheet-batch-labels-btn"
+				className="sanpin-bottom-sheet-item" data-testid="sheet-batch-labels-btn"
 			>
 				<Printer size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<div className="flex flex-col text-left">
@@ -70,10 +52,8 @@ export function AutoclaveToolbarSheetItems({
 			</button>
 
 			<button
-				type="button"
-				onClick={() => { onClose(); onOpenEquipmentModal(); }}
-				className="sanpin-bottom-sheet-item"
-				data-testid="sheet-equipment-fleet-btn"
+				type="button" onClick={() => { onClose(); onOpenEquipmentModal(); }}
+				className="sanpin-bottom-sheet-item" data-testid="sheet-equipment-fleet-btn"
 			>
 				<ShieldCheck size={18} className="text-blue-600 shrink-0" />
 				<div className="flex flex-col text-left">
@@ -84,10 +64,8 @@ export function AutoclaveToolbarSheetItems({
 
 			{onOpenNewCycleModal && (
 				<button
-					type="button"
-					onClick={() => { onClose(); onOpenNewCycleModal(); }}
-					className="sanpin-bottom-sheet-item"
-					data-testid="sheet-manual-cycle-entry-btn"
+					type="button" onClick={() => { onClose(); onOpenNewCycleModal(); }}
+					className="sanpin-bottom-sheet-item" data-testid="sheet-manual-cycle-entry-btn"
 				>
 					<Plus size={18} className="text-sky-600 shrink-0" />
 					<div className="flex flex-col text-left">
@@ -98,10 +76,8 @@ export function AutoclaveToolbarSheetItems({
 			)}
 
 			<button
-				type="button"
-				onClick={() => { onClose(); onGenerateMonthlyForm257(); }}
-				className="sanpin-bottom-sheet-item"
-				data-testid="sheet-monthly-journal-btn"
+				type="button" onClick={() => { onClose(); onGenerateMonthlyForm257(); }}
+				className="sanpin-bottom-sheet-item" data-testid="sheet-monthly-journal-btn"
 			>
 				<FileSpreadsheet size={18} className="text-emerald-600 shrink-0" />
 				<div className="flex flex-col text-left">
@@ -111,10 +87,8 @@ export function AutoclaveToolbarSheetItems({
 			</button>
 
 			<button
-				type="button"
-				onClick={() => { onClose(); onOpenKraftModal(); }}
-				className="sanpin-bottom-sheet-item"
-				data-testid="sheet-kraft-studio-btn"
+				type="button" onClick={() => { onClose(); onOpenKraftModal(); }}
+				className="sanpin-bottom-sheet-item" data-testid="sheet-kraft-studio-btn"
 			>
 				<QrCode size={18} className="text-purple-600 shrink-0" />
 				<div className="flex flex-col text-left">

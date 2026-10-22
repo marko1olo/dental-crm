@@ -6,10 +6,10 @@ import { JournalTabEmptyState } from "./JournalTabEmptyState";
 export interface JournalTabTableProps {
 	readonly records: readonly Form257Record[];
 	readonly filteredRecords: readonly Form257Record[];
-	readonly headNurseName?: string;
-	readonly onVerifyRecord?: (id: string, headNurseName: string) => void;
-	readonly onDeleteRecord?: (id: string) => void;
-	readonly onOpenNewCycle?: () => void;
+	readonly headNurseName?: string | undefined;
+	readonly onVerifyRecord?: ((id: string, headNurseName: string) => void) | undefined;
+	readonly onDeleteRecord?: ((id: string) => void) | undefined;
+	readonly onOpenNewCycle?: (() => void) | undefined;
 }
 
 export const JournalTabTable: React.FC<JournalTabTableProps> = ({

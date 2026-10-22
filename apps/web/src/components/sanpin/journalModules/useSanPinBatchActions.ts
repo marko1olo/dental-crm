@@ -1,8 +1,6 @@
 /**
  * apps/web/src/components/sanpin/journalModules/useSanPinBatchActions.ts
- *
  * Обработчики пакетных действий автоклава и ПСО (СанПиН 3.3686-21).
- * Мандат 8b: строго <= 120 строк.
  */
 
 import { useState, useRef } from "react";
@@ -68,16 +66,9 @@ export function useSanPinBatchActions(
 				: `${cycleLabel} автоклавирования: ${targetBatch} наборов (15 смотровых, 8 терапевтических, 4 турбины)`;
 
 			const payload = {
-				regime: isDelicate ? "delicate_121" : "standard_134",
-				batchSize: targetBatch,
-				cycleName: cycleLabel,
-				temperatureCelsius: tempC,
-				durationMin: isDelicate ? 20 : 5,
-				pressureBar: pressBar,
-				deviceName: devName,
-				autoclaveId: autoId,
-				itemsDescription: itemsDesc,
-				packagingType: isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive",
+				regime: isDelicate ? "delicate_121" : "standard_134", batchSize: targetBatch, cycleName: cycleLabel,
+				temperatureCelsius: tempC, durationMin: isDelicate ? 20 : 5, pressureBar: pressBar, deviceName: devName,
+				autoclaveId: autoId, itemsDescription: itemsDesc, packagingType: isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive",
 			};
 
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {

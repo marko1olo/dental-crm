@@ -1,4 +1,6 @@
-import type { StomxTaskCallType } from "@dental/shared";
+import type { ClinicalTaskCallType, StomxTaskCallType } from "@dental/shared";
+
+export type { ClinicalTaskCallType, StomxTaskCallType };
 
 export type RecallCycleType =
 	| "standard_prophylaxis"

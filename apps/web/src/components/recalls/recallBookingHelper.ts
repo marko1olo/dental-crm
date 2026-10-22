@@ -5,7 +5,7 @@ import type {
 import type { PatientRecallRecord } from "./recallCycleCatalog";
 
 /**
- * Номенклатура медицинских услуг 804н для плановых контрольных приёмов и профгигиены.
+ * Прейскурант услуг клиники для плановых контрольных приёмов и профессиональной гигиены.
  */
 export function resolveRecallServices(candidate: PatientRecallRecord): QuickBookingStageService[] {
 	if (candidate.cycleType === "implant_monitoring") {
@@ -64,7 +64,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 		];
 	}
 
-	// По умолчанию — профессиональная гигиена полости рта и зубов (Order 804n)
+	// По умолчанию — профессиональная гигиена полости рта и зубов
 	return [
 		{
 			id: "rec-srv-hygiene",

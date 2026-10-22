@@ -47,9 +47,11 @@ export {
  * Layer 5: shiftAutofillRoutes.ts (Compact Canonical Facade <= 250 lines)
  */
 export function registerSanpinShiftAutofillRoutes(app: FastifyInstance) {
-	// 7. 1-КЛИК АВТОПИЛОТ СМЕНЫ САНПИН (СанПиН 3.3686-21, Форма 257/у, 366/у)
+	// 7. 1-КЛИК АВТОПИЛОТ СМЕНЫ САНПИН (Форма 257/у, 366/у)
 	app.post("/api/registers/autofill-shift", handleAutofillShift);
+	app.post("/api/sanpin/shift-autofill", handleAutofillShift);
 
-	// 8. 1-КЛИК АВТОПИЛОТ МЕСЯЦА САНПИН (СанПиН 3.3686-21, Форма 257/у, 366/у)
+	// 8. 1-КЛИК АВТОПИЛОТ МЕСЯЦА САНПИН (Форма 257/у, 366/у)
 	app.post("/api/registers/autofill-month", handleAutofillMonth);
+	app.post("/api/sanpin/month-autofill", handleAutofillMonth);
 }

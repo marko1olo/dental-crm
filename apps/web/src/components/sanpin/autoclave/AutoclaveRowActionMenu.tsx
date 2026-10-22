@@ -12,6 +12,20 @@ export interface AutoclaveRowActionMenuProps {
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 }
 
+const itemBtnStyle: React.CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	padding: "0.4rem 0.6rem",
+	fontSize: "0.75rem",
+	textAlign: "left",
+	background: "none",
+	border: "none",
+	borderRadius: "4px",
+	cursor: "pointer",
+	color: "var(--ink)",
+};
+
 export function AutoclaveRowActionMenu({
 	log,
 	isMenuOpen,
@@ -31,7 +45,7 @@ export function AutoclaveRowActionMenu({
 					minHeight: "24px",
 					height: "24px",
 					width: "24px",
-					padding: "0",
+					padding: 0,
 					cursor: "pointer",
 					display: "inline-flex",
 					alignItems: "center",
@@ -67,19 +81,7 @@ export function AutoclaveRowActionMenu({
 					<button
 						type="button"
 						onClick={() => onOpenKraftForLog(log)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							padding: "0.4rem 0.6rem",
-							fontSize: "0.75rem",
-							textAlign: "left",
-							background: "none",
-							border: "none",
-							borderRadius: "4px",
-							cursor: "pointer",
-							color: "var(--ink)",
-						}}
+						style={itemBtnStyle}
 						className="hover:bg-[var(--paper-soft,#f1f5f9)]"
 					>
 						<QrCode size={13} color="var(--brand-primary)" />
@@ -88,19 +90,7 @@ export function AutoclaveRowActionMenu({
 					<button
 						type="button"
 						onClick={() => onPrintSinglePouch(log)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							padding: "0.4rem 0.6rem",
-							fontSize: "0.75rem",
-							textAlign: "left",
-							background: "none",
-							border: "none",
-							borderRadius: "4px",
-							cursor: "pointer",
-							color: "var(--ink)",
-						}}
+						style={itemBtnStyle}
 						className="hover:bg-[var(--paper-soft,#f1f5f9)]"
 					>
 						<Tag size={13} />
@@ -109,20 +99,7 @@ export function AutoclaveRowActionMenu({
 					<button
 						type="button"
 						onClick={() => onPrintBatchPouches(log, 10)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							padding: "0.4rem 0.6rem",
-							fontSize: "0.75rem",
-							textAlign: "left",
-							background: "none",
-							border: "none",
-							borderRadius: "4px",
-							cursor: "pointer",
-							color: "var(--teal, #0d9488)",
-							fontWeight: 600,
-						}}
+						style={{ ...itemBtnStyle, color: "var(--teal, #0d9488)", fontWeight: 600 }}
 						className="hover:bg-[var(--paper-soft,#f1f5f9)]"
 					>
 						<Printer size={13} />

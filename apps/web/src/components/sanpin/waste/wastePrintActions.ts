@@ -8,7 +8,7 @@ import {
 export function printWasteThermalSticker(record: MedicalWasteJournalRecord, disposalContractNo?: string): void {
 	const html = generateWasteThermalStickerHtml(record, {
 		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
-		disposalContractNo,
+		...(disposalContractNo !== undefined ? { disposalContractNo } : {}),
 	});
 	const win = window.open("", "_blank", "width=450,height=350");
 	if (win) {

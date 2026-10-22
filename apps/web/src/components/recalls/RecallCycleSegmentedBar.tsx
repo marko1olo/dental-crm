@@ -21,7 +21,7 @@ export const RecallCycleSegmentedBar: React.FC<RecallCycleSegmentedBarProps> = (
 
 	return (
 		<div
-			className="recall-solo-presets dente-segmented-bar"
+			className="recall-solo-presets"
 			role="group"
 			aria-label="Быстрый фильтр циклов возврата"
 		>
@@ -50,7 +50,8 @@ export const RecallCycleSegmentedBar: React.FC<RecallCycleSegmentedBarProps> = (
 				style={{ minHeight: "44px" }}
 			>
 				<ShieldCheck size={16} />
-				<span>1-Click: Профгигиена (6 мес.)</span>
+				<span className="recall-preset-label-full">1-Click: Профгигиена (6 мес.)</span>
+				<span className="recall-preset-label-short">Профгигиена (6м)</span>
 				{typeof hygieneCount === "number" && (
 					<span className="recall-chip-badge">{hygieneCount}</span>
 				)}
@@ -69,7 +70,8 @@ export const RecallCycleSegmentedBar: React.FC<RecallCycleSegmentedBarProps> = (
 				style={{ minHeight: "44px" }}
 			>
 				<Sparkles size={16} />
-				<span>1-Click: Импланты (1 год)</span>
+				<span className="recall-preset-label-full">1-Click: Импланты (1 год)</span>
+				<span className="recall-preset-label-short">Импланты (1г)</span>
 				{typeof implantCount === "number" && (
 					<span className="recall-chip-badge">{implantCount}</span>
 				)}
@@ -88,7 +90,8 @@ export const RecallCycleSegmentedBar: React.FC<RecallCycleSegmentedBarProps> = (
 				style={{ minHeight: "44px" }}
 			>
 				<Clock size={16} />
-				<span>1-Click: Орто-активация (1 мес.)</span>
+				<span className="recall-preset-label-full">1-Click: Орто-активация (1 мес.)</span>
+				<span className="recall-preset-label-short">Орто-активация (1м)</span>
 				{typeof orthoCount === "number" && (
 					<span className="recall-chip-badge">{orthoCount}</span>
 				)}
@@ -107,7 +110,8 @@ export const RecallCycleSegmentedBar: React.FC<RecallCycleSegmentedBarProps> = (
 				style={{ minHeight: "44px" }}
 			>
 				<Users size={16} />
-				<span>1-Click: Детский осмотр (3-4 мес.)</span>
+				<span className="recall-preset-label-full">1-Click: Детский осмотр (3-4 мес.)</span>
+				<span className="recall-preset-label-short">Детский осмотр (3м)</span>
 				{typeof pediatricCount === "number" && (
 					<span className="recall-chip-badge">{pediatricCount}</span>
 				)}

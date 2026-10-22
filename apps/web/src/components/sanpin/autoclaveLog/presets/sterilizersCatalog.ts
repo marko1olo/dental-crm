@@ -1,5 +1,4 @@
 export type SterilizerMethodType = "steam_autoclave" | "dry_heat_air" | "low_temp_plasma";
-
 export type AutoclaveClassType = "class_b" | "class_s" | "class_n" | "dry_heat";
 
 export type SterilizationRegimeId =
@@ -47,12 +46,8 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		lastMaintenanceDate: "2026-06-15",
 		nextMaintenanceDate: "2026-12-15",
 		supportedRegimeIds: [
-			"steam_134_5min",
-			"steam_134_quick",
-			"steam_134_20min_prion",
-			"steam_121_20min",
-			"bowie_dick_test",
-			"helix_pcd_test",
+			"steam_134_5min", "steam_134_quick", "steam_134_20min_prion",
+			"steam_121_20min", "bowie_dick_test", "helix_pcd_test",
 		],
 	},
 	{
@@ -71,12 +66,8 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		lastMaintenanceDate: "2026-07-01",
 		nextMaintenanceDate: "2027-01-01",
 		supportedRegimeIds: [
-			"steam_134_5min",
-			"steam_134_quick",
-			"steam_134_20min_prion",
-			"steam_121_20min",
-			"bowie_dick_test",
-			"helix_pcd_test",
+			"steam_134_5min", "steam_134_quick", "steam_134_20min_prion",
+			"steam_121_20min", "bowie_dick_test", "helix_pcd_test",
 		],
 	},
 	{
@@ -95,10 +86,7 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		lastMaintenanceDate: "2026-03-10",
 		nextMaintenanceDate: "2026-09-10",
 		supportedRegimeIds: [
-			"steam_134_5min",
-			"steam_134_quick",
-			"steam_121_20min",
-			"bowie_dick_test",
+			"steam_134_5min", "steam_134_quick", "steam_121_20min", "bowie_dick_test",
 		],
 	},
 	{
@@ -116,8 +104,6 @@ export const STATUTORY_STERILIZERS_CATALOG: readonly SterilizerApparatusDefiniti
 		commissionDate: "2022-11-05",
 		lastMaintenanceDate: "2026-05-18",
 		nextMaintenanceDate: "2026-11-18",
-		supportedRegimeIds: [
-			"dry_heat_180_60min", "dry_heat_160_150min",
-		],
+		supportedRegimeIds: ["dry_heat_180_60min", "dry_heat_160_150min"],
 	},
 ];

@@ -6,8 +6,7 @@ export const EXPRESS_CYCLE_DEFAULTS = {
 	targetTemperatureCelsius: 134,
 	targetPressureBar: 2.1,
 	targetExposureMinutes: 5,
-	itemsDescription:
-		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
+	itemsDescription: "Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
 	defaultPacksCount: 14,
 	defaultBixNumber: "Бикс № 1 (КСКФ-3) / Пакеты № 1-14",
 	packagingType: "kraft_pouch_sealed" as const,
@@ -37,15 +36,8 @@ export function computeExpressStandardCycleValues(params: {
 	defaultOperatorName?: string;
 	selectedIndicatorId?: string;
 }): ExpressCycleFillState {
-	const packs =
-		params.currentPacksCount !== undefined && params.currentPacksCount > 0
-			? params.currentPacksCount
-			: EXPRESS_CYCLE_DEFAULTS.defaultPacksCount;
-	const operator =
-		params.currentOperatorName?.trim() ||
-		params.defaultOperatorName?.trim() ||
-		EXPRESS_CYCLE_DEFAULTS.defaultOperatorName;
-
+	const packs = params.currentPacksCount && params.currentPacksCount > 0 ? params.currentPacksCount : EXPRESS_CYCLE_DEFAULTS.defaultPacksCount;
+	const operator = params.currentOperatorName?.trim() || params.defaultOperatorName?.trim() || EXPRESS_CYCLE_DEFAULTS.defaultOperatorName;
 	return {
 		selectedRegimeId: EXPRESS_CYCLE_DEFAULTS.regimeId,
 		actualTemp: EXPRESS_CYCLE_DEFAULTS.targetTemperatureCelsius,
@@ -70,20 +62,8 @@ export function resolveAutoclaveCycleFallbacks(input: {
 	readonly itemsDescriptionRu: string;
 	readonly packsCount: number;
 } {
-	const operatorStaffFullName =
-		input.operatorFullName?.trim() ||
-		input.defaultOperatorName?.trim() ||
-		EXPRESS_CYCLE_DEFAULTS.fallbackOperatorName;
-	const itemsDescriptionRu =
-		input.itemsDescription?.trim() || EXPRESS_CYCLE_DEFAULTS.fallbackItemsDescription;
-	const packsCount =
-		input.packsCount !== undefined && input.packsCount > 0
-			? input.packsCount
-			: EXPRESS_CYCLE_DEFAULTS.fallbackPacksCount;
-
-	return {
-		operatorStaffFullName,
-		itemsDescriptionRu,
-		packsCount,
-	};
+	const operatorStaffFullName = input.operatorFullName?.trim() || input.defaultOperatorName?.trim() || EXPRESS_CYCLE_DEFAULTS.fallbackOperatorName;
+	const itemsDescriptionRu = input.itemsDescription?.trim() || EXPRESS_CYCLE_DEFAULTS.fallbackItemsDescription;
+	const packsCount = input.packsCount && input.packsCount > 0 ? input.packsCount : EXPRESS_CYCLE_DEFAULTS.fallbackPacksCount;
+	return { operatorStaffFullName, itemsDescriptionRu, packsCount };
 }

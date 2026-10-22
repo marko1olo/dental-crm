@@ -1,5 +1,5 @@
 import type React from "react";
-import { Calendar, ChevronRight, MessageCircle, Phone, PhoneCall, Send } from "lucide-react";
+import { Calendar, ChevronRight, Eye, Lightbulb, MessageCircle, Phone, Send } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 
 export interface RecallPatientRowCardActionsProps {
@@ -24,16 +24,30 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 	onTelegram,
 	onCopySms,
 }) => {
-	const btnBase = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
+	const btnSecondary = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
+	const btnPrimary = "recall-action-btn recall-action-btn--book bg-[var(--teal)] text-white hover:bg-[var(--teal-dark)] font-bold rounded-lg px-3 py-1.5 shadow-xs transition-colors border-0";
 
 	return (
 		<div className="recall-patient-card__actions" role="group" aria-label="Действия вызова">
+			<button
+				type="button"
+				className={btnPrimary}
+				onClick={() => onBook(candidate)}
+				data-testid={`recall-book-btn-${candidate.id}`}
+				title="Записать на приём"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+			>
+				<Calendar size={15} />
+				<span>Записать на приём</span>
+				<ChevronRight size={14} />
+			</button>
+
 			<a
 				href={candidate.phone ? `tel:${candidate.phone}` : undefined}
-				className={`${btnBase} recall-action-btn--phone`}
+				className={`${btnSecondary} recall-action-btn--phone`}
 				data-testid={`recall-phone-btn-${candidate.id}`}
 				title={candidate.phone ? `Позвонить: ${candidate.phone}` : "Телефон не указан"}
-				style={{ minHeight: "36px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+				style={{ minHeight: "44px", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
 				<Phone size={15} />
 				<span>Позвонить</span>
@@ -41,48 +55,47 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 
 			<button
 				type="button"
-				className={`${btnBase} recall-action-btn--whatsapp`}
+				className={`${btnSecondary} recall-action-btn--whatsapp`}
 				onClick={() => onWhatsApp(candidate)}
 				data-testid={`recall-whatsapp-btn-${candidate.id}`}
-				title="WhatsApp шаблон"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+				title="WhatsApp сообщение"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
 				<MessageCircle size={15} />
-				<span>WhatsApp шаблон</span>
+				<span>WhatsApp</span>
 			</button>
 
 			<button
 				type="button"
-				className={`${btnBase} recall-action-btn--book`}
-				onClick={() => onBook(candidate)}
-				data-testid={`recall-book-btn-${candidate.id}`}
-				title="Записать на приём"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+				className={`${btnSecondary} recall-action-btn--telegram`}
+				onClick={() => onTelegram(candidate)}
+				data-testid={`recall-telegram-btn-${candidate.id}`}
+				title="Telegram сообщение"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
-				<Calendar size={15} />
-				<span>Записать на приём</span>
-				<ChevronRight size={14} />
+				<Send size={14} />
+				<span>TG</span>
 			</button>
 
 			<button
 				type="button"
-				className={`${btnBase} recall-action-btn--script ${isScriptActive ? "active" : ""}`}
+				className={`${btnSecondary} recall-action-btn--script ${isScriptActive ? "active" : ""}`}
 				onClick={() => onToggleScript(candidate)}
 				data-testid={`recall-script-btn-${candidate.id}`}
-				title="Шаблон приглашения"
-				style={{ minHeight: "36px", display: "none" }}
+				title="Речевой скрипт для диалога"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
-				<PhoneCall size={15} />
-				<span>Шаблон</span>
+				<Lightbulb size={15} />
+				<span>Скрипт</span>
 			</button>
 
 			<button
 				type="button"
-				className={`${btnBase} recall-action-btn--subtle recall-secondary-channel`}
+				className={`${btnSecondary} recall-action-btn--subtle`}
 				onClick={() => onCopySms(candidate)}
 				data-testid={`recall-sms-btn-${candidate.id}`}
 				title="Скопировать СМС"
-				style={{ minHeight: "36px", display: "none" }}
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
 				<Send size={14} />
 				<span>СМС</span>
@@ -90,24 +103,26 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 
 			<button
 				type="button"
-				className={`${btnBase} recall-action-btn--subtle recall-secondary-channel`}
-				onClick={() => onTelegram(candidate)}
-				data-testid={`recall-telegram-btn-${candidate.id}`}
-				title="Telegram"
-				style={{ minHeight: "36px", display: "none" }}
+				className={`${btnSecondary} recall-action-btn--preview`}
+				onClick={() => onTogglePreview?.(candidate)}
+				data-testid={`recall-quick-preview-btn-${candidate.id}`}
+				title="Быстрый просмотр шаблона"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
-				<Send size={14} />
-				<span>TG</span>
+				<Eye size={14} />
+				<span>Превью</span>
 			</button>
 
-			<div style={{ display: "none" }}>
-				<button type="button" onClick={() => onTogglePreview?.(candidate)} data-testid={`recall-quick-preview-btn-${candidate.id}`}>
-					Превью
-				</button>
-				<button type="button" onClick={() => onTogglePreview?.(candidate)} data-testid={`recall-preview-btn-${candidate.id}`}>
-					Шаблон
-				</button>
-			</div>
+			<button
+				type="button"
+				className={btnSecondary}
+				onClick={() => onTogglePreview?.(candidate)}
+				data-testid={`recall-preview-btn-${candidate.id}`}
+				title="Шаблон приглашения"
+				style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+			>
+				<span>Шаблон</span>
+			</button>
 		</div>
 	);
 };

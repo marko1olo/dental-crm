@@ -17,9 +17,9 @@ export function useRetroactiveBatchState({
 	sterilizerModel,
 	onSuccess,
 }: {
-	initialPreset?: PeriodPreset;
+	initialPreset?: PeriodPreset | undefined;
 	sterilizerModel: string;
-	onSuccess?: () => void;
+	onSuccess?: (() => void) | undefined;
 }) {
 	const [periodPreset, setPeriodPreset] = useState<PeriodPreset>(initialPreset);
 	const [customStartDate, setCustomStartDate] = useState<string>(() => {

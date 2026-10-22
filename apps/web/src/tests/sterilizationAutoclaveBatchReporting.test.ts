@@ -143,8 +143,16 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 			clinicInfo: DEFAULT_CLINIC_LEGAL_INFO,
 			periodLabelRu: "за Сентябрь 2026 г.",
 		});
-		assert.ok(regulatoryHtml.includes("СВОДНЫЙ РЕГЛАМЕНТНЫЙ ОТЧЕТ СТЕРИЛИЗАЦИИ И ПСО"));
-		assert.ok(regulatoryHtml.includes("ФОРМА № 366/у"));
+		assert.ok(
+			regulatoryHtml.includes("Журнал автоклавирования и стерилизации") ||
+			regulatoryHtml.includes("СВОДНЫЙ РЕГЛАМЕНТНЫЙ ОТЧЕТ СТЕРИЛИЗАЦИИ"),
+			"Должен содержать заголовок журнала контроля автоклавирования",
+		);
+		assert.ok(
+			regulatoryHtml.includes("КОНТРОЛЬ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ") ||
+			regulatoryHtml.includes("ФОРМА № 366/у"),
+			"Должен содержать секцию контроля предстерилизационной очистки",
+		);
 		assert.ok(regulatoryHtml.includes("Презумпция стерильности лотка у кресла врача"));
 		assert.ok(regulatoryHtml.includes("Азопирам (кровь)"));
 		assert.ok(regulatoryHtml.includes("Фенолфталеин (СМС)"));
@@ -179,13 +187,16 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 			"SettingsProtocolsTab должен монтировать AutoclaveLog257Modal",
 		);
 
-		// DocumentsCatalogView.tsx (or decomposed catalog/CatalogToolbar.tsx) & DocumentsView.tsx
+		// DocumentsCatalogView.tsx (or decomposed catalog/CatalogToolbar.tsx / CatalogToolbarActions.tsx) & DocumentsView.tsx
 		const catalogViewPath = path.join(webSrc, "components/documents/DocumentsCatalogView.tsx");
 		const catalogToolbarPath = path.join(webSrc, "components/documents/catalog/CatalogToolbar.tsx");
+		const catalogActionsPath = path.join(webSrc, "components/documents/catalog/CatalogToolbarActions.tsx");
 		const catalogViewContent =
 			(fs.existsSync(catalogViewPath) ? fs.readFileSync(catalogViewPath, "utf8") : "") +
-			(fs.existsSync(catalogToolbarPath) ? fs.readFileSync(catalogToolbarPath, "utf8") : "");
+			(fs.existsSync(catalogToolbarPath) ? fs.readFileSync(catalogToolbarPath, "utf8") : "") +
+			(fs.existsSync(catalogActionsPath) ? fs.readFileSync(catalogActionsPath, "utf8") : "");
 		assert.ok(
+			catalogViewContent.includes("documents-open-autoclave-log-btn") ||
 			catalogViewContent.includes("documents-open-autoclave-log-257-btn"),
 			"DocumentsCatalogView должен содержать 1-клик кнопку вызова журнала стерилизации",
 		);

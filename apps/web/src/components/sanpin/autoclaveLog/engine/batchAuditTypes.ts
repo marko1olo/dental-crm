@@ -1,13 +1,5 @@
-import type {
-	PackagingTypeId,
-	SterilizationRegimeId,
-} from "../autoclaveLogPresets.js";
-import type {
-	ChamberPointEvaluation,
-	ClinicLegalInfo,
-	Form257Record,
-	PhysicalSensorsData,
-} from "./cycleTypes.js";
+import type { PackagingTypeId, SterilizationRegimeId } from "../autoclaveLogPresets.js";
+import type { ChamberPointEvaluation, ClinicLegalInfo, Form257Record, PhysicalSensorsData } from "./cycleTypes.js";
 
 export interface Form257FilterCriteria {
 	readonly searchQuery?: string | undefined;

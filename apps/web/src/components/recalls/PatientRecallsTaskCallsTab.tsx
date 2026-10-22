@@ -1,6 +1,7 @@
 import type React from "react";
+import { useMemo } from "react";
 import { PhoneCall } from "lucide-react";
-import type { StomxTaskCallType } from "@dental/shared";
+import type { ClinicalTaskCallType } from "@dental/shared";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 import { PatientRecallsTaskCallBanner } from "./PatientRecallsTaskCallBanner";
 import { PatientRecallsTaskCallCard } from "./PatientRecallsTaskCallCard";
@@ -8,17 +9,17 @@ import { PatientRecallsTaskCallsToolbar } from "./PatientRecallsTaskCallsToolbar
 
 export interface TaskCallCandidateItem {
 	readonly candidate: PatientRecallRecord;
-	readonly taskType: StomxTaskCallType;
+	readonly taskType: ClinicalTaskCallType;
 }
 
 export interface PatientRecallsTaskCallsTabProps {
 	readonly taskCallCandidates: readonly TaskCallCandidateItem[];
 	readonly searchQuery: string;
 	readonly onSearchQueryChange: (query: string) => void;
-	readonly selectedTaskCallType: StomxTaskCallType | "all";
-	readonly onSelectTaskCallType: (type: StomxTaskCallType | "all") => void;
-	readonly activeTaskCallScriptType: StomxTaskCallType | null;
-	readonly onToggleTaskCallScriptType: (type: StomxTaskCallType | null) => void;
+	readonly selectedTaskCallType: ClinicalTaskCallType | "all";
+	readonly onSelectTaskCallType: (type: ClinicalTaskCallType | "all") => void;
+	readonly activeTaskCallScriptType: ClinicalTaskCallType | null;
+	readonly onToggleTaskCallScriptType: (type: ClinicalTaskCallType | null) => void;
 	readonly onWhatsApp: (candidate: PatientRecallRecord) => void;
 	readonly onTelegram: (candidate: PatientRecallRecord) => void;
 	readonly onBook: (candidate: PatientRecallRecord) => void;
@@ -38,6 +39,25 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 	onBook,
 	onStatusUpdate,
 }) => {
+	const visibleCandidates = useMemo(() => {
+		let items = taskCallCandidates;
+		if (selectedTaskCallType !== "all") {
+			items = items.filter((item) => item.taskType === selectedTaskCallType);
+		}
+		const q = searchQuery.trim().toLowerCase();
+		if (q) {
+			items = items.filter(({ candidate }) => {
+				const nameMatch = candidate.fullName.toLowerCase().includes(q);
+				const phoneMatch = candidate.phone ? candidate.phone.includes(q) : false;
+				const doctorMatch = candidate.attendingDoctorName
+					? candidate.attendingDoctorName.toLowerCase().includes(q)
+					: false;
+				return nameMatch || phoneMatch || doctorMatch;
+			});
+		}
+		return items;
+	}, [taskCallCandidates, selectedTaskCallType, searchQuery]);
+
 	return (
 		<main className="recall-content-area" data-testid="task-calls-view-section">
 			<PatientRecallsTaskCallsToolbar
@@ -57,7 +77,7 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 				/>
 			)}
 
-			{taskCallCandidates.length === 0 ? (
+			{visibleCandidates.length === 0 ? (
 				<div className="recall-empty-state" data-testid="task-calls-empty-state">
 					<PhoneCall size={48} className="recall-empty-icon" aria-hidden="true" />
 					<h3 className="recall-empty-title">Все плановые звонки выполнены</h3>
@@ -66,8 +86,8 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 					</p>
 				</div>
 			) : (
-				<div style={{ padding: "0 24px 24px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
-					{taskCallCandidates.map(({ candidate, taskType }) => (
+				<div className="recall-task-calls-stream" role="feed" aria-label="Очередь сервисных звонков">
+					{visibleCandidates.map(({ candidate, taskType }) => (
 						<PatientRecallsTaskCallCard
 							key={candidate.id}
 							candidate={candidate}

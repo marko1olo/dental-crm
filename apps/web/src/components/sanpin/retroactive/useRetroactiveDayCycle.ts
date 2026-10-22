@@ -9,7 +9,7 @@ export function useRetroactiveDayCycle({
 }: {
 	availableSterilizers: Array<{ id: string; label: string; modelName: string }>;
 	sterilizerModel: string;
-	onSuccess?: () => void;
+	onSuccess?: (() => void) | undefined;
 }) {
 	const inFlightRef = useRef(false);
 	const [isLoggingDayCycle, setIsLoggingDayCycle] = useState(false);

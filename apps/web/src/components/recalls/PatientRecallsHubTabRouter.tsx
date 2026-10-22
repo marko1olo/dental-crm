@@ -1,5 +1,7 @@
 import type React from "react";
+import type { ClinicalTaskCallType } from "@dental/shared";
 import type { PatientRecallRecord, RecallContactStatus, RecallPeriodFilter } from "./patientRecallEngine";
+import { determineTaskCallTypeForCandidate } from "./recallRecordTypes";
 import { PatientRecallsRegistryView } from "./PatientRecallsRegistryView";
 import { RecallDispensaryFunnel } from "./RecallDispensaryFunnel";
 import { PatientRecallsTaskCallsTab } from "./PatientRecallsTaskCallsTab";
@@ -18,6 +20,10 @@ export interface PatientRecallsHubTabRouterProps {
 	readonly selectedWorkflowStatus: RecallContactStatus | "all";
 	readonly onStatusChangeFilter: (status: RecallContactStatus | "all") => void;
 	readonly statusCounts: { readonly all: number; readonly due_now: number; readonly invited: number; readonly scheduled: number; readonly completed: number };
+	readonly selectedTaskCallType?: ClinicalTaskCallType | "all" | undefined;
+	readonly onSelectTaskCallType?: ((type: ClinicalTaskCallType | "all") => void) | undefined;
+	readonly activeTaskCallScriptType?: ClinicalTaskCallType | null | undefined;
+	readonly onToggleTaskCallScriptType?: ((type: ClinicalTaskCallType | null) => void) | undefined;
 	readonly searchQuery: string;
 	readonly onSearchChange: (q: string) => void;
 	readonly onBook: (candidate: PatientRecallRecord) => void;
@@ -32,7 +38,10 @@ export interface PatientRecallsHubTabRouterProps {
 export const PatientRecallsHubTabRouter: React.FC<PatientRecallsHubTabRouterProps> = ({
 	activeTab, candidates, filteredCandidates, activeScriptCandidateId,
 	uniqueDoctors, selectedDoctorId, onDoctorChange, selectedPeriod, onPeriodChange,
-	selectedWorkflowStatus, onStatusChangeFilter, statusCounts, searchQuery, onSearchChange,
+	selectedWorkflowStatus, onStatusChangeFilter, statusCounts,
+	selectedTaskCallType = "all", onSelectTaskCallType = () => {},
+	activeTaskCallScriptType = null, onToggleTaskCallScriptType = () => {},
+	searchQuery, onSearchChange,
 	onBook, onToggleScript, onTogglePreview, onWhatsApp, onTelegram, onCopySms, onStatusUpdate,
 }) => {
 	if (activeTab === "registry") {
@@ -77,15 +86,19 @@ export const PatientRecallsHubTabRouter: React.FC<PatientRecallsHubTabRouterProp
 	}
 
 	if (activeTab === "task_calls") {
+		const taskCallCandidates = candidates.map((c) => ({
+			candidate: c,
+			taskType: c.taskCallType ?? determineTaskCallTypeForCandidate(c),
+		}));
 		return (
 			<PatientRecallsTaskCallsTab
-				taskCallCandidates={candidates.map((c) => ({ candidate: c, taskType: "preventive_inspection" as const }))}
+				taskCallCandidates={taskCallCandidates}
 				searchQuery={searchQuery}
 				onSearchQueryChange={onSearchChange}
-				selectedTaskCallType="all"
-				onSelectTaskCallType={() => {}}
-				activeTaskCallScriptType={null}
-				onToggleTaskCallScriptType={() => {}}
+				selectedTaskCallType={selectedTaskCallType}
+				onSelectTaskCallType={onSelectTaskCallType}
+				activeTaskCallScriptType={activeTaskCallScriptType}
+				onToggleTaskCallScriptType={onToggleTaskCallScriptType}
 				onWhatsApp={onWhatsApp}
 				onTelegram={onTelegram}
 				onBook={onBook}

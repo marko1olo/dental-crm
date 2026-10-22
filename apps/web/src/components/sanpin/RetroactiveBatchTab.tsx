@@ -20,10 +20,7 @@ export interface RetroactiveBatchTabProps {
 }
 
 export function RetroactiveBatchTab({
-	initialPreset = "current_month",
-	onSuccess,
-	onClose,
-	isModal = false,
+	initialPreset = "current_month", onSuccess, onClose, isModal = false,
 }: RetroactiveBatchTabProps = {}) {
 	const sterilizers = useRetroactiveSterilizers();
 	const dayCycle = useRetroactiveDayCycle({
@@ -45,25 +42,16 @@ export function RetroactiveBatchTab({
 	return (
 		<div className="sanpin-tab-content" style={{ gap: "1.25rem" }}>
 			<RetroactiveBatchHeroBanner
-				periodPreset={batch.periodPreset}
-				setPeriodPreset={batch.setPeriodPreset}
-				customStartDate={batch.customStartDate}
-				setCustomStartDate={batch.setCustomStartDate}
-				customEndDate={batch.customEndDate}
-				setCustomEndDate={batch.setCustomEndDate}
-				selectedCabinetIds={batch.selectedCabinetIds}
-				toggleCabinet={batch.toggleCabinet}
-				selectAllCabinets={batch.selectAllCabinets}
-				nurseFullName={batch.nurseFullName}
-				setNurseFullName={batch.setNurseFullName}
-				sterilizerModel={sterilizers.sterilizerModel}
-				setSterilizerModel={sterilizers.setSterilizerModel}
-				availableSterilizers={sterilizers.availableSterilizers}
+				periodPreset={batch.periodPreset} setPeriodPreset={batch.setPeriodPreset}
+				customStartDate={batch.customStartDate} setCustomStartDate={batch.setCustomStartDate}
+				customEndDate={batch.customEndDate} setCustomEndDate={batch.setCustomEndDate}
+				selectedCabinetIds={batch.selectedCabinetIds} toggleCabinet={batch.toggleCabinet}
+				selectAllCabinets={batch.selectAllCabinets} nurseFullName={batch.nurseFullName}
+				setNurseFullName={batch.setNurseFullName} sterilizerModel={sterilizers.sterilizerModel}
+				setSterilizerModel={sterilizers.setSterilizerModel} availableSterilizers={sterilizers.availableSterilizers}
 				onOpenEquipmentModal={() => sterilizers.setIsEquipmentModalOpen(true)}
-				autoclaveRegimeId={batch.autoclaveRegimeId}
-				setAutoclaveRegimeId={batch.setAutoclaveRegimeId}
-				onGenerateBatch={batch.handleGenerateBatch}
-				onRecordDayCycle={dayCycle.handleRecordDayAutoclaveCycle}
+				autoclaveRegimeId={batch.autoclaveRegimeId} setAutoclaveRegimeId={batch.setAutoclaveRegimeId}
+				onGenerateBatch={batch.handleGenerateBatch} onRecordDayCycle={dayCycle.handleRecordDayAutoclaveCycle}
 				isLoggingDayCycle={dayCycle.isLoggingDayCycle}
 			/>
 
@@ -71,33 +59,22 @@ export function RetroactiveBatchTab({
 
 			{batch.isGenerated && (
 				<RetroactiveBatchControlBar
-					searchQuery={batch.searchQuery}
-					setSearchQuery={batch.setSearchQuery}
-					filterOnlyWorkdays={batch.filterOnlyWorkdays}
-					setFilterOnlyWorkdays={batch.setFilterOnlyWorkdays}
-					isLoggingDayCycle={dayCycle.isLoggingDayCycle}
-					onRecordDayAutoclaveCycle={dayCycle.handleRecordDayAutoclaveCycle}
-					isSaving={batch.isSaving}
-					onSaveToRegisters={batch.handleSaveToRegisters}
-					onPrintDossier={batch.handlePrintDossier}
-					onExportCsv={batch.handleExportCsv}
-					onExportScheduleSyncCsv={scheduleSync.handleExportCsv}
-					isModal={isModal}
+					searchQuery={batch.searchQuery} setSearchQuery={batch.setSearchQuery}
+					filterOnlyWorkdays={batch.filterOnlyWorkdays} setFilterOnlyWorkdays={batch.setFilterOnlyWorkdays}
+					isLoggingDayCycle={dayCycle.isLoggingDayCycle} onRecordDayAutoclaveCycle={dayCycle.handleRecordDayAutoclaveCycle}
+					isSaving={batch.isSaving} onSaveToRegisters={batch.handleSaveToRegisters}
+					onPrintDossier={batch.handlePrintDossier} onExportCsv={batch.handleExportCsv}
+					onExportScheduleSyncCsv={scheduleSync.handleExportCsv} isModal={isModal}
 				/>
 			)}
 
 			{batch.isGenerated && (
 				<RetroactiveBatchTable
-					filteredDays={batch.filteredDays}
-					editingDayId={editing.editingDayId}
-					editFormData={editing.editFormData}
-					setEditFormData={editing.setEditFormData}
-					onStartEditing={editing.startEditing}
-					onSaveEditing={editing.saveEditing}
-					onCancelEditing={editing.cancelEditing}
-					onRequestDeleteDay={editing.requestDeleteDay}
-					onConfirmDeleteDay={editing.confirmDeleteDay}
-					onCancelDeleteDay={editing.cancelDeleteDay}
+					filteredDays={batch.filteredDays} editingDayId={editing.editingDayId}
+					editFormData={editing.editFormData} setEditFormData={editing.setEditFormData}
+					onStartEditing={editing.startEditing} onSaveEditing={editing.saveEditing}
+					onCancelEditing={editing.cancelEditing} onRequestDeleteDay={editing.requestDeleteDay}
+					onConfirmDeleteDay={editing.confirmDeleteDay} onCancelDeleteDay={editing.cancelDeleteDay}
 					pendingDeleteDayId={editing.pendingDeleteDayId}
 				/>
 			)}

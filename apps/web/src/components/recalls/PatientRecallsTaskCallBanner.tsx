@@ -1,9 +1,9 @@
 import type React from "react";
 import { Lightbulb, X } from "lucide-react";
-import { STOMX_TASK_CALL_BY_TYPE, type StomxTaskCallType } from "@dental/shared";
+import { CLINICAL_TASK_CALL_BY_TYPE, type ClinicalTaskCallType } from "@dental/shared";
 
 export interface PatientRecallsTaskCallBannerProps {
-	readonly activeTaskCallScriptType: StomxTaskCallType;
+	readonly activeTaskCallScriptType: ClinicalTaskCallType;
 	readonly onClose: () => void;
 }
 
@@ -11,7 +11,7 @@ export const PatientRecallsTaskCallBanner: React.FC<PatientRecallsTaskCallBanner
 	activeTaskCallScriptType,
 	onClose,
 }) => {
-	const meta = STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType];
+	const meta = CLINICAL_TASK_CALL_BY_TYPE[activeTaskCallScriptType];
 	if (!meta) return null;
 
 	return (

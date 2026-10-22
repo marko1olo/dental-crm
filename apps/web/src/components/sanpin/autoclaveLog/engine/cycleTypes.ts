@@ -32,6 +32,8 @@ export interface SterilizationCycleCompliance {
 	readonly failureReasons: readonly string[];
 }
 
+export type CycleComplianceEvaluation = SterilizationCycleCompliance;
+
 export interface BiologicalControlTestRecord {
 	readonly id: string;
 	readonly sterilizerId: string;

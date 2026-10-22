@@ -59,20 +59,19 @@ export function ScheduleChairSingleShiftCard({
             data-testid={`chair-duty-now-badge-${chair.id}`}
             title={isOnDuty ? "На смене" : "Не на смене"}
           />
-          <Clock size={13} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
-          <span className="font-bold text-[var(--ink)] truncate">
+          <span className="font-bold text-[var(--ink)] truncate text-xs">
             {formatDoctorShortName(assignment.doctorName)}
           </span>
-          <span className="text-[11px] text-[var(--muted)] truncate hidden md:inline">
+          <span className="text-[11px] text-[var(--muted)] truncate hidden xl:inline">
             · {assignment.doctorSpecialty || "Врач"}
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <span className="font-mono text-[11px] text-[var(--muted)] font-medium">
+          <span className="font-mono text-[11px] text-[var(--muted)] font-medium hidden sm:inline">
             {assignment.shiftHours || "08:00–20:00"}
           </span>
           {isOnDuty && (
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shrink-0 hidden 2xl:inline">
               На смене
             </span>
           )}

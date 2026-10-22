@@ -4,9 +4,9 @@ import type { Form257Record } from "../autoclaveLogEngine.js";
 
 export interface JournalTabRowProps {
 	readonly record: Form257Record;
-	readonly headNurseName?: string;
-	readonly onVerify?: (id: string, headNurseName: string) => void;
-	readonly onDelete?: (id: string) => void;
+	readonly headNurseName?: string | undefined;
+	readonly onVerify?: ((id: string, headNurseName: string) => void) | undefined;
+	readonly onDelete?: ((id: string) => void) | undefined;
 }
 
 export const JournalTabRow: React.FC<JournalTabRowProps> = ({ record, headNurseName, onVerify, onDelete }) => {

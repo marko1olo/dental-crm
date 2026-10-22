@@ -105,8 +105,8 @@ export const AUTOCLAVE_CYCLES: Record<AutoclaveCycleId, AutoclaveCycleDefinition
 		mandatoryIndicators: ['physical_sensors', 'chemical_class4'],
 		sanpinNormRefRu: 'СанПиН 3.3686-21 табл. 3.12'
 	},
-	cycle_bowie_dick: AUTOCLAVE_SPECIAL_CYCLES.cycle_bowie_dick,
-	cycle_helix_test: AUTOCLAVE_SPECIAL_CYCLES.cycle_helix_test,
+	cycle_bowie_dick: AUTOCLAVE_SPECIAL_CYCLES.cycle_bowie_dick!,
+	cycle_helix_test: AUTOCLAVE_SPECIAL_CYCLES.cycle_helix_test!,
 };
 
 export function getAutoclavePreset(cycleId: AutoclaveCycleId): AutoclaveCycleDefinition {

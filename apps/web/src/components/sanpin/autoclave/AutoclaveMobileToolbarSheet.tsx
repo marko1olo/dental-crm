@@ -14,7 +14,7 @@ export interface AutoclaveMobileToolbarSheetProps {
 	readonly onQuickShiftBatch: () => void;
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onOpenEquipmentModal: () => void;
-	readonly onOpenNewCycleModal?: () => void;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
 	readonly onGenerateMonthlyForm257: () => void;
 	readonly onOpenKraftModal: () => void;
 }

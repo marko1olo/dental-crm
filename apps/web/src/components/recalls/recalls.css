@@ -1,14 +1,788 @@
+@import "./recallsKanban.css";
+
 /* ==========================================================================
-   Patient Recall & Clinical Prophylaxis Engine Styles
+   Patient Recall & Clinical Prophylaxis Engine Styles (SSOT)
    Touch-First, Responsive, Multi-Theme (Light, Dark, Night, Calm Teal)
    ========================================================================== */
 
-@import "./recallsContainer.css";
-@import "./recallsModal.css";
-@import "./recallsKanban.css";
-@import "./recallsCards.css";
-@import "./recallsMetrics.css";
-@import "./recallsToolbar.css";
-@import "./recallsTable.css";
-@import "./recallsBadges.css";
-@import "./recallsResponsive.css";
+.recall-manager-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: var(--backdrop, color-mix(in srgb, var(--paper-strong) 40%, black 60%));
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.recall-manager-container {
+	--rm-bg: var(--paper); --rm-surface: var(--paper-strong); --rm-surface-hover: var(--paper-soft);
+	--rm-border: var(--line); --rm-border-focus: var(--teal);
+	--rm-text-main: var(--ink); --rm-text-muted: var(--muted); --rm-text-subtle: var(--muted);
+	--rm-primary: var(--teal); --rm-primary-hover: var(--teal-dark, var(--teal)); --rm-primary-light: var(--teal-surface, var(--paper-soft));
+	--rm-success: var(--ok-fg); --rm-success-light: var(--ok-bg);
+	--rm-warning: var(--warn-fg); --rm-warning-light: var(--warn-bg);
+	--rm-danger: var(--bad-fg); --rm-danger-light: var(--bad-bg);
+	--rm-info: var(--info-fg); --rm-info-light: var(--info-bg);
+	--rm-radius-lg: 14px; --rm-radius-md: 10px; --rm-radius-sm: 8px; --rm-shadow: var(--shadow-3);
+
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-lg);
+	box-shadow: var(--rm-shadow);
+	width: 100%;
+	max-width: 1240px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+/* Header & Tabs */
+.recall-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--rm-border);
+	background: var(--rm-surface);
+	flex-shrink: 0;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.recall-header-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.recall-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-primary-light);
+	color: var(--rm-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.recall-header-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	line-height: 1.3;
+	color: var(--rm-text-main);
+}
+
+.recall-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+	margin: 2px 0 0 0;
+}
+
+.recall-header-controls {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.recall-view-mode-tabs {
+	display: inline-flex;
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 3px;
+	gap: 4px;
+}
+
+.recall-tab-btn {
+	min-height: 34px;
+	padding: 6px 14px;
+	border-radius: var(--rm-radius-sm);
+	border: none;
+	background: transparent;
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-tab-btn:hover { color: var(--rm-text-main); }
+.recall-tab-btn.active {
+	background: var(--rm-primary);
+	color: var(--paper-strong);
+	font-weight: 700;
+}
+.recall-tab-label-short {
+	display: none;
+}
+.recall-tab-label-full {
+	display: inline;
+}
+
+.recall-close-btn {
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: transparent;
+	color: var(--rm-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-close-btn:hover { background: var(--rm-surface-hover); color: var(--rm-text-main); }
+.recall-close-btn--mobile {
+	display: none;
+}
+.recall-close-btn--desktop {
+	display: flex;
+}
+
+/* Solo Presets Bar */
+.recall-solo-presets {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 20px;
+	background: var(--rm-surface);
+	border-bottom: 1px solid var(--rm-border);
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+.recall-solo-presets::-webkit-scrollbar { display: none; }
+
+.recall-preset-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-preset-btn:hover {
+	border-color: var(--teal);
+	color: var(--rm-text-main);
+}
+.recall-preset-btn.active {
+	background: var(--teal-surface, var(--rm-surface-hover));
+	border-color: var(--teal);
+	color: var(--teal);
+	font-weight: 700;
+}
+.recall-preset-label-short { display: none; }
+.recall-preset-label-full { display: inline; }
+
+/* Toolbar & Filters */
+.recall-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px 20px;
+	background: var(--rm-surface);
+	border-bottom: 1px solid var(--rm-border);
+	flex-shrink: 0;
+}
+
+.recall-toolbar-top {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.recall-search-input-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 220px;
+}
+
+.recall-search-input {
+	width: 100%;
+	min-height: 36px;
+	padding: 6px 12px 6px 38px !important;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.875rem;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+}
+.recall-search-input:focus {
+	outline: none;
+	border-color: var(--rm-border-focus);
+	box-shadow: 0 0 0 2px var(--rm-primary-light);
+}
+
+.recall-search-icon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--rm-text-subtle);
+	pointer-events: none;
+}
+
+.recall-filter-select,
+.recall-cycle-select {
+	min-height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.recall-status-chips {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+.recall-status-chips::-webkit-scrollbar { display: none; }
+
+.recall-chip {
+	min-height: 32px;
+	padding: 4px 12px;
+	border-radius: 9999px;
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-chip:hover { background: var(--rm-surface-hover); color: var(--rm-text-main); }
+.recall-chip.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: var(--paper-strong);
+}
+
+.recall-chip-count {
+	font-size: 0.75rem;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--rm-surface);
+	color: var(--rm-text-muted);
+}
+.recall-chip.active .recall-chip-count {
+	background: var(--paper-strong);
+	color: var(--rm-primary);
+}
+
+/* Content Area */
+.recall-content-area {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	box-sizing: border-box;
+	min-height: 300px;
+}
+
+/* Table View */
+.recall-table-wrap {
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	overflow: hidden;
+	background: var(--rm-bg);
+}
+
+.recall-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.875rem;
+}
+.recall-table th {
+	background: var(--rm-surface);
+	padding: 10px 14px;
+	font-weight: 700;
+	color: var(--rm-text-muted);
+	border-bottom: 1px solid var(--rm-border);
+	white-space: nowrap;
+	font-size: 0.8125rem;
+}
+.recall-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--rm-border);
+	vertical-align: middle;
+}
+.recall-table tr:last-child td { border-bottom: none; }
+.recall-table tr:hover td { background: var(--rm-surface-hover); }
+
+.recall-patient-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.recall-patient-name {
+	font-weight: 700;
+	color: var(--rm-text-main);
+	font-size: 0.9375rem;
+}
+.recall-patient-phone {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+}
+
+/* Badges */
+.recall-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.recall-badge--upcoming { background: var(--info-bg); color: var(--info-fg); border: 1px solid var(--info-fg); }
+.recall-badge--due_now { background: var(--bad-bg); color: var(--bad-fg); border: 1px solid var(--bad-fg); }
+.recall-badge--overdue_30 { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-fg); }
+.recall-badge--overdue_90 { background: var(--bad-bg); color: var(--bad-fg); border: 1px solid var(--bad-fg); font-weight: 800; }
+.recall-badge--completed { background: var(--rm-success-light); color: var(--rm-success); border: 1px solid var(--rm-success); }
+
+.recall-cycle-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: var(--rm-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	color: var(--rm-text-main);
+}
+
+/* Actions */
+.recall-actions-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.recall-action-btn {
+	min-height: 32px;
+	padding: 5px 10px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-action-btn:hover { background: var(--rm-surface-hover); border-color: var(--rm-text-muted); }
+.recall-action-btn--phone { color: var(--rm-primary); border-color: var(--rm-primary); }
+.recall-action-btn--whatsapp { color: var(--ok-fg); background: var(--ok-bg); border-color: var(--ok-fg); }
+.recall-action-btn--telegram { color: var(--info-fg); background: var(--info-bg); border-color: var(--info-fg); }
+.recall-action-btn--script { color: var(--rm-primary); background: var(--rm-primary-light); border-color: var(--rm-primary); }
+.recall-action-btn--book { color: var(--paper-strong); background: var(--rm-primary); border-color: var(--rm-primary); }
+.recall-action-btn--book:hover { background: var(--rm-primary-hover); }
+
+/* Cards & Streams */
+.recall-cards-stream {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow-y: auto;
+}
+
+.recall-patient-card {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+	min-height: 44px;
+	box-sizing: border-box;
+}
+.recall-patient-card:hover {
+	background: var(--rm-surface-hover);
+	border-color: var(--teal);
+	box-shadow: var(--shadow-1);
+}
+
+.recall-patient-card__main {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.recall-patient-card__header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.recall-patient-card__name {
+	font-size: 1rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--rm-text-main);
+	line-height: 1.3;
+}
+
+.recall-patient-card__details {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	font-size: 0.875rem;
+	line-height: 1.4;
+}
+.recall-patient-card__procedure { font-weight: 600; color: var(--teal); }
+.recall-patient-card__divider { color: var(--muted); font-size: 0.75rem; }
+.recall-patient-card__last-visit { color: var(--rm-text-main); font-size: 0.8125rem; }
+.recall-patient-card__no-phone { color: var(--muted); font-style: italic; }
+.recall-patient-card__doctor { color: var(--rm-text-muted); }
+
+.recall-patient-card__phone {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--teal);
+	text-decoration: none;
+	font-weight: 600;
+	min-height: 24px;
+}
+.recall-patient-card__phone:hover { text-decoration: underline; }
+
+.recall-patient-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+/* Task Calls Stream & Cards */
+.recall-task-calls-stream {
+	padding: 0 24px 24px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.recall-task-call-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-surface);
+	transition: all var(--rm-transition);
+	gap: 16px;
+}
+
+.recall-task-call-card:hover {
+	border-color: var(--teal);
+	box-shadow: var(--shadow-sm);
+}
+
+.recall-task-call-card__info {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.recall-task-call-card__title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.recall-task-call-card__name {
+	font-weight: 800;
+	font-size: 1rem;
+	color: var(--ink);
+}
+
+.recall-task-call-card__phone-link {
+	font-size: 0.8125rem;
+	color: var(--teal);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.recall-task-call-card__phone-link:hover {
+	text-decoration: underline;
+}
+
+.recall-task-call-card__meta-row {
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+
+.recall-task-call-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.recall-badge--task-type {
+	background-color: var(--teal-surface);
+	color: var(--teal);
+	font-weight: 700;
+}
+
+/* Empty State */
+.recall-empty-state {
+	text-align: center;
+	padding: 48px 16px;
+	color: var(--rm-text-muted);
+}
+.recall-empty-icon { color: var(--teal); margin: 0 auto 12px; }
+.recall-empty-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	margin: 0 0 6px 0;
+}
+.recall-empty-text {
+	font-size: 0.875rem;
+	color: var(--rm-text-muted);
+	max-width: 420px;
+	margin: 0 auto;
+}
+
+/* Kanban Board & Sub-Views */
+
+/* Mobile Overrides (Apple HIG 390x844) */
+@media (max-width: 768px) {
+	.recall-manager-modal-backdrop {
+		padding: 0 !important;
+		align-items: stretch !important;
+		justify-content: flex-start !important;
+	}
+	.recall-manager-container {
+		width: 100vw !important;
+		max-width: 100vw !important;
+		height: 100vh !important;
+		max-height: 100vh !important;
+		border-radius: 0 !important;
+		border: none !important;
+		overflow-x: hidden !important;
+	}
+	.recall-header {
+		padding: 10px 14px;
+		gap: 8px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.recall-header-title-wrap {
+		width: 100%;
+		justify-content: space-between;
+		display: flex;
+		align-items: center;
+	}
+	.recall-header-subtitle { display: none; }
+	.recall-close-btn--desktop {
+		display: none !important;
+	}
+	.recall-close-btn--mobile {
+		display: flex !important;
+	}
+	.recall-tab-label-full {
+		display: none !important;
+	}
+	.recall-tab-label-short {
+		display: inline !important;
+	}
+	.recall-header-controls {
+		width: 100%;
+		justify-content: stretch;
+	}
+	.recall-view-mode-tabs {
+		width: 100% !important;
+		flex: 1;
+		min-width: 0;
+	}
+	.recall-tab-btn {
+		min-height: 44px;
+		flex: 1;
+		justify-content: center;
+		font-size: 0.8125rem;
+		padding: 6px 4px;
+	}
+	.recall-preset-label-full {
+		display: none !important;
+	}
+	.recall-preset-label-short {
+		display: inline !important;
+	}
+	.recall-solo-presets {
+		padding: 8px 12px !important;
+		gap: 6px !important;
+		overflow-x: auto !important;
+		flex-wrap: nowrap !important;
+		justify-content: flex-start !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+	.recall-preset-btn {
+		min-height: 44px !important;
+		padding: 6px 10px !important;
+		font-size: 0.8125rem !important;
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+	}
+	.recall-action-btn { min-height: 44px; min-width: 44px; font-size: 0.875rem; }
+	.recall-patient-card {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+		padding: 12px;
+	}
+	.recall-patient-card__actions {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+		width: 100%;
+	}
+	.recall-patient-card__actions .recall-action-btn--book {
+		grid-column: 1 / -1 !important;
+		width: 100% !important;
+	}
+	.recall-patient-card__actions .recall-action-btn {
+		width: 100%;
+		min-height: 44px;
+	}
+
+	.recall-task-calls-stream {
+		padding: 0 12px 20px 12px !important;
+		gap: 10px !important;
+	}
+	.recall-task-call-card {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 12px !important;
+		padding: 12px !important;
+	}
+	.recall-task-call-card__actions {
+		display: grid !important;
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 8px !important;
+		width: 100% !important;
+	}
+	.recall-task-call-card__actions .recall-action-btn--book {
+		grid-column: 1 / -1 !important;
+		width: 100% !important;
+	}
+	.recall-task-call-card__actions .recall-action-btn {
+		width: 100% !important;
+		min-height: 44px !important;
+		justify-content: center !important;
+	}
+
+	.recall-table thead { display: none; }
+	.recall-table,
+	.recall-table tbody,
+	.recall-table tr,
+	.recall-table td {
+		display: block;
+		width: 100%;
+		box-sizing: border-box;
+	}
+	.recall-table tr {
+		margin-bottom: 12px;
+		border: 1px solid var(--rm-border);
+		border-radius: var(--rm-radius-sm);
+		background: var(--rm-bg);
+	}
+	.recall-table td {
+		border-bottom: 1px solid var(--rm-surface);
+		padding: 10px 12px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.recall-actions-cell {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+		width: 100%;
+	}
+	.recall-actions-cell .recall-action-btn { width: 100%; min-height: 44px; }
+	.recall-kanban-board {
+		display: flex;
+		flex-direction: column;
+		grid-template-columns: none;
+		padding: 8px;
+		overflow-x: hidden;
+		max-width: 100vw;
+	}
+}
+
+@media (pointer: coarse) {
+	.recall-action-btn,
+	.recall-tab-btn,
+	.recall-chip,
+	.recall-cycle-chip,
+	.recall-close-btn {
+		min-height: 44px;
+	}
+}

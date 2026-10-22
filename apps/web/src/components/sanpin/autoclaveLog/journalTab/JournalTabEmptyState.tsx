@@ -4,7 +4,7 @@ import { Autoclave } from "../../../icons/DentalIcons";
 
 export interface JournalTabEmptyStateProps {
 	readonly isFiltered: boolean;
-	readonly onOpenNewCycle?: () => void;
+	readonly onOpenNewCycle?: (() => void) | undefined;
 }
 
 export const JournalTabEmptyState: React.FC<JournalTabEmptyStateProps> = ({ isFiltered, onOpenNewCycle }) => {

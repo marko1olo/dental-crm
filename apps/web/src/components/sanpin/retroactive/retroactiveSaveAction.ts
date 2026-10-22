@@ -14,7 +14,7 @@ export async function saveRetroactiveBatchAction({
 	periodLabelRu: string;
 	nurseFullName: string;
 	workingDaysCount: number;
-	onSuccess?: () => void;
+	onSuccess?: (() => void) | undefined;
 	onDaysUpdated: (updater: (prev: RetroactiveDayRecord[]) => RetroactiveDayRecord[]) => void;
 }) {
 	if (generatedDays.length === 0) {

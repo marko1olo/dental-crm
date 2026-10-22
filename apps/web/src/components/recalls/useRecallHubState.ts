@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { RecallReport } from "@dental/shared";
+import type { ClinicalTaskCallType, RecallReport } from "@dental/shared";
 import { mapRecallCandidateToRecord } from "./recallCandidateAdapter";
 import {
 	filterAndSortRecallCandidates,
@@ -26,6 +26,8 @@ export function useRecallHubState(
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string | "all">("all");
 	const [selectedPeriod, setSelectedPeriod] = useState<RecallPeriodFilter>("all");
 	const [selectedWorkflowStatus, setSelectedWorkflowStatus] = useState<RecallContactStatus | "all">("all");
+	const [selectedTaskCallType, setSelectedTaskCallType] = useState<ClinicalTaskCallType | "all">("all");
+	const [activeTaskCallScriptType, setActiveTaskCallScriptType] = useState<ClinicalTaskCallType | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeScriptCandidate, setActiveScriptCandidate] = useState<PatientRecallRecord | null>(null);
 	const [activePreviewCandidate, setActivePreviewCandidate] = useState<PatientRecallRecord | null>(null);
@@ -89,6 +91,10 @@ export function useRecallHubState(
 		setSelectedPeriod,
 		selectedWorkflowStatus,
 		setSelectedWorkflowStatus,
+		selectedTaskCallType,
+		setSelectedTaskCallType,
+		activeTaskCallScriptType,
+		setActiveTaskCallScriptType,
 		statusCounts,
 		searchQuery,
 		setSearchQuery,

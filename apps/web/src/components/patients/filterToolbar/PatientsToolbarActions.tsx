@@ -25,7 +25,8 @@ export const PatientsToolbarActions: React.FC<PatientsToolbarActionsProps> = ({
 				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-3 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onOpenRecallsHub}
 				title="Профосмотры и диспансерный учет (Recall, гигиена, импланты)"
-				data-testid="btn-patients-recalls-hub"
+				data-testid="btn-recalls-hub"
+				data-legacy-testid="btn-patients-recalls-hub"
 			>
 				<RotateCcw size={14} aria-hidden="true" className="shrink-0 text-[var(--ink-muted)]" />
 				<span className="whitespace-nowrap">Профосмотры</span>

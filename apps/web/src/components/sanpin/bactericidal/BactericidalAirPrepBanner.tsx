@@ -63,21 +63,10 @@ export function BactericidalAirPrepBanner({
 					aria-busy={submitting}
 					className="sanpin-btn touch-manipulation"
 					style={{
-						minHeight: "44px",
-						padding: "0.55rem 1.15rem",
-						fontSize: "0.875rem",
-						fontWeight: 800,
-						cursor: "pointer",
-						whiteSpace: "nowrap",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.45rem",
-						borderRadius: "8px",
-						background: "var(--teal, #0d9488)",
-						color: "#ffffff",
-						border: "none",
-						boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
-						opacity: submitting ? 0.7 : 1,
+						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 800,
+						cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center",
+						gap: "0.45rem", borderRadius: "8px", background: "var(--teal, #0d9488)", color: "#ffffff",
+						border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)", opacity: submitting ? 0.7 : 1,
 					}}
 					data-testid="bactericidal-open-morning-shift-btn"
 					title="Открыть утреннюю смену: зафиксировать предсменное обеззараживание воздуха для всех аппаратов"
@@ -92,21 +81,10 @@ export function BactericidalAirPrepBanner({
 					aria-busy={submitting}
 					className="sanpin-btn touch-manipulation"
 					style={{
-						minHeight: "44px",
-						padding: "0.55rem 1.15rem",
-						fontSize: "0.875rem",
-						fontWeight: 800,
-						cursor: "pointer",
-						whiteSpace: "nowrap",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.45rem",
-						borderRadius: "8px",
-						background: "var(--brand-primary, #0284c7)",
-						color: "#ffffff",
-						border: "none",
-						boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)",
-						opacity: submitting ? 0.7 : 1,
+						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 800,
+						cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center",
+						gap: "0.45rem", borderRadius: "8px", background: "var(--brand-primary, #0284c7)", color: "#ffffff",
+						border: "none", boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)", opacity: submitting ? 0.7 : 1,
 					}}
 					data-testid="bactericidal-close-evening-shift-btn"
 					title="Закрыть вечернюю смену (финальная дезинфекция): фиксирует дневную смену 6 ч + заключительное обеззараживание 30 мин без ручного счета"

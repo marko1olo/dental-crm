@@ -62,7 +62,7 @@ export function generatePdnProtectedRecallMessage(
 		patientId: candidate.patientId,
 		doctorId: candidate.attendingDoctorId,
 		cycleType: candidate.cycleType,
-		source: "recall_pdn_152fz",
+		source: "recall_secure_pdn",
 	});
 
 	const visitPart = candidate.lastVisitDate ? ` (прошлый визит был ${candidate.lastVisitDate})` : "";

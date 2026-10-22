@@ -1,4 +1,4 @@
-import type { StomxTaskCallType } from "@dental/shared";
+import type { ClinicalTaskCallType, StomxTaskCallType } from "@dental/shared";
 import type {
 	ClinicalRecallTriggerType,
 	RecallChannel,
@@ -38,7 +38,7 @@ export interface PatientRecallRecord {
 	readonly decayedTeethCount?: number | undefined;
 	readonly lastProcedures?: readonly string[] | undefined;
 	readonly clinicalNotes?: string | undefined;
-	readonly taskCallType?: StomxTaskCallType | undefined;
+	readonly taskCallType?: ClinicalTaskCallType | undefined;
 	readonly lastContactedAt?: string | undefined;
 	readonly lastContactChannel?: RecallChannel | undefined;
 	readonly scheduledAppointmentId?: string | undefined;
@@ -55,7 +55,7 @@ export interface PatientRecallRecord {
 
 export type PatientRecallCandidate = PatientRecallRecord;
 
-export function determineTaskCallTypeForCandidate(c: PatientRecallRecord): StomxTaskCallType {
+export function determineTaskCallTypeForCandidate(c: PatientRecallRecord): ClinicalTaskCallType {
 	if (c.taskCallType) return c.taskCallType;
 	if (c.implantSurgeryDate || (c.clinicalNotes && /удалени|имплант|операци/i.test(c.clinicalNotes))) {
 		return "learn_health";

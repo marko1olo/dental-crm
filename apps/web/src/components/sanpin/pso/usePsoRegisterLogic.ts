@@ -14,17 +14,13 @@ export function usePsoRegisterLogic(appLogic: any) {
 	const [submitting, setSubmitting] = useState(false);
 	const [displayLimit] = useState(DEFAULT_DOM_PAGE_SIZE);
 
-	const nurseName = useMemo(() => {
-		return appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name || "Медсестра ЦСО";
-	}, [appLogic]);
+	const nurseName = useMemo(() => appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name || "Медсестра ЦСО", [appLogic]);
 
 	const fetchLogs = async () => {
 		try {
 			setLoading(true);
 			let res = await fetch("/api/sanpin/sterilization/pso-tests", { headers: getDenteAuthHeaders() }).catch(() => null);
-			if (!res || !res.ok) {
-				res = await fetch("/api/registers/pso", { headers: getDenteAuthHeaders() }).catch(() => null);
-			}
+			if (!res || !res.ok) res = await fetch("/api/registers/pso", { headers: getDenteAuthHeaders() }).catch(() => null);
 			setLogs(res && res.ok ? await res.json() : []);
 		} catch {
 			setLogs([]);
@@ -33,9 +29,7 @@ export function usePsoRegisterLogic(appLogic: any) {
 		}
 	};
 
-	useEffect(() => {
-		fetchLogs();
-	}, []);
+	useEffect(() => { fetchLogs(); }, []);
 
 	const inFlightRef = useRef(false);
 
@@ -45,25 +39,18 @@ export function usePsoRegisterLogic(appLogic: any) {
 		try {
 			setSubmitting(true);
 			const payload = {
-				batchItemCount: 50,
-				testedSampleCount: 5,
-				isAzopyramNegative: true,
-				isPhenolphthaleinNegative: true,
+				batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true,
 				detergentBrand: "Биолот 0.5% + Аламинол 1%",
 				notes: `Азопирамовая и фенолфталеиновая пробы — норма (скрытой крови и щелочи нет). Партия 50 шт. допущена к автоклавированию. [ЭЦП: ${nurseName}]`,
 			};
 
 			let res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify(payload),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload),
 			}).catch(() => null);
 
 			if (!res || !res.ok) {
 				res = await fetch("/api/registers/pso/quick-norm", {
-					method: "POST",
-					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify(payload),
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(payload),
 				}).catch(() => null);
 			}
 
@@ -86,15 +73,8 @@ export function usePsoRegisterLogic(appLogic: any) {
 	const filteredLogs = useMemo(() => {
 		return logs.filter((log) => {
 			const q = searchQuery.toLowerCase();
-			const matchSearch =
-				!searchQuery ||
-				log.instrumentName?.toLowerCase().includes(q) ||
-				log.operatorName?.toLowerCase().includes(q) ||
-				log.detergentBrand?.toLowerCase().includes(q);
-			const matchTest =
-				testFilter === "all" ||
-				(testFilter === "approved" && log.isBatchApproved) ||
-				(testFilter === "rejected" && !log.isBatchApproved);
+			const matchSearch = !searchQuery || log.instrumentName?.toLowerCase().includes(q) || log.operatorName?.toLowerCase().includes(q) || log.detergentBrand?.toLowerCase().includes(q);
+			const matchTest = testFilter === "all" || (testFilter === "approved" && log.isBatchApproved) || (testFilter === "rejected" && !log.isBatchApproved);
 			return matchSearch && matchTest;
 		});
 	}, [logs, searchQuery, testFilter]);
@@ -110,20 +90,8 @@ export function usePsoRegisterLogic(appLogic: any) {
 	};
 
 	return {
-		logs,
-		filteredLogs,
-		logsSlice,
-		loading,
-		nurseName,
-		searchQuery,
-		setSearchQuery,
-		testFilter,
-		setTestFilter,
-		submitting,
-		handleQuickMarkBatchNorm,
-		handlePrintJournal,
-		stampedRows,
-		setStampedRows,
-		handleStampVerification,
+		logs, filteredLogs, logsSlice, loading, nurseName, searchQuery, setSearchQuery,
+		testFilter, setTestFilter, submitting, handleQuickMarkBatchNorm, handlePrintJournal,
+		stampedRows, setStampedRows, handleStampVerification,
 	};
 }

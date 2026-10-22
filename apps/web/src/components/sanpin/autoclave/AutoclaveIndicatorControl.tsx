@@ -1,12 +1,12 @@
+import { ArrowRight, CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import React from "react";
-import { CheckCircle2, XCircle, AlertCircle, ShieldCheck, Flame, Gauge, ArrowRight } from "lucide-react";
+import {
+	getIndicatorMeta,
+	type IndicatorClassType,
+} from "./autoclaveIndicatorMeta.js";
 
-export type IndicatorClassType =
-	| "class4_multivariable"
-	| "class5_integrating"
-	| "class6_emulating"
-	| "bowie_dick"
-	| "helix_test";
+export type { IndicatorClassType };
+export { getIndicatorMeta };
 
 export interface AutoclaveIndicatorControlProps {
 	readonly indicatorType?: IndicatorClassType | string;
@@ -14,58 +14,6 @@ export interface AutoclaveIndicatorControlProps {
 	readonly onChange?: (type: IndicatorClassType, passed: boolean) => void;
 	readonly readonly?: boolean;
 	readonly showDetails?: boolean;
-}
-
-export function getIndicatorMeta(type?: string): {
-	labelRu: string;
-	classBadge: string;
-	standardRu: string;
-	colorBefore: string;
-	colorAfter: string;
-} {
-	switch (type) {
-		case "class6_emulating":
-			return {
-				labelRu: "Класс 6 (Эмулирующий)",
-				classBadge: "Класс VI",
-				standardRu: "ГОСТ ISO 11140-1 (134°C / 5 мин)",
-				colorBefore: "#fef08a", // Желтый
-				colorAfter: "#1e1b4b",  // Темно-синий / фиолетовый
-			};
-		case "bowie_dick":
-			return {
-				labelRu: "Тест Бови-Дика (Вакуум)",
-				classBadge: "Bowie-Dick",
-				standardRu: "Проверка удаления воздуха и проникновения пара",
-				colorBefore: "#e2e8f0",
-				colorAfter: "#0f172a",
-			};
-		case "helix_test":
-			return {
-				labelRu: "Helix-тест (Полые каналы)",
-				classBadge: "Helix PCD",
-				standardRu: "Контроль стерилизации наконечников и трубок",
-				colorBefore: "#fef3c7",
-				colorAfter: "#1e293b",
-			};
-		case "class4_multivariable":
-			return {
-				labelRu: "Класс 4 (Многопеременный)",
-				classBadge: "Класс IV",
-				standardRu: "Контроль T° и времени выдержки",
-				colorBefore: "#fed7aa",
-				colorAfter: "#3b0764",
-			};
-		case "class5_integrating":
-		default:
-			return {
-				labelRu: "Класс 5 (Интегрирующий)",
-				classBadge: "Класс V",
-				standardRu: "ГОСТ ISO 11140-1 (T°, пар, время)",
-				colorBefore: "#fef08a", // Желтый
-				colorAfter: "#1c1917",  // Черный / темно-коричневый
-			};
-	}
 }
 
 export function AutoclaveIndicatorControl({

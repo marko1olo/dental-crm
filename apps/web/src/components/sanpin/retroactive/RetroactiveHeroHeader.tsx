@@ -2,8 +2,8 @@ import React from "react";
 import { CheckCircle2, FileCheck } from "lucide-react";
 
 export interface RetroactiveHeroHeaderProps {
-	readonly onRecordDayCycle?: () => void;
-	readonly isLoggingDayCycle?: boolean;
+	readonly onRecordDayCycle?: (() => void) | undefined;
+	readonly isLoggingDayCycle?: boolean | undefined;
 }
 
 export function RetroactiveHeroHeader({

@@ -1,15 +1,15 @@
 import type React from "react";
 import { Search, X } from "lucide-react";
-import { STOMX_TASK_CALLS_CATALOG, type StomxTaskCallType } from "@dental/shared";
+import { CLINICAL_TASK_CALLS_CATALOG, type ClinicalTaskCallType } from "@dental/shared";
 import type { TaskCallCandidateItem } from "./PatientRecallsTaskCallsTab";
 
 export interface PatientRecallsTaskCallsToolbarProps {
 	readonly searchQuery: string;
 	readonly onSearchQueryChange: (query: string) => void;
-	readonly selectedTaskCallType: StomxTaskCallType | "all";
-	readonly onSelectTaskCallType: (type: StomxTaskCallType | "all") => void;
-	readonly activeTaskCallScriptType: StomxTaskCallType | null;
-	readonly onToggleTaskCallScriptType: (type: StomxTaskCallType | null) => void;
+	readonly selectedTaskCallType: ClinicalTaskCallType | "all";
+	readonly onSelectTaskCallType: (type: ClinicalTaskCallType | "all") => void;
+	readonly activeTaskCallScriptType: ClinicalTaskCallType | null;
+	readonly onToggleTaskCallScriptType: (type: ClinicalTaskCallType | null) => void;
 	readonly taskCallCandidates: readonly TaskCallCandidateItem[];
 }
 
@@ -63,7 +63,7 @@ export const PatientRecallsTaskCallsToolbar: React.FC<PatientRecallsTaskCallsToo
 					<span className="recall-chip-badge">{taskCallCandidates.length}</span>
 				</button>
 
-				{STOMX_TASK_CALLS_CATALOG.map((cat) => {
+				{CLINICAL_TASK_CALLS_CATALOG.map((cat) => {
 					const count = taskCallCandidates.filter((item) => item.taskType === cat.type).length;
 					return (
 						<button

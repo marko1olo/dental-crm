@@ -24,9 +24,7 @@ export function CabinetBactericidalTimer({
 	const [mode] = useState<"closed_recirculator" | "open_uv">("closed_recirculator");
 	const [lastLoggedAt, setLastLoggedAt] = useState<string | null>(null);
 
-	const lampCalc = useMemo(() => {
-		return calculateLampOperatingHours(operatingHours, 0, maxLampHours);
-	}, [operatingHours, maxLampHours]);
+	const lampCalc = useMemo(() => calculateLampOperatingHours(operatingHours, 0, maxLampHours), [operatingHours, maxLampHours]);
 
 	const handleLogExposureToSanpin = () => {
 		const sessionHours = Math.round((selectedDurationMinutes / 60) * 100) / 100;
@@ -45,43 +43,24 @@ export function CabinetBactericidalTimer({
 			lampHoursAfter: nextHours,
 			mode,
 		};
-
 		if (onExposureLogged) onExposureLogged(logEntry);
-
-		showToast(
-			`Зафиксировано в журнале: ${selectedCabinet}, ${lampModel}, +${selectedDurationMinutes} мин (наработка ${nextHours}/${maxLampHours} ч)`,
-			"success",
-		);
+		showToast(`Зафиксировано в журнале: ${selectedCabinet}, ${lampModel}, +${selectedDurationMinutes} мин (наработка ${nextHours}/${maxLampHours} ч)`, "success");
 	};
 
 	return (
 		<div
 			className="cabinet-bactericidal-timer-card"
 			style={{
-				marginTop: "0.75rem",
-				background: "var(--paper, #ffffff)",
-				border: "1px solid var(--paper-border, #e2e8f0)",
-				borderRadius: "0.75rem",
-				padding: "0.85rem 1.1rem",
+				marginTop: "0.75rem", background: "var(--paper, #ffffff)",
+				border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "0.85rem 1.1rem",
 			}}
 		>
 			<CabinetLampStatusBadge
-				lampModel={lampModel}
-				selectedCabinet={selectedCabinet}
-				operatingHours={operatingHours}
-				maxLampHours={maxLampHours}
-				lampStatus={lampCalc.lampStatus}
-				remainingPercent={lampCalc.remainingPercent}
+				lampModel={lampModel} selectedCabinet={selectedCabinet} operatingHours={operatingHours}
+				maxLampHours={maxLampHours} lampStatus={lampCalc.lampStatus} remainingPercent={lampCalc.remainingPercent}
 			/>
 
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-					gap: "1rem",
-					alignItems: "center",
-				}}
-			>
+			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", alignItems: "center" }}>
 				<CabinetLampDurationSelector
 					selectedDurationMinutes={selectedDurationMinutes}
 					setSelectedDurationMinutes={setSelectedDurationMinutes}
@@ -100,18 +79,9 @@ export function CabinetBactericidalTimer({
 						onClick={handleLogExposureToSanpin}
 						className="primary-button sanpin-btn-primary"
 						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1.15rem",
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							cursor: "pointer",
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
-							borderRadius: "0.5rem",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.4rem",
-							boxShadow: "0 1px 3px rgba(13, 148, 136, 0.2)",
+							minHeight: "44px", padding: "0.5rem 1.15rem", fontSize: "0.85rem", fontWeight: 700,
+							cursor: "pointer", background: "var(--teal, #0d9488)", color: "#ffffff", borderRadius: "0.5rem",
+							display: "inline-flex", alignItems: "center", gap: "0.4rem", boxShadow: "0 1px 3px rgba(13, 148, 136, 0.2)",
 						}}
 						data-testid="bactericidal-log-cycle-btn"
 						title="Зафиксировать цикл работы рециркулятора в журнале в 1 клик"
