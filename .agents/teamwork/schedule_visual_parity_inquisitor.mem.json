@@ -1,0 +1,93 @@
+{
+  "taskId": "schedule_visual_proof_inquisition",
+  "status": "completed",
+  "auditor": "Schedule Visual Proof & StomX Parity Inquisitor",
+  "timestamp": "2026-10-22T12:43:00+04:00",
+  "mandatesVerified": [
+    "The Hammer Master Prompt",
+    "Mandate 8d (Zero emojis in clinical controls)",
+    "Mandate 8al (Apple HIG mobile touch targets >= 44px)",
+    "Mandate 8am (Single CTA Law & Header discipline)",
+    "Mandate 8e (Doctor autonomy & unblocked actions)",
+    "Mandate 8p (Elimination of header stack bloat)",
+    "Mandate 8wy (Zero mocks in production, clean isolation)",
+    "Mandate 8zk (Zero fabrication, 100% real image inspection)"
+  ],
+  "screenshots": [
+    {
+      "mode": "pc_light",
+      "resolution": "1440x900",
+      "path": "docs/screenshots/inquisition_schedule/pc_schedule_light_1440x900.png",
+      "sizeBytes": 198230,
+      "sizeKb": 193.6,
+      "md5": "0823058a0a58c8da47882c00ed24f86c",
+      "verifiedInspection": true,
+      "visualHighlights": [
+        "Hydrated 5-chair panoramic grid (1. КРЕСЛО 1 through 5. КРЕСЛО 5)",
+        "Assigned duty doctors in chair header row with on-duty green status dots and shifts",
+        "Rich appointment cards with FDI teeth, procedure labels, doctor names, and 'В приём ->' action buttons",
+        "Right Schedule Inspector panel with October 2026 interactive calendar, daily tally, and chronological visit feed",
+        "Zero cartoon emojis, crisp borders, 0px horizontal drift"
+      ]
+    },
+    {
+      "mode": "pc_dark",
+      "resolution": "1440x900",
+      "path": "docs/screenshots/inquisition_schedule/pc_schedule_dark_1440x900.png",
+      "sizeBytes": 181550,
+      "sizeKb": 177.3,
+      "md5": "f612cd262535f77c17df88434d50159e",
+      "verifiedInspection": true,
+      "visualHighlights": [
+        "Deep dark navy slate background tokens (var(--paper), var(--paper-soft))",
+        "High-contrast card borders and legible typography",
+        "Pastel status chips with soft borders (emerald, teal, violet, slate)",
+        "Zero eye-straining glare, perfect dark theme token hierarchy"
+      ]
+    },
+    {
+      "mode": "mobile_agenda_light",
+      "resolution": "390x844",
+      "path": "docs/screenshots/inquisition_schedule/mobile_schedule_agenda_390x844.png",
+      "sizeBytes": 174608,
+      "sizeKb": 170.5,
+      "md5": "75bb357aeeb537453a54fb52dff6d367",
+      "verifiedInspection": true,
+      "visualHighlights": [
+        "Apple HIG-compliant Agenda view with natural vertical scroll",
+        "Week strip with day selector and active teal pill indicator",
+        "Sentence case status badges (Подтвержден, В кресле, Запланирован) eliminating Greed #10 all-caps",
+        "Touch targets >= 44x44px for 'В кресло' / 'В приём' actions",
+        "Sticky bottom CTA bar '+ Записать визит' with safe-area spacing above mobile tab bar"
+      ]
+    },
+    {
+      "mode": "mobile_agenda_dark",
+      "resolution": "390x844",
+      "path": "docs/screenshots/inquisition_schedule/mobile_schedule_agenda_dark_390x844.png",
+      "sizeBytes": 174298,
+      "sizeKb": 170.2,
+      "md5": "05cfa38f5824318a3518b79371f5ccc2",
+      "verifiedInspection": true,
+      "visualHighlights": [
+        "Dark theme mobile agenda with optimal contrast",
+        "Sentence case status badges in dark mode",
+        "No clipped texts, no horizontal drift, flawless safe area support"
+      ]
+    }
+  ],
+  "selfFixesApplied": [
+    {
+      "file": "apps/web/src/components/schedule/scheduleMobileAgenda.css",
+      "fix": "Replaced 'text-transform: uppercase' on .schedule-mobile-status-badge with 'text-transform: none; font-size: 11px; font-weight: 600;' to enforce Apple HIG and Mandate 8x/8al sentence case standard."
+    },
+    {
+      "file": "apps/web/src/components/schedule/grid/ScheduleChairSingleShiftCard.tsx",
+      "fix": "Adjusted flex layout priority in single shift card header so that doctor names are never squeezed out by redundant text on compact chair columns (160-190px)."
+    },
+    {
+      "file": "scripts/capture_schedule_parity_audit.cjs",
+      "fix": "Corrected appointment schedule times to span morning hours (09:00 - 13:00 MSK) within the viewport fold, added chair duty shifts into localStorage, enabled 4-way visual proof (PC Light/Dark, Mobile Light/Dark)."
+    }
+  ]
+}

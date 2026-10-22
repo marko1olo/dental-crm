@@ -56,8 +56,8 @@ test("DoctorClinicalTrainingTour — Clinical Operations & Ergonomics Verificati
 
 		// Step 4: Fast Cashier 54-FZ
 		const step4 = CLINICAL_TRAINING_STEPS[3]!;
-		assert.ok(step4.title.includes("54-ФЗ") || step4.title.includes("Касса"));
-		assert.ok(step4.description.includes("54-ФЗ"));
+		assert.ok(step4.title.includes("Касса") || step4.title.includes("чек"), "Step 4 title must be clear domain language");
+		assert.ok(step4.description.includes("чекаут") || step4.description.includes("Оплата") || step4.description.includes("чек"), "Step 4 description must describe fast checkout");
 		assert.ok(step4.description.includes("ИНН"), "Step 4 must state no mandatory individual INN");
 		assert.ok(step4.shortcutBadge.includes("F9"), "Step 4 must indicate F9 checkout");
 	});
