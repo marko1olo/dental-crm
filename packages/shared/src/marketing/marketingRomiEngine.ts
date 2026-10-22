@@ -455,9 +455,9 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 ];
 
 /**
- * Нормализует произвольную строку источника пациента в канонический channelKey из STOMX_MARKETING_SOURCES.
+ * Нормализует произвольную строку источника пациента в канонический channelKey из DENTE_MARKETING_SOURCES.
  */
-export function matchStomxMarketingChannel(rawSource?: string | null): string {
+export function matchDenteMarketingChannel(rawSource?: string | null): string {
 	if (!rawSource || typeof rawSource !== "string") {
 		return "word_of_mouth";
 	}
@@ -501,12 +501,16 @@ export function matchStomxMarketingChannel(rawSource?: string | null): string {
 	return "word_of_mouth";
 }
 
+/** Алиас для обратной совместимости */
+export const matchStomxMarketingChannel = matchDenteMarketingChannel;
+
 /**
- * Создает предустановленный набор 10 каналов на основе канонического справочника StomX (STOMX_MARKETING_SOURCES).
+ * Создает предустановленный набор 10 канонических каналов DENTE:
+ * 2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама, Сайт, Инстаграм, Листовки.
  */
-export function buildStomxDefaultAdvertisingChannels(): AdvertisingChannelInput[] {
+export function buildDenteDefaultAdvertisingChannels(): AdvertisingChannelInput[] {
 	return STOMX_MARKETING_SOURCES.map((source) => ({
-		id: `ch_stomx_${source.channelKey}`,
+		id: `ch_dente_${source.channelKey}`,
 		channelKey: source.channelKey,
 		nameRu: source.nameRu,
 		categoryRu: source.categoryRu,
@@ -519,11 +523,14 @@ export function buildStomxDefaultAdvertisingChannels(): AdvertisingChannelInput[
 	}));
 }
 
-/**
- * Канонические 10 каналов StomX с нулевыми исходными показателями для безопасного старта аналитики.
- */
-export const STOMX_DEFAULT_ADVERTISING_CHANNELS: readonly AdvertisingChannelInput[] =
-	Object.freeze(buildStomxDefaultAdvertisingChannels());
+/** Канонические 10 каналов клиники DENTE с нулевыми исходными показателями */
+export const CANONICAL_DENTE_ADVERTISING_CHANNELS: readonly AdvertisingChannelInput[] =
+	Object.freeze(buildDenteDefaultAdvertisingChannels());
+export const DENTE_DEFAULT_ADVERTISING_CHANNELS = CANONICAL_DENTE_ADVERTISING_CHANNELS;
+
+/** Алиасы обратной совместимости */
+export const buildStomxDefaultAdvertisingChannels = buildDenteDefaultAdvertisingChannels;
+export const STOMX_DEFAULT_ADVERTISING_CHANNELS = CANONICAL_DENTE_ADVERTISING_CHANNELS;
 
 /**
  * Агрегирует реальные маркетинговые метрики клиники из живых данных CRM:
@@ -694,7 +701,7 @@ export function aggregateCrmMarketingMetrics(params: {
 	// Build result with custom budgets preserved
 	const result: AdvertisingChannelInput[] = [];
 
-	// First output canonical STOMX channels
+	// First output canonical DENTE channels
 	for (const source of STOMX_MARKETING_SOURCES) {
 		const stat = channelStats.get(source.channelKey) ?? {
 			leadsCount: 0,
@@ -703,13 +710,17 @@ export function aggregateCrmMarketingMetrics(params: {
 			revenueKopecks: 0,
 			totalLtvRevenueKopecks: 0,
 		};
+		const customBudget =
+			customBudgetsKopecks[source.channelKey] ??
+			customBudgetsKopecks[`ch_dente_${source.channelKey}`] ??
+			customBudgetsKopecks[`ch_stomx_${source.channelKey}`];
 		const spentKopecks =
-			customBudgetsKopecks[source.channelKey] ?? (source.defaultSpendRub * 100);
+			customBudget !== undefined ? customBudget : (source.defaultSpendRub * 100);
 
 		const leadsCount = Math.max(stat.leadsCount, stat.primaryPatientsCount);
 
 		result.push({
-			id: `ch_stomx_${source.channelKey}`,
+			id: `ch_dente_${source.channelKey}`,
 			channelKey: source.channelKey,
 			nameRu: source.nameRu,
 			categoryRu: source.categoryRu,

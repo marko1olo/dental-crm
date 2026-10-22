@@ -777,6 +777,8 @@ export function getTaskCallMeta(type: StomxTaskCallType): StomxTaskCallMeta | un
 
 export const REPRESENTATIVE_RELATIONSHIP_CATALOG = STOMX_REPRESENTATIVE_CATALOG;
 export const MARKETING_SOURCES_CATALOG = STOMX_MARKETING_SOURCES_CATALOG;
+export const DENTE_MARKETING_SOURCES = STOMX_MARKETING_SOURCES;
+export type DenteMarketingSourceItem = StomxMarketingSourceItem;
 export type RepresentativeRelationshipType = StomxRepresentativeType;
 export type RepresentativeRelationshipMeta = StomxRepresentativeTypeMeta;
 

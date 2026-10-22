@@ -17,6 +17,11 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
+import {
+	type AdvertisingChannelInput,
+	advertisingChannelInputSchema,
+	buildDenteDefaultAdvertisingChannels,
+} from "@dental/shared";
 
 const promoStatsSchema = z.object({
 	reach: z.number().nonnegative().default(0),
@@ -214,6 +219,44 @@ async function readOrSeedOrganizationPromos(orgId: string): Promise<{
 	};
 }
 
+async function readOrSeedOrganizationRomiChannels(orgId: string): Promise<{
+	flags: Record<string, unknown>;
+	channels: AdvertisingChannelInput[];
+}> {
+	const [org] = await db
+		.select({ flags: organizations.workspaceFeatureFlags })
+		.from(organizations)
+		.where(eq(organizations.id, orgId))
+		.limit(1);
+
+	const existingFlags = (org?.flags as Record<string, unknown>) || {};
+	const rawChannels = existingFlags.marketingRomiChannels;
+
+	if (Array.isArray(rawChannels) && rawChannels.length > 0) {
+		return {
+			flags: existingFlags,
+			channels: rawChannels as AdvertisingChannelInput[],
+		};
+	}
+
+	// Первичное авто-сидирование канонических каналов DENTE в PostgreSQL 18
+	const seeded = buildDenteDefaultAdvertisingChannels();
+	const updatedFlags = {
+		...existingFlags,
+		marketingRomiChannels: seeded,
+	};
+
+	await db
+		.update(organizations)
+		.set({ workspaceFeatureFlags: updatedFlags })
+		.where(eq(organizations.id, orgId));
+
+	return {
+		flags: updatedFlags,
+		channels: seeded,
+	};
+}
+
 export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/marketing/promos
@@ -343,6 +386,138 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			return reply.code(500).send({
 				error: "InternalServerError",
 				message: "Не удалось обновить статус акции в базе данных",
+			});
+		}
+	});
+
+	/**
+	 * GET /api/marketing/romi-channels
+	 * Возвращает список рекламных каналов клиники с фактическими расходами из PostgreSQL 18.
+	 */
+	app.get("/api/marketing/romi-channels", async (request: FastifyRequest, reply: FastifyReply) => {
+		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing romi channels");
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "marketing romi channels");
+		if (!orgId) return;
+
+		try {
+			const { channels } = await readOrSeedOrganizationRomiChannels(orgId);
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				channels,
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Failed to load ROMI channels from DB");
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				channels: buildDenteDefaultAdvertisingChannels(),
+			});
+		}
+	});
+
+	/**
+	 * POST /api/marketing/romi-channels
+	 * Сохраняет рекламные каналы и затраты клиники в PostgreSQL 18 с изоляцией по организации.
+	 */
+	app.post("/api/marketing/romi-channels", async (request: FastifyRequest, reply: FastifyReply) => {
+		const mutAllowed = await requireClinicalMutationAccess(request, reply, "save marketing romi channels");
+		if (!mutAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing romi channels");
+		if (!orgId) return;
+
+		const body = request.body as any;
+		const rawList = Array.isArray(body)
+			? body
+			: Array.isArray(body?.channels)
+				? body.channels
+				: null;
+
+		if (!rawList) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Ожидался массив рекламных каналов channels",
+			});
+		}
+
+		const parsed = z.array(advertisingChannelInputSchema).safeParse(rawList);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректная структура рекламных каналов",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const { flags } = await readOrSeedOrganizationRomiChannels(orgId);
+			const updatedFlags = {
+				...flags,
+				marketingRomiChannels: parsed.data,
+			};
+
+			await db
+				.update(organizations)
+				.set({ workspaceFeatureFlags: updatedFlags })
+				.where(eq(organizations.id, orgId));
+
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				channels: parsed.data,
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Failed to persist ROMI channels in DB");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось сохранить рекламные каналы в базе данных",
+			});
+		}
+	});
+
+	/**
+	 * POST /api/marketing/romi-channels/reset
+	 * Сбрасывает рекламные каналы клиники к эталонным каноническим каналам DENTE в PostgreSQL 18.
+	 */
+	app.post("/api/marketing/romi-channels/reset", async (request: FastifyRequest, reply: FastifyReply) => {
+		const mutAllowed = await requireClinicalMutationAccess(request, reply, "reset marketing romi channels");
+		if (!mutAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "reset marketing romi channels");
+		if (!orgId) return;
+
+		try {
+			const [org] = await db
+				.select({ flags: organizations.workspaceFeatureFlags })
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1);
+
+			const existingFlags = (org?.flags as Record<string, unknown>) || {};
+			const resetChannels = buildDenteDefaultAdvertisingChannels();
+			const updatedFlags = {
+				...existingFlags,
+				marketingRomiChannels: resetChannels,
+			};
+
+			await db
+				.update(organizations)
+				.set({ workspaceFeatureFlags: updatedFlags })
+				.where(eq(organizations.id, orgId));
+
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				channels: resetChannels,
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Failed to reset ROMI channels in DB");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось сбросить рекламные каналы в базе данных",
 			});
 		}
 	});

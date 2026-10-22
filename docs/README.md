@@ -41,9 +41,10 @@
 *   **[02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md)** — Многокассовость, рассрочки, наряды ЗТЛ и расчёт зарплат Т-51 Net Revenue.
 *   **[03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md)** — Техкарты склада (BOM), СанПиН 3.3686-21, МДЛП Честный Знак.
 
-### 4. Коммуникации, Телефония и Пациентский Портал
+### 4. Коммуникации, Телефония, Маркетинг и Пациентский Портал
 *   **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал.
 *   **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Интеграция WhatsApp Cloud API, VK MAX bot, единый лог входящих сообщений.
+*   **[DENTE_MARKETING_AND_ROMI_ENGINE_SPEC.md](file:///C:/Clinic_MVP/dental-crm/docs/architecture/DENTE_MARKETING_AND_ROMI_ENGINE_SPEC.md)** — Архитектура сквозного маркетинга, окупаемость рекламы (ROMI), CAC, 10 канонических каналов DENTE и персистенция расходов в PostgreSQL 18.
 
 ### 5. Искусственный Интеллект, Когнитивное Ядро и Агентный Харнесс
 *   **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция, правила поведения, T.A.R.S. протокол честности (100% честность / 80% скепсис), 15 когнитивных законов EBM и автономия врача (Мандат 8e).

@@ -1,7 +1,7 @@
 /**
  * packages/shared/src/tests/wave118StomxCashFlowCatalogs.test.ts
  *
- * DENTE Dental CRM — Verification Suite for StomX Cash Flow & 54-FZ FFD 1.2 Tag 1054 Catalogs (Wave 118).
+ * DENTE Dental CRM — Verification Suite for Cash Flow & 54-FZ Tag 1054 Operation Catalogs.
  * Governed by:
  * - Supreme Law: THE HAMMER, Mandates 8a-8q
  * - Federal Law No. 54-FZ & FFD 1.2 Tag 1054
@@ -35,7 +35,7 @@ import {
 	cashReceiptItemSchema,
 } from "../finance/stomxCashFlowCatalogs.js";
 
-describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification", () => {
+describe("Cash Flow Catalogs & 54-FZ Tag 1054 Classification", () => {
 	it("exposes clean canonical DENTE aliases identical to legacy catalog", () => {
 		assert.strictEqual(CASH_EXPENSE_CATALOG, STOMX_CASH_EXPENSE_CATALOG);
 		assert.strictEqual(CASH_RECEIPT_CATALOG, STOMX_CASH_RECEIPT_CATALOG);
@@ -49,9 +49,9 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 		assert.strictEqual(cashReceiptItemSchema, stomxCashReceiptItemSchema);
 	});
 
-	it("contains exactly 14 canonical StomX cash expense types with valid schemas and IDs", () => {
-		assert.equal(STOMX_CASH_EXPENSE_CATALOG.length, 14, "Must contain exactly 14 expense types");
-		assert.equal(STOMX_EXPENSE_TYPE_ALIASES.length, 14, "Must list all 14 aliases");
+	it("contains exactly 14 canonical cash expense types with valid schemas and IDs", () => {
+		assert.equal(CASH_EXPENSE_CATALOG.length, 14, "Must contain exactly 14 expense types");
+		assert.equal(CASH_EXPENSE_TYPE_ALIASES.length, 14, "Must list all 14 aliases");
 
 		const expectedExpenses: Record<string, { id: number; name: string; tag1054: string | null }> = {
 			family_transfer: { id: 41, name: "Перевод семейного аванса", tag1054: null },
@@ -71,26 +71,26 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 		};
 
 		for (const [alias, expected] of Object.entries(expectedExpenses)) {
-			const item = STOMX_CASH_EXPENSE_BY_ALIAS[alias as keyof typeof STOMX_CASH_EXPENSE_BY_ALIAS];
+			const item = CASH_EXPENSE_BY_ALIAS[alias as keyof typeof CASH_EXPENSE_BY_ALIAS];
 			assert.ok(item, `Expense item for alias '${alias}' must exist`);
 			assert.equal(item.id, expected.id, `ID mismatch for expense '${alias}'`);
 			assert.equal(item.name, expected.name, `Name mismatch for expense '${alias}'`);
 			assert.equal(item.ffdTag1054, expected.tag1054, `54-FZ Tag 1054 mismatch for '${alias}'`);
 
 			// Validate with Zod schema
-			const parsed = stomxCashExpenseItemSchema.safeParse(item);
+			const parsed = cashExpenseItemSchema.safeParse(item);
 			assert.ok(parsed.success, `Zod validation failed for expense '${alias}': ${JSON.stringify(parsed.error?.issues)}`);
 
 			// Lookup by ID parity
-			const byId = STOMX_CASH_EXPENSE_BY_ID[expected.id];
+			const byId = CASH_EXPENSE_BY_ID[expected.id];
 			assert.ok(byId);
 			assert.equal(byId.alias, alias, `ID map lookup mismatch for id ${expected.id}`);
 		}
 	});
 
-	it("contains exactly 9 canonical StomX cash receipt types with valid schemas and IDs", () => {
-		assert.equal(STOMX_CASH_RECEIPT_CATALOG.length, 9, "Must contain exactly 9 receipt types");
-		assert.equal(STOMX_RECEIPT_TYPE_ALIASES.length, 9, "Must list all 9 aliases");
+	it("contains exactly 9 canonical cash receipt types with valid schemas and IDs", () => {
+		assert.equal(CASH_RECEIPT_CATALOG.length, 9, "Must contain exactly 9 receipt types");
+		assert.equal(CASH_RECEIPT_TYPE_ALIASES.length, 9, "Must list all 9 aliases");
 
 		const expectedReceipts: Record<string, { id: number; name: string; tag1054: string | null; ffdSubject?: number | null }> = {
 			installment_payment: { id: 50, name: "Оплата по рассрочке", tag1054: "приход", ffdSubject: 3 },
@@ -105,7 +105,7 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 		};
 
 		for (const [alias, expected] of Object.entries(expectedReceipts)) {
-			const item = STOMX_CASH_RECEIPT_BY_ALIAS[alias as keyof typeof STOMX_CASH_RECEIPT_BY_ALIAS];
+			const item = CASH_RECEIPT_BY_ALIAS[alias as keyof typeof CASH_RECEIPT_BY_ALIAS];
 			assert.ok(item, `Receipt item for alias '${alias}' must exist`);
 			assert.equal(item.id, expected.id, `ID mismatch for receipt '${alias}'`);
 			assert.equal(item.name, expected.name, `Name mismatch for receipt '${alias}'`);
@@ -116,11 +116,11 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 			}
 
 			// Validate with Zod schema
-			const parsed = stomxCashReceiptItemSchema.safeParse(item);
+			const parsed = cashReceiptItemSchema.safeParse(item);
 			assert.ok(parsed.success, `Zod validation failed for receipt '${alias}': ${JSON.stringify(parsed.error?.issues)}`);
 
 			// Lookup by ID parity
-			const byId = STOMX_CASH_RECEIPT_BY_ID[expected.id];
+			const byId = CASH_RECEIPT_BY_ID[expected.id];
 			assert.ok(byId);
 			assert.equal(byId.alias, alias, `ID map lookup mismatch for id ${expected.id}`);
 		}
@@ -134,10 +134,10 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 		assert.equal(getFfd1054Label(null), "Внереализационная / Без чека");
 
 		// isFiscal54FzOperation
-		const receiptFiscal = STOMX_CASH_RECEIPT_BY_ALIAS.appointment_payment;
-		const receiptNonFiscal = STOMX_CASH_RECEIPT_BY_ALIAS.cash_deposit;
-		const expenseFiscalRefund = STOMX_CASH_EXPENSE_BY_ALIAS.return_appointment;
-		const expenseNonFiscal = STOMX_CASH_EXPENSE_BY_ALIAS.collection;
+		const receiptFiscal = CASH_RECEIPT_BY_ALIAS.appointment_payment;
+		const receiptNonFiscal = CASH_RECEIPT_BY_ALIAS.cash_deposit;
+		const expenseFiscalRefund = CASH_EXPENSE_BY_ALIAS.return_appointment;
+		const expenseNonFiscal = CASH_EXPENSE_BY_ALIAS.collection;
 
 		assert.equal(isFiscal54FzOperation(receiptFiscal), true, "Appointment payment must be fiscal");
 		assert.equal(isFiscal54FzOperation(receiptNonFiscal), false, "Cash deposit for change is non-fiscal");
@@ -155,7 +155,7 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 			isLocked: false,
 			ffdTag1054: null,
 		};
-		assert.equal(stomxCashExpenseItemSchema.safeParse(invalidExpense).success, false);
+		assert.equal(cashExpenseItemSchema.safeParse(invalidExpense).success, false);
 
 		// Unknown alias
 		const invalidAlias = {
@@ -166,6 +166,6 @@ describe("Wave 118 — StomX Cash Flow Catalogs & 54-FZ Tag 1054 Classification"
 			isLocked: false,
 			ffdTag1054: null,
 		};
-		assert.equal(stomxCashReceiptItemSchema.safeParse(invalidAlias).success, false);
+		assert.equal(cashReceiptItemSchema.safeParse(invalidAlias).success, false);
 	});
 });

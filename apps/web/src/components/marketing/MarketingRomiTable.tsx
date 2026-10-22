@@ -33,7 +33,7 @@ import {
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage.js";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import {
-	DEFAULT_STOMX_CHANNELS,
+	DEFAULT_DENTE_CHANNELS,
 	STORAGE_KEY,
 } from "./marketingRomiPresets.js";
 import { MarketingRomiKpiStrip } from "./MarketingRomiKpiStrip.js";
@@ -50,7 +50,7 @@ export function MarketingRomiTable() {
 	const appLogic = useOptionalAppLogicContext();
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-	// Channels state loaded from safe storage (defaulting to standard StomX catalog with zeroed balances)
+	// Channels state loaded from safe storage (defaulting to standard DENTE catalog with zeroed balances)
 	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
 		try {
 			const saved = safeLocalStorageGetItem(STORAGE_KEY);
@@ -61,9 +61,9 @@ export function MarketingRomiTable() {
 				}
 			}
 		} catch {
-			// Fall back to default StomX preset
+			// Fall back to default DENTE preset
 		}
-		return [...DEFAULT_STOMX_CHANNELS];
+		return [...DEFAULT_DENTE_CHANNELS];
 	});
 
 	// Local draft state for table inputs to avoid forced snapback to 0 while typing
@@ -72,10 +72,25 @@ export function MarketingRomiTable() {
 	// New channel creation modal/form state
 	const [isAddingChannel, setIsAddingChannel] = useState(false);
 
-	// Save helper
+	// Save helper — надежная персистенция в PostgreSQL 18 и локальный fallback кэш
 	const persistChannels = (updated: AdvertisingChannelInput[]) => {
 		setChannels(updated);
 		safeLocalStorageSetItem(STORAGE_KEY, JSON.stringify(updated));
+
+		try {
+			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
+				? appLogic.auth.denteClinicalMutationHeaders()
+				: { "Content-Type": "application/json" };
+			void fetch("/api/marketing/romi-channels", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ channels: updated }),
+			}).catch((err) => {
+				console.warn("[MarketingRomiTable] Failed to persist channels to DB:", err);
+			});
+		} catch (err) {
+			console.warn("[MarketingRomiTable] Network error saving channels:", err);
+		}
 	};
 
 	// Calculated metrics and summary totals
@@ -165,11 +180,25 @@ export function MarketingRomiTable() {
 	};
 
 	const handleResetDefaults = () => {
-		persistChannels([...DEFAULT_STOMX_CHANNELS]);
+		persistChannels([...DEFAULT_DENTE_CHANNELS]);
 		setSyncMessage(null);
+
+		try {
+			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
+				? appLogic.auth.denteClinicalMutationHeaders()
+				: { "Content-Type": "application/json" };
+			void fetch("/api/marketing/romi-channels/reset", {
+				method: "POST",
+				headers,
+			}).catch((err) => {
+				console.warn("[MarketingRomiTable] Failed to reset channels in DB:", err);
+			});
+		} catch (err) {
+			console.warn("[MarketingRomiTable] Network error resetting channels:", err);
+		}
 	};
 
-	const handleSyncWithCrmLocal = () => {
+	const handleSyncWithCrmLocal = (preferredChannels?: AdvertisingChannelInput[] | null) => {
 		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as any[];
 		const appointments = (appLogic?.dashboard?.appointments ?? appLogic?.appointments ?? appLogic?.sortedAppointments ?? []) as any[];
 		const payments = (appLogic?.dashboard?.payments ?? appLogic?.payments ?? appLogic?.activePayments ?? []) as any[];
@@ -177,7 +206,8 @@ export function MarketingRomiTable() {
 
 		// Preserve custom budgets set by user in current channels
 		const customBudgetsKopecks: Record<string, number> = {};
-		for (const ch of channels) {
+		const sourceForBudgets = preferredChannels || channels;
+		for (const ch of sourceForBudgets) {
 			if (ch.spentKopecks > 0) {
 				customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 			}
@@ -203,6 +233,22 @@ export function MarketingRomiTable() {
 			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalReadHeaders === "function"
 				? appLogic.auth.denteClinicalReadHeaders()
 				: {};
+
+			// 1. Попытка загрузить сохраненные рекламные каналы организации из БД
+			let dbChannels: AdvertisingChannelInput[] | null = null;
+			try {
+				const chRes = await fetch("/api/marketing/romi-channels", { headers });
+				if (chRes.ok) {
+					const chData = await chRes.json();
+					if (Array.isArray(chData?.channels) && chData.channels.length > 0) {
+						dbChannels = chData.channels;
+					}
+				}
+			} catch (err) {
+				console.warn("[MarketingRomiTable] Failed to fetch romi-channels from DB:", err);
+			}
+
+			// 2. Запрос сквозной атрибуции пациентов из CRM
 			const res = await fetch("/api/marketing/attribution", { headers });
 			if (res.ok) {
 				const data = await res.json();
@@ -219,12 +265,13 @@ export function MarketingRomiTable() {
 					// If server has no activity but local dashboard has patients, prioritize local CRM state (e.g. demo mode)
 					const localPatients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as any[];
 					if (!hasServerActivity && localPatients.length > 0) {
-						handleSyncWithCrmLocal();
+						handleSyncWithCrmLocal(dbChannels);
 						return;
 					}
 
 					const customBudgetsKopecks: Record<string, number> = {};
-					for (const ch of channels) {
+					const sourceForBudgets = dbChannels || channels;
+					for (const ch of sourceForBudgets) {
 						if (ch.spentKopecks > 0) {
 							customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 						}
@@ -242,6 +289,9 @@ export function MarketingRomiTable() {
 					setSyncMessage(msg);
 					return;
 				}
+			} else if (dbChannels && dbChannels.length > 0) {
+				persistChannels(dbChannels);
+				return;
 			}
 		} catch (err) {
 			console.warn("[MarketingRomiTable] Server attribution fetch error, falling back:", err);

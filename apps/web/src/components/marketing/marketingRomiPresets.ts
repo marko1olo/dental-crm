@@ -1,17 +1,18 @@
 /**
  * DENTE Dental CRM — Marketing ROMI Channels Presets & Storage Keys.
  *
- * 10 canonical StomX advertising channels for dental clinics:
+ * 10 canonical DENTE advertising channels for dental clinics:
  * 2GIS, Yandex Maps, ProDoctorov, Word of mouth, SberHealth, VK, Outdoor, Website, Instagram, Flyers.
+ * Governed by Mandate 8ap (Zero third-party brands, clean domain nomenclature).
  */
 
 import type { AdvertisingChannelInput } from "@dental/shared";
 
-export const STORAGE_KEY = "dental_crm_mkt_romi_channels_v3";
+export const STORAGE_KEY = "dente_mkt_romi_channels_v4";
 
-export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
+export const DEFAULT_DENTE_CHANNELS: AdvertisingChannelInput[] = [
 	{
-		id: "ch_stomx_gis2",
+		id: "ch_dente_2gis",
 		channelKey: "gis2",
 		nameRu: "2GIS",
 		categoryRu: "Гео-сервисы",
@@ -24,7 +25,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Картографический справочник 2ГИС: гео-профиль клиники и кнопка онлайн-записи",
 	},
 	{
-		id: "ch_stomx_yandex_maps",
+		id: "ch_dente_yandex_maps",
 		channelKey: "yandex_maps",
 		nameRu: "Яндекс Карты",
 		categoryRu: "Гео-сервисы",
@@ -37,7 +38,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Гео-приоритет клиники в Яндекс Картах и Навигаторе с синей меткой",
 	},
 	{
-		id: "ch_stomx_prodoctorov",
+		id: "ch_dente_prodoctorov",
 		channelKey: "prodoctorov",
 		nameRu: "ПроДокторов",
 		categoryRu: "Мед-агрегаторы",
@@ -50,7 +51,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Профили ведущих врачей на медицинском портале отзывов ПроДокторов",
 	},
 	{
-		id: "ch_stomx_word_of_mouth",
+		id: "ch_dente_word_of_mouth",
 		channelKey: "word_of_mouth",
 		nameRu: "Сарафанное радио",
 		categoryRu: "Органика",
@@ -63,7 +64,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Рекомендации постоянных пациентов, членов семьи и знакомых (0 ₽ бюджет)",
 	},
 	{
-		id: "ch_stomx_sberhealth",
+		id: "ch_dente_sberhealth",
 		channelKey: "sberhealth",
 		nameRu: "СберЗдоровье",
 		categoryRu: "Мед-агрегаторы",
@@ -76,7 +77,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Записи пациентов через экосистему медицинских сервисов СберЗдоровье (DocDoc)",
 	},
 	{
-		id: "ch_stomx_vk",
+		id: "ch_dente_vk",
 		channelKey: "vk",
 		nameRu: "ВКонтакте",
 		categoryRu: "Соцсети",
@@ -89,7 +90,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Таргетированная реклама и официальное сообщество клиники ВКонтакте",
 	},
 	{
-		id: "ch_stomx_outdoor",
+		id: "ch_dente_outdoor",
 		channelKey: "outdoor",
 		nameRu: "Наружная реклама",
 		categoryRu: "Наружная реклама",
@@ -102,7 +103,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Фасадная световая вывеска, панель-кронштейн и указатели",
 	},
 	{
-		id: "ch_stomx_website",
+		id: "ch_dente_website",
 		channelKey: "website",
 		nameRu: "Сайт",
 		categoryRu: "Сайт / SEO",
@@ -115,7 +116,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Официальный сайт стоматологии, поисковое SEO-продвижение и веб-виджет",
 	},
 	{
-		id: "ch_stomx_instagram",
+		id: "ch_dente_instagram",
 		channelKey: "instagram",
 		nameRu: "Инстаграм",
 		categoryRu: "Соцсети",
@@ -128,7 +129,7 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Клинические кейсы до/после, сторис и запись через директ Инстаграм",
 	},
 	{
-		id: "ch_stomx_flyers",
+		id: "ch_dente_flyers",
 		channelKey: "flyers",
 		nameRu: "Листовки",
 		categoryRu: "Полиграфия",
@@ -141,6 +142,9 @@ export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = [
 		notes: "Печатные промо-листовки, буклеты в жилые комплексы и партнерские стойки",
 	},
 ];
+
+/** Алиас для безопасной обратной совместимости компонентов */
+export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = DEFAULT_DENTE_CHANNELS;
 
 export interface QuickChannelPreset {
 	readonly channelKey: string;
