@@ -241,7 +241,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 						contractData={{
 							clinic: cardData.clinic,
 							patient: cardData.patient,
-							contractNumber: `Д-043/${pt.cardNumber}`,
+							contractNumber: `Д-${pt.cardNumber}`,
 							contractDate: todayRu,
 							estimatedTotalRub: 0,
 							services: [],
@@ -249,9 +249,9 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 						actData={{
 							clinic: cardData.clinic,
 							patient: cardData.patient,
-							actNumber: `А-043/${pt.cardNumber}`,
+							actNumber: `А-${pt.cardNumber}`,
 							actDate: todayRu,
-							contractNumber: `Д-043/${pt.cardNumber}`,
+							contractNumber: `Д-${pt.cardNumber}`,
 							contractDate: todayRu,
 							doctorFullName: doctor,
 							services: [],
@@ -260,7 +260,7 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 						treatmentPlanData={{
 							clinic: cardData.clinic,
 							patient: cardData.patient,
-							planNumber: `П-043/${pt.cardNumber}`,
+							planNumber: `П-${pt.cardNumber}`,
 							planDate: todayRu,
 							doctorFullName: doctor,
 							stages: [],

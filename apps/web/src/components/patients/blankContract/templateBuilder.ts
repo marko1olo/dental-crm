@@ -1,8 +1,11 @@
 /**
  * apps/web/src/components/patients/blankContract/templateBuilder.ts
  *
- * Тонкий фасад сборщика печатных бланков договоров и ИДС (Мандат 8b: <= 120 строк).
+ * Тонкий фасад сборщика печатных бланков договоров и ИДС.
+ * Единый канонический источник правды (SSOT): paidContract/blankContract.ts (Мандат 8e / 8n).
  */
 
-export { generateBlankContractFallbackHtml } from "./contractBuilder";
-export { generateBlankConsentFallbackHtml } from "./consentBuilder";
+export {
+	generateBlankContractFallbackHtml,
+	generateBlankConsentFallbackHtml,
+} from "../../documents/paidContract/blankContract";

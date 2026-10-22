@@ -292,5 +292,22 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(hygieneStripCode.includes("Протоколы гигиены"), "Hygiene button must be labeled 'Протоколы гигиены'");
 		assert.ok(hygieneStripCode.includes("Клинические диагнозы пародонта:"), "Diagnoses header must be clean Russian");
 	});
+
+	it("20. Fast Clinical Print, Cash Shift Templates & Outpatient Print: zero 043/у, USSR decrees, 54-ФЗ (Mandates 8e, 8x, 8ap)", () => {
+		const render043Code = readComponent("components/documents/fastClinicalPrint/RenderForm043u.tsx");
+		assert.ok(!render043Code.includes("Форма № 043/у"), "RenderForm043u must not cite 'Форма № 043/у'");
+		assert.ok(!render043Code.includes("Минздрава СССР"), "RenderForm043u must not cite 'Минздрава СССР'");
+		assert.ok(render043Code.includes("Медицинская карта приёма"), "RenderForm043u must label document 'Медицинская карта приёма'");
+
+		const cashPrintCode = readComponent("components/billing/cashShiftPrintTemplates.ts");
+		assert.ok(!cashPrintCode.includes("CRM DENTE • 54-ФЗ"), "cashShiftPrintTemplates must not cite '54-ФЗ'");
+		assert.ok(cashPrintCode.includes("CRM DENTE • Касса и чеки"), "cashShiftPrintTemplates must say 'Касса и чеки'");
+
+		const cashClosingCode = readComponent("components/billing/cashShiftClosingEngine.ts");
+		assert.ok(!cashClosingCode.includes("54-ФЗ"), "cashShiftClosingEngine must not cite '54-ФЗ' in user warnings");
+
+		const outpatientPrintCode = readComponent("components/documents/OutpatientCardPrintModal.tsx");
+		assert.ok(!outpatientPrintCode.includes("-043/"), "OutpatientCardPrintModal must not contain '-043/' in document prefixes");
+	});
 });
 

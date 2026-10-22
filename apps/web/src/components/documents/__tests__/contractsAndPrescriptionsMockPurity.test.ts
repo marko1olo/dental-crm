@@ -65,13 +65,16 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 	}
 
 	test("Functional verification: PrescriptionPrintModal defaults patientName to empty string instead of mock", () => {
-		const fullPath = path.join(webSrcDir, "components/prescriptions/PrescriptionPrintModal.tsx");
-		const content = fs.readFileSync(fullPath, "utf-8");
+		const targetPath = fs.existsSync(path.join(webSrcDir, "components/prescriptions/usePrescriptionContextStrings.ts"))
+			? path.join(webSrcDir, "components/prescriptions/usePrescriptionContextStrings.ts")
+			: path.join(webSrcDir, "components/prescriptions/PrescriptionPrintModal.tsx");
+		const content = fs.readFileSync(targetPath, "utf-8");
 
 		assert.ok(
-			content.includes('const patientName = patient?.fullName || "";') ||
+			content.includes('patientName: patient?.fullName || patientNameProp || ""') ||
+				content.includes('const patientName = patient?.fullName || "";') ||
 				content.includes('const patientName = patient?.fullName || patientNameProp || "";'),
-			"В PrescriptionPrintModal patientName должен иметь дефолтное значение пустой строки",
+			"В рецептурном модуле patientName должен иметь дефолтное значение пустой строки",
 		);
 	});
 

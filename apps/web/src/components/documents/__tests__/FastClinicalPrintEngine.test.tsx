@@ -130,9 +130,9 @@ describe("FastClinicalPrintEngine Vector Print Suite", () => {
 			/>
 		);
 		// Statutory header
-		assert.ok(html.includes("Форма № 043/у"));
-		assert.ok(html.includes("Минздрава СССР №1030"));
-		assert.ok(html.includes("Медицинская карта стоматологического больного №"));
+		assert.ok(html.includes("Медицинская карта приёма"));
+		assert.ok(html.includes("Электронная медицинская карта"));
+		assert.ok(html.includes("Медицинская карта приёма стоматологического пациента №"));
 		assert.ok(html.includes("043/2026-99"));
 		// Patient data
 		assert.ok(html.includes("Смирнов Алексей Викторович"));

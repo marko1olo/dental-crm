@@ -10,3 +10,4 @@ export * from "./crypto";
 export * from "./validation";
 export * from "./defaults";
 export * from "./print";
+export * from "./blankContract";

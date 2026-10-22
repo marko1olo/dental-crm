@@ -2,7 +2,7 @@ import type { PhotoVideoConsentMaterial } from "@dental/shared";
 import React, { useMemo } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import { photoVideoConsentBlockersReview } from "../photoVideoConsentBlockers";
+import { photoVideoConsentGuidanceReview } from "../photoVideoConsentGuiding";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
 export interface PhotoVideoConsentFormProps {
@@ -85,7 +85,7 @@ export const PhotoVideoConsentForm = React.memo(function PhotoVideoConsentForm({
 
 	const review = useMemo(
 		() =>
-			photoVideoConsentBlockersReview({
+			photoVideoConsentGuidanceReview({
 				materials: photoVideoMaterials,
 				clinicalRecordUseConfirmed: photoVideoClinicalRecordUseConfirmed,
 				anonymizationConfirmed: photoVideoAnonymizationConfirmed,

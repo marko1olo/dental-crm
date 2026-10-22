@@ -119,7 +119,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Печать справки"), "Must render print button");
 	});
 
-	it("renders PrescriptionForm107Modal with Order 1094n and Latin Recipe", () => {
+	it("renders PrescriptionForm107Modal with human clinical header and Latin Recipe", () => {
 		const html = renderToString(
 			<PrescriptionForm107Modal
 				isOpen={true}
@@ -131,8 +131,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		);
 
 		assert.ok(html.includes("prescription-form-107-modal"), "Must render modal container");
-		assert.ok(html.includes("107-1/у"), "Must reference Form 107-1/u");
-		assert.ok(html.includes("1094н"), "Must reference Order 1094n");
+		assert.ok(html.includes("Рецептурный бланк"), "Must render human-readable prescription blank title");
 		assert.ok(html.includes("Rp.:"), "Must render Latin Recipe prefix");
 		assert.ok(html.includes("Печать рецепта"), "Must render print button");
 	});

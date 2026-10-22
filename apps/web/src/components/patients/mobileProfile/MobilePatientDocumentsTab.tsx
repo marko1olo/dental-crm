@@ -36,7 +36,7 @@ export const MobilePatientDocumentsTab: React.FC<MobilePatientDocumentsTabProps>
 		},
 		{
 			title: "Справка для налогового вычета (13%)",
-			desc: "Справка об оплате медицинских услуг (ФНС КНД 1151156)",
+			desc: "Справка об оплате медицинских услуг для налоговой (НДФЛ)",
 			icon: FileCheck,
 			iconBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
 			onClick: onOpenTaxModal,

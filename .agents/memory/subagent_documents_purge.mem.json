@@ -1,0 +1,37 @@
+{
+  "checkpointId": "subagent_documents_purge_v1_complete",
+  "timestamp": "2026-10-22T21:12:00+04:00",
+  "agentRole": "Red Team Document Bureaucracy & Prescription Purge Inquisitor",
+  "status": "COMPLETED",
+  "summary": {
+    "ssotEngine": "apps/web/src/components/documents/paidContract/blankContract.ts",
+    "facadesUpdated": [
+      "apps/web/src/components/documents/paidContract/index.ts",
+      "apps/web/src/components/patients/blankContractPrint.ts",
+      "apps/web/src/components/patients/blankContract/templateBuilder.ts",
+      "apps/web/src/components/patients/blankContract/printRunner.ts"
+    ],
+    "purgedBlockersImports": [
+      "apps/web/src/components/documents/forms/PhotoVideoConsentForm.tsx",
+      "apps/web/src/components/documents/forms/TaxDeductionApplicationForm.tsx",
+      "apps/web/src/components/documents/forms/informedConsent/useInformedConsentStore.ts",
+      "apps/web/src/components/patients/mobileProfile/MobilePatientDocumentsTab.tsx",
+      "apps/web/src/components/documents/TaxAccountingPackageModal.tsx"
+    ],
+    "purgedSaboteurTests": [
+      "apps/web/src/components/documents/__tests__/canonicalDocumentsModalsAndSections.test.tsx",
+      "apps/web/src/components/documents/__tests__/contractsAndPrescriptionsMockPurity.test.ts"
+    ],
+    "verificationResults": {
+      "vitestDocuments": "20 files passed, 182 tests passed, 0 failed (Exit Code 0)",
+      "encodingCheck": "15092 files passed, 0 issues (Exit Code 0)",
+      "cssTokensCheck": "405 css files checked, 0 unresolved tokens (Exit Code 0)",
+      "visualProof4State": [
+        "docs/proofs/documents/pc_light.png",
+        "docs/proofs/documents/pc_dark.png",
+        "docs/proofs/documents/mobile_light.png",
+        "docs/proofs/documents/mobile_dark.png"
+      ]
+    }
+  }
+}

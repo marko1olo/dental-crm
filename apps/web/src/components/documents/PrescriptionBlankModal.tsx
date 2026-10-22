@@ -39,6 +39,7 @@ export interface PrescriptionBlankModalProps {
 	// biome-ignore lint/suspicious/noExplicitAny: Clinic profile draft object
 	readonly clinicProfileDraft?: any | undefined;
 	readonly initialMedicationId?: string | undefined;
+	readonly disablePortal?: boolean | undefined;
 }
 
 export type PrescriptionForm107ModalProps = PrescriptionBlankModalProps;
@@ -56,6 +57,7 @@ export const PrescriptionBlankModal: React.FC<PrescriptionBlankModalProps> = ({
 	doctorSpecialty,
 	clinicProfileDraft,
 	initialMedicationId,
+	disablePortal,
 }) => {
 	const doctorName = propDoctorName ?? doctorFullName;
 	if (!isOpen) return null;
@@ -66,6 +68,7 @@ export const PrescriptionBlankModal: React.FC<PrescriptionBlankModalProps> = ({
 			isOpen={isOpen}
 			onClose={onClose}
 			patient={patient}
+			disablePortal={disablePortal ?? true}
 			doctorName={doctorName || "Смирнов Алексей Владимирович"}
 			doctorSpecialty={doctorSpecialty || "Врач-стоматолог хирург"}
 			clinicName={String(draft.legalName || draft.clinicName || 'ООО "Стоматологическая клиника ДЕНТЕ"')}

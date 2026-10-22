@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
-import { taxApplicationBlockersReview } from "../taxApplicationBlockers";
+import { taxApplicationGuidanceReview } from "../taxApplicationGuiding";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
 export interface TaxDeductionApplicationFormProps {
@@ -117,7 +117,7 @@ export function TaxDeductionApplicationForm({
 
 		const review = useMemo(
 			() =>
-				taxApplicationBlockersReview({
+				taxApplicationGuidanceReview({
 					taxpayerFullName: taxApplicationTaxpayerFullName,
 					taxpayerInn: taxApplicationTaxpayerInn,
 					taxpayerBirthDate: taxApplicationTaxpayerBirthDate,

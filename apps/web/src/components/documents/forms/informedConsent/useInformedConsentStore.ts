@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { usePatientStore } from "../../../../store/patientStore";
-import { informedConsentBlockersReview } from "../../informedConsentBlockers";
+import { informedConsentGuidanceReview } from "../../informedConsentGuiding";
 import { generateConsentPrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates.js";
 import { showToast } from "../../../GlobalToast";
 import type { InformedConsentFormProps } from "../InformedConsentForm";
@@ -84,7 +84,7 @@ export function useInformedConsentStore({
 		showToast("Согласие заполнено нормой", "success", 3000);
 	};
 
-	const review = useMemo(() => informedConsentBlockersReview({
+	const review = useMemo(() => informedConsentGuidanceReview({
 		intervention: docStore.informedConsentIntervention, toothOrArea: docStore.informedConsentToothOrArea,
 		inferredTreatmentArea: inferredTreatmentArea ?? "", diagnosisOrIndication: docStore.informedConsentDiagnosisOrIndication,
 		activeVisitComplaint: activeVisitComplaint ?? "", expectedBenefit: docStore.informedConsentExpectedBenefit,

@@ -40,13 +40,13 @@ export function RenderForm043u({
 				</div>
 				<div className="text-right fast-print-sub">
 					<div>Медицинская документация</div>
-					<div className="font-bold">Форма № 043/у</div>
-					<div>Утв. приказом Минздрава СССР №1030</div>
+					<div className="font-bold">Медицинская карта приёма</div>
+					<div>Электронная медицинская карта</div>
 				</div>
 			</div>
 
 			<div className="fast-print-doc-title">
-				Медицинская карта стоматологического больного № {patient.cardNumber}
+				Медицинская карта приёма стоматологического пациента № {patient.cardNumber}
 			</div>
 
 			<table className="fast-print-table">
