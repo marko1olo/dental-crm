@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, FileText, Printer, ShieldCheck } from "lucide-react";
+import { Download, Printer, ShieldCheck } from "lucide-react";
 import type { MedicalRecordExtractPayload } from "./egiszRemdPrintTemplates";
 
 export interface MedicalRecordExtractDrawerProps {
@@ -24,8 +24,8 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 
 	const extractOptions = [
 		{ id: "sanitation", title: "Справка о санации", desc: "Для работы, бассейна, школы и плановой госпитализации" },
-		{ id: "sanatorium", title: "Санаторно-курортная карта", desc: "Форма 072/у: стоматологический раздел и допуск" },
-		{ id: "clinical_extract", title: "Выписка из карты 043/у", desc: "Полная выписка диагнозов и оказанных услуг" },
+		{ id: "sanatorium", title: "Санаторно-курортная карта", desc: "Стоматологический раздел и допуск" },
+		{ id: "clinical_extract", title: "Выписка из медицинской карты", desc: "Полная выписка диагнозов и оказанных услуг" },
 	] as const;
 
 	const handleExtractTypeChange = (type: "sanitation" | "sanatorium" | "clinical_extract") => {
@@ -54,7 +54,6 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 				<p className="egisz-extract-sub">Формирование официальных справок в 1 клик на основе медкарты</p>
 			</div>
 
-			{/* Выбор типа выписки */}
 			<div className="egisz-extract-types">
 				{extractOptions.map((opt) => (
 					<button
@@ -69,7 +68,6 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 				))}
 			</div>
 
-			{/* Заключение врача */}
 			<div className="egisz-extract-field">
 				<label className="egisz-extract-label">Клиническое заключение</label>
 				<textarea
@@ -81,7 +79,6 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 				/>
 			</div>
 
-			{/* Блок врача и реквизитов */}
 			<div className="egisz-extract-doctor-box">
 				<ShieldCheck size={18} className="text-teal" />
 				<div>
@@ -90,7 +87,6 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 				</div>
 			</div>
 
-			{/* Зона большого пальца (CTA кнопки) */}
 			<div className="egisz-extract-cta-row">
 				<button
 					type="button"

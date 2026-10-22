@@ -70,7 +70,7 @@ export const EgiszFnsTaxTab: React.FC<EgiszFnsTaxTabProps> = ({
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 			{/* Form Meta */}
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+			<div className="egisz-fns-meta-grid">
 				<div>
 					<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
 						Номер справки
@@ -136,7 +136,7 @@ export const EgiszFnsTaxTab: React.FC<EgiszFnsTaxTabProps> = ({
 			</div>
 
 			{/* Taxpayer & Patient Details */}
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+			<div className="egisz-fns-parties-grid">
 				<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "0.875rem", background: "var(--paper)" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)", marginBottom: "0.75rem" }}>
 						1. Налогоплательщик (Получатель вычета)

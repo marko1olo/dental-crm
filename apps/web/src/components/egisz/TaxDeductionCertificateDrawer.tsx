@@ -14,11 +14,8 @@ export interface TaxDeductionCertificateDrawerProps {
 
 export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDrawerProps> = ({
 	patientName,
-	patientInn = "770123456789",
-	payments = [
-		{ date: "2026-02-14", serviceCode: "1", serviceDescription: "Лечение кариеса и пломбирование", amountKopecks: 1250000 },
-		{ date: "2026-05-20", serviceCode: "2", serviceDescription: "Установка дентального имплантата", amountKopecks: 3600000 },
-	],
+	patientInn = "",
+	payments = [],
 	defaultYear = 2026,
 	onPrintCertificate,
 	onExportPdf,
@@ -33,7 +30,6 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 
 	return (
 		<div className="egisz-tax-drawer" data-testid="tax-deduction-drawer">
-			{/* Год налогового периода */}
 			<div className="egisz-tax-section">
 				<label className="egisz-tax-label">Отчетный налоговый период</label>
 				<div className="egisz-year-chips" role="radiogroup">
@@ -45,18 +41,16 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 				</div>
 			</div>
 
-			{/* Крупная итоговая сумма расходов */}
 			<div className="egisz-tax-summary-hero">
-				<div className="egisz-tax-hero-label">Оплачено медицинских услуг по чекам 54-ФЗ</div>
+				<div className="egisz-tax-hero-label">Оплачено за медицинские услуги</div>
 				<div className="egisz-tax-hero-amount" data-testid="tax-total-amount">
 					{`${formatKopecksToRubles(totalKopecks)} ₽`}
 				</div>
 				<div className="egisz-tax-hero-sub">
-					{`Стандартное (код 1): ${formatKopecksToRubles(code1Kopecks)} ₽ • Дорогостоящее (код 2): ${formatKopecksToRubles(code2Kopecks)} ₽`}
+					{`Обычное лечение (код 1): ${formatKopecksToRubles(code1Kopecks)} ₽ • Дорогостоящее (код 2): ${formatKopecksToRubles(code2Kopecks)} ₽`}
 				</div>
 			</div>
 
-			{/* Степень родства */}
 			<div className="egisz-tax-section">
 				<label className="egisz-tax-label">Получатель вычета</label>
 				<div className="egisz-rel-chips">
@@ -73,29 +67,30 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 				</div>
 			</div>
 
-			{/* Данные налогоплательщика */}
 			<div className="egisz-tax-patient-box">
 				<div className="text-sm font-semibold">{patientName}</div>
-				<div className="text-xs text-muted">ИНН: {patientInn} • Электронный документооборот ФНС (КНД 1151156)</div>
+				<div className="text-xs text-muted">ИНН: {patientInn || "не указан"} • Справка для налогового вычета (13% НДФЛ)</div>
 			</div>
 
-			{/* Чек-лист кассы 54-ФЗ */}
 			<div className="egisz-tax-payments-list">
-				<div className="text-xs font-bold text-muted uppercase">Подтвержденные оплаты кассы ({payments.length})</div>
-				{payments.map((p, idx) => (
-					<div key={idx} className="egisz-tax-payment-item">
-						<div>
-							<div className="font-semibold text-xs">{p.serviceDescription}</div>
-							<div className="text-xs text-muted">
-								{typeof p.date === "string" ? p.date : p.date.toLocaleDateString("ru-RU")} • Код: {p.serviceCode}
+				<div className="text-xs font-bold text-muted uppercase">Подтвержденные оплаты ({payments.length})</div>
+				{payments.length === 0 ? (
+					<div className="text-xs text-muted py-2">Нет зарегистрированных оплат за выбранный период</div>
+				) : (
+					payments.map((p, idx) => (
+						<div key={idx} className="egisz-tax-payment-item">
+							<div>
+								<div className="font-semibold text-xs">{p.serviceDescription}</div>
+								<div className="text-xs text-muted">
+									{typeof p.date === "string" ? p.date : p.date.toLocaleDateString("ru-RU")} • Код: {p.serviceCode}
+								</div>
 							</div>
+							<div className="font-bold text-sm">{`${formatKopecksToRubles(p.amountKopecks)} ₽`}</div>
 						</div>
-						<div className="font-bold text-sm">{`${formatKopecksToRubles(p.amountKopecks)} ₽`}</div>
-					</div>
-				))}
+					))
+				)}
 			</div>
 
-			{/* Зона большого пальца (Floating Bottom CTA) */}
 			<div className="egisz-tax-footer-cta">
 				<button type="button" onClick={() => onPrintCertificate?.(selectedYear)} className="egisz-btn egisz-btn-primary full-width" data-testid="print-fns-tax-btn">
 					<QrCode size={18} /> Печать бланка ФНС с QR-кодом

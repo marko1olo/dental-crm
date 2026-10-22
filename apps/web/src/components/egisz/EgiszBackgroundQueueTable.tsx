@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertCircle, CheckCircle, Clock, Download, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Download, RefreshCw, Send } from "lucide-react";
 import type { RemdDocumentRecord } from "./egiszJournalData";
 
 export interface EgiszBackgroundQueueTableProps {
@@ -7,6 +7,7 @@ export interface EgiszBackgroundQueueTableProps {
 	readonly onRetryRecord?: ((record: RemdDocumentRecord) => void) | undefined;
 	readonly onDownloadZip?: ((record: RemdDocumentRecord) => void) | undefined;
 	readonly onRefresh?: (() => void) | undefined;
+	readonly onBatchSendShift?: (() => void) | undefined;
 }
 
 const getDocTitle = (r: RemdDocumentRecord) => (r as any).docTitle || r.docTypeName || `СЭМД ${(r as any).semdDocCode || r.docTypeCode || "105"}`;
@@ -17,6 +18,7 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 	onRetryRecord,
 	onDownloadZip,
 	onRefresh,
+	onBatchSendShift,
 }) => {
 	const renderBadge = (status: string) => {
 		if (status === "registered" || status === "accepted_by_egisz" || status === "sent") {
@@ -28,6 +30,8 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 		return <span className="egisz-queue-badge warning"><Clock size={12} /> В очереди</span>;
 	};
 
+	const pendingCount = records.filter((r) => r.status !== "registered" && r.status !== "accepted_by_egisz" && r.status !== "sent").length;
+
 	return (
 		<div className="egisz-queue-wrap" data-testid="egisz-queue-table">
 			<div className="egisz-queue-header-row">
@@ -35,11 +39,18 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 					<h3 className="egisz-queue-heading">Фоновый журнал пакетов ЕГИСЗ</h3>
 					<p className="egisz-queue-subheading">Асинхронная очередь отправки СЭМД без блокировки работы врача</p>
 				</div>
-				{onRefresh && (
-					<button type="button" onClick={onRefresh} className="egisz-btn sm" aria-label="Обновить журнал">
-						<RefreshCw size={14} /> Обновить
-					</button>
-				)}
+				<div style={{ display: "flex", gap: "0.5rem" }}>
+					{onBatchSendShift && (
+						<button type="button" onClick={onBatchSendShift} className="egisz-btn sm egisz-btn-primary" data-testid="batch-send-shift-btn">
+							<Send size={14} /> Отправить пакет смены ({pendingCount})
+						</button>
+					)}
+					{onRefresh && (
+						<button type="button" onClick={onRefresh} className="egisz-btn sm" aria-label="Обновить журнал">
+							<RefreshCw size={14} /> Обновить
+						</button>
+					)}
+				</div>
 			</div>
 
 			{records.length === 0 ? (
@@ -50,17 +61,10 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 				</div>
 			) : (
 				<>
-					{/* Десктопная таблица */}
 					<div className="egisz-queue-desktop-table">
 						<table className="egisz-queue-table">
 							<thead>
-								<tr>
-									<th>Документ</th>
-									<th>Пациент</th>
-									<th>Время</th>
-									<th>Статус</th>
-									<th style={{ textAlign: "right" }}>Действия</th>
-								</tr>
+								<tr><th>Документ</th><th>Пациент</th><th>Время</th><th>Статус</th><th style={{ textAlign: "right" }}>Действия</th></tr>
 							</thead>
 							<tbody>
 								{records.map((r) => (
@@ -89,25 +93,17 @@ export const EgiszBackgroundQueueTable: React.FC<EgiszBackgroundQueueTableProps>
 						</table>
 					</div>
 
-					{/* Мобильный список карточек по Apple HIG */}
 					<div className="egisz-queue-mobile-cards">
 						{records.map((r) => (
 							<div key={r.id} className="egisz-queue-card" data-testid={`queue-card-${r.id}`}>
-								<div className="egisz-card-top">
-									<span className="font-bold">{getDocTitle(r)}</span>
-									{renderBadge(r.status)}
-								</div>
+								<div className="egisz-card-top"><span className="font-bold">{getDocTitle(r)}</span>{renderBadge(r.status)}</div>
 								<div className="egisz-card-patient">{getPatientName(r)}</div>
 								<div className="egisz-card-actions">
 									{(r.status === "error" || r.status === "rejected_by_egisz" || r.status === "draft") && onRetryRecord && (
-										<button type="button" onClick={() => onRetryRecord(r)} className="egisz-btn sm flex-1">
-											<RefreshCw size={14} /> Повторить
-										</button>
+										<button type="button" onClick={() => onRetryRecord(r)} className="egisz-btn sm flex-1"><RefreshCw size={14} /> Повторить</button>
 									)}
 									{onDownloadZip && (
-										<button type="button" onClick={() => onDownloadZip(r)} className="egisz-btn sm">
-											<Download size={14} /> ZIP
-										</button>
+										<button type="button" onClick={() => onDownloadZip(r)} className="egisz-btn sm"><Download size={14} /> ZIP</button>
 									)}
 								</div>
 							</div>

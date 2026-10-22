@@ -96,7 +96,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-						Подписание СЭМД УКЭП (Приказ Минздрава № 947н)
+						Электронная подпись документов (УКЭП)
 					</div>
 					<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "var(--primary-strong)" }}>
 						КриптоПро CSP
@@ -122,7 +122,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							cursor: "pointer",
 						}}
 					>
-						Печатный бланк СЭМД ф. 043/у
+						Медицинская карта приёма
 					</button>
 					<button
 						type="button"

@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { AlertCircle, FileArchive, RefreshCw } from "lucide-react";
+import { AlertCircle, FileArchive, RefreshCw, Send } from "lucide-react";
 import type { RemdDocumentRecord, RemdDocumentStatus } from "../egiszJournalData";
 
 export interface EgiszJournalTabProps {
@@ -23,6 +23,7 @@ export interface EgiszJournalTabProps {
 	readonly onExportJournalZip?: ((record: RemdDocumentRecord) => void) | undefined;
 	readonly onSwitchToSignatureTab: () => void;
 	readonly onRefreshOutbox?: (() => void) | undefined;
+	readonly onBatchSendShift?: (() => void) | undefined;
 	readonly isLoading?: boolean | undefined;
 }
 
@@ -58,6 +59,7 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	onExportJournalZip,
 	onSwitchToSignatureTab,
 	onRefreshOutbox,
+	onBatchSendShift,
 	isLoading,
 }) => {
 	const registeredCount = records.filter((r) => r.status === "registered" || r.status === "accepted_by_egisz").length;
@@ -74,10 +76,33 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 						Журнал медицинских документов РЭМД ЕГИСЗ
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-						Реестр СЭМД 043/у (протоколы консультаций и вмешательств)
+						Журнал электронных медицинских карт (протоколы консультаций и вмешательств)
 					</p>
 				</div>
 				<div style={{ display: "flex", gap: "0.5rem" }}>
+					{onBatchSendShift && (
+						<button
+							type="button"
+							onClick={onBatchSendShift}
+							className="egisz-btn sm"
+							data-testid="journal-batch-send-shift-btn"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								padding: "0.5rem 0.9rem",
+								fontSize: "0.8125rem",
+								fontWeight: 700,
+								borderRadius: "6px",
+								background: "var(--teal)",
+								color: "var(--ink-inverse)",
+								border: "none",
+								cursor: "pointer",
+							}}
+						>
+							<Send size={15} /> ✓ Отправить пакет смены в РЭМД
+						</button>
+					)}
 					{onRefreshOutbox && (
 						<button
 							type="button"

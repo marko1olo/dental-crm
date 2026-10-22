@@ -15,6 +15,7 @@ export interface EgiszCertificatesHubModalProps {
 	readonly onClose: () => void;
 	readonly initialSection?: EgiszHubSection;
 	readonly patientName?: string;
+	readonly patientInn?: string;
 	readonly records?: readonly RemdDocumentRecord[];
 	readonly onRetryRecord?: (record: RemdDocumentRecord) => void;
 }
@@ -24,6 +25,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 	onClose,
 	initialSection = "queue",
 	patientName = "Смирнова Елена Васильевна",
+	patientInn = "",
 	records = [
 		{ id: "remd-1", docTitle: "СЭМД 105: Протокол консультации", patientFullName: patientName, status: "accepted_by_egisz", createdAt: "2026-10-15T10:30:00Z" } as unknown as RemdDocumentRecord,
 		{ id: "remd-2", docTitle: "СЭМД 303: Протокол операции", patientFullName: patientName, status: "sent", createdAt: "2026-10-15T11:45:00Z" } as unknown as RemdDocumentRecord,
@@ -46,9 +48,9 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			documentDate: new Date().toISOString(),
 			taxYear,
 			clinic: { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701987654", ogrn: "1157746000000" },
-			taxpayer: { fullName: patientName, inn: "770123456789" },
+			taxpayer: { fullName: patientName, inn: patientInn || undefined },
 			patient: { fullName: patientName, relationshipCode: "1" },
-			payments: [{ date: `${taxYear}-03-12`, serviceCode: "1", serviceDescription: "Лечение кариеса", amountKopecks: 2450000 }],
+			payments: [],
 			signer: { fullName: "Главврач Клиники", position: "Главный врач" },
 		}));
 	};
@@ -83,7 +85,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 							className={`egisz-hub-tab ${activeSection === "tax_deduction" ? "active" : ""}`}
 							onClick={() => setActiveSection("tax_deduction")}
 						>
-							<Receipt size={15} /> Справка 3-НДФЛ
+							<Receipt size={15} /> Справка для налогового вычета
 						</button>
 						<button
 							type="button"
@@ -103,7 +105,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 
 				<div className="egisz-hub-body">
 					{activeSection === "queue" && <EgiszBackgroundQueueTable records={records} onRetryRecord={onRetryRecord} />}
-					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} onPrintCertificate={handlePrintFns} />}
+					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} onPrintCertificate={handlePrintFns} />}
 					{activeSection === "extracts" && <MedicalRecordExtractDrawer patientName={patientName} onPrintExtract={(p) => openPrint(generateMedicalRecordExtractPrintHtml(p))} />}
 				</div>
 			</div>

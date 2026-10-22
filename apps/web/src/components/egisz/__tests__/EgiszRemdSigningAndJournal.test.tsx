@@ -54,20 +54,16 @@ describe("1. EgiszRemdHubModal — UKEP Signing Studio (Order 947n and 63-FZ)", 
 		);
 
 		assert.ok(
-			html.includes("Подписание СЭМД УКЭП"),
-			"Contains title with SEMD UKEP signing",
-		);
-		assert.ok(
-			html.includes("Приказ Минздрава № 947н"),
-			"Contains reference to Order 947n",
+			html.includes("Электронная подпись документов (УКЭП)"),
+			"Contains clean title for electronic signature",
 		);
 		assert.ok(
 			html.includes("КриптоПро"),
 			"Contains CryptoPro CSP status bar",
 		);
 		assert.ok(
-			html.includes("Печатный бланк СЭМД ф. 043/у"),
-			"Contains view tab for Form 043/u sheet",
+			html.includes("Медицинская карта приёма"),
+			"Contains view tab for clinical record sheet",
 		);
 		assert.ok(
 			html.includes("HL7 CDA R2 XML"),
@@ -188,8 +184,8 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 			"Contains journal modal title",
 		);
 		assert.ok(
-			html.includes("Реестр СЭМД 043/у"),
-			"Contains subtitle with supported SEMD document codes",
+			html.includes("Журнал электронных медицинских карт"),
+			"Contains subtitle with clean clinical records terminology",
 		);
 		assert.ok(
 			html.includes("Зарегистрировано в РЭМД"),

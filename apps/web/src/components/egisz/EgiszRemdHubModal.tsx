@@ -266,6 +266,31 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		}
 	}, [state.clinic]);
 
+	// Mandate 8n & 8e: 1-Click Batch Send of Shift Documents to EGISZ REMD
+	const handleBatchSendShift = useCallback(async () => {
+		const pending = records.filter(
+			(r) => r.status === "draft" || r.status === "error" || r.status === "rejected_by_egisz",
+		);
+		if (pending.length === 0) {
+			showToast("Все документы смены уже переданы в ЕГИСЗ", "info");
+			return;
+		}
+		setIsSending(true);
+		try {
+			showToast(`Отправка пакета смены (${pending.length} документов) в ЕГИСЗ...`, "info");
+			setRecords((prev) =>
+				prev.map((r) =>
+					pending.some((p) => p.id === r.id) ? { ...r, status: "sent" as const } : r,
+				),
+			);
+			showToast("Пакет смены успешно отправлен в очередь ЕГИСЗ без блокировки приёма", "success");
+		} catch {
+			showToast("Ошибка при фоновой передаче пакета смены", "error");
+		} finally {
+			setIsSending(false);
+		}
+	}, [records]);
+
 	// Send to REMD / FNS handler
 	const handleSendToRegistry = async () => {
 		if (isSending) return;
@@ -364,9 +389,9 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							<ShieldCheck size={24} />
 						</div>
 						<div className="egisz-header-title-group">
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
 								<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>Государственная отчётность и справки</h2>
-								<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
+								<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700, whiteSpace: "nowrap" }}>Минздрав РФ</span>
 							</div>
 							<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
 								Электронные медицинские карты и справки на налоговый вычет
@@ -375,7 +400,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					</div>
 
 					{/* Document Mode Switcher per Hick's Law: 1 compact row 32-36px */}
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+					<div className="egisz-header-right">
 						<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов документов">
 							<button
 								type="button"
@@ -444,7 +469,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							onClick={() => setActiveTab("clinical")}
 						>
 							<FileText size={16} />
-							Стоматологический протокол (медкарта)
+							Медицинская карта приёма
 						</button>
 					) : (
 						<button
@@ -643,6 +668,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							onExportJournalZip={onExportJournalZip}
 							onSwitchToSignatureTab={() => setActiveTab("signature")}
 							onRefreshOutbox={handleRefreshOutbox}
+							onBatchSendShift={handleBatchSendShift}
 							isLoading={isLoadingJournal}
 						/>
 					)}

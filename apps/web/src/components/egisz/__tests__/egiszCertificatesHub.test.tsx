@@ -69,7 +69,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		}
 	});
 
-	it("2.1 EgiszCertificatesHubModal renders 3 statutory sections (Queue, Tax 3-NDFL, Extracts)", () => {
+	it("2.1 EgiszCertificatesHubModal renders 3 statutory sections (Queue, Tax Deduction, Extracts)", () => {
 		const html = renderToString(
 			createElement(EgiszCertificatesHubModal, {
 				isOpen: true,
@@ -79,7 +79,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		);
 		assert.ok(html.includes("ЕГИСЗ и официальные справки"));
 		assert.ok(html.includes("Фоновый журнал"));
-		assert.ok(html.includes("Справка 3-НДФЛ"));
+		assert.ok(html.includes("Справка для налогового вычета"));
 		assert.ok(html.includes("Выписки и справки"));
 		assert.ok(html.includes("egisz-mobile-drag-handle"), "Must contain Apple HIG drag handle for mobile bottom sheet");
 	});
@@ -112,7 +112,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		assert.ok(html.includes("egisz-empty-box"));
 	});
 
-	it("3.1 TaxDeductionCertificateDrawer calculates exact totals and renders 54-FZ payments", () => {
+	it("3.1 TaxDeductionCertificateDrawer calculates exact totals and renders payments without 54-FZ jargon", () => {
 		const payments = [
 			{ date: "2026-02-14", serviceCode: "1" as const, serviceDescription: "Лечение кариеса", amountKopecks: 1500000 },
 			{ date: "2026-06-10", serviceCode: "2" as const, serviceDescription: "Имплантация", amountKopecks: 3500000 },
@@ -125,6 +125,8 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 			}),
 		);
 		assert.ok(html.includes("50000.00 ₽"), "Total sum 50000.00 Rubles must be calculated exactly");
+		assert.ok(html.includes("Оплачено за медицинские услуги"), "Clean Russian heading without 54-FZ jargon");
+		assert.ok(!html.includes("по чекам 54-ФЗ"), "Must not contain raw 54-FZ jargon in client UI");
 		assert.ok(html.includes("Печать бланка ФНС с QR-кодом"));
 		assert.ok(html.includes("Кузнецов А.А."));
 		assert.ok(html.includes("770199887766"));
@@ -140,7 +142,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		);
 		assert.ok(html.includes("Справка о санации"));
 		assert.ok(html.includes("Санаторно-курортная карта"));
-		assert.ok(html.includes("Выписка из карты 043/у"));
+		assert.ok(html.includes("Выписка из медицинской карты"), "Must use clean clinical language without 043/u order number");
 		assert.ok(html.includes("Распечатать официальный бланк"));
 	});
 
