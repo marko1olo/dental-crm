@@ -66,6 +66,10 @@ export function useIncomingCallBookingActions({
 			isCitoEmergency: slotType === "today_cito",
 		};
 		useScheduleStore.getState().setPendingStageBooking(slotInfo);
+		if (useAppStore.getState().currentView !== "schedule") {
+			useAppStore.getState().setCurrentView("schedule");
+		}
+		useUiSurfaceStore.getState().openDrawer("quick_booking");
 		if (typeof window !== "undefined") {
 			try { window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo })); } catch {}
 		}

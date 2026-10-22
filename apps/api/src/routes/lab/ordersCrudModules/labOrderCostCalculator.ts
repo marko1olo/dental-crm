@@ -1,28 +1,15 @@
 import { calculateBusinessDaysDueDate, CANONICAL_DENTAL_LAB_PRESETS } from "../types.js";
+import type {
+	LabOrderCostBreakdown,
+	LabOrderTurnaroundResult,
+	LabOrderFittingSchedule,
+} from "./labOrderCostCalculatorTypes.js";
 
-/**
- * Layer 1/2: Cost, Margin, and Turnaround Deadlines Calculator for Dental Lab Orders.
- */
-
-export interface LabOrderCostBreakdown {
-	suggestedPriceRub: number;
-	estimatedCostRub: number;
-	grossMarginRub: number;
-	grossMarginPercent: number;
-	unitsCount: number;
-}
-
-export interface LabOrderTurnaroundResult {
-	turnaroundBusinessDays: number;
-	dueDate: Date;
-	isUrgent: boolean;
-}
-
-export interface LabOrderFittingSchedule {
-	productionDueDate: Date;
-	clinicDeliveryDate: Date;
-	suggestedFittingDate: Date;
-}
+export type {
+	LabOrderCostBreakdown,
+	LabOrderTurnaroundResult,
+	LabOrderFittingSchedule,
+};
 
 /**
  * Standard business turnaround days map by construction/material type.

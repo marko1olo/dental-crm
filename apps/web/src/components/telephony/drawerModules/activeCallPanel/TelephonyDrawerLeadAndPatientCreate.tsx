@@ -78,6 +78,7 @@ export function TelephonyDrawerLeadAndPatientCreate({
 						placeholder="ФИО пациента (по умолчанию: Пациент + телефон)"
 						className="w-full min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-xs font-medium text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						data-testid="drawer-new-patient-name-input"
+						data-legacy-testid="popup-drawer-new-patient-name-input"
 					/>
 					<button
 						type="button"
@@ -85,6 +86,7 @@ export function TelephonyDrawerLeadAndPatientCreate({
 						disabled={isCreatingPatient}
 						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 						data-testid="drawer-quick-create-patient-btn"
+						data-legacy-testid="popup-drawer-quick-create-patient-btn"
 					>
 						<UserCheck size={15} />
 						<span>

@@ -3,6 +3,7 @@ import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../DentalLabOrderModal";
 import { is3DScanUrl } from "../../LabAttachScanModal";
+import { copyLabPortalLink, executeLabPayFromCashbox } from "./labOrderActionHelpers";
 
 export function useLabOrderActions(
 	fetchOrders: () => Promise<void>,
@@ -50,14 +51,7 @@ export function useLabOrderActions(
 		if (inFlightSetRef.current.has(lockKey)) return;
 		inFlightSetRef.current.add(lockKey);
 		try {
-			const res = await fetch(`/api/lab-orders/${order.id}/pay`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-				body: JSON.stringify({ amountRub: order.priceRub, notes: `Оплата ЗТЛ (зуб ${order.toothFdi || "—"})` }),
-			});
-			if (!res.ok) throw new Error("Ошибка оплаты наряда из кассы");
-			showToast(`Наряд ЗТЛ успешно оплачен из кассы (${order.priceRub} ₽)`, "success");
-			void fetchOrders();
+			await executeLabPayFromCashbox(order, fetchOrders);
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось оплатить наряд", "error");
 		} finally {
@@ -114,10 +108,7 @@ export function useLabOrderActions(
 	}, [fetchOrders]);
 
 	const copyPortalLink = useCallback((token?: string) => {
-		if (!token) return;
-		const url = `${window.location.origin}/#/portal/lab-order/${token}`;
-		void navigator.clipboard.writeText(url);
-		showToast("Ссылка для техника скопирована в буфер обмена", "success");
+		copyLabPortalLink(token);
 	}, []);
 
 	return { handleStatusChange, handlePayFromCashbox, handleMarkInstalled, handleSaveAttachedFile, copyPortalLink };

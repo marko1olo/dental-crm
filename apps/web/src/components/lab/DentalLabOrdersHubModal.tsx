@@ -11,28 +11,17 @@ import { DentalLabHubHeader } from "./hub/DentalLabHubHeader";
 import { DentalLabHubAlerts } from "./hub/DentalLabHubAlerts";
 import { useDentalLabHubData } from "./hub/useDentalLabHubData";
 import { useDentalLabHubActions } from "./hub/useDentalLabHubActions";
+import {
+	type DentalLabOrdersHubModalProps,
+	SAMPLE_LABS,
+} from "./hub/dentalLabHubModalTypes";
+
+export type { DentalLabOrdersHubModalProps };
+export { SAMPLE_LABS };
+
 if (typeof document !== "undefined") {
 	void import("./dentalLab.css");
 }
-
-export interface DentalLabOrdersHubModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly initialOrders?: readonly DentalLabWorkflowOrder[] | undefined;
-	readonly onSaveOrder?: ((order: DentalLabWorkflowOrder) => void) | undefined;
-	readonly currentDoctorName?: string | undefined;
-	readonly currentPatientName?: string | undefined;
-	readonly currentPatientId?: string | undefined;
-	readonly currentToothNumber?: number | string | undefined;
-	readonly treatmentPlanAgeDays?: number | undefined;
-	readonly isPlanExpired?: boolean | undefined;
-}
-
-const SAMPLE_LABS = ["CAD/CAM Центр Дентал-Мастер", "ArtDent Премиум Лаб", "ZirconLab Pro", "Центральная ЗТЛ"] as const;
-
-// Live API Contract & Delegation (hub/useDentalLabHubData & hub/useDentalLabHubActions):
-// - GET/POST /api/clinical/lab-orders & /api/dental-lab/orders
-// - Authorization: denteAdminSecretRequestHeaders()
 
 export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = ({
 	isOpen, onClose, initialOrders, onSaveOrder, currentDoctorName,

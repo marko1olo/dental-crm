@@ -1,90 +1,54 @@
 import React from "react";
+import type { DentalLabShadePickerProps, ShadeSystemKey } from "./shades/dentalLabShadePickerTypes";
+import { DentalLabPhotoReference } from "./shades/DentalLabPhotoReference";
+import { DentalLabShadeHeader } from "./shades/DentalLabShadeHeader";
+import { DentalLabStratificationSection } from "./shades/DentalLabStratificationSection";
+import { DentalLabCharacterizationCheckboxes } from "./shades/DentalLabCharacterizationCheckboxes";
+import { DentalLabShadeSystemViews } from "./shades/DentalLabShadeSystemViews";
 
 if (typeof document !== "undefined") {
 	void import("../../styles/components.css");
 }
 
-import { DentalLab3dMasterGrid } from "./shades/DentalLab3dMasterGrid";
-import { DentalLabBleachGrid } from "./shades/DentalLabBleachGrid";
-import { DentalLabClassicalGrid } from "./shades/DentalLabClassicalGrid";
-import { DentalLabPhotoReference } from "./shades/DentalLabPhotoReference";
-import { DentalLabShadeHeader } from "./shades/DentalLabShadeHeader";
-import { DentalLabStratificationSection } from "./shades/DentalLabStratificationSection";
-import { DentalLabStumpGrid } from "./shades/DentalLabStumpGrid";
+export type { DentalLabShadePickerProps };
 
-export interface DentalLabShadePickerProps {
-	readonly shadeSystem?: ("classical" | "3d_master" | "bleach" | "stump") | undefined;
-	readonly onShadeSystemChange?:
-		| ((system: "classical" | "3d_master" | "bleach" | "stump") => void)
-		| undefined;
-	readonly selectedShade: string;
-	readonly onSelectShade: (shade: string) => void;
-	readonly selectedStumpShade?: string | null | undefined;
-	readonly onSelectStumpShade?: ((stumpShade: string) => void) | undefined;
-	readonly showStumpSelector?: boolean | undefined;
-	readonly showBleachTab?: boolean | undefined;
-	readonly compact?: boolean | undefined;
-	readonly shadePhotoUrl?: string | null | undefined;
-	readonly onShadePhotoChange?: ((url: string | null) => void) | undefined;
+export function DentalLabShadePicker(props: DentalLabShadePickerProps): React.JSX.Element {
+	const {
+		shadeSystem = "classical",
+		onShadeSystemChange,
+		selectedShade,
+		onSelectShade,
+		selectedStumpShade,
+		onSelectStumpShade,
+		showStumpSelector = false,
+		showBleachTab = true,
+		shadePhotoUrl,
+		onShadePhotoChange,
+		showStratification = false,
+		shadeCervical,
+		onShadeCervicalChange,
+		shadeBody,
+		onShadeBodyChange,
+		shadeIncisal,
+		onShadeIncisalChange,
+		translucency,
+		onTranslucencyChange,
+		mamelons,
+		onMamelonsChange,
+		calcifications,
+		onCalcificationsChange,
+		opalescence,
+		onOpalescenceChange,
+	} = props;
 
-	// 3-Zone Stratification & Characterizations (SSOT)
-	readonly showStratification?: boolean | undefined;
-	readonly shadeCervical?: string | undefined;
-	readonly onShadeCervicalChange?: ((s: string) => void) | undefined;
-	readonly shadeBody?: string | undefined;
-	readonly onShadeBodyChange?: ((s: string) => void) | undefined;
-	readonly shadeIncisal?: string | undefined;
-	readonly onShadeIncisalChange?: ((s: string) => void) | undefined;
-	readonly translucency?: string | undefined;
-	readonly onTranslucencyChange?: ((t: string) => void) | undefined;
-	readonly mamelons?: boolean | undefined;
-	readonly onMamelonsChange?: ((m: boolean) => void) | undefined;
-	readonly calcifications?: boolean | undefined;
-	readonly onCalcificationsChange?: ((c: boolean) => void) | undefined;
-	readonly opalescence?: boolean | undefined;
-	readonly onOpalescenceChange?: ((o: boolean) => void) | undefined;
-}
-
-export function DentalLabShadePicker({
-	shadeSystem = "classical",
-	onShadeSystemChange,
-	selectedShade,
-	onSelectShade,
-	selectedStumpShade,
-	onSelectStumpShade,
-	showStumpSelector = false,
-	showBleachTab = true,
-	compact: _compact = false,
-	shadePhotoUrl,
-	onShadePhotoChange,
-	showStratification = false,
-	shadeCervical,
-	onShadeCervicalChange,
-	shadeBody,
-	onShadeBodyChange,
-	shadeIncisal,
-	onShadeIncisalChange,
-	translucency,
-	onTranslucencyChange,
-	mamelons,
-	onMamelonsChange,
-	calcifications,
-	onCalcificationsChange,
-	opalescence,
-	onOpalescenceChange,
-}: DentalLabShadePickerProps) {
-	const [internalSystem, setInternalSystem] = React.useState<
-		"classical" | "3d_master" | "bleach" | "stump"
-	>(shadeSystem || "classical");
-	const currentSystem = onShadeSystemChange
-		? shadeSystem || "classical"
-		: internalSystem;
+	const [internalSystem, setInternalSystem] = React.useState<ShadeSystemKey>(shadeSystem || "classical");
+	const currentSystem = onShadeSystemChange ? shadeSystem || "classical" : internalSystem;
 
 	React.useEffect(() => {
 		if (shadeSystem) setInternalSystem(shadeSystem);
 	}, [shadeSystem]);
 
-	const handleTab = (sys: "classical" | "3d_master" | "bleach" | "stump") => {
+	const handleTab = (sys: ShadeSystemKey) => {
 		if (onShadeSystemChange) onShadeSystemChange(sys);
 		else setInternalSystem(sys);
 	};
@@ -98,43 +62,22 @@ export function DentalLabShadePicker({
 				selectedStumpShade={selectedStumpShade}
 				showBleachTab={showBleachTab}
 			/>
-			{currentSystem === "classical" && (
-				<DentalLabClassicalGrid
-					selectedShade={selectedShade}
-					onSelectShade={onSelectShade}
-				/>
-			)}
-			{currentSystem === "3d_master" && (
-				<DentalLab3dMasterGrid
-					selectedShade={selectedShade}
-					onSelectShade={onSelectShade}
-				/>
-			)}
-			{currentSystem === "bleach" && (
-				<DentalLabBleachGrid
-					selectedShade={selectedShade}
-					onSelectShade={onSelectShade}
-				/>
-			)}
-			{currentSystem === "stump" && (
-				<DentalLabStumpGrid
-					selectedStumpShade={selectedStumpShade}
-					onSelectStumpShade={onSelectStumpShade}
-					mode="tab"
-				/>
-			)}
-			{showStumpSelector && (
-				<DentalLabStumpGrid
-					selectedStumpShade={selectedStumpShade}
-					onSelectStumpShade={onSelectStumpShade}
-					mode="inline"
-				/>
-			)}
+
+			<DentalLabShadeSystemViews
+				currentSystem={currentSystem}
+				selectedShade={selectedShade}
+				onSelectShade={onSelectShade}
+				selectedStumpShade={selectedStumpShade}
+				onSelectStumpShade={onSelectStumpShade}
+				showStumpSelector={showStumpSelector}
+			/>
+
 			<DentalLabPhotoReference
 				selectedShade={selectedShade}
 				shadePhotoUrl={shadePhotoUrl}
 				onShadePhotoChange={onShadePhotoChange}
 			/>
+
 			{(showStratification || shadeCervical !== undefined) && (
 				<>
 					<DentalLabStratificationSection
@@ -150,40 +93,15 @@ export function DentalLabShadePicker({
 						translucency={translucency || "HT"}
 						setTranslucency={onTranslucencyChange || (() => {})}
 					/>
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
-						<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={Boolean(mamelons)}
-								onChange={(e) => onMamelonsChange?.(e.target.checked)}
-								className="w-4 h-4 accent-teal-600 rounded"
-								data-testid="mamelons-checkbox"
-							/>
-							<span className="font-semibold text-[11px]">Мамелоны края</span>
-						</label>
-						<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={Boolean(calcifications)}
-								onChange={(e) => onCalcificationsChange?.(e.target.checked)}
-								className="w-4 h-4 accent-teal-600 rounded"
-								data-testid="calcifications-checkbox"
-							/>
-							<span className="font-semibold text-[11px]">Кальцификаты</span>
-						</label>
-						{onOpalescenceChange && (
-							<label className="min-h-[44px] inline-flex items-center gap-2 p-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] cursor-pointer">
-								<input
-									type="checkbox"
-									checked={Boolean(opalescence)}
-									onChange={(e) => onOpalescenceChange(e.target.checked)}
-									className="w-4 h-4 accent-teal-600 rounded"
-									data-testid="opalescence-checkbox"
-								/>
-								<span className="font-semibold text-[11px]">Опалесценция</span>
-							</label>
-						)}
-					</div>
+
+					<DentalLabCharacterizationCheckboxes
+						mamelons={mamelons}
+						onMamelonsChange={onMamelonsChange}
+						calcifications={calcifications}
+						onCalcificationsChange={onCalcificationsChange}
+						opalescence={opalescence}
+						onOpalescenceChange={onOpalescenceChange}
+					/>
 				</>
 			)}
 		</div>

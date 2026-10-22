@@ -9,6 +9,7 @@ import { labItems, labOrders } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { createLabItemSchema } from "./types.js";
+import { insertLabItem } from "./orderItemsCrud.js";
 
 export async function registerOrderItemsRoutes(app: FastifyInstance) {
 	// ─── Multi-Unit Restoration Items CRUD ───────────────────────────────────
@@ -99,34 +100,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 		const body = parsed.data;
-
-		const [createdItem] = await db
-			.insert(labItems)
-			.values({
-				organizationId: orgId,
-				labOrderId,
-				toothFdi: body.toothFdi,
-				restorationType: body.restorationType,
-				material: body.material,
-				shadeSystem: body.shadeSystem,
-				shadeFinal: body.shadeFinal,
-				shadeStump: body.shadeStump ?? null,
-				shadeGingiva: body.shadeGingiva ?? null,
-				translucencyLevel: body.translucencyLevel,
-				cementGapMicrons: body.cementGapMicrons,
-				extraMarginGapMicrons: body.extraMarginGapMicrons,
-				minimalThicknessMm: body.minimalThicknessMm,
-				implantSystem: body.implantSystem ?? null,
-				implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
-				tiBaseHeightMm: body.tiBaseHeightMm ?? null,
-				meshTriangleCount: body.meshTriangleCount ?? null,
-				meshSurfaceAreaMm2: body.meshSurfaceAreaMm2 ?? null,
-				meshVolumeMm3: body.meshVolumeMm3 ?? null,
-				meshBboxMm: body.meshBboxMm ?? null,
-				isManifold: body.isManifold,
-				priceRub: body.priceRub ? String(body.priceRub) : null,
-			})
-			.returning();
+		const createdItem = await insertLabItem(orgId, labOrderId, body);
 
 		return reply.status(201).send({ success: true, item: createdItem });
 	});

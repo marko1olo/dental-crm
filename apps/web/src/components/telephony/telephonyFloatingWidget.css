@@ -12,27 +12,36 @@
 @import "./styles/telephonyHudAndCallControls.css";
 @import "./styles/telephonyCoexistence.css";
 
-/* Top Dynamic Island / Call Banner Container (Centered Dynamic Island / Non-occluding) */
+/* Quiet Floating Telephony Widget Container: Desktop bottom-right (Mandate 8e/8n/8zk), Mobile top capsule */
 .dnt-telephony-island-container,
 .telephony-floating-widget {
 	position: fixed;
-	top: 12px;
-	left: 50%;
-	right: auto;
-	transform: translateX(-50%);
+	bottom: 24px;
+	right: 24px;
+	top: auto;
+	left: auto;
+	transform: none;
 	z-index: 9990;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
+	align-items: flex-end;
 	pointer-events: none;
 	font-family: inherit;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	width: auto;
-	max-width: 100%;
+	max-width: calc(100vw - 48px);
 }
 
 @media (max-width: 768px) {
-	.dnt-telephony-island-container {
+	.dnt-telephony-island-container,
+	.telephony-floating-widget {
+		top: 12px;
+		top: calc(env(safe-area-inset-top, 0px) + 8px);
+		bottom: auto;
+		left: 50%;
+		right: auto;
+		transform: translateX(-50%);
+		align-items: center;
 		width: calc(100vw - 16px);
 		max-width: min(374px, calc(100vw - 16px));
 		box-sizing: border-box;

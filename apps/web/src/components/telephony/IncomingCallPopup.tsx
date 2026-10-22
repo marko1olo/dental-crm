@@ -12,6 +12,7 @@ import {
 import "./telephonyFloatingWidget.css";
 
 // 100% Transparent Re-exports (Zero-Downtime Contract & Mandate 8b)
+// min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95
 export { CallAudioPlayer } from "./CallAudioPlayer";
 export * from "./IncomingCallQuickBooking";
 export * from "./IncomingCallerCard";

@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import { uploadScanFile } from "./labScanUploadApi";
 
 export function useLabAttachScanState(
 	isOpen: boolean,
@@ -53,35 +54,7 @@ export function useLabAttachScanState(
 
 		setIsSubmitting(true);
 		try {
-			// 1. Запрос Presigned URL из бэкенда Fastify
-			const res = await fetch(`/api/lab/orders/${order.id}/scans/upload-url`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ fileName: file.name, fileSizeBytes: file.size }),
-			});
-			if (!res.ok) {
-				const errData = await res.json().catch(() => null);
-				throw new Error(errData?.message || "Ошибка получения URL загрузки скана");
-			}
-			const presigned = await res.json();
-			const uploadUrl: string = presigned.uploadUrl;
-			const downloadUrl: string = presigned.downloadUrl || uploadUrl;
-			const headers: Record<string, string> = presigned.headersToInclude || {
-				"Content-Type": file.type || (detectedType === "ply" ? "model/ply" : detectedType === "stl" ? "model/stl" : "application/octet-stream"),
-			};
-
-			// 2. Честная прямая бинарная загрузка PUT (на S3 или в локальный fallback .data/lab_scans/)
-			const uploadRes = await fetch(uploadUrl, {
-				method: "PUT",
-				headers,
-				body: file,
-			});
-			if (!uploadRes.ok) {
-				const errText = await uploadRes.text().catch(() => "");
-				throw new Error(`Ошибка загрузки файла на сервер (${uploadRes.status}): ${errText || uploadRes.statusText}`);
-			}
-
-			// 3. Сохранение итогового URL скачивания для заказ-наряда
+			const downloadUrl = await uploadScanFile(order.id, file, detectedType);
 			setFilePath(downloadUrl);
 			showToast("3D скан успешно загружен на сервер клиники", "success");
 		} catch (err: unknown) {

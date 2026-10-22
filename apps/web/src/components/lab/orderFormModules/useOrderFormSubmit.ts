@@ -1,67 +1,15 @@
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { createDoctorClinicalOverride } from "../dentalLabFinancialGateEngine";
-import { executeSaveLabOrder, copyLabOrderZtl1Protocol, copyLabOrderMessengerSummary } from "../dentalLabOrderSaveHelper";
+import {
+	executeSaveLabOrder,
+	copyLabOrderZtl1Protocol,
+	copyLabOrderMessengerSummary,
+} from "../dentalLabOrderSaveHelper";
+import type { OrderFormSubmitContext } from "./orderFormSubmitTypes";
 
-export interface OrderFormSubmitContext {
-	initialOrder: any;
-	formPatientId: string;
-	patientId?: string | undefined;
-	formPatientName: string;
-	formDoctorId: string;
-	formDoctorName: string;
-	chiefDoctorName?: string | undefined;
-	patientChartNumber?: string | undefined;
-	skipFinancialGate?: boolean | undefined;
-	totalLabPriceRub: number;
-	priceRubInput: string;
-	financialGateResult: any;
-	gateOverride: any;
-	setGateOverride: (v: any) => void;
-	selectedTeeth: number[];
-	jawScope: any;
-	constructionType: string;
-	material: string;
-	impressionType: string;
-	shadeSystem: "classical" | "3d_master" | "bleach";
-	shadeClassical: string;
-	shade3dMaster: string;
-	shadeBleach: string;
-	shadeCervical: string;
-	shadeBody: string;
-	shadeIncisal: string;
-	shadeStump: string;
-	translucency: string;
-	mamelons: boolean;
-	calcifications: boolean;
-	opalescence: boolean;
-	occlusalScheme: string;
-	contactTightness: string;
-	surfaceTexture: string;
-	cementGapMicrons: number;
-	currentStage: any;
-	dueDate: string;
-	scheduledVisitDate: string;
-	frameworkTrialDate: string;
-	ceramicTrialDate: string;
-	clinicalNotes: string;
-	attachedImageUrl: string | null;
-	treatmentPlanId: string | null;
-	stageId: string | null;
-	stageNumber: number | null;
-	stageTitle: string | null;
-	includeImpressionBilling: boolean;
-	clinicSharePct: number;
-	doctorSharePct: number;
-	doctorAmountRub: number;
-	fittingCollision: any;
-	gostOrderNumber: string;
-	clinicName?: string | undefined;
-	clinicPhone?: string | undefined;
-	onOrderSaved?: ((order: any) => void) | undefined;
-	onSaveOrder?: ((order: any) => void) | undefined;
-	onClose: () => void;
-}
+export type { OrderFormSubmitContext };
 
 export function useOrderFormSubmit(ctx: OrderFormSubmitContext) {
 	const [isSubmitting, setIsSubmitting] = useState(false);

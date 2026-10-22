@@ -50,6 +50,14 @@ body:has(.dnt-telephony-island-expanded) .dnt-incoming-call-badge-container {
 	display: none !important;
 }
 
+/* Suppress background island pill when incoming call popup or capsule is actively displayed (No duplicate widgets) */
+body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-pill,
+body:has([data-testid="incoming-call-capsule"]) .dnt-telephony-island-pill,
+body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container:not(:has(.dnt-telephony-island-expanded)),
+body:has([data-testid="incoming-call-popup"]) .telephony-floating-widget:not(:has(.dnt-telephony-island-expanded)) {
+	display: none !important;
+}
+
 /* On mobile viewports (<= 768px), suppress background island pill when incoming call popup is actively displayed */
 @media (max-width: 768px) {
 	body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container,

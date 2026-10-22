@@ -1,6 +1,4 @@
 import {
-	type DentalLabConstructionType,
-	type DentalLabOrderStatus,
 	DENTAL_LAB_CONSTRUCTIONS,
 	parseFdiTeethString,
 	calculateZtlWageFinancials,
@@ -8,30 +6,9 @@ import {
 } from "../dentalLabOrderEngine";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
-import type { DentalLabOrderDrawerProps } from "../DentalLabOrderDrawer";
+import type { DrawerSubmitContext } from "./dentalLabDrawerSubmitTypes";
 
-export interface DrawerSubmitContext {
-	props: DentalLabOrderDrawerProps;
-	editingOrder: any;
-	patientName: string;
-	doctorName: string;
-	labName: string;
-	technicianName: string;
-	teethInput: string;
-	construction: DentalLabConstructionType;
-	vitaShade: string;
-	translucency: "HT" | "MT" | "LT" | "MO" | "HO";
-	stumpShade: string;
-	sentDate: string;
-	deadlineDate: string;
-	scheduledVisit: string;
-	patientPriceRub: number;
-	ztlCostRub: number;
-	doctorPercent: number;
-	clinicalNotes: string;
-	attachedScanUrl: string;
-	status: DentalLabOrderStatus;
-}
+export type { DrawerSubmitContext };
 
 export function executeDrawerOrderSubmit(ctx: DrawerSubmitContext) {
 	const { props, editingOrder, patientName, doctorName, labName, technicianName, teethInput, construction, vitaShade, translucency, stumpShade, sentDate, deadlineDate, scheduledVisit, patientPriceRub, ztlCostRub, doctorPercent, clinicalNotes, attachedScanUrl, status } = ctx;

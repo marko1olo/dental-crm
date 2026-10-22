@@ -62,7 +62,7 @@ export function DentalLabFinancialGateModal({
 					data-testid="lab-override-active-badge"
 				>
 					<Check size={14} className="shrink-0" />
-					<span>Согласовано врачом</span>
+					<span>Наряд отправлен в лабораторию</span>
 				</span>
 			) : (
 				!isPaid && onConfirmOverride && (
@@ -78,10 +78,10 @@ export function DentalLabFinancialGateModal({
 						}
 						className="min-h-[34px] px-3 py-1.5 rounded-lg border border-teal-600/40 bg-teal-500/15 hover:bg-teal-500/25 text-teal-900 dark:text-teal-100 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
 						data-testid="btn-lab-override-financial-gate"
-						title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
+						title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача (Мандат 8e)"
 					>
 						<Check size={14} className="shrink-0" />
-						<span>Отправить по согласованию врача</span>
+						<span>Отправить в лабораторию</span>
 					</button>
 				)
 			)}

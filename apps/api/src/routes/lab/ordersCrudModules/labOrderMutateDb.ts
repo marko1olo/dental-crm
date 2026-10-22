@@ -1,13 +1,11 @@
 import { normalizeVitaShade } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import {
-	LAB_ORDER_CLINIC_TRANSITIONS,
-	type LabOrderStatus,
-} from "../../../db/labQuery.js";
+import type { LabOrderStatus } from "../../../db/labQuery.js";
 import type { TenantDb } from "../../../db/rls.js";
 import { labOrders } from "../../../db/schema.js";
 import { mapStageToLabOrderStatus } from "../types.js";
 import type { UpdateLabOrderInput } from "./labOrderValidationSchemas.js";
+import { isPermittedLabStatusTransition } from "./labOrderStatusTransitions.js";
 
 /**
  * DB query helper: Update lab order in database with state transition checks.
@@ -37,21 +35,7 @@ export async function updateLabOrderInDb(
 
 	if (targetStatus && targetStatus !== currentOrder.status) {
 		const currentStatus = currentOrder.status as LabOrderStatus;
-		const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
-
-		const isPermittedShortcut =
-			(currentStatus === "in_progress" &&
-				["received", "refitting", "completed", "shipped", "cancelled"].includes(targetStatus)) ||
-			(currentStatus === "received" &&
-				["completed", "refitting", "in_progress", "cancelled"].includes(targetStatus)) ||
-			(currentStatus === "refitting" &&
-				["in_progress", "received", "completed", "cancelled"].includes(targetStatus)) ||
-			(currentStatus === "sent" &&
-				["in_progress", "shipped", "received", "cancelled"].includes(targetStatus)) ||
-			(currentStatus === "completed" && ["refitting"].includes(targetStatus)) ||
-			targetStatus === "cancelled";
-
-		if ((!allowed || !allowed.includes(targetStatus)) && !isPermittedShortcut) {
+		if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
 			return { kind: "invalid_transition" as const, currentStatus, targetStatus };
 		}
 	}

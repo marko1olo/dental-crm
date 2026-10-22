@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
 	type DentalLabConstructionType, type DentalLabOrderStatus,
-	DENTAL_LAB_CONSTRUCTIONS, toIsoDate, addWorkingDaysRu, checkFittingAppointmentCollision,
+	toIsoDate, addWorkingDaysRu, checkFittingAppointmentCollision,
 } from "../dentalLabOrderEngine";
 import type { DentalLabOrderDrawerProps } from "../DentalLabOrderDrawer";
 import { executeDrawerOrderSubmit, executeDrawerMarkReadyInClinic } from "./dentalLabDrawerSubmit";
+import { computeConstructionDefaults } from "./dentalLabConstructionDefaults";
 
 export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 	const inFlightRef = useRef(false);
@@ -64,19 +65,11 @@ export function useDentalLabOrderDrawerForm(props: DentalLabOrderDrawerProps) {
 
 	const handleSelectConstruction = (val: string) => {
 		setConstruction(val as DentalLabConstructionType);
-		if (val === "crown_pmma" || val === "wt_009") {
-			setPatientPriceRub(3500); setZtlCostRub(1200); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 2))); return;
-		}
-		if (val === "custom_abutment_zirconia" || val === "wt_014") {
-			setPatientPriceRub(35000); setZtlCostRub(12000); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 7))); return;
-		}
-		if (val === "inlay_onlay" || val === "wt_006") {
-			setPatientPriceRub(18000); setZtlCostRub(6000); setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, 4))); return;
-		}
-		const def = DENTAL_LAB_CONSTRUCTIONS[val as DentalLabConstructionType];
+		const def = computeConstructionDefaults(val, sentDate);
 		if (def) {
-			setPatientPriceRub(def.defaultPatientPriceKopecks / 100); setZtlCostRub(def.defaultZtlCostKopecks / 100);
-			setDeadlineDate(toIsoDate(addWorkingDaysRu(sentDate, def.standardTurnaroundDays)));
+			setPatientPriceRub(def.patientPriceRub);
+			setZtlCostRub(def.ztlCostRub);
+			setDeadlineDate(def.deadlineDate);
 		}
 	};
 
