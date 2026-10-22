@@ -82,6 +82,7 @@ import { PerioChartModal } from "../../../perio/PerioChartModal";
 import { PeriodontalPocketDepthModal } from "../../../perio/PeriodontalPocketDepthModal";
 import { EmkPerioSection } from "../../../visit/emk/EmkPerioSection";
 import { HygieneIndicesPanel } from "../../../hygiene/HygieneIndicesPanel";
+import { PatientAnamnesisTab } from "../../../patient/PatientAnamnesisTab";
 import { PatientRecallsHubModal } from "../../../recalls/PatientRecallsHubModal";
 
 
@@ -233,6 +234,27 @@ export function renderSpecializedClinicalLaunchers({
 				data-testid="perio-standalone-workspace"
 			>
 				<PerioStandaloneWorkspaceContent />
+			</div>
+		);
+	}
+
+	// PATIENT ANAMNESIS & ALLERGY SAFETY (?anamnesis=1, ?anamnesis=demo, #anamnesis)
+	const isAnamnesisDirect =
+		typeof window !== "undefined" &&
+		(new URLSearchParams(window.location.search).has("anamnesis") ||
+			window.location.hash.toLowerCase().includes("anamnesis"));
+	if (isAnamnesisDirect) {
+		return (
+			<div
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
+				data-testid="anamnesis-standalone-workspace"
+			>
+				<div className="max-w-4xl mx-auto">
+					<PatientAnamnesisTab
+						patientId="demo_anamnesis_patient"
+						patientName="Ковалёв Роман Станиславович"
+					/>
+				</div>
 			</div>
 		);
 	}
