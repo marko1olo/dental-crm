@@ -46,18 +46,21 @@
 | Telegram Mini App Components | `apps/web/src/components/portal/telegramMiniApp/__tests__/telegramMiniAppComponents.test.tsx` | 5 | ✅ PASS |
 | Telegram Patient Portal Cabinet | `apps/web/src/components/portal/telegramMiniApp/__tests__/TelegramPatientPortalCabinet.test.tsx` | 7 | ✅ PASS |
 | Mobile Self-Checkin Kiosk Modal | `apps/web/src/components/portal/selfCheckin/__tests__/MobileSelfCheckinModal.test.tsx` | 7 | ✅ PASS |
+| Self-Checkin Autonomy Inquisition | `apps/web/src/components/portal/selfCheckin/__tests__/selfCheckinAutonomyInquisition.test.ts` | 6 | ✅ PASS |
+| Patient Cabinet Autonomy Inquisition | `apps/web/src/components/portal/patientCabinet/__tests__/patientCabinetAutonomyInquisition.test.ts` | 16 | ✅ PASS |
+| Patient Portal End-to-End Journey | `apps/web/src/components/portal/__tests__/patientPortalEndToEndJourney.test.ts` | 7 | ✅ PASS |
 | Messaging Template Engine (API) | `apps/api/src/services/messaging/__tests__/templateEngine.test.ts` | 8 | ✅ PASS |
 | Telephony Caller Lookup (API) | `apps/api/src/tests/routes/telephonyCallerLookup.test.ts` | 4 | ✅ PASS |
 | Telephony Security & RBAC (API) | `apps/api/src/tests/routes/telephonySecurity.test.ts` | 6 | ✅ PASS |
 | Portal Routes (API) | `apps/api/src/tests/routes/portalRoutes.test.ts` | 6 | ✅ PASS |
 | Portal Security & 152-FZ Audit (API) | `apps/api/src/tests/routes/portalSecurityAnd152FzAudit.test.ts` | 10 | ✅ PASS |
-| **ИТОГО** | **24 тестовых набора** | **216** | **✅ 100% PASS** |
+| **ИТОГО** | **27 тестовых наборов** | **245** | **✅ 100% PASS** |
 
 ---
 
 ## 3. Визуальный 4-состояный Red Team Proof
 
-Все скриншоты сняты через Playwright на живом dev-сервере и физически проверены через `read_file`:
+Все скриншоты сняты на живом dev-сервере и физически проверены через `read_file`:
 
 ### 3.1. Телефония (Входящий вызов и Софтфон)
 - ☀️ **PC Light (1440×900)**:
@@ -82,3 +85,13 @@
 - `docs/screenshots/portal_inquisition/06_telegram_tooth_picker_bottom_sheet_dark.png` — Нативный Bottom Sheet в тёмной теме (OLED contrast).
 - `docs/screenshots/portal_inquisition/07_telegram_miniapp_booking_scrolled_cta_light.png` — Floating Bottom Bar CTA в нижней трети экрана (Natural Thumb Zone).
 - `docs/screenshots/portal_inquisition/08_telegram_miniapp_booking_scrolled_cta_dark.png` — Floating Bottom Bar CTA в тёмной теме.
+
+### 3.3. Терминал самообслуживания (Self-Checkin Kiosk) & Личный кабинет
+- ☀️ **PC Light (1440×900)**:
+  - `docs/proofs/portal/01_portal_kiosk_pc_light.png` — терминал самообслуживания в холле клиники, 64px сенсорные клавиши цифрового пин-пада, маскирование ПДн 152-ФЗ («Алексей С.»).
+- 🌙 **PC Dark (1440×900)**:
+  - `docs/proofs/portal/02_portal_kiosk_pc_dark.png` — терминал самообслуживания в глубокой темной теме.
+- 📱 **Mobile Light (390×844)**:
+  - `docs/proofs/portal/03_portal_kiosk_mobile_light.png` — мобильное сенсорное представление, 0px горизонтального скролла, тач-таргеты $\ge 44\times 44\text{px}$.
+- 📱 **Mobile Dark (390×844)**:
+  - `docs/proofs/portal/04_portal_kiosk_mobile_dark.png` — мобильный терминал в тёмной теме.

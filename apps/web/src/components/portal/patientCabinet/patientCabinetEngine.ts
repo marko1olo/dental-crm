@@ -24,7 +24,7 @@ import {
 export * from "./patientCabinetDocuments.js";
 export * from "./patientTreatmentPlanDocuments.js";
 export * from "./patientInvoiceDocuments.js";
-export * from "./patientExtract043Documents.js";
+export * from "./patientMedicalCardExtractDocuments.js";
 export * from "./patientDentalPassport.js";
 export * from "./patientCabinetAppointments.js";
 
@@ -268,6 +268,15 @@ export interface PatientPersonalCabinetData {
 	readonly birthDate?: string | undefined;
 	readonly inn?: string | undefined;
 	readonly cardNumber: string;
+	readonly clinicInfo?: {
+		readonly nameRu?: string | undefined;
+		readonly legalName?: string | undefined;
+		readonly licenseNumber?: string | undefined;
+		readonly inn?: string | undefined;
+		readonly ogrn?: string | undefined;
+		readonly address?: string | undefined;
+		readonly phone?: string | undefined;
+	} | undefined;
 	readonly curatingDoctor: string;
 	readonly loyaltyBonusBalance: number;
 	readonly loyaltyTierRu: "Базовый" | "Серебряный (5%)" | "Золотой (10%)" | "Платиновый VIP (15%)";

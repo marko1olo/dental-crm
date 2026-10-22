@@ -42,6 +42,7 @@ import {
 	generateConsentPrintHtml,
 	generateDocumentSnapshotHtml,
 	generateExtract043Html,
+	generateMedicalCardExtractHtml,
 	generatePatientTaxCertificate1151156,
 	generatePrescription107PrintHtml,
 	openPrintWindow,
@@ -326,7 +327,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 				</div>
 			</section>
 
-			{/* 3. ОФИЦИАЛЬНЫЕ МЕДИЦИНСКИЕ ДОКУМЕНТЫ (Договоры, Акты, Форма 043/у) */}
+			{/* 3. ОФИЦИАЛЬНЫЕ МЕДИЦИНСКИЕ ДОКУМЕНТЫ (Договоры, Акты, Медицинская карта приёма) */}
 			<section className="pc-section-card" data-testid="clinical-documents-section">
 				<div className="pc-card-header">
 					<div className="pc-card-title">
@@ -397,15 +398,15 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 									)}
 
 									<div className="pc-consent-actions-row">
-										{(doc.kind === "medical_card_extract_043" || doc.kind.includes("043")) && (
+										{(doc.kind === "medical_card_extract_043" || doc.kind === "medical_card_extract" || doc.kind.includes("043")) && (
 											<button
 												type="button"
 												className="pc-btn-primary pc-btn-compact pc-extract-print-btn"
 												data-testid="print-extract-043-btn"
 												onClick={() => {
-													openPrintWindow(generateExtract043Html(doc, data));
+													openPrintWindow(generateMedicalCardExtractHtml(doc, data));
 													onShowToast(
-														`Медицинская выписка готова к печати!`,
+														`Выписка из медицинской карты приёма готова к печати!`,
 													);
 												}}
 											>

@@ -27,12 +27,16 @@ import {
 	formatRubles,
 	calculateCabinetSummary,
 } from "./patientCabinetEngine.js";
-import { generateExtract043Html } from "./patientExtract043Documents.js";
+import {
+	generateExtract043Html,
+	generateMedicalCardExtractHtml,
+} from "./patientMedicalCardExtractDocuments.js";
 export {
 	formatRussianDateIso,
 	formatRubles,
 	calculateCabinetSummary,
 	generateExtract043Html,
+	generateMedicalCardExtractHtml,
 };
 
 // ============================================================================
