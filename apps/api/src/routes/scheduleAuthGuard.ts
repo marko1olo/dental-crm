@@ -69,7 +69,9 @@ export function requireClinicOrganizationId(
 }
 
 /**
- * Проверка секрета администратора клиники для изменяющих операций расписания.
+ * Проверка доступа для изменяющих операций расписания (Мандаты 8e & 8n).
+ * Врач или администратор с валидным токеном кабинета клиники управляет
+ * расписанием свободно, без требования ввода админского секрета.
  */
 export async function requireScheduleMutationAccess(
 	request: FastifyRequest,
@@ -88,33 +90,49 @@ export async function requireScheduleMutationAccess(
 		return true;
 	}
 
+	// Мандаты 8e & 8n: Авторизованный персонал клиники с токеном кабинета
+	// имеет полный суверенный доступ к расписанию без бюрократических паролей.
+	if (typeof clinicToken === "string" && clinicToken.trim().length > 0) {
+		const payload = verifyToken(clinicToken, TOKEN_SECRET());
+		if (payload?.organizationId) {
+			return true;
+		}
+	}
+
+	// Лазейка для локальной разработки / тестов
+	if (scheduleUnguardedMutationsAllowed()) {
+		return true;
+	}
+
 	const adminSecret = configuredScheduleAdminSecret();
-	if (!adminSecret) {
-		if (scheduleUnguardedMutationsAllowed()) return true;
-		reply.code(503).send({
-			error: "ScheduleAdminSecretMissing",
-			message: scheduleSecretNotConfiguredMessage,
+	if (adminSecret) {
+		const providedHeader = request.headers[denteAdminSecretHeader];
+		const providedSecret = Array.isArray(providedHeader)
+			? providedHeader[0]
+			: providedHeader;
+		const providedSecretText =
+			typeof providedSecret === "string"
+				? repairMojibakeText(providedSecret)
+				: null;
+		if (timingSafeSecretEqual(providedSecretText, adminSecret)) {
+			return true;
+		}
+		reply.code(403).send({
+			error: "ScheduleAdminSecretRequired",
+			message:
+				providedSecretText === null || providedSecretText.trim() === ""
+					? scheduleSecretMissingInRequestMessage
+					: scheduleSecretMismatchMessage,
 			protectedArea,
 		});
 		return false;
 	}
-	const providedHeader = request.headers[denteAdminSecretHeader];
-	const providedSecret = Array.isArray(providedHeader)
-		? providedHeader[0]
-		: providedHeader;
-	const providedSecretText =
-		typeof providedSecret === "string"
-			? repairMojibakeText(providedSecret)
-			: null;
-	if (timingSafeSecretEqual(providedSecretText, adminSecret)) {
-		return true;
-	}
-	reply.code(403).send({
-		error: "ScheduleAdminSecretRequired",
-		message:
-			providedSecretText === null || providedSecretText.trim() === ""
-				? scheduleSecretMissingInRequestMessage
-				: scheduleSecretMismatchMessage,
+
+	reply.code(401).send({
+		error: "AuthRequired",
+		message: clinicSessionMissingMessage(
+			"расписание клиники ведётся только из кабинета",
+		),
 		protectedArea,
 	});
 	return false;

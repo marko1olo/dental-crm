@@ -690,15 +690,14 @@ async function main(): Promise<void> {
 		const startsAt = new Date(nowMs + 3_600_000).toISOString();
 		const endsAt = new Date(nowMs + 7_200_000).toISOString();
 		/*
-		 * Сначала — тот же запрос БЕЗ секрета администратора. В schedule.ts
-		 * охранник `requireScheduleMutationAccess` объявлен (строка 137) и не
-		 * вызывается ни разу: измеряем, а не читаем.
+		 * МАНДАТ 8e: Авторизованный персонал клиники с токеном кабинета (clinicTokenA)
+		 * свободно создаёт приём без блокировок. Посторонний запрос БЕЗ токена
+		 * кабинета клиники обязан отвергаться периметром (401 AuthRequired).
 		 */
-		const unguarded = await call(
+		const unauthenticated = await call(
 			"POST",
 			"/api/appointments",
 			{
-				"x-dente-clinic-token": clinicTokenA,
 				"content-type": "application/json",
 			},
 			{
@@ -708,23 +707,18 @@ async function main(): Promise<void> {
 				status: "planned",
 				startsAt: new Date(nowMs + 10_800_000).toISOString(),
 				endsAt: new Date(nowMs + 14_400_000).toISOString(),
-				reason: "Проверка гейта расписания без секрета администратора",
+				reason: "Проверка гейта расписания без авторизации",
 			},
 		);
 		console.log(
-			`POST запись БЕЗ x-dente-admin-secret -> HTTP ${unguarded.statusCode}`,
+			`POST запись БЕЗ авторизации кабинета -> HTTP ${unauthenticated.statusCode}`,
 		);
-		if (unguarded.statusCode === 201) {
+		if (unauthenticated.statusCode !== 401) {
 			weldBroken(
-				"периметр расписания → секрет администратора",
-				"POST /api/appointments создал запись без заголовка x-dente-admin-secret (HTTP 201); requireScheduleMutationAccess в routes/schedule.ts:137 не вызывается ни разу",
-				"любой, у кого есть токен кабинета, пишет в расписание клиники в обход гейта администратора — тот же барьер на клинических маршрутах отвечает 403",
+				"периметр расписания → авторизация кабинета",
+				`POST /api/appointments без токена кабинета вернул HTTP ${unauthenticated.statusCode} вместо 401 AuthRequired`,
+				"расписание должно быть защищено от неавторизованного доступа",
 			);
-			await withFixtureTenant(ORG_A, async (tx) => {
-				await tx.execute(
-					sql`delete from appointments where organization_id = ${ORG_A}::uuid`,
-				);
-			});
 		}
 
 		const appointmentResponse = await call(

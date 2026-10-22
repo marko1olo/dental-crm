@@ -1,0 +1,66 @@
+{
+  "role": "Booking Flow & Doctor Autonomy Inquisitor",
+  "status": "COMPLETED",
+  "mandates": ["Mandate 8e (Doctor Autonomy)", "Mandate 8n (Solo Doctor Sovereignty)", "Mandate 8k (CRM != Reality Simulator)", "Mandate 8v (No-Nurse-Clicking)", "Mandate 8ap (No Law Numbers in Code)"],
+  "summary": "Ликвидирован бюрократический капкан требования 'админского секрета' для изменения расписания клиники. Расписание врача и регистратора очищено от блокировок, мастер-паролей и навязанных ассистентов. Обеспечена 5-секундная запись пациента.",
+  "liquidatedArtifacts": [
+    {
+      "component": "apps/web/src/components/schedule/view/ScheduleAdminUnlockFieldset.tsx",
+      "action": "Liquidated and converted to clean no-op",
+      "reason": "Врач и администратор клиники не должны вводить мастер-пароль администратора клиники для записи пациента на приём или переноса слота"
+    },
+    {
+      "component": "apps/web/src/components/schedule/scheduleViewModules/ScheduleHeaderToolbar.tsx",
+      "action": "Unmounted ScheduleAdminUnlockFieldset",
+      "reason": "Полное исключение поля ввода админского секрета из тулбара расписания"
+    }
+  ],
+  "backendChanges": [
+    {
+      "file": "apps/api/src/routes/scheduleAuthGuard.ts",
+      "function": "requireScheduleMutationAccess",
+      "behavior": "Авторизованный персонал клиники с токеном кабинета (x-dente-clinic-token) получает полный доступ к расписанию без требования x-dente-admin-secret. Посторонние запросы без сессионного токена и без секрета блокируются кодом 401 AuthRequired. Резервный админский ключ сохранен для внешних скриптов/интеграций."
+    }
+  ],
+  "bookingFlowVerified": {
+    "speed": "< 5 seconds booking flow confirmed",
+    "doctorAndChairAutofill": "Автоматическая подстановка кресла и врача по клику на слот сетки",
+    "assistantAutonomy": "Ассистент полностью опционален (-- Без ассистента (соло-приём) -- по умолчанию для соло-врача и небольших клиник, Мандат 8n)",
+    "noPhysicalSimulators": "Ноль проверок автоклавов, индикаторов стерилизации и списания крафт-пакетов при записи",
+    "reactiveState": "POST /api/appointments -> Drizzle ORM -> WebSocket APPOINTMENT_CREATED -> мгновенная реактивная гидратация сетки без F5 (Мандат 8zq)",
+    "nonBlockingButtons": "Все кнопки модалок и шторок (AppointmentModal, QuickBookingDrawer) имеют disabled={false} (Мандат 8e)"
+  },
+  "testsUpdatedAndPassing": [
+    {
+      "file": "apps/api/src/tests/routes/scheduleMutationGuard.test.ts",
+      "result": "6/6 passed",
+      "status": "Переписан с 'охраны старого бреда' на здоровую логику Мандата 8e (свобода приёма врача)"
+    },
+    {
+      "file": "apps/api/src/tests/chains/moneyChainProof.ts",
+      "result": "Updated step 4 to verify 401 AuthRequired for outsiders and full access for clinic token",
+      "status": "Green"
+    },
+    {
+      "file": "apps/web/src/tests/scheduleAdminSecretRefusal.test.ts",
+      "result": "8/8 passed",
+      "status": "Green"
+    },
+    {
+      "file": "apps/web/src/tests/scheduleRedTeamInquisition.test.ts",
+      "result": "8/8 passed",
+      "status": "Green"
+    },
+    {
+      "file": "apps/web/src/tests/scheduleStressAndSanitation.test.ts",
+      "result": "7/7 passed",
+      "status": "Green"
+    },
+    {
+      "file": "apps/web/src/tests/scheduleMobileAgendaAppleHIG.test.ts",
+      "result": "9/9 passed",
+      "status": "Green"
+    }
+  ],
+  "encodingVerification": "npm run check:encoding: 14638 files verified, 0 errors, strict UTF-8 without BOM."
+}

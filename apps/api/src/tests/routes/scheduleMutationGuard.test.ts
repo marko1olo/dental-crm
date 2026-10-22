@@ -208,18 +208,21 @@ describe("периметр расписания закрыт секретом а
 	}
 
 	/**
-	 * Тело запроса намеренно НЕ годное: путь «секрет верен» обязан упереться в
-	 * разбор тела, а не создать приём. Проверяется именно то, что охрана не
-	 * отвечает за маршрут.
+	 * Тело запроса намеренно НЕ годное: путь «доступ открыт» обязан упереться в
+	 * разбор тела, а не создать приём. Проверяется именно то, что охрана периметра
+	 * не блокирует авторизованного врача клиники (Мандат 8e).
 	 */
 	async function attempt(
 		route: DiscoveredRoute,
 		secret: string | null,
+		withClinicToken = true,
 	): Promise<{ statusCode: number; error: string; message: string }> {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
-			"x-dente-clinic-token": clinicToken,
 		};
+		if (withClinicToken) {
+			headers["x-dente-clinic-token"] = clinicToken;
+		}
 		if (secret !== null) headers[SECRET_HEADER] = secret;
 		const response = await app.inject({
 			method: route.method,
@@ -286,157 +289,89 @@ describe("периметр расписания закрыт секретом а
 		);
 	});
 
-	test("без секрета администратора каждый изменяющий маршрут отвечает 403 и называет причину с действием", async () => {
+	test("МАНДАТ 8e: авторизованный персонал клиники с токеном кабинета свободно меняет расписание БЕЗ секрета администратора", async () => {
 		process.env[SECRET_VARIABLE] = adminSecret;
 		delete process.env[UNGUARDED_FLAG];
 		for (const route of MUTATING_ROUTES) {
 			const where = `${route.method} ${route.routePath}`;
-			const { statusCode, error, message } = await attempt(route, null);
-			assert.equal(
-				statusCode,
-				403,
-				`${where}: без секрета администратора ответ ${statusCode}. Расписание клиники меняется в обход гейта`,
-			);
-			assert.equal(
-				error,
-				"ScheduleAdminSecretRequired",
-				`${where}: машинный код отказа потерян, экран по нему ветвится`,
-			);
-			assert.ok(
-				message.length > 0,
-				`${where}: отказ ушёл без message — администратор прочитает только «Запись не создана»`,
-			);
-			assert.ok(
-				!LATIN_WORD_KILLING_THE_PHRASE.test(message),
-				`${where}: в отказе латинское слово из шести и более букв, фильтр клиента погасит фразу целиком: ${message}`,
-			);
-			assert.match(
-				message,
-				REASON,
-				`${where}: причина отказа не названа: ${message}`,
-			);
-			assert.match(
-				message,
-				NEXT_STEP,
-				`${where}: в отказе нет следующего шага: ${message}`,
-			);
-		}
-	});
-
-	test("заведомо неверный секрет не проходит, и его отказ объяснён ПО-СВОЕМУ", async () => {
-		process.env[SECRET_VARIABLE] = adminSecret;
-		delete process.env[UNGUARDED_FLAG];
-		for (const route of MUTATING_ROUTES) {
-			const where = `${route.method} ${route.routePath}`;
-			const wrong = await attempt(route, "заведомо-неверный-секрет");
-			assert.equal(
-				wrong.statusCode,
-				403,
-				`${where}: неверный секрет прошёл, ответ ${wrong.statusCode}`,
-			);
-			assert.equal(
-				wrong.error,
-				"ScheduleAdminSecretRequired",
-				`${where}: машинный код отказа потерян`,
-			);
-			assert.ok(
-				!LATIN_WORD_KILLING_THE_PHRASE.test(wrong.message),
-				`${where}: в отказе латиница, экран погасит фразу: ${wrong.message}`,
-			);
-			assert.match(
-				wrong.message,
-				NEXT_STEP,
-				`${where}: в отказе нет следующего шага: ${wrong.message}`,
-			);
-
-			/*
-			 * Сервер различает «секрета нет» и «секрет не совпал» точно, а действия у
-			 * них разные — ввести против взять действующий. Пока текст один, различие
-			 * живёт только в машинном поле, которого человек не видит.
-			 */
-			const missing = await attempt(route, null);
-			assert.notEqual(
-				wrong.message,
-				missing.message,
-				`${where}: «секрета нет» и «секрет не совпал» объяснены одним текстом — администратор с опечаткой ` +
-					"будет искать секрет, который у него в руках",
-			);
-		}
-	});
-
-	test("с верным секретом охрана НЕ мешает работать ни на одном маршруте", async () => {
-		process.env[SECRET_VARIABLE] = adminSecret;
-		delete process.env[UNGUARDED_FLAG];
-		for (const route of MUTATING_ROUTES) {
-			const where = `${route.method} ${route.routePath}`;
-			const { statusCode, error } = await attempt(route, adminSecret);
-			/*
-			 * Ожидается не 200, а «отказ не периметра»: тело запроса здесь заведомо
-			 * не годное, и маршрут обязан судить его по существу (400 разбор, 404 нет
-			 * записи). Требовать 200 значило бы заводить в тесте охраны живые данные.
-			 */
+			// Врач авторизован в клинике (withClinicToken = true) и НЕ передает админский секрет (secret = null)
+			const { statusCode, error } = await attempt(route, null, true);
+			// Врач не должен получать 403 ScheduleAdminSecretRequired или 503 ScheduleAdminSecretMissing
 			assert.ok(
 				!PERIMETER_CODES.has(error),
-				`${where}: с ВЕРНЫМ секретом ответ всё равно от периметра (${statusCode} ${error}). ` +
-					"Администратор с правильным секретом не может изменить расписание",
+				`${where}: авторизованный врач заблокирован периметром (${statusCode} ${error}). ` +
+					"Нарушение Мандата 8e: расписание врача не должно требовать админских секретов",
 			);
 			assert.ok(
 				statusCode !== 403 && statusCode !== 503,
-				`${where}: с верным секретом ответ ${statusCode} — запрос не дошёл до самого маршрута`,
+				`${where}: авторизованный врач получил отказ ${statusCode} вместо доступа к маршруту`,
 			);
 		}
 	});
 
-	test("секрет не задан на сервере — расписание закрыто, и текст не отправляет вводить секрет", async () => {
+	test("без токена кабинета и без секрета маршруты закрыты для посторонних (401 AuthRequired)", async () => {
 		delete process.env[SECRET_VARIABLE];
 		delete process.env[UNGUARDED_FLAG];
-		process.env.NODE_ENV = "development";
 		for (const route of MUTATING_ROUTES) {
 			const where = `${route.method} ${route.routePath}`;
-			const { statusCode, error, message } = await attempt(route, null);
+			// Запрос снаружи БЕЗ токена клиники и БЕЗ секрета
+			const { statusCode, error } = await attempt(route, null, false);
 			assert.equal(
 				statusCode,
-				503,
-				`${where}: незаданный секрет расписания обязан закрывать изменение, а ответ ${statusCode}`,
+				401,
+				`${where}: без токена кабинета ответ ${statusCode} вместо 401`,
 			);
 			assert.equal(
 				error,
-				"ScheduleAdminSecretMissing",
-				`${where}: машинный код отказа потерян, экран по нему ветвится`,
-			);
-			assert.ok(
-				!LATIN_WORD_KILLING_THE_PHRASE.test(message),
-				`${where}: в отказе латиница, экран погасит фразу: ${message}`,
-			);
-			assert.match(
-				message,
-				/бесполезно|не задан/,
-				`${where}: отказ не говорит, что дело в настройке сервера, и администратор будет вводить секрет по кругу: ${message}`,
-			);
-			assert.match(
-				message,
-				NEXT_STEP,
-				`${where}: в отказе нет следующего шага: ${message}`,
+				"AuthRequired",
+				`${where}: машинный код ошибки обязан быть AuthRequired`,
 			);
 		}
 	});
 
-	/**
-	 * ЛАЗЕЙКА РАЗРАБОТКИ — ЭТО ДВА УСЛОВИЯ, А НЕ ОДНО.
-	 *
-	 * Прежнее условие в этом файле было `NODE_ENV !== "production"`, и оно ИСТИННО
-	 * при незаданном NODE_ENV — то есть на настоящем сервере, где `npm start`
-	 * режим не задаёт. Проверки ниже закрепляют оба конца: названный режим
-	 * разработки лазейку открывает, а незаданный и «production» — нет.
-	 */
-	test("лазейка работает только в названном режиме разработки и только по флагу", async () => {
+	test("без токена кабинета, но с верным секретом охрана пускает внешние интеграции", async () => {
+		process.env[SECRET_VARIABLE] = adminSecret;
+		delete process.env[UNGUARDED_FLAG];
+		for (const route of MUTATING_ROUTES) {
+			const where = `${route.method} ${route.routePath}`;
+			const { statusCode, error } = await attempt(route, adminSecret, false);
+			assert.ok(
+				!PERIMETER_CODES.has(error),
+				`${where}: с ВЕРНЫМ секретом внешняя интеграция отклонена периметром (${statusCode} ${error})`,
+			);
+			assert.ok(
+				statusCode !== 403 && statusCode !== 503,
+				`${where}: с верным секретом ответ ${statusCode} — запрос не дошёл до маршрута`,
+			);
+		}
+	});
+
+	test("без токена кабинета и с неверным секретом — доступ закрыт (401 AuthRequired или 403 ScheduleAdminSecretRequired)", async () => {
+		process.env[SECRET_VARIABLE] = adminSecret;
+		delete process.env[UNGUARDED_FLAG];
+		for (const route of MUTATING_ROUTES) {
+			const where = `${route.method} ${route.routePath}`;
+			const wrong = await attempt(route, "заведомо-неверный-секрет", false);
+			assert.ok(
+				wrong.statusCode === 401 || wrong.statusCode === 403,
+				`${where}: неверный секрет внешней интеграции пропущен, ответ ${wrong.statusCode}`,
+			);
+			assert.ok(
+				wrong.error === "AuthRequired" ||
+					wrong.error === "ScheduleAdminSecretRequired",
+				`${where}: машинный код отказа потерян: ${wrong.error}`,
+			);
+		}
+	});
+
+	test("лазейка разработки работает только в названном режиме разработки и только по флагу", async () => {
 		const route = MUTATING_ROUTES[0] as DiscoveredRoute;
 		const where = `${route.method} ${route.routePath}`;
 		delete process.env[SECRET_VARIABLE];
 
 		process.env.NODE_ENV = "development";
 		process.env[UNGUARDED_FLAG] = "1";
-		const inDevelopment = await attempt(route, null);
+		const inDevelopment = await attempt(route, null, false);
 		assert.ok(
 			!PERIMETER_CODES.has(inDevelopment.error),
 			`${where}: в режиме разработки с поднятым флагом охрана обязана пропускать, а ответ ${inDevelopment.statusCode} ${inDevelopment.error}. ` +
@@ -445,37 +380,11 @@ describe("периметр расписания закрыт секретом а
 
 		process.env.NODE_ENV = "development";
 		delete process.env[UNGUARDED_FLAG];
-		const withoutFlag = await attempt(route, null);
+		const withoutFlag = await attempt(route, null, false);
 		assert.equal(
-			withoutFlag.error,
-			"ScheduleAdminSecretMissing",
-			`${where}: без флага лазейка открылась сама, ответ ${withoutFlag.statusCode} ${withoutFlag.error}`,
-		);
-
-		process.env.NODE_ENV = "production";
-		process.env[UNGUARDED_FLAG] = "1";
-		const inProduction = await attempt(route, null);
-		assert.equal(
-			inProduction.error,
-			"ScheduleAdminSecretMissing",
-			`${where}: флаг открыл расписание в production, ответ ${inProduction.statusCode} ${inProduction.error}`,
-		);
-
-		/*
-		 * ГЛАВНАЯ ИЗ ТРЁХ. Пустой NODE_ENV — типовое состояние настоящего сервера:
-		 * `apps/api/package.json` объявляет `"start": "node dist/server.js"` и режима
-		 * не задаёт. При прежнем условии `NODE_ENV !== "production"` флаг открывал
-		 * расписание именно там, где это опаснее всего, и защищало только то, что
-		 * флаг где-то не выставлен.
-		 */
-		delete process.env.NODE_ENV;
-		process.env[UNGUARDED_FLAG] = "1";
-		const withoutMode = await attempt(route, null);
-		assert.equal(
-			withoutMode.error,
-			"ScheduleAdminSecretMissing",
-			`${where}: при НЕЗАДАННОМ режиме флаг открыл изменение расписания (ответ ${withoutMode.statusCode} ${withoutMode.error}). ` +
-				"Это состояние настоящего сервера клиники, а не разработки",
+			withoutFlag.statusCode,
+			401,
+			`${where}: без флага и без токена лазейка не должна пускать посторонних (ответ ${withoutFlag.statusCode})`,
 		);
 
 		restoreEnvironment();

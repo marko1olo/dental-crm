@@ -1,6 +1,5 @@
 import React from "react";
 import { ScheduleViewToolbar } from "../view/ScheduleViewToolbar";
-import { ScheduleAdminUnlockFieldset } from "../view/ScheduleAdminUnlockFieldset";
 import { NewAppointmentForm } from "../NewAppointmentForm";
 import type { ScheduleHeaderToolbarProps } from "./types";
 
@@ -8,18 +7,6 @@ export function ScheduleHeaderToolbar(props: ScheduleHeaderToolbarProps) {
   return (
     <>
       <ScheduleViewToolbar {...(props as any)} />
-
-      <ScheduleAdminUnlockFieldset
-        scheduleAdminSecretNeeded={props.scheduleAdminSecretNeeded}
-        scheduleAdminSecretSession={props.scheduleAdminSecretSession}
-        scheduleAdminSecretDraft={props.scheduleAdminSecretDraft}
-        setScheduleAdminSecretDraft={props.setScheduleAdminSecretDraft}
-        scheduleAdminSecretReason={props.scheduleAdminSecretReason}
-        adminSecretReady={props.adminSecretReady}
-        unlockScheduleAdminSession={props.unlockScheduleAdminSession}
-        lockScheduleAdminSession={props.lockScheduleAdminSession}
-        showToast={props.showToast}
-      />
 
       <NewAppointmentForm
         dashboard={props.dashboard}
