@@ -72,7 +72,8 @@ export function PricesCatalogTable({
 						<div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full justify-center">
 							<button
 								type="button"
-								data-testid="pricelist-seed-baseline-804n-btn"
+								data-testid="pricelist-seed-standard-catalog-btn"
+								data-testid-alias="pricelist-seed-baseline-804n-btn"
 								title="Заполнить рекомендованный прейскурант (30 базовых услуг)"
 								disabled={isSeedingBaseline}
 								onClick={onSeedBaseline}

@@ -3,6 +3,10 @@ import type React from "react";
 import { ServiceFormMetaFields } from "../ServiceFormMetaFields";
 import type { PriceItemEditModalProps } from "./types";
 
+/**
+ * PriceItemEditModal — Single Source of Truth (SSOT) для создания и редактирования позиций прейскуранта.
+ * Реализует стандарты клинической эргономики, мгновенный ввод цен с копейками и чистый доменный язык.
+ */
 export function PriceItemEditModal({
 	isOpen,
 	isNew,
@@ -19,6 +23,13 @@ export function PriceItemEditModal({
 	onSave,
 }: PriceItemEditModalProps) {
 	if (!isOpen) return null;
+
+	const standardCodeValue =
+		editServiceForm.standardCode ??
+		editServiceForm.catalogCode ??
+		editServiceForm.order804nCode ??
+		editServiceForm.code ??
+		"";
 
 	return (
 		<div
@@ -52,6 +63,7 @@ export function PriceItemEditModal({
 						type="button"
 						className="premium-modal-close p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 						onClick={onClose}
+						title="Закрыть окно"
 					>
 						<X size={18} />
 					</button>
@@ -84,13 +96,16 @@ export function PriceItemEditModal({
 								id="service-code-input"
 								type="text"
 								value={editServiceForm.code}
-								onChange={(e) =>
+								onChange={(e) => {
+									const val = e.target.value;
 									setEditServiceForm({
 										...editServiceForm,
-										code: e.target.value,
-										order804nCode: editServiceForm.order804nCode || e.target.value,
-									})
-								}
+										code: val,
+										catalogCode: editServiceForm.catalogCode || val,
+										standardCode: editServiceForm.standardCode || val,
+										order804nCode: editServiceForm.order804nCode || val,
+									});
+								}}
 								placeholder="Например: ТЕР-01 или A16.07.002"
 							/>
 						</div>
@@ -139,20 +154,23 @@ export function PriceItemEditModal({
 							/>
 						</div>
 						<div className="staff-form-group">
-							<label htmlFor="service-order804n-input">
-								Номенклатурный шифр (для справок)
+							<label htmlFor="service-standard-code-input">
+								Стандартный код услуги (для справок)
 							</label>
 							<input
-								id="service-order804n-input"
+								id="service-standard-code-input"
 								type="text"
-								value={editServiceForm.order804nCode ?? editServiceForm.code}
-								onChange={(e) =>
+								value={standardCodeValue}
+								onChange={(e) => {
+									const val = e.target.value;
 									setEditServiceForm({
 										...editServiceForm,
-										order804nCode: e.target.value,
-									})
-								}
-								placeholder="Опционально"
+										catalogCode: val,
+										standardCode: val,
+										order804nCode: val,
+									});
+								}}
+								placeholder="Опционально (например: A16.07.002)"
 							/>
 						</div>
 					</div>
@@ -187,4 +205,6 @@ export function PriceItemEditModal({
 	);
 }
 
+/** Алиас для обратной совместимости со старыми импортами */
 export const PriceItemModal = PriceItemEditModal;
+export default PriceItemEditModal;

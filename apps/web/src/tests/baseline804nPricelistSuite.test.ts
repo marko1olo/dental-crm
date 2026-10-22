@@ -63,7 +63,7 @@ describe("Базовый рекомендованный прейскурант 8
 		assert.ok(categories.has("radiology"), "Отсутствует категория радиовизиография");
 	});
 
-	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-baseline-804n-btn' и в пустом каталоге, и в меню справочника", () => {
+	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-standard-catalog-btn' (или алиасом 804н) и в пустом каталоге, и в меню справочника", () => {
 		const settingsDir = join(here, "..", "components", "settings");
 		const tabContent = [
 			readFileSync(join(settingsDir, "SettingsPricesTab.tsx"), "utf8"),
@@ -72,16 +72,22 @@ describe("Базовый рекомендованный прейскурант 8
 			readFileSync(join(settingsDir, "pricesTab", "useSettingsPricesLogic.ts"), "utf8"),
 		].join("\n");
 
-		const testIdMatches = tabContent.match(/data-testid="pricelist-seed-baseline-804n-btn"/g);
-		assert.ok(testIdMatches, "В модуле SettingsPricesTab отсутствует data-testid='pricelist-seed-baseline-804n-btn'");
+		const testIdMatches = tabContent.match(
+			/data-testid="(?:pricelist-seed-baseline-804n-btn|pricelist-seed-standard-catalog-btn)"/g,
+		);
+		assert.ok(
+			testIdMatches,
+			"В модуле SettingsPricesTab отсутствует data-testid='pricelist-seed-standard-catalog-btn' / 'pricelist-seed-baseline-804n-btn'",
+		);
 		assert.ok(
 			testIdMatches.length >= 2,
 			`Ожидалось как минимум 2 точки вызова (пустой каталог и меню справочника), найдено: ${testIdMatches.length}`,
 		);
 
 		assert.ok(
-			tabContent.includes("/api/pricelist/seed-baseline-804n"),
-			"Модуль SettingsPricesTab должен вызывать серверный маршрут /api/pricelist/seed-baseline-804n",
+			tabContent.includes("/api/pricelist/seed-baseline-804n") ||
+				tabContent.includes("/api/pricelist/seed-standard-catalog"),
+			"Модуль SettingsPricesTab должен вызывать серверный маршрут /api/pricelist/seed-baseline-804n или /api/pricelist/seed-standard-catalog",
 		);
 		assert.ok(
 			tabContent.includes("Заполнить базовый прейскурант (30 услуг)") ||

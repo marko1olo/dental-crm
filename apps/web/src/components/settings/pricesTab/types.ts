@@ -12,6 +12,8 @@ import type { ServicePricelistItem } from "../../catalog/pricelist/servicePricel
 export interface ServiceEditFormData {
 	title: string;
 	code: string;
+	catalogCode?: string;
+	standardCode?: string;
 	order804nCode?: string;
 	category: ServiceCategory;
 	specialty: DentalSpecialty;
@@ -39,6 +41,7 @@ export interface PricesFilterToolbarProps {
 	isCodesMenuOpen?: boolean;
 	setIsCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 	codesMenuRef?: React.RefObject<HTMLDivElement | null>;
+	/** Алиасы обратной совместимости */
 	is804nCodesMenuOpen?: boolean;
 	setIs804nCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 	codes804nMenuRef?: React.RefObject<HTMLDivElement | null>;
@@ -69,7 +72,6 @@ export interface PriceItemEditModalProps {
 }
 
 export type PriceItemModalProps = PriceItemEditModalProps;
-
 
 export interface PriceImportModalProps {
 	isDropzoneOpen: boolean;

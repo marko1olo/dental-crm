@@ -47,43 +47,22 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations, propsOverrides) as any;
 	const {
-		dashboard,
-		pricelistSourceKindLabels,
-		pricelistSourceKind,
-		setPricelistSourceKind,
-		clearPricelistImage,
-		setPricelistAnalysis,
-		pricelistRecognitionServiceGroups,
-		pricelistRecognitionBrandGroups,
-		pricelistText,
-		setPricelistText,
-		pricelistImageName,
-		attachPricelistImage,
-		usePricelistAi,
-		setUsePricelistAi,
-		analyzePricelist,
-		isPricelistAnalyzing,
-		pricelistImageBase64,
-		pricelistAnalysis,
-		pricelistParserModeLabels,
-		serviceCategoryLabels,
-		specialtyLabels,
-		createServiceCatalogItem,
-		updateServiceCatalogItem,
-		deleteServiceCatalogItem,
+		dashboard, pricelistSourceKindLabels, pricelistSourceKind, setPricelistSourceKind,
+		clearPricelistImage, setPricelistAnalysis, pricelistRecognitionServiceGroups,
+		pricelistRecognitionBrandGroups, pricelistText, setPricelistText,
+		pricelistImageName, attachPricelistImage, usePricelistAi, setUsePricelistAi,
+		analyzePricelist, isPricelistAnalyzing, pricelistImageBase64, pricelistAnalysis,
+		pricelistParserModeLabels, serviceCategoryLabels, specialtyLabels,
+		createServiceCatalogItem, updateServiceCatalogItem, deleteServiceCatalogItem,
 	} = mergedProps;
 
 	const [activeTab, setActiveTab] = useState<PricelistStudioTab>("catalog");
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedCategoryFilter, setSelectedCategoryFilter] =
-		useState<string>("all");
-	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] =
-		useState(false);
-	const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>(
-		{},
-	);
-	const [is804nCodesMenuOpen, setIs804nCodesMenuOpen] = useState(false);
-	const codes804nMenuRef = useRef<HTMLDivElement | null>(null);
+	const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] = useState(false);
+	const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>({});
+	const [isCodesMenuOpen, setIsCodesMenuOpen] = useState(false);
+	const codesMenuRef = useRef<HTMLDivElement | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset pagination when searching
 	useEffect(() => {
@@ -91,62 +70,47 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	}, [searchQuery, selectedCategoryFilter]);
 
 	useEffect(() => {
-		if (!is804nCodesMenuOpen) return;
+		if (!isCodesMenuOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				codes804nMenuRef.current &&
-				!codes804nMenuRef.current.contains(e.target as Node)
-			) {
-				setIs804nCodesMenuOpen(false);
+			if (codesMenuRef.current && !codesMenuRef.current.contains(e.target as Node)) {
+				setIsCodesMenuOpen(false);
 			}
 		};
 		document.addEventListener("mousedown", handleClickOutside);
-		return () =>
-			document.removeEventListener("mousedown", handleClickOutside);
-	}, [is804nCodesMenuOpen]);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isCodesMenuOpen]);
 
 	const [editServiceId, setEditServiceId] = useState<string | null>(null);
-	const [editServiceForm, setEditServiceForm] = useState<ServiceEditFormData>(
-		NEW_SERVICE_TEMPLATE,
-	);
+	const [editServiceForm, setEditServiceForm] = useState<ServiceEditFormData>({
+		...NEW_SERVICE_TEMPLATE, catalogCode: "", standardCode: "",
+	});
 	const [priceRubInput, setPriceRubInput] = useState("");
 	const [priceProblem, setPriceProblem] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
-	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(
-		null,
-	);
+	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
 	const [isSeedingBaseline, setIsSeedingBaseline] = useState(false);
 
-	// Native 804n Pricelist Scanner Dropzone & Diff Modal State
-	const [isNativeScannerDropzoneOpen, setIsNativeScannerDropzoneOpen] =
-		useState(false);
+	// Native Pricelist Scanner Dropzone & Diff Modal State
+	const [isNativeScannerDropzoneOpen, setIsNativeScannerDropzoneOpen] = useState(false);
 	const [scannerMode, setScannerMode] = useState<"file" | "text">("file");
 	const [scannerDragOver, setScannerDragOver] = useState(false);
 	const [scannerFile, setScannerFile] = useState<ScannerFileState | null>(null);
 	const [scannerText, setScannerText] = useState("");
-	const [scannerCollisionStrategy, setScannerCollisionStrategy] =
-		useState<PricelistCollisionStrategy>("update_existing");
+	const [scannerCollisionStrategy, setScannerCollisionStrategy] = useState<PricelistCollisionStrategy>("update_existing");
 	const [isScanningPricelist, setIsScanningPricelist] = useState(false);
 	const [scannerError, setScannerError] = useState<string | null>(null);
 	const [isMappingDiffOpen, setIsMappingDiffOpen] = useState(false);
-	const [mappingDiffItems, setMappingDiffItems] = useState<
-		IngestedMappingItem[]
-	>([]);
+	const [mappingDiffItems, setMappingDiffItems] = useState<IngestedMappingItem[]>([]);
 	const [isCommittingImport, setIsCommittingImport] = useState(false);
 	const nativeFileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const typedServiceCatalog = dashboard?.serviceCatalog || [];
-
-	const accessHeaders = (
-		mergedProps as { auth?: { settingsAccessHeaders?: SettingsAccessHeaders } }
-	).auth?.settingsAccessHeaders;
+	const accessHeaders = (mergedProps as { auth?: { settingsAccessHeaders?: SettingsAccessHeaders } }).auth?.settingsAccessHeaders;
 
 	const filteredCatalog = useMemo(() => {
 		let items = [...typedServiceCatalog];
 		if (selectedCategoryFilter !== "all") {
-			items = items.filter(
-				(s) => (s.category || "other") === selectedCategoryFilter,
-			);
+			items = items.filter((s) => (s.category || "other") === selectedCategoryFilter);
 		}
 		if (searchQuery.trim()) {
 			const q = searchQuery.toLowerCase().trim();
@@ -154,12 +118,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			items = items.filter((s) => {
 				const titleMatch = (s.title || s.name || "").toLowerCase().includes(q);
 				const codeMatch = s.code?.toLowerCase().includes(q);
-				const cleanCodeMatch =
-					cleanQ.length >= 2 &&
-					(s.code || "")
-						.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "")
-						.toLowerCase()
-						.includes(cleanQ);
+				const cleanCodeMatch = cleanQ.length >= 2 && (s.code || "").replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "").toLowerCase().includes(cleanQ);
 				return titleMatch || codeMatch || cleanCodeMatch;
 			});
 		}
@@ -180,11 +139,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		e.preventDefault();
 		const basePriceRub = normalizeRubAmountInput(priceRubInput);
 		if (basePriceRub === null) {
-			setPriceProblem(
-				priceRubInput.trim()
-					? "Цена непонятна. Впишите сумму цифрами, копейки после запятой: 1500 или 1500,50."
-					: "Укажите цену услуги: например 1500 или 1500,50.",
-			);
+			setPriceProblem(priceRubInput.trim() ? "Цена непонятна. Впишите сумму цифрами, копейки после запятой: 1500 или 1500,50." : "Укажите цену услуги: например 1500 или 1500,50.");
 			return;
 		}
 		setPriceProblem(null);
@@ -192,28 +147,20 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		try {
 			const effectiveHeaders = {
 				"Content-Type": "application/json",
-				...staffMutationHeaders(
-					(accessHeaders as SettingsAccessHeaders | undefined) ??
-						(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-						(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
-				),
+				...staffMutationHeaders((accessHeaders as SettingsAccessHeaders | undefined) ?? (mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
 			};
+			const statutoryCode = editServiceForm.standardCode || editServiceForm.catalogCode || editServiceForm.order804nCode || editServiceForm.code || null;
 			const servicePayload = {
-				...editServiceForm,
-				basePriceRub,
+				...editServiceForm, basePriceRub,
 				materialsCostRub: Number(editServiceForm.materialsCostRub) || 0,
-				order804nCode: editServiceForm.order804nCode || editServiceForm.code || null,
+				order804nCode: statutoryCode, catalogCode: statutoryCode, standardCode: statutoryCode,
 			};
 
 			if (editServiceId === "new") {
 				if (typeof createServiceCatalogItem === "function") {
 					await createServiceCatalogItem(servicePayload);
 				} else {
-					const res = await fetch("/api/settings/catalog", {
-						method: "POST",
-						headers: effectiveHeaders,
-						body: JSON.stringify(servicePayload),
-					});
+					const res = await fetch("/api/settings/catalog", { method: "POST", headers: effectiveHeaders, body: JSON.stringify(servicePayload) });
 					if (!res.ok) {
 						const errJson = await res.json().catch(() => ({}));
 						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
@@ -223,11 +170,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				if (typeof updateServiceCatalogItem === "function") {
 					await updateServiceCatalogItem(editServiceId, servicePayload);
 				} else {
-					const res = await fetch(`/api/settings/catalog/${editServiceId}`, {
-						method: "PUT",
-						headers: effectiveHeaders,
-						body: JSON.stringify(servicePayload),
-					});
+					const res = await fetch(`/api/settings/catalog/${editServiceId}`, { method: "PUT", headers: effectiveHeaders, body: JSON.stringify(servicePayload) });
 					if (!res.ok) {
 						const errJson = await res.json().catch(() => ({}));
 						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
@@ -235,18 +178,11 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				}
 			}
 
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			} else if (typeof appLogic?.loadDashboard === "function") {
-				await appLogic.loadDashboard();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+			else if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
 
-			showToast(
-				editServiceId === "new" ? "Услуга добавлена в прейскурант" : "Услуга обновлена",
-				"success",
-			);
+			showToast(editServiceId === "new" ? "Услуга добавлена в прейскурант" : "Услуга обновлена", "success");
 			setEditServiceId(null);
 			// biome-ignore lint/suspicious/noExplicitAny: error handling
 		} catch (error: any) {
@@ -267,29 +203,18 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			} else {
 				const effectiveHeaders = {
 					"Content-Type": "application/json",
-					...staffMutationHeaders(
-						(accessHeaders as SettingsAccessHeaders | undefined) ??
-							(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-							(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
-					),
+					...staffMutationHeaders((accessHeaders as SettingsAccessHeaders | undefined) ?? (mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
 				};
-				const res = await fetch(`/api/settings/catalog/${id}`, {
-					method: "DELETE",
-					headers: effectiveHeaders,
-				});
+				const res = await fetch(`/api/settings/catalog/${id}`, { method: "DELETE", headers: effectiveHeaders });
 				if (!res.ok) {
 					const errJson = await res.json().catch(() => ({}));
 					throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
 				}
 			}
 
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			} else if (typeof appLogic?.loadDashboard === "function") {
-				await appLogic.loadDashboard();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+			else if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
 
 			showToast("Услуга отключена в прейскуранте", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: error handling
@@ -302,34 +227,20 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		}
 	};
 
-	const modalInitialItems: readonly ServicePricelistItem[] = useMemo(() => {
-		return buildModalInitialItems(typedServiceCatalog);
-	}, [typedServiceCatalog]);
+	const modalInitialItems: readonly ServicePricelistItem[] = useMemo(() => buildModalInitialItems(typedServiceCatalog), [typedServiceCatalog]);
 
 	const handleSaveCatalog = async (items: readonly ServicePricelistItem[]) => {
 		await syncPricelistItemsToCatalog({
-			items,
-			existingServices:
-				(dashboard?.serviceCatalog ?? []) as ServiceCatalogItem[],
-			createServiceCatalogItem,
-			updateServiceCatalogItem,
+			items, existingServices: (dashboard?.serviceCatalog ?? []) as ServiceCatalogItem[],
+			createServiceCatalogItem, updateServiceCatalogItem,
 		});
-		if (typeof mergedProps.refreshDashboard === "function") {
-			await mergedProps.refreshDashboard();
-		} else if (typeof appLogic?.refreshDashboard === "function") {
-			await appLogic.refreshDashboard();
-		}
+		if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+		else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
 	};
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-	const handleExportCsv = () => {
-		exportCatalogToCsvDownload(typedServiceCatalog);
-	};
-
-	const handlePrintPricelist = () => {
-		printPricelistA4(dashboard?.clinicSettings, modalInitialItems);
-	};
+	const handleExportCsv = () => exportCatalogToCsvDownload(typedServiceCatalog);
+	const handlePrintPricelist = () => printPricelistA4(dashboard?.clinicSettings, modalInitialItems);
 
 	const handleImportCsvFile = async (e: ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -338,50 +249,38 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			const text = await file.text();
 			const count = await parseAndImportCsvText(text, handleSaveCatalog);
 			showToast(`Импортировано ${count} услуг из CSV`, "success");
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
 		} catch (err) {
-			showToast(
-				`Ошибка импорта CSV: ${err instanceof Error ? err.message : String(err)}`,
-				"error",
-			);
+			showToast(`Ошибка импорта CSV: ${err instanceof Error ? err.message : String(err)}`, "error");
 		} finally {
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		}
 	};
 
-	const handleSeedBaseline804n = async (replace = false) => {
+	const handleSeedStandardCatalog = async (replace = false) => {
 		if (isSeedingBaseline) return;
 		setIsSeedingBaseline(true);
 		try {
 			let seededCount = 0;
 			let apiSucceeded = false;
 			try {
-				const headers = staffMutationHeaders(
-					(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-						(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
-				);
-				const response = await fetch("/api/pricelist/seed-baseline-804n", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...headers,
-					},
-					body: JSON.stringify({ replace }),
+				const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined));
+				let response = await fetch("/api/pricelist/seed-standard-catalog", {
+					method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ replace }),
 				});
+				if (!response.ok && response.status === 404) {
+					response = await fetch("/api/pricelist/seed-baseline-804n", {
+						method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ replace }),
+					});
+				}
 				if (response.ok) {
 					const data = await response.json();
 					seededCount = data.createdCount ?? 30;
 					apiSucceeded = true;
 				}
 			} catch (fetchErr) {
-				console.warn(
-					"[pricelist] fetch /api/pricelist/seed-baseline-804n fallback to client loop:",
-					fetchErr,
-				);
+				console.warn("[pricelist] fetch /api/pricelist/seed fallback to client loop:", fetchErr);
 			}
 
 			if (!apiSucceeded) {
@@ -389,97 +288,52 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				seededCount = BASELINE_804N_PRICELIST_SERVICES.length;
 			}
 
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			} else if (typeof appLogic?.loadClinicSettings === "function") {
-				await appLogic.loadClinicSettings();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+			else if (typeof appLogic?.loadClinicSettings === "function") await appLogic.loadClinicSettings();
 
-			showToast(
-				seededCount > 0
-					? `Базовый прейскурант услуг успешно заполнен (${seededCount} услуг)`
-					: "Базовый прейскурант услуг актуален (услуги уже присутствуют в каталоге)",
-				"success",
-			);
-			setIs804nCodesMenuOpen(false);
+			showToast(seededCount > 0 ? `Базовый прейскурант услуг успешно заполнен (${seededCount} услуг)` : "Базовый прейскурант услуг актуален (услуги уже присутствуют в каталоге)", "success");
+			setIsCodesMenuOpen(false);
 		} catch (error: any) {
-			console.error(
-				"[pricelist] Ошибка наполнения базового прейскуранта услуг:",
-				error,
-			);
-			showToast(
-				error?.message || "Не удалось наполнить базовый прейскурант услуг",
-				"error",
-			);
+			console.error("[pricelist] Ошибка наполнения базового прейскуранта услуг:", error);
+			showToast(error?.message || "Не удалось наполнить базовый прейскурант услуг", "error");
 		} finally {
 			setIsSeedingBaseline(false);
 		}
 	};
 
-	const existingCatalogReferences: readonly ExistingCatalogReference[] =
-		useMemo(() => {
-			return buildExistingCatalogReferences(typedServiceCatalog);
-		}, [typedServiceCatalog]);
+	const existingCatalogReferences: readonly ExistingCatalogReference[] = useMemo(() => buildExistingCatalogReferences(typedServiceCatalog), [typedServiceCatalog]);
 
-	const runScannerRequest = async (opts: {
-		fileBase64?: string;
-		filename?: string;
-		rawContent?: string;
-	}) => {
+	const runScannerRequest = async (opts: { fileBase64?: string; filename?: string; rawContent?: string }) => {
 		setIsScanningPricelist(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders(
-				(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-					(appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ??
-					accessHeaders,
-			);
-
+			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
 			const payload = {
-				commit: false,
-				collisionStrategy: scannerCollisionStrategy,
-				filename: opts.filename || "pricelist.csv",
+				commit: false, collisionStrategy: scannerCollisionStrategy, filename: opts.filename || "pricelist.csv",
 				...(opts.fileBase64 ? { fileBase64: opts.fileBase64 } : {}),
 				...(opts.rawContent ? { rawContent: opts.rawContent } : {}),
 			};
-
 			const res = await fetch("/api/pricelist/scan-and-import", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...headers,
-				},
-				body: JSON.stringify(payload),
+				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
-
 			if (!res.ok) {
 				const errData = await res.json().catch(() => ({}));
-				throw new Error(
-					errData.message ||
-						`Ошибка сканирования прейскуранта (HTTP ${res.status})`,
-				);
+				throw new Error(errData.message || `Ошибка сканирования прейскуранта (HTTP ${res.status})`);
 			}
-
 			const data = await res.json();
 			const itemsList = data.scanResult?.items || data.items;
 			if (itemsList && itemsList.length > 0) {
 				const diffItems = mapScanItemsToDiffItems(itemsList);
 				if (diffItems.length === 0) {
-					showToast(
-						"В файле не найдено строк с услугами или ценами",
-						"warning",
-					);
+					showToast("В файле не найдено строк с услугами или ценами", "warning");
 					return;
 				}
-
 				setMappingDiffItems(diffItems);
 				setIsMappingDiffOpen(true);
 			}
 		} catch (err: unknown) {
-			const msg =
-				err instanceof Error ? err.message : "Сбой сканирования прейскуранта";
+			const msg = err instanceof Error ? err.message : "Сбой сканирования прейскуранта";
 			setScannerError(msg);
 			showToast(msg, "error");
 		} finally {
@@ -492,86 +346,48 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		reader.onload = async () => {
 			const resultStr = reader.result as string;
 			const base64 = resultStr.split(",")[1] || "";
-			const fileObj = {
-				name: file.name,
-				base64,
-				size: file.size,
-			};
-			setScannerFile(fileObj);
+			setScannerFile({ name: file.name, base64, size: file.size });
 			await runScannerRequest({ fileBase64: base64, filename: file.name });
 		};
 		reader.readAsDataURL(file);
 	};
 
-	const handleCommitPricelistDiff = async (
-		approvedItems: readonly IngestedMappingItem[],
-	) => {
+	const handleCommitPricelistDiff = async (approvedItems: readonly IngestedMappingItem[]) => {
 		setIsCommittingImport(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders(
-				(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-					(appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ??
-					accessHeaders,
-			);
-
+			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
 			const payload = {
-				commit: true,
-				collisionStrategy: scannerCollisionStrategy,
+				commit: true, collisionStrategy: scannerCollisionStrategy,
 				approvedItems: approvedItems.map((it) => ({
-					cleanedTitle: it.cleanedTitle,
-					code: it.code804n ? undefined : it.cleanedTitle,
-					code804n: it.code804n,
-					category: it.category,
-					specialty: it.specialty,
-					priceRub: it.priceRub,
-					durationMinutes: 30,
-					suggestedAction: it.suggestedAction,
-					matchedExistingServiceId: it.matchedExistingServiceId,
-					isApproved: true,
+					cleanedTitle: it.cleanedTitle, code: it.code804n ? undefined : it.cleanedTitle,
+					code804n: it.code804n, standardCode: it.code804n, catalogCode: it.code804n,
+					category: it.category, specialty: it.specialty, priceRub: it.priceRub,
+					durationMinutes: 30, suggestedAction: it.suggestedAction,
+					matchedExistingServiceId: it.matchedExistingServiceId, isApproved: true,
 				})),
 				filename: scannerFile?.name || "pricelist.csv",
 			};
-
 			const res = await fetch("/api/pricelist/scan-and-import", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...headers,
-				},
-				body: JSON.stringify(payload),
+				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
-
 			if (!res.ok) {
 				const errData = await res.json().catch(() => ({}));
-				throw new Error(
-					errData.message ||
-						`Ошибка сохранения прейскуранта (HTTP ${res.status})`,
-				);
+				throw new Error(errData.message || `Ошибка сохранения прейскуранта (HTTP ${res.status})`);
 			}
-
 			const data = await res.json();
 			const count = data.committedCount ?? approvedItems.length;
-			showToast(
-				`Прейскурант успешно сохранён: ${count} услуг в каталоге клиники`,
-				"success",
-			);
-
+			showToast(`Прейскурант успешно сохранён: ${count} услуг в каталоге клиники`, "success");
 			setIsMappingDiffOpen(false);
 			setIsNativeScannerDropzoneOpen(false);
 			setScannerFile(null);
 			setScannerText("");
 
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			} else if (typeof appLogic?.loadClinicSettings === "function") {
-				await appLogic.loadClinicSettings();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+			else if (typeof appLogic?.loadClinicSettings === "function") await appLogic.loadClinicSettings();
 		} catch (err: unknown) {
-			const msg =
-				err instanceof Error ? err.message : "Не удалось сохранить прейскурант";
+			const msg = err instanceof Error ? err.message : "Не удалось сохранить прейскурант";
 			setScannerError(msg);
 			showToast(msg, "error");
 		} finally {
@@ -579,66 +395,35 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		}
 	};
 
-	const handleDirectFlatImport = async (opts: {
-		fileBase64?: string;
-		filename?: string;
-		rawContent?: string;
-	}) => {
+	const handleDirectFlatImport = async (opts: { fileBase64?: string; filename?: string; rawContent?: string }) => {
 		setIsCommittingImport(true);
 		setScannerError(null);
 		try {
-			const headers = staffMutationHeaders(
-				(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
-					(appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ??
-					accessHeaders,
-			);
-
+			const headers = staffMutationHeaders((mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined) ?? accessHeaders);
 			const payload = {
-				commit: true,
-				collisionStrategy: scannerCollisionStrategy,
-				filename: opts.filename || "pricelist.csv",
+				commit: true, collisionStrategy: scannerCollisionStrategy, filename: opts.filename || "pricelist.csv",
 				...(opts.fileBase64 ? { fileBase64: opts.fileBase64 } : {}),
 				...(opts.rawContent ? { rawContent: opts.rawContent } : {}),
 			};
-
 			const res = await fetch("/api/pricelist/scan-and-import", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...headers,
-				},
-				body: JSON.stringify(payload),
+				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
-
 			if (!res.ok) {
 				const errData = await res.json().catch(() => ({}));
-				throw new Error(
-					errData.message ||
-						`Ошибка импорта прейскуранта (HTTP ${res.status})`,
-				);
+				throw new Error(errData.message || `Ошибка импорта прейскуранта (HTTP ${res.status})`);
 			}
-
 			const data = await res.json();
 			const count = data.committedCount ?? data.scanResult?.items?.length ?? 0;
-			showToast(
-				`Прейскурант успешно импортирован: ${count} услуг в каталоге клиники`,
-				"success",
-			);
-
+			showToast(`Прейскурант успешно импортирован: ${count} услуг в каталоге клиники`, "success");
 			setIsNativeScannerDropzoneOpen(false);
 			setScannerFile(null);
 			setScannerText("");
 
-			if (typeof mergedProps.refreshDashboard === "function") {
-				await mergedProps.refreshDashboard();
-			} else if (typeof appLogic?.refreshDashboard === "function") {
-				await appLogic.refreshDashboard();
-			} else if (typeof appLogic?.loadClinicSettings === "function") {
-				await appLogic.loadClinicSettings();
-			}
+			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+			else if (typeof appLogic?.loadClinicSettings === "function") await appLogic.loadClinicSettings();
 		} catch (err: unknown) {
-			const msg =
-				err instanceof Error ? err.message : "Не удалось импортировать прейскурант";
+			const msg = err instanceof Error ? err.message : "Не удалось импортировать прейскурант";
 			setScannerError(msg);
 			showToast(msg, "error");
 		} finally {
@@ -648,9 +433,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 	const openNewServiceModal = () => {
 		setEditServiceForm({
-			...NEW_SERVICE_TEMPLATE,
-			order804nCode: "",
-			materialsCostRub: 0,
+			...NEW_SERVICE_TEMPLATE, catalogCode: "", standardCode: "", order804nCode: "", materialsCostRub: 0,
 		});
 		setPriceRubInput("");
 		setPriceProblem(null);
@@ -658,22 +441,16 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	};
 
 	const openEditServiceModal = (item: any) => {
+		const statutoryCode = item.standardCode || item.catalogCode || item.order804nCode || item.code || "";
 		setEditServiceForm({
-			title: item.title,
-			code: item.code || "",
-			order804nCode: item.order804nCode || item.code || "",
-			category: item.category,
-			specialty: item.specialty,
-			basePriceRub: item.basePriceRub ?? item.priceRub ?? 0,
-			materialsCostRub: item.materialsCostRub ?? 0,
-			durationMinutes: item.durationMinutes || 30,
-			taxDeductible: item.taxDeductible,
-			vatRate: item.vatRate || "vat_exempt",
+			title: item.title, code: item.code || "", catalogCode: statutoryCode,
+			standardCode: statutoryCode, order804nCode: statutoryCode, category: item.category,
+			specialty: item.specialty, basePriceRub: item.basePriceRub ?? item.priceRub ?? 0,
+			materialsCostRub: item.materialsCostRub ?? 0, durationMinutes: item.durationMinutes || 30,
+			taxDeductible: item.taxDeductible, vatRate: item.vatRate || "vat_exempt",
 			active: item.isActive !== false && item.active !== false,
 		});
-		setPriceRubInput(
-			rubToPriceInput(item.basePriceRub ?? item.priceRub ?? 0),
-		);
+		setPriceRubInput(rubToPriceInput(item.basePriceRub ?? item.priceRub ?? 0));
 		setPriceProblem(null);
 		setEditServiceId(item.id);
 	};
@@ -684,112 +461,46 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	};
 
 	const handleImportSuccess = async () => {
-		if (typeof mergedProps.refreshDashboard === "function") {
-			await mergedProps.refreshDashboard();
-		} else if (typeof appLogic?.refreshDashboard === "function") {
-			await appLogic.refreshDashboard();
-		} else if (typeof appLogic?.loadClinicSettings === "function") {
-			await appLogic.loadClinicSettings();
-		}
+		if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
+		else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
+		else if (typeof appLogic?.loadClinicSettings === "function") await appLogic.loadClinicSettings();
 	};
 
 	return {
-		mergedProps,
-		appLogic,
-		dashboard,
-		accessHeaders,
-		// Sub-module labels
-		serviceCategoryLabels,
-		specialtyLabels,
-		pricelistSourceKindLabels,
-		pricelistSourceKind,
-		setPricelistSourceKind,
-		clearPricelistImage,
-		setPricelistAnalysis,
-		pricelistRecognitionServiceGroups,
-		pricelistRecognitionBrandGroups,
-		pricelistText,
-		setPricelistText,
-		pricelistImageName,
-		attachPricelistImage,
-		usePricelistAi,
-		setUsePricelistAi,
-		analyzePricelist,
-		isPricelistAnalyzing,
-		pricelistImageBase64,
-		pricelistAnalysis,
-		pricelistParserModeLabels,
+		mergedProps, appLogic, dashboard, accessHeaders,
+		serviceCategoryLabels, specialtyLabels, pricelistSourceKindLabels, pricelistSourceKind,
+		setPricelistSourceKind, clearPricelistImage, setPricelistAnalysis,
+		pricelistRecognitionServiceGroups, pricelistRecognitionBrandGroups,
+		pricelistText, setPricelistText, pricelistImageName, attachPricelistImage,
+		usePricelistAi, setUsePricelistAi, analyzePricelist, isPricelistAnalyzing,
+		pricelistImageBase64, pricelistAnalysis, pricelistParserModeLabels,
 		// State
-		activeTab,
-		setActiveTab,
-		searchQuery,
-		setSearchQuery,
-		selectedCategoryFilter,
-		setSelectedCategoryFilter,
-		isServicePricelistModalOpen,
-		setIsServicePricelistModalOpen,
-		categoryLimits,
-		setCategoryLimits,
-		isCodesMenuOpen: is804nCodesMenuOpen,
-		setIsCodesMenuOpen: setIs804nCodesMenuOpen,
-		codesMenuRef: codes804nMenuRef,
-		is804nCodesMenuOpen,
-		setIs804nCodesMenuOpen,
-		codes804nMenuRef,
-		editServiceId,
-		setEditServiceId,
-		editServiceForm,
-		setEditServiceForm,
-		priceRubInput,
-		setPriceRubInput,
-		priceProblem,
-		setPriceProblem,
-		isSaving,
-		deletingServiceId,
-		isSeedingBaseline,
-		isNativeScannerDropzoneOpen,
-		setIsNativeScannerDropzoneOpen,
-		scannerMode,
-		setScannerMode,
-		scannerDragOver,
-		setScannerDragOver,
-		scannerFile,
-		setScannerFile,
-		scannerText,
-		setScannerText,
-		scannerCollisionStrategy,
-		setScannerCollisionStrategy,
-		isScanningPricelist,
-		scannerError,
-		isMappingDiffOpen,
-		setIsMappingDiffOpen,
-		mappingDiffItems,
-		setMappingDiffItems,
-		isCommittingImport,
-		nativeFileInputRef,
-		fileInputRef,
+		activeTab, setActiveTab, searchQuery, setSearchQuery,
+		selectedCategoryFilter, setSelectedCategoryFilter,
+		isServicePricelistModalOpen, setIsServicePricelistModalOpen,
+		categoryLimits, setCategoryLimits,
+		isCodesMenuOpen, setIsCodesMenuOpen, codesMenuRef,
+		is804nCodesMenuOpen: isCodesMenuOpen, setIs804nCodesMenuOpen: setIsCodesMenuOpen, codes804nMenuRef: codesMenuRef,
+		editServiceId, setEditServiceId, editServiceForm, setEditServiceForm,
+		priceRubInput, setPriceRubInput, priceProblem, setPriceProblem,
+		isSaving, deletingServiceId, isSeedingBaseline,
+		isNativeScannerDropzoneOpen, setIsNativeScannerDropzoneOpen,
+		scannerMode, setScannerMode, scannerDragOver, setScannerDragOver,
+		scannerFile, setScannerFile, scannerText, setScannerText,
+		scannerCollisionStrategy, setScannerCollisionStrategy,
+		isScanningPricelist, scannerError,
+		isMappingDiffOpen, setIsMappingDiffOpen,
+		mappingDiffItems, setMappingDiffItems,
+		isCommittingImport, nativeFileInputRef, fileInputRef,
 		// Computed
-		typedServiceCatalog,
-		filteredCatalog,
-		groupedCatalog,
-		modalInitialItems,
-		existingCatalogReferences,
+		typedServiceCatalog, filteredCatalog, groupedCatalog,
+		modalInitialItems, existingCatalogReferences,
 		// Handlers
-		handleSaveService,
-		handleDeleteService,
-		handleSaveCatalog,
-		handleExportCsv,
-		handlePrintPricelist,
-		handleImportCsvFile,
-		handleSeedStandardCatalog: handleSeedBaseline804n,
-		handleSeedBaseline804n,
-		runScannerRequest,
-		handleProcessScannerFile,
-		handleCommitPricelistDiff,
-		handleDirectFlatImport,
-		openNewServiceModal,
-		openEditServiceModal,
-		resetFilters,
-		handleImportSuccess,
+		handleSaveService, handleDeleteService, handleSaveCatalog,
+		handleExportCsv, handlePrintPricelist, handleImportCsvFile,
+		handleSeedStandardCatalog, handleSeedBaseline804n: handleSeedStandardCatalog,
+		runScannerRequest, handleProcessScannerFile, handleCommitPricelistDiff,
+		handleDirectFlatImport, openNewServiceModal, openEditServiceModal,
+		resetFilters, handleImportSuccess,
 	};
 }

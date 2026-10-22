@@ -1,10 +1,1 @@
-@import "./pricesTab/styles/pricesLayout.css";
 @import "./pricesTab/styles/pricesCatalog.css";
-@import "./pricesTab/styles/pricesDropzone.css";
-@import "./pricesTab/styles/pricesTaxonomy.css";
-@import "./pricesTab/styles/pricesAiImport.css";
-@import "./pricesTab/styles/pricesThemes.css";
-@import "./pricesTab/styles/pricesTable.css";
-@import "./pricesTab/styles/pricesModal.css";
-@import "./pricesTab/styles/pricesButtons.css";
-@import "./pricesTab/styles/pricesResponsive.css";

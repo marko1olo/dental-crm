@@ -715,6 +715,8 @@ export async function handleBatchReprice(
 	}
 }
 
+export const handleSeedStandardCatalog = handleSeedBaseline804n;
+
 /**
  * Регистрация маршрутов прейскуранта.
  */
@@ -724,46 +726,13 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 	app.get("/api/pricing/catalog", handleGetPricelists);
 	app.get("/api/pricelist/categories", handleGetCategories);
 
-	app.post(
-		"/api/pricelist/analyze",
-		{
-			bodyLimit: 5 * 1024 * 1024,
-		},
-		handleAnalyzePricelist,
-	);
+	app.post("/api/pricelist/analyze", { bodyLimit: 5 * 1024 * 1024 }, handleAnalyzePricelist);
+	app.post("/api/pricelist/ingest", { bodyLimit: 10 * 1024 * 1024 }, handleIngestPricelist);
+	app.post("/api/pricelist/parse-file", { bodyLimit: 15 * 1024 * 1024 }, handleParseFile);
+	app.post("/api/pricelist/scan-and-import", { bodyLimit: 20 * 1024 * 1024 }, handleScanAndImport);
+	app.post("/api/pricelist/batch-import", { bodyLimit: 15 * 1024 * 1024 }, handleBatchImport);
 
-	app.post(
-		"/api/pricelist/ingest",
-		{
-			bodyLimit: 10 * 1024 * 1024,
-		},
-		handleIngestPricelist,
-	);
-
-	app.post(
-		"/api/pricelist/parse-file",
-		{
-			bodyLimit: 15 * 1024 * 1024,
-		},
-		handleParseFile,
-	);
-
-	app.post(
-		"/api/pricelist/scan-and-import",
-		{
-			bodyLimit: 20 * 1024 * 1024,
-		},
-		handleScanAndImport,
-	);
-
-	app.post(
-		"/api/pricelist/batch-import",
-		{
-			bodyLimit: 15 * 1024 * 1024,
-		},
-		handleBatchImport,
-	);
-
+	app.post("/api/pricelist/seed-standard-catalog", handleSeedBaseline804n);
 	app.post("/api/pricelist/seed-baseline-804n", handleSeedBaseline804n);
 	app.post("/api/pricelist/seed-baseline", handleSeedBaseline804n);
 	app.post("/api/pricelist/seed", handleSeedBaseline804n);

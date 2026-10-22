@@ -4,7 +4,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { SettingsPricesAiImportSection } from "./SettingsPricesAiImportSection";
 import {
-	PriceItemModal,
+	PriceItemEditModal,
 	PricesCatalogSection,
 	useSettingsPricesLogic,
 } from "./pricesTab";
@@ -78,7 +78,7 @@ export function SettingsPricesTab() {
 				/>
 			)}
 
-			<PriceItemModal
+			<PriceItemEditModal
 				isOpen={Boolean(prices.editServiceId)} isNew={prices.editServiceId === "new"}
 				editServiceForm={prices.editServiceForm} setEditServiceForm={prices.setEditServiceForm}
 				priceRubInput={prices.priceRubInput} setPriceRubInput={prices.setPriceRubInput}

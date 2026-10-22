@@ -4,7 +4,6 @@ import {
 	Plus,
 	Printer,
 	Search,
-	ShieldCheck,
 	Sparkles,
 	Tag,
 	UploadCloud,
@@ -13,7 +12,7 @@ import {
 import type React from "react";
 import {
 	CATEGORY_TABS,
-	QUICK_804N_CHIPS,
+	QUICK_CLINICAL_CHIPS,
 } from "../pricelistEditorHelpers";
 import type { PricesFilterToolbarProps } from "./types";
 
@@ -107,7 +106,7 @@ export function PricesFilterToolbar({
 									? "active"
 									: ""
 							}`}
-							title="Выбрать типовую услугу из справочника услуг и процедур"
+							title="Выбрать типовую услугу из каталога процедур"
 							aria-expanded={isMenuOpen}
 						>
 							<Tag size={13} className="text-[var(--teal)] shrink-0" />
@@ -128,7 +127,7 @@ export function PricesFilterToolbar({
 									Быстрый выбор процедур
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-									{QUICK_804N_CHIPS.map((chip) => (
+									{QUICK_CLINICAL_CHIPS.map((chip) => (
 										<button
 											key={chip.code}
 											type="button"
@@ -153,7 +152,8 @@ export function PricesFilterToolbar({
 								<div className="mt-1.5 pt-1.5 border-t border-[var(--line)]">
 									<button
 										type="button"
-										data-testid="pricelist-seed-baseline-804n-btn"
+										data-testid="pricelist-seed-standard-catalog-btn"
+										data-testid-alias="pricelist-seed-baseline-804n-btn"
 										disabled={isSeedingBaseline}
 										onClick={() => seedCatalog?.(false)}
 										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
@@ -214,10 +214,10 @@ export function PricesFilterToolbar({
 						title="Импорт прейскуранта клиники (Excel / CSV / Текст) со сканером номенклатуры услуг"
 					>
 						<UploadCloud size={13} className="text-[var(--teal)] shrink-0" />
-						<span className="hidden xl:inline">
+						<span className="hidden 2xl:inline">
 							Импорт прейскуранта (Excel/CSV/Текст)
 						</span>
-						<span className="hidden sm:inline xl:hidden">Импорт</span>
+						<span className="hidden sm:inline 2xl:hidden">Импорт</span>
 						<span className="sm:hidden">Импорт</span>
 					</button>
 					<button

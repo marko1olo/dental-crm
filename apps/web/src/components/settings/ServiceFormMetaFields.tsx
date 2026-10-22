@@ -6,6 +6,8 @@ export interface ServiceFormMetaFieldsProps {
 	readonly editServiceForm: {
 		title: string;
 		code: string;
+		catalogCode?: string;
+		standardCode?: string;
 		order804nCode?: string;
 		category: ServiceCategory;
 		specialty: DentalSpecialty;
@@ -17,19 +19,7 @@ export interface ServiceFormMetaFieldsProps {
 		active: boolean;
 	};
 	readonly setEditServiceForm: React.Dispatch<
-		React.SetStateAction<{
-			title: string;
-			code: string;
-			order804nCode?: string;
-			category: ServiceCategory;
-			specialty: DentalSpecialty;
-			basePriceRub: number;
-			materialsCostRub?: number;
-			durationMinutes: number;
-			taxDeductible: boolean;
-			vatRate: "vat_exempt" | "vat_0" | "vat_20";
-			active: boolean;
-		}>
+		React.SetStateAction<any>
 	>;
 	readonly serviceCategoryLabels: Record<string, string>;
 	readonly specialtyLabels: Record<string, string>;
@@ -50,7 +40,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-category-select"
 						value={editServiceForm.category}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								category: e.target.value as ServiceCategory,
 							}))
@@ -71,7 +61,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-specialty-select"
 						value={editServiceForm.specialty}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								specialty: e.target.value as DentalSpecialty,
 							}))
@@ -95,7 +85,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-duration-select"
 						value={editServiceForm.durationMinutes}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								durationMinutes: Number.parseInt(e.target.value, 10),
 							}))
@@ -116,7 +106,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-vat-select"
 						value={editServiceForm.vatRate || "vat_exempt"}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								vatRate: e.target.value as "vat_exempt" | "vat_0" | "vat_20",
 							}))
@@ -139,7 +129,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						type="checkbox"
 						checked={editServiceForm.taxDeductible}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								taxDeductible: e.target.checked,
 							}))
@@ -158,7 +148,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						type="checkbox"
 						checked={editServiceForm.active}
 						onChange={(e) =>
-							setEditServiceForm((prev) => ({
+							setEditServiceForm((prev: any) => ({
 								...prev,
 								active: e.target.checked,
 							}))
