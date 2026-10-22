@@ -18,21 +18,9 @@ const OdontogramModule = lazyWithRetry(() =>
 	})),
 );
 
-export function OdontogramSkeleton() {
-	return (
-		<div
-			className="odontogram-skeleton"
-			aria-label="Загрузка зубной формулы"
-			aria-busy="true"
-		>
-			<div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-				<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)] animate-spin" />
-				<span>Загрузка интерактивной зубной формулы...</span>
-			</div>
-		</div>
-	);
-}
+import { OdontogramSkeleton } from "./odontogramTab/OdontogramSkeleton";
 
+export { OdontogramSkeleton };
 export * from "./odontogramTab/visitOdontogramTabTypes";
 export { resolveValidVisitUuid } from "./odontogramTab/visitOdontogramResolve";
 
