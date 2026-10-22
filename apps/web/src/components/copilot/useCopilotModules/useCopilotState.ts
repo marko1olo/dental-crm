@@ -41,7 +41,6 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 	// Expose global automation hooks for Playwright & E2E proof captures
 	useEffect(() => {
 		if (typeof window !== "undefined") {
-			// biome-ignore lint/suspicious/noExplicitAny: automation hook
 			(window as any).__denteCopilot = {
 				open: () => setIsOpen(true),
 				close: () => setIsOpen(false),
@@ -49,16 +48,12 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				setMessages: (msgs: CopilotUiMessage[]) => setMessages(msgs),
 				setPending: (pend: PendingConfirmation | null) => setPending(pend),
 				setActiveTab: (tab: "chat" | "pending") => setActiveTab(tab),
-				setProactiveAlerts: (alerts: ProactiveAlertCardData[]) =>
-					setProactiveAlerts(alerts),
-				setWhatsappHitLCards: (cards: WhatsAppApprovalCard[]) =>
-					setWhatsappHitLCards(cards),
+				setProactiveAlerts: (alerts: ProactiveAlertCardData[]) => setProactiveAlerts(alerts),
+				setWhatsappHitLCards: (cards: WhatsAppApprovalCard[]) => setWhatsappHitLCards(cards),
 			};
 		}
 		return () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automation hook cleanup
 			if (typeof window !== "undefined" && (window as any).__denteCopilot) {
-				// biome-ignore lint/suspicious/noExplicitAny: automation hook cleanup
 				delete (window as any).__denteCopilot;
 			}
 		};
@@ -104,32 +99,10 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 	}, []);
 
 	return {
-		isOpen,
-		setIsOpen,
-		conversationId,
-		setConversationId,
-		messages,
-		setMessages,
-		busy,
-		setBusy,
-		pending,
-		setPending,
-		phase,
-		setPhase,
-		nameCache,
-		setNameCache,
-		nudges,
-		setNudges,
-		activeTab,
-		setActiveTab,
-		proactiveAlerts,
-		setProactiveAlerts,
-		whatsappHitLCards,
-		setWhatsappHitLCards,
-		toggle,
-		openDrawer,
-		closeDrawer,
-		cacheNames,
-		resetState,
+		isOpen, setIsOpen, conversationId, setConversationId, messages, setMessages,
+		busy, setBusy, pending, setPending, phase, setPhase, nameCache, setNameCache,
+		nudges, setNudges, activeTab, setActiveTab, proactiveAlerts, setProactiveAlerts,
+		whatsappHitLCards, setWhatsappHitLCards, toggle, openDrawer, closeDrawer,
+		cacheNames, resetState,
 	};
 }

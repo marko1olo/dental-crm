@@ -57,26 +57,12 @@ export const ChairsideCapsuleVoiceControls: React.FC<ChairsideCapsuleVoiceProps>
         data-testid="chairside-vu-meter"
         title={isListening ? "Микрофон активен: идёт приём звука" : "Микрофон ожидает активации"}
       >
-        <span
-          className="chairside-vu-bar chairside-vu-bar--1"
-          style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.round(((vu[0] ?? 0) / 100) * 18))}px` } : undefined}
-        />
-        <span
-          className="chairside-vu-bar chairside-vu-bar--2"
-          style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.round(((vu[1] ?? 0) / 100) * 20))}px` } : undefined}
-        />
-        <span
-          className="chairside-vu-bar chairside-vu-bar--3"
-          style={isListening && audioVolume > 0 ? { height: `${Math.max(5, Math.round(((vu[2] ?? 0) / 100) * 22))}px` } : undefined}
-        />
-        <span
-          className="chairside-vu-bar chairside-vu-bar--4"
-          style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.round(((vu[3] ?? 0) / 100) * 20))}px` } : undefined}
-        />
-        <span
-          className="chairside-vu-bar chairside-vu-bar--5"
-          style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.round(((vu[4] ?? 0) / 100) * 18))}px` } : undefined}
-        />
+        {[0, 1, 2, 3, 4].map((idx) => {
+          const maxH = [18, 20, 22, 20, 18][idx] ?? 20;
+          const minH = [4, 6, 5, 6, 4][idx] ?? 4;
+          const h = isListening && audioVolume > 0 ? `${Math.max(minH, Math.round(((vu[idx] ?? 0) / 100) * maxH))}px` : undefined;
+          return <span key={idx} className={`chairside-vu-bar chairside-vu-bar--${idx + 1}`} style={h ? { height: h } : undefined} />;
+        })}
       </div>
     </>
   );

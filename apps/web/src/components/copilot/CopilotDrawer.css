@@ -1285,6 +1285,10 @@
   flex-shrink: 0;
 }
 
+.copilot-drawer-drag-handle {
+  display: none;
+}
+
 /* Mobile Responsive Override */
 @media (max-width: 768px) {
   .copilot-drawer,
@@ -1298,7 +1302,17 @@
     height: 100vh;
     height: 100dvh;
     border-left: none;
+    border-radius: 24px 24px 0 0;
     z-index: 99999;
+  }
+  .copilot-drawer-drag-handle {
+    display: block;
+    width: 36px;
+    height: 5px;
+    margin: 8px auto 2px;
+    background: var(--line-strong, rgba(0, 0, 0, 0.25));
+    border-radius: 9999px;
+    flex-shrink: 0;
   }
   .copilot-msg-bubble {
     max-width: 90%;

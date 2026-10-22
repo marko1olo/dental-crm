@@ -1,113 +1,42 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { Send, Mic, MicOff, RotateCcw, ShieldCheck, Check, Activity } from 'lucide-react';
-import { useUnifiedDictation } from '../../hooks/useUnifiedDictation';
-import { useAudioFeedback } from '../../hooks/useAudioFeedback';
-import { showToast } from '../GlobalToast';
-import { safeLocalStorageSetItem, safeLocalStorageRemoveItem } from '../../lib/safeLocalStorage';
+import React, { useRef, useEffect } from "react";
+import { Send, Mic, MicOff } from "lucide-react";
+import { useAudioFeedback } from "../../hooks/useAudioFeedback";
+import { showToast } from "../GlobalToast";
+import { safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
+import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
+import { CopilotComposerFooter } from "./composer/CopilotComposerFooter";
+import { useCopilotComposerDictation } from "./composer/useCopilotComposerDictation";
+import type { CopilotComposerProps } from "./composer/composerTypes";
 
-export interface CopilotComposerProps {
-  value: string;
-  busy: boolean;
-  onChange: (text: string) => void;
-  onSubmit: () => void;
-  onReset?: () => void;
-  organizationId?: string | null;
-  patientId?: string | null;
-  visitId?: string | null;
-}
+export type { CopilotComposerProps };
+
+export const DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации для дневника приёма";
 
 export const CopilotComposer: React.FC<CopilotComposerProps> = ({
-  value,
-  busy,
-  onChange,
-  onSubmit,
-  onReset,
-  organizationId,
-  patientId,
-  visitId,
+  value, busy, onChange, onSubmit, onReset, organizationId, patientId, visitId,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const baseTextRef = useRef<string>('');
-  const lastEmittedRef = useRef<string>('');
   const { playActionSuccess } = useAudioFeedback();
+  const dict = useCopilotComposerDictation({ value, onChange, organizationId, patientId, visitId });
 
-  const {
-    isRecording,
-    isSpeaking,
-    mode: dictationMode,
-    audioLevel,
-    interimText,
-    fullTranscript,
-    startDictation,
-    stopDictation,
-    clearTranscript,
-  } = useUnifiedDictation({
-    preferredMode: 'gemini_live',
-    context: 'chat',
-    specialty: 'therapy',
-    organizationId,
-    patientId,
-    visitId,
-  });
-
-  const syncLiveText = useCallback(
-    (accumulated: string, interim: string) => {
-      const base = baseTextRef.current.trim();
-      const spoken = `${accumulated || ''} ${interim || ''}`.trim();
-      const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
-      if (combined !== lastEmittedRef.current) {
-        lastEmittedRef.current = combined;
-        onChange(combined);
-        try {
-          if (combined.trim()) {
-            safeLocalStorageSetItem('dente_copilot_draft_text', combined);
-          } else {
-            safeLocalStorageRemoveItem('dente_copilot_draft_text');
-          }
-        } catch {
-          // ignore storage access errors
-        }
-      }
-    },
-    [onChange],
-  );
-
-  // Synchronize live dictation tokens (interim and accumulated) in real time
-  useEffect(() => {
-    if (isRecording) {
-      syncLiveText(fullTranscript, interimText);
-    }
-  }, [isRecording, fullTranscript, interimText, syncLiveText]);
-
-  // Dynamic textarea height calculation
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [value]);
 
-  const DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации для дневника приёма";
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (busy) return;
-      if (!value.trim()) {
-        handleTextChange(DEFAULT_CLINICAL_PROMPT);
-        showToast("Подставлен клинический запрос по умолчанию", "info");
-        textareaRef.current?.focus();
-        return;
-      }
-      if (isRecording) {
-        stopDictation();
-      }
-      void playActionSuccess();
-      onSubmit();
-    }
+  const handleTextChange = (newText: string) => {
+    dict.baseTextRef.current = newText;
+    onChange(newText);
+    dict.lastEmittedRef.current = newText;
+    try {
+      if (newText.trim()) safeLocalStorageSetItem("dente_copilot_draft_text", newText);
+      else safeLocalStorageRemoveItem("dente_copilot_draft_text");
+    } catch { /* ignore */ }
   };
 
-  const handleSendClick = () => {
+  const handleSend = () => {
     if (busy) return;
     if (!value.trim()) {
       handleTextChange(DEFAULT_CLINICAL_PROMPT);
@@ -115,184 +44,67 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
       textareaRef.current?.focus();
       return;
     }
-    if (isRecording) {
-      stopDictation();
-    }
+    if (dict.isRecording) void dict.stopDictation();
     void playActionSuccess();
     onSubmit();
   };
 
-  const handleTextChange = (newText: string) => {
-    baseTextRef.current = newText;
-    onChange(newText);
-    lastEmittedRef.current = newText;
-    try {
-      if (newText.trim()) {
-        safeLocalStorageSetItem('dente_copilot_draft_text', newText);
-      } else {
-        safeLocalStorageRemoveItem('dente_copilot_draft_text');
-      }
-    } catch {
-      // ignore storage access errors
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
-
-  const handleToggleVoice = async () => {
-    if (isRecording) {
-      await stopDictation();
-    } else {
-      baseTextRef.current = value || '';
-      clearTranscript();
-      await startDictation('gemini_live');
-    }
-  };
-
-  const handleStopVoice = async () => {
-    if (isRecording) {
-      await stopDictation();
-    }
-  };
-
-  const modeLabel =
-    dictationMode === 'gemini_live'
-      ? 'Gemini 3.5 Transcribe Live'
-      : dictationMode === 'server_whisper'
-      ? 'Server Whisper'
-      : 'Web Speech Live';
 
   return (
     <div className="copilot-composer">
-      {/* Live Dictation & VU-Meter Status Capsule */}
-      {isRecording && (
-        <div className="copilot-dictation-banner" data-testid="copilot-dictation-banner">
-          <div className="copilot-dictation-meta">
-            <span className="copilot-recording-dot" />
-            <span className="copilot-dictation-title">{modeLabel}</span>
-            <span className="copilot-dictation-state">
-              {isSpeaking ? '• Распознавание...' : '• Слушаю микрофон...'}
-            </span>
-          </div>
-
-          {/* Live Dynamic VU Equalizer */}
-          <div className="copilot-vu-meter-bar-container" aria-label="VU-метр микрофона" title="Уровень звука">
-            {[0.4, 0.8, 1.3, 0.9, 0.5].map((factor, idx) => {
-              const heightPx = Math.max(4, Math.min(22, 4 + audioLevel * factor * 22));
-              return (
-                <span
-                  key={idx}
-                  className="copilot-vu-equalizer-bar"
-                  style={{
-                    height: `${heightPx}px`,
-                    backgroundColor: isSpeaking ? 'var(--teal, #0d9488)' : 'var(--muted, #6b7280)',
-                  }}
-                />
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleStopVoice}
-            className="copilot-stop-dictation-btn"
-            title="Завершить надиктовку и сохранить текст"
-          >
-            <Check size={14} />
-            <span>Готово</span>
-          </button>
-        </div>
+      {dict.isRecording && (
+        <CopilotDictationBanner
+          dictationMode={dict.mode} isSpeaking={dict.isSpeaking} audioLevel={dict.audioLevel}
+          onStopVoice={dict.handleStopVoice}
+        />
       )}
 
-      {/* Input box */}
       <div className="copilot-composer-box">
-        {isRecording ? (
-          <div
-            className="copilot-two-layer-display"
-            data-testid="copilot-two-layer-stream"
-            aria-live="polite"
-          >
-            {baseTextRef.current && (
-              <span className="copilot-stream-base">{baseTextRef.current} </span>
-            )}
-            <span className="copilot-stream-final">{fullTranscript}</span>
-            {interimText.trim() && (
-              <span className="copilot-stream-interim">
-                {fullTranscript.trim() ? ' ' : ''}{interimText.trim()}
-              </span>
-            )}
-            {!baseTextRef.current && !fullTranscript.trim() && !interimText.trim() && (
-              <span style={{ color: 'var(--muted, #6b7280)' }}>
+        {dict.isRecording ? (
+          <div className="copilot-two-layer-display" data-testid="copilot-two-layer-stream" aria-live="polite">
+            {dict.baseTextRef.current && <span className="copilot-stream-base">{dict.baseTextRef.current} </span>}
+            <span className="copilot-stream-final">{dict.fullTranscript}</span>
+            {dict.interimText.trim() && <span className="copilot-stream-interim">{dict.fullTranscript.trim() ? " " : ""}{dict.interimText.trim()}</span>}
+            {!dict.baseTextRef.current && !dict.fullTranscript.trim() && !dict.interimText.trim() && (
+              <span style={{ color: "var(--muted, #6b7280)" }}>
                 <Mic size={14} className="inline mr-1 text-[var(--teal)] animate-pulse" /> Говорите... ДЕНТА слушает и транскрибирует в реальном времени...
               </span>
             )}
           </div>
         ) : (
           <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => handleTextChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Спросить ДЕНТУ или отдать команду врачебного протокола..."
-            disabled={busy}
-            rows={1}
-            className="copilot-textarea"
-            aria-label="Поле ввода запроса или голосовой надиктовки"
+            ref={textareaRef} value={value} onChange={(e) => handleTextChange(e.target.value)} onKeyDown={handleKeyDown}
+            placeholder="Спросить ДЕНТУ или отдать команду врачебного протокола..." disabled={busy} rows={1}
+            className="copilot-textarea" aria-label="Поле ввода запроса или голосовой надиктовки"
           />
         )}
 
-        {/* Live Mic Toggle Button */}
         <button
-          type="button"
-          onClick={handleToggleVoice}
-          className={`copilot-icon-btn copilot-mic-btn ${isRecording ? 'active recording' : ''}`}
-          title={
-            isRecording
-              ? 'Остановить надиктовку речи'
-              : 'Голосовая надиктовка ДЕНТА (Gemini 3.5 Transcribe Live)'
-          }
-          aria-label={isRecording ? 'Остановить запись речи' : 'Голосовая надиктовка ДЕНТА'}
+          type="button" onClick={dict.handleToggleVoice}
+          className={`copilot-icon-btn copilot-mic-btn ${dict.isRecording ? "active recording" : ""}`}
+          title={dict.isRecording ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Gemini 3.5 Transcribe Live)"}
+          aria-label={dict.isRecording ? "Остановить запись речи" : "Голосовая надиктовка ДЕНТА"}
           data-testid="copilot-mic-btn"
         >
-          {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+          {dict.isRecording ? <MicOff size={18} /> : <Mic size={18} />}
         </button>
 
-        {/* Send Button */}
         <button
-          type="button"
-          onClick={handleSendClick}
-          disabled={busy}
-          className="copilot-send-btn"
-          title="Отправить (Enter)"
-          aria-label="Отправить сообщение"
+          type="button" onClick={handleSend} disabled={busy} className="copilot-send-btn"
+          title="Отправить (Enter)" aria-label="Отправить сообщение"
         >
           <Send size={16} />
         </button>
       </div>
 
-      {/* Footer info & hotkeys */}
-      <div className="copilot-composer-footer">
-        <div className="copilot-trust-note">
-          <ShieldCheck size={15} style={{ color: 'var(--teal)' }} />
-          <span>Медицинская тайна и защита данных</span>
-        </div>
-
-        <div className="copilot-footer-actions">
-          <span className="copilot-hotkey-hint">
-            Горячие клавиши: <span className="copilot-kbd">Ctrl+K</span>
-          </span>
-          {onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="copilot-reset-btn"
-              title="Сброс / Очистить диалог"
-              aria-label="Сброс / Очистить диалог"
-            >
-              <RotateCcw size={13} style={{ flexShrink: 0 }} />
-              <span>Сброс</span>
-            </button>
-          )}
-        </div>
-      </div>
+      <CopilotComposerFooter onReset={onReset} />
     </div>
   );
 };
+export default CopilotComposer;
