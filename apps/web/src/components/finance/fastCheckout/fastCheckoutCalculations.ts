@@ -42,13 +42,24 @@ export {
 
 /** Вычисляет исходную сумму чека в копейках с точностью до копейки */
 export function resolveInitialTotalBillKop(
+	amountKopecks?: number | undefined,
 	propTotalBillKop?: number | undefined,
-	propTotalBillRub?: number | undefined
+	propTotalBillRub?: number | undefined,
+	amountRub?: number | undefined,
 ): number {
-	return (
-		propTotalBillKop ??
-		(propTotalBillRub !== undefined ? Math.round(propTotalBillRub * 100) : 0)
-	);
+	if (typeof amountKopecks === "number" && !Number.isNaN(amountKopecks)) {
+		return Math.round(amountKopecks);
+	}
+	if (typeof propTotalBillKop === "number" && !Number.isNaN(propTotalBillKop)) {
+		return Math.round(propTotalBillKop);
+	}
+	if (typeof amountRub === "number" && !Number.isNaN(amountRub)) {
+		return Math.round(amountRub * 100);
+	}
+	if (typeof propTotalBillRub === "number" && !Number.isNaN(propTotalBillRub)) {
+		return Math.round(propTotalBillRub * 100);
+	}
+	return 0;
 }
 
 /** Определяет ФИО кассира или лечащего врача для фискального тега 1021 */

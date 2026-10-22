@@ -68,9 +68,12 @@ export interface SbpQrGeneratedData {
 export interface UseFastCheckoutLogicProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly amountKopecks?: number | undefined;
 	readonly totalBillKop?: number | undefined;
 	readonly totalBillRub?: number | undefined;
+	readonly amountRub?: number | undefined;
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
+	readonly defaultMethod?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -79,14 +82,28 @@ export interface UseFastCheckoutLogicProps {
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly familyPayerName?: string | undefined;
+	readonly familyHeadName?: string | undefined;
 	readonly orderId?: string | undefined;
+	readonly invoiceId?: string | undefined;
 	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
 	readonly cashierFullName?: string | undefined;
+	readonly cashierName?: string | undefined;
 	readonly attendingDoctorName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicLegalName?: string | undefined;
 	readonly initialSimpleCashierMode?: boolean | undefined;
+	readonly initialDiscountPercent?: number | undefined;
+	readonly initialDiscountReason?: string | undefined;
+	readonly initialCustomDiscountRub?: number | undefined;
+	readonly initialWarranty100?: boolean | undefined;
+	readonly initialSplit5050?: boolean | undefined;
 	readonly advanceAlreadyPaidRub?: number | undefined;
 	readonly advanceAlreadyPaidKop?: number | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
+	readonly items?: readonly any[] | undefined;
+	readonly onSuccess?: ((payload: any) => void) | undefined;
+	readonly containerTestId?: string | undefined;
+	readonly title?: string | undefined;
 }
 
 /** Состояние распределения сумм по способам оплаты (в рублях) */

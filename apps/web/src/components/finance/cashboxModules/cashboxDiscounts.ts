@@ -97,6 +97,12 @@ export function calculateFastCheckoutDiscount(params: {
 		discountKop = Math.round((gross * 5) / 100);
 	} else if (params.preset === "discount_10") {
 		discountKop = Math.round((gross * 10) / 100);
+	} else if (params.preset === "discount_15") {
+		discountKop = Math.round((gross * 15) / 100);
+	} else if (params.preset === "discount_20") {
+		discountKop = Math.round((gross * 20) / 100);
+	} else if (params.preset === "discount_50") {
+		discountKop = Math.round((gross * 50) / 100);
 	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
 		discountKop = gross;
 	} else if (params.preset === "manual_percent") {

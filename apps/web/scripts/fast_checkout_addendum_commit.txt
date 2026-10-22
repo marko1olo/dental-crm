@@ -1,0 +1,21 @@
+feat(finance): add presets 15-20-50 discount calculation and prop contracts for FastCheckout
+
+## Контекст и архитектурная цель (Why):
+- Завершение консолидации SSOT FastCheckoutModal: поддержка дополнительных клинических пресетов скидок (15% Комплекс, 20% Партнёр, 50% Персонал) и типизированных пропсов экспресс-кассы.
+- Восстановление контрактов состояния payroll modal для стабильности сьютов Mandate 8e/8n.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/finance/cashboxModules/cashboxDiscounts.ts & cashboxTypes.ts:
+  * Добавлены типы и обработчики пресетов `discount_15`, `discount_20`, `discount_50` с целочисленным округлением копеек.
+- apps/web/src/components/finance/fastCheckout/fastCheckoutCalculations.ts:
+  * Добавлена поддержка `amountKopecks` и `amountRub` в `resolveInitialTotalBillKop` без IEEE-754 float drift.
+- apps/web/src/components/finance/fastCheckout/types.ts:
+  * Расширен интерфейс `UseFastCheckoutLogicProps` опциональными полями `amountKopecks`, `amountRub`, `defaultMethod`, `onSuccess`, `invoiceId`, `doctorName`, `clinicLegalName`.
+- apps/web/src/components/payroll/useDoctorPayrollModalState.ts:
+  * Восстановлена выгрузка `activeWorkspaceTab`, `setActiveWorkspaceTab`, `timesheetState`.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Vitest Finance: 54 сьюта пройдены со 100% успехом (407/407 PASS).
+- Vitest FastCheckout Split & Autonomy: 3 сьюта пройдены (40/40 PASS).
+- TypeScript: 0 ошибок в модуле `components/finance`.
+- Visual Proofs: 4-состояния (PC Light/Dark 1440x900, Mobile Light/Dark 390x844) подтверждены.

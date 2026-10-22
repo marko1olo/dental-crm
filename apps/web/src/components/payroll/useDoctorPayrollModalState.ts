@@ -114,7 +114,8 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 		activeDoc, selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
-		activeWorkspaceTab, setActiveWorkspaceTab, timesheetState, advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,
+		activeWorkspaceTab, setActiveWorkspaceTab, timesheetState,
+		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,
 		copyFeedback, setCopyFeedback, customPercent, setCustomPercent, taxRegime, setTaxRegime, isLoadingEarnings, servicesToUse, payrollResult,
 	};
 }

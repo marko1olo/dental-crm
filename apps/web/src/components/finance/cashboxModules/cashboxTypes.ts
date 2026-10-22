@@ -39,6 +39,9 @@ export type FastCheckoutDiscountPreset =
 	| "discount_3"
 	| "discount_5"
 	| "discount_10"
+	| "discount_15"
+	| "discount_20"
+	| "discount_50"
 	| "warranty_100"
 	| "colleague_100"
 	| "manual_percent";
