@@ -13,6 +13,10 @@ export const TOOTH46_RESTORATION_GEOMETRY = {
 		"C 69,20 74,21 75,22 C 74,24 69,25 64,25 C 60,25.5 62,28.5 62,30 C 59,29 57,26 55,25.5 " +
 		"C 50,25.5 45,26 42,26.5 C 40,29 38,32 36,32 C 35,30 35.5,27 37,25 C 33,25 29,23.5 26.5,22 C 26,20.8 26.5,20.2 27,20 Z",
 
+	// Specular glaze reflection on cured composite restoration surface
+	compositeGlazeHighlight:
+		"M 29,20.5 C 34,19 40,19.2 46,20 C 50,18.5 54,18 58,19 C 63,19.5 68,20.5 73,21.5",
+
 	// Composite restoration fissure anatomy (sculpted secondary anatomy)
 	compositeSculptedFissures: [
 		{ id: "cnt", d: "M 29,21 C 36,22 44,22.5 52,22 C 60,21.5 68,22 72,22.5" },

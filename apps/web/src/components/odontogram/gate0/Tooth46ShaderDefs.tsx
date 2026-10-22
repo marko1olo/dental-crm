@@ -41,11 +41,24 @@ export const Tooth46ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#c5a987" stopOpacity="1" />
 			</linearGradient>
 
-			{/* Mesial Root Sulcus Longitudinalis 3D Shadow Trough */}
+			{/* Mesial Root Sulcus Longitudinalis 3D Soft Ambient Shadow Trough */}
 			<linearGradient id="dente-root-sulcus-shadow" x1="0" y1="0" x2="1" y2="0">
-				<stop offset="0%" stopColor="#94a3b8" stopOpacity="0.10" />
-				<stop offset="50%" stopColor="#475569" stopOpacity="0.35" />
-				<stop offset="100%" stopColor="#94a3b8" stopOpacity="0.05" />
+				<stop offset="0%" stopColor="#8c6b46" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#735230" stopOpacity="0.22" />
+				<stop offset="100%" stopColor="#8c6b46" stopOpacity="0.0" />
+			</linearGradient>
+
+			{/* Dark Mode Root Sulcus Trough */}
+			<linearGradient
+				id="dente-root-sulcus-shadow-dark"
+				x1="0"
+				y1="0"
+				x2="1"
+				y2="0"
+			>
+				<stop offset="0%" stopColor="#0f172a" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#020617" stopOpacity="0.38" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Central Fossa Ambient Depth (Linear Directed Depth) */}

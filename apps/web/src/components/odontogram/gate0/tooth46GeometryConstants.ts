@@ -50,10 +50,11 @@ export const TOOTH46_GEOMETRY = {
 	cervicalRidgeHighlight: "M 17,72 C 22,66 35,63 50,63 C 65,63 78,67 83,72",
 	cervicalRidgeShadow: "M 16,74 C 20,72 35,71.5 50,71.5 C 65,71.5 80,72 84,74",
 	fissures: {
-		sulcusCentralis: "M 38,22 C 44,22 47,22 52,22 C 57,22 59,22 62,22",
-		sulcusMesiobuccalis: "M 38,22 C 37,28 35,36 34,44",
-		sulcusDistobuccalis: "M 62,22 C 63,28 65,36 66,44",
-		sulcusLingualis: "M 48,12 C 49,15 50,18 52,22",
+		sulcusCentralis:
+			"M 28,20.5 C 33,21.2 38,22 44,22 C 48,22 51,21.8 54,21.8 C 58,21.8 62,22 66,21.8 C 69,21.5 72,21.5 72,21.5",
+		sulcusMesiobuccalis: "M 38,19.5 C 38,20.3 38,21.2 38,22",
+		sulcusDistobuccalis: "M 62,19.5 C 62,20.3 62,21.2 62,22",
+		sulcusLingualis: "M 48,12 C 49,15 50,18 51,21.8",
 		fossaTriangularisMesialis:
 			"M 38,22 C 34,21 30,20.5 28,20.5 C 25,20 22.5,20 20.5,21.5 M 28,20.5 C 25.5,22 23,24 22,26",
 		fossaTriangularisDistalis:
@@ -61,7 +62,10 @@ export const TOOTH46_GEOMETRY = {
 		buccalPit: { cx: 34, cy: 44, r: 1.0 },
 	},
 	fissuresY5: [
-		{ id: "central", d: "M 38,22 C 44,22 47,22 52,22 C 57,22 59,22 62,22" },
+		{
+			id: "central",
+			d: "M 28,20.5 C 33,21.2 38,22 44,22 C 48,22 51,21.8 54,21.8 C 58,21.8 62,22 66,21.8 C 69,21.5 72,21.5 72,21.5",
+		},
 		{
 			id: "mesial-fossa",
 			d: "M 38,22 C 34,21 30,20.5 28,20.5 C 25,20 22.5,20 20.5,21.5 M 28,20.5 C 25.5,22 23,24 22,26",
@@ -70,9 +74,9 @@ export const TOOTH46_GEOMETRY = {
 			id: "distal-fossa",
 			d: "M 62,22 C 66,22 69,21.8 72,21.5 C 75,21 78,21.5 80.5,23.5 M 72,21.5 C 74.5,22.8 77,24.5 78.5,26.5",
 		},
-		{ id: "buccal-mesial", d: "M 38,22 C 37,28 35,36 34,44" },
-		{ id: "buccal-distal", d: "M 62,22 C 63,28 65,36 66,44" },
-		{ id: "lingual-groove", d: "M 48,12 C 49,15 50,18 52,22" },
+		{ id: "buccal-mesial", d: "M 38,19.5 C 38,20.3 38,21.2 38,22" },
+		{ id: "buccal-distal", d: "M 62,19.5 C 62,20.3 62,21.2 62,22" },
+		{ id: "lingual-groove", d: "M 48,12 C 49,15 50,18 51,21.8" },
 	],
 	cusps: TOOTH46_CUSPS,
 	endoCanals: [

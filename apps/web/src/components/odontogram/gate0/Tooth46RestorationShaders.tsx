@@ -9,10 +9,10 @@ export const Tooth46RestorationShaders: React.FC = () => {
 		<>
 			{/* Nanohybrid Light-Cure Composite (A2/A3 Enamel-Dentin) */}
 			<linearGradient id="dente-composite-body" x1="0" y1="0" x2="0.6" y2="1">
-				<stop offset="0%" stopColor="#f8fafc" stopOpacity="0.98" />
-				<stop offset="35%" stopColor="#f1f5f9" stopOpacity="0.96" />
-				<stop offset="70%" stopColor="#ede8e1" stopOpacity="0.95" />
-				<stop offset="100%" stopColor="#e2dcd2" stopOpacity="0.92" />
+				<stop offset="0%" stopColor="#fbf6ee" stopOpacity="0.98" />
+				<stop offset="35%" stopColor="#f4ecd8" stopOpacity="0.96" />
+				<stop offset="70%" stopColor="#ebdcc0" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#dfcca8" stopOpacity="0.92" />
 			</linearGradient>
 
 			{/* Submicron Marginal Seal (Enamel Bevel Transition) */}

@@ -53,12 +53,13 @@ export const Tooth46CuspShaders: React.FC = () => {
 				id="dente-buccal-lobe-light"
 				x1="0"
 				y1="0"
-				x2="0.8"
+				x2="0.6"
 				y2="1"
 			>
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.36" />
-				<stop offset="50%" stopColor="#ffffff" stopOpacity="0.14" />
-				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
+				<stop offset="40%" stopColor="#ffffff" stopOpacity="0.28" />
+				<stop offset="75%" stopColor="#ffffff" stopOpacity="0.08" />
+				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Buccal Developmental Lobe Silky Light - Dark Mode */}
@@ -66,12 +67,13 @@ export const Tooth46CuspShaders: React.FC = () => {
 				id="dente-buccal-lobe-light-dark"
 				x1="0"
 				y1="0"
-				x2="0.8"
+				x2="0.6"
 				y2="1"
 			>
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
-				<stop offset="50%" stopColor="#ffffff" stopOpacity="0.08" />
-				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.01" />
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+				<stop offset="40%" stopColor="#ffffff" stopOpacity="0.18" />
+				<stop offset="75%" stopColor="#ffffff" stopOpacity="0.05" />
+				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Buccal Developmental Depression Shadow - Light Mode */}
@@ -79,11 +81,13 @@ export const Tooth46CuspShaders: React.FC = () => {
 				id="dente-buccal-lobe-shadow"
 				x1="0"
 				y1="0"
-				x2="1"
-				y2="0.5"
+				x2="0.8"
+				y2="1"
 			>
 				<stop offset="0%" stopColor="#334155" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#334155" stopOpacity="0.13" />
+				<stop offset="40%" stopColor="#334155" stopOpacity="0.14" />
+				<stop offset="75%" stopColor="#334155" stopOpacity="0.06" />
+				<stop offset="100%" stopColor="#334155" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Buccal Developmental Depression Shadow - Dark Mode */}
@@ -91,11 +95,13 @@ export const Tooth46CuspShaders: React.FC = () => {
 				id="dente-buccal-lobe-shadow-dark"
 				x1="0"
 				y1="0"
-				x2="1"
-				y2="0.5"
+				x2="0.8"
+				y2="1"
 			>
 				<stop offset="0%" stopColor="#0f172a" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.24" />
+				<stop offset="40%" stopColor="#0f172a" stopOpacity="0.25" />
+				<stop offset="75%" stopColor="#0f172a" stopOpacity="0.10" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.0" />
 			</linearGradient>
 		</>
 	);

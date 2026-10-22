@@ -24,9 +24,6 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	const strokeColor = isDark
 		? "rgba(203, 213, 225, 0.55)"
 		: "rgba(71, 85, 105, 0.40)";
-	const grooveColor = isDark
-		? "rgba(148, 163, 184, 0.65)"
-		: "rgba(100, 116, 139, 0.55)";
 	const rootOpacity = isEndo ? "0.48" : "1.0";
 
 	return (
@@ -61,38 +58,30 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 				pointerEvents="none"
 			/>
 
-			{/* Mesial and Distal Sulcus Longitudinalis */}
+			{/* Mesial and Distal Sulcus Longitudinalis — 3D Ambient Volumetric Occlusion (Zero Harsh Strokes) */}
 			{showGrooves && (
 				<g id="tooth46-root-grooves" clipPath="url(#tooth46-root-clip)">
 					<path
 						d={TOOTH46_GEOMETRY.mesialLongitudinalGroove}
 						fill="none"
-						stroke="url(#dente-root-sulcus-shadow)"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH46_GEOMETRY.mesialLongitudinalGroove}
-						fill="none"
-						stroke={grooveColor}
-						strokeWidth="0.75"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH46_GEOMETRY.distalLongitudinalGroove}
-						fill="none"
-						stroke="url(#dente-root-sulcus-shadow)"
-						strokeWidth="1.6"
+						stroke={
+							isDark
+								? "url(#dente-root-sulcus-shadow-dark)"
+								: "url(#dente-root-sulcus-shadow)"
+						}
+						strokeWidth="2.8"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
 					<path
 						d={TOOTH46_GEOMETRY.distalLongitudinalGroove}
 						fill="none"
-						stroke={grooveColor}
-						strokeWidth="0.65"
+						stroke={
+							isDark
+								? "url(#dente-root-sulcus-shadow-dark)"
+								: "url(#dente-root-sulcus-shadow)"
+						}
+						strokeWidth="2.0"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>

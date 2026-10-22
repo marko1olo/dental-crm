@@ -32,6 +32,14 @@ export const Tooth46EndoShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#0c0a09" stopOpacity="1" />
 			</linearGradient>
 
+			{/* Devitalized / Sealed Coronal Pulp Cavity Post-Endo (Clean Dentin Chamber) */}
+			<linearGradient id="dente-pulp-chamber-obturated" x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#faf8f5" stopOpacity="0.88" />
+				<stop offset="45%" stopColor="#f3ede2" stopOpacity="0.82" />
+				<stop offset="80%" stopColor="#e8decb" stopOpacity="0.80" />
+				<stop offset="100%" stopColor="#d5c8b2" stopOpacity="0.75" />
+			</linearGradient>
+
 			{/* Tapered Gutta-Percha Cone & Outer Sheath */}
 			<linearGradient id="dente-guttapercha-cone" x1="0" y1="0" x2="0" y2="1">
 				<stop offset="0%" stopColor="#fda4af" stopOpacity="1" />

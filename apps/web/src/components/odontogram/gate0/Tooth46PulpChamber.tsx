@@ -16,29 +16,38 @@ export interface Tooth46PulpChamberProps {
  */
 export const Tooth46PulpChamber: React.FC<Tooth46PulpChamberProps> = ({
 	condition = "vital",
+	isDark = false,
 	className,
 	unified = false,
 }) => {
 	const p = TOOTH46_PULP_GEOMETRY;
-	const pathD = unified ? p.unifiedPulpSystemPath : p.coronalPulpChamber;
 	const isNecrotic = condition === "necrotic";
 	const isPulpitis = condition === "pulpitis";
 	const isObturated = ["adequate", "underfill", "overfill"].includes(condition);
+	const pathD = isObturated
+		? p.coronalPulpChamber
+		: unified
+			? p.unifiedPulpSystemPath
+			: p.coronalPulpChamber;
 
 	const chamberFill = isNecrotic
 		? "url(#dente-pulp-necrotic)"
 		: isPulpitis
 			? "url(#dente-pulp-hyperemia)"
 			: isObturated
-				? "url(#dente-guttapercha-cone)"
+				? "url(#dente-pulp-chamber-obturated)"
 				: "url(#dente-pulp-vital)";
 
 	const chamberStroke = isNecrotic
 		? "rgba(68, 64, 60, 0.85)"
 		: isPulpitis
 			? "#ef4444"
-			: "rgba(159, 18, 57, 0.70)";
-	const chamberOpacity = isPulpitis ? "0.95" : isNecrotic ? "0.90" : "0.80";
+			: isObturated
+				? isDark
+					? "rgba(148, 163, 184, 0.50)"
+					: "rgba(180, 150, 120, 0.55)"
+				: "rgba(159, 18, 57, 0.70)";
+	const chamberOpacity = isPulpitis ? "0.95" : isNecrotic ? "0.90" : "0.85";
 
 	return (
 		<g
@@ -66,32 +75,14 @@ export const Tooth46PulpChamber: React.FC<Tooth46PulpChamberProps> = ({
 						? "rgba(28, 25, 23, 0.90)"
 						: isPulpitis
 							? "rgba(153, 27, 27, 0.80)"
-							: "rgba(136, 19, 55, 0.65)"
+							: isObturated
+								? "rgba(180, 150, 120, 0.45)"
+								: "rgba(136, 19, 55, 0.65)"
 				}
 				strokeWidth="0.7"
 				strokeLinecap="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-
-			{/* Canal Orifice Light Anchors at Rostrum Fusion Termini */}
-			{p.rostrumMap.orifices.map((orf) => (
-				<circle
-					key={`orifice-${orf.id}`}
-					id={`orifice-${orf.id}`}
-					cx={orf.x}
-					cy={orf.y}
-					r={orf.r}
-					fill={
-						isNecrotic
-							? "#44403c"
-							: isObturated
-								? "#be123c"
-								: "rgba(254, 226, 226, 0.90)"
-					}
-					stroke={isNecrotic ? "#1c1917" : "#9f1239"}
-					strokeWidth="0.3"
-				/>
-			))}
 
 			{/* Raschkow Neurovascular Capillary Plexus Strands */}
 			{!isNecrotic &&

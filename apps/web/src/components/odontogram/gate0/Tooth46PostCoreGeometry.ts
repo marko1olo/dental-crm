@@ -7,17 +7,16 @@
 export const TOOTH46_POST_CORE_GEOMETRY = {
 	// Anatomical 2-Root Cast Post-and-Core (КШВ / Co-Cr or Gold)
 	castPostCore: {
-		// Coronal anatomical stump prepared for crown coping
+		// Truncated conical anatomical molar stump prepared for crown coping (6° taper, chamfer margin)
 		coreStump:
-			"M 26,46 " +
-			"C 26,36 30,34 35,34 " +
-			"C 42,34 46,38 50,38 " +
-			"C 54,38 58,34 65,34 " +
-			"C 70,34 74,36 74,46 " +
-			"C 72,56 70,68 66,72 " +
-			"C 56,70 52,69 50,69 " +
-			"C 46,69 42,70 34,72 " +
-			"C 30,68 28,56 26,46 Z",
+			"M 22.0,72.0 " +
+			"C 22.5,62.0 24.5,50.0 26.5,42.0 " +
+			"C 27.5,39.5 31.0,38.5 36.0,38.5 " +
+			"C 43.0,38.5 47.0,39.0 50.0,39.0 " +
+			"C 53.0,39.0 57.0,38.5 64.0,38.5 " +
+			"C 69.0,38.5 72.5,39.5 73.5,42.0 " +
+			"C 75.5,50.0 77.5,62.0 78.0,72.0 " +
+			"C 70.0,72.8 50.0,73.2 22.0,72.0 Z",
 		// Primary Distal Root Post Shaft
 		distalPost:
 			"M 58.0,72.0 C 62.0,86 68.0,104 71.5,120 " +
@@ -28,22 +27,21 @@ export const TOOTH46_POST_CORE_GEOMETRY = {
 			"L 27.5,110 C 28.5,98 33.5,84 35.5,72.0 Z",
 	},
 
-	// Translucent Quartz Fiberglass Post (СВШ) with composite core
+	// Translucent Quartz Fiberglass Post (СВШ) with composite core build-up
 	fiberPostCore: {
 		// Distal fiber post shaft following distal canal trajectory
 		postShaft:
 			"M 58.5,60.0 C 61.5,75 66.5,95 72.0,118 " +
 			"L 74.8,118 C 70.0,95 64.5,75 61.5,60.0 Z",
-		// Core stump rebuilt with nanohybrid composite
+		// Core stump rebuilt with nanohybrid composite (anatomical prepared molar taper)
 		coreStump:
-			"M 28,45 " +
-			"C 28,34 33,32 37,32 " +
-			"C 42,32 46,36 50,36 " +
-			"C 54,36 58,32 63,32 " +
-			"C 67,32 72,34 72,45 " +
-			"C 70,54 67,60 63,68 " +
-			"C 58,68 54,66 50,66 " +
-			"C 46,66 42,68 37,68 " +
-			"C 33,68 30,54 28,45 Z",
+			"M 23.0,71.5 " +
+			"C 23.5,61.5 25.5,50.0 27.0,42.5 " +
+			"C 28.0,40.0 31.5,39.0 36.5,39.0 " +
+			"C 43.0,39.0 47.0,39.5 50.0,39.5 " +
+			"C 53.0,39.5 57.0,39.0 63.5,39.0 " +
+			"C 68.5,39.0 72.0,40.0 73.0,42.5 " +
+			"C 74.5,50.0 76.5,61.5 77.0,71.5 " +
+			"C 69.0,72.2 50.0,72.6 23.0,71.5 Z",
 	},
 } as const;

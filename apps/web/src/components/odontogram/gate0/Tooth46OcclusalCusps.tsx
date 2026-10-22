@@ -20,10 +20,10 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
-	const fShadow = isDark ? "rgba(15, 23, 42, 0.55)" : "rgba(71, 85, 105, 0.30)";
+	const fShadow = isDark ? "rgba(15, 23, 42, 0.50)" : "rgba(100, 116, 139, 0.22)";
 	const fCore = isDark
-		? "rgba(203, 213, 225, 0.70)"
-		: "rgba(71, 85, 105, 0.55)";
+		? "rgba(203, 213, 225, 0.65)"
+		: "rgba(71, 85, 105, 0.45)";
 	const crFill = isDark
 		? "url(#dente-cervical-ridge-dark)"
 		: "url(#dente-cervical-ridge)";
@@ -33,11 +33,7 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	const crHighlight = isDark
 		? "rgba(255, 255, 255, 0.28)"
 		: "rgba(255, 255, 255, 0.60)";
-	const pitCore = isDark
-		? "rgba(255, 255, 255, 0.35)"
-		: "rgba(255, 255, 255, 0.65)";
 	const fissures = TOOTH46_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
-	const pit = TOOTH46_GEOMETRY.fissures.buccalPit;
 
 	return (
 		<g id="tooth46-crown" className={className}>
@@ -80,7 +76,7 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 						d={fissures}
 						fill="none"
 						stroke={fShadow}
-						strokeWidth="1.0"
+						strokeWidth="0.8"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -88,20 +84,10 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 						d={fissures}
 						fill="none"
 						stroke={fCore}
-						strokeWidth="0.5"
+						strokeWidth="0.45"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
-					{/* Anatomical Buccal Pit (Foramen Caecum) at mesiobuccal groove terminus */}
-					<circle
-						cx={pit.cx}
-						cy={pit.cy}
-						r={pit.r}
-						fill={fShadow}
-						stroke={fCore}
-						strokeWidth="0.35"
-					/>
-					<circle cx={pit.cx} cy={pit.cy} r={pit.r * 0.4} fill={pitCore} />
 				</g>
 			)}
 		</g>

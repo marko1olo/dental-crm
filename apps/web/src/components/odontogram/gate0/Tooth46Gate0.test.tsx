@@ -85,7 +85,7 @@ describe("Gate 0 First Article — Tooth 46 Monolithic Anatomical Odontogram", (
 		}
 	});
 
-	it("renders Wheeler Ch. 11 buccal cervical ridge, Y-5 triangular fossae, and buccal pit", () => {
+	it("renders Wheeler Ch. 11 buccal cervical ridge, Y-5 triangular fossae, and occlusal fissures", () => {
 		assert.ok(TOOTH46_GEOMETRY.buccalCervicalRidge.startsWith("M 16,74"));
 		assert.ok(TOOTH46_GEOMETRY.cervicalRidgeHighlight.startsWith("M 17,72"));
 		assert.equal(TOOTH46_GEOMETRY.fissures.buccalPit.cx, 34);
@@ -97,7 +97,6 @@ describe("Gate 0 First Article — Tooth 46 Monolithic Anatomical Odontogram", (
 			}),
 		);
 		assert.ok(html.includes("dente-cervical-ridge"));
-		assert.ok(html.includes('cx="34" cy="44"'));
 		assert.ok(html.includes("tooth46-fissures"));
 		assert.ok(html.includes("tooth46-cusp-ridges"));
 	});

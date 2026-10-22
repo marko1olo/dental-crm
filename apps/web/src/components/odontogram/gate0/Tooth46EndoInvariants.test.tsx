@@ -30,11 +30,11 @@ describe("Gate 0 Red Team — Tooth 46 Pulp & Endodontic System Invariants", () 
 		}
 	});
 
-	it("renders Krasner & Rankow (2004) pulpal floor map with dark rostrum & orifice anchors", () => {
+	it("renders Krasner & Rankow (2004) pulpal floor map with dark rostrum & neurovascular plexus", () => {
 		const html = renderToString(
 			React.createElement(Tooth46PulpChamber, { condition: "vital" }),
 		);
-		for (const id of "orifice-MB orifice-ML orifice-D plexus-mesial_trunk plexus-distal_trunk dente-pulp-vital".split(
+		for (const id of "plexus-mesial_trunk plexus-distal_trunk dente-pulp-vital".split(
 			" ",
 		)) {
 			assert.ok(html.includes(id));
@@ -85,7 +85,7 @@ describe("Gate 0 Red Team — Tooth 46 Pulp & Endodontic System Invariants", () 
 		assert.ok(
 			html.includes("dente-guttapercha-cone") &&
 				html.includes("dente-guttapercha-sheath") &&
-				html.includes('fill="#be123c"'),
+				html.includes("dente-pulp-chamber-obturated"),
 		);
 		assert.ok(!html.includes('rx="2.4" ry="1.8"'), "No primitive ellipses");
 	});

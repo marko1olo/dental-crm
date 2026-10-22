@@ -32,13 +32,13 @@ export const Tooth46RestorationOverlay: React.FC<
 	const r = TOOTH46_RESTORATION_GEOMETRY;
 	const d = TOOTH46_DEFECT_GEOMETRY.defectiveComposite;
 
-	// Submicron enamel margin & anatomical fissure stain
+	// Submicron polymerized enamel margin & anatomical fissure stain
 	const compositeBorder = isDark
-		? "rgba(203, 213, 225, 0.50)"
-		: "rgba(100, 116, 139, 0.40)";
+		? "rgba(226, 232, 240, 0.75)"
+		: "rgba(130, 95, 55, 0.65)";
 	const fissureColor = isDark
-		? "rgba(148, 163, 184, 0.65)"
-		: "rgba(71, 85, 105, 0.60)";
+		? "rgba(217, 119, 6, 0.70)"
+		: "rgba(120, 53, 15, 0.75)";
 
 	return (
 		<g id="tooth46-restorations" className={className}>
@@ -60,10 +60,21 @@ export const Tooth46RestorationOverlay: React.FC<
 						d={r.compositeFilling}
 						fill="url(#dente-composite-body)"
 						stroke={compositeBorder}
-						strokeWidth="0.6"
+						strokeWidth="0.75"
 						strokeLinejoin="round"
 						vectorEffect="non-scaling-stroke"
 					/>
+					{/* Specular Glaze Reflection */}
+					{r.compositeGlazeHighlight && (
+						<path
+							d={r.compositeGlazeHighlight}
+							fill="none"
+							stroke="#ffffff"
+							strokeWidth="0.55"
+							strokeOpacity="0.75"
+							strokeLinecap="round"
+						/>
+					)}
 					{/* Sculpted Secondary Anatomy Fissures */}
 					{r.compositeSculptedFissures.map((fissure) => (
 						<path
