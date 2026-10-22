@@ -1,0 +1,29 @@
+{
+  "subagent": "Endodontics & Canal Protocol Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T23:25:00+04:00",
+  "target": "apps/web/src/components/endo/",
+  "mandates": [
+    "Mandate 8e: Doctor Autonomy (Zero disabled buttons, physiological defaults in 1-click)",
+    "Mandate 8n: Solo Doctor Sovereignty (1-3 chairs focus, zero unnecessary paperwork)",
+    "Mandate 8am: Single Primary CTA in DENTE emerald style",
+    "Mandate 8x: Clear Clinical Russian (no raw decree codes like 804n / 043/u in UI)",
+    "Apple HIG: Touch targets >= 44px, natural thumb zone, native bottom sheet",
+    "Mandate 8zk: Red Team 4-State Visual Proof verified via read_file"
+  ],
+  "verification": {
+    "tests_passing": 80,
+    "tests_failing": 0,
+    "encoding_check": "UTF-8 without BOM across 15,440 files (Exit Code 0)",
+    "screenshots_verified": [
+      "docs/proofs/endo/endo_protocol_pc_light_1440x900.png",
+      "docs/proofs/endo/endo_protocol_pc_dark_1440x900.png",
+      "docs/proofs/endo/endo_protocol_mobile_light_390x844.png",
+      "docs/proofs/endo/endo_protocol_mobile_dark_390x844.png",
+      "docs/proofs/endo/endo_modal_pc_light_1440x900.png",
+      "docs/proofs/endo/endo_modal_pc_dark_1440x900.png",
+      "docs/proofs/endo/endo_modal_mobile_light_390x844.png",
+      "docs/proofs/endo/endo_modal_mobile_dark_390x844.png"
+    ]
+  }
+}

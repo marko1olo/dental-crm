@@ -46,7 +46,7 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 			{/* Endodontic Root Canal Log Modal */}
 			{effectiveActiveModal === "endo_canal" && endoModalToothNumber && (
 				<EndoCanalLogModal
-					isOpen={isEndoModalOpen}
+					isOpen={isEndoModalOpen || effectiveActiveModal === "endo_canal"}
 					onClose={() => {
 						setIsEndoModalOpen(false);
 						setEndoModalToothNumber(null);

@@ -66,62 +66,43 @@ export function useVisitModalsState({
 
 	useEffect(() => {
 		const handleLabOrderEvent = (e: Event) => {
-			const customEvent = e as CustomEvent<{
-				toothNumber?: number | string;
-				toothFdi?: number | string;
-				teeth?: (number | string)[];
-				selectedTeeth?: (number | string)[];
-				items?: any[];
-			}>;
-			const itemsTeeth = Array.isArray(customEvent?.detail?.items)
-				? customEvent.detail.items
-						.map((it: any) => it.toothNumber ?? it.toothCode)
-						.filter((t: any): t is number | string => t !== undefined && t !== null && t !== "")
+			const ce = e as CustomEvent<any>;
+			const itemsTeeth = Array.isArray(ce?.detail?.items)
+				? ce.detail.items.map((it: any) => it.toothNumber ?? it.toothCode).filter(Boolean)
 				: undefined;
-			const customTooth =
-				customEvent?.detail?.selectedTeeth ??
-				customEvent?.detail?.teeth ??
-				customEvent?.detail?.toothNumber ??
-				customEvent?.detail?.toothFdi ??
-				(itemsTeeth && itemsTeeth.length > 0 ? itemsTeeth : undefined);
+			const customTooth = ce?.detail?.selectedTeeth ?? ce?.detail?.teeth ?? ce?.detail?.toothNumber ?? ce?.detail?.toothFdi ?? (itemsTeeth?.length ? itemsTeeth : undefined);
 			handleOpenLabOrder(customTooth);
 		};
+		const handleEndoEvent = (e: Event) => {
+			const ce = e as CustomEvent<{ toothNumber?: number | string; toothState?: string }>;
+			setEndoModalToothNumber(ce?.detail?.toothNumber ?? 16);
+			if (ce?.detail?.toothState) setEndoModalToothState(ce.detail.toothState);
+			setIsEndoModalOpen(true);
+		};
 		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
-		return () => window.removeEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
+		window.addEventListener("dente-open-endo-modal", handleEndoEvent);
+		return () => {
+			window.removeEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
+			window.removeEventListener("dente-open-endo-modal", handleEndoEvent);
+		};
 	}, [handleOpenLabOrder]);
 
 	return {
-		endoModalToothNumber,
-		setEndoModalToothNumber,
-		endoModalToothState,
-		setEndoModalToothState,
-		labOrderModalToothNumber,
-		setLabOrderModalToothNumber,
-		isEndoModalOpen,
-		setIsEndoModalOpen,
-		isLabOrderModalOpen,
-		setIsLabOrderModalOpen,
-		isStagePaymentModalOpen,
-		setIsStagePaymentModalOpen,
-		isPriceValidatorModalOpen,
-		setIsPriceValidatorModalOpen,
-		isEmergencyModalOpen,
-		setIsEmergencyModalOpen,
-		isVoiceDictationModalOpen,
-		setIsVoiceDictationModalOpen,
-		isWarrantyModalOpen,
-		setIsWarrantyModalOpen,
-		isDoctorShiftModalOpen,
-		setIsDoctorShiftModalOpen,
-		isInformedConsentModalOpen,
-		setIsInformedConsentModalOpen,
-		isPrescriptionModalOpen,
-		setIsPrescriptionModalOpen,
-		isVisiographComparisonModalOpen,
-		setIsVisiographComparisonModalOpen,
-		isHeaderMoreMenuOpen,
-		setIsHeaderMoreMenuOpen,
-		headerMoreMenuRef,
-		handleOpenLabOrder,
+		endoModalToothNumber, setEndoModalToothNumber,
+		endoModalToothState, setEndoModalToothState,
+		labOrderModalToothNumber, setLabOrderModalToothNumber,
+		isEndoModalOpen, setIsEndoModalOpen,
+		isLabOrderModalOpen, setIsLabOrderModalOpen,
+		isStagePaymentModalOpen, setIsStagePaymentModalOpen,
+		isPriceValidatorModalOpen, setIsPriceValidatorModalOpen,
+		isEmergencyModalOpen, setIsEmergencyModalOpen,
+		isVoiceDictationModalOpen, setIsVoiceDictationModalOpen,
+		isWarrantyModalOpen, setIsWarrantyModalOpen,
+		isDoctorShiftModalOpen, setIsDoctorShiftModalOpen,
+		isInformedConsentModalOpen, setIsInformedConsentModalOpen,
+		isPrescriptionModalOpen, setIsPrescriptionModalOpen,
+		isVisiographComparisonModalOpen, setIsVisiographComparisonModalOpen,
+		isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen,
+		headerMoreMenuRef, handleOpenLabOrder,
 	};
 }

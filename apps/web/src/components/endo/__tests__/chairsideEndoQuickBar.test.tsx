@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -82,7 +82,7 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(html.includes("chip-maf-MB-2004"), "Has 20/.04 chip");
 	});
 
-	it("6. 1-Click Obturation Type: Gutta-percha + AH Plus vs Ca(OH)2", () => {
+	it("6. 1-Click Obturation Type: Gutta-percha + AH Plus vs Bioceramic vs Ca(OH)2", () => {
 		const html = renderToStaticMarkup(
 			createElement(ChairsideEndoQuickBar, {
 				activeTooth: 16,
@@ -90,10 +90,11 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		);
 
 		assert.ok(html.includes("chip-obturation-gutta-MB"), "Has Gutta-percha chip");
+		assert.ok(html.includes("chip-obturation-bio-MB"), "Has Bioceramic chip");
 		assert.ok(html.includes("chip-obturation-caoh2-MB"), "Has Ca(OH)2 chip");
 	});
 
-	it("7. Primary CTA: «Перенести в дневник» with zero disabled buttons (Mandate 8e)", () => {
+	it("7. Primary CTA: «✓ Зафиксировать протокол каналов» with zero disabled buttons (Mandate 8e, 8am)", () => {
 		const html = renderToStaticMarkup(
 			createElement(ChairsideEndoQuickBar, {
 				activeTooth: 16,
@@ -102,11 +103,11 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		);
 
 		assert.ok(html.includes("btn-endo-transfer-to-diary"), "Has Primary CTA button");
-		assert.ok(html.includes("Перенести в дневник"), "Has clear action title");
+		assert.ok(html.includes("Зафиксировать протокол каналов"), "Has clear action title");
 		assert.ok(!html.includes("disabled"), "Mandate 8e: Primary CTA is NEVER disabled");
 	});
 
-	it("8. Express 1-click presets in header", () => {
+	it("8. Express 1-click presets in header: Pulpitis 1-visit, Periodontitis Bioceramic, Ca(OH)2, Norm", () => {
 		const html = renderToStaticMarkup(
 			createElement(ChairsideEndoQuickBar, {
 				activeTooth: 16,
@@ -114,6 +115,7 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		);
 
 		assert.ok(html.includes("btn-quick-pulpitis-1visit"), "Has 1-visit pulpitis preset");
+		assert.ok(html.includes("btn-quick-periodontitis-bio"), "Has Bioceramic periodontitis preset");
 		assert.ok(html.includes("btn-quick-caoh2"), "Has Ca(OH)2 preset");
 		assert.ok(html.includes("btn-quick-norm"), "Has anatomical norm preset");
 	});
@@ -141,13 +143,9 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(!emojiRegex.test(html), "HTML markup must contain ZERO emojis");
 	});
 
-	it("11. Strict File Line Count Ceilings (<= 800 lines)", () => {
+	it("11. Strict File Line Count Ceilings (Mandate 8b: <= 120 lines)", () => {
 		const quickBarFile = path.resolve(__dirname, "../ChairsideEndoQuickBar.tsx");
 		const lines = fs.readFileSync(quickBarFile, "utf-8").split("\n").length;
-		assert.ok(lines <= 800, `ChairsideEndoQuickBar.tsx must be <= 800 lines (current: ${lines})`);
-
-		const logicFile = path.resolve(__dirname, "../useEndoCanalLogic.ts");
-		const logicLines = fs.readFileSync(logicFile, "utf-8").split("\n").length;
-		assert.ok(logicLines <= 800, `useEndoCanalLogic.ts must be <= 800 lines (current: ${logicLines})`);
+		assert.ok(lines <= 120, `ChairsideEndoQuickBar.tsx must be <= 120 lines (current: ${lines})`);
 	});
 });

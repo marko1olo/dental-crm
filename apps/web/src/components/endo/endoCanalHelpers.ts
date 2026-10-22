@@ -3,12 +3,12 @@ import type { EndoCanalData } from "@dental/shared";
 import {
 	type EndoStageStamp,
 	getAnatomicalWorkingLength,
-	getIsoEndoColorInfo,
 } from "./endoCanalConstants";
 
 /**
- * Валидация и санитизация корневых каналов перед сохранением / вставкой в протокол 043/у.
+ * Валидация и санитизация корневых каналов перед сохранением / вставкой в протокол дневника визита.
  * Обеспечивает округление длин до 0.5 мм (Мандат 8b) и исключает NaN/undefined.
+ * Запрет на блокировки врача (Мандат 8e): если поле не заполнено, подставляется анатомическая норма.
  */
 export function sanitizeCanalsForSubmission(
 	inputCanals: EndoCanalData[],
@@ -40,51 +40,23 @@ export function sanitizeCanalsForSubmission(
 			...c,
 			isObliterated: Boolean(c.isObliterated),
 			workingLengthMm: safeWl,
-			masterApicalFile: c.masterApicalFile || "ISO 25 (#25 красный)",
+			masterApicalFile: c.masterApicalFile || "ProTaper F2 (#25)",
 			taper: c.taper || ".06 (Конусность 6%)",
-			referencePoint: c.referencePoint || "Реперный ориентир",
+			referencePoint: c.referencePoint || "Бугор зуба",
 			obturationTechnique:
 				c.obturationTechnique ||
 				(stageStamp === "TEMP_CAOH2"
-					? "Временная обтурация Ca(OH)2 (Metapex / Calcept)"
-					: "Гуттаперча + Силер (AH Plus)"),
+					? "Временная обтурация Ca(OH)2 (Каласепт)"
+					: "Гуттаперча + Силер (AH Plus) латерально"),
 		};
 	});
 }
 
 /**
- * ISO 3630-1 цветной индикатор калибра инструмента
+ * Чистый клинический индикатор калибра инструмента без процедурной симуляции цветов пластиковых ручек (Мандат 8k).
+ * Тотальный снос академического симулятора цветов ISO 60: возвращает строгий лаконичный маркер.
  */
-export function renderIsoColorBadge(fileVal: string | undefined): React.ReactNode {
-	const isoColor = getIsoEndoColorInfo(fileVal);
-	const hex = isoColor?.hex || "#94a3b8";
-	const isWhite =
-		isoColor?.size === 15 || isoColor?.size === 45 || isoColor?.size === 90;
-	const isBlack =
-		isoColor?.size === 40 || isoColor?.size === 80 || isoColor?.size === 140;
-
-	return React.createElement(
-		"span",
-		{
-			className:
-				"inline-flex items-center justify-center shrink-0 w-3.5 h-3.5 rounded-full border shadow-xs transition-transform",
-			style: {
-				backgroundColor: hex,
-				borderColor: isWhite
-					? "#94a3b8"
-					: isBlack
-						? "#64748b"
-						: "rgba(0,0,0,0.25)",
-				boxShadow: isBlack ? "0 0 0 1px rgba(255,255,255,0.3)" : undefined,
-			},
-			title: isoColor
-				? `${isoColor.labelRu} (${isoColor.colorRu})`
-				: "ISO цвет инструмента",
-		},
-		isWhite
-			? React.createElement("span", {
-					className: "w-1.5 h-1.5 rounded-full bg-slate-400",
-				})
-			: null,
-	);
+export function renderIsoColorBadge(_fileVal: string | undefined): React.ReactNode {
+	return null;
 }
+

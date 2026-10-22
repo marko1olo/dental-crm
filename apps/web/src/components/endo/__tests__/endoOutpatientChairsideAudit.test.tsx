@@ -185,7 +185,7 @@ describe("Chairside Endodontics Outpatient Audit (Mandates 8e, 8i, 8k, 8s)", () 
 		assert.ok(len46mb >= 19 && len46mb <= 23, `Tooth 46 MB length ${len46mb} must be in anatomical range`);
 	});
 
-	it("6. ISO 3630-1 color coding and safe formatting eliminate undefined / NaN leaks", () => {
+	it("6. Express 1-click endo protocol & safe working length formatting (Mandates 8e, 8k)", () => {
 		assert.equal(formatWorkingLengthDisplay(null), "—");
 		assert.equal(formatWorkingLengthDisplay(undefined), "—");
 		assert.equal(formatWorkingLengthDisplay(""), "—");
@@ -194,16 +194,13 @@ describe("Chairside Endodontics Outpatient Audit (Mandates 8e, 8i, 8k, 8s)", () 
 		assert.equal(formatWorkingLengthDisplay(21.2), "21.0 мм");
 		assert.equal(formatWorkingLengthDisplay(21.3), "21.5 мм");
 
-		// ISO 3630-1 file sizes and colors
-		const iso25 = getIsoEndoColorInfo("ISO 25 (#25 красный)");
-		assert.ok(iso25);
-		assert.equal(iso25.size, 25);
-		assert.equal(iso25.colorRu, "красный");
-
-		const iso30 = getIsoEndoColorInfo("ISO 30 (#30 синий)");
-		assert.ok(iso30);
-		assert.equal(iso30.size, 30);
-		assert.equal(iso30.colorRu, "синий");
+		// Express protocol defaults: ProTaper + AH Plus (Zero ISO needle simulator)
+		const canals16 = getDefaultCanalsForTooth(16);
+		const express = applyExpressApicalEndoProtocol(canals16, 16);
+		assert.ok(express.canals.length >= 3, "Tooth 16 must have at least 3 anatomical canals");
+		assert.ok(express.rotarySystem.includes("ProTaper"), "Must default to ProTaper instrumentation");
+		assert.ok(express.canals.every((c) => c.sealer?.includes("AH Plus")), "Must default to AH Plus sealer");
+		assert.ok(express.canals.every((c) => Number(c.workingLengthMm) >= 20.0), "Default anatomical lengths must be >= 20mm");
 	});
 
 	it("7. Patient memo for WhatsApp/Telegram is generated with zero emojis and clear post-treatment rules", () => {

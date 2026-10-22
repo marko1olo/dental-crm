@@ -1,29 +1,12 @@
 /**
- * EndoTreatmentPlanModal.tsx — Модальное окно плана эндодонтического лечения и протокола каналов
- *
- * Клинические стандарты:
- * - Форма 043/у: учет рабочей длины, апекслокация, MAF (ISO 3630-1), конусность, силер и обтурация
- * - Мандат 8e (Автономия врача): возможность сохранения на любом этапе (черновик / временная обтурация / постоянная)
- * - Мандат 8b: строго <= 800 строк
- * - 0% эмодзи, отсутствие dev-жаргона
+ * EndoTreatmentPlanModal.tsx — Канонический алиас для EndoCanalLogModal (SSOT Invariant)
+ * Mandate 8s: Best of Breed. Схлопнуто в единый компонент EndoCanalLogModal.
  */
 
-import React from "react";
-import {
-	EndoCanalLogModal,
-	type EndoCanalLogModalProps,
-} from "./EndoCanalLogModal";
+import { EndoCanalLogModal, type EndoCanalLogModalProps } from "./EndoCanalLogModal";
 
+export const EndoTreatmentPlanModal = EndoCanalLogModal;
 export type EndoTreatmentPlanModalProps = EndoCanalLogModalProps;
+export default EndoCanalLogModal;
 
-/**
- * Канонический компонент модального окна плана эндодонтического лечения.
- * Обеспечивает ведение протокола корневых каналов по стандартам Формы 043/у.
- */
-export const EndoTreatmentPlanModal: React.FC<EndoTreatmentPlanModalProps> = (
-	props,
-) => {
-	return <EndoCanalLogModal {...props} />;
-};
 
-export default EndoTreatmentPlanModal;
