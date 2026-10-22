@@ -54,7 +54,7 @@ describe("SMART-OPG-01: AI Inference Service & Fallback Pipeline", () => {
 
 		const protocol = response.analysis.protocol043Ru;
 		expect(protocol).toContain("ПРОТОКОЛ АНАЛИЗА ОРТОПАНТОМОГРАММЫ (ОПТГ)");
-		expect(protocol).toContain("Форма 043/у");
+		expect(protocol).toContain("Медицинская карта пациента");
 		expect(protocol).toContain("ЗАКЛЮЧЕНИЕ ОПТГ");
 	});
 });
@@ -115,7 +115,7 @@ describe("SMART-OPG-03: UI Modal & Odontogram Toolbar Integration", () => {
 		expect(html).toContain("Номера FDI");
 		expect(html).toContain("Патологии");
 		expect(html).toContain("Для пациента");
-		expect(html).toContain("Принять в зубную формулу (Форма 043/у)");
+		expect(html).toContain("Принять в зубную формулу");
 	});
 
 	it("renders Smart OPG trigger button in OdontogramToolbarMoreMenu", () => {

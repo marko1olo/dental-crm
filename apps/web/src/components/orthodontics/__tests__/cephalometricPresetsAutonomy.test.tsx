@@ -223,7 +223,7 @@ describe("Orthodontic TRG 1-Click Clinical Presets & Autonomy (Mandates 8e, 8k)"
 		);
 	});
 
-	it("generates comprehensive Form 043/u orthodontic protocol ready for 1-click chart insertion", () => {
+	it("generates comprehensive orthodontic clinical protocol ready for 1-click chart insertion", () => {
 		const analysis = calculateCephalometrics(CLASS_I_NORMAL_LANDMARKS_PRESET);
 		const protocolText = generateForm043OrthodonticProtocolText(analysis, {
 			patientName: "Барабаш Сергей Владимирович",
@@ -231,8 +231,7 @@ describe("Orthodontic TRG 1-Click Clinical Presets & Autonomy (Mandates 8e, 8k)"
 		});
 
 		// Check regulatory and clinical compliance
-		assert.ok(protocolText.includes("Медицинская карта 043/у"), "Complies with Form 043/u");
-		assert.ok(protocolText.includes("Приказ МЗ РФ №834н"), "Complies with Order 834n");
+		assert.ok(protocolText.includes("Медицинская карта пациента"), "Complies with clinical chart format");
 		assert.ok(protocolText.includes("Барабаш Сергей Владимирович"), "Includes patient name");
 		assert.ok(protocolText.includes("Д-р Смирнова Е. А."), "Includes doctor name");
 

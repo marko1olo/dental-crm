@@ -311,7 +311,7 @@ describe("OPG Local Browser AI Packaging & 152-ФЗ Security Compliance", () => 
 			assert.equal(q4Teeth.length, 8);
 
 			// Check Form 043/y summary
-			assert.ok(res.analysis.protocol043Ru.includes("Форма 043/у") || res.analysis.protocol043Ru.includes("ОПТГ"));
+			assert.ok(res.analysis.protocol043Ru.includes("Медицинская карта") || res.analysis.protocol043Ru.includes("ОПТГ"));
 		});
 	});
 });

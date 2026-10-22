@@ -93,7 +93,7 @@ export class CephAiInferenceService {
 			options.viewBoxHeight || 700,
 		);
 
-		const latencyMs = Math.max(12, Math.round((typeof performance !== "undefined" ? performance.now() : Date.now()) - startTime));
+		const latencyMs = Math.max(1, Math.round((typeof performance !== "undefined" ? performance.now() : Date.now()) - startTime));
 		const confs = Object.values(rawLandmarks).map((p) => p.confidence);
 
 		return {

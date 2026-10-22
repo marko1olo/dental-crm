@@ -207,7 +207,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 										: "text-slate-400 hover:text-slate-200"
 							}`}
 						>
-							Форма 043/у
+							Медицинская карта
 						</button>
 					</div>
 
@@ -436,7 +436,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 										theme === "light" ? "text-slate-800" : "text-slate-300"
 									}`}
 								>
-									Заключение (Форма 043/у)
+									Заключение (Медицинская карта)
 								</span>
 								<button
 									type="button"

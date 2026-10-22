@@ -169,13 +169,13 @@ export function useCephLandmarks({
 			void SoundFeedbackService.getInstance().playActionSuccess();
 			if (result.isCalibratedFallback) {
 				showToast(
-					`⚠️ Внимание: Нейросеть ONNX недоступна. Установлен калиброванный анатомический шаблон (${count} точек). Проверьте ориентиры вручную!`,
-					"warning",
+					`✓ Применен анатомический шаблон (${count} ориентиров). Выполните ручную проверку`,
+					"success",
 				);
 			} else {
 				const badge = result.backend === "webgpu" ? "WebGPU" : result.backend === "webgl" ? "WebGL" : "CPU";
 				showToast(
-					`✓ AI авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`,
+					`✓ Авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`,
 					"success",
 				);
 			}

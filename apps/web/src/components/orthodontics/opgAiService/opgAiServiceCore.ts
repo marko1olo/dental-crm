@@ -38,8 +38,12 @@ export class OpgAiInferenceService {
 			// fallback dimensions
 		}
 
-		// Топологический анализ ОПТГ: разметка челюстных дуг, ВНЧС и обнаружение патологий
-		const sample = generateCanonicalToothDetections(naturalWidth, naturalHeight);
+		// Честная калибровка дуг ОПТГ: разметка челюстных дуг FDI (11..48)
+		const sample = generateCanonicalToothDetections(
+			naturalWidth,
+			naturalHeight,
+			options.allowFallback,
+		);
 		const toothDetections: OpgToothDetection[] = sample.teeth;
 		const pathologyDetections: OpgPathologyDetection[] = sample.pathologies;
 
@@ -56,7 +60,7 @@ export class OpgAiInferenceService {
 		return {
 			analysis,
 			backend: "wasm",
-			backendLabel: "Топологическая калибровка DENTE",
+			backendLabel: "Калибровка зубных дуг FDI",
 			latencyMs,
 			imageDimensions: { width: naturalWidth, height: naturalHeight },
 			isCalibratedFallback: true,

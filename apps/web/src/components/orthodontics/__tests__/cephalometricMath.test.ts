@@ -120,7 +120,7 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		assert.ok(result.diagnosis.skeletalClassRu.length > 0);
 		assert.ok(result.diagnosis.growthPatternRu.length > 0);
 		assert.ok(result.diagnosis.summaryRu.length > 0);
-		assert.ok(result.diagnosis.protocol043Text.includes("Форма 043/у"));
+		assert.ok(result.diagnosis.protocol043Text.includes("Медицинская карта"));
 		assert.ok(result.diagnosis.protocol043Text.includes("Steiner"));
 		assert.ok(result.diagnosis.protocol043Text.includes("Downs"));
 		assert.ok(result.diagnosis.protocol043Text.includes("Tweed"));

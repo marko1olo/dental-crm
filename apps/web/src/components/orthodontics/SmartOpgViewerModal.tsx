@@ -33,7 +33,7 @@ export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 	}, [isOpen, activeImage]);
 
 	const handleApply = useCallback(() => {
-		if (isLoading) { showToast("Выполняется анализ панорамного снимка нейросетью...", "info"); return; }
+		if (isLoading) { showToast("Выполняется калибровка панорамного снимка...", "info"); return; }
 		if (!result) { showToast("Снимок не загружен или анализ недоступен", "warning"); return; }
 		if (onApplyOdontogram) {
 			onApplyOdontogram(result.analysis.teeth);

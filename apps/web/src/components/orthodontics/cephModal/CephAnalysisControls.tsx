@@ -2,7 +2,7 @@ import {
 	ArrowRight,
 	Check,
 	Save,
-	Zap,
+	Sparkles,
 } from "lucide-react";
 import React from "react";
 import type {
@@ -53,10 +53,10 @@ export function CephDesktopControlsStrip({
 						color: "#ffffff",
 						borderColor: "rgba(45, 212, 191, 0.6)",
 					}}
-					title={`Локальная нейросеть CephaloHRNet-W32 (${aiBackendLabel})`}
+					title={`Анатомический шаблон (${aiBackendLabel})`}
 				>
-					<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-					<span style={{ color: "#ffffff" }}>{isAiInferring ? "AI расчёт..." : "AI Авторазметка"}</span>
+					<Sparkles size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 shrink-0"} />
+					<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Анатомический шаблон"}</span>
 					<span className="text-[10px] px-1 rounded bg-black/50 font-mono text-teal-200 border border-teal-400/40">
 						[{aiBackendBadge}]
 					</span>
@@ -124,14 +124,14 @@ export function CephTab1TopControls({
 			<div className="mb-3.5 bg-gradient-to-r from-teal-950/80 to-slate-900/90 p-3 rounded-xl border border-teal-500/40 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 				<div className="min-w-0">
 					<div className="flex items-center gap-1.5 font-bold text-xs text-teal-300">
-						<Zap size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-						<span className="font-extrabold">CephaloHRNet-W32 (2D ТРГ)</span>
+						<Sparkles size={14} className="text-amber-400 shrink-0" />
+						<span className="font-extrabold">Анатомический шаблон (I класс)</span>
 						<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-950 text-teal-200 border border-teal-400/40 font-mono">
 							[{aiBackendBadge}]
 						</span>
 					</div>
 					<p className="text-[11px] text-slate-300 m-0 mt-1 truncate">
-						{aiStats ? `✓ Расчёт: ${aiStats.placedCount} точек за ${aiStats.latencyMs} мс` : "100% локально в браузере (0 байт в сеть, 152-ФЗ)"}
+						{aiStats ? `✓ Калибровано: ${aiStats.placedCount} ориентиров за ${aiStats.latencyMs} мс` : "Быстрая разметка 16 ориентиров для последующей ручной коррекции"}
 					</p>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">
@@ -139,7 +139,7 @@ export function CephTab1TopControls({
 						value={aiBackendPref}
 						onChange={(e) => setAiBackendPref(e.target.value as CephAiBackendPreference)}
 						className="h-8 px-2 rounded-lg bg-slate-900 border border-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer"
-						title="Выбор аппаратного бэкенда инференса"
+						title="Режим разметки"
 						data-testid="ai-backend-select"
 					>
 						<option value="auto">Auto ({detectedBackend?.badge || "GPU"})</option>
@@ -160,10 +160,10 @@ export function CephTab1TopControls({
 							color: "#ffffff",
 							borderColor: "rgba(45, 212, 191, 0.6)",
 						}}
-						title="Автоматическая расстановка 16 точек с помощью локальной нейросети"
+						title="Применить калиброванный анатомический шаблон"
 					>
-						<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Расчёт..." : "AI Разметка"}</span>
+						<Sparkles size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 shrink-0"} />
+						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Анатомический шаблон"}</span>
 					</button>
 				</div>
 			</div>

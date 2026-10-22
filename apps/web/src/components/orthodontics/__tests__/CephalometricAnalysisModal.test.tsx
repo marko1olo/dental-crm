@@ -277,7 +277,7 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		assert.ok(htmlPending.includes("Nasion (Назион)"), "Displays target pending landmark name");
 	});
 
-	it("renders mobile tab switcher with [Снимок / Разметка], [16 ориентиров], [Расчет углов], and [Форма 043/у]", () => {
+	it("renders mobile tab switcher with [Снимок / Разметка], [16 ориентиров], [Расчет углов], and [Медицинская карта]", () => {
 		const html = renderToStaticMarkup(
 			createElement(CephalometricAnalysisModal, {
 				isOpen: true,

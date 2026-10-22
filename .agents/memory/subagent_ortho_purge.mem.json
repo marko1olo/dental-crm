@@ -1,0 +1,47 @@
+{
+  "task": "Red Team Orthodontics & Ceph TRG / OPG AI Simulator Purge",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T21:46:30+04:00",
+  "invariants_enforced": [
+    "Mandate 8e: Doctor Autonomy (0 disabled buttons on clinical path)",
+    "Mandate 8x: Living Clinical Language (0 bird-language / 'Форма 043/у' -> 'Медицинская карта пациента')",
+    "Mandate 8f & 8zk: T.A.R.S. 100% Honesty & Zero-Fabrication (fake AI simulators eliminated)",
+    "Mandate 8ze, 8al, 8am: Apple HIG Touch Ergonomics & 4-State Visual Proof"
+  ],
+  "modifications": [
+    "apps/web/src/components/orthodontics/opgAiService/canonicalDetections.ts: purged hardcoded fake caries car-16/car-24 from production; isolated demo fixtures behind isDemoShowcaseMode()",
+    "apps/web/src/components/orthodontics/opgAiService/opgAiServiceCore.ts: renamed backend to honest 'Калибровка зубных дуг FDI'",
+    "apps/web/src/components/orthodontics/opgEngine/odontogramOrchestrator.ts: sanitized protocol header from 'Форма 043/у' to 'Медицинская карта пациента'",
+    "apps/web/src/components/orthodontics/smartOpgModal/SmartOpgFooter.tsx: cleaned aria-label and action button to 'Принять в зубную формулу'",
+    "apps/web/src/components/orthodontics/cephAiService/cephAiServiceCore.ts: honest fallback labeling as 'Калиброванный анатомический шаблон (Ручная проверка)'",
+    "apps/web/src/components/orthodontics/cephModal/CephAnalysisControls.tsx: removed fake GPU/CephaloHRNet labels and Zap icon, replaced with Sparkles and 'Анатомический шаблон (I класс)'",
+    "apps/web/src/components/orthodontics/CephalometricHudStrip.tsx: replaced fake AI placement buttons with honest 'Анатомический шаблон'",
+    "apps/web/src/components/orthodontics/cephModal/useCephLandmarks.ts: sanitized toast notifications to 'Применен анатомический шаблон (16 ориентиров). Выполните ручную проверку'",
+    "apps/web/src/components/orthodontics/cephStudioModules/CephMeasurementsSidebar.tsx: renamed tabs and summary headers to 'Медицинская карта'",
+    "apps/web/src/components/orthodontics/cephalometric/diagnosisEngine.ts: sanitized protocol header to 'Медицинская карта пациента · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts, McNamara'",
+    "apps/web/src/components/orthodontics/cephalometric/protocolGenerator.ts: sanitized protocol text header to 'Медицинская карта пациента'",
+    "apps/web/src/components/orthodontics/__tests__/smartOpgIntegration.test.tsx: synchronized test expectations with purged clinical terms",
+    "apps/web/src/components/orthodontics/__tests__/cephalometricMath.test.ts: verified clean protocol header assertions",
+    "apps/web/src/components/orthodontics/__tests__/cephalometricPresetsAutonomy.test.tsx: verified 1-click clinical chart insertion format",
+    "apps/web/src/components/orthodontics/__tests__/CephalometricAnalysisModal.test.tsx: sanitized test suite title"
+  ],
+  "verification_gates": {
+    "vitest": "10 test files passed, 108 tests passing (100%)",
+    "check_encoding": "Exit Code 0 (15157 files verified)",
+    "check_css_tokens": "Exit Code 0 (405 css files verified, 0 unresolved tokens)"
+  },
+  "screenshots_4state_proof": {
+    "cephalometric_trg": {
+      "pc_light_1440x900": "docs/proofs/orthodontics/ceph_pc_light_1440x900.png",
+      "pc_dark_1440x900": "docs/proofs/orthodontics/ceph_pc_dark_1440x900.png",
+      "mobile_light_390x844": "docs/proofs/orthodontics/ceph_mobile_light_390x844.png",
+      "mobile_dark_390x844": "docs/proofs/orthodontics/ceph_mobile_dark_390x844.png"
+    },
+    "smart_opg": {
+      "pc_light_1440x900": "docs/proofs/orthodontics/smart_opg_pc_light_1440x900.png",
+      "pc_dark_1440x900": "docs/proofs/orthodontics/smart_opg_pc_dark_1440x900.png",
+      "mobile_light_390x844": "docs/proofs/orthodontics/smart_opg_mobile_light_390x844.png",
+      "mobile_dark_390x844": "docs/proofs/orthodontics/smart_opg_mobile_dark_390x844.png"
+    }
+  }
+}

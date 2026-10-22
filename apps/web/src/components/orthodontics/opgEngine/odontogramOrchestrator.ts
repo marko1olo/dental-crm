@@ -62,7 +62,7 @@ export function calculateOpgOdontogram(
 	const cariesList = ALL_FDI_SLOTS.filter((fdi) => slots[fdi]!.status === "Caries");
 
 	const protocol043Ru = `ПРОТОКОЛ АНАЛИЗА ОРТОПАНТОМОГРАММЫ (ОПТГ)
-(Медицинская карта стоматологического пациента · Форма 043/у)
+(Медицинская карта пациента)
 Дата исследования: ${dateStr}
 
 1. Общая характеристика зубных рядов:

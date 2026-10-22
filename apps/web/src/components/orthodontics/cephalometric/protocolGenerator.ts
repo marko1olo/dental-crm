@@ -36,7 +36,7 @@ export function generateForm043OrthodonticProtocolText(
 	const mcnamaraPog = analysis.measurements.find((m) => m.id === "McNamara-Pog-Nperp");
 
 	return `ПРОТОКОЛ ЦЕФАЛОМЕТРИЧЕСКОГО АНАЛИЗА ТРГ В БОКОВОЙ ПРОЕКЦИИ
-(Медицинская карта 043/у · Приказ МЗ РФ №834н · Штайнер, Твид, Даунс, Якобсон, Макнамара)
+(Медицинская карта пациента · Штайнер, Твид, Даунс, Якобсон, Макнамара)
 Пациент: ${pName}
 Врач: ${docName}
 Дата исследования: ${dateStr}

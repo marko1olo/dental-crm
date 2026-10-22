@@ -271,12 +271,12 @@ export function CephalometricHudStrip({
 								color: "#ffffff",
 								borderColor: "rgba(45, 212, 191, 0.6)",
 							}}
-							title={`Локальная нейросетевая авторазметка 16 ориентиров ТРГ (${aiBackendLabel || "AI"})`}
+							title={`Анатомический шаблон 16 ориентиров ТРГ (${aiBackendLabel || "Шаблон"})`}
 						>
-							<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-							<span style={{ color: "#ffffff" }}>{isAiInferring ? "AI расчёт..." : "AI Авторазметка"}</span>
+							<Sparkles size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 shrink-0"} />
+							<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Анатомический шаблон"}</span>
 							<span className="text-[11.5px] px-1 py-0.2 rounded bg-black/50 font-mono font-bold text-teal-200 border border-teal-400/40">
-								[{aiBackendBadge || "GPU"}]
+								[{aiBackendBadge || "Шаблон"}]
 							</span>
 						</button>
 						{onChangeAiBackendPref && (

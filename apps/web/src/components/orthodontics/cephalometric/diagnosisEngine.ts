@@ -192,7 +192,7 @@ export function synthesizeCephalometricDiagnosis(
 
 	const dateStr = new Date().toLocaleDateString("ru-RU");
 	const protocol043Text = `ПРОТОКОЛ ТЕЛЕРЕНТГЕНОГРАФИЧЕСКОГО (ТРГ) ИССЛЕДОВАНИЯ В БОКОВОЙ ПРОЕКЦИИ
-(Форма 043/у · Приказ МЗ РФ №834н · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts, McNamara)
+(Медицинская карта пациента · Анализ по Steiner, Tweed, Downs, Jacobson, Ricketts, McNamara)
 Дата расчета: ${dateStr}
 
 1. Сагиттальные скелетные взаимоотношения (Steiner, Downs, Jacobson, McNamara):
