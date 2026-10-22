@@ -3,7 +3,6 @@ import type {
 	AnestheticDrugId,
 	InjectionTechniqueId,
 } from "../anesthesiaCatalog";
-import { resolveDrugMeta, resolveTechniqueEnum } from "./anesthesiaApiHelpers";
 
 export interface PersistAnesthesiaLogParams {
 	patientId?: string | undefined;
@@ -16,6 +15,53 @@ export interface PersistAnesthesiaLogParams {
 	isCardioRisk: boolean;
 	targetToothNumberFdi?: number | string | undefined;
 	diaryEntry: string;
+}
+
+export function resolveDrugMeta(drugId: AnestheticDrugId) {
+	if (drugId === "articaine_1_100k" || drugId === "septanest_1_100k") {
+		return {
+			drugEnum: "articaine" as const,
+			vasoEnum: "1:100000" as const,
+			concentrationPct: 4.0,
+			brandName: "Ультракаин Д-С форте 1:100 000",
+		};
+	}
+	if (drugId === "articaine_1_200k") {
+		return {
+			drugEnum: "articaine" as const,
+			vasoEnum: "1:200000" as const,
+			concentrationPct: 4.0,
+			brandName: "Ультракаин Д-С 1:200 000",
+		};
+	}
+	if (drugId === "mepivacaine_plain") {
+		return {
+			drugEnum: "mepivacaine" as const,
+			vasoEnum: "none" as const,
+			concentrationPct: 3.0,
+			brandName: "Скандонест 3%",
+		};
+	}
+	if (drugId === "lidocaine_1_100k") {
+		return {
+			drugEnum: "lidocaine" as const,
+			vasoEnum: "1:100000" as const,
+			concentrationPct: 2.0,
+			brandName: "Лидокаин 2% с адреналином",
+		};
+	}
+	return {
+		drugEnum: "articaine" as const,
+		vasoEnum: "1:100000" as const,
+		concentrationPct: 4.0,
+		brandName: "Ультракаин Д-С",
+	};
+}
+
+export function resolveTechniqueEnum(techniqueId: InjectionTechniqueId) {
+	if (techniqueId.includes("mandibular")) return "mandibular_block" as const;
+	if (techniqueId.includes("torus")) return "torus_block" as const;
+	return "infiltration" as const;
 }
 
 export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
@@ -101,14 +147,12 @@ export async function postQuickCarpuleWriteoff(params: {
 			body: JSON.stringify({
 				visitId: params.visitId || null,
 				patientId: params.patientId || null,
-				count: params.count,
 				carpulesCount: params.count,
-				drugId: params.drugId || "articaine_1_100k",
-				drugName: params.drugId || "articaine_1_100k",
-				category: "anesthetic_carpule",
+				drugName: params.drugId || "Ультракаин Д-С",
+				notes: `Списание ${params.count} карпул у кресла`,
 			}),
 		});
 	} catch (err) {
-		console.warn("[Anesthesia] Carpule writeoff error:", err);
+		console.warn("[anesthesia] Quick carpule writeoff error:", err);
 	}
 }

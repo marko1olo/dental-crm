@@ -10,8 +10,6 @@ import type {
 } from "../anesthesiaEngine";
 import { formatAnesthesiaPatientMemo } from "../anesthesiaEngine";
 
-export * from "./anesthesiaActionTypes";
-export * from "./primaryAnestheticDrugsData";
 export {
 	type AnesthesiaCalculationResult,
 	type AnesthesiaPatientMemoParams,
@@ -22,33 +20,12 @@ export {
 	type InjectionTechniqueId,
 };
 
-export interface AnesthesiaQuickBarProps {
-	patientId?: string | undefined;
-	visitId?: string | undefined;
-	patientWeightKg?: number | undefined;
-	patientAgeYears?: number | undefined;
-	hasCardiovascularRisk?: boolean | undefined;
-	hasHypertension?: boolean | undefined;
-	hasCardiacArrhythmia?: boolean | undefined;
-	hasIschemicHeartDisease?: boolean | undefined;
-	hasMyocardialInfarctionHistory?: boolean | undefined;
-	takesBetaBlockers?: boolean | undefined;
-	hasSulfiteAllergy?: boolean | undefined;
-	hasBronchialAsthma?: boolean | undefined;
-	isPregnantOrLactating?: boolean | undefined;
-	hasLidocaineAllergy?: boolean | undefined;
-	hasArticaineAllergy?: boolean | undefined;
-	targetToothNumberFdi?: number | string | undefined;
-	onApplyAnesthesia?:
-		| ((diaryText: string, result: AnesthesiaCalculationResult) => void)
-		| undefined;
-	onDisposalCarpules?:
-		| ((carpulesCount: number, drugId?: AnestheticDrugId | undefined) => void)
-		| undefined;
-	onOpenEmergencyProtocol?: (() => void) | undefined;
-	servicePriceRub?: number | undefined;
-	disabled?: boolean | undefined;
-}
+export {
+	PRIMARY_ANESTHETIC_DRUGS,
+	WEIGHT_PRESETS,
+	WEIGHT_QUICK_PRESETS,
+	type AnesthesiaQuickBarProps,
+} from "../AnesthesiaQuickBar";
 
 export interface SafetyWarningState {
 	readonly title: string;
@@ -65,12 +42,5 @@ export interface AnestheticDrugSelectorProps {
 	readonly hasBronchialAsthma: boolean;
 	readonly hasLidocaineAllergy?: boolean | undefined;
 	readonly hasArticaineAllergy?: boolean | undefined;
-	readonly disabled?: boolean | undefined;
-}
-
-export interface AnesthesiaMethodSelectorProps {
-	readonly techniqueId: InjectionTechniqueId;
-	readonly onSelectTechnique: (techniqueId: InjectionTechniqueId) => void;
-	readonly targetToothNumberFdi?: number | string | undefined;
 	readonly disabled?: boolean | undefined;
 }

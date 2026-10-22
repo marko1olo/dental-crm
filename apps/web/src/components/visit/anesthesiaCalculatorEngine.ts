@@ -104,4 +104,5 @@ export function calculateAnesthesiaSafety(
 	});
 }
 
-export * from "./anesthesiaMrdCalculatorEngine.js";
+export * from "../anesthesia/anesthesiaCatalog.js";
+export * from "../anesthesia/anesthesiaEngine.js";

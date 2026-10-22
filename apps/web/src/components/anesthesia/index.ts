@@ -1,5 +1,3 @@
-export * from "./mrd/anesthesiaMrdCalculatorEngine.js";
-export * from "./mrd/anesthesiaMrdMath.js";
 export * from "./AnesthesiaQuickBar.js";
 export * from "./anesthesiaCatalog.js";
 export * from "./anesthesiaEngine.js";

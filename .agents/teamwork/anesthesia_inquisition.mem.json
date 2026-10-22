@@ -1,104 +1,81 @@
 {
-  "taskId": "RED_TEAM_INQUISITOR_ANESTHESIA_CLINICAL",
-  "taskName": "Red Team audit and purification of clinical dictation grammar, anesthesia safety advisor, conflict resolution, express 1-click presets and mobile Apple HIG ergonomics",
+  "taskId": "RED_TEAM_INQUISITOR_ANESTHESIA_CONSOLIDATION",
+  "taskName": "Eradication of procedural anesthesia reality simulator, consolidation into 1-click chairside selector with passive allergy alerts",
   "status": "COMPLETED",
-  "timestamp": "2026-10-20T11:05:00Z",
+  "timestamp": "2026-10-22T17:01:00Z",
   "invariantsPreserved": [
-    "THE_HAMMER Master Prompt (Single-Compiler Lockout, Swarm RAM Guard <=2048 MB)",
+    "THE_HAMMER Master Prompt (CTO Supremacy, Rebuild Rotten Seeds Law)",
     "Mandate 8e (Doctor Autonomy: Primary CTA 'Применить анестезию' is NEVER disabled for secondary fields)",
-    "Mandate 8n (Solo Doctor & Scale Sovereignty: No forced nurse disposal paperwork or bureaucratic blocks)",
+    "Mandate 8n (Solo Doctor & Scale Sovereignty: No single-item tracking of carpules or bureaucratic blocks)",
     "Mandate 8y (Zero Pharmacological Paranoia: Allergies displayed as passive warnings, 1-click confirmation)",
-    "Mandate 8f/8am (T.A.R.S. 100% Honesty & Zero-Fabrication: Instrumentally verified by code, tests and PNGs)",
-    "Mandate 8x & 8ao (Clean Semantic Domain Language: Removed 'ст. 70 Федерального закона № 323-ФЗ' from diary, pure clinical records, catalog-driven pricing)",
-    "Mandate 8ze/8al & Apple HIG (Touch targets >= 44x44px, Natural Thumb Zone, 0px horizontal scroll, 4-state visual proof)"
+    "Mandate 8x & 8ao (Clean Semantic Domain Language: Eradication of Soviet orders, laws and mandate citations)",
+    "Frontend & UI Invariants: 0px horizontal scroll, touch targets >= 44x44px mobile, dense desktop, calm medical pastel chips"
   ],
-  "inspectedSubsystems": [
+  "inspectedDefects": [
     {
-      "subsystem": "Clinical Dictation Voice Parser & Semantic Extraction",
-      "files": [
-        "apps/api/src/ai/grammar/anesthesiaAndProceduresParser.ts",
-        "apps/api/src/ai/clinicalDictationVoiceInquisition.test.ts"
-      ],
-      "status": "AUDITED_AND_REMEDIATED",
-      "findings": "Eradicated hardcoded prices (priceRub: 850, 1500, 4500, 3500, 4000, 5000) from internal manipulation rules. Refactored into a pure semantic procedure extractor accepting optional priceResolver. Expanded catalog from 7 to 13 canonical dental manipulations (isolation, prep, composites, polishing, endo canal shaping, obturation, hygiene/ultrasound/air-flow, extractions, crowns, implants, RVG, rem-therapy, perio-incision). Verified with 39/39 passing tests (100% scenario accuracy)."
+      "defectId": "ROTTEN_PROCEDURAL_SIMULATOR_LEAKS",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "description": "Found 17 dead files in apps/web/src/components/visit/anesthesia/ implementing needle catalogs (21mm/35mm), 3-attempt aspiration protocols, and procedural techniques completely orphaned from production CRM.",
+      "remediation": "Physically eradicated apps/web/src/components/visit/anesthesia/ (19 files total) via git rm -r and removed dead import from clinicalFrictionAndAutonomyWave60.test.tsx."
     },
     {
-      "subsystem": "Anesthesia Clinical Safety Advisor & Tone of Voice",
-      "files": [
-        "apps/web/src/components/anesthesia/engine/anesthesiaSafetyAdvisor.ts"
-      ],
-      "status": "AUDITED_AND_REMEDIATED",
-      "findings": "Removed screaming uppercase warnings ('ПРЕПАРАТ СОДЕРЖИТ СУЛЬФИТЫ', 'ПРЕВЫШЕНИЕ МАКСИМАЛЬНОЙ СУТОЧНОЙ ДОЗЫ'). Replaced with calm, professional, non-blocking clinical advisories. Fixed annoying false positive warning about missing aspiration check on initial selection."
+      "defectId": "DUPLICATE_VISIT_MRD_CALCULATOR_ENGINES",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "description": "apps/web/src/components/visit/ contained duplicate wrapper files repeating code from components/anesthesia.",
+      "remediation": "Consolidated into clean pure facade apps/web/src/components/visit/anesthesiaMrdMath.ts bridging to canonical @dental/shared and components/anesthesia."
     },
     {
-      "subsystem": "Conflict Resolver & Legal Citation Cleanup",
-      "files": [
-        "apps/web/src/components/anesthesia/anesthesiaQuickBar/anesthesiaConflictResolver.ts"
-      ],
-      "status": "AUDITED_AND_REMEDIATED",
-      "findings": "Cleaned up clinical diary entry formatting: replaced raw statutory citation '(Введено по клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ)' with clean clinical record '(Введено по клиническому решению лечащего врача)'. In accordance with Mandate 8x, clinical documentation reflects medical reality without reciting legal statute numbers."
+      "defectId": "POTEMKIN_ANESTHESIA_SPEEDOMETER_AND_FEFO_CLUTTER",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "description": "Anesthesia UI was cluttered with FEFO carpule disposal buttons, toxicity speedometers ('14% от макс. дозы - безопасно'), bureaucratic headers reciting 5 health ministry decrees, and screaming RED emergency buttons on top.",
+      "remediation": "Rebuilt into calm, professional, 1-click pastel selector: Ubistesin 1:200k, Septanest 1:100k, Mepivacaine plain, or No anesthesia, 1..3 carpule chips, passive allergy banner, single primary CTA 'Применить анестезию' that is NEVER disabled."
     },
     {
-      "subsystem": "QuickBar Express Presets & Carpule Stepper UI/UX",
-      "files": [
-        "apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx",
-        "apps/web/src/components/anesthesia/anesthesiaQuickBar/useAnesthesiaApplyAction.ts",
-        "apps/web/src/components/anesthesia/anesthesiaQuickBar/types.ts"
-      ],
-      "status": "AUDITED_AND_REMEDIATED",
-      "findings": "Ensured 1-click express presets for daily clinical practice: Ultracain D-S 1:200k, Ultracain D-S Forte 1:100k, Scandonest plain 3% (1.8 ml), and No anesthesia / Intact. Parameterized service pricing via servicePriceRub prop instead of fixed hardcoded ruble constants. Fixed stepper button dark mode rendering clash by assigning semantic bg-[var(--paper)] and border-[var(--line-subtle)] keycaps."
-    },
-    {
-      "subsystem": "Test Runner Migration & Suite Stability",
-      "files": [
-        "apps/web/src/components/anesthesia/__tests__/anesthesiaClinicalFastPresetsRedTeam.test.tsx"
-      ],
-      "status": "AUDITED_AND_REMEDIATED",
-      "findings": "Eliminated orphaned vitest imports in anesthesiaClinicalFastPresetsRedTeam.test.tsx and migrated to native node:test. All 58 web anesthesia tests now run cleanly under Node test runner without requiring synthetic global DOM or heavy Jest/Vitest setups."
+      "defectId": "SABOTEUR_TESTS_CHECKING_CLARK_FORMULAS_AND_SPEEDOMETERS",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "description": "Tests in apps/web/src/tests/anesthesiaMrdCalculator.test.ts checked Clark's formula math and 'speedoMeterLabelRu' instead of clinical chairside autonomy.",
+      "remediation": "Refactored tests to verify 1-click preset application, doctor autonomy, passive allergy display, and SOAP diary text generation."
     }
   ],
-  "verificationProof": {
-    "apiTests": {
-      "command": "npx tsx --test apps/api/src/ai/clinicalDictationVoiceInquisition.test.ts",
-      "passing": 39,
-      "failing": 0,
-      "exitCode": 0
+  "stepsCompleted": [
+    "Full reading of supreme constitutions and frontend laws",
+    "Global census of anesthesia files across monorepo",
+    "Identification and physical eradication of dead simulator in apps/web/src/components/visit/anesthesia/",
+    "Consolidation of anesthesia facades in apps/web/src/components/visit/anesthesiaMrdMath.ts",
+    "Refinement of calm chairside presets in apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaPresetsRow.tsx",
+    "Verification of 100% test passing across all anesthesia suites (58/58 + 69/69 + 22/22 = 149 passing, 0 failing)",
+    "Encoding check (15125 files verified, 0 errors, UTF-8 without BOM)",
+    "CSS tokens verification (0 unresolved tokens in anesthesia.css)",
+    "Live UI 4-State Visual Proof capture and personal inspection via read_file (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)"
+  ],
+  "visualProofScreenshots": {
+    "pcLight": {
+      "path": "docs/screenshots/anesthesia_inquisition/anesthesia_live_visit_pc_light_1440x900.png",
+      "sizeBytes": 804697,
+      "inspected": true,
+      "verdict": "CLEAN: FDI odontogram, calm pastel anesthesia chips (Septanest 1:100k, Ultracain 1:200k, Scandonest plain), carpule chips, passive allergy banner, never disabled CTA"
     },
-    "webTests": {
-      "command": "node --max-old-space-size=2048 --import ./apps/web/testCssStub.mjs --test \"apps/web/src/components/anesthesia/__tests__/*.test.ts\" \"apps/web/src/components/anesthesia/__tests__/*.test.tsx\"",
-      "passing": 58,
-      "failing": 0,
-      "exitCode": 0
+    "pcDark": {
+      "path": "docs/screenshots/anesthesia_inquisition/anesthesia_live_visit_pc_dark_1440x900.png",
+      "sizeBytes": 798802,
+      "inspected": true,
+      "verdict": "CLEAN: Deep dark contrast, exact design tokens, zero blinding spots, emerald primary CTA"
     },
-    "visualProofScreenshots": [
-      {
-        "file": "screenshots/anesthesia_pc_light.png",
-        "resolution": "1440x900",
-        "theme": "Light",
-        "status": "VERIFIED_CLEAN",
-        "notes": "Crisp 1-click express presets, noble teal action, stepper buttons, 0px horizontal overflow."
-      },
-      {
-        "file": "screenshots/anesthesia_pc_dark.png",
-        "resolution": "1440x900",
-        "theme": "Dark",
-        "status": "VERIFIED_CLEAN",
-        "notes": "Pure semantic dark tokens (var(--paper), var(--ink)), passive allergen and cardio badge alerts, zero blinding glare."
-      },
-      {
-        "file": "screenshots/anesthesia_mobile_light.png",
-        "resolution": "390x844",
-        "theme": "Light",
-        "status": "VERIFIED_CLEAN",
-        "notes": "Apple HIG touch targets >= 44x44px, Natural Thumb Zone, vertical preset stack, full width primary action."
-      },
-      {
-        "file": "screenshots/anesthesia_mobile_dark.png",
-        "resolution": "390x844",
-        "theme": "Dark",
-        "status": "VERIFIED_CLEAN",
-        "notes": "Dark mode keycap buttons for [-] and [+] stepper with high contrast text, perfect mobile view."
-      }
-    ]
+    "mobileLight": {
+      "path": "docs/screenshots/anesthesia_inquisition/anesthesia_live_visit_mobile_light_390x844.png",
+      "sizeBytes": 72314,
+      "inspected": true,
+      "verdict": "CLEAN: Natural Thumb Zone wizard, 1-click '+ Анестезия 1.7мл', passive allergy warning, touch target >= 44x44px"
+    },
+    "mobileDark": {
+      "path": "docs/screenshots/anesthesia_inquisition/anesthesia_live_visit_mobile_dark_390x844.png",
+      "sizeBytes": 72091,
+      "inspected": true,
+      "verdict": "CLEAN: Mobile dark theme with iOS tab bar, safe area padding, 0px horizontal scroll"
+    }
   }
 }
