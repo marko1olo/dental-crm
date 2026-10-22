@@ -39,6 +39,9 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 				aria-label="Боковая шторка телефонии"
 				data-testid="telephony-patient-side-drawer"
 			>
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0" aria-hidden="true">
+					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,rgba(0,0,0,0.25))] dark:bg-[rgba(255,255,255,0.25)]" />
+				</div>
 				<TelephonyDrawerHeader
 					onClose={handleClose}
 					isKnownPatient={callData.isKnownPatient}
