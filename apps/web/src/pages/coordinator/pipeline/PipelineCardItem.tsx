@@ -8,11 +8,13 @@ import {
 	Eye,
 	Link2,
 	Phone,
+	PhoneCall,
 	Tablet,
 } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
+import { useState } from "react";
 import type { PipelineCard, PipelineStage, PipelineViewMode } from "./types";
-import { formatRub } from "./types";
+import { formatRub, STAGE_CONFIG } from "./types";
 
 export interface PipelineCardItemProps {
 	card: PipelineCard;
@@ -22,10 +24,12 @@ export interface PipelineCardItemProps {
 	isGeneratingLink: string | null;
 	onCopyOrGenerateLink: (card: PipelineCard) => void;
 	onOpenPlan?: ((card: PipelineCard) => void) | undefined;
+	onTransitionStage?: ((card: PipelineCard, targetStage: PipelineStage) => Promise<void>) | undefined;
+	onCreateRecallTask?: ((card: PipelineCard) => Promise<void>) | undefined;
 }
 
-function getInitials(name: string): string {
-	if (!name) return "П";
+function getInitials(name: string | null | undefined): string {
+	if (!name || typeof name !== "string") return "П";
 	const parts = name.trim().split(/\s+/);
 	const first = parts[0];
 	const second = parts[1];
@@ -46,16 +50,57 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 	isGeneratingLink,
 	onCopyOrGenerateLink,
 	onOpenPlan,
+	onTransitionStage,
+	onCreateRecallTask,
 }) => {
+	const [isMovingStage, setIsMovingStage] = useState(false);
+	const [isCreatingRecall, setIsCreatingRecall] = useState(false);
+	const [recallCreated, setRecallCreated] = useState(false);
+
 	const isApproved =
 		card.budgetStatus === "accepted" || card.status === "Approved";
 	const isHorizontal = viewMode === "horizontal";
+	const patientName = card.patientName || "Без имени";
+	const doctorName = card.doctorName || "Врач не назначен";
+	const planTitle = card.title || card.name || "План лечения";
+	const daysInactive = Number.isFinite(card.daysSinceLastActivity)
+		? Math.max(0, card.daysSinceLastActivity)
+		: 0;
+
+	const handleStageSelect = async (newStage: PipelineStage) => {
+		if (newStage === stageKey || !onTransitionStage) return;
+		try {
+			setIsMovingStage(true);
+			await onTransitionStage(card, newStage);
+		} finally {
+			setIsMovingStage(false);
+		}
+	};
+
+	const handleRecallClick = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (!onCreateRecallTask || isCreatingRecall || recallCreated) return;
+		try {
+			setIsCreatingRecall(true);
+			await onCreateRecallTask(card);
+			setRecallCreated(true);
+		} finally {
+			setIsCreatingRecall(false);
+		}
+	};
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: pipeline card container has click-to-open with keyboard navigation
 		<div
 			role="button"
 			tabIndex={0}
+			draggable={true}
+			onDragStart={(e) => {
+				e.dataTransfer.setData(
+					"text/plain",
+					JSON.stringify({ planId: card.id, currentStage: stageKey }),
+				);
+			}}
 			onClick={() => onOpenPlan?.(card)}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
@@ -63,17 +108,19 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 					onOpenPlan?.(card);
 				}
 			}}
-			className="p-3.5 sm:p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:shadow-md transition space-y-3 text-xs w-full max-w-full overflow-hidden cursor-pointer"
+			className={`p-3.5 sm:p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong)] hover:shadow-md transition space-y-3 text-xs w-full max-w-full overflow-hidden cursor-pointer ${
+				isMovingStage ? "opacity-60 pointer-events-none" : ""
+			}`}
 		>
 			{/* Top Row: Patient Info, Phone, and Total Amount */}
 			<div className="flex items-start justify-between gap-2.5 sm:gap-3">
 				<div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
 					<div className="w-8 h-8 rounded-full bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold text-xs shrink-0 select-none mt-0.5 sm:mt-0">
-						{getInitials(card.patientName)}
+						{getInitials(patientName)}
 					</div>
 					<div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-x-2.5 gap-y-0.5 min-w-0 flex-1">
 						<span className="font-semibold text-sm sm:text-base text-[var(--text)] leading-snug break-words">
-							{card.patientName}
+							{patientName}
 						</span>
 						{card.patientPhone && (
 							<a
@@ -91,7 +138,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 
 				<div className="text-right shrink-0 pl-1">
 					<span className="font-bold font-mono text-sm sm:text-base text-[var(--teal,#0d9488)] block whitespace-nowrap">
-						{formatRub(card.netTotalRub)}
+						{formatRub(card.netTotalRub || 0)}
 					</span>
 					{Boolean(card.discountRub) && (
 						<span className="text-[11px] text-emerald-500 font-mono block whitespace-nowrap">
@@ -101,7 +148,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 				</div>
 			</div>
 
-			{/* Middle Row: Plan title, Doctor, Visit badge, and Status Pills (ZERO MATRYOSHKA INNER BORDER) */}
+			{/* Middle Row: Plan title, Doctor, Visit badge, and Status Pills */}
 			<div
 				className={`flex gap-3 pt-2 border-t border-[var(--line-subtle)] ${
 					isHorizontal
@@ -112,13 +159,13 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 				{/* Metadata & Status Pills */}
 				<div className="flex flex-wrap items-center gap-2 min-w-0 text-xs">
 					<span className="font-medium text-[var(--text)]">
-						{card.title || card.name}
+						{planTitle}
 					</span>
 					<span className="text-[var(--line-strong)]">•</span>
 					<span className="text-[var(--muted)]">
 						Врач:{" "}
 						<strong className="font-medium text-[var(--text)]">
-							{card.doctorName || "Не назначен"}
+							{doctorName}
 						</strong>
 					</span>
 
@@ -157,13 +204,56 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 					{stageKey === "in_progress_abandoned" && (
 						<span className="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-medium flex items-center gap-1 shrink-0">
 							<Clock className="w-3 h-3 shrink-0" />
-							<span>Пауза {card.daysSinceLastActivity} дн.</span>
+							<span>Пауза {daysInactive} дн.</span>
+						</span>
+					)}
+
+					{/* Анти-отвал: Предупреждение и кнопка реколла */}
+					{card.isDropoutRisk && (
+						<span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-1 shrink-0">
+							<AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+							<span>⚠️ Риск отвала ({daysInactive} дн.)</span>
 						</span>
 					)}
 				</div>
 
-				{/* Action Buttons: Unified height 36px on desktop, >= 44px on touch, rounded-xl */}
+				{/* Action Buttons */}
 				<div className="flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-2 shrink-0 pt-1 lg:pt-0 w-full sm:w-auto">
+					{/* Drop-out recall task 1-click generator */}
+					{card.isDropoutRisk && onCreateRecallTask && (
+						<button
+							type="button"
+							onClick={handleRecallClick}
+							disabled={isCreatingRecall || recallCreated}
+							className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer ${
+								recallCreated
+									? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+									: "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/40 text-amber-700 dark:text-amber-300"
+							}`}
+							title="Создать контрольный звонок куратора для предотвращения отвала"
+						>
+							<PhoneCall className="w-3.5 h-3.5 shrink-0" />
+							<span>{recallCreated ? "Звонок назначен" : isCreatingRecall ? "Создание..." : "Звонок куратора"}</span>
+						</button>
+					)}
+
+					{/* Stage Transition Dropdown */}
+					{onTransitionStage && (
+						<select
+							value={stageKey}
+							onClick={(e) => e.stopPropagation()}
+							onChange={(e) => handleStageSelect(e.target.value as PipelineStage)}
+							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 text-xs rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--text)] font-medium outline-none focus:border-[var(--teal,#0d9488)] transition cursor-pointer"
+							title="Переместить план на другой этап"
+						>
+							<option value="requires_budget">1. Требуется смета</option>
+							<option value="awaiting_decision">2. Ожидает решения</option>
+							<option value="no_appointment">3. Без записи</option>
+							<option value="in_progress_abandoned">4. Брошенные (&gt;30д)</option>
+							<option value="completed">5. Завершенные</option>
+						</select>
+					)}
+
 					<button
 						type="button"
 						data-testid="pipeline-card-open-plan-btn"
@@ -186,7 +276,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						title="Открыть студию презентации плана лечения и сметы"
 					>
 						<Tablet className="w-3.5 h-3.5 shrink-0" />
-						<span>Презентация (3-Tier)</span>
+						<span>Презентация</span>
 					</button>
 
 					<a

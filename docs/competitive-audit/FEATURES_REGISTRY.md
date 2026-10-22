@@ -1116,7 +1116,16 @@
        * `mobile_light_chairside_390x844.png` (1004.6 KB, MD5: `86fd760a21232cfe7724acc66bb01b31`)
        * `mobile_dark_chairside_390x844.png` (1004.8 KB, MD5: `7e328646a75fe92c169bcbcc2a9ca111`)
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (491 фича в реестре: 64 канонические + 427 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (492 фичи в реестре: 64 канонические + 428 аддендум, ВСЕ ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+
+---
+
+### АДДЕНДУМ 492: Воронка планов лечения, кураторская аналитика и анти-отвал пациентов (14–21+ дней)
+
+| # | Код фичи | Описание функционала | Аналог | Домен | Клиническая ценность и мандаты | Статус | Уровень | Проверено | Сложность | Влияние | Файлы реализации и тесты |
+|---|---|---|---|---|---|:---:|:---:|:---:|:---:|:---:|---|
+| 492 | `планы_лечения::воронка_куратора_и_профилактика_отвала_пациентов` | 5-колоночный канбан-пайплайн планов лечения, авто-реколлы куратора при паузе >= 14 дней, расчет конверсии и среднего чека | DentalPRO / IDENT | Планы лечения / CRM / Реколл | 1. **Мгновенное перемещение планов между этапами воронки** (`POST /api/v1/treatment-plans/:id/transition-stage`): переключение стадий (`Draft`, `Active`, `Approved`, `Completed`, `Rejected`) с ACID-фиксацией в PostgreSQL 18, проставлением `approvedAt`, аудитом `TREATMENT_PLAN_STAGE_TRANSITION` и реактивным WebSocket-бродкастом.<br>2. **Автоматическая защита от отвала пациентов (Anti-Dropout Prevention)**: сканирование утвержденных и активных планов без записей на прием >= 14 дней (`POST /api/v1/treatment-plans/dropout-prevention/run` и `POST /api/v1/treatment-plans/:id/create-dropout-recall`), создание дедуплицированных задач куратора (`patientRecalls`, когорта `treatment_plan_followup`).<br>3. **Финансовая и конверсионная аналитика без `NaN`**: расчет Acceptance Rate (CR %), среднего чека комплекса и суммарного бюджета воронки со строгим суммированием отфильтрованных карточек.<br>4. **Ликвидация ловушек Red Team**: Empty State с первичной CTA «Создать первый план лечения», сохранение списка врачей в фильтре при переключении доктора, защита от утечек `NaN` в днях неактивности. | [ДА] | 5 | Да | Средняя | MUST-HAVE | `apps/api/src/services/patients/treatmentPlanDropoutService.ts`; `apps/api/src/routes/treatmentPlan/stageTransitionHandler.ts`; `apps/api/src/routes/treatmentPlan/pipelineDataAggregator.ts`; `apps/api/src/routes/treatmentPlan/pipelineTypes.ts`; `apps/api/src/routes/treatmentPlanRoutes.ts`; `apps/web/src/pages/coordinator/TreatmentPipeline.tsx`; `apps/web/src/pages/coordinator/pipeline/PipelineBoard.tsx`; `apps/web/src/pages/coordinator/pipeline/PipelineCardItem.tsx`; `apps/web/src/pages/coordinator/pipeline/PipelineKpiSummary.tsx`; `apps/web/src/components/patients/TreatmentPlansList.tsx`; `apps/api/src/tests/routes/treatmentPipelineAndPublicBudget.test.ts` (9/9 PASS) |
+
 
 
 

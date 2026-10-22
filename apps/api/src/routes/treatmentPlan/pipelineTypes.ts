@@ -31,6 +31,21 @@ export interface PipelineCard {
 	hasFutureAppointment: boolean;
 	nextAppointmentDate?: string | null;
 	lastAppointmentDate?: string | null;
+	isDropoutRisk: boolean;
+}
+
+export interface PipelineAnalytics {
+	acceptanceRatePercent: number;
+	averagePlanRub: number;
+	totalPipelineRub: number;
+	totalPlansCount: number;
+	dropoutRiskCount: number;
+}
+
+export interface PipelineResponseSummary {
+	counts: Record<PipelineStage | "total", number>;
+	totalsRub: Record<PipelineStage | "total", number>;
+	analytics: PipelineAnalytics;
 }
 
 export const treatmentPlanQuerySchema = z.object({

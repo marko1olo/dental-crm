@@ -3,12 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
+	CheckCircle2,
 	Columns,
 	Filter,
 	Layers,
 	List,
+	Plus,
 	RefreshCw,
 	Search,
+	ShieldAlert,
 	X,
 } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
@@ -47,6 +50,13 @@ export const TreatmentPipeline: React.FC = () => {
 	const [copiedToken, setCopiedToken] = useState<string | null>(null);
 	const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
 	const [selectedCardForPresenter, setSelectedCardForPresenter] = useState<PipelineCard | null>(null);
+
+	// Anti-dropout state
+	const [isRunningDropout, setIsRunningDropout] = useState<boolean>(false);
+	const [dropoutMessage, setDropoutMessage] = useState<string | null>(null);
+
+	// Accumulated doctor options so filtering by doctor doesn't collapse the dropdown (Red Team Trap 3)
+	const [accumulatedDoctors, setAccumulatedDoctors] = useState<Array<{ id: string; name: string }>>([]);
 
 	const fetchPipeline = useCallback(async () => {
 		try {
@@ -88,10 +98,21 @@ export const TreatmentPipeline: React.FC = () => {
 		};
 	}, [fetchPipeline]);
 
-	// Extract unique doctors for filtering
-	const doctorOptions = useMemo(() => {
-		if (!data) return [];
+	// Track stable doctor list
+	useEffect(() => {
+		if (!data) return;
 		const docMap = new Map<string, string>();
+
+		const rawStaff = (appLogic?.dashboard?.clinicSettings?.staff as Array<{
+			id: string;
+			fullName?: string;
+			name?: string;
+			role?: string;
+		}>) || [];
+		for (const s of rawStaff) {
+			docMap.set(s.id, s.fullName || s.name || "Врач");
+		}
+
 		for (const stage of Object.keys(data.pipeline) as PipelineStage[]) {
 			for (const card of data.pipeline[stage]) {
 				if (card.doctorId && card.doctorName) {
@@ -99,8 +120,75 @@ export const TreatmentPipeline: React.FC = () => {
 				}
 			}
 		}
-		return Array.from(docMap.entries()).map(([id, name]) => ({ id, name }));
-	}, [data]);
+
+		setAccumulatedDoctors((prev) => {
+			for (const p of prev) {
+				if (!docMap.has(p.id)) docMap.set(p.id, p.name);
+			}
+			return Array.from(docMap.entries()).map(([id, name]) => ({ id, name }));
+		});
+	}, [data, appLogic?.dashboard?.clinicSettings?.staff]);
+
+	// Move card to another stage
+	const handleTransitionStage = async (card: PipelineCard, targetStage: PipelineStage) => {
+		try {
+			const res = await fetch(`/api/v1/treatment-plans/${card.id}/transition-stage`, {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({ targetStage }),
+			});
+			if (!res.ok) {
+				throw new Error("Не удалось переместить план лечения");
+			}
+			await fetchPipeline();
+		} catch (err) {
+			alert((err as Error).message || "Ошибка перемещения плана");
+		}
+	};
+
+	// 1-Click Drop-out Prevention batch run
+	const handleRunDropoutPrevention = async () => {
+		try {
+			setIsRunningDropout(true);
+			const res = await fetch("/api/v1/treatment-plans/dropout-prevention/run", {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({ minDays: 14 }),
+			});
+			if (!res.ok) {
+				throw new Error("Не удалось выполнить контроль отвала");
+			}
+			const json = await res.json();
+			const created = json.data?.tasksCreated ?? 0;
+			const atRisk = json.data?.dropoutRiskCount ?? 0;
+			setDropoutMessage(
+				`Контроль отвала завершен: ${atRisk} пациентов в зоне риска (без записи >14д), сформировано ${created} новых задач на звонок куратора.`,
+			);
+			setTimeout(() => setDropoutMessage(null), 7000);
+			await fetchPipeline();
+		} catch (err) {
+			alert((err as Error).message || "Ошибка контроля отвала");
+		} finally {
+			setIsRunningDropout(false);
+		}
+	};
+
+	// 1-Click single card recall task
+	const handleCreatePlanRecall = async (card: PipelineCard) => {
+		try {
+			const res = await fetch(`/api/v1/treatment-plans/${card.id}/create-dropout-recall`, {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({ notes: `Создано куратором из воронки планов лечения.` }),
+			});
+			if (!res.ok) {
+				throw new Error("Не удалось создать задачу на звонок");
+			}
+			await fetchPipeline();
+		} catch (err) {
+			alert((err as Error).message || "Ошибка создания задачи на звонок");
+		}
+	};
 
 	// Create or copy budget link
 	const handleCopyOrGenerateLink = async (card: PipelineCard) => {
@@ -135,22 +223,6 @@ export const TreatmentPipeline: React.FC = () => {
 		}
 	};
 
-	const staffList = useMemo(() => {
-		const rawStaff = (appLogic?.dashboard?.clinicSettings?.staff as Array<{
-			id: string;
-			fullName?: string;
-			name?: string;
-			role?: string;
-		}>) || [];
-		if (rawStaff.length > 0) {
-			return rawStaff.map((s) => ({
-				id: s.id,
-				name: s.fullName || s.name || "Врач",
-			}));
-		}
-		return doctorOptions;
-	}, [appLogic?.dashboard?.clinicSettings?.staff, doctorOptions]);
-
 	const clinicName = branding.clinicName || appLogic?.dashboard?.organization?.name || "";
 	const clinicLegalName = branding.clinicLegalName || appLogic?.dashboard?.organization?.legalName || clinicName;
 	const clinicInn = branding.clinicInn || appLogic?.dashboard?.organization?.inn || "";
@@ -167,6 +239,8 @@ export const TreatmentPipeline: React.FC = () => {
 		return "Врач не назначен";
 	}, [presenterDoctorOverride, selectedCardForPresenter?.doctorName, appLogic?.dashboard?.activeDoctor?.fullName]);
 
+	const dropoutRiskCount = data?.summary.analytics?.dropoutRiskCount ?? 0;
+
 	return (
 		<div className="w-full min-h-screen flex flex-col p-2.5 sm:p-4 space-y-4 overflow-x-hidden bg-[var(--bg)] text-[var(--text)] pb-4 md:pb-6">
 			{/* Top Header & View Mode Switcher / Refresh: Strictly 1 Row */}
@@ -179,11 +253,43 @@ export const TreatmentPipeline: React.FC = () => {
 						</h1>
 					</div>
 					<p className="text-xs text-[var(--muted)] hidden sm:block">
-						Оперативный контроль смет, возвращаемости и отсутствия потерянных пациентов
+						Оперативный контроль смет, возвращаемости и защита от отвала пациентов
 					</p>
 				</div>
 
 				<div className="flex items-center gap-2 shrink-0">
+					{/* Drop-out prevention button */}
+					<button
+						type="button"
+						onClick={handleRunDropoutPrevention}
+						disabled={isRunningDropout || isLoading}
+						className={`h-9 min-h-[36px] px-3 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+							dropoutRiskCount > 0
+								? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
+								: "bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--text)] border-[var(--line)]"
+						}`}
+						title="Проверить зависшие планы (>14 дней без записи) и создать задачи на звонок куратора"
+					>
+						<ShieldAlert className={`w-3.5 h-3.5 ${isRunningDropout ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+						<span className="hidden sm:inline">Анти-отвал (14–21д)</span>
+						{dropoutRiskCount > 0 && (
+							<span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500 text-white font-bold leading-none">
+								{dropoutRiskCount}
+							</span>
+						)}
+					</button>
+
+					{/* Create new plan button */}
+					<a
+						href="#/patients"
+						className="primary-button h-9 min-h-[36px] px-3.5 rounded-xl text-xs font-semibold transition hidden sm:flex items-center gap-1.5 shadow-sm cursor-pointer"
+						style={{ borderRadius: "10px" }}
+						title="Перейти к пациентам для составления нового плана"
+					>
+						<Plus className="w-3.5 h-3.5" />
+						<span>Новый план</span>
+					</a>
+
 					{/* Desktop View Mode Switcher (Horizontal Swimlanes vs Kanban Columns) */}
 					<div className="hidden md:flex items-center gap-1 p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shadow-xs">
 						<button
@@ -220,7 +326,7 @@ export const TreatmentPipeline: React.FC = () => {
 						</button>
 					</div>
 
-					{/* Refresh Button (Desktop only — on mobile it lives in the Floating Bottom Bar) */}
+					{/* Refresh Button */}
 					<button
 						type="button"
 						onClick={fetchPipeline}
@@ -240,6 +346,23 @@ export const TreatmentPipeline: React.FC = () => {
 				</div>
 			</div>
 
+			{/* Dropout Banner Alert */}
+			{dropoutMessage && (
+				<div className="p-3 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+					<div className="flex items-center gap-2">
+						<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+						<span className="font-medium">{dropoutMessage}</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => setDropoutMessage(null)}
+						className="text-[var(--muted)] hover:text-[var(--text)] transition"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				</div>
+			)}
+
 			{/* KPI Summary & Interactive Stage Selector */}
 			{data && (
 				<PipelineKpiSummary
@@ -251,7 +374,7 @@ export const TreatmentPipeline: React.FC = () => {
 
 			{/* Filter & Search Bar */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2.5 sm:p-3 bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm">
-				{/* Search Field with strict paddingLeft 38px against icon overlap */}
+				{/* Search Field */}
 				<div className="relative flex-1 max-w-md dente-search-wrap">
 					<Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
 					<input
@@ -285,7 +408,7 @@ export const TreatmentPipeline: React.FC = () => {
 							className="w-full sm:w-auto h-9 sm:h-[38px] min-h-[36px] px-3 pr-8 rounded-xl border border-[var(--line)] bg-[var(--bg)] text-xs text-[var(--text)] font-medium outline-none focus:border-[var(--teal,#0d9488)] transition appearance-none cursor-pointer"
 						>
 							<option value="all">Все лечащие врачи</option>
-							{doctorOptions.map((doc) => (
+							{accumulatedDoctors.map((doc) => (
 								<option key={doc.id} value={doc.id}>
 									{doc.name}
 								</option>
@@ -296,7 +419,7 @@ export const TreatmentPipeline: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Apple HIG Mobile Stage Selector (5-Column Segmented Bar — Zero Horizontal Scroll & Zero Clipping) */}
+			{/* Apple HIG Mobile Stage Selector */}
 			<div className="md:hidden">
 				<div className="grid grid-cols-5 gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)]">
 					{PIPELINE_STAGES.map((stg) => {
@@ -354,12 +477,19 @@ export const TreatmentPipeline: React.FC = () => {
 							isGeneratingLink={isGeneratingLink}
 							onCopyOrGenerateLink={handleCopyOrGenerateLink}
 							onOpenPlan={(card) => setSelectedCardForPresenter(card)}
+							onTransitionStage={handleTransitionStage}
+							onCreateRecallTask={handleCreatePlanRecall}
+							onCreateNewPlan={() => {
+								if (typeof window !== "undefined") {
+									window.location.hash = "#/patients";
+								}
+							}}
 						/>
 					</div>
 				)
 			)}
 
-			{/* Floating Bottom Bar in Natural Thumb Zone for Mobile (<= 768px / md:hidden) */}
+			{/* Floating Bottom Bar in Natural Thumb Zone for Mobile */}
 			{data &&
 				(typeof document !== "undefined" && document.body
 					? createPortal(
@@ -391,16 +521,30 @@ export const TreatmentPipeline: React.FC = () => {
 									</div>
 								</div>
 
-								<button
-									type="button"
-									onClick={fetchPipeline}
-									disabled={isLoading}
-									className="primary-button min-h-[44px] h-11 px-4 font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
-									data-testid="pipeline-mobile-refresh-btn"
-								>
-									<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-									<span>Обновить</span>
-								</button>
+								<div className="flex items-center gap-1.5">
+									{dropoutRiskCount > 0 && (
+										<button
+											type="button"
+											onClick={handleRunDropoutPrevention}
+											disabled={isRunningDropout}
+											className="min-h-[44px] h-11 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1 touch-manipulation cursor-pointer"
+										>
+											<ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+											<span>{dropoutRiskCount}</span>
+										</button>
+									)}
+
+									<button
+										type="button"
+										onClick={fetchPipeline}
+										disabled={isLoading}
+										className="primary-button min-h-[44px] h-11 px-4 font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
+										data-testid="pipeline-mobile-refresh-btn"
+									>
+										<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+										<span>Обновить</span>
+									</button>
+								</div>
 							</div>,
 							document.body,
 						)
@@ -431,7 +575,7 @@ export const TreatmentPipeline: React.FC = () => {
 										data-testid="pipeline-doctor-assign-select"
 									>
 										<option value="">-- Выбрать врача из персонала --</option>
-										{staffList.map((doc) => (
+										{accumulatedDoctors.map((doc) => (
 											<option key={doc.id} value={doc.name}>
 												{doc.name}
 											</option>

@@ -32,6 +32,15 @@ export interface PipelineCard {
 	hasFutureAppointment: boolean;
 	nextAppointmentDate?: string | null | undefined;
 	lastAppointmentDate?: string | null | undefined;
+	isDropoutRisk?: boolean | undefined;
+}
+
+export interface PipelineAnalytics {
+	acceptanceRatePercent: number;
+	averagePlanRub: number;
+	totalPipelineRub: number;
+	totalPlansCount: number;
+	dropoutRiskCount: number;
 }
 
 export interface PipelineResponse {
@@ -39,6 +48,7 @@ export interface PipelineResponse {
 	summary: {
 		counts: Record<PipelineStage | "total", number>;
 		totalsRub: Record<PipelineStage | "total", number>;
+		analytics?: PipelineAnalytics | undefined;
 	};
 }
 

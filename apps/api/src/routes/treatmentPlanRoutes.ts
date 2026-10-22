@@ -14,6 +14,11 @@ import {
 	handleUpdateTreatmentPlanStage,
 } from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 import { handleSignTreatmentPlanPep } from "./treatmentPlan/treatmentPlanPepHandler.js";
+import { handleStageTransition } from "./treatmentPlan/stageTransitionHandler.js";
+import {
+	checkAndGenerateDropoutRecalls,
+	createSinglePlanDropoutRecall,
+} from "../services/patients/treatmentPlanDropoutService.js";
 
 export * from "./treatmentPlan/pipelineTypes.js";
 export * from "./treatmentPlan/treatmentPlanCrudHandlers.js";
@@ -111,4 +116,38 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	};
 	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/approve", approvePlanHandler);
 	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/approve", approvePlanHandler);
+
+	// 8. POST /api/v1/treatment-plans/:id/transition-stage — Перемещение плана между этапами воронки
+	const stageTransitionHandler = async (request: any, reply: any) => {
+		const context = await requireClinicalMutationContext(request, reply, "transition treatment plan stage");
+		if (!context) return;
+		return handleStageTransition(request, reply, context.organizationId);
+	};
+	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/transition-stage", stageTransitionHandler);
+	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/transition-stage", stageTransitionHandler);
+
+	// 9. POST /api/v1/treatment-plans/dropout-prevention/run — Пакетная генерация задач куратора по анти-отвалу (14–21д)
+	server.post("/api/v1/treatment-plans/dropout-prevention/run", async (request, reply) => {
+		const context = await requireClinicalMutationContext(request, reply, "run treatment plan dropout prevention");
+		if (!context) return;
+		const minDays = (request.body as any)?.minDays || 14;
+		const result = await checkAndGenerateDropoutRecalls(context.organizationId, minDays);
+		return reply.code(200).send({
+			success: true,
+			data: result,
+		});
+	});
+
+	// 10. POST /api/v1/treatment-plans/:id/create-dropout-recall — Одиночная задача куратору по анти-отвалу
+	server.post<{ Params: { id: string } }>(
+		"/api/v1/treatment-plans/:id/create-dropout-recall",
+		async (request, reply) => {
+			const context = await requireClinicalMutationContext(request, reply, "create dropout recall for plan");
+			if (!context) return;
+			const notes = (request.body as any)?.notes;
+			const result = await createSinglePlanDropoutRecall(context.organizationId, request.params.id, notes);
+			const statusCode = result.success ? 200 : 400;
+			return reply.code(statusCode).send(result);
+		},
+	);
 };

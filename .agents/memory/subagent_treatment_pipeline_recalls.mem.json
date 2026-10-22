@@ -1,0 +1,85 @@
+{
+  "taskId": "treatment_pipeline_recalls_and_analytics",
+  "status": "COMPLETED",
+  "verifiedAt": "2026-10-22T11:52:00+04:00",
+  "scope": {
+    "module": "Treatment Pipeline, Drop-out Prevention & Curator Analytics",
+    "pages": [
+      "apps/web/src/pages/coordinator/TreatmentPipeline.tsx",
+      "apps/web/src/pages/coordinator/pipeline/PipelineBoard.tsx",
+      "apps/web/src/pages/coordinator/pipeline/PipelineCardItem.tsx",
+      "apps/web/src/pages/coordinator/pipeline/PipelineKpiSummary.tsx",
+      "apps/web/src/components/patients/TreatmentPlansList.tsx"
+    ],
+    "backendRoutesAndServices": [
+      "apps/api/src/services/patients/treatmentPlanDropoutService.ts",
+      "apps/api/src/routes/treatmentPlan/stageTransitionHandler.ts",
+      "apps/api/src/routes/treatmentPlan/pipelineDataAggregator.ts",
+      "apps/api/src/routes/treatmentPlan/pipelineTypes.ts",
+      "apps/api/src/routes/treatmentPlanRoutes.ts"
+    ],
+    "tests": [
+      "apps/api/src/tests/routes/treatmentPipelineAndPublicBudget.test.ts"
+    ]
+  },
+  "deliverables": {
+    "kanbanDragAndDropTransitions": {
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "endpoint": "POST /api/v1/treatment-plans/:id/transition-stage",
+      "features": [
+        "Immediate DB update in PostgreSQL 18 with ACID and RLS support",
+        "Dual trigger: targetStage ('requires_budget' -> 'Draft', 'awaiting_decision' -> 'Active', 'no_appointment' -> 'Approved', 'in_progress_abandoned' -> 'Active', 'completed' -> 'Completed') or explicit status",
+        "Automatic setting of approvedAt timestamp upon moving to Approved",
+        "Audit event logged (TREATMENT_PLAN_STAGE_TRANSITION) in auditEvents table",
+        "Reactive WebSocket broadcast (TREATMENT_PLAN_UPDATED) without requiring F5 reload",
+        "Drag-and-Drop and selector support on frontend card item and kanban board"
+      ]
+    },
+    "dropoutPreventionRecalls": {
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "batchEndpoint": "POST /api/v1/treatment-plans/dropout-prevention/run",
+      "singleEndpoint": "POST /api/v1/treatment-plans/:id/create-dropout-recall",
+      "features": [
+        "Identifies active/approved plans with >= 14 days inactivity and no planned/in_progress appointments",
+        "Deduplication against active patientRecalls (cohortType: 'treatment_plan_followup', status: 'pending' | 'scheduled')",
+        "1-click recall generation from card item with curator notes and due date",
+        "Batch scan banner with total at-risk count and 1-click trigger",
+        "WebSocket broadcast of recall creation events"
+      ]
+    },
+    "kpiAndAnalytics": {
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "metrics": [
+        "totalPipelineRub (sanitized, zero NaN)",
+        "acceptanceRatePercent (conversion rate without division-by-zero, clamped 0-100%)",
+        "averagePlanRub (average complex check)",
+        "dropoutRiskCount (cards requiring curator intervention)",
+        "Fixed Search Filter Aggregate bug: Totals now sum strictly matching cards instead of all unfiltered plans"
+      ]
+    },
+    "redTeamTrapElimination": {
+      "status": "ELIMINATED",
+      "traps": [
+        {
+          "trap": "Empty State Dead End",
+          "fix": "Added prominent Empty State with primary CTA 'Создать первый план лечения' in TreatmentPipeline / PipelineBoard, and 'Добавить первую услугу в план' in TreatmentPlansList"
+        },
+        {
+          "trap": "Doctor Dropdown Collapse",
+          "fix": "accumulatedDoctors state maintains all staff members even when filtered by specific doctor"
+        },
+        {
+          "trap": "Inactive Days NaN Leaks",
+          "fix": "Safe parsing with safeIso and safeNum prevents 'Пауза NaN дн.' leaks when date strings are missing or malformed"
+        }
+      ]
+    },
+    "testResults": {
+      "suite": "apps/api/src/tests/routes/treatmentPipelineAndPublicBudget.test.ts",
+      "testsTotal": 9,
+      "testsPassing": 9,
+      "testsFailing": 0,
+      "exitCode": 0
+    }
+  }
+}

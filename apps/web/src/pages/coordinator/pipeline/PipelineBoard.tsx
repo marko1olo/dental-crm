@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Layers, Plus } from "lucide-react";
 import type {
 	PipelineCard,
 	PipelineResponse,
@@ -20,6 +20,9 @@ export interface PipelineBoardProps {
 	isGeneratingLink: string | null;
 	onCopyOrGenerateLink: (card: PipelineCard) => void;
 	onOpenPlan?: ((card: PipelineCard) => void) | undefined;
+	onTransitionStage?: ((card: PipelineCard, targetStage: PipelineStage) => Promise<void>) | undefined;
+	onCreateRecallTask?: ((card: PipelineCard) => Promise<void>) | undefined;
+	onCreateNewPlan?: (() => void) | undefined;
 }
 
 export const PipelineBoard: React.FC<PipelineBoardProps> = ({
@@ -32,11 +35,72 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 	isGeneratingLink,
 	onCopyOrGenerateLink,
 	onOpenPlan,
+	onTransitionStage,
+	onCreateRecallTask,
+	onCreateNewPlan,
 }) => {
 	const mobileCfg = STAGE_CONFIG[activeMobileStage];
 	const mobileCards = data.pipeline[activeMobileStage] || [];
 	const mobileStageCount = mobileCards.length;
 	const mobileStageTotalRub = mobileCards.reduce((acc, c) => acc + c.netTotalRub, 0);
+
+	const isTotalEmpty = (data.summary?.counts?.total ?? 0) === 0;
+
+	const handleDrop = async (e: React.DragEvent, targetStage: PipelineStage) => {
+		e.preventDefault();
+		try {
+			const raw = e.dataTransfer.getData("text/plain");
+			if (!raw) return;
+			const payload = JSON.parse(raw);
+			if (payload.planId && payload.currentStage !== targetStage) {
+				const allCards = Object.values(data.pipeline).flat();
+				const card = allCards.find((c) => c.id === payload.planId);
+				if (card && onTransitionStage) {
+					await onTransitionStage(card, targetStage);
+				}
+			}
+		} catch {
+			// ignore drag parse errors
+		}
+	};
+
+	if (isTotalEmpty) {
+		return (
+			<div
+				className="w-full p-8 sm:p-12 text-center bg-[var(--paper)] border border-dashed border-[var(--line)] rounded-2xl flex flex-col items-center justify-center gap-3 my-4 shadow-xs"
+				data-testid="pipeline-global-empty-state"
+			>
+				<div className="w-12 h-12 rounded-2xl bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] flex items-center justify-center">
+					<Layers className="w-6 h-6" />
+				</div>
+				<div className="space-y-1 max-w-md">
+					<h3 className="text-sm sm:text-base font-bold text-[var(--text)]">
+						В воронке пока нет планов лечения
+					</h3>
+					<p className="text-xs text-[var(--muted)]">
+						Составьте первый комплексный план лечения для любого пациента клиники или откройте студию презентации сметы.
+					</p>
+				</div>
+				<div className="flex items-center gap-2 pt-2">
+					<button
+						type="button"
+						onClick={() => {
+							if (typeof window !== "undefined") {
+								window.location.hash = "#/patients";
+							}
+							onCreateNewPlan?.();
+						}}
+						className="primary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+						style={{ borderRadius: "10px" }}
+						data-testid="pipeline-create-first-plan-btn"
+					>
+						<Plus className="w-4 h-4" />
+						<span>Создать первый план лечения</span>
+					</button>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -88,6 +152,8 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									isGeneratingLink={isGeneratingLink}
 									onCopyOrGenerateLink={onCopyOrGenerateLink}
 									onOpenPlan={onOpenPlan}
+									onTransitionStage={onTransitionStage}
+									onCreateRecallTask={onCreateRecallTask}
 								/>
 							))
 						)}
@@ -108,7 +174,14 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 							const stageTotalRub = cards.reduce((acc, c) => acc + c.netTotalRub, 0);
 
 							return (
-								<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm overflow-hidden space-y-4">
+								<div
+									className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm overflow-hidden space-y-4"
+									onDragOver={(e) => {
+										e.preventDefault();
+										e.dataTransfer.dropEffect = "move";
+									}}
+									onDrop={(e) => handleDrop(e, selectedStage)}
+								>
 									{/* Focused Header */}
 									<div
 										className="p-4 border-b border-[var(--line)] flex items-center justify-between gap-4"
@@ -156,7 +229,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									<div className="p-4 space-y-3">
 										{cards.length === 0 ? (
 											<div className="p-12 text-center text-xs text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl bg-[var(--paper-soft)]/50">
-												В статусе «{cfg.title}» сейчас нет активных планов лечения
+												В статусе «{cfg.title}» сейчас нет активных планов лечения (перетащите карточку сюда для смены этапа)
 											</div>
 										) : (
 											cards.map((card) => (
@@ -169,6 +242,8 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 													isGeneratingLink={isGeneratingLink}
 													onCopyOrGenerateLink={onCopyOrGenerateLink}
 													onOpenPlan={onOpenPlan}
+													onTransitionStage={onTransitionStage}
+													onCreateRecallTask={onCreateRecallTask}
 												/>
 											))
 										)}
@@ -189,6 +264,11 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									<div
 										key={stageKey}
 										className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm overflow-hidden"
+										onDragOver={(e) => {
+											e.preventDefault();
+											e.dataTransfer.dropEffect = "move";
+										}}
+										onDrop={(e) => handleDrop(e, stageKey)}
 									>
 										{/* Swimlane Section Header */}
 										<div
@@ -216,7 +296,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 												</span>
 												{cards.length === 0 && (
 													<span className="text-xs text-[var(--muted)] italic hidden md:inline ml-2">
-														— нет активных планов
+														— перетащите карточку сюда для перевода в статус
 													</span>
 												)}
 											</div>
@@ -242,7 +322,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 											</div>
 										</div>
 
-										{/* Swimlane Cards Container (only rendered when cards exist so empty stages don't push active cards below the fold) */}
+										{/* Swimlane Cards Container */}
 										{cards.length > 0 && (
 											<div className="p-3 space-y-2.5">
 												{cards.map((card) => (
@@ -255,6 +335,8 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 														isGeneratingLink={isGeneratingLink}
 														onCopyOrGenerateLink={onCopyOrGenerateLink}
 														onOpenPlan={onOpenPlan}
+														onTransitionStage={onTransitionStage}
+														onCreateRecallTask={onCreateRecallTask}
 													/>
 												))}
 											</div>
@@ -278,6 +360,11 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									<div
 										key={stageKey}
 										className="w-full flex flex-col bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm overflow-hidden"
+										onDragOver={(e) => {
+											e.preventDefault();
+											e.dataTransfer.dropEffect = "move";
+										}}
+										onDrop={(e) => handleDrop(e, stageKey)}
 									>
 										{/* Column Header */}
 										<div
@@ -308,10 +395,10 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 										</div>
 
 										{/* Cards Container */}
-										<div className="p-2.5 space-y-2.5 overflow-y-auto max-h-[calc(100vh-320px)] flex-1">
+										<div className="p-2.5 space-y-2.5 overflow-y-auto max-h-[calc(100vh-320px)] flex-1 min-h-[140px]">
 											{cards.length === 0 ? (
 												<div className="p-6 text-center text-xs text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl">
-													Нет планов
+													Перетащите сюда карточку
 												</div>
 											) : (
 												cards.map((card) => (
@@ -324,6 +411,8 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 														isGeneratingLink={isGeneratingLink}
 														onCopyOrGenerateLink={onCopyOrGenerateLink}
 														onOpenPlan={onOpenPlan}
+														onTransitionStage={onTransitionStage}
+														onCreateRecallTask={onCreateRecallTask}
 													/>
 												))
 											)}

@@ -232,6 +232,17 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 								? `По запросу «${searchQuery}» позиций плана не найдено.`
 								: "План лечения пациента пока пуст. Вы можете составить комплексный план из каталога услуг."}
 						</p>
+						{!searchQuery && onNewPlanItem && (
+							<button
+								type="button"
+								onClick={onNewPlanItem}
+								className="primary-button h-9 px-4 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 mt-2"
+								data-testid="btn-add-first-plan-position"
+							>
+								<Plus size={15} />
+								<span>Добавить первую услугу в план</span>
+							</button>
+						)}
 					</div>
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5" data-testid="plans-items-grid">
