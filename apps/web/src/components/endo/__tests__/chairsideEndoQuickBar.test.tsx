@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
 	ChairsideEndoQuickBar,
 	getChairsideDefaultCanals,
+	generateSoapEndoProtocol,
 } from "../ChairsideEndoQuickBar";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -107,7 +108,7 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(!html.includes("disabled"), "Mandate 8e: Primary CTA is NEVER disabled");
 	});
 
-	it("8. Express 1-click presets in header: Pulpitis 1-visit, Periodontitis Bioceramic, Ca(OH)2, Norm", () => {
+	it("8. Express 1-click presets in header: Pulpitis 1-visit, Periodontitis Bioceramic, Ca(OH)2, Retreatment, Norm", () => {
 		const html = renderToStaticMarkup(
 			createElement(ChairsideEndoQuickBar, {
 				activeTooth: 16,
@@ -117,6 +118,7 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(html.includes("btn-quick-pulpitis-1visit"), "Has 1-visit pulpitis preset");
 		assert.ok(html.includes("btn-quick-periodontitis-bio"), "Has Bioceramic periodontitis preset");
 		assert.ok(html.includes("btn-quick-caoh2"), "Has Ca(OH)2 preset");
+		assert.ok(html.includes("btn-quick-retreatment"), "Has Retreatment / Resorcin unseal preset");
 		assert.ok(html.includes("btn-quick-norm"), "Has anatomical norm preset");
 	});
 
@@ -147,5 +149,23 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		const quickBarFile = path.resolve(__dirname, "../ChairsideEndoQuickBar.tsx");
 		const lines = fs.readFileSync(quickBarFile, "utf-8").split("\n").length;
 		assert.ok(lines <= 120, `ChairsideEndoQuickBar.tsx must be <= 120 lines (current: ${lines})`);
+	});
+
+	it("12. 1-Click Retreatment Protocol (Resorcin/Cement unseal) generated for SOAP diary", () => {
+		const soap = generateSoapEndoProtocol({
+			activeTooth: 16,
+			toothAnatomicalName: "Первый моляр верхней челюсти",
+			currentCanals: [
+				{ id: "c1", name: "MB", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".06", obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)", isRetreatment: true },
+				{ id: "c2", name: "DB", workingLengthMm: 20.0, masterApicalFile: "#25", taper: ".06", obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)", isRetreatment: true },
+				{ id: "c3", name: "P", workingLengthMm: 22.0, masterApicalFile: "#25", taper: ".06", obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)", isRetreatment: true },
+			],
+		});
+
+		assert.ok(soap.includes("РАСПЛОМБИРОВКА И ПЕРЕЛЕЧИВАНИЕ"), "Includes retreatment title");
+		assert.ok(soap.includes("резорцин-формалин / фосфат-цемент"), "Mentions resorcin/cement unsealing");
+		assert.ok(soap.includes("D-RaCe / ProTaper Retreatment") || soap.includes("Retreatment/NiTi"), "Mentions retreatment files");
+		assert.ok(soap.includes("Каласепт"), "Mentions Ca(OH)2 medication");
+		assert.ok(soap.includes("Септопак"), "Mentions Septopack temporary dressing");
 	});
 });

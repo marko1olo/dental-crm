@@ -50,6 +50,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 			<EndoPrimaryPresets
 				onApplyExpressApical={handleApplyExpressApicalPreset}
 				onApplyCaOh2={handleApplyCaOh2Protocol}
+				onApplyRetreatment={handleApplyRetreatmentPreset}
 				onApplyPulpitis={handleApplyPulpitisPreset}
 			/>
 			<EndoSecondaryPresetsMenu

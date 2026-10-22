@@ -1,16 +1,18 @@
 import React from "react";
-import { Check, ShieldCheck } from "lucide-react";
-import { EndoFileCanal, ToothPulpitis } from "../../icons/DentalIcons";
+import { Check, RotateCcw, ShieldCheck } from "lucide-react";
+import { EndoFileCanal } from "../../icons/DentalIcons";
 
 interface EndoPrimaryPresetsProps {
 	readonly onApplyExpressApical: () => void;
 	readonly onApplyCaOh2: () => void;
+	readonly onApplyRetreatment: () => void;
 	readonly onApplyPulpitis: () => void;
 }
 
 export const EndoPrimaryPresets: React.FC<EndoPrimaryPresetsProps> = ({
 	onApplyExpressApical,
 	onApplyCaOh2,
+	onApplyRetreatment,
 	onApplyPulpitis,
 }) => (
 	<>
@@ -28,7 +30,7 @@ export const EndoPrimaryPresets: React.FC<EndoPrimaryPresetsProps> = ({
 			title="Экспресс-пресет: ProTaper Gold + AH Plus гуттаперча латерально до апекса (Apex 0.0)"
 		>
 			<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-			<span className="truncate">ProTaper + AH Plus</span>
+			<span className="truncate">Обтурированы (AH Plus)</span>
 		</button>
 
 		{/* Preset 2: Временная пломбировка Ca(OH)2 */}
@@ -40,10 +42,22 @@ export const EndoPrimaryPresets: React.FC<EndoPrimaryPresetsProps> = ({
 			title="Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2 (Каласепт)"
 		>
 			<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-			<span className="truncate">NaOCl 3% + Ca(OH)2</span>
+			<span className="truncate">Временная Ca(OH)2</span>
 		</button>
 
-		{/* Preset 3: Эндодонтия пульпита в 1 визит */}
+		{/* Preset 3: Распломбировка ранее леченых каналов (резорцин-формалин / фосфат-цемент) */}
+		<button
+			type="button"
+			data-testid="btn-retreatment-resorcin-protocol"
+			onClick={onApplyRetreatment}
+			className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold border border-purple-500/40 bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/50 flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 active:scale-98"
+			title="Распломбировка ранее леченых каналов (резорцин-формалин / фосфат-цемент) + паста Каласепт под повязку"
+		>
+			<RotateCcw size={13} className="text-purple-600 dark:text-purple-400 shrink-0" />
+			<span className="truncate">Распломбировка (резорцин/цемент)</span>
+		</button>
+
+		{/* Preset 4: Эндодонтия пульпита в 1 визит */}
 		<button
 			type="button"
 			data-testid="btn-endo-preset-pulpitis-complete"
@@ -51,7 +65,7 @@ export const EndoPrimaryPresets: React.FC<EndoPrimaryPresetsProps> = ({
 			className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 active:scale-98"
 			title="Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)"
 		>
-			<ToothPulpitis size={13} className="text-rose-500 shrink-0" />
+			<Check size={13} className="text-rose-500 shrink-0" />
 			<span className="truncate">Пульпит 1 визит</span>
 		</button>
 	</>

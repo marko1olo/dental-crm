@@ -19,6 +19,7 @@ export interface QuickCanalState {
 	obturationType: "gutta_sealer" | "temp_caoh2" | "bioceramic";
 	sealer: string;
 	isObliterated?: boolean;
+	isRetreatment?: boolean;
 }
 
 export const QUICK_LENGTH_CHIPS = [19, 20, 21, 21.5, 22] as const;
