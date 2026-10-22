@@ -23,6 +23,7 @@ export {
 	executeApplyAnesthesiaPresetAutonomy,
 	VisitPlanStageHandoffBanner,
 };
+export { AnesthesiaQuickBar } from "./components/anesthesia/AnesthesiaQuickBar";
 export * from "./components/visit/visitPlanStageHandoff";
 export { handlePrintMedicalCardFast, handlePrintClinicalDiaryFast, handlePrintForm043uFast } from "./components/visit/view";
 
