@@ -1,0 +1,40 @@
+import { parseKopecks } from "@dental/shared";
+import type { TreatmentPlanTier } from "../../types";
+
+export const initialTestTier: TreatmentPlanTier = {
+	tierId: "optimum",
+	title: "Оптимум",
+	subtitle: "Оптимальный клинический баланс",
+	badge: "Популярный",
+	badgeClass: "badge-blue",
+	borderClass: "border-blue",
+	isRecommended: true,
+	totalRub: 0,
+	totalKopecks: parseKopecks(0),
+	durationWeeks: 4,
+	durationVisits: 3,
+	warrantyYears: 2,
+	materialsHeadline: "Премиум композиты",
+	materialsList: ["Estelite", "Osstem"],
+	keyAdvantages: ["Надежность"],
+	stages: [],
+	itemsCount: 0,
+	ndflRefundRub: 0,
+	priceWithNdflRefundRub: 0,
+	monthlyInstallment12Rub: 0,
+	installments: {
+		3: { months: 3, monthlyPaymentKopecks: parseKopecks(0), monthlyPaymentRub: 0, partsKopecks: [parseKopecks(0), parseKopecks(0), parseKopecks(0)], remainderKopecks: parseKopecks(0) },
+		6: { months: 6, monthlyPaymentKopecks: parseKopecks(0), monthlyPaymentRub: 0, partsKopecks: Array(6).fill(parseKopecks(0)), remainderKopecks: parseKopecks(0) },
+		12: { months: 12, monthlyPaymentKopecks: parseKopecks(0), monthlyPaymentRub: 0, partsKopecks: Array(12).fill(parseKopecks(0)), remainderKopecks: parseKopecks(0) },
+		24: { months: 24, monthlyPaymentKopecks: parseKopecks(0), monthlyPaymentRub: 0, partsKopecks: Array(24).fill(parseKopecks(0)), remainderKopecks: parseKopecks(0) },
+	},
+	ndflDetails: {
+		code: "01",
+		codeDescription: "",
+		isHighCostCode02: false,
+		baseKopecks: parseKopecks(0),
+		refundKopecks: parseKopecks(0),
+		refundRub: 0,
+		finalPriceWithRefundRub: 0,
+	},
+};
