@@ -24,6 +24,7 @@ export {
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
 import {
+	applyGingivalRecessionPreset,
 	applyGingivitisPreset,
 	applyHealthyPeriodontiumPreset,
 	applyPeriodontitisMildPreset,
@@ -82,6 +83,11 @@ export function applyExpressPerioPreset(
 			updatedTeeth = applyPeriodontitisSeverePreset(teeth);
 			protocolText =
 				PERIO_EXPRESS_PRESETS.periodontitis_severe_express.defaultProtocolRu;
+			break;
+		case "recession_express":
+			updatedTeeth = applyGingivalRecessionPreset(teeth);
+			protocolText =
+				PERIO_EXPRESS_PRESETS.recession_express.defaultProtocolRu;
 			break;
 	}
 

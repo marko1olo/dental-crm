@@ -42,6 +42,7 @@ import { PerioToothVisual } from "./PerioToothVisual";
 import { SITE_SHORT_RU } from "./PerioToothCard";
 import { MobilePerioKeypadDial, SITE_NAME_FULL_RU } from "./MobilePerioKeypadDial";
 import { triggerHaptic } from "../../../native/mobileBridge";
+import type { PerioExpressPresetId } from "../perioMath";
 
 export type PerioQuadrantKey = "Q1" | "Q2" | "Q3" | "Q4";
 
@@ -76,7 +77,7 @@ export interface PerioMobileTouchCockpitProps {
 	) => void;
 	readonly summary: PerioChartSummary;
 	readonly aapDiagnosis: PeriodontalDiagnosisDetail;
-	readonly onApplyExpressPreset: (presetId: "perio_norm_express" | "pro_hygiene_express") => void;
+	readonly onApplyExpressPreset: (presetId: PerioExpressPresetId) => void;
 	readonly onSetAllIntact: () => void;
 	readonly onInsertToProtocol: () => void;
 	readonly insertStatus: boolean;
@@ -227,7 +228,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<ShieldCheck size={16} className="shrink-0" />
-						<span className="truncate">Десна здорова (Норма)</span>
+						<span className="whitespace-nowrap">Норма</span>
 					</button>
 
 					{/* Протокол «Профгигиена» */}
@@ -251,7 +252,54 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 						data-testid="perio-insert-protocol-btn"
 					>
 						{insertStatus ? <Check size={16} className="shrink-0" /> : <FileText size={16} className="shrink-0" />}
-						<span className="truncate">{insertStatus ? "Внесено!" : "В дневник"}</span>
+						<span className="whitespace-nowrap">{insertStatus ? "Внесено!" : "В дневник"}</span>
+					</button>
+				</div>
+
+				{/* Quick Pathology Presets Row (Apple HIG Touch >= 44x44px) */}
+				<div className="grid grid-cols-4 gap-1.5 w-full">
+					<button
+						type="button"
+						onClick={() => onApplyExpressPreset("gingivitis_express")}
+						className="min-h-[44px] px-1 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-[11px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer text-center"
+						data-testid="perio-mobile-preset-gingivitis-btn"
+						title="Гингивит (K05.1): карманы < 3.5 мм, BOP+"
+					>
+						<span className="whitespace-nowrap">Гингивит</span>
+						<span className="text-[10px] opacity-75 font-mono">K05.1</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => onApplyExpressPreset("periodontitis_moderate_express")}
+						className="min-h-[44px] px-1 py-1 rounded-xl bg-orange-500/15 hover:bg-orange-500/25 active:scale-95 text-orange-900 dark:text-orange-200 border border-orange-500/30 text-[10px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer text-center"
+						data-testid="perio-mobile-preset-moderate-btn"
+						title="Пародонтит средний (K05.31): карманы 4-5 мм"
+					>
+						<span className="whitespace-nowrap tracking-tighter">Пародонтит</span>
+						<span className="text-[10px] opacity-75 font-mono">K05.31</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => onApplyExpressPreset("periodontitis_severe_express")}
+						className="min-h-[44px] px-1 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-900 dark:text-rose-200 border border-rose-500/30 text-[11px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer text-center"
+						data-testid="perio-mobile-preset-severe-btn"
+						title="Пародонтит тяжелый (K05.32): карманы >= 6 мм"
+					>
+						<span className="whitespace-nowrap">Тяжелый</span>
+						<span className="text-[10px] opacity-75 font-mono">K05.32</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => onApplyExpressPreset("recession_express")}
+						className="min-h-[44px] px-1 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 active:scale-95 text-purple-900 dark:text-purple-200 border border-purple-500/30 text-[11px] font-bold flex flex-col items-center justify-center transition-all cursor-pointer text-center"
+						data-testid="perio-mobile-preset-recession-btn"
+						title="Рецессия десны (K06.0): рецессия 1-3 мм"
+					>
+						<span className="whitespace-nowrap">Рецессия</span>
+						<span className="text-[10px] opacity-75 font-mono">K06.0</span>
 					</button>
 				</div>
 			</div>

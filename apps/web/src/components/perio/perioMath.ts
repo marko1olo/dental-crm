@@ -121,6 +121,7 @@ export type PerioExpressPresetId =
 	| "periodontitis_mild_express"
 	| "periodontitis_moderate_express"
 	| "periodontitis_severe_express"
+	| "recession_express"
 	| "pro_hygiene_express";
 
 export interface PerioExpressPreset {
@@ -142,7 +143,7 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		subtitleRu: "PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0",
 		icd10: "Z01.2",
 		defaultProtocolRu:
-			"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет. маргинальная десна бледно-розовая, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет. Скрининг PSR: 0 во всех секстантах. Патологических карманов нет. Диагноз: Здоров (Z01.2).",
+			"Слизистая оболочка бледно-розовая, десневые сосочки плотные, патологические зубодесневые карманы не определяются, кровоточивость отсутствует. Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет. маргинальная десна бледно-розовая, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет. Скрининг PSR: 0 во всех секстантах. Патологических карманов нет. Диагноз: Здоров (Z01.2).",
 	},
 	gingivitis_express: {
 		id: "gingivitis_express",
@@ -175,6 +176,14 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		icd10: "K05.32",
 		defaultProtocolRu:
 			"Пародонт: десна застойно гиперемирована, цианотична, выраженная кровоточивость сосочков (BOP > 50%), глубокие пародонтальные карманы от 6 до 8 мм (PSR 4*) с серозно-гнойным экссудатом (гноетечение). Выраженная рецессия десны 2-4 мм с обнажением фуркаций (фуркационные дефекты II класса). Патологическая подвижность зубов II-III ст., веерообразное смещение резцов. На рентгенограмме: деструкция костной ткани более 1/2 длины корней. Диагноз: Хронический генерализованный пародонтит тяжёлой степени (K05.32).",
+	},
+	recession_express: {
+		id: "recession_express",
+		titleRu: "Рецессия десны",
+		subtitleRu: "K06.0, рецессия десны 2–3 мм, CAL > PD, без карманов и воспаления",
+		icd10: "K06.0",
+		defaultProtocolRu:
+			"Пародонт: апикальное смещение десневого края (рецессия десны) на 2–3 мм преимущественно с вестибулярной поверхности клыков и премоляров (I–II класс по Миллеру / Cairo). Обнажение шеек зубов, гиперчувствительность к термическим раздражителям. Патологические зубодесневые карманы отсутствуют (глубина зондирования 1–2 мм), кровоточивость при зондировании отсутствует (BOP 0%), десна бледно-розовая, плотная. Потеря прикрепления (CAL) 3–5 мм за счет рецессии. Диагноз: Рецессия десны (K06.0).",
 	},
 	pro_hygiene_express: {
 		id: "pro_hygiene_express",
@@ -418,6 +427,46 @@ export function applyPeriodontitisSeverePreset(
 			distoLingual: makeSite(),
 			midLingual: makeSite(),
 			mesioLingual: makeSite(),
+		};
+		return copy;
+	});
+}
+
+/**
+ * Клинический пресет 6: Рецессия десны (K06.0).
+ * Апикальное смещение десневого края 2-3 мм, глубина зондирования 1-2 мм (нет карманов), BOP 0.
+ */
+export function applyGingivalRecessionPreset(
+	teeth: readonly PerioToothRecord[],
+): PerioToothRecord[] {
+	return teeth.map((t) => {
+		if (t.isMissing) return { ...t };
+		const num = t.toothNumber;
+		const isCanineOrPremolar = [13, 14, 15, 23, 24, 25, 33, 34, 35, 43, 44, 45].includes(num);
+		const gm = isCanineOrPremolar ? 3 : 2;
+		const depth = 2;
+		const calMm = calculateClinicalAttachmentLevel(depth, gm);
+
+		const makeSite = (siteGm: number) => ({
+			probingDepthMm: depth,
+			gingivalMarginMm: siteGm,
+			bleedingOnProbing: false,
+			suppuration: false,
+			plaque: false,
+			calculus: false,
+			calMm: calculateClinicalAttachmentLevel(depth, siteGm),
+		});
+
+		const copy: PerioToothRecord = {
+			...t,
+			mobility: 0,
+			furcation: 0,
+			distoBuccal: makeSite(gm),
+			midBuccal: makeSite(gm),
+			mesioBuccal: makeSite(gm),
+			distoLingual: makeSite(0),
+			midLingual: makeSite(0),
+			mesioLingual: makeSite(0),
 		};
 		return copy;
 	});

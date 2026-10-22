@@ -6,6 +6,7 @@ import {
 } from "./visitDraftAutosaveHandler.js";
 import { handleCompleteVisit } from "./visitDraftCompleteHandler.js";
 import { registerVisitHygieneRoutes } from "./visitHygieneRoutes.js";
+import { registerVisitPerioRoutes } from "./visitPerioRoutes.js";
 
 export function registerVisitDraftRoutes(app: FastifyInstance) {
 	app.get("/api/visits/:visitId/draft/autosave", handleGetVisitDraft);
@@ -22,4 +23,5 @@ export function registerVisitDraftRoutes(app: FastifyInstance) {
 	app.post("/api/v1/visits/:visitId/complete", handleCompleteVisit);
 
 	registerVisitHygieneRoutes(app);
+	registerVisitPerioRoutes(app);
 }

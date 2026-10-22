@@ -117,7 +117,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 			</div>
 
 			{/* Клинические протоколы пародонтологии (Mandates 8e, 8k, Touch >= 44x44px, Zero Emojis) */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
 				{/* Preset 1: Норма пародонта */}
 				<button
 					type="button"
@@ -278,6 +278,33 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					</div>
 					<span className="text-[12px] text-red-900/80 dark:text-red-200/80 leading-tight mt-1 line-clamp-2">
 						карманы &ge;6 мм, гноетечение, подвижность II-III
+					</span>
+				</button>
+
+				{/* Preset 7: Рецессия десны (K06.0) */}
+				<button
+					type="button"
+					disabled={readOnly}
+					onClick={() => onApplyExpressPreset("recession_express")}
+					className="min-h-[50px] p-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/30 text-purple-900 dark:text-purple-200 border border-purple-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					title={
+						readOnly
+							? "Режим только для чтения (закрытый визит / архив)"
+							: "Рецессия десны: K06.0, рецессия маргинальной десны 1-3 мм при интактных карманах (<= 2 мм), BOP 0"
+					}
+					data-testid="perio-preset-recession-card"
+				>
+					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
+						<span className="flex items-center gap-1.5 text-purple-800 dark:text-purple-300 min-w-0 truncate">
+							<ShieldAlert size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+							<span className="truncate">Рецессия десны</span>
+						</span>
+						<span className="text-[11.5px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 shrink-0">
+							K06.0
+						</span>
+					</div>
+					<span className="text-[12px] text-purple-900/80 dark:text-purple-200/80 leading-tight mt-1 line-clamp-2">
+						рецессия 1–3 мм, карманы &le; 2 мм, BOP 0
 					</span>
 				</button>
 			</div>

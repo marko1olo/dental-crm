@@ -13,6 +13,7 @@ export * from "./visits/visitDraftRoutes.js";
 export * from "./visits/visitQualityRoutes.js";
 export * from "./visits/visitWorkOrderRoutes.js";
 export * from "./visits/visitConsumablesRoutes.js";
+export * from "./visits/visitPerioRoutes.js";
 
 /**
  * Регистрация всех маршрутов домена визитов клиники (EMK, черновики, списания расходников, подписания, наряды, контроль качества)

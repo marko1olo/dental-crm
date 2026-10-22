@@ -46,9 +46,14 @@ import { usePerioDraftPersistence } from "./usePerioDraftPersistence";
 export interface UsePerioChartLogicOptions {
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
 	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly initialSelectedTooth?: number | undefined;
 	readonly previousSummary?: PerioChartSummary | null | undefined;
 	readonly previousRecordedAt?: string | null | undefined;
 	readonly onChange?:
+		| ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void)
+		| undefined;
+	readonly onSave?:
 		| ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void)
 		| undefined;
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
@@ -61,9 +66,12 @@ export interface UsePerioChartLogicOptions {
 export function usePerioChartLogic({
 	initialTeeth,
 	patientId,
+	visitId,
+	initialSelectedTooth,
 	previousSummary,
 	previousRecordedAt,
 	onChange,
+	onSave,
 	onInsertToProtocol,
 	readOnly = false,
 	initialTier3Expanded = false,
@@ -93,13 +101,26 @@ export function usePerioChartLogic({
 	});
 
 	// Selected tooth for warm context inspector
-	const [selectedToothNumber, setSelectedToothNumber] = useState<number>(16);
+	const [selectedToothNumber, setSelectedToothNumber] = useState<number>(
+		initialSelectedTooth ?? 16,
+	);
 
 	// Focused site for continuous keyboard entry
 	const [focusedSite, setFocusedSite] = useState<{
 		toothNumber: number;
 		siteKey: PerioSiteKey;
-	} | null>(null);
+	} | null>(() =>
+		initialSelectedTooth
+			? { toothNumber: initialSelectedTooth, siteKey: "midBuccal" }
+			: null,
+	);
+
+	useEffect(() => {
+		if (initialSelectedTooth && initialSelectedTooth !== selectedToothNumber) {
+			setSelectedToothNumber(initialSelectedTooth);
+			setFocusedSite({ toothNumber: initialSelectedTooth, siteKey: "midBuccal" });
+		}
+	}, [initialSelectedTooth]);
 
 	// Diagnostic breakdown accordion
 	const [isDiagnosticsExpanded, setIsDiagnosticsExpanded] =
@@ -169,7 +190,10 @@ export function usePerioChartLogic({
 		if (onChange) {
 			onChange(teeth, summary);
 		}
-	}, [teeth, summary, onChange]);
+		if (onSave) {
+			onSave(teeth, summary);
+		}
+	}, [teeth, summary, onChange, onSave]);
 
 	// Tooth map lookup for high-speed rendering
 	const toothMap = useMemo(() => {
@@ -578,6 +602,7 @@ export function usePerioChartLogic({
 	const { draftSnapshotId, syncStatus, lastSavedAt, handleSaveDraft } =
 		usePerioDraftPersistence({
 			patientId,
+			visitId,
 			initialTeeth,
 			readOnly,
 			teeth,

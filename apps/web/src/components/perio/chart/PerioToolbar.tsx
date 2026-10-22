@@ -171,6 +171,17 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						<span>Интактно</span>
 					</button>
 
+					{/* Протокол «Рецессия десны»: K06.0 */}
+					<button
+						type="button"
+						onClick={() => onApplyExpressPreset("recession_express")}
+						className="secondary-button shrink-0"
+						title="Рецессия десны (K06.0): рецессия 1–3 мм, карманы <= 2 мм, BOP 0"
+						data-testid="perio-preset-recession-toolbar-btn"
+					>
+						<span>Рецессия (K06.0)</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={() => onMarkSelectedToothPathology(5, true)}

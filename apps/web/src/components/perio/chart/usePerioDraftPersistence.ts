@@ -19,6 +19,7 @@ import { applyPeriodontitisModeratePreset } from "../perioMath";
 
 export interface UsePerioDraftPersistenceOptions {
 	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
 	readonly readOnly: boolean;
 	readonly teeth: PerioToothRecord[];
@@ -33,6 +34,7 @@ export interface UsePerioDraftPersistenceOptions {
 
 export function usePerioDraftPersistence({
 	patientId,
+	visitId,
 	initialTeeth,
 	readOnly,
 	teeth,
@@ -246,6 +248,22 @@ export function usePerioDraftPersistence({
 					setSyncStatus("error");
 					showToast("Ошибка сохранения перио-карты на сервере", "error", 3500);
 					return false;
+				}
+
+				if (visitId) {
+					try {
+						void fetch(`/api/clinical/visits/${visitId}/perio`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								teeth: sepaTeeth,
+								notes: options?.notes ?? generateProtocolText(),
+								status: options?.closeAfter ? "closed" : "draft",
+							}),
+						});
+					} catch {
+						// graceful offline
+					}
 				}
 
 				if (options?.closeAfter) {
