@@ -1,7 +1,7 @@
 /**
  * cashbox.ts — High-Precision 6-Account Cash Box, Installments, 12 Expense Reasons & Dental Lab Payments API.
  * 
- * Compliant with 54-FZ, StomX Reverse Engineering Bible (Sections 6, 8, 9), Order 804n, and Form T-51.
+ * Compliant with Cash & Fiscal Architecture, Clinical Service Registry, and Doctor Payroll Calculations.
  * Decomposed into modular DAG package apps/api/src/routes/cashbox/.
  */
 

@@ -1,0 +1,60 @@
+{
+  "task": "Cashbox & Virtual POS LCD Simulator Purge Inquisition",
+  "subagent_role": "Red Team Inquisitor: Cashbox & Virtual POS LCD Simulator Purge",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T18:50:00+04:00",
+  "invariants_enforced": [
+    "Mandate 8e (Doctor & Staff Autonomy - No disabled checkout buttons, no timer blocks)",
+    "Mandate 8n (Scale Sovereignty - Solo practice and small clinic first, zero bureaucracy)",
+    "Mandate 8x (Clean Russian medical language, no civil servant jargon like FFD 1.2 / 54-FZ)",
+    "Mandate 8am (One Primary CTA, Apple HIG touch targets >= 44px, 4-State Visual Proof)",
+    "No-Vacuum-Mocks (Live Fastify POST /api/cashbox/payments and cashOperations balance ledger)"
+  ],
+  "amputated_simulators": [
+    "SberPosLcdDisplay.tsx: Green LCD matrix simulator, FacePay bouncing smiley animations, 45-second countdown timers eradicated",
+    "SberPosTerminalLcdPanel.tsx: Disabled button blocks removed, converted to professional Pilot-NT hardware terminal command interface",
+    "SberPosTerminalSlipPanel.tsx: Pseudo thermal receipt printer ribbon animation replaced with structured authorization ledger card (RRN, AuthCode, Quick Actions)",
+    "useSberPosTimer.ts: setInterval(45s) artificial timeout pin_timeout generator amputated",
+    "sberPos.css: Purged @keyframes sberFacePulse, .sber-facepay-active-ring, .sber-lcd-cursor-blink and calculator LCD fonts"
+  ],
+  "backend_wiring": {
+    "routes": [
+      "POST /api/cashbox/payments (fast unified checkout payment processing)",
+      "POST /api/cash/payments (canonical cashier alias route)"
+    ],
+    "files": [
+      "apps/api/src/routes/cashbox/cashboxSchemas.ts",
+      "apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts",
+      "apps/api/src/routes/payments/sberPosWebhookRoute.ts"
+    ],
+    "database_ledger": {
+      "table_mutations": ["payments", "cashOperations", "cashBoxes"],
+      "precision": "amountKopecks: bigint / integer (zero float errors)",
+      "rls_context": "withTenantCtx transaction boundary"
+    }
+  },
+  "frontend_wiring": {
+    "files": [
+      "apps/web/src/components/payments/sberPos/terminalModalModules/SberPosLcdDisplay.tsx",
+      "apps/web/src/components/payments/sberPos/terminalModalModules/SberPosTerminalLcdPanel.tsx",
+      "apps/web/src/components/payments/sberPos/terminalModalModules/SberPosTerminalSlipPanel.tsx",
+      "apps/web/src/components/payments/sberPos/terminalModalModules/useSberPosTimer.ts",
+      "apps/web/src/components/payments/sberPos/sberPos.css",
+      "apps/web/src/components/finance/fastCheckoutFiscalHandlers.ts"
+    ]
+  },
+  "verification_gates": {
+    "vitest_sber_pos": "19 passed, 0 failed (npx vitest run apps/web/src/tests/sberPos.test.ts)",
+    "vitest_payments_all": "87 passed in 7 test files (npx vitest run apps/web/src/components/payments/)",
+    "backend_purity_test": "5 passed (npx tsx --test apps/api/src/services/fns/__tests__/apiMockPurityWave108.test.ts)",
+    "encoding_check": "14,797 files checked, 0 errors (node scripts/check-encoding.mjs)",
+    "css_tokens_check": "393 CSS files checked, 0 unresolved var() (node scripts/check-css-tokens.mjs)"
+  },
+  "visual_proofs": {
+    "pc_light": "docs/proofs/finance/proof_cashbox_purge_pc_light.png (198,398 bytes)",
+    "pc_dark": "docs/proofs/finance/proof_cashbox_purge_pc_dark.png (195,481 bytes)",
+    "mobile_light": "docs/proofs/finance/proof_cashbox_purge_mobile_light.png (154,447 bytes)",
+    "mobile_dark": "docs/proofs/finance/proof_cashbox_purge_mobile_dark.png (148,945 bytes)",
+    "visual_inspection": "Verified personally via read_file tool. No text clipping, no 45s countdowns, no FacePay smiley clowns, clean Apple HIG layout."
+  }
+}

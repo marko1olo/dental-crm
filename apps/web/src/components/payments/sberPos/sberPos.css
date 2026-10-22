@@ -29,7 +29,7 @@
 	overflow: hidden;
 }
 
-/* POS Terminal Status Card (Design Tokens / Zero CRT Scanline Simulators) */
+/* Status Card & Badges */
 .sber-pos-lcd-screen {
 	background-color: var(--paper-soft, #f8fafc);
 	color: var(--ink, #0f172a);
@@ -39,7 +39,6 @@
 	position: relative;
 	overflow: hidden;
 }
-
 
 /* Sberbank Green Badge */
 .sber-badge-green {
@@ -56,41 +55,11 @@
 .sber-slip-box {
 	background-color: var(--paper-soft, #f8fafc);
 	color: var(--ink, #0f172a);
-	border: 1px dashed var(--line, #cbd5e1);
+	border: 1px solid var(--line, #cbd5e1);
 	border-radius: 0.75rem;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	white-space: pre-wrap;
 	word-break: break-word;
 	line-height: 1.35;
 	font-size: 0.75rem;
-}
-
-/* Biometry Pulse Ring Animation */
-@keyframes sberFacePulse {
-	0% {
-		transform: scale(0.95);
-		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-	}
-	70% {
-		transform: scale(1.05);
-		box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
-	}
-	100% {
-		transform: scale(0.95);
-		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-	}
-}
-
-.sber-facepay-active-ring {
-	animation: sberFacePulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-/* LCD Glow animation for PIN / Processing */
-@keyframes sberLcdGlow {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.5; }
-}
-
-.sber-lcd-cursor-blink {
-	animation: sberLcdGlow 1s infinite;
 }

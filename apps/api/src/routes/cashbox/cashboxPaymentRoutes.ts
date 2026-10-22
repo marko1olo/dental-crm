@@ -15,6 +15,8 @@ import {
 	cashBoxes,
 	cashExpenseReasons,
 	cashOperations,
+	payments,
+	patients,
 } from "../../db/schema.js";
 import {
 	ensureOrganizationCashBoxes,
@@ -23,7 +25,7 @@ import {
 import { FiscalResilienceService } from "../../services/fiscalResilienceService.js";
 import { registerCashInstallmentsRoutes } from "../cashInstallmentsRoutes.js";
 import { registerCashLabPaymentRoutes } from "../cashLabPaymentRoutes.js";
-import { cashOperationListQuerySchema } from "./cashboxSchemas.js";
+import { cashOperationListQuerySchema, cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
 export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -181,4 +183,196 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 
 	app.post("/api/cashbox/transactions/:id/retry-fiscalize", handleRetryFiscalize);
 	app.post("/api/cash/transactions/:id/retry-fiscalize", handleRetryFiscalize);
+
+	/**
+	 * 7. POST /api/cashbox/payments & POST /api/cash/payments
+	 * Канонический эндпоинт проведения оплаты через кассу: целочисленные копейки (amountKopecks: bigint),
+	 * проводка в кассовый журнал cashOperations, обновление баланса cashBoxes и фискальный чек.
+	 */
+	const handleCashboxPayment = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"cashbox payment process",
+		);
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
+
+		const parsed = cashboxPaymentRequestSchema.safeParse(request.body || {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры платежа",
+				details: parsed.error.issues,
+			});
+		}
+
+		const body = parsed.data;
+		const headerIdemp =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			body.clientMutationId?.trim() ||
+			body.idempotencyKey?.trim() ||
+			headerIdemp?.trim() ||
+			`cbx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+		// Вычисляем точную сумму в копейках и рублях
+		let totalKopecks = 0n;
+		if (body.amountKopecks !== undefined) {
+			totalKopecks = BigInt(body.amountKopecks);
+		} else if (body.amountRub !== undefined) {
+			totalKopecks = BigInt(Math.round(body.amountRub * 100));
+		}
+		const amountRubNumber = Number(totalKopecks) / 100;
+
+		const result = await withTenantCtx(orgId, async (tx) => {
+			// Проверка идемпотентности
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, effectiveMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				return {
+					id: existingPayment.id,
+					amountKopecks: Math.round(Number(existingPayment.amountRub) * 100),
+					amountRub: Number(existingPayment.amountRub),
+					method: existingPayment.method,
+					status: existingPayment.status,
+					fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
+					clientMutationId: existingPayment.clientMutationId,
+				};
+			}
+
+			// Разрешение ID пациента
+			let resolvedPatientId = body.patientId;
+			if (!resolvedPatientId) {
+				const [firstPatient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(eq(patients.organizationId, orgId))
+					.limit(1);
+				if (firstPatient) {
+					resolvedPatientId = firstPatient.id;
+				}
+			}
+
+			if (!resolvedPatientId) {
+				throw new Error("В клинике не найден пациент для проведения кассового платежа");
+			}
+
+			// Генерируем номер кассового чека
+			const receiptNumber = `ФД-${Date.now().toString().slice(-6)}`;
+			const issuedAt = new Date().toISOString();
+
+			// 1. Фиксация платежа в таблице payments
+			const [newPayment] = await tx
+				.insert(payments)
+				.values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					visitId: body.visitId || null,
+					clientMutationId: effectiveMutationId,
+					amountRub: amountRubNumber,
+					method: (body.method as any) || "card",
+					status: "paid",
+					paidAt: new Date(),
+					fiscalReceiptNumber: receiptNumber,
+					fiscalReceiptIssuedAt: issuedAt,
+					payerFullName: body.cashierFullName || "Кассир",
+					note: body.note || `Оплата через кассу (${body.method || "card"})`,
+				})
+				.returning();
+
+			// 2. Инициализируем и находим кассовые счета клиники
+			await ensureOrganizationCashBoxes(tx, orgId);
+			const boxes = await tx
+				.select()
+				.from(cashBoxes)
+				.where(eq(cashBoxes.organizationId, orgId));
+
+			const cashDeskBox = boxes.find((b) => b.boxType === "cash_desk") || boxes[0];
+			const cashlessBox = boxes.find((b) => b.boxType === "bank_account") || boxes[1] || cashDeskBox;
+
+			// 3. Кассовые проводки в cashOperations
+			const isSplit = body.method === "split";
+			const resolvedCashKop = body.cashAmountKopecks ?? (body.method === "cash" ? Number(totalKopecks) : 0);
+			const resolvedElecKop =
+				body.electronicAmountKopecks ??
+				(["card", "sbp", "online"].includes(body.method || "") ? Number(totalKopecks) : 0);
+
+			if (resolvedCashKop > 0 && cashDeskBox) {
+				const curBal = Number(cashDeskBox.balanceRub || 0);
+				const addRub = Number((resolvedCashKop / 100).toFixed(2));
+				const newBal = Number((curBal + addRub).toFixed(2));
+
+				await tx.insert(cashOperations).values({
+					organizationId: orgId,
+					cashBoxId: cashDeskBox.id,
+					operationType: "income",
+					amountRub: addRub,
+					balanceBeforeRub: curBal,
+					balanceAfterRub: newBal,
+					patientId: resolvedPatientId,
+					kkmDocNumber: receiptNumber,
+					reasonText: `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})`,
+					operatorName: body.cashierFullName || "Кассир",
+				});
+
+				await tx
+					.update(cashBoxes)
+					.set({ balanceRub: newBal, updatedAt: new Date() })
+					.where(eq(cashBoxes.id, cashDeskBox.id));
+			}
+
+			if (resolvedElecKop > 0 && cashlessBox) {
+				const curBal = Number(cashlessBox.balanceRub || 0);
+				const addRub = Number((resolvedElecKop / 100).toFixed(2));
+				const newBal = Number((curBal + addRub).toFixed(2));
+
+				await tx.insert(cashOperations).values({
+					organizationId: orgId,
+					cashBoxId: cashlessBox.id,
+					operationType: "income",
+					amountRub: addRub,
+					balanceBeforeRub: curBal,
+					balanceAfterRub: newBal,
+					patientId: resolvedPatientId,
+					kkmDocNumber: receiptNumber,
+					reasonText: `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})`,
+					operatorName: body.cashierFullName || "Кассир",
+				});
+
+				await tx
+					.update(cashBoxes)
+					.set({ balanceRub: newBal, updatedAt: new Date() })
+					.where(eq(cashBoxes.id, cashlessBox.id));
+			}
+
+			return {
+				id: newPayment.id,
+				amountKopecks: Number(totalKopecks),
+				amountRub: amountRubNumber,
+				method: newPayment.method,
+				status: "paid",
+				fiscalReceiptNumber: receiptNumber,
+				clientMutationId: effectiveMutationId,
+			};
+		});
+
+		return reply.code(200).send({
+			success: true,
+			data: result,
+		});
+	};
+
+	app.post("/api/cashbox/payments", handleCashboxPayment);
+	app.post("/api/cash/payments", handleCashboxPayment);
 }

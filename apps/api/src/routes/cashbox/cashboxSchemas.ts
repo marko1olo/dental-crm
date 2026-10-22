@@ -87,3 +87,32 @@ export const cashRefundBodySchema = z.object({
 export const retryFiscalizeParamsSchema = z.object({
 	id: z.string(),
 });
+
+export const cashboxPaymentRequestSchema = z.object({
+	patientId: z.string().uuid().optional(),
+	visitId: z.string().uuid().optional(),
+	orderId: z.string().trim().max(128).optional(),
+	amountKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
+	amountRub: nonNegativeMoneyRubSchema.optional(),
+	method: z.enum([
+		"card",
+		"cash",
+		"sbp",
+		"family_wallet",
+		"deposit",
+		"loyalty",
+		"split",
+		"warranty",
+		"online",
+		"insurance",
+	]).optional().default("card"),
+	cashAmountKopecks: z.number().int().nonnegative().optional(),
+	electronicAmountKopecks: z.number().int().nonnegative().optional(),
+	depositAmountKopecks: z.number().int().nonnegative().optional(),
+	clientMutationId: z.string().trim().max(128).optional(),
+	idempotencyKey: z.string().trim().max(128).optional(),
+	cashierFullName: z.string().trim().max(256).optional(),
+	note: z.string().trim().max(500).optional(),
+	isElectronicReceiptOnly: z.boolean().optional(),
+	customerContact: z.string().trim().max(128).optional(),
+});

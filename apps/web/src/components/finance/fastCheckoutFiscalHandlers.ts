@@ -42,6 +42,7 @@ export interface FiscalExecutionParams {
 	effectiveCashierFullName: string;
 	stageCalc: StageAdvanceCalculation;
 	onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
+	onSuccess?: ((payload: any) => void) | undefined;
 	onClose: () => void;
 	inFlightRef: React.MutableRefObject<boolean>;
 	lastClickTimeRef: React.MutableRefObject<number>;
@@ -93,6 +94,7 @@ export async function executeFiscalPayment(
 		effectiveCashierFullName,
 		stageCalc,
 		onPaymentComplete,
+		onSuccess,
 		onClose,
 		inFlightRef,
 		lastClickTimeRef,
@@ -247,27 +249,38 @@ export async function executeFiscalPayment(
 			});
 
 			if (typeof fetch === "function") {
-				const response = await fetch("/api/billing/payments", {
+				const paymentPayload = JSON.stringify({
+					patientId,
+					visitId: visitId || undefined,
+					amountRub: effectiveTotalRub,
+					amountKopecks: targetBillKop,
+					method: targetBillKop === 0 ? "warranty" : (isSplitPayment ? "split" : primaryMethod),
+					cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
+					electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
+					cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
+					electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
+					clientMutationId: compositeIdempotencyKey,
+					note: targetBillKop === 0
+						? `Акт гарантийного обслуживания / списания услуг (${effectiveCashierFullName}): скидка 100%, 0.00 ₽`
+						: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
+				});
+
+				let response = await fetch("/api/billing/payments", {
 					method: "POST",
 					headers,
-					body: JSON.stringify({
-						patientId,
-						visitId: visitId || undefined,
-						amountRub: effectiveTotalRub,
-						method: targetBillKop === 0 ? "warranty" : (isSplitPayment ? "split" : primaryMethod),
-						cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
-						electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
-						cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
-						electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
-						clientMutationId: compositeIdempotencyKey,
-						note: targetBillKop === 0
-							? `Акт гарантийного обслуживания / списания услуг (${effectiveCashierFullName}): скидка 100%, 0.00 ₽`
-							: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
-					}),
-				}).catch((fetchErr) => {
-					console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
-					return null;
-				});
+					body: paymentPayload,
+				}).catch(() => null);
+
+				if (!response || !response.ok) {
+					response = await fetch("/api/cashbox/payments", {
+						method: "POST",
+						headers,
+						body: paymentPayload,
+					}).catch((fetchErr) => {
+						console.warn("[FastCheckoutModal] payments sync fallback error:", fetchErr);
+						return null;
+					});
+				}
 
 				if (response && response.ok) {
 					const data = (await response.json().catch(() => null)) as { fiscalReceiptNumber?: string } | null;
@@ -356,6 +369,12 @@ export async function executeFiscalPayment(
 				offlineBuffered: false,
 			});
 		}
+		if (onSuccess) {
+			onSuccess({
+				...payload,
+				offlineBuffered: false,
+			});
+		}
 		setTimeout(() => {
 			setIsPrinting(false);
 			inFlightRef.current = false;
@@ -403,6 +422,9 @@ export async function executeFiscalPayment(
 
 		if (onPaymentComplete) {
 			onPaymentComplete({ ...payload, offlineBuffered: true });
+		}
+		if (onSuccess) {
+			onSuccess({ ...payload, offlineBuffered: true });
 		}
 
 		setTimeout(() => {
@@ -492,6 +514,9 @@ export async function executeFiscalPayment(
 			if (onPaymentComplete) {
 				onPaymentComplete(payload);
 			}
+			if (onSuccess) {
+				onSuccess(payload);
+			}
 		}
 
 		setTimeout(() => {
@@ -542,6 +567,9 @@ export async function executeFiscalPayment(
 		if (onPaymentComplete) {
 			onPaymentComplete({ ...payload, offlineBuffered: true });
 		}
+		if (onSuccess) {
+			onSuccess({ ...payload, offlineBuffered: true });
+		}
 
 		setTimeout(() => {
 			setIsPrinting(false);
@@ -566,6 +594,7 @@ export interface ManualCardTerminalParams {
 	isElectronicReceiptOnly: boolean;
 	stageCalc: StageAdvanceCalculation;
 	onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
+	onSuccess?: ((payload: any) => void) | undefined;
 	onClose: () => void;
 	setIsSubmittingManualCard: (val: boolean) => void;
 	setIsOfflineBuffered: (val: boolean) => void;
@@ -590,6 +619,7 @@ export async function executeManualCardTerminalConfirm(
 		isElectronicReceiptOnly,
 		stageCalc,
 		onPaymentComplete,
+		onSuccess,
 		onClose,
 		setIsSubmittingManualCard,
 		setIsOfflineBuffered,
@@ -640,20 +670,32 @@ export async function executeManualCardTerminalConfirm(
 				"Content-Type": "application/json",
 				"Idempotency-Key": compositeIdempotencyKey,
 			});
-			await fetch("/api/billing/payments", {
+			const manualBody = JSON.stringify({
+				patientId,
+				visitId: visitId || undefined,
+				amountRub,
+				amountKopecks: Math.round(amountRub * 100),
+				method: "card",
+				electronicAmountKopecks: Math.round(amountRub * 100),
+				clientMutationId: compositeIdempotencyKey,
+				note: `Оплата картой подтверждена на терминале вручную (${effectiveCashierFullName}): ${amountRub} ₽ [Без повторного списания с карты]`,
+			});
+
+			let res = await fetch("/api/cashbox/payments", {
 				method: "POST",
 				headers,
-				body: JSON.stringify({
-					patientId,
-					visitId: visitId || undefined,
-					amountRub,
-					method: "card",
-					clientMutationId: compositeIdempotencyKey,
-					note: `Оплата картой подтверждена на терминале вручную (${effectiveCashierFullName}): ${amountRub} ₽ [Без повторного списания с карты]`,
-				}),
-			}).catch((err) => {
-				console.warn("[FastCheckoutModal] Manual card payment recording warning:", err);
-			});
+				body: manualBody,
+			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				await fetch("/api/billing/payments", {
+					method: "POST",
+					headers,
+					body: manualBody,
+				}).catch((err) => {
+					console.warn("[FastCheckoutModal] Manual card payment recording warning:", err);
+				});
+			}
 		}
 
 		showToast(
@@ -662,7 +704,7 @@ export async function executeManualCardTerminalConfirm(
 			5000
 		);
 
-		if (onPaymentComplete) {
+		if (onPaymentComplete || onSuccess) {
 			const payload = generate54FzFiscalPayload(
 				{
 					orderId,
@@ -684,7 +726,12 @@ export async function executeManualCardTerminalConfirm(
 					offlineBuffered: true,
 				}
 			);
-			onPaymentComplete({ ...payload, offlineBuffered: true });
+			if (onPaymentComplete) {
+				onPaymentComplete({ ...payload, offlineBuffered: true });
+			}
+			if (onSuccess) {
+				onSuccess({ ...payload, offlineBuffered: true });
+			}
 		}
 
 		setInterruptedPaymentState(null);

@@ -1,4 +1,4 @@
-import { Ban, RefreshCw } from "lucide-react";
+import { Ban, RefreshCw, Send } from "lucide-react";
 import type React from "react";
 import {
 	SberPosAlternativePaymentOptions,
@@ -33,6 +33,7 @@ export const SberPosTerminalLcdPanel: React.FC<SberPosTerminalLcdPanelProps> = (
 		"pin_timeout",
 		"card_declined",
 		"communication_error",
+		"user_cancelled",
 	].includes(status);
 
 	return (
@@ -43,11 +44,10 @@ export const SberPosTerminalLcdPanel: React.FC<SberPosTerminalLcdPanelProps> = (
 				<button
 					type="button"
 					onClick={() => onStartOperation(operation)}
-					disabled={status === "connecting" || status === "authorizing"}
-					className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-soft,#f0fdfa)]/80 text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-2 transition-all cursor-pointer shadow-xs"
 				>
-					<RefreshCw className="w-3.5 h-3.5" />
-					<span>Повторить запрос (Retry)</span>
+					{isExecuting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+					<span>{isExecuting ? "Запрос выполняется..." : "Отправить сумму на терминал"}</span>
 				</button>
 				{isExecuting && (
 					<button
