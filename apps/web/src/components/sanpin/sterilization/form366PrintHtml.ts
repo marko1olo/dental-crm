@@ -53,7 +53,7 @@ export function generatePso366PrintHtml(
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Форма 366/у — Журнал учета качества ПСО</title>
+	<title>Журнал учета качества предстерилизационной очистки</title>
 	<style>${formPrintStyles}</style>
 </head>
 <body>
@@ -67,12 +67,12 @@ export function generatePso366PrintHtml(
 			<td style="width: 40%; text-align: right;">
 				<div class="font-bold">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
 				<div>Форма № 366/у</div>
-				<div class="subtext">СанПиН 3.3686-21 / МУ 287-113</div>
+				<div class="subtext">Регламент предстерилизационной очистки</div>
 			</td>
 		</tr>
 	</table>
 
-	<div class="doc-title">Журнал учета качества предстерилизационной очистки (ПСО)</div>
+	<div class="doc-title">Журнал учета качества предстерилизационной очистки</div>
 	<div class="doc-subtitle">Контроль качества отмывки от скрытой крови (азопирам) и моющих средств (фенолфталеин)</div>
 
 	<table class="main-table">

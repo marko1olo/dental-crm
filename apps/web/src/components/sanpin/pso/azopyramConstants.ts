@@ -8,9 +8,9 @@ export {
 export const SANPIN_AZOPYRAM_NORMS = {
 	standardNameRu: "СанПиН 3.3686-21",
 	standardSectionRu: "Раздел IV. Профилактика инфекционных болезней при оказании медицинской помощи",
-	guidelineDocRu: "Методические указания МУ 287-113 от 30.12.1998 г.",
-	form366TitleRu: "Форма № 366/у — Журнал учета качества предстерилизационной обработки",
-	form257TitleRu: "Форма № 257/у — Журнал работы стерилизаторов (автоклавов и воздушных)",
+	guidelineDocRu: "Регламент дезинфекции и стерилизации изделий",
+	form366TitleRu: "Журнал учета качества предстерилизационной очистки",
+	form257TitleRu: "Журнал автоклавирования и работы стерилизаторов",
 	workingSolutionLifespanMinutes: SANPIN_PSO_CONSTANTS.workingSolutionLifespanMinutes,
 	reactionObservationSeconds: SANPIN_PSO_CONSTANTS.azopyramReactionMaxSeconds,
 	statutorySamplingPercent: SANPIN_PSO_CONSTANTS.statutorySamplingPercent,

@@ -13,7 +13,7 @@ export function generateStatutoryPsoForm366PrintHtml(params: PsoPrintDocumentPar
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Журнал учета качества предстерилизационной очистки (Форма № 366/у)</title>
+	<title>Журнал учета качества предстерилизационной очистки</title>
 	<style>
 		@page { size: A4 landscape; margin: 8mm 10mm; }
 		@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } }
@@ -37,8 +37,8 @@ export function generateStatutoryPsoForm366PrintHtml(params: PsoPrintDocumentPar
 	<div class="doc-header">
 		<div class="clinic-title">${clinicName}</div>
 		<div class="clinic-sub">${clinicAddress} | ИНН: ${inn} | ОГРН: ${ogrn} | Лицензия: ${licenseInfo}</div>
-		<div class="doc-name">ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/у)</div>
-		<div class="doc-meta">В соответствии с требованиями СанПиН 3.3686-21 (Раздел IV) и Методических указаний МУ 287-113</div>
+		<div class="doc-name">ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ</div>
+		<div class="doc-meta">В соответствии с Регламентом стерилизации и предстерилизационной очистки изделий</div>
 		<div class="doc-period">${dateRangeTextRu}</div>
 	</div>
 
@@ -62,12 +62,12 @@ export function generateStatutoryPsoForm366PrintHtml(params: PsoPrintDocumentPar
 			</tr>
 		</thead>
 		<tbody>
-			${rowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 18px; border: 1px solid #000;">Записи в журнале ПСО за указанный период отсутствуют. Честный Zero-Mock учет.</td></tr>'}
+			${rowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 18px; border: 1px solid #000;">Записи в журнале предстерилизационной очистки за указанный период отсутствуют. Честный Zero-Mock учет.</td></tr>'}
 		</tbody>
 	</table>
 
 	<div class="signatures-block">
-		<div class="sign-col">Ответственный за ПСО (медсестра ЦСО): ____________________ / ${headNurseFullName} /</div>
+		<div class="sign-col">Ответственный за предстерилизационную очистку (медсестра ЦСО): ____________________ / ${headNurseFullName} /</div>
 		<div class="sign-col" style="text-align: right;">Главный врач медицинской организации: ____________________ / ${chiefDoctorFullName} /</div>
 	</div>
 

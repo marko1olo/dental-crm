@@ -109,7 +109,9 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(!html.includes("СанПиН 3.3686-21"));
 		assert.ok(!html.includes("Форма 257/у"));
 
-		// New cycle CTA
-		assert.ok(html.includes("journal-view-new-cycle-cta"));
+		// Real shift batch closure CTA (Mandate 8e / 8am)
+		assert.ok(html.includes("sanpin-shift-close-primary-btn"));
+		// Zero fake hidden buttons (Mandate 8zk)
+		assert.ok(!html.includes('style="display:none"') && !html.includes('style="display: none"'));
 	});
 });

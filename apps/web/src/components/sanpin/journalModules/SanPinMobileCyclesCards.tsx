@@ -56,7 +56,7 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 						className="flex-1 h-11 min-h-[44px] rounded-xl font-semibold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3 text-[13px] flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
 					>
 						<CheckCircle2 size={16} />
-						<span className="truncate">Зафиксировать цикл автоклава (134°C)</span>
+						<span className="truncate">+ Провести стерилизацию смены</span>
 					</button>
 					<button
 						type="button"

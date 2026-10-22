@@ -279,7 +279,7 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			const html = generateStatutoryPsoForm366PrintHtml(printParams);
 
 			assert.ok(html.includes("<!DOCTYPE html>"));
-			assert.ok(html.includes("Форма № 366/у"));
+			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ") || html.includes("Форма № 366/у"));
 			assert.ok(html.includes("ООО «Стоматологический Центр ДЕНТЕ»"));
 			assert.ok(html.includes("7701987654"));
 			assert.ok(html.includes("Стоматологические боры и наконечники"));

@@ -3,7 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/sterilization";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/e885d1bc-6630-4cff-a78a-b5844a9db4d8/screenshots";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/24ac26f7-6798-4304-a711-a94f274fb104/screenshots";
 const WEB_URL = "http://127.0.0.1:5173";
 
 await mkdir(PROOFS_DIR, { recursive: true });
@@ -76,6 +76,14 @@ async function prepareAndClean(page, theme) {
 	}, theme);
 
 	await page.waitForTimeout(600);
+
+	try {
+		const sanpinSubTab = page.locator('[data-testid="scanner-tab-sanpin"]');
+		if (await sanpinSubTab.count() > 0 && await sanpinSubTab.isVisible()) {
+			await sanpinSubTab.click({ force: true });
+			await page.waitForTimeout(400);
+		}
+	} catch {}
 }
 
 async function saveProof(page, baseName) {
@@ -104,7 +112,7 @@ async function run() {
 		browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 	}
 
-	const targetUrl = `${WEB_URL}/?demo=true#scanner`;
+	const targetUrl = `${WEB_URL}/?demo=true&tab=sanpin#scanner`;
 
 	try {
 		// 1. PC Light (1440x900)

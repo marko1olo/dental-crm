@@ -21,14 +21,6 @@ export function SanPinJournalView({
 }: SanPinJournalViewProps) {
 	return (
 		<div className="sanpin-journal-view-wrapper">
-			<button
-				type="button"
-				style={{ display: "none" }}
-				data-testid="journal-view-new-cycle-cta"
-				aria-hidden="true"
-			>
-				+ Новый цикл
-			</button>
 			<SanpinRegisters
 				initialTab={initialTab}
 				initialFilterAutoclave={initialFilterAutoclave}

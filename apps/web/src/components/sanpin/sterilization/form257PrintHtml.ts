@@ -49,7 +49,7 @@ export function generateForm257PrintHtml(
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Форма 257/у — Журнал работы стерилизаторов</title>
+	<title>Журнал автоклавирования и работы стерилизаторов</title>
 	<style>${formPrintStyles}</style>
 </head>
 <body>
@@ -63,13 +63,13 @@ export function generateForm257PrintHtml(
 			<td style="width: 40%; text-align: right;">
 				<div class="font-bold">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
 				<div>Форма № 257/у</div>
-				<div class="subtext">СанПиН 3.3686-21</div>
+				<div class="subtext">Регламент стерилизации изделий</div>
 			</td>
 		</tr>
 	</table>
 
-	<div class="doc-title">Журнал работы стерилизаторов воздушного, парового (автоклава)</div>
-	<div class="doc-subtitle">Контроль параметров циклов и термовременных индикаторов по СанПиН 3.3686-21</div>
+	<div class="doc-title">Журнал работы стерилизаторов и автоклавирования (парового, воздушного)</div>
+	<div class="doc-subtitle">Контроль параметров циклов и термовременных индикаторов стерильности</div>
 
 	<table class="main-table">
 		<thead>

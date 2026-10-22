@@ -34,13 +34,13 @@ export const SANPIN_CANONICAL_TABS: SanpinTabDef[] = [
 	{
 		id: "pso",
 		label: "Контроль очистки инструментов (Азопирам)",
-		shortLabel: "Очистка (Азопирам)",
+		shortLabel: "Очистка",
 		icon: FlaskConical,
 	},
 	{
 		id: "disinfection",
 		label: "Обеззараживание воздуха и санитарный режим",
-		shortLabel: "Санитарный режим",
+		shortLabel: "Санрежим",
 		icon: Sparkles,
 	},
 ];

@@ -15,6 +15,7 @@ export * from "./SterilizationJournalTable.js";
 export * from "./SterilizationJournalToolbar.js";
 export * from "./sterilizationPresets.js";
 export * from "./useSterilizationDrawerLogic.js";
+export * from "../sterilizationModules/index.js";
 
 export {
 	detectMissingSterilizationDays,

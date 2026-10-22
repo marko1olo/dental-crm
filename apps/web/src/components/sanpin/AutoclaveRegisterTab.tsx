@@ -65,7 +65,7 @@ export function AutoclaveRegisterTab() {
 						style={{ height: 28, padding: "0 12px", borderRadius: 6, border: "none", background: logic.viewSubMode === "journal" ? "var(--paper, #fff)" : "transparent", color: logic.viewSubMode === "journal" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)", fontWeight: logic.viewSubMode === "journal" ? 600 : 500, fontSize: "0.8125rem", cursor: "pointer" }}
 						data-testid="subtab-journal-btn"
 					>
-						Журнал контроля автоклавирования
+						Журнал автоклавирования
 					</button>
 					<button
 						type="button"
@@ -73,7 +73,7 @@ export function AutoclaveRegisterTab() {
 						style={{ height: 28, padding: "0 12px", borderRadius: 6, border: "none", background: logic.viewSubMode === "table" ? "var(--paper, #fff)" : "transparent", color: logic.viewSubMode === "table" ? "var(--ink, #0f172a)" : "var(--muted, #64748b)", fontWeight: logic.viewSubMode === "table" ? 600 : 500, fontSize: "0.8125rem", cursor: "pointer" }}
 						data-testid="subtab-table-btn"
 					>
-						Регламентные карточки циклов
+						Карточки циклов
 					</button>
 				</div>
 			</div>

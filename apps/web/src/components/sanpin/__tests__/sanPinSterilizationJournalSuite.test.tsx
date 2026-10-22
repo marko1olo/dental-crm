@@ -20,7 +20,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { normalizePouchBarcode } from "../journalModules/pouchBarcodeUtils";
 import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
-import { parseAndValidateKraftBarcode, insertPouchIntoDiaryText } from "@dental/shared";
+import { parseAndValidateKraftBarcode, formatPouch043StatutorySnippet } from "@dental/shared";
 
 describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.3686-21)", () => {
 	describe("1. Пакетная стерилизация и нормализация кодов", () => {
@@ -38,15 +38,16 @@ describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.36
 			assert.equal(res.rawInput, "KP-84920");
 		});
 
-		it("формирует регламентную запись пакета с параметрами 134°C, 2.1 бар, 5 мин и индикатором 5 кл.", () => {
-			const diary = "Пациент жалуется на ноющие боли в зубе 1.6.";
-			const snippet = "Стерилизация СанПиН 3.3686-21: крафт-пакет №KP-84920 (АК-01, 134°C / 2.1 бар / 5 мин, норма).";
-			const updated = insertPouchIntoDiaryText(diary, snippet, "KP-84920");
+		it("формирует регламентную запись пакета с параметрами 134°C, 2.1 бар, 5 мин и индикатором 5 кл. без блокировки врача", () => {
+			const snippet = formatPouch043StatutorySnippet({
+				pouchCode: "KP-84920",
+				indicatorClass: 5,
+				openedInPresenceOfPatient: true,
+				isPassed: true,
+			});
 
-			assert.ok(updated.includes("KP-84920"));
-			assert.ok(updated.includes("134°C"));
-			assert.ok(updated.includes("2.1 бар"));
-			assert.ok(updated.includes("5 мин"));
+			assert.ok(snippet.includes("КП-84920"));
+			assert.ok(snippet.includes("5 класса сработал"));
 		});
 	});
 

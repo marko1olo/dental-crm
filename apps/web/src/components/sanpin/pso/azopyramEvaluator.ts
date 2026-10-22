@@ -92,7 +92,7 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 		solutionTimeRemainingMinutes: freshness.remainingMinutes,
 		rejectionReasons: reasons,
 		clinicalActionProtocolRu,
-		regulatoryClauseRu: "СанПиН 3.3686-21 п. 3618-3622 / МУ 287-113",
+		regulatoryClauseRu: "Регламент предстерилизационной очистки (СанПиН)",
 		statusBadgeText: isBatchApproved
 			? "ДОПУЩЕНО К СТЕРИЛИЗАЦИИ"
 			: !isAzopyramNegative

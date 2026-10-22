@@ -3,7 +3,7 @@ export const SANPIN_REGULATORY_META = {
 	standardTitleRu: "Санитарно-эпидемиологические требования по профилактике инфекционных болезней (Раздел IV)",
 	form257TitleRu: "Журнал автоклавирования и работы стерилизаторов (паровых и воздушных)",
 	form366TitleRu: "Журнал учета качества предстерилизационной очистки",
-	guidelinePsoRu: "МУ 287-113 по дезинфекции, предстерилизационной очистке и стерилизации изделий медицинского назначения",
+	guidelinePsoRu: "Регламент дезинфекции, предстерилизационной очистки и стерилизации медицинских изделий",
 } as const;
 
 export type SterilizerDeviceClass = "autoclave_class_b" | "autoclave_class_s" | "autoclave_class_n" | "dry_heat_air";

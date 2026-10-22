@@ -20,7 +20,7 @@ export function validateRetroactiveDaySanpin(
 				code: "PSO_SAMPLE_UNDERSIZED",
 				messageRu: `Выборка предстерилизационной очистки (${record.psoSampleCount} шт.) ниже норматива 1% (${minExpectedSample} шт.)`,
 				severity: "error",
-				statutoryNorm: "СанПиН 3.3686-21 п. 3624 / МУ 287-113",
+				statutoryNorm: "Регламент предстерилизационной очистки",
 			});
 		}
 

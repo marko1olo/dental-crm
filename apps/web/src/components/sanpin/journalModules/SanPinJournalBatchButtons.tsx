@@ -27,48 +27,22 @@ export function SanPinJournalBatchButtons({
 		<div className="flex items-center gap-2 flex-wrap">
 			{onQuickBatchNorm && (
 				<>
+					{/* Вспомогательный запуск смены: стиль secondary с акцентом бирюзы (Mandate 8am - ровно 1 Primary CTA на экран) */}
 					<button
 						type="button"
-						onClick={() => onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`)}
+						onClick={() => {
+							onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`);
+							if (onQuickPsoNorm) onQuickPsoNorm();
+						}}
 						aria-busy={isAutofilling}
-						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
+						className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
 						title="Пакетная стерилизация смены: Автоклав №1, 134°C, 2.1 бар, 5 мин, индикаторы норма, списание расходников со склада"
 						aria-label="Пакетная стерилизация смены"
 						data-testid="quick-shift-batch-btn"
 					>
-						<Zap size={15} />
-						<span>Запустить цикл автоклава (134°C)</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => {
-							onQuickBatchNorm(27, "134", "Смена по норме: Автоклав №1 (134°C)");
-							if (onQuickPsoNorm) onQuickPsoNorm();
-						}}
-						aria-busy={isAutofilling}
-						className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
-						title="Заполнить смену по норме: Автоклав №1, 134°C, 2.1 бар, индикаторы стерильно, предстерилизационная очистка: отрицательно"
-						aria-label="Заполнить смену по норме"
-						data-testid="fill-shift-norm-btn"
-					>
 						<CheckCircle2 size={15} />
-						<span>Заполнить смену по норме</span>
+						<span>{isAutofilling ? "Проведение стерилизации..." : "+ Провести стерилизацию смены"}</span>
 					</button>
-
-					<div className="inline-flex rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 gap-1">
-						{(["Утренний цикл", "Дневной цикл", "Вечерний цикл"] as const).map((cycle) => (
-							<button
-								key={cycle}
-								type="button"
-								onClick={() => onQuickBatchNorm(27, "134", cycle)}
-								className="secondary-button text-[12px] font-medium px-2.5 py-1 rounded-lg border-0 bg-transparent hover:bg-[var(--paper)] text-[var(--ink)] cursor-pointer touch-manipulation transition-all"
-								title={`Зафиксировать ${cycle} (134°C, 2.1 бар, 5 мин)`}
-							>
-								{cycle.replace(" цикл", "")}
-							</button>
-						))}
-					</div>
 
 					<button
 						type="button"
@@ -94,7 +68,7 @@ export function SanPinJournalBatchButtons({
 					data-testid="quick-pso-norm-btn"
 				>
 					<ShieldCheck size={14} />
-					<span>Очистка (Азопирам): норма</span>
+					<span>Очистка: норма</span>
 				</button>
 			)}
 		</div>

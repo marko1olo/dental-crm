@@ -86,7 +86,7 @@ export const AutoclaveDesktopActionStrip: React.FC<AutoclaveDesktopActionStripPr
 			>
 				<Sparkles size={13} className="shrink-0" />
 				<span className="shrink-0 whitespace-nowrap">
-					{isLoggingBatch ? "Фиксация..." : "Подтвердить цикл стерилизации смены"}
+					{isLoggingBatch ? "Фиксация цикла..." : "Зафиксировать цикл стерилизации смены"}
 				</span>
 			</button>
 

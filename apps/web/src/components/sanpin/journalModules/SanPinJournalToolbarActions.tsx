@@ -70,7 +70,7 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 					<button
 						type="button"
 						onClick={onOpenNewCycleModal}
-						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+						className={BTN_SEC}
 						data-testid="start-cycle-btn"
 						title="Зафиксировать цикл автоклава вручную"
 					>
