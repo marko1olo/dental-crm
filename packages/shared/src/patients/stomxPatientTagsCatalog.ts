@@ -772,7 +772,7 @@ export function getTaskCallMeta(type: StomxTaskCallType): StomxTaskCallMeta | un
 }
 
 // ============================================================================
-// 8. ЧИСТЫЕ СЕМАНТИЧЕСКИЕ АЛИАСЫ БЕЗ ЧУЖИХ БРЕНДОВ (МАНДАТ 8ao)
+// 8. ЧИСТЫЕ СЕМАНТИЧЕСКИЕ АЛИАСЫ БЕЗ ЧУЖИХ БРЕНДОВ (МАНДАТ 8ao & 8ap)
 // ============================================================================
 
 export const REPRESENTATIVE_RELATIONSHIP_CATALOG = STOMX_REPRESENTATIVE_CATALOG;
@@ -781,4 +781,14 @@ export const DENTE_MARKETING_SOURCES = STOMX_MARKETING_SOURCES;
 export type DenteMarketingSourceItem = StomxMarketingSourceItem;
 export type RepresentativeRelationshipType = StomxRepresentativeType;
 export type RepresentativeRelationshipMeta = StomxRepresentativeTypeMeta;
+
+// Чистые алиасы задач сервисных звонков (Clinical Retention Task Calls)
+export const CLINICAL_TASK_CALL_TYPES = STOMX_TASK_CALL_TYPES;
+export const clinicalTaskCallTypeSchema = stomxTaskCallTypeSchema;
+export type ClinicalTaskCallType = StomxTaskCallType;
+export type ClinicalTaskCallMeta = StomxTaskCallMeta;
+export const CLINICAL_TASK_CALLS_CATALOG = STOMX_TASK_CALLS_CATALOG;
+export const CLINICAL_TASK_CALL_BY_TYPE = STOMX_TASK_CALL_BY_TYPE;
+export const getClinicalTaskCallMeta = getTaskCallMeta;
+
 
