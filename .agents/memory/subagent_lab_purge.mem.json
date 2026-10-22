@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-10-22T21:48:45+04:00",
+  "subagent": "red-team-inquisitor-lab",
+  "task": "Dental Lab (ЗТЛ) Modal Consolidation & Financial Gate Unblocking",
+  "status": "COMPLETED",
+  "verification": {
+    "vitest": {
+      "command": "npx vitest run apps/web/src/components/lab/__tests__/",
+      "testFilesPassed": 67,
+      "testFilesTotal": 67,
+      "testsPassed": 201,
+      "testsTotal": 201,
+      "exitCode": 0
+    },
+    "encodings": {
+      "command": "node scripts/check-encoding.mjs",
+      "filesChecked": 15163,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "cssTokens": {
+      "command": "node scripts/check-css-tokens.mjs",
+      "filesChecked": 405,
+      "unresolvedVariables": 0,
+      "exitCode": 0
+    },
+    "visualProof": {
+      "pcLight": {
+        "file": "apps/web/public/screenshots/lab/lab_pc_light_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_pc_light_1440x900.png",
+        "sizeBytes": 146836,
+        "verifiedRead": true
+      },
+      "pcDark": {
+        "file": "apps/web/public/screenshots/lab/lab_pc_dark_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_pc_dark_1440x900.png",
+        "sizeBytes": 151450,
+        "verifiedRead": true
+      },
+      "mobileLight": {
+        "file": "apps/web/public/screenshots/lab/lab_mobile_light_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_mobile_light_390x844.png",
+        "sizeBytes": 51651,
+        "verifiedRead": true
+      },
+      "mobileDark": {
+        "file": "apps/web/public/screenshots/lab/lab_mobile_dark_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_mobile_dark_390x844.png",
+        "sizeBytes": 53055,
+        "verifiedRead": true
+      },
+      "modalPcLight": {
+        "file": "apps/web/public/screenshots/lab/lab_order_modal_pc_light.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_order_modal_pc_light.png",
+        "sizeBytes": 75300,
+        "verifiedRead": true
+      },
+      "modalPcDark": {
+        "file": "apps/web/public/screenshots/lab/lab_order_modal_pc_dark.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/0a466d18-389d-40f1-b83c-a6f1d28ee3de/lab_order_modal_pc_dark.png",
+        "sizeBytes": 77776,
+        "verifiedRead": true
+      }
+    }
+  },
+  "clinicalInvariants": {
+    "mandate8eDoctorAutonomy": "Финансовый контроль ЗТЛ никогда не блокирует отправку наряда. Отправка доступна в 1 клик. Предупреждение выводится пассивной мягкой строкой.",
+    "mandate8dZeroEmojis": "Полный запрет юникод-эмодзи в TS/TSX. Используются SVG-иконки Lucide.",
+    "mandate8amButtonConsistency": "Строго 1 Primary CTA кнопка на видимый экран (+ Новый наряд в ЗТЛ / Отправить наряд в лабораторию / Сформировать наряд в ЗТЛ).",
+    "appleHigMobileErgonomics": "Touch target >= 44x44px, Natural Thumb Zone, Safe Area padding."
+  }
+}

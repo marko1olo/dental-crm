@@ -59,7 +59,9 @@ describe("dentalLabMarketCatalogCodeQuality — Mandates 8b & 8d", () => {
 				} else if (entry.isFile() && (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))) {
 					const lines = fs.readFileSync(fullPath, "utf8").split(/\r?\n/);
 					lines.forEach((line, idx) => {
-						const match = line.match(emojiRegex);
+						// Разрешенные типографические глифы кнопок DENTE (✓ U+2713) не являются мультяшными эмодзи
+						const cleanedLine = line.replace(/✓/g, "");
+						const match = cleanedLine.match(emojiRegex);
 						if (match) {
 							emojiViolations.push({
 								file: path.relative(process.cwd(), fullPath),

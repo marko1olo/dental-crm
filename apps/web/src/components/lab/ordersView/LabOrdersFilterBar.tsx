@@ -94,10 +94,10 @@ export function LabOrdersFilterBar({
 					onClick={onOpenNewOrder}
 					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
 					data-testid="lab-orders-new-order-btn"
-					title="+ Заказ в лабораторию"
+					title="+ Новый наряд в ЗТЛ"
 				>
 					<Plus className="w-3.5 h-3.5" />
-					<span>+ Заказ в лабораторию</span>
+					<span>+ Новый наряд в ЗТЛ</span>
 				</button>
 			</div>
 		</header>

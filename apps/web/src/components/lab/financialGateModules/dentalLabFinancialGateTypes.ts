@@ -44,6 +44,8 @@ export interface DentalLabFinancialGateParams {
 
 export interface DentalLabFinancialGateResult {
 	readonly isGatePassed: boolean;
+	readonly isBlocked: boolean;
+	readonly canDispatch: boolean;
 	readonly gateStatus: DentalLabGateStatus;
 	readonly isUrgentBypassed?: boolean | undefined;
 	readonly minAdvancePercent: number;

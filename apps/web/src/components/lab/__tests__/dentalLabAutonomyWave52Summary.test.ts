@@ -33,11 +33,11 @@ describe("Wave 52 — Dental Lab Messenger Summary", () => {
 		assert.ok(text.includes("Конструкция: Одиночная коронка"));
 		assert.ok(text.includes("Материал: Диоксид циркония Multi-layer (Katana HTML)"));
 		assert.ok(text.includes("Цвет: A2"));
-		assert.ok(text.includes("Срок сдачи (Due date): 15.09.2026"));
+		assert.ok(text.includes("Срок готовности: 15.09.2026"));
 		assert.ok(text.includes("Примерка каркаса: 11.09.2026"));
 		assert.ok(text.includes("Примерка керамики: 13.09.2026"));
 		assert.ok(text.includes("Особые указания: Индивидуальная эстетика, легкая текстура, без выраженных мамелонов"));
-		assert.ok(text.includes("Курьерская доставка / Связь с клиникой: +7 (495) 777-88-99."));
+		assert.ok(text.includes("Связь с клиникой: +7 (495) 777-88-99."));
 
 		const emojiRegex = /\p{Extended_Pictographic}/u;
 		assert.strictEqual(emojiRegex.test(text), false);
@@ -61,7 +61,7 @@ describe("Wave 52 — Dental Lab Messenger Summary", () => {
 		assert.ok(!text.includes("Примерка каркаса:"));
 		assert.ok(!text.includes("Примерка керамики:"));
 		assert.ok(text.includes("Особые указания: Без особенностей"));
-		assert.ok(text.includes("Курьерская доставка / Связь с клиникой: не указан."));
+		assert.ok(text.includes("Связь с клиникой: не указан."));
 		assert.ok(!text.includes("+7 (495) 123-45-67"));
 		assert.strictEqual(/\p{Extended_Pictographic}/u.test(text), false);
 	});

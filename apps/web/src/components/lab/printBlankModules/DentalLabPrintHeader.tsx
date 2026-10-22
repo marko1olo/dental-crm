@@ -1,5 +1,5 @@
 import React from "react";
-import { Printer } from "lucide-react";
+import { Printer, Share2 } from "lucide-react";
 
 export interface DentalLabPrintHeaderProps {
 	clinicName: string;
@@ -11,6 +11,7 @@ export interface DentalLabPrintHeaderProps {
 	isDraft: boolean;
 	isSigned: boolean;
 	handlePrint: () => void;
+	onShareMessenger?: (() => void) | undefined;
 }
 
 export function DentalLabPrintHeader({
@@ -23,6 +24,7 @@ export function DentalLabPrintHeader({
 	isDraft,
 	isSigned,
 	handlePrint,
+	onShareMessenger,
 }: DentalLabPrintHeaderProps): React.JSX.Element {
 	return (
 		<>
@@ -36,15 +38,29 @@ export function DentalLabPrintHeader({
 						Официальный наряд-заказ с уникальным 2D-штрихкодом партии и ссылкой для трекинга техником.
 					</p>
 				</div>
-				<button
-					type="button"
-					onClick={handlePrint}
-					data-testid="print-blank-action-btn"
-					className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
-				>
-					<Printer className="w-4 h-4" />
-					Распечатать наряд (A4 / Термочехол)
-				</button>
+				<div className="flex items-center gap-2">
+					{onShareMessenger && (
+						<button
+							type="button"
+							onClick={onShareMessenger}
+							data-testid="print-blank-share-messenger-btn"
+							className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+							title="Поделиться текстом наряда с зубным техником в WhatsApp или Telegram"
+						>
+							<Share2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+							<span>Поделиться в мессенджер</span>
+						</button>
+					)}
+					<button
+						type="button"
+						onClick={handlePrint}
+						data-testid="print-blank-action-btn"
+						className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
+					>
+						<Printer className="w-4 h-4" />
+						Распечатать наряд (A4)
+					</button>
+				</div>
 			</div>
 
 			{/* Blank Header */}

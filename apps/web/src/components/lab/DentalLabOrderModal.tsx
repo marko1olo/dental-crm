@@ -99,7 +99,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							translucency={form.translucency} mamelons={form.mamelons} calcifications={form.calcifications} opalescence={form.opalescence}
 							impressionType={form.impressionType} frameworkTrialDate={form.frameworkTrialDate} ceramicTrialDate={form.ceramicTrialDate}
 							dueDate={form.dueDate} clinicalNotes={form.clinicalNotes} totalLabPriceRub={form.totalLabPriceRub} portalUrl={form.portalUrl}
-							handlePrint={form.handlePrint} currentStage={form.currentStage}
+							handlePrint={form.handlePrint} currentStage={form.currentStage} onShareMessenger={form.handleCopyMessengerSummary}
 						/>
 					)}
 				</div>

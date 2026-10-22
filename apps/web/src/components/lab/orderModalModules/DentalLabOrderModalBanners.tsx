@@ -25,12 +25,7 @@ export function DentalLabOrderModalBanners({
 	const isPaid =
 		financialGateResult.paidPercent >= 100 ||
 		(financialGateResult.isGatePassed && financialGateResult.missingAdvanceRub <= 0);
-	const missingRub = financialGateResult.missingAdvanceRub || 0;
-	const missingFormatted = `${missingRub.toLocaleString("ru-RU")} ₽`;
-	const debtLabel =
-		financialGateResult.paidPercent === 0
-			? `Не оплачен аванс: ${missingFormatted}`
-			: `Не оплачен аванс (остаток: ${missingFormatted})`;
+	const debtLabel = "Аванс 50% ожидает внесения (пациент оплатит на примерке)";
 	const paymentLabel = isPaid ? "Оплачено 100%" : debtLabel;
 	const isCleared = isPaid || hasOverride;
 

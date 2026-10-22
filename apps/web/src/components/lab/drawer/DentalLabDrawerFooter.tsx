@@ -17,18 +17,18 @@ export function DentalLabDrawerFooter({
 			<button
 				type="button"
 				onClick={onClose}
-				className="secondary-button min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-bold text-xs shadow-2xs transition-colors cursor-pointer active:scale-95"
+				className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-bold text-xs shadow-2xs transition-colors cursor-pointer active:scale-95"
 			>
 				Отмена
 			</button>
 			<button
 				type="button"
 				onClick={onSubmit}
-				className="primary-button min-h-[44px] px-5 rounded-xl border border-[var(--teal)] bg-[var(--teal)] hover:bg-[var(--teal-dark,#0d736b)] text-white font-bold text-xs inline-flex items-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
+				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-5 rounded-xl border border-[var(--teal)] bg-[var(--teal)] hover:bg-[var(--teal-dark,#0d736b)] text-white font-bold text-xs inline-flex items-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
 				data-testid="form-save-order-btn"
 			>
 				<Check className="w-4 h-4" />
-				<span>{isEditing ? "Сохранить изменения" : "Оформить наряд-заказ"}</span>
+				<span>{isEditing ? "Сохранить наряд в ЗТЛ" : "Сформировать наряд в ЗТЛ"}</span>
 			</button>
 		</div>
 	);

@@ -72,7 +72,7 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 					title="Создать новый наряд в лабораторию"
 				>
 					<Plus size={14} />
-					<span>Новый наряд ЗТЛ</span>
+					<span>+ Новый наряд в ЗТЛ</span>
 				</button>
 
 				<button

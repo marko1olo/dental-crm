@@ -37,10 +37,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 		(gateResult.isGatePassed && gateResult.missingAdvanceRub <= 0);
 	const missingRub = gateResult.missingAdvanceRub || 0;
 	const missingFormatted = `${missingRub.toLocaleString("ru-RU")} ₽`;
-	const debtLabel =
-		gateResult.paidPercent === 0
-			? `Не оплачен аванс: ${missingFormatted}`
-			: `Не оплачен аванс (остаток: ${missingFormatted})`;
+	const debtLabel = "Аванс 50% ожидает внесения (пациент оплатит на примерке)";
 	const label = isPaid ? "Оплачено 100%" : debtLabel;
 
 	if (variant === "modal") {

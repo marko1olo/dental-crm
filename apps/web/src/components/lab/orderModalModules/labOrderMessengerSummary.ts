@@ -24,7 +24,7 @@ export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): 
 		`Конструкция: ${params.constructionTypeTitle}`,
 		`Материал: ${params.materialTitle}`,
 		`Цвет: ${params.shade}`,
-		`Срок сдачи (Due date): ${params.dueDate}`,
+		`Срок готовности: ${params.dueDate}`,
 	];
 
 	if (params.frameworkTrialDate && params.frameworkTrialDate.trim()) {
@@ -39,7 +39,7 @@ export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): 
 
 	const phone = params.clinicPhone?.trim() || "не указан";
 	const formattedPhone = phone.endsWith(".") ? phone : `${phone}.`;
-	lines.push(`Курьерская доставка / Связь с клиникой: ${formattedPhone}`);
+	lines.push(`Связь с клиникой: ${formattedPhone}`);
 
 	return lines.join("\n");
 }

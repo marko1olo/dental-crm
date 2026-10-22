@@ -46,7 +46,7 @@ export function DentalLabOrderModalFooter({
 					</button>
 					<button type="button" onClick={onSubmit} disabled={isSubmitting} className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]" data-testid="submit-lab-order-btn">
 						{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-						<span>{isEdit ? "Сохранить изменения" : "Сохранить и отправить наряд"}</span>
+						<span>{isEdit ? "Сохранить наряд в ЗТЛ" : "Сформировать наряд в ЗТЛ"}</span>
 					</button>
 				</div>
 			</div>
@@ -61,7 +61,7 @@ export function DentalLabOrderModalFooter({
 				</div>
 				<button type="button" onClick={onSubmit} disabled={isSubmitting} className="w-full min-h-[48px] h-12 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-[0.98] transition-transform" data-testid="submit-lab-order-btn">
 					{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-					<span>{isEdit ? "Сохранить изменения" : "Сохранить и отправить наряд"}</span>
+					<span>{isEdit ? "Сохранить наряд в ЗТЛ" : "Сформировать наряд в ЗТЛ"}</span>
 				</button>
 			</div>
 		</div>

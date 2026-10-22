@@ -16,6 +16,7 @@ export interface DentalLabPrintBlankProps {
 	impressionType?: string | undefined; impressionDate?: string | null | undefined; frameworkTrialDate?: string | null | undefined;
 	ceramicTrialDate?: string | null | undefined; dueDate?: string | null | undefined; clinicalNotes: string;
 	totalLabPriceRub?: number | undefined; portalUrl: string; handlePrint: () => void;
+	onShareMessenger?: (() => void) | undefined;
 	isDraft?: boolean | undefined; isSigned?: boolean | undefined; currentStage?: string | undefined; status?: string | undefined;
 	occlusalScheme?: string | undefined; contactTightness?: string | undefined; surfaceTexture?: string | undefined; cementGapMicrons?: number | undefined;
 }
@@ -48,6 +49,7 @@ export function DentalLabPrintBlank(props: DentalLabPrintBlankProps): React.JSX.
 				clinicName={clinicName} gostOrderNumber={gostOrderNumber} formattedOrderDate={formattedOrderDate}
 				dueDate={dueDate} deliveryTimeSlot={deliveryTimeSlot} deadlineInfo={deadlineInfo}
 				isDraft={isDraft} isSigned={isSigned} handlePrint={handlePrint}
+				onShareMessenger={props.onShareMessenger}
 			/>
 			<div id="printable-lab-order-sheet" data-testid="form-ztl-1-blank" className="p-6 sm:p-8 bg-white text-slate-900 rounded-xl border border-slate-300 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0 print:m-0 print:space-y-4 print:bg-white">
 				<DentalLabPrintInfoTable

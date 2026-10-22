@@ -827,6 +827,17 @@
 	white-space: nowrap;
 }
 
+.ztl-btn-card-action.ztl-btn-open {
+	flex: 0 0 auto;
+	padding: 0 8px;
+}
+
+.ztl-btn-card-action.ztl-btn-advance {
+	flex: 1 1 auto;
+	padding: 0 6px;
+	font-size: 11px;
+}
+
 .ztl-btn-card-action:hover {
 	background: var(--teal-surface);
 	border-color: var(--teal);
