@@ -1,0 +1,37 @@
+{
+  "subagent": "treatment_plan_clinical_rail_inquisitor",
+  "target": "Treatment Plan 4 End-to-End Rails (Chairside Handoff, 54-FZ Cashier, Lab Bridge, Warehouse Closed Loop)",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T11:43:00+04:00",
+  "mandates_enforced": [
+    "Mandate 8e (Doctor Autonomy & Non-blocking UI)",
+    "Mandate 8n (Solo Practice & Soft Negative Warehouse Overdraft)",
+    "Mandate 8aa (FFD 1.2 Tag 1215 Advance Offset & Exact Integer Kopecks)",
+    "Mandate 8wy (Dual-Mode Isolation & Real PostgreSQL Integrity)"
+  ],
+  "traps_audited_and_resolved": [
+    {
+      "trap": "Trap 1: Stage items losing tooth number, 804n code, or agreed doctor discounts upon visit handoff",
+      "resolution": "Updated visitPlanStageHandoff.ts, billingEventItemParser.ts, and useVisitProtocolSync.ts to preserve toothNumber, toothCode, 804n code, unitPriceRub, and agreed discountRub/discountPercent."
+    },
+    {
+      "trap": "Trap 2: Treatment plan stages partial advance payments not deducting in 54-FZ cashier",
+      "resolution": "Extended fastCheckoutEngine.ts, types.ts, fastCheckoutStateReducer.ts, PatientBillingModal.tsx, and PatientBillingFriendlyTab.tsx to track paidAmountRub/paidAmountKop and remainingDueRub/remainingDueKop. Automatically enables advance_offset_tag1215 tender up to stage advance paid."
+    },
+    {
+      "trap": "Trap 3: Completed stages blocked or lost in limbo without closed-loop tracking",
+      "resolution": "Added isCompleted and status tracking to groupTreatmentPlanByStages, updated VisitPlanStageHandoffChips/Banner with checkmark and 'Повторить этап в визите' CTA (Mandate 8e: never disabled). Updated planCompletionRoutes.ts to set completionPercentage = 100, autoArchived = true, and archivedAt on treatmentPlanStages."
+    },
+    {
+      "trap": "Trap 4: Dental Lab (ЗТЛ) order bridge failing to propagate tooth numbers and stage pricing",
+      "resolution": "Updated visitPlanStageHandoffEvents.ts and useVisitModalsState.ts to resolve toothFdi, toothNumber, selectedTeeth, and isolated priceRub in dispatchOpenLabOrderForStage."
+    }
+  ],
+  "verification": {
+    "vitest_rails_test": "apps/web/src/tests/treatmentPlan4RailsInquisition.test.ts (10/10 passing)",
+    "vitest_stage_handoff_test": "apps/web/src/components/visit/__tests__/visitPlanStageHandoff.test.tsx (6/6 passing)",
+    "vitest_redteam_test": "apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts (10/10 passing)",
+    "tsc_web": "Exit Code 0 (apps/web/tsconfig.json)",
+    "tsc_api": "Exit Code 0 (apps/api/tsconfig.json)"
+  }
+}

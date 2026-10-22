@@ -78,6 +78,31 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	const [advanceAlreadyPaidRub] = useState<number>(0);
 	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(initialPaymentMethod ?? "sbp_qr");
 
+	const effectiveAdvanceAlreadyPaidRub = useMemo(() => {
+		const stage = stages.find((s) => s.id === selectedStageId);
+		if (stage) {
+			if (typeof stage.advanceAlreadyPaidRub === "number" && stage.advanceAlreadyPaidRub > 0) {
+				return stage.advanceAlreadyPaidRub;
+			}
+			if (typeof stage.advanceAlreadyPaidKop === "number" && stage.advanceAlreadyPaidKop > 0) {
+				return stage.advanceAlreadyPaidKop / 100;
+			}
+			if (typeof stage.paidAmountRub === "number" && stage.paidAmountRub > 0) {
+				return stage.paidAmountRub;
+			}
+			if (typeof stage.paidAmountKop === "number" && stage.paidAmountKop > 0) {
+				return stage.paidAmountKop / 100;
+			}
+		}
+		if (typeof props.advanceAlreadyPaidRub === "number" && props.advanceAlreadyPaidRub > 0) {
+			return props.advanceAlreadyPaidRub;
+		}
+		if (typeof props.advanceAlreadyPaidKop === "number" && props.advanceAlreadyPaidKop > 0) {
+			return props.advanceAlreadyPaidKop / 100;
+		}
+		return advanceAlreadyPaidRub;
+	}, [selectedStageId, stages, props.advanceAlreadyPaidRub, props.advanceAlreadyPaidKop, advanceAlreadyPaidRub]);
+
 	// Split Payment State (amounts in Rubles)
 	const [cardAmountRub, setCardAmountRub] = useState<number>(0);
 	const [cashAmountRub, setCashAmountRub] = useState<number>(0);
@@ -122,7 +147,20 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 			if (initialPaymentMethod) setActiveMethod(initialPaymentMethod);
 			setSbpStatus("awaiting");
 			setSbpCheckMessage(null);
-			setSelectedStageId(resolveInitialSelectedStageId(propStages, isDemoShowcaseMode()));
+			const initialStageId = resolveInitialSelectedStageId(propStages, isDemoShowcaseMode());
+			setSelectedStageId(initialStageId);
+			const initialStg = propStages?.find((s) => s.id === initialStageId);
+			const initAdvancePaid =
+				initialStg?.advanceAlreadyPaidRub ??
+				(initialStg?.advanceAlreadyPaidKop ? initialStg.advanceAlreadyPaidKop / 100 : undefined) ??
+				(initialStg?.paidAmountRub ?? (initialStg?.paidAmountKop ? initialStg.paidAmountKop / 100 : 0)) ??
+				props.advanceAlreadyPaidRub ??
+				(props.advanceAlreadyPaidKop ? props.advanceAlreadyPaidKop / 100 : 0);
+			if (initAdvancePaid > 0) {
+				setStagePaymentMode("advance_offset_tag1215");
+			} else {
+				setStagePaymentMode("full");
+			}
 			setKktHardwareStatus((prev) => ({ ...prev, isChecking: true }));
 			void checkFastCheckoutKktDeviceHealth().then((status) => {
 				setKktHardwareStatus(status);
@@ -132,7 +170,7 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 			inFlightRef.current = false;
 			setIsPrinting(false);
 		}
-	}, [isOpen, initialPaymentMethod, propStages]);
+	}, [isOpen, initialPaymentMethod, propStages, props.advanceAlreadyPaidRub, props.advanceAlreadyPaidKop]);
 
 	const baseStageAmountKop = useMemo(() => {
 		const configuredKop = calculateBaseStageAmountKop(selectedStageId, initialTotalBillKop, stages);
@@ -160,8 +198,8 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	const discountedStageAmountKop = discountCalc.netKop;
 
 	const stageCalc = useMemo(() => {
-		return computeStageAdvanceCalc(discountedStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub);
-	}, [discountedStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
+		return computeStageAdvanceCalc(discountedStageAmountKop, stagePaymentMode, effectiveAdvanceAlreadyPaidRub);
+	}, [discountedStageAmountKop, stagePaymentMode, effectiveAdvanceAlreadyPaidRub]);
 
 	const { effectiveBillKop, targetBillKop, targetBillRub, effectiveTotalRub } =
 		computeTargetBillAmounts(discountedStageAmountKop, stagePaymentMode, stageCalc);
@@ -237,6 +275,14 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	const handleStageSelect = (stageId: string) => {
 		setSelectedStageId(stageId);
 		setCashTenderedRub(0);
+		const stg = stages.find((s) => s.id === stageId);
+		const stgAdvancePaid =
+			stg?.advanceAlreadyPaidRub ??
+			(stg?.advanceAlreadyPaidKop ? stg.advanceAlreadyPaidKop / 100 : undefined) ??
+			(stg?.paidAmountRub ?? (stg?.paidAmountKop ? stg.paidAmountKop / 100 : 0));
+		if (stgAdvancePaid && stgAdvancePaid > 0) {
+			setStagePaymentMode("advance_offset_tag1215");
+		}
 	};
 
 	const handleSingle100Percent = (method: CheckoutPaymentMethodType) => {
@@ -348,7 +394,7 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 
 	const handleAcceptPaymentOfflineFallback = async () => {
 		showToast(
-			"Принимаем оплату через автономный терминал (без ККТ)... Чек поставлен в очередь отложенной печати!",
+			"Принимаем оплату через автономный терминал... Чек поставлен в очередь отложенной печати!",
 			"info",
 			3000,
 		);

@@ -29,6 +29,10 @@ export interface PatientBillingPlanStage {
 	readonly totalAmountRub?: number | undefined;
 	readonly totalRub?: number | undefined;
 	readonly totalPriceKopecks?: number | undefined;
+	readonly paidAmountRub?: number | undefined;
+	readonly paidAmountKopecks?: number | undefined;
+	readonly remainingAmountRub?: number | undefined;
+	readonly remainingAmountKopecks?: number | undefined;
 	readonly status?: string | undefined;
 	readonly items?: readonly any[] | undefined;
 }

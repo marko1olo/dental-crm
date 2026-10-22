@@ -113,6 +113,8 @@ export function useVisitProtocolSync({
 							name: billingItem.title,
 							priceRub: billingItem.unitPriceRub,
 							priceKopecks: Math.round(billingItem.unitPriceRub * 100),
+							discountRub: billingItem.discountRub,
+							discountPercent: billingItem.discountPercent,
 							quantity: billingItem.quantity || 1,
 							category: String(stageItems[idx]?.category || "therapy"),
 							...(toothNum !== undefined ? { toothNumber: toothNum } : {}),

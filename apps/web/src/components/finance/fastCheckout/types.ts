@@ -84,6 +84,8 @@ export interface UseFastCheckoutLogicProps {
 	readonly cashierFullName?: string | undefined;
 	readonly attendingDoctorName?: string | undefined;
 	readonly initialSimpleCashierMode?: boolean | undefined;
+	readonly advanceAlreadyPaidRub?: number | undefined;
+	readonly advanceAlreadyPaidKop?: number | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
 }
 

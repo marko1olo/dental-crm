@@ -114,6 +114,11 @@ export const PatientBillingPlanStagePanel: React.FC<PatientBillingPlanStagePanel
 								<span className="text-xs sm:text-sm font-extrabold font-mono text-[var(--ink)]">
 									{amt.toLocaleString("ru-RU")} ₽
 								</span>
+								{((stg.paidAmountRub && stg.paidAmountRub > 0) || (stg.paidAmountKopecks && stg.paidAmountKopecks > 0)) ? (
+									<div className="text-[10px] text-teal-700 dark:text-teal-300 font-medium">
+										Аванс: {(stg.paidAmountRub ?? (stg.paidAmountKopecks ? stg.paidAmountKopecks / 100 : 0)).toLocaleString("ru-RU")} ₽
+									</div>
+								) : null}
 							</div>
 						</button>
 					);
@@ -126,6 +131,11 @@ export const PatientBillingPlanStagePanel: React.FC<PatientBillingPlanStagePanel
 					{isStageApplied && selectedStage ? (
 						<span>
 							К оплате выбран: <strong className="text-[var(--ink)]">{selectedStage.titleRu ?? selectedStage.title ?? `Этап ${selectedStage.stageNumber ?? 1}`}</strong> ({getStageAmountRub(selectedStage).toLocaleString("ru-RU")} ₽)
+							{((selectedStage.paidAmountRub && selectedStage.paidAmountRub > 0) || (selectedStage.paidAmountKopecks && selectedStage.paidAmountKopecks > 0)) ? (
+								<span className="text-teal-700 dark:text-teal-300 ml-1">
+									(зачтен аванс {(selectedStage.paidAmountRub ?? (selectedStage.paidAmountKopecks ? selectedStage.paidAmountKopecks / 100 : 0)).toLocaleString("ru-RU")} ₽)
+								</span>
+							) : null}
 						</span>
 					) : (
 						<span>Выберите этап для подстановки суммы в чек</span>

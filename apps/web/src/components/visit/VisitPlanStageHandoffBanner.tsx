@@ -52,6 +52,13 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 								{loadedTreatmentPlan.status === "Approved" ? "Согласован" : loadedTreatmentPlan.status === "Active" ? "В работе" : "Черновик"}
 							</span>
 
+							{h.activeStage?.isCompleted && (
+								<span data-testid="handoff-stage-completed-badge" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+									<CheckCircle2 size={11} />
+									<span>Этап завершён</span>
+								</span>
+							)}
+
 							{h.appointmentStageTarget.durationMinutes && h.isTargetedFromAppointment && (
 								<span data-testid="handoff-stage-duration-badge" className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] flex items-center gap-1">
 									<Clock size={11} />
@@ -83,7 +90,11 @@ export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerPr
 						title="Перенести выбранный этап плана лечения в текущий визит и счет"
 					>
 						<CheckCircle2 size={16} />
-						<span>{typeof h.selectedStageKey === "number" ? `Взять Этап ${h.selectedStageKey} в работу визита` : "Взять этап в работу визита"}</span>
+						<span>
+							{h.activeStage?.isCompleted
+								? (typeof h.selectedStageKey === "number" ? `Повторить Этап ${h.selectedStageKey} в визите` : "Повторить этап в визите")
+								: (typeof h.selectedStageKey === "number" ? `Взять Этап ${h.selectedStageKey} в работу визита` : "Взять этап в работу визита")}
+						</span>
 					</button>
 
 					<button

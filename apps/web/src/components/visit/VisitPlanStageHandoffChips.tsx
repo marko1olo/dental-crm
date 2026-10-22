@@ -43,6 +43,15 @@ export const VisitPlanStageHandoffChips: React.FC<VisitPlanStageHandoffChipsProp
 						className="min-h-[38px] sm:min-h-[28px] px-3 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs sm:text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer border shadow-2xs touch-manipulation"
 					>
 						<span>Этап {stg.stageNumber}</span>
+						{stg.isCompleted && (
+							<span
+								data-testid={`handoff-stage-chip-${stg.stageNumber}-completed`}
+								className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+								title="Этап выполнен"
+							>
+								✓
+							</span>
+						)}
 						{isTarget && (
 							<span
 								style={{

@@ -71,12 +71,19 @@ export function useVisitModalsState({
 				toothFdi?: number | string;
 				teeth?: (number | string)[];
 				selectedTeeth?: (number | string)[];
+				items?: any[];
 			}>;
+			const itemsTeeth = Array.isArray(customEvent?.detail?.items)
+				? customEvent.detail.items
+						.map((it: any) => it.toothNumber ?? it.toothCode)
+						.filter((t: any): t is number | string => t !== undefined && t !== null && t !== "")
+				: undefined;
 			const customTooth =
 				customEvent?.detail?.selectedTeeth ??
 				customEvent?.detail?.teeth ??
 				customEvent?.detail?.toothNumber ??
-				customEvent?.detail?.toothFdi;
+				customEvent?.detail?.toothFdi ??
+				(itemsTeeth && itemsTeeth.length > 0 ? itemsTeeth : undefined);
 			handleOpenLabOrder(customTooth);
 		};
 		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);

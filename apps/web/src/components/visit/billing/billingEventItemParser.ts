@@ -38,21 +38,36 @@ export function parseBillingServicesList(rawList: any[], detail: any): VisitBill
 
 export function parseSingleBillingItem(item: any): VisitBillingServiceItem {
 	const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(0, 8) : Date.now().toString(36);
-	let tooth = item.toothNumber ? String(item.toothNumber) : item.toothCode;
+	let tooth = item.toothNumber !== undefined && item.toothNumber !== null && item.toothNumber !== ""
+		? String(item.toothNumber)
+		: item.toothCode;
 	if (!tooth) {
 		const match = (item.title || item.name || "").match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
 		if (match) tooth = (match[1] || match[2] || "").trim();
 	}
+	const price = Number(
+		item.unitPriceRub ??
+		item.priceRub ??
+		item.price ??
+		item.basePriceRub ??
+		(typeof item.priceKopecks === "number" ? item.priceKopecks / 100 : 0)
+	);
+	const discountRub = Number(item.discountRub ?? item.discount ?? 0);
+	const discountPercent = Number(
+		item.discountPercent ??
+		(price > 0 && discountRub > 0 ? Math.round((discountRub / price) * 100) : 0)
+	);
+
 	return {
-		id: `copilot-serv-${Date.now()}-${idSuffix}`,
-		code804n: item.code804n || "A16.07.001",
+		id: item.id || `copilot-serv-${Date.now()}-${idSuffix}`,
+		code804n: item.code804n || item.code || item.priceId || "A16.07.001",
 		title: item.title || item.name || "Услуга",
 		toothCode: tooth ? String(tooth) : undefined,
-		quantity: item.quantity || 1,
-		unitPriceRub: Number(item.priceRub ?? item.unitPriceRub ?? item.basePriceRub ?? 0),
-		discountPercent: 0,
-		discountRub: 0,
-		isWarranty: false,
+		quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
+		unitPriceRub: Math.max(0, price),
+		discountPercent,
+		discountRub,
+		isWarranty: Boolean(item.isWarranty),
 		labCostRub: Number(item.labCostRub) > 0 ? Number(item.labCostRub) : undefined,
 		labOrderId: item.labOrderId,
 		labOrderNumber: item.labOrderNumber,

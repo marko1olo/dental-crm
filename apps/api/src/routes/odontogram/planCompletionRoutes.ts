@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
@@ -7,6 +7,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import {
 	treatmentItems,
 	treatmentPlanItemsNew,
+	treatmentPlanStages,
 	treatmentPlans,
 	visits,
 } from "../../db/schema.js";
@@ -325,6 +326,58 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							and(
 								eq(treatmentPlans.id, planId),
 								eq(treatmentPlans.organizationId, organizationId),
+							),
+						);
+				}
+
+				// Синхронизация прогресса этапов treatmentPlanStages (Мандат 8e / Closed-loop)
+				const targetPhases = new Set<number>();
+				if (body.phase !== undefined) {
+					targetPhases.add(body.phase);
+				} else {
+					for (const idx of targetIndices) {
+						if (planItems[idx]?.phase) {
+							targetPhases.add(planItems[idx].phase);
+						}
+					}
+				}
+
+				for (const phaseNum of targetPhases) {
+					const phaseIndices = planItems
+						.map((it, idx) => (it.phase === phaseNum ? idx : -1))
+						.filter((idx) => idx >= 0);
+					const allPhaseCompleted =
+						phaseIndices.length > 0 &&
+						phaseIndices.every(
+							(idx) =>
+								completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()) ||
+								targetIndices.has(idx),
+						);
+					const completedPhaseCount = phaseIndices.filter(
+						(idx) =>
+							completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()) ||
+							targetIndices.has(idx),
+					).length;
+					const phasePercentage =
+						phaseIndices.length > 0
+							? Math.min(100, Math.round((completedPhaseCount / phaseIndices.length) * 100))
+							: 0;
+
+					await tx
+						.update(treatmentPlanStages)
+						.set({
+							completionPercentage: phasePercentage,
+							autoArchived: allPhaseCompleted,
+							archivedAt: allPhaseCompleted ? new Date() : null,
+						})
+						.where(
+							and(
+								eq(treatmentPlanStages.organizationId, organizationId),
+								eq(treatmentPlanStages.stageOrder, phaseNum),
+								or(
+									eq(treatmentPlanStages.planTitle, plan.name),
+									sql`${treatmentPlanStages.planTitle} ILIKE ${`%${plan.name}%`}`,
+								),
 							),
 						);
 				}

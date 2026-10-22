@@ -48,6 +48,12 @@ export interface TreatmentPlanStageOption {
 	readonly stageKind: string;
 	readonly amountKop: number;
 	readonly itemsCount: number;
+	readonly advanceAlreadyPaidKop?: number | undefined;
+	readonly advanceAlreadyPaidRub?: number | undefined;
+	readonly paidAmountKop?: number | undefined;
+	readonly paidAmountRub?: number | undefined;
+	readonly remainingDueKop?: number | undefined;
+	readonly remainingDueRub?: number | undefined;
 }
 
 export const DEFAULT_TREATMENT_STAGES: readonly TreatmentPlanStageOption[] = [

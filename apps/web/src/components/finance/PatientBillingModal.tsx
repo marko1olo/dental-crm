@@ -62,6 +62,10 @@ export interface PatientBillingPlanStage {
 	readonly totalAmountRub?: number | undefined;
 	readonly totalRub?: number | undefined;
 	readonly totalPriceKopecks?: number | undefined;
+	readonly paidAmountRub?: number | undefined;
+	readonly paidAmountKopecks?: number | undefined;
+	readonly remainingAmountRub?: number | undefined;
+	readonly remainingAmountKopecks?: number | undefined;
 	readonly status?: string | undefined;
 	readonly items?: readonly any[] | undefined;
 }
@@ -226,17 +230,32 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 
 	const getStageAmountRub = (stg: PatientBillingPlanStage | null | undefined): number => {
 		if (!stg) return 0;
-		if (typeof stg.totalAmountRub === "number") return stg.totalAmountRub;
-		if (typeof stg.totalRub === "number") return stg.totalRub;
-		if (typeof stg.totalPriceKopecks === "number") return stg.totalPriceKopecks / 100;
-		if (stg.items && stg.items.length > 0) {
-			return stg.items.reduce((sum: number, it: any) => {
-				const pr = it.priceRub ?? (it.priceKopecks ? it.priceKopecks / 100 : (it.totalRub ?? 0));
-				const qty = it.quantity ?? 1;
-				return sum + pr * qty;
-			}, 0);
-		}
-		return 0;
+		if (typeof stg.remainingAmountRub === "number") return Math.max(0, stg.remainingAmountRub);
+		if (typeof stg.remainingAmountKopecks === "number") return Math.max(0, stg.remainingAmountKopecks / 100);
+
+		const gross =
+			typeof stg.totalAmountRub === "number"
+				? stg.totalAmountRub
+				: typeof stg.totalRub === "number"
+					? stg.totalRub
+					: typeof stg.totalPriceKopecks === "number"
+						? stg.totalPriceKopecks / 100
+						: stg.items && stg.items.length > 0
+							? stg.items.reduce((sum: number, it: any) => {
+									const pr = it.priceRub ?? (it.priceKopecks ? it.priceKopecks / 100 : (it.totalRub ?? 0));
+									const qty = it.quantity ?? 1;
+									return sum + pr * qty;
+								}, 0)
+							: 0;
+
+		const paid =
+			typeof stg.paidAmountRub === "number"
+				? stg.paidAmountRub
+				: typeof stg.paidAmountKopecks === "number"
+					? stg.paidAmountKopecks / 100
+					: 0;
+
+		return Math.max(0, gross - paid);
 	};
 
 	const handleSelectPlanStage = (stg: PatientBillingPlanStage) => {

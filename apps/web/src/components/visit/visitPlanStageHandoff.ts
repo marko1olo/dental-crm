@@ -27,6 +27,8 @@ export interface PlanStageOption {
 	totalPriceRub: number;
 	servicesCount: number;
 	isCurrentTarget?: boolean;
+	status?: "planned" | "in_progress" | "completed";
+	isCompleted?: boolean;
 }
 
 /**
@@ -241,6 +243,18 @@ export function groupTreatmentPlanByStages(
 
 		const isCurrentTarget = Boolean(targetStageInfo?.stageNumber === phaseNum);
 
+		const isCompleted =
+			phaseItems.length > 0 &&
+			phaseItems.every((it) => Boolean(it.isCompleted || it.status === "completed" || it.planStatus === "completed"));
+		const isInProgress =
+			!isCompleted &&
+			phaseItems.some((it) => Boolean(it.isCompleted || it.status === "completed" || it.status === "in_progress"));
+		const stageStatus: "planned" | "in_progress" | "completed" = isCompleted
+			? "completed"
+			: isInProgress
+				? "in_progress"
+				: "planned";
+
 		let title = "";
 		if (isCurrentTarget && targetStageInfo?.stageTitle) {
 			title = targetStageInfo.stageTitle;
@@ -259,6 +273,8 @@ export function groupTreatmentPlanByStages(
 			totalPriceRub,
 			servicesCount: phaseItems.length,
 			isCurrentTarget,
+			status: stageStatus,
+			isCompleted,
 		};
 	});
 
@@ -276,22 +292,35 @@ export function groupTreatmentPlanByStages(
 export function formatStageItemForBilling(it: any): {
 	code804n: string;
 	title: string;
+	toothNumber?: number | undefined;
 	toothCode?: string | undefined;
 	quantity: number;
 	unitPriceRub: number;
 	discountRub: number;
+	discountPercent?: number | undefined;
 } {
-	const toothCandidate = it.toothNumber ? String(it.toothNumber) : (it.toothCode ? String(it.toothCode) : undefined);
-	const priceVal = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
+	const toothNum =
+		typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber)
+			? it.toothNumber
+			: typeof it.toothNumber === "string" && /^\d+$/.test(it.toothNumber)
+				? Number.parseInt(it.toothNumber, 10)
+				: typeof it.toothCode === "string" && /^\d+$/.test(it.toothCode)
+					? Number.parseInt(it.toothCode, 10)
+					: undefined;
+	const toothCandidate = toothNum !== undefined ? String(toothNum) : (it.toothCode ? String(it.toothCode) : undefined);
+	const priceVal = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? (typeof it.priceKopecks === "number" ? it.priceKopecks / 100 : 0));
 	const discountVal = Number(it.discountRub ?? it.discount ?? 0);
+	const discountPercent = Number(it.discountPercent ?? (priceVal > 0 && discountVal > 0 ? Math.round((discountVal / priceVal) * 100) : 0));
 
 	return {
 		code804n: it.code804n || it.priceId || "A16.07.001",
 		title: it.name || it.title || it.medicalTitleRu || it.patientFriendlyTitleRu || "Услуга плана лечения",
+		...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
 		...(toothCandidate ? { toothCode: toothCandidate } : {}),
 		quantity: Number(it.quantity || 1),
 		unitPriceRub: priceVal,
 		discountRub: discountVal,
+		...(discountPercent > 0 ? { discountPercent } : {}),
 	};
 }
 
