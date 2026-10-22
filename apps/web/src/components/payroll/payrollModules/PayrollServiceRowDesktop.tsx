@@ -83,7 +83,7 @@ export const PayrollServiceRowDesktop: React.FC<PayrollServiceRowDesktopProps> =
 					)}
 					{hasPartialPayment && (
 						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-							Оплачено 54-ФЗ: {Math.round((srv.paidAmountKop ?? 0) / 100).toLocaleString("ru-RU")} ₽ из {Math.round(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
+							Оплачено по кассе: {Math.round((srv.paidAmountKop ?? 0) / 100).toLocaleString("ru-RU")} ₽ из {Math.round(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
 						</span>
 					)}
 				</div>

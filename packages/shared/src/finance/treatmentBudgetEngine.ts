@@ -673,7 +673,7 @@ tr { page-break-inside: avoid; }
 <div style="font-weight: bold; margin-bottom: 2px;">Пациент (Потребитель):</div>
 <div><strong>ФИО:</strong> ${patientName}</div>
 <div><strong>Дата рождения:</strong> ${birthDate}</div>
-<div><strong>Медицинская карта 043/у:</strong> ${cardNumber}</div>
+<div><strong>Медицинская карта:</strong> ${cardNumber}</div>
 <div><strong>Телефон:</strong> ${patientPhone}</div>
 <div><strong>Лечащий врач:</strong> ${doctorName} (${specialty})</div>
 </td>

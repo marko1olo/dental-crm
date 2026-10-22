@@ -34,7 +34,7 @@ export function renderDoctorPayslipServicesTableHtml(
 
 	return `
 	<h2 style="font-size: 11pt; margin: 20px 0 8px 0; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
-		Детализация приёмов и оказанных услуг по пациентам (Касса 54-ФЗ)
+		Детализация приёмов и оказанных услуг по пациентам (Кассовая оплата)
 	</h2>
 	<table class="table" style="font-size: 8.5pt;">
 		<thead>
@@ -44,7 +44,7 @@ export function renderDoctorPayslipServicesTableHtml(
 				<th>Пациент (№ карты)</th>
 				<th style="width: 40px; text-align: center;">Зуб</th>
 				<th>Наименование услуги</th>
-				<th style="width: 90px; text-align: right;">Оплата 54-ФЗ</th>
+				<th style="width: 90px; text-align: right;">Оплачено в кассу</th>
 				<th style="width: 80px; text-align: right;">Вычет ЗТЛ</th>
 				<th style="width: 90px; text-align: right;">Начислено</th>
 			</tr>

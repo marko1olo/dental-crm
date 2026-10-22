@@ -79,28 +79,28 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="inline-flex items-center justify-center gap-1 px-3 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer"
+						className="inline-flex items-center justify-center gap-1 px-3 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer shrink-0"
 						data-testid="doctor-payroll-mobile-messenger-btn"
 					>
-						<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-						<span>{copyFeedback ?? "Мессенджер"}</span>
+						<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+						<span className="whitespace-nowrap">{copyFeedback ?? "В чат"}</span>
 					</button>
 					<button
 						type="button"
 						onClick={handlePayoutAndPrint}
-						className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[44px] px-3 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 transition-all cursor-pointer active:scale-98 shadow-sm"
+						className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[44px] px-3 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 transition-all cursor-pointer active:scale-98 shadow-sm whitespace-nowrap"
 						data-testid="doctor-payroll-mobile-print-btn"
 					>
-						<Printer className="w-4 h-4" />
-						<span>✓ Выплатить и распечатать</span>
+						<Printer className="w-4 h-4 shrink-0" />
+						<span className="whitespace-nowrap">Печать листа</span>
 					</button>
 					<button
 						type="button"
 						onClick={onClose}
-						className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+						className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer shrink-0"
 						aria-label="Закрыть окно"
 					>
-						<X className="w-4 h-4" />
+						<X className="w-4 h-4 shrink-0" />
 					</button>
 				</div>
 			</div>

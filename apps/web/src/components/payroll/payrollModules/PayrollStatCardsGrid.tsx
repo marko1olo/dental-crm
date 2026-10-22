@@ -24,7 +24,7 @@ export const PayrollStatCardsGrid: React.FC<PayrollStatCardsGridProps> = ({
 		<>
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 				<div className="payroll-stat-card">
-					<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Выручка брутто (Касса 54-ФЗ)</span>
+					<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Выручка брутто (Оплачено в кассу)</span>
 					<span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400">{grossRevenueRub.toLocaleString("ru-RU")} ₽</span>
 					<span className="text-[12px] text-[var(--muted,#64748b)]">
 						{payrollResult.serviceCount} услуг

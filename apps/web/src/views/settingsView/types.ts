@@ -81,7 +81,7 @@ export const CANONICAL_SETTINGS_TABS: CanonicalSettingsTabDefinition[] = [
 	{
 		id: "prices",
 		title: "Прайс-лист процедур",
-		description: "Каталог услуг, пресеты 804н, себестоимость и тарифы",
+		description: "Каталог услуг, клинические шаблоны, себестоимость и тарифы",
 	},
 	{
 		id: "staff",
@@ -91,12 +91,12 @@ export const CANONICAL_SETTINGS_TABS: CanonicalSettingsTabDefinition[] = [
 	{
 		id: "hardware",
 		title: "Оборудование и касса",
-		description: "Касса 54-ФЗ, ККТ, визиографы, датчики и оповещения",
+		description: "Касса и чеки, ККТ, визиографы, датчики и оповещения",
 	},
 	{
 		id: "imports",
 		title: "Импорт данных",
-		description: "Экспресс-перенос из IDENT, DentalPRO, Инфодент, 1С и Excel",
+		description: "Экспресс-перенос из других МИС, 1С и Excel",
 	},
 ];
 

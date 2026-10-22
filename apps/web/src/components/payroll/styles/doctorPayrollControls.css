@@ -22,6 +22,14 @@
 	background-color: var(--paper-soft);
 	border: 1px solid var(--line-subtle, var(--line));
 	border-radius: 10px;
+	max-width: 100%;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dente-segmented-bar::-webkit-scrollbar {
+	display: none;
 }
 
 .dente-segmented-item {

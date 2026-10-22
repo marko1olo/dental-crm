@@ -23,7 +23,7 @@ export const PayrollHeaderPeriodFilters: React.FC<PayrollHeaderPeriodFiltersProp
 			<div className="flex items-center gap-2 flex-wrap">
 				<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5 shrink-0">
 					<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-					Период расчета:
+					Период:
 				</span>
 				<div className="dente-segmented-bar">
 					<button

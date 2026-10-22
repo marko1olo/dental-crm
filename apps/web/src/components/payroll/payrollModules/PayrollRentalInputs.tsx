@@ -122,8 +122,8 @@ export const PayrollRentalInputs: React.FC<PayrollRentalInputsProps> = ({
 
 			<div className="text-[11px] text-[var(--teal,#0d9488)] font-medium">
 				{chairRentalMode === "fixed"
-					? `Прозрачная соло-экономика: Выручка (касса 54-ФЗ) − Аренда (${shiftsCount} см × ${shiftRateRub.toLocaleString("ru-RU")} ₽) − ЗТЛ − Материалы = 100% чистый доход`
-					: "Прозрачная соло-экономика: Выручка (касса 54-ФЗ) − ЗТЛ − Материалы = Чистая база → Сплит 70% врачу, 30% клинике за аренду кресла"}
+					? `Прозрачная соло-экономика: Кассовая выручка − Аренда (${shiftsCount} см × ${shiftRateRub.toLocaleString("ru-RU")} ₽) − ЗТЛ − Материалы = 100% чистый доход`
+					: "Прозрачная соло-экономика: Кассовая выручка − ЗТЛ − Материалы = Чистая база → Сплит 70% врачу, 30% клинике за аренду кресла"}
 			</div>
 		</div>
 	);

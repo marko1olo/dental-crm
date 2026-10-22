@@ -212,7 +212,7 @@ export function renderSupplementaryAgreementHtml(draft: SupplementaryAgreementDr
 			<tr>
 				<th style="width:30px;text-align:center;">№</th>
 				<th style="width:60px;text-align:center;">Область</th>
-				<th>Наименование услуги (Номенклатура 804н)</th>
+				<th>Наименование медицинской услуги</th>
 				<th style="width:40px;text-align:center;">Кол-во</th>
 				<th style="width:90px;text-align:right;">Старая цена</th>
 				<th style="width:90px;text-align:right;">Новая цена</th>

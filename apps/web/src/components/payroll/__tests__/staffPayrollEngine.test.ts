@@ -61,8 +61,8 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.equal(res.totalLabDeductionsKop, 0);
 			// Total net base = 1,200,000 - 100,000 = 1,100,000 kop
 			assert.equal(res.totalNetBaseKop, 1100000);
-			// Base commission = 25% of 900,000 (therapy net) = 225,000 kop
-			assert.equal(res.earnedBaseCommissionKop, 225000);
+			// Base commission = 30% of 900,000 (therapy net) = 270,000 kop
+			assert.equal(res.earnedBaseCommissionKop, 270000);
 			// Retail commission = 10% of 200,000 = 20,000 kop
 			assert.equal(res.earnedRetailCommissionKop, 20000);
 			// Minimum guarantee floor applies (60,000 RUB = 6,000,000 kop)
@@ -101,15 +101,15 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.equal(res.totalMaterialDeductionsKop, 0); // Orthopedist preset deducts lab only
 			// Net base = 1,200,000 - 300,000 = 900,000 RUB = 90,000,000 kop
 			assert.equal(res.totalNetBaseKop, 90000000);
-			// Base commission = 25% of 90,000,000 = 22,500,000 kop (225,000 RUB)
-			assert.equal(res.earnedBaseCommissionKop, 22500000);
+			// Base commission = 30% of 90,000,000 = 27,000,000 kop (270,000 RUB)
+			assert.equal(res.earnedBaseCommissionKop, 27000000);
 			// Revenue tier KPI = 5% of 90,000,000 = 4,500,000 kop (45,000 RUB)
 			assert.equal(res.revenueKpiPercent, 5);
 			assert.equal(res.revenueKpiBonusKop, 4500000);
 			// Comprehensive plans bonus = 2,500,000 kop (25,000 RUB)
 			assert.equal(res.comprehensivePlanBonusKop, 2500000);
-			// Total gross payout = 22,500,000 + 4,500,000 + 2,500,000 = 29,500,000 kop (295,000 RUB)
-			assert.equal(res.grossPayoutBeforeTaxKop, 29500000);
+			// Total gross payout = 27,000,000 + 4,500,000 + 2,500,000 = 34,000,000 kop (340,000 RUB)
+			assert.equal(res.grossPayoutBeforeTaxKop, 34000000);
 			assert.equal(res.minimumGuaranteeApplied, false);
 		});
 	});
@@ -356,8 +356,8 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			if (docResult && docResult.role === "doctor") {
 				assert.equal(docResult.minimumGuaranteeApplied, true);
 				assert.equal(docResult.grossPayoutBeforeTaxKop, 6000000); // 60,000 RUB
-				assert.equal(docResult.earnedBaseCommissionKop, 500000); // 5,000 RUB
-				assert.equal(docResult.guaranteeTopUpKop, 5500000); // 55,000 RUB
+				assert.equal(docResult.earnedBaseCommissionKop, 600000); // 6,000 RUB (30% of 20,000 RUB)
+				assert.equal(docResult.guaranteeTopUpKop, 5400000); // 54,000 RUB (topup to 60,000 RUB min guarantee)
 			}
 
 			const csv = generateStaffPayrollT51Csv(summary);
@@ -366,12 +366,12 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.ok(doctorRow, "Doctor row exists in CSV");
 
 			const cols = doctorRow.split(";");
-			const col8Base = Number.parseFloat(cols[7] ?? "0"); // 5000.00
-			const col9Bonus = Number.parseFloat(cols[8] ?? "0"); // 55000.00
+			const col8Base = Number.parseFloat(cols[7] ?? "0"); // 6000.00
+			const col9Bonus = Number.parseFloat(cols[8] ?? "0"); // 54000.00
 			const col10Gross = Number.parseFloat(cols[9] ?? "0"); // 60000.00
 
-			assert.equal(col8Base, 5000.0);
-			assert.equal(col9Bonus, 55000.0);
+			assert.equal(col8Base, 6000.0);
+			assert.equal(col9Bonus, 54000.0);
 			assert.equal(col10Gross, 60000.0);
 			assert.equal(
 				Math.round((col8Base + col9Bonus) * 100),
@@ -385,7 +385,7 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 				xml.includes("Доплата до гарантированного оклада (минимальная гарантия)"),
 				"1C:ZUP XML must have guarantee top-up accrual",
 			);
-			assert.ok(xml.includes("<Сумма>55000.00</Сумма>"), "1C:ZUP XML has exact top-up amount");
+			assert.ok(xml.includes("<Сумма>54000.00</Сумма>"), "1C:ZUP XML has exact top-up amount");
 		});
 	});
 

@@ -106,7 +106,7 @@ export const PayrollServiceCardMobile: React.FC<PayrollServiceCardMobileProps> =
 				)}
 				{hasPartialPayment && (
 					<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-						Частичная оплата 54-ФЗ
+						Частичная оплата (касса)
 					</span>
 				)}
 			</div>
