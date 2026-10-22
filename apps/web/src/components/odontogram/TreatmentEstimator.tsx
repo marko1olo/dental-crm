@@ -214,8 +214,12 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		const loadPlan = async () => {
 			let status: number | null = null;
 			try {
+				const origin =
+					typeof window !== "undefined" && window.location?.origin
+						? window.location.origin
+						: "http://localhost:5173";
 				const response = await fetch(
-					`/api/patients/${patientId}/treatment-plans`,
+					`${origin}/api/patients/${encodeURIComponent(patientId)}/treatment-plans`,
 					{
 						headers: denteAdminSecretRequestHeaders(),
 					},

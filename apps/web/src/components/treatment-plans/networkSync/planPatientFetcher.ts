@@ -13,7 +13,8 @@ export async function fetchPatientTreatmentPlans(
 	targetPlanId?: string | null,
 ): Promise<LoadedPlanResult | null> {
 	try {
-		const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
+		const origin = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "http://localhost:5173";
+		const res = await fetch(`${origin}/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
 			headers: denteAdminSecretRequestHeaders(),
 		});
 		if (!res.ok) return null;

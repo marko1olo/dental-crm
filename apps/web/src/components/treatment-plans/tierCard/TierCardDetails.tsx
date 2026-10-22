@@ -15,7 +15,7 @@ export const TierCardDetails: React.FC<TierCardDetailsProps> = ({ tier }) => {
 					<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Shield size={11} /> Гарантия
 					</span>
-					<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears)}>
+					<strong className="text-[11px] text-[var(--ink,#0f172a)] leading-tight break-words mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears)}>
 						{formatWarrantyYearsText(tier.warrantyYears)}
 					</strong>
 				</div>
@@ -24,7 +24,7 @@ export const TierCardDetails: React.FC<TierCardDetailsProps> = ({ tier }) => {
 					<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Clock size={11} /> Срок службы
 					</span>
-					<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}>
+					<strong className="text-[11px] text-[var(--ink,#0f172a)] leading-tight break-words mt-0.5" title={formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}>
 						{formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}
 					</strong>
 				</div>
