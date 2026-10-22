@@ -102,23 +102,12 @@ export const channelLabels: Record<string, string> = {
 
 export async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch((err) => {
-		showToast(
-			actionFailureToast(
-				"Ошибка ответа сервера",
-				(err as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
+		showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
 		return null;
 	})) as unknown;
 	if (!response.ok) {
-		const message =
-			payload &&
-			typeof payload === "object" &&
-			"message" in payload &&
-			typeof payload.message === "string"
-				? payload.message
-				: `Сервер ответил ${response.status}`;
+		const message = payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+			? payload.message : `Сервер ответил ${response.status}`;
 		throw new Error(message);
 	}
 	return payload as T;

@@ -1,130 +1,57 @@
 import type {
-	CommunicationTaskOutcome,
-	Dashboard,
-	GeneratedDocument,
-	StaffRole,
+	CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole,
 } from "@dental/shared";
-import { CheckCircle2, FileText, MessageSquare } from "lucide-react";
+import { FileText, MessageSquare } from "lucide-react";
 import { useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { useSettingsStore } from "../../store/settingsStore";
 import { showToast } from "../GlobalToast";
+import { AppointmentConfirmWidget } from "./AppointmentConfirmWidget";
+import {
+	CommunicationOutcomeSelector,
+	communicationTaskOutcomeLabels,
+	communicationTaskOutcomeOptions,
+} from "./CommunicationOutcomeSelector";
+
+export { communicationTaskOutcomeLabels, communicationTaskOutcomeOptions };
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 
-export const communicationTaskOutcomeLabels: Record<
-	CommunicationTaskOutcome,
-	string
-> = {
-	no_answer: "Нет ответа",
-	callback_requested: "Перезвонить",
-	reschedule_requested: "Перенос записи",
-	promised_payment: "Обещал оплату",
-	document_pickup: "Заберет документы",
-};
-
-export const communicationTaskOutcomeOptions = Object.entries(
-	communicationTaskOutcomeLabels,
-) as [CommunicationTaskOutcome, string][];
-
 export interface CommunicationTaskCardProps {
 	communicationChannelLabels: Record<CommunicationTask["channel"], string>;
-	communicationDocumentTaskActionLabels: Partial<
-		Record<GeneratedDocument["kind"], string>
-	>;
+	communicationDocumentTaskActionLabels: Partial<Record<GeneratedDocument["kind"], string>>;
 	communicationIntentLabels: Record<CommunicationTask["intent"], string>;
 	communicationPriorityLabels: Record<CommunicationTask["priority"], string>;
 	communicationSavingTaskId: string | null;
 	communicationStatusLabels: Record<CommunicationTask["status"], string>;
 	completionNoteDescriptionId: string;
-	completeCommunicationTask: (
-		taskId: string,
-		outcome: CommunicationTaskOutcome,
-	) => void | Promise<void>;
+	completeCommunicationTask: (taskId: string, outcome: CommunicationTaskOutcome) => void | Promise<void>;
 	documentKinds: readonly GeneratedDocument["kind"][];
 	documentLabels: Record<GeneratedDocument["kind"], string>;
 	formatDateTime: (value: string) => string;
-	openCommunicationTaskDocumentWorkflow: (
-		task: CommunicationTask,
-		kind: GeneratedDocument["kind"],
-	) => void;
+	openCommunicationTaskDocumentWorkflow: (task: CommunicationTask, kind: GeneratedDocument["kind"]) => void;
 	staffRoleLabels: Record<StaffRole, string>;
 	task: CommunicationTask;
 	appointments: Dashboard["appointments"];
 }
 
 export function CommunicationTaskCard({
-	communicationChannelLabels,
-	communicationDocumentTaskActionLabels,
-	communicationIntentLabels,
-	communicationPriorityLabels,
-	communicationSavingTaskId,
-	communicationStatusLabels,
-	completionNoteDescriptionId,
-	completeCommunicationTask,
-	documentKinds,
-	documentLabels,
-	formatDateTime,
-	openCommunicationTaskDocumentWorkflow,
-	staffRoleLabels,
-	task,
-	appointments,
+	communicationChannelLabels, communicationDocumentTaskActionLabels,
+	communicationIntentLabels, communicationPriorityLabels,
+	communicationSavingTaskId, communicationStatusLabels,
+	completionNoteDescriptionId, completeCommunicationTask,
+	documentKinds, documentLabels, formatDateTime,
+	openCommunicationTaskDocumentWorkflow, staffRoleLabels, task, appointments,
 }: CommunicationTaskCardProps) {
-	const [selectedOutcome, setSelectedOutcome] = useState<
-		CommunicationTaskOutcome | ""
-	>("");
-	const [apptActionLoading, setApptActionLoading] = useState(false);
-	const [apptActionDone, setApptActionDone] = useState<
-		"confirmed" | "cancelled" | null
-	>(null);
-	const [apptActionError, setApptActionError] = useState<string | null>(null);
+	const [selectedOutcome, setSelectedOutcome] = useState<CommunicationTaskOutcome | "">("");
 	const isTaskSaving = communicationSavingTaskId === task.id;
 	const communicationSaveInProgress = communicationSavingTaskId !== null;
-	const outcomeSelectId = `communication-task-outcome-${task.id}`;
 	const savingStatusId = `communication-task-saving-${task.id}`;
 
-	const linkedAppointment =
-		task.intent === "appointment_confirmation" && task.appointmentId
-			? (appointments.find((a) => a.id === task.appointmentId) ?? null)
-			: null;
-
-	const scheduleAdminSecretSession = useSettingsStore(
-		(state) => state.scheduleAdminSecretSession,
-	);
-
-	async function handleConfirmAppointment(status: "confirmed" | "cancelled") {
-		if (!task.appointmentId) return;
-		setApptActionLoading(true);
-		setApptActionError(null);
-		try {
-			const res = await fetch(`/api/appointments/${task.appointmentId}`, {
-				method: "PATCH",
-				credentials: "include",
-				headers: denteAdminSecretRequestHeaders(
-					{ "Content-Type": "application/json" },
-					scheduleAdminSecretSession,
-				),
-				body: JSON.stringify({ status }),
-			});
-			if (!res.ok) {
-				setApptActionError(
-					res.status === 403
-						? "Нет доступа к изменению расписания: введите секрет расписания в настройках"
-						: `Ошибка обновления приёма (${res.status})`,
-				);
-			} else {
-				setApptActionDone(status);
-			}
-		} catch {
-			setApptActionError("Ошибка сети при обновлении приёма");
-		} finally {
-			setApptActionLoading(false);
-		}
-	}
+	const linkedAppointment = task.intent === "appointment_confirmation" && task.appointmentId
+		? (appointments?.find((a) => a.id === task.appointmentId) ?? null) : null;
 
 	function handleCompleteTask() {
 		if (!selectedOutcome) {
-			document.getElementById(outcomeSelectId)?.focus();
+			document.getElementById(`communication-task-outcome-${task.id}`)?.focus();
 			showToast("Выберите результат звонка", "info");
 			return;
 		}
@@ -133,171 +60,56 @@ export function CommunicationTaskCard({
 
 	return (
 		<article
-			className={`communication-task priority-${task.priority}`}
-			key={task.id}
-			style={{
-				contentVisibility: "auto",
-				containIntrinsicSize: "1px 64px",
-				contain: "content",
-			}}
+			className={`communication-task priority-${task.priority}`} key={task.id}
+			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 64px", contain: "content" }}
 		>
 			<MessageSquare aria-hidden="true" />
 			<div>
 				<span>
-					{communicationIntentLabels[task.intent]} ·{" "}
-					{communicationChannelLabels[task.channel]} ·{" "}
-					{staffRoleLabels[task.assignedRole]}
+					{communicationIntentLabels[task.intent]} · {communicationChannelLabels[task.channel]} · {staffRoleLabels[task.assignedRole]}
 				</span>
 				<h3>{task.title}</h3>
 				<p>{task.body}</p>
 				<small>
-					{formatDateTime(task.dueAt)} ·{" "}
-					{communicationPriorityLabels[task.priority]} ·{" "}
-					{communicationStatusLabels[task.status]}
+					{formatDateTime(task.dueAt)} · {communicationPriorityLabels[task.priority]} · {communicationStatusLabels[task.status]}
 				</small>
 			</div>
 			{task.status === "completed" ? (
 				<span className="status-pill status-completed">
-					{task.lastOutcome
-						? communicationTaskOutcomeLabels[task.lastOutcome]
-						: "закрыто"}
+					{task.lastOutcome ? communicationTaskOutcomeLabels[task.lastOutcome] : "закрыто"}
 				</span>
 			) : (
 				<div className="communication-task-actions">
 					{linkedAppointment ? (
-						<div
-							className="appointment-confirm-widget"
-							style={{
-								borderLeft: "3px solid var(--teal)",
-								paddingLeft: "10px",
-								marginBottom: "8px",
-							}}
-						>
-							<p
-								style={{
-									margin: "0 0 6px",
-									fontSize: "12px",
-									color: "var(--muted)",
-								}}
-							>
-								Приём:{" "}
-								<strong>{formatDateTime(linkedAppointment.startsAt)}</strong>
-							</p>
-							{apptActionDone ? (
-								<span className={`status-pill status-${apptActionDone}`}>
-									Приём{" "}
-									{apptActionDone === "confirmed" ? "подтверждён" : "отменён"}
-								</span>
-							) : (
-								<button
-									type="button"
-									className="secondary-button"
-									onClick={() => void handleConfirmAppointment("confirmed")}
-									disabled={apptActionLoading || communicationSaveInProgress}
-									aria-label="Подтвердить приём"
-									style={{ minHeight: "36px" }}
-								>
-									Подтвердить приём
-								</button>
-							)}
-							{apptActionError ? (
-								<p
-									role="alert"
-									style={{
-										color: "var(--bad-fg, #b42318)",
-										fontSize: "12px",
-										marginTop: "4px",
-									}}
-								>
-									{apptActionError}
-								</p>
-							) : null}
-						</div>
+						<AppointmentConfirmWidget
+							appointmentId={task.appointmentId!} startsAt={linkedAppointment.startsAt}
+							formatDateTime={formatDateTime} disabled={communicationSaveInProgress}
+						/>
 					) : (
 						documentKinds?.slice(0, 1).map((kind) => {
-							const documentActionLabel =
-								communicationDocumentTaskActionLabels[kind] ??
-								documentLabels[kind];
+							const label = communicationDocumentTaskActionLabels[kind] ?? documentLabels[kind];
 							return (
 								<button
-									className="secondary-button"
-									type="button"
-									key={kind}
-									onClick={() =>
-										openCommunicationTaskDocumentWorkflow(task, kind)
-									}
-									aria-label={`${documentActionLabel}: ${task.title}`}
-									style={{ minHeight: "36px" }}
+									className="secondary-button" type="button" key={kind}
+									onClick={() => openCommunicationTaskDocumentWorkflow(task, kind)}
+									aria-label={`${label}: ${task.title}`} style={{ minHeight: "36px" }}
 								>
-									<FileText aria-hidden="true" /> {documentActionLabel}
+									<FileText aria-hidden="true" /> {label}
 								</button>
 							);
 						})
 					)}
-					{isTaskSaving ? (
-						<span
-							className="communication-task-saving"
-							id={savingStatusId}
-							role="status"
-							aria-live="polite"
-						>
+					{isTaskSaving && (
+						<span className="communication-task-saving" id={savingStatusId} role="status" aria-live="polite">
 							Сохраняю в журнал
 						</span>
-					) : null}
-					<div className="flex items-center gap-2 flex-wrap">
-						<label htmlFor={outcomeSelectId} className="sr-only">
-							Исход
-						</label>
-						<select
-							id={outcomeSelectId}
-							value={selectedOutcome}
-							onChange={(e) =>
-								setSelectedOutcome(e.target.value as CommunicationTaskOutcome)
-							}
-							className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
-						>
-							<option value="">Исход звонка / связи...</option>
-							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
-								<option key={outcome} value={outcome}>
-									{label}
-								</option>
-							))}
-						</select>
-						<div className="sr-only" aria-hidden="true">
-							{communicationTaskOutcomeOptions?.map(([outcome, label]) => (
-								<button
-									key={outcome}
-									type="button"
-									data-testid={`communication-outcome-${outcome}`}
-									data-outcome={outcome}
-									onClick={() =>
-										setSelectedOutcome(outcome as CommunicationTaskOutcome)
-									}
-									disabled={communicationSaveInProgress}
-								>
-									{label}
-								</button>
-							))}
-						</div>
-						<button
-							aria-label={`Закрыть задачу связи: ${task.title}`}
-							aria-busy={isTaskSaving || undefined}
-							aria-describedby={
-								isTaskSaving
-									? `${completionNoteDescriptionId} ${savingStatusId}`
-									: completionNoteDescriptionId
-							}
-							className="primary-button"
-							type="button"
-							data-testid="communication-task-complete-btn"
-							onClick={handleCompleteTask}
-							disabled={communicationSaveInProgress}
-							style={{ minHeight: "44px" }}
-						>
-							<CheckCircle2 aria-hidden="true" size={14} />{" "}
-							{isTaskSaving ? "Закрываю" : "Закрыть"}
-						</button>
-					</div>
+					)}
+					<CommunicationOutcomeSelector
+						taskId={task.id} taskTitle={task.title} selectedOutcome={selectedOutcome}
+						setSelectedOutcome={setSelectedOutcome} onComplete={handleCompleteTask}
+						isTaskSaving={isTaskSaving} disabled={communicationSaveInProgress}
+						completionNoteDescriptionId={completionNoteDescriptionId} savingStatusId={savingStatusId}
+					/>
 				</div>
 			)}
 		</article>

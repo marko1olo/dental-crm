@@ -1,0 +1,43 @@
+feat(finance): unify fast checkout SSOT with 54-FZ zero-float math and Apple HIG
+
+## Контекст и архитектурная цель (Why):
+- Исполнение Высшей Конституции THE HAMMER, Мандата 8e (Автономия врача), Мандата 8n (Суверенитет соло-практики и малой клиники), Мандата 8x & 8ap (Искоренение номеров законов и птичьего канцелярита), Мандата 8ze (Apple HIG Touch Ergonomics).
+- Ликвидация дублирования 4 разрозненных кассовых модалок оплаты (`PatientBillingModal`, `PaymentSplitModal`, `PaymentModal`, `FastCheckoutModal`) в пользу единого канонического SSOT-модала `FastCheckoutModal.tsx`.
+- Строгая целочисленная копеечная математика транзакций, сдачи и сплитов (`amountKopecks`, ноль float-дрифта) с автобалансировкой остатка.
+- Отмена требования ИНН для физических лиц по закону 54-ФЗ (тег 1228 ФФД 1.2 строго для ЮЛ/ИП) без блокировки кнопок кассы.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/finance/FastCheckoutModal.tsx:
+  * Расширен интерфейс пропсов (`amountKopecks`, `amountRub`, `defaultMethod="split"`, `initialWarranty100`, `initialDiscountPercent`, `onSuccess`).
+  * Добавлен баннер `banner-payment-zero-warranty` и кнопка закрытия при нулевом гарантийном приеме.
+  * Мобильная сумма по центру выведена размером 36px bold.
+- apps/web/src/components/finance/PatientBillingModal.tsx:
+  * Переведен на делегирование в FastCheckoutModal при открытии кассового чека.
+- apps/web/src/components/finance/PaymentSplitModal.tsx:
+  * Переведен на прямое использование FastCheckoutModal с режимом split.
+- apps/web/src/components/finance/FastCheckoutPresetsAndDiscounts.tsx:
+  * Добавлены кнопки быстрых скидок врача (0%, 5% Пенс/Утро, 10% Постоянный, 15% Комплекс, 20% Партнёр, 50% Персонал, 100% Гарантия).
+  * Бейдж активной скидки с зачеркиванием исходной суммы при применении дисконта.
+- apps/web/src/components/finance/fastCheckoutSplitModules/SplitRemainderComboChips.tsx & SplitSbpQrPanel.tsx:
+  * Добавлены селекторы и чипы остатка (`preset-three-way-split`, `btn-payment-remainder-family`, `btn-payment-remainder-5050`, `sbp-qr-embedded-container`).
+- apps/web/src/components/finance/fastCheckoutModalModules/FastCheckoutModalHeader.tsx:
+  * Добавлен тактильный Drag Handle (`w-9 h-1 rounded-full`) по стандартам Apple HIG для мобильного Bottom Sheet.
+- apps/web/src/components/payments/checkout/fastCheckout.css:
+  * На мобильных экранах (<=768px) модал трансформирован в нативный Bottom Sheet с `rounded-t-[24px]` и плавной анимацией slideUpMobile.
+- apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts:
+  * Исправлен выбор типа кассы (`.type` / `!b.isCashless`), добавлена проверка возвращаемого платежа `newPayment`.
+- docs/proofs/finance/ & apps/web/public/screenshots/:
+  * Сохранены 4 эталонных скриншота чекаута: PC Light/Dark (1440x900), Mobile Light/Dark (390x844).
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Vitest Finance: 54 сьюта пройдены со 100% успехом (407/407 PASS).
+- Vitest FastCheckout Split: 3 сьюта пройдены (40/40 PASS).
+- 4-State Visual Proof Gate: все 4 скриншота отсмотрены лично через read_file в docs/proofs/finance/:
+  * fast_checkout_pc_light_1440x900.png: 0 наездов, четкие кнопки пресетов, бейдж без ИНН для физлиц, единая Primary CTA.
+  * fast_checkout_pc_dark_1440x900.png: темная тема без слепящих белых пятен, точное соответствие токенам.
+  * fast_checkout_mobile_light_390x844.png: нативный Bottom Sheet, тач-таргеты >= 48px, сумма 36px bold, 0px горизонтального скролла.
+  * fast_checkout_mobile_dark_390x844.png: темная мобильная тема с тактильным Drag Handle и липким футером.
+
+## Синхронизация документации (Documentation Sync):
+- docs/competitive-audit/FEATURES_REGISTRY.md: добавлен Аддендум 495 (Фича #495).
+- docs/competitive-audit/BACKLOG.md: добавлена Волна 361 (Red Team Инквизитор Финансов, Кассы 54-ФЗ и Экспресс-Чекаута).

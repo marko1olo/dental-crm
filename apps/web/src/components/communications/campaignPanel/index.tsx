@@ -69,44 +69,25 @@ export function CampaignPanel(props: CampaignPanelProps = {}) {
 			</div>
 
 			<CampaignList
-				campaigns={campaigns}
-				busy={busy}
-				notice={notice}
-				openPreview={openPreview}
-				loadProgress={loadProgress}
-				campaignAction={campaignAction}
+				campaigns={campaigns} busy={busy} notice={notice}
+				openPreview={openPreview} loadProgress={loadProgress} campaignAction={campaignAction}
 			/>
 
 			<CampaignStats
-				progressFor={progressFor}
-				progress={progress}
-				progressError={progressError}
-				progressLoading={progressLoading}
-				isCampaignRunning={isRunning}
-				loadProgress={loadProgress}
-				closeProgress={closeProgress}
-				previewFor={previewFor}
-				preview={preview}
-				previewError={previewError}
-				openPreview={openPreview}
-				closePreview={closePreview}
+				progressFor={progressFor} progress={progress} progressError={progressError}
+				progressLoading={progressLoading} isCampaignRunning={isRunning}
+				loadProgress={loadProgress} closeProgress={closeProgress}
+				previewFor={previewFor} preview={preview} previewError={previewError}
+				openPreview={openPreview} closePreview={closePreview}
 			/>
 
 			<CampaignEditor
-				templates={templates}
-				title={title}
-				setTitle={setTitle}
-				templateId={templateId}
-				setTemplateId={setTemplateId}
-				scope={scope}
-				setScope={setScope}
-				monthsSinceVisit={monthsSinceVisit}
-				setMonthsSinceVisit={setMonthsSinceVisit}
-				excludeBooked={excludeBooked}
-				setExcludeBooked={setExcludeBooked}
-				busy={busy}
-				createCampaign={createCampaign}
-				variables={variables}
+				templates={templates} title={title} setTitle={setTitle}
+				templateId={templateId} setTemplateId={setTemplateId}
+				scope={scope} setScope={setScope}
+				monthsSinceVisit={monthsSinceVisit} setMonthsSinceVisit={setMonthsSinceVisit}
+				excludeBooked={excludeBooked} setExcludeBooked={setExcludeBooked}
+				busy={busy} createCampaign={createCampaign} variables={variables}
 			/>
 		</section>
 	);

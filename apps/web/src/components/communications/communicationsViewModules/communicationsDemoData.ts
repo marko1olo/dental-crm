@@ -1,0 +1,65 @@
+import type { CommunicationEvent, CommunicationTask } from "./types";
+
+export const DEMO_COMMUNICATION_TASKS: CommunicationTask[] = [
+	{
+		id: "demo-comm-task-1",
+		title: "Подтвердить приём: Смирнова А. С.",
+		body: "Запись завтра в 10:30 — лечение кариеса 16 зуба (Д-р Соколов А. В.)",
+		channel: "whatsapp",
+		intent: "appointment_confirmation",
+		priority: "normal",
+		status: "scheduled",
+		dueAt: new Date(Date.now() + 3600_000).toISOString(),
+		assignedRole: "administrator",
+		patientId: "01a00000-0000-0000-0000-000000000001",
+		appointmentId: null,
+		lastOutcome: null,
+	} as unknown as CommunicationTask,
+	{
+		id: "demo-comm-task-2",
+		title: "Контроль после имплантации: Громов И. В.",
+		body: "Уточнить самочувствие на 2-е сутки после установки имплантата Straumann 46",
+		channel: "phone",
+		intent: "post_visit_instruction",
+		priority: "high",
+		status: "scheduled",
+		dueAt: new Date(Date.now() + 7200_000).toISOString(),
+		assignedRole: "administrator",
+		patientId: "01a00000-0000-0000-0000-000000000004",
+		appointmentId: null,
+		lastOutcome: null,
+	} as unknown as CommunicationTask,
+];
+
+export const DEMO_COMMUNICATION_EVENTS: CommunicationEvent[] = [
+	{
+		id: "demo-comm-ev-1",
+		patientId: "01a00000-0000-0000-0000-000000000001",
+		patientName: "Смирнова Анна Сергеевна",
+		direction: "outbound",
+		channel: "whatsapp",
+		status: "delivered",
+		message: "Смирнова А. С.: Напоминание о записи на 10:30 доставлено",
+		createdAt: new Date(Date.now() - 1800_000).toISOString(),
+	} as unknown as CommunicationEvent,
+	{
+		id: "demo-comm-ev-2",
+		patientId: "01a00000-0000-0000-0000-000000000001",
+		patientName: "Смирнова Анна Сергеевна",
+		direction: "inbound",
+		channel: "whatsapp",
+		status: "delivered",
+		message: "Здравствуйте! Подтверждаю визит на завтра в 10:30.",
+		createdAt: new Date(Date.now() - 1200_000).toISOString(),
+	} as unknown as CommunicationEvent,
+	{
+		id: "demo-comm-ev-3",
+		patientId: "01a00000-0000-0000-0000-000000000002",
+		patientName: "Воронов Дмитрий Игоревич",
+		direction: "outbound",
+		channel: "telegram",
+		status: "delivered",
+		message: "Воронов Д. И.: Памятка после профгигиены отправлена",
+		createdAt: new Date(Date.now() - 5400_000).toISOString(),
+	} as unknown as CommunicationEvent,
+];

@@ -1,7 +1,6 @@
 import React from "react";
-import { formatMoment } from "../deliveryReportNotice.js";
-import { channelLabels, statusLabels } from "./constants";
-import { DeliveryStatusBadge } from "./DeliveryStatusBadge";
+import { statusLabels } from "./constants";
+import { DeliveryQueueRow } from "./DeliveryQueueRow";
 import type { OutboxItem } from "./types";
 
 export interface DeliveryQueueListProps {
@@ -14,16 +13,10 @@ export interface DeliveryQueueListProps {
 }
 
 export function DeliveryQueueList({
-	outbox,
-	summary,
-	statusFilter,
-	setStatusFilter,
-	busy,
-	outboxAction,
+	outbox, summary, statusFilter, setStatusFilter, busy, outboxAction,
 }: DeliveryQueueListProps) {
 	return (
 		<>
-			{/* ── Журнал ────────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Журнал отправки</h3>
 			<fieldset className="quick-chips-row p-0 m-0 border-0">
 				<legend className="sr-only">Фильтр по состоянию</legend>
@@ -66,53 +59,7 @@ export function DeliveryQueueList({
 						</thead>
 						<tbody>
 							{(outbox || []).map((item) => (
-								<tr key={item.id}>
-									<td className="ops-time" data-label="Создано">
-										{formatMoment(item.createdAt)}
-									</td>
-									<td data-label="Канал">
-										{channelLabels[item.channel] ?? item.channel}
-									</td>
-									<td data-label="Получатель">{item.recipientAddress}</td>
-									<td data-label="Текст" title={item?.body ?? ""}>
-										{(item?.body ?? "").length > 80
-											? `${(item?.body ?? "").slice(0, 80)}…`
-											: (item?.body ?? "")}
-									</td>
-									<td data-label="Состояние">
-										<DeliveryStatusBadge
-											status={item.status}
-											lastErrorMessage={item.lastErrorMessage}
-											attempts={item.attempts}
-											maxAttempts={item.maxAttempts}
-										/>
-									</td>
-									<td data-label="Действие">
-										{item.status === "queued" || item.status === "sending" ? (
-											<button
-												className="secondary-button"
-												type="button"
-												disabled={busy}
-												onClick={() => void outboxAction(item.id, "cancel")}
-											>
-												Отменить
-											</button>
-										) : item.status === "failed" ||
-											item.status === "cancelled" ||
-											item.status === "suppressed" ? (
-											<button
-												className="secondary-button"
-												type="button"
-												disabled={busy}
-												onClick={() => void outboxAction(item.id, "retry")}
-											>
-												Повторить
-											</button>
-										) : (
-											"—"
-										)}
-									</td>
-								</tr>
+								<DeliveryQueueRow key={item.id} item={item} busy={busy} outboxAction={outboxAction} />
 							))}
 						</tbody>
 					</table>

@@ -1,45 +1,20 @@
-import {
-	CampaignAudienceFilter,
-	CampaignQuickPresets,
-} from "./CampaignAudienceFilter.js";
-import {
-	type TemplateOption,
-	type TemplateVariable,
-	channelLabels,
-} from "./types.js";
+import { CampaignAudienceFilter, CampaignQuickPresets } from "./CampaignAudienceFilter.js";
+import { type TemplateOption, type TemplateVariable, channelLabels } from "./types.js";
 
 export type CampaignEditorProps = {
 	templates: TemplateOption[];
-	title: string;
-	setTitle: (title: string) => void;
-	templateId: string;
-	setTemplateId: (id: string) => void;
-	scope: "service" | "marketing";
-	setScope: (scope: "service" | "marketing") => void;
-	monthsSinceVisit: string;
-	setMonthsSinceVisit: (months: string) => void;
-	excludeBooked: boolean;
-	setExcludeBooked: (exclude: boolean) => void;
-	busy: boolean;
-	createCampaign: () => Promise<void>;
-	variables: TemplateVariable[];
+	title: string; setTitle: (title: string) => void;
+	templateId: string; setTemplateId: (id: string) => void;
+	scope: "service" | "marketing"; setScope: (scope: "service" | "marketing") => void;
+	monthsSinceVisit: string; setMonthsSinceVisit: (months: string) => void;
+	excludeBooked: boolean; setExcludeBooked: (exclude: boolean) => void;
+	busy: boolean; createCampaign: () => Promise<void>; variables: TemplateVariable[];
 };
 
 export function CampaignEditor({
-	templates,
-	title,
-	setTitle,
-	templateId,
-	setTemplateId,
-	scope,
-	setScope,
-	monthsSinceVisit,
-	setMonthsSinceVisit,
-	excludeBooked,
-	setExcludeBooked,
-	busy,
-	createCampaign,
-	variables,
+	templates, title, setTitle, templateId, setTemplateId,
+	scope, setScope, monthsSinceVisit, setMonthsSinceVisit,
+	excludeBooked, setExcludeBooked, busy, createCampaign, variables,
 }: CampaignEditorProps) {
 	return (
 		<>
@@ -51,71 +26,43 @@ export function CampaignEditor({
 			) : (
 				<>
 					<CampaignQuickPresets
-						onApplyPreset={({
-							title: presetTitle,
-							scope: presetScope,
-							months: presetMonths,
-							excludeBooked: presetExclude,
-						}) => {
-							setTitle(presetTitle);
-							setScope(presetScope);
-							setMonthsSinceVisit(presetMonths);
-							setExcludeBooked(presetExclude);
+						onApplyPreset={({ title: t, scope: s, months: m, excludeBooked: e }) => {
+							setTitle(t); setScope(s); setMonthsSinceVisit(m); setExcludeBooked(e);
 						}}
 					/>
 					<div className="ops-toolbar">
 						<span className="ops-field ops-field--grow">
 							<label htmlFor="campaign-title">Название</label>
 							<input
-								id="campaign-title"
-								type="text"
-								value={title}
-								onChange={(event) => setTitle(event.target.value)}
-								placeholder="Приглашение на осмотр"
+								id="campaign-title" type="text" value={title}
+								onChange={(e) => setTitle(e.target.value)} placeholder="Приглашение на осмотр"
 							/>
 						</span>
 						<span className="ops-field">
 							<label htmlFor="campaign-template">Шаблон</label>
-							<select
-								id="campaign-template"
-								value={templateId}
-								onChange={(event) => setTemplateId(event.target.value)}
-							>
+							<select id="campaign-template" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
 								<option value="">Выберите шаблон</option>
 								{templates.map((template) => (
 									<option key={template.id} value={template.id}>
-										{template.title} ·{" "}
-										{channelLabels[template.channel] ?? template.channel}
+										{template.title} · {channelLabels[template.channel] ?? template.channel}
 									</option>
 								))}
 							</select>
 						</span>
 						<CampaignAudienceFilter
-							scope={scope}
-							setScope={setScope}
-							monthsSinceVisit={monthsSinceVisit}
-							setMonthsSinceVisit={setMonthsSinceVisit}
-							excludeBooked={excludeBooked}
-							setExcludeBooked={setExcludeBooked}
+							scope={scope} setScope={setScope}
+							monthsSinceVisit={monthsSinceVisit} setMonthsSinceVisit={setMonthsSinceVisit}
+							excludeBooked={excludeBooked} setExcludeBooked={setExcludeBooked}
 						/>
-
-						<button
-							className="primary-button"
-							type="button"
-							disabled={busy}
-							onClick={() => void createCampaign()}
-						>
+						<button className="primary-button" type="button" disabled={busy} onClick={() => void createCampaign()}>
 							Создать и посмотреть получателей
 						</button>
-
-						{variables.length > 0 ? (
+						{variables.length > 0 && (
 							<p className="ops-hint ops-variable-catalog__title">
 								<strong>Доступные переменные шаблонов:</strong>{" "}
-								{variables
-									.map((variable) => `{${variable.key}} (${variable.label})`)
-									.join(", ")}
+								{variables.map((v) => `{${v.key}} (${v.label})`).join(", ")}
 							</p>
-						) : null}
+						)}
 					</div>
 				</>
 			)}

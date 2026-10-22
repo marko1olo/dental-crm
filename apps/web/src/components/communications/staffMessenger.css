@@ -6,7 +6,9 @@
 
 .staff-messenger-container {
 	display: flex;
-	height: 780px;
+	height: 100%;
+	min-height: 580px;
+	flex: 1 1 0%;
 	background-color: var(--paper, #ffffff);
 	border: 1px solid var(--line, #e2e8f0);
 	border-radius: 16px;
