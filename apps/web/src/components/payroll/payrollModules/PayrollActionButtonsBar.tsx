@@ -75,11 +75,11 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 
 			{/* Mobile Floating Thumb Zone Action Bar (Apple HIG) */}
 			<div className="payroll-mobile-thumb-bar sm:hidden" data-testid="doctor-payroll-mobile-thumb-bar">
-				<div className="flex items-center justify-between gap-2 w-full">
+				<div className="flex items-center justify-between gap-2.5 w-full">
 					<button
 						type="button"
 						onClick={() => onSendToMessenger("clipboard")}
-						className="inline-flex items-center justify-center gap-1 px-3 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer shrink-0"
+						className="inline-flex items-center justify-center gap-1.5 px-3.5 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,#f1f5f9)] transition-colors cursor-pointer shrink-0"
 						data-testid="doctor-payroll-mobile-messenger-btn"
 					>
 						<Share2 className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
@@ -92,15 +92,7 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 						data-testid="doctor-payroll-mobile-print-btn"
 					>
 						<Printer className="w-4 h-4 shrink-0" />
-						<span className="whitespace-nowrap">Печать листа</span>
-					</button>
-					<button
-						type="button"
-						onClick={onClose}
-						className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-hover,#f1f5f9)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer shrink-0"
-						aria-label="Закрыть окно"
-					>
-						<X className="w-4 h-4 shrink-0" />
+						<span className="whitespace-nowrap">✓ Выплатить и печать</span>
 					</button>
 				</div>
 			</div>

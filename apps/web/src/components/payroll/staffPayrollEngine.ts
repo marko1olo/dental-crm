@@ -69,23 +69,29 @@ export {
 
 export {
 	escapeXml,
+	generateDoctorPayrollCsv,
+	generateStaffPayrollCsv,
 	generateStaffPayrollT51Csv,
 	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
+	generateStaffPayrollXml,
 	generate1CZup31Xml,
+	generateStaffPayrollAccountingCsv,
 	generate1CZup31Csv,
+	generateStaffPayrollLedgerHtml,
 	generateFormT51Html,
 } from "./staffPayrollExports";
 
 import type { StaffPayrollRecord, ConsolidatedStaffPayrollSummary } from "./engine/staffPayrollAssistantAdminTypes";
 import { calculateConsolidatedStaffPayroll } from "./engine/consolidatedCalculation";
-import { generate1CZup31Xml } from "./exports/zup31XmlExporter";
-import { generateStaffPayrollT51Csv } from "./exports/t51CsvExporter";
+import { generateStaffPayrollXml } from "./exports/staffPayrollXmlExporter";
+import { generateStaffPayrollCsv } from "./exports/payrollCsvExporter";
 
 // Canonical Aliases & Interop
 export type AnyStaffPayrollResult = StaffPayrollRecord;
 export type UnifiedStaffPayrollLedger = ConsolidatedStaffPayrollSummary;
 export const calculateUnifiedStaffPayrollLedger = calculateConsolidatedStaffPayroll;
-export const exportStaffPayrollTo1CZupXml = generate1CZup31Xml;
-export const exportStaffPayrollToCsv = generateStaffPayrollT51Csv;
+export const exportStaffPayrollToXml = generateStaffPayrollXml;
+export const exportStaffPayrollTo1CZupXml = generateStaffPayrollXml;
+export const exportStaffPayrollToCsv = generateStaffPayrollCsv;

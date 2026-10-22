@@ -14,8 +14,6 @@ export interface PayrollHeaderProps {
 	readonly doctorsList: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[];
 	readonly selectedDoctorId: string;
 	readonly soloSpecialtyId: string;
-	readonly activeWorkspaceTab?: "payroll" | "timesheet" | undefined;
-	readonly onSelectWorkspaceTab?: ((tab: "payroll" | "timesheet") => void) | undefined;
 	readonly onClose: () => void;
 	readonly onSelectPeriodPreset: (preset: "current_month" | "previous_month" | "quarter" | "custom") => void;
 	readonly onSetTaxRegime: (regime: "employee" | "self_employed") => void;
@@ -37,8 +35,6 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
 	doctorsList,
 	selectedDoctorId,
 	soloSpecialtyId,
-	activeWorkspaceTab = "payroll",
-	onSelectWorkspaceTab,
 	onClose,
 	onSelectPeriodPreset,
 	onSetTaxRegime,
@@ -54,35 +50,31 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
 				clinicName={clinicName}
 				taxRegime={taxRegime}
 				isProgressiveTaxApplied={isProgressiveTaxApplied}
-				activeWorkspaceTab={activeWorkspaceTab}
-				onSelectWorkspaceTab={onSelectWorkspaceTab}
 				onClose={onClose}
 			/>
 
-			{activeWorkspaceTab === "payroll" && (
-				<div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-					<PayrollHeaderPeriodFilters
-						periodPreset={periodPreset}
-						taxRegime={taxRegime}
-						payoutModel={payoutModel}
-						onSelectPeriodPreset={onSelectPeriodPreset}
-						onSetTaxRegime={onSetTaxRegime}
-						onSetPayoutModel={onSetPayoutModel}
-					/>
+			<div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+				<PayrollHeaderPeriodFilters
+					periodPreset={periodPreset}
+					taxRegime={taxRegime}
+					payoutModel={payoutModel}
+					onSelectPeriodPreset={onSelectPeriodPreset}
+					onSetTaxRegime={onSetTaxRegime}
+					onSetPayoutModel={onSetPayoutModel}
+				/>
 
-					<PayrollHeaderDoctorPicker
-						doctorsList={doctorsList}
-						selectedDoctorId={selectedDoctorId}
-						soloSpecialtyId={soloSpecialtyId}
-						periodStart={periodStart}
-						periodEnd={periodEnd}
-						onSetPeriodStart={onSetPeriodStart}
-						onSetPeriodEnd={onSetPeriodEnd}
-						onSelectDoctorId={onSelectDoctorId}
-						onSelectSoloSpecialtyId={onSelectSoloSpecialtyId}
-					/>
-				</div>
-			)}
+				<PayrollHeaderDoctorPicker
+					doctorsList={doctorsList}
+					selectedDoctorId={selectedDoctorId}
+					soloSpecialtyId={soloSpecialtyId}
+					periodStart={periodStart}
+					periodEnd={periodEnd}
+					onSetPeriodStart={onSetPeriodStart}
+					onSetPeriodEnd={onSetPeriodEnd}
+					onSelectDoctorId={onSelectDoctorId}
+					onSelectSoloSpecialtyId={onSelectSoloSpecialtyId}
+				/>
+			</div>
 		</>
 	);
 };

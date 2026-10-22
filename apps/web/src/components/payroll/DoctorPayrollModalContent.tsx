@@ -30,7 +30,7 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 	const {
 		taxRegime, setTaxRegime, payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, selectedDoctorId, setSelectedDoctorId,
-		soloSpecialtyId, setSoloSpecialtyId, activeWorkspaceTab, setActiveWorkspaceTab,
+		soloSpecialtyId, setSoloSpecialtyId,
 		payrollResult, chairRentalRub, setChairRentalRub, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub,
 		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone, copyFeedback, servicesToUse, isLoadingEarnings,
 		activeDoc,
@@ -50,8 +50,6 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 					doctorsList={doctorsList}
 					selectedDoctorId={selectedDoctorId}
 					soloSpecialtyId={soloSpecialtyId}
-					activeWorkspaceTab={activeWorkspaceTab}
-					onSelectWorkspaceTab={setActiveWorkspaceTab}
 					onClose={onClose}
 					onSelectPeriodPreset={handleSelectPeriodPreset}
 					onSetTaxRegime={setTaxRegime}

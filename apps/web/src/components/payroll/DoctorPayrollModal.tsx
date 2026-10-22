@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import {
+	generateDoctorPayrollCsv,
 	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
@@ -73,7 +74,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	};
 
 	const handleDownloadCsv = () => {
-		const csv = generatePayrollT51Csv([state.payrollResult]);
+		const csv = generateDoctorPayrollCsv([state.payrollResult]);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");

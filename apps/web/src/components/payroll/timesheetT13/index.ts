@@ -1,3 +1,9 @@
+/**
+ * timesheetT13 — Тихий бэкофисный архив табеля учета рабочего времени.
+ * Mandate 8x & 8ap & 8n: Изолирован от горячего фокуса врача.
+ * Врач работает с чистым 1-клик экраном сдельного расчета (DoctorPayrollModal).
+ */
+
 export * from "./types";
 export * from "./useTimesheetT13State";
 export * from "./TimesheetT13Header";

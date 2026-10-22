@@ -11677,34 +11677,33 @@
         - `03_lab_mobile_light_390x844.png` (Mobile Light 390×844, мобильные карточки нарядов)
         - `04_lab_mobile_dark_390x844.png` (Mobile Dark 390×844, Bottom Sheet и экспресс-пресеты).
 
-64. **Волна 361: Red Team Инквизитор Финансов, Кассы 54-ФЗ и Экспресс-Чекаута — Консолидация единого SSOT-модала FastCheckoutModal, целочисленные копейки (amountKopecks), автономия врача и Apple HIG (Мандаты 8e, 8n, 8x, 8ap, 8ze, 8am, Фича #495)**:
-    - **1. Консолидация единого SSOT модала чекаута (`FastCheckoutModal`)**:
-      * Устранено дублирование 4 разрозненных модалок оплаты (`PatientBillingModal`, `PaymentSplitModal`, `FastCheckoutModal`, `PaymentModal`);
-      * `PaymentSplitModal.tsx` и `PatientBillingModal.tsx` преобразованы в чистые делегаты канонического `FastCheckoutModal` с сохранением всех пропсов (`amountKopecks`, `amountRub`, `defaultMethod="split"`, `initialWarranty100`, `onSuccess`);
-      * В `fastCheckoutFiscalHandlers.ts` поддержан обратный вызов `onSuccess` во всех ветках оплаты (наличные, POS-терминал, ручной терминал, СБП QR, депозит);
-    - **2. Строгие целочисленные копейки и автобалансировка остатка (Ноль float-дрифта)**:
-      * Все суммы, сдача, скидки и сплиты вычисляются строго в целых копейках (`amountKopecks`, `BIGINT`);
-      * Реализована автобалансировка остатка при расчетах сплита в 1 клик (`SplitRemainderComboChips.tsx`, `preset-three-way-split`, `btn-payment-remainder-family`, `btn-payment-remainder-5050`);
-    - **3. Искоренение номеров законов и птичьего канцелярита (Мандаты 8x, 8ap)**:
-      * В интерфейсе заменены сырые номера приказов: вместо «54-ФЗ» -> «Кассовый чек», вместо «804н» -> «Прейскурант услуг»;
-      * Для физических лиц выводится четкий статус «✓ Для пациентов-физлиц ИНН не требуется» без требований ввода ИНН и без блокировки кнопок;
-    - **4. Автономия врача и кассира (Мандаты 8e, 8n)**:
-      * Свобода скидок врача до 100% («Гарантия 100% (0 ₽)», «-50% Персонал», «-15% Комплекс», «-10% Постоянный», «-5% Пенс/Утро») без административных паролей;
-      * Появление специального баннера `data-testid="banner-payment-zero-warranty"` и кнопки `data-testid="btn-payment-close-warranty-zero"` при нулевом чеке;
-      * Кнопки сохранения и оплаты никогда не блокируются (`disabled={false}`) из-за второстепенных полей;
-    - **5. Apple HIG Touch Ergonomics (390×844) & 4-State Visual Proof Gate (Мандат 8ze)**:
-      * На смартфонах модал открывается как нативный Bottom Sheet (`fast-checkout-modal-container` с `rounded-t-[24px]` и тактильным Drag Handle `w-9 h-1 rounded-full`);
-      * Крупная итоговая сумма 36px bold по центру, плитки способов оплаты в 2 колонки с тач-таргетами $\ge 48$px;
-      * Закрепленная кнопка Primary CTA на всю ширину (52px) в Natural Thumb Zone;
-      * Все 4 скриншота отсмотрены лично через `read_file` в `docs/proofs/finance/`:
-        - `screenshot_pc_light.png` (PC Light 1440×900)
-        - `screenshot_pc_dark.png` (PC Dark 1440×900)
-        - `screenshot_mobile_light.png` (Mobile Light 390×844)
-        - `screenshot_mobile_dark.png` (Mobile Dark 390×844);
+65. **Волна 362: Red Team Инквизиция Зарплаты Врача, Сдельной Мотивации (Net Revenue) и Аренды Кресла — Изоляция Т-13, Канонический Расчетный Листок в DoctorPayrollModal, Целочисленные Копейки и Apple HIG (Мандаты 8d, 8e, 8n, 8x, 8ap, 8ze, 8am, Фича #470, #471)**:
+    - **1. Изоляция советской бюрократии (Т-13, Т-51, ЗУП 3.1) и устранение птичьего канцелярита (Мандаты 8x, 8ap)**:
+      * Табель Т-13 (`TimesheetT13Modal.tsx`, `timesheetT13/`) изолирован в тихий архив настроек бэкофиса и исключен из горячего рабочего пути врача;
+      * Искоренены бюрократические шифры из UI: заменены на естественный доменный язык («Сдельная зарплата и расчетный листок», «Экспорт ведомости (CSV)», «Расчет зарплаты / НДФЛ 13%», «ИП / Самозанятый»);
+      * Реализованы канонические модули экспорта (`payrollCsvExporter.ts`, `staffPayrollLedgerHtmlExporter.ts`, `staffPayrollXmlExporter.ts`, `staffPayrollAccountingCsvExporter.ts`) с сохранением безопасных shims для совместимости;
+    - **2. Сквозной расчет чистой базы (Net Revenue) и себестоимости ЗТЛ / материалов**:
+      * Все начисления и удержания рассчитываются строго в целочисленных копейках (`amountKopecks`, `BIGINT`);
+      * Автоматический вычет себестоимости нарядов зуботехнической лаборатории (`labCostKop`) и прямых расходов материалов (`materialCostKop`) до расчета сдельного процента врача;
+      * Поддержка соло-врача на аренде кресла (`chair_rental`) со ставкой НДФЛ 0% и переключением модели расчета в 1 клик;
+    - **3. Автономия врача и персонала (Мандаты 8e, 8n)**:
+      * Кнопки сохранения, печати и выплат никогда не блокируются (`disabled={false}`);
+      * Мгновенный экспорт расчетного листка в CSV и отправка сводки в чат/мессенджер в 1 клик;
+    - **4. Apple HIG Touch Ergonomics (390×844) & Единый дизайн-код (Мандаты 8ze, 8am)**:
+      * Ровно одна Primary CTA кнопка («✓ Выплатить и распечатать расчетный листок» на десктопе, «✓ Выплатить и печать» на мобильном);
+      * Ликвидация обрезаний слов: переключатели периодов обновлены на компактные чипы `Текущий | Прошлый | Квартал | Период`;
+      * В мобильной шапке кнопка закрытия `✕` выровнена без переноса строк, устранена белая подложка кнопки в темной теме;
+      * Тач-таргеты на смартфоне $\ge 44$px, карточки $\ge 52$px, 0px горизонтального скролла;
+    - **5. Red Team 4-State Visual Proof Gate (Мандат 8ze)**:
+      * Все 4 скриншота на живом dev-сервере (`http://127.0.0.1:5173/?demo=true&payroll=true`) лично проверены через `read_file` в `docs/proofs/payroll/`:
+        - `doctor_payroll_modal_pc_light_1440x900.png` (PC Light 1440×900)
+        - `doctor_payroll_modal_pc_dark_1440x900.png` (PC Dark 1440×900)
+        - `doctor_payroll_modal_mobile_light_390x844.png` (Mobile Light 390×844)
+        - `doctor_payroll_modal_mobile_dark_390x844.png` (Mobile Dark 390×844);
     - **6. Машинные гейты и автотесты (100% Green)**:
-      * 54 сьюта `apps/web/src/components/finance` (407 тестов) — 100% PASS;
-      * Смежные сьюты `fastCheckoutSplit.test.ts`, `dualModeZeroMockBatch4.test.ts`, `fastCheckoutAutonomy.test.tsx` (40 тестов) — 100% PASS;
-      * Чистый TypeScript в API и Web.
+      * 35 unit-тестов в `apps/web/src/components/payroll` — 100% PASS (Exit Code 0);
+      * `npm run check:encoding` — 15162 файлов проверено, 0 замечаний (Exit Code 0).
+
 
 
 

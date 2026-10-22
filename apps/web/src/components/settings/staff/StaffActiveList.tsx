@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { StaffMemberCard } from "./StaffMemberCard";
 import type { StaffCredentialKind } from "../staffMutationRequest";
 
@@ -7,7 +7,8 @@ interface StaffActiveListProps {
 	// biome-ignore lint/suspicious/noExplicitAny: staff row
 	staff: any[];
 	clinicDataLoaded: boolean;
-	onOpenTimesheet: () => void;
+	onOpenPayroll?: () => void;
+	onOpenTimesheet?: () => void;
 	onOpenProfile: (member: any) => void;
 	onUpdatePhone: (staffId: string, phone: string) => Promise<void>;
 	onUpdateCredential: (staffId: string, kind: StaffCredentialKind, value: string) => Promise<void>;
@@ -17,25 +18,30 @@ interface StaffActiveListProps {
 export const StaffActiveList: React.FC<StaffActiveListProps> = ({
 	staff,
 	clinicDataLoaded,
+	onOpenPayroll,
 	onOpenTimesheet,
 	onOpenProfile,
 	onUpdatePhone,
 	onUpdateCredential,
 	loading,
 }) => {
+	const handleOpenPayroll = onOpenPayroll ?? onOpenTimesheet;
+
 	return (
 		<article className="settings-card col-span-full form-span-2 w-full" data-testid="active-staff-list-card">
 			<div className="settings-card-header flex items-center justify-between gap-2">
 				<h4 className="m-0 text-sm font-semibold text-[var(--ink)]">Активный персонал</h4>
-				<button
-					type="button"
-					onClick={onOpenTimesheet}
-					className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-					data-testid="btn-staff-open-timesheet-t13"
-				>
-					<Calendar className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-					<span>Учёт рабочих часов</span>
-				</button>
+				{handleOpenPayroll && (
+					<button
+						type="button"
+						onClick={handleOpenPayroll}
+						className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+						data-testid="btn-staff-open-payroll"
+					>
+						<Calculator className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+						<span>Расчетный листок и зарплата</span>
+					</button>
+				)}
 			</div>
 
 			{staff.length === 0 && (

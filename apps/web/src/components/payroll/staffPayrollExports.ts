@@ -1,18 +1,27 @@
 /**
- * DENTE Dental CRM — Multi-Role Staff Payroll Statutory & 1C:ZUP 3.1 Exports
+ * DENTE Dental CRM — Multi-Role Staff Payroll & Payout Exports Facade
  * Compact Canonical Facade (Mandate 8b: File strictly <= 120 lines).
+ * Compliance: Mandate 8x & 8ap (Clean Russian Clinical Terminology without Bureaucratic Codes).
  */
 
 export { escapeXml } from "./exports/escapeXml";
 export {
+	generateDoctorPayrollCsv,
+	generateStaffPayrollCsv,
 	generateStaffPayrollT51Csv,
 	generatePayrollT51Csv,
-} from "./exports/t51CsvExporter";
-export { generate1CZup31Xml } from "./exports/zup31XmlExporter";
-export { generate1CZup31Csv } from "./exports/zup31CsvExporter";
-export { generateFormT51Html } from "./exports/formT51HtmlExporter";
+} from "./exports/payrollCsvExporter";
+export {
+	generateStaffPayrollXml,
+	generate1CZup31Xml,
+} from "./exports/staffPayrollXmlExporter";
+export {
+	generateStaffPayrollAccountingCsv,
+	generate1CZup31Csv,
+} from "./exports/staffPayrollAccountingCsvExporter";
+export {
+	generateStaffPayrollLedgerHtml,
+	generateFormT51Html,
+} from "./exports/staffPayrollLedgerHtmlExporter";
 export { generateDoctorPayslipHtml } from "./exports/doctorPayslipHtmlExporter";
 export { generateDoctorPayslipMessengerText } from "./exports/doctorPayslipMessengerExporter";
-
-import { generatePayrollT51Csv } from "./exports/t51CsvExporter";
-export const generateDoctorPayrollCsv = generatePayrollT51Csv;
