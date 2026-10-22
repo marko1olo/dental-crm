@@ -1,35 +1,21 @@
 /**
  * bomBatchMatcher.ts — FEFO/FIFO Batch Matching & Expiry Quarantine Engine.
- *
- * Implements:
- * 1. Strict chair/cabinet isolation: never deducts lots from a different operating suite.
- * 2. FEFO (First-Expired, First-Out) priority with FIFO fallback.
- * 3. Quarantine of expired batches: blocks usage and triggers statutory alert (Mandate 8e, 8n).
  */
 
 import { validateBatchForClinicalUse } from "../fefoTrafficLight.js";
+import type {
+	BatchCandidate,
+	BatchResolutionResult,
+} from "./bomBatchMatcherTypes.js";
+import { allocateBatchesFefo } from "./bomBatchAllocation.js";
 
-export interface BatchCandidate {
-	readonly id?: string | undefined;
-	readonly itemId: string;
-	readonly batchNumber: string;
-	readonly expiryDate: string;
-	readonly stockQuantity: number;
-	readonly chairId?: string | undefined;
-	readonly cabinetId?: string | undefined;
-	readonly locationId?: string | undefined;
-}
+export type {
+	BatchCandidate,
+	BatchResolutionResult,
+	MatchBatchAllocation,
+} from "./bomBatchMatcherTypes.js";
 
-export interface BatchResolutionResult {
-	readonly validStockMap: Record<string, number>;
-	readonly quarantinedBatchesCount: number;
-}
-
-export interface MatchBatchAllocation {
-	readonly batchNumber: string;
-	readonly expiryDate: string;
-	readonly allocatedQuantity: number;
-}
+export { allocateBatchesFefo };
 
 /**
  * Filters candidate batches by room/chair, quarantines expired lots,
@@ -58,7 +44,6 @@ export function resolveFefoStockMap(
 
 	const batchesByItem = new Map<string, BatchCandidate[]>();
 	for (const b of batches) {
-		// Strict isolation: skip batches belonging to a different chair or cabinet
 		if (options.chairId && b.chairId && b.chairId !== options.chairId) continue;
 		if (options.cabinetId && b.cabinetId && b.cabinetId !== options.cabinetId) continue;
 
@@ -68,7 +53,6 @@ export function resolveFefoStockMap(
 	}
 
 	for (const [itemId, candidateBatches] of batchesByItem.entries()) {
-		// Sort candidates by expiry date ascending (FEFO)
 		const sorted = [...candidateBatches].sort((a, b) =>
 			a.expiryDate.localeCompare(b.expiryDate),
 		);
@@ -95,46 +79,4 @@ export function resolveFefoStockMap(
 	}
 
 	return { validStockMap, quarantinedBatchesCount };
-}
-
-/**
- * Allocates requested material quantity across unexpired FEFO batches.
- */
-export function allocateBatchesFefo(
-	itemId: string,
-	requiredQty: number,
-	batches: readonly BatchCandidate[] | undefined,
-	options: {
-		chairId?: string | undefined;
-		cabinetId?: string | undefined;
-		visitDate?: string | undefined;
-	} = {},
-): readonly MatchBatchAllocation[] {
-	if (!batches || batches.length === 0 || requiredQty <= 0) return [];
-
-	const matching = batches
-		.filter((b) => b.itemId === itemId)
-		.filter((b) => !options.chairId || !b.chairId || b.chairId === options.chairId)
-		.filter((b) => !options.cabinetId || !b.cabinetId || b.cabinetId === options.cabinetId)
-		.filter((b) => validateBatchForClinicalUse(b, options.visitDate).isAllowed)
-		.sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
-
-	let remainingToAllocate = requiredQty;
-	const allocations: MatchBatchAllocation[] = [];
-
-	for (const b of matching) {
-		if (remainingToAllocate <= 0) break;
-		const available = Math.max(0, b.stockQuantity);
-		if (available <= 0) continue;
-
-		const take = Math.min(available, remainingToAllocate);
-		allocations.push({
-			batchNumber: b.batchNumber,
-			expiryDate: b.expiryDate,
-			allocatedQuantity: Number(take.toFixed(4)),
-		});
-		remainingToAllocate -= take;
-	}
-
-	return allocations;
 }

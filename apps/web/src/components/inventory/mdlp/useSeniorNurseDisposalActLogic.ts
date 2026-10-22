@@ -1,5 +1,4 @@
 import {
-	type MdlpCarpuleQueueItem,
 	type SeniorNurseDisposalActData,
 	formatSeniorNurseDisposalActData,
 	generateSeniorNurseDisposalActHtml,
@@ -12,25 +11,15 @@ import {
 	createSupplierPurchaseOrderFromLines,
 } from "../inventoryMath.js";
 import type { SeniorNurseDisposalActModalProps } from "./SeniorNurseDisposalActModal.js";
+import { downloadHtmlFile, printHtmlInNewWindow } from "./seniorNurseDisposalPrintUtils.js";
 
 export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModalProps) {
 	const {
-		isOpen,
-		onClose,
-		items,
-		organizationName = "",
-		organizationInn = "",
-		organizationAddress = "",
-		departmentName = "Стоматологическое отделение",
-		cabinetName = "Кабинет №1 (Терапия / Хирургия)",
-		initialSeniorNurseName = "Старшая медсестра",
-		initialChiefDoctorName = "Главный врач",
-		initialDentistName = "Врач-стоматолог",
-		onApproveAct,
-		initialApproverRole = "doctor",
-		initialPaperJournalAcknowledged = true,
-		backgroundMode = false,
-		autoApproveOnMount = false,
+		isOpen, onClose, items, organizationName = "", organizationInn = "", organizationAddress = "",
+		departmentName = "Стоматологическое отделение", cabinetName = "Кабинет №1 (Терапия / Хирургия)",
+		initialSeniorNurseName = "Старшая медсестра", initialChiefDoctorName = "Главный врач",
+		initialDentistName = "Врач-стоматолог", onApproveAct, initialApproverRole = "doctor",
+		initialPaperJournalAcknowledged = true, backgroundMode = false, autoApproveOnMount = false,
 	} = props;
 
 	const now = new Date();
@@ -54,7 +43,6 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 	const [isSingleSigner] = useState<boolean>(true);
 	const [isApproved, setIsApproved] = useState<boolean>(false);
 	const [notes, setNotes] = useState<string>("");
-
 	const [showPoModal, setShowPoModal] = useState<boolean>(false);
 	const [showMoreActions, setShowMoreActions] = useState<boolean>(false);
 
@@ -64,9 +52,7 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 			? `Акт списания №${actNumber} утверждён в фоновом режиме: бумажный журнал учтён, участие старшей медсестры опционально`
 			: `Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
 		showToast(message, "info");
-		if (onApproveAct) {
-			await onApproveAct(actData);
-		}
+		if (onApproveAct) await onApproveAct(actData);
 	};
 
 	useEffect(() => {
@@ -90,11 +76,9 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 			approverRole, approverName, approvedByFullName: approverName, approvedByPositionRu: rolePositionRu,
 			paperJournalAcknowledged, isSingleSigner, notes: notes.trim() || undefined, items,
 		});
-	}, [
-		actNumber, actDate, organizationName, organizationInn, organizationAddress, departmentName, cabinetName,
+	}, [actNumber, actDate, organizationName, organizationInn, organizationAddress, departmentName, cabinetName,
 		seniorNurseName, chiefDoctorName, dentistName, approverRole, approverName, paperJournalAcknowledged,
-		isSingleSigner, notes, items,
-	]);
+		isSingleSigner, notes, items]);
 
 	const actHtml = useMemo(() => generateSeniorNurseDisposalActHtml(actData), [actData]);
 
@@ -120,32 +104,12 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 		return createSupplierPurchaseOrderFromLines(deductionLines, organizationName);
 	}, [deductionLines, organizationName]);
 
-	const handlePrint = () => {
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(actHtml);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => printWin.print(), 250);
-		}
-	};
-
-	const handleDownloadHtml = () => {
-		const blob = new Blob([actHtml], { type: "text/html;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `Акт_списания_${actNumber}.html`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-	};
-
 	return {
 		actNumber, setActNumber, actDate, setActDate, approverRole, setApproverRole,
 		paperJournalAcknowledged, setPaperJournalAcknowledged, approverName, setApproverName,
 		isApproved, notes, setNotes, showPoModal, setShowPoModal, showMoreActions, setShowMoreActions,
-		handleApproveAct, actHtml, generatedPurchaseOrder, handlePrint, handleDownloadHtml,
+		handleApproveAct, actHtml, generatedPurchaseOrder,
+		handlePrint: () => printHtmlInNewWindow(actHtml),
+		handleDownloadHtml: () => downloadHtmlFile(actHtml, `Акт_списания_${actNumber}.html`),
 	};
 }

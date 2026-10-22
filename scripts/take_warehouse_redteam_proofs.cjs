@@ -18,7 +18,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/inventory");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/581c5bc9-6fa0-4c65-9d42-e7fe18db913a");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/5ce0fd48-6a85-42b3-af32-59753a8b75e1");
 
 if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
 if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -206,6 +206,16 @@ async function saveProof(page, filename) {
 	await page.screenshot({ path: docsPath, fullPage: false });
 	fs.copyFileSync(docsPath, brainPath);
 
+	if (filename === "warehouse_stock_pc_light.png") {
+		fs.copyFileSync(docsPath, path.join(BRAIN_DIR, "pc_light_1440x900.png"));
+	} else if (filename === "warehouse_stock_pc_dark.png") {
+		fs.copyFileSync(docsPath, path.join(BRAIN_DIR, "pc_dark_1440x900.png"));
+	} else if (filename === "warehouse_waybills_mobile_light.png") {
+		fs.copyFileSync(docsPath, path.join(BRAIN_DIR, "mobile_light_390x844.png"));
+	} else if (filename === "warehouse_waybills_mobile_dark.png") {
+		fs.copyFileSync(docsPath, path.join(BRAIN_DIR, "mobile_dark_390x844.png"));
+	}
+
 	const stats = fs.statSync(docsPath);
 	console.log(`[PROOF CAPTURED] ${filename} -> size: ${(stats.size / 1024).toFixed(1)} KB`);
 	if (stats.size < 20 * 1024) {
@@ -276,22 +286,17 @@ async function main() {
 	);
 
 	const pcPage = await pcContext.newPage();
-	console.log(">>> [PC] Navigating to http://127.0.0.1:5173/#inventory...");
-	await pcPage.goto("http://127.0.0.1:5173/#inventory", {
-		waitUntil: "domcontentloaded",
+	console.log(">>> [PC] Navigating to http://127.0.0.1:5173/ and switching to #inventory...");
+	await pcPage.goto("http://127.0.0.1:5173/", {
+		waitUntil: "commit",
 		timeout: 30000,
 	});
+	await pcPage.waitForLoadState("domcontentloaded");
 	await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-	await pcPage.waitForSelector(".workspace", { timeout: 20000 });
-	await pcPage.waitForTimeout(2000);
-
-	// Ensure inventory route is active
 	await pcPage.evaluate(() => {
-		if (window.location.hash !== "#inventory") {
-			window.location.hash = "#inventory";
-		}
+		window.location.hash = "#inventory";
 	});
-	await pcPage.waitForTimeout(1000);
+	await pcPage.waitForTimeout(2500);
 
 	// Capture PC Light
 	console.log(">>> [PC] Capturing warehouse_stock_pc_light.png...");
@@ -361,13 +366,17 @@ async function main() {
 	);
 
 	const mobilePage = await mobileContext.newPage();
-	console.log(">>> [MOBILE] Navigating to http://127.0.0.1:5173/#inventory...");
-	await mobilePage.goto("http://127.0.0.1:5173/#inventory", {
-		waitUntil: "domcontentloaded",
+	console.log(">>> [MOBILE] Navigating to http://127.0.0.1:5173/ and switching to #inventory...");
+	await mobilePage.goto("http://127.0.0.1:5173/", {
+		waitUntil: "commit",
 		timeout: 30000,
 	});
+	await mobilePage.waitForLoadState("domcontentloaded");
 	await mobilePage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-	await mobilePage.waitForTimeout(2000);
+	await mobilePage.evaluate(() => {
+		window.location.hash = "#inventory";
+	});
+	await mobilePage.waitForTimeout(2500);
 
 	console.log(">>> [MOBILE] Opening Acceptance Waybills (ТОРГ-12) modal...");
 	// Click download icon button or trigger button

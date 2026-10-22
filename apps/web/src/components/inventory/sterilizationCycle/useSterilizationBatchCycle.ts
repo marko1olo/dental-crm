@@ -1,27 +1,18 @@
 /**
  * useSterilizationBatchCycle.ts — Хук управления состоянием и списанием цикла стерилизации.
- * Мандаты 8e, 8n (Soft Negative Stock), 8b (<=120 строк).
  */
 
 import { useMemo, useState } from "react";
-import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import { showToast } from "../../GlobalToast.js";
 import { executeSterilizationBatchCycle } from "./sterilizationBatchCycleEngine.js";
+import { syncSterilizationApiRecord } from "./sterilizationApiSync.js";
 import {
 	DEFAULT_STERILIZATION_PACKAGES,
 	type SterilizationBatchCycleResult,
 	type SterilizationBatchPackageItem,
+	type UseSterilizationBatchCycleOptions,
 } from "./types.js";
-
-export interface UseSterilizationBatchCycleOptions {
-	readonly organizationId: string;
-	readonly operatorName?: string | undefined;
-	readonly onCycleCompleted?:
-		| ((result: SterilizationBatchCycleResult) => void)
-		| undefined;
-	readonly onClose: () => void;
-}
 
 export function useSterilizationBatchCycle({
 	organizationId,
@@ -83,34 +74,7 @@ export function useSterilizationBatchCycle({
 				allowOverdraft: true,
 			});
 
-			try {
-				const activeDesc = packages
-					.filter((p) => p.count > 0)
-					.map((p) => `${p.name} x${p.count}`)
-					.join(", ");
-				const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-					method: "POST",
-					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({
-						batchSize: totalPackages,
-						regime: "standard_134",
-						packagingType: "kraft_self_adhesive",
-						operatorName,
-						itemsDescription: `Партия автоклавирования (${totalPackages} шт.): ${activeDesc}`,
-					}),
-				});
-				if (res.ok) {
-					const data = (await res.json().catch(() => null)) as { log?: { id?: string } } | null;
-					if (data?.log?.id) {
-						(result.cycleRecord as { id: string }).id = data.log.id;
-						if (result.cycleLog) {
-							(result.cycleLog as { id: string }).id = data.log.id;
-						}
-					}
-				}
-			} catch {
-				// Фоновое сохранение не должно прерывать интерфейс медсестры
-			}
+			await syncSterilizationApiRecord(result, packages, totalPackages, operatorName);
 
 			void useInventoryStore.getState().fetchItems(organizationId).catch(() => {});
 

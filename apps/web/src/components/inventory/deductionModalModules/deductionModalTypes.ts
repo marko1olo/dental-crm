@@ -18,14 +18,16 @@ export interface ConsumablesDeductionModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly procedureTitle?: string | undefined;
+	readonly serviceName?: string | undefined;
 	readonly serviceCode?: string | undefined;
 	readonly service804nCode?: string | undefined;
+	readonly initialTechMapCodes?: readonly string[] | undefined;
 	readonly doctorName?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly toothNumber?: number | undefined | null;
 	readonly currentStockMap?: Record<string, number> | undefined;
 	readonly warehouseItems?: readonly any[] | undefined;
-	readonly onConfirmDeduction?: (items: ConsumablesDeductionModalItem[]) => void | Promise<void>;
+	readonly onConfirmDeduction?: (items: readonly ConsumablesDeductionModalItem[]) => void | Promise<void>;
 }
 
 export interface DeductionTotals {

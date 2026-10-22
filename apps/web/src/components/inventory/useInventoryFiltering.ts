@@ -1,7 +1,7 @@
 import { multiplyKopecks, parseKopecks, sumKopecks } from "@dental/shared";
-import React, { useEffect, useMemo, useState } from "react";
-import { showToast } from "../GlobalToast.js";
+import React, { useMemo, useState } from "react";
 import type { InventoryItem } from "./inventoryDataMappers.js";
+import { useBarcodeScannerListener } from "./useBarcodeScannerListener.js";
 
 export interface UseInventoryFilteringParams {
 	readonly items: InventoryItem[];
@@ -36,70 +36,18 @@ export function useInventoryFiltering({
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
 	const [isScannerActive, setIsScannerActive] = useState(false);
 
-	/*
-	 * --- Слушатель сканера штрихкодов (эмуляция «клавиатурного» сканера) ---
-	 */
-	useEffect(() => {
-		let barcodeBuffer = "";
-		let lastKeyTime = 0;
-
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement;
-			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-
-			const currentTime = Date.now();
-			if (currentTime - lastKeyTime > 100) {
-				barcodeBuffer = "";
-			}
-			lastKeyTime = currentTime;
-
-			if (e.key === "Enter") {
-				if (barcodeBuffer.length > 3) {
-					setScannedBarcode(barcodeBuffer);
-					setIsScannerActive(true);
-					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
-
-					if (showModal) {
-						setFormData((prev) => ({ ...prev, barcode: barcodeBuffer }));
-						barcodeBuffer = "";
-						return;
-					}
-
-					if (adjustingItem || confirmDialogOpen) {
-						barcodeBuffer = "";
-						return;
-					}
-
-					const found = items.find(
-						(i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer,
-					);
-					if (found) {
-						showToast(`Найден товар: ${found.name}`, "info");
-						setSearchQuery(barcodeBuffer);
-					} else {
-						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
-						setFormData({
-							name: "",
-							threshold: "",
-							unitCostRub: "",
-							sku: "",
-							barcode: barcodeBuffer,
-							lotNumber: "",
-							expirationDate: "",
-						});
-						setEditingItem(null);
-						setShowModal(true);
-					}
-				}
-				barcodeBuffer = "";
-			} else if (e.key.length === 1) {
-				barcodeBuffer += e.key;
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [items, showModal, adjustingItem, confirmDialogOpen, setFormData, setEditingItem, setShowModal]);
+	useBarcodeScannerListener({
+		items,
+		showModal,
+		adjustingItem,
+		confirmDialogOpen,
+		setFormData,
+		setEditingItem,
+		setShowModal,
+		setScannedBarcode,
+		setIsScannerActive,
+		setSearchQuery,
+	});
 
 	const filteredItems = useMemo(() => {
 		if (!searchQuery.trim()) return items;

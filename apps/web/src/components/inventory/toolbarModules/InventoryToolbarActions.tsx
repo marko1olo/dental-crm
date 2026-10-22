@@ -1,4 +1,4 @@
-import { Package, PackageCheck, Plus, Search, Truck, X, Zap } from "lucide-react";
+import { PackageCheck, Plus, Search, Truck, X, Zap } from "lucide-react";
 import React from "react";
 import { InventoryOperationsMenu } from "../InventoryOperationsMenu.js";
 
@@ -22,7 +22,7 @@ export interface InventoryToolbarActionsProps {
 	readonly handleQuickWriteoffStandardKit: () => void;
 	readonly handleQuickWriteoffAnestheticCarpule: () => void;
 	readonly handleQuickWriteoffSterilizationKit: () => void;
-	readonly handleQuickWriteoffCarpules: () => Promise<any> | void;
+	readonly handleQuickWriteoffCarpules?: () => Promise<any> | void;
 	readonly handleQuickWriteoffVisitBundle: (bundle: "therapy" | "surgery") => void;
 	readonly handleQuickWriteoffShiftBundle: (bundle: "therapy" | "orthopedics" | "surgery") => void;
 	readonly setIsInboundInvoiceModalOpen: (open: boolean) => void;
@@ -34,7 +34,7 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 	const {
 		searchQuery, setSearchQuery, isOpsMenuOpen, setIsOpsMenuOpen,
 		setIsAcceptanceWaybillsOpen, onOpenShiftDeductionModal, onOpenProtocolDeduction,
-		openAddModal, setIsQuickPackagesOpen, handleQuickWriteoffCarpules,
+		openAddModal, setIsQuickPackagesOpen,
 	} = props;
 
 	return (
@@ -42,9 +42,7 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 			<div className="dente-search-wrap inventory-search-wrap relative flex items-center shrink-0 w-28 sm:w-36 md:w-40 lg:w-44">
 				<Search className="dente-search-icon absolute left-3 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" />
 				<input
-					type="text"
-					placeholder="Поиск..."
-					value={searchQuery}
+					type="text" placeholder="Поиск..." value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					className="dente-search-input w-full h-9 min-h-[36px] pl-9 pr-8 text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)]"
 					data-testid="inventory-search-input"
@@ -56,56 +54,57 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 				)}
 			</div>
 
-			<button type="button" className="primary-button h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 shadow-xs whitespace-nowrap" onClick={() => setIsAcceptanceWaybillsOpen(true)} data-testid="btn-acceptance-waybills">
+			{/* Primary CTA: ровно 1 Primary кнопка в шапке склада (Мандаты 8e, 8n, 8am) */}
+			<button
+				type="button"
+				className="bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 shadow-xs whitespace-nowrap inline-flex items-center transition"
+				onClick={() => setIsAcceptanceWaybillsOpen(true)}
+				data-testid="btn-acceptance-waybills"
+			>
 				<Truck className="w-4 h-4 shrink-0" />
-				<span>+ Приходная накладная</span>
+				<span>+ Оприходовать накладную</span>
 			</button>
 
+			{/* Вторичное действие в 1 клик: Списать расходники смены */}
+			{onOpenShiftDeductionModal && (
+				<button
+					type="button"
+					className="secondary-button inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap items-center bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)]/10 text-[var(--ink)] transition"
+					onClick={onOpenShiftDeductionModal}
+					title="Автоматическое списание расходных материалов за смену по закрытым визитам (1 клик)"
+					data-testid="btn-open-shift-batch-deduction"
+				>
+					<Zap className="w-4 h-4 shrink-0 text-amber-500 fill-amber-500" />
+					<span className="hidden sm:inline">⚡ Списать расходники смены</span>
+					<span className="sm:hidden">⚡ Смена</span>
+				</button>
+			)}
+
 			<InventoryOperationsMenu
-				isOpen={isOpsMenuOpen}
-				onToggle={() => setIsOpsMenuOpen((prev) => !prev)}
-				onClose={() => setIsOpsMenuOpen(false)}
-				onOpenAcceptanceWaybills={() => props.setIsAcceptanceWaybillsOpen(true)}
-				onOpenWarehouseManager={() => props.setIsWarehouseManagerOpen(true)}
-				onOpenMdlpScanning={() => props.setIsMdlpScanningOpen(true)}
-				onOpenClinicalWriteoff={() => props.setIsClinicalWriteoffOpen(true)}
-				onOpenProcedureDeduction={() => props.setIsProcedureDeductionOpen(true)}
-				onOpenWarehouseTransfer={() => props.setIsWarehouseTransferOpen(true)}
-				onOpenInventoryAudit={() => props.setIsInventoryAuditOpen(true)}
-				onOpenMdlpDisposal={() => props.setIsMdlpDisposalOpen(true)}
-				onOpenNurseCarpuleModal={props.setIsNurseCarpuleModalOpen ? () => props.setIsNurseCarpuleModalOpen!(true) : undefined}
-				onOpenShiftDeductionModal={props.onOpenShiftDeductionModal}
-				onOpenSterilizationCycleModal={props.onOpenSterilizationCycleModal}
-				onQuickWriteoffStandardKit={props.handleQuickWriteoffStandardKit}
-				onQuickWriteoffAnestheticCarpule={props.handleQuickWriteoffAnestheticCarpule}
-				onQuickWriteoffSterilizationKit={props.handleQuickWriteoffSterilizationKit}
-				onQuickWriteoffCarpules={() => { props.handleQuickWriteoffCarpules(); }}
-				onQuickWriteoffVisitBundle={props.handleQuickWriteoffVisitBundle}
-				onQuickWriteoffShiftBundle={props.handleQuickWriteoffShiftBundle}
+				isOpen={isOpsMenuOpen} onToggle={() => setIsOpsMenuOpen((prev) => !prev)} onClose={() => setIsOpsMenuOpen(false)}
+				onOpenAcceptanceWaybills={() => props.setIsAcceptanceWaybillsOpen(true)} onOpenWarehouseManager={() => props.setIsWarehouseManagerOpen(true)}
+				onOpenMdlpScanning={() => props.setIsMdlpScanningOpen(true)} onOpenClinicalWriteoff={() => props.setIsClinicalWriteoffOpen(true)}
+				onOpenProcedureDeduction={() => props.setIsProcedureDeductionOpen(true)} onOpenWarehouseTransfer={() => props.setIsWarehouseTransferOpen(true)}
+				onOpenInventoryAudit={() => props.setIsInventoryAuditOpen(true)} onOpenMdlpDisposal={() => props.setIsMdlpDisposalOpen(true)}
+				onOpenShiftDeductionModal={props.onOpenShiftDeductionModal} onOpenSterilizationCycleModal={props.onOpenSterilizationCycleModal}
+				onQuickWriteoffStandardKit={props.handleQuickWriteoffStandardKit} onQuickWriteoffAnestheticCarpule={props.handleQuickWriteoffAnestheticCarpule}
+				onQuickWriteoffSterilizationKit={props.handleQuickWriteoffSterilizationKit} onQuickWriteoffCarpules={() => { props.handleQuickWriteoffCarpules?.(); }}
+				onQuickWriteoffVisitBundle={props.handleQuickWriteoffVisitBundle} onQuickWriteoffShiftBundle={props.handleQuickWriteoffShiftBundle}
 			/>
 
-			<button type="button" className="secondary-button h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={openAddModal} data-testid="btn-add-inventory-item">
+			<button type="button" className="secondary-button h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center" onClick={openAddModal} data-testid="btn-add-inventory-item">
 				<Plus className="w-4 h-4 shrink-0" />
 				<span>Позиция</span>
 			</button>
 
-			{onOpenShiftDeductionModal && (
-				<button type="button" className="secondary-button inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenShiftDeductionModal} title="Списать расходники за смену (1 клик)" data-testid="btn-open-shift-batch-deduction">
-					<PackageCheck className="w-4 h-4 shrink-0 text-[var(--teal)]" />
-					<span className="hidden sm:inline">Смена (1 клик)</span>
-					<span className="sm:hidden">Смена</span>
-				</button>
-			)}
-
 			{onOpenProtocolDeduction && (
-				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap" onClick={onOpenProtocolDeduction} title="Нормы списания по процедурам" data-testid="btn-open-protocol-deduction">
-					<Zap className="w-4 h-4 shrink-0 text-[var(--teal)]" />
+				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap items-center" onClick={onOpenProtocolDeduction} title="Нормы списания по процедурам" data-testid="btn-open-protocol-deduction">
+					<PackageCheck className="w-4 h-4 shrink-0 text-[var(--teal)]" />
 					<span>Нормы расхода</span>
 				</button>
 			)}
 
 			<button type="button" className="hidden" data-testid="btn-toggle-quick-packages" onClick={() => setIsQuickPackagesOpen((prev) => !prev)} aria-hidden="true" />
-			<button type="button" className="hidden" data-testid="nurse-quick-carpules-btn" onClick={() => handleQuickWriteoffCarpules()} aria-hidden="true" />
 		</div>
 	);
 };

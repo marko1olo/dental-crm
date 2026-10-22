@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
 import { buildCanonicalFallbackBomRules } from "./bomModules/materialBomTypes.js";
+import { useInventoryRulesMutations } from "./rulesModules/useInventoryRulesMutations.js";
 
 export interface UseInventoryRulesParams {
 	readonly organizationId: string;
@@ -23,17 +24,14 @@ export function useInventoryRules({
 	getHeaders,
 	setConfirmDialog,
 }: UseInventoryRulesParams) {
-	const [activeSubTab, setActiveSubTab] = useState<InventorySubTab>(
-		"inventory",
-	);
+	const [activeSubTab, setActiveSubTab] = useState<InventorySubTab>("inventory");
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [rulesList, setRulesList] = useState<any[]>(() =>
 		buildCanonicalFallbackBomRules(),
 	);
 	const [isLoadingRules, setIsLoadingRules] = useState(false);
-	const [selectedInventoryItemId, setSelectedInventoryItemId] =
-		useState<string>("");
+	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string>("");
 	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
 	const [rulesError, setRulesError] = useState<string | null>(null);
 
@@ -52,12 +50,9 @@ export function useInventoryRules({
 			}
 			try {
 				setIsLoadingRules(true);
-				const res = await fetch(
-					`/api/inventory/${organizationId}/rules/${serviceId}`,
-					{
-						headers: getHeaders(),
-					},
-				);
+				const res = await fetch(`/api/inventory/${organizationId}/rules/${serviceId}`, {
+					headers: getHeaders(),
+				});
 				if (res.ok) {
 					const data = await res.json();
 					setRulesList(Array.isArray(data) ? data : []);
@@ -91,82 +86,17 @@ export function useInventoryRules({
 		}
 	}, [activeSubTab, selectedServiceId, fetchRules]);
 
-	const isSavingRuleRef = useRef(false);
-	const [isSavingRule, setIsSavingRule] = useState(false);
-
-	const handleAddRule = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct)
-			return;
-
-		const qty = parseInt(quantityToDeduct, 10);
-		if (Number.isNaN(qty) || qty <= 0) {
-			showToast("Введите корректное количество", "error");
-			return;
-		}
-		if (isSavingRuleRef.current) return;
-		isSavingRuleRef.current = true;
-		setIsSavingRule(true);
-
-		try {
-			const res = await fetch(`/api/inventory/${organizationId}/rules`, {
-				method: "POST",
-				headers: getHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					serviceId: selectedServiceId,
-					inventoryItemId: selectedInventoryItemId,
-					quantityToDeduct: qty,
-				}),
-			});
-
-			if (res.ok) {
-				showToast("Правило списания сохранено", "success");
-				setSelectedInventoryItemId("");
-				setQuantityToDeduct("1");
-				fetchRules(selectedServiceId);
-			} else {
-				showToast("Ошибка сохранения правила", "error");
-			}
-		} catch (e) {
-			logger.error(e);
-			showToast("Системная ошибка", "error");
-		} finally {
-			isSavingRuleRef.current = false;
-			setIsSavingRule(false);
-		}
-	};
-
-	const handleDeleteRule = async (ruleId: string) => {
-		setConfirmDialog({
-			isOpen: true,
-			title: "Удалить правило?",
-			message: "Удалить это правило списания? Это действие необратимо.",
-			onConfirm: async () => {
-				setConfirmDialog(null);
-				try {
-					const res = await fetch(
-						`/api/inventory/${organizationId}/rules/${ruleId}`,
-						{
-							method: "DELETE",
-							headers: getHeaders(),
-						},
-					);
-
-					if (res.ok) {
-						showToast("Правило списания удалено", "success");
-						fetchRules(selectedServiceId);
-					} else {
-						showToast("Ошибка удаления правила", "error");
-					}
-				} catch (e) {
-					logger.error(e);
-					showToast("Системная ошибка", "error");
-				}
-			},
-		});
-	};
+	const mutations = useInventoryRulesMutations({
+		organizationId,
+		getHeaders,
+		setConfirmDialog,
+		selectedServiceId,
+		selectedInventoryItemId,
+		setSelectedInventoryItemId,
+		quantityToDeduct,
+		setQuantityToDeduct,
+		fetchRules,
+	});
 
 	return {
 		activeSubTab,
@@ -182,9 +112,7 @@ export function useInventoryRules({
 		setSelectedInventoryItemId,
 		quantityToDeduct,
 		setQuantityToDeduct,
-		isSavingRule,
 		fetchRules,
-		handleAddRule,
-		handleDeleteRule,
+		...mutations,
 	};
 }

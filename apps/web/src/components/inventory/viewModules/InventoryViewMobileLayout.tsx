@@ -1,9 +1,6 @@
 import React from "react";
 import { money } from "../../../AppHelpers.js";
-import {
-	MobileInventoryGroupedList,
-	type MobileInventoryCategoryType,
-} from "../MobileInventoryGroupedList.js";
+import { MobileInventoryGroupedList, type MobileInventoryCategoryType } from "../MobileInventoryGroupedList.js";
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
@@ -22,8 +19,8 @@ export interface InventoryViewMobileLayoutProps {
 	readonly openAddModal: () => void;
 	readonly setIsInboundInvoiceModalOpen: (b: boolean) => void;
 	readonly setIsAcceptanceWaybillsOpen: (b: boolean) => void;
-	readonly handleQuickWriteoffCarpules: () => Promise<any> | void;
-	readonly isWritingOffCarpules: boolean;
+	readonly handleQuickWriteoffCarpules?: () => Promise<any> | void;
+	readonly isWritingOffCarpules?: boolean;
 	readonly fetchItems: () => Promise<void> | void;
 	readonly getHeaders: (h?: Record<string, string>) => Record<string, string>;
 	readonly showModal: boolean;
@@ -55,11 +52,8 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 	return (
 		<div className="w-full h-full flex flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
 			<MobileInventoryGroupedList
-				items={items}
-				organizationId={organizationId}
-				searchQuery={searchQuery}
-				onSearchChange={setSearchQuery}
-				onClearSearch={() => setSearchQuery("")}
+				items={items} organizationId={organizationId} searchQuery={searchQuery}
+				onSearchChange={setSearchQuery} onClearSearch={() => setSearchQuery("")}
 				selectedCategory={selectedCategory === "therapy" || selectedCategory === "composite" ? "filling" : (selectedCategory as MobileInventoryCategoryType)}
 				onSelectCategory={(cat) => setSelectedCategory(cat === "filling" ? "composite" : cat)}
 				onQuickDeduct={async (item, qty) => {
@@ -76,16 +70,12 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 					});
 					if (res.ok) fetchItems();
 				}}
-				onSelectItem={(item) => openEditModal(item)}
-				onEditItem={(item) => openEditModal(item)}
-				onOpenAddModal={openAddModal}
-				onOpenInboundInvoice={() => setIsInboundInvoiceModalOpen(true)}
+				onSelectItem={(item) => openEditModal(item)} onEditItem={(item) => openEditModal(item)}
+				onOpenAddModal={openAddModal} onOpenInboundInvoice={() => setIsInboundInvoiceModalOpen(true)}
 				onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
 				onOpenShiftDeduction={onOpenShiftDeduction || (() => setIsShiftDeductionOpen?.(true))}
-				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
-				isWritingOffCarpules={isWritingOffCarpules}
-				onRefresh={() => fetchItems()}
-				money={money}
+				onQuickWriteoffCarpules={handleQuickWriteoffCarpules} isWritingOffCarpules={isWritingOffCarpules}
+				onRefresh={() => fetchItems()} money={money}
 			/>
 
 			<InventoryItemFormModal
@@ -108,10 +98,8 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 			/>
 
 			<ShiftBatchDeductionModal
-				isOpen={Boolean(isShiftDeductionOpen)}
-				onClose={() => setIsShiftDeductionOpen?.(false)}
-				organizationId={organizationId}
-				onCompleted={() => fetchItems()}
+				isOpen={Boolean(isShiftDeductionOpen)} onClose={() => setIsShiftDeductionOpen?.(false)}
+				organizationId={organizationId} onDeductionComplete={() => fetchItems()}
 			/>
 		</div>
 	);

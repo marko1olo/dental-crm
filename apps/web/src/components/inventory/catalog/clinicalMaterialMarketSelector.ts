@@ -1,16 +1,9 @@
 /**
  * clinicalMaterialMarketSelector.ts — 1-Click Clinical Materials Selector for UI & Inventory.
- *
- * Wave 134+ / Red Team Mandates 8e, 8k, 8n (Doctor Autonomy & Scale Sovereignty):
- * Provides frontend components, warehouse acceptance, and tech-map recipe builders
- * with instant 1-click access to the 90%+ CIS market share clinical materials catalog.
- *
- * ZERO EMOJIS — Exact deterministic typing — Descending popularity ordering.
  */
 
 import {
 	type ClinicalMarketMaterialItem,
-	type ClinicalMaterialDomain,
 	type ConsumableItemLink,
 	ALL_CLINICAL_MARKET_MATERIALS,
 	getClinicalMaterialsByDomain,
@@ -18,131 +11,14 @@ import {
 	searchClinicalMaterials,
 	findClinicalMaterialById,
 } from "@dental/shared";
+import {
+	type MaterialOptionGroup,
+	getGroupedClinicalMarketMaterials,
+} from "./groupedMarketMaterials.js";
 
-export interface MaterialOptionGroup {
-	readonly domain: ClinicalMaterialDomain;
-	readonly titleRu: string;
-	readonly items: readonly ClinicalMarketMaterialItem[];
-}
+export type { MaterialOptionGroup };
+export { getGroupedClinicalMarketMaterials };
 
-/**
- * Returns grouped clinical materials for dropdowns and popover menus,
- * with items strictly sorted by descending market popularity (Rank 1 first).
- */
-export function getGroupedClinicalMarketMaterials(): readonly MaterialOptionGroup[] {
-	return [
-		{
-			domain: "implant_system",
-			titleRu: "Дентальные имплантаты (16 систем РФ/СНГ)",
-			items: getClinicalMaterialsByDomain("implant_system"),
-		},
-		{
-			domain: "bone_graft_membrane",
-			titleRu: "Костная пластика и мембраны (НКР)",
-			items: getClinicalMaterialsByDomain("bone_graft_membrane"),
-		},
-		{
-			domain: "surg_suture",
-			titleRu: "Хирургический шовный материал",
-			items: getClinicalMaterialsByDomain("surg_suture"),
-		},
-		{
-			domain: "surg_hemostatic",
-			titleRu: "Хирургический гемостаз",
-			items: getClinicalMaterialsByDomain("surg_hemostatic"),
-		},
-		{
-			domain: "endo_file",
-			titleRu: "Эндодонтические машинные файлы",
-			items: getClinicalMaterialsByDomain("endo_file"),
-		},
-		{
-			domain: "endo_sealer",
-			titleRu: "Эндодонтические силеры",
-			items: getClinicalMaterialsByDomain("endo_sealer"),
-		},
-		{
-			domain: "endo_irrigation",
-			titleRu: "Эндодонтическая ирригация и промывание",
-			items: getClinicalMaterialsByDomain("endo_irrigation"),
-		},
-		{
-			domain: "endo_dressing",
-			titleRu: "Временные внутриканальные вложения",
-			items: getClinicalMaterialsByDomain("endo_dressing"),
-		},
-		{
-			domain: "ortho_bracket",
-			titleRu: "Ортодонтические брекет-системы",
-			items: getClinicalMaterialsByDomain("ortho_bracket"),
-		},
-		{
-			domain: "ortho_aligner",
-			titleRu: "Элайнеры и прозрачные каппы",
-			items: getClinicalMaterialsByDomain("ortho_aligner"),
-		},
-		{
-			domain: "ortho_archwire",
-			titleRu: "Ортодонтические дуги",
-			items: getClinicalMaterialsByDomain("ortho_archwire"),
-		},
-		{
-			domain: "ortho_miniscrew",
-			titleRu: "Ортодонтические микроимплантаты (TAD)",
-			items: getClinicalMaterialsByDomain("ortho_miniscrew"),
-		},
-		{
-			domain: "prostho_a_silicone",
-			titleRu: "А-силиконы и полиэфиры",
-			items: getClinicalMaterialsByDomain("prostho_a_silicone"),
-		},
-		{
-			domain: "prostho_c_silicone",
-			titleRu: "С-силиконы",
-			items: getClinicalMaterialsByDomain("prostho_c_silicone"),
-		},
-		{
-			domain: "prostho_bite_reg",
-			titleRu: "Регистраторы прикуса",
-			items: getClinicalMaterialsByDomain("prostho_bite_reg"),
-		},
-		{
-			domain: "prostho_cement_perm",
-			titleRu: "Постоянные стоматологические цементы",
-			items: getClinicalMaterialsByDomain("prostho_cement_perm"),
-		},
-		{
-			domain: "prostho_cement_temp",
-			titleRu: "Временные стоматологические цементы",
-			items: getClinicalMaterialsByDomain("prostho_cement_temp"),
-		},
-		{
-			domain: "prostho_retraction",
-			titleRu: "Ретракционные нити",
-			items: getClinicalMaterialsByDomain("prostho_retraction"),
-		},
-		{
-			domain: "lab_cad_material",
-			titleRu: "CAD/CAM зуботехнические материалы",
-			items: getClinicalMaterialsByDomain("lab_cad_material"),
-		},
-		{
-			domain: "therapy_composite",
-			titleRu: "Светоотверждаемые нанокомпозиты",
-			items: getClinicalMaterialsByDomain("therapy_composite"),
-		},
-		{
-			domain: "therapy_adhesive",
-			titleRu: "Адгезивные системы",
-			items: getClinicalMaterialsByDomain("therapy_adhesive"),
-		},
-	];
-}
-
-/**
- * Converts a ClinicalMarketMaterialItem into a ConsumableItemLink template
- * for 1-click binding to an 804n clinical service.
- */
 export function convertMarketMaterialToBomLink(
 	material: ClinicalMarketMaterialItem,
 	service804nCode: string,
@@ -151,7 +27,6 @@ export function convertMarketMaterialToBomLink(
 ): ConsumableItemLink {
 	const costPriceKopecks = Math.round(material.approximatePriceRub * 100);
 
-	// Map domain to consumable category
 	let category: ConsumableItemLink["category"] = "other";
 	if (
 		material.domain.startsWith("therapy_") ||
@@ -182,10 +57,6 @@ export function convertMarketMaterialToBomLink(
 	};
 }
 
-/**
- * Converts a ClinicalMarketMaterialItem into a warehouse item draft
- * for 1-click receipt or manual warehouse item creation.
- */
 export interface WarehouseItemDraft {
 	readonly sku: string;
 	readonly name: string;

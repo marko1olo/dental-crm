@@ -75,16 +75,16 @@ export interface MobileInventoryGroupedListProps {
 	readonly onClearSearch: () => void;
 	readonly selectedCategory: MobileInventoryCategoryType;
 	readonly onSelectCategory: (category: MobileInventoryCategoryType) => void;
-	readonly onQuickDeduct?: (item: InventoryItem, quantity?: number) => void | Promise<void>;
-	readonly onReceiveItem?: (item: InventoryItem, quantity?: number, lotNumber?: string, expDate?: string) => void | Promise<void>;
-	readonly onSelectItem?: (item: InventoryItem) => void;
-	readonly onEditItem?: (item: InventoryItem) => void;
-	readonly onOpenAddModal?: () => void;
-	readonly onOpenInboundInvoice?: () => void;
-	readonly onOpenWaybills?: () => void;
-	readonly onOpenShiftDeduction?: () => void;
-	readonly onQuickWriteoffCarpules?: () => void;
-	readonly isWritingOffCarpules?: boolean;
-	readonly onRefresh?: () => void;
-	readonly money?: (amountRub: number) => string;
+	readonly onQuickDeduct?: ((item: InventoryItem, quantity?: number) => void | Promise<void>) | undefined;
+	readonly onReceiveItem?: ((item: InventoryItem, quantity?: number, lotNumber?: string, expDate?: string) => void | Promise<void>) | undefined;
+	readonly onSelectItem?: ((item: InventoryItem) => void) | undefined;
+	readonly onEditItem?: ((item: InventoryItem) => void) | undefined;
+	readonly onOpenAddModal?: (() => void) | undefined;
+	readonly onOpenInboundInvoice?: (() => void) | undefined;
+	readonly onOpenWaybills?: (() => void) | undefined;
+	readonly onOpenShiftDeduction?: (() => void) | undefined;
+	readonly onQuickWriteoffCarpules?: (() => void | Promise<any>) | undefined;
+	readonly isWritingOffCarpules?: boolean | undefined;
+	readonly onRefresh?: (() => void) | undefined;
+	readonly money?: ((amountRub: any) => string) | undefined;
 }

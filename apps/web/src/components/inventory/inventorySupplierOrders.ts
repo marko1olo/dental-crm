@@ -1,39 +1,17 @@
-import { type Kopecks, formatKopecksRu } from "@dental/shared";
-import type { DeductionLineItem, TechMapCategory } from "./inventoryMath.js";
+import { formatKopecksRu } from "@dental/shared";
+import type { DeductionLineItem } from "./inventoryMath.js";
 import { calculateLineCostKopecks, evaluateStockStatus } from "./inventoryMath.js";
+import type {
+	SupplierPurchaseOrderItemView,
+	SupplierPurchaseOrderView,
+} from "./orders/inventorySupplierOrderTypes.js";
 
-/**
- * Элемент заказа поставщику в интерфейсе
- */
-export interface SupplierPurchaseOrderItemView {
-	readonly sku: string;
-	readonly materialName: string;
-	readonly category: TechMapCategory;
-	readonly unit: string;
-	readonly currentStock: number;
-	readonly criticalThreshold: number;
-	readonly shortfall: number;
-	readonly suggestedOrderQuantity: number;
-	readonly unitCostKopecks: Kopecks;
-	readonly unitCostFormatted: string;
-	readonly totalCostKopecks: Kopecks;
-	readonly totalCostFormatted: string;
-}
+export type {
+	SupplierPurchaseOrderItemView,
+	SupplierPurchaseOrderView,
+} from "./orders/inventorySupplierOrderTypes.js";
 
-/**
- * Документ заказа поставщику в интерфейсе
- */
-export interface SupplierPurchaseOrderView {
-	readonly id: string;
-	readonly orderNumber: string;
-	readonly orderDate: string;
-	readonly clinicNameRu: string;
-	readonly reason: "stock_deficit" | "critical_threshold_breach";
-	readonly items: readonly SupplierPurchaseOrderItemView[];
-	readonly totalItemsCount: number;
-	readonly totalCostKopecks: Kopecks;
-	readonly totalCostFormatted: string;
-}
+export { formatSupplierPurchaseOrderTextRu } from "./orders/inventorySupplierOrderFormatting.js";
 
 /**
  * 1-Кликовое формирование заказа поставщику на основе позиций списания с дефицитом или критическим остатком
@@ -112,37 +90,3 @@ export function canSafelyDeductLinesWithoutDeficit(lines: readonly DeductionLine
 	}
 	return true;
 }
-
-/**
- * Форматирует заказ поставщику в текстовый вид для буфера обмена
- */
-export function formatSupplierPurchaseOrderTextRu(order: SupplierPurchaseOrderView): string {
-	const lines = [
-		`================================================================================`,
-		`ЗАКАЗ ПОСТАВЩИКУ РАСХОДНЫХ МАТЕРИАЛОВ № ${order.orderNumber}`,
-		`Дата: ${order.orderDate} | Клиника: ${order.clinicNameRu}`,
-		`Основание: ${order.reason === "stock_deficit" ? "Ликвидация дефицита материалов" : "Пополнение неснижаемого запаса"}`,
-		`================================================================================`,
-		`СПЕЦИФИКАЦИЯ МАТЕРИАЛОВ:`,
-		`--------------------------------------------------------------------------------`,
-	];
-
-	order.items.forEach((item, idx) => {
-		lines.push(
-			`${idx + 1}. [${item.sku}] ${item.materialName}`,
-			`   Остаток: ${item.currentStock} ${item.unit} | Норма: ${item.criticalThreshold} ${item.unit} | Дефицит: ${item.shortfall}`,
-			`   Рекомендуемый заказ: ${item.suggestedOrderQuantity} ${item.unit} × ${formatKopecksRu(item.unitCostKopecks)} = ${item.totalCostFormatted}`,
-			`--------------------------------------------------------------------------------`,
-		);
-	});
-
-	lines.push(
-		`ВСЕГО ПОЗИЦИЙ: ${order.totalItemsCount}`,
-		`ИТОГО ОРИЕНТИРОВОЧНО: ${order.totalCostFormatted} (${order.totalCostKopecks} коп.)`,
-		`================================================================================`,
-		`Сформировано системой DENTE CRM (Модуль Auto-BOM Inventory).`,
-	);
-
-	return lines.join("\n");
-}
-

@@ -43,6 +43,15 @@ export interface SterilizationBatchCycleResult {
 	readonly nurseWarningBanner?: string | undefined;
 }
 
+export interface UseSterilizationBatchCycleOptions {
+	readonly organizationId: string;
+	readonly operatorName?: string | undefined;
+	readonly onCycleCompleted?:
+		| ((result: SterilizationBatchCycleResult) => void)
+		| undefined;
+	readonly onClose: () => void;
+}
+
 export const DEFAULT_AUTOCLAVE_REGIME = {
 	nameRu: "Стандартный цикл 134°C / 2.1 bar, 45 мин",
 	temperatureCelsius: 134.5,

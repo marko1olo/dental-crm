@@ -1,7 +1,6 @@
 /**
  * inventoryExpiryUtils.ts
  * DENTE Dental CRM — Утилиты расчета сроков годности и категорий материалов склада.
- * Мандаты 8e, 8n, 8v: Контроль FEFO и сроков годности СанПиН 3.3686-21.
  */
 
 import {
@@ -9,6 +8,7 @@ import {
 	getWarehouseFefoTrafficLight,
 	type FefoTrafficLightInfo,
 } from "./fefoTrafficLight.js";
+import { formatExpDate } from "./formatExpDate.js";
 
 export type ExpiryTrafficStatus = "good" | "warning_soon" | "expired" | "normal" | "unknown";
 
@@ -22,12 +22,6 @@ export interface ExpiryTrafficLightInfo {
 	readonly className: string;
 }
 
-/**
- * Расчет светофора срока годности по Мандатам 8e, 8n, 8v:
- * 1. Зеленый: срок годности > 6 месяцев (> 180 дней).
- * 2. Янтарный (предупреждение): срок годности < 30 дней («Истекает скоро — первоочередной отпуск»).
- * 3. Красный (просрочено): daysLeft <= 0. Блокировка отпуска с кнопкой «Акт утилизации по СанПиН 3.3686-21».
- */
 export function getExpiryTrafficLight(
 	expirationDate: string | null | undefined,
 	referenceDate: Date = new Date(),
@@ -76,97 +70,42 @@ export function getExpiryTrafficLight(
 
 	const readable = `${String(expires.getUTCDate()).padStart(2, "0")}.${String(expires.getUTCMonth() + 1).padStart(2, "0")}.${expires.getUTCFullYear()}`;
 
-	// Красный: просрочено (daysLeft <= 0)
 	if (daysLeft <= 0) {
 		const overdueDays = Math.abs(daysLeft);
 		return {
-			status: "expired",
-			color: "rose",
-			daysLeft,
-			labelRu:
-				daysLeft === 0
-					? `Истекает сегодня (${readable})`
-					: `Просрочено на ${overdueDays} дн. (${readable})`,
+			status: "expired", color: "rose", daysLeft, isBlocked: true,
+			labelRu: daysLeft === 0 ? `Истекает сегодня (${readable})` : `Просрочено на ${overdueDays} дн. (${readable})`,
 			badgeTextRu: "Просрочено — отпуск заблокирован",
-			isBlocked: true,
 			className: "text-rose-700 dark:text-rose-300 bg-rose-500/15 border-rose-500/40",
 		};
 	}
 
-	// Янтарный: < 30 дней — первоочередной отпуск FEFO
 	if (daysLeft < 30) {
 		return {
-			status: "warning_soon",
-			color: "amber",
-			daysLeft,
+			status: "warning_soon", color: "amber", daysLeft, isBlocked: false,
 			labelRu: `Истекает через ${daysLeft} дн. (${readable}) — первоочередной отпуск`,
 			badgeTextRu: "Истекает скоро (FEFO)",
-			isBlocked: false,
 			className: "text-amber-700 dark:text-amber-300 bg-amber-500/15 border-amber-500/40",
 		};
 	}
 
-	// Зеленый: > 6 месяцев (> 180 дней)
 	if (daysLeft > 180) {
 		return {
-			status: "good",
-			color: "emerald",
-			daysLeft,
+			status: "good", color: "emerald", daysLeft, isBlocked: false,
 			labelRu: `Годен до ${readable}`,
 			badgeTextRu: "Срок в норме (> 6 мес)",
-			isBlocked: false,
 			className: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/30",
 		};
 	}
 
-	// Промежуточный нормальный срок (от 1 до 6 месяцев)
 	return {
-		status: "normal",
-		color: "teal",
-		daysLeft,
+		status: "normal", color: "teal", daysLeft, isBlocked: false,
 		labelRu: `Годен до ${readable}`,
 		badgeTextRu: `Срок в норме (${Math.round(daysLeft / 30)} мес)`,
-		isBlocked: false,
-		className:
-			"text-[var(--teal-dark,#0f766e)] dark:text-teal-300 bg-[var(--teal-surface)] border-[var(--teal-soft)]",
+		className: "text-[var(--teal-dark,#0f766e)] dark:text-teal-300 bg-[var(--teal-surface)] border-[var(--teal-soft)]",
 	};
 }
 
 export { getWarehouseFefoTrafficLight, getFefoTrafficLight, type FefoTrafficLightInfo };
-
-const CATEGORY_MAP: Record<string, { label: string; className: string }> = {
-	material: { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-	materials: { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-	anesthesia: { label: "Анестезия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	therapy: { label: "Терапия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	composite: { label: "Композиты", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	disposables: { label: "Расходники", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-	ppe: { label: "Расходники", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-	surgery: { label: "Хирургия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	hygiene: { label: "Гигиена", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-	endo: { label: "Эндодонтия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	implant: { label: "Имплантаты", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
-	suture: { label: "Шовный матер.", className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" },
-};
-
-export function getCategoryBadge(category?: string): { label: string; className: string } {
-	if (!category) {
-		return { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
-	}
-	const norm = category.toLowerCase().trim();
-	return CATEGORY_MAP[norm] || { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
-}
-
-export function formatExpDate(exp?: string | null): string {
-	if (!exp) return "—";
-	const trimmed = exp.trim();
-	if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-		const [y, m, d] = trimmed.split("-");
-		return `${d}.${m}.${y}`;
-	}
-	if (/^\d{4}-\d{2}$/.test(trimmed)) {
-		const [y, m, d] = trimmed.split("-");
-		return `${m}.${y}`;
-	}
-	return trimmed;
-}
+export { getCategoryBadge } from "./inventoryCategoryBadges.js";
+export { formatExpDate };

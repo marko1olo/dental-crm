@@ -27,7 +27,7 @@ export const ShiftBatchModalHeader: React.FC<ShiftBatchModalHeaderProps> = ({
 							Списание расходников за смену
 						</h2>
 						<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200 shrink-0">
-							1 клик по нормам процедур • Мягкий овердрафт
+							1 клик по техкартам • Мягкий овердрафт
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted)] truncate">
