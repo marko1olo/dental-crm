@@ -43,7 +43,7 @@ export function TomorrowRemindersBatchFooter({
 				</button>
 				<button
 					type="button"
-					onClick={summary.dispatchableCount === 0 ? () => {} : onBatchDispatch}
+					onClick={(summary.dispatchableCount ?? 0) === 0 ? () => {} : onBatchDispatch}
 					aria-busy={isDispatching}
 					className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
 				>
@@ -51,7 +51,7 @@ export function TomorrowRemindersBatchFooter({
 					<span>
 						{isDispatching
 							? `Отправка (${dispatchProgress?.current || 0}/${dispatchProgress?.total || 0})...`
-							: `Разослать все (Каскад)${summary.dispatchableCount > 0 ? ` (${summary.dispatchableCount})` : ""}`}
+							: `Разослать все (Каскад)${(summary.dispatchableCount ?? 0) > 0 ? ` (${summary.dispatchableCount})` : ""}`}
 					</span>
 				</button>
 			</div>

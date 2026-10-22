@@ -12,10 +12,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { appointmentScheduleMissingFields } from "../../../AppHelpers";
+import { appointmentScheduleMissingFields, type AppointmentScheduleDraft } from "../../../AppHelpers";
 import { AssistantChairFields } from "../appointmentDoctorChair/AssistantChairFields";
 import { DoctorChairTimeStep } from "../newAppointment/DoctorChairTimeStep";
-import type { Dashboard, AppointmentScheduleDraft } from "@dental/shared";
+import type { Dashboard } from "@dental/shared";
 
 describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 	it("1. appointmentScheduleMissingFields never requires assistantUserId for solo doctor or clinic", () => {
@@ -47,7 +47,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 			draftWithoutAssistant,
 			"solo_doctor",
 			staff as any,
-			resources,
+			resources as any,
 		);
 		assert.deepEqual(missingSolo, [], "Must have 0 missing fields without assistant in solo_doctor mode");
 
@@ -56,7 +56,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 			draftWithoutAssistant,
 			"one_chair",
 			staff as any,
-			resources,
+			resources as any,
 		);
 		assert.deepEqual(missingOneChair, [], "Must have 0 missing fields without assistant in one_chair mode");
 
@@ -65,7 +65,7 @@ describe("Solo Doctor Schedule & Assistant Autonomy (Mandates 8e, 8n)", () => {
 			draftWithoutAssistant,
 			"small_clinic",
 			staff as any,
-			resources,
+			resources as any,
 		);
 		assert.deepEqual(missingSmallClinic, [], "Must have 0 missing fields without assistant in small_clinic mode");
 	});

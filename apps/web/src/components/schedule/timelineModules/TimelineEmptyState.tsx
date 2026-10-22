@@ -1,13 +1,13 @@
 import { Plus } from "lucide-react";
 
 interface TimelineEmptyStateProps {
-	onNewAppointmentClick?: () => void;
-	activeScheduleFilterCount?: number;
-	resetScheduleFilters?: () => void;
-	stepScheduleDay?: (delta: number) => void;
-	setScheduleDateFilter?: (date: string) => void;
-	todayScheduleDate?: () => string;
-	clinicToday?: string;
+	onNewAppointmentClick?: (() => void) | undefined;
+	activeScheduleFilterCount?: number | undefined;
+	resetScheduleFilters?: (() => void) | undefined;
+	stepScheduleDay?: ((delta: number) => void) | undefined;
+	setScheduleDateFilter?: ((date: string) => void) | undefined;
+	todayScheduleDate?: (() => string) | undefined;
+	clinicToday?: string | undefined;
 }
 
 export function TimelineEmptyState({

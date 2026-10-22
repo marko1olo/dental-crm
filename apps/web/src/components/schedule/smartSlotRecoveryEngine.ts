@@ -8,6 +8,7 @@ import {
   type MatchWaitlistSlotParams,
   type SmartSlotCandidateMatch,
   type SmartSlotRecoveryResult,
+  type TimeOfDay,
   type WaitlistEntryLike,
   type WaitlistUrgency,
   URGENCY_LABELS,
@@ -50,8 +51,8 @@ interface ScoredCandidate {
 
 function buildCandidateMatchReasons(params: {
   entry: WaitlistEntryLike;
-  doctorId?: string | null;
-  docSpecLower?: string | null;
+  doctorId?: string | null | undefined;
+  docSpecLower?: string | null | undefined;
   timeOfDayCategory: TimeOfDay;
   timeFit: { fits: boolean; hasSpecificPreference: boolean };
   slotDurationMinutes: number;
@@ -121,7 +122,7 @@ export function matchWaitlistCandidatesForSlot(params: MatchWaitlistSlotParams):
       if (c.includes(docSpecLower) || docSpecLower.includes(c)) { score += 15; }
     }
 
-    const timeFit = checkCandidateTimeOfDayFit(timeOfDayCategory, entry.preferredTimeRanges, entry.notes);
+    const timeFit = checkCandidateTimeOfDayFit(timeOfDayCategory, entry.preferredTimeRanges);
     if (timeFit.fits && timeFit.hasSpecificPreference) {
       score += 20;
     } else if (timeFit.fits) {

@@ -1,5 +1,6 @@
-import { CHAIR_SPECIALTY_PRESETS } from "./chairPresets";
+import { CHAIR_NAME_SUGGESTIONS } from "./chairPresets";
 import { QuickAddChairDoctorSelect } from "./QuickAddChairDoctorSelect";
+import { QuickAddChairSpecialtyPicker } from "./QuickAddChairSpecialtyPicker";
 import type { QuickAddChairFieldsProps } from "./types";
 
 export function QuickAddChairFields({
@@ -37,6 +38,19 @@ export function QuickAddChairFields({
 						style={{ minHeight: "44px" }}
 						className="w-full min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-sm text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
 					/>
+					<div className="flex flex-wrap gap-1.5 mt-2">
+						{CHAIR_NAME_SUGGESTIONS.map((suggestion, idx) => (
+							<button
+								key={suggestion}
+								type="button"
+								data-testid={`quick-add-chair-name-suggestion-${idx}`}
+								onClick={() => setChairName(suggestion)}
+								className="text-[11px] px-2 py-1 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] transition-colors cursor-pointer"
+							>
+								{suggestion}
+							</button>
+						))}
+					</div>
 				</div>
 				<div>
 					<label
@@ -58,32 +72,10 @@ export function QuickAddChairFields({
 				</div>
 			</div>
 
-			<div className="space-y-1.5">
-				<label
-					htmlFor="chair-specialty-presets"
-					className="block text-xs font-semibold text-[var(--ink,#0f172a)] mb-1"
-				>
-					Специализация установки
-				</label>
-				<div id="chair-specialty-presets" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-					{CHAIR_SPECIALTY_PRESETS.map((spec) => (
-						<button
-							key={spec.id}
-							type="button"
-							data-testid={`quick-add-chair-spec-${spec.id}`}
-							onClick={() => setSelectedSpecialty(spec.id)}
-							style={{ minHeight: "44px" }}
-							className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
-								selectedSpecialty === spec.id
-									? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] shadow-xs"
-									: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
-							}`}
-						>
-							<span className="text-xs font-semibold text-[var(--ink,#0f172a)]">{spec.label}</span>
-						</button>
-					))}
-				</div>
-			</div>
+			<QuickAddChairSpecialtyPicker
+				selectedSpecialty={selectedSpecialty}
+				setSelectedSpecialty={setSelectedSpecialty}
+			/>
 
 			<div>
 				<QuickAddChairDoctorSelect

@@ -6,9 +6,9 @@ export async function submitChairData(params: {
 	isEditMode: boolean;
 	finalName: string;
 	payload: QuickAddChairData;
-	initialData?: QuickAddChairData | null;
-	onUpdateChair?: (chairData: QuickAddChairData) => Promise<void> | void;
-	onAddChair?: (chairData: QuickAddChairData) => Promise<void> | void;
+	initialData?: QuickAddChairData | null | undefined;
+	onUpdateChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	onClose: () => void;
 }) {
 	const { isEditMode, finalName, payload, initialData, onUpdateChair, onAddChair, onClose } = params;
@@ -48,8 +48,8 @@ export async function duplicateChairData(params: {
 	selectedColor: string;
 	isActive: boolean;
 	defaultDoctorId: string;
-	branchId?: string;
-	onAddChair?: (chairData: QuickAddChairData) => Promise<void> | void;
+	branchId?: string | undefined;
+	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	onClose: () => void;
 }) {
 	const {

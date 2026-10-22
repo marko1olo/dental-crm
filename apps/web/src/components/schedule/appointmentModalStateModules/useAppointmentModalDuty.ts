@@ -1,7 +1,7 @@
 import type {
 	Appointment,
-	ClinicStaffMember,
-	DentalChair,
+	StaffMember as ClinicStaffMember,
+	Chair as DentalChair,
 } from "@dental/shared";
 import { useMemo } from "react";
 import { resolveChairDutyDoctor } from "../QuickBookingDrawer";

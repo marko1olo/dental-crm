@@ -5,5 +5,6 @@ export * from "./QuickAddChairDoctorSelect";
 export * from "./QuickAddChairFields";
 export * from "./QuickAddChairFooter";
 export * from "./QuickAddChairPreview";
+export * from "./QuickAddChairSpecialtyPicker";
 export * from "./types";
 export * from "./useQuickAddChairForm";

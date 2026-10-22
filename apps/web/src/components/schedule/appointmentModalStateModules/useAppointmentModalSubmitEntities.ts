@@ -1,4 +1,4 @@
-import type { ClinicStaffMember, DentalChair } from "@dental/shared";
+import type { StaffMember as ClinicStaffMember, Chair as DentalChair } from "@dental/shared";
 import { isCitoAppointment } from "../../../utils/scheduleCollisionUtils";
 import { isTechnicalBreakAppointment } from "../AppointmentModalQuickReasons";
 import { DEFAULT_SOLO_CHAIR } from "../ScheduleGrid";

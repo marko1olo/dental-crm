@@ -23,7 +23,7 @@ export function buildTomorrowReminderItem(
 	dateIso: string,
 	baseUrl: string,
 	clinicInfo: ClinicProfileInfo,
-	quietHoursStatus: { isQuietHours: boolean; warningRu?: string | null },
+	quietHoursStatus: { isQuietHours: boolean; warningRu?: string | null | undefined },
 	options?: CompileRemindersOptions,
 ): { item: TomorrowReminderItem; availableChannels: string[] } {
 	const patient = appt.patientId ? patientsMap.get(appt.patientId) : undefined;

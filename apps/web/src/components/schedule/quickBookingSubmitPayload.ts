@@ -8,7 +8,7 @@ interface BuildPayloadOptions {
   startsAtIso: string;
   endsAtIso: string;
   isEmergency: boolean;
-  overbookOverride?: boolean;
+  overbookOverride?: boolean | undefined;
 }
 
 export function buildQuickBookingPayload(opts: BuildPayloadOptions) {

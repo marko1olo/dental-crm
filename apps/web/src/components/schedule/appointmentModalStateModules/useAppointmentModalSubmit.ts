@@ -1,4 +1,4 @@
-import type { Appointment, ClinicStaffMember, DentalChair } from "@dental/shared";
+import type { Appointment, StaffMember as ClinicStaffMember, Chair as DentalChair } from "@dental/shared";
 import { isCitoAppointment } from "../../../utils/scheduleCollisionUtils";
 import {
 	resolveEffectiveDoctorAndChair,

@@ -7,7 +7,7 @@ interface TimelineGapRowProps {
 	row: any;
 	gapStartLabel: string | null;
 	gapEndLabel: string | null;
-	onEmptySlotClick?: (slot: QuickBookingSlotInfo) => void;
+	onEmptySlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
 }
 
 export function TimelineGapRow({

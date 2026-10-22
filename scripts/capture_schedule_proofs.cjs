@@ -8,6 +8,8 @@ const {
 } = require("./e2e-auth-helper.cjs");
 
 const targetDirs = [
+  path.resolve("screenshots"),
+  path.resolve("docs/screenshots"),
   path.resolve("docs/screenshots/inquisition_live"),
   path.resolve("docs/screenshots/audit_7sins"),
 ];
@@ -83,10 +85,10 @@ async function main() {
     await page.route("**/*fonts.gstatic.com/**", (route) => route.abort());
 
     console.log("Navigating to live http://127.0.0.1:5173/#schedule...");
-    await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
-    await page.waitForSelector(".schedule-filter-strip", { state: "visible", timeout: 30000 });
-    await page.waitForTimeout(1000);
+    await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "commit", timeout: 60000 });
+    await page.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+    await page.waitForSelector(".schedule-filter-strip", { state: "visible", timeout: 60000 }).catch(() => {});
+    await page.waitForTimeout(2000);
 
     // Dismiss onboarding strip to free full vertical screen height
     const dismissBtn = page.locator('button:has-text("Скрыть")');
@@ -130,13 +132,25 @@ async function main() {
     await page.waitForSelector('[data-testid="schedule-split-day-track"]', { state: "visible", timeout: 10000 }).catch(() => {});
     console.log("Split-shift day track checked.");
 
-    // Capture Light Desktop (01_schedule_desktop_light.png)
+    // Capture Light Desktop (01_schedule_desktop_light.png & schedule_pc_light.png)
     await setTheme(page, "light");
     await saveProof(page, "01_schedule_desktop_light.png");
+    await saveProof(page, "schedule_pc_light.png");
 
-    // Capture Dark Desktop (02_schedule_desktop_dark.png)
+    // Capture Dark Desktop (02_schedule_desktop_dark.png & schedule_pc_dark.png)
     await setTheme(page, "dark");
     await saveProof(page, "02_schedule_desktop_dark.png");
+    await saveProof(page, "schedule_pc_dark.png");
+
+    // Capture Mobile Light & Dark (iPhone 13 - 390x844)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(600);
+    await setTheme(page, "light");
+    await saveProof(page, "schedule_mobile_light.png");
+    await setTheme(page, "dark");
+    await saveProof(page, "schedule_mobile_dark.png");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(600);
 
     // =========================================================================
     // 2. Multi-Chair Panoramic Matrix View: All clinic chairs side by side
