@@ -370,18 +370,18 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						</button>
 					</div>
 
-					{/* Резервный 1-клик чекаут через автономный терминал (Мандаты 8e, 8n) */}
+					{/* Резервный чекаут через автономный терминал (Мандаты 8e, 8n, 8am: Secondary CTA) */}
 					<button
 						type="button"
 						data-testid="btn-autonomous-terminal-checkout"
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
-						className="min-h-[44px] h-11 px-4 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+						className="secondary-button min-h-[44px] h-11 px-3.5 rounded-xl font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
-						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-						<span className="truncate sm:hidden">Автономный терминал</span>
-						<span className="truncate hidden sm:inline">Оплата через автономный терминал</span>
+						<WifiOff size={15} className="shrink-0 text-[var(--muted,#64748b)]" />
+						<span className="truncate sm:hidden">Автономно</span>
+						<span className="truncate hidden sm:inline">Автономный терминал</span>
 					</button>
 					<button
 						type="button"
@@ -395,6 +395,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						Принять оплату (чек пробить позже)
 					</button>
 
+					{/* Единственная каноническая Primary CTA кнопка (Мандат 8am) */}
 					<button
 						type="button"
 						data-testid="execute-fast-checkout-btn"
@@ -413,8 +414,8 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 								<Check className="w-5 h-5 shrink-0" />
 								<span className="truncate">
 									{targetBillKop === 0
-										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
-										: `Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
+										? "✓ Закрыть визит: 100% Гарантия (0 ₽)"
+										: `✓ Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
 								</span>
 							</>
 						)}

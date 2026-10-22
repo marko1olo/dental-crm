@@ -1,77 +1,93 @@
 /**
  * cashboxInnValidation.ts
  *
- * DENTE Dental CRM — 54-FZ & FFD 1.2 Tag 1228 Buyer INN Validation.
- * Compliant with:
- * - Mandate 8e (Doctor & Staff Autonomy: no disabled buttons, no obstacle INN for citizens)
- * - 54-FZ & FFD 1.2 Tag 1228 (Buyer INN strictly optional for physical persons, required only for B2B legal entities/IP)
+ * DENTE Dental CRM — Кассовая валидация ИНН покупателя (Buyer INN Validation).
+ * Соответствует:
+ * - Мандат 8e (Автономия врача и персонала: запрет блокировки кнопок «Оплатить» / «Выбить чек»)
+ * - Мандат 8n (Касса без палок в колёса: для физлиц-пациентов ИНН СТРОГО опционален)
+ * - Мандат 8ap (Запрет номеров законов в названиях функций и типов)
  */
 
 export type PayerLegalType = "physical_person" | "legal_entity" | "individual_entrepreneur";
+export type PayerType = "physical" | "legal_entity" | "physical_person" | "individual_entrepreneur";
 
 export interface BuyerInnValidationResult {
 	readonly isValid: boolean;
 	readonly isRequired: boolean;
 	readonly errorRu?: string | undefined;
+	readonly errorMessage?: string | undefined;
 	readonly cleanInn?: string | undefined;
 }
 
 /**
- * 54-ФЗ Tag 1228: Валидация ИНН покупателя.
+ * Каноническая функция валидации ИНН покупателя (Мандаты 8e, 8n, 8ap).
  * В частной стоматологии для физлиц ИНН КАТЕГОРИЧЕСКИ НЕ ТРЕБУЕТСЯ и никогда не блокирует оплату.
+ * Обязателен ИСКЛЮЧИТЕЛЬНО для юридических лиц (10 цифр) и ИП (12 цифр).
  */
-export function validateBuyerInn54Fz(params: {
-	readonly payerType?: PayerLegalType | undefined;
+export function validateBuyerInn(params: {
+	readonly payerType?: PayerType | PayerLegalType | undefined;
 	readonly buyerInn?: string | undefined;
 }): BuyerInnValidationResult {
-	const payerType = params.payerType ?? "physical_person";
+	const rawPayerType = params.payerType ?? "physical_person";
 	const cleanInn = (params.buyerInn ?? "").trim().replace(/\D/g, "");
 
-	if (payerType === "physical_person") {
+	const isPhysical = rawPayerType === "physical" || rawPayerType === "physical_person";
+
+	if (isPhysical) {
 		// Физическое лицо — ИНН строго опционален. Пустое поле всегда 100% валидно.
 		if (!cleanInn) {
 			return { isValid: true, isRequired: false };
 		}
-		// Если физлицо добровольно указало ИНН (например для справки об оплате 13% НДФЛ),
-		// проверяем формат, но НИКОГДА не блокируем чек
+		// Если физлицо добровольно указало ИНН (например, для справки на налоговый вычет 13%),
+		// проверяем длину, но НИКОГДА не блокируем чек
 		const isStandardLength = cleanInn.length === 12 || cleanInn.length === 10;
+		const hint = isStandardLength
+			? undefined
+			: "ИНН физлица обычно содержит 12 цифр (поле опционально и не блокирует чек)";
 		return {
 			isValid: true,
 			isRequired: false,
 			cleanInn,
-			errorRu: isStandardLength
-				? undefined
-				: "ИНН физлица обычно состоит из 12 цифр (для 54-ФЗ поле опционально и не блокирует чек)",
+			errorRu: hint,
+			errorMessage: hint,
 		};
 	}
 
-	// B2B: Юридическое лицо или ИП
+	// B2B: Юридическое лицо или Индивидуальный предприниматель
+	const isLegalEntity = rawPayerType === "legal_entity";
+	const isIp = rawPayerType === "individual_entrepreneur";
+
 	if (!cleanInn) {
+		const msg = isLegalEntity
+			? "Для организации обязателен ИНН (10 цифр)"
+			: "Для ИП обязателен ИНН (12 цифр)";
 		return {
 			isValid: false,
 			isRequired: true,
-			errorRu:
-				payerType === "legal_entity"
-					? "Для организации обязателен ИНН (10 цифр)"
-					: "Для ИП обязателен ИНН (12 цифр)",
+			errorRu: msg,
+			errorMessage: msg,
 		};
 	}
 
-	if (payerType === "legal_entity" && cleanInn.length !== 10) {
+	if (isLegalEntity && cleanInn.length !== 10) {
+		const msg = "ИНН юридического лица должен содержать ровно 10 цифр";
 		return {
 			isValid: false,
 			isRequired: true,
 			cleanInn,
-			errorRu: "ИНН юридического лица должен содержать ровно 10 цифр",
+			errorRu: msg,
+			errorMessage: msg,
 		};
 	}
 
-	if (payerType === "individual_entrepreneur" && cleanInn.length !== 12) {
+	if (isIp && cleanInn.length !== 12) {
+		const msg = "ИНН индивидуального предпринимателя должен содержать ровно 12 цифр";
 		return {
 			isValid: false,
 			isRequired: true,
 			cleanInn,
-			errorRu: "ИНН индивидуального предпринимателя должен содержать ровно 12 цифр",
+			errorRu: msg,
+			errorMessage: msg,
 		};
 	}
 
@@ -82,48 +98,20 @@ export function validateBuyerInn54Fz(params: {
 	};
 }
 
-export type PayerType = "physical" | "legal_entity" | "physical_person" | "individual_entrepreneur";
-
 /**
- * Облегченная обёртка валидации ИНН 54-ФЗ для модальных окон оплаты.
+ * Облегченная обёртка валидации ИНН покупателя.
  */
-export function validate54FzBuyerInn(
+export function validateBuyerInnShort(
 	buyerInn: string | undefined,
 	payerType: PayerType = "physical",
-): {
-	readonly isValid: boolean;
-	readonly isRequired: boolean;
-	readonly cleanInn?: string | undefined;
-	readonly errorMessage?: string | undefined;
-	readonly errorRu?: string | undefined;
-} {
-	const clean = (buyerInn ?? "").trim().replace(/\D/g, "");
-	const mappedLegalType: PayerLegalType =
-		payerType === "legal_entity"
-			? clean.length === 12
-				? "individual_entrepreneur"
-				: "legal_entity"
-			: payerType === "individual_entrepreneur"
-				? "individual_entrepreneur"
-				: "physical_person";
-	const res = validateBuyerInn54Fz({
-		payerType: mappedLegalType,
-		buyerInn,
-	});
-	return {
-		isValid: res.isValid,
-		isRequired: res.isRequired,
-		cleanInn: res.cleanInn,
-		errorMessage: res.errorRu,
-		errorRu: res.errorRu,
-	};
+): BuyerInnValidationResult {
+	return validateBuyerInn({ buyerInn, payerType });
 }
 
 /**
- * Мандат 8e п. 9, 8n: Проверка блокировки кассовых действий из-за ИНН.
- * Для физических лиц (граждан) по ст. 4.7 № 54-ФЗ ИНН не требуется,
- * поэтому действие кассира/врача («Выбить чек», «Принять оплату») КАТЕГОРИЧЕСКИ НЕ БЛОКИРУЕТСЯ (всегда false).
- * Для юридических лиц и ИП блокировка активна при отсутствии или невалидном ИНН.
+ * Проверка блокировки кассовых действий из-за ИНН (Мандаты 8e, 8n).
+ * Для граждан (физических лиц) оплата НИКОГДА не блокируется (всегда false).
+ * Для B2B блокировка срабатывает только при отсутствии обязательного ИНН организации.
  */
 export function isCashierActionBlockedByInn(params: {
 	readonly payerType?: PayerType | PayerLegalType | undefined;
@@ -133,6 +121,10 @@ export function isCashierActionBlockedByInn(params: {
 	if (pType === "physical" || pType === "physical_person") {
 		return false;
 	}
-	const res = validate54FzBuyerInn(params.buyerInn, pType);
+	const res = validateBuyerInn({ payerType: pType, buyerInn: params.buyerInn });
 	return !res.isValid;
 }
+
+// Алиасы обратной совместимости (Мандат 8ap)
+export const validateBuyerInn54Fz = validateBuyerInn;
+export const validate54FzBuyerInn = validateBuyerInnShort;

@@ -44,9 +44,9 @@ export const SberPosTerminalLcdPanel: React.FC<SberPosTerminalLcdPanelProps> = (
 				<button
 					type="button"
 					onClick={() => onStartOperation(operation)}
-					className="min-h-[44px] px-4 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal-soft,#f0fdfa)]/80 text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+					className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
 				>
-					{isExecuting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+					{isExecuting ? <RefreshCw className="w-4 h-4 animate-spin shrink-0" /> : <Send className="w-4 h-4 shrink-0" />}
 					<span>{isExecuting ? "Запрос выполняется..." : "Отправить сумму на терминал"}</span>
 				</button>
 				{isExecuting && (
@@ -55,7 +55,7 @@ export const SberPosTerminalLcdPanel: React.FC<SberPosTerminalLcdPanelProps> = (
 						onClick={onCancelOperation}
 						className="min-h-[44px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5 transition-colors cursor-pointer"
 					>
-						<Ban className="w-3.5 h-3.5" />
+						<Ban className="w-4 h-4 shrink-0" />
 						<span>Отменить операцию</span>
 					</button>
 				)}

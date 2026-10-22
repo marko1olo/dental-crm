@@ -1,6 +1,6 @@
 /**
- * DENTE Dental CRM — Sberbank POS Terminal & SberPay HUD Styles
- * Multi-Theme CSS Token Compatible
+ * DENTE Dental CRM — POS Terminal & Acquirer Modal Styles
+ * Multi-Theme CSS Token Compatible (Mandates 8e, 8k, 8x)
  */
 
 .sber-pos-modal-overlay {
@@ -30,7 +30,7 @@
 }
 
 /* Status Card & Badges */
-.sber-pos-lcd-screen {
+.sber-pos-card {
 	background-color: var(--paper-soft, #f8fafc);
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line, #cbd5e1);
@@ -40,7 +40,7 @@
 	overflow: hidden;
 }
 
-/* Sberbank Green Badge */
+/* Green Badge */
 .sber-badge-green {
 	background-color: rgba(16, 185, 129, 0.15);
 	border: 1px solid rgba(16, 185, 129, 0.35);

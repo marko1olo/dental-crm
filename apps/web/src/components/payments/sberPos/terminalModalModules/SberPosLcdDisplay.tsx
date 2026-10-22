@@ -1,8 +1,5 @@
-import {
-	getPilotNtCommandCode,
-	type SberPosOperationType,
-} from "@dental/shared";
-import { CheckCircle2, CreditCard, Loader2, QrCode, Wifi, XCircle } from "lucide-react";
+import type { SberPosOperationType } from "@dental/shared";
+import { CheckCircle2, CreditCard, Loader2, QrCode, ShieldCheck, XCircle } from "lucide-react";
 import type React from "react";
 
 export interface SberPosLcdDisplayProps {
@@ -14,62 +11,81 @@ export interface SberPosLcdDisplayProps {
 	readonly statusMessage: string;
 	readonly totalBillKop: number;
 	readonly operation: SberPosOperationType;
-	readonly pilotCommandText: string;
+	readonly pilotCommandText?: string | undefined;
 }
 
+/**
+ * Статус эквайрингового терминала без архаичных псевдо-ЖК экранчиков (Мандаты 8e, 8k, 8x).
+ * Чистый прозрачный UI: сумма, статус ожидания карты и результат авторизации банком.
+ */
 export const SberPosLcdDisplay: React.FC<SberPosLcdDisplayProps> = ({
-	activeModelName,
 	terminalId,
 	isConfigured,
 	status,
 	statusMessage,
 	totalBillKop,
-	operation,
-	pilotCommandText,
 }) => {
 	const isSuccess = status === "success";
-	const isFailed = ["card_declined", "pin_timeout", "communication_error", "user_cancelled"].includes(status);
-	const isProcessing = ["connecting", "card_wait", "processing_card", "authorizing", "pin_entry"].includes(status);
+	const isFailed = [
+		"card_declined",
+		"pin_timeout",
+		"communication_error",
+		"user_cancelled",
+	].includes(status);
+	const isProcessing = [
+		"connecting",
+		"card_wait",
+		"processing_card",
+		"authorizing",
+		"pin_entry",
+	].includes(status);
+
+	const amountRubFormatted = ((totalBillKop || 0) / 100).toLocaleString("ru-RU", {
+		minimumFractionDigits: 2,
+	});
 
 	return (
 		<div
-			className="p-5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] min-h-[220px] flex flex-col justify-between shadow-xs transition-all"
+			className="p-5 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] min-h-[200px] flex flex-col justify-between shadow-xs transition-all"
 			data-testid="sber-pos-status-panel"
 		>
-			<div className="flex items-center justify-between text-xs border-b border-[var(--line,#e2e8f0)] pb-2.5 text-[var(--muted,#64748b)]">
+			{/* Верхняя строка статуса подключения */}
+			<div className="flex items-center justify-between text-xs border-b border-[var(--line,#e2e8f0)] pb-3 text-[var(--muted,#64748b)]">
 				<div className="flex items-center gap-2 font-medium">
-					<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+					<span
+						className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+							isConfigured ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+						}`}
+					/>
 					<span className="font-semibold text-[var(--ink,#0f172a)]">
-						{activeModelName ? activeModelName.split(" ")[0] : "Банковский POS-терминал"}
+						Банковский POS-терминал
 					</span>
 					<span>• TID: {isConfigured ? terminalId : "Не настроен"}</span>
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-					<Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-					<span>Связь активна</span>
+					<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+					<span>{isConfigured ? "Готов к оплате" : "Требуется настройка"}</span>
 				</div>
 			</div>
 
-			<div className="my-auto py-4 text-center flex flex-col items-center justify-center gap-2">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-					Сумма операции на терминале
+			{/* Центральная информационная зона: Сумма + Статус */}
+			<div className="my-auto py-5 text-center flex flex-col items-center justify-center gap-2">
+				<span className="text-xs font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
+					Сумма к оплате на терминале
 				</span>
 				<div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-[var(--ink,#0f172a)] leading-tight">
-					{((totalBillKop || 0) / 100).toLocaleString("ru-RU", {
-						minimumFractionDigits: 2,
-					})}{" "}
-					₽
+					{amountRubFormatted} ₽
 				</div>
 
-				<div className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold max-w-md">
+				<div className="mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold max-w-lg transition-all">
 					{isSuccess ? (
-						<div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold">
-							<CheckCircle2 className="w-4 h-4 text-emerald-600" />
+						<div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+							<CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
 							<span>Оплата успешно авторизована банком!</span>
 						</div>
 					) : isFailed ? (
-						<div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-medium">
-							<XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+						<div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-semibold bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/30">
+							<XCircle className="w-5 h-5 text-rose-600 shrink-0" />
 							<span>{statusMessage || "Операция отклонена банком"}</span>
 						</div>
 					) : status === "qr_displayed" ? (
@@ -82,24 +98,23 @@ export const SberPosLcdDisplay: React.FC<SberPosLcdDisplayProps> = ({
 							</span>
 						</div>
 					) : isProcessing ? (
-						<div className="flex items-center gap-2 text-[var(--ink,#0f172a)] font-medium">
-							<Loader2 className="w-4 h-4 text-[var(--teal,#0d9488)] animate-spin" />
-							<span>{statusMessage || "Отправка команды на физический терминал..."}</span>
+						<div className="flex items-center gap-2 text-[var(--ink,#0f172a)] font-medium bg-[var(--paper-soft,#f8fafc)] px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)]">
+							<Loader2 className="w-4 h-4 text-[var(--teal,#0d9488)] animate-spin shrink-0" />
+							<span>{statusMessage || "Ожидание прикладывания карты к терминалу..."}</span>
 						</div>
 					) : (
-						<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)]">
-							<CreditCard className="w-4 h-4" />
-							<span>{statusMessage || "Готов к отправке суммы"}</span>
+						<div className="flex items-center gap-2 text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)]">
+							<CreditCard className="w-4 h-4 shrink-0 text-[var(--teal,#0d9488)]" />
+							<span>{statusMessage || "Ожидание карты на терминале..."}</span>
 						</div>
 					)}
 				</div>
 			</div>
 
-			<div className="text-[11px] text-[var(--muted,#64748b)] font-mono pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
-				<span>Драйвер эквайринга: Pilot-NT (CMD {getPilotNtCommandCode(operation)})</span>
-				<span className="truncate max-w-[240px] text-[var(--ink,#0f172a)] font-medium">
-					{pilotCommandText}
-				</span>
+			{/* Нижняя строчка подсказки оператору */}
+			<div className="text-[11px] text-[var(--muted,#64748b)] pt-2.5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
+				<span>Приложите карту, смартфон или вставьте чип в терминал</span>
+				<span className="text-[var(--ink,#0f172a)] font-medium">Безналичный расчет</span>
 			</div>
 		</div>
 	);

@@ -98,11 +98,12 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = (props)
 
 				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between flex-wrap gap-3">
 					<div className="text-xs text-[var(--muted,#64748b)]">
-						Сбербанк Эквайринг • MCC 8021 • ПАО Сбербанк Генеральная лицензия ЦБ РФ №1481
+						Банковский терминал • Безналичная оплата
 					</div>
 					<button
-						type="button" onClick={onClose}
-						className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+						type="button"
+						onClick={onClose}
+						className="secondary-button min-h-[44px] h-11 px-6 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-all"
 					>
 						<span>Закрыть</span>
 					</button>

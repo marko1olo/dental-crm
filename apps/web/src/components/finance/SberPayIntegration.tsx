@@ -279,33 +279,33 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 				</button>
 			</div>
 
-			{/* Terminal Status Display HUD */}
-			<div className="p-4 rounded-xl bg-slate-900 text-emerald-400 font-mono text-xs border border-slate-800 space-y-2">
-				<div className="flex items-center justify-between border-b border-slate-800 pb-2">
+			{/* Terminal Status Display — Clean DENTE Card (Mandates 8e, 8k, 8x) */}
+			<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs border border-[var(--line,#e2e8f0)] space-y-2">
+				<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2">
 					<div className="flex items-center gap-2">
-						<ShieldCheck size={14} className={isConfigured ? "text-emerald-400" : "text-amber-400"} />
-						<span className="font-bold uppercase tracking-wider">
-							СБЕРБАНК POS • {isConfigured && activeConfig?.terminalId ? `TID ${activeConfig.terminalId}` : "TID: НЕ НАСТРОЕН"}
+						<ShieldCheck size={14} className={isConfigured ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"} />
+						<span className="font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+							Банковский POS-терминал • {isConfigured && activeConfig?.terminalId ? `TID ${activeConfig.terminalId}` : "TID: НЕ НАСТРОЕН"}
 						</span>
 					</div>
-					<span className="text-emerald-300 font-bold">{amountRubString} ₽</span>
+					<span className="text-base font-extrabold text-[var(--ink,#0f172a)] font-mono">{amountRubString} ₽</span>
 				</div>
 
 				<div className="py-2 text-center">
 					{terminalStatus === "qr_displayed" && qrPayload ? (
 						<div className="flex flex-col items-center gap-2 py-2">
-							<div className="w-24 h-24 bg-white p-2 rounded-lg flex items-center justify-center">
+							<div className="w-24 h-24 bg-white p-2 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center">
 								<QrCode className="w-full h-full text-slate-950" />
 							</div>
-							<span className="text-[11px] text-emerald-300">Отсканируйте в СберБанк Онлайн или приложении СБП</span>
+							<span className="text-xs font-semibold text-teal-700 dark:text-teal-300">Отсканируйте в приложении банка (СБП)</span>
 						</div>
 					) : terminalStatus === "biometry_scan" ? (
 						<div className="flex flex-col items-center gap-1 py-1">
-							<Smile size={36} className="text-emerald-300 animate-pulse" />
-							<span className="text-[11px] text-emerald-200">FacePay: Пациент смотрит в камеру терминала</span>
+							<Smile size={32} className="text-teal-600 dark:text-teal-400 animate-pulse" />
+							<span className="text-xs font-semibold text-teal-800 dark:text-teal-200">Оплата улыбкой: взгляд в камеру терминала</span>
 						</div>
 					) : (
-						<p className="text-sm font-bold text-emerald-200 m-0">
+						<p className="text-sm font-semibold text-[var(--ink,#0f172a)] m-0">
 							{statusMessage}
 						</p>
 					)}
