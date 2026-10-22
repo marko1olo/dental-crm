@@ -1,0 +1,111 @@
+/**
+ * Russian Dental Emergency Rescue — Briefing & Dispatcher Box Stylesheet
+ */
+
+.emergency-briefing-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 0.75rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+@media (max-width: 1024px) {
+	.emergency-briefing-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+	.emergency-briefing-grid { grid-template-columns: 1fr; }
+}
+
+.emergency-briefing-card {
+	background: var(--paper-soft);
+	border: 1.5px solid var(--line-strong, var(--line));
+	border-radius: 12px;
+	padding: 0.85rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	box-sizing: border-box;
+	min-width: 0;
+}
+.emergency-briefing-card.status-card { border-color: var(--bad-fg); background: var(--bad-bg); }
+
+.emergency-briefing-label {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink-2, var(--muted));
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.emergency-briefing-card.status-card .emergency-briefing-label { color: var(--bad-fg); }
+
+.emergency-briefing-value {
+	font-size: 0.95rem;
+	font-weight: 800;
+	color: var(--ink);
+	line-height: 1.3;
+	word-break: break-word;
+}
+.emergency-briefing-value.alert-color { color: var(--bad-fg); }
+
+.emergency-briefing-sub {
+	font-size: 0.8125rem;
+	color: var(--ink-2, var(--muted));
+	line-height: 1.35;
+	word-break: break-word;
+}
+
+.emergency-cheatsheet-textbox {
+	background: var(--paper);
+	border: 1.5px solid var(--line-strong, var(--line));
+	border-radius: 12px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	box-sizing: border-box;
+}
+
+.emergency-cheatsheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.emergency-cheatsheet-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+.emergency-cheatsheet-hint { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.emergency-cheatsheet-textarea { min-height: 160px; font-size: 0.85rem; line-height: 1.45; }
+
+.emergency-kit-weight-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.75rem 1rem;
+	background: var(--paper-soft);
+	border: 1.5px solid var(--line-strong, var(--line));
+	border-radius: 12px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.emergency-kit-weight-label {
+	font-size: 0.875rem;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+.emergency-kit-weight-label strong { color: var(--teal); font-weight: 800; }

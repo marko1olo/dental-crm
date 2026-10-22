@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
 	Activity,
+	AlertOctagon,
 	ChevronDown,
 	ClipboardCheck,
 	Lock,
@@ -132,6 +133,21 @@ export function WorkspaceTopBarActions({
 			>
 				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
 				<span className="hidden md:inline">{workspaceTopbarLabels.copilot.label}</span>
+			</button>
+
+			{/* 2.55. SOS Экстренная помощь у кресла (Ctrl+Alt+E) */}
+			<button
+				className="secondary-button compact-top-button hidden sm:inline-flex min-h-[44px] items-center gap-1.5 text-[var(--bad-fg)] border-[var(--bad-fg)]/40 hover:bg-[var(--bad-bg)] hover:border-[var(--bad-fg)] transition-colors cursor-pointer"
+				type="button"
+				id="topbar-emergency-rescue-btn"
+				data-testid="topbar-emergency-rescue-btn"
+				title="Экстренная помощь у кресла (Ctrl+Alt+E)"
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("dente:open-emergency-rescue"));
+				}}
+			>
+				<AlertOctagon className="w-3.5 h-3.5 text-[var(--bad-fg)] shrink-0" aria-hidden="true" />
+				<span className="hidden md:inline font-bold">SOS</span>
 			</button>
 
 			{/* 2.6. Деликатный 32px значок телефонии в хедере при активном звонке у кресла врача */}

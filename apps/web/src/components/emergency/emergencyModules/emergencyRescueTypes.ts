@@ -1,10 +1,26 @@
 /**
  * Russian Dental Emergency Clinical Protocols & Resuscitation Suite
- * Layer 0: Emergency Rescue Types, DTOs & Relative Notice Formatter
+ * Layer 0: Emergency Rescue Types, DTOs & Component Props
  */
 
-import type { EmergencyScenarioId, EmergencyActionStep } from '../emergencyRescuePresets';
-import type { EmergencyVitals } from '../emergencyRescueEngine';
+import type React from 'react';
+import type { EmergencyDrugId, EmergencyDosageResult, LipidRescueDoseCalculation, StatutoryEmergencyKitItem } from './emergencyDrugTypes';
+import type { EmergencyScenarioId, EmergencyUrgencyLevel, EmergencyActionStep, EmergencyScenario } from './emergencyScenarioTypes';
+import type { EmergencyVitals, ExecutedEmergencyStep, EmergencyIncidentInput } from './emergencyIncidentTypes';
+
+export type {
+	EmergencyDrugId,
+	EmergencyDosageResult,
+	LipidRescueDoseCalculation,
+	StatutoryEmergencyKitItem,
+	EmergencyScenarioId,
+	EmergencyUrgencyLevel,
+	EmergencyActionStep,
+	EmergencyScenario,
+	EmergencyVitals,
+	ExecutedEmergencyStep,
+	EmergencyIncidentInput,
+};
 
 export interface EmergencyRelativeNoticeParams {
 	clinicName: string;
@@ -16,10 +32,6 @@ export interface EmergencyRelativeNoticeParams {
 	doctorFullName: string;
 }
 
-/**
- * Format structured emergency notice for relatives via WhatsApp / Telegram / SMS
- * Mandates 8d (pt 7: zero cartoon emojis), 8e (doctor & staff autonomy), 8k (friction-killer)
- */
 export function formatEmergencyRelativeNotice(
 	params: EmergencyRelativeNoticeParams
 ): string {
@@ -58,6 +70,22 @@ export interface EmergencyProtocolStepListProps {
 	actionSteps: EmergencyActionStep[];
 	completedStepIds: Record<string, string>;
 	onToggleStep: (stepId: string) => void;
+}
+
+export interface EmergencyDispatcherBoxProps {
+	generatedCheatSheetText: string;
+	isCopiedCheatSheet: boolean;
+	onCopyCheatSheet: () => void;
+	onPrintEmergencyAct: () => void;
+	isKitWrittenOff: boolean;
+	isWritingOffKit: boolean;
+	onWriteoffAntishockKit: () => void;
+	onApplyToDiary?: ((text: string) => void) | undefined;
+	onApplyToForm043: () => void;
+	isCopiedAct: boolean;
+	onCopyAct: () => void;
+	isCopiedRelative: boolean;
+	onCopyRelativeNotice: () => void;
 }
 
 export interface EmergencyResuscitationToolsProps {

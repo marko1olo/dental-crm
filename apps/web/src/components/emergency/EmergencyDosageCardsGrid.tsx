@@ -1,452 +1,109 @@
-import React from "react";
-import { Syringe } from "lucide-react";
-import { EmergencyScenarioId } from "./emergencyRescuePresets";
-import {
-	calculateAllEmergencyDosages,
-	calculateLipidRescueDoses,
-} from "./emergencyRescueEngine";
-import "./emergencyDosages.css";
+/**
+ * Emergency Dosage Cards Grid (Layer 4)
+ * Real-time weight-adjusted dosage cards for essential resuscitation drugs.
+ */
+
+import React from 'react';
+import type { EmergencyScenarioId } from './emergencyRescuePresets';
+import type { calculateAllEmergencyDosages, calculateLipidRescueDoses } from './emergencyRescueEngine';
+import { EmergencyDrugCardItem } from './emergencyModules/EmergencyDrugCardItem';
+import './emergencyDosages.css';
 
 export interface EmergencyDosageCardsGridProps {
-	activeScenarioId: EmergencyScenarioId;
+	activeScenarioId?: EmergencyScenarioId;
 	patientWeightKg: number;
 	patientAgeYears: number;
 	allDosages: ReturnType<typeof calculateAllEmergencyDosages>;
-	lipidRescueData: ReturnType<typeof calculateLipidRescueDoses>;
+	lipidRescueData?: ReturnType<typeof calculateLipidRescueDoses>;
 }
 
 export function EmergencyDosageCardsGrid({
 	activeScenarioId,
-	patientWeightKg,
-	patientAgeYears,
 	allDosages,
 	lipidRescueData,
 }: EmergencyDosageCardsGridProps) {
+	const isLast = activeScenarioId === 'local_anesthetic_toxicity';
+
 	return (
-		<div className="emergency-dosage-banner">
-			<div className="emergency-dosage-header">
-				<div className="emergency-dosage-title">
-					<Syringe size={18} />
-					<span>Экстренные дозировки препаратов</span>
-				</div>
-				<div className="emergency-dosage-patient-tag">
-					Масса: {patientWeightKg} кг • {patientAgeYears < 18 ? "Детский возраст" : "Взрослый"} ({patientAgeYears} л)
-				</div>
-			</div>
+		<div className="emergency-dosage-cards-grid">
+			{isLast && lipidRescueData ? (
+				<>
+					<EmergencyDrugCardItem
+						isPrimary
+						name="Липидная эмульсия 20% (Липофундин)"
+						priorityBadge="Антидот"
+						priorityClass="first-line"
+						doseVal={`${lipidRescueData.bolusVolumeMl} мл`}
+						doseSub="(болюс за 1–2 мин)"
+						route={`В/В инфузия: ${lipidRescueData.infusionRateMlPerHour} мл/час (${lipidRescueData.infusionRateMlPerMin} мл/мин)`}
+						note={`Макс доза: ${lipidRescueData.maxTotalDoseMl} мл (12 мл/кг)`}
+					/>
+					<EmergencyDrugCardItem
+						name="Диазепам 0.5% (Реланиум)"
+						priorityBadge="При судорогах"
+						doseVal={`${allDosages.diazepam_relanium.calculatedDoseMg} мг`}
+						doseSub={`(${allDosages.diazepam_relanium.calculatedVolumeMl} мл)`}
+						route="В/В медленно (не более 2.5 мг/мин)"
+						note="Купирование судорожного синдрома"
+					/>
+				</>
+			) : null}
 
-			<div className="emergency-dosage-cards-grid">
-				{activeScenarioId === "anaphylactic_shock" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Адреналин 0.1% (Эпинефрин)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">1-я линия</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.adrenaline_epi_01.calculatedVolumeMl} мл</span>
-								<span className="emergency-drug-dose-sub">({allDosages.adrenaline_epi_01.calculatedDoseMg} мг)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/М в среднюю треть бедра</span>
-							</div>
-							<div className="emergency-drug-note">
-								Повтор через 5 мин при сохранении гипотонии
-							</div>
-						</div>
+			<EmergencyDrugCardItem
+				isPrimary
+				name="Адреналин 0.1% (Эпинефрин)"
+				priorityBadge="1-я линия"
+				priorityClass="first-line"
+				doseVal={`${allDosages.adrenaline_epi_01.calculatedVolumeMl} мл`}
+				doseSub={`(${allDosages.adrenaline_epi_01.calculatedDoseMg} мг)`}
+				route="В/М в среднюю треть переднебоковой поверхности бедра"
+				note="1-я линия при анафилаксии. Повтор через 5–15 мин при гипотонии."
+			/>
 
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Преднизолон (ГКС)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">2-я линия</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.prednisolone_30mg.calculatedDoseMg} мг</span>
-								<span className="emergency-drug-dose-sub">({allDosages.prednisolone_30mg.calculatedVolumeMl} мл / {allDosages.prednisolone_30mg.numberOfAmpoules} амп.)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В струйно медленно за 2–3 мин</span>
-							</div>
-							<div className="emergency-drug-note">
-								На 10 мл 0.9% NaCl для профилактики 2-й волны шока
-							</div>
-						</div>
+			<EmergencyDrugCardItem
+				name="Преднизолон 30 мг/мл (ГКС)"
+				priorityBadge="2-я линия"
+				doseVal={`${allDosages.prednisolone_30mg.calculatedDoseMg} мг`}
+				doseSub={`(${allDosages.prednisolone_30mg.calculatedVolumeMl} мл / ${allDosages.prednisolone_30mg.numberOfAmpoules} амп.)`}
+				route="В/В струйно медленно за 2–3 мин на 10 мл 0.9% NaCl (или в/м)"
+				note="Профилактика второй волны шока."
+			/>
 
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Дексаметазон 4 мг/мл</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Альтернатива ГКС</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.dexamethasone_4mg.calculatedDoseMg} мг</span>
-								<span className="emergency-drug-dose-sub">({allDosages.dexamethasone_4mg.calculatedVolumeMl} мл / {allDosages.dexamethasone_4mg.numberOfAmpoules} амп.)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В струйно или В/М</span>
-							</div>
-							<div className="emergency-drug-note">
-								Быстрое мембраностабилизирующее действие
-							</div>
-						</div>
+			<EmergencyDrugCardItem
+				name="Сальбутамол аэрозоль 100 мкг"
+				priorityBadge="Бронходилататор"
+				doseVal="2–4 дозы"
+				doseSub="(ингаляционно)"
+				route="Ингаляция через рот (желательно со спейсером)"
+				note="При остром бронхоспазме и приступе удушья."
+			/>
 
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Кислород (100% O2)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">Оксигенация</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">10–15 л/мин</span>
-								<span className="emergency-drug-dose-sub">(маска с резервуаром)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Ингаляция 100% кислорода</span>
-							</div>
-							<div className="emergency-drug-note">
-								Поддержание SpO2 не менее 95%
-							</div>
-						</div>
-					</>
-				)}
+			<EmergencyDrugCardItem
+				name="Нитроглицерин 0.5 мг"
+				priorityBadge="ОКС"
+				doseVal="0.5 мг"
+				doseSub="(1 таб. / спрей)"
+				route="Сублингвально строго сидя (при АД сист > 100)"
+				note="При давящей боли за грудиной и подозрении на инфаркт."
+			/>
 
-				{activeScenarioId === "local_anesthetic_toxicity" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Липидная эмульсия 20% (Липофундин)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">Антидот</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{lipidRescueData.bolusVolumeMl} мл</span>
-								<span className="emergency-drug-dose-sub">(болюс за 1–2 мин)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В инфузия: {lipidRescueData.infusionRateMlPerHour} мл/час ({lipidRescueData.infusionRateMlPerMin} мл/мин)</span>
-							</div>
-							<div className="emergency-drug-note">
-								Макс доза: {lipidRescueData.maxTotalDoseMl} мл (12 мл/кг)
-							</div>
-						</div>
+			<EmergencyDrugCardItem
+				name="Супрастин 2% (Хлоропирамин)"
+				priorityBadge="Антигистамин"
+				doseVal={`${allDosages.suprastin_2_percent.calculatedVolumeMl} мл`}
+				doseSub={`(${allDosages.suprastin_2_percent.calculatedDoseMg} мг)`}
+				route="В/М глубоко"
+				note="Вводить строго ПОСЛЕ адреналина и стабилизации давления!"
+			/>
 
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Диазепам 0.5% (Реланиум)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">При судорогах</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.diazepam_relanium.calculatedDoseMg} мг</span>
-								<span className="emergency-drug-dose-sub">({allDosages.diazepam_relanium.calculatedVolumeMl} мл)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В медленно за 2–3 мин</span>
-							</div>
-							<div className="emergency-drug-note">
-								Готовность к ИВЛ мешком Амбу
-							</div>
-						</div>
-
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Кислород (100% O2)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">Оксигенация</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">10–15 л/мин</span>
-								<span className="emergency-drug-dose-sub">(гипервентиляция)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Маска с мешком / мешок Амбу</span>
-							</div>
-							<div className="emergency-drug-note">
-								Снижает ацидоз и кардиотоксичность анестетика
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "hypertensive_crisis" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Каптоприл (Капотен)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">1-я линия</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">25 мг</span>
-								<span className="emergency-drug-dose-sub">(1 таблетка)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Сублингвально (под язык)</span>
-							</div>
-							<div className="emergency-drug-note">
-								Снижение АД не более чем на 20–25% за 1–2 часа
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Моксонидин (Физиотенз)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Альтернатива</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">0.2 мг</span>
-								<span className="emergency-drug-dose-sub">(1 таблетка)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Сублингвально (под язык)</span>
-							</div>
-							<div className="emergency-drug-note">
-								Контроль АД и ЧСС каждые 10 минут
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Нитроглицерин 0.5 мг</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">ОКС / Боль</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">0.5 мг</span>
-								<span className="emergency-drug-dose-sub">(1 таб / спрей)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Сублингвально строго сидя (при АД сист &gt; 100)</span>
-							</div>
-							<div className="emergency-drug-note">
-								При давящей боли в груди / ишемии миокарда
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "angina_myocardial_infarction" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Нитроглицерин 0.5 мг</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">ОКС</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">0.5 мг</span>
-								<span className="emergency-drug-dose-sub">(1 таб / 1 доза спрея)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Под язык строго сидя (при АД сист &gt; 100)</span>
-							</div>
-							<div className="emergency-drug-note">
-								Противопоказан при АД &lt; 100 и приеме ингибиторов ФДЭ-5!
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Аспирин (АСК)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Антиагрегант</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">250–325 мг</span>
-								<span className="emergency-drug-dose-sub">(разжевать)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Разжевать и проглотить</span>
-							</div>
-							<div className="emergency-drug-note">
-								Без кишечнорастворимой оболочки
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "bronchospasm_asthma" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Сальбутамол (Вентолин)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">Ингаляция</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">2–4 дозы</span>
-								<span className="emergency-drug-dose-sub">(200–400 мкг)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Через спейсер с задержкой дыхания</span>
-							</div>
-							<div className="emergency-drug-note">
-								Повторить через 15–20 мин при необходимости
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Преднизолон (ГКС)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Парентерально</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.prednisolone_30mg.calculatedDoseMg} мг</span>
-								<span className="emergency-drug-dose-sub">({allDosages.prednisolone_30mg.calculatedVolumeMl} мл)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В медленно или В/М</span>
-							</div>
-							<div className="emergency-drug-note">
-								При тяжелом удушье / астматическом статусе
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "hypoglycemia_diabetic" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Глюкоза 40% (Декстроза)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">В/В струйно</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">{allDosages.glucose_dextrose_40.calculatedVolumeMl} мл</span>
-								<span className="emergency-drug-dose-sub">({(allDosages.glucose_dextrose_40.calculatedVolumeMl * 0.4).toFixed(0)} г глюкозы)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В струйно до восстановления сознания</span>
-							</div>
-							<div className="emergency-drug-note">
-								При сохранении сознания: теплый сладкий чай / сахар
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "syncope_collapse" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Положение Тренделенбурга</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">1-я линия</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">Подъем ног 15–30°</span>
-								<span className="emergency-drug-dose-sub">(горизонтально)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Опустить спинку, расстегнуть воротник</span>
-							</div>
-							<div className="emergency-drug-note">
-								Восстановление венозного возврата к головному мозгу
-							</div>
-						</div>
-
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Аммиак 10% (Нашатырный спирт)</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">Рефлекторно</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">Пары на ватке</span>
-								<span className="emergency-drug-dose-sub">(1–2 сек на 2 см)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>Ингаляция паров у ноздрей</span>
-							</div>
-							<div className="emergency-drug-note">
-								Возбуждение дыхательного и сосудодвигательного центров
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Натрия хлорид 0.9% (NaCl)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Инфузия</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">500 мл</span>
-								<span className="emergency-drug-dose-sub">(флакон 0.9%)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/В капельно или струйно</span>
-							</div>
-							<div className="emergency-drug-note">
-								Восполнение ОЦК при стойкой ортостатической гипотонии
-							</div>
-						</div>
-
-						<div className="emergency-drug-card">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Кордиамин 25% (Никетамид)</span>
-								</div>
-								<span className="emergency-drug-priority-badge second-line">Аналептик</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">2 мл</span>
-								<span className="emergency-drug-dose-sub">(1 ампула)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>В/М или П/К медленно</span>
-							</div>
-							<div className="emergency-drug-note">
-								При затяжном коллапсе и артериальной гипотензии
-							</div>
-						</div>
-					</>
-				)}
-
-				{activeScenarioId === "accidental_swallowing" && (
-					<>
-						<div className="emergency-drug-card primary">
-							<div className="emergency-drug-card-header">
-								<div className="emergency-drug-name">
-									<span>Прием Геймлиха</span>
-								</div>
-								<span className="emergency-drug-priority-badge first-line">При асфиксии</span>
-							</div>
-							<div className="emergency-drug-dose-highlight">
-								<span className="emergency-drug-dose-val">5 толчков</span>
-								<span className="emergency-drug-dose-sub">(вверх в эпигастрий)</span>
-							</div>
-							<div className="emergency-drug-route">
-								<span>До восстановления проходимости</span>
-							</div>
-							<div className="emergency-drug-note">
-								При попадании в ЖКТ: РВОТУ НЕ ВЫЗЫВАТЬ! Рентген/ФГДС.
-							</div>
-						</div>
-					</>
-				)}
-			</div>
+			<EmergencyDrugCardItem
+				name="Глюкоза (Декстроза) 40%"
+				priorityBadge="Гипогликемия"
+				doseVal={`${allDosages.glucose_dextrose_40.calculatedVolumeMl} мл`}
+				doseSub="(в/в струйно)"
+				route="В/В струйно медленно"
+				note="До восстановления сознания при гипогликемической коме."
+			/>
 		</div>
 	);
 }

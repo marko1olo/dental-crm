@@ -27,18 +27,13 @@ export function EmergencyResuscitationTools({
 					<Clock size={20} />
 					<span className="truncate min-w-0">ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА</span>
 				</div>
-
-				<div className={`emergency-timer-display ${isAdrenalineDue ? 'due' : ''}`}>
-					{formatTimerSeconds(adrenalineTimerSeconds)}
-				</div>
-
+				<div className={`emergency-timer-display ${isAdrenalineDue ? 'due' : ''}`}>{formatTimerSeconds(adrenalineTimerSeconds)}</div>
 				{isAdrenalineDue && (
 					<div className="emergency-timer-alert">
 						<AlertTriangle className="w-4 h-4 shrink-0" />
 						<span>ВРЕМЯ ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА (0.3–0.5 МЛ В/М)!</span>
 					</div>
 				)}
-
 				<div className="emergency-timer-buttons">
 					<button
 						type="button"
@@ -49,12 +44,7 @@ export function EmergencyResuscitationTools({
 						<Clock size={14} />
 						<span>Старт 5 мин</span>
 					</button>
-					<button
-						type="button"
-						className="emergency-timer-btn"
-						onClick={onResetAdrenalineTimer}
-						title="Сбросить таймер адреналина"
-					>
+					<button type="button" className="emergency-timer-btn" onClick={onResetAdrenalineTimer} title="Сбросить таймер адреналина">
 						<RotateCcw size={14} />
 						<span>Сброс</span>
 					</button>
@@ -81,7 +71,6 @@ export function EmergencyResuscitationTools({
 						</button>
 					)}
 				</div>
-
 				<div className="emergency-cpr-guidelines-list">
 					{STATUTORY_EMERGENCY_KIT_MEMO.map((kit) => (
 						<div key={kit.drugId} className="emergency-kit-row">
@@ -103,7 +92,6 @@ export function EmergencyResuscitationTools({
 						<span className="truncate min-w-0">СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
 					</div>
 				</div>
-
 				<div className="emergency-cpr-guidelines-list">
 					<div className="emergency-cpr-guideline-row">
 						<span className="emergency-cpr-label truncate min-w-0">Соотношение:</span>

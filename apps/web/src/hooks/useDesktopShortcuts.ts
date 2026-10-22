@@ -53,6 +53,8 @@ export interface UseDesktopShortcutsOptions {
 	onF12PrintDiary?: () => void;
 	/** Callback for Ctrl+F / Cmd+F: Global clinic search (patient / record search) */
 	onCtrlFSearch?: () => void;
+	/** Callback for Ctrl+Alt+E: Emergency SOS Resuscitation Modal */
+	onEmergencyRescue?: () => void;
 	/** Callback for Alt+1..Alt+5: Quick tab / view navigation (Desktop operatory) */
 	onSwitchTab?: (tabIndex: number) => void;
 	/**
@@ -128,7 +130,7 @@ export function isTypingInInputElement(target: EventTarget | null): boolean {
  * Helper to dispatch decoupled custom events for shortcuts across components.
  */
 export function dispatchDesktopShortcut(
-	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print" | "ctrl_f" | "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5" | "shortcuts_overlay" | "help_drawer",
+	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print" | "ctrl_f" | "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5" | "shortcuts_overlay" | "help_drawer" | "emergency_rescue",
 ): void {
 	if (typeof window === "undefined" || !window.dispatchEvent) return;
 	try {
@@ -378,6 +380,20 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 					dispatchDesktopShortcut(tabShortcut);
 					return;
 				}
+			}
+
+			// 4D. Ctrl+Alt+E / Cmd+Alt+E: Instant Emergency SOS Modal (Mandate 8aq)
+			// Note: Cyrillic keyboard layout maps "e" to "у" (KeyE)
+			if (isCtrlOrMeta && e.altKey && !e.shiftKey && (key === "e" || key === "у" || code === "KeyE")) {
+				e.preventDefault();
+				e.stopPropagation();
+				if (optionsRef.current.onEmergencyRescue) {
+					optionsRef.current.onEmergencyRescue();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:open-emergency-rescue"));
+				}
+				dispatchDesktopShortcut("emergency_rescue");
+				return;
 			}
 
 			// 5. Ctrl+P / Cmd+P: Quick Print

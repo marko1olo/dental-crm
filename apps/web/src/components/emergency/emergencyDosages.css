@@ -1,52 +1,7 @@
 /**
- * Russian Dental Emergency Rescue HUD — Dosage Banner & Drug Cards Stylesheet
+ * Russian Dental Emergency Rescue HUD — Dosage Cards Stylesheet
  * 100% Token Compliant, Multi-Theme, Touch-First (>=44-48px), WCAG 2.1 AAA Contrast
  */
-
-/* Real-Time Dosage Banner & Cards */
-.emergency-dosage-banner {
-	background: var(--paper);
-	border: 2px solid var(--bad-fg);
-	border-radius: 12px;
-	padding: 1rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	box-shadow: var(--shadow-2);
-	box-sizing: border-box;
-	max-width: 100%;
-}
-
-.emergency-dosage-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-	padding-bottom: 0.5rem;
-	border-bottom: 1px solid var(--line);
-	flex-wrap: wrap;
-}
-
-.emergency-dosage-title {
-	font-size: 0.875rem;
-	font-weight: 800;
-	color: var(--bad-fg);
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	letter-spacing: 0.02em;
-	text-transform: uppercase;
-}
-
-.emergency-dosage-patient-tag {
-	font-size: 0.75rem;
-	font-weight: 700;
-	padding: 0.2rem 0.55rem;
-	border-radius: 9999px;
-	background: var(--paper-soft);
-	color: var(--ink);
-	border: 1px solid var(--line-strong);
-}
 
 .emergency-dosage-cards-grid {
 	display: grid;
@@ -90,9 +45,7 @@
 	gap: 0.35rem;
 }
 
-.emergency-drug-card.primary .emergency-drug-name {
-	color: var(--bad-fg);
-}
+.emergency-drug-card.primary .emergency-drug-name { color: var(--bad-fg); }
 
 .emergency-drug-priority-badge {
 	font-size: 0.6875rem;
@@ -132,9 +85,7 @@
 	white-space: nowrap;
 }
 
-.emergency-drug-card.primary .emergency-drug-dose-val {
-	color: var(--bad-fg);
-}
+.emergency-drug-card.primary .emergency-drug-dose-val { color: var(--bad-fg); }
 
 .emergency-drug-dose-sub {
 	font-size: 0.75rem;
@@ -159,16 +110,6 @@
 }
 
 @media (max-width: 768px) {
-	.emergency-dosage-banner {
-		padding: 0.75rem;
-	}
-
-	.emergency-dosage-cards-grid {
-		grid-template-columns: 1fr;
-		gap: 0.5rem;
-	}
-
-	.emergency-drug-card {
-		padding: 0.65rem 0.75rem;
-	}
+	.emergency-dosage-cards-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+	.emergency-drug-card { padding: 0.65rem 0.75rem; }
 }

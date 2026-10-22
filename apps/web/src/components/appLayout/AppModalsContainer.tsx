@@ -24,6 +24,12 @@ const RapidLaunchWizard = lazyWithRetry(() =>
 	})),
 );
 
+const EmergencyRescueModal = lazyWithRetry(() =>
+	import("../emergency/EmergencyRescueModal").then((module) => ({
+		default: module.EmergencyRescueModal,
+	})),
+);
+
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
 
@@ -108,6 +114,13 @@ export function AppModalsContainer({
 				(window.location.hash || "").includes("onboarding")),
 	);
 
+	const [isEmergencyRescueOpen, setIsEmergencyRescueOpen] = React.useState(
+		() =>
+			typeof window !== "undefined" &&
+			((window.location.search || "").includes("emergency") ||
+				(window.location.hash || "").includes("emergency")),
+	);
+
 	const primaryModal = useUiSurfaceStore((s) => s.primaryModal);
 	const isLoyaltyFromStore = primaryModal?.id === "loyalty";
 	const isEffectiveLoyaltyOpen = Boolean(isGlobalLoyaltyOpen || isLoyaltyFromStore);
@@ -151,12 +164,21 @@ export function AppModalsContainer({
 		const onOpenOnboarding = () => {
 			setIsGlobalOnboardingOpen(true);
 		};
+		const onOpenEmergencyRescue = () => {
+			setIsEmergencyRescueOpen(true);
+		};
 		const onHashChange = () => {
 			if (
 				(window.location.hash || "").includes("onboarding") ||
 				(window.location.search || "").includes("onboarding")
 			) {
 				setIsGlobalOnboardingOpen(true);
+			}
+			if (
+				(window.location.hash || "").includes("emergency") ||
+				(window.location.search || "").includes("emergency")
+			) {
+				setIsEmergencyRescueOpen(true);
 			}
 		};
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
@@ -167,6 +189,7 @@ export function AppModalsContainer({
 		window.addEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
 		window.addEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
 		window.addEventListener("dente-open-rapid-onboarding", onOpenOnboarding);
+		window.addEventListener("dente:open-emergency-rescue", onOpenEmergencyRescue);
 		window.addEventListener("hashchange", onHashChange);
 
 		return () => {
@@ -178,6 +201,7 @@ export function AppModalsContainer({
 			window.removeEventListener("dente-open-egisz-certificates", onOpenEgiszCertificates);
 			window.removeEventListener("dente:open-egisz-certificates", onOpenEgiszCertificates);
 			window.removeEventListener("dente-open-rapid-onboarding", onOpenOnboarding);
+			window.removeEventListener("dente:open-emergency-rescue", onOpenEmergencyRescue);
 			window.removeEventListener("hashchange", onHashChange);
 		};
 	}, []);
@@ -284,6 +308,25 @@ export function AppModalsContainer({
 									{},
 									"",
 									window.location.pathname + window.location.search,
+								);
+							}
+						}}
+					/>
+				</React.Suspense>
+			)}
+			{isEmergencyRescueOpen && (
+				<React.Suspense fallback={null}>
+					<EmergencyRescueModal
+						isOpen={true}
+						onClose={() => {
+							setIsEmergencyRescueOpen(false);
+							if (typeof window !== "undefined" && ((window.location.hash || "").includes("emergency") || (window.location.search || "").includes("emergency"))) {
+								const url = new URL(window.location.href);
+								url.searchParams.delete("emergency");
+								window.history.replaceState(
+									{},
+									"",
+									url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("emergency") ? url.hash : ""),
 								);
 							}
 						}}

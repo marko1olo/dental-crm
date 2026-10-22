@@ -44,114 +44,57 @@ export function EmergencyProtocolHandoverBox({
 		<div className="emergency-protocol-box">
 			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", minWidth: 0 }}>
 				<div style={{ display: "flex", gap: "0.5rem" }}>
-					<button
-						type="button"
-						className={`emergency-protocol-tab-btn ${activeProtocolTab === "act" ? "active-act" : ""}`}
-						onClick={() => setActiveProtocolTab("act")}
-					>
+					<button type="button" className={`emergency-protocol-tab-btn ${activeProtocolTab === "act" ? "active-act" : ""}`} onClick={() => setActiveProtocolTab("act")}>
 						Акт в медкарту
 					</button>
-					<button
-						type="button"
-						className={`emergency-protocol-tab-btn ${activeProtocolTab === "cheatsheet" ? "active-cheatsheet" : ""}`}
-						onClick={() => setActiveProtocolTab("cheatsheet")}
-					>
+					<button type="button" className={`emergency-protocol-tab-btn ${activeProtocolTab === "cheatsheet" ? "active-cheatsheet" : ""}`} onClick={() => setActiveProtocolTab("cheatsheet")}>
 						Шпаргалка 112
 					</button>
 				</div>
-
 				<span className="truncate min-w-0 text-right" style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 					Шагов выполнено: {completedStepsCount} из {totalStepsCount}
 				</span>
 			</div>
 
-			{activeProtocolTab === "act" ? (
-				<textarea
-					readOnly
-					className="emergency-protocol-textarea"
-					value={generatedActText}
-				/>
-			) : (
-				<textarea
-					readOnly
-					className="emergency-protocol-textarea"
-					value={generatedCheatSheetText}
-				/>
-			)}
+			<textarea readOnly className="emergency-protocol-textarea" value={activeProtocolTab === "act" ? generatedActText : generatedCheatSheetText} />
 
-			{/* Actions: <= 2 buttons per row by Miller Law */}
 			<div className="emergency-protocol-actions">
 				{activeProtocolTab === "act" ? (
 					<>
-						{/* Row 1: Primary Clinical Action (Medical Card or Copy) & Ambulance Print (Mandate 8e, Miller Law <= 2) */}
 						<div className="emergency-protocol-action-row primary-actions">
 							{onApplyToDiary ? (
-								<button
-									type="button"
-									className="emergency-copy-act-btn teal"
-									onClick={onApplyToForm043}
-									title="Вставить протокол оказания экстренной помощи в дневник медкарты"
-								>
+								<button type="button" className="emergency-copy-act-btn teal" onClick={onApplyToForm043} title="Вставить протокол оказания экстренной помощи в дневник медкарты">
 									<FileText size={16} />
 									<span>Вставить в медкарту</span>
 								</button>
 							) : (
-								<button
-									type="button"
-									className="emergency-copy-act-btn"
-									onClick={onCopyAct}
-								>
+								<button type="button" className="emergency-copy-act-btn" onClick={onCopyAct}>
 									{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
 									<span>{isCopiedAct ? "Скопировано!" : "Копировать Акт"}</span>
 								</button>
 							)}
-							<button
-								type="button"
-								className="emergency-copy-act-btn primary"
-								onClick={onPrintEmergencyAct}
-								data-testid="emergency-print-act-btn"
-								title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)"
-							>
+							<button type="button" className="emergency-copy-act-btn primary" onClick={onPrintEmergencyAct} data-testid="emergency-print-act-btn" title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)">
 								<Printer size={16} />
 								<span>Печать Акта (СМП)</span>
 							</button>
 						</div>
 
-						{/* Row 2: Secondary Handover & Messenger Notification (Miller Law <= 2) */}
 						<div className="emergency-protocol-action-row secondary-actions">
 							{onApplyToDiary && (
-								<button
-									type="button"
-									className="emergency-copy-act-btn secondary"
-									onClick={onCopyAct}
-									title="Скопировать текст Акта в буфер обмена"
-								>
+								<button type="button" className="emergency-copy-act-btn secondary" onClick={onCopyAct} title="Скопировать текст Акта в буфер обмена">
 									{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
 									<span>{isCopiedAct ? "Скопировано!" : "Копировать Акт"}</span>
 								</button>
 							)}
-							<button
-								type="button"
-								className="emergency-copy-act-btn surface"
-								onClick={onCopyRelativeNotice}
-								data-testid="emergency-copy-relative-notice-btn"
-								title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram"
-							>
+							<button type="button" className="emergency-copy-act-btn surface" onClick={onCopyRelativeNotice} data-testid="emergency-copy-relative-notice-btn" title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram">
 								<Copy size={16} />
 								<span>Извещение родственникам</span>
 							</button>
 						</div>
 
-						{/* Row 3: Statutory Warehouse Antishock Kit Write-off (Order 786n / Mandate 8e) */}
 						{onWriteoffAntishockKit && (
 							<div className="emergency-protocol-action-row tertiary-actions" style={{ gridTemplateColumns: "1fr" }}>
-								<button
-									type="button"
-									className={`emergency-copy-act-btn ${isKitWrittenOff ? "teal" : "surface"}`}
-									onClick={onWriteoffAntishockKit}
-									data-testid="emergency-handover-writeoff-btn"
-									title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)"
-								>
+								<button type="button" className={`emergency-copy-act-btn ${isKitWrittenOff ? "teal" : "surface"}`} onClick={onWriteoffAntishockKit} data-testid="emergency-handover-writeoff-btn" title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)">
 									{isKitWrittenOff ? <Check size={16} /> : <PackageCheck size={16} />}
 									<span>{isWritingOffKit ? "Списание со склада..." : isKitWrittenOff ? "Укладка «Антишок» списана со склада" : "Списать укладку «Антишок» (Склад)"}</span>
 								</button>
@@ -159,12 +102,7 @@ export function EmergencyProtocolHandoverBox({
 						)}
 					</>
 				) : (
-					<button
-						type="button"
-						className="emergency-copy-act-btn danger"
-						onClick={onCopyCheatSheet}
-						data-testid="emergency-copy-cheatsheet-btn"
-					>
+					<button type="button" className="emergency-copy-act-btn danger" onClick={onCopyCheatSheet} data-testid="emergency-copy-cheatsheet-btn">
 						{isCopiedCheatSheet ? <Check size={16} /> : <Copy size={16} />}
 						<span>{isCopiedCheatSheet ? "Скопировано для звонка!" : "Копировать шпаргалку 112"}</span>
 					</button>
