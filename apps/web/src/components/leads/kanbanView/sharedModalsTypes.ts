@@ -18,9 +18,9 @@ export interface LeadsKanbanSharedModalsProps {
 	staff: BookableDoctor[];
 	chairs: BookableChair[];
 	selectedDoctorId: string;
-	setSelectedDoctorId: React.Dispatch<React.SetStateAction<string>>;
+	setSelectedDoctorId: React.Dispatch<React.SetStateAction<string>> | ((id: string) => void);
 	selectedChairId: string;
-	setSelectedChairId: React.Dispatch<React.SetStateAction<string>>;
+	setSelectedChairId: React.Dispatch<React.SetStateAction<string>> | ((id: string) => void);
 	appointmentDate: string;
 	setAppointmentDate: (date: string) => void;
 	appointmentTime: string;

@@ -12,7 +12,12 @@ export interface PendingBookingInfo {
 	patientName?: string | null | undefined;
 	patientPhone?: string | null | undefined;
 	dateKey?: string | undefined;
+	startTime?: string | undefined;
+	startsAt?: string | undefined;
+	endsAt?: string | undefined;
 	reason?: string | undefined;
+	comment?: string | null | undefined;
+	source?: string | null | undefined;
 	doctorUserId?: string | null | undefined;
 	chairId?: string | null | undefined;
 }
@@ -24,7 +29,15 @@ export function useLeadBookingNavigation() {
 				usePatientStore.getState().setSelectedPatientId(booking.patientId);
 			if (booking.dateKey)
 				useScheduleStore.getState().setScheduleDateFilter(booking.dateKey);
-			useScheduleStore.getState().setPendingStageBooking?.(booking);
+
+			const finalComment =
+				booking.comment ||
+				(booking.source ? `Источник: ${booking.source}` : undefined);
+
+			useScheduleStore.getState().setPendingStageBooking?.({
+				...booking,
+				comment: finalComment,
+			});
 			useAppStore.getState().setCurrentView("schedule");
 			if (typeof window !== "undefined") window.location.hash = "schedule";
 		} catch {

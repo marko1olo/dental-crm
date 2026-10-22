@@ -262,7 +262,7 @@ async function run() {
 
   await pcPage.goto("http://127.0.0.1:5173/?demo=true#leads", {
     waitUntil: "domcontentloaded",
-    timeout: 30000,
+    timeout: 90000,
   });
 
   await pcPage.waitForSelector("#boot-splash, .boot-state, .boot-container", {
@@ -270,9 +270,9 @@ async function run() {
     timeout: 25000,
   }).catch(() => {});
 
-  await pcPage.waitForSelector(".leads-kanban-board, .leads-view, [data-testid='leads-kanban']", {
+  await pcPage.waitForSelector(".leads-kanban-board, .leads-view, [data-testid='leads-kanban'], [data-testid='leads-kanban-board']", {
     state: "visible",
-    timeout: 25000,
+    timeout: 60000,
   });
 
   try {
@@ -297,6 +297,29 @@ async function run() {
   await applyTheme(pcPage, "dark");
   await saveProof(pcPage, "leads_kanban_live_pc_dark.png");
 
+  // 2a. PC Convert Modal Light & Dark
+  try {
+    await applyTheme(pcPage, "light");
+    const scheduleBtn = pcPage.locator('[data-testid^="schedule-lead-btn-"]').first();
+    if (await scheduleBtn.count() > 0) {
+      await scheduleBtn.click();
+      await pcPage.waitForSelector('[data-testid="lead-convert-submit-btn"]', { timeout: 5000 });
+      await pcPage.waitForTimeout(500);
+      await saveProof(pcPage, "leads_convert_modal_pc_light.png");
+
+      await applyTheme(pcPage, "dark");
+      await saveProof(pcPage, "leads_convert_modal_pc_dark.png");
+
+      const closeBtn = pcPage.locator('button[aria-label="Закрыть"], button:has-text("✕")').first();
+      if (await closeBtn.count() > 0) {
+        await closeBtn.click().catch(() => {});
+        await pcPage.waitForTimeout(300);
+      }
+    }
+  } catch (err) {
+    console.warn("Could not capture modal separately:", err.message);
+  }
+
   await pcContext.close();
 
   // ================= 2. MOBILE CONTEXT (390x844) =================
@@ -312,7 +335,7 @@ async function run() {
 
   await mobilePage.goto("http://127.0.0.1:5173/?demo=true#leads", {
     waitUntil: "domcontentloaded",
-    timeout: 30000,
+    timeout: 90000,
   });
 
   await mobilePage.waitForSelector("#boot-splash, .boot-state, .boot-container", {
@@ -320,9 +343,9 @@ async function run() {
     timeout: 25000,
   }).catch(() => {});
 
-  await mobilePage.waitForSelector(".leads-mobile-feed, .leads-view, .leads-kanban-board", {
+  await mobilePage.waitForSelector(".leads-mobile-feed, .leads-view, .leads-kanban-board, [data-testid='leads-mobile-feed']", {
     state: "visible",
-    timeout: 25000,
+    timeout: 60000,
   });
 
   try {

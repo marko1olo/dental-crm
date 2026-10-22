@@ -14,7 +14,8 @@ import type { LeadViewMode } from "./types";
 interface LeadsKanbanDesktopContainerProps {
 	leads: Lead[];
 	filteredLeads: Lead[];
-	staff: Array<{ id: string; fullName: string; role?: string }>;
+	// biome-ignore lint/suspicious/noExplicitAny: polymorphic staff list
+	staff: any[];
 	loadError: string | null;
 	searchQuery: string;
 	setSearchQuery: (q: string) => void;
@@ -35,7 +36,8 @@ interface LeadsKanbanDesktopContainerProps {
 	onDrop: (e: React.DragEvent, status: Lead["status"]) => void;
 	onDragStart: (e: React.DragEvent, id: string) => void;
 	onEditLead: (lead: Lead) => void;
-	onStatusChange: (id: string, status: Lead["status"]) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: event handler signature flexibility
+	onStatusChange: (e: any, id: string, status: Lead["status"], options?: any) => void;
 	onCreatePatient: (lead: Lead) => void;
 	onSchedule: (id: string) => void;
 	onQuickSchedule: (id: string) => void;

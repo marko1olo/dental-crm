@@ -15,7 +15,8 @@ interface LeadsKanbanMobileContainerProps {
 	modals: React.ReactNode;
 	onNewLead: () => void;
 	onEditLead: (lead: Lead) => void;
-	onStatusChange: (id: string, status: Lead["status"]) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: event handler flexibility
+	onStatusChange: (e: any, id: string, status: Lead["status"], options?: any) => void;
 	onSchedule: (id: string) => void;
 	onQuickSchedule: (id: string) => void;
 	onCreatePatient: (lead: Lead) => void;

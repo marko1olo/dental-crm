@@ -29,7 +29,7 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 			className="flex flex-col gap-1.5 mt-2"
 			onClick={(e) => e.stopPropagation()}
 		>
-			{/* Действие 1: Записать в сетку расписания (Primary CTA + 1-Click Fast Booking) */}
+			{/* Действие 1: Записать в сетку расписания (Secondary Outline/Accent CTA + 1-Click Fast Booking) */}
 			{lead.status !== "trash" && (
 				<div className="flex items-center gap-1.5 w-full">
 					<button
@@ -38,7 +38,7 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 							e.stopPropagation();
 							onSchedule(lead.id);
 						}}
-						className="primary-button flex-1 h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg bg-[var(--teal)] text-white shadow-2xs hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer border border-[var(--teal)]"
+						className="secondary-button flex-1 h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg border border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark, var(--teal))] hover:bg-[var(--teal)] hover:text-white active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
 						data-testid={`schedule-lead-btn-${lead.id}`}
 						title="Выбрать слот в расписании и записать пациента"
 					>

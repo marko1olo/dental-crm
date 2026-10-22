@@ -94,6 +94,10 @@ export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 				reason: quickReason,
 				doctorUserId: doctorIdToBook || null,
 				chairId: chairIdToBook || null,
+				source: targetLead?.source || null,
+				comment: targetLead?.source
+					? `Источник: ${targetLead.source}${targetLead?.notes ? ` | ${targetLead.notes}` : ""}`
+					: targetLead?.notes || undefined,
 			});
 		} catch (err: unknown) {
 			const text =

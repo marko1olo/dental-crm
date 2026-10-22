@@ -1,12 +1,11 @@
 /**
- * DENTE Dental CRM — Compact Inline Call Audio Player Widget
- * Mandate 8b (<= 120 lines)
+ * DENTE Dental CRM — Native HTML5 Call Audio Player Widget
+ * Mandate 8b (<= 120 lines), Mandate 8e & 8n (Solo Doctor Autonomy & Zero Fakes)
+ * Standard native HTML5 audio controls without artificial canvas waves
  */
 
-import { MessageSquareQuote, Pause, Play } from "lucide-react";
+import { MessageSquareQuote } from "lucide-react";
 import React from "react";
-import { formatAudioDuration } from "./leadsKanbanTypes";
-import { useLeadAudioPlayer } from "./useLeadAudioPlayer";
 
 export interface LeadAudioPlayerWidgetProps {
 	audioUrl?: string | null | undefined;
@@ -21,16 +20,10 @@ export const LeadAudioPlayerWidget: React.FC<LeadAudioPlayerWidgetProps> = ({
 	durationSeconds,
 	compact = false,
 }) => {
-	const { isPlaying, currentTime, duration, hasError, togglePlay } =
-		useLeadAudioPlayer(audioUrl, durationSeconds);
 	if (!audioUrl?.trim()) return null;
 
-	const displayTime = isPlaying
-		? formatAudioDuration(currentTime)
-		: formatAudioDuration(duration || durationSeconds || 0);
-
 	const tooltipTitle = transcriptionSnippet
-		? `Стенограмма: «${transcriptionSnippet}»`
+		? `Стенограмма звонка: «${transcriptionSnippet}»`
 		: "Аудиозапись входящего звонка АТС";
 
 	return (
@@ -41,68 +34,39 @@ export const LeadAudioPlayerWidget: React.FC<LeadAudioPlayerWidgetProps> = ({
 			style={{
 				display: "inline-flex",
 				alignItems: "center",
-				gap: 4,
-				position: "relative",
+				gap: 6,
+				maxWidth: "100%",
+				verticalAlign: "middle",
 			}}
 		>
-			<button
-				type="button"
-				onClick={(e) => {
-					e.stopPropagation();
-					togglePlay();
-				}}
-				disabled={hasError}
-				title={hasError ? "Запись недоступна" : tooltipTitle}
-				aria-label={
-					isPlaying ? "Приостановить запись звонка" : "Прослушать запись звонка"
-				}
+			<audio
+				controls
+				preload="metadata"
+				src={audioUrl}
 				data-testid="lead-audio-play-btn"
+				title={tooltipTitle}
 				style={{
-					display: "inline-flex",
-					alignItems: "center",
-					gap: 5,
-					padding: compact ? "2px 6px" : "3px 8px",
-					fontSize: compact ? 11 : 11.5,
-					fontWeight: 600,
-					borderRadius: 6,
-					border: isPlaying ? "1px solid var(--teal)" : "1px solid var(--line)",
-					background: isPlaying ? "var(--teal-soft)" : "var(--paper-soft)",
-					color: isPlaying
-						? "var(--teal-dark, var(--teal))"
-						: hasError
-							? "var(--muted)"
-							: "var(--ink)",
-					cursor: hasError ? "not-allowed" : "pointer",
-					transition: "all 0.15s ease",
-					lineHeight: 1,
-					height: compact ? 22 : 26,
-					whiteSpace: "nowrap",
-					opacity: hasError ? 0.6 : 1,
+					height: compact ? 26 : 30,
+					maxHeight: 32,
+					maxWidth: compact ? 190 : 230,
+					borderRadius: 8,
 				}}
-			>
-				{isPlaying ? (
-					<Pause size={compact ? 11 : 12} className="shrink-0 animate-pulse" />
-				) : (
-					<Play
-						size={compact ? 11 : 12}
-						className="shrink-0"
-						fill={isPlaying ? "currentColor" : "none"}
+			/>
+			{transcriptionSnippet && !compact && (
+				<span
+					title={`«${transcriptionSnippet}»`}
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						cursor: "help",
+					}}
+				>
+					<MessageSquareQuote
+						size={13}
+						className="shrink-0 text-[var(--teal)]"
 					/>
-				)}
-				<span>{hasError ? "Ошибка аудио" : displayTime}</span>
-				{transcriptionSnippet && !compact && (
-					<span
-						title={`«${transcriptionSnippet}»`}
-						style={{ display: "inline-flex", alignItems: "center" }}
-					>
-						<MessageSquareQuote
-							size={11}
-							className="shrink-0"
-							style={{ color: "var(--teal)", opacity: 0.85 }}
-						/>
-					</span>
-				)}
-			</button>
+				</span>
+			)}
 		</div>
 	);
 };

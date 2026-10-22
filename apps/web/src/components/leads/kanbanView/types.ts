@@ -16,6 +16,7 @@ import {
 export * from "../leadsKanbanTypes";
 
 export type LeadsKanbanViewMode = "funnel" | "all";
+export type LeadViewMode = LeadsKanbanViewMode;
 
 export type LeadQuickStatusChangeHandler = (
 	e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,

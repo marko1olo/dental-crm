@@ -101,6 +101,8 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 				reason: options?.reason || "Первичная консультация",
 				doctorUserId: doctorIdToBook || null,
 				chairId: chairIdToBook || null,
+				source: activeLead?.source || null,
+				comment: options?.comment || (activeLead?.source ? `Источник: ${activeLead.source}` : undefined),
 			});
 		} catch (err: unknown) {
 			logger.error(err);

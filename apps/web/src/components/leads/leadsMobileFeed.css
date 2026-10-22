@@ -1,8 +1,5 @@
-/* DENTE Dental CRM — Leads Mobile Feed CSS Master Facade (Mandate 8b <= 120 lines) */
-@import "./styles/leadsMobileHeader.css";
-@import "./styles/leadsMobileSearchAndSegmented.css";
-@import "./styles/leadsMobileCardContainer.css";
-@import "./styles/leadsMobileCardBody.css";
-@import "./styles/leadsMobileActionsBar.css";
-@import "./styles/leadsMobileFloatingBar.css";
-@import "./styles/leadsMobileMenuDropdown.css";
+/**
+ * DENTE Dental CRM — Leads Mobile Feed Stylesheet Facade
+ * Points to the canonical consolidated leadsKanban.css
+ */
+@import "./leadsKanban.css";
