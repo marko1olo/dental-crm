@@ -40,7 +40,7 @@ export const InventoryDisposalActModal: React.FC<InventoryDisposalActModalProps>
 							id="disposal-act-title"
 							className="text-base font-black leading-tight text-rose-700 dark:text-rose-300"
 						>
-							Акт утилизации по СанПиН 3.3686-21
+							Акт списания и утилизации материалов
 						</h3>
 						<p className="text-xs text-[var(--muted)] mt-0.5">
 							Оформление акта списания просроченных медицинских изделий и препаратов (Класс Б / Класс Г).

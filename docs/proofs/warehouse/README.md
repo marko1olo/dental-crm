@@ -39,6 +39,10 @@
 
 | Состояние / Экран | Разрешение | Файл скриншота | Размер | Статус инспекции |
 | :--- | :--- | :--- | :--- | :--- |
+| ☀️ **PC Light Warehouse** | 1440×900 | [`docs/proofs/warehouse/inventory_warehouse_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/inventory_warehouse_pc_light.png) | 526 КБ | [ПРОВЕРЕНО: ЧИСТО] Полный рабочий каталог материалов, чипы категорий, FEFO сроки годности, нулевой овердрафт, действия Списание/Приход |
+| 🌙 **PC Dark Warehouse** | 1440×900 | [`docs/proofs/warehouse/inventory_warehouse_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/inventory_warehouse_pc_dark.png) | 487 КБ | [ПРОВЕРЕНО: ЧИСТО] Глубокая тёмная тема, идеальный контраст, отсутствие слепящих артефактов |
+| 📱 **Mobile Light Sterilization** | 390×844 | [`docs/proofs/warehouse/sterilization_journal_mobile_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/sterilization_journal_mobile_light.png) | 74 КБ | [ПРОВЕРЕНО: ЧИСТО] Apple HIG карточки циклов автоклавирования, Класс VI, 1-клик заполнение за месяц, печать наклеек, 0px горизонтального скролла |
+| 🌙 **Mobile Dark Sterilization** | 390×844 | [`docs/proofs/warehouse/sterilization_journal_mobile_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/sterilization_journal_mobile_dark.png) | 74 КБ | [ПРОВЕРЕНО: ЧИСТО] Темный режим смартфона, контрастные бейджи «Стерильно 100%», «Заверено ЭЦП», нижняя навигация |
 | ☀️ **PC Light Catalog** | 1440×900 | [`apps/web/proofs/inventory/01_inventory_stock_table_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/01_inventory_stock_table_pc_light.png) | ~215 КБ | [ПРОВЕРЕНО: ЧИСТО] 7 колонок без обрезки справа, чипы категорий, кнопка «Смена (1 клик)» в тулбаре, нулевой овердрафт не блокирует интерфейс |
 | ⚡ **PC Shift Batch Modal Light** | 1440×900 | [`apps/web/proofs/inventory/02_shift_batch_modal_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/02_shift_batch_modal_pc_light.png) | ~80 КБ | [ПРОВЕРЕНО: ЧИСТО] Сегментированный переключатель табов в 1 строку, динамическая техкарта, кнопка «✓ Списать стандартный набор терапевта», единицы измерения без переноса букв, Primary CTA «Списать материалы по процедуре» активна |
 | 🌙 **PC Shift Batch Modal Dark** | 1440×900 | [`apps/web/proofs/inventory/03_shift_batch_modal_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/apps/web/proofs/inventory/03_shift_batch_modal_pc_dark.png) | ~80 КБ | [ПРОВЕРЕНО: ЧИСТО] Глубокая темная тема, чистый контраст `var(--paper)` / `var(--ink)`, четкие кнопки без белых пятен |
@@ -48,6 +52,8 @@
 
 ## 3. Результаты автоматизированного тестирования (PASS, 100% GREEN)
 
-- `apps/web/src/components/inventory/__tests__/` + `mdlp/__tests__/` + `tests/inventoryDeduction.test.ts`: **274 passing, 0 failing (Exit Code: 0, Duration: 8.1s)**
+- `apps/web/src/components/inventory/__tests__/`: **57 test files passed, 184 passed tests (0 failing, Exit Code: 0)**
+- `apps/web/src/components/sanpin/__tests__/`: **22 test files passed, 275 passed tests (0 failing, Exit Code: 0)**
+- `apps/api/src/tests/routes/treatmentConsumables.test.ts`: **5 passed tests (0 failing, Exit Code: 0)**
 - Typecheck инвентаря: **0 ошибок (Exit Code: 0)**
 
