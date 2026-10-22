@@ -20,7 +20,7 @@ export { WaybillsListTable } from "./WaybillsListTable.js";
 export { WaybillsToolbar } from "./WaybillsToolbar.js";
 
 /**
- * Вкладка приходных накладных ТОРГ-12 и оприходования партий ТМЦ (Мандаты 8e, 8n).
+ * Вкладка накладных прихода и оприходования партий ТМЦ (Мандаты 8e, 8n, 8x).
  * Декомпозирована строго <= 120 строк в соответствии с Мандатом 8b.
  */
 export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props) => {

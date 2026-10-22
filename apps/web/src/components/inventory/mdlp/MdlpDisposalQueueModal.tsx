@@ -60,6 +60,11 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = (pr
 			<div className="mdlp-modal-container" onClick={(e) => e.stopPropagation()}>
 				<MdlpDisposalHeader onClose={onClose} />
 
+				{/* 2D DataMatrix scanner instruction for Senior Nurse */}
+				<div className="sr-only" aria-live="polite">
+					Отсканируйте DataMatrix код 2D-сканером для добавления в очередь списания
+				</div>
+
 				<div className="mdlp-modal-body">
 					{successDoc && (
 						<MdlpDisposalSuccessBanner

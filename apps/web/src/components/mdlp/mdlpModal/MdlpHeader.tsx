@@ -82,7 +82,7 @@ export const MdlpHeader: React.FC<MdlpHeaderProps> = ({
 					onClick={onClose}
 					className="mdlp-close-btn"
 					data-testid="close-mdlp-modal-btn"
-					aria-label="Закрыть окно сканирования МДЛП"
+					aria-label="Закрыть окно маркировки препаратов"
 				>
 					<X className="w-5 h-5" />
 				</button>

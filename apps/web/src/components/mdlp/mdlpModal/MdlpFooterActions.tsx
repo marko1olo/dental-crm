@@ -62,10 +62,11 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 				/>
 				<div
 					className="hidden sm:flex items-center gap-1.5 text-[11px] text-[var(--muted)] border-l border-[var(--line)] pl-3 ml-2"
-					title="Фиксация выбытия медикаментов в ИС МДЛП в соответствии с 425-ФЗ"
+					title="Фиксация выбытия маркированных препаратов"
 				>
 					<ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-					<span>425-ФЗ МДЛП</span>
+					<span>Учет медикаментов</span>
+					<span className="sr-only">425-ФЗ МДЛП</span>
 				</div>
 			</div>
 

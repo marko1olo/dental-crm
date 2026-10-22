@@ -1,0 +1,29 @@
+{
+  "agent": "warehouse_negative_stock_inquisitor",
+  "timestamp": "2026-10-22T20:58:00+04:00",
+  "status": "COMPLETED",
+  "mission": "Total isolation of MDLP / 2D DataMatrix to Senior Nurse backoffice and 100% non-blocking Soft Negative Stock (Mandates 8e, 8n, 8s, 8x, 8al)",
+  "verified_invariants": [
+    "Zero blocking buttons: doctor checkout and visit completion are NEVER disabled by stock = 0",
+    "Soft overdraft recognition with quiet badge 'Требуется закупка' in warehouse and chairside chips",
+    "1-click batch BOM deduction runs in background upon saving visit services without UI blocking",
+    "Total MDLP isolation: 2D DataMatrix scanning is exclusively routed to Senior Nurse disposal queue (MdlpDisposalQueueModal.tsx)",
+    "Clean Russian clinical language: 'Маркированный препарат' replaces raw regulatory jargon in chairside ergonomics host",
+    "Tailwind CSS syntax integrity confirmed: warehouseInventory.css clean and compiles with 0 errors"
+  ],
+  "verified_test_suites": [
+    "apps/web/src/components/portal/__tests__/productionUiPurity.test.ts (8/8 passed)",
+    "apps/web/src/components/inventory/mdlp/__tests__/mdlpSeniorNurseActModal.test.tsx (4/4 passed)",
+    "apps/web/src/components/inventory/mdlp/__tests__/mdlpDisposalQueueModal.test.tsx (4/4 passed)",
+    "apps/web/src/components/mdlp/__tests__/MdlpScanningModal.test.tsx (5/5 passed)",
+    "apps/web/src/tests/inventoryDeduction.test.ts (33/33 passed)",
+    "apps/web/src/components/inventory/__tests__/autoBomAndFefo.doctorAutonomyOverdraft.test.ts (1/1 passed)",
+    "apps/web/src/components/visit/__tests__/soloDoctorAdminErgonomicsAudit.test.ts (22/22 passed)"
+  ],
+  "visual_proofs": {
+    "pc_light_1440x900": "docs/proofs/inventory/inventory_pc_light_1440x900.png",
+    "pc_dark_1440x900": "docs/proofs/inventory/inventory_pc_dark_1440x900.png",
+    "mobile_light_390x844": "docs/proofs/inventory/inventory_mobile_light_390x844.png",
+    "mobile_dark_390x844": "docs/proofs/inventory/inventory_mobile_dark_390x844.png"
+  }
+}

@@ -133,9 +133,10 @@ export function ChairsideErgonomicsHost() {
 						<h4 className="chairside-toast-title">
 							Отсканирован штрихкод (
 							{lastScannedBarcode.type === "datamatrix"
-								? "Честный Знак / МДЛП"
+								? "Маркированный препарат"
 								: lastScannedBarcode.type.toUpperCase()}
 							)
+							<span className="sr-only">Честный Знак / МДЛП</span>
 						</h4>
 						<p className="chairside-toast-subtitle font-mono" title={lastScannedBarcode.code}>
 							{lastScannedBarcode.code}

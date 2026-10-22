@@ -85,7 +85,7 @@ export function SterilizationBatchCycleFooter({
 						) : (
 							<>
 								<Check size={16} className="text-white" />
-								<span>Зафиксировать цикл стерилизации смены</span>
+								<span>Зафиксировать цикл автоклавирования смены</span>
 							</>
 						)}
 					</button>

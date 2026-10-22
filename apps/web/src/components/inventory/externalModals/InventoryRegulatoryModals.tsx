@@ -5,7 +5,6 @@ import type { WarehouseWriteoffItem } from "../warehouseManagerModules/types.js"
 
 const MdlpDisposalQueueModal = lazy(() => import("../mdlp/index.js").then((m) => ({ default: m.MdlpDisposalQueueModal })));
 const WarehouseManagerModal = lazy(() => import("../WarehouseManagerModal.js").then((m) => ({ default: m.WarehouseManagerModal })));
-const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
 const AcceptanceWaybillsModal = lazy(() => import("../AcceptanceWaybillsModal.js").then((m) => ({ default: m.AcceptanceWaybillsModal })));
 
 export interface InventoryRegulatoryModalsProps {
