@@ -179,7 +179,14 @@ describe("Wave 115: PatientBillingModal Touch Targets >= 44x44px", () => {
 		__dirname,
 		"../../finance/PatientBillingModal.tsx",
 	);
-	const content = fs.readFileSync(billingModalPath, "utf-8");
+	const content = [
+		fs.readFileSync(billingModalPath, "utf-8"),
+		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingHeader.tsx"), "utf-8"),
+		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingDiscountsToolbar.tsx"), "utf-8"),
+		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingFriendlyTab.tsx"), "utf-8"),
+		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingTenderPanel.tsx"), "utf-8"),
+		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingFooter.tsx"), "utf-8"),
+	].join("\n");
 
 	it("tab buttons should have min-h-[44px]", () => {
 		assert.match(content, /data-testid="btn-tab-friendly-bill"[\s\S]*?min-h-\[44px\]/);

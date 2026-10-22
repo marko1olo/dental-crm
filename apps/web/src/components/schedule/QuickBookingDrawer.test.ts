@@ -219,14 +219,13 @@ describe("QuickBookingDrawer", () => {
 		);
 
 		assert.ok(html.includes("Должников Петр Сергеевич"), "должно отображаться имя пациента");
-		assert.ok(html.includes("Надежный пациент"), "должен отображаться бейдж надежности");
 		assert.ok(html.includes("Долг"), "должен отображаться бейдж финансового долга");
 		assert.ok(html.includes("500"), "должна отображаться сумма долга");
 		assert.ok(html.includes("patient-reliability-section"), "должен быть блок надежности пациента");
 		assert.ok(html.includes("patient-financial-badge"), "должен быть testid финансового бейджа");
 	});
 
-	it("renders receptionist risk alert when patient has consecutive no-shows", () => {
+	it("renders clean 1-click booking without blocking or 2-hour confirmation demands for patient with past no-shows", () => {
 		const riskyPatient: Patient = {
 			...mockPatients[0]!,
 			id: "pat-risk",
@@ -272,9 +271,8 @@ describe("QuickBookingDrawer", () => {
 		);
 
 		assert.ok(html.includes("Неявин Артем Игоревич"), "должно отображаться имя пациента");
-		assert.ok(html.includes("Риск неявки"), "должен отображаться бейдж риска неявки");
-		assert.ok(html.includes("Требуется подтверждение за 2 часа"), "должно отображаться предупреждение о подтверждении за 2 часа");
-		assert.ok(html.includes("patient-reliability-risk-alert"), "должен быть testid алерта риска");
+		assert.ok(!html.includes("Требуется подтверждение за 2 часа"), "не должно быть блокирующих требований подтверждения за 2 часа (Мандат 8e)");
+		assert.ok(html.includes("quick-drawer-save-btn"), "кнопка записи должна присутствовать и быть доступной для 1-клик записи");
 	});
 
 	it("initializes existing patient by patientName from initialSlot", () => {

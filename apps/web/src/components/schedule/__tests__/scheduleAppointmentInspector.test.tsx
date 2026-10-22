@@ -145,7 +145,9 @@ describe("ScheduleAppointmentInspector (StomX CRM Parity Right Inspector Panel)"
 
     // Action CTA buttons
     assert.ok(html.includes("data-testid=\"schedule-inspector-open-visit-btn\""));
+    assert.ok(html.includes("data-action-testid=\"schedule-inspector-start-visit-btn\""));
     assert.ok(html.includes("Открыть карту приёма"));
+    assert.ok(html.includes("✓ Начать приём"));
     assert.ok(html.includes("data-testid=\"schedule-inspector-edit-btn\""));
     assert.ok(html.includes("Редактировать запись"));
     assert.ok(html.includes("data-testid=\"schedule-inspector-close-btn\""));

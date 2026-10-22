@@ -95,8 +95,9 @@ export const SmartSlotRecoveryCard: React.FC<SmartSlotRecoveryCardProps> = ({
         <button
           type="button"
           onClick={() => onOfferWhatsApp(match)}
-          disabled={bookingDisabled || !match.phone}
-          className={`secondary-button text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${isContacted ? "!bg-emerald-500/15 !text-emerald-700 dark:!text-emerald-300" : ""}`}
+          disabled={false}
+          aria-busy={isBookingThis || undefined}
+          className={`secondary-button text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer ${isContacted ? "!bg-emerald-500/15 !text-emerald-700 dark:!text-emerald-300" : ""}`}
           title={match.offerMessage}
           data-testid={`smart-slot-whatsapp-btn-${idx}`}
         >
@@ -108,7 +109,7 @@ export const SmartSlotRecoveryCard: React.FC<SmartSlotRecoveryCardProps> = ({
         </button>
       </div>
 
-      <button type="button" onClick={() => onBook(match)} disabled={bookingDisabled} className="primary-button text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs" data-testid={`smart-slot-book-btn-${idx}`}>
+      <button type="button" onClick={() => onBook(match)} disabled={false} aria-busy={isBookingThis || undefined} className="primary-button text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid={`smart-slot-book-btn-${idx}`}>
         {isBookingThis ? (
           <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>Запись...</span></>
         ) : (

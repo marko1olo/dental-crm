@@ -130,7 +130,11 @@ describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () 
 		);
 		assert.ok(fs.existsSync(modalPath), "PatientBillingModal.tsx must exist");
 
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const content = [
+			fs.readFileSync(modalPath, "utf-8"),
+			fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingTypes.ts"), "utf-8"),
+			fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingPlanStagePanel.tsx"), "utf-8"),
+		].join("\n");
 
 		// Contract: types & props
 		assert.ok(

@@ -5068,7 +5068,7 @@
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
 - **Задействованные компоненты и модули**:
   - *Амбулаторная хирургия и протоколы 043/у*: `VisitSurgeryProtocolTab.tsx`, `surgeryProtocols.ts`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgerySafetyChecklist.tsx`, `surgery.css`.
-  - *Имплантологический паспорт и торк/ISQ*: `ImplantPassportModal.tsx`, `ImplantPassportCard.tsx`, `implantQuickPresets.ts`, `implants.css`.
+  - *Имплантологический паспорт и торк/ISQ*: `ImplantPassportModal.tsx`, `ImplantSurgeryProtocolModal.tsx`, `ImplantBatchSelector.tsx`, `ImplantPassportCard.tsx`, `implantQuickPresets.ts`, `implants.css`.
   - *Неотложная помощь и реанимационный чек-лист*: `EmergencyRescueModal.tsx`, `emergencyRescueEngine.ts`, `emergencyProtocols.ts`, `emergencyRescue.css`.
   - *Тесты*: `surgeryProtocols.test.ts`, `implantPassport.test.tsx`, `emergencyRescuePrintAutonomyWave53.test.tsx`, `clinical804nWriteoff.test.ts`.
 - **Ключевые результаты**:
@@ -5080,8 +5080,10 @@
      - Мягкий технологический овердрафт расходных материалов склада (`evaluateWarehouseOverdraft`) без блокировки операции при задержке накладных;
      - Тач-таргеты $\ge 44\times 44\text{px}$ для работы в стерильных перчатках (Sterile Glove Mode), 1-строчный тулбар 32–36px, 0 эмодзи.
   2. *Паспорт имплантации, торк 35–45 Н·см и стабильность ISQ 70–75 (Мандаты 8c, 8d, 8e пп. 1, 3, 5, 8i, 8k, 8n, 8p)*:
-     - В `ImplantPassportModal.tsx`, `ImplantPassportCard.tsx` и `implantQuickPresets.ts`:
+     - В `ImplantPassportModal.tsx`, `ImplantSurgeryProtocolModal.tsx`, `ImplantBatchSelector.tsx`, `ImplantPassportCard.tsx` и `implantQuickPresets.ts`:
      - Фиксация канонических имплантологических протоколов ведущих мировых систем (Dentium SuperLine/Implantium, Osstem TSIII/TSIV, Straumann BLX/SLA, MIS C1/V3, Astra Tech OsseoSpeed EV);
+     - Ликвидация фейковых сканеров штрихкодов и лазерных анимаций (Мандат 8e, 8n): прямой быстрый ввод REF/LOT/SN, 1-клик кнопка пресетов по умолчанию и селектор партий со склада (`ImplantBatchSelector`);
+     - Автономия врача: кнопки сохранения и печати никогда не блокируются, мягкий складской овердрафт без модальных окон блокировки;
      - Регистрация первичной механической торк-стабильности при установке (диапазон нормы 35–45 Н·см) и коэффициента стабильности имплантата ISQ по шкале Ostell/Penguin (70–75 на День 0);
      - Выбор тактики заживления: установка формирователя десны (ФДМ) при торке $\ge 35\text{ Н}\cdot\text{см}$ vs установка винта-заглушки и глухое ушивание слизистой при сниженной первичной стабильности;
      - Печать бланка «Паспорт имплантации» для выдачи пациенту со штрих-кодом партии, серийным номером и рекомендациями по нагрузке без эмодзи;

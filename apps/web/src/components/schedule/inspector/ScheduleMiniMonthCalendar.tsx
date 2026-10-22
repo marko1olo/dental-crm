@@ -157,7 +157,7 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="w-6 h-6 rounded-md hover:bg-[var(--paper)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+            className="w-6 h-6 rounded-md bg-transparent hover:bg-[var(--paper)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
             title="Предыдущий месяц"
             aria-label="Предыдущий месяц"
           >
@@ -171,7 +171,7 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
               setViewMonth(now.getMonth());
               onSelectDate(now.toISOString().slice(0, 10));
             }}
-            className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
+            className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
             title="Текущий месяц"
           >
             Сегодня
@@ -179,7 +179,7 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
           <button
             type="button"
             onClick={handleNextMonth}
-            className="w-6 h-6 rounded-md hover:bg-[var(--paper)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+            className="w-6 h-6 rounded-md bg-transparent hover:bg-[var(--paper)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
             title="Следующий месяц"
             aria-label="Следующий месяц"
           >
@@ -214,8 +214,8 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
                 cell.isSelected
                   ? "bg-sky-600 text-white font-bold shadow-xs hover:bg-sky-500"
                   : cell.isCurrentMonth
-                    ? "hover:bg-[var(--paper)] text-[var(--ink)]"
-                    : "text-[var(--muted)]/40 hover:bg-[var(--paper)]/50"
+                    ? "bg-transparent hover:bg-[var(--paper)] text-[var(--ink)]"
+                    : "bg-transparent text-[var(--muted)]/40 hover:bg-[var(--paper)]/50"
               } ${cell.isToday && !cell.isSelected ? "ring-1 ring-sky-500/60 font-bold" : ""}`}
               title={`${cell.dateIso}${cell.hasAppointments ? " (есть приёмы)" : ""}`}
               aria-label={`Дата ${cell.dateIso}`}

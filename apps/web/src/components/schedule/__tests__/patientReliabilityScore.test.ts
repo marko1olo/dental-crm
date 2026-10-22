@@ -112,7 +112,8 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 		assert.equal(result.reliabilityBadge.badgeText, "Риск неявки");
 		assert.equal(result.reliabilityBadge.shortLabel, "Риск неявки");
 		assert.ok(!result.reliabilityBadge.badgeText.includes("🔴"), "No raw 🔴 emoji");
-		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, true);
+		// Mandate 8e/8n: Doctor autonomy and zero-blocking, no hostile 2-hour confirmation popups
+		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, false);
 		assert.ok(result.receptionistAlert?.startsWith("[Внимание]"), "Receptionist alert uses clean semantic marker");
 		assert.ok(!result.receptionistAlert?.includes("⚠️"), "No ⚠️ in receptionist alert");
 	});
@@ -252,7 +253,8 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 
 		assert.equal(result.category, "risk");
 		assert.equal(result.stats.noShowCount, 3);
-		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, true);
+		// Mandate 8e/8n: Doctor autonomy and zero-blocking, no hostile 2-hour confirmation popups
+		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, false);
 		assert.ok(result.score <= 45, `score should be <= 45, got ${result.score}`);
 	});
 
@@ -402,7 +404,8 @@ describe("Patient Discipline & Reliability Score Engine — Zero Cartoon Emojis 
 		const result = calculatePatientReliability(patient, appts, { overrideInsight: mockInsight });
 
 		assert.equal(result.category, "risk");
-		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, true);
+		// Mandate 8e/8n: Doctor autonomy and zero-blocking, no hostile 2-hour confirmation popups
+		assert.equal(result.reliabilityBadge.requiresTwoHourConfirmation, false);
 	});
 
 	it("19. isAppointmentFinalizedOrPast correctly classifies appointment states", () => {

@@ -44,32 +44,20 @@ export function SelectedPatientCard({
 
       {patientReliability && (
         <div className="pt-2.5 border-t border-[var(--line)] space-y-2" data-testid="patient-reliability-section">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${patientReliability.reliabilityBadge.badgeClass}`} data-testid={`patient-reliability-badge-${patientReliability.category}`} title={patientReliability.reliabilityBadge.summary}>
-              {patientReliability.reliabilityBadge.status === "reliable" && <ShieldCheck size={14} className="text-emerald-700 dark:text-emerald-300 shrink-0" />}
-              {patientReliability.reliabilityBadge.status === "new" && <Sparkles size={14} className="text-sky-700 dark:text-sky-300 shrink-0" />}
-              {patientReliability.reliabilityBadge.status === "high_risk" && <AlertTriangle size={14} className="text-rose-700 dark:text-rose-300 shrink-0" />}
-              {patientReliability.reliabilityBadge.status === "attention" && <AlertTriangle size={14} className="text-amber-700 dark:text-amber-300 shrink-0" />}
-              <span>{patientReliability.reliabilityBadge.badgeText}</span>
-            </div>
-
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono border ${patientReliability.financialBadge.badgeClass}`} data-testid="patient-financial-badge" title={`Баланс пациента: ${patientReliability.financialBadge.label}`}>
-              <CreditCard size={14} className="shrink-0 opacity-80" />
-              <span>{patientReliability.financialBadge.label}</span>
-            </div>
-          </div>
-
-          {patientReliability.category === "risk" && (
-            <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-900 dark:text-rose-100 text-xs font-bold flex items-start gap-2 animate-pulse" data-testid="patient-reliability-risk-alert">
-              <AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="m-0 font-bold text-rose-700 dark:text-rose-300">Требуется подтверждение за 2 часа</p>
-                <p className="m-0 font-normal text-[11px]">{patientReliability.receptionistAlert || "У пациента зафиксированы повторные неявки. Рекомендуется подтвердить визит перед приемом."}</p>
+          {patientReliability.financialBadge && (
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono border ${patientReliability.financialBadge.badgeClass}`}
+                data-testid="patient-financial-badge"
+                title={`Баланс пациента: ${patientReliability.financialBadge.label}`}
+              >
+                <CreditCard size={14} className="shrink-0 opacity-80" />
+                <span>{patientReliability.financialBadge.label}</span>
               </div>
             </div>
           )}
 
-          {patientReliability.financialBadge.isDebt && (
+          {patientReliability.financialBadge?.isDebt && (
             <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between gap-2" data-testid="patient-reliability-debt-alert">
               <span className="font-semibold">Финансовый долг: {patientReliability.financialBadge.formattedAmount}</span>
               <span className="text-[11px] text-rose-700 dark:text-rose-300">Напомнить об оплате</span>

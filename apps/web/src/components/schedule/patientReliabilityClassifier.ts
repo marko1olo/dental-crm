@@ -44,24 +44,24 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 
 	if (consecutiveNoShows >= 2 || noShowCount >= 3 || (maxConsecutiveNoShows >= 2 && attendanceRatePercent < 60) || (isInsightHighRisk && noShowCount >= 2)) {
 		const score = Math.max(0, Math.min(45, 100 - noShowCount * 30 - consecutiveNoShows * 15 - lateCount * 10));
-		const summary = consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд. Высокий риск отмены.` : `${noShowCount} неявок из ${totalFinished} визитов.`;
+		const summary = consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд.` : `${noShowCount} неявок из ${totalFinished} визитов.`;
 		const badge: PatientReliabilityBadge = {
 			category: "risk",
 			status: "high_risk",
 			badgeText: "Риск неявки",
 			shortLabel: "Риск неявки",
 			emoji: "high_risk",
-			recommendation: "Требуется подтверждение за 2 часа",
+			recommendation: "Рекомендуется контрольный звонок накануне (запись без блокировок)",
 			summary,
 			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40",
-			requiresTwoHourConfirmation: true,
+			requiresTwoHourConfirmation: false,
 		};
 		return {
 			category: "risk",
 			status: "high_risk",
 			score,
 			badge,
-			receptionistAlert: `[Внимание] Рекомендуется подтвердить визит за 2 часа до приема: у пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`,
+			receptionistAlert: `[Внимание] У пациента в истории ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}. Запись не блокируется.`,
 		};
 	}
 

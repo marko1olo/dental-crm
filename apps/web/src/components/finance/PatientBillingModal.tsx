@@ -87,6 +87,24 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = (props) =
 		);
 	}
 
+	const handleSelectPlanStage = (stg: any) => {
+		s.setSelectedStageId(stg.id);
+		s.setIsStageApplied(true);
+		const amt = s.getStageAmountRub(stg);
+		onPayTreatmentPlanStage?.(stg.id, amt);
+	};
+
+	const handleTenderPlanStage = (stg?: any) => {
+		const target = stg ?? s.selectedStage;
+		if (target) {
+			s.setSelectedStageId(target.id);
+			s.setIsStageApplied(true);
+			const amt = s.getStageAmountRub(target);
+			onPayTreatmentPlanStage?.(target.id, amt);
+			s.handleFiscalizeAction();
+		}
+	};
+
 	return (
 		<div ref={s.modalRef} className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-label="Акт выполненных работ и гарантийный талон" data-testid="patient-billing-modal" tabIndex={-1}>
 			<div className="relative bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
@@ -94,7 +112,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = (props) =
 				<PatientBillingDiscountsToolbar discountPreset={s.discountPreset} onSetDiscountPreset={s.setDiscountPreset} customDiscountPercent={s.customDiscountPercent} onSetCustomDiscountPercent={s.setCustomDiscountPercent} customDiscountRub={s.customDiscountRub} onSetCustomDiscountRub={s.setCustomDiscountRub} discountResult={s.discountResult} totalNetRub={s.totalNetRub} onInputEnterKeyDown={s.handleInputEnterKeyDown} />
 				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 pb-24">
 					{s.activeTab === "friendly" ? (
-						<PatientBillingFriendlyTab patientName={patient?.fullName || s.actParams.patient.fullName || "Пациент"} friendlyBreakdown={s.friendlyBreakdown} onOpenQr={() => s.setIsQrOpen(true)} planStages={s.planStages} activeTreatmentPlan={activeTreatmentPlan} isStageApplied={s.isStageApplied} onSetIsStageApplied={s.setIsStageApplied} selectedStage={s.selectedStage} initialServicesCount={initialServices.length} getStageAmountRub={s.getStageAmountRub} onSelectPlanStage={(stg) => { s.setSelectedStageId(stg.id); s.setIsStageApplied(true); const amt = s.getStageAmountRub(stg); onPayTreatmentPlanStage?.(stg.id, amt); }} onTenderPlanStage={(stg) => { const target = stg ?? s.selectedStage; if (target) { s.setSelectedStageId(target.id); s.setIsStageApplied(true); const amt = s.getStageAmountRub(target); onPayTreatmentPlanStage?.(target.id, amt); s.handleFiscalizeAction(); }}} selectedTender={s.selectedTender} onSelectTender={s.setSelectedTender} onFiscalizeAction={s.handleFiscalizeAction} totalNetRub={s.totalNetRub} receivedCashRub={s.receivedCashRub} onSetReceivedCashRub={s.setReceivedCashRub} cashChangeResult={s.cashChangeResult} primaryInputRef={s.primaryInputRef} onInputEnterKeyDown={s.handleInputEnterKeyDown} installmentSchedule={s.installmentSchedule} effectiveDeposit={s.effectiveDeposit} effectiveFamilyBalance={s.effectiveFamilyBalance} customServiceName={s.customServiceName} onSetCustomServiceName={s.setCustomServiceName} customAmountRub={s.customAmountRub} onSetCustomAmountRub={s.setCustomAmountRub} itemWarrantyMap={s.itemWarrantyMap} onToggleItemWarranty={s.toggleItemWarranty} />
+						<PatientBillingFriendlyTab patientName={patient?.fullName || s.actParams.patient.fullName || "Пациент"} friendlyBreakdown={s.friendlyBreakdown} onOpenQr={() => s.setIsQrOpen(true)} planStages={s.planStages} activeTreatmentPlan={activeTreatmentPlan} isStageApplied={s.isStageApplied} onSetIsStageApplied={s.setIsStageApplied} selectedStage={s.selectedStage} initialServicesCount={initialServices.length} getStageAmountRub={s.getStageAmountRub} onSelectPlanStage={handleSelectPlanStage} onTenderPlanStage={handleTenderPlanStage} selectedTender={s.selectedTender} onSelectTender={s.setSelectedTender} onFiscalizeAction={s.handleFiscalizeAction} totalNetRub={s.totalNetRub} receivedCashRub={s.receivedCashRub} onSetReceivedCashRub={s.setReceivedCashRub} cashChangeResult={s.cashChangeResult} primaryInputRef={s.primaryInputRef} onInputEnterKeyDown={s.handleInputEnterKeyDown} installmentSchedule={s.installmentSchedule} effectiveDeposit={s.effectiveDeposit} effectiveFamilyBalance={s.effectiveFamilyBalance} customServiceName={s.customServiceName} onSetCustomServiceName={s.setCustomServiceName} customAmountRub={s.customAmountRub} onSetCustomAmountRub={s.setCustomAmountRub} itemWarrantyMap={s.itemWarrantyMap} onToggleItemWarranty={s.toggleItemWarranty} />
 					) : (
 						<PatientBillingActPreview activeTab={s.activeTab} actParams={s.actParams} summary={s.summary} />
 					)}

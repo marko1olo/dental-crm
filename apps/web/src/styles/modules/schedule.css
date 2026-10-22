@@ -1235,6 +1235,15 @@ button[data-testid^="btn-slot-"]:focus-visible svg,
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+.schedule-mini-calendar button {
+	background: transparent;
+	color: var(--ink);
+}
+
+.schedule-mini-calendar button:hover {
+	background: var(--paper);
+}
+
 
 
 

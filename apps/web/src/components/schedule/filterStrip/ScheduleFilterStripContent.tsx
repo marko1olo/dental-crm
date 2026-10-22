@@ -230,18 +230,44 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 						</div>
 					)}
 
+					{/* 1-Click Grid Step Switcher (15m / 30m / 60m) - StomX Parity */}
+					{onGridStepChange && (
+						<div
+							className="schedule-grid-step-segmented hidden lg:inline-flex shrink-0 select-none items-center"
+							role="group"
+							aria-label="Шаг сетки расписания"
+							data-testid="schedule-grid-step-segmented"
+						>
+							{([15, 30, 60] as const).map((step) => (
+								<button
+									key={step}
+									type="button"
+									onClick={() => onGridStepChange(step)}
+									className={`schedule-grid-step-btn ${
+										(gridStepMinutes ?? 30) === step ? "active font-bold" : ""
+									}`}
+									data-testid={`schedule-grid-step-${step}-btn`}
+									title={`Шаг сетки ${step} минут`}
+									aria-pressed={(gridStepMinutes ?? 30) === step}
+								>
+									{step}м
+								</button>
+							))}
+						</div>
+					)}
+
 					{/* 1-Click Primary Quick Booking Action */}
 					{onQuickBooking && (
 						<button
 							type="button"
 							onClick={onQuickBooking}
-							className="schedule-toolbar-primary-quick-booking-btn primary-button h-8 min-h-[32px] max-h-8 px-3 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap bg-sky-600 hover:bg-sky-500 text-white"
+							className="schedule-toolbar-primary-quick-booking-btn primary-button h-8 sm:h-9 min-h-[36px] px-3.5 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap bg-sky-600 hover:bg-sky-500 text-white"
 							data-testid="schedule-toolbar-primary-quick-booking-btn"
 							data-tour="schedule-booking"
 							title="Быстрая запись (N) / Новая запись пациента на прием"
 							aria-label="Быстрая запись (+ Запись)"
 						>
-							<Plus size={14} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
+							<Plus size={15} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
 							<span className="whitespace-nowrap font-bold">+ Запись</span>
 						</button>
 					)}

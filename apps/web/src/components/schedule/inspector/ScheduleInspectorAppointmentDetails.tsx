@@ -343,10 +343,9 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
             <button
               type="button"
               onClick={() => onQuickStatusChange(a.id, "confirmed")}
-              disabled={a.status === "confirmed"}
               className={`h-7 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 a.status === "confirmed"
-                  ? "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/40 opacity-70 cursor-default"
+                  ? "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/40 ring-1 ring-teal-500/30"
                   : "bg-[var(--paper)] hover:bg-teal-500/10 text-[var(--ink)] border-[var(--line)] hover:border-teal-400"
               }`}
               title="Отметить как подтверждённый"
@@ -359,10 +358,9 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
             <button
               type="button"
               onClick={() => onQuickStatusChange(a.id, "arrived")}
-              disabled={a.status === "arrived"}
               className={`h-7 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 a.status === "arrived"
-                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/40 opacity-70 cursor-default"
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/40 ring-1 ring-amber-500/30"
                   : "bg-[var(--paper)] hover:bg-amber-500/10 text-[var(--ink)] border-[var(--line)] hover:border-amber-400"
               }`}
               title="Пациент пришёл в клинику и ожидает в холле"
@@ -375,10 +373,9 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
             <button
               type="button"
               onClick={() => onQuickStatusChange(a.id, "in_treatment")}
-              disabled={isAppointmentInChair(a.status)}
               className={`h-7 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 isAppointmentInChair(a.status)
-                  ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-500/50 opacity-70 cursor-default"
+                  ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-500/50 ring-1 ring-emerald-500/30"
                   : "bg-[var(--paper)] hover:bg-emerald-500/10 text-[var(--ink)] border-[var(--line)] hover:border-emerald-400"
               }`}
               title="Пациент сидит в кресле врача"
@@ -391,10 +388,9 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
             <button
               type="button"
               onClick={() => onQuickStatusChange(a.id, "completed")}
-              disabled={a.status === "completed"}
               className={`h-7 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 a.status === "completed"
-                  ? "bg-violet-500/15 text-violet-800 dark:text-violet-200 border-violet-500/40 opacity-70 cursor-default"
+                  ? "bg-violet-500/15 text-violet-800 dark:text-violet-200 border-violet-500/40 ring-1 ring-violet-500/30"
                   : "bg-[var(--paper)] hover:bg-violet-500/10 text-[var(--ink)] border-[var(--line)] hover:border-violet-400"
               }`}
               title="Приём завершён"
@@ -412,11 +408,14 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
         <button
           type="button"
           onClick={handleOpenVisitClick}
-          className="primary-button h-9 min-h-[36px] w-full rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm bg-sky-600 hover:bg-sky-500 text-white"
+          className="schedule-inspector-start-visit-btn primary-button h-9 min-h-[36px] w-full rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm bg-sky-600 hover:bg-sky-500 text-white"
           data-testid="schedule-inspector-open-visit-btn"
+          data-action-testid="schedule-inspector-start-visit-btn"
+          title="Открыть карту приёма и начать приём"
+          aria-label="Начать приём"
         >
-          <FileText size={14} className="shrink-0" />
-          <span>Открыть карту приёма</span>
+          <Check size={14} className="shrink-0 stroke-[2.5]" />
+          <span>✓ Начать приём</span>
         </button>
 
         {onEditAppointment && (

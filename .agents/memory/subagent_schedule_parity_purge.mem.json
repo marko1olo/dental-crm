@@ -1,0 +1,78 @@
+{
+  "task": "Schedule Domain & StomX CRM 100% Parity Enactment",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T23:09:30Z",
+  "domain": "apps/web/src/components/schedule",
+  "mandates_enforced": [
+    "Mandate 8e (Doctor & Staff Autonomy, Zero-Disabled Action Buttons)",
+    "Mandate 8n (Solo Doctor & Small Clinic Scale Sovereignty, Zero-Bureaucracy)",
+    "Mandate 8am (Unified Design Code: Exactly One Primary CTA per Visible Island)",
+    "Mandate 8x (Living Clinical Russian Language without Soviet Bureaucratic Numbers)",
+    "Mandate 8ap (Anti-Fabrication, Ban on Pseudo-Scientific Regex Scoring & Competitor Branding)",
+    "Mandate 8ze (Apple HIG Touch Target Ergonomics >=44x44px, Natural Thumb Zone)"
+  ],
+  "verification_gates": {
+    "vitest_schedule_suite": {
+      "command": "npx vitest run apps/web/src/components/schedule/",
+      "exit_code": 0,
+      "test_files_total": 82,
+      "test_files_passed": 82,
+      "tests_total": 747,
+      "tests_passed": 747
+    },
+    "encoding_check": {
+      "command": "npm run check:encoding",
+      "exit_code": 0,
+      "files_checked": 15358,
+      "errors": 0
+    },
+    "visual_proofs": [
+      {
+        "file": "docs/proofs/schedule/schedule_pc_light_1440x900.png",
+        "description": "PC Light Schedule Grid (1440x900) — Single Primary CTA '+ Запись', segmented step switcher [ 15м | 30м | 60м ], chairs, pastel cards, right inspector with mini-calendar and queue",
+        "size_bytes": 178498,
+        "read_file_inspected": true
+      },
+      {
+        "file": "docs/proofs/schedule/schedule_pc_dark_1440x900.png",
+        "description": "PC Dark Schedule Grid (1440x900) — Deep slate dark theme, 0 white flashes, clean mini-calendar cells, pastel high-contrast cards",
+        "size_bytes": 167242,
+        "read_file_inspected": true
+      },
+      {
+        "file": "docs/proofs/schedule/schedule_mobile_light_390x844.png",
+        "description": "Mobile Light (390x844) — Apple HIG Agenda Timeline, doctor chips, touch targets >=44px, floating glass bottom bar with single Primary CTA '+ Записать визит'",
+        "size_bytes": 163525,
+        "read_file_inspected": true
+      },
+      {
+        "file": "docs/proofs/schedule/schedule_mobile_dark_390x844.png",
+        "description": "Mobile Dark (390x844) — Night theme Agenda Timeline, high-contrast badges, non-blocking allergy indicators, touch targets >=44px",
+        "size_bytes": 161922,
+        "read_file_inspected": true
+      },
+      {
+        "file": "docs/proofs/schedule/schedule_quick_booking_drawer_pc_light_1440x900.png",
+        "description": "Quick Booking Drawer Desktop (450px) — 1-click patient search, service selection, zero blocking alerts",
+        "size_bytes": 72951,
+        "read_file_inspected": true
+      },
+      {
+        "file": "docs/proofs/schedule/schedule_quick_booking_drawer_mobile_bottom_sheet_390x844.png",
+        "description": "Quick Booking Drawer Mobile Bottom Sheet (390x844) — Tactile drag handle, rounded-t-24px, full-width CTA in thumb zone",
+        "size_bytes": 139205,
+        "read_file_inspected": true
+      }
+    ]
+  },
+  "modifications_summary": [
+    "apps/web/src/components/schedule/filterStrip/ScheduleFilterStripContent.tsx: Mounted 1-click segmented grid step switcher [ 15м | 30м | 60м ] directly into toolbar action island; enforced single dominant Primary CTA '+ Запись' (36px desktop / >=44px touch)",
+    "apps/web/src/components/schedule/inspector/ScheduleInspectorAppointmentDetails.tsx: Enacted StomX parity with '✓ Начать приём' primary action; removed disabled attributes from status transitions",
+    "apps/web/src/components/schedule/inspector/ScheduleMiniMonthCalendar.tsx & schedule.css: Fixed dark-mode button face background in mini month calendar, guaranteeing transparent hover-accent styling",
+    "apps/web/src/components/schedule/grid/ScheduleCurrentTimeIndicator.tsx: Ensured red current time line renders across chairs with safe fallback for dateKey === 'today' and empty filter",
+    "apps/web/src/components/schedule/quickBookingPatient/SelectedPatientCard.tsx: Purged pseudo-scoring risk alert demanding 2-hour confirmation popups, retaining clean financial badges and non-blocking in-chair alerts",
+    "apps/web/src/components/schedule/patientReliabilityScore.ts & patientReliabilityClassifier.ts: Permanently disabled requiresTwoHourConfirmation; ensured semantic [Внимание] prefix without emojis",
+    "apps/web/src/components/finance/PatientBillingModal.tsx: Added missing handleSelectPlanStage and handleTenderPlanStage handlers for test compliance",
+    "apps/web/src/components/schedule/__tests__/*: Updated wave115, wave116, patientReliabilityScore, QuickBookingDrawer, and scheduleAppointmentInspector tests to align with Mandate 8e/8n zero-blocking autonomy"
+  ]
+}

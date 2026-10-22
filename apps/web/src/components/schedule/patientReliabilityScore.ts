@@ -42,7 +42,7 @@ export function calculatePatientReliability(
 
 	const flags: string[] = [];
 	if (stats.consecutiveNoShows >= 2) {
-		flags.push(`${stats.consecutiveNoShows} неявки подряд («Требуется подтверждение за 2 часа»)`);
+		flags.push(`${stats.consecutiveNoShows} неявки подряд`);
 	} else if (stats.noShowCount > 0) {
 		flags.push(`${stats.noShowCount} неявка(и) без предупреждения`);
 	}

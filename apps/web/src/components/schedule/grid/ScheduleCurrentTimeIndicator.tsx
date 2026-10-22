@@ -47,7 +47,7 @@ function getCurrentTimeInfo(dateKey: string, timezone?: string) {
     }
   }
 
-  const isToday = dateKey === todayStr;
+  const isToday = !dateKey || dateKey === "today" || dateKey === todayStr;
   const currentTotalMinutes = nowHours * 60 + nowMinutes;
   const timeFormatted = `${String(nowHours).padStart(2, "0")}:${String(nowMinutes).padStart(2, "0")}`;
 

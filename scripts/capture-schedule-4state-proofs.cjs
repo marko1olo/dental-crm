@@ -88,6 +88,16 @@ async function setTheme(page, theme) {
   await page.waitForTimeout(500);
 }
 
+async function waitForAppReady(page) {
+  console.log("Waiting for app Suspense to resolve (detaching .boot-state)...");
+  try {
+    await page.waitForSelector('.boot-state', { state: 'detached', timeout: 35000 });
+  } catch (_) {
+    await page.waitForFunction(() => !document.querySelector('.boot-state') && !document.body?.innerText?.includes("Загрузка CRM"), { timeout: 15000 }).catch(() => {});
+  }
+  await page.waitForTimeout(2000);
+}
+
 async function captureScreen(page, filename) {
   await suppressOverlays(page);
   await page.waitForTimeout(600);
@@ -113,11 +123,11 @@ async function run() {
     const pcPage = await pcContext.newPage();
 
     console.log("Navigating to http://127.0.0.1:5173/?demo=true...");
-    await pcPage.goto(`${WEB_BASE}/?demo=true#schedule`, { waitUntil: "domcontentloaded", timeout: 35000 });
-    await pcPage.waitForTimeout(3000);
+    await pcPage.goto(`${WEB_BASE}/?demo=true#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await waitForAppReady(pcPage);
     await suppressOverlays(pcPage);
 
-    // Ensure schedule is open
+    // Ensure schedule is open and loaded
     await pcPage.evaluate(() => {
       if (window.__useAppStore) {
         window.__useAppStore.getState().setCurrentView("schedule");
@@ -125,6 +135,15 @@ async function run() {
       window.location.hash = "schedule";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
+    console.log("Waiting for schedule modules to hydrate...");
+    try {
+      await pcPage.waitForFunction(() => {
+        return !document.body.innerText.includes("Подготовка модулей расписания") &&
+               (document.querySelector('.schedule-grid-container') ||
+                document.querySelector('.schedule-panel') ||
+                document.querySelector('[data-testid="schedule-view"]'));
+      }, { timeout: 20000 });
+    } catch (_) {}
     await pcPage.waitForTimeout(2000);
     await suppressOverlays(pcPage);
 
@@ -135,16 +154,17 @@ async function run() {
     // Open Quick Booking Drawer on PC
     console.log("Opening Quick Booking Drawer on PC...");
     const openedQuick = await pcPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="quick-booking-primary-btn"]') ||
-                  document.querySelector('button[title*="Запись"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("+ Запись") || b.innerText.includes("Запись"));
+      const btn = document.querySelector('[data-testid="schedule-toolbar-primary-quick-booking-btn"]') ||
+                  document.querySelector('[data-testid="quick-booking-primary-btn"]') ||
+                  Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("+ Запись"));
       if (btn) {
         btn.click();
         return true;
       }
       return false;
     });
-    await pcPage.waitForTimeout(1500);
+    console.log("Opened quick booking drawer on PC:", openedQuick);
+    await pcPage.waitForTimeout(2000);
     await suppressOverlays(pcPage);
     console.log("Capturing quick_booking_pc_light_1440x900.png...");
     await captureScreen(pcPage, "quick_booking_pc_light_1440x900.png");
@@ -168,13 +188,26 @@ async function run() {
       userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15",
       isMobile: true,
       hasTouch: true,
+      deviceScaleFactor: 2,
     });
     await injectStorage(mobContext, "light");
     const mobPage = await mobContext.newPage();
 
     console.log("Navigating Mobile to http://127.0.0.1:5173/?demo=true#schedule...");
-    await mobPage.goto(`${WEB_BASE}/?demo=true#schedule`, { waitUntil: "domcontentloaded", timeout: 35000 });
-    await mobPage.waitForTimeout(3000);
+    await mobPage.goto(`${WEB_BASE}/?demo=true#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await waitForAppReady(mobPage);
+    await suppressOverlays(mobPage);
+
+    // If offline autonomy button is present, click it
+    try {
+      const offlineBtn = mobPage.locator('button:has-text("Перейти в автономный режим")');
+      if (await offlineBtn.count() > 0 && await offlineBtn.isVisible()) {
+        console.log("Clicking 'Перейти в автономный режим' on mobile...");
+        await offlineBtn.click({ force: true });
+        await mobPage.waitForTimeout(1500);
+      }
+    } catch (_) {}
+
     await suppressOverlays(mobPage);
 
     // Switch to schedule on mobile
@@ -185,7 +218,7 @@ async function run() {
       window.location.hash = "schedule";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
-    await mobPage.waitForTimeout(2000);
+    await mobPage.waitForTimeout(3000);
     await suppressOverlays(mobPage);
 
     // Capture Mobile Light (Agenda View per Apple HIG)
@@ -194,13 +227,19 @@ async function run() {
 
     // Open Quick Booking Drawer on Mobile
     console.log("Opening Quick Booking Drawer on Mobile...");
-    await mobPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="quick-booking-primary-btn"]') ||
-                  document.querySelector('button[title*="Запись"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("+ Запись") || b.innerText.includes("Запись"));
-      if (btn) btn.click();
+    const openedMobQuick = await mobPage.evaluate(() => {
+      const btn = document.querySelector('[data-testid="schedule-mobile-add-btn"]') ||
+                  document.querySelector('.schedule-mobile-primary-action-btn') ||
+                  document.querySelector('[data-testid="quick-booking-primary-btn"]') ||
+                  Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("+ Записать визит") || b.innerText.includes("Записать визит") || b.innerText.includes("+ Запись"));
+      if (btn) {
+        btn.click();
+        return true;
+      }
+      return false;
     });
-    await mobPage.waitForTimeout(1500);
+    console.log("Opened quick booking drawer on mobile:", openedMobQuick);
+    await mobPage.waitForTimeout(2000);
     await suppressOverlays(mobPage);
     console.log("Capturing quick_booking_mobile_light_390x844.png...");
     await captureScreen(mobPage, "quick_booking_mobile_light_390x844.png");
@@ -209,7 +248,7 @@ async function run() {
     console.log("Switching to Mobile Dark...");
     await setTheme(mobPage, "dark");
     await mobPage.keyboard.press("Escape");
-    await mobPage.waitForTimeout(1000);
+    await mobPage.waitForTimeout(1500);
     await suppressOverlays(mobPage);
     console.log("Capturing schedule_mobile_dark_390x844.png...");
     await captureScreen(mobPage, "schedule_mobile_dark_390x844.png");
