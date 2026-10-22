@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
+	clinics,
 	communicationTasks,
 	visits,
 } from "../../../db/schema.js";
@@ -122,7 +123,15 @@ export class TelegramPostOpCarePipeline {
 				if (vRow) validVisitId = vRow.id;
 			}
 
-			const validClinicId = isUuid(params.clinicId) ? params.clinicId : null;
+			let validClinicId: string | null = null;
+			if (isUuid(params.clinicId)) {
+				const [cRow] = await tx
+					.select({ id: clinics.id })
+					.from(clinics)
+					.where(and(eq(clinics.organizationId, params.organizationId), eq(clinics.id, params.clinicId)))
+					.limit(1);
+				if (cRow) validClinicId = cRow.id;
+			}
 
 			await tx.insert(communicationTasks).values({
 				organizationId: params.organizationId,
@@ -245,7 +254,15 @@ export class TelegramPostOpCarePipeline {
 				if (aRow) validAppointmentId = aRow.id;
 			}
 
-			const validClinicId = isUuid(params.clinicId) ? params.clinicId : null;
+			let validClinicId: string | null = null;
+			if (isUuid(params.clinicId)) {
+				const [cRow] = await tx
+					.select({ id: clinics.id })
+					.from(clinics)
+					.where(and(eq(clinics.organizationId, params.organizationId), eq(clinics.id, params.clinicId)))
+					.limit(1);
+				if (cRow) validClinicId = cRow.id;
+			}
 
 			const [createdTask] = await tx
 				.insert(communicationTasks)
