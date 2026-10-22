@@ -41,7 +41,7 @@ export const ToolbarParamsDropdown: React.FC<ToolbarParamsDropdownProps> = ({
 			<button
 				type="button"
 				onClick={() => setIsParamsOpen((prev) => !prev)}
-				className="secondary-button h-9 px-4 rounded-lg text-[13px] font-medium border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
+				className="secondary-button h-9 px-4 rounded-lg text-[13px] font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
 				title="Параметры сметы: налоговый вычет 13%, студия сравнения, эскроу, валидация цен"
 				aria-label="Параметры сметы"
 				aria-expanded={isParamsOpen}
@@ -51,14 +51,14 @@ export const ToolbarParamsDropdown: React.FC<ToolbarParamsDropdownProps> = ({
 				<span>Параметры сметы</span>
 				<ChevronDown
 					size={13}
-					className={`text-[var(--muted,#64748b)] transition-transform duration-200 ${
+					className={`text-[var(--muted)] transition-transform duration-200 ${
 						isParamsOpen ? "rotate-180" : ""
 					}`}
 				/>
 			</button>
 
 			<div
-				className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,#ffffff)] border border-[var(--line,var(--border,#cbd5e1))] rounded-xl shadow-2xl min-w-[260px] text-xs ${
+				className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[260px] text-xs ${
 					isParamsOpen ? "animate-in fade-in zoom-in-95 duration-100" : "hidden"
 				}`}
 				role="menu"

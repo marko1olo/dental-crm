@@ -56,16 +56,16 @@
 
 /* Card Header */
 .treatment-tier-header {
-	padding: 20px 18px 14px 18px;
+	padding: 14px 16px 10px 16px;
 	border-bottom: 1px solid var(--tp-border);
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 6px;
 	background: var(--tp-bg);
 }
 
 .treatment-tier-card.recommended .treatment-tier-header {
-	padding-top: 36px;
+	padding-top: 30px;
 }
 
 .treatment-tier-badge-row {

@@ -1,0 +1,73 @@
+{
+  "subagent": "Treatment Plan Ergonomics Inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-22T09:46:00Z",
+  "completed_at": "2026-10-22T11:41:00Z",
+  "steps_completed": [
+    {
+      "step": 1,
+      "name": "Constitutional and Architectural Rules Ingestion",
+      "status": "done",
+      "details": "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, frontend.md, STOMX_REVERSE_ENGINEERING_BIBLE.md (medplans 314-325). Confirmed zero-mock policy, doctor autonomy (Mandate 8e), desktop-first density, and split-screen catalog requirements."
+    },
+    {
+      "step": 2,
+      "name": "Analysis of existing treatment-plans builder components",
+      "status": "done",
+      "details": "Audited TreatmentPlanModule, TreatmentPlanStagesListSection, TreatmentPlanAddServiceModal, useTreatmentPlanLogic, and StageItemRow. Identified modal-barrier defect: adding services previously required opening a modal on every action."
+    },
+    {
+      "step": 3,
+      "name": "Design & implementation of Split-Screen Catalog Mode",
+      "status": "done",
+      "details": "Implemented modular split catalog architecture: splitCatalogTypes, SplitCatalogToothQuickBar (FDI 11-48 1-click tooth selector), SplitCatalogCategoryAccordion, SplitCatalogPanel, StageServicesTableHeader, StageServicesTableRow, StageServicesTableFooter, StageServicesTable, SplitStagesHeaderBar, TreatmentPlanSplitView, and splitCatalog.css."
+    },
+    {
+      "step": 4,
+      "name": "Seamless integration into TreatmentPlanStagesListSection & TreatmentPlanModule",
+      "status": "done",
+      "details": "Added 1-click service addition directly from catalog to active stage without modal dialogs. Added layout switcher (Split-Catalog / Full Cards) to TreatmentPlanSpecialtyFilterBar. Preserved 100% backward compatibility with existing tests and flows."
+    },
+    {
+      "step": 5,
+      "name": "Unit test suite & quality gates",
+      "status": "done",
+      "details": "Created apps/web/src/components/treatment-plans/__tests__/treatmentPlanSplitCatalogMode.test.tsx. Ran vitest across all 4 suites: 20 passing tests, 0 failing. Verified check-encoding.mjs (14634 files clean) and check-css-tokens.mjs (100% valid tokens)."
+    }
+  ],
+  "defects_identified": [
+    {
+      "defect": "Modal barrier on service addition",
+      "impact": "Doctors had to open, search, select, confirm, and close TreatmentPlanAddServiceModal for every single procedure.",
+      "remediation": "Implemented StomX parity: Split-Catalog mode with left accordion catalog and 1-click instant append into active stage."
+    },
+    {
+      "defect": "Missing tooth selector in catalog view",
+      "impact": "Doctors had to navigate into tooth configuration sub-dialogs.",
+      "remediation": "Implemented SplitCatalogToothQuickBar with 1-click FDI chip selection (11-48 and general)."
+    },
+    {
+      "defect": "Lack of quantity stepper in stages list table",
+      "impact": "Editing procedure quantity required deep row clicking.",
+      "remediation": "Implemented compact [- 1 +] steppers in StageServicesTableRow with instant kopeck-accurate sum recalculations."
+    }
+  ],
+  "remediations": [
+    "apps/web/src/components/treatment-plans/splitCatalog/splitCatalogTypes.ts",
+    "apps/web/src/components/treatment-plans/splitCatalog/SplitCatalogToothQuickBar.tsx",
+    "apps/web/src/components/treatment-plans/splitCatalog/SplitCatalogCategoryAccordion.tsx",
+    "apps/web/src/components/treatment-plans/splitCatalog/SplitCatalogPanel.tsx",
+    "apps/web/src/components/treatment-plans/splitCatalog/SplitStagesHeaderBar.tsx",
+    "apps/web/src/components/treatment-plans/splitCatalog/TreatmentPlanSplitView.tsx",
+    "apps/web/src/components/treatment-plans/splitCatalog/splitCatalog.css",
+    "apps/web/src/components/treatment-plans/stageEditor/StageServicesTableHeader.tsx",
+    "apps/web/src/components/treatment-plans/stageEditor/StageServicesTableRow.tsx",
+    "apps/web/src/components/treatment-plans/stageEditor/StageServicesTableFooter.tsx",
+    "apps/web/src/components/treatment-plans/stageEditor/StageServicesTable.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanSpecialtyFilterBar.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanStagesListSection.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx",
+    "apps/web/src/components/treatment-plans/treatmentPlans.css",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanSplitCatalogMode.test.tsx"
+  ]
+}

@@ -106,7 +106,7 @@ describe("Treatment Plan 4 End-to-End Rails Inquisition", () => {
 				quantity: 1,
 			};
 
-			const parsed = parseSingleBillingItem(incomingStageDetail, 0);
+			const parsed = parseSingleBillingItem(incomingStageDetail);
 
 			expect(parsed.code804n).toBe("A16.07.004");
 			expect(parsed.title).toBe("Коронка из диоксида циркония");
@@ -114,7 +114,7 @@ describe("Treatment Plan 4 End-to-End Rails Inquisition", () => {
 			expect(parsed.unitPriceRub).toBe(28000);
 			expect(parsed.discountRub).toBe(2800);
 			expect(parsed.discountPercent).toBe(10);
-			const lineTotal = parsed.unitPriceRub * parsed.quantity - parsed.discountRub;
+			const lineTotal = parsed.unitPriceRub * parsed.quantity - (parsed.discountRub ?? 0);
 			expect(lineTotal).toBe(25200);
 		});
 

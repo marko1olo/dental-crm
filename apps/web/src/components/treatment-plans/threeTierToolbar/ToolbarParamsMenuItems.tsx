@@ -26,7 +26,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 				className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9 transition-colors ${
 					showNdflBreakdown
 						? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
-						: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
+						: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				}`}
 				role="menuitem"
 				title="Показать расчет налогового вычета 13% по НК РФ"
@@ -56,7 +56,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 						onOpenComparatorStudio();
 						onClose();
 					}}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
+					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
 					role="menuitem"
 					title="Открыть полноэкранную презентационную студию сравнения"
 				>
@@ -72,7 +72,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 						onOpenStagePaymentStudio();
 						onClose();
 					}}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
+					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
 					role="menuitem"
 					title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 				>
@@ -88,7 +88,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 						onOpenPriceValidatorStudio();
 						onClose();
 					}}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
+					className="w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9"
 					role="menuitem"
 					title="Проверить цены по прайсу и протоколам СтАР"
 				>

@@ -1,0 +1,62 @@
+{
+  "subagent": "subagent_treatment_plan_visual_inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-22T13:50:30+04:00",
+  "scope": "apps/web/src/components/treatment-plans/",
+  "defects_remediated": [
+    {
+      "id": "CLIPPING_DISCOUNT_BUTTON",
+      "description": "Doctor discount button clipped as '% Скид...' against modal right edge in 1440x900 PC view",
+      "root_cause": "Redundant horizontal padding (sm:px-6) + wide label strings ('Инструменты врача:', 'Клинические пакеты') + double percent symbol (<Percent /> icon + '% Скидка' text) exceeding 1320px modal container width",
+      "remediation": [
+        "apps/web/src/components/treatment-plans/presenterTools/PresenterToolsButtonsBar.tsx: changed default discountLabel to 'Скидка' (rendering clean '% Скидка' with Lucide Percent icon), shortened 'Инструменты врача:' to 'Инструменты:', shortened 'Клинические пакеты' to 'Пакеты', purged hardcoded hex colors to CSS design tokens (var(--paper-strong), var(--ink), var(--line), var(--teal)), added shrink-0 whitespace-nowrap",
+        "apps/web/src/components/treatment-plans/presenterHeader/PresenterHeaderNavRow.tsx: removed redundant sm:px-6 inner padding, added pr-3 to toolsBarSlot container for guaranteed breathing room before modal boundary"
+      ],
+      "verification": "treatment_plans_pc_light_1440x900.png and treatment_plans_pc_dark_1440x900.png inspected via read_file; button '% Скидка' is 100% visible with ~20px clearance"
+    },
+    {
+      "id": "HARDCODED_HEX_COLORS",
+      "description": "Hardcoded hex colors (#ffffff, #0f172a, #0d9488, #cbd5e1) in presenter toolbar and comparison components",
+      "remediation": "Replaced all raw hex literals with canonical CSS tokens: var(--paper-strong), var(--paper-soft), var(--ink), var(--line), var(--teal)",
+      "verification": "Zero hardcoded hex color violations in presenter toolbar components"
+    },
+    {
+      "id": "MOBILE_FOOTER_NATURAL_FLOW",
+      "description": "Mobile presenter footer had flex-direction: column-reverse placing summary text below action buttons",
+      "remediation": "apps/web/src/components/treatment-plans/styles/mobilePresenterFooterOverrides.css: updated to flex-direction: column to ensure natural visual hierarchy (summary first, primary CTA second, auxiliary actions third)",
+      "verification": "treatment_plans_mobile_light_390x844.png and treatment_plans_mobile_dark_390x844.png inspected via read_file"
+    }
+  ],
+  "proofs": {
+    "pc_light": {
+      "path": "docs/proofs/treatment_plans/treatment_plans_pc_light_1440x900.png",
+      "size_bytes": 203827,
+      "viewport": "1440x900",
+      "inspected": true
+    },
+    "pc_dark": {
+      "path": "docs/proofs/treatment_plans/treatment_plans_pc_dark_1440x900.png",
+      "size_bytes": 197059,
+      "viewport": "1440x900",
+      "inspected": true
+    },
+    "mobile_light": {
+      "path": "docs/proofs/treatment_plans/treatment_plans_mobile_light_390x844.png",
+      "size_bytes": 176251,
+      "viewport": "390x844",
+      "inspected": true
+    },
+    "mobile_dark": {
+      "path": "docs/proofs/treatment_plans/treatment_plans_mobile_dark_390x844.png",
+      "size_bytes": 171440,
+      "viewport": "390x844",
+      "inspected": true
+    }
+  },
+  "tests": {
+    "suite": "apps/web/src/components/treatment-plans/__tests__/",
+    "files_passed": 34,
+    "tests_passed": 286,
+    "tests_failed": 0
+  }
+}

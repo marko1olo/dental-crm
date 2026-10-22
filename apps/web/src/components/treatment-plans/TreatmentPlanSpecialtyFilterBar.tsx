@@ -1,5 +1,5 @@
 import React from "react";
-import { Layers, Plus } from "lucide-react";
+import { Columns, Layers, LayoutGrid, Plus } from "lucide-react";
 import type { TreatmentPlanStage } from "./types";
 
 export interface TreatmentPlanSpecialtyFilterBarProps {
@@ -9,6 +9,8 @@ export interface TreatmentPlanSpecialtyFilterBarProps {
 	readonly onSetSpecialtyFilter: (filter: any) => void;
 	readonly onOpenAddCatalogService: () => void;
 	readonly onOpenCreateStageModal: () => void;
+	readonly isSplitMode?: boolean | undefined;
+	readonly onToggleSplitMode?: (() => void) | undefined;
 }
 
 export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFilterBarProps> = ({
@@ -17,6 +19,8 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 	onSetSpecialtyFilter,
 	onOpenAddCatalogService,
 	onOpenCreateStageModal,
+	isSplitMode = true,
+	onToggleSplitMode,
 }) => {
 	const tabs = [
 		{ id: "all", label: "Все специалисты", count: stages.length },
@@ -28,7 +32,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 	];
 
 	return (
-		<div className="tp-filter-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs">
+		<div className="tp-filter-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xs" data-testid="tp-specialty-filter-bar">
 			<div className="tp-filter-chips flex items-center gap-1.5 flex-wrap" role="tablist" aria-label="Фильтр по специализациям">
 				{tabs.map((tab) => (
 					<button
@@ -49,15 +53,40 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 			</div>
 
 			<div className="flex items-center gap-2 flex-wrap shrink-0">
+				{onToggleSplitMode && (
+					<div className="tp-view-toggle flex items-center border border-[var(--line)] rounded-lg p-0.5 bg-[var(--paper-soft)]" role="group" aria-label="Режим отображения этапов">
+						<button
+							type="button"
+							onClick={() => !isSplitMode && onToggleSplitMode()}
+							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${isSplitMode ? "bg-[var(--teal)] text-white" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							data-testid="tp-split-mode-btn"
+							title="Двухколоночный режим: Каталог услуг + Этапы плана"
+						>
+							<Columns size={13} />
+							<span className="hidden md:inline">Сплит-каталог</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => isSplitMode && onToggleSplitMode()}
+							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${!isSplitMode ? "bg-[var(--teal)] text-white" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							data-testid="tp-cards-mode-btn"
+							title="Классический вид карточек этапов"
+						>
+							<LayoutGrid size={13} />
+							<span className="hidden md:inline">Карточки</span>
+						</button>
+					</div>
+				)}
+
 				<button
 					type="button"
 					onClick={onOpenAddCatalogService}
 					data-testid="tp-add-catalog-service-btn"
 					className="secondary-button tp-action-btn tp-action-btn-catalog min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
-					title="Добавить любую услугу из утвержденного прейскуранта клиники"
+					title="Добавить услугу из каталога через поиск"
 				>
 					<Plus size={14} className="shrink-0" />
-					<span>Услуга из каталога</span>
+					<span>Услуга</span>
 				</button>
 
 				<button
@@ -68,7 +97,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					title="Добавить новый этап в план лечения"
 				>
 					<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-					<span>+ Добавить этап</span>
+					<span>+ Этап</span>
 				</button>
 			</div>
 		</div>

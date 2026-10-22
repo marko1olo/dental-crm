@@ -43,7 +43,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 	initialParamsOpen = false,
 }) => {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-2xs max-w-full overflow-x-clip">
+		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] shadow-2xs max-w-full overflow-x-clip">
 			<ToolbarTitleBadge />
 
 			<div className="flex items-center gap-1.5 flex-wrap max-w-full py-0.5">

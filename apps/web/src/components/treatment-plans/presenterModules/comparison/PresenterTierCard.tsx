@@ -90,13 +90,13 @@ export const PresenterTierCard: React.FC<PresenterTierCardProps> = ({
 				>
 					{isSelected ? (
 						<>
-							<CheckCircle2 size={16} className="shrink-0" />
-							<span>Выбранный вариант — Начать лечение</span>
+							<CheckCircle2 size={15} className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Выбранный вариант</span>
 						</>
 					) : (
 						<>
-							<Check size={16} className="shrink-0" />
-							<span>Применить: выбрать этот вариант и начать лечение ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
+							<Check size={15} className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Применить вариант ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
 						</>
 					)}
 				</button>

@@ -2,12 +2,12 @@ import React, { useEffect } from "react";
 import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
 import { getOptimizedTiming } from "../../../utils/lowSpecHddOptimizer";
 import { saveChairsideVisitDraft } from "../clinicalVisitWorkflow";
-import type { VisitSoapNoteValues } from "./types";
+import type { SoapSaveStatus, VisitSoapNoteValues } from "./types";
 
 interface AutosaveDebounceParams {
 	readonly values: VisitSoapNoteValues;
-	readonly saveStatus: "idle" | "saving" | "saved";
-	readonly setSaveStatus: (status: "idle" | "saving" | "saved") => void;
+	readonly saveStatus: SoapSaveStatus;
+	readonly setSaveStatus: (status: SoapSaveStatus) => void;
 	readonly soapStorageKey: string;
 	readonly selectedTooth: number | null;
 	readonly visitId?: string | undefined;

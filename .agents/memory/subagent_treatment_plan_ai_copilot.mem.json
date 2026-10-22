@@ -1,0 +1,33 @@
+{
+  "subagent": "treatment_plan_ai_copilot_inquisitor",
+  "status": "COMPLETED_CLEAN",
+  "timestamp": "2026-10-22T11:40:00Z",
+  "scope": [
+    "apps/web/src/services/ai/treatmentPlanCopilot.ts",
+    "apps/web/src/services/ai/treatmentPlanScenarios.ts",
+    "apps/web/src/services/ai/treatmentPlanAllOn4.ts",
+    "apps/web/src/services/ai/treatmentPlanCopilotModifiers.ts",
+    "apps/web/src/components/treatment-plans/treatmentPlanAutoGenerator.ts",
+    "apps/web/src/components/treatment-plans/tierComparison/makeTierHelper.ts",
+    "apps/web/src/components/treatment-plans/autoGenerator/autoGenPeriodontal.ts",
+    "apps/api/src/ai/treatmentPlanPersonalize.ts",
+    "apps/api/src/ai/treatmentPlanValidatorAndCommenter.ts"
+  ],
+  "verification": {
+    "totalPassingTests": 61,
+    "totalFailingTests": 0,
+    "webTestsPassing": 48,
+    "apiTestsPassing": 13,
+    "testCommandWeb": "node --max-old-space-size=1024 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/planGeneratorAutopilot.test.ts apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts apps/web/src/tests/opgOdontogramTreatmentPlanPipeline.test.ts apps/web/src/components/treatment-plans/__tests__/treatmentPlanBundlesEngine.test.ts apps/web/src/tests/treatmentPlanCopilotAutopilotInquisition.test.ts",
+    "testCommandApi": "npx tsx --test apps/api/src/ai/treatmentPlanPersonalize.test.ts apps/api/src/ai/treatmentPlanValidatorAndCommenter.test.ts"
+  },
+  "invariantsVerified": {
+    "trap1_incompatible_stages": "PASS: INCOMPATIBLE_EXTRACTION_AND_RESTORATION detects simultaneous extraction and therapy/crown on the same tooth with error status",
+    "trap2_kopeck_math_and_quantity": "PASS: Exact rubles and kopecks preserved, item.quantity multiplier correctly applied across Economy, Optimum, Premium and budget optimize",
+    "trap3_zero_synthetic_mocks": "PASS: Confirmed zero hardcoded patient/doctor mock names ('Иванов', 'Петров') in generator code",
+    "trap4_star_xray_validation": "PASS: STAR_ENDO_PERIAPICAL_XRAY flags missing periapical RVG (A06.07.003) for root canal treatments",
+    "kennedy_class_1_free_end": "PASS: Terminal defect validation blocks impossible bilateral bridge replacement for third molars (teeth 18, 28, 38, 48)",
+    "high_cost_ndfl_code_02": "PASS: isHighCost correctly matches all implant and bone grafting services with prefix wildcards",
+    "periodontal_missing_immunity": "PASS: Missing teeth, hopeless roots (mobility >= 3) and extracted teeth excluded from SRP and curettage"
+  }
+}

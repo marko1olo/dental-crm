@@ -1,11 +1,11 @@
 /* Key Advantages & Materials */
 .treatment-tier-advantages {
-	padding: 14px 18px;
+	padding: 10px 14px;
 	border-bottom: 1px solid var(--tp-border);
 	font-size: 12px;
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 	flex: 1;
 }
 
@@ -13,7 +13,7 @@
 	display: flex;
 	align-items: flex-start;
 	gap: 6px;
-	line-height: 1.35;
+	line-height: 1.3;
 	color: var(--tp-text-main);
 }
 

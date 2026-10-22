@@ -11,17 +11,17 @@ export const TreatmentPlanHeaderBar: React.FC<TreatmentPlanHeaderBarProps> = ({
 	totalItemsCount,
 }) => {
 	return (
-		<div className="flex items-center justify-between gap-2 px-1 text-xs text-[var(--muted,#64748b)] pb-1 border-b border-[var(--line,var(--border,#cbd5e1))]/40">
+		<div className="flex items-center justify-between gap-2 px-1 text-xs text-[var(--muted)] pb-1 border-b border-[var(--line)]/40">
 			<div className="flex items-center gap-2 min-w-0 flex-wrap">
 				<div className="p-1 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] shrink-0">
 					<Layers size={13} />
 				</div>
-				<span className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
+				<span className="font-bold text-[var(--ink)] whitespace-nowrap">
 					Комплексный план лечения
 				</span>
 				<span className="hidden sm:inline text-[var(--line-subtle)]">·</span>
 				<span className="truncate">
-					Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong>
+					Пациент: <strong className="text-[var(--ink)]">{patientName || "Пациент"}</strong>
 				</span>
 			</div>
 			<div className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium">

@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect } from "react";
 import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
-import type { VisitSoapNoteValues } from "./types";
+import type { SoapSaveStatus, VisitSoapNoteValues } from "./types";
 
 interface DraftFlushParams {
-	readonly saveStatusRef: React.MutableRefObject<"idle" | "saving" | "saved">;
+	readonly saveStatusRef: React.MutableRefObject<SoapSaveStatus>;
 	readonly onChangeRef: React.MutableRefObject<((values: VisitSoapNoteValues) => void) | undefined>;
 	readonly onSaveRef: React.MutableRefObject<((values: VisitSoapNoteValues) => void) | undefined>;
 	readonly valuesRef: React.MutableRefObject<VisitSoapNoteValues>;
 	readonly soapStorageKeyRef: React.MutableRefObject<string>;
 	readonly soapStorageKey: string;
-	readonly setSaveStatus: (status: "idle" | "saving" | "saved") => void;
+	readonly setSaveStatus: (status: SoapSaveStatus) => void;
 	readonly selectedTooth: number | null;
 }
 

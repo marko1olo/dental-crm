@@ -12,12 +12,15 @@ export function assembleTierFromPreset(
 	const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
 	const totalRub = Math.round(totalKopecks / 100);
 
-	const isHighCost = allItems.some(
-		(i) =>
-			i.code804n === "A16.07.054.001" ||
-			i.code804n === "A16.07.041" ||
-			i.code804n === "A16.07.035",
-	);
+	const isHighCost = allItems.some((i) => {
+		const code = (i.code804n || "").trim().toUpperCase();
+		return (
+			code.startsWith("A16.07.054") ||
+			code.startsWith("A16.07.041") ||
+			code.startsWith("A16.07.035") ||
+			/имплант|синус|костн.*пласт|all-on-4|all-on-6|балочн/i.test(i.name)
+		);
+	});
 
 	const ndflDetails = calculateNdflDeduction(totalKopecks, isHighCost);
 	const installments = computeTierInstallments(totalKopecks);

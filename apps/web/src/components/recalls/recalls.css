@@ -29,6 +29,7 @@
 	--rm-danger: var(--bad-fg); --rm-danger-light: var(--bad-bg);
 	--rm-info: var(--info-fg); --rm-info-light: var(--info-bg);
 	--rm-radius-lg: 14px; --rm-radius-md: 10px; --rm-radius-sm: 8px; --rm-shadow: var(--shadow-3);
+	--rm-transition: 0.15s ease;
 
 	background: var(--rm-bg);
 	color: var(--rm-text-main);
@@ -530,7 +531,7 @@
 	border: 1px solid var(--rm-border);
 	border-radius: var(--rm-radius-sm);
 	background: var(--rm-surface);
-	transition: all var(--rm-transition);
+	transition: all var(--rm-transition, 0.15s ease);
 	gap: 16px;
 }
 

@@ -93,7 +93,7 @@ export const TreatmentPlanPresenterFooter: React.FC<
 							data-testid="approve-and-sign-btn"
 						>
 							<FileSignature size={18} className="shrink-0" />
-							<span>Подписать план</span>
+							<span>Подписать план лечения</span>
 						</button>
 					)}
 				</div>

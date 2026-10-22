@@ -3,10 +3,10 @@
 	background: var(--tp-surface-soft);
 	border: 1px solid var(--tp-border);
 	border-radius: var(--tp-radius-md);
-	padding: 14px 16px;
+	padding: 10px 14px;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 5px;
 	transition: background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -16,7 +16,7 @@
 }
 
 .treatment-tier-total-amount {
-	font-size: 28px;
+	font-size: 26px;
 	font-weight: 900;
 	color: var(--tp-text-main);
 	line-height: 1;
@@ -27,7 +27,7 @@
 }
 
 .treatment-tier-rub-sign {
-	font-size: 18px;
+	font-size: 17px;
 	font-weight: 800;
 	color: var(--tp-primary);
 }
@@ -35,8 +35,8 @@
 .treatment-tier-finance-chips {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	margin-top: 8px;
+	gap: 5px;
+	margin-top: 5px;
 	font-size: 12px;
 }
 

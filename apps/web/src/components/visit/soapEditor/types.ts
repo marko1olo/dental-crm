@@ -98,3 +98,5 @@ export interface SoapFullTextViewProps {
 	isLocked: boolean;
 	isCorrectionMode: boolean;
 }
+
+export type SoapSaveStatus = "idle" | "saving" | "saved" | "error";
