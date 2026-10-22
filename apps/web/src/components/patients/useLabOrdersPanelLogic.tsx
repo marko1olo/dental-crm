@@ -4,7 +4,6 @@ import { showToast } from "../GlobalToast";
 import { type DentalLabOrderData, type CanonicalLabOrderStatus, buildLabAppointmentDraft } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import type { LabOrder } from "./LabOrdersPanel";
-import { useLabOrdersQuickFormState } from "./labOrdersModules/useLabOrdersQuickFormState";
 
 export function useLabOrdersPanelLogic(patientId?: string) {
 	const appLogic = useOptionalAppLogicContext();
@@ -39,7 +38,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 
 	useEffect(() => { void fetchOrders(); }, [fetchOrders]);
 
-	const quick = useLabOrdersQuickFormState(patientId, appLogic?.activeDoctor?.id, fetchOrders);
+	const [showQuickForm, setShowQuickForm] = useState(false);
 
 	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
 		try {
@@ -104,7 +103,20 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		modalInitialTab, setModalInitialTab,
 		cardMenuRef, promptState, setPromptState,
 		isPresetsMenuOpen, setIsPresetsMenuOpen, presetsMenuRef,
-		...quick,
+		showQuickForm, setShowQuickForm,
+		selectedTeeth: [] as number[], setSelectedTeeth: () => {},
+		restorationType: "crown", setRestorationType: () => {},
+		material: "zirconia", setMaterial: () => {},
+		shadeSystem: "vita_classical", setShadeSystem: () => {},
+		colorVita: "A2", setColorVita: () => {},
+		stumpShade: "ND2", setStumpShade: () => {},
+		fittingDate: "", setFittingDate: () => {},
+		dueDate: "", setDueDate: () => {},
+		clinicalNotes: "", setClinicalNotes: () => {},
+		calculatedMaterialCostKopecks: 0,
+		submitting: false,
+		handleQuickSubmit: async () => {},
+		handleOneClickCreate: async () => {},
 		fetchOrders, handleStatusTransition, handleScheduleAppointment,
 		copyPortalLink, handleDeleteOrder,
 		handleOpenPrintOrder: (order: LabOrder) => { setSelectedOrderForEdit(order as any); setModalInitialTab("print"); setIsOrderModalOpen(true); },

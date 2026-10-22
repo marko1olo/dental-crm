@@ -9,9 +9,18 @@ import {
 	type PerioToothRecord,
 } from "@dental/shared";
 import { Check } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { probingDepthClinicalTone, probingDepthTone } from "../perioHeatmap";
+
+export const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
+	distoBuccal: "Дистально-вестибулярно (ДВ)",
+	midBuccal: "Вестибулярно по центру (В)",
+	mesioBuccal: "Медиально-вестибулярно (МВ)",
+	distoLingual: "Дистально-орально (ДО)",
+	midLingual: "Орально по центру (О)",
+	mesioLingual: "Медиально-орально (МО)",
+};
 
 export interface PerioToothInspectorProps {
 	readonly selectedTooth: PerioToothRecord | null;
@@ -40,6 +49,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 	onUpdateToothProperties,
 	onUpdateToothSite,
 }) => {
+	const [activeSiteKey, setActiveSiteKey] = useState<PerioSiteKey>("midBuccal");
+
 	if (!selectedTooth) return null;
 
 	return (
@@ -170,10 +181,10 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 				<div className="flex flex-col gap-2 pt-2 pb-1 border-t border-[var(--line)]">
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
-							Фокус патологии зуба #{selectedTooth.toothNumber}:
+							Пресеты глубины карманов зуба #{selectedTooth.toothNumber}:
 						</span>
 
-						{/* 1-Tap Reset Tooth to Norm */}
+						{/* Preset Norm (1-2mm) */}
 						<button
 							type="button"
 							onClick={() => {
@@ -190,15 +201,36 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 								}
 								onUpdateToothProperties(selectedTooth.toothNumber, { mobility: 0, furcation: 0 });
 							}}
-							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-emerald-500/10 !text-emerald-700 dark:!text-emerald-300 !border-emerald-500/30 font-bold"
-							title="Сбросить выбранный зуб в норму (глубина 2 мм, BOP 0, подвижность 0)"
-							data-testid="inspector-reset-tooth-norm"
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-emerald-500/10 !text-emerald-700 dark:!text-emerald-300 !border-emerald-500/30 font-bold shrink-0"
+							title="1–2 мм норма (нет карманов, десна здорова)"
+							data-testid="btn-perio-preset-norm"
 						>
-							<Check size={12} />
-							<span>Интактен (2 мм)</span>
+							<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+							<span>1–2 мм (Норма)</span>
 						</button>
 
-						{/* 1-Tap Pocket 4mm */}
+						{/* Preset Gingivitis (3-4mm) */}
+						<button
+							type="button"
+							onClick={() => {
+								for (const key of PERIO_SITE_KEYS) {
+									onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
+										probingDepthMm: 3,
+										bleedingOnProbing: true,
+										plaque: false,
+										calMm: calculateClinicalAttachmentLevel(3, prev.gingivalMarginMm ?? 0),
+									}));
+								}
+							}}
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-amber-500/10 !text-amber-700 dark:!text-amber-300 !border-amber-500/30 font-bold shrink-0"
+							title="3–4 мм гингивит / лёгкий пародонтит + BOP"
+							data-testid="btn-perio-preset-gingivitis"
+						>
+							<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+							<span>3–4 мм (Гингивит)</span>
+						</button>
+
+						{/* Preset Pocket 4mm */}
 						<button
 							type="button"
 							onClick={() => {
@@ -206,18 +238,20 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
 										probingDepthMm: 4,
 										bleedingOnProbing: true,
+										plaque: true,
 										calMm: calculateClinicalAttachmentLevel(4, prev.gingivalMarginMm ?? 0),
 									}));
 								}
 							}}
-							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-amber-500/10 !text-amber-700 dark:!text-amber-300 !border-amber-500/30 font-bold"
-							title="Установить карманы 4 мм + BOP на выбранном зубе"
-							data-testid="inspector-focus-pocket-4mm"
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-orange-500/10 !text-orange-700 dark:!text-orange-300 !border-orange-500/30 font-bold shrink-0"
+							title="4 мм пародонтит средней степени + BOP + зубной камень"
+							data-testid="btn-perio-preset-pocket-4"
 						>
-							Карман 4 мм (BOP+)
+							<span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+							<span>Карман 4 мм</span>
 						</button>
 
-						{/* 1-Tap Pocket 5mm */}
+						{/* Preset Pocket 5+mm Severe */}
 						<button
 							type="button"
 							onClick={() => {
@@ -225,16 +259,19 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
 										probingDepthMm: 5,
 										bleedingOnProbing: true,
+										plaque: true,
 										calculus: true,
 										calMm: calculateClinicalAttachmentLevel(5, prev.gingivalMarginMm ?? 0),
 									}));
 								}
+								onUpdateToothProperties(selectedTooth.toothNumber, { mobility: 1 });
 							}}
-							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-orange-500/10 !text-orange-700 dark:!text-orange-300 !border-orange-500/30 font-bold"
-							title="Установить карманы 5 мм + зубной камень + BOP на выбранном зубе"
-							data-testid="inspector-focus-pocket-5mm"
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-rose-500/10 !text-rose-700 dark:!text-rose-300 !border-rose-500/30 font-bold shrink-0"
+							title="5+ мм тяжелый пародонтит + глубокие карманы"
+							data-testid="btn-perio-preset-pocket-5"
 						>
-							Карман 5 мм + BOP
+							<span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+							<span>5+ мм (Тяжелый)</span>
 						</button>
 
 						{/* 1-Tap Pocket >= 6mm with Suppuration */}
@@ -252,7 +289,7 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 								}
 								onUpdateToothProperties(selectedTooth.toothNumber, { mobility: 2 });
 							}}
-							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-rose-500/10 !text-rose-700 dark:!text-rose-300 !border-rose-500/30 font-bold"
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-rose-500/10 !text-rose-700 dark:!text-rose-300 !border-rose-500/30 font-bold shrink-0"
 							title="Установить глубокие карманы 7 мм + гноетечение + подвижность II ст."
 							data-testid="inspector-focus-pocket-severe"
 						>
@@ -273,7 +310,7 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									});
 								}
 							}}
-							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-purple-500/10 !text-purple-700 dark:!text-purple-300 !border-purple-500/30 font-bold"
+							className="secondary-button text-[11px] !min-h-[28px] !h-7 !px-2.5 !bg-purple-500/10 !text-purple-700 dark:!text-purple-300 !border-purple-500/30 font-bold shrink-0"
 							title="Установить рецессию десны +2 мм по вестибулярной поверхности"
 							data-testid="inspector-focus-recession-2mm"
 						>
@@ -323,7 +360,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 
 			{/* 6 Sites Granular Controls */}
 			{!selectedTooth.isMissing && (
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+				<>
+					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
 					{PERIO_SITES_CONFIG.map((siteCfg) => {
 						const site = selectedTooth[siteCfg.key] ?? {
 							probingDepthMm: 2,
@@ -336,11 +374,17 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 						const pd = site.probingDepthMm ?? 0;
 						const gm = site.gingivalMarginMm ?? 0;
 						const cal = calculateClinicalAttachmentLevel(pd, gm);
+						const isSelected = activeSiteKey === siteCfg.key;
 
 						return (
 							<div
 								key={siteCfg.key}
-								className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5"
+								onClick={() => setActiveSiteKey(siteCfg.key)}
+								className={`p-2.5 rounded-lg border flex flex-col gap-1.5 transition-all cursor-pointer ${
+									isSelected
+										? "ring-2 ring-teal-500 border-teal-500 bg-teal-500/15 shadow-xs"
+										: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/50"
+								}`}
 							>
 								<div className="flex items-center justify-between text-[11px] font-bold text-teal-400">
 									<span>{siteCfg.shortKey}</span>
@@ -529,6 +573,57 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 						);
 					})}
 				</div>
+
+				{/* Fast Depth Numeric Input for Selected Site (1-12 mm Florida Probe Range) */}
+				<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2">
+					<div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
+						<span className="text-[12px]">
+							Ввод глубины кармана для точки:{" "}
+							<strong className="text-teal-600 dark:text-teal-400">
+								{SITE_NAMES_RU[activeSiteKey] || activeSiteKey}
+							</strong>
+						</span>
+						<span className="text-[11.5px] text-[var(--muted)] font-normal">
+							Диапазон: 1–12 мм (Флорида-зонд)
+						</span>
+					</div>
+					<div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+						{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((numVal) => {
+							const currentSite = selectedTooth[activeSiteKey];
+							const isSelectedVal = currentSite?.probingDepthMm === numVal;
+							const isNorm = numVal <= 3;
+							const isBorderline = numVal === 4;
+							return (
+								<button
+									key={numVal}
+									type="button"
+									disabled={readOnly}
+									onClick={() =>
+										onUpdateToothSite(selectedTooth.toothNumber, activeSiteKey, (prev) => ({
+											probingDepthMm: numVal,
+											bleedingOnProbing: numVal > 4 ? true : prev.bleedingOnProbing,
+											calMm: calculateClinicalAttachmentLevel(numVal, prev.gingivalMarginMm ?? 0),
+										}))
+									}
+									className={`h-9 rounded-lg font-black text-[13px] transition-all cursor-pointer flex items-center justify-center border active:scale-95 ${
+										isSelectedVal
+											? "bg-teal-600 text-white border-teal-500 shadow-xs ring-2 ring-teal-400"
+											: isNorm
+												? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
+												: isBorderline
+													? "bg-amber-500/20 hover:bg-amber-500/35 text-amber-800 dark:text-amber-300 border-amber-500/40"
+													: "bg-red-600/25 hover:bg-red-600/40 text-red-800 dark:text-red-200 border-red-500/50 shadow-xs"
+									}`}
+									title={`Установить глубину ${numVal} мм для точки ${SITE_NAMES_RU[activeSiteKey]}`}
+									data-testid={`inspector-site-depth-${numVal}`}
+								>
+									{numVal}
+								</button>
+							);
+						})}
+					</div>
+				</div>
+				</>
 			)}
 		</div>
 	);

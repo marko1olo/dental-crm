@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/perio/PerioChartModal.tsx
  *
- * Dedicated Periodontal Examination Modal & Mobile Bottom Sheet Drawer (Apple HIG & Форма 043/у).
+ * Dedicated Periodontal Examination Modal & Mobile Bottom Sheet Drawer (Apple HIG & Пародонтологическая карта приёма).
  * 0-Modal Blocking, 0px Horizontal Scroll, 48px Touch Targets, Dark Mode AAA WCAG.
  */
 
@@ -99,7 +99,7 @@ export const PerioChartModal: React.FC<PerioChartModalProps> = React.memo(({
 								id="perio-modal-heading"
 								className="text-sm md:text-base font-bold text-[var(--ink)] truncate"
 							>
-								Пародонтологическая карта пациента
+								Пародонтологическая карта приёма
 							</h2>
 							{patientName && (
 								<p className="text-xs text-[var(--muted)] truncate">

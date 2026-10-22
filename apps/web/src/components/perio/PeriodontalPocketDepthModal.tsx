@@ -168,9 +168,9 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 			aria-label={`Зондирование пародонтальных карманов зуба ${toothNumber}`}
 			data-testid="periodontal-pocket-depth-modal"
 		>
-			<div className="relative w-full max-w-3xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+			<div className="relative w-full max-w-3xl bg-[var(--paper)] border border-[var(--line)] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
 				{/* Header */}
-				<header className="flex items-center justify-between gap-4 p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90">
+				<header className="flex items-center justify-between gap-4 p-4 sm:p-5 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
 						<div className="w-9 h-9 rounded-lg bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 flex items-center justify-center shrink-0">
 							<PerioProbe size={20} />
@@ -179,7 +179,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 							<span className="text-xs uppercase font-black tracking-wider text-teal-700 dark:text-teal-300">
 								Зондирование пародонтальных карманов
 							</span>
-							<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
+							<h3 className="text-base sm:text-lg font-black text-[var(--ink)] m-0 truncate">
 								Зуб #{toothNumber} • {toothName}
 							</h3>
 						</div>
@@ -266,19 +266,19 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 									onClick={() => setActiveSiteKey(siteCfg.key)}
 									className={`p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
 										isSelected
-											? "ring-2 ring-teal-500 border-teal-500 bg-teal-500/10"
-											: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 border-[var(--line,#e2e8f0)] dark:border-slate-700"
+											? "ring-2 ring-teal-500 border-teal-500 bg-teal-500/15"
+											: "bg-[var(--paper-soft)] border-[var(--line)]"
 									}`}
 								>
 									<div className="flex items-center justify-between text-[12px] font-bold text-teal-600 dark:text-teal-400">
 										<span>{siteCfg.shortKey}</span>
-										<span className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
+										<span className="text-[11.5px] text-[var(--muted)] font-medium">
 											CAL: {site.calMm ?? pd} мм
 										</span>
 									</div>
 
 									<div className="flex items-center justify-between">
-										<span className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">Глубина:</span>
+										<span className="text-[11.5px] text-[var(--muted)] font-medium">Глубина:</span>
 										<span
 											className={`text-sm font-black font-mono ${
 												tone === "success"
@@ -294,7 +294,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 										</span>
 									</div>
 
-									<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
+									<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line)]">
 										<button
 											type="button"
 											disabled={readOnly}
@@ -305,7 +305,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 											className={`flex-1 h-7 rounded-md text-[12.5px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
 												site.bleedingOnProbing
 													? "bg-rose-500 text-white shadow-xs"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-[var(--line,#e2e8f0)] dark:border-slate-600 hover:bg-slate-50"
+													: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 											}`}
 											title="Кровоточивость десны (BOP)"
 										>
@@ -322,7 +322,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 											className={`flex-1 h-7 rounded-md text-[12.5px] font-semibold flex items-center justify-center cursor-pointer transition-all ${
 												site.plaque
 													? "bg-amber-500 text-slate-950 shadow-xs font-bold"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-[var(--line,#e2e8f0)] dark:border-slate-600 hover:bg-slate-50"
+													: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 											}`}
 											title="Зубной налет (PLQ)"
 										>
@@ -335,10 +335,10 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 					</div>
 
 					{/* Fast Depth Numeric Input for Selected Site */}
-					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-700 space-y-2">
-						<div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+					<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
+						<div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
 							<span className="text-[12.5px]">Ввод глубины кармана для точки: <strong className="text-teal-700 dark:text-teal-300">{SITE_NAMES_RU[activeSiteKey] || activeSiteKey}</strong></span>
-							<span className="text-[12px] text-slate-500 dark:text-slate-400 font-normal">Диапазон: 1–12 мм</span>
+							<span className="text-[12px] text-[var(--muted)] font-normal">Диапазон: 1–12 мм</span>
 						</div>
 						<div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
 							{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((numVal) => {
@@ -365,7 +365,7 @@ const SITE_NAMES_RU: Record<PerioSiteKey, string> = {
 				</div>
 
 				{/* Footer */}
-				<footer className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90 shrink-0">
+				<footer className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<button
 						type="button"
 						onClick={onClose}

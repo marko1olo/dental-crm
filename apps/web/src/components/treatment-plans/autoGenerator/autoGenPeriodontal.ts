@@ -18,6 +18,12 @@ export function buildPeriodontalAndHygieneItems(
 
 	// 1. Предварительный пародонтологический скрининг
 	for (const tooth of effectiveTeeth) {
+		const state = tooth.state || "Healthy";
+		// Отсутствующие зубы, корни под удаление и уже удаленные зубы не подлежат пародонтологической обработке
+		if (state === "Missing" || state === "Root" || state === "Extracted") {
+			continue;
+		}
+
 		const hasBoneLoss = Boolean(tooth.boneLossLevel && tooth.boneLossLevel > 0);
 		const hasMobility = Boolean(tooth.mobility && tooth.mobility > 0);
 		const hasFurcation = Boolean(tooth.furcationGrade && tooth.furcationGrade > 0);
@@ -60,7 +66,8 @@ export function buildPeriodontalAndHygieneItems(
 				);
 			}
 
-			if (hasMobility && (tooth.mobility ?? 0) >= 2) {
+			// Шинирование стекловолокном проводится при подвижности II степени (при III степени зуб подлежит удалению)
+			if (hasMobility && (tooth.mobility ?? 0) === 2) {
 				const defSplint = DENTAL_SERVICES_CATALOG.PeriodontalSplinting!;
 				stage1PerioItems.push(
 					createPlanItem(

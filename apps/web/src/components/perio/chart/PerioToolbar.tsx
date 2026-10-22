@@ -5,6 +5,7 @@ import {
 	ChevronUp,
 	Clipboard,
 	Droplets,
+	FileText,
 	HelpCircle,
 	RotateCcw,
 	Save,
@@ -12,7 +13,6 @@ import {
 } from "lucide-react";
 import React from "react";
 import {
-	DentalForm043,
 	PerioProbe,
 	UltrasonicScaler,
 } from "../../icons/DentalIcons";
@@ -75,7 +75,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
 						<h3 className="text-base font-bold text-[var(--ink)] truncate">
-							Пародонтологическая карта пациента
+							Пародонтологическая карта приёма
 						</h3>
 						<span
 							className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
@@ -136,16 +136,16 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 			{/* Клинические протоколы пародонтологии (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 			{!readOnly && (
 				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 min-h-[36px]">
-					{/* Протокол «Норма»: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
+					{/* Протокол «Норма»: Instant PSR 0, Healthy Tissues & Clinical Protocol */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="primary-button shrink-0"
+						className="primary-button shrink-0 font-bold"
 						title="Вся десна здорова (Норма) • 1-клик: Здоровый пародонт (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<Check size={15} className="shrink-0 text-white" />
-						<span>Пародонт интактен / Физиологическая норма</span>
+						<span>Вся десна здорова (Норма)</span>
 					</button>
 
 					{/* Протокол «Профгигиена»: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
@@ -234,7 +234,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 							data-testid="perio-save-draft-btn"
 						>
 							<Save size={15} className={syncStatus === "saving" ? "animate-spin text-white" : "text-white"} />
-							<span>Сохранить карту пародонта</span>
+							<span>Сохранить</span>
 						</button>
 					)}
 
@@ -246,7 +246,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						title="Сформировать и вставить протокол пародонтограммы в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
-						{insertStatus ? <Check size={14} className="text-emerald-500" /> : <DentalForm043 size={14} />}
+						{insertStatus ? <Check size={14} className="text-emerald-500" /> : <FileText size={14} className="text-teal-600 dark:text-teal-400" />}
 						<span>
 							{insertStatus ? "Внесено в дневник!" : "Внести в дневник"}
 						</span>

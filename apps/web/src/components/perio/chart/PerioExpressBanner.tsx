@@ -4,13 +4,13 @@ import {
 	Check,
 	ChevronDown,
 	ChevronUp,
+	FileText,
 	Layers,
 	ShieldAlert,
 	ShieldCheck,
 } from "lucide-react";
 import React from "react";
 import {
-	DentalForm043,
 	PerioProbe,
 	UltrasonicScaler,
 } from "../../icons/DentalIcons";
@@ -89,9 +89,9 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 							title="Внести текущее заключение пародонтограммы в дневник приёма"
 							data-testid="perio-express-insert-043-btn"
 						>
-							{insertStatus ? <Check size={14} className="text-white" /> : <DentalForm043 size={14} className="text-white" />}
+							{insertStatus ? <Check size={14} className="text-white" /> : <FileText size={14} className="text-white" />}
 							<span>
-								{insertStatus ? "Внесено в медкарту!" : "Внести в дневник"}
+								{insertStatus ? "Внесено в дневник!" : "Внести в дневник"}
 							</span>
 						</button>
 					)}

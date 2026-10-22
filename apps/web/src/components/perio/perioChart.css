@@ -3,6 +3,7 @@
  *
  * Apple Mobile HIG & Anti-Desktop-Squeeze Standard for Perio Charting (390x844).
  * Strict Vanilla CSS Design Tokens, 0px Horizontal Scroll, 48px Touch Ergonomics.
+ * 100% Tokenized: Zero Raw Hex Colors.
  */
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -30,10 +31,10 @@
 	width: 100vw;
 	max-width: 100vw;
 	overflow-x: clip;
-	background: var(--paper, #ffffff);
+	background: var(--paper);
 	border-top-left-radius: 24px;
 	border-top-right-radius: 24px;
-	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-top: 1px solid var(--line);
 	box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.28);
 	animation: perioSheetSlideUp 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -53,7 +54,7 @@
 	height: 5px;
 	min-height: 5px;
 	border-radius: 9999px;
-	background: var(--line-strong, #94a3b8);
+	background: var(--line-strong);
 	margin: 10px auto 6px auto;
 	opacity: 0.85;
 	cursor: grab;
@@ -79,7 +80,7 @@
 	background: color-mix(in srgb, var(--paper-strong, var(--paper)) 92%, transparent);
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+	border-top: 1px solid var(--line);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -115,15 +116,15 @@
 	font-size: 1.15rem;
 	font-weight: 800;
 	border-radius: 12px;
-	background: var(--paper-soft, #f1f5f9);
-	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
-	color: var(--ink, #0f172a);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
 	transition: background-color 100ms ease, border-color 100ms ease;
 }
 
 .perio-numpad-tile:active {
-	background: var(--paper-strong, #e2e8f0);
-	border-color: var(--accent, #0d9488);
+	background: var(--paper-strong);
+	border-color: var(--teal, var(--accent));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -135,8 +136,8 @@
 	gap: 6px;
 	padding: 4px;
 	border-radius: 14px;
-	background: var(--paper-soft, #f8fafc);
-	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	overflow-x: auto;
 	scrollbar-width: none;
 }
@@ -153,14 +154,14 @@
 	font-weight: 700;
 	white-space: nowrap;
 	border: 1px solid transparent;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .perio-quadrant-chip[data-active="true"] {
-	background: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	border-color: var(--accent, #0d9488);
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--teal, var(--accent));
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -179,8 +180,8 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
-	background: var(--paper, #ffffff);
+	border: 1px solid var(--line);
+	background: var(--paper);
 	cursor: pointer;
 }
 
@@ -188,39 +189,39 @@
    6. DARK MODE ADAPTATION (WCAG AAA Contrast Invariants)
    ═══════════════════════════════════════════════════════════════════════════ */
 :root[data-theme="dark"] .perio-bottom-sheet {
-	background: var(--paper, #0b1320);
-	border-top-color: var(--line, rgba(255, 255, 255, 0.15));
+	background: var(--paper);
+	border-top-color: var(--line);
 	box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.7);
 }
 
 :root[data-theme="dark"] .perio-drag-handle {
-	background: var(--line-strong, #475569);
+	background: var(--line-strong);
 }
 
 :root[data-theme="dark"] .perio-floating-bottom-bar {
-	background: color-mix(in srgb, var(--paper-strong, #0f172a) 92%, transparent);
-	border-top-color: var(--line, rgba(255, 255, 255, 0.12));
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	border-top-color: var(--line);
 }
 
 :root[data-theme="dark"] .perio-numpad-tile {
-	background: var(--paper-soft, #1e293b);
-	border-color: var(--line, rgba(255, 255, 255, 0.12));
-	color: var(--ink, #f8fafc);
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
 }
 
 :root[data-theme="dark"] .perio-numpad-tile:active {
-	background: #334155;
-	border-color: var(--accent, #2dd4bf);
+	background: var(--paper-strong);
+	border-color: var(--teal, var(--accent));
 }
 
 :root[data-theme="dark"] .perio-quadrant-bar {
-	background: var(--paper-soft, #0f172a);
-	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 :root[data-theme="dark"] .perio-quadrant-chip[data-active="true"] {
-	background: var(--paper, #1e293b);
-	color: var(--ink, #f8fafc);
-	border-color: var(--accent, #2dd4bf);
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--teal, var(--accent));
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }

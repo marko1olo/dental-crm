@@ -1,5 +1,5 @@
 /**
- * PeriodontogramChart.tsx — Интерактивная пародонтограмма Формы 043/у
+ * PeriodontogramChart.tsx — Интерактивная пародонтологическая карта приёма
  * Двухчелюстная 6-точечная пародонтограмма (32 зуба, 192 точки зондирования)
  *
  * Архитектура и Мандаты:
@@ -194,7 +194,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					<span className="text-[12px] text-[var(--muted)] hidden md:inline px-1 truncate">
 						{viewModeOverride === "touch"
 							? "Сенсорный режим (1–7+ мм, 6 точек на зуб)"
-							: "Пародонтологическая карта пациента (32 зуба, 192 точки зондирования)"}
+							: "Пародонтологическая карта приёма (32 зуба, 192 точки зондирования)"}
 					</span>
 				</div>
 			</div>

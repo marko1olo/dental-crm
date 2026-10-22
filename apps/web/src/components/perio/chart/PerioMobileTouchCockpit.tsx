@@ -29,13 +29,14 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Droplets,
+	FileText,
 	RotateCcw,
 	ShieldCheck,
 	Sparkles,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
-import { DentalForm043, UltrasonicScaler } from "../../icons/DentalIcons";
+import { UltrasonicScaler } from "../../icons/DentalIcons";
 import { probingDepthClinicalClasses, probingDepthClinicalHex } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";
 import { SITE_SHORT_RU } from "./PerioToothCard";
@@ -222,11 +223,11 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
 						className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-						title="Вся десна здорова (Норма)"
+						title="Вся десна здорова (Норма) • 1-клик: Здоровый пародонт (Норма)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<ShieldCheck size={16} className="shrink-0" />
-						<span className="truncate">Вся норма</span>
+						<span className="truncate">Десна здорова (Норма)</span>
 					</button>
 
 					{/* Протокол «Профгигиена» */}
@@ -249,7 +250,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 						title="Внести протокол в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
-						{insertStatus ? <Check size={16} className="shrink-0" /> : <DentalForm043 size={16} className="shrink-0" />}
+						{insertStatus ? <Check size={16} className="shrink-0" /> : <FileText size={16} className="shrink-0" />}
 						<span className="truncate">{insertStatus ? "Внесено!" : "В дневник"}</span>
 					</button>
 				</div>

@@ -11,14 +11,15 @@ import {
 } from "../../treatment-plans/TreatmentPlanRoadmap";
 
 describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps", () => {
-	it("1. Computes VIP / Loyal Sentiment for platinum/gold tier and high LTV", () => {
+	it("1. Computes VIP / Loyal Sentiment for platinum/gold tier and high LTV from normalized data", () => {
 		const patientVip = {
 			id: "pat-vip-1",
 			fullName: "Иванова Марина Викторовна",
 			administrativeProfile: { loyaltyTier: "platinum" },
 			totalSpentRub: 320000,
 			balanceRub: 15000,
-			notes: "Постоянный лояльный пациент, рекомендует клинику друзьям",
+			// Mandate 8ap: subjective notes must never be parsed via regex
+			notes: "Заметка администратора для чтения человеком",
 		};
 
 		const sentiment = computePatientSentiment(patientVip);
@@ -29,12 +30,13 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.ok(sentiment.clinicalDirective.includes("Приоритетная запись"));
 	});
 
-	it("2. Computes Cancellation Risk Sentiment for high no-show probability & cancel notes", () => {
+	it("2. Computes Cancellation Risk Sentiment strictly from normalized metrics (no-shows, cancellations, zero regex)", () => {
 		const patientRisk = {
 			id: "pat-risk-1",
 			fullName: "Сидоров Артем Павлович",
 			noShowProbability: 0.48,
-			notes: "Частая отмена в день приёма, переносил 3 раза",
+			noShowsCount: 2,
+			cancellationsCount: 3,
 			balanceRub: 0,
 		};
 
@@ -46,12 +48,31 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.ok(sentiment.riskFactors.length > 0);
 	});
 
-	it("3. Computes Strict IDS Required for somatic stop-factors and severe allergies", () => {
+	it("3. Mandate 8ap: Subjective notes text does NOT alter scoring (Zero Regex Scoring Law)", () => {
+		const patientWithScaryNotes = {
+			id: "pat-neutral-1",
+			fullName: "Петров Василий Иванович",
+			noShowProbability: 0.05,
+			noShowsCount: 0,
+			cancellationsCount: 0,
+			totalSpentRub: 25000,
+			// Text that legacy pseudoscientific systems tried to score via regex:
+			notes: "Опоздал на 40 минут! Скандалил, отменил 3 визита, требует VIP скидку 50%!",
+		};
+
+		// Should remain standard because normalized fields indicate normal patient
+		const sentiment = computePatientSentiment(patientWithScaryNotes);
+		assert.equal(sentiment.type, "standard");
+		assert.equal(sentiment.colorTheme, "slate");
+		assert.equal(sentiment.riskFactors.length, 0);
+	});
+
+	it("4. Computes Strict IDS Required for somatic stop-factors and normalized allergies", () => {
 		const patientStrict = {
 			id: "pat-strict-1",
 			fullName: "Кузнецов Денис Олегович",
-			notes: "Особое внимание: отягощенный аллергоанамнез",
 			allergies: "Отек Квинке на новокаин",
+			requiresStrictInformedConsent: true,
 		};
 
 		const sentiment = computePatientSentiment(patientStrict);
@@ -61,7 +82,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.ok(sentiment.riskFactors.some((r) => r.includes("ИДС") || r.includes("аллерг") || r.includes("Аллерг")));
 	});
 
-	it("4. Formats patient birth date and Russian age correctly", () => {
+	it("5. Formats patient birth date and Russian age correctly", () => {
 		// Test birth date 30 years ago
 		const today = new Date();
 		const birth30 = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate()).toISOString();
@@ -79,7 +100,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		assert.ok(formatted24.includes("24 года"));
 	});
 
-	it("5. Verifies 5 Canonical Treatment Plan Roadmap metadata (Timelines, Prep, Warranty)", () => {
+	it("6. Verifies 5 Canonical Treatment Plan Roadmap metadata (Timelines, Prep, Warranty)", () => {
 		const stage1 = CANONICAL_ROADMAP_META.stage_1_emergency;
 		assert.equal(stage1.stageNumber, 1);
 		assert.ok(stage1.timelineRu.includes("визит"));
