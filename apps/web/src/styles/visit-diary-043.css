@@ -670,85 +670,6 @@ html.dark .vde-043__letter--p {
 	color: var(--muted);
 }
 
-/* ── Scanner modal ── */
-.vde-043-scanner-overlay {
-	position: fixed;
-	inset: 0;
-	z-index: 100;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 1rem;
-	background: rgba(0, 0, 0, 0.72);
-	backdrop-filter: blur(6px);
-}
-
-.vde-043-scanner {
-	position: relative;
-	width: 100%;
-	max-width: 24rem;
-	padding: 1.5rem;
-	border-radius: 1rem;
-	background: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line);
-	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-	overflow: hidden;
-}
-
-.vde-043-scanner__title {
-	margin: 0 0 0.35rem;
-	font-size: 1.15rem;
-	font-weight: 700;
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	color: var(--ink);
-}
-
-.vde-043-scanner__hint {
-	margin: 0 0 1.25rem;
-	font-size: 0.875rem;
-	color: var(--muted);
-}
-
-.vde-043-scanner__close {
-	position: absolute;
-	top: 1rem;
-	right: 1rem;
-	color: var(--muted);
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	padding: 0.25rem;
-	min-width: 40px;
-	min-height: 40px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.vde-043-scanner__close:hover {
-	color: var(--ink);
-}
-
-.vde-043-scanner__input {
-	width: 100%;
-	min-height: 44px;
-	padding: 0.75rem 1rem;
-	border-radius: 0.75rem;
-	border: 1px solid var(--line);
-	background: var(--paper-soft);
-	color: var(--ink);
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-	font-size: 0.95rem;
-	outline: none;
-}
-
-.vde-043-scanner__input:focus {
-	border-color: var(--red, #ef4444);
-	box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
-}
 
 /* ── Print preview modal (screen) ── */
 .vde-043-print-overlay {
@@ -1064,34 +985,7 @@ html.dark .vde-043__letter--p {
 	}
 }
 
-@keyframes visitScanLaser {
-	0% {
-		top: 10%;
-		opacity: 0;
-	}
-	10% {
-		opacity: 1;
-	}
-	90% {
-		opacity: 1;
-	}
-	100% {
-		top: 90%;
-		opacity: 0;
-	}
-}
 
-.vde-043-scanner__laser {
-	position: absolute;
-	left: 0;
-	right: 0;
-	height: 2px;
-	background: var(--bad-fg, #ef4444);
-	box-shadow: 0 0 0 1px var(--bad-fg, #ef4444);
-	z-index: 50;
-	pointer-events: none;
-	animation: visitScanLaser 2s linear infinite;
-}
 
 /* Forensic 043/у — история правок подписанного дневника */
 .vde-043__revisions {

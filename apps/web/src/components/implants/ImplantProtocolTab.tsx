@@ -1,12 +1,11 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Package } from "lucide-react";
 import type { MischDensity, ImplantCapType, ImplantWarehouseStockItem, ImplantConsumablesStock } from "./presets/implantPresetTypes";
 import { DEFAULT_CANONICAL_CONSUMABLES } from "./presets/implantStockDefaults";
 import { ImplantToothPicker } from "./protocol/ImplantToothPicker";
 import { ImplantBrandAndSizeSelector } from "./protocol/ImplantBrandAndSizeSelector";
 import { ImplantStabilitySelector } from "./protocol/ImplantStabilitySelector";
 import { ImplantCapAndGbrSelector } from "./protocol/ImplantCapAndGbrSelector";
-import { ImplantBarcodeScannerRow } from "./protocol/ImplantBarcodeScannerRow";
 import { ImplantWarehouseSelector } from "./ImplantWarehouseSelector";
 import { ImplantEconomicsSection } from "./ImplantEconomicsSection";
 
@@ -57,6 +56,7 @@ export interface ImplantProtocolTabProps {
 	readonly expirationDate?: string;
 	readonly setExpirationDate?: (date: string) => void;
 	readonly isqValue?: number;
+	readonly setIsqValue?: (val: number) => void;
 	readonly onApplyStandardProtocol?: () => void;
 	readonly onApplyImmediateProtocol?: () => void;
 	readonly onApplyTwoStageProtocol?: () => void;
@@ -126,9 +126,101 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 
 			<ImplantToothPicker toothFdi={props.toothFdi} onSelectTooth={props.handleToothSelect} />
 			<ImplantBrandAndSizeSelector selectedBrand={props.selectedBrand} onSelectBrand={props.handleBrandSelect} diameterMm={props.diameterMm} setDiameterMm={props.setDiameterMm} lengthMm={props.lengthMm} setLengthMm={props.setLengthMm} />
-			<ImplantStabilitySelector boneDensity={props.boneDensity} setBoneDensity={props.setBoneDensity} torqueNcm={props.torqueNcm} setTorqueNcm={props.setTorqueNcm} isIsqEnabled={props.isIsqEnabled} setIsIsqEnabled={props.setIsIsqEnabled} isqValue={props.isqValue} />
-			<ImplantCapAndGbrSelector capType={props.capType} setCapType={props.setCapType} isGbrPerformed={props.isGbrPerformed} setIsGbrPerformed={props.setIsGbrPerformed} stockConsumables={props.stockConsumables || DEFAULT_CANONICAL_CONSUMABLES} selectedGraftId={props.selectedGraftId} onSelectGraftId={props.onSelectGraftId} selectedMembraneId={props.selectedMembraneId} onSelectMembraneId={props.onSelectMembraneId} selectedSutureId={props.selectedSutureId} onSelectSutureId={props.onSelectSutureId} />
-			<ImplantBarcodeScannerRow scannedBarcode={props.scannedBarcode} setScannedBarcode={props.setScannedBarcode} onApplyBarcode={props.handleApplyBarcode} lotNumber={props.lotNumber} setLotNumber={props.setLotNumber} catalogArticle={props.catalogArticle} setCatalogArticle={props.setCatalogArticle} serialNumber={props.serialNumber} setSerialNumber={props.setSerialNumber} />
+			<ImplantStabilitySelector
+				boneDensity={props.boneDensity}
+				setBoneDensity={props.setBoneDensity}
+				torqueNcm={props.torqueNcm}
+				setTorqueNcm={props.setTorqueNcm}
+				isIsqEnabled={props.isIsqEnabled}
+				setIsIsqEnabled={props.setIsIsqEnabled}
+				isqValue={props.isqValue}
+				setIsqValue={props.setIsqValue}
+			/>
+			<ImplantCapAndGbrSelector
+				capType={props.capType}
+				setCapType={props.setCapType}
+				isGbrPerformed={props.isGbrPerformed}
+				setIsGbrPerformed={props.setIsGbrPerformed}
+				stockConsumables={props.stockConsumables || DEFAULT_CANONICAL_CONSUMABLES}
+				selectedGraftId={props.selectedGraftId}
+				onSelectGraftId={props.onSelectGraftId}
+				selectedMembraneId={props.selectedMembraneId}
+				onSelectMembraneId={props.onSelectMembraneId}
+				selectedSutureId={props.selectedSutureId}
+				onSelectSutureId={props.onSelectSutureId}
+			/>
+
+			{/* Данные стерильной упаковки: прямой ввод артикула, партии и серийного номера без бутафорских задержек */}
+			<div className="implant-packaging-section p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
+				<div className="flex items-center justify-between flex-wrap gap-2">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<Package size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+						<span className="text-xs font-bold text-[var(--ink)]">
+							Стерильная упаковка & Идентификация изделия (LOT / SN / REF):
+						</span>
+					</div>
+					<span className="text-[11px] text-[var(--muted)]">Прямой ввод или сканер штрихкодов</span>
+				</div>
+
+				<div className="relative">
+					<input
+						type="text"
+						value={props.scannedBarcode}
+						onChange={(e) => {
+							const val = e.target.value;
+							props.setScannedBarcode(val);
+							if (val.trim()) {
+								props.handleApplyBarcode(val);
+							}
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								props.handleApplyBarcode();
+							}
+						}}
+						placeholder="Штрихкод / DataMatrix с упаковки (GS1, DataMatrix, REF, LOT, SN)..."
+						className="implant-input w-full min-h-[38px] px-3 text-xs font-mono"
+						data-testid="input-barcode-scanner input-scanned-barcode"
+					/>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+					<div className="min-w-0">
+						<label className="text-[10px] text-[var(--muted)] font-medium block mb-1">REF / Артикул:</label>
+						<input
+							type="text"
+							value={props.catalogArticle}
+							onChange={(e) => props.setCatalogArticle(e.target.value)}
+							placeholder="TS3S4010S"
+							className="implant-input w-full min-h-[36px] px-2.5 text-xs font-mono"
+							data-testid="input-catalog-article"
+						/>
+					</div>
+					<div className="min-w-0">
+						<label className="text-[10px] text-[var(--muted)] font-medium block mb-1">LOT / Партия:</label>
+						<input
+							type="text"
+							value={props.lotNumber}
+							onChange={(e) => props.setLotNumber(e.target.value)}
+							placeholder="24C1208"
+							className="implant-input w-full min-h-[36px] px-2.5 text-xs font-mono font-bold"
+							data-testid="input-lot-number"
+						/>
+					</div>
+					<div className="min-w-0">
+						<label className="text-[10px] text-[var(--muted)] font-medium block mb-1">SN / Серийный номер:</label>
+						<input
+							type="text"
+							value={props.serialNumber}
+							onChange={(e) => props.setSerialNumber(e.target.value)}
+							placeholder="SN-884210"
+							className="implant-input w-full min-h-[36px] px-2.5 text-xs font-mono"
+							data-testid="input-serial-number"
+						/>
+					</div>
+				</div>
+			</div>
 
 			{props.stockItems && (
 				<ImplantWarehouseSelector stockItems={props.stockItems} selectedStockItemId={props.selectedStockItemId} onSelectStockItem={props.onSelectStockItem || (() => {})} isOverdraftActive={props.isOverdraftActive} lotNumber={props.lotNumber} catalogArticle={props.catalogArticle} />

@@ -277,7 +277,7 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(getBoneDensityByToothFdi(28), "D4", "Upper third molar must be D4");
 	});
 
-	it("16. ImplantPassportModal renders interactive tooth selector, barcode scanner, and Ankylos", () => {
+	it("16. ImplantPassportModal renders interactive tooth selector, packaging barcode input, and Ankylos", () => {
 		const html = renderToString(
 			<ImplantPassportModal
 				isOpen={true}
@@ -291,8 +291,10 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("input-tooth-fdi"), "Must render FDI tooth number input");
 		assert.ok(html.includes("btn-quick-tooth-16"), "Must render quick tooth button #16");
 		assert.ok(html.includes("btn-quick-tooth-46"), "Must render quick tooth button #46");
-		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode scanner input");
-		assert.ok(html.includes("btn-scan-barcode"), "Must render barcode scan button");
+		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode / DataMatrix input");
+		assert.ok(html.includes("input-lot-number"), "Must render direct LOT number input");
+		assert.ok(html.includes("input-serial-number"), "Must render direct SN number input");
+		assert.ok(html.includes("input-catalog-article"), "Must render direct REF article input");
 	});
 
 	it("17. ImplantPassportModal renders interactive ISQ controls and clinical interpretation", () => {
