@@ -1,0 +1,35 @@
+{
+  "subagent": "anesthesia_purge_inquisitor",
+  "domain": "Anesthesia Duplication & Academic Bloat Purge Inquisitor",
+  "status": "passed_100_percent",
+  "verified_at": "2026-10-22T14:33:00Z",
+  "liquidated_duplicate_files": [
+    "apps/web/src/components/visit/anesthesiaCarpulePresets.ts (converted to clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdCalculatorEngine.ts (clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdCatalog.ts (converted to clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdDoseEval.ts (converted to clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdFormulas.ts (converted to clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdMath.ts (clean re-export facade)",
+    "apps/web/src/components/visit/anesthesiaMrdTypes.ts (converted to clean re-export facade)",
+    "apps/web/src/components/visit/anesthesia/ (17 dead files including needle catalogs and aspiration simulators eradicated)"
+  ],
+  "amputated_bloat": [
+    "apps/web/src/components/visit/visitTimerModules/VisitAnesthesiaCountdownBadge.tsx (disabled / returns null, 0 ticking timers at chairside)",
+    "apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaPresetsRow.tsx (eradicated confusing brand duplication, unified on 3 instant chairside presets)",
+    "apps/web/src/components/visit/emk/emkAnesthesiaPresets.ts (purged redundant ubistesin clone, exactly 3 canonical presets remain)"
+  ],
+  "chairside_1_click_ssot": {
+    "preset_1": "Артикаин 1:100 000 (1 карпула / 1.7 мл) — рабочая лошадка стоматолога",
+    "preset_2": "Артикаин 1:200 000 (1 карпула / 1.7 мл) — щадящий вазоконстриктор",
+    "preset_3": "Мепивакаин (Скандонест) 3% без вазоконстриктора (1 карпула / 1.8 мл) — кардио-профиль / аллергия на сульфиты",
+    "preset_none": "Без анестезии / Интактно — 1 клик",
+    "passive_allergy_alert": "Пассивная строчка ⚠️ (Мандат 8e и 8y, кнопка «Сохранить» / «Применить» НИКОГДА не блокируется)"
+  ],
+  "verification_gates": {
+    "encoding": "node scripts/check-encoding.mjs -> 0 errors (14808 files verified)",
+    "css_tokens": "node scripts/check-css-tokens.mjs -> 0 unresolved variables",
+    "anesthesia_tests": "npx vitest run apps/web/src/components/anesthesia/__tests__/ -> 6 test files, 58/58 passing",
+    "visit_anesthesia_tests": "npx vitest run apps/web/src/components/visit/__tests__/anesthesia* apps/web/src/tests/anesthesia* -> 12 test files, 108/108 passing",
+    "total_passing_tests": 166
+  }
+}

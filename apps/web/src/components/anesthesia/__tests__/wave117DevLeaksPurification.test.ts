@@ -103,19 +103,28 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 	});
 
 	it("4. PatientBillingModal.tsx: absence of synthetic doctor mock «Кузнецов П. С.» in completed acts", () => {
-		const filePath = path.join(
+		const modalPath = path.join(
 			repoRoot,
 			"apps/web/src/components/finance/PatientBillingModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
+		const dataPath = path.join(
+			repoRoot,
+			"apps/web/src/components/finance/usePatientBillingData.ts",
+		);
+		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		const dataContent = fs.existsSync(dataPath)
+			? fs.readFileSync(dataPath, "utf-8")
+			: modalContent;
 
 		assert.ok(
-			!content.includes("Кузнецов П. С."),
+			!modalContent.includes("Кузнецов П. С.") &&
+				!dataContent.includes("Кузнецов П. С."),
 			"PatientBillingModal.tsx must not contain synthetic mock 'Кузнецов П. С.'",
 		);
 		assert.ok(
-			content.includes('fullName: doctor?.fullName || "Лечащий врач"'),
-			"PatientBillingModal.tsx must use neutral fallback 'Лечащий врач'",
+			dataContent.includes('fullName: doctor?.fullName || "Лечащий врач"') ||
+				modalContent.includes('fullName: doctor?.fullName || "Лечащий врач"'),
+			"PatientBillingModal.tsx / usePatientBillingData.ts must use neutral fallback 'Лечащий врач'",
 		);
 	});
 

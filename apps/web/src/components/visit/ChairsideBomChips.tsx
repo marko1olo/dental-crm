@@ -55,10 +55,16 @@ export const ChairsideBomChips: React.FC<ChairsideBomChipsProps> = ({
 			</div>
 			{showOverdraft && (
 				<div
-					className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 font-medium"
+					className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 font-medium"
 					data-testid={`overdraft-warning-${item.id}`}
 				>
-					<AlertCircle size={10} className="shrink-0" />
+					<span
+						className="inline-flex items-center px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold uppercase tracking-wider text-[9px]"
+						data-testid={`overdraft-badge-procurement-${item.id}`}
+					>
+						Требуется закупка
+					</span>
+					<AlertCircle size={10} className="shrink-0 text-amber-600 dark:text-amber-400" />
 					<span>Материал отсутствует по учету (будет списан в овердрафт)</span>
 				</div>
 			)}

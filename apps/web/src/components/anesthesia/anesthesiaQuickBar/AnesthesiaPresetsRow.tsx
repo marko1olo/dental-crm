@@ -25,18 +25,18 @@ export function AnesthesiaPresetsRow({
 			<button
 				type="button"
 				disabled={disabled}
-				onClick={onApplyUltracainForte}
+				onClick={onApplySeptanest100k || onApplyUltracainForte}
 				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 					selectedDrugId === "articaine_1_100k"
 						? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
 				}`}
-				title="Норма: Артикаин 1:100 000 (Ультракаин Д-С Форте 1:100 000, 1 карпула 1.7 мл)"
+				title="Артикаин 1:100 000 (1 карпула / 1.7 мл) — Ультракаин Д-С Форте 1:100 000 / Септанест"
 				data-testid="anesthesia-dose-norm-preset"
 			>
 				<CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-				<span>Норма: Артикаин 1:100 000 (1 карпула)</span>
-				<span className="sr-only">Норма: Артикаин 1:100k Убистезин форте Ультракаин Д-С Форте 1:100 000</span>
+				<span>Артикаин 1:100 000 (1.7 мл)</span>
+				<span className="sr-only">Норма: Артикаин 1:100k Убистезин форте Ультракаин Д-С Форте 1:100 000 Септанест</span>
 			</button>
 
 			<button
@@ -48,12 +48,12 @@ export function AnesthesiaPresetsRow({
 						? "border-2 border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold ring-1 ring-[var(--teal)]"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)]"
 				}`}
-				title="Щадящий адреналин: Артикаин 1:200 000 (Ультракаин Д-С 1:200 000, 1 карпула 1.7 мл)"
+				title="Артикаин 1:200 000 (1 карпула / 1.7 мл) — Ультракаин Д-С 1:200 000 / Убистезин"
 				data-testid="anesthesia-preset-infiltration-articaine-200k"
 			>
 				<Syringe size={14} className="text-teal-600 shrink-0" />
-				<span>Щадящий адреналин: Артикаин 1:200 000</span>
-				<span className="sr-only">Ультракаин Д-С 1:200 000</span>
+				<span>Артикаин 1:200 000 (1.7 мл)</span>
+				<span className="sr-only">Ультракаин Д-С 1:200 000 Щадящий адреналин Убистезин</span>
 			</button>
 
 			<button
@@ -65,12 +65,12 @@ export function AnesthesiaPresetsRow({
 						? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold ring-1 ring-amber-600"
 						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-amber-600"
 				}`}
-				title="Кардио-защита: Мепивакаин без адреналина (Скандонест 3%, 1 карпула 1.7 мл)"
+				title="Мепивакаин без адреналина — Скандонест 3% (1 карпула 1.7–1.8 мл, кардио-профиль)"
 				data-testid="anesthesia-preset-scandonest-cardio"
 			>
 				<Syringe size={14} className="text-amber-600 shrink-0" />
-				<span>Кардио-защита: Мепивакаин без адреналина</span>
-				<span className="sr-only">Скандонест без адреналина</span>
+				<span>Мепивакаин 3% (без адреналина)</span>
+				<span className="sr-only">Скандонест без адреналина Кардио-защита Мепивакаин 3%</span>
 			</button>
 
 			<button

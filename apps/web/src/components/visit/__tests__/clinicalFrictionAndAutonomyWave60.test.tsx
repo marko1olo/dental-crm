@@ -19,7 +19,7 @@ import {
 	patientAdministrativeProfileDraftIssue,
 	patientAdministrativeProfileTimeWarning,
 } from '../../../utils/clinicProfileUtils';
-import { ANESTHETIC_DRUGS_CATALOG } from '../anesthesia/anesthesiaTechniqueCatalog';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
