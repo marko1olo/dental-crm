@@ -42,20 +42,26 @@ export const FormulaHeaderBar: React.FC<FormulaHeaderBarProps> = React.memo(
 						</p>
 					</div>
 
-					<div className="flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)] ml-1 sm:ml-2">
+					<div className="flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle,var(--glass-border))] ml-1 sm:ml-2">
 						{(["adult", "mixed", "pediatric"] as const).map((mode) => (
 							<button
 								key={mode}
 								type="button"
 								onClick={() => onDentitionModeChange(mode)}
-								className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer inline-flex items-center gap-1 ${
+								className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer inline-flex items-center gap-1 ${
 									dentitionMode === mode
-										? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs"
+										? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs font-bold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								{mode === "pediatric" && <ToothDeciduous className="w-3 h-3 text-amber-500" />}
-								<span>{mode === "adult" ? "Постоянный" : mode === "mixed" ? "Сменный" : "Детский"}</span>
+								{mode === "pediatric" && <ToothDeciduous className="w-3.5 h-3.5 text-amber-500" />}
+								<span>
+									{mode === "adult"
+										? "Взрослая (11–48)"
+										: mode === "mixed"
+											? "Сменная"
+											: "Детская (51–85)"}
+								</span>
 							</button>
 						))}
 					</div>
@@ -63,7 +69,7 @@ export const FormulaHeaderBar: React.FC<FormulaHeaderBarProps> = React.memo(
 
 				<div className="flex items-center gap-2 flex-wrap">
 					<div
-						className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)] text-xs font-bold"
+						className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle,var(--glass-border))] text-xs font-bold"
 						title={`Индекс КПУ (Кариес: ${kpuStats.c}, Пломбировано: ${kpuStats.p}, Удалено: ${kpuStats.u})`}
 					>
 						<span className="text-[var(--muted)]">КПУ:</span>
@@ -80,19 +86,19 @@ export const FormulaHeaderBar: React.FC<FormulaHeaderBarProps> = React.memo(
 						type="button"
 						data-testid="btn-formula-mark-intact"
 						onClick={onMarkIntact}
-						className="min-h-[30px] sm:min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-						title="Отметить весь зубной ряд как здоровый и санированный"
+						className="min-h-[30px] sm:min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap"
+						title="Физиологическая норма (Мандат 8e): отметить всю зубную формулу санированной (интактной) в 1 клик"
 					>
-						<ShieldCheck className="w-3.5 h-3.5" />
-						<span>Интактный</span>
+						<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+						<span>✓ Все интактны / норма</span>
 					</button>
 
 					<button
 						type="button"
 						data-testid="btn-formula-mark-wisdom-missing"
 						onClick={onMarkWisdomMissing}
-						className="min-h-[30px] sm:min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-						title="Отметить зубы 18, 28, 38, 48 как отсутствующие"
+						className="min-h-[30px] sm:min-h-[32px] h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
+						title="Отметить третьи моляры (18, 28, 38, 48) как отсутствующие"
 					>
 						<span>Без 8-рок</span>
 					</button>

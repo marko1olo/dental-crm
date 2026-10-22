@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { registerExtendedOdontogramRoutes } from "./extendedRoutes.js";
 import { registerHistoryRoutes } from "./historyRoutes.js";
 import { registerPediatricRoutes } from "./pediatricRoutes.js";
 import { registerPeriodontalRoutes } from "./periodontalRoutes.js";
@@ -18,6 +19,7 @@ export * from "./pediatricRoutes.js";
 export * from "./planCrudRoutes.js";
 export * from "./planCompletionRoutes.js";
 export * from "./planVariantRoutes.js";
+export * from "./extendedRoutes.js";
 
 /**
  * Главный Fastify-плагин маршрутов зубной формулы, эндодонтии и планов лечения
@@ -25,6 +27,7 @@ export * from "./planVariantRoutes.js";
  */
 export async function registerOdontogramRoutes(app: FastifyInstance): Promise<void> {
 	registerStatusRoutes(app);
+	registerExtendedOdontogramRoutes(app);
 	registerSurfaceRoutes(app);
 	registerHistoryRoutes(app);
 	registerPeriodontalRoutes(app);

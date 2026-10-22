@@ -26,7 +26,7 @@ export const FormulaStampBar: React.FC<FormulaStampBarProps> = React.memo(
 		lastSavedTime,
 	}) {
 		return (
-			<div className="flex items-center justify-between gap-1.5 flex-wrap p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+			<div className="flex items-center justify-between gap-1.5 flex-wrap p-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle,var(--glass-border))]">
 				<div className="flex items-center gap-1 flex-wrap">
 					<span className="text-[11px] font-bold text-[var(--muted)] px-1">
 						Быстрый штамп:
@@ -38,11 +38,12 @@ export const FormulaStampBar: React.FC<FormulaStampBarProps> = React.memo(
 								key={opt.state}
 								type="button"
 								onClick={() => onSelectStamp(opt.state)}
-								className={`min-h-[26px] h-6.5 px-2 text-[11px] font-bold rounded-md transition-all cursor-pointer inline-flex items-center gap-1 ${
+								className={`min-h-[28px] h-7 px-2.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1 ${
 									isSelected
 										? `${opt.colorClass} shadow-xs ring-1 ring-white/50`
-										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--glass-border)] hover:border-[var(--teal)]"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
 								}`}
+								title={`Установить статус: ${opt.label}`}
 							>
 								<span>{opt.label}</span>
 							</button>

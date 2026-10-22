@@ -21,7 +21,10 @@ export const extendedOdontogramStates = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		patientName: text("patient_name"),
 		toothNumber: integer("tooth_number").notNull(),
 		isPrimaryPediatric: boolean("is_primary_pediatric")
 			.default(false)
@@ -33,7 +36,7 @@ export const extendedOdontogramStates = pgTable(
 		pediatricCrownPresent: boolean("pediatric_crown_present")
 			.default(false)
 			.notNull(),
-		notes: text("notes").notNull(),
+		notes: text("notes").default("").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -42,6 +45,15 @@ export const extendedOdontogramStates = pgTable(
 		organizationIdIdx: index(
 			"extended_odontogram_states_organizationId_idx",
 		).on(t.organizationId),
+		patientIdIdx: index(
+			"extended_odontogram_states_patientId_idx",
+		).on(t.patientId),
+		orgPatientIdx: index(
+			"extended_odontogram_states_org_patient_idx",
+		).on(t.organizationId, t.patientId),
+		orgPatientToothIdx: index(
+			"extended_odontogram_states_org_patient_tooth_idx",
+		).on(t.organizationId, t.patientId, t.toothNumber),
 	}),
 );
 

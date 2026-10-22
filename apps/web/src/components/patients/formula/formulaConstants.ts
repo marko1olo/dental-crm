@@ -23,12 +23,12 @@ export const ALL_DECIDUOUS_TEETH: readonly number[] = [
 export const WISDOM_TEETH: readonly number[] = [18, 28, 38, 48];
 
 export const STAMP_OPTIONS: readonly StampOption[] = [
-	{ state: "Healthy", label: "Норма", colorClass: "bg-emerald-600 text-white" },
-	{ state: "Caries", label: "Кариес", colorClass: "bg-rose-500 text-white" },
-	{ state: "Pulpitis", label: "Пульпит", colorClass: "bg-amber-600 text-white" },
-	{ state: "Periodontitis", label: "Периодонтит", colorClass: "bg-purple-600 text-white" },
-	{ state: "Filled", label: "Пломба", colorClass: "bg-teal-600 text-white" },
-	{ state: "Crown", label: "Коронка", colorClass: "bg-blue-600 text-white" },
-	{ state: "Implant", label: "Имплант", colorClass: "bg-indigo-600 text-white" },
-	{ state: "Missing", label: "Отсутствует", colorClass: "bg-slate-600 text-white" },
+	{ state: "Healthy", label: "Норма (N)", colorClass: "bg-emerald-600 text-white" },
+	{ state: "Caries", label: "Кариес (C)", colorClass: "bg-rose-500 text-white" },
+	{ state: "Pulpitis", label: "Пульпит (P)", colorClass: "bg-amber-600 text-white" },
+	{ state: "Periodontitis", label: "Периодонтит (Pt)", colorClass: "bg-purple-600 text-white" },
+	{ state: "Filled", label: "Пломба (F)", colorClass: "bg-teal-600 text-white" },
+	{ state: "Crown", label: "Коронка (Cr)", colorClass: "bg-blue-600 text-white" },
+	{ state: "Implant", label: "Имплант (Im)", colorClass: "bg-indigo-600 text-white" },
+	{ state: "Missing", label: "Удален (R)", colorClass: "bg-slate-600 text-white" },
 ];

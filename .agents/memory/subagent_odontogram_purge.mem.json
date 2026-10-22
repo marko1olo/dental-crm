@@ -1,0 +1,76 @@
+{
+  "task": "Red Team Inquisitor for relational integrity of the odontogram, FDI dental formula (11–48 adult, 51–85 pediatric), and elimination of pseudoscience reality simulators",
+  "status": "COMPLETED",
+  "completedAt": "2026-10-22T19:38:00+04:00",
+  "subagentConversationId": "09b4614e-d47e-4114-8504-e019044a5216",
+  "callerAgentId": "ce204741-1043-496d-84b4-ac98361937f4",
+  "databaseSchema": {
+    "file": "apps/api/src/db/schema/clinical/odontogramSchema.ts",
+    "table": "extended_odontogram_states",
+    "changes": [
+      "Added patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' })",
+      "Demoted patientName to optional text for backwards compatibility",
+      "Added btree indexes: patientIdIdx (patient_id), orgPatientIdx (organization_id, patient_id), orgPatientToothIdx (organization_id, patient_id, tooth_number)"
+    ],
+    "migrationSql": "apps/api/drizzle/0228_extended_odontogram_states_patient_id.sql"
+  },
+  "backendRoutes": {
+    "file": "apps/api/src/routes/odontogram/extendedRoutes.ts",
+    "mountedIn": "apps/api/src/routes/odontogram/index.ts",
+    "endpoints": [
+      "GET /api/patients/:patientId/extended-tooth-states",
+      "GET /api/patients/:patientId/extended-tooth-states/:toothNumber",
+      "POST /api/patients/:patientId/extended-tooth-states/batch"
+    ],
+    "testsPassed": "9/9 passing (extendedOdontogramRoutes.test.ts & odontogramDecomposition.test.ts)"
+  },
+  "frontendErgonomics": {
+    "components": [
+      "apps/web/src/components/patients/formula/formulaConstants.ts",
+      "apps/web/src/components/patients/formula/FormulaHeaderBar.tsx",
+      "apps/web/src/components/patients/formula/FormulaStampBar.tsx",
+      "apps/web/src/components/odontogram/chart/toolbar/ToothChartExpressActions.tsx"
+    ],
+    "features": [
+      "1-Click physiological norm CTA «✓ Все интактны / норма» (Mandate 8e)",
+      "Clinical pathology stamps: Норма (N), Кариес (C), Пульпит (P), Периодонтит (Pt), Пломба (F), Коронка (Cr), Имплант (Im), Удален (R)",
+      "FDI mode switcher: Взрослая (11–48), Сменная, Детская (51–85)",
+      "Strict button hierarchy: exactly ONE Primary CTA per toolbar, eliminating carnival confetti palette (Mandate 8am)"
+    ],
+    "vitestPassed": "41/41 passing (classicGostOdontogram.test.ts & odontogramOverhaulAndVisualErgonomics.test.tsx)"
+  },
+  "machineGates": {
+    "encoding": "PASS (14,939 files checked, 0 errors)",
+    "cssTokens": "PASS (394 CSS files checked, 0 unresolvable CSS token errors)"
+  },
+  "visualProof4State": {
+    "directory": "docs/screenshots/odontogram_formula",
+    "brainArtifactsDirectory": "C:/Users/Admin/.gemini/antigravity/brain/09b4614e-d47e-4114-8504-e019044a5216",
+    "screenshots": [
+      {
+        "file": "01_dental_formula_pc_light.png",
+        "description": "☀️ PC Light (1440x900) - Зубная формула FDI, 1-клик физиологическая норма, клинические штампы",
+        "sizeBytes": 200379,
+        "md5": "6B822B761A88765503047133EF8252F2"
+      },
+      {
+        "file": "02_dental_formula_pc_dark.png",
+        "description": "🌙 PC Dark (1440x900) - Зубная формула FDI в тёмной теме без паразитных рамок",
+        "sizeBytes": 194694,
+        "md5": "32C6BD4E46E13FCDBE7A542FF97801AD"
+      },
+      {
+        "file": "03_dental_formula_mobile_light.png",
+        "description": "📱 Mobile Light (390x844) - Квадрантная зубная формула FDI, Natural Thumb Zone",
+        "sizeBytes": 47428,
+        "md5": "4CB14DD230DE575EDCA71B1FFC1334C7"
+      },
+      {
+        "file": "04_dental_formula_mobile_dark.png",
+        "description": "🌙 Mobile Dark (390x844) - Квадрантная формула FDI в тёмной теме без паразитного скролла",
+        "sizeBytes": 47538,
+        "md5": "2B2C054FDC6D2B0E77DAB55942A00737"
+      }
+    ]
+  }
+}
