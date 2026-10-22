@@ -16,8 +16,8 @@ import { TelephonyDialerHistoryTab } from "./telephonyDialerModal/TelephonyDiale
 export interface TelephonyDialerModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	initialPhone?: string;
-	onStartCall?: (phone: string) => void;
+	initialPhone?: string | undefined;
+	onStartCall?: ((phone: string) => void) | undefined;
 }
 
 export function TelephonyDialerModal({
@@ -58,7 +58,7 @@ export function TelephonyDialerModal({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
-	if (typeof document === "undefined" || !isOpen) return null;
+	if (!isOpen) return null;
 
 	const handleStartCall = () => {
 		if (!dialNumber.trim()) {
@@ -84,7 +84,7 @@ export function TelephonyDialerModal({
 		onClose();
 	};
 
-	return createPortal(
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[9995] flex items-end sm:items-center justify-center p-0 sm:p-3 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog" aria-modal="true" aria-label="Софтфон клиники и номеронабиратель"
@@ -112,7 +112,12 @@ export function TelephonyDialerModal({
 					)}
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	if (typeof document === "undefined") {
+		return modalContent;
+	}
+
+	return createPortal(modalContent, document.body);
 }

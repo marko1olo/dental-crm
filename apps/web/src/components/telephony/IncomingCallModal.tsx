@@ -63,13 +63,16 @@ export function IncomingCallModal({
 	}
 
 	const content = (
-		<div className="dnt-incoming-call-modal-overlay fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm pointer-events-auto" data-testid="incoming-call-modal">
+		<div className="dnt-incoming-call-modal-overlay fixed inset-0 z-[9990] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm pointer-events-auto" data-testid="incoming-call-modal">
 			<section
-				className="dnt-incoming-call-card relative w-full max-w-[520px] rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 flex flex-col gap-3.5 box-border animate-badge-drop"
+				className="dnt-incoming-call-card relative w-full max-w-full sm:max-w-[520px] rounded-t-[24px] sm:rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl p-4 sm:p-5 flex flex-col gap-3.5 box-border animate-badge-drop pb-[max(16px,env(safe-area-inset-bottom))]"
 				aria-label="Входящий звонок"
 				role="dialog"
 				aria-modal="true"
 			>
+				{/* Mobile tactile handle (Apple HIG) */}
+				<div className="w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)] mx-auto -mt-1 mb-0.5 sm:hidden" aria-hidden="true" />
+
 				{/* Header with caller identity, carrier badge & close */}
 				<IncomingCallHeaderBar ctrl={ctrl} />
 

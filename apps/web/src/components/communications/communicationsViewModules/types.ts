@@ -12,6 +12,7 @@ export type CommunicationEvent = Dashboard["communicationEvents"][number];
 
 export type CommunicationActiveSection =
 	| "tasks"
+	| "omnichannel"
 	| "chat"
 	| "notifications"
 	| "staff_chat"

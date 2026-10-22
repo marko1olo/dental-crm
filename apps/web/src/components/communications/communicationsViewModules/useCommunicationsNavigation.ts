@@ -7,6 +7,7 @@ export function useCommunicationsNavigation(initialSection?: CommunicationActive
 		if (typeof window !== "undefined") {
 			const hash = window.location.hash || "";
 			const search = window.location.search || "";
+			if (hash.includes("omnichannel") || search.includes("omnichannel")) return "omnichannel";
 			if (hash.includes("bot_inbox") || hash.includes("bots") || search.includes("bot_inbox") || search.includes("bots")) return "bot_inbox";
 			if (hash.includes("chat") || search.includes("chat")) return "chat";
 			if (hash.includes("notifications") || search.includes("notifications")) return "notifications";
@@ -19,7 +20,8 @@ export function useCommunicationsNavigation(initialSection?: CommunicationActive
 	useEffect(() => {
 		const handleHash = () => {
 			const hash = window.location.hash || "";
-			if (hash.includes("bot_inbox") || hash.includes("bots")) setActiveSection("bot_inbox");
+			if (hash.includes("omnichannel")) setActiveSection("omnichannel");
+			else if (hash.includes("bot_inbox") || hash.includes("bots")) setActiveSection("bot_inbox");
 			else if (hash.includes("chat")) setActiveSection("chat");
 			else if (hash.includes("notifications")) setActiveSection("notifications");
 			else if (hash.includes("staff_chat")) setActiveSection("staff_chat");
