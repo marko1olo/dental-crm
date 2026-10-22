@@ -16,7 +16,9 @@ describe("CashShiftWidget Mandate 8b Decomposition Invariants", () => {
 
 	it("guarantees every decomposed file is strictly <= 120 lines", () => {
 		for (const relativePath of files) {
-			const fullPath = path.resolve(process.cwd(), relativePath);
+			const fullPath = fs.existsSync(path.resolve(process.cwd(), relativePath))
+				? path.resolve(process.cwd(), relativePath)
+				: path.resolve(process.cwd(), relativePath.replace(/^apps\/web\//, ""));
 			expect(fs.existsSync(fullPath)).toBe(true);
 			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 			expect(lineCount).toBeLessThanOrEqual(120);
