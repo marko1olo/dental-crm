@@ -810,30 +810,35 @@
 	color: var(--ink, #0f172a);
 }
 
-/* Phone Frame */
+/* Message Bubble Card Preview Container */
 .tg-phone-frame {
 	width: 100%;
-	border-radius: 36px;
-	border: 7px solid #1e293b;
-	box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+	border-radius: 16px;
+	border: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	height: 640px;
+	min-height: 480px;
 	position: relative;
 	transition: all 0.2s ease;
 }
 
-/* Theme styling within Phone */
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-phone-frame {
+	border-color: rgba(51, 65, 85, 0.8);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Theme styling within Message Bubble Card */
 .tg-phone-frame.tg-theme-light {
-	background-color: #9cbcd4;
-	background-image: radial-gradient(#8ea8be 1px, transparent 1px);
+	background-color: var(--paper-soft, #f8fafc);
+	background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
 	background-size: 16px 16px;
 }
 
 .tg-phone-frame.tg-theme-dark {
-	background-color: #0f172a;
-	background-image: radial-gradient(#1e293b 1px, transparent 1px);
+	background-color: #0c1319;
+	background-image: radial-gradient(rgba(51, 65, 85, 0.4) 1px, transparent 1px);
 	background-size: 16px 16px;
 }
 

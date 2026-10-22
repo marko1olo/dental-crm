@@ -130,9 +130,6 @@ export const SettingsTabRenderer: React.FC<SettingsTabRendererProps> = ({
 					<EgiszBlankPermissionsWidget />
 				</div>
 			)}
-			{settingsTab === "telegram" && activeStaffUser?.role !== "doctor" && (
-				<SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} />
-			)}
 			{settingsTab === "hardware" && (
 				<ErrorBoundary moduleName="Оборудование и рентген">
 					<HardwareSettingsTab />

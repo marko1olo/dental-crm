@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { X, Bot, Sparkles, Smartphone, Layers, ShieldCheck } from "lucide-react";
+import {
+	X,
+	Bot,
+	Sparkles,
+	ShieldCheck,
+	Activity,
+	QrCode,
+	Copy,
+	Check,
+	ExternalLink,
+} from "lucide-react";
+import { generateQrCodeSvg } from "@dental/shared";
+import { showToast } from "../../GlobalToast";
 import { BotOnboardingWizard } from "./BotOnboardingWizard";
 import {
 	TelegramPhoneSimulator,
@@ -39,8 +51,12 @@ export function BotStudioModal({
 		CLINICAL_BOT_PRESETS.premium.primaryActionLabel,
 	);
 	const [simTheme, setSimTheme] = useState<"light" | "dark">("light");
+	const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
 	const activePreset = CLINICAL_BOT_PRESETS[selectedPresetId] || CLINICAL_BOT_PRESETS.premium;
+	const clinicId = parentProps?.clinicId || "dente";
+	const botUsername = parentProps?.telegramStatus?.bot?.username || "dente_clinic_bot";
+	const botLink = `https://t.me/${botUsername}?start=clinic_${clinicId}`;
 
 	// Close on Escape
 	useEffect(() => {
@@ -54,6 +70,19 @@ export function BotStudioModal({
 	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
+
+	const handleCopyBotLink = async () => {
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				await navigator.clipboard.writeText(botLink);
+			}
+			setCopiedLink(true);
+			showToast("Ссылка на бота клиники скопирована", "success");
+			setTimeout(() => setCopiedLink(false), 2500);
+		} catch {
+			showToast("Не удалось скопировать ссылку", "warning");
+		}
+	};
 
 	return (
 		<div
@@ -78,7 +107,7 @@ export function BotStudioModal({
 								</h2>
 								<span className="bot-pill-mini text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/50">
 									<ShieldCheck size={12} className="inline mr-1" />
-									152-ФЗ Безопасно
+									Конфиденциально и защищено
 								</span>
 							</div>
 							<p className="bot-modal-subtitle">
@@ -117,9 +146,140 @@ export function BotStudioModal({
 						/>
 					</div>
 
-					{/* Right: Interactive Phone Simulator */}
+					{/* Right: Live Diagnostics & Message Bubble Card */}
 					<div className="bot-modal-simulator-col">
 						<div className="bot-modal-sim-sticky">
+							{/* Live Diagnostics Card */}
+							<div
+								className="bot-diagnostics-card"
+								style={{
+									width: "100%",
+									padding: "14px 16px",
+									background: "var(--paper-soft, #f8fafc)",
+									border: "1px solid var(--line, #e2e8f0)",
+									borderRadius: "12px",
+									display: "flex",
+									flexDirection: "column",
+									gap: "10px",
+									boxSizing: "border-box",
+								}}
+							>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<Activity size={15} color="var(--teal)" />
+										<strong
+											style={{
+												fontSize: "13px",
+												color: "var(--ink)",
+											}}
+										>
+											Диагностика бота
+										</strong>
+									</div>
+									<span
+										style={{
+											fontSize: "11px",
+											fontWeight: 600,
+											padding: "2px 8px",
+											borderRadius: "4px",
+											background: "rgba(16, 185, 129, 0.15)",
+											color: "#10b981",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "4px",
+										}}
+									>
+										<span
+											style={{
+												width: "6px",
+												height: "6px",
+												borderRadius: "50%",
+												background: "#10b981",
+											}}
+										/>
+										<span>Online</span>
+									</span>
+								</div>
+
+								<div
+									style={{
+										display: "grid",
+										gridTemplateColumns: "1fr auto",
+										gap: "12px",
+										alignItems: "center",
+									}}
+								>
+									<div style={{ fontSize: "12px", color: "var(--muted)" }}>
+										<div>
+											Имя:{" "}
+											<strong style={{ color: "var(--ink)" }}>
+												@{botUsername}
+											</strong>
+										</div>
+										<div style={{ marginTop: "2px" }}>
+											Шифрование:{" "}
+											<span style={{ color: "var(--ink)" }}>
+												AES-256-GCM
+											</span>
+										</div>
+									</div>
+
+									{/* QR Thumbnail */}
+									<div
+										style={{
+											width: "48px",
+											height: "48px",
+											background: "#ffffff",
+											padding: "2px",
+											borderRadius: "6px",
+											border: "1px solid var(--line, #cbd5e1)",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+										}}
+										title="QR-код для старта пациента в боте"
+									>
+										<div
+											// biome-ignore lint/security/noDangerouslySetInnerHtml: safe SVG
+											dangerouslySetInnerHTML={{
+												__html: generateQrCodeSvg(botLink, {
+													size: 44,
+													margin: 1,
+												}),
+											}}
+											style={{ width: "100%", height: "100%" }}
+										/>
+									</div>
+								</div>
+
+								<button
+									type="button"
+									onClick={handleCopyBotLink}
+									className="secondary-button compact-button"
+									style={{
+										width: "100%",
+										fontSize: "12px",
+										minHeight: "32px",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: "6px",
+									}}
+								>
+									{copiedLink ? (
+										<Check size={13} color="#10b981" />
+									) : (
+										<Copy size={13} />
+									)}
+									<span>
+										{copiedLink
+											? "Ссылка скопирована!"
+											: "Скопировать ссылку для пациентов"}
+									</span>
+								</button>
+							</div>
+
+							{/* Live Message Bubble Card */}
 							<TelegramPhoneSimulator
 								preset={activePreset}
 								channel={activeChannel}
@@ -133,9 +293,13 @@ export function BotStudioModal({
 							/>
 
 							<div className="bot-sim-footnote">
-								<span>Канал: <strong>{activeChannel.toUpperCase()}</strong></span>
+								<span>
+									Канал: <strong>{activeChannel.toUpperCase()}</strong>
+								</span>
 								<span>•</span>
-								<span>Пресет: <strong>{activePreset.name}</strong></span>
+								<span>
+									Пресет: <strong>{activePreset.name}</strong>
+								</span>
 							</div>
 						</div>
 					</div>

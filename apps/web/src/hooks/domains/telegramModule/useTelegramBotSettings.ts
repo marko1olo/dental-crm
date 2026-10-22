@@ -29,6 +29,8 @@ export function useTelegramBotSettings({
 }: UseTelegramBotSettingsOptions): UseTelegramBotSettingsResult {
 	const initialTelegramHandoffTargetRef =
 		useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
+	const lastHydratedSettingsKeyRef = useRef<string | null>(null);
+	const lastLoadedControlPlaneRef = useRef<boolean>(false);
 
 	const {
 		telegramBotConfigId,
@@ -76,6 +78,10 @@ export function useTelegramBotSettings({
 	useEffect(() => {
 		const settings = telegramStatus?.settings;
 		if (!settings || telegramSettingsDirty) return;
+		const key = `${settings.updatedAt || ""}_${settings.botUsername || ""}_${settings.mode}_${settings.ownBotUsername || ""}`;
+		if (lastHydratedSettingsKeyRef.current === key) return;
+		lastHydratedSettingsKeyRef.current = key;
+
 		setTelegramModeDraft(settings.mode);
 		setTelegramBotUsernameDraft(settings.botUsername ?? "");
 		setTelegramOwnBotUsernameDraft(settings.ownBotUsername ?? "");
@@ -147,18 +153,22 @@ export function useTelegramBotSettings({
 	}, [telegramSettingsDirty, telegramStatus?.settings, saveTelegramSettings]);
 
 	useEffect(() => {
-		if (
+		const isTelegramActive =
 			(currentView === "settings" && settingsTab === "telegram") ||
-			(!onboardingDismissed && onboardingStep === "telegram")
-		) {
-			void loadTelegramControlPlane({ silent: true });
+			(!onboardingDismissed && onboardingStep === "telegram");
+		if (!isTelegramActive) {
+			lastLoadedControlPlaneRef.current = false;
+			return;
 		}
+		if (lastLoadedControlPlaneRef.current) return;
+		lastLoadedControlPlaneRef.current = true;
+
+		void loadTelegramControlPlane({ silent: true });
 	}, [
 		currentView,
 		settingsTab,
 		onboardingDismissed,
 		onboardingStep,
-		loadTelegramControlPlane,
 	]);
 
 	useEffect(() => {

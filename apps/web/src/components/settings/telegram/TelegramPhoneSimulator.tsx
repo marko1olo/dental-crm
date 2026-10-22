@@ -2,20 +2,17 @@ import React, { useState, useEffect } from "react";
 import {
 	ChevronLeft,
 	ExternalLink,
-	Mic,
-	MoreVertical,
-	Paperclip,
 	RefreshCw,
 	Sparkles,
-	Wifi,
-	Battery,
-	Smartphone,
 	Sun,
 	Moon,
 	CheckCheck,
-	Phone,
-	Video,
+	Copy,
+	Check,
+	MessageSquare,
+	Send,
 } from "lucide-react";
+import { showToast } from "../../GlobalToast";
 import type { BotPreset, BotSimulatorScreen } from "./telegramBotPresets";
 
 export type BotChannelType = "telegram" | "vk" | "whatsapp" | "max";
@@ -44,6 +41,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		themeMode: externalThemeMode,
 		onThemeModeChange,
 	} = props;
+
 	const [internalThemeMode, setInternalThemeMode] = useState<"light" | "dark">(() => {
 		if (typeof document !== "undefined") {
 			return document.documentElement.classList.contains("dark") ||
@@ -64,9 +62,10 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		}
 	};
 
-	// Active screen state within the simulator
+	// Active screen state within the preview
 	const [currentScreenId, setCurrentScreenId] = useState<string>(previewScreenId || "root");
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
+	const [copied, setCopied] = useState<boolean>(false);
 
 	// Sync external previewScreenId when updated by wizard
 	useEffect(() => {
@@ -195,7 +194,6 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		},
 	};
 
-	// Determine current screen data with guaranteed fallback
 	const fallbackScreen: BotSimulatorScreen = preset.screens.root ?? {
 		id: "root",
 		title: "Главное меню",
@@ -208,11 +206,23 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		preset.screens[currentScreenId] ??
 		fallbackScreen;
 
-	// Custom overrides for the root screen if provided
 	const effectiveText =
 		currentScreenId === "root" && customWelcomeText?.trim()
 			? customWelcomeText
 			: activeScreen.text;
+
+	const handleCopyText = async () => {
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				await navigator.clipboard.writeText(effectiveText);
+			}
+			setCopied(true);
+			showToast("Текст сообщения скопирован в буфер", "success");
+			setTimeout(() => setCopied(false), 2500);
+		} catch {
+			showToast("Не удалось скопировать текст", "warning");
+		}
+	};
 
 	const handleButtonClick = (action: string, isWebApp?: boolean, url?: string) => {
 		if (url) {
@@ -269,7 +279,6 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		showMiniToast("Команда принята ботом");
 	};
 
-	// Channel visual configurations
 	const channelConfigs = {
 		telegram: {
 			name: "Telegram Bot",
@@ -304,20 +313,41 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 	const currentChannelConfig = channelConfigs[channel] || channelConfigs.telegram;
 
 	return (
-		<div className="tg-simulator-wrapper" aria-label={`Интерактивный симулятор бота (${currentChannelConfig.name})`}>
+		<div
+			className="tg-simulator-wrapper"
+			aria-label={`Предпросмотр сообщения бота (${currentChannelConfig.name})`}
+		>
 			{/* Simulator Header Toolbar */}
 			<div className="tg-sim-toolbar">
 				<div className="tg-sim-toolbar-title">
-					<Smartphone size={15} style={{ color: currentChannelConfig.iconColor }} aria-hidden="true" />
-					<span>Симулятор {currentChannelConfig.badge}</span>
+					<MessageSquare
+						size={15}
+						style={{ color: currentChannelConfig.iconColor }}
+						aria-hidden="true"
+					/>
+					<span>Предпросмотр сообщения {currentChannelConfig.badge}</span>
 					<span className="tg-sim-live-badge">Live</span>
 				</div>
 				<div className="tg-sim-toolbar-actions">
 					<button
 						type="button"
+						onClick={handleCopyText}
+						className="tg-sim-tool-btn"
+						title="Копировать текст сообщения"
+						data-testid="tg-copy-message-btn"
+					>
+						{copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+						<span>{copied ? "Скопировано!" : "Копировать"}</span>
+					</button>
+					<button
+						type="button"
 						onClick={handleThemeToggle}
 						className="tg-sim-tool-btn"
-						title={activeTheme === "light" ? "Включить тёмную тему симулятора" : "Включить светлую тему симулятора"}
+						title={
+							activeTheme === "light"
+								? "Включить тёмную тему предпросмотра"
+								: "Включить светлую тему предпросмотра"
+						}
 					>
 						{activeTheme === "light" ? <Moon size={13} /> : <Sun size={13} />}
 						<span>Тема</span>
@@ -326,7 +356,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 						type="button"
 						onClick={resetToStart}
 						className="tg-sim-tool-btn"
-						title="Перезапустить бота"
+						title="Перезапустить диалог бота"
 					>
 						<RefreshCw size={13} />
 						<span>/start</span>
@@ -334,21 +364,13 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 				</div>
 			</div>
 
-			{/* Phone Shell */}
+			{/* Clean Message Bubble Card Container (No Toy Phone Bezel) */}
 			<div
-				className={`tg-phone-frame channel-${channel} ${activeTheme === "dark" ? "tg-theme-dark" : "tg-theme-light"}`}
+				className={`tg-phone-frame tg-message-bubble-container channel-${channel} ${
+					activeTheme === "dark" ? "tg-theme-dark" : "tg-theme-light"
+				}`}
 			>
-				{/* Phone Notch / Island */}
-				<div className="tg-phone-notch-bar">
-					<span className="tg-phone-time">09:41</span>
-					<div className="tg-phone-dynamic-island" />
-					<div className="tg-phone-status-icons">
-						<Wifi size={13} />
-						<Battery size={15} />
-					</div>
-				</div>
-
-				{/* Messenger Chat Header */}
+				{/* Messenger Header Bar */}
 				<div
 					className={`tg-chat-header header-${channel}`}
 					style={{
@@ -359,15 +381,16 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 						color: "#ffffff",
 					}}
 				>
-					<button
-						type="button"
-						className="tg-header-back-btn"
-						onClick={resetToStart}
-						title="Назад в чаты"
-					>
-						<ChevronLeft size={20} />
-						<span className="tg-back-count">1</span>
-					</button>
+					{currentScreenId !== "root" && (
+						<button
+							type="button"
+							className="tg-header-back-btn"
+							onClick={resetToStart}
+							title="Назад в главное меню"
+						>
+							<ChevronLeft size={20} />
+						</button>
+					)}
 
 					<div
 						className="tg-header-avatar"
@@ -380,65 +403,90 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 										: preset.avatarGradient,
 						}}
 					>
-						<span>{channel === "vk" ? "VK" : channel === "whatsapp" ? "WA" : preset.avatarText}</span>
+						<span>
+							{channel === "vk"
+								? "VK"
+								: channel === "whatsapp"
+									? "WA"
+									: preset.avatarText}
+						</span>
 					</div>
 
 					<div className="tg-header-info">
 						<h4 className="tg-header-name" title={effectiveTitle}>
 							{effectiveTitle}
 						</h4>
-						<span className="tg-header-status">{currentChannelConfig.statusText}</span>
-					</div>
-
-					<div className="flex items-center gap-1">
-						{channel === "whatsapp" && (
-							<>
-								<button
-									type="button"
-									className="tg-header-more-btn"
-									onClick={() => showMiniToast("Видеозвонок клиники")}
-									title="Видеозвонок"
-								>
-									<Video size={16} />
-								</button>
-								<button
-									type="button"
-									className="tg-header-more-btn"
-									onClick={() => showMiniToast("Звонок в клинику")}
-									title="Аудиозвонок"
-								>
-									<Phone size={15} />
-								</button>
-							</>
-						)}
-						<button
-							type="button"
-							className="tg-header-more-btn"
-							onClick={() => showMiniToast(`${currentChannelConfig.name} • DENTE Bot Engine 24/7`)}
-							title="О боте"
-						>
-							<MoreVertical size={18} />
-						</button>
+						<span className="tg-header-status">
+							{currentChannelConfig.statusText}
+						</span>
 					</div>
 				</div>
 
-				{/* Messenger Chat Area */}
+				{/* Quick Template Switch Chips for Testing */}
+				<div
+					className="tg-template-quick-chips"
+					style={{
+						display: "flex",
+						gap: "6px",
+						padding: "10px 14px",
+						background: "var(--paper-soft, rgba(0,0,0,0.03))",
+						borderBottom: "1px solid var(--line, rgba(0,0,0,0.08))",
+						overflowX: "auto",
+					}}
+				>
+					{[
+						{ id: "root", label: "Приветствие" },
+						{ id: "booking", label: "Онлайн-запись" },
+						{ id: "reminders", label: "Напоминание" },
+						{ id: "reviews", label: "Отзывы" },
+						{ id: "price_faq", label: "Прейскурант" },
+						{ id: "admin_chat", label: "Администратор" },
+					].map((tab) => (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => changeScreen(tab.id)}
+							style={{
+								padding: "4px 10px",
+								fontSize: "11px",
+								fontWeight: currentScreenId === tab.id ? 600 : 500,
+								borderRadius: "6px",
+								border: "1px solid",
+								borderColor:
+									currentScreenId === tab.id
+										? "var(--teal, #0d9488)"
+										: "var(--line, #cbd5e1)",
+								background:
+									currentScreenId === tab.id
+										? "var(--teal, #0d9488)"
+										: "var(--paper, #ffffff)",
+								color:
+									currentScreenId === tab.id
+										? "#ffffff"
+										: "var(--ink, #0f172a)",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{tab.label}
+						</button>
+					))}
+				</div>
+
+				{/* Message Canvas */}
 				<div className={`tg-chat-canvas canvas-${channel}`}>
-					{/* Toast Notice inside phone */}
 					{toastNotice && (
 						<div className="tg-phone-toast" role="status" aria-live="polite">
 							{toastNotice}
 						</div>
 					)}
 
-					{/* Date separator */}
 					<div className="tg-date-bubble">
 						<span>Сегодня</span>
 					</div>
 
-					{/* Bot Message Bubble */}
+					{/* Bot Message Bubble Card */}
 					<div className={`tg-message-card bubble-${channel}`}>
-						{/* Banner image if screen has one */}
 						{activeScreen.bannerUrl && currentScreenId === "root" && (
 							<div className="tg-message-banner">
 								<img
@@ -452,7 +500,6 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 							</div>
 						)}
 
-						{/* Text body */}
 						<div className="tg-message-body">
 							<p className="tg-message-text">
 								{effectiveText.split("\n").map((paragraph, index) => (
@@ -464,87 +511,59 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 								))}
 							</p>
 							<div className="tg-message-meta">
-								<span className="tg-message-time">09:41</span>
-								<CheckCheck size={14} className="tg-read-check text-sky-500" aria-hidden="true" />
+								<span className="tg-message-time">12:00</span>
+								<CheckCheck
+									size={14}
+									className="tg-read-check text-sky-500"
+									aria-hidden="true"
+								/>
 							</div>
 						</div>
 					</div>
 
-					{/* Inline Keyboard / Buttons */}
-					<div className={`tg-inline-keyboard kb-${channel}`} role="group" aria-label="Кнопки бота">
-						{activeScreen.buttons.map((row, rowIndex) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: button rows
-							<div className="tg-inline-row" key={`sim-row-${rowIndex}`}>
-								{row.map((btn, btnIndex) => {
-									// Root screen custom CTA label
-									const displayLabel =
-										currentScreenId === "root" &&
-										btn.isPrimary &&
-										customPrimaryActionLabel?.trim()
-											? customPrimaryActionLabel
-											: btn.text;
-
-									let btnClass = "tg-inline-btn";
-									if (btn.isPrimary) btnClass += " tg-btn-primary";
-									if (btn.isDanger) btnClass += " tg-btn-danger";
-
-									return (
-										<button
-											// biome-ignore lint/suspicious/noArrayIndexKey: button in row
-											key={`sim-btn-${rowIndex}-${btnIndex}`}
-											type="button"
-											className={btnClass}
-											onClick={() =>
-												handleButtonClick(btn.action, btn.webApp, btn.url)
-											}
-										>
-											<span>{displayLabel}</span>
-											{btn.url && <ExternalLink size={12} className="tg-link-icon" />}
-										</button>
-									);
-								})}
-							</div>
-						))}
-					</div>
-				</div>
-
-				{/* Bottom Input Bar */}
-				<div className="tg-input-bar">
-					<button
-						type="button"
-						className="tg-menu-pill-btn"
-						onClick={resetToStart}
-						title="Меню бота"
-					>
-						<span>[/] Меню</span>
-					</button>
-
-					<div className="tg-input-field-wrapper">
-						<input
-							type="text"
-							readOnly
-							placeholder="Сообщение..."
-							className="tg-fake-input"
-							onClick={() => showMiniToast("Интерактивный симулятор: кликайте кнопки выше")}
-						/>
-						<button
-							type="button"
-							className="tg-input-icon-btn"
-							onClick={() => showMiniToast("Прикрепление документов / файлов")}
-							title="Вложения"
+					{/* Inline Action Buttons below bubble */}
+					{activeScreen.buttons.length > 0 && (
+						<div
+							className={`tg-inline-keyboard kb-${channel}`}
+							role="group"
+							aria-label="Кнопки бота"
 						>
-							<Paperclip size={17} />
-						</button>
-					</div>
+							{activeScreen.buttons.map((row, rowIndex) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: button rows
+								<div className="tg-inline-row" key={`sim-row-${rowIndex}`}>
+									{row.map((btn, btnIndex) => {
+										const displayLabel =
+											currentScreenId === "root" &&
+											btn.isPrimary &&
+											customPrimaryActionLabel?.trim()
+												? customPrimaryActionLabel
+												: btn.text;
 
-					<button
-						type="button"
-						className="tg-mic-btn"
-						onClick={() => showMiniToast("Голосовое сообщение: распознается медицинским ассистентом DENTE")}
-						title="Голосовое сообщение"
-					>
-						<Mic size={18} />
-					</button>
+										let btnClass = "tg-inline-btn";
+										if (btn.isPrimary) btnClass += " tg-btn-primary";
+										if (btn.isDanger) btnClass += " tg-btn-danger";
+
+										return (
+											<button
+												// biome-ignore lint/suspicious/noArrayIndexKey: button in row
+												key={`sim-btn-${rowIndex}-${btnIndex}`}
+												type="button"
+												className={btnClass}
+												onClick={() =>
+													handleButtonClick(btn.action, btn.webApp, btn.url)
+												}
+											>
+												<span>{displayLabel}</span>
+												{btn.url && (
+													<ExternalLink size={12} className="tg-link-icon" />
+												)}
+											</button>
+										);
+									})}
+								</div>
+							))}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

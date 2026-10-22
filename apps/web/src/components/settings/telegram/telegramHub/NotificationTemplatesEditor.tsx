@@ -77,6 +77,19 @@ export function NotificationTemplatesEditor({
 		showToast("Шаблоны сброшены к стандартным", "info");
 	};
 
+	const handleCopyPreview = async () => {
+		if (!activeTemplate) return;
+		const textToCopy = renderPreviewText(activeTemplate.templateText);
+		try {
+			if (navigator?.clipboard?.writeText) {
+				await navigator.clipboard.writeText(textToCopy);
+			}
+			showToast("Текст сообщения скопирован в буфер", "success");
+		} catch {
+			showToast("Не удалось скопировать в буфер", "error");
+		}
+	};
+
 	// Генерация живого предпросмотра с подстановкой тестовых данных
 	const renderPreviewText = (rawText: string) => {
 		let processed = rawText;
@@ -131,7 +144,6 @@ export function NotificationTemplatesEditor({
 						type="button"
 						className="tg-btn-primary"
 						onClick={handleSave}
-						disabled={!isDirty}
 					>
 						<Save size={14} />
 						<span>Сохранить</span>
@@ -377,6 +389,28 @@ export function NotificationTemplatesEditor({
 									position: "relative",
 								}}
 							>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "flex-end",
+										marginBottom: "6px",
+									}}
+								>
+									<button
+										type="button"
+										onClick={handleCopyPreview}
+										className="tg-btn-secondary"
+										style={{
+											minHeight: "28px",
+											padding: "2px 8px",
+											fontSize: "11px",
+										}}
+										title="Скопировать текст сообщения"
+									>
+										<Copy size={12} />
+										<span>Копировать</span>
+									</button>
+								</div>
 								<div
 									style={{
 										fontSize: "13px",

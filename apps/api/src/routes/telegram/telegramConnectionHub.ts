@@ -163,6 +163,75 @@ export function registerTelegramConnectionHubRoutes(app: FastifyInstance) {
 	});
 
 	/**
+	 * POST /api/telegram/bot-token
+	 * Прямой эндпоинт сохранения и проверки токена Telegram-бота клиники.
+	 */
+	app.post("/api/telegram/bot-token", async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"telegram bot token save",
+		);
+		if (!orgId) return;
+
+		const bodySchema = z.object({
+			token: z.string().trim().min(5, "Токен бота обязателен"),
+			webhookUrl: z.string().trim().url().optional().nullable(),
+			clinicId: z.string().uuid().optional().nullable(),
+		});
+
+		const parsed = bodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				ok: false,
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Некорректный формат токена бота.",
+			});
+		}
+
+		const result = await TelegramBotHostingService.connectBot({
+			organizationId: orgId,
+			botToken: parsed.data.token,
+			webhookBaseUrl: parsed.data.webhookUrl || null,
+			clinicId: parsed.data.clinicId || null,
+			botConfigId: "default",
+		});
+
+		if (!result.ok) {
+			return reply.code(400).send({
+				ok: false,
+				error: "BotConnectionFailed",
+				message: result.error || "Не удалось подключить Telegram-бота.",
+			});
+		}
+
+		return reply.code(200).send({
+			ok: true,
+			connected: true,
+			bot: result.bot,
+			message: "Токен Telegram-бота успешно сохранен и проверен.",
+		});
+	});
+
+	/**
+	 * GET /api/telegram/bot-token
+	 * Проверка статуса токена бота клиники.
+	 */
+	app.get("/api/telegram/bot-token", async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"telegram bot token status",
+		);
+		if (!orgId) return;
+
+		const status = await TelegramBotHostingService.getBotStatus({
+			organizationId: orgId,
+		});
+		return reply.code(200).send(status);
+	});
+
+	/**
 	 * =========================================================================
 	 * TELEGRAM PERSONAL ACCOUNT (MTProto): Вход врача / админа по телефону и QR
 	 * =========================================================================

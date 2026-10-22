@@ -99,7 +99,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	};
 
 	const isMobile = useIsMobile(768);
-	const [mobileSection, setMobileSection] = useState<string>(() => (settingsTab === "telegram" || settingsTab === "messengers") ? "messengers" : (settingsTab && settingsTab !== "clinic" ? settingsTab : "root"));
+	const [mobileSection, setMobileSection] = useState<string>(() => (settingsTab && settingsTab !== "clinic" ? settingsTab : "root"));
+
+	useEffect(() => {
+		if (settingsTab && settingsTab !== "clinic") {
+			setMobileSection(settingsTab);
+		}
+	}, [settingsTab]);
 
 	if (isMobile) {
 		return (

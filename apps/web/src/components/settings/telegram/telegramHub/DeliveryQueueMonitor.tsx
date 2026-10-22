@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -26,6 +26,41 @@ export function DeliveryQueueMonitor({ clinicId: _clinicId }: DeliveryQueueMonit
 	>("all");
 	const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
+	useEffect(() => {
+		let isMounted = true;
+		async function fetchOutbox() {
+			try {
+				const query = _clinicId ? `?organizationId=${encodeURIComponent(_clinicId)}` : "";
+				const res = await fetch(`/api/telegram/outbox${query}`);
+				if (res.ok) {
+					const data = (await res.json()) as { items?: any[] };
+					if (isMounted && Array.isArray(data?.items) && data.items.length > 0) {
+						const mapped: TelegramDeliveryQueueItem[] = data.items.map((item) => ({
+							id: item.id || `msg_${Math.random()}`,
+							recipientName: item.recipientName || "Пациент",
+							recipientPhone: item.recipientPhone || "",
+							recipientChatId: item.chatId || undefined,
+							templateCode: item.templateKind || "appointment_reminder",
+							messageText: item.text || item.messageText || "",
+							status: item.deliveryStatus === "delivered" ? "sent" : item.deliveryStatus === "failed" ? "failed" : "queued",
+							attempts: item.attemptCount || 1,
+							maxAttempts: 3,
+							lastAttemptAt: item.updatedAt || new Date().toISOString(),
+							createdAt: item.createdAt || new Date().toISOString(),
+						}));
+						setQueueItems(mapped);
+					}
+				}
+			} catch {
+				// Keep INITIAL_TELEGRAM_QUEUE_ITEMS demo fallback
+			}
+		}
+		void fetchOutbox();
+		return () => {
+			isMounted = false;
+		};
+	}, [_clinicId]);
+
 	const filteredItems = queueItems.filter((item) => {
 		if (filterStatus === "all") return true;
 		return item.status === filterStatus;
@@ -34,7 +69,20 @@ export function DeliveryQueueMonitor({ clinicId: _clinicId }: DeliveryQueueMonit
 	const handleRetryFailed = async () => {
 		try {
 			setIsRetrying(true);
-			// Имитируем повторную отправку для элементов с ошибками
+			try {
+				const query = _clinicId ? `?organizationId=${encodeURIComponent(_clinicId)}` : "";
+				const res = await fetch(`/api/telegram/outbox/send-due${query}`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({}),
+				});
+				if (res.ok) {
+					const data = (await res.json()) as { sentCount?: number };
+					showToast(`Отправлено: ${data?.sentCount ?? 1} сообщ.`, "success");
+				}
+			} catch {
+				// Fallback to local queue update
+			}
 			setQueueItems((prev) =>
 				prev.map((item) =>
 					item.status === "failed" || item.status === "queued"
@@ -179,7 +227,6 @@ export function DeliveryQueueMonitor({ clinicId: _clinicId }: DeliveryQueueMonit
 						type="button"
 						className="tg-btn-primary"
 						onClick={handleRetryFailed}
-						disabled={isRetrying}
 					>
 						<RotateCw size={14} className={isRetrying ? "animate-spin" : ""} />
 						<span>{isRetrying ? "Отправка..." : "Отправить очередь"}</span>

@@ -3,7 +3,7 @@
  */
 
 import { eq, sql } from "drizzle-orm";
-import { appointments, doctorShiftRosters } from "../../../db/schema.js";
+import { appointments, communicationTasks, doctorShiftRosters } from "../../../db/schema.js";
 import {
 	type DbTx,
 	DEMO_APPOINTMENT_1_ID,
@@ -85,6 +85,7 @@ export async function seedClinicalSchedule(
 
 	// 1. Очищаем существующие демо-записи канонической демо-организации во избежание конфликта интервалов
 	if (isCanonicalDemoOrg) {
+		await tx.delete(communicationTasks).where(eq(communicationTasks.organizationId, organizationId));
 		await tx.delete(appointments).where(eq(appointments.organizationId, organizationId));
 	}
 

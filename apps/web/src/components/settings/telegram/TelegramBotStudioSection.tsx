@@ -172,7 +172,7 @@ export function TelegramBotStudioSection({
 							<Server size={13} aria-hidden="true" /> Облачный хостинг DENTE
 						</span>
 						<span className="tg-pill tg-pill-success">
-							<Lock size={13} aria-hidden="true" /> 152-ФЗ Безопасно: Без ПДн
+							<Lock size={13} aria-hidden="true" /> Конфиденциально и защищено: Без ПДн
 						</span>
 						<span className="tg-pill tg-pill-accent">
 							<Zap size={13} aria-hidden="true" /> Запуск за 60 секунд
@@ -197,16 +197,6 @@ export function TelegramBotStudioSection({
 						>
 							<Sparkles size={16} />
 							<span>Мастер быстрой настройки бота</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleDownloadQuickZip}
-							className="secondary-button tg-hero-btn"
-							title="Скачать открытый исходный код Node.js / Python бота"
-						>
-							<Download size={15} />
-							<span>Скачать исходники бота (ZIP)</span>
 						</button>
 					</div>
 				</div>

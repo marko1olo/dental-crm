@@ -508,7 +508,8 @@ export function AppViewRouter({
 						<SettingsView
 							activeStaffUser={
 								activeStaffUser ??
-								dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "owner" || s.role === "doctor") ??
+								dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "owner") ??
+								dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "doctor") ??
 								dashboard?.clinicSettings?.staff?.[0] ??
 								null
 							}

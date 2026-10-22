@@ -1,5 +1,5 @@
 import { BellRing, Bot, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./SettingsMessengersTab.css";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -69,6 +69,12 @@ export function SettingsMessengersTab({
 		settingsTab === "telegram" ? "telegram" : "cadence",
 	);
 	const [isBotStudioOpen, setIsBotStudioOpen] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (settingsTab === "telegram") {
+			setActiveMessenger("telegram");
+		}
+	}, [settingsTab]);
 
 	if (settingsTab !== "messengers" && settingsTab !== "telegram") return null;
 
