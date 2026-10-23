@@ -1,19 +1,8 @@
-import type React from "react";
 import type { DocumentKind } from "@dental/shared";
-import {
-	FileText,
-	UserCheck,
-	Receipt,
-	FileCheck,
-} from "lucide-react";
-import { DentalForm043 } from "../icons/DentalIcons";
+import type { DocumentCategoryTab } from "./navTabs/types";
 
-export type DocumentCategoryTab =
-	| "all"
-	| "intake"
-	| "clinical"
-	| "finance_tax"
-	| "certificates_sanpin";
+export type { DocumentCategoryTab, DocumentNavTabsProps } from "./navTabs";
+export { DocumentNavTabs } from "./navTabs";
 
 export const DOCUMENT_CATEGORY_KINDS: Record<
 	Exclude<DocumentCategoryTab, "all">,
@@ -63,101 +52,3 @@ export const DOCUMENT_CATEGORY_KINDS: Record<
 		"medical_document_release_receipt",
 	]),
 };
-
-export interface DocumentNavTabsProps {
-	readonly activeTab: DocumentCategoryTab;
-	readonly onSelectTab: (tab: DocumentCategoryTab) => void;
-	readonly counts?: Partial<Record<DocumentCategoryTab, number>> | Record<DocumentCategoryTab, number>;
-}
-
-export function DocumentNavTabs({
-	activeTab,
-	onSelectTab,
-	counts = {} as Record<DocumentCategoryTab, number>,
-}: DocumentNavTabsProps): React.JSX.Element {
-	const tabs: Array<{
-		id: DocumentCategoryTab;
-		label: string;
-		tabletLabel: string;
-		mobileLabel: string;
-		icon: React.ReactNode;
-	}> = [
-		{
-			id: "all",
-			label: "Все документы и реестр",
-			tabletLabel: "Все документы",
-			mobileLabel: "Все",
-			icon: <FileText size={15} aria-hidden="true" className="shrink-0" />,
-		},
-		{
-			id: "intake",
-			label: "Договоры и согласия",
-			tabletLabel: "Договоры и согласия",
-			mobileLabel: "Согласия",
-			icon: <UserCheck size={15} aria-hidden="true" className="shrink-0" />,
-		},
-		{
-			id: "clinical",
-			label: "Архив карт и лечение",
-			tabletLabel: "Архив карт",
-			mobileLabel: "Карты",
-			icon: <DentalForm043 size={15} aria-hidden="true" className="shrink-0" />,
-		},
-		{
-			id: "finance_tax",
-			label: "Справки в налоговую и оплата",
-			tabletLabel: "Справки в налоговую",
-			mobileLabel: "ФНС",
-			icon: <Receipt size={15} aria-hidden="true" className="shrink-0" />,
-		},
-		{
-			id: "certificates_sanpin",
-			label: "Акты, счета и справки",
-			tabletLabel: "Акты и счета",
-			mobileLabel: "Счета",
-			icon: <FileCheck size={15} aria-hidden="true" className="shrink-0" />,
-		},
-	];
-
-	return (
-		<nav
-			className="dente-segmented-bar document-nav-tabs overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x flex flex-nowrap w-full min-w-0"
-			aria-label="Категории документов"
-			role="tablist"
-			onWheel={(e) => {
-				if (e.deltaY !== 0) {
-					e.currentTarget.scrollLeft += e.deltaY;
-				}
-			}}
-		>
-			{tabs.map((tab) => {
-				const isActive = activeTab === tab.id;
-				const count = counts?.[tab.id] ?? 0;
-				return (
-					<button
-						key={tab.id}
-						type="button"
-						role="tab"
-						aria-selected={isActive}
-						data-active={isActive}
-						className={`dente-segmented-item document-nav-tab-btn ${isActive ? "active" : ""}`}
-						onClick={() => onSelectTab(tab.id)}
-					>
-						{tab.icon}
-						<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max text-[12.5px] leading-none">
-							<span className="sm:hidden">{tab.mobileLabel}</span>
-							<span className="hidden sm:inline 2xl:hidden">{tab.tabletLabel}</span>
-							<span className="hidden 2xl:inline">{tab.label}</span>
-						</span>
-						<span
-							className="document-nav-tab-badge text-[11px] h-[18px] min-w-[18px] px-1.5 shrink-0 flex-shrink-0 leading-none inline-flex items-center justify-center font-semibold rounded-full"
-							aria-label={`Количество: ${count}`}
-						>
-							{count}
-						</span>
-					</button>
-				);
-			})}
-		</nav>
-	);
-}

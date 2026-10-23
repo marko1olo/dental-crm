@@ -33,6 +33,7 @@ export interface PaidContractRequiredFieldsInput {
 export interface PaidContractRequiredFieldsReview {
 	requiredCount: number;
 	missing: PaidContractMissingField[];
+	readonly canPrint: boolean;
 }
 
 export interface PaidContractRequiredFieldsOptions {
@@ -78,5 +79,6 @@ export function paidContractRequiredFieldsReview(
 	return {
 		requiredCount: checks.length,
 		missing: checks.filter((c) => !c.ok).map(({ field, label, hint }) => ({ field, label, hint })),
+		canPrint: true, // Mandate 8e: Doctor & staff autonomy — never block printing
 	};
 }

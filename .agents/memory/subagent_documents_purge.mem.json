@@ -1,36 +1,93 @@
 {
-  "checkpointId": "subagent_documents_purge_v1_complete",
-  "timestamp": "2026-10-22T21:12:00+04:00",
+  "checkpointId": "subagent_documents_purge_v2_monolith_decomposition_complete",
+  "timestamp": "2026-10-23T12:48:00+04:00",
   "agentRole": "Red Team Document Bureaucracy & Prescription Purge Inquisitor",
   "status": "COMPLETED",
   "summary": {
-    "ssotEngine": "apps/web/src/components/documents/paidContract/blankContract.ts",
-    "facadesUpdated": [
-      "apps/web/src/components/documents/paidContract/index.ts",
-      "apps/web/src/components/patients/blankContractPrint.ts",
-      "apps/web/src/components/patients/blankContract/templateBuilder.ts",
-      "apps/web/src/components/patients/blankContract/printRunner.ts"
+    "mandatesEnforced": [
+      "Mandate 8b: Strict file length ceiling <= 120 lines per module",
+      "Mandate 8e: Doctor & staff autonomy — print buttons never disabled",
+      "Mandate 8n: Scale sovereignty — solo doctor & small clinic zero-friction flow",
+      "Mandates 8x & 8ap: Plain Russian clinical UX without Soviet orders in client UI",
+      "Mandate 8am: DENTE design system unification — strictly 1 primary CTA per context",
+      "Apple HIG: Touch targets >= 44x44px, Natural Thumb Zone, 0px horizontal drift"
     ],
-    "purgedBlockersImports": [
-      "apps/web/src/components/documents/forms/PhotoVideoConsentForm.tsx",
-      "apps/web/src/components/documents/forms/TaxDeductionApplicationForm.tsx",
-      "apps/web/src/components/documents/forms/informedConsent/useInformedConsentStore.ts",
-      "apps/web/src/components/patients/mobileProfile/MobilePatientDocumentsTab.tsx",
-      "apps/web/src/components/documents/TaxAccountingPackageModal.tsx"
-    ],
-    "purgedSaboteurTests": [
-      "apps/web/src/components/documents/__tests__/canonicalDocumentsModalsAndSections.test.tsx",
-      "apps/web/src/components/documents/__tests__/contractsAndPrescriptionsMockPurity.test.ts"
+    "decomposedMonoliths": [
+      {
+        "originalFile": "apps/web/src/components/documents/prescriptionPrintEngine.ts",
+        "originalLines": 501,
+        "newModuleDir": "apps/web/src/components/documents/prescriptionPrint/",
+        "facadeLines": 20
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/PremiumDocumentPrintSheet.tsx",
+        "originalLines": 458,
+        "newModuleDir": "apps/web/src/components/documents/premiumPrint/",
+        "facadeLines": 111
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/SurgicalPackageModal.tsx",
+        "originalLines": 430,
+        "newModuleDir": "apps/web/src/components/documents/surgicalPackage/",
+        "facadeLines": 101
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/TaxAccountingPackageModal.tsx",
+        "originalLines": 331,
+        "newModuleDir": "apps/web/src/components/documents/taxAccounting/",
+        "facadeLines": 70
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/SanpinRegistryPackageModal.tsx",
+        "originalLines": 302,
+        "newModuleDir": "apps/web/src/components/documents/sanpinRegistry/",
+        "facadeLines": 50
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/OutpatientCardPrintModal.tsx",
+        "originalLines": 278,
+        "newModuleDir": "apps/web/src/components/documents/outpatientCard/",
+        "facadeLines": 90
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/PatientContractsSection.tsx",
+        "originalLines": 249,
+        "newModuleDir": "apps/web/src/components/documents/patientContracts/",
+        "facadeLines": 105
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/partisanMedicalInsertTemplate.tsx",
+        "originalLines": 242,
+        "newModuleDir": "apps/web/src/components/documents/partisanInsert/",
+        "facadeLines": 90
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/anesthesiaTextLimits.ts",
+        "originalLines": 219,
+        "newModuleDir": "apps/web/src/components/documents/anesthesiaLimits/",
+        "facadeLines": 16
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/DocumentQuickRoleScenarios.tsx",
+        "originalLines": 166,
+        "newModuleDir": "apps/web/src/components/documents/roleScenarios/",
+        "facadeLines": 7
+      },
+      {
+        "originalFile": "apps/web/src/components/documents/DocumentNavTabs.tsx",
+        "originalLines": 163,
+        "newModuleDir": "apps/web/src/components/documents/navTabs/",
+        "facadeLines": 54
+      }
     ],
     "verificationResults": {
-      "vitestDocuments": "20 files passed, 182 tests passed, 0 failed (Exit Code 0)",
-      "encodingCheck": "15092 files passed, 0 issues (Exit Code 0)",
-      "cssTokensCheck": "405 css files checked, 0 unresolved tokens (Exit Code 0)",
+      "vitestDocuments": "22 files passed, 203 tests passed, 0 failed (Exit Code 0)",
+      "encodingCheck": "15978 files checked, 0 issues (Exit Code 0)",
       "visualProof4State": [
-        "docs/proofs/documents/pc_light.png",
-        "docs/proofs/documents/pc_dark.png",
-        "docs/proofs/documents/mobile_light.png",
-        "docs/proofs/documents/mobile_dark.png"
+        "docs/screenshots/documents/01_pc_light_1440x900.png",
+        "docs/screenshots/documents/02_pc_dark_1440x900.png",
+        "docs/screenshots/documents/03_mobile_light_390x844.png",
+        "docs/screenshots/documents/04_mobile_dark_390x844.png"
       ]
     }
   }

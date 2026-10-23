@@ -1,63 +1,67 @@
-export interface SurgicalPackagePrintOptions {
-	patient: {
-		fullName?: string | null | undefined;
-		birthDate?: string | null | undefined;
-		phone?: string | null | undefined;
-		passport?: string | null | undefined;
-		passportSeries?: string | null | undefined;
-		passportNumber?: string | null | undefined;
-		passportIssuedBy?: string | null | undefined;
-		passportIssuedDate?: string | null | undefined;
-		passportDepartmentCode?: string | null | undefined;
-		snils?: string | null | undefined;
-		address?: string | null | undefined;
-		registrationAddress?: string | null | undefined;
-		cardNumber?: string | null | undefined;
-		gender?: string | null | undefined;
-	} | null | undefined;
-	clinic?: {
-		legalName?: string | null | undefined;
-		clinicName?: string | null | undefined;
-		fullName?: string | null | undefined;
-		shortName?: string | null | undefined;
-		inn?: string | null | undefined;
-		kpp?: string | null | undefined;
-		ogrn?: string | null | undefined;
-		address?: string | null | undefined;
-		actualAddress?: string | null | undefined;
-		licenseNumber?: string | null | undefined;
-		licenseDate?: string | null | undefined;
-		phone?: string | null | undefined;
-		bankName?: string | null | undefined;
-		bik?: string | null | undefined;
-		checkingAccount?: string | null | undefined;
-		corrAccount?: string | null | undefined;
-		directorTitle?: string | null | undefined;
-		directorFullName?: string | null | undefined;
-	} | null | undefined;
-	doctorFullName?: string | null | undefined;
-	operationDetails?: {
-		operationType?: string | null | undefined;
-		toothNumber?: string | number | null | undefined;
-		anestheticName?: string | null | undefined;
-	} | null | undefined;
+import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+
+export interface SurgicalPackageModalProps {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly patient: Patient | null;
+	readonly doctorFullName?: string | null;
+	readonly existingDocuments: GeneratedDocument[];
+	readonly onCreateDocument: (kind: DocumentKind) => void;
+	readonly onOpenDocument: (documentId: string) => void;
+	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: clinic profile settings draft
+	readonly clinicProfileDraft?: any;
 }
 
-export interface SurgicalRequisitesContext {
-	todayFormatted: string;
-	clinicName: string;
-	clinicAddress: string;
-	clinicInn: string;
-	clinicOgrn: string;
-	clinicLicense: string;
-	clinicPhone: string;
-	ptName: string;
-	ptBirthDate: string;
-	ptPhone: string;
-	ptAddress: string;
-	ptPassport: string;
-	docDoctorName: string;
-	opTooth: string;
-	opType: string;
-	anesName: string;
+export interface SurgicalItem {
+	kind: DocumentKind;
+	title: string;
+	statutoryRef: string;
+	description: string;
+	required: boolean;
 }
+
+export const SURGICAL_STATUTORY_ITEMS: readonly SurgicalItem[] = [
+	{
+		kind: "procedure_specific_consent_packet",
+		title: "Согласие на хирургическое вмешательство и имплантацию",
+		statutoryRef: "Информированное согласие пациента",
+		description: "Согласие на операцию удаления зуба, остеотомию, синус-лифтинг, костную пластику или установку имплантатов.",
+		required: true,
+	},
+	{
+		kind: "anesthesia_consent_log",
+		title: "Протокол и согласие на местную/проводниковую анестезию",
+		statutoryRef: "Стандарты безопасности и информированное согласие",
+		description: "Фиксация аллергоанамнеза, типа анестетика (артикаин/мепивакаин), дозировки и отсутствия противопоказаний.",
+		required: true,
+	},
+	{
+		kind: "dental_medical_card_043u",
+		title: "Хирургический протокол операции в карте пациента",
+		statutoryRef: "Протокол операции",
+		description: "Протокол хода операции, гемостаза, наложения швов, используемых шовных и костных материалов.",
+		required: true,
+	},
+	{
+		kind: "xray_cbct_referral",
+		title: "Направление на контрольную рентгенодиагностику / КЛКТ 3D",
+		statutoryRef: "Стандарты безопасности и прейскурант",
+		description: "Контроль позиционирования имплантатов, целостности кортикальной пластинки и дна гайморовой пазухи.",
+		required: true,
+	},
+	{
+		kind: "prescription_medication_order",
+		title: "Рецептурный бланк (антибиотики и НПВС)",
+		statutoryRef: "Назначение лекарств",
+		description: "Назначение превентивной антибактериальной, противовоспалительной, обезболивающей и антигистаминной терапии.",
+		required: true,
+	},
+	{
+		kind: "post_visit_recommendations",
+		title: "Памятка пациента после хирургического вмешательства",
+		statutoryRef: "Закон РФ «О защите прав потребителей» № 2300-1",
+		description: "Правила послеоперационного режима: холод, ванночки с антисептиком, диета, ограничение физнагрузок, гигиена.",
+		required: true,
+	},
+];

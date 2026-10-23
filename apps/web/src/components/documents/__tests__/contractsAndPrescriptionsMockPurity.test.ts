@@ -287,7 +287,13 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			webSrcDir,
 			"components/documents/PremiumDocumentPrintSheet.tsx",
 		);
-		const content = fs.readFileSync(sheetPath, "utf-8");
+		const signaturePath = path.join(
+			webSrcDir,
+			"components/documents/premiumPrint/PremiumPrintSignatureZone.tsx",
+		);
+		const content =
+			fs.readFileSync(sheetPath, "utf-8") +
+			(fs.existsSync(signaturePath) ? fs.readFileSync(signaturePath, "utf-8") : "");
 		assert.ok(
 			content.includes('breakInside: "avoid"'),
 			"PremiumDocumentPrintSheet signatures must have breakInside: 'avoid'",

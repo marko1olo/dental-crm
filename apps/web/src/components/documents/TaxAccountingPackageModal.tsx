@@ -1,73 +1,19 @@
 import type React from "react";
+import type { DocumentKind, GeneratedDocument } from "@dental/shared";
 import {
-	type DocumentKind,
-	type GeneratedDocument,
-	type Patient,
-} from "@dental/shared";
-import {
-	X,
-	CheckCircle2,
-	Clock,
-	PlusCircle,
-	Building,
-	FileCode2,
-	FileSignature,
-	Zap,
-} from "lucide-react";
-import { money } from "../../AppHelpers";
+	type TaxDocumentPayerOption,
+	type TaxAccountingPackageModalProps,
+	type TaxItem,
+	TAX_ACCOUNTING_ITEMS,
+	TaxAccountingHeader,
+	TaxPayerYearControls,
+	TaxChecklistSection,
+	TaxFnsXmlBanner,
+	TaxAccountingFooter,
+} from "./taxAccounting/index";
 
-export interface TaxDocumentPayerOption {
-	key: string;
-	inn: string;
-	label: string;
-	amountRub: number;
-	paymentCount: number;
-}
-
-export interface TaxAccountingPackageModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly patient: Patient | null;
-	readonly taxYear: number;
-	readonly setTaxYear: (year: number) => void;
-	readonly payerOptions: TaxDocumentPayerOption[];
-	readonly selectedPayerKey: string;
-	readonly onSelectPayerKey: (payerKey: string) => void;
-	readonly existingDocuments: GeneratedDocument[];
-	readonly onCreateDocument: (kind: DocumentKind) => void;
-	readonly onOpenDocument: (documentId: string) => void;
-	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	readonly onOpenFnsXmlModal: () => void;
-	readonly onRequestIssueDocument?: (doc: GeneratedDocument) => void;
-}
-
-interface TaxItem {
-	kind: DocumentKind;
-	title: string;
-	statutoryRef: string;
-	description: string;
-}
-
-const TAX_ACCOUNTING_ITEMS: readonly TaxItem[] = [
-	{
-		kind: "tax_deduction_certificate",
-		title: "Справка для налогового вычета (13% НДФЛ)",
-		statutoryRef: "Унифицированная справка об оплате медицинских услуг",
-		description: "Официальная унифицированная справка для получения социального налогового вычета 13% (НДФЛ).",
-	},
-	{
-		kind: "completed_works_act",
-		title: "Акт выполненных работ / фактически оказанных услуг",
-		statutoryRef: "Договор оказания услуг и перечень выполненных процедур",
-		description: "Акт приема-сдачи медицинских услуг с детализацией проведенных манипуляций, гарантией и подписями сторон.",
-	},
-	{
-		kind: "payment_receipt",
-		title: "Квитанция об оплате и кассовый чек",
-		statutoryRef: "Касса и подтверждения оплаты",
-		description: "Финансовое подтверждение оплаты медицинских услуг с реквизитами платежа и фискального признака.",
-	},
-];
+export type { TaxDocumentPayerOption, TaxAccountingPackageModalProps, TaxItem };
+export { TAX_ACCOUNTING_ITEMS };
 
 export function TaxAccountingPackageModal({
 	isOpen,
@@ -115,216 +61,34 @@ export function TaxAccountingPackageModal({
 			}}
 		>
 			<div className="document-package-modal-content">
-				<div className="document-package-modal-header">
-					<h3 className="document-package-modal-title" id="tax-package-modal-title">
-						<Building className="w-5 h-5 text-indigo-600 inline" />
-						<span>Налоговый вычет и бухгалтерия</span>
-					</h3>
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={onClose}
-						aria-label="Закрыть модальное окно"
-					>
-						<X size={18} aria-hidden="true" />
-					</button>
-				</div>
-
+				<TaxAccountingHeader onClose={onClose} />
 				<div className="document-package-modal-body">
-					{/* Controls for Year and Payer */}
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-							gap: "12px",
-							padding: "12px 16px",
-							background: "var(--surface-100, #f8fafc)",
-							borderRadius: "8px",
-							border: "1px solid var(--line, #e2e8f0)",
-						}}
-					>
-						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: 600 }}>
-							Налоговый год
-							<select
-								value={taxYear}
-								onChange={(e) => setTaxYear(Number(e.target.value))}
-								style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line, #cbd5e1)" }}
-							>
-								<option value={2026}>2026 (вычет 13% НДФЛ)</option>
-								<option value={2025}>2025 (вычет 13% НДФЛ)</option>
-								<option value={2024}>2024 (вычет 13% НДФЛ)</option>
-								<option value={2023}>2023 (архивная справка)</option>
-								<option value={2022}>2022 (архивная справка)</option>
-								<option value={2021}>2021 (архивная справка)</option>
-							</select>
-						</label>
-
-						{(payerOptions ?? []).length > 0 ? (
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: 600 }}>
-								Плательщик (ИНН / Пациент)
-								<select
-									value={selectedPayerKey}
-									onChange={(e) => onSelectPayerKey(e.target.value)}
-									style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line, #cbd5e1)" }}
-								>
-									{payerOptions.map((opt) => (
-										<option key={opt.key} value={opt.key}>
-											{opt.label} · {money(opt.amountRub)} ({opt.paymentCount} чеков)
-										</option>
-									))}
-								</select>
-							</label>
-						) : (
-							<div style={{ display: "flex", alignItems: "center", fontSize: "12px", color: "var(--muted, #64748b)" }}>
-								Пациент: {patient?.fullName || "Не выбран"}
-							</div>
-						)}
-					</div>
-
-					{/* 3 Accounting Documents */}
-					<div className="document-package-checklist">
-						{TAX_ACCOUNTING_ITEMS.map((item) => {
-							const existingList = documentsByKind.get(item.kind) ?? [];
-							const latestDoc = existingList[0];
-							const isIssued = latestDoc?.status === "issued";
-							const isDraft = latestDoc?.status === "draft";
-
-							return (
-								<div className="document-package-item-card" key={item.kind}>
-									<div className="document-package-item-info">
-										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-											{isIssued ? (
-												<CheckCircle2 size={18} color="var(--success-fg, #10b981)" aria-hidden="true" />
-											) : isDraft ? (
-												<Clock size={18} color="var(--warn-fg, #f59e0b)" aria-hidden="true" />
-											) : (
-												<PlusCircle size={18} color="var(--muted, #94a3b8)" aria-hidden="true" />
-											)}
-											<span className="document-package-item-title">{item.title}</span>
-										</div>
-										<span className="document-package-item-sub">
-											<strong>{item.statutoryRef}</strong> — {item.description}
-										</span>
-									</div>
-
-									<div className="document-package-item-actions">
-										{latestDoc ? (
-											<>
-												<button
-													type="button"
-													className="secondary-button"
-													onClick={() => onOpenDocument(latestDoc.id)}
-												>
-													Открыть
-												</button>
-												{isDraft && onRequestIssueDocument && (
-													<button
-														type="button"
-														className="primary-button"
-														onClick={() => {
-															onClose();
-															onRequestIssueDocument(latestDoc);
-														}}
-														data-testid={`btn-issue-tax-doc-${latestDoc.id}`}
-														title="Выдать документ (открыть подтверждение выдачи)"
-													>
-														<FileSignature size={14} aria-hidden="true" />
-														<span>Выдать</span>
-													</button>
-												)}
-												<button
-													type="button"
-													className="secondary-button"
-													onClick={() => {
-														onSelectDocumentKind(item.kind);
-														onClose();
-													}}
-												>
-													{isDraft ? "Редактировать черновик" : "Параметры"}
-												</button>
-											</>
-										) : (
-											<button
-												type="button"
-												className="primary-button"
-												onClick={() => {
-													onSelectDocumentKind(item.kind);
-													onCreateDocument(item.kind);
-												}}
-											>
-												<Zap size={14} aria-hidden="true" />
-												Создать
-											</button>
-										)}
-									</div>
-								</div>
-							);
-						})}
-					</div>
-
-					{/* FNS XML Studio Banner */}
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							padding: "12px 16px",
-							borderRadius: "8px",
-							background: "var(--brand-100, #ccfbf1)",
-							border: "1px solid var(--brand-700, #0d9488)",
-							gap: "12px",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-							<FileCode2 size={24} color="var(--brand-800, #115e59)" aria-hidden="true" />
-							<div>
-								<strong style={{ fontSize: "13px", color: "var(--brand-900, #134e4a)" }}>
-									Электронная выгрузка справки в ФНС (XML-пакет для налоговой)
-								</strong>
-								<div style={{ fontSize: "12px", color: "var(--brand-800, #115e59)" }}>
-									Автоматическая проверка XSD-схемы, ИНН, СНИЛС и формирование файла для отправки через ТКС/ЛК
-								</div>
-							</div>
-						</div>
-						<button
-							type="button"
-							className="primary-button"
-							onClick={() => {
-								onClose();
-								onOpenFnsXmlModal();
-							}}
-						>
-							Открыть XML-студию
-						</button>
-					</div>
+					<TaxPayerYearControls
+						taxYear={taxYear}
+						setTaxYear={setTaxYear}
+						payerOptions={payerOptions}
+						selectedPayerKey={selectedPayerKey}
+						onSelectPayerKey={onSelectPayerKey}
+						patient={patient}
+					/>
+					<TaxChecklistSection
+						documentsByKind={documentsByKind}
+						onOpenDocument={onOpenDocument}
+						onSelectDocumentKind={onSelectDocumentKind}
+						onCreateDocument={onCreateDocument}
+						onRequestIssueDocument={onRequestIssueDocument}
+						onClose={onClose}
+					/>
+					<TaxFnsXmlBanner
+						onOpenFnsXmlModal={onOpenFnsXmlModal}
+						onClose={onClose}
+					/>
 				</div>
-
-				<div className="document-package-modal-footer">
-					<div>
-						{missingKinds.length > 0 ? (
-							<button
-								type="button"
-								className="primary-button"
-								onClick={handleBatchCreate}
-							>
-								<Zap size={16} aria-hidden="true" />
-								Сформировать недостающие ({missingKinds.length})
-							</button>
-						) : (
-							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
-								<CheckCircle2 size={16} aria-hidden="true" />
-								Все документы налогового пакета сформированы
-							</span>
-						)}
-					</div>
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={onClose}
-					>
-						Закрыть
-					</button>
-				</div>
+				<TaxAccountingFooter
+					missingCount={missingKinds.length}
+					onBatchCreate={handleBatchCreate}
+					onClose={onClose}
+				/>
 			</div>
 		</div>
 	);

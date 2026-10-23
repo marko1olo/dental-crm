@@ -51,7 +51,7 @@ export function PaidContractRequiredFieldsPanel({
 					className="btn-missing-fields-print-blank-contract inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg bg-[var(--teal,#0d9488)] text-white font-semibold text-xs cursor-pointer shadow-xs"
 					onClick={() => {
 						if (onPrintBlankContract) onPrintBlankContract();
-						else void printBlankMedicalContract(patient, { doctorName });
+						else void printBlankMedicalContract(patient, { doctorName: doctorName ?? undefined });
 					}}
 					title="Распечатать пустой бланк договора со строками _______ для ручного заполнения"
 				>

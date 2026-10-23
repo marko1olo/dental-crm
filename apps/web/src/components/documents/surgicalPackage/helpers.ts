@@ -1,6 +1,8 @@
 import { escapeHtml, formatDateRu } from "../documentPrintFormatters";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { SurgicalPackagePrintOptions, SurgicalRequisitesContext } from "./types";
+import type { ClinicProfileDraft } from "../../store/clinicProfileStore";
+import type { Patient } from "@dental/shared";
 
 export function buildSurgicalRequisitesContext(options: SurgicalPackagePrintOptions): SurgicalRequisitesContext {
 	const { patient, clinic, doctorFullName, operationDetails } = options;
@@ -39,5 +41,40 @@ export function buildSurgicalRequisitesContext(options: SurgicalPackagePrintOpti
 	return {
 		todayFormatted, clinicName, clinicAddress, clinicInn, clinicOgrn, clinicLicense, clinicPhone,
 		ptName, ptBirthDate, ptPhone, ptAddress, ptPassport, docDoctorName, opTooth, opType, anesName,
+	};
+}
+
+export function buildSurgicalClinic(draft: ClinicProfileDraft | null | undefined) {
+	if (!draft) return null;
+	return {
+		clinicName: draft.clinicName || "Стоматологическая клиника",
+		legalName: draft.legalName || draft.clinicName || "",
+		fullName: draft.legalName || draft.clinicName || "",
+		shortName: draft.clinicName || "",
+		inn: draft.inn || "",
+		ogrn: draft.ogrn || "",
+		licenseNumber: draft.licenseNumber || "",
+		address: draft.address || "",
+		actualAddress: draft.address || "",
+		phone: draft.phone || "",
+	};
+}
+
+export function buildSurgicalPatient(patient: Patient | null | undefined) {
+	if (!patient) return null;
+	const p = patient as any;
+	return {
+		fullName: patient.fullName,
+		birthDate: patient.birthDate,
+		phone: patient.phone,
+		snils: p?.administrativeProfile?.snils || p?.snils,
+		registrationAddress: p?.administrativeProfile?.registrationAddress || p?.address,
+		address: p?.administrativeProfile?.registrationAddress || p?.address,
+		passportSeries: p?.administrativeProfile?.passportSeries,
+		passportNumber: p?.administrativeProfile?.passportNumber,
+		passportIssuedBy: p?.administrativeProfile?.passportIssuedBy,
+		passportIssuedDate: p?.administrativeProfile?.passportIssuedDate,
+		passportDepartmentCode: p?.administrativeProfile?.passportDepartmentCode,
+		gender: p?.gender,
 	};
 }
