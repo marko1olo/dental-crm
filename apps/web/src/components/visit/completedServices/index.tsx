@@ -54,9 +54,18 @@ export const CompletedServicesChecklist: React.FC<
 				<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
 					Отметка выполненного у кресла
 				</h4>
-				<span className="text-[11px] text-slate-500 dark:text-slate-400">
-					Прейскурант услуг
-				</span>
+				<button
+					type="button"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente-open-pricelist"));
+						}
+					}}
+					className="text-[11px] text-teal-600 dark:text-teal-400 hover:underline bg-transparent border-none p-0 cursor-pointer font-medium"
+					title="Открыть полный каталог прейскуранта клиники"
+				>
+					Прейскурант услуг ↗
+				</button>
 			</div>
 			<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
 				{c.visitPatientName ? `Пациент: ${c.visitPatientName}. ` : ""}

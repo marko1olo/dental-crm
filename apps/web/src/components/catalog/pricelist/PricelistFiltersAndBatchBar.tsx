@@ -84,7 +84,7 @@ export const PricelistFiltersAndBatchBar: React.FC<
 
 				<button
 					type="button"
-					className={`pricelist-btn ${isBatchBarOpen ? "pricelist-btn-primary" : ""}`}
+					className={`pricelist-btn ${isBatchBarOpen ? "pricelist-btn-active" : ""}`}
 					style={{
 						minHeight: "36px",
 						height: "36px",

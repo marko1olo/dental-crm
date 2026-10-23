@@ -1,43 +1,39 @@
 {
-  "timestamp": "2026-10-23T12:45:00.000Z",
+  "timestamp": "2026-10-23T20:25:00.000Z",
   "subagent": "Pricelist & Services Catalog Inquisitor",
   "role": "Red Team Architect-Inquisitor",
   "mandates": [
-    "Mandate 8b: Micro-modular DAG decomposition <= 120 lines",
+    "Mandate 8b: Micro-modular DAG decomposition <= 120 lines per file (0 files > 120 lines)",
     "Mandate 8e: Doctor & staff autonomy, zero disabled buttons",
     "Mandate 8n: Solo-doctor and small clinic sovereignty, zero-dead-ends",
     "Mandate 8x: Natural clinical terminology without Soviet order numbers",
     "Mandate 8am: Unified design code, exactly 1 Primary CTA per visible viewport",
     "Mandate 8ap: Zero raw law codes in identifiers and UI",
-    "Mandate 8aq: Mounted directly into live UI",
+    "Mandate 8aq: Mounted directly into live UI (DirectPricelistLauncher)",
     "Mandate 8ze: Apple HIG mobile touch ergonomics (>=44x44px target, >=52px row height, 0px horizontal drift)"
   ],
   "status": "COMPLETED",
   "verification": {
-    "vitest_suites_passed": 5,
-    "vitest_tests_passed": 78,
-    "encoding_check": "16026 files UTF-8 clean without BOM",
+    "vitest_catalog_components": "33 passed (6 test files)",
+    "vitest_service_pricelist_unit": "38 passed (1 test file)",
+    "total_tests_passed": "71 passed, 0 failed",
+    "encoding_check": "19148 files checked, 0 encoding errors (Exit Code 0)",
     "four_state_visual_proofs": {
-      "pc_light": "docs/proofs/catalog/pc_light_1440x900.png",
-      "pc_dark": "docs/proofs/catalog/pc_dark_1440x900.png",
-      "mobile_light": "docs/proofs/catalog/mobile_light_390x844.png",
-      "mobile_dark": "docs/proofs/catalog/mobile_dark_390x844.png"
+      "pc_light": "docs/proofs/pricelist/01_pricelist_pc_light.png",
+      "pc_dark": "docs/proofs/pricelist/02_pricelist_pc_dark.png",
+      "mobile_light": "docs/proofs/pricelist/03_pricelist_mobile_light.png",
+      "mobile_dark": "docs/proofs/pricelist/04_pricelist_mobile_dark.png"
     }
   },
-  "decomposed_modules": [
-    "PricelistServiceFormPriceFields.tsx (104 lines) -> PricelistServiceFormMarginSummary.tsx (34 lines)",
-    "PricelistDataTableRow.tsx (103 lines) -> PricelistDataTableRowProps.ts (22 lines)",
-    "ServicePricelistManagerModal.tsx (48 lines) -> PricelistManagerDialogContainer.tsx (110 lines)",
-    "usePricelistServiceForm.ts (119 lines) -> usePricelistServiceFormState.ts (94 lines)",
-    "useServicePricelistManager.ts (115 lines) -> usePricelistPriceInteractions.ts (71 lines)"
-  ],
-  "terminology_sanitization": {
-    "Order804nCategory": "ServiceCategory (with backwards compatible alias)",
-    "code804n": "statutoryCode (with backward compatibility helper)",
-    "statutoryTitle804n": "statutoryTitle",
-    "STATUTORY_ORDER_804N_PRESETS": "CANONICAL_SERVICE_PRESETS",
-    "BASELINE_804N_PRICELIST_SERVICES": "BASELINE_PRICELIST_SERVICES",
-    "detectCategoryFrom804nCode": "detectCategoryFromServiceCode",
-    "formCode804n": "formStatutoryCode"
+  "decomposed_architecture": {
+    "presets": "Split into 33 modular category files <= 118 lines (consultation, hygiene, therapy, surgery, orthopedics, ortho, pediatric, radiology, packages, dictionary)",
+    "servicePricelist": "Split into 22 engine modules <= 115 lines (synonyms, csv IO, unstructured parser, profitability, search & sort, validators)",
+    "styles": "Split into 17 CSS modules <= 105 lines in apps/web/src/components/catalog/pricelist/styles/",
+    "hooks_and_state": "usePricelistServiceForm.ts (108 lines), useServicePricelistManager.ts (115 lines), usePricelistToast.ts (22 lines)"
+  },
+  "visual_and_hig_fixes": {
+    "mobile_card_layout": "Scoped desktop table to @media (min-width: 769px) and enforced mobile cards on <= 768px via pricelistMobileLayout.css",
+    "header_actions": "Removed inline flexWrap: wrap causing button stacks; unified single-row swipe actions with >=44x44px touch targets",
+    "cta_buttons": "Exactly 1 Primary CTA (#10b981 emerald), zero disabled buttons (warranty 0 rub button in 1 tap)"
   }
 }

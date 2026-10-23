@@ -1,0 +1,58 @@
+/**
+ * DENTE Dental CRM — Service Catalog Category Sidebar Styles
+ */
+
+.pricelist-category-sidebar {
+	width: 240px;
+	border-right: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	overflow-y: auto;
+	padding: 0.75rem 0.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex-shrink: 0;
+}
+
+.category-nav-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.35rem 0.65rem;
+	min-height: 32px;
+	border-radius: 6px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--ink, #0f172a);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+}
+
+.category-nav-btn:hover {
+	background: var(--surface, #f1f5f9);
+}
+
+.category-nav-btn.active {
+	background: var(--paper, #ffffff);
+	border-color: var(--line, #e2e8f0);
+	color: var(--brand-500, #3b82f6);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.category-nav-count {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	padding: 0.125rem 0.375rem;
+	border-radius: 10px;
+	background: var(--surface, #e2e8f0);
+	color: var(--muted, #64748b);
+}
+
+.category-nav-btn.active .category-nav-count {
+	background: rgba(59, 130, 246, 0.15);
+	color: var(--brand-500, #3b82f6);
+}

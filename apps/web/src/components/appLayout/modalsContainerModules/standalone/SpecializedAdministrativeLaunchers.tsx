@@ -11,11 +11,26 @@ import { renderTreatmentPlanLaunchers } from "./administrative/TreatmentPlanLaun
 import { renderFamilyBillingLaunchers } from "./administrative/FamilyBillingLaunchers";
 import { renderCashierFinanceLaunchers } from "./administrative/CashierFinanceLaunchers";
 import { renderDoctorWalletLaunchers } from "./administrative/DoctorWalletLaunchers";
+import { renderWarehouseMdlpLaunchers } from "./administrative/WarehouseMdlpLaunchers";
+import { renderDocumentsStandaloneLauncher } from "./administrative/DocumentsStandaloneLauncher";
+import { renderPricelistStandaloneLauncher } from "./administrative/PricelistStandaloneLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Прейскурант и каталог услуг (?pricelist=1, ?catalog=1)
+	const pricelist = renderPricelistStandaloneLauncher();
+	if (pricelist) return pricelist;
+
+	// 0. Реестр документов и бланков (?documents=1, ?docs=1)
+	const docs = renderDocumentsStandaloneLauncher();
+	if (docs) return docs;
+
+	// 0. Склад материалов и маркировка Честный Знак / МДЛП (?inventory=1, ?mdlp=1)
+	const warehouseMdlp = renderWarehouseMdlpLaunchers();
+	if (warehouseMdlp) return warehouseMdlp;
 
 	// 1. ЕГИСЗ РЭМД, подбор слотов и ДМС гарантийные письма
 	const compliance = renderReportsComplianceLaunchers(props);

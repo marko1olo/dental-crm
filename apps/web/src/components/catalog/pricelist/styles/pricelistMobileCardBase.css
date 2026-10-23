@@ -1,0 +1,52 @@
+/**
+ * DENTE Dental CRM — Service Catalog Mobile Card Base Styles
+ */
+
+@media (min-width: 769px) {
+	.pricelist-desktop-table-view {
+		display: block;
+		width: 100%;
+	}
+
+	.pricelist-mobile-cards-view {
+		display: none;
+	}
+}
+
+.pricelist-bottom-sheet-handle-bar {
+	display: none;
+}
+
+.pricelist-bottom-sheet-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, #94a3b8);
+	opacity: 0.6;
+}
+
+.pricelist-mobile-grouped-list {
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+}
+
+.pricelist-mobile-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 0.875rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+}
+
+.pricelist-mobile-card.selected {
+	border-color: var(--brand-500, #3b82f6);
+	background: rgba(59, 130, 246, 0.04);
+}

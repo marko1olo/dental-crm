@@ -1,0 +1,123 @@
+import { type ServiceCategory } from "@dental/shared";
+
+export const VALID_SERVICE_CATEGORIES = [
+	"therapy",
+	"prosthetics",
+	"surgery",
+	"orthodontics",
+	"hygiene",
+	"periodontology",
+	"imaging",
+	"consultation",
+	"documents",
+	"other",
+] as const;
+
+export const STATUTORY_CATEGORY_CODES: Record<ServiceCategory, string> = {
+	therapy: "A16.07.002",
+	prosthetics: "A16.07.004",
+	surgery: "A16.07.001",
+	orthodontics: "A16.07.048",
+	hygiene: "A16.07.051",
+	periodontology: "A16.07.018",
+	imaging: "A06.07.007",
+	consultation: "B01.065.001",
+	documents: "B01.065.001",
+	other: "A16.07.002",
+};
+
+export const STATUTORY_CATEGORY_DURATIONS: Record<ServiceCategory, number> = {
+	therapy: 45,
+	prosthetics: 60,
+	surgery: 45,
+	orthodontics: 30,
+	hygiene: 60,
+	periodontology: 45,
+	imaging: 15,
+	consultation: 30,
+	documents: 15,
+	other: 30,
+};
+
+export const SERVICE_CATEGORIES_METADATA = [
+	{
+		id: "therapy" as const,
+		label: "Терапевтическая стоматология",
+		shortLabel: "Терапия",
+		statutoryCodePrefix: "A16.07.002",
+		specialty: "therapist",
+		description: "Лечение кариеса, пульпита, периодонтита, реставрация и эндодонтия.",
+	},
+	{
+		id: "prosthetics" as const,
+		label: "Ортопедическая стоматология",
+		shortLabel: "Ортопедия",
+		statutoryCodePrefix: "A16.07.004",
+		specialty: "orthopedist",
+		description: "Протезирование, коронки, виниры, мостовидные протезы и вкладки.",
+	},
+	{
+		id: "surgery" as const,
+		label: "Хирургическая стоматология и имплантология",
+		shortLabel: "Хирургия",
+		statutoryCodePrefix: "A16.07.001",
+		specialty: "surgeon",
+		description: "Удаление зубов, дентальная имплантация, синус-лифтинг.",
+	},
+	{
+		id: "orthodontics" as const,
+		label: "Ортодонтия",
+		shortLabel: "Ортодонтия",
+		statutoryCodePrefix: "A16.07.048",
+		specialty: "orthodontist",
+		description: "Исправление прикуса, брекет-системы, элайнеры.",
+	},
+	{
+		id: "hygiene" as const,
+		label: "Профессиональная гигиена и профилактика",
+		shortLabel: "Гигиена",
+		statutoryCodePrefix: "A16.07.051",
+		specialty: "hygienist",
+		description: "Ультразвуковая чистка, Air-Flow, полировка, реминерализация.",
+	},
+	{
+		id: "periodontology" as const,
+		label: "Пародонтология",
+		shortLabel: "Пародонтология",
+		statutoryCodePrefix: "A16.07.018",
+		specialty: "periodontist",
+		description: "Лечение гингивита, пародонтита, кюретаж, шинирование.",
+	},
+	{
+		id: "imaging" as const,
+		label: "Лучевая диагностика и рентгенология",
+		shortLabel: "Диагностика",
+		statutoryCodePrefix: "A06.07.007",
+		specialty: "radiologist",
+		description: "Прицельная визиография RVG, панорамная ОПТГ, КЛКТ 3D.",
+	},
+	{
+		id: "consultation" as const,
+		label: "Консультация и прием врача",
+		shortLabel: "Консультация",
+		statutoryCodePrefix: "B01.065.001",
+		specialty: "universal",
+		description: "Первичный и повторный осмотр, составление плана лечения.",
+	},
+	{
+		id: "documents" as const,
+		label: "Официальные медицинские документы",
+		shortLabel: "Документы",
+		statutoryCodePrefix: "B01.065.001",
+		specialty: "universal",
+		description: "Медицинская карта приёма, справки в ФНС для вычета (КНД 1151156).",
+	},
+	{
+		id: "other" as const,
+		label: "Прочие стоматологические услуги",
+		shortLabel: "Прочее",
+		statutoryCodePrefix: "A16.07.002",
+		specialty: "universal",
+		description: "Анестезия, изолирующие системы коффердам, сервисное обслуживание.",
+	},
+] as const;

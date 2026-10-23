@@ -1,0 +1,104 @@
+/**
+ * DENTE Dental CRM — Service Catalog Buttons & Footer Styles
+ */
+
+/* Editable Price Cell */
+.price-input-quick {
+	width: 90px;
+	height: 30px;
+	padding: 0 0.5rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 6px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	outline: none;
+}
+
+.price-input-quick:focus {
+	border-color: var(--brand-500, #3b82f6);
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Action Buttons */
+.pricelist-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	padding: 0.35rem 0.75rem;
+	min-height: 32px;
+	border-radius: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.pricelist-btn:hover {
+	background: var(--surface);
+}
+
+.pricelist-btn-active {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.pricelist-btn-primary {
+	background: var(--brand-500, var(--teal));
+	color: #ffffff;
+	border-color: var(--brand-500, var(--teal));
+}
+
+.pricelist-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.pricelist-btn-ok {
+	background: var(--ok-fg, var(--teal));
+	color: #ffffff;
+	border-color: var(--ok-fg, var(--teal));
+}
+
+.pricelist-btn-ok:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.pricelist-btn-icon {
+	padding: 0;
+	width: 32px;
+	height: 32px;
+	min-height: 32px;
+	border-radius: 6px;
+}
+
+/* Footer Legal & Stats Bar */
+.pricelist-footer-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1.25rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	flex-shrink: 0;
+}
+
+.pricelist-footer-legal {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.pricelist-legal-icon {
+	color: var(--brand-500, #3b82f6);
+}

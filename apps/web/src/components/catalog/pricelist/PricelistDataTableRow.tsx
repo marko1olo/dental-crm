@@ -80,7 +80,7 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
 			</td>
 			<td style={{ textAlign: "center" }}>
 				<span className={`margin-badge ${prof.level}`}>
-					{prof.marginPercent}%
+					{Number.isFinite(prof.marginPercent) ? prof.marginPercent : 0}%
 				</span>
 			</td>
 			<td

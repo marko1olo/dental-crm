@@ -1,0 +1,21 @@
+/**
+ * DENTE Dental CRM — Service Catalog Tablet Layout Styles (<= 900px)
+ */
+
+@media (max-width: 900px) {
+	.pricelist-main-layout {
+		flex-direction: column;
+	}
+	.pricelist-category-sidebar {
+		width: 100%;
+		border-right: none;
+		border-bottom: 1px solid var(--line, #e2e8f0);
+		flex-direction: row;
+		overflow-x: auto;
+		padding: 0.5rem;
+	}
+	.category-nav-btn {
+		min-width: 160px;
+		flex-shrink: 0;
+	}
+}

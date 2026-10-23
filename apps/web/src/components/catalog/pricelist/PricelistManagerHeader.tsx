@@ -41,7 +41,7 @@ export const PricelistManagerHeader: React.FC<PricelistManagerHeaderProps> = (
 						Прейскурант услуг
 					</div>
 					<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-						{totalCount} позиций · Классификатор Минздрава РФ · НДС 0%
+						{totalCount} позиций · Каталог процедур клиники · НДС 0%
 					</div>
 				</div>
 				<div

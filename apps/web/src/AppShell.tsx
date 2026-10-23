@@ -3,12 +3,17 @@ import { lazy, Suspense, useEffect } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
+import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
+import { DirectDocumentsLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/DocumentsStandaloneLauncher";
+import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
 import "./theme.css";
 
-const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
+const DentalWorkspace = lazy(() =>
+	import("./App").then((module) => ({ default: module.App })),
+);
 
 const DiagnosticDrawer = lazy(() =>
 	import("./components/diagnostics/DiagnosticDrawer").then((module) => ({
@@ -74,6 +79,9 @@ export function AppShell() {
 				<DentalWorkspace />
 			</Suspense>
 			<DirectMedicalInsertLauncher />
+			<DirectPricelistLauncher />
+			<DirectDocumentsLauncher />
+			<DirectConsentLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

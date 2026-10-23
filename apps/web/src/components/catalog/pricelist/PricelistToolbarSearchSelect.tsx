@@ -53,15 +53,15 @@ export const PricelistToolbarSearchSelect: React.FC<
 				title="Мгновенный выбор популярной услуги"
 			>
 				<option value="">Быстрый выбор услуги...</option>
-				<option value="B01.065.001">Б01.065.001 Прием / Консультация</option>
-				<option value="A16.07.002">A16.07.002 Кариес</option>
-				<option value="A16.07.008">A16.07.008 Пульпит</option>
-				<option value="A11.07.012">A11.07.012 Анестезия</option>
-				<option value="A06.07.003">A06.07.003 Снимок / ОПТГ</option>
-				<option value="A16.07.054">A16.07.054 Имплантация</option>
-				<option value="A16.07.004">A16.07.004 Коронка</option>
-				<option value="A16.07.001">A16.07.001 Удаление</option>
-				<option value="A16.07.051">A16.07.051 Профессиональная гигиена</option>
+				<option value="Консультация">Прием / Консультация</option>
+				<option value="Кариес">Лечение кариеса</option>
+				<option value="Пульпит">Лечение пульпита</option>
+				<option value="Анестезия">Местная анестезия</option>
+				<option value="Снимок">Рентген / Снимок</option>
+				<option value="Имплантация">Дентальная имплантация</option>
+				<option value="Коронка">Коронка / Протезирование</option>
+				<option value="Удаление">Удаление зуба</option>
+				<option value="Гигиена">Профессиональная гигиена</option>
 			</select>
 		</>
 	);

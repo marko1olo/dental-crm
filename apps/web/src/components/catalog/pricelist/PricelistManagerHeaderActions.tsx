@@ -28,16 +28,10 @@ export const PricelistManagerHeaderActions: React.FC<
 	return (
 		<div
 			className="pricelist-header-actions"
-			style={{
-				display: "flex",
-				alignItems: "center",
-				gap: "6px",
-				flexWrap: "wrap",
-			}}
 		>
 			<button
 				type="button"
-				className="pricelist-btn"
+				className="pricelist-btn pricelist-btn-primary"
 				onClick={onOpenAdd}
 				title="Добавить новую услугу в прейскурант"
 				style={{
@@ -45,10 +39,11 @@ export const PricelistManagerHeaderActions: React.FC<
 					height: "36px",
 					gap: "6px",
 					padding: "0 0.875rem",
+					fontWeight: 600,
 				}}
 			>
 				<Plus size={15} />
-				<span>Добавить услугу</span>
+				<span>+ Добавить услугу</span>
 			</button>
 			<button
 				type="button"
@@ -92,18 +87,17 @@ export const PricelistManagerHeaderActions: React.FC<
 			</button>
 			<button
 				type="button"
-				className="pricelist-btn pricelist-btn-primary"
+				className="pricelist-btn"
 				onClick={onSaveAndClose}
 				style={{
 					minHeight: "36px",
 					height: "36px",
 					gap: "6px",
 					padding: "0 1rem",
-					fontWeight: 600,
 				}}
 			>
 				<Check size={16} />
-				<span>✓ Сохранить</span>
+				<span>Сохранить</span>
 			</button>
 			<button
 				type="button"

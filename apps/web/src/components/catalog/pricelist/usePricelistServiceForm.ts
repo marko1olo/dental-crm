@@ -4,11 +4,8 @@ import {
 	calculateAllTierStrings,
 	parseTierPricesRecord,
 } from "./pricelistTierPricesHelper";
-import { detectCategoryFromServiceCode } from "./servicePricelistEngine";
-import {
-	CANONICAL_SERVICE_PRESETS,
-	type ServicePricelistItem,
-} from "./servicePricelistPresets";
+import { matchServiceCode } from "./pricelistFormCodeMatcher";
+import type { ServicePricelistItem } from "./servicePricelistPresets";
 import { usePricelistServiceFormState } from "./usePricelistServiceFormState";
 
 export function usePricelistServiceForm(
@@ -32,28 +29,19 @@ export function usePricelistServiceForm(
 
 	const handleCodeChange = (newCode: string) => {
 		s.setFormStatutoryCode(newCode);
-		const trimmed = newCode.trim().toUpperCase();
-		if (!trimmed) return;
-		const match = CANONICAL_SERVICE_PRESETS.find(
-			(p) => (p.statutoryCode || p.code804n).toUpperCase() === trimmed,
+		const info = matchServiceCode(
+			newCode,
+			s.formCommercialTitle,
+			s.formStatutoryTitle,
+			Boolean(editingItem),
 		);
-		if (match) {
-			const title = match.statutoryTitle || match.statutoryTitle804n;
-			if (!s.formStatutoryTitle || s.formStatutoryTitle === s.formCommercialTitle)
-				s.setFormStatutoryTitle(title);
-			s.setFormCategory(match.category);
-			s.setFormSpecialty(match.specialty);
-			if (match.icd10Indications.length > 0 && !s.formIcd10)
-				s.setFormIcd10(match.icd10Indications.join(", "));
-			if (match.estimatedDurationMin && !editingItem)
-				s.setFormDurationMin(match.estimatedDurationMin);
-		} else {
-			const detected = detectCategoryFromServiceCode(
-				trimmed,
-				s.formCommercialTitle,
-			);
-			if (detected !== "other") s.setFormCategory(detected);
-		}
+		if (!info) return;
+		if (info.statutoryTitle) s.setFormStatutoryTitle(info.statutoryTitle);
+		if (info.category) s.setFormCategory(info.category);
+		if (info.specialty) s.setFormSpecialty(info.specialty);
+		if (info.icd10 && !s.formIcd10) s.setFormIcd10(info.icd10);
+		if (info.durationMin) s.setFormDurationMin(info.durationMin);
+		if (info.detectedCategory) s.setFormCategory(info.detectedCategory);
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -70,10 +58,7 @@ export function usePricelistServiceForm(
 				materialCostRub: parseFloat(s.formMaterialCostRub.replace(",", ".")) || 0,
 				labCostRub: parseFloat(s.formLabCostRub.replace(",", ".")) || 0,
 				durationMin: s.formDurationMin,
-				icd10List: s.formIcd10
-					.split(",")
-					.map((str) => str.trim().toUpperCase())
-					.filter(Boolean),
+				icd10List: s.formIcd10.split(",").map((str) => str.trim().toUpperCase()).filter(Boolean),
 				tierPrices: parseTierPricesRecord({
 					vip: s.formVipPrice,
 					dms: s.formDmsPrice,
@@ -87,7 +72,7 @@ export function usePricelistServiceForm(
 
 	return {
 		formStatutoryCode: s.formStatutoryCode,
-		formCode804n: s.formStatutoryCode, // Backwards-compatible alias
+		formCode804n: s.formStatutoryCode,
 		formCommercialTitle: s.formCommercialTitle,
 		setFormCommercialTitle: s.setFormCommercialTitle,
 		formStatutoryTitle: s.formStatutoryTitle,

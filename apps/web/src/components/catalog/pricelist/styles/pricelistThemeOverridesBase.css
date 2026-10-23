@@ -1,0 +1,99 @@
+/**
+ * DENTE Dental CRM — Service Catalog Multi-Theme Base Overrides
+ */
+
+[data-theme="dark"] .pricelist-modal-container,
+[data-theme="night"] .pricelist-modal-container,
+[data-theme="cyber_xray"] .pricelist-modal-container,
+[data-theme="contrast"] .pricelist-modal-container {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-modal-header,
+[data-theme="night"] .pricelist-modal-header,
+[data-theme="cyber_xray"] .pricelist-modal-header,
+[data-theme="contrast"] .pricelist-modal-header {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-toolbar,
+[data-theme="night"] .pricelist-toolbar,
+[data-theme="cyber_xray"] .pricelist-toolbar,
+[data-theme="contrast"] .pricelist-toolbar {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-search-input,
+[data-theme="night"] .pricelist-search-input,
+[data-theme="cyber_xray"] .pricelist-search-input,
+[data-theme="contrast"] .pricelist-search-input {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-tier-segmented,
+[data-theme="night"] .pricelist-tier-segmented,
+[data-theme="cyber_xray"] .pricelist-tier-segmented,
+[data-theme="contrast"] .pricelist-tier-segmented {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .tier-segment-btn,
+[data-theme="night"] .tier-segment-btn,
+[data-theme="cyber_xray"] .tier-segment-btn,
+[data-theme="contrast"] .tier-segment-btn {
+	color: var(--ink-muted, #cbd5e1);
+}
+
+[data-theme="dark"] .tier-segment-btn.active,
+[data-theme="night"] .tier-segment-btn.active,
+[data-theme="cyber_xray"] .tier-segment-btn.active,
+[data-theme="contrast"] .tier-segment-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+[data-theme="dark"] .pricelist-category-sidebar,
+[data-theme="night"] .pricelist-category-sidebar,
+[data-theme="cyber_xray"] .pricelist-category-sidebar,
+[data-theme="contrast"] .pricelist-category-sidebar {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .category-nav-btn,
+[data-theme="night"] .category-nav-btn,
+[data-theme="cyber_xray"] .category-nav-btn,
+[data-theme="contrast"] .category-nav-btn {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .category-nav-btn:hover,
+[data-theme="night"] .category-nav-btn:hover,
+[data-theme="cyber_xray"] .category-nav-btn:hover,
+[data-theme="contrast"] .category-nav-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .category-nav-btn.active,
+[data-theme="night"] .category-nav-btn.active,
+[data-theme="cyber_xray"] .category-nav-btn.active,
+[data-theme="contrast"] .category-nav-btn.active {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--teal, #2dd4bf);
+}
+
+[data-theme="dark"] .category-nav-count,
+[data-theme="night"] .category-nav-count,
+[data-theme="cyber_xray"] .category-nav-count,
+[data-theme="contrast"] .category-nav-count {
+	background: var(--paper, #0f172a);
+	color: var(--ink-muted, #cbd5e1);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
 	PricelistSortDirection,
 	PricelistSortField,
@@ -12,6 +12,7 @@ import {
 } from "./servicePricelistPresets";
 import { usePricelistFilterAndSlice } from "./usePricelistFilterAndSlice";
 import { usePricelistPriceInteractions } from "./usePricelistPriceInteractions";
+import { usePricelistToast } from "./usePricelistToast";
 
 export function useServicePricelistManager(
 	initialItems: readonly ServicePricelistItem[] = CANONICAL_SERVICE_PRESETS,
@@ -20,39 +21,23 @@ export function useServicePricelistManager(
 ) {
 	const [items, setItems] =
 		useState<readonly ServicePricelistItem[]>(initialItems);
-	const [selectedCategory, setSelectedCategory] = useState<
-		ServiceCategory | "all"
-	>("all");
-	const [selectedSpecialty, setSelectedSpecialty] = useState<
-		DoctorSpecialty | "all"
-	>("all");
+	const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | "all">("all");
+	const [selectedSpecialty, setSelectedSpecialty] = useState<DoctorSpecialty | "all">("all");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [activeTier, setActiveTier] = useState<PriceTierKind>("standard");
-	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-		new Set(),
-	);
+	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const [editingItem, setEditingItem] = useState<ServicePricelistItem | null>(
-		null,
-	);
+	const [editingItem, setEditingItem] = useState<ServicePricelistItem | null>(null);
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 	const [isBatchBarOpen, setIsBatchBarOpen] = useState(false);
 	const [sortField, setSortField] = useState<PricelistSortField>("code");
-	const [sortDirection, setSortDirection] =
-		useState<PricelistSortDirection>("asc");
-	const [toastMessage, setToastMessage] = useState<string | null>(null);
-	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [sortDirection, setSortDirection] = useState<PricelistSortDirection>("asc");
+	const { toastMessage, showToast } = usePricelistToast();
 
 	useEffect(() => {
 		if (isOpen && initialItems && initialItems.length > 0)
 			setItems(initialItems);
 	}, [isOpen, initialItems]);
-
-	const showToast = (msg: string) => {
-		if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-		setToastMessage(msg);
-		toastTimerRef.current = setTimeout(() => setToastMessage(null), 3000);
-	};
 
 	const updateAndPersist = (next: readonly ServicePricelistItem[]) => {
 		setItems(next);
