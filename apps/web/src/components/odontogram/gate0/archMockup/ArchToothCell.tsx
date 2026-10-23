@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { Tooth48Container } from "../teeth/tooth48/index";
 import { Tooth47Container } from "../teeth/tooth47/index";
 import { Tooth46Container } from "../Tooth46Container";
 import { ArchToothBadge } from "./ArchToothBadge";
@@ -51,7 +52,8 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 		</div>
 	);
 
-	// Anatomical 2.5D SVG tooth container (upper flipped roots-up; 47/37 dedicated 4-cusp anatomy)
+	// Anatomical 2.5D SVG tooth container (upper flipped roots-up; 48/38 wisdom; 47/37 2nd molar)
+	const isTooth48 = toothNumber === 48 || toothNumber === 38;
 	const isTooth47 = toothNumber === 47 || toothNumber === 37;
 
 	const toothSvg = (
@@ -59,7 +61,14 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 			className="transition-transform duration-150 hover:scale-105 active:scale-95 flex items-center justify-center"
 			style={{ transform: isUpper ? "scaleY(-1)" : "none" }}
 		>
-			{isTooth47 ? (
+			{isTooth48 ? (
+				<Tooth48Container
+					isDark={isDark}
+					zoom={zoom}
+					presetId={presetId}
+					showBadge={false}
+				/>
+			) : isTooth47 ? (
 				<Tooth47Container
 					isDark={isDark}
 					zoom={zoom}
