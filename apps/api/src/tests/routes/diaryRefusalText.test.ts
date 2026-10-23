@@ -164,6 +164,7 @@ describe("отказ дневника приёма объяснён врачу",
 	});
 
 	after(async () => {
+		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 		await app?.close();
 	});
 

@@ -381,11 +381,7 @@ export async function runDiarySigningCeremony(
 		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
 	}
 
-	const effectiveToothForSigning =
-		diary.diagnosisTooth?.trim() ||
-		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.diagnosisIcd10) ||
-		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.statusLocalis) ||
-		Icd10ClinicalValidator.extractEmbeddedTeethFromText(diary.treatmentDescription);
+	const effectiveToothForSigning = diary.diagnosisTooth?.trim() || undefined;
 	const validation = Icd10ClinicalValidator.validate(diary.diagnosisIcd10, effectiveToothForSigning);
 	if (!validation.isValid) {
 		throw new DiarySigningError(validation.errorCode, validation.errorMessage);
