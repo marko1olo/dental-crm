@@ -1,0 +1,92 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Patient Cohorts
+ * Mandate 8b: Strict <= 120 lines per file.
+ * UTF-8 without BOM.
+ */
+
+.marketing-cohorts-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px;
+}
+
+@media (max-width: 600px) {
+	.marketing-cohorts-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.marketing-cohort-card {
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	text-align: left;
+	transition: all 0.15s ease;
+}
+
+.marketing-cohort-card:hover {
+	border-color: var(--teal);
+}
+
+.marketing-cohort-top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.marketing-cohort-name {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--ink);
+	line-height: 1.3;
+	word-break: break-word;
+}
+
+.marketing-cohort-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--paper);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--line);
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.marketing-cohort-desc {
+	font-size: 11px;
+	color: var(--muted);
+	margin: 0;
+	line-height: 1.4;
+}
+
+.marketing-cohort-action {
+	margin-top: 4px;
+	min-height: 32px;
+	padding: 4px 10px;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 8px;
+	cursor: pointer;
+	text-align: left;
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+	transition: all 0.15s ease;
+}
+
+.marketing-cohort-action:hover {
+	background: var(--teal);
+	color: var(--paper-strong, var(--paper));
+	text-decoration: none;
+}

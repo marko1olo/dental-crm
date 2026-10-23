@@ -1,0 +1,77 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Header
+ * Mandate 8b: Strict <= 120 lines per file.
+ * UTF-8 without BOM.
+ */
+
+.marketing-dashboard-page {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	padding: 20px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+	box-sizing: border-box;
+}
+
+.marketing-dashboard-page--embedded {
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.marketing-dashboard-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+}
+
+.marketing-dashboard-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.marketing-dashboard-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+}
+
+.marketing-quiet-telemetry {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11.5px;
+	font-weight: 500;
+	color: var(--muted);
+	padding: 3px 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+}
+
+.marketing-telemetry-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--ok-fg, #10b981);
+}
+
+.marketing-dashboard-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}

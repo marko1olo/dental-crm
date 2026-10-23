@@ -1,0 +1,82 @@
+/* -------------------------------------------
+   MARKETING ROMI TABLE VIEW
+   Co-located component CSS for MarketingRomiTable.tsx
+   Strict <= 120 lines. UTF-8 without BOM.
+   ------------------------------------------- */
+.romi-table-container {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	min-width: 0;
+	max-width: 100%;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.romi-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.romi-table th {
+	background: var(--paper-soft);
+	padding: 10px 12px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--muted);
+	border-bottom: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+.romi-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line);
+	vertical-align: middle;
+}
+
+.romi-row:hover {
+	background: var(--paper-soft);
+}
+
+.romi-channel-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.romi-channel-name {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.romi-channel-badge {
+	font-size: 11px;
+	color: var(--muted);
+}
+
+.romi-cell-input-wrapper {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.romi-table-input {
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	padding: 5px 8px;
+	font-size: 13px;
+	color: var(--ink);
+	width: 110px;
+	transition: border-color 0.15s ease;
+}
+
+.romi-table-input:focus {
+	border-color: var(--teal);
+	outline: none;
+	box-shadow: 0 0 0 2px var(--teal-glow);
+}

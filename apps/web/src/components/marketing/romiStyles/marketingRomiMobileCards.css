@@ -1,0 +1,111 @@
+/* -------------------------------------------
+   MARKETING ROMI MOBILE GROUPED CARDS
+   Co-located component CSS for MarketingRomiTable.tsx
+   Strict <= 120 lines. Apple HIG >= 44px.
+   ------------------------------------------- */
+@media (max-width: 768px) {
+	.marketing-romi-card {
+		padding: 12px;
+		gap: 12px;
+		overflow-x: clip;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.marketing-romi-title {
+		font-size: 15px;
+		line-height: 1.3;
+	}
+
+	.marketing-romi-header-actions {
+		width: 100%;
+		justify-content: flex-start;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.romi-action-btn {
+		min-height: 44px;
+		padding: 10px 14px;
+		font-size: 13px;
+	}
+
+	.romi-delete-btn {
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.romi-table-container {
+		display: none;
+	}
+
+	.romi-mobile-cards-list {
+		display: flex;
+	}
+}
+
+.romi-mobile-cards-list {
+	display: none;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.romi-mobile-card {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.romi-mobile-card-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.romi-mobile-card-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.romi-mobile-card-category {
+	font-size: 11px;
+	color: var(--muted);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	padding: 1px 6px;
+}
+
+.romi-mobile-card-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.romi-mobile-field {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.romi-mobile-field-lbl {
+	font-size: 10.5px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+}
+
+.romi-mobile-field-val {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+}

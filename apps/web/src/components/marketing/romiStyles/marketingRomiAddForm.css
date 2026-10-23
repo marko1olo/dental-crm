@@ -1,0 +1,69 @@
+/* -------------------------------------------
+   MARKETING ROMI ADD CHANNEL FORM
+   Co-located component CSS for MarketingRomiTable.tsx
+   Strict <= 120 lines. UTF-8 without BOM.
+   ------------------------------------------- */
+.romi-add-form {
+	background: var(--paper-soft);
+	border: 1.5px solid var(--teal);
+	border-radius: 8px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.romi-add-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.romi-add-grid {
+	display: grid;
+	grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+	gap: 10px;
+}
+
+@media (max-width: 800px) {
+	.romi-add-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 500px) {
+	.romi-add-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.romi-form-label {
+	display: block;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--muted);
+	margin-bottom: 4px;
+}
+
+.romi-input {
+	width: 100%;
+	box-sizing: border-box;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	padding: 6px 10px;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.romi-input:focus {
+	border-color: var(--teal);
+	outline: none;
+}
+
+.romi-add-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}

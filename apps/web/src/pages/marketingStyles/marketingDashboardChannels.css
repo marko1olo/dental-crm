@@ -1,0 +1,94 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Acquisition Channels
+ * Mandate 8b: Strict <= 120 lines per file.
+ * UTF-8 without BOM.
+ */
+
+.marketing-channels-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.marketing-channel-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid transparent;
+	transition: all 0.15s ease;
+}
+
+.marketing-channel-row:hover {
+	border-color: var(--line);
+	background: var(--paper-soft);
+}
+
+.marketing-channel-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1;
+}
+
+.marketing-channel-bullet {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--teal);
+	flex-shrink: 0;
+}
+
+.marketing-channel-name {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.marketing-channel-stats {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-shrink: 0;
+}
+
+.marketing-channel-metric {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 1px;
+}
+
+.marketing-channel-metric-val {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.marketing-channel-metric-sub {
+	font-size: 10px;
+	color: var(--muted);
+}
+
+.marketing-channel-bar-wrap {
+	width: 100%;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--line);
+	overflow: hidden;
+	margin-top: 4px;
+}
+
+.marketing-channel-bar {
+	height: 100%;
+	background: var(--teal);
+	border-radius: 2px;
+	transition: width 0.3s ease;
+}

@@ -1,0 +1,79 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Top KPIs Strip
+ * Mandate 8b: Strict <= 120 lines per file.
+ * UTF-8 without BOM.
+ */
+
+.marketing-dashboard-kpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+}
+
+@media (max-width: 900px) {
+	.marketing-dashboard-kpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+	}
+}
+
+.marketing-kpi-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	position: relative;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.marketing-kpi-card:hover {
+	border-color: var(--line-strong, var(--line));
+}
+
+.marketing-kpi-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.marketing-kpi-label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+	margin: 0;
+}
+
+.marketing-kpi-icon {
+	color: var(--teal);
+	opacity: 0.85;
+}
+
+.marketing-kpi-value {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: var(--ink);
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+
+.marketing-kpi-sub {
+	font-size: 11px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	gap: 4px;
+}
+
+.marketing-kpi-sub strong {
+	white-space: nowrap;
+}
+
+.marketing-kpi-tag-good {
+	color: var(--ok-fg, #10b981);
+	font-weight: 600;
+}

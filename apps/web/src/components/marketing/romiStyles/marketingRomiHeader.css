@@ -1,0 +1,102 @@
+/* -------------------------------------------
+   MARKETING ROMI HEADER & ACTIONS
+   Co-located component CSS for MarketingRomiTable.tsx
+   Strict <= 120 lines. UTF-8 without BOM.
+   ------------------------------------------- */
+.marketing-romi-container {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.marketing-romi-card {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: var(--shadow);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px;
+	margin-bottom: 20px;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow-x: clip;
+}
+
+.marketing-romi-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.marketing-romi-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.marketing-romi-title-row svg {
+	width: 22px;
+	height: 22px;
+	color: var(--teal-dark);
+}
+
+.marketing-romi-title {
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+}
+
+.marketing-romi-subtitle {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 4px 0 0 0;
+	line-height: 1.4;
+}
+
+.marketing-romi-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.romi-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 36px;
+	transition: all 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.romi-action-btn.primary {
+	background: var(--teal);
+	color: var(--on-teal, var(--paper));
+}
+
+.romi-action-btn.primary:hover {
+	background: var(--teal-dark);
+}
+
+.romi-action-btn.secondary {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong);
+}
+
+.romi-action-btn.secondary:hover {
+	background: var(--line);
+}

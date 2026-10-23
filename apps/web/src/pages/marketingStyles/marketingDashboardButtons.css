@@ -1,0 +1,72 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Buttons & Action Controls
+ * Mandate 8b: Strict <= 120 lines per file.
+ * UTF-8 without BOM.
+ */
+
+.marketing-header-csv-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.marketing-header-csv-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+}
+
+.marketing-header-promo-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 14px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.marketing-modal-link {
+	min-height: 32px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.marketing-modal-link:hover {
+	background: var(--teal);
+	color: var(--paper-strong, var(--paper));
+	text-decoration: none;
+}
+
+.marketing-period-label-short {
+	display: none;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .marketing-dashboard-page {
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}

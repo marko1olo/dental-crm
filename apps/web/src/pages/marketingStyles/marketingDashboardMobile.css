@@ -1,0 +1,76 @@
+/**
+ * DENTE Dental CRM — Marketing Dashboard Mobile Touch Adaptations
+ * Mandate 8b: Strict <= 120 lines per file.
+ * Mandate 8ze: Apple HIG Mobile >= 44px touch targets.
+ * UTF-8 without BOM.
+ */
+
+@media (max-width: 768px) {
+	.marketing-dashboard-page--embedded .marketing-dashboard-title-wrap {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.marketing-dashboard-controls {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.marketing-period-segmented.dente-segmented-bar {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: 1.35fr 1fr 1fr 1fr 0.85fr 0.85fr;
+		height: 36px;
+		width: 100%;
+		padding: 3px;
+		gap: 2px;
+		overflow: hidden;
+	}
+
+	.marketing-period-label-full {
+		display: none;
+	}
+
+	.marketing-period-label-short {
+		display: inline;
+	}
+
+	.marketing-period-segmented.dente-segmented-bar .marketing-period-btn {
+		width: 100% !important;
+		min-width: 0 !important;
+		min-height: 28px !important;
+		height: 28px !important;
+		padding: 0 4px !important;
+		font-size: 11.5px !important;
+	}
+
+	.marketing-header-promo-btn {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.marketing-kpi-card {
+		padding: 10px 12px;
+	}
+
+	.marketing-kpi-value {
+		font-size: 1.15rem;
+	}
+
+	.marketing-header-csv-btn,
+	.marketing-header-promo-btn,
+	.marketing-cohort-action,
+	.marketing-modal-link {
+		min-height: 44px;
+		height: 44px;
+	}
+}

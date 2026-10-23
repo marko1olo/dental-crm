@@ -1,0 +1,106 @@
+/* -------------------------------------------
+   MARKETING ROMI BADGES AND TOTALS
+   Co-located component CSS for MarketingRomiTable.tsx
+   Strict <= 120 lines. UTF-8 without BOM.
+   ------------------------------------------- */
+.romi-badge {
+	display: inline-block;
+	padding: 4px 9px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 800;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.romi-badge.positive {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	border: 1px solid var(--teal);
+}
+
+.romi-badge.organic {
+	background: var(--info-bg, rgba(3, 105, 161, 0.12));
+	color: var(--info-fg, var(--teal-dark));
+	border: 1px solid var(--info-border, var(--teal));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .romi-badge.organic {
+	background: var(--info-bg, rgba(3, 105, 161, 0.25));
+	color: var(--info-fg, var(--teal));
+	border-color: var(--info-border, var(--teal-dark));
+}
+
+.romi-badge.negative {
+	background: var(--rust-soft);
+	color: var(--bad-fg);
+	border: 1px solid var(--rust);
+}
+
+.romi-badge.neutral {
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line-strong);
+}
+
+.romi-badge.total {
+	font-size: 13px;
+	padding: 5px 12px;
+}
+
+.romi-delete-btn {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.15s ease;
+}
+
+.romi-delete-btn:hover {
+	color: var(--bad-fg);
+	background: var(--rust-soft);
+}
+
+.romi-total-row {
+	background: var(--paper-soft);
+	font-weight: 800;
+	border-top: 2px solid var(--line-strong);
+}
+
+.romi-total-title {
+	font-weight: 800;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.romi-total-num {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--ink);
+}
+
+.romi-total-center {
+	text-align: center;
+}
+
+.romi-footer-hint {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: var(--paper-soft);
+	border-radius: 8px;
+	padding: 10px 14px;
+	font-size: 12px;
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+
+.romi-footer-hint p {
+	margin: 0;
+	line-height: 1.4;
+}

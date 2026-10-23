@@ -1,11 +1,12 @@
 /**
  * MarketingCampaignLaunchSection.tsx — Audience Segmentation & 1-Click Campaign Launch.
- * Governed by Mandate 8b (<= 120 lines), Mandate 8e (Doctor Autonomy, Never Disabled), Mandate 8am (Single Primary CTA).
+ * Governed by Mandate 8b (Strict <= 120 lines), Mandate 8e (Doctor Autonomy, Never Disabled), Mandate 8am (Single Primary CTA).
  */
 
 import React from "react";
-import { Send, MessageSquare, ShieldCheck } from "lucide-react";
+import { Send, MessageSquare } from "lucide-react";
 import type { PatientSegmentOption } from "./marketingTypes";
+import { MarketingCampaignLaunchControls } from "./MarketingCampaignLaunchControls";
 
 export interface MarketingCampaignLaunchSectionProps {
 	readonly segments: readonly PatientSegmentOption[];
@@ -67,28 +68,13 @@ export const MarketingCampaignLaunchSection: React.FC<MarketingCampaignLaunchSec
 				})}
 			</div>
 
-			<div className="marketing-launch-controls">
-				<label className="marketing-compliance-checkbox">
-					<input
-						type="checkbox"
-						checked={consentOnly}
-						onChange={(e) => onChangeConsentOnly(e.target.checked)}
-						className="marketing-checkbox-input"
-					/>
-					<ShieldCheck size={15} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
-					<span className="marketing-compliance-text">
-						Только пациенты с подтвержденным согласием на сервисные и рекламные сообщения
-					</span>
-				</label>
-
-				<div className="marketing-budget-calc">
-					<span className="marketing-budget-label">Расчетный бюджет:</span>
-					<strong className="marketing-budget-value">{estimatedCostRub} ₽</strong>
-					<span className="marketing-budget-sub">
-						({activeSegment.count} получателей × {channelRateRub.toFixed(2)} ₽)
-					</span>
-				</div>
-			</div>
+			<MarketingCampaignLaunchControls
+				consentOnly={consentOnly}
+				onChangeConsentOnly={onChangeConsentOnly}
+				estimatedCostRub={estimatedCostRub}
+				activeSegmentCount={activeSegment.count}
+				channelRateRub={channelRateRub}
+			/>
 
 			<div className="marketing-launch-actions">
 				<button
