@@ -428,7 +428,8 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 
 		it("5.1. PeriodontogramChart.tsx: Тулбар 32-36px, кнопки 1-клик нормы и профгигиены, тач >= 44px", () => {
 			const perioChartPath = path.join(webSrcDir, "components/perio/PeriodontogramChart.tsx");
-			const perioCode = fs.readFileSync(perioChartPath, "utf-8");
+			const toolbarPath = path.join(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
+			const perioCode = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
 
 			// Проверка 1-клик нормы
 			assert.ok(
@@ -715,7 +716,8 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 
 		it("7.8. PeriodontogramChart.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
 			const perioChartPath = path.resolve(webSrcDir, "components/perio/PeriodontogramChart.tsx");
-			const source = fs.readFileSync(perioChartPath, "utf-8");
+			const toolbarPath = path.resolve(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
+			const source = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
 			assert.ok(source.includes("perio-preset-severe-btn"), "Кнопка perio-preset-severe-btn обязана присутствовать в тулбаре");
 			assert.ok(
 				source.includes("periodontitis_severe_express") || source.includes("handleApplySeverePeriodontitisPreset"),

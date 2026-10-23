@@ -1,201 +1,66 @@
+/**
+ * apps/web/src/components/perio/chart/PerioToothVisual.tsx
+ *
+ * SVG-визуализация анатомии зуба и уровня кости/карманов (Мандат 8b, <= 120 строк).
+ */
+
 import React from "react";
-import { isFurcationEligibleTooth } from "@dental/shared";
-import { getToothConfig, getToothPath } from "../../../utils/math/toothGeometry";
-import { probingDepthClinicalHex, probingDepthHex, probingDepthTone } from "../perioHeatmap";
+import { fastGetClinicalToneHex } from "../perioRafOptimizer";
+import { PerioImplantVisualSvg, PerioMissingVisualSvg } from "./PerioMissingOrImplantSvg";
 
 export interface PerioToothVisualProps {
 	readonly toothNumber: number;
 	readonly isUpper: boolean;
-	readonly isMissing: boolean;
-	readonly isImplant: boolean;
+	readonly isMissing?: boolean | undefined;
+	readonly isImplant?: boolean | undefined;
 	readonly buccalPd: number;
 	readonly lingualPd: number;
+	readonly width?: number | undefined;
+	readonly height?: number | undefined;
 }
 
-const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
-	toothNumber,
-	isUpper,
-	isMissing,
-	isImplant,
-	buccalPd,
-	lingualPd,
+export const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
+	toothNumber, isUpper, isMissing = false, isImplant = false,
+	buccalPd, lingualPd, width = 28, height = 52,
 }) => {
-	const maxPd = Math.max(buccalPd, lingualPd);
-	const isMolar =
-		isFurcationEligibleTooth(toothNumber) &&
-		(toothNumber % 10 === 6 ||
-			toothNumber % 10 === 7 ||
-			toothNumber % 10 === 8);
-
 	if (isMissing) {
-		return (
-			<svg width="28" height="34" viewBox="0 0 28 34" className="text-[var(--muted)]">
-				<line
-					x1="4"
-					y1="4"
-					x2="24"
-					y2="30"
-					stroke="currentColor"
-					strokeWidth="2"
-				/>
-				<line
-					x1="24"
-					y1="4"
-					x2="4"
-					y2="30"
-					stroke="currentColor"
-					strokeWidth="2"
-				/>
-			</svg>
-		);
+		return <PerioMissingVisualSvg width={width} height={height} isUpper={isUpper} />;
 	}
-
 	if (isImplant) {
-		return (
-			<svg
-				width="28"
-				height="34"
-				viewBox="0 0 28 34"
-				className="text-amber-400"
-			>
-				<rect
-					x="7"
-					y="4"
-					width="14"
-					height="26"
-					rx="2"
-					fill="currentColor"
-					fillOpacity="0.15"
-					stroke="currentColor"
-					strokeWidth="1.5"
-				/>
-				<line
-					x1="7"
-					y1="9"
-					x2="21"
-					y2="9"
-					stroke="currentColor"
-					strokeWidth="1.5"
-				/>
-				<line
-					x1="7"
-					y1="14"
-					x2="21"
-					y2="14"
-					stroke="currentColor"
-					strokeWidth="1.5"
-				/>
-				<line
-					x1="7"
-					y1="19"
-					x2="21"
-					y2="19"
-					stroke="currentColor"
-					strokeWidth="1.5"
-				/>
-				<line
-					x1="7"
-					y1="24"
-					x2="21"
-					y2="24"
-					stroke="currentColor"
-					strokeWidth="1.5"
-				/>
-			</svg>
-		);
+		return <PerioImplantVisualSvg width={width} height={height} isUpper={isUpper} />;
 	}
 
-	// Dynamic pocket depth fill bar height
-	const pocketFillRatio = Math.min(1, Math.max(0, (maxPd - 2) / 8));
-	const pocketFillHeight = Math.round(pocketFillRatio * 18);
+	const isAnterior = [11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43].includes(toothNumber);
+	const isMolar = [16, 17, 18, 26, 27, 28, 36, 37, 38, 46, 47, 48].includes(toothNumber);
 
-	const pocketColor = probingDepthClinicalHex(maxPd);
+	const maxPd = Math.max(buccalPd, lingualPd);
+	const pocketVisualHeight = Math.min(18, Math.max(2, (maxPd - 2) * 2.8));
+	const pocketColor = fastGetClinicalToneHex(maxPd);
+
+	const rootPath = isAnterior
+		? isUpper ? "M 10 24 L 14 46 L 18 24 Z" : "M 10 28 L 14 6 L 18 28 Z"
+		: isMolar
+			? isUpper ? "M 8 24 L 10 46 L 14 32 L 18 46 L 20 24 Z" : "M 8 28 L 10 6 L 14 20 L 18 6 L 20 28 Z"
+			: isUpper ? "M 9 24 L 12 45 L 15 30 L 17 45 L 19 24 Z" : "M 9 28 L 12 7 L 15 22 L 17 7 L 19 28 Z";
+
+	const crownY = isUpper ? 6 : 28;
+	const boneY = isUpper ? 24 : 28;
 
 	return (
-		<svg width="28" height="34" viewBox="0 0 28 34">
-			{/* Crown */}
-			<rect
-				x="5"
-				y={isUpper ? 20 : 2}
-				width="18"
-				height="12"
-				rx="3"
-				fill="var(--line-strong, #64748b)"
-				fillOpacity="0.25"
-				stroke="var(--line, #94a3b8)"
-				strokeWidth="1.2"
-			/>
-
-			{/* Root(s) */}
-			{isMolar ? (
-				<>
-					{/* Dual root appearance */}
-					<path
-						d={
-							isUpper
-								? "M7,20 L6,4 A2,2 0 0,1 11,4 L12,20 Z"
-								: "M7,14 L6,30 A2,2 0 0,0 11,30 L12,14 Z"
-						}
-						fill="var(--line-strong, #64748b)"
-						fillOpacity="0.2"
-						stroke="var(--line, #64748b)"
-						strokeWidth="1"
-					/>
-					<path
-						d={
-							isUpper
-								? "M16,20 L17,4 A2,2 0 0,1 22,4 L21,20 Z"
-								: "M16,14 L17,30 A2,2 0 0,0 22,30 L21,14 Z"
-						}
-						fill="var(--line-strong, #64748b)"
-						fillOpacity="0.2"
-						stroke="var(--line, #64748b)"
-						strokeWidth="1"
-					/>
-				</>
-			) : (
-				/* Single conical root */
-				<path
-					d={
-						isUpper
-							? "M7,20 L12,3 A2,2 0 0,1 16,3 L21,20 Z"
-							: "M7,14 L12,31 A2,2 0 0,0 16,31 L21,14 Z"
-					}
-					fill="var(--line-strong, #64748b)"
-					fillOpacity="0.2"
-					stroke="var(--line, #64748b)"
-					strokeWidth="1"
-				/>
-			)}
-
-			{/* Probing Depth Fill Indicator */}
-			{pocketFillHeight > 0 && (
+		<svg width={width} height={height} viewBox="0 0 28 52" className="overflow-visible select-none pointer-events-none">
+			<path d={rootPath} fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.2" strokeLinejoin="round" />
+			<rect x="6" y={crownY} width="16" height="18" rx="4" fill="#ffffff" stroke="#64748b" strokeWidth="1.2" />
+			<line x1="10" y1={crownY + 4} x2="18" y2={crownY + 4} stroke="#cbd5e1" strokeWidth="1" strokeLinecap="round" />
+			<line x1="2" y1={boneY} x2="26" y2={boneY} stroke="#0d9488" strokeWidth="1" strokeDasharray="2,2" opacity="0.6" />
+			{maxPd > 3 && (
 				<rect
-					x="9"
-					y={isUpper ? 20 - pocketFillHeight : 14}
-					width="10"
-					height={pocketFillHeight}
-					rx="1"
-					fill={pocketColor}
-					fillOpacity="0.75"
+					x="5" y={isUpper ? boneY : boneY - pocketVisualHeight}
+					width="18" height={pocketVisualHeight} rx="1.5"
+					fill={pocketColor} opacity="0.45" stroke={pocketColor} strokeWidth="1"
 				/>
 			)}
-
-			{/* Gingival Margin line */}
-			<line
-				x1="3"
-				y1={isUpper ? 20 : 14}
-				x2="25"
-				y2={isUpper ? 20 : 14}
-				stroke="var(--sky, #38bdf8)"
-				strokeWidth="1.5"
-				strokeDasharray="2 1"
-			/>
 		</svg>
 	);
 });
+
 PerioToothVisual.displayName = "PerioToothVisual";
-
-
-export { PerioToothVisual };
-

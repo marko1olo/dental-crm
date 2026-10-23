@@ -1,334 +1,102 @@
 /**
  * apps/web/src/components/perio/chart/usePerioDraftPersistence.ts
  *
- * Backend draft lifecycle, synchronization, and autosave management for Periodontogram.
- * Decomposed from usePerioChartLogic.ts per Mandate 8b (file size <= 800 lines).
+ * Хук синхронизации и автосохранения перио-карты (Мандат 8b, <= 120 строк).
  */
 
-import {
-	convertPerioDentitionToSepa,
-	convertSepaDentitionToPerio,
-	createDefaultPerioTeeth,
-	type PerioSiteKey,
-	type PerioToothRecord,
-} from "@dental/shared";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createDefaultPerioTeeth, type PerioSiteKey, type PerioToothRecord } from "@dental/shared";
+import { useCallback, useEffect, useState } from "react";
+import { isDemoPatientId } from "../../../lib/demoMode";
 import { showToast } from "../../GlobalToast";
-import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
-import { applyPeriodontitisModeratePreset } from "../perioMath";
+import { closeRemoteDraftSnapshot, createRemoteDraft, fetchRemoteDraft, patchRemoteDraftTeethAndSites } from "./perioDraftApi";
+import { getPerioStorageKey, loadLocalPerioDraft, saveLocalPerioDraft } from "./perioDraftStorage";
+
+export { getPerioStorageKey };
 
 export interface UsePerioDraftPersistenceOptions {
-	readonly patientId?: string | undefined;
-	readonly visitId?: string | undefined;
+	readonly patientId?: string | undefined; readonly visitId?: string | undefined;
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
-	readonly readOnly: boolean;
-	readonly teeth: PerioToothRecord[];
+	readonly readOnly: boolean; readonly teeth: PerioToothRecord[];
 	readonly setTeeth: React.Dispatch<React.SetStateAction<PerioToothRecord[]>>;
 	readonly setSelectedToothNumber: (num: number) => void;
-	readonly setFocusedSite: (
-		site: { toothNumber: number; siteKey: PerioSiteKey } | null,
-	) => void;
+	readonly setFocusedSite: (site: { toothNumber: number; siteKey: PerioSiteKey } | null) => void;
 	readonly generateProtocolText: () => string;
 	readonly refetchSnapshots: () => Promise<void>;
 }
 
 export function usePerioDraftPersistence({
-	patientId,
-	visitId,
-	initialTeeth,
-	readOnly,
-	teeth,
-	setTeeth,
-	setSelectedToothNumber,
-	setFocusedSite,
-	generateProtocolText,
-	refetchSnapshots,
+	patientId, visitId, initialTeeth, readOnly, teeth, setTeeth,
+	setSelectedToothNumber, setFocusedSite, generateProtocolText, refetchSnapshots,
 }: UsePerioDraftPersistenceOptions) {
 	const [draftSnapshotId, setDraftSnapshotId] = useState<string | null>(null);
-	const [syncStatus, setSyncStatus] = useState<
-		"idle" | "loading" | "saving" | "synced" | "closed" | "error"
-	>("idle");
+	const [syncStatus, setSyncStatus] = useState<"idle" | "loading" | "saving" | "synced" | "closed" | "error">("idle");
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-	// Reset dentition when patient changes or load draft from backend (Mandates 8e, 8y)
-	const currentPatientIdRef = useRef<string | undefined>(patientId);
 	useEffect(() => {
-		if (currentPatientIdRef.current !== patientId) {
-			currentPatientIdRef.current = patientId;
-			setDraftSnapshotId(null);
-			setSelectedToothNumber(16);
-			setFocusedSite(null);
-		}
-
-		if (!patientId || isDemoPatientId(patientId)) {
-			if (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) {
-				const map = new Map<number, PerioToothRecord>();
-				for (const t of initialTeeth) {
-					map.set(t.toothNumber, t);
-				}
-				const defaults = createDefaultPerioTeeth(2);
-				setTeeth(defaults.map((def) => map.get(def.toothNumber) ?? def));
-			} else {
-				setTeeth(createDefaultPerioTeeth(2));
-			}
+		setSelectedToothNumber(16); setFocusedSite(null); setDraftSnapshotId(null);
+		if (initialTeeth?.length) {
+			const map = new Map<number, PerioToothRecord>();
+			for (const t of initialTeeth) map.set(t.toothNumber, t);
+			setTeeth(createDefaultPerioTeeth(2).map((def) => map.get(def.toothNumber) ?? def));
 			return;
 		}
+		const local = loadLocalPerioDraft(patientId, visitId);
+		if (local) setTeeth(local);
+		if (!patientId || isDemoPatientId(patientId)) return;
+		if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) return;
 
-		const UUID_REGEX =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		if (!UUID_REGEX.test(patientId)) return;
-
-		let isMounted = true;
-		async function initDraft() {
+		let mounted = true;
+		void (async () => {
 			setSyncStatus("loading");
-			try {
-				// 1. Try to fetch existing draft from backend
-				const res = await fetch(`/api/periodontogram/patients/${patientId}/draft`);
-				if (!res.ok) {
-					if (isMounted) setSyncStatus("idle");
-					return;
-				}
-				const json = (await res.json()) as {
-					success: boolean;
-					data?: {
-						id: string;
-						status: string;
-						teeth?: any[];
-					} | null;
-				};
+			const existing = await fetchRemoteDraft(patientId);
+			if (!mounted) return;
+			if (existing) { setDraftSnapshotId(existing.id); setSyncStatus("synced"); if (existing.teeth.length) setTeeth(existing.teeth); return; }
+			const created = await createRemoteDraft(patientId);
+			if (!mounted || !created) { setSyncStatus("idle"); return; }
+			setDraftSnapshotId(created.id); setSyncStatus("synced"); if (created.teeth.length) setTeeth(created.teeth);
+		})();
+		return () => { mounted = false; };
+	}, [patientId, visitId, initialTeeth, setTeeth, setSelectedToothNumber, setFocusedSite]);
 
-				if (json.success && json.data) {
-					if (!isMounted) return;
-					setDraftSnapshotId(json.data.id);
-					setSyncStatus("synced");
-					if (Array.isArray(json.data.teeth) && json.data.teeth.length > 0) {
-						const converted = convertSepaDentitionToPerio(json.data.teeth);
-						const tMap = new Map<number, PerioToothRecord>();
-						for (const t of converted) tMap.set(t.toothNumber, t);
-						const defaults = createDefaultPerioTeeth(2);
-						setTeeth(defaults.map((def) => tMap.get(def.toothNumber) ?? def));
-					}
-					return;
-				}
+	const handleSaveDraft = useCallback(async (options?: { closeAfter?: boolean; notes?: string }) => {
+		if (readOnly) return false;
+		saveLocalPerioDraft(teeth, patientId, visitId);
+		setLastSavedAt(new Date());
 
-				// 2. No draft exists — create new draft on backend with tooth_states
-				const createRes = await fetch(
-					`/api/periodontogram/patients/${patientId}/draft`,
-					{
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({}),
-					},
-				);
-				if (!createRes.ok) {
-					if (isMounted) setSyncStatus("idle");
-					return;
-				}
-				const createJson = (await createRes.json()) as {
-					success: boolean;
-					data?: {
-						id: string;
-						status: string;
-						teeth?: any[];
-					};
-				};
-				if (createJson.success && createJson.data && isMounted) {
-					setDraftSnapshotId(createJson.data.id);
-					setSyncStatus("synced");
-					if (Array.isArray(createJson.data.teeth) && createJson.data.teeth.length > 0) {
-						const converted = convertSepaDentitionToPerio(createJson.data.teeth);
-						const tMap = new Map<number, PerioToothRecord>();
-						for (const t of converted) tMap.set(t.toothNumber, t);
-						const defaults = createDefaultPerioTeeth(2);
-						setTeeth(defaults.map((def) => tMap.get(def.toothNumber) ?? def));
-					}
-				}
-			} catch {
-				if (isMounted) setSyncStatus("idle");
+		if (!draftSnapshotId) {
+			setSyncStatus("synced"); showToast("Данные перио-карты сохранены", "info", 2500); return true;
+		}
+
+		setSyncStatus("saving");
+		const ok = await patchRemoteDraftTeethAndSites(draftSnapshotId, teeth);
+		if (!ok) {
+			setSyncStatus("error"); showToast("Сбой сети: данные сохранены локально", "warning", 3500); return false;
+		}
+
+		if (options?.closeAfter) {
+			const closed = await closeRemoteDraftSnapshot(draftSnapshotId, options.notes ?? generateProtocolText());
+			if (closed) {
+				setSyncStatus("closed"); setDraftSnapshotId(null);
+				void refetchSnapshots();
+				showToast("Перио-карта успешно зафиксирована в ЭМК и закрыта", "success", 4000);
+				return true;
 			}
 		}
 
-		void initDraft();
+		setSyncStatus("synced"); showToast("Перио-карта сохранена на сервере", "success", 2500); return true;
+	}, [readOnly, draftSnapshotId, patientId, visitId, teeth, generateProtocolText, refetchSnapshots]);
 
-		return () => {
-			isMounted = false;
-		};
-	}, [
-		patientId,
-		initialTeeth,
-		setTeeth,
-		setSelectedToothNumber,
-		setFocusedSite,
-	]);
+	useEffect(() => {
+		if (readOnly || !teeth?.length) return;
+		const timer = setTimeout(() => saveLocalPerioDraft(teeth, patientId, visitId), 300);
+		return () => clearTimeout(timer);
+	}, [teeth, patientId, visitId, readOnly]);
 
-	// ─── Backend Draft Persistence & Autocommit (Mandate 8e, 8aj) ─────────────
-	const handleSaveDraft = useCallback(
-		async (options?: { closeAfter?: boolean; notes?: string }) => {
-			if (readOnly) return false;
-			let snapshotId = draftSnapshotId;
-
-			// If no draft ID yet but valid patient ID, try to create draft first
-			if (!snapshotId && patientId && !isDemoPatientId(patientId)) {
-				const UUID_REGEX =
-					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-				if (UUID_REGEX.test(patientId)) {
-					try {
-						const res = await fetch(
-							`/api/periodontogram/patients/${patientId}/draft`,
-							{
-								method: "POST",
-								headers: { "Content-Type": "application/json" },
-								body: JSON.stringify({}),
-							},
-						);
-						if (res.ok) {
-							const json = (await res.json()) as {
-								success: boolean;
-								data?: { id: string };
-							};
-							if (json.success && json.data?.id) {
-								snapshotId = json.data.id;
-								setDraftSnapshotId(snapshotId);
-							}
-						}
-					} catch {
-						// Offline graceful fallback
-					}
-				}
-			}
-
-			if (!snapshotId) {
-				showToast("Данные перио-карты сохранены локально", "info", 2500);
-				return true;
-			}
-
-			setSyncStatus("saving");
-
-			try {
-				const sepaTeeth = convertPerioDentitionToSepa(teeth);
-
-				// Prepare batch teeth payload
-				const teethPayload = sepaTeeth.map((t) => ({
-					toothNumber: t.toothNumber,
-					isPresent: t.isPresent,
-					isImplant: t.isImplant,
-					mobility: t.mobility,
-					furcationBuccal: t.furcationBuccal,
-					furcationLingual: t.furcationLingual,
-				}));
-
-				// Prepare batch sites payload
-				const sitesPayload = sepaTeeth.flatMap((t) =>
-					(t.sites ?? []).map((s) => ({
-						toothNumber: t.toothNumber,
-						siteCode: s.siteCode,
-						probingDepthMm: s.probingDepthMm,
-						gingivalMarginMm: s.gingivalMarginMm,
-						bleedingOnProbing: s.bleedingOnProbing,
-						plaque: s.plaque,
-						suppuration: s.suppuration,
-						calculus: s.calculus,
-					})),
-				);
-
-				const [patchTeethRes, patchSitesRes] = await Promise.all([
-					fetch(`/api/periodontogram/snapshots/${snapshotId}/teeth`, {
-						method: "PATCH",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ teeth: teethPayload }),
-					}),
-					fetch(`/api/periodontogram/snapshots/${snapshotId}/sites`, {
-						method: "PATCH",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ sites: sitesPayload }),
-					}),
-				]);
-
-				if (!patchTeethRes.ok || !patchSitesRes.ok) {
-					setSyncStatus("error");
-					showToast("Ошибка сохранения перио-карты на сервере", "error", 3500);
-					return false;
-				}
-
-				if (visitId) {
-					try {
-						void fetch(`/api/clinical/visits/${visitId}/perio`, {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								teeth: sepaTeeth,
-								notes: options?.notes ?? generateProtocolText(),
-								status: options?.closeAfter ? "closed" : "draft",
-							}),
-						});
-					} catch {
-						// graceful offline
-					}
-				}
-
-				if (options?.closeAfter) {
-					const closeRes = await fetch(
-						`/api/periodontogram/snapshots/${snapshotId}/close`,
-						{
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								notes: options.notes ?? generateProtocolText(),
-							}),
-						},
-					);
-
-					if (closeRes.ok) {
-						setSyncStatus("closed");
-						setDraftSnapshotId(null);
-						setLastSavedAt(new Date());
-						void refetchSnapshots();
-						showToast("Перио-карта успешно зафиксирована в ЭМК и закрыта", "success", 4000);
-						return true;
-					}
-				}
-
-				setSyncStatus("synced");
-				setLastSavedAt(new Date());
-				showToast("Перио-карта сохранена на сервере", "success", 2500);
-				return true;
-			} catch {
-				setSyncStatus("error");
-				showToast("Сбой сети: данные сохранены локально", "warning", 3500);
-				return false;
-			}
-		},
-		[
-			readOnly,
-			draftSnapshotId,
-			patientId,
-			teeth,
-			generateProtocolText,
-			refetchSnapshots,
-		],
-	);
-
-	// Debounced autosave for active draft
-	const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 	useEffect(() => {
 		if (readOnly || !draftSnapshotId || syncStatus === "closed") return;
-		if (autosaveTimerRef.current) {
-			clearTimeout(autosaveTimerRef.current);
-		}
-		autosaveTimerRef.current = setTimeout(() => {
-			void handleSaveDraft({ closeAfter: false });
-		}, 3000);
-		return () => {
-			if (autosaveTimerRef.current) {
-				clearTimeout(autosaveTimerRef.current);
-			}
-		};
+		const timer = setTimeout(() => { void handleSaveDraft({ closeAfter: false }); }, 3000);
+		return () => clearTimeout(timer);
 	}, [teeth, draftSnapshotId, syncStatus, readOnly, handleSaveDraft]);
 
-	return {
-		draftSnapshotId,
-		syncStatus,
-		lastSavedAt,
-		handleSaveDraft,
-	};
+	return { draftSnapshotId, syncStatus, lastSavedAt, handleSaveDraft };
 }
