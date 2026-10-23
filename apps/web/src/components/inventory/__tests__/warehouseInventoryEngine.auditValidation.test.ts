@@ -47,8 +47,8 @@ describe("Document Validation (validateInventoryAuditDraft)", () => {
 		const res = validateInventoryAuditDraft(invalidDoc);
 		assert.equal(res.isValid, false);
 		assert.ok(res.errors.some((e) => e.includes("Номер инвентаризационной описи")));
-		assert.ok(res.errors.some((e) => e.includes("Номер приказа")));
-		assert.ok(res.errors.some((e) => e.includes("ФИО материально ответственного лица")));
+		assert.ok(res.warnings.some((w) => w.includes("без оформления отдельного приказа")));
+		assert.ok(res.errors.some((e) => e.includes("ФИО ответственного сотрудника")));
 		assert.ok(res.warnings.some((w) => w.includes("без обязательного требования комиссии из 3 человек")));
 		assert.ok(res.errors.some((e) => e.includes("хотя бы одну позицию")));
 	});

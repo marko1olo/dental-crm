@@ -5,6 +5,14 @@ import { describe, it } from "vitest";
 import { OmnichannelChatView } from "../OmnichannelChatView";
 import { OMNICHANNEL_TEMPLATES, applyTemplateVariables } from "../omnichannelChatTemplates";
 
+/**
+ * Omnichannel Chat Inquisitor Suite (Apple HIG & Mandates 8e, 8n).
+ *
+ * Zero-Mocks Invariant: серверный рендер без сети обязан показывать ЧЕСТНЫЙ
+ * пустой стейт. Никаких захардкоженных «демо-диалогов» с вымышленными
+ * пациентами — список наполняется только живыми данными из /api/bots/inbox
+ * (PostgreSQL: messengerInboundEvents + communicationEvents).
+ */
 describe("Omnichannel Chat Inquisitor Suite (Apple HIG & Mandates 8e, 8n)", () => {
 	it("1. OmnichannelChatView renders channel filter bar and conversations list", () => {
 		const html = renderToString(<OmnichannelChatView />);
@@ -14,20 +22,20 @@ describe("Omnichannel Chat Inquisitor Suite (Apple HIG & Mandates 8e, 8n)", () =
 		assert.ok(html.includes("data-testid=\"channel-filter-whatsapp\""), "WhatsApp filter must render");
 		assert.ok(html.includes("data-testid=\"channel-filter-telegram\""), "Telegram filter must render");
 		assert.ok(html.includes("data-testid=\"channel-filter-sms\""), "SMS filter must render");
+		assert.ok(html.includes("data-testid=\"channel-filter-vk\""), "VK filter must render");
+		assert.ok(html.includes("data-testid=\"channel-filter-max\""), "MAX filter must render");
 		assert.ok(html.includes("data-testid=\"omnichannel-conversations-list\""), "Conversations list must render");
 	});
 
-	it("2. Active chat pane provides 1-click clinical actions (Mandate 8e & 8n)", () => {
+	it("2. Without backend data the view shows an honest empty state, no hardcoded fake dialogs", () => {
 		const html = renderToString(<OmnichannelChatView />);
 
-		assert.ok(html.includes("data-testid=\"chat-action-open-card\""), "Chat must provide open patient card button");
-		assert.ok(html.includes("data-testid=\"chat-action-quick-book\""), "Chat must provide quick booking button");
-		assert.ok(html.includes("data-testid=\"chat-send-message-btn\""), "Send message button must be present");
-		assert.ok(html.includes("data-testid=\"chat-attachment-btn\""), "Attachment button must be present");
-
-		// Buttons are not disabled
-		assert.ok(!html.includes("chat-action-open-card\" disabled"), "Card button must not be disabled");
-		assert.ok(!html.includes("chat-action-quick-book\" disabled"), "Booking button must not be disabled");
+		assert.ok(html.includes("Загрузка диалогов"), "Loading state must be honest about fetching from the database");
+		// Реэдтикт-детектор: фейковые «демо-пациенты» из снесённого omnichannelChatDefaults
+		// не имеют права вернуться в код под видом стартовых данных.
+		assert.ok(!html.includes("Смирнова Екатерина Васильевна"), "Hardcoded fake patient name is forbidden");
+		assert.ok(!html.includes("PAT-001"), "Hardcoded fake patient id is forbidden");
+		assert.ok(!html.includes("Здравствуйте! Подскажите, пожалуйста, стоимость приёма?"), "Hardcoded fake phrase is forbidden");
 	});
 
 	it("3. Clinical reminder templates include 'Приём завтра в 14:00' and variable interpolation", () => {
@@ -42,11 +50,11 @@ describe("Omnichannel Chat Inquisitor Suite (Apple HIG & Mandates 8e, 8n)", () =
 		assert.ok(interpolated.includes("14:00"), "Interpolation must retain time");
 	});
 
-	it("4. OmnichannelChatView renders quick templates pills", () => {
+	it("4. Conversation list search input renders and loading state is honest", () => {
 		const html = renderToString(<OmnichannelChatView />);
 
-		assert.ok(html.includes("quick-template-reminder_tomorrow"), "Tomorrow reminder pill must render");
-		assert.ok(html.includes("quick-template-post_op_care"), "Post-op care pill must render");
-		assert.ok(html.includes("quick-template-payment_receipt"), "Payment receipt pill must render");
+		assert.ok(html.includes("data-testid=\"conversations-search-input\""), "Search input must render");
+		assert.ok(html.includes("Загрузка диалогов"), "List must show honest loading state before data arrives");
+		assert.ok(!html.includes("Диалоги не найдены"), "Old fabricated fallback text must not return");
 	});
 });

@@ -29,7 +29,10 @@ function readAuthPayload(): {
 	};
 }
 
-export function useWebsocket(url: string) {
+/** Время ожидания открытия сокета до переключения на резервный адрес. */
+const OPEN_FALLBACK_TIMEOUT_MS = 4000;
+
+export function useWebsocket(url: string, fallbackUrl?: string) {
 	const [isConnected, setIsConnected] = useState(false);
 	const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
 	const ws = useRef<WebSocket | null>(null);
@@ -40,9 +43,15 @@ export function useWebsocket(url: string) {
 	// проваленных рукопожатий в минуту и столько же строк ошибок в консоли.
 	const attempts = useRef(0);
 	const closedByUs = useRef(false);
+	// Резервный адрес включается, когда основной не открывается (в dev-стенде
+	// vite-прокси может быть поднят без ws-апгрейда). Как только резерв открылся,
+	// он остаётся активным до конца жизни хука.
+	const useFallbackUrl = useRef(false);
+	const openGuardTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const connect = useCallback(() => {
-		if (!url) return;
+		const targetUrl = useFallbackUrl.current && fallbackUrl ? fallbackUrl : url;
+		if (!targetUrl) return;
 		if (typeof WebSocket === "undefined") return;
 		if (closedByUs.current) return;
 		if (ws.current?.readyState === WebSocket.OPEN) return;
@@ -68,11 +77,32 @@ export function useWebsocket(url: string) {
 			ws.current = null;
 		}
 
-		const socket = new WebSocket(url);
+		const socket = new WebSocket(targetUrl);
 		ws.current = socket;
+
+		// Страховка от «висящего» рукопожатия: если сокет не открылся за
+		// OPEN_FALLBACK_TIMEOUT_MS, а резервный адрес задан — переключаемся на
+		// него (vite-прокси без ws:true принимает TCP, но апгрейда не делает).
+		if (fallbackUrl && fallbackUrl !== targetUrl) {
+			openGuardTimeout.current = setTimeout(() => {
+				if (closedByUs.current) return;
+				if (socket.readyState !== WebSocket.OPEN) {
+					useFallbackUrl.current = true;
+					try {
+						socket.close();
+					} catch {
+						// ignore — реконнект планирует onclose
+					}
+				}
+			}, OPEN_FALLBACK_TIMEOUT_MS);
+		}
 
 		socket.onopen = () => {
 			if (closedByUs.current) return;
+			if (openGuardTimeout.current) {
+				clearTimeout(openGuardTimeout.current);
+				openGuardTimeout.current = null;
+			}
 			attempts.current = 0;
 			setIsConnected(true);
 			// Браузерный WebSocket не умеет ставить заголовки, а токен в
@@ -134,7 +164,7 @@ export function useWebsocket(url: string) {
 		socket.onerror = () => {
 			socket.close();
 		};
-	}, [url]);
+	}, [url, fallbackUrl]);
 
 	useEffect(() => {
 		closedByUs.current = false;
@@ -168,6 +198,10 @@ export function useWebsocket(url: string) {
 		return () => {
 			closedByUs.current = true;
 			clearInterval(pingInterval);
+			if (openGuardTimeout.current) {
+				clearTimeout(openGuardTimeout.current);
+				openGuardTimeout.current = null;
+			}
 			if (typeof document !== "undefined") {
 				document.removeEventListener("visibilitychange", handleVisibilityChange);
 			}

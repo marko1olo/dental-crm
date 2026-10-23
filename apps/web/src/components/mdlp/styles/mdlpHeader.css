@@ -1,0 +1,87 @@
+/* ─── mdlpHeader.css — Шапка модального окна и кнопка закрытия (<= 120 строк) ─── */
+
+.mdlp-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background-color: var(--paper-soft, #0f172a);
+	flex-shrink: 0;
+	gap: 1rem;
+}
+
+.mdlp-header-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.mdlp-header-icon {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 0.75rem;
+	background: linear-gradient(135deg, #0d9488, #059669);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.mdlp-header-title {
+	font-size: 1.125rem;
+	font-weight: 800;
+	line-height: 1.25;
+	color: var(--ink, #f8fafc);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.mdlp-badge-version {
+	font-size: 0.6875rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-weight: 700;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background-color: var(--teal-surface, rgba(20, 184, 166, 0.15));
+	color: var(--teal, #14b8a6);
+	border: 1px solid var(--line, rgba(20, 184, 166, 0.3));
+}
+
+.mdlp-header-subtitle {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	margin: 0.125rem 0 0 0;
+}
+
+.mdlp-close-btn {
+	min-width: 36px;
+	min-height: 36px;
+	padding: 0.375rem;
+	border-radius: 0.5rem;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease-in-out;
+}
+
+.mdlp-close-btn:hover {
+	background-color: var(--paper-strong, rgba(255, 255, 255, 0.05));
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+@media (max-width: 640px) {
+	.mdlp-header {
+		padding: 0.75rem 1rem;
+	}
+}

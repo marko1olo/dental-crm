@@ -37,12 +37,15 @@ export function TelephonyToastActions({
 				<button
 					type="button"
 					onClick={onCreateAppointment}
-					className="primary-button min-h-[44px] px-2.5 py-2 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white"
+					/* Secondary по закону Single-Focus: единственный Primary карточки
+					   входящего звонка — «Ответить». Запись на приём — вторичное действие. */
+					className="secondary-button min-h-[44px] px-2.5 py-2 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)]"
 					title="Записать на приём"
 					data-testid="toast-action-quick-book"
 				>
-					<CalendarCheck size={16} className="shrink-0" />
-					<span className="truncate">Записать на приём</span>
+					<CalendarCheck size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="hidden sm:inline">Записать на приём</span>
+					<span className="sm:hidden">Записать</span>
 				</button>
 			</div>
 

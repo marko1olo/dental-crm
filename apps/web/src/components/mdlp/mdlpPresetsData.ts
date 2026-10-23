@@ -1,7 +1,4 @@
-import {
-	type ChestnyZnakScannedItem,
-	createChestnyZnakScannedItem,
-} from "@dental/shared";
+import { type ChestnyZnakScannedItem, createChestnyZnakScannedItem } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export const SAMPLE_BARCODES = [

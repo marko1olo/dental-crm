@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useWebsocket } from "./useWebsocket";
 import { useAppStore } from "../store/appStore";
 import {
+	resolveTelephonyFallbackWsUrl,
 	resolveTelephonyWsUrl,
 	useTelephonyStore,
 } from "../store/telephonyStore";
@@ -27,7 +28,8 @@ export function useTelephonyRealtime() {
 	}, [fetchCallHistory]);
 
 	const wsUrl = !isDoctorMode ? resolveTelephonyWsUrl() : "";
-	const { lastMessage, isConnected } = useWebsocket(wsUrl);
+	const wsFallbackUrl = !isDoctorMode ? resolveTelephonyFallbackWsUrl() : "";
+	const { lastMessage, isConnected } = useWebsocket(wsUrl, wsFallbackUrl || undefined);
 
 	useEffect(() => {
 		setWsConnected(isConnected);

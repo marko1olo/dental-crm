@@ -1,0 +1,100 @@
+/* ─── mdlpScanner.css — Поле ввода 2D-сканера и кнопки действий (<= 120 строк) ─── */
+
+.mdlp-scanner-box {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+	border-radius: 0.75rem;
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--teal, #0d9488);
+	box-shadow: 0 0 15px rgba(13, 148, 136, 0.15);
+}
+
+.mdlp-scanner-row {
+	display: flex;
+	gap: 0.75rem;
+	align-items: center;
+}
+
+.mdlp-scanner-input {
+	flex: 1;
+	height: 42px;
+	padding: 0.5rem 1rem;
+	font-size: 0.875rem;
+	font-family: ui-monospace, monospace;
+	background-color: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.15));
+	border-radius: 0.5rem;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mdlp-scanner-input:focus {
+	border-color: var(--teal, #14b8a6);
+	box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+}
+
+.mdlp-action-btn {
+	height: 38px;
+	min-width: 38px;
+	padding: 0.5rem 1rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-radius: 0.5rem;
+	border: 1px solid transparent;
+	background-color: var(--teal-fill, #0d9488);
+	color: #ffffff;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.mdlp-action-btn:hover:not(:disabled) {
+	opacity: 0.9;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.mdlp-action-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.mdlp-action-btn.secondary {
+	background-color: var(--paper, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
+
+.mdlp-action-btn.secondary:hover:not(:disabled) {
+	background-color: var(--paper-strong, #334155);
+}
+
+.mdlp-action-btn.danger {
+	background-color: rgba(239, 68, 68, 0.15);
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+.mdlp-action-btn.danger:hover:not(:disabled) {
+	background-color: #ef4444;
+	color: #ffffff;
+}
+
+.mdlp-action-btn.primary-cta {
+	background-color: var(--teal-fill, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+@media (max-width: 640px) {
+	.mdlp-scanner-box { padding: 0.75rem; }
+	.mdlp-scanner-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+	.mdlp-scanner-input { width: 100%; box-sizing: border-box; font-size: 0.8125rem; }
+	.mdlp-scanner-row .mdlp-action-btn { width: 100%; min-height: 44px; }
+}

@@ -13,6 +13,11 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
+	/* Панель софтфона ограничена 480px: когда строка не помещается,
+	   статусный сегмент аккуратно переносится на вторую строку,
+	   вместо наезда на таймер вызова. */
+	flex-wrap: wrap;
+	row-gap: 6px;
 }
 
 .dnt-widget-title {

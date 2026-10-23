@@ -1,10 +1,10 @@
 /**
  * Omnichannel Chat Domain Types & Invariants
- * 
- * Supports WhatsApp, Telegram, and SMS unified communication streams.
+ *
+ * Supports WhatsApp, Telegram, SMS, VK and MAX unified communication streams.
  */
 
-export type OmnichannelChannel = "whatsapp" | "telegram" | "sms" | "vk";
+export type OmnichannelChannel = "whatsapp" | "telegram" | "sms" | "vk" | "max";
 
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "read" | "failed";
 

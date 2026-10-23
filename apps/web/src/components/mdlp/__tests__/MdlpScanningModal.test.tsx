@@ -62,9 +62,9 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 		// Footer deferred disposal button
 		assert.ok(html.includes("data-testid=\"mdlp-footer-deferred-btn\""));
 
-		// Mandate 8am: Exactly ONE Primary CTA button "✓ Подтвердить списание" (emerald color, never disabled)
+		// Mandate 8am: Exactly ONE Primary CTA button "Вывести из оборота" (emerald color, never disabled)
 		assert.ok(html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\""));
-		assert.ok(html.includes("✓ Подтвердить списание"));
+		assert.ok(html.includes("Вывести из оборота"));
 		assert.ok(!html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\" disabled"));
 	});
 
@@ -113,8 +113,8 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 			}),
 		);
 		assert.ok(html.includes("data-testid=\"mdlp-tab-disposal-444\""));
-		assert.ok(html.includes("Медпомощь 043/у (Схема 444)"));
+		assert.ok(html.includes("Списание по медицинской карте приёма"));
 		assert.ok(html.includes("АКТ-СПИСАНИЕ-0042"));
-		assert.ok(html.includes("Схема 444"));
+		assert.ok(html.includes("Списание материалов"));
 	});
 });

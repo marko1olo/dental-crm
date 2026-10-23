@@ -1,0 +1,49 @@
+/* ─── mdlpMetrics.css — Метрики сканирования и сводные индикаторы (<= 120 строк) ─── */
+
+.mdlp-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 0.75rem;
+	margin: 0.5rem 1.25rem 0 1.25rem;
+	flex-shrink: 0;
+}
+
+.mdlp-metric-card {
+	padding: 0.75rem 1rem;
+	border-radius: 0.75rem;
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.mdlp-metric-title {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.mdlp-metric-value {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	font-family: ui-monospace, monospace;
+}
+
+.mdlp-metric-value.verified {
+	color: #10b981;
+}
+
+.mdlp-metric-value.warning {
+	color: #f59e0b;
+}
+
+.mdlp-metric-value.expired {
+	color: #ef4444;
+}

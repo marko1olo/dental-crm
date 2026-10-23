@@ -1,0 +1,87 @@
+/* ─── mdlpTable.css — Таблица отсканированных упаковок и бейджи статусов (<= 120 строк) ─── */
+
+.mdlp-table-container {
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	border-radius: 0.75rem;
+	overflow: hidden;
+	background-color: var(--paper, #1e293b);
+}
+
+.mdlp-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.mdlp-table th {
+	padding: 0.625rem 0.875rem;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	background-color: var(--paper-soft, #0f172a);
+	color: var(--muted, #94a3b8);
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	white-space: nowrap;
+}
+
+.mdlp-table td {
+	padding: 0.625rem 0.875rem;
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.05));
+	color: var(--ink, #f8fafc);
+	vertical-align: middle;
+}
+
+.mdlp-table tr:last-child td {
+	border-bottom: none;
+}
+
+.mdlp-table tr:hover td {
+	background-color: var(--paper-soft, rgba(15, 23, 42, 0.5));
+}
+
+.mdlp-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.1875rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.mdlp-status-badge.verified {
+	background-color: rgba(16, 185, 129, 0.15);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.mdlp-status-badge.warning {
+	background-color: rgba(245, 158, 11, 0.15);
+	color: #f59e0b;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.mdlp-status-badge.expired {
+	background-color: rgba(239, 68, 68, 0.15);
+	color: #ef4444;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.mdlp-status-badge.invalid {
+	background-color: rgba(148, 163, 184, 0.15);
+	color: #94a3b8;
+	border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.mdlp-empty-table {
+	padding: 3rem 1rem;
+	text-align: center;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+}

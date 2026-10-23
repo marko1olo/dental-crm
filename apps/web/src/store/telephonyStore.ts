@@ -94,6 +94,26 @@ export function resolveTelephonyWsUrl(): string {
 	return `${protocol}//${window.location.host}/api/ws/telephony`;
 }
 
+/**
+ * Резервный WS-адрес телефонии напрямую к API (мимо dev-прокси).
+ * Нужен, когда vite-стенд поднят без ws-апгрейда (VITE_ENABLE_WS_PROXY !== "true"):
+ * прокси принимает TCP, но рукопожатие висит, и события входящих звонков
+ * TELEPHONY_INCOMING_CALL не доходят до софтфона.
+ */
+export function resolveTelephonyFallbackWsUrl(): string {
+	const env = (import.meta as unknown as { env?: Record<string, string> }).env;
+	if (env?.VITE_WS_URL) return "";
+	if (typeof window === "undefined") return "";
+	const apiOrigin = env?.VITE_API_ORIGIN || "http://127.0.0.1:4100";
+	try {
+		const parsed = new URL(apiOrigin);
+		const scheme = parsed.protocol === "https:" ? "wss:" : "ws:";
+		return `${scheme}//${parsed.host}/api/ws/telephony`;
+	} catch {
+		return "ws://127.0.0.1:4100/api/ws/telephony";
+	}
+}
+
 if (typeof window !== "undefined") {
 	(
 		window as unknown as { __denteTelephonyStore?: typeof useTelephonyStore }

@@ -28,7 +28,7 @@ export const MdlpScannerInput: React.FC<MdlpScannerInputProps> = ({
 					type="text"
 					value={barcodeInput}
 					onChange={(e) => onChangeBarcodeInput(e.target.value)}
-					placeholder="Отсканируйте 2D DataMatrix код маркировки или вставьте строку (01...21...)"
+					placeholder="2D DataMatrix (сканер или Ctrl+V)"
 					className="mdlp-scanner-input"
 					data-testid="mdlp-scanner-input"
 					autoComplete="off"

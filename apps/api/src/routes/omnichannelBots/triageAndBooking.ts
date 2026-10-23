@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -260,16 +260,24 @@ export async function fetchInboxMessages(
 		.orderBy(desc(messengerInboundEvents.createdAt))
 		.limit(100);
 
-	// 2. Ищем пациента для получения исходящих ответов
+	// 2. Ищем пациента для получения исходящих ответов.
+	// Телефон в БД хранится в формате «+7 903 555-44-33», поэтому сравниваем
+	// по нормализованным цифрам (та же нормализация, что в fetchInboxConversations),
+	// иначе тред диалога всегда пуст: подстрока «9035554433» в форматированном
+	// телефоне не встречается.
 	const phoneDigits = senderId.replace(/\D/g, "");
+	const national10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
 	const matchedPatients = await db
 		.select()
 		.from(patients)
 		.where(
 			and(
 				eq(patients.organizationId, orgId),
-				phoneDigits.length >= 10
-					? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+				national10
+					? or(
+							eq(patients.phone, senderId),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
+						)
 					: ilike(patients.notes, `%${channel}:${senderId}%`),
 			),
 		)
@@ -286,6 +294,9 @@ export async function fetchInboxMessages(
 				and(
 					eq(communicationEvents.organizationId, orgId),
 					eq(communicationEvents.patientId, patient.id),
+					// В тред конкретного мессенджера попадают только его же каналы,
+					// иначе SMS-уведомления загрязняют переписку в Telegram/WhatsApp.
+					eq(communicationEvents.channel, channel),
 				),
 			)
 			.orderBy(desc(communicationEvents.createdAt))
@@ -323,7 +334,7 @@ export async function fetchInboxMessages(
 			senderId,
 			direction: "outbound",
 			sender: isOperator ? "operator" : "bot",
-			senderName: isOperator ? "Оператор" : "🤖 Ассистент DENTE",
+			senderName: isOperator ? "Оператор клиники" : "Ассистент DENTE",
 			text: ob.message,
 			createdAt: (ob.createdAt || new Date()).toISOString(),
 		});

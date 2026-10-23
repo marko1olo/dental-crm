@@ -18,6 +18,7 @@ import { useAppStore } from "../../../store/appStore";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 import { CallHistoryDrawer } from "../CallHistoryDrawer";
 import { IncomingCallModal } from "../IncomingCallModal";
+import { IncomingCallActionFooter } from "../incomingCallPopupModules/IncomingCallActionFooter";
 import { TelephonyFloatingDialer } from "../TelephonyFloatingDialer";
 import { useTelephonyState } from "../useTelephonyState";
 
@@ -70,6 +71,28 @@ describe("Telephony Facades & Chairside Sterile Zone Invariants (Mandates 8e, 8n
 			);
 
 			assert.equal(html, "", "IncomingCallModal MUST be suppressed during doctor clinical procedures");
+		});
+
+		it("IncomingCallActionFooter renders 1-click callback and quick booking buttons for receptionist", () => {
+			const mockCtrl = {
+				currentCall: {
+					phone: "+79265551234",
+					patientId: "pat-101",
+					patientName: "Смирнова Анна",
+					status: "ringing",
+				},
+				isKnownPatient: true,
+				handleQuickBook: () => {},
+				handleToggleCardDrawer: () => {},
+				showBadgeMoreMenu: false,
+				setShowBadgeMoreMenu: () => {},
+			} as any;
+
+			const html = renderToString(<IncomingCallActionFooter ctrl={mockCtrl} />);
+
+			assert.ok(html.includes('data-testid="badge-action-book"'), "Must contain 1-click booking CTA");
+			assert.ok(html.includes('data-testid="badge-action-callback"'), "Must contain 1-click callback button");
+			assert.ok(html.includes('data-testid="badge-action-card"'), "Must contain 1-click patient card button");
 		});
 	});
 

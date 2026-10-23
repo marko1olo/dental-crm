@@ -44,18 +44,29 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 	return (
 		<footer className="mdlp-footer">
 			<div className="mdlp-footer-info">
-				<span>Документ:</span>
-				<input
-					type="text" value={docNum} onChange={(e) => onChangeDocNum(e.target.value)}
-					className="px-2.5 py-1 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-					style={{ width: 190 }} placeholder="Номер документа" data-testid="mdlp-doc-num-input"
-				/>
-				<span>от</span>
-				<input
-					type="date" value={docDate} onChange={(e) => onChangeDocDate(e.target.value)}
-					className="px-2 py-1 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-					data-testid="mdlp-doc-date-input"
-				/>
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+					<div className="flex items-center gap-2 w-full sm:w-auto">
+						<span className="text-xs text-[var(--muted)] whitespace-nowrap">Документ:</span>
+						<input
+							type="text"
+							value={docNum}
+							onChange={(e) => onChangeDocNum(e.target.value)}
+							className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex-1 sm:w-44"
+							placeholder="Номер документа"
+							data-testid="mdlp-doc-num-input"
+						/>
+					</div>
+					<div className="flex items-center gap-2 w-full sm:w-auto">
+						<span className="text-xs text-[var(--muted)] whitespace-nowrap">от</span>
+						<input
+							type="date"
+							value={docDate}
+							onChange={(e) => onChangeDocDate(e.target.value)}
+							className="px-2 py-1.5 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex-1 sm:w-36"
+							data-testid="mdlp-doc-date-input"
+						/>
+					</div>
+				</div>
 				<div className="hidden sm:flex items-center gap-1.5 text-[11px] text-[var(--muted)] border-l border-[var(--line)] pl-3 ml-2" title="Фиксация выбытия маркированных препаратов">
 					<ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
 					<span>Учет медикаментов</span>
@@ -68,7 +79,7 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 					data-testid="mdlp-clear-all-btn" title="Очистить список сканирования"
 				>
 					<Trash2 className="w-3.5 h-3.5" />
-					<span>Очистить</span>
+					<span>Очистить список</span>
 				</button>
 
 				<button
@@ -87,13 +98,13 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 					<span>Экспорт XML</span>
 				</button>
 
-				{/* Мандат 8am: Ровно ОДНА Primary CTA кнопка «✓ Подтвердить списание», изумрудный цвет DENTE */}
+				{/* Мандат 8am: Ровно ОДНА Primary CTA кнопка «Вывести из оборота», изумрудный цвет DENTE */}
 				<button
 					type="button" onClick={() => onConfirmDisposal?.()} className="mdlp-action-btn primary-cta text-xs font-bold" style={{ height: 38 }}
-					data-testid="mdlp-confirm-disposal-primary-cta" title="Подтвердить списание медикаментов"
+					data-testid="mdlp-confirm-disposal-primary-cta" title="Вывести отсканированные упаковки из оборота в 1 клик"
 				>
 					<PackageCheck className="w-4 h-4" />
-					<span>✓ Подтвердить списание</span>
+					<span>Вывести из оборота</span>
 				</button>
 			</div>
 		</footer>

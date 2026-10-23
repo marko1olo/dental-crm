@@ -17,10 +17,10 @@ export function validateInventoryAuditDraft(doc: Partial<WarehouseInventoryAudit
 		errors.push("Номер инвентаризационной описи обязателен.");
 	}
 	if (!doc.orderNumber || doc.orderNumber.trim().length === 0) {
-		errors.push("Номер приказа о проведении инвентаризации (ИНВ-22) обязателен.");
+		warnings.push("Опись проводится в оперативном порядке (без оформления отдельного приказа).");
 	}
 	if (!doc.molFullName || doc.molFullName.trim().length === 0) {
-		errors.push("ФИО материально ответственного лица (МОЛ) обязательно.");
+		errors.push("ФИО ответственного сотрудника (МОЛ) обязательно.");
 	}
 	if (!doc.commission || doc.commission.length === 0) {
 		warnings.push("Опись оформляется ответственным сотрудником (единоличное списание/опись без обязательного требования комиссии из 3 человек).");

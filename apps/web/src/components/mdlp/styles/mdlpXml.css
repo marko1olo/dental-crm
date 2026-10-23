@@ -1,0 +1,68 @@
+/* ─── mdlpXml.css — Превью XML выгрузки и футер модалки (<= 120 строк) ─── */
+
+.mdlp-xml-preview {
+	margin-top: 0.5rem;
+	padding: 1rem;
+	background-color: var(--paper-soft, #0f172a);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	border-radius: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.mdlp-xml-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+}
+
+.mdlp-xml-code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.75rem;
+	background-color: #090d16;
+	color: #38bdf8;
+	padding: 0.75rem;
+	border-radius: 0.5rem;
+	max-height: 200px;
+	overflow-y: auto;
+	white-space: pre;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mdlp-footer {
+	padding: 1rem 1.25rem;
+	border-top: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background-color: var(--paper-soft, #0f172a);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.mdlp-footer-info {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.mdlp-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+	.mdlp-footer {
+		padding: 0.75rem 1rem;
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 16px));
+	}
+}

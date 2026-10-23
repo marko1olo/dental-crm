@@ -14,6 +14,7 @@ import {
 } from "./types.js";
 import { useMdlpXmlExport } from "./useMdlpXmlExport.js";
 import { useMdlpDisposalActions } from "./useMdlpDisposalActions.js";
+import { useMdlpHidScanner } from "./useMdlpHidScanner.js";
 
 export function useMdlpModalState(props: MdlpScanningModalProps) {
 	const {
@@ -25,11 +26,9 @@ export function useMdlpModalState(props: MdlpScanningModalProps) {
 	const scannerInputId = useId();
 	const [mode, setMode] = useState<MdlpScanMode>(initialMode);
 	const [barcodeInput, setBarcodeInput] = useState("");
-	const [docNum, setDocNum] = useState(() => {
-		if (isAcceptanceMode(initialMode)) return "УПД-2026-0891";
-		if (isSpoilageMode(initialMode)) return "АКТ-СПИСАНИЕ-0042";
-		return "АКТ-ВЫБЫТИЕ-0042";
-	});
+	const [docNum, setDocNum] = useState(() => (
+		isAcceptanceMode(initialMode) ? "УПД-2026-0891" : isSpoilageMode(initialMode) ? "АКТ-СПИСАНИЕ-0042" : "АКТ-ВЫБЫТИЕ-0042"
+	));
 	const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [scannedItems, setScannedItems] = useState<readonly ChestnyZnakScannedItem[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -43,15 +42,19 @@ export function useMdlpModalState(props: MdlpScanningModalProps) {
 		scannedItems, setScannedItems, onDeferredDisposal,
 	);
 
+	useMdlpHidScanner({
+		isOpen, inputRef, setBarcodeInput, setScannedItems,
+		resetXml: () => { xml.setGeneratedXml(null); xml.setXmlDocType(null); },
+		playBeep: actions.playBeep,
+	});
+
 	useEffect(() => {
 		if (isOpen) inputRef.current?.focus();
 	}, [isOpen, mode]);
 
 	const handleModeSwitch = (newMode: MdlpScanMode) => {
 		setMode(newMode);
-		if (isAcceptanceMode(newMode)) setDocNum("УПД-2026-0891");
-		else if (isSpoilageMode(newMode)) setDocNum("АКТ-СПИСАНИЕ-0042");
-		else setDocNum("АКТ-ВЫБЫТИЕ-0042");
+		setDocNum(isAcceptanceMode(newMode) ? "УПД-2026-0891" : isSpoilageMode(newMode) ? "АКТ-СПИСАНИЕ-0042" : "АКТ-ВЫБЫТИЕ-0042");
 		xml.setGeneratedXml(null);
 		xml.setXmlDocType(null);
 	};

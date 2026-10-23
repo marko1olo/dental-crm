@@ -57,8 +57,8 @@ export const MdlpModeTabs: React.FC<MdlpModeTabsProps> = ({
 				<Syringe className="w-4 h-4 shrink-0" />
 				<span className="hidden sm:inline">Списание по сроку годности / браку</span>
 				<span className="sm:hidden">Брак / Срок</span>
-				<span className="sr-only">Медпомощь 043/у (Схема 444)</span>
-				<span className="sr-only">Схема 444</span>
+				<span className="sr-only">Списание по медицинской карте приёма</span>
+				<span className="sr-only">Списание материалов</span>
 			</button>
 		</div>
 	);
