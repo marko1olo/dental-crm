@@ -1,14 +1,26 @@
 import { randomUUID } from "node:crypto";
-import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { resolveOrganizationId } from "../../../accessGuard.js";
+import {
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+	requireResolvedOrganizationId,
+} from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { doctorShiftRosters } from "../../../db/schema.js";
 import { shiftsPayloadSchema } from "../types.js";
 
+/**
+ * Смены врачей (сетка кресел). Гард по образцу соседних diary-хендлеров:
+ * чтение — requireClinicalReadAccess, запись — requireClinicalMutationAccess,
+ * организация — только из подписанного токена (requireResolvedOrganizationId).
+ * Раньше здесь был молчаливый фолбэк на демо-организацию: любой запрос без
+ * авторизации получал сетку смен витринной демо-клиники. Теперь нет токена — 401.
+ */
 export async function handleDoctorShiftsGet(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-	const orgId = (await resolveOrganizationId(req)) || DEMO_SHOWCASE_ORG_ID;
+	if (!(await requireClinicalReadAccess(req, reply, "read doctor shifts"))) return;
+	const orgId = await requireResolvedOrganizationId(req, reply, "read doctor shifts");
+	if (!orgId) return;
 
 	const rows = await db
 		.select()
@@ -32,7 +44,10 @@ export async function handleDoctorShiftsGet(req: FastifyRequest, reply: FastifyR
 }
 
 export async function handleDoctorShiftsPost(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-	const orgId = (await resolveOrganizationId(req)) || DEMO_SHOWCASE_ORG_ID;
+	if (!(await requireClinicalMutationAccess(req, reply, "save doctor shifts"))) return;
+	const orgId = await requireResolvedOrganizationId(req, reply, "save doctor shifts");
+	if (!orgId) return;
+
 	const parsed = shiftsPayloadSchema.safeParse(req.body);
 	if (!parsed.success) {
 		return reply.code(400).send({

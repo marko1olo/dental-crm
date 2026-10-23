@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import registerDiaryRoutes from "../../routes/diary.js";
+import registerDiaryRoutes from "../../routes/diary/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
