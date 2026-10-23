@@ -42,6 +42,11 @@ export const TOOTH48_GEOMETRY = {
 	cejCurve: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
 	apex: { x: 60.5, y: 148.0 },
 	distalCurvedApex: { x: 60.5, y: 148.0 },
+	apices: [{ x: 60.5, y: 148.0, r: 9.5 }] as const,
+	cervicalShoulderPath:
+		"M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74 L 83.5,71.5 C 72,73.5 62,74.0 50,74.0 C 38,74.0 28,73.5 16.5,71.5 Z",
+	compositeFillingPath:
+		"M 28,22 C 36,21 44,21 50,22 C 56,21 64,21 72,22 C 70,26 62,27 50,27 C 38,27 30,26 28,22 Z",
 	// Longitudinal developmental fusion groove following the distal sweep
 	fusedRootSulcus: "M 48,80 C 48,100 52,122 59,142",
 	fusedRootHighlight: "M 49.5,82 C 49.5,101 53.5,122 60,141",

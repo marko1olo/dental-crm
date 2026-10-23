@@ -47,6 +47,14 @@ export const TOOTH47_GEOMETRY = {
 	mesialApex: { x: 31, y: 148 },
 	distalApex: { x: 69, y: 147 },
 	furcationApex: { x: 50, y: 104 },
+	apices: [
+		{ x: 38.0, y: 147.0, r: 8.5 },
+		{ x: 62.0, y: 147.0, r: 8.5 },
+	] as const,
+	cervicalShoulderPath:
+		"M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74 L 83.5,71.5 C 72,73.5 62,74.0 50,74.0 C 38,74.0 28,73.5 16.5,71.5 Z",
+	compositeFillingPath:
+		"M 26,22 C 34,20 44,20 50,21 C 56,20 66,20 74,22 C 72,26 62,27 50,27 C 38,27 28,26 26,22 Z",
 	// Parallel root longitudinal sulci
 	mesialLongitudinalGroove: "M 27,80 C 26,98 27,122 31,144",
 	distalLongitudinalGroove: "M 73,80 C 74,98 73,122 69,143",

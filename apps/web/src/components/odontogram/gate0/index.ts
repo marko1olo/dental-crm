@@ -1,3 +1,5 @@
+export * from "./ToothAdaptivePeriapicalArea";
+export * from "./ToothCrownOverlay";
 export * from "./Tooth46AbutmentOverlay";
 export * from "./Tooth46AdvancedPathologyGeometry";
 export * from "./Tooth46AdvancedPathologyOverlay";

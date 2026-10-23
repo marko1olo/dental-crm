@@ -2,14 +2,14 @@ import React from "react";
 import { Tooth46CariesOverlay } from "../../Tooth46CariesOverlay";
 import { Tooth46InlayOnlayOverlay } from "../../Tooth46InlayOnlayOverlay";
 import { Tooth46PathologyOverlay } from "../../Tooth46PathologyOverlay";
-import { Tooth46PeriapicalArea } from "../../Tooth46PeriapicalArea";
-import { Tooth46RestorationOverlay } from "../../Tooth46RestorationOverlay";
+import { ToothAdaptivePeriapicalArea } from "../../ToothAdaptivePeriapicalArea";
 import { Tooth46ShaderDefs } from "../../Tooth46ShaderDefs";
 import { Tooth46SurgeryOverlay } from "../../Tooth46SurgeryOverlay";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
 import { DEFAULT_TOOTH46_LAYERS, type Tooth46ContainerProps } from "../../tooth46Types";
 import { Tooth47EnamelCrown } from "./Tooth47EnamelCrown";
 import { Tooth47EndoCanals } from "./Tooth47EndoCanals";
+import { Tooth47RestorationOverlay } from "./Tooth47RestorationOverlay";
 import { TOOTH47_GEOMETRY } from "./tooth47Geometry";
 import { Tooth47Roots } from "./Tooth47Roots";
 
@@ -45,7 +45,13 @@ export const Tooth47Container: React.FC<Tooth46ContainerProps> = ({
 			role="img"
 		>
 			<Tooth46ShaderDefs />
-			<Tooth46PeriapicalArea condition={a.periapicalCondition} halo={a.periapicalHalo} isDark={isDark} />
+			<ToothAdaptivePeriapicalArea
+				toothId="47"
+				apices={TOOTH47_GEOMETRY.apices}
+				condition={a.periapicalCondition}
+				halo={a.periapicalHalo}
+				isDark={isDark}
+			/>
 			{a.roots && !a.implant && (
 				<Tooth47Roots showGrooves={a.grooves ?? true} showCej={a.cej ?? true} isEndo={isEndo} isDark={isDark} />
 			)}
@@ -74,7 +80,7 @@ export const Tooth47Container: React.FC<Tooth46ContainerProps> = ({
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (
-				<Tooth46RestorationOverlay
+				<Tooth47RestorationOverlay
 					showComposite={Boolean(a.composite)}
 					showZirconiaCrown={Boolean(a.zirconiaCrown)}
 					crownMaterial={a.crownMaterial ?? "zirconia"}

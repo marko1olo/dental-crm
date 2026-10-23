@@ -42,6 +42,11 @@ export const TOOTH44_GEOMETRY = {
 	cejPath: "M 17,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 83,74",
 	cejCurve: "M 17,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 83,74",
 	apex: { x: 51.0, y: 147.5 },
+	apices: [{ x: 50.8, y: 147.5, r: 9.5 }] as const,
+	cervicalShoulderPath:
+		"M 17,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 83,74 L 82.5,71.5 C 72,73.5 62,74.0 50,74.0 C 38,74.0 28,73.5 17.5,71.5 Z",
+	compositeFillingPath:
+		"M 32,22 C 38,20 46,19 50,20 C 54,19 62,20 66,23 C 65,27 58,29 50,29 C 42,29 34,27 32,22 Z",
 	// Longitudinal root depression groove
 	rootSulcus: "M 50,80 C 49.5,100 50.2,122 51,142",
 	rootSulcusHighlight: "M 51.2,82 C 50.8,101 51.5,122 52.0,141",

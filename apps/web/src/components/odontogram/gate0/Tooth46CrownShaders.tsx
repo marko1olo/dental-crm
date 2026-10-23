@@ -13,6 +13,10 @@ import type React from "react";
 export const Tooth46CrownShaders: React.FC = () => {
 	return (
 		<>
+			{/* Clinical Crown Shader Aliases */}
+			<linearGradient id="dente-zirconia-crown" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-pfm-crown" href="#dente-crown-pfm" />
+			<linearGradient id="dente-gold-crown" href="#dente-crown-gold" />
 			{/* 1. Monolithic Zirconia (ZrO2) */}
 			<linearGradient id="dente-zirconia-ceramic" x1="0" y1="0" x2="0" y2="1">
 				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.99" />

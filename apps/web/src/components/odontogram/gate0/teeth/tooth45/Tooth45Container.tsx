@@ -2,15 +2,16 @@ import React from "react";
 import { Tooth46CariesOverlay } from "../../Tooth46CariesOverlay";
 import { Tooth46InlayOnlayOverlay } from "../../Tooth46InlayOnlayOverlay";
 import { Tooth46PathologyOverlay } from "../../Tooth46PathologyOverlay";
-import { Tooth46PeriapicalArea } from "../../Tooth46PeriapicalArea";
-import { Tooth46RestorationOverlay } from "../../Tooth46RestorationOverlay";
+import { ToothAdaptivePeriapicalArea } from "../../ToothAdaptivePeriapicalArea";
 import { Tooth46ShaderDefs } from "../../Tooth46ShaderDefs";
 import { Tooth46SurgeryOverlay } from "../../Tooth46SurgeryOverlay";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
 import { DEFAULT_TOOTH46_LAYERS, type Tooth46ContainerProps } from "../../tooth46Types";
 import { Tooth45EnamelCrown } from "./Tooth45EnamelCrown";
 import { Tooth45EndoCanals } from "./Tooth45EndoCanals";
+import { Tooth45RestorationOverlay } from "./Tooth45RestorationOverlay";
 import { Tooth45Roots } from "./Tooth45Roots";
+import { TOOTH45_GEOMETRY } from "./tooth45Geometry";
 
 export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 	isDark = false,
@@ -44,7 +45,13 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 			role="img"
 		>
 			<Tooth46ShaderDefs />
-			<Tooth46PeriapicalArea condition={a.periapicalCondition} halo={a.periapicalHalo} isDark={isDark} />
+			<ToothAdaptivePeriapicalArea
+				toothId="45"
+				apices={TOOTH45_GEOMETRY.apices}
+				condition={a.periapicalCondition}
+				halo={a.periapicalHalo}
+				isDark={isDark}
+			/>
 			{a.roots && !a.implant && (
 				<Tooth45Roots showGrooves={a.grooves ?? true} showCej={a.cej ?? true} isEndo={isEndo} isDark={isDark} />
 			)}
@@ -73,7 +80,7 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (
-				<Tooth46RestorationOverlay
+				<Tooth45RestorationOverlay
 					showComposite={Boolean(a.composite)}
 					showZirconiaCrown={Boolean(a.zirconiaCrown)}
 					crownMaterial={a.crownMaterial ?? "zirconia"}

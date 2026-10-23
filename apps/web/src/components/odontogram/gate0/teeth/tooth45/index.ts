@@ -1,4 +1,5 @@
 export { Tooth45Container } from "./Tooth45Container";
+export { Tooth45RestorationOverlay } from "./Tooth45RestorationOverlay";
 export { Tooth45EnamelCrown } from "./Tooth45EnamelCrown";
 export { Tooth45OcclusalCusps } from "./Tooth45OcclusalCusps";
 export { Tooth45Roots } from "./Tooth45Roots";
