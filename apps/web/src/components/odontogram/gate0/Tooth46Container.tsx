@@ -23,19 +23,27 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 	presetId,
 	className,
 	style,
+	badgeRadius,
+	badgeCy,
+	showBadge = true,
 }) => {
 	const a = { ...DEFAULT_TOOTH46_LAYERS, ...layers };
+	if (showBadge === false) a.showBadge = false;
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
+	const r = badgeRadius ?? 8.5;
+	const cy = badgeCy ?? (r > 10 ? 162 + (r - 10) * 0.6 : 160);
+	const baseHeight = r > 10 ? Math.ceil(165 + r + 3) : 170;
+	const viewBox = r > 10 ? `0 0 100 ${baseHeight}` : TOOTH46_GEOMETRY.viewBox;
 
 	return (
 		<svg
-			viewBox={TOOTH46_GEOMETRY.viewBox}
+			viewBox={viewBox}
 			width={100 * zoom}
-			height={170 * zoom}
+			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
-			style={{ display: "block", ...(style ?? {}) }}
+			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
 			aria-label="Анатомический нижний первый моляр 46"
 			role="img"
 		>
@@ -98,7 +106,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				isDark={isDark}
 			/>
 			{a.missing && <Tooth46SurgeryOverlay showMissing />}
-			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} />}
+			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} />}
 		</svg>
 	);
 };

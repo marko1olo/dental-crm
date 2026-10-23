@@ -19,12 +19,13 @@ export function renderStandaloneLaunchers(
 		return null;
 	}
 
-	// 0. Gate 0 Odontogram Tooth 46 Stand Launcher (?stand=odontogram-gate0, #odontogram-gate0)
+	// 0. Gate 0 Odontogram Tooth 46 Stand & 32-Tooth Full Arch Mockup Launcher
 	if (
 		typeof window !== "undefined" &&
-		(window.location.search.includes("stand=odontogram-gate0") ||
-			window.location.search.includes("odontogram-gate0") ||
-			window.location.hash.includes("odontogram-gate0"))
+		(window.location.search.includes("odontogram-gate0") ||
+			window.location.hash.includes("odontogram-gate0") ||
+			window.location.search.includes("odontogram-32") ||
+			window.location.hash.includes("odontogram-32"))
 	) {
 		return <Tooth46InspectionStand />;
 	}

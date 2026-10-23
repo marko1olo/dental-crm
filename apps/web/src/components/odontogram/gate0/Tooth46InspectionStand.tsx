@@ -1,8 +1,14 @@
+/**
+ * DENTE Dental CRM — Tooth 46 Inspection Stand & Full Arch Mockup Coordinator
+ * Mandate 8b <= 120 lines.
+ */
+
 import React, { useEffect, useState } from "react";
+import { Tooth46FullArchMockup } from "./archMockup/Tooth46FullArchMockup";
+import type { BadgeSizeOption } from "./archMockup/archMockupTypes";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
-import { Tooth46Container } from "./Tooth46Container";
+import { Tooth46SingleView } from "./Tooth46SingleView";
 import { Tooth46StandHeader } from "./Tooth46StandHeader";
-import { Tooth46StandToggles } from "./Tooth46StandToggles";
 import {
 	type CrownMaterial,
 	DEFAULT_TOOTH46_LAYERS,
@@ -21,17 +27,20 @@ export const Tooth46InspectionStand: React.FC = () => {
 		return false;
 	});
 	const [zoom, setZoom] = useState<number>(2);
-	const [activePreset, setActivePreset] =
-		useState<Tooth46ClinicalPreset | null>("intact");
-	const [layers, setLayers] = useState<Tooth46LayerFlags>(
-		DEFAULT_TOOTH46_LAYERS,
-	);
+	const [activePreset, setActivePreset] = useState<Tooth46ClinicalPreset | null>("intact");
+	const [layers, setLayers] = useState<Tooth46LayerFlags>(DEFAULT_TOOTH46_LAYERS);
+	const [standMode, setStandMode] = useState<"single" | "arch32">(() => {
+		if (typeof window !== "undefined") {
+			const s = window.location.search;
+			const h = window.location.hash;
+			if (s.includes("odontogram-32") || h.includes("odontogram-32")) return "arch32";
+		}
+		return "single";
+	});
+	const initialBadgeSize = (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("size") as BadgeSizeOption) || "l";
 
 	useEffect(() => {
-		document.documentElement.setAttribute(
-			"data-theme",
-			isDark ? "dark" : "light",
-		);
+		document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
 		document.documentElement.classList.toggle("dark", isDark);
 		document.documentElement.classList.toggle("light", !isDark);
 	}, [isDark]);
@@ -52,14 +61,10 @@ export const Tooth46InspectionStand: React.FC = () => {
 
 	const handleToggleCondition = (type: "composite" | "crown") => {
 		const k = type === "composite" ? "compositeCondition" : "crownCondition";
-		setLayers((prev) => ({
-			...prev,
-			[k]: prev[k] === "defective" ? "adequate" : "defective",
-		}));
+		setLayers((prev) => ({ ...prev, [k]: prev[k] === "defective" ? "adequate" : "defective" }));
 	};
 
 	const bg = "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]";
-	const card = "bg-[var(--paper-strong,#f8fafc)] border-[var(--line,#e2e8f0)]";
 
 	return (
 		<div
@@ -71,42 +76,24 @@ export const Tooth46InspectionStand: React.FC = () => {
 				isDark={isDark}
 				onZoomChange={setZoom}
 				onToggleTheme={() => setIsDark((d) => !d)}
+				standMode={standMode}
+				onSelectStandMode={setStandMode}
 			/>
-			<Tooth46StandToggles
-				layers={layers}
-				activePreset={activePreset}
-				onSelectPreset={handleSelectPreset}
-				onToggle={toggleLayer}
-				onChangeCrownMaterial={handleChangeCrownMaterial}
-				onToggleCondition={handleToggleCondition}
-			/>
-			<main
-				className={`flex-1 w-full max-w-5xl rounded-2xl border p-3 sm:p-6 flex flex-col items-center justify-center relative overflow-auto ${card}`}
-			>
-				<div className="stand-hud absolute top-2 left-3 sm:top-3 sm:left-4 text-[10px] sm:text-xs font-mono opacity-60 space-y-0.5 pointer-events-none">
-					<div>
-						Масштаб: {zoom}x ({100 * zoom}×{170 * zoom}px)
-					</div>
-					<div>
-						Статус:{" "}
-						{activePreset
-							? TOOTH46_PRESETS.find((p) => p.id === activePreset)?.nameRu
-							: "Пользовательский"}
-					</div>
-					<div>
-						WCAG: {isDark ? "4.52:1 (AAA)" : "3.33:1 (AA)"} · 5 Бугров: MB, DB,
-						D, ML, DL
-					</div>
-				</div>
-				<div className="p-2 sm:p-8 pb-44 sm:pb-8 transition-transform duration-200">
-					<Tooth46Container
-						isDark={isDark}
-						zoom={zoom}
-						layers={layers}
-						presetId={activePreset ?? undefined}
-					/>
-				</div>
-			</main>
+
+			{standMode === "arch32" ? (
+				<Tooth46FullArchMockup isDark={isDark} initialSize={initialBadgeSize} />
+			) : (
+				<Tooth46SingleView
+					isDark={isDark}
+					zoom={zoom}
+					layers={layers}
+					activePreset={activePreset}
+					onSelectPreset={handleSelectPreset}
+					onToggleLayer={toggleLayer}
+					onChangeCrownMaterial={handleChangeCrownMaterial}
+					onToggleCondition={handleToggleCondition}
+				/>
+			)}
 		</div>
 	);
 };

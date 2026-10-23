@@ -73,7 +73,9 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 				search.includes("cbct=true") ||
 				search.includes("cbct") ||
 				search.includes("scenarios=demo") ||
-				search.includes("presenter=demo")
+				search.includes("presenter=demo") ||
+				search.includes("odontogram") ||
+				search.includes("stand=")
 			) {
 				localStorage.setItem("dente_demo_showcase", "true");
 				return true;

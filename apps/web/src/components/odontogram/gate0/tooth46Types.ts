@@ -106,4 +106,7 @@ export interface Tooth46ContainerProps {
 	presetId?: string | undefined;
 	className?: string | undefined;
 	style?: React.CSSProperties | undefined;
+	badgeRadius?: number | undefined;
+	badgeCy?: number | undefined;
+	showBadge?: boolean | undefined;
 }

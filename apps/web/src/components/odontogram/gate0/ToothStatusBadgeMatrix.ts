@@ -79,3 +79,16 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	calculus: { code: "Км", title: "Зубной камень (над- и поддесневой)", bg: "#78350f", border: "#92400e", text: "#ffffff" },
 	crack: { code: "Тр", title: "Трещина эмали (Infraction)", bg: "#dc2626", border: "#b91c1c", text: "#ffffff" },
 };
+
+export const INTACT_BADGE: ToothStatusBadgeInfo = {
+	code: "✓",
+	title: "Интактный / Здоров",
+	bg: "#64748b",
+	border: "#94a3b8",
+	text: "#ffffff",
+};
+
+export function getStatusBadge(key?: string | undefined): ToothStatusBadgeInfo {
+	if (!key) return INTACT_BADGE;
+	return TOOTH_STATUS_MATRIX[key] ?? INTACT_BADGE;
+}
