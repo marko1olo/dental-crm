@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
+const API_BASE = "http://127.0.0.1:4100";
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:5174";
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/orthopedics";
 
@@ -21,8 +22,19 @@ if (!executablePath) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function run() {
-	console.log("🚀 Launching browser for Orthopedics 4-State Proofs:", executablePath);
+	console.log("🔐 Authenticating against Fastify API...");
+	const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email: "admin@clinic.ru", password: "Password123!" }),
+	});
+	if (!loginRes.ok) {
+		throw new Error(`Login failed with HTTP ${loginRes.status}: ${await loginRes.text()}`);
+	}
+	const auth = await loginRes.json();
+	console.log(`✅ Logged in as ${auth.user?.fullName} (${auth.clinic?.name || "ООО ДЕНТЕ"})`);
 
+	console.log("🚀 Launching browser for Orthopedics 4-State Proofs:", executablePath);
 	const browser = await chromium.launch({
 		executablePath,
 		headless: true,
@@ -86,36 +98,42 @@ async function run() {
 
 		const page = await context.newPage();
 
-		page.on("console", (msg) => console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`));
-		page.on("pageerror", (err) => console.error(`[Browser PageError]:`, err));
-
 		await page.addInitScript(
-			({ t }) => {
-				localStorage.setItem("dente_clinic_token", "demo-token");
-				localStorage.setItem("dente_staff_token", "demo-token");
+			({ clinicToken, staffToken, u, t }) => {
+				localStorage.setItem("dente_clinic_token", clinicToken);
+				localStorage.setItem("dente_staff_token", staffToken);
+				localStorage.setItem("dente_active_role", u.role);
+				localStorage.setItem("dente_active_user_id", u.id);
+				localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(u));
+				localStorage.setItem("dente_demo_showcase", "true");
 				localStorage.setItem("dente_theme", t);
 				localStorage.setItem("dente_theme_mode", t);
 				localStorage.setItem(
 					"dente_ui_preferences_v1",
 					JSON.stringify({ onboardingDismissed: true, theme: t }),
 				);
+				localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+				localStorage.setItem("dente_tour_completed", "true");
+				localStorage.setItem("dente_tour_dismissed", "true");
+				localStorage.setItem("dente_demo_banner_dismissed", "true");
+				document.cookie = `dente_clinic_token=${encodeURIComponent(clinicToken)}; path=/; max-age=31536000`;
+				document.cookie = `dente_staff_token=${encodeURIComponent(staffToken)}; path=/; max-age=31536000`;
 			},
-			{ t: state.theme },
+			{ clinicToken: auth.clinicToken, staffToken: auth.staffToken, u: auth.user, t: state.theme },
 		);
 
-		await page.goto(`${BASE_URL}/?standalone=orthopedics&theme=${state.theme}`, {
+		await page.goto(`${BASE_URL}/?standalone=orthopedics&demo=true&theme=${state.theme}`, {
 			waitUntil: "commit",
-			timeout: 60000,
+			timeout: 30000,
 		});
 
-		// Ждём реального монтирования рабочего кокпита ортопедии
 		console.log("Waiting for orthopedics-standalone-workspace to mount...");
 		await page.waitForSelector('[data-testid="orthopedics-standalone-workspace"]', {
-			timeout: 60000,
+			timeout: 30000,
 		});
 		console.log("Mounted successfully!");
 
-		await sleep(800);
+		await sleep(500);
 
 		// Принудительно устанавливаем тему
 		await page.evaluate(({ t }) => {
@@ -135,18 +153,6 @@ async function run() {
 
 		await sleep(300);
 
-		// Если это PC Dark или Mobile Dark — откроем шкалу культи ND и кликнем на ND3
-		const stumpTab = page.locator('[data-testid="vita-stump-tab"]');
-		if (await stumpTab.count() > 0 && await stumpTab.isVisible()) {
-			await stumpTab.click();
-			await sleep(300);
-			const nd3Btn = page.locator('button:has-text("ND3")');
-			if (await nd3Btn.count() > 0) {
-				await nd3Btn.first().click();
-				await sleep(200);
-			}
-		}
-
 		const outPath = path.join(PROOFS_DIR, state.file);
 		await page.screenshot({ path: outPath, fullPage: false });
 		console.log(`✅ Saved: ${outPath}`);
@@ -154,7 +160,7 @@ async function run() {
 		await context.close();
 	}
 
-	// Дополнительный скриншот: открытый Гарантийный Паспорт А4 с QR-кодом
+	// 5. Дополнительный скриншот: открытый Гарантийный Паспорт А4 с QR-кодом
 	console.log("\n📸 Capturing Orthopedic Passport A4 Modal with QR code (PC Light)...");
 	const passportContext = await browser.newContext({
 		viewport: { width: 1440, height: 900 },
@@ -163,25 +169,34 @@ async function run() {
 		colorScheme: "light",
 	});
 	const passportPage = await passportContext.newPage();
-	await passportPage.addInitScript(() => {
-		localStorage.setItem("dente_clinic_token", "demo-token");
-		localStorage.setItem("dente_staff_token", "demo-token");
-		localStorage.setItem("dente_theme", "light");
-	});
+	await passportPage.addInitScript(
+		({ clinicToken, staffToken, u }) => {
+			localStorage.setItem("dente_clinic_token", clinicToken);
+			localStorage.setItem("dente_staff_token", staffToken);
+			localStorage.setItem("dente_active_role", u.role);
+			localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(u));
+			localStorage.setItem("dente_demo_showcase", "true");
+			localStorage.setItem("dente_theme", "light");
+			localStorage.setItem("dente_theme_mode", "light");
+			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+			document.cookie = `dente_clinic_token=${encodeURIComponent(clinicToken)}; path=/; max-age=31536000`;
+			document.cookie = `dente_staff_token=${encodeURIComponent(staffToken)}; path=/; max-age=31536000`;
+		},
+		{ clinicToken: auth.clinicToken, staffToken: auth.staffToken, u: auth.user },
+	);
 
 	try {
-		await passportPage.goto(`${BASE_URL}/?standalone=orthopedics&theme=light`, {
-			waitUntil: "domcontentloaded",
+		await passportPage.goto(`${BASE_URL}/?standalone=orthopedics&demo=true&theme=light`, {
+			waitUntil: "commit",
 			timeout: 30000,
 		});
-		await passportPage.waitForLoadState("domcontentloaded");
-		await sleep(1000);
+		await passportPage.waitForSelector('[data-testid="orthopedics-standalone-workspace"]', { timeout: 30000 });
+		await sleep(500);
 
-		// Кликаем на кнопку открытия гарантийного паспорта
 		const passportBtn = passportPage.locator('[data-testid="open-orthopedic-passport-btn"]');
 		if (await passportBtn.count() > 0 && await passportBtn.isVisible()) {
 			await passportBtn.click();
-			await sleep(800);
+			await sleep(500);
 			const passportOut = path.join(PROOFS_DIR, "passport_a4_qr_pc_light.png");
 			await passportPage.screenshot({ path: passportOut, fullPage: false });
 			console.log(`✅ Saved Passport Modal: ${passportOut}`);

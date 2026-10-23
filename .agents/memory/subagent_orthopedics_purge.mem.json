@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-10-23T13:05:00+04:00",
+  "task": "Orthopedics & Dental Lab (ZTL) Monolith Decomposition & Doctor Autonomy",
+  "status": "COMPLETED",
+  "mandates": [
+    "Mandate 8b (All source files <= 120 lines, Layered Architecture)",
+    "Mandate 8e (Doctor Autonomy, non-blocking CTA, instant normative defaults)",
+    "Mandate 8n (Solo Doctor & Small Clinic Sovereignty, amountKopecks in ZTL orders)",
+    "Mandate 8x (Zero bird language, zero Decree 804n/Form 043u raw numbers in UI)",
+    "Mandate 8d (Zero emojis)",
+    "Mandate 8am (Single Primary CTA 'Send to Lab' in emerald style)",
+    "Mandate 8ze & Apple HIG (Mobile cards, touch targets >= 44x44px, 0px horizontal scroll)",
+    "Mandate 8an (Strict per-file git add, no destructive commands, detailed commits)"
+  ],
+  "decomposed_modules": {
+    "orthopedicsPresets.ts": {
+      "facade_lines": 12,
+      "submodules": [
+        "presets/ztlPresetTypes.ts (17 lines)",
+        "presets/ztlOrderPresets.ts (60 lines)",
+        "presets/fixationPresets.ts (34 lines)",
+        "presets/stumpShadePresets.ts (16 lines)",
+        "presets/preparationMarginPresets.ts (32 lines)",
+        "presets/vita3dMasterPresets.ts (32 lines)"
+      ]
+    },
+    "OrthopedicsChairsideLabOrderBanner.tsx": {
+      "facade_lines": 11,
+      "submodules": [
+        "banner/orthopedicsBannerTypes.ts (51 lines)",
+        "banner/OrthopedicsChairsideTopBar.tsx (115 lines)",
+        "banner/OrthopedicsChairsideLinkedBanner.tsx (89 lines)",
+        "banner/OrthopedicsChairsideFooterBar.tsx (116 lines)"
+      ]
+    },
+    "OrthopedicPassportA4Modal.tsx": {
+      "facade_lines": 80,
+      "submodules": [
+        "passport/orthopedicPassportTypes.ts (30 lines)",
+        "passport/OrthopedicPassportHeader.tsx (56 lines)",
+        "passport/OrthopedicPassportSpecsTable.tsx (76 lines)",
+        "passport/OrthopedicPassportCareNotice.tsx (39 lines)",
+        "passport/OrthopedicPassportSignatures.tsx (37 lines)",
+        "passport/OrthopedicPassportMobileBar.tsx (40 lines)"
+      ]
+    },
+    "OrthopedicsZtlSelectors.tsx": {
+      "facade_lines": 72,
+      "submodules": [
+        "selectors/orthopedicsSelectorsTypes.ts (27 lines)",
+        "selectors/ZtlPresetsGrid.tsx (59 lines)",
+        "selectors/ZtlPrepMarginSelector.tsx (53 lines)",
+        "selectors/ZtlFixationSelector.tsx (73 lines)",
+        "selectors/ZtlManufacturingStageTracker.tsx (65 lines)",
+        "selectors/ZtlStumpShadeSelector.tsx (53 lines)",
+        "selectors/ZtlSoloEconomicsCard.tsx (68 lines)",
+        "selectors/ZtlOcclusionDrawer.tsx (66 lines)"
+      ]
+    },
+    "orthopedicProtocols.ts": {
+      "facade_lines": 11,
+      "submodules": [
+        "protocols/orthopedicProtocolTypes.ts (71 lines)",
+        "protocols/orthopedicVitaConstants.ts (18 lines)",
+        "protocols/protocolsFixed.ts (77 lines)",
+        "protocols/protocolsTryInAndTemp.ts (60 lines)",
+        "protocols/protocolsRemovableAndNorm.ts (36 lines)",
+        "protocols/canonicalProtocolsData.ts (9 lines)",
+        "protocols/orthopedicProtocolFormatter.ts (72 lines)",
+        "protocols/orthopedicProtocolApplier.ts (82 lines)"
+      ]
+    }
+  },
+  "visual_proofs": {
+    "pc_light": "docs/proofs/orthopedics/pc_light_1440x900.png (118,806 bytes)",
+    "pc_dark": "docs/proofs/orthopedics/pc_dark_1440x900.png (118,558 bytes)",
+    "mobile_light": "docs/proofs/orthopedics/mobile_light_390x844.png (55,828 bytes)",
+    "mobile_dark": "docs/proofs/orthopedics/mobile_dark_390x844.png (55,969 bytes)",
+    "passport_a4_qr": "docs/proofs/orthopedics/passport_a4_qr_pc_light.png (103,685 bytes)"
+  },
+  "verification": {
+    "vitest": "61 passed, 0 failed (5 test files, 100% PASS)",
+    "check_encoding": "15,926 files checked, UTF-8 clean, Exit Code 0"
+  }
+}
