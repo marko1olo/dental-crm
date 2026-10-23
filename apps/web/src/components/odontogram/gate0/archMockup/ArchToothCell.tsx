@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { Tooth44Container } from "../teeth/tooth44/index";
 import { Tooth45Container } from "../teeth/tooth45/index";
 import { Tooth47Container } from "../teeth/tooth47/index";
 import { Tooth48Container } from "../teeth/tooth48/index";
@@ -61,7 +62,9 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 				? Tooth47Container
 				: toothNumber === 45 || toothNumber === 35
 					? Tooth45Container
-					: Tooth46Container;
+					: toothNumber === 44 || toothNumber === 34
+						? Tooth44Container
+						: Tooth46Container;
 
 	const toothSvg = (
 		<div
