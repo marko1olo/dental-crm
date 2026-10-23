@@ -92,6 +92,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 				onOpenInboundDrawer={() => logic.handleOpenInboundDrawer()}
 				onOpenInboundInvoice={onOpenInboundInvoice}
 				onOpenShiftDeduction={onOpenShiftDeduction}
+				onOpenMdlpScanning={props.onOpenMdlpScanning}
 			/>
 
 			<MobileInventoryInboundDrawer

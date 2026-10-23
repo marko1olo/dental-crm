@@ -1,4 +1,4 @@
-import { ArrowDownToLine, PackageCheck, Plus } from "lucide-react";
+import { ArrowDownToLine, PackageCheck, Plus, QrCode } from "lucide-react";
 import React from "react";
 import { createPortal } from "react-dom";
 
@@ -6,12 +6,14 @@ export interface MobileInventoryBottomBarProps {
 	readonly onOpenInboundDrawer: () => void;
 	readonly onOpenInboundInvoice?: (() => void) | undefined;
 	readonly onOpenShiftDeduction?: (() => void) | undefined;
+	readonly onOpenMdlpScanning?: (() => void) | undefined;
 }
 
 export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> = ({
 	onOpenInboundDrawer,
 	onOpenInboundInvoice,
 	onOpenShiftDeduction,
+	onOpenMdlpScanning,
 }) => {
 	const barElement = (
 		<div className="mobile-inventory-bottom-bar" data-testid="mobile-inventory-bottom-bar">
@@ -25,6 +27,20 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 				<Plus size={20} aria-hidden="true" />
 				<span>+ Приход</span>
 			</button>
+
+			{onOpenMdlpScanning && (
+				<button
+					type="button"
+					className="mobile-inventory-secondary-btn cursor-pointer"
+					onClick={onOpenMdlpScanning}
+					title="Маркированные медикаменты Честный Знак / МДЛП"
+					aria-label="Маркировка"
+					data-testid="mobile-btn-mdlp-trigger"
+				>
+					<QrCode size={18} aria-hidden="true" />
+					<span>МДЛП</span>
+				</button>
+			)}
 
 			{onOpenShiftDeduction && (
 				<button

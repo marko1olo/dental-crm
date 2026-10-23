@@ -51,6 +51,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 	// Вспомогательные переключатели
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isSterilizationCycleOpen, setIsSterilizationCycleOpen] = useState(false);
+	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
@@ -87,8 +88,9 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 		onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
 		isMdlpDisposalOpen: false,
 		onCloseMdlpDisposal: () => {},
-		isMdlpScanningOpen: false,
-		onCloseMdlpScanning: () => {},
+		isMdlpScanningOpen,
+		onCloseMdlpScanning: () => setIsMdlpScanningOpen(false),
+		onOpenMdlpScanning: () => setIsMdlpScanningOpen(true),
 		isDeductingMaterials: false,
 		setIsDeductingMaterials: () => {},
 	};
@@ -153,7 +155,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsOpsMenuOpen={setIsOpsMenuOpen}
 				setIsAcceptanceWaybillsOpen={() => setIsInboundWaybillOpen(true)}
 				setIsWarehouseManagerOpen={() => setIsBatchWriteoffOpen(true)}
-				setIsMdlpScanningOpen={() => {}}
+				setIsMdlpScanningOpen={() => setIsMdlpScanningOpen(true)}
 				setIsClinicalWriteoffOpen={() => setIsBatchWriteoffOpen(true)}
 				setIsProcedureDeductionOpen={() => setIsBatchWriteoffOpen(true)}
 				setIsWarehouseTransferOpen={setIsWarehouseTransferOpen}

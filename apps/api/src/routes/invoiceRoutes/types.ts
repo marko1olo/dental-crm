@@ -101,6 +101,7 @@ export type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>;
 
 export type CatalogRow = Awaited<ReturnType<typeof getServiceCatalogForOrganization>>[number];
 export type PriceFreezeTokenResult = Awaited<ReturnType<typeof getActivePriceFreezeToken>>;
+export type FrozenPriceItem = NonNullable<PriceFreezeTokenResult>["frozenPrices"][number];
 export type TreatmentPlanRow = typeof treatmentPlans.$inferSelect;
 export type TreatmentPlanItemRow = typeof treatmentPlanItemsNew.$inferSelect;
 export type PatientRow = typeof patients.$inferSelect;

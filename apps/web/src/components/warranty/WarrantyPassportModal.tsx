@@ -67,7 +67,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				{/* Tabs */}
 				<div className="warranty-tabs-bar">
 					<button type="button" className={`warranty-tab-btn ${s.activeTab === "editor" ? "active" : ""}`} onClick={() => s.setActiveTab("editor")}>
-						<Sliders size={16} /> Редактор позиций и рисков
+						<Sliders size={16} /> Позиции и регламент гарантии
 					</button>
 					<button type="button" className={`warranty-tab-btn ${s.activeTab === "preview" ? "active" : ""}`} onClick={() => s.setActiveTab("preview")}>
 						<Eye size={16} /> Гарантийный паспорт (A4 / A5)

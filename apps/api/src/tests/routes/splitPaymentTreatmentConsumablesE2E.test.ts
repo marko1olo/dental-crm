@@ -153,7 +153,7 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 				{
 					id: ITEM_SUTURE_ID,
 					organizationId: ORG_ID,
-					name: "Шовный материал монофиламентный PTFE / Пролен 4-0",
+					name: "Шовный материал Викрил 4-0 с атравматической иглой",
 					category: "surgery",
 					unit: "шт.",
 					stockQuantity: "10.000",
@@ -336,8 +336,8 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 			assert.ok(articaineItem);
 			assert.strictEqual(
 				Number(articaineItem.stockQuantity),
-				9,
-				"Остаток карпул артикаина должен уменьшиться с 10 до 9",
+				8,
+				"Остаток карпул артикаина должен уменьшиться с 10 до 8 (2 карпулы по техкарте сложного удаления)",
 			);
 
 			const [sutureItem] = await tx

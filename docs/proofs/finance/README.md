@@ -32,4 +32,11 @@
   - `npx vitest run apps/web/src/components/finance`: **41 passed (41 test files), 403 passed (403 tests), Duration: 16.48s, Exit Code 0**.
 - **Бэкенд Fastify API (`npx tsx --test`)**:
   - `apps/api/src/routes/cashbox.test.ts`: **100% green**.
+  - `apps/api/src/tests/routes/splitPaymentTreatmentConsumablesE2E.test.ts`: **100% PASS** (E2E сплит-оплата Карта + СБП + Семейный депозит -> Чек 54-ФЗ -> Списание со склада по техкартам).
+  - `apps/api/src/tests/routes/fiscalReceiptRoutes.test.ts`: **100% PASS** (8/8 тестов фискализации чеков, предоплат, возвратов и очередей буфера ФФД 1.2).
+  - `apps/api/src/tests/routes/sbpQrFiscalEngine.test.ts`: **100% PASS** (6/6 тестов генерации динамического QR СБП по ГОСТ Р 56042-2014 с контрольной суммой CRC16).
+  - `apps/api/src/tests/routes/fiscalDecompositionSmoke.test.ts`: **100% PASS** (2/2 тестов паритета экспортов и роутов после декомпозиции).
+  - `apps/api/src/tests/routes/invoiceKeepsItsAmount.test.ts`: **100% PASS** (5/5 тестов целочисленных расчетов сумм счетов).
+  - `apps/api/src/tests/billingBarrierRemoval.test.ts`: **100% PASS** (5/5 тестов снятия барьеров кассира, отсутствия требования ИНН с физлиц, зачисления излишка на аванс).
+  - **Архитектурный гейт Мандата 8b**: Все 69 файлов в `apps/api/src/routes/billingRoutes/`, `apps/api/src/routes/sbp/`, `apps/api/src/routes/invoiceRoutes/` декомпозированы строго $\le 120$ строк, все фасады $\le 80$ строк (`0 VIOLATIONS`).
 - **Визуальный аудит (`read_file`)**: Лично просмотрены глазами все 10 скриншотов. Отсутствие 7 смертных грехов UI: 0px горизонтального дрифта, тач-таргеты $\ge 44\times 44\text{px}$, WCAG AA контрасты, кнопки действий всегда доступны.

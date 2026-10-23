@@ -64,7 +64,7 @@ describe("Warehouse Suite: Components Rendering (Part 2)", () => {
 		);
 		assert.ok(html.includes("consumables-deduction-modal"));
 		assert.ok(html.includes("Расходные материалы приёма"));
-	}, 15000);
+	});
 
 	it("AutoBomDeductionBanner рендерит статус расходников к услуге", () => {
 		const html = renderToStaticMarkup(
@@ -75,5 +75,5 @@ describe("Warehouse Suite: Components Rendering (Part 2)", () => {
 		);
 		assert.ok(html.includes("auto-bom-deduction-banner"));
 		assert.ok(html.includes("Автоматическое списание материалов по приёму:"));
-	}, 15000);
+	});
 });

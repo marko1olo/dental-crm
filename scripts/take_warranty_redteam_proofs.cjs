@@ -16,7 +16,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 let WEB_BASE = "http://127.0.0.1:5174";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/warranty");
-const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/81fae5b7-e72f-4791-80f2-4315e604d2a9");
+const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a4979f39-cf04-44db-9273-1b787eb14bfd");
 
 async function resolveWebBase() {
   for (const port of [5174, 5173, 5175, 5176]) {
@@ -268,9 +268,11 @@ async function openWarrantyPassport(page, isMobile = false) {
     await page.waitForTimeout(1000);
   }
 
-  // Try store direct trigger
+  // Try store direct trigger and window custom events
   await page.evaluate(() => {
     try {
+      window.dispatchEvent(new CustomEvent("dente-open-warranty-passport"));
+      window.dispatchEvent(new CustomEvent("dente:open-warranty-passport"));
       if (window.__useUiSurfaceStore) {
         window.__useUiSurfaceStore.getState().openPrimaryModal("warranty_passport");
       }

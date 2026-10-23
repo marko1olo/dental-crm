@@ -102,6 +102,10 @@ export function useVisitModalsManager(opts: VisitModalsManagerOptions) {
 	React.useEffect(() => {
 		if (!effectiveActiveModal) {
 			const current = useUiSurfaceStore.getState().primaryModal?.id;
+			if (current === "warranty_passport") {
+				setIsWarrantyModalOpen(true);
+				return;
+			}
 			if (current && CLINICAL_MODAL_IDS.includes(current)) {
 				useUiSurfaceStore.getState().closePrimaryModal();
 			}

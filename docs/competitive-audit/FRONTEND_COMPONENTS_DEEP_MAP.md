@@ -88,10 +88,12 @@ graph TD
   - Гипертонический криз и острый коронарный синдром.
   - Токсическая реакция на местный анестетик (протокол липидной реанимации Intralipid 20%).
 * **[`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts)** & **[`emergencyRescuePresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescuePresets.ts)** — Автоматические калькуляторы реанимационных дозировок, состав аптечки «АнтиШок».
-* **[`WarrantyPassportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/WarrantyPassportModal.tsx)** — Электронный гарантийный паспорт пациента:
-  - Паспорт дентальных имплантов (бренд, диаметр, длина, номер партии, серийный номер, ISQ торк).
-  - Гарантийные обязательства на ортопедические конструкции ЗТЛ и терапевтические реставрации.
-  - Динамический QR-код для верификации подлинности паспорта со смартфона пациента.
+* **[`WarrantyPassportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/WarrantyPassportModal.tsx)** — Электронный гарантийный паспорт пациента и студия гарантийных обязательств (Мандат 8b: строго $\le 120$ строк на модуль; Мандат 8e: 0 disabled кнопок, 0 ₽ рекламации без мастер-паролей):
+  - **[`warrantyEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyEngine.ts)** — Канонический мастер-фасад гарантийных вычислений и сертификатов.
+  - **[`warrantyCalculation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCalculation.ts)** & **[`warrantyRiskEvaluator.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRiskEvaluator.ts)** — Клинический расчет сроков по СтАР и Закону РФ № 2300-1 (без потемкинских симуляторов деградации).
+  - **[`warrantyCertificateHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateHtml.ts)** & **[`warrantyCertificateSections.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyCertificateSections.ts)** — Генерация печатного бланка паспорта А4/А5 со строками FDI, QR и контрольным хешем SHA-256.
+  - **[`warrantyRemediation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediation.ts)** & **[`warrantyRemediationActHtml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyRemediationActHtml.ts)** — 1-клик оформление рекламаций (0 ₽, 100% скидка, списание материалов со склада).
+  - **[`warrantyPatientMemo.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyPatientMemo.ts)** — Официальная памятка пациента для WhatsApp/TG с 0 эмодзи (Мандат 8d).
 
 ### 3.3. Пациентский Портал, Кабинет и Self-Checkin (`components/portal/`, `components/patient-portal/`)
 * **[`PatientCabinetModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx)** — PWA кабинет пациента с бесшовной авторизацией:

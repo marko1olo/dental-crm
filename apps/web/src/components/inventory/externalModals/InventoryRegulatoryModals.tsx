@@ -4,6 +4,7 @@ import type { InventoryItem } from "../useInventoryLogic.js";
 import type { WarehouseWriteoffItem } from "../warehouseManagerModules/types.js";
 
 const MdlpDisposalQueueModal = lazy(() => import("../mdlp/index.js").then((m) => ({ default: m.MdlpDisposalQueueModal })));
+const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
 const WarehouseManagerModal = lazy(() => import("../WarehouseManagerModal.js").then((m) => ({ default: m.WarehouseManagerModal })));
 const AcceptanceWaybillsModal = lazy(() => import("../AcceptanceWaybillsModal.js").then((m) => ({ default: m.AcceptanceWaybillsModal })));
 
@@ -75,13 +76,9 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 
 			{isMdlpScanningOpen && (
 				<Suspense fallback={null}>
-					<MdlpDisposalQueueModal
+					<MdlpScanningModal
 						isOpen={isMdlpScanningOpen}
 						onClose={onCloseMdlpScanning}
-						onConfirmDisposal={async () => {
-							onCloseMdlpScanning();
-							fetchItems();
-						}}
 					/>
 				</Suspense>
 			)}

@@ -79,11 +79,18 @@ export function useVisitModalsState({
 			if (ce?.detail?.toothState) setEndoModalToothState(ce.detail.toothState);
 			setIsEndoModalOpen(true);
 		};
+		const handleWarrantyEvent = () => {
+			setIsWarrantyModalOpen(true);
+		};
 		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
 		window.addEventListener("dente-open-endo-modal", handleEndoEvent);
+		window.addEventListener("dente-open-warranty-passport", handleWarrantyEvent);
+		window.addEventListener("dente:open-warranty-passport", handleWarrantyEvent);
 		return () => {
 			window.removeEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
 			window.removeEventListener("dente-open-endo-modal", handleEndoEvent);
+			window.removeEventListener("dente-open-warranty-passport", handleWarrantyEvent);
+			window.removeEventListener("dente:open-warranty-passport", handleWarrantyEvent);
 		};
 	}, [handleOpenLabOrder]);
 

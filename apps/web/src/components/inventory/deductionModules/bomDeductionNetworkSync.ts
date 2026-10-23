@@ -2,12 +2,13 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import type { AutoVisitBomDeductionResult } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
+import type { DeductionValidationSummary } from "./bomDeductionValidator.js";
 
 export function syncAutoBomDeduction(
 	options: PerformAutoVisitBomDeductionOptions,
 	result: AutoVisitBomDeductionResult,
 	normalizedServices: readonly any[],
-	validation: { hasOverdraft: boolean; overdraftNotice?: string; overdraftItems?: any[] },
+	validation: DeductionValidationSummary,
 ) {
 	try {
 		useInventoryStore.getState().deductStock(

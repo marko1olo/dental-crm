@@ -86,5 +86,6 @@ export interface MobileInventoryGroupedListProps {
 	readonly onQuickWriteoffCarpules?: (() => void | Promise<any>) | undefined;
 	readonly isWritingOffCarpules?: boolean | undefined;
 	readonly onRefresh?: (() => void) | undefined;
+	readonly onOpenMdlpScanning?: (() => void) | undefined;
 	readonly money?: ((amountRub: any) => string) | undefined;
 }

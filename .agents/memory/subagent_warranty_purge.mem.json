@@ -1,0 +1,39 @@
+{
+  "checkpointId": "subagent-warranty-purge-2026-10-23",
+  "subagent": "Warranty & Product Passports Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-23T18:18:00+04:00",
+  "invariantsVerified": {
+    "mandate8b_file_limits": "PASS (All 16 target warranty files decomposed <= 120 lines, max 114 lines)",
+    "hammer_zero_mocks_zero_simulators": "PASS (Exterminated pseudo-mathematical chipping/degradation formulas; statutory StAP & RF Law 2300-1 terms applied)",
+    "mandate8e_doctor_autonomy": "PASS (0 disabled buttons, non-blocking blank print with underlines, 0 ₽ statutory warranty remediation without master password)",
+    "mandate8am_single_primary_cta": "PASS (Single Primary CTA emerald button «Выдать гарантийный паспорт» with Lucide Printer icon)",
+    "apple_hig_mobile": "PASS (390x844 Bottom Sheet Drawer, 24px rounded corners, 36x5px drag handle, touch targets >= 44x44px, 0px horizontal scroll drift)",
+    "encoding": "PASS (UTF-8 without BOM across 18530 files)",
+    "tests": "PASS (Vitest 51/51 tests pass 100%)",
+    "visual_proofs": {
+      "pc_light": "docs/proofs/warranty/warranty_pc_light.png (1440x900, 200.7 KB, MD5: 0c3032aa59506932e0ffe4d7df150843)",
+      "pc_dark": "docs/proofs/warranty/warranty_pc_dark.png (1440x900, 173.7 KB, MD5: 1d79a34dd77c18830b520ae04411b916)",
+      "mobile_light": "docs/proofs/warranty/warranty_mobile_light.png (390x844, 130.9 KB, MD5: 063ebf877124e28a7ab66b96b7f08dcf)",
+      "mobile_dark": "docs/proofs/warranty/warranty_mobile_dark.png (390x844, 129.6 KB, MD5: 3505fbeecaebff2060581fa5e05fea92)"
+    }
+  },
+  "decomposedFiles": [
+    "apps/web/src/components/warranty/warrantyEngine.ts (15 lines)",
+    "apps/web/src/components/warranty/warrantyEngineTypes.ts (81 lines)",
+    "apps/web/src/components/warranty/warrantyRemediationTypes.ts (70 lines)",
+    "apps/web/src/components/warranty/warrantyDateUtils.ts (48 lines)",
+    "apps/web/src/components/warranty/warrantyIdUtils.ts (74 lines)",
+    "apps/web/src/components/warranty/warrantyRiskEvaluator.ts (101 lines)",
+    "apps/web/src/components/warranty/warrantyCalculation.ts (103 lines)",
+    "apps/web/src/components/warranty/warrantyPatientMemo.ts (43 lines)",
+    "apps/web/src/components/warranty/warrantyRemediation.ts (65 lines)",
+    "apps/web/src/components/warranty/warrantyCertificateBaseStyles.ts (25 lines)",
+    "apps/web/src/components/warranty/warrantyCertificateTableStyles.ts (46 lines)",
+    "apps/web/src/components/warranty/warrantyCertificateSections.ts (111 lines)",
+    "apps/web/src/components/warranty/warrantyRemediationActStyles.ts (114 lines)",
+    "apps/web/src/components/warranty/warrantyRemediationActHtml.ts (86 lines)",
+    "apps/web/src/components/warranty/warrantyCertificateHtml.ts (102 lines)",
+    "apps/web/src/components/warranty/WarrantyPassportModal.tsx (109 lines)"
+  ]
+}
