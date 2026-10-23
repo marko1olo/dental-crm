@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-10-23T20:26:30+04:00",
+  "role": "Public Online Booking & Patient Intake Inquisitor",
+  "task": "Purge Potemkin booking simulators, decompose bookingWidget.css (1898 lines -> <= 120 lines/file), eliminate network desync, enforce Doctor/Patient Autonomy & Apple HIG Mobile ergonomics",
+  "status": "COMPLETED",
+  "artifacts": {
+    "styles_decomposed": [
+      "apps/web/src/components/booking/bookingWidget.css",
+      "apps/web/src/components/booking/styles/bookingRoot.css",
+      "apps/web/src/components/booking/styles/bookingThemes.css",
+      "apps/web/src/components/booking/styles/bookingHeader.css",
+      "apps/web/src/components/booking/styles/bookingProgressBar.css",
+      "apps/web/src/components/booking/styles/bookingBodyLayout.css",
+      "apps/web/src/components/booking/styles/bookingCategories.css",
+      "apps/web/src/components/booking/styles/bookingServicesList.css",
+      "apps/web/src/components/booking/styles/bookingDoctorCards.css",
+      "apps/web/src/components/booking/styles/bookingDoctorBadges.css",
+      "apps/web/src/components/booking/styles/bookingDaysRibbon.css",
+      "apps/web/src/components/booking/styles/bookingMonthCalendar.css",
+      "apps/web/src/components/booking/styles/bookingCalendarDaysGrid.css",
+      "apps/web/src/components/booking/styles/bookingSlotPeriodChips.css",
+      "apps/web/src/components/booking/styles/bookingSlotsGrid.css",
+      "apps/web/src/components/booking/styles/bookingSlotsFeedback.css",
+      "apps/web/src/components/booking/styles/bookingPatientForm.css",
+      "apps/web/src/components/booking/styles/bookingTelegramCard.css",
+      "apps/web/src/components/booking/styles/bookingSmsBlock.css",
+      "apps/web/src/components/booking/styles/bookingActionFooter.css",
+      "apps/web/src/components/booking/styles/bookingConfirmation.css",
+      "apps/web/src/components/booking/styles/bookingBoardingPass.css",
+      "apps/web/src/components/booking/styles/bookingCalendarExport.css",
+      "apps/web/src/components/booking/styles/bookingStreamlined.css",
+      "apps/web/src/components/booking/styles/bookingStepperBar.css",
+      "apps/web/src/components/booking/styles/bookingFloatingBottomBar.css",
+      "apps/web/src/components/booking/styles/bookingArtBackground.css",
+      "apps/web/src/components/booking/styles/bookingFloatingPass.css",
+      "apps/web/src/components/booking/styles/bookingCanonicalButtons.css",
+      "apps/web/src/components/booking/styles/bookingMobileResponsive.css",
+      "apps/web/src/pages/PublicBookingWidget.css",
+      "apps/web/src/pages/styles/bookingPageSurfaces.css",
+      "apps/web/src/pages/styles/bookingPageMobile.css"
+    ],
+    "components_decomposed": [
+      "apps/web/src/components/booking/BookingSlotGrid.tsx",
+      "apps/web/src/components/booking/BookingSlotButton.tsx",
+      "apps/web/src/components/booking/BookingSlotsErrorFallback.tsx",
+      "apps/web/src/components/booking/PublicBookingWidget.tsx"
+    ],
+    "backend_fixes": [
+      "apps/web/src/components/booking/hooks/useBookingSlotsQuery.ts",
+      "apps/api/src/routes/patients/timelineRoutes.ts"
+    ],
+    "visual_proof_screenshots": [
+      "docs/screenshots/audit_7sins/public_booking_pc_light_1440x900.png",
+      "docs/screenshots/audit_7sins/public_booking_pc_dark_1440x900.png",
+      "docs/screenshots/audit_7sins/public_booking_mobile_light_390x844.png",
+      "docs/screenshots/audit_7sins/public_booking_mobile_dark_390x844.png"
+    ]
+  },
+  "gates_passed": {
+    "vitest_booking_components": "57 passed / 57 total (100%)",
+    "fastify_booking_queue_test": "12 passed / 12 total (100%)",
+    "encoding_check": "19153 files checked, 0 errors (strict UTF-8 without BOM)",
+    "file_line_ceiling_mandate_8b": "All style files and components strictly <= 120 lines",
+    "visual_proof_mandate_8am_8ze": "PC Light/Dark (1440x900) & Mobile Light/Dark (390x844) inspected via read_file with 0 sins"
+  }
+}

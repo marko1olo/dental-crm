@@ -1,0 +1,22 @@
+/* ==========================================================================
+   Telegram 1-Tap Card Component
+   ========================================================================== */
+
+.dbw-tg-1tap-card {
+	background: linear-gradient(135deg, rgba(34, 158, 217, 0.08) 0%, rgba(34, 158, 217, 0.03) 100%);
+	border: 1.5px solid rgba(34, 158, 217, 0.35);
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 14px;
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-tg-share-btn {
+	cursor: pointer;
+	border: none;
+	touch-action: manipulation;
+	box-shadow: 0 2px 6px rgba(34, 158, 217, 0.3);
+}
+
+.dbw-tg-share-btn:hover {
+	box-shadow: 0 4px 10px rgba(34, 158, 217, 0.4);
+}

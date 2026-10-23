@@ -1,0 +1,49 @@
+/* ==========================================================================
+   Public Online Booking Widget - Root Tokens & Shell
+   Mandates 8b, 8c, 8e, 8n - Canonical DENTE Tokens
+   ========================================================================== */
+
+.dente-booking-widget {
+	--dbw-primary: var(--primary, #0d9488);
+	--dbw-primary-hover: var(--primary-hover, #0f766e);
+	--dbw-primary-light: var(--primary-soft, #ccfbf1);
+	--dbw-primary-glow: rgba(13, 148, 136, 0.25);
+	--dbw-success: var(--success, #15803d);
+	--dbw-success-hover: #166534;
+	--dbw-success-light: #dcfce7;
+	--dbw-warning: var(--warning, #d97706);
+	--dbw-warning-light: #fef3c7;
+	--dbw-danger: var(--danger, #b91c1c);
+	--dbw-danger-light: #fee2e2;
+	--dbw-bg: var(--paper, #ffffff);
+	--dbw-surface: var(--paper-soft, #f8fafc);
+	--dbw-surface-hover: var(--paper-strong, #f1f5f9);
+	--dbw-border: var(--line, #e2e8f0);
+	--dbw-border-hover: var(--line-strong, #cbd5e1);
+	--dbw-text-main: var(--ink, #0f172a);
+	--dbw-text-muted: var(--ink-muted, #64748b);
+	--dbw-text-subtle: var(--ink-subtle, #94a3b8);
+	--dbw-radius-lg: 16px;
+	--dbw-radius-md: 12px;
+	--dbw-radius-sm: 8px;
+	--dbw-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+	--dbw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	--dbw-focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.25);
+	--glass-panel: rgba(255, 255, 255, 0.85);
+	--glass-border: rgba(226, 232, 240, 0.8);
+
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	color: var(--dbw-text-main);
+	background: var(--dbw-bg);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	box-shadow: var(--dbw-shadow-xl);
+	width: 100%;
+	max-width: 680px;
+	margin: 0 auto;
+	overflow: hidden;
+	box-sizing: border-box;
+	transition: background-color 0.2s ease, border-color 0.2s ease;
+	touch-action: manipulation;
+}

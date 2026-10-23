@@ -35,46 +35,24 @@ export function useBookingSlotsQuery(
 		}, 7000);
 
 		const fetchSlots = async () => {
-			const urlsToTry = [
-				`${apiBaseUrl}/available-slots?date=${encodeURIComponent(selectedDate)}${docParam}${orgParam}`,
-				`${apiBaseUrl}/slots?date=${encodeURIComponent(selectedDate)}${docParam}${orgParam}`,
-				`${apiBaseUrl}/${effectiveOrgId}/slots?date=${encodeURIComponent(selectedDate)}${docParam}`,
-			];
-
-			// Если apiBaseUrl /api/public/booking, пробуем также /api/public-booking
-			if (apiBaseUrl.includes("public/booking")) {
-				urlsToTry.push(`/api/public-booking/available-slots?date=${encodeURIComponent(selectedDate)}${docParam}${orgParam}`);
-				urlsToTry.push(`/api/public-booking/slots?date=${encodeURIComponent(selectedDate)}${docParam}${orgParam}`);
-			}
-
-			let lastError: Error | null = null;
-			for (const url of urlsToTry) {
-				if (isCancelled) return null;
-				try {
-					const reqInit: RequestInit = controller ? { signal: controller.signal } : {};
-					const res = await fetch(url, reqInit).catch((fetchErr) => {
-						lastError = fetchErr;
-						return null;
-					});
-					if (!res) continue;
-					if (res.status === 404) continue;
-					const data = await res.json().catch(() => null);
-					if (!res.ok) {
-						throw new Error(data?.message || data?.error || "На выбранную дату приём не ведётся");
-					}
-					return data;
-				} catch (err: any) {
-					if (err?.name === "AbortError") {
-						throw new Error("Таймаут соединения с клиникой. Проверьте интернет или позвоните администратору.");
-					}
-					lastError = err;
+			const targetUrl = `${apiBaseUrl}/available-slots?date=${encodeURIComponent(selectedDate)}${docParam}${orgParam}`;
+			try {
+				const reqInit: RequestInit = controller ? { signal: controller.signal } : {};
+				const res = await fetch(targetUrl, reqInit);
+				const data = await res.json().catch(() => null);
+				if (!res.ok) {
+					throw new Error(data?.message || data?.error || "На выбранную дату приём не ведётся");
 				}
+				return data;
+			} catch (err: any) {
+				if (err?.name === "AbortError") {
+					throw new Error("Таймаут соединения с клиникой. Проверьте интернет или позвоните администратору.");
+				}
+				if (typeof navigator !== "undefined" && !navigator.onLine) {
+					throw new Error("Отсутствует подключение к интернету (автономный режим). Пожалуйста, позвоните в клинику.");
+				}
+				throw err instanceof Error ? err : new Error("Сетевая ошибка при загрузке расписания. Пожалуйста, позвоните в клинику.");
 			}
-
-			if (typeof navigator !== "undefined" && !navigator.onLine) {
-				throw new Error("Отсутствует подключение к интернету (автономный режим). Пожалуйста, позвоните в клинику.");
-			}
-			throw lastError || new Error("Сетевая ошибка при загрузке расписания. Пожалуйста, позвоните в клинику.");
 		};
 
 		fetchSlots()
@@ -113,5 +91,13 @@ export function useBookingSlotsQuery(
 		};
 	}, [effectiveOrgId, selectedDate, selectedDoctorId, apiBaseUrl, retryTrigger]);
 
-	return { slots, setSlots, selectedSlot, setSelectedSlot, slotsLoading, slotError, setSlotError, refetch };
+	return {
+		slots,
+		selectedSlot,
+		slotsLoading,
+		slotError,
+		setSlotError,
+		setSelectedSlot,
+		refetch,
+	};
 }

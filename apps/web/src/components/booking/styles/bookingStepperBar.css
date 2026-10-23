@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Apple Store HIG Stepper Bar & Step Cards
+   ========================================================================== */
+
+.dbw-stepper-bar {
+	width: 100%;
+	margin-bottom: 20px;
+	padding: 6px;
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+}
+
+.dbw-stepper-track {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+}
+
+.dbw-stepper-step {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: transparent;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	cursor: pointer;
+	color: var(--dbw-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	min-height: 36px;
+}
+
+.dbw-stepper-step.active {
+	color: var(--dbw-primary);
+	font-weight: 700;
+}
+
+.dbw-stepper-num {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	font-size: 0.75rem;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dbw-stepper-line {
+	flex: 1;
+	height: 2px;
+	background: var(--dbw-border);
+	min-width: 6px;
+}
+
+.dbw-step-card {
+	background: var(--dbw-bg);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	padding: 18px 16px;
+	margin-bottom: 16px;
+	box-shadow: var(--dbw-shadow-sm);
+}

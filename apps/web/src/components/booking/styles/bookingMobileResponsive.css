@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Responsive Queries (Strict 390px Mobile Viewport & Apple HIG, Mandate 8p)
+   Header height budget <= 110px strictly observed on mobile
+   ========================================================================== */
+
+@media (max-width: 640px) {
+	.dente-booking-widget {
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+		max-width: 100vw;
+		width: 100%;
+		overflow-x: clip;
+		margin: 0;
+	}
+
+	.dbw-header {
+		padding: 10px 14px;
+		max-height: 106px;
+		min-height: 68px;
+		box-sizing: border-box;
+	}
+
+	.dbw-header-clinic {
+		font-size: 0.75rem;
+		margin-bottom: 2px;
+	}
+
+	.dbw-header-title {
+		font-size: 1.125rem;
+		line-height: 1.2;
+		margin: 0;
+	}
+
+	.dbw-header-subtitle {
+		font-size: 0.75rem;
+		margin-top: 2px;
+	}
+
+	.dbw-progress-bar { padding: 8px 12px; }
+
+	.dbw-body {
+		padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
+	}
+
+	.dbw-step-card {
+		padding: 14px 12px;
+		margin-bottom: 12px;
+		border-radius: 16px;
+	}
+
+	.dbw-stepper-bar {
+		margin-bottom: 12px;
+		padding: 4px;
+	}
+
+	.dbw-stepper-title { display: none; }
+	.dbw-stepper-step { padding: 4px 6px; }
+
+	.dbw-floating-bottom-bar {
+		margin: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		border-radius: 0;
+		box-sizing: border-box;
+		padding: 10px 16px calc(12px + env(safe-area-inset-bottom)) 16px;
+	}
+
+	/* Mandate 8am & Apple HIG: Sole Natural Thumb Zone Primary CTA */
+	.dbw-submit-row,
+	.dbw-calendar-container.is-compact { display: none; }
+
+	.dbw-categories-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.dbw-category-btn {
+		padding: 12px 10px;
+		min-height: 90px;
+	}
+
+	.dbw-branches-grid,
+	.dbw-export-actions-grid { grid-template-columns: 1fr; }
+
+	.dbw-slots-grid {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+
+	.dbw-calendar-days-grid { gap: 4px; }
+	.dbw-calendar-day-btn { min-height: 44px; }
+
+	.dbw-day-ribbon-btn {
+		flex: 0 0 70px;
+		min-width: 70px;
+		min-height: 72px;
+		padding: 6px 4px;
+	}
+
+	.dbw-pass-body { padding: 12px; }
+}

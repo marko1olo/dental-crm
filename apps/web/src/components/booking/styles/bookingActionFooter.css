@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Action Buttons Footer (Touch targets >= 48px, Mandates 8am, 8c)
+   ========================================================================== */
+
+.dbw-actions-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-top: 16px;
+	border-top: 1px solid var(--dbw-border);
+}
+
+.dbw-btn-back {
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-muted);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 20px;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-btn-back:hover {
+	background: var(--dbw-surface-hover);
+	color: var(--dbw-text-main);
+}
+
+.dbw-btn-next,
+.dbw-btn-confirm {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 24px;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 48px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-btn-next:hover:not(:disabled),
+.dbw-btn-confirm:hover:not(:disabled) {
+	background: var(--dbw-primary-hover);
+}
+
+.dbw-btn-next:disabled,
+.dbw-btn-confirm:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.dbw-btn-confirm {
+	background: var(--dbw-success);
+}
+
+.dbw-btn-confirm:hover:not(:disabled) {
+	background: var(--dbw-success-hover);
+}

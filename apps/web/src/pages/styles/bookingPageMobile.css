@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Mobile Flush Responsive Overrides (Apple HIG Anti-Desktop-Squeeze)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+	.PublicBookingWidget-root {
+		padding: 0;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.PublicBookingWidget-root .dente-booking-widget {
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+		max-width: 100vw;
+		width: 100%;
+		margin: 0;
+	}
+
+	.PublicBookingWidget-root .PublicBookingWidget-glass-nav {
+		border-radius: 9999px;
+		margin: 8px auto 8px auto;
+		width: calc(100% - 24px);
+		max-width: 360px;
+		padding: 3px;
+	}
+
+	.PublicBookingWidget-root .PublicBookingWidget-glass-nav button {
+		padding: 6px 10px;
+		font-size: 11px;
+		border-radius: 9999px;
+	}
+}

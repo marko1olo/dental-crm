@@ -1,0 +1,81 @@
+/* ==========================================================================
+   Content Area & Branch Selector Cards
+   ========================================================================== */
+
+.dbw-body {
+	padding: 24px;
+}
+
+.dbw-section-heading {
+	font-size: 1.1875rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	margin: 0 0 16px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dbw-section-subheading {
+	font-size: 0.9375rem;
+	color: var(--dbw-text-muted);
+	margin: -8px 0 16px 0;
+}
+
+/* Branch Selector Cards */
+.dbw-branches-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dbw-branch-card {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 56px;
+}
+
+.dbw-branch-card:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-branch-card.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-branch-name {
+	font-weight: 700;
+	font-size: 1rem;
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dbw-branch-address {
+	font-size: 0.875rem;
+	color: var(--dbw-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-branch-hours {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-subtle);
+	margin-top: 2px;
+}

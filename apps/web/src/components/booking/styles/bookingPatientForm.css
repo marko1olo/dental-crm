@@ -1,0 +1,90 @@
+/* ==========================================================================
+   Patient Contacts Form & Privacy Block
+   ========================================================================== */
+
+.dbw-form-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.dbw-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dbw-label {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbw-input,
+.dbw-textarea {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 14px;
+	font-size: 1rem;
+	font-weight: 500;
+	outline: none;
+	min-height: 48px;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.dbw-input:focus,
+.dbw-textarea:focus {
+	border-color: var(--dbw-primary);
+	box-shadow: var(--dbw-focus-ring);
+	background: var(--dbw-bg);
+}
+
+.dbw-textarea {
+	min-height: 80px;
+	resize: vertical;
+}
+
+.dbw-contacts-section {
+	border-top: 1px solid var(--dbw-border);
+	padding-top: 20px;
+	margin-top: 8px;
+}
+
+.dbw-callback-notice {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	margin-bottom: 16px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	line-height: 1.4;
+}
+
+.dbw-callback-notice strong {
+	color: var(--dbw-text-main);
+}
+
+.dbw-privacy-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+	user-select: none;
+}
+
+.dbw-submit-row {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}

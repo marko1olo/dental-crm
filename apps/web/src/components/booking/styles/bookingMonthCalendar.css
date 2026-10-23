@@ -1,0 +1,71 @@
+/* ==========================================================================
+   Month Calendar Component (Zero CLS, Tactile 1-Tap)
+   ========================================================================== */
+
+.dbw-calendar-container {
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	background: var(--dbw-surface);
+	padding: 16px;
+	margin-bottom: 20px;
+	min-height: 310px; /* Reserve space to eliminate CLS */
+	transition: all 0.2s ease;
+}
+
+.dbw-calendar-container.is-compact {
+	margin-bottom: 16px;
+}
+
+.dbw-calendar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.dbw-calendar-month-label {
+	font-weight: 700;
+	font-size: 1.0625rem;
+	color: var(--dbw-text-main);
+	text-transform: capitalize;
+}
+
+.dbw-calendar-nav-btn {
+	width: 48px;
+	height: 48px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-calendar-nav-btn:hover:not(:disabled) {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border-hover);
+}
+
+.dbw-calendar-nav-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.dbw-calendar-weekdays {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 4px;
+	margin-bottom: 6px;
+	text-align: center;
+}
+
+.dbw-calendar-weekday {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--dbw-text-subtle);
+	padding: 4px 0;
+}

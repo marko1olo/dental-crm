@@ -1,0 +1,51 @@
+/* ==========================================================================
+   Canonical DENTE Button System & Filter Chips (Mandates 8c, 8e, 8p)
+   ========================================================================== */
+
+.dente-booking-widget .primary-button {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: 1px solid transparent;
+	border-radius: var(--dbw-radius-md);
+	font-weight: 700;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+}
+
+.dente-booking-widget .primary-button:hover:not(:disabled) {
+	background: var(--dbw-primary-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 16px var(--dbw-primary-glow);
+}
+
+.dente-booking-widget .primary-button:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.dente-booking-widget .secondary-button {
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	border: 1.5px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+	font-weight: 600;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dente-booking-widget .secondary-button:hover:not(:disabled) {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border-hover);
+	color: var(--dbw-text-main);
+}
+
+.dente-booking-widget .secondary-button:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.dente-booking-widget .dente-filter-chip {
+	touch-action: manipulation;
+	user-select: none;
+	min-height: 44px;
+	border-radius: var(--dbw-radius-sm);
+	font-weight: 600;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}

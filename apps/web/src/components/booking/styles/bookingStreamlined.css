@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Streamlined 1-Screen 2-Click Booking (Mandates 8e, 8k, 8p, 8n)
+   ========================================================================== */
+
+.dbw-streamlined-flow {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.dbw-selected-slot-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	font-size: 0.875rem;
+	font-weight: 700;
+	border: 1px solid var(--dbw-primary-glow);
+	max-width: 100%;
+	box-sizing: border-box;
+	word-break: break-word;
+}
+
+.dbw-alert-warning {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-warning-light);
+	color: var(--dbw-warning);
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.dbw-alert-error {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-danger-light);
+	color: var(--dbw-danger);
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid rgba(185, 28, 28, 0.3);
+}

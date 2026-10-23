@@ -1,0 +1,73 @@
+/* ==========================================================================
+   SMS Verification & Zero-Barrier Fallback Notice
+   ========================================================================== */
+
+.dbw-sms-block {
+	border: 1px dashed var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px;
+	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dbw-sms-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dbw-sms-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--dbw-primary);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dbw-sms-code-input-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.dbw-sms-code-input {
+	max-width: 140px;
+	min-height: 48px;
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: 4px;
+	text-align: center;
+	padding: 8px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+}
+
+.dbw-sms-verify-btn {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	padding: 12px 18px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 48px;
+	transition: background 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-sms-verify-btn:hover:not(:disabled) {
+	background: var(--dbw-primary-hover);
+}
+
+.dbw-sms-verify-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}

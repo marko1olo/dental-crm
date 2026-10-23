@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Service Category Cards
+   ========================================================================== */
+
+.dbw-categories-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dbw-category-btn {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	border-radius: var(--dbw-radius-md);
+	padding: 16px 14px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+	min-height: 100px;
+}
+
+.dbw-category-btn:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-category-btn.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-category-icon {
+	width: 42px;
+	height: 42px;
+	border-radius: var(--dbw-radius-sm);
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--dbw-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dbw-category-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-category-desc {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	line-height: 1.4;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}

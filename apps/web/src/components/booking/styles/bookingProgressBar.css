@@ -1,0 +1,83 @@
+/* ==========================================================================
+   Step Progress Indicator (Mandates 8c, 8e)
+   ========================================================================== */
+
+.dbw-progress-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--dbw-surface);
+	border-bottom: 1px solid var(--dbw-border);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dbw-step-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--dbw-text-muted);
+	white-space: nowrap;
+	cursor: pointer;
+	border: none;
+	background: transparent;
+	padding: 8px 4px;
+	min-height: 48px;
+	min-width: 48px;
+	border-radius: var(--dbw-radius-sm);
+	transition: all 0.2s ease;
+}
+
+.dbw-step-item:hover:not(:disabled) {
+	color: var(--dbw-text-main);
+}
+
+.dbw-step-item:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.dbw-step-number {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--dbw-border);
+	color: var(--dbw-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	transition: all 0.2s ease;
+}
+
+.dbw-step-item.active .dbw-step-number {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 0 0 3px var(--dbw-primary-light);
+}
+
+.dbw-step-item.completed .dbw-step-number {
+	background: var(--dbw-success);
+	color: #ffffff;
+}
+
+.dbw-step-item.active {
+	color: var(--dbw-primary);
+	font-weight: 700;
+}
+
+.dbw-step-divider {
+	flex: 1;
+	height: 2px;
+	background: var(--dbw-border);
+	margin: 0 8px;
+	min-width: 12px;
+}
+
+.dbw-step-divider.active {
+	background: var(--dbw-primary);
+}

@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Month Calendar - Days Grid & Day Buttons (Zero CLS, Tactile 1-Tap)
+   ========================================================================== */
+
+.dbw-calendar-days-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 6px;
+}
+
+.dbw-calendar-day-btn {
+	min-height: 48px;
+	border-radius: var(--dbw-radius-sm);
+	border: 1.5px solid transparent;
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-calendar-day-btn:hover:not(:disabled) {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border);
+}
+
+.dbw-calendar-day-btn.selected {
+	background: var(--dbw-primary);
+	color: #ffffff;
+	font-weight: 800;
+	border-color: var(--dbw-primary);
+	box-shadow: 0 2px 8px var(--dbw-primary-glow);
+}
+
+.dbw-calendar-day-btn.today:not(.selected) {
+	border-color: var(--dbw-primary);
+	font-weight: 800;
+}
+
+.dbw-calendar-day-btn:disabled {
+	color: var(--dbw-text-subtle);
+	opacity: 0.35;
+	cursor: not-allowed;
+	background: transparent;
+}
+
+.dbw-calendar-day-btn .dbw-day-slot-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--dbw-success);
+	position: absolute;
+	bottom: 4px;
+}
+
+.dbw-calendar-day-btn.selected .dbw-day-slot-dot {
+	background: #ffffff;
+}

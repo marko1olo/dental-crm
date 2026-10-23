@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Header (Apple Glass Style, <= 110px on mobile, Mandates 8c, 8p)
+   ========================================================================== */
+
+.dbw-header {
+	background: linear-gradient(135deg, rgba(15, 118, 110, 0.94) 0%, rgba(13, 148, 136, 0.94) 100%);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+	color: #ffffff;
+	padding: 16px 20px;
+	position: relative;
+	transition: all 0.2s ease;
+}
+
+.dbw-header-clinic {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.92);
+	margin-bottom: 4px;
+}
+
+.dbw-header-title {
+	font-size: 1.375rem;
+	font-weight: 800;
+	margin: 0;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+}
+
+.dbw-header-subtitle {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: rgba(255, 255, 255, 0.88);
+	margin: 4px 0 0 0;
+	line-height: 1.35;
+}
+
+.dbw-tg-badge,
+.dbw-tg-inline-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: rgba(255, 255, 255, 0.22);
+	color: #ffffff;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	white-space: nowrap;
+}

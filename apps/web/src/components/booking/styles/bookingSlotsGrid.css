@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Time Slots Grid & Buttons (CLS = 0 with reserved height)
+   ========================================================================== */
+
+.dbw-slots-section {
+	min-height: 220px; /* Layout preservation */
+	margin-bottom: 24px;
+}
+
+.dbw-slot-group {
+	margin-bottom: 16px;
+}
+
+.dbw-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+	gap: 10px;
+}
+
+.dbw-slot-btn {
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	border-radius: var(--dbw-radius-sm);
+	padding: 10px 8px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	cursor: pointer;
+	text-align: center;
+	min-height: 48px;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	touch-action: manipulation;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	position: relative;
+}
+
+.dbw-slot-btn:hover {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	transform: translateY(-1px);
+}
+
+.dbw-slot-btn:active {
+	transform: scale(0.97);
+}
+
+.dbw-slot-btn.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+	transform: scale(1.02);
+}
+
+.dbw-slot-btn.selected:active {
+	transform: scale(0.98);
+}
+
+.dbw-slot-check {
+	flex-shrink: 0;
+}

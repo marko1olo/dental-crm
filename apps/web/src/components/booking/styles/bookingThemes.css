@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Multi-Theme Overrides (WCAG AAA Compliance, Mandates 8d, 8p)
+   ========================================================================== */
+
+/* Dark Mode */
+.dark .dente-booking-widget,
+.dente-booking-widget[data-theme="dark"],
+[data-theme="dark"] .dente-booking-widget {
+	--dbw-primary: var(--primary, #2dd4bf);
+	--dbw-primary-hover: var(--primary-hover, #14b8a6);
+	--dbw-primary-light: rgba(45, 212, 191, 0.15);
+	--dbw-primary-glow: rgba(45, 212, 191, 0.3);
+	--dbw-success: var(--success, #4ade80);
+	--dbw-success-hover: #22c55e;
+	--dbw-success-light: rgba(74, 222, 128, 0.15);
+	--dbw-bg: var(--paper, #090d16);
+	--dbw-surface: var(--paper-soft, #0f172a);
+	--dbw-surface-hover: var(--paper-strong, #1e293b);
+	--dbw-border: var(--line, #1e293b);
+	--dbw-border-hover: var(--line-strong, #334155);
+	--dbw-text-main: var(--ink, #f8fafc);
+	--dbw-text-muted: var(--ink-muted, #94a3b8);
+	--dbw-text-subtle: var(--ink-subtle, #64748b);
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+	--dbw-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
+	--glass-panel: rgba(15, 23, 42, 0.85);
+	--glass-border: rgba(51, 65, 85, 0.6);
+}
+
+/* Night / OLED Mode */
+.dente-booking-widget[data-theme="night"],
+.dente-booking-widget[data-theme="oled"],
+[data-theme="night"] .dente-booking-widget {
+	--dbw-primary: #2dd4bf;
+	--dbw-primary-hover: #5eead4;
+	--dbw-primary-light: rgba(45, 212, 191, 0.18);
+	--dbw-primary-glow: rgba(45, 212, 191, 0.4);
+	--dbw-success: #4ade80;
+	--dbw-success-hover: #22c55e;
+	--dbw-success-light: rgba(74, 222, 128, 0.2);
+	--dbw-bg: #000000;
+	--dbw-surface: #121215;
+	--dbw-surface-hover: #27272a;
+	--dbw-border: #27272a;
+	--dbw-border-hover: #3f3f46;
+	--dbw-text-main: #ffffff;
+	--dbw-text-muted: #a1a1aa;
+	--dbw-text-subtle: #71717a;
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
+	--dbw-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.4);
+}
+
+/* Calm Teal Mode */
+.dente-booking-widget[data-theme="calm_teal"],
+.dente-booking-widget[data-theme="calm-teal"],
+[data-theme="calm_teal"] .dente-booking-widget,
+[data-theme="calm-teal"] .dente-booking-widget {
+	--dbw-primary: #0f766e;
+	--dbw-primary-hover: #115e59;
+	--dbw-primary-light: #ccfbf1;
+	--dbw-primary-glow: rgba(15, 118, 110, 0.25);
+	--dbw-success: #059669;
+	--dbw-success-hover: #047857;
+	--dbw-success-light: #d1fae5;
+	--dbw-bg: #ffffff;
+	--dbw-surface: #f0fdfa;
+	--dbw-surface-hover: #e6fffa;
+	--dbw-border: #99f6e4;
+	--dbw-border-hover: #5eead4;
+	--dbw-text-main: #134e4a;
+	--dbw-text-muted: #0f766e;
+	--dbw-text-subtle: #14b8a6;
+}
+
+/* Contrast Mode */
+.dente-booking-widget[data-theme="contrast"],
+[data-theme="contrast"] .dente-booking-widget {
+	--dbw-primary: #000000;
+	--dbw-primary-hover: #1e293b;
+	--dbw-primary-light: #e2e8f0;
+	--dbw-success: #000000;
+	--dbw-bg: #ffffff;
+	--dbw-surface: #ffffff;
+	--dbw-surface-hover: #f1f5f9;
+	--dbw-border: #000000;
+	--dbw-text-main: #000000;
+	--dbw-text-muted: #1e293b;
+}
+
+/* Telegram WebApp Embed Mode */
+.dente-booking-widget[data-embed="telegram"] {
+	border-radius: 0;
+	border: none;
+	box-shadow: none;
+	max-width: 100%;
+	background: var(--tg-theme-bg-color, var(--dbw-bg));
+	color: var(--tg-theme-text-color, var(--dbw-text-main));
+}
+
+.dente-booking-widget[data-embed="iframe"],
+.dente-booking-widget[data-embed="modal"] {
+	box-shadow: none;
+}

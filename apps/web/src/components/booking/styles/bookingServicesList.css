@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Services Sub-list & Procedure Items
+   ========================================================================== */
+
+.dbw-services-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 24px;
+}
+
+.dbw-service-item {
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 16px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 52px;
+	transition: all 0.2s ease;
+}
+
+.dbw-service-item:hover {
+	border-color: var(--dbw-border-hover);
+	background: var(--dbw-surface-hover);
+}
+
+.dbw-service-item.selected {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-primary-light);
+}
+
+.dbw-service-info {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	flex: 1;
+}
+
+.dbw-service-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-service-duration {
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dbw-service-price {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--dbw-primary);
+	white-space: nowrap;
+	flex-shrink: 0;
+}

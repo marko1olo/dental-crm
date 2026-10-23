@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Doctor Badges, Meta & Bio Information
+   ========================================================================== */
+
+.dbw-doctor-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	flex: 1;
+}
+
+.dbw-doctor-name {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-doctor-specialties {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--dbw-text-muted);
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+.dbw-doctor-chevron {
+	flex-shrink: 0;
+	transition: transform 0.2s ease;
+}
+
+.dbw-doctor-card:hover .dbw-doctor-chevron {
+	transform: translateX(2px);
+}
+
+.dbw-doctor-badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+.dbw-badge-rating {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: #b45309;
+	background: #fef3c7;
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.dente-booking-widget[data-theme="dark"] .dbw-badge-rating,
+.dark .dbw-badge-rating {
+	color: #fbbf24;
+	background: rgba(245, 158, 11, 0.18);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.dbw-badge-exp {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--dbw-text-muted);
+	background: var(--dbw-surface-hover);
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.dbw-badge-slot {
+	display: inline-flex;
+	align-items: center;
+	white-space: nowrap;
+	max-width: 100%;
+}
+
+.dbw-doctor-bio {
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: var(--dbw-text-muted);
+	margin-top: 6px;
+}

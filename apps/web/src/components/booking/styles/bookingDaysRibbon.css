@@ -1,0 +1,118 @@
+/* ==========================================================================
+   Days Ribbon Component (Zero CLS, Tactile 1-Tap)
+   ========================================================================== */
+
+.dbw-slot-picker-root { width: 100%; }
+.dbw-ribbon-section { margin-bottom: 14px; }
+
+.dbw-ribbon-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.dbw-ribbon-toggle-btn {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--dbw-primary);
+	padding: 4px 6px;
+	border-radius: var(--dbw-radius-sm);
+	transition: background 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-ribbon-toggle-btn:hover {
+	background: var(--dbw-primary-light);
+}
+
+.dbw-days-ribbon {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding: 2px 2px 10px 2px;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+
+.dbw-days-ribbon::-webkit-scrollbar {
+	display: none;
+}
+
+.dbw-day-ribbon-btn {
+	flex: 0 0 74px;
+	min-height: 76px;
+	border-radius: var(--dbw-radius-md);
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 4px;
+	cursor: pointer;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.dbw-day-ribbon-btn:hover {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-surface-hover);
+	transform: translateY(-1px);
+}
+
+.dbw-day-ribbon-btn:active {
+	transform: scale(0.97);
+}
+
+.dbw-day-ribbon-btn.selected {
+	background: var(--dbw-primary);
+	border-color: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+}
+
+.dbw-day-ribbon-btn.today:not(.selected) {
+	border-color: var(--dbw-primary);
+	font-weight: 800;
+}
+
+.dbw-ribbon-weekday {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: inherit;
+	opacity: 0.9;
+}
+
+.dbw-ribbon-day {
+	font-size: 1.1875rem;
+	font-weight: 800;
+	color: inherit;
+	line-height: 1.1;
+	margin: 2px 0;
+}
+
+.dbw-ribbon-month {
+	font-size: 0.6875rem;
+	font-weight: 500;
+	color: inherit;
+	opacity: 0.8;
+}
+
+.dbw-ribbon-active-pill {
+	position: absolute;
+	bottom: 4px;
+	width: 14px;
+	height: 3px;
+	border-radius: 9999px;
+	background: #ffffff;
+}

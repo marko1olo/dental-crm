@@ -1,0 +1,91 @@
+/* ==========================================================================
+   Floating Bottom Bar (Natural Thumb Zone, Mandate 8am & Apple HIG)
+   ========================================================================== */
+
+.dbw-floating-bottom-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	background: var(--paper-strong, #ffffff);
+	border-top: 1px solid var(--dbw-border);
+	padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+	transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .dbw-floating-bottom-bar,
+.dark .dbw-floating-bottom-bar {
+	background: var(--paper-strong, #0f172a);
+	border-top-color: var(--dbw-border);
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+}
+
+@media (min-width: 641px) {
+	.dbw-floating-bottom-bar {
+		position: sticky;
+		margin: 20px -20px -24px -20px;
+		border-radius: 0 0 var(--dbw-radius-lg) var(--dbw-radius-lg);
+	}
+}
+
+.dbw-floating-bar-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	max-width: 640px;
+	margin: 0 auto;
+}
+
+.dbw-floating-bar-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.dbw-floating-summary-service {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+}
+
+.dbw-floating-summary-meta {
+	font-size: 0.75rem;
+	color: var(--dbw-text-muted);
+}
+
+.dbw-floating-cta-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 20px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 48px;
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.dbw-floating-cta-btn:hover {
+	background: var(--dbw-primary-hover);
+	transform: translateY(-1px);
+}
+
+.dbw-floating-cta-btn:active {
+	transform: scale(0.98);
+}
+
+.dbw-floating-cta-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
