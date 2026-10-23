@@ -1,4 +1,7 @@
 export * from "./Tooth46AbutmentOverlay";
+export * from "./Tooth46AdvancedPathologyGeometry";
+export * from "./Tooth46AdvancedPathologyOverlay";
+export * from "./Tooth46AdvancedPresets";
 export * from "./Tooth46BasePresets";
 export * from "./Tooth46BrokenFileOverlay";
 export * from "./Tooth46CalculusOverlay";
@@ -52,6 +55,8 @@ export * from "./Tooth46SingleCanal";
 export * from "./Tooth46SingleCusp";
 export * from "./Tooth46StandHeader";
 export * from "./Tooth46StandToggles";
+export * from "./ToothStatusBadge";
+export * from "./ToothStatusBadgeMatrix";
 export * from "./Tooth46SurgeryOverlay";
 export * from "./tooth46CuspGeometry";
 export * from "./tooth46GeometryConstants";

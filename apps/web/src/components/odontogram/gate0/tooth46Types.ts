@@ -58,6 +58,14 @@ export interface Tooth46LayerFlags {
 	implant?: boolean;
 	implantStage?: ImplantStage;
 	missing?: boolean;
+	resorcinolFormalin?: boolean;
+	calciumHydroxide?: boolean;
+	attrition?: boolean;
+	rootPerforation?: boolean;
+	canalLedge?: boolean;
+	rootFracture?: boolean;
+	showBadge?: boolean;
+	statusBadge?: string;
 }
 
 export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
@@ -95,6 +103,7 @@ export interface Tooth46ContainerProps {
 	isDark?: boolean | undefined;
 	zoom?: number | undefined;
 	layers?: Tooth46LayerFlags | undefined;
+	presetId?: string | undefined;
 	className?: string | undefined;
 	style?: React.CSSProperties | undefined;
 }

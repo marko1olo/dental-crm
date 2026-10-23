@@ -3,23 +3,9 @@
  * Mandate 8b <= 120 lines.
  */
 
-export type CrownMaterial =
-	| "zirconia"
-	| "pfm"
-	| "emax"
-	| "gold"
-	| "metal"
-	| "pmma";
-
+export type CrownMaterial = "zirconia" | "pfm" | "emax" | "gold" | "metal" | "pmma";
 export type RestorationCondition = "adequate" | "defective";
-
-export type ImplantStage =
-	| "pure"
-	| "healing_abutment"
-	| "crown"
-	| "crown_screw"
-	| "temporary";
-
+export type ImplantStage = "pure" | "healing_abutment" | "crown" | "crown_screw" | "temporary";
 export type CanalCondition =
 	| "vital"
 	| "pulpitis"
@@ -28,10 +14,8 @@ export type CanalCondition =
 	| "underfill"
 	| "overfill"
 	| "broken_file";
-
 export type PeriapicalCondition = "none" | "granuloma" | "cyst" | "resorption";
 export type PostCoreType = "fiber" | "cast";
-
 export type CariesType =
 	| "class1"
 	| "class2_mo"
@@ -39,9 +23,7 @@ export type CariesType =
 	| "class2_mod"
 	| "class5"
 	| "white_spot";
-
 export type CariesChronicity = "acute" | "chronic";
-
 export type InlayOnlayType = "inlay" | "onlay" | "overlay";
 
 export type Tooth46ClinicalPreset =
@@ -88,4 +70,10 @@ export type Tooth46ClinicalPreset =
 	| "implant_crown"
 	| "implant_crown_screw"
 	| "implant_temporary"
-	| "missing";
+	| "missing"
+	| "resorcinol_formalin"
+	| "calcium_hydroxide"
+	| "pathological_attrition"
+	| "root_perforation"
+	| "canal_ledge"
+	| "vertical_root_fracture";

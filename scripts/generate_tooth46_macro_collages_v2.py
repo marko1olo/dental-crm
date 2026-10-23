@@ -31,7 +31,6 @@ def auto_crop_tooth(im):
     diff = ImageChops.difference(im_rgb, bg)
     bbox = diff.getbbox()
     if bbox:
-        # Pad slightly by 4px
         x0 = max(0, bbox[0] - 4)
         y0 = max(0, bbox[1] - 4)
         x1 = min(im.width, bbox[2] + 4)
@@ -45,11 +44,9 @@ def create_tight_2x2_collage(items, title, out_filename, cell_w=480, cell_h=700,
     """
     canvas_w = cell_w * 2 + pad * 3
     canvas_h = cell_h * 2 + pad * 3 + header_h
-    # Dark modern canvas
     canvas = Image.new("RGBA", (canvas_w, canvas_h), (11, 17, 32, 255))
     draw = ImageDraw.Draw(canvas)
 
-    # Title header
     draw.text((pad * 2, 20), title, fill=(241, 245, 249, 255), font=font_header)
 
     coords = [
@@ -59,10 +56,9 @@ def create_tight_2x2_collage(items, title, out_filename, cell_w=480, cell_h=700,
         (cell_w + pad * 2, header_h + cell_h + pad * 2) # 4: Bottom-Right
     ]
 
-    caption_h = 82 # Bottom info bar height
+    caption_h = 82
 
     for idx, (item, (cx, cy)) in enumerate(zip(items, coords), 1):
-        # Card outer border
         card_rect = [cx, cy, cx + cell_w, cy + cell_h]
         draw.rounded_rectangle(card_rect, radius=16, fill=(19, 28, 49, 255), outline=(37, 50, 78, 255), width=2)
 
@@ -72,7 +68,6 @@ def create_tight_2x2_collage(items, title, out_filename, cell_w=480, cell_h=700,
                 raw_img = raw_img.convert("RGBA")
                 cropped_img, bg_col = auto_crop_tooth(raw_img)
 
-                # Available area for tooth
                 avail_w = cell_w - 24
                 avail_h = cell_h - caption_h - 24
 
@@ -82,31 +77,25 @@ def create_tight_2x2_collage(items, title, out_filename, cell_w=480, cell_h=700,
 
                 resized = cropped_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
 
-                # Inner tooth display area background (subtle soft contrast)
                 inner_bg_rect = [cx + 8, cy + 8, cx + cell_w - 8, cy + cell_h - caption_h]
-                # If original had dark bg, keep dark; if light, provide crisp light slate pill
                 is_dark_source = (sum(bg_col) / 3) < 128
                 inner_fill = (15, 23, 42, 255) if is_dark_source else (248, 250, 252, 255)
                 draw.rounded_rectangle(inner_bg_rect, radius=12, fill=inner_fill)
 
-                # Center paste
                 px = cx + 8 + (avail_w - target_w) // 2 + 4
                 py = cy + 8 + (avail_h - target_h) // 2 + 4
                 canvas.paste(resized, (px, py), resized)
 
-        # Top-Left Number Badge (floating pill)
         badge_text = f"#{idx}"
         badge_box = [cx + 16, cy + 16, cx + 66, cy + 54]
-        draw.rounded_rectangle(badge_box, radius=8, fill=(14, 165, 233, 255)) # Sky blue
+        draw.rounded_rectangle(badge_box, radius=8, fill=(14, 165, 233, 255))
         draw.text((cx + 23, cy + 20), badge_text, fill=(255, 255, 255, 255), font=font_badge)
 
-        # Bottom Caption Bar
         cap_y0 = cy + cell_h - caption_h
         cap_rect = [cx + 2, cap_y0, cx + cell_w - 2, cy + cell_h - 2]
         draw.rounded_rectangle(cap_rect, radius=14, fill=(15, 23, 42, 255))
         draw.line([(cx + 2, cap_y0), (cx + cell_w - 2, cap_y0)], fill=(51, 65, 85, 255), width=1)
 
-        # Text inside caption bar
         draw.text((cx + 16, cap_y0 + 10), item["badge"], fill=(56, 189, 248, 255), font=font_title)
         draw.text((cx + 16, cap_y0 + 44), item["label"], fill=(148, 163, 184, 255), font=font_label)
 
@@ -190,8 +179,8 @@ COLLAGES_V2 = [
         "file": "tight_08_caries_spectrum.png",
         "items": [
             {"path": "gate0_tooth46_macro_caries_white_spot.png", "badge": "1. Меловидное пятно", "label": "Стадия деминерализации (Caries in situ)"},
-            {"path": "gate0_tooth46_macro_caries_class2_mo.png", "badge": "2. Кариес Class II MO", "label": "Апроксимальная мезио-окклюзионная полость"},
-            {"path": "gate0_tooth46_macro_caries_class2_mod.png", "badge": "3. Кариес Class II MOD", "label": "Сквозное контактное разрушение стенок"},
+            {"path": "gate0_tooth46_macro_caries_class2_mo.png", "badge": "2. Кариес Class II MO", "label": "Мезиальный боковой ящик (контакт с 4.5)"},
+            {"path": "gate0_tooth46_macro_caries_class2_mod.png", "badge": "3. Кариес Class II MOD", "label": "Сквозное поражение обеих боковых стенок"},
             {"path": "gate0_tooth46_macro_caries_class5.png", "badge": "4. Кариес Class V (CEJ)", "label": "Серповидная пришеечная каверна у десны"}
         ]
     },
@@ -203,6 +192,26 @@ COLLAGES_V2 = [
             {"path": "gate0_tooth46_macro_restoration_onlay.png", "badge": "2. Накладка Onlay (MB/DB)", "label": "Перекрытие ослабленных щечных бугров"},
             {"path": "gate0_tooth46_macro_caries_acute.png", "badge": "3. Острый кариес (активный)", "label": "Влажный охристый размягченный дентин"},
             {"path": "gate0_tooth46_macro_caries_chronic.png", "badge": "4. Хронический кариес", "label": "Пигментированный склерозированный дентин"}
+        ]
+    },
+    {
+        "title": "Зуб 4.6 — Коллаж 10: Сложная эндодонтия & Резорцин",
+        "file": "tight_10_advanced_endo_pathologies.png",
+        "items": [
+            {"path": "gate0_tooth46_macro_resorcinol_formalin.png", "badge": "1. Резорцин-формалин", "label": "«Розовый зуб», облитерированные каналы"},
+            {"path": "gate0_tooth46_macro_calcium_hydroxide.png", "badge": "2. Кальций Ca(OH)2 + Cavit", "label": "Меловая паста в каналах, повязка в полости"},
+            {"path": "gate0_tooth46_macro_root_perforation.png", "badge": "3. Перфорация фуркации", "label": "Дефект дна полости, выход силера, гало"},
+            {"path": "gate0_tooth46_macro_canal_ledge.png", "badge": "4. Ступенька Ledge", "label": "Искусственный уступ в MB канале, стоп"}
+        ]
+    },
+    {
+        "title": "Зуб 4.6 — Коллаж 11: Стираемость, VRF-трещина & II класс DO",
+        "file": "tight_11_attrition_fracture_badges.png",
+        "items": [
+            {"path": "gate0_tooth46_macro_attrition.png", "badge": "1. Патологическая стираемость", "label": "Сошлифованные бугры, 5 дентинных кратеров"},
+            {"path": "gate0_tooth46_macro_root_fracture.png", "badge": "2. Вертикальная трещина VRF", "label": "Продольный перелом мезиального корня"},
+            {"path": "gate0_tooth46_macro_caries_class2_do.png", "badge": "3. Кариес Class II DO", "label": "Дистальный боковой ящик (контакт с 4.7)"},
+            {"path": "gate0_tooth46_macro_implant_crown.png", "badge": "4. Коронка на импланте", "label": "Цементная фиксация, абатмент, десна"}
         ]
     }
 ]

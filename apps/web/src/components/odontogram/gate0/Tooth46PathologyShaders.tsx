@@ -66,6 +66,14 @@ export const Tooth46PathologyShaders: React.FC = () => {
 				<stop offset="50%" stopColor="#fb7185" stopOpacity="0.14" />
 				<stop offset="100%" stopColor="#fda4af" stopOpacity="0.05" />
 			</linearGradient>
+
+			{/* Resorcinol-Formalin Diffuse Stain ("Pink Tooth") */}
+			<linearGradient id="dente-resorcinol-stain" x1="0" y1="0" x2="1" y2="1">
+				<stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
+				<stop offset="40%" stopColor="#e11d48" stopOpacity="0.90" />
+				<stop offset="75%" stopColor="#be123c" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#881337" stopOpacity="0.95" />
+			</linearGradient>
 		</>
 	);
 };

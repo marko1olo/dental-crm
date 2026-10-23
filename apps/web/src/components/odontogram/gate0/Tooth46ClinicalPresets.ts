@@ -3,6 +3,7 @@
  * Authentic clinical pathology & restorative states (Mandate 8b <= 120 lines).
  */
 
+import { TOOTH46_ADVANCED_PRESETS } from "./Tooth46AdvancedPresets";
 import {
 	TOOTH46_BASE_PRESETS,
 	type Tooth46PresetDef,
@@ -18,4 +19,5 @@ export const TOOTH46_PRESETS: readonly Tooth46PresetDef[] = [
 	...TOOTH46_CARIES_PRESETS,
 	...TOOTH46_CROWN_PRESETS,
 	...TOOTH46_PATHOLOGY_PRESETS,
+	...TOOTH46_ADVANCED_PRESETS,
 ];

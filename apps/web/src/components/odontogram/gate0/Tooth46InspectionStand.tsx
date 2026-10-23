@@ -99,7 +99,12 @@ export const Tooth46InspectionStand: React.FC = () => {
 					</div>
 				</div>
 				<div className="p-2 sm:p-8 pb-44 sm:pb-8 transition-transform duration-200">
-					<Tooth46Container isDark={isDark} zoom={zoom} layers={layers} />
+					<Tooth46Container
+						isDark={isDark}
+						zoom={zoom}
+						layers={layers}
+						presetId={activePreset ?? undefined}
+					/>
 				</div>
 			</main>
 		</div>

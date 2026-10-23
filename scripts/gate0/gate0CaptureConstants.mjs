@@ -29,7 +29,7 @@ export const VIEWPORTS = {
 const shot = (name, preset, zoom = 4) => ({ name, preset, zoom });
 
 export const MACRO_SHOTS = [
-	// 31 Clinical Presets of Tooth 46 Gate 0
+	// 50 Clinical Presets of Tooth 46 Gate 0
 	shot("gate0_tooth46_macro_cusps.png", "intact"),
 	shot("gate0_tooth46_macro_caries.png", "caries"),
 	shot("gate0_tooth46_macro_pulpitis.png", "pulpitis"),
@@ -46,10 +46,7 @@ export const MACRO_SHOTS = [
 	shot("gate0_tooth46_macro_crown_gold.png", "crown_gold"),
 	shot("gate0_tooth46_macro_crown_gold_defective.png", "crown_gold_defective"),
 	shot("gate0_tooth46_macro_crown_metal.png", "crown_metal"),
-	shot(
-		"gate0_tooth46_macro_crown_metal_defective.png",
-		"crown_metal_defective",
-	),
+	shot("gate0_tooth46_macro_crown_metal_defective.png", "crown_metal_defective"),
 	shot("gate0_tooth46_macro_crown_pmma.png", "crown_pmma"),
 	shot("gate0_tooth46_macro_crown_pmma_defective.png", "crown_pmma_defective"),
 	shot("gate0_tooth46_macro_abfraction.png", "abfraction"),
@@ -78,6 +75,13 @@ export const MACRO_SHOTS = [
 	shot("gate0_tooth46_macro_caries_chronic.png", "caries_chronic"),
 	shot("gate0_tooth46_macro_restoration_inlay.png", "restoration_inlay"),
 	shot("gate0_tooth46_macro_restoration_onlay.png", "restoration_onlay"),
+	// 6 Advanced Pathologies (Iteration 6)
+	shot("gate0_tooth46_macro_resorcinol_formalin.png", "resorcinol_formalin"),
+	shot("gate0_tooth46_macro_calcium_hydroxide.png", "calcium_hydroxide"),
+	shot("gate0_tooth46_macro_attrition.png", "pathological_attrition"),
+	shot("gate0_tooth46_macro_root_perforation.png", "root_perforation"),
+	shot("gate0_tooth46_macro_canal_ledge.png", "canal_ledge"),
+	shot("gate0_tooth46_macro_root_fracture.png", "vertical_root_fracture"),
 	// Backward-compatible aliases and specific zoomed details
 	shot("gate0_tooth46_macro_pulp.png", "pulpitis"),
 	shot("gate0_tooth46_macro_overfilled_puff.png", "overfill"),
