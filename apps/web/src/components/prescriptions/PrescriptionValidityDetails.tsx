@@ -28,21 +28,14 @@ const VALIDITY_OPTIONS = [
 	{ days: "365" as const, label: "1 год" },
 ];
 
-export const PrescriptionValidityDetails: React.FC<
-	PrescriptionValidityDetailsProps
-> = ({
-	customSeriesNumber,
-	onCustomSeriesNumberChange,
-	validityDays,
-	onValidityDaysChange,
-	isChronicSpecialCare,
-	onToggleChronicSpecialCare,
-	chronicPeriodicity,
-	onChronicPeriodicityChange,
-	patientAddress,
-	onPatientAddressChange,
-	activeForm,
-}) => {
+export const PrescriptionValidityDetails: React.FC<PrescriptionValidityDetailsProps> = (
+	props,
+) => {
+	const {
+		customSeriesNumber, onCustomSeriesNumberChange, validityDays, onValidityDaysChange,
+		isChronicSpecialCare, onToggleChronicSpecialCare, chronicPeriodicity,
+		onChronicPeriodicityChange, patientAddress, onPatientAddressChange, activeForm,
+	} = props;
 	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
 
 	return (

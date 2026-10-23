@@ -1297,6 +1297,14 @@ export function App() {
 					}),
 				);
 			}
+			if (
+				s.includes("tasks") ||
+				s.includes("clinical-tasks") ||
+				h.includes("tasks") ||
+				h.includes("clinical-tasks")
+			) {
+				setIsClinicalTasksOpen(true);
+			}
 		};
 		handleHashChange();
 		const handleOpenDms = () => setIsDmsDirectModalOpen(true),
@@ -1859,7 +1867,9 @@ export function App() {
 											clinicalTasksPatientId ||
 											activePatient?.id ||
 											activeVisitPatient?.id ||
-											null
+											(typeof window !== "undefined" && window.location.search.includes("demo=1")
+												? "demo-patient-1"
+												: null)
 										}
 										assignedDoctorId={
 											activeDoctor?.id || activeStaffUser?.id || null

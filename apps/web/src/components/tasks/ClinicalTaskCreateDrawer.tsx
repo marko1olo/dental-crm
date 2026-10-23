@@ -17,6 +17,16 @@ export interface ClinicalTaskCreateDrawerProps {
 	readonly onClose: () => void;
 }
 
+function computeDueAtIso(opt: DueOption): string {
+	const now = new Date();
+	const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	if (opt === "today") d.setHours(19, 0, 0);
+	else if (opt === "tomorrow") { d.setDate(d.getDate() + 1); d.setHours(12, 0, 0); }
+	else if (opt === "3days") { d.setDate(d.getDate() + 3); d.setHours(12, 0, 0); }
+	else { d.setDate(d.getDate() + 7); d.setHours(12, 0, 0); }
+	return d.toISOString();
+}
+
 export const ClinicalTaskCreateDrawer: React.FC<ClinicalTaskCreateDrawerProps> = ({
 	patientId,
 	patientName,
@@ -32,42 +42,21 @@ export const ClinicalTaskCreateDrawer: React.FC<ClinicalTaskCreateDrawerProps> =
 		const trimmedTitle = newTitle.trim();
 		if (!trimmedTitle) return;
 
-		const now = new Date();
-		let dueAtIso: string;
-		if (selectedDueOption === "today") {
-			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0);
-			dueAtIso = d.toISOString();
-		} else if (selectedDueOption === "tomorrow") {
-			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 0, 0);
-			dueAtIso = d.toISOString();
-		} else if (selectedDueOption === "3days") {
-			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3, 12, 0, 0);
-			dueAtIso = d.toISOString();
-		} else {
-			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 12, 0, 0);
-			dueAtIso = d.toISOString();
-		}
-
 		if (onAddTask) {
 			await onAddTask({
 				title: trimmedTitle,
 				description: newDescription.trim() || undefined,
-				dueAt: dueAtIso,
+				dueAt: computeDueAtIso(selectedDueOption),
 				taskType: "custom_reminder",
 			});
 		}
-
 		setNewTitle("");
 		setNewDescription("");
 		onClose();
 	};
 
 	return (
-		<form
-			onSubmit={handleCreateTask}
-			className="quick-task-form"
-			data-testid="quick-task-form"
-		>
+		<form onSubmit={handleCreateTask} className="quick-task-form" data-testid="quick-task-form">
 			<div className="quick-task-form-header">
 				<span>Быстрое напоминание у кресла</span>
 				{patientName || patientId ? (
@@ -91,49 +80,30 @@ export const ClinicalTaskCreateDrawer: React.FC<ClinicalTaskCreateDrawerProps> =
 			<div className="quick-task-footer">
 				<div className="quick-task-due-options">
 					<span style={{ color: "var(--muted)" }}>Срок:</span>
-					<button
-						type="button"
-						className={`quick-task-due-btn ${selectedDueOption === "today" ? "quick-task-due-btn--active" : ""}`}
-						onClick={() => setSelectedDueOption("today")}
-					>
-						Сегодня к вечеру
-					</button>
-					<button
-						type="button"
-						className={`quick-task-due-btn ${selectedDueOption === "tomorrow" ? "quick-task-due-btn--active" : ""}`}
-						onClick={() => setSelectedDueOption("tomorrow")}
-					>
-						Завтра к 12:00
-					</button>
-					<button
-						type="button"
-						className={`quick-task-due-btn ${selectedDueOption === "3days" ? "quick-task-due-btn--active" : ""}`}
-						onClick={() => setSelectedDueOption("3days")}
-					>
-						Через 3 дня
-					</button>
-					<button
-						type="button"
-						className={`quick-task-due-btn ${selectedDueOption === "week" ? "quick-task-due-btn--active" : ""}`}
-						onClick={() => setSelectedDueOption("week")}
-					>
-						Через неделю
-					</button>
+					{(
+						[
+							["today", "Сегодня к вечеру"],
+							["tomorrow", "Завтра к 12:00"],
+							["3days", "Через 3 дня"],
+							["week", "Через неделю"],
+						] as const
+					).map(([key, label]) => (
+						<button
+							key={key}
+							type="button"
+							className={`quick-task-due-btn ${selectedDueOption === key ? "quick-task-due-btn--active" : ""}`}
+							onClick={() => setSelectedDueOption(key)}
+						>
+							{label}
+						</button>
+					))}
 				</div>
 
 				<div className="quick-task-actions">
-					<button
-						type="button"
-						className="secondary-button"
-						onClick={onClose}
-					>
+					<button type="button" className="secondary-button" onClick={onClose}>
 						Отмена
 					</button>
-					<button
-						type="submit"
-						className="primary-button"
-						data-testid="btn-submit-quick-task"
-					>
+					<button type="submit" className="primary-button" data-testid="btn-submit-quick-task">
 						Сохранить
 					</button>
 				</div>

@@ -719,40 +719,22 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 
 			const copyBtn = findNodeByTestId(container, "med-rx-copy-patient-btn");
 			assert.ok(copyBtn, "med-rx-copy-patient-btn must be present");
-
 			await clickNode(copyBtn);
 
 			// Assert warning toast was shown and clipboard was not populated
 			const lastToast = mockDom.getLastToast();
 			assert.ok(lastToast, "Warning toast must be triggered");
-			assert.strictEqual(
-				lastToast?.detail?.text,
-				"Выберите хотя бы один препарат",
-			);
+			assert.strictEqual(lastToast?.detail?.text, "Выберите хотя бы один препарат");
 			assert.strictEqual(lastToast?.detail?.type, "warning");
-			assert.strictEqual(
-				mockDom.getClipboardText(),
-				"",
-				"Clipboard must not be written when no drugs are selected",
-			);
+			assert.strictEqual(mockDom.getClipboardText(), "", "Clipboard must not be written when no drugs are selected");
 		});
 	});
 
 	describe("4. Eradication of Legacy Duplicate Component (Wave 199)", () => {
 		it("confirms MedicalPrescriptionModal.tsx is physically eradicated", () => {
-			const targetPath = path.resolve(
-				process.cwd(),
-				"src/components/prescriptions/generator/MedicalPrescriptionModal.tsx",
-			);
-			const targetPathAlt = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/prescriptions/generator/MedicalPrescriptionModal.tsx",
-			);
-			assert.strictEqual(
-				fs.existsSync(targetPath) || fs.existsSync(targetPathAlt),
-				false,
-				"MedicalPrescriptionModal.tsx must be physically deleted from filesystem",
-			);
+			const targetPath = path.resolve(process.cwd(), "src/components/prescriptions/generator/MedicalPrescriptionModal.tsx");
+			const targetPathAlt = path.resolve(process.cwd(), "apps/web/src/components/prescriptions/generator/MedicalPrescriptionModal.tsx");
+			assert.strictEqual(fs.existsSync(targetPath) || fs.existsSync(targetPathAlt), false, "MedicalPrescriptionModal.tsx must be physically deleted from filesystem");
 		});
 	});
 });

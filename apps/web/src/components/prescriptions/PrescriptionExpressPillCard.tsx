@@ -13,9 +13,7 @@ export interface PrescriptionExpressPillCardProps {
 	readonly isSelected: boolean;
 	readonly onSelectPreset: (preset: DentalFastPrescriptionSet) => void;
 	readonly onApplyAndPrint?: ((preset: DentalFastPrescriptionSet) => void) | undefined;
-	readonly onApplyAndInsertToDiary?: (
-		(preset: DentalFastPrescriptionSet) => void
-	) | undefined;
+	readonly onApplyAndInsertToDiary?: ((preset: DentalFastPrescriptionSet) => void) | undefined;
 	readonly patientAllergies?: string | readonly string[] | null | undefined;
 	readonly catalogDrugs?: readonly {
 		readonly id: string;
@@ -25,32 +23,15 @@ export interface PrescriptionExpressPillCardProps {
 	}[] | undefined;
 }
 
-export const PrescriptionExpressPillCard: React.FC<
-	PrescriptionExpressPillCardProps
-> = ({
-	preset,
-	isSelected,
-	onSelectPreset,
-	onApplyAndPrint,
-	onApplyAndInsertToDiary,
-	patientAllergies,
-	catalogDrugs = [],
+export const PrescriptionExpressPillCard: React.FC<PrescriptionExpressPillCardProps> = ({
+	preset, isSelected, onSelectPreset, onApplyAndPrint, onApplyAndInsertToDiary, patientAllergies, catalogDrugs = [],
 }) => {
 	const isConflict = Boolean(
 		patientAllergies &&
 			preset.drugIds?.some((drugId) => {
 				const drug = catalogDrugs.find((d) => d.id === drugId);
-				return isDrugConflictingWithAllergies(
-					drug
-						? {
-								id: drug.id,
-								tradeName: drug.tradeNameRu,
-								latinName: drug.latinRp,
-								category: drug.category,
-							}
-						: { id: drugId, tradeName: drugId, latinName: drugId },
-					patientAllergies,
-				);
+				const item = drug ? { id: drug.id, tradeName: drug.tradeNameRu, latinName: drug.latinRp, category: drug.category } : { id: drugId, tradeName: drugId, latinName: drugId };
+				return isDrugConflictingWithAllergies(item, patientAllergies);
 			}),
 	);
 
@@ -72,9 +53,7 @@ export const PrescriptionExpressPillCard: React.FC<
 				className="text-left w-full flex flex-col gap-1.5 cursor-pointer bg-transparent border-0 p-0 focus:outline-hidden"
 			>
 				<div className="flex items-start justify-between gap-1.5 w-full">
-					<span className="text-xs font-bold text-[var(--ink)] leading-snug">
-						{preset.label}
-					</span>
+					<span className="text-xs font-bold text-[var(--ink)] leading-snug">{preset.label}</span>
 					{isConflict && (
 						<span
 							data-testid={`preset-allergy-badge-${preset.id}`}
@@ -85,16 +64,10 @@ export const PrescriptionExpressPillCard: React.FC<
 						</span>
 					)}
 				</div>
-				<p className="text-[11.5px] text-[var(--muted)] line-clamp-2 leading-tight">
-					{preset.desc}
-				</p>
+				<p className="text-[11.5px] text-[var(--muted)] line-clamp-2 leading-tight">{preset.desc}</p>
 			</button>
 			{(onApplyAndPrint || onApplyAndInsertToDiary) && (
-				<div
-					role="toolbar"
-					aria-label="Действия с набором"
-					className="flex items-center gap-2 pt-1 border-t border-[var(--line-subtle,var(--line))] mt-0.5"
-				>
+				<div role="toolbar" aria-label="Действия с набором" className="flex items-center gap-2 pt-1 border-t border-[var(--line-subtle,var(--line))] mt-0.5">
 					{onApplyAndInsertToDiary && (
 						<button
 							type="button"
