@@ -34,13 +34,9 @@ export const MarketingNewPromoModal: React.FC<MarketingNewPromoModalProps> = ({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const trimmedTitle = title.trim();
-		const trimmedCode = promoCode.trim().toUpperCase();
-
-		if (!trimmedTitle || !trimmedCode) {
-			showToast("Заполните название и промокод акции", "warning");
-			return;
-		}
+		const trimmedTitle = title.trim() || "Специальная акция клиники";
+		const autoCode = `PROMO${Math.floor(1000 + Math.random() * 9000)}`;
+		const trimmedCode = (promoCode.trim() || autoCode).toUpperCase();
 
 		const newPromo: MarketingPromo = {
 			id: `promo-custom-${Date.now()}`,
@@ -65,9 +61,9 @@ export const MarketingNewPromoModal: React.FC<MarketingNewPromoModalProps> = ({
 				romiPercent: 0,
 			},
 			templates: {
-				sms: templateSms,
-				whatsapp: `Здравствуйте, {Имя}!\n\nВ клинике *{Клиника}* действует акция «${trimmedTitle}»!\nПромокод: *{Промокод}*\nЗапись: {Ссылка}`,
-				telegram: `{Имя}, для вас акция «${trimmedTitle}» в *{Клиника}*!\nПромокод: \`{Промокод}\`\nЗапись: {Ссылка}`,
+				sms: templateSms || `{Имя}, здравствуйте! В клинике «{Клиника}» действует специальная акция по коду ${trimmedCode}. Запись: {Ссылка}`,
+				whatsapp: `Здравствуйте, {Имя}!\n\nВ клинике *{Клиника}* действует акция «${trimmedTitle}»!\nПромокод: *${trimmedCode}*\nЗапись: {Ссылка}`,
+				telegram: `{Имя}, для вас акция «${trimmedTitle}» в *{Клиника}*!\nПромокод: \`${trimmedCode}\`\nЗапись: {Ссылка}`,
 			},
 			recommendedSegment: "all_active",
 			createdAt: new Date().toISOString(),
@@ -114,7 +110,6 @@ export const MarketingNewPromoModal: React.FC<MarketingNewPromoModalProps> = ({
 							<input
 								id="promo-title"
 								type="text"
-								required
 								value={title}
 								onChange={(e) => setTitle(e.target.value)}
 								placeholder="Например: Профгигиена Air-Flow 3 500 ₽"
@@ -125,16 +120,15 @@ export const MarketingNewPromoModal: React.FC<MarketingNewPromoModalProps> = ({
 
 						<div className="marketing-form-field">
 							<label htmlFor="promo-code" className="marketing-form-label">
-								Промокод (латиница/цифры) *
+								Промокод (латиница/цифры)
 							</label>
 							<div className="relative">
 								<input
 									id="promo-code"
 									type="text"
-									required
 									value={promoCode}
 									onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-									placeholder="HYGIENE3500"
+									placeholder="HYGIENE3500 (или авто-код)"
 									className="marketing-form-input uppercase"
 									data-testid="input-promo-code"
 								/>

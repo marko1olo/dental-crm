@@ -1,8 +1,9 @@
 import type React from "react";
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { PaymentCapture } from "../../PaymentCapture";
 import { PaymentModal } from "../../components/billing/PaymentModal";
+import { LoyaltyProgramModal } from "../../components/loyalty/program/LoyaltyProgramModal";
 
 export interface FinanceCashboxSectionProps {
 	readonly s: any;
@@ -10,6 +11,7 @@ export interface FinanceCashboxSectionProps {
 
 export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.JSX.Element {
 	const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
+	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [showLegacyForm, setShowLegacyForm] = useState(false);
 
 	const effectiveAmount = s.paymentAmount ? Number(s.paymentAmount) : 15400;
@@ -34,6 +36,17 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							onClick={() => setIsLoyaltyModalOpen(true)}
+							className="min-h-[48px] h-12 px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+							data-testid="btn-open-cashbox-loyalty-modal"
+							title="Открыть программу лояльности, списание бонусов и сертификаты"
+						>
+							<Award size={16} className="text-[var(--teal,#0d9488)]" />
+							<span className="hidden sm:inline">Бонусы и сертификаты</span>
+							<span className="sm:hidden">Бонусы</span>
+						</button>
+						<button
+							type="button"
 							onClick={() => setIsStudioModalOpen(true)}
 							className="min-h-[48px] h-12 px-5 sm:px-6 rounded-xl font-extrabold text-sm text-white bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
 							data-testid="btn-open-cashbox-studio-modal"
@@ -53,6 +66,25 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					</div>
 				</div>
 			</div>
+
+			{isLoyaltyModalOpen && (
+				<LoyaltyProgramModal
+					isOpen={isLoyaltyModalOpen}
+					onClose={() => setIsLoyaltyModalOpen(false)}
+					clinicName={s.dashboard?.clinicSettings?.name || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+					patientId={s.effectivePatient?.id || "pat_mikhailov"}
+					patientName={patientName}
+					medicalCardNumber={s.effectivePatient?.medicalCardNumber || "043-128"}
+					initialPointsBalance={1500}
+					currentInvoiceAmountKop={effectiveAmount * 100}
+					onRedeemSuccess={(redeemedPointsRub) => {
+						if (typeof s.setPaymentAmount === "function") {
+							const nextAmt = Math.max(0, effectiveAmount - redeemedPointsRub);
+							s.setPaymentAmount(nextAmt.toString());
+						}
+					}}
+				/>
+			)}
 
 			{isStudioModalOpen && (
 				<PaymentModal

@@ -32,7 +32,7 @@ export const LeadConvertExistingPatientAlert: React.FC<LeadConvertExistingPatien
 		>
 			<UserCheck size={15} className="shrink-0 text-[var(--amber)]" />
 			<span>
-				⚠️ Повторный пациент: {existingPatient.fullName} (новая карта не создается,
+				Повторный пациент: {existingPatient.fullName} (новая карта не создается,
 				приём привяжется к существующей)
 			</span>
 		</div>

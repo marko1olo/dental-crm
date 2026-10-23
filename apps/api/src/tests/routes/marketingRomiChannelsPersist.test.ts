@@ -39,7 +39,7 @@ describe("Marketing ROMI Channels Persistence in PostgreSQL 18", () => {
 			});
 		});
 
-		app = await createTenantTestApp(ORG_ID);
+		app = createTenantTestApp();
 		await registerMarketingRoutes(app);
 		await app.ready();
 	});
@@ -121,5 +121,51 @@ describe("Marketing ROMI Channels Persistence in PostgreSQL 18", () => {
 		const resetBody = resetRes.json();
 		assert.equal(resetBody.success, true);
 		assert.equal(resetBody.channels.length, 10);
+	});
+
+	test("4. GET & POST /api/marketing/campaigns persists campaigns with exact integer kopecks", async () => {
+		const getRes = await app.inject({
+			method: "GET",
+			url: "/api/marketing/campaigns",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(getRes.statusCode, 200);
+		const getBody = getRes.json();
+		assert.equal(getBody.success, true);
+		assert.ok(Array.isArray(getBody.campaigns));
+
+		// Update spentKopecks & revenueKopecks via /api/marketing/campaigns
+		const payload = [
+			{
+				id: "ch_dente_2gis",
+				channelKey: "gis2",
+				nameRu: "2GIS",
+				categoryRu: "Гео-сервисы",
+				spentKopecks: 5000000, // 50 000 ₽
+				leadsCount: 12,
+				primaryPatientsCount: 8,
+				repeatVisitsCount: 4,
+				revenueKopecks: 24000000, // 240 000 ₽
+				totalLtvRevenueKopecks: 30000000,
+			},
+		];
+
+		const postRes = await app.inject({
+			method: "POST",
+			url: "/api/marketing/campaigns",
+			headers: {
+				...ORG_HEADERS,
+				"content-type": "application/json",
+			},
+			payload: { campaigns: payload },
+		});
+
+		assert.equal(postRes.statusCode, 200);
+		const postBody = postRes.json();
+		assert.equal(postBody.success, true);
+		const target = postBody.campaigns.find((c: any) => c.channelKey === "gis2");
+		assert.ok(target);
+		assert.equal(target.spentKopecks, 5000000);
+		assert.equal(target.revenueKopecks, 24000000);
 	});
 });

@@ -22,6 +22,7 @@ import {
 	Plus,
 	RotateCcw,
 	Sparkles,
+	TrendingUp,
 } from "lucide-react";
 import {
 	type AdvertisingChannelInput,
@@ -30,11 +31,11 @@ import {
 	calculateMarketingRomiSummary,
 	aggregateCrmMarketingMetrics,
 } from "@dental/shared";
-import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { MarketingRoiModal } from "../analytics/MarketingRoiModal.js";
 import {
 	DEFAULT_DENTE_CHANNELS,
-	STORAGE_KEY,
 } from "./marketingRomiPresets.js";
 import { MarketingRomiKpiStrip } from "./MarketingRomiKpiStrip.js";
 import { MarketingRomiAddChannelForm } from "./MarketingRomiAddChannelForm.js";
@@ -144,22 +145,12 @@ function MarketingRomiMobileCard({
 export function MarketingRomiTable() {
 	const appLogic = useOptionalAppLogicContext();
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
+	const [isRoiModalOpen, setIsRoiModalOpen] = useState(false);
 
-	// Channels state loaded from safe storage (defaulting to standard DENTE catalog with zeroed balances)
-	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
-		try {
-			const saved = safeLocalStorageGetItem(STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved);
-				if (Array.isArray(parsed) && parsed.length > 0) {
-					return parsed as AdvertisingChannelInput[];
-				}
-			}
-		} catch {
-			// Fall back to default DENTE preset
-		}
-		return [...DEFAULT_DENTE_CHANNELS];
-	});
+	// Channels state loaded from PostgreSQL 18 Fastify API (defaulting to standard DENTE catalog)
+	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => [
+		...DEFAULT_DENTE_CHANNELS,
+	]);
 
 	// Local draft state for table inputs to avoid forced snapback to 0 while typing
 	const [draftInputs, setDraftInputs] = useState<Record<string, string>>({});
@@ -167,21 +158,20 @@ export function MarketingRomiTable() {
 	// New channel creation modal/form state
 	const [isAddingChannel, setIsAddingChannel] = useState(false);
 
-	// Save helper — надежная персистенция в PostgreSQL 18 и локальный fallback кэш
+	// Save helper — надежная персистенция в PostgreSQL 18 через Fastify API (целочисленные копейки BIGINT)
 	const persistChannels = (updated: AdvertisingChannelInput[]) => {
 		setChannels(updated);
-		safeLocalStorageSetItem(STORAGE_KEY, JSON.stringify(updated));
 
 		try {
 			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
 				? appLogic.auth.denteClinicalMutationHeaders()
-				: { "Content-Type": "application/json" };
-			void fetch("/api/marketing/romi-channels", {
+				: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			void fetch("/api/marketing/campaigns", {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ channels: updated }),
+				body: JSON.stringify({ channels: updated, campaigns: updated }),
 			}).catch((err) => {
-				console.warn("[MarketingRomiTable] Failed to persist channels to DB:", err);
+				console.warn("[MarketingRomiTable] Failed to persist campaigns to DB:", err);
 			});
 		} catch (err) {
 			console.warn("[MarketingRomiTable] Network error saving channels:", err);
@@ -281,7 +271,7 @@ export function MarketingRomiTable() {
 		try {
 			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
 				? appLogic.auth.denteClinicalMutationHeaders()
-				: { "Content-Type": "application/json" };
+				: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
 			void fetch("/api/marketing/romi-channels/reset", {
 				method: "POST",
 				headers,
@@ -327,20 +317,21 @@ export function MarketingRomiTable() {
 		try {
 			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalReadHeaders === "function"
 				? appLogic.auth.denteClinicalReadHeaders()
-				: {};
+				: denteAdminSecretRequestHeaders();
 
-			// 1. Попытка загрузить сохраненные рекламные каналы организации из БД
+			// 1. Попытка загрузить сохраненные рекламные кампании/каналы организации из PostgreSQL 18
 			let dbChannels: AdvertisingChannelInput[] | null = null;
 			try {
-				const chRes = await fetch("/api/marketing/romi-channels", { headers });
+				const chRes = await fetch("/api/marketing/campaigns", { headers });
 				if (chRes.ok) {
 					const chData = await chRes.json();
-					if (Array.isArray(chData?.channels) && chData.channels.length > 0) {
-						dbChannels = chData.channels;
+					const list = chData?.campaigns || chData?.channels;
+					if (Array.isArray(list) && list.length > 0) {
+						dbChannels = list;
 					}
 				}
 			} catch (err) {
-				console.warn("[MarketingRomiTable] Failed to fetch romi-channels from DB:", err);
+				console.warn("[MarketingRomiTable] Failed to fetch campaigns from DB:", err);
 			}
 
 			// 2. Запрос сквозной атрибуции пациентов из CRM
@@ -433,6 +424,16 @@ export function MarketingRomiTable() {
 					>
 						<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
 						Синхронизировать с CRM
+					</button>
+					<button
+						type="button"
+						className="romi-action-btn secondary"
+						onClick={() => setIsRoiModalOpen(true)}
+						title="Открыть подробный сквозной аудит ROI и воронки"
+						data-testid="romi-open-roi-modal-btn"
+					>
+						<TrendingUp className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
+						Сквозной аудит
 					</button>
 					<button
 						type="button"
@@ -540,6 +541,13 @@ export function MarketingRomiTable() {
 					<strong>Справочник каналов:</strong> 10 типовых каналов (2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама, Сайт, Инстаграм, Листовки). Кнопка «Синхронизировать с CRM» автоматически рассчитывает доходимость, первичных и повторных пациентов, выручку и LTV по реальным медицинским картам и чекам оплат клиники.
 				</p>
 			</div>
+
+			{isRoiModalOpen && (
+				<MarketingRoiModal
+					isOpen={isRoiModalOpen}
+					onClose={() => setIsRoiModalOpen(false)}
+				/>
+			)}
 		</section>
 	);
 }

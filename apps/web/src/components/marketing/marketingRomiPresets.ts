@@ -143,9 +143,6 @@ export const DEFAULT_DENTE_CHANNELS: AdvertisingChannelInput[] = [
 	},
 ];
 
-/** Алиас для безопасной обратной совместимости компонентов */
-export const DEFAULT_STOMX_CHANNELS: AdvertisingChannelInput[] = DEFAULT_DENTE_CHANNELS;
-
 export interface QuickChannelPreset {
 	readonly channelKey: string;
 	readonly nameRu: string;

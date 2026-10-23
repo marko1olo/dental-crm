@@ -67,7 +67,7 @@ export const LeadMobileCardBodyContent: React.FC<
 						data-testid={`mobile-lead-existing-patient-btn-${lead.id}`}
 					>
 						<UserCheck size={12} className="text-[var(--amber)]" />
-						<span>⚠️ Повторный пациент: {lead.existingPatient.fullName}</span>
+						<span>Повторный пациент: {lead.existingPatient.fullName}</span>
 					</button>
 				</div>
 			)}

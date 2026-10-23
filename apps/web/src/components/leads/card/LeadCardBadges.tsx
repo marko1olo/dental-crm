@@ -82,7 +82,7 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 					data-testid={`lead-existing-patient-badge-${lead.id}`}
 				>
 					<UserCheck size={11} className="shrink-0 text-[var(--amber)]" />
-					<span>⚠️ Повторный пациент: {lead.existingPatient.fullName}</span>
+					<span>Повторный пациент: {lead.existingPatient.fullName}</span>
 				</div>
 			)}
 

@@ -419,6 +419,114 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	});
 
 	/**
+	 * GET /api/marketing/campaigns
+	 * Алиас эндпоинта рекламных кампаний клиники с фактическими расходами и выручкой в копейках из PostgreSQL 18.
+	 */
+	app.get("/api/marketing/campaigns", async (request: FastifyRequest, reply: FastifyReply) => {
+		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing campaigns");
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "marketing campaigns");
+		if (!orgId) return;
+
+		try {
+			const { channels } = await readOrSeedOrganizationRomiChannels(orgId);
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				campaigns: channels,
+				channels,
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Failed to load marketing campaigns from DB");
+			const defChannels = buildDenteDefaultAdvertisingChannels();
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				campaigns: defChannels,
+				channels: defChannels,
+			});
+		}
+	});
+
+	/**
+	 * POST /api/marketing/campaigns
+	 * Сохраняет рекламные кампании/каналы клиники в PostgreSQL 18 с целочисленными копейками (BIGINT).
+	 */
+	app.post("/api/marketing/campaigns", async (request: FastifyRequest, reply: FastifyReply) => {
+		const mutAllowed = await requireClinicalMutationAccess(request, reply, "save marketing campaigns");
+		if (!mutAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing campaigns");
+		if (!orgId) return;
+
+		const body = request.body as any;
+		const rawList = Array.isArray(body)
+			? body
+			: Array.isArray(body?.campaigns)
+				? body.campaigns
+				: Array.isArray(body?.channels)
+					? body.channels
+					: body && typeof body === "object" && body.channelKey
+						? [body]
+						: null;
+
+		if (!rawList) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Ожидался массив рекламных кампаний campaigns или channels",
+			});
+		}
+
+		const parsed = z.array(advertisingChannelInputSchema).safeParse(rawList);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректная структура рекламных кампаний",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const { flags, channels: existing } = await readOrSeedOrganizationRomiChannels(orgId);
+
+			const mergedMap = new Map<string, AdvertisingChannelInput>();
+			for (const ch of existing) {
+				mergedMap.set(ch.channelKey || ch.id, ch);
+			}
+			for (const updated of parsed.data) {
+				const key = updated.channelKey || updated.id;
+				const prev = mergedMap.get(key);
+				mergedMap.set(key, { ...prev, ...updated });
+			}
+			const finalCampaigns = Array.from(mergedMap.values());
+
+			const updatedFlags = {
+				...flags,
+				marketingRomiChannels: finalCampaigns,
+			};
+
+			await db
+				.update(organizations)
+				.set({ workspaceFeatureFlags: updatedFlags })
+				.where(eq(organizations.id, orgId));
+
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				campaigns: finalCampaigns,
+				channels: finalCampaigns,
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Failed to persist marketing campaigns in DB");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось сохранить рекламные кампании в базе данных",
+			});
+		}
+	});
+
+	/**
 	 * POST /api/marketing/romi-channels
 	 * Сохраняет рекламные каналы и затраты клиники в PostgreSQL 18 с изоляцией по организации.
 	 */
