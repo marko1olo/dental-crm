@@ -87,7 +87,31 @@ $$\text{Доходимость} = \frac{\text{Первичные пациент�
 
 | Состояние | Разрешение | Файл скриншота | Результат проверки |
 |---|---|---|---|
-| ☀️ **PC Light** | $1440 \times 900$ | `docs/proofs/marketing/pc_light_1440x900.png` | Чистая сводная таблица ROMI, KPI-карточки, 10 каналов DENTE, 1 Primary CTA |
-| 🌙 **PC Dark** | $1440 \times 900$ | `docs/proofs/marketing/pc_dark_1440x900.png` | OLED темная тема, нулевые белые дыры, идеальный контраст инпутов |
-| 📱 **Mobile Light** | $390 \times 844$ | `docs/proofs/marketing/mobile_light_390x844.png` | Группированные карточки (Apple Health style), 0px горизонтального скролла, тач-таргеты $\ge 44\text{px}$ |
-| 📱 **Mobile Dark** | $390 \times 844$ | `docs/proofs/marketing/mobile_dark_390x844.png` | Нативная мобильная темная тема, правильное позиционирование нижнего Apple Tab Bar |
+| ☀️ **PC Light (Акции)** | $1440 \times 900$ | `docs/proofs/marketing/marketing_promos_pc_light_1440x900.png` | Чистая сводка промокодов и акций, 1 Primary CTA ("+ Запустить акцию"), карточки с метриками |
+| 🌙 **PC Dark (Акции)** | $1440 \times 900$ | `docs/proofs/marketing/marketing_promos_pc_dark_1440x900.png` | Темная тема промокодов, контрастные бейджи, нулевые утечки токенов |
+| 📱 **Mobile Light (Акции)** | $390 \times 844$ | `docs/proofs/marketing/marketing_promos_mobile_light_390x844.png` | Мобильный список акций, тач-таргеты $\ge 44\text{px}$, 0px горизонтального скролла |
+| 📱 **Mobile Dark (Акции)** | $390 \times 844$ | `docs/proofs/marketing/marketing_promos_mobile_dark_390x844.png` | Нативная мобильная темная тема промокодов |
+| ☀️ **PC Light (ROMI)** | $1440 \times 900$ | `docs/proofs/marketing/marketing_romi_pc_light_1440x900.png` | Чистая сводная таблица ROMI, KPI-карточки, 10 каналов DENTE, 1 Primary CTA |
+| 🌙 **PC Dark (ROMI)** | $1440 \times 900$ | `docs/proofs/marketing/marketing_romi_pc_dark_1440x900.png` | OLED темная тема ROMI, нулевые белые дыры, идеальный контраст инпутов |
+| 📱 **Mobile Light (ROMI)** | $390 \times 844$ | `docs/proofs/marketing/marketing_romi_mobile_light_390x844.png` | Группированные карточки (Apple Health style), 0px горизонтального скролла, тач-таргеты $\ge 44\text{px}$ |
+| 📱 **Mobile Dark (ROMI)** | $390 \times 844$ | `docs/proofs/marketing/marketing_romi_mobile_dark_390x844.png` | Нативная мобильная темная тема ROMI, правильное позиционирование нижнего Apple Tab Bar |
+
+---
+
+## 6. Итоги Инквизиции и Рефакторинга (Мандаты 8b, 8e, 8am, 8ap)
+
+1. **Тотальная ликвидация игрушечных симуляторов (Мандат 8ap)**:
+   - Полностью выпилены `Message Preview Simulator` и `marketing-chat-simulator`. Вместо бутафорского чата реализована профессиональная карточка сообщения (`MarketingCampaignMessageCard.tsx`) с предпросмотром реального текста шаблона, переменными вставки и расчетом тарифа отправки по каналам (SMS, WhatsApp, Telegram, Push).
+2. **Декомпозиция монолитов под потолок $\le 120$ строк (Мандат 8b)**:
+   - Все файлы в `apps/web/src/components/marketing/` декомпозированы и строго укладываются в лимит $\le 120$ строк:
+     - `MarketingCampaignDetail.tsx` (95 строк) + `useCampaignSegments.ts` (106), `MarketingCampaignHeader.tsx` (78), `MarketingCampaignConditions.tsx` (27), `MarketingCampaignAnalytics.tsx` (95), `MarketingCampaignMessageCard.tsx` (102), `MarketingCampaignLaunchSection.tsx` (112).
+     - `MarketingRomiTable.tsx` (93 строки) + `MarketingRomiTableHeader.tsx` (75), `MarketingRomiMobileCard.tsx` (96), `useMarketingRomiChannels.ts` (106), `MarketingRomiTableRow.tsx` (104), `MarketingRomiAddChannelForm.tsx` (99), `MarketingRomiQuickPresets.tsx` (40), `marketingRomiPresets.ts` (115).
+     - `MarketingPromosList.tsx` (103 строки) + `MarketingPromoCard.tsx` (76).
+     - `MarketingNewPromoModal.tsx` (50 строк) + `MarketingNewPromoForm.tsx` (104).
+     - `marketingPresets.ts` (14 строк) + `marketingSegmentsPresets.ts` (31), `marketingActivePromosPresets.ts` (88), `marketingArchivedPromosPresets.ts` (41).
+3. **Автономия врача и персонала (Мандат 8e)**:
+   - Кнопки запуска кампаний, тестовой отправки и добавления каналов никогда не блокируются (`disabled`).
+4. **Единый дизайн-код (Мандат 8am)**:
+   - Ровно 1 Primary CTA на видимый контекст (`+ Запустить акцию` / `+ Добавить канал`), второстепенные действия оформлены через Secondary/Outline кнопки.
+5. **Чистый клинический язык (Мандат 8x)**:
+   - Запрещен канцелярит и номера законов в интерфейсе (убраны упоминания «38-ФЗ»).

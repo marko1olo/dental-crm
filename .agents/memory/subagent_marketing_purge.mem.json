@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-10-23T12:12:00+04:00",
+  "task": "Red Team Marketing, ROMI & Promos Inquisitor",
+  "status": "COMPLETED",
+  "mandates_applied": [
+    "8b (Atomic Monolith Decomposition <= 120 lines)",
+    "8e (Doctor/Staff Autonomy, non-disabled CTA buttons)",
+    "8am (Single Primary CTA per visible context)",
+    "8ap (Zero toy simulators, exact kopeck math, clean domain terms)",
+    "8ze (Apple HIG Touch Ergonomics, >= 44x44px targets, 0px horizontal scroll)",
+    "8x (Russian clinical language, zero raw law numbers in UI)"
+  ],
+  "monolith_decomposition_results": {
+    "apps/web/src/components/marketing/MarketingCampaignDetail.tsx": 95,
+    "apps/web/src/components/marketing/useCampaignSegments.ts": 106,
+    "apps/web/src/components/marketing/MarketingCampaignHeader.tsx": 78,
+    "apps/web/src/components/marketing/MarketingCampaignConditions.tsx": 27,
+    "apps/web/src/components/marketing/MarketingCampaignAnalytics.tsx": 95,
+    "apps/web/src/components/marketing/MarketingCampaignMessageCard.tsx": 102,
+    "apps/web/src/components/marketing/MarketingCampaignLaunchSection.tsx": 112,
+    "apps/web/src/components/marketing/MarketingRomiTable.tsx": 93,
+    "apps/web/src/components/marketing/MarketingRomiTableHeader.tsx": 75,
+    "apps/web/src/components/marketing/MarketingRomiMobileCard.tsx": 96,
+    "apps/web/src/components/marketing/useMarketingRomiChannels.ts": 106,
+    "apps/web/src/components/marketing/MarketingRomiTableRow.tsx": 104,
+    "apps/web/src/components/marketing/MarketingRomiAddChannelForm.tsx": 99,
+    "apps/web/src/components/marketing/MarketingRomiQuickPresets.tsx": 40,
+    "apps/web/src/components/marketing/marketingRomiQuickPresetsData.ts": 25,
+    "apps/web/src/components/marketing/marketingRomiPresets.ts": 115,
+    "apps/web/src/components/marketing/MarketingPromosList.tsx": 103,
+    "apps/web/src/components/marketing/MarketingPromoCard.tsx": 76,
+    "apps/web/src/components/marketing/MarketingNewPromoModal.tsx": 50,
+    "apps/web/src/components/marketing/MarketingNewPromoForm.tsx": 104,
+    "apps/web/src/components/marketing/marketingPresets.ts": 14,
+    "apps/web/src/components/marketing/marketingSegmentsPresets.ts": 31,
+    "apps/web/src/components/marketing/marketingActivePromosPresets.ts": 88,
+    "apps/web/src/components/marketing/marketingArchivedPromosPresets.ts": 41
+  },
+  "tests": {
+    "framework": "vitest",
+    "command": "npx vitest run apps/web/src/tests/marketing*.test.tsx",
+    "passed_files": 5,
+    "passed_tests": 26,
+    "failed_tests": 0
+  },
+  "encodings": {
+    "command": "npm run check:encoding",
+    "files_checked": 15815,
+    "errors": 0
+  },
+  "visual_proofs": [
+    "docs/proofs/marketing/marketing_promos_pc_light_1440x900.png",
+    "docs/proofs/marketing/marketing_promos_pc_dark_1440x900.png",
+    "docs/proofs/marketing/marketing_promos_mobile_light_390x844.png",
+    "docs/proofs/marketing/marketing_promos_mobile_dark_390x844.png",
+    "docs/proofs/marketing/marketing_romi_pc_light_1440x900.png",
+    "docs/proofs/marketing/marketing_romi_pc_dark_1440x900.png",
+    "docs/proofs/marketing/marketing_romi_mobile_light_390x844.png",
+    "docs/proofs/marketing/marketing_romi_mobile_dark_390x844.png"
+  ]
+}

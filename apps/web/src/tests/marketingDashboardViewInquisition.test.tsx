@@ -22,9 +22,9 @@ describe("CRM Leads & Marketing Funnel Inquisitor Tests", () => {
 	it("1. Kanban COLUMNS canonical 4-column active funnel labels match Constitution", () => {
 		const labels = COLUMNS.map((c) => c.label);
 		assert.strictEqual(labels[0], "Новые");
-		assert.strictEqual(labels[1], "Назначен приём");
-		assert.strictEqual(labels[2], "Дошли");
-		assert.strictEqual(labels[3], "Отказ/Архив");
+		assert.strictEqual(labels[1], "Квалифицированы");
+		assert.strictEqual(labels[2], "Консультация");
+		assert.strictEqual(labels[3], "Дошли");
 	});
 
 	it("2. MarketingDashboardView renders 2-column balanced layout with acquisition channels & ROI", () => {

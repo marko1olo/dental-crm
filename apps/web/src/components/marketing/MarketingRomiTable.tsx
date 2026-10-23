@@ -1,487 +1,57 @@
 /**
- * MarketingRomiTable.tsx — Таблица эффективности рекламных каналов (ROMI) для владельца стоматологии.
- *
- * СТРУКТУРА:
- *   «Канал рекламы -> Потрачено (₽) -> Приведено первичных -> Выручка (₽) -> ROMI (%) -> CAC (₽)»
- *
- * ФОРМУЛА:
- *   ROMI (%) = ((Выручка - Потрачено) / Потрачено) * 100%
- *   CAC (₽)  = Потрачено / Приведено первичных
- *
- * МАНДАТ:
- * - Никаких абстрактных 3-летних LTV графиков или 3D симуляций.
- * - Чистые копеечные расчеты.
- * - Удобное редактирование затрат, пациентов и выручки прямо в таблице.
+ * MarketingRomiTable.tsx — Owner Marketing ROMI & Acquisition Channels Table.
+ * Governed by Mandate 8b (<= 120 lines), Mandate 8e, 8am, 8ze (Touch Ergonomics, Pure Domain).
  */
 
-import React, { useEffect, useMemo, useState } from "react";
-import {
-	BarChart3,
-	CheckCircle2,
-	HelpCircle,
-	Plus,
-	RotateCcw,
-	Sparkles,
-	TrendingUp,
-} from "lucide-react";
-import {
-	type AdvertisingChannelInput,
-	type AdvertisingChannelMetric,
-	buildAdvertisingChannelMetric,
-	calculateMarketingRomiSummary,
-	aggregateCrmMarketingMetrics,
-} from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
-import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import React, { useState } from "react";
+import { CheckCircle2, HelpCircle } from "lucide-react";
 import { MarketingRoiModal } from "../analytics/MarketingRoiModal.js";
-import {
-	DEFAULT_DENTE_CHANNELS,
-} from "./marketingRomiPresets.js";
 import { MarketingRomiKpiStrip } from "./MarketingRomiKpiStrip.js";
 import { MarketingRomiAddChannelForm } from "./MarketingRomiAddChannelForm.js";
 import { MarketingRomiEmptyState } from "./MarketingRomiEmptyState.js";
-import {
-	MarketingRomiTableRow,
-	type RomiFieldKey,
-} from "./MarketingRomiTableRow.js";
+import { MarketingRomiTableRow } from "./MarketingRomiTableRow.js";
 import { MarketingRomiTableFooter } from "./MarketingRomiTableFooter.js";
+import { MarketingRomiMobileCard } from "./MarketingRomiMobileCard.js";
+import { MarketingRomiTableHeader } from "./MarketingRomiTableHeader.js";
+import { useMarketingRomiChannels } from "./useMarketingRomiChannels.js";
 import "./marketingRomi.css";
 
-function MarketingRomiMobileCard({
-	metric,
-	getInputValue,
-	onInputChange,
-	onInputBlur,
-	onRemoveChannel,
-}: {
-	metric: AdvertisingChannelMetric;
-	getInputValue: (id: string, field: RomiFieldKey, def: string) => string;
-	onInputChange: (id: string, field: RomiFieldKey, val: string) => void;
-	onInputBlur: (id: string, field: RomiFieldKey) => void;
-	onRemoveChannel: (id: string) => void;
-}) {
-	const spentVal = getInputValue(metric.id, "spentRub", (metric.spentKopecks / 100).toString());
-	const patientsVal = getInputValue(metric.id, "patients", metric.primaryPatientsCount.toString());
-	const revVal = getInputValue(metric.id, "revenueRub", (metric.revenueKopecks / 100).toString());
-
-	return (
-		<div className="romi-mobile-card">
-			<div className="romi-mobile-card-header">
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="romi-mobile-card-title">{metric.nameRu}</span>
-						<span className="romi-mobile-card-category">{metric.categoryRu}</span>
-					</div>
-				</div>
-				<div className="flex items-center gap-1.5 shrink-0">
-					<span
-						className={`romi-badge ${
-							metric.romiStatus === "organic"
-								? "organic"
-								: metric.romiStatus === "super_profitable" || metric.romiStatus === "profitable"
-									? "positive"
-									: metric.romiStatus === "loss"
-										? "negative"
-										: "neutral"
-						}`}
-					>
-						ROMI: {metric.romiFormatted}
-					</span>
-					<button
-						type="button"
-						onClick={() => onRemoveChannel(metric.id)}
-						className="romi-delete-btn"
-						title="Удалить канал"
-						aria-label="Удалить канал"
-					>
-						×
-					</button>
-				</div>
-			</div>
-
-			<div className="romi-mobile-card-grid">
-				<div className="romi-mobile-field">
-					<span className="romi-mobile-field-lbl">Потрачено (₽)</span>
-					<input
-						type="number"
-						value={spentVal}
-						onChange={(e) => onInputChange(metric.id, "spentRub", e.target.value)}
-						onBlur={() => onInputBlur(metric.id, "spentRub")}
-						className="romi-table-input w-full"
-					/>
-				</div>
-				<div className="romi-mobile-field">
-					<span className="romi-mobile-field-lbl">Первичных (чел)</span>
-					<input
-						type="number"
-						value={patientsVal}
-						onChange={(e) => onInputChange(metric.id, "patients", e.target.value)}
-						onBlur={() => onInputBlur(metric.id, "patients")}
-						className="romi-table-input w-full"
-					/>
-				</div>
-				<div className="romi-mobile-field">
-					<span className="romi-mobile-field-lbl">Выручка (₽)</span>
-					<input
-						type="number"
-						value={revVal}
-						onChange={(e) => onInputChange(metric.id, "revenueRub", e.target.value)}
-						onBlur={() => onInputBlur(metric.id, "revenueRub")}
-						className="romi-table-input w-full"
-					/>
-				</div>
-				<div className="romi-mobile-field">
-					<span className="romi-mobile-field-lbl">CAC / LTV</span>
-					<div className="text-[12.5px] font-semibold text-[var(--ink)] pt-1.5">
-						CAC: {metric.cacFormatted} <br />
-						LTV: {metric.ltvFormatted}
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 export function MarketingRomiTable() {
-	const appLogic = useOptionalAppLogicContext();
-	const [syncMessage, setSyncMessage] = useState<string | null>(null);
 	const [isRoiModalOpen, setIsRoiModalOpen] = useState(false);
-
-	// Channels state loaded from PostgreSQL 18 Fastify API (defaulting to standard DENTE catalog)
-	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => [
-		...DEFAULT_DENTE_CHANNELS,
-	]);
-
-	// Local draft state for table inputs to avoid forced snapback to 0 while typing
-	const [draftInputs, setDraftInputs] = useState<Record<string, string>>({});
-
-	// New channel creation modal/form state
 	const [isAddingChannel, setIsAddingChannel] = useState(false);
-
-	// Save helper — надежная персистенция в PostgreSQL 18 через Fastify API (целочисленные копейки BIGINT)
-	const persistChannels = (updated: AdvertisingChannelInput[]) => {
-		setChannels(updated);
-
-		try {
-			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
-				? appLogic.auth.denteClinicalMutationHeaders()
-				: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
-			void fetch("/api/marketing/campaigns", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({ channels: updated, campaigns: updated }),
-			}).catch((err) => {
-				console.warn("[MarketingRomiTable] Failed to persist campaigns to DB:", err);
-			});
-		} catch (err) {
-			console.warn("[MarketingRomiTable] Network error saving channels:", err);
-		}
-	};
-
-	// Calculated metrics and summary totals
-	const calculatedMetrics: AdvertisingChannelMetric[] = useMemo(() => {
-		return channels.map(buildAdvertisingChannelMetric);
-	}, [channels]);
-
-	const summary = useMemo(() => {
-		return calculateMarketingRomiSummary(calculatedMetrics);
-	}, [calculatedMetrics]);
-
-	// In-place channel field update
-	const handleUpdateField = (
-		channelId: string,
-		field: RomiFieldKey,
-		rawValue: string,
-	) => {
-		const num = Math.max(0, parseFloat(rawValue) || 0);
-		const updated = channels.map((ch) => {
-			if (ch.id !== channelId) return ch;
-			if (field === "spentRub") {
-				return { ...ch, spentKopecks: Math.round(num * 100) };
-			}
-			if (field === "leads") {
-				return { ...ch, leadsCount: Math.round(num) };
-			}
-			if (field === "patients") {
-				return { ...ch, primaryPatientsCount: Math.round(num) };
-			}
-			if (field === "revenueRub") {
-				return { ...ch, revenueKopecks: Math.round(num * 100) };
-			}
-			if (field === "repeatVisits") {
-				return { ...ch, repeatVisitsCount: Math.round(num) };
-			}
-			return ch;
-		});
-		persistChannels(updated);
-	};
-
-	const getInputValue = (
-		channelId: string,
-		field: RomiFieldKey,
-		defaultValue: string,
-	) => {
-		const key = `${channelId}_${field}`;
-		return draftInputs[key] !== undefined ? draftInputs[key] : defaultValue;
-	};
-
-	const handleInputChange = (
-		channelId: string,
-		field: RomiFieldKey,
-		rawValue: string,
-	) => {
-		const key = `${channelId}_${field}`;
-		setDraftInputs((prev) => ({ ...prev, [key]: rawValue }));
-		if (rawValue.trim() !== "") {
-			handleUpdateField(channelId, field, rawValue);
-		}
-	};
-
-	const handleInputBlur = (
-		channelId: string,
-		field: RomiFieldKey,
-	) => {
-		const key = `${channelId}_${field}`;
-		const rawValue = draftInputs[key];
-		if (rawValue !== undefined) {
-			handleUpdateField(channelId, field, rawValue);
-			setDraftInputs((prev) => {
-				const next = { ...prev };
-				delete next[key];
-				return next;
-			});
-		}
-	};
-
-	const handleSaveNewChannel = (newEntry: AdvertisingChannelInput) => {
-		const updated = [...channels, newEntry];
-		persistChannels(updated);
-		setIsAddingChannel(false);
-	};
-
-	const handleRemoveChannel = (channelId: string) => {
-		const updated = channels.filter((ch) => ch.id !== channelId);
-		persistChannels(updated);
-	};
-
-	const handleResetDefaults = () => {
-		persistChannels([...DEFAULT_DENTE_CHANNELS]);
-		setSyncMessage(null);
-
-		try {
-			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
-				? appLogic.auth.denteClinicalMutationHeaders()
-				: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
-			void fetch("/api/marketing/romi-channels/reset", {
-				method: "POST",
-				headers,
-			}).catch((err) => {
-				console.warn("[MarketingRomiTable] Failed to reset channels in DB:", err);
-			});
-		} catch (err) {
-			console.warn("[MarketingRomiTable] Network error resetting channels:", err);
-		}
-	};
-
-	const handleSyncWithCrmLocal = (preferredChannels?: AdvertisingChannelInput[] | null) => {
-		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as any[];
-		const appointments = (appLogic?.dashboard?.appointments ?? appLogic?.appointments ?? appLogic?.sortedAppointments ?? []) as any[];
-		const payments = (appLogic?.dashboard?.payments ?? appLogic?.payments ?? appLogic?.activePayments ?? []) as any[];
-		const communicationEvents = (appLogic?.dashboard?.communicationEvents ?? []) as any[];
-
-		// Preserve custom budgets set by user in current channels
-		const customBudgetsKopecks: Record<string, number> = {};
-		const sourceForBudgets = preferredChannels || channels;
-		for (const ch of sourceForBudgets) {
-			if (ch.spentKopecks > 0) {
-				customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
-			}
-		}
-
-		const aggregated = aggregateCrmMarketingMetrics({
-			patients,
-			appointments,
-			payments,
-			communicationEvents,
-			customBudgetsKopecks,
-		});
-
-		persistChannels(aggregated);
-		const totalPatients = aggregated.reduce((acc, c) => acc + (c.primaryPatientsCount || 0), 0);
-		const totalRevRub = Math.round(aggregated.reduce((acc, c) => acc + (c.revenueKopecks || 0), 0) / 100).toLocaleString("ru-RU");
-		const msg = `Синхронизировано с CRM: учтено ${patients.length} пациентов (${totalPatients} первичных), ${appointments.length} приемов, ${payments.length} оплат (выручка ${totalRevRub} ₽)`;
-		setSyncMessage(msg);
-	};
-
-	const fetchServerAttribution = async () => {
-		try {
-			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalReadHeaders === "function"
-				? appLogic.auth.denteClinicalReadHeaders()
-				: denteAdminSecretRequestHeaders();
-
-			// 1. Попытка загрузить сохраненные рекламные кампании/каналы организации из PostgreSQL 18
-			let dbChannels: AdvertisingChannelInput[] | null = null;
-			try {
-				const chRes = await fetch("/api/marketing/campaigns", { headers });
-				if (chRes.ok) {
-					const chData = await chRes.json();
-					const list = chData?.campaigns || chData?.channels;
-					if (Array.isArray(list) && list.length > 0) {
-						dbChannels = list;
-					}
-				}
-			} catch (err) {
-				console.warn("[MarketingRomiTable] Failed to fetch campaigns from DB:", err);
-			}
-
-			// 2. Запрос сквозной атрибуции пациентов из CRM
-			const res = await fetch("/api/marketing/attribution", { headers });
-			if (res.ok) {
-				const data = await res.json();
-				const fetchedChannels = (Array.isArray(data?.romiChannels) && data.romiChannels.length > 0)
-					? data.romiChannels
-					: (Array.isArray(data?.channels) && data.channels.length > 0)
-						? data.channels
-						: null;
-
-				if (fetchedChannels) {
-					// Check if server returned any patient activity
-					const hasServerActivity = fetchedChannels.some((c: any) => (c.primaryPatientsCount || 0) > 0 || (c.revenueKopecks || 0) > 0);
-					
-					// If server has no activity but local dashboard has patients, prioritize local CRM state (e.g. demo mode)
-					const localPatients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as any[];
-					if (!hasServerActivity && localPatients.length > 0) {
-						handleSyncWithCrmLocal(dbChannels);
-						return;
-					}
-
-					const customBudgetsKopecks: Record<string, number> = {};
-					const sourceForBudgets = dbChannels || channels;
-					for (const ch of sourceForBudgets) {
-						if (ch.spentKopecks > 0) {
-							customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
-						}
-					}
-
-					const merged: AdvertisingChannelInput[] = fetchedChannels.map((c: any) => ({
-						...c,
-						spentKopecks: customBudgetsKopecks[c.channelKey] ?? Number(c.spentKopecks || 0),
-					}));
-
-					persistChannels(merged);
-					const totalPatients = merged.reduce((acc, c) => acc + (c.primaryPatientsCount || 0), 0);
-					const totalRevRub = Math.round(merged.reduce((acc, c) => acc + (c.revenueKopecks || 0), 0) / 100).toLocaleString("ru-RU");
-					const msg = `Синхронизировано со сквозной аналитикой CRM: ${merged.length} каналов, ${totalPatients} первичных, выручка ${totalRevRub} ₽`;
-					setSyncMessage(msg);
-					return;
-				}
-			} else if (dbChannels && dbChannels.length > 0) {
-				persistChannels(dbChannels);
-				return;
-			}
-		} catch (err) {
-			console.warn("[MarketingRomiTable] Server attribution fetch error, falling back:", err);
-		}
-		// Fallback to local CRM aggregation
-		handleSyncWithCrmLocal();
-	};
-
-	const handleSyncWithCrm = () => {
-		fetchServerAttribution();
-	};
-
-	useEffect(() => {
-		fetchServerAttribution();
-	}, []);
+	const {
+		channels,
+		summary,
+		calculatedMetrics,
+		syncMessage,
+		getInputValue,
+		handleInputChange,
+		handleInputBlur,
+		handleSyncWithCrm,
+		handleSaveNewChannel,
+		handleRemoveChannel,
+		handleResetDefaults,
+	} = useMarketingRomiChannels();
 
 	return (
-		<section
-			className="marketing-romi-card"
-			aria-label="Окупаемость рекламы и каналов привлечения (ROMI)"
-			data-testid="marketing-romi-table-section"
-		>
-			{/* HEADER & EXECUTIVE STRIP */}
-			<div className="marketing-romi-header">
-				<div>
-					<div className="marketing-romi-title-row">
-						<BarChart3 className="text-[var(--teal)]" aria-hidden="true" />
-						<h3 className="marketing-romi-title">
-							Эффективность рекламы и окупаемость каналов (ROMI)
-						</h3>
-					</div>
-					<p className="marketing-romi-subtitle">
-						Сводная таблица для владельца: реальные затраты, первичные и повторные пациенты, LTV выручка и чистый возврат инвестиций (ROMI).
-					</p>
-				</div>
+		<section className="marketing-romi-card" aria-label="Окупаемость рекламы и каналов привлечения (ROMI)" data-testid="marketing-romi-table-section">
+			<MarketingRomiTableHeader onSyncWithCrm={handleSyncWithCrm} onOpenRoiModal={() => setIsRoiModalOpen(true)} onResetDefaults={handleResetDefaults} isAddingChannel={isAddingChannel} onToggleAddChannel={() => setIsAddingChannel(!isAddingChannel)} />
 
-				<div className="marketing-romi-header-actions">
-					<button
-						type="button"
-						className="romi-action-btn secondary"
-						onClick={handleSyncWithCrm}
-						title="Синхронизировать показатели с живой базой CRM"
-						data-testid="romi-sync-crm-btn"
-					>
-						<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
-						Синхронизировать с CRM
-					</button>
-					<button
-						type="button"
-						className="romi-action-btn secondary"
-						onClick={() => setIsRoiModalOpen(true)}
-						title="Открыть подробный сквозной аудит ROI и воронки"
-						data-testid="romi-open-roi-modal-btn"
-					>
-						<TrendingUp className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
-						Сквозной аудит
-					</button>
-					<button
-						type="button"
-						className="romi-action-btn secondary"
-						onClick={handleResetDefaults}
-						title="Восстановить типовые каналы"
-					>
-						<RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-						Сброс
-					</button>
-					<button
-						type="button"
-						className="romi-action-btn primary"
-						onClick={() => setIsAddingChannel(!isAddingChannel)}
-					>
-						<Plus className="w-3.5 h-3.5" aria-hidden="true" />
-						Добавить канал
-					</button>
-				</div>
-			</div>
-
-			{/* CRM SYNC NOTIFICATION BANNER */}
 			{syncMessage && (
 				<div className="romi-sync-banner" data-testid="romi-sync-banner">
-					<CheckCircle2 className="w-4 h-4 text-[var(--teal)] flex-shrink-0" aria-hidden="true" />
+					<CheckCircle2 className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
 					<span>{syncMessage}</span>
 				</div>
 			)}
 
-			{/* KPI STATS STRIP */}
 			<MarketingRomiKpiStrip summary={summary} />
 
-			{/* ADD CHANNEL INLINE FORM */}
 			{isAddingChannel && (
-				<MarketingRomiAddChannelForm
-					channelsCount={channels.length}
-					onSaveChannel={handleSaveNewChannel}
-					onCancel={() => setIsAddingChannel(false)}
-				/>
+				<MarketingRomiAddChannelForm channelsCount={channels.length} onSaveChannel={(ch) => { handleSaveNewChannel(ch); setIsAddingChannel(false); }} onCancel={() => setIsAddingChannel(false)} />
 			)}
 
-			{/* MAIN OWNER ROMI TABLE OR HONEST EMPTY STATE */}
 			{channels.length === 0 && !isAddingChannel ? (
-				<MarketingRomiEmptyState
-					onAddChannel={() => setIsAddingChannel(true)}
-					onSyncWithCrm={handleSyncWithCrm}
-					onResetDefaults={handleResetDefaults}
-				/>
+				<MarketingRomiEmptyState onAddChannel={() => setIsAddingChannel(true)} onSyncWithCrm={handleSyncWithCrm} onResetDefaults={handleResetDefaults} />
 			) : (
 				<>
 					<div className="romi-table-container">
@@ -505,14 +75,7 @@ export function MarketingRomiTable() {
 							</thead>
 							<tbody>
 								{calculatedMetrics.map((metric) => (
-									<MarketingRomiTableRow
-										key={metric.id}
-										metric={metric}
-										getInputValue={getInputValue}
-										onInputChange={handleInputChange}
-										onInputBlur={handleInputBlur}
-										onRemoveChannel={handleRemoveChannel}
-									/>
+									<MarketingRomiTableRow key={metric.id} metric={metric} getInputValue={getInputValue} onInputChange={handleInputChange} onInputBlur={handleInputBlur} onRemoveChannel={handleRemoveChannel} />
 								))}
 							</tbody>
 							<MarketingRomiTableFooter summary={summary} />
@@ -521,33 +84,20 @@ export function MarketingRomiTable() {
 
 					<div className="romi-mobile-cards-list" data-testid="romi-mobile-cards-list">
 						{calculatedMetrics.map((metric) => (
-							<MarketingRomiMobileCard
-								key={metric.id}
-								metric={metric}
-								getInputValue={getInputValue}
-								onInputChange={handleInputChange}
-								onInputBlur={handleInputBlur}
-								onRemoveChannel={handleRemoveChannel}
-							/>
+							<MarketingRomiMobileCard key={metric.id} metric={metric} getInputValue={getInputValue} onInputChange={handleInputChange} onInputBlur={handleInputBlur} onRemoveChannel={handleRemoveChannel} />
 						))}
 					</div>
 				</>
 			)}
 
-			{/* EXPLANATORY HINT */}
 			<div className="romi-footer-hint">
-				<HelpCircle className="w-4 h-4 flex-shrink-0 text-[var(--teal)]" aria-hidden="true" />
+				<HelpCircle className="w-4 h-4 shrink-0 text-[var(--teal)]" aria-hidden="true" />
 				<p>
-					<strong>Справочник каналов:</strong> 10 типовых каналов (2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама, Сайт, Инстаграм, Листовки). Кнопка «Синхронизировать с CRM» автоматически рассчитывает доходимость, первичных и повторных пациентов, выручку и LTV по реальным медицинским картам и чекам оплат клиники.
+					<strong>Справочник каналов:</strong> Реальные каналы стоматологии (Яндекс.Карты, 2ГИС, ПроДокторов, Сарафанное радио, Сайт, Telegram). Автоматический расчет первичных, доходимости и выручки по реальным картам и чекам оплат.
 				</p>
 			</div>
 
-			{isRoiModalOpen && (
-				<MarketingRoiModal
-					isOpen={isRoiModalOpen}
-					onClose={() => setIsRoiModalOpen(false)}
-				/>
-			)}
+			{isRoiModalOpen && <MarketingRoiModal isOpen={isRoiModalOpen} onClose={() => setIsRoiModalOpen(false)} />}
 		</section>
 	);
 }

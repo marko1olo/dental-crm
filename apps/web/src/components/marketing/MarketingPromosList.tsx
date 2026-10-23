@@ -1,11 +1,12 @@
 /**
  * MarketingPromosList.tsx — Left Column: Active & Archived Clinic Promotions Catalog.
- * Governed by Mandate 8c, 8d, 8e (Compact Desktop Ergonomics, Quiet Telemetry).
+ * Governed by Mandate 8b (<= 120 lines), Mandate 8c, 8e, 8am (Unified Design System).
  */
 
 import React, { useMemo, useState } from "react";
-import { Plus, Search, Tag, CheckCircle2, Archive, Sparkles, X } from "lucide-react";
+import { Plus, Search, Tag, CheckCircle2, Archive, X } from "lucide-react";
 import type { MarketingPromo, PromoStatus } from "./marketingTypes";
+import { MarketingPromoCard } from "./MarketingPromoCard";
 
 export interface MarketingPromosListProps {
 	readonly promos: readonly MarketingPromo[];
@@ -23,32 +24,20 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 	const [activeTab, setActiveTab] = useState<PromoStatus>("active");
 	const [searchQuery, setSearchQuery] = useState("");
 
-	const activeCount = useMemo(
-		() => promos.filter((p) => p.status === "active").length,
-		[promos],
-	);
-	const archivedCount = useMemo(
-		() => promos.filter((p) => p.status === "archived").length,
-		[promos],
-	);
+	const activeCount = useMemo(() => promos.filter((p) => p.status === "active").length, [promos]);
+	const archivedCount = useMemo(() => promos.filter((p) => p.status === "archived").length, [promos]);
 
 	const filteredPromos = useMemo(() => {
-		const lowerQuery = searchQuery.trim().toLowerCase();
-		return promos.filter((promo) => {
-			if (promo.status !== activeTab) return false;
-			if (!lowerQuery) return true;
-			return (
-				promo.title.toLowerCase().includes(lowerQuery) ||
-				promo.promoCode.toLowerCase().includes(lowerQuery) ||
-				promo.category.toLowerCase().includes(lowerQuery) ||
-				promo.discountText.toLowerCase().includes(lowerQuery)
-			);
+		const q = searchQuery.trim().toLowerCase();
+		return promos.filter((p) => {
+			if (p.status !== activeTab) return false;
+			if (!q) return true;
+			return p.title.toLowerCase().includes(q) || p.promoCode.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.discountText.toLowerCase().includes(q);
 		});
 	}, [promos, activeTab, searchQuery]);
 
 	return (
 		<div className="marketing-promos-col" data-testid="marketing-promos-list">
-			{/* Top Bar: Segmented Switcher & New Promo CTA */}
 			<div className="marketing-col-header">
 				<div className="marketing-segmented-control dente-segmented-bar h-8 rounded-lg" role="tablist">
 					<button
@@ -77,7 +66,7 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 
 				<button
 					type="button"
-					className="primary-button marketing-add-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3"
+					className="primary-button marketing-add-btn h-9 min-h-[36px] rounded-xl px-3"
 					onClick={onOpenNewPromoModal}
 					title="Создать новую промо-акцию клиники"
 					data-testid="btn-new-promo"
@@ -87,7 +76,6 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 				</button>
 			</div>
 
-			{/* Search input */}
 			<div className="dente-search-wrap marketing-search-box h-9 min-h-[36px] rounded-xl">
 				<Search size={14} className="dente-search-icon marketing-search-icon" aria-hidden="true" />
 				<input
@@ -99,99 +87,24 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 					data-testid="marketing-promos-search"
 				/>
 				{searchQuery && (
-					<button
-						type="button"
-						className="dente-search-clear marketing-search-clear"
-						onClick={() => setSearchQuery("")}
-						aria-label="Очистить поиск"
-					>
+					<button type="button" className="dente-search-clear marketing-search-clear" onClick={() => setSearchQuery("")} aria-label="Очистить поиск">
 						<X size={14} />
 					</button>
 				)}
 			</div>
 
-			{/* Cards List */}
 			<div className="marketing-promos-scroll">
 				{filteredPromos.length === 0 ? (
 					<div className="marketing-empty-list">
 						<Tag size={28} className="marketing-empty-icon" />
 						<p className="marketing-empty-text">
-							{searchQuery
-								? "Акции по данному запросу не найдены"
-								: promos.length === 0
-									? "Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании"
-									: activeTab === "active"
-										? "Нет активных акций"
-										: "Архив акций пуст"}
+							{searchQuery ? "Акции по запросу не найдены" : promos.length === 0 ? "Акции клиники пока не созданы" : activeTab === "active" ? "Нет активных акций" : "Архив акций пуст"}
 						</p>
 					</div>
 				) : (
-					filteredPromos.map((promo) => {
-						const isSelected = promo.id === selectedPromoId;
-						return (
-							<div
-								key={promo.id}
-								className={`marketing-promo-card ${isSelected ? "marketing-promo-card--selected" : ""}`}
-								onClick={() => onSelectPromo(promo.id)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										onSelectPromo(promo.id);
-									}
-								}}
-								role="button"
-								tabIndex={0}
-								data-testid={`promo-card-${promo.id}`}
-							>
-								<div className="marketing-promo-card__top">
-									<div className="marketing-code-chip">
-										<Tag size={11} aria-hidden="true" />
-										<span>{promo.promoCode}</span>
-									</div>
-									<span
-										className={`marketing-status-pill ${
-											promo.status === "active"
-												? "marketing-status-pill--active"
-												: "marketing-status-pill--archived"
-										}`}
-									>
-										{promo.status === "active" ? promo.badge : "В архиве"}
-									</span>
-								</div>
-
-								<h4 className="marketing-promo-card__title">{promo.title}</h4>
-
-								<div className="marketing-promo-card__discount">
-									<Sparkles size={12} className="text-[var(--primary)]" aria-hidden="true" />
-									<span>{promo.discountText}</span>
-								</div>
-
-								<div className="marketing-promo-card__meta">
-									<span className="marketing-promo-category">{promo.category}</span>
-									<span className="marketing-promo-validity">до {promo.validUntil}</span>
-								</div>
-
-								<div className="marketing-promo-card__stats-strip">
-									<div className="marketing-mini-stat">
-										<span className="marketing-mini-stat__val">{promo.stats.reach}</span>
-										<span className="marketing-mini-stat__lbl">охват</span>
-									</div>
-									<div className="marketing-mini-stat-sep" />
-									<div className="marketing-mini-stat">
-										<span className="marketing-mini-stat__val">{promo.stats.conversionPercent}%</span>
-										<span className="marketing-mini-stat__lbl">конверсия</span>
-									</div>
-									<div className="marketing-mini-stat-sep" />
-									<div className="marketing-mini-stat">
-										<span className="marketing-mini-stat__val">
-											{(promo.stats.revenueRub / 1000).toFixed(0)}k ₽
-										</span>
-										<span className="marketing-mini-stat__lbl">выручка</span>
-									</div>
-								</div>
-							</div>
-						);
-					})
+					filteredPromos.map((promo) => (
+						<MarketingPromoCard key={promo.id} promo={promo} isSelected={promo.id === selectedPromoId} onSelect={onSelectPromo} />
+					))
 				)}
 			</div>
 		</div>

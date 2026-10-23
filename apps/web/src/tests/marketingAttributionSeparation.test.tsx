@@ -144,10 +144,10 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 			html.includes('data-testid="lead-convert-primary-inquiry"'),
 		);
 		assert.ok(html.includes("Отбеливание зубов Zoom 4 и чистка"));
-		assert.ok(html.includes("Zero Attribution Loss"));
+		assert.ok(html.includes("Источник обращения и первичные жалобы прикрепляются к карте"));
 	});
 
-	it("5. LeadConvertModal enforces 152-FZ & FZ-38 consent separation with independent checkboxes", () => {
+	it("5. LeadConvertModal enforces consent separation with independent checkboxes without law numbers", () => {
 		const modal = createElement(LeadConvertModal, {
 			isOpen: true,
 			onClose: () => {},
@@ -189,17 +189,17 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 		);
 		assert.ok(
 			html.includes(
-				"Разделение согласий (152-ФЗ и ст. 18 ФЗ «О рекламе»)",
+				"Согласия и уведомления пациента",
 			),
 		);
 
 		// Medical consent checkbox
 		assert.ok(html.includes('data-testid="consent-medical-checkbox"'));
 		assert.ok(
-			html.includes("Согласие на обработку персданных (152-ФЗ)"),
+			html.includes("Медицинская карта и обслуживание"),
 		);
 		assert.ok(
-			html.includes("Обязательно для оказания медицинской помощи"),
+			html.includes("Оформление амбулаторной карты приёма"),
 		);
 
 		// Marketing consent checkbox
@@ -207,11 +207,11 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 			html.includes('data-testid="consent-marketing-checkbox"'),
 		);
 		assert.ok(
-			html.includes("Согласие на рекламные рассылки и акции (ФЗ-38)"),
+			html.includes("Рекламные предложения и акции"),
 		);
 		assert.ok(
 			html.includes(
-				"Отказ от рекламы: пациент исключается из промо-рассылок",
+				"Отключено: отправляются только сервисные напоминания",
 			),
 		);
 	});
