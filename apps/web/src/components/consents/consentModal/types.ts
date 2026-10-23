@@ -64,6 +64,35 @@ export interface InformedConsentModalProps {
 	}) => void;
 }
 
+export interface ExecuteSigningParams {
+	effectiveMethod: VerificationMethod;
+	strokes: SignatureStroke[];
+	currentPoints: SignaturePoint[];
+	smsOtpCode: string;
+	paperScanFile: File | null;
+	substitutionContext: ConsentSubstitutionContext;
+	effectiveContext: ConsentSubstitutionContext;
+	patient?: InformedConsentPatientInfo | null | undefined;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
+	integrityRecord: { hash: string };
+	activeMode: "packages" | "single";
+	currentPackage: { code: string; title: string; templateKeys: readonly ConsentTemplateKey[] };
+	activeDocKey: ConsentTemplateKey;
+	currentTemplate: ConsentTemplate;
+	rendered: { fullTextContent: string };
+	onConsentSigned?: ((payload: SignedConsentPayload) => void) | undefined;
+	onPackageSigned?: ((payloads: SignedConsentPayload[]) => void) | undefined;
+	onConsentConfirmed?: ((payload: {
+		consentType: string;
+		intervention: string;
+		toothOrArea: string;
+		confirmedAt: string;
+		integrityHash?: string;
+	}) => void) | undefined;
+	onClose: () => void;
+}
+
 export type {
 	ConsentPackageKey,
 	ConsentTemplateKey,

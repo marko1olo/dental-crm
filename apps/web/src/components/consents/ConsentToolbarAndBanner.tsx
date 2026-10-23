@@ -1,18 +1,14 @@
-import { FileText, Layers, Package, Sparkles } from "lucide-react";
-import React, { useMemo } from "react";
-import {
-	type ConsentPackage,
-	type ConsentPackageKey,
-	type ConsentSubstitutionContext,
-	type ConsentTemplate,
-	type ConsentTemplateKey,
-	PACKAGE_SHORT_TITLES,
-	TEMPLATE_SHORT_TITLES,
+import React from "react";
+import type {
+	ConsentPackage,
+	ConsentPackageKey,
+	ConsentSubstitutionContext,
+	ConsentTemplate,
+	ConsentTemplateKey,
 } from "./consentTemplates.js";
-import {
-	sanitizeConsentFieldValue,
-	sanitizeConsentContext,
-} from "./consentSummaryHelper.js";
+import { ConsentModeTabs } from "./toolbar/ConsentModeTabs";
+import { ConsentPackageBanner } from "./toolbar/ConsentPackageBanner";
+import { ConsentMetaGrid } from "./toolbar/ConsentMetaGrid";
 
 export interface ConsentToolbarAndBannerProps {
 	activeMode: "packages" | "single";
@@ -45,188 +41,30 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 	getConsentTemplate,
 	substitutionContext,
 }) => {
-	const cleanContext = useMemo(() => sanitizeConsentContext(substitutionContext), [substitutionContext]);
-
-	const cleanTeethList = useMemo(() => {
-		const raw = cleanContext.toothNumbers || "";
-		if (!raw || raw === "Полость рта (зубной ряд)" || raw === "Полость рта") return [];
-		return raw.split(/[,;\s]+/).filter(Boolean);
-	}, [cleanContext.toothNumbers]);
-
 	return (
 		<>
-			{/* Панель выбора режима и вкладок (1 строка 40px на ПК, адаптивный скролл на мобиле) */}
-			<div className="consent-toolbar-row">
-				<div className="consent-mode-segmented dente-segmented-bar">
-					<button
-						type="button"
-						className={`consent-mode-btn dente-segmented-item ${activeMode === "packages" ? "active" : ""}`}
-						onClick={() => {
-							setActiveMode("packages");
-							setPreviewTemplateKey(null);
-						}}
-						data-testid="tab-mode-packages"
-						aria-pressed={activeMode === "packages"}
-					>
-						<Layers size={13} />
-						<span>Пакеты согласий</span>
-					</button>
-					<button
-						type="button"
-						className={`consent-mode-btn dente-segmented-item ${activeMode === "single" ? "active" : ""}`}
-						onClick={() => setActiveMode("single")}
-						data-testid="tab-mode-single"
-						aria-pressed={activeMode === "single"}
-					>
-						<FileText size={13} />
-						<span>Отдельные согласия</span>
-					</button>
-				</div>
+			<ConsentModeTabs
+				activeMode={activeMode}
+				setActiveMode={setActiveMode}
+				activePackageKey={activePackageKey}
+				setActivePackageKey={setActivePackageKey}
+				activeKey={activeKey}
+				setActiveKey={setActiveKey}
+				setPreviewTemplateKey={setPreviewTemplateKey}
+				allPackages={allPackages}
+				allTemplates={allTemplates}
+			/>
 
-				<nav
-					className="consent-tabs-scroll min-w-0"
-					aria-label={activeMode === "packages" ? "Пакеты согласий" : "Шаблоны согласий"}
-				>
-					{activeMode === "packages"
-						? allPackages.map((pkg) => {
-								const isActive = pkg.key === activePackageKey;
-								const titleText = PACKAGE_SHORT_TITLES[pkg.key] || pkg.title;
-								return (
-									<button
-										key={pkg.key}
-										type="button"
-										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-max ${isActive ? "active" : ""}`}
-										onClick={() => {
-											setActivePackageKey(pkg.key);
-											setPreviewTemplateKey(null);
-										}}
-										aria-selected={isActive}
-										data-testid={`pkg-tab-${pkg.key}`}
-										title={titleText}
-									>
-										<span className="whitespace-nowrap">{titleText}</span>
-									</button>
-								);
-						  })
-						: allTemplates.map((tpl) => {
-								const isActive = tpl.key === activeKey;
-								const titleText = TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title;
-								return (
-									<button
-										key={tpl.key}
-										type="button"
-										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-max ${isActive ? "active" : ""}`}
-										onClick={() => setActiveKey(tpl.key)}
-										aria-selected={isActive}
-										data-testid={`tpl-tab-${tpl.key}`}
-										title={titleText}
-									>
-										<span className="whitespace-nowrap">{titleText}</span>
-									</button>
-								);
-						  })}
-				</nav>
-			</div>
-
-			{/* Баннер активного пакета с чипами быстрого предпросмотра документов */}
 			{activeMode === "packages" && (
-				<div className="consent-package-banner">
-					<div className="consent-package-banner-title min-w-0 flex-1">
-						<Package size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
-						<div className="min-w-0 flex-1">
-							<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)]">
-								{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
-							</div>
-							<div className="text-xs text-muted">
-								{currentPackage.description}
-							</div>
-						</div>
-					</div>
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-xs font-semibold text-muted mr-1">Просмотр бланка:</span>
-						{currentPackage.templateKeys.map((k, idx) => {
-							const t = getConsentTemplate(k);
-							const isSelected = k === activeDocKey;
-							return (
-								<button
-									key={k}
-									type="button"
-									className={`consent-subdoc-chip min-w-max ${isSelected ? "active" : ""}`}
-									onClick={() => setPreviewTemplateKey(k)}
-									title={`Просмотреть ${t.title}`}
-								>
-									<span className="font-semibold opacity-75 shrink-0">{idx + 1}.</span>
-									<span className="whitespace-nowrap">{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
-								</button>
-							);
-						})}
-					</div>
-				</div>
+				<ConsentPackageBanner
+					currentPackage={currentPackage}
+					activeDocKey={activeDocKey}
+					setPreviewTemplateKey={setPreviewTemplateKey}
+					getConsentTemplate={getConsentTemplate}
+				/>
 			)}
 
-			{/* Информационная панель метаданных (полная чистота от системного мусора) */}
-			<div className="consent-meta-grid">
-				<div className="consent-meta-item min-w-0">
-					<span className="consent-meta-label">Пациент</span>
-					<span
-						className="consent-meta-value break-words"
-						title={cleanContext.patientName || "Бланк для ручного заполнения («________»)"}
-					>
-						{cleanContext.patientName || <em style={{ color: "var(--muted, #64748b)" }}>Бланк («________»)</em>}
-					</span>
-					{cleanContext.birthDate && (
-						<span className="consent-meta-label truncate">Д.Р.: {cleanContext.birthDate}</span>
-					)}
-				</div>
-
-				<div className="consent-meta-item min-w-0">
-					<span className="consent-meta-label">Лечащий врач</span>
-					<span
-						className="consent-meta-value break-words"
-						title={cleanContext.doctorName || "Врач не назначен"}
-					>
-						{cleanContext.doctorName || <em style={{ color: "var(--muted, #64748b)" }}>Не назначен</em>}
-					</span>
-				</div>
-
-				<div className="consent-meta-item min-w-0">
-					<span className="consent-meta-label">Диагноз (МКБ-10)</span>
-					<span
-						className="consent-meta-value break-words"
-						title={cleanContext.diagnosisIcd || "Первичный осмотр"}
-					>
-						{cleanContext.diagnosisIcd || <em style={{ color: "var(--muted, #64748b)" }}>Не указан</em>}
-					</span>
-				</div>
-
-				<div className="consent-meta-item min-w-0">
-					<span className="consent-meta-label">Зубы / Зона</span>
-					<span
-						className="consent-meta-value truncate"
-						title={cleanContext.toothNumbers || "Полость рта"}
-					>
-						{cleanContext.toothNumbers || <span style={{ color: "var(--muted, #64748b)" }}>Полость рта</span>}
-					</span>
-					{cleanTeethList.length > 0 && (
-						<div
-							className="consent-teeth-badges"
-							style={{
-								display: "flex",
-								flexWrap: "wrap",
-								gap: "3px",
-								maxHeight: "56px",
-								overflowY: "auto",
-							}}
-						>
-							{cleanTeethList.map((t) => (
-								<span key={t} className="consent-tooth-chip">
-									{t}
-								</span>
-							))}
-						</div>
-					)}
-				</div>
-			</div>
+			<ConsentMetaGrid substitutionContext={substitutionContext} />
 		</>
 	);
 };
