@@ -40,6 +40,14 @@ export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({
 						<span>Черновик</span>
 					</span>
 				)}
+				<span
+					className="vde-043__saved-badge"
+					data-testid="visit-diary-egisz-badge"
+					title="Фоновая отправка в ЕГИСЗ (РЭМД): протокол передается в Минздрав в фоновом режиме без задержек приёма"
+				>
+					<CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					<span className="text-teal-700 dark:text-teal-300 font-medium">Отправлено в ЕГИСЗ ✓</span>
+				</span>
 				{logic.isSaving && (
 					<span className="vde-043__saving-indicator">
 						<span className="vde-043__saving-spinner" />

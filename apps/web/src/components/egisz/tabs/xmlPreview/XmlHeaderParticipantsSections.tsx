@@ -54,7 +54,7 @@ export const XmlHeaderParticipantsSections: React.FC<XmlHeaderParticipantsSectio
 					<div style={codeBoxStyle}>
 						<div>&lt;realmCode code="RU"/&gt;</div>
 						<div>&lt;templateId root="{EGISZ_DENTAL_SEMD_TYPES[semdDocCode]?.templateRoot || '1.2.643.5.1.13.13.11.1527'}"/&gt;</div>
-						<div>&lt;id root="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}.100.1.1" extension="{semdPayload.documentUuid}"/&gt;</div>
+						<div>&lt;id root="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}.100.1.1" extension="{semdPayload?.documentUuid || 'DOC-UUID-DRAFT'}"/&gt;</div>
 					</div>
 				)}
 			</div>

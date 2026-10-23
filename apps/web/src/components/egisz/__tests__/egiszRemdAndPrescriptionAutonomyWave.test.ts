@@ -10,6 +10,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
+import { VisitDiaryHeader } from "../../visit/diary/section/VisitDiaryHeader";
+import { EgiszXmlPreviewTab } from "../tabs/EgiszXmlPreviewTab";
+import { TaxDeductionCertificateDrawer } from "../TaxDeductionCertificateDrawer";
 
 import {
 	EGISZ_DENTAL_SEMD_TYPES,
@@ -391,6 +396,82 @@ describe("EGISZ REMD, Form 107-1/u & Consents Autonomy & Demolition Wave", () =>
 			assert.ok(rendered.fullTextContent.includes("Иванов Сергей Владимирович"), "Имя врача подставлено");
 			assert.ok(rendered.fullTextContent.includes("K02.1"), "Диагноз подставлен");
 			assert.ok(rendered.fullTextContent.includes("46"), "Номер зуба подставлен");
+		});
+	});
+
+	// ═════════════════════════════════════════════════════════════════════════
+	// 5. ТИХАЯ ТЕЛЕМЕТРИЯ ЕГИСЗ, ZERO-XML В ПУТИ ВРАЧА И СПРАВКА ФНС В 1 КЛИК
+	// ═════════════════════════════════════════════════════════════════════════
+	describe("5. Quiet EGISZ Telemetry, Zero Raw XML Trees & 1-Click Tax Certificate", () => {
+		it("5.1. VisitDiaryHeader содержит ненавязчивый бейдж тихой телеметрии ЕГИСЗ", () => {
+			const html = renderToString(
+				createElement(VisitDiaryHeader, {
+					logic: {
+						lastSavedAt: "2026-10-23T11:00:00Z",
+						isSaving: false,
+						isLocked: false,
+						isRevising: false,
+						beginRevise: () => {},
+						setShowPreview: () => {},
+					},
+					modals: {
+						setShowTemplatesModal: () => {},
+						setShowSummaryModal: () => {},
+						setShowPrescriptionModal: () => {},
+						setShowRadiologyReferralModal: () => {},
+						setIsTier3PerioModalOpen: () => {},
+						setShowEgiszModal: () => {},
+						setShowBrandingCustomizer: () => {},
+					},
+					onApplyNorm: () => {},
+				}),
+			);
+			assert.ok(html.includes("visit-diary-egisz-badge"), "Бейдж телеметрии ЕГИСЗ в шапке дневника");
+			assert.ok(html.includes("Отправлено в ЕГИСЗ ✓"), "Текст статуса отправки в ЕГИСЗ");
+		});
+
+		it("5.2. EgiszXmlPreviewTab скрывает технический XML под административный спойлер <details>", () => {
+			const html = renderToString(
+				createElement(EgiszXmlPreviewTab, {
+					generatedXml: "<ClinicalDocument><id root='1.2.3'/></ClinicalDocument>",
+					xmlValidation: { isValid: true, failedRulesCount: 0, checkedRulesCount: 15, rules: [] } as any,
+					onValidateCdaXml: () => {},
+					onDownloadXml: () => {},
+					onExportCurrentPackageZip: () => {},
+					onSendToRegistry: () => {},
+					onCopyXml: () => {},
+					isSending: false,
+					collapsedSections: {},
+					onToggleSection: () => {},
+					semdDocCode: "302",
+					clinic: { clinicName: "ООО Денте", clinicOgrn: "1157746123457", clinicInn: "7701234567" } as any,
+					doctor: { doctorFullName: "Иванов И.И.", doctorPosition: "Врач-стоматолог-терапевт", doctorSnils: "123-456-789 64" } as any,
+					patient: { patientFullName: "Смирнов А.В.", patientSnils: "112-233-445 95" } as any,
+					semdPayload: null,
+					diagnoses: [],
+					procedures: [],
+				}),
+			);
+			assert.ok(html.includes("egisz-quiet-telemetry-card"), "Карточка тихой телеметрии для врача");
+			assert.ok(html.includes("Отправлено в ЕГИСЗ ✓"), "Статус фоновой отправки документа");
+			assert.ok(html.includes("<details"), "Технический XML спрятан под тег details");
+			assert.ok(html.includes("egisz-tech-accordion"), "Класс спойлера технического XML");
+		});
+
+		it("5.3. TaxDeductionCertificateDrawer содержит ровно одну Primary CTA кнопку для 1-клик генерации", () => {
+			const html = renderToString(
+				createElement(TaxDeductionCertificateDrawer, {
+					patientName: "Васильев В.В.",
+					patientInn: "770123456789",
+					payments: [
+						{ date: "2026-03-01", serviceCode: "1", serviceDescription: "Лечение кариеса", amountKopecks: 500000 },
+					],
+					onClose: () => {},
+				}),
+			);
+			assert.ok(html.includes("Сформировать справку ФНС"), "Primary CTA кнопка формирует справку в 1 клик");
+			assert.ok(html.includes("Печать бланка ФНС с QR-кодом"), "Title для печати бланка");
+			assert.ok(!html.includes("disabled"), "Кнопка никогда не блокируется (Мандат 8e)");
 		});
 	});
 });

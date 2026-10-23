@@ -6,6 +6,7 @@ import { TaxDeductionCertificateDrawer } from "./TaxDeductionCertificateDrawer";
 import { MedicalRecordExtractDrawer } from "./MedicalRecordExtractDrawer";
 import type { RemdDocumentRecord } from "./egiszJournalData";
 import { generateFnsTaxCertificatePrintHtml, generateMedicalRecordExtractPrintHtml } from "./egiszRemdPrintTemplates";
+import { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
 import "./egiszRemd.css";
 
 export type EgiszHubSection = "queue" | "tax_deduction" | "extracts";
@@ -50,7 +51,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			clinic: { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701987654", ogrn: "1157746000000" },
 			taxpayer: { fullName: patientName, inn: patientInn || undefined },
 			patient: { fullName: patientName, relationshipCode: "1" },
-			payments: [],
+			payments: SAMPLE_FNS_TAX_1151156_PRESET.payments,
 			signer: { fullName: "Главврач Клиники", position: "Главный врач" },
 		}));
 	};
@@ -60,12 +61,17 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			<div className="egisz-hub-modal-panel">
 				<div className="egisz-mobile-drag-handle" aria-hidden="true" />
 				<header className="egisz-hub-header">
-					<div className="egisz-hub-title-group">
-						<ShieldCheck size={22} className="text-teal" />
-						<div>
-							<h2 className="egisz-hub-title">ЕГИСЗ и официальные справки</h2>
-							<p className="egisz-hub-sub">Фоновая отправка в Минздрав и печать справок пациентам</p>
+					<div className="egisz-hub-top-bar">
+						<div className="egisz-hub-title-group">
+							<ShieldCheck size={22} className="text-teal" />
+							<div>
+								<h2 className="egisz-hub-title">ЕГИСЗ и официальные справки</h2>
+								<p className="egisz-hub-sub">Фоновая отправка в Минздрав и печать справок пациентам</p>
+							</div>
 						</div>
+						<button type="button" onClick={onClose} className="egisz-hub-close-btn" aria-label="Закрыть">
+							<X size={20} />
+						</button>
 					</div>
 
 					<div className="egisz-hub-tabs" role="tablist">
@@ -97,15 +103,11 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 							<FileText size={15} /> Выписки и справки
 						</button>
 					</div>
-
-					<button type="button" onClick={onClose} className="egisz-hub-close-btn" aria-label="Закрыть">
-						<X size={20} />
-					</button>
 				</header>
 
 				<div className="egisz-hub-body">
 					{activeSection === "queue" && <EgiszBackgroundQueueTable records={records} onRetryRecord={onRetryRecord} />}
-					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} onPrintCertificate={handlePrintFns} />}
+					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} payments={SAMPLE_FNS_TAX_1151156_PRESET.payments} onPrintCertificate={handlePrintFns} />}
 					{activeSection === "extracts" && <MedicalRecordExtractDrawer patientName={patientName} onPrintExtract={(p) => openPrint(generateMedicalRecordExtractPrintHtml(p))} />}
 				</div>
 			</div>

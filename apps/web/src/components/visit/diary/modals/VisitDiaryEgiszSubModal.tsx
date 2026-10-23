@@ -20,7 +20,7 @@ export const VisitDiaryEgiszSubModal: React.FC<VisitDiaryEgiszSubModalProps> = (
 			<EgiszRemdHubModal
 				isOpen={showEgiszModal}
 				onClose={() => setShowEgiszModal(false)}
-				initialTab="xml"
+				initialTab="clinical"
 			/>
 		</Suspense>
 	);

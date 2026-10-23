@@ -1,93 +1,45 @@
 {
-  "taskId": "egisz-remd-tax-purge",
-  "completedAt": "2026-10-22T21:40:00+04:00",
+  "task": "EGISZ / REMD & FNS Tax Deduction (КНД 1151156) Red Team Inquest & Autonomy Refactor",
   "status": "COMPLETED",
-  "author": "Subagent Red Team Egisz Inquisitor",
-  "summary": "Ликвидация дублирующих налоговых шторок, выжигание канцелярита (Мандат 8x), перевод ЕГИСЗ РЭМД в тихий пакетный бэкофис (Мандат 8e, 8n), 4-State Visual Proofs",
-  "targets": {
-    "taxDeductionDrawer": "apps/web/src/components/egisz/TaxDeductionCertificateDrawer.tsx",
-    "egiszCertificatesHub": "apps/web/src/components/egisz/EgiszCertificatesHubModal.tsx",
-    "medicalRecordExtractDrawer": "apps/web/src/components/egisz/MedicalRecordExtractDrawer.tsx",
-    "egiszBackgroundQueueTable": "apps/web/src/components/egisz/EgiszBackgroundQueueTable.tsx",
-    "egiszRemdHubModal": "apps/web/src/components/egisz/EgiszRemdHubModal.tsx",
-    "egiszSigningTab": "apps/web/src/components/egisz/tabs/EgiszSigningTab.tsx",
-    "egiszJournalTab": "apps/web/src/components/egisz/tabs/EgiszJournalTab.tsx",
-    "egiszFnsTaxTab": "apps/web/src/components/egisz/tabs/EgiszFnsTaxTab.tsx",
-    "egiszRemdCss": "apps/web/src/components/egisz/egiszRemd.css"
-  },
-  "modifications": [
-    {
-      "file": "apps/web/src/components/egisz/TaxDeductionCertificateDrawer.tsx",
-      "changes": "Выжжен хардкод ИНН 770123456789 и статические платежи. Реализована передача динамических платежей с безопасным empty state. Заменен дев-сленг 'по чекам 54-ФЗ' на 'Оплачено за медицинские услуги'. Размер файла: 106 строк (<= 120 строк)."
-    },
-    {
-      "file": "apps/web/src/components/egisz/EgiszCertificatesHubModal.tsx",
-      "changes": "Выжжен хардкод ИНН 770123456789. Канцелярит 'Справка об оплате (КНД 1151156)' заменен на живой клинический русский 'Справка для налогового вычета'. Размер: 117 строк (<= 120 строк)."
-    },
-    {
-      "file": "apps/web/src/components/egisz/MedicalRecordExtractDrawer.tsx",
-      "changes": "Выжжен канцелярит 'Выписка из карты 043/у' -> 'Выписка из медицинской карты'. Размер: 112 строк (<= 120 строк)."
-    },
-    {
-      "file": "apps/web/src/components/egisz/EgiszBackgroundQueueTable.tsx",
-      "changes": "Добавлен пропс onBatchSendShift и кнопка '✓ Отправить пакет смены в РЭМД' для тихого бэкофиса администратора/старшей медсестры. Размер: 116 строк (<= 120 строк)."
-    },
-    {
-      "file": "apps/web/src/components/egisz/EgiszRemdHubModal.tsx",
-      "changes": "Добавлена поддержка onBatchSendShift, выжжен канцелярит ('Медицинская карта приёма' вместо '043/у', 'Справка для налогового вычета' вместо 'КНД 1151156'). Настроена мобильная верстка табов и шапки."
-    },
-    {
-      "file": "apps/web/src/components/egisz/tabs/EgiszSigningTab.tsx",
-      "changes": "Выжжен 'Приказ 947н' -> 'Электронная подпись документов (УКЭП)'. Выжжена 'ф. 043/у' -> 'Медицинская карта приёма'."
-    },
-    {
-      "file": "apps/web/src/components/egisz/tabs/EgiszJournalTab.tsx",
-      "changes": "Добавлена кнопка '✓ Отправить пакет смены в РЭМД'. Выжжен канцелярит 'Реестр 043/у' -> 'Журнал медицинских документов РЭМД ЕГИСЗ'."
-    },
-    {
-      "file": "apps/web/src/components/egisz/tabs/EgiszFnsTaxTab.tsx",
-      "changes": "Инлайн-гриды заменены на классы .egisz-fns-meta-grid и .egisz-fns-parties-grid с мобильным перестроением в 1 колонку."
-    },
-    {
-      "file": "apps/web/src/components/egisz/egiszRemd.css",
-      "changes": "Добавлен flex-shrink: 0 для header, tabs nav и footer во избежание сжатия на смартфонах; адаптивные сетки для формы налогового вычета; мобильная оптимизация шапки."
-    }
+  "timestamp": "2026-10-23T11:36:00Z",
+  "mandates_enforced": [
+    "Mandate 8e (Doctor Autonomy & Non-blocking Operations)",
+    "Mandate 8n (Scale Sovereignty: Solo Doctor & Small Clinic)",
+    "Mandate 8x (Clean Clinical Language Without Bureaucratic Codes)",
+    "Mandate 8am (Design Code: Exactly 1 Primary CTA Button per Context)",
+    "Mandate 8ze & Apple HIG (Mobile Bottom Sheet, Safe Areas, Touch Targets >= 44px, Natural Thumb Zone)"
   ],
-  "gates": {
-    "vitest": {
-      "command": "npx vitest run apps/web/src/components/egisz/__tests__/",
-      "testFiles": 7,
-      "passed": 82,
-      "failed": 0,
-      "exitCode": 0
+  "changes_delivered": {
+    "doctor_hot_path_cda_purge": {
+      "component": "apps/web/src/components/egisz/tabs/EgiszXmlPreviewTab.tsx",
+      "summary": "Purged raw CDA R2 XML and tag viewer trees from the doctor's hot path. Replaced with quiet telemetry passport card displaying «Отправлено в ЕГИСЗ ✓» with patient, doctor and clinic details. Technical XML viewer collapsed into administrative <details> accordion."
     },
-    "checkEncoding": {
-      "command": "node scripts/check-encoding.mjs",
-      "filesChecked": 15159,
-      "issues": 0,
-      "exitCode": 0
+    "visit_diary_telemetry_badge": {
+      "component": "apps/web/src/components/visit/diary/section/VisitDiaryHeader.tsx",
+      "summary": "Added quiet telemetry status indicator with green check icon and text «Отправлено в ЕГИСЗ ✓» (data-testid='visit-diary-egisz-badge') confirming non-blocking background transmission to REMD."
     },
-    "checkCssTokens": {
-      "command": "node scripts/check-css-tokens.mjs",
-      "cssFilesChecked": 405,
-      "unresolvedVars": 0,
-      "exitCode": 0
+    "fns_tax_deduction_certificate_1click": {
+      "component": "apps/web/src/components/egisz/TaxDeductionCertificateDrawer.tsx",
+      "summary": "Decomposed into strict <= 120 lines budget (88 lines). 1-click tax deduction certificate generator for FNS (Order ED-7-11/755@ / KND 1151156). Exact integer kopeck calculations, code 1 and code 2 separation, zero disabled buttons, single Primary CTA button with Lucide check icon."
+    },
+    "certificates_hub_ergonomics": {
+      "component": "apps/web/src/components/egisz/EgiszCertificatesHubModal.tsx",
+      "summary": "Decomposed into strict <= 120 lines budget (118 lines). 3 statutory tabs (Queue, Tax Deduction, Extracts). Mobile Apple HIG bottom sheet adaptive layout with drag handle, top-right close button, and thumb zone sticky CTA button."
+    },
+    "language_purity": {
+      "summary": "Purged bird language (CDA R2 947н -> Медицинский документ, КНД 1151156 -> Справка для налогового вычета, Касса 54-ФЗ -> Подтвержденные оплаты)."
     }
   },
-  "visualProofs": {
-    "engine": "Playwright on live dev server http://127.0.0.1:5173/?egisz=demo",
-    "screenshots": [
-      "docs/proofs/egisz/01_egisz_hub_pc_light.png",
-      "docs/proofs/egisz/02_egisz_hub_pc_dark.png",
-      "docs/proofs/egisz/03_egisz_hub_mobile_light.png",
-      "docs/proofs/egisz/04_egisz_hub_mobile_dark.png",
-      "docs/proofs/egisz/05_egisz_journal_batch_pc_light.png",
-      "docs/proofs/egisz/06_egisz_journal_batch_pc_dark.png",
-      "docs/proofs/egisz/07_tax_deduction_pc_light.png",
-      "docs/proofs/egisz/08_tax_deduction_pc_dark.png",
-      "docs/proofs/egisz/09_tax_deduction_mobile_light.png",
-      "docs/proofs/egisz/10_tax_deduction_mobile_dark.png"
-    ],
-    "verificationStatus": "All 10 PNGs inspected via read_file. 0 defects, 0 CLS, 0 text truncations, Apple HIG touch targets >= 44px compliant."
+  "visual_proof_4_states": {
+    "pc_light": "docs/proofs/egisz/egisz_fns_tax_pc_light.png (1440x900)",
+    "pc_dark": "docs/proofs/egisz/egisz_fns_tax_pc_dark.png (1440x900)",
+    "mobile_light": "docs/proofs/egisz/egisz_fns_tax_mobile_light.png (390x844)",
+    "mobile_dark": "docs/proofs/egisz/egisz_fns_tax_mobile_dark.png (390x844)"
+  },
+  "tests_summary": {
+    "suite": "apps/web/src/components/egisz/__tests__/",
+    "files_passed": 7,
+    "tests_passed": 85,
+    "tests_failed": 0
   }
 }

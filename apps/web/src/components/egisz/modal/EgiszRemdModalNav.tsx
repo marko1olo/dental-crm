@@ -50,7 +50,7 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("preflight")}
 			>
 				<Shield size={16} />
-				Preflight & Валидация
+				Проверка готовности
 				<span className="egisz-tab-badge">{scorePercent}%</span>
 			</button>
 
@@ -60,7 +60,7 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("signature")}
 			>
 				<Key size={16} />
-				Подписание УКЭП
+				Подписание документа
 				{isDoctorSigned ? (
 					<span className="egisz-tab-badge" style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--success, #10b981)" }}>
 						Подписан
@@ -78,7 +78,7 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("xml_preview")}
 			>
 				<Code2 size={16} />
-				XML & Экспорт
+				Экспорт и статус
 			</button>
 
 			<button
@@ -87,7 +87,7 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("journal")}
 			>
 				<Archive size={16} />
-				Журнал отправки в Минздрав
+				Журнал отправки
 			</button>
 		</nav>
 	);

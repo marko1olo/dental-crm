@@ -2570,6 +2570,10 @@
 	flex-wrap: wrap;
 }
 
+.egisz-hub-top-bar {
+	display: contents;
+}
+
 [data-theme="dark"] .egisz-hub-header,
 .dark .egisz-hub-header {
 	background: rgba(15, 23, 42, 0.4);
@@ -2577,6 +2581,7 @@
 }
 
 .egisz-hub-title-group {
+	order: 1;
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -2601,6 +2606,7 @@
 }
 
 .egisz-hub-tabs {
+	order: 2;
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -2646,6 +2652,7 @@
 }
 
 .egisz-hub-close-btn {
+	order: 3;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2970,6 +2977,18 @@
 	margin-top: 8px;
 }
 
+.egisz-tax-footer-cta button {
+	height: 36px;
+	min-height: 36px;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.egisz-tax-footer-cta button {
+		height: 44px;
+		min-height: 44px;
+	}
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MEDICAL EXTRACT DRAWER
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -3110,6 +3129,17 @@
 
 	.egisz-hub-header {
 		padding: 10px 16px;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+
+	.egisz-hub-top-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
 	}
 
 	.egisz-hub-tabs {
@@ -3117,12 +3147,28 @@
 		overflow-x: auto;
 		justify-content: flex-start;
 		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 4px;
 	}
 
 	.egisz-hub-tab {
 		white-space: nowrap;
 		flex-shrink: 0;
 		min-height: 44px;
+	}
+
+	.egisz-tax-footer-cta {
+		position: sticky;
+		bottom: 0;
+		background: var(--paper, #ffffff);
+		padding-top: 8px;
+		padding-bottom: 4px;
+		z-index: 10;
+	}
+
+	[data-theme="dark"] .egisz-tax-footer-cta,
+	.dark .egisz-tax-footer-cta {
+		background: var(--paper-strong, #1e293b);
 	}
 
 	.egisz-queue-desktop-table {

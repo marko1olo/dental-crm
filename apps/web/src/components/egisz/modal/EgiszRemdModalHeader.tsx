@@ -49,7 +49,7 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 						type="button"
 						data-testid="doc-type-btn-302"
 						className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "302" ? "active" : ""}`}
-						onClick={() => onSelectDocType("cda_semd", "302", "xml_preview")}
+						onClick={() => onSelectDocType("cda_semd", "302", "clinical")}
 					>
 						Консультация
 					</button>
@@ -57,7 +57,7 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 						type="button"
 						data-testid="doc-type-btn-303"
 						className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "303" ? "active" : ""}`}
-						onClick={() => onSelectDocType("cda_semd", "303", "xml_preview")}
+						onClick={() => onSelectDocType("cda_semd", "303", "clinical")}
 					>
 						Вмешательство
 					</button>
