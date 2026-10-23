@@ -28,7 +28,7 @@ export function calculateDoctorServicesMetrics(
 		if (item.isDepositAdvanceOnly) continue;
 		if (item.isPaid === false || item.isDebt === true || item.invoiceStatus === "unpaid") continue;
 
-		const rawGrossKop = Math.round(Number(item.grossRevenueKop) || 0);
+		const rawGrossKop = Math.round(Number((item as any).amountKopecks ?? item.grossRevenueKop) || 0);
 		const actualPaidKop = item.actuallyPaidGrossKop !== undefined
 			? Math.max(0, Math.round(Number(item.actuallyPaidGrossKop) || 0))
 			: (item.paidAmountKop !== undefined
@@ -38,8 +38,9 @@ export function calculateDoctorServicesMetrics(
 		if (actualPaidKop <= 0 && rawGrossKop > 0) continue;
 
 		const itemGrossKop = actualPaidKop;
-		const itemLabKop = Math.round(Number(item.labCostKop) || 0);
-		const itemMatKop = Math.round(Number(item.materialCostKop) || 0);
+		const itemLabKop = Math.round(Number((item as any).labCostKopecks ?? item.labCostKop) || 0);
+		const rawMatKop = Number((item as any).materialCostKopecks ?? (item as any).implantCostKopecks ?? item.materialCostKop) || 0;
+		const itemMatKop = Math.round(rawMatKop);
 
 		totalGross += itemGrossKop;
 

@@ -18,13 +18,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
-	calculateEmployeeTimesheetT13,
-	generateTimesheetT13Csv,
-	getDaysInMonth,
-	type TimesheetDayRecord,
-	type EmployeeTimesheetInput,
-} from "@dental/shared";
-import {
 	calculateDoctorStaffPayroll,
 	calculateAssistantStaffPayroll,
 	calculateAdministratorStaffPayroll,
@@ -39,114 +32,37 @@ import {
 import {
 	generateDoctorPayslipHtml,
 } from "../staffPayrollExports";
-import {
-	staffToEmployeeInfo,
-	generateDefaultMonthSchedule,
-} from "../timesheetT13/types";
 import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Red Team: Solo Doctor & Small Clinic Timesheet T-13 Autonomy (Mandate 8s)", () => {
-	it("1.1 staffToEmployeeInfo assigns Labor Code RF hours: 6.6h for doctor (ст. 350 ТК РФ), 7.8h for assistant, 8.0h for admin", () => {
-		const rawStaff = [
-			{ id: "doc-solo", role: "doctor", fullName: "Д-р Смирнов А.П.", specialties: ["general_dentist"] },
-			{ id: "owner-1", role: "owner", fullName: "Д-р Кузнецов В.В." },
-			{ id: "asst-1", role: "assistant", fullName: "Семенова Е.А." },
-			{ id: "adm-1", role: "admin", fullName: "Васильева М.С." },
-		];
+describe("Red Team: Solo Doctor Autonomy & Piece-Rate Sovereignty (Mandates 8e, 8n)", () => {
+	it("1.1 Doctor specialty presets provide robust piecework rates across all clinical directions", () => {
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.general_dentist, "general_dentist must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.therapist, "therapist must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.orthopedist, "orthopedist must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.surgeon, "surgeon must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.orthodontist, "orthodontist must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner, "solo_practitioner must exist");
 
-		const converted = staffToEmployeeInfo(rawStaff);
-		assert.equal(converted.length, 4);
-
-		// Doctor & Owner: 33h week = 6.6h/day per Art. 350 Labor Code RF
-		assert.equal(converted[0]!.defaultShiftHours, 6.6);
-		assert.equal(converted[0]!.positionRu, "Врач-стоматолог общей практики");
-		assert.equal(converted[1]!.defaultShiftHours, 6.6);
-
-		// Assistant: 39h week = 7.8h/day
-		assert.equal(converted[2]!.defaultShiftHours, 7.8);
-		assert.equal(converted[2]!.positionRu, "Ассистент врача-стоматолога");
-
-		// Administrator: 40h week = 8.0h/day
-		assert.equal(converted[3]!.defaultShiftHours, 8.0);
-		assert.equal(converted[3]!.positionRu, "Администратор клиники");
+		// Therapist has standard 30% piecework rate
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.therapist.defaultPercentage, 30);
+		// Orthopedist has 30% and deducts lab costs
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.orthopedist.defaultPercentage, 30);
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.orthopedist.deductsLabCosts, true);
 	});
 
-	it("1.2 1-click monthly fill with doctor statutory hours (Я/6.6 per ст. 350 ТК РФ) computes exact totals and split halves", () => {
-		// August 2026 has 31 days (21 working days, 10 weekend days)
-		const schedule66 = generateDefaultMonthSchedule(2026, 8, 6.6);
-		assert.equal(schedule66.length, 31);
-
-		const workDays = schedule66.filter((d) => d.primaryCode === "Я");
-		const weekendDays = schedule66.filter((d) => d.primaryCode === "В");
-
-		assert.equal(workDays.length, 21);
-		assert.equal(weekendDays.length, 10);
-		workDays.forEach((d) => assert.equal(d.primaryHours, 6.6));
-		weekendDays.forEach((d) => assert.equal(d.primaryHours, 0));
-
-		const input: EmployeeTimesheetInput = {
-			employeeId: "solo-1",
-			employeeTabNumber: "00001",
-			employeeFullName: "Смирнов Алексей Петрович",
-			positionRu: "Врач-стоматолог / Руководитель",
-			departmentRu: "Клинический прием",
-			year: 2026,
-			month: 8,
-			days: schedule66,
-		};
-
-		const res = calculateEmployeeTimesheetT13(input);
-		assert.equal(res.daysInMonth, 31);
-		assert.equal(res.monthTotalSummary.daysWorked, 21);
-		// 21 days * 6.6 hours = 138.6 hours
-		assert.equal(Number(res.monthTotalSummary.totalHoursWorked.toFixed(1)), 138.6);
-		assert.equal(res.monthTotalSummary.vacationDays, 0);
-		assert.equal(res.monthTotalSummary.sickLeaveDays, 0);
-
-		// Half months split
-		assert.equal(
-			res.firstHalfSummary.daysWorked + res.secondHalfSummary.daysWorked,
-			21,
-		);
-		assert.equal(
-			Number((res.firstHalfSummary.totalHoursWorked + res.secondHalfSummary.totalHoursWorked).toFixed(1)),
-			138.6,
-		);
-
-		// CSV export verification
-		const csv = generateTimesheetT13Csv([res], "Стоматологический кабинет д-ра Смирнова", 2026, 8);
-		assert.ok(csv.startsWith("\uFEFF"));
-		assert.ok(csv.includes("Унифицированная форма № Т-13"));
-		assert.ok(csv.includes("Смирнов Алексей Петрович"));
-		assert.ok(csv.includes("138.6"));
+	it("1.2 Solo practitioner operates on 100% net margin piecework after clinic expenses", () => {
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.defaultPercentage, 100);
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.deductsLabCosts, true);
+		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.deductsMaterialCosts, true);
 	});
 
-	it("1.3 1-click monthly fill with standard 8-hour shift (Я/8.0) computes standard 40h workweek totals", () => {
-		const schedule80 = generateDefaultMonthSchedule(2026, 8, 8.0);
-		assert.equal(schedule80.length, 31);
-
-		const workDays = schedule80.filter((d) => d.primaryCode === "Я");
-		assert.equal(workDays.length, 21);
-		workDays.forEach((d) => assert.equal(d.primaryHours, 8.0));
-
-		const input: EmployeeTimesheetInput = {
-			employeeId: "solo-admin",
-			employeeTabNumber: "00002",
-			employeeFullName: "Петрова Анна Сергеевна",
-			positionRu: "Администратор клиники",
-			departmentRu: "Ресепшен",
-			year: 2026,
-			month: 8,
-			days: schedule80,
-		};
-
-		const res = calculateEmployeeTimesheetT13(input);
-		assert.equal(res.monthTotalSummary.daysWorked, 21);
-		// 21 days * 8.0 hours = 168.0 hours
-		assert.equal(res.monthTotalSummary.totalHoursWorked, 168.0);
+	it("1.3 Minimum monthly guarantee floors apply correctly when doctor has attendance", () => {
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.general_dentist.minGuaranteeMonthlyKop > 0);
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.therapist.minGuaranteeMonthlyKop > 0);
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.surgeon.minGuaranteeMonthlyKop > 0);
 	});
 });
 

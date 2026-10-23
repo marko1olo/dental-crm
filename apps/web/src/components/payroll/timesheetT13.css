@@ -1,7 +1,0 @@
-/* Form T-13 Statutory Timesheet Workspace Styling */
-/* Mandate 8b: File strictly <= 120 lines. */
-
-@import "./styles/timesheetT13Modal.css";
-@import "./styles/timesheetT13Grid.css";
-@import "./styles/timesheetT13Controls.css";
-@import "./styles/timesheetT13Buttons.css";

@@ -9,6 +9,7 @@ import {
 	sendOtpVerificationRequest,
 } from "../publicBookingEngine.js";
 import { BookingSlotPicker } from "../BookingSlotPicker.js";
+import { BookingDoctorCard } from "../BookingDoctorCard.js";
 import { mapServerPortalMeToCabinetData } from "../../portal/patientCabinet/patientCabinetMapper.js";
 
 describe("Honest Booking & Patient Portal — Zero Fake Slots & Real Empty State (Mandates 8a, 8e, 8k, 8n)", () => {
@@ -121,7 +122,6 @@ describe("Honest Booking & Patient Portal — Zero Fake Slots & Real Empty State
 	});
 
 	it("6. BookingDoctorCard does not render a fake slot string when nextAvailableSlot is undefined", () => {
-		const { BookingDoctorCard } = require("../BookingDoctorCard.js");
 		const html = renderToString(
 			<BookingDoctorCard
 				doctor={{

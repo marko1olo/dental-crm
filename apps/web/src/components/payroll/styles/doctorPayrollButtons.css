@@ -1,17 +1,17 @@
 /**
  * DENTE Dental CRM — Doctor Payroll Standardized Buttons
+ * Mandate 8am: Single Primary CTA (36px desktop / >=44px mobile, rounded-xl 10-12px)
  */
 
 .dente-btn-primary {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 14px;
-	border-radius: 8px;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 16px;
+	border-radius: 12px;
 	font-size: 13px;
-	font-weight: 600;
-	background-color: var(--teal);
-	color: var(--on-teal);
+	font-weight: 700;
+	background-color: var(--primary, var(--teal, #0d9488));
+	color: var(--on-primary, #ffffff);
 	border: 1px solid transparent;
 	display: inline-flex;
 	align-items: center;
@@ -24,7 +24,7 @@
 }
 
 .dente-btn-primary:hover:not(:disabled) {
-	opacity: 0.92;
+	opacity: 0.94;
 	transform: translateY(-0.5px);
 }
 
@@ -33,16 +33,15 @@
 }
 
 .dente-btn-secondary {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 12px;
-	border-radius: 8px;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 14px;
+	border-radius: 12px;
 	font-size: 13px;
 	font-weight: 500;
-	background-color: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #cbd5e1);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -53,6 +52,6 @@
 }
 
 .dente-btn-secondary:hover:not(:disabled) {
-	background-color: var(--paper-soft);
-	border-color: var(--line-strong, var(--line));
+	background-color: var(--paper-soft, #f8fafc);
+	border-color: var(--line-strong, var(--line, #94a3b8));
 }

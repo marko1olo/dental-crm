@@ -1,0 +1,42 @@
+{
+  "task": "Purge Potemkin timesheetT13 simulator and unify Doctor Piece-Rate Payroll SSOT",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-23T11:26:00+04:00",
+  "mandates": {
+    "8e": "Doctor Autonomy: zero blocker disabled buttons, debounced draft auto-save, instant print anytime",
+    "8n": "Solo Doctor Sovereignty: piece-rate calculation (Net Revenue 20-35% = Closed Paid Invoices - Dental Lab - Consumed Implants/Materials)",
+    "8x": "Elimination of Soviet Goskomstat bird-language (purged all T-13/T-51 bureaucratic simulators)",
+    "8am": "Design-code: exactly ONE Primary CTA button ('Начислить зарплату', 36px desktop / 44px mobile) with secondary buttons in neutral tier",
+    "8an": "VCS discipline: dirty worktree respect, atomic per-file git add, detailed conventional commit"
+  },
+  "purged_files": [
+    "apps/web/src/components/payroll/timesheetT13/",
+    "apps/web/src/components/payroll/timesheetT13.css",
+    "apps/web/src/components/payroll/styles/timesheetT13Buttons.css",
+    "apps/web/src/components/payroll/styles/timesheetT13Controls.css",
+    "apps/web/src/components/payroll/styles/timesheetT13Grid.css",
+    "apps/web/src/components/payroll/styles/timesheetT13Modal.css"
+  ],
+  "unified_components": [
+    "apps/web/src/components/payroll/DoctorPayrollModal.tsx",
+    "apps/web/src/components/payroll/useDoctorPayrollModalState.ts",
+    "apps/web/src/components/payroll/payrollModules/PayrollActionButtonsBar.tsx",
+    "apps/web/src/components/payroll/styles/doctorPayrollButtons.css",
+    "apps/web/src/components/payroll/engine/doctorServicesCalculation.ts"
+  ],
+  "verified_tests": [
+    "apps/web/src/components/payroll/__tests__/timesheetT13.test.ts (6/6 passing)",
+    "apps/web/src/components/payroll/__tests__/payrollTimesheetSoloDoctorAutonomy.test.ts (18/18 passing)",
+    "apps/web/src/components/payroll/__tests__/advancedPayrollComponents.test.ts (5/5 passing)",
+    "apps/web/src/components/payroll/__tests__/staffPayrollEngine.test.ts (10/10 passing)",
+    "apps/web/src/components/doctor/__tests__/doctorShiftEarnings.test.ts (3/3 passing)",
+    "apps/api/src/tests/routes/doctorEarningsRoutes.test.ts (5/5 passing)"
+  ],
+  "visual_proofs": {
+    "pc_light": "docs/proofs/payroll/doctor_payroll_modal_pc_light_1440x900.png",
+    "pc_dark": "docs/proofs/payroll/doctor_payroll_modal_pc_dark_1440x900.png",
+    "mobile_light": "docs/proofs/payroll/doctor_payroll_modal_mobile_light_390x844.png",
+    "mobile_dark": "docs/proofs/payroll/doctor_payroll_modal_mobile_dark_390x844.png",
+    "mobile_scrolled_cards": "docs/proofs/payroll/doctor_payroll_modal_mobile_services_cards_390x844.png"
+  }
+}

@@ -40,8 +40,6 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 	const [shiftsCount, setShiftsCount] = useState<number>(10);
 	const [shiftRateRub, setShiftRateRub] = useState<number>(4000);
 	const [chairRentalRub, setChairRentalRub] = useState<number>(40000);
-	const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"payroll" | "timesheet">("payroll");
-	const timesheetState = null;
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
 	const [isNpdReceiptDone, setIsNpdReceiptDone] = useState<boolean>(false);
 	const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -114,7 +112,6 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 		activeDoc, selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
-		activeWorkspaceTab, setActiveWorkspaceTab, timesheetState,
 		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,
 		copyFeedback, setCopyFeedback, customPercent, setCustomPercent, taxRegime, setTaxRegime, isLoadingEarnings, servicesToUse, payrollResult,
 	};

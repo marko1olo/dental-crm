@@ -1,705 +1,83 @@
-import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { generateUuidV7, parseUtmFromUrl } from "@dental/shared";
-import {
-	CANONICAL_BOOKING_CATEGORIES,
-	type BookingCategoryOption,
-} from "../BookingCategoriesSection";
-import type { BookingDoctorData } from "../BookingDoctorCard";
+import { CANONICAL_BOOKING_CATEGORIES } from "../presets/bookingCategoryPresets";
 import { DEFAULT_DOCTORS_LIST } from "../publicBookingEngine";
 import { useBookingAvailability } from "../useBookingAvailability";
-import {
-	type BookingConfirmationData,
-	type ClinicBranch,
-	DEFAULT_BRANCHES,
-	DEFAULT_DOCTORS,
-	DEFAULT_SERVICE_CATEGORIES,
-	buildCalendarDays,
-	formatRussianPhone,
-	generateBookingReference,
-	isValidRussianPhone,
-	localDateString,
-} from "../bookingUtils";
+import { DEFAULT_BRANCHES, DEFAULT_DOCTORS, DEFAULT_SERVICE_CATEGORIES, generateBookingReference, isValidRussianPhone } from "../bookingUtils";
+import { useBookingCalendarNavigation } from "../hooks/useBookingCalendarNavigation";
+import { useBookingTelegramContext } from "../hooks/useBookingTelegramContext";
+import { useBookingFormState } from "../hooks/useBookingFormState";
+import { useBookingSmsState } from "../hooks/useBookingSmsState";
+import { submitBookingRequest } from "../engine/bookingSubmissionEngine";
+import type { BookingCategoryOption, BookingConfirmationData, BookingDoctorData, ClinicBranch } from "../contracts/bookingContracts";
 import type { PublicBookingWidgetProps } from "./types";
 
-export function usePublicBookingState({
-	organizationId = null,
-	embedMode,
-	customBranches = DEFAULT_BRANCHES,
-	customCategories = DEFAULT_SERVICE_CATEGORIES,
-	customDoctors = DEFAULT_DOCTORS,
-	initialStep = 1,
-	initialBranchId,
-	initialCategoryId,
-	initialDoctorId,
-	onSuccess,
-	onStepChange,
-	showToast,
-	apiBaseUrl = "/api/public/booking",
-	requireSmsVerification = false,
-	initialPatientName,
-	initialPatientPhone,
-	patientId,
-}: PublicBookingWidgetProps) {
+export function usePublicBookingState(props: PublicBookingWidgetProps) {
+	const { organizationId = null, embedMode, customBranches = DEFAULT_BRANCHES, customDoctors = DEFAULT_DOCTORS, initialStep = 1, initialBranchId, initialCategoryId, initialDoctorId, onSuccess, onStepChange, showToast, apiBaseUrl = "/api/public/booking", requireSmsVerification = false, initialPatientName, initialPatientPhone, patientId } = props;
 	const widgetInstanceId = useId();
-
-	// Step State (1: Booking Form, 5: Confirmation Ticket)
 	const [step, setStep] = useState<number>(initialStep);
-
-	// Detect Telegram Mini App Context
-	const isTelegramContext = useMemo(() => {
-		if (embedMode === "telegram") return true;
-		if (typeof window === "undefined") return false;
-		const searchParams = new URLSearchParams(window.location.search);
-		const source = searchParams.get("source");
-		const isTgParam =
-			source === "tg" || source === "telegram" || searchParams.get("tg") === "1";
-		// biome-ignore lint/suspicious/noExplicitAny: Telegram global check
-		const hasTgObject = Boolean((window as any)?.Telegram?.WebApp);
-		return isTgParam || hasTgObject;
-	}, [embedMode]);
-
-	// Resolved Embed Mode
-	const effectiveEmbedMode = useMemo(() => {
-		if (embedMode) return embedMode;
-		if (isTelegramContext) return "telegram";
-		if (typeof window !== "undefined" && window.self !== window.top) {
-			return "iframe";
-		}
-		return "standalone";
-	}, [embedMode, isTelegramContext]);
-
-	// Date & Calendar state
-	const todayDateStr = useMemo(() => localDateString(), []);
-	const [selectedDate, setSelectedDate] = useState<string>(todayDateStr);
-	const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
-
-	// Selected Doctor ID state
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => {
-		if (initialDoctorId) return initialDoctorId;
-		if (customDoctors && customDoctors.length === 1 && customDoctors[0]) {
-			return customDoctors[0].id;
-		}
-		return null;
-	});
-
-	// Live Availability & Doctor data fetching hook
-	const {
-		loadedDoctors,
-		doctorsLoading,
-		slots,
-		setSlots,
-		selectedSlot,
-		setSelectedSlot,
-		slotsLoading,
-		slotError,
-		setSlotError,
-	} = useBookingAvailability({
-		organizationId,
-		apiBaseUrl,
-		selectedDate,
-		selectedDoctorId,
-	});
-
-	// Service Category state (Step 1)
-	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-		() => initialCategoryId || "therapy",
-	);
-
-	const selectedCategory: BookingCategoryOption = useMemo(() => {
-		if (selectedCategoryId) {
-			const found = CANONICAL_BOOKING_CATEGORIES.find(
-				(c) => c.id === selectedCategoryId,
-			);
-			if (found) return found;
-		}
-		return CANONICAL_BOOKING_CATEGORIES[0]!;
-	}, [selectedCategoryId]);
-
-	// Active doctors list (customDoctors prop takes priority, then backend loaded, then default canonical doctors)
-	const activeDoctors: BookingDoctorData[] = useMemo(() => {
-		if (customDoctors && customDoctors.length > 0) {
-			return (customDoctors as any[]).map((doc) => ({
-				id: doc.id,
-				fullName: doc.fullName,
-				specialties: doc.specialties,
-				experienceYears: doc.experienceYears ?? 5,
-				rating: doc.rating ?? 5.0,
-				reviewsCount: doc.reviewsCount ?? 0,
-				categoryIds: doc.categoryIds ?? ["all"],
-				avatarUrl: doc.avatarUrl,
-				bio: doc.bio,
-			}));
-		}
-		if (loadedDoctors && loadedDoctors.length > 0) return loadedDoctors;
-		return DEFAULT_DOCTORS_LIST.map((doc) => ({
-			id: doc.id,
-			fullName: doc.fullName,
-			specialties: doc.specialties,
-			experienceYears: doc.experienceYears ?? 5,
-			rating: doc.rating ?? 5.0,
-			reviewsCount: doc.reviewsCount ?? 0,
-			categoryIds: doc.categoryIds ?? ["all"],
-			avatarUrl: doc.avatarUrl,
-			bio: (doc as any).bio,
-		}));
-	}, [customDoctors, loadedDoctors]);
-
-	// Solo doctor status (Mandate 8n Solo Doctor Sovereignty)
-	const isSoloDoctor = activeDoctors.length === 1;
-
-	// Auto-select doctor when there is exactly 1 doctor (Mandate 8n Solo Doctor)
-	useEffect(() => {
-		if (activeDoctors.length === 1 && activeDoctors[0]) {
-			setSelectedDoctorId(activeDoctors[0].id);
-		}
-	}, [activeDoctors]);
-
-	const selectedDoctor: BookingDoctorData = useMemo(() => {
-		if (selectedDoctorId) {
-			const found = activeDoctors.find((d) => d.id === selectedDoctorId);
-			if (found) return found;
-		}
-		return (
-			activeDoctors[0] ?? {
-				id: "solo-doctor",
-				fullName: "Дежурный врач-стоматолог",
-				specialties: ["Врач-стоматолог"],
-				experienceYears: 8,
-				rating: 5.0,
-				reviewsCount: 120,
-				categoryIds: ["all"],
-			}
-		);
-	}, [activeDoctors, selectedDoctorId]);
-
-	// Selected Branch
-	const selectedBranch: ClinicBranch = useMemo(() => {
-		if (customBranches.length > 0) {
-			if (initialBranchId) {
-				const found = customBranches.find((b) => b.id === initialBranchId);
-				if (found) return found;
-			}
-			return customBranches[0]!;
-		}
-		return {
-			id: "main-branch",
-			name: "Стоматологический центр DENTE",
-			address: "Главный клинический корпус",
-			phone: "+7 (800) 000-00-00",
-			workHours: "Пн-Сб 09:00 - 20:00, Вс 10:00 - 18:00",
-			isMain: true,
-		};
-	}, [customBranches, initialBranchId]);
-
-	// Patient Form state
-	const [patientName, setPatientName] = useState(initialPatientName || "");
-	const [patientPhone, setPatientPhone] = useState(
-		initialPatientPhone ? formatRussianPhone(initialPatientPhone) : "",
-	);
-	const [patientComment, setPatientComment] = useState("");
-	const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(true);
-
-	useEffect(() => {
-		if (initialPatientName && !patientName) {
-			setPatientName(initialPatientName);
-		}
-	}, [initialPatientName, patientName]);
-
-	useEffect(() => {
-		if (initialPatientPhone && !patientPhone) {
-			setPatientPhone(formatRussianPhone(initialPatientPhone));
-		}
-	}, [initialPatientPhone, patientPhone]);
-
-	// SMS Verification (Optional clinic gate)
-	const showSmsVerification = Boolean(requireSmsVerification);
-	const [smsCodeSent, setSmsCodeSent] = useState(false);
-	const [enteredSmsCode, setEnteredSmsCode] = useState("");
-	const [isSmsVerified, setIsSmsVerified] = useState(false);
-	const [isSmsFallbackActive, setIsSmsFallbackActive] = useState(false);
-	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
-	const [smsError, setSmsError] = useState<string | null>(null);
-
-	const handleEnableSmsFallback = useCallback(() => {
-		setIsSmsFallbackActive(true);
-		setSmsError(null);
-		showToast?.(
-			"Режим предварительной брони: администратор свяжется с вами для подтверждения",
-			"info",
-		);
-	}, [showToast]);
-
-	// Submission & Confirmation state
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [confirmationData, setConfirmationData] =
-		useState<BookingConfirmationData | null>(null);
+	const [confirmationData, setConfirmationData] = useState<BookingConfirmationData | null>(null);
 
-	// Telegram WebApp prefill & auto-expand
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
-		const tg = (window as any)?.Telegram?.WebApp;
+	const cal = useBookingCalendarNavigation();
+	const form = useBookingFormState(initialPatientName, initialPatientPhone);
+	const tg = useBookingTelegramContext(embedMode, form.patientName, form.setPatientName, form.patientPhone, form.setPatientPhone, showToast);
+	const sms = useBookingSmsState(organizationId, apiBaseUrl, form.patientPhone, requireSmsVerification, showToast);
 
-		if (tg) {
-			tg.ready?.();
-			tg.expand?.();
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => initialDoctorId || (customDoctors?.length === 1 ? customDoctors[0]!.id : null));
+	const avail = useBookingAvailability({ organizationId, apiBaseUrl, selectedDate: cal.selectedDate, selectedDoctorId });
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() => initialCategoryId || "therapy");
 
-			const user = tg.initDataUnsafe?.user;
-			if (user && !patientName) {
-				const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
-				if (full) setPatientName(full);
-			}
-			if (user?.phone_number && !patientPhone) {
-				setPatientPhone(formatRussianPhone(user.phone_number));
-			}
-		}
-	}, [patientName, patientPhone]);
+	const selectedCategory: BookingCategoryOption = useMemo(() => CANONICAL_BOOKING_CATEGORIES.find((c) => c.id === selectedCategoryId) || CANONICAL_BOOKING_CATEGORIES[0]!, [selectedCategoryId]);
 
-	// Handle 1-tap contact sharing from Telegram
-	const handleTelegramShareContact = () => {
-		if (typeof window === "undefined") return;
-		// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
-		const tg = (window as any)?.Telegram?.WebApp;
-		if (tg?.requestContact) {
-			tg.requestContact((shared: boolean) => {
-				if (shared && tg.initDataUnsafe?.user?.phone_number) {
-					const formatted = formatRussianPhone(tg.initDataUnsafe.user.phone_number);
-					setPatientPhone(formatted);
-					showToast?.("Номер успешно получен из Telegram", "success");
-				}
-			});
-		} else if (tg?.initDataUnsafe?.user?.phone_number) {
-			const formatted = formatRussianPhone(tg.initDataUnsafe.user.phone_number);
-			setPatientPhone(formatted);
-			showToast?.("Номер получен из профиля Telegram", "success");
-		} else {
-			const phoneEl = document.getElementById("patient-phone-input");
-			phoneEl?.focus();
-		}
-	};
+	const activeDoctors: BookingDoctorData[] = useMemo(() => {
+		if (customDoctors && customDoctors.length > 0) return customDoctors.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 5, rating: doc.rating ?? 5.0, reviewsCount: doc.reviewsCount ?? 0 }));
+		if (avail.loadedDoctors && avail.loadedDoctors.length > 0) return avail.loadedDoctors;
+		return DEFAULT_DOCTORS_LIST.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 5, rating: doc.rating ?? 5.0, reviewsCount: doc.reviewsCount ?? 0 }));
+	}, [customDoctors, avail.loadedDoctors]);
 
-	// Post height resize message to parent iframe
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		if (effectiveEmbedMode === "iframe" && window.parent) {
-			const notifyResize = () => {
-				const docHeight = document.body.scrollHeight || 600;
-				window.parent.postMessage(
-					{
-						type: "DENTE_BOOKING_RESIZE",
-						height: docHeight,
-						step,
-					},
-					"*",
-				);
-			};
-			notifyResize();
-			const timer = setTimeout(notifyResize, 150);
-			return () => clearTimeout(timer);
-		}
-	}, [step, effectiveEmbedMode, slots]);
+	const isSoloDoctor = activeDoctors.length === 1;
+	useEffect(() => { if (activeDoctors.length === 1 && activeDoctors[0]) setSelectedDoctorId(activeDoctors[0].id); }, [activeDoctors]);
 
-	// Step change notification
-	const handleStepChange = useCallback(
-		(newStep: number) => {
-			setStep(newStep);
-			if (onStepChange) onStepChange(newStep);
-		},
-		[onStepChange],
-	);
+	const selectedDoctor: BookingDoctorData = useMemo(() => (selectedDoctorId && activeDoctors.find((d) => d.id === selectedDoctorId)) || activeDoctors[0] || { id: "solo-doctor", fullName: "Дежурный врач-стоматолог", specialties: ["Врач-стоматолог"], experienceYears: 8, rating: 5.0, reviewsCount: 120, categoryIds: ["all"] }, [activeDoctors, selectedDoctorId]);
+	const selectedBranch: ClinicBranch = useMemo(() => (customBranches.length > 0 && ((initialBranchId && customBranches.find((b) => b.id === initialBranchId)) || customBranches[0])) || { id: "main-branch", name: "Стоматологический центр DENTE", address: "Главный клинический корпус", phone: "+7 (800) 000-00-00", workHours: "Пн-Сб 09:00 - 20:00, Вс 10:00 - 18:00", isMain: true }, [customBranches, initialBranchId]);
 
-	// Handle Phone formatting
-	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const raw = e.target.value;
-		const formatted = formatRussianPhone(raw);
-		setPatientPhone(formatted);
-	};
+	const handleStepChange = useCallback((newStep: number) => { setStep(newStep); onStepChange?.(newStep); }, [onStepChange]);
 
-	// Send SMS OTP code
-	const handleSendSmsCode = async () => {
-		if (!isValidRussianPhone(patientPhone)) {
-			setSmsError("Введите корректный номер телефона");
-			return;
-		}
-		setSmsError(null);
-		if (organizationId) {
-			try {
-				const response = await fetch(`${apiBaseUrl}/${organizationId}/send-otp`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ phone: patientPhone }),
-				});
-				if (!response.ok) {
-					const errData = await response.json().catch(() => ({}));
-					// Zero Dead-Ends (Mandate 8e / 8n): Graceful fallback to receptionist callback
-					setIsSmsFallbackActive(true);
-					const fallbackMsg =
-						errData?.message ||
-						errData?.error ||
-						"Служба СМС временно недоступна. Запись переключена в режим предварительной брони — подтверждение звонком администратора.";
-					setSmsError(fallbackMsg);
-					showToast?.(
-						"Служба СМС временно недоступна. Вы можете завершить бронь без СМС — администратор перезвонит вам.",
-						"info",
-					);
-					return;
-				}
-			} catch {
-				// Zero Dead-Ends (Mandate 8e / 8n): Graceful network fallback
-				setIsSmsFallbackActive(true);
-				setSmsError(
-					"Сбой связи со службой СМС. Запись переключена в режим предварительной брони — подтверждение звонком администратора.",
-				);
-				showToast?.(
-					"Сбой связи с СМС-шлюзом. Запись переключена в режим предварительной брони без кода.",
-					"info",
-				);
-				return;
-			}
-		}
-		setSmsCodeSent(true);
-		setSmsResendCountdown(60);
-	};
-
-	// Verify SMS OTP code
-	const handleVerifySmsCode = async () => {
-		if (!enteredSmsCode.trim()) {
-			setSmsError("Введите проверочный код из сообщения");
-			return;
-		}
-		setSmsError(null);
-		if (organizationId) {
-			try {
-				const response = await fetch(`${apiBaseUrl}/${organizationId}/verify-otp`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						phone: patientPhone,
-						code: enteredSmsCode.trim(),
-					}),
-				});
-				if (!response.ok) {
-					const errData = await response.json().catch(() => ({}));
-					setSmsError(
-						errData?.message ||
-							errData?.error ||
-							"Неверный код. Проверьте правильность ввода.",
-					);
-					return;
-				}
-			} catch {
-				setSmsError("Сбой связи с сервером при проверке кода");
-				return;
-			}
-		}
-		setIsSmsVerified(true);
-		setSmsError(null);
-	};
-
-	// Calendar calculation helpers
-	const calendarDays = useMemo(() => {
-		return buildCalendarDays(calendarMonth, selectedDate, todayDateStr);
-	}, [calendarMonth, selectedDate, todayDateStr]);
-
-	const monthLabel = useMemo(() => {
-		return calendarMonth.toLocaleDateString("ru-RU", {
-			month: "long",
-			year: "numeric",
-		});
-	}, [calendarMonth]);
-
-	const handlePrevMonth = () => {
-		setCalendarMonth(
-			(prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-		);
-	};
-
-	const handleNextMonth = () => {
-		setCalendarMonth(
-			(prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-		);
-	};
-
-	// Final Booking Submission: POST /api/public/booking/:organizationId/book
 	const handleFinalSubmit = async (e?: React.FormEvent) => {
-		if (e?.preventDefault) {
-			e.preventDefault();
-		}
-		// Double-click guard (Mandate 8e / 8n): prevent race condition if already submitting
-		if (isSubmitting) {
-			return;
-		}
-		if (!patientName.trim()) {
-			const errMsg = "Пожалуйста, введите ваше имя";
-			setSubmitError(errMsg);
-			showToast?.(errMsg, "warning");
-			return;
-		}
-		if (!isValidRussianPhone(patientPhone)) {
-			const errMsg = "Введите корректный номер телефона (11 цифр)";
-			setSubmitError(errMsg);
-			showToast?.(errMsg, "warning");
-			return;
-		}
-		if (!hasAgreedToPrivacy) {
-			setHasAgreedToPrivacy(true);
-			showToast?.("Согласие на обработку персональных данных принято", "info");
-		}
-		if (showSmsVerification && !isSmsVerified && !isSmsFallbackActive) {
-			// Zero Dead-Ends (Mandate 8e / 8n): Instead of blocking the patient with acute pain,
-			// activate graceful fallback and proceed as unconfirmed pre-booking!
-			setIsSmsFallbackActive(true);
-			showToast?.(
-				"Заявка оформлена как предварительная бронь. Администратор свяжется с вами для подтверждения.",
-				"info",
-			);
-		}
+		e?.preventDefault?.();
+		if (isSubmitting) return;
+		if (!form.patientName.trim()) { setSubmitError("Пожалуйста, введите ваше имя"); showToast?.("Пожалуйста, введите ваше имя", "warning"); return; }
+		if (!isValidRussianPhone(form.patientPhone)) { setSubmitError("Введите корректный номер телефона (11 цифр)"); showToast?.("Введите корректный номер телефона (11 цифр)", "warning"); return; }
+		if (!form.hasAgreedToPrivacy) { form.setHasAgreedToPrivacy(true); showToast?.("Согласие на обработку персональных данных принято", "info"); }
+		if (sms.showSmsVerification && !sms.isSmsVerified && !sms.isSmsFallbackActive) { sms.setIsSmsFallbackActive(true); showToast?.("Заявка оформлена как предварительная бронь. Администратор свяжется с вами для подтверждения.", "info"); }
 
-		const isPreBookingMode = Boolean(
-			isSmsFallbackActive || (showSmsVerification && !isSmsVerified),
-		);
-		const bookingStatus = isPreBookingMode ? "unconfirmed" : "confirmed";
-		const preBookingNotice = isPreBookingMode
-			? "[Предварительная бронь без СМС / Звонок администратора]"
-			: "";
-		const combinedComment = [patientComment.trim(), preBookingNotice]
-			.filter(Boolean)
-			.join(" ");
-
-		const activeSlot =
-			selectedSlot ||
-			slots[0] ||
-			(!organizationId
-				? {
-						time: "10:00",
-						startsAt: new Date(selectedDate).toISOString(),
-						endsAt: new Date(new Date(selectedDate).getTime() + 30 * 60_000).toISOString(),
-						period: "morning" as const,
-				  }
-				: null);
-
-		if (!activeSlot) {
-			const errMsg =
-				"На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания.";
-			setSubmitError(errMsg);
-			showToast?.(errMsg, "warning");
-			return;
-		}
-
-		if (!selectedSlot && activeSlot) {
-			setSelectedSlot(activeSlot);
-		}
+		const isPreBookingMode = Boolean(sms.isSmsFallbackActive || (sms.showSmsVerification && !sms.isSmsVerified));
+		const activeSlot = avail.selectedSlot || avail.slots[0] || (!organizationId ? { time: "10:00", startsAt: new Date(cal.selectedDate).toISOString(), endsAt: new Date(new Date(cal.selectedDate).getTime() + 30 * 60_000).toISOString(), period: "morning" as const } : null);
+		if (!activeSlot) { setSubmitError("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания."); showToast?.("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания.", "warning"); return; }
+		if (!avail.selectedSlot && activeSlot) avail.setSelectedSlot(activeSlot);
 
 		setIsSubmitting(true);
 		setSubmitError(null);
-
-		const refNumber = generateBookingReference();
-
-		const finalConfirmation: BookingConfirmationData = {
-			referenceNumber: refNumber,
-			branch: selectedBranch,
-			doctor: selectedDoctor,
-			date: selectedDate,
-			time: activeSlot.time,
-			startsAt: activeSlot.startsAt,
-			endsAt: activeSlot.endsAt,
-			patientName: patientName.trim(),
-			patientPhone,
-			cabinetNumber: "Кабинет №3 (Терапевтическое отделение)",
-			comment: combinedComment || undefined,
-			status: bookingStatus,
-			isPreBooking: isPreBookingMode,
-			createdAt: new Date().toISOString(),
-		};
-
-		// Parse UTM parameters from current URL and window context
-		const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-		const parsedUtm = parseUtmFromUrl(currentUrl);
-
-		if (organizationId) {
-			try {
-				const effectiveDoctorId =
-					selectedDoctorId ||
-					activeSlot.availableDoctorIds?.[0] ||
-					selectedDoctor.id;
-
-				const idempotencyKey = generateUuidV7();
-
-				const bookingPayload = {
-					organizationId,
-					doctorId: effectiveDoctorId,
-					patientId: patientId || undefined,
-					startsAt: activeSlot.startsAt,
-					endsAt: activeSlot.endsAt,
-					patientName: patientName.trim(),
-					patientPhone: patientPhone.trim(),
-					comment: combinedComment || undefined,
-					status: bookingStatus,
-					idempotencyKey,
-					utm_source: parsedUtm.utm_source || undefined,
-					utm_medium: parsedUtm.utm_medium || undefined,
-					utm_campaign: parsedUtm.utm_campaign || undefined,
-					utm_content: parsedUtm.utm_content || undefined,
-					utm_term: parsedUtm.utm_term || undefined,
-					referrer:
-						parsedUtm.referrer ||
-						(typeof document !== "undefined" ? document.referrer : undefined),
-				};
-
-				const requestHeaders: Record<string, string> = {
-					"Content-Type": "application/json",
-					"Idempotency-Key": idempotencyKey,
-					"X-Idempotency-Key": idempotencyKey,
-				};
-
-				let response = await fetch(`${apiBaseUrl}/create`, {
-					method: "POST",
-					headers: requestHeaders,
-					body: JSON.stringify(bookingPayload),
-				}).catch(() => null);
-
-				if (!response || response.status === 404) {
-					response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
-						method: "POST",
-						headers: requestHeaders,
-						body: JSON.stringify(bookingPayload),
-					});
-				}
-
-				if (!response.ok) {
-					if (response.status === 409) {
-						setSubmitError(
-							"Выбранное время только что заняли. Пожалуйста, выберите другое время в расписании.",
-						);
-						setIsSubmitting(false);
-						return;
-					}
-					const errData = await response.json().catch(() => ({}));
-					const errMsg =
-						errData?.message ||
-						errData?.error ||
-						`Не удалось завершить запись на сервере клиники. Пожалуйста, позвоните в регистратуру: ${selectedBranch.phone}`;
-					setSubmitError(errMsg);
-					setIsSubmitting(false);
-					return;
-				}
-			} catch {
-				setSubmitError(
-					`Сбой связи с сервером клиники при бронировании. Пожалуйста, проверьте подключение к интернету или позвоните в клинику: ${selectedBranch.phone}`,
-				);
-				setIsSubmitting(false);
-				return;
+		try {
+			const refNumber = generateBookingReference();
+			const finalData = await submitBookingRequest({ organizationId, apiBaseUrl, patientName: form.patientName, patientPhone: form.patientPhone, patientComment: [form.patientComment.trim(), isPreBookingMode ? "[Предварительная бронь без СМС / Звонок администратора]" : ""].filter(Boolean).join(" "), patientId, selectedDate: cal.selectedDate, selectedSlot: activeSlot, selectedDoctor, selectedBranch, bookingStatus: isPreBookingMode ? "unconfirmed" : "confirmed", isPreBookingMode, referenceNumber: refNumber });
+			setConfirmationData(finalData);
+			setIsSubmitting(false);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:booking_completed", { detail: finalData }));
+				window.dispatchEvent(new CustomEvent("dente:schedule_refresh"));
+				if (window.parent) window.parent.postMessage({ type: "DENTE_BOOKING_SUCCESS", booking: finalData }, "*");
 			}
+			handleStepChange(5);
+			onSuccess?.(finalData);
+		} catch (err: any) {
+			setSubmitError(err.message || "Сбой связи с сервером клиники");
+			setIsSubmitting(false);
 		}
-
-		// Trigger Telegram Haptic Feedback if available
-		if (typeof window !== "undefined") {
-			// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
-			const tg = (window as any)?.Telegram?.WebApp;
-			tg?.HapticFeedback?.notificationOccurred?.("success");
-
-			if (window.parent) {
-				window.parent.postMessage(
-					{
-						type: "DENTE_BOOKING_SUCCESS",
-						booking: finalConfirmation,
-					},
-					"*",
-				);
-			}
-		}
-
-		// Proceed to Confirmation
-		setConfirmationData(finalConfirmation);
-		setIsSubmitting(false);
-
-		// Broadcast events for schedule synchronization (Mandates 8e, 8n)
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente:booking_completed", { detail: finalConfirmation }),
-			);
-			window.dispatchEvent(new CustomEvent("dente:schedule_refresh"));
-		}
-
-		handleStepChange(5);
-		if (onSuccess) onSuccess(finalConfirmation);
 	};
 
-	// Reset widget state for a new booking
-	const handleResetBooking = () => {
-		setStep(1);
-		setSelectedSlot(null);
-		setPatientName("");
-		setPatientPhone("");
-		setPatientComment("");
-		setSmsCodeSent(false);
-		setIsSmsVerified(false);
-		setIsSmsFallbackActive(false);
-		setEnteredSmsCode("");
-		setConfirmationData(null);
-		handleStepChange(1);
-	};
+	const handleResetBooking = () => { setStep(1); avail.setSelectedSlot(null); form.setPatientName(""); form.setPatientPhone(""); form.setPatientComment(""); sms.setSmsCodeSent(false); sms.setIsSmsVerified(false); sms.setIsSmsFallbackActive(false); sms.setEnteredSmsCode(""); setConfirmationData(null); handleStepChange(1); };
 
-	return {
-		widgetInstanceId,
-		step,
-		setStep,
-		isTelegramContext,
-		effectiveEmbedMode,
-		selectedDate,
-		setSelectedDate,
-		calendarMonth,
-		calendarDays,
-		monthLabel,
-		handlePrevMonth,
-		handleNextMonth,
-		selectedCategoryId,
-		setSelectedCategoryId,
-		selectedCategory,
-		activeDoctors,
-		isSoloDoctor,
-		selectedDoctorId,
-		setSelectedDoctorId,
-		selectedDoctor,
-		selectedBranch,
-		patientName,
-		setPatientName,
-		patientPhone,
-		setPatientPhone,
-		handlePhoneChange,
-		patientComment,
-		setPatientComment,
-		hasAgreedToPrivacy,
-		setHasAgreedToPrivacy,
-		showSmsVerification,
-		smsCodeSent,
-		enteredSmsCode,
-		setEnteredSmsCode,
-		isSmsVerified,
-		isSmsFallbackActive,
-		setIsSmsFallbackActive,
-		handleEnableSmsFallback,
-		smsResendCountdown,
-		smsError,
-		handleSendSmsCode,
-		handleVerifySmsCode,
-		handleTelegramShareContact,
-		doctorsLoading,
-		slots,
-		setSlots,
-		selectedSlot,
-		setSelectedSlot,
-		slotsLoading,
-		slotError,
-		setSlotError,
-		isSubmitting,
-		submitError,
-		setSubmitError,
-		confirmationData,
-		handleStepChange,
-		handleFinalSubmit,
-		handleResetBooking,
-	};
+	return { widgetInstanceId, step, setStep, isTelegramContext: tg.isTelegramContext, effectiveEmbedMode: tg.effectiveEmbedMode, handleTelegramShareContact: tg.handleTelegramShareContact, selectedDate: cal.selectedDate, setSelectedDate: cal.setSelectedDate, calendarMonth: cal.calendarMonth, calendarDays: cal.calendarDays, monthLabel: cal.monthLabel, handlePrevMonth: cal.handlePrevMonth, handleNextMonth: cal.handleNextMonth, selectedCategoryId, setSelectedCategoryId, selectedCategory, activeDoctors, isSoloDoctor, selectedDoctorId, setSelectedDoctorId, selectedDoctor, selectedBranch, patientName: form.patientName, setPatientName: form.setPatientName, patientPhone: form.patientPhone, setPatientPhone: form.setPatientPhone, handlePhoneChange: form.handlePhoneChange, patientComment: form.patientComment, setPatientComment: form.setPatientComment, hasAgreedToPrivacy: form.hasAgreedToPrivacy, setHasAgreedToPrivacy: form.setHasAgreedToPrivacy, ...sms, ...avail, isSubmitting, submitError, setSubmitError, confirmationData, handleStepChange, handleFinalSubmit, handleResetBooking };
 }

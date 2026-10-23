@@ -43,12 +43,14 @@ describe("Doctor Workstation: Chairside Shift Earnings HUD", () => {
 	});
 
 	it("2. DoctorShiftEarningsWidget renders trigger button cleanly via SSR", () => {
+		const appointments = createSampleChairsideShiftAppointments("doc-1", "Д-р Смирнов А. П.", "2026-09-25");
 		const html = renderToString(
 			createElement(DoctorShiftEarningsWidget, {
 				doctorId: "doc-1",
 				doctorName: "Д-р Смирнов А. П.",
 				shiftDateIso: "2026-09-25",
 				commissionPercent: 25,
+				appointments,
 			}),
 		);
 

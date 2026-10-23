@@ -15,16 +15,9 @@ import {
 	type DoctorStaffPayrollInput,
 	type AssistantStaffPayrollInput,
 } from "../staffPayrollEngine.js";
-import {
-	calculateEmployeeTimesheetT13,
-	generateTimesheetT13Csv,
-	getDaysInMonth,
-	type TimesheetDayRecord,
-	type EmployeeTimesheetInput,
-} from "@dental/shared";
 import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal.js";
 
-describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
+describe("Wave 14: Advanced Doctor Piece-Rate Payroll & Net Revenue", () => {
 	it("1.1 Re-exports all required payroll modals and engines from canonical modules", () => {
 		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
 		assert.ok(calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
@@ -186,34 +179,36 @@ describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
 		assert.ok(csv.includes("Смирнов Алексей Петрович"));
 	});
 
-	it("1.5 Computes Form T-13 statutory timesheet with proper split halves and codes", () => {
-		const days: TimesheetDayRecord[] = [
-			{ dayNumber: 1, primaryCode: "Я", primaryHours: 6.0 },
-			{ dayNumber: 2, primaryCode: "Я", primaryHours: 6.0 },
-			{ dayNumber: 3, primaryCode: "В", primaryHours: 0 },
-			{ dayNumber: 16, primaryCode: "ОТ", primaryHours: 0 },
-			{ dayNumber: 17, primaryCode: "Б", primaryHours: 0 },
-			{ dayNumber: 18, primaryCode: "С", primaryHours: 8.0 },
-		];
-
-		const input: EmployeeTimesheetInput = {
-			employeeId: "emp-t13-1",
-			employeeTabNumber: "00101",
+	it("1.5 Computes Net Revenue piece-rate payroll deducting lab and surgical implants", () => {
+		const docInput: DoctorStaffPayrollInput = {
+			employeeId: "doc-net-1",
+			employeeTabNumber: "00105",
 			employeeFullName: "Смирнов Алексей Петрович",
-			positionRu: "Врач-стоматолог терапевт",
-			departmentRu: "Терапевтическое отделение",
-			year: 2026,
-			month: 8,
-			days,
+			specialtyId: "surgeon",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [
+				{
+					id: "srv-imp-test",
+					dateIso: "2026-10-05",
+					patientName: "Пациент Тестовый",
+					medicalCardNumber: "001",
+					serviceNameRu: "Имплантация Nobel Biocare",
+					category: "surgery",
+					grossRevenueKop: 12000000, // 120,000 RUB
+					labCostKop: 0,
+					materialCostKop: 4000000, // 40,000 RUB имплант + мембрана
+					isPaid: true,
+					paidAmountKop: 12000000,
+				},
+			],
 		};
 
-		const res = calculateEmployeeTimesheetT13(input);
-
-		assert.equal(res.firstHalfSummary.daysWorked, 2);
-		assert.equal(res.firstHalfSummary.regularHoursWorked, 12.0);
-		assert.equal(res.secondHalfSummary.vacationDays, 1);
-		assert.equal(res.secondHalfSummary.sickLeaveDays, 1);
-		assert.equal(res.secondHalfSummary.overtimeHoursWorked, 8.0);
-		assert.equal(res.monthTotalSummary.daysWorked, 3);
+		const res = calculateDoctorStaffPayroll(docInput);
+		// Net base = 120,000 - 40,000 = 80,000 RUB = 8,000,000 kop
+		assert.equal(res.totalGrossRevenueKop, 12000000);
+		assert.equal(res.totalMaterialDeductionsKop, 4000000);
+		assert.equal(res.totalNetBaseKop, 8000000);
+		assert.ok(res.earnedBaseCommissionKop > 0);
 	});
 });

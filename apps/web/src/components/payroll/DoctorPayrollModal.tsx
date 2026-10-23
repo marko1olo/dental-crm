@@ -2,9 +2,10 @@ import React from "react";
 import { createPortal } from "react-dom";
 import {
 	generateDoctorPayrollCsv,
-	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
+	calculateConsolidatedStaffPayroll,
+	generateStaffPayrollXml,
 	type DoctorCompletedServiceItem,
 	SOLO_DOCTOR_SPECIALTY_PRESETS,
 	type SoloDoctorSpecialtyPreset,
@@ -48,7 +49,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedClinicName = (clinicName && clinicName.trim())
 		|| branding?.clinicName
-		|| branding?.legalEntityName
+		|| branding?.clinicLegalName
 		|| appLogic?.dashboard?.organization?.name
 		|| appLogic?.dashboard?.clinicSettings?.clinicName
 		|| "";
@@ -84,6 +85,43 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		URL.revokeObjectURL(url);
 	};
 
+	const handleExport1C = () => {
+		const summary = calculateConsolidatedStaffPayroll({
+			clinicName: resolvedClinicName,
+			periodStartIso: state.periodStart,
+			periodEndIso: state.periodEnd,
+			doctors: [
+				{
+					employeeId: state.payrollResult.doctorId || "doc-1",
+					employeeTabNumber: "00101",
+					employeeFullName: state.payrollResult.doctorName,
+					specialtyId: (state.soloSpecialtyId as any) || "therapist",
+					periodStartIso: state.periodStart,
+					periodEndIso: state.periodEnd,
+					services: state.servicesToUse.map((s) => ({
+						id: s.id,
+						dateIso: s.dateIso,
+						patientName: s.patientName,
+						medicalCardNumber: s.medicalCardNumber,
+						serviceNameRu: s.serviceNameRu,
+						category: s.category,
+						grossRevenueKop: s.grossRevenueKop,
+						labCostKop: s.labCostKop,
+						materialCostKop: s.materialCostKop,
+					})),
+				},
+			],
+		});
+		const xml = generateStaffPayrollXml(summary, `ЗП-${state.payrollResult.doctorId || "DOC"}`, state.periodEnd);
+		const blob = new Blob([xml], { type: "application/xml;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `выгрузка_1с_зарплата_${state.payrollResult.doctorId || "report"}_${state.periodStart}.xml`;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
 	const handlePrintPayslip = () => {
 		const printWindow = window.open("", "_blank", "width=800,height=900");
 		const html = generateDoctorPayslipHtml(state.payrollResult, resolvedClinicName, state.servicesToUse);
@@ -101,6 +139,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 			state={state}
 			onSendToMessenger={handleSendToMessenger}
 			onDownloadCsv={handleDownloadCsv}
+			onExport1C={handleExport1C}
 			onPrintPayslip={handlePrintPayslip}
 		/>
 	);
