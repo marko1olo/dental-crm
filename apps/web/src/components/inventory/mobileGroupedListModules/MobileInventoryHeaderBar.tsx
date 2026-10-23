@@ -7,6 +7,7 @@ export interface MobileInventoryHeaderBarProps {
 	readonly searchQuery: string;
 	readonly onSearchChange: (q: string) => void;
 	readonly onClearSearch: () => void;
+	readonly onOpenMdlpScanning?: (() => void) | undefined;
 }
 
 export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> = ({
@@ -15,6 +16,7 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 	searchQuery,
 	onSearchChange,
 	onClearSearch,
+	onOpenMdlpScanning,
 }) => {
 	return (
 		<div className="mobile-inventory-header-bar">
@@ -25,6 +27,17 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 				</div>
 
 				<div className="flex items-center gap-2">
+					{onOpenMdlpScanning && (
+						<button
+							type="button"
+							onClick={onOpenMdlpScanning}
+							className="mobile-inventory-kpi-badge cursor-pointer"
+							data-testid="mobile-header-btn-mdlp"
+							title="Маркированные медикаменты МДЛП и Честный Знак"
+						>
+							МДЛП
+						</button>
+					)}
 					{lowStockCount > 0 ? (
 						<span
 							className="mobile-inventory-kpi-badge has-shortage"

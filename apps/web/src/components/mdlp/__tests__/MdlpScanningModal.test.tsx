@@ -61,6 +61,28 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 
 		// Footer deferred disposal button
 		assert.ok(html.includes("data-testid=\"mdlp-footer-deferred-btn\""));
+
+		// Mandate 8am: Exactly ONE Primary CTA button "✓ Подтвердить списание" (emerald color, never disabled)
+		assert.ok(html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\""));
+		assert.ok(html.includes("✓ Подтвердить списание"));
+		assert.ok(!html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\" disabled"));
+	});
+
+	it("MdlpScanningModal supports human semantic modes (warehouse_acceptance, care_dispense, spoilage_disposal)", () => {
+		const html = renderToStaticMarkup(
+			createElement(MdlpScanningModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialMode: "warehouse_acceptance",
+				clinicName: "ООО «Денте Стоматология»",
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"mdlp-tab-acceptance\""));
+		assert.ok(html.includes("Приёмка на склад"));
+		assert.ok(html.includes("Списание при оказании медпомощи"));
+		assert.ok(html.includes("Списание по сроку годности / браку"));
+		assert.ok(html.includes("УПД-2026-0891"));
 	});
 
 	it("MdlpScanningModal returns empty markup when isOpen is false", () => {
@@ -87,16 +109,12 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 	it("MdlpScanningModal renders Scheme 444 tab and supports initialMode disposal_444", () => {
 		const html = renderToStaticMarkup(
 			createElement(MdlpScanningModal, {
-				isOpen: true,
-				onClose: () => {},
-				initialMode: "disposal_444",
-				clinicName: "ООО «Денте Стоматология»",
+				isOpen: true, onClose: () => {}, initialMode: "disposal_444", clinicName: "ООО «Денте Стоматология»",
 			}),
 		);
-
 		assert.ok(html.includes("data-testid=\"mdlp-tab-disposal-444\""));
 		assert.ok(html.includes("Медпомощь 043/у (Схема 444)"));
-		assert.ok(html.includes("АКТ-444-0042"));
+		assert.ok(html.includes("АКТ-СПИСАНИЕ-0042"));
 		assert.ok(html.includes("Схема 444"));
 	});
 });

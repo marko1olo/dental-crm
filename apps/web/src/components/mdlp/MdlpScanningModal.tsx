@@ -68,6 +68,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = (props) => {
 				onClearAll={state.handleClearAll}
 				onDeferredDisposal={state.handleDeferredDisposal}
 				onGenerateXml={state.handleGenerateXml}
+				onConfirmDisposal={state.handleConfirmDisposal}
 			/>
 		</MdlpModalContainer>
 	);

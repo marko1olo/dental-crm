@@ -1,0 +1,57 @@
+{
+  "task": "MDLP & Medication Disposal Decomposition, Autonomous Batch Writeoff & Red Team Inquisition",
+  "subagent_role": "Red Team Архитектор-Инквизитор Честного Знака, МДЛП и Списания Препаратов",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-23T18:52:00+04:00",
+  "invariants_enforced": [
+    "Mandate 8b: Strict <= 120 lines limit on every single file in apps/web/src/components/mdlp/ (29 files decomposed)",
+    "Mandate 8e: Doctor & Staff Autonomy - Buttons ('Списать упаковку', 'Подтвердить выбытие', 'Экспорт XML', 'Очистить', 'Отложить в буфер') NEVER disabled; instant unblocking fallback",
+    "Mandate 8n: Solo practice scale sovereignty - 1-click batch shift disposal ('Списать 10 карпул за смену'), Soft Negative Stock, offline queue with indexedDB resilience, zero laser hardware locks",
+    "Mandate 8x: Clean clinical Russian language, eradicated raw bureaucratic regulatory codes (701, 531, 444, 043/у replaced with 'Приёмка на склад', 'Списание при оказании медпомощи', 'Списание по сроку годности / браку')",
+    "Mandate 8am: Exactly ONE Primary CTA in visible context ('✓ Подтвердить списание' in emerald #0d9488)",
+    "Mandate 8aq: Live UI Mount - mounted directly in InventoryView, InventoryRegulatoryModals, and MobileInventoryGroupedList",
+    "Apple HIG & Mobile Touch Ergonomics: Bottom Sheet presentation on mobile, touch targets >= 44x44px, zero horizontal overflow drift, grouped cards"
+  ],
+  "decomposed_modules": [
+    "apps/web/src/components/mdlp/MdlpScanningModal.tsx: 75 lines",
+    "apps/web/src/components/mdlp/MdlpScannedTableRow.tsx: 73 lines",
+    "apps/web/src/components/mdlp/MdlpScannedItemsTable.tsx: 69 lines",
+    "apps/web/src/components/mdlp/MdlpScannedMobileCards.tsx: 66 lines",
+    "apps/web/src/components/mdlp/MdlpStatusBadge.tsx: 54 lines",
+    "apps/web/src/components/mdlp/mdlpPresetsData.ts: 120 lines",
+    "apps/web/src/components/mdlp/mdlpScanningPresets.ts: 24 lines",
+    "apps/web/src/components/mdlp/mdlpApiClient.ts: 97 lines",
+    "apps/web/src/components/mdlp/mdlpOfflineQueue.ts: 44 lines",
+    "apps/web/src/components/mdlp/mdlpAudio.ts: 19 lines",
+    "apps/web/src/components/mdlp/index.ts: 1 line",
+    "apps/web/src/components/mdlp/mdlpModal/index.ts: 7 lines",
+    "apps/web/src/components/mdlp/mdlpModal/types.ts: 57 lines",
+    "apps/web/src/components/mdlp/mdlpModal/useMdlpModalState.ts: 113 lines",
+    "apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts: 105 lines",
+    "apps/web/src/components/mdlp/mdlpModal/useMdlpXmlExport.ts: 78 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpModalContainer.tsx: 39 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpHeader.tsx: 77 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpHeaderTitle.tsx: 42 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpModeTabs.tsx: 65 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpMetricsStrip.tsx: 57 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpScannerInput.tsx: 49 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpScannedList.tsx: 69 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpNurseRulesBanner.tsx: 47 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpCrptStatusStrip.tsx: 64 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpEmergencyDrawer.tsx: 39 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpOfflineDrawer.tsx: 68 lines",
+    "apps/web/src/components/mdlp/mdlpModal/MdlpFooterActions.tsx: 101 lines",
+    "apps/web/src/components/mdlp/__tests__/MdlpScanningModal.test.tsx: 120 lines"
+  ],
+  "verification_gates": {
+    "vitest_mdlp_unit": "6 passing (npx vitest run apps/web/src/components/mdlp/)",
+    "vitest_inventory_mdlp": "8 passing in 2 test files (npx vitest run apps/web/src/components/inventory/mdlp/__tests__/)",
+    "encoding_check": "18,656 files checked, 0 errors (npm run check:encoding)"
+  },
+  "visual_proofs": {
+    "pc_light": "docs/screenshots/mdlp/mdlp_modal_pc_light.png (168,919 bytes)",
+    "pc_dark": "docs/screenshots/mdlp/mdlp_modal_pc_dark.png (163,419 bytes)",
+    "mobile_light": "docs/screenshots/mdlp/mdlp_modal_mobile_light.png (171,225 bytes)",
+    "mobile_dark": "docs/screenshots/mdlp/mdlp_modal_mobile_dark.png (169,205 bytes)"
+  }
+}

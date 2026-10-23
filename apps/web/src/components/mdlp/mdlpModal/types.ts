@@ -1,35 +1,41 @@
 import type { ChestnyZnakScannedItem } from "@dental/shared";
-import type { MdlpOfflinePackage } from "../mdlpScanningPresets.js";
+import type { MdlpOfflinePackage } from "../mdlpOfflineQueue.js";
 
-/** Режимы работы модалки МДЛП / Честный ЗНАК */
-export type MdlpScanMode = "acceptance_701" | "disposal_531" | "disposal_444";
+/** Семантические режимы работы модуля учета маркированных препаратов */
+export type MdlpScanMode =
+	| "warehouse_acceptance"
+	| "care_dispense"
+	| "spoilage_disposal"
+	| "acceptance_701"
+	| "disposal_531"
+	| "disposal_444";
+
+export function isAcceptanceMode(mode: MdlpScanMode): boolean {
+	return mode === "warehouse_acceptance" || mode === "acceptance_701";
+}
+
+export function isCareDispenseMode(mode: MdlpScanMode): boolean {
+	return mode === "care_dispense" || mode === "disposal_531";
+}
+
+export function isSpoilageMode(mode: MdlpScanMode): boolean {
+	return mode === "spoilage_disposal" || mode === "disposal_444";
+}
+
+/** Человеческие названия режимов работы для врача и персонала */
+export const MDLP_MODE_TITLES: Record<string, string> = {
+	warehouse_acceptance: "Приёмка на склад",
+	acceptance_701: "Приёмка на склад",
+	care_dispense: "Списание при оказании медпомощи",
+	disposal_531: "Списание при оказании медпомощи",
+	spoilage_disposal: "Списание по сроку годности / браку",
+	disposal_444: "Списание по сроку годности / браку",
+};
 
 /** Статус сетевой связи с ИС «Честный ЗНАК» / ЦРПТ */
 export type CrptServerStatus = "online" | "degraded" | "offline";
 
-/** Статусы сканирования DataMatrix кода маркировки */
-export type DataMatrixScanStatus = "verified" | "warning" | "expired" | "invalid";
-
-/** Коды ошибок проверки кодов маркировки «Честный Знак» */
-export type ChestnyZnakErrorCode =
-	| "CODE_NOT_FOUND"
-	| "ALREADY_DISPOSED"
-	| "EXPIRED_BATCH"
-	| "CRYPTO_TAIL_MISMATCH"
-	| "CRYPTO_SIGNATURE_INVALID"
-	| "UNAUTHORIZED_EMISSION"
-	| "WRONG_OWNER_INN";
-
-/** Типы упаковок анестетиков и медикаментов для быстрого выбытия */
-export type AnestheticPackageType =
-	| "articaine_1_100k"
-	| "articaine_1_200k"
-	| "mepivacaine_3pct"
-	| "lidocaine_2pct"
-	| "chlorhexidine_005"
-	| "miramistin_001";
-
-/** Пропсы главного модального окна сканирования МДЛП */
+/** Пропсы главного модального окна маркировки медикаментов */
 export interface MdlpScanningModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;

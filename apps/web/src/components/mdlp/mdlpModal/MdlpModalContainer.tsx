@@ -1,4 +1,5 @@
 import type React from "react";
+import { createPortal } from "react-dom";
 
 export interface MdlpModalContainerProps {
 	readonly isOpen: boolean;
@@ -13,7 +14,7 @@ export const MdlpModalContainer: React.FC<MdlpModalContainerProps> = ({
 }) => {
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
 			className="mdlp-scanning-overlay"
 			role="dialog"
@@ -29,4 +30,10 @@ export const MdlpModalContainer: React.FC<MdlpModalContainerProps> = ({
 			</div>
 		</div>
 	);
+
+	if (typeof document !== "undefined" && document.body) {
+		return createPortal(modalContent, document.body);
+	}
+
+	return modalContent;
 };
