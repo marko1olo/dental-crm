@@ -1,5 +1,5 @@
 import React from "react";
-import { Tooth46CariesOverlay } from "../../Tooth46CariesOverlay";
+import { Tooth45CariesOverlay } from "./Tooth45CariesOverlay";
 import { Tooth46InlayOnlayOverlay } from "../../Tooth46InlayOnlayOverlay";
 import { Tooth46PathologyOverlay } from "../../Tooth46PathologyOverlay";
 import { ToothAdaptivePeriapicalArea } from "../../ToothAdaptivePeriapicalArea";
@@ -30,8 +30,8 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
 	const r = badgeRadius ?? 18.5;
-	const cy = badgeCy ?? (r > 10 ? 162 + (r - 10) * 0.6 : 160);
-	const baseHeight = r > 10 ? Math.ceil(165 + r + 3) : 170;
+	const cy = badgeCy ?? (r > 10 ? 162 + r : 160);
+	const baseHeight = r > 10 ? Math.ceil(cy + r + 5) : 170;
 	const viewBox = `0 0 100 ${baseHeight}`;
 
 	return (
@@ -76,7 +76,7 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 				/>
 			)}
 			{a.caries && !a.zirconiaCrown && (
-				<Tooth46CariesOverlay cariesType={a.cariesType} chronicity={a.cariesChronicity} isDark={isDark} />
+				<Tooth45CariesOverlay cariesType={a.cariesType} chronicity={a.cariesChronicity} isDark={isDark} />
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (

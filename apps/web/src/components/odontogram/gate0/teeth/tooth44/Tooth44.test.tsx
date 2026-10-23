@@ -30,16 +30,16 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 		assert.ok(fossae.some((f) => f.id === "sulcus-distalis"));
 	});
 
-	it("maintains Anti-Chopstick crown width in comfortable corridor (70px)", () => {
+	it("maintains Wheeler anatomical scale (48px width, 7.0mm scale)", () => {
 		const path = TOOTH44_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("15.0,38") || path.includes("15.0"));
-		assert.ok(path.includes("85.0,38") || path.includes("85.0"));
+		assert.ok(path.includes("26,74"));
+		assert.ok(path.includes("74,74"));
 	});
 
 	it("models 1 single conical root with developmental depression", () => {
 		const apex = TOOTH44_GEOMETRY.apex;
 		assert.equal(apex.x, 51.0);
-		assert.ok(apex.y >= 147);
+		assert.equal(apex.y, 147.5);
 		assert.ok(TOOTH44_GEOMETRY.rootSulcus);
 		assert.ok(TOOTH44_GEOMETRY.rootSulcusHighlight);
 	});
@@ -48,8 +48,8 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 		const canals = TOOTH44_PULP_GEOMETRY.canals;
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
-		assert.equal(canals[0]?.orifice.x, 50.0);
-		assert.equal(canals[0]?.apex.x, 51.0);
+		assert.equal(canals[0]?.orifice.x, 50.2);
+		assert.equal(canals[0]?.apex.x, 50.5);
 	});
 
 	it("renders Tooth44Container with default XXL badge (37px diameter, R=18.5)", () => {
@@ -57,7 +57,7 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 			React.createElement(Tooth44Container, { presetId: "intact" }),
 		);
 		assert.ok(html.includes("<svg"));
-		assert.ok(html.includes("viewBox=\"0 0 100 187\""));
+		assert.ok(html.includes("viewBox=\"0 0 100 204\""));
 		assert.ok(html.includes("id=\"tooth44-roots\""));
 		assert.ok(html.includes("id=\"tooth44-natural-crown-group\""));
 		assert.ok(html.includes("r=\"18.5\""));

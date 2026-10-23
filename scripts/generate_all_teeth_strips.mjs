@@ -287,13 +287,12 @@ body {
   justify-content: center;
   align-items: flex-start;
   width: 100%;
-  height: 380px;
+  height: 350px;
+  padding-top: 8px;
 }
 .svg-wrapper svg {
   overflow: visible;
-  max-height: 100%;
-  max-width: 100%;
-  width: auto;
+  display: block;
 }
 </style>
 </head>
