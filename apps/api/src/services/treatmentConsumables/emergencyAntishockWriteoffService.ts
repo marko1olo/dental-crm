@@ -16,10 +16,9 @@ export async function quickWriteoffAntishockKit(
 		patientName?: string | undefined;
 		doctorName?: string | undefined;
 		notes?: string | null | undefined;
-		scenarioId?: string | undefined;
 	},
 ) {
-	const { organizationId, userId, visitId, patientName, doctorName, notes, scenarioId } = params;
+	const { organizationId, userId, visitId, patientName, doctorName, notes } = params;
 	const items = getAntishockKitDefinitions();
 
 	const actorNote = doctorName ? `Врач: ${doctorName}` : "";

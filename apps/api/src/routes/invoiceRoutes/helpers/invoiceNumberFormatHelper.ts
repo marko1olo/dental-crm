@@ -7,7 +7,7 @@ export function buildEffectiveItemResolutionOverrides(
 	const map: Record<string, PriceLockResolutionPolicy> = {};
 	let hasAny = false;
 	for (const it of items) {
-		if (it.resolutionPolicy) {
+		if (it.resolutionPolicy && typeof it.itemId === "string") {
 			map[it.itemId] = it.resolutionPolicy;
 			hasAny = true;
 		}

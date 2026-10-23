@@ -465,7 +465,6 @@ export async function registerVisitWriteOffHandlers(
 				organizationId,
 				visitId: body.visitId ?? null,
 				userId: body.userId ?? (request.user as any)?.id ?? null,
-				scenarioId: body.scenarioId ?? null,
 				notes: body.notes ?? null,
 			});
 		});

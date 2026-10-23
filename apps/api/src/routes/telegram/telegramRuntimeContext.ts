@@ -26,7 +26,6 @@ export {
 } from "./telegramEnvDelayParsers.js";
 
 export {
-	type TelegramClinicBotEnvConfig,
 	clinicBotEnvConfigs,
 } from "./telegramEnvConfigParsers.js";
 
@@ -37,6 +36,10 @@ export {
 export {
 	type TelegramRuntimeContext,
 	type TelegramRuntimeSettingsResolution,
+	type TelegramClinicBotEnvConfig,
+} from "./types.js";
+
+export {
 	clinicBotEnvConfigForOrganization,
 	clinicBotEnvConfigFor,
 	runtimeSettingsForRequestedOrganization,

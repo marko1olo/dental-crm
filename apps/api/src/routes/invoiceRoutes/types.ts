@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { priceLockResolutionPolicySchema } from "@dental/shared";
 import type { getActivePriceFreezeToken } from "../../db/priceFreezeTokensQuery.js";
 import type { getServiceCatalogForOrganization } from "../../db/pricelistQuery.js";
 import type {
@@ -74,7 +75,7 @@ export const generateInvoiceFromPlanSchema = z.object({
 				effectiveUnitPriceRub: z.number().nonnegative().optional(),
 				unitPriceRub: z.number().nonnegative().optional(),
 				discountRub: z.number().nonnegative().optional(),
-				resolutionPolicy: z.string().default("LOCK_ORIGINAL_PRICE"),
+				resolutionPolicy: priceLockResolutionPolicySchema.default("LOCK_ORIGINAL_PRICE"),
 				serviceId: z.string().optional(),
 				analogueServiceId: z.string().optional(),
 				doctorId: z.string().uuid().optional().nullable(),

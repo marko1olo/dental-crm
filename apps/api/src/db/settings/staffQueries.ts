@@ -161,11 +161,11 @@ export async function updateStaffMemberProfileInDb(
 				),
 			);
 	}
-	if (input.commissionPct !== undefined) {
+	if (input.commissionPct !== undefined && input.commissionPct !== null) {
 		try {
 			await setDoctorCommissionRateInDb(organizationId, staffId, input.commissionPct, {
-				materialCostDeductionPct: input.materialCostDeductionPct,
-				labCostDeductionPct: input.labCostDeductionPct,
+				materialCostDeductionPct: input.materialCostDeductionPct ?? undefined,
+				labCostDeductionPct: input.labCostDeductionPct ?? undefined,
 			});
 		} catch (commErr) {
 			console.warn("[staffQueries] Не удалось синхронизировать ставку врача при обновлении профиля:", commErr);

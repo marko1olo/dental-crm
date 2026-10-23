@@ -343,7 +343,6 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 				organizationId: effectiveOrgId,
 				userId: request.user?.id ?? null,
 				visitId: body.visitId ?? null,
-				scenarioId: body.scenarioId ?? null,
 				notes: body.notes ?? null,
 			});
 		});
@@ -372,7 +371,6 @@ export const writeOffRoutes: FastifyPluginAsync = async (server: FastifyInstance
 				organizationId: targetOrgId,
 				userId: request.user?.id ?? null,
 				visitId: body.visitId ?? null,
-				scenarioId: body.scenarioId ?? null,
 				notes: body.notes ?? null,
 			});
 		});

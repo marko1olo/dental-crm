@@ -50,7 +50,7 @@ export function validateUkepSignaturePayload(data: SignUkepBody): UkepValidation
 			valid: false,
 			statusCode: 400,
 			error: certStatus.errorCode ?? "InvalidCertificateStatus",
-			message: certStatus.error,
+			...(certStatus.error ? { message: certStatus.error } : {}),
 		};
 	}
 
@@ -83,13 +83,13 @@ export function validateUkepSignaturePayload(data: SignUkepBody): UkepValidation
 		valid: true,
 		meta: {
 			certificateSerialNumber: certSerial,
-			certificateThumbprint: data.certificateThumbprint,
+			...(data.certificateThumbprint ? { certificateThumbprint: data.certificateThumbprint } : {}),
 			certificateIssuer: data.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
 			certificateValidFrom: certValidFrom || new Date().toISOString(),
-			certificateValidTo: certValidTo,
-			doctorSnils: data.doctorSnils,
+			...(certValidTo ? { certificateValidTo: certValidTo } : {}),
+			...(data.doctorSnils ? { doctorSnils: data.doctorSnils } : {}),
 			signatureAlgorithm: data.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
-			egiszDocumentId: data.egiszDocumentId,
+			...(data.egiszDocumentId ? { egiszDocumentId: data.egiszDocumentId } : {}),
 			signedAt: new Date().toISOString(),
 		},
 	};

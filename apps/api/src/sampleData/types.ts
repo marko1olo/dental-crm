@@ -20,6 +20,14 @@ export type UpdateStaffMemberProfileInput = {
 	phone?: string | null | undefined;
 	email?: string | null | undefined;
 	active?: boolean | undefined;
+	specialties?: string[] | undefined;
+	snils?: string | null | undefined;
+	canSignMedicalRecords?: boolean | undefined;
+	canManageMoney?: boolean | undefined;
+	canManageImports?: boolean | undefined;
+	commissionPct?: number | null | undefined;
+	materialCostDeductionPct?: number | null | undefined;
+	labCostDeductionPct?: number | null | undefined;
 };
 
 /**
