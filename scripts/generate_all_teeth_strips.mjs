@@ -1,7 +1,7 @@
 /**
  * scripts/generate_all_teeth_strips.mjs
- * Generates horizontal strip collages for all finished lower teeth (48, 47, 46, 45, 44)
- * across key clinical states and pathologies.
+ * Generates horizontal strip collages for all finished lower teeth (48, 47, 46, 45, 44, 43, 42, 41)
+ * across key clinical states and pathologies with Wheeler Ch. 1 anatomical proportions.
  * Mandate 8b: clean modular code.
  */
 
@@ -11,6 +11,9 @@ import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { Tooth41Container } from "../apps/web/src/components/odontogram/gate0/teeth/tooth41/index.ts";
+import { Tooth42Container } from "../apps/web/src/components/odontogram/gate0/teeth/tooth42/index.ts";
+import { Tooth43Container } from "../apps/web/src/components/odontogram/gate0/teeth/tooth43/index.ts";
 import { Tooth44Container } from "../apps/web/src/components/odontogram/gate0/teeth/tooth44/index.ts";
 import { Tooth45Container } from "../apps/web/src/components/odontogram/gate0/teeth/tooth45/index.ts";
 import { Tooth46Container } from "../apps/web/src/components/odontogram/gate0/Tooth46Container.tsx";
@@ -21,31 +24,36 @@ import { launchBrowser } from "./gate0/gate0BrowserHelper.mjs";
 
 const ORCH_BRAIN = "C:/Users/Admin/.gemini/antigravity/brain/a6f2b5ab-6bb4-4d96-af8a-9006a477cf49";
 const OUT_DIR = resolve("docs/proofs/odontogram/strips");
-for (const dir of [OUT_DIR, ORCH_BRAIN]) {
+const SCRATCH_DIR = resolve("scratch");
+for (const dir of [OUT_DIR, ORCH_BRAIN, SCRATCH_DIR]) {
 	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
+// Wheeler Ch. 1 Mandibular Relative Scale: 48 (10mm), 47 (10.5mm), 46 (11mm), 45 (7mm), 44 (7mm), 43 (7.5mm), 42 (5.5mm), 41 (5mm)
 const TEETH = [
-	{ num: 48, name: "3-й моляр (Восьмерка)", trait: "Сросшиеся корни · C-канал · 72px", Component: Tooth48Container },
-	{ num: 47, name: "2-й моляр", trait: "4 бугра · Крест (+) · 2 пар. корня · 74px", Component: Tooth47Container },
-	{ num: 46, name: "1-й моляр (Шестерка)", trait: "5 бугров · Y-5 · 2 расп. корня · 78px", Component: Tooth46Container },
-	{ num: 45, name: "2-й премоляр", trait: "3 бугорка · Y-фиссура · 1 конус · 72px", Component: Tooth45Container },
-	{ num: 44, name: "1-й премоляр", trait: "Асимметрия · Crista Transversa · 1 корень · 70px", Component: Tooth44Container },
+	{ num: 48, name: "3-й моляр", trait: "Сросшиеся корни · C-канал · 10мм", Component: Tooth48Container },
+	{ num: 47, name: "2-й моляр", trait: "4 бугра · 2 пар. корня · 10.5мм", Component: Tooth47Container },
+	{ num: 46, name: "1-й моляр", trait: "5 бугров · Y-5 · 2 корня · 11мм", Component: Tooth46Container },
+	{ num: 45, name: "2-й премоляр", trait: "3 бугорка · Y-фиссура · 7мм", Component: Tooth45Container },
+	{ num: 44, name: "1-й премоляр", trait: "Crista Transversa · 1 корень · 7мм", Component: Tooth44Container },
+	{ num: 43, name: "Нижний клык", trait: "Рвущий бугор · Самый длинный · 7.5мм", Component: Tooth43Container },
+	{ num: 42, name: "Боковой резец", trait: "Скругленный угол · 1 корень · 5.5мм", Component: Tooth42Container },
+	{ num: 41, name: "Центр. резец", trait: "Узкое долото (38px) · 1 корень · 5мм", Component: Tooth41Container },
 ];
 
 const STRIPS_CONFIG = [
 	{
 		id: "01_norm_intact",
 		presetId: "intact",
-		title: "1. ФИЗИОЛОГИЧЕСКАЯ НОРМА (ИНТАКТНЫЕ ЗУБЫ)",
-		subtitle: "Соматически здоров · Здоровая эмаль · Интактные корни · Бейдж XXL (37px) «✓»",
+		title: "1. ФИЗИОЛОГИЧЕСКАЯ НОРМА (ИНТАКТНЫЕ ЗУБЫ) — WHEELER PROPORTIONS",
+		subtitle: "Соматически здоров · Анатомический масштаб Wheeler Ch. 1 (5.0–11.0 мм) · Бейдж XXL (37px) «✓»",
 		isDark: false,
 	},
 	{
 		id: "02_caries_fissures",
 		presetId: "caries",
-		title: "2. ФИССУРНЫЙ КАРИЕС (CLASS I)",
-		subtitle: "Органическая деструкция фиссур и слепых ямок · Бейдж XXL (37px) «C»",
+		title: "2. ФИССУРНЫЙ И ПРИШЕЕЧНЫЙ КАРИЕС",
+		subtitle: "Органическая деструкция фиссур, ямок и контактных пунктов · Бейдж XXL (37px) «C»",
 		isDark: false,
 	},
 	{
@@ -116,7 +124,7 @@ function buildStripHtml(cfg) {
 
 	const teethCards = TEETH.map((t) => {
 		const toothElement = React.createElement(t.Component, {
-			zoom: 1.6,
+			zoom: 1.45,
 			isDark,
 			presetId: preset.id,
 			layers: preset.layers,
@@ -192,9 +200,9 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--line);
   border-radius: 24px;
-  padding: 28px 36px 36px 36px;
+  padding: 28px 32px 36px 32px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-  width: 1360px;
+  width: 1720px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -230,15 +238,15 @@ body {
 }
 .teeth-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
+  grid-template-columns: 10fr 10.5fr 11fr 7fr 7fr 7.5fr 5.5fr 5fr;
+  gap: 10px;
   align-items: stretch;
 }
 .tooth-col {
   background: ${isDark ? "#141e33" : "#f8fafc"};
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 16px 12px 20px 12px;
+  padding: 14px 6px 18px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -255,20 +263,21 @@ body {
   width: 100%;
 }
 .fdi-pill {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 900;
-  padding: 2px 12px;
+  padding: 2px 8px;
   border-radius: 8px;
   background: ${isDark ? "#1e293b" : "#e2e8f0"};
   color: var(--ink);
 }
 .tooth-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
+  white-space: nowrap;
 }
 .tooth-trait {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--sub);
   line-height: 1.25;
   min-height: 28px;
@@ -276,13 +285,14 @@ body {
 .svg-wrapper {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
   height: 380px;
 }
 .svg-wrapper svg {
   overflow: visible;
   max-height: 100%;
+  max-width: 100%;
   width: auto;
 }
 </style>
@@ -294,11 +304,11 @@ ${innerHtml}
 }
 
 async function run() {
-	console.log(`[strips] Starting capture of ${STRIPS_CONFIG.length} clinical strips...`);
+	console.log(`[strips] Starting capture of ${STRIPS_CONFIG.length} clinical strips with Wheeler proportions...`);
 	const browser = await launchBrowser();
 	try {
 		const page = await browser.newPage({
-			viewport: { width: 1440, height: 760 },
+			viewport: { width: 1800, height: 760 },
 			deviceScaleFactor: 1.5,
 		});
 

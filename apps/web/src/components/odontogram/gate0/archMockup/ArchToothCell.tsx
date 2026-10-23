@@ -4,6 +4,9 @@
  */
 
 import React from "react";
+import { Tooth41Container } from "../teeth/tooth41/index";
+import { Tooth42Container } from "../teeth/tooth42/index";
+import { Tooth43Container } from "../teeth/tooth43/index";
 import { Tooth44Container } from "../teeth/tooth44/index";
 import { Tooth45Container } from "../teeth/tooth45/index";
 import { Tooth47Container } from "../teeth/tooth47/index";
@@ -22,6 +25,17 @@ export interface ArchToothCellProps {
 	readonly onClick?: ((item: MockupToothItem) => void) | undefined;
 }
 
+function resolveToothComponent(num: number) {
+	if (num === 48 || num === 38) return Tooth48Container;
+	if (num === 47 || num === 37) return Tooth47Container;
+	if (num === 45 || num === 35) return Tooth45Container;
+	if (num === 44 || num === 34) return Tooth44Container;
+	if (num === 43 || num === 33) return Tooth43Container;
+	if (num === 42 || num === 32) return Tooth42Container;
+	if (num === 41 || num === 31) return Tooth41Container;
+	return Tooth46Container;
+}
+
 export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 	item,
 	radius,
@@ -34,7 +48,6 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 	const { toothNumber, presetId, isUpper } = item;
 	const handleClick = () => onClick?.(item);
 
-	// Number pill badge
 	const numberBadge = (
 		<span
 			className={`font-mono font-black text-[11px] sm:text-xs transition-colors px-1 py-0.5 rounded leading-none ${
@@ -47,29 +60,23 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 		</span>
 	);
 
-	// Status badge component
 	const statusBadge = (
 		<div className="flex items-center justify-center p-0.5 min-h-[40px]">
 			<ArchToothBadge presetId={presetId} radius={radius} onClick={handleClick} />
 		</div>
 	);
 
-	// Anatomical 2.5D SVG tooth container (upper flipped roots-up)
-	const ToothComponent =
-		toothNumber === 48 || toothNumber === 38
-			? Tooth48Container
-			: toothNumber === 47 || toothNumber === 37
-				? Tooth47Container
-				: toothNumber === 45 || toothNumber === 35
-					? Tooth45Container
-					: toothNumber === 44 || toothNumber === 34
-						? Tooth44Container
-						: Tooth46Container;
+	const ToothComponent = resolveToothComponent(toothNumber);
+	const isLeft = (toothNumber >= 31 && toothNumber <= 38) || (toothNumber >= 21 && toothNumber <= 28);
+	const transform = [
+		isUpper ? "scaleY(-1)" : "",
+		isLeft ? "scaleX(-1)" : "",
+	].filter(Boolean).join(" ") || "none";
 
 	const toothSvg = (
 		<div
 			className="transition-transform duration-150 hover:scale-105 active:scale-95 flex items-center justify-center"
-			style={{ transform: isUpper ? "scaleY(-1)" : "none" }}
+			style={{ transform }}
 		>
 			<ToothComponent isDark={isDark} zoom={zoom} presetId={presetId} showBadge={false} />
 		</div>

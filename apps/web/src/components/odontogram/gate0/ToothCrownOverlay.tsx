@@ -82,17 +82,18 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 			)}
 
 			{/* Milled secondary fissures of the specific tooth */}
-			{fissures?.map((f) => (
-				<path
-					key={`fissure-${f.id}`}
-					d={f.d}
-					fill="none"
-					stroke={fissureColor}
-					strokeWidth="0.55"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-			))}
+			{Array.isArray(fissures) &&
+				fissures.map((f) => (
+					<path
+						key={`fissure-${f.id}`}
+						d={f.d}
+						fill="none"
+						stroke={fissureColor}
+						strokeWidth="0.55"
+						strokeLinecap="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+				))}
 
 			{/* Equator & glaze reflection highlight */}
 			{cervicalShoulderPath && (

@@ -1,0 +1,44 @@
+/**
+ * DENTE Dental CRM — Wheeler Ch. 11 Mandibular Canine (Tooth 43) Geometry
+ * Anatomical scale: 27.0mm total length (longest tooth in human mouth!).
+ * Tall spear crown (54px width: X=23..77), sharp tearing cusp elevated to Y=8.0,
+ * deepest massive root down to Y=162.0.
+ * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 220".
+ */
+
+export const TOOTH43_GEOMETRY = {
+	toothId: "43",
+	nameRu: "Нижний клык",
+	viewBox: "0 0 100 220",
+	// Elevated spear crown with sharp tearing cusp at Y=8.0
+	crownMonolithPath:
+		"M 23.0,73.0 " +
+		"C 21.0,58.0 22.0,40.0 25.0,28.0 " +
+		"C 33.0,20.0 42.0,14.0 50.0,8.0 " +  // Tall sharp tearing cusp tip
+		"C 58.0,14.0 67.0,21.0 75.0,29.0 " +
+		"C 78.0,40.0 79.0,58.0 77.0,73.0 " +
+		"C 68.0,75.0 59.0,76.0 50.0,76.0 " +
+		"C 41.0,76.0 32.0,75.0 23.0,73.0 Z",
+	// Longest single root of the human dentition down to Y=162.0
+	rootMonolithPath:
+		"M 23.0,73.0 " +
+		"C 28.0,92.0 34.0,120.0 42.0,144.0 " +
+		"C 45.5,154.0 48.0,161.0 50.0,162.0 " + // Deepest apex in dentition
+		"C 52.0,161.0 54.5,154.0 58.0,144.0 " +
+		"C 66.0,120.0 72.0,92.0 77.0,73.0 " +
+		"C 68.0,75.0 59.0,76.0 50.0,76.0 " +
+		"C 41.0,76.0 32.0,75.0 23.0,73.0 Z",
+	cejPath: "M 23.0,73.0 C 32.0,75.0 41.0,76.0 50.0,76.0 C 59.0,76.0 68.0,75.0 77.0,73.0",
+	apex: { x: 50.0, y: 162.0 },
+	apices: [{ x: 50.0, y: 162.0, r: 9.5 }] as const,
+	// Labial central vertical ridge
+	labialRidge: "M 50.0,8.0 C 50.0,28.0 50.0,50.0 50.0,73.0",
+	labialRidgeHighlight: "M 48.5,10.0 C 48.5,29.0 48.5,50.0 48.5,72.0",
+	// Developmental root groove
+	rootSulcus: "M 50.0,78.0 C 50.0,105.0 50.0,132.0 50.0,154.0",
+	cervicalShoulderPath:
+		"M 23.0,73.0 C 32.0,75.0 41.0,76.0 50.0,76.0 C 59.0,76.0 68.0,75.0 77.0,73.0 " +
+		"L 76.5,70.5 C 68.0,72.5 59.0,73.5 50.0,73.5 C 41.0,73.5 32.0,72.5 23.5,70.5 Z",
+	compositeFillingPath:
+		"M 38.0,62.0 C 44.0,60.5 56.0,60.5 62.0,62.0 C 61.0,68.0 56.0,71.0 50.0,71.0 C 44.0,71.0 39.0,68.0 38.0,62.0 Z",
+} as const;
