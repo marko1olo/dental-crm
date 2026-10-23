@@ -355,16 +355,16 @@ export function VisitEmkOdontogramBar({
 					isOdontogramCollapsed ? "" : "mb-2 pb-1.5 border-b border-[var(--line)]/60"
 				}`}
 			>
-				<div className="flex items-center gap-2 min-w-0">
+				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
 					<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)] truncate">
-						Интерактивная зубная формула
-						<span className="font-normal text-[var(--muted)] ml-1.5">
+						<span className="hidden sm:inline">Интерактивная </span>зубная формула
+						<span className="font-normal text-[var(--muted)] ml-1.5 hidden md:inline">
 							• {formulaSummary}
 						</span>
 					</span>
-					<span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold shrink-0">
-						Активный зуб: {effectiveActiveTooth}
+					<span className="text-[11px] font-mono px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold shrink-0 whitespace-nowrap">
+						<span className="hidden sm:inline">Активный зуб: </span>Зуб {effectiveActiveTooth}
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">
@@ -372,7 +372,7 @@ export function VisitEmkOdontogramBar({
 						type="button"
 						onClick={handleMarkAllIntact}
 						data-testid="btn-mark-all-teeth-intact"
-						className="border border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:bg-teal-500/20 hover:border-teal-500 transition-colors inline-flex items-center gap-1 cursor-pointer"
+						className="border border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:bg-teal-500/20 hover:border-teal-500 transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
 						title="Отметить все зубы интактными и заполнить протокол нормы (Дневник визита)"
 					>
 						<ShieldCheck size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
@@ -386,10 +386,10 @@ export function VisitEmkOdontogramBar({
 							);
 						}}
 						data-testid="btn-open-odontogram-tab"
-						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
 						title="Перейти во вкладку полной зубной формулы"
 					>
-						<span>Зубная формула</span>
+						<span className="hidden md:inline">Зубная формула</span>
 						<ArrowUpRight size={13} className="shrink-0" />
 					</button>
 					<button
@@ -398,7 +398,7 @@ export function VisitEmkOdontogramBar({
 							window.dispatchEvent(new CustomEvent("dente:open-perio-modal"));
 						}}
 						data-testid="btn-open-perio-modal"
-						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
 						title="Открыть подробную пародонтограмму и скрининг карманов (Мандат 8e)"
 					>
 						<Activity size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
@@ -408,17 +408,17 @@ export function VisitEmkOdontogramBar({
 						type="button"
 						onClick={() => setIsOdontogramCollapsed((v) => !v)}
 						data-testid="btn-toggle-odontogram-collapse"
-						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
 						title={isOdontogramCollapsed ? "Развернуть одонтограмму" : "Свернуть одонтограмму"}
 					>
 						{isOdontogramCollapsed ? (
 							<>
-								<span>Развернуть</span>
+								<span className="hidden sm:inline">Развернуть</span>
 								<ChevronDown size={13} />
 							</>
 						) : (
 							<>
-								<span>Свернуть</span>
+								<span className="hidden sm:inline">Свернуть</span>
 								<ChevronUp size={13} />
 							</>
 						)}

@@ -58,7 +58,7 @@ export function registerDiaryRevisionRoutes(app: FastifyInstance): void {
 					error: "PermissionDenied",
 					permission: "clinical.diary.read",
 					role: staffRole,
-					message: `Отказ в доступе к ревизиям дневника 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+					message: `Отказ в доступе к ревизиям дневника приёма: ${evalAccess.reason}`,
 				});
 			}
 		}
@@ -86,7 +86,7 @@ export function registerDiaryRevisionRoutes(app: FastifyInstance): void {
 			organizationId: orgId,
 			patientId: diary.patientId ?? "unknown",
 			action: "VIEW_DIARY_REVISIONS",
-			diagnosis: diary.diagnosisIcd10 ?? "Ревизии дневника 043/у",
+			diagnosis: diary.diagnosisIcd10 ?? "Ревизии дневника приёма",
 		});
 
 		/*

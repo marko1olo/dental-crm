@@ -1,0 +1,34 @@
+{
+  "subagent": "Marketing, ROMI & Promo Inquisitor",
+  "status": "COMPLETED_VICTORY",
+  "commitHash": "b71ac8acc",
+  "branch": "main",
+  "mandate8b_census": {
+    "totalMarketingFiles": 64,
+    "violationsOver120Lines": 0,
+    "maxFileLineCount": 119
+  },
+  "mandate8e_autonomy": {
+    "disabledButtonsCount": 0,
+    "allInteractiveCTAsActive": true
+  },
+  "mandate8am_design_code": {
+    "singlePrimaryCtaEnforced": true,
+    "primaryColor": "var(--primary)"
+  },
+  "visualProof_4state": {
+    "pc_light_1440x900": "docs/proofs/marketing/01_pc_light_01_promos.png",
+    "pc_dark_1440x900": "docs/proofs/marketing/02_pc_dark_01_promos.png",
+    "mobile_light_390x844": "docs/proofs/marketing/03_mobile_light_01_promos.png",
+    "mobile_dark_390x844": "docs/proofs/marketing/04_mobile_dark_01_promos.png",
+    "totalScreenshots": 12,
+    "inquisitionDefects": 0,
+    "auditedViaReadFile": true
+  },
+  "machineGates": {
+    "encodingGate": "PASSED (18654 files, UTF-8 no BOM)",
+    "marketingTests": "34 passing, 0 failing (9 suites, 4.5s)",
+    "preCommitGate": "PASSED (THE IRON GATE code 0)",
+    "pushGate": "PASSED (origin/main b71ac8acc)"
+  }
+}

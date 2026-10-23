@@ -195,7 +195,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Некорректные параметры фильтрации шаблонов 043/у",
+				message: "Некорректные параметры фильтрации клинических протоколов",
 				details: parsed.error.issues,
 			});
 		}

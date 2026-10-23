@@ -98,7 +98,7 @@ export const PatientAnamnesisTab: React.FC<PatientAnamnesisTabProps> = React.mem
 							className="px-3 py-2 text-xs font-medium rounded-xl bg-[var(--surface-muted,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--surface-hover,#f1f5f9)] border border-[var(--line,#e2e8f0)] transition-colors flex items-center gap-1.5 min-h-[44px]"
 						>
 							<FileText className="w-3.5 h-3.5 text-blue-500" />
-							<span>В дневник 043/у</span>
+							<span>В дневник приёма</span>
 						</button>
 						<button
 							type="button"

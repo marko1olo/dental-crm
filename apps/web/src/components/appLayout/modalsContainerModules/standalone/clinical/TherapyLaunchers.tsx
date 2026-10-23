@@ -10,6 +10,7 @@ import { PeriodontalPocketDepthModal } from "../../../../perio/PeriodontalPocket
 import { EmkPerioSection } from "../../../../visit/emk/EmkPerioSection";
 import { PatientAnamnesisTab } from "../../../../patient/PatientAnamnesisTab";
 import { PatientRecallsHubModal } from "../../../../recalls/PatientRecallsHubModal";
+import { renderEmkLauncher } from "./EmkStandaloneLauncher";
 
 function PerioWorkspace() {
 	const [diaryForm, setDiaryForm] = React.useState<Record<string, string>>({
@@ -39,6 +40,9 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
+
+	const emk = renderEmkLauncher();
+	if (emk) return emk;
 
 	if (s.includes("hygiene") || h.includes("hygiene")) {
 		return (

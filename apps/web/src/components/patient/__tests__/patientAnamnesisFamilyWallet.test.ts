@@ -118,7 +118,7 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 			}
 		});
 
-		it("generates clinical SOAP Form 043/u diary snippet without cartoon emojis", () => {
+		it("generates clinical SOAP diary snippet without cartoon emojis", () => {
 			const profile: PatientClinicalSafetyProfile = {
 				...DEFAULT_SOMATIC_HEALTHY_NORM,
 				hasPenicillinAllergy: true,
@@ -149,7 +149,16 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 
 		it("enforces zero disabled buttons in PatientAnamnesisTab source code", () => {
 			const tabFile = path.resolve(patientDir, "PatientAnamnesisTab.tsx");
-			const content = fs.readFileSync(tabFile, "utf-8");
+			const anamnesisDir = path.resolve(patientDir, "anamnesis");
+			let content = fs.readFileSync(tabFile, "utf-8");
+			if (fs.existsSync(anamnesisDir)) {
+				const decompFiles = fs
+					.readdirSync(anamnesisDir)
+					.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"));
+				for (const f of decompFiles) {
+					content += `\n${fs.readFileSync(path.join(anamnesisDir, f), "utf-8")}`;
+				}
+			}
 
 			assert.ok(
 				content.includes('data-testid="mark-somatic-norm-btn"'),

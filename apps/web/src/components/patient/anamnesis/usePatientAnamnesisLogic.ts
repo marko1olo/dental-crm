@@ -123,7 +123,7 @@ export function usePatientAnamnesisLogic({
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			void navigator.clipboard.writeText(diaryText);
 		}
-		showToast("Анамнез скопирован и синхронизирован с ЭМК 043/у", "info", 3000);
+		showToast("Анамнез скопирован и синхронизирован с дневником приёма", "info", 3000);
 	}, [diaryText, profile, onSyncToEmkDiary]);
 
 	return {

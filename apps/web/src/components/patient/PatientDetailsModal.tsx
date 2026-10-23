@@ -324,7 +324,7 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> =
 								type="button"
 								onClick={handlePrint}
 								className="min-h-[44px] sm:min-h-[32px] h-8 px-3 border border-[var(--glass-border)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-								title="Печать карты 043/у"
+								title="Печать медицинской карты"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
 								<span className="hidden sm:inline">Печать</span>

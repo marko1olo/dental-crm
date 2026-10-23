@@ -86,7 +86,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 			return reply.code(404).send({
 				error: "VisitNotFound",
 				message:
-					"Приём не найден в этой клинике, дневник 043/у открыть нельзя.",
+					"Приём не найден в этой клинике, дневник приёма открыть нельзя.",
 			});
 		}
 
@@ -130,7 +130,7 @@ export async function registerDiaryCrudRoutes(app: FastifyInstance): Promise<voi
 			action: "VIEW_DIARY_043U",
 			diagnosis: diary.diagnosisIcd10
 				? `${diary.diagnosisIcd10} (${diary.diagnosisTooth ? `зуб ${diary.diagnosisTooth}` : "без зуба"})`
-				: "Дневник 043/у",
+				: "Дневник приёма",
 		});
 		/*
 		 * DEFECT #36: ФИО врача для печати 043/у.

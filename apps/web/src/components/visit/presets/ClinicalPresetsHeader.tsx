@@ -75,7 +75,7 @@ export const ClinicalPresetsHeader: React.FC<ClinicalPresetsHeaderProps> = ({
 					title={isCollapsed ? "Развернуть клинические протоколы" : "Свернуть панель протоколов"}
 				>
 					{isCollapsed ? <ChevronDown size={13} className="shrink-0 text-[var(--teal)]" /> : <ChevronUp size={13} className="shrink-0 text-[var(--muted)]" />}
-					<span>{isCollapsed ? "Развернуть" : "Свернуть"}</span>
+					<span className="hidden sm:inline">{isCollapsed ? "Развернуть" : "Свернуть"}</span>
 				</button>
 			</div>
 		</div>
