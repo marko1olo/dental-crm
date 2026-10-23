@@ -11,17 +11,24 @@
 - **Человеческий клинический язык**: Запрет на советские номера приказов («804н», «043/у») и чужие бренды в UI.
 
 ## 3. 4-State Red Team Visual Proofs (Apple iOS HIG & Desktop)
-Скриншоты сняты в живом браузере Chromium через Playwright (`scripts/capture-insurance-4state-proofs.mjs`) и лично проверены аудитором:
+Скриншоты сняты в живом браузере Edge/Chromium через Playwright (`apps/web/scripts/captureInsuranceScreenshots.mjs`) и лично проверены аудитором по 8 осям дефектовки:
 
-1. **☀️ PC Light (1440x900)**: `01_insurance_dms_guarantee_letter_pc_light.png`
-   - Чистая типографика, формат даты рождения РФ «15.04.1990», аккуратный sentence-case бейдж «Активно», сводный баннер покрытия, быстрые чипы страховых (СОГАЗ, Ингосстрах, РЕСО, Альфа, ВСК, Согласие), 1 Primary CTA.
-2. **🌙 PC Dark (1440x900)**: `02_insurance_dms_guarantee_letter_pc_dark.png`
-   - Полная поддержка системных токенов темной темы без белых пятен, акцентные янтарные и циан индикаторы.
-3. **📱 Mobile Light (390x844)**: `03_insurance_dms_guarantee_letter_mobile_light.png`
-   - Нативный Apple iOS Bottom Sheet: Drag handle 36x5px, `rounded-t-[24px]`, безопасная зона `env(safe-area-inset-bottom)`, тач-таргеты $\ge 44$px, кнопки в Natural Thumb Zone.
-4. **📱 Mobile Dark (390x844)**: `04_insurance_dms_guarantee_letter_mobile_dark.png`
+1. **☀️ PC Light (1440x900)**: `pc-light-insurance-guarantee-letter.png`
+   - Чистая типографика, формат даты рождения РФ «12.04.1988», аккуратный sentence-case бейдж «Активно», сводный баннер покрытия (лимит 50 000 ₽, остаток 37 500 ₽, прогресс-бар 25%), быстрые чипы ведущих страховщиков РФ (СОГАЗ, Ингосстрах, РЕСО-Гарантия, АльфаСтрахование, ВСК, Согласие), ровно 1 Primary CTA «Сохранить гарантийное письмо» справа внизу (Мандат 8am).
+2. **🌙 PC Dark (1440x900)**: `pc-dark-insurance-guarantee-letter.png`
+   - Полная поддержка системных токенов темной темы без белых пятен, акцентные бирюзовые и янтарные индикаторы, гармоничный контраст фонов `--paper`, `--surface`, `--ink`.
+3. **📱 Mobile Light (390x844)**: `mobile-light-insurance-guarantee-letter.png`
+   - Нативный Apple iOS Bottom Sheet: Drag handle 36x5px, `rounded-t-[24px]`, безопасная зона `env(safe-area-inset-bottom)`, все тач-таргеты $\ge 44$px, ровно 1 Primary CTA в Natural Thumb Zone (Мандат 8am & Apple HIG).
+4. **📱 Mobile Dark (390x844)**: `mobile-dark-insurance-guarantee-letter.png`
    - Идеальная ночная эргономика на смартфоне, перенос бейджей без обрезания слов, четкий контраст, бейдж «Активно».
+5. **☀️ PC Light Registry (1440x900)**: `pc-light-dms-registry-export.png`
+   - 1-клик фильтры по страховым компаниям, инпут поиска с лупой и левым паддингом 38px, карточки сводки, зеленая плашка подтверждения копеечного баланса, ровно 1 Primary CTA «Печать двустороннего акта».
+6. **📱 Mobile Light Registry (390x844)**: `mobile-light-dms-registry-export.png`
+   - Полноэкранный мобильный вид с кнопками действий во всю ширину $\ge 48$px в нижней зоне экрана.
 
 ## 4. Тестовый гейт
 - **64 теста из 64 успешно пройдены** (`node --import tsx --test`).
 - **0 ошибок TypeScript** в `apps/web/src/components/insurance`.
+- **Выжигание фейковых ID**: Никаких клиентских случайных ID `ГП-ДМС-${Date.now()}`. Сохранение идет строго через Fastify API `/api/insurance/guarantee-letters` с возвратом реального ID из PostgreSQL.
+- **Интеграция справочника**: Роут `GET /api/insurance/insurers` возвращает активные договоры клиники и реестр страховщиков РФ.
+- **SSOT сплита**: Единое математическое ядро на целочисленных копейках (`amountKopecks`, `BIGINT`) с доказательством инварианта копейка-в-копейку.

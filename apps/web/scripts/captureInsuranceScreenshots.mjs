@@ -1,14 +1,14 @@
 /**
  * captureInsuranceScreenshots.mjs
- * 4-State Red Team Visual Proof for DmsGuaranteeLetterModal & DmsRegistryExportModal.
- * Mandate 8am & Apple HIG Touch Ergonomics.
+ * 4-State Red Team Visual Proof for DmsGuaranteeLetterModal in LIVE APPLICATION (http://127.0.0.1:5173/?dms=true).
+ * Zero standalone mockups / zero preview.html per supreme mandate.
  */
 
-import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
+const BASE_URL = 'http://127.0.0.1:5173/?dms=true';
 const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/96ef30db-4ea3-48b9-a458-0904c66a4516';
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/insurance';
 const PUBLIC_DIR = 'C:/Clinic_MVP/dental-crm/apps/web/public/screenshots/insurance';
@@ -32,48 +32,8 @@ if (!executablePath) {
   process.exit(1);
 }
 
-async function findLiveBaseUrl() {
-  for (const port of [5174, 5173, 5175]) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/insurance-preview.html`);
-      if (res.ok) {
-        console.log(`[VITE] Found live Vite server on port ${port}`);
-        return `http://127.0.0.1:${port}`;
-      }
-    } catch {}
-  }
-  return null;
-}
-
 async function main() {
-  console.log('[VITE] Detecting live Vite dev server...');
-  let baseUrl = await findLiveBaseUrl();
-  let viteProcess = null;
-
-  if (!baseUrl) {
-    console.log('[VITE] Spawning Vite dev server on port 5173...');
-    viteProcess = spawn('npx', ['vite', '--port', '5173', '--host', '127.0.0.1'], {
-      cwd: 'C:/Clinic_MVP/dental-crm/apps/web',
-      shell: true,
-      stdio: 'pipe',
-    });
-
-    for (let i = 0; i < 30; i++) {
-      await new Promise((r) => setTimeout(r, 500));
-      baseUrl = await findLiveBaseUrl();
-      if (baseUrl) break;
-    }
-
-    if (!baseUrl) {
-      console.error('[ERROR] Vite dev server failed to start.');
-      if (viteProcess) viteProcess.kill();
-      process.exit(1);
-    }
-  }
-
-  const PREVIEW_URL = `${baseUrl}/insurance-preview.html`;
-
-  console.log('[PLAYWRIGHT] Launching browser at:', executablePath);
+  console.log('[PLAYWRIGHT] Connecting to live application at:', BASE_URL);
   const browser = await chromium.launch({
     executablePath,
     headless: true,
@@ -86,7 +46,6 @@ async function main() {
       height: 900,
       isMobile: false,
       colorScheme: 'light',
-      url: PREVIEW_URL,
     },
     {
       name: 'pc-dark-insurance-guarantee-letter.png',
@@ -94,7 +53,6 @@ async function main() {
       height: 900,
       isMobile: false,
       colorScheme: 'dark',
-      url: PREVIEW_URL,
     },
     {
       name: 'mobile-light-insurance-guarantee-letter.png',
@@ -102,7 +60,6 @@ async function main() {
       height: 844,
       isMobile: true,
       colorScheme: 'light',
-      url: PREVIEW_URL,
     },
     {
       name: 'mobile-dark-insurance-guarantee-letter.png',
@@ -110,23 +67,6 @@ async function main() {
       height: 844,
       isMobile: true,
       colorScheme: 'dark',
-      url: PREVIEW_URL,
-    },
-    {
-      name: 'pc-light-dms-registry-export.png',
-      width: 1440,
-      height: 900,
-      isMobile: false,
-      colorScheme: 'light',
-      url: `${PREVIEW_URL}?mode=registry`,
-    },
-    {
-      name: 'mobile-light-dms-registry-export.png',
-      width: 390,
-      height: 844,
-      isMobile: true,
-      colorScheme: 'light',
-      url: `${PREVIEW_URL}?mode=registry`,
     },
   ];
 
@@ -141,7 +81,19 @@ async function main() {
     });
 
     const page = await context.newPage();
-    await page.goto(st.url, { waitUntil: 'networkidle' });
+
+    // Live auth hydration per Mandate 8wy
+    await page.addInitScript(() => {
+      window.localStorage.setItem('dente_clinic_token', 'demo-showcase-token-therapist');
+      window.localStorage.setItem('dente_staff_token', 'demo-showcase-staff-token-therapist');
+      window.localStorage.setItem('dente_demo_showcase_active', 'true');
+      window.localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ onboardingDismissed: true }));
+      window.localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ onboardingDismissed: true }));
+      window.localStorage.setItem('dente_onboarding_strip_dismissed', 'true');
+      window.localStorage.setItem('active_staff_user', JSON.stringify({ id: 'staff-1', name: 'Д-р Смирнов', role: 'therapist' }));
+    });
+
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
 
     await page.evaluate((theme) => {
       document.documentElement.setAttribute('data-theme', theme);
@@ -154,6 +106,7 @@ async function main() {
       }
     }, st.colorScheme);
 
+    await page.waitForSelector('.dms-modal-window', { timeout: 20000 });
     await page.waitForTimeout(600);
 
     const proofPath = path.join(PROOFS_DIR, st.name);
@@ -170,10 +123,7 @@ async function main() {
   }
 
   await browser.close();
-  if (viteProcess) {
-    viteProcess.kill();
-  }
-  console.log('[SUCCESS] All 4-state Red Team screenshots captured cleanly.');
+  console.log('[SUCCESS] All live 4-state Red Team screenshots captured cleanly from http://127.0.0.1:5173/?dms=true.');
 }
 
 main().catch((err) => {
