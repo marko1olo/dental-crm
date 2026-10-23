@@ -5,7 +5,7 @@ import {
 } from "./servicePricelistEngine";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
+	ServiceCategory,
 	ServicePricelistItem,
 } from "./servicePricelistPresets";
 
@@ -14,9 +14,11 @@ export function mapProposalsToDiffItems(
 	existingItems: readonly ServicePricelistItem[],
 ): IngestedMappingItem[] {
 	return proposals.map((p, idx): IngestedMappingItem => {
+		const targetCode = p.detectedCode || p.detectedCode804n;
+		const targetStatTitle = p.statutoryTitle || p.statutoryTitle804n || p.commercialTitle;
 		const existingMatch = existingItems.find(
 			(it) =>
-				it.code804n === p.detectedCode804n ||
+				(it.statutoryCode || it.code804n) === targetCode ||
 				it.commercialTitle.toLowerCase() === p.commercialTitle.toLowerCase(),
 		);
 		const numericConfidence =
@@ -37,8 +39,8 @@ export function mapProposalsToDiffItems(
 			sourceLineNumber: idx + 1,
 			rawLine: p.rawLine,
 			cleanedTitle: p.commercialTitle,
-			code804n: p.detectedCode804n || "A16.07.002",
-			statutoryTitle804n: p.statutoryTitle804n || p.commercialTitle,
+			code804n: targetCode || "A16.07.002",
+			statutoryTitle804n: targetStatTitle,
 			category: p.suggestedCategory,
 			specialty: p.suggestedSpecialty,
 			priceRub: p.priceRub,
@@ -80,10 +82,12 @@ export function mergeApprovedDiffItems(
 		}
 		result.unshift({
 			id: `srv-imp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			statutoryCode: m.code804n,
 			code804n: m.code804n,
 			commercialTitle: m.cleanedTitle,
+			statutoryTitle: m.statutoryTitle804n,
 			statutoryTitle804n: m.statutoryTitle804n,
-			category: (m.category as Order804nCategory) || "therapy",
+			category: (m.category as ServiceCategory) || "therapy",
 			specialty: (m.specialty as DoctorSpecialty) || "therapist",
 			basePriceRub: m.priceRub,
 			basePriceKopecks: m.priceKopecks || rublesToKopecks(m.priceRub),

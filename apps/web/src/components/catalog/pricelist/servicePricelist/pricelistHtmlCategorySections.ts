@@ -1,7 +1,7 @@
 import {
 	CATEGORY_LABELS,
-	type Order804nCategory,
 	type PriceTierKind,
+	type ServiceCategory,
 	type ServicePricelistItem,
 	SPECIALTY_LABELS,
 } from "../servicePricelistPresets";
@@ -18,13 +18,15 @@ function renderCategoryRows(
 				tier,
 				item.tierPrices?.[tier],
 			);
+			const code = item.statutoryCode || item.code804n;
+			const statutoryTitle = item.statutoryTitle || item.statutoryTitle804n;
 			return `
 				<tr>
 					<td class="col-num">${idx + 1}</td>
-					<td class="col-code"><code>${item.code804n}</code></td>
+					<td class="col-code"><code>${code}</code></td>
 					<td class="col-name">
 						<div class="commercial-title">${item.commercialTitle}</div>
-						<div class="statutory-title">${item.statutoryTitle804n}</div>
+						<div class="statutory-title">${statutoryTitle}</div>
 					</td>
 					<td class="col-spec">${SPECIALTY_LABELS[item.specialty] ?? item.specialty}</td>
 					<td class="col-price">${formatRubles(price)}</td>
@@ -40,7 +42,7 @@ export function generateCategorySectionsHtml(
 ): string {
 	const activeItems = items.filter((i) => !i.isArchived && i.isActive);
 	const groupedByCategory = new Map<
-		Order804nCategory,
+		ServiceCategory,
 		ServicePricelistItem[]
 	>();
 

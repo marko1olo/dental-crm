@@ -2,6 +2,7 @@ import type {
 	DoctorSpecialty,
 	Order804nCategory,
 	PriceTierKind,
+	ServiceCategory,
 	ServicePricelistItem,
 } from "../servicePricelistPresets";
 
@@ -34,7 +35,7 @@ export interface BatchMarkupOptions {
 	readonly percentChange?: number | undefined; // e.g. +5, +10, -5
 	readonly fixedRubChange?: number | undefined; // e.g. +200, -500
 	readonly roundMode?: PriceRoundingMode | undefined;
-	readonly categoryFilter?: Order804nCategory | "all" | undefined;
+	readonly categoryFilter?: ServiceCategory | "all" | undefined;
 	readonly specialtyFilter?: DoctorSpecialty | "all" | undefined;
 	readonly targetItemIds?: readonly string[] | undefined;
 	readonly applyToTiers?: readonly PriceTierKind[] | undefined;
@@ -42,7 +43,7 @@ export interface BatchMarkupOptions {
 
 export interface SearchPricelistQuery {
 	readonly searchTerm?: string | undefined;
-	readonly category?: Order804nCategory | "all" | undefined;
+	readonly category?: ServiceCategory | "all" | undefined;
 	readonly specialty?: DoctorSpecialty | "all" | undefined;
 	readonly includeArchived?: boolean | undefined;
 	readonly minPriceRub?: number | undefined;
@@ -56,6 +57,7 @@ export interface CsvExportOptions {
 
 export interface CsvRowError {
 	readonly rowIndex: number;
+	readonly statutoryCode?: string | undefined;
 	readonly code804n?: string | undefined;
 	readonly title?: string | undefined;
 	readonly error: string;
@@ -82,9 +84,11 @@ export interface ClinicPricelistPrintInfo {
 export interface ParsedPriceProposal {
 	readonly rawLine: string;
 	readonly commercialTitle: string;
+	readonly detectedCode: string;
 	readonly detectedCode804n: string;
+	readonly statutoryTitle?: string | undefined;
 	readonly statutoryTitle804n?: string | undefined;
-	readonly suggestedCategory: Order804nCategory;
+	readonly suggestedCategory: ServiceCategory;
 	readonly suggestedSpecialty: DoctorSpecialty;
 	readonly priceRub: number;
 	readonly confidence: "exact_code" | "keyword_match" | "fallback";
@@ -97,3 +101,4 @@ export type PricelistSortField =
 	| "margin"
 	| "duration";
 export type PricelistSortDirection = "asc" | "desc";
+export type { Order804nCategory };

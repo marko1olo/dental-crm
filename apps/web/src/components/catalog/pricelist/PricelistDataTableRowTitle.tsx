@@ -29,7 +29,9 @@ export const PricelistDataTableRowTitle: React.FC<
 				>
 					{item.commercialTitle}
 				</button>
-				<div className="service-statutory-name">{item.statutoryTitle804n}</div>
+				<div className="service-statutory-name">
+					{item.statutoryTitle || item.statutoryTitle804n}
+				</div>
 				{item.icd10Indications.length > 0 && (
 					<div className="service-meta-tags">
 						{item.icd10Indications.map((icd) => (

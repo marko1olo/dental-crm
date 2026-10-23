@@ -34,7 +34,7 @@ export const PricelistImportExportModal: React.FC<
 	const hasDiff = imp.ingestedMappingItems.length > 0;
 	const catalogRefs = items.map((it) => ({
 		id: it.id,
-		code: it.code804n,
+		code: it.statutoryCode || it.code804n,
 		title: it.commercialTitle,
 		basePriceRub: it.basePriceRub,
 	}));

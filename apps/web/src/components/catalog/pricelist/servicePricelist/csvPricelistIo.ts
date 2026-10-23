@@ -3,12 +3,13 @@ import {
 	type DoctorSpecialty,
 	type Order804nCategory,
 	type PriceTierKind,
+	type ServiceCategory,
 	type ServicePricelistItem,
 	SPECIALTY_LABELS,
 	STATUTORY_VAT_EXEMPTION_NOTE,
 } from "../servicePricelistPresets";
 import { calculateTierPrice, rublesToKopecks } from "./currencyMath";
-import { detectCategoryFrom804nCode } from "./serviceCodesAndSynonyms";
+import { detectCategoryFromServiceCode } from "./serviceCodesAndSynonyms";
 import type { CsvExportOptions, CsvImportResult, CsvRowError } from "./types";
 
 // =============================================================================
@@ -163,11 +164,11 @@ export function parseRawCsvText(
 	return rows;
 }
 
-function parseCategoryFromLabel(label: string): Order804nCategory {
+function parseCategoryFromLabel(label: string): ServiceCategory {
 	const norm = label.toLowerCase().trim();
 	for (const [cat, catLabel] of Object.entries(CATEGORY_LABELS)) {
 		if (norm.includes(cat) || norm.includes(catLabel.toLowerCase())) {
-			return cat as Order804nCategory;
+			return cat as ServiceCategory;
 		}
 	}
 	if (
@@ -332,6 +333,7 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		if (!commercialTitle) {
 			invalidRows.push({
 				rowIndex,
+				statutoryCode: rawCode,
 				code804n: rawCode,
 				error: "Отсутствует наименование услуги",
 			});
@@ -347,6 +349,7 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		if (Number.isNaN(basePriceRub) || basePriceRub < 0) {
 			invalidRows.push({
 				rowIndex,
+				statutoryCode: rawCode,
 				code804n: rawCode,
 				error: `Некорректная цена: "${rawPriceStr}"`,
 				title: commercialTitle,
@@ -357,7 +360,7 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		const catVal = colCat >= 0 ? row[colCat] : undefined;
 		const category = catVal
 			? parseCategoryFromLabel(catVal)
-			: detectCategoryFrom804nCode(rawCode);
+			: detectCategoryFromServiceCode(rawCode);
 		const specVal = colSpec >= 0 ? row[colSpec] : undefined;
 		const specialty = specVal ? parseSpecialtyFromLabel(specVal) : "general";
 
@@ -447,8 +450,10 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 
 		const item: ServicePricelistItem = {
 			id: `import-${Date.now()}-${rowIndex}`,
+			statutoryCode: code804n,
 			code804n,
 			commercialTitle,
+			statutoryTitle: statutoryTitle804n,
 			statutoryTitle804n,
 			category,
 			specialty,

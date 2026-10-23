@@ -4,7 +4,7 @@
  * Layer 0: Domain Types, Contracts & Nomenclature Links
  */
 
-export type Order804nCategory =
+export type ServiceCategory =
 	| "therapy"
 	| "surgery"
 	| "orthopedics"
@@ -17,6 +17,9 @@ export type Order804nCategory =
 	| "consultation"
 	| "package"
 	| "other";
+
+/** Backwards-compatible alias for Mandate 8x/8ap */
+export type Order804nCategory = ServiceCategory;
 
 export type DoctorSpecialty =
 	| "therapist"
@@ -38,10 +41,14 @@ export type PriceTierKind =
 
 export interface ServicePricelistItem {
 	readonly id: string;
+	readonly statutoryCode: string;
+	/** Backwards-compatible alias */
 	readonly code804n: string;
+	readonly statutoryTitle: string;
+	/** Backwards-compatible alias */
 	readonly statutoryTitle804n: string;
 	readonly commercialTitle: string;
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;
 	readonly basePriceRub: number;
 	readonly basePriceKopecks: number;
@@ -69,7 +76,7 @@ export type PricelistItemPreset = ServicePricelistItem;
  */
 export interface PricelistPresetGroup {
 	readonly id: string;
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;
 	readonly title: string;
 	readonly description?: string;
@@ -84,7 +91,7 @@ export interface PresetMatcherCriteria {
 	readonly icd10Code?: string;
 	readonly toothNumber?: number;
 	readonly canalCount?: number;
-	readonly category?: Order804nCategory;
+	readonly category?: ServiceCategory;
 	readonly specialty?: DoctorSpecialty;
 	readonly maxPriceRub?: number;
 }
@@ -109,8 +116,9 @@ export interface PresetMatchResult {
  * Statutory nomenclature cross-link
  */
 export interface StatutoryNomenclatureLink {
-	readonly code804n: string;
+	readonly statutoryCode: string;
+	readonly code804n?: string;
 	readonly statutoryTitle: string;
 	readonly commercialPresetId: string;
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 }

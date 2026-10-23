@@ -9,14 +9,14 @@ import {
 } from "./servicePricelistEngine";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
 	PriceTierKind,
+	ServiceCategory,
 	ServicePricelistItem,
 } from "./servicePricelistPresets";
 
 export function usePricelistFilterAndSlice(
 	items: readonly ServicePricelistItem[],
-	selectedCategory: Order804nCategory | "all",
+	selectedCategory: ServiceCategory | "all",
 	selectedSpecialty: DoctorSpecialty | "all",
 	searchTerm: string,
 	activeTier: PriceTierKind,

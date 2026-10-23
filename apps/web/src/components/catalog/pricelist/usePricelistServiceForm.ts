@@ -1,100 +1,58 @@
-import { useEffect, useState } from "react";
-import { getInitialFormValues } from "./pricelistFormStateHelpers";
+import type React from "react";
 import { buildServicePricelistItem } from "./pricelistServiceFormBuilder";
 import {
 	calculateAllTierStrings,
 	parseTierPricesRecord,
 } from "./pricelistTierPricesHelper";
-import { detectCategoryFrom804nCode } from "./servicePricelistEngine";
+import { detectCategoryFromServiceCode } from "./servicePricelistEngine";
 import {
-	type DoctorSpecialty,
-	type Order804nCategory,
+	CANONICAL_SERVICE_PRESETS,
 	type ServicePricelistItem,
-	STATUTORY_ORDER_804N_PRESETS,
 } from "./servicePricelistPresets";
+import { usePricelistServiceFormState } from "./usePricelistServiceFormState";
 
 export function usePricelistServiceForm(
 	editingItem: ServicePricelistItem | null,
 	_isOpen: boolean,
 	onSave: (item: ServicePricelistItem) => void,
 ) {
-	const init = getInitialFormValues(editingItem);
-	const [formCode804n, setFormCode804n] = useState(init.code);
-	const [formCommercialTitle, setFormCommercialTitle] = useState(
-		init.commercialTitle,
-	);
-	const [formStatutoryTitle, setFormStatutoryTitle] = useState(
-		init.statutoryTitle,
-	);
-	const [formCategory, setFormCategory] = useState<Order804nCategory>(
-		init.category,
-	);
-	const [formSpecialty, setFormSpecialty] = useState<DoctorSpecialty>(
-		init.specialty,
-	);
-	const [formPriceRub, setFormPriceRub] = useState(init.priceRub);
-	const [formMaterialCostRub, setFormMaterialCostRub] = useState(
-		init.materialCost,
-	);
-	const [formLabCostRub, setFormLabCostRub] = useState(init.labCost);
-	const [formDurationMin, setFormDurationMin] = useState(init.duration);
-	const [formIcd10, setFormIcd10] = useState(init.icd10);
-	const [formVipPrice, setFormVipPrice] = useState(init.vip);
-	const [formDmsPrice, setFormDmsPrice] = useState(init.dms);
-	const [formPromoPrice, setFormPromoPrice] = useState(init.promo);
-	const [formNightPrice, setFormNightPrice] = useState(init.night);
-	const [showTiersSection, setShowTiersSection] = useState(init.showTiers);
-
-	useEffect(() => {
-		const v = getInitialFormValues(editingItem);
-		setFormCode804n(v.code);
-		setFormCommercialTitle(v.commercialTitle);
-		setFormStatutoryTitle(v.statutoryTitle);
-		setFormCategory(v.category);
-		setFormSpecialty(v.specialty);
-		setFormPriceRub(v.priceRub);
-		setFormMaterialCostRub(v.materialCost);
-		setFormLabCostRub(v.labCost);
-		setFormDurationMin(v.duration);
-		setFormIcd10(v.icd10);
-		setFormVipPrice(v.vip);
-		setFormDmsPrice(v.dms);
-		setFormPromoPrice(v.promo);
-		setFormNightPrice(v.night);
-		setShowTiersSection(v.showTiers);
-	}, [editingItem]);
+	const s = usePricelistServiceFormState(editingItem);
 
 	const handleBasePriceChange = (newVal: string) => {
-		setFormPriceRub(newVal);
+		s.setFormPriceRub(newVal);
 		const parsed = parseFloat(newVal.replace(",", ".")) || 0;
 		if (parsed > 0) {
 			const t = calculateAllTierStrings(parsed);
-			setFormVipPrice(t.vip);
-			setFormDmsPrice(t.dms);
-			setFormPromoPrice(t.promo);
-			setFormNightPrice(t.night);
+			s.setFormVipPrice(t.vip);
+			s.setFormDmsPrice(t.dms);
+			s.setFormPromoPrice(t.promo);
+			s.setFormNightPrice(t.night);
 		}
 	};
 
 	const handleCodeChange = (newCode: string) => {
-		setFormCode804n(newCode);
+		s.setFormStatutoryCode(newCode);
 		const trimmed = newCode.trim().toUpperCase();
 		if (!trimmed) return;
-		const match = STATUTORY_ORDER_804N_PRESETS.find(
-			(p) => p.code804n.toUpperCase() === trimmed,
+		const match = CANONICAL_SERVICE_PRESETS.find(
+			(p) => (p.statutoryCode || p.code804n).toUpperCase() === trimmed,
 		);
 		if (match) {
-			if (!formStatutoryTitle || formStatutoryTitle === formCommercialTitle)
-				setFormStatutoryTitle(match.statutoryTitle804n);
-			setFormCategory(match.category);
-			setFormSpecialty(match.specialty);
-			if (match.icd10Indications.length > 0 && !formIcd10)
-				setFormIcd10(match.icd10Indications.join(", "));
+			const title = match.statutoryTitle || match.statutoryTitle804n;
+			if (!s.formStatutoryTitle || s.formStatutoryTitle === s.formCommercialTitle)
+				s.setFormStatutoryTitle(title);
+			s.setFormCategory(match.category);
+			s.setFormSpecialty(match.specialty);
+			if (match.icd10Indications.length > 0 && !s.formIcd10)
+				s.setFormIcd10(match.icd10Indications.join(", "));
 			if (match.estimatedDurationMin && !editingItem)
-				setFormDurationMin(match.estimatedDurationMin);
+				s.setFormDurationMin(match.estimatedDurationMin);
 		} else {
-			const detected = detectCategoryFrom804nCode(trimmed, formCommercialTitle);
-			if (detected !== "other") setFormCategory(detected);
+			const detected = detectCategoryFromServiceCode(
+				trimmed,
+				s.formCommercialTitle,
+			);
+			if (detected !== "other") s.setFormCategory(detected);
 		}
 	};
 
@@ -103,24 +61,24 @@ export function usePricelistServiceForm(
 		onSave(
 			buildServicePricelistItem({
 				id: editingItem ? editingItem.id : `srv-custom-${Date.now()}`,
-				code: formCode804n,
-				commercialTitle: formCommercialTitle,
-				statutoryTitle: formStatutoryTitle,
-				category: formCategory,
-				specialty: formSpecialty,
-				priceRub: parseFloat(formPriceRub.replace(",", ".")) || 0,
-				materialCostRub: parseFloat(formMaterialCostRub.replace(",", ".")) || 0,
-				labCostRub: parseFloat(formLabCostRub.replace(",", ".")) || 0,
-				durationMin: formDurationMin,
-				icd10List: formIcd10
+				code: s.formStatutoryCode,
+				commercialTitle: s.formCommercialTitle,
+				statutoryTitle: s.formStatutoryTitle,
+				category: s.formCategory,
+				specialty: s.formSpecialty,
+				priceRub: parseFloat(s.formPriceRub.replace(",", ".")) || 0,
+				materialCostRub: parseFloat(s.formMaterialCostRub.replace(",", ".")) || 0,
+				labCostRub: parseFloat(s.formLabCostRub.replace(",", ".")) || 0,
+				durationMin: s.formDurationMin,
+				icd10List: s.formIcd10
 					.split(",")
-					.map((s) => s.trim().toUpperCase())
+					.map((str) => str.trim().toUpperCase())
 					.filter(Boolean),
 				tierPrices: parseTierPricesRecord({
-					vip: formVipPrice,
-					dms: formDmsPrice,
-					promo: formPromoPrice,
-					night: formNightPrice,
+					vip: s.formVipPrice,
+					dms: s.formDmsPrice,
+					promo: s.formPromoPrice,
+					night: s.formNightPrice,
 				}),
 				fallbackItem: editingItem,
 			}),
@@ -128,37 +86,38 @@ export function usePricelistServiceForm(
 	};
 
 	return {
-		formCode804n,
-		formCommercialTitle,
-		setFormCommercialTitle,
-		formStatutoryTitle,
-		setFormStatutoryTitle,
-		formCategory,
-		setFormCategory,
-		formSpecialty,
-		setFormSpecialty,
-		formPriceRub,
+		formStatutoryCode: s.formStatutoryCode,
+		formCode804n: s.formStatutoryCode, // Backwards-compatible alias
+		formCommercialTitle: s.formCommercialTitle,
+		setFormCommercialTitle: s.setFormCommercialTitle,
+		formStatutoryTitle: s.formStatutoryTitle,
+		setFormStatutoryTitle: s.setFormStatutoryTitle,
+		formCategory: s.formCategory,
+		setFormCategory: s.setFormCategory,
+		formSpecialty: s.formSpecialty,
+		setFormSpecialty: s.setFormSpecialty,
+		formPriceRub: s.formPriceRub,
 		handleBasePriceChange,
-		formMaterialCostRub,
-		setFormMaterialCostRub,
-		formLabCostRub,
-		setFormLabCostRub,
-		formDurationMin,
-		setFormDurationMin,
-		formIcd10,
-		setFormIcd10,
-		formVipPrice,
-		setFormVipPrice,
-		formDmsPrice,
-		setFormDmsPrice,
-		formPromoPrice,
-		setFormPromoPrice,
-		formNightPrice,
-		setFormNightPrice,
-		showTiersSection,
-		setShowTiersSection,
+		formMaterialCostRub: s.formMaterialCostRub,
+		setFormMaterialCostRub: s.setFormMaterialCostRub,
+		formLabCostRub: s.formLabCostRub,
+		setFormLabCostRub: s.setFormLabCostRub,
+		formDurationMin: s.formDurationMin,
+		setFormDurationMin: s.setFormDurationMin,
+		formIcd10: s.formIcd10,
+		setFormIcd10: s.setFormIcd10,
+		formVipPrice: s.formVipPrice,
+		setFormVipPrice: s.setFormVipPrice,
+		formDmsPrice: s.formDmsPrice,
+		setFormDmsPrice: s.setFormDmsPrice,
+		formPromoPrice: s.formPromoPrice,
+		setFormPromoPrice: s.setFormPromoPrice,
+		formNightPrice: s.formNightPrice,
+		setFormNightPrice: s.setFormNightPrice,
+		showTiersSection: s.showTiersSection,
+		setShowTiersSection: s.setShowTiersSection,
 		handleCodeChange,
 		handleSubmit,
-		handleAutoRecalculateTiers: () => handleBasePriceChange(formPriceRub),
+		handleAutoRecalculateTiers: () => handleBasePriceChange(s.formPriceRub),
 	};
 }

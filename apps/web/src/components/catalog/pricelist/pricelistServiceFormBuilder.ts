@@ -1,8 +1,8 @@
 import { rublesToKopecks } from "./servicePricelistEngine";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
 	PriceTierKind,
+	ServiceCategory,
 	ServicePricelistItem,
 } from "./servicePricelistPresets";
 
@@ -11,7 +11,7 @@ export interface BuildServicePricelistItemParams {
 	readonly code: string;
 	readonly commercialTitle: string;
 	readonly statutoryTitle: string;
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;
 	readonly priceRub: number;
 	readonly materialCostRub: number;
@@ -25,13 +25,17 @@ export interface BuildServicePricelistItemParams {
 export function buildServicePricelistItem(
 	params: BuildServicePricelistItemParams,
 ): ServicePricelistItem {
+	const code = params.code.trim().toUpperCase() || "A16.07.002";
+	const statTitle =
+		params.statutoryTitle.trim() || params.commercialTitle.trim();
 	return {
 		id: params.id,
-		code804n: params.code.trim().toUpperCase() || "A16.07.002",
+		statutoryCode: code,
+		code804n: code,
 		commercialTitle:
 			params.commercialTitle.trim() || params.statutoryTitle.trim(),
-		statutoryTitle804n:
-			params.statutoryTitle.trim() || params.commercialTitle.trim(),
+		statutoryTitle: statTitle,
+		statutoryTitle804n: statTitle,
 		category: params.category,
 		specialty: params.specialty,
 		basePriceRub: params.priceRub,

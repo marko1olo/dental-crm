@@ -5,16 +5,20 @@ import {
 	calculateServiceProfitability,
 	calculateTierPrice,
 	detectCategoryFrom804nCode,
+	detectCategoryFromServiceCode,
 	exportPricelistToCsv,
 	getClinicalSynonyms,
 	importPricelistFromCsv,
 	isValidOrder804nCode,
+	isValidStatutoryCode,
 	searchPricelistItems,
 	sortPricelistItems,
 	UTF8_BOM,
 } from "../pricelist/servicePricelistEngine";
 import {
 	BASELINE_804N_PRICELIST_SERVICES,
+	BASELINE_PRICELIST_SERVICES,
+	CANONICAL_SERVICE_PRESETS,
 	type ServicePricelistItem,
 } from "../pricelist/servicePricelistPresets";
 
@@ -257,32 +261,41 @@ describe("Service Pricelist Engine & Statutory 804n Catalog Tests", () => {
 		});
 	});
 
-	describe("7. Order 804n Code Validation and Category Detection", () => {
-		it("validates Order 804n standard syntax", () => {
+	describe("7. Statutory Code Validation and Category Detection", () => {
+		it("validates statutory standard syntax", () => {
+			assert.ok(isValidStatutoryCode("A16.07.002"));
+			assert.ok(isValidStatutoryCode("A16.07.002.001"));
+			assert.ok(isValidStatutoryCode("B01.065.001"));
+			assert.ok(isValidStatutoryCode("A06.07.007"));
+			assert.equal(isValidStatutoryCode("INVALID_CODE"), false);
+			// Backwards compatibility check
 			assert.ok(isValidOrder804nCode("A16.07.002"));
-			assert.ok(isValidOrder804nCode("A16.07.002.001"));
-			assert.ok(isValidOrder804nCode("B01.065.001"));
-			assert.ok(isValidOrder804nCode("A06.07.007"));
-			assert.equal(isValidOrder804nCode("INVALID_CODE"), false);
 		});
 
-		it("detects category automatically from 804n code prefix", () => {
+		it("detects category automatically from service code prefix", () => {
+			assert.equal(detectCategoryFromServiceCode("A16.07.002"), "therapy");
+			assert.equal(detectCategoryFromServiceCode("A16.07.001"), "surgery");
+			assert.equal(detectCategoryFromServiceCode("A16.07.006"), "orthopedics");
+			assert.equal(detectCategoryFromServiceCode("A16.07.047"), "orthodontics");
+			assert.equal(detectCategoryFromServiceCode("A16.07.051"), "hygiene");
+			assert.equal(detectCategoryFromServiceCode("A06.07.007"), "radiology");
+			assert.equal(detectCategoryFromServiceCode("B01.065.001"), "consultation");
+			assert.equal(detectCategoryFromServiceCode("PKG-CHECKUP"), "package");
+			// Backwards compatibility check
 			assert.equal(detectCategoryFrom804nCode("A16.07.002"), "therapy");
-			assert.equal(detectCategoryFrom804nCode("A16.07.001"), "surgery");
-			assert.equal(detectCategoryFrom804nCode("A16.07.006"), "orthopedics");
-			assert.equal(detectCategoryFrom804nCode("A16.07.047"), "orthodontics");
-			assert.equal(detectCategoryFrom804nCode("A16.07.051"), "hygiene");
-			assert.equal(detectCategoryFrom804nCode("A06.07.007"), "radiology");
-			assert.equal(detectCategoryFrom804nCode("B01.065.001"), "consultation");
-			assert.equal(detectCategoryFrom804nCode("PKG-CHECKUP"), "package");
 		});
 	});
 
-	describe("8. Statutory Presets Sanity Check", () => {
-		it("baseline 804n pricelist has at least 25 canonical services", () => {
-			assert.ok(BASELINE_804N_PRICELIST_SERVICES.length >= 25);
-			for (const srv of BASELINE_804N_PRICELIST_SERVICES) {
-				assert.ok(srv.code804n, `Service ${srv.id} missing code804n`);
+	describe("8. Canonical Presets Sanity Check", () => {
+		it("canonical presets has at least 45 services", () => {
+			assert.ok(CANONICAL_SERVICE_PRESETS.length >= 45);
+		});
+
+		it("baseline pricelist has at least 25 canonical services", () => {
+			assert.ok(BASELINE_PRICELIST_SERVICES.length >= 25);
+			for (const srv of BASELINE_PRICELIST_SERVICES) {
+				const code = srv.statutoryCode || srv.code804n;
+				assert.ok(code, `Service ${srv.id} missing code`);
 				assert.ok(
 					srv.commercialTitle,
 					`Service ${srv.id} missing commercialTitle`,

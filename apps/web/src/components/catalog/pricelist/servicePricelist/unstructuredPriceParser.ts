@@ -1,11 +1,11 @@
 import {
+	CANONICAL_SERVICE_PRESETS,
 	type DoctorSpecialty,
-	type Order804nCategory,
+	type ServiceCategory,
 	type ServicePricelistItem,
-	STATUTORY_ORDER_804N_PRESETS,
 } from "../servicePricelistPresets";
 import { rublesToKopecks } from "./currencyMath";
-import { detectCategoryFrom804nCode } from "./serviceCodesAndSynonyms";
+import { detectCategoryFromServiceCode } from "./serviceCodesAndSynonyms";
 import type { ParsedPriceProposal } from "./types";
 
 // =============================================================================
@@ -110,15 +110,15 @@ export function parseUnstructuredPriceText(
 			.trim();
 		if (!title || title.length < 2) continue;
 
-		// 4. Clinical Heuristic Classification & 804n Mapping
+		// 4. Clinical Heuristic Classification & Nomenclature Mapping
 		let finalCode = detectedCode;
-		let category: Order804nCategory = "other";
+		let category: ServiceCategory = "other";
 		let specialty: DoctorSpecialty = "therapist";
 		let confidence: "exact_code" | "keyword_match" | "fallback" = "fallback";
 
 		if (detectedCode) {
 			finalCode = detectedCode;
-			category = detectCategoryFrom804nCode(detectedCode);
+			category = detectCategoryFromServiceCode(detectedCode);
 			confidence = "exact_code";
 			if (category === "surgery") specialty = "surgeon";
 			else if (category === "orthopedics") specialty = "orthopedist";
@@ -209,16 +209,20 @@ export function parseUnstructuredPriceText(
 		}
 
 		const matchedPreset = finalCode
-			? STATUTORY_ORDER_804N_PRESETS.find(
-					(p) => p.code804n.toUpperCase() === finalCode.toUpperCase(),
+			? CANONICAL_SERVICE_PRESETS.find(
+					(p) => (p.statutoryCode || p.code804n).toUpperCase() === finalCode.toUpperCase(),
 				)
 			: undefined;
+
+		const statutoryTitle = matchedPreset?.statutoryTitle || matchedPreset?.statutoryTitle804n;
 
 		results.push({
 			rawLine: line,
 			commercialTitle: title,
+			detectedCode: finalCode,
 			detectedCode804n: finalCode,
-			statutoryTitle804n: matchedPreset?.statutoryTitle804n,
+			statutoryTitle,
+			statutoryTitle804n: statutoryTitle,
 			suggestedCategory: category,
 			suggestedSpecialty: specialty,
 			priceRub,
@@ -239,11 +243,15 @@ export function proposalToPricelistItem(
 		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 			? crypto.randomUUID().slice(0, 8)
 			: Date.now().toString(36);
+	const code = proposal.detectedCode || proposal.detectedCode804n;
+	const statTitle = proposal.statutoryTitle || proposal.statutoryTitle804n || proposal.commercialTitle;
 	return {
 		id: `srv-imp-${Date.now()}-${idSuffix}`,
-		code804n: proposal.detectedCode804n,
+		statutoryCode: code,
+		code804n: code,
 		commercialTitle: proposal.commercialTitle,
-		statutoryTitle804n: proposal.statutoryTitle804n || proposal.commercialTitle,
+		statutoryTitle: statTitle,
+		statutoryTitle804n: statTitle,
 		category: proposal.suggestedCategory,
 		specialty: proposal.suggestedSpecialty,
 		basePriceRub: proposal.priceRub,

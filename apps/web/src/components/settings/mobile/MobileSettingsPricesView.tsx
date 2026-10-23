@@ -29,7 +29,7 @@ import { money } from "../../../AppHelpers";
 import { MobilePriceDrawer } from "./MobilePriceDrawer";
 import { CATEGORY_TABS } from "../pricelistEditorHelpers";
 import { showToast } from "../../GlobalToast";
-import { BASELINE_804N_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
+import { BASELINE_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
 import { ServicePricelistManagerModal } from "../../catalog/pricelist/ServicePricelistManagerModal";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
 
@@ -146,14 +146,14 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 		setIsSeeding(true);
 		try {
 			await syncPricelistItemsToCatalog({
-				items: BASELINE_804N_PRICELIST_SERVICES,
+				items: BASELINE_PRICELIST_SERVICES,
 				existingServices: rawCatalog,
 				createServiceCatalogItem,
 				updateServiceCatalogItem,
 			});
 			if (typeof refreshDashboard === "function") await refreshDashboard();
 			else if (typeof loadClinicSettings === "function") await loadClinicSettings();
-			showToast(`Каталог наполнен: добавлено ${BASELINE_804N_PRICELIST_SERVICES.length} типовых услуг`, "success");
+			showToast(`Каталог наполнен: добавлено ${BASELINE_PRICELIST_SERVICES.length} типовых услуг`, "success");
 		} catch (err: any) {
 			showToast(err?.message || "Ошибка наполнения каталога", "error");
 		} finally {
@@ -167,39 +167,51 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 			data-testid="mobile-settings-prices-view"
 		>
 			{/* Top Navigation Bar (Apple HIG Navigation Bar Style) */}
-			<div className="sticky top-0 z-30 bg-[var(--paper)]/95 backdrop-blur-md border-b border-[var(--line)] px-4 py-2.5 flex items-center justify-between">
+			<div className="sticky top-0 z-30 bg-[var(--paper)]/95 backdrop-blur-md border-b border-[var(--line)] px-3 py-2 flex items-center justify-between">
 				<button
 					type="button"
 					onClick={onBackToSettings}
-					className="min-w-[44px] min-h-[44px] -ml-2 px-2 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] hover:opacity-80 active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
+					className="min-w-[44px] min-h-[44px] -ml-1 px-1 flex items-center gap-0.5 text-[15px] font-medium text-[var(--teal)] hover:opacity-80 active:scale-95 transition-transform cursor-pointer bg-transparent border-0 shrink-0"
 					aria-label="Назад в настройки"
 					data-testid="btn-mobile-back-to-settings"
 				>
 					<ChevronLeft size={20} className="shrink-0" />
-					<span>Настройки</span>
+					<span className="text-[14px]">Назад</span>
 				</button>
 
-				<div className="text-center min-w-0 px-2 flex flex-col items-center">
-					<h2 className="text-[17px] font-semibold text-[var(--ink)] tracking-tight truncate leading-tight">
+				<div className="text-center min-w-0 px-1 flex-1 flex flex-col items-center">
+					<h2 className="text-[16px] font-semibold text-[var(--ink)] tracking-tight whitespace-nowrap leading-tight">
 						Прейскурант
 					</h2>
-					<span className="text-[11px] font-medium text-[var(--muted)]">
+					<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap">
 						{rawCatalog.length} услуг в каталоге
 					</span>
 				</div>
 
-				<button
-					type="button"
-					onClick={() => {
-						setEditingService(null);
-						setIsDrawerOpen(true);
-					}}
-					className="min-w-[44px] min-h-[44px] -mr-2 w-11 h-11 rounded-full flex items-center justify-center text-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
-					aria-label="Добавить услугу"
-					data-testid="btn-mobile-add-price-top"
-				>
-					<Plus size={22} />
-				</button>
+				<div className="flex items-center gap-0.5 -mr-1 shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsServicePricelistModalOpen(true)}
+						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full flex items-center justify-center text-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
+						aria-label="Печать и прейскурант"
+						title="Печать и прейскурант"
+						data-testid="btn-mobile-open-pricelist-manager"
+					>
+						<Printer size={19} />
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							setEditingService(null);
+							setIsDrawerOpen(true);
+						}}
+						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full flex items-center justify-center text-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-95 transition-transform cursor-pointer bg-transparent border-0"
+						aria-label="Добавить услугу"
+						data-testid="btn-mobile-add-price-top"
+					>
+						<Plus size={22} />
+					</button>
+				</div>
 			</div>
 
 			{/* Search Row — Canonical Dente Search Wrap */}
@@ -427,6 +439,15 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 				onDelete={handleDeleteService}
 				serviceCategoryLabels={serviceCategoryLabels}
 				specialtyLabels={specialtyLabels}
+			/>
+
+			{/* Service Pricelist Manager Modal (Full Catalog / A4 Print) */}
+			<ServicePricelistManagerModal
+				isOpen={isServicePricelistModalOpen}
+				onClose={() => setIsServicePricelistModalOpen(false)}
+				clinicName={dashboard?.clinic?.name}
+				clinicAddress={dashboard?.clinic?.address}
+				clinicPhone={dashboard?.clinic?.phone}
 			/>
 		</div>
 	);

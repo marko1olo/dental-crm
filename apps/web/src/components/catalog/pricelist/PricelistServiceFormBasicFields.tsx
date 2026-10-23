@@ -2,19 +2,19 @@ import type React from "react";
 import { PricelistServiceFormCategoryFields } from "./PricelistServiceFormCategoryFields";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
+	ServiceCategory,
 } from "./servicePricelistPresets";
 
 export interface PricelistServiceFormBasicFieldsProps {
 	readonly code: string;
 	readonly commercialTitle: string;
 	readonly statutoryTitle: string;
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;
 	readonly onCodeChange: (code: string) => void;
 	readonly onCommercialTitleChange: (title: string) => void;
 	readonly onStatutoryTitleChange: (title: string) => void;
-	readonly onCategoryChange: (cat: Order804nCategory) => void;
+	readonly onCategoryChange: (cat: ServiceCategory) => void;
 	readonly onSpecialtyChange: (spec: DoctorSpecialty) => void;
 }
 

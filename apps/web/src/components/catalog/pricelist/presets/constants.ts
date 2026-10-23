@@ -9,11 +9,11 @@
 
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
 	PriceTierKind,
+	ServiceCategory,
 } from "./types";
 
-export const CATEGORY_LABELS: Record<Order804nCategory, string> = {
+export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
 	consultation: "Консультации и осмотры",
 	therapy: "Терапия и эндодонтия",
 	surgery: "Хирургия и имплантация",

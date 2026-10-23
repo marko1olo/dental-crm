@@ -38,8 +38,12 @@ export const PricelistImportModalFooter: React.FC<
 						padding: "0 1.25rem",
 						fontWeight: 600,
 					}}
-					onClick={onIngest}
-					disabled={!smartTextInput.trim() || isIngestingApi}
+					onClick={() => {
+						if (!isIngestingApi && smartTextInput.trim()) {
+							onIngest();
+						}
+					}}
+					aria-busy={isIngestingApi}
 				>
 					{isIngestingApi ? "Анализ..." : "Распознать цены и услуги"}
 				</button>

@@ -1,34 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import {
-	batchPriceMarkup,
-	commitInlinePrice,
-	setZeroWarrantyPrice,
-} from "./pricelistManagerPriceActions";
-import {
-	formatRubles,
-	type PricelistSortDirection,
-	type PricelistSortField,
-	type PriceRoundingMode,
+import type {
+	PricelistSortDirection,
+	PricelistSortField,
 } from "./servicePricelistEngine";
 import {
+	CANONICAL_SERVICE_PRESETS,
 	type DoctorSpecialty,
-	type Order804nCategory,
-	PRICE_TIER_LABELS,
 	type PriceTierKind,
+	type ServiceCategory,
 	type ServicePricelistItem,
-	STATUTORY_ORDER_804N_PRESETS,
 } from "./servicePricelistPresets";
 import { usePricelistFilterAndSlice } from "./usePricelistFilterAndSlice";
+import { usePricelistPriceInteractions } from "./usePricelistPriceInteractions";
 
 export function useServicePricelistManager(
-	initialItems: readonly ServicePricelistItem[] = STATUTORY_ORDER_804N_PRESETS,
+	initialItems: readonly ServicePricelistItem[] = CANONICAL_SERVICE_PRESETS,
 	onSaveCatalog?: (items: readonly ServicePricelistItem[]) => void,
 	isOpen = false,
 ) {
 	const [items, setItems] =
 		useState<readonly ServicePricelistItem[]>(initialItems);
 	const [selectedCategory, setSelectedCategory] = useState<
-		Order804nCategory | "all"
+		ServiceCategory | "all"
 	>("all");
 	const [selectedSpecialty, setSelectedSpecialty] = useState<
 		DoctorSpecialty | "all"
@@ -47,10 +40,6 @@ export function useServicePricelistManager(
 	const [sortField, setSortField] = useState<PricelistSortField>("code");
 	const [sortDirection, setSortDirection] =
 		useState<PricelistSortDirection>("asc");
-	const [editingPriceCellId, setEditingPriceCellId] = useState<string | null>(
-		null,
-	);
-	const [editingPriceBuffer, setEditingPriceBuffer] = useState<string>("");
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -80,38 +69,16 @@ export function useServicePricelistManager(
 		sortDirection,
 	);
 
-	const handleCommitInlinePrice = (itemId: string, raw: string) => {
-		const res = commitInlinePrice(items, itemId, raw, activeTier);
-		if (res) {
-			updateAndPersist(res.updatedItems);
-			showToast(`Цена обновлена: ${formatRubles(res.parsed)}`);
-		}
-		setEditingPriceCellId(null);
-	};
-
-	const handleSetZeroWarrantyPrice = (itemId: string) => {
-		updateAndPersist(setZeroWarrantyPrice(items, itemId));
-		showToast("Установлена гарантийная цена (0 ₽)");
-	};
-
-	const handleApplyBatchMarkup = (
-		percent: number,
-		rounding: PriceRoundingMode,
-	) => {
-		const updated = batchPriceMarkup(
-			items,
-			percent,
-			rounding,
-			selectedItemIds,
-			selectedCategory,
-			selectedSpecialty,
-			activeTier,
-		);
-		setItems(updated);
-		showToast(
-			`Применена наценка ${percent > 0 ? `+${percent}%` : `${percent}%`} (${PRICE_TIER_LABELS[activeTier]})`,
-		);
-	};
+	const priceActions = usePricelistPriceInteractions(
+		items,
+		activeTier,
+		selectedItemIds,
+		selectedCategory,
+		selectedSpecialty,
+		updateAndPersist,
+		setItems,
+		showToast,
+	);
 
 	const handleToggleSort = (f: PricelistSortField) => {
 		if (sortField === f)
@@ -144,17 +111,11 @@ export function useServicePricelistManager(
 		isBatchBarOpen,
 		setIsBatchBarOpen,
 		sortField,
-		editingPriceCellId,
-		setEditingPriceCellId,
-		editingPriceBuffer,
-		setEditingPriceBuffer,
 		toastMessage,
 		showToast,
 		updateAndPersist,
 		filterSlice,
-		handleCommitInlinePrice,
-		handleSetZeroWarrantyPrice,
-		handleApplyBatchMarkup,
 		handleToggleSort,
+		...priceActions,
 	};
 }

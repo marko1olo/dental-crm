@@ -1,4 +1,7 @@
-import type { Order804nCategory } from "../servicePricelistPresets";
+import type {
+	Order804nCategory,
+	ServiceCategory,
+} from "../servicePricelistPresets";
 
 // =============================================================================
 // LAYER 1: STATUTORY ORDER 804N CODES & CLINICAL SYNONYM DICTIONARY
@@ -319,21 +322,24 @@ export function getClinicalSynonyms(token: string): readonly string[] {
 	return synonyms.length > 0 ? Array.from(new Set(synonyms)) : [];
 }
 
-const ORDER_804N_REGEX = /^[AB]\d{2}\.\d{2,3}\.\d{2,3}(?:\.\d{2,3})?$/i;
+const STATUTORY_CODE_REGEX = /^[AB]\d{2}\.\d{2,3}\.\d{2,3}(?:\.\d{2,3})?$/i;
 
 /**
- * Validates whether a code conforms to Minzdrav Order 804n statutory syntax (e.g. A16.07.002.001 or B01.065.001).
+ * Validates whether a code conforms to statutory syntax (e.g. A16.07.002.001 or B01.065.001).
  */
-export function isValidOrder804nCode(code: string): boolean {
+export function isValidStatutoryCode(code: string): boolean {
 	if (!code || typeof code !== "string") return false;
-	return ORDER_804N_REGEX.test(code.trim());
+	return STATUTORY_CODE_REGEX.test(code.trim());
 }
 
+/** Backwards-compatible alias */
+export const isValidOrder804nCode = isValidStatutoryCode;
+
 /**
- * Checks whether a service code is valid for catalog use (either standard 804n code OR custom clinic package identifier).
+ * Checks whether a service code is valid for catalog use (either standard code OR custom clinic package identifier).
  *
  * Mandate 8e (Freedom of Clinic): Clinics are never blocked from creating intra-clinic packages or services
- * ("Подарочный сертификат", "Индивидуальная капа", "Снятие швов сторонней клиники") due to non-conformance with 804n regex.
+ * ("Подарочный сертификат", "Индивидуальная капа", "Снятие швов сторонней клиники") due to non-conformance with statutory regex.
  */
 export function isValidCatalogServiceCode(code: string): boolean {
 	if (!code || typeof code !== "string") return false;
@@ -341,19 +347,19 @@ export function isValidCatalogServiceCode(code: string): boolean {
 }
 
 /**
- * Checks if a code represents an intra-clinic custom service/package rather than standard statutory 804n.
+ * Checks if a code represents an intra-clinic custom service/package rather than standard statutory code.
  */
 export function isClinicPackageOrCustomService(code: string): boolean {
-	return !isValidOrder804nCode(code);
+	return !isValidStatutoryCode(code);
 }
 
 /**
- * Automatically detects the clinical dental category based on Order 804n code prefix or service title.
+ * Automatically detects the clinical dental category based on statutory code prefix or service title.
  */
-export function detectCategoryFrom804nCode(
+export function detectCategoryFromServiceCode(
 	code: string,
 	title?: string,
-): Order804nCategory {
+): ServiceCategory {
 	const trimmed = code.trim().toUpperCase();
 	const titleLower = title?.toLowerCase() ?? "";
 
@@ -432,3 +438,6 @@ export function detectCategoryFrom804nCode(
 	}
 	return "other";
 }
+
+/** Backwards-compatible alias */
+export const detectCategoryFrom804nCode = detectCategoryFromServiceCode;

@@ -33,14 +33,16 @@ const itemSearchIndexCache = new WeakMap<
 function getItemSearchIndex(item: ServicePricelistItem): ItemSearchIndex {
 	let cached = itemSearchIndexCache.get(item);
 	if (!cached) {
-		const cleanCode = item.code804n.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+		const rawCode = item.statutoryCode || item.code804n;
+		const statTitle = item.statutoryTitle || item.statutoryTitle804n;
+		const cleanCode = rawCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 		const catLabel = CATEGORY_LABELS[item.category] ?? "";
 		const specLabel = SPECIALTY_LABELS[item.specialty] ?? "";
 		const tagsStr = item.tags.length > 0 ? item.tags.join(" ") : "";
 		const icdStr =
 			item.icd10Indications.length > 0 ? item.icd10Indications.join(" ") : "";
 		const searchableText = normalizeSearchText(
-			`${item.code804n} ${item.commercialTitle} ${item.statutoryTitle804n} ${tagsStr} ${icdStr} ${catLabel} ${specLabel}`,
+			`${rawCode} ${item.commercialTitle} ${statTitle} ${tagsStr} ${icdStr} ${catLabel} ${specLabel}`,
 		);
 		cached = { searchableText, cleanCode };
 		itemSearchIndexCache.set(item, cached);
@@ -181,8 +183,11 @@ export function sortPricelistItems(
 	const factor = direction === "asc" ? 1 : -1;
 	return [...items].sort((a, b) => {
 		switch (field) {
-			case "code":
-				return factor * a.code804n.localeCompare(b.code804n, "ru");
+			case "code": {
+				const codeA = a.statutoryCode || a.code804n;
+				const codeB = b.statutoryCode || b.code804n;
+				return factor * codeA.localeCompare(codeB, "ru");
+			}
 			case "title":
 				return (
 					factor * a.commercialTitle.localeCompare(b.commercialTitle, "ru")

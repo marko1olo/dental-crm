@@ -1,12 +1,12 @@
 import type React from "react";
 import {
 	CATEGORY_LABELS,
-	type Order804nCategory,
+	type ServiceCategory,
 } from "./servicePricelistPresets";
 
 export interface PricelistCategorySidebarProps {
-	readonly selectedCategory: Order804nCategory | "all";
-	readonly onSelectCategory: (category: Order804nCategory | "all") => void;
+	readonly selectedCategory: ServiceCategory | "all";
+	readonly onSelectCategory: (category: ServiceCategory | "all") => void;
 	readonly categoryCounts: Record<string, number>;
 }
 
@@ -27,7 +27,7 @@ export const PricelistCategorySidebar: React.FC<
 				<span className="category-nav-count">{categoryCounts.all || 0}</span>
 			</button>
 
-			{(Object.keys(CATEGORY_LABELS) as Order804nCategory[]).map((catKey) => {
+			{(Object.keys(CATEGORY_LABELS) as ServiceCategory[]).map((catKey) => {
 				const count = categoryCounts[catKey] || 0;
 				if (count === 0 && selectedCategory !== catKey) return null;
 				return (

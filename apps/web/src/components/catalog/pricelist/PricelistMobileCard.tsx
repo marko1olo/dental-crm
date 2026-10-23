@@ -52,7 +52,9 @@ export const PricelistMobileCard: React.FC<PricelistMobileCardProps> = ({
 						onChange={(e) => onToggleSelectItem(item.id, e.target.checked)}
 						aria-label={`Выбрать ${item.commercialTitle}`}
 					/>
-					<code className="pricelist-mobile-card-code">{item.code804n}</code>
+					<code className="pricelist-mobile-card-code">
+						{item.statutoryCode || item.code804n}
+					</code>
 				</label>
 				<span className="pricelist-mobile-card-cat">
 					{CATEGORY_LABELS[item.category] || item.category}
@@ -76,10 +78,11 @@ export const PricelistMobileCard: React.FC<PricelistMobileCardProps> = ({
 				<div className="pricelist-mobile-card-title">
 					{item.commercialTitle}
 				</div>
-				{item.statutoryTitle804n &&
-					item.statutoryTitle804n !== item.commercialTitle && (
+				{(item.statutoryTitle || item.statutoryTitle804n) &&
+					(item.statutoryTitle || item.statutoryTitle804n) !==
+						item.commercialTitle && (
 						<div className="pricelist-mobile-card-statutory">
-							{item.statutoryTitle804n}
+							{item.statutoryTitle || item.statutoryTitle804n}
 						</div>
 					)}
 			</button>

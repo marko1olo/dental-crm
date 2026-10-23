@@ -9,6 +9,8 @@
 
 export {
 	BASELINE_804N_PRICELIST_SERVICES,
+	BASELINE_PRICELIST_SERVICES,
+	CANONICAL_SERVICE_PRESETS,
 	STATUTORY_ORDER_804N_PRESETS,
 } from "./presets";
 export * from "./presets/constants";

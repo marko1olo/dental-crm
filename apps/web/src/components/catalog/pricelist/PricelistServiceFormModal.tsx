@@ -60,7 +60,7 @@ export const PricelistServiceFormModal: React.FC<
 						}}
 					>
 						<PricelistServiceFormBasicFields
-							code={form.formCode804n}
+							code={form.formStatutoryCode}
 							commercialTitle={form.formCommercialTitle}
 							statutoryTitle={form.formStatutoryTitle}
 							category={form.formCategory}

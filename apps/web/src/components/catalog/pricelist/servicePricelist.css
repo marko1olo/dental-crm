@@ -507,13 +507,13 @@
 }
 
 .pricelist-btn-primary {
-	background: var(--brand-500, #3b82f6);
+	background: var(--brand-500, #10b981);
 	color: #ffffff;
-	border-color: var(--brand-500, #3b82f6);
+	border-color: var(--brand-500, #10b981);
 }
 
 .pricelist-btn-primary:hover {
-	background: #2563eb;
+	background: #059669;
 }
 
 .pricelist-btn-ok {

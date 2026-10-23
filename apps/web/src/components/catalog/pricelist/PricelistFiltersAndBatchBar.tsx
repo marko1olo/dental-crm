@@ -7,15 +7,15 @@ import { PricelistToolbarTierControl } from "./PricelistToolbarTierControl";
 import type { PriceRoundingMode } from "./servicePricelistEngine";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
 	PriceTierKind,
+	ServiceCategory,
 } from "./servicePricelistPresets";
 
 export interface PricelistFiltersAndBatchBarProps {
 	readonly searchTerm: string;
 	readonly onSearchChange: (value: string) => void;
-	readonly selectedCategory: Order804nCategory | "all";
-	readonly onCategoryChange: (category: Order804nCategory | "all") => void;
+	readonly selectedCategory: ServiceCategory | "all";
+	readonly onCategoryChange: (category: ServiceCategory | "all") => void;
 	readonly selectedSpecialty: DoctorSpecialty | "all";
 	readonly onSpecialtyChange: (specialty: DoctorSpecialty | "all") => void;
 	readonly activeTier: PriceTierKind;

@@ -6,6 +6,8 @@ import { describe, it as test } from "vitest";
 import {
 	ANESTHESIA_STATUTORY_PRESETS,
 	BASELINE_804N_PRICELIST_SERVICES,
+	BASELINE_PRICELIST_SERVICES,
+	CANONICAL_SERVICE_PRESETS,
 	CATEGORY_LABELS,
 	CONSULTATION_BASELINE_SERVICES,
 	findPresetsByComplaint,
@@ -72,6 +74,8 @@ describe("Service Pricelist Presets Decomposed Suite (DAG Invariants & Red Team 
 
 	test("Preserves 100% of Statutory Order 804n Presets (exactly 50 items)", () => {
 		assert.strictEqual(STATUTORY_ORDER_804N_PRESETS.length, 50);
+		assert.strictEqual(CANONICAL_SERVICE_PRESETS.length, 50);
+		assert.strictEqual(CANONICAL_SERVICE_PRESETS, STATUTORY_ORDER_804N_PRESETS);
 
 		// Verify specialty sub-arrays composition
 		const totalSubArrays =
@@ -115,6 +119,8 @@ describe("Service Pricelist Presets Decomposed Suite (DAG Invariants & Red Team 
 
 	test("Preserves 100% of Baseline 804n Catalog Presets (exactly 30 items srv-base-01 to srv-base-30)", () => {
 		assert.strictEqual(BASELINE_804N_PRICELIST_SERVICES.length, 30);
+		assert.strictEqual(BASELINE_PRICELIST_SERVICES.length, 30);
+		assert.strictEqual(BASELINE_PRICELIST_SERVICES, BASELINE_804N_PRICELIST_SERVICES);
 
 		BASELINE_804N_PRICELIST_SERVICES.forEach((item, index) => {
 			const expectedIndexStr = String(index + 1).padStart(2, "0");

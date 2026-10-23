@@ -1,4 +1,5 @@
 import type React from "react";
+import { PricelistServiceFormMarginSummary } from "./PricelistServiceFormMarginSummary";
 import {
 	DURATION_OPTIONS,
 	type PricelistServiceFormPriceFieldsProps,
@@ -106,22 +107,11 @@ export const PricelistServiceFormPriceFields: React.FC<
 				</div>
 			</div>
 
-			<div
-				style={{
-					fontSize: "0.75rem",
-					color: "var(--muted)",
-					display: "flex",
-					gap: "1rem",
-					marginTop: "-0.25rem",
-				}}
-			>
-				<span>
-					Чистая маржа: <b>{net > 0 ? `${net} ₽` : "0 ₽"}</b> ({marginPct}%)
-				</span>
-				<span>
-					Себестоимость: <b>{matVal + labVal} ₽</b>
-				</span>
-			</div>
+			<PricelistServiceFormMarginSummary
+				net={net}
+				marginPct={marginPct}
+				costTotal={matVal + labVal}
+			/>
 		</>
 	);
 };

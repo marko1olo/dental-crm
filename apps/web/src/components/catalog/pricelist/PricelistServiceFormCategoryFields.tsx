@@ -2,14 +2,14 @@ import type React from "react";
 import {
 	CATEGORY_LABELS,
 	type DoctorSpecialty,
-	type Order804nCategory,
+	type ServiceCategory,
 	SPECIALTY_LABELS,
 } from "./servicePricelistPresets";
 
 export interface PricelistServiceFormCategoryFieldsProps {
-	readonly category: Order804nCategory;
+	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;
-	readonly onCategoryChange: (cat: Order804nCategory) => void;
+	readonly onCategoryChange: (cat: ServiceCategory) => void;
 	readonly onSpecialtyChange: (spec: DoctorSpecialty) => void;
 }
 
@@ -35,7 +35,7 @@ export const PricelistServiceFormCategoryFields: React.FC<
 					style={{ height: "36px" }}
 					value={category}
 					onChange={(e) =>
-						onCategoryChange(e.target.value as Order804nCategory)
+						onCategoryChange(e.target.value as ServiceCategory)
 					}
 				>
 					{Object.entries(CATEGORY_LABELS).map(([k, label]) => (

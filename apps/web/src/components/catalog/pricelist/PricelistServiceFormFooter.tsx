@@ -35,7 +35,7 @@ export const PricelistServiceFormFooter: React.FC<
 					fontWeight: 600,
 				}}
 			>
-				{isEditing ? "Сохранить изменения" : "Добавить в прейскурант"}
+				{isEditing ? "✓ Сохранить изменения" : "✓ Добавить услугу"}
 			</button>
 		</footer>
 	);

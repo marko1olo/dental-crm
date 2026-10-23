@@ -1,7 +1,7 @@
 import { calculateAllTierStrings } from "./pricelistTierPricesHelper";
 import type {
 	DoctorSpecialty,
-	Order804nCategory,
+	ServiceCategory,
 	ServicePricelistItem,
 } from "./servicePricelistPresets";
 
@@ -9,7 +9,7 @@ export interface FormInitialValues {
 	code: string;
 	commercialTitle: string;
 	statutoryTitle: string;
-	category: Order804nCategory;
+	category: ServiceCategory;
 	specialty: DoctorSpecialty;
 	priceRub: string;
 	materialCost: string;
@@ -47,9 +47,10 @@ export function getInitialFormValues(
 	}
 	const t = calculateAllTierStrings(editingItem.basePriceRub);
 	return {
-		code: editingItem.code804n || "",
+		code: editingItem.statutoryCode || editingItem.code804n || "",
 		commercialTitle: editingItem.commercialTitle,
-		statutoryTitle: editingItem.statutoryTitle804n,
+		statutoryTitle:
+			editingItem.statutoryTitle || editingItem.statutoryTitle804n || "",
 		category: editingItem.category,
 		specialty: editingItem.specialty,
 		priceRub: String(editingItem.basePriceRub),

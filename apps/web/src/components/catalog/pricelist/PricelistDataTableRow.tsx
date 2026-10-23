@@ -1,33 +1,15 @@
 import type React from "react";
 import { PricelistDataTableRowActions } from "./PricelistDataTableRowActions";
 import { PricelistDataTableRowPrice } from "./PricelistDataTableRowPrice";
+import type { PricelistDataTableRowProps } from "./PricelistDataTableRowProps";
 import { PricelistDataTableRowTitle } from "./PricelistDataTableRowTitle";
 import {
 	calculateServiceProfitability,
 	calculateTierPrice,
 } from "./servicePricelistEngine";
-import {
-	type PriceTierKind,
-	type ServicePricelistItem,
-	SPECIALTY_LABELS,
-} from "./servicePricelistPresets";
+import { SPECIALTY_LABELS } from "./servicePricelistPresets";
 
-export interface PricelistDataTableRowProps {
-	readonly item: ServicePricelistItem;
-	readonly isSelected: boolean;
-	readonly activeTier: PriceTierKind;
-	readonly isEditingPrice: boolean;
-	readonly editingPriceBuffer: string;
-	readonly onToggleSelectItem: (id: string, checked: boolean) => void;
-	readonly onStartEditPrice: (id: string, currentPrice: number) => void;
-	readonly onPriceBufferChange: (val: string) => void;
-	readonly onCommitPrice: (id: string, rawInput: string) => void;
-	readonly onCancelEditPrice: () => void;
-	readonly onSetZeroWarrantyPrice: (id: string) => void;
-	readonly onEditItem: (item: ServicePricelistItem) => void;
-	readonly onDuplicateItem: (item: ServicePricelistItem) => void;
-	readonly onDeleteItem: (id: string) => void;
-}
+export type { PricelistDataTableRowProps };
 
 export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
 	props,
@@ -74,7 +56,9 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
 				/>
 			</td>
 			<td>
-				<span className="pricelist-code-pill">{item.code804n}</span>
+				<span className="pricelist-code-pill">
+					{item.statutoryCode || item.code804n}
+				</span>
 			</td>
 			<PricelistDataTableRowTitle item={item} onEditItem={onEditItem} />
 			<td>
