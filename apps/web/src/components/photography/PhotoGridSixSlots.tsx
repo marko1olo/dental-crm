@@ -45,11 +45,12 @@ export const PhotoGridSixSlots: React.FC<PhotoGridSixSlotsProps> = ({
 			<div className="photo-grid-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
 					<span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>Пресет:</span>
-					<div style={{ display: 'flex', gap: '4px', background: 'var(--surface, #f1f5f9)', padding: '2px', borderRadius: '8px' }}>
-						{CLINICAL_PROTOCOLS_REGISTRY.slice(0, 3).map((p) => (
+					<div style={{ display: 'flex', gap: '4px', background: 'var(--surface, #f1f5f9)', padding: '2px', borderRadius: '8px', flexWrap: 'wrap' }}>
+						{CLINICAL_PROTOCOLS_REGISTRY.map((p) => (
 							<button
 								key={p.id}
 								type="button"
+								data-testid={`btn-preset-${p.id}`}
 								className={`photo-touch-btn ${preset.id === p.id ? 'primary' : ''}`}
 								onClick={() => onSelectPreset(p)}
 								style={{ minHeight: '34px', minWidth: '44px', padding: '4px 10px', fontSize: '12px' }}

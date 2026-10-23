@@ -69,6 +69,7 @@ describe("DiagnosticDrawer HUD Component", () => {
 		assert.ok(html.includes("Сетевые запросы"), "Network tab should be present");
 		assert.ok(html.includes("Офлайн-очередь"), "Offline tab should be present");
 		assert.ok(html.includes("Системный отчет"), "System report tab should be present");
+		assert.ok(html.includes("Рентген и Снимки"), "Imaging tab should be present");
 		assert.ok(html.includes("Server started"), "Log entry should be rendered");
 	});
 });

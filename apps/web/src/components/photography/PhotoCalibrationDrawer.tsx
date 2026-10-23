@@ -80,8 +80,31 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 				</div>
 			</div>
 
+			<div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+				<label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>Привязка к зубу FDI:</label>
+				<input
+					type="text"
+					placeholder="Напр. 16, 21, 36..."
+					value={record.toothCode ? String(record.toothCode) : ''}
+					onChange={(e) => onUpdateRecord({ toothCode: e.target.value.trim() })}
+					data-testid="input-photo-tooth-code"
+					style={{
+						width: '120px',
+						minHeight: '32px',
+						padding: '4px 8px',
+						borderRadius: '6px',
+						border: '1px solid var(--line, #cbd5e1)',
+						background: 'var(--paper, #fff)',
+						color: 'var(--ink, #0f172a)',
+						fontSize: '12px',
+						fontWeight: 700,
+					}}
+				/>
+				<span style={{ fontSize: '11px', color: 'var(--muted, #64748b)' }}>(прикрепление к зубной формуле)</span>
+			</div>
+
 			<div>
-				<div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>Цвет VITA: {selectedShade}</div>
+				<div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--ink, #0f172a)' }}>Цвет VITA: {selectedShade}</div>
 				<div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
 					{quickShades.map((sh) => (
 						<button key={sh} type="button" className={`photo-touch-btn ${selectedShade === sh ? 'primary' : ''}`} onClick={() => handleShade(sh)} style={{ minHeight: '32px', minWidth: '40px', fontSize: '11px', fontWeight: 700, padding: '2px 6px' }}>

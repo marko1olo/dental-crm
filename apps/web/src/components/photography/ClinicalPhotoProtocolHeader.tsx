@@ -13,7 +13,7 @@ export interface ClinicalPhotoProtocolHeaderProps {
 	readonly setActiveViewMode: (mode: 'grid' | 'comparison' | 'export') => void;
 	readonly slotsData: Record<string, PhotoSlotRecord>;
 	readonly activePresetId: string;
-	readonly onSaveProtocol?: ((slots: Record<string, PhotoSlotRecord>, presetId: string) => void) | undefined;
+	readonly onSaveProtocol: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
 	readonly onClose: () => void;
 }
 
@@ -47,7 +47,7 @@ export const ClinicalPhotoProtocolHeader: React.FC<ClinicalPhotoProtocolHeaderPr
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 				<button type="button" className="photo-touch-btn" data-testid="btn-patient-presentation-popout" onClick={() => openPatientPresentationWindow({ clinicName, patientName, mode: 'split' })} title="Экран пациента"><ExternalLink size={16} /> Экран</button>
-				{onSaveProtocol && <button type="button" className="photo-touch-btn primary" onClick={() => onSaveProtocol(slotsData, activePresetId)}><CheckCircle size={16} /> Сохранить</button>}
+				<button type="button" className="photo-touch-btn primary" onClick={() => onSaveProtocol(slotsData, activePresetId)} data-testid="btn-save-photo-protocol"><CheckCircle size={16} /> Сохранить</button>
 				<button type="button" className="photo-touch-btn" onClick={onClose} title="Закрыть"><X size={18} /></button>
 			</div>
 		</div>

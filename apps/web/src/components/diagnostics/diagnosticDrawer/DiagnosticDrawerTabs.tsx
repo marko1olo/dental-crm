@@ -1,5 +1,5 @@
 import React from "react";
-import { Terminal, Globe, Database, Activity } from "lucide-react";
+import { Terminal, Globe, Database, Activity, Camera } from "lucide-react";
 import type { TabKind } from "./diagnosticDrawerTypes";
 
 interface DiagnosticDrawerTabsProps {
@@ -59,6 +59,17 @@ export const DiagnosticDrawerTabs: React.FC<DiagnosticDrawerTabsProps> = ({
 				>
 					<Activity size={14} />
 					<span>Системный отчет</span>
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeTab === "imaging"}
+					className={`dente-segmented-item ${activeTab === "imaging" ? "active" : ""}`}
+					onClick={() => setActiveTab("imaging")}
+					data-testid="tab-diagnostic-imaging"
+				>
+					<Camera size={14} />
+					<span>Рентген и Снимки</span>
 				</button>
 			</div>
 		</div>

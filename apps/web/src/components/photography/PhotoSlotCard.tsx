@@ -56,6 +56,7 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 							}}
 						/>
 						<div className="photo-slot-badges">
+							{record.toothCode && <span className="photo-mini-badge tooth-badge" title={`Привязан к зубу #${record.toothCode}`}>Зуб #{record.toothCode}</span>}
 							{record.flipHorizontal && <span className="photo-mini-badge"><FlipHorizontal size={10} /> Зеркало (H)</span>}
 							{(record.rotationDegrees || 0) !== 0 && <span className="photo-mini-badge"><RotateCw size={10} /> {record.rotationDegrees}°</span>}
 							{record.detectedVitaShade && <span className="photo-mini-badge shade-badge">VITA {record.detectedVitaShade}</span>}

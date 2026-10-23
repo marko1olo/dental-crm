@@ -16,7 +16,7 @@ export const VitaStratificationPanel: React.FC<VitaStratificationPanelProps> = (
 	];
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', background: 'var(--surface, #f8fafc)', borderRadius: '10px', border: '1px solid var(--line, #e2e8f0)' }}>
+		<div className="vita-stratification-panel" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', background: 'var(--surface, #f8fafc)', borderRadius: '10px', border: '1px solid var(--line, #e2e8f0)' }}>
 			<div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700 }}>
 				<Layers size={14} style={{ color: 'var(--primary, #0d9488)' }} /> 3-Зонная стратификация коронки (ЗТЛ):
 			</div>

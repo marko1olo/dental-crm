@@ -94,8 +94,8 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 				{/* Primary CTA: Save to EMR 043/u */}
 				<button
 					type="button"
-					onClick={onSaveToEmr}
-					disabled={isSaving}
+					onClick={isSaving ? undefined : onSaveToEmr}
+					aria-busy={isSaving}
 					className="primary-button rvg-action-btn-primary"
 					title={
 						isSaving

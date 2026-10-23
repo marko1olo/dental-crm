@@ -336,6 +336,53 @@
 	background: var(--brand-500, #2563eb);
 }
 
+.photo-mini-badge.tooth-badge {
+	background: rgba(37, 99, 235, 0.9);
+	color: #ffffff;
+}
+
+/* Photo Calibration Drawer & Dark Mode Tokens */
+.photo-calibration-drawer {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .photo-calibration-drawer {
+	background: var(--paper-strong, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .photo-calibration-drawer input {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-shade-selector-root {
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-shade-selector-root input {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel input,
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel select {
+	background: var(--paper-strong, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
 /* Hover Action Bar */
 .photo-slot-actions {
 	padding: 8px 12px;

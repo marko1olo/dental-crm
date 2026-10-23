@@ -1,4 +1,4 @@
-export type TabKind = "logs" | "network" | "offline" | "system";
+export type TabKind = "logs" | "network" | "offline" | "system" | "imaging";
 
 export interface DiagnosticDrawerProps {
 	readonly organizationId?: string | null;

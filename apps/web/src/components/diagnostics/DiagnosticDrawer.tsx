@@ -3,7 +3,9 @@
  */
 
 import React from "react";
-import "./DiagnosticDrawer.css";
+if (typeof document !== "undefined") {
+	import("./DiagnosticDrawer.css");
+}
 import type { DiagnosticDrawerProps } from "./diagnosticDrawer/diagnosticDrawerTypes";
 import { useDiagnosticDrawerState } from "./diagnosticDrawer/useDiagnosticDrawerState";
 import { DiagnosticTriggerButton } from "./diagnosticDrawer/DiagnosticTriggerButton";
@@ -14,6 +16,7 @@ import { DiagnosticDrawerLogsTab } from "./diagnosticDrawer/DiagnosticDrawerLogs
 import { DiagnosticDrawerNetworkTab } from "./diagnosticDrawer/DiagnosticDrawerNetworkTab";
 import { DiagnosticDrawerOfflineTab } from "./diagnosticDrawer/DiagnosticDrawerOfflineTab";
 import { DiagnosticDrawerSystemTab } from "./diagnosticDrawer/DiagnosticDrawerSystemTab";
+import { DiagnosticDrawerImagingTab } from "./diagnosticDrawer/DiagnosticDrawerImagingTab";
 
 export * from "./diagnosticDrawer/diagnosticDrawerTypes";
 
@@ -86,6 +89,9 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = (props) => {
 									organizationId={props.organizationId}
 									onExportReport={state.handleExportReport}
 								/>
+							)}
+							{state.activeTab === "imaging" && (
+								<DiagnosticDrawerImagingTab />
 							)}
 						</div>
 					</div>

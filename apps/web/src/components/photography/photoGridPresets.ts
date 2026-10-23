@@ -70,6 +70,7 @@ export interface PhotoSlotRecord {
 	imageUrl?: string;
 	storagePath?: string;
 	uploadedAt?: string;
+	toothCode?: string | number | undefined;
 	stage?: 'before' | 'in_progress' | 'after' | 'followup';
 	notes?: string;
 	rotationDegrees?: number;
