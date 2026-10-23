@@ -43,7 +43,6 @@ export function AppointmentModalHeaderActions({
 				detail: {
 					patientId,
 					patientName: currentPatientName,
-					amountRub: 15400,
 				},
 			}),
 		);

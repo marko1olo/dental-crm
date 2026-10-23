@@ -49,7 +49,6 @@ export function OperationsMenuSection({
 				detail: {
 					patientId: appointmentPatient?.id || appointment.patientId,
 					patientName: appointmentPatientName,
-					amountRub: 15400,
 				},
 			}),
 		);

@@ -2,7 +2,7 @@
  * index.ts — Cashbox Shift Submodules Aggregator & Router.
  *
  * Decomposed from monolithic cashboxShiftRoutes.ts (< 500 lines constraint).
- * Adheres to 54-FZ, StomX reverse-engineered financial specs, and Mandates 8e/8i/8n.
+ * Adheres to 54-FZ and Mandates 8e/8i/8n.
  */
 
 import type { FastifyInstance } from "fastify";

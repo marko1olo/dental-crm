@@ -1,7 +1,7 @@
 /**
  * index.ts — Modular Cashbox Subsystem Package Exports.
- * 
- * Compliant with 54-FZ, StomX Reverse Engineering Bible & Mandate 8b/8e/8n.
+ *
+ * Compliant with 54-FZ and Mandates 8b/8e/8n.
  */
 
 export type * from "./types.js";

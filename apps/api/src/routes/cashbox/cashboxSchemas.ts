@@ -1,7 +1,7 @@
 /**
  * cashboxSchemas.ts — Layer 1: Strict Zod Validation Schemas for Cashbox Endpoints.
- * 
- * 54-FZ, StomX Reverse Engineering Bible & Mandate 8e/8n compliant.
+ *
+ * 54-FZ compliant, Mandates 8e/8n.
  */
 
 import {

@@ -35,6 +35,21 @@ import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory
 import { LanKktDriverService } from "../../../services/hardware/index.js";
 import type { ApplyCashBoxRefundParams, DbClientOrTransaction, PrintResultMetadata } from "./types.js";
 
+/**
+ * Resolves the patient's real contact from the card (Tag 1008 customer contact).
+ * Returns null when the patient card has no phone or email on file.
+ */
+async function resolvePatientCustomerContact(orgId: string, patientId: string): Promise<string | null> {
+	return await withTenantCtx(orgId, async (tx) => {
+		const [p] = await tx
+			.select({ phone: patients.phone })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+		return p?.phone?.trim() || null;
+	});
+}
+
 export async function applyCashBoxFiscalRefund(
 	tx: DbClientOrTransaction,
 	orgId: string,
@@ -273,11 +288,15 @@ export async function handleFiscalRefund(
 
 			const totalElectronicKopecks = data.refundElectronicKopecks;
 
+			// Честный контакт пациента из карточки (Тег 1008). Служебная заглушка
+			// остаётся только если в карте нет ни телефона, ни email.
+			const patientContact = await resolvePatientCustomerContact(orgId, data.patientId);
+
 			const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
 				clientMutationId: data.clientMutationId,
 				patientId: data.patientId,
 				operationType: "income_return",
-				customerContact: "+79990000000",
+				customerContact: patientContact || "+79990000000",
 				cashierFullName: data.cashierFullName,
 				items: data.items,
 				cashKopecks: data.refundCashKopecks,
@@ -375,11 +394,15 @@ export async function handleFiscalRefund(
 
 	const totalElectronicKopecks = data.refundElectronicKopecks;
 
+	// Честный контакт пациента из карточки (Тег 1008). Служебная заглушка
+	// остаётся только если в карте нет ни телефона, ни email.
+	const patientContact = await resolvePatientCustomerContact(orgId, data.patientId);
+
 	const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
 		clientMutationId: data.clientMutationId,
 		patientId: data.patientId,
 		operationType: "income_return",
-		customerContact: "+79990000000",
+		customerContact: patientContact || "+79990000000",
 		cashierFullName: data.cashierFullName,
 		items: data.items,
 		cashKopecks: data.refundCashKopecks,

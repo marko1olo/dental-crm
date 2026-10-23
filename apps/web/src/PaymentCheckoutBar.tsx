@@ -44,8 +44,8 @@ export function PaymentCheckoutBar({
 
 			<div className="payment-actions flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-1 min-w-0 justify-end">
 				<button
-					style={{ minHeight: "44px" }}
-					className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-3 sm:px-3 whitespace-nowrap shrink-0"
+					style={{ minHeight: "52px" }}
+					className="primary-button min-h-[52px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-3 sm:px-3 whitespace-nowrap shrink-0"
 					type="button"
 					onClick={onPrimarySubmit}
 					aria-busy={isSaving || undefined}

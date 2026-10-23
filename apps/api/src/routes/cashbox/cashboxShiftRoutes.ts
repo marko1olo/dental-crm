@@ -7,7 +7,7 @@
  * - cashTransferRoutes: cash-in (introduction) & cash-out (withdrawal)
  * - shiftReconciliationRoutes: X-report & pre-closure live audit
  *
- * Compliant with 54-FZ, StomX Reverse Engineering Bible (Section 6, 8), and Mandates 8e/8n.
+ * Compliant with 54-FZ and Mandates 8e/8n.
  */
 
 import type { FastifyInstance } from "fastify";

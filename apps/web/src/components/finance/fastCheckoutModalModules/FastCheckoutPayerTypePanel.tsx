@@ -27,30 +27,30 @@ export const FastCheckoutPayerTypePanel: React.FC<
 	setBuyerName,
 	onInputEnterKeyDown,
 }) => (
-	<div
-		className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2"
-		data-testid="payer-type-section"
-	>
-		<div className="flex items-center justify-between flex-wrap gap-2">
-			<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-				<Building2 size={14} className="text-teal-600" />
-				Тип плательщика (реквизиты чека):
-			</span>
-			{clientType === "physical_person" && (
-				<span
-					className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0"
-					data-testid="inn-physical-not-required-badge"
-					title="По 54-ФЗ для физлиц не требуется"
-				>
-					<ShieldCheck
-						size={14}
-						className="inline mr-1 shrink-0 text-emerald-500"
-					/>
-					Для пациентов-физлиц ИНН не требуется{" "}
-					<span className="sr-only">(По 54-ФЗ для физлиц не требуется)</span>
+		<div
+			className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2"
+			data-testid="payer-type-section"
+		>
+			<div className="flex items-center justify-between flex-wrap gap-2">
+				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+					<Building2 size={14} className="text-[var(--teal)]" />
+					Тип плательщика (реквизиты чека):
 				</span>
-			)}
-		</div>
+				{clientType === "physical_person" && (
+					<span
+						className="px-2 py-0.5 rounded text-[11px] font-bold bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 flex items-center min-w-0"
+						data-testid="inn-physical-not-required-badge"
+						title="ИНН не требуется для физических лиц"
+					>
+						<ShieldCheck
+							size={14}
+							className="inline mr-1 shrink-0 text-[var(--teal)]"
+						/>
+						Для пациентов-физлиц ИНН не требуется{" "}
+						<span className="sr-only">(ИНН не требуется для физических лиц)</span>
+					</span>
+				)}
+			</div>
 		<div
 			className="dente-segmented-bar inline-flex"
 			role="tablist"

@@ -24,7 +24,6 @@ export function CompletedActions({
 							detail: {
 								patientId: pid,
 								patientName: appointmentPatientName,
-								amountRub: 15400,
 							},
 						}),
 					);

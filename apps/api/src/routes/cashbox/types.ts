@@ -1,7 +1,7 @@
 /**
  * types.ts — Layer 0: DTO Contracts & TypeScript Types for Cashbox Subsystem.
- * 
- * Strict 54-FZ, StomX Reverse Engineering Bible & Mandate 8e/8n compliance.
+ *
+ * Strict 54-FZ compliance, Mandates 8e/8n.
  * Zero runtime dependencies (Pure Type Definitions).
  */
 

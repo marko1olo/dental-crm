@@ -1,11 +1,12 @@
 /**
  * cashboxPaymentRoutes.ts — Layer 2: Cash Accounts, Operation Journal, Lab Orders & Installments Rails.
- * 
- * 54-FZ, StomX Reverse Engineering Bible (Section 6, 9), Order 804n, Form T-51.
+ *
+ * 54-FZ compliant: integer kopecks, idempotency, honest patient attribution.
  */
 
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { normalizePaymentMethod } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -119,10 +120,10 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	// 4. Регистрация модульных маршрутов рассрочки и траншей (Feature #37)
 	await registerCashInstallmentsRoutes(app);
 
-	/**
-	 * 5. GET /api/cash/operation-list
-	 * Журнал кассовых ордеров и проводок (StomX Bible раздел 6).
-	 */
+		/**
+		 * 5. GET /api/cash/operation-list
+		 * Журнал кассовых ордеров и проводок клиники.
+		 */
 	app.get("/api/cash/operation-list", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "cash operations read");
 		if (reply.sent) return reply;
@@ -217,13 +218,33 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			headerIdemp?.trim() ||
 			`cbx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-		// Вычисляем точную сумму в копейках и рублях
+		// Честная сумма: платеж без суммы невозможен. Нулевой расчет (скидка 100%)
+		// оформляется актом гарантийного обслуживания, а не кассовым платежом с чеком.
 		let totalKopecks = 0n;
 		if (body.amountKopecks !== undefined) {
 			totalKopecks = BigInt(body.amountKopecks);
 		} else if (body.amountRub !== undefined) {
 			totalKopecks = BigInt(Math.round(body.amountRub * 100));
 		}
+		if (totalKopecks <= 0n) {
+			return reply.code(400).send({
+				error: "ZeroAmountPayment",
+				message:
+					"Сумма платежа обязана быть больше нуля. Для гарантийной переделки со скидкой 100% оформите акт списания услуг без кассового чека.",
+			});
+		}
+
+		// Честная атрибуция: платеж проводится строго на выбранного пациента.
+		// Молчаливое списание на «первого попавшегося» пациента клиники запрещено —
+		// это подделка баланса и налоговой отчетности.
+		if (!body.patientId) {
+			return reply.code(400).send({
+				error: "PatientRequired",
+				message:
+					"Укажите пациента для проведения платежа. Безличные продажи регистрируйте через внесение в кассу.",
+			});
+		}
+		const requestedPatientId: string = body.patientId;
 		const amountRubNumber = Number(totalKopecks) / 100;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
@@ -251,22 +272,20 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				};
 			}
 
-			// Разрешение ID пациента
-			let resolvedPatientId = body.patientId;
-			if (!resolvedPatientId) {
-				const [firstPatient] = await tx
-					.select({ id: patients.id })
-					.from(patients)
-					.where(eq(patients.organizationId, orgId))
-					.limit(1);
-				if (firstPatient) {
-					resolvedPatientId = firstPatient.id;
-				}
-			}
+			// Проверка существования пациента в этой клинике: при отсутствии —
+			// честный 400, платеж не проводится ни на кого.
+			const [patientExists] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, requestedPatientId), eq(patients.organizationId, orgId)))
+				.limit(1);
 
-			if (!resolvedPatientId) {
-				throw new Error("В клинике не найден пациент для проведения кассового платежа");
+			if (!patientExists) {
+				return {
+					kind: "patient_not_found" as const,
+				};
 			}
+			const resolvedPatientId = requestedPatientId;
 
 			// Генерируем номер кассового чека
 			const receiptNumber = `ФД-${Date.now().toString().slice(-6)}`;
@@ -281,7 +300,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 					visitId: body.visitId || null,
 					clientMutationId: effectiveMutationId,
 					amountRub: amountRubNumber,
-					method: (body.method as any) || "card",
+					method: normalizePaymentMethod(body.method),
 					status: "paid",
 					paidAt: new Date(),
 					fiscalReceiptNumber: receiptNumber,
@@ -370,6 +389,13 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				clientMutationId: effectiveMutationId,
 			};
 		});
+
+		if ("kind" in result && result.kind === "patient_not_found") {
+			return reply.code(400).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике — платёж не проведён.",
+			});
+		}
 
 		return reply.code(200).send({
 			success: true,

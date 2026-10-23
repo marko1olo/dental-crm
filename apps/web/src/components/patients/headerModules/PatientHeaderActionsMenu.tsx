@@ -22,7 +22,7 @@ export const PatientHeaderActionsMenu: React.FC<PatientHeaderActionsMenuProps> =
 	const pid = resolvedPatient?.id;
 	const openPlan = () => { onClose(); window.dispatchEvent(new CustomEvent("dente:open-treatment-plan", { bubbles: true, detail: { patientId: pid } })); showToast(`План лечения: ${fullName}`, "info"); };
 	const printCard = () => { onClose(); window.print(); showToast("Печать карты", "info"); };
-	const openCash = () => { onClose(); if (pid) usePatientStore.getState().setSelectedPatientId(pid); window.dispatchEvent(new CustomEvent("dente:open-payment-modal", { detail: { patientId: pid, patientName: fullName, patientPhone: resolvedPatient?.phone, amountRub: 15400 } })); };
+	const openCash = () => { onClose(); if (pid) usePatientStore.getState().setSelectedPatientId(pid); window.dispatchEvent(new CustomEvent("dente:open-payment-modal", { detail: { patientId: pid, patientName: fullName, patientPhone: resolvedPatient?.phone } })); };
 	const mergeDuplicates = () => { onClose(); window.dispatchEvent(new CustomEvent("dente-open-duplicate-merge-modal", { detail: { patientId: pid } })); showToast("Проверка слияния дубликатов", "info"); };
 	const sendWhatsApp = () => { onClose(); openWhatsAppChat(phone, `Здравствуйте, ${fullName}! Стоматологическая клиника DENTE приветствует вас.`); };
 

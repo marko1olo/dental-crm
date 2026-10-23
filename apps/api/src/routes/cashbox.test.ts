@@ -285,3 +285,114 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 		}
 	});
 });
+
+describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)", () => {
+	it("rejects payments without patient, with zero amount and normalizes method aliases", async () => {
+		const app = await buildTestApp();
+
+		const orgId = fixtureUuid("cashboxPayTest", 1);
+		const userId = fixtureUuid("cashboxPayTest", 2);
+		const patientId = fixtureUuid("cashboxPayTest", 3);
+		const unknownPatientId = fixtureUuid("cashboxPayTest", 4);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx.insert(organizations).values({
+				id: orgId,
+				name: `Клиника Честной Кассы-${Date.now()}`,
+			});
+			await tx.insert(users).values({
+				id: userId,
+				organizationId: orgId,
+				fullName: "Администратор Кассы",
+				role: "admin",
+				email: `cashbox-pay-${Date.now()}@dental.ru`,
+			});
+			await tx.insert(patients).values({
+				id: patientId,
+				organizationId: orgId,
+				fullName: "Смирнова Елена Александровна",
+				phone: "+79991234567",
+			});
+		});
+
+		try {
+			const headers = createStaffHeaders(orgId, userId, "admin");
+			const base = "/api/cashbox/payments";
+
+			// 1. Платёж без пациента — честный 400, никто «первый попавшийся» не оплачивается
+			const noPatientRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: { amountRub: 1500, method: "cash" },
+			});
+			assert.equal(noPatientRes.statusCode, 400);
+			assert.equal(noPatientRes.json().error, "PatientRequired");
+
+			// 2. Нулевой платёж — 400: акт гарантии оформляется без кассового чека
+			const zeroAmountRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: { patientId, amountRub: 0, method: "cash" },
+			});
+			assert.equal(zeroAmountRes.statusCode, 400);
+			assert.equal(zeroAmountRes.json().error, "ZeroAmountPayment");
+
+			// 3. Несуществующий пациент — 400, а не молчаливая проводка
+			const unknownPatientRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId: unknownPatientId,
+					amountRub: 1500,
+					method: "cash",
+					clientMutationId: `cbx-test-unknown-${Date.now()}`,
+				},
+			});
+			assert.equal(unknownPatientRes.statusCode, 400);
+			assert.equal(unknownPatientRes.json().error, "PatientNotFound");
+
+			// 4. Валидный СБП-платёж: метод нормализуется в statutory "online"
+			const mutationId = `cbx-test-sbp-${Date.now()}`;
+			const sbpRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 1500.5,
+					method: "sbp",
+					electronicAmountKopecks: 150050,
+					clientMutationId: mutationId,
+				},
+			});
+			assert.equal(sbpRes.statusCode, 200);
+			const sbpJson = sbpRes.json();
+			assert.equal(sbpJson.success, true);
+			assert.equal(sbpJson.data.method, "online");
+			assert.equal(sbpJson.data.amountKopecks, 150050);
+
+			// 5. Идемпотентный повтор с тем же clientMutationId не создаёт второй платёж
+			const replayRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 1500.5,
+					method: "sbp",
+					electronicAmountKopecks: 150050,
+					clientMutationId: mutationId,
+				},
+			});
+			assert.equal(replayRes.statusCode, 200);
+			assert.equal(replayRes.json().data.id, sbpJson.data.id);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+});

@@ -231,19 +231,27 @@ test("Zero-Mock Hardware KKT & 54-FZ Fiscal Pipeline Suite", async (t) => {
 		assert.equal(queuedItem.payload.totalRub, 3500);
 	});
 
-	await t.test("8. Codebase Invariant: Absence of dummyFiscalPayload in omniPlatformAdapter.ts", () => {
-		const adapterFilePath = fileURLToPath(new URL("../lib/omniPlatformAdapter.ts", import.meta.url));
-		const fileContent = fs.readFileSync(adapterFilePath, "utf8");
+	await t.test("8. Codebase Invariant: Absence of dummyFiscalPayload in the omni-platform fiscal module", () => {
+		// Адаптер декомпозирован: фасад omniPlatformAdapter.ts реэкспортирует
+		// реализацию из ./omniPlatform/. Инвариант проверяет ВЕСЬ модуль:
+		// ни мокового пейлоада, ни потери канонического фискального контура.
+		const moduleDirPath = fileURLToPath(new URL("../lib/omniPlatform/", import.meta.url));
+		const moduleFiles = fs.readdirSync(moduleDirPath).filter((f) => f.endsWith(".ts"));
+		assert.ok(moduleFiles.length > 0, "omniPlatform module directory must exist");
+
+		const allSource = moduleFiles
+			.map((f) => fs.readFileSync(path.join(moduleDirPath, f), "utf8"))
+			.join("\n");
 
 		assert.equal(
-			fileContent.includes("dummyFiscalPayload"),
+			allSource.includes("dummyFiscalPayload"),
 			false,
-			"CRITICAL DEFECT: dummyFiscalPayload must be completely eliminated from omniPlatformAdapter.ts",
+			"CRITICAL DEFECT: dummyFiscalPayload must be completely eliminated from the omniPlatform fiscal module",
 		);
 		assert.equal(
-			fileContent.includes("executeStatutoryFiscalPipeline"),
+			allSource.includes("executeStatutoryFiscalPipeline"),
 			true,
-			"omniPlatformAdapter.ts must route fiscal receipts via executeStatutoryFiscalPipeline",
+			"omniPlatform fiscal module must route receipts via executeStatutoryFiscalPipeline",
 		);
 	});
 

@@ -78,7 +78,7 @@ export async function executeFiscalizeReceiptTransaction(params: {
 		queueEntryId: result.queueEntry?.id,
 		orgId,
 		isKktOffline,
-		logWarn,
+		...(logWarn ? { logWarn } : {}),
 	});
 
 	return {

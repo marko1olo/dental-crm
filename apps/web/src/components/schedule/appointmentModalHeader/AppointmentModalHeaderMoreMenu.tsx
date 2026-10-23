@@ -98,7 +98,6 @@ export function AppointmentModalHeaderMoreMenu({
 									detail: {
 										patientId,
 										patientName: currentPatientName,
-										amountRub: 15400,
 									},
 								}),
 							);
