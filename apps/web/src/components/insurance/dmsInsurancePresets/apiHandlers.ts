@@ -101,3 +101,51 @@ export async function fetchPatientGuaranteeLettersFromApi(patientId?: string): P
 		return [];
 	}
 }
+
+/**
+ * Получение актуального списка страховых компаний и активных договоров через Fastify API /api/insurance/insurers
+ * с надежным локальным фолбеком на случай оффлайн-режима.
+ */
+export async function fetchStatutoryInsurersFromApi(): Promise<DmsInsurerMetadata[]> {
+	try {
+		const res = await fetch("/api/insurance/insurers", {
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+		});
+		if (!res.ok) return [...STATUTORY_DMS_INSURERS];
+		const data = await res.json();
+		if (data && Array.isArray(data.insurers) && data.insurers.length > 0) {
+			return data.insurers.map((apiIns: { key: string; name: string; inn: string }) => {
+				const fallback = STATUTORY_DMS_INSURERS.find((s) => s.key === apiIns.key);
+				if (fallback) {
+					return {
+						...fallback,
+						shortName: apiIns.name || fallback.shortName,
+						inn: apiIns.inn || fallback.inn,
+					};
+				}
+				return {
+					id: apiIns.key as DmsInsurerId,
+					key: apiIns.key,
+					shortName: apiIns.name,
+					fullName: apiIns.name,
+					inn: apiIns.inn || "0000000000",
+					ogrn: "0000000000000",
+					kpp: "000001001",
+					phone: "8 (800) 000-00-00",
+					email: "dms@insurance.ru",
+					portalUrl: "https://dms.ru",
+					curatorDepartment: "Отдел урегулирования убытков ДМС",
+					defaultSlaHours: 24,
+					statutoryRegulations2026: true,
+					supportedPrograms: ["standard_therapy", "vip_full_coverage"],
+					standardTermsDescription: "100% покрытие терапии и хирургии по стандартам МЗ РФ.",
+					requiresXrayForEndo: true,
+					requiresCtPreAuth: false,
+				} satisfies DmsInsurerMetadata;
+			});
+		}
+		return [...STATUTORY_DMS_INSURERS];
+	} catch {
+		return [...STATUTORY_DMS_INSURERS];
+	}
+}

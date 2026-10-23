@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import {
 	COMMON_DENTAL_ICD10_DIAGNOSES, DEFAULT_BILL_ITEMS_TO_SPLIT,
 	DmsApprovedServicesMatrix, DmsCoverageSummaryBanner, DmsGuaranteeLetterModal,

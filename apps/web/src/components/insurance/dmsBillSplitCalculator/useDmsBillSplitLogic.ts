@@ -29,16 +29,22 @@ export function useDmsBillSplitLogic(
 	const effectiveItems = billItems !== undefined ? billItems : (isDemo ? DEMO_VISIT_BILL_ITEMS : []);
 
 	const mappedItems: DmsBillableLineItem[] = useMemo(() => {
-		return effectiveItems.map((item) => ({
-			id: item.id,
-			serviceCode: item.serviceCode804n,
-			serviceCode804n: item.serviceCode804n,
-			serviceName: item.serviceName,
-			toothNumber: item.toothNumber,
-			quantity: item.quantity,
-			unitPriceKopecks: item.unitPriceKopecks,
-			discountPercent: item.discountPercent,
-		}));
+		return effectiveItems.map((item) => {
+			const raw = item as Record<string, unknown>;
+			const code = typeof item.serviceCode804n === "string" ? item.serviceCode804n : typeof raw.code === "string" ? raw.code : "";
+			const name = typeof item.serviceName === "string" ? item.serviceName : typeof raw.name === "string" ? raw.name : "";
+			const priceKop = typeof item.unitPriceKopecks === "number" ? item.unitPriceKopecks : typeof raw.priceRub === "number" ? Math.round(raw.priceRub * 100) : 0;
+			return {
+				id: item.id || `item-${Math.random()}`,
+				serviceCode: code,
+				serviceCode804n: code,
+				serviceName: name,
+				toothNumber: item.toothNumber || (typeof raw.tooth === "string" ? raw.tooth : undefined),
+				quantity: typeof item.quantity === "number" ? item.quantity : 1,
+				unitPriceKopecks: priceKop,
+				discountPercent: item.discountPercent,
+			};
+		});
 	}, [effectiveItems]);
 
 	const splitCalculation = useMemo(() => {

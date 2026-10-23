@@ -10,6 +10,7 @@ import { dmsGuaranteeLetters, insuranceContracts } from "../../db/schema.js";
 import {
 	INSURANCE_COMPANY_NAME_REQUIRED,
 	INSURANCE_CONTRACT_NOT_FOUND,
+	INSURER_DIRECTORY,
 	INSURER_NAMES,
 } from "./constants.js";
 import {
@@ -40,6 +41,52 @@ export async function registerPolicyManagementRoutes(app: FastifyInstance) {
 			.orderBy(insuranceContracts.companyName);
 
 		return contracts;
+	});
+
+	// GET all known statutory insurers and clinic's active contracts
+	app.get("/api/insurance/insurers", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"insurance insurers read",
+		);
+		if (!orgId) return;
+
+		const activeContracts = await db
+			.select()
+			.from(insuranceContracts)
+			.where(
+				and(
+					eq(insuranceContracts.organizationId, orgId),
+					eq(insuranceContracts.isActive, true),
+				),
+			)
+			.orderBy(insuranceContracts.companyName);
+
+		const statutoryList = Object.entries(INSURER_DIRECTORY).map(([key, info]) => ({
+			key,
+			name: info.name,
+			shortName: info.name,
+			inn: info.inn,
+			isPartner: activeContracts.some((c) =>
+				c.companyName.toLowerCase().includes(info.name.toLowerCase()),
+			),
+		}));
+
+		const contractInsurers = activeContracts.map((c) => ({
+			key: `contract_${c.id}`,
+			name: c.companyName,
+			shortName: c.companyName,
+			contractId: c.id,
+			annualLimitRub: c.annualLimitRub,
+			patientFranchisePct: c.patientFranchisePct,
+			isPartner: true,
+		}));
+
+		return reply.code(200).send({
+			insurers: statutoryList,
+			contracts: contractInsurers,
+		});
 	});
 
 	// GET a single contract by id

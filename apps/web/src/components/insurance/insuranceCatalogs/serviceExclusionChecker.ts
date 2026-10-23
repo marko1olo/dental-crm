@@ -19,8 +19,8 @@ export function isServiceExcludedByDmsRules(
 	rule?: DmsExclusionRule | undefined;
 	reason?: string | undefined;
 } {
-	const lowerName = serviceName.toLowerCase();
-	const cleanCode = serviceCode.trim().toUpperCase();
+	const lowerName = typeof serviceName === "string" ? serviceName.toLowerCase() : "";
+	const cleanCode = typeof serviceCode === "string" ? serviceCode.trim().toUpperCase() : "";
 
 	for (const rule of DMS_EXCLUSION_RULES) {
 		if (!rule.appliesToPrograms.includes(program)) {

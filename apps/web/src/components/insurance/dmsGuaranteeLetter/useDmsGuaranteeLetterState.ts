@@ -42,7 +42,7 @@ export function useDmsGuaranteeLetterState({
 
 	const handleActivateEmergencyPainMode = () => {
 		f.setIsEmergencyCare(true);
-		if (!f.letterNumber.trim() || f.letterNumber.startsWith("ГП-")) f.setLetterNumber(`ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ГАРАНТИЯ В ПУТИ)`);
+		if (!f.letterNumber.trim() || f.letterNumber.startsWith("ГП-")) f.setLetterNumber("ГП-ЭКСТРЕННО-ОСТРАЯ-БОЛЬ");
 		if (!f.policyNumber.trim()) f.setPolicyNumber(patient?.policyNumber || "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ");
 		f.setMaxCoverageRub((p) => (p < 35000 ? 50000 : p)); f.setStatus("active");
 		f.setApprovedServiceCodes((p) => Array.from(new Set([...p, "A16.07.030.001", "A11.07.010", "A16.07.011", "A16.07.008.001", "A16.07.002.001", "B01.003.004.001"])));
@@ -57,32 +57,32 @@ export function useDmsGuaranteeLetterState({
 		f.setApprovedServiceCodes([...preset.approvedServiceCodes804n]); f.setApprovedDiagnosisCodes([...preset.approvedDiagnosisMkb10]);
 		f.setNotes(preset.noteRu);
 		const pfx = { sogaz: "СОГАЗ-ГП", ingosstrakh: "ИНГОС-ГП", alfastrakhovanie: "АЛЬФА-ГП", reso_garantiya: "РЕСО-ГП" }[preset.insurerKey] ?? "ГП";
-		f.setLetterNumber(`${pfx}-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`);
+		f.setLetterNumber(`${pfx}-${new Date().getFullYear()}-ПРЕСЕТ`);
 		showToast(`Экспресс-шаблон «${preset.labelRu}» применен в 1 клик`, "info");
 	};
 
-	const saveLetter = (overrideStatus?: string) => {
+	const saveLetter = async (overrideStatus?: string) => {
 		const letter = buildCurrentLetter(f, patient, safeInitialLetter, overrideStatus as any);
-		persistAndDispatchLetter(letter, patient, initialLetter?.id);
-		if (onSave) onSave(letter);
-		return letter;
+		const saved = await persistAndDispatchLetter(letter, patient, initialLetter?.id);
+		if (onSave) onSave(saved);
+		return saved;
 	};
 
-	const handleSave = () => {
-		const l = saveLetter();
+	const handleSave = async () => {
+		const l = await saveLetter();
 		showToast(f.isEmergencyCare ? `Согласование по острой боли № ${l.letterNumber} сохранено` : `Письмо № ${l.letterNumber} сохранено`, "success");
 		onClose();
 	};
 
-	const handleAttachToCurrentVisit = () => {
-		const l = saveLetter();
+	const handleAttachToCurrentVisit = async () => {
+		const l = await saveLetter();
 		showToast(`Письмо № ${l.letterNumber} привязано к визиту`, "success");
 		onClose();
 	};
 
-	const handleSendPreAuthRequest = () => {
+	const handleSendPreAuthRequest = async () => {
 		f.setStatus("pending_approval");
-		const l = saveLetter("pending_approval");
+		const l = await saveLetter("pending_approval");
 		showToast(`Запрос (${l.approvedServiceCodes.length} усл.) отправлен куратору ${l.insurerName}`, "info");
 	};
 
