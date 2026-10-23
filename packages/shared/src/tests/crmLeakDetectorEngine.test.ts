@@ -141,6 +141,14 @@ test("crmLeakDetectorEngine: корректно рассчитывает вор�
 	assert.equal(funnel.rebookedRevenuePotentialRub, 7500);
 	assert.equal(funnel.totalUncompletedPlanSumRub, 25000);
 	assert.equal(funnel.averageDaysSinceVisit, 240);
+
+	// Проверка расчета потенциала на базе реальных сумм планов лечения (preferActualPlanSum)
+	const actualPlanFunnel = calculateLeakFunnelMetrics(leads, { preferActualPlanSum: true });
+	assert.equal(actualPlanFunnel.rebookedRevenuePotentialRub, 25000);
+
+	// Проверка кастомного среднего чека клиники
+	const customAvgFunnel = calculateLeakFunnelMetrics(leads, { averageTicketRub: 12000 });
+	assert.equal(customAvgFunnel.rebookedRevenuePotentialRub, 12000);
 });
 
 test("crmLeakDetectorEngine: определяет физиологическую паузу и исключает из оттока врачей", () => {

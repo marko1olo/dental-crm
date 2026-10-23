@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
-import { COLUMNS } from "../leadsKanbanConstants";
+import { ALL_KANBAN_COLUMNS, CORE_FUNNEL_COLUMNS } from "../leadsKanbanConstants";
 import { LeadsKanbanBoardGrid } from "./LeadsKanbanBoardGrid";
 import { LeadsKanbanExpandedModal } from "./LeadsKanbanExpandedModal";
 import { LeadsKanbanHeaderToolbar } from "./LeadsKanbanHeaderToolbar";
@@ -74,7 +74,7 @@ export const LeadsKanbanDesktopContainer: React.FC<LeadsKanbanDesktopContainerPr
 				</div>
 			)}
 			<LeadsKanbanBoardGrid
-				activeColumns={COLUMNS}
+				activeColumns={props.viewMode === "all" ? ALL_KANBAN_COLUMNS : CORE_FUNNEL_COLUMNS}
 				filteredLeads={props.filteredLeads}
 				draggedLeadId={props.draggedLeadId}
 				creatingPatientLeadId={props.creatingPatientLeadId}

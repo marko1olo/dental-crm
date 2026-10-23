@@ -71,7 +71,7 @@ export const CrmLeakDetectorDrawer: React.FC<CrmLeakDetectorDrawerProps> = (prop
 					onSaveContact={pSaveContact || sub.handleSaveContact}
 					onCloseContact={() => { pCloseContact?.(); sub.setInternalContactLead(null); }}
 					declineLead={pDecline || sub.internalDeclineLead}
-					reason={pReason || sub.internalDeclineReason}
+					declineReason={pReason || sub.internalDeclineReason}
 					onReasonChange={(r) => { pSetReason?.(r); sub.setInternalDeclineReason(r); }}
 					declineComment={pComment ?? sub.internalDeclineComment}
 					onCommentChange={(c) => { pSetComment?.(c); sub.setInternalDeclineComment(c); }}

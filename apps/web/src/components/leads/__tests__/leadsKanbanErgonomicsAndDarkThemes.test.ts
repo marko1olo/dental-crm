@@ -31,15 +31,15 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(CORE_FUNNEL_COLUMNS.length, 4);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.id),
-				["new", "consult_booked", "showed_up", "trash"],
+				["new", "contacted", "consult_booked", "showed_up"],
 			);
 			assert.deepEqual(
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
 				[
 					"Новые",
-					"Назначен приём",
+					"Квалифицированы",
+					"Консультация",
 					"Дошли",
-					"Отказ/Архив",
 				],
 			);
 		});
@@ -48,9 +48,9 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(COLUMNS.length, 4);
 			const columnIds = COLUMNS.map((c) => c.id);
 			assert.ok(columnIds.includes("new"));
+			assert.ok(columnIds.includes("contacted"));
 			assert.ok(columnIds.includes("consult_booked"));
 			assert.ok(columnIds.includes("showed_up"));
-			assert.ok(columnIds.includes("trash"));
 		});
 
 		it("Simulates sequential 1-click status transitions through all canonical funnel stages", () => {
@@ -62,14 +62,16 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 				status: "new",
 			};
 
-			// Step 1: new -> consult_booked (1-click conversion to appointment)
-			const step1Status = "consult_booked";
-			mockLead.status = step1Status;
+			// Step 1: new -> contacted
+			mockLead.status = "contacted";
+			assert.equal(mockLead.status, "contacted");
+
+			// Step 2: contacted -> consult_booked (conversion to appointment)
+			mockLead.status = "consult_booked";
 			assert.equal(mockLead.status, "consult_booked");
 
-			// Step 2: consult_booked -> showed_up (patient arrived)
-			const step2Status = "showed_up";
-			mockLead.status = step2Status;
+			// Step 3: consult_booked -> showed_up (patient arrived)
+			mockLead.status = "showed_up";
 			assert.equal(mockLead.status, "showed_up");
 		});
 

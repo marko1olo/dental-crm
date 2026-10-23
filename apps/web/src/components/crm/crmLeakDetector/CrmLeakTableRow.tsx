@@ -1,6 +1,6 @@
 import type React from "react";
-import { AlertTriangle, Phone } from "lucide-react";
-import type { CrmLeakLeadItem } from "@dental/shared";
+import { AlertTriangle, Phone, XCircle } from "lucide-react";
+import { type CrmDeclineReason, type CrmLeakLeadItem, DECLINE_REASON_LABELS_RU } from "@dental/shared";
 import { CrmLeakRowActions } from "./CrmLeakRowActions";
 
 interface Props {
@@ -52,6 +52,12 @@ export const CrmLeakTableRow: React.FC<Props> = ({
 				<div className="text-[11.5px] leading-snug text-[var(--ink)]">
 					{lead.clinicalRiskReason}
 				</div>
+				{lead.declineReason && (
+					<div className="cld-decline-badge mt-1 inline-flex items-center gap-1 text-[11px] text-red-600 font-medium">
+						<XCircle size={11} />
+						<span>Срыв: {DECLINE_REASON_LABELS_RU[lead.declineReason as CrmDeclineReason] || lead.declineReason}</span>
+					</div>
+				)}
 				{lead.hasUncompletedPlan && (
 					<div className="cld-plan-alert mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600">
 						<AlertTriangle size={11} />

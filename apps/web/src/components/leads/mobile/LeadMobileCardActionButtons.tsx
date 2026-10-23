@@ -42,8 +42,10 @@ export const LeadMobileCardActionButtons: React.FC<
 			) : (
 				<button
 					type="button"
-					disabled
-					className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
+					onClick={handleScheduleClick}
+					className="leads-mobile-action-btn leads-mobile-action-btn--call opacity-85"
+					title="Указать номер телефона и записать"
+					data-testid={`quick-call-btn-${lead.id}`}
 				>
 					<Phone size={15} />
 					<span>Звонок</span>
@@ -68,8 +70,10 @@ export const LeadMobileCardActionButtons: React.FC<
 			) : (
 				<button
 					type="button"
-					disabled
-					className="leads-mobile-action-btn opacity-40 cursor-not-allowed"
+					onClick={handleScheduleClick}
+					className="leads-mobile-action-btn leads-mobile-action-btn--whatsapp opacity-85"
+					title="Указать номер телефона для чата"
+					data-testid={`quick-chat-btn-${lead.id}`}
 				>
 					<MessageSquare size={15} />
 					<span>Чат</span>

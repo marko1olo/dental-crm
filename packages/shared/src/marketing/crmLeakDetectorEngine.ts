@@ -235,10 +235,18 @@ export function generateReactivationScript(
 	);
 }
 
+export interface LeakFunnelCalculationOptions {
+	readonly averageTicketRub?: number;
+	readonly preferActualPlanSum?: boolean;
+}
+
 /**
  * Рассчитывает сводную воронку реактивации пациентов из списка лидов.
  */
-export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): CrmLeakFunnelMetrics {
+export function calculateLeakFunnelMetrics(
+	leads: readonly CrmLeakLeadItem[],
+	options?: LeakFunnelCalculationOptions,
+): CrmLeakFunnelMetrics {
 	let inProgressCount = 0;
 	let contactedCount = 0;
 	let rebookedCount = 0;
@@ -247,9 +255,11 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 	let clinicalObservationPauseCount = 0;
 	let totalDays = 0;
 	let totalUncompletedPlanSumRub = 0;
+	let calculatedRebookedRevenue = 0;
 
 	const doctorCounts: Record<string, number> = {};
 	const specialtyCounts: Record<string, number> = {};
+	const defaultAverageTicket = options?.averageTicketRub ?? 7500;
 
 	for (const lead of leads) {
 		totalDays += lead.daysSinceLastVisit;
@@ -267,6 +277,11 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 			contactedCount++;
 		} else if (lead.leadStatus === "rebooked") {
 			rebookedCount++;
+			if (options?.preferActualPlanSum && lead.uncompletedPlanSumRub > 0) {
+				calculatedRebookedRevenue += lead.uncompletedPlanSumRub;
+			} else {
+				calculatedRebookedRevenue += defaultAverageTicket;
+			}
 		} else if (lead.leadStatus === "declined") {
 			declinedCount++;
 		} else if (lead.leadStatus === "archived") {
@@ -289,8 +304,8 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 		? Math.round((rebookedCount / touchedCount) * 1000) / 10
 		: 0;
 
-	// Средний чек повторного визита в клинике ~7500 ₽
-	const rebookedRevenuePotentialRub = rebookedCount * 7500;
+	// Расчет потенциала: сумма планов лечения или средний чек клиники (без слепого захардкоженного множителя)
+	const rebookedRevenuePotentialRub = calculatedRebookedRevenue;
 
 	const topChurnDoctors = Object.entries(doctorCounts)
 		.map(([doctorName, leadCount]) => ({ doctorName, leadCount }))

@@ -288,9 +288,9 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 
 	describe("5. Funnel Stage Transitions SSOT (NEXT_STAGE_MAP)", () => {
 		it("provides unbroken progressive stages for all canonical columns", () => {
-			assert.equal(NEXT_STAGE_MAP.new?.status, "consult_booked");
+			assert.equal(NEXT_STAGE_MAP.new?.status, "contacted");
 			assert.equal(
-				NEXT_STAGE_MAP.new?.label.includes("Записать на приём"),
+				NEXT_STAGE_MAP.new?.label.includes("Квалифицировать"),
 				true,
 			);
 

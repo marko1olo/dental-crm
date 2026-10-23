@@ -8,10 +8,12 @@
 
 | State | Viewport | Mode | Verification Proof |
 |---|---|---|---|
-| ☀️ **PC Light** | 1440×900 | Clean Light Theme | [`01_pc_leads_kanban_light_1440x900.png`](./01_pc_leads_kanban_light_1440x900.png) |
-| 🌙 **PC Dark** | 1440×900 | OLED High Contrast | [`02_pc_leads_kanban_dark_1440x900.png`](./02_pc_leads_kanban_dark_1440x900.png) |
-| 📱 **Mobile Light** | 390×844 | Apple HIG Cards | [`03_mobile_leads_light_390x844.png`](./03_mobile_leads_light_390x844.png) |
-| 📱 **Mobile Dark** | 390×844 | Thumb Zone Bottom Sheet | [`04_mobile_leads_dark_bottom_sheet_390x844.png`](./04_mobile_leads_dark_bottom_sheet_390x844.png) |
+| ☀️ **PC Light** | 1440×900 | Clean Light Theme | [`leads_kanban_live_pc_light.png`](./leads_kanban_live_pc_light.png) |
+| 🌙 **PC Dark** | 1440×900 | OLED High Contrast | [`leads_kanban_live_pc_dark.png`](./leads_kanban_live_pc_dark.png) |
+| ☀️ **PC Convert Modal Light** | 1440×900 | 1-Click Fastify Convert | [`leads_convert_modal_pc_light.png`](./leads_convert_modal_pc_light.png) |
+| 🌙 **PC Convert Modal Dark** | 1440×900 | Dark Convert Modal | [`leads_convert_modal_pc_dark.png`](./leads_convert_modal_pc_dark.png) |
+| 📱 **Mobile Light** | 390×844 | Apple HIG Cards Feed | [`leads_mobile_live_light.png`](./leads_mobile_live_light.png) |
+| 📱 **Mobile Dark** | 390×844 | Apple HIG Dark Feed | [`leads_mobile_live_dark.png`](./leads_mobile_live_dark.png) |
 
 ---
 
@@ -29,17 +31,27 @@
 - **Результат аудита**: В рабочих директориях `components/leads/` и `components/crm/` ровно **0** файлов свыше 120 строк (**100% зелёный гейт**).
 
 ### 2. Полный снос псевдонаучного regex-скоринга и симуляторов (Mandate 8ap)
-- Запрещено парсить строки заметок регулярками ради псевдо-ИИ надежности лидов.
-- Вся аналитика воронки лидов и детектора утечек выручки (`detectFunnelLeaks`, `calculateAdminLeakImpact`) базируется строго на нормализованных полях базы данных: `daysSinceLastVisit`, `hasUncompletedPlan`, `uncompletedPlanSumRub`, `leadStatus`.
+- Запрещено парсить строки заметок регулярками (`опоздал на 20 мин`) ради псевдо-ИИ надежности лидов. Создан модуль `packages/shared/src/leads/leadReliabilityScoring.ts`.
+- Вся аналитика воронки лидов и детектора утечек выручки (`detectFunnelLeaks`, `calculateLeakFunnelMetrics`) базируется строго на нормализованных полях базы данных: `daysSinceLastVisit`, `hasUncompletedPlan`, `uncompletedPlanSumRub`, `leadStatus`, `dropReason`.
+- Устранены синтетические коэффициенты `* 7500 ₽`: внедрен расчет реального потенциала на базе сумм планов лечения (`preferActualPlanSum`) и среднего чека клиники (`averageTicketRub`).
 
-### 3. Apple HIG Мобильный адаптив (Mandates 8ze, 8al)
+### 3. Каноническая 4-этапная воронка SSOT (Mandate 8e, 8n)
+- 4 канонических этапа клинического канбана: `new` ("Новые") -> `contacted` ("Квалифицированы") -> `consult_booked` ("Консультация") -> `showed_up` ("Дошли").
+- Переключатель `[ Воронка (4) | Все этапы (6) ]` позволяет при необходимости видеть редкие отказные обращения (`no_answer`, `trash`) без замусоривания основного канбана.
+- Ровно 1 Primary CTA кнопка в тулбаре (`+ Новое обращение` / `+ Новый лид`).
+
+### 4. Apple HIG Мобильный адаптив & Автономия (Mandates 8ze, 8al, 8e)
 - **Zero Desktop Squeeze**: Мобильный экран спроектирован как суверенный сенсорный слой (Agenda View).
 - **Тач-таргеты**: Кнопки быстрых действий (`Звонок`, `Чат`, `Записать`) имеют размеры $\ge 44\times 44\text{px}$.
-- **Bottom Sheet**: Нативная шторка деталей и быстрого захвата лида в нижней трети экрана (Natural Thumb Zone).
+- **Запрет блокировок**: Кнопки звонка и чата при отсутствии телефона не блокируются навечно (`disabled`), а мягко открывают форму для быстрого ввода номера.
 
 ---
 
 ## 🧪 Machine Verification
-- **Тестовый люкс**: `apps/web/src/components/leads/__tests__/*.test.ts*`, `apps/web/src/components/crm/__tests__/*.test.ts*`.
-- **Результат**: **135 passed, 0 failed** (100% green), время выполнения ~3.8с ($\le 10\text{с}$).
-- **Визуальный пруф**: 4 честных PNG скриншота на живом приложении, лично отсмотрены через `read_file`.
+- **Тестовый люкс**:
+  - `apps/web/src/components/leads/__tests__/*.test.ts*`: 173 passed, 0 failed.
+  - `packages/shared/src/tests/leadReliabilityScoring.test.ts`: 4 passed, 0 failed.
+  - `packages/shared/src/tests/crmLeakDetectorEngine.test.ts`: 5 passed, 0 failed.
+  - `apps/web/src/components/crm/__tests__/*.test.tsx`: 6 passed, 0 failed.
+- **Общий итог**: **188 passed, 0 failed** (100% green), время выполнения ~5.3с ($\le 10\text{с}$).
+- **Визуальный пруф**: 6 честных PNG скриншотов на живом приложении, лично отсмотрены через `read_file`.

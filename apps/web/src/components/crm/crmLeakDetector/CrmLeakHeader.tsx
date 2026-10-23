@@ -5,7 +5,7 @@ interface Props {
 	minDays: number;
 	syncing: boolean;
 	onSync: () => void;
-	onClose?: () => void;
+	onClose?: (() => void) | undefined;
 }
 
 export const CrmLeakHeader: React.FC<Props> = ({

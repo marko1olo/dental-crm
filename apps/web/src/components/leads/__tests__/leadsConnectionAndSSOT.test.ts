@@ -53,9 +53,9 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 			assert.strictEqual(columnIds.length, 4);
 			for (const status of [
 				"new",
+				"contacted",
 				"consult_booked",
 				"showed_up",
-				"trash",
 			] as const) {
 				assert.ok(
 					columnIds.includes(status),

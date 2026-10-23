@@ -25,13 +25,15 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 	onStatusChange,
 }) => {
 	const currentSelectValue =
-		lead.status === "new" || lead.status === "contacted"
+		lead.status === "new"
 			? "new"
-			: lead.status === "consult_booked"
-				? "consult_booked"
-				: lead.status === "showed_up" || lead.status === "converted"
-					? "showed_up"
-					: "trash";
+			: lead.status === "contacted"
+				? "contacted"
+				: lead.status === "consult_booked"
+					? "consult_booked"
+					: lead.status === "showed_up" || lead.status === "converted"
+						? "showed_up"
+						: "trash";
 
 	return (
 		<div
@@ -64,6 +66,7 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 				aria-label="Выбрать статус обращения"
 			>
 				<option value="new">Новые обращения</option>
+				<option value="contacted">Квалифицированы</option>
 				<option value="consult_booked">Записаны на приём</option>
 				<option value="showed_up">Дошли до клиники</option>
 				<option value="trash">Архив / Спам</option>
