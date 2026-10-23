@@ -27,7 +27,7 @@ export interface Tooth46FullArchMockupProps {
 
 export const Tooth46FullArchMockup: React.FC<Tooth46FullArchMockupProps> = ({
 	isDark = false,
-	initialSize = "l",
+	initialSize = "xxl",
 }) => {
 	const [sizeOption, setSizeOption] = useState<BadgeSizeOption>(initialSize);
 	const [placement, setPlacement] = useState<BadgePlacement>("root_apex");
