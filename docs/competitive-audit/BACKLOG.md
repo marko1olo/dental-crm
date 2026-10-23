@@ -11712,6 +11712,45 @@
       * 35 unit-тестов в `apps/web/src/components/payroll` — 100% PASS (Exit Code 0);
       * `npm run check:encoding` — 15162 файлов проверено, 0 замечаний (Exit Code 0).
 
+66. **Волна 363: Red Team Инквизиция Аналитики и Отчётов Руководителя — Консолидация Дашбордов в Единый SSOT Кокпит, Вычищение Стороннего Бренда Diagnocat, Ликвидация Деления на Ноль, Защита Врачебной Тайны без Сырых Статей и Apple HIG 4-State Proof (Мандаты 8b, 8d, 8e, 8n, 8x, 8ap, 8am, 8ze, 8aq)**:
+    - **1. Консолидация параллельных дашбордов в единый SSOT кокпит (`AnalyticsDashboardView.tsx`, `AnalyticsHeaderBar.tsx`, `AnalyticsSubDashboards.tsx`, `ManagementViewRouter.tsx`)**:
+      * Ликвидировано нелепое дублирование: из `ManagementViewRouter.tsx` удален принудительный рендеринг `<ManagerReportsPanel />` под `AnalyticsDashboardView`;
+      * В канонический дашборд `AnalyticsDashboardView` добавлен полноценный раздел `reports` («Отчёты») в панель навигации рядом с табами «Директор» и «Графики»;
+      * `AnalyticsSubDashboards.tsx` монтирует `<ManagerReportsPanel />` строго по клику на таб «Отчёты» либо по хэшу `#reports` / `#payout` без наслоения экранов;
+      * В `AnalyticsHeaderBar.tsx` скрыта конфликтующая операционная панель фильтров при активном табе отчётов, устранена коллизия и наезд элементов;
+      * В `routeUtils.ts` добавлена каноническая маршрутизация хэшей `#reports` и `#report` в представление `analytics`.
+    - **2. Автономный стенд и лаунчер Mandate 8aq (`ReportsStandaloneLauncher.tsx`, `StandaloneLaunchers.tsx`)**:
+      * Создан изолированный легковесный лаунчер `ReportsStandaloneLauncher.tsx` ($\le 120$ строк) для автономного запуска по параметрам `?reports=1`, `#reports`, `?analytics=1`;
+      * Лаунчер подключен в `StandaloneLaunchers.tsx` с соблюдением изолированного демо-режима и dev-окружения;
+      * Актуализирован тест `managerReportSlicesReachTheOwner.test.ts` для проверки монтирования панели в каноническом дереве компонентов.
+    - **3. Тотальное вычищение стороннего бренда Diagnocat (Мандат 8ap)**:
+      * В `apps/api/src/routes/analytics/diagnocatRoutes.ts` зарегистрирован канонический эндпоинт `/api/analytics/ai-diagnostics` (с сохранением безопасного алиаса для внешних клиентов), все сообщения логов и типы переведены на нейтральную клиническую терминологию («ИИ-скрининг рентгенологических снимков»);
+      * В `packages/shared/src/analytics/executiveDashboard.ts` этап 4 переименован в «Осмотр + ИИ-диагностика снимков» с автоскринингом патологий;
+      * В `packages/shared/src/clinical/cmoEmkQualityAuditEngine.ts` дефект переименован в «Расхождение диагноза с КТ / ИИ-скринингом снимков»;
+      * В скриптах аудита и комментариях удалены любые маркетинговые упоминания сторонних вендоров.
+    - **4. Математическая точность и предотвращение деления на ноль (Мандаты 8d, 8e, 8n)**:
+      * В `cohortLtvCalculator.ts` добавлены гварды `Number.isFinite` для защиты от `NaN` при вычислении среднего LTV когорты;
+      * В `ReportsDashboardDoctorsTable.tsx` средний чек при 0 завершенных визитов безопасно падает в `0 ₽`, исключая `null`, `NaN` и битые строки;
+      * Все финансовые операции и агрегации строго оперируют целочисленными копейками (`amountKopecks`, `BIGINT`).
+    - **5. Доменная чистота без сырых номеров законов (Мандат 8ap) и синхронизация тестов**:
+      * В `FinancialAnalyticsModal.tsx` и `analyticsMedicalPrivacy.test.ts` сырые статьи законов («152-ФЗ и ст. 13 323-ФЗ») заменены на естественный доменный язык медицинской тайны: «Защита персональных данных и врачебной тайны: финансовый учёт оперирует исключительно агрегированными кассовыми суммами».
+    - **6. Apple HIG Touch Ergonomics & Единый дизайн-код (Мандаты 8am, 8ze)**:
+      * Ровно одна Primary CTA кнопка («Печать A4» в бирюзовом акценте), все второстепенные действия («Обновить», «Экспорт CSV») стилизованы как вторичные контурные кнопки;
+      * Высота кнопок на десктопе приведена к стандарту 32–36px (`sm:h-8`), на смартфонах строго $\ge 44\times 44$px;
+      * Ликвидирован паразитный горизонтальный скролл (0px);
+      * Полная токенизация Dark Mode на CSS-переменных (`var(--canvas)`, `var(--paper)`, `var(--line)`, `var(--ink)`) с нулевой утечкой белого света (0 white flashes).
+    - **7. Машинные гейты и 4-State Visual Proof (100% Pass)**:
+      * 43 теста в `apps/web/src/components/analytics/__tests__/` — 100% PASS;
+      * 6 тестов в `apps/web/src/tests/managerReportSlicesReachTheOwner.test.ts` — 100% PASS;
+      * 6 тестов в `apps/web/src/tests/reportsCsvExport.test.ts` — 100% PASS;
+      * 22 теста в `apps/api/src/tests/routes/managerReports.test.ts` — 100% PASS;
+      * 10 тестов в `analyticsCohortTimeZone.test.ts` и `analyticsPlanFunnelRoute.test.ts` — 100% PASS;
+      * Сняты и лично отсмотрены глазами через `read_file` 4 скриншота в `docs/proofs/analytics/`:
+        - `analytics_pc_light.png` (117 КБ, PC Light 1440×900, чистый кокпит с табом «Отчёты», 1 Primary CTA)
+        - `analytics_pc_dark.png` (100 КБ, PC Dark 1440×900, глубокая тёмная тема без белых пятен)
+        - `analytics_mobile_light.png` (208 КБ, Mobile Light 390×844, Grouped List Cards, устранена коллизия тулбаров)
+        - `analytics_mobile_dark.png` (174 КБ, Mobile Dark 390×844, мобильная тёмная тема Apple HIG).
+
 
 
 

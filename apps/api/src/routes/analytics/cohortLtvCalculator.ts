@@ -63,8 +63,9 @@ export async function calculateCohortLtv(
 			const [, monthStr] = key.split("-");
 			const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 			const label = (RU_MONTHS as readonly string[])[monthIdx] ?? key;
-			const avg = revenues.length
-				? Math.round(revenues.reduce((a, b) => a + b, 0) / revenues.length)
+			const total = revenues.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+			const avg = revenues.length > 0 && Number.isFinite(total)
+				? Math.round(total / revenues.length)
 				: 0;
 			return {
 				cohort: label,

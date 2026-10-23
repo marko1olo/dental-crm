@@ -8,10 +8,11 @@ import { db } from "../../db/client.js";
 import { diagnocatAiFindings, diagnocatReports } from "../../db/schema.js";
 
 /**
- * Честный подсчет диагностических ИИ-осмотров Diagnocat AI.
+ * Честный подсчет диагностических ИИ-осмотров и скрининга снимков (aiRadiologyFindings / aiDiagnosticReports).
+ * Мандат 8ap: Ноль чужих брендов, только нейтральный клинический доменный контракт.
  * Запрещена подмена на visitsWithDiaryRow: если клиника не пользуется ИИ, честно возвращаем 0.
  */
-export async function fetchDiagnocatStats(
+export async function fetchAiDiagnosticStats(
 	orgId: string,
 	startDate?: Date,
 ): Promise<{
@@ -50,19 +51,22 @@ export async function fetchDiagnocatStats(
 	};
 }
 
+/** Алиас для обратной совместимости импортов */
+export const fetchDiagnocatStats = fetchAiDiagnosticStats;
+
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
-	app.get("/api/analytics/diagnocat", async (request, reply) => {
+	const handler = async (request: any, reply: any) => {
 		const readAllowed = await requireClinicalReadAccess(
 			request,
 			reply,
-			"diagnocat analytics",
+			"ai diagnostics analytics",
 		);
 		if (!readAllowed) return;
 
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
-			"diagnocat analytics",
+			"ai diagnostics analytics",
 		);
 		if (!orgId) return;
 
@@ -85,19 +89,22 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
-			const stats = await fetchDiagnocatStats(orgId, startDate);
+			const stats = await fetchAiDiagnosticStats(orgId, startDate);
 
 			return {
 				success: true,
 				data: stats,
 			};
 		} catch (e) {
-			request.log.error({ err: e }, "Не удалось загрузить статистику Diagnocat AI");
+			request.log.error({ err: e }, "Не удалось загрузить статистику ИИ-диагностики снимков");
 			return reply.code(503).send({
 				success: false,
-				error: "DiagnocatAnalyticsUnavailable",
-				message: "Не удалось загрузить аналитику Diagnocat AI.",
+				error: "AiDiagnosticsAnalyticsUnavailable",
+				message: "Не удалось загрузить аналитику ИИ-диагностики снимков.",
 			});
 		}
-	});
+	};
+
+	app.get("/api/analytics/ai-diagnostics", handler);
+	app.get("/api/analytics/diagnocat", handler);
 }

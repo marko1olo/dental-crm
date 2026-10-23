@@ -90,6 +90,18 @@ export function AnalyticsHeaderBar({
 					<button
 						type="button"
 						role="tab"
+						aria-selected={analyticsSection === "reports"}
+						className={`analytics-tab-btn ${analyticsSection === "reports" ? "analytics-tab-btn--active" : ""}`}
+						onClick={() => {
+							setAnalyticsSection("reports");
+							setIsSectionMoreOpen(false);
+						}}
+					>
+						<span>Отчёты</span>
+					</button>
+					<button
+						type="button"
+						role="tab"
 						aria-selected={analyticsSection === "operational"}
 						className={`analytics-tab-btn ${analyticsSection === "operational" ? "analytics-tab-btn--active" : ""}`}
 						onClick={() => {
@@ -293,7 +305,9 @@ export function AnalyticsHeaderBar({
 				</div>
 			</div>
 
-			{analyticsSection !== "executive" && analyticsSection !== "clinic" && (
+			{analyticsSection !== "executive" &&
+				analyticsSection !== "clinic" &&
+				analyticsSection !== "reports" && (
 				<div
 					className="analytics-toolbar"
 					role="toolbar"

@@ -19,6 +19,12 @@ const FinancialAnalyticsModal = lazy(() =>
 	})),
 );
 
+const ManagerReportsPanel = lazy(() =>
+	import("../../components/reports/ManagerReportsPanel").then((module) => ({
+		default: module.ManagerReportsPanel,
+	})),
+);
+
 export function AnalyticsSubDashboards({
 	analyticsSection,
 	setAnalyticsSection,
@@ -64,6 +70,12 @@ export function AnalyticsSubDashboards({
 					}}
 					onOpenFinancialAnalytics={() => setIsFinancialAnalyticsOpen(true)}
 				/>
+			)}
+
+			{analyticsSection === "reports" && (
+				<Suspense fallback={<div className="p-8 text-center text-[var(--muted)]">Загрузка отчётов управляющего...</div>}>
+					<ManagerReportsPanel />
+				</Suspense>
 			)}
 
 			{analyticsSection === "marketing" && (

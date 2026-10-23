@@ -19,16 +19,16 @@ export function ReportsDashboardHeader({
 	isLoading = false,
 }: ReportsDashboardHeaderProps) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xs">
+		<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs">
 			<div className="flex items-center gap-2.5">
-				<div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/20">
-					<TrendingUp className="w-5 h-5" />
+				<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/20">
+					<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
 				</div>
 				<div>
-					<h2 className="text-sm font-bold leading-tight text-[var(--ink,#0f172a)]">
-						Сводная аналитика и ключевые KPI клиники
+					<h2 className="text-xs sm:text-sm font-bold leading-tight text-[var(--ink)]">
+						Сводная аналитика и ключевые показатели клиники
 					</h2>
-					<span className="text-xs text-[var(--muted,#64748b)]">
+					<span className="text-[11px] sm:text-xs text-[var(--muted)]">
 						Период: {period.from} — {period.to} · {clinicName}
 					</span>
 				</div>
@@ -40,11 +40,11 @@ export function ReportsDashboardHeader({
 						type="button"
 						onClick={onRefresh}
 						disabled={isLoading}
-						className="min-h-[44px] min-w-[44px] sm:min-w-0 px-3 py-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-xs font-medium text-[var(--ink)] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
 						title="Обновить аналитические срезы"
 					>
 						<RefreshCw
-							className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+							className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[var(--teal)]" : ""}`}
 						/>
 						<span className="hidden sm:inline">Обновить</span>
 					</button>
@@ -53,18 +53,18 @@ export function ReportsDashboardHeader({
 					<button
 						type="button"
 						onClick={onExportCsv}
-						className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition-colors flex items-center gap-1.5 cursor-pointer"
+						className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-xs font-medium text-[var(--ink)] transition-colors flex items-center gap-1.5 cursor-pointer"
 					>
-						<Download className="w-4 h-4 text-teal-600" />
+						<Download className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span>Экспорт CSV</span>
 					</button>
 				)}
 				<button
 					type="button"
 					onClick={onPrint}
-					className="min-h-[44px] px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 py-1.5 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
 				>
-					<Printer className="w-4 h-4" />
+					<Printer className="w-3.5 h-3.5" />
 					<span>Печать A4</span>
 				</button>
 			</div>

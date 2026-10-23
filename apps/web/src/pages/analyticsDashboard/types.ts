@@ -3,6 +3,7 @@ import type { AnalyticsDashboardData } from "../analyticsDoctorMetrics.js";
 
 export type AnalyticsSection =
 	| "executive"
+	| "reports"
 	| "operational"
 	| "curators"
 	| "lost_patients"

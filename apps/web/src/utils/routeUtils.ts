@@ -186,7 +186,7 @@ export function viewFromHash(customHash?: string): AppView {
 		return "pipeline";
 	}
 	if (view === "sanpin" || view === "sterilization") return "scanner";
-	if (view === "cmo" || view === "payout" || view === "payouts" || view === "payroll") return "analytics";
+	if (view === "cmo" || view === "payout" || view === "payouts" || view === "payroll" || view === "reports" || view === "report") return "analytics";
 	if (view === "telephony") return "communications";
 	if (view === "lab-orders" || view === "lab_orders") return "lab";
 	if (view === "invoices" || view === "billing" || view === "cashbox" || view === "payments") return "finance";

@@ -368,7 +368,7 @@ const mockExecutivePayload = {
     { stage: "lead", title: "1. Первичный лид", count: 120, conversionFromPreviousPercent: 100, isAiAssisted: false },
     { stage: "consultation_booking", title: "2. Запись на консультацию", count: 98, conversionFromPreviousPercent: 82, isAiAssisted: false },
     { stage: "attended", title: "3. Явка в клинику", count: 88, conversionFromPreviousPercent: 90, isAiAssisted: false },
-    { stage: "ai_examination", title: "4. Осмотр Diagnocat AI", count: 82, conversionFromPreviousPercent: 93, isAiAssisted: true },
+    { stage: "ai_examination", title: "4. Осмотр + ИИ-диагностика снимков", count: 82, conversionFromPreviousPercent: 93, isAiAssisted: true },
     { stage: "plan_presentation", title: "5. Презентация плана", count: 78, conversionFromPreviousPercent: 95, isAiAssisted: false, totalVolumeFormatted: "12 400 000 ₽" },
     { stage: "plan_approved", title: "6. Согласование плана", count: 56, conversionFromPreviousPercent: 72, isAiAssisted: false, totalVolumeFormatted: "8 200 000 ₽" },
     { stage: "treatment_started", title: "7. Старт лечения", count: 48, conversionFromPreviousPercent: 86, isAiAssisted: false, totalVolumeFormatted: "6 800 000 ₽" },
@@ -717,6 +717,42 @@ async function run() {
       console.log(`[Captured] ${pcDarkPath}`);
 
       // ───────────────────────────────────────────────────────────────────────
+      // 2b & 2c: PC LIGHT & PC DARK (Отчёты управляющего / Reports tab)
+      // ───────────────────────────────────────────────────────────────────────
+      const reportsTab = page.locator('button[role="tab"]:has-text("Отчёты")');
+      if (await reportsTab.isVisible()) {
+        await reportsTab.click({ force: true });
+        await page.waitForTimeout(1200);
+
+        // Reports Light
+        await page.evaluate(() => {
+          document.documentElement.setAttribute("data-theme", "light");
+          document.documentElement.classList.remove("dark");
+        });
+        await page.waitForTimeout(800);
+        const repLightPath = path.join(proofsDir, "reports_pc_light.png");
+        await page.screenshot({ path: repLightPath, fullPage: false });
+        console.log(`[Captured] ${repLightPath}`);
+
+        // Reports Dark
+        await page.evaluate(() => {
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.classList.add("dark");
+        });
+        await page.waitForTimeout(800);
+        const repDarkPath = path.join(proofsDir, "reports_pc_dark.png");
+        await page.screenshot({ path: repDarkPath, fullPage: false });
+        console.log(`[Captured] ${repDarkPath}`);
+
+        // Switch back to Director tab
+        const directorTab = page.locator('button[role="tab"]:has-text("Директор")');
+        if (await directorTab.isVisible()) {
+          await directorTab.click({ force: true });
+          await page.waitForTimeout(800);
+        }
+      }
+
+      // ───────────────────────────────────────────────────────────────────────
       // 3 & 4: PC LIGHT & PC DARK (CuratorDashboard / Воронка куратора)
       // ───────────────────────────────────────────────────────────────────────
       await page.evaluate(() => {
@@ -862,6 +898,35 @@ async function run() {
       if (fs.existsSync(brainDir)) fs.copyFileSync(mobDarkPath, path.join(brainDir, "audit_mobile_dark_executive.png"));
       fs.copyFileSync(mobDarkPath, path.join(proofsDir, "analytics_mobile_dark.png"));
       console.log(`[Captured] ${mobDarkPath}`);
+
+      // ───────────────────────────────────────────────────────────────────────
+      // 11 & 12: MOBILE LIGHT & MOBILE DARK (Reports / Отчёты tab)
+      // ───────────────────────────────────────────────────────────────────────
+      const mobReportsTab = page.locator('button[role="tab"]:has-text("Отчёты")');
+      if (await mobReportsTab.isVisible()) {
+        await mobReportsTab.click({ force: true });
+        await page.waitForTimeout(1200);
+
+        // Mobile Reports Light
+        await page.evaluate(() => {
+          document.documentElement.setAttribute("data-theme", "light");
+          document.documentElement.classList.remove("dark");
+        });
+        await page.waitForTimeout(800);
+        const mobRepLightPath = path.join(proofsDir, "reports_mobile_light.png");
+        await page.screenshot({ path: mobRepLightPath, fullPage: false });
+        console.log(`[Captured] ${mobRepLightPath}`);
+
+        // Mobile Reports Dark
+        await page.evaluate(() => {
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.classList.add("dark");
+        });
+        await page.waitForTimeout(800);
+        const mobRepDarkPath = path.join(proofsDir, "reports_mobile_dark.png");
+        await page.screenshot({ path: mobRepDarkPath, fullPage: false });
+        console.log(`[Captured] ${mobRepDarkPath}`);
+      }
 
       await context.close();
     }

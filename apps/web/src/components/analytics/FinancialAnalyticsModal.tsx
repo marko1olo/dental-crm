@@ -102,7 +102,7 @@ export function FinancialAnalyticsModal({
 					/>
 					<div className="fin-analytics-privacy-note" data-testid="financial-privacy-note">
 						<ShieldCheck size={16} style={{ color: "var(--teal)", flexShrink: 0 }} />
-						<span>Защита персональных данных и врачебной тайны (152-ФЗ и ст. 13 323-ФЗ): финансовый учет оперирует исключительно агрегированными кассовыми суммами.</span>
+						<span>Защита персональных данных и врачебной тайны: финансовый учёт оперирует исключительно агрегированными кассовыми суммами.</span>
 					</div>
 					<FinancialModalFooter onClose={onClose} />
 				</div>

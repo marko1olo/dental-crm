@@ -8,7 +8,7 @@
  *    - 1. Первичный лид (Lead / Inbound inquiry)
  *    - 2. Запись на консультацию (Consultation booking)
  *    - 3. Явка на первичный приём (Arrival / Attendance)
- *    - 4. Осмотр + ИИ-диагностика Diagnocat (AI examination)
+ *    - 4. Осмотр + ИИ-диагностика снимков (AI examination)
  *    - 5. Презентация комплексного плана (Plan presentation)
  *    - 6. Согласование плана (Plan approved)
  *    - 7. Оплата / Старт лечения (Payment & treatment start)
@@ -44,7 +44,7 @@ export const executiveFunnelStageSchema = z.enum([
 	"lead",                  // 1. Первичный лид / Обращение
 	"consultation_booking",  // 2. Запись на консультацию
 	"attended",              // 3. Явка на первичный приём
-	"ai_examination",        // 4. Осмотр + ИИ-диагностика Diagnocat
+	"ai_examination",        // 4. Осмотр + ИИ-диагностика снимков
 	"plan_presentation",     // 5. Презентация комплексного плана
 	"plan_approved",         // 6. Согласование плана
 	"treatment_started",     // 7. Оплата и старт лечения
@@ -91,9 +91,9 @@ export const EXECUTIVE_FUNNEL_STAGE_DEFINITIONS: readonly ExecutiveFunnelStageDe
 	{
 		stage: "ai_examination",
 		stepNumber: 4,
-		title: "Осмотр + ИИ-диагностика Diagnocat",
+		title: "Осмотр + ИИ-диагностика снимков",
 		shortTitle: "4. ИИ-осмотр",
-		description: "Выполнен фотопротокол, КЛКТ/ОПТГ и автоматический скрининг Diagnocat",
+		description: "Выполнен фотопротокол, КЛКТ/ОПТГ и автоматический скрининг патологий",
 		benchmarkConversionPercent: 90,
 		isAiAssisted: true,
 	},
@@ -321,7 +321,7 @@ export interface ExecutiveKpis {
 	readonly totalAvailableMinutes: number;         // Доступный фонд кресел
 	readonly totalChairsCount: number;
 	readonly leadToSanitationConversionPercent: number; // Сквозная конверсия Лид -> Санация
-	readonly aiDiagnosticRatePercent: number;       // Доля первичных с ИИ-осмотром Diagnocat (%)
+	readonly aiDiagnosticRatePercent: number;       // Доля первичных с ИИ-осмотром снимков (%)
 	
 	// Потери расписания
 	readonly cancelledVisitsCount: number;          // Отменено пациентом заранее

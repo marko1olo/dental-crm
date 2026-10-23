@@ -150,7 +150,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const totalLeads = Number(leadsRow?.count || 0) + Number(newPatientsRow?.count || 0);
 
-	// 3. Честный подсчет диагностических ИИ-осмотров Diagnocat AI
+	// 3. Честный подсчет диагностических ИИ-осмотров снимков (aiRadiologyFindings / aiDiagnosticReports)
 	const [aiReportsRow] = await db
 		.select({ count: sql<number>`count(*)::int` })
 		.from(diagnocatReports)

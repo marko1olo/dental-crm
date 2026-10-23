@@ -8,6 +8,7 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
+import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./standalone/SpecializedAdministrativeLaunchers";
 import { renderSpecializedClinicalLaunchers } from "./standalone/SpecializedClinicalLaunchers";
 
@@ -34,6 +35,12 @@ export function renderStandaloneLaunchers(
 	const payrollLauncher = renderPayrollLauncher();
 	if (payrollLauncher) {
 		return payrollLauncher;
+	}
+
+	// 0. Executive Analytics & Reports Standalone Launcher (?reports=1, #reports, ?analytics=1)
+	const reportsLauncher = renderReportsStandaloneLauncher();
+	if (reportsLauncher) {
+		return reportsLauncher;
 	}
 
 	// 1. Clinical Launchers (CBCT, Ceph, CT, OPG, Consent, Presentation)

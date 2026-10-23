@@ -436,22 +436,21 @@ describe("разрезы отчётов управляющего доходят 
 		// До панели надо ДОЙТИ. Если её перестанут монтировать, все проверки выше
 		// останутся зелёными, а владелец снова не увидит ни одного разреза — так уже
 		// было с тремя починками диктовки и с таблицей выплат врачам.
-		const app = withoutComments(
-			readFileSync(path.join(webSrc, "App.tsx"), "utf8"),
-		);
-		const appRouter = withoutComments(
-			readFileSync(path.join(webSrc, "components", "appLayout", "AppViewRouter.tsx"), "utf8"),
-		);
-		const combined = `${app}\n${appRouter}`;
-		assert.match(
-			combined,
-			/import\("(\.\.\/reports\/|\.\/components\/reports\/)ManagerReportsPanel"\)/,
-			"AppViewRouter.tsx / App.tsx больше не подгружает панель отчётов",
+		const analyticsSubDashboards = withoutComments(
+			readFileSync(
+				path.join(webSrc, "pages", "analyticsDashboard", "AnalyticsSubDashboards.tsx"),
+				"utf8",
+			),
 		);
 		assert.match(
-			combined,
+			analyticsSubDashboards,
+			/import\(["'](\.\.\/reports\/|\.\/components\/reports\/|\.\.\/\.\.\/components\/reports\/)ManagerReportsPanel["']\)/,
+			"AnalyticsSubDashboards.tsx больше не подгружает панель отчётов",
+		);
+		assert.match(
+			analyticsSubDashboards,
 			/<ManagerReportsPanel\s/,
-			"панель отчётов больше не отрисовывается ни на одном экране",
+			"панель отчётов больше не отрисовывается в разделе аналитики",
 		);
 	});
 });

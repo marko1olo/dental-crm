@@ -1,5 +1,5 @@
 import { AlertTriangle, Calendar, RefreshCw } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { EmptyState } from "../../components/EmptyState.js";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { NETWORK_FAILURE_MESSAGE } from "../analyticsDoctorMetrics.js";
@@ -20,9 +20,56 @@ import { useAnalyticsDashboardData } from "./useAnalyticsDashboardData";
 export function AnalyticsDashboardView() {
 	const [dateRange, setDateRange] = useState<string>("all");
 	const [branchFilter, setBranchFilter] = useState<string>("all");
-	const [analyticsSection, setAnalyticsSection] = useState<AnalyticsSection>("executive");
+	const [analyticsSection, setAnalyticsSection] = useState<AnalyticsSection>(() => {
+		if (typeof window !== "undefined") {
+			const hash = window.location.hash.toLowerCase();
+			const search = window.location.search.toLowerCase();
+			if (
+				hash.includes("reports") ||
+				search.includes("reports") ||
+				hash.includes("payout") ||
+				search.includes("payout")
+			) {
+				return "reports";
+			}
+			if (hash.includes("curator") || search.includes("curator")) {
+				return "curators";
+			}
+			if (hash.includes("lost") || search.includes("lost")) {
+				return "lost_patients";
+			}
+			if (hash.includes("slots") || search.includes("slots")) {
+				return "freed_slots";
+			}
+			if (hash.includes("marketing") || search.includes("marketing")) {
+				return "marketing";
+			}
+		}
+		return "executive";
+	});
 	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
 	const [isFinancialAnalyticsOpen, setIsFinancialAnalyticsOpen] = useState(false);
+
+	useEffect(() => {
+		const handleHashChange = () => {
+			const hash = window.location.hash.toLowerCase();
+			if (hash.includes("reports") || hash.includes("payout")) {
+				setAnalyticsSection("reports");
+			} else if (hash.includes("curator")) {
+				setAnalyticsSection("curators");
+			} else if (hash.includes("lost")) {
+				setAnalyticsSection("lost_patients");
+			} else if (hash.includes("slots")) {
+				setAnalyticsSection("freed_slots");
+			} else if (hash.includes("marketing")) {
+				setAnalyticsSection("marketing");
+			} else if (hash.includes("analytics")) {
+				setAnalyticsSection("executive");
+			}
+		};
+		window.addEventListener("hashchange", handleHashChange);
+		return () => window.removeEventListener("hashchange", handleHashChange);
+	}, []);
 
 	const {
 		data,

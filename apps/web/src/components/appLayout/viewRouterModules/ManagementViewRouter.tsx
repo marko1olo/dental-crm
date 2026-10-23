@@ -14,9 +14,6 @@ import type { AppViewRouterProps } from "../types";
 const AnalyticsDashboardView = lazyWithRetry(() =>
 	import("../../../pages/AnalyticsDashboardView").then((m) => ({ default: m.AnalyticsDashboardView })),
 );
-const ManagerReportsPanel = lazyWithRetry(() =>
-	import("../../reports/ManagerReportsPanel").then((m) => ({ default: m.ManagerReportsPanel })),
-);
 const LeadsKanbanView = lazyWithRetry(() =>
 	import("../../leads/LeadsKanbanView").then((m) => ({ default: m.LeadsKanbanView })),
 );
@@ -31,14 +28,10 @@ export function ManagementViewRouter(props: AppViewRouterProps) {
 	const { currentView, dashboard } = props;
 
 	if (currentView === "analytics") {
-		const isPayout = typeof window !== "undefined" && window.location.hash.includes("payout");
 		return (
 			<WorkspaceRouteErrorBoundary view="analytics" label="Аналитика" panelClassName="panel analytics-panel" panelId="analytics">
 				<Suspense fallback={<AppLoadingState message="Загрузка аналитики..." />}>
-					{!isPayout && <AnalyticsDashboardView />}
-				</Suspense>
-				<Suspense fallback={null}>
-					<ManagerReportsPanel clinicMode={dashboard?.clinicSettings?.profile?.mode ?? null} />
+					<AnalyticsDashboardView />
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>
 		);

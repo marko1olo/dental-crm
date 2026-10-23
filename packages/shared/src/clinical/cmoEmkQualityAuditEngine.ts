@@ -40,7 +40,7 @@ export const emkDefectTagSchema = z.enum([
 	"missing_treatment_protocol", // Нет протокола манипуляций SOAP
 	"missing_804n_services", // Наряд-заказ пуст, нет услуг по Номенклатуре 804н
 	"missing_pep_signature", // Нет подписи врача (ПЭП)
-	"discrepancy_with_xray", // Расхождение диагноза с рентгенологической картиной (Diagnocat/КЛКТ)
+	"discrepancy_with_xray", // Расхождение диагноза с рентгенологической картиной (ИИ-скрининг / КЛКТ)
 	"unreasonable_antibiotics", // Необоснованное назначение антибиотиков без показаний
 	"price_discrepancy", // Несоответствие суммы наряда прейскуранту клиники
 ]);
@@ -98,7 +98,7 @@ export const EMK_DEFECT_TAGS_CATALOG: readonly EmkDefectTagMeta[] = [
 	},
 	{
 		tag: "discrepancy_with_xray",
-		labelRu: "Расхождение диагноза с КТ/Diagnocat AI",
+		labelRu: "Расхождение диагноза с КТ / ИИ-скринингом снимков",
 		sectionIndex: 4,
 		severity: "warning",
 	},

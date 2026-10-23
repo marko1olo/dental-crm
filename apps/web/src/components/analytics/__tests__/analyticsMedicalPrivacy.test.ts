@@ -44,7 +44,11 @@ test("FinancialAnalyticsModal enforces medical privacy notice and strictly imper
 		"FinancialAnalyticsModal must display medical secrecy compliance notice",
 	);
 	assert.ok(
-		content.includes("врачебной тайны (152-ФЗ и ст. 13 323-ФЗ)"),
-		"Must explicitly cite medical privacy regulations",
+		content.includes("врачебной тайны"),
+		"Must explicitly mention medical secrecy / privacy protection",
+	);
+	assert.ok(
+		content.includes("агрегированными кассовыми суммами"),
+		"Must explicitly state that accounting operates strictly on aggregated financial figures",
 	);
 });
