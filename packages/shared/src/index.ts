@@ -74,6 +74,11 @@ export * from "./sanpin/index.js";
 export * from "./sanpin/sterilizationPouchEngine.js";
 export * from "./legal/index.js";
 export * from "./documents/index.js";
+export {
+	consentCategorySchema,
+	type ConsentCategory,
+	type SharedConsentContext,
+} from "./consents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
 export * from "./clinical/therapyProtocolEngine.js";

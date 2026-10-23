@@ -9,7 +9,6 @@ export {
 	addWeeksSafe,
 	buildTelegramUrl,
 	buildWhatsAppUrl,
-	calculateCohortRetention,
 	calculateDaysOverdue,
 	calculateHygieneRecallDate,
 	calculateImplantRecallMilestones,
@@ -29,7 +28,9 @@ export {
 	resolveUrgencyStatus,
 	sanitizePhoneNumber,
 	calculateHygieneRecallTrigger,
+	calculateImplantMonitoringRecallTrigger,
 	calculateImplantProstheticRecallTrigger,
+	calculateProstheticRecallTrigger,
 	calculateOrthoActivationRecallTrigger,
 	calculatePediatricRecallTrigger,
 	calculateEndodonticRecallTrigger,
@@ -51,8 +52,6 @@ export type {
 	CanonicalRecallWorkflowStatus,
 	ClinicalRecallTriggerInfo,
 	ClinicalRecallTriggerType,
-	CohortRetentionGroup,
-	CohortRetentionReport,
 	PatientRecallCandidate,
 	PatientRecallRecord,
 	RecallChannel,
@@ -90,7 +89,6 @@ export {
 	default,
 } from "./PatientRecallsHubModal";
 
-export * from "./PatientRecallsCohortsTab";
 export * from "./PatientRecallsTaskCallsTab";
 export * from "./PatientRecallsTableView";
 export * from "./PatientRecallsKanbanView";

@@ -94,3 +94,72 @@
 	padding-top: 8px;
 	border-top: 1px solid var(--rm-border);
 }
+
+/* Mobile Tabs & Responsive Kanban (Apple HIG) */
+.recall-kanban-mobile-tabs {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.recall-kanban-mobile-tabs {
+		display: flex;
+		gap: 6px;
+		overflow-x: auto;
+		padding: 4px 2px 8px 2px;
+		margin-bottom: 8px;
+		border-bottom: 1px solid var(--rm-border);
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+	.recall-kanban-mobile-tabs::-webkit-scrollbar {
+		display: none;
+	}
+	.recall-kanban-mobile-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 12px;
+		border-radius: var(--radius-full, 9999px);
+		border: 1px solid var(--rm-border);
+		background: var(--rm-surface);
+		color: var(--rm-text-main);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		white-space: nowrap;
+		min-height: 38px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+	.recall-kanban-mobile-tab.active {
+		background: var(--primary);
+		color: white;
+		border-color: var(--primary);
+		box-shadow: var(--shadow-sm);
+	}
+	.recall-kanban-mobile-tab-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1px 6px;
+		border-radius: 10px;
+		font-size: 0.75rem;
+		background: var(--paper);
+		color: var(--ink);
+	}
+	.recall-kanban-mobile-tab.active .recall-kanban-mobile-tab-count {
+		background: rgba(255, 255, 255, 0.25);
+		color: white;
+	}
+	.recall-kanban-board {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.recall-kanban-column {
+		display: none;
+		min-height: auto;
+	}
+	.recall-kanban-column[data-mobile-active="true"] {
+		display: flex;
+	}
+}

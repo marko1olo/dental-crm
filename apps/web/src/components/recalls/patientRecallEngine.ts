@@ -4,10 +4,16 @@
 
 export * from "./recallCycleCatalog";
 export * from "./recallDateMath";
-export * from "./recallCohortRetention";
+export * from "./recallRecordTypes";
+export * from "./recallMetricsCalculator";
 export * from "./recallSmsAndMessaging";
 export * from "./recallClinicalTriggers";
-export * from "./recallLegacyCandidates";
 export * from "./recallProfile";
 export * from "./recallFilterSort";
 export * from "./recallActions";
+export * from "./recallMessagingApi";
+
+// Clean aliases for legacy imports
+import { sanitizePhoneNumber, extractFirstName } from "./recallSmsAndMessaging";
+export const cleanPhoneDigits = sanitizePhoneNumber;
+export const extractPatientFirstName = extractFirstName;

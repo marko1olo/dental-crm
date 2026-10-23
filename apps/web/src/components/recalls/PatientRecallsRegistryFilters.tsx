@@ -1,5 +1,5 @@
 import type React from "react";
-import { Search, X } from "lucide-react";
+import { LayoutGrid, List, Search, X } from "lucide-react";
 import type { RecallPeriodFilter } from "./patientRecallEngine";
 
 export interface PatientRecallsRegistryFiltersProps {
@@ -10,6 +10,8 @@ export interface PatientRecallsRegistryFiltersProps {
 	readonly onDoctorChange: (id: string | "all") => void;
 	readonly selectedPeriod: RecallPeriodFilter;
 	readonly onPeriodChange: (p: RecallPeriodFilter) => void;
+	readonly viewMode?: "list" | "kanban" | undefined;
+	readonly onViewModeChange?: ((mode: "list" | "kanban") => void) | undefined;
 }
 
 export const PatientRecallsRegistryFilters: React.FC<PatientRecallsRegistryFiltersProps> = ({
@@ -20,6 +22,8 @@ export const PatientRecallsRegistryFilters: React.FC<PatientRecallsRegistryFilte
 	onDoctorChange,
 	selectedPeriod,
 	onPeriodChange,
+	viewMode = "list",
+	onViewModeChange,
 }) => {
 	return (
 		<div className="recall-filters-row">
@@ -65,9 +69,31 @@ export const PatientRecallsRegistryFilters: React.FC<PatientRecallsRegistryFilte
 					<option value="next_30_days">Ближайшие 30 дней</option>
 				</select>
 
-				<div className="recall-hidden-toggles" style={{ display: "none" }}>
-					<button type="button" data-testid="view-mode-table">Таблица</button>
-					<button type="button" data-testid="view-mode-kanban">Канбан</button>
+				<div className="recall-view-mode-toggle dente-segmented-bar" role="tablist" aria-label="Режим отображения">
+					<button
+						type="button"
+						role="tab"
+						aria-selected={viewMode === "list"}
+						className={`recall-tab-btn ${viewMode === "list" ? "active" : ""}`}
+						data-testid="view-mode-table"
+						onClick={() => onViewModeChange?.("list")}
+						title="Список пациентов"
+					>
+						<List size={15} />
+						<span>Список</span>
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={viewMode === "kanban"}
+						className={`recall-tab-btn ${viewMode === "kanban" ? "active" : ""}`}
+						data-testid="view-mode-kanban"
+						onClick={() => onViewModeChange?.("kanban")}
+						title="Канбан-доска"
+					>
+						<LayoutGrid size={15} />
+						<span>Канбан</span>
+					</button>
 				</div>
 			</div>
 		</div>

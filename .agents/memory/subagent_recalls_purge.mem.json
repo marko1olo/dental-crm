@@ -1,0 +1,41 @@
+{
+  "subagent": "Senior Red Team Recalls & Loyalty Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-23T11:40:00+04:00",
+  "task": "Purge academic cohort retention simulators and dispensary funnels, consolidate clinical return triggers in recallClinicalTriggers.ts SSOT, enforce single Primary CTA «✓ Запланировать осмотр» and 4-column responsive Kanban board with zero disabled buttons",
+  "purged_files": [
+    "apps/web/src/components/recalls/recallCohortRetention.ts",
+    "apps/web/src/components/recalls/recallCohortCalculations.ts",
+    "apps/web/src/components/recalls/recallCohortTypes.ts",
+    "apps/web/src/components/recalls/PatientRecallsCohortsTab.tsx",
+    "apps/web/src/components/recalls/PatientRecallsCohortsMetrics.tsx",
+    "apps/web/src/components/recalls/RecallDispensaryFunnel.tsx",
+    "apps/web/src/components/recalls/recallLegacyCandidates.ts",
+    "apps/web/src/components/recalls/recallLegacyCandidatesTypes.ts",
+    "apps/web/src/components/recalls/recallLegacyMessageFormatter.ts"
+  ],
+  "verified_clinical_triggers": [
+    "hygiene_6m: Профгигиена (6 мес) + онкоскрининг",
+    "implant_monitoring_6m: Контроль остеоинтеграции имплантатов (6 мес)",
+    "implant_prosthetic_12m: Годовой рентген-контроль ортопедии и имплантатов СтАР/ITI (12 мес)",
+    "ortho_activation_1m: Ортодонтическая активация (1 мес / 4 нед)",
+    "pediatric_3_4m: Детский профосмотр и фторирование (3-4 мес)",
+    "periodontal_3m: Пародонтологический контроль (3 мес)"
+  ],
+  "doctor_autonomy_enforced": {
+    "disabled_buttons": 0,
+    "primary_cta": "Запланировать осмотр (Lucide CalendarCheck)",
+    "kanban_columns": 4,
+    "mobile_responsive_tabs": "Apple HIG segmented chip bar, 0px horizontal scroll"
+  },
+  "verification_gates": {
+    "encoding": "UTF-8 without BOM (15,644 files verified)",
+    "vitest": "86 passed, 0 failed across all 5 test files",
+    "visual_proofs": [
+      "docs/proofs/recalls/01_pc_light_1440x900.png",
+      "docs/proofs/recalls/02_pc_dark_1440x900.png",
+      "docs/proofs/recalls/03_mobile_light_390x844.png",
+      "docs/proofs/recalls/04_mobile_dark_390x844.png"
+    ]
+  }
+}

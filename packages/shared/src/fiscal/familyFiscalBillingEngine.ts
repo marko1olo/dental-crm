@@ -37,7 +37,8 @@ export interface FamilyMemberBillingItem {
 	readonly relationship: FamilyRelationshipType;
 	readonly relationshipRu?: string | undefined;
 	readonly serviceName: string;
-	readonly code804n: string;
+	readonly code804n?: string | undefined;
+	readonly serviceCode?: string | undefined;
 	readonly toothNumber?: number | undefined;
 	readonly priceRub: number;
 	readonly quantity: number;

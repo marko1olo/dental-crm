@@ -1,129 +1,37 @@
+/**
+ * ClinicalModalsSubcontainer — Подконтейнер клинических модальных окон (Мандат 8b, <= 120 строк).
+ */
+
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
-import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
-import { ImagingExportModal } from "../../imaging/ImagingExportModal";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
+import { ClinicalImagingModals } from "./ClinicalImagingModals";
 import type { ClinicalModalsSubcontainerProps } from "./modalsContainerTypes";
 
-const CbctTunerPlayground = lazyWithRetry(() =>
-	import("../../radiology/tuner/CbctTunerPlayground").then((module) => ({
-		default: module.CbctTunerPlayground,
-	})),
-);
-
-const CbctMprImplantStudioModal = lazyWithRetry(() =>
-	import("../../radiology/CbctMprImplantStudioModal").then((module) => ({
-		default: module.CbctMprImplantStudioModal,
-	})),
-);
-
 const EgiszRemdHubModal = lazyWithRetry(() =>
-	import("../../egisz/EgiszRemdHubModal").then((module) => ({
-		default: module.EgiszRemdHubModal,
-	})),
+	import("../../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal })),
 );
 
-export function ClinicalModalsSubcontainer({
-	isGlobalVisiographOpen,
-	setIsGlobalVisiographOpen,
-	isGlobalImagingExportOpen,
-	setIsGlobalImagingExportOpen,
-	isCbctTunerOpen,
-	setIsCbctTunerOpen,
-	isCbctDirectModalOpen,
-	setIsCbctDirectModalOpen,
-	isConsentDirectModalOpen,
-	setIsConsentDirectModalOpen,
-	isEgiszRemdModalOpen,
-	setIsEgiszRemdModalOpen,
-	activeStaffUser,
-}: ClinicalModalsSubcontainerProps) {
+export function ClinicalModalsSubcontainer(props: ClinicalModalsSubcontainerProps) {
+	const {
+		isConsentDirectModalOpen,
+		setIsConsentDirectModalOpen,
+		isEgiszRemdModalOpen,
+		setIsEgiszRemdModalOpen,
+	} = props;
+
 	return (
 		<>
-			{isGlobalVisiographOpen && (
-				<VisiographComparisonModal
-					isOpen={isGlobalVisiographOpen}
-					onClose={() => setIsGlobalVisiographOpen(false)}
-					patientName="Чухрова Лариса Павловна"
-					patientCardNumber="20190621_101042"
-					patientAge="58Y"
-					activeToothFdi="36"
-				/>
-			)}
-			{isGlobalImagingExportOpen && (
-				<ImagingExportModal
-					isOpen={isGlobalImagingExportOpen}
-					onClose={() => setIsGlobalImagingExportOpen(false)}
-					study={{
-						id: "study-rvg-36",
-						title: "Прицельный снимок визиографа (зуб 36, эндодонтия)",
-						capturedAt: new Date().toISOString(),
-						date: new Date().toISOString(),
-						kind: "rvg",
-					} as any}
-					patient={{
-						fullName: "Чухрова Лариса Павловна",
-						medicalCardNumber: "20190621_101042",
-					}}
-					doctorName={activeStaffUser?.name || "Д-р Барабаш С. В."}
-					clinicName="Клиника Инновационной Стоматологии ДЕНТЕ"
-				/>
-			)}
-			{isCbctTunerOpen && (
-				<Suspense fallback={null}>
-					<CbctTunerPlayground
-						isOpen={true}
-						onClose={() => {
-							setIsCbctTunerOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("cbct");
-							window.history.replaceState(
-								{},
-								"",
-								url.pathname +
-									(url.search ? url.search : "") +
-									(url.hash && !url.hash.includes("cbct") ? url.hash : ""),
-							);
-						}}
-					/>
-				</Suspense>
-			)}
-			{isCbctDirectModalOpen && (
-				<Suspense fallback={null}>
-					<CbctMprImplantStudioModal
-						isOpen={true}
-						onClose={() => {
-							setIsCbctDirectModalOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("cbct");
-							window.history.replaceState(
-								{},
-								"",
-								url.pathname +
-									(url.search ? url.search : "") +
-									(url.hash && !url.hash.includes("cbct") ? url.hash : ""),
-							);
-						}}
-						patientName="Захаров Иван Дмитриевич (Демо 3D КЛКТ 312 срезов)"
-						patientId="demo_cbct_patient"
-						autoLoadDemo={true}
-					/>
-				</Suspense>
-			)}
+			<ClinicalImagingModals {...props} />
+
 			{isConsentDirectModalOpen && (
 				<InformedConsentModal
 					isOpen={true}
 					onClose={() => {
 						setIsConsentDirectModalOpen(false);
-						const url = new URL(window.location.href);
-						url.searchParams.delete("consent");
-						window.history.replaceState(
-							{},
-							"",
-							url.pathname +
-								(url.search ? url.search : "") +
-								(url.hash && !url.hash.includes("consent") ? url.hash : ""),
-						);
+						const u = new URL(window.location.href);
+						u.searchParams.delete("consent");
+						window.history.replaceState({}, "", u.pathname + (u.search || "") + (u.hash.includes("consent") ? "" : u.hash));
 					}}
 					initialMode="packages"
 					initialPackageKey="PACKAGE_PRIMARY_VISIT"
@@ -141,30 +49,21 @@ export function ClinicalModalsSubcontainer({
 					toothNumbers="3.6"
 				/>
 			)}
+
 			{isEgiszRemdModalOpen && (
 				<Suspense fallback={null}>
 					<EgiszRemdHubModal
 						isOpen={true}
 						onClose={() => {
 							setIsEgiszRemdModalOpen(false);
-							const url = new URL(window.location.href);
-							url.searchParams.delete("egisz");
-							url.searchParams.delete("remd");
-							url.searchParams.delete("semd");
-							window.history.replaceState(
-								{},
-								"",
-								url.pathname +
-									(url.search ? url.search : "") +
-									(url.hash && !url.hash.includes("egisz") && !url.hash.includes("remd") ? url.hash : ""),
-							);
+							const u = new URL(window.location.href);
+							u.searchParams.delete("egisz");
+							u.searchParams.delete("remd");
+							u.searchParams.delete("semd");
+							window.history.replaceState({}, "", u.pathname + (u.search || "") + (u.hash.includes("egisz") && !u.hash.includes("remd") ? u.hash : ""));
 						}}
 						initialDocType="cda_semd"
-						initialTab={
-							((typeof window !== "undefined"
-								? new URLSearchParams(window.location.search).get("tab")
-								: null) as any) ?? "signature"
-						}
+						initialTab="signature"
 					/>
 				</Suspense>
 			)}

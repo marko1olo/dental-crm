@@ -284,6 +284,7 @@ export interface DoctorCompletedServiceItem {
 	readonly isRefunded?: boolean | undefined;
 	readonly refundedAmountKop?: number | undefined;
 	readonly order804nCode?: string | undefined;
+	readonly serviceCode?: string | undefined;
 	readonly toothCode?: string | undefined;
 	readonly performerId?: string | undefined;
 	readonly doctorId?: string | undefined;

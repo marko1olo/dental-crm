@@ -1,5 +1,5 @@
 import type React from "react";
-import { Calendar, ChevronDown, MessageCircle, Phone } from "lucide-react";
+import { CalendarCheck, ChevronDown, MessageCircle, Phone } from "lucide-react";
 import {
 	formatHumanRecallBadge, resolveCandidateTriggerType,
 	type PatientRecallRecord, type RecallContactStatus,
@@ -34,7 +34,7 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 		dueDate: candidate.dueDate, status: candidate.status,
 	});
 
-	const btnCls = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
+	const btnCls = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--primary)] hover:bg-[var(--paper-hover)] transition-colors";
 
 	return (
 		<div className="recall-kanban-card" data-testid={`kanban-card-${candidate.id}`}>
@@ -63,14 +63,14 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 			<div className="recall-kanban-card-actions" style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed var(--rm-border)" }}>
 				<button
 					type="button"
-					className={`${btnCls} recall-action-btn--book`}
-					style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem", flex: "1 1 0", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "5px" }}
+					className="recall-action-btn recall-action-btn--book bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] font-bold rounded-xl px-2.5 py-1.5 shadow-xs transition-colors border-0"
+					style={{ minHeight: "36px", padding: "4px 8px", fontSize: "0.75rem", flex: "1 1 0", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "5px" }}
 					onClick={() => onBook(candidate)}
 					data-testid={`kanban-book-btn-${candidate.id}`}
-					title="Записать в расписание"
+					title="Запланировать осмотр"
 				>
-					<Calendar size={13} />
-					<span>Записать</span>
+					<CalendarCheck size={14} />
+					<span>Запланировать</span>
 				</button>
 
 				<div style={{ position: "relative", flex: "1 1 0", display: "inline-flex" }}>

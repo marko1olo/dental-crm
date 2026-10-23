@@ -3,7 +3,6 @@ import type { ClinicalTaskCallType } from "@dental/shared";
 import type { PatientRecallRecord, RecallContactStatus, RecallPeriodFilter } from "./patientRecallEngine";
 import { determineTaskCallTypeForCandidate } from "./recallRecordTypes";
 import { PatientRecallsRegistryView } from "./PatientRecallsRegistryView";
-import { RecallDispensaryFunnel } from "./RecallDispensaryFunnel";
 import { PatientRecallsTaskCallsTab } from "./PatientRecallsTaskCallsTab";
 import type { RecallHubActiveTab } from "./RecallHubHeader";
 
@@ -70,20 +69,7 @@ export const PatientRecallsHubTabRouter: React.FC<PatientRecallsHubTabRouterProp
 		);
 	}
 
-	if (activeTab === "funnel") {
-		return (
-			<RecallDispensaryFunnel
-				candidates={filteredCandidates}
-				activeScriptCandidateId={activeScriptCandidateId}
-				onBook={onBook}
-				onToggleScript={onToggleScript}
-				onWhatsApp={onWhatsApp}
-				onTelegram={onTelegram}
-				onCopySms={onCopySms}
-				onStatusUpdate={onStatusUpdate}
-			/>
-		);
-	}
+
 
 	if (activeTab === "task_calls") {
 		const taskCallCandidates = candidates.map((c) => ({

@@ -1,6 +1,6 @@
-import type { ClinicalTaskCallType, StomxTaskCallType } from "@dental/shared";
+import type { ClinicalTaskCallType } from "@dental/shared";
 
-export type { ClinicalTaskCallType, StomxTaskCallType };
+export type { ClinicalTaskCallType };
 
 export type RecallCycleType =
 	| "standard_prophylaxis"
@@ -78,6 +78,7 @@ export function fromCanonicalRecallStatus(canonical: CanonicalRecallWorkflowStat
 
 export type ClinicalRecallTriggerType =
 	| "hygiene_6m"
+	| "implant_monitoring_6m"
 	| "implant_prosthetic_12m"
 	| "ortho_activation_1m"
 	| "pediatric_3_4m"

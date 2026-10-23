@@ -9,6 +9,7 @@ export interface ReceiptItem {
 	readonly id?: string | undefined;
 	readonly name: string;
 	readonly code804n?: string | undefined;
+	readonly serviceCode?: string | undefined;
 	readonly toothNumber?: number | string | undefined;
 	readonly quantity: number;
 	readonly priceRub: number;

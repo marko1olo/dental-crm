@@ -8,13 +8,15 @@ import { addCalendarMonthsSafe, addWeeksSafe, formatIsoDateOnly } from "./recall
 
 export interface ClinicalProcedureIdentifier {
 	readonly code?: string | undefined;
+	readonly serviceCode?: string | undefined;
+	readonly nomenclatureCode?: string | undefined;
 	readonly code804n?: string | undefined;
 	readonly name?: string | undefined;
 	readonly serviceName?: string | undefined;
 }
 
 export function isProfessionalHygieneProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.code804n || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
+	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
 	if (
 		rawCode.startsWith("A16.07.051") ||
 		rawCode.startsWith("A16.07.020") ||
@@ -37,7 +39,7 @@ export function isProfessionalHygieneProcedure(proc: ClinicalProcedureIdentifier
 }
 
 export function isOrthodonticAdjustmentProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.code804n || proc.code || "").trim().toUpperCase();
+	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
 	if (rawCode.startsWith("A16.07.048") || rawCode.startsWith("A16.07.047") || rawCode.startsWith("A16.07.046")) {
 		return true;
 	}
@@ -51,7 +53,7 @@ export function isOrthodonticAdjustmentProcedure(proc: ClinicalProcedureIdentifi
 }
 
 export function isImplantMonitoringProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.code804n || proc.code || "").trim().toUpperCase();
+	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
 	if (rawCode.startsWith("A16.07.054") || rawCode.startsWith("A06.07")) {
 		const rawName = (proc.serviceName || proc.name || "").toLowerCase();
 		if (rawName.includes("имплант") || rawName.includes("остеоинтеграц")) return true;
@@ -64,7 +66,7 @@ export function isImplantMonitoringProcedure(proc: ClinicalProcedureIdentifier):
 }
 
 export function isPediatricProphylaxisProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.code804n || proc.code || "").trim().toUpperCase();
+	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
 	if (rawCode.startsWith("A16.07.057") || rawCode.startsWith("A11.07.012") || rawCode.startsWith("A11.07.024")) {
 		return true;
 	}
@@ -73,7 +75,7 @@ export function isPediatricProphylaxisProcedure(proc: ClinicalProcedureIdentifie
 }
 
 export function isEndodonticCheckProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.code804n || proc.code || "").trim().toUpperCase();
+	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
 	if (rawCode.startsWith("A06.07.003") || rawCode.startsWith("A06.07.004") || rawCode.startsWith("A06.07.012")) {
 		return true;
 	}
@@ -92,7 +94,7 @@ export function shouldResetRecallTimer(
 	if (recall.cycleType === "orthodontic_braces" || recall.cycleType === "orthodontic_aligners" || recall.clinicalTriggerType === "ortho_activation_1m") {
 		return visitProcedures.some(isOrthodonticAdjustmentProcedure);
 	}
-	if (recall.cycleType === "implant_monitoring" || recall.clinicalTriggerType === "implant_prosthetic_12m") {
+	if (recall.cycleType === "implant_monitoring" || recall.clinicalTriggerType === "implant_prosthetic_12m" || recall.clinicalTriggerType === "implant_monitoring_6m") {
 		return visitProcedures.some(isImplantMonitoringProcedure);
 	}
 	if (recall.cycleType === "pediatric_fluoridation" || recall.clinicalTriggerType === "pediatric_3_4m") {
@@ -123,20 +125,37 @@ export function calculateHygieneRecallTrigger(lastCleaningDate: Date | string, c
 	};
 }
 
+export function calculateImplantMonitoringRecallTrigger(lastSurgeryDate: Date | string, customMonths = 6): ClinicalRecallTriggerInfo {
+	const months = customMonths > 0 ? customMonths : 6;
+	const nextDueDate = addCalendarMonthsSafe(lastSurgeryDate, months);
+	return {
+		triggerType: "implant_monitoring_6m",
+		title: "Контрольный осмотр и приживление имплантатов",
+		shortTitle: "Контроль имплантации 6 мес.",
+		intervalMonths: months,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale: "Рентген-контроль остеоинтеграции имплантатов, стабильности десневой манжетки и состояния абатментов через 6 месяцев после операции.",
+		mappedCycleType: "implant_monitoring",
+	};
+}
+
 export function calculateImplantProstheticRecallTrigger(lastProcedureDate: Date | string, customMonths = 12): ClinicalRecallTriggerInfo {
 	const months = customMonths > 0 ? customMonths : 12;
 	const nextDueDate = addCalendarMonthsSafe(lastProcedureDate, months);
 	return {
 		triggerType: "implant_prosthetic_12m",
-		title: "Контрольный осмотр после имплантации и протезирования",
+		title: "Годовой контрольный осмотр после имплантации и протезирования",
 		shortTitle: "Импланты/Ортопедия 12 мес.",
 		intervalMonths: months,
 		nextDueDate,
 		formattedDueDate: formatIsoDateOnly(nextDueDate),
-		clinicalRationale: "Годовой рентген-контроль остеоинтеграции имплантатов по протоколу СтАР/ITI, ревизия окклюзионного баланса и краевого прилегания ортопедии.",
+		clinicalRationale: "Годовой рентген-контроль остеоинтеграции имплантатов по клиническому протоколу СтАР/ITI, ревизия окклюзионного баланса и краевого прилегания ортопедии.",
 		mappedCycleType: "implant_monitoring",
 	};
 }
+
+export const calculateProstheticRecallTrigger = calculateImplantProstheticRecallTrigger;
 
 export function calculateOrthoActivationRecallTrigger(lastActivationDate: Date | string, customWeeks = 4): ClinicalRecallTriggerInfo {
 	const weeks = customWeeks > 0 ? customWeeks : 4;

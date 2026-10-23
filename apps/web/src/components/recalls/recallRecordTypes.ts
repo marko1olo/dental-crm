@@ -1,4 +1,4 @@
-import type { ClinicalTaskCallType, StomxTaskCallType } from "@dental/shared";
+import type { ClinicalTaskCallType } from "@dental/shared";
 import type {
 	ClinicalRecallTriggerType,
 	RecallChannel,
@@ -8,6 +8,46 @@ import type {
 	RecallUrgencyStatus,
 	CanonicalRecallWorkflowStatus,
 } from "./recallCycleTypes";
+
+export type RecallCategoryFilter =
+	| "all"
+	| "hygiene_6m"
+	| "implants_1y"
+	| "orthodontics"
+	| "endodontics";
+
+export type RecallUrgencyLevel =
+	| "upcoming"
+	| "due_now"
+	| "overdue_30"
+	| "overdue_90"
+	| "completed";
+
+export type RecallChannelType = "whatsapp" | "telegram" | "sms" | "phone";
+
+export interface PatientRecallItem {
+	readonly id: string;
+	readonly patientId: string;
+	readonly fullName: string;
+	readonly phone: string | null;
+	readonly email?: string | null | undefined;
+	readonly category: "hygiene" | "implants" | "orthodontics" | "endodontics";
+	readonly categoryLabel: string;
+	readonly lastVisitDate: string; // YYYY-MM-DD
+	readonly dueDate: string; // YYYY-MM-DD
+	readonly daysOverdue: number; // positive = overdue
+	readonly urgency: RecallUrgencyLevel;
+	readonly attendingDoctorId?: string | undefined;
+	readonly attendingDoctorName?: string | undefined;
+	readonly lastProcedures?: readonly string[] | undefined;
+	readonly clinicalNotes?: string | undefined;
+	readonly implantsCount?: number | undefined;
+	readonly periodontalPocketMm?: number | undefined;
+	readonly status: RecallContactStatus;
+	readonly lastContactedAt?: string | undefined;
+	readonly lastContactChannel?: RecallChannelType | undefined;
+	readonly scheduledAppointmentDate?: string | undefined;
+}
 
 export interface PatientRecallRecord {
 	readonly id: string;
@@ -102,3 +142,26 @@ export interface RecallFilterOptions {
 	readonly sortDirection?: ("asc" | "desc") | undefined;
 	readonly includeArchived?: boolean | undefined;
 }
+
+export interface RecallMetrics {
+	readonly totalCandidates: number;
+	readonly upcomingCount: number;
+	readonly dueNowCount: number;
+	readonly overdue30Count: number;
+	readonly overdue90Count: number;
+	readonly completedCount: number;
+	readonly contactedCount: number;
+	readonly scheduledCount: number;
+	readonly declinedCount: number;
+	readonly conversionRatePercent: number;
+	readonly contactResponseRatePercent: number;
+	readonly retentionRatePercent: number;
+	readonly totalHistoricalLtvRub: number;
+	readonly averageRecallLtvRub: number;
+	readonly byCycle: Record<RecallCycleType, number>;
+	readonly overdueEstimatedLostRevenueRub: number;
+	readonly retainedRevenueRub: number;
+}
+
+export const DEFAULT_RECALL_CANDIDATES: readonly PatientRecallRecord[] = [];
+

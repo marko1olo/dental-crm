@@ -1,9 +1,16 @@
-import type React from "react";
+import React, { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { PatientRecallRecord, RecallContactStatus, RecallPeriodFilter } from "./patientRecallEngine";
+import {
+	toCanonicalRecallStatus,
+	type CanonicalRecallWorkflowStatus,
+	type PatientRecallRecord,
+	type RecallContactStatus,
+	type RecallPeriodFilter,
+} from "./patientRecallEngine";
 import { RecallPatientRowCard } from "./RecallPatientRowCard";
 import { PatientRecallsRegistryStatusChips } from "./PatientRecallsRegistryStatusChips";
 import { PatientRecallsRegistryFilters } from "./PatientRecallsRegistryFilters";
+import { PatientRecallsKanbanView } from "./PatientRecallsKanbanView";
 
 export interface PatientRecallsRegistryViewProps {
 	readonly filteredCandidates: readonly PatientRecallRecord[];
@@ -39,6 +46,22 @@ export const PatientRecallsRegistryView: React.FC<PatientRecallsRegistryViewProp
 	statusCounts, searchQuery, onSearchChange, onBook, onToggleScript, onTogglePreview,
 	onWhatsApp, onTelegram, onCopySms, onStatusUpdate,
 }) => {
+	const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+
+	const kanbanGroups = useMemo<Record<CanonicalRecallWorkflowStatus, readonly PatientRecallRecord[]>>(() => {
+		const groups: Record<CanonicalRecallWorkflowStatus, PatientRecallRecord[]> = {
+			not_called: [],
+			reached: [],
+			declined: [],
+			scheduled: [],
+		};
+		for (const candidate of filteredCandidates) {
+			const canonical = toCanonicalRecallStatus(candidate.status);
+			groups[canonical].push(candidate);
+		}
+		return groups;
+	}, [filteredCandidates]);
+
 	return (
 		<div className="recall-registry-section">
 			<PatientRecallsRegistryStatusChips
@@ -55,9 +78,19 @@ export const PatientRecallsRegistryView: React.FC<PatientRecallsRegistryViewProp
 				onDoctorChange={onDoctorChange}
 				selectedPeriod={selectedPeriod}
 				onPeriodChange={onPeriodChange}
+				viewMode={viewMode}
+				onViewModeChange={setViewMode}
 			/>
 
-			{filteredCandidates.length === 0 ? (
+			{viewMode === "kanban" ? (
+				<PatientRecallsKanbanView
+					kanbanGroups={kanbanGroups}
+					onBook={onBook}
+					onWhatsApp={onWhatsApp}
+					onCopySms={onCopySms}
+					onStatusUpdate={onStatusUpdate}
+				/>
+			) : filteredCandidates.length === 0 ? (
 				<div className="recall-empty-state">
 					<div className="recall-empty-icon">
 						<CheckCircle2 size={36} className="recall-empty-check-icon" />

@@ -241,3 +241,14 @@ DENTE полностью адаптирована под актуальные т
 - **Модальный и инлайн вид**: `PeriodontogramModalView.tsx` (111 строк) и `PeriodontogramWorkspaceBody.tsx` (352 строки).
 - **Клинический контроль**: 192 точки зондирования (глубина карманов, рецессия, BOP, фуркации, подвижность) с адаптивным переключением между сенсорным режимом планшета/смартфона и полной сеткой десктопа.
 
+### 5. Каркас приложения, Top Bar и маршрутизация экранов (`apps/web/src/components/appLayout/` — Мандаты 8b, 8e, 8am, 8ap, HIG)
+- **Тотальная модульная декомпозиция (0 файлов > 120 строк)**:
+  - `AppTopBar.tsx` (90 строк, фасад) декомпозирован на `topBarModules/` (`TopBarClinicSelector`, `TopBarEmergencyBell`, `TopBarUserProfile`, `UserProfileMenuItems`, `TopBarNotices`, `TopBarOnboardingStrips`, `TopBarDraftStrips`, `TopBarModalsHost`, `TopBarContinuitySection`).
+  - `AppViewRouter.tsx` (13 строк, фасад) декомпозирован на `viewRouterModules/` (`ClinicalViewRouter`, `AdministrativeViewRouter`, `ManagementViewRouter`, `BusinessOperationsViewRouter`, `GlobalDoctorPayrollModal`, `ViewRouterContainer`).
+  - `AppModalsContainer.tsx` (69 строк, фасад) декомпозирован на `modalsContainerModules/` с выносом `ClinicalModalsSubcontainer`, `ClinicalImagingModals`, `GlobalSupportModals`, `useAppModalsEventBridge`.
+  - Специализированные лаунчеры декомпозированы по клиническим (`TherapyLaunchers`, `ImplantologyLaunchers`, `OrthodonticsLaunchers`, `SurgeryLaunchers`, `OrthopedicsLaunchers`) и административным (`CashierFinanceLaunchers`, `FiscalReceiptLaunchers`, `FamilyBillingLaunchers`, `TreatmentPlanLaunchers`, `ReportsComplianceLaunchers`, `DoctorWalletLaunchers`) направлениям.
+- **Мандат 8ap (Анти-канцелярит и чистый домен)**: Свойство `serviceCode` взамен сырых номеров приказов (`order804nCode`).
+- **Apple HIG (Сенсорная эргономика на смартфонах)**: Мобильная шапка строго в 1 строку (48–52px), тач-таргеты $\ge 44\times 44\text{px}$, 0px паразитного горизонтального скролла, нативная нижняя панель навигации.
+- **Red Team Visual Proof**: Проверено на реальном стеке во всех 4 обязательных состояниях (☀️ PC Light 1440×900, 🌙 PC Dark 1440×900, 📱 Mobile Light 390×844, 📱 Mobile Dark 390×844) в `docs/screenshots/appLayout/`.
+
+

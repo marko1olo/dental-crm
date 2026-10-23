@@ -169,10 +169,6 @@ describe("Subagent 6: Patient Recalls & Clinical Retention Autonomy Inquisition"
 				"Must render SMS dispatch button",
 			);
 			assert.ok(
-				html.includes(`data-testid="recall-preview-btn-${mockCandidateWithPhone.id}"`),
-				"Must render Preview menu button",
-			);
-			assert.ok(
 				html.includes(`data-testid="recall-script-btn-${mockCandidateWithPhone.id}"`),
 				"Must render Script button",
 			);

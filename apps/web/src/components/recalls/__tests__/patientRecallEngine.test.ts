@@ -10,7 +10,6 @@ import {
 	addCalendarMonthsSafe,
 	addDaysSafe,
 	addWeeksSafe,
-	calculateCohortRetention,
 	calculateDaysOverdue,
 	calculateHygieneRecallDate,
 	calculateImplantRecallMilestones,
@@ -385,25 +384,6 @@ describe("Patient Recall Engine - Cohort Retention & LTV Metrics", () => {
 		assert.equal(metrics.averageRecallLtvRub, 195000);
 	});
 
-	it("calculates monthly cohorts with individual retention & conversion rates", () => {
-		const report = calculateCohortRetention(testCandidates, { grouping: "month", defaultAverageCheckRub: 6500 });
-		assert.ok(report.cohorts.length >= 2);
-
-		const janCohort = report.cohorts.find((c) => c.cohortKey === "2026-01");
-		assert.ok(janCohort);
-		assert.equal(janCohort.totalPatients, 2);
-		assert.equal(janCohort.scheduledCount, 1);
-		assert.equal(janCohort.completedCount, 1);
-		assert.equal(janCohort.retentionRatePercent, 50); // 1 completed / 2 due = 50%
-		assert.equal(janCohort.conversionRatePercent, 100); // 2 / 2 = 100%
-	});
-
-	it("calculates quarterly cohorts", () => {
-		const qReport = calculateCohortRetention(testCandidates, { grouping: "quarter", defaultAverageCheckRub: 6500 });
-		const q1Cohort = qReport.cohorts.find((c) => c.cohortKey === "2026-Q1");
-		assert.ok(q1Cohort);
-		assert.equal(q1Cohort.totalPatients, 3); // Jan + Feb
-	});
 });
 
 describe("Patient Recall Engine - Filtering and Search", () => {

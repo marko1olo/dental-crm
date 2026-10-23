@@ -1,6 +1,5 @@
 import type { RecallCycleType } from "./recallCycleTypes";
-import type { PatientRecallRecord } from "./recallRecordTypes";
-import type { RecallMetrics } from "./recallCohortTypes";
+import type { PatientRecallRecord, RecallMetrics } from "./recallRecordTypes";
 
 export function calculateRecallMetrics(
 	candidates: readonly PatientRecallRecord[],
