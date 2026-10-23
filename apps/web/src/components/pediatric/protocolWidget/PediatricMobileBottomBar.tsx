@@ -45,7 +45,7 @@ export const PediatricMobileBottomBar: React.FC<
 				</span>
 			</div>
 
-			{/* Главная кнопка действия (Primary CTA): Внести протокол в карту (высота >= 52px) */}
+			{/* Главная кнопка действия (Primary CTA): ровно ОДНА Primary CTA кнопка (высота >= 52px, Мандат 8am/8ze) */}
 			<button
 				type="button"
 				onClick={handleApply}

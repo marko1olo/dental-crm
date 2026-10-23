@@ -84,26 +84,26 @@ export const PediatricVisitAdaptationTab: React.FC<PediatricVisitAdaptationTabPr
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
-						onClick={() => onApplyNorm?.("Физиологическая норма прикуса (Мандат 8e)")}
-						className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-teal-300 bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+						onClick={() => onApplyNorm?.("Норма прикуса (физиологическая)")}
+						className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
 						data-testid="btn-adaptation-1click-norm"
 					>
-						<Check className="h-4 w-4 text-teal-600" />
-						<span>Норма прикуса (Мандат 8e)</span>
+						<Check className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+						<span>Норма прикуса</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsDiplomaOpen(true)}
-						className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
 						data-testid="btn-adaptation-open-diploma"
 					>
-						<Sparkles className="h-4 w-4 text-amber-600" />
+						<Sparkles className="h-4 w-4 text-amber-500" />
 						<span>Грамота за смелость</span>
 					</button>
 				</div>
-				<button type="button" onClick={handleComplete} className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-complete-pediatric-adaptation">
+				<button type="button" onClick={handleComplete} className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs select-none active:scale-95" data-testid="btn-complete-pediatric-adaptation">
 					<Check className="h-4 w-4" />
-					<span>Завершить адаптацию и внести в карту</span>
+					<span>Зафиксировать адаптацию в карте</span>
 				</button>
 			</div>
 

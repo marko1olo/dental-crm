@@ -57,7 +57,7 @@ export function calculateClinicalProtocol(params: ClinicalCalculationParams): Cl
 
 	if (params.anesthesiaCalculation && params.anesthesiaCalculation.carpulesAdministered > 0) {
 		services.push({ code: "B01.003.004.004", nameRu: `Местная анестезия (${params.anesthesiaCalculation.drug.nameRu}): ${params.anesthesiaCalculation.carpulesAdministered} карп. (${params.anesthesiaCalculation.totalDoseAdministeredMg} мг)` });
-		const anesthNote = params.anesthesiaCalculation.formattedClinicalNote || params.anesthesiaCalculation.formattedText043;
+		const anesthNote = params.anesthesiaCalculation.formattedClinicalNote;
 		treatmentDescription += `\nМестная анестезия: ${anesthNote}`;
 	} else if (params.anesthesiaText) {
 		treatmentDescription += `\nМестная анестезия: ${params.anesthesiaText}`;

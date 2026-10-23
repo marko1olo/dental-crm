@@ -43,6 +43,7 @@ function expect<T>(actual: T) {
 }
 import {
 	PEDIATRIC_ANESTHETIC_SPECS,
+	checkPediatricAnesthesiaContraindications,
 	type PediatricAnesthesiaCalculationResult,
 } from "../PediatricAnesthesiaCalculator";
 import {
@@ -295,10 +296,12 @@ describe("Subagent 4: Pediatric Anesthesia Somatic Contraindications & Allergies
 		expect(Boolean(mepiProfile.hasMepivacaineAllergy)).toBe(true);
 	});
 
-	it("detects anesthetic allergies from unstructured clinical text", () => {
+	it("detects anesthetic allergies via typed checkPediatricAnesthesiaContraindications without regex parsing", () => {
 		const textAllergies = "Поливалентная аллергия: ультракаин, пенициллины";
-		const hasArticaineMention = /артикаин|ультракаин|септанест|убистезин/i.test(textAllergies);
-		expect(hasArticaineMention).toBe(true);
+		const check = checkPediatricAnesthesiaContraindications(undefined, textAllergies);
+		expect(check.isArticaineContraindicated).toBe(true);
+		expect(check.isMepivacaineContraindicated).toBe(false);
+		expect(check.contraindicationReasonRu).toContain("артикаин");
 	});
 });
 

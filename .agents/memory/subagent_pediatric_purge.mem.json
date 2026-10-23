@@ -1,0 +1,44 @@
+{
+  "subagent": "pediatric_purge_inquisitor",
+  "domain": "Pediatric Dentistry Inquisitor & Frankl Scale Chairside Parity",
+  "status": "passed_100_percent",
+  "verified_at": "2026-10-23T07:33:00Z",
+  "liquidated_duplicate_files": [
+    "apps/web/src/components/pediatric/anesthesia/pediatricAnesthesiaCalculation.ts (purged duplicate physics simulator)",
+    "apps/web/src/components/pediatric/anesthesia/PediatricAnesthesiaAlerts.tsx (purged duplicate alerts)",
+    "apps/web/src/components/pediatric/anesthesia/PediatricAnesthesiaDoseControl.tsx (purged duplicate controls)",
+    "apps/web/src/components/pediatric/anesthesia/PediatricAnesthesiaDrugSelect.tsx (purged duplicate selector)",
+    "apps/web/src/components/pediatric/anesthesia/PediatricAnesthesiaHeader.tsx (purged duplicate header)",
+    "apps/web/src/components/pediatric/anesthesia/pediatricAnesthesiaSpecs.ts (purged duplicate specs)",
+    "apps/web/src/components/pediatric/anesthesia/PediatricAnesthesiaWeightControl.tsx (purged duplicate weight sliders)",
+    "apps/web/src/components/pediatric/anesthesia/ (entire directory completely eradicated)"
+  ],
+  "ssot_catalog_consolidation": {
+    "facade_file": "apps/web/src/components/pediatric/PediatricAnesthesiaCalculator.tsx",
+    "ssot_engine": "apps/web/src/components/anesthesia/ (DENTAL_ANESTHETICS, calculateAnesthesiaSafety)",
+    "typed_allergy_guard": "checkPediatricAnesthesiaContraindications(somaticProfile, allergies) — zero regex parsing (Mandate 8ap)",
+    "doctor_autonomy": "Mandate 8e: apply button NEVER disabled, 1-click step-down dose button for safe margin"
+  },
+  "pediatric_chairside_features": {
+    "primary_dentition": "All 20 deciduous teeth (FDI 51-85) with anatomical naming and pediatric chart",
+    "frankl_scale": "4-tier Frankl behavioral rating with Lucide icons (Zero cartoon emojis)",
+    "bravery_diploma": "1-click bravery diploma printing modal (PediatricBraveryDiplomaModal) with hotkey Enter",
+    "parent_memo": "1-click post-anesthesia parent memo modal (PediatricParentMemoModal)",
+    "soap_clinical_note": "1-click insert to clinical note without form blocking (Mandate 8e)",
+    "design_code": "Mandate 8am: exactly ONE Primary CTA button (36px desktop / 52px mobile Floating Bottom Bar)"
+  },
+  "verification_gates": {
+    "encoding": "npm run check:encoding -> 0 errors (15622 files verified)",
+    "pediatric_test_suite": "83 passed, 0 failed across all 6 test files in apps/web/src/components/pediatric/__tests__/",
+    "visual_proofs": [
+      "docs/proofs/pediatric/pediatric_pc_light_1440x900.png",
+      "docs/proofs/pediatric/pediatric_pc_dark_1440x900.png",
+      "docs/proofs/pediatric/pediatric_mobile_light_390x844.png",
+      "docs/proofs/pediatric/pediatric_mobile_dark_390x844.png",
+      "docs/proofs/pediatric/pediatric_protocol_pc_light.png",
+      "docs/proofs/pediatric/pediatric_protocol_pc_dark.png",
+      "docs/proofs/pediatric/pediatric_diploma_pc_light.png",
+      "docs/proofs/pediatric/pediatric_diploma_pc_dark.png"
+    ]
+  }
+}

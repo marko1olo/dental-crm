@@ -92,11 +92,16 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)]">
 					<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Памятка родителям после приёма</h3>
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={handlePrint} className="h-9 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition" data-testid="btn-print-parent-memo">
-							<Printer className="h-4 w-4" />
+						<button
+							type="button"
+							onClick={handlePrint}
+							className="h-9 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+							data-testid="btn-print-parent-memo"
+						>
+							<Printer className="h-4 w-4 text-[var(--muted,#64748b)]" />
 							<span>Печать</span>
 						</button>
-						<button type="button" onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition" aria-label="Закрыть">
+						<button type="button" onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
 							<X className="h-5 w-5" />
 						</button>
 					</div>

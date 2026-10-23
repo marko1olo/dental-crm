@@ -32,18 +32,18 @@ export function printParentMemo({
 			<meta charset="UTF-8">
 			<title>Памятка родителям — ${patientName}</title>
 			<style>
-				@page { size: A4 portrait; margin: 12mm; }
+				@page { size: A4 portrait; margin: 10mm; }
 				* { box-sizing: border-box; }
 				body {
-					margin: 0; padding: 20px;
+					margin: 0; padding: 16px;
 					font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 					color: #0f172a; line-height: 1.5; font-size: 13px;
 				}
-				.header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+				.header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid; break-inside: avoid; }
 				.clinic { font-size: 16px; font-weight: 800; color: #0d9488; text-transform: uppercase; }
 				.title { font-size: 20px; font-weight: 900; margin: 0 0 4px 0; color: #0f172a; }
-				.content { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
-				.footer { margin-top: 24px; padding-top: 12px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; font-weight: 600; }
+				.content { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; page-break-inside: avoid; break-inside: avoid; }
+				.footer { margin-top: 24px; padding-top: 12px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; font-weight: 600; page-break-inside: avoid; break-inside: avoid; }
 			</style>
 		</head>
 		<body>

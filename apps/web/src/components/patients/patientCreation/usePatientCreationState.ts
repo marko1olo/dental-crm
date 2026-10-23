@@ -12,18 +12,21 @@ export function usePatientCreationState({
 	initialBirthDate,
 	initialIsChild = false,
 }: UsePatientCreationFormOptions) {
+	const patientStore = usePatientStore();
+	const liveStore = usePatientStore.getState();
+
+	const newPatientName = patientStore.newPatientName || liveStore.newPatientName;
+	const newPatientPhone = patientStore.newPatientPhone || liveStore.newPatientPhone;
+	const newPatientBirthDate = patientStore.newPatientBirthDate || liveStore.newPatientBirthDate;
+	const isPatientCreating = patientStore.isPatientCreating ?? liveStore.isPatientCreating;
 	const {
-		newPatientName,
-		newPatientPhone,
-		newPatientBirthDate,
-		isPatientCreating,
 		setNewPatientName,
 		setNewPatientPhone,
 		setNewPatientBirthDate,
 		setSelectedPatientId,
 		patientAdministrativeProfileDraft,
 		setPatientAdministrativeProfileDraft,
-	} = usePatientStore();
+	} = patientStore;
 
 	const appLogic = useOptionalAppLogicContext();
 	const patients = appLogic?.dashboard?.patients ?? [];

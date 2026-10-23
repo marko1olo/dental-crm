@@ -100,7 +100,11 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 flex items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200"
 					data-testid="rep-consent-warning-banner"
 				>
-					<span>323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством</span>
+					<span>
+						{isMinor15Plus
+							? "ст. 54 323-ФЗ: пациент старше 15 лет вправе подписать ИДС лично"
+							: "323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством"}
+					</span>
 					<button
 						type="button"
 						onClick={() => setRepresentative((prev) => ({ ...prev, consentSigned: true }))}

@@ -51,7 +51,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 	return (
 		<div
 			className={`pediatric-somatic-legal-rep rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3 sm:p-4 space-y-3 ${className}`.trim()}
-			data-testid="pediatric-somatic-and-legal-rep"
+			data-testid="pediatric-somatic-legal-rep"
 		>
 			<PediatricSomaticNormSection somaticStatus={somaticStatus} setSomaticStatus={setSomaticStatus} />
 			<PediatricLegalRepresentativeSection representative={representative} setRepresentative={setRepresentative} patientAge={patientAge} />

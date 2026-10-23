@@ -28,22 +28,23 @@ export function printBraveryDiploma({
 			<meta charset="UTF-8">
 			<title>Диплом за храбрость — ${heroName}</title>
 			<style>
-				@page { size: A4 landscape; margin: 10mm; }
+				@page { size: A4 landscape; margin: 8mm; }
 				* { box-sizing: border-box; }
 				body {
-					margin: 0; padding: 24px;
+					margin: 0; padding: 16px;
 					font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 					background: #ffffff; color: #0f172a;
 					display: flex; align-items: center; justify-content: center; min-height: 100vh;
 				}
 				.diploma-card {
 					width: 100%; max-width: 960px; border: 8px double #d97706; border-radius: 24px;
-					padding: 40px; text-align: center; position: relative; background: #fffbeb;
+					padding: 32px; text-align: center; position: relative; background: #fffbeb;
+					page-break-inside: avoid; break-inside: avoid;
 				}
-				.diploma-title { font-size: 38px; font-weight: 900; color: #b45309; text-transform: uppercase; margin: 16px 0; }
-				.hero-name { font-size: 42px; font-weight: 900; color: #0f172a; border-bottom: 3px solid #d97706; display: inline-block; padding: 0 24px 8px; margin: 16px 0; }
-				.praise { font-size: 20px; line-height: 1.6; color: #334155; margin: 24px auto; max-width: 700px; }
-				.footer { display: flex; justify-content: space-between; margin-top: 48px; padding-top: 24px; border-top: 2px dashed #d97706; font-size: 16px; font-weight: bold; }
+				.diploma-title { font-size: 36px; font-weight: 900; color: #b45309; text-transform: uppercase; margin: 12px 0; }
+				.hero-name { font-size: 38px; font-weight: 900; color: #0f172a; border-bottom: 3px solid #d97706; display: inline-block; padding: 0 24px 6px; margin: 12px 0; }
+				.praise { font-size: 18px; line-height: 1.5; color: #334155; margin: 16px auto; max-width: 700px; }
+				.footer { display: flex; justify-content: space-between; margin-top: 36px; padding-top: 18px; border-top: 2px dashed #d97706; font-size: 15px; font-weight: bold; }
 			</style>
 		</head>
 		<body>
