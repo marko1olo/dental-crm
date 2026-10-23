@@ -261,4 +261,30 @@ DENTE полностью адаптирована под актуальные т
 - **Apple HIG (Сенсорная эргономика на смартфонах)**: Мобильная шапка строго в 1 строку (48–52px), тач-таргеты $\ge 44\times 44\text{px}$, 0px паразитного горизонтального скролла, нативная нижняя панель навигации.
 - **Red Team Visual Proof**: Проверено на реальном стеке во всех 4 обязательных состояниях (☀️ PC Light 1440×900, 🌙 PC Dark 1440×900, 📱 Mobile Light 390×844, 📱 Mobile Dark 390×844) в `docs/screenshots/appLayout/`.
 
+### 6. Корневой фасад приложения и модули оболочки (`apps/web/src/App.tsx` и `apps/web/src/appModules/` — Мандаты 8b, 8e, 8n, HIG)
+- **Тотальная модульная декомпозиция (`App.tsx` $\le 100$ строк, все модули $\le 120$ строк)**:
+  - `apps/web/src/App.tsx` (61 строка $\le 100$, фасад Layer 5): связывает жизненный цикл сессии, хэш-маршрутизацию, горячие клавиши, провайдеры контекста и модалки без фиктивного дублирования стейта.
+  - `apps/web/src/appModules/` (12 модулей, каждый строго $\le 120$ строк):
+    - `appStateTypes.ts` (89 стр.): строгие типы и контракты сессии, маршрутизации и модалок.
+    - `appRoutingHelpers.ts` (31 стр.): чистые предикаты сопоставления путей, хэшей и токенов URL.
+    - `useAppHashRouting.ts` (83 стр.): реактивный трекер URL-хэшей и состояния специализированных модалок (`#tasks`, `#sanpin`, `#finance`, `#prescriptions`, `#perio`, `#inventory`, `#schedule`, `#patients`, `cbct`, `consent`, `implant_passport` и др.).
+    - `useAppRoutingEvents.ts` (105 стр.): обработка глобальных событий браузера, `hashchange`, `online`/`offline` и хоткеев (`Alt+I`).
+    - `useAppSessionAuth.ts` (113 стр.): логика StaffPinPad, LAN P2P pairing, локальная блокировка и Privacy Shield.
+    - `AppBootScreens.tsx` (98 стр.): экраны первичного входа `AuthHub`, `StaffPinPad`, `AppUnlockState` и прелоадера `AppLoadingState`.
+    - `AppDirectModals.tsx` (88 стр.): прямые модалки рецептов, паспортов имплантатов, гарантий и отзывов.
+    - `AppDirectSpecialtyModals.tsx` (64 стр.): узкоспециализированные модалки фотопротоколов, ортодонтии, контекста зуба и клинических задач.
+    - `AppModalsContainer.tsx` (46 стр.): агрегатор базовых модалок `appLayout` и прямых модалок.
+    - `AppNavigationShell.tsx` (98 стр.): сайдбар, топбар, маршрутизатор представлений, нижний мобильный таббар и виджеты телефонии.
+    - `AppSessionProviders.tsx` (27 стр.): иерархия контекстных провайдеров (`AppLogicProvider`, `AuthProvider`).
+    - `index.ts` (16 стр.): единая точка публичного экспорта подсистемы.
+- **Инварианты автономии и надежности**:
+  - Сохранение 100% работоспособности прямых ссылок и быстрого вызова функционала без блокировки интерфейса (Мандат 8e).
+  - Устранение 682 строк фиктивной деструктуризации хука `useAppLogic` при полном сохранении тестовых контрактов.
+- **Визуальная верификация 4-State Red Team**:
+  - `docs/proofs/app_nav/app_nav_pc_light.png` (1440×900)
+  - `docs/proofs/app_nav/app_nav_pc_dark.png` (1440×900)
+  - `docs/proofs/app_nav/app_nav_mobile_light.png` (390×844)
+  - `docs/proofs/app_nav/app_nav_mobile_dark.png` (390×844)
+
+
 
