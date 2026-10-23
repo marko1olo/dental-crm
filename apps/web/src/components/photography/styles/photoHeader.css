@@ -1,0 +1,76 @@
+/**
+ * Clinical Dental Photography — Header & Navigation Tabs
+ */
+
+.photo-protocol-header {
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	background: var(--surface, #f8fafc);
+}
+
+[data-theme="dark"] .photo-protocol-header,
+.dark .photo-protocol-header {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: var(--line, #334155);
+}
+
+.photo-protocol-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.photo-protocol-badge-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: rgba(37, 99, 235, 0.1);
+	color: var(--brand-500, #2563eb);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.photo-protocol-tabs {
+	display: flex;
+	gap: 8px;
+	background: var(--paper, #ffffff);
+	padding: 4px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .photo-protocol-tabs,
+.dark .photo-protocol-tabs {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-protocol-tab-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.photo-protocol-tab-btn.active {
+	background: var(--brand-500, #2563eb);
+	color: var(--paper, #ffffff);
+	box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}

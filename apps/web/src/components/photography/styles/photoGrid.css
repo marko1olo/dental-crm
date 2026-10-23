@@ -1,0 +1,121 @@
+/**
+ * Clinical Dental Photography — Grid & Slot Cards Styles
+ * WCAG 2.1 touch target standards (>= 44x44px)
+ */
+
+.photo-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+	gap: 16px;
+}
+
+@media (min-width: 1200px) {
+	.photo-slots-grid-12 {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.photo-slot-card {
+	background: var(--paper, #ffffff);
+	border: 1.5px dashed var(--line, #cbd5e1);
+	border-radius: 14px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	min-height: 310px;
+}
+
+[data-theme="dark"] .photo-slot-card,
+.dark .photo-slot-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-slot-card:hover {
+	border-color: var(--brand-500, #2563eb);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+}
+
+.photo-slot-card.has-image {
+	border-style: solid;
+	border-color: var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .photo-slot-card.has-image,
+.dark .photo-slot-card.has-image {
+	border-color: var(--line, #334155);
+}
+
+.photo-slot-card.drag-active {
+	border-color: var(--brand-500, #2563eb);
+	background: rgba(37, 99, 235, 0.06);
+	transform: scale(1.02);
+}
+
+.photo-slot-header {
+	padding: 10px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line, #f1f5f9);
+	background: var(--surface, #f8fafc);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+[data-theme="dark"] .photo-slot-header,
+.dark .photo-slot-header {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: var(--line, #334155);
+}
+
+.photo-category-pill {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.photo-category-pill.extraoral {
+	background: rgba(59, 130, 246, 0.15);
+	color: var(--brand-500, #2563eb);
+}
+
+[data-theme="dark"] .photo-category-pill.extraoral,
+.dark .photo-category-pill.extraoral {
+	background: rgba(30, 58, 138, 0.5);
+	color: var(--brand-200, #93c5fd);
+}
+
+.photo-category-pill.intraoral {
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--teal, #059669);
+}
+
+[data-theme="dark"] .photo-category-pill.intraoral,
+.dark .photo-category-pill.intraoral {
+	background: rgba(6, 78, 59, 0.5);
+	color: var(--teal-light, #6ee7b7);
+}
+
+.photo-slot-viewport {
+	flex: 1;
+	position: relative;
+	min-height: 190px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--surface, #f8fafc);
+	cursor: pointer;
+	overflow: hidden;
+}
+
+[data-theme="dark"] .photo-slot-viewport,
+.dark .photo-slot-viewport {
+	background: var(--paper-strong, #090d16);
+}

@@ -1,0 +1,93 @@
+/**
+ * Clinical Dental Photography — Intraoral Camera & Calibration Drawer Styles
+ */
+
+.photo-editor-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 50;
+	background: rgba(0, 0, 0, 0.85);
+	backdrop-filter: blur(10px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.photo-editor-modal {
+	background: var(--paper, #ffffff);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 1200px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .photo-editor-modal,
+.dark .photo-editor-modal {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink);
+	border: 1px solid var(--line, #334155);
+}
+
+.photo-editor-content {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+}
+
+@media (max-width: 900px) {
+	.photo-editor-content {
+		flex-direction: column;
+		overflow-y: auto;
+	}
+}
+
+.photo-editor-canvas-pane {
+	flex: 1;
+	background: var(--paper-strong, #020617);
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	min-height: 400px;
+}
+
+.photo-editor-sidebar {
+	width: 360px;
+	padding: 20px;
+	overflow-y: auto;
+	border-left: 1px solid var(--line, #e2e8f0);
+	background: var(--surface, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+[data-theme="dark"] .photo-editor-sidebar,
+.dark .photo-editor-sidebar {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-calibration-drawer {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .photo-calibration-drawer {
+	background: var(--paper-strong, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .photo-calibration-drawer input {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}

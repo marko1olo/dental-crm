@@ -1,0 +1,23 @@
+/**
+ * Clinical Dental Photography — Print Styles
+ */
+
+@media print {
+	.photo-protocol-modal-backdrop {
+		position: static;
+		background: none;
+		padding: 0;
+	}
+	.photo-protocol-modal {
+		max-height: none;
+		max-width: none;
+		box-shadow: none;
+		border: none;
+	}
+	.photo-protocol-header,
+	.photo-protocol-tabs,
+	.photo-slot-actions,
+	.no-print {
+		display: none !important;
+	}
+}

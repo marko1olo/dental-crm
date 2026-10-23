@@ -1,0 +1,139 @@
+/**
+ * Clinical Dental Photography — Collage Export & VITA Color Tokens
+ */
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-shade-selector-root {
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-shade-selector-root input {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel {
+	background: var(--surface, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel input,
+:is([data-theme="dark"], [data-theme="night"], .dark) .vita-stratification-panel select {
+	background: var(--paper-strong, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+.shade-matching-box {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+[data-theme="dark"] .shade-matching-box,
+.dark .shade-matching-box {
+	background: var(--surface, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+.shade-swatch-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.shade-color-chip {
+	width: 48px;
+	height: 48px;
+	border-radius: 8px;
+	border: 2px solid var(--line, #e2e8f0);
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.photo-collage-sheet {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	padding: 32px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 1000px;
+	margin: 0 auto;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .photo-collage-sheet,
+.dark .photo-collage-sheet {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink);
+	border-color: var(--line, #334155);
+}
+
+.photo-collage-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	border-bottom: 2px solid var(--ink, #0f172a);
+	padding-bottom: 16px;
+}
+
+[data-theme="dark"] .photo-collage-header,
+.dark .photo-collage-header {
+	border-bottom-color: var(--line, #334155);
+}
+
+.photo-collage-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+}
+
+.photo-collage-item {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+[data-theme="dark"] .photo-collage-item,
+.dark .photo-collage-item {
+	border-color: var(--line, #334155);
+}
+
+.photo-collage-thumb {
+	width: 100%;
+	height: 140px;
+	object-fit: cover;
+	background: var(--paper-soft);
+}
+
+[data-theme="dark"] .photo-collage-thumb,
+.dark .photo-collage-thumb {
+	background: var(--surface, #0f172a);
+}
+
+.photo-collage-label {
+	padding: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	text-align: center;
+	background: var(--surface, #f8fafc);
+	border-top: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .photo-collage-label,
+.dark .photo-collage-label {
+	background: var(--surface, #1e293b);
+	border-top-color: var(--line, #334155);
+	color: var(--ink);
+}

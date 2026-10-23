@@ -1,0 +1,104 @@
+/**
+ * Clinical Dental Photography — Slot Silhouette Guides & Touch Action Buttons
+ */
+
+.photo-silhouette-guide {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 16px;
+	text-align: center;
+	color: var(--muted, #94a3b8);
+}
+
+.photo-silhouette-svg {
+	width: 90px;
+	height: 90px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 2;
+	stroke-dasharray: 4 3;
+	opacity: 0.7;
+	transition: all 0.2s ease;
+}
+
+.photo-slot-card:hover .photo-silhouette-svg {
+	stroke: var(--brand-500, #2563eb);
+	opacity: 1;
+	transform: scale(1.05);
+}
+
+.photo-silhouette-label {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+}
+
+.photo-slot-actions {
+	padding: 8px 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	border-top: 1px solid var(--line, #f1f5f9);
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .photo-slot-actions,
+.dark .photo-slot-actions {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.photo-touch-btn {
+	min-width: 44px;
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+[data-theme="dark"] .photo-touch-btn,
+.dark .photo-touch-btn {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink);
+}
+
+.photo-touch-btn:hover {
+	border-color: var(--brand-500, #2563eb);
+	color: var(--brand-500, #2563eb);
+	background: rgba(37, 99, 235, 0.04);
+}
+
+.photo-touch-btn.primary {
+	background: var(--brand-500, #2563eb);
+	color: var(--paper, #ffffff);
+	border-color: var(--brand-500, #2563eb);
+}
+
+.photo-touch-btn.primary:hover {
+	background: var(--brand-600, #1d4ed8);
+}
+
+.photo-touch-btn.danger {
+	color: var(--danger, #e11d48);
+}
+
+.photo-touch-btn.danger:hover {
+	background: rgba(225, 29, 72, 0.08);
+	border-color: var(--danger, #e11d48);
+}
