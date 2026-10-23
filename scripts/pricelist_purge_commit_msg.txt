@@ -1,0 +1,32 @@
+feat(catalog): decompose pricelist monoliths to <=120 lines, sanitize terminology & deliver Apple HIG 4-state visual proof
+
+## Контекст и архитектурная цель (Why):
+- Реализация требований Мандата 8b (микромодульный DAG <= 120 строк на файл) для каталога и прейскуранта услуг.
+- Устранение канцелярита и номеров советских/минздравовских приказов ("804н", "043/у") из боевого UI в соответствии с Мандатами 8x и 8ap.
+- Обеспечение автономии врача (Мандат 8e): кнопки "🛡 0 ₽" (гарантия) и сохранение не блокируются, мгновенный выбор категорий.
+- Сенсорная адаптация Apple HIG (Мандат 8ze): переход от сжатых десктопных таблиц к нативным карточкам Grouped List Cards (390x844), тач-таргеты >= 44x44px, устранение паразитного горизонтального скролла и многоэтажных кнопок.
+
+## Что конкретно сделано (What & Where):
+- packages/shared/src/pricelist/: декомпозированы парсеры прейскурантов, сканеры таблиц/матриц и валидация номенклатуры под жесткий лимит <= 120 строк.
+- apps/api/src/routes/pricelist/: микромодульное разделение обработчиков импорта/экспорта/сканирования прейскуранта.
+- apps/web/src/components/catalog/:
+  * `pricelist/presets/`: 33 модульных файла пресетов услуг по направлениям (терапия, ортопедия, хирургия, ортодонтия, педиатрия, гигиена, анестезия, рентген, комплексные пакеты).
+  * `pricelist/servicePricelist/`: 24 движка валидации кодов, синонимов, CSV экспорта/импорта, расчета рентабельности и полнотекстового поиска.
+  * `pricelist/styles/`: 17 модульных CSS файлов стилей под лимит <= 120 строк с жесткой изоляцией медиа-запросов десктопа и мобильных карточек.
+  * `pricelist/usePricelistServiceForm.ts` & `useServicePricelistManager.ts`: хуки управления формами и прейскурантом <= 115 строк.
+  * `DirectPricelistLauncher.tsx` смонтирован в `AppShell.tsx` (Мандат 8aq).
+- Устранены дефекты мобильного адаптива: кнопки тулбара объединены в свайп-ряд без трехэтажного wrapping, Grouped List Cards выводят цену, гарантийный статус и тач-кнопки >= 44x44px.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Лимит строк: 167 файлов каталога, 0 файлов > 120 строк (Мандат 8b 100% соблюден).
+- Тесты: npx vitest run apps/web/src/components/catalog/ apps/web/src/tests/servicePricelist.test.ts (7 файлов тестов, 71 passed, 0 failed).
+- Кодировка: npm run check:encoding (19148 файлов проверено, 0 ошибок кодировки, Exit Code 0).
+- Red Team 4-State Visual Proof (Мандат 8am & Apple HIG):
+  * ☀️ PC Light (1440x900): docs/proofs/pricelist/01_pricelist_pc_light.png
+  * 🌙 PC Dark (1440x900): docs/proofs/pricelist/02_pricelist_pc_dark.png
+  * 📱 Mobile Light (390x844): docs/proofs/pricelist/03_pricelist_mobile_light.png
+  * 📱 Mobile Dark (390x844): docs/proofs/pricelist/04_pricelist_mobile_dark.png
+  * Все скриншоты лично проинспектированы через read_file; 0px горизонтального скролла, 1 Primary CTA (#10b981), чистая темная тема без слепящих пятен.
+
+## Синхронизация документации (Documentation Sync):
+- Обновлен чекпоинт памяти подсистемы: .agents/memory/subagent_pricelist_purge.mem.json.
