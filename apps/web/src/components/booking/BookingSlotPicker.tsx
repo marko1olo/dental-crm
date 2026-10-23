@@ -26,8 +26,10 @@ export interface BookingSlotPickerProps {
 	readonly selectedSlot: BookingSlotItem | null;
 	readonly onSelectSlot: (slot: BookingSlotItem) => void;
 	readonly slotsLoading: boolean;
+	readonly slotError?: string | null | undefined;
 	readonly className?: string;
 	readonly onJoinWaitlist?: (() => void) | undefined;
+	readonly onRetry?: (() => void) | undefined;
 }
 
 export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
@@ -42,8 +44,10 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 	selectedSlot,
 	onSelectSlot,
 	slotsLoading,
+	slotError,
 	className = "",
 	onJoinWaitlist,
+	onRetry,
 }) => {
 	const [activePeriodFilter, setActivePeriodFilter] = useState<SlotPeriod>("all");
 	const [showFullMonthCalendar, setShowFullMonthCalendar] = useState(false);
@@ -94,6 +98,8 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 				selectedSlot={selectedSlot}
 				onSelectSlot={onSelectSlot}
 				onJoinWaitlist={onJoinWaitlist}
+				slotError={slotError}
+				onRetry={onRetry}
 			/>
 		</div>
 	);

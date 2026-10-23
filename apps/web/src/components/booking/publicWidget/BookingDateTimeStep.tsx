@@ -17,6 +17,7 @@ export const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 	slotError,
 	onNextStep,
 	onJoinWaitlist,
+	onRetry,
 }) => {
 	return (
 		<div id="dbw-step-slots" className="dbw-step-card">
@@ -35,6 +36,7 @@ export const BookingDateTimeStep: React.FC<BookingDateTimeStepProps> = ({
 				slotError={slotError}
 				onNextStep={onNextStep}
 				onJoinWaitlist={onJoinWaitlist}
+				onRetry={onRetry}
 			/>
 		</div>
 	);

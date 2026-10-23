@@ -10,11 +10,37 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 		let isCancelled = false;
 		setDoctorsLoading(true);
 
-		fetch(`${apiBaseUrl}/${effectiveOrgId}/doctors`)
-			.then((res) => {
-				if (!res.ok) throw new Error("Failed to load doctors");
-				return res.json();
-			})
+		const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+		const timeoutId = setTimeout(() => {
+			controller?.abort();
+		}, 7000);
+
+		const fetchDoctors = async () => {
+			const urls = [
+				`${apiBaseUrl}/${effectiveOrgId}/doctors`,
+				`${apiBaseUrl}/doctors`,
+			];
+			if (apiBaseUrl.includes("public/booking")) {
+				urls.push(`/api/public-booking/${effectiveOrgId}/doctors`);
+				urls.push(`/api/public-booking/doctors`);
+			}
+
+			for (const url of urls) {
+				if (isCancelled) return null;
+				try {
+					const reqInit: RequestInit = controller ? { signal: controller.signal } : {};
+					const res = await fetch(url, reqInit).catch(() => null);
+					if (res && res.ok) {
+						return await res.json().catch(() => null);
+					}
+				} catch {
+					// continue next url
+				}
+			}
+			return null;
+		};
+
+		fetchDoctors()
 			.then((data) => {
 				if (isCancelled) return;
 				if (Array.isArray(data)) {
@@ -40,11 +66,14 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 				if (!isCancelled) setLoadedDoctors([]);
 			})
 			.finally(() => {
+				clearTimeout(timeoutId);
 				if (!isCancelled) setDoctorsLoading(false);
 			});
 
 		return () => {
 			isCancelled = true;
+			clearTimeout(timeoutId);
+			controller?.abort();
 		};
 	}, [effectiveOrgId, apiBaseUrl]);
 

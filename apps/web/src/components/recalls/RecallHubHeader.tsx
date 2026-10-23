@@ -23,7 +23,7 @@ export const RecallHubHeader: React.FC<RecallHubHeaderProps> = ({
 					</div>
 					<div>
 						<h2 id="recalls-hub-title" className="recall-header-title">
-							Профосмотры и диспансеризация
+							Плановые профосмотры и профгигиена
 						</h2>
 						<p className="recall-header-subtitle">
 							<Phone
@@ -76,10 +76,10 @@ export const RecallHubHeader: React.FC<RecallHubHeaderProps> = ({
 						aria-selected={activeTab === "registry"}
 						className={`recall-tab-btn ${activeTab === "registry" ? "active" : ""}`}
 						onClick={() => onTabChange("registry")}
-						title="Реестр диспансерного наблюдения и профилактических осмотров"
+						title="Реестр планового наблюдения и профилактических осмотров"
 					>
 						<Users size={16} />
-						<span className="recall-tab-label-full">2. Реестр диспансеризации (Список на обзвон)</span>
+						<span className="recall-tab-label-full">2. Реестр плановых визитов (Список на обзвон)</span>
 						<span className="recall-tab-label-short">Реестр обзвона</span>
 					</button>
 				</div>

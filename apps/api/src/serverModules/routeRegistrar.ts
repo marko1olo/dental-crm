@@ -273,6 +273,9 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await app.register(registerPublicBookingRoutes, {
 		prefix: "/api/public/booking",
 	});
+	await app.register(registerPublicBookingRoutes, {
+		prefix: "/api/public-booking",
+	});
 	await app.register(telephonyRoutes, { prefix: "/api/telephony" });
 
 	// Сообщения пациентам: справочник шаблонов, очередь отправки, согласия,

@@ -179,5 +179,46 @@ describe("Honest Booking & Patient Portal — Zero Fake Slots & Real Empty State
 			"Month toggle button must have secondary-button class",
 		);
 	});
+
+	it("8. BookingSlotPicker renders offline fallback with Call Clinic CTA when network error occurs", () => {
+		const html = renderToString(
+			<BookingSlotPicker
+				selectedDate="2026-10-18"
+				onSelectDate={() => {}}
+				calendarMonth={new Date("2026-10-01")}
+				onPrevMonth={() => {}}
+				onNextMonth={() => {}}
+				calendarDays={[]}
+				monthLabel="Октябрь 2026"
+				slots={[]}
+				selectedSlot={null}
+				onSelectSlot={() => {}}
+				slotsLoading={false}
+				slotError="Отсутствует подключение к интернету (автономный режим). Пожалуйста, позвоните в клинику."
+				onRetry={() => {}}
+			/>,
+		);
+
+		assert.ok(
+			html.includes('data-testid="slots-offline-fallback"'),
+			"Must render slots-offline-fallback container",
+		);
+		assert.ok(
+			html.includes("Связь с сервером клиники временно недоступна"),
+			"Must render offline header message",
+		);
+		assert.ok(
+			html.includes('data-testid="call-clinic-btn"'),
+			"Must render call-clinic-btn CTA",
+		);
+		assert.ok(
+			html.includes("tel:+78000000000"),
+			"Call clinic button must have tel link",
+		);
+		assert.ok(
+			html.includes('data-testid="retry-slots-btn"'),
+			"Must render retry-slots-btn when onRetry is provided",
+		);
+	});
 });
 

@@ -90,10 +90,10 @@ export const SelfCheckinSomaticSection: React.FC<SelfCheckinSomaticSectionProps>
 					<CheckCircle2 size={26} className="selfcheckin-dominant-check-icon shrink-0" />
 					<div className="selfcheckin-dominant-text-col text-left">
 						<span className="selfcheckin-dominant-title block font-extrabold text-base sm:text-lg">
-							✓ Чувствую себя хорошо / Соматическая норма
+							✓ Соматически здоров / Жалоб нет
 						</span>
 						<span className="selfcheckin-dominant-sub block text-xs sm:text-sm font-normal opacity-95">
-							Давление в норме, хронических патологий нет • Правьте только аллергии ниже
+							✓ Чувствую себя хорошо / Соматическая норма • Давление в норме, хронических патологий нет
 						</span>
 					</div>
 				</button>

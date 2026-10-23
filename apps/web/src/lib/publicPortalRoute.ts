@@ -204,7 +204,7 @@ export function publicPortalRouteFromHash(
 		}
 	}
 
-	for (const kioskPath of [KIOSK_PORTAL_PATH, CHECKIN_PORTAL_PATH]) {
+	for (const kioskPath of [KIOSK_PORTAL_PATH, CHECKIN_PORTAL_PATH, "/kiosk/"]) {
 		const kioskBase = kioskPath.replace(/\/$/, "");
 		if (
 			path === kioskBase ||

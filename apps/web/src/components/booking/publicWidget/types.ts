@@ -51,6 +51,7 @@ export interface BookingDateTimeStepProps {
 	slotError: string | null;
 	onNextStep: () => void;
 	onJoinWaitlist?: (() => void) | undefined;
+	onRetry?: (() => void) | undefined;
 }
 
 export interface BookingPatientFormStepProps {

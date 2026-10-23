@@ -315,7 +315,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		const cNum =
 			fullCabinetData?.cardNumber ||
 			effectiveCardNumber ||
-			(fullCabinetData?.patientId ? `043-${fullCabinetData.patientId.slice(0, 6).toUpperCase()}` : "043/у");
+			(fullCabinetData?.patientId ? `043-${fullCabinetData.patientId.slice(0, 6).toUpperCase()}` : "б/н");
 		const text = encodeURIComponent(
 			`Здравствуйте! Я пациент клиники DENTE (${pName}, карта № ${cNum}). После недавнего лечения у меня возникли болезненные ощущения / вопросы. Проконсультируйте, пожалуйста, дежурного врача.`,
 		);

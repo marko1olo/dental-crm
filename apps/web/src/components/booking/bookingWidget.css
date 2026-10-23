@@ -650,6 +650,13 @@
 	border-radius: 4px;
 }
 
+.dbw-badge-slot {
+	display: inline-flex;
+	align-items: center;
+	white-space: nowrap;
+	max-width: 100%;
+}
+
 .dbw-doctor-bio {
 	font-size: 0.8125rem;
 	line-height: 1.4;
@@ -975,7 +982,8 @@
 }
 
 .dbw-slots-loading-container,
-.dbw-slots-empty-container {
+.dbw-slots-empty-container,
+.dbw-slots-offline-container {
 	min-height: 200px;
 	display: flex;
 	flex-direction: column;
@@ -1461,7 +1469,7 @@
 }
 
 .dark .dbw-pass-barcode-section {
-	background: #f1f5f9;
+	background: var(--dbw-surface, var(--paper-soft, #1e293b));
 }
 
 /* Calendar export options */
@@ -1554,6 +1562,9 @@
 	font-size: 0.875rem;
 	font-weight: 700;
 	border: 1px solid var(--dbw-primary-glow);
+	max-width: 100%;
+	box-sizing: border-box;
+	word-break: break-word;
 }
 
 .dbw-alert-warning {

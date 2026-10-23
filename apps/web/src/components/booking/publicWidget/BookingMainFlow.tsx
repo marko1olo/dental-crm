@@ -43,6 +43,7 @@ export const BookingMainFlow: React.FC<BookingMainFlowProps> = ({ state }) => {
 				}}
 				slotsLoading={state.slotsLoading}
 				slotError={state.slotError}
+				onRetry={state.refetch}
 				onNextStep={() => {
 					if (!state.selectedSlot && state.slots.length > 0) {
 						state.setSelectedSlot(state.slots[0] || null);

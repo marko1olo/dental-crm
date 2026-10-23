@@ -168,8 +168,20 @@ const publicPortalRoute = publicPortalRouteFromHash(
 			window.location.pathname === "/portal/booking" ||
 			window.location.pathname.startsWith("/portal/booking/") ||
 			window.location.pathname === "/portal/book" ||
-			window.location.pathname.startsWith("/portal/book/"))
-		? window.location.pathname + window.location.search
+			window.location.pathname.startsWith("/portal/book/") ||
+			window.location.pathname === "/portal/kiosk" ||
+			window.location.pathname.startsWith("/portal/kiosk/") ||
+			window.location.pathname === "/kiosk" ||
+			window.location.pathname.startsWith("/kiosk/") ||
+			window.location.pathname === "/portal/checkin" ||
+			window.location.pathname.startsWith("/portal/checkin/") ||
+			window.location.search.includes("booking=1") ||
+			window.location.search.includes("kiosk=1"))
+		? window.location.search.includes("booking=1")
+			? "/booking"
+			: window.location.search.includes("kiosk=1")
+				? "/portal/kiosk"
+				: window.location.pathname + window.location.search
 		: typeof window !== "undefined"
 			? window.location.hash
 			: "",

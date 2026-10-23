@@ -28,6 +28,7 @@ export interface BookingSlotsSectionProps {
 	slotError: string | null;
 	onNextStep: () => void;
 	onJoinWaitlist?: (() => void) | undefined;
+	onRetry?: (() => void) | undefined;
 }
 
 export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
@@ -45,6 +46,7 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 	slotError,
 	onNextStep,
 	onJoinWaitlist,
+	onRetry,
 }) => {
 	return (
 		<section aria-labelledby="booking-slots-heading" className="mb-5">
@@ -64,7 +66,9 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 				selectedSlot={selectedSlot}
 				onSelectSlot={onSelectSlot}
 				slotsLoading={slotsLoading}
+				slotError={slotError}
 				onJoinWaitlist={onJoinWaitlist}
+				onRetry={onRetry}
 			/>
 
 			{selectedSlot && (
@@ -76,7 +80,7 @@ export const BookingSlotsSection: React.FC<BookingSlotsSectionProps> = ({
 				</div>
 			)}
 
-			{slotError && (
+			{slotError && slots.length > 0 && (
 				<div
 					role="alert"
 					className="dbw-alert-warning"

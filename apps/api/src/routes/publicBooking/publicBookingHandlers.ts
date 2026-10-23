@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
@@ -198,9 +198,9 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 	// 0b. Direct available-slots query: GET /api/public/booking/available-slots?date=YYYY-MM-DD[&doctorId=UUID][&organizationId=UUID]
 	// Mandate 8a & 8k: Real schedule calculation between appointments in PostgreSQL 18.
-	server.get<{
+	const slotsQueryHandler = async (request: FastifyRequest<{
 		Querystring: { date: string; doctorId?: string; organizationId?: string };
-	}>("/available-slots", async (request, reply) => {
+	}>, reply: FastifyReply) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
@@ -222,9 +222,45 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 
 		return handleSlotsQuery(organizationId, date, doctorId, reply);
-	});
+	};
 
-	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create
+	server.get<{
+		Querystring: { date: string; doctorId?: string; organizationId?: string };
+	}>("/available-slots", slotsQueryHandler);
+
+	server.get<{
+		Querystring: { date: string; doctorId?: string; organizationId?: string };
+	}>("/slots", slotsQueryHandler);
+
+	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create or /appointments
+	const createAppointmentHandler = async (request: FastifyRequest<{
+		Body: {
+			organizationId?: string;
+			doctorId: string;
+			startsAt: string;
+			endsAt: string;
+			patientName: string;
+			patientPhone: string;
+			comment?: string;
+			verificationCode?: string;
+			source?: string;
+			utm_source?: string;
+			utmSource?: string;
+			utm_campaign?: string;
+			utm_medium?: string;
+			utm_content?: string;
+			utm_term?: string;
+		};
+	}>, reply: FastifyReply) => {
+		const organizationId =
+			request.body?.organizationId || (await resolveDefaultClinicOrgId());
+		(request.params as Record<string, string>) = {
+			...(request.params as Record<string, string> || {}),
+			organizationId,
+		};
+		return handleBookAppointment(request as any, reply);
+	};
+
 	server.post<{
 		Body: {
 			organizationId?: string;
@@ -243,14 +279,35 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			utm_content?: string;
 			utm_term?: string;
 		};
-	}>("/create", async (request, reply) => {
-		const organizationId =
-			request.body?.organizationId || (await resolveDefaultClinicOrgId());
-		(request.params as Record<string, string>) = {
-			...(request.params as Record<string, string> || {}),
-			organizationId,
+	}>("/create", createAppointmentHandler);
+
+	server.post<{
+		Body: {
+			organizationId?: string;
+			doctorId: string;
+			startsAt: string;
+			endsAt: string;
+			patientName: string;
+			patientPhone: string;
+			comment?: string;
+			verificationCode?: string;
+			source?: string;
+			utm_source?: string;
+			utmSource?: string;
+			utm_campaign?: string;
+			utm_medium?: string;
+			utm_content?: string;
+			utm_term?: string;
 		};
-		return handleBookAppointment(request as any, reply);
+	}>("/appointments", createAppointmentHandler);
+
+	// 1a. Get doctors with default organization fallback
+	server.get("/doctors", async (request, reply) => {
+		if (isRateLimited(request.ip ?? "unknown")) {
+			return reply.status(429).send({ error: "Слишком много запросов." });
+		}
+		const organizationId = await resolveDefaultClinicOrgId();
+		return handleDoctorList(organizationId, reply);
 	});
 
 	// 1. Get doctors for an organization

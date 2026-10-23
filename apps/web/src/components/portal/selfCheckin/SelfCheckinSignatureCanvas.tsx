@@ -244,7 +244,7 @@ export const SelfCheckinSignatureCanvas: React.FC<SelfCheckinSignatureCanvasProp
 					height: "140px",
 					borderRadius: "10px",
 					border: hasStrokes ? "2px solid var(--teal)" : "2px dashed var(--line)",
-					backgroundColor: "var(--paper-card, #ffffff)",
+					backgroundColor: "var(--paper-card, var(--paper))",
 					overflow: "hidden",
 					touchAction: "none",
 					cursor: "crosshair",
