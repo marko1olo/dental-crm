@@ -32,9 +32,30 @@ export type CanalCondition =
 export type PeriapicalCondition = "none" | "granuloma" | "cyst" | "resorption";
 export type PostCoreType = "fiber" | "cast";
 
+export type CariesType =
+	| "class1"
+	| "class2_mo"
+	| "class2_do"
+	| "class2_mod"
+	| "class5"
+	| "white_spot";
+
+export type CariesChronicity = "acute" | "chronic";
+
+export type InlayOnlayType = "inlay" | "onlay" | "overlay";
+
 export type Tooth46ClinicalPreset =
 	| "intact"
 	| "caries"
+	| "caries_class2_mo"
+	| "caries_class2_do"
+	| "caries_class2_mod"
+	| "caries_class5"
+	| "caries_white_spot"
+	| "caries_acute"
+	| "caries_chronic"
+	| "restoration_inlay"
+	| "restoration_onlay"
 	| "pulpitis"
 	| "periodontitis"
 	| "endodontics"

@@ -1,113 +1,96 @@
 import type React from "react";
-import { TOOTH46_CARIES_GEOMETRY } from "./Tooth46CariesGeometry";
+import { Tooth46CariesClass1 } from "./Tooth46CariesClass1";
+import { Tooth46CariesClass2 } from "./Tooth46CariesClass2";
+import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "./Tooth46CariesSpectrumGeometry";
+import type { CariesChronicity, CariesType } from "./tooth46PresetTypes";
 
 export interface Tooth46CariesOverlayProps {
-	isDark?: boolean;
-	showBuccalPit?: boolean;
-	className?: string;
+	cariesType?: CariesType | undefined;
+	chronicity?: CariesChronicity | undefined;
+	isDark?: boolean | undefined;
+	showBuccalPit?: boolean | undefined;
+	className?: string | undefined;
 }
 
 /**
- * Organic Biological Caries Pathology for Tooth 46
- * Authentic Class I dendritic fissure caries with 3 pathology zones:
- * 1. Chalky demineralized enamel halo
- * 2. Infiltrating dendritic softened dentin (Y-5 Dryopithecus groove)
- * 3. Deep necrotic cavitated crater with micro-pits & isolated buccal caecum pit
+ * Organic Biological Caries Spectrum for Tooth 46
+ * Class I, Class II (MO, DO, MOD), Class V, White Spot, Acute & Chronic.
+ * Mandate 8b <= 120 lines.
  */
 export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
+	cariesType = "class1",
+	chronicity = "acute",
 	isDark = false,
 	showBuccalPit = true,
 	className,
 }) => {
-	const c = TOOTH46_CARIES_GEOMETRY;
+	const sp = TOOTH46_CARIES_SPECTRUM_GEOMETRY;
+	const isChronic = chronicity === "chronic";
+	const lesionFill = isChronic
+		? "url(#dente-caries-chronic)"
+		: "url(#dente-caries-lesion)";
+	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
 	const haloStroke = isDark
 		? "rgba(254, 243, 199, 0.35)"
 		: "rgba(254, 243, 199, 0.55)";
-	const grooveStroke = isDark
-		? "rgba(120, 53, 15, 0.50)"
-		: "rgba(146, 64, 14, 0.60)";
 
 	return (
 		<g
 			id="tooth46-biological-caries"
+			data-caries-type={cariesType}
+			data-caries-chronicity={chronicity}
 			className={className}
 			clipPath="url(#tooth46-crown-clip)"
 		>
-			{/* Zone 1: Chalky Demineralized Enamel Halo */}
-			<path
-				d={c.demineralizedHalo}
-				fill="url(#dente-caries-demin)"
-				stroke={haloStroke}
-				strokeWidth="0.6"
-				strokeLinejoin="round"
-				vectorEffect="non-scaling-stroke"
-			/>
-
-			{/* Zone 2: Infiltrating Dendritic Softened Dentin in Y-5 Fissure */}
-			<path
-				d={c.dendriticCariesPath}
-				fill="url(#dente-caries-lesion)"
-				stroke="rgba(120, 53, 15, 0.85)"
-				strokeWidth="0.6"
-				strokeLinejoin="round"
-				vectorEffect="non-scaling-stroke"
-			/>
-
-			{/* Zone 3: Deep Cavitated Necrotic Core */}
-			<path
-				d={c.necroticCore}
-				fill="url(#dente-caries-necrotic)"
-				stroke="rgba(28, 25, 23, 0.95)"
-				strokeWidth="0.6"
-				strokeLinejoin="round"
-				vectorEffect="non-scaling-stroke"
-			/>
-
-			{/* Micro-pits in fissure bottoms */}
-			{c.microPits.map((pit) => (
-				<circle
-					key={`pit-${pit.cx}-${pit.cy}`}
-					cx={pit.cx}
-					cy={pit.cy}
-					r={pit.r}
-					fill="#1c1917"
-					opacity="0.9"
-				/>
-			))}
-
-			{/* Hairline Developmental Buccal Groove Trace */}
-			<path
-				d={c.buccalGrooveTrace}
-				fill="none"
-				stroke={grooveStroke}
-				strokeWidth="0.7"
-				strokeLinecap="round"
-				vectorEffect="non-scaling-stroke"
-			/>
-
-			{/* Class V Buccal Pit (Foramen Caecum) Cavitation */}
-			{showBuccalPit && (
-				<g id="tooth46-buccal-caecum">
+			{cariesType === "white_spot" && (
+				<g id="tooth46-caries-white-spot">
 					<path
-						d={c.buccalPitCavity.halo}
+						d={sp.whiteSpot.halo}
+						fill="url(#dente-caries-white-spot)"
+						stroke="rgba(255, 255, 255, 0.75)"
+						strokeWidth="0.5"
+					/>
+					<path d={sp.whiteSpot.core} fill="#ffffff" fillOpacity="0.80" />
+				</g>
+			)}
+
+			{cariesType === "class5" && (
+				<g id="tooth46-caries-class5">
+					<path
+						d={sp.class5.halo}
 						fill="url(#dente-caries-demin)"
 						stroke={haloStroke}
 						strokeWidth="0.5"
 					/>
 					<path
-						d={c.buccalPitCavity.crater}
-						fill="url(#dente-caries-lesion)"
-						stroke="rgba(120, 53, 15, 0.8)"
+						d={sp.class5.crater}
+						fill={lesionFill}
+						stroke="rgba(120, 53, 15, 0.85)"
 						strokeWidth="0.5"
 					/>
-					<path
-						d={c.buccalPitCavity.necroticCenter}
-						fill="url(#dente-caries-necrotic)"
-						stroke="#1c1917"
-						strokeWidth="0.4"
-						strokeLinejoin="round"
-					/>
+					<path d={sp.class5.necrotic} fill={necroticFill} stroke="#1c1917" />
 				</g>
+			)}
+
+			{(cariesType === "class2_mo" ||
+				cariesType === "class2_do" ||
+				cariesType === "class2_mod") && (
+				<Tooth46CariesClass2
+					cariesType={cariesType}
+					lesionFill={lesionFill}
+					necroticFill={necroticFill}
+					haloStroke={haloStroke}
+				/>
+			)}
+
+			{cariesType === "class1" && (
+				<Tooth46CariesClass1
+					lesionFill={lesionFill}
+					necroticFill={necroticFill}
+					haloStroke={haloStroke}
+					isDark={isDark}
+					showBuccalPit={showBuccalPit}
+				/>
 			)}
 		</g>
 	);

@@ -5,8 +5,11 @@
 
 import type {
 	CanalCondition,
+	CariesChronicity,
+	CariesType,
 	CrownMaterial,
 	ImplantStage,
+	InlayOnlayType,
 	PeriapicalCondition,
 	PostCoreType,
 	RestorationCondition,
@@ -14,8 +17,11 @@ import type {
 
 export type {
 	CanalCondition,
+	CariesChronicity,
+	CariesType,
 	CrownMaterial,
 	ImplantStage,
+	InlayOnlayType,
 	PeriapicalCondition,
 	PostCoreType,
 	RestorationCondition,
@@ -36,8 +42,11 @@ export interface Tooth46LayerFlags {
 	periapicalHalo?: boolean;
 	periapicalCondition?: PeriapicalCondition;
 	caries?: boolean;
+	cariesType?: CariesType;
+	cariesChronicity?: CariesChronicity;
 	composite?: boolean;
 	compositeCondition?: RestorationCondition;
+	inlayOnlay?: InlayOnlayType;
 	zirconiaCrown?: boolean;
 	crownMaterial?: CrownMaterial;
 	crownCondition?: RestorationCondition;
@@ -65,6 +74,8 @@ export const DEFAULT_TOOTH46_LAYERS: Tooth46LayerFlags = {
 	periapicalHalo: false,
 	periapicalCondition: "none",
 	caries: false,
+	cariesType: "class1",
+	cariesChronicity: "acute",
 	composite: false,
 	compositeCondition: "adequate",
 	zirconiaCrown: false,

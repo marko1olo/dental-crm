@@ -84,11 +84,11 @@ describe("Gate 0 Advanced Clinical States — Tooth 46", () => {
 		assert.ok(resorbHtml.includes("tooth46-resorption"));
 	});
 
-	it("renders Tooth46InspectionStand with 35 clinical presets and HUD", () => {
+	it("renders Tooth46InspectionStand with 44 clinical presets and HUD", () => {
 		assert.equal(
 			TOOTH46_PRESETS.length,
-			35,
-			"Must have 35 clinical presets (6 crown mats x 2, endo spectrum, base, 5 implant states, pathology)",
+			44,
+			"Must have 44 clinical presets (6 crown mats x 2, endo spectrum, base, 5 implant states, pathology, caries spectrum, inlays)",
 		);
 		const standHtml = renderToString(
 			React.createElement(Tooth46InspectionStand),

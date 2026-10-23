@@ -184,6 +184,26 @@ COLLAGES_V2 = [
             {"path": "gate0_tooth46_macro_crack.png", "badge": "3. Трещина эмали (Infraction)", "label": "Субмиллиметровая вертикальная трещина"},
             {"path": "gate0_tooth46_macro_crown_metal.png", "badge": "4. Коронка цельнолитая", "label": "Полированный кобальт-хром КХС"}
         ]
+    },
+    {
+        "title": "Зуб 4.6 — Коллаж 8: Спектр кариеса (Class II, Class V, In Situ)",
+        "file": "tight_08_caries_spectrum.png",
+        "items": [
+            {"path": "gate0_tooth46_macro_caries_white_spot.png", "badge": "1. Меловидное пятно", "label": "Стадия деминерализации (Caries in situ)"},
+            {"path": "gate0_tooth46_macro_caries_class2_mo.png", "badge": "2. Кариес Class II MO", "label": "Апроксимальная мезио-окклюзионная полость"},
+            {"path": "gate0_tooth46_macro_caries_class2_mod.png", "badge": "3. Кариес Class II MOD", "label": "Сквозное контактное разрушение стенок"},
+            {"path": "gate0_tooth46_macro_caries_class5.png", "badge": "4. Кариес Class V (CEJ)", "label": "Серповидная пришеечная каверна у десны"}
+        ]
+    },
+    {
+        "title": "Зуб 4.6 — Коллаж 9: Накладки Inlay/Onlay & Течение кариеса",
+        "file": "tight_09_inlays_and_onlays.png",
+        "items": [
+            {"path": "gate0_tooth46_macro_restoration_inlay.png", "badge": "1. Керамическая вкладка Inlay", "label": "Прецизионная адгезивная вкладка"},
+            {"path": "gate0_tooth46_macro_restoration_onlay.png", "badge": "2. Накладка Onlay (MB/DB)", "label": "Перекрытие ослабленных щечных бугров"},
+            {"path": "gate0_tooth46_macro_caries_acute.png", "badge": "3. Острый кариес (активный)", "label": "Влажный охристый размягченный дентин"},
+            {"path": "gate0_tooth46_macro_caries_chronic.png", "badge": "4. Хронический кариес", "label": "Пигментированный склерозированный дентин"}
+        ]
     }
 ]
 

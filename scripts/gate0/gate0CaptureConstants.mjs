@@ -68,6 +68,16 @@ export const MACRO_SHOTS = [
 	shot("gate0_tooth46_macro_implant_crown_screw.png", "implant_crown_screw"),
 	shot("gate0_tooth46_macro_implant_temporary.png", "implant_temporary"),
 	shot("gate0_tooth46_macro_missing.png", "missing"),
+	// Caries Spectrum & Bonded Inlays/Onlays
+	shot("gate0_tooth46_macro_caries_white_spot.png", "caries_white_spot"),
+	shot("gate0_tooth46_macro_caries_class2_mo.png", "caries_class2_mo"),
+	shot("gate0_tooth46_macro_caries_class2_do.png", "caries_class2_do"),
+	shot("gate0_tooth46_macro_caries_class2_mod.png", "caries_class2_mod"),
+	shot("gate0_tooth46_macro_caries_class5.png", "caries_class5"),
+	shot("gate0_tooth46_macro_caries_acute.png", "caries_acute"),
+	shot("gate0_tooth46_macro_caries_chronic.png", "caries_chronic"),
+	shot("gate0_tooth46_macro_restoration_inlay.png", "restoration_inlay"),
+	shot("gate0_tooth46_macro_restoration_onlay.png", "restoration_onlay"),
 	// Backward-compatible aliases and specific zoomed details
 	shot("gate0_tooth46_macro_pulp.png", "pulpitis"),
 	shot("gate0_tooth46_macro_overfilled_puff.png", "overfill"),
