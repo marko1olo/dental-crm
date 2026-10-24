@@ -35,7 +35,7 @@ export const ConsentDocumentPreview: React.FC<ConsentDocumentPreviewProps> = ({
 				>
 					<span className="flex items-center gap-2">
 						<FileText size={16} className="text-[var(--teal,#0d9488)]" />
-						<span>Юридический текст согласия (Приказ 1051н)</span>
+						<span>Текст информированного согласия на лечение</span>
 					</span>
 					<span className="text-xs text-[var(--muted)] flex items-center gap-1">
 						{isDocumentTextExpanded ? (

@@ -428,7 +428,7 @@ test("Informed Consents Dynamic Scope Invalidation: detects scope mismatch when 
 	assert.ok(surgeryMismatch.uncoveredTemplateKeys.includes("CONSENT_SURGERY_IMPLANT"));
 	assert.equal(surgeryMismatch.mismatchedItems.length, 1);
 	assert.equal(surgeryMismatch.mismatchedItems[0]?.domainKey, "CONSENT_SURGERY_IMPLANT");
-	assert.ok(surgeryMismatch.warningTitle.includes("Внимание: добавлены процедуры, не покрытые текущим ИДС 1051н"));
+	assert.ok(surgeryMismatch.warningTitle.includes("Внимание: добавлены процедуры, не покрытые текущим согласием на лечение"));
 	assert.equal(surgeryMismatch.suggestedActionLabel, "Сформировать доп. согласие на новые процедуры");
 
 	// 3. Врач добавляет ортопедические манипуляции (коронки, слепки, препарирование)

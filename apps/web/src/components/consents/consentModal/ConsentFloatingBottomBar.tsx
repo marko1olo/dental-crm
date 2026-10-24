@@ -23,20 +23,18 @@ export const ConsentFloatingBottomBar: React.FC<ConsentFloatingBottomBarProps> =
 				className="consent-mobile-primary-cta"
 				data-testid="btn-confirm-sign-mobile"
 				onClick={onConfirmSign}
-				disabled={isSubmitting || !isSigningReady}
+				disabled={isSubmitting}
 				style={{
-					background: isSigningReady ? "var(--teal)" : "var(--muted)",
-					cursor: isSigningReady ? "pointer" : "not-allowed",
-					opacity: isSigningReady ? 1 : 0.65,
+					background: "var(--teal)",
+					cursor: isSubmitting ? "wait" : "pointer",
+					opacity: isSubmitting ? 0.75 : 1,
 				}}
 			>
 				<Zap size={20} />
 				<span>
-					{isSigningReady
-						? activeMode === "packages"
-							? `Подтвердить пакет (${packageDocsCount} док.)`
-							: "Подтвердить согласие"
-						: "Ожидает росписи пальцем / бланка"}
+					{activeMode === "packages"
+						? `Подтвердить пакет (${packageDocsCount} док.)`
+						: "Подтвердить согласие (1 клик)"}
 				</span>
 			</button>
 		</div>
