@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
 import {
+  deriveClinicWorkingHours,
   findDoctorFreeSlots,
   type TimeOfDayFilter,
 } from "../doctorFreeSlotsEngine";
@@ -37,6 +38,11 @@ export function useDoctorFreeSlotsController({ dashboard, initialDoctorId }: Use
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }, [startDateOffsetDays]);
 
+  const workingWindow = useMemo(
+    () => deriveClinicWorkingHours(dashboard, selectedDoctorId || undefined),
+    [dashboard, selectedDoctorId],
+  );
+
   const freeSlotsByDay = useMemo(() => {
     return findDoctorFreeSlots({
       doctorId: selectedDoctorId || undefined,
@@ -47,8 +53,10 @@ export function useDoctorFreeSlotsController({ dashboard, initialDoctorId }: Use
       timeOfDayFilter,
       appointments: dashboard?.appointments ?? [],
       chairs: dashboard?.clinicSettings?.chairs ?? [],
-      clinicStartHour: 9,
-      clinicEndHour: 20,
+      clinicStartHour: workingWindow.clinicStartHour,
+      clinicEndHour: workingWindow.clinicEndHour,
+      workingDays: workingWindow.workingDays,
+      perDayWorkingHours: workingWindow.perDayWorkingHours,
       stepMinutes: durationMinutes <= 30 ? 15 : 30,
     });
   }, [
@@ -60,6 +68,7 @@ export function useDoctorFreeSlotsController({ dashboard, initialDoctorId }: Use
     timeOfDayFilter,
     dashboard?.appointments,
     dashboard?.clinicSettings?.chairs,
+    workingWindow,
   ]);
 
   const totalSlotsCount = useMemo(() => {

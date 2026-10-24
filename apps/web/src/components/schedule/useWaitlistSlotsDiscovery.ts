@@ -5,7 +5,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { logger } from "../../utils/logger";
-import { findDoctorFreeSlots } from "./doctorFreeSlotsEngine";
+import {
+  deriveClinicWorkingHours,
+  findDoctorFreeSlots,
+} from "./doctorFreeSlotsEngine";
 import type { TargetSlotInfo } from "./waitlistCancellationEngine";
 
 interface UseWaitlistSlotsDiscoveryParams {
@@ -27,12 +30,16 @@ export function useWaitlistSlotsDiscovery({
   const discoveredFreeSlots: TargetSlotInfo[] = useMemo(() => {
     if (targetSlot) return [targetSlot];
     const today = new Date().toISOString().slice(0, 10);
+    const workingWindow = deriveClinicWorkingHours(dashboard);
     const days = findDoctorFreeSlots({
       startDate: today,
       horizonDays: 3,
       durationMinutes: 30,
       appointments: dashboard?.appointments ?? [],
       chairs: dashboard?.clinicSettings?.chairs ?? [],
+      clinicStartHour: workingWindow.clinicStartHour,
+      clinicEndHour: workingWindow.clinicEndHour,
+      workingDays: workingWindow.workingDays,
     });
     const list: TargetSlotInfo[] = [];
     for (const day of days) {

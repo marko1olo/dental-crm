@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
 	type DoctorFreeSlot,
+	deriveClinicWorkingHours,
 	findDoctorFreeSlots,
 } from "./doctorFreeSlotsEngine";
 import {
@@ -613,12 +614,16 @@ export function useWaitlistDrawerOperations({
 	const fallbackFreeSlots = useMemo(() => {
 		if (targetSlot) return [];
 		const today = new Date().toISOString().slice(0, 10);
+		const workingWindow = deriveClinicWorkingHours(dashboard);
 		const days = findDoctorFreeSlots({
 			startDate: today,
 			horizonDays: 3,
 			durationMinutes: 30,
 			appointments: dashboard?.appointments ?? [],
 			chairs: dashboard?.clinicSettings?.chairs ?? [],
+			clinicStartHour: workingWindow.clinicStartHour,
+			clinicEndHour: workingWindow.clinicEndHour,
+			workingDays: workingWindow.workingDays,
 		});
 		const flat: (DoctorFreeSlot & {
 			dateFormatted: string;

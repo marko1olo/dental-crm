@@ -65,7 +65,118 @@ export interface FindDoctorFreeSlotsParams {
 	clinicEndHour?: number | undefined;   // default 20
 	stepMinutes?: number | undefined;     // default 30
 	workingDays?: readonly number[] | undefined; // 0 (Sun) - 6 (Sat). Default [1, 2, 3, 4, 5, 6] (Mon-Sat)
+	perDayWorkingHours?: Readonly<
+		Record<number, { startHour: number; endHour: number }>
+	> | undefined; // точное окно врача на день недели из настроек сотрудника
 	breakIntervals?: readonly DoctorBreakInterval[] | undefined; // e.g. [{ startTime: "13:00", endTime: "14:00" }]
+}
+
+export interface ClinicWorkingHoursWindow {
+	clinicStartHour: number;
+	clinicEndHour: number;
+	workingDays?: number[] | undefined;
+	perDayWorkingHours?: Record<number, { startHour: number; endHour: number }> | undefined;
+}
+
+function clockToHour(value: unknown): number | null {
+	const match = /^(\d{1,2}):(\d{2})$/.exec(
+		typeof value === "string" ? value.trim() : "",
+	);
+	if (!match) return null;
+	const hour = Number(match[1]);
+	return Number.isFinite(hour) && hour >= 0 && hour <= 23 ? hour : null;
+}
+
+/**
+ * Честное рабочее окно из реальных данных клиники, а не константа из головы:
+ * расписание клиники берётся из настроек профиля (scheduleDefaults), а окно
+ * выбранного врача — из его недельного графика в карточке сотрудника
+ * (staff[].workingHours). Прежние вызовы передавали жёсткое 9:00–20:00, из-за
+ * чего поиск свободных окон предлагал врачу часы, когда он физически не работает.
+ */
+export function deriveClinicWorkingHours(
+	dashboard: unknown,
+	doctorId?: string | null | undefined,
+): ClinicWorkingHoursWindow {
+	const settings = (
+		dashboard as
+			| { clinicSettings?: { profile?: unknown; staff?: unknown } | null }
+			| null
+			| undefined
+	)?.clinicSettings;
+	const profile = settings?.profile as
+		| {
+				scheduleDefaults?: {
+					workdayStart?: string | null;
+					workdayEnd?: string | null;
+					workingDays?: number[] | null;
+				} | null;
+		  }
+		| undefined;
+	const parsedStart = clockToHour(profile?.scheduleDefaults?.workdayStart);
+	const parsedEnd = clockToHour(profile?.scheduleDefaults?.workdayEnd);
+	const clinicStartHour = parsedStart ?? 9;
+	const clinicEndHour = parsedEnd && parsedEnd > clinicStartHour ? parsedEnd : 20;
+
+	const result: ClinicWorkingHoursWindow = { clinicStartHour, clinicEndHour };
+	const clinicWorkingDays = profile?.scheduleDefaults?.workingDays;
+	if (Array.isArray(clinicWorkingDays) && clinicWorkingDays.length > 0) {
+		result.workingDays = [...clinicWorkingDays];
+	}
+
+	if (!doctorId) return result;
+
+	const staff = settings?.staff as
+		| Array<{
+				id?: string | null;
+				workingHours?:
+					| Array<{
+							weekday?: number | null;
+							enabled?: boolean | null;
+							start?: string | null;
+							end?: string | null;
+					  }>
+					| null;
+		  }>
+		| null
+		| undefined;
+	const doctor = staff?.find((member) => member?.id === doctorId);
+	const doctorSchedule = doctor?.workingHours;
+	if (!Array.isArray(doctorSchedule) || doctorSchedule.length === 0) {
+		return result;
+	}
+
+	const perDay: Record<number, { startHour: number; endHour: number }> = {};
+	for (const day of doctorSchedule) {
+		if (!day || day.enabled === false) continue;
+		const weekday = day.weekday;
+		const dayStart = clockToHour(day.start);
+		const dayEnd = clockToHour(day.end);
+		if (
+			typeof weekday !== "number" ||
+			!Number.isInteger(weekday) ||
+			weekday < 0 ||
+			weekday > 6 ||
+			dayStart === null ||
+			dayEnd === null ||
+			dayEnd <= dayStart
+		) {
+			continue;
+		}
+		perDay[weekday] = {
+			startHour: Math.max(dayStart, clinicStartHour),
+			endHour: Math.min(dayEnd, clinicEndHour),
+		};
+	}
+
+	result.perDayWorkingHours = perDay;
+	const configuredDays = Object.keys(perDay).map(Number);
+	if (result.workingDays) {
+		result.workingDays = result.workingDays.filter((d) => perDay[d] !== undefined);
+	} else {
+		result.workingDays = configuredDays;
+	}
+	return result;
 }
 
 export function getTimeOfDayCategory(hour: number): "morning" | "day" | "evening" {
@@ -105,12 +216,22 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 		clinicEndHour = 20,
 		stepMinutes = 30,
 		workingDays,
+		perDayWorkingHours,
 		breakIntervals = [],
 	} = params;
 
 	const activeChairs = chairs.filter((c) => c.active !== false);
 	const targetChairs = chairId ? activeChairs.filter((c) => c.id === chairId) : activeChairs;
-	const defaultChair = targetChairs[0] || activeChairs[0] || { id: "chair-1", name: "Кабинет 1" };
+	/*
+	 * Честность слотов: свободные окна существуют только в реальных креслах
+	 * клиники. Раньше при пустом списке кресел движок подставлял выдуманное
+	 * «Кабинет 1» (id: "chair-1"), которого нет в базе, и рисовал администратору
+	 * фейковую доступность: клик по такому окну упирался в отказ сервера.
+	 * Нет активных кресел (или выбранное кресло не найдено) — честный ответ
+	 * «нет окон», а не лестница из несуществующих слотов.
+	 */
+	const defaultChair = targetChairs[0] || activeChairs[0] || null;
+	const hasRealChairs = defaultChair !== null;
 
 	const activeAppointments = appointments.filter(
 		(a) => a.status !== "cancelled" && a.status !== "no_show",
@@ -129,8 +250,24 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 		const dateKey = `${yyyy}-${mm}-${dd}`;
 		const { dateFormatted, dayOfWeek } = formatRussianDayHeader(dateKey);
 
-		// Check if the doctor has a day off on this day of week
-		if (workingDays && workingDays.length > 0 && !workingDays.includes(dayOfWeekNum)) {
+		// Без реальных кресел клиники свободных окон не существует вовсе.
+		if (!hasRealChairs) {
+			result.push({
+				date: dateKey,
+				dateFormatted,
+				dayOfWeek,
+				isDayOff: true,
+				dayOffReason: "В клинике нет активных кресел",
+				slots: [],
+			});
+			continue;
+		}
+
+		// Check if the doctor has a day off on this day of week.
+		// Пустой массив workingDays — явная настройка «врач не работает ни в
+		// какой день недели» (администратор снимает все дни в графике перед
+		// отпуском), а не «данные не заданы».
+		if (workingDays && !workingDays.includes(dayOfWeekNum)) {
 			result.push({
 				date: dateKey,
 				dateFormatted,
@@ -141,6 +278,28 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 			});
 			continue;
 		}
+
+		const perDayWindow = perDayWorkingHours
+			? perDayWorkingHours[dayOfWeekNum]
+			: undefined;
+		if (perDayWorkingHours && (!perDayWindow || perDayWindow.endHour <= perDayWindow.startHour)) {
+			result.push({
+				date: dateKey,
+				dateFormatted,
+				dayOfWeek,
+				isDayOff: true,
+				dayOffReason: "Врач не работает в этот день недели",
+				slots: [],
+			});
+			continue;
+		}
+
+		const dayStartHour = perDayWindow
+			? Math.max(perDayWindow.startHour, clinicStartHour)
+			: clinicStartHour;
+		const dayEndHour = perDayWindow
+			? Math.min(perDayWindow.endHour, clinicEndHour)
+			: clinicEndHour;
 
 		const daySlots: DoctorFreeSlot[] = [];
 
@@ -178,9 +337,9 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 		});
 
 		// Iterate time slots
-		const totalDayMinutes = (clinicEndHour - clinicStartHour) * 60;
+		const totalDayMinutes = (dayEndHour - dayStartHour) * 60;
 		for (let offset = 0; offset + durationMinutes <= totalDayMinutes; offset += stepMinutes) {
-			const startTotalMin = clinicStartHour * 60 + offset;
+			const startTotalMin = dayStartHour * 60 + offset;
 			const endTotalMin = startTotalMin + durationMinutes;
 
 			const startH = Math.floor(startTotalMin / 60);
@@ -216,36 +375,33 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 				continue;
 			}
 
-			// Find available chair using pre-parsed timestamps via SSOT engine
+			// Find available chair using pre-parsed timestamps via SSOT engine.
+			// Все кресла заняты на этот интервал — окна нет, выдумывать кабинет нельзя.
 			const availableChair = targetChairs.find((chair) => {
 				const hasChairConflict = parsedDayAppts.some(
 					(a) => a.chairId === chair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs),
 				);
 				return !hasChairConflict;
-			}) || defaultChair;
-
-			// Verify chair availability
-			const chairConflict = parsedDayAppts.some(
-				(a) => a.chairId === availableChair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs),
-			);
-
-			if (!chairConflict) {
-				const timeStartStr = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
-				const timeEndStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
-				daySlots.push({
-					date: dateKey,
-					startsAtIso: startIso,
-					endsAtIso: endIso,
-					startTime: timeStartStr,
-					endTime: timeEndStr,
-					timeDisplay: `${timeStartStr} – ${timeEndStr}`,
-					durationMinutes,
-					doctorId: doctorId || "",
-					chairId: availableChair.id,
-					chairName: availableChair.name,
-					timeOfDay: timeCategory,
-				});
+			});
+			if (!availableChair) {
+				continue;
 			}
+
+			const timeStartStr = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
+			const timeEndStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+			daySlots.push({
+				date: dateKey,
+				startsAtIso: startIso,
+				endsAtIso: endIso,
+				startTime: timeStartStr,
+				endTime: timeEndStr,
+				timeDisplay: `${timeStartStr} – ${timeEndStr}`,
+				durationMinutes,
+				doctorId: doctorId || "",
+				chairId: availableChair.id,
+				chairName: availableChair.name,
+				timeOfDay: timeCategory,
+			});
 		}
 
 		result.push({
@@ -288,6 +444,7 @@ export interface DailyScheduleTallySummary {
 	readonly totalDurationMinutes: number;
 	readonly totalClinicCapacityMinutes: number;
 	readonly clinicOccupancyPercent: number;
+	readonly clinicWorkdayLabel: string;
 	readonly totalRevenueRub: number;
 	readonly chairs: readonly ChairDailyOccupancyStats[];
 	readonly doctors: readonly DoctorDailyOccupancyStats[];
@@ -378,12 +535,12 @@ export function calculateDailyChairDoctorTally(params: {
 			if (a.doctorUserId) docIdSet.add(a.doctorUserId);
 			if (a.status === "completed") completedCount++;
 
-			// Estimate or sum real revenue
+			// Честная выручка: только реальные оплаченные счета из БД.
+			// Прежняя оценка «50 ₽ за минуту / 2 500 ₽ за приём» рисовала
+			// администратору выдуманные деньги за визиты без счетов.
 			const invSum = invoiceRevenueByAppt.get(a.id);
 			if (invSum !== undefined) {
 				chairRevenue += invSum;
-			} else {
-				chairRevenue += durMin > 0 ? durMin * 50 : 2500;
 			}
 		}
 
@@ -429,8 +586,9 @@ export function calculateDailyChairDoctorTally(params: {
 		current.durMin += durMin;
 		if (a.chairId) current.chairs.add(a.chairId);
 
+		// Только реальные счета: без синтетической оценки выручки.
 		const invSum = invoiceRevenueByAppt.get(a.id);
-		current.revenue += invSum !== undefined ? invSum : (durMin > 0 ? durMin * 50 : 2500);
+		current.revenue += invSum !== undefined ? invSum : 0;
 		doctorStatsMap.set(dId, current);
 	}
 
@@ -459,6 +617,7 @@ export function calculateDailyChairDoctorTally(params: {
 		totalDurationMinutes,
 		totalClinicCapacityMinutes,
 		clinicOccupancyPercent,
+		clinicWorkdayLabel: `${String(clinicStartHour).padStart(2, "0")}:00–${String(clinicEndHour).padStart(2, "0")}:00`,
 		totalRevenueRub,
 		chairs: chairStats,
 		doctors: doctorStats,

@@ -8,7 +8,10 @@ import {
   areIntervalsOverlapping,
 } from "@dental/shared";
 import { DEFAULT_SOLO_CHAIR } from "./gridConstants";
-import { calculateDailyChairDoctorTally } from "../doctorFreeSlotsEngine";
+import {
+  calculateDailyChairDoctorTally,
+  deriveClinicWorkingHours,
+} from "../doctorFreeSlotsEngine";
 import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 
 export interface UseScheduleGridDataProps {
@@ -349,6 +352,9 @@ export function useScheduleGridData({
   }, [dashboard?.clinicSettings?.staff]);
 
   const dailyTally = useMemo(() => {
+    // Занятость кресел считается против реального рабочего окна клиники из
+    // настроек профиля, а не против константы 9:00–20:00.
+    const workingWindow = deriveClinicWorkingHours(dashboard);
     return calculateDailyChairDoctorTally({
       dateKey,
       appointments,
@@ -357,10 +363,13 @@ export function useScheduleGridData({
         ? dashboard.clinicSettings.chairs
         : effectiveChairs) as any,
       doctors: ((dashboard?.clinicSettings as any)?.staff ?? []) as any[],
+      clinicStartHour: workingWindow.clinicStartHour,
+      clinicEndHour: workingWindow.clinicEndHour,
     });
   }, [
     dateKey,
     appointments,
+    dashboard,
     dashboard?.clinicSettings?.chairs,
     effectiveChairs,
     (dashboard?.clinicSettings as any)?.staff,

@@ -7,6 +7,7 @@ import { describe, it } from "node:test";
 import type { Appointment } from "@dental/shared";
 import {
 	calculateDailyChairDoctorTally,
+	deriveClinicWorkingHours,
 	findDoctorFreeSlots,
 	findNextDoctorFreeSlotAfterDays,
 	findQuickRepeatSlotsForDoctor,
@@ -336,6 +337,200 @@ describe("Doctor Free Slots Engine Suite", () => {
 		assert.ok(repeatSlots.slot30Days);
 		assert.equal(repeatSlots.slot30Days?.date, "2026-09-24");
 		assert.equal(repeatSlots.slot30Days?.startTime, "09:00");
+	});
+
+	it("deriveClinicWorkingHours reads real clinic schedule defaults instead of hardcoded 9-20", () => {
+		const dashboard = {
+			clinicSettings: {
+				profile: {
+					scheduleDefaults: {
+						workdayStart: "08:00",
+						workdayEnd: "21:00",
+						workingDays: [2, 3, 4, 5, 6],
+					},
+				},
+				staff: [],
+			},
+		};
+
+		const window = deriveClinicWorkingHours(dashboard);
+		assert.equal(window.clinicStartHour, 8);
+		assert.equal(window.clinicEndHour, 21);
+		assert.deepEqual(window.workingDays, [2, 3, 4, 5, 6]);
+		assert.equal(window.perDayWorkingHours, undefined);
+	});
+
+	it("deriveClinicWorkingHours applies per-doctor weekly workingHours from staff settings", () => {
+		const dashboard = {
+			clinicSettings: {
+				profile: {
+					scheduleDefaults: {
+						workdayStart: "08:00",
+						workdayEnd: "20:00",
+						workingDays: [1, 2, 3, 4, 5, 6],
+					},
+				},
+				staff: [
+					{
+						id: "doc-1",
+						// Врач работает только по вторникам 10:00-18:00 и четвергам 12:00-22:00 (обрезается окном клиники)
+						workingHours: [
+							{ weekday: 2, enabled: true, start: "10:00", end: "18:00" },
+							{ weekday: 4, enabled: true, start: "12:00", end: "22:00" },
+							{ weekday: 1, enabled: false, start: "08:00", end: "20:00" },
+						],
+					},
+				],
+			},
+		};
+
+		const window = deriveClinicWorkingHours(dashboard, "doc-1");
+		assert.equal(window.clinicStartHour, 8);
+		assert.equal(window.clinicEndHour, 20);
+		assert.deepEqual(window.workingDays, [2, 4]);
+		assert.deepEqual(window.perDayWorkingHours?.[2], { startHour: 10, endHour: 18 });
+		assert.deepEqual(window.perDayWorkingHours?.[4], { startHour: 12, endHour: 20 });
+		assert.equal(window.perDayWorkingHours?.[1], undefined);
+	});
+
+	it("deriveClinicWorkingHours treats all-disabled weekly schedule as vacation (no working days)", () => {
+		const dashboard = {
+			clinicSettings: {
+				profile: {
+					scheduleDefaults: { workdayStart: "08:00", workdayEnd: "20:00", workingDays: [1, 2, 3, 4, 5] },
+				},
+				staff: [
+					{
+						id: "doc-1",
+						workingHours: [{ weekday: 1, enabled: false, start: "08:00", end: "20:00" }],
+					},
+				],
+			},
+		};
+
+		const window = deriveClinicWorkingHours(dashboard, "doc-1");
+		assert.deepEqual(window.workingDays, []);
+	});
+
+	it("findDoctorFreeSlots honors perDayWorkingHours window per weekday", () => {
+		// 2026-09-01 is Tuesday (weekday 2)
+		const result = findDoctorFreeSlots({
+			doctorId: "doc-1",
+			startDate: "2026-09-01",
+			horizonDays: 1,
+			durationMinutes: 60,
+			appointments: [],
+			chairs: [{ id: "chair-1", name: "Кабинет 1", active: true }],
+			clinicStartHour: 9,
+			clinicEndHour: 20,
+			stepMinutes: 60,
+			perDayWorkingHours: { 2: { startHour: 10, endHour: 12 } },
+		});
+
+		// Только 10:00-11:00 и 11:00-12:00 из окна врача, а не весь день клиники
+		assert.equal(result[0]?.slots.length, 2);
+		assert.equal(result[0]?.slots[0]?.timeDisplay, "10:00 – 11:00");
+		assert.equal(result[0]?.slots[1]?.timeDisplay, "11:00 – 12:00");
+	});
+
+	it("tally counts only real invoice revenue and never fabricates money for visits without invoices", () => {
+		const appointments: Appointment[] = [
+			{
+				id: "appt-paid",
+				organizationId: "org-1",
+				patientId: "pat-1",
+				doctorUserId: "doc-1",
+				chairId: "chair-1",
+				startsAt: "2026-08-25T09:00:00Z",
+				endsAt: "2026-08-25T10:00:00Z",
+				status: "completed",
+				reason: null,
+				comment: null,
+			},
+			{
+				id: "appt-no-invoice",
+				organizationId: "org-1",
+				patientId: "pat-2",
+				doctorUserId: "doc-1",
+				chairId: "chair-1",
+				startsAt: "2026-08-25T10:00:00Z",
+				endsAt: "2026-08-25T11:00:00Z",
+				status: "confirmed",
+				reason: null,
+				comment: null,
+			},
+		];
+
+		const tally = calculateDailyChairDoctorTally({
+			dateKey: "2026-08-25",
+			appointments,
+			chairs: [{ id: "chair-1", name: "Кабинет 1", active: true }],
+			invoices: [{ appointmentId: "appt-paid", totalRub: 5000, status: "paid" }],
+			clinicStartHour: 9,
+			clinicEndHour: 19,
+		});
+
+		// Прежняя синтетическая оценка (60 мин × 50 ₽ = 3000 ₽ за визит без
+		// счета) подсовывала администратору выдуманные деньги.
+		assert.equal(tally.totalRevenueRub, 5000);
+		assert.equal(tally.chairs[0]?.totalRevenueRub, 5000);
+		assert.ok(tally.clinicWorkdayLabel.includes("09:00"));
+		assert.ok(tally.clinicWorkdayLabel.includes("19:00"));
+	});
+
+	it("never fabricates slots for a clinic without active chairs", () => {
+		// Прежний движок подставлял выдуманное «Кабинет 1» (id: "chair-1"),
+		// которого нет в базе, и показывал администратору лестницу фейковых
+		// свободных окон. Честный ответ — дней без окон с явной причиной.
+		const result = findDoctorFreeSlots({
+			doctorId: "doc-1",
+			startDate: "2026-09-01",
+			horizonDays: 2,
+			durationMinutes: 30,
+			appointments: [],
+			chairs: [],
+			clinicStartHour: 9,
+			clinicEndHour: 20,
+			stepMinutes: 30,
+		});
+
+		assert.equal(result.length, 2);
+		for (const day of result) {
+			assert.equal(day.isDayOff, true);
+			assert.equal(day.slots.length, 0);
+			assert.equal(day.dayOffReason, "В клинике нет активных кресел");
+		}
+	});
+
+	it("skips intervals when every real chair is busy instead of inventing a free cabinet", () => {
+		// Единственное кресло занято 09:00–12:00 — окно 09:30 существовать
+		// не может, даже если врач свободен.
+		const result = findDoctorFreeSlots({
+			doctorId: "doc-1",
+			startDate: "2026-09-01",
+			horizonDays: 1,
+			durationMinutes: 60,
+			appointments: [
+				{
+					id: "appt-other",
+					organizationId: "org-1",
+					patientId: "pat-9",
+					doctorUserId: "doc-2",
+					chairId: "chair-1",
+					startsAt: "2026-09-01T09:00:00Z",
+					endsAt: "2026-09-01T12:00:00Z",
+					status: "planned",
+					reason: null,
+					comment: null,
+				},
+			],
+			chairs: [{ id: "chair-1", name: "Кабинет 1", active: true }],
+			clinicStartHour: 9,
+			clinicEndHour: 12,
+			stepMinutes: 60,
+		});
+
+		assert.equal(result[0]?.slots.length, 0);
 	});
 });
 

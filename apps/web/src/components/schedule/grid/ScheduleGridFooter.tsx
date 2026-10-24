@@ -52,7 +52,7 @@ export function ScheduleGridFooter({
                 "кресло",
                 "кресла",
                 "кресел",
-              )} · 08:00–20:00`}
+              )} · ${dailyTally.clinicWorkdayLabel ?? "08:00–20:00"}`}
             </span>
           </span>
         )}
