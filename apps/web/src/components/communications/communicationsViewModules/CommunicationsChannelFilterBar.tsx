@@ -50,14 +50,19 @@ export function CommunicationsChannelFilterBar({
 			</div>
 
 			<div className="flex items-center gap-1.5 shrink-0 relative">
-				<button
-					type="button" onClick={onOpenOmnichannelHub}
-					className="primary-button h-9 min-h-[36px] max-h-[36px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs whitespace-nowrap cursor-pointer transition-all select-none shrink-0"
-					data-testid="communications-omnichannel-hub-btn" title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
-				>
-					<MessageSquare size={14} className="shrink-0 text-white" aria-hidden="true" />
-					<span>Омниканальный чат</span>
-				</button>
+				{/* Один Primary CTA на экран (Мандат 8am): когда активна вкладка
+				    «Омниканальный чат», акцентная кнопка-дубль скрыта — она дублировала
+				    таб и спорила за фокус с Primary самой секции. */}
+				{activeSection !== "omnichannel" && (
+					<button
+						type="button" onClick={onOpenOmnichannelHub}
+						className="primary-button h-9 min-h-[36px] max-h-[36px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs whitespace-nowrap cursor-pointer transition-all select-none shrink-0"
+						data-testid="communications-omnichannel-hub-btn" title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
+					>
+						<MessageSquare size={14} className="shrink-0 text-white" aria-hidden="true" />
+						<span>Омниканальный чат</span>
+					</button>
+				)}
 				<button
 					type="button" onClick={onToggleMoreMenu}
 					className="secondary-button h-9 min-h-[36px] max-h-[36px] w-9 min-w-[36px] max-w-[36px] p-0 rounded-xl inline-flex items-center justify-center cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs shrink-0"

@@ -52,16 +52,18 @@ export function AdministrativeModalsSubcontainer({
 					initialTeeth={labCreateOrderContext?.initialTeeth || [21, 22]}
 				/>
 			)}
-			{isGlobalLoyaltyOpen && (
+			{/* Честность: бонусы списываются только конкретному пациенту из контекста.
+			    Без patientId модалка не открывается — никаких подставных карт и ФИО. */}
+			{isGlobalLoyaltyOpen && loyaltyModalContext?.patientId && (
 				<React.Suspense fallback={null}>
 					<LoyaltyProgramModal
 						isOpen={isGlobalLoyaltyOpen}
 						onClose={() => setIsGlobalLoyaltyOpen?.(false)}
-						patientId={loyaltyModalContext?.patientId || "01a00000-0000-0000-0000-000000000001"}
-						patientName={loyaltyModalContext?.patientName || "Смирнова Анна Сергеевна"}
-						initialPointsBalance={loyaltyModalContext?.initialPointsBalance}
-						currentInvoiceAmountKop={loyaltyModalContext?.currentInvoiceAmountKop}
-						medicalCardNumber={loyaltyModalContext?.medicalCardNumber || "№ 01A00001"}
+						patientId={loyaltyModalContext.patientId}
+						patientName={loyaltyModalContext.patientName || "Пациент"}
+						initialPointsBalance={loyaltyModalContext.initialPointsBalance}
+						currentInvoiceAmountKop={loyaltyModalContext.currentInvoiceAmountKop}
+						medicalCardNumber={loyaltyModalContext.medicalCardNumber || ""}
 					/>
 				</React.Suspense>
 			)}

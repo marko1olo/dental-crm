@@ -35,7 +35,7 @@ export function CommunicationsView(
 	if (ctrl.isMobile) {
 		if (ctrl.activeSection === "omnichannel") {
 			return (
-				<div className="w-full max-w-full overflow-x-clip h-[calc(100dvh-124px)] bg-[var(--paper)] p-1.5 box-border flex flex-col gap-1" data-testid="communications-view">
+				<div className="w-full max-w-full overflow-x-clip h-[calc(100dvh-196px)] bg-[var(--paper)] p-1.5 box-border flex flex-col gap-1" data-testid="communications-view">
 					<div className="flex items-center justify-between pb-1 border-b border-[var(--line)] shrink-0">
 						<button
 							type="button"

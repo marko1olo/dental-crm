@@ -1,63 +1,39 @@
 /**
  * PatientDetailsStandaloneLauncher.tsx
  * Standalone лаунчер фасадной модалки медицинской карты пациента (PatientDetailsModal).
- * Соответствует Mandate 8b (Layer 5 Facade, <= 120 строк) и Mandate 8aq (монтирование в живой UI).
+ * Честный режим: ?patient_details + ?patientId= → реальная карточка из базы;
+ * вымышленная «Иванова Марина Викторовна» с фейковым балансом выжжена.
+ * Соответствует Mandate 8b (Layer 5 Facade, <= 120 строк) и Mandate 8aq.
  */
 
-import React, { useState } from "react";
+import type React from "react";
+import { useMemo } from "react";
 import { PatientDetailsModal } from "../../../../patient/PatientDetailsModal";
-import type { PatientClinicalSafetyProfile } from "../../../../patients/safetyMath";
-import type { PatientGeneralInfo } from "../../../../patients/tabs/PatientGeneralInfoTab";
-
-const DEMO_PATIENT: PatientGeneralInfo = {
-	id: "demo_pat_001",
-	fullName: "Иванова Марина Викторовна",
-	birthDate: "1992-07-15",
-	gender: "female",
-	phone: "+7 (916) 789-01-23",
-	address: "г. Москва, Ленинский пр-т, д. 45, кв. 112",
-	notes: "Первичный приём. Отягощенный аллергоанамнез.",
-	medicalCardNumber: "043-У/89",
-	patientBalanceRub: 14500,
-};
-
-const DEMO_SAFETY: PatientClinicalSafetyProfile = {
-	allergyPenicillin: true,
-	allergyLatex: false,
-	allergyLocalAnesthetics: false,
-	allergyIodine: false,
-	allergyAspirin: false,
-	otherAllergies: "Амоксициллин",
-	cardiovascularRisk: false,
-	diabetes: false,
-	bleedingDisorder: false,
-	anticoagulants: false,
-	bisphosphonates: false,
-	pregnancyOrLactation: false,
-	bronchialAsthma: false,
-	hepatitisOrHiv: false,
-	notes: "Контролировать анестетик без антибиотиков группы пенициллинов",
-};
+import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
+import { readPatientIdFromUrl } from "../useLauncherPatientDebt";
+import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 
 export function renderPatientDetailsLauncher(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
-	const s = window.location.search || "";
-	const h = window.location.hash || "";
+	if (!hasUrlToken(["patient_details"])) return null;
 
-	if (!s.includes("patient_details") && !h.includes("patient_details")) {
-		return null;
+	return <StandalonePatientDetailsHost />;
+}
+
+function StandalonePatientDetailsHost(): React.ReactElement {
+	const patientId = useMemo(() => readPatientIdFromUrl(), []);
+	const onClose = () => clearUrlTokens(["patient_details"]);
+
+	if (!patientId) {
+		return (
+			<StandaloneDeepLinkMissingState
+				title="Пациент не указан"
+				message="Медицинская карта открывается по конкретному пациенту. Откройте её из картотеки или добавьте ?patientId= в ссылку."
+				testId="standalone-patient-details-missing-state"
+				onClose={onClose}
+			/>
+		);
 	}
 
-	return (
-		<PatientDetailsModal
-			isOpen={true}
-			onClose={() => {
-				const u = new URL(window.location.href);
-				u.searchParams.delete("patient_details");
-				window.history.replaceState({}, "", u.pathname + (u.search || "") + (u.hash.includes("patient_details") ? "" : u.hash));
-			}}
-			patient={DEMO_PATIENT}
-			safetyProfile={DEMO_SAFETY}
-		/>
-	);
+	return <PatientDetailsModal isOpen={true} onClose={onClose} patientId={patientId} />;
 }

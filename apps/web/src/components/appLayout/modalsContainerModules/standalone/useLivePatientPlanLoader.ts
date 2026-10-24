@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { DEFAULT_SAMPLE_TEETH } from "../../../treatment-plans/presenterModules/state/presenterStateConstants";
 import {
 	fetchPipelineFirstPlan,
 	fetchTargetPatientPlan,
@@ -8,26 +7,12 @@ import type { LivePatientPlanInfo } from "./presenterLauncherTypes";
 
 export interface UseLivePatientPlanLoaderParams {
 	readonly isOpen: boolean;
-	readonly isDemo: boolean;
 	readonly patientId?: string | undefined;
 	readonly planId?: string | undefined;
 }
 
-const DEMO_PLAN_INFO: LivePatientPlanInfo = {
-	patientName: "Смирнова Анна Сергеевна",
-	patientId: "pat-demo-showcase-01",
-	patientPhone: "+7 (999) 345-67-89",
-	patientBirthDate: "1988-04-12",
-	doctorFullName: "Д-р Соколов Алексей Владимирович",
-	doctorSpecialty: "Врач-стоматолог терапевт, ортопед",
-	planId: "plan-demo-showcase-01",
-	planCreatedAtIso: "2026-04-12T10:00:00.000Z",
-	teeth: DEFAULT_SAMPLE_TEETH,
-};
-
 export function useLivePatientPlanLoader({
 	isOpen,
-	isDemo,
 	patientId: propPatientId,
 	planId: propPlanId,
 }: UseLivePatientPlanLoaderParams) {
@@ -45,16 +30,11 @@ export function useLivePatientPlanLoader({
 			setIsLoading(true);
 			setIsEmptyState(false);
 
-			if (isDemo) {
-				if (isMounted) {
-					setPatientPlan({
-						...DEMO_PLAN_INFO,
-						planCreatedAtIso: new Date().toISOString(),
-					});
-					setIsLoading(false);
-				}
-				return;
-			}
+			/* Демо-режим идёт тем же честным контуром через БД/API: демо-база
+			 * засеяна реальными записями, поэтому вымышленный «пациент витрины»
+			 * (бывший DEMO_PLAN_INFO с захардкоженной «Смирновой») не нужен —
+			 * если в базе нет ни целевого плана, ни воронки, показываем честное
+			 * пустое состояние, а не подставное лицо. */
 
 			const search = new URLSearchParams(window.location.search);
 			const targetPatientId = propPatientId || search.get("patientId");
@@ -90,7 +70,7 @@ export function useLivePatientPlanLoader({
 		return () => {
 			isMounted = false;
 		};
-	}, [isOpen, isDemo, propPatientId, propPlanId]);
+	}, [isOpen, propPatientId, propPlanId]);
 
 	return { patientPlan, isLoading, isEmptyState };
 }

@@ -32,7 +32,6 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["consent", "ids"])) state.setIsConsentDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["ceph", "trg"])) state.setIsCephDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["egisz", "remd"])) state.setIsEgiszRemdModalOpen(true);
-			if (hasLocationToken(s, h, ["smart_slot", "recovery", "smart-slot"])) state.setIsSmartSlotRecoveryDemoOpen(true);
 			if (hasLocationToken(s, h, ["opg"])) state.setIsSmartOpgDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["visiograph"])) state.setIsVisiographDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["imaging-export"])) state.setIsImagingExportDirectModalOpen(true);
@@ -48,6 +47,7 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"])) state.setIsOrthoPhotoDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["tooth-drawer", "tooth-card"])) state.setIsToothDrawerDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["emergency", "rescue"])) state.setIsEmergencyDirectModalOpen(true);
+			if (hasLocationToken(s, h, ["prescriptions", "prescription", "rx"])) state.setIsPrescriptionForm107Open(true);
 			if (hasLocationToken(s, h, ["doctor-portal", "mobile-shift"])) openDoctorShiftCockpit?.();
 			if (hasLocationToken(s, h, ["chairside-auth"])) setShowStaffPinPad?.(true);
 			if (hasLocationToken(s, h, ["tasks", "clinical-tasks"])) state.setIsClinicalTasksOpen(true);

@@ -4,8 +4,8 @@ import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
 import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
-import { DirectDocumentsLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/DocumentsStandaloneLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
+import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -80,8 +80,8 @@ export function AppShell() {
 			</Suspense>
 			<DirectMedicalInsertLauncher />
 			<DirectPricelistLauncher />
-			<DirectDocumentsLauncher />
 			<DirectConsentLauncher />
+			<DirectWarehouseMdlpLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

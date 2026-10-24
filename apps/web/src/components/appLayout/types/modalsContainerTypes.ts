@@ -11,8 +11,6 @@ export interface AppModalsContainerProps {
 	setIsCephDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isEgiszRemdModalOpen: boolean;
 	setIsEgiszRemdModalOpen: Dispatch<SetStateAction<boolean>>;
-	isSmartSlotRecoveryDemoOpen: boolean;
-	setIsSmartSlotRecoveryDemoOpen: Dispatch<SetStateAction<boolean>>;
 	isPrivacyShieldActive: boolean;
 	setIsPrivacyShieldActive: Dispatch<SetStateAction<boolean>>;
 	isSessionLocked?: boolean;

@@ -24,7 +24,6 @@ export const LiveTreatmentPlanPresenterLauncher: React.FC<
 	const clinicRequisites = useClinicRequisitesLoader(isOpen);
 	const { patientPlan, isLoading, isEmptyState } = useLivePatientPlanLoader({
 		isOpen,
-		isDemo,
 		patientId,
 		planId,
 	});

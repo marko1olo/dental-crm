@@ -4,7 +4,7 @@
 
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
-import { InformedConsentModal } from "../../consents/InformedConsentModal";
+import { StandaloneConsentHost } from "./standalone/clinical/StandaloneSurgeryHosts";
 import { ClinicalImagingModals } from "./ClinicalImagingModals";
 import type { ClinicalModalsSubcontainerProps } from "./modalsContainerTypes";
 
@@ -25,28 +25,13 @@ export function ClinicalModalsSubcontainer(props: ClinicalModalsSubcontainerProp
 			<ClinicalImagingModals {...props} />
 
 			{isConsentDirectModalOpen && (
-				<InformedConsentModal
-					isOpen={true}
+				<StandaloneConsentHost
 					onClose={() => {
 						setIsConsentDirectModalOpen(false);
 						const u = new URL(window.location.href);
 						u.searchParams.delete("consent");
 						window.history.replaceState({}, "", u.pathname + (u.search || "") + (u.hash.includes("consent") ? "" : u.hash));
 					}}
-					initialMode="packages"
-					initialPackageKey="PACKAGE_PRIMARY_VISIT"
-					initialVerificationMethod="tablet_stylus"
-					patient={{
-						fullName: "Ковалёв Роман Станиславович",
-						birthDate: "12.04.1988",
-						passport: "45 10 № 884721",
-						phone: "+7 (999) 888-77-66",
-						address: "г. Москва, ул. Арбат, д. 24, кв. 12",
-					}}
-					doctorName="Д-р Воронов Алексей Владимирович"
-					doctorSpecialty="Стоматолог-терапевт"
-					diagnosisIcd="K02.1 Кариес дентина"
-					toothNumbers="3.6"
 				/>
 			)}
 

@@ -12,8 +12,6 @@ export interface StandaloneLaunchersProps {
 	setIsCephDirectModalOpen: (open: boolean) => void;
 	isEgiszRemdModalOpen: boolean;
 	setIsEgiszRemdModalOpen: (open: boolean) => void;
-	isSmartSlotRecoveryDemoOpen: boolean;
-	setIsSmartSlotRecoveryDemoOpen: (open: boolean) => void;
 	isSmartOpgDirectModalOpen?: boolean;
 	setIsSmartOpgDirectModalOpen?: (open: boolean) => void;
 	isCtSelectorDirectModalOpen?: boolean;
