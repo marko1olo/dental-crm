@@ -34,6 +34,31 @@ function useInMemory() {
  * первой. Порядок блокировок фиксированный — кресло, врач, пациент, — иначе
  * встречные вызовы могут заклиниться друг о друга.
  */
+/**
+ * Экстренность приёма определяется ТОЛЬКО структурными флагами запроса,
+ * которые клиент выставляет явно в карточке острой боли
+ * (allowEmergencyOverride / allowOverbooking / urgency).
+ *
+ * Прежний разбор свободного текста причины регуляркой («острая боль»,
+ * «пульпит», «флюс»…) превращал плановое перелечивание каналов с диагнозом
+ * в анамнезе в экстренный приём: молча снимались проверка чёрного списка,
+ * архивной блокировки и занятости слота, а приёму ставился фейковый флаг
+ * isOverbooking. Текст причины пишут люди о плановом лечении — решать,
+ * экстренный ли это приём, должен администратор переключателем, а не regex.
+ */
+export function isEmergencyBookingOverride(input: {
+	allowEmergencyOverride?: boolean | null | undefined;
+	allowOverbooking?: boolean | null | undefined;
+	urgency?: "routine" | "urgent" | "emergency" | null | undefined;
+}): boolean {
+	return Boolean(
+		input?.allowEmergencyOverride ||
+			input?.allowOverbooking ||
+			input?.urgency === "urgent" ||
+			input?.urgency === "emergency",
+	);
+}
+
 export async function lockAppointmentResources(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
@@ -329,16 +354,11 @@ export async function createAppointmentInDb(
 			)
 			.limit(1);
 
-		// Ст. 124 УК РФ (Неоказание помощи больному): если пациент обращается с острой болью
-		// или включен флаг allowEmergencyOverride / allowOverbooking, блокировка ЧС/архива и овербукинг не блокируют приём!
-		const isEmergencyOverride = Boolean(
-			input.allowEmergencyOverride ||
-			input.allowOverbooking ||
-			input.urgency === "urgent" ||
-			input.urgency === "emergency" ||
-			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason || "") ||
-			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment || "")
-		);
+		// Ст. 124 УК РФ (Неоказание помощи больному): экстренная запись не
+		// блокируется черным списком/архивом и допускает овербукинг — но только
+		// по явному флагу администратора, а не по словам в причине (SSOT:
+		// isEmergencyBookingOverride).
+		const isEmergencyOverride = isEmergencyBookingOverride(input);
 
 		if (!isEmergencyOverride) {
 			if (patient?.status === "archived") {
@@ -385,14 +405,7 @@ export async function createAppointmentInDb(
 	const candidateStarts = new Date(startsAtMs);
 	const candidateEnds = new Date(endsAtMs);
 
-	const isEmergencyOverrideOverall = Boolean(
-		input.allowEmergencyOverride ||
-		input.allowOverbooking ||
-		input.urgency === "urgent" ||
-		input.urgency === "emergency" ||
-		/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason || "") ||
-		/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment || "")
-	);
+	const isEmergencyOverrideOverall = isEmergencyBookingOverride(input);
 
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const insertChecked = async (executor: any) => {
@@ -560,15 +573,10 @@ export async function updateAppointmentInDb(
 				)
 				.limit(1);
 
-			// Ст. 124 УК РФ (Неоказание помощи больному): при острой боли перенос/запись не блокируются!
-			const isEmergencyOverride = Boolean(
-				input.allowEmergencyOverride ||
-				input.allowOverbooking ||
-				input.urgency === "urgent" ||
-				input.urgency === "emergency" ||
-				/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason ?? existing.reason ?? "") ||
-				/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment ?? existing.comment ?? "")
-			);
+			// Ст. 124 УК РФ (Неоказание помощи больному): при острой боли перенос/запись
+			// не блокируются — только по явному структурному флагу (SSOT:
+			// isEmergencyBookingOverride), без разбора свободного текста причины.
+			const isEmergencyOverride = isEmergencyBookingOverride(input);
 
 			if (!isEmergencyOverride) {
 				if (patient?.status === "archived") {
@@ -580,14 +588,7 @@ export async function updateAppointmentInDb(
 			}
 		}
 
-		const isEmergencyOverrideOverall = Boolean(
-			input.allowEmergencyOverride ||
-			input.allowOverbooking ||
-			input.urgency === "urgent" ||
-			input.urgency === "emergency" ||
-			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason ?? existing.reason ?? "") ||
-			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment ?? existing.comment ?? "")
-		);
+		const isEmergencyOverrideOverall = isEmergencyBookingOverride(input);
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
 			// Шаг 2: Блокировка всех затрагиваемых ресурсов (старых И новых) в каноническом порядке

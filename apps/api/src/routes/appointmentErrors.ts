@@ -308,13 +308,15 @@ export async function appointmentRejectionResponse(
 
 	if (reason === "resource_overlap") {
 		errorType = "SlotConflict";
+		// Слоты-подсказки приходят только из честного сканирования расписания.
+		// Фейковый фолбэк вида ["14:30", "15:00"] выдавал администратору
+		// выдуманную доступность — без контекста конфликта подсказки не
+		// отправляются вовсе.
 		if (conflictContext) {
 			suggestedSlots = await findSuggestedAvailableSlots(
 				conflictContext.orgId,
 				conflictContext,
 			);
-		} else {
-			suggestedSlots = ["14:30", "15:00"];
 		}
 	}
 
