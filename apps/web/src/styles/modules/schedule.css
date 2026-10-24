@@ -600,16 +600,31 @@
 	height: 28px;
 	min-height: 28px;
 	max-height: 28px;
-	width: 28px;
-	min-width: 28px;
 	line-height: 1;
 	box-sizing: border-box;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0;
 	border-radius: 6px;
 	margin: 0;
+}
+/*
+ * Квадрат 28px — только для стрелок «день назад/вперёд». Прежнее безадресное
+ * width: 28px сплющивало текстовую кнопку «Сегодня» до 26px и срезало слово
+ * («Сегодн…») — срез текста, Грех №1 визуальной инквизиции. Текстовая кнопка
+ * живёт авторазмером с честным паддингом.
+ */
+.schedule-date-picker-group .schedule-day-step-prev,
+.schedule-date-picker-group .schedule-day-step-next {
+	width: 28px;
+	min-width: 28px;
+	padding: 0;
+}
+.schedule-date-picker-group .secondary-button[data-testid="schedule-date-today-btn"] {
+	width: auto;
+	min-width: 0;
+	padding: 0 10px;
+	white-space: nowrap;
 }
 .schedule-date-filter-wrap {
 	display: flex;
