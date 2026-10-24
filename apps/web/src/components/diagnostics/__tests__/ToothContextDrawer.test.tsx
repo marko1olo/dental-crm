@@ -94,7 +94,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("Вставить протокол эндодонтии в медкарту") || html.includes("Вставить протокол эндодонтии в карту 043/у"), "Endo protocol export action should be present");
 	});
 
-	it("AnesthesiaQuickBar calculates safe carpule limits by patient weight", () => {
+	it("AnesthesiaQuickBar offers 1-click chairside drugs without dose-calculator simulations", () => {
 		const html = renderToString(
 			<AnesthesiaQuickBar
 				targetToothNumberFdi={16}
@@ -109,7 +109,9 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("70 кг"), "Weight preset should be displayed");
 		assert.ok(html.includes("Ультракаин Д-С"), "Standard articaine option should be present");
 		assert.ok(html.includes("Скандонест 3%") || html.includes("Скандонест без адреналина"), "Plain mepivacaine option should be present");
-		assert.ok(html.includes("безопасно"), "Safe dosage badge should be ok for standard dose");
+		// Доз-калькуляторные симуляторы выжжены (анти-аутизм): никаких «безопасных
+		// лимитов по весу» — врач сам выбирает препарат и карпулы в 1 клик.
+		assert.ok(!html.includes("безопасно до"), "Dose-limit simulator badge must NOT be rendered");
 	});
 
 	it("ToothContextDrawer contains NO per-tooth Kraft package binding bloat (Mandates 8v, 8k, 8s)", () => {

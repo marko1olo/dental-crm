@@ -6,7 +6,9 @@ import { ToothDrawerQuickTabs } from "./toothDrawer/ToothDrawerQuickTabs";
 import { ToothDrawerAccordionsBody } from "./toothDrawer/ToothDrawerAccordionsBody";
 import { ToothDrawerFooter } from "./toothDrawer/ToothDrawerFooter";
 import type { ToothContextDrawerProps } from "./toothDrawer/toothDrawerTypes";
-import "./ToothContextDrawer.css";
+if (typeof document !== "undefined") {
+	import("./ToothContextDrawer.css");
+}
 
 export * from "./toothDrawer/toothDrawerTypes";
 

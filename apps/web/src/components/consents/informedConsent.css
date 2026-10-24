@@ -293,6 +293,18 @@
 	outline: 2px solid var(--focus-ring);
 }
 
+/* Zero-Clipping: на десктопе вкладки пакетов переносятся на вторую строку
+   вместо обрезки последней вкладки краем модалки; на узких экранах остаётся
+   канонический горизонтальный скроллер (Apple HIG chip scroller). */
+@media (min-width: 768px) {
+	.consent-tabs-scroll {
+		flex-wrap: wrap;
+		overflow-x: visible;
+		row-gap: 0.35rem;
+		padding-bottom: 0.25rem;
+	}
+}
+
 /* Package Banner */
 .consent-package-banner {
 	display: flex;
