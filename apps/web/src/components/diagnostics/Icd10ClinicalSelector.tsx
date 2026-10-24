@@ -32,7 +32,9 @@ import {
 	type Icd10SearchResult,
 	type Icd10SearchOptions,
 } from "./icd10MatchingEngine";
-import "./icd10Selector.css";
+if (typeof document !== "undefined") {
+	import("./icd10Selector.css");
+}
 
 export interface Icd10ClinicalSelectorProps {
 	readonly selectedCode?: string | null | undefined;

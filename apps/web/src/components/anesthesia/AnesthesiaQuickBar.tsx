@@ -78,6 +78,7 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 			asaStatus: isCardioRisk ? "asa_3" : "asa_1", hasCardiovascularRisk: isCardioRisk,
 			hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy), hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
 			isPregnantOrLactating: Boolean(props.isPregnantOrLactating), techniqueId: tech, targetToothNumberFdi: props.targetToothNumberFdi,
+			needleType: "g27_long_35mm", aspirationNegativeConfirmed: isAspirationNegative,
 		});
 		const diaryText = drugId === "none" ? "Анестезия не проводилась. Лечение проведено без анестезии по согласию пациента." : result.diaryEntryRu;
 		setLastAppliedText(drugId === "none" ? "Лечение без анестезии" : `${drugId === "mepivacaine_plain" ? "Скандонест 3%" : drugId === "articaine_1_200k" ? "Ультракаин Д-С 1:200k" : "Ультракаин Д-С форте 1:100k"} — ${count} карп.`);

@@ -30,6 +30,8 @@ describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets'
 				hasBronchialAsthma: false,
 				isPregnantOrLactating: false,
 				techniqueId: preset.techniqueId,
+				needleType: 'g27_long_35mm',
+				aspirationNegativeConfirmed: true,
 			});
 
 			assert.equal(res.injectedActiveMg, 68.0);
@@ -50,7 +52,15 @@ describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets'
 				drugId: 'articaine_1_200k',
 				carpulesCount: 2.0,
 				patientWeightKg: 70,
+				patientAgeYears: 35,
+				asaStatus: 'asa_1',
+				hasCardiovascularRisk: false,
+				hasSulfiteAllergy: false,
+				hasBronchialAsthma: false,
+				isPregnantOrLactating: false,
 				techniqueId: 'infiltration',
+				needleType: 'g27_long_35mm',
+				aspirationNegativeConfirmed: true,
 			});
 
 			assert.equal(res.injectedActiveMg, 136.0);
@@ -69,8 +79,15 @@ describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets'
 				drugId: 'mepivacaine_plain',
 				carpulesCount: 1.0,
 				patientWeightKg: 70,
+				patientAgeYears: 35,
+				asaStatus: 'asa_2',
 				hasCardiovascularRisk: true,
+				hasSulfiteAllergy: false,
+				hasBronchialAsthma: false,
+				isPregnantOrLactating: false,
 				techniqueId: 'infiltration',
+				needleType: 'g27_long_35mm',
+				aspirationNegativeConfirmed: true,
 			});
 
 			assert.equal(res.injectedActiveMg, 51.0);
@@ -88,8 +105,15 @@ describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets'
 				drugId: 'articaine_1_100k',
 				carpulesCount: 1.0,
 				patientWeightKg: 70,
+				patientAgeYears: 35,
+				asaStatus: 'asa_1',
+				hasCardiovascularRisk: false,
 				hasSulfiteAllergy: true, // warning for sulfite-containing drug
+				hasBronchialAsthma: false,
+				isPregnantOrLactating: false,
 				techniqueId: 'infiltration',
+				needleType: 'g27_long_35mm',
+				aspirationNegativeConfirmed: true,
 			});
 
 			// Warning is provided passively for clinical awareness
