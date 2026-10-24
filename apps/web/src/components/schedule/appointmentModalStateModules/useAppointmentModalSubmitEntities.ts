@@ -1,7 +1,6 @@
 import type { StaffMember as ClinicStaffMember, Chair as DentalChair } from "@dental/shared";
 import { isCitoAppointment } from "../../../utils/scheduleCollisionUtils";
 import { isTechnicalBreakAppointment } from "../AppointmentModalQuickReasons";
-import { DEFAULT_SOLO_CHAIR } from "../ScheduleGrid";
 
 export async function resolveEffectivePatientId(params: {
 	patientId: string;
@@ -51,7 +50,14 @@ export function resolveEffectiveDoctorAndChair(params: {
 	chairs: DentalChair[];
 }): { effDoctorUserId: string; effChairId: string } {
 	const { doctorUserId, dutyDoctorId, doctors, isSoloDoctor, chairId, chairs } = params;
-	const effDoctorUserId = doctorUserId || dutyDoctorId || doctors[0]?.id || (isSoloDoctor ? "doctor-solo" : "doctor-default");
+	/*
+	 * Без явного выбора врача/кресла уходит пустая строка: сервер
+	 * (prepareCreateAppointmentRawBody) резолвит её в реального врача и
+	 * реальное кресло клиники из БД. Прежние фолбэки «doctor-solo»/
+	 * «doctor-default»/«default-chair» были алиасами того же резолва —
+	 * врать идентификаторами на клиенте незачем, источник правды один: база.
+	 */
+	const effDoctorUserId = doctorUserId || dutyDoctorId || doctors[0]?.id || "";
 	let effChairId = chairId || (isSoloDoctor && chairs[0] ? chairs[0].id : "") || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 	if (!effChairId && effDoctorUserId) {
 		const doc = doctors.find((d) => d.id === effDoctorUserId);
@@ -60,6 +66,5 @@ export function resolveEffectiveDoctorAndChair(params: {
 			if (pref) effChairId = pref.id;
 		}
 	}
-	if (!effChairId) effChairId = chairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 	return { effDoctorUserId, effChairId };
 }

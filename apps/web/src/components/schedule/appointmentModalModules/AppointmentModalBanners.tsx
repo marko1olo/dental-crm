@@ -58,8 +58,11 @@ export function AppointmentModalBanners({
                       if (typeof onSave === "function") {
                         await onSave(appointment.id, {
                           ...appointment,
-                          doctorUserId: appointment.doctorUserId || doctorUserId || "doctor-default",
-                          chairId: appointment.chairId || chairId || "chair-default",
+                          // Без явного выбора — null: сервер резолвит реального
+                          // врача/кресло из БД. «chair-default» не был алиасом
+                          // сервера и ломал сохранение невалидным идентификатором.
+                          doctorUserId: appointment.doctorUserId || doctorUserId || null,
+                          chairId: appointment.chairId || chairId || null,
                           reason: appointment.reason || reason || "",
                           comment: appointment.comment || comment || "",
                           assistantUserId: appointment.assistantUserId ?? null,

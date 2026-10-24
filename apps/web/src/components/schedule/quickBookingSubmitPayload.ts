@@ -18,8 +18,14 @@ export function buildQuickBookingPayload(opts: BuildPayloadOptions) {
     isSoloClinic, reason, comment, status, initialSlot,
   } = params;
 
-  const effDoctor = doctorUserId || dutyDoctorId || doctors[0]?.id || "doctor-default";
-  const effChair = chairId || (chairs[0] ? chairs[0].id : "chair-1");
+  /*
+   * Честный payload: без выбранных врача/кресла уходит null, а не выдуманный
+   * алиас «doctor-default»/«chair-1». Сервер (prepareCreateAppointmentRawBody)
+   * резолвит null в реального врача и реальное кресло этой клиники из БД —
+   * врать идентификаторами на клиенте незачем, источник правды один: база.
+   */
+  const effDoctor = doctorUserId || dutyDoctorId || doctors[0]?.id || null;
+  const effChair = chairId || chairs[0]?.id || null;
   const effectiveReason = reason.trim() || (isEmergency ? "Срочно! Острая боль" : "Приём врача");
 
   const stageServices = initialSlot?.services || initialSlot?.items || initialSlot?.procedures || [];

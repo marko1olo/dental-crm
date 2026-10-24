@@ -7,7 +7,6 @@ import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 import type { TargetSlotInfo } from "./waitlistCancellationEngine";
 import type { WaitlistPatientEntry } from "./waitlistMatchScoring";
 
@@ -46,9 +45,12 @@ export function useWaitlistBookingAction({
         await onBookSlot(currentSlot, patient);
       } else if (currentSlot) {
         const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter((m: any) => m.active && (m.role === "doctor" || m.role === "owner"));
-        const doctorUserId = currentSlot.doctorUserId || patient.preferredDoctorId || (activeDocs[0]?.id || "doctor-default");
+        // Без явного выбора уходит null: сервер резолвит реального врача и
+        // кресло этой клиники из БД (prepareCreateAppointmentRawBody).
+        // Выдуманные «doctor-default» на клиенте — ложь, источник правды БД.
+        const doctorUserId = currentSlot.doctorUserId || patient.preferredDoctorId || activeDocs[0]?.id || null;
         const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c: any) => c.active);
-        const chairId = currentSlot.chairId || (activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id);
+        const chairId = currentSlot.chairId || activeChairs[0]?.id || null;
         const startsAt = currentSlot.startsAt;
         const endsAt = currentSlot.endsAt || new Date(Date.parse(startsAt) + 30 * 60_000).toISOString();
 
