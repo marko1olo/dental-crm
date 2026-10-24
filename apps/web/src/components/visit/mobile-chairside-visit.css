@@ -111,8 +111,15 @@
   align-items: center;
   gap: 3px;
   min-height: 20px;
-  flex-shrink: 0;
+  /* Анти-наезд: телефон сжимается с деликатным многоточием и не заезжает под пилюли действий */
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
+}
+
+.mobile-chairside-phone-link > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-chairside-phone-link:active {

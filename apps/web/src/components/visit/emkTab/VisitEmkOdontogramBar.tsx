@@ -357,7 +357,10 @@ export function VisitEmkOdontogramBar({
 			>
 				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
 					<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
-					<span className="text-xs font-bold text-[var(--ink)] truncate">
+					<span
+						className="text-xs font-bold text-[var(--ink)] truncate cursor-default"
+						title={`Интерактивная зубная формула • ${formulaSummary}`}
+					>
 						<span className="hidden sm:inline">Интерактивная </span>зубная формула
 						<span className="font-normal text-[var(--muted)] ml-1.5 hidden md:inline">
 							• {formulaSummary}
