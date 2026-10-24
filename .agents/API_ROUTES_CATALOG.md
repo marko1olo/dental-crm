@@ -187,10 +187,9 @@
 | Метод | Маршрут | Файл обработчика | Доступ / RBAC | Валидация Zod | Статусы | Связанные таблицы |
 | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
 | `GET` | `/api/analytics/lost-patients-filters` | [clinical.ts:870](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/clinical.ts#L870) | Verified Tenant Org | — | 200, 500 | — |
-| `POST` | `/api/anesthesia/calculate-safety` | [anesthesia.ts:64](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts#L64) | Verified Tenant Org | `calculateSafetyBodySchema` | 400, 403 | — |
-| `DELETE` | `/api/anesthesia/logs/:logId` | [anesthesia.ts:334](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts#L334) | Verified Tenant Org | — | 403, 404 | — |
-| `GET` | `/api/anesthesia/patients/:patientId/logs` | [anesthesia.ts:106](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts#L106) | Verified Tenant Org | — | 403 | `anesthesiaLogs` |
-| `POST` | `/api/anesthesia/patients/:patientId/logs` | [anesthesia.ts:189](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia.ts#L189) | Verified Tenant Org | `createAnesthesiaLogBodySchema` | 400, 403, 404 | `patients, visits` |
+| `DELETE` | `/api/anesthesia/logs/:logId` | [anesthesia/logsDeleteRoute.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia/logsDeleteRoute.ts) | Verified Tenant Org | — | 403, 404 | `anesthesiaLogs` |
+| `GET` | `/api/anesthesia/patients/:patientId/logs` | [anesthesia/logsListRoute.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia/logsListRoute.ts) | Verified Tenant Org | — | 403 | `anesthesiaLogs` |
+| `POST` | `/api/anesthesia/patients/:patientId/logs` | [anesthesia/logsCreateRoute.ts](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/anesthesia/logsCreateRoute.ts) | Verified Tenant Org | `createAnesthesiaLogBodySchema` | 400, 403, 404 | `patients, visits, treatmentItems` |
 | `POST` | `/api/appointments/:appointmentId/visit` | [visits.ts:413](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts#L413) | Clinical Mutation Secret | `visitDraftAutosaveResponseSchema` | 400 | — |
 | `GET` | `/api/catalogs/mkb/categories/tree` | [outpatient_v2.ts:130](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/outpatient_v2.ts#L130) | Verified Tenant Org | `getMkbCategoriesQuerySchema` | 400 | `mkbCategories` |
 | `GET` | `/api/catalogs/teeth` | [outpatient_v2.ts:32](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/outpatient_v2.ts#L32) | Verified Tenant Org | `getToothDefectsQuerySchema` | 400 | `clinicalTeethCatalog, toothDefectsCatalog` |
@@ -213,7 +212,6 @@
 | `POST` | `/api/diaries/:id/lock` | [diary.ts:894](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L894) | Clinical Mutation Secret | `diaryIdParamsSchema` | 400, 403 | — |
 | `POST` | `/api/diaries/:id/revise` | [diary.ts:1302](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L1302) | Clinical Mutation Secret | `diaryIdParamsSchema` | 400, 403 | — |
 | `GET` | `/api/diaries/:id/revisions` | [diary.ts:350](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L350) | Clinical Read Secret | `diaryIdParamsSchema` | 400, 403, 404 | `visitDiaries` |
-| `POST` | `/api/diaries/sync-progress` | [diary.ts:1659](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L1659) | Clinical Mutation Secret | — | 403, 404 | `treatmentPlans, patients` |
 | `GET` | `/api/diaries/visit/:visitId` | [diary.ts:217](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L217) | Clinical Read Secret | `diaryVisitParamsSchema` | 400, 403, 404 | `visits` |
 | `POST` | `/api/diary/:id/chief-review` | [diary.ts:1922](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L1922) | Verified Tenant Org | — | 200 | — |
 | `GET` | `/api/diary/:id/chief-reviews` | [diary.ts:1924](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L1924) | Verified Tenant Org | — | 200 | — |

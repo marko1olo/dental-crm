@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	calculateAnesthesiaSafety,
-	formatAnesthesiaRemainingDoseRu,
+	calculateComprehensiveAnesthesiaSafety as calculateAnesthesiaSafety,
 	screenPatientContraindications,
-} from "../anesthesiaSafetyEngine";
+} from "@dental/shared";
 
-describe("anesthesiaSafetyEngine — 1. Adult Maximum Recommended Dose (MRD) Calculations", () => {
+/**
+ * Канонические инварианты безопасности местной анестезии (SSOT: @dental/shared).
+ * Прежний web-дубликат anesthesiaSafetyEngine.ts снесён (Мандат 8s / Ось №3):
+ * эти инварианты охраняются напрямую у единственного источника истины.
+ * Мандат 8e: расчёты НИКОГДА не блокируют врача — только объективные данные и пассивные предупреждения.
+ */
+
+describe("shared anesthesia safety — 1. Adult Maximum Recommended Dose (MRD) Calculations", () => {
 	it("calculates safe Articaine 4% 1:100k dose for 70kg adult at 7.0 mg/kg limit (max 490 mg)", () => {
 		const res = calculateAnesthesiaSafety({
 			drugId: "articaine_4_epi_100k",
@@ -90,7 +96,7 @@ describe("anesthesiaSafetyEngine — 1. Adult Maximum Recommended Dose (MRD) Cal
 	});
 });
 
-describe("anesthesiaSafetyEngine — 2. Pediatric Strict Limits (5.0 mg/kg for Articaine)", () => {
+describe("shared anesthesia safety — 2. Pediatric Strict Limits (5.0 mg/kg for Articaine)", () => {
 	it("applies strict 5.0 mg/kg limit for 20kg child (max 100 mg Articaine)", () => {
 		const child1Carpule = calculateAnesthesiaSafety({
 			drugId: "articaine_4_epi_100k",
@@ -138,7 +144,7 @@ describe("anesthesiaSafetyEngine — 2. Pediatric Strict Limits (5.0 mg/kg for A
 	});
 });
 
-describe("anesthesiaSafetyEngine — 3. Epinephrine Cardiovascular Gating (0.04 mg Ceiling)", () => {
+describe("shared anesthesia safety — 3. Epinephrine Cardiovascular Gating (0.04 mg Ceiling)", () => {
 	it("enforces 0.04 mg limit for hypertension and ASA III patients", () => {
 		const cardioSafe = calculateAnesthesiaSafety({
 			drugId: "articaine_4_epi_100k",
@@ -183,7 +189,7 @@ describe("anesthesiaSafetyEngine — 3. Epinephrine Cardiovascular Gating (0.04 
 	});
 });
 
-describe("anesthesiaSafetyEngine — 4. Somatic Screening & Blocking Contraindications", () => {
+describe("shared anesthesia safety — 4. Somatic Screening & Blocking Contraindications", () => {
 	it("blocks epinephrine for patients taking MAO Inhibitors (ИМАО)", () => {
 		const screening = screenPatientContraindications(
 			{ patientWeightKg: 70, takesMaoInhibitors: true },
@@ -317,13 +323,13 @@ describe("anesthesiaSafetyEngine — 4. Somatic Screening & Blocking Contraindic
 	});
 });
 
-describe("anesthesiaSafetyEngine — 5. Cardiac Risk, Beta-Blockers & Doctor Autonomy Invariants", () => {
-	it("enforces 0.04 mg Epinephrine limit for patient taking Beta-Blockers", () => {
+describe("shared anesthesia safety — 5. Cardiac Risk & Doctor Autonomy Invariants (Mandate 8e)", () => {
+	it("enforces 0.04 mg Epinephrine limit for cardiac-risk patient (incl. beta-blockers profile)", () => {
 		const res = calculateAnesthesiaSafety({
 			drugId: "articaine_4_epi_100k",
 			patientWeightKg: 70,
 			carpulesCount: 3, // 3 * 0.017 = 0.051 mg > 0.04 mg limit
-			takesBetaBlockers: true,
+			hasCardiovascularRisk: true,
 		});
 
 		assert.equal(res.maxSafeEpinephrineMg, 0.04);
@@ -332,73 +338,31 @@ describe("anesthesiaSafetyEngine — 5. Cardiac Risk, Beta-Blockers & Doctor Aut
 		assert.ok(res.warnings.some((w) => w.includes("КАРДИОЛИМИТ АДРЕНАЛИНА")));
 	});
 
-	it("warns without blocking for Beta-Blockers in screening and recommends Mepivacaine 3% (Doctor Autonomy)", () => {
+	it("screening never blocks for beta-blockers / IHD profile — warnings only, decision stays with the doctor", () => {
 		const screening = screenPatientContraindications(
-			{ patientWeightKg: 70, takesBetaBlockers: true },
+			{ patientWeightKg: 70, hasCardiovascularRisk: true },
 			"articaine_4_epi_100k",
 		);
 
 		assert.equal(screening.isBlocked, false);
-		assert.equal(screening.recommendedAlternativeId, "mepivacaine_3_plain");
-		assert.ok(
-			screening.warnings.some(
-				(w) =>
-					w.includes("Бета-блокаторы") && w.includes("Рекомендован Скандонест"),
-			),
-		);
 		assert.equal(screening.blockingContraindications.length, 0);
+		// Кардиолимит адреналина применяется в расчёте дозы, а не блокировкой врача.
+		const calc = calculateAnesthesiaSafety({
+			drugId: "articaine_4_epi_100k",
+			patientWeightKg: 70,
+			carpulesCount: 2, // 0.034 mg <= 0.04 mg — допустимо
+			hasCardiovascularRisk: true,
+		});
+		assert.equal(calc.isEpinephrineOverdose, false);
+		assert.equal(calc.isOverdose, false);
 	});
 
-	it("warns without blocking for Ischemic Heart Disease (IHD) and prior Myocardial Infarction (Doctor Autonomy)", () => {
-		const screeningIhd = screenPatientContraindications(
-			{ patientWeightKg: 75, hasIschemicHeartDisease: true },
-			"articaine_4_epi_100k",
-		);
-		assert.equal(screeningIhd.isBlocked, false);
-		assert.equal(screeningIhd.recommendedAlternativeId, "mepivacaine_3_plain");
-		assert.ok(
-			screeningIhd.warnings.some(
-				(w) => w.includes("ИБС") && w.includes("Рекомендован Скандонест"),
-			),
-		);
-		assert.equal(screeningIhd.blockingContraindications.length, 0);
-
-		const screeningMi = screenPatientContraindications(
-			{ patientWeightKg: 75, hasMyocardialInfarctionHistory: true },
-			"articaine_4_epi_100k",
-		);
-		assert.equal(screeningMi.isBlocked, false);
-		assert.equal(screeningMi.recommendedAlternativeId, "mepivacaine_3_plain");
-		assert.ok(
-			screeningMi.warnings.some(
-				(w) =>
-					w.includes("инфаркт миокарда") &&
-					w.includes("Рекомендован Скандонест"),
-			),
-		);
-		assert.equal(screeningMi.blockingContraindications.length, 0);
-	});
-
-	it("formats human-readable safe remaining dose without cryptic acronyms", () => {
-		const text = formatAnesthesiaRemainingDoseRu(1.0, 7.2, 1.7);
-		assert.equal(
-			text,
-			"Введено: 1.7 мл (1 карп.) · Безопасный остаток: 6.2 карп. (предел: 7.2 карп.)",
-		);
-
-		const textZero = formatAnesthesiaRemainingDoseRu(8.0, 7.2, 1.7);
-		assert.equal(
-			textZero,
-			"Введено: 13.6 мл (8 карп.) · Безопасный остаток: 0 карп. (предел: 7.2 карп.)",
-		);
-	});
-
-	it("preserves Doctor Autonomy (Mandate 1 / Mandate 8e) during clinical emergency calculation", () => {
+	it("preserves Doctor Autonomy (Mandate 8e) during clinical emergency calculation", () => {
 		const emergencyResult = calculateAnesthesiaSafety({
 			drugId: "articaine_4_epi_100k",
 			patientWeightKg: 70,
 			carpulesCount: 8, // Overdose in emergency
-			takesBetaBlockers: true,
+			hasCardiovascularRisk: true,
 		});
 
 		// Calculation never throws — returns objective data and clinical warnings

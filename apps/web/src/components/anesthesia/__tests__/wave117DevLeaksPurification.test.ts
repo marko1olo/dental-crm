@@ -83,9 +83,11 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8aâ
 			repoRoot,
 			"apps/web/src/components/appLayout/AppTopBar.tsx",
 		);
-		const topBarContent = fs.existsSync(topBarPath)
-			? fs.readFileSync(topBarPath, "utf-8")
-			: "";
+		const topBarModulesPath = path.join(
+			repoRoot,
+			"apps/web/src/components/appLayout/topBarModules/TopBarModalsHost.tsx",
+		);
+		const topBarContent = `${fs.existsSync(topBarPath) ? fs.readFileSync(topBarPath, "utf-8") : ""}\n${fs.existsSync(topBarModulesPath) ? fs.readFileSync(topBarModulesPath, "utf-8") : ""}`;
 		const combined = `${content}\n${topBarContent}`;
 
 		assert.ok(

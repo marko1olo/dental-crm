@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import {
 	calculateAnesthesiaSafety,
 	resolveClinicalDefaultWeightKg,
-	STANDARD_ANESTHESIA_PRESETS,
-	DENTAL_ANESTHETICS,
 	generateAnesthesiaDiaryEntry,
-} from '../components/anesthesia';
+} from '../components/anesthesia/anesthesiaEngine';
+import {
+	DENTAL_ANESTHETICS,
+	STANDARD_ANESTHESIA_PRESETS,
+} from '../components/anesthesia/anesthesiaCatalog';
 
 describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets', () => {
 	describe('1. Workhorse Clinical Presets (1-Click Chairside)', () => {

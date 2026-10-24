@@ -124,8 +124,8 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 				"Must show standard norm preset label",
 			);
 			assert.ok(
-				html.includes("МДД по массе тела 70 кг"),
-				"Must show weight-adjusted MRD label",
+				html.includes("Вес пациента: 70 кг"),
+				"Must show patient weight label in plain Russian",
 			);
 		});
 

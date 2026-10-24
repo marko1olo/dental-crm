@@ -1,8 +1,10 @@
+/**
+ * @dental/web/components/anesthesia/anesthesiaQuickBar/anesthesiaApiPersistence.ts
+ * Background API Persistence & Soft Overdraft for Anesthesia (Mandate 8b, <= 120 lines)
+ */
+
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import type {
-	AnestheticDrugId,
-	InjectionTechniqueId,
-} from "../anesthesiaCatalog";
+import type { AnestheticDrugId, InjectionTechniqueId } from "../anesthesiaCatalog";
 
 export interface PersistAnesthesiaLogParams {
 	patientId?: string | undefined;
@@ -19,43 +21,18 @@ export interface PersistAnesthesiaLogParams {
 
 export function resolveDrugMeta(drugId: AnestheticDrugId) {
 	if (drugId === "articaine_1_100k" || drugId === "septanest_1_100k") {
-		return {
-			drugEnum: "articaine" as const,
-			vasoEnum: "1:100000" as const,
-			concentrationPct: 4.0,
-			brandName: "Ультракаин Д-С форте 1:100 000",
-		};
+		return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С форте 1:100 000" };
 	}
 	if (drugId === "articaine_1_200k") {
-		return {
-			drugEnum: "articaine" as const,
-			vasoEnum: "1:200000" as const,
-			concentrationPct: 4.0,
-			brandName: "Ультракаин Д-С 1:200 000",
-		};
+		return { drugEnum: "articaine" as const, vasoEnum: "1:200000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С 1:200 000" };
 	}
 	if (drugId === "mepivacaine_plain") {
-		return {
-			drugEnum: "mepivacaine" as const,
-			vasoEnum: "none" as const,
-			concentrationPct: 3.0,
-			brandName: "Скандонест 3%",
-		};
+		return { drugEnum: "mepivacaine" as const, vasoEnum: "none" as const, concentrationPct: 3.0, brandName: "Скандонест 3%" };
 	}
 	if (drugId === "lidocaine_1_100k") {
-		return {
-			drugEnum: "lidocaine" as const,
-			vasoEnum: "1:100000" as const,
-			concentrationPct: 2.0,
-			brandName: "Лидокаин 2% с адреналином",
-		};
+		return { drugEnum: "lidocaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 2.0, brandName: "Лидокаин 2% с адреналином" };
 	}
-	return {
-		drugEnum: "articaine" as const,
-		vasoEnum: "1:100000" as const,
-		concentrationPct: 4.0,
-		brandName: "Ультракаин Д-С",
-	};
+	return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С" };
 }
 
 export function resolveTechniqueEnum(techniqueId: InjectionTechniqueId) {
@@ -66,24 +43,17 @@ export function resolveTechniqueEnum(techniqueId: InjectionTechniqueId) {
 
 export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
 	if (!params.patientId) return;
-	const { drugEnum, vasoEnum, concentrationPct, brandName } = resolveDrugMeta(
-		params.drugId,
-	);
+	const { drugEnum, vasoEnum, concentrationPct, brandName } = resolveDrugMeta(params.drugId);
 	const techniqueEnum = resolveTechniqueEnum(params.techniqueId);
-	const toothNum =
-		typeof params.targetToothNumberFdi === "number"
-			? params.targetToothNumberFdi
-			: parseInt(String(params.targetToothNumberFdi || ""), 10);
-	const toothNumbers =
-		Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
+	const toothNum = typeof params.targetToothNumberFdi === "number"
+		? params.targetToothNumberFdi
+		: parseInt(String(params.targetToothNumberFdi || ""), 10);
+	const toothNumbers = Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
 
 	try {
 		fetch(`/api/anesthesia/patients/${params.patientId}/logs`, {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
-			},
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 			body: JSON.stringify({
 				visitId: params.visitId || null,
 				technique: techniqueEnum,
@@ -103,26 +73,16 @@ export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
 				autoDeductInventory: true,
 				addToVisitEstimate: Boolean(params.visitId),
 			}),
-		}).catch((err) => {
-			console.warn(
-				"[AnesthesiaQuickBar] Failed to log anesthesia to API:",
-				err,
-			);
-		});
+		}).catch((err) => console.warn("[AnesthesiaQuickBar] API write warning:", err));
 	} catch (err) {
 		console.warn("[AnesthesiaQuickBar] Anesthesia API request error:", err);
 	}
 }
 
-export async function postEmergencyAntishockWriteoff(
-	visitId?: string,
-): Promise<void> {
+export async function postEmergencyAntishockWriteoff(visitId?: string): Promise<void> {
 	await fetch("/api/inventory/quick-writeoff-emergency-antishock", {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			...denteAdminSecretRequestHeaders(),
-		},
+		headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 		body: JSON.stringify({
 			visitId: visitId || null,
 			scenarioId: "anaphylactic_shock",
@@ -140,10 +100,7 @@ export async function postQuickCarpuleWriteoff(params: {
 	try {
 		await fetch("/api/inventory/quick-writeoff-carpules", {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
-			},
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 			body: JSON.stringify({
 				visitId: params.visitId || null,
 				patientId: params.patientId || null,

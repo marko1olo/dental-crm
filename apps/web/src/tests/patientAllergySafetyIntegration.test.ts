@@ -21,12 +21,6 @@ import {
 	AnesthesiaQuickBar,
 } from "../components/anesthesia/AnesthesiaQuickBar";
 import {
-	AnesthesiaSafetyAllergyHud,
-} from "../components/anesthesia/anesthesiaQuickBar/AnesthesiaSafetyAllergyHud";
-import {
-	AnestheticDrugSelector,
-} from "../components/anesthesia/anesthesiaQuickBar/AnestheticDrugSelector";
-import {
 	EMERGENCY_SCENARIOS,
 	type EmergencyScenarioId,
 } from "../components/emergency/emergencyRescuePresets";
@@ -157,97 +151,56 @@ describe("Red Team: Patient Allergy Guard & Medical Safety Inquisitor Suite", ()
 		});
 	});
 
-	describe("3. Anesthesia Quick Bar & Guiding Soft-Alert (Mandates 8e, 8z)", () => {
-		it("renders dedicated Lidocaine allergy guiding soft-alert when lidocaine is selected for allergic patient", () => {
+	describe("3. Anesthesia Quick Bar & Guiding Soft-Alert (Mandates 8e, 8y)", () => {
+		it("renders passive Lidocaine allergy badge from patient card without blocking apply (Mandate 8y)", () => {
 			const html = renderToString(
-				React.createElement(AnesthesiaSafetyAllergyHud, {
+				React.createElement(AnesthesiaQuickBar, {
 					patientWeightKg: 70,
-					isCardioRisk: false,
-					takesBetaBlockers: false,
-					hasSulfiteAllergy: false,
-					hasBronchialAsthma: false,
 					hasLidocaineAllergy: true,
-					selectedDrugId: "lidocaine_1_100k",
-					selectedDrugInfo: {
-						isAdrenalineFree: false,
-						tradeNamesRu: ["Лидокаин 2% с адреналином 1:100 000"],
-					} as any,
-					safetyWarning: null,
-					onSelectDrug: () => {},
-					onDismissWarning: () => {},
-					onConfirmWarningOverride: () => {},
 				}),
 			);
 
 			assert.ok(
-				html.includes('data-testid="anesthesia-lidocaine-allergy-warning-badge"'),
-				"Must render anesthesia-lidocaine-allergy-warning-badge",
+				html.includes('data-testid="allergy-passive-badge"'),
+				"Must render passive allergy badge for lidocaine",
 			);
 			assert.ok(
-				html.includes("Аллергия на Лидокаин"),
+				html.includes("Аллергия: Лидокаин"),
 				"Must explicitly warn about Lidocaine allergy",
 			);
+			const applyBtn = html.match(/<button[^>]*data-testid="btn-apply-anesthesia-to-card"[^>]*>/);
+			assert.ok(applyBtn, "Apply anesthesia CTA must be rendered");
 			assert.ok(
-				html.includes('data-testid="btn-switch-to-scandonest-safe"'),
-				"Must offer 1-click switch to Scandonest safe",
-			);
-			assert.ok(
-				html.includes("Выбрать Скандонест 3%"),
-				"Button must display Russian recommendation to choose Scandonest 3%",
+				!applyBtn[0].includes("disabled"),
+				"Apply CTA must NEVER be disabled because of allergy (Mandate 8e: Doctor Autonomy)",
 			);
 		});
 
-		it("never disables buttons during clinical allergy warnings (Mandate 8e: Doctor Autonomy)", () => {
+		it("renders cardio-control and sulfite/asthma passive tags, all drug presets stay clickable (Mandate 8e)", () => {
 			const html = renderToString(
-				React.createElement(AnesthesiaSafetyAllergyHud, {
+				React.createElement(AnesthesiaQuickBar, {
 					patientWeightKg: 70,
-					isCardioRisk: false,
-					takesBetaBlockers: false,
-					hasSulfiteAllergy: false,
-					hasBronchialAsthma: false,
-					hasLidocaineAllergy: true,
-					selectedDrugId: "lidocaine_1_100k",
-					selectedDrugInfo: {
-						isAdrenalineFree: false,
-						tradeNamesRu: ["Лидокаин 2% с адреналином 1:100 000"],
-					} as any,
-					safetyWarning: {
-						title: "Внимание",
-						text: "Тест предупреждения",
-						carpulesCount: 1.0,
-					},
-					onSelectDrug: () => {},
-					onDismissWarning: () => {},
-					onConfirmWarningOverride: () => {},
+					hasSulfiteAllergy: true,
+					hasBronchialAsthma: true,
+					hasCardiovascularRisk: true,
 				}),
 			);
 
+			assert.ok(html.includes("Кардио-контроль"), "Must render cardio-control passive tag");
 			assert.ok(
-				html.includes("Всё равно внести (врачебное решение)"),
-				"Must allow doctor override without blocking",
+				html.includes("сульфиты"),
+				"Must render sulfite/asthma passive tag",
 			);
-		});
-
-		it("AnestheticDrugSelector displays allergy indicator on lidocaine chip when patient is allergic", () => {
-			const html = renderToString(
-				React.createElement(AnestheticDrugSelector, {
-					selectedDrugId: "mepivacaine_plain",
-					onSelectDrug: () => {},
-					isCardioRisk: false,
-					hasSulfiteAllergy: false,
-					hasBronchialAsthma: false,
-					hasLidocaineAllergy: true,
-				}),
-			);
-
-			assert.ok(
-				html.includes("Лидокаин"),
-				"Must include Lidocaine chip",
-			);
-			assert.ok(
-				html.includes("Аллергия!"),
-				"Must flag Lidocaine chip with allergy badge",
-			);
+			for (const presetId of [
+				"anesthesia-dose-norm-preset",
+				"anesthesia-preset-infiltration-articaine-200k",
+				"anesthesia-preset-scandonest-cardio",
+				"btn-anes-none",
+			]) {
+				const btn = html.match(new RegExp(`<button[^>]*data-testid="${presetId}"[^>]*>`));
+				assert.ok(btn, `Preset ${presetId} must be rendered`);
+				assert.ok(!btn[0].includes("disabled"), `Preset ${presetId} must stay clickable`);
+			}
 		});
 
 		it("AnesthesiaQuickBar defaults to safe Mepivacaine 3% when patient has lidocaine allergy", () => {
@@ -260,6 +213,12 @@ describe("Red Team: Patient Allergy Guard & Medical Safety Inquisitor Suite", ()
 
 			assert.ok(html.includes("anesthesia-quick-bar"), "AnesthesiaQuickBar must render");
 			assert.ok(html.includes("Аллергия: Лидокаин"), "Must display Lidocaine allergy tag");
+			const scandonestBtn = html.match(/<button[^>]*data-testid="anesthesia-preset-scandonest-cardio"[^>]*>/);
+			assert.ok(scandonestBtn, "Safe Scandonest preset must be available for allergic patient");
+			assert.ok(
+				scandonestBtn[0].includes("font-bold") || scandonestBtn[0].includes("border-2"),
+				"Scandonest must be preselected as the safe default for lidocaine allergy",
+			);
 		});
 	});
 
