@@ -701,4 +701,52 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.ok(html.includes("btn-share-whatsapp"), "Must have WhatsApp share button");
 		assert.ok(html.includes("btn-share-telegram"), "Must have Telegram share button");
 	});
+
+	it("36. Decomposed torqueCatalogModules maintain 100% SSOT parity and strict file size limits", async () => {
+		const { getTorqueSpecsByBrand, getRecommendedTorqueNcm, getScrewdriverType } = await import("../torqueCatalogModules/implantScrewdriverHelper");
+		const { IMPLANT_TORQUE_SPECS } = await import("../torqueCatalogModules/brandTorqueSpecs");
+		const { TI_BASE_CATALOG } = await import("../torqueCatalogModules/tiBaseCatalogData");
+
+		// Straumann SSOT
+		const straumann = getTorqueSpecsByBrand("straumann");
+		assert.equal(straumann.torqueFinalScrewNcm, 35, "Straumann final screw must be 35 N*cm");
+		assert.equal(straumann.torqueMultiUnitBridgeScrewNcm, 15, "Straumann Multi-Unit bridge screw strictly 15 N*cm");
+		assert.ok(straumann.screwdriverDefault.includes("SCS"), "Straumann default driver must be SCS");
+
+		// Nobel Biocare SSOT
+		const nobel = getTorqueSpecsByBrand("nobel_biocare");
+		assert.equal(nobel.torqueFinalScrewNcm, 35, "Nobel final screw must be 35 N*cm");
+		assert.ok(nobel.screwdriverDefault.includes("Unigrip"), "Nobel driver must be Unigrip");
+
+		// Ti-Base catalog
+		assert.ok(TI_BASE_CATALOG.length >= 8, "Must contain all 8 Ti-Base items");
+		const variobase = TI_BASE_CATALOG.find((t) => t.id === "st-tb-nc-01");
+		assert.ok(variobase, "Must have Variobase NC");
+		assert.equal(variobase.recommendedTorqueNcm, 35);
+
+		// Multi-unit recommended torque helper
+		const muTorque = getRecommendedTorqueNcm("straumann", "multi_unit_bridge_screw");
+		assert.equal(muTorque, 15, "Multi-unit bridge screw must recommend strictly 15 N*cm");
+	});
+
+	it("37. Implant passport renders osteointegration date and 1-click print support without Soviet order codes", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 46,
+			brand: "Straumann",
+			patientName: "Васильев В. В.",
+		});
+
+		const html = renderToString(<ImplantPassportCard data={record} />);
+
+		// Osteointegration date verification
+		assert.ok(html.includes("passport-osteointegration-notice"), "Must render osteointegration notice");
+		assert.ok(html.includes("Контроль остеоинтеграции"), "Must show osteointegration label");
+		assert.ok(html.includes("passport-osteo-date"), "Must have osteo date element");
+
+		// Zero Soviet orders in production UI (Mandate 8x)
+		assert.ok(!html.includes("043/у"), "Zero Form 043/u in card");
+		assert.ok(!html.includes("804н"), "Zero 804n in card");
+		assert.ok(!html.includes("54-ФЗ"), "Zero 54-FZ in card");
+		assert.ok(!html.includes("disabled"), "No disabled buttons in passport");
+	});
 });

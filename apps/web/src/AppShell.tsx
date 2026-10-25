@@ -7,6 +7,8 @@ import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLau
 import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
 import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
+import { DirectSanPinStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher";
+import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -84,6 +86,8 @@ export function AppShell() {
 			<DirectWarehouseMdlpLauncher />
 			<DirectOmnichannelStandaloneLauncher />
 			<DirectPrescriptionLauncher />
+			<DirectSanPinStandaloneLauncher />
+			<DirectImplantPassportLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

@@ -77,6 +77,7 @@ export interface FastImplantPassportData {
 	readonly doctorGrossMarginRub?: number | undefined;
 	readonly netDoctorIncomeRub?: number | undefined;
 	readonly isImmediateLoadingFeasible?: boolean | undefined;
+	readonly osteointegrationExpectedDate?: string | undefined;
 	readonly boneGraftMaterial?: string | undefined;
 	readonly membraneUsed?: string | undefined;
 	readonly sutureMaterial?: string | undefined;

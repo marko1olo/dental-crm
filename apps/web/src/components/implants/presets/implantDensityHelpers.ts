@@ -137,6 +137,12 @@ export function createDefaultPassportRecord(params: {
 	const isImmediateLoadingFeasible = torque >= 35 && torque <= 55 && isq >= 70;
 	const article = params.catalogArticle ?? (preset.brand === "Osstem" ? "TS3S4010S" : preset.brand === "Dentium" ? "FX4010" : preset.brand === "Straumann" ? "021.2310" : preset.brand === "Ankylos" ? "A-B110-CX" : preset.brand === "Astra Tech" ? "EV-42110" : preset.brand === "Nobel Biocare" ? "NP-35115" : "TS3S4010S");
 
+	const dateIso = new Date().toISOString();
+	const isUpperJaw = tooth >= 11 && tooth <= 28;
+	const osteoD = new Date(dateIso);
+	osteoD.setMonth(osteoD.getMonth() + (isUpperJaw ? 4 : 3));
+	const osteointegrationExpectedDate = osteoD.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+
 	return {
 		passportId: `IMP-PASSPORT-${tooth}-${timestampSuffix}`,
 		toothFdi: tooth,
@@ -157,7 +163,8 @@ export function createDefaultPassportRecord(params: {
 		patientId: params.patientId ?? "PAT-01",
 		doctorName: params.doctorName ?? "Хирург-имплантолог",
 		doctorId: params.doctorId ?? "DOC-01",
-		dateIso: new Date().toISOString(),
+		dateIso,
+		osteointegrationExpectedDate,
 		isWarehouseOverdraft: false,
 		operationPriceRub: params.operationPriceRub ?? 45000,
 		implantCostRub: params.implantCostRub ?? 12500,

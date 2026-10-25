@@ -44,6 +44,13 @@ export const ImplantPassportWarrantySection: React.FC<{
 						<span>Предоставляется клиникой при условии регулярных профилактических визитов и профгигиены 1 раз в 6 месяцев.</span>
 					</div>
 				</div>
+				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] text-[11px] flex items-center justify-between flex-wrap gap-2" data-testid="passport-osteointegration-notice">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<strong className="text-[var(--ink)]">Контроль остеоинтеграции:</strong>
+						<span className="font-bold text-[var(--teal,#0d9488)]" data-testid="passport-osteo-date">{data.osteointegrationExpectedDate || "через 3-4 месяца"}</span>
+					</div>
+					<span className="text-[10px] text-[var(--muted)]">Контрольная визиография / прицельный снимок</span>
+				</div>
 				<div className="text-[10px] text-[var(--muted)] pt-1 border-t border-[var(--line-subtle)] flex items-center justify-between flex-wrap gap-2">
 					<span>Медицинская организация: ООО «ДЕНТЕ Клиник» (Лицензия ЛО-77-01-018924)</span>
 					<span>Телефон регистратуры: +7 (495) 212-03-03</span>

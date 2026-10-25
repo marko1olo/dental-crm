@@ -30,7 +30,16 @@ export interface AssemblePassportParams {
 	readonly sutureMaterial?: string | undefined;
 }
 
+export function computeOsteointegrationDate(dateIso: string, toothFdi: number): string {
+	const d = new Date(dateIso || Date.now());
+	const isUpperJaw = (toothFdi >= 11 && toothFdi <= 28) || (toothFdi >= 51 && toothFdi <= 65);
+	const monthsToAdd = isUpperJaw ? 4 : 3;
+	d.setMonth(d.getMonth() + monthsToAdd);
+	return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export function buildAssembledPassportData(params: AssemblePassportParams): FastImplantPassportData {
+	const dateIso = new Date().toISOString();
 	return {
 		passportId: `IMP-PASSPORT-${params.toothFdi}-${Date.now().toString().slice(-6)}`,
 		toothFdi: params.toothFdi,
@@ -49,7 +58,8 @@ export function buildAssembledPassportData(params: AssemblePassportParams): Fast
 		patientId: params.patientId,
 		doctorName: params.doctorName,
 		doctorId: params.doctorId,
-		dateIso: new Date().toISOString(),
+		dateIso,
+		osteointegrationExpectedDate: computeOsteointegrationDate(dateIso, params.toothFdi),
 		isWarehouseOverdraft: params.isWarehouseOverdraft,
 		inventoryItemId: params.inventoryItemId,
 		expirationDate: params.expirationDate,

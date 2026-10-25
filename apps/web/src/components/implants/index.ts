@@ -14,6 +14,7 @@ export * from "./ImplantWarehouseSelector";
 export * from "./ImplantDiaryTab";
 export * from "./implantCatalog";
 export * from "./implantTorqueCatalog";
+export * from "./DirectImplantPassportLauncher";
 
 import {
 	IMPLANT_BRANDS_METADATA,

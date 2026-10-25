@@ -7,6 +7,7 @@
 
 import type React from "react";
 import { useMemo } from "react";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../../AppBootState";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
@@ -42,13 +43,13 @@ function usePatientGuard(
 
 export const StandaloneImplantPassportHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const { patientId, patientName, guard } = usePatientGuard("standalone-implant-missing-state", onClose);
-	if (guard) return guard;
+	if (guard && !isDemoShowcaseMode()) return guard;
 	return (
 		<ImplantPassportModal
 			isOpen={true}
 			onClose={onClose}
-			patientId={patientId || undefined}
-			patientName={patientName || undefined}
+			patientId={patientId || "demo-patient-01"}
+			patientName={patientName || "Иванов Иван Иванович"}
 		/>
 	);
 };
