@@ -14,15 +14,15 @@ export interface Tooth41CanalAnatomy {
 }
 
 export const TOOTH41_PULP_GEOMETRY = {
-	// Slender delicate symmetrical coronal pulp chamber (width 7px, Wheeler Ch. 10)
+	// Slender anatomical symmetrical coronal pulp chamber in cervical half (Wheeler Ch. 10)
 	coronalPulpChamber:
 		"M 48.5,70.0 " +
-		"C 47.0,68.0 46.5,58.0 46.5,46.0 " +
-		"C 46.5,38.0 47.5,32.0 48.0,29.0 " + // Mesial horn
-		"C 49.0,31.0 49.5,28.5 50.0,28.5 " + // Central horn
-		"C 50.5,28.5 51.0,31.0 52.0,29.0 " + // Distal horn
-		"C 52.5,32.0 53.5,38.0 53.5,46.0 " +
-		"C 53.5,58.0 53.0,68.0 51.5,70.0 " +
+		"C 47.0,68.0 46.5,60.0 46.5,52.0 " +
+		"C 46.5,47.0 47.5,45.0 48.0,43.0 " + // Mesial horn at 43.0
+		"C 49.0,44.5 49.5,43.5 50.0,43.5 " + // Central horn at 43.5
+		"C 50.5,43.5 51.0,44.5 52.0,43.0 " + // Distal horn at 43.0
+		"C 52.5,47.0 53.5,52.0 53.5,60.0 " +
+		"C 53.5,68.0 53.0,68.0 51.5,70.0 " +
 		"C 50.8,71.0 49.2,71.0 48.5,70.0 Z",
 	canals: [
 		{
@@ -42,6 +42,6 @@ export const TOOTH41_PULP_GEOMETRY = {
 		orifices: [{ id: "Main", x: 50.0, y: 70.0, r: 0.9 }],
 	},
 	neuroPlexus: [
-		{ id: "central_incisor_trunk", d: "M 50.0,30.0 C 50.0,45.0 50.0,58.0 50.0,70.0" },
+		{ id: "central_incisor_trunk", d: "M 50.0,44.0 C 50.0,52.0 50.0,62.0 50.0,70.0" },
 	] as const,
 } as const;

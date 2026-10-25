@@ -93,14 +93,27 @@ export const TOOTH47_GEOMETRY = {
 			d: "M 76,21.0 C 79,19.5 81,21.5 83,23.5 M 76,21.0 C 79,23.0 81,25.0 82,27.0",
 		},
 	],
+	// Sculpted CAD/CAM zirconia crown shell with 4 distinct cusp tips
+	zirconiaCrownShell:
+		"M 16,74 C 13.5,66 12.5,52 13,38 C 13.5,28 17,18 23,16 C 26,13 28,10 32,10 " +
+		"C 37,11 42,14 47,15 C 52,14 57,11 63,10.5 C 68,11 71,13 75,16.5 " +
+		"C 81,18 85.5,28 86,38 C 86.5,52 85.5,66 84,74 C 68,76.2 32,76.2 16,74 Z",
 	foramenCaecum: { cx: 50.0, cy: 45.5, r: 0.9 },
 	crownCuspSlopes: [
-		{ id: "mb", d: "M 20,20 C 26,17 38,19 46,22 C 38,25 26,24 20,20 Z", type: "highlight" as const },
-		{ id: "db", d: "M 54,22 C 62,19 74,17 80,20 C 74,24 62,25 54,22 Z", type: "shadow" as const },
+		{ id: "mb-m", d: "M 23,16 C 18,18 15,21 14,24 C 18,25 22,23 25,21 Z", type: "highlight" as const },
+		{ id: "mb-d", d: "M 23,16 C 27,18 32,20 37,21.5 C 35,26 31,28 27,26 Z", type: "shadow" as const },
+		{ id: "ml-m", d: "M 32,10 C 26,12 22,14 21,16 C 24,18 28,19 32,20 Z", type: "highlight" as const },
+		{ id: "ml-d", d: "M 32,10 C 35,14 39,18 42,21.5 C 44,18 46,14 47,12 Z", type: "shadow" as const },
+		{ id: "db-m", d: "M 50,22 C 55,20 62,18 70,17 C 67,21 64,23 58,24 Z", type: "highlight" as const },
+		{ id: "db-d", d: "M 75,16.5 C 79,18 82,21 84,24 C 79,25 75,25 71,23 Z", type: "shadow" as const },
+		{ id: "dl-m", d: "M 63,10.5 C 58,11 54,12 50,13 C 52,17 54,19 55,22 Z", type: "highlight" as const },
+		{ id: "dl-d", d: "M 63,10.5 C 67,11 71,13 74,14 C 72,17 70,20 68,22 Z", type: "shadow" as const },
 	],
 	crownSpecularRidges: [
-		{ id: "mb", d: "M 22,17 C 28,18.5 38,20.5 46,22" },
-		{ id: "db", d: "M 54,22 C 62,20.5 72,18.5 78,17" },
+		{ id: "mb", d: "M 21,17 C 26,18.5 31,20 37,21.5" },
+		{ id: "ml", d: "M 30,10.5 C 33,14 37,18 40,21.5" },
+		{ id: "db", d: "M 54,22 C 60,20 67,18 73,17" },
+		{ id: "dl", d: "M 62,11 C 59,14 56,18 53,21.5" },
 	],
 	crownEquatorHighlight: "M 19,52 C 34,56 66,56 81,52",
 } as const;

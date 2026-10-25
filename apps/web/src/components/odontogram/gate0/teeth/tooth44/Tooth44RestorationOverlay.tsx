@@ -39,7 +39,7 @@ export const Tooth44RestorationOverlay: React.FC<
 			{showZirconiaCrown && (
 				<ToothCrownOverlay
 					toothId="44"
-					crownPath={geo.crownMonolithPath}
+					crownPath={geo.zirconiaCrownShell || geo.crownMonolithPath}
 					cervicalShoulderPath={geo.cervicalShoulderPath}
 					fissures={geo.fossaeAndGrooves}
 					cuspSlopes={geo.crownCuspSlopes}

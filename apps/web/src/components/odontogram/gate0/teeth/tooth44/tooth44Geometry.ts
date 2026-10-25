@@ -77,13 +77,19 @@ export const TOOTH44_GEOMETRY = {
 			d: "M 57,24.0 C 59,26.0 62,28.5 64,31.0",
 		},
 	],
+	zirconiaCrownShell:
+		"M 26,74.5 C 22,66 20,52 21,37 C 22,27 26,18 36,16 C 42,14.5 45,13.5 48,13.5 " +
+		"C 52,13.5 56,15 64,17 C 73,19 77,28 77.5,37 C 78,52 76,66 72,74.5 C 60,76.5 38,76.5 26,74.5 Z",
 	crownCuspSlopes: [
-		{ id: "buccal", d: "M 30,22 C 36,17 44,19 48,22 C 42,25 35,24 30,22 Z", type: "highlight" as const },
-		{ id: "lingual", d: "M 48,22 C 54,19 62,18 68,22 C 62,25 54,26 48,22 Z", type: "shadow" as const },
+		{ id: "buccal-m", d: "M 48,13.5 C 41,15.5 35,17.5 30,22 C 34,24 41,23 48,22 Z", type: "highlight" as const },
+		{ id: "buccal-d", d: "M 48,13.5 C 55,15.5 61,17.5 66,22 C 61,24 55,23 48,22 Z", type: "shadow" as const },
+		{ id: "lingual-m", d: "M 38,24 C 42,22 45,22 48,22 L 50,26 L 42,26 Z", type: "highlight" as const },
+		{ id: "crista-d", d: "M 48,22 C 54,23 58,25 64,28 C 59,29 54,28 50,26 Z", type: "shadow" as const },
 	],
 	crownSpecularRidges: [
-		{ id: "buccal", d: "M 32,18 C 38,19.5 44,21 48,22" },
-		{ id: "transverse", d: "M 47,17.2 C 48.0,20.0 49.0,22.8 50,25.5" },
+		{ id: "buccal-tip", d: "M 36,16 C 43,14 46,13.5 48,13.5 C 51,13.5 55,14.5 62,17" },
+		{ id: "buccal-axial", d: "M 48,13.5 L 48,22" },
+		{ id: "crista", d: "M 48,22 L 50,26" },
 	],
 	crownEquatorHighlight: "M 28,52 C 38,56 62,56 72,52",
 } as const;

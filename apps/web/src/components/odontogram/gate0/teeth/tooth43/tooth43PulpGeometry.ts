@@ -14,13 +14,13 @@ export interface Tooth43CanalAnatomy {
 }
 
 export const TOOTH43_PULP_GEOMETRY = {
-	// Slender spear-like pulp chamber conforming to canine crown (width 13px, Wheeler Ch. 11)
+	// Slender anatomical spear-like pulp chamber in cervical half (Wheeler Ch. 11)
 	coronalPulpChamber:
 		"M 48.0,73.0 " +
-		"C 45.5,71.0 43.5,60.0 43.5,48.0 " +
-		"C 43.5,38.0 46.5,28.0 50.0,22.0 " + // Tall spear horn at Y=22.0
-		"C 53.5,28.0 56.5,38.0 56.5,48.0 " +
-		"C 56.5,60.0 54.5,71.0 52.0,73.0 " +
+		"C 45.5,71.0 44.0,62.0 44.0,52.0 " +
+		"C 44.0,46.0 47.0,42.0 50.0,40.0 " + // Slender spear horn at Y=40.0
+		"C 53.0,42.0 56.0,46.0 56.0,52.0 " +
+		"C 56.0,62.0 54.5,71.0 52.0,73.0 " +
 		"C 51.0,74.5 49.0,74.5 48.0,73.0 Z",
 	canals: [
 		{
@@ -40,6 +40,6 @@ export const TOOTH43_PULP_GEOMETRY = {
 		orifices: [{ id: "Main", x: 50.0, y: 73.0, r: 1.2 }],
 	},
 	neuroPlexus: [
-		{ id: "canine_trunk", d: "M 50.0,24.0 C 50.0,42.0 50.0,58.0 50.0,73.0" },
+		{ id: "canine_trunk", d: "M 50.0,42.0 C 50.0,52.0 50.0,62.0 50.0,73.0" },
 	] as const,
 } as const;

@@ -14,14 +14,14 @@ export interface Tooth45CanalAnatomy {
 }
 
 export const TOOTH45_PULP_GEOMETRY = {
-	// Compact coronal pulp chamber with 3 horns inside premolar crown (width 11.5px, Wheeler Ch. 11)
+	// Compact anatomical coronal pulp chamber inside cervical half (Wheeler Ch. 11)
 	coronalPulpChamber:
 		"M 48.4,74.5 " +
-		"C 46.0,72.5 44.2,62.0 44.2,52.0 " +
-		"C 44.2,42.0 45.0,32.0 46.5,27.0 " + // Buccal/ML Horn
-		"C 48.0,29.5 49.0,31.0 49.8,28.5 " + // Center dip
-		"C 51.5,31.0 53.0,30.0 54.5,27.5 " + // DL Horn
-		"C 54.5,42.0 55.2,62.0 52.0,72.5 " +
+		"C 46.0,72.5 44.5,64.0 44.5,56.0 " +
+		"C 44.5,48.0 45.2,43.0 46.5,40.0 " + // Buccal Horn at 40.0
+		"C 48.0,42.0 49.0,43.5 49.8,41.5 " + // Center dip
+		"C 51.5,43.5 53.0,43.0 54.5,40.5 " + // DL Horn at 40.5
+		"C 54.5,48.0 55.0,64.0 52.0,72.5 " +
 		"C 51.2,74.5 49.5,74.5 48.4,74.5 Z",
 	canals: [
 		{
@@ -41,6 +41,6 @@ export const TOOTH45_PULP_GEOMETRY = {
 		orifices: [{ id: "Main", x: 50.2, y: 74.5, r: 1.1 }],
 	},
 	neuroPlexus: [
-		{ id: "buccal_trunk", d: "M 49.8,28.5 C 50.0,42.0 50.0,58.0 50.2,74.5" },
+		{ id: "buccal_trunk", d: "M 49.8,41.5 C 50.0,52.0 50.0,62.0 50.2,74.5" },
 	] as const,
 } as const;

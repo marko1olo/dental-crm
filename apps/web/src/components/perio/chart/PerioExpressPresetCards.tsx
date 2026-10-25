@@ -39,7 +39,7 @@ const PRESET_CARDS: readonly PresetCardItem[] = [
 export const PerioExpressPresetCards: React.FC<PerioExpressPresetCardsProps> = React.memo(({
 	readOnly = false, onApplyExpressPreset,
 }) => (
-	<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+	<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-2.5">
 		{PRESET_CARDS.map(({ id, testId, title, icd, desc, btnClass, textClass, badgeClass, Icon, extraAction }) => (
 			<button
 				key={id} type="button" disabled={readOnly} onClick={() => onApplyExpressPreset(id)}
@@ -47,12 +47,12 @@ export const PerioExpressPresetCards: React.FC<PerioExpressPresetCardsProps> = R
 				data-testid={testId}
 				{...(extraAction ? { "data-preset-action": extraAction } : {})}
 			>
-				<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-					<span className={`flex items-center gap-1.5 min-w-0 truncate ${textClass}`}>
+				<div className="flex items-center justify-between gap-1.5 font-bold text-xs min-w-0">
+					<span className={`flex items-center gap-1.5 min-w-0 ${textClass}`}>
 						<Icon size={16} className="shrink-0" />
 						<span className="truncate">{title}</span>
 					</span>
-					<span className={`text-[11.5px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${badgeClass}`}>{icd}</span>
+					<span className={`text-[11px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${badgeClass}`}>{icd}</span>
 				</div>
 				<span className="text-[12px] opacity-80 leading-tight mt-1 line-clamp-2">{desc}</span>
 			</button>
