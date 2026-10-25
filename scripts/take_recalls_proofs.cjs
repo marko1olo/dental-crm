@@ -13,11 +13,25 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const API_BASE = "http://127.0.0.1:4100";
-const WEB_BASE = "http://127.0.0.1:5173";
+let WEB_BASE = process.env.WEB_BASE || "http://127.0.0.1:5173";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/recalls");
 
 if (!fs.existsSync(PROOFS_DIR)) {
   fs.mkdirSync(PROOFS_DIR, { recursive: true });
+}
+
+async function detectWebBase() {
+  if (process.env.WEB_BASE) return process.env.WEB_BASE;
+  for (const port of [5173, 5174, 5175]) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/`);
+      if (res.ok) {
+        console.log(`[WebBase] Auto-detected active web server at http://127.0.0.1:${port}`);
+        return `http://127.0.0.1:${port}`;
+      }
+    } catch (_) {}
+  }
+  return "http://127.0.0.1:5173";
 }
 
 async function provisionClinicalRecallsSession() {
@@ -121,96 +135,84 @@ async function provisionClinicalRecallsSession() {
       birthDate: "1982-08-09",
       gender: "male",
       phone: "+7 (985) 567-89-01",
-      allergies: "Пенициллиновый ряд",
-      chronicDiseases: "Соматически компенсирован",
+      allergies: "Пенициллиновый ряд (крапивница)",
+      chronicDiseases: "Состояние после имплантации (зубы 3.6, 4.6)",
     }),
   });
   const p4 = await p4Res.json();
   const p4Id = p4.patient?.id || p4.id;
 
-  // Now seed completed past appointments directly in DB or via API so recallCandidates finds them
-  // Let's create past appointments via DB client or API
   console.log("[Provisioning] Seeding completed historical appointments...");
 
-  const { db } = await import("../apps/api/dist/db/client.js");
-  const { appointments, patientImplantInstallations } = await import("../apps/api/dist/db/schema.js");
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
 
-  const sevenMonthsAgo = new Date();
-  sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 7);
-
-  const fourMonthsAgo = new Date();
-  fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
-
-  const twoMonthsAgo = new Date();
-  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-
-  const thirteenMonthsAgo = new Date();
-  thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
-
-  // Insert completed appointment for P1 (Hygiene)
-  await db.insert(appointments).values({
-    organizationId: initData.organizationId,
-    patientId: p1Id,
-    doctorUserId: initData.ownerUserId,
-    startsAt: sevenMonthsAgo,
-    endsAt: new Date(sevenMonthsAgo.getTime() + 45 * 60000),
-    status: "completed",
-    reason: "Комплексная профессиональная гигиена полости рта и реминерализация",
-  });
-
-  // Insert completed appointment for P2 (Periodontal)
-  await db.insert(appointments).values({
-    organizationId: initData.organizationId,
-    patientId: p2Id,
-    doctorUserId: initData.ownerUserId,
-    startsAt: fourMonthsAgo,
-    endsAt: new Date(fourMonthsAgo.getTime() + 60 * 60000),
-    status: "completed",
-    reason: "Пародонтологическое лечение: кюретаж пародонтальных карманов и вектор-терапия",
-  });
-
-  // Insert completed appointment for P3 (Endodontic)
-  await db.insert(appointments).values({
-    organizationId: initData.organizationId,
-    patientId: p3Id,
-    doctorUserId: initData.ownerUserId,
-    startsAt: twoMonthsAgo,
-    endsAt: new Date(twoMonthsAgo.getTime() + 90 * 60000),
-    status: "completed",
-    reason: "Эндодонтическое лечение пульпита 3 каналов зуба 16, обтурация",
-  });
-
-  // Insert completed appointment for P4 (Implant)
-  await db.insert(appointments).values({
-    organizationId: initData.organizationId,
-    patientId: p4Id,
-    doctorUserId: initData.ownerUserId,
-    startsAt: thirteenMonthsAgo,
-    endsAt: new Date(thirteenMonthsAgo.getTime() + 60 * 60000),
-    status: "completed",
-    reason: "Установка дентального имплантата Osstem в позицию зуба 36",
-  });
-
-  // Also insert implant installation record for P4
-  await db.insert(patientImplantInstallations).values({
-    organizationId: initData.organizationId,
-    patientId: p4Id,
-    surgeonDoctorId: initData.ownerUserId,
-    toothNumberFdi: 36,
-    implantBrand: "Osstem TS III",
-    implantDiameterMm: "4.00",
-    implantLengthMm: "10.00",
-    finalInsertionTorqueNcm: "35.00",
-    installedAt: thirteenMonthsAgo,
-  });
-
-  console.log("[Provisioning] Verification: querying GET /api/patients/recall-candidates...");
-  const candRes = await fetch(`${API_BASE}/api/patients/recall-candidates?minMonths=1&limit=200`, {
+  // Patient 1: Hygiene 210 days ago (due every 180 days -> overdue by 30 days)
+  await fetch(`${API_BASE}/api/appointments`, {
+    method: "POST",
     headers,
+    body: JSON.stringify({
+      patientId: p1Id,
+      doctorId: initData.ownerUserId,
+      chairId: 1,
+      startTime: new Date(now - 210 * dayMs).toISOString(),
+      durationMinutes: 60,
+      treatmentType: "Профгигиена полости рта и осмотр",
+      status: "completed",
+    }),
   });
+
+  // Patient 2: Perio check 120 days ago (due every 90 days -> overdue by 30 days)
+  await fetch(`${API_BASE}/api/appointments`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      patientId: p2Id,
+      doctorId: initData.ownerUserId,
+      chairId: 1,
+      startTime: new Date(now - 120 * dayMs).toISOString(),
+      durationMinutes: 45,
+      treatmentType: "Пародонтологический осмотр и гигиена",
+      status: "completed",
+    }),
+  });
+
+  // Patient 3: Endo check 60 days ago (due every 30 days -> overdue by 30 days)
+  await fetch(`${API_BASE}/api/appointments`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      patientId: p3Id,
+      doctorId: initData.ownerUserId,
+      chairId: 1,
+      startTime: new Date(now - 60 * dayMs).toISOString(),
+      durationMinutes: 30,
+      treatmentType: "Эндодонтический контроль и снимок",
+      status: "completed",
+    }),
+  });
+
+  // Patient 4: Implant 395 days ago (due every 365 days -> overdue by 30 days)
+  await fetch(`${API_BASE}/api/appointments`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      patientId: p4Id,
+      doctorId: initData.ownerUserId,
+      chairId: 1,
+      startTime: new Date(now - 395 * dayMs).toISOString(),
+      durationMinutes: 45,
+      treatmentType: "Контроль имплантов и ортопедии",
+      status: "completed",
+    }),
+  });
+
+  // Verify recall-candidates endpoint responds with calculated records
+  console.log("[Provisioning] Verification: querying GET /api/patients/recall-candidates...");
+  const candRes = await fetch(`${API_BASE}/api/patients/recall-candidates`, { headers });
   if (candRes.ok) {
-    const candData = await candRes.json();
-    console.log(`[Provisioning] Recall candidates found: ${candData.candidates?.length ?? 0}`);
+    const cands = await candRes.json();
+    console.log(`[Provisioning] Recall candidates found: ${Array.isArray(cands) ? cands.length : (cands.candidates?.length || 0)}`);
   } else {
     console.warn(`[Provisioning] Recall candidates fetch failed: ${await candRes.text()}`);
   }
@@ -226,12 +228,13 @@ async function provisionClinicalRecallsSession() {
 }
 
 async function run() {
+  WEB_BASE = await detectWebBase();
   const auth = await provisionClinicalRecallsSession();
 
   const browser = await chromium.launch({
     headless: true,
     executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+    args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
   });
 
   const setupContext = async (isDark, viewport = { width: 1440, height: 900 }) => {
@@ -251,9 +254,24 @@ async function run() {
         localStorage.setItem("dente_active_role", "owner");
         localStorage.setItem("dente_user_role", "owner");
         localStorage.setItem("dente_active_mode", "clinic");
+        localStorage.setItem("dente_workspace_mode", "clinic");
+        localStorage.setItem(
+          "dente-workspace-profile",
+          JSON.stringify({ mode: "clinic", role: "owner", activeRole: "owner" })
+        );
+        localStorage.setItem("dental-crm:active-user:v1", JSON.stringify({
+          id: uid,
+          fullName: docName,
+          role: "owner",
+          email: "owner@dente-clinic.ru",
+        }));
         sessionStorage.setItem("dente_unlocked", "true");
         localStorage.setItem("dente_onboarding_completed", "true");
         localStorage.setItem("dente_tour_completed", "true");
+        localStorage.setItem("dente_tour_dismissed", "true");
+        localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+        localStorage.setItem("dente_demo_banner_dismissed", "true");
+        localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
 
         localStorage.setItem(
           "dente_staff_session",
@@ -266,24 +284,7 @@ async function run() {
           }),
         );
 
-        localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
-          version: 1,
-          uiLanguage: "ru",
-          theme: dark ? "dark" : "light",
-          selectedWorkspaceRole: "owner",
-          onboardingDismissed: true,
-          onboardingStep: "done",
-        }));
-
         localStorage.setItem("theme", dark ? "dark" : "light");
-
-        if (dark) {
-          document.documentElement.classList.add("dark");
-          document.documentElement.setAttribute("data-theme", "dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.setAttribute("data-theme", "light");
-        }
       },
       {
         ct: auth.clinicToken,
@@ -309,64 +310,74 @@ async function run() {
         document.body.classList.add(mode);
         document.body.setAttribute("data-theme", mode);
       }
-      localStorage.setItem("dente_theme_mode", mode);
-      localStorage.setItem("theme", mode);
-      localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
-        version: 1,
-        uiLanguage: "ru",
-        theme: mode,
-        selectedWorkspaceRole: "owner",
-        onboardingDismissed: true,
-        onboardingStep: "done",
-      }));
-    }, isDark);
-    await page.waitForTimeout(500);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    }, isDark).catch(() => {});
+    await page.waitForTimeout(600);
+  };
+
+  const openRecallsPage = async (ctx, isDark) => {
+    const page = await ctx.newPage();
+    page.on("console", (msg) => {
+      if (msg.type() === "error") console.log("[BROWSER CONSOLE ERROR]", msg.text());
+    });
+    page.on("pageerror", (err) => console.error("[BROWSER PAGEERROR]", err.message));
+
+    await page.goto(`${WEB_BASE}/?demo=true`, { waitUntil: "commit", timeout: 35000 });
+    await page.waitForTimeout(3000);
+    await page.locator(".boot-logo-box").waitFor({ state: "detached", timeout: 15000 }).catch(() => {});
+    await page.waitForFunction(() => !document.body?.innerText?.includes("Загрузка CRM") && !document.body?.innerText?.includes("Загрузка системы"), { timeout: 15000 }).catch(() => {});
+
+    // Suppress overlays
+    await page.evaluate(() => {
+      const style = document.createElement("style");
+      style.innerHTML = `
+        .tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .toast, .connection-toast {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }).catch(() => {});
+
+    await applyTheme(page, isDark);
+
+    const modalLocator = page.locator('[data-testid="patient-recalls-hub-modal"]');
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const visible = await modalLocator.isVisible().catch(() => false);
+      if (visible) break;
+      await page.evaluate(() => {
+        window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
+        window.dispatchEvent(new CustomEvent("dente-open-recalls-hub"));
+      });
+      const ok = await modalLocator.waitFor({ state: "visible", timeout: 4000 }).then(() => true).catch(() => false);
+      if (ok) break;
+    }
+    await modalLocator.waitFor({ state: "visible", timeout: 15000 });
+    await page.waitForTimeout(1000);
+    return { page, modalLocator };
   };
 
   // ==========================================
   // 1. PROOF 1: PC Light (1440x900) - Recalls Hub Modal
   // ==========================================
   console.log("\n--- Capturing PC Light (1440x900) ---");
-  const pcLightCtx = await setupContext(false, { width: 1440, height: 900 });
-  const pcLightPage = await pcLightCtx.newPage();
-
-  await pcLightPage.goto(`${WEB_BASE}/#recalls`, { waitUntil: "domcontentloaded" });
-  await pcLightPage.waitForTimeout(2000);
-  await applyTheme(pcLightPage, false);
-
-  const modalLocator = pcLightPage.locator('[data-testid="patient-recalls-hub-modal"]');
-  if (await modalLocator.count() === 0) {
-    console.log("[PC Light] Dispatching dente:open-recalls-hub...");
-    await pcLightPage.evaluate(() => window.dispatchEvent(new CustomEvent("dente:open-recalls-hub")));
-  }
-  await modalLocator.waitFor({ state: "visible", timeout: 10000 });
-  await pcLightPage.waitForTimeout(2000);
+  const pcCtx = await setupContext(false, { width: 1440, height: 900 });
+  const { page: pcPage } = await openRecallsPage(pcCtx, false);
 
   const pcLightProofPath = path.join(PROOFS_DIR, "pc_light_recalls_hub.png");
-  await pcLightPage.screenshot({ path: pcLightProofPath, fullPage: false });
+  await pcPage.screenshot({ path: pcLightProofPath, fullPage: false });
+  fs.copyFileSync(pcLightProofPath, path.join(PROOFS_DIR, "01_pc_light_1440x900.png"));
+  fs.copyFileSync(pcLightProofPath, path.join(PROOFS_DIR, "recalls_pc_light.png"));
   const pcLightSize = fs.statSync(pcLightProofPath).size;
-  console.log(`[PROOF 1 OK] Saved pc_light_recalls_hub.png (${pcLightSize} bytes)`);
+  console.log(`[PROOF 1 OK] Saved pc_light_recalls_hub.png & 01_pc_light_1440x900.png (${pcLightSize} bytes)`);
+  if (pcLightSize < 20480) throw new Error(`PC Light screenshot too small: ${pcLightSize}`);
 
   // ==========================================
-  // 2. PROOF 2: PC Dark (1440x900) - QuickBookingDrawer inside Recalls Hub
+  // 2. PROOF 2: PC Dark (1440x900) - QuickBookingDrawer / Dark Hub
   // ==========================================
   console.log("\n--- Capturing PC Dark (1440x900) with QuickBookingDrawer ---");
   const pcDarkCtx = await setupContext(true, { width: 1440, height: 900 });
-  const pcDarkPage = await pcDarkCtx.newPage();
+  const { page: pcDarkPage, modalLocator: darkModalLocator } = await openRecallsPage(pcDarkCtx, true);
 
-  await pcDarkPage.goto(`${WEB_BASE}/#recalls`, { waitUntil: "domcontentloaded" });
-  await pcDarkPage.waitForTimeout(2000);
-  await applyTheme(pcDarkPage, true);
-
-  const darkModalLocator = pcDarkPage.locator('[data-testid="patient-recalls-hub-modal"]');
-  if (await darkModalLocator.count() === 0) {
-    console.log("[PC Dark] Dispatching dente:open-recalls-hub...");
-    await pcDarkPage.evaluate(() => window.dispatchEvent(new CustomEvent("dente:open-recalls-hub")));
-  }
-  await darkModalLocator.waitFor({ state: "visible", timeout: 10000 });
-  await pcDarkPage.waitForTimeout(1500);
-
-  // Click "Записать" button on the first candidate to trigger QuickBookingDrawer!
   console.log("[PC Dark] Triggering 'Записать на прием' to open QuickBookingDrawer...");
   const bookBtn = darkModalLocator.locator('button:has-text("Записать")').first();
   if (await bookBtn.count() > 0) {
@@ -378,99 +389,69 @@ async function run() {
 
   const pcDarkProofPath = path.join(PROOFS_DIR, "pc_dark_recalls_hub.png");
   await pcDarkPage.screenshot({ path: pcDarkProofPath, fullPage: false });
+  fs.copyFileSync(pcDarkProofPath, path.join(PROOFS_DIR, "02_pc_dark_1440x900.png"));
+  fs.copyFileSync(pcDarkProofPath, path.join(PROOFS_DIR, "recalls_pc_dark.png"));
   const pcDarkSize = fs.statSync(pcDarkProofPath).size;
-  console.log(`[PROOF 2 OK] Saved pc_dark_recalls_hub.png (${pcDarkSize} bytes)`);
+  console.log(`[PROOF 2 OK] Saved pc_dark_recalls_hub.png & 02_pc_dark_1440x900.png (${pcDarkSize} bytes)`);
+  if (pcDarkSize < 20480) throw new Error(`PC Dark screenshot too small: ${pcDarkSize}`);
+
+  await pcCtx.close();
+  await pcDarkCtx.close();
 
   // ==========================================
   // 3. PROOF 3: Mobile Light (390x844) - Mobile Kanban View
   // ==========================================
   console.log("\n--- Capturing Mobile Light (390x844) - Mobile Kanban ---");
   const mobileLightCtx = await setupContext(false, { width: 390, height: 844 });
-  const mobileLightPage = await mobileLightCtx.newPage();
+  const { page: mobileLightPage } = await openRecallsPage(mobileLightCtx, false);
 
-  await mobileLightPage.goto(`${WEB_BASE}/#recalls`, { waitUntil: "domcontentloaded" });
-  await mobileLightPage.waitForTimeout(2000);
-  await applyTheme(mobileLightPage, false);
-
-  try {
-    const mobModalLocator = mobileLightPage.locator('[data-testid="patient-recalls-hub-modal"]');
-    if (await mobModalLocator.count() === 0) {
-      console.log("[Mobile Light] Modal not open yet, dispatching dente:open-recalls-hub...");
-      await mobileLightPage.evaluate(() => {
-        window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
-      });
-    }
-    await mobModalLocator.waitFor({ state: "visible", timeout: 8000 });
+  console.log("[Mobile Light] Switching to Kanban View Mode...");
+  const kanbanToggle = mobileLightPage.locator('[data-testid="view-mode-kanban"]');
+  if (await kanbanToggle.count() > 0) {
+    await kanbanToggle.click();
     await mobileLightPage.waitForTimeout(1000);
-
-    // Switch to Kanban View Mode
-    console.log("[Mobile Light] Switching to Kanban View Mode...");
-    const kanbanToggle = mobileLightPage.locator('[data-testid="view-mode-kanban"]');
-    if (await kanbanToggle.count() > 0) {
-      await kanbanToggle.click();
-      await mobileLightPage.waitForTimeout(800);
-    }
-    const kanbanWrapper = mobileLightPage.locator('.recall-kanban-wrapper');
-    await kanbanWrapper.waitFor({ state: "visible", timeout: 5000 });
-    await kanbanWrapper.scrollIntoViewIfNeeded();
-    await mobileLightPage.waitForTimeout(600);
-
-    const mobileLightProofPath = path.join(PROOFS_DIR, "mobile_light_recalls_kanban.png");
-    await mobileLightPage.screenshot({ path: mobileLightProofPath, fullPage: false });
-    const mobileLightSize = fs.statSync(mobileLightProofPath).size;
-    console.log(`[PROOF 3 OK] Saved mobile_light_recalls_kanban.png (${mobileLightSize} bytes)`);
-  } catch (err) {
-    console.error("[Mobile Light FAIL]", err.message);
-    await mobileLightPage.screenshot({ path: "scripts/debug_mobile_light.png" });
-    const url = mobileLightPage.url();
-    console.log("[Mobile Light URL]", url);
-    throw err;
   }
+  const kanbanWrapper = mobileLightPage.locator('.recall-kanban-wrapper');
+  await kanbanWrapper.waitFor({ state: "visible", timeout: 8000 });
+  await kanbanWrapper.scrollIntoViewIfNeeded();
+  await mobileLightPage.waitForTimeout(600);
+
+  const mobileLightProofPath = path.join(PROOFS_DIR, "mobile_light_recalls_kanban.png");
+  await mobileLightPage.screenshot({ path: mobileLightProofPath, fullPage: false });
+  fs.copyFileSync(mobileLightProofPath, path.join(PROOFS_DIR, "03_mobile_light_390x844.png"));
+  fs.copyFileSync(mobileLightProofPath, path.join(PROOFS_DIR, "recalls_mobile_light.png"));
+  const mobileLightSize = fs.statSync(mobileLightProofPath).size;
+  console.log(`[PROOF 3 OK] Saved mobile_light_recalls_kanban.png & 03_mobile_light_390x844.png (${mobileLightSize} bytes)`);
+  if (mobileLightSize < 20480) throw new Error(`Mobile Light screenshot too small: ${mobileLightSize}`);
 
   // ==========================================
   // 4. PROOF 4: Mobile Dark (390x844) - Mobile Kanban Dark
   // ==========================================
   console.log("\n--- Capturing Mobile Dark (390x844) - Mobile Kanban Dark ---");
   const mobileDarkCtx = await setupContext(true, { width: 390, height: 844 });
-  const mobileDarkPage = await mobileDarkCtx.newPage();
+  const { page: mobileDarkPage } = await openRecallsPage(mobileDarkCtx, true);
 
-  await mobileDarkPage.goto(`${WEB_BASE}/#recalls`, { waitUntil: "domcontentloaded" });
-  await mobileDarkPage.waitForTimeout(2000);
-  await applyTheme(mobileDarkPage, true);
-
-  try {
-    const mobDarkModalLocator = mobileDarkPage.locator('[data-testid="patient-recalls-hub-modal"]');
-    if (await mobDarkModalLocator.count() === 0) {
-      console.log("[Mobile Dark] Modal not open yet, dispatching dente:open-recalls-hub...");
-      await mobileDarkPage.evaluate(() => {
-        window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
-      });
-    }
-    await mobDarkModalLocator.waitFor({ state: "visible", timeout: 8000 });
+  console.log("[Mobile Dark] Switching to Kanban View Mode...");
+  const darkKanbanToggle = mobileDarkPage.locator('[data-testid="view-mode-kanban"]');
+  if (await darkKanbanToggle.count() > 0) {
+    await darkKanbanToggle.click();
     await mobileDarkPage.waitForTimeout(1000);
-
-    // Switch to Kanban View Mode
-    const darkKanbanToggle = mobileDarkPage.locator('[data-testid="view-mode-kanban"]');
-    if (await darkKanbanToggle.count() > 0) {
-      await darkKanbanToggle.click();
-      await mobileDarkPage.waitForTimeout(800);
-    }
-    const darkKanbanWrapper = mobileDarkPage.locator('.recall-kanban-wrapper');
-    await darkKanbanWrapper.waitFor({ state: "visible", timeout: 5000 });
-    await darkKanbanWrapper.scrollIntoViewIfNeeded();
-    await mobileDarkPage.waitForTimeout(600);
-
-    const mobileDarkProofPath = path.join(PROOFS_DIR, "mobile_dark_recalls_kanban.png");
-    await mobileDarkPage.screenshot({ path: mobileDarkProofPath, fullPage: false });
-    const mobileDarkSize = fs.statSync(mobileDarkProofPath).size;
-    console.log(`[PROOF 4 OK] Saved mobile_dark_recalls_kanban.png (${mobileDarkSize} bytes)`);
-  } catch (err) {
-    console.error("[Mobile Dark FAIL]", err.message);
-    await mobileDarkPage.screenshot({ path: "scripts/debug_mobile_dark.png" });
-    const url = mobileDarkPage.url();
-    console.log("[Mobile Dark URL]", url);
-    throw err;
   }
+  const darkKanbanWrapper = mobileDarkPage.locator('.recall-kanban-wrapper');
+  await darkKanbanWrapper.waitFor({ state: "visible", timeout: 8000 });
+  await darkKanbanWrapper.scrollIntoViewIfNeeded();
+  await mobileDarkPage.waitForTimeout(600);
+
+  const mobileDarkProofPath = path.join(PROOFS_DIR, "mobile_dark_recalls_kanban.png");
+  await mobileDarkPage.screenshot({ path: mobileDarkProofPath, fullPage: false });
+  fs.copyFileSync(mobileDarkProofPath, path.join(PROOFS_DIR, "04_mobile_dark_390x844.png"));
+  fs.copyFileSync(mobileDarkProofPath, path.join(PROOFS_DIR, "recalls_mobile_dark.png"));
+  const mobileDarkSize = fs.statSync(mobileDarkProofPath).size;
+  console.log(`[PROOF 4 OK] Saved mobile_dark_recalls_kanban.png & 04_mobile_dark_390x844.png (${mobileDarkSize} bytes)`);
+  if (mobileDarkSize < 20480) throw new Error(`Mobile Dark screenshot too small: ${mobileDarkSize}`);
+
+  await mobileLightCtx.close();
+  await mobileDarkCtx.close();
 
   await browser.close();
   console.log("\n[ALL 4 PROOFS CAPTURED SUCCESSFULLY]");

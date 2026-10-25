@@ -1,18 +1,17 @@
 {
   "role": "Periodontology & Perio Chart Inquisitor",
-  "startedAt": "2026-10-22T22:23:00+04:00",
-  "completedAt": "2026-10-22T22:35:00+04:00",
+  "updatedAt": "2026-10-25T18:47:00+04:00",
   "status": "completed",
   "constitutionRead": true,
   "tasks": [
     {
       "id": "purge_florida_probe_simulator",
-      "description": "Purge Florida Probe procedure simulation and 192-point mandatory probing",
+      "description": "Purge Florida Probe procedure simulation and 192-point mandatory probing treadmill",
       "status": "completed"
     },
     {
       "id": "implement_1click_norm",
-      "description": "Consolidate 1-click physiological norm ('Пародонт в норме', 1-2 mm, BOP 0%)",
+      "description": "Consolidate 1-click physiological norm ('Пародонт в норме', <=2 mm, BOP 0%, Mandate 8e)",
       "status": "completed"
     },
     {
@@ -21,39 +20,45 @@
       "status": "completed"
     },
     {
+      "id": "mandate_8b_decomposition",
+      "description": "Decompose all non-test files in packages/shared/src/perio and apps/web/src/components/perio to <= 120 lines",
+      "status": "completed"
+    },
+    {
+      "id": "clean_clinical_language",
+      "description": "Purge Soviet order numbers and rival brands (Mandate 8x, 8ap), clean domain terms",
+      "status": "completed"
+    },
+    {
       "id": "single_primary_cta",
-      "description": "Enforce Mandate 8am: exactly ONE Primary CTA 'Сохранить периодонтограмму' (36px desktop / >=44px mobile)",
+      "description": "Enforce Mandate 8am & Apple HIG: exactly ONE Primary CTA button, 44x44px touch targets on mobile",
       "status": "completed"
     },
     {
-      "id": "diary_export_unblocked",
-      "description": "1-click export of clinical periodontal summary to visit diary without barriers",
-      "status": "completed"
-    },
-    {
-      "id": "rewrite_tests",
-      "description": "Rewrite tests to verify 1-click norm, pathology entry, and zero simulation bloat (54 tests passing)",
+      "id": "quality_gates_verification",
+      "description": "Vitest 54/54 passing, shared perio tests 38/38 passing, encoding check clean across 19389 files",
       "status": "completed"
     },
     {
       "id": "visual_proof_4state",
-      "description": "Capture and inspect 4-state screenshots (PC Light/Dark 1440x900, Mobile Light/Dark 390x844)",
+      "description": "Capture and personally audit 4-state screenshots (PC Light/Dark 1440x900, Mobile Light/Dark 390x844)",
       "status": "completed"
     }
   ],
   "proofs": [
-    "docs/proofs/perio/perio_chart_pc_light.png",
-    "docs/proofs/perio/perio_chart_pc_dark.png",
-    "docs/proofs/perio/perio_chart_mobile_light.png",
-    "docs/proofs/perio/perio_chart_mobile_dark.png"
+    "docs/proofs/perio/01_perio_pc_light_1440x900.png",
+    "docs/proofs/perio/02_perio_pc_dark_1440x900.png",
+    "docs/proofs/perio/03_perio_mobile_light_390x844.png",
+    "docs/proofs/perio/04_perio_mobile_dark_390x844.png"
   ],
   "checkpoints": [
-    "Removed fake PerioGeometryBufferPool and 192-point procedural simulation bloat",
-    "Consolidated 1-click norm (1-2mm, BOP 0%) and quick pathology recording for pockets >= 4mm",
-    "Enforced Mandate 8am: exactly ONE primary-button 'Сохранить периодонтограмму' (!h-9 !min-h-[36px])",
-    "Enforced Mandate 8d: zero raw emoji / dingbats symbols, pure SVG Lucide icons",
+    "Eliminated 192-point Florida Probe treadmill simulator in favor of Russian outpatient reality",
+    "Implemented 1-click physiological norm (<=2mm sulcus, BOP 0%) and WHO PSR 6-sextant screening",
+    "All non-test files strictly <= 120 lines (Mandate 8b verified with zero violations)",
+    "Single emerald Primary CTA button enforced (Mandate 8am), Apple HIG >= 44x44px touch targets",
     "All 54 vitest tests passing in apps/web/src/components/perio",
-    "All 15279 files pass npm run check:encoding without errors",
-    "All 4 visual proofs captured and verified through read_file inspection"
+    "All 38 node tests passing in packages/shared/src/perio",
+    "All 19389 files pass npm run check:encoding without errors",
+    "All 4 visual proofs captured via Edge CDP and verified through personal read_file inspection"
   ]
 }

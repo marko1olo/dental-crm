@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Recall Badges, Cycle Tags & Action Buttons
+   ========================================================================== */
+
+.recall-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.recall-badge--upcoming { background: var(--info-bg); color: var(--info-fg); border: 1px solid var(--info-fg); }
+.recall-badge--due_now { background: var(--bad-bg); color: var(--bad-fg); border: 1px solid var(--bad-fg); }
+.recall-badge--overdue_30 { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-fg); }
+.recall-badge--overdue_90 { background: var(--bad-bg); color: var(--bad-fg); border: 1px solid var(--bad-fg); font-weight: 800; }
+.recall-badge--completed { background: var(--rm-success-light); color: var(--rm-success); border: 1px solid var(--rm-success); }
+
+.recall-cycle-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: var(--rm-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	color: var(--rm-text-main);
+}
+
+.recall-actions-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.recall-action-btn {
+	min-height: 32px;
+	padding: 5px 10px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-action-btn:hover { background: var(--rm-surface-hover); border-color: var(--rm-text-muted); }
+.recall-action-btn--phone { color: var(--rm-primary); border-color: var(--rm-primary); }
+.recall-action-btn--whatsapp { color: var(--ok-fg); background: var(--ok-bg); border-color: var(--ok-fg); }
+.recall-action-btn--telegram { color: var(--info-fg); background: var(--info-bg); border-color: var(--info-fg); }
+.recall-action-btn--script { color: var(--rm-primary); background: var(--rm-primary-light); border-color: var(--rm-primary); }
+.recall-action-btn--book { color: var(--paper-strong); background: var(--rm-primary); border-color: var(--rm-primary); }
+.recall-action-btn--book:hover { background: var(--rm-primary-hover); }
+
+@media (pointer: coarse) {
+	.recall-action-btn {
+		min-height: 44px;
+	}
+}

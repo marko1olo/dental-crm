@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Recall Task Calls Stream & Cards
+   ========================================================================== */
+
+.recall-task-calls-stream {
+	padding: 0 24px 24px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.recall-task-call-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-surface);
+	transition: all var(--rm-transition, 0.15s ease);
+	gap: 16px;
+}
+.recall-task-call-card:hover {
+	border-color: var(--teal);
+	box-shadow: var(--shadow-sm);
+}
+
+.recall-task-call-card__info {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.recall-task-call-card__title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.recall-task-call-card__name {
+	font-weight: 800;
+	font-size: 1rem;
+	color: var(--ink);
+}
+
+.recall-task-call-card__phone-link {
+	font-size: 0.8125rem;
+	color: var(--teal);
+	text-decoration: none;
+	font-weight: 600;
+}
+.recall-task-call-card__phone-link:hover { text-decoration: underline; }
+
+.recall-task-call-card__meta-row {
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+
+.recall-task-call-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.recall-badge--task-type {
+	background-color: var(--teal-surface);
+	color: var(--teal);
+	font-weight: 700;
+}
+
+@media (max-width: 768px) {
+	.recall-task-calls-stream {
+		padding: 0 12px 20px 12px !important;
+		gap: 10px !important;
+	}
+	.recall-task-call-card {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 12px !important;
+		padding: 12px !important;
+	}
+	.recall-task-call-card__actions {
+		display: grid !important;
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 8px !important;
+		width: 100% !important;
+	}
+	.recall-task-call-card__actions .recall-action-btn--book {
+		grid-column: 1 / -1 !important;
+		width: 100% !important;
+	}
+	.recall-task-call-card__actions .recall-action-btn {
+		width: 100% !important;
+		min-height: 44px !important;
+		justify-content: center !important;
+	}
+}

@@ -1,29 +1,16 @@
-import type { ClinicalTaskCallType } from "@dental/shared";
 import type {
 	ClinicalRecallTriggerType,
 	RecallChannel,
 	RecallContactStatus,
 	RecallCycleType,
-	RecallPeriodFilter,
 	RecallUrgencyStatus,
-	CanonicalRecallWorkflowStatus,
 } from "./recallCycleTypes";
+import type { ClinicalTaskCallType } from "@dental/shared";
+import type { RecallChannelType, RecallUrgencyLevel } from "./recallFilterTypes";
 
-export type RecallCategoryFilter =
-	| "all"
-	| "hygiene_6m"
-	| "implants_1y"
-	| "orthodontics"
-	| "endodontics";
-
-export type RecallUrgencyLevel =
-	| "upcoming"
-	| "due_now"
-	| "overdue_30"
-	| "overdue_90"
-	| "completed";
-
-export type RecallChannelType = "whatsapp" | "telegram" | "sms" | "phone";
+export * from "./recallFilterTypes";
+export * from "./recallMetricsTypes";
+export * from "./recallTaskCallClassifier";
 
 export interface PatientRecallItem {
 	readonly id: string;
@@ -68,7 +55,7 @@ export interface PatientRecallRecord {
 	readonly attendingDoctorId?: string | undefined;
 	readonly attendingDoctorName?: string | undefined;
 	readonly implantSurgeryDate?: string | undefined;
-	readonly implantMilestoneMonth?: number | undefined; // 1, 3, 6, 12
+	readonly implantMilestoneMonth?: number | undefined;
 	readonly implantsCount?: number | undefined;
 	readonly orthoDeviceType?: ("braces" | "aligners" | "retainer") | undefined;
 	readonly hasBraces?: boolean | undefined;
@@ -95,26 +82,6 @@ export interface PatientRecallRecord {
 
 export type PatientRecallCandidate = PatientRecallRecord;
 
-export function determineTaskCallTypeForCandidate(c: PatientRecallRecord): ClinicalTaskCallType {
-	if (c.taskCallType) return c.taskCallType;
-	if (c.implantSurgeryDate || (c.clinicalNotes && /удалени|имплант|операци/i.test(c.clinicalNotes))) {
-		return "learn_health";
-	}
-	if (c.clinicalNotes && /план лечения не начат/i.test(c.clinicalNotes)) {
-		return "medplan_not_started";
-	}
-	if (c.clinicalNotes && /план лечения не закончен/i.test(c.clinicalNotes)) {
-		return "medplan_not_finished";
-	}
-	if (c.status === "scheduled") {
-		return "appointment_confirmation";
-	}
-	if (c.status === "declined") {
-		return "appointment_refuse";
-	}
-	return "preventive_inspection";
-}
-
 export interface RecallTemplateVariables {
 	readonly patientFirstName: string;
 	readonly patientFullName: string;
@@ -127,41 +94,3 @@ export interface RecallTemplateVariables {
 	readonly bookingUrl: string;
 	readonly phone: string;
 }
-
-export interface RecallFilterOptions {
-	readonly status?: (RecallContactStatus | "all") | undefined;
-	readonly canonicalStatus?: (CanonicalRecallWorkflowStatus | "all") | undefined;
-	readonly urgencyStatus?: (RecallUrgencyStatus | "all") | undefined;
-	readonly cycleType?: (RecallCycleType | "all") | undefined;
-	readonly triggerType?: (ClinicalRecallTriggerType | "all") | undefined;
-	readonly doctorId?: (string | "all") | undefined;
-	readonly period?: (RecallPeriodFilter) | undefined;
-	readonly referenceDate?: (Date | string) | undefined;
-	readonly searchQuery?: string | undefined;
-	readonly sortBy?: ("daysOverdue" | "dueDate" | "fullName" | "lastVisitDate" | "ltv") | undefined;
-	readonly sortDirection?: ("asc" | "desc") | undefined;
-	readonly includeArchived?: boolean | undefined;
-}
-
-export interface RecallMetrics {
-	readonly totalCandidates: number;
-	readonly upcomingCount: number;
-	readonly dueNowCount: number;
-	readonly overdue30Count: number;
-	readonly overdue90Count: number;
-	readonly completedCount: number;
-	readonly contactedCount: number;
-	readonly scheduledCount: number;
-	readonly declinedCount: number;
-	readonly conversionRatePercent: number;
-	readonly contactResponseRatePercent: number;
-	readonly retentionRatePercent: number;
-	readonly totalHistoricalLtvRub: number;
-	readonly averageRecallLtvRub: number;
-	readonly byCycle: Record<RecallCycleType, number>;
-	readonly overdueEstimatedLostRevenueRub: number;
-	readonly retainedRevenueRub: number;
-}
-
-export const DEFAULT_RECALL_CANDIDATES: readonly PatientRecallRecord[] = [];
-

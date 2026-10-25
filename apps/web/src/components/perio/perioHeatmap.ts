@@ -12,27 +12,15 @@
  * - > 6 mm           -> 'error' (severe deep pocket, rose / red)
  */
 
-export type HeatmapTone =
-	| "neutral"
-	| "success"
-	| "warning-low"
-	| "warning-high"
-	| "error"
-	| "critical";
+export type HeatmapTone = "neutral" | "success" | "warning-low" | "warning-high" | "error" | "critical";
 
 export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
-	neutral:
-		"bg-gray-100 ring-gray-300 text-gray-700 dark:bg-gray-700/70 dark:ring-gray-500 dark:text-gray-200 border-gray-300 dark:border-gray-600",
-	success:
-		"bg-emerald-50 ring-emerald-400 text-emerald-800 dark:bg-emerald-900/50 dark:ring-emerald-500 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
-	"warning-low":
-		"bg-amber-50 ring-amber-400 text-amber-800 dark:bg-amber-900/50 dark:ring-amber-500 dark:text-amber-200 border-amber-300 dark:border-amber-700",
-	"warning-high":
-		"bg-orange-50 ring-orange-500 text-orange-800 dark:bg-orange-900/50 dark:ring-orange-500 dark:text-orange-200 border-orange-300 dark:border-orange-700",
-	error:
-		"bg-rose-50 ring-rose-400 text-rose-800 dark:bg-rose-900/50 dark:ring-rose-500 dark:text-rose-200 border-rose-300 dark:border-rose-700",
-	critical:
-		"bg-red-50 ring-red-500 text-red-900 dark:bg-red-950/70 dark:ring-red-500 dark:text-red-200 border-red-400 dark:border-red-700 font-black shadow-xs",
+	neutral: "bg-gray-100 ring-gray-300 text-gray-700 dark:bg-gray-700/70 dark:ring-gray-500 dark:text-gray-200 border-gray-300 dark:border-gray-600",
+	success: "bg-emerald-50 ring-emerald-400 text-emerald-800 dark:bg-emerald-900/50 dark:ring-emerald-500 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
+	"warning-low": "bg-amber-50 ring-amber-400 text-amber-800 dark:bg-amber-900/50 dark:ring-amber-500 dark:text-amber-200 border-amber-300 dark:border-amber-700",
+	"warning-high": "bg-orange-50 ring-orange-500 text-orange-800 dark:bg-orange-900/50 dark:ring-orange-500 dark:text-orange-200 border-orange-300 dark:border-orange-700",
+	error: "bg-rose-50 ring-rose-400 text-rose-800 dark:bg-rose-900/50 dark:ring-rose-500 dark:text-rose-200 border-rose-300 dark:border-rose-700",
+	critical: "bg-red-50 ring-red-500 text-red-900 dark:bg-red-950/70 dark:ring-red-500 dark:text-red-200 border-red-400 dark:border-red-700 font-black shadow-xs",
 };
 
 export const TONE_TO_HEX: Record<HeatmapTone, string> = {

@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Patient Recall Modal Backdrop & Sizing (SSOT)
+   ========================================================================== */
+
+.recall-manager-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: var(--backdrop, color-mix(in srgb, var(--paper-strong) 40%, black 60%));
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.recall-manager-container {
+	--rm-bg: var(--paper);
+	--rm-surface: var(--paper-strong);
+	--rm-surface-hover: var(--paper-soft);
+	--rm-border: var(--line);
+	--rm-border-focus: var(--teal);
+	--rm-text-main: var(--ink);
+	--rm-text-muted: var(--muted);
+	--rm-text-subtle: var(--muted);
+	--rm-primary: var(--teal);
+	--rm-primary-hover: var(--teal-dark, var(--teal));
+	--rm-primary-light: var(--teal-surface, var(--paper-soft));
+	--rm-success: var(--ok-fg);
+	--rm-success-light: var(--ok-bg);
+	--rm-warning: var(--warn-fg);
+	--rm-warning-light: var(--warn-bg);
+	--rm-danger: var(--bad-fg);
+	--rm-danger-light: var(--bad-bg);
+	--rm-info: var(--info-fg);
+	--rm-info-light: var(--info-bg);
+	--rm-radius-lg: 14px;
+	--rm-radius-md: 10px;
+	--rm-radius-sm: 8px;
+	--rm-shadow: var(--shadow-3);
+	--rm-transition: 0.15s ease;
+
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-lg);
+	box-shadow: var(--rm-shadow);
+	width: 100%;
+	max-width: 1240px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.recall-empty-state {
+	text-align: center;
+	padding: 48px 16px;
+	color: var(--rm-text-muted);
+}
+.recall-empty-icon { color: var(--teal); margin: 0 auto 12px; }
+.recall-empty-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	margin: 0 0 6px 0;
+}
+.recall-empty-text {
+	font-size: 0.875rem;
+	color: var(--rm-text-muted);
+	max-width: 420px;
+	margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+	.recall-manager-modal-backdrop {
+		padding: 0 !important;
+		align-items: stretch !important;
+		justify-content: flex-start !important;
+	}
+	.recall-manager-container {
+		width: 100vw !important;
+		max-width: 100vw !important;
+		height: 100vh !important;
+		max-height: 100vh !important;
+		border-radius: 0 !important;
+		border: none !important;
+		overflow-x: hidden !important;
+	}
+}

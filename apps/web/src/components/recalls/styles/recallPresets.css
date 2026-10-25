@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Recall Solo Presets Toolbar & Quick Selectors
+   ========================================================================== */
+
+.recall-solo-presets {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 20px;
+	background: var(--rm-surface);
+	border-bottom: 1px solid var(--rm-border);
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+.recall-solo-presets::-webkit-scrollbar { display: none; }
+
+.recall-preset-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-preset-btn:hover {
+	border-color: var(--teal);
+	color: var(--rm-text-main);
+}
+.recall-preset-btn.active {
+	background: var(--teal-surface, var(--rm-surface-hover));
+	border-color: var(--teal);
+	color: var(--teal);
+	font-weight: 700;
+}
+.recall-preset-label-short { display: none; }
+.recall-preset-label-full { display: inline; }
+
+@media (max-width: 768px) {
+	.recall-preset-label-full { display: none !important; }
+	.recall-preset-label-short { display: inline !important; }
+	.recall-solo-presets {
+		padding: 8px 12px !important;
+		gap: 6px !important;
+		overflow-x: auto !important;
+		flex-wrap: nowrap !important;
+		justify-content: flex-start !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+	.recall-preset-btn {
+		min-height: 44px !important;
+		padding: 6px 10px !important;
+		font-size: 0.8125rem !important;
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+	}
+}

@@ -17,6 +17,13 @@ export interface PatientRecallsKanbanViewProps {
 	readonly onPostpone?: ((candidate: PatientRecallRecord, duration: "2_weeks" | "1_month") => void) | undefined;
 }
 
+const MOBILE_STATUS_LABELS: Record<CanonicalRecallWorkflowStatus, string> = {
+	not_called: "Новые",
+	reached: "Дозвон",
+	declined: "Отказ",
+	scheduled: "Запись",
+};
+
 export const PatientRecallsKanbanView: React.FC<PatientRecallsKanbanViewProps> = ({
 	kanbanGroups,
 	onBook,
@@ -36,7 +43,6 @@ export const PatientRecallsKanbanView: React.FC<PatientRecallsKanbanViewProps> =
 			{/* Apple HIG 1-Row Mobile Segmented Chip Bar */}
 			<div className="recall-kanban-mobile-tabs" role="tablist" aria-label="Когорты канбан-доски">
 				{columns.map((colKey) => {
-					const colConfig = CANONICAL_RECALL_STATUS_CONFIG[colKey];
 					const count = kanbanGroups[colKey]?.length ?? 0;
 					const isActive = activeMobileColumn === colKey;
 					return (
@@ -49,7 +55,7 @@ export const PatientRecallsKanbanView: React.FC<PatientRecallsKanbanViewProps> =
 							data-testid={`kanban-mobile-tab-${colKey}`}
 							onClick={() => setActiveMobileColumn(colKey)}
 						>
-							<span>{colConfig.label}</span>
+							<span className="recall-kanban-mobile-tab-text">{MOBILE_STATUS_LABELS[colKey]}</span>
 							<span className="recall-kanban-mobile-tab-count">{count}</span>
 						</button>
 					);

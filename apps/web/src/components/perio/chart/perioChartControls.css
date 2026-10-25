@@ -1,0 +1,105 @@
+/**
+ * apps/web/src/components/perio/chart/perioChartControls.css
+ *
+ * Touch Ergonomics, Keypad Numpad & Quadrant Bar for Perio Charting.
+ * Strict Vanilla CSS Design Tokens, 44px-48px Touch Targets.
+ * Mandate 8b: <= 120 lines.
+ */
+
+.perio-touch-btn {
+	min-height: 48px;
+	min-width: 48px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	font-weight: 600;
+	touch-action: manipulation;
+	user-select: none;
+	transition: transform 120ms ease, background-color 150ms ease, opacity 150ms ease;
+}
+
+.perio-touch-btn:active {
+	transform: scale(0.97);
+}
+
+.perio-numpad-tile {
+	min-height: 48px;
+	min-width: 48px;
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-mono, monospace);
+	font-size: 1.15rem;
+	font-weight: 800;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	transition: background-color 100ms ease, border-color 100ms ease;
+}
+
+.perio-numpad-tile:active {
+	background: var(--paper-strong);
+	border-color: var(--teal, var(--accent));
+}
+
+.perio-quadrant-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.perio-quadrant-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.perio-quadrant-chip {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	color: var(--muted);
+	transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.perio-quadrant-chip[data-active="true"] {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--teal, var(--accent));
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.perio-teeth-grid-8 {
+	display: grid;
+	grid-template-columns: repeat(8, minmax(0, 1fr));
+	gap: 4px;
+	width: 100%;
+}
+
+.perio-tooth-cell {
+	min-height: 48px;
+	border-radius: 10px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	cursor: pointer;
+}
+
+:root[data-theme="dark"] .perio-quadrant-chip[data-active="true"] {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}

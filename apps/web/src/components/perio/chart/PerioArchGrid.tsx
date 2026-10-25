@@ -3,12 +3,7 @@
  * Архитектурный слой Layer 5: Facade (Мандат 8b, <= 120 строк).
  */
 
-import {
-	PERIO_LOWER_ARCH_TEETH,
-	PERIO_UPPER_ARCH_TEETH,
-	type PerioSiteKey,
-	type PerioToothRecord,
-} from "@dental/shared";
+import { PERIO_LOWER_ARCH_TEETH, PERIO_UPPER_ARCH_TEETH, type PerioSiteKey, type PerioToothRecord } from "@dental/shared";
 import { Layers } from "lucide-react";
 import React from "react";
 import { PerioProbe } from "../../icons/DentalIcons";

@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Recall Table View & Responsive Rows
+   ========================================================================== */
+
+.recall-content-area {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	box-sizing: border-box;
+	min-height: 300px;
+}
+
+.recall-table-wrap {
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	overflow: hidden;
+	background: var(--rm-bg);
+}
+
+.recall-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.875rem;
+}
+.recall-table th {
+	background: var(--rm-surface);
+	padding: 10px 14px;
+	font-weight: 700;
+	color: var(--rm-text-muted);
+	border-bottom: 1px solid var(--rm-border);
+	white-space: nowrap;
+	font-size: 0.8125rem;
+}
+.recall-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--rm-border);
+	vertical-align: middle;
+}
+.recall-table tr:last-child td { border-bottom: none; }
+.recall-table tr:hover td { background: var(--rm-surface-hover); }
+
+.recall-patient-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.recall-patient-name {
+	font-weight: 700;
+	color: var(--rm-text-main);
+	font-size: 0.9375rem;
+}
+.recall-patient-phone {
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+}
+
+@media (max-width: 768px) {
+	.recall-table thead { display: none; }
+	.recall-table,
+	.recall-table tbody,
+	.recall-table tr,
+	.recall-table td {
+		display: block;
+		width: 100%;
+		box-sizing: border-box;
+	}
+	.recall-table tr {
+		margin-bottom: 12px;
+		border: 1px solid var(--rm-border);
+		border-radius: var(--rm-radius-sm);
+		background: var(--rm-bg);
+	}
+	.recall-table td {
+		border-bottom: 1px solid var(--rm-surface);
+		padding: 10px 12px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.recall-actions-cell {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+		width: 100%;
+	}
+	.recall-actions-cell .recall-action-btn { width: 100%; min-height: 44px; }
+}

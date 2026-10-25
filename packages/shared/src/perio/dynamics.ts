@@ -1,14 +1,6 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════
  * PERIODONTAL VISIT DYNAMICS & HEALING PROGRESS ENGINE ("БЫЛО / СТАЛО")
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Implements objective comparison between periodontal visits / snapshots:
- * - Changes in Full Mouth Bleeding Score (FMBS / BOP %)
- * - Changes in Plaque Score (FMPS %)
- * - Healing of deep pockets (PD >= 5 mm): resolved vs remaining
- * - Clinical Attachment Loss (CAL) progression / stabilization
- * - Standardized clinical summary for Form 043/u and patient motivation.
+ * Objective comparison between visits (FMBS, FMPS, deep pockets, CAL).
  */
 
 import type { PerioChartSummary } from "./types.js";

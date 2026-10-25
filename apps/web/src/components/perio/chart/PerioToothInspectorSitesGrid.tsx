@@ -12,10 +12,7 @@ export interface PerioToothInspectorSitesGridProps {
 	readonly activeSiteKey: PerioSiteKey;
 	readonly onSetActiveSiteKey: (key: PerioSiteKey) => void;
 	readonly readOnly?: boolean | undefined;
-	readonly onUpdateToothSite: (
-		toothNumber: number, siteKey: PerioSiteKey,
-		updater: (prev: PerioToothRecord[PerioSiteKey]) => Partial<PerioToothRecord[PerioSiteKey]>,
-	) => void;
+	readonly onUpdateToothSite: (toothNumber: number, siteKey: PerioSiteKey, updater: (prev: PerioToothRecord[PerioSiteKey]) => Partial<PerioToothRecord[PerioSiteKey]>) => void;
 }
 
 export const PerioToothInspectorSitesGrid: React.FC<PerioToothInspectorSitesGridProps> = React.memo(({

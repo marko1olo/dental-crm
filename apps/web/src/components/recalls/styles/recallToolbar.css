@@ -1,0 +1,115 @@
+/* ==========================================================================
+   Recall Registry Toolbar & Filters
+   ========================================================================== */
+
+.recall-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px 20px;
+	background: var(--rm-surface);
+	border-bottom: 1px solid var(--rm-border);
+	flex-shrink: 0;
+}
+.recall-toolbar-top {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+.recall-search-input-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 220px;
+}
+.recall-search-input {
+	width: 100%;
+	min-height: 36px;
+	padding: 6px 12px 6px 38px !important;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.875rem;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+}
+.recall-search-input:focus {
+	outline: none;
+	border-color: var(--rm-border-focus);
+	box-shadow: 0 0 0 2px var(--rm-primary-light);
+}
+.recall-search-icon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--rm-text-subtle);
+	pointer-events: none;
+}
+.recall-filter-select,
+.recall-cycle-select {
+	min-height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+.recall-status-chips {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+.recall-status-chips::-webkit-scrollbar { display: none; }
+.recall-chip {
+	min-height: 32px;
+	padding: 4px 12px;
+	border-radius: 9999px;
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+.recall-chip:hover { background: var(--rm-surface-hover); color: var(--rm-text-main); }
+.recall-chip.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: var(--paper-strong);
+}
+.recall-chip-count {
+	font-size: 0.75rem;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--rm-surface);
+	color: var(--rm-text-muted);
+}
+.recall-chip.active .recall-chip-count {
+	background: var(--paper-strong);
+	color: var(--rm-primary);
+}
+@media (max-width: 768px) {
+	.recall-toolbar { padding: 8px 12px; gap: 8px; }
+	.recall-toolbar-top { gap: 6px; }
+	.recall-search-input-wrap { min-width: 100%; }
+}
+@media (pointer: coarse) {
+	.recall-chip,
+	.recall-cycle-chip { min-height: 44px; }
+}

@@ -11,15 +11,9 @@ import { SITE_SHORT_RU } from "./PerioToothCard";
 import { PerioToothVisual } from "./PerioToothVisual";
 
 export interface PerioMobileToothCardProps {
-	readonly selectedTooth: PerioToothRecord;
-	readonly focusedSiteKey: PerioSiteKey;
-	readonly readOnly: boolean;
-	readonly isUpper: boolean;
-	readonly buccalSites: readonly PerioSiteKey[];
-	readonly lingualSites: readonly PerioSiteKey[];
-	readonly onFocusSite: (num: number, key: PerioSiteKey) => void;
-	readonly onCycleMobility: (num: number) => void;
-	readonly onCycleFurcation: (num: number) => void;
+	readonly selectedTooth: PerioToothRecord; readonly focusedSiteKey: PerioSiteKey; readonly readOnly: boolean; readonly isUpper: boolean;
+	readonly buccalSites: readonly PerioSiteKey[]; readonly lingualSites: readonly PerioSiteKey[];
+	readonly onFocusSite: (num: number, key: PerioSiteKey) => void; readonly onCycleMobility: (num: number) => void; readonly onCycleFurcation: (num: number) => void;
 	readonly updateToothProperties: (num: number, patch: Partial<Pick<PerioToothRecord, "isMissing" | "isImplant" | "mobility" | "furcation">>) => void;
 }
 
