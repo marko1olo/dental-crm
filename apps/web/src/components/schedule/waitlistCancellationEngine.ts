@@ -197,14 +197,8 @@ export function generateWaitlistOfferMessage(params: {
     whoPhrase = `В клинике ${clinicNameStr}`;
   }
 
-  return `Здравствуйте, ${politeName}! ${whoPhrase} освободилось время ${dateWord} в ${timeStr}. Сможете подойти?`;
+  return `Здравствуйте, ${politeName}! ${whoPhrase} освободилось удобное время для визита: ${dateWord} в ${timeStr}. Сможете подойти?`;
 }
-
-/**
- * Backward-compatibility alias for generateWaitlistOfferMessage.
- * @deprecated Use generateWaitlistOfferMessage instead (Mandates 8ao, 8ap).
- */
-export const generate152FzWaitlistOfferMessage = generateWaitlistOfferMessage;
 
 /**
  * Detects waitlist urgency from explicit field, priorityLevel, or natural text.

@@ -103,14 +103,8 @@ export function generateSlotOfferMessage(params: {
   const who = docSalutation && clinicStr ? `В клинике ${clinicStr} у ${docSalutation}` : docSalutation ? `У ${docSalutation}` : clinicStr ? `В клинике ${clinicStr}` : "В клинике";
   const dur = params.durationMinutes ? ` (${params.durationMinutes} мин)` : "";
 
-  return `Здравствуйте, ${politeName}! ${who} освободилось время ${dateWord} в ${timeStr}${dur}. Сможете подойти?`;
+  return `Здравствуйте, ${politeName}! ${who} освободилось удобное время для визита: ${dateWord} в ${timeStr}${dur}. Сможете подойти?`;
 }
-
-/**
- * Backward-compatibility alias for generateSlotOfferMessage.
- * @deprecated Use generateSlotOfferMessage instead (Mandates 8ao, 8ap).
- */
-export const generate152FzSlotOfferMessage = generateSlotOfferMessage;
 
 export function generateWhatsAppLink(phone: string | null | undefined, message: string): string {
   if (!phone) return "";

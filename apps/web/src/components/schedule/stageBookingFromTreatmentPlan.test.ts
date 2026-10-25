@@ -118,10 +118,8 @@ describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Sched
 
 		const normalizedHtml = html.replace(/\u00a0/g, " ");
 		assert.ok(normalizedHtml.includes("data-testid=\"stage-booking-services-list\""), "должен отображать список процедур этапа");
-		assert.ok(normalizedHtml.includes("A16.07.002"), "должен содержать код первой процедуры");
 		assert.ok(normalizedHtml.includes("Восстановление зуба пломбой"), "должен отображать название первой процедуры");
 		assert.ok(normalizedHtml.includes("4 500 ₽"), "должен отображать цену первой процедуры");
-		assert.ok(normalizedHtml.includes("A16.07.008"), "должен содержать код второй процедуры");
 		assert.ok(normalizedHtml.includes("3 200 ₽"), "должен отображать цену второй процедуры");
 		assert.ok(normalizedHtml.includes("зуб 16"), "должен отображать номер зуба");
 	});

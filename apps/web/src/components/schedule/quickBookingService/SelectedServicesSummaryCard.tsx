@@ -75,23 +75,28 @@ export function SelectedServicesSummaryCard({
                 "Стоматологическая процедура";
               const tooth = svc.toothNumber ?? svc.toothCode ?? svc.toothFdi;
               const price = svc.priceRub ?? svc.unitPriceRub ?? svc.price;
+              const duration =
+                (svc as { durationMinutes?: number; duration?: number; estimatedDurationMinutes?: number })
+                  .durationMinutes ??
+                (svc as { duration?: number }).duration ??
+                (svc as { estimatedDurationMinutes?: number }).estimatedDurationMinutes;
               return (
                 <div
                   key={svc.id || idx}
                   className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]/40 gap-2"
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    {svc.code804n && (
-                      <span className="font-mono text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]/50 shrink-0">
-                        {svc.code804n}
-                      </span>
-                    )}
                     <span className="truncate font-medium">{svcName}</span>
                     {tooth && (
                       <span className="shrink-0 text-[11px] text-[var(--teal)] font-semibold">
                         (зуб {tooth})
                       </span>
                     )}
+                    {duration ? (
+                      <span className="shrink-0 text-[11px] text-[var(--muted)] font-medium">
+                        · {duration} мин
+                      </span>
+                    ) : null}
                   </div>
                   {price !== undefined && price !== null && (
                     <span className="shrink-0 font-semibold text-[var(--ink)] whitespace-nowrap">

@@ -13,7 +13,6 @@ import {
   filterWaitlistCandidates,
   formatDoctorSalutation,
   generateWaitlistOfferMessage,
-  generate152FzWaitlistOfferMessage,
   scoreWaitlistCandidate,
 } from "../waitlistCancellationEngine";
 import { WaitlistDrawer } from "../WaitlistDrawer";
@@ -56,15 +55,6 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
         startsAt: "2026-09-25T15:30:00.000Z",
         clinicName: "Стоматология DENTE",
       });
-
-      // Backward-compat alias check
-      const aliasMsg = generate152FzWaitlistOfferMessage({
-        patientName: "Иванов Иван Иванович",
-        doctorName: "Д-р Ковалев Сергей Петрович",
-        startsAt: "2026-09-25T15:30:00.000Z",
-        clinicName: "Стоматология DENTE",
-      });
-      assert.equal(message, aliasMsg);
 
       assert.ok(
         message.includes("Здравствуйте, Иван Иванович!"),

@@ -16,7 +16,6 @@ import {
   extractPoliteName,
   formatDoctorSalutation,
   generateSlotOfferMessage,
-  generate152FzSlotOfferMessage,
   generateWhatsAppLink,
   getTimeOfDayCategory,
   matchWaitlistCandidatesForSlot,
@@ -144,16 +143,6 @@ describe("Smart Slot Recovery Engine & Popover (Priorities & 152-FZ)", () => {
         startsAt: "2026-10-06T10:00:00.000Z",
         durationMinutes: 60,
       });
-
-      // Backward-compat alias check
-      const aliasMsg = generate152FzSlotOfferMessage({
-        patientName: "Волков Сергей Николаевич",
-        doctorName: "Д-р Смирнов А.П.",
-        clinicName: "DENTE",
-        startsAt: "2026-10-06T10:00:00.000Z",
-        durationMinutes: 60,
-      });
-      assert.equal(msg, aliasMsg);
 
       assert.ok(
         msg.includes("Здравствуйте, Сергей Николаевич!"),

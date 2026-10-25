@@ -79,16 +79,18 @@ async function captureProof(page, filename) {
     throw new Error(`Screenshot ${filename} is too small: ${sizeKb} KB (< 25 KB)`);
   }
 
-  // Synchronize legacy files
+  // Synchronize legacy and numbered files
   const legacyMap = {
-    "schedule_pc_light_1440x900.png": "pc_schedule_light_1440x900.png",
-    "schedule_pc_dark_1440x900.png": "pc_schedule_dark_1440x900.png",
-    "schedule_mobile_light_390x844.png": "mobile_schedule_light_390x844.png",
-    "schedule_mobile_dark_390x844.png": "mobile_schedule_dark_390x844.png",
+    "schedule_pc_light_1440x900.png": ["pc_schedule_light_1440x900.png", "01_schedule_pc_light.png"],
+    "schedule_pc_dark_1440x900.png": ["pc_schedule_dark_1440x900.png", "02_schedule_pc_dark.png"],
+    "schedule_mobile_light_390x844.png": ["mobile_schedule_light_390x844.png", "03_schedule_mobile_light.png"],
+    "schedule_mobile_dark_390x844.png": ["mobile_schedule_dark_390x844.png", "04_schedule_mobile_dark.png"],
   };
   if (legacyMap[filename]) {
-    fs.copyFileSync(targetPath, path.join(PROOF_DIR, legacyMap[filename]));
-    fs.copyFileSync(targetPath, path.join(LEGACY_PROOF_DIR, legacyMap[filename]));
+    for (const targetName of legacyMap[filename]) {
+      fs.copyFileSync(targetPath, path.join(PROOF_DIR, targetName));
+      fs.copyFileSync(targetPath, path.join(LEGACY_PROOF_DIR, targetName));
+    }
   }
 
   return { filename, sizeKb, hash };
