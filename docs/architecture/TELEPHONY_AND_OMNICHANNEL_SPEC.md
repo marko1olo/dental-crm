@@ -42,37 +42,35 @@
 | `PatientOmnichannelHubModal` | `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx` | Центральный омниканальный хаб сообщений, лояльности и динамических платежей СБП. |
 | `SbpPaymentQrModal` | `apps/web/src/components/messaging/SbpPaymentQrModal.tsx` | Экспресс-генерация QR-кода СБП с фискальным чеком, покрытием семейным депозитом и копированием ссылки. |
 | `TelegramBotIntegrationModal` | `apps/web/src/components/chat/TelegramBotIntegrationModal.tsx` | Модальное окно Telegram-бота с неблокирующим мягким фолбэком и шаблонами напоминаний. |
+| `IncomingCallPopup` | `apps/web/src/components/telephony/IncomingCallPopup.tsx` | Верхняя амбиентная капсула вызова (Top Ambient Event Capsule) по центру вверху экрана без перекрытия рабочей зоны врача. |
+| `OmnichannelChatView` | `apps/web/src/components/omnichannel_chat/OmnichannelChatView.tsx` | Единый канонический модуль омниканального чата (WhatsApp, Telegram, SMS, VK) с декомпозицией на модули <= 120 строк. |
 
 ---
 
 ## 3. Доказательства работоспособности телефонии (Red Team 4-State Verification)
 
-Реальные скриншоты сняты в живом браузере Chromium (Playwright) на боевом инстансе `http://127.0.0.1:5173/?demo=true`:
+Реальные скриншоты сняты в живом браузере Chromium (Playwright) на боевом инстансе `http://127.0.0.1:5173/?telephony=1`:
 
-1. ☀️ **PC Light (1440×900)**: `docs/screenshots/telephony/telephony_incoming_call_pc_light.png`
-   - Администраторский входящий звонок: карточка пациента Смирновой А.С., баланс счёта (+15 000 ₽), история визитов, пассивный алерт аллергии, ровно 1 Primary CTA «Записать на приём».
-2. 🌙 **PC Dark (1440×900)**: `docs/screenshots/telephony/telephony_incoming_call_pc_dark.png`
-   - Журнал вызовов и боковая шторка звонящего в тёмной теме, медицинские предупреждения, экстренная запись Cito.
-3. 📱 **Mobile Light (390×844)**: `docs/screenshots/telephony/telephony_incoming_call_mobile_light.png`
-   - Мобильная капсула входящего вызова: центрирование Dynamic Island, имя «Сми...», таймер 00:01, кнопка ответа, сброса и закрытия, отсутствие горизонтального среза.
-4. 📱 **Mobile Dark (390×844)**: `docs/screenshots/telephony/telephony_incoming_call_mobile_dark.png`
-   - Мобильная карточка звонящего в тёмной теме: нативный Bottom Sheet, крупный тач-таргет $\ge 44\text{px}$, защита Home Indicator.
+1. ☀️ **PC Light (1440×900)**: `docs/proofs/telephony/01_incoming_call_pc_light.png`
+   - Верхняя амбиентная капсула по центру вверху экрана над живым расписанием на 2 кресла: ФИО звонящего «Смирнова Анна Сергеевна», статус «ПЕРВИЧНЫЙ», «Аванс: +15 000 ₽», бейдж «⚠️ Аллергия: На пенициллин», 1 Primary CTA «Записать», Secondary «Перезвонить», «Карта».
+2. 🌙 **PC Dark (1440×900)**: `docs/proofs/telephony/02_incoming_call_pc_dark.png`
+   - Глубокий темный глассморфизм капсулы, высокая контрастность текста, отсутствие слепящих белых пятен.
+3. 📱 **Mobile Light (390×844)**: `docs/proofs/telephony/03_incoming_call_mobile_light.png`
+   - Нативный iOS Top Sheet на экране смартфона: имя без срезаний, телефон крупно, сенсорный минимум кнопок $\ge 44\text{px}$, естественная зона большого пальца.
+4. 📱 **Mobile Dark (390×844)**: `docs/proofs/telephony/04_incoming_call_mobile_dark.png`
+   - Мобильная капсула входящего звонка в ночной теме с поддержкой Dynamic Island Safe Area.
 
 ---
 
 ## 4. Омниканальный чат и СБП платежи (Red Team 4-State Verification)
 
-Реальные скриншоты сняты в живом браузере Chromium (Playwright) на боевом инстансе `http://127.0.0.1:5173/#communications`:
+Реальные скриншоты сняты в живом браузере Chromium (Playwright) на боевом инстансе `http://127.0.0.1:5173/?omnichannel=1`:
 
-1. ☀️ **PC Light (1440×900)**:
-   - `docs/proofs/omnichannel_chat/01_omnichannel_whatsapp_panel_pc_light_1440.png`: WhatsApp панель чата с пациентом Смирновым А.В., быстрыми шаблонами с клинической памяткой, вложением файлов до 16 МБ (Paperclip $\ge 44\times 44\text{px}$) и неблокирующей кнопкой отправки (Мандат 8e).
-   - `docs/proofs/omnichannel_chat/02_omnichannel_operator_desk_pc_light_1440.png`: Пульт оператора ботов (Telegram, ВКонтакте, WhatsApp, MAX) с фильтрацией диалогов и перехватом управления.
-   - `docs/proofs/omnichannel_chat/02b_omnichannel_hub_modal_pc_light_1440.png`: Омниканальный центр сообщений и лояльности, стрим сообщений, кнопка «Выставить счет СБП» и санированный футер медицинской тайны.
-2. 🌙 **PC Dark (1440×900)**:
-   - `docs/proofs/omnichannel_chat/03_omnichannel_whatsapp_panel_pc_dark_1440.png`: WhatsApp панель в темной теме `#0b1118` с высокими контрастами, статусами доставки (✓✓) и чипами каналов.
-   - `docs/proofs/omnichannel_chat/04_omnichannel_operator_desk_pc_dark_1440.png`: Пульт оператора в темной теме с бейджами каналов и быстрыми ответами.
-   - `docs/proofs/omnichannel_chat/04b_omnichannel_hub_modal_pc_dark_1440.png`: Омниканальный модальный хаб в глубокой ночной теме.
-3. 📱 **Mobile Light (390×844)**:
-   - `docs/proofs/omnichannel_chat/05_omnichannel_mobile_light_390.png`: Суверенный мобильный мессенджер Apple HIG (iPhone 14/15 390×844), сгруппированные карточки диалогов с бейджами WhatsApp/Telegram, чипы фильтрации каналов, $0\text{px}$ горизонтального дрифта, тач-таргеты $\ge 44\times 44\text{px}$.
-4. 🌙 **Mobile Dark (390×844)**:
-   - `docs/proofs/omnichannel_chat/06_omnichannel_mobile_dark_390.png`: Мобильный мессенджер в темной теме с нативным нижним таббаром Safe Area.
+1. ☀️ **PC Light (1440×900)**: `docs/proofs/chat/01_omnichannel_chat_pc_light.png`
+   - Единый двухпанельный пульт диалогов: слева список переписок с бейджами (WhatsApp, Telegram, VK), чипы фильтрации, справа активный тред с историей сообщений, быстрыми шаблонами в 1 клик («Приём завтра в 14:00»), полем ввода и кнопкой отправки.
+2. 🌙 **PC Dark (1440×900)**: `docs/proofs/chat/02_omnichannel_chat_pc_dark.png`
+   - Темная тема рабочего места оператора `#0b1118`, четкие акцентные цвета каналов, читаемые баблы сообщений.
+3. 📱 **Mobile Light (390×844)**: `docs/proofs/chat/03_omnichannel_chat_mobile_light.png`
+   - Адаптивный мобильный мессенджер с Top Bar (кнопка «Назад», имя пациента, бейдж канала, 1 Primary CTA «Запись»), чистая лента чата, скроллируемые шаблоны и поле ввода.
+4. 📱 **Mobile Dark (390×844)**: `docs/proofs/chat/04_omnichannel_chat_mobile_dark.png`
+   - Мобильный интерфейс в темной теме Apple HIG с кнопками $\ge 44\times 44\text{px}$ и защитой области клавиатуры.

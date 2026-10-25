@@ -23,7 +23,7 @@ export function OmnichannelActiveChatHeader({
 				<button
 					type="button"
 					onClick={onBackToList}
-					className="sm:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] shrink-0"
+					className="sm:hidden min-h-[38px] min-w-[38px] p-1 flex items-center justify-center rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] shrink-0 cursor-pointer"
 					title="Назад ко всем диалогам"
 					data-testid="chat-mobile-back-btn"
 				>
@@ -32,7 +32,7 @@ export function OmnichannelActiveChatHeader({
 
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 min-w-0">
-						<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
+						<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate max-w-[170px] sm:max-w-none" title={conversation.patientName}>
 							{conversation.patientName}
 						</h3>
 						<OmnichannelChannelBadge channel={conversation.channel} />
@@ -60,19 +60,18 @@ export function OmnichannelActiveChatHeader({
 				<button
 					type="button"
 					onClick={onOpenCard}
-					className="secondary-button min-h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center gap-1"
+					className="secondary-button min-h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center gap-1 cursor-pointer"
 					title="Открыть карту пациента"
 					data-testid="chat-action-open-card"
 				>
 					<UserCheck size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span className="hidden sm:inline">Открыть карту</span>
-					<span className="sm:hidden text-[11px]">Карта</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onQuickBook}
-					className="primary-button min-h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center gap-1"
+					className="primary-button min-h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center gap-1 cursor-pointer"
 					title="Записать на приём"
 					data-testid="chat-action-quick-book"
 				>

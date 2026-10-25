@@ -14,6 +14,7 @@ import { renderDoctorWalletLaunchers } from "./administrative/DoctorWalletLaunch
 import { renderWarehouseMdlpLaunchers } from "./administrative/WarehouseMdlpLaunchers";
 import { renderDocumentsStandaloneLauncher } from "./administrative/DocumentsStandaloneLauncher";
 import { renderPricelistStandaloneLauncher } from "./administrative/PricelistStandaloneLauncher";
+import { renderOmnichannelAndTelephonyLauncher } from "./administrative/OmnichannelAndTelephonyStandaloneLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
@@ -52,9 +53,9 @@ export function renderSpecializedAdministrativeLaunchers(
 	const doctorWallet = renderDoctorWalletLaunchers();
 	if (doctorWallet) return doctorWallet;
 
-	// Омниканальный чат и телефония работают ТОЛЬКО в живом рабочем контуре
-	// (раздел «Обращения» → «Омниканальный чат», софтфон в шапке) — отдельная
-	// вакуумная страница-лаунчер с захардкоженным звонком снесена как Потёмкинская деревня.
+	// 6. Омниканальный чат и телефония
+	const omnichannelAndTelephony = renderOmnichannelAndTelephonyLauncher();
+	if (omnichannelAndTelephony) return omnichannelAndTelephony;
 
 	return null;
 }

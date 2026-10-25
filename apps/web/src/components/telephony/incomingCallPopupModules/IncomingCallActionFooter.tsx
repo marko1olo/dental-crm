@@ -29,7 +29,7 @@ export function IncomingCallActionFooter({ ctrl }: IncomingCallActionFooterProps
 			<button
 				type="button"
 				onClick={() => handleQuickBook("today_standard")}
-				className="primary-button flex-1 min-h-[44px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1"
+				className="primary-button flex-1 min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1 rounded-xl cursor-pointer"
 				title={isKnownPatient ? "Записать пациента на приём" : "+ Быстрая запись лида"}
 				data-testid="badge-action-book"
 			>
@@ -41,7 +41,7 @@ export function IncomingCallActionFooter({ ctrl }: IncomingCallActionFooterProps
 			<button
 				type="button"
 				onClick={handleCallback}
-				className="secondary-button min-h-[44px] px-2 sm:px-2.5 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1"
+				className="secondary-button min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-2 sm:px-2.5 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1 rounded-xl cursor-pointer"
 				title="Перезвонить пациенту (1 клик)"
 				data-testid="badge-action-callback"
 			>
@@ -52,7 +52,7 @@ export function IncomingCallActionFooter({ ctrl }: IncomingCallActionFooterProps
 			<button
 				type="button"
 				onClick={handleToggleCardDrawer}
-				className="secondary-button min-h-[44px] px-2 sm:px-2.5 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1"
+				className="secondary-button min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-2 sm:px-2.5 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1 rounded-xl cursor-pointer"
 				title={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 				aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 				data-testid="badge-action-card"
@@ -65,7 +65,7 @@ export function IncomingCallActionFooter({ ctrl }: IncomingCallActionFooterProps
 				<button
 					type="button"
 					onClick={() => setShowBadgeMoreMenu((prev) => !prev)}
-					className="icon-button min-h-[44px] min-w-[44px]"
+					className="icon-button min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px] sm:h-[34px] sm:w-[34px] rounded-xl cursor-pointer"
 					title="Дополнительные действия"
 					aria-label="Дополнительные действия"
 					data-testid="badge-more-menu-btn"

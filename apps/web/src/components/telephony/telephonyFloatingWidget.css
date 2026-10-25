@@ -1,8 +1,4 @@
-/* ============================================================
-   Telephony & Incoming Call Ambient Capsule, Drawer & Theme Styles
-   Clean Modular Architecture (Mandates 8b, 8c, 8e, 8n) <= 120 lines
-   ============================================================ */
-
+/* Telephony & Ambient Capsule Styles. Mandates 8b (<=120 lines), 8c, 8e, 8n */
 @import "./styles/telephonyCapsuleAndDrawer.css";
 @import "./styles/telephonyCardAndMetrics.css";
 @import "./styles/telephonyActionsAndDialpad.css";
@@ -12,7 +8,7 @@
 @import "./styles/telephonyHudAndCallControls.css";
 @import "./styles/telephonyCoexistence.css";
 
-/* Quiet Floating Telephony Widget Container: Desktop bottom-right (Mandate 8e/8n/8zk), Mobile top capsule */
+/* Floating Telephony Widget: Desktop bottom-right, Mobile top capsule */
 .dnt-telephony-island-container,
 .telephony-floating-widget {
 	position: fixed;
@@ -35,7 +31,6 @@
 @media (max-width: 768px) {
 	.dnt-telephony-island-container,
 	.telephony-floating-widget {
-		top: 12px;
 		top: calc(env(safe-area-inset-top, 0px) + 8px);
 		bottom: auto;
 		left: 50%;
@@ -55,23 +50,23 @@
 	}
 }
 
-/* Incoming Call Popup Badge Container: Desktop bottom-right, Mobile top sheet */
+/* Incoming Call Popup Badge: Top Ambient Event Capsule (macOS/iOS style) */
 .dnt-incoming-call-badge-container {
 	position: fixed;
-	bottom: 24px;
-	right: 24px;
-	top: auto;
-	left: auto;
-	transform: none;
+	top: 16px;
+	left: 50%;
+	right: auto;
+	bottom: auto;
+	transform: translateX(-50%);
 	z-index: 9990;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	align-items: center;
 	pointer-events: none;
 	font-family: inherit;
 	transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 	width: auto;
-	max-width: calc(100vw - 48px);
+	max-width: min(520px, calc(100vw - 32px));
 }
 
 @media (max-width: 768px) {
@@ -82,14 +77,14 @@
 		right: auto;
 		transform: translateX(-50%);
 		align-items: center;
-		width: calc(100vw - 24px);
-		max-width: min(480px, calc(100vw - 24px));
+		width: calc(100vw - 20px);
+		max-width: min(480px, calc(100vw - 20px));
 		box-sizing: border-box;
 		overflow-x: clip;
 	}
 }
 
-/* Fallback floating positioning for desktop toast avoidance */
+/* Fallback floating positioning */
 .dnt-telephony-floating-widget,
 .telephony-floating-softphone {
 	position: fixed;
@@ -97,7 +92,6 @@
 	right: 24px;
 	z-index: 9990;
 }
-
 @media (max-width: 768px) {
 	.dnt-telephony-floating-widget,
 	.telephony-floating-softphone {
@@ -105,8 +99,7 @@
 		right: 12px;
 	}
 }
-
-/* Desktop Clinical Density (32-36px, Anti-Mobile Bloat per Mandates 8c, 8d, 8e) */
+/* Clinical Density: Desktop 32-36px, Mobile Touch 44px */
 .dnt-telephony-card button,
 .dnt-telephony-island-pill button,
 .dnt-telephony-island-expanded button,
@@ -114,8 +107,6 @@
 .dnt-incoming-call-capsule button {
 	min-height: 32px;
 }
-
-/* Touchscreens and mobile viewports adapt touch targets for gloved fingers (Mandate 8c) */
 @media (pointer: coarse) {
 	.dnt-telephony-card button,
 	.dnt-telephony-island-pill button,

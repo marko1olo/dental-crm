@@ -39,9 +39,7 @@ export function OmnichannelChatView({
 
 	const handleOpenCard = () => {
 		if (!state.activeConv) return;
-		if (state.activeConv.patientId) {
-			setSelectedPatientId(state.activeConv.patientId);
-		}
+		if (state.activeConv.patientId) setSelectedPatientId(state.activeConv.patientId);
 		if (onOpenPatientCard && state.activeConv.patientId) {
 			onOpenPatientCard(state.activeConv.patientId);
 		} else {
@@ -97,9 +95,7 @@ export function OmnichannelChatView({
 							/>
 
 							<OmnichannelMessageStream messages={state.activeMessages} isLoading={state.isThreadLoading} />
-
 							<OmnichannelQuickTemplatesBar onApplyTemplate={state.handleApplyTemplate} />
-
 							<OmnichannelInputBar
 								draftText={state.draftText}
 								onDraftChange={state.setDraftText}
