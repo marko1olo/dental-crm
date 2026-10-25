@@ -24,6 +24,10 @@ export interface AppHashRoutingState {
 	setImplantPassportConfig: Dispatch<SetStateAction<ImplantPassportConfig | null>>;
 	isRecallsHubOpen: boolean;
 	setIsRecallsHubOpen: Dispatch<SetStateAction<boolean>>;
+	isLoyaltyProgramOpen: boolean;
+	setIsLoyaltyProgramOpen: Dispatch<SetStateAction<boolean>>;
+	isFastCheckoutDirectOpen: boolean;
+	setIsFastCheckoutDirectOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoPhotoDirectModalOpen: boolean;
 	setIsOrthoPhotoDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoProtocolDirectModalOpen: boolean;
@@ -67,6 +71,8 @@ export interface AppHashRoutingState {
 	setIsEmergencyDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isWarrantyPassportOpen: boolean;
 	setIsWarrantyPassportOpen: Dispatch<SetStateAction<boolean>>;
+	isShiftCloseZReportDirectOpen: boolean;
+	setIsShiftCloseZReportDirectOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface AppSessionAuthState {

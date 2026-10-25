@@ -38,6 +38,9 @@ export const FastCheckoutPaymentSplit: React.FC<
 				activeMethod={activeMethod}
 				onSelectMethod={props.onSelectMethod}
 				totalAvailableDeposit={totalAvailableDeposit}
+				availableLoyaltyPointsRub={props.availableLoyaltyPointsRub}
+				loyaltyAmountRub={props.loyaltyAmountRub}
+				onApplyOneClickLoyaltyPoints={props.onApplyOneClickLoyaltyPoints}
 				onSwitchToSplitMode={props.onSwitchToSplitMode}
 			/>
 

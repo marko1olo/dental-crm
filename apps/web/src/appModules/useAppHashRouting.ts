@@ -22,6 +22,8 @@ export function useAppHashRouting(
 	const [implantPassportConfig, setImplantPassportConfig] = useState<ImplantPassportConfig | null>(null);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(() => hasLocationToken(s, h, ["warranty-passport", "warranty_passport", "warranty-studio", "warranty=1", "warranty=true"]));
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(() => hasLocationToken(s, h, ["recalls", "prophylaxis", "preventive"]));
+	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(() => hasLocationToken(s, h, ["loyalty", "bonus", "family-pool", "points"]));
+	const [isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen] = useState(() => hasLocationToken(s, h, ["bonus-payment", "direct-cashier-bonus"]));
 	const [isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"]));
 	const [isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-protocol", "orthodontic-protocol", "ortho=protocol"]));
 	const [isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen] = useState(() => hasLocationToken(s, h, ["tooth-drawer", "tooth-card"]));
@@ -32,7 +34,6 @@ export function useAppHashRouting(
 	const [isConsentDirectModalOpen, setIsConsentDirectModalOpen] = useState(() => hasLocationToken(s, h, ["consent", "ids"]));
 	const [isCephDirectModalOpen, setIsCephDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ceph", "trg"]));
 	const [isEgiszRemdModalOpen, setIsEgiszRemdModalOpen] = useState(() => hasLocationToken(s, h, ["egisz", "remd"]));
-	const [isSmartSlotRecoveryDemoOpen, setIsSmartSlotRecoveryDemoOpen] = useState(() => hasLocationToken(s, h, ["smart_slot", "recovery", "smart-slot"]));
 	const [isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen] = useState(() => hasLocationToken(s, h, ["opg"]));
 	const [isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ct-selector", "ct_selector"]));
 	const [isVisiographDirectModalOpen, setIsVisiographDirectModalOpen] = useState(() => hasLocationToken(s, h, ["visiograph"]));
@@ -44,6 +45,7 @@ export function useAppHashRouting(
 	const [isSbpDirectModalOpen, setIsSbpDirectModalOpen] = useState(() => hasLocationToken(s, h, ["sbp"]));
 	const [isReceiptDirectModalOpen, setIsReceiptDirectModalOpen] = useState(() => hasLocationToken(s, h, ["receipt"]));
 	const [isEmergencyDirectModalOpen, setIsEmergencyDirectModalOpen] = useState(() => hasLocationToken(s, h, ["emergency", "rescue"]));
+	const [isShiftCloseZReportDirectOpen, setIsShiftCloseZReportDirectOpen] = useState(() => hasLocationToken(s, h, ["zreport", "z-report", "shift-close", "shift_close"]));
 
 	const state: AppHashRoutingState = {
 		isPrescriptionForm107Open, setIsPrescriptionForm107Open,
@@ -51,6 +53,8 @@ export function useAppHashRouting(
 		isImplantPassportDirectOpen, setIsImplantPassportDirectOpen,
 		implantPassportConfig, setImplantPassportConfig,
 		isRecallsHubOpen, setIsRecallsHubOpen,
+		isLoyaltyProgramOpen, setIsLoyaltyProgramOpen,
+		isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen,
 		isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen,
 		isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen,
 		isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen,
@@ -61,7 +65,6 @@ export function useAppHashRouting(
 		isConsentDirectModalOpen, setIsConsentDirectModalOpen,
 		isCephDirectModalOpen, setIsCephDirectModalOpen,
 		isEgiszRemdModalOpen, setIsEgiszRemdModalOpen,
-		isSmartSlotRecoveryDemoOpen, setIsSmartSlotRecoveryDemoOpen,
 		isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen,
 		isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen,
 		isVisiographDirectModalOpen, setIsVisiographDirectModalOpen,
@@ -74,6 +77,7 @@ export function useAppHashRouting(
 		isReceiptDirectModalOpen, setIsReceiptDirectModalOpen,
 		isEmergencyDirectModalOpen, setIsEmergencyDirectModalOpen,
 		isWarrantyPassportOpen, setIsWarrantyPassportOpen,
+		isShiftCloseZReportDirectOpen, setIsShiftCloseZReportDirectOpen,
 	};
 
 	useAppRoutingEvents(state, openDoctorShiftCockpit, setShowStaffPinPad);

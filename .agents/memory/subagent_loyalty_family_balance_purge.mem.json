@@ -85,10 +85,18 @@
     "mobile_light_scrolled_390x844": "docs/proofs/loyalty/loyalty_03b_mobile_light_scrolled.png",
     "family_wallet_tab_pc_light": "docs/proofs/loyalty/loyalty_tab_family_pc_light.png",
     "certificates_tab_pc_light": "docs/proofs/loyalty/loyalty_tab_certificates_pc_light.png",
+    "fast_checkout_bonus_pc_light": "docs/proofs/loyalty/fast_checkout_bonus_01_pc_light.png",
     "audit_passed": true
   },
+  "fast_checkout_integration": {
+    "one_click_cashier_redemption": "Added 'Бонусы' button to SplitSimpleCashierButtons and FastCheckoutModal",
+    "routing_events": "Mounted in AppDirectModals with #loyalty and #bonus-payment hash routes",
+    "zero_emojis_compliance": "Eradicated emoji/checkmark character U+2713 from button and preview, 100% HIG pass"
+  },
   "tests": {
-    "vitest": "25 passed (2 suites)",
-    "encoding": "19392 files checked, 0 errors"
+    "vitest_loyalty": "25 passed (2 suites)",
+    "vitest_api_loyalty": "31 passed (4 suites)",
+    "vitest_cashier_autonomy": "26 passed (2 suites)",
+    "encoding": "19410 files checked, 0 errors"
   }
 }

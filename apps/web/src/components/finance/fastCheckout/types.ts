@@ -81,6 +81,8 @@ export interface UseFastCheckoutLogicProps {
 	readonly patientEmail?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly patientBonusPointsRub?: number | undefined;
+	readonly patientLoyaltyPoints?: number | undefined;
 	readonly familyPayerName?: string | undefined;
 	readonly familyHeadName?: string | undefined;
 	readonly orderId?: string | undefined;

@@ -94,24 +94,24 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
-			<div className="ceph-workstation-root relative w-full max-w-[1410px] h-[92vh] max-h-[92vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" data-theme="dark" style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}>
-				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-900/95 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
+		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
+			<div className="ceph-workstation-root relative w-full max-w-[1410px] h-[92vh] max-h-[92vh] bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink)]">
+				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4">
-						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--primary)] shadow-sm shrink-0">
 							<Activity size={20} className="sm:w-5 sm:h-5" />
 						</div>
 						<div>
 							<div className="flex items-center gap-2 flex-wrap">
-								<h2 className="text-sm sm:text-base font-black tracking-tight text-white m-0 whitespace-nowrap" style={{ color: "#ffffff", margin: 0 }} aria-label="Цефалометрический трекер ТРГ">
+								<h2 className="text-sm sm:text-base font-black tracking-tight text-[var(--ink)] m-0 whitespace-nowrap" aria-label="Цефалометрический трекер ТРГ">
 									Цефалометрический анализ ТРГ
 									<span className="sr-only">Цефалометрический трекер ТРГ</span>
 								</h2>
-								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap">
+								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)] px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap">
 									Steiner / Tweed / Downs / Ricketts / McNamara
 								</span>
 							</div>
-							<p className="text-xs text-slate-400 m-0 mt-0.5 whitespace-nowrap" style={{ color: "#94a3b8", margin: 0 }}>
+							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 whitespace-nowrap">
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Медицинская карта
 							</p>
 						</div>
@@ -252,14 +252,13 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 
 					{/* ── Right Column: Interactive Sidebar (5 Cols) ── */}
 					<div
-						className={`lg:col-span-5 flex-col bg-slate-950 border-l border-slate-800 text-slate-100 overflow-hidden ${mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"}`}
-						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+						className={`lg:col-span-5 flex-col bg-[var(--paper)] border-l border-[var(--line)] text-[var(--ink)] overflow-hidden ${mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"}`}
 					>
-						<div className="grid grid-cols-3 border-b border-slate-800 bg-slate-900 px-2 pt-1.5 shrink-0 gap-1 w-full">
+						<div className="grid grid-cols-3 border-b border-[var(--line)] bg-[var(--paper-soft)] px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
 								type="button"
 								onClick={() => { setActiveTab("landmarks"); setMobileView("landmarks"); }}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "landmarks" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "landmarks" ? "border-[var(--primary)] text-[var(--primary)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"}`}
 								title="Ориентиры ТРГ"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({isImageLoaded ? analysis.placedCount : 0}/16)</span>
@@ -272,18 +271,18 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 									if (isImageLoaded) { setActiveTab("metrics"); setMobileView("metrics"); }
 									else { showToast("Сначала загрузите снимок ТРГ", "warning"); }
 								}}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "metrics" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "metrics" ? "border-[var(--primary)] text-[var(--primary)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Расчет углов (Steiner, Tweed, Downs, McNamara)"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
 								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
-								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />}
+								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
 							</button>
 
 							<button
 								type="button"
 								onClick={() => { setActiveTab("report"); setMobileView("report"); }}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "report" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "report" ? "border-[var(--primary)] text-[var(--primary)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"}`}
 								title="Ортодонтический протокол ТРГ для карты"
 							>
 								<FileText size={14} className="shrink-0" />

@@ -35,9 +35,7 @@ export function CephStandaloneStudioView(props: CephStandaloneStudioViewProps) {
 
 	return (
 		<div
-			className={`fixed inset-0 z-50 flex flex-col font-sans select-none overflow-hidden ${
-				logic.theme === "light" ? "bg-slate-100 text-slate-800" : "bg-slate-950 text-slate-100"
-			}`}
+			className="fixed inset-0 z-50 flex flex-col font-sans select-none overflow-hidden bg-[var(--paper)] text-[var(--ink)]"
 			data-testid="ceph-standalone-studio"
 			data-theme={logic.theme}
 		>

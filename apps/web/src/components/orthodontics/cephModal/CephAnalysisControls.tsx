@@ -36,7 +36,7 @@ export function CephDesktopControlsStrip({
 	aiBackendBadge,
 }: CephDesktopControlsStripProps) {
 	return (
-		<div className="hidden lg:flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 shrink-0" style={{ backgroundColor: "#0b1220", borderColor: "#1e293b" }}>
+		<div className="hidden lg:flex items-center justify-between px-4 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] shrink-0" style={{ backgroundColor: "var(--paper-soft)", borderColor: "var(--line)" }}>
 			<div className="flex items-center gap-2">
 				<CephalometricPresetsBar variant="header" onApplyPreset={onApplyPreset} onResetLandmarks={onResetLandmarks} />
 				<div className="h-5 w-[1px] bg-slate-800 mx-1" />
@@ -138,7 +138,7 @@ export function CephTab1TopControls({
 					<select
 						value={aiBackendPref}
 						onChange={(e) => setAiBackendPref(e.target.value as CephAiBackendPreference)}
-						className="h-8 px-2 rounded-lg bg-slate-900 border border-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer"
+						className="h-8 px-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[11px] font-bold text-[var(--ink)] cursor-pointer"
 						title="Режим разметки"
 						data-testid="ai-backend-select"
 					>
@@ -168,15 +168,15 @@ export function CephTab1TopControls({
 				</div>
 			</div>
 
-			<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
+			<div className="mb-3.5 bg-[var(--paper-soft)] p-3.5 rounded-xl border border-[var(--line)] shrink-0" style={{ backgroundColor: "var(--paper-soft)", borderColor: "var(--line)" }}>
 				<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
-					<span className="text-slate-200" style={{ color: "#f8fafc" }}>Прогресс разметки ТРГ</span>
+					<span className="text-[var(--ink)]" style={{ color: "var(--ink)" }}>Прогресс разметки ТРГ</span>
 					<span className="text-teal-400 font-extrabold">{placedPercent}%</span>
 				</div>
-				<div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden">
+				<div className="h-2.5 w-full bg-[var(--line)] rounded-full overflow-hidden">
 					<div className="h-full bg-teal-500 rounded-full transition-all duration-300" style={{ width: `${placedPercent}%` }} />
 				</div>
-				<p className="text-xs text-slate-400 m-0 mt-2 min-w-0 break-words">
+				<p className="text-xs text-[var(--muted)] m-0 mt-2 min-w-0 break-words">
 					{isImageLoaded ? "Кликните ориентир ниже, затем укажите его положение на снимке ТРГ слева." : "Загрузите боковую ТРГ пациента или выберите эталонный снимок для начала анализа."}
 				</p>
 			</div>

@@ -1,8 +1,4 @@
-import {
-	ELASTIC_SCHEMES,
-	ELASTIC_SIZES,
-} from "./OrthoArchwireSelector";
-import { BRACKET_SYSTEMS } from "./OrthoBracketProtocolSection";
+import type { OrthodonticService } from "./orthoServicesCalculator";
 
 export type OrthodonticStageFilter =
 	| "all"
@@ -28,15 +24,6 @@ export const ORTHODONTIC_STAGE_TABS: Array<{
 
 export type TargetArch = "upper" | "lower" | "both";
 
-export interface OrthodonticService804n {
-	code: string;
-	nameRu: string;
-	priceRub: number;
-	stageKind: "stage_ortho";
-	toothNumber?: number | undefined;
-	arch?: TargetArch | undefined;
-}
-
 export type OrthoClinicalPresetId =
 	| "activation"
 	| "wire_change"
@@ -57,290 +44,6 @@ export type OrthoClinicalPresetId =
 	| "lab_plate"
 	| "lab_splint";
 
-export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
-	wire_change: [
-		{
-			code: "A16.07.048.002",
-			nameRu: "Смена ортодонтической дуги",
-			priceRub: 2500,
-		},
-		{
-			code: "A16.07.048",
-			nameRu: "Коррекция прикуса с использованием брекет-системы",
-			priceRub: 1500,
-		},
-	],
-	wire_change_leveling: [
-		{
-			code: "A16.07.046",
-			nameRu: "Смена дуг: плановое нивелирование (NiTi / CuNiTi)",
-			priceRub: 3500,
-		},
-		{
-			code: "A16.07.049",
-			nameRu: "Наложение эластической тяги Class II",
-			priceRub: 1200,
-		},
-	],
-	ligature_change: [
-		{
-			code: "A16.07.048",
-			nameRu: "Активация элементов брекет-системы / смена лигатур",
-			priceRub: 1500,
-		},
-	],
-	activation: [
-		{
-			code: "A16.07.048",
-			nameRu: "Плановая активация элементов брекет-системы",
-			priceRub: 1500,
-		},
-	],
-	niti_014_activation: [
-		{
-			code: "A16.07.048.002",
-			nameRu: "Активация дуги 0.14 NiTi",
-			priceRub: 2500,
-		},
-		{
-			code: "A16.07.048",
-			nameRu: "Активация элементов брекет-системы / смена лигатур",
-			priceRub: 1500,
-		},
-	],
-	power_chain_change: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Смена эластических цепочек (Power Chain)",
-			priceRub: 1500,
-		},
-	],
-	bonding_both_mbt: [
-		{
-			code: "A16.07.047",
-			nameRu: "Фиксация брекет-системы верх/низ Roth/MBT .022",
-			priceRub: 45000,
-		},
-		{
-			code: "A16.07.048.002",
-			nameRu: "Первичная установка нивелирующих дуг NiTi",
-			priceRub: 3000,
-		},
-	],
-	aligner_scan: [
-		{
-			code: "A16.07.046",
-			nameRu: "Снятие слепков / 3D-сканирование под элайнеры",
-			priceRub: 6000,
-		},
-	],
-	aligner_trays_1_4: [
-		{
-			code: "A16.07.046",
-			nameRu: "Выдача капп 1-4 элайнеров",
-			priceRub: 12000,
-		},
-		{
-			code: "A16.07.046.001",
-			nameRu: "Фиксация композитных аттачментов элайнеров",
-			priceRub: 3500,
-		},
-	],
-	aligner_trays_5_8: [
-		{
-			code: "A16.07.046",
-			nameRu: "Выдача капп 5-8 элайнеров",
-			priceRub: 12000,
-		},
-	],
-	power_chain: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Активация дуги / наложение эластической цепочки (Power Chain)",
-			priceRub: 1200,
-		},
-	],
-	spring_activation: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Активация пружин (open-coil / closed-coil)",
-			priceRub: 1400,
-		},
-	],
-	separation_rings: [
-		{
-			code: "A16.07.050",
-			nameRu: "Сепарация межзубная / установка эластических колец под бандажи",
-			priceRub: 1200,
-		},
-	],
-	rebracket: [
-		{
-			code: "A16.07.048.001",
-			nameRu: "Фиксация одного брекета / замка",
-			priceRub: 1200,
-		},
-	],
-	bonding: [
-		{
-			code: "A16.07.047",
-			nameRu: "Ортодонтическая коррекция: фиксация брекет-системы",
-			priceRub: 25000,
-		},
-	],
-	elastics: [
-		{
-			code: "A16.07.049",
-			nameRu: "Наложение эластической межчелюстной тяги (эластики)",
-			priceRub: 1200,
-		},
-	],
-	ipr: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Сепарация зубов",
-			priceRub: 800,
-		},
-	],
-	separation: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Установка сепарационных эластиков / сепарация",
-			priceRub: 800,
-		},
-	],
-	plate_activation: [
-		{
-			code: "A16.07.047",
-			nameRu: "Коррекция съемного ортодонтического аппарата",
-			priceRub: 1000,
-		},
-	],
-	expansion_screw_activation: [
-		{
-			code: "A16.07.047.001",
-			nameRu: "Активация расширяющего винта пластинки",
-			priceRub: 800,
-		},
-	],
-	debonding: [
-		{
-			code: "A16.07.049",
-			nameRu: "Снятие несъемного ортодонтического аппарата",
-			priceRub: 5000,
-		},
-		{
-			code: "A16.07.050",
-			nameRu: "Фиксация несъемного ретейнера",
-			priceRub: 4000,
-		},
-	],
-};
-
-export const ALIGNER_804N_SERVICES: Array<Omit<OrthodonticService804n, "stageKind">> = [
-	{
-		code: "A16.07.046",
-		nameRu: "Ортодонтическая коррекция с применением элайнеров",
-		priceRub: 3000,
-	},
-	{
-		code: "A16.07.046.001",
-		nameRu: "Фиксация композитных аттачментов элайнеров",
-		priceRub: 2000,
-	},
-];
-
-export interface CalculateOrthoServicesParams {
-	selectedActions?: string[] | undefined;
-	bracketSystem?: string | undefined;
-	activeAttachmentPreset?: string | null | undefined;
-	selectedTooth?: number | null | undefined;
-	isAttachmentsOnly?: boolean | undefined;
-	targetArch?: TargetArch | undefined;
-}
-
-export function calculateOrthodonticServices804n(
-	params: CalculateOrthoServicesParams,
-): OrthodonticService804n[] {
-	if (params.isAttachmentsOnly) {
-		return ALIGNER_804N_SERVICES.map((s) => ({
-			...s,
-			stageKind: "stage_ortho",
-			toothNumber: params.selectedTooth ?? undefined,
-		}));
-	}
-
-	const rawServices: OrthodonticService804n[] = [];
-
-	const isAligners = params.bracketSystem === "aligners" || Boolean(params.activeAttachmentPreset);
-	if (isAligners) {
-		for (const s of ALIGNER_804N_SERVICES) {
-			rawServices.push({
-				...s,
-				stageKind: "stage_ortho",
-				toothNumber: params.selectedTooth ?? undefined,
-			});
-		}
-	}
-
-	const actions = params.selectedActions || [];
-	for (const actionId of actions) {
-		const mapped = ORTHO_804N_ACTIONS_MAP[actionId];
-		if (mapped) {
-			for (const item of mapped) {
-				if (actionId === "wire_change" && item.code === "A16.07.048.002") {
-					if (params.targetArch === "both") {
-						rawServices.push({
-							...item,
-							nameRu: "Смена ортодонтической дуги (ВЧ)",
-							stageKind: "stage_ortho",
-							arch: "upper",
-						});
-						rawServices.push({
-							...item,
-							nameRu: "Смена ортодонтической дуги (НЧ)",
-							stageKind: "stage_ortho",
-							arch: "lower",
-						});
-					} else if (params.targetArch === "upper" || params.targetArch === "lower") {
-						const label = params.targetArch === "upper" ? " (ВЧ)" : " (НЧ)";
-						rawServices.push({
-							...item,
-							nameRu: `${item.nameRu}${label}`,
-							stageKind: "stage_ortho",
-							arch: params.targetArch,
-						});
-					} else {
-						rawServices.push({
-							...item,
-							stageKind: "stage_ortho",
-						});
-					}
-				} else {
-					rawServices.push({
-						...item,
-						stageKind: "stage_ortho",
-						toothNumber:
-							actionId === "rebracket" && params.selectedTooth
-								? params.selectedTooth
-								: undefined,
-					});
-				}
-			}
-		}
-	}
-
-	const servicesMap = new Map<string, OrthodonticService804n>();
-	for (const s of rawServices) {
-		const key = `${s.code}_${s.arch || ""}_${s.toothNumber || ""}`;
-		if (!servicesMap.has(key)) {
-			servicesMap.set(key, s);
-		}
-	}
-
-	return Array.from(servicesMap.values());
-}
-
 export interface OrthodonticVisitProtocolWidgetProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -358,7 +61,7 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	totalAlignersUpper?: number | undefined;
 	totalAlignersLower?: number | undefined;
 	onIssueAlignerSet?: ((count: number, days: number) => void) | undefined;
-	onAddToInvoice?: ((services: OrthodonticService804n[]) => void) | undefined;
+	onAddToInvoice?: ((services: OrthodonticService[]) => void) | undefined;
 }
 
 export const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -377,107 +80,21 @@ export const CLINICAL_ACTIONS = [
 	{ id: "debonding", label: "Снятие аппаратуры + ретейнер" },
 ];
 
-export interface OrthodonticPatientMemoParams {
-	clinicName: string;
-	clinicPhone?: string | undefined;
-	doctorName: string;
-	patientName: string;
-	visitDate?: string | undefined;
-	bracketSystem: string;
-	archwireMaterial?: string | undefined;
-	archwireSection?: string | undefined;
-	targetArch?: string | undefined;
-	elasticScheme?: string | undefined;
-	elasticSize?: string | undefined;
-	elasticWear?: string | undefined;
-	isAligners?: boolean | undefined;
-	currentAligner?: number | undefined;
-	totalAligners?: number | undefined;
-	currentAlignerUpper?: number | undefined;
-	currentAlignerLower?: number | undefined;
-	totalAlignersUpper?: number | undefined;
-	totalAlignersLower?: number | undefined;
-	notes?: string | undefined;
-}
+// Re-exports from dedicated modules
+export {
+	type OrthodonticService,
+	type OrthodonticService804n,
+	type CalculateOrthoServicesParams,
+	calculateOrthodonticServices,
+	calculateOrthodonticServices804n,
+	ORTHO_ACTIONS_SERVICES_MAP,
+	ORTHO_804N_ACTIONS_MAP,
+	ALIGNER_SERVICES,
+	ALIGNER_804N_SERVICES,
+} from "./orthoServicesCalculator";
 
-export function getRuDateString(d: Date = new Date()): string {
-	const day = String(d.getDate()).padStart(2, "0");
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const year = d.getFullYear();
-	return `${day}.${month}.${year}`;
-}
-
-export function formatOrthodonticPatientMemo(
-	params: OrthodonticPatientMemoParams,
-): string {
-	const clinicName = params.clinicName || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone || "";
-	const doctorName = params.doctorName || "Лечащий врач-ортодонт";
-	const patientName = params.patientName || "Пациент";
-	const visitDate = params.visitDate || getRuDateString();
-
-	const isAligners = Boolean(
-		params.isAligners || params.bracketSystem === "aligners",
-	);
-
-	const systems = BRACKET_SYSTEMS;
-	const systemObj = systems.find((b) => b.id === params.bracketSystem);
-	let systemName = isAligners
-		? "Элайнеры"
-		: (systemObj ? systemObj.label : params.bracketSystem || "Damon Q2");
-	if (!systemName) {
-		systemName = "Damon Q2";
-	}
-
-	let apparatusDetails = "";
-	if (isAligners) {
-		if (params.currentAlignerUpper && params.currentAlignerLower) {
-			const curU = params.currentAlignerUpper;
-			const totalU = params.totalAlignersUpper || params.totalAligners || "—";
-			const curL = params.currentAlignerLower;
-			const totalL = params.totalAlignersLower || params.totalAligners || "—";
-			apparatusDetails = `Текущий этап: ВЧ Каппа №${curU} из ${totalU}, НЧ Каппа №${curL} из ${totalL}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
-		} else {
-			const cur = params.currentAligner || 1;
-			const total = params.totalAligners || "—";
-			apparatusDetails = `Текущий этап: Каппа №${cur} из ${total}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
-		}
-	} else {
-		const arch =
-			params.targetArch === "upper"
-				? "верхняя челюсть"
-				: params.targetArch === "lower"
-					? "нижняя челюсть"
-					: "обе челюсти";
-		const mat = params.archwireMaterial || "CuNiTi";
-		const sec = params.archwireSection || ".016";
-		apparatusDetails = `Установленная дуга: ${mat} ${sec} (${arch})\n`;
-	}
-
-	let elasticsBlock = "";
-	if (params.elasticScheme && params.elasticScheme !== "none") {
-		const schemeObj = ELASTIC_SCHEMES.find((e) => e.id === params.elasticScheme);
-		const schemeLabel = schemeObj ? schemeObj.label : params.elasticScheme;
-
-		const sizeObj = ELASTIC_SIZES.find((s) => s.id === params.elasticSize);
-		const sizeLabel = sizeObj
-			? `${sizeObj.label} (${sizeObj.strength})`
-			: (params.elasticSize || "3/16\" Medium");
-
-		const wearMode = params.elasticWear || "22 часа/сутки";
-
-		elasticsBlock = `Схема межчелюстных эластиков (тяг):\n- Направление: ${schemeLabel}\n- Размер/сила: ${sizeLabel}\n- Режим ношения: ${wearMode} (смена на свежие 2 раза в день)\n`;
-	}
-
-	return `Ортодонтические рекомендации после приёма (клиника «${clinicName}»):
-Пациент: ${patientName}
-Лечащий врач: ${doctorName}
-Дата приёма: ${visitDate}
-Аппаратура: ${systemName}
-${apparatusDetails}${elasticsBlock}Памятка пациенту:
-1. Первые 2-3 дня возможна умеренная чувствительность зубов при накусывании (физиологическая норма перемещения зубов).
-2. Эластики снимаются только во время еды и чистки зубов. При обрыве эластика надеть новый из упаковки.
-3. При натирании щеки или губы нанесите защитный ортодонтический воск на выступающий элемент.
-4. При отклейке брекета, утере кнопки или дискомфорте от дуги немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.
-Следующий контрольный визит: через 4–6 недель.`;
-}
+export {
+	type OrthodonticPatientMemoParams,
+	formatOrthodonticPatientMemo,
+	getRuDateString,
+} from "./orthoPatientMemo";

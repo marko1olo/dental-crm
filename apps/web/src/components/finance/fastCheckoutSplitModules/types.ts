@@ -51,5 +51,7 @@ export interface FastCheckoutPaymentSplitProps {
 	readonly onAddRemainingToFamily: () => void;
 	readonly onAddRemaining5050: () => void;
 	readonly onAddRemainingDepositPlusCard?: () => void;
+	readonly availableLoyaltyPointsRub?: number | undefined;
+	readonly onApplyOneClickLoyaltyPoints?: (() => void) | undefined;
 	readonly onSwitchToSplitMode?: () => void;
 }

@@ -33,12 +33,12 @@ export function CephMeasurementTable({
 		const isValValid = meas?.value !== null && meas?.value !== undefined && Number.isFinite(meas.value);
 		const isDistValid = distMeas?.value !== null && distMeas?.value !== undefined && Number.isFinite(distMeas.value);
 		const missing = getRequiredLandmarksForMeasurement(measId).filter((k) => !landmarks[k]);
-		const cardClassName = "p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]";
+		const cardClassName = "p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between min-h-[76px]";
 		const cardBody = (
 			<>
 				<div className="flex items-center justify-between gap-1">
-					<span className="text-[11px] font-bold text-slate-300 truncate">{label}</span>
-					<span className="text-[9px] text-slate-400 font-mono">{norm}</span>
+					<span className="text-[11px] font-bold text-[var(--ink)] truncate">{label}</span>
+					<span className="text-[9px] text-[var(--muted)] font-mono">{norm}</span>
 				</div>
 				<div className="my-1 flex items-baseline gap-1">
 					{isValValid ? (
@@ -70,20 +70,20 @@ export function CephMeasurementTable({
 	};
 
 	return (
-		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
+		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-[var(--paper)] text-[var(--ink)]">
 			<CephalometricPresetsBar variant="tab2" onApplyPreset={onApplyPreset} onResetLandmarks={onResetLandmarks} />
 
-			<div className="mb-4 p-4 rounded-xl bg-teal-950/80 border border-teal-500/50 shadow-sm" style={{ backgroundColor: "#042f2e", borderColor: "rgba(20, 184, 166, 0.5)" }}>
-				<div className="text-xs font-black uppercase tracking-wider" style={{ color: "#2dd4bf" }}>Клиническое резюме анализа</div>
-				<div className="text-base font-black mt-1 min-w-0 break-words" style={{ color: "#ffffff" }}>{analysis.diagnosis.skeletalClassRu}</div>
-				<div className="text-sm mt-1.5 leading-relaxed min-w-0 break-words" style={{ color: "#cbd5e1" }}>{analysis.diagnosis.summaryRu}</div>
+			<div className="mb-4 p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--primary)]/30 shadow-sm">
+				<div className="text-xs font-black uppercase tracking-wider text-[var(--primary)]">Клиническое резюме анализа</div>
+				<div className="text-base font-black mt-1 min-w-0 break-words text-[var(--ink)]">{analysis.diagnosis.skeletalClassRu}</div>
+				<div className="text-sm mt-1.5 leading-relaxed min-w-0 break-words text-[var(--muted)]">{analysis.diagnosis.summaryRu}</div>
 			</div>
 
 			{/* Core Cephalometric Angles Hero Showcase */}
 			<div className="mb-4 space-y-2">
-				<div className="text-xs font-black uppercase tracking-wider flex items-center justify-between" style={{ color: "#cbd5e1" }}>
+				<div className="text-xs font-black uppercase tracking-wider flex items-center justify-between text-[var(--ink)]">
 					<span>Ключевые углы Штайнера (Steiner Core)</span>
-					<span className="text-[10px] font-normal" style={{ color: "#2dd4bf" }}>Ортодонтия</span>
+					<span className="text-[10px] font-normal text-[var(--primary)]">Ортодонтия</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
 					{renderHeroCard("SNA", "SNA", "82° ± 2°")}
@@ -96,7 +96,7 @@ export function CephMeasurementTable({
 
 			<CephalometricMeasurementsCategories analysis={analysis} landmarks={landmarks} />
 
-			<div className="mt-3 pt-3 border-t border-slate-800">
+			<div className="mt-3 pt-3 border-t border-[var(--line)]">
 				<button
 					type="button"
 					onClick={onNavigateToReport}

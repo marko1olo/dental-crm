@@ -32,10 +32,10 @@ export const OrthodonticActivationNotes: React.FC<OrthodonticActivationNotesProp
 	return (
 		<div
 			data-testid="ortho-activation-notes"
-			className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+			className="bg-[var(--paper-soft)] p-3 rounded-xl border border-[var(--line)] flex flex-col gap-2.5"
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 					<Activity size={14} className="text-teal-600 dark:text-teal-400" />
 					Протокол активации & Клинические заметки
 				</span>
@@ -52,7 +52,7 @@ export const OrthodonticActivationNotes: React.FC<OrthodonticActivationNotesProp
 						key={idx}
 						type="button"
 						onClick={() => handleInsertPhrase(phrase)}
-						className="h-6 px-2 rounded-md bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900 border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 text-[11px] font-medium text-[var(--ink,#0f172a)] dark:text-slate-300 hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-300 transition-all cursor-pointer truncate max-w-full"
+						className="h-6 px-2 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[11px] font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-300 transition-all cursor-pointer truncate max-w-full"
 						title={phrase}
 					>
 						+ {phrase.slice(0, 36)}...
@@ -70,13 +70,13 @@ export const OrthodonticActivationNotes: React.FC<OrthodonticActivationNotesProp
 					onChange={(e) => setNotes(e.target.value)}
 					rows={3}
 					placeholder="Особые отметки врача: динамика торка, жалобы на натирание, режим чувисов, межзубная сепарация..."
-					className="w-full p-2.5 bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-lg text-xs leading-relaxed text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-[var(--muted,#64748b)] dark:placeholder:text-slate-500 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 transition-all resize-y"
+					className="w-full p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs leading-relaxed text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 transition-all resize-y"
 				/>
 			</div>
 
 			{/* Информационная строка статуса */}
 			{(powerChainSpan || selectedTeeth?.length || selectedActions?.length) ? (
-				<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 flex-wrap">
+				<div className="flex items-center gap-2 text-[11px] text-[var(--muted)] flex-wrap">
 					{powerChainSpan && (
 						<span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 font-semibold border border-purple-500/20">
 							Power Chain: {powerChainSpan} ({powerChainType === "short" ? "короткий шаг" : "стандарт"})

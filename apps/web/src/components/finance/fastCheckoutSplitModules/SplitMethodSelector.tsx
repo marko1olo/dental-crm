@@ -22,6 +22,9 @@ export const SplitMethodSelector: React.FC<SplitMethodSelectorProps> = ({
 	activeMethod,
 	onSelectMethod,
 	totalAvailableDeposit,
+	availableLoyaltyPointsRub,
+	loyaltyAmountRub,
+	onApplyOneClickLoyaltyPoints,
 	onSwitchToSplitMode,
 }) => {
 	return (
@@ -34,6 +37,9 @@ export const SplitMethodSelector: React.FC<SplitMethodSelectorProps> = ({
 					activeMethod={activeMethod}
 					onSelectMethod={onSelectMethod}
 					totalAvailableDeposit={totalAvailableDeposit}
+					availableLoyaltyPointsRub={availableLoyaltyPointsRub}
+					loyaltyAmountRub={loyaltyAmountRub}
+					onApplyOneClickLoyaltyPoints={onApplyOneClickLoyaltyPoints}
 					onSwitchToSplitMode={onSwitchToSplitMode}
 				/>
 			) : (

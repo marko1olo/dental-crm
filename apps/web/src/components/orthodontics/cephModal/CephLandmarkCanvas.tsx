@@ -14,41 +14,7 @@ import {
 } from "../cephalometricMath";
 import { CephalometricMobileAccordion } from "./CephalometricReportTab";
 import type { CephAiBackendPreference } from "../cephAiInferenceService";
-import type { CephAiStats, CephMobileViewId } from "./types";
-
-export interface CephLandmarkCanvasProps {
-	readonly landmarks: LandmarkMap;
-	readonly setLandmarks: React.Dispatch<React.SetStateAction<LandmarkMap>>;
-	readonly onLandmarkChange: (key: LandmarkKey, point: Point2D) => void;
-	readonly onRemoveLandmark: (key: LandmarkKey) => void;
-	readonly activeTargetKey: LandmarkKey | null;
-	readonly setActiveTargetKey: (key: LandmarkKey | null) => void;
-	readonly imageUrl: string | null;
-	readonly setImageUrl: (url: string | null) => void;
-	readonly filterMode: XrayFilterMode;
-	readonly setFilterMode: (mode: XrayFilterMode) => void;
-	readonly brightness: number;
-	readonly contrast: number;
-	readonly showPolygon: boolean;
-	readonly setShowPolygon: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly showPlanes: boolean;
-	readonly setShowPlanes: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly showLabels: boolean;
-	readonly setShowLabels: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly scaleMmPerPixel: number;
-	readonly setScaleMmPerPixel: (scale: number) => void;
-	readonly onLoadPreset: () => void;
-	readonly onResetLandmarks: () => void;
-	readonly onRunAiAutoPlacement: () => void;
-	readonly isAiInferring: boolean;
-	readonly aiBackendBadge: string;
-	readonly aiBackendLabel: string;
-	readonly aiBackendPref: CephAiBackendPreference;
-	readonly setAiBackendPref: (pref: CephAiBackendPreference) => void;
-	readonly aiStats: CephAiStats | null;
-	readonly analysis: CephalometricAnalysisResult;
-	readonly mobileView: CephMobileViewId;
-}
+import type { CephAiStats, CephMobileViewId, CephLandmarkCanvasProps } from "./types";
 
 export function CephLandmarkCanvas({
 	landmarks,
@@ -85,8 +51,7 @@ export function CephLandmarkCanvas({
 }: CephLandmarkCanvasProps) {
 	return (
 		<div
-			className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"}`}
-			style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+			className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-[var(--paper)] border-r border-[var(--line)] text-[var(--ink)] shrink-0 lg:overflow-hidden ${mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"}`}
 		>
 			<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 				<CephalometricCanvas

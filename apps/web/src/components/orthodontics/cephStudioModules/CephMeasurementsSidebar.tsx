@@ -66,7 +66,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 						<p className="text-xs text-slate-300 leading-relaxed m-0">
 							Прямая линия, соединяющая кончик носа (Pn) и наиболее выступающую точку подбородка (PogS).
 						</p>
-						<div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-2">
+						<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 							<div className="flex items-center justify-between text-xs">
 								<span className="text-slate-400">Верхняя губа:</span>
 								<span className="font-bold text-emerald-400">
@@ -103,7 +103,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 								{analysis.diagnosis.skeletalClassRu}
 							</span>
 						</div>
-						<div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800">
+						<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
 							<p className="text-xs text-slate-200 leading-relaxed m-0">
 								{analysis.diagnosis.skeletalClass === "Class I"
 									? "Челюсти расположены в правильном нейтральном соотношении. Основная задача — ровное выравнивание зубного ряда и закрытие промежутков."
@@ -119,7 +119,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 						<span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
 							Наклон передних зубов и улыбка
 						</span>
-						<div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 space-y-1.5 text-xs">
+						<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5 text-xs">
 							<div className="flex items-center justify-between">
 								<span className="text-slate-400">Верхние резцы:</span>
 								<span className="font-semibold text-slate-200">
@@ -156,11 +156,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 				/* ─── DOCTOR CLINICAL DIAGNOSTIC MODE ──────────────────────────── */
 				<div className="flex-1 flex flex-col overflow-hidden">
 					{/* Tab Switcher */}
-					<div
-						className={`h-11 border-b px-3 flex items-center gap-1 shrink-0 ${
-							theme === "light" ? "bg-slate-100 border-slate-200" : "bg-slate-950 border-slate-800"
-						}`}
-					>
+					<div className="h-11 border-b border-[var(--line)] bg-[var(--paper-soft)] px-3 flex items-center gap-1 shrink-0">
 						<button
 							type="button"
 							onClick={() => onTabChange("landmarks")}
@@ -463,7 +459,7 @@ export const CephMeasurementsSidebar: React.FC<CephMeasurementsSidebarProps> = (
 								className={`w-full flex-1 min-h-[360px] p-3.5 rounded-xl font-mono text-xs leading-relaxed resize-none focus:outline-none border ${
 									theme === "light"
 										? "bg-slate-50 border-slate-200 text-slate-800 focus:border-teal-600"
-										: "bg-slate-950 border-slate-800 text-slate-300 focus:border-teal-500"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] focus:border-[var(--primary)]"
 								}`}
 							/>
 						</div>

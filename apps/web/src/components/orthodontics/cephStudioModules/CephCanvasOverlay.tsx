@@ -35,7 +35,7 @@ export const CephCanvasOverlay: React.FC<CephCanvasOverlayProps> = ({
 	onApplyPreset,
 }) => {
 	return (
-		<div className="flex-1 relative bg-slate-950 flex flex-col overflow-hidden">
+		<div className="flex-1 relative bg-[var(--paper)] text-[var(--ink)] flex flex-col overflow-hidden">
 			<CephalometricCanvas
 				imageUrl={imageUrl}
 				landmarks={landmarks}

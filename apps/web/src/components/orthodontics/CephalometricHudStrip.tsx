@@ -91,7 +91,7 @@ export function CephalometricHudStrip({
 			{/* TOP HUD BAR: Filters, Zoom & Planes/Polygon Layers */}
 			<div
 				data-testid="ceph-unified-hud-strip"
-				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1 sm:gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none flex-nowrap whitespace-nowrap pointer-events-auto"
+				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1 sm:gap-1.5 bg-[var(--paper)]/95 border border-[var(--line)] rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none flex-nowrap whitespace-nowrap pointer-events-auto text-[var(--ink)]"
 			>
 				{/* 1. [Пресеты WW/WL] */}
 				<div className="dente-segmented-bar shrink-0 flex-nowrap">
@@ -115,28 +115,28 @@ export function CephalometricHudStrip({
 					))}
 				</div>
 
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+				<div className="w-[1px] h-5 bg-[var(--line)] shrink-0 mx-0.5" />
 
 				{/* 2. [Зум/Сброс] (Единая геометрия h-7) */}
-				<div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+				<div className="flex items-center gap-0.5 sm:gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] shrink-0 flex-nowrap">
 					<button
 						type="button"
 						disabled={false}
 						onClick={onZoomOut}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer shrink-0"
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer shrink-0"
 						title="Отдалить (Масштаб -)"
 						aria-label="Отдалить масштаб"
 					>
 						<ZoomOut size={14} />
 					</button>
-					<span className="text-[12px] font-mono font-bold text-teal-300 px-1 min-w-[36px] text-center">
+					<span className="text-[12px] font-mono font-bold text-[var(--primary)] px-1 min-w-[36px] text-center">
 						{Math.round(zoom * 100)}%
 					</span>
 					<button
 						type="button"
 						disabled={false}
 						onClick={onZoomIn}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer shrink-0"
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer shrink-0"
 						title="Приблизить (Масштаб +)"
 						aria-label="Приблизить масштаб"
 					>
@@ -146,7 +146,7 @@ export function CephalometricHudStrip({
 						type="button"
 						disabled={false}
 						onClick={onResetView}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer shrink-0"
+						className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer shrink-0"
 						title="Сбросить масштаб и положение (0)"
 						aria-label="Сбросить масштаб"
 					>
@@ -159,7 +159,7 @@ export function CephalometricHudStrip({
 						className={`h-7 px-2.5 rounded-md flex items-center gap-1.5 text-[12.5px] font-semibold shrink-0 whitespace-nowrap transition-colors cursor-pointer ${
 							isCalibrating
 								? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
-								: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
+								: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] shadow-sm"
 						}`}
 						title="Калибровка масштаба по линейке (мм/px)"
 						aria-label="Калибровка масштаба"
@@ -169,7 +169,7 @@ export function CephalometricHudStrip({
 					</button>
 				</div>
 
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+				<div className="w-[1px] h-5 bg-[var(--line)] shrink-0 mx-0.5" />
 
 				{/* 3. [Скрыть плоскости/полигон] */}
 				<div className="dente-segmented-bar shrink-0 flex-nowrap">
@@ -206,27 +206,27 @@ export function CephalometricHudStrip({
 			{/* BOTTOM HUD BAR: Status & Radiology File Actions */}
 			<div
 				data-testid="ceph-bottom-hud-strip"
-				className="absolute bottom-2 sm:bottom-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1 sm:gap-2 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none flex-nowrap whitespace-nowrap pointer-events-auto"
+				className="absolute bottom-2 sm:bottom-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center justify-between gap-1 sm:gap-2 bg-[var(--paper)]/95 border border-[var(--line)] rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none flex-nowrap whitespace-nowrap pointer-events-auto text-[var(--ink)]"
 			>
 
 			{/* 4. [Статус] */}
-			<div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-[12.5px] font-medium text-slate-100 shrink-0 min-w-0 max-w-[280px]">
-				<Crosshair size={14} className="text-teal-400 animate-pulse shrink-0" />
-				<div className="text-[12px] font-medium text-slate-100 min-w-0 truncate">
+			<div className="flex items-center gap-1.5 bg-[var(--paper-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)] text-[12.5px] font-medium text-[var(--ink)] shrink-0 min-w-0 max-w-[280px]">
+				<Crosshair size={14} className="text-[var(--primary)] animate-pulse shrink-0" />
+				<div className="text-[12px] font-medium text-[var(--ink)] min-w-0 truncate">
 					{!imageUrl ? (
-						<span className="text-slate-300">
+						<span className="text-[var(--muted)]">
 							Ожидание загрузки ТРГ
 						</span>
 					) : isAllLandmarksPlaced ? (
-						<span className="text-emerald-300 font-bold">
+						<span className="text-emerald-500 font-bold">
 							Все 16 точек заданы. Расчет углов готов
 						</span>
 					) : activeTargetKey ? (
 						<span className="flex items-center gap-1">
-							<span className="text-slate-400 font-normal mr-1">
+							<span className="text-[var(--muted)] font-normal mr-1">
 								{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
 							</span>
-							<span className="text-teal-300 font-bold uppercase">
+							<span className="text-[var(--primary)] font-bold uppercase">
 								{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 							</span>
 							<button
@@ -235,7 +235,7 @@ export function CephalometricHudStrip({
 									e.stopPropagation();
 									onSelectTargetKey(null);
 								}}
-								className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer ml-1"
+								className="p-0.5 rounded hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer ml-1"
 								title="Отменить выбор ориентира (Esc)"
 								aria-label="Отменить выбор ориентира"
 							>
@@ -243,19 +243,19 @@ export function CephalometricHudStrip({
 							</button>
 						</span>
 					) : (
-						<span className="text-slate-300">
+						<span className="text-[var(--muted)]">
 							16 ориентиров ТРГ
 						</span>
 					)}
 				</div>
 			</div>
 
-			<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
+			<div className="w-[1px] h-5 bg-[var(--line)] shrink-0 mx-0.5" />
 
 			{/* 5. [Действия (AI авторазметка, Загрузить, Эталон, Сбросить)] */}
 			<div className="flex items-center gap-1 shrink-0 flex-nowrap">
 				{onRunAiAutoPlacement && (
-					<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
+					<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] shrink-0 flex-nowrap">
 						<button
 							type="button"
 							disabled={isAiInferring}
@@ -288,7 +288,7 @@ export function CephalometricHudStrip({
 									const nextPref = cycle[(curIdx + 1) % cycle.length]!;
 									onChangeAiBackendPref(nextPref);
 								}}
-								className="h-7 px-2 rounded-md text-[11.5px] font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors shrink-0 cursor-pointer"
+								className="h-7 px-2 rounded-md text-[11.5px] font-medium text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shrink-0 cursor-pointer"
 								title="Режим разметки ТРГ: Анатомический шаблон / Внешний софт (Romexis, Dolphin, OnyxCeph, Ez3D)"
 								data-testid="ceph-ai-backend-switch-btn"
 							>
@@ -299,7 +299,7 @@ export function CephalometricHudStrip({
 				)}
 
 				<label
-					className="h-7 min-w-max px-2.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 text-[12.5px] font-medium flex items-center gap-1 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap shrink-0"
+					className="h-7 min-w-max px-2.5 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[12.5px] font-medium flex items-center gap-1 cursor-pointer transition-colors border border-[var(--line)] shadow-sm whitespace-nowrap shrink-0"
 					title="Загрузить пользовательский снимок ТРГ"
 				>
 					<UploadCloud size={13} />

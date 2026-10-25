@@ -157,6 +157,33 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 	const [buyerInn, setBuyerInn] = useState<string>("");
 	const [buyerName, setBuyerName] = useState<string>("");
 	const [isElectronicReceiptOnly, setIsElectronicReceiptOnly] = useState<boolean>(false);
+	const [availableLoyaltyPointsRub, setAvailableLoyaltyPointsRub] = useState<number>(
+		() => props.patientBonusPointsRub ?? props.patientLoyaltyPoints ?? 0
+	);
+
+	useEffect(() => {
+		const targetPatientId = patientId;
+		if (!isOpen || !targetPatientId) return;
+		let cancelled = false;
+		async function loadPatientLoyaltyPoints() {
+			if (!targetPatientId) return;
+			try {
+				const res = await fetch(`/api/loyalty/balance/${encodeURIComponent(targetPatientId)}`);
+				if (res.ok) {
+					const data = await res.json();
+					if (!cancelled && typeof data.activePoints === "number") {
+						setAvailableLoyaltyPointsRub(data.activePoints);
+					}
+				}
+			} catch {
+				// Silently fail in test or offline environment
+			}
+		}
+		void loadPatientLoyaltyPoints();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, patientId]);
 	const [discountPreset, setDiscountPreset] = useState<FastCheckoutDiscountPreset>(() => {
 		if (props.initialWarranty100) return "warranty_100";
 		if (props.initialDiscountPercent) return "manual_percent";
@@ -438,6 +465,25 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 		await handleExecutePayment(true);
 	};
 
+	const handleApplyOneClickLoyaltyPoints = () => {
+		if (availableLoyaltyPointsRub <= 0) return;
+		const pointsToRedeem = Math.min(availableLoyaltyPointsRub, targetBillRub);
+		if (pointsToRedeem >= targetBillRub) {
+			handleSingle100Percent("loyalty_points");
+		} else {
+			setLoyaltyAmountRub(pointsToRedeem);
+			const remaining = Number((targetBillRub - pointsToRedeem).toFixed(2));
+			if (activeMethod === "cash") {
+				setCashAmountRub(remaining);
+				setCashTenderedRub(remaining);
+			} else if (activeMethod === "sbp_qr") {
+				setSbpAmountRub(remaining);
+			} else {
+				setCardAmountRub(remaining);
+			}
+		}
+	};
+
 	const handleRetryFiscalizationDirect = async () => {
 		await executeRetryFiscalizationDirect({
 			patientPhone, patientEmail, effectiveCashierFullName, targetBillRub, cashAmountRub,
@@ -465,7 +511,8 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 		handleQuickPreset, handleStageSelect, handleSingle100Percent, handleAddRemainingToCard,
 		handleAddRemainingToCash, handleAddRemainingToSbp, handleAddRemainingToDeposit,
 		handleAddRemainingDepositPlusCard, handleAddRemainingToLoyalty, handleAddRemaining5050,
-		handleAddRemainingToFamily, handleExecutePayment, handleCheckSbpStatus, handleConfirmSbpManual,
+		handleAddRemainingToFamily, handleApplyOneClickLoyaltyPoints, availableLoyaltyPointsRub,
+		handleExecutePayment, handleCheckSbpStatus, handleConfirmSbpManual,
 		handleManualCardTerminalConfirm, handleAcceptPaymentOfflineFallback,
 		handleRetryFiscalizationDirect, handleFlushQueue,
 	};

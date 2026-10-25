@@ -63,7 +63,7 @@
 
 /* High contrast radiograph canvas backdrop */
 .ceph-canvas-dark {
-	background: #020617;
+	background: var(--paper-canvas, #020617);
 }
 
 /* Norm status badges with semantic tokens */
@@ -116,8 +116,8 @@
 
 /* Cephalometric Radiology Cockpit invariants */
 .ceph-workstation-root {
-	background-color: #020617 !important;
-	color: #f8fafc !important;
+	background-color: var(--paper-canvas, #020617) !important;
+	color: var(--ink, #f8fafc) !important;
 	color-scheme: dark;
 }
 

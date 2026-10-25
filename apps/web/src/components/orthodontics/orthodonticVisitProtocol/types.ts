@@ -1,63 +1,27 @@
 import type React from "react";
 import type {
-	AnbClass,
-	AnbClassOption,
-	AngleClass,
-	AngleClassOption,
-	WorkhorseArchwireOption,
-	SagittalAnomaly,
-	VerticalAnomaly,
-	TransversalAnomaly,
-	TmjStatus,
+	AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption,
+	SagittalAnomaly, VerticalAnomaly, TransversalAnomaly, TmjStatus,
 } from "@dental/shared";
 import type {
-	OrthodonticStageFilter,
-	TargetArch,
-	OrthodonticService804n,
-	CalculateOrthoServicesParams,
-	OrthodonticVisitProtocolWidgetProps,
-	OrthodonticPatientMemoParams,
+	OrthodonticStageFilter, TargetArch, OrthodonticService804n, CalculateOrthoServicesParams,
+	OrthodonticVisitProtocolWidgetProps, OrthodonticPatientMemoParams,
 } from "../orthoProtocolTypes";
-import type {
-	BracketSlot,
-	AlignerAttachmentPreset,
-} from "../OrthoBracketProtocolSection";
+import type { BracketSlot, AlignerAttachmentPreset } from "../OrthoBracketProtocolSection";
 
 export type {
-	AnbClass,
-	AnbClassOption,
-	AngleClass,
-	AngleClassOption,
-	WorkhorseArchwireOption,
-	SagittalAnomaly,
-	VerticalAnomaly,
-	TransversalAnomaly,
-	TmjStatus,
-	OrthodonticStageFilter,
-	TargetArch,
-	OrthodonticService804n,
-	CalculateOrthoServicesParams,
-	OrthodonticVisitProtocolWidgetProps,
-	OrthodonticPatientMemoParams,
-	BracketSlot,
-	AlignerAttachmentPreset,
+	AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption,
+	SagittalAnomaly, VerticalAnomaly, TransversalAnomaly, TmjStatus,
+	OrthodonticStageFilter, TargetArch, OrthodonticService804n, CalculateOrthoServicesParams,
+	OrthodonticVisitProtocolWidgetProps, OrthodonticPatientMemoParams, BracketSlot, AlignerAttachmentPreset,
 };
 
 export type ArchwireMaterial = "NiTi" | "CuNiTi" | "SS" | "TMA";
 
 export type ArchwireSection =
-	| ".012"
-	| ".014"
-	| ".016"
-	| ".018"
-	| ".020"
-	| ".014x.025"
-	| ".016x.022"
-	| ".016x.025"
-	| ".017x.025"
-	| ".018x.025"
-	| ".019x.025"
-	| ".021x.025";
+	| ".012" | ".014" | ".016" | ".018" | ".020"
+	| ".014x.025" | ".016x.022" | ".016x.025" | ".017x.025"
+	| ".018x.025" | ".019x.025" | ".021x.025";
 
 export interface TorquePresetOption {
 	id: string;

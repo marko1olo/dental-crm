@@ -45,14 +45,14 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 					onAddServicesToInvoice={protocol.handleAddServicesToInvoice}
 					onApplyToVisitNote={protocol.handleApplyToVisitNote}
 					onClose={onClose}
-					calculatedServicesCount={protocol.calculatedServices804n.length}
+					calculatedServicesCount={protocol.calculatedServices.length}
 					onSetMasterPhysiologicalNorm={protocol.handleSetMasterPhysiologicalNorm}
 				/>
 
 				<OrthoMobileSegmentedBar
 					mobileTab={mobileTab}
 					setMobileTab={setMobileTab}
-					servicesCount={protocol.calculatedServices804n.length}
+					servicesCount={protocol.calculatedServices.length}
 				/>
 
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto overflow-x-clip">
@@ -69,7 +69,7 @@ export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWi
 				<OrthoMobileStickyCta
 					mobileTab={mobileTab}
 					setMobileTab={setMobileTab}
-					servicesCount={protocol.calculatedServices804n.length}
+					servicesCount={protocol.calculatedServices.length}
 					onClose={onClose}
 					onApplyBoth={() => {
 						protocol.handleApplyToVisitNote();
