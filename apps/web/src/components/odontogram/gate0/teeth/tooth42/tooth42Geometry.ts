@@ -46,14 +46,11 @@ export const TOOTH42_GEOMETRY = {
 	zirconiaCrownShell:
 		"M 30,70 C 29,54 29.5,38 31,23.5 C 31.5,21.5 33,21 34.5,21 L 65.5,22.8 " +
 		"C 68,23 69.5,25 69.5,27.5 C 69,38 69.5,54 70,70 C 64,72.5 57,73.5 50,73.5 C 43,73.5 36,72.5 30,70 Z",
-	crownCuspSlopes: [
-		{ id: "mesial_lobe", d: "M 32,23 L 42,23.5 C 41.5,42 41,56 39,68 C 34,65 31,54 31,38 Z", type: "highlight" as const },
-		{ id: "distal_lobe", d: "M 58,24 L 68,24.5 C 68,38 67,54 62,68 C 60,56 59,42 58,24 Z", type: "shadow" as const },
-		{ id: "central_lobe", d: "M 46,23 L 54,23.5 L 53,68 L 47,68 Z", type: "highlight" as const },
-	],
+	crownCuspSlopes: [] as const,
 	crownSpecularRidges: [
-		{ id: "incisal_bevel", d: "M 33,21.5 L 67,23.2" },
-		{ id: "central_ridge", d: "M 49,23 L 49,66" },
+		{ id: "incisal_bevel", d: "M 33.5,22.0 L 66.5,23.5" },
+		{ id: "mesial_mamelon", d: "M 38.0,24.5 C 38.0,38.0 37.5,50.0 37.0,60.0" },
+		{ id: "distal_mamelon", d: "M 62.0,25.5 C 62.0,38.0 62.5,50.0 63.0,60.0" },
 	],
-	crownEquatorHighlight: "M 32,52 C 40,55 60,55 68,52",
+	crownEquatorHighlight: "M 31,52 C 40,55 60,55 69,52",
 } as const;

@@ -44,16 +44,11 @@ export const TOOTH43_GEOMETRY = {
 	zirconiaCrownShell:
 		"M 23,73 C 21,58 20,40 24,28 C 30,20 40,13 50,8 C 60,13 70,20 76,28 " +
 		"C 80,40 79,58 77,73 C 68,75 50,76 23,73 Z",
-	crownCuspSlopes: [
-		{ id: "mesial-slope", d: "M 50,8 C 42,14 34,22 25,28 C 30,34 38,36 46,38 C 48,26 49,16 50,8 Z", type: "highlight" as const },
-		{ id: "distal-slope", d: "M 50,8 C 58,14 66,22 75,28 C 70,34 62,36 54,38 C 52,26 51,16 50,8 Z", type: "shadow" as const },
-		{ id: "labial-ridge", d: "M 48,10 C 47,28 47,50 48,68 L 52,68 C 53,50 53,28 52,10 Z", type: "highlight" as const },
-		{ id: "cervical-cingulum", d: "M 26,62 C 34,60 42,59 50,59 C 58,59 66,60 74,62 C 76,68 77,71 77,73 C 68,75 50,76 23,73 Z", type: "shadow" as const },
-	],
+	crownCuspSlopes: [] as const,
 	crownSpecularRidges: [
-		{ id: "labial-axis", d: "M 49,9 L 49,60" },
-		{ id: "mesial-arm", d: "M 25,28 C 33,20 42,14 49,9" },
-		{ id: "distal-arm", d: "M 51,9 C 58,14 67,20 75,28" },
+		{ id: "labial-axis", d: "M 50.0,9.0 C 50.0,26.0 50.0,44.0 50.0,62.0" },
+		{ id: "mesial-cusp-slope", d: "M 50.0,9.0 C 42.0,15.0 34.0,22.0 26.0,28.0" },
+		{ id: "distal-cusp-slope", d: "M 50.0,9.0 C 58.0,15.0 66.0,22.0 74.0,29.0" },
 	],
 	crownEquatorHighlight: "M 26,52 C 38,56 62,56 74,52",
 } as const;

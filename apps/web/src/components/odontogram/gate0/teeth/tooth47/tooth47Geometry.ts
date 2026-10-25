@@ -65,33 +65,13 @@ export const TOOTH47_GEOMETRY = {
 	buccalCervicalRidge:
 		"M 16,74 C 20,68 35,62.5 50,62.5 C 65,62.5 80,68 84,74 C 70,72 30,72 16,74 Z",
 	cervicalRidgeHighlight: "M 17,72 C 22,66.5 35,63.5 50,63.5 C 65,63.5 78,67.5 83,72",
-	// Cruciform (+) fissure pattern dividing occlusal table into 4 quadrants
+	// Organic offset fissure pattern (non-cruciform, natural Wheeler curvature)
 	fissuresCruciform: [
-		{
-			// Transverse central groove crossing the occlusal table
-			id: "sulcus-centralis",
-			d: "M 24,21.0 C 32,21.2 41,21.8 50,22.0 C 59,21.8 68,21.2 76,21.0",
-		},
-		{
-			// Vertical buccal groove ending naturally in occlusal third
-			id: "sulcus-buccalis",
-			d: "M 50,22.0 C 49.8,26.0 49.8,30.0 50,33.5",
-		},
-		{
-			// Vertical lingual groove extending between ML and DL cusps
-			id: "sulcus-lingualis",
-			d: "M 50,22.0 C 50,18.0 50,15.0 50,12.0",
-		},
-		{
-			// Mesial triangular fossa
-			id: "fossa-triangularis-mesialis",
-			d: "M 24,21.0 C 21,19.5 19,21.5 17,23.5 M 24,21.0 C 21,23.0 19,25.0 18,27.0",
-		},
-		{
-			// Distal triangular fossa
-			id: "fossa-triangularis-distalis",
-			d: "M 76,21.0 C 79,19.5 81,21.5 83,23.5 M 76,21.0 C 79,23.0 81,25.0 82,27.0",
-		},
+		{ id: "sulcus-centralis", d: "M 25,21.5 C 33,22.6 42,23.2 50,22.4 C 58,21.6 66,22.2 75,22.0" },
+		{ id: "sulcus-buccalis", d: "M 44,22.8 C 43,26.5 42,30.5 41,34.0" },
+		{ id: "sulcus-lingualis", d: "M 53,22.2 C 53.5,18.5 54,15.5 54,12.5" },
+		{ id: "fossa-triangularis-mesialis", d: "M 25,21.5 C 22,20 20,21.5 18,23 M 25,21.5 C 22,23 20,24.5 19,26" },
+		{ id: "fossa-triangularis-distalis", d: "M 75,22.0 C 78,20.5 80,21.5 82,23 M 75,22.0 C 78,23.5 80,24.5 81,26" },
 	],
 	// Sculpted CAD/CAM zirconia crown shell with 4 distinct cusp tips
 	zirconiaCrownShell:
@@ -101,19 +81,19 @@ export const TOOTH47_GEOMETRY = {
 	foramenCaecum: { cx: 50.0, cy: 45.5, r: 0.9 },
 	crownCuspSlopes: [
 		{ id: "mb-m", d: "M 23,16 C 18,18 15,21 14,24 C 18,25 22,23 25,21 Z", type: "highlight" as const },
-		{ id: "mb-d", d: "M 23,16 C 27,18 32,20 37,21.5 C 35,26 31,28 27,26 Z", type: "shadow" as const },
+		{ id: "mb-d", d: "M 23,16 C 27,18.5 32,20.5 38,22 C 36,25.5 32,27 28,25.5 C 25,23 23.5,19 23,16 Z", type: "shadow" as const },
 		{ id: "ml-m", d: "M 32,10 C 26,12 22,14 21,16 C 24,18 28,19 32,20 Z", type: "highlight" as const },
-		{ id: "ml-d", d: "M 32,10 C 35,14 39,18 42,21.5 C 44,18 46,14 47,12 Z", type: "shadow" as const },
-		{ id: "db-m", d: "M 50,22 C 55,20 62,18 70,17 C 67,21 64,23 58,24 Z", type: "highlight" as const },
-		{ id: "db-d", d: "M 75,16.5 C 79,18 82,21 84,24 C 79,25 75,25 71,23 Z", type: "shadow" as const },
-		{ id: "dl-m", d: "M 63,10.5 C 58,11 54,12 50,13 C 52,17 54,19 55,22 Z", type: "highlight" as const },
-		{ id: "dl-d", d: "M 63,10.5 C 67,11 71,13 74,14 C 72,17 70,20 68,22 Z", type: "shadow" as const },
+		{ id: "ml-d", d: "M 32,10 C 35,13.5 39,17.5 43,21 C 45,18.5 47,15 48,12 C 43,11 38,10 32,10 Z", type: "shadow" as const },
+		{ id: "db-m", d: "M 48,22 C 54,20.5 61,19 69,17.5 C 66,21 63,23 57,24 C 53,23.5 50,23 48,22 Z", type: "highlight" as const },
+		{ id: "db-d", d: "M 74,17 C 78,18.5 82,21 84,24 C 79,25 75,24.5 71,23 C 72,21 73,19 74,17 Z", type: "shadow" as const },
+		{ id: "dl-m", d: "M 63,10.5 C 58,11.5 54,12.5 50,13.5 C 52,17 54,19 55,22 C 59,18 61,14 63,10.5 Z", type: "highlight" as const },
+		{ id: "dl-d", d: "M 63,10.5 C 67,11.5 71,13 74,14 C 72,17 70,20 68,22 C 66,18 64,14 63,10.5 Z", type: "shadow" as const },
 	],
 	crownSpecularRidges: [
-		{ id: "mb", d: "M 21,17 C 26,18.5 31,20 37,21.5" },
-		{ id: "ml", d: "M 30,10.5 C 33,14 37,18 40,21.5" },
-		{ id: "db", d: "M 54,22 C 60,20 67,18 73,17" },
-		{ id: "dl", d: "M 62,11 C 59,14 56,18 53,21.5" },
+		{ id: "mb", d: "M 22,16.5 C 27,18.5 32,20.2 38,21.8" },
+		{ id: "ml", d: "M 31,10.5 C 34,14 38,18 42,21.5" },
+		{ id: "db", d: "M 53,22 C 59,20.5 66,19 72,17.5" },
+		{ id: "dl", d: "M 62,11 C 59,14 56,17.5 53,21.5" },
 	],
 	crownEquatorHighlight: "M 19,52 C 34,56 66,56 81,52",
 } as const;

@@ -41,8 +41,8 @@ export const Tooth43RestorationOverlay: React.FC<
 					toothId="43"
 					crownPath={geo.zirconiaCrownShell || geo.crownMonolithPath}
 					cervicalShoulderPath={geo.cervicalShoulderPath}
-					fissures={[{ id: "labialRidge", d: geo.labialRidge }]}
-					cuspSlopes={geo.crownCuspSlopes}
+					fissures={undefined}
+					cuspSlopes={undefined}
 					specularRidges={geo.crownSpecularRidges}
 					equatorHighlight={geo.crownEquatorHighlight}
 					material={crownMaterial}
