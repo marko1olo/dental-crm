@@ -12,6 +12,7 @@ import {
 import {
 	parseSettingsPayload,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 } from "./helpers.js";
 import {
 	uiPreferencesConcurrentSaveMessage,
@@ -43,7 +44,7 @@ export function registerUiPreferencesRoutes(app: FastifyInstance): void {
 	 * как время, и следующее сохранение сравнивать было уже не с чем.
 	 */
 	app.put("/api/settings/preferences", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(uiPreferencesInputSchema, request.body);
 		if (!input) {

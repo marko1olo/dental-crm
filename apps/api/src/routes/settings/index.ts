@@ -14,6 +14,8 @@ export {
 	parseSettingsPayload,
 	protocolTemplateMutationRejection,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
+	requireSettingsSensitiveReadAccess,
 	serviceCatalogMutationRejection,
 	staffAuthorityMutationRejection,
 	staffMutationRejection,

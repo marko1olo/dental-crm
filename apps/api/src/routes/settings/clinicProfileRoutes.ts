@@ -18,6 +18,7 @@ import {
 	clinicProfileMutationRejection,
 	parseSettingsPayload,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 } from "./helpers.js";
 import {
 	clinicModeValidationMessage,
@@ -71,7 +72,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(
 			updateClinicFiscalSettingsSchema,
@@ -91,7 +92,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.patch("/api/settings/clinic/fiscal", handleUpdateFiscalSettings);
 
 	app.post("/api/settings/clinic/mode", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(updateClinicModeSchema, request.body);
 		if (!input) {
@@ -110,7 +111,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(
 			applyClinicScalePresetSchema,
@@ -135,7 +136,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/clinic/scale-preset", handleApplyScalePreset);
 
 	const handleUpdateClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(updateClinicProfileSchema, request.body);
 		if (!input) {

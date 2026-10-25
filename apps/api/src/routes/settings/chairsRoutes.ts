@@ -16,6 +16,7 @@ import {
 	chairWorkingHoursRejection,
 	parseSettingsPayload,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 } from "./helpers.js";
 import {
 	chairCreateValidationMessage,
@@ -41,7 +42,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	});
 
 	app.post("/api/settings/chairs", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(createChairSchema, request.body);
 		if (!input) {
@@ -61,7 +62,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	app.put(
 		"/api/settings/chairs/:chairId/working-hours",
 		async (request, reply) => {
-			const orgId = await requireSettingsAccess(request, reply);
+			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
 			const params = request.params as { chairId?: string };
 			if (!params.chairId) {
@@ -101,7 +102,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	 * значило бы ответить 200 и молча потерять ввод оператора.
 	 */
 	app.put("/api/settings/chairs/:chairId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { chairId?: string };
 		if (!params.chairId) {
@@ -151,7 +152,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	 * становится false. Уже назначенные приемы не теряют привязку к кабинету.
 	 */
 	app.delete("/api/settings/chairs/:chairId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { chairId?: string };
 		if (!params.chairId) {

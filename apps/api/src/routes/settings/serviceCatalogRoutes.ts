@@ -8,6 +8,7 @@ import {
 import {
 	parseSettingsPayload,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 	serviceCatalogMutationRejection,
 } from "./helpers.js";
 import {
@@ -45,7 +46,7 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	 * из тела запроса, и стоит в условии КАЖДОГО запроса к базе.
 	 */
 	app.post("/api/settings/catalog", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload<CreateServiceCatalogItemInput>(
 			createServiceCatalogItemSchema,
@@ -78,7 +79,7 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	 * Доступно для соло-врача и клиник (Мандаты 8e, 8k, 8n).
 	 */
 	app.post("/api/settings/catalog-seed-baseline", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const body = (request.body as { replace?: boolean } | null) || {};
 		const replace = Boolean(body.replace);
@@ -98,7 +99,7 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	});
 
 	app.put("/api/settings/catalog/:serviceId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { serviceId?: string };
 		if (!params.serviceId) {
@@ -154,7 +155,7 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	 * оператору в подтверждении: «Связанные счета сохранятся, но услуга уйдет в архив».
 	 */
 	app.delete("/api/settings/catalog/:serviceId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { serviceId?: string };
 		if (!params.serviceId) {

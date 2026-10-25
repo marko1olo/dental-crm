@@ -6,14 +6,18 @@ import {
 	backupsDirectory,
 	createEncryptedBackup,
 } from "../../services/backupWorker.js";
-import { requireSettingsAccess } from "./helpers.js";
+import {
+	requireSettingsAccess,
+	requireSettingsMutationAccess,
+	requireSettingsSensitiveReadAccess,
+} from "./helpers.js";
 
 export function registerBackupRoutes(app: FastifyInstance): void {
 	/**
 	 * Получить список реальных зашифрованных копий на диске с SHA-256 и точным размером в байтах.
 	 */
 	app.get("/api/settings/backup/list", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsSensitiveReadAccess(request, reply);
 		if (!orgId) return;
 
 		try {
@@ -71,7 +75,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	 * Запустить реальное создание зашифрованной резервной копии базы клиники.
 	 */
 	app.post("/api/settings/backup/create", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
 		const outcome = await createEncryptedBackup();

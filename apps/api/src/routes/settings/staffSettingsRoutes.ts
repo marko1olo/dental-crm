@@ -24,6 +24,7 @@ import { hashCredential } from "../../utils/cryptoHelper.js";
 import {
 	parseSettingsPayload,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 	settingsDomainMessage,
 	staffAuthorityMutationRejection,
 	staffMutationRejection,
@@ -59,7 +60,7 @@ import {
 
 export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/staff", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload(createStaffMemberSchema, request.body);
 		if (!input) {
@@ -77,7 +78,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.post(
 		"/api/settings/staff/:staffId/credentials",
 		async (request, reply) => {
-			const orgId = await requireSettingsAccess(request, reply);
+			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
 			const params = request.params as { staffId?: string };
 			if (!params.staffId) {
@@ -147,7 +148,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.put(
 		"/api/settings/staff/:staffId/working-hours",
 		async (request, reply) => {
-			const orgId = await requireSettingsAccess(request, reply);
+			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
 			const params = request.params as { staffId?: string };
 			if (!params.staffId) {
@@ -191,7 +192,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	 * не из тела запроса, и каждый запрос к базе фильтруется по ней.
 	 */
 	app.put("/api/settings/staff/:staffId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {
@@ -246,7 +247,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	 * возвращается в ответе с active: false, история лечения остается с автором.
 	 */
 	app.delete("/api/settings/staff/:staffId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {
@@ -298,7 +299,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	 * проценту, которого никто не согласовывал.
 	 */
 	app.put("/api/settings/staff/:staffId/commission", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {

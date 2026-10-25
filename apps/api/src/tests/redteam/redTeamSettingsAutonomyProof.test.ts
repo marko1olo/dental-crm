@@ -10,14 +10,28 @@ import * as schema from "../../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 
+/**
+ * ЧТО БЫЛО. Этот файл подписывал токен с ролью doctor и требовал 201/200 на
+ * POST прайса, правке кресел и назначении СВОЕЙ комиссии врачу. То есть тест
+ * охранял дыру: врач, у которого по матрице прав нет settings.write, мог из
+ * интерфейса (или curl'ом) переписать каталог цен и поднять себе процент.
+ * «Автономия врача» (Мандат 8e) — это свобода клинических решений и скидок,
+ * а не самоуправство в прайсе и собственной зарплате.
+ *
+ * ЧТО ЗДЕСЬ. Мутации настроек выполняет токен владельца (его право
+ * settings.write), persistence-проверки сохранены, и добавлен обратный
+ * ассерт: токен врача на тех же адресах получает 403 PermissionDenied
+ * с человеческим текстом отказа — ровно то, что обещает матрица прав.
+ */
 describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 	let app: FastifyInstance;
 	let orgId: string;
 	let doctorUserId: string;
-	let validStaffToken: string;
+	let ownerUserId: string;
+	let doctorToken: string;
+	let ownerToken: string;
 
 	before(async () => {
-		// Use real database
 		const [org] = await db
 			.select({ id: schema.organizations.id })
 			.from(schema.organizations)
@@ -25,34 +39,44 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 		assert.ok(org, "Organization must exist in DB");
 		orgId = org.id;
 
-		// Find or create doctor user in this org
-		let [user] = await db
-			.select({ id: schema.users.id })
-			.from(schema.users)
-			.where(eq(schema.users.organizationId, orgId))
-			.limit(1);
+		const [doctor] = await db
+			.insert(schema.users)
+			.values({
+				organizationId: orgId,
+				fullName: "Тестовый Доктор Редтим",
+				role: "doctor",
+				isActive: true,
+			})
+			.returning({ id: schema.users.id });
+		doctorUserId = doctor!.id;
 
-		if (!user) {
-			const [createdUser] = await db
-				.insert(schema.users)
-				.values({
-					organizationId: orgId,
-					fullName: "Тестовый Доктор Редтим",
-					role: "doctor",
-					isActive: true,
-				})
-				.returning({ id: schema.users.id });
-			user = createdUser!;
-		}
-		doctorUserId = user.id;
+		const [owner] = await db
+			.insert(schema.users)
+			.values({
+				organizationId: orgId,
+				fullName: "Тестовый Владелец Редтим",
+				role: "owner",
+				isActive: true,
+			})
+			.returning({ id: schema.users.id });
+		ownerUserId = owner!.id;
 
 		const secret = authTokenSecret();
-		validStaffToken = signToken(
+		doctorToken = signToken(
 			{
 				userId: doctorUserId,
 				organizationId: orgId,
 				role: "doctor",
 				fullName: "Тестовый Доктор Редтим",
+			},
+			secret,
+		);
+		ownerToken = signToken(
+			{
+				userId: ownerUserId,
+				organizationId: orgId,
+				role: "owner",
+				fullName: "Тестовый Владелец Редтим",
 			},
 			secret,
 		);
@@ -67,16 +91,49 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 
 	after(async () => {
 		await app.close();
+		await db
+			.delete(schema.doctorCommissions)
+			.where(eq(schema.doctorCommissions.userId, doctorUserId));
+		await db.delete(schema.users).where(eq(schema.users.id, doctorUserId));
+		await db.delete(schema.users).where(eq(schema.users.id, ownerUserId));
 	});
 
-	test("1. Authed staff token eliminates 403 Forbidden on /api/settings/catalog without admin secret", async () => {
+	test("0. Врач получает внятный отказ (403) на мутации настроек", async () => {
 		await withFixtureTenant(orgId, async () => {
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/settings/catalog",
 				headers: {
 					"content-type": "application/json",
-					"x-dente-staff-token": validStaffToken,
+					"x-dente-staff-token": doctorToken,
+				},
+				payload: {
+					title: "Попытка врача изменить прайс",
+					code: "A16.07.008.001",
+					basePriceRub: 4500,
+					active: true,
+				},
+			});
+			assert.equal(res.statusCode, 403);
+			const body = JSON.parse(res.body);
+			assert.equal(body.error, "PermissionDenied");
+			assert.equal(body.permission, "settings.write");
+			assert.ok(
+				body.message.toLowerCase().includes("врач"),
+				`Текст отказа должен называть роль, а не коды: ${body.message}`,
+			);
+			assert.ok(!body.message.includes("undefined"));
+		});
+	});
+
+	test("1. Токен владельца создаёт услугу каталога без секрета администратора", async () => {
+		await withFixtureTenant(orgId, async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/settings/catalog",
+				headers: {
+					"content-type": "application/json",
+					"x-dente-staff-token": ownerToken,
 				},
 				payload: {
 					title: "Эндодонтическое лечение корневого канала зуба (RedTeam SSOT)",
@@ -92,8 +149,8 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 				},
 			});
 
-			assert.notEqual(res.statusCode, 403, "Must not return 403 Forbidden with valid session token");
-			assert.notEqual(res.statusCode, 503, "Must not return 503 Secret Missing with valid session token");
+			assert.notEqual(res.statusCode, 403, "Владельцу не нужен секрет при живом токене");
+			assert.notEqual(res.statusCode, 503, "Владельцу не нужен секрет при живом токене");
 			assert.equal(res.statusCode, 201, `Service must be created: ${res.body}`);
 
 			const body = JSON.parse(res.body);
@@ -102,7 +159,6 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 			assert.equal(body.order804nCode, "A16.07.008");
 			assert.equal(body.materialsCostRub, 850.5);
 
-			// Clean up created test service
 			if (body.id) {
 				await db
 					.delete(schema.serviceCatalogItems)
@@ -111,14 +167,14 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 		});
 	});
 
-	test("2. Authorization: Bearer token also passes without 403 Forbidden", async () => {
+	test("2. Authorization: Bearer токен владельца проходит", async () => {
 		await withFixtureTenant(orgId, async () => {
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/settings/catalog",
 				headers: {
 					"content-type": "application/json",
-					authorization: `Bearer ${validStaffToken}`,
+					authorization: `Bearer ${ownerToken}`,
 				},
 				payload: {
 					title: "Профессиональная гигиена полости рта (Bearer Test)",
@@ -134,7 +190,7 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 				},
 			});
 
-			assert.notEqual(res.statusCode, 403, "Bearer token must not return 403");
+			assert.notEqual(res.statusCode, 403, "Bearer токен владельца не должен получать 403");
 			assert.equal(res.statusCode, 201, `Service must be created: ${res.body}`);
 			const body = JSON.parse(res.body);
 			if (body.id) {
@@ -145,15 +201,14 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 		});
 	});
 
-	test("3. Chair renaming & active status persists via PUT /api/settings/chairs/:id", async () => {
+	test("3. Переименование кресла и статус сохраняются через PUT владельцем", async () => {
 		await withFixtureTenant(orgId, async () => {
-			// Create a chair first
 			const createRes = await app.inject({
 				method: "POST",
 				url: "/api/settings/chairs",
 				headers: {
 					"content-type": "application/json",
-					"x-dente-staff-token": validStaffToken,
+					"x-dente-staff-token": ownerToken,
 				},
 				payload: {
 					name: "Кресло RedTeam Тест",
@@ -167,13 +222,12 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 			assert.equal(createRes.statusCode, 201, `Chair must be created: ${createRes.body}`);
 			const createdChair = JSON.parse(createRes.body);
 
-			// Update chair name and active status
 			const updateRes = await app.inject({
 				method: "PUT",
 				url: `/api/settings/chairs/${createdChair.id}`,
 				headers: {
 					"content-type": "application/json",
-					"x-dente-staff-token": validStaffToken,
+					"x-dente-staff-token": ownerToken,
 				},
 				payload: {
 					name: "Кабинет №1 (Терапия VIP)",
@@ -184,20 +238,18 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 			const updatedChair = JSON.parse(updateRes.body);
 			assert.equal(updatedChair.name, "Кабинет №1 (Терапия VIP)");
 
-			// Clean up created chair
 			await db.delete(schema.chairs).where(eq(schema.chairs.id, createdChair.id));
 		});
 	});
 
-	test("4. Doctor commission percentages are isolated and preserved when staff profile is edited", async () => {
+	test("4. Комиссия врача сохраняется при правке карточки сотрудника владельцем", async () => {
 		await withFixtureTenant(orgId, async () => {
-			// Set doctor commission
 			const commRes = await app.inject({
 				method: "PUT",
 				url: `/api/settings/staff/${doctorUserId}/commission`,
 				headers: {
 					"content-type": "application/json",
-					"x-dente-staff-token": validStaffToken,
+					"x-dente-staff-token": ownerToken,
 				},
 				payload: {
 					commissionPct: 35,
@@ -207,13 +259,12 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 			});
 			assert.equal(commRes.statusCode, 200, `Commission set: ${commRes.body}`);
 
-			// Edit staff profile (name, phone)
 			const profileRes = await app.inject({
 				method: "PUT",
 				url: `/api/settings/staff/${doctorUserId}`,
 				headers: {
 					"content-type": "application/json",
-					"x-dente-staff-token": validStaffToken,
+					"x-dente-staff-token": ownerToken,
 				},
 				payload: {
 					fullName: "Д-р Тестовый Обновленный",
@@ -222,7 +273,6 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 			});
 			assert.equal(profileRes.statusCode, 200, `Profile update: ${profileRes.body}`);
 
-			// Verify commission is still 35% in doctor_commissions table
 			const [activeComm] = await db
 				.select()
 				.from(schema.doctorCommissions)
@@ -237,6 +287,16 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 
 			assert.ok(activeComm, "Active commission must exist");
 			assert.equal(Number(activeComm.commissionPct), 35, "Commission % must be preserved at 35");
+			assert.equal(
+				Number(activeComm.materialCostDeductionPct),
+				10,
+				"Материальный вычет сохранён",
+			);
+			assert.equal(
+				Number(activeComm.labCostDeductionPct),
+				5,
+				"Лабораторный вычет сохранён",
+			);
 		});
 	});
 });

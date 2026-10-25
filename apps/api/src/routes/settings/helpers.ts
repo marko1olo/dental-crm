@@ -16,6 +16,10 @@ import {
 	StaffAuthorityStorageDisabledError,
 } from "../../db/staffAuthorityQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import {
+	enforcePermissionWhenStaffKnown,
+	type Permission,
+} from "../../security/permissions.js";
 import { repairMojibakeDeep } from "../../text/repairMojibake.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 import {
@@ -494,3 +498,48 @@ export async function requireSettingsAccess(
 	}
 	return org.id;
 }
+
+/**
+ * Барьер ИЗМЕНЕНИЯ настроек: то же, что requireSettingsAccess, плюс право роли.
+ *
+ * ЧТО БЫЛО. requireSettingsAccess проверяет периметр (подписанный токен клиники
+ * или секрет администратора), но НЕ роль: любой сотрудник с личным токеном —
+ * ассистент, куратор, врач — проходил на POST/PUT/DELETE профиля клиники,
+ * прайса, кресел, шаблонов протоколов и сотрудников. Роль проверял только
+ * интерфейс (кнопки скрыты), а маршрут был открыт любому токену клиники.
+ *
+ * ЧТО ЗДЕСЬ. Мягкий режим из permissions.ts (enforcePermissionWhenStaffKnown):
+ * сотрудник ОПОЗНАН и роль не даёт права — отказ 403 с человеческим текстом;
+ * запрос без личности (секрет/токен кабинета) решают прежние барьеры. Это
+ * заранее заявленный staged-переход: когда вход сотрудника станет обязательным
+ * везде, вызовы меняются на строгий requirePermission без смены мест вызова.
+ *
+ * Право: settings.write — владелец и admin (матрица ROLE_PERMISSIONS). Ставится
+ * ТОЛЬКО на мутации; чтения (кресла для расписания, реквизиты для печати,
+ * темы интерфейса) нужны всем ролям и гардом не трогаются.
+ */
+export async function requireSettingsMutationAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<string | null> {
+	if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) {
+		return null;
+	}
+	return requireSettingsAccess(request, reply);
+}
+
+/**
+ * Барьер чтения чувствительного: настройки, которые не нужны рядовым ролям
+ * (например, список резервных копий). Мягкий режим, право settings.read.
+ */
+export async function requireSettingsSensitiveReadAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<string | null> {
+	if (!enforcePermissionWhenStaffKnown(request, reply, "settings.read")) {
+		return null;
+	}
+	return requireSettingsAccess(request, reply);
+}
+
+export type SettingsPermission = Permission;

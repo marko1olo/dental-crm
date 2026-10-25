@@ -8,6 +8,7 @@ import {
 	parseSettingsPayload,
 	protocolTemplateMutationRejection,
 	requireSettingsAccess,
+	requireSettingsMutationAccess,
 } from "./helpers.js";
 import {
 	createProtocolTemplateSchema,
@@ -41,7 +42,7 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	 * протокол, ни исправить пришедший с посевом.
 	 */
 	app.post("/api/settings/protocols", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const input = parseSettingsPayload<CreateProtocolTemplateInput>(
 			createProtocolTemplateSchema,
@@ -70,7 +71,7 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	});
 
 	app.put("/api/settings/protocols/:templateId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { templateId?: string };
 		if (!params.templateId) {
@@ -126,7 +127,7 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	 * счёта. Экран обещает оператору именно удаление.
 	 */
 	app.delete("/api/settings/protocols/:templateId", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
+		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { templateId?: string };
 		if (!params.templateId) {
