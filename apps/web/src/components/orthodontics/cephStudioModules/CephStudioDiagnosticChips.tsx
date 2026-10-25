@@ -1,11 +1,12 @@
 import React from "react";
 import { CEPHALOMETRIC_LANDMARKS } from "../cephalometricMath";
-import type { CephalometricAnalysisResult, TorqueSelectionAdvice } from "../cephalometric/types";
+import type { CephalometricAnalysisResult } from "../cephalometric/types";
+import type { TorqueRecommendation } from "./cephStudioTypes";
 
 export interface CephStudioDiagnosticChipsProps {
 	readonly theme: "light" | "dark";
 	readonly analysis: CephalometricAnalysisResult;
-	readonly torqueRecommendation: TorqueSelectionAdvice | null;
+	readonly torqueRecommendation: TorqueRecommendation | null;
 }
 
 export const CephStudioDiagnosticChips: React.FC<CephStudioDiagnosticChipsProps> = ({

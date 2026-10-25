@@ -1,12 +1,12 @@
-import type { CephActiveTab, CephMobileView, CephAiStats } from "./types";
+import type { CephTabId, CephMobileViewId, CephAiStats } from "./types";
 import type { LandmarkKey, LandmarkMap, CephalometricAnalysisResult } from "../cephalometricMath";
 import type { CephAiBackendPreference, CephBackendInfo } from "../cephAiInferenceService";
 
 export interface CephModalRightSidebarProps {
-	readonly activeTab: CephActiveTab;
-	readonly setActiveTab: (tab: CephActiveTab) => void;
-	readonly mobileView: CephMobileView;
-	readonly setMobileView: (view: CephMobileView) => void;
+	readonly activeTab: CephTabId;
+	readonly setActiveTab: (tab: CephTabId) => void;
+	readonly mobileView: CephMobileViewId;
+	readonly setMobileView: (view: CephMobileViewId) => void;
 	readonly isImageLoaded: boolean;
 	readonly analysis: CephalometricAnalysisResult;
 	readonly landmarks: LandmarkMap;
@@ -25,7 +25,7 @@ export interface CephModalRightSidebarProps {
 	readonly onResetLandmarks: () => void;
 	readonly onSaveConsultationWithoutCeph: () => void;
 	readonly onInsertToChart: () => void;
-	readonly onCopyText: (text: string) => void;
+	readonly onCopyText: () => void;
 	readonly copied: boolean;
 	readonly currentEffectiveProtocolText: string;
 }

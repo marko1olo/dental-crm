@@ -53,7 +53,7 @@ export const MaterialCardItem: React.FC<MaterialCardItemProps> = ({
 
 			<div className="flex items-center gap-2 shrink-0">
 				<span className="text-[11.5px] font-bold text-teal-600 dark:text-teal-400">
-					{mat.marketSharePct}% рынка
+					{mat.tier === "premium" ? "премиум" : mat.tier === "mainstream" ? "мейнстрим" : "бюджетный"}
 				</span>
 				{isSelected && <Check size={16} className="text-teal-600 dark:text-teal-400" />}
 			</div>

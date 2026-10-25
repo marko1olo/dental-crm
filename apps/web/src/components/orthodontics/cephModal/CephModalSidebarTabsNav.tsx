@@ -1,13 +1,13 @@
 import React from "react";
 import { CheckCircle2, FileText } from "lucide-react";
 import { showToast } from "../../GlobalToast";
-import type { CephActiveTab, CephMobileView } from "./types";
+import type { CephTabId, CephMobileViewId } from "./types";
 import type { CephalometricAnalysisResult } from "../cephalometricMath";
 
 export interface CephModalSidebarTabsNavProps {
-	readonly activeTab: CephActiveTab;
-	readonly setActiveTab: (tab: CephActiveTab) => void;
-	readonly setMobileView: (view: CephMobileView) => void;
+	readonly activeTab: CephTabId;
+	readonly setActiveTab: (tab: CephTabId) => void;
+	readonly setMobileView: (view: CephMobileViewId) => void;
 	readonly isImageLoaded: boolean;
 	readonly analysis: CephalometricAnalysisResult;
 }
