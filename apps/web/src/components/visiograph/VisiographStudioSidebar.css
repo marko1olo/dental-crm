@@ -1,0 +1,49 @@
+.visiograph-studio-sidebar {
+	width: 230px;
+	background: var(--paper-soft, #161b22);
+	border-right: 1px solid var(--line, #30363d);
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	font-size: 0.82rem;
+	color: var(--ink, #c9d1d9);
+}
+
+.visiograph-sidebar-divider {
+	border: none;
+	border-top: 1px solid var(--line, #30363d);
+	margin: 4px 0;
+}
+
+.visiograph-sidebar-calib-box {
+	background: var(--paper-strong, #0d1117);
+	padding: 8px;
+	border-radius: 6px;
+	font-size: 0.76rem;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.visiograph-sidebar-preset-btn {
+	min-height: 44px;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 0.78rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	text-align: left;
+}
+
+.visiograph-sidebar-clear-btn {
+	background: var(--paper-strong, #21262d);
+	color: var(--danger, #f85149);
+	border: 1px solid var(--line, #30363d);
+	border-radius: 6px;
+	padding: 5px 8px;
+	font-size: 0.75rem;
+	cursor: pointer;
+}

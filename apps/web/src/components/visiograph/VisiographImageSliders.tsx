@@ -1,12 +1,13 @@
 /**
  * VisiographImageSliders.tsx
- *
  * Real-time sliders for Brightness, Contrast, Gamma (γ), and Sharpness (USM).
+ * Modular decomposition <= 120 lines (Mandate 8b).
  */
 
 import { Sliders } from "lucide-react";
 import type React from "react";
 import type { VisiographImageParams } from "./VisiographImageProcessor";
+import { VisiographSliderField } from "./VisiographSliderField";
 
 export interface VisiographImageSlidersProps {
 	params: VisiographImageParams;
@@ -51,82 +52,54 @@ export function VisiographImageSliders({
 				</button>
 			</div>
 
-			{/* Brightness */}
-			<div>
-				<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-					<span>Яркость</span>
-					<span>{params.brightness > 0 ? `+${params.brightness}` : params.brightness}</span>
-				</div>
-				<input
-					type="range"
-					min="-100"
-					max="100"
-					value={params.brightness}
-					onChange={(e) => {
-						setParams((p) => ({ ...p, brightness: Number(e.target.value) }));
-						setActiveClinicalFilter(null);
-					}}
-					style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
-				/>
-			</div>
+			<VisiographSliderField
+				label="Яркость"
+				valueText={params.brightness > 0 ? `+${params.brightness}` : params.brightness}
+				value={params.brightness}
+				min={-100}
+				max={100}
+				onChange={(val) => {
+					setParams((p) => ({ ...p, brightness: val }));
+					setActiveClinicalFilter(null);
+				}}
+			/>
 
-			{/* Contrast */}
-			<div>
-				<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-					<span>Контраст</span>
-					<span>{params.contrast > 0 ? `+${params.contrast}` : params.contrast}</span>
-				</div>
-				<input
-					type="range"
-					min="-100"
-					max="100"
-					value={params.contrast}
-					onChange={(e) => {
-						setParams((p) => ({ ...p, contrast: Number(e.target.value) }));
-						setActiveClinicalFilter(null);
-					}}
-					style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
-				/>
-			</div>
+			<VisiographSliderField
+				label="Контраст"
+				valueText={params.contrast > 0 ? `+${params.contrast}` : params.contrast}
+				value={params.contrast}
+				min={-100}
+				max={100}
+				onChange={(val) => {
+					setParams((p) => ({ ...p, contrast: val }));
+					setActiveClinicalFilter(null);
+				}}
+			/>
 
-			{/* Gamma */}
-			<div>
-				<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-					<span>Гамма (γ)</span>
-					<span>{params.gamma.toFixed(2)}</span>
-				</div>
-				<input
-					type="range"
-					min="0.2"
-					max="3.0"
-					step="0.05"
-					value={params.gamma}
-					onChange={(e) => {
-						setParams((p) => ({ ...p, gamma: Number(e.target.value) }));
-						setActiveClinicalFilter(null);
-					}}
-					style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
-				/>
-			</div>
+			<VisiographSliderField
+				label="Гамма (γ)"
+				valueText={params.gamma.toFixed(2)}
+				value={params.gamma}
+				min={0.2}
+				max={3.0}
+				step={0.05}
+				onChange={(val) => {
+					setParams((p) => ({ ...p, gamma: val }));
+					setActiveClinicalFilter(null);
+				}}
+			/>
 
-			{/* Sharpness (Unsharp Mask) */}
-			<div>
-				<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-					<span>Резкость (USM)</span>
-					<span>{params.sharpness}%</span>
-				</div>
-				<input
-					type="range"
-					min="0"
-					max="100"
-					value={params.sharpness}
-					onChange={(e) => {
-						setParams((p) => ({ ...p, sharpness: Number(e.target.value) }));
-						setActiveClinicalFilter(null);
-					}}
-					style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
-				/>
-			</div>
+			<VisiographSliderField
+				label="Резкость (USM)"
+				valueText={`${params.sharpness}%`}
+				value={params.sharpness}
+				min={0}
+				max={100}
+				onChange={(val) => {
+					setParams((p) => ({ ...p, sharpness: val }));
+					setActiveClinicalFilter(null);
+				}}
+			/>
 		</>
 	);
 }
