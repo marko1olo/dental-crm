@@ -167,30 +167,27 @@ describe("Settings, Migration & Vault Inquisitor Suite", () => {
 	});
 
 	describe("4. Pure Clinical Russian (Zero Bird-Language)", () => {
+		const readSource = (subPath: string) => {
+			const clean = subPath.replace(/^apps[\\/]web[\\/]/, "");
+			const rootCandidate = path.resolve(process.cwd(), "apps/web", clean);
+			if (fs.existsSync(rootCandidate)) return fs.readFileSync(rootCandidate, "utf-8");
+			const localCandidate = path.resolve(process.cwd(), clean);
+			if (fs.existsSync(localCandidate)) return fs.readFileSync(localCandidate, "utf-8");
+			return fs.readFileSync(path.resolve(process.cwd(), subPath), "utf-8");
+		};
+
 		it("проверяет отсутствие сырых номеров приказов в видимых текстах настроек", () => {
-			const adminSource = fs.readFileSync(
-				path.resolve(process.cwd(), "apps/web/src/components/settings/AdminSettingsSection.tsx"),
-				"utf-8",
-			);
+			const adminSource = readSource("apps/web/src/components/settings/AdminSettingsSection.tsx");
 			assert.ok(!adminSource.includes("Опрос 043/у"), "043/у не должно быть в карточке опроса");
 			assert.ok(adminSource.includes("Опрос самочувствия"), "Должен использоваться термин 'Опрос самочувствия'");
 
-			const mobileSource = fs.readFileSync(
-				path.resolve(process.cwd(), "apps/web/src/components/settings/mobile/MobileSettingsRootView.tsx"),
-				"utf-8",
-			);
+			const mobileSource = readSource("apps/web/src/components/settings/mobile/MobileSettingsRootView.tsx");
 			assert.ok(!mobileSource.includes("ЭМК 043/у"), "ЭМК 043/у не должно быть в мобильном корне");
 
-			const ownerSource = fs.readFileSync(
-				path.resolve(process.cwd(), "apps/web/src/components/settings/OwnerSettingsSection.tsx"),
-				"utf-8",
-			);
+			const ownerSource = readSource("apps/web/src/components/settings/OwnerSettingsSection.tsx");
 			assert.ok(!ownerSource.includes("ИДС 1051н"), "ИДС 1051н не должно быть в табах владельца");
 
-			const taxSource = fs.readFileSync(
-				path.resolve(process.cwd(), "apps/web/src/components/settings/clinic/TaxationAndFiscalizationCard.tsx"),
-				"utf-8",
-			);
+			const taxSource = readSource("apps/web/src/components/settings/clinic/TaxationAndFiscalizationCard.tsx");
 			assert.ok(!taxSource.includes("ФФД {ffdVersion}"), "ФФД не должно быть на видимом бейдже");
 			assert.ok(taxSource.includes("Кассовый чек ({ffdVersion})"));
 		});

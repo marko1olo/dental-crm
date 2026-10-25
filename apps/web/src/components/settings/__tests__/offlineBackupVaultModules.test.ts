@@ -19,6 +19,15 @@ import {
 
 const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
+function resolvePath(relPath: string): string {
+	const clean = relPath.replace(/^apps[\\/]web[\\/]/, "");
+	const c1 = path.resolve(process.cwd(), relPath);
+	if (fs.existsSync(c1)) return c1;
+	const c2 = path.resolve(process.cwd(), clean);
+	if (fs.existsSync(c2)) return c2;
+	return c1;
+}
+
 describe("Offline Backup Vault Modules & Recovery Engine", () => {
 	it("1. Архитектурная декомпозиция: все модули vault находятся в пределах лимита <= 500 строк", () => {
 		const targetFiles = [
@@ -38,7 +47,7 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 		];
 
 		for (const relPath of targetFiles) {
-			const absPath = path.join(process.cwd(), relPath);
+			const absPath = resolvePath(relPath);
 			assert.ok(fs.existsSync(absPath), `Файл ${relPath} обязан существовать`);
 			const lines = fs.readFileSync(absPath, "utf-8").split("\n").length;
 			assert.ok(
@@ -60,7 +69,8 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 		];
 
 		for (const relPath of filesToCheck) {
-			const content = fs.readFileSync(path.join(process.cwd(), relPath), "utf-8");
+			const absPath = resolvePath(relPath);
+			const content = fs.readFileSync(absPath, "utf-8");
 			assert.ok(
 				!RAW_EMOJI_REGEX.test(content),
 				`Файл ${relPath} не должен содержать сырых эмодзи`,
