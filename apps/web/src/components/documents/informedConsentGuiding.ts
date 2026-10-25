@@ -2,19 +2,12 @@
  * informedConsentGuiding.ts
  *
  * Soft Guiding & Safe Defaults Engine for Informed Consent (Mandate 8e, 8n & Anti-Blockers Law).
- *
- * Инварианты:
- * 1. Никаких блокирующих капканов: кнопки печати («Печать», «Распечатать») НИКОГДА не блокируются (disabled = false).
- * 2. Вместо блокировок — мягкие подсказки (Soft Guiding) для врача или администратора.
- * 3. При неполном заполнении при нажатии печати подставляются клинически безопасные дефолты
- *    («Санация полости рта», «По плану лечения»).
  */
 
 export interface InformedConsentGuideItem {
 	field: string;
 	label: string;
 	hint: string;
-	/** Всегда true: подсказка мягкая, печать не блокируется */
 	isSoftGuide?: boolean | undefined;
 }
 
@@ -23,7 +16,6 @@ export type InformedConsentBlocker = InformedConsentGuideItem;
 export interface InformedConsentGuidanceReview {
 	requiredCount: number;
 	blockers: InformedConsentGuideItem[];
-	/** Печать всегда разрешена (Мандат 8e) */
 	canPrint: boolean;
 	isSoftGuiding: boolean;
 }
@@ -81,13 +73,8 @@ export function resolveInformedConsentSafeDefaults(
 	};
 }
 
-function filled(value: unknown): string {
-	return String(value ?? "").trim();
-}
-
-function textLines(value: string): string[] {
-	return String(value ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-}
+function filled(value: unknown): string { return String(value ?? "").trim(); }
+function textLines(value: string): string[] { return String(value ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean); }
 
 export function informedConsentGuidanceReview(
 	input: InformedConsentGuideInput,

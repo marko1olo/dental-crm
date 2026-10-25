@@ -10,49 +10,34 @@ interface UsePrimaryIntakePrintProps {
 	isNormApplied: boolean;
 }
 
+function resolveClinicPrintPayload(c?: any) {
+	return {
+		clinicName: c?.clinicName || "Стоматологическая клиника",
+		legalName: c?.legalName || c?.clinicName || "",
+		fullName: c?.legalName || c?.clinicName || "",
+		shortName: c?.clinicName || "",
+		inn: c?.inn || "",
+		kpp: c?.kpp || "",
+		ogrn: c?.ogrn || "",
+		licenseNumber: c?.licenseNumber || "",
+		licenseDate: c?.licenseDate || "",
+		address: c?.address || "",
+		actualAddress: c?.address || "",
+		phone: c?.phone || "",
+		directorTitle: c?.directorTitle || "Руководитель",
+		directorFullName: c?.directorFullName || "",
+		city: c?.city || "",
+		website: c?.website || "",
+	};
+}
+
 export function usePrimaryIntakePrint({
 	patient,
 	clinicProfileDraft,
 	doctorFullName,
 	isNormApplied,
 }: UsePrimaryIntakePrintProps) {
-	const clinicPrintPayload = clinicProfileDraft
-		? {
-				clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
-				legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
-				fullName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
-				shortName: clinicProfileDraft.clinicName || "",
-				inn: clinicProfileDraft.inn || "",
-				kpp: clinicProfileDraft.kpp || "",
-				ogrn: clinicProfileDraft.ogrn || "",
-				licenseNumber: clinicProfileDraft.licenseNumber || "",
-				licenseDate: clinicProfileDraft.licenseDate || "",
-				address: clinicProfileDraft.address || "",
-				actualAddress: clinicProfileDraft.address || "",
-				phone: clinicProfileDraft.phone || "",
-				directorTitle: clinicProfileDraft.directorTitle || "Руководитель",
-				directorFullName: clinicProfileDraft.directorFullName || "",
-				city: clinicProfileDraft.city || "",
-				website: clinicProfileDraft.website || "",
-			}
-		: {
-				clinicName: "Стоматологическая клиника",
-				legalName: "",
-				fullName: "",
-				shortName: "",
-				inn: "",
-				kpp: "",
-				ogrn: "",
-				licenseNumber: "",
-				licenseDate: "",
-				address: "",
-				actualAddress: "",
-				phone: "",
-				directorTitle: "Руководитель",
-				directorFullName: "",
-				city: "",
-				website: "",
-			};
+	const clinicPrintPayload = resolveClinicPrintPayload(clinicProfileDraft);
 
 	const handleBatchPrint = () => {
 		const store = useDocumentStore.getState();
