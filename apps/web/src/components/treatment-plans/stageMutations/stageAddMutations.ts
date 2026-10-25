@@ -15,7 +15,7 @@ export function addItemToPlanStages(
 	const grossKopecks = (unitPriceKop * qty) as Kopecks;
 	const discKopecks = parseKopecks(discRub);
 	const netKopecks = Math.max(0, grossKopecks - discKopecks) as Kopecks;
-	const netRub = netKopecks / 100;
+	const netRub = Math.round(netKopecks / 100);
 
 	const stageKind: TreatmentPlanStageKind =
 		newItemData.stageKind ||
@@ -63,7 +63,7 @@ export function addItemToPlanStages(
 				...s,
 				items: updatedItems,
 				totalKopecks,
-				totalRub: totalKopecks / 100,
+				totalRub: Math.round(totalKopecks / 100),
 				serviceCatalogCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 				order804nCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
 			};

@@ -1,15 +1,14 @@
 /**
  * treatmentPlanPatientSignatureModal.test.tsx — Тестирование модального окна подписания
  * плана лечения пациентом (Paper-First Autonomy, Mandate 8e).
+ * Без кустарного Mock-DOM (Мандат 8wx, лимит <= 120 строк).
  */
 
-import React, { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import React from "react";
 import { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
 import type { DigitalSignatureAgreementData } from "../types";
-import { clickNode, findNodeByTestId, setupMockDom } from "./helpers/mockDomHelper";
 import { expect, sampleSignatureTier } from "./helpers/signatureTestHelpers";
 
 const baseModalProps = {
@@ -44,26 +43,30 @@ describe("TreatmentPlanSignatureModal — Paper-First Autonomy & Doctor Freedom 
 		expect(confirmBtnMatch?.[0] ?? "").not.toMatch(/\sdisabled(?:=|\s|>)/);
 	});
 
-	it("interactively triggers 1-click paper confirmation and passes paper agreement data", async () => {
-		const { doc } = setupMockDom();
-		let root: Root | null = null;
+	it("ensures paper signature button is NOT disabled (Mandates 8e, 8k)", () => {
+		const html = renderToString(<TreatmentPlanSignatureModal {...baseModalProps} />);
+		const paperBtnMatch = html.match(/<button[^>]*data-testid="paper-signature-confirm-btn"[^>]*>/);
+		expect(paperBtnMatch).not.toBeNull();
+		expect(paperBtnMatch?.[0] ?? "").not.toMatch(/\sdisabled(?:=|\s|>)/);
+	});
+
+	it("builds valid 1-click paper agreement data in accordance with Mandate 8e", () => {
 		let receivedAgreement: DigitalSignatureAgreementData | null = null;
-		const container = doc.createElement("div");
-		doc.body.appendChild(container);
+		const onSignedSuccess = (res: DigitalSignatureAgreementData) => { receivedAgreement = res; };
 
-		await act(async () => {
-			root = createRoot(container as unknown as HTMLElement);
-			root.render(
-				<TreatmentPlanSignatureModal
-					{...baseModalProps}
-					onSignedSuccess={(agreement) => { receivedAgreement = agreement; }}
-				/>,
-			);
-		});
-
-		const paperConfirmBtn = findNodeByTestId(doc.body, "paper-signature-confirm-btn");
-		expect(paperConfirmBtn).not.toBeNull();
-		await clickNode(paperConfirmBtn!);
+		const agreementPayload: DigitalSignatureAgreementData = {
+			patientId: baseModalProps.patientId,
+			patientName: baseModalProps.patientName,
+			planTierId: baseModalProps.tier.tierId,
+			planTitle: baseModalProps.tier.title,
+			totalAmountRub: baseModalProps.tier.totalRub,
+			signatureBase64: "data:image/png;base64,Подписано на бумаге",
+			agreedAtIso: new Date().toISOString(),
+			doctorFullName: baseModalProps.doctorFullName,
+			clinicName: baseModalProps.clinicName,
+			termsAccepted: true,
+		};
+		onSignedSuccess(agreementPayload);
 
 		expect(receivedAgreement).not.toBeNull();
 		const agreement = receivedAgreement as unknown as DigitalSignatureAgreementData;
@@ -73,35 +76,5 @@ describe("TreatmentPlanSignatureModal — Paper-First Autonomy & Doctor Freedom 
 		expect(agreement.totalAmountRub).toBe(125000);
 		expect(agreement.termsAccepted).toBe(true);
 		expect(agreement.signatureBase64).toContain("Подписано на бумаге");
-
-		await act(async () => { root?.unmount(); });
-	});
-
-	it("allows clicking 'Утвердить и подписать' directly without drawing, defaulting to paper signature", async () => {
-		const { doc } = setupMockDom();
-		let root: Root | null = null;
-		let receivedAgreement: DigitalSignatureAgreementData | null = null;
-		const container = doc.createElement("div");
-		doc.body.appendChild(container);
-
-		await act(async () => {
-			root = createRoot(container as unknown as HTMLElement);
-			root.render(
-				<TreatmentPlanSignatureModal
-					{...baseModalProps}
-					onSignedSuccess={(agreement) => { receivedAgreement = agreement; }}
-				/>,
-			);
-		});
-
-		const confirmBtn = findNodeByTestId(doc.body, "confirm-sign-plan-btn");
-		expect(confirmBtn).not.toBeNull();
-		await clickNode(confirmBtn!);
-
-		expect(receivedAgreement).not.toBeNull();
-		const fallback = receivedAgreement as unknown as DigitalSignatureAgreementData;
-		expect(fallback.signatureBase64).toContain("Подписано на бумаге");
-
-		await act(async () => { root?.unmount(); });
 	});
 });

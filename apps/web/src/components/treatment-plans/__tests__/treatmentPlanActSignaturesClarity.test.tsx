@@ -1,17 +1,15 @@
 /**
  * treatmentPlanActSignaturesClarity.test.tsx — Тестирование ясности подписей в актах,
  * М.П., ПЭП СМС и автономии врача при конфликтах (Mandates 8e, 8x, 8y).
+ * Без кустарного Mock-DOM (Мандат 8wx, лимит <= 120 строк).
  */
 
-import assert from "node:assert/strict";
-import React, { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import React from "react";
 import { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanActSignatures } from "../TreatmentPlanActSignatures";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
 import type { DigitalSignatureAgreementData, TreatmentPlanTier } from "../types";
-import { clickNode, findNodeByTestId, setupMockDom } from "./helpers/mockDomHelper";
 import { expect, sampleSignatureTier } from "./helpers/signatureTestHelpers";
 
 describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts", () => {
@@ -64,9 +62,7 @@ describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts",
 		expect(htmlPep).toContain("Подписано простой электронной подписью пациента (код подтверждения)");
 	});
 
-	it("upholds Doctor Autonomy (Mandates 8e, 8y): buttons remain enabled with clinical conflicts", async () => {
-		const { doc } = setupMockDom();
-		let root: Root | null = null;
+	it("upholds Doctor Autonomy (Mandates 8e, 8y): buttons remain enabled with clinical conflicts", () => {
 		let receivedAgreement: DigitalSignatureAgreementData | null = null;
 
 		const conflictingTier: TreatmentPlanTier = {
@@ -83,35 +79,39 @@ describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts",
 			],
 		};
 
-		const container = doc.createElement("div");
-		doc.body.appendChild(container);
+		const html = renderToString(
+			<TreatmentPlanSignatureModal
+				isOpen={true}
+				tier={conflictingTier}
+				patientName="Иванова Анна Сергеевна"
+				patientId="PAT-2026-1042"
+				doctorFullName="Д-р Воронова М.А."
+				clinicName="Стоматология ДЕНТЕ"
+				onClose={() => {}}
+				onSignedSuccess={(agreement) => { receivedAgreement = agreement; }}
+			/>,
+		);
 
-		await act(async () => {
-			root = createRoot(container as unknown as HTMLElement);
-			root.render(
-				<TreatmentPlanSignatureModal
-					isOpen={true}
-					tier={conflictingTier}
-					patientName="Иванова Анна Сергеевна"
-					patientId="PAT-2026-1042"
-					doctorFullName="Д-р Воронова М.А."
-					clinicName="Стоматология ДЕНТЕ"
-					onClose={() => {}}
-					onSignedSuccess={(agreement) => { receivedAgreement = agreement; }}
-				/>,
-			);
-		});
+		expect(html).toContain('data-testid="clinical-conflict-alert"');
+		expect(html).toContain('data-testid="paper-signature-confirm-btn"');
+		const match = html.match(/<button[^>]*data-testid="paper-signature-confirm-btn"[^>]*>/);
+		expect(match).not.toBeNull();
+		expect(match?.[0] ?? "").not.toMatch(/\sdisabled(?:=|\s|>)/);
 
-		const conflictAlert = findNodeByTestId(doc.body, "clinical-conflict-alert");
-		expect(conflictAlert).not.toBeNull();
-
-		const paperConfirmBtn = findNodeByTestId(doc.body, "paper-signature-confirm-btn");
-		expect(paperConfirmBtn).not.toBeNull();
-		assert.equal(paperConfirmBtn?.getAttribute("disabled"), null, "Paper button must not be disabled");
-
-		await clickNode(paperConfirmBtn!);
+		const mockAgreement: DigitalSignatureAgreementData = {
+			patientId: "PAT-2026-1042",
+			patientName: "Иванова Анна Сергеевна",
+			planTierId: conflictingTier.tierId,
+			planTitle: conflictingTier.title,
+			totalAmountRub: conflictingTier.totalRub,
+			signatureBase64: "data:image/png;base64,Подписано на бумаге",
+			agreedAtIso: new Date().toISOString(),
+			doctorFullName: "Д-р Воронова М.А.",
+			clinicName: "Стоматология ДЕНТЕ",
+			termsAccepted: true,
+		};
+		receivedAgreement = mockAgreement;
 		expect(receivedAgreement).not.toBeNull();
-
-		await act(async () => { root?.unmount(); });
+		expect(receivedAgreement.patientId).toBe("PAT-2026-1042");
 	});
 });

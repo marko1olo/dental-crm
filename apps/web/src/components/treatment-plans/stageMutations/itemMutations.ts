@@ -27,16 +27,16 @@ export function updateItemQuantityInStages(
 				return {
 					...it,
 					quantity: safeQty,
-					unitPriceRub: unitKop / 100,
-					discountRub: (unitDiscountKop * safeQty) / 100,
-					priceRub: (finalUnitKop * safeQty) / 100,
+					unitPriceRub: Math.round(unitKop / 100),
+					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
+					priceRub: Math.round((finalUnitKop * safeQty) / 100),
 				};
 			}
 			return it;
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: stTotalKopecks / 100, totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
 	});
 }
 
@@ -59,9 +59,9 @@ export function updateItemPriceInStages(
 				return {
 					...it,
 					quantity: safeQty,
-					unitPriceRub: newPriceRub,
-					discountRub: (unitDiscountKop * safeQty) / 100,
-					priceRub: (finalUnitKop * safeQty) / 100,
+					unitPriceRub: Math.round(unitKop / 100),
+					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
+					priceRub: Math.round((finalUnitKop * safeQty) / 100),
 					requiresManualPricing: false,
 				};
 			}
@@ -69,7 +69,7 @@ export function updateItemPriceInStages(
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: stTotalKopecks / 100, totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
 	});
 }
 
@@ -95,9 +95,9 @@ export function updateItemInStages(
 				return {
 					...updatedItem,
 					quantity: safeQty,
-					unitPriceRub: unitKop / 100,
-					discountRub: (unitDiscountKop * safeQty) / 100,
-					priceRub: (finalUnitKop * safeQty) / 100,
+					unitPriceRub: Math.round(unitKop / 100),
+					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
+					priceRub: Math.round((finalUnitKop * safeQty) / 100),
 					requiresManualPricing: false,
 				};
 			}
@@ -105,6 +105,6 @@ export function updateItemInStages(
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: stTotalKopecks / 100, totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
 	});
 }

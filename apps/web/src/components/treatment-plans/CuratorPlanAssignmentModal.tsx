@@ -3,6 +3,7 @@
  *
  * Модальное окно закрепления / смены куратора лечения за пациентом и планом (Фича #27).
  * Автономия врача и суверенитет масштаба (Мандаты 8e, 8k, 8n).
+ * Строго <= 120 строк per Mandate 8b.
  */
 
 import React, { useMemo } from "react";
@@ -37,6 +38,9 @@ export const CuratorPlanAssignmentModal: React.FC<CuratorPlanAssignmentModalProp
 	currentStage = "consultation",
 	onClose,
 	onAssigned,
+	onApprovePlan,
+	onPrintEstimate,
+	onSendToCashier,
 }) => {
 	const { dashboard } = useAppLogicContext();
 
@@ -46,68 +50,32 @@ export const CuratorPlanAssignmentModal: React.FC<CuratorPlanAssignmentModalProp
 	}, [dashboard?.clinicSettings?.staff]);
 
 	const {
-		selectedCuratorId,
-		setSelectedCuratorId,
-		selectedStage,
-		setSelectedStage,
-		useCustomCommission,
-		setUseCustomCommission,
-		customCommissionPercent,
-		setCustomCommissionPercent,
-		notes,
-		setNotes,
-		nextContactDate,
-		setNextContactDate,
-		isSaving,
-		isDoctorSelf,
-		handleSave,
+		selectedCuratorId, setSelectedCuratorId, selectedStage, setSelectedStage,
+		useCustomCommission, setUseCustomCommission, customCommissionPercent, setCustomCommissionPercent,
+		notes, setNotes, nextContactDate, setNextContactDate, isSaving, isDoctorSelf,
+		handleSave, handleApprovePlan, handlePrintEstimate, handleSendToCashier,
 	} = useCuratorPlanAssignment({
-		patientId,
-		treatmentPlanId,
-		currentCuratorId,
-		currentStage,
-		staffList,
-		onClose,
-		onAssigned,
+		patientId, treatmentPlanId, currentCuratorId, currentStage, staffList,
+		onClose, onAssigned, onApprovePlan, onPrintEstimate, onSendToCashier,
 	});
 
 	if (!isOpen) return null;
 
 	return (
 		<div className="curator-modal-backdrop" onClick={onClose}>
-			<div
-				className="curator-modal-dialog"
-				onClick={(e) => e.stopPropagation()}
-				role="dialog"
-				aria-modal="true"
-			>
-				<CuratorModalHeader
-					patientName={patientName}
-					treatmentPlanTitle={treatmentPlanTitle}
-					onClose={onClose}
-				/>
-
+			<div className="curator-modal-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+				<CuratorModalHeader patientName={patientName} treatmentPlanTitle={treatmentPlanTitle} onClose={onClose} />
 				<CuratorFormBody
-					staffList={staffList}
-					selectedCuratorId={selectedCuratorId}
-					onSelectCuratorId={setSelectedCuratorId}
-					selectedStage={selectedStage}
-					onSelectStage={setSelectedStage}
-					useCustomCommission={useCustomCommission}
-					onToggleCustomCommission={setUseCustomCommission}
-					customCommissionPercent={customCommissionPercent}
-					onChangeCommissionPercent={setCustomCommissionPercent}
-					nextContactDate={nextContactDate}
-					onChangeNextContactDate={setNextContactDate}
-					notes={notes}
-					onChangeNotes={setNotes}
+					staffList={staffList} selectedCuratorId={selectedCuratorId} onSelectCuratorId={setSelectedCuratorId}
+					selectedStage={selectedStage} onSelectStage={setSelectedStage}
+					useCustomCommission={useCustomCommission} onToggleCustomCommission={setUseCustomCommission}
+					customCommissionPercent={customCommissionPercent} onChangeCommissionPercent={setCustomCommissionPercent}
+					nextContactDate={nextContactDate} onChangeNextContactDate={setNextContactDate}
+					notes={notes} onChangeNotes={setNotes}
 				/>
-
 				<CuratorModalFooter
-					isSaving={isSaving}
-					isDoctorSelf={isDoctorSelf}
-					onClose={onClose}
-					onSave={handleSave}
+					isSaving={isSaving} isDoctorSelf={isDoctorSelf} onClose={onClose} onSave={handleSave}
+					onApprovePlan={handleApprovePlan} onPrintEstimate={handlePrintEstimate} onSendToCashier={handleSendToCashier}
 				/>
 			</div>
 		</div>

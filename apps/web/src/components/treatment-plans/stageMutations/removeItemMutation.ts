@@ -12,7 +12,7 @@ export function removeItemFromStages(
 		return {
 			...st,
 			items: updatedItems,
-			totalRub: stTotalKopecks / 100,
+			totalRub: Math.round(stTotalKopecks / 100),
 			totalKopecks: stTotalKopecks,
 		};
 	});

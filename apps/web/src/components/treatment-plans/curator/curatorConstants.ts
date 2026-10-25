@@ -55,4 +55,7 @@ export interface CuratorPlanAssignmentModalProps {
 	readonly currentStage?: CuratorFunnelStage | undefined;
 	readonly onClose: () => void;
 	readonly onAssigned?: ((payload: CuratorPlanAssignmentPayload) => void) | undefined;
+	readonly onApprovePlan?: (() => void) | undefined;
+	readonly onPrintEstimate?: (() => void) | undefined;
+	readonly onSendToCashier?: (() => void) | undefined;
 }

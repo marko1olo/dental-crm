@@ -61,6 +61,7 @@
 	--paper-glass: var(--glass-panel);
 	--backdrop: rgba(15, 23, 42, 0.65);
 	--on-amber: var(--paper-strong);
+	--on-primary: #ffffff;
 	--border-default: var(--line-strong);
 	--border-subtle: var(--line);
 	--border-soft: var(--line);
