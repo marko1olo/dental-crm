@@ -277,6 +277,40 @@ export async function register(app: FastifyInstance) {
 				"возврат сведён с кассой при выдаче заявления",
 			);
 		}
+
+		// Синхронизация выданных медицинских согласий в таблицу patient_consents (Мандат 8e и 8n)
+		const consentKinds = new Set([
+			"informed_consent",
+			"procedure_specific_consent_packet",
+			"anesthesia_consent_log",
+			"personal_data_processing_consent",
+			"minor_legal_representative_consent",
+			"photo_video_consent",
+			"medical_intervention_refusal",
+		]);
+		if (consentKinds.has(document.kind)) {
+			import("../consents/queries.js")
+				.then((m) =>
+					m.syncDocumentToPatientConsent(
+						orgId,
+						document.patientId,
+						document.kind,
+						document.id,
+						new Date(issuedAt),
+					),
+				)
+				.catch((err: unknown) => {
+					// Выдача документа уже подтверждена пациенту — сбой фоновой
+					// синхронизации не отменяет её и не должен выглядеть как пустой
+					// успех: без журнала расхождение реестра согласий с выданными
+					// документами никто не заметит.
+					request.log.error(
+						{ err, documentId: document.id, kind: document.kind },
+						"[Documents] Сбой синхронизации выданного согласия с реестром согласий пациента",
+					);
+				});
+		}
+
 		return reply.send(publicGeneratedDocumentSchema.parse(document));
 	});
 }
