@@ -141,7 +141,7 @@ export function ScannerView() {
 					</div>
 					<div className="scanner-status-chip">
 						<ShieldCheck size={13} className="text-[var(--teal)]" />
-						<span>{activeSubTab === "sanpin" ? "СанПиН 3.3686-21" : "152-ФЗ защита ПДн"}</span>
+						<span>{activeSubTab === "sanpin" ? "Стерилизация и дезинфекция" : "Защита данных пациентов"}</span>
 					</div>
 				</div>
 			</header>

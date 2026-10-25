@@ -27,21 +27,30 @@ const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${BRAIN
 if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
 if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
-async function isPortResponding(url, timeoutMs = 2000) {
-	try {
-		const controller = new AbortController();
-		const t = setTimeout(() => controller.abort(), timeoutMs);
-		const baseUrl = new URL(url).origin;
-		const res = await fetch(baseUrl, { signal: controller.signal });
-		clearTimeout(t);
-		return res.ok || res.status === 200 || res.status === 304;
-	} catch {
-		return false;
-	}
+const net = require("node:net");
+
+async function isPortOpen(port = 5173) {
+	return new Promise((resolve) => {
+		const socket = new net.Socket();
+		socket.setTimeout(1000);
+		socket.on("connect", () => {
+			socket.destroy();
+			resolve(true);
+		});
+		socket.on("timeout", () => {
+			socket.destroy();
+			resolve(false);
+		});
+		socket.on("error", () => {
+			socket.destroy();
+			resolve(false);
+		});
+		socket.connect(port, "127.0.0.1");
+	});
 }
 
-async function ensureViteServer(url = "http://127.0.0.1:5173/") {
-	if (await isPortResponding(url, 2000)) {
+async function ensureViteServer() {
+	if (await isPortOpen(5173)) {
 		console.log("[Vite] Detected active dev server on port 5173.");
 		return null;
 	}
@@ -52,9 +61,10 @@ async function ensureViteServer(url = "http://127.0.0.1:5173/") {
 		cwd: webDir,
 		stdio: "ignore",
 	});
-	for (let i = 0; i < 50; i++) {
+
+	for (let i = 0; i < 40; i++) {
 		await new Promise((r) => setTimeout(r, 600));
-		if (await isPortResponding(url, 1000)) {
+		if (await isPortOpen(5173)) {
 			console.log(`[Vite] Server ready in ${(i + 1) * 600}ms!`);
 			return proc;
 		}
@@ -174,13 +184,14 @@ async function setupPageContext(context, creds) {
 			localStorage.setItem("dente_organization_id", orgId);
 			localStorage.setItem("dente_staff_token", st);
 			localStorage.setItem("dente_active_session_token", st);
+			localStorage.setItem("dente_active_user_id", uid);
 			localStorage.setItem("dente_active_role", "owner");
 			localStorage.setItem("dente_user_role", "owner");
 			localStorage.setItem("dente_user_id", uid);
+			localStorage.setItem("dente_user_name", "Д-р Кузнецов Андрей Владимирович");
 			localStorage.setItem("dente_active_mode", "clinic");
 			localStorage.setItem("dente_demo_showcase", "true");
 			sessionStorage.setItem("dente_unlocked", "true");
-			sessionStorage.setItem("dente:sw-controller-reload", "1");
 			localStorage.setItem("dente_onboarding_completed", "true");
 			localStorage.setItem("dente_tour_completed", "true");
 			localStorage.setItem("dente_tour_dismissed", "true");
@@ -200,6 +211,26 @@ async function setupPageContext(context, creds) {
 			localStorage.setItem(
 				"dental-crm:onboarding:v1",
 				JSON.stringify({ dismissed: true, step: "done", completed: true }),
+			);
+			localStorage.setItem(
+				"dental-crm:web-ui-preferences:v1",
+				JSON.stringify({
+					version: 1,
+					uiLanguage: "ru",
+					selectedWorkspaceRole: "owner",
+					selectedSpecialty: "therapist",
+					onboardingDismissed: true,
+				}),
+			);
+			localStorage.setItem(
+				"dente_staff_session",
+				JSON.stringify({
+					userId: uid,
+					name: "Д-р Кузнецов А. В.",
+					fullName: "Д-р Кузнецов Андрей Владимирович",
+					role: "owner",
+					permissions: ["all"],
+				}),
 			);
 		},
 		{
@@ -221,13 +252,47 @@ async function dismissTourElements(page) {
 	await page.waitForTimeout(400);
 }
 
+async function ensureMounted(page) {
+	for (let i = 0; i < 60; i++) {
+		await page.waitForTimeout(1000);
+		const state = await page.evaluate(() => {
+			const sanpinEl = document.querySelector(".sanpin-container");
+			const standaloneEl = document.querySelector('[data-testid="sanpin-standalone-view"]');
+			const tabEl = document.querySelector('[data-testid="scanner-tab-sanpin"]');
+			return {
+				hasSanpin: !!sanpinEl,
+				hasStandalone: !!standaloneEl,
+				hasTab: !!tabEl,
+				hash: window.location.hash,
+				textPreview: document.body?.innerText?.slice(0, 150),
+			};
+		}).catch(() => ({}));
+
+		if (state.hasSanpin || state.hasStandalone) {
+			console.log(`[Mounted] Found SanPin container on iteration ${i + 1}`);
+			await page.waitForTimeout(1000);
+			return;
+		}
+		if (state.hasTab) {
+			console.log(`[Mounted] Found scanner-tab-sanpin on iteration ${i + 1}, clicking...`);
+			await page.click('[data-testid="scanner-tab-sanpin"]').catch(() => {});
+			await page.waitForTimeout(1000);
+		}
+		if (i % 5 === 0) {
+			console.log(`[Mounted check ${i}] State:`, JSON.stringify(state));
+		}
+	}
+	await page.waitForSelector(".sanpin-container, [data-testid=\"sanpin-standalone-view\"]", { timeout: 30000 });
+}
+
 async function main() {
 	const creds = await provisionTestClinic();
 	const viteProc = await ensureViteServer("http://127.0.0.1:5173/");
 
 	const browser = await chromium.launch({
-		channel: "chrome",
 		headless: true,
+		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
 	});
 
 	try {
@@ -236,18 +301,22 @@ async function main() {
 		const pcContext = await browser.newContext({
 			viewport: { width: 1440, height: 900 },
 			deviceScaleFactor: 1,
-			serviceWorkers: "block",
 		});
 		await setupPageContext(pcContext, creds);
 
 		const pcPage = await pcContext.newPage();
-		console.log(">>> [PC] Navigating to http://127.0.0.1:5173/?demo=true&sanpin=1...");
-		await pcPage.goto("http://127.0.0.1:5173/?demo=true&sanpin=1", {
-			waitUntil: "commit",
-			timeout: 30000,
+		pcPage.on("console", (m) => {
+			if (m.type() === "error" || m.type() === "warn") console.log(`[PC ${m.type()}] ${m.text()}`);
 		});
+		pcPage.on("pageerror", (e) => console.error(`[PC ERROR] ${e.message}`));
+		console.log(">>> [PC] Navigating to http://127.0.0.1:5173/?demo=1#sanpin...");
+		await pcPage.goto("http://127.0.0.1:5173/?demo=1#sanpin", {
+			waitUntil: "commit",
+			timeout: 45000,
+		});
+		await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
 
-		await pcPage.waitForSelector(".sanpin-container", { timeout: 25000 });
+		await ensureMounted(pcPage);
 		await dismissTourElements(pcPage);
 
 		// 1.1 Autoclave PC Light & Dark
@@ -262,7 +331,11 @@ async function main() {
 
 		// 1.2 PSO PC Light & Dark
 		console.log("--- [PSO] Switching to PSO Tab & Capturing Desktop Proofs (1440x900) ---");
-		await pcPage.click('[data-testid="tab-pso-btn"]');
+		await pcPage.evaluate(() => {
+			const btns = Array.from(document.querySelectorAll('[data-testid="tab-pso-btn"]'));
+			const target = btns[btns.length - 1] || btns[0];
+			if (target) target.click();
+		});
 		await pcPage.waitForTimeout(800);
 		await dismissTourElements(pcPage);
 
@@ -281,18 +354,22 @@ async function main() {
 			deviceScaleFactor: 2,
 			isMobile: true,
 			hasTouch: true,
-			serviceWorkers: "block",
 		});
 		await setupPageContext(mobContext, creds);
 
 		const mobPage = await mobContext.newPage();
-		console.log(">>> [MOBILE] Navigating to http://127.0.0.1:5173/?demo=true&sanpin=1...");
-		await mobPage.goto("http://127.0.0.1:5173/?demo=true&sanpin=1", {
-			waitUntil: "commit",
-			timeout: 30000,
+		mobPage.on("console", (m) => {
+			if (m.type() === "error" || m.type() === "warn") console.log(`[MOB ${m.type()}] ${m.text()}`);
 		});
+		mobPage.on("pageerror", (e) => console.error(`[MOB ERROR] ${e.message}`));
+		console.log(">>> [MOBILE] Navigating to http://127.0.0.1:5173/?demo=1#sanpin...");
+		await mobPage.goto("http://127.0.0.1:5173/?demo=1#sanpin", {
+			waitUntil: "commit",
+			timeout: 45000,
+		});
+		await mobPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
 
-		await mobPage.waitForSelector(".sanpin-container", { timeout: 25000 });
+		await ensureMounted(mobPage);
 		await dismissTourElements(mobPage);
 
 		// 2.1 Autoclave Mobile Light & Dark
@@ -307,7 +384,11 @@ async function main() {
 
 		// 2.2 PSO Mobile Light & Dark
 		console.log("--- [PSO] Switching to PSO Tab & Capturing Mobile Proofs (390x844) ---");
-		await mobPage.click('[data-testid="tab-pso-btn"]');
+		await mobPage.evaluate(() => {
+			const btns = Array.from(document.querySelectorAll('[data-testid="tab-pso-btn"]'));
+			const target = btns[btns.length - 1] || btns[0];
+			if (target) target.click();
+		});
 		await mobPage.waitForTimeout(800);
 		await dismissTourElements(mobPage);
 

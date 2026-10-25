@@ -14,19 +14,9 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 }) => {
 	return (
 		<div
-			className="pso-banner-responsive"
-			style={{
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				padding: "10px 16px",
-				background: "var(--paper-soft, #f8fafc)",
-				border: "1px solid var(--line, #e2e8f0)",
-				borderRadius: 12,
-				marginBottom: 12,
-			}}
+			className="pso-banner-responsive flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:px-4 sm:py-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] mb-3 gap-3"
 		>
-			<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+			<div className="flex items-center gap-2.5">
 				<CheckCircle2 size={18} color="var(--teal, #0d9488)" className="shrink-0" />
 				<div>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
@@ -38,7 +28,7 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 				</div>
 			</div>
 
-			<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+			<div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
 				<button
 					type="button"
 					onClick={onPrintJournal}
@@ -47,7 +37,8 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 					title="Печать журнала проверки качества очистки"
 				>
 					<Printer size={14} />
-					<span>Печать журнала</span>
+					<span className="hidden sm:inline">Печать журнала</span>
+					<span className="sm:hidden">Печать</span>
 				</button>
 
 				<button
@@ -59,7 +50,16 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 					title="Зафиксировать нормативные результаты проб смены в 1 клик"
 				>
 					<FlaskConical size={14} />
-					<span>{submitting ? "Фиксация..." : "Контроль предстерилизационной очистки — норма"}</span>
+					<span>
+						{submitting ? (
+							"Фиксация..."
+						) : (
+							<>
+								<span className="hidden sm:inline">Контроль предстерилизационной очистки — норма</span>
+								<span className="sm:hidden">Контроль очистки — норма</span>
+							</>
+						)}
+					</span>
 				</button>
 			</div>
 		</div>
