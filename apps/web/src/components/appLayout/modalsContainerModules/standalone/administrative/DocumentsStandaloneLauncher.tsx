@@ -22,7 +22,9 @@ import { LauncherDocumentsContractsSection } from "./LauncherDocumentsContractsS
 
 export function renderDocumentsStandaloneLauncher(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
-	if (!hasUrlToken(["documents", "docs"])) return null;
+	const search = new URLSearchParams(window.location.search || "");
+	const hasDocsQuery = search.has("documents") || search.has("docs");
+	if (!hasDocsQuery) return null;
 
 	return <StandaloneDocumentsHub />;
 }
