@@ -8,20 +8,20 @@ import React from "react";
 export const ToothAnteriorShaders: React.FC = () => {
 	return (
 		<>
-			{/* Proximal Curvature Contour 3D Volume — Light Mode */}
+			{/* Proximal Curvature Contour 3D Volume — Light Mode (Softened Unified Porcelain) */}
 			<linearGradient id="dente-proximal-contour" x1="0" y1="0" x2="1" y2="0">
-				<stop offset="0%" stopColor="#334155" stopOpacity="0.22" />
-				<stop offset="18%" stopColor="#334155" stopOpacity="0.0" />
-				<stop offset="82%" stopColor="#334155" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#334155" stopOpacity="0.26" />
+				<stop offset="0%" stopColor="#475569" stopOpacity="0.10" />
+				<stop offset="16%" stopColor="#475569" stopOpacity="0.0" />
+				<stop offset="84%" stopColor="#475569" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#475569" stopOpacity="0.12" />
 			</linearGradient>
 
-			{/* Proximal Curvature Contour 3D Volume — Dark Mode */}
+			{/* Proximal Curvature Contour 3D Volume — Dark Mode (Softened Unified Porcelain) */}
 			<linearGradient id="dente-proximal-contour-dark" x1="0" y1="0" x2="1" y2="0">
-				<stop offset="0%" stopColor="#020617" stopOpacity="0.55" />
-				<stop offset="20%" stopColor="#020617" stopOpacity="0.0" />
-				<stop offset="80%" stopColor="#020617" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#020617" stopOpacity="0.60" />
+				<stop offset="0%" stopColor="#020617" stopOpacity="0.26" />
+				<stop offset="18%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="82%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#020617" stopOpacity="0.30" />
 			</linearGradient>
 		</>
 	);

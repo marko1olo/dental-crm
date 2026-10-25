@@ -22,36 +22,40 @@ export const Tooth48EnamelCrown: React.FC<Tooth48EnamelCrownProps> = ({
 	showFissures = true,
 	showAbfraction = false,
 	isDark = false,
-}) => (
-	<g id="tooth48-natural-crown-group">
-		<clipPath id="tooth48-crown-clip">
+}) => {
+	const crownPath = showAbfraction
+		? TOOTH48_GEOMETRY.crownMonolithPathWithAbfraction
+		: TOOTH48_GEOMETRY.crownMonolithPath;
+
+	return (
+		<g id="tooth48-natural-crown-group">
+			<clipPath id="tooth48-crown-clip">
+				<path d={crownPath} />
+			</clipPath>
 			<path
-				d={
-					showAbfraction
-						? TOOTH48_GEOMETRY.crownMonolithPathWithAbfraction
-						: TOOTH48_GEOMETRY.crownMonolithPath
-				}
+				id="tooth48-crown-monolith"
+				d={crownPath}
+				fill="url(#dente-enamel-porcelain)"
+				fillOpacity={crownOpacity}
+				stroke={stroke}
+				strokeWidth="0.8"
+				strokeLinejoin="round"
+				vectorEffect="non-scaling-stroke"
 			/>
-		</clipPath>
-		<path
-			id="tooth48-crown-monolith"
-			d={
-				showAbfraction
-					? TOOTH48_GEOMETRY.crownMonolithPathWithAbfraction
-					: TOOTH48_GEOMETRY.crownMonolithPath
-			}
-			fill="url(#dente-enamel-porcelain)"
-			fillOpacity={crownOpacity}
-			stroke={stroke}
-			strokeWidth="0.8"
-			strokeLinejoin="round"
-			vectorEffect="non-scaling-stroke"
-		/>
-		<Tooth48OcclusalCusps
-			showCusps={showCusps}
-			showFissures={showFissures}
-			renderBaseCrown={false}
-			isDark={isDark}
-		/>
-	</g>
-);
+			{/* Unified 3D Cylindrical Proximal Contour Volume */}
+			<g clipPath="url(#tooth48-crown-clip)">
+				<path
+					d={crownPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
+			<Tooth48OcclusalCusps
+				showCusps={showCusps}
+				showFissures={showFissures}
+				renderBaseCrown={false}
+				isDark={isDark}
+			/>
+		</g>
+	);
+};
