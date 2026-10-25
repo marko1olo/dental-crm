@@ -258,12 +258,18 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("12. Doctor Settings: Templates & Materials Catalog free of bureaucratic 043/у bloat", () => {
 		const tplPath = path.join(webSrcRoot, "components/settings/doctor/DoctorForm043TemplatesSection.tsx");
-		const tplContent = fs.readFileSync(tplPath, "utf-8");
+		const playgroundPath = path.join(webSrcRoot, "components/settings/doctor/templates/DoctorDiaryPlaygroundBar.tsx");
+		const tplContent = fs.existsSync(playgroundPath)
+			? fs.readFileSync(tplPath, "utf-8") + "\n" + fs.readFileSync(playgroundPath, "utf-8")
+			: fs.readFileSync(tplPath, "utf-8");
 		assert.ok(!tplContent.includes("Тестовый диагноз МКБ-10:"), "Must not use 'Тестовый диагноз МКБ-10:'");
 		assert.ok(tplContent.includes("Тестовый диагноз:"));
 
 		const matPath = path.join(webSrcRoot, "components/settings/doctor/DoctorMaterialsCatalogSection.tsx");
-		const matContent = fs.readFileSync(matPath, "utf-8");
+		const matSnippetPath = path.join(webSrcRoot, "components/settings/doctor/materials/DoctorMaterialsLiveSnippetCard.tsx");
+		const matContent = fs.existsSync(matSnippetPath)
+			? fs.readFileSync(matPath, "utf-8") + "\n" + fs.readFileSync(matSnippetPath, "utf-8")
+			: fs.readFileSync(matPath, "utf-8");
 		assert.ok(!matContent.includes("(Форма 043/у)"), "Must not use '(Форма 043/у)' in visible snippet title or button");
 		assert.ok(matContent.includes("Автоматический фрагмент протокола для медкарты с вашими материалами"));
 		assert.ok(matContent.includes("Скопировать готовый текст для медкарты"));

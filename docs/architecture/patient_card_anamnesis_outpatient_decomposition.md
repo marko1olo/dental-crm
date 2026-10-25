@@ -55,9 +55,66 @@
 | `TherapyLaunchers.tsx` | 108 | $\le 120$ | PASS |
 | `PatientDetailsStandaloneLauncher.tsx` | 64 | $\le 120$ | PASS |
 
-## 4. Доказательства работоспособности (Proof & Verification)
-1. **Тесты**:
-   - `apps/web/src/components/patient/__tests__/patientAnamnesisFamilyWallet.test.ts`: 10/10 PASS (Exit Code 0).
+## 5. Волна декомпозиции: Реестр пациентов, Карточка пациента и Автономия (Мандаты 8b, 8e, 8n, 8x, 8am)
+
+### Декомпозированные компоненты и модули ($\le 120$ строк, фасады $\le 80$ строк):
+- `apps/web/src/components/patients/PatientSearchAutocomplete.tsx`: 66 строк (фасад $\le 80$)
+  - `patientSearchAutocomplete/types.ts`: 19 строк
+  - `patientSearchAutocomplete/somaticBadgeHelper.ts`: 21 строк
+  - `patientSearchAutocomplete/PatientSearchInput.tsx`: 54 строк
+  - `patientSearchAutocomplete/PatientSearchResultRow.tsx`: 118 строк
+  - `patientSearchAutocomplete/PatientSearchDropdown.tsx`: 118 строк
+  - `patientSearchAutocomplete/usePatientSearchAutocomplete.ts`: 105 строк
+- `apps/web/src/components/patients/patientAutonomyActions.ts`: 22 строки (фасад $\le 80$)
+  - `patientAutonomy/patientSaveAutonomy.ts`: 95 строк
+  - `patientAutonomy/patientNavigationAutonomy.ts`: 65 строк
+  - `patientAutonomy/patientSafetyMapping.ts`: 58 строк
+  - `patientAutonomy/patientModalApiPersistence.ts`: 118 строк
+- `apps/web/src/components/patients/PatientWhatsappSendPanel.tsx`: 55 строк (фасад $\le 80$)
+  - `whatsapp/types.ts`: 14 строк
+  - `whatsapp/WhatsappStatusHeader.tsx`: 54 строки
+  - `whatsapp/WhatsappTemplatePicker.tsx`: 61 строка
+  - `whatsapp/WhatsappSendActions.tsx`: 82 строки
+  - `whatsapp/usePatientWhatsappSend.ts`: 117 строк
+- `apps/web/src/components/patients/patientSafetyEvaluation.ts`: 11 строк (фасад $\le 80$)
+  - `safetyEvaluation/types.ts`: 25 строк
+  - `safetyEvaluation/safetyDiaryFormatter.ts`: 66 строк
+  - `safetyEvaluation/procedureSafetyChecker.ts`: 87 строк
+  - `safetyEvaluation/safetyFlagsEvaluator.ts`: 100 строк
+- `apps/web/src/components/patients/safetyMath.ts`: 36 строк (фасад $\le 80$)
+  - `safetyMath/types.ts`: 67 строк
+  - `safetyMath/somaticDefaults.ts`: 68 строк
+  - `safetyMath/somaticTextParser.ts`: 51 строка
+  - `safetyMath/anesthesiaRiskBridge.ts`: 61 строка
+- `apps/web/src/components/patients/PatientCommunicationConsentsPanel.tsx`: 75 строк (фасад $\le 80$)
+  - `communicationConsents/types.ts`: 32 строки
+  - `communicationConsents/consentsApi.ts`: 43 строки
+  - `communicationConsents/ConsentsMatrixTable.tsx`: 71 строка
+  - `communicationConsents/useCommunicationConsents.ts`: 96 строк
+- `apps/web/src/components/patients/PatientSecondaryActionsMenu.tsx`: 46 строк (фасад $\le 80$)
+  - `secondaryActions/types.ts`: 9 строк
+  - `secondaryActions/ActionMenuItem.tsx`: 33 строки
+  - `secondaryActions/SecondaryActionsDropdownList.tsx`: 89 строк
+- `apps/web/src/components/patients/PatientCard.tsx`: 62 строки (фасад $\le 80$)
+  - `patientCardModules/patientCardTypes.ts`: 32 строки
+  - `patientCardModules/PatientCardActions.tsx`: 69 строк
+  - `patientCardModules/PatientLegalBadges.tsx`: 68 строк
+  - `patientCardModules/PatientHeaderSafetyAlert.tsx`: 46 строк
+  - `patientCardModules/PatientCardTabContent.tsx`: 71 строка
+  - `patientCardModules/usePatientCardState.ts`: 95 строк
+  - `patientCardModules/PatientCardHeader.tsx`: 110 строк
+- `apps/web/src/components/patients/PatientHistoryTab.tsx`: 66 строк (фасад $\le 80$)
+  - `patientHistory/PatientTimelineScroller.tsx`: 80 строк
+
+### Пруфы и верификация:
+- **Vitest Suite**: 24 тест-файла, 190/190 тестов пройдены успешно (0 failing).
+- **Визуальные пруфы 4-состояний (docs/proofs/patients/)**:
+  - `patient_card_pc_light.png` (164 665 байт, 1440×900)
+  - `patient_card_pc_dark.png` (169 608 байт, 1440×900)
+  - `patient_card_mobile_light.png` (178 818 байт, 390×844)
+  - `patient_card_mobile_dark.png` (188 108 байт, 390×844)
+  - Лично проверено через `read_file`: отсутствие перекрытий, сенсорные области $\ge 44\times 44$px, 0px горизонтального скролла, полное соответствие Мандатам 8e, 8n, 8x, 8am и Apple HIG.
+
    - `apps/api/src/tests/routes/outpatient.test.ts`: 6/6 PASS (Exit Code 0).
 2. **Кодировка**: `npm run check:encoding`: 19 023 файлов проверено, 0 замечаний (Exit Code 0).
 3. **4-состояный Red Team скриншот-пруф (`docs/proofs/patients/`)**:

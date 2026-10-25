@@ -1,338 +1,21 @@
 /**
- * Согласия пациента на каналы связи (service / marketing).
- *
- * БЫЛО: GET/PUT /api/communications/consents/:patientId уже хранили per-channel
- * согласия (phone/sms/whatsapp/telegram/email/… × service|marketing →
- * granted|revoked), defaults service=granted / marketing=revoked, но **zero web
- * callers** — администратор не мог отметить отказ от рекламы или разрешение
- * на WhatsApp, а outbox/campaigns слали вслепую.
- *
- * ТЕПЕРЬ: на карточке пациента панель грузит согласия, даёт переключатели
- * «служебные» / «реклама» по основным каналам доставки, сохраняет PUT с
- * clinical mutation headers. Самодостаточная: auth из useAppLogicContext.
+ * PatientCommunicationConsentsPanel.tsx — Согласия пациента на каналы связи.
+ * Decomposed facade strictly <= 80 lines following Mandate 8b.
  */
 
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { operatorReadableErrorDetail } from "../../AppHelpers";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	actionFailureToast,
-	requestFailureCause,
-} from "../../lib/panelStateText";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+import React from "react";
+import type { PatientCommunicationConsentsPanelProps } from "./communicationConsents/types";
+import { useCommunicationConsents } from "./communicationConsents/useCommunicationConsents";
+import { ConsentsMatrixTable } from "./communicationConsents/ConsentsMatrixTable";
 
-const CHANNELS = [
-	{ value: "sms", label: "SMS" },
-	{ value: "whatsapp", label: "WhatsApp" },
-	{ value: "telegram", label: "Telegram" },
-	{ value: "email", label: "E-mail" },
-	{ value: "phone", label: "Звонок" },
-	{ value: "max", label: "MAX" },
-	{ value: "vk", label: "VK" },
-	{ value: "in_person", label: "Лично" },
-] as const;
-
-const SCOPES = [
-	{ value: "service", label: "Служебные" },
-	{ value: "marketing", label: "Реклама" },
-] as const;
-
-type Channel = (typeof CHANNELS)[number]["value"];
-type Scope = (typeof SCOPES)[number]["value"];
-type ConsentState = "granted" | "revoked";
-
-type ConsentRow = {
-	channel: Channel;
-	scope: Scope;
-	state: ConsentState;
-	source?: string | undefined;
-	evidence?: string | null | undefined;
-	decidedAt?: string | null | undefined;
-};
-
-type ConsentMatrix = Record<string, ConsentState>; // key = `${channel}:${scope}`
-
-function cellKey(channel: string, scope: string): string {
-	return `${channel}:${scope}`;
-}
-
-function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
-	if (typeof raw !== "string") return null;
-	const t = (raw ?? "").trim();
-	if (!t) return null;
-	try {
-		const p: unknown = JSON.parse(t);
-		return typeof p === "object" && p !== null && !Array.isArray(p)
-			? (p as Record<string, unknown>)
-			: null;
-	} catch {
-		return null;
-	}
-}
-
-function buildMatrix(
-	consents: ConsentRow[],
-	defaults: { service: ConsentState; marketing: ConsentState },
-): ConsentMatrix {
-	const m: ConsentMatrix = {};
-	for (const ch of CHANNELS) {
-		m[cellKey(ch.value, "service")] = defaults.service;
-		m[cellKey(ch.value, "marketing")] = defaults.marketing;
-	}
-	for (const row of consents) {
-		const ch = row.channel;
-		const sc = row.scope;
-		if (!CHANNELS.some((c) => c.value === ch)) continue;
-		if (sc !== "service" && sc !== "marketing") continue;
-		if (row.state !== "granted" && row.state !== "revoked") continue;
-		m[cellKey(ch, sc)] = row.state;
-	}
-	return m;
-}
-
-export type PatientCommunicationConsentsPanelProps = {
-	patientId?: string | null;
-};
+export type { PatientCommunicationConsentsPanelProps } from "./communicationConsents/types";
 
 export const PatientCommunicationConsentsPanel: React.FC<
 	PatientCommunicationConsentsPanelProps
 > = ({ patientId }) => {
-	const appLogic = useAppLogicContext();
-	const auth = appLogic?.auth;
+	const state = useCommunicationConsents(patientId);
 
-	const [loading, setLoading] = useState(false);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [matrix, setMatrix] = useState<ConsentMatrix>({});
-	const [baseline, setBaseline] = useState<ConsentMatrix>({});
-	const [loaded, setLoaded] = useState(false);
-
-	const dirty = useMemo(() => {
-		const keys = new Set([...Object.keys(matrix), ...Object.keys(baseline)]);
-		for (const k of keys) {
-			if ((matrix[k] ?? "revoked") !== (baseline[k] ?? "revoked")) return true;
-		}
-		return false;
-	}, [matrix, baseline]);
-
-	const load = useCallback(async () => {
-		const pid = (patientId ?? "").trim();
-		if (!pid) {
-			setMatrix({});
-			setBaseline({});
-			setLoaded(false);
-			setError(null);
-			return;
-		}
-		setLoading(true);
-		setError(null);
-		try {
-			const headers =
-				auth && typeof auth.denteClinicalReadHeaders === "function"
-					? auth.denteClinicalReadHeaders()
-					: {};
-			const res = await fetch(
-				`/api/communications/consents/${encodeURIComponent(pid)}`,
-				{
-					method: "GET",
-					headers,
-				},
-			);
-			const raw = await res.text();
-			const json = jsonObjectOrNull(raw);
-			if (!res.ok) {
-				logger.error(`[comm-consents] GET ${res.status} ${raw.slice(0, 300)}`);
-				const detail = operatorReadableErrorDetail(
-					typeof json?.message === "string" ? json.message : null,
-				);
-				const msg =
-					detail ??
-					(res.status === 404
-						? "Пациент не найден — обновите карточку."
-						: actionFailureToast("Согласия на связь не загружены", res.status));
-				setError(msg);
-				setLoaded(false);
-				return;
-			}
-			const defaultsRaw = json?.defaults;
-			const defaults = {
-				service:
-					defaultsRaw &&
-					typeof defaultsRaw === "object" &&
-					(defaultsRaw as { service?: string }).service === "revoked"
-						? ("revoked" as const)
-						: ("granted" as const),
-				marketing:
-					defaultsRaw &&
-					typeof defaultsRaw === "object" &&
-					(defaultsRaw as { marketing?: string }).marketing === "granted"
-						? ("granted" as const)
-						: ("revoked" as const),
-			};
-			const rows: ConsentRow[] = Array.isArray(json?.consents)
-				? ((json?.consents ?? []) as unknown[])
-						.filter(
-							(r): r is Record<string, unknown> =>
-								typeof r === "object" && r !== null,
-						)
-						.map((r) => {
-							const row: ConsentRow = {
-								channel: String(r.channel ?? "") as Channel,
-								scope: String(r.scope ?? "") as Scope,
-								state: (r.state === "granted"
-									? "granted"
-									: "revoked") as ConsentState,
-							};
-							if (typeof r.source === "string") row.source = r.source;
-							if (typeof r.evidence === "string") row.evidence = r.evidence;
-							else if (r.evidence === null) row.evidence = null;
-							if (typeof r.decidedAt === "string") row.decidedAt = r.decidedAt;
-							else if (r.decidedAt === null) row.decidedAt = null;
-							return row;
-						})
-				: [];
-			const next = buildMatrix(rows, defaults);
-			setMatrix(next);
-			setBaseline({ ...next });
-			setLoaded(true);
-		} catch (e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error("[comm-consents] load failed", e);
-			const msg = `Согласия не загружены: ${requestFailureCause(null)}.`;
-			setError(msg);
-			setLoaded(false);
-		} finally {
-			setLoading(false);
-		}
-	}, [auth, patientId]);
-
-	useEffect(() => {
-		void load();
-	}, [load]);
-
-	const toggle = useCallback((channel: Channel, scope: Scope) => {
-		const k = cellKey(channel, scope);
-		setMatrix((prev) => {
-			const cur = prev[k] ?? "revoked";
-			return { ...prev, [k]: cur === "granted" ? "revoked" : "granted" };
-		});
-	}, []);
-
-	const save = useCallback(async () => {
-		const pid = (patientId ?? "").trim();
-		if (!pid) {
-			showToast("Сначала выберите пациента.", "error", 8000);
-			return;
-		}
-		if (!loaded) {
-			showToast("Согласия загружаются, подождите завершения загрузки.", "info", 3000);
-			return;
-		}
-		const entries: Array<{
-			channel: Channel;
-			scope: Scope;
-			state: ConsentState;
-			source: string;
-		}> = [];
-		for (const ch of CHANNELS) {
-			for (const sc of SCOPES) {
-				const k = cellKey(ch.value, sc.value);
-				const state = matrix[k] ?? "revoked";
-				const base = baseline[k] ?? "revoked";
-				// Отправляем изменённые + все явные, чтобы defaults зафиксировались.
-				if (state !== base || state === "granted" || sc.value === "marketing") {
-					entries.push({
-						channel: ch.value,
-						scope: sc.value,
-						state,
-						source: "staff",
-					});
-				}
-			}
-		}
-		// Всегда хотя бы изменённые; если dirty но entries пуст — шлём полный снимок.
-		if (entries.length === 0) {
-			for (const ch of CHANNELS) {
-				for (const sc of SCOPES) {
-					const k = cellKey(ch.value, sc.value);
-					entries.push({
-						channel: ch.value,
-						scope: sc.value,
-						state: matrix[k] ?? "revoked",
-						source: "staff",
-					});
-				}
-			}
-		}
-		// API max 32 entries — 8×2=16, ok.
-		setSaving(true);
-		setError(null);
-		try {
-			const headers =
-				auth && typeof auth.denteClinicalMutationHeaders === "function"
-					? auth.denteClinicalMutationHeaders({
-							"Content-Type": "application/json",
-						})
-					: auth && typeof auth.denteClinicalReadHeaders === "function"
-						? {
-								...auth.denteClinicalReadHeaders(),
-								"Content-Type": "application/json",
-							}
-						: { "Content-Type": "application/json" };
-			const res = await fetch(
-				`/api/communications/consents/${encodeURIComponent(pid)}`,
-				{
-					method: "PUT",
-					headers,
-					body: JSON.stringify({ entries }),
-				},
-			);
-			const raw = await res.text();
-			const json = jsonObjectOrNull(raw);
-			if (!res.ok) {
-				logger.error(`[comm-consents] PUT ${res.status} ${raw.slice(0, 300)}`);
-				const detail = operatorReadableErrorDetail(
-					typeof json?.message === "string" ? json.message : null,
-				);
-				const msg =
-					detail ??
-					(res.status === 400
-						? "Согласия не сохранены: проверьте каналы и статусы."
-						: res.status === 404
-							? "Пациент не найден в клинике."
-							: actionFailureToast(
-									"Согласия на связь не сохранены",
-									res.status,
-								));
-				setError(msg);
-				showToast(msg, "error", 12000);
-				return;
-			}
-			setBaseline({ ...matrix });
-			showToast("Согласия на связь сохранены.", "success", 7000);
-			// Reload to pick server decidedAt / canonical state
-			void load();
-		} catch (e) {
-			logger.error("[comm-consents] save failed", e);
-			const msg = `Согласия не сохранены: ${requestFailureCause(null)}.`;
-			setError(msg);
-			showToast(msg, "error", 12000);
-		} finally {
-			setSaving(false);
-		}
-	}, [auth, baseline, load, matrix, patientId]);
-
-	if (!patientId) {
-		return null;
-	}
+	if (!patientId) return null;
 
 	return (
 		<section
@@ -351,7 +34,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					</p>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
-					{dirty && (
+					{state.dirty && (
 						<span className="text-xs px-2.5 py-1 rounded-lg border border-amber-600/30 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200 font-semibold">
 							Есть изменения
 						</span>
@@ -359,8 +42,8 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-comm-consents-reload"
-						disabled={loading || saving}
-						onClick={() => void load()}
+						disabled={state.loading || state.saving}
+						onClick={() => void state.load()}
 						className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] disabled:opacity-50 inline-flex items-center justify-center font-medium cursor-pointer"
 					>
 						Обновить
@@ -368,82 +51,31 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-comm-consents-save"
-						disabled={loading || saving}
-						onClick={() => void save()}
+						disabled={state.loading || state.saving}
+						onClick={() => void state.save()}
 						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
 					>
-						{saving ? "Сохраняю…" : "Сохранить"}
+						{state.saving ? "Сохраняю…" : "Сохранить"}
 					</button>
 				</div>
 			</div>
 
-			{loading && !loaded ? (
+			{state.loading && !state.loaded ? (
 				<p className="text-xs text-[var(--muted)]">Загружаю согласия…</p>
 			) : null}
 
-			{error && (
+			{state.error && (
 				<p className="mb-3 text-xs text-rose-700 dark:text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2">
-					{error}
+					{state.error}
 				</p>
 			)}
 
-			{loaded && (
-				<div
-					className="overflow-x-auto"
-					data-testid="patient-comm-consents-matrix"
-				>
-					<table className="w-full text-left text-xs border-collapse min-w-[420px]">
-						<thead>
-							<tr className="text-[var(--muted)] border-b border-[var(--line)]">
-								<th className="py-2 pr-3 font-medium">Канал</th>
-								{SCOPES.map((sc) => (
-									<th
-										key={sc.value}
-										className="py-2 px-2 font-medium text-center"
-									>
-										{sc.label}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{CHANNELS.map((ch) => (
-								<tr key={ch.value} className="border-b border-[var(--line)]">
-									<td className="py-2 pr-3 text-[var(--ink)] font-medium">
-										{ch.label}
-									</td>
-									{SCOPES.map((sc) => {
-										const k = cellKey(ch.value, sc.value);
-										const state = matrix[k] ?? "revoked";
-										const on = state === "granted";
-										return (
-											<td key={sc.value} className="py-2 px-2 text-center">
-												<button
-													type="button"
-													data-testid={`patient-comm-consent-${ch.value}-${sc.value}`}
-													aria-pressed={on}
-													onClick={() => toggle(ch.value, sc.value)}
-													disabled={saving}
-													className={
-														on
-															? "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 dark:bg-emerald-600/25 text-emerald-800 dark:text-emerald-200 border border-emerald-600/30 dark:border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
-															: "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-medium bg-[var(--paper-strong)] text-[var(--muted)] border border-[var(--glass-border)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center cursor-pointer transition-colors"
-													}
-												>
-													{on ? "Разрешено" : "Запрещено"}
-												</button>
-											</td>
-										);
-									})}
-								</tr>
-							))}
-						</tbody>
-					</table>
-					<p className="mt-2 text-xs text-[var(--muted)] leading-relaxed">
-						По умолчанию служебные — разрешены, реклама — запрещена, пока
-						администратор не зафиксирует иное.
-					</p>
-				</div>
+			{state.loaded && (
+				<ConsentsMatrixTable
+					matrix={state.matrix}
+					saving={state.saving}
+					onToggle={state.toggle}
+				/>
 			)}
 		</section>
 	);
