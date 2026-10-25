@@ -49,38 +49,11 @@ export const Tooth47Roots: React.FC<Tooth47RootsProps> = ({
 				pointerEvents="none"
 			/>
 
-			{/* Cylindrical Volume Highlights on both Parallel Roots (Zero harsh lines!) */}
+			{/* Cylindrical Volume Shading & Highlights (Pure shader depth, zero artificial white strokes) */}
 			<g clipPath="url(#tooth47-root-clip)">
 				<path
-					d="M 24.0,76.0 C 22.0,96.0 20.5,118.0 23.5,142.0"
-					fill="none"
-					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
-					strokeWidth="2.6"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-				<path
-					d="M 24.0,76.0 C 22.0,96.0 20.5,118.0 23.5,142.0"
-					fill="none"
-					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
-					strokeWidth="0.8"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-				<path
-					d="M 69.0,76.0 C 66.0,96.0 61.5,118.0 58.0,142.0"
-					fill="none"
-					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
-					strokeWidth="2.6"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-				<path
-					d="M 69.0,76.0 C 66.0,96.0 61.5,118.0 58.0,142.0"
-					fill="none"
-					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
-					strokeWidth="0.8"
-					strokeLinecap="round"
+					d={TOOTH47_GEOMETRY.rootMonolithPath}
+					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

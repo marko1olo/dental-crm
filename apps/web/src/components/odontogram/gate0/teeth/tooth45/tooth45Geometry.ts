@@ -68,4 +68,13 @@ export const TOOTH45_GEOMETRY = {
 	centralPit: { x: 49.5, y: 23.5, cx: 49.5, cy: 23.5, r: 1.2 },
 	mesialPit: { x: 35.0, y: 23.0 },
 	distalPit: { x: 64.0, y: 23.0 },
+	crownCuspSlopes: [
+		{ id: "buccal", d: "M 32,23 C 38,19 46,21 50,23 C 44,26 36,25 32,23 Z", type: "highlight" as const },
+		{ id: "distal", d: "M 50,23 C 55,21 62,19 68,23 C 62,25 55,26 50,23 Z", type: "shadow" as const },
+	],
+	crownSpecularRidges: [
+		{ id: "buccal", d: "M 34,19 C 40,20.5 46,22 50,23" },
+		{ id: "lingual", d: "M 50,23 C 55,22 62,20.5 66,19" },
+	],
+	crownEquatorHighlight: "M 30,52 C 40,56 60,56 70,52",
 } as const;

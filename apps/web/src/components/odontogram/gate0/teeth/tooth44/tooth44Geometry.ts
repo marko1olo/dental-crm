@@ -77,4 +77,13 @@ export const TOOTH44_GEOMETRY = {
 			d: "M 57,24.0 C 59,26.0 62,28.5 64,31.0",
 		},
 	],
+	crownCuspSlopes: [
+		{ id: "buccal", d: "M 30,22 C 36,17 44,19 48,22 C 42,25 35,24 30,22 Z", type: "highlight" as const },
+		{ id: "lingual", d: "M 48,22 C 54,19 62,18 68,22 C 62,25 54,26 48,22 Z", type: "shadow" as const },
+	],
+	crownSpecularRidges: [
+		{ id: "buccal", d: "M 32,18 C 38,19.5 44,21 48,22" },
+		{ id: "transverse", d: "M 47,17.2 C 48.0,20.0 49.0,22.8 50,25.5" },
+	],
+	crownEquatorHighlight: "M 28,52 C 38,56 62,56 72,52",
 } as const;

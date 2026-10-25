@@ -19,3 +19,27 @@ Flagship interactive 3D anatomical odontogram with visible roots, pulp chambers,
 - **Zero Mocks / Real DOM:** Captured live from Chromium session on `http://127.0.0.1:5173/`.
 - **Mandate 8b Compliance:** All modules $\le 120$ lines.
 - **Mandate 8e Autonomy:** 1-click clinical presets ("Все здоровы (Норма)", "Санирован", "Без 8-ок").
+
+---
+
+## 4. Quadrant 4 (Teeth 48..41) Clinical Sculpting & 5 Flaws Elimination
+
+Full 8-tooth resolution in Quadrant 4 (mandibular right quadrant):
+1. **Ликвидация «белой линии» на корнях:** Artificial white stroked highlight paths (`stroke="rgba(255, 255, 255, ...)" strokeWidth="2.4" / "0.8"`) completely excised across all roots (`Tooth41Roots`..`Tooth48Roots`). Pure cylindrical gradient volumetric depth applied.
+2. **Усиление 3D-объема и контраста теней корней:** Deepened flank opacity in `dente-root-contour` (Light: 0.32–0.38, Dark: 0.46–0.52) in `ToothAnteriorShaders.tsx` and rich dentin contrast in `Tooth46ShaderDefs.tsx`.
+3. **Бесшовные коронки без полос и серого уступа:** In `ToothCrownOverlay.tsx`, eliminated the dirty-gray chamfer shoulder (`dente-zirconia-chamfer`) and white glaze line at the cervix. Added individualized 3D ceramic depth (proximal contour, cusp slopes, specular ridges, equator highlight) across all teeth (48, 47, 45, 44, 43, 42, 41) matching tooth 46.
+4. **Физиологический объем пульпарной камеры:** Reduced coronal pulp chamber and orifices in `tooth41PulpGeometry`..`tooth45PulpGeometry` down to true anatomical dimensions (incisors 41/42: 7–7.5px; canine 43: slender 13px spear; premolars 44/45: 11–11.5px).
+5. **Ультра-заметный отломок инструмента (Broken File):** Created dedicated `ToothBrokenFileMarker.tsx` ($\le 120$ lines) and integrated across all `Tooth4xEndoCanals.tsx` with high-visibility amber-orange outline (`rgba(217, 119, 6, 0.95)`), dark NiTi metallic core, bright red fracture notch (`#ef4444`), and white spiral flutes.
+
+### 10 Master Clinical Strip Proofs (strips/):
+- `strip_01_norm_intact.png` — Интактные зубы (физиологическая норма), чистые градиенты корней без белых полос.
+- `strip_02_caries_fissures.png` — Кариозный спектр (I–V классы Блэка).
+- `strip_03_acute_pulpitis.png` — Пульпит с анатомически выверенными узкими пульпарными камерами.
+- `strip_04_periodontitis_granuloma.png` — Периодонтит и гранулемы верхушек корней.
+- `strip_05_endodontics_treated.png` — Обтурированные гуттаперчей каналы (SEAL).
+- `strip_06_prosthetics_crowns.png` — Бесшовные керамические и циркониевые коронки без серого уступа.
+- `strip_07_restorations_fillings.png` — Анатомические композитные реставрации.
+- `strip_08_implants_abutments.png` — Титановые имплантаты и абатменты.
+- `strip_09_broken_file.png` — Высококонтрастные отломки эндодонтических инструментов (Broken File).
+- `strip_10_dark_mode_all_teeth.png` — Безупречная светотеневая модель в Apple HIG Dark Mode.
+

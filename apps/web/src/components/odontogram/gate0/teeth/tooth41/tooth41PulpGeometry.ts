@@ -14,34 +14,34 @@ export interface Tooth41CanalAnatomy {
 }
 
 export const TOOTH41_PULP_GEOMETRY = {
-	// Narrow symmetrical coronal pulp chamber inside narrow 38px chisel crown
+	// Slender delicate symmetrical coronal pulp chamber (width 7px, Wheeler Ch. 10)
 	coronalPulpChamber:
-		"M 47.5,69.5 " +
-		"C 45.0,67.5 44.0,58.0 44.0,46.0 " +
-		"C 44.0,38.0 45.5,31.0 46.5,28.0 " + // Mesial horn
-		"C 48.0,31.0 49.0,27.5 50.0,27.5 " + // Central horn
-		"C 51.0,27.5 52.0,31.0 53.5,28.0 " + // Distal horn
-		"C 54.5,31.0 56.0,38.0 56.0,46.0 " +
-		"C 56.0,58.0 55.0,67.5 52.5,69.5 " +
-		"C 51.5,71.0 48.5,71.0 47.5,69.5 Z",
+		"M 48.5,70.0 " +
+		"C 47.0,68.0 46.5,58.0 46.5,46.0 " +
+		"C 46.5,38.0 47.5,32.0 48.0,29.0 " + // Mesial horn
+		"C 49.0,31.0 49.5,28.5 50.0,28.5 " + // Central horn
+		"C 50.5,28.5 51.0,31.0 52.0,29.0 " + // Distal horn
+		"C 52.5,32.0 53.5,38.0 53.5,46.0 " +
+		"C 53.5,58.0 53.0,68.0 51.5,70.0 " +
+		"C 50.8,71.0 49.2,71.0 48.5,70.0 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный корневой канал",
-			orifice: { x: 50.0, y: 69.5 },
+			orifice: { x: 50.0, y: 70.0 },
 			apex: { x: 45.2, y: 141.0 },
 			centerLine:
-				"M 50.0,69.5 C 49.0,92.0 47.2,118.0 45.2,141.0",
+				"M 50.0,70.0 C 49.0,92.0 47.2,118.0 45.2,141.0",
 			taperedLumen:
-				"M 48.0,69.5 C 47.0,92.0 45.8,118.0 44.6,141.0 " +
-				"L 45.8,141.0 C 48.2,118.0 51.0,92.0 52.0,69.5 Z",
+				"M 48.6,70.0 C 47.5,92.0 46.1,118.0 44.8,141.0 " +
+				"L 45.6,141.0 C 47.9,118.0 50.5,92.0 51.4,70.0 Z",
 		},
 	] as readonly Tooth41CanalAnatomy[],
 	rostrumMap: {
-		grooves: "M 48.0,69.5 C 49.0,71.0 51.0,71.0 52.0,69.5",
-		orifices: [{ id: "Main", x: 50.0, y: 69.5, r: 1.2 }],
+		grooves: "M 48.5,70.0 C 49.2,71.0 50.8,71.0 51.5,70.0",
+		orifices: [{ id: "Main", x: 50.0, y: 70.0, r: 0.9 }],
 	},
 	neuroPlexus: [
-		{ id: "central_incisor_trunk", d: "M 50.0,30.0 C 50.0,45.0 50.0,58.0 50.0,69.5" },
+		{ id: "central_incisor_trunk", d: "M 50.0,30.0 C 50.0,45.0 50.0,58.0 50.0,70.0" },
 	] as const,
 } as const;

@@ -42,6 +42,9 @@ export const Tooth43RestorationOverlay: React.FC<
 					crownPath={geo.crownMonolithPath}
 					cervicalShoulderPath={geo.cervicalShoulderPath}
 					fissures={[{ id: "labialRidge", d: geo.labialRidge }]}
+					cuspSlopes={geo.crownCuspSlopes}
+					specularRidges={geo.crownSpecularRidges}
+					equatorHighlight={geo.crownEquatorHighlight}
 					material={crownMaterial}
 					condition={crownCondition}
 					translucent={translucent}

@@ -43,4 +43,13 @@ export const TOOTH41_GEOMETRY = {
 		"L 67.5,67.0 C 62.0,69.3 56.0,70.3 50.0,70.3 C 44.0,70.3 38.0,69.3 32.5,67.0 Z",
 	compositeFillingPath:
 		"M 39.0,71.0 C 43.0,72.5 57.0,72.5 61.0,71.0 C 59.5,66.0 55.5,64.5 50.0,64.5 C 44.5,64.5 40.5,66.0 39.0,71.0 Z",
+	crownCuspSlopes: [
+		{ id: "mesial_lobe", d: "M 34,23 L 43,23 C 42.5,42 42,56 40,68 C 36,65 33,54 33,38 Z", type: "highlight" as const },
+		{ id: "distal_lobe", d: "M 57,23 L 66,23 C 67,38 64,54 60,68 C 58,56 57.5,42 57,23 Z", type: "shadow" as const },
+	],
+	crownSpecularRidges: [
+		{ id: "incisal_bevel", d: "M 35,21.5 L 65,21.5" },
+		{ id: "central_lobe", d: "M 50,22 L 50,65" },
+	],
+	crownEquatorHighlight: "M 34,52 C 41,55 59,55 66,52",
 } as const;

@@ -76,4 +76,13 @@ export const TOOTH48_GEOMETRY = {
 		},
 	],
 	foramenCaecum: { cx: 50.2, cy: 33.0, r: 0.8 },
+	crownCuspSlopes: [
+		{ id: "mb", d: "M 22,21 C 28,18 38,20 46,22 C 38,25 28,24 22,21 Z", type: "highlight" as const },
+		{ id: "db", d: "M 54,22 C 62,20 72,18 78,21 C 72,24 62,25 54,22 Z", type: "shadow" as const },
+	],
+	crownSpecularRidges: [
+		{ id: "mb", d: "M 24,18 C 30,19.5 38,21 46,22" },
+		{ id: "db", d: "M 54,22 C 62,21 70,19.5 76,18" },
+	],
+	crownEquatorHighlight: "M 19,50 C 34,54 66,54 81,50",
 } as const;

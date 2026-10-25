@@ -3,6 +3,7 @@ import {
 	CROWN_FILL_MAP,
 	getCrownFissureStroke,
 	getCrownStroke,
+	getCuspSlopeColors,
 	getGlazeStroke,
 } from "./Tooth46CrownMaps";
 import type { CrownMaterial, RestorationCondition } from "./tooth46Types";
@@ -12,6 +13,9 @@ export interface ToothCrownOverlayProps {
 	crownPath: string;
 	cervicalShoulderPath?: string | undefined;
 	fissures?: readonly { id: string; d: string }[] | undefined;
+	cuspSlopes?: readonly { id: string; d: string; type: "highlight" | "shadow" }[] | undefined;
+	specularRidges?: readonly { id: string; d: string }[] | undefined;
+	equatorHighlight?: string | undefined;
 	material?: CrownMaterial | undefined;
 	condition?: RestorationCondition | undefined;
 	translucent?: boolean | undefined;
@@ -21,16 +25,16 @@ export interface ToothCrownOverlayProps {
 }
 
 /**
- * Universal anatomical orthopedic crown overlay.
- * Renders crown strictly in the tooth's own anatomical outline
- * with realistic materials, cervical chamfer, and milled fissures.
- * Mandate 8b <= 120 lines.
+ * Universal anatomical orthopedic crown overlay (Mandate 8b <= 120 lines).
  */
 export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 	toothId,
 	crownPath,
 	cervicalShoulderPath,
 	fissures,
+	cuspSlopes,
+	specularRidges,
+	equatorHighlight,
 	material = "zirconia",
 	condition = "adequate",
 	translucent = false,
@@ -41,6 +45,7 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 	const stroke = getCrownStroke(material, isDark);
 	const fissureColor = getCrownFissureStroke(material, isDark);
 	const glazeStroke = getGlazeStroke(material);
+	const slopes = getCuspSlopeColors(material);
 
 	return (
 		<g
@@ -51,7 +56,9 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 			data-implant-crown={isImplant ? "true" : undefined}
 			className={className}
 		>
-			{/* Monolithic anatomical shell of the specific tooth */}
+			<clipPath id={`tooth${toothId}-crown-clip`}>
+				<path d={crownPath} />
+			</clipPath>
 			<path
 				id={`tooth${toothId}-crown-shell`}
 				d={crownPath}
@@ -62,50 +69,27 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-
-			{/* Subgingival PFM metal collar */}
-			{material === "pfm" && cervicalShoulderPath && (
+			<g clipPath={`url(#tooth${toothId}-crown-clip)`}>
 				<path
-					d={cervicalShoulderPath}
-					fill="url(#dente-pfm-metal-collar)"
-					stroke="none"
-				/>
-			)}
-
-			{/* Circumferential cervical chamfer prep shoulder */}
-			{(material === "zirconia" || material === "emax") && cervicalShoulderPath && (
-				<path
-					d={cervicalShoulderPath}
-					fill="url(#dente-zirconia-chamfer)"
-					stroke="none"
-				/>
-			)}
-
-			{/* Milled secondary fissures of the specific tooth */}
-			{Array.isArray(fissures) &&
-				fissures.map((f) => (
-					<path
-						key={`fissure-${f.id}`}
-						d={f.d}
-						fill="none"
-						stroke={fissureColor}
-						strokeWidth="0.55"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				))}
-
-			{/* Equator & glaze reflection highlight */}
-			{cervicalShoulderPath && (
-				<path
-					d={cervicalShoulderPath}
-					fill="none"
-					stroke={glazeStroke}
-					strokeWidth="0.5"
-					opacity="0.4"
-					strokeLinecap="round"
+					d={crownPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
+			</g>
+			{material === "pfm" && cervicalShoulderPath && (
+				<path d={cervicalShoulderPath} fill="url(#dente-pfm-metal-collar)" stroke="none" />
+			)}
+			{Array.isArray(cuspSlopes) && cuspSlopes.map((s) => (
+				<path key={`sl-${s.id}`} d={s.d} fill={s.type === "highlight" ? slopes.highlight : slopes.shadow} stroke="none" />
+			))}
+			{Array.isArray(fissures) && fissures.map((f) => (
+				<path key={`fs-${f.id}`} d={f.d} fill="none" stroke={fissureColor} strokeWidth="0.55" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+			))}
+			{material !== "pmma" && Array.isArray(specularRidges) && specularRidges.map((g) => (
+				<path key={`gz-${g.id}`} d={g.d} fill="none" stroke={glazeStroke} strokeWidth="0.8" strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={material === "emax" ? "0.95" : "0.85"} />
+			))}
+			{equatorHighlight && (
+				<path d={equatorHighlight} fill="none" stroke={glazeStroke} strokeWidth="0.6" opacity="0.35" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
 			)}
 		</g>
 	);

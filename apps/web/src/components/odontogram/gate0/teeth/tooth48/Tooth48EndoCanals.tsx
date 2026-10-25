@@ -1,5 +1,6 @@
 import type React from "react";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
+import { ToothBrokenFileMarker } from "../../ToothBrokenFileMarker";
 import type { CanalCondition } from "../../tooth46Types";
 import { Tooth48PulpChamber } from "./Tooth48PulpChamber";
 import { TOOTH48_PULP_GEOMETRY } from "./tooth48PulpGeometry";
@@ -61,20 +62,16 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 
 					{/* Broken Instrument in Distal Curvature of Apical Third */}
 					{isBrokenFile && (
-						<g id="tooth48-broken-file">
-							<path
-								d="M 38.0,132.0 C 36.0,138.0 35.5,142.0 35.2,145.5"
-								fill="none"
-								stroke="#e2e8f0"
-								strokeWidth="1.2"
-								strokeLinecap="round"
-							/>
-							<path
-								d="M 36.0,134.0 L 38.0,136.0 M 34.5,138.5 L 36.5,140.5"
-								stroke="#0284c7"
-								strokeWidth="0.8"
-							/>
-						</g>
+						<ToothBrokenFileMarker
+							toothId="48"
+							path="M 38.0,132.0 C 36.0,138.0 35.5,142.0 35.2,145.5"
+							fracturePoint={{ x: 38.0, y: 132.0 }}
+							flutes={[
+								"M 36.0,135.5 L 38.0,137.5",
+								"M 34.8,140.0 L 36.8,142.0",
+							]}
+							isDark={isDark}
+						/>
 					)}
 				</g>
 			)}
