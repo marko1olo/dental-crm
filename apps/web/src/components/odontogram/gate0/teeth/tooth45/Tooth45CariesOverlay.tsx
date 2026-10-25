@@ -36,23 +36,27 @@ export const Tooth45CariesOverlay: React.FC<Tooth45CariesOverlayProps> = ({
 			className={className}
 			clipPath="url(#tooth45-crown-clip)"
 		>
-			{/* Central Pit Lesion of the Y-fissure */}
+			{/* Central Pit Cavitation of the Y-fissure with realistic depth */}
 			<g id="tooth45-caries-central-pit">
+				{/* 1. Demineralized halo expanding along Y-fissure branches */}
 				<path
-					d="M 49.5,20.5 C 52.5,20.5 54.0,22.5 53.5,25.0 C 53.0,27.5 50.5,28.5 48.0,28.0 C 45.5,27.5 45.0,25.0 45.5,22.5 C 46.5,21.0 48.0,20.5 49.5,20.5 Z"
-					fill={lesionFill}
+					d="M 41,21.5 C 45,20.5 48,20.8 50,21 C 52,20.8 55,20.5 59,21.5 C 57.5,23.5 53,24 51.5,25.5 L 51.5,30 C 51.5,31 48.5,31 48.5,30 L 48.5,25.5 C 47,24 42.5,23.5 41,21.5 Z"
+					fill="url(#dente-caries-demin)"
 					stroke={haloStroke}
 					strokeWidth="0.55"
 				/>
-				<circle cx="49.5" cy="24.0" r="1.6" fill={necroticFill} />
-			</g>
-
-			{/* Lingual Stem Fissure Infiltration (down Y-stem to Y=29) */}
-			<g id="tooth45-caries-stem">
+				{/* 2. Softened dentin crater */}
 				<path
-					d="M 48.5,24.5 L 48.5,29.5 C 48.5,30.5 50.5,30.5 50.5,29.5 L 50.5,24.5 Z"
+					d="M 44,22 C 47,21.5 49,21.8 50,22 C 51,21.8 53,21.5 56,22 C 54.5,23.8 52,24.2 51,25.5 L 51,29 C 51,29.8 49,29.8 49,29 L 49,25.5 C 48,24.2 45.5,23.8 44,22 Z"
 					fill={lesionFill}
-					stroke={haloStroke}
+					stroke="rgba(120, 53, 15, 0.75)"
+					strokeWidth="0.5"
+				/>
+				{/* 3. Deep necrotic core pit (tissue loss into dentin) */}
+				<path
+					d="M 47.5,22.2 C 49,21.8 51,21.8 52.5,22.2 C 52.8,23.5 51.8,24.8 50.8,25.5 L 50.8,28 C 50.8,28.6 49.2,28.6 49.2,28 L 49.2,25.5 C 48.2,24.8 47.2,23.5 47.5,22.2 Z"
+					fill={necroticFill}
+					stroke="rgba(12, 10, 9, 0.9)"
 					strokeWidth="0.5"
 				/>
 			</g>

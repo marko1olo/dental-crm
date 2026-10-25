@@ -79,6 +79,9 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 			{material === "pfm" && cervicalShoulderPath && (
 				<path d={cervicalShoulderPath} fill="url(#dente-pfm-metal-collar)" stroke="none" />
 			)}
+			{(material === "zirconia" || material === "emax") && cervicalShoulderPath && (
+				<path d={cervicalShoulderPath} fill="url(#dente-zirconia-chamfer)" stroke="none" />
+			)}
 			{Array.isArray(cuspSlopes) && cuspSlopes.map((s) => (
 				<path key={`sl-${s.id}`} d={s.d} fill={s.type === "highlight" ? slopes.highlight : slopes.shadow} stroke="none" />
 			))}

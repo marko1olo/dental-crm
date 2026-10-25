@@ -17,12 +17,13 @@ export const Tooth46CrownShaders: React.FC = () => {
 			<linearGradient id="dente-zirconia-crown" href="#dente-zirconia-ceramic" />
 			<linearGradient id="dente-pfm-crown" href="#dente-crown-pfm" />
 			<linearGradient id="dente-gold-crown" href="#dente-crown-gold" />
-			{/* 1. Monolithic Zirconia (ZrO2) */}
+			{/* 1. Monolithic Multilayer Zirconia (Katana ML / ZirCAD) */}
 			<linearGradient id="dente-zirconia-ceramic" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.99" />
-				<stop offset="25%" stopColor="#f8fafc" stopOpacity="0.97" />
-				<stop offset="65%" stopColor="#f1f5f9" stopOpacity="0.96" />
-				<stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.94" />
+				<stop offset="0%" stopColor="#f8fafc" stopOpacity="0.99" />
+				<stop offset="20%" stopColor="#f1f5f9" stopOpacity="0.97" />
+				<stop offset="55%" stopColor="#fef9ee" stopOpacity="0.96" />
+				<stop offset="80%" stopColor="#f6ecdc" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#ebd8bf" stopOpacity="0.95" />
 			</linearGradient>
 			<linearGradient id="dente-zirconia-glaze" x1="0" y1="0" x2="1" y2="0.5">
 				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
@@ -30,8 +31,9 @@ export const Tooth46CrownShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
 			</linearGradient>
 			<linearGradient id="dente-zirconia-chamfer" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#cbd5e1" stopOpacity="0.80" />
-				<stop offset="100%" stopColor="#94a3b8" stopOpacity="0.95" />
+				<stop offset="0%" stopColor="#dfd3c1" stopOpacity="0.80" />
+				<stop offset="50%" stopColor="#c5b29b" stopOpacity="0.90" />
+				<stop offset="100%" stopColor="#9a8167" stopOpacity="0.95" />
 			</linearGradient>
 
 			{/* 2. Porcelain Fused to Metal (PFM) */}

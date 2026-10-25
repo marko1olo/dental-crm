@@ -42,16 +42,6 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 				stroke="rgba(28, 25, 23, 0.95)"
 				strokeWidth="0.6"
 			/>
-			{c1.microPits.map((pit) => (
-				<circle
-					key={`pit-${pit.cx}-${pit.cy}`}
-					cx={pit.cx}
-					cy={pit.cy}
-					r={pit.r}
-					fill="#1c1917"
-					opacity="0.9"
-				/>
-			))}
 			<path
 				d={c1.buccalGrooveTrace}
 				fill="none"
