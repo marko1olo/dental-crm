@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Zap, CheckCircle2, ShieldCheck, Layers, Plus, SlidersHorizontal } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
+	getSinusGbrServices,
 	getSinusGbrServices804n,
 	dispatchSurgicalServicesToInvoice,
+	type SurgicalServiceItem,
 	type SurgicalService804n,
 } from "../../surgery/surgeryProtocols";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
@@ -13,7 +15,7 @@ export interface VisitSurgerySinusGbrBarProps {
 	readonly effectiveTooth: number;
 	readonly isClosedSinus?: boolean | undefined;
 	readonly onApplyProtocolText: (text: string) => void;
-	readonly onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
+	readonly onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 }
 
 export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = ({

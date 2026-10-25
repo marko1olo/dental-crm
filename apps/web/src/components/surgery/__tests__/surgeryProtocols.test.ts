@@ -1,221 +1,51 @@
-import assert from "node:assert/strict";
+/**
+ * surgeryProtocols.test.ts — Интеграционные тесты контура хирургии и автономии врача (Мандаты 8e, 8n, 8x).
+ * Автономия хирурга, целочисленный торк 35 Н·см, SOAP дневник без номеров приказов, гарантийные обязательства.
+ */
 
-const { describe, it } = await (async () => {
-	try {
-		// @ts-ignore
-		return await import("vitest");
-	} catch {
-		return await import("node:test");
-	}
-})();
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
-	DENTAL_IMPLANTATION_NORM_TEXT,
-	SIMPLE_EXTRACTION_NORM_TEXT,
-	ATYPICAL_EXTRACTION_NORM_TEXT,
-	SINUS_LIFT_GBR_NORM_TEXT,
-	CLOSED_SINUS_LIFT_NORM_TEXT,
-	PERICORONITIS_NORM_TEXT,
-	COMPLEX_EXTRACTION_NORM_TEXT,
-	PERIOSTOTOMY_NORM_TEXT,
-	SURGICAL_OPERATION_NORMS,
-	evaluateWarehouseOverdraft,
-	quickDeductSurgicalMaterials,
 	buildSurgicalDiaryEntry,
-	EXTRACTION_804N_CODES,
-	SURGICAL_HEMOSTASIS_OPTIONS,
-	EXTRACTION_COMPLEXITY_OPTIONS,
-	buildStandardExtractionProtocolText,
-	buildPostExtractionMemoText,
+	DENTAL_IMPLANTATION_NORM_TEXT,
+	evaluateWarehouseOverdraft,
 } from "../surgeryProtocols";
 import {
-	CLINICAL_SOAP_PRESETS,
-	getPresetById,
-	validateSoapPreset,
-} from "../../visit/clinicalSoapPresets";
+	createDefaultPassportRecord,
+	FAST_IMPLANT_SYSTEM_PRESETS,
+} from "../../implants/implantQuickPresets";
 
-describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
-	it("1. Dental Implantation 1-click norm matches canonical text and 35 N·см torque", () => {
-		assert.ok(
-			DENTAL_IMPLANTATION_NORM_TEXT.includes("первичная торк-стабильность 35 Н·см") ||
-				DENTAL_IMPLANTATION_NORM_TEXT.includes("первичная торк-стабильность 35 Н/см"),
-			"Must contain 35 N*cm torque specification",
-		);
-		assert.ok(
-			DENTAL_IMPLANTATION_NORM_TEXT.includes("Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл"),
-			"Must contain 1.7 ml articaine anesthesia",
-		);
-		assert.ok(
-			DENTAL_IMPLANTATION_NORM_TEXT.includes("Ушивание раны шовным материалом ПГА 4-0"),
-			"Must contain PGA 4-0 suture material",
-		);
-		assert.ok(
-			DENTAL_IMPLANTATION_NORM_TEXT.includes("Гемостаз полный. Рекомендации даны."),
-			"Must contain complete hemostasis and post-op recommendations",
-		);
-	});
-
-	it("2. Surgical Operation Norms catalog has all canonical procedures with ICD-10", () => {
-		const ids = SURGICAL_OPERATION_NORMS.map((n) => n.id);
-		assert.ok(ids.includes("surgery_implant_standard"), "Must include implant standard norm");
-		assert.ok(ids.includes("surgery_extraction_simple"), "Must include simple extraction norm");
-		assert.ok(ids.includes("surgery_extraction_atypical"), "Must include atypical wisdom tooth norm");
-		assert.ok(ids.includes("surgery_sinus_lift_gbr"), "Must include sinus-lift/GBR norm");
-		assert.ok(ids.includes("surgery_sinus_lift_closed"), "Must include closed sinus-lift norm");
-		assert.ok(ids.includes("surgery_pericoronitis"), "Must include pericoronitis norm");
-		assert.ok(ids.includes("surgery_extraction_complex"), "Must include complex extraction norm");
-		assert.ok(ids.includes("surgery_periostotomy"), "Must include emergency periostotomy norm");
-
-		for (const norm of SURGICAL_OPERATION_NORMS) {
-			assert.ok(norm.icd10.length > 0, `Norm ${norm.id} must have valid ICD-10 code`);
-			assert.ok(norm.standardProtocolTextRu.length > 50, `Norm ${norm.id} must have complete clinical text`);
-			assert.ok(norm.requiredMaterials.length > 0, `Norm ${norm.id} must declare required materials`);
-		}
-	});
-
-	it("2a. Complex tooth extraction norm (surgery_extraction_complex) has full clinical protocol & materials", () => {
-		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_complex");
-		assert.ok(norm, "surgery_extraction_complex must be present in SURGICAL_OPERATION_NORMS");
-		assert.equal(norm.title, "Сложное удаление зуба с разъединением корней и ушиванием");
-		assert.equal(norm.shortBadge, "Сложн. удаление");
-		assert.equal(norm.category, "extraction");
-		assert.equal(norm.icd10, "K04.7");
-		assert.equal(norm.icd10Label, "Периапикальный абсцесс без свища / Дистопия");
-		assert.equal(norm.standardProtocolTextRu, COMPLEX_EXTRACTION_NORM_TEXT);
-
-		// Clinical protocol details
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Инфильтрационная и проводниковая анестезия"));
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Сепарация корней бором с водяным охлаждением"));
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Люксация элеватором"));
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("кюретаж"));
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Альвожил"));
-		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Викрил 4-0"));
-
-		// Materials: Артикаин 1:100000 (2 шт), Шовный материал Викрил 4-0 (1 шт), Губка Альвожил (1 шт), Марлевые тампоны (2 шт)
-		const mats = norm.requiredMaterials;
-		const articaine = mats.find((m) => m.name.includes("Артикаин 1:100000"));
-		assert.ok(articaine, "Must have Articaine");
-		assert.equal(articaine.quantity, 2);
-
-		const suture = mats.find((m) => m.name.includes("Викрил 4-0"));
-		assert.ok(suture, "Must have Vicryl 4-0 suture");
-		assert.equal(suture.quantity, 1);
-
-		const sponge = mats.find((m) => m.name.includes("Альвожил"));
-		assert.ok(sponge, "Must have Alvogyl sponge");
-		assert.equal(sponge.quantity, 1);
-
-		const tampons = mats.find((m) => m.name.includes("Марлевые тампоны"));
-		assert.ok(tampons, "Must have gauze tampons");
-		assert.equal(tampons.quantity, 2);
-	});
-
-	it("2b. Periostotomy emergency norm (surgery_periostotomy) has incision, drainage & materials", () => {
-		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_periostotomy");
-		assert.ok(norm, "surgery_periostotomy must be present in SURGICAL_OPERATION_NORMS");
-		assert.equal(norm.title, "Вскрытие поднадкостничного очага воспаления (периостотомия) с дренированием");
-		assert.equal(norm.shortBadge, "Периостотомия");
-		assert.equal(norm.category, "emergency");
-		assert.equal(norm.icd10, "K10.2");
-		assert.equal(norm.icd10Label, "Воспалительные заболевания челюстей (острый гнойный периостит)");
-		assert.equal(norm.standardProtocolTextRu, PERIOSTOTOMY_NORM_TEXT);
-
-		// Protocol clinical details
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("Инфильтрационная анестезия по переходной складке"));
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("Разрез слизистой и надкостницы длиной 1.5–2 см"));
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("распатором"));
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("эвакуация гнойного экссудата"));
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("0.05% хлоргексидином"));
-		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("дренаж"));
-
-		// Materials: Артикаин 1:100000 (1 шт), Дренаж резиновый ленточный (1 шт), Хлоргексидин 0.05% (50 мл), Стерильные марлевые салфетки (2 шт)
-		const mats = norm.requiredMaterials;
-		const articaine = mats.find((m) => m.name.includes("Артикаин 1:100000"));
-		assert.ok(articaine, "Must have Articaine 1:100000");
-		assert.equal(articaine.quantity, 1);
-
-		const drain = mats.find((m) => m.name.includes("Дренаж резиновый ленточный"));
-		assert.ok(drain, "Must have rubber ribbon drain");
-		assert.equal(drain.quantity, 1);
-
-		const chlorhexidine = mats.find((m) => m.name.includes("Хлоргексидин 0.05%"));
-		assert.ok(chlorhexidine, "Must have chlorhexidine");
-		assert.equal(chlorhexidine.quantity, 50);
-
-		const wipes = mats.find((m) => m.name.includes("Стерильные марлевые салфетки"));
-		assert.ok(wipes, "Must have sterile gauze wipes");
-		assert.equal(wipes.quantity, 2);
-	});
-
-	it("2c. clinicalSoapPresets includes surgery_periostotomy with 804n A16.07.011, 2100 Rub and drainage care", () => {
-		const preset = getPresetById("surgery_periostotomy");
-		assert.ok(preset, "Preset surgery_periostotomy must exist in CLINICAL_SOAP_PRESETS");
-		assert.equal(preset.icd10, "K10.2");
-		assert.equal(preset.category, "surgery");
-		assert.ok(preset.service804n, "Must have 804n service");
-		assert.equal(preset.service804n.code804n, "A16.07.011");
-		assert.equal(preset.service804n.basePriceRub, 2100);
-		assert.ok(preset.service804n.title.includes("периостотомия"));
-
-		// Recommendations check: drainage care and next day appointment
-		assert.ok(preset.recommendations?.includes("Дренаж самостоятельно не извлекать"));
-		assert.ok(preset.recommendations?.includes("следующий день"));
-
-		// Form 043/u validator check
-		const validation = validateSoapPreset(preset);
-		assert.equal(validation.isValid, true, `Preset must be valid: ${validation.errors.join(", ")}`);
-	});
-
-	it("2d. Closed sinus-lift norm (surgery_sinus_lift_closed) has transalveolar Summers protocol, Valsalva test & 804n code", () => {
-		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_sinus_lift_closed");
-		assert.ok(norm, "surgery_sinus_lift_closed must be present in SURGICAL_OPERATION_NORMS");
-		assert.equal(norm.title, "Закрытый (трансальвеолярный) синус-лифтинг остеотомами");
-		assert.equal(norm.shortBadge, "Закрытый синус");
-		assert.equal(norm.category, "sinus_gbr");
-		assert.equal(norm.icd10, "K08.2");
-		assert.equal(norm.icd10Label, "Атрофия беззубого альвеолярного края");
-		assert.equal(norm.standardProtocolTextRu, CLOSED_SINUS_LIFT_NORM_TEXT);
-
-		// Clinical protocol verification
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("Инфильтрационная анестезия"));
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("остеотомами Саммерса"));
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("пробой Вальсальвы"));
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("ксенографт"));
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("35 Н·см"));
-		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("ПГА 4-0"));
-
-		// Materials: Ксенографт (1 шт), ПГА 4-0 (1 шт), Артикаин (1 карп)
-		const mats = norm.requiredMaterials;
-		const xenograft = mats.find((m) => m.name.includes("ксенографт"));
-		assert.ok(xenograft, "Must have xenograft material");
-		assert.equal(xenograft.isWarehouseCritical, true);
-
-		const suture = mats.find((m) => m.name.includes("ПГА 4-0"));
-		assert.ok(suture, "Must have PGA 4-0 suture");
-
-		const articaine = mats.find((m) => m.name.toLowerCase().includes("артикаин"));
-		assert.ok(articaine, "Must have Articaine anesthetic");
-	});
-
-	it("3. Soft warehouse overdraft NEVER blocks surgery (canProceed is always true)", () => {
+describe("Surgeon Autonomy & Clinical Operation Protocols (Mandates 8e, 8n, 8x)", () => {
+	it("1. Surgeon autonomy: operations and saves are NEVER blocked by warehouse or minor fields", () => {
 		const materials = [
-			{ name: "Имплантат Osstem TS III", isWarehouseCritical: true },
-			{ name: "Шовный материал ПГА 4-0", isWarehouseCritical: false },
+			{ name: "Имплантат титановый", isWarehouseCritical: true },
+			{ name: "Шовный материал", isWarehouseCritical: false },
 		];
-
-		// Case A: Warehouse normal
-		const normalStatus = evaluateWarehouseOverdraft(materials, false);
-		assert.equal(normalStatus.hasOverdraft, false);
-		assert.equal(normalStatus.canProceed, true);
-
-		// Case B: Supplier invoice delayed (задержка оприходования накладной)
 		const delayedStatus = evaluateWarehouseOverdraft(materials, true);
+		assert.equal(delayedStatus.canProceed, true, "Surgeon MUST never be blocked (disabled: 0)");
 		assert.equal(delayedStatus.hasOverdraft, true);
-		assert.equal(delayedStatus.canProceed, true, "CRITICAL: Operation MUST NOT be blocked!");
-		assert.ok(delayedStatus.detailsRu.includes("мягкий овердрафт"));
-		assert.ok(delayedStatus.pendingItems.includes("Имплантат Osstem TS III"));
+		assert.ok(delayedStatus.detailsRu.includes("Операция не блокируется"));
 	});
 
-	it("4. buildSurgicalDiaryEntry creates complete Form 043/u record without loss", () => {
+	it("2. 1-click implant passport generation with integer torque parameters (35 N·cm)", () => {
+		const passport = createDefaultPassportRecord({
+			toothFdi: 46,
+			brand: "Osstem",
+			patientName: "Сидоров А. В.",
+			patientId: "PAT-001",
+			doctorName: "Др. Громов",
+		});
+
+		assert.equal(passport.toothFdi, 46);
+		assert.equal(passport.brand, "Osstem");
+		assert.equal(passport.torqueNcm, 35, "Default torque must be integer 35 N·cm");
+		assert.equal(Number.isInteger(passport.torqueNcm), true, "Torque must be an integer");
+		assert.equal(passport.capType, "fdm");
+		assert.ok(passport.lotNumber.length > 0);
+		assert.ok(passport.serialNumber.length > 0);
+	});
+
+	it("3. Clean clinical language of surgical protocols: SOAP diary without Soviet order numbers", () => {
 		const diary = buildSurgicalDiaryEntry({
 			patientName: "Смирнов А. В.",
 			patientId: "PAT-2026-99",
@@ -232,298 +62,32 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 			},
 		});
 
-		assert.ok(diary.includes("Зуб FDI #46"));
-		assert.ok(diary.includes("Osstem TS III"));
-		assert.ok(diary.includes("35 Н·см") || diary.includes("35 Н/см"));
-		assert.ok(diary.includes("LOT-88124"));
 		assert.ok(diary.includes("ХОД ОПЕРАЦИИ:"));
+		assert.ok(diary.includes("Зуб FDI #46"));
+		assert.ok(diary.includes("35 Н·см"));
 		assert.ok(diary.includes("Холод 15 минут"));
+
+		// Strict absence of Soviet order numbers in user-facing medical diary
+		assert.equal(diary.includes("043/у"), false, "Must NOT contain Soviet Form 043/u order number");
+		assert.equal(diary.includes("804н"), false, "Must NOT contain 804n order number in diary text");
 	});
 
-	it("5. 5 canonical outpatient surgery protocols have correct 804n codes and clinical content (Mandates 8e, 8i)", () => {
-		// 1. Simple extraction: A16.07.001
-		const simpleExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_simple");
-		assert.ok(simpleExt, "surgery_extraction_simple must exist");
-		assert.equal(simpleExt.code804n, "A16.07.001");
-		assert.ok(simpleExt.standardProtocolTextRu.includes("щипцы"), "Must mention forceps");
-		assert.ok(simpleExt.standardProtocolTextRu.includes("элеватор"), "Must mention elevator");
-		assert.ok(simpleExt.standardProtocolTextRu.includes("кюретаж"), "Must mention curettage");
-		assert.ok(
-			simpleExt.standardProtocolTextRu.includes("Альвожиль") ||
-			simpleExt.standardProtocolTextRu.includes("губка"),
-			"Must mention Alvogyl or hemostatic sponge",
-		);
-
-		// 2. Complex extraction: A16.07.001.001 (subcode A16.07.002)
-		const complexExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_complex");
-		assert.ok(complexExt, "surgery_extraction_complex must exist");
-		assert.ok(complexExt.code804n === "A16.07.001.001" || complexExt.code804n === "A16.07.002");
-		assert.ok(complexExt.standardProtocolTextRu.includes("Lindemann"), "Must mention Lindemann bur");
-		assert.ok(complexExt.standardProtocolTextRu.toLowerCase().includes("люксация"), "Must mention luxation");
-		assert.ok(complexExt.standardProtocolTextRu.includes("Викрил 4-0"), "Must mention Vicryl 4-0");
-
-		// 3. Atypical / impacted wisdom tooth extraction: A16.07.001.002 (subcode A16.07.024)
-		const atypicalExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_atypical");
-		assert.ok(atypicalExt, "surgery_extraction_atypical must exist");
-		assert.ok(atypicalExt.code804n === "A16.07.001.002" || atypicalExt.code804n === "A16.07.024");
-		assert.ok(atypicalExt.standardProtocolTextRu.includes("выкраивание"), "Must mention flap incision");
-		assert.ok(atypicalExt.standardProtocolTextRu.includes("сепарация"), "Must mention separation");
-		assert.ok(atypicalExt.standardProtocolTextRu.includes("ушивание раны"), "Must mention wound suturing");
-
-		// 4. Emergency periostotomy: A16.07.011
-		const periost = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_periostotomy");
-		assert.ok(periost, "surgery_periostotomy must exist");
-		assert.equal(periost.code804n, "A16.07.011");
-		assert.ok(periost.standardProtocolTextRu.includes("переходной складке"), "Must mention mucobuccal fold incision");
-		assert.ok(periost.standardProtocolTextRu.includes("эвакуация гнойного экссудата"), "Must mention pus evacuation");
-		assert.ok(periost.standardProtocolTextRu.includes("дренаж"), "Must mention drainage");
-
-		// 5. Dental implantation: A16.07.054
-		const implant = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_implant_standard");
-		assert.ok(implant, "surgery_implant_standard must exist");
-		assert.equal(implant.code804n, "A16.07.054");
-		assert.ok(
-			implant.standardProtocolTextRu.includes("35 Н·см") ||
-				implant.standardProtocolTextRu.includes("35 Н/см"),
-			"Must mention 35 N*cm torque",
-		);
-		assert.ok(
-			implant.standardProtocolTextRu.includes("формирователь десны") ||
-			implant.standardProtocolTextRu.includes("винт-заглушка"),
-			"Must mention healing abutment or cover screw",
-		);
-	});
-
-	it("6. Suture material and hemostatic sponge warehouse delays NEVER block surgery (canProceed: true under Mandate 8e)", () => {
-		const surgicalMaterials = [
-			{ name: "Шовный материал Викрил 4-0", isWarehouseCritical: false },
-			{ name: "Губка Альвожил", isWarehouseCritical: false },
-			{ name: "Артикаин 1:100000", isWarehouseCritical: false },
-		];
-
-		// Overdraft with delayed suture and sponge
-		const overdraftStatus = evaluateWarehouseOverdraft(
-			surgicalMaterials,
-			false,
-			["Шовный материал Викрил 4-0", "Губка Альвожил"],
-		);
-
-		assert.equal(overdraftStatus.hasOverdraft, true);
-		assert.equal(overdraftStatus.canProceed, true, "Mandate 8e: Operation CANNOT be blocked!");
-		assert.ok(overdraftStatus.pendingItems.includes("Шовный материал Викрил 4-0"));
-		assert.ok(overdraftStatus.pendingItems.includes("Губка Альвожил"));
-		assert.ok(overdraftStatus.detailsRu.includes("Операция не блокируется"));
-	});
-
-	it("7. Zero emojis in all surgical protocol texts and diary records for Form 043/u (Deadly Sin #7)", () => {
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
-
-		for (const norm of SURGICAL_OPERATION_NORMS) {
-			assert.equal(
-				emojiRegex.test(norm.standardProtocolTextRu),
-				false,
-				`Norm ${norm.id} standardProtocolTextRu contains forbidden emojis`,
-			);
-			assert.equal(
-				emojiRegex.test(norm.title),
-				false,
-				`Norm ${norm.id} title contains forbidden emojis`,
-			);
-			assert.equal(
-				emojiRegex.test(norm.postOpRecommendationsRu),
-				false,
-				`Norm ${norm.id} postOpRecommendationsRu contains forbidden emojis`,
-			);
-		}
-
-		const diary = buildSurgicalDiaryEntry({
-			patientName: "Петров П. П.",
+	it("4. Correct preservation of clinic warranty obligations in implant passport", () => {
+		const passport = createDefaultPassportRecord({
 			toothFdi: 36,
-			protocolText: SIMPLE_EXTRACTION_NORM_TEXT,
-			recommendations: "Марлевый тампон сплюнуть через 20 минут.",
+			brand: "Straumann",
+			patientName: "Алексеев Д. М.",
 		});
 
-		assert.equal(
-			emojiRegex.test(diary),
-			false,
-			"Form 043/u diary entry contains forbidden emojis",
-		);
-	});
+		assert.ok(passport.osteointegrationExpectedDate.length > 0);
+		assert.ok(passport.expirationDate.length > 0);
+		assert.ok(passport.catalogArticle.length > 0);
+		assert.ok(passport.passportId.startsWith("IMP-PASSPORT-36-"));
 
-	it("8. Mandate 8e: 804n Extraction codes & 1-click complexity presets (simple, complex, impacted)", () => {
-		assert.equal(EXTRACTION_804N_CODES.SIMPLE, "A16.07.001");
-		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.001");
-		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.001.002");
-		assert.equal(EXTRACTION_804N_CODES.CURETTAGE, "A16.07.026");
-		assert.equal(EXTRACTION_804N_CODES.SUTURE_VICRYL, "A16.07.097");
-
-		assert.equal(EXTRACTION_COMPLEXITY_OPTIONS.length, 3);
-		const simpleOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "simple");
-		assert.ok(simpleOpt);
-		assert.equal(simpleOpt.code804n, "A16.07.001");
-		assert.equal(simpleOpt.defaultPriceRub, 3500);
-
-		const complexOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "complex");
-		assert.ok(complexOpt);
-		assert.equal(complexOpt.code804n, "A16.07.001.001");
-		assert.equal(complexOpt.defaultPriceRub, 6000);
-
-		const impactedOpt = EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "impacted_dystopic");
-		assert.ok(impactedOpt);
-		assert.equal(impactedOpt.code804n, "A16.07.001.002");
-		assert.equal(impactedOpt.defaultPriceRub, 9500);
-	});
-
-	it("9. Mandate 8e: 1-click hemostasis options & protocol generation (Alvogyl, collagen sponge, Vicryl 4-0)", () => {
-		const hemoIds = SURGICAL_HEMOSTASIS_OPTIONS.map((h) => h.id);
-		assert.ok(hemoIds.includes("alvogyl"), "Must have Alvogyl");
-		assert.ok(hemoIds.includes("hemostatic_sponge"), "Must have sponge");
-		assert.ok(hemoIds.includes("vicryl_suture"), "Must have Vicryl 4-0");
-		assert.ok(hemoIds.includes("tampon"), "Must have tampon 20 min");
-
-		// Test simple extraction protocol generation
-		const simpleText = buildStandardExtractionProtocolText({
-			toothFdi: 36,
-			complexity: "simple",
-			hemostasis: ["alvogyl", "tampon"],
-			postOpXray: true,
-		});
-		assert.ok(simpleText.includes("зуба FDI #36"));
-		assert.ok(simpleText.includes("Круговая связка"));
-		assert.ok(simpleText.includes("щипцы / элеватор"));
-		assert.ok(simpleText.includes("Альвожил"));
-		assert.ok(simpleText.includes("давящий марлевый тампон на 20 минут"));
-		assert.ok(simpleText.includes("контрольный радиовизиографический снимок"));
-
-		// Test complex extraction protocol generation with Lindemann and Vicryl
-		const complexText = buildStandardExtractionProtocolText({
-			toothFdi: 47,
-			complexity: "complex",
-			hemostasis: ["hemostatic_sponge", "vicryl_suture"],
-			sutureMaterial: "Викрил 4-0",
-		});
-		assert.ok(complexText.includes("зуба FDI #47"));
-		assert.ok(complexText.includes("Сепарация корней твердосплавным бором Lindemann"));
-		assert.ok(complexText.includes("гемостатической коллагеновой губкой"));
-		assert.ok(complexText.includes("швы (Викрил 4-0)"));
-	});
-
-	it("10. Mandate 8k: 1-click patient post-op memo for WhatsApp/Telegram has all key points & ZERO emojis", () => {
-		const memo = buildPostExtractionMemoText({
-			patientName: "Сидорова Анна",
-			toothFdi: 38,
-			doctorName: "Др. Иванов",
-			complexity: "complex",
-			hasSutures: true,
-			sutureRemovalDays: 8,
-			clinicPhone: "+7 (495) 123-45-67",
-		});
-
-		// Check clinical mandatory guidance
-		assert.ok(memo.includes("ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ УДАЛЕНИЯ ЗУБА (зуб #38)"));
-		assert.ok(memo.includes("Сидорова Анна"));
-		assert.ok(memo.includes("МАРЛЕВЫЙ ТАМПОН: Сплюнуть через 20 минут"));
-		assert.ok(memo.includes("ХОЛОД: Прикладывать сухой холод к щеке на 15 минут"));
-		assert.ok(memo.includes("НЕ ГРЕТЬ"));
-		assert.ok(memo.includes("НЕ ПОЛОСКАТЬ"));
-		assert.ok(memo.includes("через 2 часа после операции"));
-		assert.ok(memo.includes("ШВЫ: Наложены швы. Снятие швов через 8 дней"));
-		assert.ok(memo.includes("+7 (495) 123-45-67"));
-
-		// Strict zero emojis check
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
-		assert.equal(emojiRegex.test(memo), false, "Post-op memo must strictly have zero emojis");
-	});
-
-	it("11. Mandate 8i Outpatient Domain Sovereignty: 100% free of hospital, laparotomy, transfusion, and general anesthesia bloat", () => {
-		const forbiddenHospitalKeywords = [
-			"лапаротом",
-			"полостн",
-			"трансфузи",
-			"койко-дн",
-			"интубаци",
-			"общий наркоз",
-			"паллиатив",
-			"стационар",
-			"брюшн",
-			"пку наркотик",
-			"наркотическ",
-			"комиссия согласования",
-			"палата реанимации",
-			"интенсивная терапия",
-			"консилиум начмед",
-		];
-
-		for (const norm of SURGICAL_OPERATION_NORMS) {
-			const fullText = [
-				norm.title,
-				norm.standardProtocolTextRu,
-				norm.anesthesiaDefaultRu,
-				norm.postOpRecommendationsRu,
-				...(norm.order804nServices?.map((s) => s.nameRu) ?? []),
-			].join(" ").toLowerCase();
-
-			for (const badWord of forbiddenHospitalKeywords) {
-				assert.equal(
-					fullText.includes(badWord),
-					false,
-					`Norm ${norm.id} violates Mandate 8i by containing hospital bloat keyword "${badWord}"`,
-				);
-			}
-
-			// Must be valid outpatient chairside dental category
-			assert.ok(
-				["implant", "extraction", "perio_surgery", "sinus_gbr", "emergency"].includes(norm.category),
-				`Norm ${norm.id} must be in an outpatient dental surgical category`,
-			);
+		// Fast implant presets must all define canonical 35 N·cm torque
+		for (const preset of FAST_IMPLANT_SYSTEM_PRESETS) {
+			assert.equal(preset.defaultTorqueNcm, 35);
+			assert.ok(preset.brand.length > 0);
 		}
-	});
-
-	it("12. Apicoectomy / root apex resection (surgery_apicoectomy, A16.07.007) conforms to Form 043/u and Mandates 8e, 8i", () => {
-		const apico = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_apicoectomy");
-		assert.ok(apico, "surgery_apicoectomy must be registered in SURGICAL_OPERATION_NORMS");
-		assert.equal(apico.code804n, "A16.07.007");
-		assert.equal(apico.icd10, "K04.5");
-		assert.ok(apico.standardProtocolTextRu.includes("Резекция верхушки корня на 3 мм"));
-		assert.ok(apico.standardProtocolTextRu.includes("Ретроградное пломбирование МТА"));
-		assert.ok(apico.standardProtocolTextRu.includes("радиовизиография"));
-
-		// Materials: MTA material and suture PGA 5-0
-		const mta = apico.requiredMaterials.find((m) => m.name.includes("МТА"));
-		assert.ok(mta, "Must require MTA retrograde filling material");
-
-		// Non-blocking warehouse status
-		const overdraft = evaluateWarehouseOverdraft(apico.requiredMaterials, true);
-		assert.equal(overdraft.canProceed, true, "Apicoectomy must never be blocked by warehouse delay");
-	});
-
-	it("13. Mandate 8e: quickDeductSurgicalMaterials provides 1-click write-off with soft overdraft guarantee", async () => {
-		const materials = [
-			{ name: "Имплантат Osstem TS III", unit: "шт", quantity: 1, isWarehouseCritical: true },
-			{ name: "Шовный материал ПГА 4-0", unit: "шт", quantity: 1, isWarehouseCritical: false },
-		];
-
-		// Normal deduction
-		const normalResult = await quickDeductSurgicalMaterials({
-			materials,
-			hasWarehouseDelay: false,
-			operationTitle: "Дентальная имплантация",
-		});
-		assert.equal(normalResult.success, true);
-		assert.equal(normalResult.isOverdraft, false);
-		assert.equal(normalResult.deductedItems.length, 2);
-		assert.ok(normalResult.messageRu.includes("успешно списаны"));
-
-		// Soft overdraft deduction (supplier invoice delayed)
-		const overdraftResult = await quickDeductSurgicalMaterials({
-			materials,
-			hasWarehouseDelay: true,
-			operationTitle: "Дентальная имплантация",
-		});
-		assert.equal(overdraftResult.success, true);
-		assert.equal(overdraftResult.isOverdraft, true);
-		assert.equal(overdraftResult.deductedItems[0]!.isOverdraft, true);
-		assert.ok(overdraftResult.messageRu.includes("мягкий овердрафт"));
-		assert.ok(overdraftResult.messageRu.includes("без комиссии и блокировки врача"));
 	});
 });

@@ -1,0 +1,60 @@
+/* ==========================================================================
+   APPLE MOBILE HIG & TOUCH TARGETS (>=44px, Content & Inputs)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.implant-desktop-only,
+	.implant-btn-text-hide-mobile {
+		display: none !important;
+	}
+
+	.implant-passport-content {
+		padding: 14px;
+		gap: 12px;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.implant-brand-toolbar {
+		height: auto;
+		min-height: 52px;
+		max-height: none;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.implant-system-pill {
+		min-height: 48px;
+		height: 48px;
+		max-height: 48px;
+		padding: 0 16px;
+		font-size: 14px;
+		border-radius: 12px;
+		touch-action: manipulation;
+	}
+
+	.implant-tabs-nav {
+		padding: 6px 12px;
+		gap: 6px;
+		-webkit-overflow-scrolling: touch;
+		touch-action: pan-x;
+	}
+
+	.implant-tabs-nav .secondary-button {
+		height: 40px;
+		min-height: 40px;
+		font-size: 13px;
+		padding: 0 12px;
+	}
+
+	.implant-select,
+	.implant-input {
+		min-height: 44px;
+		height: 44px;
+		font-size: 14px;
+	}
+
+	.implant-form-row {
+		gap: 4px;
+	}
+}

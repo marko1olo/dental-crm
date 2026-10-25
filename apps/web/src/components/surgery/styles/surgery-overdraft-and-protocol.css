@@ -1,0 +1,40 @@
+/* ==========================================================================
+   SURGERY OVERDRAFT BANNER & PROTOCOL TEXTAREA (Mandates 8e, 8x)
+   ========================================================================== */
+
+.surgery-overdraft-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	background: var(--amber-soft, rgba(245, 158, 11, 0.1));
+	border: 1px solid var(--amber, #f59e0b);
+	color: var(--ink);
+}
+
+.surgery-overdraft-icon {
+	color: var(--amber, #f59e0b);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.surgery-protocol-textarea {
+	width: 100%;
+	min-height: 140px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.6;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+.surgery-protocol-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+}

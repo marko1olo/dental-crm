@@ -10,6 +10,7 @@ import {
 	dispatchSurgicalServicesToInvoice,
 	type ExtractionComplexity,
 	type SurgicalHemostasisMethod,
+	type SurgicalServiceItem,
 	type SurgicalService804n,
 } from "../../surgery/surgeryProtocols";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
@@ -20,7 +21,7 @@ export interface VisitSurgeryExtractionBarProps {
 	readonly patientName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly onApplyProtocolText: (text: string) => void;
-	readonly onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
+	readonly onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 }
 
 export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps> = ({

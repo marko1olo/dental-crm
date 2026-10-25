@@ -18,30 +18,18 @@ export type ImplantModalTab = "protocol" | "diary" | "passport";
 export interface UseImplantPassportLogicParams {
 	readonly isOpen: boolean;
 	readonly initialTooth: number;
-	readonly initialTab?: ImplantModalTab | undefined;
+	readonly initialTab?: ImplantModalTab | "isq" | undefined;
 	readonly inventoryOverdraftActive?: boolean | undefined;
-	readonly patientName?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly doctorId?: string | undefined;
+	readonly patientName: string;
+	readonly patientId: string;
+	readonly doctorName: string;
+	readonly doctorId: string;
 	readonly onSavePassport?: ((data: FastImplantPassportData) => void) | undefined;
 	readonly onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
 	readonly onClose: () => void;
 }
 
-export function useImplantPassportLogic(params: {
-	isOpen: boolean;
-	initialTooth: number;
-	initialTab?: ImplantModalTab | "isq" | undefined;
-	inventoryOverdraftActive?: boolean | undefined;
-	patientName: string;
-	patientId: string;
-	doctorName: string;
-	doctorId: string;
-	onSavePassport?: ((data: FastImplantPassportData) => void) | undefined;
-	onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
-	onClose: () => void;
-}) {
+export function useImplantPassportLogic(params: UseImplantPassportLogicParams) {
 	const initialDefaults = getAnatomicalImplantDefaults(params.initialTooth);
 	const [toothFdi, setToothFdi] = useState<number>(params.initialTooth);
 	const [selectedBrand, setSelectedBrand] = useState<string>("Osstem");
