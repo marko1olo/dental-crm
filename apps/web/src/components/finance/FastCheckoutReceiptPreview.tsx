@@ -414,8 +414,8 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 								<Check className="w-5 h-5 shrink-0" />
 								<span className="truncate">
 									{targetBillKop === 0
-										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
-										: `Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
+										? "✓ Закрыть визит: 100% Гарантия (0 ₽)"
+										: `✓ Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
 								</span>
 							</>
 						)}

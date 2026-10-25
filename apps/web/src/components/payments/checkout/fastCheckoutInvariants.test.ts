@@ -6,7 +6,7 @@ import {
 	calculateFastCheckoutDiscount,
 	calculateSplitRemainingKop,
 	calculateStageAdvanceAmount,
-	generate54FzFiscalPayload,
+	generateFiscalReceiptPayload,
 	paymentsToSplitState,
 	splitStateToCheckoutPayments,
 	validateBuyerInn,
@@ -219,7 +219,7 @@ describe("54-FZ Fast Checkout Invariants (Mandates 8e, 8b, 8n)", () => {
 	});
 
 	it("8. 54-FZ Fiscal Payload distribution generator", () => {
-		const payload = generate54FzFiscalPayload(
+		const payload = generateFiscalReceiptPayload(
 			{
 				orderId: "CHK-999",
 				totalBillKop: 1000000,

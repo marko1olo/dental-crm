@@ -4,7 +4,7 @@ import {
 	calculateStageAdvanceAmount,
 	calculateFastCheckoutDiscount,
 	applyQuickCheckoutPreset,
-	generate54FzFiscalPayload,
+	generateFiscalReceiptPayload,
 	validateBuyerInn,
 	validateCheckoutSplit,
 	type FastCheckoutInput,
@@ -60,7 +60,7 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 		});
 	});
 
-	describe("2. generate54FzFiscalPayload with Tag 1215 Prepayment Offset", () => {
+	describe("2. generateFiscalReceiptPayload with Tag 1215 Prepayment Offset", () => {
 		it("generates correct FFD 1.2 payload for advance offset + card remainder", () => {
 			const input: FastCheckoutInput = {
 				orderId: "ORD-9912",
@@ -72,7 +72,7 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 				patientPhone: "+79991234567",
 			};
 
-			const payload = generate54FzFiscalPayload(input, {
+			const payload = generateFiscalReceiptPayload(input, {
 				paymentMethodTag1214: 4,
 				paymentSubjectTag1212: 4,
 			});
@@ -95,7 +95,7 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 				clientType: "physical_person",
 				buyerInn: "770123456789",
 			};
-			const payload = generate54FzFiscalPayload(input);
+			const payload = generateFiscalReceiptPayload(input);
 			assert.equal(payload.buyerInn, undefined, "Tag 1228 must be undefined for physical persons");
 		});
 
@@ -107,7 +107,7 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 				clientType: "legal_entity",
 				buyerInn: "7701234567",
 			};
-			const payload = generate54FzFiscalPayload(input);
+			const payload = generateFiscalReceiptPayload(input);
 			assert.equal(payload.buyerInn, "7701234567");
 		});
 	});

@@ -134,7 +134,7 @@ graph TD
 ### 3.7. Касса 54-ФЗ, СБП, Эквайринг и Зарплата Т-13/Т-51 (`components/payments/`, `components/payroll/`)
 * **[`SberPosTerminalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx)** — Интеграция со смарт-терминалами Сбербанк POS: отправка команды оплаты, чтение карт МИР/Mastercard/Visa.
 * **[`BankInstallmentQrModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/BankInstallmentQrModal.tsx)** — Оформление банковской рассрочки по QR-коду за 2 минуты у кресла.
-* **[`checkout/fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts)** — Быстрый кассовый расчет: комбинированная оплата (нал + карта + аванс) без требования ИНН у физлиц (Мандат 8e).
+* **[`checkout/fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts)** — Быстрый кассовый расчет: комбинированная оплата (нал + карта + аванс) без требования ИНН у физлиц (Мандат 8e); модульная архитектура <= 120 строк (`checkout/modules/`) и фискальные обработчики (`fiscalHandlersModules/`).
 * **[`TimesheetT13Modal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/TimesheetT13Modal.tsx)** — Табель учета рабочего времени формы Т-13: отработанные смены, ночные часы, больничные и праздничные.
 * **[`staffPayrollEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/staffPayrollEngine.ts)** — Расчет сдельной зарплаты врачей Т-51 Net Revenue за вычетом расходников BOM и лаборатории.
 

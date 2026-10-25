@@ -5,13 +5,13 @@
  * Compliant with Mandate 8e: Zero-Wait Patient Intake & Offline Queue Resilience.
  */
 
-import type { ClientLegalType, Ffd12FiscalPayload } from "./fastCheckoutEngine.js";
+import type { ClientLegalType, FiscalReceiptPayload } from "./fastCheckoutEngine.js";
 
 export interface OfflineFiscalBufferItem {
 	readonly orderId: string;
 	readonly totalRub: number;
 	readonly totalKop: number;
-	readonly paymentsDistribution: Ffd12FiscalPayload["paymentsDistribution"];
+	readonly paymentsDistribution: FiscalReceiptPayload["paymentsDistribution"];
 	readonly customerContact: string;
 	readonly isElectronicReceiptOnly: boolean;
 	readonly idempotencyKey: string;
@@ -26,7 +26,7 @@ export interface OfflineFiscalBufferItem {
  * ensuring zero patient wait time at the reception counter (Mandate 8e).
  */
 export function createOfflineFiscalBufferItem(
-	payload: Ffd12FiscalPayload,
+	payload: FiscalReceiptPayload,
 	reason = "ККТ временно недоступна (автосохранение в буфер отложенной фискализации)",
 ): OfflineFiscalBufferItem {
 	return {
