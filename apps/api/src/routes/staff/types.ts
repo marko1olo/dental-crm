@@ -18,7 +18,12 @@ export interface ExtendedHrProfileStorage {
 
 export interface StaffAuthContext {
 	orgId: string;
-	callerRole: string;
+	/**
+	 * Роль из ПОДПИСАННОГО токена сотрудника. null — токен кабинета без входа
+	 * конкретного человека: у такого запроса нет личности, а значит нет и прав
+	 * «владельца по умолчанию». Все проверки ниже обязаны закрываться на null.
+	 */
+	callerRole: string | null;
 	callerUserId: string | null;
 }
 

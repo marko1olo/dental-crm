@@ -13,8 +13,6 @@ import {
 	validateStaffInn,
 } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
-import * as schema from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { repairMojibakeDeep } from "../../text/repairMojibake.js";
 import type { ExtendedHrProfileStorage, StaffAuthContext } from "./types.js";
@@ -23,41 +21,37 @@ export async function resolveOrganizationId(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<StaffAuthContext | null> {
+	/*
+	 * ЧТО БЫЛО. Три ветки, из которых две открывали кадровые данные без входа:
+	 *   1. подписанный токен: роль по умолчанию «owner», если в токене нет
+	 *      личности (кабинетный токен) — зарплаты и ПДн коллег раскрывались
+	 *      любой стойке с токеном кабинета;
+	 *   2. неподписанная организация: та же роль «owner» по умолчанию;
+	 *   3. ВООБЩЕ БЕЗ ТОКЕНА: первая организация из базы + callerRole «owner»
+	 *      (комментарий обещал «Fallback for development», но проверки режима
+	 *      не было никакой). Запрос без единого заголовка получал список всех
+	 *      сотрудников с окладами и мог менять чужие карточки, роли и ставки —
+	 *      тот же безгардный паттерн, что был закрыт в diary/shifts.
+	 *
+	 * ЧТО ЗДЕСЬ. Организация — ТОЛЬКО из identity (подписанный токен либо
+	 * dev-заголовок, который security/identity.ts сам ограничивает по режиму и
+	 * методу запроса). Роль передаётся как есть: null означает «человека нет»,
+	 * и все проверки прав ниже на null закрываются (fail closed).
+	 */
 	const identity = getRequestIdentity(request);
-	if (identity.organizationId && identity.verified) {
-		return {
-			orgId: identity.organizationId,
-			callerRole: identity.role || "owner",
-			callerUserId: identity.userId,
-		};
-	}
-
 	if (identity.organizationId) {
 		return {
 			orgId: identity.organizationId,
-			callerRole: identity.role || "owner",
+			callerRole: identity.role,
 			callerUserId: identity.userId,
-		};
-	}
-
-	// Fallback for development if no token provided
-	const [firstOrg] = await db
-		.select({ id: schema.organizations.id })
-		.from(schema.organizations)
-		.limit(1);
-
-	if (firstOrg?.id) {
-		return {
-			orgId: firstOrg.id,
-			callerRole: "owner",
-			callerUserId: null,
 		};
 	}
 
 	reply.code(401);
 	reply.send({
 		error: "Unauthorized",
-		message: "Не удалось определить организацию клиники: поддельный или отсутствующий токен.",
+		message:
+			"Не удалось определить организацию клиники: поддельный или отсутствующий токен.",
 	});
 	return null;
 }
@@ -67,7 +61,7 @@ export function assembleStaffProfile(
 	user: any,
 	// biome-ignore lint/suspicious/noExplicitAny: DB commission row
 	commissionRow: any,
-	callerRole: string,
+	callerRole: string | null,
 	callerUserId?: string | null,
 ): StaffProfileExtended {
 	const uiPrefs = (user.uiPreferences as Record<string, unknown>) || {};

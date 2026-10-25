@@ -9,7 +9,7 @@ import {
 	validateStaffSnils,
 } from "@dental/shared";
 import { and, eq, ne } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
@@ -17,11 +17,32 @@ import type { ExtendedHrProfileStorage } from "./types.js";
 
 export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	/**
+	 * Изменение кадровых данных требует ЛИЧНОГО входа сотрудника. Токена
+	 * кабинета (общая стойка ресепшена без входа конкретного человека) для
+	 * мутаций мало: у запроса нет личности, а значит некому отвечать за правку
+	 * чужой карточки, роли или ставки.
+	 */
+	function requirePersonalStaff(
+		auth: { callerUserId: string | null },
+		reply: FastifyReply,
+	): boolean {
+		if (auth.callerUserId) return true;
+		reply.code(401);
+		reply.send({
+			error: "StaffAuthRequired",
+			message:
+				"Изменение карточек сотрудников выполняется от конкретного лица: войдите в кабинет под своей учётной записью.",
+		});
+		return false;
+	}
+
+	/**
 	 * PUT /api/staff/:staffId/profile — Сохранение полной расширенной карточки сотрудника
 	 */
 	app.put("/api/staff/:staffId/profile", async (request, reply) => {
 		const auth = await resolveOrganizationId(request, reply);
 		if (!auth) return;
+		if (!requirePersonalStaff(auth, reply)) return;
 
 		const params = request.params as { staffId: string };
 		const parsed = updateStaffProfileExtendedSchema.safeParse(request.body);
@@ -399,6 +420,30 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	app.post("/api/staff/:staffId/terminate-session", async (request, reply) => {
 		const auth = await resolveOrganizationId(request, reply);
 		if (!auth) return;
+		/*
+		 * Завершение чужой сессии — административное действие: оно выкидывает
+		 * коллегу из программы. Кабинетный токен стойки без входа конкретного
+		 * человека это делать не может; самоуправство сотрудника ограничено
+		 * правом управления кадрами (свою сессию завершает владелец токена —
+		 * это выход, а не атака).
+		 */
+		const isSelf = auth.callerUserId === (request.params as { staffId: string }).staffId;
+		if (!auth.callerUserId) {
+			reply.code(401);
+			return {
+				error: "StaffAuthRequired",
+				message:
+					"Завершение сессии сотрудника выполняется от конкретного лица: войдите под своей учётной записью.",
+			};
+		}
+		if (!isSelf && !canManageStaffAuthority(auth.callerRole) && auth.callerRole !== "owner") {
+			reply.code(403);
+			return {
+				error: "Forbidden",
+				message:
+					"Завершать чужие сессии могут владелец клиники и руководство.",
+			};
+		}
 
 		const params = request.params as { staffId: string };
 		await db
