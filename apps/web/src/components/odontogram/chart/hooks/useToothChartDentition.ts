@@ -7,7 +7,7 @@ import {
 } from "../toothChartTypes";
 
 export function useToothChartDentition(
-	teethData: ToothData[] | undefined, patientId: string | undefined,
+	teethData: readonly ToothData[] | undefined, patientId: string | undefined,
 	pediatricMode: boolean | undefined, mixedDentition: boolean | undefined,
 	dentitionMode: DentitionMode | undefined, controlledQuadrant: OdontogramQuadrantId | undefined,
 	onQuadrantChange: ((q: OdontogramQuadrantId) => void) | undefined,

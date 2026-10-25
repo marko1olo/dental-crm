@@ -39,8 +39,8 @@ export const Tooth46ShaderDefs: React.FC = () => {
 				<stop offset="0%" stopColor="#faf6ef" stopOpacity="1" />
 				<stop offset="25%" stopColor="#f2e6d6" stopOpacity="1" />
 				<stop offset="55%" stopColor="#e5d0b9" stopOpacity="1" />
-				<stop offset="85%" stopColor="#d6bc9f" stopOpacity="1" />
-				<stop offset="100%" stopColor="#c5a987" stopOpacity="1" />
+				<stop offset="85%" stopColor="#d2b390" stopOpacity="1" />
+				<stop offset="100%" stopColor="#b6946e" stopOpacity="1" />
 			</linearGradient>
 
 			{/* Mesial Root Sulcus Longitudinalis 3D Soft Ambient Shadow Trough */}

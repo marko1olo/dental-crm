@@ -37,7 +37,7 @@ export const ClassicGostPresetsBar: React.FC<ClassicGostPresetsBarProps> = ({
 				}),
 			);
 		}
-		showToast("Протокол профгигиены (A16.07.051) сформирован", "success");
+		showToast("Протокол профессиональной гигиены сформирован", "success");
 	};
 
 	return (
@@ -78,7 +78,7 @@ export const ClassicGostPresetsBar: React.FC<ClassicGostPresetsBarProps> = ({
 					type="button"
 					data-testid="gost-preset-prohygiene"
 					onClick={handleProhygiene}
-					title="Сформировать протокол профессиональной гигиены полости рта (A16.07.051)"
+					title="Сформировать протокол профессиональной гигиены полости рта"
 					className="inline-flex items-center gap-1.5 px-2.5 py-1 h-7 rounded-lg text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 active:bg-sky-500/35 text-sky-900 dark:text-sky-100 border-2 border-sky-500 dark:border-sky-400 shadow-xs transition-all active:scale-97 cursor-pointer"
 				>
 					<Sparkles size={13} className="text-sky-700 dark:text-sky-300 shrink-0" />

@@ -6,51 +6,14 @@
 import type React from "react";
 import type { SettingsTabGroup, SettingsTab as SettingsTabId } from "../../AppConstants";
 
-export type SettingsRoleMode = "doctor" | "admin" | "owner" | "all";
-
-export const DOCTOR_TABS = new Set<string>([
-	"profile",
-	"preferences",
-	"protocols",
-	"rules",
-	"procedure-boms",
-	"ai",
-	"hardware",
-]);
-
-export const ADMIN_TABS = new Set<string>([
-	"clinic",
-	"staff",
-	"access",
-	"messengers",
-	"telegram",
-	"booking",
-	"modules",
-	"marketing",
-	"bpmn",
-]);
-
-export const OWNER_TABS = new Set<string>([
-	"clinic",
-	"prices",
-	"commissions",
-	"procedure-boms",
-	"insurance",
-	"reporting",
-	"imports",
-	"backup",
-	"audit",
-	"sources",
-	"deep-clinical",
-]);
-
-export const ENTERPRISE_ADVANCED_TABS = new Set<string>([
-	"bpmn",
-	"sources",
-	"insurance",
-	"marketing",
-	"reporting",
-]);
+import type { SettingsRoleMode } from "./settingsRoleTabs.js";
+export type { SettingsRoleMode };
+export {
+	DOCTOR_TABS,
+	ADMIN_TABS,
+	OWNER_TABS,
+	ENTERPRISE_ADVANCED_TABS,
+} from "./settingsRoleTabs.js";
 
 export const SETTINGS_ROLE_LABELS: Record<SettingsRoleMode, string> = {
 	doctor: "Кабинет врача",
@@ -119,7 +82,7 @@ export interface SettingsNavigationSidebarProps {
 		event: React.KeyboardEvent<HTMLButtonElement>,
 		tabId: SettingsTabId,
 	) => void;
-	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null>;
+	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null> | undefined;
 	settingsTabButtonId: (tabId: SettingsTabId) => string;
 	settingsTabPanelId: (tabId: SettingsTabId) => string;
 }

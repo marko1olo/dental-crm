@@ -24,20 +24,26 @@ export const ToothAnteriorShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#020617" stopOpacity="0.30" />
 			</linearGradient>
 
-			{/* Cylindrical Root Proximal Volume Contour — Light Mode (Soft Ambient Flank Shading) */}
+			{/* Cylindrical Root Proximal Volume Contour — Light Mode (Contrast Flank Shading & Curvature) */}
 			<linearGradient id="dente-root-contour" x1="0" y1="0" x2="1" y2="0">
-				<stop offset="0%" stopColor="#785530" stopOpacity="0.08" />
-				<stop offset="16%" stopColor="#785530" stopOpacity="0.0" />
-				<stop offset="82%" stopColor="#785530" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#785530" stopOpacity="0.12" />
+				<stop offset="0%" stopColor="#63421f" stopOpacity="0.32" />
+				<stop offset="14%" stopColor="#785530" stopOpacity="0.18" />
+				<stop offset="28%" stopColor="#785530" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#ffffff" stopOpacity="0.12" />
+				<stop offset="72%" stopColor="#63421f" stopOpacity="0.0" />
+				<stop offset="88%" stopColor="#63421f" stopOpacity="0.22" />
+				<stop offset="100%" stopColor="#4d3215" stopOpacity="0.38" />
 			</linearGradient>
 
 			{/* Cylindrical Root Proximal Volume Contour — Dark Mode */}
 			<linearGradient id="dente-root-contour-dark" x1="0" y1="0" x2="1" y2="0">
-				<stop offset="0%" stopColor="#020617" stopOpacity="0.22" />
-				<stop offset="18%" stopColor="#020617" stopOpacity="0.0" />
-				<stop offset="82%" stopColor="#020617" stopOpacity="0.0" />
-				<stop offset="100%" stopColor="#020617" stopOpacity="0.30" />
+				<stop offset="0%" stopColor="#020617" stopOpacity="0.46" />
+				<stop offset="15%" stopColor="#020617" stopOpacity="0.25" />
+				<stop offset="30%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#ffffff" stopOpacity="0.06" />
+				<stop offset="70%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="86%" stopColor="#020617" stopOpacity="0.30" />
+				<stop offset="100%" stopColor="#020617" stopOpacity="0.52" />
 			</linearGradient>
 		</>
 	);

@@ -15,9 +15,9 @@ export const TreatmentEstimatorSignModal: React.FC<TreatmentEstimatorSignModalPr
 	onConfirmPaper,
 	onPrint,
 }) => {
-	if (!isOpen || typeof window === "undefined") return null;
+	if (!isOpen) return null;
 
-	return createPortal(
+	const modalContent = (
 		<div className="modal-overlay">
 			<div className="modal-content" style={{ maxWidth: "800px" }}>
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-zinc-700">
@@ -36,7 +36,7 @@ export const TreatmentEstimatorSignModal: React.FC<TreatmentEstimatorSignModalPr
 				</div>
 				<div className="p-4 space-y-3 bg-[var(--paper,#18181b)] rounded-xl border border-[var(--line,#27272a)] text-center">
 					<p className="text-xs text-slate-600 dark:text-slate-300">
-						Смета согласована с пациентом в соответствии со ст. 84 323-ФЗ и ПП РФ № 736.
+						Смета согласована с пациентом и соответствует правилам оказания платных медицинских услуг.
 					</p>
 					<div className="flex flex-col sm:flex-row gap-2">
 						<button
@@ -60,7 +60,8 @@ export const TreatmentEstimatorSignModal: React.FC<TreatmentEstimatorSignModalPr
 					</div>
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

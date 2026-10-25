@@ -23,8 +23,8 @@ export interface LiveInvoiceCashierExport {
 }
 
 /**
- * Номенклатура медицинских услуг по Приказу Минздрава России от 13.10.2017 № 804н
- * с поддержкой взрослой терапии, эндодонтии (A16.07.030.001..004 и A16.07.008.001..004),
+ * Каталог медицинских услуг стоматологии
+ * с поддержкой взрослой терапии, эндодонтии (обработка и обтурация корневых каналов),
  * пародонтологии, детской стоматологии, имплантации и костной пластики.
  */
 export const ORDER_804N_PROCEDURES: Record<
@@ -328,12 +328,12 @@ export function calculateEndodonticCompositePrice(
 	toothNumber: number,
 	state: "Pulpitis" | "Periodontitis" | string,
 	clinicalCanalsCount?: number,
+	options?: { includeMedication?: boolean } | undefined,
 ): EndodonticCompositeCalculation {
 	const canalsCount = getAnatomicalRootCanalCount(toothNumber, clinicalCanalsCount);
 	const prepProcedure = getEndoPreparationProcedure(canalsCount);
 	const obturationProcedure = getEndoObturationProcedure(canalsCount);
-	const isPeriodontitis = state === "Periodontitis";
-	const medicationProcedure = isPeriodontitis
+	const medicationProcedure = options?.includeMedication
 		? ORDER_804N_PROCEDURES.EndoMedicationCaOH2
 		: undefined;
 
@@ -554,29 +554,7 @@ export function calculateLiveInvoiceItems(
 				});
 			}
 
-			// 3b. При периодонтите: временное пломбирование лекарственным препаратом Ca(OH)2 (A16.07.091)
-			if (state === "Periodontitis") {
-				const medProc = ORDER_804N_PROCEDURES.EndoMedicationCaOH2!;
-				const medKey = `${num}-${medProc.code}`;
-				if (!excludedKeys.has(medKey)) {
-					const qty = quantities[medKey] ?? 1;
-					const disc =
-						discountPercent > 0
-							? Math.round((medProc.price * qty * discountPercent) / 100)
-							: 0;
-					items.push({
-						toothNumber: num,
-						code: medProc.code,
-						title: `Зуб ${num}: ${medProc.title}`,
-						category: medProc.category,
-						price: medProc.price,
-						quantity: qty,
-						discountRub: disc,
-					});
-				}
-			}
-
-			// 3c. Пломбирование / обтурация корневых каналов (A16.07.008.001..004)
+			// 3b. Пломбирование / обтурация корневых каналов
 			const obtKey = `${num}-${obtProc.code}`;
 			if (!excludedKeys.has(obtKey)) {
 				const qty = quantities[obtKey] ?? 1;

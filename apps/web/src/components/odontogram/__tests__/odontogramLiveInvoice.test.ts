@@ -147,19 +147,17 @@ describe("OdontogramLiveInvoice — Order 804n Nomenclature & Endodontic Anatomi
 		assert.equal(threeCanalTotal, 14500);
 	});
 
-	test("Эндодонтическая смета периодонтита (Periodontitis) с дезинфекцией Ca(OH)2 A16.07.091", () => {
-		// Нижний моляр (36): 3 канала -> Обработка A16.07.030.003 (7500) + Ca(OH)2 A16.07.091 (2000) + Обтурация A16.07.008.003 (7000) = 16500 ₽
+	test("Эндодонтическая смета периодонтита (Periodontitis) строится на процедурах каталога без навязывания симуляций", () => {
+		// Нижний моляр (36): 3 канала -> Обработка A16.07.030.003 (7500) + Обтурация A16.07.008.003 (7000) = 14500 ₽ (без псевдонаучного Ca(OH)2)
 		const perioItems = calculateLiveInvoiceItems([{ toothNumber: 36, state: "Periodontitis" }]);
-		assert.equal(perioItems.length, 3);
+		assert.equal(perioItems.length, 2);
 		assert.equal(perioItems[0]?.code, "A16.07.030.003");
 		assert.equal(perioItems[0]?.price, 7500);
-		assert.equal(perioItems[1]?.code, "A16.07.091");
-		assert.equal(perioItems[1]?.price, 2000);
-		assert.equal(perioItems[2]?.code, "A16.07.008.003");
-		assert.equal(perioItems[2]?.price, 7000);
+		assert.equal(perioItems[1]?.code, "A16.07.008.003");
+		assert.equal(perioItems[1]?.price, 7000);
 
 		const perioTotal = perioItems.reduce((acc, it) => acc + it.price, 0);
-		assert.equal(perioTotal, 16500);
+		assert.equal(perioTotal, 14500);
 	});
 
 	test("Клиническое переопределение числа каналов через clinicalData.canals", () => {

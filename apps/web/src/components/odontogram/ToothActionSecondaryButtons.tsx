@@ -7,7 +7,7 @@ export interface ToothActionSecondaryButtonsProps {
 	readonly toothNumber: number;
 	readonly selectedTeeth: number[];
 	readonly activeSurfaces: string[];
-	readonly teethData: ToothData[];
+	readonly teethData: readonly ToothData[];
 	readonly onClose: () => void;
 	readonly onOpenContextDrawer: (toothNumber: number) => void;
 	readonly onOpenHistory: (toothNumber: number) => void;

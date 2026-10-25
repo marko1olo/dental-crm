@@ -1,5 +1,4 @@
-import type React from "react";
-import { useCallback, memo, useRef } from "react";
+import React, { useCallback, memo, useRef } from "react";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import {
 	type ToothChartProps,
