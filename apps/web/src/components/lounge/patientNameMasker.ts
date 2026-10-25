@@ -14,9 +14,9 @@ export function maskPatientName152Fz(fullName: string | null | undefined): strin
 
 	const parts = clean.split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "Пациент";
-	if (parts.length === 1) return parts[0];
+	if (parts.length === 1) return parts[0] ?? "Пациент";
 
-	const surname = parts[0];
+	const surname = parts[0] ?? "";
 	const firstInitial = parts[1]?.[0] ? `${parts[1][0].toUpperCase()}.` : "";
 	const patronymicInitial = parts[2]?.[0] ? ` ${parts[2][0].toUpperCase()}.` : "";
 
@@ -36,9 +36,9 @@ export function formatDoctorDisplay(fullName: string | null | undefined): string
 	const parts = withoutPrefix.split(/\s+/).filter(Boolean);
 
 	if (parts.length === 0) return "Дежурный врач";
-	if (parts.length === 1) return parts[0];
+	if (parts.length === 1) return parts[0] ?? "Дежурный врач";
 
-	const surname = parts[0];
+	const surname = parts[0] ?? "";
 	const p1 = parts[1]?.[0] ? `${parts[1][0].toUpperCase()}.` : "";
 	const p2 = parts[2]?.[0] ? ` ${parts[2][0].toUpperCase()}.` : "";
 

@@ -2,7 +2,7 @@ import React from "react";
 
 export interface BillboardStatusSelectorProps {
 	readonly status: "calling" | "in_treatment" | "waiting";
-	readonly scheduledTime?: string;
+	readonly scheduledTime?: string | undefined;
 }
 
 export const BillboardStatusSelector: React.FC<BillboardStatusSelectorProps> = ({
