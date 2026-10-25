@@ -1,31 +1,33 @@
 import type { Patient, A4DocumentMedicalCardData } from "@dental/shared";
 
 export function buildDefaultClinic(clinicProfileDraft: any) {
+	// Честные реквизиты: только данные профиля клиники из БД; при незаполненном
+	// профиле — пустые строки для ручного заполнения, никаких выдуманных ИНН/лицензий.
 	const draft = clinicProfileDraft || {};
 	return {
-		name: draft.clinicName || draft.name || 'ООО "Стоматологическая клиника ДЕНТЕ"',
-		legalName: draft.legalName || draft.clinicName || 'ООО "Стоматологическая клиника ДЕНТЕ"',
-		shortName: draft.shortName || 'ООО "ДЕНТЕ"',
-		address: draft.legalAddress || draft.address || "127006, г. Москва, ул. Тверская, д. 12, стр. 2",
-		inn: draft.inn || "7710984521",
-		kpp: draft.kpp || "771001001",
-		ogrn: draft.ogrn || "1217700456123",
-		licenseNumber: draft.medicalLicenseNumber || draft.licenseNumber || "ЛО41-01137-77/00645892",
-		phone: draft.phone || "+7 (495) 123-45-67",
-		directorFullName: draft.directorFullName || "Воронов Алексей Владимирович",
+		name: draft.clinicName || draft.name || "Стоматологическая клиника",
+		legalName: draft.legalName || draft.clinicName || "",
+		shortName: draft.clinicName || "",
+		address: draft.legalAddress || draft.address || "",
+		inn: draft.inn || "",
+		kpp: draft.kpp || "",
+		ogrn: draft.ogrn || "",
+		licenseNumber: draft.medicalLicenseNumber || draft.licenseNumber || "",
+		phone: draft.phone || "",
+		directorFullName: draft.directorFullName || "",
 	};
 }
 
 export function buildDefaultPatient(patient?: Patient | null) {
 	const pAny = (patient || {}) as any;
 	return {
-		fullName: patient?.fullName || "Пациент клиники",
+		fullName: patient?.fullName || "",
 		birthDate: patient?.birthDate
 			? new Date(patient.birthDate).toLocaleDateString("ru-RU")
-			: "01.01.1990",
+			: "",
 		gender: (patient?.gender as "male" | "female") || "male",
-		phone: patient?.phone || "+7 (999) 000-00-00",
-		cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "МК-2026/001",
+		phone: patient?.phone || "",
+		cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "",
 	};
 }
 
@@ -55,12 +57,12 @@ export function buildCompleteCardData(
 		visitDate: todayRu,
 		doctorFullName: doctor,
 		doctorSpecialty: "Врач-стоматолог",
-		allergyStatus: "Соматически сохранен. Лекарственные аллергии со слов пациента отрицает.",
-		somaticStatus: "Соматически здоров. Физиологическая норма.",
-		complaints: "Плановый осмотр и санация полости рта.",
-		anamnesisMorbi: "Обратился в плановом порядке для стоматологического лечения.",
-		statusLocalis: "Слизистая оболочка полости рта бледно-розовая, влажная. Прикус ортогнатический.",
-		teethFormulaSummary: "Зубная формула санирована.",
+		allergyStatus: "",
+		somaticStatus: "",
+		complaints: "",
+		anamnesisMorbi: "",
+		statusLocalis: "",
+		teethFormulaSummary: "",
 		teethFormulaMap: {
 			18: { state: "—" }, 17: { state: "—" }, 16: { state: "—" }, 15: { state: "—" },
 			14: { state: "—" }, 13: { state: "—" }, 12: { state: "—" }, 11: { state: "—" },
@@ -71,12 +73,12 @@ export function buildCompleteCardData(
 			31: { state: "—" }, 32: { state: "—" }, 33: { state: "—" }, 34: { state: "—" },
 			35: { state: "—" }, 36: { state: "—" }, 37: { state: "—" }, 38: { state: "—" },
 		},
-		diagnosisIcd10: "K02.1",
-		diagnosisDescription: "Кариес дентина",
-		diagnosisTooth: "16",
-		treatmentProtocol: "Проведено стоматологическое лечение по клиническому протоколу.",
-		materialsUsed: "Стоматологические материалы по стандарту СтАР.",
-		recommendations: "Соблюдать гигиену полости рта. Плановый контрольный осмотр через 6 месяцев.",
+		diagnosisIcd10: "",
+		diagnosisDescription: "",
+		diagnosisTooth: "",
+		treatmentProtocol: "",
+		materialsUsed: "",
+		recommendations: "",
 		...customCardData,
 	};
 }
