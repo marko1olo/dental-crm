@@ -76,7 +76,12 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 				/>
 			)}
 			{a.caries && !a.zirconiaCrown && (
-				<Tooth45CariesOverlay cariesType={a.cariesType} chronicity={a.cariesChronicity} isDark={isDark} />
+				<Tooth45CariesOverlay
+					cariesType={a.cariesType}
+					chronicity={a.cariesChronicity}
+					cariesDepth={a.cariesDepth}
+					isDark={isDark}
+				/>
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (
@@ -95,17 +100,10 @@ export const Tooth45Container: React.FC<Tooth46ContainerProps> = ({
 				<Tooth46SurgeryOverlay showImplant implantStage="crown_screw" renderScrewAccessOnly isDark={isDark} />
 			)}
 			<Tooth46PathologyOverlay
-				showAbfraction={Boolean(a.abfraction)}
-				showPostCore={Boolean(a.postCore)}
-				postCoreType={a.postCoreType ?? "fiber"}
-				showCalculus={Boolean(a.calculus)}
-				showCrack={Boolean(a.crack)}
-				resorcinolFormalin={Boolean(a.resorcinolFormalin)}
-				calciumHydroxide={Boolean(a.calciumHydroxide)}
-				attrition={Boolean(a.attrition)}
-				rootPerforation={Boolean(a.rootPerforation)}
-				canalLedge={Boolean(a.canalLedge)}
-				rootFracture={Boolean(a.rootFracture)}
+				showAbfraction={Boolean(a.abfraction)} showPostCore={Boolean(a.postCore)} postCoreType={a.postCoreType ?? "fiber"}
+				showCalculus={Boolean(a.calculus)} showCrack={Boolean(a.crack)} resorcinolFormalin={Boolean(a.resorcinolFormalin)}
+				calciumHydroxide={Boolean(a.calciumHydroxide)} attrition={Boolean(a.attrition)}
+				rootPerforation={Boolean(a.rootPerforation)} canalLedge={Boolean(a.canalLedge)} rootFracture={Boolean(a.rootFracture)}
 				isDark={isDark}
 			/>
 			{a.missing && <Tooth46SurgeryOverlay showMissing />}

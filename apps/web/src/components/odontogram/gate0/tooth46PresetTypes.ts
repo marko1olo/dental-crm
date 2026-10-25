@@ -16,11 +16,14 @@ export type CanalCondition =
 	| "broken_file";
 export type PeriapicalCondition = "none" | "granuloma" | "cyst" | "resorption";
 export type PostCoreType = "fiber" | "cast";
+export type CariesDepth = "superficial" | "media" | "profunda" | "destructive";
 export type CariesType =
 	| "class1"
 	| "class2_mo"
 	| "class2_do"
 	| "class2_mod"
+	| "class3"
+	| "class4"
 	| "class5"
 	| "white_spot";
 export type CariesChronicity = "acute" | "chronic";
@@ -29,9 +32,15 @@ export type InlayOnlayType = "inlay" | "onlay" | "overlay";
 export type Tooth46ClinicalPreset =
 	| "intact"
 	| "caries"
+	| "caries_superficial"
+	| "caries_media"
+	| "caries_profunda"
+	| "caries_destructive"
 	| "caries_class2_mo"
 	| "caries_class2_do"
 	| "caries_class2_mod"
+	| "caries_class3"
+	| "caries_class4"
 	| "caries_class5"
 	| "caries_white_spot"
 	| "caries_acute"

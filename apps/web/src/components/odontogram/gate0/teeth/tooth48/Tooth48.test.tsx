@@ -39,8 +39,8 @@ describe("Tooth48 Wheeler Ch. 11 Third Mandibular Molar Anatomical Invariants", 
 			["M", "D"],
 		);
 		// Both canals converge into the distally curved apical zone (x < 40)
-		assert.ok(canals[0].apex.x < 40);
-		assert.ok(canals[1].apex.x < 40);
+		assert.ok((canals[0]?.apex.x ?? 99) < 40);
+		assert.ok((canals[1]?.apex.x ?? 99) < 40);
 		assert.ok(TOOTH48_PULP_GEOMETRY.cShapedIsthmus);
 	});
 

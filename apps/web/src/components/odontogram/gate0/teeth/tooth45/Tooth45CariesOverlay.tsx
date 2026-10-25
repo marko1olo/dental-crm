@@ -1,65 +1,85 @@
-import type React from "react";
-import type { CariesChronicity, CariesType } from "../../tooth46PresetTypes";
+import React from "react";
+import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46PresetTypes";
+import { TOOTH45_CARIES_GEOMETRY } from "./tooth45CariesGeometry";
 
 export interface Tooth45CariesOverlayProps {
 	cariesType?: CariesType | undefined;
+	cariesDepth?: CariesDepth | undefined;
 	chronicity?: CariesChronicity | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
 }
 
 /**
- * Organic Fissure Caries for Tooth 45 (Second Mandibular Premolar)
- * Classical Y-fissure central pit caries and lingual groove extension on 50px crown.
- * Mandate 8b <= 120 lines.
+ * Organic Y-Fissure, Destructive & Cervical Caries for Tooth 45 (Second Premolar)
+ * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth45CariesOverlay: React.FC<Tooth45CariesOverlayProps> = ({
 	cariesType = "class1",
+	cariesDepth = "media",
 	chronicity = "acute",
 	isDark = false,
 	className,
 }) => {
+	const g = TOOTH45_CARIES_GEOMETRY;
 	const isChronic = chronicity === "chronic";
-	const lesionFill = isChronic
-		? "url(#dente-caries-chronic)"
-		: "url(#dente-caries-lesion)";
+	const lesionFill = isChronic ? "url(#dente-caries-chronic)" : "url(#dente-caries-lesion)";
 	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
-	const haloStroke = isDark
-		? "rgba(254, 243, 199, 0.35)"
-		: "rgba(254, 243, 199, 0.55)";
+	const haloStroke = isDark ? "rgba(254, 243, 199, 0.35)" : "rgba(254, 243, 199, 0.55)";
+	const isSuperficial = cariesDepth === "superficial";
+	const isProfunda = cariesDepth === "profunda" || cariesDepth === "destructive";
+	const isDestructive = cariesDepth === "destructive" || cariesType === "class2_do" || cariesType === "class2_mod";
 
 	return (
 		<g
 			id="tooth45-caries-overlay"
 			data-caries-type={cariesType}
+			data-caries-depth={cariesDepth}
 			data-caries-chronicity={chronicity}
 			className={className}
 			clipPath="url(#tooth45-crown-clip)"
 		>
-			{/* Central Pit Cavitation of the Y-fissure with realistic depth */}
-			<g id="tooth45-caries-central-pit">
-				{/* 1. Demineralized halo expanding along Y-fissure branches */}
-				<path
-					d="M 41,21.5 C 45,20.5 48,20.8 50,21 C 52,20.8 55,20.5 59,21.5 C 57.5,23.5 53,24 51.5,25.5 L 51.5,30 C 51.5,31 48.5,31 48.5,30 L 48.5,25.5 C 47,24 42.5,23.5 41,21.5 Z"
-					fill="url(#dente-caries-demin)"
-					stroke={haloStroke}
-					strokeWidth="0.55"
-				/>
-				{/* 2. Softened dentin crater */}
-				<path
-					d="M 44,22 C 47,21.5 49,21.8 50,22 C 51,21.8 53,21.5 56,22 C 54.5,23.8 52,24.2 51,25.5 L 51,29 C 51,29.8 49,29.8 49,29 L 49,25.5 C 48,24.2 45.5,23.8 44,22 Z"
-					fill={lesionFill}
-					stroke="rgba(120, 53, 15, 0.75)"
-					strokeWidth="0.5"
-				/>
-				{/* 3. Deep necrotic core pit (tissue loss into dentin) */}
-				<path
-					d="M 47.5,22.2 C 49,21.8 51,21.8 52.5,22.2 C 52.8,23.5 51.8,24.8 50.8,25.5 L 50.8,28 C 50.8,28.6 49.2,28.6 49.2,28 L 49.2,25.5 C 48.2,24.8 47.2,23.5 47.5,22.2 Z"
-					fill={necroticFill}
-					stroke="rgba(12, 10, 9, 0.9)"
-					strokeWidth="0.5"
-				/>
-			</g>
+			{/* Destructive Cavitation (Collapse of Distal Marginal Ridge & Lingual Cusp) */}
+			{isDestructive && (
+				<g id="tooth45-caries-destructive">
+					<path d={g.destructive.halo} fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.5" />
+					{!isSuperficial && (
+						<path d={g.destructive.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.85)" strokeWidth="0.55" />
+					)}
+					{isProfunda && (
+						<path d={g.destructive.profunda} fill={necroticFill} stroke="rgba(28, 25, 23, 0.95)" strokeWidth="0.5" />
+					)}
+					{g.destructive.fractureSteps.map((s, idx) => (
+						<path key={`step-${idx}`} d={s} fill="none" stroke={isDark ? "#f1f5f9" : "#ffffff"} strokeWidth="0.75" strokeLinecap="round" />
+					))}
+				</g>
+			)}
+
+			{/* Class I Y-Pattern Cavity */}
+			{!isDestructive && cariesType !== "class5" && (
+				<g id="tooth45-caries-class1">
+					<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.5" />
+					{!isSuperficial && (
+						<path d={g.class1.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.75)" strokeWidth="0.5" />
+					)}
+					{isProfunda && (
+						<path d={g.class1.profunda} fill={necroticFill} stroke="rgba(12, 10, 9, 0.9)" strokeWidth="0.5" />
+					)}
+				</g>
+			)}
+
+			{/* Class V Cervical Cavity */}
+			{cariesType === "class5" && (
+				<g id="tooth45-caries-cervical">
+					<path d={g.class5.halo} fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.55" />
+					{!isSuperficial && (
+						<path d={g.class5.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.75)" strokeWidth="0.5" />
+					)}
+					{isProfunda && (
+						<path d={g.class5.profunda} fill={necroticFill} stroke="rgba(12, 10, 9, 0.9)" strokeWidth="0.5" />
+					)}
+				</g>
+			)}
 		</g>
 	);
 };

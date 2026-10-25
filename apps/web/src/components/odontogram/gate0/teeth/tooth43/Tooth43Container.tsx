@@ -73,7 +73,12 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 				/>
 			)}
 			{a.caries && !a.zirconiaCrown && (
-				<Tooth43CariesOverlay cariesType={a.cariesType} chronicity={a.cariesChronicity} isDark={isDark} />
+				<Tooth43CariesOverlay
+					cariesType={a.cariesType}
+					chronicity={a.cariesChronicity}
+					cariesDepth={a.cariesDepth}
+					isDark={isDark}
+				/>
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (

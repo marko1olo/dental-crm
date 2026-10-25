@@ -2,10 +2,11 @@ import type React from "react";
 import { Tooth46CariesClass1 } from "./Tooth46CariesClass1";
 import { Tooth46CariesClass2 } from "./Tooth46CariesClass2";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "./Tooth46CariesSpectrumGeometry";
-import type { CariesChronicity, CariesType } from "./tooth46PresetTypes";
+import type { CariesChronicity, CariesDepth, CariesType } from "./tooth46PresetTypes";
 
 export interface Tooth46CariesOverlayProps {
 	cariesType?: CariesType | undefined;
+	cariesDepth?: CariesDepth | undefined;
 	chronicity?: CariesChronicity | undefined;
 	isDark?: boolean | undefined;
 	showBuccalPit?: boolean | undefined;
@@ -19,6 +20,7 @@ export interface Tooth46CariesOverlayProps {
  */
 export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 	cariesType = "class1",
+	cariesDepth = "media",
 	chronicity = "acute",
 	isDark = false,
 	showBuccalPit = true,
@@ -33,11 +35,14 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 	const haloStroke = isDark
 		? "rgba(254, 243, 199, 0.35)"
 		: "rgba(254, 243, 199, 0.55)";
+	const isSuperficial = cariesDepth === "superficial";
+	const showNecrotic = cariesDepth === "profunda" || cariesDepth === "destructive" || !cariesDepth;
 
 	return (
 		<g
 			id="tooth46-biological-caries"
 			data-caries-type={cariesType}
+			data-caries-depth={cariesDepth}
 			data-caries-chronicity={chronicity}
 			className={className}
 			clipPath="url(#tooth46-crown-clip)"
@@ -62,13 +67,15 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 						stroke={haloStroke}
 						strokeWidth="0.5"
 					/>
-					<path
-						d={sp.class5.crater}
-						fill={lesionFill}
-						stroke="rgba(120, 53, 15, 0.85)"
-						strokeWidth="0.5"
-					/>
-					<path d={sp.class5.necrotic} fill={necroticFill} stroke="#1c1917" />
+					{!isSuperficial && (
+						<path
+							d={sp.class5.crater}
+							fill={lesionFill}
+							stroke="rgba(120, 53, 15, 0.85)"
+							strokeWidth="0.5"
+						/>
+					)}
+					{showNecrotic && <path d={sp.class5.necrotic} fill={necroticFill} stroke="#1c1917" />}
 				</g>
 			)}
 
@@ -77,6 +84,7 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 				cariesType === "class2_mod") && (
 				<Tooth46CariesClass2
 					cariesType={cariesType}
+					cariesDepth={cariesDepth}
 					lesionFill={lesionFill}
 					necroticFill={necroticFill}
 					haloStroke={haloStroke}
@@ -85,6 +93,7 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 
 			{cariesType === "class1" && (
 				<Tooth46CariesClass1
+					cariesDepth={cariesDepth}
 					lesionFill={lesionFill}
 					necroticFill={necroticFill}
 					haloStroke={haloStroke}

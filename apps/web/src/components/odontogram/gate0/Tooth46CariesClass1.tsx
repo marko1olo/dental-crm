@@ -1,10 +1,12 @@
 import type React from "react";
 import { TOOTH46_CARIES_GEOMETRY } from "./Tooth46CariesGeometry";
+import type { CariesDepth } from "./tooth46PresetTypes";
 
 export interface Tooth46CariesClass1Props {
 	lesionFill: string;
 	necroticFill: string;
 	haloStroke: string;
+	cariesDepth?: CariesDepth | undefined;
 	isDark?: boolean;
 	showBuccalPit?: boolean;
 }
@@ -17,10 +19,13 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	lesionFill,
 	necroticFill,
 	haloStroke,
+	cariesDepth,
 	isDark = false,
 	showBuccalPit = true,
 }) => {
 	const c1 = TOOTH46_CARIES_GEOMETRY;
+	const isSuperficial = cariesDepth === "superficial";
+	const showNecrotic = cariesDepth === "profunda" || cariesDepth === "destructive" || !cariesDepth;
 
 	return (
 		<g id="tooth46-caries-class1">
@@ -30,18 +35,22 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 				stroke={haloStroke}
 				strokeWidth="0.6"
 			/>
-			<path
-				d={c1.dendriticCariesPath}
-				fill={lesionFill}
-				stroke="rgba(120, 53, 15, 0.85)"
-				strokeWidth="0.6"
-			/>
-			<path
-				d={c1.necroticCore}
-				fill={necroticFill}
-				stroke="rgba(28, 25, 23, 0.95)"
-				strokeWidth="0.6"
-			/>
+			{!isSuperficial && (
+				<path
+					d={c1.dendriticCariesPath}
+					fill={lesionFill}
+					stroke="rgba(120, 53, 15, 0.85)"
+					strokeWidth="0.6"
+				/>
+			)}
+			{showNecrotic && (
+				<path
+					d={c1.necroticCore}
+					fill={necroticFill}
+					stroke="rgba(28, 25, 23, 0.95)"
+					strokeWidth="0.6"
+				/>
+			)}
 			<path
 				d={c1.buccalGrooveTrace}
 				fill="none"
@@ -57,18 +66,22 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 						stroke={haloStroke}
 						strokeWidth="0.5"
 					/>
-					<path
-						d={c1.buccalPitCavity.crater}
-						fill={lesionFill}
-						stroke="rgba(120, 53, 15, 0.8)"
-						strokeWidth="0.5"
-					/>
-					<path
-						d={c1.buccalPitCavity.necroticCenter}
-						fill={necroticFill}
-						stroke="#1c1917"
-						strokeWidth="0.4"
-					/>
+					{!isSuperficial && (
+						<path
+							d={c1.buccalPitCavity.crater}
+							fill={lesionFill}
+							stroke="rgba(120, 53, 15, 0.8)"
+							strokeWidth="0.5"
+						/>
+					)}
+					{showNecrotic && (
+						<path
+							d={c1.buccalPitCavity.necroticCenter}
+							fill={necroticFill}
+							stroke="#1c1917"
+							strokeWidth="0.4"
+						/>
+					)}
 				</g>
 			)}
 		</g>
