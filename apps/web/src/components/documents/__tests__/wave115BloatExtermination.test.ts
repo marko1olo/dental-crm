@@ -93,7 +93,16 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 			repoRoot,
 			"apps/api/src/routes/outpatient.ts",
 		);
-		const routesContent = fs.readFileSync(outpatientRoutesPath, "utf-8");
+		const outpatientDir = path.join(repoRoot, "apps/api/src/routes/outpatient");
+		let routesContent = fs.readFileSync(outpatientRoutesPath, "utf-8");
+		if (fs.existsSync(outpatientDir)) {
+			const subFiles = fs.readdirSync(outpatientDir);
+			for (const file of subFiles) {
+				if (file.endsWith(".ts")) {
+					routesContent += "\n" + fs.readFileSync(path.join(outpatientDir, file), "utf-8");
+				}
+			}
+		}
 
 		// Проверка маршрута lock-status на автономию врача
 		assert.ok(
