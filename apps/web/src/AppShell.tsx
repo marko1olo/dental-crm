@@ -5,6 +5,8 @@ import { GlobalToast } from "./components/GlobalToast";
 import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
 import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
 import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
+import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
+import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -80,6 +82,8 @@ export function AppShell() {
 			<DirectMedicalInsertLauncher />
 			<DirectPricelistLauncher />
 			<DirectWarehouseMdlpLauncher />
+			<DirectOmnichannelStandaloneLauncher />
+			<DirectPrescriptionLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

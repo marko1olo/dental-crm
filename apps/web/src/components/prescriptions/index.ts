@@ -19,3 +19,4 @@ export * from "./prescriptionApiClient";
 export * from "./prescriptionDataSets";
 export * from "./prescriptionPrintHtml";
 export * from "./usePrescriptionCockpit";
+export * from "./DirectPrescriptionLauncher";

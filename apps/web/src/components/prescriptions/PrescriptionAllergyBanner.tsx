@@ -48,7 +48,7 @@ export const PrescriptionAllergyBanner: React.FC<
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 						<span className="font-bold whitespace-normal">
-							⚠️ Аллергия:{" "}
+							Аллергия:{" "}
 							{allergyConflicts
 								.map((c) => ALLERGY_TYPE_LABELS[c.type] || c.matchedAllergyTerm || c.type)
 								.join(", ")}

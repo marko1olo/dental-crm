@@ -3,7 +3,7 @@
  * Decomposed from PrescriptionCatalogList.tsx per Mandate 8b (<= 120 lines).
  */
 
-import { CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type React from "react";
 import { getDrugAllergyConflictType } from "./prescriptionAllergyChecker";
 
@@ -49,9 +49,10 @@ export const PrescriptionCatalogListItem: React.FC<
 					{conflict && (
 						<span
 							data-testid={`drug-allergy-badge-${drug.id}`}
-							className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-0.5 shrink-0"
+							className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1 shrink-0"
 						>
-							⚠️ АЛЛЕРГИЯ
+							<AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+							<span>Аллергия</span>
 						</span>
 					)}
 				</div>

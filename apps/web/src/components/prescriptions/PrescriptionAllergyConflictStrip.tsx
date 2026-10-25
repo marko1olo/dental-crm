@@ -24,7 +24,7 @@ export const PrescriptionAllergyConflictStrip: React.FC<
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 						<span className="font-bold leading-snug">
-							⚠️ Выписан пенициллин при аллергии в анамнезе (Риск
+							Выписан пенициллин при аллергии в анамнезе (Риск
 							непереносимости)
 						</span>
 					</div>
@@ -41,7 +41,7 @@ export const PrescriptionAllergyConflictStrip: React.FC<
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 						<span className="font-bold leading-snug">
-							⚠️ Выписан НПВС при аллергии на НПВС/аспирин в анамнезе
+							Выписан НПВС при аллергии на НПВС/аспирин в анамнезе
 						</span>
 					</div>
 					<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0 ml-auto">
@@ -57,7 +57,7 @@ export const PrescriptionAllergyConflictStrip: React.FC<
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 						<span className="font-bold leading-snug">
-							⚠️ Выписан местный анестетик при аллергии на анестетики
+							Выписан местный анестетик при аллергии на анестетики
 						</span>
 					</div>
 					<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0 ml-auto">
