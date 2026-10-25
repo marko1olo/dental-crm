@@ -22,7 +22,7 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 			<h1 className="sanpin-main-title">
 				<ShieldCheck size={18} color="var(--teal, #0d9488)" className="shrink-0" />
 				<span className="hidden sm:inline">Журнал стерилизации и автоклава</span>
-				<span className="sm:hidden">Журнал автоклава</span>
+				<span className="sm:hidden">Стерилизация</span>
 			</h1>
 
 			<button
@@ -33,7 +33,10 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 				data-testid="sanpin-kpi-consolidated-chip"
 			>
 				<CheckCircle2 size={13} color="var(--teal, #0d9488)" className="shrink-0" />
-				<span className={psoToday === 0 && akToday === 0 ? "" : "sanpin-kpi-status-ok"}>{complianceLabel}</span>
+				<span className={psoToday === 0 && akToday === 0 ? "" : "sanpin-kpi-status-ok"}>
+					<span className="sanpin-desktop-only-label">{complianceLabel}</span>
+					<span className="sanpin-mobile-only">{psoToday === 0 && akToday === 0 ? "Нет записей" : "Норма"}</span>
+				</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-sep">·</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-metric">
 					Очистка {psoToday}

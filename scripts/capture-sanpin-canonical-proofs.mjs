@@ -1,15 +1,56 @@
-import { mkdirSync, statSync, copyFileSync } from "node:fs";
+import { mkdirSync, statSync, copyFileSync, existsSync } from "node:fs";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "0f58b943-0bae-4bea-b7a5-46fd0ca5824b";
-const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
-const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/sterilization";
+const CURRENT_CONV_ID = "e2713ddf-da1e-43b7-b726-c9f91f49200e";
+const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
+const OUT_SANPIN = "C:/Clinic_MVP/dental-crm/docs/proofs/sanpin";
+const OUT_SSOT = "C:/Clinic_MVP/dental-crm/docs/proofs/sanpin_ssot";
+const OUT_STERIL = "C:/Clinic_MVP/dental-crm/docs/proofs/sterilization";
 const API_URL = "http://127.0.0.1:4100";
 const WEB_URL = "http://127.0.0.1:5173";
 
 mkdirSync(OUT_CONV, { recursive: true });
-mkdirSync(OUT_DOCS, { recursive: true });
+mkdirSync(OUT_SANPIN, { recursive: true });
+mkdirSync(OUT_SSOT, { recursive: true });
+mkdirSync(OUT_STERIL, { recursive: true });
+
+async function isPortResponding(url, timeoutMs = 2000) {
+	try {
+		const controller = new AbortController();
+		const t = setTimeout(() => controller.abort(), timeoutMs);
+		const baseUrl = new URL(url).origin;
+		const res = await fetch(baseUrl, { signal: controller.signal });
+		clearTimeout(t);
+		return res.ok || res.status === 200 || res.status === 304;
+	} catch {
+		return false;
+	}
+}
+
+async function ensureViteServer() {
+	if (await isPortResponding(WEB_URL, 2000)) {
+		console.log("[Vite] Detected active dev server on port 5173.");
+		return null;
+	}
+	console.log("[Vite] Spawning dev server on port 5173...");
+	const viteBin = path.resolve("C:/Clinic_MVP/dental-crm/node_modules/vite/bin/vite.js");
+	const webDir = path.resolve("C:/Clinic_MVP/dental-crm/apps/web");
+	const proc = spawn(process.execPath, ["--max-old-space-size=2048", viteBin, "--host", "127.0.0.1", "--port", "5173"], {
+		cwd: webDir,
+		stdio: "ignore",
+	});
+	for (let i = 0; i < 50; i++) {
+		await new Promise((r) => setTimeout(r, 600));
+		if (await isPortResponding(WEB_URL, 1000)) {
+			console.log(`[Vite] Server ready in ${(i + 1) * 600}ms!`);
+			return proc;
+		}
+	}
+	try { proc.kill(); } catch {}
+	throw new Error("Vite dev server failed to start on port 5173");
+}
 
 async function provisionSession() {
 	console.log("[Auth] Provisioning live clinic session via API...");
@@ -119,17 +160,24 @@ async function resolveViteUrl() {
 	return "http://127.0.0.1:5173";
 }
 
-async function captureScreen(page, filename, altFilename) {
-	const p1 = path.join(OUT_CONV, filename);
-	const p2 = path.join(OUT_DOCS, filename);
-	await page.screenshot({ path: p1, fullPage: false });
-	copyFileSync(p1, p2);
-	if (altFilename) {
-		copyFileSync(p1, path.join(OUT_DOCS, altFilename));
-		copyFileSync(p1, path.join(OUT_CONV, altFilename));
+async function captureScreen(page, canonicalName, aliases = []) {
+	const pConv = path.join(OUT_CONV, canonicalName);
+	await page.screenshot({ path: pConv, fullPage: false });
+
+	const targetDirs = [OUT_SANPIN, OUT_SSOT, OUT_STERIL];
+	for (const dir of targetDirs) {
+		copyFileSync(pConv, path.join(dir, canonicalName));
 	}
-	const size = statSync(p1).size;
-	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
+
+	for (const alias of aliases) {
+		copyFileSync(pConv, path.join(OUT_CONV, alias));
+		for (const dir of targetDirs) {
+			copyFileSync(pConv, path.join(dir, alias));
+		}
+	}
+
+	const size = statSync(pConv).size;
+	console.log(`[Captured] ${canonicalName} (${size} bytes) -> OK: ${size >= 20000}`);
 	if (size < 20000) {
 		console.warn(`[WARN] File size is only ${size} bytes!`);
 	}
@@ -165,7 +213,10 @@ async function main() {
 		await preparePage(pageLight, "light");
 		await pageLight.waitForTimeout(1000);
 
-		await captureScreen(pageLight, "sanpin_pc_light_autoclave.png", "sterilization_pc_light.png");
+		await captureScreen(pageLight, "pc_light_sanpin_sterilization_1440x900.png", [
+			"sanpin_pc_light_autoclave.png",
+			"sterilization_pc_light.png",
+		]);
 		await ctxLight.close();
 
 		// 2. PC Dark
@@ -186,7 +237,10 @@ async function main() {
 		await preparePage(pageDark, "dark");
 		await pageDark.waitForTimeout(1000);
 
-		await captureScreen(pageDark, "sanpin_pc_dark_autoclave.png", "sterilization_pc_dark.png");
+		await captureScreen(pageDark, "pc_dark_sanpin_sterilization_1440x900.png", [
+			"sanpin_pc_dark_autoclave.png",
+			"sterilization_pc_dark.png",
+		]);
 		await ctxDark.close();
 
 		// 3. Mobile Light (390x844)
@@ -212,7 +266,10 @@ async function main() {
 		await preparePage(pageMobLight, "light");
 		await pageMobLight.waitForTimeout(1000);
 
-		await captureScreen(pageMobLight, "sanpin_mobile_light_autoclave.png", "sterilization_mobile_light.png");
+		await captureScreen(pageMobLight, "mobile_light_sanpin_sterilization_390x844.png", [
+			"sanpin_mobile_light_autoclave.png",
+			"sterilization_mobile_light.png",
+		]);
 		await ctxMobLight.close();
 
 		// 4. Mobile Dark (390x844)
@@ -238,7 +295,10 @@ async function main() {
 		await preparePage(pageMobDark, "dark");
 		await pageMobDark.waitForTimeout(1000);
 
-		await captureScreen(pageMobDark, "sanpin_mobile_dark_autoclave.png", "sterilization_mobile_dark.png");
+		await captureScreen(pageMobDark, "mobile_dark_sanpin_sterilization_390x844.png", [
+			"sanpin_mobile_dark_autoclave.png",
+			"sterilization_mobile_dark.png",
+		]);
 		await ctxMobDark.close();
 
 		console.log("ALL 4 SANPIN SCREENSHOTS CAPTURED PERFECTLY!");

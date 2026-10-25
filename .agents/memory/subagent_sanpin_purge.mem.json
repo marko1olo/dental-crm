@@ -57,15 +57,18 @@
     "apps/web/src/components/sanpin/kraft/KraftPackageBarcodeModal.tsx (1-click shift batch creation)"
   ],
   "verification_gates": {
-    "sanpinAutoclaveJournal257": "33/33 tests passing (apps/web/src/components/sanpin/__tests__/sanpinAutoclaveJournal257.test.ts)",
-    "autoclaveExpressCycle": "10/10 tests passing (apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts)",
-    "sanPinSterilizationJournalSuite": "6/6 tests passing (apps/web/src/components/sanpin/__tests__/sanPinSterilizationJournalSuite.test.tsx)",
-    "sanpinKraftBarcodeThermalSticker": "15/15 tests passing (apps/web/src/components/sanpin/__tests__/sanpinKraftBarcodeThermalSticker.test.ts)",
-    "sanpinUnsealMandate8e": "9/9 tests passing (apps/web/src/components/sanpin/__tests__/sanpinUnsealMandate8e.test.ts)",
-    "kraftPackageSanpin_shared": "24/24 tests passing (packages/shared/src/tests/kraftPackageSanpin.test.ts)",
-    "kraftPackage_web": "25/25 tests passing (apps/web/src/tests/kraftPackage.test.ts)",
+    "vitest_sanpin_components": "22/22 files passing, 274/274 tests passing (apps/web/src/components/sanpin/)",
     "sterilizationKraftLogbook": "25/25 tests passing (apps/web/src/tests/sterilizationKraftLogbook.test.ts)",
-    "foolproofNurseWorkflows": "21/21 tests passing (apps/web/src/tests/foolproofNurseWorkflows.test.ts)",
-    "total_passing_tests": 168
+    "kraftPackage": "25/25 tests passing (apps/web/src/tests/kraftPackage.test.ts)",
+    "sterilization043QuickScannerLink": "9/9 tests passing (apps/web/src/tests/sterilization043QuickScannerLink.test.ts)",
+    "sterilizationAutoclaveBatchReporting": "6/6 tests passing (apps/web/src/tests/sterilizationAutoclaveBatchReporting.test.ts)",
+    "check_encoding": "19289 files checked, 0 errors (npm run check:encoding)",
+    "canonical_4_state_visual_proofs": {
+      "pc_light": "docs/proofs/sanpin/pc_light_sanpin_sterilization_1440x900.png (171.8 KB) - verified via read_file",
+      "pc_dark": "docs/proofs/sanpin/pc_dark_sanpin_sterilization_1440x900.png (175.0 KB) - verified via read_file",
+      "mobile_light": "docs/proofs/sanpin/mobile_light_sanpin_sterilization_390x844.png (49.1 KB) - verified via read_file, 0px horizontal drift, 0 badge clipping",
+      "mobile_dark": "docs/proofs/sanpin/mobile_dark_sanpin_sterilization_390x844.png (49.6 KB) - verified via read_file, 0px horizontal drift, 0 badge clipping"
+    },
+    "total_passing_tests": 339
   }
 }

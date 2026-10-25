@@ -158,21 +158,21 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 		assert.ok(regulatoryHtml.includes("Фенолфталеин (СМС)"));
 	});
 
-	it("5. проверяет доступность журнала Формы 257/у из документов клиники (PrimaryIntakePackageModal, SettingsProtocolsTab, DocumentsView)", () => {
+	it("5. проверяет правильную изоляцию журнала автоклавирования (отсутствие в PrimaryIntakePackageModal и доступность в бэк-офисе SettingsProtocolsTab, DocumentsView)", () => {
 		const webSrc = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 			? path.resolve(process.cwd(), "apps/web/src")
 			: path.resolve(process.cwd(), "src");
 
-		// PrimaryIntakePackageModal.tsx
+		// PrimaryIntakePackageModal.tsx: первичный прием пациента НЕ ДОЛЖЕН содержать журнал автоклавирования (Мандат 8x, 8ap)
 		const intakeModalPath = path.join(webSrc, "components/documents/PrimaryIntakePackageModal.tsx");
 		const intakeModalContent = fs.readFileSync(intakeModalPath, "utf8");
 		assert.ok(
-			intakeModalContent.includes("onOpenAutoclaveLog257"),
-			"PrimaryIntakePackageModal должен поддерживать проп onOpenAutoclaveLog257",
+			!intakeModalContent.includes("onOpenAutoclaveLog257"),
+			"PrimaryIntakePackageModal НЕ должен содержать onOpenAutoclaveLog257 (в первичной карте нет места автоклавам)",
 		);
 		assert.ok(
-			intakeModalContent.includes("primary-intake-open-autoclave-log-btn"),
-			"PrimaryIntakePackageModal должен содержать кнопку вызова журнала стерилизации 257/у",
+			!intakeModalContent.includes("primary-intake-open-autoclave-log-btn"),
+			"PrimaryIntakePackageModal НЕ должен содержать кнопку вызова журнала стерилизации",
 		);
 
 		// SettingsProtocolsTab.tsx

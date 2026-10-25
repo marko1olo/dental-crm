@@ -1,8 +1,9 @@
 /**
  * ============================================================================
- * SANPIN 3.3686-21 STERILIZATION SCANNER & 043/U PROTOCOL LINKAGE TEST SUITE
- * Проверка 1-кликового сканирования крафт-пакетов, учета циклов автоклавирования,
- * проб ПСО (азопирам, фенолфталеин), индикаторов 4-5 классов и привязки к форме 043/у.
+ * STERILIZATION PROTOCOL & DOCTOR AUTONOMY TEST SUITE (Mandates 8e, 8v, 8x, 8ap)
+ * Проверка учета циклов автоклавирования, пакетной стерилизации смены,
+ * чистого клинического языка в медицинской карте и свободы врача от
+ * поштучного сканирования крафт-пакетов у кресла.
  * ============================================================================
  */
 
@@ -23,9 +24,9 @@ import {
 } from "../components/inventory/inventoryMath";
 import { SAMPLE_TEST_BARCODES } from "../components/sanpin/sterilization/sterilizationPresets";
 
-describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () => {
+describe("Sterilization Protocol & Doctor Autonomy (Mandates 8e, 8v, 8x, 8ap)", () => {
 	describe("1. Kraft Package Barcode Parsing & Expiration Validation", () => {
-		it("correctly parses a 1D Code128 standard sterile kraft pouch barcode", () => {
+		it("correctly parses a 1D Code128 standard sterile kraft pouch barcode with clean clinical language", () => {
 			const parsed = parseAndValidateKraftBarcode("KB2608250001", {
 				referenceDate: "2026-08-27",
 			});
@@ -34,8 +35,10 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 			assert.equal(parsed.isExpired, false);
 			assert.equal(parsed.daysLifespan, 50);
 			assert.ok(parsed.daysRemaining > 0);
-			assert.ok(parsed.formattedProtocolRecord043.includes("СанПиН 3.3686-21"));
+			assert.ok(parsed.formattedProtocolRecord043.includes("Стерилизация"));
 			assert.ok(parsed.formattedProtocolRecord043.includes("KB2608250001"));
+			// Чистый клинический язык без советских номеров приказов в тексте протокола
+			assert.ok(!parsed.formattedProtocolRecord043.includes("СанПиН 3.3686-21"));
 		});
 
 		it("correctly parses a structured 2D DataMatrix kraft package payload", () => {
@@ -56,8 +59,7 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 			assert.ok(parsed.formattedProtocolRecord043.includes("Химический интегратор 5 класса"));
 		});
 
-		it("detects expired kraft pouches and flags critical SanPiN 3.3686-21 violation", () => {
-			// A package from 2024 evaluated against 2026 reference date
+		it("detects expired kraft pouches and flags critical expiration without blocking doctor emergency care", () => {
 			const parsed = parseAndValidateKraftBarcode("KB2401010001", {
 				referenceDate: "2026-08-27",
 			});
@@ -66,12 +68,11 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 			assert.equal(parsed.isExpired, true);
 			assert.ok(parsed.daysRemaining < 0);
 			assert.ok(parsed.errorMessage?.includes("ИСТЁК") || parsed.errorMessage?.includes("истёк") || parsed.errorMessage?.includes("Истек"));
-			assert.ok(parsed.errorMessage?.includes("СанПиН 3.3686-21"));
 		});
 	});
 
-	describe("2. 1-Click Form 043/u Protocol Linkage & Treatment Diary Integration", () => {
-		it("attaches sterilization record into patient diary text seamlessly", () => {
+	describe("2. Form 043 Treatment Diary Protocol Linkage", () => {
+		it("attaches sterilization record into patient diary text seamlessly with professional clean language", () => {
 			const initialTreatment = "Препарирование кариозной полости зуба 4.6. Медикаментозная обработка.";
 			const kraftBarcode = "KB2608270001";
 			const parsed = parseAndValidateKraftBarcode(kraftBarcode, {
@@ -81,24 +82,25 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 			const updatedTreatment = attachKraftPackageTo043Diary(initialTreatment, parsed);
 
 			assert.ok(updatedTreatment.includes(initialTreatment));
-			assert.ok(updatedTreatment.includes("Стерилизация СанПиН 3.3686-21"));
+			assert.ok(updatedTreatment.includes("Стерилизация инструментария"));
 			assert.ok(updatedTreatment.includes(kraftBarcode));
 			assert.ok(updatedTreatment.includes("Целостность упаковки сохранена"));
+			assert.ok(!updatedTreatment.includes("СанПиН 3.3686-21"));
 		});
 
 		it("avoids duplicate sterilization record injection if barcode is already attached", () => {
-			const initialTreatment = "Препарирование зуба 1.1.\n\nСтерилизация СанПиН 3.3686-21: крафт-пакет KB2608270001.";
+			const initialTreatment = "Препарирование зуба 1.1.\n\nСтерилизация инструментария: крафт-пакет KB2608270001.";
 			const parsed = parseAndValidateKraftBarcode("KB2608270001", {
 				referenceDate: "2026-08-27",
 			});
 
 			const result = attachKraftPackageTo043Diary(initialTreatment, parsed);
-			assert.equal(result, initialTreatment); // Unchanged, no duplicates
+			assert.equal(result, initialTreatment);
 		});
 	});
 
-	describe("3. Autoclave Regimes, Indicators & Pre-Sterilization Cleaning (PSO)", () => {
-		it("verifies autoclave regimes (134°C 5 min / 121°C 20 min) and indicator classes 4-5", () => {
+	describe("3. Autoclave Regimes & Indicator Classes 4-5", () => {
+		it("verifies autoclave regimes (134°C 5 min / 121°C 20 min) and packaging lifespans", () => {
 			const singleKraftLifespan = calculateSanpinKraftLifespanDays("paper_self_seal_single");
 			assert.equal(singleKraftLifespan, 50);
 
@@ -137,7 +139,7 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 		});
 	});
 
-	describe("5. Doctor Autonomy (Mandates 8e, 8v): Freedom from Chairside Barcode Pouch Scanning", () => {
+	describe("5. Doctor Autonomy (Mandates 8e, 8v): Absolute Freedom from Chairside Barcode Pouch Scanning", () => {
 		it("confirms doctor chairside workflow does NOT force per-item pouch scanning", () => {
 			// Врач у кресла лечит зубы, а не пикает сканером каждый ватный валик и крафт-пакет
 			// Инструменты признаются стерильными по умолчанию партией из автоклава
@@ -146,9 +148,11 @@ describe("SanPiN 3.3686-21 Sterilization Scanner & 043/u Protocol Linkage", () =
 				autoclaveRegime: "134C_5min",
 				chemicalIndicatorClass: 5,
 				presumptionOfSterility: true,
+				chairsideScanningRequired: false,
 			};
 			assert.equal(batchRecord.presumptionOfSterility, true);
 			assert.equal(batchRecord.isBatchApproved, true);
+			assert.equal(batchRecord.chairsideScanningRequired, false);
 		});
 	});
 });

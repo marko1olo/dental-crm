@@ -133,7 +133,7 @@ export function parseAndValidateKraftBarcode(
 			indicatorId: "vinar_intetest_5",
 			indicatorClassRu: "Химический интегратор 5 класса (пар 134°C)",
 			indicatorPassed: false,
-			sanpinClauseRu: "СанПиН 3.3686-21 п. 3632",
+			sanpinClauseRu: "Стандарт стерилизации инструментария",
 			formattedProtocolRecord043: "",
 			errorMessage: "Штрихкод крафт-пакета не указан (пустая строка).",
 		};
@@ -168,7 +168,7 @@ export function parseAndValidateKraftBarcode(
 
 		let errorMessage: string | undefined;
 		if (isExpired) {
-			errorMessage = `Срок годности стерильного крафт-пакета ИСТЁК ${Math.abs(daysRemaining)} дн. назад (годен до ${expDateIso}). Использование просроченного инструментария категорически запрещено СанПиН 3.3686-21 п. 3632!`;
+			errorMessage = `Срок годности стерильного крафт-пакета ИСТЁК ${Math.abs(daysRemaining)} дн. назад (годен до ${expDateIso}). Использование просроченного инструментария категорически запрещено стандартом стерилизации!`;
 		}
 
 		const formattedRecord = format043SterilizationRecord({
@@ -288,7 +288,7 @@ export function parseAndValidateKraftBarcode(
 		indicatorId: "vinar_intetest_5",
 		indicatorClassRu: "Химический интегратор 5 класса (ИнтеТЕСТ-В-134/5)",
 		indicatorPassed: !isExpired,
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632",
+		sanpinClauseRu: "Стандарт стерилизации инструментария",
 		formattedProtocolRecord043: formattedRecord,
 		errorMessage,
 	};
@@ -315,7 +315,7 @@ export function format043SterilizationRecord(params: {
 		return `[ОШИБКА САНПИН: ПАКЕТ ПРОСРОЧЕН] Стерилизация: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), пакет ${params.barcode} ИСТЁК ${params.expDateIso}. Ответственная медсестра: ${params.operatorName}.`;
 	}
 
-	return `Стерилизация СанПиН 3.3686-21: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), ${indicatorText}, крафт-пакет ${params.barcode}${toolText} годен до ${params.expDateIso}. Ответственная медсестра ЦСО: ${params.operatorName}. Целостность упаковки сохранена.`;
+	return `Стерилизация инструментария: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), ${indicatorText}, крафт-пакет ${params.barcode}${toolText} годен до ${params.expDateIso}. Ответственная медсестра ЦСО: ${params.operatorName}. Целостность упаковки сохранена.`;
 }
 
 /**

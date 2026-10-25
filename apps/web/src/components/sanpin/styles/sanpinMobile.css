@@ -22,20 +22,26 @@
 		justify-content: space-between;
 		gap: 0.5rem;
 		min-width: 0;
+		flex-wrap: nowrap;
 	}
 
 	.sanpin-title-block h1.sanpin-main-title {
-		font-size: 0.925rem !important;
-		flex: 1 1 auto;
+		font-size: 0.95rem !important;
+		flex-shrink: 0;
 		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.sanpin-kpi-summary-chip {
 		flex-shrink: 0;
 		padding: 0 0.5rem;
+		max-width: fit-content;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.sanpin-mobile-only {
+		display: inline !important;
 	}
 
 	.sanpin-kpi-desktop-detail,

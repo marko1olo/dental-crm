@@ -28,6 +28,14 @@
 	box-sizing: border-box;
 }
 
+.sanpin-desktop-only-label {
+	display: inline;
+}
+
+.sanpin-mobile-only {
+	display: none !important;
+}
+
 .sanpin-title-block {
 	display: flex;
 	align-items: center;
