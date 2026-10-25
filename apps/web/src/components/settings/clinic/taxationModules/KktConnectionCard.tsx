@@ -2,15 +2,11 @@
  * apps/web/src/components/settings/clinic/taxationModules/KktConnectionCard.tsx
  *
  * KKT Fiscal Register Hardware Binding Component.
- * Maps physical fiscal cash register to PostgreSQL 18 `cash_boxes` table.
  */
 
 import { Printer } from "lucide-react";
 import type React from "react";
-import {
-	BRANCH_OPTIONS,
-	KKM_MODEL_OPTIONS,
-} from "./TaxationCardTypes";
+import { BRANCH_OPTIONS, KKM_MODEL_OPTIONS } from "./TaxationCardTypes";
 
 interface KktConnectionCardProps {
 	kkmActive: boolean;
@@ -58,9 +54,7 @@ export const KktConnectionCard: React.FC<KktConnectionCardProps> = ({
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				<label className="space-y-1 block">
-					<span className="text-[11px] font-semibold text-[var(--muted)] block">
-						Модель ККТ (54-ФЗ)
-					</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] block">Модель ККТ (54-ФЗ)</span>
 					<select
 						aria-label="Модель ККТ"
 						data-testid="select-kkm-model"
@@ -69,17 +63,13 @@ export const KktConnectionCard: React.FC<KktConnectionCardProps> = ({
 						className="w-full h-9 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
 					>
 						{KKM_MODEL_OPTIONS.map((opt) => (
-							<option key={opt.value} value={opt.value}>
-								{opt.label}
-							</option>
+							<option key={opt.value} value={opt.value}>{opt.label}</option>
 						))}
 					</select>
 				</label>
 
 				<label className="space-y-1 block">
-					<span className="text-[11px] font-semibold text-[var(--muted)] block">
-						Заводской номер ККТ / ФН
-					</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] block">Заводской номер ККТ / ФН</span>
 					<input
 						type="text"
 						aria-label="Заводской номер ККТ"
@@ -92,9 +82,7 @@ export const KktConnectionCard: React.FC<KktConnectionCardProps> = ({
 				</label>
 
 				<label className="space-y-1 block">
-					<span className="text-[11px] font-semibold text-[var(--muted)] block">
-						Подразделение / Кассовый узел
-					</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] block">Подразделение / Кассовый узел</span>
 					<select
 						aria-label="Подразделение кассы"
 						data-testid="select-kkm-branch"
@@ -103,17 +91,13 @@ export const KktConnectionCard: React.FC<KktConnectionCardProps> = ({
 						className="w-full h-9 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
 					>
 						{BRANCH_OPTIONS.map((opt) => (
-							<option key={opt.value} value={opt.value}>
-								{opt.label}
-							</option>
+							<option key={opt.value} value={opt.value}>{opt.label}</option>
 						))}
 					</select>
 				</label>
 
 				<label className="space-y-1 block">
-					<span className="text-[11px] font-semibold text-[var(--muted)] block">
-						Наименование кассы в учёте
-					</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] block">Наименование кассы в учёте</span>
 					<input
 						type="text"
 						aria-label="Наименование кассы"
