@@ -1,0 +1,92 @@
+/* ==========================================================================
+   mobileMessengerChatView.css — Fullscreen Chat Layer & Top Navigation Bar
+   Strict Mandate 8b (<=120 lines), Apple HIG (0px horizontal drift).
+   ========================================================================== */
+
+.mobile-chat-fullscreen {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100dvh;
+	background: var(--paper);
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	overflow: hidden;
+}
+
+.mobile-chat-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: max(10px, env(safe-area-inset-top)) 12px 10px 12px;
+	background: color-mix(in srgb, var(--paper) 94%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-bottom: 1px solid var(--line);
+	min-height: 56px;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.mobile-chat-back-btn {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	background: transparent;
+	border: none;
+	color: var(--primary);
+	cursor: pointer;
+	padding: 0;
+}
+
+.mobile-chat-patient-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex: 1;
+	min-width: 0;
+	cursor: pointer;
+}
+
+.mobile-chat-patient-meta {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.mobile-chat-patient-name {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.25;
+}
+
+.mobile-chat-patient-sub {
+	font-size: 11px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	line-height: 1.2;
+}
+
+.mobile-chat-channel-indicator {
+	font-weight: 600;
+	text-transform: uppercase;
+	font-size: 10px;
+	letter-spacing: 0.03em;
+}
+
+.mobile-chat-top-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}

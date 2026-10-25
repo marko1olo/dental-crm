@@ -12,6 +12,7 @@ export interface FullscreenChatViewProps {
 	isCurrentMobileIntercepted: boolean;
 	onBack: () => void;
 	onTakeover: () => void;
+	onQuickBook?: (() => void) | undefined;
 	chatMessages: MobileChatMessageItem[];
 	messagesEndRef: React.RefObject<HTMLDivElement | null>;
 	quickTemplates: QuickTemplateItem[];
@@ -33,6 +34,7 @@ export const FullscreenChatView: React.FC<FullscreenChatViewProps> = ({
 	isCurrentMobileIntercepted,
 	onBack,
 	onTakeover,
+	onQuickBook,
 	chatMessages,
 	messagesEndRef,
 	quickTemplates,
@@ -58,6 +60,7 @@ export const FullscreenChatView: React.FC<FullscreenChatViewProps> = ({
 				isCurrentMobileIntercepted={isCurrentMobileIntercepted}
 				onBack={onBack}
 				onTakeover={onTakeover}
+				onQuickBook={onQuickBook}
 			/>
 
 			<MessageBubbleList

@@ -1,23 +1,17 @@
 /**
- * OmnichannelChatView.tsx — Unified Omnichannel Messaging Center (CTI & Messaging Inquisitor)
- * 
- * Mandate 8b: Decomposed modular architecture, files strictly <= 120 lines.
- * Mandate 8e: Autonomous staff & doctor workflows, buttons never disabled.
- * Mandate 8n: Solo doctor & small clinic consolidated communication.
- * Apple HIG: Grouped List cards, 44x44px touch targets, zero horizontal drift, safe area insets.
+ * OmnichannelChatView.tsx — Unified Omnichannel Messaging Center (Mandates 8b, 8e, 8n)
+ * 1-click booking, sovereign SSOT communication, Apple HIG ergonomics.
  */
 
 import React from "react";
+import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
+import { executeBookAppointmentFromChat } from "../communications/bookFromChatAutonomy";
 import { showToast } from "../GlobalToast";
 import type { OmnichannelChannel } from "./types";
 import {
-	OmnichannelActiveChatHeader,
-	OmnichannelChatHeader,
-	OmnichannelConversationList,
-	OmnichannelInputBar,
-	OmnichannelMessageStream,
-	OmnichannelQuickTemplatesBar,
+	OmnichannelActiveChatHeader, OmnichannelChatHeader, OmnichannelConversationList,
+	OmnichannelInputBar, OmnichannelMessageStream, OmnichannelQuickTemplatesBar,
 	useOmnichannelChatState,
 } from "./modules";
 
@@ -29,10 +23,7 @@ export interface OmnichannelChatViewProps {
 }
 
 export function OmnichannelChatView({
-	initialChannel = "all",
-	onOpenPatientCard,
-	onQuickBookAppointment,
-	className = "",
+	initialChannel = "all", onOpenPatientCard, onQuickBookAppointment, className = "",
 }: OmnichannelChatViewProps): React.JSX.Element {
 	const state = useOmnichannelChatState(initialChannel);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -43,6 +34,7 @@ export function OmnichannelChatView({
 		if (onOpenPatientCard && state.activeConv.patientId) {
 			onOpenPatientCard(state.activeConv.patientId);
 		} else {
+			useAppStore.getState().setCurrentView("patients");
 			showToast(`Карта пациента: ${state.activeConv.patientName}`, "info");
 		}
 	};
@@ -52,7 +44,10 @@ export function OmnichannelChatView({
 		if (onQuickBookAppointment && state.activeConv.patientId) {
 			onQuickBookAppointment(state.activeConv.patientId, state.activeConv.patientName);
 		} else {
-			showToast(`Запись на приём: ${state.activeConv.patientName}`, "info");
+			executeBookAppointmentFromChat({
+				id: state.activeConv.patientId, fullName: state.activeConv.patientName,
+				phone: state.activeConv.patientPhone,
+			});
 		}
 	};
 
@@ -62,22 +57,16 @@ export function OmnichannelChatView({
 			data-testid="omnichannel-chat-root"
 		>
 			<OmnichannelChatHeader
-				selectedChannel={state.selectedChannel}
-				onSelectChannel={state.setSelectedChannel}
+				selectedChannel={state.selectedChannel} onSelectChannel={state.setSelectedChannel}
 				mobileViewMode={state.mobileViewMode}
 			/>
-
 			<div className="flex-1 flex overflow-hidden relative">
 				<OmnichannelConversationList
-					conversations={state.filteredConversations}
-					activeConversationId={state.activeConv?.id || null}
-					searchQuery={state.searchQuery}
-					onSearchChange={state.setSearchQuery}
-					onSelectConversation={state.handleSelectConversation}
-					mobileViewMode={state.mobileViewMode}
+					conversations={state.filteredConversations} activeConversationId={state.activeConv?.id || null}
+					searchQuery={state.searchQuery} onSearchChange={state.setSearchQuery}
+					onSelectConversation={state.handleSelectConversation} mobileViewMode={state.mobileViewMode}
 					isLoading={state.isConversationsLoading}
 				/>
-
 				<main
 					aria-label="Окно активного диалога и сообщений"
 					className={`flex-1 flex flex-col bg-[var(--paper)] overflow-hidden ${
@@ -88,21 +77,15 @@ export function OmnichannelChatView({
 					{state.activeConv ? (
 						<>
 							<OmnichannelActiveChatHeader
-								conversation={state.activeConv}
-								onBackToList={() => state.setMobileViewMode("list")}
-								onOpenCard={handleOpenCard}
-								onQuickBook={handleBook}
+								conversation={state.activeConv} onBackToList={() => state.setMobileViewMode("list")}
+								onOpenCard={handleOpenCard} onQuickBook={handleBook}
 							/>
-
 							<OmnichannelMessageStream messages={state.activeMessages} isLoading={state.isThreadLoading} />
 							<OmnichannelQuickTemplatesBar onApplyTemplate={state.handleApplyTemplate} />
 							<OmnichannelInputBar
-								draftText={state.draftText}
-								onDraftChange={state.setDraftText}
-								onSend={state.handleSend}
-								channelName={state.activeConv.channel}
-								inputRef={state.inputRef}
-								isSending={state.isSending}
+								draftText={state.draftText} onDraftChange={state.setDraftText}
+								onSend={state.handleSend} channelName={state.activeConv.channel}
+								inputRef={state.inputRef} isSending={state.isSending}
 							/>
 						</>
 					) : (

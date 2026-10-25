@@ -53,6 +53,7 @@ export const MobileMessengerView: React.FC<MobileMessengerViewProps> = ({ props,
 					activePatient={logic.activePatient} activeChannel={logic.activeChannel}
 					isCurrentMobileIntercepted={logic.isCurrentMobileIntercepted}
 					onBack={() => logic.setSelectedPatientId(null)} onTakeover={logic.handleMobileTakeoverChat}
+					onQuickBook={logic.handleQuickBook}
 					chatMessages={logic.chatMessages} messagesEndRef={logic.messagesEndRef}
 					quickTemplates={logic.quickTemplates} onApplyTemplate={logic.handleApplyTemplate}
 					inputText={logic.inputText} setInputText={logic.setInputText}

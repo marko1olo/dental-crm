@@ -1,0 +1,49 @@
+/* ==========================================================================
+   mobileMessengerAvatars.css — Avatars & Channel Badges
+   Strict Mandate 8b (<=120 lines).
+   ========================================================================== */
+
+.mobile-avatar-wrap {
+	position: relative;
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 16px;
+	color: var(--paper);
+	background: linear-gradient(135deg, var(--primary), var(--primary-hover, var(--primary)));
+	box-shadow: 0 2px 5px var(--line);
+}
+
+.mobile-avatar-channel-badge {
+	position: absolute;
+	bottom: -2px;
+	right: -2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px solid var(--paper);
+	font-size: 9px;
+}
+
+.channel-badge-whatsapp {
+	background: #16a34a;
+	color: #ffffff;
+}
+
+.channel-badge-telegram {
+	background: #0284c7;
+	color: #ffffff;
+}
+
+.channel-badge-sms {
+	background: #2563eb;
+	color: #ffffff;
+}

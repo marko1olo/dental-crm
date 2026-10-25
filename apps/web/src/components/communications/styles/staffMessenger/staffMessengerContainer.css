@@ -1,0 +1,92 @@
+/* ==========================================================================
+   staffMessengerContainer.css — In-Clinic Staff Messenger Root & Channels
+   Strict Mandate 8b (<=120 lines), Mandate 8c (Zero Blinding Spots).
+   ========================================================================== */
+
+.staff-messenger-container {
+	display: flex;
+	height: 100%;
+	min-height: 580px;
+	flex: 1 1 0%;
+	background-color: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+:root[data-theme="dark"] .staff-messenger-container,
+.dark .staff-messenger-container {
+	background-color: var(--paper-card, var(--paper));
+	border-color: var(--line);
+	box-shadow: 0 16px 40px color-mix(in srgb, var(--ink) 50%, transparent);
+}
+
+/* ─── Sidebar Channel Buttons ─── */
+.staff-chat-channel-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 9px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	text-align: left;
+	cursor: pointer;
+	min-height: 44px;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	background-color: transparent;
+	color: var(--ink);
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn,
+.dark .staff-chat-channel-btn {
+	color: var(--ink);
+}
+
+.staff-chat-channel-btn:hover:not(.active) {
+	background-color: var(--primary-soft, color-mix(in srgb, var(--primary) 8%, transparent));
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn:hover:not(.active),
+.dark .staff-chat-channel-btn:hover:not(.active) {
+	background-color: var(--primary-soft, color-mix(in srgb, var(--primary) 12%, transparent));
+}
+
+.staff-chat-channel-btn.active {
+	background-color: var(--primary) !important;
+	color: var(--paper) !important;
+	font-weight: 700 !important;
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.staff-chat-channel-btn.active * {
+	color: var(--paper) !important;
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn.active,
+.dark .staff-chat-channel-btn.active {
+	background-color: var(--primary) !important;
+	color: var(--paper) !important;
+	box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+/* ─── Unread Badge ─── */
+.staff-chat-badge {
+	padding: 2px 6px;
+	border-radius: 9999px;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.staff-chat-channel-btn.active .staff-chat-badge {
+	background-color: var(--paper) !important;
+	color: var(--primary) !important;
+}
+
+.staff-chat-channel-btn:not(.active) .staff-chat-badge {
+	background-color: var(--primary) !important;
+	color: var(--paper) !important;
+}

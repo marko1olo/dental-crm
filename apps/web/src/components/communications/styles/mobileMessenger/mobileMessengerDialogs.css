@@ -1,0 +1,100 @@
+/* ==========================================================================
+   mobileMessengerDialogs.css — Inset Grouped Dialog List & Patient Cards
+   Strict Mandate 8b (<=120 lines), Apple HIG (Grouped List Cards).
+   ========================================================================== */
+
+.mobile-dialogs-container {
+	padding: 0 16px 24px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.mobile-dialogs-card {
+	background: var(--paper-card, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px var(--line-subtle, transparent);
+}
+
+.mobile-dialog-row {
+	display: flex;
+	align-items: center;
+	padding: 12px 14px;
+	gap: 12px;
+	min-height: 64px;
+	cursor: pointer;
+	border-bottom: 1px solid var(--line-subtle, var(--line));
+	transition: background-color 0.15s ease;
+}
+
+.mobile-dialog-row:last-child {
+	border-bottom: none;
+}
+
+.mobile-dialog-row:active {
+	background: var(--paper-soft);
+}
+
+.mobile-dialog-content {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.mobile-dialog-top-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.mobile-dialog-patient-name {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.mobile-dialog-time {
+	font-size: 11px;
+	font-family: monospace;
+	color: var(--muted);
+	flex-shrink: 0;
+}
+
+.mobile-dialog-bottom-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.mobile-dialog-preview {
+	font-size: 13px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
+}
+
+.mobile-dialog-unread-badge {
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: var(--primary);
+	color: var(--paper);
+	font-size: 11px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}

@@ -1,0 +1,36 @@
+/* ==========================================================================
+   staffMessengerIntercom.css — 1-Click Chairside Intercom Presets Bar
+   Strict Mandate 8b (<=120 lines), Mandate 8e (1-click staff autonomy).
+   ========================================================================== */
+
+.chairside-intercom-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	white-space: nowrap;
+	padding: 8px 16px;
+	background-color: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+}
+
+:root[data-theme="dark"] .chairside-intercom-bar,
+.dark .chairside-intercom-bar {
+	background-color: var(--paper-card, var(--paper));
+	border-bottom-color: var(--line);
+}
+
+.chairside-intercom-preset-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 38px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+	border: 1px solid transparent;
+}

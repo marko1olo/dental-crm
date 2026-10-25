@@ -1,0 +1,53 @@
+/* ==========================================================================
+   staffMessengerBubbles.css — Staff Message Bubbles & Urgency Levels
+   Strict Mandate 8b (<=120 lines), Mandate 8c (Semantic tokens).
+   ========================================================================== */
+
+.staff-message-bubble {
+	padding: 12px;
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	background-color: var(--paper);
+	box-shadow: 0 1px 3px var(--line);
+	transition: all 0.15s ease;
+}
+
+:root[data-theme="dark"] .staff-message-bubble,
+.dark .staff-message-bubble {
+	border-color: var(--line);
+	background-color: var(--paper-card, var(--paper));
+	box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.staff-message-bubble.bubble-ping {
+	background-color: var(--primary-soft, color-mix(in srgb, var(--primary) 6%, transparent));
+	border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-ping,
+.dark .staff-message-bubble.bubble-ping {
+	background-color: var(--primary-soft, color-mix(in srgb, var(--primary) 10%, transparent));
+	border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.staff-message-bubble.bubble-urgent {
+	background-color: color-mix(in srgb, #f59e0b 8%, transparent);
+	border-color: color-mix(in srgb, #f59e0b 40%, transparent);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-urgent,
+.dark .staff-message-bubble.bubble-urgent {
+	background-color: color-mix(in srgb, #f59e0b 12%, transparent);
+	border-color: color-mix(in srgb, #f59e0b 45%, transparent);
+}
+
+.staff-message-bubble.bubble-critical {
+	background-color: color-mix(in srgb, #ef4444 10%, transparent);
+	border-color: color-mix(in srgb, #ef4444 50%, transparent);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-critical,
+.dark .staff-message-bubble.bubble-critical {
+	background-color: color-mix(in srgb, #ef4444 16%, transparent);
+	border-color: color-mix(in srgb, #ef4444 55%, transparent);
+}

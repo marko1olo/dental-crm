@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowLeft, Phone, Shield, UserCheck } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Phone, Shield, UserCheck } from "lucide-react";
 import { formatPhoneDisplay, getAvatarColor, formatPatientInitials } from "../../../store/telephonyStore";
 import type { ActivePatient, ChatChannel } from "./types";
 
@@ -9,6 +9,7 @@ export interface ChatTopBarProps {
 	isCurrentMobileIntercepted: boolean;
 	onBack: () => void;
 	onTakeover: () => void;
+	onQuickBook?: (() => void) | undefined;
 }
 
 export const ChatTopBar: React.FC<ChatTopBarProps> = ({
@@ -17,6 +18,7 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
 	isCurrentMobileIntercepted,
 	onBack,
 	onTakeover,
+	onQuickBook,
 }) => {
 	return (
 		<div className="mobile-chat-topbar">
@@ -66,6 +68,20 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
 			</div>
 
 			<div className="mobile-chat-top-actions">
+				{/* 1-Click Quick Booking from Chat per Mandate 8e & 8n */}
+				{onQuickBook && (
+					<button
+						type="button"
+						className="mobile-touch-btn text-teal-600 dark:text-teal-400"
+						onClick={onQuickBook}
+						aria-label="Записать на приём"
+						title="Записать на приём в 1 клик"
+						data-testid="btn-mobile-chat-quick-book"
+					>
+						<CalendarCheck size={18} />
+					</button>
+				)}
+
 				{/* Кнопка перехвата диалога у Telegram/VK бота */}
 				<button
 					type="button"

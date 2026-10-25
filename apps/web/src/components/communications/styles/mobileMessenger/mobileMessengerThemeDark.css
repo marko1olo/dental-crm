@@ -1,0 +1,48 @@
+/* ==========================================================================
+   mobileMessengerThemeDark.css — WCAG AAA Dark Mode Semantics
+   Strict Mandate 8b (<=120 lines), Mandate 8c (Zero Blinding Spots).
+   ========================================================================== */
+
+[data-theme="dark"] .mobile-messenger-root,
+[data-theme="dark"] .mobile-chat-fullscreen,
+.dark .mobile-messenger-root,
+.dark .mobile-chat-fullscreen {
+	background: var(--paper);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .mobile-dialogs-card,
+.dark .mobile-dialogs-card {
+	background: var(--paper-card, var(--paper));
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-dialog-row:active,
+.dark .mobile-dialog-row:active {
+	background: var(--paper-soft);
+}
+
+[data-theme="dark"] .mobile-chat-textarea,
+.dark .mobile-chat-textarea {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .mobile-segment-tab.active,
+.dark .mobile-segment-tab.active {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .mobile-chat-topbar,
+.dark .mobile-chat-topbar {
+	background: color-mix(in srgb, var(--paper) 92%, transparent);
+	border-bottom-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-chat-input-bar,
+.dark .mobile-chat-input-bar {
+	background: color-mix(in srgb, var(--paper) 92%, transparent);
+	border-top-color: var(--line);
+}

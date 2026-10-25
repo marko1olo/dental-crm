@@ -1,0 +1,81 @@
+/* ==========================================================================
+   mobileMessengerInputBar.css — Bottom Input Bar & Send Button
+   Strict Mandate 8b (<=120 lines), Apple HIG (Natural Thumb Zone).
+   ========================================================================== */
+
+.mobile-chat-input-bar {
+	position: sticky;
+	bottom: 0;
+	z-index: 30;
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding-left: 12px;
+	padding-right: 12px;
+	padding-top: 10px;
+	padding-bottom: max(12px, env(safe-area-inset-bottom));
+	background: color-mix(in srgb, var(--paper) 94%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.mobile-chat-textarea {
+	flex: 1;
+	height: 44px;
+	min-height: 44px;
+	max-height: 120px;
+	padding: 10px 14px;
+	border-radius: 20px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 14px;
+	line-height: 20px;
+	resize: none;
+	outline: none;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.mobile-chat-textarea:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px var(--primary-soft, color-mix(in srgb, var(--primary) 20%, transparent));
+}
+
+.mobile-chat-textarea::placeholder {
+	color: var(--muted);
+	opacity: 0.8;
+	line-height: 20px;
+}
+
+.mobile-send-btn {
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: var(--primary);
+	color: var(--paper);
+	cursor: pointer;
+	transition: background-color 0.15s ease, transform 0.1s ease;
+	padding: 0;
+	flex-shrink: 0;
+	box-shadow: 0 2px 6px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.mobile-send-btn:active {
+	transform: scale(0.94);
+	background: var(--primary-hover, var(--primary));
+}
+
+.mobile-send-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}

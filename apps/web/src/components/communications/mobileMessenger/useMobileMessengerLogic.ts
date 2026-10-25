@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { buildQuickTemplates } from "../../chat/whatsAppChatTemplates";
+import { executeBookAppointmentFromChat } from "../bookFromChatAutonomy";
 import type {
 	ActivePatient, ActiveSection, MobileCommunicationsMessengerProps, MobilePatientDialogSummary,
 } from "./types";
@@ -50,7 +51,6 @@ export function useMobileMessengerLogic({
 	);
 	const thread = useMobileChatThread(selectedPatientId, sender.activeChannel, dashboard);
 
-	// Connect chatMessages setter to sender
 	sender.handleSendMessage = useMobileMessageSender(
 		selectedPatientId, thread.setChatMessages, communicationChannelLabels, quickTemplates,
 	).handleSendMessage;
@@ -59,6 +59,10 @@ export function useMobileMessengerLogic({
 		setSelectedPatientId(dialog.patientId);
 		sender.setActiveChannel(dialog.channel === "max" ? "whatsapp" : dialog.channel);
 	}, [sender]);
+
+	const handleQuickBook = useCallback(() => {
+		if (activePatient) executeBookAppointmentFromChat(activePatient, dashboard);
+	}, [activePatient, dashboard]);
 
 	return {
 		activeSection, setActiveSection,
@@ -78,7 +82,7 @@ export function useMobileMessengerLogic({
 		handleSendMessage: sender.handleSendMessage, handleToggleChannel: sender.handleToggleChannel,
 		handleAttachFile: sender.handleAttachFile, handleRemoveAttachedFile: sender.handleRemoveAttachedFile,
 		handleApplyTemplate: sender.handleApplyTemplate, textareaRef: sender.textareaRef,
-		activePatient, quickTemplates, handleSelectDialog,
+		activePatient, quickTemplates, handleSelectDialog, handleQuickBook,
 		communicationTasks: dashboard?.communicationTasks ?? [],
 		communicationEvents: dashboard?.communicationEvents ?? [],
 	};
