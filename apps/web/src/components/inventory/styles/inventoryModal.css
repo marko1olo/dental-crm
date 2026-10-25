@@ -1,0 +1,134 @@
+/**
+ * ============================================================================
+ * WAREHOUSE INVENTORY MODAL OVERLAY, HEADER & KPI CARDS
+ * ============================================================================
+ */
+
+.warehouse-inventory-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	background: rgba(15, 23, 42, 0.7);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.warehouse-inventory-modal {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 12px;
+	width: 100%;
+	max-width: 1380px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+}
+
+/* 1. Header */
+.warehouse-inventory-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--border, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.warehouse-inventory-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.warehouse-inventory-icon-box {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 8px;
+	background: #3b82f6;
+	color: #ffffff;
+	flex-shrink: 0;
+}
+
+.warehouse-inventory-title {
+	font-size: 1.15rem;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.warehouse-inventory-subtitle {
+	font-size: 0.825rem;
+	color: var(--muted, #64748b);
+	margin: 2px 0 0 0;
+}
+
+.warehouse-inventory-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* 2. Top Summary KPI Cards */
+.warehouse-inventory-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 10px;
+	padding: 12px 20px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.warehouse-kpi-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 8px;
+	padding: 8px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.warehouse-kpi-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--muted, #64748b);
+}
+
+.warehouse-kpi-value {
+	font-size: 1.15rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--ink, #0f172a);
+}
+
+.warehouse-kpi-value.surplus {
+	color: #059669;
+}
+
+.warehouse-kpi-value.shortage {
+	color: #dc2626;
+}
+
+.warehouse-kpi-sub {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}

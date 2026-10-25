@@ -1,0 +1,101 @@
+/**
+ * ============================================================================
+ * WAREHOUSE INVENTORY TABLE & STEPPER
+ * ============================================================================
+ */
+
+.warehouse-inventory-table-container {
+	flex: 1;
+	overflow: auto;
+	min-height: 260px;
+	background: var(--paper, #ffffff);
+}
+
+.warehouse-inventory-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.warehouse-inventory-table th {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	background: var(--paper-strong, #f8fafc);
+	color: var(--muted, #475569);
+	font-weight: 600;
+	padding: 8px 10px;
+	border-bottom: 2px solid var(--border, #cbd5e1);
+	white-space: nowrap;
+	user-select: none;
+}
+
+.warehouse-inventory-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--border, #f1f5f9);
+	vertical-align: middle;
+}
+
+.warehouse-inventory-table tr:hover td {
+	background: rgba(59, 130, 246, 0.04);
+}
+
+.warehouse-inventory-table tr.row-expired td {
+	background: rgba(239, 68, 68, 0.06);
+}
+
+.warehouse-inventory-table tr.row-discrepancy td {
+	background: rgba(245, 158, 11, 0.04);
+}
+
+/* Stepper & Quantity Input */
+.warehouse-qty-stepper {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #cbd5e1);
+	border-radius: 8px;
+	padding: 2px;
+	width: fit-content;
+}
+
+.warehouse-qty-stepper-btn {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 6px;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--ink, #0f172a);
+	font-size: 1.15rem;
+	font-weight: bold;
+	cursor: pointer;
+	transition: background 0.1s, transform 0.05s;
+	user-select: none;
+}
+
+.warehouse-qty-stepper-btn:active {
+	transform: scale(0.96);
+}
+
+.warehouse-qty-stepper-btn:hover {
+	background: var(--paper-strong, #f1f5f9);
+}
+
+.warehouse-qty-input {
+	width: 48px;
+	height: 44px;
+	border: none;
+	background: transparent;
+	text-align: center;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	outline: none;
+}

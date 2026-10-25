@@ -1,0 +1,43 @@
+/* ─── MDLP Table & Summary Bar ────────────────────────────────────────── */
+
+.mdlp-table-wrap {
+	overflow-x: auto;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.mdlp-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+}
+
+.mdlp-table th {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 600;
+	text-align: left;
+	padding: 0.65rem 0.85rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.mdlp-table td {
+	padding: 0.65rem 0.85rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.mdlp-table tr:hover td {
+	background: rgba(0, 0, 0, 0.015);
+}
+
+.mdlp-summary-bar {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 1rem;
+	padding: 1rem;
+	border-radius: 10px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}

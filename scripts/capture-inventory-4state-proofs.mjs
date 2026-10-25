@@ -3,7 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOFS_DIR = path.join(process.cwd(), "docs/proofs/inventory");
-const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\2fd3d700-f5fd-4c76-8d24-3f9395b98db1";
+const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\d5390e57-3220-40f6-a5be-e5bfa009f88f";
 
 if (!existsSync(PROOFS_DIR)) mkdirSync(PROOFS_DIR, { recursive: true });
 if (!existsSync(CONV_DIR)) mkdirSync(CONV_DIR, { recursive: true });

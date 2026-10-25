@@ -1,0 +1,72 @@
+/**
+ * ============================================================================
+ * WAREHOUSE INVENTORY SEARCH & TABS TOOLBAR
+ * ============================================================================
+ */
+
+.warehouse-inventory-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 20px;
+	gap: 12px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--border, #e2e8f0);
+	flex-wrap: wrap;
+}
+
+.warehouse-inventory-search-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 6px;
+	padding: 4px 10px;
+	min-width: 260px;
+	height: 34px;
+}
+
+.warehouse-inventory-search-input {
+	background: transparent;
+	border: none;
+	outline: none;
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	width: 100%;
+}
+
+.warehouse-inventory-tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--paper-strong, #f1f5f9);
+	padding: 3px;
+	border-radius: 6px;
+}
+
+.warehouse-inventory-tab-btn {
+	background: transparent;
+	border: none;
+	color: var(--muted, #64748b);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 5px 12px;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: 28px;
+}
+
+.warehouse-inventory-tab-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+.warehouse-inventory-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}

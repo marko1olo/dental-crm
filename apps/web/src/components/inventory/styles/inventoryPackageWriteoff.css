@@ -1,0 +1,44 @@
+/**
+ * ============================================================================
+ * WAREHOUSE INVENTORY PACKAGE WRITEOFF & NURSE CARPULE FILTER BAR
+ * ============================================================================
+ */
+
+.warehouse-package-writeoff-bar {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.nurse-carpule-filter-toolbar {
+	height: 34px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.nurse-carpule-filter-toolbar::-webkit-scrollbar {
+	display: none;
+}
+
+.nurse-carpule-filter-chip {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.nurse-carpule-filter-chip:hover {
+	border-color: #0d9488;
+}

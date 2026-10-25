@@ -1,0 +1,70 @@
+/* MaterialBomsSettingsPanel Service Cards & Prime Cost */
+
+.material-boms-procedures-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.material-boms-service-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	overflow: hidden;
+	transition: border-color 0.15s ease;
+}
+
+.material-boms-service-card:hover {
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.material-boms-service-header {
+	padding: 16px 20px;
+	background: var(--paper-strong, rgba(0, 0, 0, 0.02));
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+}
+
+.material-boms-service-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.material-boms-service-code {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	color: var(--teal-dark, #0f766e);
+	font-size: 13px;
+	font-weight: 700;
+	font-family: ui-monospace, monospace;
+}
+
+.material-boms-service-title {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.material-boms-service-cost {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.material-boms-prime-cost {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.material-boms-prime-cost strong {
+	color: var(--ink);
+	font-weight: 700;
+}

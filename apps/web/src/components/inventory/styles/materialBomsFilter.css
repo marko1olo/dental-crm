@@ -1,0 +1,65 @@
+/* MaterialBomsSettingsPanel Search & Filters */
+
+.material-boms-filter-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+
+.material-boms-search-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 260px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 8px 14px;
+}
+
+.material-boms-search-input {
+	flex: 1;
+	border: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+}
+
+.material-boms-category-tabs {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.material-boms-cat-btn {
+	min-height: 38px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.material-boms-cat-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.material-boms-cat-btn.active {
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	color: var(--teal-dark, #0f766e);
+	border-color: var(--teal, #14b8a6);
+	font-weight: 600;
+}

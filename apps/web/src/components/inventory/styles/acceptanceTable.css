@@ -1,0 +1,101 @@
+/**
+ * ============================================================================
+ * ACCEPTANCE WAYBILLS TABLE & FEFO BADGES
+ * ============================================================================
+ */
+
+.acceptance-table-container {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 240px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .acceptance-table-container {
+	background: var(--paper, #111827);
+}
+
+.acceptance-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	text-align: left;
+}
+
+.acceptance-table th {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	height: 34px;
+	padding: 0 8px;
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .acceptance-table th {
+	background: var(--paper-soft, #1f2937);
+	color: var(--muted, #94a3b8);
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+.acceptance-table td {
+	height: 40px;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .acceptance-table td {
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-table tr:hover td {
+	background: var(--paper-soft, rgba(0, 0, 0, 0.015));
+}
+
+[data-theme="dark"] .acceptance-table tr:hover td {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.02));
+}
+
+.acceptance-table-input {
+	height: 28px;
+	padding: 0 6px;
+	font-size: 12px;
+	border-radius: 4px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+	outline: none;
+	width: 100%;
+}
+
+[data-theme="dark"] .acceptance-table-input {
+	background: var(--paper-strong, #1f2937);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-table-input:focus {
+	border-color: var(--teal, #0d9488);
+}
+
+/* FEFO Badges */
+.fefo-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 7px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	white-space: nowrap;
+}

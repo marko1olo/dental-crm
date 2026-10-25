@@ -1,0 +1,106 @@
+/**
+ * ============================================================================
+ * ACCEPTANCE WAYBILLS META BAR & PRESETS TOOLBAR
+ * ============================================================================
+ */
+
+.acceptance-meta-bar {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+	padding: 12px 20px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.015));
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+}
+
+[data-theme="dark"] .acceptance-meta-bar {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.02));
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+}
+
+.acceptance-meta-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.acceptance-meta-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.acceptance-input,
+.acceptance-select {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	box-sizing: border-box;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .acceptance-input,
+[data-theme="dark"] .acceptance-select {
+	background: var(--paper-strong, #1f2937);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-input:focus,
+.acceptance-select:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+/* Presets Toolbar (Canonical Dental Materials) */
+.acceptance-presets-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 20px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+	background: var(--paper, #ffffff);
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .acceptance-presets-toolbar {
+	background: var(--paper, #111827);
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+}
+
+.acceptance-preset-chip {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	color: var(--ink, #0f172a);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	transition: background 0.15s ease, border-color 0.15s ease;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .acceptance-preset-chip {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.05));
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-preset-chip:hover {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}

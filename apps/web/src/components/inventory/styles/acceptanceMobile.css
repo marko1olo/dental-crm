@@ -1,0 +1,60 @@
+/**
+ * ============================================================================
+ * MOBILE APPLE HIG & BOTTOM SHEET RESPONSIVENESS (390x844)
+ * ============================================================================
+ */
+
+@media (max-width: 640px) {
+	.acceptance-modal-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.acceptance-modal-window {
+		width: 100%;
+		max-height: 92vh;
+		border-radius: 20px 20px 0 0;
+		border-bottom: none;
+	}
+
+	.acceptance-modal-header {
+		padding: 10px 14px;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.acceptance-modal-title {
+		font-size: 14px;
+	}
+
+	.acceptance-meta-bar {
+		grid-template-columns: 1fr;
+		padding: 10px 14px;
+		gap: 8px;
+	}
+
+	.acceptance-templates-bar {
+		padding: 8px 14px;
+	}
+
+	.acceptance-modal-footer {
+		padding: 12px 14px;
+		padding-bottom: max(14px, env(safe-area-inset-bottom));
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+
+	.acceptance-summary-block {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 6px;
+		text-align: center;
+	}
+
+	.acceptance-btn-primary {
+		width: 100%;
+		height: 44px;
+		justify-content: center;
+	}
+}

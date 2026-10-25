@@ -1,0 +1,72 @@
+/**
+ * ============================================================================
+ * CLINICAL WRITEOFF TABLE, SUMMARY BAR & PRINT
+ * ============================================================================
+ */
+
+.cw-table-wrap {
+	overflow-x: auto;
+	width: 100%;
+}
+
+.cw-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.cw-table th {
+	padding: 10px 14px;
+	background: var(--paper-strong, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.cw-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.cw-table tr:last-child td {
+	border-bottom: none;
+}
+
+/* Сводная плашка сумм */
+.cw-summary-bar {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 16px 20px;
+	border-radius: 14px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
+	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+[data-theme="dark"] .cw-summary-bar {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+@media (max-width: 800px) {
+	.cw-summary-bar {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* Стили печати для документов */
+@media print {
+	.cw-modal-overlay,
+	.cw-modal-header,
+	.cw-modal-footer,
+	.no-print {
+		display: none !important;
+	}
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}

@@ -1,0 +1,85 @@
+/* ─── Scanner Input Card, Drug Recognition Card & Badges ─────────────── */
+
+.mdlp-scanner-card {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.mdlp-input-group {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.mdlp-scanner-input {
+	flex: 1;
+	height: 2.75rem;
+	padding: 0 0.85rem;
+	border-radius: 8px;
+	border: 2px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+}
+
+.mdlp-scanner-input:focus {
+	outline: none;
+	border-color: #0d9488;
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.mdlp-drug-card {
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	border-left: 4px solid #0d9488;
+	background: rgba(13, 148, 136, 0.05);
+	border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
+.mdlp-drug-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.mdlp-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.6rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.mdlp-badge-teal {
+	background: #ccfbf1;
+	color: #0f766e;
+}
+
+.mdlp-badge-amber {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.mdlp-badge-red {
+	background: #fee2e2;
+	color: #b91c1c;
+}
+
+.mdlp-badge-blue {
+	background: #e0f2fe;
+	color: #0369a1;
+}

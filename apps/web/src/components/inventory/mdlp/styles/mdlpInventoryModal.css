@@ -1,0 +1,61 @@
+/* ─── MDLP Modal Overlay, Container, Header & Footer ───────────────────── */
+
+.mdlp-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+
+.mdlp-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	width: 100%;
+	max-width: 1100px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+}
+
+.mdlp-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.1rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.mdlp-modal-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.mdlp-modal-body {
+	padding: 1.25rem 1.5rem;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.mdlp-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}

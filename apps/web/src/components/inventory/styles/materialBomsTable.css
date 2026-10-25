@@ -1,0 +1,84 @@
+/* MaterialBomsSettingsPanel Table, Th, Td & Stock Badges */
+
+.material-boms-table-wrap {
+	width: 100%;
+	overflow-x: auto;
+}
+
+.material-boms-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	text-align: left;
+}
+
+.material-boms-table th {
+	padding: 10px 18px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.02));
+	color: var(--muted);
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	border-bottom: 1px solid var(--line);
+}
+
+.material-boms-table td {
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: middle;
+}
+
+.material-boms-table tr:last-child td {
+	border-bottom: none;
+}
+
+.material-boms-stock-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.material-boms-stock-ok {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg, #059669);
+}
+
+.material-boms-stock-warn {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	color: var(--warn-fg, #d97706);
+}
+
+.material-boms-stock-crit {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	color: var(--bad-fg, #dc2626);
+}
+
+.material-boms-icon-btn {
+	min-width: 38px;
+	min-height: 38px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.material-boms-icon-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.material-boms-icon-btn-danger:hover {
+	color: var(--bad-fg, #dc2626);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	border-color: var(--bad-fg, rgba(239, 68, 68, 0.3));
+}

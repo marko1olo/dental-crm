@@ -1,0 +1,89 @@
+/**
+ * ============================================================================
+ * WAREHOUSE TRANSFER TABLE, SUMMARY BAR & PRINT
+ * ============================================================================
+ */
+
+.wh-table-container {
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	background: var(--paper, #ffffff);
+}
+
+.wh-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.wh-table th {
+	padding: 10px 14px;
+	background: var(--paper-strong, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.wh-table td {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.wh-table tr:last-child td {
+	border-bottom: none;
+}
+
+/* Сводная плашка сумм */
+.wh-summary-bar {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 16px;
+	border-radius: 14px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
+	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+@media (max-width: 768px) {
+	.wh-summary-bar {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+[data-theme="dark"] .wh-summary-bar {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+[data-theme="dark"] .wh-table-container {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .wh-table th {
+	background: var(--paper-strong);
+	color: var(--muted);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .wh-table td {
+	border-color: var(--line);
+}
+
+/* Стили печати для документов */
+@media print {
+	.wh-transfer-overlay,
+	.wh-transfer-header,
+	.wh-transfer-footer,
+	.no-print {
+		display: none !important;
+	}
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}
