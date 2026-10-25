@@ -121,7 +121,7 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 				<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
 					{POPULAR_RVG_SENSORS.map((s) => (
 						<span
-							key={s.brand}
+							key={s.id}
 							style={{
 								padding: "4px 8px",
 								borderRadius: 6,
@@ -131,7 +131,7 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 								fontWeight: 600,
 							}}
 						>
-							✓ {s.brand} ({s.model})
+							✓ {s.name} ({s.resolution})
 						</span>
 					))}
 				</div>

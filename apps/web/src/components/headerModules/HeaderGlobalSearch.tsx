@@ -14,7 +14,7 @@ interface SearchResultItem {
 	id: string;
 	name: string;
 	phone: string;
-	birthYear?: string;
+	birthYear?: string | undefined;
 }
 
 export function HeaderGlobalSearch({

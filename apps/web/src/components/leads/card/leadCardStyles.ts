@@ -1,16 +1,16 @@
-import type React from "react";
+import type { MotionStyle } from "framer-motion";
 import type { LeadSlaStatus } from "../leadsKanbanSla";
 
 export interface LeadCardStyleParams {
-	cardBg?: string;
-	borderColor?: string;
+	cardBg?: string | undefined;
+	borderColor?: string | undefined;
 	sla: LeadSlaStatus;
-	isDragged?: boolean;
+	isDragged?: boolean | undefined;
 }
 
 export function computeLeadCardStyle(
 	params: LeadCardStyleParams,
-): React.CSSProperties {
+): MotionStyle {
 	const { cardBg, borderColor, sla, isDragged } = params;
 	return {
 		background: cardBg,

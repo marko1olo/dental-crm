@@ -18,6 +18,8 @@ export interface LeadSlaInfo {
 	formattedDuration: string;
 }
 
+export type LeadSlaStatus = LeadSlaInfo;
+
 function formatHoursMins(mins: number): string {
 	const hours = Math.floor(mins / 60);
 	const rem = mins % 60;

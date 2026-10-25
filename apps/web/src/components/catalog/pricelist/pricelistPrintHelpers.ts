@@ -12,6 +12,8 @@ export interface PricelistPrintClinicMeta {
 	readonly chiefDoctorName: string;
 }
 
+export type ClinicPrintMeta = PricelistPrintClinicMeta;
+
 export function openPrintPricelistWindow(
 	meta: PricelistPrintClinicMeta,
 	items: readonly ServicePricelistItem[],

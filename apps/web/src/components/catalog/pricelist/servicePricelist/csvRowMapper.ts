@@ -69,7 +69,10 @@ export function mapCsvRow(
 	const rawMat = cols.colMatCost >= 0 ? parseFloat(row[cols.colMatCost]?.replace(/\s+/g, "").replace(",", ".") || "0") : 0;
 	const rawLab = cols.colLabCost >= 0 ? parseFloat(row[cols.colLabCost]?.replace(/\s+/g, "").replace(",", ".") || "0") : 0;
 	const rawDur = cols.colDur >= 0 ? parseInt(row[cols.colDur]?.replace(/\D/g, "") || "30", 10) : 30;
-	const icdRaw = cols.colIcd >= 0 && row[cols.colIcd] ? row[cols.colIcd]?.split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [];
+	const rawIcd = cols.colIcd >= 0 ? row[cols.colIcd] : undefined;
+	const icdRaw: readonly string[] = rawIcd
+		? rawIcd.split(/[,;]+/).map((s) => s.trim()).filter(Boolean)
+		: [];
 
 	const exactBasePriceRub = Math.round(basePriceRub * 100) / 100;
 	const exactMatCostRub = !Number.isNaN(rawMat) && rawMat >= 0 ? Math.round(rawMat * 100) / 100 : 0;

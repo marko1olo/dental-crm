@@ -7,7 +7,7 @@ import { PricelistManagerHeader } from "./PricelistManagerHeader";
 import { PricelistManagerSubModals } from "./PricelistManagerSubModals";
 import { PricelistToast } from "./PricelistToast";
 import {
-	type ClinicPrintMeta,
+	type PricelistPrintClinicMeta,
 	openPrintPricelistWindow,
 } from "./pricelistPrintHelpers";
 import type { ServicePricelistItem } from "./servicePricelistPresets";
@@ -15,7 +15,7 @@ import type { useServicePricelistManager } from "./useServicePricelistManager";
 
 export interface PricelistManagerDialogContainerProps {
 	readonly mgr: ReturnType<typeof useServicePricelistManager>;
-	readonly clinicMeta: ClinicPrintMeta;
+	readonly clinicMeta: PricelistPrintClinicMeta;
 	readonly adminSecret?: string | undefined;
 	readonly onSaveCatalog?: ((items: readonly ServicePricelistItem[]) => void) | undefined;
 	readonly onClose: () => void;

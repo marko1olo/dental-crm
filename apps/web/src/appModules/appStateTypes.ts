@@ -3,6 +3,8 @@
  * Mandate 8b (Architecture Decomposition), Mandate 8e (Doctor Autonomy).
  */
 
+import type { Dispatch, SetStateAction } from "react";
+
 export interface ImplantPassportConfig {
 	patientName?: string;
 	patientId?: string;
@@ -13,75 +15,73 @@ export interface ImplantPassportConfig {
 
 export interface AppHashRoutingState {
 	isPrescriptionForm107Open: boolean;
-	setIsPrescriptionForm107Open: (v: boolean) => void;
+	setIsPrescriptionForm107Open: Dispatch<SetStateAction<boolean>>;
 	prescriptionInitialMedId: string | null;
 	prescriptionInitialMedIds: string[] | null;
 	isImplantPassportDirectOpen: boolean;
-	setIsImplantPassportDirectOpen: (v: boolean) => void;
+	setIsImplantPassportDirectOpen: Dispatch<SetStateAction<boolean>>;
 	implantPassportConfig: ImplantPassportConfig | null;
-	setImplantPassportConfig: (v: ImplantPassportConfig | null) => void;
+	setImplantPassportConfig: Dispatch<SetStateAction<ImplantPassportConfig | null>>;
 	isRecallsHubOpen: boolean;
-	setIsRecallsHubOpen: (v: boolean) => void;
+	setIsRecallsHubOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoPhotoDirectModalOpen: boolean;
-	setIsOrthoPhotoDirectModalOpen: (v: boolean) => void;
+	setIsOrthoPhotoDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoProtocolDirectModalOpen: boolean;
-	setIsOrthoProtocolDirectModalOpen: (v: boolean) => void;
+	setIsOrthoProtocolDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isToothDrawerDirectModalOpen: boolean;
-	setIsToothDrawerDirectModalOpen: (v: boolean) => void;
+	setIsToothDrawerDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isClinicalTasksOpen: boolean;
-	setIsClinicalTasksOpen: (v: boolean) => void;
+	setIsClinicalTasksOpen: Dispatch<SetStateAction<boolean>>;
 	clinicalTasksPatientId: string | null;
 	isCbctTunerOpen: boolean;
-	setIsCbctTunerOpen: (v: boolean) => void;
+	setIsCbctTunerOpen: Dispatch<SetStateAction<boolean>>;
 	isCbctDirectModalOpen: boolean;
-	setIsCbctDirectModalOpen: (v: boolean) => void;
+	setIsCbctDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isConsentDirectModalOpen: boolean;
-	setIsConsentDirectModalOpen: (v: boolean) => void;
+	setIsConsentDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isCephDirectModalOpen: boolean;
-	setIsCephDirectModalOpen: (v: boolean) => void;
+	setIsCephDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isEgiszRemdModalOpen: boolean;
-	setIsEgiszRemdModalOpen: (v: boolean) => void;
-	isSmartSlotRecoveryDemoOpen: boolean;
-	setIsSmartSlotRecoveryDemoOpen: (v: boolean) => void;
+	setIsEgiszRemdModalOpen: Dispatch<SetStateAction<boolean>>;
 	isSmartOpgDirectModalOpen: boolean;
-	setIsSmartOpgDirectModalOpen: (v: boolean) => void;
+	setIsSmartOpgDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isCtSelectorDirectModalOpen: boolean;
-	setIsCtSelectorDirectModalOpen: (v: boolean) => void;
+	setIsCtSelectorDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isVisiographDirectModalOpen: boolean;
-	setIsVisiographDirectModalOpen: (v: boolean) => void;
+	setIsVisiographDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isImagingExportDirectModalOpen: boolean;
-	setIsImagingExportDirectModalOpen: (v: boolean) => void;
+	setIsImagingExportDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isLabCreateOrderDirectModalOpen: boolean;
-	setIsLabCreateOrderDirectModalOpen: (v: boolean) => void;
+	setIsLabCreateOrderDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isDmsDirectModalOpen: boolean;
-	setIsDmsDirectModalOpen: (v: boolean) => void;
+	setIsDmsDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isPlanScenariosDirectModalOpen: boolean;
-	setIsPlanScenariosDirectModalOpen: (v: boolean) => void;
+	setIsPlanScenariosDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isCasePresenterDirectModalOpen: boolean;
-	setIsCasePresenterDirectModalOpen: (v: boolean) => void;
+	setIsCasePresenterDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isSbpDirectModalOpen: boolean;
-	setIsSbpDirectModalOpen: (v: boolean) => void;
+	setIsSbpDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isReceiptDirectModalOpen: boolean;
-	setIsReceiptDirectModalOpen: (v: boolean) => void;
+	setIsReceiptDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isEmergencyDirectModalOpen: boolean;
-	setIsEmergencyDirectModalOpen: (v: boolean) => void;
+	setIsEmergencyDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isWarrantyPassportOpen: boolean;
-	setIsWarrantyPassportOpen: (v: boolean) => void;
+	setIsWarrantyPassportOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface AppSessionAuthState {
 	clinicAuthed: boolean;
-	setClinicAuthed: (v: boolean) => void;
+	setClinicAuthed: Dispatch<SetStateAction<boolean>>;
 	staffAuthed: boolean;
-	setStaffAuthed: (v: boolean) => void;
+	setStaffAuthed: Dispatch<SetStateAction<boolean>>;
 	activeStaffUser: any;
-	setActiveStaffUser: (u: any) => void;
+	setActiveStaffUser: Dispatch<SetStateAction<any>>;
 	showStaffPinPad: boolean;
-	setShowStaffPinPad: (v: boolean) => void;
+	setShowStaffPinPad: Dispatch<SetStateAction<boolean>>;
 	isSessionLocked: boolean;
-	setIsSessionLocked: (v: boolean) => void;
+	setIsSessionLocked: Dispatch<SetStateAction<boolean>>;
 	isPrivacyShieldActive: boolean;
-	setIsPrivacyShieldActive: (v: boolean) => void;
+	setIsPrivacyShieldActive: Dispatch<SetStateAction<boolean>>;
 	handleLockSession: () => void;
 	handleClinicLogout: () => void;
 	handleFullStaffLock: () => void;

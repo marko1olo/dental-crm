@@ -12,12 +12,12 @@ import {
 } from "./servicePricelistPresets";
 
 export interface MatchedCodeInfo {
-	statutoryTitle?: string;
-	category?: ServiceCategory;
-	specialty?: DoctorSpecialty;
-	icd10?: string;
-	durationMin?: number;
-	detectedCategory?: ServiceCategory;
+	statutoryTitle?: string | undefined;
+	category?: ServiceCategory | undefined;
+	specialty?: DoctorSpecialty | undefined;
+	icd10?: string | undefined;
+	durationMin?: number | undefined;
+	detectedCategory?: ServiceCategory | undefined;
 }
 
 export function matchServiceCode(

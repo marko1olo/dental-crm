@@ -10,6 +10,7 @@ import {
 } from "./servicePricelistEngine";
 import {
 	PRICE_TIER_LABELS,
+	type DoctorSpecialty,
 	type PriceTierKind,
 	type ServiceCategory,
 	type ServicePricelistItem,
@@ -20,7 +21,7 @@ export function usePricelistPriceInteractions(
 	activeTier: PriceTierKind,
 	selectedItemIds: Set<string>,
 	selectedCategory: ServiceCategory | "all",
-	selectedSpecialty: string,
+	selectedSpecialty: DoctorSpecialty | "all",
 	updateAndPersist: (next: readonly ServicePricelistItem[]) => void,
 	setItems: (next: readonly ServicePricelistItem[]) => void,
 	showToast: (msg: string) => void,
