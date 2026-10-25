@@ -3,10 +3,12 @@
  * Переключатель 6 секстантов ВОЗ/PSR и кнопки действий в Natural Thumb Zone (Мандат 8b, <= 120 строк).
  */
 
-import type { PsrCode } from "@dental/shared";
+import type { PsrSextantResult } from "@dental/shared";
 import { ShieldCheck, X } from "lucide-react";
 import React from "react";
 import { triggerHaptic } from "../../../native/mobileBridge";
+
+type PsrCode = PsrSextantResult["code"];
 
 export interface PerioMobileDrawerProps {
 	readonly isOpen: boolean;

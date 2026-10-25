@@ -108,6 +108,7 @@ describe("Doctor Piece-Rate Payroll & Net Revenue Audit (Mandates 8e, 8n, 8x, 8a
 
 	it("3. Retail Products: chairside oral care goods use direct retail percentage without lab deduction", () => {
 		const preset = DOCTOR_SPECIALTY_CONFIGS.therapist;
+		assert.ok(preset, "therapist preset must exist");
 
 		const input: DoctorStaffPayrollInput = {
 			employeeId: "doc-ther-1",

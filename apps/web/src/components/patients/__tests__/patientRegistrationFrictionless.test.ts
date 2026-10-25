@@ -86,7 +86,7 @@ describe("Frictionless Patient Registration & Non-Blocking Invariants (Mandate 8
 		);
 	});
 
-	it("prints blank contract package with '_______' placeholders and 0 rubles without 403 or server errors (Mandate 8e)", async () => {
+	it("prints blank contract package with '_______' placeholders and 0 rubles without 403 or server errors (Mandate 8e)", { timeout: 15000 }, async () => {
 		const { generatePrimaryIntakePackageHtml } = await import(
 			"../../documents/primaryIntakePackagePrintEngine.js"
 		);
@@ -129,7 +129,7 @@ describe("Frictionless Patient Registration & Non-Blocking Invariants (Mandate 8
 			html.includes("0 (ноль) рублей") || html.includes("0 ₽") || html.includes("ориентировочная"),
 			"Must handle 0 ruble / preliminary contract price gracefully",
 		);
-	}, { timeout: 15000 });
+	});
 
 	it("allows booking appointment without mandatory assistant (solo doctor or dynamic assignment)", async () => {
 		const { appointmentScheduleMissingFields } = await import(

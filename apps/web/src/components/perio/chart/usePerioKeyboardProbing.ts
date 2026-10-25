@@ -57,7 +57,7 @@ export function usePerioKeyboardProbing({
 
 		if (handlePerioKeyboardDigit(e, activeSite, updateToothSite, moveToNextSite)) return;
 		if (handlePerioKeyboardShiftDigits(e, activeSite, updateToothSite, moveToNextSite)) return;
-		if (handlePerioKeyboardToggles(e, activeSite, currentTooth, updateToothSite, updateToothProperties)) return;
+		if (handlePerioKeyboardToggles(e, activeSite.toothNumber, activeSite.siteKey, toothMap, updateToothSite, updateToothProperties)) return;
 		if (handlePerioKeyboardStep(e, activeSite, currentSite, updateToothSite)) return;
 	}, [readOnly, isProbeKeyboardEnabled, focusedSite, probingSequence, toothMap, updateToothSite, updateToothProperties, moveToNextSite, moveToPreviousSite, setFocusedSite, setSelectedToothNumber, onSetAllIntact]);
 }

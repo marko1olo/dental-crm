@@ -3,13 +3,13 @@
  * Архитектурный слой Layer 4: UI Subcomponent (Мандат 8b, <= 120 строк).
  */
 
-import type { PerioToothSite } from "@dental/shared";
+import type { PerioSiteMeasurement } from "@dental/shared";
 import { Droplets } from "lucide-react";
 import React from "react";
 
 export interface PerioKeypadNumButtonsProps {
 	readonly readOnly?: boolean | undefined;
-	readonly currentSite: PerioToothSite | null;
+	readonly currentSite: PerioSiteMeasurement | null;
 	readonly onKeypadDepth: (depth: number) => void;
 	readonly onToggleBop: () => void;
 	readonly onTogglePlaque: () => void;

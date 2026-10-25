@@ -74,6 +74,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 			{/* Secondary Therapist Presets */}
 			<PerioExpressTherapistRow
 				readOnly={readOnly}
+				onApplyExpressPreset={onApplyExpressPreset}
 				onApplyTherapistPreset={onApplyTherapistPreset}
 			/>
 		</div>

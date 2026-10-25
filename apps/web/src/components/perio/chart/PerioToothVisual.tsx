@@ -24,10 +24,10 @@ export const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
 	buccalPd, lingualPd, width = 28, height = 52,
 }) => {
 	if (isMissing) {
-		return <PerioMissingVisualSvg width={width} height={height} isUpper={isUpper} />;
+		return <PerioMissingVisualSvg width={width} height={height} />;
 	}
 	if (isImplant) {
-		return <PerioImplantVisualSvg width={width} height={height} isUpper={isUpper} />;
+		return <PerioImplantVisualSvg width={width} height={height} />;
 	}
 
 	const isAnterior = [11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43].includes(toothNumber);

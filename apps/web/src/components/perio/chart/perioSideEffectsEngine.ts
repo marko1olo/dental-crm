@@ -56,7 +56,7 @@ export function dispatchPresetSideEffects(
 }
 
 export function generatePerioProtocolText(
-	teeth: PerioToothRecord[],
+	teeth: readonly PerioToothRecord[],
 	summary: PerioChartSummary,
 	doctorName?: string,
 	customNotes?: string,

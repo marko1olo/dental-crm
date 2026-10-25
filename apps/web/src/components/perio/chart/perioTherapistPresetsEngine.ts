@@ -40,7 +40,7 @@ function getFallbackPreset(presetId: string): PerioPathologyPreset | undefined {
 	return undefined;
 }
 
-export function applyTherapistPathologyPreset(teeth: PerioToothRecord[], presetId: string): PresetApplyResult | null {
+export function applyTherapistPathologyPreset(teeth: readonly PerioToothRecord[], presetId: string): PresetApplyResult | null {
 	const targetPreset = PERIO_PATHOLOGY_PRESETS.find((p) => p.id === presetId) ?? getFallbackPreset(presetId);
 	if (!targetPreset) return null;
 

@@ -17,10 +17,10 @@ import {
 import type { PresetApplyResult } from "./perioPresetTypes";
 
 export function applyExpressPerioPreset(
-	teeth: PerioToothRecord[],
+	teeth: readonly PerioToothRecord[],
 	presetId: PerioExpressPresetId,
 ): PresetApplyResult {
-	let updatedTeeth: PerioToothRecord[] = teeth;
+	let updatedTeeth: PerioToothRecord[] = [...teeth];
 	let protocolText = "";
 
 	switch (presetId) {
