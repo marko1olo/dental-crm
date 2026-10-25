@@ -1,7 +1,6 @@
 import type { Dashboard } from "@dental/shared";
 import {
 	appointmentStatusLabels,
-	insightCategoryLabels,
 	insightRiskLabels,
 	paymentMethodLabels,
 	paymentStatusLabels,
@@ -49,11 +48,14 @@ export function createPatientJourneyEvents(
 	const insightEvents: JourneyEvent[] = (dashboard?.patientInsights || [])
 		.filter((i) => i.patientId === patientId)
 		.map((i) => ({
-			id: i.id ?? `insight-${i.patientId}-${i.category}`,
-			timestamp: i.createdAt || new Date().toISOString(),
+			id: `insight-${i.patientId}-${i.riskLevel}`,
+			timestamp: i.lastActivityAt || new Date().toISOString(),
 			type: "medical_alert",
-			title: insightCategoryLabels[String(i.category)] ?? String(i.category),
-			description: i.reason,
+			title: `Инсайт: ${insightRiskLabels[String(i.riskLevel)] ?? i.riskLevel}`,
+			description:
+				[i.riskReasons.join(" · "), i.nextBestAction]
+					.filter(Boolean)
+					.join(" — ") || "нет пояснений к риску",
 			status: insightRiskLabels[String(i.riskLevel)] ?? i.riskLevel,
 		}));
 
