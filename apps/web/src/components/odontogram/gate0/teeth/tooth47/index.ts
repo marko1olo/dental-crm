@@ -5,6 +5,7 @@ export { Tooth47OcclusalCusps } from "./Tooth47OcclusalCusps";
 export { Tooth47Roots } from "./Tooth47Roots";
 export { Tooth47PulpChamber } from "./Tooth47PulpChamber";
 export { Tooth47EndoCanals } from "./Tooth47EndoCanals";
+export { Tooth47CariesOverlay } from "./Tooth47CariesOverlay";
 export { TOOTH47_GEOMETRY } from "./tooth47Geometry";
 export { TOOTH47_CUSPS, type Tooth47CuspDef } from "./tooth47CuspGeometry";
 export { TOOTH47_PULP_GEOMETRY, type Tooth47CanalAnatomy } from "./tooth47PulpGeometry";

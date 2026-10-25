@@ -53,16 +53,13 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 				isDark={isDark}
 			/>
 			{a.roots && !a.implant && (
-				<Tooth43Roots showGrooves={a.grooves ?? true} showCej={a.cej ?? true} isEndo={isEndo} isDark={isDark} />
+				<Tooth43Roots isEndo={isEndo} isDark={isDark} />
 			)}
 			{a.implant && <Tooth46SurgeryOverlay showImplant implantStage={a.implantStage} isDark={isDark} />}
 			{a.crown && !noCrown && (
 				<Tooth43EnamelCrown
 					stroke={stroke}
 					crownOpacity="1.0"
-					showCusps={a.cusps ?? true}
-					showFissures={a.fissures ?? true}
-					showAbfraction={Boolean(a.abfraction)}
 					isDark={isDark}
 				/>
 			)}

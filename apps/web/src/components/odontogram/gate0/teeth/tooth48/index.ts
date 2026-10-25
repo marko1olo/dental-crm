@@ -5,6 +5,7 @@ export { Tooth48Roots } from "./Tooth48Roots";
 export { Tooth48PulpChamber } from "./Tooth48PulpChamber";
 export { Tooth48EndoCanals } from "./Tooth48EndoCanals";
 export { Tooth48RestorationOverlay } from "./Tooth48RestorationOverlay";
+export { Tooth48CariesOverlay } from "./Tooth48CariesOverlay";
 export { TOOTH48_GEOMETRY } from "./tooth48Geometry";
 export { TOOTH48_CUSPS, type Tooth48CuspDef } from "./tooth48CuspGeometry";
 export { TOOTH48_PULP_GEOMETRY, type Tooth48CanalAnatomy } from "./tooth48PulpGeometry";

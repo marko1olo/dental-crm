@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 /**
  * DENTE Dental CRM — Authentic Enamel Cusp & Lobe Shaders for Tooth 46

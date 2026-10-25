@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 /**
  * DENTE Dental CRM — Periapical Pathology Shaders for Tooth 46

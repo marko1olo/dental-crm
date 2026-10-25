@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CanalCondition } from "../../tooth46Types";
 import { TOOTH47_PULP_GEOMETRY } from "./tooth47PulpGeometry";
 

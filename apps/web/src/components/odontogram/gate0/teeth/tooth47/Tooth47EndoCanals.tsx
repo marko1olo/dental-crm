@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
 import type { CanalCondition } from "../../tooth46Types";
 import { Tooth47PulpChamber } from "./Tooth47PulpChamber";

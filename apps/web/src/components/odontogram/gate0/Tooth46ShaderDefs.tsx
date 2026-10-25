@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46CariesShaders } from "./Tooth46CariesShaders";
 import { Tooth46CrownShaders } from "./Tooth46CrownShaders";
 import { Tooth46CuspShaders } from "./Tooth46CuspShaders";
