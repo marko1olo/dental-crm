@@ -50,7 +50,7 @@ import { SettingsPricesTab } from "./SettingsPricesTab";
 import { SettingsReportingTab } from "./SettingsReportingTab";
 import { SettingsSourcesTab } from "./SettingsSourcesTab";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
-import { OwnerPriceList804nSection } from "./owner/OwnerPriceList804nSection";
+import { OwnerPriceListSection } from "./owner/OwnerPriceListSection";
 import { DeepClinicalSettingsSection } from "./DeepClinicalSettingsSection";
 import { SovereignScalePresetsCard } from "../onboarding/SovereignScalePresetsCard";
 
@@ -357,7 +357,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 								</section>
 							)}
 
-							<OwnerPriceList804nSection />
+							<OwnerPriceListSection />
 							<SettingsPricesTab />
 						</div>
 					</ErrorBoundary>

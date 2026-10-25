@@ -61,3 +61,42 @@
 2. 🌙 **PC Dark (1440×900)**: `docs/screenshots/audit_prices_tab/pc_dark_settings_prices.png` — проверен через `read_file`, 0 белых дыр, контрастные токены `var(--paper)`, `var(--teal)`.
 3. 📱 **Mobile Light (390×844)**: `docs/screenshots/audit_prices_tab/mobile_light_settings_prices.png` — проверен через `read_file`, тач-таргеты $\ge 44\text{px}$, адаптивные чипы, нулевой горизонтальный скролл.
 4. 📱 **Mobile Dark (390×844)**: `docs/screenshots/audit_prices_tab/mobile_dark_settings_prices.png` — проверен через `read_file`, темная палитра, гармоничный мобильный вид.
+
+
+---
+
+## 4. Верховная Red Team Инквизиция прейскуранта и калькулятора (Этап 2)
+
+### А. Уничтожение псевдо-превью песочниц (Правило 23 THE HAMMER)
+- Физически уничтожены изолированные муляжи в вакууме:
+  * `apps/web/pricelist-preview.html`
+  * `apps/web/src/pricelistPreviewEntry.tsx`
+- Все экраны работают строго в едином живом контуре приложения через реальный роутинг.
+
+### Б. Декомпозиция прейскуранта владельца клиники (Мандат 8b, <= 80 строк на фасад)
+- `OwnerPriceList804nSection.tsx` (233 строки) переименован в семантический `OwnerPriceListSection.tsx` (55 строк, строго <= 80 строк).
+- Извлечены высокоспециализированные подмодули (все строго <= 120 строк):
+  * `useOwnerPriceList.ts` (106 строк) — управление поиском, фильтрами, переопределением цен и синхронизацией с БД.
+  * `OwnerPriceListHeader.tsx` (47 строк) — шапка с единым стилем кнопок (36px), бейджем «Без НДС».
+  * `OwnerPriceListTable.tsx` (67 строк) — табличный рендеринг списка услуг и пустого состояния.
+  * `PriceListItemRowPriceCell.tsx` (67 строк) — ячейка инлайн-редактирования цен.
+  * `PriceListItemRow.tsx` декомпозирован с 144 до 95 строк.
+
+### В. Декомпозиция калькулятора сдельной оплаты труда (Мандат 8b, <= 120 строк)
+- `DoctorPieceRateCalculatorSection.tsx` декомпозирован с 203 до 91 строки.
+- Выделены подмодули (все строго <= 120 строк):
+  * `useDoctorPieceRateCalculator.ts` (100 строк) — хук расчетов сдельной оплаты в целых копейках.
+  * `PieceRateCategoryRevenueInputs.tsx` (81 строка) — ввод выручки и ставок по клиническим направлениям.
+  * `PieceRateDeductionInputs.tsx` (82 строки) — ввод удержаний по ЗТЛ, материалам и гарантированного оклада.
+  * `PieceRateInputsPanel.tsx` сокращен с 242 до 28 строк.
+
+### Г. Семантическая переработка тестовых сьютов
+- `baseline804nPricelistSuite.test.ts` и `staffCommissionsAndPricelistDecomposition.test.ts` очищены от регуляторного канцелярита, переведены на проверку канонических фасадов (`OwnerPriceListSection`, `DoctorPieceRateCalculatorSection`) и строгих лимитов строк (<= 80..120).
+
+### Д. Доказательства работоспособности (Proof & Verification)
+- **Vitest:** 9 тест-файлов, 161 тест — 100% PASS (Exit Code 0).
+- **Визуальный пруф:** `docs/proofs/pricelist/` (все PNG >= 20 КБ):
+  * ☀️ `01_pricelist_pc_light.png` (156.7 KB)
+  * 🌙 `02_pricelist_pc_dark.png` (158.7 KB)
+  * 📱 `03_pricelist_mobile_light.png` (157.9 KB)
+  * 📱 `04_pricelist_mobile_dark.png` (164.2 KB)

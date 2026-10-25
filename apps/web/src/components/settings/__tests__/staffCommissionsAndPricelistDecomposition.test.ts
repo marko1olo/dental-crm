@@ -3,9 +3,9 @@
  *
  * Индивидуальный тест декомпозиции и бизнес-логики:
  * 1. StaffCommissionsPanel и подмодули commissionsModules/
- * 2. OwnerPriceList804nSection и подмодули priceListModules/
+ * 2. OwnerPriceListSection и подмодули priceListModules/
  * 3. DoctorPieceRateCalculatorSection и подмодули pieceRateModules/
- * 4. Священные лимиты: Фасады <= 250 строк, подмодули <= 500 строк, 0 эмодзи.
+ * 4. Священные лимиты Мандата 8b: Фасад OwnerPriceListSection <= 80 строк, подмодули <= 120 строк, 0 эмодзи.
  */
 
 import { describe, it } from "node:test";
@@ -32,33 +32,40 @@ import {
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-describe("Staff Commissions & Price List 804n Decomposition Invariants", () => {
+describe("Staff Commissions & Price List Decomposition Invariants", () => {
 	const settingsDir = path.resolve(__dirname, "..");
 
 	const facades = [
 		{ relPath: "StaffCommissionsPanel.tsx", maxLines: 250 },
-		{ relPath: "owner/OwnerPriceList804nSection.tsx", maxLines: 250 },
-		{ relPath: "owner/DoctorPieceRateCalculatorSection.tsx", maxLines: 250 },
+		{ relPath: "owner/OwnerPriceListSection.tsx", maxLines: 80 },
+		{ relPath: "owner/DoctorPieceRateCalculatorSection.tsx", maxLines: 120 },
 	];
 
 	const submodules = [
-		"commissionsModules/staffCommissionsTypes.ts",
-		"commissionsModules/useStaffCommissionsState.ts",
-		"commissionsModules/StaffRoleCommissionCard.tsx",
-		"commissionsModules/DoctorSpecialtyRatesTable.tsx",
-		"commissionsModules/MaterialDeductionRulesCard.tsx",
-		"owner/priceListModules/priceListTypes.ts",
-		"owner/priceListModules/priceListCatalogMerger.ts",
-		"owner/priceListModules/PriceListSummaryStats.tsx",
-		"owner/priceListModules/PriceListCategoryFilter.tsx",
-		"owner/priceListModules/PriceListItemRow.tsx",
-		"owner/pieceRateModules/pieceRateTypes.ts",
-		"owner/pieceRateModules/PieceRatePresetsBar.tsx",
-		"owner/pieceRateModules/PieceRateInputsPanel.tsx",
-		"owner/pieceRateModules/PieceRateSummaryCard.tsx",
+		{ relPath: "commissionsModules/staffCommissionsTypes.ts", maxLines: 500 },
+		{ relPath: "commissionsModules/useStaffCommissionsState.ts", maxLines: 500 },
+		{ relPath: "commissionsModules/StaffRoleCommissionCard.tsx", maxLines: 500 },
+		{ relPath: "commissionsModules/DoctorSpecialtyRatesTable.tsx", maxLines: 500 },
+		{ relPath: "commissionsModules/MaterialDeductionRulesCard.tsx", maxLines: 500 },
+		{ relPath: "owner/priceListModules/priceListTypes.ts", maxLines: 120 },
+		{ relPath: "owner/priceListModules/priceListCatalogMerger.ts", maxLines: 120 },
+		{ relPath: "owner/priceListModules/PriceListSummaryStats.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/PriceListCategoryFilter.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/PriceListItemRow.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/PriceListItemRowPriceCell.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/OwnerPriceListHeader.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/OwnerPriceListTable.tsx", maxLines: 120 },
+		{ relPath: "owner/priceListModules/useOwnerPriceList.ts", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/pieceRateTypes.ts", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/PieceRatePresetsBar.tsx", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/PieceRateInputsPanel.tsx", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/PieceRateCategoryRevenueInputs.tsx", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/PieceRateDeductionInputs.tsx", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/PieceRateSummaryCard.tsx", maxLines: 120 },
+		{ relPath: "owner/pieceRateModules/useDoctorPieceRateCalculator.ts", maxLines: 120 },
 	];
 
-	describe("1. Лимиты строк: Фасады <= 250 строк, подмодули <= 500 строк", () => {
+	describe("1. Лимиты строк: Фасады <= 80..120 строк, подмодули прейскуранта строго <= 120 строк", () => {
 		for (const facade of facades) {
 			it(`Фасад ${facade.relPath} строго <= ${facade.maxLines} строк`, () => {
 				const fullPath = path.join(settingsDir, facade.relPath);
@@ -72,19 +79,19 @@ describe("Staff Commissions & Price List 804n Decomposition Invariants", () => {
 		}
 
 		for (const sub of submodules) {
-			it(`Подмодуль ${sub} строго <= 500 строк`, () => {
-				const fullPath = path.join(settingsDir, sub);
+			it(`Подмодуль ${sub.relPath} строго <= ${sub.maxLines} строк`, () => {
+				const fullPath = path.join(settingsDir, sub.relPath);
 				const content = fs.readFileSync(fullPath, "utf-8");
 				const lines = content.split("\n").length;
-				assert.ok(lines <= 500, `Подмодуль ${sub} превысил 500 строк: ${lines}`);
+				assert.ok(lines <= sub.maxLines, `Подмодуль ${sub.relPath} превысил ${sub.maxLines} строк: ${lines}`);
 			});
 		}
 	});
 
-	describe("2. Мандат 8d: Ноль мультяшных эмодзи во всех новых модулях", () => {
+	describe("2. Мандат 8d: Ноль мультяшных эмодзи во всех модулях", () => {
 		const allTargetFiles = [
 			...facades.map((f) => f.relPath),
-			...submodules,
+			...submodules.map((s) => s.relPath),
 		];
 
 		for (const rel of allTargetFiles) {

@@ -57,7 +57,7 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 		"doctor/DoctorPrescriptions107Section.tsx",
 		"doctor/DoctorSpecialtyPresetsCard.tsx",
 		"doctor/index.ts",
-		"owner/OwnerPriceList804nSection.tsx",
+		"owner/OwnerPriceListSection.tsx",
 		"owner/DoctorPieceRateCalculatorSection.tsx",
 		"owner/index.ts",
 		"clinic/SettingsClinicScheduleSection.tsx",
@@ -389,12 +389,14 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 		});
 	});
 
-	describe("10. Сквозная синхронизация Прейскуранта 804н (service_catalog_items) и кассы приёма", () => {
-		it("OwnerPriceList804nSection синхронизирует цены с БД через syncPricelistItemsToCatalog", () => {
-			const ownerPriceContent = fs.readFileSync(path.join(settingsDir, "owner/OwnerPriceList804nSection.tsx"), "utf-8");
-			assert.ok(ownerPriceContent.includes("useOptionalAppLogicContext"));
-			assert.ok(ownerPriceContent.includes("syncPricelistItemsToCatalog"));
-			assert.ok(ownerPriceContent.includes("persistServicePriceToDatabase"));
+	describe("10. Сквозная синхронизация Прейскуранта услуг (service_catalog_items) и кассы приёма", () => {
+		it("OwnerPriceListSection синхронизирует цены с БД через syncPricelistItemsToCatalog", () => {
+			const facadeContent = fs.readFileSync(path.join(settingsDir, "owner/OwnerPriceListSection.tsx"), "utf-8");
+			const hookContent = fs.readFileSync(path.join(settingsDir, "owner/priceListModules/useOwnerPriceList.ts"), "utf-8");
+			const combined = facadeContent + "\n" + hookContent;
+			assert.ok(combined.includes("useOptionalAppLogicContext"));
+			assert.ok(combined.includes("syncPricelistItemsToCatalog"));
+			assert.ok(combined.includes("persistServicePriceToDatabase"));
 		});
 
 		it("Обновление цены A16.07.002.010 до 5 500 ₽ в каталоге клиники пересчитывает пакет кариеса", async () => {

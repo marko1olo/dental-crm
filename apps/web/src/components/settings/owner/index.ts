@@ -4,5 +4,5 @@
  * Barrel export for Owner & Finance Settings modules.
  */
 
-export * from "./OwnerPriceList804nSection";
+export * from "./OwnerPriceListSection";
 export * from "./DoctorPieceRateCalculatorSection";

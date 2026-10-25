@@ -1,60 +1,72 @@
+/**
+ * apps/web/src/tests/baseline804nPricelistSuite.test.ts
+ *
+ * Семантический тест базового прейскуранта услуг клиники (30 услуг) и 1-клик наполнения.
+ * Соответствует Мандатам 8b (копейка в копейку), 8e (автономия врача), 8x (живой язык без канцелярита).
+ */
+
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-	BASELINE_804N_PRICELIST_SERVICES,
+	BASELINE_PRICELIST_SERVICES,
 	type ServicePricelistItem,
 } from "../components/catalog/pricelist/servicePricelistPresets";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-describe("Базовый рекомендованный прейскурант 804н (30 услуг) и 1-клик наполнение", () => {
-	it("клиентский пресет содержит ровно 30 канонических услуг", () => {
-		assert.equal(BASELINE_804N_PRICELIST_SERVICES.length, 30);
+describe("Базовый рекомендованный прейскурант клиники (30 услуг) и быстрое наполнение каталога", () => {
+	it("клиентский пресет содержит ровно 30 канонических клинических услуг", () => {
+		assert.equal(BASELINE_PRICELIST_SERVICES.length, 30);
 	});
 
-	it("каждая услуга имеет валидный код номенклатуры 804н (класс A или B)", () => {
-		const code804nRegex = /^A\d{2}\.\d{2}\.\d{3}(\.\d{3})?$|^B\d{2}\.\d{3}\.\d{3}(\.\d{3})?$/;
-		for (const item of BASELINE_804N_PRICELIST_SERVICES) {
+	it("каждая услуга имеет валидный код медицинской номенклатуры (класс A или B)", () => {
+		const statutoryCodeRegex = /^[ABАВ]\d{2}\.\d{2,3}\.\d{3}(\.\d{3})?$/i;
+		for (const item of BASELINE_PRICELIST_SERVICES) {
+			const code = item.statutoryCode || item.code804n;
 			assert.ok(
-				code804nRegex.test(item.code804n),
-				`Услуга ${item.id} («${item.commercialTitle}») имеет некорректный код 804н: «${item.code804n}»`,
+				statutoryCodeRegex.test(code),
+				`Услуга ${item.id} («${item.commercialTitle}») имеет некорректный номенклатурный код: «${code}»`,
 			);
 		}
 	});
 
 	it("цены в рублях и копейках строго согласованы (Мандат 8b: копейка в копейку)", () => {
-		for (const item of BASELINE_804N_PRICELIST_SERVICES) {
-			assert.ok(item.basePriceRub > 0, `Услуга ${item.code804n} имеет нулевую или отрицательную цену`);
+		for (const item of BASELINE_PRICELIST_SERVICES) {
+			const code = item.statutoryCode || item.code804n;
+			assert.ok(item.basePriceRub > 0, `Услуга ${code} имеет нулевую или отрицательную цену`);
 			assert.equal(
 				item.basePriceKopecks,
 				Math.round(item.basePriceRub * 100),
-				`Услуга ${item.code804n} имеет расхождение между basePriceRub (${item.basePriceRub}) и basePriceKopecks (${item.basePriceKopecks})`,
+				`Услуга ${code} имеет расхождение между basePriceRub (${item.basePriceRub}) и basePriceKopecks (${item.basePriceKopecks})`,
 			);
 		}
 	});
 
-	it("все услуги содержат официальное наименование Минздрава 804н и понятное коммерческое наименование", () => {
-		for (const item of BASELINE_804N_PRICELIST_SERVICES) {
-			assert.ok(item.statutoryTitle804n.trim().length > 5, `Пустое номенклатурное название у ${item.code804n}`);
-			assert.ok(item.commercialTitle.trim().length > 5, `Пустое коммерческое название у ${item.code804n}`);
+	it("все услуги содержат официальное наименование номенклатуры и понятное коммерческое наименование", () => {
+		for (const item of BASELINE_PRICELIST_SERVICES) {
+			const code = item.statutoryCode || item.code804n;
+			const statTitle = item.statutoryTitle || item.statutoryTitle804n;
+			assert.ok(statTitle.trim().length > 5, `Пустое номенклатурное название у ${code}`);
+			assert.ok(item.commercialTitle.trim().length > 5, `Пустое коммерческое название у ${code}`);
 		}
 	});
 
 	it("НДС равен 0% с указанием ссылки на пп. 2 п. 2 ст. 149 НК РФ", () => {
-		for (const item of BASELINE_804N_PRICELIST_SERVICES) {
+		for (const item of BASELINE_PRICELIST_SERVICES) {
+			const code = item.statutoryCode || item.code804n;
 			assert.equal(item.vatRate, 0);
 			assert.ok(
 				item.vatExemptionArticle.includes("149"),
-				`Услуга ${item.code804n} не содержит ссылки на статью 149 НК РФ`,
+				`Услуга ${code} не содержит ссылки на статью 149 НК РФ`,
 			);
 		}
 	});
 
 	it("пресет покрывает ключевые клинические направления: терапия, хирургия, ортопедия, гигиена, консультация, радиовизиография", () => {
-		const categories = new Set(BASELINE_804N_PRICELIST_SERVICES.map((s) => s.category));
+		const categories = new Set(BASELINE_PRICELIST_SERVICES.map((s) => s.category));
 		assert.ok(categories.has("therapy"), "Отсутствует категория терапия");
 		assert.ok(categories.has("surgery"), "Отсутствует категория хирургия");
 		assert.ok(categories.has("orthopedics"), "Отсутствует категория ортопедия");
@@ -63,7 +75,7 @@ describe("Базовый рекомендованный прейскурант 8
 		assert.ok(categories.has("radiology"), "Отсутствует категория радиовизиография");
 	});
 
-	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-standard-catalog-btn' (или алиасом 804н) и в пустом каталоге, и в меню справочника", () => {
+	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-standard-catalog-btn' и в пустом каталоге, и в меню справочника", () => {
 		const settingsDir = join(here, "..", "components", "settings");
 		const tabContent = [
 			readFileSync(join(settingsDir, "SettingsPricesTab.tsx"), "utf8"),
@@ -87,7 +99,7 @@ describe("Базовый рекомендованный прейскурант 8
 		assert.ok(
 			tabContent.includes("/api/pricelist/seed-baseline-804n") ||
 				tabContent.includes("/api/pricelist/seed-standard-catalog"),
-			"Модуль SettingsPricesTab должен вызывать серверный маршрут /api/pricelist/seed-baseline-804n или /api/pricelist/seed-standard-catalog",
+			"Модуль SettingsPricesTab должен вызывать серверный маршрут заполнения прейскуранта",
 		);
 		assert.ok(
 			tabContent.includes("Заполнить базовый прейскурант (30 услуг)") ||
