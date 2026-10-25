@@ -55,11 +55,11 @@ export const ToothActionSurfacesAccordion: React.FC<
 								key={chip.label}
 								type="button"
 								onClick={() => {
-									setActiveSurfaces((prev) =>
-										isSelected
-											? prev.filter((s) => !chip.surfs.includes(s))
-											: Array.from(new Set([...prev, ...chip.surfs])),
-									);
+								setActiveSurfaces((prev) =>
+									isSelected
+										? prev.filter((s) => !chip.surfs.some((cs) => cs === s))
+										: Array.from(new Set([...prev, ...chip.surfs])),
+								);
 								}}
 								className={`flex-1 min-h-[44px] sm:min-h-[32px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 									isSelected

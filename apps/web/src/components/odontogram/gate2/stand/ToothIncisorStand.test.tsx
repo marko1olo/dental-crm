@@ -86,12 +86,14 @@ describe("Gate 2: ToothIncisorInspectionStand UI Suite", () => {
 	});
 
 	it("renders ToothIncisorStage dispatching upper and lower incisors", () => {
+		const [intactPreset] = INCISOR_CLINICAL_PRESETS;
+		assert.ok(intactPreset, "intact preset must exist");
 		const upperHtml = renderToString(
 			React.createElement(ToothIncisorStage, {
 				toothNumber: 11,
 				zoom: 1,
 				isDark: false,
-				layers: INCISOR_CLINICAL_PRESETS[0].layers,
+				layers: intactPreset.layers,
 			}),
 		);
 		assert.ok(upperHtml.includes("верхний центральный резец 11"));
@@ -101,7 +103,7 @@ describe("Gate 2: ToothIncisorInspectionStand UI Suite", () => {
 				toothNumber: 31,
 				zoom: 1,
 				isDark: false,
-				layers: INCISOR_CLINICAL_PRESETS[0].layers,
+				layers: intactPreset.layers,
 			}),
 		);
 		assert.ok(lowerHtml.includes("нижний центральный резец 31"));

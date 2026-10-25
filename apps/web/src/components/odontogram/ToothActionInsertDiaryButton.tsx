@@ -11,7 +11,7 @@ import type { ToothData, ToothState } from "./ToothChart";
 export interface ToothActionInsertDiaryButtonProps {
 	readonly toothNumber: number;
 	readonly activeSurfaces: string[];
-	readonly teethData: ToothData[];
+	readonly teethData: readonly ToothData[];
 	readonly onClose: () => void;
 }
 

@@ -48,7 +48,7 @@ export const OdontogramModuleMainView: React.FC<
 			onToothClick={sync.isMultiSelectMode ? handleToothClick : undefined}
 			onMarkIntactDentition={quickActions.handleMarkAllHealthy}
 			onMarkWisdomTeethMissing={quickActions.handleMarkWisdomMissing}
-			onQuickStateChange={quickActions.handleQuickStateChange}
+			onQuickStateChange={sync.updateToothState}
 			useSurfaces={odontogramUseSurfaces}
 			onOpenVoiceDictation={() => modals.setIsVoiceOpen(true)}
 			onOpenPediatricModal={() => modals.setIsPediatricModalOpen(true)}

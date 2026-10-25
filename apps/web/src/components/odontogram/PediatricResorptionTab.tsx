@@ -91,7 +91,7 @@ export const PediatricResorptionTab: React.FC<PediatricResorptionTabProps> = ({
 	return (
 		<div className="space-y-6 animate-in fade-in duration-200">
 			<PediatricResorptionHeader currentAge={currentAge} stageNameRu={timelineAnalysis.stageNameRu} onAgeChange={handleAgeChange} />
-			<PediatricResorptionActions currentAge={currentAge} onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm} onApplyAllZero={handleApplyAllZero} />
+			<PediatricResorptionActions currentAge={currentAge} onApplyNorm={handleApplyPhysiologicalNorm} onApplyAllZero={handleApplyAllZero} />
 			<PediatricResorptionStagesGrid selectedResorptionStage={selectedResorptionStage} onSelectStage={handleStageClick} />
 			<PediatricResorptionTeethGrid selectedPrimaryTooth={selectedPrimaryTooth} onSelectPrimaryTooth={onSelectPrimaryTooth} selectedResorptionStage={selectedResorptionStage} expectedForSelected={expectedForSelected} currentAge={currentAge} physiologicalResorptionMap={physiologicalResorptionMap} onApplyExpectedForSelected={handleApplyExpectedForSelected} onApplyCurrent={handleApplyCurrent} hasUpdateCallback={Boolean(onUpdateToothResorption)} />
 		</div>

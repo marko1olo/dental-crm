@@ -11,7 +11,7 @@ export interface MoreMenuDisplayModesProps {
 	readonly setShowPulpAndCanals: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly isFastExtractMode: boolean;
 	readonly setIsFastExtractMode: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly isMultiSelectMode: boolean;
+	readonly isMultiSelectMode: boolean | undefined;
 	readonly onToggleMultiSelect?: ((checked: boolean) => void) | undefined;
 }
 

@@ -14,10 +14,10 @@ export interface OdontogramPrintA4Props {
 	patientId: string;
 	teethData: ToothData[];
 	isPediatricMode: boolean;
-	odontogramUseSurfaces?: boolean;
-	activePatient?: any;
-	activeDoctor?: any;
-	auth?: any;
+	odontogramUseSurfaces?: boolean | undefined;
+	activePatient?: any | undefined;
+	activeDoctor?: any | undefined;
+	auth?: any | undefined;
 }
 
 export const OdontogramPrintA4: React.FC<OdontogramPrintA4Props> = ({

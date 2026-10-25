@@ -64,7 +64,7 @@ export const OdontogramActiveViewSlot: React.FC<
 					/>
 				)}
 				{activeMode === "classic_gost" && (
-					<ClassicGostOdontogram {...sharedViewProps} />
+					<ClassicGostOdontogram {...sharedViewProps} teethData={teethData} />
 				)}
 
 				{onQuickStateChange && (
