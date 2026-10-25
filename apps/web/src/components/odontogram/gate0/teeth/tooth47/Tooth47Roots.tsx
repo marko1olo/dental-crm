@@ -41,13 +41,49 @@ export const Tooth47Roots: React.FC<Tooth47RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Narrow Anatomical Bifurcation Ambient Shadow at Y=104 */}
+			{/* Smooth Anatomical Bifurcation Ambient Shadow at Y=104 */}
 			<path
 				d={TOOTH47_GEOMETRY.bifurcationShadowPath}
 				fill="url(#dente-furcation-shadow)"
 				clipPath="url(#tooth47-root-clip)"
 				pointerEvents="none"
 			/>
+
+			{/* Cylindrical Volume Highlights on both Parallel Roots (Zero harsh lines!) */}
+			<g clipPath="url(#tooth47-root-clip)">
+				<path
+					d="M 24.0,76.0 C 22.0,96.0 20.5,118.0 23.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.6"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 24.0,76.0 C 22.0,96.0 20.5,118.0 23.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 69.0,76.0 C 66.0,96.0 61.5,118.0 58.0,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.6"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 69.0,76.0 C 66.0,96.0 61.5,118.0 58.0,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
 
 			{/* Monolithic dentin volume without harsh longitudinal split lines */}
 			{showCej && (

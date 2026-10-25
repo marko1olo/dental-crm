@@ -47,6 +47,42 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 				pointerEvents="none"
 			/>
 
+			{/* Cylindrical Volume Highlights on both Mesial and Distal Roots (Zero harsh lines!) */}
+			<g clipPath="url(#tooth46-root-clip)">
+				<path
+					d="M 22.0,76.0 C 19.5,96.0 18.0,118.0 22.5,143.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.6"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 22.0,76.0 C 19.5,96.0 18.0,118.0 22.5,143.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 78.0,76.0 C 80.0,96.0 80.0,118.0 79.0,141.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.6"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 78.0,76.0 C 80.0,96.0 80.0,118.0 79.0,141.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
+
 			{/* Cementoenamel Junction (CEJ) Cervical Curvature */}
 			{showCej && (
 				<path

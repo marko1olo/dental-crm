@@ -41,7 +41,30 @@ export const Tooth48Roots: React.FC<Tooth48RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Monolithic dentin volume without harsh longitudinal split lines */}
+			{/* Cylindrical Volume Shading & Highlights on Fused Root (Zero harsh lines!) */}
+			<g clipPath="url(#tooth48-root-clip)">
+				<path
+					d={TOOTH48_GEOMETRY.rootMonolithPath}
+					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,76.0 C 44.5,98.0 39.0,120.0 34.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,76.0 C 44.5,98.0 39.0,120.0 34.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
 			{showCej && (
 				<path
 					d={TOOTH48_GEOMETRY.cejCurve}

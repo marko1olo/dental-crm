@@ -23,6 +23,22 @@ export const ToothAnteriorShaders: React.FC = () => {
 				<stop offset="82%" stopColor="#020617" stopOpacity="0.0" />
 				<stop offset="100%" stopColor="#020617" stopOpacity="0.30" />
 			</linearGradient>
+
+			{/* Cylindrical Root Proximal Volume Contour — Light Mode (Soft Ambient Flank Shading) */}
+			<linearGradient id="dente-root-contour" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#785530" stopOpacity="0.08" />
+				<stop offset="16%" stopColor="#785530" stopOpacity="0.0" />
+				<stop offset="82%" stopColor="#785530" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#785530" stopOpacity="0.12" />
+			</linearGradient>
+
+			{/* Cylindrical Root Proximal Volume Contour — Dark Mode */}
+			<linearGradient id="dente-root-contour-dark" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#020617" stopOpacity="0.22" />
+				<stop offset="18%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="82%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#020617" stopOpacity="0.30" />
+			</linearGradient>
 		</>
 	);
 };
