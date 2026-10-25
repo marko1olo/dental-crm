@@ -1,5 +1,5 @@
 import { Coins } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { SplitCashBillButtons } from "./SplitCashBillButtons";
 import {
 	SplitCashChangeDisplay,

@@ -1,5 +1,5 @@
 import { Building2, ShieldCheck, User } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ClientLegalType } from "../../payments/checkout/fastCheckoutEngine.js";
 import { FastCheckoutLegalEntityFields } from "./FastCheckoutLegalEntityFields";
 import { FastCheckoutPhysicalPersonFields } from "./FastCheckoutPhysicalPersonFields";

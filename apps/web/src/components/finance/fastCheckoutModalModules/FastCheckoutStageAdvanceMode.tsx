@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { StagePaymentMode } from "../../payments/checkout/fastCheckoutEngine.js";
 
 export interface FastCheckoutStageAdvanceModeProps {

@@ -5,6 +5,7 @@ import type { QueuedFiscalReceiptItem } from "../../../services/hardware/hardwar
 import { showToast } from "../../GlobalToast";
 import { exportShift1cCsv, printAccountingStatement } from "../cashShiftReports";
 import { useCashShiftCalculations } from "./useCashShiftCalculations";
+import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from "./cashShiftService";
 
 interface UseCashShiftStateProps {
 	readonly initialIsOpen?: boolean | undefined;
@@ -59,10 +60,17 @@ export function useCashShiftState(props: UseCashShiftStateProps) {
 		setIsProcessing(true);
 		try {
 			if (isShiftOpen) {
+				await executeCloseShiftDbTransaction({
+					shiftNumber,
+					cashierName,
+					cashInDrawerRub,
+					netRevenueRub: calc.totalTurnoverRub,
+				});
 				if (onCloseShift) await onCloseShift();
 				setIsShiftOpen(false);
 				showToast(`Смена №${shiftNumber} закрыта (Z-отчет снят). Выручка: ${formatMoneyRu(calc.totalTurnoverRub)}`, "success", 4000);
 			} else {
+				await executeOpenShiftDbTransaction({ cashierName });
 				if (onOpenShift) await onOpenShift();
 				setIsShiftOpen(true);
 				showToast(`Смена №${shiftNumber + 1} открыта в кассе`, "success", 3000);

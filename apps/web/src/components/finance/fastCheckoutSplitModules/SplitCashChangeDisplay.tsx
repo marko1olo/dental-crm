@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SplitCashChangeDisplayProps {
 	readonly cashTenderedRub: number;

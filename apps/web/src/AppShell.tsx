@@ -9,6 +9,7 @@ import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/moda
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectSanPinStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
+import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -88,6 +89,7 @@ export function AppShell() {
 			<DirectPrescriptionLauncher />
 			<DirectSanPinStandaloneLauncher />
 			<DirectImplantPassportLauncher />
+			<DirectFastCheckoutLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

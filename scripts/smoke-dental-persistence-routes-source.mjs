@@ -4,10 +4,16 @@ const odontogramRoutes = readFileSync(
 	"apps/api/src/routes/odontogram.ts",
 	"utf8",
 );
-const financeFamilyRoutes = readFileSync(
+const financeFamilyRoutes = [
 	"apps/api/src/routes/finance_family.ts",
-	"utf8",
-);
+	"apps/api/src/routes/family/familyGroupReadRoutes.ts",
+	"apps/api/src/routes/family/familyGroupWriteRoutes.ts",
+	"apps/api/src/routes/family/familyWalletRoutes.ts",
+	"apps/api/src/routes/family/familyWalletOperationsRoutes.ts",
+	"apps/api/src/routes/family/familyBalanceService.ts",
+]
+	.map((f) => (existsSync(f) ? readFileSync(f, "utf8") : ""))
+	.join("\n");
 const odontogramModule = readFileSync(
 	"apps/web/src/components/odontogram/OdontogramModule.tsx",
 	"utf8",

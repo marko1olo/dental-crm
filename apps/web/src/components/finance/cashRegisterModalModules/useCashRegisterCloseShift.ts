@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService.js";
 import { showToast } from "../../GlobalToast.js";
 import type { Ffd12ShiftCloseZReportSummary } from "../fiscal/fiscal54fzEngine.js";
+import { executeCloseShiftDbTransaction } from "../cashShiftWidget/cashShiftService.js";
 
 export function useCashRegisterCloseShift(
 	shiftNumber: number,
@@ -20,13 +21,15 @@ export function useCashRegisterCloseShift(
 		if (isProcessing) return;
 		setIsProcessing(true);
 		try {
+			await executeCloseShiftDbTransaction({
+				shiftNumber,
+				cashierName: (reportSummary as any)?.cashierFullName ?? (reportSummary as any)?.cashierName,
+				cashierInn: (reportSummary as any)?.cashierInn,
+				cashInDrawerRub: reportSummary.cashInDrawerRub,
+				countedCashRub: reportSummary.cashInDrawerRub,
+				netRevenueRub: reportSummary.netRevenueRub,
+			});
 			if (onCloseShift) await onCloseShift(reportSummary);
-			else
-				await fetch("/api/fiscal/shift/close", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(reportSummary),
-				}).catch(() => null);
 			setLocalIsShiftOpen(false);
 			StaffActionAuditService.logShiftClose({
 				cashRegisterId: "kkt_main",

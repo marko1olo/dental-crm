@@ -1,5 +1,5 @@
 import { Banknote, CreditCard, QrCode } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	SplitDepositLoyaltyInputs,
 	type SplitDepositLoyaltyInputsProps,

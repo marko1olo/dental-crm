@@ -1,5 +1,5 @@
 import { Check, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	SplitSbpQrWaitingBody,
 	type SplitSbpQrWaitingBodyProps,

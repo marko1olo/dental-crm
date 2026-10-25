@@ -1,5 +1,5 @@
 import { Banknote, Coins, CreditCard, Layers, QrCode, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { CheckoutPaymentMethodType } from "../../payments/checkout/fastCheckoutPresets.js";
 
 export interface SplitSimpleCashierButtonsProps {

@@ -6,6 +6,7 @@ import { CashFlowModal } from "../CashFlowModal";
 import { CashRegisterModal } from "../CashRegisterModal";
 import { OfflineFiscalBatchModal } from "../fiscal/OfflineFiscalBatchModal";
 import { ShiftCloseZReportModal } from "../fiscal/ShiftCloseZReportModal";
+import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from "./cashShiftService";
 
 export interface CashShiftModalState {
 	readonly isZReportModalOpen: boolean;
@@ -49,6 +50,14 @@ export function CashShiftModals({
 	onCloseShift, onOpenShift, onPrintXReport, onCashIn, onCashOut,
 }: CashShiftModalsProps) {
 	const { shiftNumber, cashierName, cashierInn, clinicName, clinicInn, clinicRequisites } = clinicProps;
+	const handleClose = async () => {
+		await executeCloseShiftDbTransaction({ shiftNumber, cashierName, cashierInn, cashInDrawerRub: clinicProps.cashInDrawerRub, clinicInn });
+		if (onCloseShift) await onCloseShift();
+		setIsShiftOpen(false);
+		modalState.setIsZReportModalOpen(false);
+		showToast(`Смена №${shiftNumber} закрыта в кассе и отчет отправлен оператору`, "success");
+	};
+
 	return (
 		<>
 			<ShiftCloseZReportModal
@@ -57,17 +66,11 @@ export function CashShiftModals({
 				clinicLegalName={clinicName} clinicInn={clinicInn} clinicAddress={clinicRequisites.address}
 				kktRegNumber={clinicRequisites.kktRegNumber} kktSerialNumber={clinicRequisites.kktSerialNumber}
 				fnSerial={clinicRequisites.fnSerialNumber} ofdName={clinicRequisites.ofdName}
-				onConfirmCloseShift={async () => {
-					if (onCloseShift) await onCloseShift();
-					setIsShiftOpen(false);
-					modalState.setIsZReportModalOpen(false);
-					showToast(`Смена №${shiftNumber} закрыта в кассе и отчет отправлен оператору`, "success");
-				}}
+				onConfirmCloseShift={handleClose}
 			/>
 			<OfflineFiscalBatchModal
 				isOpen={modalState.isOfflineBatchModalOpen} onClose={() => modalState.setIsOfflineBatchModalOpen(false)}
-				clinicName={clinicName} cashierFullName={cashierName} shiftNumber={shiftNumber}
-				clinicRequisites={clinicRequisites}
+				clinicName={clinicName} cashierFullName={cashierName} shiftNumber={shiftNumber} clinicRequisites={clinicRequisites}
 				onBatchProcessed={() => {
 					FiscalReceiptQueueManager.flushAllPending();
 					showToast("Офлайн-очередь успешно обработана и фискализирована!", "success");
@@ -87,8 +90,12 @@ export function CashShiftModals({
 				ofdName={clinicRequisites.ofdName} cashInDrawerRub={clinicProps.cashInDrawerRub}
 				cardSumRub={clinicProps.cardSumRub} sbpSumRub={clinicProps.sbpSumRub}
 				advanceOffsetRub={clinicProps.advanceOffsetRub}
-				onOpenShift={async () => { if (onOpenShift) await onOpenShift(); setIsShiftOpen(true); }}
-				onCloseShift={async () => { if (onCloseShift) await onCloseShift(); setIsShiftOpen(false); }}
+				onOpenShift={async () => {
+					await executeOpenShiftDbTransaction({ cashierName });
+					if (onOpenShift) await onOpenShift();
+					setIsShiftOpen(true);
+				}}
+				onCloseShift={handleClose}
 				onPrintXReport={onPrintXReport}
 			/>
 		</>

@@ -1,6 +1,6 @@
 import type { SbpDynamicQrResult } from "@dental/shared";
 import { Check, QrCode, RefreshCw } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SplitSbpQrWaitingBodyProps {
 	readonly sbpQrData: {

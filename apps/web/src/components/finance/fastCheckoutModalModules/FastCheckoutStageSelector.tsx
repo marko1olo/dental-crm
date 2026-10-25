@@ -1,5 +1,5 @@
 import { Layers } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { TreatmentPlanStageOption } from "../../payments/checkout/fastCheckoutEngine.js";
 
 export interface FastCheckoutStageSelectorProps {

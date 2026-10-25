@@ -1,5 +1,5 @@
 import { QrCode, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface FastCheckoutModalHeaderProps {
 	readonly patientName: string;

@@ -1,5 +1,5 @@
 import { Coins, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SplitDepositLoyaltyInputsProps {
 	readonly depositAmountRub: number;

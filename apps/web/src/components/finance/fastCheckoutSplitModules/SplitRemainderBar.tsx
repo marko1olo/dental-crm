@@ -1,5 +1,5 @@
 import { AlertCircle, Check, Layers } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	SplitRemainderChips,
 	type SplitRemainderChipsProps,

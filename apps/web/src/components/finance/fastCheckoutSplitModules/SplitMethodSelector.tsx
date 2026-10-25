@@ -6,7 +6,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { CHECKOUT_PAYMENT_METHODS } from "../../payments/checkout/fastCheckoutPresets.js";
 import {
 	SplitSimpleCashierButtons,
