@@ -38,7 +38,7 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 
 	it("models 1 single conical root with developmental depression", () => {
 		const apex = TOOTH44_GEOMETRY.apex;
-		assert.equal(apex.x, 48.2);
+		assert.equal(apex.x, 43.0);
 		assert.equal(apex.y, 147.5);
 		assert.ok(TOOTH44_GEOMETRY.rootSulcus);
 		assert.ok(TOOTH44_GEOMETRY.rootSulcusHighlight);
@@ -49,7 +49,7 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
 		assert.equal(canals[0]?.orifice.x, 50.2);
-		assert.equal(canals[0]?.apex.x, 48.2);
+		assert.equal(canals[0]?.apex.x, 43.0);
 	});
 
 	it("renders Tooth44Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {

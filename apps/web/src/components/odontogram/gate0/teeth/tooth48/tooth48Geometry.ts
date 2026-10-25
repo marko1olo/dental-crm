@@ -28,28 +28,28 @@ export const TOOTH48_GEOMETRY = {
 		"C 87.0,52 86.2,66 84,74 " +
 		"C 80,75.5 68,76.5 50,76.5 " +
 		"C 32,76.5 20,75.5 16,74 Z",
-	// Fused conical root mass tapering with balanced distal curvature towards apex at (60.5, 148.0)
+	// Fused conical root mass sweeping strongly distally to the left towards apex at (34.0, 148.0)
 	rootMonolithPath:
 		"M 16,74 " +
-		"C 17.5,92 23.5,114 34,134 " +
-		"C 40.0,143 48.0,147.5 57,148.2 " +
-		"C 61.5,148.5 64.5,147.0 67,145.0 " +
-		"C 72.0,136 76.5,116 80,94 " +
-		"C 81.5,85 83.0,78 84,74 " +
+		"C 16.5,88 18.0,105 21.0,122 " +
+		"C 23.5,134 27.0,144 32.0,147.5 " +
+		"C 34.0,148.5 36.5,148.5 38.5,147.0 " +
+		"C 46.0,140.0 57.0,122.0 68.0,102.0 " +
+		"C 75.0,88.0 81.0,80.0 84,74 " +
 		"C 80,75.5 68,76.5 50,76.5 " +
 		"C 32,76.5 20,75.5 16,74 Z",
 	cejPath: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
 	cejCurve: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
-	apex: { x: 60.5, y: 148.0 },
-	distalCurvedApex: { x: 60.5, y: 148.0 },
-	apices: [{ x: 60.5, y: 148.0, r: 9.5 }] as const,
+	apex: { x: 34.0, y: 148.0 },
+	distalCurvedApex: { x: 34.0, y: 148.0 },
+	apices: [{ x: 34.0, y: 148.0, r: 9.5 }] as const,
 	cervicalShoulderPath:
 		"M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74 L 83.5,71.5 C 72,73.5 62,74.0 50,74.0 C 38,74.0 28,73.5 16.5,71.5 Z",
 	compositeFillingPath:
 		"M 28,22 C 36,21 44,21 50,22 C 56,21 64,21 72,22 C 70,26 62,27 50,27 C 38,27 30,26 28,22 Z",
-	// Longitudinal developmental fusion groove following the distal sweep
-	fusedRootSulcus: "M 48,80 C 48,100 52,122 59,142",
-	fusedRootHighlight: "M 49.5,82 C 49.5,101 53.5,122 60,141",
+	// Longitudinal developmental fusion groove following the distal sweep to the left
+	fusedRootSulcus: "M 48,80 C 46,98 42,120 35.5,143",
+	fusedRootHighlight: "M 49.5,82 C 47.5,99 43.5,120 37.0,142",
 	buccalCervicalRidge:
 		"M 16,74 C 20,68 35,63.0 50,63.0 C 65,63.0 80,68 84,74 C 70,72.2 30,72.2 16,74 Z",
 	cervicalRidgeHighlight: "M 17,72 C 22,67.0 35,64.0 50,64.0 C 65,64.0 78,68.0 83,72",

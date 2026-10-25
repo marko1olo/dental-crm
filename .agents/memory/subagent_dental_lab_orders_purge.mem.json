@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-10-25T18:48:00+04:00",
+  "subagent": "red-team-inquisitor-dental-lab",
+  "task": "Dental Lab & Orthopedic Orders SSOT Inquisitor & CSS Decomposition (Mandates 8b, 8e, 8n, 8x, 8am, 8ap, 8ze)",
+  "status": "COMPLETED",
+  "decomposition": {
+    "desktopStyles": {
+      "entry": "apps/web/src/components/lab/dentalLab.css",
+      "modulesDir": "apps/web/src/components/lab/styles/",
+      "maxLinesPerFile": 120,
+      "modulesCount": 10
+    },
+    "mobileStyles": {
+      "entry": "apps/web/src/components/lab/mobile/mobileLabOrders.css",
+      "modulesDir": "apps/web/src/components/lab/mobile/styles/",
+      "maxLinesPerFile": 120,
+      "modulesCount": 8
+    }
+  },
+  "verification": {
+    "vitestLab": {
+      "command": "npx vitest run apps/web/src/components/lab/",
+      "testFilesPassed": 67,
+      "testsPassed": 201,
+      "exitCode": 0
+    },
+    "vitestOrthopedics": {
+      "command": "npx vitest run apps/web/src/components/orthopedics/",
+      "testFilesPassed": 4,
+      "testsPassed": 41,
+      "exitCode": 0
+    },
+    "encodings": {
+      "command": "npm run check:encoding",
+      "filesChecked": 19390,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "visualProof": {
+      "pcLight": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_pc_light_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_pc_light_1440x900.png",
+        "sizeBytes": 152226,
+        "verifiedRead": true
+      },
+      "pcDark": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_pc_dark_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_pc_dark_1440x900.png",
+        "sizeBytes": 155461,
+        "verifiedRead": true
+      },
+      "orderDrawerPcLight": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_order_drawer_pc_light_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_order_drawer_pc_light_1440x900.png",
+        "sizeBytes": 78951,
+        "verifiedRead": true
+      },
+      "orderDrawerPcDark": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_order_drawer_pc_dark_1440x900.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_order_drawer_pc_dark_1440x900.png",
+        "sizeBytes": 80004,
+        "verifiedRead": true
+      },
+      "mobileLight": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_mobile_light_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_mobile_light_390x844.png",
+        "sizeBytes": 162275,
+        "verifiedRead": true
+      },
+      "mobileDark": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_mobile_dark_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_mobile_dark_390x844.png",
+        "sizeBytes": 163134,
+        "verifiedRead": true
+      },
+      "orderSheetMobileDark": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_order_sheet_mobile_dark_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_order_sheet_mobile_dark_390x844.png",
+        "sizeBytes": 106451,
+        "verifiedRead": true
+      },
+      "orderSheetMobileLight": {
+        "file": "docs/proofs/dental_lab/proof_dental_lab_order_sheet_mobile_light_390x844.png",
+        "brain": "C:/Users/Admin/.gemini/antigravity/brain/48cf2cb0-96d9-4abf-8adf-49609fe61d09/proof_dental_lab_order_sheet_mobile_light_390x844.png",
+        "sizeBytes": 37530,
+        "verifiedRead": true
+      }
+    }
+  },
+  "clinicalInvariants": {
+    "mandate8eDoctorAutonomy": "Кнопка '✓ Сформировать наряд в ЗТЛ' и действия канбана никогда не блокируются (disabled: 0). Автономия врача 100%.",
+    "mandate8bAntiMonolith": "Все CSS-файлы и TSX-компоненты разделены на изолированные модули строго <= 120 строк.",
+    "mandate8xClinicalLanguage": "Запрет канцелярита: 'Медицинская карта приёма' вместо '043/у', 'Каталог процедур / Услуги' вместо '804н'.",
+    "mandate8amButtonConsistency": "Ровно 1 Primary CTA кнопка на видимый экран.",
+    "appleHigMobileErgonomics": "Нативный Bottom Sheet с Drag Handle 36x5px, Touch target >= 44x44px, Natural Thumb Zone."
+  }
+}

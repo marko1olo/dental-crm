@@ -51,7 +51,7 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth45-overfill-puffs">
 							<path
-								d="M 45.8,145.5 C 44.3,147.0 45.3,149.5 47.8,149.0 C 50.3,148.5 49.8,146.0 47.8,145.5 Z"
+								d="M 40.0,145.5 C 38.5,147.0 39.5,149.5 42.0,149.0 C 44.5,148.5 44.0,146.0 42.0,145.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -63,14 +63,14 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<g id="tooth45-broken-file">
 							<path
-								d="M 49.3,135.0 L 47.8,145.5"
+								d="M 44.5,135.0 L 42.0,145.5"
 								fill="none"
 								stroke="#e2e8f0"
 								strokeWidth="1.2"
 								strokeLinecap="round"
 							/>
 							<path
-								d="M 47.8,137.0 L 49.8,139.0 M 47.2,141.0 L 49.2,143.0"
+								d="M 43.0,137.0 L 45.0,139.0 M 42.0,141.0 L 44.0,143.0"
 								stroke="#0284c7"
 								strokeWidth="0.8"
 							/>

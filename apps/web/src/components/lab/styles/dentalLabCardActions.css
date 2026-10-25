@@ -1,0 +1,117 @@
+/* dentalLabCardActions.css — Действия на карточке, анимации и пустые состояния (Мандат 8b: <= 120 строк) */
+
+.ztl-card-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	border-top: 1px solid var(--line);
+	padding-top: 8px;
+}
+
+.ztl-btn-card-action {
+	flex: 1;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 8px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.ztl-btn-card-action.ztl-btn-open {
+	flex: 0 0 auto;
+	padding: 0 8px;
+}
+
+.ztl-btn-card-action.ztl-btn-advance {
+	flex: 1 1 auto;
+	padding: 0 6px;
+	font-size: 11px;
+}
+
+.ztl-btn-card-action:hover {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.ztl-btn-advance {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal);
+}
+
+.ztl-btn-advance:hover {
+	background: var(--teal-dark);
+	color: var(--on-teal, #ffffff);
+}
+
+@keyframes ztlFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes ztlPulseBorder {
+	0%, 100% {
+		border-bottom-color: var(--bad-fg);
+	}
+	50% {
+		border-bottom-color: var(--bad-fg);
+	}
+}
+
+.ztl-empty-state {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 24px;
+	text-align: center;
+	background: var(--paper);
+}
+
+.ztl-empty-icon-wrap {
+	width: 64px;
+	height: 64px;
+	border-radius: 16px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16px;
+	border: 1px solid var(--teal);
+}
+
+.ztl-empty-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0 0 8px 0;
+}
+
+.ztl-empty-desc {
+	font-size: 13px;
+	color: var(--muted);
+	max-width: 440px;
+	line-height: 1.5;
+	margin: 0 0 20px 0;
+}

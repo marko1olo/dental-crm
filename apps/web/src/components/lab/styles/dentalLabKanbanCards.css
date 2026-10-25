@@ -1,0 +1,114 @@
+/* dentalLabKanbanCards.css — Карточка наряд-заказа в канбане (Мандат 8b: <= 120 строк) */
+
+.ztl-order-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+	position: relative;
+	contain: content;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 64px;
+}
+.ztl-order-card:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-2);
+	border-color: var(--line-strong);
+}
+.ztl-order-card.has-delay-alert {
+	border-left: 4px solid var(--bad-fg);
+	background: var(--bad-bg);
+}
+.ztl-card-top-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+.ztl-card-order-num {
+	font-family: monospace, monospace;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--teal);
+	background: var(--teal-surface);
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--teal);
+}
+.ztl-card-patient-name {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.ztl-card-doctor {
+	font-size: 11px;
+	color: var(--muted);
+	margin: 0;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
+}
+.ztl-card-work-type {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--info-fg);
+	background: var(--info-bg);
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--info-fg);
+}
+.ztl-card-teeth-badge {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink);
+}
+.ztl-card-lab-name {
+	font-size: 11px;
+	color: var(--muted);
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	white-space: normal;
+	line-height: 1.3;
+	word-break: break-word;
+}
+.ztl-card-alert-badge {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--bad-fg);
+	background: var(--bad-bg);
+	border: 1px solid var(--bad-fg);
+	border-radius: 6px;
+	padding: 4px 6px;
+	line-height: 1.3;
+}
+.ztl-card-dates-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	color: var(--muted);
+	border-top: 1px dashed var(--line);
+	padding-top: 6px;
+	margin-top: 2px;
+}
+.ztl-card-price-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+}

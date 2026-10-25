@@ -1,0 +1,98 @@
+/* dentalLabKanbanColumns.css — Колонки канбан-доски и заголовки стадий (Мандат 8b: <= 120 строк) */
+
+.ztl-kanban-column {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+	min-width: 260px;
+	min-height: 280px;
+	transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ztl-kanban-empty-column {
+	border: 1.5px dashed var(--line, #cbd5e1);
+	background: var(--paper-soft);
+	border-radius: 8px;
+	color: var(--muted, #94a3b8);
+	transition: all 0.2s ease;
+}
+
+.ztl-kanban-column.is-drag-over .ztl-kanban-empty-column {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+.ztl-kanban-column.is-drag-over {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.05));
+	box-shadow: 0 0 0 2px var(--teal, #0d9488) inset;
+}
+
+.ztl-order-card:active,
+.ztl-order-card[draggable="true"]:active {
+	opacity: 0.6;
+	cursor: grabbing;
+}
+
+.ztl-column-header {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	background: var(--paper-strong);
+}
+
+.ztl-column-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	flex: 1;
+}
+
+.ztl-column-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal);
+	flex-shrink: 0;
+}
+
+.ztl-column-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	white-space: normal;
+	line-height: 1.25;
+	word-break: break-word;
+}
+
+.ztl-column-count {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 1px 7px;
+	border-radius: 10px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	flex-shrink: 0;
+}
+
+.ztl-column-count.has-items {
+	background: var(--teal-surface);
+	color: var(--teal);
+}
+
+.ztl-column-cards {
+	flex: 1;
+	padding: 10px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}

@@ -30,27 +30,27 @@ export const TOOTH44_GEOMETRY = {
 		"C 75.0,52 74.5,66 74,74 " +
 		"C 70,75.5 62,76.5 50,76.5 " +
 		"C 38,76.5 30,75.5 26,74 Z",
-	// Single conical root tapering smoothly to apex at (48.2, 147.5) with natural distal tilt
+	// Single conical root tapering smoothly to apex at (43.0, 147.5) with pronounced distal tilt to the left
 	rootMonolithPath:
 		"M 26,74 " +
-		"C 27.5,92 33.0,114 39.5,133 " +
-		"C 42.0,143 44.5,147.0 46.7,147.5 " +
-		"C 47.7,147.7 48.7,147.7 49.7,147.5 " +
-		"C 51.7,147.0 55.5,143 59.5,133 " +
-		"C 67.0,114 71.5,92 74,74 " +
+		"C 27.0,92 29.5,114 34.5,132 " +
+		"C 37.0,141 39.5,146.0 41.5,147.5 " +
+		"C 42.5,147.7 43.5,147.7 44.5,147.5 " +
+		"C 47.5,146.5 51.5,141 56.5,132 " +
+		"C 65.0,114 71.0,92 74,74 " +
 		"C 70,75.5 62,76.5 50,76.5 " +
 		"C 38,76.5 30,75.5 26,74 Z",
 	cejPath: "M 26,74 C 34,75.5 42,76.0 50,76.0 C 58,76.0 66,75.5 74,74",
 	cejCurve: "M 26,74 C 34,75.5 42,76.0 50,76.0 C 58,76.0 66,75.5 74,74",
-	apex: { x: 48.2, y: 147.5 },
-	apices: [{ x: 48.2, y: 147.5, r: 9.5 }] as const,
+	apex: { x: 43.0, y: 147.5 },
+	apices: [{ x: 43.0, y: 147.5, r: 9.5 }] as const,
 	cervicalShoulderPath:
 		"M 26,74 C 34,75.5 42,76.0 50,76.0 C 58,76.0 66,75.5 74,74 L 73.5,71.5 C 66,73.5 58,74.0 50,74.0 C 42,74.0 34,73.5 26.5,71.5 Z",
 	compositeFillingPath:
 		"M 38,22 C 42,20 47,19 50,20 C 53,19 58,20 62,23 C 61,27 56,29 50,29 C 44,29 39,27 38,22 Z",
-	// Longitudinal root depression groove with natural distal tilt
-	rootSulcus: "M 50,80 C 49.5,100 49.0,122 48.2,142",
-	rootSulcusHighlight: "M 51.2,82 C 50.8,101 50.2,122 49.2,141",
+	// Longitudinal root depression groove with pronounced distal tilt
+	rootSulcus: "M 50,80 C 48.5,100 46.0,122 43.0,142",
+	rootSulcusHighlight: "M 51.2,82 C 49.8,101 47.2,122 44.0,141",
 	// Buccal cervical ridge convexity in cervical third
 	buccalCervicalRidge:
 		"M 26,74 C 29,68 38,63.0 50,63.0 C 62,63.0 71,68 74,74 C 65,72.2 35,72.2 26,74 Z",

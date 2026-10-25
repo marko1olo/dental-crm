@@ -1,0 +1,108 @@
+/* dentalLabTeeth.css — Кнопки зубов FDI, квадранты и вкладки модалки (Мандат 8b: <= 120 строк) */
+
+.lab-tooth-btn {
+	min-width: 34px;
+	min-height: 34px;
+	font-size: 13px;
+	font-weight: 700;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+}
+
+@media (min-width: 640px) {
+	.lab-tooth-btn {
+		min-width: 40px;
+		min-height: 40px;
+	}
+}
+
+.lab-tooth-btn:hover {
+	border-color: var(--teal);
+	background: var(--teal-surface);
+}
+
+.lab-tooth-btn.is-selected {
+	background: var(--teal) !important;
+	color: var(--paper-strong) !important;
+	border-color: var(--teal-dark) !important;
+	box-shadow: 0 3px 8px -1px rgba(13, 148, 136, 0.35);
+	transform: scale(1.05);
+}
+
+.lab-quadrant-btn {
+	min-height: 40px;
+	padding: 6px 14px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 12px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.lab-quadrant-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.lab-quadrant-clear-btn {
+	min-height: 40px;
+	padding: 6px 14px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 12px;
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--bad-fg);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.lab-quadrant-clear-btn:hover {
+	background: var(--bad-bg);
+	opacity: 0.9;
+}
+
+.lab-modal-tab-btn {
+	min-height: 42px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+	text-align: center;
+}
+
+.lab-modal-tab-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.lab-modal-tab-btn.is-active {
+	background: var(--paper);
+	color: var(--teal);
+	border-color: var(--line);
+	box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08);
+}

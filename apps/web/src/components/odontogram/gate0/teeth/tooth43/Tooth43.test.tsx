@@ -23,7 +23,7 @@ describe("Tooth43 Wheeler Ch. 11 Mandibular Canine Anatomical Invariants", () =>
 
 	it("models longest massive single root (Y=162)", () => {
 		const apex = TOOTH43_GEOMETRY.apex;
-		assert.equal(apex.x, 46.5);
+		assert.equal(apex.x, 39.0);
 		assert.equal(apex.y, 161.5);
 		assert.ok(TOOTH43_GEOMETRY.rootSulcus);
 	});
@@ -34,7 +34,7 @@ describe("Tooth43 Wheeler Ch. 11 Mandibular Canine Anatomical Invariants", () =>
 		assert.equal(canals[0]?.id, "Main");
 		assert.equal(canals[0]?.orifice.x, 50.0);
 		assert.equal(canals[0]?.apex.y, 159.0);
-		assert.equal(canals[0]?.apex.x, 46.8);
+		assert.equal(canals[0]?.apex.x, 39.5);
 	});
 
 	it("renders Tooth43Container with XXL badge clearance (height=218)", () => {

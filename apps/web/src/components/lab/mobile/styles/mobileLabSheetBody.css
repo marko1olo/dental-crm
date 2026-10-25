@@ -1,0 +1,87 @@
+/* mobileLabSheetBody.css — Содержимое шторки и кнопки смены стадий (Мандат 8b: <= 120 строк) */
+
+.mobile-lab-sheet-close-btn {
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.mobile-lab-sheet-close-btn:active {
+	background: var(--line);
+	color: var(--ink);
+}
+
+.mobile-lab-sheet-body {
+	flex: 1;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	-webkit-overflow-scrolling: touch;
+	padding: 14px 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.mobile-lab-status-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.mobile-lab-status-action-btn {
+	width: 100%;
+	min-height: 50px;
+	padding: 10px 14px;
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 700;
+	transition: all 0.15s ease;
+	text-align: left;
+}
+
+.mobile-lab-status-action-btn:active {
+	transform: scale(0.98);
+}
+
+.mobile-lab-status-action-btn.variant-ready {
+	background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
+	border-color: color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+	color: var(--teal, #0d9488);
+}
+
+.mobile-lab-status-action-btn.variant-fitting {
+	background: color-mix(in srgb, #8b5cf6 12%, transparent);
+	border-color: color-mix(in srgb, #8b5cf6 35%, transparent);
+	color: #7c3aed;
+}
+
+.mobile-lab-status-action-btn.variant-correction {
+	background: color-mix(in srgb, #f43f5e 12%, transparent);
+	border-color: color-mix(in srgb, #f43f5e 35%, transparent);
+	color: #e11d48;
+}
+
+.mobile-lab-status-action-btn.variant-completed {
+	background: color-mix(in srgb, #10b981 12%, transparent);
+	border-color: color-mix(in srgb, #10b981 35%, transparent);
+	color: #059669;
+}

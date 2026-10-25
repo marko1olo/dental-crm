@@ -1,0 +1,101 @@
+/* dentalLabToolbar.css — Кнопки тулбара и баннер задержки (Мандат 8b: <= 120 строк) */
+
+.ztl-btn-primary {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 14px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.ztl-btn-primary:hover {
+	background: var(--teal-dark);
+}
+
+.ztl-btn-secondary {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.ztl-btn-secondary:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+.ztl-btn-icon {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	padding: 0;
+	background: transparent;
+	color: var(--muted);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.ztl-btn-icon:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.ztl-delay-banner {
+	background: var(--bad-bg);
+	border-bottom: 1px solid var(--bad-fg);
+	padding: 8px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 12px;
+	color: var(--bad-fg);
+	animation: ztlPulseBorder 2s infinite ease-in-out;
+}
+
+.ztl-delay-banner-dark {
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+}
+
+.ztl-delay-banner-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.ztl-delay-badge-count {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	padding: 2px 7px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 800;
+}

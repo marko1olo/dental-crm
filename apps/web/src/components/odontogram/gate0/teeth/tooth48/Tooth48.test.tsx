@@ -25,8 +25,8 @@ describe("Tooth48 Wheeler Ch. 11 Third Mandibular Molar Anatomical Invariants", 
 
 	it("models fused conical root mass with pronounced distal curvature of apex", () => {
 		const apex = TOOTH48_GEOMETRY.distalCurvedApex;
-		// Midline is X=50, apex at X=60.5 indicates marked distal curvature (> 58)
-		assert.ok(apex.x > 58);
+		// Midline is X=50, apex at X=34.0 indicates marked distal curvature to the left (< 40)
+		assert.ok(apex.x < 40);
 		assert.ok(apex.y >= 145);
 		assert.ok(TOOTH48_GEOMETRY.fusedRootSulcus);
 	});
@@ -38,9 +38,9 @@ describe("Tooth48 Wheeler Ch. 11 Third Mandibular Molar Anatomical Invariants", 
 			canals.map((c) => c.id),
 			["M", "D"],
 		);
-		// Both canals converge into the distally curved apical zone (x > 58)
-		assert.ok(canals[0].apex.x > 58);
-		assert.ok(canals[1].apex.x > 58);
+		// Both canals converge into the distally curved apical zone (x < 40)
+		assert.ok(canals[0].apex.x < 40);
+		assert.ok(canals[1].apex.x < 40);
 		assert.ok(TOOTH48_PULP_GEOMETRY.cShapedIsthmus);
 	});
 

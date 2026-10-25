@@ -1,0 +1,67 @@
+/* dentalLabFilterChips.css — Фильтр-чипы и адаптивная сетка канбана (Мандат 8b: <= 120 строк) */
+
+.ztl-filter-chips {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+}
+
+.ztl-chip {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 20px;
+	font-size: 12.5px;
+	font-weight: 500;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.ztl-chip:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.ztl-chip.active {
+	background: var(--teal-surface);
+	color: var(--teal);
+	border-color: var(--teal);
+}
+
+.ztl-chip.alert-chip.active {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
+}
+
+.ztl-kanban-board {
+	flex: 1;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(260px, 1fr));
+	gap: 12px;
+	padding: 16px;
+	overflow-x: auto;
+	background: var(--paper-soft);
+}
+
+@media (max-width: 1280px) {
+	.ztl-kanban-board {
+		grid-template-columns: repeat(2, minmax(260px, 1fr));
+		overflow-y: auto;
+	}
+}
+
+@media (max-width: 768px) {
+	.ztl-kanban-board {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+}

@@ -1,0 +1,48 @@
+/* mobileLabSecondaryAndAnim.css — Вторичные действия и анимации (Мандат 8b: <= 120 строк) */
+
+.mobile-lab-secondary-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-top: 10px;
+	border-top: 1px solid var(--line-subtle);
+}
+
+.mobile-lab-secondary-btn {
+	width: 100%;
+	min-height: 44px;
+	padding: 0 14px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.mobile-lab-secondary-btn:active {
+	background: var(--line);
+}
+
+@keyframes mobileLabFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes mobileLabSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}

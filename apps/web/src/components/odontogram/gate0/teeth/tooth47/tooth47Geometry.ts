@@ -29,38 +29,38 @@ export const TOOTH47_GEOMETRY = {
 		"C 87.5,52 86.5,66 84,74 " +
 		"C 80,75.5 68,76.2 50,76.5 " +
 		"C 32,76.2 20,75.5 16,74 Z",
-	// Two parallel roots, tighter furcation at Y=104, mesial apex (31, 148), distal apex (69, 147)
+	// Two parallel roots sweeping distally to the left, furcation at Y=104, mesial apex (24, 148), distal apex (58, 147)
 	rootMonolithPath:
 		"M 16,74 " +
-		"C 15,88 18,110 22,126 " +
-		"C 24,136 27,144 31,148 " +
-		"C 34,148 36,142 38,132 " +
-		"C 41,118 45,108 50,104 " +
-		"C 55,108 59,118 62,132 " +
-		"C 64,142 66,147 69,147 " +
-		"C 73,147 76,136 78,126 " +
-		"C 82,110 85,88 84,74 " +
+		"C 14.5,88 15.0,110 18.0,126 " +
+		"C 19.5,136 21.0,144 24.0,148 " +
+		"C 26.5,148 29.0,142 32.0,132 " +
+		"C 35.0,118 41.0,108 47.0,104 " +
+		"C 49.0,110 51.5,122 54.0,134 " +
+		"C 55.5,142 56.5,147 58.0,147 " +
+		"C 61.5,147 64.5,138 68.0,126 " +
+		"C 75.0,110 82.0,88 84,74 " +
 		"C 80,75.5 68,76.2 50,76.5 " +
 		"C 32,76.2 20,75.5 16,74 Z",
 	cejPath: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
 	cejCurve: "M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74",
-	mesialApex: { x: 31, y: 148 },
-	distalApex: { x: 69, y: 147 },
-	furcationApex: { x: 50, y: 104 },
+	mesialApex: { x: 24, y: 148 },
+	distalApex: { x: 58, y: 147 },
+	furcationApex: { x: 47, y: 104 },
 	apices: [
-		{ x: 38.0, y: 147.0, r: 8.5 },
-		{ x: 62.0, y: 147.0, r: 8.5 },
+		{ x: 24.0, y: 148.0, r: 8.5 },
+		{ x: 58.0, y: 147.0, r: 8.5 },
 	] as const,
 	cervicalShoulderPath:
 		"M 16,74 C 28,76 38,76.5 50,76.5 C 62,76.5 72,76 84,74 L 83.5,71.5 C 72,73.5 62,74.0 50,74.0 C 38,74.0 28,73.5 16.5,71.5 Z",
 	compositeFillingPath:
 		"M 26,22 C 34,20 44,20 50,21 C 56,20 66,20 74,22 C 72,26 62,27 50,27 C 38,27 28,26 26,22 Z",
-	// Parallel root longitudinal sulci
-	mesialLongitudinalGroove: "M 27,80 C 26,98 27,122 31,144",
-	distalLongitudinalGroove: "M 73,80 C 74,98 73,122 69,143",
+	// Parallel root longitudinal sulci sweeping distally
+	mesialLongitudinalGroove: "M 25,80 C 23,98 22,122 24,144",
+	distalLongitudinalGroove: "M 71,80 C 69,98 63,122 58,143",
 	// Furcation ambient occlusion shadow
 	bifurcationShadowPath:
-		"M 44,112 C 48,105 50,104 50,104 C 50,104 52,105 56,112 C 53,109 47,109 44,112 Z",
+		"M 41,112 C 45,105 47,104 47,104 C 47,104 49,105 53,112 C 50,109 44,109 41,112 Z",
 	// Buccal cervical ridge bulge above CEJ
 	buccalCervicalRidge:
 		"M 16,74 C 20,68 35,62.5 50,62.5 C 65,62.5 80,68 84,74 C 70,72 30,72 16,74 Z",

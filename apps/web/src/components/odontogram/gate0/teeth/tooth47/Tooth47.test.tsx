@@ -27,11 +27,11 @@ describe("Tooth47 Wheeler Ch. 11 Second Mandibular Molar Anatomical Invariants",
 		assert.equal(TOOTH47_GEOMETRY.foramenCaecum.cx, 50);
 	});
 
-	it("models tighter, parallel roots with apex distance strictly narrower than Tooth 46 (38px vs 56px)", () => {
+	it("models tighter, parallel roots with apex distance strictly narrower than Tooth 46 (34px vs 56px)", () => {
 		const m = TOOTH47_GEOMETRY.mesialApex;
 		const d = TOOTH47_GEOMETRY.distalApex;
 		const apexDistance = Math.abs(d.x - m.x);
-		assert.equal(apexDistance, 38);
+		assert.equal(apexDistance, 34);
 		// Wheeler invariant: second molar furcation is deeper/lower than first molar
 		assert.equal(TOOTH47_GEOMETRY.furcationApex.y, 104);
 	});
@@ -44,9 +44,9 @@ describe("Tooth47 Wheeler Ch. 11 Second Mandibular Molar Anatomical Invariants",
 			["MB", "ML", "D"],
 		);
 		// Mesial root houses MB & ML; distal root houses D
-		assert.ok(canals[0] && canals[0].apex.x < 40);
-		assert.ok(canals[1] && canals[1].apex.x < 40);
-		assert.ok(canals[2] && canals[2].apex.x > 60);
+		assert.ok(canals[0] && canals[0].apex.x < 30);
+		assert.ok(canals[1] && canals[1].apex.x < 30);
+		assert.ok(canals[2] && canals[2].apex.x >= 55);
 	});
 
 	it("renders Tooth47Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {

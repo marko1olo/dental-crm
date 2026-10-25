@@ -19,23 +19,23 @@ export const TOOTH43_GEOMETRY = {
 		"C 78.0,40.0 79.0,58.0 77.0,73.0 " +
 		"C 68.0,75.0 59.0,76.0 50.0,76.0 " +
 		"C 41.0,76.0 32.0,75.0 23.0,73.0 Z",
-	// Longest single root of the human dentition down to Y=162.0 with natural distal apical hook
+	// Longest single root of the human dentition down to Y=161.5 with pronounced distal curve to the left
 	rootMonolithPath:
 		"M 23.0,73.0 " +
-		"C 27.5,92.0 32.5,120.0 39.5,144.0 " +
-		"C 42.0,154.0 44.5,160.5 46.5,161.5 " + // Deepest apex in dentition with distal tilt
-		"C 48.5,160.5 51.5,154.0 55.5,144.0 " +
-		"C 64.5,120.0 71.5,92.0 77.0,73.0 " +
+		"C 25.0,92.0 27.5,118.0 31.0,140.0 " +
+		"C 33.0,150.0 35.5,158.0 39.0,161.5 " + // Deepest apex with pronounced distal tilt to the left
+		"C 41.5,161.0 45.0,154.0 49.0,140.0 " +
+		"C 58.0,118.0 68.0,94.0 77.0,73.0 " +
 		"C 68.0,75.0 59.0,76.0 50.0,76.0 " +
 		"C 41.0,76.0 32.0,75.0 23.0,73.0 Z",
 	cejPath: "M 23.0,73.0 C 32.0,75.0 41.0,76.0 50.0,76.0 C 59.0,76.0 68.0,75.0 77.0,73.0",
-	apex: { x: 46.5, y: 161.5 },
-	apices: [{ x: 46.5, y: 161.5, r: 9.5 }] as const,
+	apex: { x: 39.0, y: 161.5 },
+	apices: [{ x: 39.0, y: 161.5, r: 9.5 }] as const,
 	// Labial central vertical ridge
 	labialRidge: "M 50.0,8.0 C 50.0,28.0 50.0,50.0 50.0,73.0",
 	labialRidgeHighlight: "M 48.5,10.0 C 48.5,29.0 48.5,50.0 48.5,72.0",
-	// Developmental root groove with subtle distal curvature
-	rootSulcus: "M 50.0,78.0 C 50.0,105.0 49.0,132.0 46.8,153.5",
+	// Developmental root groove with pronounced distal curvature
+	rootSulcus: "M 50.0,78.0 C 48.0,105.0 43.0,132.0 39.5,154.0",
 	cervicalShoulderPath:
 		"M 23.0,73.0 C 32.0,75.0 41.0,76.0 50.0,76.0 C 59.0,76.0 68.0,75.0 77.0,73.0 " +
 		"L 76.5,70.5 C 68.0,72.5 59.0,73.5 50.0,73.5 C 41.0,73.5 32.0,72.5 23.5,70.5 Z",

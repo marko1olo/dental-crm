@@ -1,0 +1,105 @@
+/* mobileLabThumbBar.css — Зона большого пальца и шторка Bottom Sheet (Мандат 8b: <= 120 строк) */
+
+.mobile-lab-thumb-bar {
+	position: fixed;
+	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	width: 100%;
+	z-index: 10000;
+	padding: 8px 16px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.mobile-lab-primary-cta {
+	width: 100%;
+	height: 50px;
+	min-height: 50px;
+	border-radius: 16px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 15px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--teal, #0d9488) 45%, transparent);
+	transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.mobile-lab-primary-cta:active {
+	transform: scale(0.98);
+	background: color-mix(in srgb, var(--teal, #0d9488) 85%, #000000);
+}
+
+.mobile-lab-sheet-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: mobileLabFadeIn 0.2s ease-out;
+}
+
+.mobile-lab-sheet-surface {
+	position: relative;
+	width: 100%;
+	max-height: 88dvh;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+	display: flex;
+	flex-direction: column;
+	animation: mobileLabSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow: hidden;
+}
+
+.mobile-lab-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, rgba(150, 150, 150, 0.45));
+	margin: 10px auto 4px;
+	cursor: grab;
+	flex-shrink: 0;
+}
+
+.mobile-lab-sheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 16px 12px;
+	border-bottom: 1px solid var(--line-subtle);
+	flex-shrink: 0;
+}
+
+.mobile-lab-sheet-title {
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+}
+
+.mobile-lab-sheet-subtitle {
+	font-size: 12px;
+	color: var(--muted);
+	margin-top: 1px;
+}

@@ -1,0 +1,108 @@
+/* mobileLabSearch.css — Мобильный инлайн-поиск и скроллер чипов (Мандат 8b: <= 120 строк) */
+
+.mobile-lab-search-container {
+	padding: 8px 12px 4px;
+	width: 100%;
+}
+
+.mobile-lab-search-box {
+	position: relative;
+	width: 100%;
+	display: flex;
+	align-items: center;
+}
+
+.mobile-lab-search-input {
+	width: 100%;
+	height: 38px;
+	padding: 0 32px 0 34px;
+	border-radius: 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mobile-lab-search-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal, #0d9488) 20%, transparent);
+}
+
+.mobile-lab-search-icon {
+	position: absolute;
+	left: 10px;
+	color: var(--muted);
+	pointer-events: none;
+}
+
+.mobile-lab-search-clear {
+	position: absolute;
+	right: 4px;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+}
+
+.mobile-lab-chips-scroller {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	padding: 6px 10px 8px;
+	width: 100%;
+}
+
+.mobile-lab-chips-scroller::-webkit-scrollbar {
+	display: none;
+}
+
+.mobile-lab-chip {
+	height: 34px;
+	min-height: 34px;
+	padding: 0 10px;
+	border-radius: 9px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.mobile-lab-chip.is-active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+}
+
+.mobile-lab-chip-count {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 1px 5px;
+	border-radius: 9999px;
+	background: var(--line);
+	color: var(--ink);
+}
+
+.mobile-lab-chip.is-active .mobile-lab-chip-count {
+	background: rgba(255, 255, 255, 0.28);
+	color: #ffffff;
+}

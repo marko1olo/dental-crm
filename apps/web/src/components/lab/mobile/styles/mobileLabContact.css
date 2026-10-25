@@ -1,0 +1,58 @@
+/* mobileLabContact.css — Контакты техника и звонок в 1 тап (Мандат 8b: <= 120 строк) */
+
+.mobile-lab-contact-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle);
+}
+
+.mobile-lab-info-block {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+
+.mobile-lab-name-text {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+	word-break: break-word;
+	line-height: 1.25;
+}
+
+.mobile-lab-tech-text {
+	font-size: 11px;
+	color: var(--muted);
+	word-break: break-word;
+	line-height: 1.25;
+}
+
+.mobile-lab-call-btn {
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--teal, #0d9488) 15%, transparent);
+	color: var(--teal, #0d9488);
+	border: 1px solid color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	text-decoration: none;
+	flex-shrink: 0;
+	transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.mobile-lab-call-btn:active {
+	transform: scale(0.92);
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
