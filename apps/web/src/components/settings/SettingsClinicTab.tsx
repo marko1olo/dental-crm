@@ -1,12 +1,7 @@
 /**
  * apps/web/src/components/settings/SettingsClinicTab.tsx
- *
- * Facade container for Clinic settings: working hours, chairs, legal profile,
- * taxation, and staff quick setup.
- *
- * Decomposed into clinicTabModules/ per Mandates 8b, 8e: <= 250 lines ceiling.
+ * Facade container for Clinic settings: working hours, chairs, legal profile.
  */
-
 import React, { useState } from "react";
 import type { Chair, StaffMember } from "@dental/shared";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";

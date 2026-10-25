@@ -5,61 +5,13 @@
 
 import type React from "react";
 import type { KeyboardEvent } from "react";
-import {
-	Bot,
-	Building2,
-	ChevronDown,
-	Database,
-	DollarSign,
-	FileText,
-	HardDrive,
-	HardDriveDownload,
-	Layers,
-	LineChart,
-	Lock,
-	MessageSquare,
-	Percent,
-	Puzzle,
-	Send,
-	ShieldAlert,
-	ShieldCheck,
-	SlidersHorizontal,
-	User,
-	Users,
-	Wand2,
-} from "lucide-react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { settingsTabGroups } from "../../AppConstants";
 import {
 	ENTERPRISE_ADVANCED_TABS,
 	type SettingsNavigationSidebarProps,
 } from "./types.js";
-
-const SETTINGS_TAB_ICONS: Record<
-	string,
-	React.ComponentType<{ size?: number; className?: string }>
-> = {
-	profile: User,
-	preferences: Wand2,
-	clinic: Building2,
-	modules: Puzzle,
-	staff: Users,
-	commissions: Percent,
-	access: Lock,
-	telegram: MessageSquare,
-	hardware: HardDrive,
-	protocols: FileText,
-	rules: ShieldAlert,
-	"procedure-boms": Layers,
-	prices: DollarSign,
-	ai: Bot,
-	insurance: ShieldCheck,
-	marketing: Send,
-	bpmn: SlidersHorizontal,
-	sources: Database,
-	reporting: LineChart,
-	imports: HardDriveDownload,
-	audit: Lock,
-};
+import { SETTINGS_TAB_ICONS } from "./settingsTabIcons.js";
 
 export function SettingsNavigationSidebar({
 	typedSettingsTabs,

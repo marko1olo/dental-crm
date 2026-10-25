@@ -1,30 +1,17 @@
 /**
- * apps/web/src/views/settingsView/settingsNavigationMenu.tsx
- *
- * Top navigation bar with role switcher (Doctor / Admin / Owner / All)
- * and overflow dropdown with Onboarding & Guide Tour triggers.
- *
- * Mandates 8b, 8c, 8d, 8e: desktop density, <= 500 lines, WCAG AAA.
+ * @file apps/web/src/views/settingsView/settingsNavigationMenu.tsx
+ * @description Top navigation bar with role switcher and overflow menu.
  */
-
-import React, { useState } from "react";
-import {
-	Building2,
-	ClipboardCheck,
-	GraduationCap,
-	MoreHorizontal,
-	SlidersHorizontal,
-	Stethoscope,
-	UserCheck,
-} from "lucide-react";
-import { startInteractiveTour } from "../../components/tutorial/InteractiveGuideTour";
-import { SETTINGS_ROLE_LABELS, type SettingsRoleMode } from "./types.js";
+import React from "react";
+import { Building2, SlidersHorizontal, Stethoscope, UserCheck } from "lucide-react";
+import type { SettingsRoleMode } from "./types.js";
+import { SettingsMoreActionsDropdown } from "./SettingsMoreActionsDropdown.js";
 
 export interface SettingsNavigationMenuProps {
 	roleMode: SettingsRoleMode;
 	setRoleMode: (mode: SettingsRoleMode) => void;
 	selectSettingsTab: (tabId: string) => void;
-	reopenOnboarding?: () => void;
+	reopenOnboarding?: (() => void) | undefined;
 	activeStaffUser?: any;
 }
 
@@ -35,8 +22,6 @@ export const SettingsNavigationMenu: React.FC<SettingsNavigationMenuProps> = ({
 	reopenOnboarding,
 	activeStaffUser,
 }) => {
-	const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
-
 	return (
 		<div
 			className="settings-heading col-span-full flex items-center justify-between gap-3 min-h-[48px] max-h-[52px] pb-2.5 border-b border-[var(--line)] mb-3 flex-nowrap"
@@ -59,62 +44,71 @@ export const SettingsNavigationMenu: React.FC<SettingsNavigationMenuProps> = ({
 			</div>
 
 			<div className="flex items-center gap-2.5 shrink-0">
-
-				<div className="settings-heading-actions relative">
+				<div
+					className="settings-segmented-strip h-9 min-h-[36px] max-h-[36px] p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hidden md:flex items-center gap-1"
+					role="tablist"
+					aria-label="Режим настроек"
+				>
 					<button
-						className="secondary-button min-h-[36px] min-w-[36px] h-9 w-9 p-0 flex items-center justify-center rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] shrink-0 cursor-pointer transition-all"
 						type="button"
-						onClick={() => setIsMoreActionsOpen((prev) => !prev)}
-						aria-expanded={isMoreActionsOpen}
-						aria-label="Дополнительные действия"
-						title="Дополнительные действия"
-						data-testid="btn-settings-more-actions"
+						role="tab"
+						aria-selected={roleMode === "doctor"}
+						onClick={() => { setRoleMode("doctor"); selectSettingsTab("preferences"); }}
+						className={`settings-segment-btn h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold ${roleMode === "doctor" ? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+						data-testid="btn-settings-role-doctor"
 					>
-						<MoreHorizontal
-							size={16}
-							className="w-4 h-4 text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors"
-						/>
+						<Stethoscope size={14} className="shrink-0" />
+						<span>Врач</span>
 					</button>
-					{isMoreActionsOpen && (
-						<div
-							className="absolute right-0 top-full mt-1.5 w-60 py-1.5 px-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-50 flex flex-col gap-1 text-left animate-in fade-in zoom-in-95 duration-100"
-							role="menu"
-						>
-							<button
-								type="button"
-								onClick={() => {
-									setIsMoreActionsOpen(false);
-									reopenOnboarding?.();
-								}}
-								className="w-full h-9 text-left px-3 text-xs font-medium rounded-xl hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-								role="menuitem"
-								data-testid="btn-reopen-onboarding-menuitem"
-							>
-								<ClipboardCheck size={16} className="w-4 h-4 text-[var(--primary)] shrink-0" />
-								<span>Мастер первого запуска</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setIsMoreActionsOpen(false);
-									const currentRole =
-										activeStaffUser?.role === "admin" || activeStaffUser?.role === "receptionist"
-											? "admin"
-											: activeStaffUser?.role === "director" || activeStaffUser?.role === "owner"
-												? "director"
-												: "doctor";
-									startInteractiveTour(currentRole);
-								}}
-								className="w-full h-9 text-left px-3 text-xs font-medium rounded-xl hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
-								role="menuitem"
-								data-testid="btn-start-interactive-tour-menuitem"
-							>
-								<GraduationCap size={16} className="w-4 h-4 text-[var(--primary)] shrink-0" />
-								<span>Интерактивный тур обучения</span>
-							</button>
-						</div>
-					)}
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={roleMode === "admin"}
+						onClick={() => {
+							setRoleMode("admin");
+							selectSettingsTab("staff");
+						}}
+						className={`settings-segment-btn h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold ${roleMode === "admin" ? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+						data-testid="btn-settings-role-admin"
+					>
+						<UserCheck size={14} className="shrink-0" />
+						<span>Администратор</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={roleMode === "owner"}
+						onClick={() => {
+							setRoleMode("owner");
+							selectSettingsTab("clinic");
+						}}
+						className={`settings-segment-btn h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold ${roleMode === "owner" ? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+						data-testid="btn-settings-role-owner"
+					>
+						<Building2 size={14} className="shrink-0" />
+						<span>Владелец</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={roleMode === "all"}
+						onClick={() => setRoleMode("all")}
+						className={`settings-segment-btn h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-semibold ${roleMode === "all" ? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+						title="Показать все настройки единым классическим каталогом"
+						data-testid="btn-settings-role-all"
+					>
+						<SlidersHorizontal size={14} className="shrink-0" />
+						<span>Все</span>
+					</button>
 				</div>
+
+				<SettingsMoreActionsDropdown
+					reopenOnboarding={reopenOnboarding}
+					activeStaffUser={activeStaffUser}
+				/>
 			</div>
 		</div>
 	);

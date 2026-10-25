@@ -68,7 +68,7 @@ export function DoctorSpecialtyPresetsCard({
 							key={spec.key}
 							type="button"
 							onClick={() => handleSelectPreset(spec.key, spec.label)}
-							className={`h-9 min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none whitespace-nowrap ${
+							className={`h-11 min-h-[44px] sm:h-9 sm:min-h-[36px] px-2 sm:px-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none whitespace-nowrap min-w-0 ${
 								isSelected
 									? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs font-bold"
 									: "bg-[var(--paper-card)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"

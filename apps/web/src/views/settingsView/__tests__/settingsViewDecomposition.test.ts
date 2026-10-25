@@ -19,27 +19,31 @@ import {
 describe("SettingsView Architecture & Decomposition", () => {
 	const viewDir = path.resolve(__dirname, "..");
 
-	it("has facade index.tsx strictly <= 250 lines", () => {
+	it("has facade index.tsx strictly <= 80 lines per Mandate 8b", () => {
 		const indexPath = path.join(viewDir, "index.tsx");
 		const content = fs.readFileSync(indexPath, "utf-8");
 		const lines = content.split("\n").length;
-		expect(lines).toBeLessThanOrEqual(250);
+		expect(lines).toBeLessThanOrEqual(80);
 	});
 
-	it("has submodules each strictly <= 500 lines", () => {
+	it("has submodules each strictly <= 120 lines per Mandate 8b", () => {
 		const files = [
 			"settingsNavigationMenu.tsx",
 			"settingsTabRenderer.tsx",
 			"SettingsNavigationSidebar.tsx",
 			"SettingsClinicGeneralTab.tsx",
 			"SettingsSecurityAndBackupTab.tsx",
+			"SettingsDesktopLayout.tsx",
+			"MobileSettingsViewWrapper.tsx",
+			"useSettingsViewLogic.ts",
+			"types.ts",
 		];
 		for (const file of files) {
 			const fullPath = path.join(viewDir, file);
 			if (fs.existsSync(fullPath)) {
 				const content = fs.readFileSync(fullPath, "utf-8");
 				const lines = content.split("\n").length;
-				expect(lines).toBeLessThanOrEqual(500);
+				expect(lines).toBeLessThanOrEqual(120);
 			}
 		}
 	});

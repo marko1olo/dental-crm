@@ -44,10 +44,10 @@ export function DoctorCbctCardHeader({
 					<button
 						type="button"
 						onClick={onReset}
-						className="secondary-button compact-button px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center gap-1.5"
+						className="h-11 min-h-[44px] sm:h-9 sm:min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
 						title="Сбросить все параметры на канон"
 					>
-						<RotateCcw size={13} />
+						<RotateCcw size={13} className="shrink-0" />
 						<span>Сброс на канон</span>
 					</button>
 				)}
@@ -55,11 +55,11 @@ export function DoctorCbctCardHeader({
 				<button
 					type="button"
 					onClick={onOpenTuner}
-					className="primary-button compact-button px-3.5 h-8 min-h-[32px] rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+					className="h-11 min-h-[44px] sm:h-9 sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
 					data-testid="button-open-cbct-tuner"
 				>
-					<Sliders size={14} />
-					<span>Настроить в интерактивном окне</span>
+					<Sliders size={14} className="shrink-0" />
+					<span>Калибровать КЛКТ</span>
 				</button>
 			</div>
 		</div>

@@ -36,19 +36,21 @@ export function DoctorClinicalPreferencesSection({
 			className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5 shadow-xs"
 			data-testid="doctor-clinical-preferences-section"
 		>
-			<div className="flex items-center justify-between gap-2 mb-4 pb-2 border-b border-[var(--line)]">
-				<div className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)]">
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[var(--line)]">
+				<div className="flex items-center gap-2.5 min-w-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)] shrink-0">
 						<Stethoscope size={18} />
 					</div>
-					<div>
-						<h3 className="m-0 text-base font-bold text-[var(--ink)]">Клинические настройки врача</h3>
-						<p className="m-0 text-xs text-[var(--muted)]">
+					<div className="min-w-0">
+						<h3 className="m-0 text-base font-bold text-[var(--ink)] leading-snug break-normal">
+							Клинические настройки врача
+						</h3>
+						<p className="m-0 text-xs text-[var(--muted)] leading-relaxed">
 							Реестр стоматологических материалов, шаблоны медицинской карты, рецепты и сетка приёма.
 						</p>
 					</div>
 				</div>
-				<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+				<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shrink-0 self-start sm:self-auto">
 					<ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400" />
 					Автосохранение 0 мс
 				</span>
