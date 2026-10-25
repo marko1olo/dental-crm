@@ -74,12 +74,11 @@ export const AutoclaveDesktopActionStrip: React.FC<AutoclaveDesktopActionStripPr
 				type="button"
 				onClick={onQuickShiftBatch}
 				aria-busy={isLoggingBatch}
-				className="sanpin-btn touch-manipulation shrink-0 whitespace-nowrap"
+				className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 				style={{
 					minHeight: "32px", height: "32px", padding: "0.2rem 0.65rem", fontSize: "0.75rem",
 					fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.3rem", borderRadius: "8px",
-					background: "var(--teal, #0d9488)", color: "#ffffff", border: "none",
-					boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)", cursor: "pointer",
+					color: "var(--teal, #0d9488)", borderColor: "var(--teal, #0d9488)", background: "var(--paper-strong, #ffffff)",
 				}}
 				data-testid="sanpin-autoclave-new-cycle-btn"
 				title="Провести цикл автоклавирования на смену: 134°C, 2.15 бар, 5 мин"

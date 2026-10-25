@@ -11,6 +11,11 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 	onToggleExpandedKpi,
 }) => {
 	const hasTempDeviations = (summary?.temperature?.deviationsToday ?? 0) > 0;
+	const psoToday = summary?.pso?.approvedToday ?? 0;
+	const akToday = summary?.sterilization?.passedToday ?? 0;
+	// Честный статус: при нулевых записях за сегодня нет оснований писать
+	// «Норма 100%» — это выставочная похвальба без данных.
+	const complianceLabel = psoToday === 0 && akToday === 0 ? "Журналы за сегодня не заполнялись" : "Норма 100%";
 
 	return (
 		<div className="sanpin-title-block">
@@ -28,14 +33,14 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 				data-testid="sanpin-kpi-consolidated-chip"
 			>
 				<CheckCircle2 size={13} color="var(--teal, #0d9488)" className="shrink-0" />
-				<span className="sanpin-kpi-status-ok">Норма 100%</span>
+				<span className={psoToday === 0 && akToday === 0 ? "" : "sanpin-kpi-status-ok"}>{complianceLabel}</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-sep">·</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-metric">
-					Очистка {summary?.pso?.approvedToday ?? 0}
+					Очистка {psoToday}
 				</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-sep">·</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-metric">
-					АК {summary?.sterilization?.passedToday ?? 0}
+					АК {akToday}
 				</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-sep">·</span>
 				<span className={`sanpin-kpi-desktop-detail ${hasTempDeviations ? "sanpin-kpi-status-bad" : "sanpin-kpi-status-ok"}`}>
