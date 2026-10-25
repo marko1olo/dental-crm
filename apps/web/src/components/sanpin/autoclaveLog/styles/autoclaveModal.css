@@ -1,0 +1,53 @@
+/* ==========================================================================
+   AUTOCLAVE LOG MODAL CONTAINER & OVERLAY (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.autoclave-log-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+	padding: 1rem;
+	animation: autoclaveFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+@keyframes autoclaveFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.autoclave-log-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	width: 100%;
+	max-width: 1200px;
+	max-height: 85vh;
+	height: auto;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .autoclave-log-modal-container,
+.dark .autoclave-log-modal-container {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: #f8fafc;
+}

@@ -1,0 +1,93 @@
+/* ==========================================================================
+   AUTOCLAVE LOG FORMS & MATRIX HEADER (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.autoclave-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 1rem;
+}
+
+.autoclave-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.autoclave-form-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .autoclave-form-label,
+.dark .autoclave-form-label {
+	color: #f8fafc;
+}
+
+.autoclave-input,
+.autoclave-select,
+.autoclave-textarea {
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	min-height: 42px;
+	height: 42px;
+	outline: none;
+	transition: border-color 0.15s ease;
+	box-sizing: border-box;
+}
+
+.autoclave-select {
+	cursor: pointer;
+}
+
+.autoclave-textarea {
+	height: auto;
+	min-height: 80px;
+	resize: vertical;
+}
+
+[data-theme="dark"] .autoclave-input,
+[data-theme="dark"] .autoclave-select,
+[data-theme="dark"] .autoclave-textarea,
+.dark .autoclave-input,
+.dark .autoclave-select,
+.dark .autoclave-textarea {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.autoclave-input:focus,
+.autoclave-select:focus,
+.autoclave-textarea:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+.chamber-matrix-wrapper {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 1.25rem;
+	background: var(--paper-soft, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+[data-theme="dark"] .chamber-matrix-wrapper,
+.dark .chamber-matrix-wrapper {
+	background: #131d2e;
+	border-color: #1e293b;
+}
+
+.chamber-matrix-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}

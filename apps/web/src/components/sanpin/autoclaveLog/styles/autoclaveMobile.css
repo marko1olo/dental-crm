@@ -1,0 +1,32 @@
+/* ==========================================================================
+   AUTOCLAVE LOG MOBILE RESPONSIVE (APPLE HIG) (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.autoclave-log-modal-overlay {
+		padding: 0;
+		align-items: flex-start;
+	}
+
+	.autoclave-log-modal-container {
+		max-height: 100dvh;
+		height: 100dvh;
+		width: 100%;
+		border-radius: 0;
+		border: none;
+	}
+
+	.autoclave-log-header {
+		padding: 0.75rem 1rem;
+	}
+
+	.autoclave-log-tabs-nav {
+		padding: 0.5rem 1rem;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.autoclave-log-body {
+		padding: 1rem;
+		padding-bottom: 5rem;
+	}
+}

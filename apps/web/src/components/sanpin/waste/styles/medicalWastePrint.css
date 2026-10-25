@@ -1,0 +1,16 @@
+/* ==========================================================================
+   MEDICAL WASTE PRINT RULES (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+@media print {
+	.waste-modal-overlay,
+	.waste-modal-header,
+	.waste-modal-footer,
+	.no-print {
+		display: none !important;
+	}
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}

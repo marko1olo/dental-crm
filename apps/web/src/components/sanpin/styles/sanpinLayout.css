@@ -1,0 +1,99 @@
+/* ==========================================================================
+   DENTE SANPIN LAYOUT & HEADER (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.sanpin-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-radius: 12px;
+	min-height: 80vh;
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow-x: clip;
+}
+
+.sanpin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	min-height: 48px;
+	padding: 0.25rem 0 0.5rem;
+	border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	box-sizing: border-box;
+}
+
+.sanpin-title-block {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-shrink: 0;
+	min-width: 0;
+}
+
+.sanpin-title-block h1.sanpin-main-title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+}
+
+.sanpin-kpi-summary-chip {
+	white-space: nowrap !important;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 0.75rem;
+	border-radius: 10px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #1e293b);
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.sanpin-kpi-summary-chip:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft);
+}
+
+.sanpin-kpi-status-ok {
+	color: var(--ok-fg, #059669);
+	font-weight: 700;
+}
+
+.sanpin-kpi-status-bad {
+	color: var(--bad-fg, #dc2626);
+	font-weight: 700;
+}
+
+.sanpin-kpi-sep {
+	color: var(--muted, #94a3b8);
+}
+
+.sanpin-kpi-metric {
+	color: var(--ink, #0f172a);
+	font-weight: 600;
+}
+
+.sanpin-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-shrink: 0;
+	flex-wrap: nowrap;
+}

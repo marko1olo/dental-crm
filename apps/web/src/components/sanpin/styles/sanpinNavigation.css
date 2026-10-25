@@ -1,0 +1,105 @@
+/* ==========================================================================
+   DENTE SANPIN NAVIGATION & KPI GRID (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.sanpin-unified-nav {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 4px 0;
+}
+
+.sanpin-tabs-strip {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+	background: var(--paper-soft, #f1f5f9);
+	padding: 3px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+}
+
+.sanpin-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.sanpin-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.sanpin-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 0.75rem;
+	margin: 0.25rem 0;
+}
+
+.sanpin-kpi-card {
+	padding: 0.75rem 1rem;
+	border-radius: 10px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	transition: all 0.15s ease;
+}
+
+.sanpin-kpi-card:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.sanpin-kpi-card--interactive {
+	cursor: pointer;
+}
+
+.sanpin-kpi-label {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	color: var(--muted, #64748b);
+}
+
+.sanpin-kpi-value {
+	font-size: 1.25rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink, #0f172a);
+}
+
+.sanpin-kpi-subtext {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.sanpin-kpi-subtext--ok {
+	color: var(--ok-fg, #059669);
+	font-weight: 600;
+}
+
+.sanpin-kpi-subtext--bad {
+	color: var(--bad-fg, #dc2626);
+	font-weight: 700;
+}
+
+.sanpin-kpi-subtext--warn {
+	color: var(--warn-fg, #d97706);
+	font-weight: 700;
+}

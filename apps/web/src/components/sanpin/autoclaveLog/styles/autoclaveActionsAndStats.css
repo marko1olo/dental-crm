@@ -1,0 +1,104 @@
+/* ==========================================================================
+   AUTOCLAVE LOG ACTIONS & STATS (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.autoclave-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1.25rem;
+	min-height: 44px;
+	min-width: 44px;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.autoclave-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.autoclave-btn-primary:hover {
+	background: #0f766e;
+}
+
+.autoclave-btn-secondary {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+[data-theme="dark"] .autoclave-btn-secondary,
+.dark .autoclave-btn-secondary {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.autoclave-btn-secondary:hover {
+	background: var(--paper-soft, #f8fafc);
+}
+
+[data-theme="dark"] .autoclave-btn-secondary:hover,
+.dark .autoclave-btn-secondary:hover {
+	background: #334155;
+}
+
+.autoclave-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 1rem;
+}
+
+.autoclave-stat-card {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+}
+
+[data-theme="dark"] .autoclave-stat-card,
+.dark .autoclave-stat-card {
+	background: #131d2e;
+	border-color: #1e293b;
+}
+
+.autoclave-stat-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.15);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.autoclave-stat-number {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .autoclave-stat-number,
+.dark .autoclave-stat-number {
+	color: #f8fafc;
+}
+
+.autoclave-stat-label {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+[data-theme="dark"] .autoclave-stat-label,
+.dark .autoclave-stat-label {
+	color: #94a3b8;
+}

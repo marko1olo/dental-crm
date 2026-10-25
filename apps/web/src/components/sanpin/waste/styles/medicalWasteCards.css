@@ -1,0 +1,115 @@
+/* ==========================================================================
+   MEDICAL WASTE CARDS & WEIGHT GAUGE (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.waste-class-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	border: 2px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+}
+
+.waste-class-card:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.waste-class-card.selected-class-a {
+	border-color: #64748b;
+	background: rgba(100, 116, 139, 0.08);
+}
+
+.waste-class-card.selected-class-b {
+	border-color: #f59e0b;
+	background: rgba(245, 158, 11, 0.1);
+}
+
+.waste-class-card.selected-class-v {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.waste-class-card.selected-class-g {
+	border-color: #334155;
+	background: rgba(15, 23, 42, 0.08);
+}
+
+.waste-weight-display {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	padding: 16px;
+	border-radius: 14px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
+	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+.waste-weight-metric {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 4px;
+}
+
+.waste-weight-val {
+	font-size: 1.5rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.waste-weight-net-val {
+	color: var(--teal-dark, #0f766e);
+	font-size: 1.75rem;
+	font-weight: 900;
+}
+
+.waste-weight-lbl {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--muted, #64748b);
+	letter-spacing: 0.03em;
+}
+
+.waste-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.waste-badge-class-a {
+	background: #f1f5f9;
+	color: #334155;
+	border: 1px solid #cbd5e1;
+}
+
+.waste-badge-class-b {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #f59e0b;
+}
+
+.waste-badge-class-v {
+	background: #fee2e2;
+	color: #991b1b;
+	border: 1px solid #ef4444;
+}
+
+.waste-badge-class-g {
+	background: #1e293b;
+	color: #f8fafc;
+	border: 1px solid #475569;
+}

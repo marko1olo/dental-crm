@@ -1,0 +1,36 @@
+/* ==========================================================================
+   MEDICAL WASTE LOG TABLE (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.waste-table-wrapper {
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	background: var(--paper, #ffffff);
+}
+
+.waste-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.waste-table th {
+	padding: 10px 14px;
+	background: var(--paper-strong, #f8fafc);
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+.waste-table td {
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+.waste-table tr:last-child td {
+	border-bottom: none;
+}

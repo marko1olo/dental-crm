@@ -1,0 +1,105 @@
+/* ==========================================================================
+   DENTE SANPIN MOBILE RESPONSIVE (APPLE HIG) (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.sanpin-container {
+		padding: 0.5rem 0.5rem 6rem;
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.sanpin-header {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.4rem;
+	}
+
+	.sanpin-title-block {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.sanpin-title-block h1.sanpin-main-title {
+		font-size: 0.925rem !important;
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.sanpin-kpi-summary-chip {
+		flex-shrink: 0;
+		padding: 0 0.5rem;
+	}
+
+	.sanpin-kpi-desktop-detail,
+	.sanpin-desktop-only-btn,
+	.sanpin-desktop-only-label,
+	.sanpin-desktop-table-container {
+		display: none !important;
+	}
+
+	.sanpin-header-actions {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.sanpin-header-actions .sanpin-btn-primary-cta {
+		flex: 1 1 auto;
+		min-height: 44px !important;
+		height: 44px !important;
+		font-size: 0.85rem;
+		border-radius: 12px;
+	}
+
+	.sanpin-header-actions .sanpin-btn-options {
+		min-width: 44px !important;
+		width: 44px !important;
+		min-height: 44px !important;
+		height: 44px !important;
+		padding: 0;
+		justify-content: center;
+		border-radius: 12px;
+	}
+
+	.sanpin-tabs-strip {
+		width: 100%;
+		display: flex !important;
+		gap: 4px !important;
+		padding: 3px !important;
+		box-sizing: border-box;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.sanpin-tabs-strip .sanpin-tab-btn {
+		min-height: 44px !important;
+		height: 44px !important;
+		padding: 0 6px !important;
+		flex: 1 1 0 !important;
+		min-width: 0 !important;
+		justify-content: center;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.775rem !important;
+	}
+
+	.sanpin-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.5rem;
+	}
+}
+
+@media (pointer: coarse) {
+	.sanpin-btn,
+	.sanpin-tab-btn {
+		min-height: 44px;
+	}
+}

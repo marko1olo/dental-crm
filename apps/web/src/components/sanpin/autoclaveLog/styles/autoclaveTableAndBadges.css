@@ -1,0 +1,90 @@
+/* ==========================================================================
+   AUTOCLAVE LOG TABLES & BADGES (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.journal257-table-wrapper {
+	overflow-x: auto;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .journal257-table-wrapper,
+.dark .journal257-table-wrapper {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+.journal257-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.journal257-table th {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 600;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .journal257-table th,
+.dark .journal257-table th {
+	background: #131d2e;
+	border-color: #334155;
+	color: #94a3b8;
+}
+
+.journal257-table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	vertical-align: middle;
+}
+
+[data-theme="dark"] .journal257-table td,
+.dark .journal257-table td {
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.journal257-table tr:last-child td {
+	border-bottom: none;
+}
+
+.journal257-table tr:hover td {
+	background: var(--paper-soft, #f8fafc);
+}
+
+[data-theme="dark"] .journal257-table tr:hover td,
+.dark .journal257-table tr:hover td {
+	background: #334155;
+}
+
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.status-badge.passed {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+.status-badge.failed {
+	background: rgba(239, 68, 68, 0.15);
+	color: #ef4444;
+}
+
+.status-badge.quarantine {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+}

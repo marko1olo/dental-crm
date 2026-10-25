@@ -1,0 +1,74 @@
+/* ==========================================================================
+   AUTOCLAVE REGIMES GRID & CARDS (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.autoclave-regime-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.75rem;
+}
+
+.autoclave-regime-card {
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 12px;
+	padding: 0.875rem;
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-height: 80px;
+}
+
+[data-theme="dark"] .autoclave-regime-card,
+[data-theme="night"] .autoclave-regime-card,
+.dark .autoclave-regime-card,
+html[data-theme="dark"] .autoclave-regime-card {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.autoclave-regime-card:hover {
+	border-color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+}
+
+.autoclave-regime-card.selected {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .autoclave-regime-card.selected,
+[data-theme="night"] .autoclave-regime-card.selected,
+.dark .autoclave-regime-card.selected,
+html[data-theme="dark"] .autoclave-regime-card.selected {
+	background: rgba(13, 148, 136, 0.25) !important;
+	border-color: #14b8a6 !important;
+	box-shadow: 0 0 0 1px #14b8a6 !important;
+	color: #f8fafc !important;
+}
+
+.autoclave-regime-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-weight: 700;
+	font-size: 0.875rem;
+}
+
+.autoclave-regime-card-sub {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	line-height: 1.3;
+}
+
+[data-theme="dark"] .autoclave-regime-card-sub,
+.dark .autoclave-regime-card-sub {
+	color: #94a3b8;
+}

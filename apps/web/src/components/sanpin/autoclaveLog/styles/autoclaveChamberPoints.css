@@ -1,0 +1,102 @@
+/* ==========================================================================
+   AUTOCLAVE CHAMBER POINTS & MATRIX (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.chamber-visual-box {
+	position: relative;
+	width: 100%;
+	height: 240px;
+	background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+	border-radius: 12px;
+	overflow: hidden;
+	border: 2px solid #334155;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.chamber-cylinder-outline {
+	position: absolute;
+	width: 90%;
+	height: 80%;
+	border: 2px dashed #475569;
+	border-radius: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.chamber-point-marker {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	cursor: pointer;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	transition: transform 0.15s ease;
+}
+
+.chamber-point-marker:hover {
+	transform: translate(-50%, -50%) scale(1.15);
+}
+
+.chamber-point-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	font-weight: 700;
+	font-size: 0.75rem;
+	border: 2px solid #ffffff;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+	color: #ffffff;
+}
+
+.chamber-point-badge.passed {
+	background: #10b981;
+}
+
+.chamber-point-badge.failed {
+	background: #ef4444;
+}
+
+.chamber-point-label {
+	margin-top: 4px;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	background: #1e293b;
+	color: #f8fafc;
+	border: 1px solid #334155;
+	padding: 2px 6px;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.chamber-points-list-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.75rem;
+}
+
+.chamber-point-card {
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	padding: 0.75rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font-size: 0.75rem;
+}
+
+[data-theme="dark"] .chamber-point-card,
+.dark .chamber-point-card {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
