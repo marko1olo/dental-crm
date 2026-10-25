@@ -10,6 +10,6 @@ export interface SanpinRegistryPackageModalProps {
 	readonly onOpenEgiszRemd: () => void;
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	readonly onOpenPsoJournal366?: () => void;
-	readonly onOpenSanpinRegisters?: () => void;
+	readonly onOpenPsoJournal366?: (() => void) | undefined;
+	readonly onOpenSanpinRegisters?: (() => void) | undefined;
 }

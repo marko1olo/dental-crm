@@ -7,7 +7,7 @@ export interface SanpinItemsListProps {
 	onOpenSickLeaveEln: () => void;
 	onOpenAutoclaveLog257: () => void;
 	onOpenEgiszRemd: () => void;
-	onOpenPsoJournal366?: () => void;
+	onOpenPsoJournal366?: (() => void) | undefined;
 	onSelectDocumentKind: (kind: DocumentKind) => void;
 	onCreateDocument: (kind: DocumentKind) => void;
 	onClose: () => void;

@@ -35,7 +35,6 @@ export interface SanPinCycleEntry {
 export type SanPinJournalPeriod = "day" | "week" | "month";
 
 export interface SanPinSterilizationJournalProps {
-	readonly onAttachPouchToVisit?: ((pouchCode: string, snippet: string) => void) | undefined;
 	readonly initialFilterAutoclave?: string | undefined;
 	readonly className?: string | undefined;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;

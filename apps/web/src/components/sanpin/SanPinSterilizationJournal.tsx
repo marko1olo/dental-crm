@@ -12,7 +12,6 @@ import {
 	useSanPinJournalLogic,
 	SanPinJournalToolbar,
 	SanPinCyclesTable,
-	SanPinScannerModal,
 	type SanPinSterilizationJournalProps,
 } from "./journalModules";
 
@@ -20,7 +19,6 @@ export type { SanPinCycleEntry, SanPinSterilizationJournalProps } from "./journa
 export { DEFAULT_CYCLES, useSanPinJournalLogic, SanPinJournalToolbar, SanPinCyclesTable } from "./journalModules";
 
 export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProps> = ({
-	onAttachPouchToVisit,
 	initialFilterAutoclave = "all",
 	className = "",
 	onOpenEquipmentModal,
@@ -36,20 +34,15 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		setSelectedAutoclave,
 		searchQuery,
 		setSearchQuery,
-		directScanCode,
-		setDirectScanCode,
 		isAutofilling,
-		showScannerModal,
-		setShowScannerModal,
 		filteredCycles,
 		fetchCyclesFromDb,
 		handleAutofillNorms,
 		handleQuickBatchNorm,
 		handleQuickPsoNorm,
-		handleQuickChairsideScan,
 		handlePrint257,
 		handleExportCsv,
-	} = useSanPinJournalLogic({ onAttachPouchToVisit, initialFilterAutoclave });
+	} = useSanPinJournalLogic({ initialFilterAutoclave });
 
 	const handleOpenEquipment = onOpenEquipmentModal || (() => setInternalEquipmentModalOpen(true));
 	const handleOpenNewCycle = onOpenNewCycleModal || (() => setInternalNewCycleModalOpen(true));
@@ -65,12 +58,8 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				onSelectAutoclave={setSelectedAutoclave}
 				searchQuery={searchQuery}
 				onSearchChange={setSearchQuery}
-				directScanCode={directScanCode}
-				onDirectScanChange={setDirectScanCode}
-				onDirectScanSubmit={handleQuickChairsideScan}
 				isAutofilling={isAutofilling}
 				onAutofillNorms={() => handleAutofillNorms("month")}
-				onOpenScannerModal={() => setShowScannerModal(true)}
 				onPrintForm257={handlePrint257}
 				onExportCsv={handleExportCsv}
 				onOpenEquipmentModal={handleOpenEquipment}
@@ -83,12 +72,6 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				isAutofilling={isAutofilling}
 				onQuickBatchNorm={handleQuickBatchNorm}
 				onQuickPsoNorm={handleQuickPsoNorm}
-			/>
-
-			<SanPinScannerModal
-				isOpen={showScannerModal}
-				onClose={() => setShowScannerModal(false)}
-				onAttachPouchToVisit={onAttachPouchToVisit}
 			/>
 
 			<SterilizerEquipmentModal isOpen={internalEquipmentModalOpen} onClose={() => setInternalEquipmentModalOpen(false)} />

@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, QrCode } from "lucide-react";
+import { Search } from "lucide-react";
 import type { SanPinJournalPeriod } from "./sanpinJournalTypes";
 
 export interface SanPinJournalToolbarFiltersProps {
@@ -7,9 +7,6 @@ export interface SanPinJournalToolbarFiltersProps {
 	readonly onSelectAutoclave: (val: string) => void;
 	readonly searchQuery: string;
 	readonly onSearchChange: (query: string) => void;
-	readonly directScanCode: string;
-	readonly onDirectScanChange: (code: string) => void;
-	readonly onDirectScanSubmit: (code: string) => void;
 	readonly period?: SanPinJournalPeriod | undefined;
 	readonly onPeriodChange?: ((p: SanPinJournalPeriod) => void) | undefined;
 }

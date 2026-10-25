@@ -19,14 +19,12 @@ export * from "./sanpinNavigationConfig";
 export interface SanpinRegistersProps {
 	readonly initialTab?: SanpinRegisterTab | undefined;
 	readonly initialFilterAutoclave?: string | undefined;
-	readonly onAttachPouchToVisit?: ((pouchCode: string, snippet: string) => void) | undefined;
 	readonly className?: string | undefined;
 }
 
 function SanpinRegistersInner({
 	initialTab = "autoclave",
 	initialFilterAutoclave,
-	onAttachPouchToVisit,
 	className = "",
 }: SanpinRegistersProps = {}) {
 	const appLogic = useOptionalAppLogicContext();

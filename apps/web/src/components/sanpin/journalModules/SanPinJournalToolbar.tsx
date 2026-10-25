@@ -8,12 +8,8 @@ export interface SanPinJournalToolbarProps {
 	readonly onSelectAutoclave: (val: string) => void;
 	readonly searchQuery: string;
 	readonly onSearchChange: (query: string) => void;
-	readonly directScanCode: string;
-	readonly onDirectScanChange: (code: string) => void;
-	readonly onDirectScanSubmit: (code: string) => void;
 	readonly isAutofilling: boolean;
 	readonly onAutofillNorms: () => void;
-	readonly onOpenScannerModal: () => void;
 	readonly onPrintForm257: () => void;
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: () => void;
@@ -29,12 +25,8 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 	onSelectAutoclave,
 	searchQuery,
 	onSearchChange,
-	directScanCode,
-	onDirectScanChange,
-	onDirectScanSubmit,
 	isAutofilling,
 	onAutofillNorms,
-	onOpenScannerModal,
 	onPrintForm257,
 	onExportCsv,
 	onOpenEquipmentModal,
@@ -64,9 +56,6 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 				onSelectAutoclave={onSelectAutoclave}
 				searchQuery={searchQuery}
 				onSearchChange={onSearchChange}
-				directScanCode={directScanCode}
-				onDirectScanChange={onDirectScanChange}
-				onDirectScanSubmit={onDirectScanSubmit}
 				period={period}
 				onPeriodChange={onPeriodChange}
 			/>
@@ -74,7 +63,6 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 			<SanPinJournalToolbarActions
 				isAutofilling={isAutofilling}
 				onAutofillNorms={onAutofillNorms}
-				onOpenScannerModal={onOpenScannerModal}
 				onPrintForm257={onPrintForm257}
 				onExportCsv={onExportCsv}
 				onOpenEquipmentModal={onOpenEquipmentModal}

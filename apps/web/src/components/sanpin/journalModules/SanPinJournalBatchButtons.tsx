@@ -1,13 +1,11 @@
 /**
  * apps/web/src/components/sanpin/journalModules/SanPinJournalBatchButtons.tsx
- *
- * Кнопки быстрого пакетного запуска автоклава и предстерилизационной очистки по стандарту DENTE.
- * 1-клик запуск цикла автоклава 134°C и пакетное закрытие смены по норме.
- * Мандат 8b: строго <= 120 строк.
+ * 1-кликовый запуск цикла автоклавирования смены по стандарту DENTE CRM.
+ * Мандаты 8am (ровно 1 Primary CTA), 8e (автономия), 8n (пакетная обработка), 8b (<= 120 строк).
  */
 
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 export interface SanPinJournalBatchButtonsProps {
 	readonly isAutofilling: boolean;
@@ -32,14 +30,24 @@ export function SanPinJournalBatchButtons({
 						onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`);
 						if (onQuickPsoNorm) onQuickPsoNorm();
 					}}
+					disabled={isAutofilling}
 					aria-busy={isAutofilling}
-					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3.5 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
-					title="Пакетное автоклавирование смены: 134°C, 2.1 бар, 5 мин, азопирам 100% норма, списание расходников со склада"
-					aria-label="Пакетная стерилизация смены"
+					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-4 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all disabled:opacity-70"
+					title="Пакетное автоклавирование смены: 134°C, 2.1 бар, 5 мин, азопирам норма, автоматическое списание расходников со склада"
+					aria-label="Зафиксировать цикл автоклавирования смены (134°C)"
 					data-testid="quick-shift-batch-btn"
 				>
-					<CheckCircle2 size={15} />
-					<span>{isAutofilling ? "Фиксация..." : "Зафиксировать цикл автоклавирования смены"}</span>
+					{isAutofilling ? (
+						<>
+							<Loader2 size={16} className="animate-spin text-white" />
+							<span>Фиксация цикла...</span>
+						</>
+					) : (
+						<>
+							<CheckCircle2 size={16} className="text-white" />
+							<span>Зафиксировать цикл автоклавирования смены (134°C)</span>
+						</>
+					)}
 				</button>
 			)}
 		</div>

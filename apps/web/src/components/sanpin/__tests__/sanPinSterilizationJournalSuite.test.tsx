@@ -18,18 +18,11 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { normalizePouchBarcode } from "../journalModules/pouchBarcodeUtils";
 import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
 import { parseAndValidateKraftBarcode, formatPouch043StatutorySnippet } from "@dental/shared";
 
 describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.3686-21)", () => {
 	describe("1. Пакетная стерилизация и нормализация кодов", () => {
-		it("нормализует ручной ввод 4 цифр крафт-пакета в стандартный штрихкод без блокировки врача", () => {
-			assert.equal(normalizePouchBarcode("8492"), "KP-84920");
-			assert.equal(normalizePouchBarcode("84920"), "KP-84920");
-			assert.equal(normalizePouchBarcode("KP-84920"), "KP-84920");
-		});
-
 		it("валидирует штрихкод крафт-пакета KP-84920", () => {
 			const res = parseAndValidateKraftBarcode("KP-84920", {
 				referenceDate: "2026-10-08",

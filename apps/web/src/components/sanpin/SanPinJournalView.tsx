@@ -16,7 +16,6 @@ export type SanPinJournalViewProps = SanpinRegistersProps;
 export function SanPinJournalView({
 	initialTab = "autoclave",
 	initialFilterAutoclave = "all",
-	onAttachPouchToVisit,
 	className = "",
 }: SanPinJournalViewProps) {
 	return (
@@ -24,7 +23,6 @@ export function SanPinJournalView({
 			<SanpinRegisters
 				initialTab={initialTab}
 				initialFilterAutoclave={initialFilterAutoclave}
-				onAttachPouchToVisit={onAttachPouchToVisit}
 				className={className}
 			/>
 		</div>

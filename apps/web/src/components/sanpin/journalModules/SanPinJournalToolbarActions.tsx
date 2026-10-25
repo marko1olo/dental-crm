@@ -1,18 +1,15 @@
 /**
  * apps/web/src/components/sanpin/journalModules/SanPinJournalToolbarActions.tsx
- *
- * Тулбар действий журнала автоклавирования и стерилизации (DENTE HIG).
- * Мандат 8b: строго <= 120 строк.
+ * Тулбар действий журнала автоклавирования (DENTE HIG). Мандат 8b: строго <= 120 строк.
  */
 
 import React from "react";
-import { Printer, ShieldCheck, Sparkles, Download, Plus, Settings } from "lucide-react";
+import { Printer, Sparkles, Download, Plus, Settings } from "lucide-react";
 import { SanPinJournalBatchButtons } from "./SanPinJournalBatchButtons";
 
 export interface SanPinJournalToolbarActionsProps {
 	readonly isAutofilling: boolean;
 	readonly onAutofillNorms: () => void;
-	readonly onOpenScannerModal: () => void;
 	readonly onPrintForm257: () => void;
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;
@@ -26,7 +23,6 @@ const BTN_SEC = "secondary-button h-9 min-h-[36px] rounded-xl border border-[var
 export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsProps> = ({
 	isAutofilling,
 	onAutofillNorms,
-	onOpenScannerModal,
 	onPrintForm257,
 	onExportCsv,
 	onOpenEquipmentModal,
@@ -46,24 +42,14 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 				<button
 					type="button"
 					onClick={onAutofillNorms}
+					disabled={isAutofilling}
 					aria-busy={isAutofilling}
-					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all disabled:opacity-50"
 					data-testid="autofill-norms-btn"
-					title="Автоматическое заполнение журнала автоклавирования по нормам СанПиН"
+					title="Автоматическое заполнение журнала автоклавирования"
 				>
 					<Sparkles size={14} />
 					<span>{isAutofilling ? "Заполнение..." : "Заполнить по нормам"}</span>
-				</button>
-
-				<button
-					type="button"
-					onClick={onOpenScannerModal}
-					className={BTN_SEC}
-					data-testid="batch-verify-modal-btn"
-					title="Подтверждение стерильности партии лотков для приёма"
-				>
-					<ShieldCheck size={14} />
-					<span>Партия лотков к приёму</span>
 				</button>
 
 				{onOpenNewCycleModal && (

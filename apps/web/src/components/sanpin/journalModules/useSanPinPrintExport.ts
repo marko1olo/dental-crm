@@ -6,32 +6,14 @@
  */
 
 import { showToast } from "../../GlobalToast";
-import { normalizePouchBarcode } from "./pouchBarcodeUtils";
 import { handleGenerateMonthlyForm257 } from "../AutoclavePrintHelpers";
-import { parseAndValidateKraftBarcode } from "@dental/shared";
 import type { SanPinCycleEntry } from "./sanpinJournalTypes";
 
 export function useSanPinPrintExport(
 	selectedAutoclave: string,
 	devices: any[],
 	filteredCycles: readonly SanPinCycleEntry[],
-	onAttachPouchToVisit?: (pouchCode: string, snippet: string) => void,
 ) {
-	const handleQuickChairsideScan = (codeToScan: string) => {
-		const raw = codeToScan.trim();
-		if (!raw) return;
-		const normalized = normalizePouchBarcode(raw);
-		parseAndValidateKraftBarcode(normalized, {
-			referenceDate: new Date().toISOString().slice(0, 10),
-		});
-
-		const snippet = `Стерилизация инструментария: крафт-пакет №${normalized} (АК-01, 134°C / 2.1 бар / 5 мин, индикатор 5 кл. норма).`;
-		if (onAttachPouchToVisit) {
-			onAttachPouchToVisit(normalized, snippet);
-		}
-		showToast(`Крафт-пакет №${normalized} прикреплён к визиту за 1 сек (134°C / 2.1 бар, Норма)`, "success");
-	};
-
 	const handlePrint257 = () => {
 		try {
 			handleGenerateMonthlyForm257(selectedAutoclave, devices);
@@ -57,5 +39,5 @@ export function useSanPinPrintExport(
 		showToast("Журнал стерилизации экспортирован в CSV", "success");
 	};
 
-	return { handleQuickChairsideScan, handlePrint257, handleExportCsv };
+	return { handlePrint257, handleExportCsv };
 }

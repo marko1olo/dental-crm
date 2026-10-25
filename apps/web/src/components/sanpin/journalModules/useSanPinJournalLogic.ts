@@ -14,19 +14,15 @@ import { useSanPinBatchActions } from "./useSanPinBatchActions";
 import { useSanPinPrintExport } from "./useSanPinPrintExport";
 
 export interface UseSanPinJournalLogicParams {
-	readonly onAttachPouchToVisit?: ((pouchCode: string, snippet: string) => void) | undefined;
 	readonly initialFilterAutoclave?: string | undefined;
 }
 
 export function useSanPinJournalLogic({
-	onAttachPouchToVisit,
 	initialFilterAutoclave = "all",
 }: UseSanPinJournalLogicParams = {}) {
 	const [period, setPeriod] = useState<SanPinJournalPeriod>("day");
 	const [selectedAutoclave, setSelectedAutoclave] = useState<string>(initialFilterAutoclave);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [directScanCode, setDirectScanCode] = useState("");
-	const [showScannerModal, setShowScannerModal] = useState(false);
 
 	const devices = useMemo(() => {
 		try {
@@ -64,17 +60,11 @@ export function useSanPinJournalLogic({
 		setCycles,
 	);
 
-	const { handleQuickChairsideScan, handlePrint257, handleExportCsv } = useSanPinPrintExport(
+	const { handlePrint257, handleExportCsv } = useSanPinPrintExport(
 		selectedAutoclave,
 		devices,
 		filteredCycles,
-		onAttachPouchToVisit,
 	);
-
-	const handleScanWrapper = (code: string) => {
-		handleQuickChairsideScan(code);
-		setDirectScanCode("");
-	};
 
 	return {
 		period,
@@ -83,18 +73,13 @@ export function useSanPinJournalLogic({
 		setSelectedAutoclave,
 		searchQuery,
 		setSearchQuery,
-		directScanCode,
-		setDirectScanCode,
 		isAutofilling,
 		isLoading,
-		showScannerModal,
-		setShowScannerModal,
 		filteredCycles,
 		fetchCyclesFromDb,
 		handleAutofillNorms,
 		handleQuickBatchNorm,
 		handleQuickPsoNorm,
-		handleQuickChairsideScan: handleScanWrapper,
 		handlePrint257,
 		handleExportCsv,
 	};
