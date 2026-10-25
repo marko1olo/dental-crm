@@ -1,6 +1,9 @@
 /**
  * types.ts — Типы данных и утилиты сдельной оплаты труда врача («Тайный блокнот врача»).
+ * Mandate 8b: строго <= 120 строк на файл.
  */
+
+export { pluralizeRu } from "./pluralizeRu.js";
 
 export interface DoctorPieceRateWalletViewProps {
 	readonly doctorId?: string | undefined;
@@ -8,7 +11,7 @@ export interface DoctorPieceRateWalletViewProps {
 	readonly doctorSpecialty?: string | undefined;
 	readonly shiftDateIso?: string | undefined;
 	readonly onClose?: (() => void) | undefined;
-	readonly onPrintT51?: (() => void) | undefined;
+	readonly onPrintPayslip?: (() => void) | undefined;
 }
 
 export interface DoctorEarningsServiceItem {
@@ -109,16 +112,4 @@ export interface EarningsDataState {
 	readonly specialtyBreakdown: readonly DoctorEarningsCategoryBreakdown[];
 	readonly appointments: readonly DoctorEarningsAppointmentItem[];
 	readonly formulaExplanationRu: string;
-}
-
-export function pluralizeRu(
-	count: number,
-	forms: readonly [string, string, string],
-): string {
-	const abs = Math.abs(count) % 100;
-	const lastDigit = abs % 10;
-	if (abs > 10 && abs < 20) return forms[2];
-	if (lastDigit > 1 && lastDigit < 5) return forms[1];
-	if (lastDigit === 1) return forms[0];
-	return forms[2];
 }

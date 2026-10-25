@@ -98,7 +98,7 @@ function PayrollPreviewApp() {
 			<header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div>
 					<h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--ink)] m-0">
-						Зарплата врачей (Doctor Payroll T-51 Net Revenue)
+						Зарплата врачей (Doctor Payroll & Net Revenue)
 					</h1>
 					<p className="text-xs text-[var(--muted)] m-0">
 						Клиническая сдельная оплата, Net Revenue (минус ЗТЛ и расходники) &amp; аренда кресла соло-врача

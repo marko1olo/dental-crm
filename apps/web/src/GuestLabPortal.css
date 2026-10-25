@@ -14,8 +14,8 @@
 .guest-portal-card {
 	position: relative;
 	z-index: 10;
-	background: var(--paper, #ffffff);
-	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 32px;
 	max-width: 600px;

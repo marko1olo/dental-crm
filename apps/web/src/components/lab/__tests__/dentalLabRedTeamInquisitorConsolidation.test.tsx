@@ -48,7 +48,11 @@ describe("RED TEAM INQUISITOR — Dental Lab & ZTL Orders Consolidation & Mandat
 		assert.ok(html.includes("Зубы FDI"), "Содержит выбор зубов FDI");
 		assert.ok(html.includes("3D-скан челюсти (STL / PLY / OBJ)"), "Содержит загрузку 3D-сканов");
 		assert.ok(html.includes("Финансовый расчет наряда ЗТЛ"), "Содержит финансовый блок");
-		assert.ok(html.includes("Сформировать наряд в ЗТЛ"), "Содержит основную кнопку отправки");
+		assert.ok(
+			html.includes("Сформировать наряд в лабораторию") ||
+				html.includes("Сформировать наряд в ЗТЛ"),
+			"Содержит основную кнопку отправки",
+		);
 	});
 
 	it("3. VisitProtocolView бесшовно связан с нарядом ЗТЛ у кресла врача", () => {

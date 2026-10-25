@@ -1,0 +1,117 @@
+/**
+ * doctorWalletCards.css — Фильтры, KPI карточки и формула сдельной оплаты.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.dpr-controls-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: nowrap;
+}
+
+.dpr-filter-chip {
+	height: 38px;
+	min-height: 38px;
+	padding: 0 12px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #334155);
+	background: var(--paper, #0f172a);
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+	.dpr-controls-row { width: 100%; gap: 6px; }
+	.dpr-filter-chip { min-height: 44px; padding: 0 10px; font-size: 12px; }
+	.dpr-filter-chip[data-testid="dpr-date-picker"] { flex: 1; min-width: 0; padding: 0 8px; }
+}
+
+.dpr-filter-chip:hover {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--teal, #14b8a6);
+}
+
+.dpr-filter-chip.active {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.2));
+	color: var(--teal, #14b8a6);
+	border-color: var(--teal, #14b8a6);
+	font-weight: 700;
+}
+
+.dpr-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	padding: 12px 16px;
+}
+
+@media (min-width: 768px) {
+	.dpr-kpi-grid {
+		grid-template-columns: repeat(4, 1fr);
+		gap: 12px;
+		padding: 16px 24px;
+	}
+}
+
+.dpr-kpi-card {
+	padding: 10px 12px;
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, #334155);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	position: relative;
+}
+
+@media (min-width: 768px) {
+	.dpr-kpi-card { padding: 14px 16px; border-radius: 14px; gap: 6px; }
+}
+
+.dpr-kpi-card.highlight {
+	background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, var(--paper-soft, #1e293b) 100%);
+	border-color: rgba(20, 184, 166, 0.45);
+}
+
+.dpr-kpi-label {
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+}
+
+.dpr-kpi-value {
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	font-feature-settings: "tnum";
+	line-height: 1.15;
+	white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+	.dpr-kpi-value { font-size: 22px; }
+}
+
+.dpr-kpi-card.highlight .dpr-kpi-value { color: var(--teal, #14b8a6); }
+.dpr-kpi-icon-muted { color: var(--muted, #94a3b8); opacity: 0.85; flex-shrink: 0; }
+.dpr-kpi-icon-accent { color: var(--teal, #14b8a6); flex-shrink: 0; }
+.dpr-status-dot-teal { width: 8px; height: 8px; border-radius: 50%; background: var(--teal, #14b8a6); display: inline-block; flex-shrink: 0; }
+.doctor-piece-rate-container .dpr-text-teal { color: var(--teal, #14b8a6) !important; font-weight: 700; }
+.dpr-text-muted-deduction { color: var(--muted, #94a3b8); font-weight: 600; }
+.dpr-kpi-hint { font-size: 10px; font-weight: 600; color: var(--muted, #94a3b8); line-height: 1.25; }

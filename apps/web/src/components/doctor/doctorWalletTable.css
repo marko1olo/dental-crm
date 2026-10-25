@@ -1,0 +1,101 @@
+/**
+ * doctorWalletTable.css — Стили таблицы манипуляций и специальностей сдельной оплаты.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.dpr-formula-strip {
+	margin: 0 16px 12px;
+	padding: 8px 12px;
+	background: rgba(13, 148, 136, 0.08);
+	border: 1px dashed rgba(20, 184, 166, 0.35);
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink, #f8fafc);
+	line-height: 1.35;
+}
+
+@media (min-width: 768px) {
+	.dpr-formula-strip {
+		margin: 0 24px 14px;
+		padding: 10px 16px;
+		font-size: 12px;
+	}
+}
+
+.dpr-formula-strip svg { color: var(--teal, #14b8a6); flex-shrink: 0; }
+.dpr-specialty-section { display: none; padding: 0 16px 12px; }
+
+@media (min-width: 768px) {
+	.dpr-specialty-section { display: block; padding: 0 24px 16px; }
+}
+
+.dpr-specialty-title {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--muted, #94a3b8);
+	margin-bottom: 6px;
+}
+
+.dpr-specialty-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 8px;
+}
+
+.dpr-specialty-chip {
+	padding: 8px 12px;
+	border-radius: 10px;
+	background: var(--paper-soft, #1e293b);
+	border: 1px solid var(--line, #334155);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dpr-specialty-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	gap: 6px;
+}
+
+.dpr-specialty-badge {
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: rgba(20, 184, 166, 0.15);
+	color: var(--teal, #14b8a6);
+	flex-shrink: 0;
+}
+
+.dpr-specialty-stats {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 10px;
+	color: var(--muted, #94a3b8);
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.dpr-table-container { padding: 0 24px 16px; overflow-x: auto; }
+.dpr-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line, #334155); }
+.dpr-table th { background: var(--paper-soft, #1e293b); color: var(--muted, #94a3b8); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line, #334155); white-space: nowrap; }
+.dpr-table td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid var(--line, #334155); background: var(--paper, #0f172a); color: var(--ink, #f8fafc); vertical-align: middle; }
+.dpr-table tr:last-child td { border-bottom: none; }
+.dpr-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.dpr-badge-paid { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); white-space: nowrap; }
+.dpr-badge-unpaid { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); white-space: nowrap; }
+.dpr-badge-partial { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); white-space: nowrap; }
+.dpr-badge-ztl { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.25); white-space: nowrap; }

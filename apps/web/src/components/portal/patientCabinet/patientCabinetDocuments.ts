@@ -25,16 +25,15 @@ import type {
 import {
 	formatRussianDateIso,
 	formatRubles,
+} from "./engine/patientCabinetFormatters.js";
+import {
 	calculateCabinetSummary,
-} from "./patientCabinetEngine.js";
+} from "./engine/patientCabinetSummaryEngine.js";
 import {
 	generateExtract043Html,
 	generateMedicalCardExtractHtml,
 } from "./patientMedicalCardExtractDocuments.js";
 export {
-	formatRussianDateIso,
-	formatRubles,
-	calculateCabinetSummary,
 	generateExtract043Html,
 	generateMedicalCardExtractHtml,
 };

@@ -1,0 +1,122 @@
+/**
+ * doctorWalletLayout.css — Каркас, Drag Handle и шапка сдельной оплаты врача.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.doctor-piece-rate-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100%;
+	overflow-x: clip;
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+
+.dpr-mobile-drag-handle-bar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 8px;
+	padding-bottom: 2px;
+	background: var(--paper-soft, #1e293b);
+}
+
+.dpr-mobile-drag-pill {
+	width: 36px;
+	height: 5px;
+	border-radius: 999px;
+	background: var(--muted, #64748b);
+	opacity: 0.45;
+}
+
+@media (min-width: 768px) {
+	.dpr-mobile-drag-handle-bar {
+		display: none;
+	}
+}
+
+.dpr-header {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px 16px 14px;
+	background: var(--paper-soft, #1e293b);
+	border-bottom: 1px solid var(--line, #334155);
+}
+
+@media (min-width: 768px) {
+	.dpr-header {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 24px;
+	}
+}
+
+.dpr-header-top-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	width: 100%;
+}
+
+.dpr-header-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #334155);
+	background: var(--paper, #0f172a);
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+	.dpr-header-top-row { width: auto; }
+	.dpr-header-close-btn { display: none !important; }
+}
+
+.dpr-header-title-block {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.dpr-icon-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #14b8a6);
+	border: 1px solid rgba(20, 184, 166, 0.3);
+	flex-shrink: 0;
+}
+
+.dpr-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink, #f8fafc);
+	line-height: 1.2;
+	margin: 0;
+}
+
+@media (min-width: 768px) {
+	.dpr-title { font-size: 18px; }
+}
+
+.dpr-subtitle {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+	margin-top: 2px;
+}

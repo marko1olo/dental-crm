@@ -104,7 +104,22 @@ describe("Red Team Inquisition: Public Portal Routing & SSR Isolation", () => {
 
 describe("Red Team Inquisition: Guest Lab Portal Ergonomics & Data Integrity", () => {
 	it("GuestLabPortal.tsx contains exact FDI tooth notation, clinical tasks, and deadline", () => {
-		const source = readSource("GuestLabPortal.tsx");
+		const portalFiles = [
+			"GuestLabPortal.tsx",
+			"components/lab/guestPortal/GuestLabPortal.tsx",
+			"components/lab/guestPortal/GuestLabPortalTechnicalDetails.tsx",
+			"components/lab/guestPortal/GuestLabPortalClinicalNotes.tsx",
+			"components/lab/guestPortal/guestPortalTypes.tsx",
+		];
+		const source = portalFiles
+			.map((file) => {
+				try {
+					return readSource(file);
+				} catch {
+					return "";
+				}
+			})
+			.join("\n");
 
 		// Tooth FDI badge
 		assert.ok(source.includes("guest-portal-tooth-fdi"), "Must have data-testid for FDI tooth number");

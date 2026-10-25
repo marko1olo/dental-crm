@@ -366,10 +366,10 @@ export function calculateServicesPayrollBreakdown(
 }
 
 /**
- * Генерирует официальный печатный HTML унифицированной формы Т-51 (Расчетная ведомость / листок).
- * В соответствии с Постановлением Госкомстата РФ № 1 от 05.01.2004 и клиническим стандартом DENTE.
+ * Генерирует официальный печатный HTML ведомости сдельного расчёта и зарплаты врача (Doctor Earnings & Net Revenue).
+ * В соответствии с клиническими стандартами DENTE CRM и прозрачной формулой сделки (Выручка − ЗТЛ − Материалы).
  */
-export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
+export function generateDoctorEarningsPayslipHtml(payload: DoctorT51PrintPayload): string {
 	const fromDate = new Date(payload.periodFromIso).toLocaleDateString("ru-RU");
 	const toDate = new Date(payload.periodToIso).toLocaleDateString("ru-RU");
 	const formatMoney = (rub: number) => rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
@@ -412,7 +412,7 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Расчетный листок Т-51 — ${payload.doctorName}</title>
+	<title>Сдельный расчёт и зарплата врача — ${payload.doctorName}</title>
 	<style>
 		@page { size: A4 portrait; margin: 12mm; }
 		body {
@@ -424,7 +424,7 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 			padding: 0;
 			background: #ffffff;
 		}
-		.t51-header {
+		.payslip-header, .t51-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: flex-start;
@@ -528,20 +528,20 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 	</style>
 </head>
 <body>
-	<div class="t51-header">
+	<div class="payslip-header">
 		<div>
 			<div class="clinic-title">${payload.organizationName}</div>
 			<div class="clinic-sub">${payload.organizationInn ? `ИНН: ${payload.organizationInn} • ` : ""}Стоматологическая клиника DENTE</div>
 		</div>
 		<div class="okud-badge">
-			Унифицированная форма № Т-51<br>
-			Постановление Госкомстата РФ № 1<br>
-			Форма по ОКУД 0301009
+			Сдельный расчёт врача<br>
+			Doctor Earnings & Net Revenue<br>
+			Стандарт DENTE CRM
 		</div>
 	</div>
 
 	<div class="doc-title">
-		Расчетный листок за период с ${fromDate} по ${toDate}
+		Сдельный расчёт и зарплата врача за период с ${fromDate} по ${toDate}
 	</div>
 
 	<div class="meta-grid">
@@ -722,3 +722,6 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 </body>
 </html>`;
 }
+
+/** Алиас для обратной совместимости вызовов */
+export const generateDoctorT51Html = generateDoctorEarningsPayslipHtml;

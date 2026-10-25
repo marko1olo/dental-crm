@@ -17,9 +17,11 @@ import type {
 } from "./patientCabinetEngine.js";
 import {
 	downloadHtmlFile,
+} from "./patientCabinetDocuments.js";
+import {
 	formatRubles,
 	formatRussianDateIso,
-} from "./patientCabinetDocuments.js";
+} from "./engine/patientCabinetFormatters.js";
 import { generateSbpQrPayload } from "./patientCabinetEngine.js";
 
 /**

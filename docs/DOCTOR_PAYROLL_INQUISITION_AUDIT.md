@@ -84,3 +84,31 @@
   - `apps/web/src/components/payroll/__tests__/advancedPayrollComponents.test.ts` (5 tests) — **PASS**
   - `apps/web/src/components/payroll/__tests__/payrollTimesheetSoloDoctorAutonomy.test.ts` (18 tests) — **PASS**
 - **Итого: 50 тестов успешно пройдены (0 failing).**
+
+---
+
+## 7. Волна 2: Выкос канцелярита «Т-51» в подсистеме сдельного расчёта и мобильного кошелька выплат врача
+- **Тотальный выкос «Т-51» (Мандат 8x & 8ap)**:
+  - `packages/shared/src/finance/netSalary/doctorNetSalaryCore.ts`: унифицированная форма Госкомстата № 1 и ОКУД 0301009 полностью заменены на современный клинический бланк **«Сдельный расчёт и зарплата врача (Doctor Earnings & Net Revenue)»**. Функция переименована в `generateDoctorEarningsPayslipHtml`.
+  - `DoctorPieceRateWalletView.tsx` и `DoctorShiftEarningsWidget.tsx`: уничтожены все CSS-классы и селекторы `dpr-print-t51-btn`, `btn-print-shift-t51`, тексты переведены на живой клинический русский язык.
+  - `DoctorPayoutMobileWallet.tsx` и `DoctorPayoutDashboard.tsx`: чистая сделка врача, налог НПД 0/6%, аренда кресла, ноль советского канцелярита.
+  - `payroll-preview.html` и `payrollPreviewEntry.tsx`: заголовки обновлены до **«Зарплата врачей (Doctor Payroll & Net Revenue)»**.
+- **Декомпозиция монолитов строго $\le 120$ строк (Мандат 8b)**:
+  - Бэкенд `apps/api/src/routes/doctorEarnings/` декомпозирован на 14 специализированных модулей: `constants.ts`, `responseTypes.ts`, `types.ts`, `doctorEarningsValidation.ts`, `doctorEarningsDbQueries.ts`, `doctorEarningsHandlers.ts`, `liveLabOrdersProcessor.ts`, `calculateLiveAppointmentItem.ts`, `liveEarningsTypes.ts`, `liveEarningsCalculator.ts`, `adaptSampleAppointmentItem.ts`, `sampleSummaryCalculator.ts`, `sampleEarningsAdapter.ts`, `index.ts`.
+  - Стили `apps/web/src/components/doctor/doctorPieceRateWallet.css` распилены на `doctorWalletLayout.css`, `doctorWalletCards.css`, `doctorWalletTable.css`, `doctorWalletActions.css`.
+  - Компоненты `DoctorPieceRateWalletView.tsx` и `DoctorShiftEarningsWidget.tsx` декомпозированы в `pieceRateWallet/` и `shiftWidget/`.
+  - Кошелек `apps/web/src/components/finance/doctorPayoutWallet/` распилен на `dateUtils.ts`, `demoDoctorVisits.ts`, `demoDoctorData.ts`, `demoSoloDoctorData.ts`, `demoShowcaseData.ts`, `types.ts`, `categoryCardComputer.ts`, `DoctorEarningsBreakdownCard.tsx`, `doctorShiftsComputer.ts`, `DoctorShiftDetailSheet.tsx`, `DoctorPayoutHistoryList.tsx`, `useDoctorPayoutWallet.ts`, `DoctorPayoutMobileWallet.tsx`.
+  - Страница `DoctorPayoutDashboard.tsx` распилена на `payoutDashboard/DoctorSelectionNotice.tsx`, `payoutDashboard/DoctorPayoutMobileSection.tsx`, `payoutDashboard/usePayoutModalEventBridge.ts`, `payoutDashboard/PayoutModalWrapper.tsx`.
+- **Red Team Visual Proofs (docs/proofs/doctor_earnings/)**:
+  1. [`doctor_earnings_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_earnings_pc_light_1440x900.png) (91.7 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  2. [`doctor_earnings_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_earnings_pc_dark_1440x900.png) (88.6 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  3. [`doctor_earnings_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_earnings_mobile_light_390x844.png) (145.4 КБ) — [ПРОВЕРЕНО: ЧИСТО]. Apple HIG Touch Zone, тач-таргеты $\ge 44\text{px}$, 0px паразитного скролла.
+  4. [`doctor_earnings_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_earnings_mobile_dark_390x844.png) (147.2 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  5. [`doctor_payroll_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_payroll_modal_pc_light_1440x900.png) (143.7 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  6. [`doctor_payroll_modal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/doctor_earnings/doctor_payroll_modal_mobile_light_390x844.png) (140.8 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+- **Результаты тестов**:
+  - `apps/web/src/components/doctor/__tests__/` (6 passing, 0 failing) — **PASS**
+  - `apps/web/src/components/finance/doctorPayoutWallet/__tests__/` (10 passing, 0 failing) — **PASS**
+  - `apps/api/src/tests/routes/doctorEarningsRoutes.test.ts` (5 passing, 0 failing) — **PASS**
+  - `npm run check:encoding` (20136 файлов) — **PASS**
+
