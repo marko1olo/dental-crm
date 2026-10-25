@@ -1,0 +1,95 @@
+/* loungeCabinetRow.css — Карточка кабинета на ТВ-табло */
+.lounge-cabinet-item {
+	display: grid;
+	grid-template-columns: minmax(130px, 1fr) minmax(130px, 1.1fr) 24px minmax(150px, 1.2fr) auto;
+	align-items: center;
+	gap: 16px;
+	padding: 16px 20px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.lounge-cabinet-item:hover {
+	background: rgba(255, 255, 255, 0.09);
+	border-color: rgba(255, 255, 255, 0.25);
+}
+
+.lounge-cabinet-item--calling {
+	background: rgba(34, 197, 94, 0.14);
+	border-color: var(--ok-fg, #22c55e);
+	box-shadow: 0 0 24px rgba(34, 197, 94, 0.28);
+	animation: lounge-call-pulse 2.4s infinite ease-in-out;
+}
+
+.lounge-cabinet-meta { display: flex; flex-direction: column; gap: 3px; }
+.lounge-cabinet-number { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+.lounge-cabinet-spec { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lounge-doctor-meta { display: flex; flex-direction: column; gap: 2px; }
+.lounge-doctor-name { font-size: 16px; font-weight: 600; color: var(--ink); }
+.lounge-doctor-role { font-size: 12px; color: var(--muted); }
+
+.lounge-flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.lounge-cabinet-item--calling .lounge-flow-arrow { color: var(--ok-fg, #22c55e); animation: lounge-arrow-bounce 1.5s infinite ease-in-out; }
+
+.lounge-patient-meta { display: flex; flex-direction: column; gap: 2px; }
+.lounge-patient-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.lounge-patient-name { font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+.lounge-cabinet-item--calling .lounge-patient-name { color: var(--ok-fg, #4ade80); text-shadow: 0 0 12px rgba(74, 222, 128, 0.4); }
+
+.lounge-status-wrap { display: flex; justify-content: flex-end; }
+.lounge-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.lounge-status-badge--calling {
+	background: var(--ok-bg, rgba(34, 197, 94, 0.25));
+	color: var(--ok-fg, #22c55e);
+	border: 1px solid var(--ok-fg, #22c55e);
+}
+
+.lounge-status-badge--treatment {
+	background: var(--info-bg, rgba(56, 189, 248, 0.2));
+	color: var(--info-fg, #38bdf8);
+	border: 1px solid var(--info-border, rgba(56, 189, 248, 0.4));
+}
+
+.lounge-status-badge--waiting {
+	background: rgba(255, 255, 255, 0.07);
+	color: var(--muted);
+	border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+}
+
+@keyframes lounge-call-pulse {
+	0%, 100% { border-color: rgba(34, 197, 94, 0.6); box-shadow: 0 0 16px rgba(34, 197, 94, 0.2); }
+	50% { border-color: rgba(34, 197, 94, 1); box-shadow: 0 0 32px rgba(34, 197, 94, 0.45); }
+}
+
+@keyframes lounge-arrow-bounce {
+	0%, 100% { transform: translateX(0); }
+	50% { transform: translateX(4px); }
+}
+
+@media (max-width: 768px) {
+	.lounge-cabinet-item {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		padding: 14px 16px;
+	}
+	.lounge-flow-arrow { display: none; }
+	.lounge-status-wrap { justify-content: flex-start; }
+}

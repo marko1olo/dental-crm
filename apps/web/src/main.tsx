@@ -33,11 +33,7 @@ const MobileSelfCheckinModal = React.lazy(() =>
 		default: m.MobileSelfCheckinModal,
 	})),
 );
-const WaitingLoungeSignage = React.lazy(() =>
-	import("./components/lounge/WaitingLoungeSignage").then((m) => ({
-		default: m.WaitingLoungeSignage,
-	})),
-);
+import { WaitingLoungeSignage } from "./components/lounge/WaitingLoungeSignage";
 const QueueBillboardView = React.lazy(() =>
 	import("./components/queue/QueueBillboardView").then((m) => ({
 		default: m.QueueBillboardView,
@@ -337,9 +333,13 @@ if (publicPortalRoute) {
 } else if (
 	typeof window !== "undefined" &&
 	(window.location.pathname === "/lounge-display" ||
+		window.location.pathname === "/lounge" ||
 		window.location.pathname.startsWith("/lounge-display/") ||
 		window.location.hash === "#/lounge-display" ||
-		window.location.hash === "#lounge-display")
+		window.location.hash === "#lounge-display" ||
+		window.location.hash === "#/lounge" ||
+		window.location.hash === "#lounge" ||
+		new URLSearchParams(window.location.search).has("lounge"))
 ) {
 	applyThemeToRoot(
 		document.documentElement,
@@ -353,9 +353,7 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="public">
-				<React.Suspense fallback={null}>
-					<WaitingLoungeSignage />
-				</React.Suspense>
+				<WaitingLoungeSignage />
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

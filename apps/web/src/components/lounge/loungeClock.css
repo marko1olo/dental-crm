@@ -1,0 +1,102 @@
+/* loungeClock.css — Часы и комфорт на ТВ-табло */
+.lounge-left-col {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-height: 0;
+}
+
+.lounge-clock-card {
+	padding: 28px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.lounge-clock-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.lounge-clock-time-wrap { display: flex; align-items: baseline; gap: 8px; }
+.lounge-clock-time {
+	font-size: 72px;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -0.03em;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink);
+	text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.lounge-clock-seconds {
+	font-size: 30px;
+	font-weight: 600;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.lounge-clock-date {
+	font-size: 20px;
+	font-weight: 600;
+	color: var(--ink);
+	text-transform: capitalize;
+	line-height: 1.3;
+}
+
+.lounge-clock-footer {
+	margin-top: 6px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.lounge-comfort-card {
+	padding: 22px 24px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	justify-content: center;
+}
+
+.lounge-comfort-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.lounge-comfort-list { display: flex; flex-direction: column; gap: 10px; }
+.lounge-comfort-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	color: var(--ink);
+	background: rgba(255, 255, 255, 0.04);
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lounge-comfort-icon { color: var(--brand, var(--teal)); flex-shrink: 0; }
+
+@media (max-width: 768px) {
+	.lounge-left-col { gap: 14px; }
+	.lounge-clock-card { padding: 18px; border-radius: 16px; }
+	.lounge-clock-time { font-size: 52px; }
+	.lounge-clock-seconds { font-size: 22px; }
+	.lounge-comfort-card { padding: 18px; border-radius: 16px; }
+}

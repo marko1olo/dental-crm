@@ -1,0 +1,86 @@
+/* QueueBillboardRow.css — Карточки кабинетов на табло очереди холла */
+
+.queue-ticket-card {
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 1.25rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.queue-ticket-card.invited {
+	border: 2px solid var(--teal, #0d9488);
+	background: var(--paper-strong, #ffffff);
+	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.2);
+	animation: queueTicketPulse 3s infinite ease-in-out;
+}
+
+@keyframes queueTicketPulse {
+	0%, 100% { border-color: var(--teal, #0d9488); box-shadow: 0 8px 24px rgba(13, 148, 136, 0.2); }
+	50% { border-color: #10b981; box-shadow: 0 12px 32px rgba(16, 185, 129, 0.35); }
+}
+
+.queue-ticket-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.queue-ticket-patient {
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	letter-spacing: -0.01em;
+}
+
+.queue-ticket-destination {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.35rem;
+	text-align: right;
+}
+
+.queue-ticket-cabinet-badge {
+	font-size: 1.35rem;
+	font-weight: 800;
+	padding: 0.4rem 1rem;
+	border-radius: 12px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.queue-ticket-doctor {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.queue-ticket-status-pill {
+	font-size: 0.85rem;
+	font-weight: 700;
+	padding: 0.25rem 0.75rem;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	width: fit-content;
+}
+
+.queue-ticket-status-pill.invited {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+.queue-ticket-status-pill.waiting {
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted, #64748b);
+}
