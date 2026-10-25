@@ -133,8 +133,8 @@ function EndoPreviewApp() {
 					toothNumber={activeTooth}
 					toothState="K04.0 Острый пульпит"
 					patientId="pat-1"
-					onInsertToDiary={(soapSnippet) => {
-						setSoapDiary((prev) => (prev ? `${prev}\n\n${soapSnippet}` : soapSnippet));
+					onInsertToProtocol={(protocolText) => {
+						setSoapDiary((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));
 						setIsModalOpen(false);
 					}}
 				/>

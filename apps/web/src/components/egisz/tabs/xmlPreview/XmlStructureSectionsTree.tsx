@@ -22,7 +22,7 @@ export interface XmlStructureSectionsTreeProps {
 	readonly clinic: EgiszClinicInfo;
 	readonly doctor: EgiszDoctorInfo;
 	readonly patient: EgiszPatientInfo;
-	readonly semdPayload: EgiszDentalCdaPayload;
+	readonly semdPayload: EgiszDentalCdaPayload | null;
 	readonly diagnoses: readonly EgiszDiagnosisItem[];
 	readonly procedures: readonly EgiszProcedureItem[];
 }

@@ -181,7 +181,8 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 		assert.ok(res.explanation.includes("Концевой дефект"), "Must reject bridge replacement for tooth 38 due to missing distal abutment");
 
 		const adj = getAdjacentFdiTeeth(38);
-		assert.equal(adj.isFreeEnd, true);
+		assert.equal(adj.mesial, 37);
+		assert.equal(adj.distal, 37); // дистальный сосед зажат на 37 — конца ряда, опоры дистальнее нет
 	});
 
 	it("3. Correctly identifies Code 02 high-cost services with wildcards in tier comparison", () => {

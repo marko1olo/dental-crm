@@ -14,12 +14,6 @@ import "./theme.css";
 import "./components/egisz/egiszRemd.css";
 import { EgiszCertificatesHubModal } from "./components/egisz/EgiszCertificatesHubModal";
 
-const SAMPLE_PAYMENTS = [
-	{ date: "2026-04-12", serviceCode: "1" as const, serviceDescription: "Лечение кариеса (зуб 46)", amountKopecks: 1250000 },
-	{ date: "2026-06-20", serviceCode: "2" as const, serviceDescription: "Установка дентального имплантата (зуб 36)", amountKopecks: 4500000 },
-	{ date: "2026-08-15", serviceCode: "1" as const, serviceDescription: "Профессиональная гигиена полости рта", amountKopecks: 800000 },
-];
-
 function PreviewApp() {
 	const [isOpen, setIsOpen] = useState(true);
 	const searchParams = new URLSearchParams(window.location.search);
@@ -33,7 +27,6 @@ function PreviewApp() {
 				initialSection={section}
 				patientName="Смирнов Алексей Викторович"
 				patientInn="770123456789"
-				cashdeskPayments={SAMPLE_PAYMENTS}
 			/>
 		</div>
 	);

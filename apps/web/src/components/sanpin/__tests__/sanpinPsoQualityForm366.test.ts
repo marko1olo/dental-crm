@@ -72,9 +72,12 @@ describe("Журнал контроля предстерилизационной
 			testType: "both_standard",
 			isAzopyramNegative: true,
 			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
 			detergentBrand: "Биолот 0.5%",
 			isBatchApproved: true,
 			operatorStaffFullName: "Медсестра ЦСО",
+			operatorStaffPosition: "Медицинская сестра ЦСО",
+			electronicStampVerified: true,
 		};
 		const csv = exportPsoJournalToCsv([record]);
 		assert.ok(csv.includes("Азопирамовая проба") && csv.includes("Допущено"));
@@ -91,9 +94,12 @@ describe("Журнал контроля предстерилизационной
 			testType: "both_standard",
 			isAzopyramNegative: true,
 			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
 			detergentBrand: "Биолот 0.5%",
 			isBatchApproved: true,
 			operatorStaffFullName: "Медсестра ЦСО",
+			operatorStaffPosition: "Медицинская сестра ЦСО",
+			electronicStampVerified: true,
 		};
 		const html = generatePsoJournalPrintHtml({
 			records: [record],

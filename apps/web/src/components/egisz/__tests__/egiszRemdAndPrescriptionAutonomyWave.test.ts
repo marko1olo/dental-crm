@@ -466,7 +466,6 @@ describe("EGISZ REMD, Form 107-1/u & Consents Autonomy & Demolition Wave", () =>
 					payments: [
 						{ date: "2026-03-01", serviceCode: "1", serviceDescription: "Лечение кариеса", amountKopecks: 500000 },
 					],
-					onClose: () => {},
 				}),
 			);
 			assert.ok(html.includes("Сформировать справку ФНС"), "Primary CTA кнопка формирует справку в 1 клик");

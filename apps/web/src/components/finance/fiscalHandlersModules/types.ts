@@ -8,6 +8,8 @@ import type {
 	StageAdvanceCalculation,
 } from "../../payments/checkout/fastCheckoutEngine.js";
 
+export type { FiscalReceiptPayload } from "../../payments/checkout/fastCheckoutEngine.js";
+
 export interface FiscalExecutionParams {
 	targetBillKop: number;
 	targetBillRub: number;

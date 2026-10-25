@@ -79,8 +79,8 @@ describe("Surgeon Autonomy & Clinical Operation Protocols (Mandates 8e, 8n, 8x)"
 			patientName: "Алексеев Д. М.",
 		});
 
-		assert.ok(passport.osteointegrationExpectedDate.length > 0);
-		assert.ok(passport.expirationDate.length > 0);
+		assert.ok(passport.osteointegrationExpectedDate, "дата остеоинтеграции должна быть заполнена");
+		assert.ok(passport.expirationDate, "срок действия паспорта должен быть заполнен");
 		assert.ok(passport.catalogArticle.length > 0);
 		assert.ok(passport.passportId.startsWith("IMP-PASSPORT-36-"));
 

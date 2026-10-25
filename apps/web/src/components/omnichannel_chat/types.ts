@@ -49,7 +49,7 @@ export interface OmnichannelConversation {
 export interface OmnichannelTemplate {
 	id: string;
 	title: string;
-	category: "reminder" | "post_op" | "payment" | "general";
+	category: "reminder" | "post_op" | "payment" | "general" | "navigation" | "clinical";
 	text: string;
 	channel?: OmnichannelChannel | "all" | undefined;
 }

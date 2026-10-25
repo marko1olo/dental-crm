@@ -8,8 +8,8 @@
 import { useMemo, useState } from "react";
 import { formatKopecksToRublesDisplay, parseRublesToKopecks } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
-import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
+import { useOptionalAppLogicContext } from "../../../../contexts/AppLogicContext";
+import { syncPricelistItemsToCatalog } from "../../catalogSyncHelper";
 import type { PriceListStats, ServiceWithMargin } from "./priceListTypes";
 import { mergeAndCalculatePriceList } from "./priceListCatalogMerger";
 

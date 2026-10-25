@@ -20,7 +20,7 @@ export interface XmlHeaderParticipantsSectionsProps {
 	readonly clinic: EgiszClinicInfo;
 	readonly doctor: EgiszDoctorInfo;
 	readonly patient: EgiszPatientInfo;
-	readonly semdPayload: EgiszDentalCdaPayload;
+	readonly semdPayload: EgiszDentalCdaPayload | null;
 }
 
 export const XmlHeaderParticipantsSections: React.FC<XmlHeaderParticipantsSectionsProps> = ({

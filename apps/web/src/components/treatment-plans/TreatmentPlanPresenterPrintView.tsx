@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FastClinicalPrintEngine } from "../documents/FastClinicalPrintEngine";
 import { PrintViewOfficialAppendixView } from "./printView/PrintViewOfficialAppendixView";
 import { PrintViewPatientFriendlyView } from "./printView/PrintViewPatientFriendlyView";
-import { PrintViewToolbar } from "./printView/PrintViewToolbar";
+import { PrintViewFormatToolbar } from "./printView/PrintViewFormatToolbar";
 import type { TreatmentPlanPresenterPrintViewProps } from "./printView/printViewTypes";
 
 export { type TreatmentPlanPresenterPrintViewProps } from "./printView/printViewTypes";
@@ -20,7 +20,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 
 	return (
 		<div className="treatment-appendix-print-doc" data-testid="appendix-print-document">
-			<PrintViewToolbar
+			<PrintViewFormatToolbar
 				printDocFormat={printDocFormat}
 				setPrintDocFormat={setPrintDocFormat}
 				showMicroConsumables={showMicroConsumables}
