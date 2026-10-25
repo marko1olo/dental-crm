@@ -12,8 +12,8 @@ import {
 import {
 	handleGetMedicalWaste,
 	handlePostMedicalWaste,
-	handlePostMedicalWasteQuickShiftBundle,
-} from "./wasteModules/medicalWasteHandlers.js";
+} from "./wasteModules/medicalWasteCrudHandlers.js";
+import { handlePostMedicalWasteQuickShiftBundle } from "./wasteModules/medicalWasteQuickShiftHandler.js";
 
 export function registerSanpinWasteAndBiohazardRoutes(app: FastifyInstance) {
 	// 1. Медицинские отходы классов А и Б

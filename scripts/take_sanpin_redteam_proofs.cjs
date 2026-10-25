@@ -1,11 +1,18 @@
 /**
  * scripts/take_sanpin_redteam_proofs.cjs
  *
- * Captures 4-state visual proofs for SanPiN & Sterilization:
- * 1. pc_light_sanpin_sterilization_1440x900.png (1440x900 PC Light)
- * 2. pc_dark_sanpin_sterilization_1440x900.png (1440x900 PC Dark)
- * 3. mobile_light_sanpin_sterilization_390x844.png (390x844 Mobile Light)
- * 4. mobile_dark_sanpin_sterilization_390x844.png (390x844 Mobile Dark)
+ * Снятие 4-состояных Red Team скриншотов из живого браузера (Playwright Chromium):
+ * Журнал автоклавирования:
+ * - pc_light_sanpin_autoclave_1440x900.png
+ * - pc_dark_sanpin_autoclave_1440x900.png
+ * - mobile_light_sanpin_autoclave_390x844.png
+ * - mobile_dark_sanpin_autoclave_390x844.png
+ *
+ * Журнал контроля предстерилизационной очистки (ПСО):
+ * - pc_light_sanpin_pso_1440x900.png
+ * - pc_dark_sanpin_pso_1440x900.png
+ * - mobile_light_sanpin_pso_390x844.png
+ * - mobile_dark_sanpin_pso_390x844.png
  */
 
 const { chromium } = require("playwright");
@@ -13,15 +20,11 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const BRAIN_ID = process.env.CONVERSATION_ID || "e2713ddf-da1e-43b7-b726-c9f91f49200e";
+const BRAIN_ID = process.env.CONVERSATION_ID || "893754ff-ccae-4970-9ed3-f86f8cd4dbef";
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/sanpin");
-const SSOT_DIR = path.resolve(__dirname, "../docs/proofs/sanpin_ssot");
-const STERIL_DIR = path.resolve(__dirname, "../docs/proofs/sterilization");
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${BRAIN_ID}`);
 
 if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
-if (!fs.existsSync(SSOT_DIR)) fs.mkdirSync(SSOT_DIR, { recursive: true });
-if (!fs.existsSync(STERIL_DIR)) fs.mkdirSync(STERIL_DIR, { recursive: true });
 if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
 async function isPortResponding(url, timeoutMs = 2000) {
@@ -103,54 +106,38 @@ async function provisionTestClinic() {
 }
 
 async function setTheme(page, theme) {
-	await page.evaluate((t) => {
-		const root = document.documentElement;
-		root.setAttribute("data-theme", t);
-		document.body.setAttribute("data-theme", t);
-		if (t === "dark") {
-			root.classList.add("dark");
-			root.classList.remove("light");
-			document.body.classList.add("dark");
-			document.body.classList.remove("light");
-		} else {
-			root.classList.remove("dark");
-			root.classList.add("light");
-			document.body.classList.remove("dark");
-			document.body.classList.add("light");
-		}
-		localStorage.setItem("dente_theme_mode", t);
-		document.documentElement.style.colorScheme = t;
-	}, theme);
+	try {
+		await page.evaluate((t) => {
+			const root = document.documentElement;
+			root.setAttribute("data-theme", t);
+			document.body.setAttribute("data-theme", t);
+			if (t === "dark") {
+				root.classList.add("dark");
+				root.classList.remove("light");
+				document.body.classList.add("dark");
+				document.body.classList.remove("light");
+			} else {
+				root.classList.remove("dark");
+				root.classList.add("light");
+				document.body.classList.remove("dark");
+				document.body.classList.add("light");
+			}
+			localStorage.setItem("dente_theme_mode", t);
+			document.documentElement.style.colorScheme = t;
+		}, theme);
+	} catch {}
 	await page.waitForTimeout(600);
 }
 
 async function saveProof(page, filename) {
 	const docsPath = path.join(DOCS_DIR, filename);
-	const ssotPath = path.join(SSOT_DIR, filename);
-	const sterilPath = path.join(STERIL_DIR, filename);
 	const brainPath = path.join(BRAIN_DIR, filename);
 
 	await page.screenshot({ path: docsPath, fullPage: false, animations: "disabled" });
-	fs.copyFileSync(docsPath, ssotPath);
-	fs.copyFileSync(docsPath, sterilPath);
-	fs.copyFileSync(docsPath, brainPath);
-
-	// Also mirror under sanpin_<state>_<res>.png if named pc_light_sanpin_...
-	let altFilename = null;
-	if (filename.includes("pc_light_sanpin")) altFilename = "sanpin_pc_light_1440x900.png";
-	if (filename.includes("pc_dark_sanpin")) altFilename = "sanpin_pc_dark_1440x900.png";
-	if (filename.includes("mobile_light_sanpin")) altFilename = "sanpin_mobile_light_390x844.png";
-	if (filename.includes("mobile_dark_sanpin")) altFilename = "sanpin_mobile_dark_390x844.png";
-
-	if (altFilename) {
-		fs.copyFileSync(docsPath, path.join(DOCS_DIR, altFilename));
-		fs.copyFileSync(docsPath, path.join(SSOT_DIR, altFilename));
-		fs.copyFileSync(docsPath, path.join(STERIL_DIR, altFilename));
-		fs.copyFileSync(docsPath, path.join(BRAIN_DIR, altFilename));
-	}
+	try { fs.copyFileSync(docsPath, brainPath); } catch {}
 
 	const stats = fs.statSync(docsPath);
-	console.log(`[PROOF CAPTURED] ${filename} (and alt: ${altFilename}) -> size: ${(stats.size / 1024).toFixed(1)} KB`);
+	console.log(`[PROOF CAPTURED] ${filename} -> size: ${(stats.size / 1024).toFixed(1)} KB`);
 }
 
 async function setupPageContext(context, creds) {
@@ -200,8 +187,6 @@ async function setupPageContext(context, creds) {
 			localStorage.setItem("dente_demo_banner_dismissed", "true");
 			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
 			localStorage.setItem("dente_theme_mode", "light");
-			localStorage.setItem("dente_current_view", "scanner");
-			localStorage.setItem("dente_last_view", "scanner");
 			localStorage.setItem("dente_clinic_autoclaves_v1", JSON.stringify(devices));
 			localStorage.setItem(
 				"dente-workspace-profile",
@@ -216,17 +201,6 @@ async function setupPageContext(context, creds) {
 				"dental-crm:onboarding:v1",
 				JSON.stringify({ dismissed: true, step: "done", completed: true }),
 			);
-			localStorage.setItem(
-				"dental-crm:web-ui-preferences:v1",
-				JSON.stringify({
-					version: 1,
-					uiLanguage: "ru",
-					selectedWorkspaceRole: "owner",
-					selectedSpecialty: "therapist",
-					onboardingDismissed: true,
-					onboardingStep: "done",
-				}),
-			);
 		},
 		{
 			ct: creds.clinicToken,
@@ -236,6 +210,15 @@ async function setupPageContext(context, creds) {
 			devices: devicesPreset,
 		},
 	);
+}
+
+async function dismissTourElements(page) {
+	try {
+		await page.evaluate(() => {
+			document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .shepherd-element').forEach((el) => el.remove());
+		});
+	} catch {}
+	await page.waitForTimeout(400);
 }
 
 async function main() {
@@ -248,85 +231,95 @@ async function main() {
 	});
 
 	try {
+		// ==================== 1. DESKTOP CONTEXT (1440x900) ====================
 		console.log("\n>>> Launching Desktop Context (1440x900)...");
-		const context = await browser.newContext({
+		const pcContext = await browser.newContext({
 			viewport: { width: 1440, height: 900 },
 			deviceScaleFactor: 1,
 			serviceWorkers: "block",
 		});
-		await setupPageContext(context, creds);
+		await setupPageContext(pcContext, creds);
 
-		const page = await context.newPage();
-		console.log(">>> Navigating to http://127.0.0.1:5173/?demo=1&sanpin=1#sanpin with waitUntil: commit...");
-		await page.goto("http://127.0.0.1:5173/?demo=1&sanpin=1#sanpin", {
+		const pcPage = await pcContext.newPage();
+		console.log(">>> [PC] Navigating to http://127.0.0.1:5173/?demo=true&sanpin=1...");
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true&sanpin=1", {
 			waitUntil: "commit",
 			timeout: 30000,
 		});
 
-		console.log(">>> Waiting for .sanpin-container to mount...");
-		for (let i = 0; i < 40; i++) {
-			await page.waitForTimeout(500);
-			const isMounted = await page.evaluate(() => !!document.querySelector(".sanpin-container")).catch(() => false);
-			if (isMounted) {
-				console.log(`>>> SanPiN mounted in ${(i * 0.5).toFixed(1)}s!`);
-				break;
-			}
-		}
+		await pcPage.waitForSelector(".sanpin-container", { timeout: 25000 });
+		await dismissTourElements(pcPage);
 
-		console.log(">>> Ensuring hash #sanpin is set...");
-		await page.evaluate(() => {
-			window.location.hash = "sanpin";
-			window.dispatchEvent(new HashChangeEvent("hashchange"));
+		// 1.1 Autoclave PC Light & Dark
+		console.log("--- [AUTOCLAVE] Capturing Desktop Proofs (1440x900) ---");
+		await setTheme(pcPage, "light");
+		await dismissTourElements(pcPage);
+		await saveProof(pcPage, "pc_light_sanpin_autoclave_1440x900.png");
+
+		await setTheme(pcPage, "dark");
+		await dismissTourElements(pcPage);
+		await saveProof(pcPage, "pc_dark_sanpin_autoclave_1440x900.png");
+
+		// 1.2 PSO PC Light & Dark
+		console.log("--- [PSO] Switching to PSO Tab & Capturing Desktop Proofs (1440x900) ---");
+		await pcPage.click('[data-testid="tab-pso-btn"]');
+		await pcPage.waitForTimeout(800);
+		await dismissTourElements(pcPage);
+
+		await saveProof(pcPage, "pc_dark_sanpin_pso_1440x900.png");
+
+		await setTheme(pcPage, "light");
+		await dismissTourElements(pcPage);
+		await saveProof(pcPage, "pc_light_sanpin_pso_1440x900.png");
+
+		await pcContext.close();
+
+		// ==================== 2. MOBILE CONTEXT (390x844 Apple HIG) ====================
+		console.log("\n>>> Launching Mobile Context (390x844)...");
+		const mobContext = await browser.newContext({
+			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 2,
+			isMobile: true,
+			hasTouch: true,
+			serviceWorkers: "block",
 		});
-		await page.waitForTimeout(1500);
+		await setupPageContext(mobContext, creds);
 
-		const hasSanpin = await page.evaluate(() => !!document.querySelector(".sanpin-container"));
-		if (!hasSanpin) {
-			console.log(">>> Clicking [data-testid='scanner-tab-sanpin']...");
-			await page.click('[data-testid="scanner-tab-sanpin"]').catch(() => {});
-			await page.waitForTimeout(1000);
-		}
-
-		console.log(">>> Waiting for .sanpin-container selector...");
-		await page.waitForSelector(".sanpin-container", { timeout: 20000 }).catch((err) => {
-			console.warn(">>> .sanpin-container wait warning:", err.message);
-		});
-
-		await page.evaluate(() => {
-			document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .shepherd-element').forEach((el) => el.remove());
-		});
-		await page.waitForTimeout(1000);
-
-		// 1. PC Light
-		console.log(">>> [PC] Capturing pc_light_sanpin_sterilization_1440x900.png...");
-		await setTheme(page, "light");
-		await saveProof(page, "pc_light_sanpin_sterilization_1440x900.png");
-
-		// 2. PC Dark
-		console.log(">>> [PC] Capturing pc_dark_sanpin_sterilization_1440x900.png...");
-		await setTheme(page, "dark");
-		await saveProof(page, "pc_dark_sanpin_sterilization_1440x900.png");
-
-		// 3. Mobile Viewport (390x844)
-		console.log("\n>>> [MOBILE] Setting viewport to 390x844 on hydrated page...");
-		await page.setViewportSize({ width: 390, height: 844 });
-		await page.waitForTimeout(1500);
-		await page.evaluate(() => {
-			document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .shepherd-element').forEach((el) => el.remove());
+		const mobPage = await mobContext.newPage();
+		console.log(">>> [MOBILE] Navigating to http://127.0.0.1:5173/?demo=true&sanpin=1...");
+		await mobPage.goto("http://127.0.0.1:5173/?demo=true&sanpin=1", {
+			waitUntil: "commit",
+			timeout: 30000,
 		});
 
-		// 3. Mobile Light
-		console.log(">>> [MOBILE] Capturing mobile_light_sanpin_sterilization_390x844.png...");
-		await setTheme(page, "light");
-		await saveProof(page, "mobile_light_sanpin_sterilization_390x844.png");
+		await mobPage.waitForSelector(".sanpin-container", { timeout: 25000 });
+		await dismissTourElements(mobPage);
 
-		// 4. Mobile Dark
-		console.log(">>> [MOBILE] Capturing mobile_dark_sanpin_sterilization_390x844.png...");
-		await setTheme(page, "dark");
-		await saveProof(page, "mobile_dark_sanpin_sterilization_390x844.png");
+		// 2.1 Autoclave Mobile Light & Dark
+		console.log("--- [AUTOCLAVE] Capturing Mobile Proofs (390x844) ---");
+		await setTheme(mobPage, "light");
+		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
-		await context.close();
-		console.log("\n>>> ALL 4 SANPIN PROOFS CAPTURED SUCCESSFULLY!");
+		await setTheme(mobPage, "dark");
+		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "mobile_dark_sanpin_autoclave_390x844.png");
+
+		// 2.2 PSO Mobile Light & Dark
+		console.log("--- [PSO] Switching to PSO Tab & Capturing Mobile Proofs (390x844) ---");
+		await mobPage.click('[data-testid="tab-pso-btn"]');
+		await mobPage.waitForTimeout(800);
+		await dismissTourElements(mobPage);
+
+		await saveProof(mobPage, "mobile_dark_sanpin_pso_390x844.png");
+
+		await setTheme(mobPage, "light");
+		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "mobile_light_sanpin_pso_390x844.png");
+
+		await mobContext.close();
+
+		console.log("\n>>> ALL 8 SANPIN PROOFS CAPTURED SUCCESSFULLY (AUTOCLAVE & PSO, LIGHT & DARK)!");
 	} finally {
 		if (viteProc) {
 			try { viteProc.kill(); } catch {}

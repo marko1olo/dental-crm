@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, MoreHorizontal, ShieldCheck, Sparkles, X } from "lucide-react";
+import { FileText, MoreHorizontal, Sparkles, X } from "lucide-react";
 
 interface PrimaryIntakeMoreDropdownProps {
 	isMoreMenuOpen: boolean;
@@ -7,7 +7,6 @@ interface PrimaryIntakeMoreDropdownProps {
 	isNormApplied: boolean;
 	onFillSomaticNorm: () => void;
 	onPrintBlankPackage: () => void;
-	onOpenAutoclaveLog257?: (() => void) | undefined;
 	onClose: () => void;
 }
 
@@ -17,7 +16,6 @@ export function PrimaryIntakeMoreDropdown({
 	isNormApplied,
 	onFillSomaticNorm,
 	onPrintBlankPackage,
-	onOpenAutoclaveLog257,
 	onClose,
 }: PrimaryIntakeMoreDropdownProps) {
 	const itemClass = "secondary-button w-full border-none bg-transparent flex items-center justify-start gap-2 px-3 py-2 text-[13px] font-semibold text-[var(--ink)] cursor-pointer min-h-[36px]";
@@ -76,21 +74,6 @@ export function PrimaryIntakeMoreDropdown({
 					<FileText size={15} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
 					<span>Печать чистых бланков пакета («________»)</span>
 				</button>
-				{onOpenAutoclaveLog257 && (
-					<button
-						type="button"
-						className={`${itemClass} !text-[var(--teal,#0d9488)]`}
-						data-testid="primary-intake-open-autoclave-log-btn"
-						onClick={() => {
-							setIsMoreMenuOpen(false);
-							onOpenAutoclaveLog257();
-						}}
-						title="Журнал контроля стерилизации и автоклавирования для проверок"
-					>
-						<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span>Журнал стерилизации и автоклавирования</span>
-					</button>
-				)}
 				<div className="h-px bg-[var(--line,#e2e8f0)] my-1" />
 				<button
 					type="button"

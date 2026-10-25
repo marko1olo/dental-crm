@@ -102,7 +102,6 @@ export function PrimaryIntakePackageModal(props: PrimaryIntakePackageModalProps)
 					isNormApplied={state.isNormApplied}
 					onFillSomaticNorm={state.handleFillSomaticNorm}
 					onPrintBlankPackage={print.handlePrintBlankPackage}
-					onOpenAutoclaveLog257={props.onOpenAutoclaveLog257}
 					onClose={onClose}
 				/>
 			</div>

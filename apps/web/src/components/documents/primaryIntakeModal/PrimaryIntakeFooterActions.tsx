@@ -12,7 +12,6 @@ interface PrimaryIntakeFooterActionsProps {
 	isNormApplied: boolean;
 	onFillSomaticNorm: () => void;
 	onPrintBlankPackage: () => void;
-	onOpenAutoclaveLog257?: (() => void) | undefined;
 	onClose: () => void;
 }
 
@@ -26,7 +25,6 @@ export function PrimaryIntakeFooterActions({
 	isNormApplied,
 	onFillSomaticNorm,
 	onPrintBlankPackage,
-	onOpenAutoclaveLog257,
 	onClose,
 }: PrimaryIntakeFooterActionsProps) {
 	return (
@@ -65,7 +63,7 @@ export function PrimaryIntakeFooterActions({
 					className="secondary-button h-[34px] min-h-[34px] px-3 rounded-lg inline-flex items-center gap-1.5 text-[12.5px] font-semibold border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.08))] cursor-pointer whitespace-nowrap"
 					data-testid="sign-primary-intake-package-btn"
 					onClick={onOpenSignatureTablet}
-					title="Подписание первичного пакета пациентом на экране (Digital Signature Canvas) или через СМС (ПЭП 63-ФЗ)"
+					title="Подписание первичного пакета пациентом на экране (Digital Signature Canvas) или через СМС (ПЭП)"
 				>
 					<FileSignature size={15} aria-hidden="true" />
 					<span>Подписать на планшете (ПЭП)</span>
@@ -78,7 +76,6 @@ export function PrimaryIntakeFooterActions({
 				isNormApplied={isNormApplied}
 				onFillSomaticNorm={onFillSomaticNorm}
 				onPrintBlankPackage={onPrintBlankPackage}
-				onOpenAutoclaveLog257={onOpenAutoclaveLog257}
 				onClose={onClose}
 			/>
 		</div>

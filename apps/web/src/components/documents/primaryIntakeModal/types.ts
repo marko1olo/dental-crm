@@ -8,7 +8,6 @@ export interface PrimaryIntakePackageModalProps {
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	readonly onOpenAutoclaveLog257?: () => void;
 	readonly doctorFullName?: string | null | undefined;
 	readonly clinicProfileDraft?: any | undefined;
 }

@@ -117,7 +117,6 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						onCreateDocument={(kind) => void createDocument(kind)}
 						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
 						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-						onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
 					/>
 				)}
 
