@@ -1,0 +1,111 @@
+/**
+ * splitCatalogToothAndPresets.css — Выбор зуба FDI и полоса быстрых пакетов услуг DENTE.
+ */
+
+.split-catalog-tooth-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line-subtle, var(--line, #e2e8f0));
+}
+
+.split-catalog-tooth-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+}
+
+.split-catalog-tooth-icon {
+	color: var(--teal, #0d9488);
+}
+
+.split-catalog-tooth-chips {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.split-tooth-chip {
+	height: 22px;
+	padding: 0 6px;
+	border-radius: 5px;
+	font-family: ui-monospace, monospace;
+	font-size: 11px;
+	font-weight: 700;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.12s ease;
+}
+
+.split-tooth-chip:hover:not(.active) {
+	color: var(--ink, #0f172a);
+	border-color: var(--teal, #0d9488);
+}
+
+.split-tooth-chip.active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.split-tooth-select {
+	height: 22px;
+	padding: 0 4px;
+	border-radius: 5px;
+	font-size: 11px;
+	font-weight: 600;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+}
+
+.split-catalog-bundles-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	padding: 4px 6px;
+	border-radius: 8px;
+	background: rgba(13, 148, 136, 0.05);
+	border: 1px dashed rgba(13, 148, 136, 0.25);
+}
+
+.split-bundle-label {
+	font-size: 10.5px;
+	font-weight: 700;
+	color: var(--teal-dark, #0f766e);
+}
+
+.split-bundle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 22px;
+	padding: 0 7px;
+	border-radius: 5px;
+	font-size: 10.5px;
+	font-weight: 700;
+	background: var(--paper, #ffffff);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal-dark, #0f766e);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.split-bundle-btn:hover {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	border-color: var(--teal, #0d9488);
+}

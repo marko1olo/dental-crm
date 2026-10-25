@@ -1,5 +1,5 @@
 import React from "react";
-import { PenTool, Send, ShieldCheck } from "lucide-react";
+import { Check, Send, ShieldCheck } from "lucide-react";
 
 export interface TreatmentPlanPrimaryActionsProps {
 	readonly signedAgreement?: unknown;
@@ -26,12 +26,12 @@ export const TreatmentPlanPrimaryActions: React.FC<TreatmentPlanPrimaryActionsPr
 				<button
 					type="button"
 					onClick={onOpenSignModal}
-					className="primary-button h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center gap-1.5 px-3.5 rounded-xl text-xs font-semibold bg-[var(--primary,#0d9488)] text-white hover:bg-[var(--primary-dark,#0f766e)] shadow-xs active:scale-[0.98] transition-all cursor-pointer shrink-0 whitespace-nowrap touch-manipulation"
+					className="primary-button h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center gap-1.5 px-3.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs active:scale-[0.98] transition-all cursor-pointer shrink-0 whitespace-nowrap touch-manipulation"
 					title="Утвердить и подписать смету плана лечения с пациентом"
 					data-testid="tp-sign-btn"
 				>
-					<PenTool size={13} className="shrink-0" />
-					<span>Утвердить план</span>
+					<Check size={14} className="shrink-0" />
+					<span>Утвердить план лечения</span>
 				</button>
 			)}
 

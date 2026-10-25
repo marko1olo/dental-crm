@@ -1,0 +1,112 @@
+/**
+ * splitCatalogFooter.css — Подвал таблицы StageServicesTable: итоги и кнопки запуска/оплаты.
+ */
+
+.stage-table-footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 10px 14px;
+	background: var(--paper-soft, #f8fafc);
+	border-top: 1px solid var(--line, #cbd5e1);
+}
+
+.stage-table-footer-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.stage-footer-add-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 600;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.12s ease;
+}
+
+.stage-footer-add-btn:hover {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+}
+
+.stage-footer-items-count {
+	font-size: 11.5px;
+	color: var(--muted, #64748b);
+}
+
+.stage-table-footer-right {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.stage-footer-total-wrap {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.stage-footer-total-label {
+	font-size: 11.5px;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.stage-footer-total-sum {
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+}
+
+.stage-footer-start-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+	background: #059669;
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.stage-footer-start-btn:hover {
+	background: #047857;
+}
+
+.stage-footer-pay-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.stage-footer-pay-btn:hover {
+	background: var(--teal-dark, #0f766e);
+}

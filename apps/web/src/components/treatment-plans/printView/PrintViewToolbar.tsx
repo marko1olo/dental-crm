@@ -1,91 +1,83 @@
 import React from "react";
-import { FileCheck2, FileText, Printer } from "lucide-react";
+import { Check, Printer, Share2 } from "lucide-react";
 
 export interface PrintViewToolbarProps {
-	readonly printDocFormat: "patient_friendly" | "official_appendix";
-	readonly setPrintDocFormat: (format: "patient_friendly" | "official_appendix") => void;
-	readonly showMicroConsumables: boolean;
-	readonly setShowMicroConsumables: (val: boolean) => void;
-	readonly onOpenFastPrint: () => void;
+	readonly effectivePlanNumber: string;
+	readonly isDraft: boolean;
+	readonly isSigned: boolean;
+	readonly isCopied: boolean;
+	readonly onCopyEstimate: () => void;
+	readonly onPrint: () => void;
+	readonly onClose?: (() => void) | undefined;
 }
 
 export const PrintViewToolbar: React.FC<PrintViewToolbarProps> = ({
-	printDocFormat,
-	setPrintDocFormat,
-	showMicroConsumables,
-	setShowMicroConsumables,
-	onOpenFastPrint,
+	effectivePlanNumber,
+	isDraft,
+	isSigned,
+	isCopied,
+	onCopyEstimate,
+	onPrint,
+	onClose,
 }) => {
 	return (
-		<div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--line)] no-print flex-wrap gap-2">
-			<div className="flex items-center gap-2 text-[var(--ink)]">
-				<FileText size={18} />
-				<span className="font-bold text-sm">
-					{printDocFormat === "patient_friendly"
-						? "Понятная смета для пациента (крупные блоки, без шелухи)"
-						: "Официальное Приложение №1 к Договору (Постановление Правительства РФ № 736)"}
+		<div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-slate-50 border-b border-slate-200 print:hidden">
+			<div className="flex items-center gap-2">
+				<span className="text-sm font-bold text-slate-800">
+					Смета плана лечения А4 ({effectivePlanNumber})
 				</span>
+				{isDraft && !isSigned && (
+					<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+						Черновик (печать разрешена)
+					</span>
+				)}
+				{isSigned && (
+					<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+						Подписан пациентом
+					</span>
+				)}
 			</div>
-			<div className="flex items-center gap-2 flex-wrap">
-				<div className="inline-flex p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
-					<button
-						type="button"
-						onClick={() => setPrintDocFormat("patient_friendly")}
-						className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-							printDocFormat === "patient_friendly"
-								? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="print-format-patient-btn"
-					>
-						<FileText size={13} className="shrink-0" />
-						<span>Смета для пациента</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setPrintDocFormat("official_appendix")}
-						className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-							printDocFormat === "official_appendix"
-								? "bg-[var(--paper-strong)] text-teal-800 dark:text-teal-200 shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="print-format-official-btn"
-					>
-						<FileCheck2 size={13} className="shrink-0" />
-						<span>Приложение №1 (Официальная смета)</span>
-					</button>
-				</div>
 
-				{printDocFormat === "official_appendix" && (
+			<div className="flex items-center gap-2">
+				<button
+					type="button"
+					onClick={onCopyEstimate}
+					className="secondary-button h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 cursor-pointer transition-colors flex items-center gap-1.5 touch-manipulation shadow-2xs"
+					title="Скопировать смету для отправки пациенту в WhatsApp или Telegram"
+					data-testid="print-view-copy-btn"
+				>
+					{isCopied ? (
+						<>
+							<Check size={14} className="text-emerald-600" />
+							<span className="text-emerald-600 font-bold">Скопировано</span>
+						</>
+					) : (
+						<>
+							<Share2 size={14} className="text-slate-600" />
+							<span>Смета в мессенджер</span>
+						</>
+					)}
+				</button>
+
+				<button
+					type="button"
+					onClick={onPrint}
+					className="primary-button h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-4 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all flex items-center gap-1.5 shadow-xs touch-manipulation active:scale-[0.98]"
+					data-testid="print-view-trigger-btn"
+				>
+					<Printer size={14} />
+					<span>Распечатать смету (А4)</span>
+				</button>
+
+				{onClose && (
 					<button
 						type="button"
-						onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-						className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors inline-flex items-center justify-center"
-						title="Скрывать мелкие расходные материалы для чистоты сметы"
+						onClick={onClose}
+						className="h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-200 border border-slate-300 transition-colors cursor-pointer"
 					>
-						{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
+						Закрыть
 					</button>
 				)}
-
-				<button
-					type="button"
-					onClick={onOpenFastPrint}
-					className="btn-treatment-action cursor-pointer bg-teal-600 hover:bg-teal-700 text-white"
-					data-testid="btn-fast-vector-print-estimate"
-					title="Быстрая векторная печать сметы (0 мс, без зависаний Celeron)"
-				>
-					<Printer size={16} />
-					<span>Векторная печать (0 мс)</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => window.print()}
-					className="btn-treatment-action btn-patient-choice cursor-pointer"
-					data-testid="trigger-print-btn"
-				>
-					<Printer size={16} />
-					<span>Печать сметы (Ctrl+P)</span>
-				</button>
 			</div>
 		</div>
 	);

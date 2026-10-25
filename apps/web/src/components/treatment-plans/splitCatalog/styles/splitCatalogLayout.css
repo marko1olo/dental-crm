@@ -1,0 +1,58 @@
+/**
+ * splitCatalogLayout.css — Сетка и панель сплит-режима каталога DENTE.
+ */
+
+.treatment-plan-split-view {
+	display: grid;
+	grid-template-columns: 380px 1fr;
+	gap: 14px;
+	width: 100%;
+	box-sizing: border-box;
+	align-items: start;
+}
+
+@media (max-width: 1024px) {
+	.treatment-plan-split-view {
+		grid-template-columns: 1fr;
+	}
+}
+
+.split-view-catalog-col {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	width: 100%;
+}
+
+.split-catalog-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px;
+	border-radius: 14px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	box-sizing: border-box;
+	max-height: 720px;
+}
+
+.split-catalog-header {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.split-catalog-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.split-catalog-title {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	letter-spacing: -0.01em;
+}

@@ -1,0 +1,79 @@
+/**
+ * splitCatalogStageActions.css — Действия этапов, скидки врача и суммы плана.
+ */
+
+.split-stages-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.split-copilot-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 7px;
+	font-size: 11.5px;
+	font-weight: 700;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal-dark, #0f766e);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.split-copilot-btn:hover {
+	background: rgba(13, 148, 136, 0.2);
+}
+
+.split-discount-group {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	padding: 2px 4px;
+	border-radius: 6px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+}
+
+.split-discount-icon {
+	color: var(--muted, #64748b);
+	margin-right: 2px;
+}
+
+.split-discount-chip {
+	height: 22px;
+	padding: 0 5px;
+	border-radius: 4px;
+	font-family: ui-monospace, monospace;
+	font-size: 10.5px;
+	font-weight: 700;
+	border: none;
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.12s ease;
+}
+
+.split-discount-chip:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.split-stages-total-plan {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+}
+
+.split-total-label {
+	color: var(--muted, #64748b);
+}
+
+.split-total-value {
+	color: var(--ink, #0f172a);
+}

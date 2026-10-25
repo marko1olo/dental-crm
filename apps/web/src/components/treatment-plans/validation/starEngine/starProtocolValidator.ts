@@ -34,13 +34,13 @@ export function validateTreatmentPlanStarProtocols(
 		checks.push({
 			ruleId: `star-conflict-exclusive-${conflict.toothNumber}-${conflict.procedureA.id}-${conflict.procedureB.id}`,
 			protocolCode: "K08_IMPLANT_ORTHO",
-			protocolTitleRu: "Клинический протокол СтАР: Контроль взаимоисключающих манипуляций",
+			protocolTitleRu: "Клиническая рекомендация: Совмещение процедур",
 			toothNumber: conflict.toothNumber,
-			ruleDescriptionRu: "Исключение одновременного назначения взаимоисключающих манипуляций на один и тот же зуб",
-			status: "error",
-			messageRu: `Клинический конфликт на зубе №${conflict.toothNumber}: ${conflict.descriptionRu}`,
-			recommendationRu: `Удалите одну из взаимоисключающих процедур для зуба №${conflict.toothNumber}: выберите либо хирургическое удаление, либо терапевтическое/ортопедическое сохранение.`,
-			normativeRefRu: "Клинические протоколы СтАР и стандарты качества стоматологической помощи",
+			ruleDescriptionRu: "Информирование о совмещении терапевтических и хирургических манипуляций (Мандат 8e: автономия врача)",
+			status: "warning",
+			messageRu: `Клиническая заметка (зуб №${conflict.toothNumber}): совмещение процедур («${conflict.procedureA.name}» и «${conflict.procedureB.name}»).`,
+			recommendationRu: `Врач автономно определяет последовательность и необходимость этапов лечения зуба №${conflict.toothNumber} (сохранение или удаление). Сохранение плана не блокируется.`,
+			normativeRefRu: "Клинические стандарты и врачебная автономия DENTE CRM",
 			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n],
 		});
 	}

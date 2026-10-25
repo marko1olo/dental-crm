@@ -1,0 +1,47 @@
+/**
+ * splitCatalogEmptyState.css — Пустое состояние таблицы услуг этапа DENTE CRM.
+ */
+
+.stage-table-empty {
+	padding: 36px 16px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	text-align: center;
+}
+
+.stage-empty-icon {
+	color: var(--muted, #94a3b8);
+	opacity: 0.5;
+	margin-bottom: 4px;
+}
+
+.stage-empty-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.stage-empty-desc {
+	font-size: 11.5px;
+	color: var(--muted, #64748b);
+	max-width: 360px;
+}
+
+.stage-empty-add-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 6px;
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 7px;
+	font-size: 12px;
+	font-weight: 700;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border: 1px solid rgba(13, 148, 136, 0.3);
+	color: var(--teal-dark, #0f766e);
+	cursor: pointer;
+}

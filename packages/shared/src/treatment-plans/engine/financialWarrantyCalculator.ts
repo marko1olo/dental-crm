@@ -1,11 +1,6 @@
 /**
- * DENTE Dental CRM — Multi-Option Treatment Plan & Phased Clinical Estimate Engine
- * Layer 1: Financial & Warranty Calculator
- *
- * Fully compliant with:
- * - Налоговый кодекс РФ (ст. 219 НК РФ: 13% вычет на стандартное лечение Код 01 с лимитом 150 000 ₽ и дорогостоящее Код 02 без лимита)
- * - Закон РФ «О защите прав потребителей» (ст. 29: гарантийные обязательства на стоматологические конструкции и реставрации)
- * - Правила округления целочисленной копеечной арифметики DENTE Zero Fractional Loss
+ * DENTE CRM — Layer 1: Financial & Warranty Calculator.
+ * Compliant: ст. 219 НК РФ (13% вычет), ст. 29 ЗоЗПП, Zero Fractional Loss.
  */
 
 import {
@@ -15,7 +10,6 @@ import {
 	formatKopecksRu,
 } from "../../utils/money.js";
 import { ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 } from "../../finance/taxDeduction.js";
-import { integerToRussianWords } from "../../sanpin/sanpinRegistryEngine.js";
 import {
 	PLAN_TIER_CONFIGS,
 	type PlanTierKey,
@@ -23,6 +17,8 @@ import {
 	type PlanNdflDeductionSummary,
 	type TreatmentPlanItem,
 } from "./types.js";
+
+export * from "./treatmentPlanFormatters.js";
 
 /**
  * Расчет пропорционального разделения стоимости на работу и материалы
@@ -118,7 +114,6 @@ export function calculateTierNdflDeduction(
 	const cappedCode01Kopecks = Math.min(code01BaseKopecks, annualLimitKopecks);
 	const totalEligibleBaseKopecks = cappedCode01Kopecks + code02BaseKopecks;
 
-	// 13% НДФЛ в базисных пунктах (1300 б.п.)
 	const refundKopecks = percentageOfKopecks(totalEligibleBaseKopecks, 1300);
 	const totalPlanKopecks = code01BaseKopecks + code02BaseKopecks;
 	const netCostAfterNdflKopecks = Math.max(0, totalPlanKopecks - refundKopecks);
@@ -133,42 +128,4 @@ export function calculateTierNdflDeduction(
 		netCostAfterNdflKopecks,
 		annualLimitKopecks,
 	};
-}
-
-export function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
-
-export function formatRublesFromKopecks(kopecks: Kopecks): string {
-	const whole = Math.trunc(kopecks / 100);
-	const frac = Math.abs(kopecks % 100);
-	const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
-	return `${grouped},${String(frac).padStart(2, "0")}\u00A0₽`;
-}
-
-export function convertKopecksToRussianWords(kopecks: Kopecks): string {
-	const n = Math.max(0, Math.floor(kopecks / 100));
-	const kop = Math.abs(kopecks % 100);
-	const words = integerToRussianWords(n);
-	const capitalized = words.charAt(0).toUpperCase() + words.slice(1);
-
-	let rubWord = "рублей";
-	const mod10 = n % 10;
-	const mod100 = n % 100;
-	if (mod10 === 1 && mod100 !== 11) rubWord = "рубль";
-	else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) rubWord = "рубля";
-
-	let kopWord = "копеек";
-	const kMod10 = kop % 10;
-	const kMod100 = kop % 100;
-	if (kMod10 === 1 && kMod100 !== 11) kopWord = "копейка";
-	else if (kMod10 >= 2 && kMod10 <= 4 && (kMod100 < 10 || kMod100 >= 20)) kopWord = "копейки";
-
-	return `${capitalized} ${rubWord} ${String(kop).padStart(2, "0")} ${kopWord}`;
 }

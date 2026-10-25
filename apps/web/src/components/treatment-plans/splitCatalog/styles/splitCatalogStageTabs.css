@@ -1,0 +1,99 @@
+/**
+ * splitCatalogStageTabs.css — Шапка этапов и переключатели табов этапов DENTE CRM.
+ */
+
+.split-view-stages-col {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-width: 0;
+	width: 100%;
+}
+
+.split-stages-header-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 12px;
+	border-radius: 12px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.split-stages-tabs {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	flex-wrap: wrap;
+}
+
+.split-stage-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 7px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.split-stage-tab-btn:hover:not(.active) {
+	color: var(--ink, #0f172a);
+	background: var(--paper, #ffffff);
+}
+
+.split-stage-tab-btn.active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.split-stage-tab-num {
+	font-family: ui-monospace, monospace;
+	font-weight: 800;
+}
+
+.split-stage-tab-title {
+	max-width: 180px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.split-stage-tab-sum {
+	font-size: 11px;
+	opacity: 0.9;
+}
+
+.split-add-stage-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 7px;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1px dashed var(--line-strong, #94a3b8);
+	background: transparent;
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.split-add-stage-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+}

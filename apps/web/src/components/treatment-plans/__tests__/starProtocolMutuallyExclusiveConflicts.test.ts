@@ -43,7 +43,7 @@ describe("starProtocolValidationEngine — Взаимоисключающие м
 		assert.equal(conflicts[0]!.conflictType, "EXTRACTION_VS_PRESERVATION");
 	});
 
-	test("validateTreatmentPlanStarProtocols переводит план с взаимоисключающими процедурами в NON_COMPLIANT_DEFECTS", () => {
+	test("validateTreatmentPlanStarProtocols сохраняет автономию врача (Мандат 8e: warning вместо блокирующей ошибки)", () => {
 		const stageWithConflict: TreatmentPlanStage = {
 			stageNumber: 1,
 			stageKind: "stage_1_therapy",
@@ -62,8 +62,11 @@ describe("starProtocolValidationEngine — Взаимоисключающие м
 		};
 
 		const summary = validateTreatmentPlanStarProtocols([stageWithConflict]);
-		assert.equal(summary.overallStatus, "NON_COMPLIANT_DEFECTS");
-		assert.ok(summary.errorsCount >= 1);
-		assert.ok(summary.criticalDefects.some((d) => d.toothNumber === 16 && d.ruleId.startsWith("star-conflict-exclusive-16")));
+		// Мандат 8e: Врач свободен комбинировать терапию и хирургию, ошибки не блокируют план
+		assert.notEqual(summary.overallStatus, "NON_COMPLIANT_DEFECTS");
+		assert.equal(summary.errorsCount, 0);
+		assert.equal(summary.criticalDefects.length, 0);
+		assert.ok(summary.warningsCount >= 1);
+		assert.ok(summary.clinicalRecommendations.some((d) => d.toothNumber === 16 && d.ruleId.startsWith("star-conflict-exclusive-16")));
 	});
 });

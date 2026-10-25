@@ -1,0 +1,76 @@
+/**
+ * splitCatalogAccordionGroup.css — Аккордеон групп каталога услуг DENTE CRM.
+ */
+
+.split-catalog-scroll-body {
+	flex: 1;
+	overflow-y: auto;
+	max-height: 520px;
+	padding-right: 2px;
+	scrollbar-width: thin;
+}
+
+.split-catalog-accordion {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.split-category-group {
+	border-radius: 10px;
+	border: 1px solid var(--line-subtle, var(--line, #e2e8f0));
+	background: var(--paper-soft, #f8fafc);
+	overflow: hidden;
+}
+
+.split-category-header {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 10px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.12s ease;
+}
+
+.split-category-header:hover {
+	background: var(--paper, #ffffff);
+}
+
+.split-category-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.split-category-arrow {
+	color: var(--muted, #64748b);
+	flex-shrink: 0;
+}
+
+.split-category-title {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.split-category-count {
+	font-family: ui-monospace, monospace;
+	font-size: 10.5px;
+	font-weight: 700;
+	padding: 1px 5px;
+	border-radius: 6px;
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #cbd5e1);
+}
+
+.split-category-services {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper-strong, #ffffff);
+	border-top: 1px solid var(--line-subtle, var(--line, #e2e8f0));
+}
