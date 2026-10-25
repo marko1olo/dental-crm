@@ -55,6 +55,7 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["prescriptions", "prescription", "rx"])) st.setIsPrescriptionForm107Open(true);
 			if (hasLocationToken(s, h, ["loyalty", "bonus", "family-pool", "points"])) st.setIsLoyaltyProgramOpen(true);
 			if (hasLocationToken(s, h, ["bonus-payment", "direct-cashier-bonus"])) st.setIsFastCheckoutDirectOpen(true);
+			if (hasLocationToken(s, h, ["zreport", "z-report", "shift-close", "shift_close"])) st.setIsShiftCloseZReportDirectOpen(true);
 			if (hasLocationToken(s, h, ["doctor-portal", "mobile-shift"])) openDoctorRef.current?.();
 			if (hasLocationToken(s, h, ["chairside-auth"])) setPinPadRef.current?.(true);
 			if (hasLocationToken(s, h, ["tasks", "clinical-tasks"])) st.setIsClinicalTasksOpen(true);
@@ -107,6 +108,10 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente-open-loyalty-program", () => stateRef.current.setIsLoyaltyProgramOpen(true));
 		window.addEventListener("dente-open-fast-checkout", () => stateRef.current.setIsFastCheckoutDirectOpen(true));
 		window.addEventListener("dente:open-fast-checkout", () => stateRef.current.setIsFastCheckoutDirectOpen(true));
+		window.addEventListener("dente-open-zreport", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
+		window.addEventListener("dente:open-zreport", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
+		window.addEventListener("dente-open-shift-close", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
+		window.addEventListener("dente:open-shift-close", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
 		return () => {
 			window.removeEventListener("dente:open-prescriptions", onRx);
 			window.removeEventListener("dente-open-implant-passport", onPassport);
