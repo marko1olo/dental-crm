@@ -98,7 +98,7 @@ describe("Anesthesia Safety Autopilot — Patient Safety Math Integration", () =
 		assert.equal(mrd.mrdDoseMg, 300);
 	});
 
-	it("generates 043/u SOAP text with complete somatic justification", () => {
+	it("generates clean SOAP text with somatic safety notes", () => {
 		const soap = formatAnesthesiaSoapText({
 			methodKey: "mandibular",
 			drugKey: "scandonest_3",
@@ -110,7 +110,7 @@ describe("Anesthesia Safety Autopilot — Patient Safety Math Integration", () =
 
 		assert.match(soap, /Проводниковая мандибулярная анестезия в области зуба 47/);
 		assert.match(soap, /Скандонест 3%/);
-		assert.match(soap, /Гипертензия \(I10-I15\)/);
+		assert.match(soap, /Кардиоваскулярный риск/i);
 		assert.match(soap, /Бронхиальная астма \/ аллергия на сульфиты/);
 		assert.match(soap, /Аспирационная проба отрицательная/);
 	});

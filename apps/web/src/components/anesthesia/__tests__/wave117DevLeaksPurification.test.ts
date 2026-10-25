@@ -135,7 +135,14 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 			repoRoot,
 			"apps/web/src/components/documents/sickLeave/sickLeaveElnEngine.ts",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
+		let content = fs.readFileSync(filePath, "utf-8");
+		const modulePath = path.join(
+			repoRoot,
+			"apps/web/src/components/documents/sickLeave/elnEngineModules/elnEmrSnippet.ts",
+		);
+		if (fs.existsSync(modulePath)) {
+			content += "\n" + fs.readFileSync(modulePath, "utf-8");
+		}
 
 		assert.ok(
 			!content.includes("Иванова Е.В."),

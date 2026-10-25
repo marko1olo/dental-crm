@@ -1,107 +1,114 @@
 /**
  * @dental/web/components/anesthesia/anesthesiaQuickBar/AnesthesiaPresetDrugsRow.tsx
- * 1-Click Anesthetic Drug Presets (Mandate 8b, <= 120 lines)
+ * Ultra-Fast Chairside Anesthetic Chips & Injection Technique (Mandate 8e, 8y, <= 120 lines)
  */
 
-import { CheckCircle2, SlidersHorizontal, Syringe } from "lucide-react";
+import { CheckCircle2, Syringe } from "lucide-react";
 import React from "react";
-import type { AnestheticDrugId } from "../anesthesiaCatalog";
+import type { AnestheticDrugId, InjectionTechniqueId } from "../anesthesiaCatalog";
 
 export interface AnesthesiaPresetDrugsRowProps {
 	readonly selectedDrugId: AnestheticDrugId | "none";
+	readonly techniqueId: InjectionTechniqueId;
+	readonly setTechniqueId: (tech: InjectionTechniqueId) => void;
 	readonly carpulesCount: number;
 	readonly onApplyDirect: (drugId: AnestheticDrugId | "none", count: number) => void;
-	readonly onOpenMobileDrawer: () => void;
 	readonly disabled?: boolean | undefined;
 }
 
 export function AnesthesiaPresetDrugsRow({
 	selectedDrugId,
+	techniqueId,
+	setTechniqueId,
 	carpulesCount,
 	onApplyDirect,
-	onOpenMobileDrawer,
 	disabled = false,
 }: AnesthesiaPresetDrugsRowProps) {
 	return (
-		<div className="flex items-center justify-between gap-1 flex-wrap pt-0.5">
-			<div className="flex items-center gap-2 flex-wrap">
+		<div className="flex items-center gap-1.5 flex-wrap min-w-0" data-testid="anesthesia-chips-group">
+			<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Метод обезболивания">
 				<button
 					type="button"
 					disabled={disabled}
-					onClick={() => onApplyDirect("articaine_1_100k", carpulesCount)}
-					className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-						selectedDrugId === "articaine_1_100k"
-							? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600"
-							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
+					onClick={() => setTechniqueId("infiltration")}
+					className={`px-2.5 py-1 min-h-[36px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+						techniqueId === "infiltration" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
-					title="Артикаин 1:100 000 (1.7 мл) — Ультракаин Д-С Форте"
-					data-testid="anesthesia-dose-norm-preset"
+					title="Инфильтрационная анестезия"
 				>
-					<CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-					<span>Ультракаин Д-С Форте 1:100 000</span>
-					<span className="sr-only">Норма: Артикаин 1:100k Убистезин форте Ультракаин Д-С Форте 1:100 000 Септанест</span>
+					Инфильтр.
 				</button>
-
 				<button
 					type="button"
 					disabled={disabled}
-					onClick={() => onApplyDirect("articaine_1_200k", carpulesCount)}
-					className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-						selectedDrugId === "articaine_1_200k"
-							? "border-2 border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold ring-1 ring-[var(--teal)]"
-							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)]"
+					onClick={() => setTechniqueId("mandibular_torus")}
+					className={`px-2.5 py-1 min-h-[36px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+						techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
-					title="Артикаин 1:200 000 (1.7 мл) — Ультракаин Д-С"
-					data-testid="anesthesia-preset-infiltration-articaine-200k"
+					title="Проводниковая анестезия"
 				>
-					<Syringe size={14} className="text-teal-600 shrink-0" />
-					<span>Ультракаин Д-С 1:200 000</span>
-					<span className="sr-only">Ультракаин Д-С 1:200 000 Щадящий адреналин Убистезин</span>
-				</button>
-
-				<button
-					type="button"
-					disabled={disabled}
-					onClick={() => onApplyDirect("mepivacaine_plain", carpulesCount)}
-					className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-						selectedDrugId === "mepivacaine_plain"
-							? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold ring-1 ring-amber-600"
-							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-amber-600"
-					}`}
-					title="Мепивакаин 3% — Скандонест без адреналина (кардио-профиль)"
-					data-testid="anesthesia-preset-scandonest-cardio"
-				>
-					<Syringe size={14} className="text-amber-600 shrink-0" />
-					<span>Скандонест без адреналина</span>
-					<span className="sr-only">Скандонест без адреналина Кардио-защита Мепивакаин 3%</span>
-				</button>
-
-				<button
-					type="button"
-					disabled={disabled}
-					onClick={() => onApplyDirect("none", 0)}
-					className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-						selectedDrugId === "none"
-							? "border-2 border-slate-600 bg-slate-500/10 text-[var(--ink)] font-bold"
-							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)]"
-					}`}
-					title="Лечение без анестезии / Интактно по согласию пациента"
-					data-testid="btn-anes-none"
-				>
-					<CheckCircle2 size={14} className="text-slate-500 shrink-0" />
-					<span>Без анестезии / Интактно</span>
+					Проводник.
 				</button>
 			</div>
 
 			<button
 				type="button"
-				onClick={onOpenMobileDrawer}
-				className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)]"
-				title="Открыть мобильную шторку анестезии"
-				data-testid="btn-open-anesthesia-mobile-sheet"
+				disabled={disabled}
+				onClick={() => onApplyDirect("articaine_1_100k", carpulesCount)}
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+					selectedDrugId === "articaine_1_100k" ? "border-2 border-emerald-600 bg-emerald-500/10 text-[var(--ink)] font-bold ring-1 ring-emerald-600" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-600"
+				}`}
+				title="Ультракаин Д-С Форте 1:100 000 (Артикаин 4%)"
+				data-testid="anesthesia-dose-norm-preset"
 			>
-				<SlidersHorizontal size={14} />
-				<span>Шторка</span>
+				<CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
+				<span>Ультракаин 1:100к</span>
+				<span className="sr-only">Норма: Артикаин 1:100k Убистезин форте Ультракаин Д-С Форте 1:100 000 Септанест</span>
+			</button>
+
+			<button
+				type="button"
+				disabled={disabled}
+				onClick={() => onApplyDirect("articaine_1_200k", carpulesCount)}
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+					selectedDrugId === "articaine_1_200k" ? "border-2 border-[var(--teal)] bg-[var(--teal-surface)] text-[var(--ink)] font-bold ring-1 ring-[var(--teal)]" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)]"
+				}`}
+				title="Убистезин / Ультракаин Д-С 1:200 000 (щадящий адреналин)"
+				data-testid="anesthesia-preset-infiltration-articaine-200k"
+			>
+				<Syringe size={13} className="text-teal-600 shrink-0" />
+				<span>Убистезин</span>
+				<span className="sr-only">Ультракаин Д-С 1:200 000 Убистезин</span>
+			</button>
+
+			<button
+				type="button"
+				disabled={disabled}
+				onClick={() => onApplyDirect("mepivacaine_plain", carpulesCount)}
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+					selectedDrugId === "mepivacaine_plain" ? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold ring-1 ring-amber-600" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-amber-600"
+				}`}
+				title="Скандонест без адреналина (Мепивакаин 3%, кардио-защита)"
+				data-testid="anesthesia-preset-scandonest-cardio"
+			>
+				<Syringe size={13} className="text-amber-600 shrink-0" />
+				<span>Скандонест (без адреналина)</span>
+				<span className="sr-only">Скандонест без адреналина Мепивакаин</span>
+			</button>
+
+			<button
+				type="button"
+				disabled={disabled}
+				onClick={() => onApplyDirect("none", 0)}
+				className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[36px] rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
+					selectedDrugId === "none" ? "border-2 border-slate-600 bg-slate-500/10 text-[var(--ink)] font-bold" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)]"
+				}`}
+				title="Без анестезии / Интактно по согласию пациента"
+				data-testid="btn-anes-none"
+			>
+				<CheckCircle2 size={13} className="text-slate-500 shrink-0" />
+				<span>Без анестезии</span>
+				<span className="sr-only">Без анестезии / Интактно</span>
 			</button>
 		</div>
 	);
