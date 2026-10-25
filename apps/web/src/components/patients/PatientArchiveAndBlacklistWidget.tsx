@@ -1,224 +1,24 @@
-import { AlertTriangle, ShieldAlert, Zap } from "lucide-react";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { usePatientResource } from "../../hooks/usePatientResource";
-import {
-	actionFailureToast,
-	type PanelSubject,
-	panelStateText,
-	resolvePanelPhase,
-	unconfirmedActionToast,
-} from "../../lib/panelStateText";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+import React from "react";
+import { ShieldAlert } from "lucide-react";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { panelStateText } from "../../lib/panelStateText";
+import { BLACKLIST_SUBJECT, type ArchiveReasonItem } from "./patientArchive/archiveTypes";
+import { usePatientArchiveAndBlacklistLogic } from "./patientArchive/usePatientArchiveAndBlacklistLogic";
+import { EmergencyCareAlertBanner } from "./patientArchive/EmergencyCareAlertBanner";
+import { ArchiveConfirmModal } from "./patientArchive/ArchiveConfirmModal";
 
-/**
- * Отказ чтения здесь дороже, чем в любом другом виджете карточки: пустой ответ
- * даёт `isBlacklisted === false`, то есть экран утверждает «пациент не
- * заблокирован» и предлагает кнопку «Добавить в черный список» человеку,
- * который в списке уже может быть. Администратор по такому экрану запишет на
- * приём того, кому запись запрещена.
- */
-const BLACKLIST_SUBJECT: PanelSubject = {
-	// Единственное число: «Статус блокировки НЕ ПРОЧИТАН». Раньше согласование
-	// дописывал модуль — и для этой панели дало бы «не загружены».
-	notLoadedTitle: "Статус блокировки записи не прочитан",
-	accusative: "статус блокировки записи",
-	emptyTitle: "Пациент не в архиве, запрет записи не установлен",
-	emptyHint:
-		"Блокировка нужна, когда записывать пациента нельзя: долг, агрессия, отказ от лечения. Она действует во всех клиниках сети.",
-	failureConsequence:
-		"Не считайте пациента разблокированным по этому экрану: статус не прочитан. Обновите его перед записью на приём.",
-};
-
-export interface ArchiveReasonItem {
-	id: string;
-	organizationId: string;
-	reasonName: string;
-	isBookingBlocked: boolean;
-	allowRebooking: boolean;
-	notes?: string | null;
-	createdAt: string;
-}
+export type { ArchiveReasonItem };
 
 export const PatientArchiveAndBlacklistWidget: React.FC<{
 	patientId: string;
 }> = ({ patientId }) => {
-	const { auth, dashboard } = useAppLogicContext();
-	const [_selectedReason, _setSelectedReason] = useState<string>("");
-	const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
-	const [isApplying, setIsApplying] = useState<boolean>(false);
-	const [archiveReason, setArchiveReason] = useState<string>("");
-	const [modalIsBlacklisted, setModalIsBlacklisted] = useState<boolean>(false);
-	const [blacklistReason, setBlacklistReason] = useState<string>("");
-
-	// БЫЛО: ручная загрузка без сброса и без отмены. При переключении
-	// пациента виджет продолжал показывать статус предыдущего, а
-	// handleApplyStatus считает новое значение как !isBlacklisted и шлёт
-	// его ТЕКУЩЕМУ пациенту — то есть чужой показанный статус приводил к
-	// блокировке записи не тому человеку.
-	const {
-		data: reasons,
-		isLoading: loading,
-		// БЫЛО: отказ чтения из хука не забирался вовсе. Пустой список от
-		// упавшего запроса читался как «не заблокирован».
-		error: loadFailure,
-		failureStatus,
-		reload,
-	} = usePatientResource<ArchiveReasonItem[]>(
-		patientId,
-		(id) => `/api/patients/${id}/archive-status`,
-		() => (auth ? auth.denteClinicalReadHeaders() : {}),
-		[],
-	);
-
-	// Оптимистичное значение после успешной записи. Принадлежит конкретному
-	// пациенту, поэтому сбрасывается при переключении.
-	const [optimisticBlacklist, setOptimisticBlacklist] = useState<
-		boolean | null
-	>(null);
-	useEffect(() => {
-		setOptimisticBlacklist(null);
-		setConfirmModalOpen(false);
-		setArchiveReason("");
-		setBlacklistReason("");
-		setModalIsBlacklisted(false);
-	}, []);
-
-	const patientIdRef = useRef(patientId);
-	patientIdRef.current = patientId;
-
-	/*
-	 * `false` здесь — значение по умолчанию, а не прочитанный факт. Поэтому
-	 * оно имеет право попадать на экран только когда статус действительно
-	 * прочитан: при отказе чтения виджет показывает отказ и не даёт кнопку.
-	 */
-	const isBlacklisted =
-		optimisticBlacklist ?? reasons[0]?.isBookingBlocked ?? false;
-	const statusPhase = resolvePanelPhase({
-		isLoading: loading,
-		hasFailure: Boolean(loadFailure),
-		isEmpty: reasons.length === 0,
-	});
-	// Успешная запись даёт факт, которого сервер уже не отменит: после неё
-	// прежний отказ чтения статус неизвестным больше не делает.
-	const statusUnknown =
-		statusPhase === "failed" && optimisticBlacklist === null;
-
-	// Блокировка записи действует на всю сеть клиник, поэтому подтверждение
-	// обязано называть пациента поимённо, а не «пациента».
-	const patientName =
-		(
-			dashboard?.patients as
-				| Array<{ id: string; fullName?: string }>
-				| undefined
-		)?.find((p) => p.id === patientId)?.fullName ?? null;
-
-	const handleApplyStatus = async () => {
-		if (isApplying || loading) return;
-		const targetPatientId = patientId;
-		const newStatus = !isBlacklisted;
-		setIsApplying(true);
-
-		const endpoint = newStatus
-			? `/api/patients/${targetPatientId}/archive`
-			: `/api/patients/${targetPatientId}/archive-status`;
-
-		const bodyPayload = newStatus
-			? { archiveReason, isBlacklisted: modalIsBlacklisted, blacklistReason }
-			: { isBlacklisted: newStatus };
-
-		if (newStatus && !archiveReason.trim()) {
-			showToast(actionFailureToast("Укажите причину архивации", 400), "error");
-			setIsApplying(false);
-			return;
-		}
-
-		try {
-			const res = await fetch(endpoint, {
-				method: "POST",
-				headers: auth
-					? {
-							...auth.denteClinicalMutationHeaders(),
-							"Content-Type": "application/json",
-						}
-					: {
-							"Content-Type": "application/json",
-						},
-				body: JSON.stringify(bodyPayload),
-			});
-			// БЫЛО: ни .catch, ни проверки res.ok. При отказе сервера кнопка
-			// просто ничего не делала — оператор считал, что заблокировал.
-			if (!res.ok) {
-				showToast(
-					actionFailureToast(
-						newStatus
-							? "Пациент не добавлен в черный список"
-							: "Блокировка записи не снята",
-						res.status,
-					),
-					"error",
-				);
-				return;
-			}
-			const data = await res.json().catch((err) => {
-				showToast(
-					actionFailureToast(
-						"Ошибка ответа сервера",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				return {} as Record<string, unknown>;
-			});
-			if (!(data.success || data.isBlacklisted !== undefined)) {
-				showToast(
-					unconfirmedActionToast(
-						newStatus
-							? "Пациент не добавлен в черный список"
-							: "Блокировка записи не снята",
-					),
-					"error",
-				);
-				return;
-			}
-			// Пациента могли переключить, пока запрос был в пути: тогда ответ
-			// не должен перекрашивать карточку уже другого человека.
-			if (patientIdRef.current !== targetPatientId) return;
-			setOptimisticBlacklist(newStatus);
-			setConfirmModalOpen(false);
-			reload();
-			showToast(
-				newStatus
-					? "Пациент добавлен в черный список. Запись на прием заблокирована."
-					: "Разблокировано. Пациент восстановлен из черного списка.",
-				newStatus ? "warning" : "success",
-			);
-		} catch (error) {
-			logger.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
-			showToast(
-				actionFailureToast(
-					newStatus
-						? "Пациент не добавлен в черный список"
-						: "Блокировка записи не снята",
-					null,
-				),
-				"error",
-			);
-		} finally {
-			setIsApplying(false);
-		}
-	};
+	const logic = usePatientArchiveAndBlacklistLogic(patientId);
 
 	return (
 		<div
 			data-testid="patient-archive-blacklist-widget"
 			className={`p-4 rounded-xl border my-4 shadow-sm transition-all duration-200 text-[var(--ink)] ${
-				// Красный фон — утверждение «этот пациент заблокирован». При
-				// непрочитанном статусе такого утверждения делать нельзя.
-				isBlacklisted && !statusUnknown
+				logic.isBlacklisted && !logic.statusUnknown
 					? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800"
 					: "bg-[var(--paper)] border-[var(--line)]"
 			}`}
@@ -226,32 +26,25 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 			<div className="flex items-center justify-between mb-3 pb-2 border-b border-[var(--line)]">
 				<div className="flex items-center space-x-2">
 					<ShieldAlert
-						className={`w-5 h-5 ${isBlacklisted && !statusUnknown ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`}
+						className={`w-5 h-5 ${logic.isBlacklisted && !logic.statusUnknown ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`}
 					/>
 					<h3 className="font-semibold text-sm">
 						Блокировка записи и черный список
 					</h3>
 				</div>
-				{/*
-					Индикатор статуса в черном списке и блокировки записи
-				*/}
 			</div>
 
 			<div className="space-y-3">
-				{statusUnknown ? (
-					/*
-						Отказ чтения вместо кнопки, а не рядом с ней: кнопка
-						подписана по значению isBlacklisted, а оно здесь неизвестно.
-					*/
+				{logic.statusUnknown ? (
 					<PanelLoadFailure
 						subject={BLACKLIST_SUBJECT}
-						status={failureStatus}
-						onRetry={reload}
+						status={logic.failureStatus}
+						onRetry={logic.reload}
 					/>
 				) : (
 					<>
 						<p className="text-xs text-[var(--muted)] leading-relaxed break-words">
-							{isBlacklisted
+							{logic.isBlacklisted
 								? "Запись на прием заблокирована во всех клиниках сети. Снимите блокировку, если причина больше не действует."
 								: panelStateText(BLACKLIST_SUBJECT, { phase: "empty" }).hint}
 						</p>
@@ -259,162 +52,55 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							<button
 								type="button"
 								onClick={() => {
-									if (isBlacklisted) {
-										void handleApplyStatus();
+									if (logic.isBlacklisted) {
+										void logic.handleApplyStatus();
 									} else {
-										setModalIsBlacklisted(true);
-										setConfirmModalOpen(true);
+										logic.setModalIsBlacklisted(true);
+										logic.setConfirmModalOpen(true);
 									}
 								}}
-								// Пока статус не загружен, isBlacklisted равен false по
-								// умолчанию: нажатие в этот момент предлагало бы «добавить
-								// в ЧС» пациента, который в нём уже есть.
-								disabled={loading || isApplying}
+								disabled={logic.loading || logic.isApplying}
 								title={
-									isBlacklisted
+									logic.isBlacklisted
 										? "Снять блокировку записи"
 										: "Заблокировать запись и добавить в ЧС"
 								}
 								className={`px-4 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center ${
-									isBlacklisted
+									logic.isBlacklisted
 										? "bg-emerald-600 hover:bg-emerald-700 text-white"
 										: "bg-rose-600 hover:bg-rose-700 text-white"
 								}`}
 							>
-								{/* На кнопке короткая подпись: полная формулировка состояния
-									растягивает кнопку и ломает ряд. */}
-								{loading
+								{logic.loading
 									? "Читаем статус…"
-									: isBlacklisted
+									: logic.isBlacklisted
 										? "Восстановить из черного списка"
 										: "Добавить в черный список"}
 							</button>
 						</div>
 
-						{isBlacklisted && (
-							<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs leading-relaxed flex flex-col gap-2 mt-2">
-								<div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
-									<AlertTriangle
-										size={15}
-										className="shrink-0 text-amber-600 dark:text-amber-400"
-									/>
-									<span>Неотложная помощь и ст. 124 УК РФ:</span>
-								</div>
-								<span>
-									Отказ в медицинской помощи при острой боли или неотложном
-									состоянии преследуется по закону (ст. 124 УК РФ). Блокировка
-									записи в ЧС не отменяет права пациента на неотложный приём.
-								</span>
-								<div className="flex items-center gap-2 pt-1">
-									<button
-										type="button"
-										onClick={() => {
-											showToast(
-												"Режим экстренной записи активирован (ст. 124 УК РФ: острая боль). Блокировка ЧС обойдена для неотложного слота.",
-												"info",
-											);
-										}}
-										className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-xs"
-										title="Разрешить запись пациента с острой болью в соответствии со ст. 124 УК РФ"
-									>
-										<Zap
-											size={14}
-											className="text-white shrink-0"
-											aria-hidden="true"
-										/>
-										<span>Экстренная запись (Острая боль / ст. 124 УК РФ)</span>
-									</button>
-								</div>
-							</div>
-						)}
+						{logic.isBlacklisted && <EmergencyCareAlertBanner />}
 					</>
 				)}
 			</div>
 
-			{confirmModalOpen && (
-				<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-slate-800 dark:border-rose-800 space-y-2">
-					<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-300 font-bold text-xs">
-						<AlertTriangle className="w-4 h-4" />
-						<span>
-							{!isBlacklisted ? "Архивация пациента" : "Подтверждение действия"}
-						</span>
-					</div>
-					<p className="text-xs text-rose-700 dark:text-rose-300">
-						{!isBlacklisted
-							? `Вы собираетесь отправить в архив: ${patientName ?? "выбранного пациента"}.`
-							: `Снять блокировку записи с пациента: ${patientName ?? "выбранный пациент"}?`}
-					</p>
-
-					{!isBlacklisted && (
-						<div className="space-y-3 mt-2">
-							<div>
-								<label
-									htmlFor="patient-archive-reason"
-									className="block text-xs font-semibold text-[var(--ink)] mb-1"
-								>
-									Причина архивации *
-								</label>
-								<input
-									id="patient-archive-reason"
-									type="text"
-									className="w-full text-xs p-2 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-									value={archiveReason}
-									onChange={(e) => setArchiveReason(e.target.value)}
-									placeholder="Например: Переезд, дубль..."
-								/>
-							</div>
-							<label className="flex items-center space-x-2 cursor-pointer">
-								<input
-									type="checkbox"
-									className="rounded border-[var(--line)]"
-									checked={modalIsBlacklisted}
-									onChange={(e) => setModalIsBlacklisted(e.target.checked)}
-								/>
-								<span className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-									Добавить в Черный Список (запрет записи)
-								</span>
-							</label>
-							{modalIsBlacklisted && (
-								<div>
-									<label
-										htmlFor="patient-blacklist-reason"
-										className="block text-xs font-semibold text-[var(--ink)] mb-1"
-									>
-										Причина занесения в ЧС
-									</label>
-									<textarea
-										id="patient-blacklist-reason"
-										className="w-full text-xs p-2 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-										value={blacklistReason}
-										onChange={(e) => setBlacklistReason(e.target.value)}
-										placeholder="Например: Агрессивное поведение, долг..."
-										rows={2}
-									/>
-								</div>
-							)}
-						</div>
-					)}
-					<div className="flex space-x-2 pt-2">
-						<button
-							type="button"
-							onClick={handleApplyStatus}
-							disabled={isApplying}
-							title="Подтвердить действие"
-							className="flex-1 min-h-[44px] sm:min-h-[32px] px-4 py-2.5 rounded-xl bg-[var(--bad-fg)] hover:opacity-90 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
-						>
-							{isApplying ? "Применяем…" : "Подтвердить"}
-						</button>
-						<button
-							type="button"
-							onClick={() => setConfirmModalOpen(false)}
-							title="Отмена действия"
-							className="flex-1 min-h-[44px] sm:min-h-[32px] px-4 py-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold transition-colors inline-flex items-center justify-center"
-						>
-							Отмена
-						</button>
-					</div>
-				</div>
+			{logic.confirmModalOpen && (
+				<ArchiveConfirmModal
+					isBlacklisted={logic.isBlacklisted}
+					patientName={logic.patientName}
+					archiveReason={logic.archiveReason}
+					setArchiveReason={logic.setArchiveReason}
+					modalIsBlacklisted={logic.modalIsBlacklisted}
+					setModalIsBlacklisted={logic.setModalIsBlacklisted}
+					blacklistReason={logic.blacklistReason}
+					setBlacklistReason={logic.setBlacklistReason}
+					isApplying={logic.isApplying}
+					onConfirm={logic.handleApplyStatus}
+					onCancel={() => logic.setConfirmModalOpen(false)}
+				/>
 			)}
 		</div>
 	);
 };
+
+export default PatientArchiveAndBlacklistWidget;

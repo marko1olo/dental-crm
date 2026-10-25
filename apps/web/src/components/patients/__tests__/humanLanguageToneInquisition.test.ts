@@ -277,7 +277,15 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("13. ImplantWorkspace.tsx: ridge export and actions use human clinical language instead of 043/у", () => {
 		const filePath = path.join(webSrcRoot, "components/radiology/mpr/workspaces/ImplantWorkspace.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		let content = fs.readFileSync(filePath, "utf-8");
+		const actionsPath = path.join(webSrcRoot, "components/radiology/mpr/workspaces/modules/implant/ImplantActionButtons.tsx");
+		if (fs.existsSync(actionsPath)) {
+			content += "\n" + fs.readFileSync(actionsPath, "utf-8");
+		}
+		const morphPath = path.join(webSrcRoot, "components/radiology/mpr/workspaces/modules/implant/ImplantRidgeMorphometryCard.tsx");
+		if (fs.existsSync(morphPath)) {
+			content += "\n" + fs.readFileSync(morphPath, "utf-8");
+		}
 
 		assert.ok(!content.includes('"Текст 043/у"'), "Must not use 'Текст 043/у'");
 		assert.ok(!content.includes("<span>В 043/у</span>"), "Must not use 'В 043/у'");

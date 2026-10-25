@@ -1,0 +1,66 @@
+.patient-safety-banner {
+	width: 100%;
+	border-radius: 16px;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+	position: relative;
+	overflow: hidden;
+	margin-bottom: 12px;
+}
+
+.patient-safety-banner--critical {
+	background: var(--bad-bg);
+	border: 2px solid var(--bad-fg);
+	box-shadow: 0 4px 20px -2px rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .patient-safety-banner--critical,
+[data-theme="night"] .patient-safety-banner--critical,
+[data-theme="cyber_xray"] .patient-safety-banner--critical {
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	box-shadow: 0 4px 24px -2px rgba(239, 68, 68, 0.4);
+}
+
+.patient-safety-banner--high {
+	background: var(--warn-bg);
+	border: 2px solid var(--warn-fg);
+	box-shadow: 0 4px 16px -2px rgba(245, 158, 11, 0.2);
+}
+
+[data-theme="dark"] .patient-safety-banner--high,
+[data-theme="night"] .patient-safety-banner--high,
+[data-theme="cyber_xray"] .patient-safety-banner--high {
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.35);
+}
+
+.patient-safety-banner--moderate {
+	background: var(--info-bg);
+	border: 1.5px solid var(--info-fg);
+}
+
+.patient-safety-banner--safe {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	box-shadow: none;
+}
+
+[data-theme="dark"] .patient-safety-banner--safe,
+[data-theme="night"] .patient-safety-banner--safe,
+[data-theme="cyber_xray"] .patient-safety-banner--safe {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+.patient-safety-banner--compact.patient-safety-banner--safe {
+	display: none !important;
+	height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	overflow: hidden !important;
+	opacity: 0 !important;
+	pointer-events: none !important;
+}

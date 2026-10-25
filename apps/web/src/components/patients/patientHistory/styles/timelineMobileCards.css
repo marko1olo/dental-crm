@@ -1,0 +1,119 @@
+.clinical-mobile-card-header {
+	display: none;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px 14px;
+	cursor: pointer;
+	user-select: none;
+	transition: background 0.18s ease;
+}
+.clinical-mobile-card-header:hover {
+	background: var(--paper-soft);
+}
+
+.clinical-mobile-header-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.clinical-mobile-meta-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex-wrap: wrap;
+}
+
+.clinical-mobile-date {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-mobile-diagnosis-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.clinical-mobile-diagnosis {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1;
+}
+
+.clinical-diagnosis-code {
+	font-size: 14px;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+}
+
+.clinical-diagnosis-title {
+	font-size: 14px;
+	line-height: 1.35;
+	word-break: break-word;
+}
+
+.clinical-mobile-bottom-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-top: 4px;
+	border-top: 1px dashed var(--line);
+}
+
+.clinical-mobile-doctor {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	color: var(--muted);
+	font-weight: 500;
+	min-width: 0;
+}
+
+.clinical-mobile-finances {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.clinical-mobile-amount {
+	font-size: 13px;
+	font-weight: 800;
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-mobile-payment-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 7px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+}
+
+.clinical-mobile-payment-badge.status-paid {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border-color: rgba(16, 185, 129, 0.3);
+}
+
+.clinical-mobile-payment-badge.status-scheduled {
+	background: var(--paper-soft);
+	color: var(--muted);
+	border-color: var(--line);
+}

@@ -1,0 +1,98 @@
+.patient-safety-banner__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 14px;
+	gap: 10px;
+	box-sizing: border-box;
+}
+
+.patient-safety-banner__beacon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	flex-shrink: 0;
+}
+
+.patient-safety-banner--critical .patient-safety-banner__beacon {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	animation: safety-pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.patient-safety-banner--high .patient-safety-banner__beacon {
+	background: var(--warn-fg);
+	color: var(--paper-strong);
+}
+
+.patient-safety-banner--moderate .patient-safety-banner__beacon {
+	background: var(--info-fg);
+	color: var(--paper-strong);
+}
+
+.patient-safety-banner--safe .patient-safety-banner__beacon {
+	background: var(--teal-surface);
+	color: var(--teal);
+}
+
+@keyframes safety-pulse-red {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+	}
+}
+
+.patient-safety-banner__title-group {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 200px;
+}
+
+.patient-safety-banner__title {
+	font-size: 12.5px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	color: var(--ink);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.patient-safety-banner--critical .patient-safety-banner__title {
+	color: var(--bad-fg);
+}
+[data-theme="dark"] .patient-safety-banner--critical .patient-safety-banner__title,
+[data-theme="night"] .patient-safety-banner--critical .patient-safety-banner__title {
+	color: var(--bad-fg);
+}
+
+.patient-safety-banner--high .patient-safety-banner__title {
+	color: var(--warn-fg);
+}
+[data-theme="dark"] .patient-safety-banner--high .patient-safety-banner__title,
+[data-theme="night"] .patient-safety-banner--high .patient-safety-banner__title {
+	color: var(--warn-fg);
+}
+
+.patient-safety-banner__subtitle {
+	font-size: 11.5px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+	line-height: 1.35;
+}
+
+.patient-safety-banner__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}

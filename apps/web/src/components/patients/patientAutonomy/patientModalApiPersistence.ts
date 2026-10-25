@@ -115,7 +115,5 @@ export async function executePatientCardModalSaveAutonomy({
 			const saved = (await latestRes.json()) as Patient;
 			setDashboard((curr: any) => curr ? { ...curr, patients: curr.patients.map((p: Patient) => (p.id === saved.id ? saved : p)) } : curr);
 		}
-	} catch {
-		// Handled by fetchWithHandling/toast
-	}
+	} catch {}
 }

@@ -1,0 +1,99 @@
+.patient-safety-banner__drawer {
+	border-top: 1px solid var(--bad-fg);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+}
+
+[data-theme="dark"] .patient-safety-banner__drawer,
+[data-theme="night"] .patient-safety-banner__drawer,
+[data-theme="cyber_xray"] .patient-safety-banner__drawer {
+	background: var(--paper-soft);
+	border-top-color: var(--bad-fg);
+}
+
+.patient-safety-banner--high .patient-safety-banner__drawer {
+	border-top-color: var(--warn-fg);
+}
+
+.safety-flag-card {
+	background: var(--paper);
+	border-radius: 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+[data-theme="dark"] .safety-flag-card,
+[data-theme="night"] .safety-flag-card,
+[data-theme="cyber_xray"] .safety-flag-card {
+	background: var(--paper);
+	border-color: var(--line-strong);
+}
+
+.safety-flag-card--critical {
+	border-left: 4px solid var(--bad-fg);
+}
+
+.safety-flag-card--high {
+	border-left: 4px solid var(--warn-fg);
+}
+
+.safety-flag-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.safety-flag-card__title {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.safety-flag-card__badge {
+	font-size: 11px;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.safety-flag-card__badge--critical {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+}
+[data-theme="dark"] .safety-flag-card__badge--critical {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+}
+
+.safety-flag-card__badge--high {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+}
+[data-theme="dark"] .safety-flag-card__badge--high {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+}
+
+.safety-flag-card__body {
+	font-size: 12px;
+	color: var(--ink-2);
+	line-height: 1.45;
+}
+
+[data-theme="dark"] .safety-flag-card__body {
+	color: var(--ink-2);
+}

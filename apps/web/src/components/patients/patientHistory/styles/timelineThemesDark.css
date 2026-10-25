@@ -1,0 +1,70 @@
+:root[data-theme="dark"] .clinical-pill-status-paid,
+.theme-dark .clinical-pill-status-paid,
+:root[data-theme="dark"] .clinical-mobile-payment-badge.status-paid,
+.theme-dark .clinical-mobile-payment-badge.status-paid {
+	color: #34d399;
+	background: rgba(16, 185, 129, 0.18);
+	border-color: rgba(52, 211, 153, 0.4);
+}
+
+:root[data-theme="dark"] .clinical-pill-warranty,
+.theme-dark .clinical-pill-warranty {
+	color: #a5b4fc;
+	background: rgba(99, 102, 241, 0.18);
+	border-color: rgba(165, 180, 252, 0.4);
+}
+
+:root[data-theme="dark"] .clinical-pill-tooth,
+.theme-dark .clinical-pill-tooth {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.2);
+	border-color: rgba(45, 212, 191, 0.4);
+}
+
+:root[data-theme="dark"] .specialty-therapy,
+.theme-dark .specialty-therapy {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.2);
+	border-color: rgba(45, 212, 191, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-surgery,
+.theme-dark .specialty-surgery {
+	color: #c084fc;
+	background: rgba(147, 51, 234, 0.2);
+	border-color: rgba(192, 132, 252, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-orthopedics,
+.theme-dark .specialty-orthopedics {
+	color: #fbbf24;
+	background: rgba(217, 119, 6, 0.2);
+	border-color: rgba(251, 191, 36, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-hygiene,
+.theme-dark .specialty-hygiene {
+	color: #34d399;
+	background: rgba(5, 150, 105, 0.2);
+	border-color: rgba(52, 211, 153, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-orthodontics,
+.theme-dark .specialty-orthodontics {
+	color: #60a5fa;
+	background: rgba(37, 99, 235, 0.2);
+	border-color: rgba(96, 165, 250, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-btn-plan,
+.theme-dark .clinical-btn-plan {
+	color: #a5b4fc;
+	background: rgba(99, 102, 241, 0.2);
+	border-color: rgba(165, 180, 252, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-btn-plan:hover,
+.theme-dark .clinical-btn-plan:hover {
+	background: rgba(99, 102, 241, 0.3);
+	border-color: #a5b4fc;
+}

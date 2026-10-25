@@ -1,0 +1,116 @@
+.clinical-visit-details-pane {
+	padding: 14px 16px;
+	border-top: 1px solid var(--line);
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	animation: clinicalFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes clinicalFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.clinical-soap-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.clinical-soap-card {
+	padding: 10px 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.clinical-soap-title {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.clinical-soap-body {
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--ink);
+	white-space: pre-wrap;
+}
+
+.clinical-attachments-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	flex-wrap: wrap;
+	padding: 10px 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+.clinical-xray-preview {
+	width: 110px;
+	height: 110px;
+	border-radius: 8px;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	position: relative;
+	background: #000000;
+	flex-shrink: 0;
+	cursor: pointer;
+}
+
+.clinical-xray-preview img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.2s ease;
+}
+
+.clinical-xray-preview:hover img {
+	transform: scale(1.05);
+}
+
+.clinical-row-chevron-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	flex-shrink: 0;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.clinical-visit-compact-row:hover .clinical-row-chevron-badge {
+	border-color: var(--teal);
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.08);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
+}
+
+.clinical-row-chevron-badge.expanded {
+	border-color: var(--teal);
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.12);
+}

@@ -1,0 +1,91 @@
+@media (max-width: 768px) {
+	.clinical-visit-compact-row {
+		display: none !important;
+	}
+
+	.clinical-mobile-card-header {
+		display: flex !important;
+	}
+
+	.clinical-timeline-container {
+		gap: 12px;
+		overflow-x: clip;
+		max-width: 100%;
+	}
+
+	.clinical-timeline-toolbar {
+		padding: 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		border-radius: 14px;
+	}
+
+	.clinical-timeline-search {
+		min-width: 100%;
+		width: 100%;
+	}
+
+	.clinical-search-input {
+		height: 38px;
+		font-size: 13px;
+	}
+
+	.clinical-timeline-filters-scroll,
+	.clinical-timeline-filters {
+		display: flex;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		gap: 8px;
+		padding: 2px 2px 6px 2px;
+		width: 100%;
+	}
+
+	.clinical-timeline-filters-scroll::-webkit-scrollbar,
+	.clinical-timeline-filters::-webkit-scrollbar {
+		display: none;
+	}
+
+	.clinical-filter-chip {
+		height: 36px;
+		padding: 0 12px;
+		font-size: 12px;
+		flex-shrink: 0;
+	}
+
+	.clinical-timeline-actions {
+		width: 100%;
+		justify-content: space-between;
+		gap: 10px;
+	}
+
+	.clinical-timeline-toggle-group {
+		gap: 10px;
+		flex: 1;
+	}
+
+	.clinical-timeline-toggle-btn {
+		height: 36px;
+		padding: 0 10px;
+		font-size: 12px;
+		flex: 1;
+		justify-content: center;
+	}
+
+	.clinical-timeline-primary-btn {
+		height: 36px;
+		padding: 0 14px;
+		font-size: 13px;
+	}
+
+	.clinical-month-group {
+		padding: 10px;
+		border-radius: 14px;
+	}
+
+	.clinical-visit-accordion {
+		border-radius: 12px;
+	}
+}

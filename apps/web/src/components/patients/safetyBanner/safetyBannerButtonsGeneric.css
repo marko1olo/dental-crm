@@ -1,0 +1,72 @@
+.patient-safety-banner--moderate .safety-btn--outline {
+	background: rgba(59, 130, 246, 0.12);
+	border: 1px solid rgba(59, 130, 246, 0.35);
+	color: var(--info-fg);
+}
+.patient-safety-banner--moderate .safety-btn--outline:hover {
+	background: rgba(59, 130, 246, 0.22);
+	border-color: var(--info-fg);
+	color: var(--info-fg);
+}
+[data-theme="dark"] .patient-safety-banner--moderate .safety-btn--outline,
+[data-theme="night"] .patient-safety-banner--moderate .safety-btn--outline,
+[data-theme="cyber_xray"] .patient-safety-banner--moderate .safety-btn--outline {
+	background: rgba(59, 130, 246, 0.18);
+	border-color: rgba(59, 130, 246, 0.45);
+	color: var(--info-fg);
+}
+
+.patient-safety-banner--safe .safety-btn--outline {
+	background: rgba(16, 185, 129, 0.1);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	color: var(--ok-fg, #059669);
+}
+.patient-safety-banner--safe .safety-btn--outline:hover {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: var(--ok-fg, #059669);
+}
+[data-theme="dark"] .patient-safety-banner--safe .safety-btn--outline,
+[data-theme="night"] .patient-safety-banner--safe .safety-btn--outline,
+[data-theme="cyber_xray"] .patient-safety-banner--safe .safety-btn--outline {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.4);
+	color: var(--ok-fg, #10b981);
+}
+
+.safety-btn--primary-red {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	border-color: var(--bad-fg);
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+.safety-btn--primary-red:hover {
+	background: var(--bad-fg);
+	filter: brightness(1.05);
+}
+
+.safety-btn--outline {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+[data-theme="dark"] .safety-btn--outline,
+[data-theme="night"] .safety-btn--outline,
+[data-theme="cyber_xray"] .safety-btn--outline {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong);
+}
+.safety-btn--outline:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+}
+
+.safety-btn--ghost {
+	background: transparent;
+	color: var(--muted);
+	border-color: transparent;
+}
+.safety-btn--ghost:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}

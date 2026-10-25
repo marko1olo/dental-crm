@@ -1,282 +1,37 @@
-import React, { useMemo, useState } from "react";
-import type { GeneratedDocument, Patient, DocumentKind, DocumentStatus } from "@dental/shared";
-import {
-	AlertCircle,
-	CheckCircle2,
-	ChevronDown,
-	FileCheck,
-	FileSignature,
-	FileText,
-	Printer,
-	ShieldCheck,
-	Smartphone,
-} from "lucide-react";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
-import { useDocumentStore } from "../../../store/documentStore";
-import {
-	printBlankMedicalConsent,
-	printBlankMedicalContract,
-} from "../blankContractPrint";
-import { DocumentAuditFactsModal } from "../../documents/tabs/DocumentAuditFactsModal";
-import { DocumentIssueConfirmationModal } from "../../documents/tabs/DocumentIssueConfirmationModal";
-import { DigitalSignatureTabletModal } from "../../documents/DigitalSignatureTabletModal";
-import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../../documents/documentAutonomy";
+import React from "react";
+import type { GeneratedDocument, Patient } from "@dental/shared";
+import { FileCheck } from "lucide-react";
 import { VirtualizedTimeline } from "../../common/VirtualizedTimeline";
-import {
-	FastClinicalPrintEngine,
-	type FastPrintDocType,
-} from "../../documents/FastClinicalPrintEngine";
+import { usePatientDocumentsLogic } from "./documents/usePatientDocumentsLogic";
+import { PatientDocumentsHeader } from "./documents/PatientDocumentsHeader";
+import { PatientDocumentItemCard } from "./documents/PatientDocumentItemCard";
+import { PatientDocumentsModalsWrapper } from "./documents/PatientDocumentsModalsWrapper";
 
 export interface PatientDocumentsTabProps {
 	patient: Patient;
+	/** Печать: Вкладыш в амбулаторную карту */
 	onPrintOutpatientCard?: () => void;
 }
 
 export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.memo(
 	function PatientDocumentsTab({ patient, onPrintOutpatientCard }) {
-		const appLogic = useAppLogicContext();
-		const docStore = useDocumentStore();
-
-		const {
-			dashboard,
-			loadDocumentAuditFacts,
-			downloadIssuedDocumentPdf,
-			openIssuedDocumentHtml,
-			downloadIssuedDocumentHtml,
-			requestDocumentIssue,
-			confirmDocumentIssue,
-			documentLabels,
-			documentStatusLabels,
-			documentSourceStatusClassNames,
-			documentSourceStatusLabels,
-			documentIssueSignatureModeLabels,
-			documentVoidReasonLabels,
-			formatShortDate,
-			money,
-		} = appLogic;
-
-		const {
-			documentAuditFacts,
-			setDocumentAuditFacts,
-			documentIssueConfirmationId,
-			setDocumentIssueConfirmationId,
-			documentIssueSignatureMode,
-			setDocumentIssueSignatureMode,
-			documentIssueSignedAt,
-			setDocumentIssueSignedAt,
-			documentIssueRecipientFullName,
-			setDocumentIssueRecipientFullName,
-			documentIssueRecipientRole,
-			setDocumentIssueRecipientRole,
-			documentIssueStaffFullName,
-			setDocumentIssueStaffFullName,
-			documentIssueStaffRole,
-			setDocumentIssueStaffRole,
-			documentIssueNote,
-			setDocumentIssueNote,
-			documentIssueIdentityChecked,
-			setDocumentIssueIdentityChecked,
-			documentIssueDocumentOpenedAndChecked,
-			setDocumentIssueDocumentOpenedAndChecked,
-			documentIssueRecipientSigned,
-			setDocumentIssueRecipientSigned,
-			documentIssueClinicSigned,
-			setDocumentIssueClinicSigned,
-		} = docStore;
-
-		const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
-		const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("form043u");
-		const [tabletSignDoc, setTabletSignDoc] = useState<GeneratedDocument | null>(null);
-		const [isBlanksMenuOpen, setIsBlanksMenuOpen] = useState(false);
-		const blanksMenuRef = React.useRef<HTMLDivElement>(null);
-
-		React.useEffect(() => {
-			if (!isBlanksMenuOpen) return;
-			const handleClickOutside = (e: MouseEvent) => {
-				if (blanksMenuRef.current && !blanksMenuRef.current.contains(e.target as Node)) {
-					setIsBlanksMenuOpen(false);
-				}
-			};
-			const handleKeyDown = (e: KeyboardEvent) => {
-				if (e.key === "Escape") {
-					setIsBlanksMenuOpen(false);
-				}
-			};
-			document.addEventListener("mousedown", handleClickOutside);
-			document.addEventListener("keydown", handleKeyDown);
-			return () => {
-				document.removeEventListener("mousedown", handleClickOutside);
-				document.removeEventListener("keydown", handleKeyDown);
-			};
-		}, [isBlanksMenuOpen]);
-
-		const handleTabletSignatureConfirm = async (sigData: any) => {
-			if (!tabletSignDoc) return;
-			setDocumentIssueConfirmationId(tabletSignDoc.id);
-			setDocumentIssueSignatureMode("simple_electronic_signature");
-			setDocumentIssueSignedAt(sigData.signedAt);
-			setDocumentIssueRecipientFullName(sigData.recipientFullName);
-			setDocumentIssueRecipientRole(sigData.recipientRole);
-			setDocumentIssueIdentityChecked(true);
-			setDocumentIssueDocumentOpenedAndChecked(true);
-			setDocumentIssueRecipientSigned(true);
-			setDocumentIssueClinicSigned(true);
-			setDocumentIssueNote(`Подписано ПЭП (63-ФЗ) на планшете. Хэш SHA-256: ${sigData.sha256Fingerprint?.slice(0, 16)}...`);
-			await confirmDocumentIssue(true);
-			setTabletSignDoc(null);
-		};
-
-		const allDocs = useMemo(() => {
-			const fromStore = ((docStore as unknown as { activeDocuments?: GeneratedDocument[] }).activeDocuments ?? []) as GeneratedDocument[];
-			if (fromStore.length > 0) return fromStore;
-			return (dashboard?.documents ?? []) as GeneratedDocument[];
-		}, [(docStore as unknown as { activeDocuments?: GeneratedDocument[] }).activeDocuments, dashboard?.documents]);
-
-		const patientDocs = useMemo(() => {
-			return allDocs.filter(
-				(doc: GeneratedDocument) => doc && doc.patientId === patient.id,
-			);
-		}, [allDocs, patient.id]);
-
-		const activeIssueDoc = useMemo(() => {
-			if (!documentIssueConfirmationId) return null;
-			return (
-				allDocs.find(
-					(doc: GeneratedDocument) => doc.id === documentIssueConfirmationId,
-				) ?? null
-			);
-		}, [allDocs, documentIssueConfirmationId]);
+		const logic = usePatientDocumentsLogic(patient);
+		const { appLogic, docStore, patientDocs } = logic;
 
 		return (
 			<div
 				className="flex flex-col gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
 				data-testid="patient-documents-tab"
 			>
-				{/* Section Header: Strictly 1 Row, 32px height, DENTE Tokens */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[var(--line)]">
-					<div className="min-w-0">
-						<h3 className="text-sm font-bold text-[var(--ink)] uppercase tracking-wider m-0 flex items-center gap-2">
-							<FileText className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" aria-hidden="true" />
-							<span className="truncate">Официальная документация пациента</span>
-						</h3>
-						<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate hidden sm:block">
-							Медицинские карты, договоры на оказание услуг, согласия (ИДС) и налоговые справки.
-						</p>
-					</div>
+				<PatientDocumentsHeader
+					patient={patient}
+					onPrintOutpatientCard={onPrintOutpatientCard}
+					onOpenFastPrint={(type) => {
+						logic.setFastPrintDocType(type);
+						logic.setIsFastPrintOpen(true);
+					}}
+				/>
 
-					{/* Unified Action Bar: 1 Primary CTA + Clean Dropdown */}
-					<div className="flex items-center gap-2 shrink-0">
-						{/* Primary CTA: Векторная печать */}
-						<button
-							type="button"
-							onClick={() => {
-								setFastPrintDocType("form043u");
-								setIsFastPrintOpen(true);
-							}}
-							className="h-8 min-h-[32px] px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs shrink-0 active:scale-95"
-							data-testid="btn-fast-vector-print-hub"
-							title="Мгновенная векторная печать карты, акта и сметы (0 мс / без зависаний)"
-						>
-							<Printer size={13} className="shrink-0" />
-							<span>Векторная печать (0 мс)</span>
-						</button>
-
-						{/* Dropdown: Печать бланков ▾ */}
-						<div className="relative" ref={blanksMenuRef}>
-							<button
-								type="button"
-								onClick={() => setIsBlanksMenuOpen((prev) => !prev)}
-								aria-expanded={isBlanksMenuOpen}
-								className={`h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs hover:border-[var(--teal,#0d9488)] shrink-0 active:scale-95 ${
-									isBlanksMenuOpen ? "border-[var(--teal,#0d9488)] bg-[var(--paper-soft)]" : ""
-								}`}
-								data-testid="btn-print-blanks-menu"
-								title="Печать чистых медицинских бланков и выписок"
-							>
-								<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-								<span>Печать бланков</span>
-								<ChevronDown
-									size={12}
-									className={`text-[var(--muted)] transition-transform duration-150 ${
-										isBlanksMenuOpen ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-
-							{/* Dropdown Popover */}
-							{isBlanksMenuOpen && (
-								<div
-									className="absolute right-0 top-full mt-1.5 z-50 min-w-[230px] p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xl animate-in fade-in zoom-in-95"
-									data-testid="menu-print-blanks-dropdown"
-								>
-									<button
-										type="button"
-										onClick={() => {
-											setIsBlanksMenuOpen(false);
-											void printBlankMedicalContract(patient);
-										}}
-										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="btn-print-blank-contract"
-										title="Печать чистого бланка договора со строками заполнения"
-									>
-										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-										<span className="truncate">Бланк договора</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => {
-											setIsBlanksMenuOpen(false);
-											void printBlankMedicalConsent(patient);
-										}}
-										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="btn-print-blank-consent"
-										title="Печать чистого бланка информированного добровольного согласия (ИДС)"
-									>
-										<ShieldCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-										<span className="truncate">Бланк ИДС</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => {
-											setIsBlanksMenuOpen(false);
-											setFastPrintDocType("partisan_insert_043u");
-											setIsFastPrintOpen(true);
-										}}
-										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="btn-patient-print-insert"
-										title="Распечатать вкладыш в амбулаторную медицинскую карту"
-									>
-										<Printer size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-										<span className="truncate">Вкладыш в амбулаторную карту</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => {
-											setIsBlanksMenuOpen(false);
-											if (onPrintOutpatientCard) {
-												onPrintOutpatientCard();
-											} else {
-												setFastPrintDocType("form043u");
-												setIsFastPrintOpen(true);
-											}
-										}}
-										className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="btn-print-outpatient-card"
-										title="Печать выписки из амбулаторной медицинской карты"
-									>
-										<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-										<span className="truncate">Выписка из карты</span>
-									</button>
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{/* Documents Registry */}
 				{patientDocs.length > 0 ? (
 					<div className="flex flex-col gap-2.5">
 						<div className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
@@ -290,166 +45,21 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 							threshold={8}
 							getItemKey={(doc) => doc.id}
 							dataTestId="patient-docs-virtualized-scroller"
-							renderItem={(doc) => {
-								const kindLabel =
-									documentLabels?.[doc.kind as DocumentKind] ?? doc.kind;
-								const statusLabel =
-									documentStatusLabels?.[doc.status as DocumentStatus] ??
-									CANONICAL_DOCUMENT_STATUS_LABELS[doc.status as DocumentStatus] ??
-									doc.status;
-								const isIssued = doc.status === "issued";
-								const isDraft = doc.status === "draft";
-								const isSignedSms =
-									String(doc.signatureAttestation?.mode ?? "").includes("sms") ||
-									doc.signatureAttestation?.mode === "simple_electronic_signature";
-								const hasUkeP = Boolean(doc.cryptoSignaturePkcs7 || doc.doctorSignedAt);
-
-								return (
-									<div
-										key={doc.id}
-										className="p-3 sm:p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:border-[var(--teal)]/40 mb-2"
-										data-testid={`patient-doc-row-${doc.id}`}
-									>
-										{/* Document summary */}
-										<div className="flex flex-col gap-1 min-w-0">
-											<div className="flex items-center gap-2 flex-wrap">
-												<strong className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
-													{doc.title || kindLabel}
-												</strong>
-												{isDraft && (
-													<span
-														className="text-[11px] px-2 py-0.5 rounded-md font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 inline-flex items-center gap-1"
-														data-testid={`badge-requires-signature-${doc.id}`}
-														title="Черновик подготовлен, требуется личная подпись пациента (ПЭП 63-ФЗ)"
-													>
-														<FileSignature size={11} />
-														<span>Требуется подпись</span>
-													</span>
-												)}
-												{isIssued && (
-													<span
-														className="text-[11px] px-2 py-0.5 rounded-md font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1"
-														data-testid={`badge-issued-${doc.id}`}
-													>
-														<CheckCircle2 size={11} />
-														<span>Выдан</span>
-													</span>
-												)}
-												{(isSignedSms || doc.signatureSvg || doc.signatureAttestation?.mode === "simple_electronic_signature") && (
-													<span
-														className="text-[11px] px-2 py-0.5 rounded-md font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 inline-flex items-center gap-1"
-														data-testid={`badge-signed-pep-${doc.id}`}
-														title="Подписано простой электронной подписью по 63-ФЗ (экран / СМС)"
-													>
-														<CheckCircle2 size={11} />
-														<span>Подписано ПЭП</span>
-													</span>
-												)}
-												{hasUkeP && (
-													<span
-														className="text-[11px] px-2 py-0.5 rounded-md font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 inline-flex items-center gap-1"
-														title="Подписан УКЭП (ГОСТ Р 34.10-2012)"
-													>
-														<ShieldCheck size={11} />
-														<span>УКЭП ГОСТ</span>
-													</span>
-												)}
-												{isIssued && doc.issuedSnapshotSha256 && (
-													<span
-														className="text-[11px] px-2 py-0.5 rounded-md font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 inline-flex items-center gap-1"
-														data-testid={`badge-archive-${doc.id}`}
-														title={`Документ зафиксирован в неизменяемом архиве базы данных. SHA-256: ${doc.issuedSnapshotSha256}`}
-													>
-														<ShieldCheck size={11} />
-														<span>Архив</span>
-													</span>
-												)}
-											</div>
-
-											<div className="text-[11.5px] text-[var(--muted)] flex items-center gap-2 flex-wrap">
-												<span>{kindLabel}</span>
-												{doc.issuedAt && (
-													<span>· от {typeof formatShortDate === "function" ? formatShortDate(doc.issuedAt) : String(doc.issuedAt)}</span>
-												)}
-												{doc.totalAmountRub !== undefined && (
-													<span>· {typeof money === "function" ? money(doc.totalAmountRub) : `${doc.totalAmountRub} ₽`}</span>
-												)}
-												{doc.issuedSnapshotSha256 && (
-													<code className="text-[10.5px] bg-[var(--paper)] px-1 rounded border border-[var(--line)]">
-														{doc.issuedSnapshotSha256.slice(0, 10)}
-													</code>
-												)}
-											</div>
-										</div>
-
-										{/* Actions */}
-										<div className="flex items-center gap-2 flex-wrap shrink-0">
-											{/* 1-Click Legal Audit Button */}
-											<button
-												type="button"
-												onClick={() => void loadDocumentAuditFacts(doc.id)}
-												className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-												data-testid={`btn-patient-audit-doc-${doc.id}`}
-												title="Открыть аудит юридической чистоты и фактов выдачи"
-											>
-												<ShieldCheck size={13} className="text-teal-600 dark:text-teal-400" />
-												<span>Аудит чистоты</span>
-											</button>
-
-											{/* View HTML */}
-											<button
-												type="button"
-												onClick={() => void openIssuedDocumentHtml(doc.id)}
-												className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-												data-testid={`btn-patient-open-doc-${doc.id}`}
-												title="Открыть HTML-версию документа"
-											>
-												<FileText size={13} />
-												<span>Открыть</span>
-											</button>
-
-											{/* Print / PDF */}
-											<button
-												type="button"
-												onClick={() => void downloadIssuedDocumentPdf(doc.id)}
-												className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-												data-testid={`btn-patient-pdf-doc-${doc.id}`}
-												title="Печать / скачать PDF"
-											>
-												<Printer size={13} className="text-teal-600 dark:text-teal-400" />
-												<span>Печать / PDF</span>
-											</button>
-
-											{/* If draft: Issue button & Tablet sign */}
-											{isDraft && (
-												<>
-													<button
-														type="button"
-														onClick={() => setTabletSignDoc(doc)}
-														className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-														data-testid={`btn-patient-tablet-sign-${doc.id}`}
-														title="Подписание документа пациентом на экране (Digital Signature Canvas)"
-													>
-														<FileSignature size={13} />
-														<span>Подписать (ПЭП)</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => requestDocumentIssue(doc)}
-														className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-														data-testid={`btn-patient-issue-doc-${doc.id}`}
-														title="Проверить и выдать документ"
-													>
-														<FileSignature size={13} />
-														<span>Выдать</span>
-													</button>
-												</>
-											)}
-										</div>
-									</div>
-								);
-							}}
+							renderItem={(doc) => (
+								<PatientDocumentItemCard
+									key={doc.id}
+									doc={doc}
+									documentLabels={appLogic.documentLabels}
+									documentStatusLabels={appLogic.documentStatusLabels}
+									formatShortDate={appLogic.formatShortDate}
+									money={appLogic.money}
+									onAuditDoc={(id) => void appLogic.loadDocumentAuditFacts(id)}
+									onOpenDocHtml={(id) => void appLogic.openIssuedDocumentHtml(id)}
+									onDownloadPdf={(id) => void appLogic.downloadIssuedDocumentPdf(id)}
+									onTabletSign={(d) => logic.setTabletSignDoc(d)}
+									onRequestIssue={(d) => appLogic.requestDocumentIssue(d)}
+								/>
+							)}
 						/>
 					</div>
 				) : (
@@ -466,93 +76,18 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 					</div>
 				)}
 
-				{/* Modals rendered via createPortal into document.body */}
-				<DocumentAuditFactsModal
-					documentAuditFacts={documentAuditFacts}
-					documentLabels={documentLabels}
-					documentStatusLabels={documentStatusLabels}
-					formatShortDate={formatShortDate}
-					documentSourceStatusClassNames={documentSourceStatusClassNames}
-					documentSourceStatusLabels={documentSourceStatusLabels}
-					documentIssueSignatureModeLabels={documentIssueSignatureModeLabels}
-					documentVoidReasonLabels={documentVoidReasonLabels}
-					loadDocumentAuditFacts={loadDocumentAuditFacts}
-					setDocumentAuditFacts={setDocumentAuditFacts}
-					openIssuedDocumentHtml={openIssuedDocumentHtml}
-					downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
-					downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
+				<PatientDocumentsModalsWrapper
+					patient={patient}
+					appLogic={appLogic}
+					docStore={docStore}
+					isFastPrintOpen={logic.isFastPrintOpen}
+					setIsFastPrintOpen={logic.setIsFastPrintOpen}
+					fastPrintDocType={logic.fastPrintDocType}
+					tabletSignDoc={logic.tabletSignDoc}
+					setTabletSignDoc={logic.setTabletSignDoc}
+					activeIssueDoc={logic.activeIssueDoc}
+					onTabletSignatureConfirm={logic.handleTabletSignatureConfirm}
 				/>
-
-				<DocumentIssueConfirmationModal
-					documentIssueConfirmation={activeIssueDoc}
-					documentLabels={documentLabels}
-					patientName={appLogic.patientName}
-					patients={dashboard?.patients}
-					money={money}
-					documentIssueSignatureMode={documentIssueSignatureMode}
-					setDocumentIssueSignatureMode={setDocumentIssueSignatureMode}
-					normalizedDocumentIssueSignatureMode={appLogic.normalizedDocumentIssueSignatureMode}
-					documentIssueSignatureModeLabels={documentIssueSignatureModeLabels}
-					documentIssueSignedAt={documentIssueSignedAt}
-					setDocumentIssueSignedAt={setDocumentIssueSignedAt}
-					documentIssueRecipientFullName={documentIssueRecipientFullName}
-					setDocumentIssueRecipientFullName={setDocumentIssueRecipientFullName}
-					documentIssueRecipientRole={documentIssueRecipientRole}
-					setDocumentIssueRecipientRole={setDocumentIssueRecipientRole}
-					documentIssueStaffFullName={documentIssueStaffFullName}
-					setDocumentIssueStaffFullName={setDocumentIssueStaffFullName}
-					documentIssueStaffRole={documentIssueStaffRole}
-					setDocumentIssueStaffRole={setDocumentIssueStaffRole}
-					documentIssueNote={documentIssueNote}
-					setDocumentIssueNote={setDocumentIssueNote}
-					activeDoctor={dashboard?.activeDoctor}
-					documentIssueIdentityChecked={documentIssueIdentityChecked}
-					setDocumentIssueIdentityChecked={setDocumentIssueIdentityChecked}
-					documentIssueDocumentOpenedAndChecked={documentIssueDocumentOpenedAndChecked}
-					setDocumentIssueDocumentOpenedAndChecked={setDocumentIssueDocumentOpenedAndChecked}
-					documentIssueRecipientSigned={documentIssueRecipientSigned}
-					setDocumentIssueRecipientSigned={setDocumentIssueRecipientSigned}
-					documentIssueClinicSigned={documentIssueClinicSigned}
-					setDocumentIssueClinicSigned={setDocumentIssueClinicSigned}
-					documentIssueAttestationReady={true}
-					documentIssueMissingSteps={[]}
-					documentIssueMissingGuidanceId="patient-doc-issue-missing"
-					documentIssueSaving={false}
-					setDocumentIssueConfirmationId={setDocumentIssueConfirmationId}
-					confirmDocumentIssue={confirmDocumentIssue}
-				/>
-
-				{/* Векторный легковесный движок печати (0 мс, 0 МБ лишней памяти) */}
-				<FastClinicalPrintEngine
-					isOpen={isFastPrintOpen}
-					onClose={() => setIsFastPrintOpen(false)}
-					initialDocType={fastPrintDocType}
-					patient={{
-						id: patient.id,
-						fullName: patient.fullName,
-						birthDate: patient.birthDate,
-						phone: patient.phone,
-						address: (patient as any).address || undefined,
-						cardNumber: (patient as any).cardNumber || (patient.id ? `МК-${patient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01"),
-						allergies: (patient as any).allergies || (patient as any).allergyHistory,
-						somaticNotes: (patient as any).somaticHistory || (patient as any).chronicDiseases,
-					}}
-					clinic={dashboard?.clinicSettings?.profile || dashboard?.organization}
-					doctor={dashboard?.activeDoctor}
-				/>
-
-				{tabletSignDoc && (
-					<DigitalSignatureTabletModal
-						isOpen={Boolean(tabletSignDoc)}
-						onClose={() => setTabletSignDoc(null)}
-						document={tabletSignDoc}
-						patient={patient}
-						doctorFullName={dashboard?.activeDoctor?.fullName}
-						clinicName={dashboard?.clinicSettings?.profile?.clinicName || dashboard?.organization?.name || "Стоматологическая клиника"}
-						onConfirmSignature={handleTabletSignatureConfirm}
-						onPrintArchiveA4={() => void downloadIssuedDocumentPdf(tabletSignDoc.id)}
-					/>
-				)}
 			</div>
 		);
 	},

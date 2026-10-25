@@ -1,0 +1,103 @@
+.anamnesis-toggle-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 48px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	border: 1.5px solid var(--line);
+	background: var(--paper-soft);
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease-out;
+	gap: 10px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .anamnesis-toggle-item,
+[data-theme="night"] .anamnesis-toggle-item {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+.anamnesis-toggle-item:hover {
+	border-color: var(--teal);
+	background: var(--paper-strong);
+}
+
+.anamnesis-toggle-item--active-critical {
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+[data-theme="dark"] .anamnesis-toggle-item--active-critical {
+	background: var(--bad-bg);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+}
+
+.anamnesis-toggle-item--active-high {
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+[data-theme="dark"] .anamnesis-toggle-item--active-high {
+	background: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+}
+
+.anamnesis-toggle-item__label {
+	font-size: 12.5px;
+	font-weight: 700;
+	line-height: 1.3;
+	flex: 1;
+}
+
+.anamnesis-toggle-item__icon {
+	width: 20px;
+	height: 20px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .anamnesis-toggle-item__icon {
+	background: var(--paper);
+	border-color: var(--line-strong);
+}
+
+.anamnesis-toggle-item--active-critical .anamnesis-toggle-item__icon {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	border-color: var(--bad-fg);
+}
+
+.anamnesis-toggle-item--active-high .anamnesis-toggle-item__icon {
+	background: var(--warn-fg);
+	color: var(--paper-strong);
+	border-color: var(--warn-fg);
+}
+
+.anamnesis-modal__footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+[data-theme="dark"] .anamnesis-modal__footer,
+[data-theme="night"] .anamnesis-modal__footer {
+	background: var(--paper-soft);
+	border-top-color: var(--line-strong);
+}

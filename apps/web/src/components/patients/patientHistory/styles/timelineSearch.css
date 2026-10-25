@@ -1,0 +1,52 @@
+.clinical-timeline-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	position: relative;
+	min-width: 240px;
+	width: 280px;
+	max-width: 100%;
+}
+
+.clinical-search-input {
+	width: 100%;
+	height: 32px;
+	padding: 0 28px 0 32px;
+	font-size: 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	outline: none;
+	transition: all 0.18s ease;
+}
+
+.clinical-search-input:focus {
+	border-color: var(--teal);
+	background: var(--paper);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.18);
+}
+
+.clinical-search-clear-btn {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.clinical-search-clear-btn:hover {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.08);
+}

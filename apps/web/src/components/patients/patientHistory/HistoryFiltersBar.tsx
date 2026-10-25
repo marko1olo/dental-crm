@@ -1,16 +1,7 @@
-/**
- * apps/web/src/components/patients/patientHistory/HistoryFiltersBar.tsx
- *
- * DENTE Dental CRM — Панель фильтров и поиска клинического таймлайна истории приёмов.
- * Layer 1: Презентационный тулбар фильтрации по направлениям, зубам, диагнозам и врачам.
- */
-
 import React from "react";
 import { Plus, Search, SquareMinus, SquarePlus, X } from "lucide-react";
-import {
-	type ClinicalSpecialty,
-	SPECIALTY_FILTERS,
-} from "./types";
+import { type ClinicalSpecialty } from "./types";
+import { HistorySpecialtyFilterChips } from "./HistorySpecialtyFilterChips";
 
 export interface HistoryFiltersBarProps {
 	selectedSpecialty: ClinicalSpecialty;
@@ -42,31 +33,13 @@ export const HistoryFiltersBar: React.FC<HistoryFiltersBarProps> = React.memo(
 	}) {
 		return (
 			<div className="clinical-timeline-toolbar">
-				{/* Быстрые фильтры направлений */}
-				<div className="clinical-timeline-filters" data-testid="timeline-specialty-filters">
-					{SPECIALTY_FILTERS.map((filter) => {
-						const count =
-							filter.id === "all"
-								? totalVisitsCount
-								: getSpecialtyCount(filter.id);
-						const isActive = selectedSpecialty === filter.id;
+				<HistorySpecialtyFilterChips
+					selectedSpecialty={selectedSpecialty}
+					onSelectSpecialty={onSelectSpecialty}
+					totalVisitsCount={totalVisitsCount}
+					getSpecialtyCount={getSpecialtyCount}
+				/>
 
-						return (
-							<button
-								key={filter.id}
-								type="button"
-								onClick={() => onSelectSpecialty(filter.id)}
-								className={`clinical-filter-chip ${isActive ? "active" : ""}`}
-								data-testid={`filter-specialty-${filter.id}`}
-							>
-								<span>{filter.label}</span>
-								<span className="opacity-75 text-[11px] font-mono">({count})</span>
-							</button>
-						);
-					})}
-				</div>
-
-				{/* Поиск по диагнозу / зубу + Кнопки Свернуть/Развернуть + Добавить приём */}
 				<div className="clinical-timeline-actions">
 					<div className="clinical-timeline-search">
 						<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -90,7 +63,6 @@ export const HistoryFiltersBar: React.FC<HistoryFiltersBarProps> = React.memo(
 						)}
 					</div>
 
-					{/* Expand/Collapse All — Studio HIG Micro-Buttons */}
 					<div className="clinical-timeline-toggle-group" data-testid="timeline-accordion-controls">
 						<button
 							type="button"
@@ -114,7 +86,6 @@ export const HistoryFiltersBar: React.FC<HistoryFiltersBarProps> = React.memo(
 						</button>
 					</div>
 
-					{/* Кнопка записи */}
 					{onNewAppointment && (
 						<button
 							type="button"

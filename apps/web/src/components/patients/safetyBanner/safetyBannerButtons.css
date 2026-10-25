@@ -1,0 +1,90 @@
+.safety-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease-out;
+	border: 1px solid transparent;
+	text-decoration: none;
+	box-sizing: border-box;
+}
+
+.patient-safety-banner .safety-btn {
+	height: 32px;
+	min-height: 32px;
+	min-width: unset;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	white-space: nowrap;
+	gap: 5px;
+}
+.patient-safety-banner .safety-btn:active {
+	transform: scale(0.98);
+}
+
+.patient-safety-banner--high .safety-btn--outline {
+	background: rgba(245, 158, 11, 0.12);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+	color: var(--warn-fg);
+}
+.patient-safety-banner--high .safety-btn--outline:hover {
+	background: rgba(245, 158, 11, 0.22);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+}
+[data-theme="dark"] .patient-safety-banner--high .safety-btn--outline,
+[data-theme="night"] .patient-safety-banner--high .safety-btn--outline,
+[data-theme="cyber_xray"] .patient-safety-banner--high .safety-btn--outline {
+	background: rgba(245, 158, 11, 0.18);
+	border-color: rgba(245, 158, 11, 0.45);
+	color: var(--warn-fg);
+}
+[data-theme="dark"] .patient-safety-banner--high .safety-btn--outline:hover,
+[data-theme="night"] .patient-safety-banner--high .safety-btn--outline:hover,
+[data-theme="cyber_xray"] .patient-safety-banner--high .safety-btn--outline:hover {
+	background: rgba(245, 158, 11, 0.3);
+	border-color: var(--warn-fg);
+}
+
+.patient-safety-banner--critical .safety-btn--outline {
+	background: rgba(239, 68, 68, 0.12);
+	border: 1px solid rgba(239, 68, 68, 0.35);
+	color: var(--bad-fg);
+}
+.patient-safety-banner--critical .safety-btn--outline:hover {
+	background: rgba(239, 68, 68, 0.22);
+	border-color: var(--bad-fg);
+	color: var(--bad-fg);
+}
+[data-theme="dark"] .patient-safety-banner--critical .safety-btn--outline,
+[data-theme="night"] .patient-safety-banner--critical .safety-btn--outline,
+[data-theme="cyber_xray"] .patient-safety-banner--critical .safety-btn--outline {
+	background: rgba(239, 68, 68, 0.18);
+	border-color: rgba(239, 68, 68, 0.45);
+	color: var(--bad-fg);
+}
+[data-theme="dark"] .patient-safety-banner--critical .safety-btn--outline:hover,
+[data-theme="night"] .patient-safety-banner--critical .safety-btn--outline:hover,
+[data-theme="cyber_xray"] .patient-safety-banner--critical .safety-btn--outline:hover {
+	background: rgba(239, 68, 68, 0.3);
+	border-color: var(--bad-fg);
+}
+
+.patient-safety-banner--critical .safety-btn--primary-red {
+	background: var(--bad-fg);
+	color: #ffffff;
+	border: 1px solid var(--bad-fg);
+	box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}
+.patient-safety-banner--critical .safety-btn--primary-red:hover {
+	filter: brightness(1.1);
+}

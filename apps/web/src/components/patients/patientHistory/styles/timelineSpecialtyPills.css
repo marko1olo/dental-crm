@@ -1,0 +1,47 @@
+.clinical-specialty-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.specialty-therapy {
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.specialty-surgery {
+	color: #9333ea;
+	background: rgba(147, 51, 234, 0.12);
+	border: 1px solid rgba(147, 51, 234, 0.25);
+}
+
+.specialty-orthopedics {
+	color: #d97706;
+	background: rgba(217, 119, 6, 0.12);
+	border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+.specialty-hygiene {
+	color: #059669;
+	background: rgba(5, 150, 105, 0.12);
+	border: 1px solid rgba(5, 150, 105, 0.25);
+}
+
+.specialty-orthodontics {
+	color: #2563eb;
+	background: rgba(37, 99, 235, 0.12);
+	border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.specialty-all {
+	color: var(--muted);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}

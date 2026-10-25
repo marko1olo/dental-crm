@@ -1,0 +1,86 @@
+.clinical-scans-section {
+	width: 100%;
+}
+
+.clinical-scans-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 10px;
+	width: 100%;
+}
+
+.clinical-scan-card {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--paper);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.clinical-scan-card:hover {
+	border-color: var(--teal);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+}
+
+.clinical-scan-thumb {
+	aspect-ratio: 1;
+	width: 100%;
+	position: relative;
+	background: #000000;
+	overflow: hidden;
+}
+
+.clinical-scan-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.2s ease;
+}
+
+.clinical-scan-card:hover .clinical-scan-thumb img {
+	transform: scale(1.06);
+}
+
+.clinical-scan-kind-badge {
+	position: absolute;
+	bottom: 5px;
+	right: 5px;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.85);
+	color: #34d399;
+	font-family: var(--font-mono, monospace);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.clinical-scan-meta {
+	padding: 6px 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: var(--paper);
+}
+
+.clinical-scan-title {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.clinical-scan-tooth {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--teal);
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-materials-section {
+	width: 100%;
+}

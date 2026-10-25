@@ -1,0 +1,82 @@
+.clinical-timeline-toggle-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.clinical-timeline-toggle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 11px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.clinical-timeline-toggle-btn:hover {
+	background: var(--paper-strong, var(--paper));
+	border-color: var(--teal);
+	color: var(--teal);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
+}
+
+.clinical-timeline-toggle-btn:active {
+	transform: translateY(1px);
+	box-shadow: none;
+}
+
+.clinical-timeline-toggle-btn:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 1px;
+}
+
+.clinical-timeline-toggle-btn .clinical-toggle-icon {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+	transition: transform 0.18s ease;
+}
+
+.clinical-timeline-toggle-btn:hover .clinical-toggle-icon {
+	transform: scale(1.12);
+}
+
+.clinical-timeline-primary-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: var(--teal);
+	color: #ffffff;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+	flex-shrink: 0;
+}
+
+.clinical-timeline-primary-btn:hover {
+	opacity: 0.92;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.clinical-timeline-primary-btn:active {
+	transform: translateY(1px);
+}
