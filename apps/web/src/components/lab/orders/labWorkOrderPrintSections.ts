@@ -64,7 +64,7 @@ export function renderPrintTechStagesSection(order: LabWorkOrder, sectionIndex: 
 	const currentStep = LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepIndex ?? 1;
 
 	return `
-	<div class="section-title">${sectionIndex}. Маршрутный лист 8 технологических этапов ЗТЛ</div>
+	<div class="section-title">${sectionIndex}. Маршрутный лист 4 клинических этапов ЗТЛ</div>
 	<div class="highlight-box" style="padding: 6px 8px;">
 		<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
 			<thead>

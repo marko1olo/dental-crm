@@ -65,6 +65,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
 			amountRub: positiveMoneyRubSchema.optional(),
+			amountKopecks: z.union([z.number().int().positive(), z.bigint()]).optional(),
 			notes: z.string().trim().max(500).optional(),
 		});
 
@@ -87,10 +88,21 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				return { kind: "already_paid" as const };
 			}
 
-			const amountToPay = payData.amountRub ?? order.priceRub ?? 0;
-			if (amountToPay <= 0) {
+			const amountToPayKopecks = payData.amountKopecks !== undefined
+				? Number(payData.amountKopecks)
+				: payData.amountRub !== undefined
+					? rubToKopecks(payData.amountRub)
+					: order.labCostRub !== null && order.labCostRub !== undefined
+						? rubToKopecks(order.labCostRub)
+						: order.priceRub !== null && order.priceRub !== undefined
+							? rubToKopecks(order.priceRub)
+							: 0;
+
+			if (amountToPayKopecks <= 0) {
 				return { kind: "invalid_amount" as const };
 			}
+
+			const amountToPayRub = kopecksToRub(amountToPayKopecks);
 
 			// Ищем кассу для оплаты: либо переданную, либо "account" (безнал) / "main" / "expenses"
 			await ensureOrganizationCashBoxes(tx, orgId);
@@ -136,14 +148,15 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				.where(and(eq(cashExpenseReasons.organizationId, orgId), eq(cashExpenseReasons.code, 11)))
 				.limit(1);
 
-			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountToPay));
+			const balanceBeforeKop = rubToKopecks(targetBox.balanceRub);
+			const balanceAfterKop = balanceBeforeKop - amountToPayKopecks;
+			const balanceAfterRub = kopecksToRub(balanceAfterKop);
 
 			// Списываем средства
 			await tx
 				.update(cashBoxes)
 				.set({
-					balanceRub: balanceAfter,
+					balanceRub: balanceAfterRub,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -155,9 +168,9 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					organizationId: orgId,
 					cashBoxId: targetBox.id,
 					operationType: "expense",
-					amountRub: amountToPay,
-					balanceBeforeRub: balanceBefore,
-					balanceAfterRub: balanceAfter,
+					amountRub: amountToPayRub,
+					balanceBeforeRub: targetBox.balanceRub,
+					balanceAfterRub: balanceAfterRub,
 					reasonId: reason11?.id ?? null,
 					reasonCode: 11,
 					reasonText: `Оплата услуг зуботехнической лаборатории по заказу ЛО-${order.secureToken.slice(0, 8).toUpperCase()}${payData.notes ? ` (${payData.notes})` : ""}`,
@@ -176,7 +189,12 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, orgId)))
 				.returning();
 
-			return { kind: "ok" as const, operation: operation!, labOrder: updatedOrder! };
+			return {
+				kind: "ok" as const,
+				operation: operation!,
+				labOrder: updatedOrder!,
+				amountKopecks: amountToPayKopecks,
+			};
 		});
 
 		if (result.kind === "order_not_found") {
@@ -207,8 +225,12 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 		return reply.send({
 			success: true,
 			message: `Оплата наряда ЗТЛ на сумму ${result.operation.amountRub} ₽ успешно проведена по статье 11.`,
-			cashOperation: result.operation,
+			cashOperation: {
+				...result.operation,
+				amountKopecks: result.amountKopecks,
+			},
 			labOrder: result.labOrder,
+			amountKopecks: result.amountKopecks,
 		});
 	};
 	app.post("/api/lab-orders/:id/pay", payHandler);

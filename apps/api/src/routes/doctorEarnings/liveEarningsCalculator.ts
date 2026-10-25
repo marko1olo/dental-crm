@@ -59,6 +59,8 @@ export interface LiveCalculationInput {
 		material: string | null;
 		status: string;
 		priceRub: unknown;
+		labCostRub?: unknown;
+		isWarranty?: boolean;
 		dueDate: Date | null;
 	}>;
 	readonly dbPayments: ReadonlyArray<{
@@ -125,7 +127,9 @@ export function calculateLiveDoctorEarnings(
 
 		const aptLabItems: DoctorEarningsLabOrderItem[] = aptLabOrdersList.map(
 			(lo) => {
-				const loCostRub = parseFloat(String(lo.priceRub)) || 0;
+				const loCostRub = lo.isWarranty
+					? 0
+					: (parseFloat(String(lo.labCostRub ?? lo.priceRub)) || 0);
 				const loCostKop = Math.round(loCostRub * 100);
 				aptLabKop += loCostKop;
 

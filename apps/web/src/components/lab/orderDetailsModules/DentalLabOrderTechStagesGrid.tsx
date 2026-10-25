@@ -40,7 +40,7 @@ export function DentalLabOrderTechStagesGrid({
 				}}
 			>
 				<h4 style={{ margin: 0, fontSize: "12px", fontWeight: 700 }}>
-					Маршрутный лист 8 технологических этапов ЗТЛ:
+					Маршрутный лист клинических этапов:
 				</h4>
 				<span
 					style={{

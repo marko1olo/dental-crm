@@ -281,6 +281,8 @@ export async function registerDoctorEarningsHandlers(
 					material: labOrders.material,
 					status: labOrders.status,
 					priceRub: labOrders.priceRub,
+					labCostRub: labOrders.labCostRub,
+					isWarranty: labOrders.isWarranty,
 					dueDate: labOrders.dueDate,
 				})
 				.from(labOrders)

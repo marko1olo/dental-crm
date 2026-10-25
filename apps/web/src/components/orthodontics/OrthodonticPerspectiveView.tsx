@@ -9,9 +9,7 @@ import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget
 import { CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 
 /**
- * OrthodonticPerspectiveView — чистый фасад ортодонтического режима.
- * Делегирует рендер каноническому OrthopedicsChairsidePanel, а также предоставляет
- * доступ к фотопротоколу, протоколу визита и ТРГ-цефалометрии ортодонта (Мандат 8s: Закон Единого Неделимого Авторитета).
+ * OrthodonticPerspectiveView — чистый фасад ортодонтического режима (Мандат 8b <= 120 строк).
  */
 export function OrthodonticPerspectiveView() {
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -24,9 +22,7 @@ export function OrthodonticPerspectiveView() {
 	useEffect(() => {
 		const checkHash = () => {
 			if (typeof window !== "undefined") {
-				if (window.location.hash.includes("ceph")) {
-					setIsCephModalOpen(true);
-				}
+				if (window.location.hash.includes("ceph")) setIsCephModalOpen(true);
 				if (window.location.hash.includes("protocol") || window.location.hash.includes("ortho-protocol")) {
 					setIsProtocolOpen(true);
 				}

@@ -28,7 +28,7 @@ export function DentalLabDrawerFooter({
 				data-testid="form-save-order-btn"
 			>
 				<Check className="w-4 h-4" />
-				<span>{isEditing ? "Сохранить наряд в ЗТЛ" : "Сформировать наряд в ЗТЛ"}</span>
+				<span>{isEditing ? "Сохранить наряд в лабораторию" : "Сформировать наряд в лабораторию"}</span>
 			</button>
 		</div>
 	);

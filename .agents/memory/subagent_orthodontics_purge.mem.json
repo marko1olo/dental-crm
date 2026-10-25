@@ -1,0 +1,25 @@
+{
+  "task": "ORTHODONTICS & CEPHALOMETRICS MONOLITH PURGE & 4-STATE RED TEAM VISUAL PROOF",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-25T21:29:15+04:00",
+  "author": "Orthodontics & Cephalometrics Inquisitor (L2 Subagent)",
+  "invariants": {
+    "fileLineLimit": "strictly <= 120 lines on all 248 TSX/TS/CSS files in apps/web/src/components/orthodontics",
+    "doctorAutonomy": "1-click physiological norm, zero blocked buttons (disabled: 0), debounced autosave",
+    "bureaucracyElimination": "zero Soviet order numbers (043/у -> Медицинская карта приёма, 804н -> Прайс-лист услуг)",
+    "firstPrinciplesWorkflow": "3-click chairside orthodontic protocol (Apparatus -> Manipulation -> Control)",
+    "testing": "100% passing (32 test files, 105 tests passing, Exit Code 0)",
+    "visualProof": "4 canonical states captured on live running app (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark), personally reviewed via read_file"
+  },
+  "proofs": [
+    "docs/proofs/orthodontics/pc_light_1440x900.png",
+    "docs/proofs/orthodontics/pc_dark_1440x900.png",
+    "docs/proofs/orthodontics/mobile_light_390x844.png",
+    "docs/proofs/orthodontics/mobile_dark_390x844.png"
+  ],
+  "verification": {
+    "vitest": "32 passed (32), 105 passed (105)",
+    "maxFileLineCount": 119,
+    "encodingCheck": "19753 files checked, 0 errors"
+  }
+}

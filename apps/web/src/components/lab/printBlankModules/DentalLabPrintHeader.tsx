@@ -26,6 +26,8 @@ export function DentalLabPrintHeader({
 	handlePrint,
 	onShareMessenger,
 }: DentalLabPrintHeaderProps): React.JSX.Element {
+	const isOfficial = isSigned && !isDraft;
+
 	return (
 		<>
 			{/* Header Toolbar */}
@@ -35,7 +37,7 @@ export function DentalLabPrintHeader({
 						Наряд-заказ в зуботехническую лабораторию
 					</h3>
 					<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-						Официальный наряд-заказ с уникальным 2D-штрихкодом партии и ссылкой для трекинга техником.
+						Официальный наряд-заказ с уникальным штрихкодом партии и ссылкой для трекинга техником.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -45,7 +47,7 @@ export function DentalLabPrintHeader({
 							onClick={onShareMessenger}
 							data-testid="print-blank-share-messenger-btn"
 							className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
-							title="Поделиться текстом наряда с зубным техником в WhatsApp или Telegram"
+							title="Поделиться текстом наряда с зубным техником"
 						>
 							<Share2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 							<span>Поделиться в мессенджер</span>
@@ -66,18 +68,18 @@ export function DentalLabPrintHeader({
 			{/* Blank Header */}
 			<div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
 				<div>
-					<div className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+					<div className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
 						{clinicName}
 					</div>
-					<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0 mt-0.5">
-						Наряд-заказ в зуботехническую лабораторию № {gostOrderNumber}
+					<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0 mt-0.5 text-slate-900 dark:text-slate-100">
+						Наряд-заказ в лабораторию № {gostOrderNumber}
 					</h1>
-					<p className="text-xs text-slate-600 mt-0.5 m-0 font-medium">
-						Стоматологическая медицинская организация · Отделение ортопедии и цифрового зубопротезирования CAD/CAM
+					<p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 m-0 font-medium">
+						Стоматологическая клиника · Отделение ортопедии и зубопротезирования
 					</p>
 				</div>
 				<div className="text-right shrink-0">
-					<span className="text-xs font-bold block">
+					<span className="text-xs font-bold block text-slate-900 dark:text-slate-100">
 						Дата сдачи слепка/скана: <strong>{formattedOrderDate}</strong>
 					</span>
 					{dueDate && (
@@ -85,7 +87,7 @@ export function DentalLabPrintHeader({
 							Срок сдачи: {new Date(dueDate).toLocaleDateString("ru-RU")}
 						</span>
 					)}
-					<span className="text-xs font-semibold block text-slate-700 print:text-black mt-0.5">
+					<span className="text-xs font-semibold block text-slate-700 dark:text-slate-300 print:text-black mt-0.5">
 						Окно курьера: <strong>{deliveryTimeSlot}</strong>
 					</span>
 					{deadlineInfo && (
@@ -101,21 +103,14 @@ export function DentalLabPrintHeader({
 
 			{/* Statutory Stamp */}
 			<div
-				className="p-2.5 rounded-lg border text-xs font-black uppercase tracking-wider flex justify-between items-center"
-				style={{
-					borderColor: isSigned && !isDraft ? "#059669" : "#d97706",
-					backgroundColor: isSigned && !isDraft ? "#f0fdf4" : "#fffbeb",
-					color: isSigned && !isDraft ? "#047857" : "#b45309",
-				}}
+				className={`p-2.5 rounded-lg border text-xs font-black uppercase tracking-wider flex justify-between items-center ${
+					isOfficial
+						? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300"
+						: "border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300"
+				}`}
 			>
-				<span>
-					{isSigned && !isDraft
-						? "ШТАМП: ПОДПИСАНО ВРАЧОМ • ОФИЦИАЛЬНЫЙ НАРЯД ЗТЛ"
-						: "ШТАМП: ЧЕРНОВИК • ПРЕДВАРИТЕЛЬНОЕ ТЗ"}
-				</span>
-				<span className="font-mono text-[11px] font-bold">
-					{isSigned && !isDraft ? "СТАТУС: ПОДПИСАН" : "СТАТУС: ЧЕРНОВИК"}
-				</span>
+				<span>{isOfficial ? "ШТАМП: ПОДПИСАНО ВРАЧОМ • ОФИЦИАЛЬНЫЙ НАРЯД" : "ШТАМП: ЧЕРНОВИК • ПРЕДВАРИТЕЛЬНОЕ ТЗ"}</span>
+				<span className="font-mono text-[11px] font-bold">{isOfficial ? "СТАТУС: ПОДПИСАН" : "СТАТУС: ЧЕРНОВИК"}</span>
 			</div>
 		</>
 	);

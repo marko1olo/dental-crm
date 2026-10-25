@@ -22,7 +22,7 @@ export function renderImplantComponentsSection(order: DentalLabWorkflowOrder): s
 }
 
 export function renderTechStagesSection(order: DentalLabWorkflowOrder, sectionNum: number): string {
-	return `<div class="section-title">${sectionNum}. Маршрутный лист 8 технологических этапов ЗТЛ</div>
+	return `<div class="section-title">${sectionNum}. Маршрутный лист 4 клинических этапов ЗТЛ</div>
 	<div class="box" style="padding: 4px 6px;">
 		<table style="width: 100%; border-collapse: collapse; font-size: 10px;">
 			<thead><tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;"><th style="padding: 2px 4px; width: 20px;">№</th><th style="padding: 2px 4px;">Этап</th><th style="padding: 2px 4px; width: 130px;">Цех</th><th style="padding: 2px 4px; width: 80px; text-align: center;">Статус</th></tr></thead>

@@ -5,104 +5,71 @@ import type {
 
 export type { LabTechnologicalStageId, LabTechnologicalStageDefinition };
 
+const IMPRESSION: LabTechnologicalStageDefinition = {
+	id: 'impression_scan',
+	stepIndex: 1,
+	stepNumber: 1,
+	nameRu: '1. Скан/Слепок снят',
+	shortTitleRu: 'Скан/Слепок снят',
+	departmentRu: 'Клинический кабинет',
+	descriptionRu: 'Снятие оттисков или интраоральное цифровое 3D-сканирование.',
+	icon: 'scan',
+	colorToken: 'var(--brand-500, #3b82f6)'
+};
+
+const IN_LAB: LabTechnologicalStageDefinition = {
+	id: 'in_lab',
+	stepIndex: 2,
+	stepNumber: 2,
+	nameRu: '2. В лаборатории',
+	shortTitleRu: 'В лаборатории',
+	departmentRu: 'Зуботехническая лаборатория',
+	descriptionRu: 'Изготовление ортопедической конструкции в лаборатории.',
+	icon: 'settings',
+	colorToken: 'var(--teal, #0d9488)'
+};
+
+const READY_CLINIC: LabTechnologicalStageDefinition = {
+	id: 'ready_in_clinic',
+	stepIndex: 3,
+	stepNumber: 3,
+	nameRu: '3. Готово в клинике',
+	shortTitleRu: 'Готово в клинике',
+	departmentRu: 'Регистратура / Склад клиники',
+	descriptionRu: 'Работа доставлена в клинику, готова к примерке или фиксации.',
+	icon: 'truck',
+	colorToken: 'var(--warn, #f59e0b)'
+};
+
+const FITTING: LabTechnologicalStageDefinition = {
+	id: 'fitting_fixation',
+	stepIndex: 4,
+	stepNumber: 4,
+	nameRu: '4. Примерка / Фиксация',
+	shortTitleRu: 'Примерка / Фиксация',
+	departmentRu: 'Клинический кабинет ортопеда',
+	descriptionRu: 'Клиническая примерка и окончательная фиксация конструкции.',
+	icon: 'check',
+	colorToken: 'var(--ok, #10b981)'
+};
+
 export const LAB_TECHNOLOGICAL_STAGES: Record<LabTechnologicalStageId, LabTechnologicalStageDefinition> = {
-	impression_scan: {
-		id: 'impression_scan',
-		stepIndex: 1,
-		stepNumber: 1,
-		nameRu: '1. Оттиски / 3D-скан',
-		shortTitleRu: 'Слепки / Скан',
-		departmentRu: 'Клинический кабинет / Терапия-Ортопедия',
-		descriptionRu: 'Снятие прецизионных оттисков (А-силикон) или интраоральное 3D-сканирование зубных рядов (STL/PLY).',
-		icon: 'scan',
-		colorToken: 'var(--brand-500, #3b82f6)'
-	},
-	waxup_cad: {
-		id: 'waxup_cad',
-		stepIndex: 2,
-		stepNumber: 2,
-		nameRu: '2. Wax-Up / CAD-моделирование',
-		shortTitleRu: 'Wax-Up / CAD',
-		departmentRu: 'CAD/CAM лаборатория',
-		descriptionRu: 'Цифровое 3D-моделирование анатомической формы реставрации в Exocad или восковой Wax-Up.',
-		icon: 'layers',
-		colorToken: 'var(--brand-500, #3b82f6)'
-	},
-	milling_framework: {
-		id: 'milling_framework',
-		stepIndex: 3,
-		stepNumber: 3,
-		nameRu: '3. Фрезеровка / каркас',
-		shortTitleRu: 'Фрезеровка / Каркас',
-		departmentRu: 'Фрезерный центр / Литейная',
-		descriptionRu: 'CAM-фрезеровка диоксида циркония Prettau/Katana, PMMA или синтеризация Co-Cr каркаса.',
-		icon: 'settings',
-		colorToken: 'var(--teal, #0d9488)'
-	},
-	clinical_fitting: {
-		id: 'clinical_fitting',
-		stepIndex: 4,
-		stepNumber: 4,
-		nameRu: '4. Примерка в клинике',
-		shortTitleRu: 'Примерка каркаса',
-		departmentRu: 'Клинический кабинет ортопеда',
-		descriptionRu: 'Клиническая примерка каркаса / конструкции в полости рта у пациента, проверка окклюзии и контактов.',
-		icon: 'search',
-		colorToken: 'var(--warn, #f59e0b)'
-	},
-	ceramic_layering: {
-		id: 'ceramic_layering',
-		stepIndex: 5,
-		stepNumber: 5,
-		nameRu: '5. Нанесение керамики / покраска',
-		shortTitleRu: 'Керамика / Покраска',
-		departmentRu: 'Керамический цех ЗТЛ',
-		descriptionRu: 'Послойное нанесение керамических масс (Duceram, Noritake) или колоризация многослойного циркония.',
-		icon: 'palette',
-		colorToken: 'var(--brand-500, #3b82f6)'
-	},
-	glaze_finish: {
-		id: 'glaze_finish',
-		stepIndex: 6,
-		stepNumber: 6,
-		nameRu: '6. Финишная глазуровка',
-		shortTitleRu: 'Глазуровка',
-		departmentRu: 'Цех глазуровки и полировки',
-		descriptionRu: 'Финальный глазуровочный обжиг в печи, механическая полировка уступа и подгонка аппроксимальных контактов.',
-		icon: 'sparkles',
-		colorToken: 'var(--teal, #0d9488)'
-	},
-	ready_in_clinic: {
-		id: 'ready_in_clinic',
-		stepIndex: 7,
-		stepNumber: 7,
-		nameRu: '7. Готовая работа в клинике',
-		shortTitleRu: 'В клинике',
-		departmentRu: 'Регистратура / Склад клиники',
-		descriptionRu: 'Работа доставлена курьером в клинику, прошла входной контроль ортопеда и готова к фиксации.',
-		icon: 'truck',
-		colorToken: 'var(--brand-500, #3b82f6)'
-	},
-	patient_fixation: {
-		id: 'patient_fixation',
-		stepIndex: 8,
-		stepNumber: 8,
-		nameRu: '8. Фиксация пациенту',
-		shortTitleRu: 'Сдано пациенту',
-		departmentRu: 'Клинический кабинет ортопеда',
-		descriptionRu: 'Окончательная адгезивная или винтовая фиксация конструкции в полости рта у пациента.',
-		icon: 'check',
-		colorToken: 'var(--ok, #10b981)'
-	}
+	impression_scan: IMPRESSION,
+	in_lab: IN_LAB,
+	ready_in_clinic: READY_CLINIC,
+	fitting_fixation: FITTING,
+	// Совместимость с историческими записями:
+	waxup_cad: IN_LAB,
+	milling_framework: IN_LAB,
+	ceramic_layering: IN_LAB,
+	glaze_finish: IN_LAB,
+	clinical_fitting: FITTING,
+	patient_fixation: FITTING
 };
 
 export const LAB_TECHNOLOGICAL_STAGE_ORDER: readonly LabTechnologicalStageId[] = [
 	'impression_scan',
-	'waxup_cad',
-	'milling_framework',
-	'clinical_fitting',
-	'ceramic_layering',
-	'glaze_finish',
+	'in_lab',
 	'ready_in_clinic',
-	'patient_fixation'
+	'fitting_fixation'
 ];

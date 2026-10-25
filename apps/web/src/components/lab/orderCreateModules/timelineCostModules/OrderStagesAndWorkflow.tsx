@@ -24,7 +24,7 @@ export function OrderStagesAndWorkflow({
 		<div className="ztl-form-grid-2">
 			<div className="ztl-form-group">
 				<label className="ztl-form-label" htmlFor="select-tech-stage">
-					Первичный технологический этап ЗТЛ (1..8)
+					Первичный клинический этап заказа
 				</label>
 				<select
 					id="select-tech-stage"

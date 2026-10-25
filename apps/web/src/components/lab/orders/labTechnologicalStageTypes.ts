@@ -1,12 +1,28 @@
-export type LabTechnologicalStageId =
-	| 'impression_scan'     // 1) Оттиски / 3D-скан
-	| 'waxup_cad'           // 2) Wax-Up / CAD-моделирование
-	| 'milling_framework'   // 3) Фрезеровка / каркас
-	| 'clinical_fitting'    // 4) Примерка в клинике
-	| 'ceramic_layering'    // 5) Нанесение керамики / покраска
-	| 'glaze_finish'        // 6) Финишная глазуровка
-	| 'ready_in_clinic'     // 7) Готовая работа в клинике
-	| 'patient_fixation';   // 8) Фиксация пациенту
+/**
+ * 4 прозрачных клинических этапа ортопедического наряда:
+ * 1. «Скан/Слепок снят» (impression_scan)
+ * 2. «В лаборатории» (in_lab)
+ * 3. «Готово в клинике» (ready_in_clinic)
+ * 4. «Примерка / Фиксация» (fitting_fixation)
+ */
+export type CanonicalLabTechnologicalStageId =
+	| 'impression_scan'
+	| 'in_lab'
+	| 'ready_in_clinic'
+	| 'fitting_fixation';
+
+/**
+ * Обратная совместимость с устаревшими детальными этапами
+ */
+export type LegacyLabTechnologicalStageId =
+	| 'waxup_cad'
+	| 'milling_framework'
+	| 'clinical_fitting'
+	| 'ceramic_layering'
+	| 'glaze_finish'
+	| 'patient_fixation';
+
+export type LabTechnologicalStageId = CanonicalLabTechnologicalStageId | LegacyLabTechnologicalStageId;
 
 export interface LabTechnologicalStageDefinition {
 	id: LabTechnologicalStageId;

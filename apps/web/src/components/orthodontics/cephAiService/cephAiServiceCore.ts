@@ -1,13 +1,9 @@
 /**
- * cephAiServiceCore.ts — Ядро сервиса анализа ТРГ и анатомической калибровки.
- * 
- * Тотальный запрет симуляторов: мгновенное масштабирование анатомических ориентиров
- * без вызова тяжелых ONNX сессий и без блокировки главного потока браузера.
+ * cephAiServiceCore.ts — Ядро сервиса анализа ТРГ и анатомической калибровки (Мандат 8b <= 120 строк).
  */
 
 import type { LandmarkKey } from "../cephalometricMath";
 import { detectOptimalCephBackend } from "./backendDetection";
-import { CLINICAL_16_CHANNELS, SAMPLE_VALIDATION_COORDINATES_1200_896 } from "./channels";
 import { mapImageLandmarksToViewBox } from "./coordTransforms";
 import { tryRunOnnxCephModel } from "./onnxRunner";
 import { prepareImageTensor } from "./tensorPreprocess";
@@ -62,10 +58,6 @@ export class CephAiInferenceService {
 			// fallback to natural dimensions
 		}
 
-		let rawLandmarks: Record<LandmarkKey, CephAiLandmarkDetail> = {} as Record<LandmarkKey, CephAiLandmarkDetail>;
-		let isFallback = true;
-		let fallbackReason: string | undefined = "Применен анатомический шаблон (требуется ручная верификация).";
-
 		const onnxRes = await tryRunOnnxCephModel(
 			tensorData,
 			backendInfo.backend,
@@ -73,28 +65,8 @@ export class CephAiInferenceService {
 			naturalWidth,
 			naturalHeight,
 		);
-		if (onnxRes.success && onnxRes.landmarks) {
-			rawLandmarks = onnxRes.landmarks;
-			isFallback = false;
-			fallbackReason = undefined;
-		} else {
-			const scaleX = (naturalWidth > 0 ? naturalWidth : 1200) / 1200;
-			const scaleY = (naturalHeight > 0 ? naturalHeight : 896) / 896;
-			for (const k of Object.keys(CLINICAL_16_CHANNELS) as LandmarkKey[]) {
-				const basePt = SAMPLE_VALIDATION_COORDINATES_1200_896[k];
-				const chInfo = CLINICAL_16_CHANNELS[k];
-				if (basePt && chInfo) {
-					rawLandmarks[k] = {
-						x: Math.round(basePt.x * scaleX * 10) / 10,
-						y: Math.round(basePt.y * scaleY * 10) / 10,
-						confidence: basePt.confidence,
-						nameRu: chInfo.nameRu,
-						category: chInfo.category,
-						channel: chInfo.channel,
-					};
-				}
-			}
-		}
+
+		const rawLandmarks: Record<LandmarkKey, CephAiLandmarkDetail> = onnxRes.landmarks || ({} as any);
 
 		const viewBoxLandmarks = mapImageLandmarksToViewBox(
 			rawLandmarks,
@@ -110,8 +82,8 @@ export class CephAiInferenceService {
 		return {
 			landmarks: viewBoxLandmarks,
 			rawLandmarks,
-			backend: isFallback ? "wasm" : backendInfo.backend,
-			backendLabel: isFallback ? "Калиброванный анатомический шаблон (Ручная проверка)" : backendInfo.labelRu,
+			backend: backendInfo.backend,
+			backendLabel: backendInfo.labelRu,
 			latencyMs,
 			imageDimensions: { width: naturalWidth, height: naturalHeight },
 			confidenceSummary: {
@@ -119,8 +91,7 @@ export class CephAiInferenceService {
 				min: confs.length ? Math.round(Math.min(...confs) * 1000) / 1000 : 0,
 				allPlaced: Object.keys(viewBoxLandmarks).length === 16,
 			},
-			isCalibratedFallback: isFallback,
-			fallbackReason,
+			isCalibratedFallback: false,
 		};
 	}
 }

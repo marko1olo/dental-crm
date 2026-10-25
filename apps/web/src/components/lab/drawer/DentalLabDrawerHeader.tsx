@@ -40,7 +40,7 @@ export const DentalLabDrawerHeader: React.FC<DentalLabDrawerHeaderProps> = ({
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-							{isEditing ? `Наряд-заказ № ${orderNumber || "ЗТЛ"}` : "Новый наряд-заказ в лабораторию"}
+							{isEditing ? `Наряд-заказ № ${orderNumber || "ЛАБ"}` : "Новый наряд-заказ в лабораторию"}
 						</h3>
 						<span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 							Ортопедия
