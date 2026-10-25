@@ -1,0 +1,85 @@
+/**
+ * DENTE Dental CRM — Loyalty Ledger & Print Styles
+ * Monospace amounts, tabular figures, high-contrast delta badges, print rules.
+ */
+
+/* Table Ledger */
+.loyalty-ledger-table-wrap {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: var(--shadow-1);
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.loyalty-ledger-table-wrap::-webkit-scrollbar {
+	height: 6px;
+}
+
+.loyalty-ledger-table-wrap::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+
+.loyalty-ledger-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.loyalty-ledger-table th {
+	background: var(--paper-soft);
+	padding: 0.75rem 1rem;
+	font-weight: 700;
+	color: var(--muted);
+	border-bottom: 1px solid var(--line);
+}
+
+.loyalty-ledger-table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+}
+
+.loyalty-ledger-table tr:last-child td {
+	border-bottom: none;
+}
+
+.loyalty-delta-badge {
+	font-weight: 700;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.loyalty-delta-badge.positive {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.loyalty-delta-badge.negative {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+}
+
+/* Print Styles */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.loyalty-certificate-printable,
+	.loyalty-certificate-printable * {
+		visibility: visible;
+	}
+	.loyalty-certificate-printable {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
+}

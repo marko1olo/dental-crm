@@ -1,0 +1,277 @@
+/**
+ * DENTE Dental CRM — Loyalty Base Styles
+ * 100% Design Token Compliance (var(--paper), var(--ink), var(--line), var(--teal))
+ * Modal containers, standard buttons (36px desktop / >= 44px touch), segmented nav.
+ */
+
+.loyalty-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+	animation: loyaltyFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loyaltyFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.loyalty-modal-container {
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 68rem;
+	height: 90vh;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Header */
+.loyalty-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+	flex-shrink: 0;
+}
+
+.loyalty-modal-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+}
+
+.loyalty-modal-icon-badge {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 12px;
+	background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+	color: var(--on-teal, var(--paper));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: var(--shadow-1);
+}
+
+.loyalty-modal-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--ink);
+}
+
+.loyalty-modal-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted);
+	margin-top: 0.125rem;
+}
+
+/* Standard Close Button */
+.loyalty-close-btn {
+	width: 2.5rem;
+	height: 2.5rem;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all var(--transition-fast, 0.15s ease);
+}
+
+.loyalty-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Nav Tabs & Segmented Bar */
+.loyalty-nav-tabs,
+.loyalty-tabs-nav {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper);
+	overflow-x: auto;
+	flex-shrink: 0;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.loyalty-nav-tabs::-webkit-scrollbar {
+	height: 4px;
+}
+
+.loyalty-nav-tabs::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.loyalty-nav-tabs::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 2px;
+}
+
+.loyalty-tab-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1rem;
+	min-height: 44px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all var(--transition-fast, 0.2s cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.loyalty-tab-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.loyalty-tab-btn.active {
+	background: var(--teal-soft);
+	border-color: var(--teal-soft);
+	color: var(--teal);
+}
+
+/* Content Area */
+.loyalty-modal-body,
+.loyalty-tab-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem;
+	background: var(--paper-soft);
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.loyalty-modal-body::-webkit-scrollbar,
+.loyalty-tab-content::-webkit-scrollbar {
+	width: 6px;
+}
+
+.loyalty-modal-body::-webkit-scrollbar-track,
+.loyalty-tab-content::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.loyalty-modal-body::-webkit-scrollbar-thumb,
+.loyalty-tab-content::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+
+.loyalty-modal-body::-webkit-scrollbar-thumb:hover,
+.loyalty-tab-content::-webkit-scrollbar-thumb:hover {
+	background: var(--muted);
+}
+
+.loyalty-modal-drag-handle {
+	display: none;
+}
+
+/* Mobile Apple HIG & Touch Sizing */
+@media (max-width: 768px) {
+	.loyalty-modal-overlay {
+		padding: 0;
+		align-items: flex-end;
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.loyalty-modal-container {
+		width: 100%;
+		max-width: 100vw;
+		height: 92vh;
+		max-height: 92vh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		padding-bottom: env(safe-area-inset-bottom, 16px);
+		overflow-x: clip;
+		animation: loyaltySlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.loyalty-modal-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		background: var(--line-strong, #94a3b8);
+		border-radius: 9999px;
+		margin: 8px auto 4px auto;
+		flex-shrink: 0;
+	}
+
+	.loyalty-modal-header {
+		padding: 0.75rem 1rem;
+		border-top-left-radius: 24px;
+		border-top-right-radius: 24px;
+	}
+
+	.loyalty-nav-tabs,
+	.loyalty-tabs-nav {
+		display: flex !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		gap: 8px !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+		padding: 0.5rem 1rem !important;
+	}
+
+	.loyalty-tab-btn {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		min-height: 44px !important;
+		min-width: 44px !important;
+		padding: 10px 16px !important;
+		font-size: 0.8125rem;
+	}
+
+	.loyalty-modal-body,
+	.loyalty-tab-content {
+		padding: 1rem;
+		overflow-x: clip;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+@keyframes loyaltySlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}

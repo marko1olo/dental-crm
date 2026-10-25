@@ -15,3 +15,4 @@ export * from "./LoyaltyLedgerTab";
 export * from "./useLoyaltyCertificates";
 export * from "./useLoyaltyPromos";
 export * from "./useLoyaltyFamily";
+export * from "./modalModules";

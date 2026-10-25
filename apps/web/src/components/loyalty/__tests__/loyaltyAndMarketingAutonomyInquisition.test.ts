@@ -305,16 +305,22 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 		});
 
 		it("should verify loyalty presets do NOT contain corporate 'куратор 24/7' slogans", () => {
-			const filePath = path.resolve(__dirname, "../program/loyaltyPresets.ts");
-			const content = fs.readFileSync(filePath, "utf8");
+			const presetFiles = [
+				path.resolve(__dirname, "../program/loyaltyPresets.ts"),
+				path.resolve(__dirname, "../program/presets/tierPresets.ts"),
+			];
+			const combinedContent = presetFiles
+				.filter((f) => fs.existsSync(f))
+				.map((f) => fs.readFileSync(f, "utf8"))
+				.join("\n");
 
 			assert.doesNotMatch(
-				content,
+				combinedContent,
 				/куратор 24\/7/i,
 				"loyaltyPresets must not contain corporate 'куратор 24/7' marketing slogans"
 			);
 			assert.match(
-				content,
+				combinedContent,
 				/приоритетная связь с лечащим врачом/i,
 				"loyaltyPresets must emphasize direct priority contact with the treating physician"
 			);
@@ -326,19 +332,28 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 	// =========================================================================
 	describe("6. Mandate 8e — Zero Disabled Buttons in Loyalty Program Modal", () => {
 		it("should verify LoyaltyProgramModal code does NOT hard-disable one-click or execute redemption buttons", () => {
-			const modalPath = path.resolve(__dirname, "../program/LoyaltyProgramModal.tsx");
-			const content = fs.readFileSync(modalPath, "utf8");
+			const programDir = path.resolve(__dirname, "../program");
+			const allFiles: string[] = [];
+			function collectFiles(dir: string) {
+				for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+					const p = path.join(dir, ent.name);
+					if (ent.isDirectory()) collectFiles(p);
+					else if (/\.tsx?$/.test(ent.name)) allFiles.push(p);
+				}
+			}
+			collectFiles(programDir);
+			const combinedContent = allFiles.map((f) => fs.readFileSync(f, "utf8")).join("\n");
 
 			// Check that one-click-btn does not have disabled attribute
 			assert.doesNotMatch(
-				content,
+				combinedContent,
 				/className="loyalty-quick-btn one-click-btn"[^>]*disabled=/s,
 				"One-click redemption button must NOT have disabled attribute"
 			);
 
 			// Check that execute-redemption button does not have disabled attribute
 			assert.doesNotMatch(
-				content,
+				combinedContent,
 				/data-testid="loyalty-execute-redemption-btn"[^>]*disabled=/s,
 				"Execute redemption button must NOT have disabled attribute"
 			);
