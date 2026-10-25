@@ -404,12 +404,64 @@ export async function handleStaffSwitchRole(
 		});
 	}
 
+	/*
+	 * ЧТО БЫЛО. Дальше без единой проверки подписывался НОВЫЙ токен с ролью
+	 * targetRole, взятой ИЗ ТЕЛА ЗАПРОСА. Любой сотрудник клиники (хоть
+	 * ассистент) с действующим токеном мог отправить { targetRole: "owner" }
+	 * — и получить токен владельца. Или указать чужой targetUserId и войти
+	 * под любым коллегой без пароля и ПИН-кода. Это полная эскалация прав
+	 * одним curl-запросом.
+	 *
+	 * ЧТО ЗДЕСЬ. Два правила:
+	 *  1. Роль в новом токене — ТОЛЬКО из карточки сотрудника в базе.
+	 *     Просьба выдать роль, которой у сотрудника нет, отклоняется.
+	 *  2. Вход ЗА ДРУГОГО сотрудника подтверждается ЕГО ПИН-кодом (смена
+	 *     пилота у кресла: новый врач вводит свой ПИН). Без ПИН-кода у
+	 *     целевого сотрудника вход за него невозможен — владелец задаёт
+	 *     ПИН в настройках. Своя карточка (продление сессии) ПИН не требует.
+	 */
+	const dbRole = String(dbUser.role ?? "").toLowerCase();
+	if (dbRole !== targetRole) {
+		return reply.code(403).send({
+			error: "RoleMismatch",
+			message:
+				`Роль «${dbRole || "не задана"}» назначена сотруднику «${dbUser.fullName}» в настройках клиники. ` +
+				"Выдать себе другую роль через смену пользователя нельзя: её назначает владелец клиники в карточке сотрудника.",
+		});
+	}
+
+	const callerUserId =
+		typeof staffPayload.userId === "string" ? staffPayload.userId : null;
+	const isSwitchingToAnotherUser = callerUserId !== dbUser.id;
+	if (isSwitchingToAnotherUser) {
+		if (!dbUser.pinCodeHash) {
+			return reply.code(403).send({
+				error: "PinRequired",
+				message:
+					`У сотрудника «${dbUser.fullName}» не задан ПИН-код, поэтому войти за него нельзя. ` +
+					"Попросите владельца клиники задать ПИН-код в настройках сотрудника.",
+			});
+		}
+		const pinCode = parsed.data.pinCode;
+		const pinOk =
+			pinCode &&
+			dbUser.pinCodeHash &&
+			(await verifyCredential(pinCode, dbUser.pinCodeHash));
+		if (!pinOk) {
+			recordStaffPinFailure(getStaffPinRateLimitKey(orgId, dbUser.id, request.ip));
+			return reply.code(401).send({
+				error: "InvalidPin",
+				message: "Неверный ПИН-код сотрудника.",
+			});
+		}
+	}
+
 	const newSessionId = crypto.randomUUID();
 	const newStaffToken = signToken(
 		{
 			userId: dbUser.id,
 			fullName: dbUser.fullName,
-			role: targetRole,
+			role: dbUser.role,
 			organizationId: orgId,
 			sessionId: newSessionId,
 		},
@@ -422,11 +474,13 @@ export async function handleStaffSwitchRole(
 		await withTenantCtx(orgId, async (tx) => {
 			await tx.insert(auditEvents).values({
 				organizationId: orgId,
-				actorUserId: dbUser.id,
+				actorUserId: callerUserId ?? dbUser.id,
 				entityType: "user",
 				entityId: dbUser.id,
 				action: "staff_role_switch",
-				reason: `Сотрудник ${dbUser.fullName} переключил роль на: ${targetRole}`,
+				reason: isSwitchingToAnotherUser
+					? `Смена сотрудника у кресла: вход за «${dbUser.fullName}» (роль ${dbRole}) подтверждён ПИН-кодом.`
+					: `Сотрудник ${dbUser.fullName} продлил сессию в роли: ${dbRole}`,
 			});
 		});
 	} catch (auditErr) {
@@ -439,7 +493,7 @@ export async function handleStaffSwitchRole(
 		user: {
 			id: dbUser.id,
 			fullName: dbUser.fullName,
-			role: targetRole,
+			role: dbUser.role,
 			phone: dbUser.phone,
 			email: dbUser.email,
 		},
