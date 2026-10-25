@@ -55,7 +55,7 @@ export function PayrollStatCards({ result }: PayrollStatCardsProps): React.JSX.E
 	];
 
 	return (
-		<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+		<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3" data-testid="payroll-stat-cards">
 			{cards.map((c) => {
 				const Icon = c.icon;
 				return (

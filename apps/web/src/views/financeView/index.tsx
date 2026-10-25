@@ -6,7 +6,7 @@ import { FinanceTransactionsSection } from "./FinanceTransactionsSection";
 import { FinanceModalsHost } from "./modalModules/FinanceModalsHost";
 import { DoctorPayrollTab } from "./DoctorPayrollTab";
 import { FinanceTabsNavBar } from "./FinanceTabsNavBar";
-import type { FinanceViewComponentProps } from "./types.js";
+import type { FinanceViewComponentProps } from "./types";
 import { useFinanceView } from "./useFinanceView";
 
 export function FinanceView(rawProps?: FinanceViewComponentProps) {
@@ -90,10 +90,10 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	);
 }
 
-export * from "./types.js";
-export { useFinanceView } from "./useFinanceView.js";
-export { FinanceOperationsToolbar } from "./FinanceOperationsToolbar.js";
-export { FinanceSummaryCards } from "./FinanceSummaryCards.js";
-export { FinanceTransactionsTable } from "./FinanceTransactionsTable.js";
-export { DoctorPayrollTab } from "./DoctorPayrollTab.js";
+export * from "./types";
+export { useFinanceView } from "./useFinanceView";
+export { FinanceOperationsToolbar } from "./FinanceOperationsToolbar";
+export { FinanceSummaryCards } from "./FinanceSummaryCards";
+export { FinanceTransactionsTable } from "./FinanceTransactionsTable";
+export { DoctorPayrollTab } from "./DoctorPayrollTab";
 export default FinanceView;

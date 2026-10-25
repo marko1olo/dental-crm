@@ -471,4 +471,28 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		// 5. Earned commission: 25% of 17,000 (4,250 ₽) + 25% of 6,000 (1,500 ₽) = 5,750 ₽ (575,000 kop).
 		assert.equal(res.earnedBaseCommissionKop, 575000);
 	});
+
+	it("DoctorPayrollTab facade and modules strictly respect Mandate 8b line limits (<= 120 lines)", () => {
+		const fs = require("node:fs");
+		const path = require("node:path");
+
+		const tabPath = path.resolve(__dirname, "../views/financeView/DoctorPayrollTab.tsx");
+		assert.ok(fs.existsSync(tabPath), "DoctorPayrollTab.tsx must exist");
+		const tabLines = fs.readFileSync(tabPath, "utf-8").split("\n").length;
+		assert.ok(
+			tabLines <= 120,
+			`DoctorPayrollTab.tsx must be <= 120 lines (Mandate 8b), got ${tabLines}`
+		);
+
+		const modulesDir = path.resolve(__dirname, "../views/financeView/payrollTabModules");
+		const files = fs.readdirSync(modulesDir).filter((f: string) => f.endsWith(".ts") || f.endsWith(".tsx"));
+		for (const file of files) {
+			const filePath = path.join(modulesDir, file);
+			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
+			assert.ok(
+				lines <= 120,
+				`payrollTabModules/${file} must be <= 120 lines, got ${lines}`
+			);
+		}
+	});
 });

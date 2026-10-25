@@ -18,7 +18,7 @@ export function PayrollChecksTable({ services, commissionPercent }: PayrollCheck
 	}
 
 	return (
-		<div className="hidden md:block overflow-x-auto bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xs">
+		<div className="hidden md:block overflow-x-auto bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xs" data-testid="payroll-checks-table">
 			<table className="w-full text-xs text-left border-collapse">
 				<thead>
 					<tr className="border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted)]">

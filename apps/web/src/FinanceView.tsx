@@ -11,10 +11,10 @@ export {
 	FinanceSummaryCards,
 	FinanceTransactionsTable,
 	useFinanceView,
-} from "./views/financeView/index.js";
+} from "./views/financeView/index";
 
-export * from "./views/financeView/types.js";
-export { FinanceView as default } from "./views/financeView/index.js";
+export * from "./views/financeView/types";
+export { FinanceView as default } from "./views/financeView/index";
 
 // Clinical rules & invoices parity anchors for test suites:
 // hasActiveClinicalRules

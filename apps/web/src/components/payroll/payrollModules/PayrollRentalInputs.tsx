@@ -1,5 +1,6 @@
 import React from "react";
 import { Building2 } from "lucide-react";
+import { PayrollFixedRentalInputs } from "./PayrollFixedRentalInputs";
 
 export interface PayrollRentalInputsProps {
 	readonly chairRentalMode?: "fixed" | "split_70_30" | undefined;
@@ -22,18 +23,6 @@ export const PayrollRentalInputs: React.FC<PayrollRentalInputsProps> = ({
 	onSetShiftsCount,
 	onSetShiftRateRub,
 }) => {
-	const handleShiftsCountChange = (count: number) => {
-		const safeCount = Math.max(0, count);
-		onSetShiftsCount(safeCount);
-		onSetChairRentalRub(safeCount * shiftRateRub);
-	};
-
-	const handleShiftRateChange = (rate: number) => {
-		const safeRate = Math.max(0, rate);
-		onSetShiftRateRub(safeRate);
-		onSetChairRentalRub(shiftsCount * safeRate);
-	};
-
 	return (
 		<div className="flex flex-col gap-2 flex-1" data-testid="doctor-payroll-chair-rental-panel">
 			<div className="flex items-center gap-2 flex-wrap">
@@ -72,46 +61,14 @@ export const PayrollRentalInputs: React.FC<PayrollRentalInputsProps> = ({
 				)}
 
 				{chairRentalMode === "fixed" ? (
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<div className="flex items-center gap-1">
-							<input
-								type="number"
-								min={0}
-								max={31}
-								value={shiftsCount}
-								onChange={(e) => handleShiftsCountChange(Number(e.target.value) || 0)}
-								className="w-14 h-8 px-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-center font-bold text-xs"
-								title="Количество отработанных смен"
-								data-testid="doctor-payroll-shifts-count-input"
-							/>
-							<span className="text-[var(--muted,#64748b)]">смен ×</span>
-						</div>
-						<div className="flex items-center gap-1">
-							<input
-								type="number"
-								min={0}
-								step={500}
-								value={shiftRateRub}
-								onChange={(e) => handleShiftRateChange(Number(e.target.value) || 0)}
-								className="w-20 h-8 px-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-right font-bold text-xs"
-								title="Ставка субаренды за 1 смену"
-								data-testid="doctor-payroll-shift-rate-input"
-							/>
-							<span className="text-[var(--muted,#64748b)]">₽/смена =</span>
-						</div>
-						<div className="flex items-center gap-1">
-							<input
-								type="number"
-								min={0}
-								value={chairRentalRub}
-								onChange={(e) => onSetChairRentalRub(Math.max(0, Number(e.target.value) || 0))}
-								className="w-24 h-8 px-2 rounded-lg border border-[var(--teal,#0d9488)]/40 bg-[var(--paper,#ffffff)] text-right font-black text-xs text-[var(--teal,#0d9488)]"
-								title="Итоговая сумма аренды кресла за расчетный месяц"
-								data-testid="doctor-payroll-chair-rental-input"
-							/>
-							<span className="font-bold text-[var(--ink,#0f172a)]">₽</span>
-						</div>
-					</div>
+					<PayrollFixedRentalInputs
+						shiftsCount={shiftsCount}
+						shiftRateRub={shiftRateRub}
+						chairRentalRub={chairRentalRub}
+						onSetShiftsCount={onSetShiftsCount}
+						onSetShiftRateRub={onSetShiftRateRub}
+						onSetChairRentalRub={onSetChairRentalRub}
+					/>
 				) : (
 					<div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink,#0f172a)] bg-[var(--paper,#ffffff)] px-2.5 py-1 rounded-lg border border-[var(--line,#e2e8f0)]">
 						<span>Врач забирает <strong className="text-[var(--teal,#0d9488)] font-bold">70%</strong></span>
