@@ -11,7 +11,7 @@ export interface PediatricVisitAdaptationTabProps {
 	readonly clinicName?: string | undefined;
 	readonly initialFranklRating?: FranklRating | undefined;
 	readonly onFranklChange?: ((rating: FranklRating) => void) | undefined;
-	readonly onApplyNorm?: (() => void) | undefined;
+	readonly onApplyNorm?: ((normText?: string) => void) | undefined;
 	readonly onCompleteAdaptation?: ((summaryText: string) => void) | undefined;
 	readonly className?: string | undefined;
 }

@@ -1,11 +1,16 @@
 # Педиатрический протокол и детская стоматология DENTE (Pediatric Dentistry SSOT)
 
 ## 1. Архитектурный обзор и консолидация SSOT
-В рамках рефакторинга детской стоматологии ликвидирован дублирующий процедурный симулятор анестезии (`apps/web/src/components/pediatric/anesthesia/`), симулировавший физику диффузии в тканях и перегружавший интерфейс академическим балластом.
-Вся клиническая логика переведена на единый SSOT-каталог клиники:
-- **Единый каталог анестетиков**: `apps/web/src/components/anesthesia/` (`DENTAL_ANESTHETICS`, `calculateAnesthesiaSafety`).
-- **Тонкий фасад**: `apps/web/src/components/pediatric/PediatricAnesthesiaCalculator.tsx`.
-- **Типизированный аудит аллергий**: `checkPediatricAnesthesiaContraindications(somaticProfile, allergies)` — строго нормализованные поля и токены, 0 regex-парсинга (Мандат 8ap).
+В рамках декомпозиции монолитов и искоренения фармакологической паранойи в педиатрическом модуле:
+- Ликвидирован процедурный симулятор диффузии и академический балласт.
+- Монолит `PediatricAnesthesiaCalculator.tsx` (был 446 строк) распилен на независимые модули строго $\le 120$ строк (Мандат 8b):
+  - `pediatricAnesthesiaEngine.ts` (115 строк) — чистый доменный расчет дозировок, МРД (Артикаин 4% 5.0 мг/кг, Мепивакаин 3% 4.4 мг/кг) и типизированный аудит аллергий без regex-парсинга (Мандат 8ap).
+  - `PediatricWeightQuickChips.tsx` (88 строк) — экспресс-выбор массы тела ребенка (12–15 кг, 16–20 кг, 21–25 кг, 26–30 кг) и ручной ввод с тач-таргетами $\ge 44$px (Apple HIG).
+  - `PediatricAnesthesiaQuickSelector.tsx` (117 строк) — быстрый выбор препарата без адреналина (Скандонест 3% / Мепивакаин) и пресетов карпул (0.25, 0.5, 1.0, 1.5).
+  - `PediatricAnesthesiaCalculator.tsx` (100 строк) — тонкий фасад со 100% сохранением контрактов.
+  - `pediatricHeroDiplomaPrint.ts` (61 строка) — генерация бланка печати Грамоты супергероя формата А5 landscape со штампом клиники и именами героя и доктора.
+  - `PediatricHeroDiplomaModal.tsx` (102 строки) — доступное окно просмотра и 1-кликовой печати Грамоты супергероя.
+  - `usePediatricVisitLogic.ts` (74 строки) — изолированное управление состоянием детского визита, дневника SOAP и шкалы Франкла.
 
 ## 2. Клинические стандарты детского приёма
 1. **Молочные зубы FDI 51–85**:
@@ -19,11 +24,13 @@
    - 4 (++) Определенно положительное (Хороший контакт, смех, интерес)
    - Строго векторные Lucide-иконки (`Angry`, `Frown`, `Smile`, `Laugh`), 0 мультяшных эмодзи в разметке.
 3. **1-кликовые документы для маленького пациента и родителей**:
-   - **Диплом за храбрость (`PediatricBraveryDiplomaModal`)**: горячая клавиша `Enter` для мгновенной печати без отрыва от кресла.
+   - **Грамота Супергероя («Диплом за храбрость на приеме»)**: мгновенная печать в формате А5 в 1 клик прямо с рабочего места для вручения ребенку.
    - **Памятка родителям (`PediatricParentMemoModal`)**: автоматическая подстановка рекомендаций после анестезии (предотвращение прикусывания онемевшей губы и щек) и ухода за полостью рта.
 4. **Автономия врача (Мандат 8e)**:
-   - Кнопка «Внести в протокол» / «Внести в карту» НИКОГДА не блокируется (`disabled=false`).
+   - Кнопка «Внести анестезию в протокол» / «Внести в карту» НИКОГДА не блокируется (`disabled=false`).
    - При выявлении передозировки по массе тела выводится пассивное предупреждение с кнопкой «Снизить до нормы» (шаг 0.25 карпулы).
+5. **Чистый клинический язык без советского канцелярита (Мандат 8x)**:
+   - Запрет приказов в интерфейсе: «Медицинская карта приёма» вместо «Форма 043/у», «Прейскурант услуг» вместо «804н».
 
 ## 3. Мобильный эргономический слой (Apple HIG & Mandate 8am)
 - **Natural Thumb Zone**: плавающий нижний бар `PediatricMobileBottomBar` с высотой `h-[52px]` для главной кнопки.
@@ -32,12 +39,14 @@
 - 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
 
 ## 4. Верификационные гейты и доказательства
-- **Юнит-тесты**: 83 passed, 0 failed (`apps/web/src/components/pediatric/__tests__/`).
-- **Кодировка**: `npm run check:encoding` $\to$ Exit Code 0 (15 622 файла проверено).
-- **4-State Visual Proofs**:
-  - `docs/proofs/pediatric/pediatric_pc_light_1440x900.png`
-  - `docs/proofs/pediatric/pediatric_pc_dark_1440x900.png`
-  - `docs/proofs/pediatric/pediatric_mobile_light_390x844.png`
-  - `docs/proofs/pediatric/pediatric_mobile_dark_390x844.png`
-  - `docs/proofs/pediatric/pediatric_diploma_pc_light.png`
-  - `docs/proofs/pediatric/pediatric_diploma_pc_dark.png`
+- **Юнит-тесты**: 90 passed, 0 failed (`apps/web/src/components/pediatric/__tests__/`).
+- **Лимиты строк файлов (Мандат 8b)**: все файлы $\le 120$ строк (0 нарушений).
+- **Кодировка**: `npm run check:encoding` $\to$ Exit Code 0 (19 578 файлов проверено).
+- **Компиляция**: TypeScript проверка модуля `src/components/pediatric` $\to$ Exit Code 0 (0 ошибок).
+- **4-State Visual Proofs (The Hammer §23, реальное приложение `http://127.0.0.1:5173/` с read_file верификацией)**:
+  - `docs/screenshots/pediatric/pc_light_1440x900.png` (346 KB) — Рабочее место врача-стоматолога детского, PC Light
+  - `docs/screenshots/pediatric/pc_dark_1440x900.png` (350 KB) — Рабочее место врача-стоматолога детского, PC Dark
+  - `docs/screenshots/pediatric/mobile_light_390x844.png` (72 KB) — Мобильный интерфейс детского приема, Mobile Light
+  - `docs/screenshots/pediatric/mobile_dark_390x844.png` (71 KB) — Мобильный интерфейс детского приема, Mobile Dark
+  - `docs/screenshots/pediatric/pediatric_diploma_pc_light.png` (71 KB) — Модалка Грамоты супергероя, Light
+  - `docs/screenshots/pediatric/pediatric_diploma_pc_dark.png` (74 KB) — Модалка Грамоты супергероя, Dark
