@@ -45,7 +45,7 @@ export const PersonalDataSheet: React.FC<PersonalDataSheetProps> = ({
 					<p className="a4-p">
 						1.2.{" "}
 						<strong>
-							Специальные категории персональных данных (статья 10 152-ФЗ):
+							Специальные категории персональных данных:
 						</strong>{" "}
 						сведения о состоянии здоровья, жалобах, анамнезе заболеваний,
 						перенесенных операциях, аллергических реакциях, результатах
@@ -103,7 +103,7 @@ export const PersonalDataSheet: React.FC<PersonalDataSheetProps> = ({
 
 				<div className="a4-running-footer">
 					<span>
-						Согласие на обработку персональных данных (152-ФЗ) — Пациент:{" "}
+						Согласие на обработку персональных данных — Пациент:{" "}
 						{pt.fullName}
 					</span>
 					<span>Лист 1 из 1</span>

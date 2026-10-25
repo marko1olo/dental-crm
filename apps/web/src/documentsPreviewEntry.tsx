@@ -134,11 +134,10 @@ function DocumentsPreviewApp() {
 			<section className="bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-subtle,#0f172a)] p-4 rounded-xl border border-[var(--line)]">
 				<PatientContractsSection
 					patient={SAMPLE_PATIENT as any}
-					documents={SAMPLE_DOCUMENTS}
+					contracts={SAMPLE_DOCUMENTS}
 					onCreateContract={() => {}}
-					onOpenDocument={() => {}}
-					onPrintContract={() => {}}
-					onOpenQuickIntake={() => {}}
+					onOpenContract={() => {}}
+					onPrintBlankContract={() => {}}
 				/>
 			</section>
 
@@ -158,19 +157,27 @@ function DocumentsPreviewApp() {
 				isOpen={isTaxOpen}
 				onClose={() => setIsTaxOpen(false)}
 				patient={SAMPLE_PATIENT as any}
-				doctorFullName="Д-р Воронов Алексей Владимирович"
+				taxYear={2026}
+				setTaxYear={() => {}}
+				payerOptions={[]}
+				selectedPayerKey="patient"
+				onSelectPayerKey={() => {}}
 				existingDocuments={SAMPLE_DOCUMENTS}
 				onCreateDocument={() => {}}
 				onOpenDocument={() => {}}
 				onSelectDocumentKind={() => {}}
+				onOpenFnsXmlModal={() => {}}
 			/>
 
 			<SanpinRegistryPackageModal
 				isOpen={isSanpinOpen}
 				onClose={() => setIsSanpinOpen(false)}
+				patient={SAMPLE_PATIENT as any}
 				onOpenSickLeaveEln={() => {}}
 				onOpenAutoclaveLog257={() => {}}
 				onOpenEgiszRemd={() => {}}
+				onOpenPsoJournal366={() => {}}
+				onOpenSanpinRegisters={() => {}}
 				onSelectDocumentKind={() => {}}
 				onCreateDocument={() => {}}
 				existingDocuments={SAMPLE_DOCUMENTS}
@@ -180,7 +187,7 @@ function DocumentsPreviewApp() {
 				isOpen={isOutpatientOpen}
 				onClose={() => setIsOutpatientOpen(false)}
 				patient={SAMPLE_PATIENT as any}
-				doctorName="Д-р Воронов Алексей Владимирович"
+				doctorFullName="Д-р Воронов Алексей Владимирович"
 			/>
 		</div>
 	);

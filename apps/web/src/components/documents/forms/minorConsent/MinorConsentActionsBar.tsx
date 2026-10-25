@@ -33,7 +33,7 @@ export const MinorConsentActionsBar: React.FC<MinorConsentActionsBarProps> = ({
 			onClick={onApplyPreset}
 		>
 			<Baby size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-			<span>Заполнить стандартный протокол детского лечения (323-ФЗ)</span>
+			<span>Заполнить стандартный протокол детского приёма</span>
 		</button>
 
 		<button
