@@ -54,12 +54,16 @@ describe("Red Team: Solo Doctor Autonomy & Piece-Rate Sovereignty (Mandates 8e, 
 	});
 
 	it("1.2 Solo practitioner operates on 100% net margin piecework after clinic expenses", () => {
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner, "solo_practitioner config must exist");
 		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.defaultPercentage, 100);
 		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.deductsLabCosts, true);
 		assert.equal(DOCTOR_SPECIALTY_CONFIGS.solo_practitioner.deductsMaterialCosts, true);
 	});
 
 	it("1.3 Minimum monthly guarantee floors apply correctly when doctor has attendance", () => {
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.general_dentist, "general_dentist config must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.therapist, "therapist config must exist");
+		assert.ok(DOCTOR_SPECIALTY_CONFIGS.surgeon, "surgeon config must exist");
 		assert.ok(DOCTOR_SPECIALTY_CONFIGS.general_dentist.minGuaranteeMonthlyKop > 0);
 		assert.ok(DOCTOR_SPECIALTY_CONFIGS.therapist.minGuaranteeMonthlyKop > 0);
 		assert.ok(DOCTOR_SPECIALTY_CONFIGS.surgeon.minGuaranteeMonthlyKop > 0);
