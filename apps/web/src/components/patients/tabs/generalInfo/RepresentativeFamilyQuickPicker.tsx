@@ -7,7 +7,7 @@ interface RepresentativeFamilyQuickPickerProps {
 	relationships: FamilyRelationshipItem[];
 	disabled?: boolean;
 	compact?: boolean;
-	onUpdatePatient?: (field: keyof PatientGeneralInfo, value: any) => void;
+	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
 }
 
 export const RepresentativeFamilyQuickPicker: React.FC<RepresentativeFamilyQuickPickerProps> = ({

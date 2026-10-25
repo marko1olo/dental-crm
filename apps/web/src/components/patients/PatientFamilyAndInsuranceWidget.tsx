@@ -18,7 +18,7 @@ import { FamilyWalletModal } from "./family/FamilyWalletModal";
 export interface PatientFamilyAndInsuranceWidgetProps {
 	readonly patient: Patient;
 	readonly patientBalance: number;
-	readonly insurancePolicyNumber?: string;
+	readonly insurancePolicyNumber?: string | undefined;
 	readonly onUpdateInsurancePolicy?: (policy: string) => void;
 }
 

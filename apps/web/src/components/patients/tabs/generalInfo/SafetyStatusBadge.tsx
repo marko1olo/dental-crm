@@ -1,9 +1,9 @@
 import React from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import type { PatientSafetyEvaluation } from "../../safetyMath";
+import type { PatientSafetyEvaluationResult } from "../../safetyMath";
 
 interface SafetyStatusBadgeProps {
-	evaluation: PatientSafetyEvaluation;
+	evaluation: PatientSafetyEvaluationResult;
 }
 
 export const SafetyStatusBadge: React.FC<SafetyStatusBadgeProps> = ({ evaluation }) => {

@@ -7,9 +7,9 @@ import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import type { PatientGeneralInfo } from "./generalInfo/types";
 
 interface PatientGeneralAccordionsGroupProps {
-	patient?: PatientGeneralInfo | null;
+	patient?: PatientGeneralInfo | null | undefined;
 	currentProfile: PatientClinicalSafetyProfile;
-	disabled?: boolean;
+	disabled?: boolean | undefined;
 	accordionsOpen: { passport: boolean; insurance: boolean; notes: boolean };
 	toggleAccordion: (key: "passport" | "insurance" | "notes") => void;
 	passportSummary: string;
@@ -17,12 +17,12 @@ interface PatientGeneralAccordionsGroupProps {
 	notesSummary: string;
 	addressesMatchState: boolean;
 	setAddressesMatchState: React.Dispatch<React.SetStateAction<boolean>>;
-	onUpdatePatient?: (field: keyof PatientGeneralInfo, value: any) => void;
+	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
 	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
-	onApplySomaticNorm?: () => void;
-	onUpdateSafetyProfile?: (profile: PatientClinicalSafetyProfile) => void;
-	onOpenDmsLetters?: () => void;
-	onOpenTaxCertificate?: () => void;
+	onApplySomaticNorm?: (() => void) | undefined;
+	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
+	onOpenDmsLetters?: (() => void) | undefined;
+	onOpenTaxCertificate?: (() => void) | undefined;
 	onToggleServiceTag: (tag: string) => void;
 	onAppendDoctorTag: (tag: string) => void;
 }

@@ -6,7 +6,7 @@ import { PatientDocumentsBlanksMenu } from "./PatientDocumentsBlanksMenu";
 
 interface PatientDocumentsHeaderProps {
 	patient: Patient;
-	onPrintOutpatientCard?: () => void;
+	onPrintOutpatientCard?: (() => void) | undefined;
 	onOpenFastPrint: (docType: FastPrintDocType) => void;
 }
 

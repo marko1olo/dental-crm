@@ -80,7 +80,7 @@ export const PatientCardModalBody: React.FC<PatientCardModalBodyProps> = ({
 				<div className="p-2 sm:p-3">
 					<PatientFamilyAndInsuranceWidget
 						patient={patientData as any}
-						patientBalance={patientData.patientBalanceRub || 0}
+						patientBalance={Number(patientData.patientBalanceRub ?? 0) || 0}
 						insurancePolicyNumber={patientData.omsPolicyNumber || undefined}
 						onUpdateInsurancePolicy={(p) => onUpdatePatientField("omsPolicyNumber", p)}
 					/>

@@ -1,12 +1,12 @@
 import React from "react";
 import { HeartPulse, ShieldCheck } from "lucide-react";
-import type { PatientClinicalSafetyProfile, PatientSafetyEvaluation } from "../../safetyMath";
+import type { PatientClinicalSafetyProfile, PatientSafetyEvaluationResult } from "../../safetyMath";
 import { SafetyStatusBadge } from "./SafetyStatusBadge";
 import { AllergyChipsGrid } from "./AllergyChipsGrid";
 
 interface PatientSafetyBannerCompactProps {
 	currentProfile: PatientClinicalSafetyProfile;
-	safetyEvaluation: PatientSafetyEvaluation;
+	safetyEvaluation: PatientSafetyEvaluationResult;
 	disabled?: boolean;
 	handleApplyNormAction: () => void;
 	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;

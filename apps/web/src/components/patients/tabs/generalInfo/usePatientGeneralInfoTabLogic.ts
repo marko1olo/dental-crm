@@ -6,11 +6,11 @@ import { usePatientFamilyLoader } from "../../overview/usePatientFamilyLoader";
 import { computePassportSummary, computeInsuranceSummary, computeNotesSummary } from "./generalInfoSummaries";
 
 interface UsePatientGeneralInfoTabParams {
-	patient?: PatientGeneralInfo | null;
-	safetyProfile?: PatientClinicalSafetyProfile | null;
-	disabled?: boolean;
-	onUpdatePatient?: (field: keyof PatientGeneralInfo, value: any) => void;
-	onUpdateSafetyProfile?: (profile: PatientClinicalSafetyProfile) => void;
+	patient?: PatientGeneralInfo | null | undefined;
+	safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
+	disabled?: boolean | undefined;
+	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 }
 
 export function usePatientGeneralInfoTabLogic({

@@ -77,7 +77,7 @@ export const PatientDocumentItemCard: React.FC<PatientDocumentItemCardProps> = (
 				<div className="text-[11.5px] text-[var(--muted)] flex items-center gap-2 flex-wrap">
 					<span>{kindLabel}</span>
 					{doc.issuedAt && <span>· от {formatShortDate ? formatShortDate(doc.issuedAt) : String(doc.issuedAt)}</span>}
-					{doc.totalAmountRub !== undefined && <span>· {money ? money(doc.totalAmountRub) : `${doc.totalAmountRub} ₽`}</span>}
+					{doc.totalAmountRub != null && <span>· {money ? money(doc.totalAmountRub) : `${doc.totalAmountRub} ₽`}</span>}
 					{doc.issuedSnapshotSha256 && (
 						<code className="text-[10.5px] bg-[var(--paper)] px-1 rounded border border-[var(--line)]">
 							{doc.issuedSnapshotSha256.slice(0, 10)}

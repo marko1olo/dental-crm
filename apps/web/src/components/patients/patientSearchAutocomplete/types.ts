@@ -1,5 +1,5 @@
 import type { Patient } from "@dental/shared";
-import type { QuickPatientPrefill } from "../schedule/patientSearchEngine";
+import type { QuickPatientPrefill } from "../../schedule/patientSearchEngine";
 
 export interface PatientSearchAutocompleteProps {
 	readonly patients: readonly Patient[];

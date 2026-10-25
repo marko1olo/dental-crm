@@ -20,6 +20,20 @@ export interface SomaticFlagItem {
 	category?: string | undefined;
 }
 
+export interface PatientHeaderQuickActionsProps {
+	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
+	resolvedPatient: any;
+	fullName: string;
+	phone: string;
+	clinicLegalName?: string | undefined;
+	onOpenAnamnesis?: (() => void) | undefined;
+	onEditPatient?: (() => void) | undefined;
+	onOpenFamilyWallet: () => void;
+	isActiveVisit: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: flexible appointment record
+	nextAppointment?: any;
+}
+
 export function formatPatientBirthAndAge(birthDateIso?: string | null): string {
 	if (!birthDateIso) return "";
 	const date = new Date(birthDateIso);

@@ -103,8 +103,9 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 
 			{isFamilyWalletOpen && (
 				<FamilyWalletModal
+					isOpen
 					patientId={resolvedPatient.id}
-					patientFullName={fullName}
+					patientName={fullName}
 					onClose={() => setIsFamilyWalletOpen(false)}
 				/>
 			)}

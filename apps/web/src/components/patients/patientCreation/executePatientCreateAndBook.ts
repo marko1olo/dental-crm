@@ -64,7 +64,7 @@ export async function executePatientCreateAndBook(params: any, options?: { allow
 				...prev,
 				patientId: targetId,
 				reason: isEmergencyOrPrimary ? EMERGENCY_APPOINTMENT_REASON : ROUTINE_APPOINTMENT_REASON,
-				comment: isEmergencyOrPrimary ? EMERGENCY_APPOINTMENT_COMMENT : prev.comment,
+				...(isEmergencyOrPrimary ? { comment: EMERGENCY_APPOINTMENT_COMMENT } : {}),
 			}));
 		}
 		if (appLogic?.setActiveTab) appLogic.setActiveTab("schedule");

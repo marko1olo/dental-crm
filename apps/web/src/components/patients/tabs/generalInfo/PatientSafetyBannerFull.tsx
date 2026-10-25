@@ -1,20 +1,20 @@
 import React from "react";
 import { HeartPulse, ShieldCheck } from "lucide-react";
-import type { PatientClinicalSafetyProfile, PatientSafetyEvaluation } from "../../safetyMath";
+import type { PatientClinicalSafetyProfile, PatientSafetyEvaluationResult } from "../../safetyMath";
 import { SomaticAnamnesisCard } from "../../../clinical/SomaticAnamnesisCard";
 import { SafetyStatusBadge } from "./SafetyStatusBadge";
 import { AllergyChipsGrid } from "./AllergyChipsGrid";
 
 interface PatientSafetyBannerFullProps {
 	currentProfile: PatientClinicalSafetyProfile;
-	safetyEvaluation: PatientSafetyEvaluation;
+	safetyEvaluation: PatientSafetyEvaluationResult;
 	disabled?: boolean;
-	patientId?: string | null;
-	patientName?: string | null;
+	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
 	handleApplyNormAction: () => void;
 	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
-	onApplySomaticNorm?: () => void;
-	onUpdateSafetyProfile?: (profile: PatientClinicalSafetyProfile) => void;
+	onApplySomaticNorm?: (() => void) | undefined;
+	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 }
 
 export const PatientSafetyBannerFull: React.FC<PatientSafetyBannerFullProps> = ({

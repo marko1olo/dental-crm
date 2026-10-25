@@ -6,7 +6,7 @@ import type { PatientGeneralInfo } from "./generalInfo/types";
 interface PatientGeneralFamilyGroupProps {
 	patient?: PatientGeneralInfo | null;
 	familyData: any;
-	familyLoadFailure: boolean;
+	familyLoadFailure: { status: number | null } | null;
 	loadFamily: () => void;
 	disabled?: boolean;
 	onUpdatePatient?: (field: keyof PatientGeneralInfo, value: any) => void;

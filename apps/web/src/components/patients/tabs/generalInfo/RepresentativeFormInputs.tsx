@@ -3,10 +3,10 @@ import { formatPhoneNumber } from "../../../../utils/inputSanitation";
 import type { PatientGeneralInfo } from "./types";
 
 interface RepresentativeFormInputsProps {
-	patient?: PatientGeneralInfo | null;
+	patient?: PatientGeneralInfo | null | undefined;
 	disabled?: boolean;
 	compact?: boolean;
-	onUpdatePatient?: (field: keyof PatientGeneralInfo, value: any) => void;
+	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
 }
 
 export const RepresentativeFormInputs: React.FC<RepresentativeFormInputsProps> = ({

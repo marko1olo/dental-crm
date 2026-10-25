@@ -129,7 +129,7 @@ describe("Frictionless Patient Registration & Non-Blocking Invariants (Mandate 8
 			html.includes("0 (ноль) рублей") || html.includes("0 ₽") || html.includes("ориентировочная"),
 			"Must handle 0 ruble / preliminary contract price gracefully",
 		);
-	}, 15000);
+	}, { timeout: 15000 });
 
 	it("allows booking appointment without mandatory assistant (solo doctor or dynamic assignment)", async () => {
 		const { appointmentScheduleMissingFields } = await import(

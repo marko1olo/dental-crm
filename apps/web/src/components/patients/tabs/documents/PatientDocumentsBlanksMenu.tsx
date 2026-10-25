@@ -7,7 +7,7 @@ import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngin
 interface PatientDocumentsBlanksMenuProps {
 	patient: Patient;
 	onClose: () => void;
-	onPrintOutpatientCard?: () => void;
+	onPrintOutpatientCard?: (() => void) | undefined;
 	onOpenFastPrint: (docType: FastPrintDocType) => void;
 }
 

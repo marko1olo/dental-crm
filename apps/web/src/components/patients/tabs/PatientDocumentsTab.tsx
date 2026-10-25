@@ -10,7 +10,7 @@ import { PatientDocumentsModalsWrapper } from "./documents/PatientDocumentsModal
 export interface PatientDocumentsTabProps {
 	patient: Patient;
 	/** Печать: Вкладыш в амбулаторную карту */
-	onPrintOutpatientCard?: () => void;
+	onPrintOutpatientCard?: (() => void) | undefined;
 }
 
 export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.memo(

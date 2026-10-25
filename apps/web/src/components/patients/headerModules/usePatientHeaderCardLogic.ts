@@ -7,7 +7,7 @@ import {
 } from "./patientHeaderLogicHelpers";
 
 export function usePatientHeaderCardLogic(
-	patientId?: string,
+	patientId?: string | null | undefined,
 	propPatient?: any,
 ) {
 	const { dashboard, selectedPatient: ctxPatient } = useAppLogicContext();

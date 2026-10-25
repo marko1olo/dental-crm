@@ -5,9 +5,9 @@ import { showToast } from '../../GlobalToast';
 import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
 
 export interface UsePhotoProtocolUploadProps {
-	patientId?: string; visitId?: string; toothCode?: string | number;
-	initialSlots?: Record<string, PhotoSlotRecord>; initialPresetId?: string;
-	onSaveProtocol?: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
+	patientId?: string | undefined; visitId?: string | undefined; toothCode?: string | number | undefined;
+	initialSlots?: Record<string, PhotoSlotRecord> | undefined; initialPresetId?: string | undefined;
+	onSaveProtocol?: ((slots: Record<string, PhotoSlotRecord>, presetId: string) => void) | undefined;
 	onClose: () => void;
 }
 
