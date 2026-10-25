@@ -1,9 +1,6 @@
 /**
- * STATUTORY ELECTRONIC SICK LEAVE (ЭЛН) & ORDER 1089N ENGINE (THIN FACADE)
- * Conforming to Ministry of Health of the Russian Federation Order № 1089н
- *
- * Domain: Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (ВК)
- * Clinical fallbacks: Председатель ВК / Лечащий врач (decomposed into ./elnEngineModules/)
+ * STATUTORY ELECTRONIC SICK LEAVE & CLINICAL INCAPACITY ENGINE (THIN FACADE)
+ * Canonical Thin Facade (Mandate 8b SSOT <= 20 lines)
  */
 
 export * from './elnEngineModules/index';

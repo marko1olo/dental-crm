@@ -1,5 +1,6 @@
 /**
- * SICK LEAVE DURATION & ORDER 1089N VALIDATION
+ * SICK LEAVE DURATION & CLINICAL VALIDATION
+ * Pure clinical logic without bureaucratic decrees
  */
 
 import type { SickLeaveFormState, SickLeaveValidationResult } from "./types.js";
@@ -19,45 +20,28 @@ export function validateSickLeaveDuration(
 	const infoMessages: string[] = [];
 
 	if (!form.elnNumber || form.elnNumber.replace(/\D/g, "").length !== 12) {
-		warnings.push(
-			"Номер ЭЛН должен состоять из 12 цифр согласно стандарту Социального фонда России (СФР).",
-		);
+		warnings.push("Номер листка нетрудоспособности должен состоять из 12 цифр.");
 	} else if (!validateElnNumber(form.elnNumber)) {
-		warnings.push(
-			"Контрольный разряд номера ЭЛН не совпадает с расчетным по алгоритму СФР (ЕИИС «Соцстрах»).",
-		);
+		warnings.push("Контрольный разряд номера ЭЛН не совпадает с расчетным по алгоритму проверки.");
 	}
 
 	if (!form.periods || form.periods.length === 0) {
 		errors.push("Отсутствуют периоды освобождения от работы.");
-		return {
-			isValid: false,
-			totalDays: 0,
-			isVkRequired: false,
-			singleDoctorLimitExceeded: false,
-			errors,
-			warnings,
-			infoMessages,
-		};
+		return { isValid: false, totalDays: 0, isVkRequired: false, singleDoctorLimitExceeded: false, errors, warnings, infoMessages };
 	}
 
 	let totalDays = 0;
-
 	for (let i = 0; i < form.periods.length; i++) {
 		const p = form.periods[i];
 		if (!p || !p.dateFrom || !p.dateTo) {
 			errors.push(`В периоде №${i + 1} не заполнены даты начала или окончания.`);
 			continue;
 		}
-
 		const periodDays = calculateDaysBetween(p.dateFrom, p.dateTo);
 		if (periodDays <= 0) {
-			errors.push(
-				`В периоде №${i + 1} дата окончания (${formatDateRu(p.dateTo)}) предшествует дате начала (${formatDateRu(p.dateFrom)}).`,
-			);
+			errors.push(`В периоде №${i + 1} дата окончания (${formatDateRu(p.dateTo)}) предшествует дате начала (${formatDateRu(p.dateFrom)}).`);
 			continue;
 		}
-
 		totalDays += periodDays;
 
 		if (i > 0) {
@@ -65,9 +49,7 @@ export function validateSickLeaveDuration(
 			if (prevPeriod && prevPeriod.dateTo) {
 				const expectedNextStart = addDays(prevPeriod.dateTo, 1);
 				if (p.dateFrom !== expectedNextStart) {
-					warnings.push(
-						`Период №${i + 1} начинается с даты ${formatDateRu(p.dateFrom)}, нарушая непрерывность с предыдущим периодом (ожидалось ${formatDateRu(expectedNextStart)}).`,
-					);
+					warnings.push(`Период №${i + 1} начинается с даты ${formatDateRu(p.dateFrom)}, нарушая непрерывность с предыдущим периодом (ожидалось ${formatDateRu(expectedNextStart)}).`);
 				}
 			}
 		}
@@ -78,65 +60,37 @@ export function validateSickLeaveDuration(
 
 	if (singleDoctorLimitExceeded) {
 		if (!form.isVkRequired) {
-			errors.push(
-				`Общая продолжительность нетрудоспособности составляет ${totalDays} дн., что превышает установленный законом 15-дневный лимит единоличной экспертизы лечащего врача (Приказ Минздрава РФ № 1089н, п. 19). Необходимо сформировать протокол заседания Врачебной комиссии (ВК).`,
-			);
-		} else if (
-			!form.vkProtocol ||
-			!form.vkProtocol.protocolNumber ||
-			form.vkProtocol.protocolNumber.trim() === ""
-		) {
-			errors.push(
-				"Для продления ЭЛН свыше 15 дней требуется заполнить номер протокола и состав Врачебной комиссии (ВК).",
-			);
+			errors.push(`Общая продолжительность нетрудоспособности составляет ${totalDays} дн., что превышает установленный законом 15-дневный лимит единоличной экспертизы лечащего врача. Требуется согласование с главным врачом / ВК.`);
+		} else if (!form.vkProtocol || !form.vkProtocol.protocolNumber || form.vkProtocol.protocolNumber.trim() === "") {
+			errors.push("Для продления освобождения свыше 15 дней требуется заполнить номер согласования.");
 		} else {
-			infoMessages.push(
-				`Продление ЭЛН свыше 15 дней санкционировано решением Врачебной комиссии (Протокол ВК № ${form.vkProtocol.protocolNumber} от ${formatDateRu(form.vkProtocol.protocolDate)}).`,
-			);
+			infoMessages.push(`Продление освобождения свыше 15 дней согласовано (Протокол ВК № ${form.vkProtocol.protocolNumber} от ${formatDateRu(form.vkProtocol.protocolDate)}).`);
 		}
 	} else {
-		infoMessages.push(
-			`Срок нетрудоспособности (${totalDays} дн.) находится в пределах 15-дневного лимита единоличной выдачи лечащим врачом (Приказ № 1089н).`,
-		);
+		infoMessages.push(`Срок нетрудоспособности (${totalDays} дн.) находится в пределах 15-дневного лимита единоличной выдачи лечащим врачом.`);
 	}
 
 	if (form.closingCode === "31") {
 		if (!form.workResumeDate) {
-			errors.push(
-				'При статусе закрытия "31 - Приступить к работе" обязательно указание даты выхода на работу.',
-			);
+			errors.push('При статусе закрытия "31 - Приступить к работе" обязательно указание даты выхода на работу.');
 		} else {
 			const lastPeriod = form.periods[form.periods.length - 1];
 			if (lastPeriod && lastPeriod.dateTo) {
 				const expectedWorkResumeDate = addDays(lastPeriod.dateTo, 1);
 				if (form.workResumeDate < expectedWorkResumeDate) {
-					warnings.push(
-						`Дата выхода на работу (${formatDateRu(form.workResumeDate)}) должна быть не ранее дня, следующего за окончанием последнего периода нетрудоспособности (${formatDateRu(expectedWorkResumeDate)}).`,
-					);
+					warnings.push(`Дата выхода на работу (${formatDateRu(form.workResumeDate)}) должна быть не ранее дня, следующего за окончанием последнего периода нетрудоспособности (${formatDateRu(expectedWorkResumeDate)}).`);
 				}
 			}
 		}
 	}
 
 	if (form.closingCode === "32" && !form.nextElnNumber) {
-		warnings.push(
-			'При статусе закрытия "32 - Продолжает болеть" рекомендуется указать номер нового листка нетрудоспособности (продолжения).',
-		);
+		warnings.push('При статусе закрытия "32 - Продолжает болеть" рекомендуется указать номер нового листка нетрудоспособности.');
 	}
 
 	if (form.violationCode && !form.violationDate) {
-		warnings.push(
-			"При отметке о нарушении режима необходимо указать дату фиксации нарушения.",
-		);
+		warnings.push("При отметке о нарушении режима необходимо указать дату фиксации нарушения.");
 	}
 
-	return {
-		isValid: errors.length === 0,
-		totalDays,
-		isVkRequired,
-		singleDoctorLimitExceeded,
-		errors,
-		warnings,
-		infoMessages,
-	};
+	return { isValid: errors.length === 0, totalDays, isVkRequired, singleDoctorLimitExceeded, errors, warnings, infoMessages };
 }

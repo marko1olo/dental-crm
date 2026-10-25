@@ -21,6 +21,7 @@ import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModa
 import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
 import { SanpinRegistryPackageModal } from "./components/documents/SanpinRegistryPackageModal";
 import { OutpatientCardPrintModal } from "./components/documents/OutpatientCardPrintModal";
+import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
 
 const SAMPLE_PATIENT = {
 	id: "pat-1",
@@ -78,6 +79,9 @@ function DocumentsPreviewApp() {
 	const [isTaxOpen, setIsTaxOpen] = useState(false);
 	const [isSanpinOpen, setIsSanpinOpen] = useState(false);
 	const [isOutpatientOpen, setIsOutpatientOpen] = useState(false);
+	const [isSickLeaveOpen, setIsSickLeaveOpen] = useState(
+		typeof window !== "undefined" && window.location.search.includes("open=sick-leave")
+	);
 
 	const counts: Record<DocumentCategoryTab, number> = {
 		all: 14,
@@ -106,6 +110,14 @@ function DocumentsPreviewApp() {
 					>
 						Печать карты приёма
 					</button>
+					<button
+						type="button"
+						className="secondary-button"
+						onClick={() => setIsSickLeaveOpen(true)}
+						data-testid="open-sick-leave-eln-modal-btn"
+					>
+						Больничный лист (ЭЛН)
+					</button>
 				</div>
 			</header>
 
@@ -127,6 +139,7 @@ function DocumentsPreviewApp() {
 					onOpenSurgicalPackage={() => setIsSurgicalOpen(true)}
 					onOpenTaxAccounting={() => setIsTaxOpen(true)}
 					onOpenSanpinRegistry={() => setIsSanpinOpen(true)}
+					onOpenSickLeaveEln={() => setIsSickLeaveOpen(true)}
 				/>
 			</section>
 
@@ -173,7 +186,7 @@ function DocumentsPreviewApp() {
 				isOpen={isSanpinOpen}
 				onClose={() => setIsSanpinOpen(false)}
 				patient={SAMPLE_PATIENT as any}
-				onOpenSickLeaveEln={() => {}}
+				onOpenSickLeaveEln={() => setIsSickLeaveOpen(true)}
 				onOpenAutoclaveLog257={() => {}}
 				onOpenEgiszRemd={() => {}}
 				onOpenPsoJournal366={() => {}}
@@ -188,6 +201,17 @@ function DocumentsPreviewApp() {
 				onClose={() => setIsOutpatientOpen(false)}
 				patient={SAMPLE_PATIENT as any}
 				doctorFullName="Д-р Воронов Алексей Владимирович"
+			/>
+
+			<SickLeaveElnModal
+				isOpen={isSickLeaveOpen}
+				onClose={() => setIsSickLeaveOpen(false)}
+				initialPatientName={SAMPLE_PATIENT.fullName}
+				initialPatientBirthDate={SAMPLE_PATIENT.birthDate}
+				initialPatientSnils={SAMPLE_PATIENT.administrativeProfile.snils}
+				initialPatientGender={SAMPLE_PATIENT.gender}
+				initialDoctorFio="Д-р Воронов Алексей Владимирович"
+				initialDoctorSpecialty="Врач-стоматолог-терапевт"
 			/>
 		</div>
 	);

@@ -1,8 +1,6 @@
 /**
- * STATUTORY ELECTRONIC SICK LEAVE (ЭЛН) & ORDER 1089N TYPES
- * Conforming to Ministry of Health of the Russian Federation Order № 1089н
- *
- * Domain: Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (ВК)
+ * STATUTORY ELECTRONIC SICK LEAVE & CLINICAL INCAPACITY TYPES
+ * Domain: Statutory Electronic Sick Leave & Clinical Register
  */
 
 import type {
@@ -91,7 +89,7 @@ export interface SickLeaveValidationResult {
 	infoMessages: string[];
 }
 
-export interface Form036uEntry {
+export interface SickLeaveRegistryEntry {
 	entryNumber: string;
 	date: string;
 	patientFio: string;
@@ -108,3 +106,6 @@ export interface Form036uEntry {
 	chairpersonSign: string;
 	membersSign: string[];
 }
+
+/** Backward compatibility alias */
+export type Form036uEntry = SickLeaveRegistryEntry;

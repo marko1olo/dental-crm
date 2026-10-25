@@ -85,6 +85,11 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 						isOpen={isSickLeaveElnOpen}
 						onClose={() => setIsSickLeaveElnOpen(false)}
 						initialPatientName={activePatient?.fullName}
+						initialPatientBirthDate={activePatient?.birthDate || undefined}
+						initialPatientSnils={(activePatient as any)?.snils || (activePatient as any)?.administrativeProfile?.snils}
+						initialPatientGender={activePatient?.gender as any}
+						initialDoctorFio={activeDoctor?.fullName}
+						initialDoctorSpecialty={(activeDoctor as any)?.role || (activeDoctor as any)?.specialty}
 					/>
 				)}
 			</>

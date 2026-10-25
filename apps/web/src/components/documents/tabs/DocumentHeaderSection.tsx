@@ -1,7 +1,7 @@
 import React from "react";
 import type { Patient, StaffMember, GeneratedDocument, DocumentKind } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppHelpers";
-import { CheckCircle2, Clock, FileText, Printer, Zap } from "lucide-react";
+import { CheckCircle2, Clock, FileText, Printer, Stethoscope, Zap } from "lucide-react";
 import { formatShortDate } from "../../../AppHelpers";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 import { DocumentQuickRoleScenarios } from "../DocumentQuickRoleScenarios";
@@ -23,6 +23,7 @@ export interface DocumentHeaderSectionProps {
 	setIsClinicalVisitOpen: (open: boolean) => void;
 	setIsTaxAccountingOpen: (open: boolean) => void;
 	setIsSanpinRegistryOpen: (open: boolean) => void;
+	setIsSickLeaveElnOpen?: (open: boolean) => void;
 	setIsA4PrintPreviewOpen?: (open: boolean) => void;
 	onSelectDocumentKind?: (kind: DocumentKind) => void;
 }
@@ -45,6 +46,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 			setIsClinicalVisitOpen,
 			setIsTaxAccountingOpen,
 			setIsSanpinRegistryOpen,
+			setIsSickLeaveElnOpen,
 			setIsA4PrintPreviewOpen,
 			onSelectDocumentKind,
 		} = props;
@@ -69,6 +71,16 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 				<div className="panel-heading">
 					<h2>Документы и Реестр</h2>
 					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							className="secondary-button text-xs py-1.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 cursor-pointer transition-colors"
+							type="button"
+							data-testid="open-sick-leave-eln-modal-btn"
+							title="Оформить больничный лист / справку о временной нетрудоспособности"
+							onClick={() => setIsSickLeaveElnOpen?.(true)}
+						>
+							<Stethoscope size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+							<span>Больничный (ЭЛН)</span>
+						</button>
 						<button
 							className="secondary-button text-xs py-1.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 cursor-pointer transition-colors"
 							type="button"
@@ -211,7 +223,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							</span>
 						</div>
 						<span className="document-scenarios-summary-badge">
-							6 сценариев
+							7 сценариев
 						</span>
 					</summary>
 					<div className="document-scenarios-accordion-content">
@@ -222,6 +234,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
 							onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
 							onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
+							onOpenSickLeaveEln={() => setIsSickLeaveElnOpen?.(true)}
 							onSelectCompletedAct={() => onSelectDocumentKind?.("completed_works_act")}
 							onSelectAttendanceCert={() => onSelectDocumentKind?.("visit_attendance_certificate")}
 						/>

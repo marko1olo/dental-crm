@@ -9,10 +9,10 @@ import type {
 	SickLeavePatientData,
 	IncapacityPeriod,
 	MedicalCommissionProtocol,
+	SickLeaveRegistryEntry,
 	Form036uEntry
 } from "../sickLeaveElnEngine";
 
-// Canonical modal test anchor: aria-label="Закрыть"
 export interface SickLeaveElnModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -31,31 +31,7 @@ export interface SickLeaveElnModalProps {
 
 export type ElnFormData = SickLeaveFormState;
 
-export type TabType = 'eln_form' | 'vk_protocol' | 'journal_036' | 'patient_memo' | 'xml_sfr' | 'digital_signature';
-
-export type SfrElnStatus = 'draft' | 'signing' | 'signed' | 'sending' | 'accepted' | 'rejected' | 'error';
-
-export interface DigitalSignatureCert {
-	id: string;
-	subjectFio: string;
-	role: 'doctor' | 'organization';
-	thumbprint: string;
-	validTo: string;
-	issuer: string;
-	snils?: string;
-	ogrn?: string;
-}
-
-export interface DigitalSignatureStatus {
-	signedByDoctor: boolean;
-	doctorCertThumbprint?: string;
-	doctorSignedAt?: string;
-	signedByOrg: boolean;
-	orgCertThumbprint?: string;
-	orgSignedAt?: string;
-	isValid: boolean;
-	cryptoProAvailable: boolean;
-}
+export type TabType = 'eln_form' | 'patient_memo' | 'registry' | 'journal_036' | 'vk_protocol' | 'digital_signature' | 'xml_sfr';
 
 export interface ElnPatientAndJobSectionProps {
 	patientData: SickLeavePatientData;
@@ -68,18 +44,7 @@ export interface ElnDiagnosisAndPeriodSectionProps {
 	handleAddPeriod: () => void;
 	handleRemovePeriod: (index: number) => void;
 	handlePeriodDateChange: (index: number, field: 'dateFrom' | 'dateTo', value: string) => void;
-}
-
-export interface ElnDigitalSignatureSectionProps {
-	formState: SickLeaveFormState;
-	doctorFio?: string;
-	doctorSnils?: string;
-	clinicName?: string;
-	clinicOgrn?: string;
-	signatureStatus: DigitalSignatureStatus;
-	onSignDoctor: () => void;
-	onSignOrganization: () => void;
-	onVerifySignatures: () => void;
+	onQuickSetDays?: (days: number) => void;
 }
 
 export interface ElnPrintPreviewDrawerProps {
@@ -88,19 +53,5 @@ export interface ElnPrintPreviewDrawerProps {
 	onPrintMemo: () => void;
 }
 
-export interface ElnVkProtocolSectionProps {
-	formState: SickLeaveFormState;
-	setFormState: React.Dispatch<React.SetStateAction<SickLeaveFormState>>;
-	handleToggleVk: (enable: boolean) => void;
-}
-
-export interface ElnJournal036SectionProps {
-	form036u: Form036uEntry;
-}
-
-export interface ElnSfrPayloadSectionProps {
-	xmlPayload: string;
-	jsonPayload: string;
-	isCopiedXml: boolean;
-	onCopyXml: () => void;
-}
+export type { SickLeaveRegistrySectionProps } from "./SickLeaveRegistrySection";
+export type { ElnJournal036SectionProps } from "./ElnJournal036Section";

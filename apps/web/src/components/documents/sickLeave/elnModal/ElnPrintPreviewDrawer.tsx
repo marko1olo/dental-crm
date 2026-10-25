@@ -10,14 +10,14 @@ export function ElnPrintPreviewDrawer({
 }: ElnPrintPreviewDrawerProps) {
 	return (
 		<div className="sick-leave-body">
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+			<div className="flex items-center justify-between pb-2">
 				<h4 className="sick-leave-section-title">
 					<Printer size={16} />
-					Печатный талон-памятка пациенту (Формат А5)
+					Печатная справка / памятка пациенту (А5 / А4)
 				</h4>
 				<button type="button" className="sick-leave-btn primary" onClick={onPrintMemo}>
 					<Printer size={16} />
-					Распечатать памятку (А5/А4)
+					Печать справки
 				</button>
 			</div>
 			<div

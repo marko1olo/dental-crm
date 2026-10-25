@@ -1,9 +1,14 @@
-export * from "./types";
+export type {
+	SickLeaveElnModalProps,
+	ElnFormData,
+	TabType,
+	ElnPatientAndJobSectionProps,
+	ElnDiagnosisAndPeriodSectionProps,
+	ElnPrintPreviewDrawerProps,
+} from "./types";
 export * from "./ElnPatientAndJobSection";
 export * from "./ElnDiagnosisAndPeriodSection";
-export * from "./ElnDigitalSignatureSection";
 export * from "./ElnPrintPreviewDrawer";
-export * from "./ElnVkProtocolSection";
+export * from "./SickLeaveRegistrySection";
 export * from "./ElnJournal036Section";
-export * from "./ElnSfrPayloadSection";
 export * from "./useSickLeaveElnLogic";

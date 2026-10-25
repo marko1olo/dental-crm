@@ -7,6 +7,7 @@ export interface DocumentQuickRoleScenariosProps {
 	readonly onOpenSurgicalPackage?: (() => void) | undefined;
 	readonly onOpenTaxAccounting: () => void;
 	readonly onOpenSanpinRegistry: () => void;
+	readonly onOpenSickLeaveEln?: (() => void) | undefined;
 	readonly onSelectCompletedAct?: (() => void) | undefined;
 	readonly onSelectAttendanceCert?: (() => void) | undefined;
 }

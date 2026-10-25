@@ -459,20 +459,20 @@ describe('Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (Order �
 			assert.ok(html.includes('20.08.2026'));
 		});
 
-		it('generates clinical diary snippet for Form 043/u integration', () => {
+		it('generates clinical diary snippet for EMR integration', () => {
 			const snippet = generateEmrDiarySnippet(sampleForm, samplePatient);
 			assert.ok(snippet.includes('[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН)]'));
-			assert.ok(snippet.includes('Оформлен ЭЛН № 999847291039'));
+			assert.ok(snippet.includes('Оформлен электронный листок нетрудоспособности № 999847291039'));
 			assert.ok(snippet.includes('T81.2'));
-			assert.ok(snippet.includes('продолжительность: 8 кал. дн.'));
+			assert.ok(snippet.includes('8 кал. дн.'));
 			assert.ok(snippet.includes('Приступить к работе с 20.08.2026'));
 		});
 
 		it('generates non-blocking draft diary snippet for incomplete/draft ELN (Mandate 8e)', () => {
 			const draftSnippet = generateEmrDiarySnippet(sampleForm, samplePatient, true);
 			assert.ok(draftSnippet.includes('[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН) — ЧЕРНОВИК ОФОРМЛЯЕТСЯ]'));
-			assert.ok(draftSnippet.includes('[Черновик ЭЛН № 999847291039, оформляется в карте 043/у]'));
-			assert.ok(draftSnippet.includes('[Черновик ЭЛН: оформляется, ожидает передачи в СФР]'));
+			assert.ok(draftSnippet.includes('[Черновик ЭЛН № 999847291039, оформляется в медицинской карте]'));
+			assert.ok(draftSnippet.includes('[Черновик ЭЛН: оформляется]'));
 		});
 	});
 });

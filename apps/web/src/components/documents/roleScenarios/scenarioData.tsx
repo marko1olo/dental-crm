@@ -4,11 +4,27 @@ import {
 	FileCheck,
 	FileText,
 	Scissors,
+	Stethoscope,
 } from "lucide-react";
 import { Autoclave, DentalForm043 } from "../../icons/DentalIcons";
 import type { ScenarioDefinition } from "./types";
 
 export const SCENARIO_ITEMS: ScenarioDefinition[] = [
+	{
+		id: "sick-leave-eln",
+		testId: "scenario-sick-leave-eln-btn",
+		title: "Больничный лист (ЭЛН)",
+		tooltipTitle: "Оформление электронного листка нетрудоспособности и справки для работодателя",
+		badge: "Освобождение",
+		icon: <Stethoscope size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />,
+		getOnClick: (props) => () => {
+			if (props.onOpenSickLeaveEln) {
+				props.onOpenSickLeaveEln();
+			} else {
+				props.onOpenClinicalVisit();
+			}
+		},
+	},
 	{
 		id: "tax-accounting",
 		testId: "scenario-tax-accounting-btn",

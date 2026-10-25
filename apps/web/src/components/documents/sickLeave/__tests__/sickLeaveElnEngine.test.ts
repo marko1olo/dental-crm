@@ -353,9 +353,8 @@ describe("Statutory ELN Engine: MOD 11 Checksum, Verification & Deterministic Ge
 
 			const snippet = generateEmrDiarySnippet(formWithVk, mockPatient);
 			assert.ok(snippet.includes("[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН)]"));
-			assert.ok(snippet.includes("Приказ Минздрава РФ № 1089н"));
-			assert.ok(snippet.includes("Решение Врачебной комиссии (ВК): Протокол № ВК-2026/102"));
-			assert.ok(snippet.includes("Председатель ВК: Иванова Е.В."));
+			assert.ok(snippet.includes("Оформлен электронный листок нетрудоспособности № 999123456789"));
+			assert.ok(snippet.includes("Согласование: Протокол № ВК-2026/102"));
 		});
 
 		it("generates compliant XML and JSON payloads for SFR / EGISZ gateway", () => {
@@ -366,7 +365,7 @@ describe("Statutory ELN Engine: MOD 11 Checksum, Verification & Deterministic Ge
 			assert.ok(xml.includes("<eln:Fio>Ковалев Андрей Сергеевич</eln:Fio>"));
 
 			const json = generateElnJsonPayload(baseOrder1089nForm, mockPatient);
-			assert.equal(json.schemaVersion, "2.0-1089n");
+			assert.equal(json.schemaVersion, "2.0");
 			assert.equal(json.elnNumber, "999123456789");
 			assert.equal(json.patient.fio, "Ковалев Андрей Сергеевич");
 			assert.equal(json.clinicalData.icd10Code, "K04.7");

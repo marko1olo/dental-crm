@@ -32,6 +32,7 @@
 *   **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр клинических шаблонов 043/у (K02–K08), пакетов комплексных услуг 804н, циклов автоклава B и формуляра анестезии.
 *   **[CLINICAL_USER_MANUAL.md](file:///C:/Clinic_MVP/dental-crm/docs/CLINICAL_USER_MANUAL.md)** — Клиническое руководство: работа с КЛКТ, расчёт Хаунсфилда (D1–D4), сметы, импорт и Dental UX законы.
 *   **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов, генерация PDF через headless Chromium/Edge, хеширование SHA-256, штамп ЧЕРНОВИК и УКЭП.
+*   **[sick_leave_eln_architecture.md](file:///C:/Clinic_MVP/dental-crm/docs/features/sick_leave_eln_architecture.md)** — Архитектура электронных листков нетрудоспособности (ЭЛН): снос потемкинских деревень (КриптоПро/СФР/ВК), автономия врача (1-клик пресеты, 3/5/10/14 дней), декомпозиция <= 120 строк, Apple HIG и 4-State Visual Proof.
 *   **[12-document-generation-forms.md](file:///C:/Clinic_MVP/dental-crm/docs/12-document-generation-forms.md)** — Спецификации медицинских бланков (ИДС, договоры, справки НДФЛ КНД 1151156, акты 804н).
 *   **[05-speech-transcription-plan.md](file:///C:/Clinic_MVP/dental-crm/docs/05-speech-transcription-plan.md)** — Архитектура распознавания речи (Whisper/Yandex/Groq), нормализация терминов и защита от галлюцинаций.
 
