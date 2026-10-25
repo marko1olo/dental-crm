@@ -36,7 +36,7 @@ describe("Tooth45 Wheeler Ch. 11 Second Mandibular Premolar Anatomical Invariant
 
 	it("models 1 powerful single conical root with developmental depression", () => {
 		const apex = TOOTH45_GEOMETRY.apex;
-		assert.equal(apex.x, 50.5);
+		assert.equal(apex.x, 47.8);
 		assert.equal(apex.y, 147.5);
 		assert.ok(TOOTH45_GEOMETRY.rootSulcus);
 		assert.ok(TOOTH45_GEOMETRY.rootSulcusHighlight);
@@ -47,7 +47,7 @@ describe("Tooth45 Wheeler Ch. 11 Second Mandibular Premolar Anatomical Invariant
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
 		assert.equal(canals[0]?.orifice.x, 50.2);
-		assert.equal(canals[0]?.apex.x, 50.5);
+		assert.equal(canals[0]?.apex.x, 47.8);
 	});
 
 	it("renders Tooth45Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {

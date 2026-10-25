@@ -47,11 +47,11 @@ export const Tooth43EndoCanals: React.FC<Tooth43EndoCanalsProps> = ({
 						/>
 					))}
 
-					{/* Overfilled Apical Sealer Puff at Longest Canine Apex (Y=162) */}
+					{/* Overfilled Apical Sealer Puff at Canine Apex */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth43-overfill-puffs">
 							<path
-								d="M 48.8,159.0 C 47.0,160.5 48.0,163.0 50.5,162.5 C 53.0,162.0 52.8,159.5 50.8,159.0 Z"
+								d="M 45.6,159.0 C 43.8,160.5 44.8,163.0 47.3,162.5 C 49.8,162.0 49.6,159.5 47.6,159.0 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -63,14 +63,14 @@ export const Tooth43EndoCanals: React.FC<Tooth43EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<g id="tooth43-broken-file">
 							<path
-								d="M 50.0,147.0 L 50.0,158.8"
+								d="M 48.2,147.0 L 46.8,158.8"
 								fill="none"
 								stroke="#e2e8f0"
 								strokeWidth="1.2"
 								strokeLinecap="round"
 							/>
 							<path
-								d="M 49.0,149.0 L 51.0,151.0 M 49.0,153.5 L 51.0,155.5"
+								d="M 47.2,149.0 L 49.2,151.0 M 46.2,153.5 L 48.2,155.5"
 								stroke="#0284c7"
 								strokeWidth="0.8"
 							/>

@@ -23,7 +23,7 @@ describe("Tooth42 Wheeler Ch. 10 Mandibular Lateral Incisor Anatomical Invariant
 
 	it("models slender single root (Y=145)", () => {
 		const apex = TOOTH42_GEOMETRY.apex;
-		assert.equal(apex.x, 50.5);
+		assert.equal(apex.x, 47.0);
 		assert.equal(apex.y, 145.0);
 		assert.ok(TOOTH42_GEOMETRY.rootSulcus);
 	});
@@ -34,6 +34,7 @@ describe("Tooth42 Wheeler Ch. 10 Mandibular Lateral Incisor Anatomical Invariant
 		assert.equal(canals[0]?.id, "Main");
 		assert.equal(canals[0]?.orifice.x, 50.0);
 		assert.equal(canals[0]?.apex.y, 142.0);
+		assert.equal(canals[0]?.apex.x, 47.3);
 	});
 
 	it("renders Tooth42Container with XXL badge clearance (cy=194.5, height=218)", () => {

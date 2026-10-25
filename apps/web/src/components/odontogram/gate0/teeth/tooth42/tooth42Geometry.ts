@@ -20,24 +20,24 @@ export const TOOTH42_GEOMETRY = {
 		"C 69.0,38.0 70.0,54.0 70.0,70.0 " +
 		"C 64.0,72.5 57.0,73.5 50.0,73.5 " +
 		"C 43.0,73.5 36.0,72.5 30.0,70.0 Z",
-	// Slender single root tapering to apex (Y=145.0)
+	// Slender single root tapering to apex (Y=145.0) with natural distal apical curve
 	rootMonolithPath:
 		"M 30.0,70.0 " +
-		"C 34.5,88.0 40.0,112.0 44.5,132.0 " +
-		"C 46.5,140.0 48.5,144.5 50.5,145.0 " +
-		"C 52.5,144.5 54.0,140.0 56.5,132.0 " +
-		"C 61.0,112.0 66.0,88.0 70.0,70.0 " +
+		"C 34.0,88.0 38.5,112.0 42.5,132.0 " +
+		"C 44.0,140.0 45.5,144.5 47.0,145.0 " +
+		"C 49.0,144.5 51.5,140.0 54.5,132.0 " +
+		"C 60.0,112.0 65.5,88.0 70.0,70.0 " +
 		"C 64.0,72.5 57.0,73.5 50.0,73.5 " +
 		"C 43.0,73.5 36.0,72.5 30.0,70.0 Z",
 	cejPath: "M 30.0,70.0 C 37.0,72.5 44.0,73.5 50.0,73.5 C 57.0,73.5 64.0,72.5 70.0,70.0",
-	apex: { x: 50.5, y: 145.0 },
-	apices: [{ x: 50.5, y: 145.0, r: 8.5 }] as const,
+	apex: { x: 47.0, y: 145.0 },
+	apices: [{ x: 47.0, y: 145.0, r: 8.5 }] as const,
 	// Developmental vertical labial depressions
 	labialGrooveMesial: "M 41.0,23.5 C 41.0,37.0 41.5,51.0 42.5,65.0",
 	labialGrooveDistal: "M 59.0,25.0 C 59.0,38.0 58.5,51.0 57.5,65.0",
 	incisalHighlight: "M 34.0,22.0 L 66.0,23.8",
-	// Root developmental groove
-	rootSulcus: "M 50.5,75.0 C 50.5,96.0 50.5,118.0 50.5,137.0",
+	// Root developmental groove with distal curvature
+	rootSulcus: "M 50.5,75.0 C 50.5,96.0 49.5,118.0 47.5,137.0",
 	cervicalShoulderPath:
 		"M 30.0,70.0 C 37.0,72.5 44.0,73.5 50.0,73.5 C 57.0,73.5 64.0,72.5 70.0,70.0 " +
 		"L 69.5,67.5 C 63.5,69.8 57.0,70.8 50.0,70.8 C 43.0,70.8 36.5,69.8 30.5,67.5 Z",
