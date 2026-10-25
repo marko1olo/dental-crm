@@ -25,9 +25,18 @@ export function useSanPinBatchActions(
 		try {
 			setIsAutofilling(true);
 			const url = targetPeriod === "month" ? "/api/registers/autofill-month" : "/api/registers/sterilization/shift-batch";
+			// Честные данные: оператора сервер берёт из auth-токена (operatorId),
+			// автоклав — из реального списка смены, без выдуманных фамилий и моделей.
+			const shiftAutoclave = devices.find((dv) => dv?.id && dv.id !== "all") ?? devices[0];
 			const body = targetPeriod === "month"
-				? { year: new Date().getFullYear(), month: new Date().getMonth() + 1, operatorFullName: "Иванова А. С. (ЦСО)" }
-				: { cyclesCount: 3, deviceName: "Melag Vacuklav 23B+ (ЦСО №1)", packagingType: "kraft_pouch", itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)" };
+				? { year: new Date().getFullYear(), month: new Date().getMonth() + 1 }
+				: {
+					cyclesCount: 3,
+					deviceName: shiftAutoclave?.brandModelRu || "",
+					autoclaveId: shiftAutoclave?.id || "",
+					packagingType: "kraft_pouch",
+					itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)",
+				};
 
 			const res = await fetch(url, {
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
@@ -35,7 +44,7 @@ export function useSanPinBatchActions(
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast("Журнал стерилизации заполнен по нормам (134°C / 2.1 бар, 5 кл., ПСО 100% норма)", "success");
+				showToast("Журнал стерилизации заполнен по нормам: 134°C / 2.1 бар, индикатор 5 класса, предстерилизационная очистка — норма", "success");
 				await fetchCyclesFromDb(period);
 			} else if (isDemoShowcaseMode()) {
 				setCycles(DEFAULT_CYCLES);
@@ -58,8 +67,9 @@ export function useSanPinBatchActions(
 			const tempC = isDelicate ? 121.0 : 134.0;
 			const pressBar = isDelicate ? 1.15 : 2.15;
 			const targetBatch = isDelicate ? 15 : batchSize;
-			const autoId = selectedAutoclave !== "all" ? selectedAutoclave : (devices[0]?.id || "АК-01");
-			const devName = autoId === "АК-02" ? "W&H Lina 17 (ЦСО)" : "Melag Vacuklav 23 B+ (ЦСО №1)";
+			const selectedDevice = devices.find((dv) => dv?.id === selectedAutoclave) ?? devices[0];
+			const autoId = selectedDevice?.id || "AUTO-01";
+			const devName = selectedDevice?.brandModelRu || "";
 			const cycleLabel = cycleName || (new Date().getHours() < 12 ? "Утренний цикл" : new Date().getHours() < 17 ? "Дневной цикл" : "Вечерний цикл");
 			const itemsDesc = isDelicate
 				? "Пакетная стерилизация щадящая: 15 наборов (оптика, полимеры, наконечники)"

@@ -15,20 +15,19 @@ function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
 	const dateStr = rawDate.toISOString().slice(0, 10);
 	const timeStr = rawDate.toTimeString().slice(0, 5);
 	const isNorm = d.status === "passed" || d.passedIndicator !== false;
-	const isMelag = d.deviceName?.includes("Melag") || d.autoclaveId === "АК-01" || idx % 2 === 0;
-	const primaryBarcode = d.barcode || (idx === 0 ? "KP-84920" : `STER-${dateStr.replace(/-/g, "")}-${String(idx + 1).padStart(3, "0")}`);
-	const calculatedBatchSize = Number(d.batchSize) || Number(d.kraftPouchesCount) || (idx === 0 ? 25 : idx === 1 ? 15 : 30);
+	// Честный маппинг: только данные из БД, никаких выдуманных автоклавов/штрихкодов/операторов.
+	const realBatchSize = Number(d.batchSize) || Number(d.kraftPouchesCount) || 0;
 
 	return {
 		id: d.id || `cyc-${idx}`,
 		date: dateStr,
 		time: timeStr,
 		cycleNumber: d.cycleNumber || idx + 1,
-		autoclaveCode: isMelag ? "АК-01" : "АК-02",
-		autoclaveModel: d.deviceName || (isMelag ? "Melag Vacuklav 23B+" : "W&H Lina 17"),
-		temperatureC: Number(d.temperatureCelsius) || 134.4,
-		pressureBar: Number(d.pressureBar) || 2.15,
-		durationMin: Number(d.durationMin) || 5,
+		autoclaveCode: d.autoclaveId || "—",
+		autoclaveModel: d.deviceName || "Автоклав",
+		temperatureC: Number(d.temperatureCelsius) || 0,
+		pressureBar: Number(d.pressureBar) || 0,
+		durationMin: Number(d.durationMin) || 0,
 		regimeName: d.regimeName || "Режим B (Универсальный 134°C / 5 мин)",
 		indicatorClass: (d.indicatorType?.includes("4") ? "4" : "5") as "4" | "5" | "6",
 		colorBefore: "Бежевый",
@@ -36,14 +35,14 @@ function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
 		colorAfter: isNorm ? "Темно-коричневый" : "Светло-желтый",
 		colorAfterHex: isNorm ? "#3e2723" : "#fff9c4",
 		isIndicatorNorm: isNorm,
-		pouchCodes: [primaryBarcode],
-		itemsSummary: d.itemsDescription || "Стоматологический инструментарий смены (наконечники, лотки, боры)",
-		operatorName: d.operatorName || "Иванова А. С. (ЦСО)",
+		pouchCodes: d.barcode ? [d.barcode] : [],
+		itemsSummary: d.itemsDescription || "Стоматологический инструментарий смены",
+		operatorName: d.operatorName || "Медсестра ЦСО",
 		status: isNorm ? "passed" : "failed",
-		batchSize: calculatedBatchSize,
-		batchBarcode: d.batchBarcode || `BAT-134-${dateStr.replace(/-/g, "")}-${String(idx + 1).padStart(2, "0")}`,
+		batchSize: realBatchSize,
+		batchBarcode: d.batchBarcode || "",
 		psoStatus: (d.psoStatus as any) || "norm",
-		kraftPouchesCount: calculatedBatchSize,
+		kraftPouchesCount: realBatchSize,
 	};
 }
 

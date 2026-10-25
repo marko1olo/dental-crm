@@ -51,7 +51,7 @@ export function executeShiftSanpinAutoClose(
 		operatorName,
 	});
 
-	const summaryRu = `Смена ${date} закрыта в 1 клик: ${visitsCount} приемов, ${traysCount} лотков, ${totalAutoclaveCycles} цикла автоклава 134°C (все 5 точек КТ ОК), ПСО ${totalPsoSamplesTested} проб (азопирам/фенолфталеин отр. 100%), холодильник Pozis +${microclimate.refrigeratorLog.morningTempCelsius}°C, психрометр ВИТ-2 +${microclimate.psychrometerLog.morningTempCelsius}°C (${microclimate.psychrometerLog.morningHumidityPercent}%), рециркулятор Дезар-4 ${bactericidal.operatingHours} ч. Документация СанПиН 3.3686-21 оформлена.`;
+	const summaryRu = `Смена ${date} закрыта в 1 клик: ${visitsCount} приемов, ${traysCount} лотков, ${totalAutoclaveCycles} цикла автоклава 134°C (все 5 контрольных точек подтверждены), предстерилизационная очистка — ${totalPsoSamplesTested} проб (азопирам/фенолфталеин отрицательно, 100%), холодильник Pozis +${microclimate.refrigeratorLog.morningTempCelsius}°C, психрометр ВИТ-2 +${microclimate.psychrometerLog.morningTempCelsius}°C (${microclimate.psychrometerLog.morningHumidityPercent}%), рециркулятор Дезар-4 ${bactericidal.operatingHours} ч. Документация СанПиН 3.3686-21 оформлена.`;
 
 	return {
 		date,
