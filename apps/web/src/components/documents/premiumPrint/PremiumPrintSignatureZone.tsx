@@ -1,6 +1,6 @@
 import React from "react";
 import { QrCode } from "lucide-react";
-import type { DocumentBrandingState } from "../../store/documentBrandingStore";
+import type { DocumentBrandingState } from "../../../store/documentBrandingStore";
 import type { PremiumPatientInfo } from "./types";
 
 export interface PremiumPrintSignatureZoneProps {

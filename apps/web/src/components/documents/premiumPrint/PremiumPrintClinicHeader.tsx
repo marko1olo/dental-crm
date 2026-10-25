@@ -1,9 +1,9 @@
 import React from "react";
-import type { BrandColorPalette, DocumentBrandingState } from "../../store/documentBrandingStore";
+import type { DocumentBrandColorPalette, DocumentBrandingState } from "../../../store/documentBrandingStore";
 
 export interface PremiumPrintClinicHeaderProps {
 	branding: DocumentBrandingState;
-	palette: BrandColorPalette;
+	palette: DocumentBrandColorPalette;
 }
 
 export const PremiumPrintClinicHeader: React.FC<PremiumPrintClinicHeaderProps> = ({

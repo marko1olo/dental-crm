@@ -1,5 +1,5 @@
 import React from "react";
-import type { RadiologySnapshotItem } from "../visit/VisitSummaryModal";
+import type { RadiologySnapshotItem } from "../../visit/VisitSummaryModal";
 
 export interface PremiumPrintRadiologySectionProps {
 	radiologySnapshots: readonly RadiologySnapshotItem[];

@@ -1,7 +1,7 @@
 import type React from "react";
-import type { RadiologySnapshotItem } from "../visit/VisitSummaryModal";
-import type { ToothData } from "../odontogram/ToothChart";
-import type { BrandColorPalette } from "../../store/documentBrandingStore";
+import type { RadiologySnapshotItem } from "../../visit/VisitSummaryModal";
+import type { ToothData } from "../../odontogram/ToothChart";
+import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore";
 
 export interface PremiumPatientInfo {
 	fullName?: string | null | undefined;

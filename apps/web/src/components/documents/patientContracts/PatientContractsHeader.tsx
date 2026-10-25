@@ -3,7 +3,7 @@ import { FileText, Printer, Plus } from "lucide-react";
 
 export interface PatientContractsHeaderProps {
 	onPrintBlank: () => void;
-	onCreateContract?: () => void;
+	onCreateContract?: (() => void) | undefined;
 }
 
 export const PatientContractsHeader: React.FC<PatientContractsHeaderProps> = ({

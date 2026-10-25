@@ -1,11 +1,11 @@
 import React from "react";
 import type { PremiumClinicalDiary } from "./types";
 import { type ToothData, type ToothState, TOOTH_STATE_LABELS } from "../../odontogram/ToothChart";
-import type { BrandColorPalette } from "../../store/documentBrandingStore";
+import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore";
 
 export interface PremiumPrintClinicalDiaryProps {
 	diary: PremiumClinicalDiary;
-	palette: BrandColorPalette;
+	palette: DocumentBrandColorPalette;
 	icd10Label?: string | null | undefined;
 	showOdontogramDiagram?: boolean;
 	activeTeethWithFindings: readonly ToothData[];

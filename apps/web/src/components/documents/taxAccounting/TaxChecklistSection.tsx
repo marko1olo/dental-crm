@@ -8,7 +8,7 @@ export interface TaxChecklistSectionProps {
 	onOpenDocument: (documentId: string) => void;
 	onSelectDocumentKind: (kind: DocumentKind) => void;
 	onCreateDocument: (kind: DocumentKind) => void;
-	onRequestIssueDocument?: (doc: GeneratedDocument) => void;
+	onRequestIssueDocument?: ((doc: GeneratedDocument) => void) | undefined;
 	onClose: () => void;
 }
 

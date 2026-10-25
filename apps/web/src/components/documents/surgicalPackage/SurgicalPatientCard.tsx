@@ -6,7 +6,7 @@ import { SURGICAL_STATUTORY_ITEMS } from "./types";
 
 export interface SurgicalPatientCardProps {
 	patient: Patient | null;
-	doctorFullName?: string | null;
+	doctorFullName?: string | null | undefined;
 	missingCount: number;
 }
 

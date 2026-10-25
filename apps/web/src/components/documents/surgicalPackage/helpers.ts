@@ -1,7 +1,7 @@
 import { escapeHtml, formatDateRu } from "../documentPrintFormatters";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { SurgicalPackagePrintOptions, SurgicalRequisitesContext } from "./types";
-import type { ClinicProfileDraft } from "../../store/clinicProfileStore";
+import type { ClinicProfileDraft } from "../../../appHelpers/types";
 import type { Patient } from "@dental/shared";
 
 export function buildSurgicalRequisitesContext(options: SurgicalPackagePrintOptions): SurgicalRequisitesContext {
@@ -53,7 +53,7 @@ export function buildSurgicalClinic(draft: ClinicProfileDraft | null | undefined
 		shortName: draft.clinicName || "",
 		inn: draft.inn || "",
 		ogrn: draft.ogrn || "",
-		licenseNumber: draft.licenseNumber || "",
+		licenseNumber: draft.medicalLicenseNumber || "",
 		address: draft.address || "",
 		actualAddress: draft.address || "",
 		phone: draft.phone || "",

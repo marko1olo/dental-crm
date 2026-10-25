@@ -4,7 +4,7 @@ import type { GeneratedDocument } from "@dental/shared";
 
 export interface PatientContractsListProps {
 	contracts: GeneratedDocument[];
-	onOpenContract?: (contractId: string) => void;
+	onOpenContract?: ((contractId: string) => void) | undefined;
 }
 
 export const PatientContractsList: React.FC<PatientContractsListProps> = ({
