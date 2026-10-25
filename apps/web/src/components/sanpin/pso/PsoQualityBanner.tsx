@@ -59,7 +59,7 @@ export const PsoQualityBanner: React.FC<PsoQualityBannerProps> = ({
 					title="Зафиксировать нормативные результаты проб смены в 1 клик"
 				>
 					<FlaskConical size={14} />
-					<span>{submitting ? "Фиксация..." : "Предстерилизационная очистка пройдена"}</span>
+					<span>{submitting ? "Фиксация..." : "Контроль предстерилизационной очистки — норма"}</span>
 				</button>
 			</div>
 		</div>

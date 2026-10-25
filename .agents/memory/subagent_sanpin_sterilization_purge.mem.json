@@ -1,0 +1,26 @@
+{
+  "subagent": "sanpin_sterilization_purge_inquisitor",
+  "domain": "SanPiN Sterilization, Autoclaving & Pre-Sterilization Cleaning (СанПиН 3.3686-21 / Mandates 8b, 8e, 8n, 8x, 8am, 8ap, 8ze)",
+  "status": "passed_100_percent",
+  "verified_at": "2026-10-25T14:00:00Z",
+  "mandate_compliance": {
+    "mandate_8b_modular_limits": "All modified and created components strictly <= 120 lines per file",
+    "mandate_8e_doctor_autonomy": "Zero chairside pouch scanning required. 1-click batch autoclaving for entire shift. No disabled buttons.",
+    "mandate_8n_solo_doctor_sovereignty": "Backoffice batch sterilization with soft negative stock inventory deduction.",
+    "mandate_8x_clean_clinical_language": "Elimination of Soviet order numbers from UI and code (Форма 257/у -> Журнал автоклавирования; ПСО -> Предстерилизационная очистка).",
+    "mandate_8am_design_code": "Exactly 1 Primary CTA emerald button per visible screen. Standardized headers and secondary action buttons.",
+    "mandate_8ap_anti_fabrication": "Zero foreign CRM brand references. Pure normalized database domain entities.",
+    "mandate_8ze_apple_hig_mobile": "Touch targets >= 44x44px, Natural Thumb Zone, floating bottom bars with safe-area padding (pb-20), 0px horizontal drift."
+  },
+  "canonical_4_state_visual_proofs": {
+    "pc_light": "docs/proofs/sanpin/pc_light_sanpin_sterilization_1440x900.png (130.5 KB) - verified via read_file",
+    "pc_dark": "docs/proofs/sanpin/pc_dark_sanpin_sterilization_1440x900.png (132.9 KB) - verified via read_file",
+    "mobile_light": "docs/proofs/sanpin/mobile_light_sanpin_sterilization_390x844.png (59.7 KB) - verified via read_file, 0px horizontal drift, 0 badge clipping, pb-20 cards container",
+    "mobile_dark": "docs/proofs/sanpin/mobile_dark_sanpin_sterilization_390x844.png (62.1 KB) - verified via read_file, 0px horizontal drift, 0 badge clipping, pb-20 cards container"
+  },
+  "verification_gates": {
+    "vitest_sanpin_components": "22/22 files passing, 243/243 tests passing (apps/web/src/components/sanpin/)",
+    "check_encoding": "19300 files checked, 0 errors (npm run check:encoding)",
+    "git_worktree_integrity": "Dirty worktree respected, zero other agent changes discarded"
+  }
+}

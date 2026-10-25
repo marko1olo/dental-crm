@@ -46,26 +46,18 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 				cycles.map((cyc) => <SanPinMobileCycleCard key={`mob-${cyc.id}`} cyc={cyc} />)
 			)}
 
-			{/* Floating Bottom Bar (Apple HIG Natural Thumb Zone) */}
+			{/* Floating Bottom Bar (Apple HIG Natural Thumb Zone, Mandate 8am: 1 Primary CTA) */}
 			{onQuickBatchNorm && (
-				<div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg flex items-center gap-2 pb-[max(12px,env(safe-area-inset-bottom))]">
+				<div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
 						onClick={() => onQuickBatchNorm(27, "134")}
 						disabled={isAutofilling}
-						className="flex-1 h-11 min-h-[44px] rounded-xl font-semibold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3 text-[13px] flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
+						className="w-full h-11 min-h-[44px] rounded-xl font-semibold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3 text-[13px] flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
+						data-testid="sanpin-mobile-quick-batch-cta"
 					>
-						<CheckCircle2 size={16} />
-						<span className="truncate">Зафиксировать цикл автоклавирования смены</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => onQuickBatchNorm(15, "121")}
-						disabled={isAutofilling}
-						className="h-11 min-h-[44px] px-3.5 rounded-xl font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[13px] flex items-center justify-center gap-1 cursor-pointer touch-manipulation"
-					>
-						<Layers size={14} />
-						<span>121°C</span>
+						<CheckCircle2 size={16} className="shrink-0 text-white" />
+						<span>{isAutofilling ? "Фиксация смены..." : "Пакетная запись автоклавирования за смену"}</span>
 					</button>
 				</div>
 			)}

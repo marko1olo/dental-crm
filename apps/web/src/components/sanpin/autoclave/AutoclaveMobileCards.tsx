@@ -39,7 +39,7 @@ export function AutoclaveMobileCards({
 
 	return (
 		<div
-			className="md:hidden flex flex-col gap-3 p-1.5"
+			className="md:hidden flex flex-col gap-3 p-1.5 pb-20"
 			data-testid="autoclave-mobile-cards-container"
 		>
 			{showEmptyOrLoading ? (

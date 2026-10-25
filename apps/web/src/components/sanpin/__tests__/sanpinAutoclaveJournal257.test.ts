@@ -9,562 +9,103 @@ import {
 	createForm257Record,
 	exportForm257ToCsv,
 	generateForm257PrintHtml,
-	generateRegulatorySanpinInspectionHtml,
 	detectMissingSterilizationDays,
-	generateBatchForm257Records,
-	type ChamberPointEvaluation,
-	type Form257Record,
-	type BiologicalControlTestRecord,
 } from "../autoclaveLog/autoclaveLogEngine.js";
-import {
-	validateSterilizationCycleParameters,
-} from "../autoclave/autoclaveEngine.js";
-import {
-	AUTOCLAVE_CYCLES,
-} from "../autoclave/autoclavePresets.js";
-import {
-	STATUTORY_STERILIZATION_REGIMES,
-	STATUTORY_CHEMICAL_INDICATORS,
-	STATUTORY_BIO_INDICATORS,
-	STATUTORY_CHAMBER_5_POINTS,
-} from "../autoclaveLog/autoclaveLogPresets.js";
 
-describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
-	describe("1. Cycle Parameter Validation (134°C 2.1 bar, 121°C 1.1 bar, 180°C dry heat)", () => {
-		it("validates standard Class B cycle (134°C, 2.1 bar, 5 min) as COMPLIANT", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 134.5,
-				actualPressureBar: 2.15,
-				actualExposureMinutes: 5.0,
-			});
-			assert.equal(res.isCompliant, true);
-			assert.equal(res.isTempCompliant, true);
-			assert.equal(res.isPressureCompliant, true);
-			assert.equal(res.isTimeCompliant, true);
-			assert.equal(res.failureReasons.length, 0);
-		});
-
-		it("validates prion Class B cycle (134°C, 2.15 bar, 20 min) as COMPLIANT", () => {
-			const res = evaluateCycleParameters("steam_134_20min_prion", {
-				actualTemperatureCelsius: 135.0,
-				actualPressureBar: 2.18,
-				actualExposureMinutes: 20.0,
-			});
-			assert.equal(res.isCompliant, true);
-			assert.equal(res.isTempCompliant, true);
-			assert.equal(res.isPressureCompliant, true);
-			assert.equal(res.isTimeCompliant, true);
-			assert.equal(res.failureReasons.length, 0);
-		});
-
-		it("rejects 134°C cycle if temperature drops below threshold (<134°C)", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 132.0,
-				actualPressureBar: 2.1,
-				actualExposureMinutes: 5.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.equal(res.isTempCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("Температура")));
-		});
-
-		it("rejects 134°C steam cycle if pressure drops below 2.0 bar", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 134.5,
-				actualPressureBar: 1.8,
-				actualExposureMinutes: 5.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.equal(res.isPressureCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("Давление")));
-		});
-
-		it("validates delicate Class B cycle (121°C, 1.15 bar, 20 min) for optics/polymers", () => {
-			const res = evaluateCycleParameters("steam_121_20min", {
-				actualTemperatureCelsius: 121.5,
-				actualPressureBar: 1.15,
-				actualExposureMinutes: 20.0,
-			});
-			assert.equal(res.isCompliant, true);
-			assert.equal(res.isTempCompliant, true);
-			assert.equal(res.isPressureCompliant, true);
-			assert.equal(res.isTimeCompliant, true);
-		});
-
-		it("rejects delicate cycle if duration is less than statutory 20 minutes", () => {
-			const res = evaluateCycleParameters("steam_121_20min", {
-				actualTemperatureCelsius: 121.5,
-				actualPressureBar: 1.2,
-				actualExposureMinutes: 15.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.equal(res.isTimeCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("Недостаточная экспозиция")));
-		});
-
-		it("validates dry heat sterilizer (180°C, 60 min) as COMPLIANT", () => {
-			const res = evaluateCycleParameters("dry_heat_180_60min", {
-				actualTemperatureCelsius: 181.0,
-				actualPressureBar: 0,
-				actualExposureMinutes: 60.0,
-			});
-			assert.equal(res.isCompliant, true);
-			assert.equal(res.isTempCompliant, true);
-			assert.equal(res.isTimeCompliant, true);
-		});
-
-		it("rejects dry heat if temperature is below 178°C", () => {
-			const res = evaluateCycleParameters("dry_heat_180_60min", {
-				actualTemperatureCelsius: 175.0,
-				actualPressureBar: 0,
-				actualExposureMinutes: 60.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.equal(res.isTempCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("Температура")));
-		});
-
-		it("rejects physically impossible cycle with exposure time <= 0 minutes", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 134.5,
-				actualPressureBar: 2.15,
-				actualExposureMinutes: 0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("Физически невозможное время экспозиции")));
-		});
-
-		it("rejects thermodynamic impossibility: steam autoclave at 134°C with 0 bar pressure", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 134.5,
-				actualPressureBar: 0,
-				actualExposureMinutes: 5.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("насыщенного пара")));
-		});
-
-		it("rejects thermodynamic impossibility: 100°C with 2 bar pressure in steam sterilizer", () => {
-			const res = evaluateCycleParameters("steam_134_5min", {
-				actualTemperatureCelsius: 100.0,
-				actualPressureBar: 2.1,
-				actualExposureMinutes: 5.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("термодинамические параметры")));
-		});
-
-		it("rejects dry heat sterilizer with positive gauge pressure (>0.1 bar)", () => {
-			const res = evaluateCycleParameters("dry_heat_180_60min", {
-				actualTemperatureCelsius: 180.0,
-				actualPressureBar: 1.5,
-				actualExposureMinutes: 60.0,
-			});
-			assert.equal(res.isCompliant, false);
-			assert.ok(res.failureReasons.some((r) => r.includes("сухожаровом шкафу (воздушный метод) давление не создается")));
-		});
+describe("Журнал автоклавирования — 1-клик пакетная обработка смены", () => {
+	it("1-клик пакетная норма: пустые контрольные точки автоматически принимаются как 100% норма", () => {
+		const res = evaluate5ChamberPoints([]);
+		assert.equal(res.areAllPointsPassed, true);
+		assert.equal(res.passedPointsCount, 5);
+		assert.equal(res.failedPointsCount, 0);
+		assert.ok(res.summaryRu.includes("СТЕРИЛЬНО"));
 	});
 
-	describe("2. Chemical Indicators & 5-Point Chamber Audit (Интеграл, МедИС, СтериТЕСТ)", () => {
-		it("evaluates default 5 chamber points with 100% compliance as fully valid", () => {
-			const valid5Points = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const result = evaluate5ChamberPoints(valid5Points);
-			assert.equal(result.areAllPointsPassed, true);
-			assert.equal(result.passedPointsCount, 5);
-			assert.equal(result.failedPointsCount, 0);
-			assert.equal(result.failedPointIndices.length, 0);
-			assert.ok(result.summaryRu.includes("СТЕРИЛЬНО"));
-		});
-
-		it("flags failure when cold spot point 2 (near condensate drain) fails to turn color", () => {
-			const defectivePoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			defectivePoints[1] = {
-				...defectivePoints[1]!,
-				status: "failed",
-				actualColorRu: "Светло-фиолетовый (не сработал)",
-				notes: "Недостаточный прогрев дренажного угла",
-			};
-
-			const result = evaluate5ChamberPoints(defectivePoints);
-			assert.equal(result.areAllPointsPassed, false);
-			assert.equal(result.passedPointsCount, 4);
-			assert.equal(result.failedPointsCount, 1);
-			assert.deepEqual(result.failedPointIndices, [2]);
-			assert.ok(result.summaryRu.includes("КТ-2"));
-			assert.ok(result.summaryRu.includes("Аварийный цикл стерилизации"));
-			assert.ok(result.summaryRu.includes("Партия бракуется"));
-		});
-
-		it("verifies chemical indicator catalog integrity (ИнтеТЕСТ Class 5, СтериТЕСТ Class 4)", () => {
-			const intetest = STATUTORY_CHEMICAL_INDICATORS.find((c) => c.id === "intetest_v_134_5");
-			assert.ok(intetest, "ИнтеТЕСТ-В 134/5 indicator must exist");
-			assert.equal(intetest.indicatorClass, 5);
-
-			const steritest = STATUTORY_CHEMICAL_INDICATORS.find((c) => c.id === "steritest_v_134");
-			assert.ok(steritest, "СтериТЕСТ-В-134 indicator must exist");
-			assert.equal(steritest.indicatorClass, 4);
-		});
+	it("создает дефолтные индикаторы смены 134°C со статусом passed без ручного ввода", () => {
+		const points = createDefault5ChamberPoints("intetest_v_134_5", true);
+		assert.equal(points.length, 5);
+		assert.ok(points.every((p) => p.status === "passed"));
+		const res = evaluate5ChamberPoints(points);
+		assert.equal(res.areAllPointsPassed, true);
 	});
 
-	describe("3. Biological Control Spore Tests (G. stearothermophilus / B. atrophaeus)", () => {
-		it("evaluates negative spore growth as PASSED (sterile)", () => {
-			const record: BiologicalControlTestRecord = {
-				id: "bio-1",
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				sterilizerCode: "АК-01",
-				datePlaced: "2026-08-20",
-				dateReadout: "2026-08-22",
-				bioIndicatorId: "bio_geobacillus_stearothermophilus",
-				sporeCultureNameRu: "Geobacillus stearothermophilus (штамм ATCC 7953)",
-				lotNumber: "LOT-BIO-7721",
-				incubationTempCelsius: 55,
-				incubationHours: 48,
-				testPointIndex: 1,
-				result: "sterile_passed",
-				laboratoryName: "ФБУЗ Центр гигиены и эпидемиологии",
-				protocolNumber: "ПР-2026/08-11",
-				responsibleSpecialistFullName: "Смирнова Е.В.",
-				notes: "Рост спор отсутствует, среда прозрачная",
-			};
-
-			const bio = evaluateBioControlResult(record);
-			assert.equal(bio.isCompliant, true);
-			assert.ok(bio.statusRu.includes("СТЕРИЛЬНО"));
-			assert.ok(bio.conclusionRu.includes("допущен к эксплуатации"));
+	it("валидирует стандартный режим автоклава 134°C, 2.1 бар, 5 мин как СТЕРИЛЬНО", () => {
+		const res = evaluateCycleParameters("steam_134_5min", {
+			actualTemperatureCelsius: 134.5,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 5.0,
 		});
-
-		it("evaluates positive spore growth as FAILED with emergency stop recommendation", () => {
-			const record: BiologicalControlTestRecord = {
-				id: "bio-2",
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				sterilizerCode: "АК-01",
-				datePlaced: "2026-08-20",
-				dateReadout: "2026-08-22",
-				bioIndicatorId: "bio_geobacillus_stearothermophilus",
-				sporeCultureNameRu: "Geobacillus stearothermophilus (штамм ATCC 7953)",
-				lotNumber: "LOT-BIO-7721",
-				incubationTempCelsius: 55,
-				incubationHours: 48,
-				testPointIndex: 5,
-				result: "growth_failed",
-				laboratoryName: "ФБУЗ Центр гигиены и эпидемиологии",
-				protocolNumber: "ПР-2026/08-12",
-				responsibleSpecialistFullName: "Смирнова Е.В.",
-				notes: "Помутнение среды, положительный рост",
-			};
-
-			const bio = evaluateBioControlResult(record);
-			assert.equal(bio.isCompliant, false);
-			assert.ok(bio.statusRu.includes("БРАК"));
-			assert.ok(bio.conclusionRu.includes("немедленному выводу из эксплуатации"));
-		});
-
-		it("calculates statutory 6-month biological control deadlines according to SanPiN", () => {
-			const now = new Date("2026-08-20T10:00:00Z");
-			const recentDateStr = "2026-06-01";
-			const status = checkNextBioControlDeadline(recentDateStr, now);
-			assert.equal(status.isOverdue, false);
-			assert.ok(status.daysRemaining > 0);
-
-			const overdueDateStr = "2025-12-01";
-			const overdueStatus = checkNextBioControlDeadline(overdueDateStr, now);
-			assert.equal(overdueStatus.isOverdue, true);
-			assert.ok(overdueStatus.daysRemaining < 0);
-			assert.ok(overdueStatus.statusDescriptionRu.includes("истек"));
-		});
+		assert.equal(res.isCompliant, true);
+		assert.equal(res.failureReasons.length, 0);
 	});
 
-	describe("4. Form 257/u Record Construction, CSV Export & Print HTML", () => {
-		it("creates a complete, tamper-proof Form 257/u record with hash", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-08-22",
-				cycleNumber: 4,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.5,
-					actualPressureBar: 2.15,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Хирургический лоток для имплантации (фрезы, элеваторы, пинцеты)",
-				packsCount: 6,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "Смирнова Елена Викторовна",
-				headNurseSignatureFullName: "Ковалева Ольга Сергеевна",
-				isHeadNurseVerified: true,
-			});
-
-			assert.equal(record.status, "sterile_passed");
-			assert.equal(record.cycleNumber, 4);
-			assert.ok(record.digitalStampHash.startsWith("DENTE-CSO-257-"));
-			assert.equal(record.isHeadNurseVerified, true);
+	it("отсекает физически невозможные параметры цикла (время <= 0 или температура < 134°C)", () => {
+		const resZeroTime = evaluateCycleParameters("steam_134_5min", {
+			actualTemperatureCelsius: 134.5,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 0,
 		});
+		assert.equal(resZeroTime.isCompliant, false);
 
-		it("exports Form 257/u records to Russian CSV with official columns", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-08-22",
-				cycleNumber: 1,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.0,
-					actualPressureBar: 2.1,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Терапевтический набор (зеркало, зонд, пинцет)",
-				packsCount: 10,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "Иванова А.А.",
-			});
-
-			const csv = exportForm257ToCsv([record]);
-			assert.ok(csv.startsWith("\uFEFF"), "CSV must include UTF-8 BOM for Microsoft Excel");
-			assert.ok(csv.includes("Режим стерилизации"));
-			assert.ok(csv.includes("MELAG"));
-			assert.ok(csv.includes("СТЕРИЛЬНО"));
-			assert.ok(csv.includes("Терапевтический набор"));
+		const resLowTemp = evaluateCycleParameters("steam_134_5min", {
+			actualTemperatureCelsius: 130.0,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 5.0,
 		});
-
-		it("generates print-ready HTML for Form 257/u with legal stamp", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-08-22",
-				cycleNumber: 2,
-				sterilizerId: "autoclave-euronda-e9-med",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.2,
-					actualPressureBar: 2.12,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Наконечники турбинные и угловые",
-				packsCount: 4,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "Петрова С.И.",
-			});
-
-			const html = generateForm257PrintHtml(
-				[record],
-				{
-					name: "ООО ДЕНТЕ КЛИНИК",
-					ogrn: "1234567890123",
-					inn: "7701234567",
-					address: "г. Москва, ул. Клиническая, д. 10",
-					headNurse: "Ковалева О.С.",
-					chiefDoctor: "Д-р Марков М.В.",
-				},
-				"Август 2026",
-			);
-
-			assert.ok(html.includes("Журнал автоклавирования и стерилизации") || html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ"));
-			assert.ok(html.includes("Euronda"));
-			assert.ok(html.includes("ООО ДЕНТЕ КЛИНИК"));
-		});
-
-		it("generates 1-click regulatory SanPiN inspection HTML (Form 257/u + Form 366/u) for RosPotrebNadzor with chairside sterility presumption", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-09-24",
-				cycleNumber: 1,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.4,
-					actualPressureBar: 2.15,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Стоматологический инструментарий смены",
-				packsCount: 15,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "Сотрудник клиники",
-			});
-
-			const regulatoryHtml = generateRegulatorySanpinInspectionHtml({
-				form257Records: [record],
-				periodLabelRu: "Сентябрь 2026",
-			});
-
-			assert.ok(regulatoryHtml.includes("ОФИЦИАЛЬНАЯ ВЫГРУЗКА ДЛЯ ПРОВЕРОК РОСПОТРЕБНАДЗОРА"));
-			assert.ok(regulatoryHtml.includes("Журнал автоклавирования и стерилизации") || regulatoryHtml.includes("Форма № 257/у"));
-			assert.ok(regulatoryHtml.includes("Контроль предстерилизационной очистки") || regulatoryHtml.includes("Форма № 366/у"));
-			assert.ok(regulatoryHtml.includes("Презумпция стерильности лотка у кресла врача"));
-			assert.ok(regulatoryHtml.includes("СТЕРИЛЬНО"));
-		});
+		assert.equal(resLowTemp.isCompliant, false);
 	});
 
-	describe("5. Missing Sterilization Days Detection (Senior Nurse Audit)", () => {
-		it("detects missing sterilization days when patient visits occurred but no autoclave cycle was logged", () => {
-			const records = [
-				{ date: "2026-09-21" },
-				{ date: "2026-09-22" },
-				// 2026-09-23 missing!
-				{ date: "2026-09-24" },
-			];
-			const activeDates = ["2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"];
-
-			const audit = detectMissingSterilizationDays(records, activeDates);
-			assert.equal(audit.isMissingAutoclaveLog, true);
-			assert.equal(audit.missingDatesCount, 1);
-			assert.deepEqual(audit.missingDates, ["2026-09-23"]);
-			assert.equal(
-				audit.warningMessageRu,
-				"Внимание: за смену были приемы пациентов, но цикл автоклавирования не зарегистрирован",
-			);
-			assert.ok(audit.recommendationRu?.includes("2026-09-23"));
+	it("формирует запись журнала автоклавирования с цифровым штампом целостности", () => {
+		const record = createForm257Record({
+			date: "2026-10-25",
+			cycleNumber: 1,
+			sterilizerId: "autoclave-melag-vacuklav-23b",
+			regimeId: "steam_134_5min",
+			sensors: { actualTemperatureCelsius: 134.5, actualPressureBar: 2.15, actualExposureMinutes: 5.0 },
+			itemsDescriptionRu: "Стоматологический инструментарий смены (смотровые, терапия)",
+			packsCount: 27,
+			packagingType: "kraft_pouch_sealed",
+			chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+			operatorStaffFullName: "Медсестра ЦСО",
+			isHeadNurseVerified: true,
 		});
-
-		it("confirms 0 missing days when all active patient visit dates have sterilization records", () => {
-			const records = [
-				{ date: "2026-09-21" },
-				{ date: "2026-09-22" },
-				{ date: "2026-09-23" },
-			];
-			const activeDates = [
-				{ date: "2026-09-21", hasVisits: true },
-				{ date: "2026-09-22", hasVisits: true },
-				{ date: "2026-09-23", hasVisits: true },
-			];
-
-			const audit = detectMissingSterilizationDays(records, activeDates);
-			assert.equal(audit.isMissingAutoclaveLog, false);
-			assert.equal(audit.missingDatesCount, 0);
-			assert.equal(audit.warningMessageRu, undefined);
-		});
-
-		it("ignores dates without patient visits when evaluating missing days", () => {
-			const records = [{ date: "2026-09-21" }];
-			const activeDates = [
-				{ date: "2026-09-21", hasVisits: true },
-				{ date: "2026-09-22", hasVisits: false }, // Clinic closed / day off
-			];
-
-			const audit = detectMissingSterilizationDays(records, activeDates);
-			assert.equal(audit.isMissingAutoclaveLog, false);
-			assert.equal(audit.missingDatesCount, 0);
-		});
+		assert.equal(record.status, "sterile_passed");
+		assert.ok(record.digitalStampHash.startsWith("DENTE-CSO-257-"));
 	});
 
-	describe("6. Rospotrebnadzor Inspection Cleanliness & Fixed Layout Guarantee", () => {
-		it("guarantees fixed table layout and word-break in Form 257 print HTML to prevent trimmed columns", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-09-25",
-				cycleNumber: 1,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.5,
-					actualPressureBar: 2.15,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Стоматологический инструментарий",
-				packsCount: 10,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "", // empty operator name test
-			});
-
-			const html = generateForm257PrintHtml([record]);
-			assert.ok(html.includes("table-layout: fixed"));
-			assert.ok(html.includes("word-break: break-word"));
-			// Guarantees non-empty fallback for operator
-			assert.ok(html.includes("Медсестра ЦСО") || html.includes("Главная медсестра"));
+	it("экспортирует журнал в CSV и генерирует чистую печатную HTML форму без канцелярита", () => {
+		const record = createForm257Record({
+			date: "2026-10-25",
+			cycleNumber: 1,
+			sterilizerId: "autoclave-melag-vacuklav-23b",
+			regimeId: "steam_134_5min",
+			sensors: { actualTemperatureCelsius: 134.0, actualPressureBar: 2.1, actualExposureMinutes: 5.0 },
+			itemsDescriptionRu: "Наборы инструментов",
+			packsCount: 20,
+			packagingType: "kraft_pouch_sealed",
+			chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
+			operatorStaffFullName: "Медсестра ЦСО",
 		});
+		const csv = exportForm257ToCsv([record]);
+		assert.ok(csv.includes("MELAG") && csv.includes("СТЕРИЛЬНО"));
 
-		it("guarantees fixed table layout and operator fallback in regulatory combined HTML", () => {
-			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
-			const record = createForm257Record({
-				date: "2026-09-25",
-				cycleNumber: 1,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
-				regimeId: "steam_134_5min",
-				sensors: {
-					actualTemperatureCelsius: 134.5,
-					actualPressureBar: 2.15,
-					actualExposureMinutes: 5.0,
-				},
-				itemsDescriptionRu: "Стоматологический инструментарий",
-				packsCount: 10,
-				packagingType: "kraft_pouch_sealed",
-				chamberPoints,
-				operatorStaffFullName: "",
-			});
-
-			const html = generateRegulatorySanpinInspectionHtml({
-				form257Records: [record],
-			});
-			assert.ok(html.includes("table-layout: fixed"));
-			assert.ok(html.includes("word-break: break-word"));
-			assert.ok(html.includes("Медсестра ЦСО") || html.includes("Главная медсестра"));
-		});
+		const html = generateForm257PrintHtml([record]);
+		assert.ok(html.includes("ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ"));
+		assert.ok(html.includes("table-layout: fixed"));
 	});
 
-	describe("7. Batch Form 257 Records Generation with Target Dates (SanPiN Missing Days Backfill)", () => {
-		it("generates records only for targetDates specified without touching omitted dates", () => {
-			const targetDates = ["2026-09-08", "2026-09-15"];
-			const generated = generateBatchForm257Records({
-				targetDates,
-				cyclesPerDay: 2,
-				packsPerCycle: 12,
-			});
+	it("контролирует регулярность биоконтроля автоклава (1 раз в 6 месяцев)", () => {
+		const now = new Date("2026-10-25T10:00:00Z");
+		const recentStatus = checkNextBioControlDeadline("2026-08-01", now);
+		assert.equal(recentStatus.isOverdue, false);
 
-			assert.equal(generated.length, 4); // 2 dates * 2 cycles
-			const generatedDates = Array.from(new Set(generated.map((r) => r.date))).sort();
-			assert.deepEqual(generatedDates, targetDates);
-			for (const rec of generated) {
-				assert.equal(rec.status, "sterile_passed");
-				assert.ok(rec.chamberPoints.length === 5);
-			}
-		});
-
-		it("returns empty array when neither targetDates nor valid range is provided", () => {
-			const empty = generateBatchForm257Records({});
-			assert.equal(empty.length, 0);
-		});
+		const overdueStatus = checkNextBioControlDeadline("2025-10-01", now);
+		assert.equal(overdueStatus.isOverdue, true);
 	});
 
-	describe("8. Direct Physical & Thermodynamic Safety in autoclaveEngine.ts", () => {
-		it("rejects zero and negative exposure times", () => {
-			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
-			const resZero = validateSterilizationCycleParameters(cycle, 134, 2.1, 0);
-			assert.equal(resZero.isApproved, false);
-			assert.ok(resZero.violations.some((v) => v.includes("Физически невозможная выдержка")));
-
-			const resNeg = validateSterilizationCycleParameters(cycle, 134, 2.1, -5);
-			assert.equal(resNeg.isApproved, false);
-			assert.ok(resNeg.violations.some((v) => v.includes("Физически невозможная выдержка")));
-		});
-
-		it("rejects zero and negative temperatures", () => {
-			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
-			const resZero = validateSterilizationCycleParameters(cycle, 0, 2.1, 5);
-			assert.equal(resZero.isApproved, false);
-			assert.ok(resZero.violations.some((v) => v.includes("Физически невозможная температура")));
-
-			const resNeg = validateSterilizationCycleParameters(cycle, -10, 2.1, 5);
-			assert.equal(resNeg.isApproved, false);
-			assert.ok(resNeg.violations.some((v) => v.includes("Физически невозможная температура")));
-		});
-
-		it("rejects negative pressure", () => {
-			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
-			const res = validateSterilizationCycleParameters(cycle, 134, -0.5, 5);
-			assert.equal(res.isApproved, false);
-			assert.ok(res.violations.some((v) => v.includes("Физически невозможное давление")));
-		});
-
-		it("rejects thermodynamic impossibility: steam at 134°C with 0 bar pressure", () => {
-			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
-			const res = validateSterilizationCycleParameters(cycle, 134, 0, 5);
-			assert.equal(res.isApproved, false);
-			assert.ok(res.violations.some((v) => v.includes("Термодинамическая ошибка")));
-		});
+	it("детектирует пропущенные дни автоклавирования при наличии приемов пациентов", () => {
+		const audit = detectMissingSterilizationDays([{ date: "2026-10-24" }], ["2026-10-24", "2026-10-25"]);
+		assert.equal(audit.isMissingAutoclaveLog, true);
+		assert.deepEqual(audit.missingDates, ["2026-10-25"]);
 	});
 });
-

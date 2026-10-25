@@ -2,6 +2,7 @@ import type { PsoCleaningLog } from "@dental/shared";
 import { CheckCircle2, FlaskConical } from "lucide-react";
 import React from "react";
 import { PsoMobileCardItem } from "./PsoMobileCardItem.js";
+import { PsoMobileFloatingBar } from "./pso/PsoMobileFloatingBar.js";
 
 export interface PsoMobileCardsProps {
 	readonly logs: readonly PsoCleaningLog[];
@@ -55,7 +56,7 @@ export function PsoMobileCards({
 	}
 
 	return (
-		<div className="md:hidden flex flex-col gap-3 p-1.5" data-testid="pso-mobile-cards-container">
+		<div className="md:hidden flex flex-col gap-3 p-1.5 pb-20" data-testid="pso-mobile-cards-container">
 			{logs.map((log) => (
 				<PsoMobileCardItem
 					key={log.id}
@@ -65,6 +66,10 @@ export function PsoMobileCards({
 					onStampVerification={onStampVerification}
 				/>
 			))}
+			<PsoMobileFloatingBar
+				isSubmitting={isSubmitting}
+				onQuickMarkNorm={onQuickMarkNorm}
+			/>
 		</div>
 	);
 }

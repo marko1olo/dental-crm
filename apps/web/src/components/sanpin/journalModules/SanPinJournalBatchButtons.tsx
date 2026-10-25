@@ -40,12 +40,12 @@ export function SanPinJournalBatchButtons({
 					{isAutofilling ? (
 						<>
 							<Loader2 size={16} className="animate-spin text-white" />
-							<span>Фиксация цикла...</span>
+							<span>Фиксация смены...</span>
 						</>
 					) : (
 						<>
 							<CheckCircle2 size={16} className="text-white" />
-							<span>Зафиксировать цикл автоклавирования смены (134°C)</span>
+							<span>Пакетная запись автоклавирования за смену</span>
 						</>
 					)}
 				</button>
