@@ -52,15 +52,16 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 		assert.equal(canals[0]?.apex.x, 50.5);
 	});
 
-	it("renders Tooth44Container with default XXL badge (37px diameter, R=18.5)", () => {
+	it("renders Tooth44Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(Tooth44Container, { presetId: "intact" }),
 		);
 		assert.ok(html.includes("<svg"));
-		assert.ok(html.includes("viewBox=\"0 0 100 204\""));
+		assert.ok(html.includes("viewBox=\"0 0 100 218\""));
 		assert.ok(html.includes("id=\"tooth44-roots\""));
 		assert.ok(html.includes("id=\"tooth44-natural-crown-group\""));
 		assert.ok(html.includes("r=\"18.5\""));
+		assert.ok(html.includes("cy=\"194.5\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {

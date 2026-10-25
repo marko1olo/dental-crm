@@ -44,16 +44,16 @@ describe("Tooth48 Wheeler Ch. 11 Third Mandibular Molar Anatomical Invariants", 
 		assert.ok(TOOTH48_PULP_GEOMETRY.cShapedIsthmus);
 	});
 
-	it("renders Tooth48Container with default XXL badge (37px diameter, R=18.5, cy=180.5)", () => {
+	it("renders Tooth48Container with default XXL badge (37px diameter, R=18.5, cy=194.5)", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(Tooth48Container, { presetId: "intact" }),
 		);
 		assert.ok(html.includes("<svg"));
-		assert.ok(html.includes("viewBox=\"0 0 100 204\""));
+		assert.ok(html.includes("viewBox=\"0 0 100 218\""));
 		assert.ok(html.includes("id=\"tooth48-roots\""));
 		assert.ok(html.includes("id=\"tooth48-natural-crown-group\""));
 		assert.ok(html.includes("r=\"18.5\""));
-		assert.ok(html.includes("cy=\"180.5\""));
+		assert.ok(html.includes("cy=\"194.5\""));
 	});
 
 	it("renders crenulated caries overlay when caries is active", () => {

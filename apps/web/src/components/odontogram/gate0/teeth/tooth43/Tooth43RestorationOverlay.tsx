@@ -62,7 +62,7 @@ export const Tooth43RestorationOverlay: React.FC<
 						vectorEffect="non-scaling-stroke"
 					/>
 					<path
-						d="M 40.0,64.0 C 46.0,63.0 54.0,63.0 60.0,64.0"
+						d="M 38.0,70.5 C 44.0,69.0 56.0,69.0 62.0,70.5"
 						fill="none"
 						stroke={isDark ? "rgba(217, 119, 6, 0.7)" : "rgba(120, 53, 15, 0.75)"}
 						strokeWidth="0.55"

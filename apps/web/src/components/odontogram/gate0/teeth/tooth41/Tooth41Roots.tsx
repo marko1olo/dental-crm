@@ -42,14 +42,19 @@ export const Tooth41Roots: React.FC<Tooth41RootsProps> = ({
 				opacity={isEndo ? "0.90" : "1.0"}
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Central Root Depression Shadow */}
+			{/* Central Root Depression Soft Ambient Shadow */}
 			<g clipPath="url(#tooth41-root-clip)">
 				<path
 					d={g.rootSulcus}
 					fill="none"
-					stroke={sulcusStroke}
-					strokeWidth="1.4"
+					stroke={
+						isDark
+							? "url(#dente-root-sulcus-shadow-dark)"
+							: "url(#dente-root-sulcus-shadow)"
+					}
+					strokeWidth="2.0"
 					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
 				/>
 			</g>
 			{/* Cervical Margin (CEJ) */}

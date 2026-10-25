@@ -40,13 +40,17 @@ export const Tooth43Roots: React.FC<Tooth43RootsProps> = ({
 				opacity={isEndo ? "0.90" : "1.0"}
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Developmental Depression Shadow */}
+			{/* Developmental Depression Soft Ambient Shadow */}
 			<g clipPath="url(#tooth43-root-clip)">
 				<path
 					d={g.rootSulcus}
 					fill="none"
-					stroke={sulcusStroke}
-					strokeWidth="1.6"
+					stroke={
+						isDark
+							? "url(#dente-root-sulcus-shadow-dark)"
+							: "url(#dente-root-sulcus-shadow)"
+					}
+					strokeWidth="2.2"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>

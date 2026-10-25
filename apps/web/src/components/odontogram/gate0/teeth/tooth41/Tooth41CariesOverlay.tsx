@@ -47,15 +47,15 @@ export const Tooth41CariesOverlay: React.FC<Tooth41CariesOverlayProps> = ({
 				<circle cx="34.0" cy="40.5" r="1.5" fill={necroticFill} />
 			</g>
 
-			{/* Cervical Class V Lesion near Gingival Margin (X=42..58) */}
+			{/* Cervical Class V Lesion directly on Labial CEJ Margin */}
 			<g id="tooth41-caries-cervical">
 				<path
-					d="M 42.0,61.5 C 45.0,59.0 55.0,59.0 58.0,61.5 C 57.0,66.5 54.0,68.5 50.0,68.5 C 46.0,68.5 43.0,66.5 42.0,61.5 Z"
+					d="M 40.0,71.0 C 44.0,72.5 56.0,72.5 60.0,71.0 C 58.5,66.5 55.0,65.0 50.0,65.0 C 45.0,65.0 41.5,66.5 40.0,71.0 Z"
 					fill={lesionFill}
 					stroke={haloStroke}
 					strokeWidth="0.55"
 				/>
-				<circle cx="50.0" cy="64.0" r="1.6" fill={necroticFill} />
+				<circle cx="50.0" cy="68.0" r="1.4" fill={necroticFill} />
 			</g>
 		</g>
 	);

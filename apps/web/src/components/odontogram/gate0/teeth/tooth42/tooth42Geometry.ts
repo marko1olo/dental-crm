@@ -9,7 +9,7 @@
 export const TOOTH42_GEOMETRY = {
 	toothId: "42",
 	nameRu: "Нижний боковой резец",
-	viewBox: "0 0 100 205",
+	viewBox: "0 0 100 218",
 	// Chisel crown: incisal edge slightly sloping distally, rounded distal angle
 	crownMonolithPath:
 		"M 30.0,70.0 " +
@@ -42,5 +42,5 @@ export const TOOTH42_GEOMETRY = {
 		"M 30.0,70.0 C 37.0,72.5 44.0,73.5 50.0,73.5 C 57.0,73.5 64.0,72.5 70.0,70.0 " +
 		"L 69.5,67.5 C 63.5,69.8 57.0,70.8 50.0,70.8 C 43.0,70.8 36.5,69.8 30.5,67.5 Z",
 	compositeFillingPath:
-		"M 40.0,59.0 C 44.5,57.5 55.5,57.5 60.0,59.0 C 59.0,65.0 55.0,68.0 50.0,68.0 C 45.0,68.0 41.0,65.0 40.0,59.0 Z",
+		"M 38.0,71.5 C 42.5,73.0 57.5,73.0 62.0,71.5 C 60.5,66.5 56.5,65.0 50.0,65.0 C 43.5,65.0 39.5,66.5 38.0,71.5 Z",
 } as const;

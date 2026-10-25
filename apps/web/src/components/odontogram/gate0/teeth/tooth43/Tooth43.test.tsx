@@ -45,6 +45,7 @@ describe("Tooth43 Wheeler Ch. 11 Mandibular Canine Anatomical Invariants", () =>
 		assert.ok(html.includes("id=\"tooth43-root-complex\""));
 		assert.ok(html.includes("id=\"tooth43-crown\""));
 		assert.ok(html.includes("r=\"18.5\""));
+		assert.ok(html.includes("cy=\"194.5\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {

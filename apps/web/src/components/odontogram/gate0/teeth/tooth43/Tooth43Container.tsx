@@ -30,8 +30,8 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
 	const r = badgeRadius ?? 18.5;
-	const cy = badgeCy ?? (r > 10 ? 176 + r : 172);
-	const baseHeight = r > 10 ? Math.ceil(cy + r + 5) : 190;
+	const cy = badgeCy ?? (r > 10 ? 194.5 : 172);
+	const baseHeight = r > 10 ? 218 : 190;
 	const viewBox = `0 0 100 ${baseHeight}`;
 
 	return (

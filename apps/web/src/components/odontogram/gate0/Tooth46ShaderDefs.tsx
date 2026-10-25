@@ -1,4 +1,5 @@
 import React from "react";
+import { ToothAnteriorShaders } from "./ToothAnteriorShaders";
 import { Tooth46CariesShaders } from "./Tooth46CariesShaders";
 import { Tooth46CrownShaders } from "./Tooth46CrownShaders";
 import { Tooth46CuspShaders } from "./Tooth46CuspShaders";
@@ -98,6 +99,7 @@ export const Tooth46ShaderDefs: React.FC = () => {
 			</linearGradient>
 
 			{/* Modular Domain Shaders */}
+			<ToothAnteriorShaders />
 			<Tooth46CuspShaders />
 			<Tooth46CariesShaders />
 			<Tooth46EndoShaders />

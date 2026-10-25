@@ -36,27 +36,26 @@ export const Tooth43CariesOverlay: React.FC<Tooth43CariesOverlayProps> = ({
 			className={className}
 			clipPath="url(#tooth43-crown-clip)"
 		>
-			{/* Cervical Class V Lesion at Labial Gingival Margin */}
+			{/* Cervical Class V Lesion directly on Labial CEJ Margin */}
 			<g id="tooth43-caries-cervical">
 				<path
-					d="M 38.0,64.0 C 42.0,61.0 58.0,61.0 62.0,64.0 C 60.5,69.5 56.0,71.5 50.0,71.5 C 44.0,71.5 39.5,69.5 38.0,64.0 Z"
+					d="M 37.0,74.5 C 43.0,75.8 57.0,75.8 63.0,74.5 C 61.5,70.0 57.0,68.5 50.0,68.5 C 43.0,68.5 38.5,70.0 37.0,74.5 Z"
 					fill={lesionFill}
 					stroke={haloStroke}
 					strokeWidth="0.6"
 				/>
-				<circle cx="48.0" cy="66.5" r="2.2" fill={necroticFill} />
-				<circle cx="53.0" cy="66.0" r="1.6" fill={necroticFill} />
+				<circle cx="50.0" cy="72.0" r="1.6" fill={necroticFill} />
 			</g>
 
-			{/* Mesial Proximal Contact Demineralization (Class III) */}
+			{/* Mesial Proximal Contact Demineralization (Class III on border) */}
 			<g id="tooth43-caries-contact">
 				<path
-					d="M 16.0,38.0 C 18.0,38.0 20.0,41.0 19.5,44.0 C 19.0,47.0 17.0,49.0 15.0,48.0 C 14.0,45.0 14.5,40.0 16.0,38.0 Z"
+					d="M 23.5,42.0 C 26.5,42.0 27.5,45.5 27.0,48.5 C 26.5,51.5 24.5,53.0 22.8,53.0 C 22.0,49.0 22.5,45.0 23.5,42.0 Z"
 					fill={lesionFill}
 					stroke={haloStroke}
 					strokeWidth="0.5"
 				/>
-				<circle cx="16.5" cy="43.5" r="1.3" fill={necroticFill} />
+				<circle cx="24.5" cy="47.0" r="1.2" fill={necroticFill} />
 			</g>
 		</g>
 	);

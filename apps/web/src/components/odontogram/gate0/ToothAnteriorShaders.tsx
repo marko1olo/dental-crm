@@ -1,0 +1,28 @@
+import React from "react";
+
+/**
+ * DENTE Dental CRM — 3D Porcelain & Volume Shaders for Anterior Teeth (43, 42, 41)
+ * Authentic proximal curvature contours for lateral/mesial volume.
+ * Mandate 8b <= 120 lines.
+ */
+export const ToothAnteriorShaders: React.FC = () => {
+	return (
+		<>
+			{/* Proximal Curvature Contour 3D Volume — Light Mode */}
+			<linearGradient id="dente-proximal-contour" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#334155" stopOpacity="0.22" />
+				<stop offset="18%" stopColor="#334155" stopOpacity="0.0" />
+				<stop offset="82%" stopColor="#334155" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#334155" stopOpacity="0.26" />
+			</linearGradient>
+
+			{/* Proximal Curvature Contour 3D Volume — Dark Mode */}
+			<linearGradient id="dente-proximal-contour-dark" x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#020617" stopOpacity="0.55" />
+				<stop offset="20%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="80%" stopColor="#020617" stopOpacity="0.0" />
+				<stop offset="100%" stopColor="#020617" stopOpacity="0.60" />
+			</linearGradient>
+		</>
+	);
+};

@@ -38,20 +38,32 @@ export const Tooth41EnamelCrown: React.FC<Tooth41EnamelCrownProps> = ({
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Symmetrical labial grooves and crisp horizontal incisal edge highlight */}
+			{/* Symmetrical labial grooves, 3D volume, and crisp incisal highlight */}
 			<g clipPath="url(#tooth41-crown-clip)">
+				{/* 3D Cylindrical Proximal Contour Volume */}
+				<path
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				{/* Cervical Ridge Convexity */}
+				<path
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)"}
+					vectorEffect="non-scaling-stroke"
+				/>
 				<path
 					d={g.labialGrooveMesial}
 					fill="none"
-					stroke="rgba(148, 163, 184, 0.30)"
-					strokeWidth="0.8"
+					stroke="rgba(148, 163, 184, 0.20)"
+					strokeWidth="0.7"
 					strokeLinecap="round"
 				/>
 				<path
 					d={g.labialGrooveDistal}
 					fill="none"
-					stroke="rgba(148, 163, 184, 0.30)"
-					strokeWidth="0.8"
+					stroke="rgba(148, 163, 184, 0.20)"
+					strokeWidth="0.7"
 					strokeLinecap="round"
 				/>
 				<path

@@ -38,13 +38,25 @@ export const Tooth43EnamelCrown: React.FC<Tooth43EnamelCrownProps> = ({
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Central Labial Ridge and Natural Canine Light Reflex */}
+			{/* 3D Cylindrical Proximal Contour Volume & Cervical Convexity */}
 			<g clipPath="url(#tooth43-crown-clip)">
 				<path
-					d={g.labialRidge}
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				{/* Smooth Labial Ridge Light Reflex (Zero dividing dark seams!) */}
+				<path
+					d={g.labialRidgeHighlight}
 					fill="none"
-					stroke="rgba(148, 163, 184, 0.35)"
-					strokeWidth="1.2"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="3.2"
+					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>
 				<path
