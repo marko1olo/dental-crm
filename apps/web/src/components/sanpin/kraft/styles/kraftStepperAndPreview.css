@@ -1,0 +1,116 @@
+/* ==========================================================================
+   KRAFT STUDIO STEPPER & PREVIEW (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.kraft-stepper-container {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.kraft-pill-btn {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 0.85rem;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+[data-theme="dark"] .kraft-pill-btn,
+.dark .kraft-pill-btn {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.kraft-pill-btn:hover {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.kraft-pill-btn.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+.kraft-number-input {
+	min-height: 44px;
+	width: 90px;
+	padding: 0.5rem;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.95rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+[data-theme="dark"] .kraft-number-input,
+.dark .kraft-number-input {
+	background: #0f172a;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.kraft-preview-card {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+}
+
+[data-theme="dark"] .kraft-preview-card,
+.dark .kraft-preview-card {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+.kraft-label-preview-wrapper {
+	background: #ffffff;
+	color: #000000;
+	padding: 8px;
+	border: 1px dashed #94a3b8;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.kraft-indicator-box {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border-radius: 8px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .kraft-indicator-box,
+.dark .kraft-indicator-box {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+.kraft-swatch-circle {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	border: 1.5px solid #000000;
+	flex-shrink: 0;
+}

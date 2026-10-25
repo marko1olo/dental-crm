@@ -1,17 +1,11 @@
 /**
  * apps/web/src/components/sanpin/kraft/kraftPackagingTypes.ts
- *
- * Каталог упаковочных материалов для стерилизации по СанПиН 3.3686-21.
- * Нормы сроков годности (Таблица 3.14) и типы упаковки.
+ * Каталог упаковочных материалов для стерилизации. Мандат 8b: строго <= 120 строк.
  */
 
 export type SanpinPackagingTypeId =
-	| "kraft_self_seal"
-	| "paper_plastic_heat_seal"
-	| "crepe_paper_double"
-	| "bix_filter"
-	| "bix_no_filter"
-	| "calico_double_wrap";
+	| "kraft_self_seal" | "paper_plastic_heat_seal" | "crepe_paper_double"
+	| "bix_filter" | "bix_no_filter" | "calico_double_wrap";
 
 export interface SanpinPackagingTypeDefinition {
 	readonly id: SanpinPackagingTypeId;
@@ -37,26 +31,26 @@ export const SANPIN_PACKAGING_TYPES: readonly SanpinPackagingTypeDefinition[] = 
 		minShelfLifeDays: 20,
 		maxShelfLifeDays: 50,
 		defaultShelfLifeDays: 50,
-		sealingMethodRu: "Встроенный клеевой клапан с защитной полосой",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632 (Таблица 3.14)",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / ГОСТ 10354",
-		descriptionRu: "Пакет из влагопрочной медицинской крафт-бумаги плотностью 70–80 г/м² с клапаном на липкой основе.",
-		storageRequirementsRu: "Хранить в закрытых сухих шкафах/ящиках при температуре +10...+30°C.",
+		sealingMethodRu: "Встроенный клеевой клапан",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (до 50 суток)",
+		gostStandardRu: "Медицинская крафт-бумага",
+		descriptionRu: "Пакет из влагопрочной крафт-бумаги.",
+		storageRequirementsRu: "В сухих закрытых шкафах.",
 		isHeatSealed: false,
 		isTransparentFilm: false,
 	},
 	{
 		id: "paper_plastic_heat_seal",
 		nameRu: "Комбинированный пакет термосварной (бумага + пленка)",
-		shortLabelRu: "Комби-пакет термосварной (50–60 сут. / до 180 сут.)",
+		shortLabelRu: "Комби-пакет термосварной (50–180 сут.)",
 		minShelfLifeDays: 50,
 		maxShelfLifeDays: 180,
 		defaultShelfLifeDays: 60,
-		sealingMethodRu: "Термосварочный импульсный аппарат (ширина шва ≥ 8 мм)",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632 (Таблица 3.14), п. 3634",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / EN 868-5",
-		descriptionRu: "Многослойная прозрачная полимерная пленка и медицинская бумага.",
-		storageRequirementsRu: "В шкафах чистой зоны, беречь от прямых солнечных лучей.",
+		sealingMethodRu: "Термосварочный аппарат (шов ≥ 8 мм)",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (до 180 суток)",
+		gostStandardRu: "Полимер + бумага",
+		descriptionRu: "Прозрачная пленка и бумага.",
+		storageRequirementsRu: "В шкафах, защита от солнца.",
 		isHeatSealed: true,
 		isTransparentFilm: true,
 	},
@@ -67,41 +61,41 @@ export const SANPIN_PACKAGING_TYPES: readonly SanpinPackagingTypeDefinition[] = 
 		minShelfLifeDays: 60,
 		maxShelfLifeDays: 60,
 		defaultShelfLifeDays: 60,
-		sealingMethodRu: "Складывание конвертом в 2 слоя с фиксацией индикаторным скотчем",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3632 (Таблица 3.14)",
-		gostStandardRu: "ГОСТ Р ИСО 11607-1-2018 / EN 868-2",
-		descriptionRu: "Мягкая крепированная бумага повышенной прочности для крупных наборов.",
-		storageRequirementsRu: "В закрытых шкафах или остекленных витринах.",
+		sealingMethodRu: "Конвертом в 2 слоя с индикаторным скотчем",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (60 суток)",
+		gostStandardRu: "Медицинский креп",
+		descriptionRu: "Крепированная бумага для наборов.",
+		storageRequirementsRu: "В закрытых шкафах.",
 		isHeatSealed: false,
 		isTransparentFilm: false,
 	},
 	{
 		id: "bix_filter",
-		nameRu: "Стерилизационная коробка (бикс) с антибактериальным фильтром (КФ)",
-		shortLabelRu: "Бикс с фильтром КФ (20–30 сут.)",
+		nameRu: "Стерилизационная коробка (бикс) с фильтром",
+		shortLabelRu: "Бикс с фильтром (20–30 сут.)",
 		minShelfLifeDays: 20,
 		maxShelfLifeDays: 30,
 		defaultShelfLifeDays: 20,
-		sealingMethodRu: "Герметичная крышка с хлопчатобумажным фильтром",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3631",
-		gostStandardRu: "ГОСТ 19569-89",
-		descriptionRu: "Металлическая коробка круглая или прямоугольная с фильтрами.",
-		storageRequirementsRu: "В чистой зоне стерилизационной.",
+		sealingMethodRu: "Герметичная крышка с фильтром",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (20–30 суток)",
+		gostStandardRu: "Коробка КФ",
+		descriptionRu: "Металлическая коробка с фильтром.",
+		storageRequirementsRu: "В чистой зоне.",
 		isHeatSealed: false,
 		isTransparentFilm: false,
 	},
 	{
 		id: "bix_no_filter",
-		nameRu: "Стерилизационная коробка (бикс) без фильтра (КСК с поясными отверстиями)",
-		shortLabelRu: "Бикс без фильтра КСК (3 сут.)",
+		nameRu: "Стерилизационная коробка (бикс) без фильтра",
+		shortLabelRu: "Бикс без фильтра (3 сут.)",
 		minShelfLifeDays: 3,
 		maxShelfLifeDays: 3,
 		defaultShelfLifeDays: 3,
-		sealingMethodRu: "Закрытие пояса с боковыми отверстиями после извлечения из автоклава",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3631",
-		gostStandardRu: "ГОСТ 19569-89",
-		descriptionRu: "Коробка стерилизационная круглая с боковыми поясными отверстиями.",
-		storageRequirementsRu: "В закрытых шкафах стерилизационной.",
+		sealingMethodRu: "Закрытие пояса после извлечения",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (3 суток)",
+		gostStandardRu: "Коробка КСК",
+		descriptionRu: "Коробка с боковыми отверстиями.",
+		storageRequirementsRu: "В закрытых шкафах.",
 		isHeatSealed: false,
 		isTransparentFilm: false,
 	},
@@ -112,11 +106,11 @@ export const SANPIN_PACKAGING_TYPES: readonly SanpinPackagingTypeDefinition[] = 
 		minShelfLifeDays: 3,
 		maxShelfLifeDays: 3,
 		defaultShelfLifeDays: 3,
-		sealingMethodRu: "Двухслойное пеленание в отбеленную бязь с перевязкой тесьмой",
-		sanpinClauseRu: "СанПиН 3.3686-21 п. 3630",
-		gostStandardRu: "ГОСТ 29298-2005",
-		descriptionRu: "Тканевая упаковка из плотной отбеленной бязи в два слоя.",
-		storageRequirementsRu: "Хранить в закрытых шкафах при влажности не выше 60%.",
+		sealingMethodRu: "Двухслойное пеленание в бязь",
+		sanpinClauseRu: "СанПиН 3.3686-21 Таблица 3.14 (3 суток)",
+		gostStandardRu: "Отбеленная бязь",
+		descriptionRu: "Тканевая упаковка в два слоя.",
+		storageRequirementsRu: "В шкафах, влажность до 60%.",
 		isHeatSealed: false,
 		isTransparentFilm: false,
 	},

@@ -1,0 +1,113 @@
+/* ==========================================================================
+   KRAFT STUDIO BADGES & TABLES (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.kraft-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.25rem 0.6rem;
+	border-radius: 6px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+}
+
+.kraft-status-badge.sterile_valid {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .kraft-status-badge.sterile_valid,
+.dark .kraft-status-badge.sterile_valid {
+	background: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+}
+
+.kraft-status-badge.expiring_soon_7d {
+	background: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .kraft-status-badge.expiring_soon_7d,
+.dark .kraft-status-badge.expiring_soon_7d {
+	background: rgba(245, 158, 11, 0.2);
+	color: #fbbf24;
+}
+
+.kraft-status-badge.expired {
+	background: rgba(239, 68, 68, 0.12);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .kraft-status-badge.expired,
+.dark .kraft-status-badge.expired {
+	background: rgba(239, 68, 68, 0.2);
+	color: #f87171;
+}
+
+.kraft-status-badge.recalled {
+	background: rgba(100, 116, 139, 0.12);
+	color: #475569;
+	border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+[data-theme="dark"] .kraft-status-badge.recalled,
+.dark .kraft-status-badge.recalled {
+	background: rgba(100, 116, 139, 0.2);
+	color: #cbd5e1;
+}
+
+.kraft-table-container {
+	overflow-x: auto;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .kraft-table-container,
+.dark .kraft-table-container {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+.kraft-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+	text-align: left;
+}
+
+.kraft-table th {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 600;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .kraft-table th,
+.dark .kraft-table th {
+	background: #1e293b;
+	color: #94a3b8;
+	border-bottom-color: #334155;
+}
+
+.kraft-table td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .kraft-table td,
+.dark .kraft-table td {
+	border-bottom-color: #334155;
+	color: #f8fafc;
+}
+
+.kraft-table tr:hover td {
+	background: rgba(13, 148, 136, 0.04);
+}

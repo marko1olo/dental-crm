@@ -1,0 +1,105 @@
+/* ==========================================================================
+   KRAFT STUDIO FOOTER & TERMINAL (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.kraft-studio-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+[data-theme="dark"] .kraft-studio-footer,
+.dark .kraft-studio-footer {
+	background: #1e293b;
+	border-top-color: #334155;
+}
+
+.kraft-btn {
+	min-height: 44px;
+	padding: 0.5rem 1.25rem;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: all 0.15s ease;
+	border: 1px solid transparent;
+}
+
+.kraft-btn-secondary {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+[data-theme="dark"] .kraft-btn-secondary,
+.dark .kraft-btn-secondary {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: #334155;
+}
+
+.kraft-btn-secondary:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--muted, #64748b);
+}
+
+[data-theme="dark"] .kraft-btn-secondary:hover,
+.dark .kraft-btn-secondary:hover {
+	background: #1e293b;
+}
+
+.kraft-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-weight: 700;
+}
+
+.kraft-btn-primary:hover {
+	background: #0f766e;
+}
+
+.kraft-btn-danger {
+	background: rgba(239, 68, 68, 0.1);
+	color: #dc2626;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+.kraft-btn-danger:hover {
+	background: rgba(239, 68, 68, 0.2);
+}
+
+.kraft-terminal-container {
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: #0f172a;
+	color: #38bdf8;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.8125rem;
+	padding: 1rem;
+	overflow-x: auto;
+	line-height: 1.5;
+	position: relative;
+	max-height: 360px;
+}
+
+[data-theme="dark"] .kraft-terminal-container,
+.dark .kraft-terminal-container {
+	border-color: #334155;
+	background: #020617;
+	color: #38bdf8;
+}
+
+.kraft-code-line {
+	display: block;
+	white-space: pre;
+}

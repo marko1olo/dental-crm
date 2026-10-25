@@ -1,0 +1,59 @@
+/* ==========================================================================
+   KRAFT STUDIO MOBILE & PRINT (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.kraft-studio-overlay {
+		padding: 0;
+		align-items: flex-start;
+	}
+
+	.kraft-studio-modal {
+		width: 100%;
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.kraft-studio-header {
+		padding: 0.75rem 1rem;
+	}
+
+	.kraft-studio-body {
+		padding: 0.875rem 1rem;
+		gap: 0.875rem;
+		padding-bottom: 5rem;
+	}
+
+	.kraft-studio-footer {
+		padding: 0.75rem 1rem;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.kraft-studio-footer .kraft-btn {
+		width: 100%;
+	}
+}
+
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.kraft-printable-area,
+	.kraft-printable-area * {
+		visibility: visible;
+	}
+	.kraft-printable-area {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+	}
+	.no-print {
+		display: none !important;
+	}
+}

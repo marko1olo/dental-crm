@@ -1,0 +1,117 @@
+/* ==========================================================================
+   KRAFT STUDIO MODAL & HEADER (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.kraft-studio-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.kraft-studio-modal {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 1160px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+[data-theme="dark"] .kraft-studio-modal,
+.dark .kraft-studio-modal {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+	color: #f8fafc;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.kraft-studio-header {
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .kraft-studio-header,
+.dark .kraft-studio-header {
+	background: #1e293b;
+	border-bottom-color: #334155;
+}
+
+.kraft-studio-title-block {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.kraft-studio-title-block h2 {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+[data-theme="dark"] .kraft-studio-title-block h2,
+.dark .kraft-studio-title-block h2 {
+	color: #f8fafc;
+}
+
+.kraft-studio-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.125rem;
+}
+
+[data-theme="dark"] .kraft-studio-subtitle,
+.dark .kraft-studio-subtitle {
+	color: #94a3b8;
+}
+
+.kraft-studio-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--muted, #64748b);
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.kraft-studio-close-btn:hover {
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .kraft-studio-close-btn,
+.dark .kraft-studio-close-btn {
+	color: #94a3b8;
+}
+
+[data-theme="dark"] .kraft-studio-close-btn:hover,
+.dark .kraft-studio-close-btn:hover {
+	background: #334155;
+	color: #ffffff;
+}

@@ -1,0 +1,116 @@
+/* ==========================================================================
+   KRAFT STUDIO PANELS & PRESETS (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+.kraft-panel-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+[data-theme="dark"] .kraft-panel-card,
+.dark .kraft-panel-card {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+.kraft-panel-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 0.5rem;
+}
+
+[data-theme="dark"] .kraft-panel-title,
+.dark .kraft-panel-title {
+	color: #f8fafc;
+	border-bottom-color: #334155;
+}
+
+.kraft-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.75rem;
+}
+
+.kraft-preset-item {
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	padding: 0.75rem;
+	cursor: pointer;
+	background: var(--paper, #ffffff);
+	transition: all 0.15s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-height: 44px;
+}
+
+[data-theme="dark"] .kraft-preset-item,
+.dark .kraft-preset-item {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+.kraft-preset-item:hover {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.kraft-preset-item.selected {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.1);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+[data-theme="dark"] .kraft-preset-item.selected,
+.dark .kraft-preset-item.selected {
+	background: rgba(13, 148, 136, 0.2);
+	border-color: #2dd4bf;
+}
+
+.kraft-preset-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .kraft-preset-title,
+.dark .kraft-preset-title {
+	color: #f8fafc;
+}
+
+.kraft-preset-desc {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	line-height: 1.35;
+}
+
+[data-theme="dark"] .kraft-preset-desc,
+.dark .kraft-preset-desc {
+	color: #94a3b8;
+}
+
+.kraft-preset-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.2rem 0.5rem;
+	border-radius: 4px;
+	align-self: flex-start;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+}
+
+[data-theme="dark"] .kraft-preset-badge,
+.dark .kraft-preset-badge {
+	background: rgba(45, 212, 191, 0.2);
+	color: #2dd4bf;
+}
