@@ -33,7 +33,7 @@ export function AnesthesiaMobileBottomSheet({
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity lg:hidden anesthesia-mobile-sheet" data-testid="anesthesia-mobile-sheet" onClick={onClose}>
+		<div className="fixed inset-0 z-[10050] flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity lg:hidden anesthesia-mobile-sheet" data-testid="anesthesia-mobile-sheet" onClick={onClose}>
 			<div className="w-full max-w-lg bg-[var(--paper)] rounded-t-[24px] p-4 shadow-2xl border-t border-[var(--line)] flex flex-col gap-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 				<div className="w-9 h-1.5 bg-[var(--line-strong)] rounded-full mx-auto shrink-0 mb-1" />
 				<div className="flex items-center justify-between pb-1 border-b border-[var(--line)]">

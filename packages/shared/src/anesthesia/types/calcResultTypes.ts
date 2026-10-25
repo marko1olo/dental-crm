@@ -10,9 +10,10 @@ import type {
 	AnesthesiaSafetyZone,
 	AnesthesiaSomaticAlert,
 	PreoperativeVitalsChecklist,
-	SomaticCrossCheckResult,
 	SomaticRiskProfile,
 } from "./safetyTypes.js";
+
+export type { PatientMrdCalculation, AutopilotResolutionResult } from "./calcMrdTypes.js";
 
 export interface ComprehensiveAnesthesiaCalculationResult {
 	readonly drug: AnesthesiaDrugSpec;
@@ -86,38 +87,4 @@ export interface VisitAnesthesiaCalculationResult {
 	readonly carpuleBatch?: AnesthesiaCarpuleBatchInfo | undefined;
 	readonly status?: "OK" | "REQUIRES_WEIGHT_INPUT" | undefined;
 	readonly requiresWeightInput?: boolean | undefined;
-}
-
-export interface PatientMrdCalculation {
-	readonly drugKey: AnesthesiaDrugKey;
-	readonly commercialName: string;
-	readonly activeSubstance: string;
-	readonly patientWeightKg: number;
-	readonly isPediatric: boolean;
-	readonly maxDoseMgPerKg: number;
-	readonly mrdDoseMg: number;
-	readonly mrdVolumeMl: number;
-	readonly mrdCarpules: number;
-	readonly isCappedByAbsoluteMax: boolean;
-	readonly isCappedByCardio: boolean;
-	readonly maxSafeEpinephrineMg: number;
-	readonly cardioLimitBadgeText: string | null;
-	readonly formattedNoteRu: string;
-	readonly status?: "OK" | "REQUIRES_WEIGHT_INPUT" | undefined;
-	readonly requiresWeightInput?: boolean | undefined;
-}
-
-export interface AutopilotResolutionResult {
-	readonly selectedDrugKey: AnesthesiaDrugKey;
-	readonly drug: AnesthesiaDrugDefinition;
-	readonly rationaleRu: string;
-	readonly badgeText: string;
-	readonly isCardioRestricted: boolean;
-	readonly cardioLimitBadgeText: string | null;
-	readonly mrdDoseMg: number;
-	readonly mrdVolumeMl: number;
-	readonly mrdCarpules: number;
-	readonly maxSafeVolumeMl: number;
-	readonly maxSafeEpinephrineMg: number;
-	readonly crossCheck: SomaticCrossCheckResult;
 }
