@@ -56,4 +56,20 @@ describe("VisitTherapyProtocolWidget (Chairside 30-second Therapy & Restoration)
 		assert.ok(html.includes("Зуб 11"), "Header indicates tooth 11");
 		assert.ok(html.includes("MID") || html.includes("M, I, D"), "Defaults to anterior surfaces");
 	});
+
+	it("guarantees Doctor Autonomy (Mandate 8e): zero disabled buttons and clean clinical language", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitTherapyProtocolWidget, {
+				activeTooth: 25,
+			}),
+		);
+
+		// Запрет блокировки кнопок (Мандат 8e)
+		assert.ok(!html.includes('disabled=""') && !html.includes("disabled "), "Action buttons must NEVER be disabled");
+
+		// Искоренение советского птичьего канцелярита (Мандаты 8x, 8ap)
+		assert.ok(!html.includes("Форма 043/у"), "No obsolete Soviet form 043/u jargon in production UI");
+		assert.ok(!html.includes("804н"), "No Soviet decree 804n in production UI");
+		assert.ok(!html.includes("257/у"), "No Soviet decree 257/u in production UI");
+	});
 });
