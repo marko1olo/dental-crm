@@ -1,0 +1,48 @@
+import type { ClinicalMaterialOption, EtchantGel } from "../../../store/doctorPreferencesStore";
+
+export const ETCHANT_OPTIONS: readonly ClinicalMaterialOption<EtchantGel>[] = [
+	{
+		id: "ultra_etch",
+		key: "ultra_etch",
+		name: "Ultra-Etch 35% (Ultradent)",
+		title: "Ultra-Etch (Ultradent)",
+		manufacturer: "Ultradent (США)",
+		description: "Самолимитирующийся тиксотропный 35% гель фосфорной кислоты, не проникает глубже нормы в дентин",
+		popularityRank: 1,
+		isFavoriteDefault: true,
+		category: "Тиксотропный 35%",
+	},
+	{
+		id: "scotchbond_etch",
+		key: "scotchbond_etch",
+		name: "Scotchbond Universal Etchant (3M)",
+		title: "Scotchbond Universal Etchant (3M)",
+		manufacturer: "3M (США)",
+		description: "32% ортофосфорная кислота пониженной вязкости с четкой синей индикацией и легким смыванием",
+		popularityRank: 2,
+		isFavoriteDefault: false,
+		category: "Универсальный 32%",
+	},
+	{
+		id: "total_etch",
+		key: "total_etch",
+		name: "Total Etch 37% (Ivoclar Vivadent)",
+		title: "Total Etch (Ivoclar)",
+		manufacturer: "Ivoclar Vivadent (Лихтенштейн)",
+		description: "37% ортофосфорная кислота классической вязкости для тотального и селективного травления",
+		popularityRank: 3,
+		isFavoriteDefault: false,
+		category: "Классический 37%",
+	},
+	{
+		id: "travis_vladmiva",
+		key: "travis_vladmiva",
+		name: "Травис 37% (ВладМиВа)",
+		title: "Травис (ВладМиВа)",
+		manufacturer: "ВладМиВа (Россия)",
+		description: "Отечественный гель 37% ортофосфорной кислоты со стабилизированной формулой и контрастным цветом",
+		popularityRank: 4,
+		isFavoriteDefault: false,
+		category: "Гель 37% РФ",
+	},
+];

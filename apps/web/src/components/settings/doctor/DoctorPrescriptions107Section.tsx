@@ -3,11 +3,7 @@
  *
  * Шаблоны рецептов с латинскими сигнатурами и защитой от передозировки:
  * Амоксиклав, Цифран СТ, Найз, Дексалгин, Супрастин, Хлоргексидин 0.05%.
- *
- * Инварианты:
- * - Мандат 8b: строго <= 120 строк.
- * - Мандат 8d: ноль мультяшных эмодзи.
- * - Мандат 8e: врачебная автономия (1-клик выписка и печать рецептурного бланка).
+ * Decomposed strictly <= 120 lines following Mandate 8b.
  */
 
 import { Pill } from "lucide-react";
@@ -27,70 +23,42 @@ const CATEGORIES = [
 	{ id: "nsaid", label: "НПВП" },
 	{ id: "antiseptic", label: "Антисептики" },
 	{ id: "antihistamine", label: "Противоотечные" },
-];
+] as const;
 
 export function DoctorPrescriptions107Section() {
 	const preferences = useDoctorPreferencesStore((s) => s.preferences);
-	const updatePreferences = useDoctorPreferencesStore(
-		(s) => s.updatePreferences,
-	);
+	const updatePreferences = useDoctorPreferencesStore((s) => s.updatePreferences);
 
-	const [activeCategoryFilter, setActiveCategoryFilter] =
-		useState<string>("all");
-	const [selectedMedId, setSelectedMedId] =
-		useState<string>("amoxiclav_875_125");
+	const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>("all");
+	const [selectedMedId, setSelectedMedId] = useState<string>("amoxiclav_875_125");
 
 	const favoriteIds = preferences.favoriteMedicationIds || [];
 
 	const handleToggleFavorite = (id: string) => {
-		const next = favoriteIds.includes(id)
-			? favoriteIds.filter((item) => item !== id)
-			: [...favoriteIds, id];
+		const next = favoriteIds.includes(id) ? favoriteIds.filter((item) => item !== id) : [...favoriteIds, id];
 		updatePreferences({ favoriteMedicationIds: next });
 		const med = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === id);
-		showToast(
-			favoriteIds.includes(id)
-				? `${med?.tradeName || id} удален из избранного`
-				: `${med?.tradeName || id} добавлен в избранные рецепты`,
-			"info",
-		);
+		showToast(favoriteIds.includes(id) ? `${med?.tradeName || id} удален из избранного` : `${med?.tradeName || id} добавлен в избранные`, "info");
 	};
 
-	const filteredMedications = FAVORITE_MEDICATION_OPTIONS.filter((m) => {
-		if (activeCategoryFilter === "all") return true;
-		return m.category === activeCategoryFilter;
-	});
-
-	const currentMed: FavoriteMedicationOption =
-		FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === selectedMedId) ||
-		FAVORITE_MEDICATION_OPTIONS[0]!;
+	const filteredMedications = FAVORITE_MEDICATION_OPTIONS.filter((m) => activeCategoryFilter === "all" || m.category === activeCategoryFilter);
+	const currentMed: FavoriteMedicationOption = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === selectedMedId) || FAVORITE_MEDICATION_OPTIONS[0]!;
 
 	const handleCopyLatin = () => {
 		navigator.clipboard.writeText(currentMed.rpLatin);
-		showToast(
-			`Рецепт на латыни для «${currentMed.tradeName}» скопирован`,
-			"success",
-		);
+		showToast(`Рецепт на латыни для «${currentMed.tradeName}» скопирован`, "success");
 	};
 
 	return (
-		<div
-			className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4"
-			data-testid="doctor-prescriptions-107-section"
-		>
+		<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4" data-testid="doctor-prescriptions-107-section">
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-2.5">
 					<div className="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
 						<Pill size={18} />
 					</div>
 					<div>
-						<h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">
-							Шаблоны рецептурных бланков и защита от передозировки
-						</h4>
-						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-							Латинские прописи (Rp.), суточные лимиты, длительность курса и
-							противопоказания
-						</p>
+						<h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">Шаблоны рецептурных бланков</h4>
+						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">Латинские прописи (Rp.), суточные лимиты, курсы и противопоказания</p>
 					</div>
 				</div>
 
@@ -112,18 +80,8 @@ export function DoctorPrescriptions107Section() {
 				</div>
 			</div>
 
-			<DoctorPrescriptions107Grid
-				medications={filteredMedications}
-				selectedMedId={selectedMedId}
-				onSelectMedId={setSelectedMedId}
-				favoriteIds={favoriteIds}
-				onToggleFavorite={handleToggleFavorite}
-			/>
-
-			<DoctorPrescriptions107Card
-				currentMed={currentMed}
-				onCopyLatin={handleCopyLatin}
-			/>
+			<DoctorPrescriptions107Grid medications={filteredMedications} selectedMedId={selectedMedId} onSelectMedId={setSelectedMedId} favoriteIds={favoriteIds} onToggleFavorite={handleToggleFavorite} />
+			<DoctorPrescriptions107Card currentMed={currentMed} onCopyLatin={handleCopyLatin} />
 		</div>
 	);
 }

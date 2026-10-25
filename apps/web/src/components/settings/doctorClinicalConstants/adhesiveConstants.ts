@@ -1,0 +1,81 @@
+import type { AdhesiveSystem, ClinicalMaterialOption } from "../../../store/doctorPreferencesStore";
+
+export const ADHESIVE_OPTIONS: readonly ClinicalMaterialOption<AdhesiveSystem>[] = [
+	{
+		id: "optibond_fl", key: "optibond_fl", name: "OptiBond FL (Kerr) — IV поколение",
+		title: "OptiBond FL (Kerr)", manufacturer: "Kerr (США)",
+		generation: "IV поколение (золотой стандарт тотального протравливания)",
+		description: "4-е поколение, 2 бутылька (праймер + адгезив с 48% наполнителем), эталон прочности",
+		popularityRank: 1, isFavoriteDefault: true,
+	},
+	{
+		id: "clearfil_se_bond_2", key: "clearfil_se_bond_2", name: "Clearfil SE Bond 2 (Kuraray) — VI поколение",
+		title: "Clearfil SE Bond 2 (Kuraray)", manufacturer: "Kuraray Noritake (Япония)",
+		generation: "VI поколение (двухэтапный самопротравливающий с 10-MDP)",
+		description: "6-е поколение, самопротравливающий двухшаговый адгезив с оригинальным мономером 10-MDP",
+		popularityRank: 2, isFavoriteDefault: false,
+	},
+	{
+		id: "single_bond_universal", key: "single_bond_universal", name: "Single Bond Universal / Single Bond 2 (3M)",
+		title: "Single Bond Universal (3M)", manufacturer: "3M (США)",
+		generation: "VIII поколение (универсальный)",
+		description: "5-е / 8-е универсальное поколение, совместим с тотальным, селективным и самопротравливанием",
+		popularityRank: 3, isFavoriteDefault: false,
+	},
+	{
+		id: "prime_and_bond_universal", key: "prime_and_bond_universal", name: "Prime & Bond Universal / NT (Dentsply Sirona)",
+		title: "Prime&Bond Universal (Dentsply)", manufacturer: "Dentsply Sirona (Германия)",
+		generation: "VIII поколение (универсальный)",
+		description: "Универсальный адгезив с технологией Active-Guard для надежного сцепления при гипергидратации дентина",
+		popularityRank: 4, isFavoriteDefault: false,
+	},
+	{
+		id: "g_premio_bond", key: "g_premio_bond", name: "G-Premio BOND (GC) — универсальный",
+		title: "G-Premio BOND (GC)", manufacturer: "GC (Япония)",
+		generation: "VIII поколение (универсальный)",
+		description: "Универсальный самопротравливающий адгезив с 3 мономерами (4-MET, MDP, MDTP), толщина пленки 3 мкм",
+		popularityRank: 5, isFavoriteDefault: false,
+	},
+	{
+		id: "optibond_universal", key: "optibond_universal", name: "OptiBond Universal / Solo Plus (Kerr)",
+		title: "OptiBond Universal / Solo Plus (Kerr)", manufacturer: "Kerr (США)",
+		generation: "VIII / V поколение",
+		description: "Однокомпонентный универсальный адгезив с проверенной мономерной формулой OptiBond",
+		popularityRank: 6, isFavoriteDefault: false,
+	},
+	{
+		id: "gluma_2bond", key: "gluma_2bond", name: "Gluma 2Bond / Gluma Self Etch (Kulzer)",
+		title: "Gluma 2Bond / Gluma Self Etch (Kulzer)", manufacturer: "Kulzer (Германия)",
+		generation: "V / VII поколение",
+		description: "Адгезивная система с десенсибилизирующим компонентом Gluma против постоперационной чувствительности",
+		popularityRank: 7, isFavoriteDefault: false,
+	},
+	{
+		id: "tokuyama_universal_bond", key: "tokuyama_universal_bond", name: "Tokuyama Universal Bond (Tokuyama)",
+		title: "Tokuyama Universal Bond (Tokuyama)", manufacturer: "Tokuyama Dental (Япония)",
+		generation: "VIII поколение (самоотверждаемый)",
+		description: "Двухкомпонентный адгезив без светоотверждения, моментальное склеивание без ожидания",
+		popularityRank: 8, isFavoriteDefault: false,
+	},
+	{
+		id: "futurabond_u", key: "futurabond_u", name: "Futurabond U / M (Voco)",
+		title: "Futurabond U / M (Voco)", manufacturer: "Voco (Германия)",
+		generation: "VIII поколение (Dual-Cure)",
+		description: "Универсальный адгезив двойного отверждения в практичных блистерах SingleDose",
+		popularityRank: 9, isFavoriteDefault: false,
+	},
+	{
+		id: "adhese_universal", key: "adhese_universal", name: "Adhese Universal (Ivoclar Vivadent)",
+		title: "Adhese Universal (Ivoclar Vivadent)", manufacturer: "Ivoclar Vivadent (Лихтенштейн)",
+		generation: "VIII поколение (ручка VivaPen)",
+		description: "Универсальный адгезив в удобной ручке VivaPen с контролем капель и минимальным расходом",
+		popularityRank: 10, isFavoriteDefault: false,
+	},
+	{
+		id: "all_bond_universal", key: "all_bond_universal", name: "All-Bond Universal (Bisco)",
+		title: "All-Bond Universal (Bisco)", manufacturer: "Bisco (США)",
+		generation: "VIII поколение (Universal)",
+		description: "Светоотверждаемый универсальный адгезив с pH > 3.0, совместим с композитами двойного отверждения",
+		popularityRank: 11, isFavoriteDefault: false,
+	},
+];
