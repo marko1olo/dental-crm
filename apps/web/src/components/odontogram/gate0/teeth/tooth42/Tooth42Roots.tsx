@@ -42,17 +42,26 @@ export const Tooth42Roots: React.FC<Tooth42RootsProps> = ({
 				opacity={isEndo ? "0.90" : "1.0"}
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Lateral Root Depression Soft Ambient Shadow */}
+			{/* Cylindrical Volume Shading & Highlights (Zero harsh dividing lines!) */}
 			<g clipPath="url(#tooth42-root-clip)">
 				<path
-					d={g.rootSulcus}
+					d={g.rootMonolithPath}
+					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,74.0 C 46.5,95.0 44.0,116.0 42.2,138.0"
 					fill="none"
-					stroke={
-						isDark
-							? "url(#dente-root-sulcus-shadow-dark)"
-							: "url(#dente-root-sulcus-shadow)"
-					}
-					strokeWidth="2.0"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.4"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,74.0 C 46.5,95.0 44.0,116.0 42.2,138.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>

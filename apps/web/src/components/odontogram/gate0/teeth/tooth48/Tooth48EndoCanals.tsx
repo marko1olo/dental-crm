@@ -34,22 +34,9 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 				<Tooth48PulpChamber condition={canalCondition} isDark={isDark} />
 			)}
 
-			{/* C-shaped Converging Canals into Distal Curved Apex */}
+			{/* Converging Canals into Distal Curved Apex */}
 			{showCanals && (
 				<g id="tooth48-canals-tract">
-					{/* C-shaped connecting isthmus in middle third */}
-					<path
-						d={p.cShapedIsthmus}
-						fill={
-							showGuttaPercha
-								? "url(#dente-guttapercha-cone)"
-								: isNecrotic
-									? "url(#dente-pulp-necrotic)"
-									: "url(#dente-pulp-vital)"
-						}
-						opacity="0.85"
-					/>
-
 					{p.canals.map((canal) => (
 						<Tooth46SingleCanal
 							key={canal.id}
@@ -76,14 +63,14 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<g id="tooth48-broken-file">
 							<path
-								d="M 42.0,132.0 C 39.0,138.0 36.5,142.0 35.5,145.5"
+								d="M 38.0,132.0 C 36.0,138.0 35.5,142.0 35.2,145.5"
 								fill="none"
 								stroke="#e2e8f0"
 								strokeWidth="1.2"
 								strokeLinecap="round"
 							/>
 							<path
-								d="M 40.0,134.0 L 42.0,136.0 M 37.5,138.5 L 39.5,140.5"
+								d="M 36.0,134.0 L 38.0,136.0 M 34.5,138.5 L 36.5,140.5"
 								stroke="#0284c7"
 								strokeWidth="0.8"
 							/>

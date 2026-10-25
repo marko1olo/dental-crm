@@ -40,17 +40,26 @@ export const Tooth43Roots: React.FC<Tooth43RootsProps> = ({
 				opacity={isEndo ? "0.90" : "1.0"}
 				vectorEffect="non-scaling-stroke"
 			/>
-			{/* Developmental Depression Soft Ambient Shadow */}
+			{/* Cylindrical Volume Shading & Highlights (Zero harsh dividing lines!) */}
 			<g clipPath="url(#tooth43-root-clip)">
 				<path
-					d={g.rootSulcus}
+					d={g.rootMonolithPath}
+					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 47.0,76.0 C 44.5,98.0 41.0,128.0 39.2,154.0"
 					fill="none"
-					stroke={
-						isDark
-							? "url(#dente-root-sulcus-shadow-dark)"
-							: "url(#dente-root-sulcus-shadow)"
-					}
-					strokeWidth="2.2"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 47.0,76.0 C 44.5,98.0 41.0,128.0 39.2,154.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>

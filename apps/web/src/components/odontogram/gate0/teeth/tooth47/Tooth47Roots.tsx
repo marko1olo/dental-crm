@@ -49,37 +49,7 @@ export const Tooth47Roots: React.FC<Tooth47RootsProps> = ({
 				pointerEvents="none"
 			/>
 
-			{/* Parallel Root Sulcus Longitudinalis */}
-			{showGrooves && (
-				<g id="tooth47-root-grooves" clipPath="url(#tooth47-root-clip)">
-					<path
-						d={TOOTH47_GEOMETRY.mesialLongitudinalGroove}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.4"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH47_GEOMETRY.distalLongitudinalGroove}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.0"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
-
-			{/* Cementoenamel Junction (CEJ) Curvature */}
+			{/* Monolithic dentin volume without harsh longitudinal split lines */}
 			{showCej && (
 				<path
 					d={TOOTH47_GEOMETRY.cejCurve}

@@ -41,37 +41,7 @@ export const Tooth48Roots: React.FC<Tooth48RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Fusion Developmental Groove following Distal Sweep */}
-			{showGrooves && (
-				<g id="tooth48-root-grooves" clipPath="url(#tooth48-root-clip)">
-					<path
-						d={TOOTH48_GEOMETRY.fusedRootSulcus}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.6"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH48_GEOMETRY.fusedRootHighlight}
-						fill="none"
-						stroke={
-							isDark
-								? "rgba(255, 255, 255, 0.15)"
-								: "rgba(255, 255, 255, 0.35)"
-						}
-						strokeWidth="1.0"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
-
-			{/* Cementoenamel Junction (CEJ) Curvature */}
+			{/* Monolithic dentin volume without harsh longitudinal split lines */}
 			{showCej && (
 				<path
 					d={TOOTH48_GEOMETRY.cejCurve}

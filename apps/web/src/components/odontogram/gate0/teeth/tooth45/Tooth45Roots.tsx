@@ -41,37 +41,7 @@ export const Tooth45Roots: React.FC<Tooth45RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Longitudinal Developmental Depression */}
-			{showGrooves && (
-				<g id="tooth45-root-grooves" clipPath="url(#tooth45-root-clip)">
-					<path
-						d={TOOTH45_GEOMETRY.rootSulcus}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.4"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH45_GEOMETRY.rootSulcusHighlight}
-						fill="none"
-						stroke={
-							isDark
-								? "rgba(255, 255, 255, 0.15)"
-								: "rgba(255, 255, 255, 0.35)"
-						}
-						strokeWidth="1.0"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
-
-			{/* Cementoenamel Junction (CEJ) Curvature */}
+			{/* Monolithic dentin volume without harsh longitudinal split lines */}
 			{showCej && (
 				<path
 					d={TOOTH45_GEOMETRY.cejCurve}

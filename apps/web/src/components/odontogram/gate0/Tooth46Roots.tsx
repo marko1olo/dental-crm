@@ -39,17 +39,6 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Mesial Root Dual-Lobe Longitudinal Modeling (West Lobe Sheen) */}
-			<path
-				d={TOOTH46_GEOMETRY.mesialSulcusLobeWest}
-				fill="none"
-				stroke="url(#dente-ridge-highlight)"
-				strokeWidth="1.4"
-				strokeOpacity="0.45"
-				clipPath="url(#tooth46-root-clip)"
-				vectorEffect="non-scaling-stroke"
-			/>
-
 			{/* Smooth Anatomical Bifurcation Ambient Shadow (Clipped to roots) */}
 			<path
 				d={TOOTH46_GEOMETRY.bifurcationShadowPath}
@@ -57,36 +46,6 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 				clipPath="url(#tooth46-root-clip)"
 				pointerEvents="none"
 			/>
-
-			{/* Mesial and Distal Sulcus Longitudinalis — 3D Ambient Volumetric Occlusion (Zero Harsh Strokes) */}
-			{showGrooves && (
-				<g id="tooth46-root-grooves" clipPath="url(#tooth46-root-clip)">
-					<path
-						d={TOOTH46_GEOMETRY.mesialLongitudinalGroove}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.8"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH46_GEOMETRY.distalLongitudinalGroove}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.0"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
 
 			{/* Cementoenamel Junction (CEJ) Cervical Curvature */}
 			{showCej && (

@@ -41,37 +41,30 @@ export const Tooth44Roots: React.FC<Tooth44RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Longitudinal Developmental Depression */}
-			{showGrooves && (
-				<g id="tooth44-root-grooves" clipPath="url(#tooth44-root-clip)">
-					<path
-						d={TOOTH44_GEOMETRY.rootSulcus}
-						fill="none"
-						stroke={
-							isDark
-								? "url(#dente-root-sulcus-shadow-dark)"
-								: "url(#dente-root-sulcus-shadow)"
-						}
-						strokeWidth="2.4"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH44_GEOMETRY.rootSulcusHighlight}
-						fill="none"
-						stroke={
-							isDark
-								? "rgba(255, 255, 255, 0.15)"
-								: "rgba(255, 255, 255, 0.35)"
-						}
-						strokeWidth="1.0"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
-
-			{/* Cementoenamel Junction (CEJ) Curvature */}
+			{/* Cylindrical Volume Shading & Highlights (Zero harsh dividing lines!) */}
+			<g clipPath="url(#tooth44-root-clip)">
+				<path
+					d={TOOTH44_GEOMETRY.rootMonolithPath}
+					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,76.0 C 46.5,98.0 44.0,120.0 42.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(255, 255, 255, 0.25)"}
+					strokeWidth="2.6"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d="M 48.0,76.0 C 46.5,98.0 44.0,120.0 42.5,142.0"
+					fill="none"
+					stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
 			{showCej && (
 				<path
 					d={TOOTH44_GEOMETRY.cejCurve}

@@ -63,14 +63,14 @@ export const Tooth43EndoCanals: React.FC<Tooth43EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<g id="tooth43-broken-file">
 							<path
-								d="M 41.5,147.0 L 39.5,158.8"
+								d="M 40.5,147.0 L 39.5,158.8"
 								fill="none"
 								stroke="#e2e8f0"
 								strokeWidth="1.2"
 								strokeLinecap="round"
 							/>
 							<path
-								d="M 40.5,149.0 L 42.5,151.0 M 39.0,153.5 L 41.0,155.5"
+								d="M 39.5,149.0 L 41.5,151.0 M 38.5,153.5 L 40.5,155.5"
 								stroke="#0284c7"
 								strokeWidth="0.8"
 							/>
