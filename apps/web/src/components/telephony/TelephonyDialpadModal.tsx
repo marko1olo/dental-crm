@@ -1,16 +1,8 @@
 /**
- * TelephonyDialpadModal.tsx — Canonical Receptionist & Doctor Softphone Dialpad Modal
- * 
- * Mandate 8e: Doctor & chairside autonomy (non-blocking, buttons never disabled).
- * Mandate 8n: Solo doctor & small clinic 1-click outgoing calls.
- * Apple HIG: Touch targets >= 44x44px, bottom-sheet adaptivity on mobile.
+ * TelephonyDialpadModal.tsx — Canonical Softphone Dialpad Facade (Mandate 8b <= 20 lines)
  */
-
 import React from "react";
-import {
-	TelephonyDialerModal,
-	type TelephonyDialerModalProps,
-} from "./TelephonyDialerModal";
+import { TelephonyDialerModal, type TelephonyDialerModalProps } from "./TelephonyDialerModal";
 
 export type TelephonyDialpadModalProps = TelephonyDialerModalProps;
 

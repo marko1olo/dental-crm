@@ -86,14 +86,9 @@ body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="waitlist-drawer"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="doctor-free-slots-modal"]) .dnt-telephony-patient-drawer,
 body:has([data-testid="patient-search-modal"]) .dnt-telephony-patient-drawer,
-body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-drawer {
-	display: none !important;
-}
+body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-drawer { display: none !important; }
 
-@keyframes dnt-slide-in-right {
-	0% { transform: translateX(100%); }
-	100% { transform: translateX(0); }
-}
+@keyframes dnt-slide-in-right { 0% { transform: translateX(100%); } 100% { transform: translateX(0); } }
 .animate-slide-in-right { animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
 
 @media (max-width: 768px) {

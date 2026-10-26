@@ -27,8 +27,8 @@ export function useTelephonyFloatingState({
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const currentHash = typeof window !== "undefined" ? window.location.hash : "";
 	const isSterileClinicalScreen =
-		["visit", "odontogram", "periodontics"].includes(crmCurrentView as string) ||
-		/#(visit|odontogram|periodontics)/.test(currentHash);
+		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(crmCurrentView as string) ||
+		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(currentHash);
 	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || isSterileClinicalScreen;
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);

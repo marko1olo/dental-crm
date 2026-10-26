@@ -8,19 +8,19 @@
 @import "./styles/telephonyHudAndCallControls.css";
 @import "./styles/telephonyCoexistence.css";
 
-/* Floating Telephony Widget: Desktop bottom-right, Mobile top capsule */
+/* Top Ambient Event Capsule (Zero Floating Blobs Mandate): Desktop top capsule, Mobile top capsule */
 .dnt-telephony-island-container,
 .telephony-floating-widget {
 	position: fixed;
-	bottom: 24px;
-	right: 24px;
-	top: auto;
-	left: auto;
-	transform: none;
+	top: 12px;
+	left: 50%;
+	right: auto;
+	bottom: auto;
+	transform: translateX(-50%);
 	z-index: 9990;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	align-items: center;
 	pointer-events: none;
 	font-family: inherit;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -84,19 +84,21 @@
 	}
 }
 
-/* Fallback floating positioning */
+/* Top Ambient Softphone Positioning (Zero Blobs In Corners) */
 .dnt-telephony-floating-widget,
 .telephony-floating-softphone {
 	position: fixed;
-	bottom: 84px;
-	right: 24px;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
 	z-index: 9990;
 }
 @media (max-width: 768px) {
 	.dnt-telephony-floating-widget,
 	.telephony-floating-softphone {
-		bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
-		right: 12px;
+		top: calc(env(safe-area-inset-top, 0px) + 8px);
+		left: 50%;
+		transform: translateX(-50%);
 	}
 }
 /* Clinical Density: Desktop 32-36px, Mobile Touch 44px */

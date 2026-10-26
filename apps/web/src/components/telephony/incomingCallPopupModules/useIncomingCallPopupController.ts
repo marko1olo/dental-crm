@@ -31,12 +31,8 @@ export function useIncomingCallPopupController(
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const hash = typeof window !== "undefined" ? window.location.hash : "";
 	const isSterileClinicalScreen =
-		(currentView as string) === "visit" ||
-		(currentView as string) === "odontogram" ||
-		(currentView as string) === "periodontics" ||
-		hash.includes("#visit") ||
-		hash.includes("#odontogram") ||
-		hash.includes("#periodontics");
+		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit" || isSterileClinicalScreen || Boolean(suppressCallModal);
 	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	const isDndActive = agentState === "dnd";
