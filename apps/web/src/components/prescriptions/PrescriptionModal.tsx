@@ -25,7 +25,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 
 	const content = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 prescription-modal"
+			className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 prescription-modal prescription-form-107-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Рецептурный бланк на лекарства"

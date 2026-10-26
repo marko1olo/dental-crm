@@ -66,7 +66,7 @@ export function LabOrdersFilterBar({
 				</select>
 			</div>
 
-			{/* Right: Actions (Прейскурант, Обновить, + Новый наряд) */}
+			{/* Right: Actions (Прейскурант, Обновить, Новый наряд) */}
 			<div className="flex items-center gap-1.5 shrink-0">
 				<button
 					type="button"
@@ -92,12 +92,12 @@ export function LabOrdersFilterBar({
 				<button
 					type="button"
 					onClick={onOpenNewOrder}
-					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
 					data-testid="lab-orders-new-order-btn"
-					title="+ Новый наряд в лабораторию"
+					title="Новый наряд в лабораторию"
 				>
 					<Plus className="w-3.5 h-3.5" />
-					<span>+ Новый наряд в лабораторию</span>
+					<span>Новый наряд в лабораторию</span>
 				</button>
 			</div>
 		</header>

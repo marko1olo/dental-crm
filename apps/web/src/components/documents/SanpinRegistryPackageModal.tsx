@@ -15,6 +15,7 @@ export function SanpinRegistryPackageModal({
 	patient,
 	existingDocuments,
 	onOpenSickLeaveEln,
+	onOpenAutoclaveLog,
 	onOpenAutoclaveLog257,
 	onOpenEgiszRemd,
 	onCreateDocument,
@@ -51,7 +52,8 @@ export function SanpinRegistryPackageModal({
 					<SanpinItemsList
 						radiationDocs={radiationDocs}
 						onOpenSickLeaveEln={onOpenSickLeaveEln}
-						onOpenAutoclaveLog257={onOpenAutoclaveLog257}
+						onOpenAutoclaveLog={onOpenAutoclaveLog || onOpenAutoclaveLog257}
+						onOpenAutoclaveLog257={onOpenAutoclaveLog257 || onOpenAutoclaveLog}
 						onOpenEgiszRemd={onOpenEgiszRemd}
 						onOpenPsoJournal366={onOpenPsoJournal366}
 						onSelectDocumentKind={onSelectDocumentKind}

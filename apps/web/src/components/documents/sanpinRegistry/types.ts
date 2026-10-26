@@ -6,7 +6,10 @@ export interface SanpinRegistryPackageModalProps {
 	readonly patient: Patient | null;
 	readonly existingDocuments: GeneratedDocument[];
 	readonly onOpenSickLeaveEln: () => void;
-	readonly onOpenAutoclaveLog257: () => void;
+	/** Семантический обработчик открытия журнала автоклавирования (Мандат 8ap) */
+	readonly onOpenAutoclaveLog?: () => void;
+	/** @deprecated Обратная совместимость с устаревшими вызовами */
+	readonly onOpenAutoclaveLog257?: () => void;
 	readonly onOpenEgiszRemd: () => void;
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;

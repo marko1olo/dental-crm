@@ -23,6 +23,9 @@ export interface DocumentModalsContainerProps {
 	setIsSanpinRegistryOpen: (open: boolean) => void;
 	isAutoclaveLogOpen: boolean;
 	setIsAutoclaveLogOpen: (open: boolean) => void;
+	/** Семантический обработчик открытия журнала автоклавирования (Мандат 8ap) */
+	onOpenAutoclaveLog?: () => void;
+	/** @deprecated Обратная совместимость с устаревшими вызовами */
 	onOpenAutoclaveLog257?: () => void;
 	isFnsNdflXmlOpen: boolean;
 	setIsFnsNdflXmlOpen: (open: boolean) => void;

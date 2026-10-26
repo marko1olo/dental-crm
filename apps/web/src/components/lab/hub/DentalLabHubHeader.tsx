@@ -56,7 +56,7 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 			<div className="ztl-header-actions">
 				<button
 					type="button"
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer text-xs"
+					className="h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-xs shadow-2xs inline-flex items-center gap-1.5 cursor-pointer transition-colors"
 					onClick={onExportCsv}
 					title="Экспорт реестра в CSV (Excel)"
 				>
@@ -67,17 +67,17 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 				<button
 					type="button"
 					data-testid="btn-open-create-lab-order"
-					className="border border-teal-600 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold rounded-lg px-3 py-1.5 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer text-xs transition"
+					className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-medium text-xs shadow-2xs inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 					onClick={onOpenCreateModal}
 					title="Создать новый наряд в лабораторию"
 				>
 					<Plus size={14} />
-					<span>+ Новый наряд в ЗТЛ</span>
+					<span>Новый наряд в ЗТЛ</span>
 				</button>
 
 				<button
 					type="button"
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-bold rounded-lg p-1.5 shadow-2xs inline-flex items-center justify-center cursor-pointer transition"
+					className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium shadow-2xs inline-flex items-center justify-center cursor-pointer transition-colors"
 					onClick={onClose}
 					title="Закрыть окно"
 				>

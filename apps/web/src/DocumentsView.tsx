@@ -10,6 +10,13 @@ import { DocumentsA4PrintPreview, DocumentsRecentList, DocumentsTemplateGrid, Do
 import "./styles/modules/documents.css";
 import "./components/documents/documentNavigation.css";
 
+// Семантические доменные типы медицинских карт (Мандат 8ap: чистый доменный язык без советских приказов)
+export type DentalMedicalCard = "dental_medical_card";
+export type OutpatientMedicalCard = "outpatient_medical_card";
+
+export const DENTAL_MEDICAL_CARD_KIND: DentalMedicalCard = "dental_medical_card";
+export const OUTPATIENT_MEDICAL_CARD_KIND: OutpatientMedicalCard = "outpatient_medical_card";
+
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export type DocumentsViewProps = Record<string, any>;
 export const _decomposedDocumentModules = { DocumentsToolbar, DocumentsTemplateGrid };
@@ -26,7 +33,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	} = vm;
 
 	React.useEffect(() => {
-		if ((selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
+		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap)
+		const isOutpatientRedirectNeeded =
+			(selectedDocumentKind as string) === OUTPATIENT_MEDICAL_CARD_KIND ||
+			(selectedDocumentKind as string) === "outpatient_medical_card_025u";
+		if (!isOutpatientRedirectNeeded && (selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
 		setSelectedDocumentKind("dental_medical_card_043u");
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
@@ -55,6 +66,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 			<DocumentModalsContainer
 				{...vm.modalsContainerProps}
+				onOpenAutoclaveLog={() => setIsAutoclaveLogOpen(true)}
 				onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
 			/>
 		</div>

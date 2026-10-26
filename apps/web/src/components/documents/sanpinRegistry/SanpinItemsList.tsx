@@ -5,7 +5,10 @@ import type { DocumentKind, GeneratedDocument } from "@dental/shared";
 export interface SanpinItemsListProps {
 	radiationDocs: GeneratedDocument[];
 	onOpenSickLeaveEln: () => void;
-	onOpenAutoclaveLog257: () => void;
+	/** Семантический обработчик открытия журнала автоклавирования (Мандат 8ap) */
+	onOpenAutoclaveLog?: () => void;
+	/** @deprecated Обратная совместимость с устаревшими вызовами */
+	onOpenAutoclaveLog257?: () => void;
 	onOpenEgiszRemd: () => void;
 	onOpenPsoJournal366?: (() => void) | undefined;
 	onSelectDocumentKind: (kind: DocumentKind) => void;
@@ -16,6 +19,7 @@ export interface SanpinItemsListProps {
 export const SanpinItemsList: React.FC<SanpinItemsListProps> = ({
 	radiationDocs,
 	onOpenSickLeaveEln,
+	onOpenAutoclaveLog,
 	onOpenAutoclaveLog257,
 	onOpenEgiszRemd,
 	onOpenPsoJournal366,
@@ -23,6 +27,7 @@ export const SanpinItemsList: React.FC<SanpinItemsListProps> = ({
 	onCreateDocument,
 	onClose,
 }) => {
+	const handleOpenAutoclave = onOpenAutoclaveLog || onOpenAutoclaveLog257 || (() => {});
 	const hasRadiationDoc = radiationDocs.length > 0;
 
 	return (
@@ -51,7 +56,7 @@ export const SanpinItemsList: React.FC<SanpinItemsListProps> = ({
 				<div className="document-package-item-actions">
 					<button type="button" className="primary-button" onClick={() => {
 						onClose();
-						if (onOpenPsoJournal366) onOpenPsoJournal366(); else onOpenAutoclaveLog257();
+						if (onOpenPsoJournal366) onOpenPsoJournal366(); else handleOpenAutoclave();
 					}}>Открыть журнал очистки</button>
 				</div>
 			</div>
@@ -86,7 +91,7 @@ export const SanpinItemsList: React.FC<SanpinItemsListProps> = ({
 					<span className="document-package-item-sub">Реестр циклов автоклавирования, термохимических индикаторов (1-5 класс), вакуум-тестов и биотестов.</span>
 				</div>
 				<div className="document-package-item-actions">
-					<button type="button" className="primary-button" onClick={() => { onClose(); onOpenAutoclaveLog257(); }}>Открыть журнал стерилизации</button>
+					<button type="button" className="primary-button" onClick={() => { onClose(); handleOpenAutoclave(); }}>Открыть журнал стерилизации</button>
 				</div>
 			</div>
 

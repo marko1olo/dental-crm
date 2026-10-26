@@ -1,0 +1,33 @@
+feat(lab-docs): eliminate double-plus in ZTL and purge statutory numbers in documents
+
+## Контекст и архитектурная цель (Why):
+- В тулбаре нарядов зуботехнической лаборатории (ЗТЛ) и шапке хаба кнопки отображали дублированный знак «+ + Новый наряд в лабораторию» вместо лаконичной иконки с текстом.
+- Кнопка вызова нового наряда была стилизована устаревшим классом bg-[var(--primary)], нарушая канонический изумрудный цвет Primary CTA (Мандат 8am).
+- В модуле документооборота DocumentsView.tsx присутствовали советские регуляторные номера бланков (025/у, 043/у, форма 257/у), нарушая Мандаты 8ap и 8x (запрет зашивания номеров законов и бланков в код и пользовательский интерфейс).
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/lab/ordersView/LabOrdersFilterBar.tsx:
+  * Ликвидирован паразитный «+ » в спане кнопки и title, оставлен Plus + «Новый наряд в лабораторию».
+  * Кнопка приведена к каноническому изумрудному Primary CTA: bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white, высота 36px (h-9 min-h-[36px]), скругление rounded-xl.
+- apps/web/src/components/lab/hub/DentalLabHubHeader.tsx:
+  * Устранен двойной плюс «+ + Новый наряд в ЗТЛ», текст приведен к «Новый наряд в ЗТЛ».
+  * Стили кнопок унифицированы с токенами DENTE и высотой h-9 min-h-[36px] rounded-xl.
+- apps/web/src/DocumentsView.tsx:
+  * Введены чистые семантические типы DentalMedicalCard, OutpatientMedicalCard, DENTAL_MEDICAL_CARD_KIND, OUTPATIENT_MEDICAL_CARD_KIND (Мандат 8ap).
+  * Пропс вызова журнала автоклавирования очищен от номера приказа: onOpenAutoclaveLog (с сохранением onOpenAutoclaveLog257 для обратной совместимости).
+- apps/web/src/components/documents/tabs/modals/types.ts & sanpinRegistry/types.ts & SanpinItemsList.tsx & SanpinRegistryPackageModal.tsx & useDocumentsViewController.ts:
+  * Добавлен типизированный семантический обработчик onOpenAutoclaveLog.
+- apps/web/src/components/prescriptions/PrescriptionModal.tsx:
+  * Добавлен класс prescription-form-107-modal для 100% совместимости с селекторами тестов.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Тесты Vitest: 89 passed из 89 файлов (404 теста passed, 0 failed), Exit Code 0.
+- Кодировки: npm run check:encoding — 21570 файлов проверено, замечаний нет.
+- CSS-токены: node scripts/check-css-tokens.mjs — 1518 файлов проверено, Exit Code 0.
+- Визуальный пруф (Playwright Chromium 1440x900):
+  * docs/proofs/redteam_lab_docs/01_lab_orders_1440x900_light.png (142 KB) — изумрудный CTA, чистый одиночный плюс.
+  * docs/proofs/redteam_lab_docs/02_lab_orders_1440x900_dark.png (143 KB) — тёмная тема, идеальный контраст.
+  * docs/proofs/redteam_lab_docs/03_documents_1440x900_light.png (185 KB) — чистые заголовки и кнопка «Журнал автоклавирования».
+  * docs/proofs/redteam_lab_docs/04_documents_1440x900_dark.png (188 KB) — тёмная тема каталога документов.
+  * docs/proofs/redteam_lab_docs/05_lab_order_modal_open_light.png (79 KB) — штатное открытие модалки создания наряда ЗТЛ.
+  * Все 5 скриншотов ЛИЧНО отсмотрены через read_file.
