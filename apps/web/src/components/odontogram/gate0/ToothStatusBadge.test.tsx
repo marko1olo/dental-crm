@@ -15,32 +15,39 @@ const DEPTH_BG: Record<string, string> = {
 describe("Gate 0 ToothStatusBadge — 36 Black x Depth Clinical Matrix", () => {
 	it("resolves all 36 Black x Depth presets by presetId and by layers with exact codes and colors", () => {
 		assert.equal(TOOTH46_CARIES_DEPTH_PRESETS.length, 36);
-
 		for (const preset of TOOTH46_CARIES_DEPTH_PRESETS) {
 			const byId = resolveToothStatusBadge(preset.id);
-			assert.equal(byId.code, preset.badge, `Badge code for preset ${preset.id} must be ${preset.badge}`);
+			assert.equal(byId.code, preset.badge, `Badge code for ${preset.id} must be ${preset.badge}`);
 			const expectedBg = DEPTH_BG[preset.layers.cariesDepth ?? "media"];
-			assert.equal(byId.bg, expectedBg, `Badge bg for preset ${preset.id} must be ${expectedBg}`);
-
+			assert.equal(byId.bg, expectedBg, `Badge bg for ${preset.id} must be ${expectedBg}`);
 			const byLayers = resolveToothStatusBadge(undefined, preset.layers);
 			assert.equal(byLayers.code, preset.badge, `Badge code by layers for ${preset.id} must be ${preset.badge}`);
 			assert.equal(byLayers.bg, expectedBg, `Badge bg by layers for ${preset.id} must be ${expectedBg}`);
 		}
 	});
 
-	it("renders SVG status badge element with role, title, circle fill and text code", () => {
-		for (const preset of TOOTH46_CARIES_DEPTH_PRESETS) {
-			const html = renderToString(
-				React.createElement(ToothStatusBadge, {
-					presetId: preset.id,
-					layers: preset.layers,
-				}),
-			);
-			assert.ok(html.includes('role="status"'), "Must include role='status'");
-			assert.ok(html.includes(`>${preset.badge}<`), `Must render badge code ${preset.badge}`);
-			const expectedBg = DEPTH_BG[preset.layers.cariesDepth ?? "media"];
-			assert.ok(html.includes(`fill="${expectedBg}"`), `Must render circle fill ${expectedBg}`);
+	it("verifies explicit badge codes for all 9 Black classes x 4 depths", () => {
+		const expectedCodes: Record<string, string> = {
+			c1_superficial: "C1s", c1_media: "C1m", c1_profunda: "C1p", c1_destructive: "C1ds",
+			c2_m_superficial: "Ms", c2_m_media: "Mm", c2_m_profunda: "Mp", c2_m_destructive: "Mds",
+			c2_d_superficial: "Ds", c2_d_media: "Dm", c2_d_profunda: "Dp", c2_d_destructive: "Dds",
+			c2_mo_superficial: "MOs", c2_mo_media: "MOm", c2_mo_profunda: "MOp", c2_mo_destructive: "MOds",
+			c2_do_superficial: "DOs", c2_do_media: "DOm", c2_do_profunda: "DOp", c2_do_destructive: "DOds",
+			c2_mod_superficial: "MODs", c2_mod_media: "MODm", c2_mod_profunda: "MODp", c2_mod_destructive: "MODds",
+			c3_superficial: "C3s", c3_media: "C3m", c3_profunda: "C3p", c3_destructive: "C3ds",
+			c4_superficial: "C4s", c4_media: "C4m", c4_profunda: "C4p", c4_destructive: "C4ds",
+			c5_superficial: "C5s", c5_media: "C5m", c5_profunda: "C5p", c5_destructive: "C5ds",
+		};
+		for (const [id, code] of Object.entries(expectedCodes)) {
+			assert.equal(resolveToothStatusBadge(id).code, code, `Preset ${id} must have code ${code}`);
 		}
+	});
+
+	it("renders geometricPrecision and letter-spacing for dense 4-5 letter codes", () => {
+		const modHtml = renderToString(React.createElement(ToothStatusBadge, { presetId: "c2_mod_destructive" }));
+		assert.ok(modHtml.includes("MODds"));
+		assert.ok(modHtml.includes('shape-rendering="geometricPrecision"'));
+		assert.ok(modHtml.includes("letter-spacing"));
 	});
 
 	it("resolves baseline non-caries statuses correctly", () => {

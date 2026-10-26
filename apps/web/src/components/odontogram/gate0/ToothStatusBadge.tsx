@@ -23,11 +23,26 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 }) => {
 	const badge = resolveToothStatusBadge(presetId, layers);
 	const len = badge.code.length;
-	const fontSize = len === 1 ? r * 0.9 : len === 2 ? r * 0.74 : r * 0.58;
+	const fontSize =
+		len === 1
+			? r * 0.92
+			: len === 2
+				? r * 0.74
+				: len === 3
+					? r * 0.58
+					: len === 4
+						? r * 0.48
+						: r * 0.40;
 	const strokeWidth = Math.max(1.0, Number((r * 0.12).toFixed(1)));
+	const letterSpacing = len >= 5 ? "-0.06em" : len >= 4 ? "-0.04em" : len >= 3 ? "-0.02em" : undefined;
 
 	return (
-		<g id="tooth46-status-badge" data-testid="tooth-status-badge" role="status">
+		<g
+			id="tooth46-status-badge"
+			data-testid="tooth-status-badge"
+			role="status"
+			shapeRendering="geometricPrecision"
+		>
 			<title>{badge.title}</title>
 			<circle
 				cx={cx}
@@ -45,8 +60,9 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 				fontSize={fontSize}
 				fontWeight="900"
 				fontFamily="system-ui, -apple-system, sans-serif"
-				letterSpacing={len >= 3 ? "-0.04em" : undefined}
+				letterSpacing={letterSpacing}
 				fill={badge.text}
+				textRendering="geometricPrecision"
 			>
 				{badge.code}
 			</text>
