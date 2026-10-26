@@ -3,9 +3,10 @@
  * Mounts canonical ToothStatusBadge SVG with Apple HIG touch target (Mandate 8b <= 120 lines).
  */
 
-import React from "react";
+import type React from "react";
 import { ToothStatusBadge } from "../ToothStatusBadge";
 import type { Tooth46LayerFlags } from "../tooth46Types";
+import { resolveToothStatusBadge } from "../ToothStatusBadgeResolver";
 
 export interface MandibleToothBadgeProps {
 	readonly toothNumber: number;
@@ -20,11 +21,13 @@ export const MandibleToothBadge: React.FC<MandibleToothBadgeProps> = ({
 	toothNumber,
 	layers,
 	presetId,
-	radius = 18.5,
+	radius = 14,
 	onClick,
 	className = "",
 }) => {
 	const diameter = Math.round(radius * 2);
+	const badge = resolveToothStatusBadge(presetId, layers, toothNumber);
+	const isIntact = badge.code === "✓";
 
 	return (
 		<button
@@ -32,7 +35,11 @@ export const MandibleToothBadge: React.FC<MandibleToothBadgeProps> = ({
 			onClick={onClick}
 			data-testid={`mandible-tooth-badge-${toothNumber}`}
 			aria-label={`Статус зуба ${toothNumber}`}
-			className={`relative inline-flex items-center justify-center p-0 rounded-full transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-500/50 cursor-pointer shrink-0 touch-manipulation min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px] ${className}`}
+			className={`relative inline-flex items-center justify-center p-0 rounded-full transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-500/50 cursor-pointer shrink-0 touch-manipulation min-w-[32px] min-h-[32px] ${
+				isIntact
+					? "opacity-60 hover:opacity-100"
+					: "opacity-100 shadow-sm"
+			} ${className}`}
 		>
 			<svg
 				width={diameter}

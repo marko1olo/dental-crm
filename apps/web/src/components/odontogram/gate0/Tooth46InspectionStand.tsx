@@ -95,7 +95,7 @@ export const Tooth46InspectionStand: React.FC = () => {
 
 			{standMode === "mandible" ? (
 				<div className="w-full flex justify-center py-4">
-					<ToothMandibleFullArch isDark={isDark} zoom={0.52} />
+					<ToothMandibleFullArch isDark={isDark} zoom={0.74} badgeRadius={14} />
 				</div>
 			) : standMode === "arch32" ? (
 				<Tooth46FullArchMockup isDark={isDark} initialSize={initialBadgeSize} />

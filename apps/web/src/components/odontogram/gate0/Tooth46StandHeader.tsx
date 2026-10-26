@@ -5,8 +5,8 @@ export interface Tooth46StandHeaderProps {
 	isDark: boolean;
 	onZoomChange: (zoom: number) => void;
 	onToggleTheme: () => void;
-	standMode?: "single" | "arch32";
-	onSelectStandMode?: (mode: "single" | "arch32") => void;
+	standMode?: "single" | "arch32" | "mandible";
+	onSelectStandMode?: (mode: "single" | "arch32" | "mandible") => void;
 }
 
 export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
@@ -58,7 +58,19 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 						}`}
 					>
 						<span>🏛️</span>
-						<span>Эксперимент 32 зуба (Мокап челюсти)</span>
+						<span>Мокап 32</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => onSelectStandMode("mandible")}
+						className={`h-9 sm:h-8 px-3 rounded-lg transition-colors flex items-center gap-1.5 ${
+							standMode === "mandible"
+								? "bg-teal-500 text-white shadow-xs"
+								: "hover:bg-black/5 dark:hover:bg-white/5 opacity-80"
+						}`}
+					>
+						<span>🦴</span>
+						<span>Челюсть 16</span>
 					</button>
 				</div>
 			)}

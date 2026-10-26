@@ -23,8 +23,8 @@ export const ToothMandibleFullArch: React.FC<ToothMandibleFullArchProps> = ({
 	onUpdateToothLayers,
 	onUpdateToothData,
 	isDark = false,
-	zoom = 0.54,
-	badgeRadius = 18.5,
+	zoom = 0.74,
+	badgeRadius = 14,
 	badgePlacement = "root_apex",
 	className = "",
 }) => {
@@ -79,10 +79,10 @@ export const ToothMandibleFullArch: React.FC<ToothMandibleFullArchProps> = ({
 	return (
 		<div
 			data-testid="tooth-mandible-full-arch"
-			className={`w-full max-w-[1360px] flex flex-col items-center gap-3 p-3 sm:p-5 rounded-3xl border border-current/10 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xs ${className}`}
+			className={`w-full max-w-[1360px] flex flex-col items-center gap-3 p-2 sm:p-4 rounded-3xl border border-current/10 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xs ${className}`}
 		>
 			<div className="w-full overflow-x-auto pb-2 scrollbar-none flex justify-center">
-				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 px-2">
+				<div className="flex items-start gap-0.5 sm:gap-1 shrink-0 px-2">
 					{QUADRANT_4_TEETH.map(renderCell)}
 					<MandibleMidlineNotch isDark={isDark} />
 					{QUADRANT_3_TEETH.map(renderCell)}
