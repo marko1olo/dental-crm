@@ -42,7 +42,7 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = (props)
 				<button
 					type="button"
 					onClick={onClose}
-					className="payment-footer-cancel-btn min-h-[44px] hidden sm:inline-flex items-center justify-center"
+					className="payment-footer-cancel-btn min-h-[44px] md:min-h-[36px] md:h-9 px-4 rounded-xl hidden sm:inline-flex items-center justify-center cursor-pointer"
 				>
 					Отмена
 				</button>

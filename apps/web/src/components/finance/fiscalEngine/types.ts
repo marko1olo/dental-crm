@@ -339,6 +339,8 @@ export interface ShiftCloseZReport54FzResult {
 }
 
 // Семантические алиасы для фискального контура
+export type FiscalReceipt54Fz = FiscalReceipt54FzResult;
+export type TaxDeductionCertificateData = TaxDeductionCertificatePayload;
 export type Order804nFiscalReceiptPayload = FiscalReceipt54FzResult;
 export type Order804nRefundCalculation = SplitPaymentAllocation;
 export type Order804nCorrectionPayload = FiscalReceipt54FzResult;

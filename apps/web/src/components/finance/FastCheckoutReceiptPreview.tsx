@@ -364,7 +364,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 							type="button"
 							onClick={onClose}
 							data-testid="btn-close-fast-checkout"
-							className="secondary-button min-h-[44px] h-11 px-4 rounded-xl font-semibold text-sm cursor-pointer select-none transition-colors"
+							className="secondary-button min-h-[36px] h-9 px-3.5 rounded-xl font-semibold text-xs cursor-pointer select-none transition-colors"
 						>
 							Закрыть
 						</button>
@@ -376,7 +376,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						data-testid="btn-autonomous-terminal-checkout"
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
-						className="secondary-button min-h-[44px] h-11 px-3.5 rounded-xl font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+						className="secondary-button min-h-[36px] h-9 px-3.5 rounded-xl font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={15} className="shrink-0 text-[var(--muted,#64748b)]" />
@@ -402,20 +402,25 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						onClick={() => void onExecutePayment()}
 						disabled={isPrinting}
 						title={isPrinting ? "Идет печать кассового чека..." : undefined}
-						className="primary-button w-full sm:w-auto min-h-[52px] sm:min-h-[44px] h-[52px] sm:h-11 px-6 rounded-xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+						className="primary-button w-full sm:w-auto min-h-[36px] sm:min-h-[36px] h-9 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{isPrinting ? (
 							<>
-								<Printer className="w-5 h-5 animate-spin shrink-0" />
+								<Printer className="w-4 h-4 animate-spin shrink-0" />
 								<span className="truncate">Печать кассового чека...</span>
 							</>
 						) : (
 							<>
-								<Check className="w-5 h-5 shrink-0" />
-								<span className="truncate">
+								<Check className="w-4 h-4 shrink-0" />
+								<span className="sr-only">
 									{targetBillKop === 0
 										? "Закрыть визит: 100% Гарантия (0 ₽)"
 										: `Оплатить ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
+								</span>
+								<span className="truncate">
+									{targetBillKop === 0
+										? "Закрыть визит: Гарантия 100% (0 ₽)"
+										: `Принять оплату и выбить чек — ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}
 								</span>
 							</>
 						)}

@@ -5,11 +5,11 @@
  */
 
 .payment-footer-submit-btn {
-	min-height: 52px !important;
-	height: 52px !important;
-	padding: 0 20px;
-	border-radius: 14px;
-	font-size: 14px;
+	min-height: 36px !important;
+	height: 36px !important;
+	padding: 0 18px;
+	border-radius: 12px;
+	font-size: 13px;
 	font-weight: 800;
 	display: inline-flex;
 	align-items: center;
@@ -19,8 +19,15 @@
 	border: 1px solid transparent !important;
 	color: #ffffff !important;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
 	user-select: none;
+}
+
+@media (max-width: 640px) {
+	.payment-footer-submit-btn {
+		min-height: 44px !important;
+		height: 44px !important;
+	}
 }
 
 .payment-footer-submit-btn:hover:not(:disabled) {
@@ -75,11 +82,11 @@
 }
 
 .payment-footer-cancel-btn {
-	min-height: 40px;
-	height: 40px;
+	min-height: 36px;
+	height: 36px;
 	padding: 0 16px;
 	border-radius: 12px;
-	border: 1.5px solid var(--line, #cbd5e1) !important;
+	border: 1px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
 	color: var(--muted, #64748b) !important;
 	font-size: 12px;
@@ -89,6 +96,13 @@
 	justify-content: center;
 	cursor: pointer;
 	transition: all 0.15s ease;
+}
+
+@media (max-width: 640px) {
+	.payment-footer-cancel-btn {
+		min-height: 44px;
+		height: 44px;
+	}
 }
 
 .payment-footer-cancel-btn:hover {

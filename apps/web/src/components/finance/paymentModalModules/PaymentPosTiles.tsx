@@ -82,7 +82,7 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 							Наличные
 						</div>
 						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
-							Быстрые купюры и сдача
+							Купюры и сдача
 						</div>
 					</div>
 				</span>
@@ -106,7 +106,7 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
 							{patientDepositRub > 0 || patientFamilyBalanceRub > 0
 								? `Доступно: ${(patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽`
-								: "Аванс или баланс семьи"}
+								: "Аванс или баланс"}
 						</div>
 					</div>
 				</span>

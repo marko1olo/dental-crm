@@ -1,10 +1,10 @@
 import type React from "react";
 import { useState } from "react";
-import { Award, ChevronDown, ChevronUp } from "lucide-react";
 import { PaymentCapture } from "../../PaymentCapture";
 import { PaymentModal } from "../../components/billing/PaymentModal";
 import { LoyaltyProgramModal } from "../../components/loyalty/program/LoyaltyProgramModal";
 import { showToast } from "../../components/GlobalToast";
+import { CashboxQuickCard } from "./CashboxQuickCard";
 
 export interface FinanceCashboxSectionProps {
 	readonly s: any;
@@ -35,61 +35,21 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 
 	return (
 		<div className="finance-cashbox-container pb-28 sm:pb-24" data-testid="finance-cashbox-section">
-			<div className="payment-quick-card mb-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-sm">
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-					<div className="min-w-0">
-						<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-							Быстрый расчёт пациента
-						</div>
-						<div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-[var(--ink)] my-0.5">
-							{summaryAmount.toLocaleString("ru-RU")} ₽
-						</div>
-						<div className="text-xs text-[var(--muted)] truncate">
-							{patientName ? (
-								<>Пациент: <strong className="text-[var(--ink)]">{patientName}</strong></>
-							) : (
-								"Пациент не выбран — выберите карточку в картотеке"
-							)}
-						</div>
-					</div>
-					<div className="flex items-center gap-2 shrink-0 flex-nowrap">
-						<button
-							type="button"
-							onClick={() => {
-								if (!patient?.id) {
-									showToast("Бонусы и сертификаты доступны для выбранного пациента.", "info");
-									return;
-								}
-								setIsLoyaltyModalOpen(true);
-							}}
-							className="min-h-[44px] h-11 px-3 sm:px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
-							data-testid="btn-open-cashbox-loyalty-modal"
-							title="Списание бонусов и сертификаты пациента"
-						>
-							<Award size={16} className="text-[var(--teal)]" />
-							<span className="hidden md:inline">Бонусы и сертификаты</span>
-							<span className="md:hidden">Бонусы</span>
-						</button>
-						<button
-							type="button"
-							onClick={openPaymentModal}
-							className="primary-button min-h-[44px] h-11 px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap flex-1 sm:flex-initial justify-center flex items-center gap-2 cursor-pointer active:scale-[0.99] transition-all"
-							data-testid="btn-open-cashbox-payment-modal"
-							title="Принять оплату от пациента"
-						>
-							<span>Принять оплату</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setShowManualForm((prev) => !prev)}
-							className="min-h-[44px] h-11 w-11 px-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold flex items-center justify-center cursor-pointer transition-colors shrink-0"
-							title="Показать / скрыть ручные параметры"
-						>
-							{showManualForm ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-						</button>
-					</div>
-				</div>
-			</div>
+			<CashboxQuickCard
+				summaryAmount={summaryAmount}
+				patientName={patientName}
+				hasPatient={Boolean(patient?.id)}
+				showManualForm={showManualForm}
+				onOpenLoyaltyModal={() => {
+					if (!patient?.id) {
+						showToast("Бонусы и сертификаты доступны для выбранного пациента.", "info");
+						return;
+					}
+					setIsLoyaltyModalOpen(true);
+				}}
+				onOpenPaymentModal={openPaymentModal}
+				onToggleManualForm={() => setShowManualForm((prev) => !prev)}
+			/>
 
 			{isLoyaltyModalOpen && patient?.id && (
 				<LoyaltyProgramModal
@@ -123,10 +83,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					cashierName={s.paymentFiscalCashierName || undefined}
 					clinicLegalName={s.dashboard?.clinicSettings?.name || undefined}
 					onClose={() => setIsPaymentModalOpen(false)}
-					onSuccess={() => {
-						setIsPaymentModalOpen(false);
-						void s.loadDashboard?.();
-					}}
+					onSuccess={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}
 				/>
 			)}
 
