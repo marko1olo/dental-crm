@@ -65,7 +65,7 @@ export const ToothMandibleFullArch: React.FC<ToothMandibleFullArchProps> = ({
 	const renderCell = (num: number) => (
 		<MandibleToothCell
 			key={num}
-			toothNumber={num}
+			toothNumber={num as any}
 			layers={getToothLayers(num)}
 			isSelected={selectedTooth === num}
 			isDark={isDark}
