@@ -15,6 +15,20 @@ export const TOOTH46_CARIES_PRESETS: readonly Tooth46PresetDef[] = [
 		layers: { ...def, caries: true, cariesType: "white_spot" },
 	},
 	{
+		id: "caries_class2_m",
+		nameRu: "Кариес Class II M",
+		badge: "Class II M",
+		description: "Мезиальная контактная кариозная полость в пределах аппроксимального контакта",
+		layers: { ...def, caries: true, cariesType: "class2_m" },
+	},
+	{
+		id: "caries_class2_d",
+		nameRu: "Кариес Class II D",
+		badge: "Class II D",
+		description: "Дистальная контактная кариозная полость в пределах аппроксимального контакта",
+		layers: { ...def, caries: true, cariesType: "class2_d" },
+	},
+	{
 		id: "caries_class2_mo",
 		nameRu: "Кариес Class II MO",
 		badge: "Class II MO",
@@ -86,3 +100,6 @@ export const TOOTH46_CARIES_PRESETS: readonly Tooth46PresetDef[] = [
 		layers: { ...def, inlayOnlay: "onlay" },
 	},
 ];
+
+export { TOOTH46_CARIES_DEPTH_PRESETS } from "./Tooth46CariesDepthPresets";
+

@@ -4,6 +4,8 @@
  * Mandate 8b <= 120 lines.
  */
 
+import { TOOTH_CARIES_STATUS_MATRIX } from "./ToothStatusBadgeCariesMatrix";
+
 export interface ToothStatusBadgeInfo {
 	code: string;
 	title: string;
@@ -96,5 +98,5 @@ export const INTACT_BADGE: ToothStatusBadgeInfo = {
 
 export function getStatusBadge(key?: string | undefined): ToothStatusBadgeInfo {
 	if (!key) return INTACT_BADGE;
-	return TOOTH_STATUS_MATRIX[key] ?? INTACT_BADGE;
+	return TOOTH_CARIES_STATUS_MATRIX[key] ?? TOOTH_STATUS_MATRIX[key] ?? INTACT_BADGE;
 }
