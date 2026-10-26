@@ -287,3 +287,12 @@ reference_repos/
 хули втсал, где субагенты -УДАЛЯТЬ ЗАПРЕЩЕНО.txt
 .mem*.json
 
+
+/*.png
+/scripts/*.png
+/scripts/*_commit_msg*.txt
+/scripts/*_commit*.txt
+/ts_web_errors.txt
+
+/scripts/commit_*.txt
+/scripts/*.txt
