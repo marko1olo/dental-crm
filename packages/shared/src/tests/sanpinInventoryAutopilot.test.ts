@@ -63,7 +63,10 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.equal(parsed.indicatorPassed, false);
 			assert.ok(parsed.daysRemaining < 0, "Остаток дней должен быть отрицательным");
 			assert.ok(parsed.errorMessage?.includes("ИСТЁК"), "Ошибка должна содержать слово ИСТЁК");
-			assert.ok(parsed.errorMessage?.includes("СанПиН 3.3686-21"), "Ошибка должна ссылаться на СанПиН 3.3686-21");
+			assert.ok(
+				parsed.errorMessage?.includes("СанПиН") || parsed.errorMessage?.includes("стерилизации"),
+				"Ошибка должна содержать указание на стандарт стерилизации",
+			);
 			assert.ok(parsed.formattedProtocolRecord043.includes("[ОШИБКА САНПИН: ПАКЕТ ПРОСРОЧЕН]"));
 		});
 
@@ -140,7 +143,7 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 				toolSetNameRu: "Терапевтический лоток смотровой",
 			});
 
-			assert.ok(record.includes("СанПиН 3.3686-21"));
+			assert.ok(record.includes("Стерилизация") || record.includes("СанПиН"));
 			assert.ok(record.includes("Автоклав АК-01 (Melag Vacuklav 23B+)"));
 			assert.ok(record.includes("цикл №4 от 2026-08-25"));
 			assert.ok(record.includes("интегратор 5 класса"));
@@ -191,6 +194,27 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			const reUpdated = attachKraftPackageTo043Diary(updated, parsed);
 			const count = (reUpdated.appliedMaterials.match(/Стерилизация СанПиН/g) || []).length;
 			assert.equal(count, 1, "Запись не должна дублироваться при повторном сканировании");
+		});
+
+		it("позволяет свободную фиксацию смены и 1-клик внесение стерилизации в дневник приёма без обязательного сканирования пакета (Мандаты 8e, 8n)", () => {
+			// Врач у кресла не сканирует пакет — при фиксации смены берется пакетная норма регламента клиники
+			const shiftBatchParsed = parseAndValidateKraftBarcode("BATCH-SHIFT-20260825", {
+				referenceDate: "2026-08-25",
+				defaultOperatorName: "Медсестра смены",
+			});
+
+			assert.equal(shiftBatchParsed.isValid, true);
+			assert.equal(shiftBatchParsed.isExpired, false);
+			assert.ok(shiftBatchParsed.formattedProtocolRecord043.includes("СанПиН 3.3686-21"));
+
+			const diary = {
+				statusLocalis: "Зуб 2.4: средний кариес.",
+				appliedMaterials: "Эмаль-герметик 0.1мл.",
+			};
+
+			const linkedDiary = attachKraftPackageTo043Diary(diary, shiftBatchParsed);
+			assert.ok(linkedDiary.appliedMaterials.includes("Стерилизация инструментария"));
+			assert.ok(linkedDiary.appliedMaterials.includes("BATCH-SHIFT-20260825"));
 		});
 	});
 

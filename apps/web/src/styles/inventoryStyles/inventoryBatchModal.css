@@ -1,0 +1,73 @@
+/* inventoryBatchModal.css - Stepper Controls & Quick Chips (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-stepper-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin: 8px 0;
+}
+
+.mobile-inventory-stepper-btn {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-stepper-btn:active {
+	transform: scale(0.92);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+
+.mobile-inventory-stepper-val {
+	font-size: 32px;
+	font-weight: 800;
+	color: var(--ink);
+	min-width: 80px;
+	text-align: center;
+	font-family: monospace;
+}
+
+.mobile-inventory-quick-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 8px;
+}
+
+.mobile-inventory-quick-chip {
+	height: 44px;
+	min-height: 44px;
+	border-radius: 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-quick-chip:active {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal);
+	transform: scale(0.95);
+}

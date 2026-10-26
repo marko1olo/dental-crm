@@ -1,0 +1,29 @@
+/* inventoryThemeTokens.css - Animations, Tokens & Keyframes (Mandate 8b <= 120 lines) */
+
+@keyframes mobile-slide-up {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+@keyframes mobile-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+:root {
+	--inv-touch-min: 44px;
+	--inv-radius-card: 16px;
+	--inv-radius-drawer: 24px;
+	--inv-status-ok: #10b981;
+	--inv-status-warn: #f59e0b;
+	--inv-status-danger: #ef4444;
+	--inv-status-overdraft: #dc2626;
+}

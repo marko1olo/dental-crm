@@ -160,3 +160,16 @@
 | **Журналы СанПиН 257/у и ПСО 366/у в 1 клик** | [`SanpinRegisters.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegisters.tsx) | `POST /api/registers/autofill-shift`, `POST /api/sterilization/pso/quick-norm` |
 | **Интеграция МДЛП Честный Знак** | [`mdlp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mdlp.ts) | `parseChestnyZnakDataMatrix()` |
 
+---
+
+## 📱 7. Модульная архитектура стилей склада (`inventoryStyles/`) и Apple HIG (Мандаты 8b, 8e, 8n)
+
+* **Декомпозиция монолита (Мандат 8b)**: монолит `mobile-inventory.css` (795 строк) распилен на 13 атомарных модулей в `apps/web/src/styles/inventoryStyles/` (каждый строго <= 120 строк). Исходный файл превращен в чистый шлюз импортов `@import` (15 строк).
+* **Apple HIG на смартфонах (390×844)**:
+  * Верт. полоса остатка слева (`.mobile-inventory-stock-strip`): зелёный (в наличии), желтый (дефицит), красный (критический), алый (мягкий овердрафт).
+  * Тач-таргеты `>= 44×44px` для работы врача в перчатках.
+  * Кнопка камеры/сканера DataMatrix прямо в строке поиска (`.mobile-inventory-scanner-btn`).
+  * 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+  * Плавающая панель действий в Natural Thumb Zone (`.mobile-inventory-bottom-bar`).
+
+

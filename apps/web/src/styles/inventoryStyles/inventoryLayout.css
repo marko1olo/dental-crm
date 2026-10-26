@@ -1,0 +1,74 @@
+/* inventoryLayout.css - Container and Sticky Header Layout (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100vw;
+	min-height: 100%;
+	overflow-x: clip;
+	box-sizing: border-box;
+	background: var(--paper);
+	color: var(--ink);
+	padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+	position: relative;
+}
+
+.mobile-inventory-header-bar {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	padding: 10px 14px 8px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-inventory-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.mobile-inventory-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.mobile-inventory-title-icon {
+	color: var(--teal);
+	flex-shrink: 0;
+}
+
+.mobile-inventory-title-text {
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.015em;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.25;
+}
+
+.mobile-inventory-kpi-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-kpi-badge.has-shortage {
+	background: rgba(239, 68, 68, 0.12);
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.3);
+}

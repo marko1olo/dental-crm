@@ -1,0 +1,78 @@
+/* inventoryDrawerForm.css - Drawer Inputs, Footer & Submit Button (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mobile-inventory-field-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.mobile-inventory-field-input {
+	width: 100%;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.mobile-inventory-field-input:focus {
+	background: var(--paper);
+	border-color: var(--teal);
+}
+
+.mobile-inventory-drawer-footer {
+	padding: 14px 18px max(16px, env(safe-area-inset-bottom)) 18px;
+	border-top: 1px solid var(--line-subtle);
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.mobile-inventory-drawer-submit {
+	width: 100%;
+	min-height: 52px;
+	height: 52px;
+	border-radius: 14px;
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: none;
+	font-size: 16px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+	transition: transform 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-drawer-submit:active {
+	transform: scale(0.98);
+}
+
+.mobile-inventory-drawer-secondary-link {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+	padding: 6px;
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}

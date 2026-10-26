@@ -22,6 +22,11 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 	const isLowStock = !isZeroStock && !isNegativeStock && item.stockQuantity <= (item.criticalThreshold || 0);
 	const trafficLight = getExpiryTrafficLight(item.expirationDate);
 
+	let stripClass = "in-stock";
+	if (isNegativeStock) stripClass = "negative";
+	else if (isZeroStock) stripClass = "critical";
+	else if (isLowStock) stripClass = "low-stock";
+
 	let IconComponent = Package;
 	if (catType === "anesthesia") IconComponent = Syringe;
 	else if (catType === "filling") IconComponent = Sparkles;
@@ -31,6 +36,7 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 
 	return (
 		<div className="mobile-inventory-item-row" onClick={onClick} data-testid={`mobile-inventory-item-${item.id}`}>
+			<div className={`mobile-inventory-stock-strip ${stripClass}`} aria-hidden="true" />
 			<div className={`mobile-inventory-icon-box ${catType}`}>
 				<IconComponent size={20} aria-hidden="true" />
 			</div>

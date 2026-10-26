@@ -1,0 +1,112 @@
+/* inventoryMobileSearch.css - Search Bar, Camera Scanner & Quick Actions (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-search-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.mobile-inventory-search-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.mobile-inventory-search-icon {
+	position: absolute;
+	left: 12px;
+	color: var(--muted);
+	pointer-events: none;
+}
+
+.mobile-inventory-search-input {
+	width: 100%;
+	height: 42px;
+	min-height: 42px;
+	padding: 0 40px 0 38px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.mobile-inventory-search-input:focus {
+	background: var(--paper);
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.mobile-inventory-search-clear {
+	position: absolute;
+	right: 6px;
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	min-height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+.mobile-inventory-scanner-btn {
+	width: 44px;
+	height: 42px;
+	min-width: 44px;
+	min-height: 42px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-scanner-btn:active {
+	transform: scale(0.96);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+
+.mobile-inventory-quick-carpule-btn {
+	height: 42px;
+	min-height: 42px;
+	min-width: 44px;
+	padding: 0 10px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-quick-carpule-btn:active {
+	transform: scale(0.96);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}

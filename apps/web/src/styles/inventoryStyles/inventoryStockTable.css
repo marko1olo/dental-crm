@@ -1,0 +1,34 @@
+/* inventoryStockTable.css - Desktop Stock Table Density & Grid (Mandate 8b <= 120 lines) */
+
+.inventory-stock-table-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.inventory-table-sticky-header {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+}
+
+.inventory-table-dense-row {
+	height: 44px;
+	border-bottom: 1px solid var(--line-subtle);
+	transition: background-color 0.12s ease;
+}
+
+.inventory-table-dense-row:hover {
+	background: var(--paper-soft);
+}
+
+.inventory-cell-stock-num {
+	font-family: monospace;
+	font-weight: 700;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}

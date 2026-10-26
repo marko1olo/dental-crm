@@ -1,4 +1,4 @@
-import { Package, Search, X } from "lucide-react";
+import { Camera, Package, Search, X } from "lucide-react";
 import React from "react";
 
 export interface MobileInventoryHeaderBarProps {
@@ -78,6 +78,16 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 						</button>
 					) : null}
 				</div>
+				<button
+					type="button"
+					className="mobile-inventory-scanner-btn"
+					onClick={onOpenMdlpScanning}
+					aria-label="Сканировать штрихкод камерой"
+					title="Сканер штрихкодов и DataMatrix"
+					data-testid="mobile-inventory-camera-scanner-btn"
+				>
+					<Camera size={18} aria-hidden="true" />
+				</button>
 			</div>
 		</div>
 	);

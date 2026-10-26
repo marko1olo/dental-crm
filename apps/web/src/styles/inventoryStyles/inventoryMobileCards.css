@@ -1,0 +1,39 @@
+/* inventoryMobileCards.css - iOS Grouped Inset Card & Status Strip (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-grouped-inset {
+	margin: 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+/* Left Vertical Stock Balance Strip (Mandate 8ze Apple HIG) */
+.mobile-inventory-stock-strip {
+	width: 4px;
+	height: 38px;
+	min-width: 4px;
+	border-radius: 2px;
+	flex-shrink: 0;
+	margin-right: -4px;
+	transition: background-color 0.2s ease;
+}
+
+.mobile-inventory-stock-strip.in-stock {
+	background: #10b981;
+}
+
+.mobile-inventory-stock-strip.low-stock {
+	background: #f59e0b;
+}
+
+.mobile-inventory-stock-strip.critical {
+	background: #ef4444;
+}
+
+.mobile-inventory-stock-strip.negative {
+	background: #dc2626;
+	box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);
+}

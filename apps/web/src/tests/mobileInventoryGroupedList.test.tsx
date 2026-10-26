@@ -260,10 +260,15 @@ test("Mobile Inventory HIG — MobileInventoryGroupedList renders Apple Store In
 });
 
 test("Mobile Inventory HIG — mobile-inventory.css tokens and ergonomic invariants", () => {
-	const cssContent = fs.readFileSync(
+	const mainCss = fs.readFileSync(
 		path.join(webRoot, "src/styles/modules/mobile-inventory.css"),
 		"utf8",
 	);
+	// Resolve modular imports if decomposed (Mandate 8b)
+	const importMatches = [...mainCss.matchAll(/@import\s+["']([^"']+)["'];/g)];
+	const cssContent = importMatches.length > 0
+		? importMatches.map((m) => fs.readFileSync(path.resolve(webRoot, "src/styles/modules", m[1]), "utf8")).join("\n") + "\n" + mainCss
+		: mainCss;
 
 	// 1. Grouped Inset Border Radius 16px
 	assert.ok(

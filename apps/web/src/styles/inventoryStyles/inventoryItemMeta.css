@@ -1,0 +1,116 @@
+/* inventoryItemMeta.css - Item Metadata, FEFO Badges & 1-Tap Deduct (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-item-info {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.mobile-inventory-item-name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	line-height: 1.25;
+	word-break: break-word;
+}
+
+.mobile-inventory-item-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.3;
+}
+
+.mobile-inventory-stock-highlight {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.mobile-inventory-badges-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 2px;
+}
+
+.mobile-inventory-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 7px;
+	border-radius: 6px;
+	white-space: nowrap;
+	line-height: 1.2;
+}
+
+.mobile-inventory-badge.critical-warning {
+	background: rgba(245, 158, 11, 0.15);
+	color: #b45309;
+	border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.mobile-inventory-badge.critical-deficit {
+	background: rgba(239, 68, 68, 0.15);
+	color: #b91c1c;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.mobile-inventory-badge.fefo-expired {
+	background: rgba(239, 68, 68, 0.15);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.mobile-inventory-badge.fefo-warning {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.mobile-inventory-badge.fefo-ok {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.mobile-inventory-quick-deduct-btn {
+	min-width: 44px;
+	min-height: 44px;
+	height: 44px;
+	padding: 0 10px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+}
+
+.mobile-inventory-quick-deduct-btn:active {
+	transform: scale(0.92);
+	background: rgba(239, 68, 68, 0.12);
+	border-color: rgba(239, 68, 68, 0.4);
+	color: #dc2626;
+}
+
+.mobile-inventory-quick-deduct-btn:disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}

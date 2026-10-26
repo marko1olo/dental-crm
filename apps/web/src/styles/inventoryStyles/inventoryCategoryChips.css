@@ -1,0 +1,67 @@
+/* inventoryCategoryChips.css - Horizontal Category Chips Scroller (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-chips-scroller {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	padding-bottom: 2px;
+	margin: 0 -4px;
+	padding-left: 4px;
+	padding-right: 16px;
+}
+
+.mobile-inventory-chips-scroller::-webkit-scrollbar {
+	display: none;
+}
+
+.mobile-inventory-chip {
+	height: 36px;
+	min-height: 36px;
+	min-width: 44px;
+	padding: 0 12px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-chip:active {
+	transform: scale(0.96);
+}
+
+.mobile-inventory-chip.active {
+	background: var(--teal) !important;
+	color: var(--on-teal, #ffffff) !important;
+	border-color: var(--teal) !important;
+	font-weight: 600;
+	box-shadow: 0 2px 6px rgba(20, 184, 166, 0.25);
+}
+
+.mobile-inventory-chip-count {
+	font-size: 11px;
+	font-weight: 700;
+	background: rgba(0, 0, 0, 0.08);
+	padding: 1px 6px;
+	border-radius: 9999px;
+	line-height: 1.2;
+}
+
+.mobile-inventory-chip.active .mobile-inventory-chip-count {
+	background: rgba(255, 255, 255, 0.25);
+	color: var(--on-teal, #ffffff);
+}

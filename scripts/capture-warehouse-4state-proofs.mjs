@@ -3,8 +3,8 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOFS_DIR = path.join(process.cwd(), "docs/proofs/warehouse");
-const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\7f431309-3ab4-4164-bb2e-247e07bc2be0";
-const PARENT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\c8f92f48-0ac4-4e48-82f7-7b46f1cc0acb";
+const CONV_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\1cccc2e4-958e-4c5c-9d50-19d82d738965";
+const PARENT_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\ce204741-1043-496d-84b4-ac98361937f4";
 
 if (!existsSync(PROOFS_DIR)) mkdirSync(PROOFS_DIR, { recursive: true });
 if (!existsSync(CONV_DIR)) mkdirSync(CONV_DIR, { recursive: true });
@@ -42,29 +42,29 @@ const browser = await chromium.launch(launchOptions);
 
 const configs = [
 	{
-		filename: "warehouse_pc_light.png",
-		alias: "warehouse_stock_pc_light.png",
+		filename: "01_warehouse_pc_light.png",
+		alias: "warehouse_pc_light.png",
 		viewport: { width: 1440, height: 900 },
 		theme: "light",
 		isMobile: false,
 	},
 	{
-		filename: "warehouse_pc_dark.png",
-		alias: "warehouse_stock_pc_dark.png",
+		filename: "02_warehouse_pc_dark.png",
+		alias: "warehouse_pc_dark.png",
 		viewport: { width: 1440, height: 900 },
 		theme: "dark",
 		isMobile: false,
 	},
 	{
-		filename: "warehouse_mobile_light.png",
-		alias: "warehouse_stock_mobile_light.png",
+		filename: "03_warehouse_mobile_light.png",
+		alias: "warehouse_mobile_light.png",
 		viewport: { width: 390, height: 844 },
 		theme: "light",
 		isMobile: true,
 	},
 	{
-		filename: "warehouse_mobile_dark.png",
-		alias: "warehouse_stock_mobile_dark.png",
+		filename: "04_warehouse_mobile_dark.png",
+		alias: "warehouse_mobile_dark.png",
 		viewport: { width: 390, height: 844 },
 		theme: "dark",
 		isMobile: true,
@@ -197,7 +197,8 @@ for (const cfg of configs) {
 			if (cfg.isMobile) {
 				await page.waitForSelector('.mobile-inventory-container, [data-testid="mobile-inventory-container"], [data-testid="mobile-inventory-bottom-bar"]', { state: "visible", timeout: 25000 });
 			} else {
-				await page.waitForSelector('.dente-segmented-bar, [data-testid="tab-inventory-items"], [data-testid="inventory-category-filters-row"], .dente-filter-chips', { state: "visible", timeout: 25000 });
+				await page.waitForFunction(() => !document.body.innerText.includes("Загрузка склада..."), { timeout: 25000 }).catch(() => {});
+				await page.waitForSelector('.inventory-view-table, .inventory-stock-badge, .inventory-actions-container, [data-testid="tab-inventory-items"]', { state: "visible", timeout: 25000 }).catch(() => {});
 			}
 			ready = true;
 		} catch (e) {

@@ -1,0 +1,97 @@
+/* inventoryBottomBar.css - Sticky Bottom Action Bar in Thumb Zone (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-bottom-bar {
+	position: fixed;
+	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	width: 100%;
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	padding: 10px 16px;
+	z-index: 9990;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.mobile-inventory-primary-fab {
+	flex: 1;
+	min-height: 50px;
+	height: 50px;
+	border-radius: 14px;
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+	transition: transform 0.15s ease, opacity 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-primary-fab:active {
+	transform: scale(0.98);
+	opacity: 0.92;
+}
+
+.mobile-inventory-secondary-btn {
+	min-height: 50px;
+	height: 50px;
+	min-width: 50px;
+	padding: 0 14px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-secondary-btn:active {
+	transform: scale(0.96);
+	background: var(--paper);
+}
+
+.mobile-inventory-shift-btn {
+	min-height: 50px;
+	height: 50px;
+	min-width: 50px;
+	padding: 0 12px;
+	border-radius: 14px;
+	background: var(--teal-soft, rgba(20, 184, 166, 0.12));
+	border: 1px solid var(--teal-soft, rgba(20, 184, 166, 0.3));
+	color: var(--teal-dark, #0f766e);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-shift-btn:active {
+	transform: scale(0.96);
+	background: var(--teal-soft, rgba(20, 184, 166, 0.2));
+}

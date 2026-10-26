@@ -1,0 +1,88 @@
+/* inventoryDrawerModal.css - Native iOS Bottom Sheet Drawer (Mandate 8b <= 120 lines) */
+
+.mobile-inventory-drawer-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: mobile-fade-in 0.2s ease-out;
+}
+
+.mobile-inventory-drawer-surface {
+	width: 100%;
+	max-height: 88dvh;
+	background: var(--paper);
+	border-top: 1px solid var(--line);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: mobile-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+.mobile-inventory-drag-handle-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 10px 0 6px 0;
+	cursor: grab;
+}
+
+.mobile-inventory-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, rgba(150, 150, 150, 0.4));
+}
+
+.mobile-inventory-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 18px 12px 18px;
+	border-bottom: 1px solid var(--line-subtle);
+}
+
+.mobile-inventory-drawer-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.mobile-inventory-drawer-close {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 50%;
+	background: var(--paper-soft);
+	border: none;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.mobile-inventory-drawer-close:active {
+	background: var(--line);
+}
+
+.mobile-inventory-drawer-body {
+	flex: 1;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
