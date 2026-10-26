@@ -63,19 +63,20 @@ export function SterilizationBatchCycleFooter({
 					<button
 						type="button"
 						onClick={onClose}
-						disabled={submitting}
-						className="secondary-button h-9 min-h-[36px] px-3.5 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
+						className="secondary-button h-9 min-h-[36px] px-3.5 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] transition-colors cursor-pointer touch-manipulation"
 					>
 						Отмена
 					</button>
 
 					<button
 						type="button"
-						onClick={onConfirm}
-						disabled={submitting}
+						onClick={() => {
+							if (submitting) return;
+							onConfirm();
+						}}
 						aria-busy={submitting}
 						data-testid="confirm-sterilization-batch-cycle-btn"
-						className="primary-button h-9 min-h-[36px] px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs inline-flex items-center gap-2 transition-all cursor-pointer touch-manipulation disabled:opacity-50"
+						className="primary-button h-9 min-h-[36px] px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs inline-flex items-center gap-2 transition-all cursor-pointer touch-manipulation"
 					>
 						{submitting ? (
 							<>

@@ -38,7 +38,7 @@ export function KraftPackageBarcodeModal({
 		inFlightRef.current = true;
 		try {
 			setSubmitting(true);
-			await fetch("/api/sanpin/sterilization/quick-norm-cycle", {
+			await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({

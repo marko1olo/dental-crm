@@ -73,7 +73,6 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 						<button
 							type="submit"
 							aria-busy={form.isSubmitting}
-							disabled={form.isSubmitting}
 							className="min-h-[44px] px-6 py-2 rounded-xl bg-[var(--teal,#0d9488)] text-white text-sm font-extrabold hover:bg-teal-700 transition-colors shadow-md flex items-center gap-2 cursor-pointer"
 						>
 							<CheckCircle2 size={18} />

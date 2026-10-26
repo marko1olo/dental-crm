@@ -24,10 +24,12 @@ export function PsoMobileFloatingBar({
 		>
 			<button
 				type="button"
-				onClick={onQuickMarkNorm}
-				disabled={isSubmitting}
+				onClick={() => {
+					if (isSubmitting) return;
+					onQuickMarkNorm();
+				}}
 				aria-busy={isSubmitting}
-				className="sanpin-mobile-floating-cta touch-manipulation"
+				className="sanpin-mobile-floating-cta touch-manipulation cursor-pointer"
 				data-testid="pso-mobile-floating-norm-btn"
 				title="Зафиксировать результаты предстерилизационной очистки смены (пробы отрицательные)"
 			>

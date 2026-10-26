@@ -43,7 +43,6 @@ export function registerSterilizationLegacyRoutes(app: FastifyInstance): void {
 
 	// 1-клик нормы
 	app.post("/api/sterilization/quick-norm", handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization/quick-norm-cycle", handleQuickNormCycle);
 	app.post("/api/registers/sterilization/quick-norm", handleQuickNormCycle);
 
 	// Сканирование и привязка к 043/у

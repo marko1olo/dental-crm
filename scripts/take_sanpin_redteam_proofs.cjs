@@ -314,6 +314,7 @@ async function main() {
 			waitUntil: "commit",
 			timeout: 45000,
 		});
+		await pcPage.waitForLoadState("domcontentloaded").catch(() => {});
 		await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
 
 		await ensureMounted(pcPage);
@@ -369,6 +370,7 @@ async function main() {
 			waitUntil: "commit",
 			timeout: 45000,
 		});
+		await mobPage.waitForLoadState("domcontentloaded").catch(() => {});
 		await mobPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
 
 		await ensureMounted(mobPage);
@@ -378,11 +380,13 @@ async function main() {
 		console.log("--- [AUTOCLAVE] Capturing Mobile Proofs (390x844) ---");
 		await setTheme(mobPage, "light");
 		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "03_sanpin_mobile_light.png");
 		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light.png");
 		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
 		await setTheme(mobPage, "dark");
 		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "04_sanpin_mobile_dark.png");
 		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark.png");
 		await saveProof(mobPage, "mobile_dark_sanpin_autoclave_390x844.png");
 

@@ -33,8 +33,11 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 					{onAutofillShift && (
 						<button
 							type="button"
-							onClick={onAutofillShift}
-							disabled={isAutofilling}
+							onClick={() => {
+								if (isAutofilling) return;
+								onAutofillShift();
+							}}
+							aria-busy={isAutofilling}
 							className="h-11 min-h-[44px] w-full rounded-xl font-semibold bg-[var(--teal,#0d9488)] text-white shadow-xs px-4 text-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
 						>
 							<CheckCircle2 size={16} />
@@ -51,8 +54,11 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 				<div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
-						onClick={() => onQuickBatchNorm(27, "134")}
-						disabled={isAutofilling}
+						onClick={() => {
+							if (isAutofilling) return;
+							onQuickBatchNorm(27, "134");
+						}}
+						aria-busy={isAutofilling}
 						className="w-full h-11 min-h-[44px] rounded-xl font-semibold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-3 text-[13px] flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
 						data-testid="sanpin-mobile-quick-batch-cta"
 					>

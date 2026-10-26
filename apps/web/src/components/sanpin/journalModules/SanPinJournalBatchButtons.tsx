@@ -27,12 +27,12 @@ export function SanPinJournalBatchButtons({
 				<button
 					type="button"
 					onClick={() => {
+						if (isAutofilling) return;
 						onQuickBatchNorm(27, "134", `Автоклав №1 — ${defaultCycle} (134°C)`);
 						if (onQuickPsoNorm) onQuickPsoNorm();
 					}}
-					disabled={isAutofilling}
 					aria-busy={isAutofilling}
-					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-4 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all disabled:opacity-70"
+					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs px-4 text-[13px] font-semibold inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
 					title="Пакетное автоклавирование смены: 134°C, 2.1 бар, 5 мин, азопирам норма, автоматическое списание расходников со склада"
 					aria-label="Зафиксировать цикл автоклавирования смены (134°C)"
 					data-testid="quick-shift-batch-btn"

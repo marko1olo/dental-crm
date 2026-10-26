@@ -58,8 +58,11 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 							<button
 								type="button"
 								className="primary-button sanpin-btn sanpin-btn-primary"
-								onClick={() => onQuickBatchNorm(27, "134")}
-								disabled={isAutofilling}
+								onClick={() => {
+									if (isAutofilling) return;
+									onQuickBatchNorm(27, "134");
+								}}
+								aria-busy={isAutofilling}
 								data-testid="empty-start-morning-cycle-btn"
 								style={{
 									display: "inline-flex",
@@ -69,8 +72,8 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 									padding: "0 20px",
 									fontSize: "0.875rem",
 									fontWeight: 600,
-									cursor: isAutofilling ? "wait" : "pointer",
-									opacity: isAutofilling ? 0.7 : 1,
+									cursor: "pointer",
+									opacity: 1,
 								}}
 							>
 								<CheckCircle2 size={16} />
@@ -82,8 +85,11 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 							<button
 								type="button"
 								className="secondary-button sanpin-btn sanpin-btn-secondary"
-								onClick={onAutofillShift}
-								disabled={isAutofilling}
+								onClick={() => {
+									if (isAutofilling) return;
+									onAutofillShift();
+								}}
+								aria-busy={isAutofilling}
 								data-testid="empty-autofill-shift-btn"
 								style={{
 									display: "inline-flex",
@@ -93,8 +99,8 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 									padding: "0 16px",
 									fontSize: "0.875rem",
 									fontWeight: 600,
-									cursor: isAutofilling ? "wait" : "pointer",
-									opacity: isAutofilling ? 0.7 : 1,
+									cursor: "pointer",
+									opacity: 1,
 								}}
 							>
 								<Sparkles size={15} />

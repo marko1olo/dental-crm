@@ -43,10 +43,12 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 			<div className="flex items-center gap-2 flex-wrap">
 				<button
 					type="button"
-					onClick={onAutofillNorms}
-					disabled={isAutofilling}
+					onClick={() => {
+						if (isAutofilling) return;
+						onAutofillNorms();
+					}}
 					aria-busy={isAutofilling}
-					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all disabled:opacity-50"
+					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
 					data-testid="autofill-norms-btn"
 					title="Автоматическое заполнение журнала автоклавирования"
 				>
@@ -63,7 +65,7 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 						title="Зафиксировать цикл автоклава вручную"
 					>
 						<Plus size={14} />
-						<span>+ Новый цикл</span>
+						<span>Новый цикл</span>
 					</button>
 				)}
 

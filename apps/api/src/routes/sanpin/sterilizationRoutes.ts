@@ -48,27 +48,14 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
 	app.post("/api/sanpin/sterilization", handleCreateSterilizationLog);
 
-	// Алиасы циклов автоклавирования
-	app.get("/api/sanpin/sterilization-cycles", handleGetSterilizationLogs);
-	app.post("/api/sanpin/sterilization-cycles", handleCreateSterilizationLog);
-	app.post("/api/sanpin/sterilization-cycles/quick-norm", handleQuickNormCycle);
-	app.post(
-		"/api/sanpin/sterilization-cycles/shift-batch",
-		handleSterilizationShiftBatch,
-	);
-	app.post(
-		"/api/sanpin/sterilization-cycles/batch",
-		handleSterilizationShiftBatch,
-	);
-
-	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар)
+	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар) — канонический роут и алиасы
 	app.post("/api/sanpin/sterilization/quick-norm", handleQuickNormCycle);
-
-	// 1-клик пакетная регистрация циклов смены
-	app.post(
-		"/api/sanpin/sterilization/shift-batch",
-		handleSterilizationShiftBatch,
-	);
+	app.post("/api/sanpin/sterilization/quick-norm-cycle", handleQuickNormCycle);
+	app.post("/api/sanpin/sterilization-cycles/quick-norm", handleQuickNormCycle);
+	app.post("/api/sanpin/sterilization-cycles/quick-norm-cycle", handleQuickNormCycle);
+	app.post("/api/sanpin/sterilization-cycles/shift-batch", handleSterilizationShiftBatch);
+	app.post("/api/sanpin/sterilization-cycles/batch", handleSterilizationShiftBatch);
+	app.post("/api/sanpin/sterilization/shift-batch", handleSterilizationShiftBatch);
 
 	// Контроль качества предстерилизационной очистки (ПСО)
 	app.get("/api/sanpin/sterilization/pso-tests", handleGetPsoTests);

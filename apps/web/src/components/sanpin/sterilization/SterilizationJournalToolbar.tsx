@@ -80,7 +80,7 @@ export function SterilizationJournalToolbar({
 						data-testid="sterilization-journal-new-cycle-btn"
 					>
 						<Plus size={14} />
-						<span>+ Новый цикл</span>
+						<span>Новый цикл</span>
 					</button>
 				)}
 				{onPrintJournal && (

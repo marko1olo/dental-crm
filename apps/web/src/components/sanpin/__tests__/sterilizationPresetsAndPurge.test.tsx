@@ -93,7 +93,7 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(html.includes("sterilization-journal-device-filter"));
 		assert.ok(html.includes("sterilization-journal-new-cycle-btn"));
 		assert.ok(html.includes("sterilization-journal-quick-shift-btn"));
-		assert.ok(html.includes("+ Новый цикл"));
+		assert.ok(html.includes("Новый цикл"));
 		assert.ok(html.includes("Сдать смену ЦСО"));
 		assert.ok(html.includes("Печать"));
 		assert.ok(html.includes("CSV"));
