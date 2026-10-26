@@ -11,4 +11,5 @@ export * from "./pso/azopyramCalculations";
 export * from "./pso/azopyramEvaluator";
 export * from "./pso/azopyramForm366RowsHtml";
 export * from "./pso/azopyramForm366PrintHtml";
+export * from "./pso/psoAzopyramPrintHtml";
 export * from "./pso/psoInstrumentCategories";

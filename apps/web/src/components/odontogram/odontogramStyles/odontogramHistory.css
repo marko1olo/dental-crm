@@ -1,0 +1,87 @@
+/**
+ * DENTE Dental CRM — Tooth History Chronicle & Event Ledger
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.tooth-history-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	padding: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+}
+
+.tooth-history-timeline {
+	position: relative;
+	padding-left: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tooth-history-timeline::before {
+	content: "";
+	position: absolute;
+	left: 6px;
+	top: 4px;
+	bottom: 4px;
+	width: 2px;
+	background: var(--line, #e2e8f0);
+}
+
+.tooth-history-event-card {
+	position: relative;
+	padding: 8px 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.tooth-history-event-card::before {
+	content: "";
+	position: absolute;
+	left: -18px;
+	top: 12px;
+	width: 8px;
+	height: 8px;
+	border-radius: 9999px;
+	background: var(--teal, #0d9488);
+	border: 2px solid var(--paper, #ffffff);
+}
+
+.tooth-history-event-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 11px;
+	color: var(--muted, #64748b);
+}
+
+.tooth-history-event-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-history-panel {
+	background: var(--paper, #0f172a);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-history-timeline::before {
+	background: rgba(255, 255, 255, 0.15);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-history-event-card {
+	background: var(--paper-soft, #1e293b);
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-history-event-card::before {
+	border-color: #0f172a;
+}

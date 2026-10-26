@@ -10,7 +10,8 @@ import { SanPinJournalBatchButtons } from "./SanPinJournalBatchButtons";
 export interface SanPinJournalToolbarActionsProps {
 	readonly isAutofilling: boolean;
 	readonly onAutofillNorms: () => void;
-	readonly onPrintForm257: () => void;
+	readonly onPrintSterilizationLog?: (() => void) | undefined;
+	readonly onPrintForm257?: (() => void) | undefined;
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
@@ -23,6 +24,7 @@ const BTN_SEC = "secondary-button h-9 min-h-[36px] rounded-xl border border-[var
 export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsProps> = ({
 	isAutofilling,
 	onAutofillNorms,
+	onPrintSterilizationLog,
 	onPrintForm257,
 	onExportCsv,
 	onOpenEquipmentModal,
@@ -72,7 +74,7 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 					</button>
 				)}
 
-				<button type="button" onClick={onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала работы стерилизаторов">
+				<button type="button" onClick={onPrintSterilizationLog || onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала работы стерилизаторов">
 					<Printer size={14} />
 					<span>Печать журнала</span>
 				</button>

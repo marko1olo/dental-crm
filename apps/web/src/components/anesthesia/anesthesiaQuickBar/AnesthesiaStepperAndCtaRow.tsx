@@ -73,7 +73,7 @@ export function AnesthesiaStepperAndCtaRow(props: AnesthesiaStepperAndCtaRowProp
 
 			<button type="button" disabled={disabled} onClick={onApplyToCard} className="primary-button inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-xl border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto" title={`Применить анестезию (${carpulesCount} карп.) в медицинскую карту приёма`} data-testid="btn-apply-anesthesia-to-card">
 				<CheckCircle2 size={14} className="shrink-0" />
-				<span>✓ В дневник приёма</span>
+				<span>В дневник приёма</span>
 				<span className="sr-only">Применить анестезию В карту</span>
 			</button>
 		</div>

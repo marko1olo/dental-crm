@@ -1,0 +1,72 @@
+/* ── Mandate 8e Dominant Norm Bar (1-Click Physiological Norm) ── */
+.cd-templates-dominant-norm-bar {
+  padding: 8px 20px;
+  background: var(--ok-bg, #f0fdf4);
+  border-bottom: 1px solid rgba(21, 128, 61, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .cd-templates-dominant-norm-bar,
+.dark .cd-templates-dominant-norm-bar {
+  background: rgba(22, 163, 74, 0.12);
+  border-bottom-color: rgba(22, 163, 74, 0.25);
+}
+
+.cd-dominant-norm-btn {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--ok-fg, #15803d);
+  background: var(--paper-strong, #ffffff);
+  color: var(--ok-fg, #15803d);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .cd-dominant-norm-btn,
+.dark .cd-dominant-norm-btn {
+  background: var(--paper-strong, #0f172a);
+  border-color: var(--ok-fg, #4ade80);
+  color: var(--ok-fg, #4ade80);
+}
+
+.cd-dominant-norm-btn.active {
+  background: var(--ok-fg, #15803d);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.3);
+}
+
+[data-theme="dark"] .cd-dominant-norm-btn.active,
+.dark .cd-dominant-norm-btn.active {
+  background: var(--ok-fg, #4ade80);
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
+}
+
+.cd-dominant-norm-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(21, 128, 61, 0.1);
+}
+
+.cd-dominant-norm-btn.active .cd-dominant-norm-badge {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .cd-dominant-norm-btn.active .cd-dominant-norm-badge,
+.dark .cd-dominant-norm-btn.active .cd-dominant-norm-badge {
+  background: rgba(15, 23, 42, 0.25);
+}

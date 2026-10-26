@@ -22,6 +22,14 @@ import { renderToString } from "react-dom/server";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
 import {
 	ToothChart,
@@ -299,7 +307,7 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 	it("verifies odontogram.css enforces strictly 1-row toolbar (height: 36px) and dominant arch min-height >= 300px", () => {
 		const cssPath = path.resolve(__dirname, "../odontogram.css");
-		const cssContent = fs.readFileSync(cssPath, "utf-8");
+		const cssContent = readCssWithImports(cssPath);
 
 		assert.ok(
 			cssContent.includes(".odontogram-toolbar"),

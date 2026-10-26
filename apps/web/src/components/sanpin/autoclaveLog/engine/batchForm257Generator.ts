@@ -3,7 +3,7 @@ import { createForm257Record } from "./form257RecordFactory.js";
 import { createDefault5ChamberPoints } from "./sterilizationCycleValidator.js";
 import type { Form257Record, GenerateBatchForm257Options } from "./types.js";
 
-export function generateBatchForm257Records(options: GenerateBatchForm257Options): Form257Record[] {
+export function generateBatchSterilizationRecords(options: GenerateBatchForm257Options): Form257Record[] {
 	const {
 		startDate, endDate, targetDates, excludeSundays = true, cyclesPerDay = 2, packsPerCycle = 14,
 		sterilizerId = "autoclave-melag-vacuklav-23b",
@@ -77,3 +77,5 @@ export function generateBatchForm257Records(options: GenerateBatchForm257Options
 
 	return records;
 }
+
+export { generateBatchSterilizationRecords as generateBatchForm257Records };

@@ -1,0 +1,82 @@
+/**
+ * DENTE Dental CRM — Odontogram Endodontic Shaders & Root Canals
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.root-canal-obturation-layer,
+.pediatric-root-resorption-layer,
+.resorption-hatch-area,
+.resorption-boundary-line {
+	pointer-events: none;
+}
+
+.tooth-menu-btn.pulpitis {
+	background-color: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	color: var(--warn-fg, #b45309);
+	border-color: var(--warn-fg, #b45309);
+}
+
+.tooth-menu-btn.pulpitis:hover {
+	background-color: var(--warn-bg, rgba(245, 158, 11, 0.2));
+	border-color: var(--warn-fg, #b45309);
+	opacity: 0.9;
+}
+
+.periapical-halo-group {
+	transform-origin: center;
+	animation: pulsePeriapical 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulsePeriapical {
+	from {
+		opacity: 0.7;
+		transform: scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1.04);
+	}
+}
+
+.endo-canal-path {
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transition: stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.endo-canal-gutta-percha {
+	stroke: #dc2626;
+	stroke-width: 2.2px;
+	filter: drop-shadow(0 0 2px rgba(220, 38, 38, 0.6));
+}
+
+.endo-canal-silver-point {
+	stroke: #94a3b8;
+	stroke-width: 2px;
+}
+
+.endo-canal-empty {
+	stroke: rgba(220, 38, 38, 0.35);
+	stroke-dasharray: 2 2;
+}
+
+.apex-resection-line {
+	stroke: #e11d48;
+	stroke-width: 2px;
+	stroke-dasharray: 3 1.5;
+}
+
+.fiber-post-pin {
+	stroke: #38bdf8;
+	stroke-width: 3px;
+	stroke-linecap: square;
+}
+
+:is([data-theme="dark"], html.dark) .endo-canal-empty {
+	stroke: rgba(248, 113, 113, 0.4);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-menu-btn.pulpitis {
+	background-color: rgba(245, 158, 11, 0.2);
+	color: #fcd34d;
+	border-color: rgba(245, 158, 11, 0.5);
+}

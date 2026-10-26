@@ -1,0 +1,82 @@
+/**
+ * DENTE Dental CRM — Pediatric (51..85) & Mixed Dentition Shaders
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.pediatric-arch-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+}
+
+.pediatric-resorption-strip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 4px 8px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+}
+
+.pediatric-resorption-stage-chip {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.pediatric-tooth-badge {
+	font-size: 11px;
+	font-weight: 800;
+	color: #0284c7;
+	background: rgba(2, 132, 199, 0.08);
+	border: 1px solid rgba(2, 132, 199, 0.3);
+	border-radius: 6px;
+	padding: 1px 4px;
+}
+
+.resorption-boundary-line {
+	stroke: var(--odontogram-border-strong, #cbd5e1);
+	stroke-dasharray: 2.5 2;
+}
+
+.pediatric-timeline-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	padding: 4px 2px;
+}
+
+.cariogram-sector-slice {
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+	cursor: pointer;
+}
+
+.cariogram-sector-slice:hover {
+	transform: scale(1.04);
+	opacity: 0.92;
+}
+
+:is([data-theme="dark"], html.dark) .pediatric-resorption-strip {
+	background: var(--paper-soft, #1e293b);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+:is([data-theme="dark"], html.dark) .pediatric-resorption-stage-chip {
+	background: var(--paper, #0f172a);
+	border-color: rgba(255, 255, 255, 0.15);
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], html.dark) .pediatric-tooth-badge {
+	color: #38bdf8;
+	background: rgba(2, 132, 199, 0.2);
+	border-color: rgba(56, 189, 248, 0.4);
+}

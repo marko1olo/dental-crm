@@ -1,0 +1,93 @@
+/**
+ * DENTE Dental CRM — Odontogram Theme Tokens (Base & Dark/Night/Cyber)
+ * Strictly <= 110 lines per Mandate 8b
+ */
+:root,
+[data-theme="light"],
+.light {
+	--odontogram-paper: var(--paper, #ffffff);
+	--odontogram-surface: var(--paper-soft, #f8fafc);
+	--odontogram-surface-hover: var(--paper-strong, #f1f5f9);
+	--odontogram-border: var(--line, #e2e8f0);
+	--odontogram-border-subtle: var(--line, #e2e8f0);
+	--odontogram-border-strong: var(--line-strong, #cbd5e1);
+	--odontogram-ink: var(--ink, #0f172a);
+	--odontogram-ink-muted: var(--muted, #64748b);
+	--odontogram-ink-subtle: var(--muted, #64748b);
+	--tooth-enamel: #f8fafc;
+	--tooth-enamel-stroke: #94a3b8;
+	--tooth-root-fill: var(--paper-soft, #f8fafc);
+	--tooth-root-stroke: var(--tooth-enamel-stroke, #94a3b8);
+	--tooth-crown-fill: var(--paper-strong, #f1f5f9);
+	--tooth-badge-bg: var(--paper, #ffffff);
+	--tooth-badge-border: var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], html.dark:not([data-theme="light"]):not(.light), body.dark:not([data-theme="light"]):not(.light)) {
+	--odontogram-paper: var(--paper, #0f172a);
+	--odontogram-surface: var(--paper-soft, #1e293b);
+	--odontogram-surface-hover: var(--paper-strong, #334155);
+	--odontogram-border: var(--line, rgba(255, 255, 255, 0.12));
+	--odontogram-border-subtle: var(--line, rgba(255, 255, 255, 0.08));
+	--odontogram-border-strong: var(--line-strong, rgba(255, 255, 255, 0.2));
+	--odontogram-ink: var(--ink, #f8fafc);
+	--odontogram-ink-muted: var(--muted, #94a3b8);
+	--odontogram-ink-subtle: var(--muted, #94a3b8);
+	--tooth-root-fill: var(--paper-soft, #1e293b);
+	--tooth-root-stroke: var(--muted, #94a3b8);
+	--tooth-crown-fill: var(--paper-strong, #334155);
+	--tooth-badge-bg: var(--paper, #0f172a);
+	--tooth-badge-border: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+[data-theme="night"],
+[data-theme="oled"] {
+	--odontogram-paper: #09090b;
+	--odontogram-surface: #000000;
+	--odontogram-surface-hover: #121215;
+	--odontogram-border: rgba(255, 255, 255, 0.15);
+	--odontogram-border-subtle: rgba(255, 255, 255, 0.1);
+	--odontogram-border-strong: rgba(255, 255, 255, 0.3);
+	--odontogram-ink: #ffffff;
+	--odontogram-ink-muted: #a1a1aa;
+	--odontogram-ink-subtle: #71717a;
+	--tooth-root-fill: #121215;
+	--tooth-root-stroke: #3f3f46;
+	--tooth-crown-fill: #18181b;
+	--tooth-badge-bg: #18181b;
+	--tooth-badge-border: #27272a;
+}
+
+[data-theme="cyber_xray"] {
+	--odontogram-paper: #081026;
+	--odontogram-surface: #030712;
+	--odontogram-surface-hover: #0d1a3a;
+	--odontogram-border: rgba(0, 240, 255, 0.3);
+	--odontogram-border-subtle: rgba(0, 240, 255, 0.18);
+	--odontogram-border-strong: rgba(0, 240, 255, 0.55);
+	--odontogram-ink: #e0f2fe;
+	--odontogram-ink-muted: #38bdf8;
+	--odontogram-ink-subtle: #00f0ff;
+	--tooth-root-fill: #0a1532;
+	--tooth-root-stroke: #0284c7;
+	--tooth-crown-fill: #0d1a3a;
+	--tooth-badge-bg: rgba(10, 21, 50, 0.95);
+	--tooth-badge-border: rgba(0, 240, 255, 0.4);
+}
+
+[data-theme="ocean"] {
+	--odontogram-paper: #0c1e3d;
+	--odontogram-surface: #081226;
+	--odontogram-surface-hover: #132a54;
+	--odontogram-border: rgba(56, 189, 248, 0.25);
+	--odontogram-border-subtle: rgba(56, 189, 248, 0.15);
+	--odontogram-border-strong: rgba(56, 189, 248, 0.45);
+	--odontogram-ink: #f0f9ff;
+	--odontogram-ink-muted: #7dd3fc;
+	--odontogram-ink-subtle: #38bdf8;
+	--tooth-root-fill: #0f2447;
+	--tooth-root-stroke: #2563eb;
+	--tooth-crown-fill: #132a54;
+	--tooth-badge-bg: rgba(15, 36, 71, 0.9);
+	--tooth-badge-border: rgba(56, 189, 248, 0.3);
+}

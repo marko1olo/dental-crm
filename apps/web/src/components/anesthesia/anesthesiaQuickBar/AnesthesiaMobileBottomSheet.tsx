@@ -92,7 +92,7 @@ export function AnesthesiaMobileBottomSheet({
 				<div className="pt-2 pb-[env(safe-area-inset-bottom)]">
 					<button type="button" onClick={() => { onApplyDirect(selectedDrugId, carpulesCount, techniqueId); onClose(); }} className="primary-button w-full min-h-[48px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98">
 						<CheckCircle2 size={16} />
-						<span>✓ В дневник приёма</span>
+						<span>В дневник приёма</span>
 					</button>
 				</div>
 			</div>

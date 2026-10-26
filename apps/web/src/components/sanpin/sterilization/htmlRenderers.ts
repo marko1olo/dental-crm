@@ -3,6 +3,6 @@
  * Мандат 8b: лимит строк <= 120 на файл.
  */
 
-export { generateForm257PrintHtml } from "./form257PrintHtml.js";
-export { generatePso366PrintHtml } from "./form366PrintHtml.js";
+export { generateSterilizationLogPrintHtml, generateForm257PrintHtml } from "./form257PrintHtml.js";
+export { generatePsoAzopyramPrintHtml, generatePso366PrintHtml } from "./form366PrintHtml.js";
 export { generateCombinedInspectionDossierHtml } from "./combinedInspectionDossierHtml.js";

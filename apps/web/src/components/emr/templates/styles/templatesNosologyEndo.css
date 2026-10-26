@@ -1,0 +1,46 @@
+/* ── Nosology: Endodontics & Root Canal Presets ── */
+.cd-nosology-endo {
+  --endo-accent: var(--danger, #ef4444);
+  --endo-bg: var(--danger-bg, #fef2f2);
+  --endo-border: rgba(239, 68, 68, 0.3);
+}
+
+.cd-template-card[data-category="endo"] .cd-card-category-tag {
+  background: var(--endo-bg);
+  color: var(--endo-accent);
+  border: 1px solid var(--endo-border);
+}
+
+.cd-endo-canal-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .cd-endo-canal-indicator,
+.dark .cd-endo-canal-indicator {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.cd-endo-apex-badge {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .cd-endo-apex-badge,
+.dark .cd-endo-apex-badge {
+  background: var(--paper-strong, #0f172a);
+  border-color: var(--line, #334155);
+}

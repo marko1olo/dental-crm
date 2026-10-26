@@ -1,0 +1,79 @@
+/**
+ * DENTE Dental CRM — Live Treatment Estimator & Invoice Breakdown
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.treatment-estimator-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+	padding: 8px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+}
+
+.treatment-estimator-item-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	gap: 8px;
+	transition: background-color 0.15s ease;
+}
+
+.treatment-estimator-item-card:hover {
+	background: var(--paper-strong, #f1f5f9);
+}
+
+.treatment-estimator-price-tag {
+	font-weight: 700;
+	font-size: 13px;
+	color: var(--teal, #0d9488);
+	white-space: nowrap;
+}
+
+.treatment-estimator-summary-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-top: 2px solid var(--line-strong, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	border-radius: 0 0 10px 10px;
+}
+
+.treatment-estimator-total-amount {
+	font-size: 16px;
+	font-weight: 900;
+	color: var(--ink, #0f172a);
+}
+
+.treatment-estimator-discount-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+:is([data-theme="dark"], html.dark) .treatment-estimator-container {
+	background: var(--paper, #0f172a);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+:is([data-theme="dark"], html.dark) .treatment-estimator-item-card {
+	background: var(--paper-soft, #1e293b);
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], html.dark) .treatment-estimator-item-card:hover {
+	background: var(--paper-strong, #334155);
+}
+
+:is([data-theme="dark"], html.dark) .treatment-estimator-summary-footer {
+	background: var(--paper-soft, #1e293b);
+	border-top-color: rgba(255, 255, 255, 0.2);
+}

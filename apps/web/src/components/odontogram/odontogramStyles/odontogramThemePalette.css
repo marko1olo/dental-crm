@@ -1,0 +1,107 @@
+/**
+ * DENTE Dental CRM — Odontogram Theme Tokens (Palette Themes)
+ * Strictly <= 110 lines per Mandate 8b
+ */
+[data-theme="emerald"] {
+	--odontogram-paper: #064e3b;
+	--odontogram-surface: #022013;
+	--odontogram-surface-hover: #047857;
+	--odontogram-border: rgba(52, 211, 153, 0.25);
+	--odontogram-border-subtle: rgba(52, 211, 153, 0.15);
+	--odontogram-border-strong: rgba(52, 211, 153, 0.45);
+	--odontogram-ink: #ecfdf5;
+	--odontogram-ink-muted: #6ee7b7;
+	--odontogram-ink-subtle: #34d399;
+	--tooth-root-fill: #065f46;
+	--tooth-root-stroke: #059669;
+	--tooth-crown-fill: #047857;
+	--tooth-badge-bg: rgba(6, 95, 70, 0.9);
+	--tooth-badge-border: rgba(52, 211, 153, 0.35);
+}
+
+[data-theme="sakura"] {
+	--odontogram-paper: #ffffff;
+	--odontogram-surface: #fff1f2;
+	--odontogram-surface-hover: #ffe4e6;
+	--odontogram-border: #fbcfe8;
+	--odontogram-border-subtle: #fce7f3;
+	--odontogram-border-strong: #f472b6;
+	--odontogram-ink: #4c0519;
+	--odontogram-ink-muted: #9f1239;
+	--odontogram-ink-subtle: #be185d;
+	--tooth-enamel: #f8fafc;
+	--tooth-enamel-stroke: #94a3b8;
+	--tooth-root-fill: #f1ede4;
+	--tooth-root-stroke: #94a3b8;
+	--tooth-crown-fill: #f8fafc;
+	--tooth-badge-bg: #fff1f2;
+}
+
+[data-theme="sakura"] .tooth-crown-path,
+[data-theme="sakura"] .tooth-crown-base-enamel,
+[data-theme="sakura"] .tooth-enamel-layer,
+[data-theme="sakura"] .tooth-root-path,
+[data-theme="sakura"] .tooth-root-base,
+[data-theme="sakura"] path.anatomical-root-path,
+[data-theme="sakura"] path.anatomical-crown-path {
+	stroke: #94a3b8 !important;
+}
+
+[data-theme="sakura"] .anatomical-pulp-chamber,
+[data-theme="sakura"] .anatomical-canals-layer path,
+[data-theme="sakura"] path.anatomical-pulp-path,
+[data-theme="sakura"] .pulp-fill {
+	stroke: #ef4444 !important;
+	fill: #ef4444 !important;
+}
+
+[data-theme="warm_sand"] {
+	--odontogram-paper: #ffffff;
+	--odontogram-surface: #fefce8;
+	--odontogram-surface-hover: #fef3c7;
+	--odontogram-border: #fde68a;
+	--odontogram-border-subtle: #fef08a;
+	--odontogram-border-strong: #f59e0b;
+	--odontogram-ink: #451a03;
+	--odontogram-ink-muted: #92400e;
+	--odontogram-ink-subtle: #78350f;
+	--tooth-root-fill: #fef3c7;
+	--tooth-root-stroke: #f59e0b;
+	--tooth-crown-fill: #ffffff;
+	--tooth-badge-bg: #fffbeb;
+	--tooth-badge-border: #fde68a;
+}
+
+[data-theme="calm_teal"] {
+	--odontogram-paper: #ffffff;
+	--odontogram-surface: #f0fdfa;
+	--odontogram-surface-hover: #ccfbf1;
+	--odontogram-border: #99f6e4;
+	--odontogram-border-subtle: #ccfbf1;
+	--odontogram-border-strong: #5eead4;
+	--odontogram-ink: #134e4a;
+	--odontogram-ink-muted: #0f766e;
+	--odontogram-ink-subtle: #115e59;
+	--tooth-root-fill: #e6fffa;
+	--tooth-root-stroke: #5eead4;
+	--tooth-crown-fill: #ffffff;
+	--tooth-badge-bg: #f0fdfa;
+	--tooth-badge-border: #99f6e4;
+}
+
+[data-theme="contrast"] {
+	--odontogram-paper: #ffffff;
+	--odontogram-surface: #ffffff;
+	--odontogram-surface-hover: #f4f4f5;
+	--odontogram-border: #000000;
+	--odontogram-border-subtle: #000000;
+	--odontogram-border-strong: #000000;
+	--odontogram-ink: #000000;
+	--odontogram-ink-muted: #18181b;
+	--odontogram-ink-subtle: #000000;
+	--tooth-root-fill: #ffffff;
+	--tooth-root-stroke: #000000;
+	--tooth-crown-fill: #ffffff;
+	--tooth-badge-bg: #ffffff;
+	--tooth-badge-border: #000000;
+}

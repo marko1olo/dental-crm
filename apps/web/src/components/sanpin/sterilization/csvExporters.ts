@@ -12,7 +12,7 @@ export { escapeCsvField } from "./csvEscapeHelper.js";
 export { exportPsoToCsv } from "./psoCsvExporter.js";
 export { exportKraftPackagesToCsv } from "./kraftPackagesCsvExporter.js";
 
-export function exportForm257ToCsv(records: readonly Form257CycleRecord[]): string {
+export function exportSterilizationLogToCsv(records: readonly Form257CycleRecord[]): string {
 	const headers = [
 		"Дата",
 		"Время",
@@ -58,3 +58,5 @@ export function exportForm257ToCsv(records: readonly Form257CycleRecord[]): stri
 	const csvContent = [headers.map(escapeCsvField).join(";"), ...rows.map((row) => row.join(";"))].join("\r\n");
 	return `\uFEFF${csvContent}`;
 }
+
+export { exportSterilizationLogToCsv as exportForm257ToCsv };

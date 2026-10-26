@@ -6,7 +6,7 @@
  */
 
 import { showToast } from "../../GlobalToast";
-import { handleGenerateMonthlyForm257 } from "../AutoclavePrintHelpers";
+import { handleGenerateMonthlySterilizationLog, handleGenerateMonthlyForm257 } from "../AutoclavePrintHelpers";
 import type { SanPinCycleEntry } from "./sanpinJournalTypes";
 
 export function useSanPinPrintExport(
@@ -14,14 +14,15 @@ export function useSanPinPrintExport(
 	devices: any[],
 	filteredCycles: readonly SanPinCycleEntry[],
 ) {
-	const handlePrint257 = () => {
+	const handlePrintSterilizationLog = () => {
 		try {
-			handleGenerateMonthlyForm257(selectedAutoclave, devices);
+			handleGenerateMonthlySterilizationLog(selectedAutoclave, devices);
 			showToast("Печатный журнал автоклавирования сформирован (А4)", "success");
 		} catch {
 			showToast("Ошибка при формировании журнала автоклавирования", "error");
 		}
 	};
+	const handlePrint257 = handlePrintSterilizationLog;
 
 	const handleExportCsv = () => {
 		const header = "Дата,Время,Цикл,Автоклав,Температура C,Давление бар,Экспозиция мин,Индикатор,Результат,Крафт-пакеты,Оператор\n";
@@ -39,5 +40,5 @@ export function useSanPinPrintExport(
 		showToast("Журнал стерилизации экспортирован в CSV", "success");
 	};
 
-	return { handlePrint257, handleExportCsv };
+	return { handlePrintSterilizationLog, handlePrint257, handleExportCsv };
 }

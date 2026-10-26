@@ -13,15 +13,17 @@ export interface AutoclaveToolbarSheetItemsProps {
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onOpenEquipmentModal: () => void;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onGenerateMonthlyForm257: () => void;
+	readonly onGenerateMonthlySterilizationLog?: () => void;
+	readonly onGenerateMonthlyForm257?: () => void;
 	readonly onOpenKraftModal: () => void;
 }
 
 export function AutoclaveToolbarSheetItems({
 	logs, clinicDevices, isLoggingBatch, onClose,
 	onQuickShiftBatch, onPrintBatchPouches, onOpenEquipmentModal,
-	onOpenNewCycleModal, onGenerateMonthlyForm257, onOpenKraftModal,
+	onOpenNewCycleModal, onGenerateMonthlySterilizationLog, onGenerateMonthlyForm257, onOpenKraftModal,
 }: AutoclaveToolbarSheetItemsProps) {
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
 	return (
 		<>
 			<button
@@ -76,7 +78,7 @@ export function AutoclaveToolbarSheetItems({
 			)}
 
 			<button
-				type="button" onClick={() => { onClose(); onGenerateMonthlyForm257(); }}
+				type="button" onClick={() => { onClose(); handleMonthlyLog(); }}
 				className="sanpin-bottom-sheet-item" data-testid="sheet-monthly-journal-btn"
 			>
 				<FileSpreadsheet size={18} className="text-emerald-600 shrink-0" />

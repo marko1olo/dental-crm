@@ -17,8 +17,10 @@ export interface AutoclaveRegisterToolbarProps {
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onQuickShiftBatch: () => void;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onGenerateMonthlyForm257: () => void;
-	readonly onOpenJournal257Modal: () => void;
+	readonly onGenerateMonthlySterilizationLog?: () => void;
+	readonly onGenerateMonthlyForm257?: () => void;
+	readonly onOpenSterilizationLogModal?: () => void;
+	readonly onOpenJournal257Modal?: () => void;
 	readonly onOpenMobileSheet: () => void;
 }
 
@@ -34,10 +36,14 @@ export function AutoclaveRegisterToolbar({
 	onPrintBatchPouches,
 	onQuickShiftBatch,
 	onOpenNewCycleModal,
+	onGenerateMonthlySterilizationLog,
 	onGenerateMonthlyForm257,
+	onOpenSterilizationLogModal,
 	onOpenJournal257Modal,
 	onOpenMobileSheet,
 }: AutoclaveRegisterToolbarProps) {
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
+	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	return (
 		<div className="sanpin-table-toolbar min-w-0 max-w-full flex items-center justify-between gap-2 p-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]">
 			<AutoclaveSearchField searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
@@ -52,8 +58,10 @@ export function AutoclaveRegisterToolbar({
 				onPrintBatchPouches={onPrintBatchPouches}
 				onQuickShiftBatch={onQuickShiftBatch}
 				onOpenNewCycleModal={onOpenNewCycleModal}
-				onGenerateMonthlyForm257={onGenerateMonthlyForm257}
-				onOpenJournal257Modal={onOpenJournal257Modal}
+				onGenerateMonthlySterilizationLog={handleMonthlyLog}
+				onGenerateMonthlyForm257={handleMonthlyLog}
+				onOpenSterilizationLogModal={handleOpenLogModal}
+				onOpenJournal257Modal={handleOpenLogModal}
 			/>
 
 			<AutoclaveMobileActionTrigger

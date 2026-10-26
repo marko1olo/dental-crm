@@ -1,0 +1,105 @@
+/**
+ * DENTE Dental CRM — Odontogram Unified Clinical Toolbar Styles (Mandate 8b <= 110L)
+ */
+.odontogram-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	padding: 2px 8px;
+	border-bottom: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	background: var(--paper, #ffffff);
+	width: 100%;
+	max-width: 100%;
+	user-select: none;
+	flex-wrap: nowrap;
+	overflow-x: clip;
+	min-height: 36px;
+	height: 36px;
+	max-height: 36px;
+	position: relative;
+	z-index: 25;
+}
+.odontogram-toolbar__island {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+	flex-wrap: nowrap;
+}
+.odontogram-toolbar__segmented {
+	display: inline-flex;
+	align-items: center;
+	padding: 1.5px;
+	border-radius: 8px;
+	background: var(--paper-soft, var(--odontogram-surface, #f8fafc));
+	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
+	height: 30px;
+	gap: 1.5px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	flex-shrink: 0;
+}
+.odontogram-toolbar__segment-btn {
+	height: 25px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3.5px;
+	padding: 0 7px;
+	border-radius: 6px;
+	font-size: 11px;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	user-select: none;
+	flex-shrink: 0;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+	border: 1px solid transparent;
+	background: transparent;
+}
+.odontogram-toolbar__segment-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+.odontogram-toolbar__segment-btn--active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-weight: 600;
+	border-color: var(--line, var(--odontogram-border, #cbd5e1));
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.odontogram-toolbar__btn--primary-cta {
+	background: var(--teal, #0d9488) !important;
+	color: var(--on-teal, #ffffff) !important;
+	font-weight: 700;
+	border-color: var(--teal-dark, #0f766e) !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3) !important;
+}
+.tooth-hover-quick-hud button {
+	min-height: 32px;
+	height: 32px;
+	font-size: 12px;
+	touch-action: manipulation;
+}
+
+@media (pointer: coarse) {
+	.tooth-hover-quick-hud button {
+		min-height: 44px;
+		min-width: 44px;
+		font-size: 13px;
+	}
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-toolbar {
+	background: var(--paper, #0f172a);
+	border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__segmented {
+	background: var(--paper-soft, #1e293b);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__segment-btn--active {
+	background: var(--paper, #0f172a);
+	color: #ffffff;
+	border-color: rgba(255, 255, 255, 0.2);
+}

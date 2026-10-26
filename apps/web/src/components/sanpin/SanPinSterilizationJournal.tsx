@@ -40,6 +40,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		handleAutofillNorms,
 		handleQuickBatchNorm,
 		handleQuickPsoNorm,
+		handlePrintSterilizationLog,
 		handlePrint257,
 		handleExportCsv,
 	} = useSanPinJournalLogic({ initialFilterAutoclave });
@@ -60,7 +61,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				onSearchChange={setSearchQuery}
 				isAutofilling={isAutofilling}
 				onAutofillNorms={() => handleAutofillNorms("month")}
-				onPrintForm257={handlePrint257}
+				onPrintForm257={handlePrintSterilizationLog || handlePrint257}
 				onExportCsv={handleExportCsv}
 				onOpenEquipmentModal={handleOpenEquipment}
 				onOpenNewCycleModal={handleOpenNewCycle}

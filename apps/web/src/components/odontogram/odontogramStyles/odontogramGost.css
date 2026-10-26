@@ -1,0 +1,92 @@
+/**
+ * DENTE Dental CRM — Classic GOST Odontogram Table & Touch Keypad
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.gost-table-wrapper {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 4px;
+}
+
+.gost-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: center;
+	font-size: 12px;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	background: var(--paper, #ffffff);
+}
+
+.gost-table th,
+.gost-table td {
+	border: 1px solid var(--line, #e2e8f0);
+	padding: 6px 4px;
+	min-width: 32px;
+	user-select: none;
+}
+
+.gost-cell {
+	cursor: pointer;
+	font-weight: 700;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gost-cell:hover {
+	background-color: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+
+.gost-cell:focus-visible {
+	outline: 2px solid var(--teal, #0d9488);
+	outline-offset: -2px;
+}
+
+.gost-touch-keypad {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: var(--odontogram-surface, var(--paper-soft, #f8fafc));
+	border: 1px solid var(--odontogram-border-subtle, var(--line, #e2e8f0));
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:is([data-theme="dark"], html.dark) .gost-table {
+	background: var(--paper, #0f172a);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+:is([data-theme="dark"], html.dark) .gost-table th,
+:is([data-theme="dark"], html.dark) .gost-table td {
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], html.dark) .gost-cell:hover {
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="contrast"] .gost-table {
+	border: 2px solid var(--line-strong, #000000);
+}
+
+[data-theme="contrast"] .gost-table th,
+[data-theme="contrast"] .gost-table td {
+	border-color: var(--line-strong, #000000);
+}
+
+[data-theme="contrast"] .gost-cell:focus-visible {
+	outline: 3px solid var(--line-strong, #000000);
+}
+
+[data-theme="contrast"] .gost-touch-keypad {
+	border: 2px solid var(--line-strong, #000000);
+	background: var(--paper-strong, #ffffff);
+}
+
+[data-theme="contrast"] .gost-keypad-btn {
+	border: 2px solid var(--line-strong, #000000);
+	color: var(--ink, #000000);
+	background: var(--paper-strong, #ffffff);
+}

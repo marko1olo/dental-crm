@@ -13,7 +13,7 @@ import {
 } from "./sterilizationCycleValidator.js";
 import type { CreateForm257RecordParams, Form257Record } from "./types.js";
 
-export function createForm257Record(params: CreateForm257RecordParams): Form257Record {
+export function createSterilizationLogRecord(params: CreateForm257RecordParams): Form257Record {
 	const sterilizer = STATUTORY_STERILIZERS_CATALOG.find((s) => s.id === params.sterilizerId) ?? STATUTORY_STERILIZERS_CATALOG[0];
 	const regime = STATUTORY_STERILIZATION_REGIMES.find((r) => r.id === params.regimeId) ?? STATUTORY_STERILIZATION_REGIMES[0];
 	const packaging = STATUTORY_PACKAGING_TYPES.find((p) => p.id === params.packagingType) ?? STATUTORY_PACKAGING_TYPES[0];
@@ -82,3 +82,5 @@ export function createForm257Record(params: CreateForm257RecordParams): Form257R
 		createdAt: new Date().toISOString(),
 	};
 }
+
+export { createSterilizationLogRecord as createForm257Record };

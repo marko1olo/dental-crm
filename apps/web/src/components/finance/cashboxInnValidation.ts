@@ -37,12 +37,12 @@ export function validateBuyerInn(params: {
 	const isIp = rawType === "individual_entrepreneur";
 
 	if (!cleanInn) {
-		const msg = isLegal ? "Для организации обязателен ИНН (10 цифр)" : "Для ИП обязателен ИНН (12 цифр)";
+		const msg = isLegal ? "Для организации или ИП обязателен ИНН (10 или 12 цифр)" : "Для ИП обязателен ИНН (12 цифр)";
 		return { isValid: false, isRequired: true, errorRu: msg, errorMessage: msg };
 	}
 
-	if (isLegal && cleanInn.length !== 10) {
-		const msg = "ИНН юридического лица должен содержать ровно 10 цифр";
+	if (isLegal && cleanInn.length !== 10 && cleanInn.length !== 12) {
+		const msg = "ИНН юридического лица или ИП должен содержать 10 или 12 цифр";
 		return { isValid: false, isRequired: true, cleanInn, errorRu: msg, errorMessage: msg };
 	}
 

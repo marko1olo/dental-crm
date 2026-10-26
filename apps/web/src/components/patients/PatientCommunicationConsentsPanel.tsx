@@ -14,6 +14,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 	PatientCommunicationConsentsPanelProps
 > = ({ patientId }) => {
 	const state = useCommunicationConsents(patientId);
+	const { loading, saving } = state;
 
 	if (!patientId) return null;
 
@@ -42,7 +43,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-comm-consents-reload"
-						disabled={state.loading || state.saving}
+						disabled={loading || saving}
 						onClick={() => void state.load()}
 						className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] disabled:opacity-50 inline-flex items-center justify-center font-medium cursor-pointer"
 					>
@@ -51,7 +52,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-comm-consents-save"
-						disabled={state.loading || state.saving}
+						disabled={loading || saving}
 						onClick={() => void state.save()}
 						className="px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
 					>

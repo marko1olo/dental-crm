@@ -11,7 +11,7 @@ function escapeCsvField(value: unknown): string {
 	return `"${str}"`;
 }
 
-export function exportForm257ToCsv(records: readonly Form257Record[]): string {
+export function exportSterilizationLogToCsv(records: readonly Form257Record[]): string {
 	const BOM = "\uFEFF";
 	const headers = [
 		"ID Записи", "Дата", "Номер цикла", "Код аппарата",
@@ -53,3 +53,5 @@ export function exportForm257ToCsv(records: readonly Form257Record[]): string {
 
 	return BOM + rows.join("\r\n");
 }
+
+export { exportSterilizationLogToCsv as exportForm257ToCsv };

@@ -1,0 +1,85 @@
+/**
+ * DENTE Dental CRM — Odontogram Caries Shaders & Clinical Statuses
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.tooth.tooth-ai-detected {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.14));
+}
+
+.tooth-planned {
+	background: var(--rust-soft, rgba(163, 79, 50, 0.15));
+	border-color: rgba(163, 79, 50, 0.5);
+	color: #7d2c25;
+}
+
+.tooth-watch {
+	background: var(--amber-soft, rgba(245, 158, 11, 0.15));
+	border-color: rgba(184, 120, 31, 0.5);
+	color: #79500f;
+}
+
+.tooth-done {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.14));
+	border-color: rgba(47, 115, 64, 0.45);
+	color: #26562f;
+}
+
+.tooth-treatment {
+	background: var(--info-bg, rgba(59, 130, 246, 0.1));
+	border-color: rgba(67, 56, 202, 0.4);
+	color: #3730a3;
+}
+
+.tooth-missing {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	text-decoration: line-through;
+}
+
+.tooth-menu-btn.caries {
+	background-color: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	color: var(--bad-fg, #dc2626);
+	border-color: var(--bad-fg, #dc2626);
+}
+
+.tooth-menu-btn.caries:hover {
+	background-color: var(--bad-bg, rgba(239, 68, 68, 0.15));
+	border-color: var(--bad-fg, #dc2626);
+	opacity: 0.9;
+}
+
+.tooth-surface-target {
+	transition: fill 0.2s ease, fill-opacity 0.2s ease, stroke 0.2s ease;
+}
+
+.tooth-surface-target:hover {
+	fill: var(--odontogram-surface-hover, rgba(56, 189, 248, 0.35));
+	fill-opacity: 0.45;
+	stroke: var(--teal, #0d9488);
+	stroke-width: 1.2px;
+}
+
+.tooth-surface-interactive-group g.tooth-surface-target:hover polygon[fill="transparent"] {
+	fill: rgba(239, 68, 68, 0.35) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], .dark) .tooth-planned {
+	color: var(--bad-fg, #f87171);
+	border-color: rgba(248, 113, 113, 0.4);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], .dark) .tooth-watch {
+	color: var(--warn-fg, #fbbf24);
+	border-color: rgba(251, 191, 36, 0.4);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], .dark) .tooth-done {
+	color: var(--ok-fg, #4ade80);
+	border-color: rgba(74, 222, 128, 0.4);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], .dark) .tooth-treatment {
+	color: var(--info-fg, #38bdf8);
+	border-color: rgba(56, 189, 248, 0.4);
+}

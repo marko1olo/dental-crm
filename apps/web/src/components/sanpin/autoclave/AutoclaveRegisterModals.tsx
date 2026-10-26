@@ -9,8 +9,10 @@ import type { ClinicAutoclaveDevice } from "./autoclaveDeviceTypes";
 export interface AutoclaveRegisterModalsProps {
 	readonly isKraftModalOpen: boolean;
 	readonly setIsKraftModalOpen: (open: boolean) => void;
-	readonly isJournal257ModalOpen: boolean;
-	readonly setIsJournal257ModalOpen: (open: boolean) => void;
+	readonly isSterilizationLogModalOpen?: boolean;
+	readonly setIsSterilizationLogModalOpen?: (open: boolean) => void;
+	readonly isJournal257ModalOpen?: boolean;
+	readonly setIsJournal257ModalOpen?: (open: boolean) => void;
 	readonly isNewCycleModalOpen: boolean;
 	readonly setIsNewCycleModalOpen: (open: boolean) => void;
 	readonly isWasteJournalOpen: boolean;
@@ -30,6 +32,8 @@ export interface AutoclaveRegisterModalsProps {
 export const AutoclaveRegisterModals: React.FC<AutoclaveRegisterModalsProps> = ({
 	isKraftModalOpen,
 	setIsKraftModalOpen,
+	isSterilizationLogModalOpen,
+	setIsSterilizationLogModalOpen,
 	isJournal257ModalOpen,
 	setIsJournal257ModalOpen,
 	isNewCycleModalOpen,
@@ -43,6 +47,11 @@ export const AutoclaveRegisterModals: React.FC<AutoclaveRegisterModalsProps> = (
 	onCycleCreated,
 	onEquipmentUpdated,
 }) => {
+	const isLogModalOpen = Boolean(isSterilizationLogModalOpen ?? isJournal257ModalOpen);
+	const handleCloseLogModal = () => {
+		setIsSterilizationLogModalOpen?.(false);
+		setIsJournal257ModalOpen?.(false);
+	};
 	return (
 		<>
 			<KraftPackageBarcodeModal
@@ -54,9 +63,9 @@ export const AutoclaveRegisterModals: React.FC<AutoclaveRegisterModalsProps> = (
 			/>
 
 			<AutoclaveSterilizationLogModal
-				isOpen={isJournal257ModalOpen}
-				initialTab="journal_257"
-				onClose={() => setIsJournal257ModalOpen(false)}
+				isOpen={isLogModalOpen}
+				initialTab="sterilization_log"
+				onClose={handleCloseLogModal}
 			/>
 
 			<SterilizationCycleDrawer

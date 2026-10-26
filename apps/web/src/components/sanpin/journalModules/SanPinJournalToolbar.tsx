@@ -10,14 +10,15 @@ export interface SanPinJournalToolbarProps {
 	readonly onSearchChange: (query: string) => void;
 	readonly isAutofilling: boolean;
 	readonly onAutofillNorms: () => void;
-	readonly onPrintForm257: () => void;
+	readonly onPrintSterilizationLog?: (() => void) | undefined;
+	readonly onPrintForm257?: (() => void) | undefined;
 	readonly onExportCsv: () => void;
-	readonly onOpenEquipmentModal?: () => void;
-	readonly onOpenNewCycleModal?: () => void;
-	readonly period?: SanPinJournalPeriod;
-	readonly onPeriodChange?: (p: SanPinJournalPeriod) => void;
-	readonly onQuickBatchNorm?: (batchSize: number, regime: "134" | "121", cycleName?: string) => void;
-	readonly onQuickPsoNorm?: () => void;
+	readonly onOpenEquipmentModal?: (() => void) | undefined;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
+	readonly period?: SanPinJournalPeriod | undefined;
+	readonly onPeriodChange?: ((p: SanPinJournalPeriod) => void) | undefined;
+	readonly onQuickBatchNorm?: ((batchSize: number, regime: "134" | "121", cycleName?: string) => void) | undefined;
+	readonly onQuickPsoNorm?: (() => void) | undefined;
 }
 
 export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
@@ -27,6 +28,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 	onSearchChange,
 	isAutofilling,
 	onAutofillNorms,
+	onPrintSterilizationLog,
 	onPrintForm257,
 	onExportCsv,
 	onOpenEquipmentModal,
@@ -63,7 +65,8 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 			<SanPinJournalToolbarActions
 				isAutofilling={isAutofilling}
 				onAutofillNorms={onAutofillNorms}
-				onPrintForm257={onPrintForm257}
+				onPrintSterilizationLog={onPrintSterilizationLog || onPrintForm257}
+				onPrintForm257={onPrintSterilizationLog || onPrintForm257}
 				onExportCsv={onExportCsv}
 				onOpenEquipmentModal={onOpenEquipmentModal}
 				onOpenNewCycleModal={onOpenNewCycleModal}

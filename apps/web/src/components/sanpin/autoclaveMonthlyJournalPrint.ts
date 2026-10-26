@@ -7,11 +7,11 @@ import {
 	createDefault5ChamberPoints,
 	createForm257Record,
 	DEFAULT_CLINIC_LEGAL_INFO,
-	generateForm257PrintHtml,
+	generateSterilizationLogPrintHtml,
 	type Form257Record,
 } from "./autoclaveLog/autoclaveLogEngine.js";
 
-export function handleGenerateMonthlyForm257(
+export function handleGenerateMonthlySterilizationLog(
 	sterilizerId?: string,
 	clinicDevices?: ClinicAutoclaveDevice[],
 ): void {
@@ -85,7 +85,7 @@ export function handleGenerateMonthlyForm257(
 		);
 	}
 
-	const html = generateForm257PrintHtml(generatedRecords, DEFAULT_CLINIC_LEGAL_INFO, `за ${monthNameRu}`);
+	const html = generateSterilizationLogPrintHtml(generatedRecords, DEFAULT_CLINIC_LEGAL_INFO, `за ${monthNameRu}`);
 	const printWin = window.open("", "_blank");
 	if (!printWin) {
 		showToast("Разрешите всплывающие окна для печати журнала работы стерилизаторов (автоклавов)", "error");
@@ -102,3 +102,5 @@ export function handleGenerateMonthlyForm257(
 		4000,
 	);
 }
+
+export { handleGenerateMonthlySterilizationLog as handleGenerateMonthlyForm257 };

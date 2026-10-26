@@ -4,6 +4,7 @@ import { showToast } from "../GlobalToast";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { DEFAULT_DOM_CHUNK_STEP } from "../../utils/domVirtualizationHelper";
 import {
+	handleGenerateMonthlySterilizationLog,
 	handleGenerateMonthlyForm257,
 	handlePrintBatchPouches,
 	handlePrintSinglePouch,
@@ -86,10 +87,13 @@ export function AutoclaveRegisterTab() {
 					searchQuery={logic.searchQuery} setSearchQuery={logic.setSearchQuery} deviceFilter={logic.deviceFilter} setDeviceFilter={logic.setDeviceFilter}
 					onLoadMore={() => logic.setDisplayLimit((p) => p + DEFAULT_DOM_CHUNK_STEP)} onLoadAll={() => logic.setDisplayLimit(logic.logs.length || 1000)}
 					stampedRows={logic.stampedRows} onStampVerification={logic.handleStampVerification} onPrintSinglePouch={handlePrintPouch} onPrintBatchPouches={handlePrintBatch}
-					onOpenKraftForLog={handleOpenKraftForLog} onOpenKraftModal={() => logic.setIsKraftModalOpen(true)} onOpenJournal257Modal={() => logic.setIsJournal257ModalOpen(true)}
+					onOpenKraftForLog={handleOpenKraftForLog} onOpenKraftModal={() => logic.setIsKraftModalOpen(true)}
+					onOpenSterilizationLogModal={() => logic.setIsSterilizationLogModalOpen(true)}
+					onOpenJournal257Modal={() => logic.setIsJournal257ModalOpen(true)}
 					onOpenNewCycleModal={() => logic.setIsNewCycleModalOpen(true)} onOpenEquipmentModal={() => logic.setIsEquipmentModalOpen(true)}
 					onQuickShiftBatch={handleQuickShiftBatch} isLoggingBatch={logic.isLoggingBatch}
-					onGenerateMonthlyForm257={() => handleGenerateMonthlyForm257(logic.deviceFilter !== "all" ? logic.deviceFilter : undefined, logic.clinicDevices)}
+					onGenerateMonthlySterilizationLog={() => handleGenerateMonthlySterilizationLog(logic.deviceFilter !== "all" ? logic.deviceFilter : undefined, logic.clinicDevices)}
+					onGenerateMonthlyForm257={() => handleGenerateMonthlySterilizationLog(logic.deviceFilter !== "all" ? logic.deviceFilter : undefined, logic.clinicDevices)}
 				/>
 			)}
 

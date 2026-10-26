@@ -17,6 +17,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 import {
 	areToothWrapperPropsEqual,
 	areToothDataEqual,
@@ -304,7 +312,7 @@ describe("2. Low-End Hardware Mode & Reduced Motion Graphic Filters", () => {
 
 	it("odontogram.css physically contains low-end hardware mode and reduced motion filter: none rules", () => {
 		const cssPath = path.resolve(__dirname, "../odontogram.css");
-		const cssContent = fs.readFileSync(cssPath, "utf-8");
+		const cssContent = readCssWithImports(cssPath);
 
 		expect(cssContent).toContain(".low-end-hardware-mode .tooth-svg-element");
 		expect(cssContent).toContain("filter: none !important;");

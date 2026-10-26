@@ -3,7 +3,7 @@
  * Мандат 8b: лимит строк <= 120 на файл.
  */
 
-export { createForm257Record } from "./form257RecordFactory.js";
-export { filterForm257Records, calculateSterilizerStatistics } from "./form257FiltersAndStats.js";
+export { createSterilizationLogRecord, createForm257Record } from "./form257RecordFactory.js";
+export { filterSterilizationRecords, filterForm257Records, calculateSterilizerStatistics } from "./form257FiltersAndStats.js";
 export { detectMissingSterilizationDays } from "./missingSterilizationDaysAudit.js";
-export { generateBatchForm257Records } from "./batchForm257Generator.js";
+export { generateBatchSterilizationRecords, generateBatchForm257Records } from "./batchForm257Generator.js";

@@ -1,9 +1,9 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
+import { AutoclaveSterilizationLogTab } from "./AutoclaveSterilizationLogTab.js";
 import { AutoclaveNewCycleTab } from "./AutoclaveNewCycleTab.js";
 import { AutoclaveLogModalHeader } from "./AutoclaveLogModalHeader";
-import { AutoclaveLogModalTabs } from "./AutoclaveLogModalTabs";
+import { AutoclaveLogModalTabs, type AutoclaveModalTab } from "./AutoclaveLogModalTabs";
 import { useAutoclaveLogModalLogic } from "./useAutoclaveLogModalLogic";
 import { DEFAULT_CLINIC_LEGAL_INFO, type ClinicLegalInfo } from "./autoclaveLogEngine.js";
 import "./autoclaveLog.css";
@@ -11,19 +11,22 @@ import "./autoclaveLog.css";
 export interface AutoclaveSterilizationLogModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialTab?: "new_cycle" | "journal_257" | "chamber_points" | "biocontrol" | "analytics";
+	readonly initialTab?: AutoclaveModalTab | "chamber_points" | "biocontrol" | "analytics";
 	readonly clinicInfo?: ClinicLegalInfo;
 }
 
 export function AutoclaveSterilizationLogModal({
 	isOpen,
 	onClose,
-	initialTab = "journal_257",
+	initialTab = "sterilization_log",
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveSterilizationLogModalProps) {
-	const logic = useAutoclaveLogModalLogic(isOpen, initialTab);
+	const normalizedInitialTab = initialTab === "journal_257" ? "sterilization_log" : initialTab;
+	const logic = useAutoclaveLogModalLogic(isOpen, normalizedInitialTab as any);
 
 	if (!isOpen) return null;
+
+	const isLogTabActive = logic.activeTab === "sterilization_log" || logic.activeTab === ("journal_257" as any);
 
 	const modalContent = (
 		<div className="autoclave-log-modal-overlay" role="dialog" aria-modal="true" aria-label="Журнал контроля автоклавирования" onClick={onClose}>
@@ -39,8 +42,8 @@ export function AutoclaveSterilizationLogModal({
 							latestCycleNumber={logic.records.length + 1}
 						/>
 					)}
-					{logic.activeTab === "journal_257" && (
-						<AutoclaveJournal257Tab
+					{isLogTabActive && (
+						<AutoclaveSterilizationLogTab
 							records={logic.records}
 							onDeleteRecord={logic.handleDeleteRecord}
 							onVerifyRecord={logic.handleVerifyRecord}

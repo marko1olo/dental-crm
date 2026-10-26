@@ -13,9 +13,17 @@ import type { ToothState } from "../ToothChart";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 describe("Odontogram Touch Target Calibration for Clinical Tablets", () => {
 	const cssPath = path.resolve(__dirname, "../odontogram.css");
-	const cssContent = fs.readFileSync(cssPath, "utf-8");
+	const cssContent = readCssWithImports(cssPath);
 
 	test("CSS defines minimum touch target >= 44x44px for .tooth-svg-wrapper hit area", () => {
 		// Tooth wrapper base must have minimum width 44px and min height 48px
@@ -202,7 +210,7 @@ describe("Odontogram High-Speed Keyboard Triggers & 1-Key Assigning", () => {
 
 describe("10-Theme Architecture & Palette Verification", () => {
 	const cssPath = path.resolve(__dirname, "../odontogram.css");
-	const cssContent = fs.readFileSync(cssPath, "utf-8");
+	const cssContent = readCssWithImports(cssPath);
 
 	const EXPECTED_THEMES = [
 		{ id: "light", selector: ':root, [data-theme="light"]' },

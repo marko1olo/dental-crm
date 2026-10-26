@@ -1,0 +1,40 @@
+/* ── Backdrop & Modal Window Container ── */
+.cd-templates-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  animation: cdTemplatesFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cdTemplatesFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.cd-templates-modal {
+  width: 100%;
+  max-width: 1240px;
+  height: 92vh;
+  background: var(--paper-strong, #ffffff);
+  color: var(--ink, #0f172a);
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .cd-templates-modal,
+.dark .cd-templates-modal {
+  background: var(--paper-strong, #0f172a);
+  color: var(--ink, #f8fafc);
+  border-color: var(--line, #334155);
+}

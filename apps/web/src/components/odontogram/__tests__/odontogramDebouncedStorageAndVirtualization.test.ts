@@ -27,6 +27,14 @@ import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 class MockLocalStorage {
 	private store: Record<string, string> = {};
 	public setItemCalls: { key: string; value: string }[] = [];
@@ -185,7 +193,7 @@ describe("Low-Spec Caching & DOM Virtualizer Invariants", () => {
 
 		it("low-spec-hardware.css defines content-visibility: auto and 1px 48px for .patient-row and .invoice-card", () => {
 			const cssPath = path.resolve(__dirname, "../../../styles/low-spec-hardware.css");
-			const css = fs.readFileSync(cssPath, "utf-8");
+			const css = readCssWithImports(cssPath);
 
 			assert.ok(
 				css.includes(".patient-row"),

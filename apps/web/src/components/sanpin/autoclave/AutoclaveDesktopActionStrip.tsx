@@ -15,15 +15,20 @@ export interface AutoclaveDesktopActionStripProps {
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onQuickShiftBatch: () => void;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onGenerateMonthlyForm257: () => void;
-	readonly onOpenJournal257Modal: () => void;
+	readonly onGenerateMonthlySterilizationLog?: () => void;
+	readonly onGenerateMonthlyForm257?: () => void;
+	readonly onOpenSterilizationLogModal?: () => void;
+	readonly onOpenJournal257Modal?: () => void;
 }
 
 export const AutoclaveDesktopActionStrip: React.FC<AutoclaveDesktopActionStripProps> = ({
 	deviceFilter, setDeviceFilter, clinicDevices, logs, isLoggingBatch,
 	onOpenEquipmentModal, onPrintBatchPouches, onQuickShiftBatch,
-	onOpenNewCycleModal, onGenerateMonthlyForm257, onOpenJournal257Modal,
+	onOpenNewCycleModal, onGenerateMonthlySterilizationLog, onGenerateMonthlyForm257,
+	onOpenSterilizationLogModal, onOpenJournal257Modal,
 }) => {
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
+	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	return (
 		<div className="hidden md:flex items-center gap-1.5 shrink-0 flex-nowrap">
 			<select
@@ -91,8 +96,10 @@ export const AutoclaveDesktopActionStrip: React.FC<AutoclaveDesktopActionStripPr
 
 			<AutoclaveToolbarMoreMenu
 				onOpenNewCycleModal={onOpenNewCycleModal}
-				onGenerateMonthlyForm257={onGenerateMonthlyForm257}
-				onOpenJournal257Modal={onOpenJournal257Modal}
+				onGenerateMonthlySterilizationLog={handleMonthlyLog}
+				onGenerateMonthlyForm257={handleMonthlyLog}
+				onOpenSterilizationLogModal={handleOpenLogModal}
+				onOpenJournal257Modal={handleOpenLogModal}
 			/>
 		</div>
 	);

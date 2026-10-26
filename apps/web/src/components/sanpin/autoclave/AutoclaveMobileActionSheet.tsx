@@ -13,8 +13,9 @@ export interface AutoclaveMobileActionSheetProps {
 	readonly onQuickShiftBatch: () => void;
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onOpenEquipmentModal: () => void;
-	readonly onOpenNewCycleModal?: () => void;
-	readonly onGenerateMonthlyForm257: () => void;
+	readonly onOpenNewCycleModal?: (() => void) | undefined;
+	readonly onGenerateMonthlySterilizationLog?: (() => void) | undefined;
+	readonly onGenerateMonthlyForm257?: (() => void) | undefined;
 	readonly onOpenKraftModal: () => void;
 	readonly selectedLogForSheet: SterilizationLogRecord | null;
 	readonly onCloseCycleSheet: () => void;
@@ -43,6 +44,7 @@ export function AutoclaveMobileActionSheet(props: AutoclaveMobileActionSheetProp
 				onPrintBatchPouches={props.onPrintBatchPouches}
 				onOpenEquipmentModal={props.onOpenEquipmentModal}
 				onOpenNewCycleModal={props.onOpenNewCycleModal}
+				onGenerateMonthlySterilizationLog={props.onGenerateMonthlySterilizationLog}
 				onGenerateMonthlyForm257={props.onGenerateMonthlyForm257}
 				onOpenKraftModal={props.onOpenKraftModal}
 			/>

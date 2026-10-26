@@ -1,0 +1,53 @@
+/**
+ * DENTE Dental CRM — Odontogram A4 Print Layout & Media Queries
+ * Strictly <= 110 lines per Mandate 8b
+ */
+.odontogram-print-page {
+	width: 100%;
+	max-width: 210mm;
+	margin: 0 auto;
+	background: #ffffff;
+	color: #000000;
+	padding: 10mm;
+	box-sizing: border-box;
+}
+
+.odontogram-print-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 2px solid #000000;
+	padding-bottom: 4mm;
+	margin-bottom: 6mm;
+}
+
+.odontogram-print-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 6mm;
+	align-items: center;
+}
+
+@media (max-width: 639px) {
+	.odontogram-print-action-btn,
+	[data-testid="print-odontogram-a4-btn"] {
+		display: none !important;
+	}
+}
+
+@media print {
+	.odontogram-toolbar,
+	.odontogram-selection-toolbar,
+	.odontogram-stamp-palette,
+	.tooth-radial-menu,
+	.tooth-hover-quick-hud,
+	.mobile-quadrant-tabs-container {
+		display: none !important;
+	}
+
+	.odontogram-print-page {
+		padding: 0;
+		margin: 0;
+		max-width: 100%;
+	}
+}

@@ -8,7 +8,7 @@ import type { AutoclaveModalTab } from "./AutoclaveLogModalTabs";
 export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<AutoclaveModalTab>(
-		initialTab === "new_cycle" ? "new_cycle" : "journal_257"
+		initialTab === "new_cycle" ? "new_cycle" : "sterilization_log"
 	);
 	const [records, setRecords] = useState<Form257Record[]>(() =>
 		isDemo ? [...INITIAL_FORM257_RECORDS] : []

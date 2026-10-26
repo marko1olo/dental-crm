@@ -13,10 +13,10 @@ import {
 import type { ShiftSanpinAutoCloseOptions } from "./types.js";
 
 /**
- * Автоматически рассчитывает и формирует все циклы стерилизации (Форма 257/у)
+ * Автоматически рассчитывает и формирует все циклы стерилизации
  * на основании состоявшихся приёмов и лотков за смену.
  */
-export function compileShiftForm257Records(
+export function compileShiftSterilizationRecords(
 	options: ShiftSanpinAutoCloseOptions = {},
 ): readonly Form257Record[] {
 	const now = new Date();
@@ -81,3 +81,5 @@ export function compileShiftForm257Records(
 
 	return records;
 }
+
+export { compileShiftSterilizationRecords as compileShiftForm257Records };

@@ -23,7 +23,7 @@ export function checkCardioAsthmaPregnancy(
 				id: "sulfite_asthma_contraindication",
 				severity: "danger",
 				title: "ПРОТИВОПОКАЗАНО: Содержит сульфиты (риск бронхоспазма)",
-				message: `У пациента ${somatic.hasBronchialAsthma ? "бронхиальная астма" : "аллергия на сульфиты"}! Препарат «${drug.commercialName}» содержит метабисульфит натрия. Показан анестетик без вазоконстриктора и сульфитов (Скандонест 3% или Лидокаин 2%).`,
+				message: `У пациента ${somatic.hasBronchialAsthma ? "бронхиальная астма" : "аллергия на сульфиты"}! Препарат «${drug.commercialName}» содержит метабисульфит натрия (высокий риск бронхоспазма). Показан анестетик без вазоконстриктора и сульфитов (Скандонест 3% или Лидокаин 2%).`,
 				recommendedDrugKey: "scandonest_3",
 				recommendedAction: "Заменить на Скандонест 3% (без сульфитов и адреналина)",
 			});
@@ -44,7 +44,7 @@ export function checkCardioAsthmaPregnancy(
 				id: "cardio_high_vaso_alert",
 				severity: "danger",
 				title: "Высокий кардиоваскулярный риск (Адреналин 1:100 000)",
-				message: "У пациента сердечно-сосудистая патология. Концентрация адреналина 1:100 000 повышает риск криза. Препарат выбора — Скандонест 3%. При адреналине лимит <= 2 карпулы.",
+				message: "У пациента сердечно-сосудистая патология (I10–I15). Концентрация адреналина 1:100 000 повышает риск криза. Препарат выбора — Скандонест 3%. При адреналине лимит <= 2 карпулы.",
 				recommendedDrugKey: "scandonest_3",
 				recommendedAction: "Переключить на Скандонест 3% без вазоконстриктора",
 			});
@@ -91,15 +91,16 @@ export function checkCardioAsthmaPregnancy(
 				id: "pregnancy_high_vaso_warning",
 				severity: "warning",
 				title: "Высокая концентрация адреналина при беременности",
-				message: "Концентрация 1:100 000 не рекомендована при беременности из-за риска вазоконстрикции сосудов матки. Рекомендуется Ультракаин Д-С (1:200 000).",
+				message: "Концентрация 1:100 000 не рекомендована при беременности из-за риска снижения маточно-плацентарного кровотока. Рекомендуется Ультракаин Д-С (1:200 000).",
 				recommendedDrugKey: "ultracain_ds",
 				recommendedAction: "Переключить на Ультракаин Д-С (1:200 000)",
 			});
 		} else if (drug.key === "scandonest_3" || drug.key === "lidocaine_2") {
 			if (!params.hasAsthmaOrSulfite) {
 				recommendedDrugKey = "ultracain_ds";
+				const alertId = drug.key === "scandonest_3" ? "pregnancy_mepivacaine_caution" : "pregnancy_lidocaine_caution";
 				alerts.push({
-					id: `pregnancy_${drug.key}_caution`,
+					id: alertId,
 					severity: "caution",
 					title: `Особенности применения ${drug.commercialName} при беременности`,
 					message: "При отсутствии аллергии на сульфиты препаратом выбора при беременности является Артикаин 1:200 000.",

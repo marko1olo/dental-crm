@@ -26,9 +26,13 @@ export function AutoclaveRegisterTable(props: AutoclaveRegisterTableProps) {
 		stampedRows, onStampVerification, onOpenEquipmentModal,
 		onPrintBatchPouches, onPrintSinglePouch, onOpenKraftForLog,
 		onQuickShiftBatch, isLoggingBatch, onOpenNewCycleModal,
-		onGenerateMonthlyForm257, onOpenJournal257Modal, onOpenKraftModal,
+		onGenerateMonthlySterilizationLog, onGenerateMonthlyForm257,
+		onOpenSterilizationLogModal, onOpenJournal257Modal, onOpenKraftModal,
 		onLoadMore, onLoadAll,
 	} = props;
+
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
+	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 
 	return (
 		<div className="sanpin-table-wrapper w-full min-w-0" style={{ position: "relative", zIndex: 1, width: "100%" }}>
@@ -38,7 +42,10 @@ export function AutoclaveRegisterTable(props: AutoclaveRegisterTableProps) {
 				clinicDevices={clinicDevices} logs={logs} isLoggingBatch={isLoggingBatch}
 				onOpenEquipmentModal={onOpenEquipmentModal} onPrintBatchPouches={onPrintBatchPouches}
 				onQuickShiftBatch={onQuickShiftBatch} onOpenNewCycleModal={onOpenNewCycleModal}
-				onGenerateMonthlyForm257={onGenerateMonthlyForm257} onOpenJournal257Modal={onOpenJournal257Modal}
+				onGenerateMonthlySterilizationLog={handleMonthlyLog}
+				onGenerateMonthlyForm257={handleMonthlyLog}
+				onOpenSterilizationLogModal={handleOpenLogModal}
+				onOpenJournal257Modal={handleOpenLogModal}
 				onOpenMobileSheet={() => setIsMobileToolbarSheetOpen(true)}
 			/>
 
@@ -67,7 +74,8 @@ export function AutoclaveRegisterTable(props: AutoclaveRegisterTableProps) {
 				logs={logs} clinicDevices={clinicDevices} isLoggingBatch={isLoggingBatch}
 				onQuickShiftBatch={onQuickShiftBatch} onPrintBatchPouches={onPrintBatchPouches}
 				onOpenEquipmentModal={onOpenEquipmentModal} onOpenNewCycleModal={onOpenNewCycleModal || (() => {})}
-				onGenerateMonthlyForm257={onGenerateMonthlyForm257} onOpenKraftModal={onOpenKraftModal}
+				onGenerateMonthlySterilizationLog={handleMonthlyLog}
+				onGenerateMonthlyForm257={handleMonthlyLog} onOpenKraftModal={onOpenKraftModal}
 				selectedLogForSheet={selectedLogForSheet} onCloseCycleSheet={() => setSelectedLogForSheet(null)}
 				stampedRows={stampedRows} onStampVerification={onStampVerification}
 				onPrintSinglePouch={onPrintSinglePouch} onOpenKraftForLog={onOpenKraftForLog}

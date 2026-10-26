@@ -60,7 +60,7 @@ export function useSanPinJournalLogic({
 		setCycles,
 	);
 
-	const { handlePrint257, handleExportCsv } = useSanPinPrintExport(
+	const { handlePrintSterilizationLog, handlePrint257, handleExportCsv } = useSanPinPrintExport(
 		selectedAutoclave,
 		devices,
 		filteredCycles,
@@ -80,6 +80,7 @@ export function useSanPinJournalLogic({
 		handleAutofillNorms,
 		handleQuickBatchNorm,
 		handleQuickPsoNorm,
+		handlePrintSterilizationLog,
 		handlePrint257,
 		handleExportCsv,
 	};

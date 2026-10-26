@@ -38,7 +38,7 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 				data-action="tooth-chart-mark-intact-btn"
 			>
 				<ToothMolar size={14} className="text-white shrink-0" />
-				<span>✓ Все интактны / норма</span>
+				<span>Все интактны / норма</span>
 			</button>
 
 			<button

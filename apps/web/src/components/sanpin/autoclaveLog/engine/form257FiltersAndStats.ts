@@ -6,7 +6,7 @@ import type {
 	SterilizerStatisticsSummary,
 } from "./types.js";
 
-export function filterForm257Records(
+export function filterSterilizationRecords(
 	records: readonly Form257Record[],
 	criteria: Form257FilterCriteria,
 ): Form257Record[] {
@@ -78,3 +78,5 @@ export function calculateSterilizerStatistics(
 		daysUntilNextBioControl: bioDeadline.daysRemaining,
 	};
 }
+
+export { filterSterilizationRecords as filterForm257Records };

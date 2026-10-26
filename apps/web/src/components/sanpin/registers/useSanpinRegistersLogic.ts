@@ -104,7 +104,9 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 
 	return {
 		activeTab, setActiveTab, showExpandedKpi, setShowExpandedKpi, summary,
-		isKraftModalOpen, setIsKraftModalOpen, isJournal257ModalOpen, setIsJournal257ModalOpen,
+		isKraftModalOpen, setIsKraftModalOpen,
+		isSterilizationLogModalOpen: isJournal257ModalOpen, setIsSterilizationLogModalOpen: setIsJournal257ModalOpen,
+		isJournal257ModalOpen, setIsJournal257ModalOpen,
 		isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen, isExportMenuOpen, setIsExportMenuOpen,
 		autoFilling, autofillPeriod, setAutofillPeriod, refreshCounter, fetchSummary,
 		handleAutofillShift, handleAutofillByPeriod, exportContext,

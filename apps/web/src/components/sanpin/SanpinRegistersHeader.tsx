@@ -20,7 +20,8 @@ export interface SanpinRegistersHeaderProps {
 	readonly onAutofillShift: () => void;
 	readonly onOpenRetroactiveBatchModal: () => void;
 	readonly onOpenKraftModal: () => void;
-	readonly onOpenJournal257Modal: () => void;
+	readonly onOpenSterilizationLogModal?: () => void;
+	readonly onOpenJournal257Modal?: () => void;
 }
 
 export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
@@ -38,8 +39,10 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 	onAutofillShift,
 	onOpenRetroactiveBatchModal,
 	onOpenKraftModal,
+	onOpenSterilizationLogModal,
 	onOpenJournal257Modal,
 }) => {
+	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	const exportMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -105,7 +108,9 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 							onAutofillByPeriod={onAutofillByPeriod} autoFilling={autoFilling}
 							onRefreshSummary={onRefreshSummary} onAutofillShift={onAutofillShift}
 							onOpenRetroactiveBatchModal={onOpenRetroactiveBatchModal}
-							onOpenKraftModal={onOpenKraftModal} onOpenJournal257Modal={onOpenJournal257Modal}
+							onOpenKraftModal={onOpenKraftModal}
+							onOpenSterilizationLogModal={handleOpenLogModal}
+							onOpenJournal257Modal={handleOpenLogModal}
 							exportContext={exportContext}
 						/>
 					)}

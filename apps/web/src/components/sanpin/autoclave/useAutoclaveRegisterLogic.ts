@@ -95,7 +95,9 @@ export function useAutoclaveRegisterLogic() {
 		clinicDevices, fetchLogs, fetchDevices, stampedRows,
 		handleStampVerification, viewSubMode, setViewSubMode,
 		displayLimit, setDisplayLimit, isLoggingBatch, setIsLoggingBatch,
-		isKraftModalOpen, setIsKraftModalOpen, isJournal257ModalOpen, setIsJournal257ModalOpen,
+		isKraftModalOpen, setIsKraftModalOpen,
+		isSterilizationLogModalOpen: isJournal257ModalOpen, setIsSterilizationLogModalOpen: setIsJournal257ModalOpen,
+		isJournal257ModalOpen, setIsJournal257ModalOpen,
 		isNewCycleModalOpen, setIsNewCycleModalOpen, isWasteJournalOpen, setIsWasteJournalOpen,
 		isEquipmentModalOpen, setIsEquipmentModalOpen, kraftPrefill, setKraftPrefill,
 	};

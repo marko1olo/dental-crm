@@ -4,17 +4,23 @@ import { useEffect, useRef, useState } from "react";
 
 export interface AutoclaveToolbarMoreMenuProps {
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onGenerateMonthlyForm257: () => void;
-	readonly onOpenJournal257Modal: () => void;
+	readonly onGenerateMonthlySterilizationLog?: () => void;
+	readonly onGenerateMonthlyForm257?: () => void;
+	readonly onOpenSterilizationLogModal?: () => void;
+	readonly onOpenJournal257Modal?: () => void;
 }
 
 export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> = ({
 	onOpenNewCycleModal,
+	onGenerateMonthlySterilizationLog,
 	onGenerateMonthlyForm257,
+	onOpenSterilizationLogModal,
 	onOpenJournal257Modal,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
+	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -68,7 +74,7 @@ export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> =
 
 					<button
 						type="button"
-						onClick={() => { setIsOpen(false); onGenerateMonthlyForm257(); }}
+						onClick={() => { setIsOpen(false); handleMonthlyLog(); }}
 						className="sanpin-dropdown-item flex items-center gap-2 p-2 rounded w-full text-left text-xs font-semibold text-ink cursor-pointer bg-transparent border-0"
 						data-testid="generate-monthly-form257-btn"
 					>
@@ -78,7 +84,7 @@ export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> =
 
 					<button
 						type="button"
-						onClick={() => { setIsOpen(false); onOpenJournal257Modal(); }}
+						onClick={() => { setIsOpen(false); handleOpenLogModal(); }}
 						className="sanpin-dropdown-item flex items-center gap-2 p-2 rounded w-full text-left text-xs font-semibold text-ink cursor-pointer bg-transparent border-0"
 						data-testid="open-journal-257-studio-btn"
 					>

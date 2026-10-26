@@ -6,5 +6,6 @@
 export * from "./form257CsvExporter";
 export * from "./form257RowsHtml";
 export * from "./form257PrintHtml";
+export * from "./sterilizationLogPrintHtml";
 export * from "./regulatorySanpinRowsHtml";
 export * from "./regulatorySanpinInspectionHtml";

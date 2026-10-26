@@ -1,0 +1,108 @@
+/**
+ * DENTE Dental CRM — Apple HIG Mobile Quadrant Selector & Touch Targets
+ * Strictly <= 110 lines per Mandate 8b & MOBILE_DESIGN_APPLE_HIG §3.3
+ */
+.radial-item-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-height: 48px !important;
+	min-width: 48px !important;
+	font-weight: 700 !important;
+	user-select: none;
+	touch-action: manipulation;
+	transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease, border-color 0.16s ease !important;
+}
+
+.radial-item-btn:hover {
+	border-color: var(--teal, #0d9488) !important;
+}
+
+.radial-item-btn:active {
+	transform: scale(0.97);
+}
+
+.gost-keypad-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-weight: 700;
+	font-size: 13px;
+	cursor: pointer;
+	user-select: none;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+	border: 1px solid var(--odontogram-border-subtle, var(--line, #e2e8f0));
+	background: var(--odontogram-paper, var(--paper, #ffffff));
+	color: var(--odontogram-ink, var(--ink, #0f172a));
+}
+
+@media (max-width: 768px) {
+	.quadrant-view-wrapper {
+		width: 100% !important;
+		max-width: 100% !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+		overflow-x: clip !important;
+		overflow-y: visible !important;
+		margin: 0 auto !important;
+	}
+
+	.quadrant-view-wrapper .teeth-row,
+	.quadrant-view-wrapper .tooth-quadrant-group,
+	.quadrant-view-wrapper .focused-quadrant-group {
+		width: 100% !important;
+		max-width: 100% !important;
+		display: flex !important;
+		justify-content: space-evenly !important;
+		align-items: center !important;
+		gap: 2px !important;
+		padding: 4px 0 !important;
+		margin: 0 auto !important;
+		flex-wrap: nowrap !important;
+	}
+
+	.quadrant-view-wrapper .tooth-svg-wrapper {
+		min-width: 44px !important;
+		width: calc((100% - 14px) / 8) !important;
+		max-width: 52px !important;
+		min-height: 56px !important;
+		height: auto !important;
+		padding: 2px 1px !important;
+		touch-action: manipulation !important;
+		flex: 1 1 0 !important;
+		border-radius: 8px !important;
+	}
+
+	.quadrant-view-wrapper .tooth-svg-wrapper::before {
+		min-width: 44px !important;
+		min-height: 56px !important;
+	}
+
+	.quadrant-view-wrapper .tooth-svg-element {
+		max-height: 54px !important;
+		width: 100% !important;
+		height: auto !important;
+	}
+
+	.quadrant-view-wrapper .tooth-number-badge {
+		min-width: 26px !important;
+		padding: 2px 4px !important;
+		font-size: 13px !important;
+		font-weight: 900 !important;
+		border-radius: 6px !important;
+		gap: 3px !important;
+	}
+
+	.quadrant-view-wrapper .tooth-number-text {
+		font-size: 13px !important;
+		font-weight: 900 !important;
+		line-height: 1 !important;
+	}
+}

@@ -15,7 +15,8 @@ export interface AutoclaveMobileToolbarSheetProps {
 	readonly onPrintBatchPouches: (log: SterilizationLogRecord, count?: number) => void;
 	readonly onOpenEquipmentModal: () => void;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
-	readonly onGenerateMonthlyForm257: () => void;
+	readonly onGenerateMonthlySterilizationLog?: (() => void) | undefined;
+	readonly onGenerateMonthlyForm257?: (() => void) | undefined;
 	readonly onOpenKraftModal: () => void;
 }
 
@@ -29,9 +30,11 @@ export function AutoclaveMobileToolbarSheet({
 	onPrintBatchPouches,
 	onOpenEquipmentModal,
 	onOpenNewCycleModal,
+	onGenerateMonthlySterilizationLog,
 	onGenerateMonthlyForm257,
 	onOpenKraftModal,
 }: AutoclaveMobileToolbarSheetProps) {
+	const handleMonthlyLog = onGenerateMonthlySterilizationLog || onGenerateMonthlyForm257 || (() => {});
 	if (!isOpen || typeof document === "undefined") {
 		return null;
 	}
@@ -69,7 +72,8 @@ export function AutoclaveMobileToolbarSheet({
 					onPrintBatchPouches={onPrintBatchPouches}
 					onOpenEquipmentModal={onOpenEquipmentModal}
 					onOpenNewCycleModal={onOpenNewCycleModal}
-					onGenerateMonthlyForm257={onGenerateMonthlyForm257}
+					onGenerateMonthlySterilizationLog={handleMonthlyLog}
+					onGenerateMonthlyForm257={handleMonthlyLog}
 					onOpenKraftModal={onOpenKraftModal}
 				/>
 
