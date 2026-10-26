@@ -5,6 +5,10 @@
  */
 
 export const TOOTH42_CARIES_GEOMETRY = {
+	// Destructive cutout polygon: missing disto-incisal angle cut out into transparency
+	destructiveCutout:
+		"M 55.0,22.5 L 55.0,18 L 73,18 L 73,33.0 L 69.5,33.0 L 66.0,29.5 L 62.0,27.0 L 58.0,25.0 Z",
+
 	// Class III Proximal Contact (Distal X=63..70.5, Y=33..47)
 	class3: {
 		halo: "M 70.5,33.0 C 65.0,33.0 62.8,36.5 63.4,41.0 C 64.0,45.5 66.5,47.8 70.5,47.5 Z",
@@ -14,13 +18,14 @@ export const TOOTH42_CARIES_GEOMETRY = {
 
 	// Class IV Incisal Angle Fracture & Cavitation (Disto-Incisal Chipped Notch)
 	class4: {
-		halo: "M 53.5,22.0 L 68.5,24.0 C 69.5,29.0 67.0,34.0 61.5,35.0 C 56.5,35.0 54.0,29.0 53.5,22.0 Z",
+		halo: "M 55.0,22.5 L 58.0,25.0 L 62.0,27.0 L 66.0,29.5 L 69.5,33.0 C 67.5,38.5 62.0,38.5 57.5,35.5 C 53.5,32.0 52.5,25.5 55.0,22.5 Z",
 		fractureSteps: [
-			"M 68.5,24.0 L 63.5,28.0 L 64.5,30.5 L 59.0,32.0 L 55.5,22.5",
-			"M 65.5,26.0 L 62.0,29.0",
+			"M 55.0,22.5 L 58.0,25.0 L 62.0,27.0 L 66.0,29.5 L 69.5,33.0",
+			"M 58.0,25.0 L 56.5,28.0",
+			"M 62.0,27.0 L 60.5,30.0",
 		],
-		crater: "M 55.0,24.0 L 67.5,25.5 C 67.0,29.5 64.5,32.5 60.5,33.0 C 57.5,32.5 56.0,28.0 55.0,24.0 Z",
-		profunda: "M 57.5,25.5 L 65.0,26.5 C 64.5,29.5 63.0,31.2 60.0,31.5 C 58.2,31.0 57.8,28.5 57.5,25.5 Z",
+		crater: "M 55.0,22.5 L 58.0,25.0 L 62.0,27.0 L 66.0,29.5 L 69.5,33.0 C 68.0,36.5 63.5,36.5 59.5,33.5 C 55.5,30.5 54.0,25.5 55.0,22.5 Z",
+		profunda: "M 58.0,26.0 L 62.0,28.0 L 66.0,30.5 C 64.5,33.5 61.5,33.5 58.0,31.0 Z",
 	},
 
 	// Class V Cervical Buccal Margin at CEJ (X=38..62, Y=64.5..72)

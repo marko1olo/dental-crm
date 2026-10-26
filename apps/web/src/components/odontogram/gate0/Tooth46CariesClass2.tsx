@@ -54,6 +54,17 @@ export const Tooth46CariesClass2: React.FC<Tooth46CariesClass2Props> = ({
 					{showNecrotic && <path d={sp.class2ModBridge.necrotic} fill={necroticFill} />}
 				</g>
 			)}
+
+			{cariesDepth === "destructive" && (
+				<g id="tooth46-caries-destructive">
+					<path d={sp.destructive.halo} fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.5" />
+					<path d={sp.destructive.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.85)" strokeWidth="0.55" />
+					<path d={sp.destructive.profunda} fill={necroticFill} stroke="rgba(28, 25, 23, 0.95)" strokeWidth="0.5" />
+					{sp.destructive.fractureSteps.map((s, idx) => (
+						<path key={`step-${idx}`} d={s} fill="none" stroke="#ffffff" strokeWidth="0.75" strokeLinecap="round" />
+					))}
+				</g>
+			)}
 		</>
 	);
 };

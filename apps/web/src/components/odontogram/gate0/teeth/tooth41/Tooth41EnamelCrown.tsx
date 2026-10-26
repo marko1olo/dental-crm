@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH41_GEOMETRY } from "./tooth41Geometry";
+import { TOOTH41_CARIES_GEOMETRY } from "./tooth41CariesGeometry";
 
 export interface Tooth41EnamelCrownProps {
 	stroke?: string | undefined;
@@ -8,6 +9,7 @@ export interface Tooth41EnamelCrownProps {
 	showFissures?: boolean | undefined;
 	showAbfraction?: boolean | undefined;
 	isDark?: boolean | undefined;
+	destructive?: boolean | undefined;
 	className?: string | undefined;
 }
 
@@ -19,16 +21,28 @@ export const Tooth41EnamelCrown: React.FC<Tooth41EnamelCrownProps> = ({
 	stroke = "rgba(71, 85, 105, 0.45)",
 	crownOpacity = "1.0",
 	isDark = false,
+	destructive = false,
 	className,
 }) => {
 	const g = TOOTH41_GEOMETRY;
 
 	return (
-		<g id="tooth41-crown" className={className} opacity={crownOpacity}>
+		<g
+			id="tooth41-crown"
+			className={className}
+			opacity={crownOpacity}
+			mask={destructive ? "url(#tooth41-crown-destruct-mask)" : undefined}
+		>
 			<defs>
 				<clipPath id="tooth41-crown-clip">
 					<path d={g.crownMonolithPath} />
 				</clipPath>
+				{destructive && (
+					<mask id="tooth41-crown-destruct-mask">
+						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
+						<path d={TOOTH41_CARIES_GEOMETRY.destructiveCutout} fill="#000000" />
+					</mask>
+				)}
 			</defs>
 			<path
 				d={g.crownMonolithPath}

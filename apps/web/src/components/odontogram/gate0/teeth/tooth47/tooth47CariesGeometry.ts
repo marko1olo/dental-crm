@@ -5,6 +5,10 @@
  */
 
 export const TOOTH47_CARIES_GEOMETRY = {
+	// Destructive cutout polygon: missing MB ridge & cusp wall cut out into transparency
+	destructiveCutout:
+		"M 10,12 L 38,12 L 36.5,18.0 L 31.0,24.0 L 26.5,21.5 L 22.0,29.0 L 19.5,27.0 L 14.0,35.0 L 10,35.0 Z",
+
 	// Class I Organic Dendritic Cavity along Offset Molar Fissures
 	class1: {
 		halo:
@@ -42,26 +46,14 @@ export const TOOTH47_CARIES_GEOMETRY = {
 
 	// Class II MOD Destructive (Collapse of Mesiobuccal Ridge & MB Cusp Wall)
 	destructive: {
-		halo:
-			"M 13.5,36.0 " +
-			"C 13.0,26.5 17.5,17.5 24.5,15.5 " +
-			"C 31.0,14.0 36.5,17.0 39.5,22.0 " +
-			"C 37.0,27.5 28.5,33.0 17.0,36.5 Z",
+		halo: "M 14.0,35.0 L 19.5,27.0 L 22.0,29.0 L 26.5,21.5 L 31.0,24.0 L 36.5,18.0 C 41.5,22.5 37.5,29.5 28.5,34.0 C 21.5,37.0 15.0,37.0 14.0,35.0 Z",
 		fractureSteps: [
 			"M 14.0,35.0 L 19.5,27.0 L 22.0,29.0 L 26.5,21.5 L 31.0,24.0 L 36.5,18.0",
 			"M 21.0,29.5 L 25.5,33.5",
 			"M 28.0,24.0 L 33.0,27.5",
 		],
-		crater:
-			"M 15.0,34.0 " +
-			"C 15.0,27.0 19.0,19.5 25.0,18.0 " +
-			"C 30.0,16.8 34.0,19.5 36.5,23.5 " +
-			"C 34.0,27.5 26.5,31.5 17.0,34.5 Z",
-		profunda:
-			"M 17.5,32.0 " +
-			"C 17.5,27.5 21.0,21.5 26.0,20.0 " +
-			"C 29.5,19.2 32.5,21.0 34.0,24.5 " +
-			"C 31.5,27.5 25.0,30.5 19.0,32.5 Z",
+		crater: "M 14.0,35.0 L 19.5,27.0 L 22.0,29.0 L 26.5,21.5 L 31.0,24.0 L 36.5,18.0 C 39.5,22.0 35.5,28.0 27.5,32.0 C 20.5,35.0 16.0,36.0 14.0,35.0 Z",
+		profunda: "M 17.5,33.0 L 22.0,28.0 L 26.5,23.0 L 31.0,24.5 C 29.5,28.5 24.5,31.5 17.5,33.0 Z",
 	},
 
 	// Class V Cervical Buccal Margin

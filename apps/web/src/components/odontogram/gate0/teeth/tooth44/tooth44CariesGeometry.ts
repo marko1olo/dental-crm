@@ -5,6 +5,10 @@
  */
 
 export const TOOTH44_CARIES_GEOMETRY = {
+	// Destructive cutout polygon: missing mesial ridge & buccal cusp slope cut out into transparency
+	destructiveCutout:
+		"M 18,15 L 42.0,15 L 42.0,19.5 L 36.0,21.5 L 30.5,27.5 L 26.5,26.5 L 22.0,32.0 L 18,32.0 Z",
+
 	// Class I Snake-Eyes Occlusal Pits across Crista Transversa
 	class1: {
 		mesial: {
@@ -21,13 +25,14 @@ export const TOOTH44_CARIES_GEOMETRY = {
 
 	// Class II Destructive (Collapse of Mesial Marginal Ridge & Buccal Cusp Slope)
 	destructive: {
-		halo: "M 21.0,27.0 C 23.5,20.5 28.5,17.5 37.0,18.0 C 43.0,18.5 45.0,22.0 44.0,26.5 C 41.0,30.0 32.0,32.0 21.0,29.5 Z",
+		halo: "M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5 C 45.0,25.5 43.5,30.0 38.5,33.5 C 32.0,36.5 24.5,37.0 22.0,32.0 Z",
 		fractureSteps: [
-			"M 21.5,27.5 L 26.5,22.0 L 29.5,23.5 L 34.0,18.5 L 39.5,22.0",
-			"M 26.0,24.5 L 31.0,27.0",
+			"M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5",
+			"M 27.0,27.0 L 30.0,30.5",
+			"M 35.5,22.0 L 37.5,25.5",
 		],
-		crater: "M 22.0,27.5 C 24.5,22.0 29.5,20.0 36.0,20.5 C 40.5,21.0 42.0,24.0 41.0,27.0 C 37.5,29.5 30.5,30.5 22.0,28.5 Z",
-		profunda: "M 24.0,26.5 C 26.0,23.0 30.0,22.0 34.0,22.5 C 37.0,23.0 38.0,25.0 37.2,27.0 C 34.0,28.5 29.0,29.0 24.0,27.5 Z",
+		crater: "M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5 C 44.0,24.0 42.0,28.0 37.0,31.0 C 31.0,34.0 25.0,34.5 22.0,32.0 Z",
+		profunda: "M 26.0,28.0 L 31.0,28.5 L 36.0,23.5 C 38.0,26.5 36.0,29.5 32.0,31.0 C 28.0,32.0 26.0,30.5 26.0,28.0 Z",
 	},
 
 	// Class V Cervical Buccal Margin

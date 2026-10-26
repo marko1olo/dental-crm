@@ -1,10 +1,12 @@
 import type React from "react";
 import { TOOTH43_GEOMETRY } from "./tooth43Geometry";
+import { TOOTH43_CARIES_GEOMETRY } from "./tooth43CariesGeometry";
 
 export interface Tooth43EnamelCrownProps {
 	stroke?: string | undefined;
 	crownOpacity?: string | undefined;
 	isDark?: boolean | undefined;
+	destructive?: boolean | undefined;
 	className?: string | undefined;
 }
 
@@ -16,6 +18,7 @@ export const Tooth43EnamelCrown: React.FC<Tooth43EnamelCrownProps> = ({
 	stroke = "rgba(71, 85, 105, 0.45)",
 	crownOpacity = "1.0",
 	isDark = false,
+	destructive = false,
 	className,
 }) => {
 	const g = TOOTH43_GEOMETRY;
@@ -24,11 +27,22 @@ export const Tooth43EnamelCrown: React.FC<Tooth43EnamelCrownProps> = ({
 		: "rgba(255, 255, 255, 0.65)";
 
 	return (
-		<g id="tooth43-crown" className={className} opacity={crownOpacity}>
+		<g
+			id="tooth43-crown"
+			className={className}
+			opacity={crownOpacity}
+			mask={destructive ? "url(#tooth43-crown-destruct-mask)" : undefined}
+		>
 			<defs>
 				<clipPath id="tooth43-crown-clip">
 					<path d={g.crownMonolithPath} />
 				</clipPath>
+				{destructive && (
+					<mask id="tooth43-crown-destruct-mask">
+						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
+						<path d={TOOTH43_CARIES_GEOMETRY.destructiveCutout} fill="#000000" />
+					</mask>
+				)}
 			</defs>
 			<path
 				d={g.crownMonolithPath}

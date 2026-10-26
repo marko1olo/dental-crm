@@ -29,6 +29,7 @@ export const Tooth42Container: React.FC<Tooth46ContainerProps> = ({
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
+	const isDestruct = Boolean(a.caries && (a.cariesDepth === "destructive" || a.cariesType === "class4"));
 	const r = badgeRadius ?? 18.5;
 	const cy = badgeCy ?? (r > 10 ? 194.5 : 160);
 	const baseHeight = r > 10 ? 218 : 170;
@@ -64,6 +65,7 @@ export const Tooth42Container: React.FC<Tooth46ContainerProps> = ({
 					showFissures={a.fissures ?? true}
 					showAbfraction={Boolean(a.abfraction)}
 					isDark={isDark}
+					destructive={isDestruct}
 				/>
 			)}
 			{isEndo && !a.implant && (

@@ -1,9 +1,5 @@
 import type React from "react";
-import {
-	getStatusBadge,
-	TOOTH_STATUS_MATRIX,
-	type ToothStatusBadgeInfo,
-} from "./ToothStatusBadgeMatrix";
+import { getStatusBadge, TOOTH_STATUS_MATRIX, type ToothStatusBadgeInfo } from "./ToothStatusBadgeMatrix";
 import type { Tooth46LayerFlags } from "./tooth46Types";
 
 export type { ToothStatusBadgeInfo };

@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH47_GEOMETRY } from "./tooth47Geometry";
+import { TOOTH47_CARIES_GEOMETRY } from "./tooth47CariesGeometry";
 import { Tooth47OcclusalCusps } from "./Tooth47OcclusalCusps";
 
 export interface Tooth47EnamelCrownProps {
@@ -9,6 +10,7 @@ export interface Tooth47EnamelCrownProps {
 	showFissures?: boolean | undefined;
 	showAbfraction?: boolean | undefined;
 	isDark?: boolean | undefined;
+	destructive?: boolean | undefined;
 }
 
 /**
@@ -22,13 +24,25 @@ export const Tooth47EnamelCrown: React.FC<Tooth47EnamelCrownProps> = ({
 	showFissures = true,
 	showAbfraction = false,
 	isDark = false,
+	destructive = false,
 }) => {
 	const crownPath = showAbfraction
 		? TOOTH47_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH47_GEOMETRY.crownMonolithPath;
 
 	return (
-		<g id="tooth47-natural-crown-group">
+		<g
+			id="tooth47-natural-crown-group"
+			mask={destructive ? "url(#tooth47-crown-destruct-mask)" : undefined}
+		>
+			<defs>
+				{destructive && (
+					<mask id="tooth47-crown-destruct-mask">
+						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
+						<path d={TOOTH47_CARIES_GEOMETRY.destructiveCutout} fill="#000000" />
+					</mask>
+				)}
+			</defs>
 			<clipPath id="tooth47-crown-clip">
 				<path d={crownPath} />
 			</clipPath>

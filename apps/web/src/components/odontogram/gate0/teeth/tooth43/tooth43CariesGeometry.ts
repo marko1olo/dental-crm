@@ -5,6 +5,10 @@
  */
 
 export const TOOTH43_CARIES_GEOMETRY = {
+	// Destructive cutout polygon: chipped off tearing cusp apex cut out into transparency
+	destructiveCutout:
+		"M 42.0,14.5 L 42.0,5 L 58.0,5 L 58.0,15.0 L 54.5,18.0 L 50.0,16.0 L 45.5,17.0 Z",
+
 	// Class III Proximal Contact (Mesial X=22..29, Y=40..54)
 	class3: {
 		halo: "M 22.5,40.0 C 27.5,40.0 29.5,44.5 28.8,49.0 C 28.0,53.0 25.5,55.0 22.2,55.0 Z",
@@ -12,15 +16,16 @@ export const TOOTH43_CARIES_GEOMETRY = {
 		profunda: "M 22.8,44.5 C 25.0,44.5 26.0,46.5 25.6,48.5 C 25.2,50.2 24.0,51.2 22.6,51.0 Z",
 	},
 
-	// Class IV Cusp Fracture & Cavitation (Crushed Tearing Cusp Apex X=42..58, Y=8..24)
+	// Class IV Cusp Fracture & Cavitation (Chipped Tearing Cusp Apex)
 	class4: {
-		halo: "M 42.0,14.0 L 50.0,8.0 L 58.0,14.0 C 56.5,19.0 53.5,23.0 50.0,23.5 C 46.5,23.0 43.5,19.0 42.0,14.0 Z",
+		halo: "M 42.0,14.5 L 45.5,17.0 L 50.0,16.0 L 54.5,18.0 L 58.0,15.0 C 57.5,23.0 54.0,26.0 50.0,26.0 C 46.0,26.0 42.5,23.0 42.0,14.5 Z",
 		fractureSteps: [
-			"M 43.5,13.5 L 47.0,16.5 L 46.0,19.0 L 52.0,20.0 L 56.5,13.5",
-			"M 47.5,14.0 L 50.5,17.5",
+			"M 42.0,14.5 L 45.5,17.0 L 50.0,16.0 L 54.5,18.0 L 58.0,15.0",
+			"M 46.0,17.5 L 48.0,20.5",
+			"M 53.0,18.5 L 51.5,21.5",
 		],
-		crater: "M 44.0,14.5 L 50.0,11.0 L 56.0,14.5 C 54.5,19.0 52.5,21.5 50.0,21.5 C 47.5,21.5 45.5,19.0 44.0,14.5 Z",
-		profunda: "M 46.0,15.5 L 50.0,13.0 L 54.0,15.5 C 53.0,18.5 51.5,19.8 50.0,19.8 C 48.5,19.8 47.0,18.5 46.0,15.5 Z",
+		crater: "M 42.0,14.5 L 45.5,17.0 L 50.0,16.0 L 54.5,18.0 L 58.0,15.0 C 56.5,20.5 53.5,23.5 50.0,23.5 C 46.5,23.5 43.5,20.5 42.0,14.5 Z",
+		profunda: "M 46.0,18.0 L 50.0,17.0 L 54.0,19.0 C 52.5,22.0 47.5,22.0 46.0,18.0 Z",
 	},
 
 	// Class V Cervical Buccal Margin at CEJ (X=36..64, Y=67.5..75.5)
