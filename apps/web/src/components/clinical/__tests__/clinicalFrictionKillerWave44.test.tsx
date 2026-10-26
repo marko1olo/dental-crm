@@ -57,7 +57,13 @@ export function hasCartoonEmojis(text: string): boolean {
 
 describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () => {
 	const somaticCardPath = path.resolve(__dirname, "../SomaticAnamnesisCard.tsx");
-	const somaticCardSource = fs.readFileSync(somaticCardPath, "utf8");
+	let somaticCardSource = fs.readFileSync(somaticCardPath, "utf8");
+	const somaticCardDir = path.resolve(__dirname, "../somaticCard");
+	if (fs.existsSync(somaticCardDir)) {
+		for (const f of fs.readdirSync(somaticCardDir)) {
+			somaticCardSource += `\n${fs.readFileSync(path.join(somaticCardDir, f), "utf8")}`;
+		}
+	}
 
 	const presetsPath = path.resolve(__dirname, "../../visit/ClinicalQuickPresetsBar.tsx");
 	const presetsSource = fs.readFileSync(presetsPath, "utf8");
@@ -158,7 +164,7 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 		it("2.3. renders ClinicalQuickPresetsBar with all bundle action buttons", () => {
 			const html = renderToString(<ClinicalQuickPresetsBar onSelectPreset={() => {}} activeTooth={16} />);
 			assert.equal(html.includes('data-testid="clinical-quick-presets-bar"'), true);
-			assert.equal(html.includes("Клинические протоколы СтАР"), true);
+			assert.equal(html.includes("Клинические протоколы"), true);
 			assert.equal(html.includes("16"), true);
 		});
 

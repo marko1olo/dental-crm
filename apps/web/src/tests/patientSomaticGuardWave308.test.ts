@@ -356,7 +356,16 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			);
 			assert.ok(fs.existsSync(widgetPath), "SomaticSafetyAlertWidget.tsx must physically exist");
 
-			const content = fs.readFileSync(widgetPath, "utf8");
+			let content = fs.readFileSync(widgetPath, "utf8");
+			const alertModulesDir = path.resolve(
+				__dirname,
+				"../components/clinical/somaticAlert",
+			);
+			if (fs.existsSync(alertModulesDir)) {
+				for (const file of fs.readdirSync(alertModulesDir)) {
+					content += `\n${fs.readFileSync(path.join(alertModulesDir, file), "utf8")}`;
+				}
+			}
 			assert.ok(
 				content.includes('data-testid="somatic-safety-alert-badge"'),
 				"Widget must contain data-testid somatic-safety-alert-badge",

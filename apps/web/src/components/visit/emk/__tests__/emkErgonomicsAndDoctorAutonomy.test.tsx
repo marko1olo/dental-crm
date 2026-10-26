@@ -104,7 +104,13 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	});
 
 	it("4. SomaticSafetyAlertWidget uses calm clinical warning instead of screaming all-caps stop-factor badge", () => {
-		const source = fs.readFileSync(somaticAlertPath, "utf8");
+		let source = fs.readFileSync(somaticAlertPath, "utf8");
+		const alertDir = path.resolve(__dirname, "../../../clinical/somaticAlert");
+		if (fs.existsSync(alertDir)) {
+			for (const f of fs.readdirSync(alertDir)) {
+				source += `\n${fs.readFileSync(path.join(alertDir, f), "utf8")}`;
+			}
+		}
 
 		// Screaming caps "СТОП-ФАКТОРЫ" must be purged
 		assert.ok(

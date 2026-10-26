@@ -45,6 +45,35 @@ function hasCartoonEmojis(text: string): boolean {
 	return CARTOON_EMOJI_REGEX.test(text);
 }
 
+function getSomaticCardSource(): string {
+	const filePath = path.join(webSrcRoot, "components/clinical/SomaticAnamnesisCard.tsx");
+	let content = fs.readFileSync(filePath, "utf8");
+	const cardDir = path.join(webSrcRoot, "components/clinical/somaticCard");
+	if (fs.existsSync(cardDir)) {
+		for (const f of fs.readdirSync(cardDir)) {
+			content += `\n${fs.readFileSync(path.join(cardDir, f), "utf8")}`;
+		}
+	}
+	return content;
+}
+
+function getVisitViewSource(): string {
+	const filePath = path.join(webSrcRoot, "VisitView.tsx");
+	let content = fs.readFileSync(filePath, "utf8");
+	const viewDir = path.join(webSrcRoot, "components/visit/view");
+	const scan = (d: string) => {
+		for (const item of fs.readdirSync(d, { withFileTypes: true })) {
+			const p = path.join(d, item.name);
+			if (item.isDirectory() && item.name !== "__tests__") scan(p);
+			else if (item.isFile() && (item.name.endsWith(".tsx") || item.name.endsWith(".ts"))) {
+				content += `\n${fs.readFileSync(p, "utf8")}`;
+			}
+		}
+	};
+	if (fs.existsSync(viewDir)) scan(viewDir);
+	return content;
+}
+
 describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 	describe("1. 1-Click Physiological Norm & Explicit Infection Denial (Mandates 8e, 8k)", () => {
 		it("DEFAULT_SOMATIC_HEALTHY_NORM contains explicit infectious disease denial in customChronicNotes", () => {
@@ -183,8 +212,7 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 		});
 
 		it("SomaticAnamnesisCard contains only outpatient dental pathologies", () => {
-			const filePath = path.join(webSrcRoot, "components/clinical/SomaticAnamnesisCard.tsx");
-			const content = fs.readFileSync(filePath, "utf8");
+			const content = getSomaticCardSource();
 
 			// Positive dental assertions
 			assert.ok(content.includes("hasArticaineAllergy"), "Must include articaine allergy");
@@ -203,8 +231,7 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 
 	describe("4. Tier 1 Critical Badges & Doctor Autonomy in VisitView (Mandates 8e, 8i)", () => {
 		it("VisitView.tsx calculates activePatientCriticalBadges and renders red alert badges in Tier 1", () => {
-			const filePath = path.join(webSrcRoot, "VisitView.tsx");
-			const content = fs.readFileSync(filePath, "utf8");
+			const content = getVisitViewSource();
 
 			assert.ok(
 				content.includes("activePatientCriticalBadges"),
@@ -237,8 +264,7 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 		});
 
 		it("VisitView.tsx preserves 1-click somatic norm button in toolbar", () => {
-			const filePath = path.join(webSrcRoot, "VisitView.tsx");
-			const content = fs.readFileSync(filePath, "utf8");
+			const content = getVisitViewSource();
 
 			assert.ok(
 				content.includes('data-testid="btn-somatic-norm-one-click"'),
@@ -283,11 +309,7 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 				"PatientAnamnesisModal must never hardcode disabled={true}",
 			);
 
-			const somaticCardPath = path.join(
-				webSrcRoot,
-				"components/clinical/SomaticAnamnesisCard.tsx",
-			);
-			const somaticCardSource = fs.readFileSync(somaticCardPath, "utf8");
+			const somaticCardSource = getSomaticCardSource();
 
 			assert.strictEqual(
 				somaticCardSource.includes("disabled={true}"),
@@ -307,10 +329,7 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 		});
 
 		it("SomaticAnamnesisCard.tsx contains zero cartoon emojis", () => {
-			const content = fs.readFileSync(
-				path.join(webSrcRoot, "components/clinical/SomaticAnamnesisCard.tsx"),
-				"utf8",
-			);
+			const content = getSomaticCardSource();
 			assert.strictEqual(hasCartoonEmojis(content), false);
 		});
 
