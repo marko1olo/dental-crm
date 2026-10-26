@@ -9,16 +9,37 @@
 	color: var(--ink);
 }
 
+.hw-studio-domain-tabs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+.hw-studio-domain-tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.hw-studio-domain-tabs .hw-studio-category-tab {
+	min-height: 34px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	flex-shrink: 0;
+}
+
 /* 1-Row Dense Clinical Toolbar (32-36px) per Mandates 8d & 8p */
 .hw-studio-toolbar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	min-height: 34px;
-	max-height: 36px;
-	height: 36px;
-	padding: 0 12px;
+	min-height: 36px;
+	padding: 4px 12px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
@@ -31,6 +52,9 @@
 	gap: 6px;
 	overflow-x: auto;
 	scrollbar-width: none;
+	flex: 1;
+	min-width: 0;
+	flex-wrap: nowrap;
 }
 
 .hw-studio-toolbar-left::-webkit-scrollbar {
@@ -38,7 +62,7 @@
 }
 
 .hw-studio-category-tab {
-	height: 26px;
+	height: 28px;
 	padding: 0 10px;
 	font-size: 12px;
 	font-weight: 500;
@@ -48,6 +72,7 @@
 	border-radius: 6px;
 	cursor: pointer;
 	white-space: nowrap;
+	flex-shrink: 0;
 	transition: all 0.15s ease-out;
 	display: inline-flex;
 	align-items: center;
@@ -481,4 +506,59 @@
 	background: rgba(245, 158, 11, 0.08);
 	border-color: rgba(245, 158, 11, 0.3);
 	color: #92400e;
+}
+
+/* Mobile Touch & Apple HIG Responsive Layer (<= 768px) */
+@media (max-width: 768px) {
+	.hw-studio-domain-tabs .hw-studio-category-tab {
+		min-height: 44px;
+		padding: 0 14px;
+		font-size: 13px;
+	}
+
+	.hw-studio-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		padding: 10px 12px;
+		min-height: auto;
+	}
+
+	.hw-studio-toolbar-left {
+		width: 100%;
+		overflow-x: auto;
+		padding-bottom: 2px;
+		gap: 6px;
+	}
+
+	.hw-studio-toolbar-left .hw-studio-category-tab {
+		min-height: 38px;
+		padding: 0 12px;
+	}
+
+	.hw-studio-toolbar-right {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.hw-studio-counters {
+		order: 1;
+	}
+
+	.hw-studio-toolbar-right .hw-btn-compact {
+		min-height: 44px;
+		padding: 0 12px;
+		font-size: 13px;
+	}
+
+	.hw-studio-toolbar-right .hw-btn-compact.primary {
+		order: 2;
+		flex: 1;
+		min-width: 140px;
+		justify-content: center;
+	}
 }
