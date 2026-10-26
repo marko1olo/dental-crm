@@ -1,0 +1,72 @@
+/* Interactive Smartphone Preview Mockup Frame & Screen */
+.smartphone-mockup-wrapper {
+	position: sticky;
+	top: 20px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.smartphone-preview-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.smartphone-preview-header h4 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.smartphone-frame {
+	background: #0f172a;
+	border-radius: 28px;
+	padding: 10px;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+	position: relative;
+	overflow: hidden;
+}
+
+.smartphone-screen {
+	background: #f8fafc;
+	border-radius: 20px;
+	min-height: 480px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .smartphone-screen {
+	background: #0b1120;
+}
+
+/* Status Bar */
+.phone-status-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 16px 4px 16px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #475569;
+	background: inherit;
+}
+
+.phone-notch {
+	width: 80px;
+	height: 16px;
+	background: #0f172a;
+	border-radius: 0 0 10px 10px;
+	margin: -8px auto 0 auto;
+}

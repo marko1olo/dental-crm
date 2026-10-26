@@ -1,0 +1,93 @@
+/* Phone Chat Content Area and Message Bubbles */
+.phone-messages-canvas {
+	flex: 1;
+	padding: 16px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow-y: auto;
+}
+
+/* Bubbles */
+.phone-bubble {
+	max-width: 90%;
+	padding: 10px 12px;
+	border-radius: 12px;
+	font-size: 13px;
+	line-height: 1.4;
+	position: relative;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.phone-bubble-tg {
+	background: #ffffff;
+	color: #0f172a;
+	align-self: flex-start;
+	border-bottom-left-radius: 4px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-tg {
+	background: #1e293b;
+	color: #f1f5f9;
+}
+
+.phone-bubble-wa {
+	background: #e7ffdb;
+	color: #111827;
+	align-self: flex-start;
+	border-top-left-radius: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-wa {
+	background: #054740;
+	color: #e2e8f0;
+}
+
+.phone-bubble-max {
+	background: #f3e8ff;
+	color: #3b0764;
+	align-self: flex-start;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-max {
+	background: #2e1065;
+	color: #f3e8ff;
+}
+
+.phone-bubble-sms {
+	background: #e2e8f0;
+	color: #0f172a;
+	align-self: flex-start;
+	border-radius: 16px 16px 16px 4px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-sms {
+	background: #334155;
+	color: #f8fafc;
+}
+
+.phone-bubble-email {
+	background: #ffffff;
+	color: #1e293b;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	width: 100%;
+	max-width: 100%;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-email {
+	background: #1e293b;
+	color: #f8fafc;
+}
+
+.bubble-meta-row {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 4px;
+	margin-top: 4px;
+	font-size: 12px;
+	color: #94a3b8;
+}

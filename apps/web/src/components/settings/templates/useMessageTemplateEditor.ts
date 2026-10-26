@@ -7,6 +7,7 @@ import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
+import type { ClinicalPresetTemplate } from "./templateConstants";
 
 export function useMessageTemplateEditor(
 	template: MessageTemplate | null | undefined,
@@ -27,8 +28,18 @@ export function useMessageTemplateEditor(
 
 	const handleInsertMacro = (key: string) => setText((prev) => `${prev}{${key}}`);
 
+	const handleApplyPreset = (preset: ClinicalPresetTemplate) => {
+		setTitle(preset.title);
+		if (preset.scenario) {
+			setScenario(preset.scenario as MessageTemplateScenario);
+		}
+		setText(preset.text);
+		showToast(`Применён клинический пресет: «${preset.label}»`, "info");
+	};
+
 	const handleSave = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isSaving) return;
 		if (!title.trim() || !text.trim()) {
 			showToast("Заполните название и текст шаблона", "warning");
 			return;
@@ -63,5 +74,18 @@ export function useMessageTemplateEditor(
 		}
 	};
 
-	return { title, setTitle, channel, setChannel, scenario, setScenario, text, setText, isSaving, handleInsertMacro, handleSave };
+	return {
+		title,
+		setTitle,
+		channel,
+		setChannel,
+		scenario,
+		setScenario,
+		text,
+		setText,
+		isSaving,
+		handleInsertMacro,
+		handleApplyPreset,
+		handleSave,
+	};
 }

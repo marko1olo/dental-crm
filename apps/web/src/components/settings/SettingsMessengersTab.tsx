@@ -105,35 +105,37 @@ export function SettingsMessengersTab({
 				</button>
 			</div>
 
-			{/* Master Omnichannel Overview Card */}
-			<div className="my-5">
-				<MessengersOverviewCard
-					onSelectTab={(tabId) => {
-						if (
-							tabId === "telegram" ||
-							tabId === "whatsapp" ||
-							tabId === "vk" ||
-							tabId === "max" ||
-							tabId === "cadence" ||
-							tabId === "templates"
-						) {
-							setActiveMessenger(tabId as MessengerTabId);
-						} else {
-							setActiveMessenger("telegram");
-						}
-					}}
-					onOpenBotStudio={() => setIsBotStudioOpen(true)}
-					onOpenOperatorDesk={() => {
-						if (appLogic?.setActiveView) {
-							appLogic.setActiveView("chat");
-						} else if (appLogic?.setCurrentView) {
-							appLogic.setCurrentView("chat");
-						} else {
-							showToast("Переход в диалоги оператора ботов", "info");
-						}
-					}}
-				/>
-			</div>
+			{/* Master Omnichannel Overview Card (показывается для каналов связи, скрывается в каталоге шаблонов во избежание слоеного пирога) */}
+			{activeMessenger !== "templates" && (
+				<div className="my-5">
+					<MessengersOverviewCard
+						onSelectTab={(tabId) => {
+							if (
+								tabId === "telegram" ||
+								tabId === "whatsapp" ||
+								tabId === "vk" ||
+								tabId === "max" ||
+								tabId === "cadence" ||
+								tabId === "templates"
+							) {
+								setActiveMessenger(tabId as MessengerTabId);
+							} else {
+								setActiveMessenger("telegram");
+							}
+						}}
+						onOpenBotStudio={() => setIsBotStudioOpen(true)}
+						onOpenOperatorDesk={() => {
+							if (appLogic?.setActiveView) {
+								appLogic.setActiveView("chat");
+							} else if (appLogic?.setCurrentView) {
+								appLogic.setCurrentView("chat");
+							} else {
+								showToast("Переход в диалоги оператора ботов", "info");
+							}
+						}}
+					/>
+				</div>
+			)}
 
 			<div
 				className="messenger-channel-tabs"

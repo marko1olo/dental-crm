@@ -35,13 +35,13 @@ export const MessageTemplateListCard: React.FC<Props> = ({
 							key={ch}
 							type="button"
 							onClick={() => onChannelFilterChange(ch)}
-							className={`px-3 py-1 text-xs rounded-lg border font-medium cursor-pointer transition-colors ${
+							className={`px-3.5 py-2 min-h-[44px] text-xs rounded-xl border font-medium cursor-pointer transition-colors inline-flex items-center justify-center shrink-0 ${
 								channelFilter === ch
-									? "bg-[var(--teal-soft)] border-[var(--teal)] text-[var(--teal)]"
-									: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)]"
+									? "bg-[var(--teal-soft)] border-[var(--teal)] text-[var(--teal)] font-semibold shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 							}`}
 						>
-							{ch === "all" ? "Все" : CHANNEL_BADGES[ch]?.label || ch}
+							{ch === "all" ? "Все каналы" : CHANNEL_BADGES[ch]?.label || ch}
 						</button>
 					))}
 				</div>
@@ -74,13 +74,13 @@ export const MessageTemplateListCard: React.FC<Props> = ({
 								}`}
 							>
 								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-2 mb-1">
-										<span className="text-xs font-semibold text-[var(--ink)] truncate">{tpl.title}</span>
-										<span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badge.badgeClass}`}>
+									<div className="flex items-center gap-2 mb-1 flex-wrap">
+										<span className="text-xs font-semibold text-[var(--ink)] break-words leading-snug">{tpl.title}</span>
+										<span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${badge.badgeClass}`}>
 											{badge.label}
 										</span>
 									</div>
-									<span className="text-[11px] text-[var(--muted)] block truncate">
+									<span className="text-[11px] text-[var(--muted)] block break-words">
 										{SCENARIO_LABELS[(tpl as any).scenario || tpl.intent] || (tpl as any).scenario || tpl.intent}
 									</span>
 								</div>
@@ -89,17 +89,19 @@ export const MessageTemplateListCard: React.FC<Props> = ({
 										type="button"
 										onClick={() => onEdit(tpl)}
 										title="Редактировать"
-										className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer"
+										aria-label={`Редактировать шаблон ${tpl.title}`}
+										className="p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
 									>
-										<Edit3 size={14} />
+										<Edit3 size={16} />
 									</button>
 									<button
 										type="button"
 										onClick={() => onDelete(tpl.id)}
 										title="Удалить"
-										className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
+										aria-label={`Удалить шаблон ${tpl.title}`}
+										className="p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-600 inline-flex items-center justify-center cursor-pointer transition-colors"
 									>
-										<Trash2 size={14} />
+										<Trash2 size={16} />
 									</button>
 								</div>
 							</div>

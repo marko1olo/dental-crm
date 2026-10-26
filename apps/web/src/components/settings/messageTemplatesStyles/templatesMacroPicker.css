@@ -1,0 +1,47 @@
+/* Macro Tags Picker Toolbar */
+.macro-picker-section {
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 12px;
+	background: rgba(0, 0, 0, 0.02);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.macro-picker-header {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.macro-tags-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.macro-tag-btn {
+	min-height: 44px;
+	padding: 6px 14px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.macro-tag-btn:hover {
+	background: var(--teal-glow, rgba(13, 148, 136, 0.1));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}

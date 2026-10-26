@@ -1,0 +1,41 @@
+/* Badges next to tab names */
+.messenger-tab-badge {
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.wa-badge {
+	background: rgba(37, 211, 102, 0.15);
+	color: rgb(37, 211, 102);
+}
+
+.tg-badge {
+	background: rgba(0, 136, 204, 0.15);
+	color: rgb(0, 136, 204);
+}
+
+.vk-badge {
+	background: rgba(0, 119, 255, 0.15);
+	color: rgb(0, 119, 255);
+}
+
+.cadence-badge {
+	background: rgba(13, 148, 136, 0.15);
+	color: var(--teal, #0d9488);
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.templates-badge {
+	background: rgba(2, 132, 199, 0.15);
+	color: var(--primary, #0284c7);
+}
+
+.max-badge {
+	background: rgba(255, 69, 0, 0.15);
+	color: rgb(255, 69, 0);
+}

@@ -1,0 +1,81 @@
+/* Messengers Settings Container & Header */
+.messengers-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 100%;
+	overflow-x: clip;
+}
+
+.messengers-settings-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+/* Sub-tab Bar styling */
+.messenger-channel-tabs {
+	display: flex;
+	gap: 8px;
+	border-bottom: 2px solid var(--line);
+	padding-bottom: 4px;
+	margin-bottom: 16px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+
+@media (min-width: 768px) {
+	.messenger-channel-tabs {
+		flex-wrap: wrap;
+		overflow-x: visible;
+	}
+}
+
+.messenger-channel-tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.messenger-channel-tab {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	min-height: 44px;
+	border: none;
+	background: transparent;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--muted);
+	cursor: pointer;
+	border-radius: 8px 8px 0 0;
+	transition: all 0.2s ease;
+	position: relative;
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.messenger-channel-tab:hover {
+	color: var(--ink);
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.messenger-channel-tab.active {
+	color: var(--teal);
+	font-weight: 600;
+}
+
+.messenger-channel-tab.active::after {
+	content: "";
+	position: absolute;
+	bottom: -6px;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: var(--teal);
+	border-radius: 2px;
+}

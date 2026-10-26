@@ -1,0 +1,37 @@
+/* Dark Theme Harmonization for Messengers Tab */
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-status-grid article {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--border-default, var(--line));
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-status-grid article strong {
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .premium-feature-card {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--border-default, var(--line));
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .premium-feature-card.active {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-settings-panel {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--border-default, var(--line));
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-settings-panel-header {
+	background: var(--surface-200, var(--paper));
+	border-bottom-color: var(--border-default, var(--line));
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header h3 {
+	color: var(--bad-fg, #f87171);
+}

@@ -1,0 +1,93 @@
+/* Apple HIG Touch Ergonomics & Mobile Responsive Layout */
+.whatsapp-mode-toggle-group {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+	flex-wrap: wrap;
+}
+
+.qr-connection-layout {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 20px;
+	align-items: start;
+}
+
+@media (max-width: 640px) {
+	.messengers-settings {
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.messenger-panel {
+		padding: 14px;
+		gap: 16px;
+		border-radius: 16px;
+	}
+
+	.messenger-panel-header {
+		display: grid;
+		grid-template-columns: 40px 1fr;
+		grid-template-areas:
+			"icon title"
+			"badge badge";
+		gap: 10px 12px;
+		align-items: start;
+	}
+
+	.messenger-panel-icon {
+		grid-area: icon;
+	}
+
+	.messenger-panel-title {
+		grid-area: title;
+		min-width: 0;
+		width: 100%;
+	}
+
+	.messenger-panel-title h3 {
+		font-size: 16px;
+		line-height: 1.25;
+	}
+
+	.messenger-panel-title p {
+		font-size: 12px;
+		line-height: 1.4;
+		word-break: normal;
+		overflow-wrap: break-word;
+	}
+
+	.messenger-status-badge {
+		grid-area: badge;
+		margin-left: 0;
+		width: fit-content;
+		min-height: 32px;
+	}
+
+	.whatsapp-mode-toggle-group {
+		flex-direction: column;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.whatsapp-mode-toggle-group button {
+		width: 100%;
+		justify-content: center;
+		min-height: 44px;
+		font-size: 13px;
+		padding: 10px 12px;
+		white-space: normal;
+		text-align: center;
+	}
+
+	.qr-connection-layout {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.qr-connection-layout .qr-code-box {
+		width: 100% !important;
+		max-width: 260px;
+		margin: 0 auto;
+	}
+}

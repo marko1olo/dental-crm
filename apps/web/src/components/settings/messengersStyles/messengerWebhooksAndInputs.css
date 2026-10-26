@@ -1,0 +1,50 @@
+/* Webhook URLs, Form Toggles, and Icon Buttons */
+.webhook-url-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(0, 0, 0, 0.03);
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+}
+
+.webhook-url-code {
+	font-family: monospace;
+	font-size: 13px;
+	color: var(--ink);
+	word-break: break-all;
+	flex: 1;
+}
+
+.btn-icon {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--muted);
+	padding: 6px;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.btn-icon:hover {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.05);
+}
+
+.form-group-toggle {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.form-group-toggle input[type="checkbox"] {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+}

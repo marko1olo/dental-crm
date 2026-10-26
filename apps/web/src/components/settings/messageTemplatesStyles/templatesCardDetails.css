@@ -1,0 +1,85 @@
+/* Template Card Details, Previews, Macros Chips and Action Buttons */
+.scenario-pill-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	background: var(--paper-soft, rgba(125, 125, 125, 0.08));
+	padding: 2px 8px;
+	border-radius: 4px;
+}
+
+.template-card-body-preview {
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--muted);
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-height: 80px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+}
+
+.template-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 8px;
+	border-top: 1px solid var(--line);
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.template-vars-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.var-mini-tag {
+	font-size: 12px;
+	font-weight: 600;
+	font-family: monospace;
+	background: rgba(13, 148, 136, 0.08);
+	color: var(--teal, #0d9488);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.template-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.btn-icon-sm {
+	min-width: 44px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.btn-icon-sm:hover {
+	background: var(--paper-soft, rgba(125, 125, 125, 0.08));
+	color: var(--ink);
+}
+
+[data-theme="dark"] .btn-icon-sm:hover,
+.dark .btn-icon-sm:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: #f8fafc;
+}
+
+.btn-icon-sm.danger:hover {
+	background: rgba(239, 68, 68, 0.1);
+	color: #ef4444;
+}

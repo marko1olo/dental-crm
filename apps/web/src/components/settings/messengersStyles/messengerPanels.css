@@ -1,0 +1,107 @@
+/* Panels, Headers, Icons and Status Badges */
+.messenger-panel {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.messenger-panel-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+}
+
+.messenger-panel-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	font-size: 14px;
+	flex-shrink: 0;
+}
+
+.whatsapp-icon {
+	background: rgb(37, 211, 102);
+	color: white;
+}
+
+.max-icon {
+	background: rgb(255, 69, 0);
+	color: white;
+}
+
+.messenger-panel-title {
+	flex: 1;
+}
+
+.messenger-panel-title h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.messenger-panel-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.messenger-status-badge {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.messenger-status-badge.connected {
+	background: rgba(16, 185, 129, 0.1);
+	color: rgb(16, 185, 129);
+}
+
+.messenger-status-badge.disconnected {
+	background: rgba(239, 68, 68, 0.1);
+	color: rgb(239, 68, 68);
+}
+
+.messenger-status-badge.unknown {
+	background: rgba(245, 158, 11, 0.12);
+	color: rgb(180, 83, 9);
+}
+
+.messenger-status-detail {
+	font-size: 13px;
+	color: var(--muted);
+	background: rgba(0, 0, 0, 0.02);
+	padding: 10px 14px;
+	border-radius: 8px;
+	margin: 0;
+}

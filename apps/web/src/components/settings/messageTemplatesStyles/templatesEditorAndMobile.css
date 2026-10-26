@@ -1,0 +1,79 @@
+/* Template Editor Form & Apple HIG Mobile Ergonomics */
+.template-editor-form {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.editor-form-row {
+	display: flex;
+	gap: 12px;
+}
+
+.editor-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1;
+}
+
+.editor-form-group label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.input-text,
+.select-input,
+.textarea-body {
+	min-height: 44px;
+	padding: 8px 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 14px;
+	color: var(--ink);
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.input-text:focus,
+.select-input:focus,
+.textarea-body:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.15));
+}
+
+.textarea-body {
+	min-height: 140px;
+	font-family: inherit;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+@media (max-width: 640px) {
+	.message-templates-root {
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.editor-form-row {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.template-item-card {
+		padding: 12px;
+		border-radius: 12px;
+	}
+
+	.template-card-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+}

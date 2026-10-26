@@ -1,0 +1,57 @@
+/* Channel-Specific Smartphone Headers */
+.phone-chat-header {
+	padding: 8px 12px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #ffffff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.phone-header-tg {
+	background: #2481cc;
+}
+
+.phone-header-wa {
+	background: #075e54;
+}
+
+.phone-header-max {
+	background: #5b21b6;
+}
+
+.phone-header-sms {
+	background: #1e293b;
+}
+
+.phone-header-email {
+	background: #2563eb;
+}
+
+.phone-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.25);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	font-weight: 700;
+}
+
+.phone-header-info {
+	display: flex;
+	flex-direction: column;
+}
+
+.phone-header-title {
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.phone-header-subtitle {
+	font-size: 12px;
+	opacity: 0.85;
+}

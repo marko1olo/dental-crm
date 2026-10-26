@@ -1,0 +1,80 @@
+/* Routing Rules Widget */
+.messenger-routing-rules {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.routing-default-row,
+.routing-rule-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.routing-default-row label {
+	width: 140px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--muted);
+}
+
+.routing-default-row select,
+.routing-rule-row select {
+	flex: 1;
+	height: 38px;
+	min-height: 44px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	padding: 0 10px;
+	color: var(--ink);
+}
+
+.routing-arrow {
+	color: var(--muted);
+	font-weight: 700;
+}
+
+.routing-rule-remove {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 8px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.routing-rule-remove:hover {
+	color: rgb(239, 68, 68);
+	background: rgba(239, 68, 68, 0.08);
+}
+
+.routing-add-rule {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 38px;
+	min-height: 44px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--teal);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	width: 100%;
+}
+
+.routing-add-rule:hover {
+	background: rgba(13, 148, 136, 0.04);
+	border-color: var(--teal);
+}
