@@ -1,0 +1,73 @@
+/* ==========================================================================
+   TELEGRAM MINI APP HEADER & BRANDING
+   Шапка профиля клиники, логотип, плашка врача и бонусы
+   ========================================================================== */
+
+.tg-app-header {
+	padding: 12px 16px;
+	background-color: var(--tg-theme-secondary-bg-color, var(--tg-card-bg));
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border-bottom: 1px solid var(--tg-border);
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.tg-app-brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.tg-app-logo {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+	flex-shrink: 0;
+}
+
+.tg-app-title {
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--tg-text);
+}
+
+.tg-app-subtitle {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 1px;
+}
+
+.tg-bonus-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(245, 158, 11, 0.15);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+	color: #d97706;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .tg-bonus-chip,
+html.dark .tg-bonus-chip {
+	color: #fbbf24;
+}

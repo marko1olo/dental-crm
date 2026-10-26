@@ -1,0 +1,44 @@
+/* ==========================================================================
+   TELEGRAM MINI APP FAMILY PROFILE STRIP
+   Селектор членов семьи (пациент, дети, супруги)
+   ========================================================================== */
+
+.tg-family-strip {
+	padding: 8px 12px;
+	background-color: var(--tg-card-inner);
+	border-bottom: 1px solid var(--tg-border);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.tg-family-strip::-webkit-scrollbar {
+	display: none;
+}
+
+.tg-family-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 20px;
+	background: var(--tg-card-bg);
+	color: var(--tg-text-muted);
+	border: 1px solid var(--tg-border);
+	cursor: pointer;
+	white-space: nowrap;
+	min-height: 36px;
+	flex-shrink: 0;
+	transition: all 0.2s ease;
+}
+
+.tg-family-pill.active {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	border-color: transparent;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}

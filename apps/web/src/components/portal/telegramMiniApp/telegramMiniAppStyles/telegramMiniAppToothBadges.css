@@ -1,0 +1,38 @@
+/* ==========================================================================
+   TELEGRAM MINI APP TOOTH BADGES
+   Цветовые бейджи жалоб на формуле зубов
+   ========================================================================== */
+
+.tg-tooth-cell.has-complaint {
+	border-width: 2px;
+}
+
+.tg-tooth-badge-acute {
+	background: rgba(239, 68, 68, 0.15) !important;
+	border-color: #ef4444 !important;
+	box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.tg-tooth-badge-fracture {
+	background: rgba(245, 158, 11, 0.15) !important;
+	border-color: #f59e0b !important;
+	box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+.tg-tooth-badge-caries {
+	background: rgba(249, 115, 22, 0.15) !important;
+	border-color: #f97316 !important;
+	box-shadow: 0 0 10px rgba(249, 115, 22, 0.3) !important;
+}
+
+.tg-tooth-badge-temp {
+	background: rgba(6, 182, 212, 0.15) !important;
+	border-color: #06b6d4 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.3) !important;
+}
+
+.tg-tooth-badge-crown {
+	background: rgba(168, 85, 247, 0.15) !important;
+	border-color: #a855f7 !important;
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.3) !important;
+}

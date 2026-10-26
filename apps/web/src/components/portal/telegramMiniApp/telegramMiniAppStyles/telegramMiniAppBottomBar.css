@@ -1,0 +1,55 @@
+/* ==========================================================================
+   TELEGRAM MINI APP BOTTOM BAR
+   Плавающая нижняя панель подтверждения записи по Apple HIG (Natural Thumb Zone)
+   ========================================================================== */
+
+.tg-floating-bottom-bar {
+	position: fixed;
+	bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	max-width: 480px;
+	margin: 0 auto;
+	z-index: 46;
+	padding: 10px 16px;
+	background: var(--tg-card-bg);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--tg-border);
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .tg-floating-bottom-bar,
+html.light .tg-floating-bottom-bar,
+html[data-theme="light"] .tg-floating-bottom-bar {
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tg-cta-button {
+	width: 100%;
+	min-height: 52px;
+	border-radius: 14px;
+	background-color: var(--tg-accent);
+	color: var(--tg-accent-text);
+	font-size: 15px;
+	font-weight: 700;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	transition: all 0.18s ease;
+}
+
+.tg-cta-button:active {
+	transform: scale(0.98);
+	opacity: 0.9;
+}
+
+.tg-cta-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}

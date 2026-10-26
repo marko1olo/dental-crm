@@ -1,5 +1,5 @@
 /**
- * TELEGRAM MINI APP BOOKING (DENTE POCKET CLINIC) — COMPACT FACADE (<= 250 lines)
+ * TELEGRAM MINI APP BOOKING (DENTE POCKET CLINIC) — COMPACT FACADE (<= 120 lines)
  * Компонент онлайн-записи на приём в Telegram WebApp с прикреплением выбранных зубов и жалоб.
  * (Apple HIG & Clinical Ergonomics: Thumb Zone, Touch Targets >= 44x44px, Zero Overflow)
  */
@@ -28,49 +28,25 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 	onBackToTeeth,
 	onBookingComplete,
 }) => {
-	const {
-		activeCategory,
-		filteredDoctors,
-		selectedDoctorId,
-		setSelectedDoctorId,
-		selectedDateIndex,
-		setSelectedDateIndex,
-		availableSlots,
-		selectedSlot,
-		setSelectedSlot,
-		patientFullName,
-		setPatientFullName,
-		patientPhone,
-		setPatientPhone,
-		patientComment,
-		setPatientComment,
-		isSubmitting,
-		bookingSuccessResult,
-		setBookingSuccessResult,
-		calendarDays,
-		currentDoctor,
-		triggerHaptic,
-		handleSelectCategory,
-		handleSubmitBooking,
-	} = useTelegramBookingState({
+	const booking = useTelegramBookingState({
 		organizationId,
 		patientId,
 		attachedComplaints,
 		onBookingComplete,
 	});
 
-	if (bookingSuccessResult) {
+	if (booking.bookingSuccessResult) {
 		return (
 			<BookingSuccessView
-				bookingSuccessResult={bookingSuccessResult}
-				patientFullName={patientFullName}
+				bookingSuccessResult={booking.bookingSuccessResult}
+				patientFullName={booking.patientFullName}
 				onBackToTeeth={onBackToTeeth}
-				onResetResult={() => setBookingSuccessResult(null)}
+				onResetResult={() => booking.setBookingSuccessResult(null)}
 			/>
 		);
 	}
 
-	const currentDayMeta = calendarDays[selectedDateIndex] || calendarDays[0];
+	const currentDayMeta = booking.calendarDays[booking.selectedDateIndex] || booking.calendarDays[0];
 
 	return (
 		<div
@@ -78,57 +54,52 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 			data-testid="tg-booking-container"
 			style={{ overflowX: "clip", maxWidth: "100vw" }}
 		>
-			{/* 1. Баннер прикрепленных зубов и ввод контактных данных */}
 			<BookingServiceSelector
 				attachedComplaints={attachedComplaints}
-				patientFullName={patientFullName}
-				patientPhone={patientPhone}
-				patientComment={patientComment}
+				patientFullName={booking.patientFullName}
+				patientPhone={booking.patientPhone}
+				patientComment={booking.patientComment}
 				onBackToTeeth={onBackToTeeth}
-				onChangePatientFullName={setPatientFullName}
-				onChangePatientPhone={setPatientPhone}
-				onChangePatientComment={setPatientComment}
+				onChangePatientFullName={booking.setPatientFullName}
+				onChangePatientPhone={booking.setPatientPhone}
+				onChangePatientComment={booking.setPatientComment}
 			/>
 
-			{/* 2. Направление приёма и карточки врачей клиники */}
 			<BookingDoctorSelector
-				activeCategory={activeCategory}
-				filteredDoctors={filteredDoctors}
-				selectedDoctorId={selectedDoctorId}
-				onSelectCategory={handleSelectCategory}
+				activeCategory={booking.activeCategory}
+				filteredDoctors={booking.filteredDoctors}
+				selectedDoctorId={booking.selectedDoctorId}
+				onSelectCategory={booking.handleSelectCategory}
 				onSelectDoctor={(docId) => {
-					setSelectedDoctorId(docId);
-					triggerHaptic("light");
+					booking.setSelectedDoctorId(docId);
+					booking.triggerHaptic("light");
 				}}
 			/>
 
-			{/* 3. Горизонтальный стрип дней и сетка временных слотов */}
 			<BookingSlotPicker
-				calendarDays={calendarDays}
-				selectedDateIndex={selectedDateIndex}
-				availableSlots={availableSlots}
-				selectedSlot={selectedSlot}
+				calendarDays={booking.calendarDays}
+				selectedDateIndex={booking.selectedDateIndex}
+				availableSlots={booking.availableSlots}
+				selectedSlot={booking.selectedSlot}
 				onSelectDateIndex={(idx) => {
-					setSelectedDateIndex(idx);
-					triggerHaptic("light");
+					booking.setSelectedDateIndex(idx);
+					booking.triggerHaptic("light");
 				}}
 				onSelectSlot={(slot) => {
-					setSelectedSlot(slot);
-					triggerHaptic("light");
+					booking.setSelectedSlot(slot);
+					booking.triggerHaptic("light");
 				}}
 			/>
 
-			{/* 4. Закрепленная нижняя плашка действия (Apple HIG Natural Thumb Zone) */}
 			<BookingStickyBottomBar
-				isSubmitting={isSubmitting}
-				currentDoctor={currentDoctor}
-				selectedSlot={selectedSlot}
+				isSubmitting={booking.isSubmitting}
+				currentDoctor={booking.currentDoctor}
+				selectedSlot={booking.selectedSlot}
 				currentDayMeta={currentDayMeta}
-				onSubmitBooking={handleSubmitBooking}
+				onSubmitBooking={booking.handleSubmitBooking}
 			/>
 		</div>
 	);
 });
 
 TelegramMiniAppBooking.displayName = "TelegramMiniAppBooking";
-export default TelegramMiniAppBooking;

@@ -187,8 +187,8 @@ export const CabinetAppointmentsTab: React.FC<CabinetAppointmentsTabProps> = mem
 			{/* Быстрая плашка записи на новый приём */}
 			<div className="tg-quick-book-banner">
 				<div>
-					<div className="text-sm font-bold text-slate-100">Нужен осмотр или чистка?</div>
-					<div className="text-xs text-slate-400 mt-0.5">Выберите свободное время к вашему доктору</div>
+					<div className="tg-quick-book-title">Нужен осмотр или чистка?</div>
+					<div className="tg-quick-book-subtitle">Выберите свободное время к вашему доктору</div>
 				</div>
 				<button
 					type="button"

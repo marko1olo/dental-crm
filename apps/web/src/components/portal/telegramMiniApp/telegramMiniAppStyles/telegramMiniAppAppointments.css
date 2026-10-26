@@ -1,0 +1,70 @@
+/* ==========================================================================
+   TELEGRAM MINI APP APPOINTMENTS
+   Карточка визита, бейджи статусов, время
+   ========================================================================== */
+
+.tg-appointment-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tg-border);
+	gap: 8px;
+}
+
+.tg-appointment-datetime {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tg-appointment-cabinet {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-status-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.tg-badge-confirmed {
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	border: 1px solid rgba(13, 148, 136, 0.35);
+}
+
+:root[data-theme="dark"] .tg-badge-confirmed,
+html.dark .tg-badge-confirmed {
+	background: rgba(20, 184, 166, 0.2);
+	color: #2dd4bf;
+	border-color: rgba(20, 184, 166, 0.4);
+}
+
+.tg-badge-pending {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+:root[data-theme="dark"] .tg-badge-pending,
+html.dark .tg-badge-pending {
+	color: #fbbf24;
+}
+
+.tg-badge-completed {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--tg-text-muted);
+	border: 1px solid var(--tg-border);
+}

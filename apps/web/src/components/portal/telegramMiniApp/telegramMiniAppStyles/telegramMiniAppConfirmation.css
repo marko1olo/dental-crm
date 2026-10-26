@@ -1,0 +1,15 @@
+/* ==========================================================================
+   TELEGRAM MINI APP CONFIRMATION
+   Экран успешного бронирования и подтверждения визита
+   ========================================================================== */
+
+.tg-booking-success-card {
+	background: var(--tg-card-bg);
+	border: 1px solid rgba(13, 148, 136, 0.4);
+	border-radius: 20px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}

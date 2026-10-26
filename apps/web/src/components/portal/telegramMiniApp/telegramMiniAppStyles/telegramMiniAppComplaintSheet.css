@@ -1,0 +1,79 @@
+/* ==========================================================================
+   TELEGRAM MINI APP COMPLAINT SHEET
+   Шторка выбора жалобы на зуб (Bottom Sheet Drawer) и карточка симптома
+   ========================================================================== */
+
+.tg-sheet-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: tgFadeIn 0.2s ease-out;
+}
+
+.tg-bottom-sheet {
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	border-top: 1px solid var(--tg-border);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	max-height: 88vh;
+	max-height: 88dvh;
+	overflow-y: auto;
+	padding: 12px 18px calc(env(safe-area-inset-bottom, 0px) + 20px) 18px;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+	animation: tgSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	max-width: 480px;
+	width: 100%;
+	margin: 0 auto;
+}
+
+.tg-sheet-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--tg-border);
+	margin: 0 auto 12px auto;
+}
+
+.tg-sheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tg-border);
+}
+
+.tg-sheet-body {
+	padding-top: 12px;
+}
+
+.tg-symptom-card {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-inner);
+	color: var(--tg-text);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 48px;
+}
+
+.tg-symptom-card:active {
+	transform: scale(0.98);
+}
+
+.tg-symptom-card.selected {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}

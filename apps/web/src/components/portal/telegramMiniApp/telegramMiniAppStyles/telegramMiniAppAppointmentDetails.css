@@ -1,0 +1,108 @@
+/* ==========================================================================
+   TELEGRAM MINI APP APPOINTMENT DETAILS & QUICK BOOKING
+   Процедуры, врач, чипы зубов и баннер быстрой записи
+   ========================================================================== */
+
+.tg-appointment-body {
+	padding: 12px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.tg-appointment-procedure {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.tg-tooth-chip {
+	font-size: 11px;
+	font-weight: 800;
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	padding: 2px 8px;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+:root[data-theme="dark"] .tg-tooth-chip,
+html.dark .tg-tooth-chip {
+	color: #2dd4bf;
+}
+
+.tg-appointment-doctor {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: var(--tg-card-inner);
+	padding: 8px 12px;
+	border-radius: 12px;
+	border: 1px solid var(--tg-border);
+}
+
+.tg-doctor-circle {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #0d9488, #0284c7);
+	color: #ffffff;
+	font-size: 13px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-quick-book-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 16px;
+	margin-top: 16px;
+	border-radius: 16px;
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.tg-quick-book-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--tg-text);
+}
+
+.tg-quick-book-subtitle {
+	font-size: 12px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-book-accent-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 18px;
+	min-height: 44px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+	color: #ffffff;
+	font-size: 13px;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+	transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.tg-book-accent-btn:active {
+	transform: scale(0.97);
+	opacity: 0.9;
+}

@@ -1,0 +1,52 @@
+/* ==========================================================================
+   TELEGRAM MINI APP THEME TOKENS
+   CSS-переменные с поддержкой Telegram Theme Params и системных тем
+   ========================================================================== */
+
+:root {
+	--tg-bg: #0f172a;
+	--tg-card-bg: #1e293b;
+	--tg-card-inner: #0f172a;
+	--tg-text: #f8fafc;
+	--tg-text-muted: #94a3b8;
+	--tg-border: rgba(255, 255, 255, 0.12);
+	--tg-accent: #0d9488;
+	--tg-accent-hover: #14b8a6;
+	--tg-accent-text: #ffffff;
+}
+
+:root[data-theme="light"],
+html.light,
+html[data-theme="light"] {
+	--tg-bg: #f8fafc;
+	--tg-card-bg: #ffffff;
+	--tg-card-inner: #f1f5f9;
+	--tg-text: #0f172a;
+	--tg-text-muted: #64748b;
+	--tg-border: #e2e8f0;
+	--tg-accent: #0d9488;
+	--tg-accent-hover: #0f766e;
+	--tg-accent-text: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme="dark"]) {
+		--tg-bg: #f8fafc;
+		--tg-card-bg: #ffffff;
+		--tg-card-inner: #f1f5f9;
+		--tg-text: #0f172a;
+		--tg-text-muted: #64748b;
+		--tg-border: #e2e8f0;
+	}
+}
+
+:root[data-theme="dark"],
+html.dark,
+html[data-theme="dark"] {
+	--tg-bg: #0f172a;
+	--tg-card-bg: #1e293b;
+	--tg-card-inner: #0f172a;
+	--tg-text: #f8fafc;
+	--tg-text-muted: #94a3b8;
+	--tg-border: rgba(255, 255, 255, 0.12);
+}

@@ -1,0 +1,95 @@
+/* ==========================================================================
+   TELEGRAM MINI APP SERVICES & DOCTORS
+   Выбор направления/услуги, чипы категорий, баннер прикрепленных зубов, врачи
+   ========================================================================== */
+
+.tg-booking-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding-bottom: calc(68px + 76px + env(safe-area-inset-bottom, 0px));
+}
+
+.tg-attached-teeth-banner {
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	border-radius: 16px;
+	padding: 12px;
+}
+
+.tg-teeth-badge-icon {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.2);
+	color: var(--tg-accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-edit-teeth-btn {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--tg-accent);
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 10px;
+	padding: 6px 12px;
+	cursor: pointer;
+	flex-shrink: 0;
+	white-space: nowrap;
+	transition: opacity 0.15s ease;
+}
+
+.tg-specialist-chip {
+	padding: 10px 12px;
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 14px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+	min-height: 60px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.tg-specialist-chip.selected {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}
+
+.tg-doctor-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 14px;
+	padding: 12px 14px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	transition: border-color 0.2s ease;
+}
+
+.tg-doctor-card.selected {
+	border-color: var(--tg-accent);
+	background: rgba(13, 148, 136, 0.1);
+}
+
+.tg-doctor-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #0d9488, #0284c7);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	flex-shrink: 0;
+	border: 1px solid var(--tg-border);
+}

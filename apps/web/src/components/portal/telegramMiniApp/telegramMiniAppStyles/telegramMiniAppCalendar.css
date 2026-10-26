@@ -1,0 +1,58 @@
+/* ==========================================================================
+   TELEGRAM MINI APP CALENDAR & SLOTS
+   Горизонтальная полоса дней недели, сетка слотов времени, кнопка слота
+   ========================================================================== */
+
+.tg-day-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 6px;
+	border-radius: 12px;
+	min-width: 64px;
+	min-height: 54px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.tg-day-btn.selected {
+	background: var(--tg-accent);
+	border-color: var(--tg-accent);
+	color: #ffffff;
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+}
+
+.tg-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 6px;
+}
+
+.tg-slot-btn {
+	padding: 8px 4px;
+	border-radius: 10px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	text-align: center;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.tg-slot-btn.selected {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	border-color: transparent;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}

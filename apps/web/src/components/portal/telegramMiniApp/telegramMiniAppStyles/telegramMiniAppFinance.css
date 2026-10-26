@@ -1,0 +1,86 @@
+/* ==========================================================================
+   TELEGRAM MINI APP FINANCE & FORM INPUTS
+   Финансы, бонусы, рефералы, текстовые поля и кнопки-чипы
+   ========================================================================== */
+
+.tg-finance-balance-card {
+	background: linear-gradient(135deg, var(--tg-card-bg) 0%, var(--tg-card-inner) 100%);
+	border: 1px solid var(--tg-border);
+	border-radius: 22px;
+	padding: 20px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.tg-referral-card {
+	background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+	border-radius: 20px;
+	padding: 16px;
+	box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+}
+
+.tg-sheet-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tg-sheet-subtitle {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-field-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--tg-text);
+	display: block;
+	margin-bottom: 6px;
+}
+
+.tg-field-input {
+	width: 100%;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	border-radius: 12px;
+	padding: 10px 12px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--tg-text);
+	outline: none;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.tg-field-input:focus {
+	border-color: var(--tg-accent);
+}
+
+.tg-chip-selector-btn {
+	flex: 1;
+	padding: 10px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1.5px solid var(--tg-border);
+	background: var(--tg-card-inner);
+	color: var(--tg-text-muted);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-chip-selector-btn.active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+

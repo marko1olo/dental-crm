@@ -1,0 +1,81 @@
+/* ==========================================================================
+   TELEGRAM MINI APP TOOTH PICKER
+   Интерактивная зубная формула FDI 32 + 20, сетка зубов, квадранты
+   ========================================================================== */
+
+.tg-tooth-picker-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tg-quadrant-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 18px;
+	padding: 14px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tg-quadrant-tab {
+	padding: 8px 4px;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	border-radius: 10px;
+	color: var(--tg-text-muted);
+	cursor: pointer;
+	text-align: center;
+	transition: all 0.2s ease;
+	min-height: 40px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-quadrant-tab.active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}
+
+.tg-tooth-cell {
+	min-height: 52px;
+	border-radius: 12px;
+	border: 1.5px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tg-tooth-cell:active {
+	transform: scale(0.96);
+}
+
+.tg-tooth-num {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: -0.3px;
+	color: var(--tg-text);
+}
+
+.tg-tooth-indicator {
+	font-size: 13px;
+	line-height: 1;
+}
+
+.tg-tooth-cell.is-active {
+	border-color: var(--tg-accent);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.4);
+	transform: scale(1.04);
+}

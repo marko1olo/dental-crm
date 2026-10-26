@@ -80,6 +80,7 @@ describe("PatientHeaderCard & Header Modules — Architectural & Visual Invarian
 				resolvedPatient={{ id: "pat-1", fullName: "Сидорова Анна" }}
 				fullName="Сидорова Анна"
 				phone="+7 999 123-45-67"
+				isActiveVisit={false}
 				onOpenFamilyWallet={() => {}}
 			/>,
 		);
