@@ -48,30 +48,30 @@ export function VisitDiaryReviseAndLockFooters(props: VisitDiaryReviseAndLockFoo
 	}
 
 	return (
-		<div className="vde-043__footer vde-043__footer--locked">
-			<div className="vde-043__lock-meta">
+		<div className="clinical-diary__footer vde-043__footer clinical-diary__footer--locked vde-043__footer--locked">
+			<div className="clinical-diary__lock-meta vde-043__lock-meta">
 				<Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
 				<span>
 					Дневник подписан {diaryDoctorFullName ? `(${diaryDoctorFullName})` : ""}{" "}
 					{lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : ""}.
 				</span>
 				{hasCryptoSignature && (
-					<span className="vde-043__sig-chip" title={diaryHash ? `SHA-256: ${diaryHash}` : undefined}>
+					<span className="clinical-diary__sig-chip vde-043__sig-chip" title={diaryHash ? `SHA-256: ${diaryHash}` : undefined}>
 						КЭП (ГОСТ)
 					</span>
 				)}
 				{revisionCount > 0 && (
-					<span className="vde-043__rev-chip">
+					<span className="clinical-diary__rev-chip vde-043__rev-chip">
 						Редакция #{revisionCount + 1}
 					</span>
 				)}
 			</div>
-			<div className="vde-043__footer-actions">
+			<div className="clinical-diary__footer-actions vde-043__footer-actions">
 				<button
 					type="button"
 					data-testid="diary-revise-begin"
 					onClick={beginRevise}
-					className="vde-043__btn vde-043__btn--amber border border-amber-500/50 bg-amber-500/10 text-amber-500 dark:text-amber-300 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:bg-amber-500/20 transition-colors"
+					className="clinical-diary__btn vde-043__btn clinical-diary__btn--amber vde-043__btn--amber border border-amber-500/50 bg-amber-500/10 text-amber-500 dark:text-amber-300 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:bg-amber-500/20 transition-colors"
 					title="Внести исправление в закрытый дневник («Исправленному верить»)"
 				>
 					Внести исправление
@@ -80,7 +80,7 @@ export function VisitDiaryReviseAndLockFooters(props: VisitDiaryReviseAndLockFoo
 					type="button"
 					data-testid="diary-form-043-open"
 					onClick={() => setShowPreview(true)}
-					className="vde-043__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
+					className="clinical-diary__btn vde-043__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
 					title="Печать медицинской карты"
 				>
 					Печать карты

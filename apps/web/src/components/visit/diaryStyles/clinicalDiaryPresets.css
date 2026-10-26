@@ -1,0 +1,92 @@
+/**
+ * clinicalDiaryPresets.css — Protocol Presets & Autosave Indicator
+ * Mandates 8b (<=110 lines), 8e (debounced autosave), 8x (human clinical terms).
+ */
+
+.clinical-diary__saved-badge,
+.vde-043__saved-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.2rem 0.6rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.clinical-diary__saving-indicator,
+.vde-043__saving-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--teal);
+	font-weight: 600;
+}
+
+.clinical-diary__saving-spinner,
+.vde-043__saving-spinner {
+	width: 12px;
+	height: 12px;
+	border: 2px solid var(--teal);
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: clinical-diary-spin 0.8s linear infinite;
+}
+
+@keyframes clinical-diary-spin {
+	to { transform: rotate(360deg); }
+}
+
+.clinical-diary__meta,
+.vde-043__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+
+.clinical-diary__meta-item,
+.vde-043__meta-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.clinical-diary__meta-rev,
+.vde-043__meta-rev {
+	color: var(--amber, #d97706);
+	font-weight: 600;
+}
+
+.clinical-diary__badge,
+.vde-043__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 48px;
+	padding: 0.55rem 1.1rem;
+	border-radius: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 700;
+	border: 1px solid transparent;
+}
+
+.clinical-diary__badge--locked,
+.vde-043__badge--locked {
+	color: var(--green, #15803d);
+	background: color-mix(in srgb, var(--green, #15803d) 12%, transparent);
+	border-color: color-mix(in srgb, var(--green, #15803d) 25%, transparent);
+}
+
+.clinical-diary__badge--revise,
+.vde-043__badge--revise {
+	color: var(--amber, #d97706);
+	background: var(--amber-soft, rgba(217, 119, 6, 0.12));
+	border-color: color-mix(in srgb, var(--amber, #d97706) 35%, transparent);
+}

@@ -1,0 +1,83 @@
+/* Dark theme overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn {
+	background: var(--paper, #1e293b);
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	color: var(--ink, #f1f5f9);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn:hover {
+	border-color: rgba(255, 255, 255, 0.32);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-indicator {
+	box-shadow: 0 0 0 1.5px var(--paper, #1e293b);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--green {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #064e3b);
+	border: 1.5px solid rgba(16, 185, 129, 0.45);
+	color: #6ee7b7;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--green:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #064e3b);
+	border-color: #10b981;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--cyan {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #164e63);
+	border: 1.5px solid rgba(6, 182, 212, 0.45);
+	color: #67e8f9;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--cyan:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #164e63);
+	border-color: #06b6d4;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--indigo {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #312e81);
+	border: 1.5px solid rgba(99, 102, 241, 0.45);
+	color: #a5b4fc;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--indigo:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #312e81);
+	border-color: #6366f1;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--teal {
+	background: color-mix(in srgb, var(--paper, #1e293b) 88%, #134e4a);
+	border: 1.5px solid rgba(20, 184, 166, 0.45);
+	color: #5eead4;
+}
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--teal:hover {
+	background: color-mix(in srgb, var(--paper, #1e293b) 78%, #134e4a);
+	border-color: var(--teal, #14b8a6);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--catalog {
+	background: linear-gradient(180deg, #4f46e5 0%, #3730a3 100%);
+	border: 1.5px solid rgba(165, 180, 252, 0.4);
+	color: #ffffff;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .dente-norm-btn--neutral {
+	background: var(--paper, #1e293b);
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
+	color: var(--ink, #f1f5f9);
+}
+
+/* Mobile Apple HIG Touch Target: 44px min-height */
+@media (max-width: 768px), (pointer: coarse) {
+	.dente-norm-btn {
+		height: 44px;
+		min-height: 44px;
+		padding: 0 14px;
+		font-size: 13px;
+		border-radius: 10px;
+	}
+	.dente-norm-indicator {
+		width: 10px;
+		height: 10px;
+	}
+}

@@ -113,14 +113,7 @@ describe("Staff PIN Pad Autonomy & Solo Doctor Sovereignty (Mandates 8d, 8e, 8n)
 
 	it("4. touch target ergonomics: pin buttons have 64px dimension in auth.css meeting >= 44px HIG (Mandate 8d)", () => {
 		const cssPath = path.resolve(__dirname, "../../../styles/auth.css");
-		let cssCode = fs.readFileSync(cssPath, "utf-8");
-		if (cssCode.includes("@import")) {
-			const dir = path.dirname(cssPath);
-			for (const m of cssCode.matchAll(/@import\s+["']([^"']+)["'];/g)) {
-				const sub = path.resolve(dir, m[1]);
-				if (fs.existsSync(sub)) cssCode += "\n" + fs.readFileSync(sub, "utf-8");
-			}
-		}
+		const cssCode = fs.readFileSync(cssPath, "utf-8");
 
 		// CSS classes verify 64px width and height
 		expect(cssCode).toContain("width: 64px;");

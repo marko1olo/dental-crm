@@ -1,0 +1,54 @@
+.clinical-protocol-card,
+button.clinical-protocol-card {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: flex-start !important;
+	justify-content: center !important;
+	gap: 4px !important;
+	min-height: 48px !important;
+	padding: 8px 12px !important;
+	border-radius: 10px !important;
+	background: var(--paper, #ffffff) !important;
+	border: 1.5px solid var(--line-strong, #cbd5e1) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+	text-align: left !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.clinical-protocol-card:hover,
+button.clinical-protocol-card:hover {
+	border-color: var(--teal, #0d9488) !important;
+	box-shadow: 0 3px 8px rgba(13, 148, 136, 0.12) !important;
+	transform: translateY(-1px) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card {
+	background: var(--paper, #1e293b) !important;
+	border: 1px solid rgba(255, 255, 255, 0.16) !important;
+	color: var(--ink, #f1f5f9) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card:hover,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card:hover {
+	border-color: #2dd4bf !important;
+	background: rgba(30, 41, 59, 0.95) !important;
+}
+
+.clinical-protocol-card.applied,
+button.clinical-protocol-card.applied {
+	border-color: var(--teal, #0d9488) !important;
+	background: rgba(13, 148, 136, 0.08) !important;
+	box-shadow: 0 0 0 1px var(--teal, #0d9488) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-protocol-card.applied,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) button.clinical-protocol-card.applied {
+	border-color: #2dd4bf !important;
+	background: rgba(13, 148, 136, 0.22) !important;
+	box-shadow: 0 0 0 1px #2dd4bf !important;
+}
