@@ -1,10 +1,10 @@
 import type { ToothData } from "../chart/types/toothRendererTypes";
+import type { Tooth46LayerFlags } from "./tooth46Types";
 import type {
 	CariesDepth,
 	CariesType,
 	CrownMaterial,
 	PostCoreType,
-	Tooth46LayerFlags,
 } from "./tooth46PresetTypes";
 
 /**

@@ -51,7 +51,7 @@ export const DrawerTabs: React.FC<DrawerTabsProps> = ({
 				data-testid="tab-register-shift"
 			>
 				<ShieldCheck size={14} />
-				<span>Телеметрия смены</span>
+				<span>Смена</span>
 			</button>
 			<button
 				type="button"
@@ -62,7 +62,7 @@ export const DrawerTabs: React.FC<DrawerTabsProps> = ({
 				data-testid="tab-register-receipts"
 			>
 				<Receipt size={14} />
-				<span>Чеки смены ({receiptsCount})</span>
+				<span>Чеки ({receiptsCount})</span>
 			</button>
 			<button
 				type="button"
@@ -76,7 +76,7 @@ export const DrawerTabs: React.FC<DrawerTabsProps> = ({
 				data-testid="tab-register-operations"
 			>
 				<Zap size={14} />
-				<span>Операции с наличностью</span>
+				<span>Операции</span>
 			</button>
 		</div>
 	);

@@ -61,7 +61,7 @@ export const QuickCreateInvoiceModal: React.FC<QuickCreateInvoiceModalProps> = (
 			<div className="w-full max-w-lg rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col">
 				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
 					<h3 id="create-invoice-title" className="text-base font-bold flex items-center gap-2 m-0">
-						<Receipt size={18} className="text-teal-600" />
+						<Receipt size={18} className="text-[var(--primary)]" />
 						<span>Создать счет</span>
 					</h3>
 					<button
@@ -90,7 +90,7 @@ export const QuickCreateInvoiceModal: React.FC<QuickCreateInvoiceModalProps> = (
 						</button>
 						<button
 							type="submit"
-							className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+							className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 							data-testid="btn-new-invoice-submit"
 						>
 							<Plus size={14} />

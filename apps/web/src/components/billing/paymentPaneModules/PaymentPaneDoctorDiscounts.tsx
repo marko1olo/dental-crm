@@ -57,7 +57,7 @@ export const PaymentPaneDoctorDiscounts: React.FC<PaymentPaneDoctorDiscountsProp
 	return (
 		<div className="p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] space-y-1.5 text-xs">
 			<div className="flex items-center justify-between">
-				<span className="font-bold text-[var(--muted,#64748b)] text-[11px] uppercase tracking-wider flex items-center gap-1">
+				<span className="font-bold text-[var(--muted,#64748b)] text-[11px] flex items-center gap-1">
 					<Percent size={13} className="text-amber-500" />
 					<span>Скидки врача:</span>
 				</span>

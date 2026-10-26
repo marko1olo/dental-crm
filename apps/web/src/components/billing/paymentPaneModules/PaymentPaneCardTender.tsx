@@ -12,7 +12,7 @@ import { showToast } from "../../GlobalToast.js";
 interface PaymentPaneCardTenderProps {
 	readonly amountRub: number;
 	readonly isSubmitting: boolean;
-	readonly finalizeReceipt: (method: any, sum: number) => Promise<void>;
+	readonly finalizeReceipt: (method: any, sum: number, options?: { readonly idempotencyKey?: string | undefined }) => Promise<unknown>;
 }
 
 export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
@@ -21,8 +21,8 @@ export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
 	finalizeReceipt,
 }) => {
 	const handleConfirm = () => {
-		showToast(`Оплата картой на ${amountRub.toLocaleString("ru-RU")} ₽ зафиксирована`, "success");
-		finalizeReceipt("card", amountRub);
+		// Честный контур: результат оплаты подтверждает сервер внутри finalizeReceipt.
+		void finalizeReceipt("card", amountRub);
 	};
 
 	return (

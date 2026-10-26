@@ -29,7 +29,7 @@ export const PaymentPaneMethodSwitcher: React.FC<PaymentPaneMethodSwitcherProps>
 
 	return (
 		<div className="space-y-1.5">
-			<label className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
+			<label className="text-[11px] font-bold text-[var(--muted,#64748b)] block">
 				Способ оплаты
 			</label>
 			<div

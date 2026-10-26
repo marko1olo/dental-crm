@@ -25,16 +25,16 @@ const ANTERIOR_LOCS: readonly { type: CariesType; label: string; title: string }
 	{ type: "class5", label: "V", title: "Пришеечный / CEJ дефект (Class V)" },
 ];
 
-const DEPTH_STAGES: readonly { depth: CariesDepth; marker: string; label: string; title: string; activeCls: string }[] = [
-	{ depth: "superficial", marker: "⚪", label: "Пятно", title: "Superficialis / Начальная деминерализация", activeCls: "bg-amber-400 text-slate-950 border-amber-300 font-bold shadow-sm" },
-	{ depth: "media", marker: "🟤", label: "Средний", title: "Media / Кариозный кратер плащевого дентина", activeCls: "bg-orange-600 text-white border-orange-500 font-bold shadow-sm" },
-	{ depth: "profunda", marker: "⚫", label: "Глубокий", title: "Profunda / Околопульпарный некроз", activeCls: "bg-rose-700 text-white border-rose-600 font-bold shadow-sm" },
-	{ depth: "destructive", marker: "💥", label: "Скол", title: "Destructiva / Разрушение стенки", activeCls: "bg-red-950 text-red-100 border-red-800 font-bold shadow-sm" },
+const DEPTH_STAGES: readonly { depth: CariesDepth; label: string; title: string }[] = [
+	{ depth: "superficial", label: "Пятно", title: "Superficialis / Начальная деминерализация" },
+	{ depth: "media", label: "Средний", title: "Media / Кариозный кратер плащевого дентина" },
+	{ depth: "profunda", label: "Глубокий", title: "Profunda / Околопульпарный некроз" },
+	{ depth: "destructive", label: "Скол", title: "Destructiva / Разрушение стенки" },
 ];
 
 /**
- * DENTE Dental CRM — Compact Caries Quick Picker Bar (Apple HIG Touch Ergonomics).
- * Mandate 8b: Strictly <= 120 lines. Zero raster filters, pure CSS transitions.
+ * DENTE Dental CRM — Segmented Caries Quick Picker Bar (Apple HIG Touch Ergonomics).
+ * Mandate 8b: Strictly <= 120 lines. Zero emojis, pure CSS tokens.
  */
 export const Tooth46CariesBar: React.FC<Tooth46CariesBarProps> = ({
 	layers,
@@ -53,14 +53,14 @@ export const Tooth46CariesBar: React.FC<Tooth46CariesBarProps> = ({
 		<div
 			id="tooth46-caries-quick-bar"
 			data-testid="tooth46-caries-quick-bar"
-			className={`w-full flex flex-col gap-1.5 pt-1.5 pb-1 border-t border-amber-500/20 text-xs ${className}`}
+			className={`w-full flex flex-wrap items-center justify-center gap-3 py-2 px-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-xs text-xs ${className}`}
 		>
-			{/* Ряд 1: Класс / Локализация */}
-			<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none touch-pan-x [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] sm:[mask-image:none]">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0 mr-0.5">
+			{/* Класс / Локализация */}
+			<div className="flex items-center gap-2">
+				<span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0">
 					Класс:
 				</span>
-				<div className="flex items-center gap-1 shrink-0" role="group" aria-label="Локализация кариеса">
+				<div className="inline-flex p-0.5 rounded-lg bg-slate-200/60 dark:bg-slate-800/80 border border-slate-300/40 dark:border-slate-700/60" role="group" aria-label="Локализация кариеса">
 					{locs.map((loc) => {
 						const active = currentType === loc.type;
 						return (
@@ -70,10 +70,10 @@ export const Tooth46CariesBar: React.FC<Tooth46CariesBarProps> = ({
 								data-caries-class={loc.label}
 								onClick={() => onChangeCariesType?.(loc.type)}
 								title={loc.title}
-								className={`px-3 py-1.5 min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[34px] rounded-lg border text-xs font-semibold transition-all flex items-center justify-center shrink-0 active:scale-95 ${
+								className={`px-2.5 py-1 min-h-[44px] min-w-[44px] sm:min-h-[28px] sm:min-w-[30px] rounded-md text-xs font-bold transition-all flex items-center justify-center shrink-0 cursor-pointer ${
 									active
-										? "bg-amber-600 text-white border-amber-500 shadow-sm dark:bg-amber-500 dark:border-amber-400"
-										: "bg-white text-slate-700 border-slate-200 hover:bg-amber-50 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700"
+										? "bg-amber-600 text-white shadow-xs dark:bg-amber-500"
+										: "bg-transparent text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10"
 								}`}
 							>
 								{loc.label}
@@ -83,12 +83,12 @@ export const Tooth46CariesBar: React.FC<Tooth46CariesBarProps> = ({
 				</div>
 			</div>
 
-			{/* Ряд 2: 4 стадии ВОЗ (Пятно, Средний, Глубокий, Скол) */}
-			<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none touch-pan-x [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] sm:[mask-image:none]">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0 mr-0.5">
-					Стадия:
+			{/* 4 стадии ВОЗ (Пятно, Средний, Глубокий, Скол) */}
+			<div className="flex items-center gap-2">
+				<span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+					Глубина:
 				</span>
-				<div className="flex items-center gap-1 shrink-0" role="group" aria-label="Стадия глубины поражения">
+				<div className="inline-flex p-0.5 rounded-lg bg-slate-200/60 dark:bg-slate-800/80 border border-slate-300/40 dark:border-slate-700/60" role="group" aria-label="Стадия глубины поражения">
 					{DEPTH_STAGES.map((st) => {
 						const active = currentDepth === st.depth;
 						return (
@@ -98,14 +98,13 @@ export const Tooth46CariesBar: React.FC<Tooth46CariesBarProps> = ({
 								data-caries-depth={st.depth}
 								onClick={() => onChangeCariesDepth?.(st.depth)}
 								title={st.title}
-								className={`px-3 py-1.5 min-h-[44px] sm:min-h-[28px] rounded-lg border text-xs font-medium transition-all flex items-center justify-center shrink-0 active:scale-95 ${
+								className={`px-3 py-1 min-h-[44px] sm:min-h-[28px] rounded-md text-xs font-semibold transition-all flex items-center justify-center shrink-0 cursor-pointer ${
 									active
-										? st.activeCls
-										: "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700"
+										? "bg-teal-600 text-white shadow-xs dark:bg-teal-500"
+										: "bg-transparent text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10"
 								}`}
 							>
-								<span className="mr-1 text-[11px]">{st.marker}</span>
-								<span>{st.label}</span>
+								{st.label}
 							</button>
 						);
 					})}

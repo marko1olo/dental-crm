@@ -11,9 +11,12 @@ export interface SbpDynamicQrCardProps {
 	readonly invoiceId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
+	/** Срок жизни QR в секундах; сервер принимает от 60. */
 	readonly ttlSeconds?: number | undefined;
-	readonly isAutoConfirmEnabled?: boolean | undefined;
+	/** Спрятать ручное подтверждение (например, внутри сплита — там платёж фиксирует общая кнопка). */
+	readonly hideManualConfirm?: boolean | undefined;
 	readonly onPaymentSuccess?: ((result: {
+		operationId: string;
 		paymentId: string;
 		sumRub: number;
 		method: "sbp";

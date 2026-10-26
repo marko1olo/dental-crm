@@ -37,7 +37,7 @@ export const DrawerShiftTelemetryTab: React.FC<DrawerShiftTelemetryTabProps> = (
 	return (
 		<div className="space-y-4">
 			<div className="p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 space-y-3">
-				<span className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wide block">
+				<span className="text-xs font-bold text-[var(--teal-dark,#0f766e)] dark:text-teal-300 block">
 					Выручка за смену ({recentReceipts.length} чеков)
 				</span>
 				<div className="text-2xl sm:text-3xl font-black font-mono text-[var(--ink,#0f172a)]" data-testid="shift-grand-total">
@@ -73,11 +73,11 @@ export const DrawerShiftTelemetryTab: React.FC<DrawerShiftTelemetryTabProps> = (
 			</div>
 
 			<div className="space-y-2">
-				<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide block">Операции кассира</span>
+				<span className="text-xs font-bold text-[var(--muted,#64748b)] block">Операции кассира</span>
 				<div className="grid grid-cols-2 gap-2">
 					<button type="button" onClick={onXReport} className="p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all active:scale-98" data-testid="btn-x-report">
 						<FileText size={16} className="text-teal-600" />
-						<span>Х-отчёт (без гашения)</span>
+						<span>Сверка смены (X-отчёт)</span>
 					</button>
 					<button type="button" onClick={onZReport} className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-2 cursor-pointer transition-all active:scale-98" data-testid="btn-z-report">
 						<Lock size={16} className="text-rose-600" />
@@ -88,7 +88,7 @@ export const DrawerShiftTelemetryTab: React.FC<DrawerShiftTelemetryTabProps> = (
 
 			<div className="space-y-2 pt-2">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wide">Последние чеки смены</span>
+					<span className="text-xs font-bold text-[var(--muted,#64748b)]">Последние чеки смены</span>
 					<button type="button" onClick={onGoToAllReceipts} className="text-xs text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer">Все чеки →</button>
 				</div>
 				<div className="space-y-1.5">
@@ -103,8 +103,8 @@ export const DrawerShiftTelemetryTab: React.FC<DrawerShiftTelemetryTabProps> = (
 							</div>
 							<div className="text-right">
 								<div className="font-mono font-bold text-slate-900 dark:text-slate-100">{rec.totalRub.toLocaleString("ru-RU")} ₽</div>
-								<span className="text-[10px] uppercase font-bold text-teal-600 dark:text-teal-400">
-									{rec.method === "card" ? "Карта" : rec.method === "sbp" ? "СБП" : "Наличные"}
+								<span className="text-[10px] font-bold text-[var(--teal-dark,#0f766e)] dark:text-teal-400">
+									{rec.method === "card" ? "Карта" : rec.method === "sbp" ? "СБП" : rec.method === "deposit" ? "Депозит" : rec.method === "split" ? "Сплит" : "Наличные"}
 								</span>
 							</div>
 						</div>

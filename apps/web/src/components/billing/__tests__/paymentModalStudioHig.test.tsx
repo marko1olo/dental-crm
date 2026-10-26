@@ -182,12 +182,15 @@ describe("Studio Clinical HIG: CashRegisterDrawer Shift Telemetry & Operations (
 		);
 
 		assert.ok(html.includes('data-testid="cash-register-drawer"'));
-		assert.ok(html.includes("Смена № 14 открыта"));
+		// Честная телеметрия: пока X-отчёт сервера не пришёл, шторка не выдумывает номер смены.
+		assert.ok(html.includes("Смена открыта"));
+		assert.ok(!html.includes("Смена № 14"), "No fabricated shift number before the server answers");
 		assert.ok(html.includes('data-testid="shift-grand-total"'));
 		assert.ok(html.includes('data-testid="cash-in-drawer-amount"'));
 		assert.ok(html.includes('data-testid="btn-x-report"'), "Must render X-report button");
 		assert.ok(html.includes('data-testid="btn-z-report"'), "Must render Z-report button");
-		assert.ok(html.includes('data-testid="shift-receipt-item-0104"'), "Must render recent receipt in list");
+		// Чеки строятся только из реальных оплаченных счетов — демо-заготовок больше нет.
+		assert.ok(!html.includes("shift-receipt-item-0104"), "No fabricated demo receipts");
 		assert.ok(html.includes('data-testid="btn-drawer-new-payment"'), "Must render 1-click new payment button");
 	});
 });

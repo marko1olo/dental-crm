@@ -1,11 +1,12 @@
 /**
- * DENTE Dental CRM — Tooth 46 Inspection Stand & Full Arch Mockup Coordinator
+ * DENTE Dental CRM — Tooth 46 Inspection Stand & Mandible Arch Coordinator
  * Mandate 8b <= 120 lines.
  */
 
 import React, { useEffect, useState } from "react";
 import { Tooth46FullArchMockup } from "./archMockup/Tooth46FullArchMockup";
 import type { BadgeSizeOption } from "./archMockup/archMockupTypes";
+import { ToothMandibleFullArch } from "./mandible/ToothMandibleFullArch";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46SingleView } from "./Tooth46SingleView";
 import { Tooth46StandHeader } from "./Tooth46StandHeader";
@@ -31,11 +32,11 @@ export const Tooth46InspectionStand: React.FC = () => {
 	const [zoom, setZoom] = useState<number>(2);
 	const [activePreset, setActivePreset] = useState<Tooth46ClinicalPreset | null>("intact");
 	const [layers, setLayers] = useState<Tooth46LayerFlags>(DEFAULT_TOOTH46_LAYERS);
-	const [standMode, setStandMode] = useState<"single" | "arch32">(() => {
+	const [standMode, setStandMode] = useState<"single" | "arch32" | "mandible">(() => {
 		if (typeof window !== "undefined") {
-			const s = window.location.search;
-			const h = window.location.hash;
-			if (s.includes("odontogram-32") || h.includes("odontogram-32")) return "arch32";
+			const s = window.location.search + window.location.hash;
+			if (s.includes("mandible")) return "mandible";
+			if (s.includes("odontogram-32")) return "arch32";
 		}
 		return "single";
 	});
@@ -92,7 +93,11 @@ export const Tooth46InspectionStand: React.FC = () => {
 				onSelectStandMode={setStandMode}
 			/>
 
-			{standMode === "arch32" ? (
+			{standMode === "mandible" ? (
+				<div className="w-full flex justify-center py-4">
+					<ToothMandibleFullArch isDark={isDark} zoom={0.52} />
+				</div>
+			) : standMode === "arch32" ? (
 				<Tooth46FullArchMockup isDark={isDark} initialSize={initialBadgeSize} />
 			) : (
 				<Tooth46SingleView

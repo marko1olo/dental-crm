@@ -21,9 +21,9 @@ export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
 
 export const INVOICE_STATUS_CLASSES = {
-	paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-	warranty: "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-	pending: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+	paid: "bg-[var(--ok-bg,rgba(74,222,128,0.15))] text-[var(--success,#15803d)] border-[var(--success,#22c55e)]/30",
+	warranty: "bg-[var(--primary-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border-[var(--teal,#0d9488)]/30",
+	pending: "bg-[var(--warn-bg,#fef3c7)] text-[var(--warning,#b45309)] border-[var(--warning,#d97706)]/30",
 } as const;
 
 /**

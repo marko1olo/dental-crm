@@ -28,7 +28,7 @@ export const CashRegisterPaymentPane: React.FC<CashRegisterPaymentPaneProps> = (
 	const { clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", onOpenFullSplitModal, invoices, onSelectInvoice } = props;
 
 	return (
-		<div className="space-y-3.5" data-testid="cash-register-payment-pane">
+		<div className="space-y-3.5 min-w-0 max-w-full" data-testid="cash-register-payment-pane">
 			<PaymentPaneInvoiceHeader currentInvoice={logic.currentInvoice} invoices={invoices} onSelectInvoice={onSelectInvoice} />
 
 			<PaymentPaneAmountDisplay
@@ -50,8 +50,8 @@ export const CashRegisterPaymentPane: React.FC<CashRegisterPaymentPaneProps> = (
 
 			{logic.activeMethod === "sbp" && (
 				<SbpDynamicQrCard
-					sumRub={logic.amountRub} clinicLegalName={clinicLegalName} ttlSeconds={30}
-					onPaymentSuccess={(res) => logic.finalizeReceipt("sbp", res.sumRub)}
+					sumRub={logic.amountRub} clinicLegalName={clinicLegalName} ttlSeconds={300}
+					onPaymentSuccess={(res) => logic.finalizeReceipt("sbp", res.sumRub, { idempotencyKey: `sbp:${res.operationId}` })}
 				/>
 			)}
 

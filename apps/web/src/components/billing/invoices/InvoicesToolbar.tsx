@@ -47,14 +47,14 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 	const warrantyCount = invoices.filter((i) => i && i.status === "warranty_100").length;
 
 	return (
-		<div className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 select-none" role="toolbar" aria-label="Панель счетов и актов">
-			<div className="flex items-center gap-1.5 shrink min-w-0 overflow-x-auto scrollbar-none py-0.5">
-				<div className="flex items-center gap-1.5 font-bold text-xs mr-2 text-[var(--ink,#0f172a)] shrink-0">
+		<div className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 sm:px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 select-none overflow-x-clip" role="toolbar" aria-label="Панель счетов и актов">
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0 py-0.5 overflow-x-auto no-scrollbar">
+				<div className="flex items-center gap-1.5 font-bold text-xs mr-0.5 sm:mr-2 text-[var(--ink,#0f172a)] shrink-0 whitespace-nowrap">
 					<Receipt size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="whitespace-nowrap">Счета и Акты</span>
+					<span className="hidden sm:inline whitespace-nowrap">Счета и Акты</span>
 				</div>
 
-				<div className="dente-segmented-bar shrink-0" role="tablist" aria-label="Фильтры счетов">
+				<div className="dente-segmented-bar invoices-toolbar-filters shrink-0" role="tablist" aria-label="Фильтры счетов">
 					<button type="button" onClick={() => setFilterTab("all")} className={`dente-segmented-item ${filterTab === "all" ? "active" : ""}`} data-active={filterTab === "all"} data-testid="filter-invoices-all">
 						<span>Все</span> <span className="text-[10px] opacity-70 font-mono">({invoices.length})</span>
 					</button>
@@ -65,13 +65,13 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 						<span>Оплачено</span> <span className="text-[10px] opacity-70 font-mono">({paidCount})</span>
 					</button>
 					<button type="button" onClick={() => setFilterTab("warranty")} className={`dente-segmented-item ${filterTab === "warranty" ? "active" : ""}`} data-active={filterTab === "warranty"} data-testid="filter-invoices-warranty">
-						<span>Гарантия 100%</span> <span className="text-[10px] opacity-70 font-mono">({warrantyCount})</span>
+						<span>Гарантия</span> <span className="text-[10px] opacity-70 font-mono">({warrantyCount})</span>
 					</button>
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2 shrink-0">
-				<div className="dente-search-wrap hidden md:flex w-48 sm:w-60">
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+				<div className="dente-search-wrap hidden md:flex w-32 xl:w-52 shrink min-w-0">
 					<Search size={14} className="dente-search-icon" />
 					<input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту или № счета..." className="dente-search-input" data-testid="input-search-invoices" />
 					{searchQuery && (
@@ -79,16 +79,16 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 					)}
 				</div>
 
-				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2.5 rounded-lg text-xs font-bold text-white shrink-0" data-testid="btn-create-invoice-open">
-					<Plus size={14} /> <span>Новый счёт</span>
+				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold text-white shrink-0 flex items-center gap-1" data-testid="btn-create-invoice-open" title="Новый счёт">
+					<Plus size={14} /> <span className="hidden sm:inline">Новый счёт</span>
 				</button>
-				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-cash-drawer">
-					<Wallet size={14} className="text-teal-600" /> <span>Касса</span>
+				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1" data-testid="btn-invoices-open-cash-drawer" title="Касса">
+					<Wallet size={14} className="text-teal-600" /> <span className="hidden sm:inline">Касса</span>
 				</button>
 				<button type="button" onClick={onOpenShift} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-shift-modal">
 					<ShieldCheck size={14} className="text-emerald-600" /> <span>Смена</span>
 				</button>
-				<button type="button" onClick={onOpenInstallments} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden lg:inline-flex" data-testid="btn-invoices-open-installments">
+				<button type="button" onClick={onOpenInstallments} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 hidden sm:inline-flex" data-testid="btn-invoices-open-installments">
 					<Clock size={14} className="text-blue-600" /> <span>Рассрочки</span>
 				</button>
 

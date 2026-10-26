@@ -14,7 +14,7 @@ interface SbpQrUnderplateProps {
 export const SbpQrUnderplate: React.FC<SbpQrUnderplateProps> = ({ svg }) => {
 	return (
 		<div
-			className="relative shrink-0 rounded-xl bg-white p-2 border border-slate-300 dark:border-slate-700 shadow-sm flex items-center justify-center"
+			className="relative shrink-0 rounded-xl bg-[var(--paper-strong,#ffffff)] p-2 border border-[var(--line,#cbd5e1)] shadow-sm flex items-center justify-center"
 			style={{ width: "176px", height: "176px" }}
 			data-testid="sbp-qr-camera-underplate"
 		>

@@ -20,7 +20,7 @@ export const MandibleToothBadge: React.FC<MandibleToothBadgeProps> = ({
 	toothNumber,
 	layers,
 	presetId,
-	radius = 11,
+	radius = 18.5,
 	onClick,
 	className = "",
 }) => {

@@ -17,7 +17,7 @@ interface PaymentPaneCashTenderProps {
 	readonly cashChangeRub: number;
 	readonly isCashShortage: boolean;
 	readonly isSubmitting: boolean;
-	readonly finalizeReceipt: (method: any, sum: number) => Promise<void>;
+	readonly finalizeReceipt: (method: any, sum: number, options?: { readonly idempotencyKey?: string | undefined }) => Promise<unknown>;
 }
 
 export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
@@ -34,8 +34,8 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 			setCashTenderedRub(amountRub);
 			showToast(`Внесено ровно ${amountRub.toLocaleString("ru-RU")} ₽ без сдачи`, "info");
 		}
-		showToast(`Наличные ${amountRub.toLocaleString("ru-RU")} ₽ приняты в кассу`, "success");
-		finalizeReceipt("cash", amountRub);
+		// Честный контур: тост успеха приходит только после подтверждения сервера внутри finalizeReceipt.
+		void finalizeReceipt("cash", amountRub);
 	};
 
 	return (

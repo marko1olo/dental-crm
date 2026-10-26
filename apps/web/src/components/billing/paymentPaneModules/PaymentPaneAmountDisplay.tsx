@@ -49,8 +49,8 @@ export const PaymentPaneAmountDisplay: React.FC<PaymentPaneAmountDisplayProps> =
 	return (
 		<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
 			<div className="text-center sm:text-left w-full sm:w-auto">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">Сумма к оплате</span>
-				<div className={`text-3xl sm:text-3xl font-extrabold font-mono tracking-tight leading-tight mt-0.5 text-center sm:text-left ${isWarranty100 ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--ink,#0f172a)]"}`} data-testid="cashier-display-total-amount">
+				<span className="text-[11px] font-bold text-[var(--muted,#64748b)] block">Сумма к оплате</span>
+				<div className={`text-3xl sm:text-3xl font-extrabold font-mono tracking-tight leading-tight mt-0.5 text-center sm:text-left whitespace-nowrap ${isWarranty100 ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--ink,#0f172a)]"}`} data-testid="cashier-display-total-amount">
 					{amountRub.toLocaleString("ru-RU")} ₽
 				</div>
 				{isWarranty100 && (

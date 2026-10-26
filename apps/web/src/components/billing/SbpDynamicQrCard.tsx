@@ -1,7 +1,9 @@
 /**
  * apps/web/src/components/billing/SbpDynamicQrCard.tsx
  *
- * DENTE Dental CRM — Autonomous Dynamic SBP QR Code Widget & Frictionless Payment Card.
+ * Honest SBP QR payment card. The QR is requested from the clinic server
+ * (real NSPK payload); the status is checked against the payments table;
+ * manual confirmation records the payment through the real payments API.
  * Clean modular facade delegating to ./sbp/ submodules.
  * Strictly <= 120 lines per Mandate 8b.
  */
@@ -13,6 +15,8 @@ import {
 	SbpQrHeader,
 	SbpQrPaidBanner,
 	SbpQrExpiredBanner,
+	SbpQrUnavailableBanner,
+	SbpQrLoadingState,
 	SbpQrUnderplate,
 	SbpQrControls,
 } from "./sbp/index.js";
@@ -20,7 +24,7 @@ import {
 export type { SbpDynamicQrCardProps };
 
 export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = (props) => {
-	const { sumRub } = props;
+	const { sumRub, hideManualConfirm = false } = props;
 	const {
 		status,
 		secondsLeft,
@@ -28,14 +32,16 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = (props) => {
 		isCheckingSbp,
 		sbpCheckMessage,
 		qrData,
+		qrErrorRu,
 		handleManualConfirmation,
 		pollSbpStatus,
 		handleCopyLink,
 		handleRefreshQr,
 	} = useSbpPolling(props);
 
-	// Global Enter hotkey for frictionless cashier manual confirmation
+	// Enter — быстрое подтверждение кассира (когда карта показывает ожидающий QR).
 	useEffect(() => {
+		if (hideManualConfirm) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && status === "awaiting") {
 				const activeTag = document.activeElement?.tagName.toLowerCase();
@@ -47,7 +53,7 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = (props) => {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [status, handleManualConfirmation]);
+	}, [status, handleManualConfirmation, hideManualConfirm]);
 
 	return (
 		<div
@@ -57,18 +63,22 @@ export const SbpDynamicQrCard: React.FC<SbpDynamicQrCardProps> = (props) => {
 			<SbpQrHeader status={status} secondsLeft={secondsLeft} />
 
 			{status === "paid" ? (
-				<SbpQrPaidBanner sumRub={sumRub} paymentId={qrData.paymentId} />
+				<SbpQrPaidBanner sumRub={sumRub} />
 			) : status === "expired" ? (
 				<SbpQrExpiredBanner onRefresh={handleRefreshQr} />
+			) : status === "unavailable" ? (
+				<SbpQrUnavailableBanner messageRu={qrErrorRu || ""} onRefresh={handleRefreshQr} />
+			) : status === "loading" || !qrData ? (
+				<SbpQrLoadingState sumRub={sumRub} />
 			) : (
 				<div className="flex flex-col sm:flex-row items-center gap-4">
 					<SbpQrUnderplate svg={qrData.svg} />
 					<SbpQrControls
 						sumRub={sumRub}
-						crc16Hex={qrData.crc16Hex}
 						sbpCheckMessage={sbpCheckMessage}
 						isCheckingSbp={isCheckingSbp}
 						isCopied={isCopied}
+						hideManualConfirm={hideManualConfirm}
 						onManualConfirm={handleManualConfirmation}
 						onPollStatus={() => pollSbpStatus(true)}
 						onCopyLink={handleCopyLink}

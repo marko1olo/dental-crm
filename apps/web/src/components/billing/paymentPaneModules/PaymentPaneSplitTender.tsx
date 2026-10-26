@@ -21,7 +21,7 @@ interface PaymentPaneSplitTenderProps {
 	readonly clinicLegalName: string;
 	readonly onOpenFullSplitModal?: (() => void) | undefined;
 	readonly isSubmitting: boolean;
-	readonly finalizeReceipt: (method: any, sum: number) => Promise<void>;
+	readonly finalizeReceipt: (method: any, sum: number, options?: { readonly idempotencyKey?: string | undefined }) => Promise<unknown>;
 }
 
 export const PaymentPaneSplitTender: React.FC<PaymentPaneSplitTenderProps> = ({
@@ -34,8 +34,8 @@ export const PaymentPaneSplitTender: React.FC<PaymentPaneSplitTenderProps> = ({
 			setSplitSbpRub(splitSbpRub + splitRemainingRub);
 			showToast(`Остаток ${splitRemainingRub.toLocaleString("ru-RU")} ₽ добавлен в СБП QR`, "info");
 		}
-		showToast(`Сплит-оплата ${amountRub.toLocaleString("ru-RU")} ₽ проведена`, "success");
-		finalizeReceipt("split", amountRub);
+		// Честный контур: состав сплита уходит на сервер, тост успеха — только после подтверждения.
+		void finalizeReceipt("split", amountRub);
 	};
 
 	return (
@@ -66,7 +66,9 @@ export const PaymentPaneSplitTender: React.FC<PaymentPaneSplitTenderProps> = ({
 
 			{splitSbpRub > 0 && (
 				<div className="pt-2">
-					<SbpDynamicQrCard sumRub={splitSbpRub} clinicLegalName={clinicLegalName} ttlSeconds={30} compactMode={true} onPaymentSuccess={() => { showToast(`Часть сплита по СБП (${splitSbpRub.toLocaleString("ru-RU")} ₽) оплачена!`, "success"); }} />
+					{/* Внутри сплита QR — витрина для сканирования: платёж фиксирует общая кнопка
+					    «Завершить сплит-оплату», поэтому локальное подтверждение здесь скрыто. */}
+					<SbpDynamicQrCard sumRub={splitSbpRub} clinicLegalName={clinicLegalName} ttlSeconds={300} compactMode={true} hideManualConfirm={true} />
 				</div>
 			)}
 

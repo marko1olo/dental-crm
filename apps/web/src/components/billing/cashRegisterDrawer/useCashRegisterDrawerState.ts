@@ -7,8 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { type ShiftReceiptEntry, DEFAULT_RECENT_RECEIPTS } from "../cashRegisterDrawerData.js";
+import { type ShiftReceiptEntry } from "../cashRegisterDrawerData.js";
 import { executeCashDeposit, executeCashWithdrawal, executeShiftXReport, executeShiftZReport } from "./cashRegisterOperations.js";
 
 export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: string, invoices?: readonly any[]) {
@@ -16,15 +15,17 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 	const [selectedReceipt, setSelectedReceipt] = useState<ShiftReceiptEntry | null>(null);
 	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(0);
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
-	const [shiftNumber, setShiftNumber] = useState<number>(14);
-	const [openedAt, setOpenedAt] = useState<string>("09:00");
+	// Номер смены и время открытия приходят только из X-отчёта сервера. Пока ответа нет —
+	// показываем прочерк вместо выдуманных «14» и «09:00»: фальшивая телеметрия хуже пустой.
+	const [shiftNumber, setShiftNumber] = useState<number | null>(null);
+	const [openedAt, setOpenedAt] = useState<string>("");
 	const [cashTotalRub, setCashTotalRub] = useState<number>(0);
 	const [cardTotalRub, setCardTotalRub] = useState<number>(0);
 	const [sbpTotalRub, setSbpTotalRub] = useState<number>(0);
 	const [grandTotalRub, setGrandTotalRub] = useState<number>(0);
-	const initialReceipts = (typeof window === "undefined" || isDemoShowcaseMode()) ? DEFAULT_RECENT_RECEIPTS : [];
-	const [receiptsCount, setReceiptsCount] = useState<number>(initialReceipts.length);
-	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(initialReceipts);
+	// Чеки берутся строго из реальных оплаченных счетов и подтверждённых платежей. Никаких демо-заготовок.
+	const [receiptsCount, setReceiptsCount] = useState<number>(0);
+	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>([]);
 
 	const fetchShiftTelemetry = useCallback(async () => {
 		try {
@@ -66,17 +67,25 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 				.slice(0, 10)
 				.map((inv: any) => ({
 					id: String(inv.id),
-					number: String(inv.number || inv.id).padStart(4, "0").slice(-4),
-					time: inv.paidAt ? new Date(inv.paidAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "14:30",
+					number: String(inv.number || inv.id),
+					time: inv.paidAt
+						? new Date(inv.paidAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+						: "--:--",
 					patientName: inv.patientName || "Пациент клиники",
 					totalRub: inv.paidAmountRub || inv.totalAmountRub || 0,
-					method: (inv.paymentMethod === "cash" ? "cash" : inv.paymentMethod === "sbp" ? "sbp" : "card") as ShiftReceiptEntry["method"],
+					method: (inv.paymentMethod === "cash"
+						? "cash"
+						: inv.paymentMethod === "sbp"
+							? "sbp"
+							: inv.paymentMethod === "deposit"
+								? "deposit"
+								: "card") as ShiftReceiptEntry["method"],
 					items: (inv.items || []).map((it: any) => ({
 						name: it.name || it.title || "Стоматологическая услуга",
 						quantity: it.quantity || 1,
 						priceRub: it.priceRub || it.price || 0,
 						amountRub: it.amountRub || it.amount || 0,
-						code804n: it.code804n || "A16.07.002",
+						...(it.code || it.serviceCode ? { code804n: String(it.code || it.serviceCode) } : {}),
 					})),
 				}));
 			if (mapped.length > 0) {
@@ -86,10 +95,10 @@ export function useCashRegisterDrawerState(isOpen: boolean, cashierFullName: str
 		}
 	}, [invoices]);
 
-	const handleCashDeposit = (amt: number) => executeCashDeposit(amt, (nb) => nb !== undefined ? setCashInDrawerRub(nb) : setCashInDrawerRub((p) => p + amt));
-	const handleCashEncashment = () => executeCashWithdrawal(cashInDrawerRub, (nb) => setCashInDrawerRub(nb ?? 0));
-	const handleXReport = () => executeShiftXReport(cashierFullName, (sn, gt) => { if (sn) setShiftNumber(sn); if (gt !== undefined) setGrandTotalRub(gt); });
-	const handleZReport = () => executeShiftZReport(shiftNumber, () => setIsShiftOpen(false));
+	const handleCashDeposit = (amt: number) => executeCashDeposit(amt, (nb) => { if (nb !== undefined) setCashInDrawerRub(nb); });
+	const handleCashEncashment = () => executeCashWithdrawal(cashInDrawerRub, (nb) => { if (nb !== undefined) setCashInDrawerRub(nb); });
+	const handleXReport = () => executeShiftXReport(cashierFullName, (sn, gt) => { if (sn !== undefined) setShiftNumber(sn); if (gt !== undefined) setGrandTotalRub(gt); });
+	const handleZReport = () => executeShiftZReport(() => { setIsShiftOpen(false); void fetchShiftTelemetry(); });
 
 	return {
 		activeTab, setActiveTab, selectedReceipt, setSelectedReceipt, cashInDrawerRub, setCashInDrawerRub,

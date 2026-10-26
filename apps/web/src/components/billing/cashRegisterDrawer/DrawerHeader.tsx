@@ -9,7 +9,7 @@ import React from "react";
 import { Wallet, CheckCircle2, X } from "lucide-react";
 
 interface DrawerHeaderProps {
-	readonly shiftNumber: number;
+	readonly shiftNumber: number | null;
 	readonly isShiftOpen: boolean;
 	readonly cashierFullName: string;
 	readonly clinicLegalName: string;
@@ -40,7 +40,7 @@ export const DrawerHeader: React.FC<DrawerHeaderProps> = ({
 							<span>Касса и чеки</span>
 							<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
 								<CheckCircle2 size={12} />
-								<span>{`Смена № ${shiftNumber} ${isShiftOpen ? "открыта" : "закрыта"}`}</span>
+								<span>{shiftNumber !== null ? `Смена № ${shiftNumber} ${isShiftOpen ? "открыта" : "закрыта"}` : isShiftOpen ? "Смена открыта" : "Смена закрыта"}</span>
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate max-w-[200px] sm:max-w-none">

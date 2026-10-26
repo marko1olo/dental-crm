@@ -90,21 +90,21 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 		);
 
 		assert.ok(html.includes('data-testid="split-payment-modal"'));
-		assert.ok(html.includes("Комбинированная сплит-оплата"));
-		assert.ok(html.includes('data-testid="split-balance-status-card"'));
+		assert.ok(html.includes('data-testid="quick-presets-section"'), "Quick checkout presets visible");
+		assert.ok(html.includes('data-testid="split-payment-section"'), "Tender split section visible");
 
-		// Inputs for tenders
-		assert.ok(html.includes('data-testid="input-split-card"'));
-		assert.ok(html.includes('data-testid="input-split-cash"'));
-		assert.ok(html.includes('data-testid="input-split-sbp"'));
-		assert.ok(html.includes('data-testid="input-split-deposit"'));
-		assert.ok(html.includes('data-testid="input-split-family"'));
+		// Inputs for tenders (fast checkout contract)
+		assert.ok(html.includes('data-testid="split-input-card"'));
+		assert.ok(html.includes('data-testid="split-input-cash"'));
+		assert.ok(html.includes('data-testid="split-input-sbp"'));
+		assert.ok(html.includes('data-testid="split-input-deposit"'));
 
 		// Quick presets
-		assert.ok(html.includes('data-testid="btn-preset-50-50"'));
-		assert.ok(html.includes('data-testid="btn-preset-deposit-rest-card"'));
-		assert.ok(html.includes('data-testid="btn-preset-all-card"'));
-		assert.ok(html.includes('data-testid="btn-preset-all-cash"'));
+		assert.ok(html.includes('data-testid="btn-checkout-split-50-50"'));
+		assert.ok(html.includes('data-testid="btn-checkout-100-card"'));
+		assert.ok(html.includes('data-testid="btn-checkout-100-cash"'));
+		assert.ok(html.includes('data-testid="btn-checkout-100-sbp"'));
+		assert.ok(html.includes('data-testid="execute-fast-checkout-btn"'), "Single primary checkout CTA");
 	});
 
 	it("calculates exact kopeck split balances with zero floating point drift", () => {
@@ -142,9 +142,9 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 			})
 		);
 
-		// Modal renders cleanly
+		// Modal renders cleanly; the SBP tender input is present
 		assert.ok(html.includes('data-testid="split-payment-modal"'));
-		assert.ok(html.includes('data-testid="input-split-sbp"'));
+		assert.ok(html.includes('data-testid="split-input-sbp"'));
 	});
 
 	it("renders dynamic SBP QR SVG when SBP method is selected in CashRegisterCheckoutModal", () => {

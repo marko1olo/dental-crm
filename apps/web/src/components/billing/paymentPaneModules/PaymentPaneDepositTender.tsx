@@ -15,7 +15,7 @@ interface PaymentPaneDepositTenderProps {
 	readonly patientFamilyBalanceRub: number;
 	readonly totalAvailableDepositRub: number;
 	readonly isSubmitting: boolean;
-	readonly finalizeReceipt: (method: any, sum: number) => Promise<void>;
+	readonly finalizeReceipt: (method: any, sum: number, options?: { readonly idempotencyKey?: string | undefined }) => Promise<unknown>;
 	readonly setSplitDepositRub: (val: number) => void;
 	readonly setSplitSbpRub: (val: number) => void;
 	readonly setSplitCashRub: (val: number) => void;
@@ -37,8 +37,8 @@ export const PaymentPaneDepositTender: React.FC<PaymentPaneDepositTenderProps> =
 	setActiveMethod,
 }) => {
 	const handleDeductFullDeposit = () => {
-		showToast(`Списано с депозита: ${amountRub.toLocaleString("ru-RU")} ₽`, "success");
-		finalizeReceipt("card", amountRub);
+		// Честный контур: списание депозита фиксирует сервер (depositAmountRub), тост — после подтверждения.
+		void finalizeReceipt("deposit", amountRub);
 	};
 
 	const handleSplitWithDeposit = () => {

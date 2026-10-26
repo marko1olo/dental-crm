@@ -22,17 +22,17 @@ export const PaymentPaneInvoiceHeader: React.FC<PaymentPaneInvoiceHeaderProps> =
 	if (!currentInvoice) return null;
 
 	return (
-		<div className="p-3 rounded-xl border border-teal-500/25 bg-teal-500/5 flex items-center justify-between gap-2.5">
+		<div className="p-3 rounded-xl border border-[var(--teal,#0d9488)]/25 bg-[var(--teal-soft,#ccfbf1)]/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 max-w-full overflow-hidden">
 			<div className="flex items-center gap-2.5 min-w-0">
-				<div className="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+				<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)] text-white flex items-center justify-center shrink-0">
 					<FileText size={16} />
 				</div>
 				<div className="min-w-0">
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate">
-							{`Счёт ${currentInvoice.number || currentInvoice.id.slice(0, 8)}`}
+							{`Счёт ${currentInvoice.number || "без номера"}`}
 						</span>
-						<span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-teal-500/15 text-teal-800 dark:text-teal-200">
+						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] shrink-0">
 							{currentInvoice.status === "paid" ? "Оплачен" : "К оплате"}
 						</span>
 					</div>
@@ -43,19 +43,19 @@ export const PaymentPaneInvoiceHeader: React.FC<PaymentPaneInvoiceHeaderProps> =
 			</div>
 
 			{invoices && invoices.length > 1 && onSelectInvoice && (
-				<div className="shrink-0">
+				<div className="w-full sm:w-auto sm:shrink-0 min-w-0">
 					<select
 						value={currentInvoice.id}
 						onChange={(e) => {
 							const target = invoices.find((inv) => inv.id === e.target.value);
 							if (target) onSelectInvoice(target);
 						}}
-						className="h-8 text-[11px] font-bold px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] cursor-pointer"
+						className="h-9 w-full sm:w-auto sm:max-w-[260px] text-[11px] font-bold px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] cursor-pointer truncate min-w-0"
 						aria-label="Выбрать другой счёт"
 					>
 						{invoices.map((inv) => (
 							<option key={inv.id} value={inv.id}>
-								{`${inv.number || inv.id.slice(0, 6)} • ${inv.patientName || "Пациент"} (${(inv.totalAmountRub || inv.amountRub || 0).toLocaleString("ru-RU")} ₽)`}
+								{`${inv.number || "без номера"} • ${inv.patientName || "Пациент"} (${(inv.totalAmountRub || inv.amountRub || 0).toLocaleString("ru-RU")} ₽)`}
 							</option>
 						))}
 					</select>

@@ -29,7 +29,9 @@ export function renderStandaloneLaunchers(
 		(window.location.search.includes("odontogram-gate0") ||
 			window.location.hash.includes("odontogram-gate0") ||
 			window.location.search.includes("odontogram-32") ||
-			window.location.hash.includes("odontogram-32"))
+			window.location.hash.includes("odontogram-32") ||
+			window.location.search.includes("odontogram-mandible") ||
+			window.location.hash.includes("odontogram-mandible"))
 	) {
 		return <Tooth46InspectionStand />;
 	}

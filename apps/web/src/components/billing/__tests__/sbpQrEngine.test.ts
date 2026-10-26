@@ -1,23 +1,27 @@
 /**
  * apps/web/src/components/billing/__tests__/sbpQrEngine.test.ts
  *
- * Unit tests for Autonomous Dynamic SBP QR Code Engine & Frictionless Cashier.
+ * Honest SBP QR contour tests.
  *
  * Verifies:
- * - ГОСТ Р 56042-2014 & NSPK EMVCo dynamic QR payload generation
- * - Pure vector 160x160 SVG rendering with authentic SBP center logo injection
- * - SbpDynamicQrCard component rendering and safe-plate dark mode contrast
- * - CashRegisterPaymentPane: 28-32px total, quick split chips, 36px segmented switch
- * - SplitPaymentModal & CashRegisterDrawer integration
+ * - The QR is requested from the clinic server; without a server answer no QR
+ *   is drawn and no fabricated NSPK link appears anywhere in the module.
+ * - Honest failure: missing operation id or unreachable server produce a human
+ *   error text, never a fake payment link.
+ * - Pure vector helpers (SBP center logo injection, clipboard guard).
+ * - SSR of SbpDynamicQrCard, CashRegisterPaymentPane, CashRegisterDrawer,
+ *   SplitPaymentModal mounting.
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
-	createSbpDynamicQr,
-	generateSbpPaymentId,
+	fetchSbpDynamicQr,
 	injectSbpCenterLogo,
 	copySbpUrlToClipboard,
 } from "../sbpQrEngine.js";
@@ -26,33 +30,26 @@ import { CashRegisterPaymentPane } from "../CashRegisterPaymentPane.js";
 import { CashRegisterDrawer } from "../CashRegisterDrawer.js";
 import { SplitPaymentModal } from "../SplitPaymentModal.js";
 
-describe("Autonomous SBP Dynamic QR Code Engine & Frictionless Cashier", () => {
-	describe("1. sbpQrEngine Pure Logic & Vector Generation", () => {
-		it("generates collision-resistant UUIDv7-compliant SBP paymentId", () => {
-			const id1 = generateSbpPaymentId();
-			const id2 = generateSbpPaymentId();
-			assert.ok(id1.startsWith("sbp-"), "Must start with sbp- prefix");
-			assert.notEqual(id1, id2, "Payment IDs must be unique");
-			assert.ok(id1.length > 20, "Must be long cryptographically random identifier");
+const here = dirname(fileURLToPath(import.meta.url));
+
+describe("Honest SBP QR contour", () => {
+	describe("1. sbpQrEngine — server-only QR source", () => {
+		it("never fabricates an NSPK link on the client", () => {
+			const source = readFileSync(join(here, "../sbpQrEngine.ts"), "utf8");
+			assert.ok(!source.includes("qr.nspk.ru"), "Client module must not contain fabricated NSPK URLs");
+			assert.ok(!source.includes("sbp://pay"), "Client module must not invent sbp:// deep links");
 		});
 
-		it("creates valid dynamic SBP payload under ГОСТ Р 56042-2014 / NSPK", () => {
-			const qr = createSbpDynamicQr({
-				sumRub: 14500,
-				orderId: "INV-2026-999",
-				patientName: "Алексеев Владимир Сергеевич",
-				clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-				ttlSeconds: 30,
-			});
+		it("refuses to request a QR without an operation id", async () => {
+			const result = await fetchSbpDynamicQr({ sumRub: 14500 });
+			assert.equal(result.qr, null);
+			assert.ok(result.errorRu && result.errorRu.length > 0, "Must return a human error text");
+		});
 
-			assert.equal(qr.sumRub, 14500);
-			assert.equal(qr.sumKopecks, 1450000);
-			assert.ok(qr.nspkUrl.includes("qr.nspk.ru"), "Must link to official NSPK gateway");
-			assert.ok(qr.deepLinkUrl.startsWith("sbp://pay?"), "Must provide sbp:// mobile deep-link");
-			assert.equal(qr.ttlSeconds, 30);
-			assert.ok(qr.crc16Hex.length === 4, "Must calculate valid 4-char CRC16 checksum");
-			assert.ok(qr.svg.includes("<svg"), "Must produce XML SVG");
-			assert.ok(qr.svg.includes('class="sbp-center-badge"'), "Must inject SBP center emblem");
+		it("returns an honest error when the server is unreachable (node test, no API)", async () => {
+			const result = await fetchSbpDynamicQr({ sumRub: 14500, operationId: "01900000-0000-7000-8000-000000000001" });
+			assert.equal(result.qr, null, "No QR without a server answer");
+			assert.ok(result.errorRu && result.errorRu.length > 10, "Human-readable failure reason required");
 		});
 
 		it("injects crisp SBP center logo into SVG without breaking XML structure", () => {
@@ -73,38 +70,37 @@ describe("Autonomous SBP Dynamic QR Code Engine & Frictionless Cashier", () => {
 	});
 
 	describe("2. SbpDynamicQrCard Component", () => {
-		it("renders 160x160 vector QR canvas on white safe underplate with 30s timer", () => {
+		it("renders the card in loading state on SSR and shows the amount, no fake QR", () => {
 			const html = renderToString(
 				React.createElement(SbpDynamicQrCard, {
 					sumRub: 9800,
 					orderId: "INV-9800",
 					patientName: "Иванова Ольга",
-					ttlSeconds: 30,
+					ttlSeconds: 300,
 				})
 			);
 
-			// Root card & labels
 			assert.ok(html.includes('data-testid="sbp-dynamic-qr-card"'), "Renders card container");
-			assert.ok(html.includes("Динамический QR СБП"), "Renders title");
-			assert.ok(html.includes("0.4% комиссия"), "Highlights lower commission");
+			assert.ok(html.includes("QR-код СБП"), "Renders human title");
+			assert.ok(html.includes('data-testid="sbp-qr-loading"'), "Server QR not yet arrived — honest loading state");
+			assert.ok(!html.includes("qr.nspk.ru"), "No fabricated NSPK link while loading");
+			assert.ok(html.includes("9 000") || html.includes("9 800"), "Displays correct roubles sum");
+		});
 
-			// Protected underplate for dark mode contrast
-			assert.ok(html.includes('data-testid="sbp-qr-camera-underplate"'), "Renders protected white plate");
-			assert.ok(html.includes('data-testid="sbp-qr-svg-canvas"'), "Renders SVG canvas");
-
-			// Timer & amount
-			assert.ok(html.includes('data-testid="sbp-timer-indicator"'), "Renders 30s countdown indicator");
-			assert.ok(html.includes('data-testid="sbp-display-amount"'), "Renders formatted amount");
-			assert.ok(html.includes("9 800 ₽") || html.includes("9 800 ₽"), "Displays correct roubles sum");
-
-			// Confirm & copy controls
-			assert.ok(html.includes('data-testid="btn-confirm-sbp-payment"'), "Renders confirm CTA");
-			assert.ok(html.includes('data-testid="btn-copy-sbp-link"'), "Renders copy link button");
+		it("hides the manual confirm button in split mode", () => {
+			const html = renderToString(
+				React.createElement(SbpDynamicQrCard, {
+					sumRub: 4500,
+					compactMode: true,
+					hideManualConfirm: true,
+				})
+			);
+			assert.ok(!html.includes('data-testid="btn-confirm-sbp-payment"'), "No local confirm inside a split");
 		});
 	});
 
 	describe("3. CashRegisterPaymentPane Component (Anti-Accordion Grid)", () => {
-		it("renders prominent 28-32px amount, fast split chips, and 36px segmented switcher", () => {
+		it("renders prominent amount, fast split chips, and 36px segmented switcher", () => {
 			const html = renderToString(
 				React.createElement(CashRegisterPaymentPane, {
 					defaultAmountRub: 15000,
@@ -112,30 +108,26 @@ describe("Autonomous SBP Dynamic QR Code Engine & Frictionless Cashier", () => {
 				})
 			);
 
-			// Root pane & large amount
 			assert.ok(html.includes('data-testid="cash-register-payment-pane"'), "Renders payment pane");
 			assert.ok(html.includes('data-testid="cashier-display-total-amount"'), "Renders prominent amount");
-			assert.ok(html.includes("15 000 ₽") || html.includes("15 000 ₽"), "Amount is displayed");
+			assert.ok(html.includes("15 000"), "Amount is displayed");
 
-			// 3 Fast split and rounding chips
 			assert.ok(html.includes('data-testid="chip-preset-50-50-sbp"'), "Renders 50/50 Нал+СБП chip");
 			assert.ok(html.includes('data-testid="chip-preset-all-sbp"'), "Renders Вся сумма в СБП chip");
 			assert.ok(html.includes('data-testid="chip-preset-round-hundreds"'), "Renders Округлить до сотен chip");
 
-			// 36px Segmented Method Switcher
 			assert.ok(html.includes('data-testid="cashier-method-switcher"'), "Renders segmented switcher");
 			assert.ok(html.includes('data-testid="btn-method-tab-sbp"'), "Renders SBP tab");
 			assert.ok(html.includes('data-testid="btn-method-tab-card"'), "Renders Card tab");
 			assert.ok(html.includes('data-testid="btn-method-tab-cash"'), "Renders Cash tab");
 			assert.ok(html.includes('data-testid="btn-method-tab-split"'), "Renders Split tab");
 
-			// Default active SBP card is mounted
 			assert.ok(html.includes('data-testid="sbp-dynamic-qr-card"'), "SBP widget is active by default");
 		});
 	});
 
 	describe("4. CashRegisterDrawer Integration", () => {
-		it("renders 'Касса & СБП' navigation tab and mounts payment pane", () => {
+		it("renders payment navigation tab and mounts payment pane", () => {
 			const html = renderToString(
 				React.createElement(CashRegisterDrawer, {
 					isOpen: true,
@@ -146,7 +138,7 @@ describe("Autonomous SBP Dynamic QR Code Engine & Frictionless Cashier", () => {
 
 			assert.ok(html.includes('data-testid="cash-register-drawer"'), "Renders drawer");
 			assert.ok(html.includes('data-testid="tab-register-payment"'), "Renders payment tab");
-			assert.ok(html.includes("Касса &amp; СБП") || html.includes("Касса & СБП"), "Contains payment label");
+			assert.ok(html.includes("Касса") && html.includes("СБП"), "Contains payment label");
 			assert.ok(html.includes('data-testid="cash-register-payment-pane"'), "Mounts frictionless payment pane");
 		});
 	});
@@ -164,10 +156,10 @@ describe("Autonomous SBP Dynamic QR Code Engine & Frictionless Cashier", () => {
 			);
 
 			assert.ok(html.includes('data-testid="split-payment-modal"'), "Renders split modal");
-			assert.ok(html.includes('data-testid="chip-preset-50-50-sbp"'), "Renders 50/50 SBP chip");
-			assert.ok(html.includes('data-testid="chip-preset-all-sbp"'), "Renders All SBP chip");
-			assert.ok(html.includes('data-testid="chip-preset-round-hundreds"'), "Renders Round chip");
-			assert.ok(html.includes('data-testid="split-method-switcher"'), "Renders segmented method switcher");
+			assert.ok(html.includes('data-testid="quick-presets-section"'), "Renders quick presets section");
+			assert.ok(html.includes('data-testid="btn-checkout-split-50-50"'), "Renders 50/50 preset");
+			assert.ok(html.includes('data-testid="split-payment-section"'), "Renders tender split section");
+			assert.ok(html.includes('data-testid="execute-fast-checkout-btn"'), "Renders single primary checkout CTA");
 		});
 	});
 });

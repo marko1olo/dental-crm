@@ -85,7 +85,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 						<>
 							<div hidden={state.activeTab !== "payment"} style={{ display: state.activeTab === "payment" ? undefined : "none" }}>
 								<CashRegisterPaymentPane
-									defaultAmountRub={selectedInvoice?.totalAmountRub ?? selectedInvoice?.amountRub ?? (invoices && invoices[0]?.totalAmountRub ? invoices[0].totalAmountRub : 8500)}
+									defaultAmountRub={selectedInvoice?.totalAmountRub ?? selectedInvoice?.amountRub ?? 0}
 									cashierFullName={cashierFullName} clinicLegalName={clinicLegalName} activeInvoice={selectedInvoice} invoices={invoices} onSelectInvoice={setSelectedInvoice} initialMethod={initialMethod}
 									patientDepositRub={selectedInvoice?.patientDepositRub ?? 0} patientFamilyBalanceRub={selectedInvoice?.patientFamilyBalanceRub ?? 0}
 									onPaymentCompleted={handleDrawerPayment} onOpenFullSplitModal={onOpenPaymentModal}

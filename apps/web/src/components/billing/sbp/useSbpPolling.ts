@@ -1,62 +1,99 @@
 /**
  * apps/web/src/components/billing/sbp/useSbpPolling.ts
- * Hook managing SBP QR creation, countdown timer, network polling, and manual confirmation.
+ *
+ * SBP QR lifecycle: request the QR from the server, count down its TTL, poll the
+ * server for the payment status, and let the cashier confirm manually.
+ *
+ * Honest-contour rules:
+ * - The QR comes from `POST /api/sbp/generate-qr` (real NSPK payload). No QR is
+ *   drawn while the server has not answered — an invented link cannot be paid.
+ * - Status is checked against `GET /api/sbp/status/:operationId`, which looks up
+ *   the real payments table by `clientMutationId = sbp:<operationId>`.
+ * - Manual confirmation does NOT invent a paid state by itself: it reports the
+ *   operation id upward so the caller records the payment through the real
+ *   payments API with `clientMutationId = sbp:<operationId>`. After that the
+ *   status route finds the payment — the loop closes on the database.
+ *
  * Strictly <= 120 lines per Mandate 8b.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { playTactileEarcon } from "../../../lib/chairsideErgonomics.js";
 import { showToast } from "../../GlobalToast.js";
-import { copySbpUrlToClipboard, createSbpDynamicQr, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
+import { copySbpUrlToClipboard, fetchSbpDynamicQr, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
 import type { SbpDynamicQrCardProps } from "./sbpTypes.js";
 
 export function useSbpPolling(props: SbpDynamicQrCardProps) {
-	const { sumRub, orderId, invoiceId, patientName = "Пациент клиники", clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", ttlSeconds = 30, onPaymentSuccess } = props;
-	const [status, setStatus] = useState<"awaiting" | "paid" | "expired">("awaiting");
+	const { sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds = 300, onPaymentSuccess, hideManualConfirm = false } = props;
+	const [status, setStatus] = useState<"loading" | "awaiting" | "paid" | "expired" | "unavailable">("loading");
 	const [secondsLeft, setSecondsLeft] = useState<number>(ttlSeconds);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 	const [qrIteration, setQrIteration] = useState<number>(0);
 	const [isCheckingSbp, setIsCheckingSbp] = useState<boolean>(false);
 	const [sbpCheckMessage, setSbpCheckMessage] = useState<string | null>(null);
+	const [qrData, setQrData] = useState<SbpDynamicQrPayloadData | null>(null);
+	const [qrErrorRu, setQrErrorRu] = useState<string | null>(null);
+	// Идемпотентная операция живёт, пока QR на экране; «Обновить» создаёт новую операцию.
+	const operationIdRef = useRef<string>(generateUuidV7());
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: qrIteration forces QR re-generation on manual refresh
-	const qrData: SbpDynamicQrPayloadData = useMemo(() => {
-		return createSbpDynamicQr({ sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds });
-	}, [sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds, qrIteration]);
+	const loadQr = useCallback(async () => {
+		setStatus("loading");
+		setQrErrorRu(null);
+		const result = await fetchSbpDynamicQr({
+			sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds, operationId: operationIdRef.current,
+		});
+		if (result.qr) {
+			setQrData(result.qr);
+			setSecondsLeft(result.qr.ttlSeconds);
+			setStatus("awaiting");
+		} else {
+			setQrData(null);
+			setQrErrorRu(result.errorRu);
+			setStatus("unavailable");
+		}
+	}, [sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds]);
+
+	useEffect(() => {
+		void loadQr();
+	}, [loadQr, qrIteration]);
 
 	const handleConfirmPayment = useCallback(() => {
-		if (status === "paid") return;
+		if (!qrData || status === "paid") return;
 		setStatus("paid");
 		playTactileEarcon("pay");
-		showToast(`Оплата ${sumRub.toLocaleString("ru-RU")} ₽ по СБП подтверждена!`, "success");
-		onPaymentSuccess?.({ paymentId: qrData.paymentId, sumRub, method: "sbp", timestampIso: new Date().toISOString() });
-	}, [status, sumRub, qrData.paymentId, onPaymentSuccess]);
+		showToast(`Оплата ${sumRub.toLocaleString("ru-RU")} ₽ по СБП проведена`, "success");
+		onPaymentSuccess?.({
+			operationId: qrData.operationId,
+			paymentId: qrData.operationId,
+			sumRub,
+			method: "sbp",
+			timestampIso: new Date().toISOString(),
+		});
+	}, [qrData, status, sumRub, onPaymentSuccess]);
 
 	const pollSbpStatus = useCallback(async (manual = false) => {
-		if (status === "paid") return;
+		if (!qrData || status === "paid") return;
+		if (manual) setIsCheckingSbp(true);
 		try {
-			if (manual) setIsCheckingSbp(true);
-			const effectiveId = qrData.paymentId || orderId || invoiceId || "";
-			const sumKop = Math.round(sumRub * 100);
-			let res = await fetch(`/api/billing/sbp/status/${encodeURIComponent(effectiveId)}`, { credentials: "same-origin" });
-			if (!res.ok) {
-				const fallbackUrl = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(effectiveId)}&qrId=${encodeURIComponent(qrData.paymentId)}&sumKop=${sumKop}`;
-				res = await fetch(fallbackUrl, { credentials: "same-origin" });
-			}
+			const res = await fetch(`/api/sbp/status/${encodeURIComponent(qrData.operationId)}`, { credentials: "same-origin" });
 			if (res.ok) {
-				const json = await res.json();
-				if (json.isPaid || json.status === "paid" || json.paymentStatus === "CONFIRMED" || json.paymentStatus === "ACCEPTED") {
+				const json = (await res.json().catch(() => null)) as { found?: boolean; status?: string } | null;
+				if (json?.found && json.status && json.status !== "refunded" && json.status !== "voided") {
 					handleConfirmPayment();
 					return;
 				}
-				if (manual) { setSbpCheckMessage("Ожидание зачисления от банка..."); setTimeout(() => setSbpCheckMessage(null), 3500); }
+				if (manual) {
+					setSbpCheckMessage("Зачисление от банка пока не подтверждено");
+					setTimeout(() => setSbpCheckMessage(null), 3500);
+				}
 			}
 		} catch {
-			// Fail-soft offline fallback
+			if (manual) setSbpCheckMessage("Нет связи с сервером — повторите проверку");
 		} finally {
 			if (manual) setIsCheckingSbp(false);
 		}
-	}, [status, qrData.paymentId, orderId, invoiceId, sumRub, handleConfirmPayment]);
+	}, [qrData, status, handleConfirmPayment]);
 
 	useEffect(() => {
 		if (status !== "awaiting") return;
@@ -74,29 +111,35 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 
 	useEffect(() => {
 		if (status !== "awaiting") return;
-		const pollInterval = setInterval(() => pollSbpStatus(false), 2500);
+		const pollInterval = setInterval(() => { void pollSbpStatus(false); }, 3000);
 		return () => clearInterval(pollInterval);
 	}, [status, pollSbpStatus]);
 
-	const handleManualConfirmation = useCallback(async () => {
-		setIsCheckingSbp(true);
+	const handleManualConfirmation = useCallback(() => {
+		if (hideManualConfirm) return;
+		void pollSbpStatus(true);
+		// Ручное подтверждение кассира: платёж записывается вызывающей стороной
+		// с clientMutationId = sbp:<operationId>, после чего статус виден серверу.
 		handleConfirmPayment();
-		setIsCheckingSbp(false);
-	}, [handleConfirmPayment]);
+	}, [hideManualConfirm, pollSbpStatus, handleConfirmPayment]);
 
 	const handleCopyLink = async () => {
+		if (!qrData) return;
 		const ok = await copySbpUrlToClipboard(qrData.nspkUrl);
-		if (ok) { setIsCopied(true); setTimeout(() => setIsCopied(false), 2500); showToast("Ссылка СБП скопирована в буфер", "info"); }
+		if (ok) {
+			setIsCopied(true);
+			setTimeout(() => setIsCopied(false), 2500);
+			showToast("Ссылка СБП скопирована в буфер", "info");
+		}
 	};
 
 	const handleRefreshQr = () => {
+		operationIdRef.current = generateUuidV7();
 		setQrIteration((prev) => prev + 1);
-		setSecondsLeft(ttlSeconds);
-		setStatus("awaiting");
 	};
 
 	return {
-		status, secondsLeft, isCopied, isCheckingSbp, sbpCheckMessage, qrData,
+		status, secondsLeft, isCopied, isCheckingSbp, sbpCheckMessage, qrData, qrErrorRu,
 		handleConfirmPayment, pollSbpStatus, handleManualConfirmation, handleCopyLink, handleRefreshQr,
 	};
 }

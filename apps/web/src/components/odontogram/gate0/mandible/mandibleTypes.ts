@@ -23,6 +23,7 @@ export interface ToothMandibleFullArchProps {
 	readonly isDark?: boolean | undefined;
 	readonly zoom?: number | undefined;
 	readonly badgeRadius?: number | undefined;
+	readonly badgePlacement?: "root_apex" | "occlusal" | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -33,5 +34,6 @@ export interface MandibleToothCellProps {
 	readonly isDark: boolean;
 	readonly zoom: number;
 	readonly badgeRadius: number;
+	readonly badgePlacement?: "root_apex" | "occlusal" | undefined;
 	readonly onClick: (toothNumber: number) => void;
 }
