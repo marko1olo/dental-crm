@@ -39,8 +39,12 @@ export interface PediatricProtocolDefinition {
 	readonly subtitleRu: string;
 	readonly diagnosisIcd10: string;
 	readonly diagnosisNameRu: string;
-	readonly serviceCode804n: string;
-	readonly serviceName804n: string;
+	readonly serviceCode: string;
+	readonly serviceName: string;
+	/** @deprecated Использовать serviceCode (Мандат 8x/8ap: доменный язык без советских приказов) */
+	readonly serviceCode804n?: string | undefined;
+	/** @deprecated Использовать serviceName (Мандат 8x/8ap: доменный язык без советских приказов) */
+	readonly serviceName804n?: string | undefined;
 	readonly defaultSurfaces: readonly string[];
 	readonly allowsSurfaces: boolean;
 	readonly materials: readonly string[];
@@ -102,7 +106,7 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly doctorName?: string | undefined;
 	/** Название клиники */
 	readonly clinicName?: string | undefined;
-	/** Данные законного представителя (ФИО) для автоподстановки в 043/у */
+	/** Данные законного представителя (ФИО) для автоподстановки в медицинскую карту приёма */
 	readonly representativeFullName?: string | undefined;
 	/** Телефон законного представителя */
 	readonly representativePhone?: string | undefined;

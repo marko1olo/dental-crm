@@ -21,10 +21,7 @@ export function usePediatricWidgetActions(
 		const item = FRANKL_EXPRESS_ITEMS.find((f) => f.rating === rating);
 		if (item) showToast(`Шкала Франкла: ${item.titleRu}`, "info", 2000);
 	}, [onFranklChange, state]);
-
-	const handleCycleFrankl = useCallback(() => {
-		handleSelectFrankl(state.franklRating >= 4 ? 1 : ((state.franklRating + 1) as FranklRating));
-	}, [handleSelectFrankl, state.franklRating]);
+	const handleCycleFrankl = useCallback(() => handleSelectFrankl(state.franklRating >= 4 ? 1 : ((state.franklRating + 1) as FranklRating)), [handleSelectFrankl, state.franklRating]);
 
 	const toggleSurface = useCallback((surf: string) => {
 		state.setSelectedSurfaces((prev) => {
@@ -80,23 +77,27 @@ export function usePediatricWidgetActions(
 	const handleApplyPhysiologicalNorm = useCallback(() => {
 		state.setFranklRating(4);
 		onFranklChange?.(4);
-		state.setOrthoFrenulumNormal(true);
-		state.setOrthoNasalBreathing(true);
-		state.setOrthoNoHarmfulHabits(true);
+		state.setOrthoFrenulumNormal(true); state.setOrthoNasalBreathing(true); state.setOrthoNoHarmfulHabits(true);
 		const fullText = buildPhysiologicalNormClinicalNoteText();
 		onApplyProtocolText?.(fullText);
 		updateVisitNoteStore(fullText);
-		state.setToothFindings({});
-		state.setResorptionStages({});
+		state.setToothFindings({}); state.setResorptionStages({});
 		showToast("Физиологическая норма временного прикуса внесена в карту", "success", 3500);
 	}, [onApplyProtocolText, onFranklChange, state]);
+
+	const handleApplyPhysiologicalResorptionNorm = useCallback(() => {
+		state.setDentitionMode("mixed");
+		state.setResorptionStages((prev) => ({ ...prev, 71: 75, 72: 50, 81: 75, 82: 50, 51: 50, 61: 50 }));
+		const resorptionNote = "Смена прикуса по возрасту. Физиологическая резорбция корней (K08.8): 71, 81 (75%), 51, 61, 72, 82 (50%). Зачатки постоянных зубов без патологии.";
+		onApplyProtocolText?.(resorptionNote);
+		updateVisitNoteStore(resorptionNote);
+		showToast("Физиологическая резорбция корней (K08.8) внесена в карту", "success", 3000);
+	}, [onApplyProtocolText, state]);
 
 	const handleApplyAdaptationVisit = useCallback(() => {
 		state.setFranklRating(3);
 		onFranklChange?.(3);
-		state.setOrthoFrenulumNormal(true);
-		state.setOrthoNasalBreathing(true);
-		state.setOrthoNoHarmfulHabits(true);
+		state.setOrthoFrenulumNormal(true); state.setOrthoNasalBreathing(true); state.setOrthoNoHarmfulHabits(true);
 		const fullText = "Адаптационный визит (Tell-Show-Do, игра, подарок, без сверления)";
 		onApplyProtocolText?.(fullText);
 		updateVisitNoteStore(fullText);
@@ -113,7 +114,7 @@ export function usePediatricWidgetActions(
 	return {
 		handleSelectFrankl, handleCycleFrankl, toggleSurface, handleApplySurfacePreset,
 		handleSelectPreset, handleSignConsent323Fz, handleInsertToClinicalNote,
-		handleAddServicesToInvoice, handleApplyPhysiologicalNorm, handleApplyAdaptationVisit,
-		handleApplyMixedDentitionPreset,
+		handleAddServicesToInvoice, handleApplyPhysiologicalNorm, handleApplyPhysiologicalResorptionNorm,
+		handleApplyAdaptationVisit, handleApplyMixedDentitionPreset,
 	};
 }

@@ -62,7 +62,7 @@ export function buildPhysiologicalNormClinicalNoteText(): string {
 		"",
 		"3. Объект осмотра: Временный прикус (зубы 51..85)",
 		`   Диагноз (МКБ-10): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisIcd10} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisNameRu}`,
-		`   Услуга: ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
+		`   Услуга: ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode || PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName || PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
 		"",
 		`4. Осмотр и зубная формула (физиологическая норма):\n   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.statusLocalisRu}`,
 		"",

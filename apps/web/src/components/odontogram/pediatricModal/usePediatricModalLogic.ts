@@ -106,7 +106,7 @@ export function usePediatricModalLogic({
 	const [selectedPrimaryTooth, setSelectedPrimaryTooth] = useState<number>(51);
 	const [selectedResorptionStage, setSelectedResorptionStage] = useState<ResorptionStagePercent>(0);
 
-	const handleInsertCariogramTo043 = () => {
+	const handleInsertCariogramToClinicalNote = () => {
 		const teethStatesMap = (teethData ?? []).reduce(
 			(acc, t) => ({ ...acc, [t.toothNumber]: t.state }),
 			{} as Record<number, string>,
@@ -138,6 +138,8 @@ export function usePediatricModalLogic({
 			"success",
 		);
 	};
+
+	const handleInsertCariogramTo043 = handleInsertCariogramToClinicalNote;
 
 	const handleApplyPrimaryNorm = () => {
 		const norm = calculatePediatricPhysiologicalNorm("primary");
@@ -385,6 +387,7 @@ export function usePediatricModalLogic({
 		setSelectedPrimaryTooth,
 		selectedResorptionStage,
 		setSelectedResorptionStage,
+		handleInsertCariogramToClinicalNote,
 		handleInsertCariogramTo043,
 		handleApplyPrimaryNorm,
 		handleApplyFirstMolarNorm,

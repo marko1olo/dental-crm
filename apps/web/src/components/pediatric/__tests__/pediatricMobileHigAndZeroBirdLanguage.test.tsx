@@ -150,4 +150,27 @@ describe("Red Team Inquisition: Pediatric Mobile HIG Ergonomics & Zero Bird Lang
 			"Displays clear Russian legal representative section",
 		);
 	});
+
+	it("5. Mandate 8e: Dominant 1-click physiological root resorption norm (K08.8) with touch target >= 44px", () => {
+		const html = renderToString(
+			createElement(PediatricTeethChart, {
+				activeTooth: 54,
+				mode: "primary",
+				onApplyPhysiologicalResorption: () => {},
+			}),
+		);
+
+		assert.ok(
+			html.includes("pediatric-resorption-norm-btn"),
+			"Contains 1-click physiological root resorption button",
+		);
+		assert.ok(
+			html.includes("Смена корней (K08.8)"),
+			"Displays clear clinical label for physiological root resorption (K08.8)",
+		);
+		assert.ok(
+			html.includes("min-h-[44px]"),
+			"Button meets Apple HIG touch minimum target (>= 44px)",
+		);
+	});
 });

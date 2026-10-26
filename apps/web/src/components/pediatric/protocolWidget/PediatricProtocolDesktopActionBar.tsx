@@ -29,11 +29,11 @@ export const PediatricProtocolDesktopActionBar: React.FC<PediatricProtocolDeskto
 	return (
 		<div className="hidden md:flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] min-w-0">
 			<div className="flex flex-wrap items-center gap-2">
-				{/* Ровно ОДНА Primary CTA кнопка (Мандат 8am): 36px на десктопе */}
+				{/* Ровно ОДНА Primary CTA кнопка (Мандат 8am): 36px на десктопе, изумрудный цвет */}
 				<button
 					type="button"
 					onClick={handleApply}
-					className="inline-flex min-h-[44px] sm:min-h-0 sm:h-9 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-teal-700 active:scale-95 cursor-pointer touch-manipulation select-none"
+					className="inline-flex min-h-[44px] sm:min-h-0 sm:h-9 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-sm transition active:scale-95 cursor-pointer touch-manipulation select-none"
 					data-testid="pediatric-btn-apply-clinical-note"
 					title="Внести протокол в медицинскую карту приёма"
 					aria-label="Внести в дневник визита"

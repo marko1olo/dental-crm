@@ -42,6 +42,8 @@ export interface ClinicalCalculationResult {
 	readonly statusLocalis: string;
 	readonly treatmentDescription: string;
 	readonly recommendations: string;
+	readonly services: readonly PediatricServiceItem[];
+	/** @deprecated Использовать services (Мандат 8x/8ap: доменный язык без советских приказов) */
 	readonly services804n: readonly PediatricServiceItem[];
 	readonly fullClinicalNoteText: string;
 	/** @deprecated Использовать fullClinicalNoteText (Мандат 8x: искоренение советских шифров) */
@@ -52,7 +54,9 @@ export interface ClinicalCalculationResult {
 export function calculateClinicalProtocol(params: ClinicalCalculationParams): ClinicalCalculationResult {
 	const surfacesStr = params.selectedSurfaces.join(", ") || "O";
 	const presetResult = generatePresetTreatment(params.activePresetId, params.currentTooth, surfacesStr, params.selectedMaterial);
-	const services: PediatricServiceItem[] = [{ code: params.activePreset.serviceCode804n, nameRu: params.activePreset.serviceName804n }, ...presetResult.extraServices];
+	const primaryServiceCode = params.activePreset.serviceCode || params.activePreset.serviceCode804n || "A16.07.002.001";
+	const primaryServiceName = params.activePreset.serviceName || params.activePreset.serviceName804n || params.activePreset.titleRu;
+	const services: PediatricServiceItem[] = [{ code: primaryServiceCode, nameRu: primaryServiceName }, ...presetResult.extraServices];
 	let treatmentDescription = presetResult.treatmentDescription;
 
 	if (params.anesthesiaCalculation && params.anesthesiaCalculation.carpulesAdministered > 0) {
@@ -93,6 +97,7 @@ export function calculateClinicalProtocol(params: ClinicalCalculationParams): Cl
 		statusLocalis: presetResult.statusLocalis,
 		treatmentDescription,
 		recommendations: presetResult.recommendations,
+		services,
 		services804n: services,
 		fullClinicalNoteText,
 		fullProtocolText043: fullClinicalNoteText,

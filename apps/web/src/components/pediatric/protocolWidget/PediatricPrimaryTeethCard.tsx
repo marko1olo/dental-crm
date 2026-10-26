@@ -18,6 +18,7 @@ export interface PediatricPrimaryTeethCardProps {
 	readonly onToothFindingChange: (tooth: number, finding: ToothClinicalFinding) => void;
 	readonly onSetAllHealthy: () => void;
 	readonly onApplyMixedDentitionPreset: () => void;
+	readonly onApplyPhysiologicalResorption?: (() => void) | undefined;
 	readonly orthoFrenulumNormal: boolean;
 	readonly setOrthoFrenulumNormal: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly orthoNasalBreathing: boolean;
@@ -37,6 +38,7 @@ export const PediatricPrimaryTeethCard: React.FC<PediatricPrimaryTeethCardProps>
 	onToothFindingChange,
 	onSetAllHealthy,
 	onApplyMixedDentitionPreset,
+	onApplyPhysiologicalResorption,
 	orthoFrenulumNormal,
 	setOrthoFrenulumNormal,
 	orthoNasalBreathing,
@@ -58,6 +60,7 @@ export const PediatricPrimaryTeethCard: React.FC<PediatricPrimaryTeethCardProps>
 					onToothFindingChange={onToothFindingChange}
 					onSetAllHealthy={onSetAllHealthy}
 					onApplyMixedDentitionPreset={onApplyMixedDentitionPreset}
+					onApplyPhysiologicalResorption={onApplyPhysiologicalResorption}
 				/>
 			</div>
 			<PediatricOrthoNormGrid

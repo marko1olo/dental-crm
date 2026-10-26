@@ -28,7 +28,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
 						<span className="font-semibold truncate">
-							323-ФЗ ст. 20: Выбрано инвазивное вмешательство. Требуется подтверждение ИДС законного представителя.
+							Выбрано инвазивное вмешательство. Требуется подтверждение информированного согласия (ИДС) представителя.
 						</span>
 					</div>
 					<button
@@ -61,7 +61,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 										: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`pediatric-preset-btn-${preset.id}`}
-								title={`${preset.titleRu} • ${preset.serviceCode804n}`}
+								title={`${preset.titleRu} • ${preset.serviceCode || preset.serviceCode804n}`}
 							>
 								<div className="flex items-center gap-1.5 font-bold text-xs">
 									<PresetIcon className="h-4 w-4 shrink-0" />

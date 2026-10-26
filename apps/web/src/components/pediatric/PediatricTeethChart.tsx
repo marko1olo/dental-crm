@@ -41,6 +41,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	onSurfaceToggle,
 	onSetAllHealthy,
 	onApplyMixedDentitionPreset,
+	onApplyPhysiologicalResorption,
 	className = "",
 }) => {
 	const isMixed = mode === "mixed";
@@ -78,7 +79,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			className={`pediatric-teeth-chart rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3 sm:p-4 ${className}`.trim()}
 			data-testid="pediatric-teeth-chart"
 		>
-			<PediatricTeethHeader mode={mode} onModeChange={onModeChange} onSetAllHealthy={onSetAllHealthy} onApplyMixedDentitionPreset={onApplyMixedDentitionPreset} />
+			<PediatricTeethHeader mode={mode} onModeChange={onModeChange} onSetAllHealthy={onSetAllHealthy} onApplyMixedDentitionPreset={onApplyMixedDentitionPreset} onApplyPhysiologicalResorption={onApplyPhysiologicalResorption} />
 
 			<PediatricTeethMobileQuadrant activeTooth={activeTooth} onSelectTooth={onSelectTooth} toothFindings={toothFindings} resorptionStages={resorptionStages} toothSurfaces={toothSurfaces} q5Teeth={q5} q6Teeth={q6} q7Teeth={q7} q8Teeth={q8} isPermanent={isPermanent} />
 

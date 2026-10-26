@@ -39,16 +39,16 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 	});
 
 	const meta = useMemo(() => [
-		{ key: "q5" as const, label: isPermanent ? "Q1 Верх-Право" : "Q5 Верх-Право", short: isPermanent ? "Q1 В/П" : "Q5 В/П", teeth: q5Teeth },
-		{ key: "q6" as const, label: isPermanent ? "Q2 Верх-Лево" : "Q6 Верх-Лево", short: isPermanent ? "Q2 В/Л" : "Q6 В/Л", teeth: q6Teeth },
-		{ key: "q7" as const, label: isPermanent ? "Q3 Низ-Лево" : "Q7 Низ-Лево", short: isPermanent ? "Q3 Н/Л" : "Q7 Н/Л", teeth: q7Teeth },
-		{ key: "q8" as const, label: isPermanent ? "Q4 Низ-Право" : "Q8 Низ-Право", short: isPermanent ? "Q4 Н/П" : "Q8 Н/П", teeth: q8Teeth },
+		{ key: "q5" as const, label: isPermanent ? "Верх-Право (18–11)" : "Верх-Право (55–51)", short: isPermanent ? "Верх 18–11" : "Верх 55–51", teeth: q5Teeth },
+		{ key: "q6" as const, label: isPermanent ? "Верх-Лево (21–28)" : "Верх-Лево (61–65)", short: isPermanent ? "Верх 21–28" : "Верх 61–65", teeth: q6Teeth },
+		{ key: "q7" as const, label: isPermanent ? "Низ-Лево (31–38)" : "Низ-Лево (71–75)", short: isPermanent ? "Низ 31–38" : "Низ 71–75", teeth: q7Teeth },
+		{ key: "q8" as const, label: isPermanent ? "Низ-Право (48–41)" : "Низ-Право (85–81)", short: isPermanent ? "Низ 48–41" : "Низ 85–81", teeth: q8Teeth },
 	], [isPermanent, q5Teeth, q6Teeth, q7Teeth, q8Teeth]);
 
 	const currentQuad = meta.find((m) => m.key === activeQuadrant) ?? meta[0]!;
 
 	return (
-		<div className="sm:hidden mb-2" data-testid="pediatric-mobile-quadrant-view">
+		<div className="sm:hidden mb-2 overflow-x-clip" data-testid="pediatric-mobile-quadrant-view">
 			<div className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)]">
 				<span>Квадрант детского прикуса:</span>
 				<span className="font-extrabold text-[var(--ink,#0f172a)]">{currentQuad.label}</span>

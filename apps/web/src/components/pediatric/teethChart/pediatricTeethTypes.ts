@@ -110,5 +110,6 @@ export interface PediatricTeethChartProps {
 	readonly onSurfaceToggle?: ((toothNumber: number, surface: ToothSurfaceCode) => void) | undefined;
 	readonly onSetAllHealthy?: () => void;
 	readonly onApplyMixedDentitionPreset?: () => void;
+	readonly onApplyPhysiologicalResorption?: (() => void) | undefined;
 	readonly className?: string;
 }

@@ -8,6 +8,7 @@ interface PediatricTeethHeaderProps {
 	readonly onModeChange?: ((mode: PediatricDentitionMode) => void) | undefined;
 	readonly onSetAllHealthy?: (() => void) | undefined;
 	readonly onApplyMixedDentitionPreset?: (() => void) | undefined;
+	readonly onApplyPhysiologicalResorption?: (() => void) | undefined;
 }
 
 export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
@@ -15,6 +16,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 	onModeChange,
 	onSetAllHealthy,
 	onApplyMixedDentitionPreset,
+	onApplyPhysiologicalResorption,
 }) => {
 	const isMixed = mode === "mixed";
 	const isPermanent = mode === "permanent";
@@ -70,6 +72,19 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 					<button type="button" onClick={onSetAllHealthy} className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0" data-testid="pediatric-all-healthy-btn">
 						<ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
 						<span>Все интактны</span>
+					</button>
+				)}
+
+				{onApplyPhysiologicalResorption && (
+					<button
+						type="button"
+						onClick={onApplyPhysiologicalResorption}
+						className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg border border-teal-500/40 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200 hover:bg-teal-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 touch-manipulation select-none active:scale-95"
+						title="Физиологическая смена зубов по возрасту и резорбция корней (K08.8)"
+						data-testid="pediatric-resorption-norm-btn"
+					>
+						<ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Смена корней (K08.8)</span>
 					</button>
 				)}
 

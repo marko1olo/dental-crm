@@ -65,6 +65,7 @@ export const PediatricWidgetHeaderSection: React.FC<PediatricWidgetHeaderSection
 					showToast("Все молочные зубы отмечены как интактные", "success", 2000);
 				}}
 				onApplyMixedDentitionPreset={actions.handleApplyMixedDentitionPreset}
+				onApplyPhysiologicalResorption={actions.handleApplyPhysiologicalResorptionNorm}
 				orthoFrenulumNormal={state.orthoFrenulumNormal}
 				setOrthoFrenulumNormal={state.setOrthoFrenulumNormal}
 				orthoNasalBreathing={state.orthoNasalBreathing}

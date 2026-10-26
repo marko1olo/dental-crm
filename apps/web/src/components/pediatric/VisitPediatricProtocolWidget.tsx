@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * VISIT PEDIATRIC PROTOCOL WIDGET (CANONICAL FACADE)
- * Fast 1-Click Form 043/u & Order 804n Pediatric Dental Logging
+ * Fast 1-Click Pediatric Clinical Protocol & Catalog Services Logging
  * Decomposed into ./protocolWidget/ DAG hierarchy per /decomposer skill
  * 100% AST Export Parity & Backward Compatibility Preserved
  * ══════════════════════════════════════════════════════════════════════════
