@@ -1,0 +1,76 @@
+.copilot-composer-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line-strong, rgba(15, 118, 110, 0.25));
+  border-radius: 12px;
+  padding: 6px 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-composer-box:focus-within {
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+.copilot-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink, #0f172a);
+  resize: none;
+  max-height: 120px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+
+.copilot-textarea::placeholder {
+  color: var(--muted, #6b7280);
+}
+
+/* Two-layer live speech streaming display */
+.copilot-two-layer-display {
+  flex: 1;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink, #0f172a);
+  max-height: 120px;
+  min-height: 24px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.copilot-stream-base {
+  color: var(--ink, #0f172a);
+}
+
+.copilot-stream-final {
+  color: var(--ink, #0f172a);
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.copilot-stream-interim {
+  color: var(--info-fg, #0369a1);
+  font-style: italic;
+  font-weight: 600;
+  animation: copilot-pulse-interim 1.2s infinite ease-in-out;
+}
+
+@keyframes copilot-pulse-interim {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+

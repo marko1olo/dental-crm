@@ -1,0 +1,46 @@
+/**
+ * DENTE Copilot — Industrial Vanilla CSS
+ * Fully theme-harmonized across Light, Dark, Night, Ocean, Sakura, Emerald, Cyber X-Ray, Contrast
+ */
+
+/* Non-blocking Backdrop (Disabled to allow simultaneous clinical operations) */
+.copilot-backdrop,
+.copilot-drawer-backdrop {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Main Drawer Shell (Non-blocking Right Dock / Split-View) */
+.copilot-drawer,
+.copilot-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: 440px;
+  max-width: 100%;
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  box-shadow: -4px 0 24px -2px rgba(0, 0, 0, 0.12);
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.copilot-drawer.open,
+.copilot-drawer-panel.open,
+.copilot-drawer-panel {
+  transform: translateX(0);
+}
+

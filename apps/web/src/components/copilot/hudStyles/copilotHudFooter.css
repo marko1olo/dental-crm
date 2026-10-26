@@ -1,0 +1,73 @@
+/* Footer & 1-Click Action Bar */
+.chairside-hud-footer {
+  padding: 10px;
+  background-color: var(--paper-strong);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chairside-hud-apply-all-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chairside-hud-btn-apply-all {
+  flex: 1;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background-color: var(--ok-fg);
+  color: var(--paper);
+  border: 1px solid var(--ok-fg);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chairside-hud-btn-apply-all:hover {
+  opacity: 0.92;
+}
+
+.chairside-hud-btn-apply-all--undo {
+  background-color: var(--paper-strong);
+  color: var(--bad-fg);
+  border-color: var(--bad-fg);
+}
+
+.chairside-hud-btn-apply-all--undo:hover {
+  background-color: var(--bad-bg);
+}
+
+.chairside-hud-btn-dismiss {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.chairside-hud-btn-dismiss:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+}

@@ -1,0 +1,44 @@
+/* Floating Trigger Button */
+.copilot-trigger-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9990;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 18px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--teal, #0d9488), var(--teal-dark, #0f766e));
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 16px var(--teal-glow, rgba(13, 148, 136, 0.4));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.copilot-trigger-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px var(--teal-glow, rgba(13, 148, 136, 0.5));
+}
+
+.copilot-trigger-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.copilot-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.copilot-drawer-drag-handle {
+  display: none;
+}
+

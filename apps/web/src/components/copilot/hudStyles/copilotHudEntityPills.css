@@ -1,0 +1,89 @@
+/* Interactive Live Entity Pills (Mandate 8l: 1-click removal) */
+.chairside-hud-live-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: 320px;
+  scrollbar-width: none;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.chairside-hud-live-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.chairside-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0 6px 0 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--teal);
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-live-pill--tooth {
+  background-color: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.chairside-live-pill--diagnosis {
+  background-color: var(--paper-soft);
+  border-color: var(--line);
+}
+
+.chairside-live-pill--anesthetic {
+  background-color: var(--paper-soft);
+  border-color: var(--teal);
+}
+
+.chairside-live-pill--services {
+  background-color: var(--teal-soft);
+  border-color: var(--line);
+}
+
+.chairside-live-pill--applied {
+  background-color: var(--ok-bg);
+  border-color: var(--ok-fg);
+  color: var(--ok-fg);
+}
+
+.chairside-live-pill-text {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chairside-live-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.chairside-live-pill-remove:hover {
+  background-color: var(--bad-bg);
+  color: var(--bad-fg);
+}
+

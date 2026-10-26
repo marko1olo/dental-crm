@@ -1,0 +1,85 @@
+/* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-capsule-btn-apply {
+  display: none;
+}
+
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-hud-btn-mic-capsule,
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-vu-meter {
+  display: none;
+}
+
+.chairside-capsule-btn-apply {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  color: var(--paper);
+  border: 1px solid var(--teal-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.chairside-capsule-btn-apply:hover {
+  opacity: 0.92;
+}
+
+.chairside-capsule-btn-apply--applied {
+  background-color: var(--ok-bg);
+  color: var(--ok-fg);
+  border-color: var(--ok-fg);
+  cursor: default;
+}
+
+.chairside-capsule-kbd {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: monospace;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.chairside-hud-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.chairside-hud-btn-icon {
+  min-width: 28px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.chairside-hud-btn-icon:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+  border-color: var(--line);
+}
+

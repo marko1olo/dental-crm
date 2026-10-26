@@ -1,0 +1,108 @@
+ * ChairsideCopilotHUD.css — Industrial Clinical Styling for Chairside AI Copilot HUD.
+ *
+ * Compliant with:
+ * - Mandate 8c: Universal 3-tier architecture, dense clinical ergonomics.
+ * - Mandate 8d: 7 Deadly Sins checklist (Sin 2: 1-line toolbar 32-36px, Sin 3: <=2 buttons/card,
+ *   Sin 4: WCAG AAA theme tokens, Sin 6: Anti-Matryoshka depth 1, Sin 7: 0 emojis).
+ * - Mandate 8e: Doctor autonomy, zero disabled buttons, 1-click apply-all.
+ * - Mandate 8n: Solo doctor & small clinic sovereignty.
+ *
+ * ZERO hardcoded hex colors. Strictly design system CSS variables.
+ */
+
+/* Container: Floating or Docked */
+.chairside-copilot-hud {
+  box-sizing: border-box;
+  font-family: inherit;
+  color: var(--ink);
+  pointer-events: auto;
+}
+
+.chairside-copilot-hud--floating {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 8900;
+  max-width: calc(100% - 32px);
+}
+.chairside-copilot-hud--docked {
+  position: relative;
+  width: 100%;
+  margin: 6px 0 10px 0;
+}
+/* Minimized Pill State */
+.chairside-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chairside-hud-pill:hover {
+  background-color: var(--paper-soft);
+  border-color: var(--teal);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+}
+
+.chairside-hud-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+}
+
+.chairside-hud-pill-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background-color: var(--ok-bg);
+  color: var(--ok-fg);
+  border: 1px solid var(--ok-fg);
+}
+
+.chairside-hud-pill-badge--busy {
+  background-color: var(--warn-bg);
+  color: var(--warn-fg);
+  border-color: var(--warn-fg);
+}
+
+/* Expanded Main Panel */
+.chairside-hud-panel {
+  width: 600px;
+  max-width: calc(100% - 32px);
+  max-height: min(85vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.chairside-hud-panel--compact {
+  width: auto;
+  max-width: calc(100% - 32px);
+  max-height: 48px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+}

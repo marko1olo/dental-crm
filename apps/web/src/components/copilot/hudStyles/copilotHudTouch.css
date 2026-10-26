@@ -1,0 +1,33 @@
+/* ============================================================================
+   TOUCH ERGONOMICS (Mandates 8d, 8e, 8p):
+   Preserve 32-36px desktop density, expand to 44-48px touch targets on tablet/touch.
+   ============================================================================ */
+@media (pointer: coarse) {
+  .chairside-hud-btn-icon,
+  .chairside-hud-btn-mic,
+  .chairside-hud-btn-mic-capsule,
+  .chairside-hud-btn-send {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .chairside-live-pill-remove {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .chairside-hud-preset-chip {
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .chairside-hud-btn-primary,
+  .chairside-hud-btn-undo,
+  .chairside-capsule-btn-apply,
+  .chairside-hud-btn-apply-all,
+  .chairside-hud-btn-dismiss {
+    min-height: 44px;
+  }
+}
+

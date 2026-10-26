@@ -1,0 +1,57 @@
+/* Appointment Card */
+.copilot-appt-card {
+  padding: 12px;
+  border-radius: 10px;
+  background-color: var(--paper-strong, #fafcfa);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  margin: 6px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.copilot-appt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copilot-appt-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-appt-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal, #0d9488);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.copilot-status-badge.confirmed {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.5));
+}
+
+.copilot-status-badge.pending {
+  background-color: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+

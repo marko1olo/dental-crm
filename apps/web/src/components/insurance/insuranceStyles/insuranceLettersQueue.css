@@ -1,0 +1,97 @@
+/**
+ * insuranceLettersQueue.css — Очередь гарантийных писем с бейджами и номенклатурой
+ * Мандат 8b: строго <= 120 строк.
+ */
+
+.dms-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.dms-badge-active {
+	background: var(--ok-bg, #ecfdf5);
+	color: var(--ok-fg, #059669);
+	border: 1px solid var(--ok-fg, rgba(5, 150, 105, 0.3));
+}
+
+.dms-badge-exhausted {
+	background: var(--warn-bg, #fffbeb);
+	color: var(--warn-fg, #d97706);
+	border: 1px solid var(--warn-fg, rgba(217, 119, 6, 0.3));
+}
+
+.dms-badge-expired {
+	background: var(--bad-bg, #fef2f2);
+	color: var(--bad-fg, #dc2626);
+	border: 1px solid var(--bad-fg, rgba(220, 38, 38, 0.3));
+}
+
+/* Номенклатурный список услуг */
+.dms-service-item {
+	min-height: 52px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	margin-bottom: 8px;
+	transition: background-color 0.15s ease;
+}
+
+.dms-service-item:hover {
+	background: var(--surface, #f8fafc);
+}
+
+.dms-service-item.selected {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+/* Чекбоксы и бейджи исключений */
+.dms-checkbox-pill {
+	min-height: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	user-select: none;
+	font-size: 0.75rem;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+.dms-checkbox-pill.active {
+	border-color: var(--bad-fg, #ef4444);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.08));
+	color: var(--bad-fg, #ef4444);
+}
+
+.dms-checkbox-pill input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--bad-fg, #ef4444);
+}
+
+@media (max-width: 768px) {
+	.dms-checkbox-pill {
+		min-height: 44px;
+		height: 44px;
+		padding: 8px 14px;
+		border-radius: 12px;
+		font-size: 0.875rem;
+	}
+}
+

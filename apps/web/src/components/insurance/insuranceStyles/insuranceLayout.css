@@ -1,0 +1,72 @@
+/**
+ * insuranceLayout.css — Контейнеры, сетки, карточки и элементы форм ДМС
+ * Мандат 8b: строго <= 120 строк.
+ */
+
+.dms-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dms-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.dms-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+
+@media (max-width: 768px) {
+	.dms-grid-2, .dms-grid-3, .dms-grid-4 { grid-template-columns: 1fr !important; }
+}
+
+.dms-card {
+	padding: 16px; border-radius: 14px;
+	background: var(--surface, #f8fafc); border: 1px solid var(--line, #e2e8f0);
+}
+.dms-card-title {
+	font-size: 0.9375rem; font-weight: 700; margin: 0 0 12px 0;
+	display: flex; align-items: center; gap: 8px;
+}
+.dms-field-group { display: flex; flex-direction: column; gap: 6px; }
+.dms-label { font-size: 0.8125rem; font-weight: 600; color: var(--muted, #64748b); }
+
+.dms-input, .dms-select {
+	min-height: 34px; height: 34px; padding: 6px 10px; border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1); background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a); font-size: 0.8125rem;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease; box-sizing: border-box; width: 100%;
+}
+.dms-textarea {
+	min-height: 64px; padding: 8px 10px; border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1); background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a); font-size: 0.8125rem;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease; box-sizing: border-box; width: 100%;
+}
+.dms-input:focus, .dms-select:focus, .dms-textarea:focus {
+	outline: none; border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+/* Компактный 1-строчный тулбар по Закону Хика (32–36px) */
+.dms-quick-toolbar {
+	display: flex; align-items: center; gap: 6px; min-height: 32px; height: 34px; max-height: 36px;
+	overflow-x: auto; overflow-y: hidden; padding: 1px 0; box-sizing: border-box;
+	scrollbar-width: none; -ms-overflow-style: none;
+}
+.dms-quick-toolbar::-webkit-scrollbar { display: none; }
+
+.dms-quick-chip, .dms-quick-chip.dente-filter-chip {
+	height: 32px; min-height: 32px; padding: 0 10px; border-radius: 8px;
+	font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+	cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s ease;
+	border: 1px solid var(--line, #cbd5e1); background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a); box-sizing: border-box; user-select: none;
+}
+.dms-quick-chip:hover, .dms-quick-chip.dente-filter-chip:hover {
+	background: var(--surface, #f8fafc); border-color: var(--teal, #0d9488);
+}
+.dms-quick-chip.active, .dms-quick-chip.dente-filter-chip.active {
+	background: var(--teal, #0d9488); color: #ffffff; border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+@media (max-width: 768px) {
+	.dms-quick-toolbar {
+		flex-wrap: wrap; height: auto; max-height: none; min-height: auto; gap: 8px;
+	}
+	.dms-quick-chip, .dms-quick-chip.dente-filter-chip {
+		min-height: 36px; height: auto; padding: 6px 12px;
+	}
+}

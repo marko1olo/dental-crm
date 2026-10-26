@@ -1,0 +1,89 @@
+/* Text and Voice Input Row */
+.chairside-hud-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chairside-hud-input {
+  flex: 1;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.chairside-hud-input:focus {
+  border-color: var(--teal);
+}
+
+.chairside-hud-btn-mic {
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chairside-hud-btn-mic:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+}
+
+.chairside-hud-btn-mic--active {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+  color: var(--bad-fg);
+  animation: chairside-pulse 1.5s infinite;
+}
+
+@keyframes chairside-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.chairside-hud-btn-send {
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  border: 1px solid var(--teal-dark);
+  color: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chairside-hud-btn-send:hover {
+  opacity: 0.9;
+}
+
+.chairside-hud-autonomy-note {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+

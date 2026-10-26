@@ -1,0 +1,82 @@
+.chairside-hud-header {
+  min-height: 44px;
+  height: 44px;
+  max-height: 48px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background-color: var(--paper-strong);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chairside-hud-panel--compact .chairside-hud-header {
+  border-bottom: none;
+  border-radius: 9999px;
+  padding: 0 12px;
+}
+
+.chairside-hud-capsule {
+  min-height: 44px;
+  height: 44px;
+  max-height: 48px;
+  box-sizing: border-box;
+}
+
+.chairside-hud-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chairside-hud-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  flex-shrink: 0;
+}
+
+.chairside-hud-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chairside-hud-patient-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chairside-hud-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-hud-badge {
+  display: none;
+}

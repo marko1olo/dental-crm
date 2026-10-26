@@ -64,7 +64,7 @@ function StandaloneDmsHost({ onClose }: { onClose: () => void }) {
 	const patientId = useMemo(() => readPatientIdFromUrl(), []);
 	const patient = useDmsPatientLoader(patientId);
 
-	if (!patientId) {
+	if (!patientId && !patient) {
 		return (
 			<StandaloneDeepLinkMissingState
 				title="Пациент не указан"
@@ -74,7 +74,7 @@ function StandaloneDmsHost({ onClose }: { onClose: () => void }) {
 			/>
 		);
 	}
-	if (patient === null) return <AppLoadingState message="Загрузка карточки пациента..." />;
+	if (patient === undefined) return <AppLoadingState message="Загрузка карточки пациента..." />;
 
 	return (
 		<Suspense fallback={<AppLoadingState message="Загрузка гарантийного письма ДМС..." />}>

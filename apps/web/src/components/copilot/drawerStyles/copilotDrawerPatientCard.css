@@ -1,0 +1,91 @@
+/* Patient Card */
+.copilot-patient-card {
+  padding: 12px;
+  border-radius: 10px;
+  background-color: var(--paper-strong, #fafcfa);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  margin: 6px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.copilot-patient-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copilot-patient-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.copilot-patient-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal, #0d9488);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.5));
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copilot-patient-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-patient-meta {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.copilot-card-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.copilot-card-btn:hover {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border-color: var(--teal, #0d9488);
+}
+
+.copilot-patient-details {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+}
+

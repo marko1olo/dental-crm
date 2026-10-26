@@ -1,0 +1,68 @@
+/* Composer */
+.copilot-composer {
+  border-top: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-strong, #fafcfa);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Live Dictation Banner & Dynamic VU-Meter Capsule */
+.copilot-dictation-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: var(--teal-soft, #ccfbf1);
+  border: 1px solid var(--teal-surface, rgba(13, 148, 136, 0.3));
+  box-shadow: 0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.15));
+  animation: copilot-fade-in 0.2s ease-out;
+  box-sizing: border-box;
+}
+
+@keyframes copilot-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.copilot-dictation-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.copilot-recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--rust, #b91c1c);
+  animation: copilot-pulse-dot 1.2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes copilot-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.3); }
+}
+
+.copilot-dictation-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-dark, #0f766e);
+  white-space: nowrap;
+}
+
+.copilot-dictation-state {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

@@ -1,0 +1,104 @@
+/* Safety Alert Card (High WCAG contrast, Vector icons) */
+.chairside-hud-card--alert-warning {
+  background-color: var(--warn-bg);
+  border-color: var(--warn-fg);
+}
+
+.chairside-hud-card--alert-critical {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+}
+
+.chairside-hud-alert-text {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Card Action Buttons (Sin 3: <= 2 buttons per card) */
+.chairside-hud-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chairside-hud-btn-primary {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  color: var(--paper);
+  border: 1px solid var(--teal-dark);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-hud-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.chairside-hud-btn-secondary {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-hud-btn-secondary:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+  border-color: var(--ink);
+}
+
+/* Quick Presets Bar */
+.chairside-hud-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+  white-space: nowrap;
+}
+
+.chairside-hud-preset-chip {
+  min-height: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.chairside-hud-preset-chip:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+  background-color: var(--paper-soft);
+}

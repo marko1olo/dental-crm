@@ -1,0 +1,61 @@
+/* Action Proposals Section */
+.chairside-hud-proposals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chairside-hud-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.chairside-hud-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+/* Individual Action Cards (Sin 3 & 6: Flat monolithic card, max 1-2 buttons) */
+.chairside-hud-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.chairside-hud-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chairside-hud-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.chairside-hud-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+}
+

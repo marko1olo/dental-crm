@@ -1,0 +1,66 @@
+/* Live VU-Meter Sound Wave (Mandate 8l: Visual side-glance feedback) */
+.chairside-vu-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chairside-vu-meter--active {
+  background-color: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.chairside-vu-bar {
+  display: inline-block;
+  width: 3px;
+  height: 5px;
+  border-radius: 1.5px;
+  background-color: var(--muted);
+  transition: height 0.08s ease, background-color 0.15s ease;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar {
+  background-color: var(--teal-dark);
+}
+
+/* Mandate 8l & 8s: Deterministic VU meter. Heights are driven strictly by voiceMeterHeights via inline styles.
+   Zero pseudo-oscillator keyframes or fake waves when sound is not present. */
+
+/* Quick Microphone Button in Capsule (Mandate 8l) */
+.chairside-hud-btn-mic-capsule {
+  min-width: 28px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chairside-hud-btn-mic-capsule:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+  background-color: var(--paper);
+}
+
+.chairside-hud-btn-mic-capsule--active {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+  color: var(--bad-fg);
+  animation: chairside-pulse 1.5s infinite;
+}
+

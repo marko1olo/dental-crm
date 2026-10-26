@@ -1,0 +1,117 @@
+/**
+ * insuranceThemeTokens.css — Токены тем оформления ДМС (WCAG AAA Dark/Light)
+ * Мандат 8b: строго <= 120 строк.
+ */
+
+:root {
+	--dms-teal: var(--teal, #0d9488);
+	--dms-teal-dark: var(--teal-dark, #0f766e);
+	--dms-teal-glow: var(--teal-glow, rgba(13, 148, 136, 0.2));
+	--dms-teal-surface: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
+[data-theme="dark"] .dms-modal-window,
+.dark .dms-modal-window {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .dms-modal-header,
+[data-theme="dark"] .dms-modal-footer,
+.dark .dms-modal-header,
+.dark .dms-modal-footer,
+[data-theme="dark"] .dms-card,
+.dark .dms-card {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-input,
+[data-theme="dark"] .dms-select,
+[data-theme="dark"] .dms-textarea,
+.dark .dms-input,
+.dark .dms-select,
+.dark .dms-textarea,
+[data-theme="dark"] .dms-stat-card,
+.dark .dms-stat-card,
+[data-theme="dark"] .dms-table-container,
+.dark .dms-table-container,
+[data-theme="dark"] .dms-service-item,
+.dark .dms-service-item,
+[data-theme="dark"] .dms-checkbox-pill,
+.dark .dms-checkbox-pill,
+[data-theme="dark"] .dms-quick-chip,
+.dark .dms-quick-chip {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-stat-value,
+.dark .dms-stat-value,
+[data-theme="dark"] .dms-table td,
+.dark .dms-table td,
+[data-theme="dark"] .dms-banner-text,
+.dark .dms-banner-text,
+[data-theme="dark"] .dms-mobile-card-price,
+[data-theme="dark"] .dms-mobile-card-name,
+.dark .dms-mobile-card-price,
+.dark .dms-mobile-card-name {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .dms-table th,
+[data-theme="dark"] .dms-table-totals,
+.dark .dms-table th,
+.dark .dms-table-totals {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .dms-service-item:hover,
+.dark .dms-service-item:hover {
+	background: var(--surface, #1e293b);
+}
+
+[data-theme="dark"] .dms-split-summary-banner,
+.dark .dms-split-summary-banner {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+	border-color: rgba(13, 148, 136, 0.6);
+}
+
+[data-theme="dark"] .dms-split-switcher-group,
+.dark .dms-split-switcher-group,
+[data-theme="dark"] .dms-mobile-segmented-control,
+.dark .dms-mobile-segmented-control,
+[data-theme="dark"] .dms-mobile-code-badge,
+.dark .dms-mobile-code-badge,
+[data-theme="dark"] .dms-mobile-card-breakdown,
+.dark .dms-mobile-card-breakdown {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-switcher-btn.active,
+.dark .dms-switcher-btn.active,
+[data-theme="dark"] .dms-mobile-segment-btn.active,
+.dark .dms-mobile-segment-btn.active {
+	background: var(--surface, #1e293b);
+	color: #2dd4bf;
+}
+
+[data-theme="dark"] .dms-mobile-grouped-card,
+.dark .dms-mobile-grouped-card,
+[data-theme="dark"] .dms-checkout-action-wrap,
+.dark .dms-checkout-action-wrap {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .dms-mobile-code-badge,
+.dark .dms-mobile-code-badge {
+	color: #38bdf8;
+}
+

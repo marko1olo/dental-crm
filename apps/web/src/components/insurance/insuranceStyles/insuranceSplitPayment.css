@@ -1,0 +1,58 @@
+/**
+ * insuranceSplitPayment.css — Плашка сплит-оплаты на кассе (ДМС + доплата пациента)
+ * Мандат 8b: строго <= 120 строк.
+ */
+
+.dms-split-summary-banner {
+	display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;
+	border-radius: 12px; background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%);
+	border: 1px solid var(--teal, #0d9488); margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+}
+.dms-banner-content { display: flex; align-items: center; gap: 10px; }
+.dms-banner-text { font-size: 0.9375rem; font-weight: 600; color: var(--ink, #0f172a); }
+.dms-banner-divider { color: var(--line, #cbd5e1); margin: 0 4px; }
+.dms-banner-sub { font-size: 0.8125rem; color: var(--muted, #64748b); font-weight: 600; }
+
+.dms-split-switcher-group {
+	display: inline-flex; background: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line, #cbd5e1); border-radius: 8px; padding: 2px; gap: 2px;
+}
+.dms-switcher-btn {
+	border: none; background: transparent; padding: 3px 8px; border-radius: 6px;
+	font-size: 0.6875rem; font-weight: 600; color: var(--muted, #64748b);
+	cursor: pointer; transition: all 0.15s ease; min-height: 26px;
+}
+.dms-switcher-btn:hover { color: var(--ink, #0f172a); }
+.dms-switcher-btn.active {
+	background: var(--paper, #ffffff); color: var(--teal, #0d9488);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); font-weight: 700;
+}
+
+@media (max-width: 768px) {
+	.dms-mobile-segmented-control {
+		display: grid; grid-template-columns: repeat(4, 1fr);
+		background: var(--surface, #f1f5f9); border: 1px solid var(--line, #e2e8f0);
+		border-radius: 12px; padding: 3px; gap: 3px;
+	}
+	.dms-mobile-segment-btn {
+		min-height: 42px; height: 42px; border: none; background: transparent;
+		border-radius: 9px; font-size: 0.8125rem; font-weight: 600; color: var(--muted, #64748b);
+		cursor: pointer; display: flex; align-items: center; justify-content: center;
+		transition: all 0.15s ease; padding: 0 4px; text-align: center;
+	}
+	.dms-mobile-segment-btn:active { transform: scale(0.97); }
+	.dms-mobile-segment-btn.active {
+		background: var(--paper, #ffffff); color: var(--teal, #0d9488);
+		font-weight: 700; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+	}
+	.dms-checkout-action-wrap {
+		position: sticky; bottom: 0; left: 0; right: 0;
+		padding: 12px 0 env(safe-area-inset-bottom); background: var(--paper, #ffffff);
+		border-top: 1px solid var(--line, #e2e8f0); z-index: 10; margin-top: 12px !important;
+	}
+	.dms-cta-apply-checkout {
+		width: 100% !important; min-height: 48px !important; height: 48px !important;
+		font-size: 0.9375rem !important; border-radius: 14px !important;
+	}
+}
+

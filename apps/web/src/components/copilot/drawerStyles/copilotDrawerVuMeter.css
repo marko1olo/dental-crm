@@ -1,0 +1,81 @@
+/* Dynamic Live VU Meter Equalizer */
+.copilot-vu-meter-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.copilot-vu-equalizer-bar {
+  width: 3px;
+  min-height: 4px;
+  border-radius: 2px;
+  transition: height 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), background-color 0.15s ease;
+}
+
+.copilot-stop-dictation-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+}
+
+.copilot-stop-dictation-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+
+.copilot-mic-btn.active.recording {
+  background-color: var(--rust-soft, rgba(254, 226, 226, 0.4)) !important;
+  color: var(--rust, #b91c1c) !important;
+  border-color: var(--rust, #b91c1c) !important;
+  animation: copilot-pulse-mic 1.5s infinite;
+}
+
+@keyframes copilot-pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(185, 28, 28, 0); }
+}
+
+.copilot-reset-btn {
+  width: auto;
+  min-width: auto;
+  height: 26px;
+  min-height: 26px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  color: var(--muted, #6b7280);
+  background: transparent;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.copilot-reset-btn:hover {
+  color: var(--rust, #b91c1c);
+  border-color: var(--rust, #b91c1c);
+  background-color: var(--rust-soft, rgba(254, 226, 226, 0.4));
+}
+
