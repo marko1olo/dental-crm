@@ -61,11 +61,20 @@ export const MandibleToothCell: React.FC<MandibleToothCellProps> = ({
 		</div>
 	);
 
+	const widthClass =
+		toothNumber === 41 || toothNumber === 42 || toothNumber === 31 || toothNumber === 32
+			? "w-[44px] sm:w-[48px]"
+			: toothNumber === 43 || toothNumber === 33
+				? "w-[50px] sm:w-[54px]"
+				: toothNumber === 44 || toothNumber === 45 || toothNumber === 34 || toothNumber === 35
+					? "w-[56px] sm:w-[60px]"
+					: "w-[64px] sm:w-[68px]";
+
 	return (
 		<div
 			data-testid={`mandible-tooth-cell-${toothNumber}`}
 			onClick={handleClick}
-			className={`flex flex-col items-center justify-start p-1 rounded-2xl transition-all duration-150 cursor-pointer select-none border w-[62px] sm:w-[68px] shrink-0 ${
+			className={`flex flex-col items-center justify-start p-1 rounded-2xl transition-all duration-150 cursor-pointer select-none border ${widthClass} shrink-0 ${
 				isSelected
 					? "border-teal-500 bg-teal-500/10 shadow-md ring-2 ring-teal-500/30"
 					: "border-transparent hover:border-slate-200 dark:hover:border-slate-700/60 hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
