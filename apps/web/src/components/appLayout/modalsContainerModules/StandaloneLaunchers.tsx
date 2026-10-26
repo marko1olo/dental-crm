@@ -6,6 +6,7 @@
 import type React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
+import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
@@ -31,6 +32,21 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("odontogram-32"))
 	) {
 		return <Tooth46InspectionStand />;
+	}
+
+	// 0. Omnichannel Messaging Hub Standalone Launcher (?omnichannel_hub=1, #omnichannel_hub)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("omnichannel_hub") ||
+			window.location.hash.includes("omnichannel_hub") ||
+			window.location.search.includes("messaging_hub") ||
+			window.location.hash.includes("messaging_hub"))
+	) {
+		return (
+			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
+				<PatientOmnichannelHubModal isOpen={true} onClose={() => {}} portal={false} />
+			</div>
+		);
 	}
 
 	// 0. Clinical Protocols & SOAP Templates Standalone Launcher (?protocols=1, #protocols)

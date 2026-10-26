@@ -32,17 +32,17 @@ export const OmnichannelHeader: React.FC<OmnichannelHeaderProps> = ({
 						<MessagesSquare size={20} />
 					</div>
 					<div>
-						<h2 id={titleId} className="omnichannel-modal-title">
+						<h2 id={titleId} className="omnichannel-modal-title text-sm sm:text-base">
 							Омниканальный центр сообщений и лояльности
 						</h2>
-						<p className="hub-header-sub">
-							Единый шлюз WhatsApp (Kapso WABA), Telegram Bot, SMS и динамических платежей СБП
+						<p className="hub-header-sub hidden sm:block">
+							Единый шлюз WhatsApp (Kapso WABA), Telegram Bot, SMS и платежей СБП
 						</p>
 					</div>
 				</div>
 
 				{/* Индикаторы статусов каналов */}
-				<div className="hub-channel-status-bar">
+				<div className="hub-channel-status-bar hidden md:flex">
 					<div className="hub-status-pill online" title="WhatsApp Business Cloud API / Kapso Gateway">
 						<span className="hub-status-dot green" />
 						<span className="hub-status-name">WhatsApp:</span>
