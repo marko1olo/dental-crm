@@ -598,6 +598,249 @@ ${renderToStaticMarkup(root)}
 </html>`;
 }
 
+/**
+ * 3. Полный Атлас Класса II по Блэку: Апроксимальная матрица 5 локализаций x 4 глубины
+ * (M, D, MO, DO, MOD) x (Superficialis, Media, Profunda, Destructiva) на первом моляре 46
+ */
+function buildClass2MatrixHtml() {
+	const CLASS2_ROWS = [
+		{
+			id: "m",
+			type: "class2_m",
+			badgeCode: "M",
+			name: "1. Класс II M (Медиальный контакт)",
+			desc: "Поражение мезиальной контактной стенки первого моляра 46",
+			color: "#f59e0b",
+		},
+		{
+			id: "d",
+			type: "class2_d",
+			badgeCode: "D",
+			name: "2. Класс II D (Дистальный контакт)",
+			desc: "Поражение дистальной контактной стенки первого моляра 46",
+			color: "#3b82f6",
+		},
+		{
+			id: "mo",
+			type: "class2_mo",
+			badgeCode: "MO",
+			name: "3. Класс II MO (Медио-окклюзионный)",
+			desc: "Мезиальный бокс с выходом на окклюзионную фиссуру",
+			color: "#ef4444",
+		},
+		{
+			id: "do",
+			type: "class2_do",
+			badgeCode: "DO",
+			name: "4. Класс II DO (Дисто-окклюзионный)",
+			desc: "Дистальный бокс с выходом на окклюзионную фиссуру",
+			color: "#8b5cf6",
+		},
+		{
+			id: "mod",
+			type: "class2_mod",
+			badgeCode: "MOD",
+			name: "5. Класс II MOD (Сквозной разлом)",
+			desc: "Сквозное двустороннее поражение обоих краевых валиков и перешейка",
+			color: "#dc2626",
+		},
+	];
+
+	const DEPTH_COLS = [
+		{ depth: "superficial", label: "Superficialis", sub: "Начальный (ореол)", suffix: "s" },
+		{ depth: "media", label: "Media", sub: "Средний (кратер дентина)", suffix: "m" },
+		{ depth: "profunda", label: "Profunda", sub: "Глубокий (околопульпарный)", suffix: "p" },
+		{ depth: "destructive", label: "Destructiva", sub: "Скол стенки в прозрачность", suffix: "ds" },
+	];
+
+	const rows = CLASS2_ROWS.map((row) => {
+		const cols = DEPTH_COLS.map((col) => {
+			const badgeCode = `${row.badgeCode}${col.suffix}`;
+			const el = React.createElement(Tooth46Container, {
+				zoom: 1.4,
+				isDark: false,
+				layers: {
+					...def,
+					caries: true,
+					cariesType: row.type,
+					cariesDepth: col.depth,
+				},
+				badgeRadius: 18.5,
+			});
+
+			return React.createElement(
+				"div",
+				{ key: col.depth, className: "atlas-tooth-card" },
+				[
+					React.createElement("div", { key: "header", className: "card-tooth-label" }, `${badgeCode} · ${col.label}`),
+					React.createElement("div", { key: "svg", className: "atlas-svg-wrap" }, el),
+				]
+			);
+		});
+
+		return React.createElement(
+			"div",
+			{ key: row.id, className: "atlas-stage-row" },
+			[
+				React.createElement("div", { key: "meta", className: "stage-meta-col", style: { borderLeftColor: row.color } }, [
+					React.createElement("div", { key: "badge", className: "stage-badge", style: { backgroundColor: row.color } }, row.badgeCode),
+					React.createElement("div", { key: "title", className: "stage-title" }, row.name),
+					React.createElement("div", { key: "desc", className: "stage-desc" }, row.desc),
+				]),
+				React.createElement("div", { key: "teeth", className: "stage-teeth-grid" }, cols),
+			]
+		);
+	});
+
+	const root = React.createElement(
+		"div",
+		{ className: "atlas-container" },
+		[
+			React.createElement("div", { key: "header", className: "atlas-header" }, [
+				React.createElement("div", { key: "badge", className: "atlas-top-badge" }, "DENTE CLINICAL ATLAS · BLACK CLASS II APPROXIMAL MATRIX"),
+				React.createElement("h1", { key: "title", className: "atlas-main-title" }, "АТЛАС КЛАССА II ПО БЛЭКУ: МАТРИЦА ЛОКАЛИЗАЦИЙ И ГЛУБИНЫ (M, D, MO, DO, MOD)"),
+				React.createElement("p", { key: "sub", className: "atlas-sub-title" }, "Полная клиническая градация 5 апроксимальных локализаций x 4 степени разрушения на первом моляре 46 (20 состояний со сколами стенок)"),
+			]),
+			React.createElement("div", { key: "body", className: "atlas-body" }, rows),
+		]
+	);
+
+	return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>АТЛАС КЛАССА II ПО БЛЭКУ (APPROXIMAL MATRIX)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+.atlas-container {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 28px;
+  padding: 36px 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  width: 1720px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.atlas-header {
+  border-bottom: 1px solid #334155;
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.atlas-top-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  background: rgba(220, 38, 38, 0.2);
+  color: #ef4444;
+}
+.atlas-main-title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+.atlas-sub-title {
+  font-size: 14px;
+  color: #94a3b8;
+}
+.atlas-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.atlas-stage-row {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.stage-meta-col {
+  border-left: 4px solid;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stage-badge {
+  align-self: flex-start;
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+.stage-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.stage-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+.stage-teeth-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.atlas-tooth-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card-tooth-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+.atlas-svg-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  height: 310px;
+}
+.atlas-svg-wrap svg {
+  overflow: visible;
+  display: block;
+}
+</style>
+</head>
+<body>
+${renderToStaticMarkup(root)}
+</body>
+</html>`;
+}
+
 async function run() {
 	console.log(`[caries-encyclopedia] Launching browser to capture ${CARIES_STRIPS.length} strips + Master Depth Atlas...`);
 	const browser = await launchBrowser();
@@ -647,6 +890,27 @@ async function run() {
 		const atlasBrainPng = resolve(ORCH_BRAIN, "atlas_caries_depth_evolution.png");
 		copyFileSync(atlasOutPng, atlasBrainPng);
 		console.log("[caries-encyclopedia] Generated & synced: atlas_caries_depth_evolution.png");
+
+		// 3. Рендер полного Атласа Класса II (5 строк x 4 колонки)
+		const class2Html = buildClass2MatrixHtml();
+		const class2HtmlPath = resolve("scratch/atlas_class2_approximal_matrix.html");
+		writeFileSync(class2HtmlPath, class2Html);
+
+		const class2Page = await browser.newPage({
+			viewport: { width: 1800, height: 2200 },
+			deviceScaleFactor: 1.5,
+		});
+		await class2Page.goto(`file:///${class2HtmlPath.replace(/\\/g, "/")}`, { waitUntil: "networkidle" });
+		const class2Container = await class2Page.$(".atlas-container");
+		const class2OutPng = resolve(OUT_DIR, "atlas_class2_approximal_matrix.png");
+		if (class2Container) {
+			await class2Container.screenshot({ path: class2OutPng });
+		} else {
+			await class2Page.screenshot({ path: class2OutPng });
+		}
+		const class2BrainPng = resolve(ORCH_BRAIN, "atlas_class2_approximal_matrix.png");
+		copyFileSync(class2OutPng, class2BrainPng);
+		console.log("[caries-encyclopedia] Generated & synced: atlas_class2_approximal_matrix.png");
 
 		console.log("[caries-encyclopedia] SUCCESS! All clinical caries strips and atlas successfully captured!");
 	} finally {

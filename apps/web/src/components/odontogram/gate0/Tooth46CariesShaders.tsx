@@ -23,6 +23,30 @@ export const Tooth46CariesShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#78350f" stopOpacity="0.90" />
 			</linearGradient>
 
+			{/* Demineralized sharp dark fissure pigmentation (Superficialis / Stage 1) */}
+			<radialGradient id="dente-caries-demin" cx="50%" cy="40%" r="60%">
+				<stop offset="0%" stopColor="#1c1917" stopOpacity="0.98" />
+				<stop offset="55%" stopColor="#291307" stopOpacity="0.90" />
+				<stop offset="85%" stopColor="#451a03" stopOpacity="0.75" />
+				<stop offset="100%" stopColor="#451a03" stopOpacity="0.0" />
+			</radialGradient>
+
+			{/* Softened dendritic dentin lesion (Media / Stage 2) */}
+			<radialGradient id="dente-caries-lesion" cx="50%" cy="50%" r="50%">
+				<stop offset="0%" stopColor="#78350f" stopOpacity="0.98" />
+				<stop offset="45%" stopColor="#92400e" stopOpacity="0.95" />
+				<stop offset="80%" stopColor="#b45309" stopOpacity="0.88" />
+				<stop offset="100%" stopColor="#d97706" stopOpacity="0.20" />
+			</radialGradient>
+
+			{/* Deep necrotic crater cavity (Profunda / Stage 3) */}
+			<radialGradient id="dente-caries-necrotic" cx="45%" cy="40%" r="55%">
+				<stop offset="0%" stopColor="#0c0a09" stopOpacity="1" />
+				<stop offset="50%" stopColor="#1c1917" stopOpacity="0.98" />
+				<stop offset="80%" stopColor="#291307" stopOpacity="0.92" />
+				<stop offset="100%" stopColor="#451a03" stopOpacity="0.60" />
+			</radialGradient>
+
 			{/* Chronic Caries (Arrested / Sclerotic Hardened Dark Brown Dentin) */}
 			<linearGradient id="dente-caries-chronic" x1="0" y1="0" x2="0.3" y2="1">
 				<stop offset="0%" stopColor="#451a03" stopOpacity="1" />

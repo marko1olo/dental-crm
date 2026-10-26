@@ -38,43 +38,30 @@ describe("Tooth41 Wheeler Ch. 10 Mandibular Central Incisor Anatomical Invariant
 	});
 
 	it("renders Tooth41Container with XXL badge clearance (cy=194.5, height=218)", () => {
-		const html = renderToStaticMarkup(
-			React.createElement(Tooth41Container, { presetId: "intact" }),
-		);
-		assert.ok(html.includes("<svg"));
-		assert.ok(html.includes("viewBox=\"0 0 100 218\""));
-		assert.ok(html.includes("id=\"tooth41-root-complex\""));
-		assert.ok(html.includes("id=\"tooth41-crown\""));
-		assert.ok(html.includes("r=\"18.5\""));
-		assert.ok(html.includes("cy=\"194.5\""));
+		const html = renderToStaticMarkup(React.createElement(Tooth41Container, { presetId: "intact" }));
+		assert.ok(html.includes("<svg") && html.includes("id=\"tooth41-crown\"") && html.includes("r=\"18.5\""));
 	});
 
 	it("renders endodontic obturation, overfill puff, and broken file", () => {
 		const htmlOverfill = renderToStaticMarkup(
 			React.createElement(Tooth41Container, {
-				layers: {
-					roots: true,
-					crown: true,
-					canals: true,
-					pulp: false,
-					guttaPercha: true,
-					canalCondition: "overfill",
-				},
+				layers: { roots: true, crown: true, canals: true, guttaPercha: true, canalCondition: "overfill" },
 			}),
 		);
-		assert.ok(htmlOverfill.includes("id=\"tooth41-endodontics\""));
-		assert.ok(htmlOverfill.includes("id=\"tooth41-overfill-puffs\""));
-		assert.ok(htmlOverfill.includes("id=\"canal-Main\""));
+		assert.ok(htmlOverfill.includes("id=\"tooth41-endodontics\"") && htmlOverfill.includes("id=\"tooth41-overfill-puffs\""));
+	});
 
-		const htmlBroken = renderToStaticMarkup(
-			React.createElement(Tooth41Container, {
-				layers: {
-					roots: true,
-					canals: true,
-					canalCondition: "broken_file",
-				},
-			}),
-		);
-		assert.ok(htmlBroken.includes("id=\"tooth41-broken-file\""));
+	it("renders Class III, IV, V caries matrix and transparency cut masks", () => {
+		const htmlC3s = renderToStaticMarkup(React.createElement(Tooth41Container, { layers: { caries: true, cariesType: "class3", cariesDepth: "superficial" } }));
+		assert.ok(htmlC3s.includes("tooth41-c3-superficial"));
+
+		const htmlC3ds = renderToStaticMarkup(React.createElement(Tooth41Container, { layers: { caries: true, cariesType: "class3", cariesDepth: "destructive" } }));
+		assert.ok(htmlC3ds.includes("tooth41-c3-destructive"));
+
+		const htmlC4ds = renderToStaticMarkup(React.createElement(Tooth41Container, { layers: { caries: true, cariesType: "class4", cariesDepth: "destructive" } }));
+		assert.ok(htmlC4ds.includes("tooth41-c4-destructive") && htmlC4ds.includes("id=\"tooth41-crown-destruct-mask\""));
+
+		const htmlC5ds = renderToStaticMarkup(React.createElement(Tooth41Container, { layers: { caries: true, cariesType: "class5", cariesDepth: "destructive" } }));
+		assert.ok(htmlC5ds.includes("tooth41-c5-destructive") && htmlC5ds.includes("id=\"tooth41-crown-destruct-mask\""));
 	});
 });

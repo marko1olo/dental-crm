@@ -1,13 +1,26 @@
 /**
  * DENTE Dental CRM — Organic Caries & Cavitation Geometry for Tooth 44
- * Mandibular First Premolar: Class I (Snake-Eyes), Class II (MO, DO, MOD Destructive), Class V.
+ * Mandibular First Premolar: Class I (Snake-Eyes), Class II (5 localizations x 4 depths), Class V.
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
+import { TOOTH44_CARIES_CLASS2_GEOMETRY } from "./tooth44CariesClass2Geometry";
+
+export { TOOTH44_CARIES_CLASS2_GEOMETRY };
+
 export const TOOTH44_CARIES_GEOMETRY = {
-	// Destructive cutout polygon: missing mesial ridge & buccal cusp slope cut out into transparency
+	// Class I Destructive: massive central occlusal table collapse
 	destructiveCutout:
-		"M 18,15 L 42.0,15 L 42.0,19.5 L 36.0,21.5 L 30.5,27.5 L 26.5,26.5 L 22.0,32.0 L 18,32.0 Z",
+		"M 32,12 L 68,12 L 67,23 L 62,29 L 50,34 L 38,29 L 33,23 Z",
+
+	destructive: {
+		fractureMargin: "M 33,23 L 38,29 L 50,34 L 62,29 L 67,23",
+		fractureSteps: [
+			"M 33,23 L 38,29 L 50,34 L 62,29 L 67,23",
+			"M 38,29 L 36,33",
+			"M 62,29 L 64,33",
+		],
+	},
 
 	// Class I Snake-Eyes Occlusal Pits across Crista Transversa
 	class1: {
@@ -23,22 +36,19 @@ export const TOOTH44_CARIES_GEOMETRY = {
 		},
 	},
 
-	// Class II Destructive (Collapse of Mesial Marginal Ridge & Buccal Cusp Slope)
-	destructive: {
-		halo: "M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5 C 45.0,25.5 43.5,30.0 38.5,33.5 C 32.0,36.5 24.5,37.0 22.0,32.0 Z",
-		fractureSteps: [
-			"M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5",
-			"M 27.0,27.0 L 30.0,30.5",
-			"M 35.5,22.0 L 37.5,25.5",
-		],
-		crater: "M 22.0,32.0 L 26.5,26.5 L 30.5,27.5 L 36.0,21.5 L 42.0,19.5 C 44.0,24.0 42.0,28.0 37.0,31.0 C 31.0,34.0 25.0,34.5 22.0,32.0 Z",
-		profunda: "M 26.0,28.0 L 31.0,28.5 L 36.0,23.5 C 38.0,26.5 36.0,29.5 32.0,31.0 C 28.0,32.0 26.0,30.5 26.0,28.0 Z",
-	},
-
 	// Class V Cervical Buccal Margin
 	class5: {
 		halo: "M 32.0,73.0 C 38.0,68.0 50.0,66.5 56.0,66.5 C 62.0,66.5 68.0,68.0 71.0,73.0 C 62.0,74.5 41.0,74.5 32.0,73.0 Z",
 		crater: "M 35.0,72.5 C 40.0,69.5 50.0,68.2 56.0,68.2 C 61.0,68.2 65.5,69.5 68.0,72.5 C 60.5,73.8 42.5,73.8 35.0,72.5 Z",
-		profunda: "M 40.0,71.8 C 44.0,70.2 51.0,69.5 56.0,69.5 C 59.5,69.5 63.0,70.2 65.0,71.8 C 59.0,72.8 46.0,72.8 40.0,71.8 Z",
+		necrotic: "M 40.0,71.8 C 44.0,70.2 51.0,69.5 56.0,69.5 C 59.5,69.5 63.0,70.2 65.0,71.8 C 59.0,72.8 46.0,72.8 40.0,71.8 Z",
+		fractureMargin: "M 28.0,75.5 C 38.0,62.0 62.0,62.0 72.0,75.5",
+		fractureSteps: [
+			"M 28.0,75.5 C 38.0,62.0 62.0,62.0 72.0,75.5",
+			"M 44.0,66.0 L 43.0,69.5",
+			"M 56.0,66.0 L 57.0,69.5",
+		],
+		destructiveCutout: "M 28,75.5 C 38,62 62,62 72,75.5 Z",
 	},
+
+	...TOOTH44_CARIES_CLASS2_GEOMETRY,
 } as const;

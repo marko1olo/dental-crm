@@ -49,13 +49,13 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 
 	// 5. Каналы и эндодонтия
 	endodontics: { code: "Э", title: "Обтурация каналов гуттаперчей", bg: "#10b981", border: "#047857", text: "#ffffff" },
-	underfill: { code: "Эн", title: "Недопломбировка корневых каналов", bg: "#f59e0b", border: "#d97706", text: "#ffffff" },
-	overfill: { code: "Эп", title: "Выведение силера за апекс (Puff)", bg: "#f59e0b", border: "#d97706", text: "#ffffff" },
+	underfill: { code: "Эн", title: "Недопломбировка корневых каналов", bg: "#f59e0b", border: "#d97706", text: "#0f172a" },
+	overfill: { code: "Эп", title: "Выведение силера за апекс (Puff)", bg: "#f59e0b", border: "#d97706", text: "#0f172a" },
 	broken_file: { code: "Ин", title: "Отломок инструмента в канале", bg: "#ef4444", border: "#991b1b", text: "#ffffff" },
 	resorcinol_formalin: { code: "РФ", title: "Резорцин-формалиновый зуб", bg: "#e11d48", border: "#9f1239", text: "#ffffff" },
 	calcium_hydroxide: { code: "Са", title: "Временный гидроксид кальция Ca(OH)2", bg: "#06b6d4", border: "#0891b2", text: "#ffffff" },
 	root_perforation: { code: "Пр", title: "Перфорация корня / бифуркации", bg: "#ef4444", border: "#7f1d1d", text: "#ffffff" },
-	canal_ledge: { code: "Ст", title: "Ступенька в корневом канале", bg: "#f59e0b", border: "#b45309", text: "#ffffff" },
+	canal_ledge: { code: "Ст", title: "Ступенька в корневом канале", bg: "#f59e0b", border: "#b45309", text: "#0f172a" },
 	vertical_root_fracture: { code: "Тк", title: "Вертикальная трещина корня (VRF)", bg: "#ef4444", border: "#450a0a", text: "#ffffff" },
 
 	// 6. Ортопедия
@@ -65,8 +65,8 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	crown_pfm_defective: { code: "МКд", title: "Металлокерамика (скол до металла)", bg: "#d97706", border: "#dc2626", text: "#ffffff" },
 	crown_emax: { code: "Em", title: "Керамическая коронка E-Max", bg: "#d97706", border: "#fde68a", text: "#ffffff" },
 	crown_emax_defective: { code: "Emд", title: "E-Max коронка со сколом", bg: "#d97706", border: "#dc2626", text: "#ffffff" },
-	crown_gold: { code: "Au", title: "Золотая цельнолитая коронка", bg: "#eab308", border: "#a16207", text: "#ffffff" },
-	crown_gold_defective: { code: "Auд", title: "Золотая коронка с дефектом", bg: "#eab308", border: "#dc2626", text: "#ffffff" },
+	crown_gold: { code: "Au", title: "Золотая цельнолитая коронка", bg: "#eab308", border: "#a16207", text: "#0f172a" },
+	crown_gold_defective: { code: "Auд", title: "Золотая коронка с дефектом", bg: "#eab308", border: "#dc2626", text: "#0f172a" },
 	crown_metal: { code: "Me", title: "Цельнометаллическая коронка CoCr", bg: "#64748b", border: "#334155", text: "#ffffff" },
 	crown_metal_defective: { code: "Meд", title: "Металлическая коронка со сквозным истиранием", bg: "#64748b", border: "#dc2626", text: "#ffffff" },
 	crown_pmma: { code: "Кв", title: "Временная пластмассовая коронка PMMA", bg: "#d97706", border: "#fbbf24", text: "#ffffff" },

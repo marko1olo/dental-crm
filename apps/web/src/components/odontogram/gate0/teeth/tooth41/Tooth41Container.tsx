@@ -66,6 +66,8 @@ export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
 					showAbfraction={Boolean(a.abfraction)}
 					isDark={isDark}
 					destructive={isDestruct}
+					cariesType={a.cariesType}
+					cariesDepth={a.cariesDepth}
 				/>
 			)}
 			{isEndo && !a.implant && (

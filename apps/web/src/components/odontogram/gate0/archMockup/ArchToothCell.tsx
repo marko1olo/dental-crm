@@ -61,7 +61,7 @@ export const ArchToothCell: React.FC<ArchToothCellProps> = ({
 	);
 
 	const statusBadge = (
-		<div className="flex items-center justify-center p-0.5 min-h-[40px]">
+		<div className="flex items-center justify-center p-0.5 min-h-[44px]">
 			<ArchToothBadge presetId={presetId} radius={radius} onClick={handleClick} />
 		</div>
 	);

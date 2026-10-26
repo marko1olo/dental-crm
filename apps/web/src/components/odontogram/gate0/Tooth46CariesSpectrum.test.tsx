@@ -14,63 +14,53 @@ const DEPTH_COLORS: Record<string, string> = {
 
 describe("Gate 0 Caries Spectrum & Bonded Restorations — Tooth 46", () => {
 	it("renders full caries spectrum: Class II MO/DO/MOD, Class V, White Spot, Acute/Chronic and Onlay/Inlay", () => {
-		const wsHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesType: "white_spot" },
-			}),
-		);
-		assert.ok(wsHtml.includes("tooth46-caries-white-spot"));
+		const checks = [
+			[{ caries: true, cariesType: "white_spot" }, "tooth46-caries-white-spot"],
+			[{ caries: true, cariesType: "class2_mo" }, "tooth46-caries-class2-mo"],
+			[{ caries: true, cariesType: "class2_do" }, "tooth46-caries-class2-do"],
+			[{ caries: true, cariesType: "class2_mod" }, "tooth46-caries-class2-mod-isthmus"],
+			[{ caries: true, cariesType: "class5" }, "tooth46-caries-class5"],
+			[{ caries: true, cariesChronicity: "chronic" }, "dente-caries-chronic"],
+			[{ inlayOnlay: "inlay" }, "tooth46-ceramic-inlay"],
+			[{ inlayOnlay: "onlay" }, "tooth46-ceramic-onlay"],
+		] as const;
+		for (const [layers, expected] of checks) {
+			const html = renderToString(React.createElement(Tooth46Container, { layers }));
+			assert.ok(html.includes(expected), `Missing ${expected}`);
+		}
+	});
 
-		const c2MoHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesType: "class2_mo" },
-			}),
-		);
-		assert.ok(c2MoHtml.includes("tooth46-caries-class2-mo"));
+	it("renders all 20 Class II combinations (M, D, MO, DO, MOD x 4 depths) with badges and masks", () => {
+		const subClasses = [
+			{ type: "class2_m", prefix: "M" },
+			{ type: "class2_d", prefix: "D" },
+			{ type: "class2_mo", prefix: "MO" },
+			{ type: "class2_do", prefix: "DO" },
+			{ type: "class2_mod", prefix: "MOD" },
+		] as const;
+		const depths = [
+			{ depth: "superficial", sfx: "s" },
+			{ depth: "media", sfx: "m" },
+			{ depth: "profunda", sfx: "p" },
+			{ depth: "destructive", sfx: "ds" },
+		] as const;
 
-		const c2DoHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesType: "class2_do" },
-			}),
-		);
-		assert.ok(c2DoHtml.includes("tooth46-caries-class2-do"));
-
-		const c2ModHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesType: "class2_mod" },
-			}),
-		);
-		assert.ok(c2ModHtml.includes("tooth46-caries-class2-mo"));
-		assert.ok(c2ModHtml.includes("tooth46-caries-class2-do"));
-		assert.ok(c2ModHtml.includes("tooth46-caries-class2-mod-isthmus"));
-
-		const c5Html = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesType: "class5" },
-			}),
-		);
-		assert.ok(c5Html.includes("tooth46-caries-class5"));
-
-		const chronicHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { caries: true, cariesChronicity: "chronic" },
-			}),
-		);
-		assert.ok(chronicHtml.includes("dente-caries-chronic"));
-
-		const inlayHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { inlayOnlay: "inlay" },
-			}),
-		);
-		assert.ok(inlayHtml.includes("tooth46-ceramic-inlay"));
-
-		const onlayHtml = renderToString(
-			React.createElement(Tooth46Container, {
-				layers: { inlayOnlay: "onlay" },
-			}),
-		);
-		assert.ok(onlayHtml.includes("tooth46-ceramic-onlay"));
+		for (const { type, prefix } of subClasses) {
+			for (const { depth, sfx } of depths) {
+				const expectedBadge = `${prefix}${sfx}`;
+				const html = renderToString(
+					React.createElement(Tooth46Container, {
+						layers: { caries: true, cariesType: type as any, cariesDepth: depth as any },
+					}),
+				);
+				assert.ok(html.includes(`>${expectedBadge}<`), `Class II ${type} ${depth} missing badge ${expectedBadge}`);
+				assert.ok(html.includes(`data-caries-depth="${depth}"`), `Class II ${type} ${depth} missing depth attr`);
+				if (depth === "destructive") {
+					assert.ok(html.includes("tooth46-crown-destruct-mask"), `Class II ${type} destructive missing mask`);
+					assert.ok(html.includes("tooth46-caries-destructive"), `Class II ${type} destructive missing fracture`);
+				}
+			}
+		}
 	});
 
 	it("renders all 36 Black x Depth caries spectrum presets with correct data attributes, badge code and color", () => {

@@ -3,6 +3,8 @@ import { Tooth46OcclusalCusps } from "./Tooth46OcclusalCusps";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "./Tooth46CariesSpectrumGeometry";
 
+import type { CariesType } from "./tooth46PresetTypes";
+
 export interface Tooth46EnamelCrownProps {
 	stroke: string;
 	crownOpacity: string;
@@ -11,6 +13,7 @@ export interface Tooth46EnamelCrownProps {
 	showAbfraction?: boolean | undefined;
 	isDark?: boolean | undefined;
 	destructive?: boolean | undefined;
+	cariesType?: CariesType | undefined;
 }
 
 /**
@@ -25,10 +28,32 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 	showAbfraction = false,
 	isDark = false,
 	destructive = false,
+	cariesType,
 }) => {
 	const crownPath = showAbfraction
 		? TOOTH46_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH46_GEOMETRY.crownMonolithPath;
+
+	const isMod = cariesType === "class2_mod";
+	const isMO = cariesType === "class2_mo";
+	const isDO = cariesType === "class2_do";
+	const isM = cariesType === "class2_m";
+	const isD = cariesType === "class2_d";
+	const isClass5 = cariesType === "class5";
+
+	const cutout = isMod
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutoutMOD
+		: isMO
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutoutMO
+		: isDO
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutoutDO
+		: isM
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutoutM
+		: isD
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutoutD
+		: isClass5
+		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.class5.destructiveCutout
+		: TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutout;
 
 	return (
 		<g
@@ -39,7 +64,7 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 				{destructive && (
 					<mask id="tooth46-crown-destruct-mask">
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
-						<path d={TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutout} fill="#000000" />
+						<path d={cutout} fill="#000000" />
 					</mask>
 				)}
 			</defs>

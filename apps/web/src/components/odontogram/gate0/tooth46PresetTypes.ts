@@ -19,6 +19,12 @@ export type PostCoreType = "fiber" | "cast";
 export type CariesDepth = "superficial" | "media" | "profunda" | "destructive";
 export type CariesBlackClass = "c1" | "c2_m" | "c2_d" | "c2_mo" | "c2_do" | "c2_mod" | "c3" | "c4" | "c5";
 export type CariesDepthPresetId = `${CariesBlackClass}_${CariesDepth}`;
+export type CariesClass2DepthPresetId =
+	| `caries_class2_m_${CariesDepth}`
+	| `caries_class2_d_${CariesDepth}`
+	| `caries_class2_mo_${CariesDepth}`
+	| `caries_class2_do_${CariesDepth}`
+	| `caries_class2_mod_${CariesDepth}`;
 export type CariesType =
 	| "class1"
 	| "class2_m"
@@ -35,6 +41,8 @@ export type InlayOnlayType = "inlay" | "onlay" | "overlay";
 
 export type Tooth46ClinicalPreset =
 	| CariesDepthPresetId
+	| CariesClass2DepthPresetId
+	| `caries_${CariesDepthPresetId}`
 	| "intact"
 	| "caries"
 	| "caries_superficial"

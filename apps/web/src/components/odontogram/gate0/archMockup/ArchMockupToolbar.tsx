@@ -45,7 +45,7 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 								key={s}
 								type="button"
 								onClick={() => onSelectSize(s)}
-								className={`h-8 px-2 sm:px-2.5 rounded transition-colors flex items-center justify-center ${
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2 sm:px-2.5 rounded transition-colors flex items-center justify-center shrink-0 ${
 									isSelected
 										? "bg-teal-500 text-white font-medium shadow-sm"
 										: "hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100"
@@ -62,7 +62,7 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onShuffle}
-					className="h-8 px-3 text-xs font-semibold rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-semibold rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 shrink-0"
 					title="Случайно распределить 32 разных клинических состояния"
 				>
 					<span>🎲</span>
@@ -71,7 +71,7 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onResetIntact}
-					className="h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
 					title="Сбросить все 32 зуба в норму (интактные)"
 				>
 					✓ Норма
@@ -79,7 +79,7 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onTogglePlacement}
-					className="h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
 					title="Переключить положение кружков"
 				>
 					{placement === "root_apex" ? "📍 У корней" : "📍 У коронок"}
@@ -87,7 +87,7 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onToggleMacro}
-					className={`h-8 px-3 text-xs font-semibold rounded-lg border transition-colors flex items-center gap-1 ${
+					className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-semibold rounded-lg border transition-colors flex items-center gap-1 shrink-0 ${
 						showMacro
 							? "bg-amber-500 text-white border-amber-500 shadow-sm"
 							: "border-current/15 hover:bg-black/5 dark:hover:bg-white/5"

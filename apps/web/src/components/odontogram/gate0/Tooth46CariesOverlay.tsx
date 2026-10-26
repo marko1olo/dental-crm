@@ -61,29 +61,29 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 
 			{cariesType === "class5" && (
 				<g id="tooth46-caries-class5">
-					<path
-						d={sp.class5.halo}
-						fill="url(#dente-caries-demin)"
-						stroke={haloStroke}
-						strokeWidth="0.5"
-					/>
-					{!isSuperficial && (
-						<path
-							d={sp.class5.crater}
-							fill={lesionFill}
-							stroke="rgba(120, 53, 15, 0.85)"
-							strokeWidth="0.5"
-						/>
+					{cariesDepth !== "destructive" ? (
+						<>
+							<path d={sp.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth={isSuperficial ? "1.0" : "0.5"} />
+							{!isSuperficial && (
+								<path d={sp.class5.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />
+							)}
+							{showNecrotic && <path d={sp.class5.necrotic} fill={necroticFill} stroke="#0c0a09" />}
+						</>
+					) : (
+						<g id="tooth46-caries-class5-destructive">
+							<path d={sp.class5.fractureMargin} fill="none" stroke="rgba(120, 53, 15, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
+							<path d={sp.class5.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
+							{sp.class5.fractureSteps.map((s, idx) => (
+								<path key={`c5-s-${idx}`} d={s} fill="none" stroke={isDark ? "#f1f5f9" : "#ffffff"} strokeWidth="0.85" />
+							))}
+						</g>
 					)}
-					{showNecrotic && <path d={sp.class5.necrotic} fill={necroticFill} stroke="#1c1917" />}
 				</g>
 			)}
 
-			{(cariesType === "class2_mo" ||
-				cariesType === "class2_do" ||
-				cariesType === "class2_mod") && (
+			{Boolean(cariesType?.startsWith("class2")) && (
 				<Tooth46CariesClass2
-					cariesType={cariesType}
+					cariesType={cariesType as CariesType}
 					cariesDepth={cariesDepth}
 					lesionFill={lesionFill}
 					necroticFill={necroticFill}

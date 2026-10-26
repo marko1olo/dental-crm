@@ -43,6 +43,24 @@ describe("Gate 0 ToothStatusBadge — 36 Black x Depth Clinical Matrix", () => {
 		}
 	});
 
+	it("verifies all 20 Class II aliases with caries_class2_ prefix", () => {
+		const class2Aliases: Record<string, string> = {
+			caries_class2_m_superficial: "Ms", caries_class2_m_media: "Mm",
+			caries_class2_m_profunda: "Mp", caries_class2_m_destructive: "Mds",
+			caries_class2_d_superficial: "Ds", caries_class2_d_media: "Dm",
+			caries_class2_d_profunda: "Dp", caries_class2_d_destructive: "Dds",
+			caries_class2_mo_superficial: "MOs", caries_class2_mo_media: "MOm",
+			caries_class2_mo_profunda: "MOp", caries_class2_mo_destructive: "MOds",
+			caries_class2_do_superficial: "DOs", caries_class2_do_media: "DOm",
+			caries_class2_do_profunda: "DOp", caries_class2_do_destructive: "DOds",
+			caries_class2_mod_superficial: "MODs", caries_class2_mod_media: "MODm",
+			caries_class2_mod_profunda: "MODp", caries_class2_mod_destructive: "MODds",
+		};
+		for (const [id, code] of Object.entries(class2Aliases)) {
+			assert.equal(resolveToothStatusBadge(id).code, code, `Alias ${id} must resolve to ${code}`);
+		}
+	});
+
 	it("renders geometricPrecision and letter-spacing for dense 4-5 letter codes", () => {
 		const modHtml = renderToString(React.createElement(ToothStatusBadge, { presetId: "c2_mod_destructive" }));
 		assert.ok(modHtml.includes("MODds"));

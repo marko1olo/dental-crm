@@ -67,9 +67,14 @@ export const TOOTH_CARIES_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = 
 };
 
 for (const [key, val] of Object.entries(RAW_CARIES_MATRIX)) {
-	if (key.startsWith("caries_")) {
-		TOOTH_CARIES_STATUS_MATRIX[key.slice(7)] = val;
-	} else {
-		TOOTH_CARIES_STATUS_MATRIX[`caries_${key}`] = val;
+	const raw = key.startsWith("caries_") ? key.slice(7) : key;
+	TOOTH_CARIES_STATUS_MATRIX[raw] = val;
+	TOOTH_CARIES_STATUS_MATRIX[`caries_${raw}`] = val;
+
+	// Support class2 / class1 / class3 / class4 / class5 expansion
+	const expanded = raw.replace(/^c(\d)/, "class$1");
+	if (expanded !== raw) {
+		TOOTH_CARIES_STATUS_MATRIX[expanded] = val;
+		TOOTH_CARIES_STATUS_MATRIX[`caries_${expanded}`] = val;
 	}
 }
