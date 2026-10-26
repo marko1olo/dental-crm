@@ -296,7 +296,7 @@
   - **StaffProfileCard** ([`StaffProfileCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/StaffProfileCard.tsx)): Настройка карточки сотрудника, процента комиссии и расписания.
   - **ServicePricelistManagerModal** ([`ServicePricelistManagerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/pricelist/ServicePricelistManagerModal.tsx)): Редактирование позиций номенклатуры 804н.
 - **🔵 Tier 3 (Cold Backoffice / Кабинетный режим)**:
-  - **AccessMatrixModal** ([`AccessMatrixModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/AccessMatrixModal.tsx), [`GranularRoleMatrixView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/GranularRoleMatrixView.tsx)): 68 гранулярных прав доступа по ролям.
+  - **AccessMatrixModal & GranularRoleMatrixView** ([`GranularRoleMatrixView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/GranularRoleMatrixView.tsx), [`roleMatrix/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/roleMatrix/)): Матрица прав доступа 4 канонических ролей (Врач, Администратор, Ассистент, Главврач), автономия врача (скидки 100%), декомпозиция фасада <= 80 строк (Мандат 8b).
   - **MigrationWizard** ([`MigrationWizard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/MigrationWizard.tsx)): Мастер импорта данных из IDENT, DentalPRO, iStom и 1С.
   - **OfflineBackupVaultPanel** ([`OfflineBackupVaultPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/OfflineBackupVaultPanel.tsx)): Управление локальными зашифрованными бэкапами базы данных.
 
