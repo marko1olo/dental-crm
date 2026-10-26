@@ -41,8 +41,18 @@ import {
 import { panelStateText } from "../lib/panelStateText.js";
 
 const webSrc = path.resolve(import.meta.dirname, "..");
-const readSource = (relativePath: string): string =>
-	readFileSync(path.join(webSrc, relativePath), "utf8");
+const readSource = (relativePath: string): string => {
+	const filePath = path.join(webSrc, relativePath);
+	let content = readFileSync(filePath, "utf8");
+	if (relativePath === "components/auth/StaffPinPad.tsx" && content.includes("./staffPinPad/")) {
+		content = [
+			content,
+			readFileSync(path.join(webSrc, "components/auth/staffPinPad/StaffPinPadSelector.tsx"), "utf8"),
+			readFileSync(path.join(webSrc, "components/auth/staffPinPad/useStaffPinPad.ts"), "utf8"),
+		].join("\n");
+	}
+	return content;
+};
 
 const active = (id: string, fullName: string) => ({
 	id,
@@ -181,7 +191,9 @@ describe("resolveStaffUnlockPhase: загрузка не выдаётся за �
 
 describe("разметка входа не теряет различия", () => {
 	it("App.tsx не подменяет непрочитанный список сотрудников пустым массивом", () => {
-		const source = readSource("App.tsx");
+		const appSource = readSource("App.tsx");
+		const bootSource = readSource("appModules/AppBootScreens.tsx");
+		const source = appSource.includes("<StaffPinPad") ? appSource : bootSource;
 		const pinPadCall = source.slice(source.indexOf("<StaffPinPad"));
 		assert.ok(
 			pinPadCall.startsWith("<StaffPinPad"),

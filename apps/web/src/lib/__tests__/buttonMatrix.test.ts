@@ -66,7 +66,13 @@ describe("Unified Button Design Token Matrix (Section 17 frontend.md)", () => {
 
 	it("4. StaffPinPad demo button has zero emojis and zero dashed borders", () => {
 		const pinPadPath = path.resolve(__dirname, "../../components/auth/StaffPinPad.tsx");
-		const content = fs.readFileSync(pinPadPath, "utf-8");
+		let content = fs.readFileSync(pinPadPath, "utf-8");
+		if (content.includes("./staffPinPad/")) {
+			content = [
+				content,
+				fs.readFileSync(path.resolve(__dirname, "../../components/auth/staffPinPad/StaffPinPadInput.tsx"), "utf-8"),
+			].join("\n");
+		}
 
 		// Zero emoji ⚡
 		assert.ok(!content.includes("⚡"), "StaffPinPad must NOT contain ⚡ emoji");

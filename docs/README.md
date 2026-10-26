@@ -26,6 +26,7 @@
 *   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), 18 модулей, 203 таблицы Drizzle ORM, RLS и миграции.
 *   **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Инфраструктура развёртывания локальной базы данных, polyfill `uuidv7()` и push-процедуры.
 *   **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Все консольные команды, 5-этапный typecheck, гейты кодировки и E2E smoke-тесты.
+*   **[auth_and_access_control.md](file:///C:/Clinic_MVP/dental-crm/docs/architecture/auth_and_access_control.md)** — Архитектура авторизации и контроля доступа: тотальная декомпозиция монолитов StaffPinPad, DoctorPrivacyShield, Register, UserLogin <= 120 строк (фасады <= 15 строк), автономия врача (Мандат 8e, 1-клик вход, сохранение черновиков), Apple HIG и 4-State Visual Proof.
 
 ### 2. Клинический Контур, Документы и Речевой Ввод
 *   **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры и Мандат 8e (Zero-Friction).

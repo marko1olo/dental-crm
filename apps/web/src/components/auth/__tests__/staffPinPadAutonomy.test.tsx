@@ -97,7 +97,14 @@ describe("Staff PIN Pad Autonomy & Solo Doctor Sovereignty (Mandates 8d, 8e, 8n)
 
 	it("3. source code audit: digits and backspace have active toast guidance and are not disabled (Mandates 8e & 8n)", () => {
 		const componentPath = path.resolve(__dirname, "../StaffPinPad.tsx");
-		const sourceCode = fs.readFileSync(componentPath, "utf-8");
+		let sourceCode = fs.readFileSync(componentPath, "utf-8");
+		if (sourceCode.includes("./staffPinPad/")) {
+			sourceCode = [
+				sourceCode,
+				fs.readFileSync(path.resolve(__dirname, "../staffPinPad/StaffPinPadInput.tsx"), "utf-8"),
+				fs.readFileSync(path.resolve(__dirname, "../staffPinPad/useStaffPinPad.ts"), "utf-8"),
+			].join("\n");
+		}
 
 		// Verify digit button disabled prop is strictly {loading} rather than {!selectedUser || loading}
 		expect(sourceCode).toContain("disabled={loading}");
@@ -117,8 +124,11 @@ describe("Staff PIN Pad Autonomy & Solo Doctor Sovereignty (Mandates 8d, 8e, 8n)
 		if (cssCode.includes("@import")) {
 			const dir = path.dirname(cssPath);
 			for (const m of cssCode.matchAll(/@import\s+["']([^"']+)["'];/g)) {
-				const sub = path.resolve(dir, m[1]);
-				if (fs.existsSync(sub)) cssCode += "\n" + fs.readFileSync(sub, "utf-8");
+				const subRel = m[1];
+				if (subRel) {
+					const sub = path.resolve(dir, subRel);
+					if (fs.existsSync(sub)) cssCode += "\n" + fs.readFileSync(sub, "utf-8");
+				}
 			}
 		}
 
