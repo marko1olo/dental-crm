@@ -1,0 +1,72 @@
+/* ── Блэк чипы ── */
+._ccm-cavity-cluster {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+._ccm-cavity-label {
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--muted, #64748b);
+}
+
+._ccm-cavity-pills {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	background: transparent;
+	border: none;
+	padding: 0;
+}
+
+._ccm-cavity-btn {
+	height: 22px;
+	padding: 0 0.4rem;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	border-radius: 4px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #fff);
+	color: var(--ink, #334155);
+	cursor: pointer;
+	transition: background 0.12s, border-color 0.12s, color 0.12s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+._ccm-cavity-btn:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--line-strong, #94a3b8);
+}
+
+._ccm-cavity-btn.active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+._ccm-close-btn-icon {
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.12s;
+	flex-shrink: 0;
+}
+
+._ccm-close-btn-icon:hover {
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}

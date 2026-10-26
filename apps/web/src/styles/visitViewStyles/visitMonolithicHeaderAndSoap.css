@@ -1,0 +1,39 @@
+html body .visit-monolithic-header .primary-button:not(#_),
+html body .visit-monolithic-header .secondary-button:not(#_) {
+	min-height: 36px !important;
+	height: 36px !important;
+	border-radius: 12px !important;
+	padding-left: 12px !important;
+	padding-right: 12px !important;
+	font-size: 12px !important;
+}
+
+html body .visit-monolithic-header [data-testid="btn-complete-visit-header"]:not(#_) {
+	background: var(--primary, #0d9488) !important;
+	color: #ffffff !important;
+	border-color: transparent !important;
+}
+
+html body .visit-monolithic-header [data-testid="btn-complete-visit-header"]:not(#_):hover {
+	background: var(--primary-strong, var(--primary, #0f766e)) !important;
+}
+
+html body .visit-monolithic-header [data-testid="visit-header-more-actions-btn"]:not(#_) {
+	min-width: 36px !important;
+	width: 36px !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
+/* ── SOAP CLINICAL RECORD VISIBILITY TRACKER ── */
+.emk-soap-visibility-tracker {
+	backdrop-filter: blur(8px);
+}
+
+.soap-status-chip {
+	transition: all 0.15s ease-in-out;
+}
+
+.soap-status-chip:active {
+	transform: scale(0.97);
+}

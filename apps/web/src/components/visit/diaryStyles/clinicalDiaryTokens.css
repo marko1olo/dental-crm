@@ -1,0 +1,62 @@
+/**
+ * clinicalDiaryTokens.css — Design Tokens & Container Shell
+ * Mandates 8b (<=110 lines), 8x (human clinical language), 8ap (anti-mock).
+ */
+
+.clinical-diary,
+.vde-043 {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.875rem 1rem;
+	border-radius: 1rem;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	box-shadow: var(--shadow-premium, 0 10px 40px -10px rgba(15, 118, 110, 0.12));
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.clinical-diary__glow,
+.vde-043__glow {
+	position: absolute;
+	inset: -1px;
+	border-radius: 1rem;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.8s ease;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		var(--teal-surface, rgba(13, 148, 136, 0.12)),
+		transparent
+	);
+}
+
+.clinical-diary:hover .clinical-diary__glow,
+.vde-043:hover .vde-043__glow {
+	opacity: 1;
+}
+
+/* Common typography and token mappings */
+.clinical-diary,
+.vde-043 {
+	--diary-accent: var(--teal, #0d9488);
+	--diary-accent-surface: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	--diary-accent-line: var(--teal-soft, rgba(13, 148, 136, 0.25));
+}
+
+[data-theme="dark"] .clinical-diary,
+[data-theme="night"] .clinical-diary,
+[data-theme="cyber_xray"] .clinical-diary,
+html.dark .clinical-diary,
+[data-theme="dark"] .vde-043,
+[data-theme="night"] .vde-043,
+[data-theme="cyber_xray"] .vde-043,
+html.dark .vde-043 {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}

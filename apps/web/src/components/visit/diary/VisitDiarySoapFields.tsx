@@ -28,7 +28,7 @@ export function VisitDiarySoapFields(props: VisitDiarySoapFieldsProps) {
 	});
 
 	return (
-		<div className="vde-043__grid">
+		<div className="clinical-diary__grid vde-043__grid">
 			<VisitDiaryAnamnesisField
 				diary={diary}
 				setDiary={setDiary}

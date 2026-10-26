@@ -67,8 +67,8 @@ export const VisitDiaryActionsFooter: React.FC<VisitDiaryActionsFooterProps> = (
 	}
 
 	return (
-		<div className="vde-043__footer">
-			<span className="vde-043__footer-hint">
+		<div className="clinical-diary__footer vde-043__footer">
+			<span className="clinical-diary__footer-hint vde-043__footer-hint">
 				<AlertTriangle className="w-3 h-3" /> Автосохранение активно
 			</span>
 			<button
@@ -76,7 +76,7 @@ export const VisitDiaryActionsFooter: React.FC<VisitDiaryActionsFooterProps> = (
 				id="diary-save-btn"
 				data-testid="diary-save-btn"
 				onClick={() => doSave(false)}
-				className="vde-043__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
+				className="clinical-diary__btn vde-043__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
 			>
 				{isSaving ? "Сохраняю..." : "Сохранить черновик"}
 			</button>
