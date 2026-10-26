@@ -47,6 +47,7 @@ export interface Tooth46LayerFlags {
 	cariesType?: CariesType;
 	cariesChronicity?: CariesChronicity;
 	cariesDepth?: CariesDepth;
+	cariesSurface?: "mesial" | "distal" | "M" | "D" | undefined;
 	composite?: boolean;
 	compositeCondition?: RestorationCondition;
 	inlayOnlay?: InlayOnlayType;
