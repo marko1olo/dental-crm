@@ -1,0 +1,78 @@
+/* ==========================================================================
+   DENTE CRM — TELEGRAM DARK THEME HARMONY (telegramDarkTheme.css)
+   CSS Layer 4. Authority: frontend.md & theme-overrides.css. Strictly <= 120 lines.
+   ========================================================================== */
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-settings {
+	background:
+		linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(30, 41, 59, 0.5)),
+		var(--paper-strong);
+	border-color: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-status-grid article,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-link-panel,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-policy-panel,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-outbox-panel,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-outbox-item,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-preview-box,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-link-ledger-row,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-feature-grid label,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-voice-toggle {
+	background: var(--paper-strong);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-link-result {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-link-result img {
+	background: #ffffff;
+	border-color: var(--line);
+	padding: 8px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-token-row span,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-outbox-actions > span,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-preview-button {
+	background: rgba(13, 148, 136, 0.18);
+	border-color: rgba(13, 148, 136, 0.35);
+	color: var(--teal-light, #2dd4bf);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-blocked-list span,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-warning-strip span,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-preview-guidance,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-outbox-guidance {
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.28);
+	color: #fcd34d;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-outbox-buttons span {
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-feature-grid label.feature-enabled {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.35);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-save-state.save-saving {
+	background: rgba(13, 148, 136, 0.18);
+	color: #2dd4bf;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-save-state.save-saved {
+	background: rgba(16, 185, 129, 0.18);
+	color: #34d399;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .telegram-save-state.save-error {
+	background: rgba(239, 68, 68, 0.18);
+	color: #f87171;
+}

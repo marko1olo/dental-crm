@@ -1,0 +1,69 @@
+/* ==========================================================================
+   DENTE CRM — TELEGRAM WORKBENCH LAYOUT (telegramLayout.css)
+   CSS Layer 4. Authority: decomposer/SKILL.md, Mandates 8b & 8n. Strictly <= 120 lines.
+   ========================================================================== */
+.telegram-settings {
+	background:
+		linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(34, 79, 128, 0.06)),
+		var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}
+
+.telegram-status-grid,
+.telegram-workbench {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.telegram-workbench {
+	align-items: start;
+	grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.telegram-status-grid article,
+.telegram-link-panel,
+.telegram-policy-panel,
+.telegram-outbox-panel {
+	align-content: start;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 14px;
+}
+
+.telegram-status-grid span,
+.telegram-link-result span,
+.telegram-preview-box span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 900;
+	letter-spacing: 0;
+	text-transform: uppercase;
+}
+
+.telegram-status-grid strong,
+.telegram-link-result strong {
+	color: var(--ink);
+	display: block;
+	font-size: 22px;
+	line-height: 1.05;
+	margin-top: 4px;
+}
+
+.telegram-status-grid p,
+.telegram-link-panel p,
+.telegram-policy-panel p,
+.telegram-link-result p,
+.telegram-preview-box p {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.38;
+	margin: 0;
+}

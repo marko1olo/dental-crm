@@ -75,7 +75,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 						onClick={() => void sendDueTelegramOutbox()}
 						aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
 						aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
-						disabled={!typedTelegramOutbox?.dueCount || isTelegramSendingDue || Boolean(telegramSendingItemId) || isTelegramLoading}
+						disabled={isTelegramSendingDue || Boolean(telegramSendingItemId) || isTelegramLoading}
 					>
 						<Send aria-hidden="true" /> {isTelegramSendingDue ? "Отправляем" : "Отправить готовые"}
 					</button>
@@ -181,7 +181,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 									className="secondary-button compact-button"
 									type="button"
 									onClick={() => void sendTelegramOutboxItem(item.id)}
-									disabled={item.deliveryStatus !== "ready" || !isTelegramOutboxItemDueForUi(item) || Boolean(telegramSendingItemId) || isTelegramSendingDue}
+									disabled={Boolean(telegramSendingItemId) || isTelegramSendingDue}
 								>
 									<Send aria-hidden="true" /> {telegramSendingItemId === item.id ? "..." : "Отправить"}
 								</button>

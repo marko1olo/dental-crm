@@ -1,0 +1,115 @@
+/* ==========================================================================
+   DENTE CRM — TELEGRAM PATIENT OUTBOX (telegramOutbox.css)
+   CSS Layer 4. Authority: decomposer/SKILL.md & tokens.css. Strictly <= 120 lines.
+   ========================================================================== */
+.telegram-outbox-panel { display: grid; gap: 12px; }
+.telegram-outbox-list { display: grid; gap: 8px; }
+.telegram-outbox-summary-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+.telegram-outbox-controls {
+	align-items: end;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+}
+
+.telegram-outbox-controls label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 800;
+	gap: 5px;
+}
+
+.telegram-outbox-controls select {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	min-height: 36px;
+	padding: 7px 9px;
+}
+
+.telegram-outbox-controls > span,
+.telegram-outbox-result-note {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+}
+
+.telegram-outbox-item {
+	align-items: start;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding: 10px 12px;
+}
+
+.telegram-outbox-item strong {
+	color: var(--ink);
+	display: block;
+	font-size: 14px;
+	line-height: 1.25;
+}
+
+.telegram-outbox-item p,
+.telegram-empty-state {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.35;
+	margin: 4px 0;
+}
+
+.telegram-outbox-item small {
+	color: var(--muted);
+	display: block;
+	font-size: 12px;
+}
+
+.telegram-outbox-preview-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.telegram-outbox-notes { display: grid; gap: 3px; margin: 6px 0; }
+.telegram-outbox-notes small { color: var(--ink); }
+.telegram-outbox-buttons { display: grid; gap: 5px; }
+
+.telegram-outbox-buttons span {
+	align-items: center;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--ink);
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 5px;
+	line-height: 1.2;
+	padding: 5px 7px;
+}
+
+.telegram-outbox-actions {
+	align-items: end;
+	display: grid;
+	gap: 8px;
+	justify-items: end;
+}
+
+.telegram-outbox-actions > span {
+	background: rgba(13, 148, 136, 0.08);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 5px 8px;
+	white-space: nowrap;
+}
+
+.telegram-outbox-item.outbox-needs_chat_link .telegram-outbox-actions > span,
+.telegram-outbox-item.outbox-transport_not_ready .telegram-outbox-actions > span,
+.telegram-outbox-item.outbox-blocked_by_policy .telegram-outbox-actions > span,
+.telegram-outbox-item.outbox-disabled .telegram-outbox-actions > span {
+	background: rgba(245, 158, 11, 0.1);
+	color: var(--warning-ink, #b45309);
+}

@@ -1,0 +1,103 @@
+/* ==========================================================================
+   DENTE CRM — TELEGRAM MOBILE TOUCH & APPLE HIG (telegramMobile.css)
+   CSS Layer 4. Authority: mobile_hig.md & Mandate 8ze. Strictly <= 120 lines.
+   ========================================================================== */
+@media (max-width: 768px) {
+	.telegram-settings {
+		box-sizing: border-box;
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+		padding: 12px;
+	}
+
+	.telegram-workbench {
+		gap: 12px;
+		grid-template-columns: 1fr;
+	}
+
+	.telegram-status-grid {
+		gap: 8px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.telegram-link-controls,
+	.telegram-external-links,
+	.telegram-settings-form,
+	.telegram-visual-card-fields,
+	.telegram-feature-grid,
+	.telegram-outbox-controls {
+		gap: 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.telegram-checkup-delay-fields,
+	.telegram-checkup-delay-fields.full {
+		grid-template-columns: 1fr;
+	}
+
+	.telegram-link-result {
+		gap: 12px;
+		grid-template-columns: 1fr;
+		justify-items: center;
+		text-align: center;
+	}
+
+	.telegram-link-actions {
+		justify-content: center;
+	}
+
+	.telegram-outbox-item {
+		gap: 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.telegram-outbox-actions {
+		align-items: stretch;
+		justify-items: stretch;
+		width: 100%;
+	}
+
+	.telegram-link-controls input,
+	.telegram-link-controls select,
+	.telegram-settings-form input,
+	.telegram-settings-form select,
+	.telegram-external-links input,
+	.telegram-visual-card-fields input,
+	.telegram-checkup-delay-fields input,
+	.telegram-outbox-controls select {
+		font-size: 14px;
+		min-height: 44px;
+		padding: 10px 12px;
+	}
+
+	.telegram-outbox-actions .compact-button,
+	.telegram-outbox-summary-actions .compact-button,
+	.telegram-preview-button {
+		font-size: 13px;
+		justify-content: center;
+		min-height: 44px;
+		padding: 10px 14px;
+	}
+
+	.telegram-feature-grid label,
+	.telegram-voice-toggle {
+		min-height: 44px;
+		padding: 10px;
+	}
+}
+
+@media (max-width: 480px) {
+	.telegram-status-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.telegram-link-result img {
+		height: 140px;
+		width: 140px;
+	}
+
+	.telegram-visual-card-preview {
+		max-width: 100%;
+	}
+}

@@ -235,7 +235,7 @@ export function PhoneAuthForm({
 						className="tg-btn-primary"
 						style={{ marginTop: "8px" }}
 						onClick={handleRequestCode}
-						disabled={isRequestingCode || !phoneInput.trim()}
+						disabled={isRequestingCode}
 						data-testid="tg-account-request-code-btn"
 					>
 						{isRequestingCode ? (
@@ -367,9 +367,7 @@ export function PhoneAuthForm({
 							className="tg-btn-primary"
 							style={{ width: "100%" }}
 							onClick={() => handleVerifyCode()}
-							disabled={
-								isVerifyingCode || codeDigits.some((d) => d === "")
-							}
+							disabled={isVerifyingCode}
 							data-testid="tg-account-verify-code-btn"
 						>
 							{isVerifyingCode ? (
@@ -457,7 +455,7 @@ export function PhoneAuthForm({
 							className="tg-btn-primary"
 							style={{ width: "100%" }}
 							onClick={handleVerify2fa}
-							disabled={isVerifying2fa || !password2fa.trim()}
+							disabled={isVerifying2fa}
 							data-testid="tg-account-verify-2fa-btn"
 						>
 							{isVerifying2fa ? (

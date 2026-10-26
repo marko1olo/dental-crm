@@ -176,7 +176,6 @@ export function TelegramLinkPanelSection({
 										"Код",
 									)
 								}
-								disabled={!telegramLinkCode.code.trim()}
 							>
 								<Copy aria-hidden="true" /> Код
 							</button>
@@ -190,7 +189,6 @@ export function TelegramLinkPanelSection({
 											"Ссылка",
 										)
 									}
-									disabled={!telegramLinkCode.deepLink.trim()}
 								>
 									<Copy aria-hidden="true" /> Ссылка
 								</button>
@@ -204,7 +202,6 @@ export function TelegramLinkPanelSection({
 										"Текст",
 									)
 								}
-								disabled={!telegramLinkCode.shareText.trim()}
 							>
 								<Copy aria-hidden="true" /> Текст
 							</button>
@@ -225,7 +222,6 @@ export function TelegramLinkPanelSection({
 								className="secondary-button compact-button"
 								type="button"
 								onClick={downloadTelegramQrSvg}
-								disabled={!telegramLinkCode.qrSvg.trim()}
 							>
 								<Download aria-hidden="true" /> Скачать SVG
 							</button>
