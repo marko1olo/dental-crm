@@ -33,6 +33,7 @@ export interface AnesthesiaCalculationInput {
 	hasSulfiteAllergy: boolean;
 	hasBronchialAsthma: boolean;
 	isPregnantOrLactating: boolean;
+	isSomaticallyHealthy?: boolean | undefined;
 	techniqueId: InjectionTechniqueId;
 	needleType: NeedleGaugeType;
 	targetToothNumberFdi?: number | string | undefined;
@@ -68,6 +69,7 @@ export interface AnesthesiaCalculationResult {
 	isOverdose: boolean;
 	isEpinephrineOverdose: boolean;
 	isCardioRisk: boolean;
+	isSomaticallyHealthy: boolean;
 	cardioRiskReasons: string[];
 	ageCategory: PatientAgeCategory;
 	ageDoseReductionFactor: number;

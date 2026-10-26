@@ -129,13 +129,27 @@ describe("Wave 54 / Feature 242: Anesthesia Protocol Print and 1-Click Patient M
 			);
 		});
 
-		it("renders disabled state cleanly when disabled prop is set", () => {
+		it("guarantees doctor autonomy (Mandate 8e): Primary CTA and preset buttons are NEVER disabled even if disabled prop is passed", () => {
 			const html = renderToString(
 				<AnesthesiaQuickBar disabled={true} onApplyAnesthesia={() => {}} />,
 			);
-			assert.ok(
-				html.includes("disabled"),
-				"Buttons must receive disabled attribute",
+			const btnApplyMatch = html.match(
+				/<button[^>]*data-testid="btn-apply-anesthesia-to-card"[^>]*>/,
+			);
+			assert.ok(btnApplyMatch, "CTA button must be rendered");
+			assert.equal(
+				btnApplyMatch[0].includes("disabled"),
+				false,
+				"Primary CTA button must NEVER be disabled (Mandate 8e: Doctor Autonomy)",
+			);
+			const normPresetMatch = html.match(
+				/<button[^>]*data-testid="anesthesia-dose-norm-preset"[^>]*>/,
+			);
+			assert.ok(normPresetMatch, "Norm preset button must be rendered");
+			assert.equal(
+				normPresetMatch[0].includes("disabled"),
+				false,
+				"Norm preset button must NEVER be disabled (Mandate 8e)",
 			);
 		});
 

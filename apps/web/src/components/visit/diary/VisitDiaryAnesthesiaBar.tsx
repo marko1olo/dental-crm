@@ -23,7 +23,7 @@ export interface VisitDiaryAnesthesiaBarProps {
 }
 
 export function VisitDiaryAnesthesiaBar({
-	fieldsDisabled,
+	fieldsDisabled: _fieldsDisabled,
 	activePatient,
 	diary,
 	doctorName: _doctorName,
@@ -36,8 +36,6 @@ export function VisitDiaryAnesthesiaBar({
 	patientId,
 	visitId,
 }: VisitDiaryAnesthesiaBarProps) {
-	if (fieldsDisabled) return null;
-
 	const ensureRevisingIfLocked = () => {
 		if (isLocked && !isRevising) beginRevise();
 	};
@@ -58,7 +56,6 @@ export function VisitDiaryAnesthesiaBar({
 				isPregnantOrLactating={safety.isPregnantOrLactating}
 				hasLidocaineAllergy={safety.hasLidocaineAllergy}
 				hasArticaineAllergy={safety.hasArticaineAllergy}
-				disabled={fieldsDisabled}
 				patientId={patientId}
 				visitId={visitId}
 				onApplyAnesthesia={(text) => {

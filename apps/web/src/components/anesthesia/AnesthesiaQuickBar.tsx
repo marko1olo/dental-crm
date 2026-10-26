@@ -63,10 +63,9 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 	const weight = resolveClinicalDefaultWeightKg(props.patientWeightKg, props.patientAgeYears, false);
 	const isCardioRisk = Boolean(props.hasCardiovascularRisk || props.hasHypertension || props.hasCardiacArrhythmia || props.hasIschemicHeartDisease || props.hasMyocardialInfarctionHistory || props.takesBetaBlockers);
 	const showToast = (msg: string) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
-	const stepCarpules = (delta: number) => setCarpulesCount((prev) => Math.min(6.0, Math.max(0.5, Math.round((prev + delta) * 10) / 10)));
+	const stepCarpules = (delta: number) => setCarpulesCount((prev) => Math.min(10.0, Math.max(0.5, Math.round((prev + delta) * 10) / 10)));
 
 	const applyAnesthesiaDirect = (drugId: AnestheticDrugId | "none", count: number, tech: InjectionTechniqueId = techniqueId) => {
-		if (props.disabled) return;
 		setSelectedDrugId(drugId); setCarpulesCount(count); setTechniqueId(tech);
 		const effDrug: AnestheticDrugId = drugId === "none" ? "articaine_1_100k" : drugId;
 		const result = calculateAnesthesiaSafety({

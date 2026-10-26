@@ -79,6 +79,7 @@ export function calculateAnesthesiaSafety(
 			: 0;
 
 	const safetyZone = determineSafetyZone(percentOfMaxDose, percentOfEpiMaxDose);
+	const isSomaticallyHealthy = input.isSomaticallyHealthy ?? (!advisory.isCardioRisk && !input.hasSulfiteAllergy && !input.hasBronchialAsthma && !input.isPregnantOrLactating);
 
 	const diaryEntryRu = generateAnesthesiaDiaryEntry({
 		drug,
@@ -107,6 +108,7 @@ export function calculateAnesthesiaSafety(
 		percentOfMaxDose,
 		percentOfEpiMaxDose,
 		safetyZone,
+		isSomaticallyHealthy,
 		...advisory,
 		ageCategory,
 		ageDoseReductionFactor: ageFactor,
