@@ -1,57 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useCopilot } from './useCopilot';
 import { CopilotDrawer } from './CopilotDrawer';
-import { ChairsideCopilotHUD } from './ChairsideCopilotHUD';
 import { useCopilotContextSync } from './CopilotContextSync';
 import type { CopilotUiMessage, PendingConfirmation } from './copilotTypes';
-import { ClinicalProtocolsCatalogModal } from '../visit/clinicalCatalog/ClinicalProtocolsCatalogModal';
 import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinicalCatalog/clinicalProtocolsCatalog';
 import { useVisitStore } from '../../store/visitStore';
-
-import { VoiceDictationAssistantModal } from '../voice/VoiceDictationAssistantModal';
-import { useAppStore } from '../../store/appStore';
-
-declare global {
-  interface Window {
-    __denteCopilot?: {
-      open: () => void;
-      close: () => void;
-      toggle: () => void;
-      openHud: () => void;
-      closeHud: () => void;
-      toggleHud: () => void;
-      openVoiceModal: () => void;
-      closeVoiceModal: () => void;
-      openTreatmentPlanCopilot: () => void;
-      closeTreatmentPlanCopilot: () => void;
-      openAiSettings: () => void;
-      setMessages: (messages: CopilotUiMessage[]) => void;
-      setPending: (pending: PendingConfirmation | null) => void;
-      setActiveTab: (tab: 'chat' | 'pending') => void;
-    };
-  }
-}
+import { useCopilotGlobalEvents } from './host/useCopilotGlobalEvents';
+import { CopilotGlobalModals } from './host/CopilotGlobalModals';
 
 export const CopilotGlobalHost: React.FC = () => {
-  const {
-    isOpen,
-    messages,
-    busy,
-    phase,
-    pending,
-    nameCache,
-    nudges,
-    activeTab,
-    openDrawer,
-    closeDrawer,
-    toggle,
-    setActiveTab,
-    send,
-    confirm,
-    reset,
-    dismissNudge,
-  } = useCopilot();
-
+  const copilot = useCopilot();
   const { context: uiContext } = useCopilotContextSync();
 
   const [customMessages, setCustomMessages] = useState<CopilotUiMessage[] | null>(null);
@@ -61,7 +19,7 @@ export const CopilotGlobalHost: React.FC = () => {
   const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
   const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [isTreatmentPlanCopilotOpen, setIsTreatmentPlanCopilotOpen] = useState(false);
+  const [, setIsTreatmentPlanCopilotOpen] = useState(false);
 
   const openHud = useCallback(() => setIsHudOpen(true), []);
   const closeHud = useCallback(() => setIsHudOpen(false), []);
@@ -71,7 +29,13 @@ export const CopilotGlobalHost: React.FC = () => {
   const openTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(true), []);
   const closeTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(false), []);
 
-  const handleApplyCatalogPatch = useCallback((patch: VisitNoteFieldsPatch, _successMessage: string) => {
+  const handleOpenCatalog = useCallback((tooth?: number, category?: SpecialtyCategoryKey) => {
+    if (tooth) setCatalogTooth(tooth);
+    if (category) setCatalogSpecialty(category);
+    setIsCatalogModalOpen(true);
+  }, []);
+
+  const handleApplyCatalogPatch = useCallback((patch: VisitNoteFieldsPatch) => {
     useVisitStore.getState().setVisitNoteForm((prev) => ({
       ...prev,
       complaint: patch.complaint || prev.complaint || '',
@@ -87,96 +51,26 @@ export const CopilotGlobalHost: React.FC = () => {
     setIsCatalogModalOpen(false);
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('copilot') === 'open' || window.location.hash.includes('copilot')) {
-      openDrawer();
-    }
-    if (params.get('hud') === 'open' || window.location.hash.includes('chairside-hud')) {
-      setIsHudOpen(true);
-    }
+  useCopilotGlobalEvents({
+    openDrawer: copilot.openDrawer,
+    closeDrawer: copilot.closeDrawer,
+    toggle: copilot.toggle,
+    setActiveTab: copilot.setActiveTab,
+    openHud,
+    closeHud,
+    toggleHud,
+    openVoiceModal,
+    closeVoiceModal,
+    openTreatmentPlanCopilot,
+    closeTreatmentPlanCopilot,
+    setCustomMessages,
+    setCustomPending,
+    onOpenCatalog: handleOpenCatalog,
+  });
 
-    window.__denteCopilot = {
-      open: openDrawer,
-      close: closeDrawer,
-      toggle: toggle,
-      openHud,
-      closeHud,
-      toggleHud,
-      openVoiceModal,
-      closeVoiceModal,
-      openTreatmentPlanCopilot,
-      closeTreatmentPlanCopilot,
-      openAiSettings: () => {
-        useAppStore.getState().setCurrentView('settings');
-        useAppStore.getState().setSettingsTab('ai');
-      },
-      setMessages: (msgs) => setCustomMessages(msgs),
-      setPending: (pend) => setCustomPending(pend),
-      setActiveTab: (tab) => setActiveTab(tab),
-    };
-
-    const handleCustomToggle = () => toggle();
-    const handleToggleHud = () => setIsHudOpen((prev) => !prev);
-    const handleOpenHud = () => setIsHudOpen(true);
-    const handleCloseHud = () => setIsHudOpen(false);
-    const handleOpenVoice = () => setIsVoiceModalOpen(true);
-    const handleCloseVoice = () => setIsVoiceModalOpen(false);
-    const handleOpenTp = () => setIsTreatmentPlanCopilotOpen(true);
-    const handleCloseTp = () => setIsTreatmentPlanCopilotOpen(false);
-    const handleOpenAi = () => {
-      useAppStore.getState().setCurrentView('settings');
-      useAppStore.getState().setSettingsTab('ai');
-    };
-
-    const handleOpenCatalog = (e: Event) => {
-      const customEvent = e as CustomEvent<{ tooth?: number; query?: string; category?: SpecialtyCategoryKey }>;
-      if (customEvent.detail) {
-        if (customEvent.detail.tooth) setCatalogTooth(customEvent.detail.tooth);
-        if (customEvent.detail.category) setCatalogSpecialty(customEvent.detail.category);
-      }
-      setIsCatalogModalOpen(true);
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") || (e.altKey && e.key.toLowerCase() === "c")) {
-        e.preventDefault();
-        setIsHudOpen((prev) => !prev);
-      }
-    };
-
-    window.addEventListener('dente:toggle-copilot', handleCustomToggle);
-    window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
-    window.addEventListener('dente:open-chairside-hud', handleOpenHud);
-    window.addEventListener('dente:close-chairside-hud', handleCloseHud);
-    window.addEventListener('dente:open-voice-dictation', handleOpenVoice);
-    window.addEventListener('dente:close-voice-dictation', handleCloseVoice);
-    window.addEventListener('dente:open-treatment-plan-copilot', handleOpenTp);
-    window.addEventListener('dente:close-treatment-plan-copilot', handleCloseTp);
-    window.addEventListener('dente:open-ai-settings', handleOpenAi);
-    window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
-      window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
-      window.removeEventListener('dente:open-chairside-hud', handleOpenHud);
-      window.removeEventListener('dente:close-chairside-hud', handleCloseHud);
-      window.removeEventListener('dente:open-voice-dictation', handleOpenVoice);
-      window.removeEventListener('dente:close-voice-dictation', handleCloseVoice);
-      window.removeEventListener('dente:open-treatment-plan-copilot', handleOpenTp);
-      window.removeEventListener('dente:close-treatment-plan-copilot', handleCloseTp);
-      window.removeEventListener('dente:open-ai-settings', handleOpenAi);
-      window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
-      window.removeEventListener('keydown', handleKeyDown);
-      delete window.__denteCopilot;
-    };
-  }, [openDrawer, closeDrawer, toggle, setActiveTab, openHud, closeHud, toggleHud, openVoiceModal, closeVoiceModal, openTreatmentPlanCopilot, closeTreatmentPlanCopilot]);
-
-  const effectiveMessages = customMessages !== null ? customMessages : messages;
-  const effectivePending = customPending !== null ? customPending : pending;
-
-  const numericActiveTooth = typeof uiContext.activeTooth === "number"
+  const effectiveMessages = customMessages !== null ? customMessages : copilot.messages;
+  const effectivePending = customPending !== null ? customPending : copilot.pending;
+  const numericActiveTooth = typeof uiContext.activeTooth === 'number'
     ? uiContext.activeTooth
     : uiContext.activeTooth && !Number.isNaN(Number(uiContext.activeTooth))
       ? Number(uiContext.activeTooth)
@@ -184,56 +78,37 @@ export const CopilotGlobalHost: React.FC = () => {
 
   return (
     <>
-      {/* Copilot Drawer (Side Chat) */}
       <CopilotDrawer
-        isOpen={isOpen}
+        isOpen={copilot.isOpen}
         messages={effectiveMessages}
-        busy={busy}
-        phase={phase}
+        busy={copilot.busy}
+        phase={copilot.phase}
         pending={effectivePending}
-        nameCache={nameCache}
-        nudges={nudges}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onClose={closeDrawer}
-        onSend={send}
-        onConfirm={confirm}
-        onReset={reset}
-        onDismissNudge={dismissNudge}
+        nameCache={copilot.nameCache}
+        nudges={copilot.nudges}
+        activeTab={copilot.activeTab}
+        onTabChange={copilot.setActiveTab}
+        onClose={copilot.closeDrawer}
+        onSend={copilot.send}
+        onConfirm={copilot.confirm}
+        onReset={copilot.reset}
+        onDismissNudge={copilot.dismissNudge}
       />
-
-      {/* Chairside Copilot HUD (Hands-Free Autonomous Terminal at Chair) */}
-      {isHudOpen && (
-        <ChairsideCopilotHUD
-          initialOpen={true}
-          patientId={uiContext.patientId || undefined}
-          patientName={uiContext.patientName || undefined}
-          patientAllergies={uiContext.allergies}
-          activeTooth={numericActiveTooth}
-          onClose={closeHud}
-        />
-      )}
-
-      {/* 1 142 Clinical Protocols Catalog Modal (Doctor Autonomy Mandate 8e) */}
-      {isCatalogModalOpen && (
-        <ClinicalProtocolsCatalogModal
-          isOpen={isCatalogModalOpen}
-          onClose={() => setIsCatalogModalOpen(false)}
-          activeTooth={catalogTooth ?? numericActiveTooth ?? 16}
-          currentNoteForm={useVisitStore.getState().visitNoteForm}
-          onApplyPatch={handleApplyCatalogPatch}
-          initialSpecialty={catalogSpecialty}
-        />
-      )}
-
-      {/* Voice Dictation Assistant Modal */}
-      {isVoiceModalOpen && (
-        <VoiceDictationAssistantModal
-          isOpen={isVoiceModalOpen}
-          onClose={closeVoiceModal}
-          activeToothNumber={numericActiveTooth}
-        />
-      )}
+      <CopilotGlobalModals
+        isHudOpen={isHudOpen}
+        closeHud={closeHud}
+        isCatalogModalOpen={isCatalogModalOpen}
+        closeCatalogModal={() => setIsCatalogModalOpen(false)}
+        catalogTooth={catalogTooth}
+        catalogSpecialty={catalogSpecialty}
+        onApplyCatalogPatch={handleApplyCatalogPatch}
+        isVoiceModalOpen={isVoiceModalOpen}
+        closeVoiceModal={closeVoiceModal}
+        patientId={uiContext.patientId || undefined}
+        patientName={uiContext.patientName || undefined}
+        patientAllergies={uiContext.allergies}
+        activeTooth={numericActiveTooth}
+      />
     </>
   );
 };

@@ -34,8 +34,9 @@ export const DentalAgentCockpit: React.FC<DentalAgentCockpitProps> = ({
 				useAppStore.getState().setActiveTooth(Number(targetTooth));
 			}
 
-			if (window.__denteCopilot?.open) {
-				window.__denteCopilot.open();
+			const copilot = (window as any).__denteCopilot;
+			if (copilot?.open) {
+				copilot.open();
 				if (ctx?.prompt) {
 					window.dispatchEvent(
 						new CustomEvent("dente:copilot-send-prompt", { detail: { text: ctx.prompt } }),
@@ -54,18 +55,20 @@ export const DentalAgentCockpit: React.FC<DentalAgentCockpitProps> = ({
 
 	const closeCanonicalCopilot = useCallback(() => {
 		if (propOnClose) propOnClose();
-		if (window.__denteCopilot?.close) {
-			window.__denteCopilot.close();
+		const copilot = (window as any).__denteCopilot;
+		if (copilot?.close) {
+			copilot.close();
 		}
 	}, [propOnClose]);
 
 	useEffect(() => {
-		window.__denteAgentCockpit = {
-			open: (ctx) => openCanonicalCopilot(ctx),
+		(window as any).__denteAgentCockpit = {
+			open: (ctx: { patientId?: string; toothNumber?: number; prompt?: string }) => openCanonicalCopilot(ctx),
 			close: closeCanonicalCopilot,
 			toggle: () => {
-				if (window.__denteCopilot?.toggle) {
-					window.__denteCopilot.toggle();
+				const copilot = (window as any).__denteCopilot;
+				if (copilot?.toggle) {
+					copilot.toggle();
 				} else {
 					window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
 				}

@@ -1,0 +1,103 @@
+/* ==========================================================================
+   CopilotActionConfirmForms.css — Edit fields, reject prompt, and action buttons
+   Compliant with Mandate 8b (<= 110 lines)
+   ========================================================================== */
+
+.copilot-action-confirm-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.copilot-action-confirm-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-action-confirm-field-input-wrap {
+  width: 100%;
+}
+
+.copilot-action-confirm-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.25));
+  background-color: var(--paper-strong, #fafcfa);
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.copilot-action-confirm-input:focus {
+  outline: none;
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.2));
+  background-color: var(--paper, #ffffff);
+}
+
+/* Reject Reason Box */
+.copilot-action-confirm-reject-box {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--rust, #b91c1c);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-action-confirm-reject-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-action-confirm-reject-input-row .copilot-action-confirm-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Action Button Row */
+.copilot-action-confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-btn-reject {
+  color: var(--rust, #b91c1c) !important;
+  border-color: rgba(185, 28, 28, 0.25) !important;
+}
+
+.copilot-btn-reject:hover {
+  background-color: var(--rust-soft, rgba(254, 226, 226, 0.5)) !important;
+  border-color: var(--rust, #b91c1c) !important;
+}
+
+.copilot-action-confirm-actions button {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+@media (pointer: coarse) {
+  .copilot-action-confirm-actions button {
+    min-height: 44px;
+    height: 44px;
+    padding: 0 16px;
+    font-size: 13px;
+  }
+}
+

@@ -39,6 +39,25 @@
   cursor: default;
 }
 
+/* Protocol catalog button styling with guaranteed dark-theme contrast */
+[data-testid="btn-chairside-choose-another-protocol"] {
+  background-color: var(--paper-soft) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--teal) !important;
+  border-radius: 6px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+[data-testid="btn-chairside-choose-another-protocol"]:hover {
+  background-color: var(--teal-soft) !important;
+  border-color: var(--teal) !important;
+}
+
 .chairside-capsule-kbd {
   display: inline-block;
   padding: 0 4px;

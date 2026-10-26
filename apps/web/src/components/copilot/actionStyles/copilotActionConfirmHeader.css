@@ -1,0 +1,70 @@
+/* ==========================================================================
+   CopilotActionConfirmHeader.css — Title block, Status pills and descriptions
+   Compliant with Mandate 8b (<= 110 lines)
+   ========================================================================== */
+
+.copilot-action-confirm-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.copilot-action-confirm-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-action-confirm-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.copilot-action-confirm-status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.copilot-action-confirm-status-pill.pending {
+  background-color: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.copilot-action-confirm-status-pill.editing {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.6));
+}
+
+.copilot-action-confirm-status-pill.confirmed {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border: 1px solid var(--teal, #0d9488);
+}
+
+.copilot-action-confirm-status-pill.rejected {
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #6b7280);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+}
+
+.copilot-action-confirm-desc {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+}
+

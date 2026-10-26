@@ -1,83 +1,77 @@
-import React from 'react';
-import { AlertTriangle, ShieldAlert, AlertCircle, Info, Pill, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, Pill, Check } from 'lucide-react';
 import type { DrugInteractionItem } from './copilotTypes';
 
 export interface CopilotDrugInteractionCardProps {
   interactions: DrugInteractionItem[];
   patientAllergies?: string[] | undefined;
   safeAlternatives?: string[] | undefined;
+  onConfirm?: () => void;
+  onApprove?: () => void;
 }
 
 export const CopilotDrugInteractionCard: React.FC<CopilotDrugInteractionCardProps> = ({
   interactions,
   patientAllergies,
   safeAlternatives,
+  onConfirm,
+  onApprove,
 }) => {
+  const [approved, setApproved] = useState(false);
+
+  const handleApprove = () => {
+    setApproved(true);
+    onApprove?.();
+    onConfirm?.();
+  };
+
   if (!interactions.length && (!patientAllergies || !patientAllergies.length)) {
     return (
-      <div className="p-3 rounded-lg border border-[var(--ok-fg)]/30 bg-[var(--ok-bg)] text-xs text-[var(--ok-fg)] flex items-center gap-2 font-medium">
-        <CheckCircle2 className="w-4 h-4 shrink-0" />
-        <span>Лекарственные взаимодействия и аллергические риски не выявлены. Назначение безопасно.</span>
+      <div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)] flex items-center gap-2">
+        <span>Лекарственные взаимодействия не выявлены.</span>
       </div>
     );
   }
 
-  const hasCritical = interactions.some((i) =>
-    ['contraindicated', 'high', 'critical'].includes((i.severity || '').toLowerCase())
-  );
-
   return (
-    <div
-      className={`rounded-lg border p-3.5 shadow-sm space-y-2.5 transition-all ${
-        hasCritical
-          ? 'border-[var(--bad-fg)] bg-[var(--bad-bg)] ring-1 ring-[var(--bad-fg)]/20'
-          : 'border-[var(--warn-fg)] bg-[var(--warn-bg)] ring-1 ring-[var(--warn-fg)]/20'
-      }`}
-    >
-      <div className="flex items-center gap-2 font-bold text-xs">
-        {hasCritical ? (
-          <ShieldAlert className="w-4 h-4 text-[var(--bad-fg)] shrink-0 animate-bounce" />
-        ) : (
-          <AlertTriangle className="w-4 h-4 text-[var(--warn-fg)] shrink-0" />
-        )}
-        <span className={hasCritical ? 'text-[var(--bad-fg)]' : 'text-[var(--warn-fg)]'}>
-          {hasCritical ? 'КАТЕГОРИЧЕСКИ ПРОТИВОПОКАЗАНО' : 'ВНИМАНИЕ: ФАРМАКОЛОГИЧЕСКИЙ РИСК'}
-        </span>
+    <div className="rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] p-3 shadow-xs space-y-2">
+      {/* Passive unobtrusive bar (Mandates 8e, 8y) */}
+      <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+        <div className="flex items-center gap-1.5 text-[var(--ink)] font-medium">
+          <span>⚠️</span>
+          <span>Возможна чувствительность к препарату</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleApprove}
+          className="copilot-btn-primary px-3 py-1 rounded text-xs font-semibold text-white bg-[var(--primary)] flex items-center gap-1"
+          title="Утвердить назначение врача в 1 клик"
+        >
+          <Check size={13} />
+          <span>{approved ? 'Утверждено врачом' : 'Утвердить'}</span>
+        </button>
       </div>
 
-      {/* Interactions list */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {interactions.map((item, idx) => {
           const isCrit = ['contraindicated', 'high', 'critical'].includes((item.severity || '').toLowerCase());
-          const collidingDrugs = item.drugs
-            ? item.drugs.join(' + ')
-            : item.medicationA && item.medicationB
-            ? `${item.medicationA} ↔ ${item.medicationB}`
-            : item.title || 'Комбинация препаратов';
+          const drugTitle = item.drugs?.join(' + ') ||
+            (item.medicationA && item.medicationB ? `${item.medicationA} ↔ ${item.medicationB}` : item.title || 'Препарат');
 
           return (
-            <div
-              key={item.id || idx}
-              className="p-2.5 rounded-md bg-[var(--paper-strong)] border border-[var(--line)] text-xs space-y-1.5 shadow-2xs"
-            >
+            <div key={item.id || idx} className="p-2 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-xs space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+                <span className="font-semibold text-[var(--ink)] flex items-center gap-1">
                   <Pill className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-                  <span>{collidingDrugs}</span>
+                  <span>{drugTitle}</span>
                 </span>
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                    isCrit ? 'bg-[var(--bad-bg)] text-[var(--bad-fg)]' : 'bg-[var(--warn-bg)] text-[var(--warn-fg)]'
-                  }`}
-                >
-                  {isCrit ? 'Противопоказано' : 'Осторожно'}
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">
+                  {isCrit ? 'ПРОТИВОПОКАЗАНО' : 'Осторожно'}
                 </span>
               </div>
-
-              <p className="text-[var(--ink)] leading-relaxed">{item.description}</p>
-
+              {item.description && <p className="text-[var(--ink-secondary)] leading-relaxed text-[11px]">{item.description}</p>}
               {(item.medical_advice || item.clinical_recommendation) && (
-                <div className="p-2 rounded bg-[var(--paper-soft)] border-l-2 border-[var(--teal)] text-[11px] text-[var(--ink)]">
+                <div className="p-1.5 rounded bg-[var(--paper-strong)] text-[11px] text-[var(--ink)]">
                   <strong className="text-[var(--teal)]">Клиническая рекомендация:</strong>{' '}
                   {item.medical_advice || item.clinical_recommendation}
                 </div>
@@ -87,30 +81,21 @@ export const CopilotDrugInteractionCard: React.FC<CopilotDrugInteractionCardProp
         })}
       </div>
 
-      {/* Allergies banner if any */}
       {patientAllergies && patientAllergies.length > 0 && (
-        <div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--bad-fg)]/40 text-xs text-[var(--bad-fg)] flex items-start gap-1.5">
-          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <div>
-            <strong>Аллергический анамнез пациента:</strong> {patientAllergies.join(', ')}
-          </div>
+        <div className="p-1.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5 text-[var(--warn-fg,#d97706)] shrink-0" />
+          <span>Аллергоанамнез: {patientAllergies.join(', ')}</span>
         </div>
       )}
 
-      {/* Safe alternatives if any */}
       {safeAlternatives && safeAlternatives.length > 0 && (
-        <div className="p-2 rounded bg-[var(--paper-strong)] border border-[var(--teal)]/40 text-xs text-[var(--ink)] space-y-1">
-          <span className="text-[11px] font-semibold text-[var(--teal)] flex items-center gap-1">
-            <Info className="w-3.5 h-3.5" />
-            <span>Рекомендуемые безопасные альтернативы:</span>
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {safeAlternatives.map((alt, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] font-medium text-[11px]">
-                {alt}
-              </span>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-center gap-1 pt-1 text-[11px]">
+          <span className="text-[var(--muted)]">Безопасные аналоги:</span>
+          {safeAlternatives.map((alt, i) => (
+            <span key={i} className="px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink)] font-medium">
+              {alt}
+            </span>
+          ))}
         </div>
       )}
     </div>

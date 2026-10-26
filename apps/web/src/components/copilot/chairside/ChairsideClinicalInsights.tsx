@@ -73,7 +73,7 @@ export const ChairsideClinicalInsights: React.FC<ChairsideClinicalInsightsProps>
           </div>
           <button
             type="button"
-            className="text-[var(--primary)] hover:underline shrink-0 text-[11px] font-medium transition-colors"
+            className="px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--teal)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] shrink-0 text-[11px] font-semibold transition-colors cursor-pointer"
             onClick={() => {
               window.dispatchEvent(
                 new CustomEvent("dente:open-protocols-catalog", {

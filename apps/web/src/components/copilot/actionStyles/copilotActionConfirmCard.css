@@ -1,0 +1,74 @@
+/* ==========================================================================
+   CopilotActionConfirmCard.css — Base Card Container and Badges
+   Compliant with Mandate 8b (<= 110 lines)
+   ========================================================================== */
+
+.copilot-action-confirm-card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin: 10px 0;
+  border: 1px solid var(--amber, #d97706);
+  background-color: var(--amber-soft, rgba(254, 243, 199, 0.45));
+  box-shadow: 0 2px 10px rgba(217, 119, 6, 0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  word-break: break-word;
+}
+
+.copilot-action-confirm-card.destructive {
+  border-color: var(--rust, #b91c1c);
+  background-color: var(--rust-soft, rgba(254, 226, 226, 0.45));
+  box-shadow: 0 2px 10px rgba(185, 28, 28, 0.14);
+}
+
+.copilot-action-confirm-card.resolved-confirm {
+  border-color: var(--green, #15803d);
+  background-color: var(--paper-strong, #fafcfa);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.copilot-action-confirm-card.resolved-reject {
+  border-color: var(--line, rgba(15, 118, 110, 0.2));
+  background-color: var(--paper-soft, #f4f7f6);
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+/* Header & Badges */
+.copilot-action-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.copilot-action-confirm-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: var(--amber, #d97706);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+}
+
+.copilot-action-confirm-card.destructive .copilot-action-confirm-badge {
+  background-color: var(--rust, #b91c1c);
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.25);
+}
+
+.copilot-action-confirm-card.resolved-confirm .copilot-action-confirm-badge {
+  background-color: var(--green, #15803d);
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
+}
+
+.copilot-action-confirm-card.resolved-reject .copilot-action-confirm-badge {
+  background-color: var(--muted, #6b7280);
+  box-shadow: none;
+}
+
