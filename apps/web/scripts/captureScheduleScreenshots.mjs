@@ -8,8 +8,8 @@ const PROOFS_DIR = path.join(process.cwd(), "docs/proofs/schedule");
 const ORPHANS_DIR = path.join(process.cwd(), "docs/screenshots/schedule_orphans");
 const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/672af6c0-e436-47d5-ad8e-60da1460249a";
 const PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/279687e0-d651-4914-b191-0c203f3f31e4";
-const CURRENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/fb1dc98a-5f03-4e53-96d8-a37341665c9f";
-const CURRENT_PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/da920fe7-8cf1-4af3-83bf-33b629e2b869";
+const CURRENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/a3c78b7b-22c2-43a1-b7d1-15ef67866410";
+const CURRENT_PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/07663fdc-eba5-48a1-bbb4-3c4b8f181006";
 
 const ALL_DIRS = [PROOFS_DIR, ORPHANS_DIR, BRAIN_DIR, PARENT_BRAIN_DIR, CURRENT_BRAIN_DIR, CURRENT_PARENT_BRAIN_DIR];
 for (const dir of ALL_DIRS) {
@@ -151,6 +151,18 @@ async function capture() {
 		}
 		console.log(`Saved schedule_pc_light_1440x900.png (${(fs.statSync(lightPath).size / 1024).toFixed(1)} KB)`);
 
+		// 1B. TOOLBAR CLOSEUP LIGHT
+		const toolbarLightPath = path.join(PROOFS_DIR, "schedule_toolbar_closeup_light.png");
+		await page.screenshot({
+			path: toolbarLightPath,
+			clip: { x: 0, y: 0, width: 1440, height: 260 },
+			animations: "disabled",
+		});
+		for (const bDir of ALL_DIRS) {
+			fs.copyFileSync(toolbarLightPath, path.join(bDir, "schedule_toolbar_closeup_light.png"));
+		}
+		console.log(`Saved schedule_toolbar_closeup_light.png (${(fs.statSync(toolbarLightPath).size / 1024).toFixed(1)} KB)`);
+
 		// 2. CLOSEUP LIGHT
 		console.log("2. Capturing Schedule Cards Closeup Light...");
 		const closeupLightPath = path.join(PROOFS_DIR, "schedule_cards_closeup_light.png");
@@ -190,13 +202,32 @@ async function capture() {
 		// 3. PC DARK (1440x900)
 		console.log("3. Capturing Schedule PC Dark (1440x900)...");
 		await applyTheme(page, "dark");
-		await wait(1500);
+		await page.waitForFunction(() => {
+			const text = document.body.innerText || "";
+			return !text.includes("Загрузка системы") &&
+			       !text.includes("Подготовка модулей расписания") &&
+			       !text.includes("Загрузка рабочей смены");
+		}, { timeout: 35000 }).catch(() => {});
+		await page.waitForSelector('.schedule-filter-strip, [data-testid="schedule-toolbar"]', { state: "visible", timeout: 20000 }).catch(() => {});
+		await wait(2000);
 		const darkPath = path.join(PROOFS_DIR, "schedule_pc_dark_1440x900.png");
 		await page.screenshot({ path: darkPath, fullPage: false, animations: "disabled" });
 		for (const bDir of ALL_DIRS) {
 			fs.copyFileSync(darkPath, path.join(bDir, "schedule_pc_dark_1440x900.png"));
 		}
 		console.log(`Saved schedule_pc_dark_1440x900.png (${(fs.statSync(darkPath).size / 1024).toFixed(1)} KB)`);
+
+		// 3B. TOOLBAR CLOSEUP DARK
+		const toolbarDarkPath = path.join(PROOFS_DIR, "schedule_toolbar_closeup_dark.png");
+		await page.screenshot({
+			path: toolbarDarkPath,
+			clip: { x: 0, y: 0, width: 1440, height: 260 },
+			animations: "disabled",
+		});
+		for (const bDir of ALL_DIRS) {
+			fs.copyFileSync(toolbarDarkPath, path.join(bDir, "schedule_toolbar_closeup_dark.png"));
+		}
+		console.log(`Saved schedule_toolbar_closeup_dark.png (${(fs.statSync(toolbarDarkPath).size / 1024).toFixed(1)} KB)`);
 
 		// 4. CLOSEUP DARK
 		console.log("4. Capturing Schedule Cards Closeup Dark...");
@@ -250,7 +281,7 @@ async function capture() {
 
 		// 6. Quick Booking Primary Action Proof
 		console.log("6. Capturing Quick Booking Drawer...");
-		const quickBookingBtn = page.locator('[data-testid="schedule-toolbar-primary-quick-booking-btn"], button:has-text("+ Запись"), button:has-text("Новая запись")').first();
+		const quickBookingBtn = page.locator('[data-testid="schedule-toolbar-primary-quick-booking-btn"], button:has-text("Запись"), button:has-text("+ Запись"), button:has-text("Новая запись")').first();
 		if (await quickBookingBtn.isVisible().catch(() => false)) {
 			await quickBookingBtn.click();
 			await wait(1500);

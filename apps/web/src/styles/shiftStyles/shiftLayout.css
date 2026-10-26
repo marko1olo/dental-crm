@@ -1,0 +1,101 @@
+/* shiftLayout.css — Grid, Header, Status Badge & KPI Strip (Mandate 8b <= 120 lines) */
+.shift-hero {
+	display: grid;
+	gap: 14px;
+	grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+}
+
+.now-card {
+	background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(163, 79, 50, 0.08)), var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	display: grid;
+	gap: 18px;
+	padding: 18px;
+}
+
+.patient-hero { align-items: center; display: flex; gap: 14px; }
+.avatar {
+	background: var(--teal); border-radius: 50%; color: #ffffff;
+	display: grid; flex: 0 0 auto; font-size: 28px; font-weight: 900;
+	height: 62px; place-items: center; width: 62px;
+}
+.patient-hero h2 { font-size: 24px; line-height: 1.1; margin: 0; }
+.patient-hero p { color: var(--muted); margin: 7px 0 0; }
+
+.care-path {
+	background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+	display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 12px;
+}
+.path-step { align-items: center; color: var(--muted); display: flex; gap: 10px; min-height: 42px; }
+.path-step span {
+	background: var(--paper-soft); border-radius: 50%; display: grid; flex: 0 0 auto;
+	font-size: 13px; font-weight: 900; height: 28px; place-items: center; width: 28px;
+}
+.path-step p { font-weight: 850; margin: 0; }
+.path-step.done { color: var(--teal-dark); }
+.path-step.done span { background: var(--teal); color: #ffffff; }
+
+.role-focus-strip {
+	align-items: center; background: #0f3936; border: 1px solid rgba(255, 255, 255, 0.16);
+	border-radius: 8px; color: #ffffff; display: grid; gap: 12px;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 0.86fr); padding: 14px;
+}
+.role-focus-strip > div:first-child { align-items: start; display: grid; gap: 11px; grid-template-columns: auto minmax(0, 1fr); }
+.role-focus-strip svg { color: var(--amber); height: 24px; width: 24px; }
+.role-focus-strip h2 { font-size: 20px; line-height: 1.1; margin: 0; }
+.role-focus-strip p:not(.eyebrow) { color: rgba(255, 255, 255, 0.76); margin: 6px 0 0; }
+.role-focus-strip .eyebrow { color: rgba(255, 255, 255, 0.64); margin: 0; }
+.role-focus-meta { display: flex; flex-wrap: wrap; gap: 7px; justify-content: end; }
+.role-focus-meta span {
+	background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 999px; color: #ffffff; font-size: 12px; font-weight: 900; padding: 6px 8px;
+}
+
+.shift-intelligence { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mode-fit-card, .role-queue-card, .shift-warning, .schedule-command-grid article {
+	background: var(--paper-strong); border: 1px solid var(--line); border-radius: 8px; min-width: 0;
+}
+.mode-fit-card { box-shadow: var(--shadow); display: grid; gap: 10px; padding: 15px; }
+.mode-fit-head { align-items: center; display: grid; gap: 10px; grid-template-columns: auto minmax(0, 1fr) auto; }
+.mode-fit-head svg { color: var(--teal); height: 24px; width: 24px; }
+.mode-fit-head h2 { font-size: 20px; line-height: 1.1; margin: 0; }
+.mode-fit-head strong { background: var(--teal-soft); border-radius: 999px; color: var(--teal-dark); font-size: 14px; padding: 7px 9px; }
+.mode-fit-card p { color: var(--muted); margin: 0; }
+.mode-fit-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.mode-fit-list span { background: var(--paper-soft); border-radius: 999px; color: var(--rust); font-size: 12px; font-weight: 850; padding: 5px 8px; }
+.load-meter { background: var(--line); border-radius: 999px; height: 10px; overflow: hidden; }
+.load-meter span { background: linear-gradient(90deg, var(--teal), var(--amber)); display: block; height: 100%; }
+
+.role-queue-grid { display: grid; gap: 10px; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.role-queue-card { display: grid; gap: 7px; min-height: 152px; padding: 12px; }
+.role-queue-card.active { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.11); }
+.role-queue-card > div { align-items: center; color: var(--teal-dark); display: flex; font-size: 12px; font-weight: 900; gap: 7px; }
+.role-queue-card svg { height: 18px; width: 18px; }
+.role-queue-card h3 { font-size: 15px; line-height: 1.2; margin: 0; }
+.role-queue-card p, .role-queue-card small { color: var(--muted); line-height: 1.35; margin: 0; }
+.role-queue-card strong { color: var(--ink); font-size: 26px; line-height: 1; }
+
+.shift-warning-list { display: grid; gap: 8px; grid-column: 1 / -1; }
+.shift-warning {
+	align-items: center; border-left: 5px solid var(--teal); display: grid;
+	gap: 10px; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 72px; padding: 10px 12px;
+}
+.shift-warning svg { color: var(--teal); height: 22px; width: 22px; }
+.shift-warning span { color: var(--teal-dark); font-size: 12px; font-weight: 900; }
+.shift-warning h3 { font-size: 15px; line-height: 1.2; margin: 2px 0 0; }
+.shift-warning p { color: var(--muted); margin: 4px 0 0; }
+.warning-warning { border-left-color: var(--amber); }
+.warning-warning svg { color: var(--amber); }
+.warning-critical { border-left-color: var(--rust); background: var(--paper-soft); }
+.warning-critical svg { color: var(--rust); }
+
+.future-strip { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.future-strip article {
+	align-items: center; background: var(--paper-strong); border: 1px solid var(--line);
+	border-radius: 8px; display: grid; gap: 12px; grid-template-columns: auto minmax(0, 1fr); min-height: 92px; padding: 14px;
+}
+.future-strip svg { color: var(--teal); height: 24px; width: 24px; }
+.future-strip h2 { font-size: 15px; margin: 0; }
+.future-strip p { color: var(--muted); margin: 5px 0 0; }

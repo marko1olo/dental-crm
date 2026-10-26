@@ -32,7 +32,7 @@ export {
  * Chips & Tools: Автодозвон, Моё кресло
  * - Left: Date stepper (< dd.mm.yyyy [Календарь] >)
  * - Center: 1-line horizontal scrollable doctor & chair chips
- * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "+ Запись" button.
+ * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "Запись" button.
  */
 export function ScheduleFilterStrip(props: ScheduleFilterStripProps): ReactElement {
 	return <ScheduleFilterStripContent {...props} />;

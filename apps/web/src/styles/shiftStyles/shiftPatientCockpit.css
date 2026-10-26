@@ -1,0 +1,57 @@
+/* shiftPatientCockpit.css — In-Chair Patient Facts & Risks (Mandate 8b <= 120 lines) */
+.patient-cockpit {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+}
+
+.patient-summary-card {
+	background:
+		linear-gradient(150deg, rgba(15, 118, 110, 0.16), rgba(255, 255, 255, 0.82)),
+		var(--paper-strong);
+	border: 1px solid rgba(15, 118, 110, 0.28);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	min-width: 0;
+	padding: 18px;
+}
+
+.patient-summary-card h2 {
+	font-size: 25px;
+	line-height: 1.1;
+	margin: 0 0 16px;
+}
+
+.patient-facts {
+	display: grid;
+	gap: 8px;
+}
+
+.patient-facts span {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font-weight: 800;
+	min-height: 40px;
+	padding: 10px 12px;
+}
+
+.patient-insight-panel {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	margin-top: 12px;
+	padding: 12px;
+}
+
+.patient-insight-panel.risk-watch {
+	border-left-color: var(--amber);
+}
+
+.patient-insight-panel.risk-high {
+	border-left-color: var(--rust);
+}

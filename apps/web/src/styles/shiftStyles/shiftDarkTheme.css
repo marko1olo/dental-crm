@@ -1,0 +1,103 @@
+/* shiftDarkTheme.css — High Contrast Dark Mode per Mandate 8b (<= 120 lines) */
+[data-theme="dark"] .mobile-shift-cockpit,
+.dark .mobile-shift-cockpit {
+	background: var(--paper-strong);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .mobile-shift-topbar,
+.dark .mobile-shift-topbar {
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	border-bottom-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-shift-hero-card,
+.dark .mobile-shift-hero-card,
+[data-theme="dark"] .doctor-shift-earnings-card,
+.dark .doctor-shift-earnings-card {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-shift-revenue-block,
+.dark .mobile-shift-revenue-block {
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-shift-channel-item,
+.dark .mobile-shift-channel-item,
+[data-theme="dark"] .mobile-shift-consumables-card,
+.dark .mobile-shift-consumables-card {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-shift-bottom-bar,
+.dark .mobile-shift-bottom-bar {
+	background: var(--paper);
+	border-top-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-shift-sheet-container,
+.dark .mobile-shift-sheet-container {
+	background: var(--paper-strong);
+	border-top-color: var(--line);
+}
+
+[data-theme="dark"] .now-card,
+.dark .now-card {
+	background: var(--paper-strong);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .care-path,
+.dark .care-path {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .shift-todo,
+.dark .shift-todo {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .shift-todo-item,
+.dark .shift-todo-item {
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .mode-fit-card,
+.dark .mode-fit-card,
+[data-theme="dark"] .role-queue-card,
+.dark .role-queue-card {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .patient-summary-card,
+.dark .patient-summary-card {
+	background: var(--paper-strong);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .patient-facts span,
+.dark .patient-facts span {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .patient-insight-panel,
+.dark .patient-insight-panel {
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .warning-critical,
+.dark .warning-critical {
+	background: var(--paper-soft);
+	border-left-color: var(--rust);
+}

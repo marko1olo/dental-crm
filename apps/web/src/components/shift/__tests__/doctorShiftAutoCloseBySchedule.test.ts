@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import {
 	DEFAULT_MAX_SHIFT_DURATION_HOURS,
 	DEFAULT_MAX_SHIFT_DURATION_MS,

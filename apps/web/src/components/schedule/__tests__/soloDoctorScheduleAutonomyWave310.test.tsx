@@ -302,7 +302,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 			);
 		});
 
-		it("ScheduleFilterStrip displays prominent [+ Запись] button on face toolbar", () => {
+		it("ScheduleFilterStrip displays prominent [Запись] button on face toolbar", () => {
 			const html = renderToString(
 				React.createElement(ScheduleFilterStrip, {
 					scheduleDateFilter: "2026-09-24",
@@ -317,7 +317,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 			assert.ok(
 				html.includes("data-testid=\"schedule-toolbar-primary-quick-booking-btn\""),
-				"Primary [+ Запись] button must be present on face toolbar",
+				"Primary [Запись] button must be present on face toolbar",
 			);
 			assert.ok(
 				html.includes("schedule-toolbar-primary-quick-booking-btn"),
