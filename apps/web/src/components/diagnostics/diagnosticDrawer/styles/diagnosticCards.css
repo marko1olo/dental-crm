@@ -1,0 +1,108 @@
+/**
+ * DENTE CRM — Diagnostic Drawer Content & Card Rows
+ */
+
+/* Content Area */
+.dente-diagnostic-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Log & Network Rows */
+.dente-diagnostic-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-diagnostic-card {
+	padding: 12px 14px;
+	border-radius: 8px;
+	background: var(--paper-strong);
+	border: 1px solid var(--glass-border);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	transition: border-color 0.15s ease;
+}
+
+.dente-diagnostic-card:hover {
+	border-color: var(--teal);
+}
+
+.dente-diagnostic-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.dente-diagnostic-card-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.dente-diagnostic-time {
+	font-size: 11px;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.dente-diagnostic-module {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: var(--paper-soft);
+	color: var(--muted);
+}
+
+.dente-diagnostic-pill {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.dente-diagnostic-pill-debug { background: var(--paper-soft); color: var(--muted); }
+.dente-diagnostic-pill-info { background: var(--info-bg); color: var(--info-fg); }
+.dente-diagnostic-pill-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.dente-diagnostic-pill-error { background: var(--bad-bg); color: var(--bad-fg); }
+.dente-diagnostic-pill-audit { background: var(--teal-surface); color: var(--teal); }
+
+.dente-diagnostic-pill-status-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.dente-diagnostic-pill-status-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.dente-diagnostic-pill-status-err { background: var(--bad-bg); color: var(--bad-fg); }
+
+.dente-diagnostic-message {
+	font-size: 13px;
+	color: var(--ink);
+	word-break: break-word;
+	line-height: 1.4;
+}
+
+.dente-diagnostic-code-block {
+	margin-top: 6px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: var(--paper-soft);
+	color: var(--teal);
+	border: 1px solid var(--line);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 12px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+

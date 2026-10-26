@@ -1,0 +1,116 @@
+/**
+ * photoProtocolPresets.css — 1-Click Clinical Presets Bar & Preview
+ */
+
+.ortho-presets-bar {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 8px 14px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.ortho-presets-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+}
+
+.ortho-presets-list {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	flex: 1;
+}
+
+.ortho-preset-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-subtle, #f8fafc);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 32px;
+}
+
+.ortho-preset-pill:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+}
+
+.ortho-preset-pill.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.ortho-preset-preview-toggle,
+.ortho-preset-copy-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 28px;
+}
+
+.ortho-preset-preview-toggle:hover,
+.ortho-preset-copy-btn:hover {
+	color: var(--ink, #0f172a);
+	border-color: var(--teal, #0d9488);
+}
+
+.ortho-preset-preview-box {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.ortho-preset-preview-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.ortho-preset-preview-text {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--ink, #0f172a);
+	background: var(--paper-subtle, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 6px;
+	padding: 10px;
+	white-space: pre-wrap;
+	max-height: 160px;
+	overflow-y: auto;
+}
+

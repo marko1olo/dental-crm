@@ -1,5 +1,6 @@
 import React from "react";
 import type { ToothData } from "../../odontogram/ToothChart";
+import { getToothStateLabelRu } from "../../odontogram/chart/toothChartTypes";
 
 interface ToothDrawerFooterProps {
 	toothNumber: number;
@@ -12,11 +13,13 @@ export const ToothDrawerFooter: React.FC<ToothDrawerFooterProps> = ({
 	toothData,
 	onClose,
 }) => {
+	const stateLabel = toothData?.state ? getToothStateLabelRu(toothData.state) : "Здоров";
+
 	return (
 		<footer className="dente-tooth-drawer-footer">
 			<div className="footer-left">
 				<span className="status-note">
-					Зуб #{toothNumber} • {toothData?.state ?? "Healthy"}
+					Зуб #{toothNumber} • {stateLabel}
 				</span>
 			</div>
 			<div className="footer-actions">

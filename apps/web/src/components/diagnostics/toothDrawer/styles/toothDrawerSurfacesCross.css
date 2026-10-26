@@ -1,0 +1,109 @@
+/**
+ * toothDrawerSurfacesCross.css — MOD 5-Surface Interactive Cross Diagram
+ */
+
+.dente-surface-interactive-box {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border-radius: 12px;
+	background: var(--paper);
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dente-surface-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	gap: 8px;
+}
+
+@media (max-width: 640px) {
+	.dente-surface-label-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+}
+
+.dente-text-action-btn {
+	background: transparent;
+	border: none;
+	color: var(--teal);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 44px;
+	padding: 4px 10px;
+	display: inline-flex;
+	align-items: center;
+}
+
+.dente-surface-diagram-container {
+	display: flex;
+	justify-content: center;
+	padding: 4px 0;
+}
+
+.dente-surface-cross-layout {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+}
+
+.dente-surface-middle-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dente-surface-tile {
+	min-width: 58px;
+	min-height: 46px;
+	padding: 6px 10px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	background: var(--paper-strong);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.dente-surface-tile .tile-letter {
+	font-size: 13px;
+	font-weight: 900;
+	line-height: 1;
+}
+
+.dente-surface-tile .tile-name {
+	font-size: 9px;
+	color: var(--muted);
+	line-height: 1;
+	margin-top: 2px;
+}
+
+.dente-surface-tile:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.dente-surface-tile.selected {
+	background: var(--bad-fg);
+	color: #ffffff;
+	border-color: var(--bad-fg);
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+.dente-surface-tile.selected .tile-name {
+	color: rgba(255, 255, 255, 0.9);
+}

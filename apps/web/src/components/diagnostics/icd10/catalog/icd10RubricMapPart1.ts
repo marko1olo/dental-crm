@@ -1,0 +1,60 @@
+import type { DentalIcd10RubricMeta } from "../../icd10Types";
+
+export const DENTAL_ICD10_RUBRIC_MAP_PART1: Readonly<Record<string, DentalIcd10RubricMeta>> = {
+	K00: {
+		rubric: "K00",
+		titleRu: "Нарушения развития и прорезывания зубов",
+		shortTitle: "Развитие и прорезывание",
+		requiresTooth: false,
+		defaultSpecialty: "orthodontics",
+		description: "Адентия, гиподонтия, сверхкомплектные зубы, нарушения структуры эмали и дентина",
+	},
+	K01: {
+		rubric: "K01",
+		titleRu: "Вкрапленные и ретенированные зубы",
+		shortTitle: "Ретенция и дистопия",
+		requiresTooth: false,
+		defaultSpecialty: "surgery",
+		description: "Ретенированные и дистопированные зубы, полуретенция третьих моляров и клыков",
+	},
+	K02: {
+		rubric: "K02",
+		titleRu: "Кариес зубов",
+		shortTitle: "Кариес",
+		requiresTooth: true,
+		defaultSpecialty: "therapy",
+		description: "Кариозное поражение эмали, дентина, цемента, приостановившийся кариес",
+	},
+	K03: {
+		rubric: "K03",
+		titleRu: "Другие болезни твердых тканей зубов",
+		shortTitle: "Некариозные поражения",
+		requiresTooth: false,
+		defaultSpecialty: "therapy",
+		description: "Повышенное стирание, сошлифовывание, клиновидный дефект, эрозия, отложения",
+	},
+	K04: {
+		rubric: "K04",
+		titleRu: "Болезни пульпы и периапикальных тканей",
+		shortTitle: "Пульпит и периодонтит",
+		requiresTooth: true,
+		defaultSpecialty: "therapy",
+		description: "Острый и хронический пульпит, некроз пульпы, апикальный периодонтит, периапикальный абсцесс, киста",
+	},
+	K05: {
+		rubric: "K05",
+		titleRu: "Гингивит и болезни пародонта",
+		shortTitle: "Пародонтология",
+		requiresTooth: true,
+		defaultSpecialty: "periodontics",
+		description: "Острый и хронический гингивит, пародонтит локализованный и генерализованный, пародонтоз",
+	},
+	K06: {
+		rubric: "K06",
+		titleRu: "Другие изменения десны и беззубого альвеолярного края",
+		shortTitle: "Изменения десны",
+		requiresTooth: false,
+		defaultSpecialty: "periodontics",
+		description: "Рецессия десны, гипертрофия, поражения десны после травмы",
+	},
+};

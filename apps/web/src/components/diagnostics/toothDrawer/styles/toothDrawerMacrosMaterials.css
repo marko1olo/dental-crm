@@ -1,0 +1,86 @@
+/**
+ * toothDrawerMacrosMaterials.css — Black Classification Macros & Materials Grid
+ */
+
+/* Black Classification Macros */
+.dente-macros-chips-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.dente-macros-title {
+	font-size: 11px;
+	font-weight: 800;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+}
+
+.dente-macro-chip {
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.dente-macro-chip:hover {
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+}
+
+/* Materials Grid */
+.dente-materials-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 8px;
+}
+
+.dente-material-btn {
+	min-height: 48px;
+	padding: 8px 12px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	background: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.dente-material-btn .material-title {
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.dente-material-btn .material-sub {
+	font-size: 10.5px;
+	color: var(--muted, #64748b);
+}
+
+.dente-material-btn:hover {
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--paper-soft);
+}
+
+.dente-material-btn.selected {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+}

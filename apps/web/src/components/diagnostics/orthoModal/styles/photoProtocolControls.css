@@ -1,0 +1,46 @@
+/**
+ * photoProtocolControls.css — Slot Quick Toolbar & Action Buttons
+ */
+
+.ortho-slot-controls {
+	padding: 6px 10px;
+	background: var(--paper, #ffffff);
+	border-top: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.ortho-slot-btn {
+	min-width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.ortho-slot-btn-text {
+	width: auto !important;
+	padding: 0 10px !important;
+	gap: 6px !important;
+}
+
+.ortho-slot-btn:hover {
+	background: var(--paper-subtle, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.ortho-slot-btn.danger:hover {
+	border-color: #ef4444;
+	color: #ef4444;
+	background: #fef2f2;
+}
+

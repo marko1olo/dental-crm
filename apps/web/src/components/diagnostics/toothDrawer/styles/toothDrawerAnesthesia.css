@@ -1,0 +1,115 @@
+/**
+ * toothDrawerAnesthesia.css — Somatic Alert Strip & Anesthesia Drug Selection
+ */
+
+.dente-somatic-alert-strip {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: rgba(234, 88, 12, 0.1);
+	border: 1px solid rgba(234, 88, 12, 0.3);
+	color: #c2410c;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.dente-anesthesia-params-grid {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	gap: 12px;
+}
+
+.dente-presets-chips-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+	margin: 6px 0;
+}
+
+.dente-weight-chip {
+	min-height: 28px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 11px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.dente-weight-chip.active {
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.dente-range-slider {
+	width: 100%;
+	min-height: 28px;
+	cursor: pointer;
+}
+
+.dente-number-input {
+	width: 100%;
+	min-height: 32px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.dente-drugs-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 6px;
+}
+
+.dente-drug-card {
+	min-height: 36px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-drug-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.dente-drug-card-sub {
+	font-size: 10px;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+}
+
+.dente-drug-card:hover {
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.dente-drug-card.selected {
+	background: var(--teal-soft, rgba(2, 132, 199, 0.12));
+	border-color: var(--brand-primary, var(--teal));
+	color: var(--brand-primary, var(--teal));
+}
+
+.dente-drug-card.risky {
+	border-color: #f97316;
+}

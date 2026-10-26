@@ -1,0 +1,86 @@
+/* icd10Presets.css — Быстрые пресеты диагнозов (1-клик) */
+
+.icd10-quick-presets-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.icd10-section-label {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.icd10-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 8px;
+}
+
+.icd10-preset-chip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 36px;
+	min-width: 0;
+	padding: 6px 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	cursor: pointer;
+	text-align: left;
+	box-sizing: border-box;
+	touch-action: manipulation;
+	user-select: none;
+	transition:
+		background-color var(--transition-fast),
+		border-color var(--transition-fast),
+		transform var(--transition-fast);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.icd10-preset-chip {
+		min-height: 44px;
+	}
+}
+
+.icd10-preset-chip:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+	transform: translateY(-1px);
+}
+
+.icd10-preset-chip.is-selected {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.14));
+	border-color: var(--teal);
+}
+
+.icd10-preset-chip:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+.icd10-chip-code {
+	font-size: 13px;
+	font-weight: 800;
+	color: var(--teal-dark, var(--teal));
+	font-family: var(--font-mono, monospace);
+}
+
+.icd10-chip-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	margin-left: 8px;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+

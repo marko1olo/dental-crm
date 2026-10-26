@@ -1,0 +1,105 @@
+/**
+ * toothDrawerAccordions.css — Accordions Body Shell & Warm Tool Cards
+ */
+
+.dente-tooth-drawer-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Accordion Component */
+.dente-accordion-item {
+	border-radius: 12px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	overflow: hidden;
+	transition: border-color 0.15s ease;
+}
+
+.dente-accordion-item:hover {
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.dente-accordion-trigger {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	color: var(--ink, #0f172a);
+	transition: background 0.15s ease;
+}
+
+.dente-accordion-trigger:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.dente-accordion-trigger.expanded {
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.03));
+}
+
+.dente-accordion-trigger .trigger-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.dente-accordion-trigger .trigger-title {
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.dente-accordion-trigger .trigger-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--muted, #64748b);
+	font-size: 12px;
+}
+
+.dente-accordion-content {
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Tool Card & Elements */
+.dente-warm-tool-card {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+}
+
+.dente-warm-tool-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.dente-warm-tool-title-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-warm-tool-title {
+	font-size: 13px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}

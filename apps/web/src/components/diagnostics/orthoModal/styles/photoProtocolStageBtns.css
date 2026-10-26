@@ -1,0 +1,65 @@
+/**
+ * photoProtocolStageBtns.css — Orthodontic Stage Switcher Buttons
+ */
+
+.ortho-stage-selector {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--paper, #ffffff);
+	padding: 3px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.ortho-stage-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 32px;
+}
+
+.ortho-stage-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-subtle, #f8fafc);
+}
+
+.ortho-stage-btn.active-stage-pre {
+	background: #eff6ff;
+	color: #2563eb;
+}
+
+[data-theme="dark"] .ortho-stage-btn.active-stage-pre {
+	background: rgba(37, 99, 235, 0.2);
+	color: #60a5fa;
+}
+
+.ortho-stage-btn.active-stage-active {
+	background: #fffbeb;
+	color: #d97706;
+}
+
+[data-theme="dark"] .ortho-stage-btn.active-stage-active {
+	background: rgba(217, 119, 6, 0.2);
+	color: #fbbf24;
+}
+
+.ortho-stage-btn.active-stage-post {
+	background: #ecfdf5;
+	color: #059669;
+}
+
+[data-theme="dark"] .ortho-stage-btn.active-stage-post {
+	background: rgba(5, 150, 105, 0.2);
+	color: #34d399;
+}
+

@@ -1,0 +1,51 @@
+/**
+ * DENTE CRM — Diagnostic Drawer Metric Grid & Animations
+ */
+
+/* System Report Grid */
+.dente-diagnostic-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.dente-diagnostic-metric-card {
+	padding: 16px;
+	border-radius: 8px;
+	background: var(--paper-strong);
+	border: 1px solid var(--glass-border);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dente-diagnostic-metric-label {
+	font-size: 12px;
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.dente-diagnostic-metric-value {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.dente-diagnostic-empty {
+	padding: 48px 20px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 14px;
+}
+
+/* Animations */
+@keyframes denteFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes denteSlideLeft {
+	from { transform: translateX(100%); }
+	to { transform: translateX(0); }
+}
+

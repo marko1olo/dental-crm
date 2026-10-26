@@ -1,0 +1,79 @@
+/**
+ * DENTE CRM — Diagnostic Drawer Shell & Trigger Styles
+ */
+
+.dente-diagnostic-trigger {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 9990;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px 14px;
+	border-radius: 9999px;
+	background: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--shadow-2);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	backdrop-filter: blur(12px);
+	user-select: none;
+}
+
+.dente-diagnostic-trigger:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-3);
+	border-color: var(--teal);
+}
+
+.dente-diagnostic-trigger:active {
+	transform: translateY(0);
+}
+
+.dente-diagnostic-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+/* Backdrop */
+.dente-diagnostic-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	z-index: 9995;
+	display: flex;
+	justify-content: flex-end;
+	animation: denteFadeIn 0.2s ease-out;
+}
+
+/* Drawer Shell */
+.dente-diagnostic-drawer {
+	width: 100%;
+	max-width: 820px;
+	height: 100%;
+	background: var(--paper);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+	z-index: 9996;
+	animation: denteSlideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+

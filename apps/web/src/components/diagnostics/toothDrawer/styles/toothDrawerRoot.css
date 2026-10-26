@@ -1,0 +1,38 @@
+/**
+ * toothDrawerRoot.css — Backdrop, Container Shell & Animations
+ */
+
+.dente-tooth-drawer-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	z-index: 9995;
+	display: flex;
+	justify-content: flex-end;
+	animation: denteDrawerFadeIn 0.2s ease-out;
+}
+
+.dente-tooth-drawer-container {
+	width: 100%;
+	max-width: 680px;
+	height: 100%;
+	background: var(--paper);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	box-shadow: -10px 0 40px rgba(0, 0, 0, 0.25);
+	z-index: 9996;
+	animation: denteDrawerSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	overflow: hidden;
+}
+
+@keyframes denteDrawerFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes denteDrawerSlideIn {
+	from { transform: translateX(100%); }
+	to { transform: translateX(0); }
+}

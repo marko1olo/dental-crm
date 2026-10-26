@@ -1,0 +1,99 @@
+/**
+ * DENTE CRM — Diagnostic Drawer Header & Tab Navigation Styles
+ */
+
+/* Header */
+.dente-diagnostic-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 16px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--glass-border);
+}
+
+.dente-diagnostic-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.dente-diagnostic-title {
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink);
+}
+
+.dente-diagnostic-env-tag {
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	background: var(--teal-surface);
+	color: var(--teal);
+}
+
+.dente-diagnostic-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 8px;
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dente-diagnostic-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Tab Navigation */
+.dente-diagnostic-tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 42px;
+	padding: 4px 16px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--glass-border);
+	overflow-x: auto;
+	scrollbar-width: thin;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dente-diagnostic-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.dente-diagnostic-tab-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+.dente-diagnostic-tab-btn.active {
+	background: var(--teal);
+	color: var(--paper-strong);
+}
+

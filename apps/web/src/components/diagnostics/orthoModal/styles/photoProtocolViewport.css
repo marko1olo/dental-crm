@@ -1,0 +1,63 @@
+/**
+ * photoProtocolViewport.css — Photo Viewport & Empty Dropzone States
+ */
+
+.ortho-slot-viewport {
+	height: 190px;
+	background: #0f172a;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.ortho-slot-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	user-select: none;
+	pointer-events: none;
+	transition: transform 0.15s ease;
+}
+
+/* Empty Dropzone State */
+.ortho-dropzone-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 16px;
+	text-align: center;
+	color: #94a3b8;
+	width: 100%;
+	height: 100%;
+	transition: all 0.2s ease;
+}
+
+.ortho-dropzone-empty:hover {
+	color: #e2e8f0;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.ortho-dropzone-icon {
+	width: 32px;
+	height: 32px;
+	opacity: 0.8;
+}
+
+.ortho-dropzone-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #e2e8f0;
+}
+
+.ortho-dropzone-hint {
+	font-size: 10px;
+	color: #64748b;
+	max-width: 180px;
+	line-height: 1.3;
+}
+

@@ -1,0 +1,68 @@
+import type { DentalIcd10RubricMeta } from "../../icd10Types";
+
+export const DENTAL_ICD10_RUBRIC_MAP_PART2: Readonly<Record<string, DentalIcd10RubricMeta>> = {
+	K07: {
+		rubric: "K07",
+		titleRu: "Челюстно-лицевые аномалии (включая аномалии прикуса)",
+		shortTitle: "Ортодонтия и прикус",
+		requiresTooth: false,
+		defaultSpecialty: "orthodontics",
+		description: "Аномалии челюстей, соотношений зубных дуг, дистальный, мезиальный, глубокий прикус, патология ВНЧС",
+	},
+	K08: {
+		rubric: "K08",
+		titleRu: "Другие изменения зубов и их опорного аппарата (потеря зубов)",
+		shortTitle: "Адентия и корни",
+		requiresTooth: false,
+		defaultSpecialty: "orthopedics",
+		description: "Частичная и полная потеря зубов (адентия), атрофия альвеолярного отростка, оставшийся корень",
+	},
+	K09: {
+		rubric: "K09",
+		titleRu: "Кисты области рта, не классифицированные в других рубриках",
+		shortTitle: "Кисты челюстей",
+		requiresTooth: false,
+		defaultSpecialty: "surgery",
+		description: "Одонтогенные и неодонтогенные кисты челюстей и мягких тканей рта",
+	},
+	K10: {
+		rubric: "K10",
+		titleRu: "Другие болезни челюстей",
+		shortTitle: "Болезни челюстей",
+		requiresTooth: false,
+		defaultSpecialty: "surgery",
+		description: "Остеомиелит, альвеолит (сухая лунка), периостит челюстей",
+	},
+	K11: {
+		rubric: "K11",
+		titleRu: "Болезни слюнных желез",
+		shortTitle: "Слюнные железы",
+		requiresTooth: false,
+		defaultSpecialty: "surgery",
+		description: "Сиаладенит, сиалолитиаз (слюннокаменная болезнь), мукоцеле",
+	},
+	K12: {
+		rubric: "K12",
+		titleRu: "Стоматит и родственные поражения",
+		shortTitle: "Стоматиты",
+		requiresTooth: false,
+		defaultSpecialty: "therapy",
+		description: "Рецидивирующие афты, афтозный стоматит, герпетиформный стоматит, язвы полости рта",
+	},
+	K13: {
+		rubric: "K13",
+		titleRu: "Другие болезни губ и слизистой оболочки полости рта",
+		shortTitle: "Слизистая и губы",
+		requiresTooth: false,
+		defaultSpecialty: "therapy",
+		description: "Хейлит, лейкоплакия, эритроплакия слизистой рта",
+	},
+	K14: {
+		rubric: "K14",
+		titleRu: "Болезни языка",
+		shortTitle: "Болезни языка",
+		requiresTooth: false,
+		defaultSpecialty: "therapy",
+		description: "Глоссит, географический язык, глоссодиния, гипертрофия сосочков языка",
+	},
+};

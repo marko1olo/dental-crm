@@ -1,0 +1,26 @@
+/**
+ * toothDrawerSplitSummary.css — Split Summary Card & Balance Totals
+ */
+
+.dente-split-summary-card {
+	padding: 10px;
+	border-radius: 8px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 11px;
+}
+
+.dente-split-row {
+	display: flex;
+	justify-content: space-between;
+}
+
+.dente-split-row.total {
+	font-size: 12px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	padding-top: 6px;
+	margin-top: 2px;
+}

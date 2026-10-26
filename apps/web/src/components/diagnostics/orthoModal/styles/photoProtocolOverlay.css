@@ -1,0 +1,87 @@
+/**
+ * photoProtocolOverlay.css — Modal Overlay & Header Styles
+ */
+
+.ortho-photo-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	animation: orthoFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ortho-photo-modal-container {
+	width: 100%;
+	max-width: 1380px;
+	max-height: 94vh;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes orthoFadeIn {
+	from { opacity: 0; transform: scale(0.98); }
+	to { opacity: 1; transform: scale(1); }
+}
+
+/* Header */
+.ortho-modal-header {
+	padding: 14px 20px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.ortho-header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ortho-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ortho-header-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+.ortho-header-subtitle {
+	font-size: 12px;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ortho-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+

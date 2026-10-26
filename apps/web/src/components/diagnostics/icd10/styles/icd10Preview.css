@@ -1,0 +1,96 @@
+/* icd10Preview.css — Карточка активного выбранного диагноза */
+
+.icd10-selected-preview-card {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-strong);
+	border: 1.5px solid var(--teal);
+	border-radius: 10px;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.icd10-preview-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.icd10-preview-code-block {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.icd10-preview-code {
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--teal-dark, var(--teal));
+	font-family: var(--font-mono, monospace);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	padding: 4px 10px;
+	border-radius: 6px;
+	flex-shrink: 0;
+}
+
+.icd10-preview-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.icd10-preview-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.icd10-preview-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 14px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
+	transition:
+		background-color var(--transition-fast),
+		border-color var(--transition-fast);
+}
+
+.icd10-preview-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+.icd10-preview-btn:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+.icd10-preview-btn.primary {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal-dark, var(--teal));
+}
+
+.icd10-preview-btn.primary:hover {
+	background: var(--teal-dark, var(--teal));
+}
+

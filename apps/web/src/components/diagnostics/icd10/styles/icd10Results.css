@@ -1,0 +1,120 @@
+/* icd10Results.css — Список результатов поиска диагнозов МКБ-10 */
+
+.icd10-results-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 320px;
+	overflow-y: auto;
+	padding-right: 4px;
+	scrollbar-width: thin;
+}
+
+.icd10-result-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 52px;
+	padding: 10px 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	cursor: pointer;
+	box-sizing: border-box;
+	transition:
+		background-color var(--transition-fast),
+		border-color var(--transition-fast);
+}
+
+.icd10-result-item:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+}
+
+.icd10-result-item.is-selected {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.16));
+	border-color: var(--teal);
+}
+
+.icd10-result-item:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+.icd10-result-main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.icd10-result-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.icd10-result-code {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--teal-dark, var(--teal));
+	font-family: var(--font-mono, monospace);
+	flex-shrink: 0;
+}
+
+.icd10-result-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.icd10-result-desc {
+	font-size: 13px;
+	color: var(--muted);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.icd10-severity-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	flex-shrink: 0;
+	margin-left: 8px;
+}
+
+.icd10-severity-badge.critical {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.15));
+	color: var(--bad-fg, #ef4444);
+	border: 1px solid var(--bad-fg, #ef4444);
+}
+
+.icd10-severity-badge.high {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.15));
+	color: var(--warn-fg, #f59e0b);
+	border: 1px solid var(--warn-fg, #f59e0b);
+}
+
+.icd10-severity-badge.medium {
+	background: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.icd10-severity-badge.low {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg, #10b981);
+	border: 1px solid var(--ok-fg, #10b981);
+}
+

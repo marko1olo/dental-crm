@@ -1,0 +1,31 @@
+/**
+ * toothDrawerComboBtns.css — Quick Surface Combo Buttons (MOD, MO, OD)
+ */
+
+.dente-surface-quick-combo-btn {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dente-surface-quick-combo-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.dente-surface-quick-combo-btn.active {
+	background: var(--bad-fg);
+	color: #ffffff;
+	border-color: var(--bad-fg);
+	box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}

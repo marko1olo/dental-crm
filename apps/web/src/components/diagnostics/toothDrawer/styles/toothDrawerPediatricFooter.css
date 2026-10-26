@@ -1,0 +1,111 @@
+/**
+ * toothDrawerPediatricFooter.css — Pediatric Resorption & Drawer Footer Actions
+ */
+
+.dente-resorption-box {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dente-resorption-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 6px;
+}
+
+.dente-resorption-btn {
+	min-height: 36px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	text-align: left;
+	cursor: pointer;
+	position: relative;
+}
+
+.dente-resorption-btn .resorption-title {
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.dente-resorption-btn .resorption-sub {
+	font-size: 9px;
+	color: var(--muted, #64748b);
+}
+
+.dente-resorption-btn.selected {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+/* Common Actions */
+.dente-primary-action-btn {
+	min-height: 34px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	background: var(--teal);
+	color: var(--paper-strong);
+	border: none;
+	font-size: 13px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-primary-action-btn:hover {
+	background: var(--teal-dark);
+}
+
+.dente-secondary-btn {
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.dente-secondary-btn:hover {
+	background: var(--paper-soft);
+}
+
+/* Drawer Footer */
+.dente-tooth-drawer-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+}
+
+.dente-drawer-btn-secondary {
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}

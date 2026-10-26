@@ -1,0 +1,97 @@
+/**
+ * toothDrawerHeader.css — Header & Action Buttons
+ */
+
+.dente-tooth-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+}
+
+.dente-drawer-header-left {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.dente-tooth-title-block {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.dente-tooth-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.dente-tooth-title {
+	font-size: 15px;
+	font-weight: 800;
+	margin: 0;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.dente-tooth-folk-name {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 0;
+}
+
+.dente-drawer-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-recall-quick-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--teal-surface);
+	color: var(--teal);
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.dente-recall-quick-btn:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.dente-drawer-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-drawer-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}

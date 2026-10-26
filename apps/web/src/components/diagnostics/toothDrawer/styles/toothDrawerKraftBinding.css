@@ -1,0 +1,104 @@
+/**
+ * toothDrawerKraftBinding.css — SanPiN Kraft Package Binding & DataMatrix Scanner
+ */
+
+.dente-scanner-input-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 10px;
+	border-radius: 10px;
+	background: var(--paper, #f1f5f9);
+	border: 1px solid var(--line, #cbd5e1);
+}
+
+.dente-scanner-text-input {
+	flex: 1;
+	min-height: 44px;
+	border: none;
+	background: transparent;
+	font-size: 14px;
+	color: var(--ink, #0f172a);
+	outline: none;
+}
+
+.dente-scanner-action-btn {
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border: none;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	touch-manipulation: manipulation;
+}
+
+.dente-packages-selector-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 8px;
+}
+
+.dente-package-card {
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #f8fafc);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dente-package-card:hover {
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.dente-package-card.selected {
+	border-color: var(--brand-primary, var(--teal));
+	background: var(--teal-soft, rgba(5, 150, 105, 0.08));
+}
+
+.dente-package-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.dente-package-card-sub {
+	display: flex;
+	justify-content: space-between;
+	font-size: 10px;
+	color: var(--muted, #64748b);
+}
+
+.dente-package-expiry-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 10px;
+	margin-top: 4px;
+}
+
+.dente-package-expiry-row .days-badge {
+	font-weight: 800;
+	color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(5, 150, 105, 0.15));
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.dente-bound-indicator {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	font-weight: 800;
+	color: var(--ok-fg, #059669);
+	margin-top: 4px;
+}

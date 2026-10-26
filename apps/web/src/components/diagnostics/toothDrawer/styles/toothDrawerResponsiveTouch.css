@@ -1,0 +1,43 @@
+/**
+ * toothDrawerResponsiveTouch.css — Mobile & Touch Ergonomics Invariants (Apple HIG >= 44x44px)
+ */
+
+@media (pointer: coarse), (max-width: 768px) {
+	.dente-quick-tab-btn,
+	.dente-accordion-trigger,
+	.dente-touch-chip,
+	.dente-text-action-btn,
+	.dente-surface-tile,
+	.dente-macro-chip,
+	.dente-material-btn,
+	.dente-table-select,
+	.dente-table-input,
+	.dente-row-del-btn,
+	.dente-weight-chip,
+	.dente-range-slider,
+	.dente-number-input,
+	.dente-drug-card,
+	.dente-carpule-chip,
+	.dente-carpule-input,
+	.dente-select-full,
+	.dente-scanner-text-input,
+	.dente-scanner-action-btn,
+	.dente-rvg-ctrl-btn,
+	.dente-mini-slider,
+	.dente-payer-chip,
+	.dente-mini-action-btn,
+	.dente-bonus-chip,
+	.dente-resorption-btn,
+	.dente-primary-action-btn,
+	.dente-secondary-btn,
+	.dente-drawer-btn-secondary,
+	.dente-drawer-close-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+
+	.dente-row-del-btn {
+		min-width: 44px !important;
+		min-height: 44px !important;
+	}
+}

@@ -1,0 +1,54 @@
+/* icd10Rubrics.css — Вкладки рубрик МКБ-10 */
+
+.icd10-rubric-tabs {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 4px;
+	scrollbar-width: thin;
+}
+
+.icd10-rubric-tab {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 34px;
+	height: 34px;
+	padding: 0 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	touch-action: manipulation;
+	user-select: none;
+	transition:
+		background-color var(--transition-fast),
+		border-color var(--transition-fast),
+		color var(--transition-fast);
+}
+
+.icd10-rubric-tab:hover {
+	background: var(--paper-strong);
+	border-color: var(--line-strong);
+}
+
+.icd10-rubric-tab.is-active {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal-dark, var(--teal));
+}
+
+.icd10-rubric-tab:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.icd10-rubric-tab {
+		min-height: 44px;
+	}
+}
+

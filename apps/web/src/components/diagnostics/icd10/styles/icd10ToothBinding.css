@@ -1,0 +1,114 @@
+/* icd10ToothBinding.css — Привязка к зубу FDI, рекомендации, пустое состояние */
+
+.icd10-tooth-binding-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 12px;
+}
+
+.icd10-tooth-binding-label {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.icd10-tooth-required-star {
+	color: var(--bad-fg, #ef4444);
+	font-weight: 800;
+}
+
+.icd10-teeth-quick-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.icd10-tooth-quick-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 6px 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: var(--font-mono, monospace);
+	color: var(--ink);
+	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
+	transition:
+		background-color var(--transition-fast),
+		border-color var(--transition-fast),
+		color var(--transition-fast);
+}
+
+.icd10-tooth-quick-btn:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+}
+
+.icd10-tooth-quick-btn.is-selected {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal-dark, var(--teal));
+}
+
+.icd10-tooth-quick-btn:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+.icd10-recommendations-box {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--paper);
+	border-left: 3px solid var(--teal);
+	border-radius: 4px;
+	padding: 10px 12px;
+}
+
+.icd10-recommendations-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.icd10-recommendations-list {
+	margin: 0;
+	padding-left: 18px;
+	font-size: 13px;
+	color: var(--ink-2, var(--ink));
+	line-height: 1.5;
+}
+
+.icd10-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 32px 16px;
+	text-align: center;
+	color: var(--muted);
+	gap: 8px;
+}
+
+.icd10-empty-icon {
+	color: var(--muted);
+}
+
+.icd10-empty-text {
+	font-size: 14px;
+	font-weight: 500;
+}
+

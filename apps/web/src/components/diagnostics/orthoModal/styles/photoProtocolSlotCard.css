@@ -1,0 +1,86 @@
+/**
+ * photoProtocolSlotCard.css — Individual Photo Slot Card Styles
+ */
+
+.ortho-slot-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.ortho-slot-card:hover {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ortho-slot-card.drag-over {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, #f0fdfa);
+	outline: 2px dashed var(--teal, #0d9488);
+}
+
+.ortho-slot-card.has-photo {
+	border-color: var(--line, #e2e8f0);
+}
+
+.ortho-slot-header {
+	padding: 8px 12px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+}
+
+.ortho-slot-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow: hidden;
+}
+
+.ortho-slot-num {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #0f172a;
+	color: #ffffff !important;
+	font-size: 10px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .ortho-slot-num,
+.dark .ortho-slot-num {
+	background: #334155;
+	color: #ffffff !important;
+}
+
+.ortho-slot-title {
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ortho-slot-category-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: var(--paper-subtle, #f8fafc);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+}
+

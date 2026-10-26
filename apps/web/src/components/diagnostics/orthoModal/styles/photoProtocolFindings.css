@@ -1,0 +1,80 @@
+/**
+ * photoProtocolFindings.css — Findings Accordion & Clinical Diagnostics Fields
+ */
+
+.ortho-findings-section {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.ortho-findings-header {
+	padding: 12px 16px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+}
+
+.ortho-findings-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ortho-findings-body {
+	padding: 16px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+@media (max-width: 900px) {
+	.ortho-findings-body {
+		grid-template-columns: 1fr;
+	}
+}
+
+.ortho-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.ortho-field-label {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--muted, #64748b);
+	letter-spacing: 0.03em;
+}
+
+.ortho-select, .ortho-input {
+	height: 36px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.ortho-select:focus, .ortho-input:focus {
+	border-color: var(--teal, #0d9488);
+}
+
+.ortho-input-unit {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+

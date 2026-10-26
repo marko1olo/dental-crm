@@ -1,0 +1,58 @@
+/**
+ * toothDrawerStatePills.css — Clinical State Pills & Quick State Strip
+ */
+
+.dente-tooth-state-pill {
+	font-size: 12px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 6px;
+	text-transform: uppercase;
+}
+
+.dente-tooth-state-pill.state-healthy { background: var(--ok-bg); color: var(--ok-fg); }
+.dente-tooth-state-pill.state-caries { background: var(--bad-bg); color: var(--bad-fg); }
+.dente-tooth-state-pill.state-pulpitis { background: var(--bad-bg); color: var(--bad-fg); }
+.dente-tooth-state-pill.state-periodontitis { background: var(--warn-bg); color: var(--warn-fg); }
+.dente-tooth-state-pill.state-filled { background: var(--teal-surface); color: var(--teal); }
+.dente-tooth-state-pill.state-crown { background: var(--info-bg); color: var(--info-fg); }
+.dente-tooth-state-pill.state-implant { background: var(--paper-soft); color: var(--muted); }
+.dente-tooth-state-pill.state-missing { background: var(--bad-bg); color: var(--bad-fg); }
+
+.dente-drawer-state-strip {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 16px;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.dente-state-quick-chip {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.dente-state-quick-chip:hover {
+	border-color: var(--teal);
+}
+
+.dente-state-quick-chip.active {
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border-color: var(--brand-primary, var(--teal));
+}

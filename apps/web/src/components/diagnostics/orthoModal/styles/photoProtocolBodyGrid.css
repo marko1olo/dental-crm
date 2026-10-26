@@ -1,0 +1,93 @@
+/**
+ * photoProtocolBodyGrid.css — Modal Body & 8-Angle Grid Layout
+ */
+
+.ortho-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	background: var(--paper-subtle, #f8fafc);
+}
+
+/* Treatment plan stage ribbon */
+.ortho-plan-ribbon {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 12px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.ortho-plan-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+}
+
+.ortho-plan-badge {
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--teal-surface, #f0fdfa);
+	color: var(--teal, #0d9488);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.ortho-completeness-meter {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ortho-progress-bar {
+	width: 120px;
+	height: 8px;
+	border-radius: 4px;
+	background: var(--line, #e2e8f0);
+	overflow: hidden;
+}
+
+.ortho-progress-fill {
+	height: 100%;
+	background: var(--teal, #0d9488);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.ortho-progress-fill.complete {
+	background: #10b981;
+}
+
+.ortho-progress-text {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+/* 8-Slot Grid */
+.ortho-8-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+}
+
+@media (max-width: 1180px) {
+	.ortho-8-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 640px) {
+	.ortho-8-grid {
+		grid-template-columns: 1fr;
+	}
+}
+

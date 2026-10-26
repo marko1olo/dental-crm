@@ -1,0 +1,29 @@
+/**
+ * toothDrawerFdiBadge.css — FDI Tooth Notation Badge
+ */
+
+.dente-tooth-fdi-badge {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-width: 40px;
+	min-height: 40px;
+	border-radius: 10px;
+	background: var(--teal-surface);
+	border: 1.5px solid var(--teal);
+	color: var(--teal);
+}
+
+.dente-tooth-fdi-badge .fdi-label {
+	font-size: 8.5px;
+	font-weight: 800;
+	text-transform: uppercase;
+	line-height: 1;
+}
+
+.dente-tooth-fdi-badge .fdi-num {
+	font-size: 16px;
+	font-weight: 900;
+	line-height: 1.1;
+}

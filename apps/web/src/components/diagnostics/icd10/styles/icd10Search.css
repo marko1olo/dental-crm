@@ -1,0 +1,99 @@
+/* icd10Search.css — Контейнер и поисковая строка селектора МКБ-10 */
+
+.icd10-selector-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: var(--shadow-1);
+	box-sizing: border-box;
+}
+
+.icd10-search-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: 48px;
+	background: var(--paper-soft);
+	border: 1.5px solid var(--line);
+	border-radius: 10px;
+	padding: 4px 12px;
+	box-sizing: border-box;
+	transition:
+		border-color var(--transition-fast),
+		box-shadow var(--transition-fast);
+}
+
+.icd10-search-wrapper:focus-within {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.icd10-search-icon {
+	color: var(--muted);
+	margin-right: 10px;
+	flex-shrink: 0;
+}
+
+.icd10-search-input {
+	flex: 1;
+	background: transparent;
+	border: none;
+	outline: none;
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--ink);
+	min-height: 40px;
+}
+
+.icd10-search-input::placeholder {
+	color: var(--muted);
+	font-size: 14px;
+}
+
+.icd10-search-clear-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 8px;
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	color: var(--muted);
+	cursor: pointer;
+	transition:
+		background-color var(--transition-fast),
+		color var(--transition-fast);
+}
+
+.icd10-search-clear-btn:hover {
+	background: var(--paper-strong);
+	color: var(--ink);
+}
+
+.icd10-search-clear-btn:focus-visible {
+	outline: 2px solid var(--teal);
+}
+
+.icd10-detected-tooth-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.14));
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: 13px;
+	font-weight: 700;
+	margin-right: 8px;
+	flex-shrink: 0;
+}
+

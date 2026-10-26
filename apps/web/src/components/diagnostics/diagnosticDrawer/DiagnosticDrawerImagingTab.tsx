@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Camera, Radio, HardDrive, RefreshCw, ShieldCheck } from "lucide-react";
 import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProtocolModal";
 import { DirectRvgCaptureModal } from "../../radiology/DirectRvgCaptureModal";
-import { POPULAR_RVG_SENSORS } from "../../radiology/directRvgFileValidation";
 import { showToast } from "../../GlobalToast";
+import { DiagnosticImagingMetricsGrid } from "./DiagnosticImagingMetricsGrid";
+import { DiagnosticImagingSensorsList } from "./DiagnosticImagingSensorsList";
 
 export const DiagnosticDrawerImagingTab: React.FC = () => {
 	const [isPhotoOpen, setIsPhotoOpen] = useState(false);
@@ -22,120 +22,15 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 
 	return (
 		<div className="dente-diagnostic-imaging-tab" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-			<div className="dente-diagnostic-grid">
-				<div className="dente-diagnostic-metric-card" data-testid="metric-photo-protocol">
-					<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-						<Camera size={16} className="text-blue-500" />
-						<span className="dente-diagnostic-metric-label">Фотопротокол</span>
-					</div>
-					<span className="dente-diagnostic-metric-value" style={{ fontSize: 13 }}>
-						6/12 слотов, VITA, FDI
-					</span>
-					<span style={{ fontSize: 11, color: "var(--muted, #64748b)", marginTop: 2 }}>
-						1-клик вставка Ctrl+V, экспорт PDF
-					</span>
-					<button
-						type="button"
-						className="dente-diagnostic-btn mt-3"
-						onClick={() => setIsPhotoOpen(true)}
-						data-testid="btn-open-diagnostic-photo"
-						style={{ minHeight: 38, width: "100%", justifyContent: "center" }}
-					>
-						Открыть фотопротокол
-					</button>
-				</div>
+			<DiagnosticImagingMetricsGrid
+				sensorStatus={sensorStatus}
+				isCheckingSensors={isCheckingSensors}
+				onOpenPhoto={() => setIsPhotoOpen(true)}
+				onOpenRvg={() => setIsRvgOpen(true)}
+				onCheckSensors={handleCheckSensors}
+			/>
 
-				<div className="dente-diagnostic-metric-card" data-testid="metric-rvg-sensor">
-					<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-						<Radio size={16} className="text-teal-500" />
-						<span className="dente-diagnostic-metric-label">Радиовизиограф RVG</span>
-					</div>
-					<span className="dente-diagnostic-metric-value" style={{ fontSize: 13 }}>
-						Мгновенный захват &lt;50мс
-					</span>
-					<span style={{ fontSize: 11, color: "var(--muted, #64748b)", marginTop: 2 }}>
-						{sensorStatus}
-					</span>
-					<button
-						type="button"
-						className="dente-diagnostic-btn mt-3 primary"
-						onClick={() => setIsRvgOpen(true)}
-						data-testid="btn-open-diagnostic-rvg"
-						style={{ minHeight: 38, width: "100%", justifyContent: "center" }}
-					>
-						Запустить захват RVG
-					</button>
-				</div>
-
-				<div className="dente-diagnostic-metric-card" data-testid="metric-hot-folder">
-					<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-						<HardDrive size={16} className="text-amber-500" />
-						<span className="dente-diagnostic-metric-label">Hot Folder & PACS</span>
-					</div>
-					<span className="dente-diagnostic-metric-value" style={{ fontSize: 13 }}>
-						C:\RadiologyDropzone\
-					</span>
-					<span style={{ fontSize: 11, color: "var(--muted, #64748b)", marginTop: 2 }}>
-						DICOM 3.0 / TIFF автоподхват
-					</span>
-					<button
-						type="button"
-						className="dente-diagnostic-btn mt-3"
-						onClick={handleCheckSensors}
-						data-testid="btn-check-sensors"
-						style={{ minHeight: 38, width: "100%", justifyContent: "center" }}
-					>
-						<RefreshCw size={13} className={isCheckingSensors ? "animate-spin" : ""} />
-						<span>Проверить шлюзы</span>
-					</button>
-				</div>
-
-				<div className="dente-diagnostic-metric-card" data-testid="metric-ebm-compliance">
-					<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-						<ShieldCheck size={16} className="text-emerald-500" />
-						<span className="dente-diagnostic-metric-label">Мандат 8e и Доказательность</span>
-					</div>
-					<span className="dente-diagnostic-metric-value" style={{ fontSize: 13 }}>
-						Ноль блокировок сохранения
-					</span>
-					<span style={{ fontSize: 11, color: "var(--muted, #64748b)", marginTop: 2 }}>
-						FDI 11..48 привязка, честный DICOM
-					</span>
-				</div>
-			</div>
-
-			<div
-				style={{
-					padding: 16,
-					borderRadius: 8,
-					background: "var(--paper-strong, #ffffff)",
-					border: "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-					display: "flex",
-					flexDirection: "column",
-					gap: 10,
-				}}
-			>
-				<h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
-					Поддерживаемые датчики визиографов (Zero-Configuration):
-				</h4>
-				<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-					{POPULAR_RVG_SENSORS.map((s) => (
-						<span
-							key={s.id}
-							style={{
-								padding: "4px 8px",
-								borderRadius: 6,
-								background: "var(--surface, #f1f5f9)",
-								border: "1px solid var(--line, #e2e8f0)",
-								fontSize: 12,
-								fontWeight: 600,
-							}}
-						>
-							✓ {s.name} ({s.resolution})
-						</span>
-					))}
-				</div>
-			</div>
+			<DiagnosticImagingSensorsList />
 
 			{isPhotoOpen && (
 				<ClinicalPhotoProtocolModal

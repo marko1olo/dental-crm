@@ -1,0 +1,56 @@
+/**
+ * toothDrawerQuickTabs.css — Quick Navigation Tabs
+ */
+
+.dente-drawer-quick-tabs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	overflow-x: auto;
+	scrollbar-width: thin;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dente-quick-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 34px;
+	height: 34px;
+	padding: 4px 12px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.dente-quick-tab-btn {
+		min-height: 44px;
+		font-size: 13px;
+	}
+}
+
+.dente-quick-tab-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.dente-quick-tab-btn.active {
+	background: var(--teal);
+	color: var(--paper-strong);
+}
+
+.dente-quick-tab-btn.pediatric.active {
+	background: var(--teal-dark);
+	color: var(--paper-strong);
+}

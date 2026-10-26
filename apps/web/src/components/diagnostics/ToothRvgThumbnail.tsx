@@ -1,15 +1,9 @@
 import React, { useState, useRef } from "react";
-import {
-	Contrast,
-	Paperclip,
-	RefreshCw,
-	Scan,
-	Sun,
-	ZoomIn,
-} from "lucide-react";
-import { DentalPanoramicArch, DentalForm043 } from "../icons/DentalIcons";
+import { Scan } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
+import { ToothRvgViewport } from "./rvg/ToothRvgViewport";
+import { ToothRvgControls } from "./rvg/ToothRvgControls";
 
 export interface ToothRvgThumbnailProps {
 	toothNumber: number;
@@ -46,7 +40,6 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 	});
 
 	const hasImage = Boolean(resolvedImageUrl && resolvedImageUrl.trim().length > 0);
-	const imageSrc = resolvedImageUrl;
 
 	const handleResetFilters = () => {
 		setIsInverted(false);
@@ -84,184 +77,34 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 				</span>
 			</div>
 
-			{/* 200x200 Visual Display Workspace */}
 			<div className="dente-rvg-display-row">
-				{/* 200x200 Fixed Dimension Viewport (No CLS shift) */}
-				<div
-					className="dente-rvg-viewport-frame"
-					style={{ backgroundColor: "var(--ink, #0f172a)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
-					onDragOver={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-					}}
-					onDrop={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						const file = e.dataTransfer.files?.[0];
-						if (file) {
-							onAttachScan?.(file);
-							showToast(`Снимок прикреплен к зубу #${toothNumber}`, "success");
-						}
-					}}
-				>
-					<input
-						ref={fileInputRef}
-						type="file"
-						accept="image/*,.dcm"
-						data-testid="rvg-file-input"
-						style={{ display: "none" }}
-						onChange={(e) => {
-							const file = e.target.files?.[0];
-							if (file) {
-								onAttachScan?.(file);
-								showToast(`Снимок прикреплен к зубу #${toothNumber}`, "success");
-							}
-						}}
-					/>
+				<ToothRvgViewport
+					toothNumber={toothNumber}
+					hasImage={hasImage}
+					imageSrc={resolvedImageUrl}
+					isInverted={isInverted}
+					contrast={contrast}
+					brightness={brightness}
+					isZoomedApex={isZoomedApex}
+					fileInputRef={fileInputRef}
+					onAttachScan={onAttachScan}
+				/>
 
-					{hasImage ? (
-						<>
-							<img
-								src={imageSrc}
-								alt={`RVG визиограф зуба ${toothNumber}`}
-								loading="lazy"
-								decoding="async"
-								className="dente-rvg-img"
-								style={{
-									filter: `invert(${isInverted ? 1 : 0}) contrast(${contrast}%) brightness(${brightness}%)`,
-									transform: isZoomedApex ? "scale(1.4) translateY(-10%)" : "none",
-								}}
-							/>
-							<div className="dente-rvg-grid-overlay pointer-events-none" />
-							<div className="dente-rvg-scale-bar">
-								<span>| 5мм |</span>
-							</div>
-						</>
-					) : (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "6px",
-								padding: "12px",
-								color: "var(--muted)",
-								textAlign: "center",
-								cursor: "pointer",
-							}}
-							onClick={() => fileInputRef.current?.click()}
-							title="Нажмите, чтобы прикрепить снимок"
-						>
-							<Scan size={28} color="var(--teal)" />
-							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--paper-soft, #e2e8f0)" }}>
-								RVG #{toothNumber}
-							</span>
-							<span style={{ fontSize: "10px", color: "var(--muted)" }}>
-								Нажмите для прикрепления снимка
-							</span>
-						</div>
-					)}
-				</div>
-
-				{/* Quick Interactive Diagnostic Image Controls */}
-				<div className="dente-rvg-controls-col">
-					<div className="dente-rvg-btn-group">
-						<button
-							type="button"
-							onClick={() => setIsInverted(!isInverted)}
-							className={`dente-rvg-ctrl-btn ${isInverted ? "active" : ""}`}
-							title="Инвертировать цвета (негатив для костных балок)"
-						>
-							<Contrast size={14} />
-							<span>Негатив</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setIsZoomedApex(!isZoomedApex)}
-							className={`dente-rvg-ctrl-btn ${isZoomedApex ? "active" : ""}`}
-							title="Увеличение апекса (лупа корня)"
-						>
-							<ZoomIn size={14} />
-							<span>Зум апекса</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleResetFilters}
-							className="dente-rvg-ctrl-btn"
-							title="Сбросить фильтры"
-						>
-							<RefreshCw size={14} />
-							<span>Сброс</span>
-						</button>
-					</div>
-
-					{/* Sliders */}
-					<div className="dente-rvg-slider-row">
-						<Sun size={14} color="var(--muted, #64748b)" />
-						<input
-							type="range"
-							min="60"
-							max="160"
-							value={brightness}
-							onChange={(e) => setBrightness(Number(e.target.value))}
-							className="dente-mini-slider"
-							title="Яркость снимка"
-						/>
-						<span className="slider-label">{brightness}%</span>
-					</div>
-
-					<div className="dente-rvg-slider-row">
-						<Contrast size={14} color="var(--muted, #64748b)" />
-						<input
-							type="range"
-							min="60"
-							max="180"
-							value={contrast}
-							onChange={(e) => setContrast(Number(e.target.value))}
-							className="dente-mini-slider"
-							title="Контраст снимка"
-						/>
-						<span className="slider-label">{contrast}%</span>
-					</div>
-
-					{/* Quick Launchers */}
-					<div className="dente-rvg-actions-row">
-						<button
-							type="button"
-							onClick={() => fileInputRef.current?.click()}
-							className="dente-primary-action-btn"
-							data-testid="attach-rvg-scan-btn"
-							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
-							title="Прикрепить прицельный снимок к зубу"
-						>
-							<Paperclip size={13} />
-							<span>Прикрепить снимок</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleCopyXrayReport}
-							className="dente-secondary-btn"
-							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
-						>
-							<DentalForm043 size={13} />
-							<span>Вставить в карту</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => onOpenFullRadiology?.(toothNumber)}
-							className="dente-secondary-btn"
-							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
-						>
-							<DentalPanoramicArch size={13} />
-							<span>Студия снимков...</span>
-						</button>
-					</div>
-				</div>
+				<ToothRvgControls
+					toothNumber={toothNumber}
+					isInverted={isInverted}
+					contrast={contrast}
+					brightness={brightness}
+					isZoomedApex={isZoomedApex}
+					onToggleInverted={() => setIsInverted((prev) => !prev)}
+					onToggleZoomApex={() => setIsZoomedApex((prev) => !prev)}
+					onResetFilters={handleResetFilters}
+					onChangeBrightness={setBrightness}
+					onChangeContrast={setContrast}
+					onOpenFilePicker={() => fileInputRef.current?.click()}
+					onCopyXrayReport={handleCopyXrayReport}
+					onOpenFullRadiology={onOpenFullRadiology}
+				/>
 			</div>
 		</div>
 	);

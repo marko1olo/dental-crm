@@ -1,0 +1,103 @@
+/**
+ * toothDrawerRvgImaging.css — RVG 200x200 Image Frame & Radiology Controls
+ */
+
+.dente-rvg-display-row {
+	display: flex;
+	gap: 14px;
+	align-items: center;
+}
+
+.dente-rvg-viewport-frame {
+	width: 200px;
+	height: 200px;
+	min-width: 200px;
+	min-height: 200px;
+	max-width: 200px;
+	max-height: 200px;
+	border-radius: 12px;
+	background: #030712;
+	border: 2px solid var(--line, #cbd5e1);
+	overflow: hidden;
+	position: relative;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.dente-rvg-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.dente-rvg-grid-overlay {
+	position: absolute;
+	inset: 0;
+	border: 1px solid var(--teal-soft, rgba(56, 189, 248, 0.2));
+}
+
+.dente-rvg-scale-bar {
+	position: absolute;
+	bottom: 6px;
+	right: 8px;
+	background: rgba(0, 0, 0, 0.6);
+	color: var(--brand-primary, var(--teal));
+	font-family: monospace;
+	font-size: 9px;
+	padding: 1px 4px;
+	border-radius: 3px;
+}
+
+.dente-rvg-controls-col {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-rvg-btn-group {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.dente-rvg-ctrl-btn {
+	min-height: 30px;
+	padding: 3px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.dente-rvg-ctrl-btn.active {
+	background: var(--brand-primary, var(--teal));
+	color: #ffffff;
+	border-color: var(--brand-primary, var(--teal));
+}
+
+.dente-rvg-slider-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 11px;
+}
+
+.dente-mini-slider {
+	flex: 1;
+	min-height: 28px;
+	cursor: pointer;
+}
+
+.dente-rvg-actions-row {
+	display: flex;
+	gap: 6px;
+	margin-top: 4px;
+}
