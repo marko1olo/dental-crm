@@ -1,0 +1,65 @@
+/* reportFindingsTable.css — Таблицы замеров, диагнозов и протокола (Мандат 8b) */
+
+.radiology-report-findings-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 10px;
+	margin-top: 6px;
+}
+
+.radiology-report-findings-table th {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	padding: 5px 8px;
+	text-align: left;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.radiology-report-findings-table td {
+	border: 1px solid var(--line);
+	padding: 5px 8px;
+	color: var(--text);
+}
+
+.radiology-report-findings-table tr:nth-child(even) {
+	background: var(--paper-subtle);
+}
+
+.radiology-report-conclusion-box {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 10px;
+	margin-top: 8px;
+}
+
+.radiology-report-conclusion-title {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--primary);
+	margin-bottom: 4px;
+}
+
+.radiology-report-conclusion-text {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--text);
+}
+
+.radiology-report-signature-block {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	margin-top: auto;
+	padding-top: 12px;
+	border-top: 1px solid var(--line);
+	font-size: 10px;
+	color: var(--text-muted);
+}
+
+.radiology-report-signature-line {
+	width: 180px;
+	border-bottom: 1px solid var(--line);
+	height: 18px;
+}

@@ -228,33 +228,49 @@ export interface CbctLeftToolDockProps {
 }
 
 export interface DockTooltipProps {
-	readonly title: string;
+	readonly title?: string | undefined;
+	readonly text?: string | undefined;
 	readonly subtitle?: string | undefined;
 	readonly shortcut?: string | undefined;
 	readonly titleColor?: string | undefined;
 	readonly bottomClass?: string | undefined;
+	readonly children?: React.ReactNode | undefined;
 }
 
 export const DockTooltip: React.FC<DockTooltipProps> = ({
 	title,
+	text,
 	subtitle,
 	shortcut,
 	titleColor = "",
 	bottomClass = "top-1/2 -translate-y-1/2",
-}) => (
-	<div
-		role="tooltip"
-		className={`pointer-events-none absolute left-full ml-2 ${bottomClass} opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2`}
-	>
-		<span className={`font-semibold ${titleColor}`}>{title}</span>
-		{subtitle && <span className="text-[var(--muted,#a1a1aa)] text-[11px]">{subtitle}</span>}
-		{shortcut && (
-			<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-				{shortcut}
-			</kbd>
-		)}
-	</div>
-);
+	children,
+}) => {
+	const heading = title ?? text ?? "";
+	const tooltipContent = (
+		<div
+			role="tooltip"
+			className={`pointer-events-none absolute left-full ml-2 ${bottomClass} opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2`}
+		>
+			<span className={`font-semibold ${titleColor}`}>{heading}</span>
+			{subtitle && <span className="text-[var(--muted,#a1a1aa)] text-[11px]">{subtitle}</span>}
+			{shortcut && (
+				<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+					{shortcut}
+				</kbd>
+			)}
+		</div>
+	);
+	if (children) {
+		return (
+			<div className="relative group flex items-center justify-center">
+				{children}
+				{tooltipContent}
+			</div>
+		);
+	}
+	return tooltipContent;
+};
 
 export const getToolBtnClass = (
 	isActive: boolean,

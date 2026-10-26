@@ -160,7 +160,14 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 	});
 
 	it("4. DoctorCbctSettingsModal.tsx isolates dark cockpit and styles all 7 sliders with cbct-slider--teal", () => {
-		const code = fs.readFileSync(doctorModalPath, "utf-8");
+		const modalCode = fs.readFileSync(doctorModalPath, "utf-8");
+		const slidersCode = fs.existsSync(path.resolve(__dirname, "../../settings/cbct/DoctorCbctSlidersColumn.tsx"))
+			? fs.readFileSync(path.resolve(__dirname, "../../settings/cbct/DoctorCbctSlidersColumn.tsx"), "utf-8") +
+			  fs.readFileSync(path.resolve(__dirname, "../../settings/cbct/DoctorCbctWindowSliders.tsx"), "utf-8") +
+			  fs.readFileSync(path.resolve(__dirname, "../../settings/cbct/DoctorCbctThicknessSliders.tsx"), "utf-8") +
+			  fs.readFileSync(path.resolve(__dirname, "../../settings/cbct/DoctorCbctPreviewCanvas.tsx"), "utf-8")
+			: "";
+		const code = modalCode + "\n" + slidersCode;
 
 		// Imports modular styles
 		assert.ok(
@@ -234,7 +241,10 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 	});
 
 	it("8. Upper tabs in CbctHeaderBar.tsx use reduced text-[11px] font-medium and muted zinc tones", () => {
-		const headerCode = fs.readFileSync(headerBarPath, "utf-8");
+		const headerCode = fs.readFileSync(headerBarPath, "utf-8") +
+			(fs.existsSync(path.resolve(__dirname, "../mpr/header/CbctHeaderModeTabs.tsx"))
+				? fs.readFileSync(path.resolve(__dirname, "../mpr/header/CbctHeaderModeTabs.tsx"), "utf-8")
+				: "");
 		assert.ok(
 			headerCode.includes("text-[11px] font-medium"),
 			"Tabs must use text-[11px] font-medium to avoid oversized text relative to icons",

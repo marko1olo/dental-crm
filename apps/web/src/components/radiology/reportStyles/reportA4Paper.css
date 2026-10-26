@@ -1,0 +1,91 @@
+/* reportA4Paper.css — Медицинский печатный лист формата A4 (Мандат 8b) */
+
+.radiology-report-a4-sheet {
+	width: 210mm;
+	min-height: 297mm;
+	background: var(--paper-strong);
+	color: var(--text);
+	padding: 16mm 14mm;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+	border-radius: 4px;
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+}
+
+.radiology-report-sheet-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	border-bottom: 2px solid var(--line);
+	padding-bottom: 10px;
+}
+
+.radiology-report-clinic-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.radiology-report-clinic-name {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--text);
+}
+
+.radiology-report-clinic-details {
+	font-size: 10px;
+	color: var(--text-muted);
+}
+
+.radiology-report-doc-title {
+	font-size: 14px;
+	font-weight: 800;
+	text-align: right;
+	color: var(--primary);
+	text-transform: uppercase;
+}
+
+.radiology-report-patient-card {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 11px;
+}
+
+.radiology-report-snaps-grid {
+	display: grid;
+	gap: 8px;
+	flex: 1;
+}
+
+.radiology-report-snaps-grid.layout-single {
+	grid-template-columns: 1fr;
+}
+
+.radiology-report-snaps-grid.layout-quad {
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 1fr;
+}
+
+.radiology-report-snap-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.radiology-report-snap-card img {
+	width: 100%;
+	height: auto;
+	display: block;
+	object-fit: contain;
+}

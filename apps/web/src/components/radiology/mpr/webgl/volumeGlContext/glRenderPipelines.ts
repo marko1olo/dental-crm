@@ -1,31 +1,21 @@
 /**
  * DENTE CRM — WebGL2 Hardware GPU 3D-Texture Engine (FEAT-010 / GPU Overhaul)
- * Render Pipelines & Draw Call Dispatch (Mandate 8b / Layer 1)
+ * Render Pipelines & Draw Call Dispatch (Mandate 8b / Layer 1 <= 120 lines)
  */
 
 import {
-	type GlSliceCoordinates,
-	type GlSliceRenderOptions,
-	applySafeDprToCanvas,
-	resolveColorMapCode,
-	resolveInterpolationCode,
+	type GlSliceCoordinates, type GlSliceRenderOptions, applySafeDprToCanvas,
+	resolveColorMapCode, resolveInterpolationCode,
 } from "../CbctVolumeGlTextures";
 import type { GlSliceDrawResult, GlUniformLocations, GlVolumeUploadDim } from "./types";
 
 export function clearCanvasToBlack(gl: WebGL2RenderingContext): void {
-	if (typeof gl.clearColor === "function") {
-		gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	}
-	if (typeof gl.clear === "function" && typeof gl.COLOR_BUFFER_BIT === "number") {
-		gl.clear(gl.COLOR_BUFFER_BIT);
-	}
+	if (typeof gl.clearColor === "function") gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	if (typeof gl.clear === "function" && typeof gl.COLOR_BUFFER_BIT === "number") gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
 export function updateSliceBasisUniformsOnProgram(
-	gl: WebGL2RenderingContext,
-	program: WebGLProgram,
-	uniforms: GlUniformLocations,
-	coords: GlSliceCoordinates,
+	gl: WebGL2RenderingContext, program: WebGLProgram, uniforms: GlUniformLocations, coords: GlSliceCoordinates,
 ): boolean {
 	gl.useProgram(program);
 	if (uniforms.sliceOrigin) gl.uniform3fv(uniforms.sliceOrigin, coords.sliceOrigin);
@@ -35,49 +25,11 @@ export function updateSliceBasisUniformsOnProgram(
 	return true;
 }
 
-export function dispatchSliceDrawPipeline(
-	gl: WebGL2RenderingContext,
-	canvas: HTMLCanvasElement,
-	vao: WebGLVertexArrayObject | null,
-	volumeTexture: WebGLTexture | null,
-	uploadDim: GlVolumeUploadDim | null,
-	prog: WebGLProgram,
-	uniforms: GlUniformLocations,
-	coords: GlSliceCoordinates,
-	options: GlSliceRenderOptions,
-	fallbackColorMap: number,
-	fallbackSharpenAmount: number,
-	targetCanvas?: HTMLCanvasElement | null | undefined,
-	readPixels?: boolean | undefined,
-): GlSliceDrawResult | null {
-	if (targetCanvas) {
-		if (options.clampDpr) {
-			applySafeDprToCanvas(targetCanvas, coords.widthPx, coords.heightPx, options.safeDpr);
-		} else if (targetCanvas.width !== coords.widthPx || targetCanvas.height !== coords.heightPx) {
-			targetCanvas.width = coords.widthPx;
-			targetCanvas.height = coords.heightPx;
-		}
-		if (canvas.width < coords.widthPx || canvas.height < coords.heightPx) {
-			canvas.width = Math.max(canvas.width, coords.widthPx);
-			canvas.height = Math.max(canvas.height, coords.heightPx);
-		}
-	} else if (canvas.width !== coords.widthPx || canvas.height !== coords.heightPx) {
-		canvas.width = coords.widthPx;
-		canvas.height = coords.heightPx;
-	}
-
-	gl.viewport(0, 0, coords.widthPx, coords.heightPx);
-	gl.useProgram(prog);
-	if (vao && gl.bindVertexArray) gl.bindVertexArray(vao);
-
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_3D, volumeTexture);
-	if (uniforms.volume) gl.uniform1i(uniforms.volume, 0);
-
-	if (uniforms.volumeDim && uploadDim) {
-		gl.uniform3f(uniforms.volumeDim, uploadDim.width, uploadDim.height, uploadDim.depth);
-	}
-
+function bindSliceUniforms(
+	gl: WebGL2RenderingContext, uniforms: GlUniformLocations, uploadDim: GlVolumeUploadDim | null,
+	coords: GlSliceCoordinates, options: GlSliceRenderOptions, fallbackColorMap: number, fallbackSharpenAmount: number,
+): void {
+	if (uniforms.volumeDim && uploadDim) gl.uniform3f(uniforms.volumeDim, uploadDim.width, uploadDim.height, uploadDim.depth);
 	if (uniforms.sliceOrigin) gl.uniform3fv(uniforms.sliceOrigin, coords.sliceOrigin);
 	if (uniforms.axisU) gl.uniform3fv(uniforms.axisU, coords.axisU);
 	if (uniforms.axisV) gl.uniform3fv(uniforms.axisV, coords.axisV);
@@ -92,16 +44,42 @@ export function dispatchSliceDrawPipeline(
 	if (uniforms.trilinear) gl.uniform1i(uniforms.trilinear, interpCode !== 0 ? 1 : 0);
 
 	const colorMapCode = options.colorMap !== undefined ? resolveColorMapCode(options.colorMap) : fallbackColorMap;
-	const sharpenAmount = options.sharpenAmount !== undefined
-		? Math.max(0.0, Math.min(1.0, options.sharpenAmount))
-		: fallbackSharpenAmount;
-
+	const sharpen = options.sharpenAmount !== undefined ? Math.max(0.0, Math.min(1.0, options.sharpenAmount)) : fallbackSharpenAmount;
 	if (uniforms.colorMap) gl.uniform1i(uniforms.colorMap, colorMapCode);
-	if (uniforms.sharpenAmount) gl.uniform1f(uniforms.sharpenAmount, sharpenAmount);
+	if (uniforms.sharpenAmount) gl.uniform1f(uniforms.sharpenAmount, sharpen);
 	if (uniforms.gamma) gl.uniform1f(uniforms.gamma, options.gamma ?? 1.50);
 	if (uniforms.useSoftKnee) gl.uniform1i(uniforms.useSoftKnee, options.useSoftKnee ? 1 : 0);
 	if (uniforms.softKneeCeiling) gl.uniform1f(uniforms.softKneeCeiling, options.softKneeCeiling ?? 215.0);
 	if (uniforms.airCutoffHU) gl.uniform1f(uniforms.airCutoffHU, options.airCutoffHU ?? -500.0);
+}
+
+export function dispatchSliceDrawPipeline(
+	gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, vao: WebGLVertexArrayObject | null,
+	volumeTexture: WebGLTexture | null, uploadDim: GlVolumeUploadDim | null, prog: WebGLProgram,
+	uniforms: GlUniformLocations, coords: GlSliceCoordinates, options: GlSliceRenderOptions,
+	fallbackColorMap: number, fallbackSharpenAmount: number,
+	targetCanvas?: HTMLCanvasElement | null | undefined, readPixels?: boolean | undefined,
+): GlSliceDrawResult | null {
+	if (targetCanvas) {
+		if (options.clampDpr) applySafeDprToCanvas(targetCanvas, coords.widthPx, coords.heightPx, options.safeDpr);
+		else if (targetCanvas.width !== coords.widthPx || targetCanvas.height !== coords.heightPx) {
+			targetCanvas.width = coords.widthPx; targetCanvas.height = coords.heightPx;
+		}
+		if (canvas.width < coords.widthPx || canvas.height < coords.heightPx) {
+			canvas.width = Math.max(canvas.width, coords.widthPx); canvas.height = Math.max(canvas.height, coords.heightPx);
+		}
+	} else if (canvas.width !== coords.widthPx || canvas.height !== coords.heightPx) {
+		canvas.width = coords.widthPx; canvas.height = coords.heightPx;
+	}
+
+	gl.viewport(0, 0, coords.widthPx, coords.heightPx);
+	gl.useProgram(prog);
+	if (vao && gl.bindVertexArray) gl.bindVertexArray(vao);
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_3D, volumeTexture);
+	if (uniforms.volume) gl.uniform1i(uniforms.volume, 0);
+
+	bindSliceUniforms(gl, uniforms, uploadDim, coords, options, fallbackColorMap, fallbackSharpenAmount);
 
 	const tDrawStart = typeof performance !== "undefined" ? performance.now() : 0;
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -123,17 +101,7 @@ export function dispatchSliceDrawPipeline(
 		const targetCtx = targetCanvas.getContext("2d");
 		if (targetCtx) {
 			const sourceY = canvas.height - coords.heightPx;
-			targetCtx.drawImage(
-				canvas,
-				0,
-				sourceY,
-				coords.widthPx,
-				coords.heightPx,
-				0,
-				0,
-				targetCanvas.width,
-				targetCanvas.height,
-			);
+			targetCtx.drawImage(canvas, 0, sourceY, coords.widthPx, coords.heightPx, 0, 0, targetCanvas.width, targetCanvas.height);
 		}
 	}
 

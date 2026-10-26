@@ -1,0 +1,85 @@
+/* reportWorkspace.css — Сетка рабочей области и боковая панель находок (Мандат 8b) */
+
+.radiology-report-workspace {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+	background: var(--paper);
+}
+
+.radiology-report-preview-scroll {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: var(--paper);
+}
+
+.radiology-report-sidebar {
+	width: 380px;
+	background: var(--paper-strong);
+	border-left: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 16px;
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+.radiology-report-sidebar-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px;
+}
+
+.radiology-report-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.radiology-report-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.radiology-report-label {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.radiology-report-input,
+.radiology-report-textarea {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 6px 10px;
+	color: var(--text);
+	font-size: 12px;
+	font-family: inherit;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.radiology-report-input:focus,
+.radiology-report-textarea:focus {
+	border-color: var(--primary);
+}
+
+.radiology-report-textarea {
+	resize: vertical;
+	min-height: 72px;
+}

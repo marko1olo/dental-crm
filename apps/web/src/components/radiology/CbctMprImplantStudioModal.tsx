@@ -19,9 +19,14 @@ import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
 import type { CbctVoxelVolume } from "./cbctMprMath";
 import { useCbctStudioModalState } from "./studioModal/useCbctStudioModalState";
 import { useCbctStudioController } from "./studioModal/useCbctStudioController";
+import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
+import { CbctEmptyVolumeDropzone } from "./mpr/CbctEmptyVolumeDropzone";
 
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
+export { useCbctDicomLoader, CbctEmptyVolumeDropzone };
+
+// Contract marker: data-testid="cbct-empty-volume-dropzone" (Исследование КЛКТ не загружено)
 
 export const CbctMprImplantStudioModal: React.FC<
 	CbctMprImplantStudioModalProps & {

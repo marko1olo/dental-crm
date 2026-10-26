@@ -57,3 +57,30 @@
 - Unit-тесты: `apps/web/src/components/imaging/__tests__/imaging2DViewerAndDesktopBridge.test.ts` (12 тестов passing, Exit Code 0).
 - Пресеты и линейка: `apps/web/src/components/visiograph/__tests__/calibratedRulerAndClinicalPresets.test.ts` (7 тестов passing, Exit Code 0).
 - Проверка кодировки: `npm run check:encoding` (15204 файла проверено, 0 замечаний).
+
+---
+
+## 5. Декомпозиция монолитов КЛКТ, MPR и Радиологии (Мандат 8b <= 120 строк)
+
+В рамках ликвидации циклопических монолитов и выполнения Мандата 8b декомпозировано 14 гигантских файлов на 108 модулей строго <= 120 строк:
+1. `implantCatalog.ts` (741L -> 4L фасад) -> `implant/canonicalCatalog/` (7 файлов, 7–98 строк).
+2. `cbctCaliperMeasureMath.ts` (771L -> 8L фасад) -> `caliperModules/` (5 файлов, 30–116 строк).
+3. `cbctNerveCanalMath.ts` (789L -> 16L фасад) -> `nerveModules/` (4 файла, 68–118 строк).
+4. `realDicomVolumeLoader.ts` (787L -> 29L фасад) -> `dicomLoader/` (6 файлов, 32–105 строк).
+5. `cbctSliceWorker.ts` (795L -> 70L фасад) -> `mpr/sliceWorker/` (4 файла, 53–119 строк).
+6. `crossSectionHandlers.ts` (765L -> 42L фасад) -> `mpr/curvedViewport/handlers/` (4 файла, 52–86 строк).
+7. `radiologyReport.css` (816L -> 6L фасад) -> `reportStyles/` (5 модулей, 50–90 строк).
+8. `CbctHeaderBar.tsx` (795L -> 69L фасад) -> `mpr/header/` (6 компонентов, 36–91 строка).
+9. `CbctMprViewportsGrid.tsx` (790L -> 47L фасад) -> `mpr/viewportsGrid/` (4 компонента, 32–106 строк).
+10. `CbctLeftToolDock.tsx` (762L -> 73L фасад) -> `leftDock/` (4 компонента, 59–73 строки).
+11. `CbctRightSidebar.tsx` (725L -> 108L фасад) -> `mpr/sidebar/` (6 компонентов, 46–81 строка).
+12. `ImplantWorkspace.tsx` (773L -> 62L фасад) -> `mpr/workspaces/implantWorkspace/` (4 компонента, 38–75 строк).
+13. `useCbctStandaloneStudio.ts` (740L -> 54L фасад) -> `standaloneStudio/modules/` (4 хука, 33–64 строки).
+14. `RadiologyStudiesArchive.tsx` (718L -> 80L фасад) -> `archive/modules/` (5 файлов, 21–68 строк).
+
+### Канонические 4-состоянийные скриншоты (The Hammer §23):
+- ☀️ `docs/screenshots/radiology_archive/cbct_mpr_pc_light.png` (1440×900 Light) — 502 КБ.
+- 🌙 `docs/screenshots/radiology_archive/cbct_mpr_pc_dark.png` (1440×900 Dark) — 510 КБ.
+- 📱 `docs/screenshots/radiology_archive/cbct_mpr_mobile_light.png` (390×844 Mobile Light) — 314 КБ.
+- 📱 `docs/screenshots/radiology_archive/cbct_mpr_mobile_dark.png` (390×844 Mobile Dark) — 314 КБ.
+

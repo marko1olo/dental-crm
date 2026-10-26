@@ -13,7 +13,7 @@ import type {
 } from "../../../hooks/useWhatsappSettings.js";
 import { WHATSAPP_SETTINGS_PANEL_SUBJECT } from "../../../hooks/useWhatsappSettings.js";
 import { panelStateText } from "../../../lib/panelStateText.js";
-import { PanelLoadFailure } from "../../PanelLoadFailure.js";
+import { PanelLoadFailure } from "../../PanelLoadFailure";
 import { WhatsappActionsBar } from "./WhatsappActionsBar.js";
 import { WhatsappAntiBanLimitsSection } from "./WhatsappAntiBanLimitsSection.js";
 import { WhatsappCloudApiSection } from "./WhatsappCloudApiSection.js";

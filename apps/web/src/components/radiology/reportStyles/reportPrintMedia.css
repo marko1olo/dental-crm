@@ -1,0 +1,58 @@
+/* reportPrintMedia.css — Правила печати отчета (Мандат 8b) */
+
+@media print {
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+
+	.radiology-report-modal {
+		position: static !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		overflow: visible !important;
+	}
+
+	.radiology-report-toolbar,
+	.radiology-report-sidebar {
+		display: none !important;
+	}
+
+	.radiology-report-workspace,
+	.radiology-report-preview-scroll {
+		background: #ffffff !important;
+		padding: 0 !important;
+		overflow: visible !important;
+	}
+
+	.radiology-report-a4-sheet {
+		box-shadow: none !important;
+		border: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		width: 100% !important;
+		min-height: auto !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		page-break-after: always;
+	}
+
+	.radiology-report-clinic-name,
+	.radiology-report-doc-title,
+	.radiology-report-conclusion-title {
+		color: #000000 !important;
+	}
+
+	.radiology-report-patient-card,
+	.radiology-report-conclusion-box,
+	.radiology-report-snap-card {
+		border-color: #cccccc !important;
+		background: transparent !important;
+	}
+
+	.radiology-report-findings-table th,
+	.radiology-report-findings-table td {
+		border-color: #cccccc !important;
+		color: #000000 !important;
+	}
+}

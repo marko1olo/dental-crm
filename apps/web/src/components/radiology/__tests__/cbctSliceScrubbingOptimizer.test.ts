@@ -10,7 +10,7 @@
  * 6. Direction reversal responsiveness with zero rubber-band latency.
  */
 
-import { describe, it } from "node:test";
+import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert";
 import type { CbctVoxelVolume, Point3D } from "../cbctMprMath";
 import { DEFAULT_OBLIQUE_ROTATION } from "../cbctObliqueMatrixMath";
@@ -23,6 +23,7 @@ import {
 } from "../mpr/cbctWorkerBridge";
 import {
 	handleWorkerMessage,
+	clearCancelledRequests,
 	type CbctWorkerInboundMessage,
 	type CbctWorkerOutboundMessage,
 } from "../mpr/cbctSliceWorker";
@@ -67,6 +68,9 @@ const renderOpts: WorkerRenderSliceOptions = {
 };
 
 describe("CBCT Slice Scrubbing Queue & Stale Task Canceler (Anti-Rubber-Band)", () => {
+	beforeEach(() => {
+		clearCancelledRequests();
+	});
 	it("1. Collapses 50 rapid slice requests into at most 2 worker dispatches, rejecting intermediate tasks", async () => {
 		const testVol = createMockVolume();
 		const workerCache = new Map<string, CbctVoxelVolume>();
