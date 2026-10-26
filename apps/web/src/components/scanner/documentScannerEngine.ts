@@ -11,6 +11,7 @@ export type DocumentType =
 	| "oms_policy"
 	| "dms_policy"
 	| "snils"
+	| "referral_clinical"
 	| "referral_057u"
 	| "other";
 
@@ -69,14 +70,23 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		placeholderText: "Поместите свидетельство СНИЛС в рамку",
 		expectedFormatHint: "Формат: XXX-XXX-XXX YY (11 цифр)",
 	},
-	referral_057u: {
-		id: "referral_057u",
-		title: "Направление формы 057/у-04",
-		shortTitle: "Форма 057/у",
+	referral_clinical: {
+		id: "referral_clinical",
+		title: "Направление на лечение / консультацию",
+		shortTitle: "Направление",
 		icon: "ClipboardList",
 		aspectRatio: 1.414,
-		placeholderText: "Поместите бланк направления 057/у-04 в рамку",
-		expectedFormatHint: "Штамп направляющей МО, номер и дата",
+		placeholderText: "Поместите бланк направления на лечение в рамку",
+		expectedFormatHint: "Штамп направляющей клиники, номер и дата",
+	},
+	referral_057u: {
+		id: "referral_clinical",
+		title: "Направление на лечение / консультацию",
+		shortTitle: "Направление",
+		icon: "ClipboardList",
+		aspectRatio: 1.414,
+		placeholderText: "Поместите бланк направления на лечение в рамку",
+		expectedFormatHint: "Штамп направляющей клиники, номер и дата",
 	},
 	other: {
 		id: "other",
@@ -94,7 +104,7 @@ export const DOCUMENT_PRESETS_LIST: DocumentPreset[] = [
 	DOCUMENT_PRESETS.oms_policy,
 	DOCUMENT_PRESETS.dms_policy,
 	DOCUMENT_PRESETS.snils,
-	DOCUMENT_PRESETS.referral_057u,
+	DOCUMENT_PRESETS.referral_clinical,
 	DOCUMENT_PRESETS.other,
 ];
 
