@@ -45,12 +45,12 @@ describe("Gate 0 Posterior Caries Matrix «Black Class x Depth» — Teeth 48, 4
 		}
 	});
 
-	it("renders Class II approximal spectrum: all 5 localizations (M, D, MO, DO, MOD) x 4 depths", () => {
+	const verifyClass2 = (subset: typeof TEETH) => {
 		const types: CariesType[] = ["class2_m", "class2_d", "class2_mo", "class2_do", "class2_mod"];
 		const depths: CariesDepth[] = ["superficial", "media", "profunda", "destructive"];
 		const badgeSfx: Record<string, string> = { superficial: "s", media: "m", profunda: "p", destructive: "ds" };
 
-		for (const { C, c2, mask } of TEETH) {
+		for (const { C, c2, mask } of subset) {
 			for (const t of types) {
 				const sub = t.replace("class2_", "");
 				const codePrefix = sub.toUpperCase();
@@ -69,6 +69,14 @@ describe("Gate 0 Posterior Caries Matrix «Black Class x Depth» — Teeth 48, 4
 				}
 			}
 		}
+	};
+
+	it("renders premolars 44, 45 Class II approximal spectrum (M, D, MO, DO, MOD x 4 depths)", () => {
+		verifyClass2(TEETH.slice(0, 2));
+	});
+
+	it("renders molars 46, 47, 48 Class II approximal spectrum (M, D, MO, DO, MOD x 4 depths)", () => {
+		verifyClass2(TEETH.slice(2));
 	});
 
 	it("renders Class V cervical spectrum at CEJ: superficial (no black), media, profunda, destructive", () => {
