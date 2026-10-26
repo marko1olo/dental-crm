@@ -50,7 +50,7 @@ export const PaymentDoctorDiscountsBar: React.FC<PaymentDoctorDiscountsBarProps>
 							key={p.percent}
 							type="button"
 							onClick={() => discountsHook.applyDiscountPreset(p.percent, p.reason)}
-							className={`discount-preset-chip ${isActive ? "is-active" : ""}`}
+							className={`discount-preset-chip min-h-[44px] ${isActive ? "is-active" : ""}`}
 							data-testid={p.testId}
 							title={p.title}
 						>
@@ -62,7 +62,7 @@ export const PaymentDoctorDiscountsBar: React.FC<PaymentDoctorDiscountsBarProps>
 				<button
 					type="button"
 					onClick={discountsHook.applyWarranty100Preset}
-					className={`discount-preset-chip discount-preset-warranty ${discountsHook.isWarranty100 ? "is-active" : ""}`}
+					className={`discount-preset-chip discount-preset-warranty min-h-[44px] ${discountsHook.isWarranty100 ? "is-active" : ""}`}
 					data-testid="preset-warranty-100"
 					title="Гарантийное обслуживание — скидка 100%"
 				>

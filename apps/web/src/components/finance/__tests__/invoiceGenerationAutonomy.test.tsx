@@ -1,11 +1,10 @@
 /**
  * invoiceGenerationAutonomy.test.tsx
  *
- * Unit tests for Invoice Generation Autonomy & Non-Blocking PIN Guidance (Mandates 8e, 8k, 8n):
- * 1. Admin PIN verification button is NOT disabled when PIN is short (<4) or empty (Mandate 8e).
- * 2. Clicking the verify button with a short PIN triggers active warning toast guidance.
- * 3. 1-Click Doctor Clinical Decision button renders in Admin Override Drawer and authorizes
- *    override under Doctor Autonomy without requiring manager PIN.
+ * Unit tests for Invoice Generation Autonomy & Zero Blocking Barriers (Mandates 8e, 8k, 8n, 8aq):
+ * 1. 1-Click Doctor Clinical Decision button renders in Footer without any admin PIN drawer blocker.
+ * 2. 1-Click Doctor Clinical Decision button authorizes price agreement under Doctor Autonomy (Mandate 8e).
+ * 3. Create invoice CTA button is NOT permanently disabled by missing secondary manager approvals.
  */
 
 import assert from "node:assert/strict";
@@ -276,26 +275,6 @@ async function clickNode(node: MockDomNode) {
 	});
 }
 
-async function changeInput(node: MockDomNode, value: string) {
-	await act(async () => {
-		const reactPropKey = Object.keys(node).find((k) =>
-			k.startsWith("__reactProps$"),
-		);
-		if (reactPropKey) {
-			// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-			const props = (node as any)[reactPropKey];
-			if (props && typeof props.onChange === "function") {
-				props.onChange({
-					target: { value },
-				});
-				return;
-			}
-		}
-		node.value = value;
-		node.dispatchEvent({ type: "change" });
-	});
-}
-
 const mockPlanItems: TreatmentPlanItem[] = [
 	{
 		id: "plan-item-1",
@@ -331,7 +310,7 @@ const mockAppContext = {
 	},
 } as unknown as AppLogicContextType;
 
-describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 8e, 8k, 8n)", () => {
+describe("InvoiceGenerationModal Autonomy & Doctor Autonomy (Mandates 8e, 8k, 8n, 8aq)", () => {
 	beforeEach(() => {
 		clearToastEvents();
 		// biome-ignore lint/suspicious/noExplicitAny: mock fetch
@@ -342,7 +321,7 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		});
 	});
 
-	it("renders static markup with 1-click doctor clinical decision button and unblocked PIN button in drawer", () => {
+	it("renders static markup with 1-click doctor clinical decision button in footer without admin PIN drawer barrier", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContext}>
 				<InvoiceGenerationModal
@@ -351,124 +330,17 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 					patientId="PAT-001"
 					doctorFullName="Д-р Смирнов А. В."
 					planItems={mockPlanItems}
-					initialShowAdminPinDrawer={true}
 				/>
 			</AppLogicProvider>,
 		);
 
-		// Verify 1-click doctor clinical decision button in drawer
-		assert.ok(html.includes('data-testid="doctor-clinical-decision-btn"'));
-		assert.ok(html.includes("Решение врача (1 клик)"));
-		assert.ok(
-			html.includes("Согласовать цены решением лечащего врача"),
-		);
+		// Verify 1-click doctor clinical decision button in footer
+		assert.ok(html.includes('data-testid="doctor-override-footer-btn"'));
+		assert.ok(html.includes("Согласовать врачом"));
 
-		// Verify admin verify button is present and not disabled in initial state
-		assert.ok(html.includes('data-testid="admin-pin-verify-btn"'));
-		assert.ok(html.includes("Авторизовать"));
-		// Ensure it does not have disabled attribute (while allowing CSS classes like disabled:opacity-50)
-		assert.ok(
-			!/<button[^>]*data-testid="admin-pin-verify-btn"[^>]*\sdisabled(?=[\s=>])/.test(
-				html,
-			),
-		);
-	});
-
-	it("verifies handleVerifyAdminPin button is NOT disabled when adminPinInput is short or empty (disabled === false)", async () => {
-		const { doc } = setupMockDom();
-		let root: Root | null = null;
-		const container = doc.createElement("div");
-		doc.body.appendChild(container);
-
-		await act(async () => {
-			root = createRoot(container as unknown as HTMLElement);
-			root.render(
-				<AppLogicProvider value={mockAppContext}>
-					<InvoiceGenerationModal
-						isOpen={true}
-						onClose={() => {}}
-						patientId="PAT-001"
-						doctorFullName="Д-р Смирнов А. В."
-						planItems={mockPlanItems}
-						initialShowAdminPinDrawer={true}
-					/>
-				</AppLogicProvider>,
-			);
-		});
-
-		const verifyBtn = findNodeByTestId(doc.body, "admin-pin-verify-btn");
-		assert.ok(verifyBtn !== null, "admin-pin-verify-btn must be present");
-
-		// Case 1: PIN is empty -> button is NOT disabled (Mandate 8e: zero unexplained disabled buttons)
-		assert.equal(isNodeDisabled(verifyBtn), false);
-
-		// Case 2: PIN is short (3 chars: "123") -> button is still NOT disabled
-		const pinInput = findNodeByTestId(doc.body, "admin-pin-input");
-		assert.ok(pinInput !== null, "admin-pin-input must be present");
-		await changeInput(pinInput!, "123");
-
-		assert.equal(isNodeDisabled(verifyBtn), false);
-
-		await act(async () => {
-			root?.unmount();
-		});
-	});
-
-	it("clicking handleVerifyAdminPin with short PIN triggers the warning toast instead of being blocked silently", async () => {
-		const { doc } = setupMockDom();
-		clearToastEvents();
-		let root: Root | null = null;
-		const container = doc.createElement("div");
-		doc.body.appendChild(container);
-
-		await act(async () => {
-			root = createRoot(container as unknown as HTMLElement);
-			root.render(
-				<AppLogicProvider value={mockAppContext}>
-					<InvoiceGenerationModal
-						isOpen={true}
-						onClose={() => {}}
-						patientId="PAT-001"
-						doctorFullName="Д-р Смирнов А. В."
-						planItems={mockPlanItems}
-						initialShowAdminPinDrawer={true}
-					/>
-				</AppLogicProvider>,
-			);
-		});
-
-		const verifyBtn = findNodeByTestId(doc.body, "admin-pin-verify-btn");
-		assert.ok(verifyBtn !== null);
-
-		// Click with empty PIN
-		await clickNode(verifyBtn!);
-		const emptyPinToast = toastEvents[0];
-		assert.ok(emptyPinToast, "Expected at least 1 toast on empty PIN click");
-		assert.equal(
-			emptyPinToast.text,
-			"PIN-код администратора должен быть не менее 4 символов",
-		);
-		assert.equal(emptyPinToast.type, "warning");
-
-		clearToastEvents();
-
-		// Set short PIN ("42") and click
-		const pinInput = findNodeByTestId(doc.body, "admin-pin-input");
-		assert.ok(pinInput !== null);
-		await changeInput(pinInput!, "42");
-		await clickNode(verifyBtn!);
-
-		const shortPinToast = toastEvents[0];
-		assert.ok(shortPinToast, "Expected at least 1 toast on short PIN click");
-		assert.equal(
-			shortPinToast.text,
-			"PIN-код администратора должен быть не менее 4 символов",
-		);
-		assert.equal(shortPinToast.type, "warning");
-
-		await act(async () => {
-			root?.unmount();
-		});
+		// Verify orphan admin-pin-drawer is completely gone (Mandates 8e, 8aq)
+		assert.ok(!html.includes('data-testid="admin-pin-drawer"'));
+		assert.ok(!html.includes('data-testid="admin-pin-verify-btn"'));
 	});
 
 	it("1-click doctor clinical decision button renders and successfully authorizes override without requiring manager PIN", async () => {
@@ -488,18 +360,17 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 						patientId="PAT-001"
 						doctorFullName="Д-р Смирнов А. В."
 						planItems={mockPlanItems}
-						initialShowAdminPinDrawer={true}
 					/>
 				</AppLogicProvider>,
 			);
 		});
 
-		// 1. Verify 1-click doctor decision button is present in drawer
+		// 1. Verify 1-click doctor decision button is present in footer
 		const doctorBtn = findNodeByTestId(
 			doc.body,
-			"doctor-clinical-decision-btn",
+			"doctor-override-footer-btn",
 		);
-		assert.ok(doctorBtn !== null, "doctor-clinical-decision-btn must be present");
+		assert.ok(doctorBtn !== null, "doctor-override-footer-btn must be present in footer");
 
 		// 2. Click 1-click doctor clinical override
 		await clickNode(doctorBtn!);
@@ -521,9 +392,40 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		);
 		assert.ok(authorizedBadge !== null, "override-authorized-badge must be present");
 
-		// 5. Verify PIN drawer is closed
+		// 5. Verify no admin-pin-drawer exists in the DOM
 		const pinDrawer = findNodeByTestId(doc.body, "admin-pin-drawer");
-		assert.equal(pinDrawer, null, "admin-pin-drawer should be closed");
+		assert.equal(pinDrawer, null, "admin-pin-drawer must not exist");
+
+		await act(async () => {
+			root?.unmount();
+		});
+	});
+
+	it("guarantees create invoice CTA button is NOT blocked or disabled when idle", async () => {
+		const { doc } = setupMockDom();
+		let root: Root | null = null;
+		const container = doc.createElement("div");
+		doc.body.appendChild(container);
+
+		await act(async () => {
+			root = createRoot(container as unknown as HTMLElement);
+			root.render(
+				<AppLogicProvider value={mockAppContext}>
+					<InvoiceGenerationModal
+						isOpen={true}
+						onClose={() => {}}
+						patientId="PAT-001"
+						doctorFullName="Д-р Смирнов А. В."
+						planItems={mockPlanItems}
+					/>
+				</AppLogicProvider>,
+			);
+		});
+
+		// Find the submit button via testid
+		const submitBtn = findNodeByTestId(doc.body, "create-invoice-submit-btn");
+		assert.ok(submitBtn !== null, "Submit button with testid must exist");
+		assert.equal(isNodeDisabled(submitBtn), false, "Submit button must NOT be disabled");
 
 		await act(async () => {
 			root?.unmount();

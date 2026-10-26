@@ -1,0 +1,49 @@
+/* expenseFormFields.css — Form Inputs, Labels & Grid Rows (Mandate 8b <= 120 lines) */
+
+.quick-expense-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.quick-expense-field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.quick-expense-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.quick-expense-input,
+.quick-expense-select,
+.quick-expense-textarea {
+	width: 100%;
+	min-height: 36px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-expense-input:focus,
+.quick-expense-select:focus,
+.quick-expense-textarea:focus {
+	border-color: #2563eb;
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.quick-expense-textarea {
+	min-height: 68px;
+	resize: vertical;
+}

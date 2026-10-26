@@ -1,0 +1,77 @@
+/* expenseDarkTheme.css — Dark Mode & Contrast Token Overrides (Mandate 8b <= 120 lines) */
+
+[data-theme="dark"] .quick-expense-dialog,
+.dark .quick-expense-dialog {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .quick-expense-header,
+.dark .quick-expense-header,
+[data-theme="dark"] .quick-expense-footer,
+.dark .quick-expense-footer {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .quick-expense-close-btn,
+.dark .quick-expense-close-btn {
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .quick-expense-close-btn:hover,
+.dark .quick-expense-close-btn:hover {
+	color: var(--ink, #f8fafc);
+	background: var(--paper, #0f172a);
+}
+
+[data-theme="dark"] .quick-expense-input,
+.dark .quick-expense-input,
+[data-theme="dark"] .quick-expense-select,
+.dark .quick-expense-select,
+[data-theme="dark"] .quick-expense-textarea,
+.dark .quick-expense-textarea {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .quick-expense-preset-tag,
+.dark .quick-expense-preset-tag {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .quick-expense-preset-tag:hover,
+.dark .quick-expense-preset-tag:hover {
+	background: var(--line, #334155);
+	border-color: #475569;
+}
+
+[data-theme="dark"] .quick-expense-amount-chip,
+.dark .quick-expense-amount-chip {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .quick-expense-amount-chip:hover,
+.dark .quick-expense-amount-chip:hover {
+	color: var(--ink, #f8fafc);
+	border-color: #64748b;
+}
+
+[data-theme="dark"] .quick-expense-cancel-btn,
+.dark .quick-expense-cancel-btn {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .quick-expense-cancel-btn:hover,
+.dark .quick-expense-cancel-btn:hover {
+	background: var(--line, #334155);
+}

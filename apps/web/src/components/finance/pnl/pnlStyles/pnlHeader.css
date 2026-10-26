@@ -1,0 +1,74 @@
+/* pnlHeader.css — P&L Dashboard Header, Date Filter & Actions (Mandate 8b <= 120 lines) */
+
+.pnl-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--border, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	min-height: 52px;
+}
+
+.pnl-title {
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pnl-badge {
+	background: #f1f5f9;
+	color: #475569;
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+}
+
+.pnl-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pnl-date-btn {
+	height: 32px;
+	padding: 0 10px;
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 4px;
+	background: var(--paper, #ffffff);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	color: var(--ink, #0f172a);
+}
+
+.pnl-date-btn.active {
+	background: #2563eb;
+	color: #ffffff;
+	border-color: #2563eb;
+}
+
+.pnl-btn-close {
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 6px;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+}
+
+.pnl-btn-close:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper, #ffffff);
+}

@@ -1,0 +1,72 @@
+/* pnlDarkTheme.css — Dark Mode & High-Contrast P&L Overrides (Mandate 8b <= 120 lines) */
+
+[data-theme="dark"] .pnl-modal-dialog,
+.dark .pnl-modal-dialog {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-header,
+.dark .pnl-header {
+	background: var(--paper-strong, #1e293b);
+	border-bottom-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-kpi-grid,
+.dark .pnl-kpi-grid {
+	background: var(--paper, #0f172a);
+	border-bottom-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-kpi-card,
+.dark .pnl-kpi-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-content,
+.dark .pnl-content {
+	background: var(--paper, #0f172a);
+}
+
+[data-theme="dark"] .pnl-table-wrapper,
+.dark .pnl-table-wrapper {
+	background: var(--paper, #0f172a);
+	border-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-table th,
+.dark .pnl-table th {
+	background: var(--paper-strong, #1e293b);
+	border-bottom-color: var(--border, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .pnl-table td,
+.dark .pnl-table td {
+	border-bottom-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-table tr.total-row td,
+.dark .pnl-table tr.total-row td {
+	background: var(--paper-strong, #1e293b);
+}
+
+[data-theme="dark"] .pnl-breakeven-card,
+.dark .pnl-breakeven-card {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--border, #334155);
+}
+
+[data-theme="dark"] .pnl-date-btn,
+.dark .pnl-date-btn {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--border, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .pnl-btn-close:hover,
+.dark .pnl-btn-close:hover {
+	background: var(--paper-strong, #1e293b);
+}

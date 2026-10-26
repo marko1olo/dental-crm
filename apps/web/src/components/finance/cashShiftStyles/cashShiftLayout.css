@@ -1,0 +1,80 @@
+/* cashShiftLayout.css — Cash Shift Container, Header & Primary Toggle (Mandate 8b <= 120 lines) */
+
+.cash-shift-container {
+	background: var(--paper-strong, rgba(24, 24, 27, 0.6));
+	backdrop-filter: var(--glass-blur, blur(16px));
+	border-radius: 24px;
+	padding: 24px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
+	color: var(--ink, inherit);
+	position: relative;
+	box-shadow: var(--shadow-premium);
+}
+
+.cash-shift-header {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.cash-shift-status-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.cash-shift-status-open {
+	background: rgba(16, 185, 129, 0.15);
+}
+
+.cash-shift-status-closed {
+	background: rgba(239, 68, 68, 0.15);
+}
+
+.cash-shift-btn {
+	padding: 10px 20px;
+	border-radius: 12px;
+	border: none;
+	color: #fff;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	transition:
+		background-color var(--transition-fast),
+		transform var(--transition-fast);
+}
+
+.cash-shift-btn:hover {
+	transform: translateY(-1px);
+}
+
+.cash-shift-btn-open {
+	background: var(--red, #ef4444);
+}
+
+.cash-shift-btn-open:hover {
+	background: #dc2626;
+}
+
+.cash-shift-btn-closed {
+	background: var(--teal, #0d9488);
+}
+
+.cash-shift-btn-closed:hover {
+	background: #0f766e;
+}
+
+.cash-shift-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-bottom: 24px;
+}

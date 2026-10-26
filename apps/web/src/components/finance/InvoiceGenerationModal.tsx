@@ -1,14 +1,12 @@
 import type React from "react";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { InvoiceTaxDecreeBanner } from "./InvoiceTaxDecreeBanner";
-import { InvoiceAdminPinDrawer } from "./InvoiceAdminPinDrawer";
 import { InvoiceItemsTable } from "./InvoiceItemsTable";
 import { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";
 import { InvoiceGenerationFooter } from "./InvoiceGenerationFooter";
 import { useInvoiceGenerationState } from "./useInvoiceGenerationState";
 
 export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./InvoiceTaxDecreeBanner";
-export { InvoiceAdminPinDrawer } from "./InvoiceAdminPinDrawer";
 export { InvoiceItemsTable } from "./InvoiceItemsTable";
 export { submitInvoiceFromPlan, createTaxAddendum, createDecree659Addendum } from "./invoiceGenerationOperations";
 export { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";
@@ -49,8 +47,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = (pr
 					<InvoiceTaxDecreeBanner unapprovedItems={s.unapprovedItems} isCreatingAddendum={s.isCreatingAddendum} onCreateAddendum={s.handleCreateAddendum} />
 					<InvoiceItemsTable report={s.report} adminOverrideAuthorized={s.adminOverrideAuthorized} unapprovedItemIds={s.unapprovedItemIds} onItemResolutionChange={(itemId, resolution) => s.setItemResolutions((prev) => ({ ...prev, [itemId]: resolution }))} onSelectAnalogue={s.handleSelectAnalogue} />
 				</div>
-				<InvoiceAdminPinDrawer show={s.showAdminPinDrawer} adminPinInput={s.adminPinInput} setAdminPinInput={s.setAdminPinInput} adminReasonInput={s.adminReasonInput} setAdminReasonInput={s.setAdminReasonInput} isVerifyingPin={s.isVerifyingPin} onDoctorClinicalOverride={s.handleDoctorClinicalOverride} onVerifyAdminPin={s.handleVerifyAdminPin} onCloseDrawer={() => s.setShowAdminPinDrawer(false)} />
-				<InvoiceGenerationFooter report={s.report} adminOverrideAuthorized={s.adminOverrideAuthorized} adminStaffName={s.adminStaffName} onDoctorClinicalOverride={s.handleDoctorClinicalOverride} onOpenAdminPinDrawer={() => s.setShowAdminPinDrawer(true)} onCreateInvoice={s.handleCreateInvoice} isSubmitting={s.isSubmitting} isCreatingAddendum={s.isCreatingAddendum} unapprovedItemsCount={s.unapprovedItems.length} documentType={s.documentType} />
+				<InvoiceGenerationFooter report={s.report} adminOverrideAuthorized={s.adminOverrideAuthorized} adminStaffName={s.adminStaffName} onDoctorClinicalOverride={s.handleDoctorClinicalOverride} onCreateInvoice={s.handleCreateInvoice} isSubmitting={s.isSubmitting} isCreatingAddendum={s.isCreatingAddendum} unapprovedItemsCount={s.unapprovedItems.length} documentType={s.documentType} />
 			</div>
 		</div>
 	);

@@ -1,0 +1,24 @@
+/* cashShiftDarkTheme.css — Theme Variations & Responsive Layout (Mandate 8b <= 120 lines) */
+
+[data-theme="light"] .cash-shift-card {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .cash-shift-actions-btn-icon {
+	border-color: rgba(0, 0, 0, 0.1);
+	background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .cash-shift-actions-btn-icon:hover {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 640px) {
+	.cash-shift-container:not(.cash-shift-compact) {
+		padding: 16px;
+		padding-bottom: max(24px, 5.5rem);
+	}
+	.cash-shift-grid {
+		grid-template-columns: 1fr;
+	}
+}

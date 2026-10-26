@@ -1,0 +1,65 @@
+/* expenseCategories.css — Preset Tags, Error Banners & Amount Presets (Mandate 8b <= 120 lines) */
+
+.quick-expense-error {
+	padding: 10px 14px;
+	background: rgba(239, 68, 68, 0.1);
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	color: #b91c1c;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.quick-expense-presets-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.quick-expense-preset-tag {
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 6px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.quick-expense-preset-tag:hover {
+	background: var(--line, #e2e8f0);
+	border-color: #cbd5e1;
+}
+
+.quick-expense-amount-input {
+	font-size: 18px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: #b91c1c;
+}
+
+.quick-expense-amount-presets {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.quick-expense-amount-chip {
+	padding: 3px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 4px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.quick-expense-amount-chip:hover {
+	color: var(--ink, #0f172a);
+	border-color: #94a3b8;
+}
