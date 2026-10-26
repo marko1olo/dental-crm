@@ -141,7 +141,17 @@ describe("Red Team Inquisition: Guest Lab Portal Ergonomics & Data Integrity", (
 	});
 
 	it("GuestLabPortal.css has 0 hardcoded hex colors and complies with design tokens", () => {
-		const css = readSource("GuestLabPortal.css");
+		let css = readSource("GuestLabPortal.css");
+		if (css.includes("@import")) {
+			const importMatches = [...css.matchAll(/@import\s+["']([^"']+)["'];/g)].map((m) => m[1]);
+			for (const rel of importMatches) {
+				try {
+					css += "\n" + readSource(rel.replace(/^\.\//, ""));
+				} catch {
+					// ignore
+				}
+			}
+		}
 		const hexMatches = css.match(/#[0-9a-fA-F]{3,8}\b/g);
 		assert.equal(hexMatches, null, `Found hardcoded hex in GuestLabPortal.css: ${hexMatches?.join(", ")}`);
 

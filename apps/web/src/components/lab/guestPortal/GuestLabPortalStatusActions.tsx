@@ -42,8 +42,9 @@ export function GuestLabPortalStatusActions({
 				<button
 					type="button"
 					data-testid="btn-status-in-progress"
-					onClick={() => onUpdateStatus("in_progress")}
-					disabled={isUpdating || currentStatus === "in_progress"}
+					onClick={() => { if (!isUpdating) onUpdateStatus("in_progress"); }}
+					aria-busy={isUpdating}
+					aria-pressed={currentStatus === "in_progress"}
 					className={`secondary-button ${currentStatus === "in_progress" ? "active" : ""}`}
 					style={btnStyle}
 				>
@@ -54,8 +55,8 @@ export function GuestLabPortalStatusActions({
 				<button
 					type="button"
 					data-testid="btn-status-ready"
-					onClick={() => onUpdateStatus("shipped", "Работа готова")}
-					disabled={isUpdating}
+					onClick={() => { if (!isUpdating) onUpdateStatus("shipped", "Работа готова"); }}
+					aria-busy={isUpdating}
 					className="secondary-button"
 					style={btnStyle}
 				>
@@ -66,8 +67,9 @@ export function GuestLabPortalStatusActions({
 				<button
 					type="button"
 					data-testid="btn-status-shipped"
-					onClick={() => onUpdateStatus("shipped", "Отправлено курьером в клинику")}
-					disabled={isUpdating || currentStatus === "shipped"}
+					onClick={() => { if (!isUpdating) onUpdateStatus("shipped", "Отправлено курьером в клинику"); }}
+					aria-busy={isUpdating}
+					aria-pressed={currentStatus === "shipped"}
 					className={`secondary-button ${currentStatus === "shipped" ? "active" : ""}`}
 					style={btnStyle}
 				>
@@ -78,8 +80,9 @@ export function GuestLabPortalStatusActions({
 				<button
 					type="button"
 					data-testid="btn-status-refitting"
-					onClick={() => onUpdateStatus("refitting", "На переделке")}
-					disabled={isUpdating || currentStatus === "refitting"}
+					onClick={() => { if (!isUpdating) onUpdateStatus("refitting", "На переделке"); }}
+					aria-busy={isUpdating}
+					aria-pressed={currentStatus === "refitting"}
 					className={`secondary-button ${currentStatus === "refitting" ? "active" : ""}`}
 					style={btnStyle}
 				>

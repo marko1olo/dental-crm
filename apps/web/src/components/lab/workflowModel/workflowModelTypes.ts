@@ -25,6 +25,7 @@ export interface LabStlScanAttachment {
 	readonly scanType?: "upper_jaw" | "lower_jaw" | "bite_registration" | "prep_scan" | "other" | undefined;
 	readonly uploadDateIso?: string | undefined;
 	readonly uploadedAtIso?: string | undefined;
+	readonly isEncrypted?: boolean | undefined;
 	readonly isEncrypted152Fz?: boolean | undefined;
 	readonly url?: string | undefined;
 	readonly downloadUrl?: string | undefined;

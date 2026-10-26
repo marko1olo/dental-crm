@@ -1,5 +1,5 @@
 import React from "react";
-import { type JawScope, CANONICAL_5_CLINICAL_LAB_STATUSES, mapTo5StageLabStatus, calculateWorkingDaysRemaining, formatPatientName152Fz } from "./labMath";
+import { type JawScope, CANONICAL_5_CLINICAL_LAB_STATUSES, mapTo5StageLabStatus, calculateWorkingDaysRemaining, formatPatientAnonymizedName } from "./labMath";
 import { DentalLabPrintHeader } from "./printBlankModules/DentalLabPrintHeader";
 import { DentalLabPrintInfoTable } from "./printBlankModules/DentalLabPrintInfoTable";
 import { DentalLabPrintSpecBox } from "./printBlankModules/DentalLabPrintSpecBox";
@@ -38,7 +38,7 @@ export function DentalLabPrintBlank(props: DentalLabPrintBlankProps): React.JSX.
 	const active5Stage = mapTo5StageLabStatus(currentStage || status || "sent");
 	const currentStep = CANONICAL_5_CLINICAL_LAB_STATUSES.find((s) => s.id === active5Stage)?.step ?? 1;
 	const finalShade = shadeSystem === "3d_master" ? shade3dMaster : shadeSystem === "bleach" ? shadeBleach : shadeClassical;
-	const patientFio = formatPatientName152Fz(formPatientName);
+	const patientFio = formatPatientAnonymizedName(formPatientName);
 	const deadlineInfo = calculateWorkingDaysRemaining(dueDate);
 	const formattedOrderDate = impressionDate ? new Date(impressionDate).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU");
 

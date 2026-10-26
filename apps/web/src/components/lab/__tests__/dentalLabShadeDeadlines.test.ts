@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	formatPatientAnonymizedName,
 	formatPatientName152Fz,
 	addWorkingDays,
 	calculateWorkingDaysRemaining,
@@ -8,20 +9,23 @@ import {
 import { checkDentalLabFinancialGate } from "../dentalLabFinancialGateEngine";
 
 describe("Dental Lab 3D Shade — Deadlines & Mandate 8e", () => {
-	it("5. 152-FZ patient name formatting generates valid full and courier-masked names", () => {
-		const res1 = formatPatientName152Fz("Иванов Иван Иванович");
+	it("5. Anonymized patient name formatting generates valid full and courier-masked names (Mandate 8ap)", () => {
+		const res1 = formatPatientAnonymizedName("Иванов Иван Иванович");
 		assert.equal(res1.fullName, "Иванов Иван Иванович");
 		assert.equal(res1.courierMaskedName, "Иванов И. И.");
 
-		const res2 = formatPatientName152Fz("Смирнова Екатерина Васильевна");
+		const res2 = formatPatientAnonymizedName("Смирнова Екатерина Васильевна");
 		assert.equal(res2.fullName, "Смирнова Екатерина Васильевна");
 		assert.equal(res2.courierMaskedName, "Смирнова Е. В.");
 
-		const resSingle = formatPatientName152Fz("Сидоров");
+		const resSingle = formatPatientAnonymizedName("Сидоров");
 		assert.equal(resSingle.courierMaskedName, "Сидоров");
 
-		const resEmpty = formatPatientName152Fz("");
+		const resEmpty = formatPatientAnonymizedName("");
 		assert.equal(resEmpty.courierMaskedName, "Пациент");
+
+		// Backward-compatibility alias check
+		assert.equal(formatPatientName152Fz("Иванов Иван Иванович").courierMaskedName, "Иванов И. И.");
 	});
 
 	it("6. Working days remaining calculation accurately evaluates normal, urgent, and overdue deadlines", () => {

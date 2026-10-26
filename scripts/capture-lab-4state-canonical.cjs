@@ -116,11 +116,15 @@ async function run() {
 
 		await saveProof(
 			pcLightPage,
-			"01_lab_kanban_5stages_pc_light_1440x900.png",
+			"01_lab_orders_pc_light.png",
 			"Kanban Board with canonical stages (PC Light 1440x900)"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "01_lab_kanban_5stages_pc_light_1440x900.png"),
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light.png"),
+			path.join(PROOFS_DIR, "01_lab_kanban_5stages_pc_light_1440x900.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light.png"),
 			path.join(PROOFS_DIR, "lab_pc_light_1440x900.png")
 		);
 		await pcLightContext.close();
@@ -152,11 +156,15 @@ async function run() {
 
 		await saveProof(
 			pcDarkPage,
-			"02_lab_order_drawer_shades_pc_dark_1440x900.png",
+			"02_lab_orders_pc_dark.png",
 			"Order Drawer with VITA 3D-Master shades, FDI odontogram, Code128 barcode, and quick intake (PC Dark 1440x900)"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "02_lab_order_drawer_shades_pc_dark_1440x900.png"),
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark.png"),
+			path.join(PROOFS_DIR, "02_lab_order_drawer_shades_pc_dark_1440x900.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark.png"),
 			path.join(PROOFS_DIR, "lab_pc_dark_1440x900.png")
 		);
 		await pcDarkContext.close();
@@ -181,11 +189,15 @@ async function run() {
 
 		await saveProof(
 			mobileLightPage,
-			"03_lab_mobile_light_390x844.png",
+			"03_lab_orders_mobile_light.png",
 			"Mobile Lab Orders Grouped List cards (Mobile Light 390x844) - Touch targets >= 44px, Apple HIG"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "03_lab_mobile_light_390x844.png"),
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light.png"),
+			path.join(PROOFS_DIR, "03_lab_mobile_light_390x844.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light.png"),
 			path.join(PROOFS_DIR, "lab_mobile_light_390x844.png")
 		);
 		await mobileLightContext.close();
@@ -217,11 +229,15 @@ async function run() {
 
 		await saveProof(
 			mobileDarkPage,
-			"04_lab_mobile_dark_390x844.png",
+			"04_lab_orders_mobile_dark.png",
 			"Mobile Lab Orders Bottom Sheet in Dark Mode (Mobile Dark 390x844) - Apple HIG, 0px horizontal overflow"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "04_lab_mobile_dark_390x844.png"),
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark.png"),
+			path.join(PROOFS_DIR, "04_lab_mobile_dark_390x844.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark.png"),
 			path.join(PROOFS_DIR, "lab_mobile_dark_390x844.png")
 		);
 		await mobileDarkContext.close();

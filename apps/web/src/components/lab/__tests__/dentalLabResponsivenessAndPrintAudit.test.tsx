@@ -47,7 +47,16 @@ describe("Dental Lab Responsiveness, 32px Dense Registry & Perfect Print Audit",
 
 		const cardContent = fs.readFileSync(cardPath, "utf-8");
 		const drawerContent = fs.readFileSync(drawerPath, "utf-8");
-		const portalCssContent = fs.readFileSync(portalCssPath, "utf-8");
+		let portalCssContent = fs.readFileSync(portalCssPath, "utf-8");
+		if (portalCssContent.includes("@import")) {
+			const importMatches = [...portalCssContent.matchAll(/@import\s+["']([^"']+)["'];/g)].map((m) => m[1]);
+			for (const rel of importMatches) {
+				const full = path.resolve(webSrcDir, rel);
+				if (fs.existsSync(full)) {
+					portalCssContent += "\n" + fs.readFileSync(full, "utf-8");
+				}
+			}
+		}
 
 		// LabOrderCard adaptive 44px mobile / 32px desktop buttons
 		assert.ok(

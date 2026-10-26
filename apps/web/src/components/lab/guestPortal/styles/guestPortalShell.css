@@ -1,0 +1,98 @@
+/* guestPortalShell.css — Каркас, карточка, спиннер и печать (Мандат 8b: <= 100 строк) */
+
+.guest-portal-container {
+	position: relative;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 24px;
+	background: transparent;
+	color: var(--text-primary, var(--ink));
+	font-family: inherit;
+	overflow-x: hidden;
+}
+
+.guest-portal-card {
+	position: relative;
+	z-index: 10;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 32px;
+	max-width: 600px;
+	width: 100%;
+	box-shadow: var(--shadow, 0 10px 25px rgba(0, 0, 0, 0.05));
+	text-align: center;
+}
+
+.guest-portal-icon-wrapper {
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 16px;
+	background: var(--bad-bg, var(--rust-soft));
+	color: var(--bad-fg, var(--rust));
+	border: 1px solid var(--line);
+}
+
+.guest-portal-title {
+	font-size: 24px;
+	font-weight: 700;
+	margin-bottom: 8px;
+	color: var(--text-primary, var(--ink));
+}
+
+.guest-portal-subtitle {
+	color: var(--text-secondary, var(--muted));
+	font-size: 15px;
+	margin-bottom: 24px;
+}
+
+.guest-portal-spinner {
+	animation: spin 1s linear infinite;
+	color: var(--teal);
+}
+
+@keyframes spin {
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+@media (max-width: 640px) {
+	.guest-portal-container {
+		padding: 12px;
+	}
+	.guest-portal-card {
+		padding: 16px;
+		border-radius: 12px;
+	}
+	.guest-portal-title {
+		font-size: 18px;
+	}
+}
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 8mm 12mm;
+	}
+	html, body {
+		background: var(--paper) !important;
+		color: var(--ink) !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+	.guest-portal-card {
+		border: none !important;
+		box-shadow: none !important;
+		padding: 0 !important;
+		max-width: 100% !important;
+		background: var(--paper) !important;
+		color: var(--ink) !important;
+	}
+}
