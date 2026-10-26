@@ -1,0 +1,106 @@
+/* Modal Footer & Action Buttons */
+/* Modal Footer & Action Buttons */
+.egisz-modal-footer {
+	padding: 1rem 1.25rem;
+	background: var(--paper-strong, #f8fafc);
+	border-top: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .egisz-modal-footer,
+.dark .egisz-modal-footer {
+	background: var(--paper-strong, #131d31);
+	border-top-color: var(--line, #1e293b);
+}
+
+.egisz-btn-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.egisz-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	padding: 0.55rem 1.1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 44px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .egisz-btn,
+.dark .egisz-btn {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-btn:hover:not(:disabled) {
+	background: var(--paper-strong, #f1f5f9);
+	border-color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .egisz-btn:hover:not(:disabled),
+.dark .egisz-btn:hover:not(:disabled) {
+	background: rgba(51, 65, 85, 0.8);
+}
+
+.egisz-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.egisz-btn.primary {
+	background: var(--primary, #0ea5e9);
+	color: var(--paper, #ffffff);
+	border-color: var(--primary, #0ea5e9);
+}
+
+.egisz-btn.primary:hover:not(:disabled) {
+	background: var(--primary-hover, #0284c7);
+	border-color: var(--sky-700, var(--primary, #0284c7));
+}
+
+.egisz-btn.teal {
+	background: var(--teal, #0d9488);
+	color: var(--paper, #ffffff);
+	border-color: var(--teal, #0d9488);
+}
+
+.egisz-btn.teal:hover:not(:disabled) {
+	background: var(--color-teal-700, #0f766e);
+	border-color: var(--color-teal-700, #0f766e);
+}
+
+.egisz-btn.emerald {
+	background: var(--emerald, #10b981);
+	color: var(--paper, #ffffff);
+	border-color: var(--emerald, #10b981);
+}
+
+.egisz-btn.emerald:hover:not(:disabled) {
+	background: var(--emerald-700, #059669);
+	border-color: var(--emerald-text, var(--success, #059669));
+}
+
+.egisz-btn.sm {
+	min-height: 36px;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.8125rem;
+}

@@ -1,0 +1,92 @@
+.copilot-pp-finance-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  box-sizing: border-box;
+}
+
+.copilot-pp-finance-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-pp-finance-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-pp-finance-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-pp-finance-val.positive {
+  color: var(--teal, #0d9488);
+}
+
+.copilot-pp-finance-val.negative {
+  color: var(--rust, #b91c1c);
+}
+
+/* Allergy alert banner */
+.copilot-pp-allergy-alert {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--amber-soft, #fef3c7);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: var(--amber, #d97706);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copilot-pp-allergy-alert.danger {
+  background-color: var(--rust-soft, #fee2e2);
+  border-color: rgba(185, 28, 28, 0.3);
+  color: var(--rust, #b91c1c);
+}
+
+.copilot-pp-allergy-alert.clean {
+  background-color: var(--paper-soft, #f4f7f6);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--muted, #6b7280);
+}
+
+/* Clinical History row */
+.copilot-pp-history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+}
+
+.copilot-pp-history-title {
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copilot-pp-history-text {
+  color: var(--muted, #6b7280);
+  line-height: 1.4;
+}
+
+/* Action row */
+

@@ -1,0 +1,101 @@
+/* ==========================================================================
+   1. PatientProfileCard
+   ========================================================================== */
+.copilot-patient-profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copilot-pp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.copilot-pp-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.copilot-pp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--teal-soft, #ccfbf1), var(--paper-soft, #f4f7f6));
+  color: var(--teal-dark, #0f766e);
+  border: 1.5px solid var(--teal-surface, rgba(204, 251, 241, 0.7));
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.12);
+}
+
+.copilot-pp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copilot-pp-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.copilot-pp-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.copilot-pp-status-badge.active {
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border-color: var(--teal-surface, rgba(204, 251, 241, 0.5));
+}
+
+.copilot-pp-status-badge.vip {
+  background-color: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.copilot-pp-status-badge.primary {
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #6b7280);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+
+.copilot-pp-meta {
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.copilot-pp-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Financial summary pill strip */
+

@@ -1,0 +1,96 @@
+/* Master List Items & Status Pills */
+
+.egisz-doc-number {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-family: ui-monospace, monospace;
+}
+
+[data-theme="dark"] .egisz-doc-number,
+.dark .egisz-doc-number {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-doc-patient-name {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	line-height: 1.3;
+}
+
+[data-theme="dark"] .egisz-doc-patient-name,
+.dark .egisz-doc-patient-name {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-doc-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	color: var(--muted, #64748b);
+}
+
+/* Status Pills */
+.egisz-status-pill {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	white-space: nowrap;
+}
+
+.egisz-status-pill.draft {
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted, #64748b);
+	border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+[data-theme="dark"] .egisz-status-pill.draft,
+.dark .egisz-status-pill.draft {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #94a3b8);
+}
+
+.egisz-status-pill.signed_doctor,
+.egisz-status-pill.signed_clinic {
+	background: rgba(14, 165, 233, 0.12);
+	color: var(--sky-700, var(--primary, #0284c7));
+	border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .egisz-status-pill.signed_doctor,
+.dark .egisz-status-pill.signed_doctor,
+[data-theme="dark"] .egisz-status-pill.signed_clinic,
+.dark .egisz-status-pill.signed_clinic {
+	background: rgba(14, 165, 233, 0.18);
+	color: var(--primary, #38bdf8);
+}
+
+.egisz-status-pill.registered_remd {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--emerald-text, var(--success, #059669));
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .egisz-status-pill.registered_remd,
+.dark .egisz-status-pill.registered_remd {
+	background: rgba(16, 185, 129, 0.18);
+	color: var(--emerald-400, var(--success, #34d399));
+}
+
+.egisz-status-pill.sent_to_remd,
+.egisz-status-pill.queued_remd {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--amber-800, var(--warning, #d97706));
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .egisz-status-pill.sent_to_remd,
+.dark .egisz-status-pill.sent_to_remd,
+[data-theme="dark"] .egisz-status-pill.queued_remd,
+.dark .egisz-status-pill.queued_remd {
+	background: rgba(245, 158, 11, 0.18);
+	color: var(--amber, var(--warning, #fbbf24));
+}

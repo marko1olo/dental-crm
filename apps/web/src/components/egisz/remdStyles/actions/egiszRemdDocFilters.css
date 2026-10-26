@@ -1,0 +1,63 @@
+/* Document Mode Filter Toolbar (Hick's Law) */
+/* Compact Button modifier for deterministicVision (32-38px) */
+.egisz-btn.sm {
+	height: 36px;
+	min-height: 36px;
+	padding: 0.25rem 0.65rem;
+	font-size: 0.8125rem;
+}
+
+/* Document Mode Filter Toolbar per Hick's Law (32-36px height) */
+.egisz-doc-filter-toolbar {
+	display: inline-flex;
+	align-items: center;
+	height: 34px;
+	background: var(--line, #e2e8f0);
+	padding: 2px;
+	border-radius: 8px;
+	gap: 2px;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .egisz-doc-filter-toolbar,
+.dark .egisz-doc-filter-toolbar {
+	background: var(--line, #1e293b);
+}
+
+.egisz-doc-filter-btn {
+	height: 30px;
+	padding: 0 0.65rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	white-space: nowrap;
+	background: transparent;
+	color: var(--muted, #64748b);
+	transition: all 0.15s ease;
+}
+
+.egisz-doc-filter-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-doc-filter-btn:hover,
+.dark .egisz-doc-filter-btn:hover {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-doc-filter-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .egisz-doc-filter-btn.active,
+.dark .egisz-doc-filter-btn.active {
+	background: var(--paper-strong, #1e293b);
+	color: var(--teal, #2dd4bf);
+}

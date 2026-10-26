@@ -1,0 +1,87 @@
+/* Certificates Hub Modal Dialog */
+/* ═══════════════════════════════════════════════════════════════════════════
+   EGISZ CERTIFICATES HUB & BACKGROUND QUEUE STYLES (MANDATE 8e, 8n & APPLE HIG)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.egisz-hub-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(15, 23, 42, 0.6);
+	backdrop-filter: blur(8px);
+	padding: 16px;
+}
+
+.egisz-hub-modal-panel {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 960px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-hub-modal-panel,
+.dark .egisz-hub-modal-panel {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-mobile-drag-handle {
+	display: none;
+	width: 36px;
+	height: 5px;
+	border-radius: 3px;
+	background: var(--line, #cbd5e1);
+	margin: 8px auto 4px auto;
+	flex-shrink: 0;
+}
+
+.egisz-hub-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.egisz-hub-top-bar {
+	display: contents;
+}
+
+[data-theme="dark"] .egisz-hub-header,
+.dark .egisz-hub-header {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: var(--line, #334155);
+}
+
+.egisz-hub-title-group {
+	order: 1;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.egisz-hub-title {
+	font-size: 1.1rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-hub-title,
+.dark .egisz-hub-title {
+	color: var(--ink, #f8fafc);
+}

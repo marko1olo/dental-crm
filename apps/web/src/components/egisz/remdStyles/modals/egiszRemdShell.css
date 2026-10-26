@@ -1,0 +1,60 @@
+/* Modal Shell & Containers */
+.egisz-signing-modal,
+.egisz-journal-modal,
+.egisz-modal-shell,
+.egisz-remd-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	width: 100%;
+	max-width: 1240px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+}
+.egisz-modal-container {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	width: 100%;
+	max-width: 1120px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+[data-theme="dark"] .egisz-modal-container,
+.dark .egisz-modal-container {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: var(--ink, #f8fafc);
+}
+/* Responsive Rules */
+@media (max-width: 900px) {
+	.egisz-signing-body {
+		grid-template-columns: 1fr;
+	}
+	.egisz-signing-sidebar {
+		border-right: none;
+		border-bottom: 1px solid var(--line, #e2e8f0);
+		max-height: 280px;
+	}
+	.egisz-modal-footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.egisz-btn-group {
+		width: 100%;
+		flex-direction: column;
+	}
+	.egisz-btn-group .egisz-btn {
+		width: 100%;
+	}
+}

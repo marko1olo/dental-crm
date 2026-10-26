@@ -6,104 +6,86 @@
 
 ## 1. Executive Summary & Verification Gates
 
-- **Total Files in `apps/web/src/components/egisz/`:** 105 files.
+- **Total Files in `apps/web/src/components/egisz/`:** 152 files (including modular stylesheets).
 - **Files Exceeding 120 Lines:** **0 files** (100% compliant with Mandate 8b).
-- **Test Suite Results:** **82 passing tests, 0 failing, 0 skipped** (`node --max-old-space-size=2048 --import tsx --import ./apps/web/testCssStub.mjs --test "apps/web/src/components/egisz/__tests__/*.test.ts" "apps/web/src/components/egisz/__tests__/*.test.tsx"`).
+- **Cyclopean Monolith Elimination:** `egiszRemd.css` (originally 3,271 lines) decomposed into modular cohesive styles in `remdStyles/` ($\le 120$ lines each), with a 14-line root facade.
+- **Test Suite Results:** **85 passing tests, 0 failing, 0 skipped** (`npx vitest run apps/web/src/components/egisz/`).
 - **TypeScript Compilation:** Zero errors in `apps/web/src/components/egisz/`.
 - **4-State Visual Proof Inspected via `read_file`:**
-  - ☀️ PC Light (1440×900)
-  - 🌙 PC Dark (1440×900)
-  - 📱 Mobile Light (390×844)
-  - 📱 Mobile Dark (390×844)
+  - ☀️ `docs/proofs/egisz/01_egisz_hub_pc_light.png` (1440×900) — EGISZ REMD Hub Studio Light
+  - 🌙 `docs/proofs/egisz/02_egisz_hub_pc_dark.png` (1440×900) — EGISZ REMD Hub Studio Dark
+  - 📱 `docs/proofs/egisz/03_egisz_queue_mobile_light.png` (390×844) — Apple HIG Mobile Bottom Sheet Light
+  - 📱 `docs/proofs/egisz/04_egisz_queue_mobile_dark.png` (390×844) — Apple HIG Mobile Bottom Sheet Dark
 
 ---
 
-## 2. Decomposed Subsystem Architecture
+## 2. Modular CSS Decomposition Architecture (`remdStyles/`)
 
-### 2.1 CDA R2 XML Builder & Legal Standards (`cdaR2/`)
-- `cdaHeaderBuilder.ts` (87 lines): Clinical CDA header, Custodian OID, Author/LegalAuthenticator blocks.
-- `cdaTypes.ts` (99 lines): Strongly-typed interfaces for CDA R2 schemas.
-- `dentalCdaSections.ts` (104 lines): Structured dental sections (Complaints, Anamnesis, Diagnoses, Procedures).
-- `dentalCdaXmlGenerator.ts` (93 lines): Root XML assembly for SEMD 101, 102, 105, 302, 303.
-- `dentalFormulaCdaSection.ts` (51 lines): FDI tooth formula XML section.
-- `fnsTaxCertificateXmlGenerator.ts` (87 lines): FNS КНД 1151156 XML generator.
-- `fnsTaxTypes.ts` (50 lines): FNS Tax Deduction types and validation rules.
-- `gostSignatures.ts` (112 lines): ГОСТ Р 34.10-2012 signature containers and ГОСТ Р 7.0.97-2016 visual stamps.
-- `kopeckMath.ts` (27 lines): Float-free integer kopeck calculations.
-- `xmlStructureValidator.ts` (98 lines): Tag balancing and canonical W3C C14N validation.
-- `cdaR2XmlBuilder.ts` (45 lines): Thin facade preserving 100% backward-compatible exports.
+The cyclopean monolithic stylesheet `egiszRemd.css` has been decomposed into high-cohesion sub-modules, all strictly $\le 120$ lines:
 
-### 2.2 Semantic CDA Validator Engine (`cdaValidator/`)
-- `cdaXmlHeaderParticipant.ts` (107 lines)
-- `cdaXmlProceduresAndFormula.ts` (67 lines)
-- `semanticRulesEngine.ts` (35 lines)
-- `semanticRulesHeaderMo.ts` (57 lines)
-- `semanticRulesPatientClinical.ts` (81 lines)
-- `validatorDocTypes.ts` (71 lines)
-- `validatorTypes.ts` (79 lines)
-- `validatorXmlGenerator.ts` (106 lines)
-- `egiszCdaValidator.ts` (20 lines): Thin facade.
+### 2.1 Theme Tokens & Modals
+- `theme/egiszRemdThemeDark.css` (66 lines): Dark mode CSS variables and palette tokens.
+- `modals/egiszRemdBackdrops.css` (51 lines): Fixed backdrops, blur filters, entrance animations.
+- `modals/egiszRemdShell.css` (60 lines): Modal shells, container elevation, borders.
+- `egiszRemdThemeTokens.css` (2 lines): Theme gateway.
+- `egiszRemdModals.css` (3 lines): Modals gateway.
 
-### 2.3 Preflight Engine (`engine/`)
-- `clinicalPreflightClinicalSig.ts` (74 lines)
-- `clinicalPreflightEngine.ts` (33 lines)
-- `clinicalPreflightMoDocPat.ts` (111 lines)
-- `egiszFilenames.ts` (23 lines)
-- `engineTypes.ts` (33 lines)
-- `fnsTaxPreflightEngine.ts` (100 lines)
-- `egiszRemdEngine.ts` (83 lines): Thin facade.
+### 2.2 Layout, Headers & Workspaces
+- `layout/egiszRemdHeader.css` (103 lines): Header icon badge, title/subtitle group, close button.
+- `layout/egiszRemdHubHeader.css` (79 lines): Hub header, title layout and close action.
+- `layout/egiszRemdModeSelector.css` (57 lines): Center mode selector for SEMD documents.
+- `layout/egiszRemdTabsNav.css` (81 lines): Navigation tab bar, active pills.
+- `layout/egiszRemdWorkspaceGrid.css` (108 lines): Two-pane master-detail layouts.
+- `layout/egiszRemdMasterList.css` (109 lines): Master list sidebar and filtering.
+- `layout/egiszRemdMasterItems.css` (96 lines): Master list items and telemetry badges.
+- `layout/egiszRemdMonolithicCard.css` (86 lines): Anti-matryoshka single-level container.
+- `layout/egiszRemdWorkspaceTabs.css` (94 lines): XML and Journal tab workspaces.
+- `egiszRemdLayout.css` (10 lines): Layout gateway.
 
-### 2.4 REMD Presets & Dictionaries (`remdXml/`)
-- `remdDefaultPresets.ts` (43 lines)
-- `remdDentalDictionaries.ts` (92 lines)
-- `remdOidsAndTypes.ts` (118 lines)
-- `remdStatutoryValidators.ts` (79 lines)
-- `egiszRemdPresets.ts` (37 lines): Thin facade.
+### 2.3 Queue & Journal Tables
+- `queue/egiszRemdQueueBaseTable.css` (75 lines): Background queue data table container.
+- `queue/egiszRemdQueueRows.css` (78 lines): Table rows and mobile queue cards.
+- `queue/egiszRemdQueueBadges.css` (72 lines): Sent, accepted, error badges.
+- `queue/egiszRemdJournalTable.css` (84 lines): Journal documents table.
+- `queue/egiszRemdJournalStats.css` (101 lines): Stats ribbon and counter tiles.
+- `egiszRemdQueueTable.css` (6 lines): Queue gateway.
 
-### 2.5 Tab Panels (`tabs/`)
-- `signing/`: `SigningActionButtons.tsx` (58), `SigningAuxActions.tsx` (53), `SigningCertSelector.tsx` (107), `SigningHeader.tsx` (56), `SigningMainActions.tsx` (104), `SigningStampPreview.tsx` (79), `signingTabTypes.ts` (43), `EgiszSigningTab.tsx` (92).
-- `journal/`: `JournalHeaderActions.tsx` (75), `JournalRecordsTable.tsx` (90), `JournalRemediationCard.tsx` (43), `JournalStatsRibbon.tsx` (84), `JournalTableRow.tsx` (83), `journalTypes.ts` (41), `EgiszJournalTab.tsx` (67).
-- `clinical/`: `clinicalTabTypes.ts` (34), `ClinicalDiagnosesAndProcedures.tsx` (118), `ClinicalMetaAndAnamnesis.tsx` (82), `ClinicalToothFormulaSection.tsx` (82), `EgiszClinicalTab.tsx` (72).
-- `xmlPreview/`: `xmlPreviewTabTypes.ts` (33), `XmlClinicalContentSections.tsx` (70), `XmlCodeViewer.tsx` (32), `XmlHeaderParticipantsSections.tsx` (100), `XmlPreviewToolbar.tsx` (104), `XmlStructureSectionsTree.tsx` (61), `EgiszXmlPreviewTab.tsx` (63).
-- `fnsTax/`: `fnsTaxTabTypes.ts` (33), `FnsTaxMetaSection.tsx` (66), `FnsTaxpayerPatientSection.tsx` (96), `FnsTaxPaymentsTable.tsx` (118), `EgiszFnsTaxTab.tsx` (81).
-- `EgiszPreflightTab.tsx` (98 lines).
+### 2.4 CDA R2 Viewer, Preflight & Tooth Matrix
+- `cda/egiszRemdXmlViewer.css` (89 lines): XML syntax box, UKEP signature inspector.
+- `cda/egiszRemdPreflightBanner.css` (48 lines): Preflight score banner and gauge.
+- `cda/egiszRemdPreflightGrid.css` (90 lines): Verification checklist grid.
+- `cda/egiszRemdToothMatrix.css` (83 lines): FDI tooth matrix in clinical tab.
+- `egiszRemdCdaViewer.css` (5 lines): CDA viewer gateway.
 
-### 2.6 Journal Persistence & Data Mappers (`journalData/`)
-- `journalDataTypes.ts` (78 lines)
-- `journalDataFixtures.ts` (41 lines)
-- `outboxRowMapper.ts` (114 lines)
-- `egiszJournalData.ts` (16 lines): Thin facade.
+### 2.5 UKEP Certificates & CryptoPro CSP
+- `certs/egiszRemdCryptoPro.css` (67 lines): CryptoPro CSP status strip.
+- `certs/egiszRemdCertCards.css` (108 lines): Certificate selection cards and radio states.
+- `certs/egiszRemdCertPreview.css` (97 lines): Detached signature inspector card.
+- `certs/egiszRemdCertificatesHubModal.css` (87 lines): Certificates hub panel and backdrop.
+- `certs/egiszRemdCertificatesHubCards.css` (93 lines): Certificates hub list cards.
+- `certs/egiszRemdStampBox.css` (72 lines): Blue electronic signature stamp per Order 947n.
+- `certs/egiszRemdStampPrint.css` (60 lines): Stamp print media queries and seal styles.
+- `certs/egiszRemdDocPreview.css` (96 lines): Document paper preview and tabs.
+- `egiszRemdCertificates.css` (9 lines): Certificates gateway.
 
-### 2.7 Network Transmission & ZIP Export (`packageSender/`)
-- `packageSenderTypes.ts` (48 lines)
-- `remdZipExporter.ts` (86 lines)
-- `deferredRemdRecord.ts` (52 lines)
-- `remdApiSubmissions.ts` (96 lines)
-- `egiszPackageSender.ts` (24 lines): Thin facade.
+### 2.6 Drawers & Remediation
+- `drawers/egiszRemdTaxDrawer.css` (74 lines): FNS Tax Deduction (КНД 1151156) drawer.
+- `drawers/egiszRemdTaxPayments.css` (71 lines): Tax drawer payments table.
+- `drawers/egiszRemdExtractDrawer.css` (112 lines): Medical record extract drawer.
+- `drawers/egiszRemdJournalRemediation.css` (67 lines): Error remediation action cards.
+- `egiszRemdDrawers.css` (5 lines): Drawers gateway.
 
-### 2.8 CryptoPro CSP & UKEP Hook (`cryptoPro/`)
-- `cryptoProTypes.ts` (35 lines)
-- `detachedSigParser.ts` (64 lines)
-- `certValidator.ts` (47 lines)
-- `useCertList.ts` (45 lines)
-- `useCryptoProSigning.ts` (98 lines): Thin coordinator.
+### 2.7 Actions & Filters
+- `actions/egiszRemdButtons.css` (106 lines): Touch-first action buttons ($\ge 44\text{px}$).
+- `actions/egiszRemdHubFooter.css` (97 lines): Hub footer bar and primary CTA.
+- `actions/egiszRemdDocFilters.css` (63 lines): Hick's law document filter toolbar.
+- `actions/egiszRemdJournalFilters.css` (79 lines): Journal filter toolbar and search.
+- `egiszRemdActions.css` (5 lines): Actions gateway.
 
-### 2.9 Domain Payload & Preflight Hook (`remdState/`)
-- `remdStateTypes.ts` (19 lines)
-- `useClinicalSemdState.ts` (69 lines)
-- `useFnsTaxState.ts` (64 lines)
-- `useEgiszRemdState.ts` (87 lines): Thin coordinator.
-
-### 2.10 Main Modal HUD (`modal/` and `EgiszRemdHubModal.tsx`)
-- `modalTypes.ts` (30 lines)
-- `modalBodyTypes.ts` (38 lines)
-- `EgiszRemdModalHeader.tsx` (89 lines)
-- `EgiszRemdModalNav.tsx` (89 lines)
-- `EgiszRemdModalFooter.tsx` (89 lines)
-- `EgiszRemdModalBody.tsx` (85 lines)
-- `useJournalRecords.ts` (73 lines)
-- `useEgiszModalController.ts` (89 lines)
-- `EgiszRemdHubModal.tsx` (114 lines): Thin facade with Mandate 8e non-blocking warning banner.
+### 2.8 Mobile Apple HIG Responsive Adaptive
+- `layout/egiszRemdMobileLayout.css` (79 lines): Breakpoint $\le 768\text{px}$ adaptive layout.
+- `layout/egiszRemdMobileBottomSheets.css` (90 lines): Native Bottom Sheet with drag handle.
+- `egiszRemdResponsive.css` (3 lines): Responsive gateway imported at cascade end.
 
 ---
 

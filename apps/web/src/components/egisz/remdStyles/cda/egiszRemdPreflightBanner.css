@@ -1,0 +1,48 @@
+/* Preflight Summary Banner */
+/* Preflight Summary Banner */
+.egisz-preflight-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1rem;
+	border-radius: 8px;
+	border: 1px solid;
+	gap: 1rem;
+}
+
+.egisz-preflight-banner.valid {
+	background: var(--emerald-muted, rgba(16, 185, 129, 0.1));
+	border-color: var(--emerald-line, rgba(16, 185, 129, 0.3));
+	color: var(--emerald-text, #065f46);
+}
+
+.egisz-preflight-banner.invalid {
+	background: var(--rose-muted, rgba(244, 63, 94, 0.1));
+	border-color: var(--rose-line, rgba(244, 63, 94, 0.3));
+	color: var(--rose-text, #9f1239);
+}
+
+.egisz-banner-left {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.egisz-banner-title {
+	font-weight: 700;
+	font-size: 0.9375rem;
+}
+
+.egisz-banner-desc {
+	font-size: 0.8125rem;
+	opacity: 0.85;
+}
+
+.egisz-banner-score {
+	font-size: 1.125rem;
+	font-weight: 800;
+	padding: 0.35rem 0.75rem;
+	border-radius: 6px;
+	background: var(--paper, #ffffff);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}

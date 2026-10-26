@@ -1,0 +1,101 @@
+/* Journal Stats Ribbon & Status Tabs */
+/* Stats Ribbon */
+.egisz-stats-ribbon {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.egisz-stat-tile {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.75rem 1rem;
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+[data-theme="dark"] .egisz-stat-tile,
+.dark .egisz-stat-tile {
+	background: var(--paper-strong, #131d31);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-stat-label {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.egisz-stat-val {
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	line-height: 1.1;
+}
+
+[data-theme="dark"] .egisz-stat-val,
+.dark .egisz-stat-val {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-stat-val.green {
+	color: var(--success, #10b981);
+}
+
+.egisz-stat-val.amber {
+	color: var(--warning, #f59e0b);
+}
+
+.egisz-stat-val.red {
+	color: var(--danger, #ef4444);
+}
+
+.egisz-stat-val.blue {
+	color: var(--primary, #0ea5e9);
+}
+/* Journal Status Tabs */
+.egisz-status-tabs {
+	display: flex;
+	gap: 0.35rem;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.egisz-status-tab-chip {
+	padding: 0.35rem 0.75rem;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	min-height: 36px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	transition: all 0.15s ease;
+}
+
+.egisz-status-tab-chip:hover {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+}
+
+.egisz-status-tab-chip.active {
+	background: var(--paper, #ffffff);
+	color: var(--primary, #0ea5e9);
+	border-color: var(--line, #cbd5e1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .egisz-status-tab-chip.active,
+.dark .egisz-status-tab-chip.active {
+	background: rgba(30, 41, 59, 0.8);
+	border-color: var(--line, #334155);
+	color: var(--primary, #38bdf8);
+}

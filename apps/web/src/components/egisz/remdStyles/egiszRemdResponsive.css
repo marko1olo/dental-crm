@@ -1,0 +1,3 @@
+/** egiszRemdResponsive.css — Apple HIG Mobile & Responsive Adaptive (<= 768px) */
+@import './layout/egiszRemdMobileLayout.css';
+@import './layout/egiszRemdMobileBottomSheets.css';

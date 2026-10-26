@@ -1,0 +1,67 @@
+/* CryptoPro Plugin Status Strip */
+/* CryptoPro Plugin Detection Status Strip */
+.egisz-plugin-status-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.65rem 1.25rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	font-size: 0.8125rem;
+	gap: 1rem;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}
+
+.egisz-plugin-status-bar.connected {
+	background: rgba(16, 185, 129, 0.08);
+	border-bottom-color: rgba(16, 185, 129, 0.25);
+	color: var(--emerald-text, var(--success, #065f46));
+}
+
+[data-theme="dark"] .egisz-plugin-status-bar.connected,
+.dark .egisz-plugin-status-bar.connected {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--emerald-400, var(--success, #34d399));
+}
+
+.egisz-plugin-status-bar.warning {
+	background: rgba(245, 158, 11, 0.08);
+	border-bottom-color: rgba(245, 158, 11, 0.25);
+	color: var(--amber-800, var(--warning, #92400e));
+}
+
+[data-theme="dark"] .egisz-plugin-status-bar.warning,
+.dark .egisz-plugin-status-bar.warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--amber, var(--warning, #fbbf24));
+}
+
+.egisz-plugin-status-left {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-weight: 500;
+}
+
+.egisz-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.egisz-status-dot.green {
+	background: var(--emerald, #10b981);
+	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.egisz-status-dot.amber {
+	background: var(--warning, #f59e0b);
+	box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.egisz-plugin-status-right {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}

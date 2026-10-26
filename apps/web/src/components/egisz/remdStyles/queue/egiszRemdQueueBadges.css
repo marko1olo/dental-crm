@@ -1,0 +1,72 @@
+/* Queue Status Badges & Pills */
+/* Status Badges */
+.egisz-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.2rem 0.55rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.egisz-badge.registered {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--emerald-text, var(--success, #059669));
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.registered,
+.dark .egisz-badge.registered {
+	background: rgba(16, 185, 129, 0.18);
+	color: var(--emerald-400, var(--success, #34d399));
+}
+
+.egisz-badge.sent {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--amber-800, var(--warning, #d97706));
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.sent,
+.dark .egisz-badge.sent {
+	background: rgba(245, 158, 11, 0.18);
+	color: var(--amber, var(--warning, #fbbf24));
+}
+
+.egisz-badge.signed {
+	background: rgba(14, 165, 233, 0.12);
+	color: var(--sky-700, var(--primary, #0284c7));
+	border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.signed,
+.dark .egisz-badge.signed {
+	background: rgba(14, 165, 233, 0.18);
+	color: var(--primary, #38bdf8);
+}
+
+.egisz-badge.error {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--red-700, var(--danger, #dc2626));
+	border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .egisz-badge.error,
+.dark .egisz-badge.error {
+	background: rgba(239, 68, 68, 0.18);
+	color: var(--red-400, var(--danger, #f87171));
+}
+
+.egisz-badge.draft {
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted, #64748b);
+	border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+[data-theme="dark"] .egisz-badge.draft,
+.dark .egisz-badge.draft {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #94a3b8);
+}

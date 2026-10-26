@@ -1,0 +1,89 @@
+/* ==========================================================================
+   3. Prescription107Card
+   ========================================================================== */
+.copilot-prescription-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 3px solid var(--teal, #0d9488);
+}
+
+.copilot-rx-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  padding-bottom: 10px;
+}
+
+.copilot-rx-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-rx-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copilot-rx-subtitle {
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-rx-series-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  color: var(--ink, #0f172a);
+  font-family: monospace;
+}
+
+/* Patient & Doctor metadata grid */
+.copilot-rx-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+}
+
+@media (max-width: 480px) {
+  .copilot-rx-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.copilot-rx-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.copilot-rx-meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+  text-transform: uppercase;
+}
+
+.copilot-rx-meta-val {
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+}
+
+/* Drugs list */
+

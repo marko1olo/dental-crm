@@ -1,0 +1,108 @@
+/* Workspace Grid & Two-Pane Layout */
+/* Modal Body Layout (Two-Pane Grid for Signing Modal) */
+.egisz-signing-body {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 380px 1fr;
+	overflow: hidden;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-signing-body,
+.dark .egisz-signing-body {
+	background: var(--paper, #0f172a);
+}
+
+.egisz-signing-sidebar {
+	border-right: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 1.1rem;
+	gap: 1rem;
+}
+
+[data-theme="dark"] .egisz-signing-sidebar,
+.dark .egisz-signing-sidebar {
+	border-right-color: var(--line, #1e293b);
+	background: var(--paper-strong, #131d31);
+}
+
+.egisz-signing-main {
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 1.25rem;
+	gap: 1rem;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-signing-main,
+.dark .egisz-signing-main {
+	background: var(--paper, #0f172a);
+}
+/* Main Workspace Area */
+.egisz-main-workspace {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-main-workspace,
+.dark .egisz-main-workspace {
+	background: var(--paper, #0f172a);
+}
+
+.egisz-signing-workspace {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-height: 100%;
+}
+
+/* Monolithic Card (Anti-Matryoshka: clean single level) */
+.egisz-card {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+[data-theme="dark"] .egisz-card,
+.dark .egisz-card {
+	background: var(--paper-strong, #131d31);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-card-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+[data-theme="dark"] .egisz-card-title,
+.dark .egisz-card-title {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-grid-2col {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px 20px;
+}
+
+@media (max-width: 680px) {
+	.egisz-grid-2col {
+		grid-template-columns: 1fr;
+	}
+}

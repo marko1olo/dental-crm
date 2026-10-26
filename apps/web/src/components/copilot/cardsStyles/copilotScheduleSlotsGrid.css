@@ -1,0 +1,99 @@
+.copilot-sp-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  min-height: 96px;
+  box-sizing: border-box;
+}
+
+.copilot-sp-slot-btn {
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.copilot-sp-slot-btn:hover:not(:disabled) {
+  border-color: var(--teal, #0d9488);
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-sp-slot-btn.selected {
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal-dark, #0f766e);
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+}
+
+.copilot-sp-slot-duration {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-sp-slot-btn.selected .copilot-sp-slot-duration {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.copilot-sp-slot-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: var(--paper-soft, #f4f7f6);
+}
+
+/* 1-Click Booking Confirmation Footer */
+.copilot-sp-booking-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--teal-soft, #ccfbf1);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.7));
+  box-sizing: border-box;
+}
+
+.copilot-sp-booking-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-sp-book-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(13, 148, 136, 0.25));
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.copilot-sp-book-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+}
+

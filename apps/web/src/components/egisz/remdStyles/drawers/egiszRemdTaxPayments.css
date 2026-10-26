@@ -1,0 +1,71 @@
+/* Tax Drawer Payments Table & Form */
+.egisz-tax-hero-amount {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--ink, #0f172a);
+	letter-spacing: -0.5px;
+}
+
+[data-theme="dark"] .egisz-tax-hero-amount,
+.dark .egisz-tax-hero-amount {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-tax-hero-sub {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.egisz-tax-patient-box {
+	padding: 10px 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+}
+
+[data-theme="dark"] .egisz-tax-patient-box,
+.dark .egisz-tax-patient-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: var(--line, #334155);
+}
+
+.egisz-tax-payments-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.egisz-tax-payment-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-radius: 6px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .egisz-tax-payment-item,
+.dark .egisz-tax-payment-item {
+	background: rgba(30, 41, 59, 0.4);
+	border-color: var(--line, #334155);
+}
+
+.egisz-tax-footer-cta {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.egisz-tax-footer-cta button {
+	height: 36px;
+	min-height: 36px;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.egisz-tax-footer-cta button {
+		height: 44px;
+		min-height: 44px;
+	}
+}

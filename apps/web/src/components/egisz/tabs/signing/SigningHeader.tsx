@@ -17,7 +17,7 @@ export const SigningHeader: React.FC<SigningHeaderProps> = ({
 		<>
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 				<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-					Электронная подпись документов (УКЭП)
+					Подписание СЭМД УКЭП — Электронная подпись документов (УКЭП)
 				</div>
 				<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "var(--primary-strong)" }}>
 					КриптоПро CSP

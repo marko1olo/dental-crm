@@ -1,0 +1,88 @@
+/* Fixed header comment */
+.copilot-hitl-card {
+  border-left: 3px solid var(--teal, #25d366);
+}
+
+.copilot-hitl-card.approved {
+  opacity: 0.85;
+  border-left-color: var(--green, #15803d);
+}
+
+.copilot-hitl-card.rejected {
+  opacity: 0.6;
+  border-left-color: var(--muted, #94a3b8);
+}
+
+.copilot-hitl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal-dark, #128c7e);
+  background-color: var(--teal-soft, rgba(37, 211, 102, 0.12));
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.copilot-hitl-confidence {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+}
+
+.copilot-hitl-patient-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-patient-name {
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-hitl-patient-phone {
+  color: var(--muted, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copilot-hitl-snippet-box {
+  background-color: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.copilot-hitl-snippet-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+  margin-bottom: 2px;
+}
+
+.copilot-hitl-snippet-text {
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+

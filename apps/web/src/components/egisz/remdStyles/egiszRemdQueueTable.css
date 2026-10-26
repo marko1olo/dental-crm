@@ -1,0 +1,6 @@
+/** egiszRemdQueueTable.css — Background Queue & Journal Tables */
+@import './queue/egiszRemdQueueBaseTable.css';
+@import './queue/egiszRemdQueueRows.css';
+@import './queue/egiszRemdQueueBadges.css';
+@import './queue/egiszRemdJournalTable.css';
+@import './queue/egiszRemdJournalStats.css';

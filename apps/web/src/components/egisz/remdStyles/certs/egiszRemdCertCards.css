@@ -1,0 +1,108 @@
+/* Certificate Selection Cards */
+/* Certificate Selection Cards */
+.egisz-section-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--muted, #64748b);
+	margin-bottom: 0.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.egisz-cert-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+
+.egisz-cert-card {
+	border: 1.5px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	padding: 0.85rem;
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	text-align: left;
+}
+
+[data-theme="dark"] .egisz-cert-card,
+.dark .egisz-cert-card {
+	background: rgba(30, 41, 59, 0.6);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-cert-card:hover {
+	border-color: var(--primary, #0ea5e9);
+	transform: translateY(-1px);
+}
+
+.egisz-cert-card.selected {
+	border-color: var(--primary, #0ea5e9);
+	background: var(--primary-muted, rgba(14, 165, 233, 0.08));
+	box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+}
+
+[data-theme="dark"] .egisz-cert-card.selected,
+.dark .egisz-cert-card.selected {
+	background: rgba(14, 165, 233, 0.15);
+	border-color: var(--primary, #38bdf8);
+}
+
+.egisz-cert-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.egisz-cert-owner {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.25;
+}
+
+[data-theme="dark"] .egisz-cert-owner,
+.dark .egisz-cert-owner {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-cert-badge {
+	font-size: 0.7rem;
+	font-weight: 700;
+	padding: 0.15rem 0.45rem;
+	border-radius: 4px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.egisz-cert-badge.active {
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--emerald-text, var(--success, #059669));
+}
+
+.egisz-cert-badge.expired {
+	background: rgba(239, 68, 68, 0.15);
+	color: var(--red-700, var(--danger, #dc2626));
+}
+
+.egisz-cert-snils,
+.egisz-cert-issuer,
+.egisz-cert-validity {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	line-height: 1.3;
+}
+
+.egisz-cert-thumbprint {
+	font-size: 0.7rem;
+	font-family: ui-monospace, monospace;
+	color: var(--muted, #94a3b8);
+	word-break: break-all;
+}

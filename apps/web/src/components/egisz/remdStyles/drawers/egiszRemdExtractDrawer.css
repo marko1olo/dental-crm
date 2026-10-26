@@ -1,0 +1,112 @@
+/* Medical Record Extract Drawer */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEDICAL EXTRACT DRAWER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.egisz-extract-drawer {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.egisz-extract-header {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.egisz-extract-title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.egisz-extract-sub {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin: 0;
+}
+
+.egisz-extract-types {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+.egisz-extract-opt {
+	padding: 12px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .egisz-extract-opt,
+.dark .egisz-extract-opt {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-extract-opt.active {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.08);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.egisz-extract-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.egisz-extract-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.egisz-extract-textarea {
+	width: 100%;
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .egisz-extract-textarea,
+.dark .egisz-extract-textarea {
+	background: rgba(15, 23, 42, 0.6);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-extract-doctor-box {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .egisz-extract-doctor-box,
+.dark .egisz-extract-doctor-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: var(--line, #334155);
+}
+
+.egisz-extract-cta-row {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}

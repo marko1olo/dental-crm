@@ -1,0 +1,94 @@
+/* XML & Journal Workspace Tabs */
+/* XML Workspace */
+.egisz-xml-workspace {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+}
+
+.egisz-xml-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 10px 14px;
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+}
+
+[data-theme="dark"] .egisz-xml-toolbar,
+.dark .egisz-xml-toolbar {
+	background: var(--paper-strong, #131d31);
+	border-color: var(--line, #1e293b);
+}
+
+.egisz-xml-filename {
+	font-family: ui-monospace, monospace;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-xml-filename,
+.dark .egisz-xml-filename {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.egisz-btn-secondary:hover {
+	background: var(--paper-strong, #f1f5f9);
+}
+
+[data-theme="dark"] .egisz-btn-secondary,
+.dark .egisz-btn-secondary {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .egisz-btn-secondary:hover,
+.dark .egisz-btn-secondary:hover {
+	background: rgba(51, 65, 85, 0.8);
+}
+
+.egisz-xml-code-block {
+	flex: 1;
+	background: var(--code-bg, #0f172a);
+	color: var(--emerald-400, var(--success, #34d399));
+	border-radius: 8px;
+	padding: 16px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	overflow: auto;
+	max-height: 540px;
+	white-space: pre;
+	border: 1px solid var(--line, #334155);
+	user-select: text;
+}
+
+/* Journal Workspace */
+.egisz-journal-workspace {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+}

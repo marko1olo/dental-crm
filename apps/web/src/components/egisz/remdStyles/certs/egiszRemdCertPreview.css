@@ -1,0 +1,97 @@
+/* Clean Certificate Preview */
+/* Clean certificate preview without matryoshka box */
+.egisz-cert-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px 0;
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+}
+
+[data-theme="dark"] .egisz-cert-preview,
+.dark .egisz-cert-preview {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-signing-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.egisz-primary-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 18px;
+	border-radius: 8px;
+	border: none;
+	background: var(--primary, #0ea5e9);
+	color: var(--paper, #ffffff);
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.egisz-primary-btn:hover:not(:disabled) {
+	background: var(--primary-hover, #0284c7);
+	transform: translateY(-1px);
+}
+
+.egisz-primary-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.egisz-signed-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--emerald-text, var(--success, #059669));
+	font-size: 13px;
+	font-weight: 600;
+}
+
+[data-theme="dark"] .egisz-signed-badge,
+.dark .egisz-signed-badge {
+	background: rgba(16, 185, 129, 0.18);
+	color: var(--emerald-400, var(--success, #34d399));
+}
+
+.egisz-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.egisz-status-badge.success {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--emerald-text, var(--success, #059669));
+}
+
+[data-theme="dark"] .egisz-status-badge.success,
+.dark .egisz-status-badge.success {
+	background: rgba(16, 185, 129, 0.18);
+	color: var(--emerald-400, var(--success, #34d399));
+}
+
+.egisz-stamp-container {
+	display: flex;
+	justify-content: flex-start;
+	padding: 4px 0;
+}

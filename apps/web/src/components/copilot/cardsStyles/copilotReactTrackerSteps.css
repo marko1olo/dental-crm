@@ -1,0 +1,77 @@
+.copilot-rt-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.copilot-rt-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  transition: all 0.15s ease;
+}
+
+.copilot-rt-step-item.current {
+  border-color: var(--teal, #0d9488);
+  background-color: var(--teal-soft, #ccfbf1);
+  box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.copilot-rt-step-item.done {
+  border-color: rgba(21, 128, 61, 0.25);
+  background-color: var(--paper-strong, #fafcfa);
+}
+
+.copilot-rt-step-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.copilot-rt-step-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copilot-rt-step-num-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #6b7280);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+}
+
+.copilot-rt-step-item.current .copilot-rt-step-num-badge {
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal, #0d9488);
+}
+
+.copilot-rt-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.copilot-rt-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  line-height: 1.35;
+}
+
+.copilot-rt-step-detail {
+  font-size: 11px;
+  color: var(--muted, #6b7280);
+  margin-top: 2px;
+}
+

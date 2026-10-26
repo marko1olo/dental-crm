@@ -1,0 +1,5 @@
+/** egiszRemdDrawers.css — Tax Deduction & Medical Extract Drawers */
+@import './drawers/egiszRemdTaxDrawer.css';
+@import './drawers/egiszRemdTaxPayments.css';
+@import './drawers/egiszRemdExtractDrawer.css';
+@import './drawers/egiszRemdJournalRemediation.css';

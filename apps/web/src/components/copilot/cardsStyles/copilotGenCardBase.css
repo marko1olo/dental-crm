@@ -1,0 +1,26 @@
+/**
+ * DENTE Copilot — Generative Server-Driven UI Cards
+ * Standard: Apple HIG & Clinical Density (Section VI)
+ * Responsive across PC Light/Dark, Mobile Light/Dark, Ocean, Cyber X-Ray, Contrast
+ */
+
+/* Base Generative Card Container */
+.copilot-gen-card {
+  width: 100%;
+  border-radius: 12px;
+  background-color: var(--paper-strong, #fafcfa);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  padding: 14px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 44px;
+  contain: content;
+}
+
+.copilot-gen-card:hover {
+  border-color: var(--line-strong, rgba(15, 118, 110, 0.25));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+

@@ -1,0 +1,60 @@
+/* Stamp Print & Seal Styles */
+
+[data-theme="dark"] .gost-stamp-blue,
+.dark .gost-stamp-blue,
+[data-theme="dark"] .gost-signature-stamp,
+.dark .gost-signature-stamp {
+	border-color: var(--primary, #3b82f6) !important;
+	color: var(--primary, #3b82f6) !important;
+	background: rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme="dark"] .gost-stamp-header,
+.dark .gost-stamp-header,
+[data-theme="dark"] .gost-signature-stamp > div:first-child,
+.dark .gost-signature-stamp > div:first-child {
+	border-bottom-color: var(--primary, #3b82f6) !important;
+}
+
+.gost-stamp-row {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 3px;
+}
+
+.gost-stamp-row:last-child {
+	margin-bottom: 0;
+}
+
+.gost-stamp-lbl {
+	font-weight: bold;
+	min-width: 78px;
+	flex-shrink: 0;
+}
+
+.gost-stamp-val {
+	word-break: break-word;
+}
+
+.gost-stamp-mono {
+	font-family: monospace;
+	font-size: 10px;
+}
+
+.gost-stamp-pending-box {
+	border: 2px dashed var(--line, #94a3b8);
+	border-radius: 8px;
+	padding: 14px;
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--muted, #64748b);
+	font-family: sans-serif;
+	font-size: 12px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	gap: 6px;
+	min-width: 260px;
+	min-height: 110px;
+}

@@ -1,0 +1,45 @@
+   8. Sentiment Badges
+   ========================================================================== */
+.copilot-sentiment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.copilot-sentiment-badge.sentiment-emergency {
+  background-color: var(--rust-soft, rgba(220, 38, 38, 0.12));
+  color: var(--rust, #dc2626);
+  border-color: var(--rust-soft, rgba(220, 38, 38, 0.3));
+}
+
+.copilot-sentiment-badge.sentiment-anxious {
+  background-color: var(--amber-soft, rgba(217, 119, 6, 0.12));
+  color: var(--amber, #d97706);
+  border-color: var(--amber-soft, rgba(217, 119, 6, 0.3));
+}
+
+.copilot-sentiment-badge.sentiment-negative {
+  background-color: var(--rust-soft, rgba(225, 29, 72, 0.1));
+  color: var(--rust, #e11d48);
+  border-color: var(--rust-soft, rgba(225, 29, 72, 0.25));
+}
+
+.copilot-sentiment-badge.sentiment-positive {
+  background-color: var(--teal-soft, rgba(16, 185, 129, 0.12));
+  color: var(--teal, #059669);
+  border-color: var(--teal-soft, rgba(16, 185, 129, 0.3));
+}
+
+.copilot-sentiment-badge.sentiment-neutral {
+  background-color: var(--paper-soft, #f1f5f9);
+  color: var(--muted, #64748b);
+  border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+

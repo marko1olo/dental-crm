@@ -1,0 +1,89 @@
+/* XML Code Viewer & UKEP Inspector */
+/* XML Preview Code Block */
+.egisz-code-box {
+	background: var(--code-bg, #0f172a);
+	color: var(--ink, #e2e8f0);
+	border-radius: 8px;
+	padding: 1rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.75rem;
+	line-height: 1.45;
+	max-height: 480px;
+	overflow: auto;
+	white-space: pre;
+	border: 1px solid var(--line, #334155);
+	user-select: text;
+}
+/* XML Preview in Tab 4 */
+.egisz-xml-viewer {
+	background: var(--code-bg, #0f172a);
+	color: var(--code-fg, #e2e8f0);
+	border-radius: 8px;
+	padding: 1rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.75rem;
+	line-height: 1.4;
+	max-height: 380px;
+	overflow: auto;
+	white-space: pre;
+	border: 1px solid var(--line, #334155);
+}
+
+/* UKEP Signature Inspector Box */
+.egisz-ukep-box {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+[data-theme="dark"] .egisz-ukep-box,
+.dark .egisz-ukep-box {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.egisz-ukep-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+}
+
+[data-theme="dark"] .egisz-ukep-header,
+.dark .egisz-ukep-header {
+	color: var(--ink, #f8fafc);
+}
+
+.egisz-ukep-details {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 0.5rem;
+	font-size: 0.8125rem;
+}
+
+.egisz-ukep-field {
+	display: flex;
+	flex-direction: column;
+}
+
+.egisz-ukep-label {
+	font-size: 0.7rem;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.egisz-ukep-value {
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .egisz-ukep-value,
+.dark .egisz-ukep-value {
+	color: var(--ink, #f8fafc);
+}

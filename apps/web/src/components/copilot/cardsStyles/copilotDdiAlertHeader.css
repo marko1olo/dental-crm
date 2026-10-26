@@ -1,0 +1,90 @@
+/* Fixed header comment */
+.copilot-ddi-alert-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--rust-soft, #fee2e2);
+  border: 1.5px solid var(--rust, #b91c1c);
+  box-shadow: 0 3px 12px rgba(185, 28, 28, 0.16);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.copilot-ddi-alert-card.replaced {
+  background-color: var(--paper-strong, #fafcfa);
+  border-color: var(--green, #15803d);
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.12);
+}
+
+.copilot-ddi-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.copilot-ddi-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: var(--rust, #b91c1c);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.3);
+}
+
+.copilot-ddi-alert-card.replaced .copilot-ddi-badge {
+  background-color: var(--green, #15803d);
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
+}
+
+.copilot-ddi-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.copilot-ddi-desc {
+  font-size: 13px;
+  color: var(--ink, #0f172a);
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.copilot-ddi-severity-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.copilot-ddi-severity-pill.danger {
+  background-color: var(--paper-strong);
+  color: var(--rust, #b91c1c);
+  border: 1px solid var(--rust, #b91c1c);
+}
+
+.copilot-ddi-severity-pill.safe {
+  background-color: rgba(21, 128, 61, 0.15);
+  color: var(--green, #15803d);
+  border: 1px solid rgba(21, 128, 61, 0.3);
+}
+
+.copilot-ddi-allergies-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--paper-strong);
+  border: 1px solid rgba(185, 28, 28, 0.25);
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+}
+

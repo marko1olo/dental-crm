@@ -1,0 +1,84 @@
+/* Journal Main Table */
+/* Journal Main Table */
+.egisz-table-container {
+	flex: 1;
+	overflow-y: auto;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-table-container,
+.dark .egisz-table-container {
+	border-color: var(--line, #1e293b);
+	background: var(--paper, #0f172a);
+}
+
+.egisz-journal-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	text-align: left;
+}
+
+.egisz-journal-table th {
+	position: sticky;
+	top: 0;
+	background: var(--paper-strong, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 700;
+	padding: 0.75rem 0.85rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	white-space: nowrap;
+	z-index: 10;
+}
+
+[data-theme="dark"] .egisz-journal-table th,
+.dark .egisz-journal-table th {
+	background: var(--paper-strong, #131d31);
+	border-bottom-color: var(--line, #1e293b);
+	color: var(--muted, #94a3b8);
+}
+
+.egisz-journal-table td {
+	padding: 0.75rem 0.85rem;
+	border-bottom: 1px solid var(--line, #f1f5f9);
+	color: var(--ink, #0f172a);
+	vertical-align: middle;
+}
+
+[data-theme="dark"] .egisz-journal-table td,
+.dark .egisz-journal-table td {
+	border-bottom-color: rgba(30, 41, 59, 0.5);
+	color: var(--ink, #e2e8f0);
+}
+
+.egisz-journal-table tr:hover td {
+	background: var(--paper-strong, #f8fafc);
+}
+
+[data-theme="dark"] .egisz-journal-table tr:hover td,
+.dark .egisz-journal-table tr:hover td {
+	background: rgba(30, 41, 59, 0.4);
+}
+
+.egisz-journal-table tr.selected td {
+	background: var(--primary-muted, rgba(14, 165, 233, 0.08));
+}
+
+[data-theme="dark"] .egisz-journal-table tr.selected td,
+.dark .egisz-journal-table tr.selected td {
+	background: rgba(14, 165, 233, 0.15);
+}
+/* Fixed Table Layout with Truncation */
+.egisz-table-fixed {
+	table-layout: fixed;
+	width: 100%;
+}
+
+.egisz-cell-truncate {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+}

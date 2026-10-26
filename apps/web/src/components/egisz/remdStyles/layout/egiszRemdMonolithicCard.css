@@ -1,0 +1,86 @@
+/* Monolithic Card (Anti-Matryoshka) */
+/* Master-Detail Body Layout */
+.egisz-remd-body {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 340px 1fr;
+	overflow: hidden;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .egisz-remd-body,
+.dark .egisz-remd-body {
+	background: var(--paper, #0f172a);
+}
+
+.egisz-field-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	margin-bottom: 2px;
+}
+
+.egisz-field-val {
+	font-size: 14px;
+	color: var(--ink, #0f172a);
+	line-height: 1.4;
+}
+
+[data-theme="dark"] .egisz-field-val,
+.dark .egisz-field-val {
+	color: var(--ink, #f1f5f9);
+}
+
+.egisz-code-chip {
+	font-family: ui-monospace, monospace;
+	font-size: 12px;
+	font-weight: 700;
+	background: var(--primary-muted, rgba(14, 165, 233, 0.12));
+	color: var(--primary, #0ea5e9);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+[data-theme="dark"] .egisz-code-chip,
+.dark .egisz-code-chip {
+	background: rgba(59, 130, 246, 0.18);
+	color: var(--primary, #3b82f6);
+}
+
+.egisz-warning-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px;
+	border-radius: 8px;
+	background: rgba(245, 158, 11, 0.1);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	color: var(--amber-800, var(--warning, #92400e));
+}
+
+[data-theme="dark"] .egisz-warning-banner,
+.dark .egisz-warning-banner {
+	background: rgba(245, 158, 11, 0.15);
+	color: var(--amber, var(--warning, #fbbf24));
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.egisz-cert-select {
+	min-height: 44px;
+	height: 44px;
+	width: 100%;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 14px;
+	outline: none;
+}
+
+[data-theme="dark"] .egisz-cert-select,
+.dark .egisz-cert-select {
+	background: rgba(15, 23, 42, 0.7);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}

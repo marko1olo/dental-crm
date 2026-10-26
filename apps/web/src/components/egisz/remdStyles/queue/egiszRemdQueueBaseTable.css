@@ -1,0 +1,75 @@
+/* Background Queue Main Table */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BACKGROUND QUEUE TABLE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.egisz-queue-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.egisz-queue-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.egisz-queue-heading {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.egisz-queue-subheading {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin: 2px 0 0 0;
+}
+
+.egisz-queue-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+}
+
+.egisz-queue-table th {
+	text-align: left;
+	padding: 8px 12px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+[data-theme="dark"] .egisz-queue-table th,
+.dark .egisz-queue-table th {
+	border-color: var(--line, #334155);
+}
+
+.egisz-queue-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	vertical-align: middle;
+}
+
+[data-theme="dark"] .egisz-queue-table td,
+.dark .egisz-queue-table td {
+	border-color: var(--line, #334155);
+}
+
+.egisz-queue-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.egisz-queue-badge.success {
+	background: rgba(16, 185, 129, 0.12);
+	color: var(--success, #10b981);
+}

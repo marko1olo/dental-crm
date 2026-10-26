@@ -1,0 +1,78 @@
+/* Background Queue Rows & Cards */
+.egisz-queue-badge.danger {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--danger, #ef4444);
+}
+
+.egisz-queue-badge.warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: var(--warning, #d97706);
+}
+
+.egisz-action-btns {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+}
+
+.egisz-queue-mobile-cards {
+	display: none;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.egisz-queue-card {
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 12px;
+	background: var(--paper-strong, #f8fafc);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+[data-theme="dark"] .egisz-queue-card,
+.dark .egisz-queue-card {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: var(--line, #334155);
+}
+
+.egisz-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.egisz-card-patient {
+	font-size: 0.875rem;
+	color: var(--muted, #64748b);
+}
+
+.egisz-card-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.egisz-empty-box {
+	text-align: center;
+	padding: 48px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.egisz-empty-title {
+	font-size: 1rem;
+	font-weight: 700;
+	margin: 12px 0 4px 0;
+}
+
+.egisz-empty-desc {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin: 0;
+	max-width: 360px;
+}

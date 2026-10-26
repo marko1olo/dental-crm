@@ -1,0 +1,96 @@
+/* Document Preview Paper & Tabs */
+/* Document Preview Paper & Blue Signature Stamp per Order 947n */
+.egisz-doc-view-tabs {
+	display: flex;
+	gap: 0.35rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 0.5rem;
+	flex-shrink: 0;
+}
+
+.egisz-doc-tab-btn {
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-height: 38px;
+	transition: all 0.15s ease;
+}
+
+.egisz-doc-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-strong, #f1f5f9);
+}
+
+.egisz-doc-tab-btn.active {
+	background: var(--paper-strong, #f1f5f9);
+	color: var(--primary, #0ea5e9);
+	border-color: var(--line, #cbd5e1);
+}
+
+[data-theme="dark"] .egisz-doc-tab-btn.active,
+.dark .egisz-doc-tab-btn.active {
+	background: rgba(30, 41, 59, 0.8);
+	border-color: var(--line, #334155);
+	color: var(--primary, #38bdf8);
+}
+
+.egisz-paper-sheet {
+	background: var(--doc-paper, #ffffff);
+	color: var(--doc-ink, #000000);
+	border: 1px solid var(--doc-border, #cbd5e1);
+	border-radius: 8px;
+	padding: 1.5rem;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+	font-family: 'Times New Roman', Times, serif;
+	font-size: 13px;
+	line-height: 1.4;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+}
+
+.egisz-paper-header {
+	text-align: center;
+	border-bottom: 2px solid var(--doc-ink, #000000);
+	padding-bottom: 0.75rem;
+	margin-bottom: 0.5rem;
+}
+
+.egisz-paper-mo-title {
+	font-size: 14px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.egisz-paper-mo-sub {
+	font-size: 11px;
+	color: var(--doc-muted, #333333);
+}
+
+.egisz-paper-doc-title {
+	font-size: 15px;
+	font-weight: bold;
+	margin-top: 6px;
+}
+
+.egisz-paper-semd-code {
+	font-size: 11px;
+	font-family: monospace;
+	color: var(--doc-muted, #555555);
+}
+
+.egisz-paper-section-title {
+	font-size: 13px;
+	font-weight: bold;
+	border-bottom: 1px solid var(--doc-border, #777777);
+	padding-bottom: 2px;
+	margin-top: 6px;
+}
