@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IMAGING / DICOM VIEWER BASE (modalImagingViewerBase.css)
+   Radiology overlay, container, header, viewer pane
+   Strict limit: <= 120 lines (Mandate 8b, Apple HIG)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.imaging-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(10, 15, 30, 0.85);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 20px;
+}
+
+.imaging-modal-container {
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #334155);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 900px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+	color: var(--ink, #e2e8f0);
+}
+
+.imaging-modal-header {
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line, #1e293b);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.imaging-modal-header h3 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+}
+
+.imaging-modal-close {
+	background: none;
+	border: none;
+	color: var(--muted, #94a3b8);
+	cursor: pointer;
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border-radius: 8px;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.imaging-modal-close:hover {
+	background: var(--teal-surface, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+.imaging-modal-body {
+	padding: 20px;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 20px;
+	overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+	.imaging-modal-body {
+		grid-template-columns: 1.2fr 0.8fr;
+	}
+}
+
+.imaging-modal-viewer-pane {
+	background: var(--paper-soft, #020617);
+	border: 1px solid var(--line, #1e293b);
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
+	min-height: 300px;
+}
+
+.imaging-modal-viewer-pane img {
+	max-width: 100%;
+	max-height: 400px;
+	object-fit: contain;
+	transition: filter 0.1s ease;
+}

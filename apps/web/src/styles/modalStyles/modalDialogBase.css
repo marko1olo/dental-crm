@@ -1,0 +1,79 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL DIALOG BASE MODULE (modalDialogBase.css)
+   Base modal surface, shadows, z-index, animations, laptop protection
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.modal-content {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	z-index: var(--z-modal, 1101);
+	width: 96%;
+	max-width: 900px;
+	max-height: 85vh;
+	animation: modal-scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: var(--shadow-lg, 0 25px 50px -12px rgba(0, 0, 0, 0.35));
+	color: var(--ink, #0f172a);
+	overflow: hidden;
+}
+
+/* Modal Dialog Alternative Container */
+.modal-dialog {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* 1366x768 / Low height screen protection */
+@media (max-height: 800px) {
+	.modal-content {
+		max-height: calc(100vh - 40px);
+		border-radius: 12px;
+	}
+}
+
+/* Animation Keyframes */
+@keyframes modal-scale-up {
+	from {
+		transform: translate(-50%, -46%) scale(0.96);
+		opacity: 0;
+	}
+	to {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 1;
+	}
+}
+
+/* Alias for legacy keyframe references */
+@keyframes scale-up {
+	from {
+		transform: translate(-50%, -45%) scale(0.95);
+		opacity: 0;
+	}
+	to {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 1;
+	}
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-content,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-dialog {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}

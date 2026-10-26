@@ -1,0 +1,113 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL FOOTER MODULE (modalFooter.css)
+   Footer container, Mandate 8am (Strictly ONE Primary CTA), Secondary
+   Strict limit: <= 120 lines (Mandate 8b, 8am, 8e)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+}
+
+.modal-footer-hint {
+	margin-right: auto;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Mandate 8am: Strictly ONE Primary CTA Button per visible context */
+.modal-btn-primary,
+.modal-primary-btn,
+.modal-btn-cta {
+	min-height: 40px;
+	padding: 0 20px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #ffffff;
+	background: var(--teal, #0d9488);
+	border: 1px solid transparent;
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+	user-select: none;
+}
+
+.modal-btn-primary:hover,
+.modal-primary-btn:hover,
+.modal-btn-cta:hover {
+	background: var(--teal-dark, #0f766e);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+.modal-btn-primary:active,
+.modal-primary-btn:active,
+.modal-btn-cta:active {
+	transform: scale(0.98);
+}
+
+/* Secondary Actions */
+.modal-btn-secondary,
+.modal-secondary-btn,
+.modal-btn-ghost {
+	min-height: 40px;
+	padding: 0 16px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--ink, #334155);
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: background 0.15s ease, border-color 0.15s ease;
+	user-select: none;
+}
+
+.modal-btn-secondary:hover,
+.modal-secondary-btn:hover,
+.modal-btn-ghost:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--line-strong, #94a3b8);
+	color: var(--ink, #0f172a);
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-footer {
+	background: var(--paper-soft, #1e293b);
+	border-top-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-footer-hint {
+	color: var(--muted, #94a3b8);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-btn-secondary,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-secondary-btn {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-btn-secondary:hover,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-secondary-btn:hover {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line-strong, #475569);
+}

@@ -1,0 +1,52 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CLINICAL CONTEXT TABS BAR (clinicalContextTabs.css)
+   Studio tabs bar, tab buttons & active indicator
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+._ccm-tabs-bar {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 2px;
+	padding: 4px 6px;
+	background: var(--paper-soft, #f1f5f9);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	flex-shrink: 0;
+}
+
+._ccm-tab-btn {
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.12s ease;
+	white-space: nowrap;
+	user-select: none;
+}
+
+._ccm-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.03);
+}
+
+._ccm-tab-btn.active {
+	background: var(--paper-strong, var(--paper, #fff));
+	color: var(--teal-dark, #0f766e);
+	border-color: var(--line, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	font-weight: 700;
+}
+
+@media (pointer: coarse) {
+	._ccm-tab-btn {
+		min-height: 40px;
+	}
+}

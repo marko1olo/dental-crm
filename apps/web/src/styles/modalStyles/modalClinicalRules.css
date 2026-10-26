@@ -1,0 +1,49 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL CLINICAL RULES MODULE (modalClinicalRules.css)
+   Expandable clinical decision rules toggle within modals
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.clinical-rules-toggle {
+	margin: 0.75rem 0;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow: hidden;
+	background: var(--paper, #ffffff);
+}
+
+.clinical-rules-toggle > summary {
+	padding: 0.75rem 1rem;
+	background: var(--paper-soft, #f8fafc);
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--ink-2, var(--muted, #475569));
+	cursor: pointer;
+	user-select: none;
+	outline: none;
+	list-style: none;
+	transition: background 0.15s;
+}
+
+.clinical-rules-toggle > summary:hover {
+	background: var(--paper-strong, #f1f5f9);
+}
+
+.clinical-rules-toggle > summary::-webkit-details-marker {
+	display: none;
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-rules-toggle {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-rules-toggle > summary {
+	background: var(--paper-soft, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .clinical-rules-toggle > summary:hover {
+	background: var(--paper-strong, #1e293b);
+}

@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL BODY MODULE (modalBody.css)
+   Scrollable pane, 0px horizontal drift, overscroll containment
+   Strict limit: <= 120 lines (Mandate 8b, Zero-Clipping)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.modal-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 20px;
+	max-width: 100%;
+	overscroll-behavior: contain;
+	word-break: break-word;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Modal Content Scroll helper */
+.modal-content-scroll {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+}
+
+/* Modal Sections */
+.modal-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.modal-section-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	margin-bottom: 2px;
+}
+
+/* Clean Professional Scrollbar */
+.modal-body::-webkit-scrollbar,
+.modal-content-scroll::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track,
+.modal-content-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb,
+.modal-content-scroll::-webkit-scrollbar-thumb {
+	background: var(--line, #cbd5e1);
+	border-radius: 9999px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover,
+.modal-content-scroll::-webkit-scrollbar-thumb:hover {
+	background: var(--line-strong, #94a3b8);
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-section-title {
+	color: var(--muted, #94a3b8);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-body::-webkit-scrollbar-thumb,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-content-scroll::-webkit-scrollbar-thumb {
+	background: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-body::-webkit-scrollbar-thumb:hover,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-content-scroll::-webkit-scrollbar-thumb:hover {
+	background: var(--line-strong, #475569);
+}

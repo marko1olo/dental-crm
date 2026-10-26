@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IMAGING / DICOM VIEWER CONTROLS (modalImagingViewerControls.css)
+   Radiology sliders, controls & AI analysis box
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.imaging-modal-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.imaging-modal-control-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.imaging-modal-control-group label {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.imaging-modal-control-group input[type="range"] {
+	width: 100%;
+	accent-color: var(--teal);
+	cursor: pointer;
+}
+
+.imaging-modal-ai-box {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.08));
+	border: 1px solid var(--warn-fg, rgba(245, 158, 11, 0.25));
+	border-radius: 10px;
+	padding: 12px;
+	margin-top: 8px;
+}
+
+.imaging-modal-ai-box h4 {
+	margin: 0 0 6px 0;
+	font-size: 12px;
+	font-weight: 800;
+	color: var(--warn-fg, #f59e0b);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.imaging-modal-ai-box p {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--ink-2, #cbd5e1);
+}

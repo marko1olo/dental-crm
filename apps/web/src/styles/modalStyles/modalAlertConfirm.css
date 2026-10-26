@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL ALERT & CONFIRM MODULE (modalAlertConfirm.css)
+   Confirmation dialogs without destructive failures, warehouse confirm
+   Strict limit: <= 120 lines (Mandate 8b, 8e)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Warehouse / Inventory Confirm Backdrop */
+.inventory-confirm-backdrop,
+.modal-confirm-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	background: rgba(0, 0, 0, 0.52);
+	animation: modal-fade-in 0.18s ease-out;
+}
+
+/* Confirm Dialog Window */
+.inventory-confirm-window,
+.modal-confirm-window {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+	color: var(--ink, #0f172a);
+	max-width: calc(100% - 32px);
+	padding: 24px 28px;
+	width: 420px;
+	animation: modal-scale-up 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inventory-confirm-window h3,
+.modal-confirm-window h3 {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0 0 10px;
+	color: var(--ink, #0f172a);
+}
+
+.inventory-confirm-window p,
+.modal-confirm-window p {
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--muted, #64748b);
+	margin: 0 0 20px;
+}
+
+/* Mobile Touch Target Protection (Apple HIG) */
+@media (max-width: 768px) {
+	.inventory-confirm-window,
+	.modal-confirm-window {
+		width: calc(100% - 24px);
+		padding: 20px 20px;
+		border-radius: 20px;
+	}
+
+	.inventory-confirm-actions button,
+	.modal-confirm-actions button {
+		min-height: 48px;
+		font-size: 0.95rem;
+	}
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .inventory-confirm-window,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-confirm-window {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .inventory-confirm-window h3,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-confirm-window h3 {
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .inventory-confirm-window p,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-confirm-window p {
+	color: var(--muted, #94a3b8);
+}

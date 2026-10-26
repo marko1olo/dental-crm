@@ -1,0 +1,66 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL BACKDROP MODULE (modalBackdrop.css)
+   Glassmorphism blur, fade animations, backdrop z-indices
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+	--z-drawer-overlay: 1000;
+	--z-drawer: 1001;
+	--z-modal-overlay: 1100;
+	--z-modal: 1101;
+}
+
+/* Base Modal Overlay with Glassmorphism */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.52);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	z-index: var(--z-modal-overlay, 1100);
+	animation: modal-fade-in 0.2s ease-out;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overscroll-behavior: contain;
+}
+
+/* Side Drawer Overlay */
+.drawer-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.4);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	z-index: var(--z-drawer-overlay, 1000);
+	animation: modal-fade-in 0.2s ease-out;
+}
+
+/* Low-performance hardware fallback */
+html[data-perf="low"] .modal-overlay,
+html[data-perf="low"] .drawer-overlay {
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	background: rgba(15, 23, 42, 0.75);
+}
+
+/* Standard Fade-in Keyframes */
+@keyframes modal-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* Alias for legacy keyframe references */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}

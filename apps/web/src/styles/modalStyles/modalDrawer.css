@@ -1,0 +1,53 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL DRAWER MODULE (modalDrawer.css)
+   Side sliding drawers, drawer content, responsive viewports
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.drawer-content {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	max-width: 480px;
+	background: var(--paper, #ffffff);
+	z-index: var(--z-drawer, 1001);
+	box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	animation: slide-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	padding: 24px;
+	overscroll-behavior: contain;
+}
+
+@media (max-width: 768px) {
+	.drawer-content {
+		max-width: 100vw;
+		padding: 16px;
+		padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+	}
+}
+
+@media (max-height: 800px) {
+	.drawer-content {
+		padding: 16px;
+	}
+}
+
+@keyframes slide-left {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .drawer-content {
+	background: var(--bg-surface, var(--paper-strong, #0f172a));
+	color: var(--text-primary, var(--ink, #f8fafc));
+	box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+}

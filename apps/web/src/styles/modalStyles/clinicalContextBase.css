@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CLINICAL CONTEXT MODAL BASE (clinicalContextBase.css)
+   Tooth studio modal container & overlay
+   Strict limit: <= 120 lines (Mandate 8b)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes _ccm-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes _ccm-up {
+	from {
+		transform: translate(-50%, -48%) scale(0.97);
+		opacity: 0;
+	}
+	to {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 1;
+	}
+}
+
+._ccm-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: var(--z-modal-overlay, 3000);
+	background: rgba(15, 23, 42, 0.5);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	animation: _ccm-fade 0.15s ease-out;
+}
+
+._ccm-content {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
+	flex-direction: column;
+	z-index: var(--z-modal, 3001);
+	width: 95%;
+	max-width: 500px;
+	max-height: 440px;
+	background: var(--paper-strong, var(--paper, #fff));
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	animation: _ccm-up 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-height: 800px) {
+	._ccm-content {
+		max-height: calc(100vh - 40px);
+		width: 95%;
+	}
+	._ccm-body {
+		grid-template-columns: 1fr;
+	}
+}

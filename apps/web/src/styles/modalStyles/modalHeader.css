@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL HEADER MODULE (modalHeader.css)
+   Uniform headers, title hierarchy, touch close cross >= 44x44px
+   Strict limit: <= 120 lines (Mandate 8b, Apple HIG)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.modal-header-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.modal-header h2,
+.modal-header h3,
+.modal-title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.modal-subtitle {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	font-weight: 500;
+}
+
+/* Touch-optimized Close Button (Apple HIG >= 44x44px touch target) */
+.modal-close-btn,
+.modal-close,
+.modal-close-button {
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	margin: -6px -8px -6px 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+	flex-shrink: 0;
+}
+
+.modal-close-btn:hover,
+.modal-close:hover,
+.modal-close-button:hover {
+	background: var(--paper, rgba(0, 0, 0, 0.05));
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #cbd5e1);
+}
+
+.modal-close-btn:active,
+.modal-close:active,
+.modal-close-button:active {
+	transform: scale(0.92);
+}
+
+/* Dark Theme Overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-header {
+	background: var(--paper-soft, #1e293b);
+	border-bottom-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-header h2,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-header h3,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-title {
+	color: var(--ink, #f8fafc);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-close-btn,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-close {
+	color: var(--muted, #94a3b8);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-close-btn:hover,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .modal-close:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--ink, #ffffff);
+	border-color: var(--line, #475569);
+}
