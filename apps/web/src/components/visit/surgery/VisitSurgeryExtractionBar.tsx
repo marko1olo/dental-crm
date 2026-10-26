@@ -6,12 +6,11 @@ import {
 	SURGICAL_HEMOSTASIS_OPTIONS,
 	buildStandardExtractionProtocolText,
 	buildPostExtractionMemoText,
-	getExtractionServices804n,
+	getExtractionSurgicalServices,
 	dispatchSurgicalServicesToInvoice,
 	type ExtractionComplexity,
 	type SurgicalHemostasisMethod,
 	type SurgicalServiceItem,
-	type SurgicalService804n,
 } from "../../surgery/surgeryProtocols";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
 import { triggerHaptic } from "../../../native/mobileBridge";
@@ -80,7 +79,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 		onApplyProtocolText(text);
 
 		// 1-клик автоматическое начисление в смету визита по Номенклатуре 804н
-		const services = getExtractionServices804n({
+		const services = getExtractionSurgicalServices({
 			complexity: newComplexity,
 			toothFdi: effectiveTooth,
 			hemostasis: selectedHemostasis,
@@ -100,7 +99,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 
 	// Начисление услуг удаления в смету (1 клик)
 	const handleAddServicesToInvoice = () => {
-		const services = getExtractionServices804n({
+		const services = getExtractionSurgicalServices({
 			complexity,
 			toothFdi: effectiveTooth,
 			hemostasis: selectedHemostasis,
@@ -138,7 +137,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 		onApplyProtocolText(text);
 
 		// Auto-dispatch services to invoice
-		const services = getExtractionServices804n({
+		const services = getExtractionSurgicalServices({
 			complexity,
 			toothFdi: effectiveTooth,
 			hemostasis: uncomplicatedHemo,
@@ -177,7 +176,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 					<button
 						type="button"
 						onClick={handleAddServicesToInvoice}
-						className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer min-h-[44px] px-2 touch-manipulation"
+						className="btn btn--secondary text-xs font-bold text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--paper-soft)] dark:bg-slate-900 border border-[var(--line)] dark:border-slate-800 flex items-center gap-1 cursor-pointer min-h-[36px] px-2.5 py-1 rounded-lg touch-manipulation"
 						data-testid="btn-extraction-add-to-invoice"
 						title="Добавить хирургические услуги в смету визита"
 					>

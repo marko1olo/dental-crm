@@ -10,7 +10,9 @@ import type React from "react";
 import { useMemo } from "react";
 import { InformedConsentModal } from "../../../../consents/InformedConsentModal";
 import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhotoProtocolModal";
+import { VisitSurgeryProtocolTab } from "../../../../visit/surgery/VisitSurgeryProtocolTab";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
+import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWorkspaceShell";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
 function MissingPatientGuard({ testId, onClose, message }: { testId: string; onClose: () => void; message: string }): React.ReactElement {
@@ -61,4 +63,22 @@ export const StandalonePhotoProtocolHost: React.FC<{ onClose: () => void }> = ({
 	}
 	if (patientName === null) return null;
 	return <ClinicalPhotoProtocolModal isOpen={true} onClose={onClose} patientName={patientName} />;
+};
+
+export const StandaloneSurgeryProtocolHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+	const patientId = useMemo(() => readPatientIdFromUrl() || "01a00000-0000-0000-0000-000000000001", []);
+	const patientName = useLauncherPatientName(patientId) || "Смирнова Анна Сергеевна";
+	return (
+		<StandaloneTreatmentPlanWorkspaceShell title="Хирургический протокол и удаление зубов" onClose={onClose}>
+			<div className="w-full p-3 sm:p-6 overflow-y-auto" data-testid="surgery-standalone-workspace">
+				<div className="max-w-5xl mx-auto">
+					<VisitSurgeryProtocolTab
+						activeTooth={48}
+						patientName={patientName}
+						onAddToInvoice={(item) => console.log("Added to invoice:", item)}
+					/>
+				</div>
+			</div>
+		</StandaloneTreatmentPlanWorkspaceShell>
+	);
 };

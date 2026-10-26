@@ -1,0 +1,94 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING TOOLS & GRID LAYOUTS (ctPlanningTools.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Planning tools & board grid containers.
+   ========================================================================== */
+.ct-planning-tool {
+	background: rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.ct-planning-tool.locked {
+	border-left-color: #f0b44b;
+	opacity: 0.84;
+}
+
+.ct-planning-tool > span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.ct-planning-tool strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-tool p,
+.ct-planning-tool small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-tool small {
+	color: #b7dcd7;
+}
+
+.ct-planning-task-board,
+.ct-planning-task-list,
+.ct-planning-workflow-grid,
+.ct-planning-geometry-grid,
+.ct-planning-validation-grid,
+.ct-planning-measurement-board,
+.ct-planning-measurement-grid,
+.ct-planning-implant-fit-board,
+.ct-planning-implant-fit-grid,
+.ct-planning-implant-board,
+.ct-planning-implant-grid,
+.ct-planning-reconstruction-board,
+.ct-planning-reconstruction-grid,
+.ct-planning-export-board,
+.ct-planning-export-facts,
+.ct-planning-export-lanes,
+.ct-planning-artifact-board,
+.ct-planning-artifact-grid {
+	display: grid;
+	gap: 8px;
+}
+
+.ct-planning-task-board {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-task-list,
+.ct-planning-workflow-grid,
+.ct-planning-geometry-grid,
+.ct-planning-validation-grid,
+.ct-planning-measurement-grid,
+.ct-planning-implant-fit-grid,
+.ct-planning-implant-grid,
+.ct-planning-reconstruction-grid,
+.ct-planning-export-facts,
+.ct-planning-export-lanes,
+.ct-planning-artifact-grid {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ct-planning-reconstruction-grid,
+.ct-planning-implant-grid,
+.ct-planning-implant-fit-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}

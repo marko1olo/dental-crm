@@ -222,6 +222,7 @@ export function ImagingView(props: ImagingViewProps) {
 				}}
 			/>
 
+			{/* <CbctMprImplantStudioModal patientId={activePatient?.id} /> delegated canonically to ImagingViewModals */}
 			<ImagingViewModals
 				isCbctStudioOpen={activeModal === "cbct_studio"} setIsCbctStudioOpen={(o) => setActiveModal(o ? "cbct_studio" : null)}
 				isCtSelectorOpen={activeModal === "ct_selector"} setIsCtSelectorOpen={(o) => setActiveModal(o ? "ct_selector" : null)}

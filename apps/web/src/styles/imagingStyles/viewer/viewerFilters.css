@@ -1,0 +1,89 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER KIND & PATIENT FILTERS (viewerFilters.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Kind selectors, chips & patient strip.
+   ========================================================================== */
+.imaging-patient-strip {
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: flex-start !important;
+	flex-wrap: nowrap !important;
+	gap: 6px !important;
+	padding: 0 10px !important;
+	min-height: 36px !important;
+	height: 36px !important;
+	border-radius: 12px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	white-space: nowrap !important;
+}
+
+.imaging-patient-strip article {
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	width: auto !important;
+}
+
+.imaging-patient-strip span,
+.imaging-patient-strip small {
+	color: var(--ink-muted) !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	line-height: 1 !important;
+}
+
+.imaging-patient-strip strong {
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+}
+
+.imaging-kind-filter {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 2px;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
+	padding: 2px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.imaging-kind-filter button {
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	color: var(--ink-muted);
+	font-weight: 600;
+	min-height: 30px;
+	height: 30px;
+	padding: 0 10px;
+	font-size: 12px;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.imaging-kind-filter button.active,
+.imaging-kind-filter button[aria-selected="true"] {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+	font-weight: 700;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.imaging-kind-filter button:hover:not(.active):not([aria-selected="true"]) {
+	background: var(--paper-soft);
+	color: var(--ink);
+}

@@ -1,0 +1,84 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING BOARDS & WORKFLOWS (ctPlanningBoards.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Workflow boards, plan boards, metrics.
+   ========================================================================== */
+.ct-planning-workflow,
+.ct-planning-plan-board,
+.ct-planning-metric-grid {
+	display: grid;
+	gap: 8px;
+}
+
+.ct-planning-workflow {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-workflow.ct-planning-workflow-board {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.ct-planning-workflow-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ct-planning-plan-board {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-metric-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-planning-workflow article,
+.ct-planning-plan-board article,
+.ct-planning-metric-grid article {
+	background: rgba(0, 0, 0, 0.12);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.ct-planning-workflow article.locked,
+.ct-planning-metric-grid article.locked {
+	opacity: 0.78;
+}
+
+.ct-planning-plan-board article {
+	border-left: 3px solid #77d7c7;
+}
+
+.ct-planning-workflow strong,
+.ct-planning-plan-board strong,
+.ct-planning-metric-grid strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-workflow span,
+.ct-planning-plan-board span,
+.ct-planning-metric-grid span,
+.ct-planning-plan-board p,
+.ct-planning-metric-grid p,
+.ct-planning-metric-grid small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-plan-board span,
+.ct-planning-metric-grid span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	text-transform: uppercase;
+}

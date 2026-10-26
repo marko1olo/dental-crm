@@ -8,7 +8,7 @@
 import { calculateClinicalAttachmentLevel, PERIO_SITE_KEYS, type PerioChartSummary, type PerioSiteKey, type PerioToothRecord, type PeriodontalDiagnosisDetail } from "@dental/shared";
 import { Save } from "lucide-react";
 import React, { useState } from "react";
-import type { PerioExpressPresetId } from "../perioMath";
+import type { PerioExpressPresetId, PsrCode } from "../perioMath";
 import { MobilePerioKeypadDial } from "./MobilePerioKeypadDial";
 import { PerioMobileCockpitHeader } from "./PerioMobileCockpitHeader";
 import { PerioMobileCockpitKpi } from "./PerioMobileCockpitKpi";
@@ -39,6 +39,7 @@ export interface PerioMobileTouchCockpitProps {
 	readonly onSetAllIntact: () => void;
 	readonly onInsertToProtocol: () => void;
 	readonly insertStatus: boolean;
+	readonly onApplySextantCode?: ((sextantName: string, code: PsrCode, asterisk?: boolean) => void) | undefined;
 	readonly onSaveDraft?: (() => void) | undefined;
 	readonly syncStatus?: string | undefined;
 }
@@ -48,7 +49,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 	onKeypadDepth, onToggleBop, onTogglePlaque, onToggleSuppuration, onPrevSite, onNextSite,
 	onCycleMobility, onCycleFurcation, updateToothSite, updateToothProperties, summary,
 	aapDiagnosis, onApplyExpressPreset, onSetAllIntact, onInsertToProtocol, insertStatus,
-	onSaveDraft, syncStatus = "idle",
+	onApplySextantCode, onSaveDraft, syncStatus = "idle",
 }) => {
 	const [activeQuadrant, setActiveQuadrant] = useState<PerioQuadrantKey>("Q1");
 	const [isPsrDrawerOpen, setIsPsrDrawerOpen] = useState<boolean>(false);
@@ -62,7 +63,13 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 
 	return (
 		<div className="perio-mobile-touch-cockpit flex flex-col gap-3 w-full max-w-full overflow-x-clip select-none" data-testid="perio-mobile-cockpit">
-			<PerioMobileCockpitHeader aapDiagnosis={aapDiagnosis} insertStatus={insertStatus} onApplyExpressPreset={onApplyExpressPreset} onInsertToProtocol={onInsertToProtocol} />
+			<PerioMobileCockpitHeader
+				aapDiagnosis={aapDiagnosis}
+				insertStatus={insertStatus}
+				onApplyExpressPreset={onApplyExpressPreset}
+				onInsertToProtocol={onInsertToProtocol}
+				onOpenPsrDrawer={() => setIsPsrDrawerOpen(true)}
+			/>
 			<PerioMobileCockpitKpi summary={summary} />
 			<PerioMobileQuadrantBar
 				activeQuadrant={activeQuadrant} onSelectQuadrant={setActiveQuadrant} selectedToothNumber={selectedToothNumber}
@@ -101,7 +108,12 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 					</button>
 				</div>
 			)}
-			<PerioMobileDrawer isOpen={isPsrDrawerOpen} onClose={() => setIsPsrDrawerOpen(false)} onApplyNormAll={onSetAllIntact} />
+			<PerioMobileDrawer
+				isOpen={isPsrDrawerOpen}
+				onClose={() => setIsPsrDrawerOpen(false)}
+				onApplyNormAll={onSetAllIntact}
+				onApplySextantCode={onApplySextantCode}
+			/>
 		</div>
 	);
 });

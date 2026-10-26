@@ -1,0 +1,60 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING ARTIFACTS & CHIPS (ctPlanningArtifacts.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Artifact chips, export badges, action buttons.
+   ========================================================================== */
+.ct-planning-active-action-artifacts {
+	display: grid;
+	gap: 6px;
+}
+
+.ct-planning-active-artifact-chips,
+.ct-planning-export-scenario-artifacts,
+.ct-planning-workflow-issues {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.ct-planning-active-artifact-chips em,
+.ct-planning-export-scenario-artifacts em,
+.ct-planning-workflow-issues em {
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 999px;
+	color: #d7fff6;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 900;
+	line-height: 1.2;
+	padding: 4px 7px;
+}
+
+.ct-planning-active-artifact-chips em.blocked,
+.ct-planning-export-scenario-artifacts em.blocked {
+	border-color: rgba(240, 180, 75, 0.42);
+	color: #ffe2a8;
+}
+
+.ct-planning-active-artifact-chips em.draft,
+.ct-planning-export-scenario-artifacts em.draft {
+	border-color: rgba(119, 215, 199, 0.34);
+	color: #c4eee8;
+}
+
+.ct-planning-active-action-artifacts button {
+	background: rgba(119, 215, 199, 0.12);
+	border: 1px solid rgba(119, 215, 199, 0.4);
+	border-radius: 8px;
+	color: #eafffa;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 950;
+	justify-self: start;
+	min-height: 32px;
+	padding: 6px 9px;
+}
+
+.ct-planning-active-action-artifacts button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}

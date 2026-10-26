@@ -1,0 +1,118 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentMobileBottomSheet.css
+ * Apple HIG Mobile Bottom Sheet (<= 768px), tactile drag handle & thumb zone.
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+@media (max-width: 768px) {
+	.payment-modal-backdrop {
+		align-items: flex-end !important;
+		padding: 0 !important;
+		background: rgba(0, 0, 0, 0.65) !important;
+		backdrop-filter: blur(12px) !important;
+		-webkit-backdrop-filter: blur(12px) !important;
+	}
+
+	.payment-modal {
+		width: 100% !important;
+		max-width: 100vw !important;
+		border-radius: 24px 24px 0 0 !important;
+		max-height: 92dvh !important;
+		border-bottom: none !important;
+		border-left: none !important;
+		border-right: none !important;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35) !important;
+		animation: mobile-sheet-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+		overflow-x: clip !important;
+	}
+
+	@keyframes mobile-sheet-slide-up {
+		from { transform: translateY(100%); opacity: 0.8; }
+		to { transform: translateY(0); opacity: 1; }
+	}
+
+	.mobile-drag-handle-bar {
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line-strong, #94a3b8);
+		margin: 8px auto 4px auto;
+		opacity: 0.6;
+	}
+
+	.cash-bill-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+	}
+
+	.cash-bill-grid [data-testid="btn-cash-5000"] { order: 1; }
+	.cash-bill-grid [data-testid="btn-cash-2000"] { order: 2; }
+	.cash-bill-grid [data-testid="btn-cash-1000"] { order: 3; }
+	.cash-bill-grid [data-testid="btn-cash-exact"] { order: 4; }
+	.cash-bill-grid [data-testid="btn-cash-10000"] { display: none !important; }
+
+	.cash-add-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+		margin-top: 8px !important;
+	}
+
+	.cash-bill-chip,
+	.cash-add-chip,
+	.cash-exact-chip {
+		min-height: 52px !important;
+		height: 52px !important;
+		font-size: 15px !important;
+		border-radius: 14px !important;
+		padding: 0 12px !important;
+		font-weight: 800 !important;
+	}
+
+	.payment-method-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+	}
+
+	.payment-method-grid .payment-method-pill:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
+
+	.payment-method-pill {
+		min-height: 48px !important;
+		height: 48px !important;
+		font-size: 13px !important;
+	}
+
+	.mobile-sticky-checkout-bar {
+		position: sticky;
+		bottom: 0;
+		width: 100%;
+		background: var(--paper, #ffffff);
+		border-top: 1px solid var(--line, #cbd5e1);
+		padding: 12px 16px max(14px, env(safe-area-inset-bottom)) !important;
+		z-index: 40;
+		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	[data-theme="dark"] .mobile-sticky-checkout-bar {
+		background: #0f172a !important;
+		border-color: #334155 !important;
+	}
+
+	.payment-footer-cancel-btn {
+		display: none !important;
+	}
+
+	.payment-footer-submit-btn {
+		width: 100% !important;
+		min-width: 100% !important;
+		min-height: 52px !important;
+		height: 52px !important;
+		font-size: 15px !important;
+		border-radius: 16px !important;
+	}
+
+	.payment-enter-hint {
+		display: none !important;
+	}
+}

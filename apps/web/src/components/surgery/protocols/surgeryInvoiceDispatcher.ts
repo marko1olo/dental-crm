@@ -2,26 +2,29 @@
  * surgeryInvoiceDispatcher.ts — Диспатч хирургических услуг в счет/смету визита (Мандаты 8e, 8n).
  */
 
-import type { SurgicalService804n, SurgicalOperationNorm } from "../surgeryNormsCatalog";
+import type { SurgicalServiceItem, SurgicalOperationNorm } from "../surgeryNormsCatalog";
 
-export function getSurgicalServices804n(
+export function getSurgicalCatalogServices(
 	norm: SurgicalOperationNorm,
 	toothFdi?: number,
-): readonly SurgicalService804n[] {
+): readonly SurgicalServiceItem[] {
 	const effectiveTooth = toothFdi ?? norm.defaultToothFdi;
-	if (norm.order804nServices && norm.order804nServices.length > 0) {
-		return norm.order804nServices.map((s) => ({
+	const catalog = norm.catalogServices || norm.order804nServices;
+	if (catalog && catalog.length > 0) {
+		return catalog.map((s) => ({
 			...s,
 			toothNumber: effectiveTooth,
 		}));
 	}
 
-	if (norm.code804n) {
+	const code = norm.serviceCode || norm.code804n;
+	const title = norm.serviceTitle || norm.service804nTitle || norm.title;
+	if (code) {
 		return [
 			{
-				code: norm.code804n,
-				nameRu: norm.service804nTitle || norm.title,
-				name: norm.service804nTitle || norm.title,
+				code,
+				nameRu: title,
+				name: title,
 				priceRub: 3500,
 				quantity: 1,
 				suggestedPriceRub: 3500,
@@ -35,18 +38,20 @@ export function getSurgicalServices804n(
 	return [];
 }
 
+export const getSurgicalServices804n = getSurgicalCatalogServices;
+
 export function dispatchSurgicalServicesToInvoice(params: {
 	norm?: SurgicalOperationNorm | undefined;
 	toothFdi?: number | undefined;
-	customServices?: readonly SurgicalService804n[] | undefined;
-	onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
-}): readonly SurgicalService804n[] {
+	customServices?: readonly SurgicalServiceItem[] | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
+}): readonly SurgicalServiceItem[] {
 	const effectiveTooth = params.toothFdi ?? params.norm?.defaultToothFdi;
 	const services =
 		params.customServices && params.customServices.length > 0
 			? params.customServices.map((s) => ({ ...s, toothNumber: s.toothNumber ?? effectiveTooth }))
 			: params.norm
-				? getSurgicalServices804n(params.norm, effectiveTooth)
+				? getSurgicalCatalogServices(params.norm, effectiveTooth)
 				: [];
 
 	if (params.onAddToInvoice) {

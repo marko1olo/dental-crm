@@ -1,0 +1,77 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentFiscalReceipt.css
+ * Electronic fiscal receipt styling (Zero Bureaucracy, optional citizen INN).
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+.receipt-qr-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	background: #ffffff;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	margin: 12px 0;
+}
+
+.receipt-qr-box svg {
+	width: 140px;
+	height: 140px;
+}
+
+[data-theme="dark"] .receipt-qr-box {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+/* Fiscal requisites badges (WCAG AAA contrast) */
+.fiscal-citizen-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	background: #ecfdf5;
+	color: #065f46;
+	border: 1px solid #a7f3d0;
+}
+
+[data-theme="dark"] .fiscal-citizen-badge {
+	background: rgba(6, 78, 59, 0.4);
+	color: #a7f3d0;
+	border-color: rgba(52, 211, 153, 0.4);
+}
+
+.fiscal-legal-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	background: #eff6ff;
+	color: #1e40af;
+	border: 1px solid #bfdbfe;
+}
+
+[data-theme="dark"] .fiscal-legal-badge {
+	background: rgba(30, 58, 138, 0.4);
+	color: #bfdbfe;
+	border-color: rgba(96, 165, 250, 0.4);
+}
+
+.fiscal-receipt-meta {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 11px;
+	color: var(--muted, #64748b);
+	line-height: 1.4;
+}
+
+[data-theme="dark"] .fiscal-receipt-meta {
+	color: #94a3b8;
+}

@@ -1,0 +1,62 @@
+/* ==========================================================================
+   DENTE CRM — CT IMPLANT PLANNING LAYOUT (ctPlanningLayout.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Root suite, head, ready/locked badges.
+   ========================================================================== */
+.ct-planning-suite {
+	background: rgba(234, 255, 250, 0.06);
+	border: 1px solid rgba(215, 255, 246, 0.16);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 10px;
+}
+
+.ct-planning-suite.compact {
+	background: #102a2b;
+}
+
+.ct-planning-suite-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.ct-planning-suite-head div {
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+}
+
+.ct-planning-suite-head strong {
+	color: #eafffa;
+	font-size: 14px;
+	line-height: 1.2;
+}
+
+.ct-planning-suite-head span {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-suite-head > span {
+	border: 1px solid rgba(215, 255, 246, 0.18);
+	border-radius: 999px;
+	flex: 0 0 auto;
+	padding: 6px 9px;
+	white-space: nowrap;
+}
+
+.ct-planning-suite-head > span.ready {
+	background: rgba(119, 215, 199, 0.18);
+	color: #ddfff8;
+}
+
+.ct-planning-suite-head > span.locked {
+	background: rgba(240, 180, 75, 0.16);
+	color: #ffe5aa;
+}

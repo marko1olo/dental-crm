@@ -25,7 +25,7 @@ export type SurgicalOperationCategory = (typeof SURGICAL_OPERATION_CATEGORIES)[n
 
 export const surgicalOperationCategorySchema = z.enum(SURGICAL_OPERATION_CATEGORIES);
 
-export interface SurgicalService804n {
+export interface SurgicalServiceItem {
 	readonly code: string;
 	readonly nameRu: string;
 	readonly name: string;
@@ -37,7 +37,9 @@ export interface SurgicalService804n {
 	readonly isPrimary?: boolean | undefined;
 }
 
-export const surgicalService804nSchema = z.object({
+export type SurgicalService804n = SurgicalServiceItem;
+
+export const surgicalServiceItemSchema = z.object({
 	code: z.string().min(1),
 	nameRu: z.string().min(1),
 	name: z.string().min(1),
@@ -48,6 +50,8 @@ export const surgicalService804nSchema = z.object({
 	stageKind: z.string().optional(),
 	isPrimary: z.boolean().optional(),
 });
+
+export const surgicalService804nSchema = surgicalServiceItemSchema;
 
 export interface SurgicalMaterialItem {
 	readonly name: string;
@@ -70,6 +74,9 @@ export interface SurgicalOperationNorm {
 	readonly category: SurgicalOperationCategory;
 	readonly icd10: string;
 	readonly icd10Label: string;
+	readonly serviceCode?: string;
+	readonly serviceSubcode?: string;
+	readonly serviceTitle?: string;
 	readonly code804n?: string;
 	readonly code804nSubcode?: string;
 	readonly service804nTitle?: string;
@@ -77,7 +84,8 @@ export interface SurgicalOperationNorm {
 	readonly standardProtocolTextRu: string;
 	readonly anesthesiaDefaultRu: string;
 	readonly postOpRecommendationsRu: string;
-	readonly order804nServices?: readonly SurgicalService804n[];
+	readonly catalogServices?: readonly SurgicalServiceItem[];
+	readonly order804nServices?: readonly SurgicalServiceItem[];
 	readonly requiredMaterials: readonly SurgicalMaterialItem[];
 }
 
@@ -88,6 +96,9 @@ export const surgicalOperationNormSchema = z.object({
 	category: surgicalOperationCategorySchema,
 	icd10: z.string().min(1),
 	icd10Label: z.string().min(1),
+	serviceCode: z.string().optional(),
+	serviceSubcode: z.string().optional(),
+	serviceTitle: z.string().optional(),
 	code804n: z.string().optional(),
 	code804nSubcode: z.string().optional(),
 	service804nTitle: z.string().optional(),
@@ -95,7 +106,8 @@ export const surgicalOperationNormSchema = z.object({
 	standardProtocolTextRu: z.string().min(1),
 	anesthesiaDefaultRu: z.string().min(1),
 	postOpRecommendationsRu: z.string().min(1),
-	order804nServices: z.array(surgicalService804nSchema).optional(),
+	catalogServices: z.array(surgicalServiceItemSchema).optional(),
+	order804nServices: z.array(surgicalServiceItemSchema).optional(),
 	requiredMaterials: z.array(surgicalMaterialItemSchema),
 });
 
@@ -206,7 +218,8 @@ export const createSurgicalProtocolSchema = z.object({
 	protocolText: z.string().min(10),
 	anesthesiaText: z.string().optional().nullable(),
 	recommendationsText: z.string().optional().nullable(),
-	services804n: z.array(surgicalService804nSchema).default([]),
+	services: z.array(surgicalServiceItemSchema).default([]),
+	services804n: z.array(surgicalServiceItemSchema).default([]),
 	materialsUsed: z.array(surgicalMaterialItemSchema).default([]),
 	isOverdraftActive: z.boolean().default(false),
 	notes: z.string().optional().nullable(),

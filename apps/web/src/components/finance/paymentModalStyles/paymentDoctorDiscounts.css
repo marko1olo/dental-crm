@@ -1,0 +1,106 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentDoctorDiscounts.css
+ * Doctor discount preset chips (Mandate 8e: 100% warranty & doctor autonomy).
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+.discount-preset-chip {
+	height: 32px;
+	width: 100%;
+	padding: 0 6px;
+	border-radius: 9px;
+	font-weight: 700;
+	font-size: 11.5px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.discount-preset-chip:hover {
+	border-color: #f59e0b !important;
+	background: #fffbeb !important;
+	color: #b45309 !important;
+	transform: translateY(-1px);
+}
+
+.discount-preset-chip.is-active {
+	background: linear-gradient(135deg, #d97706, #b45309) !important;
+	border-color: #d97706 !important;
+	color: #ffffff !important;
+	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+[data-theme="dark"] .discount-preset-chip {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip:hover {
+	background: #451a03 !important;
+	border-color: #fbbf24 !important;
+	color: #fef3c7 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.is-active {
+	background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+	border-color: #fbbf24 !important;
+	color: #0f172a !important;
+}
+
+.discount-preset-chip.discount-preset-warranty {
+	border-color: var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+}
+
+.discount-preset-chip.discount-preset-warranty:hover {
+	border-color: #0d9488 !important;
+	background: #f0fdfa !important;
+	color: #0f766e !important;
+}
+
+.discount-preset-chip.discount-preset-warranty.is-active {
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	border-color: #0d9488 !important;
+	color: #ffffff !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty:hover {
+	background: rgba(19, 78, 74, 0.5) !important;
+	border-color: #2dd4bf !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty.is-active {
+	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+	border-color: #2dd4bf !important;
+	color: #ffffff !important;
+}
+
+.discount-preset-chip.discount-preset-combo {
+	border-color: #99f6e4 !important;
+	background: #f0fdfa !important;
+	color: #0f766e !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-combo {
+	background: rgba(19, 78, 74, 0.35) !important;
+	border-color: rgba(45, 212, 191, 0.4) !important;
+	color: #99f6e4 !important;
+}

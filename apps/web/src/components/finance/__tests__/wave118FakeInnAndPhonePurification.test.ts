@@ -122,7 +122,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 				"Must NOT include fake phone number",
 			);
 			assert.ok(
-				summary.includes("Курьерская доставка / Связь с клиникой: не указан."),
+				summary.includes("Связь с клиникой: не указан."),
 				"Outputs 'не указан' when phone is omitted",
 			);
 		});
@@ -142,7 +142,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 			});
 
 			assert.ok(
-				summary.includes("Курьерская доставка / Связь с клиникой: +7 (812) 333-22-11."),
+				summary.includes("Связь с клиникой: +7 (812) 333-22-11."),
 				"Must include provided clinic phone",
 			);
 		});

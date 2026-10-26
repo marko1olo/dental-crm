@@ -1,0 +1,53 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING EXPORT & FIT REASONS (ctPlanningExport.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Export status fills, missing alerts & fit reasons.
+   ========================================================================== */
+.ct-planning-export-summary,
+.ct-planning-export-release {
+	background: rgba(119, 215, 199, 0.1);
+}
+
+.ct-planning-export-summary.blocked,
+.ct-planning-export-release.blocked {
+	background: rgba(239, 111, 108, 0.1);
+}
+
+.ct-planning-export-focus,
+.ct-planning-export-fit {
+	background: rgba(215, 255, 246, 0.07);
+}
+
+.ct-planning-export-release.warning,
+.ct-planning-export-focus.warning,
+.ct-planning-export-fit.warning {
+	background: rgba(240, 180, 75, 0.1);
+}
+
+.ct-planning-export-missing p {
+	color: #ffd1d0;
+}
+
+.ct-planning-implant-fit-card.selected {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+}
+
+.ct-planning-implant-fit-reasons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.ct-planning-implant-fit-reasons em {
+	background: rgba(215, 255, 246, 0.08);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 999px;
+	color: #d7fff6;
+	font-size: 11px;
+	font-style: normal;
+	font-weight: 850;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+	padding: 3px 6px;
+}

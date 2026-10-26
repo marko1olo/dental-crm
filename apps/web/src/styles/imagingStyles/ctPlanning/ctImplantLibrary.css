@@ -1,0 +1,87 @@
+/* ==========================================================================
+   DENTE CRM — CT IMPLANT LIBRARY STRIP (ctImplantLibrary.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Implant catalog cards, metrics & selection.
+   ========================================================================== */
+.ct-implant-library-strip {
+	background: rgba(0, 0, 0, 0.12);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 9px;
+}
+
+.ct-implant-library-head {
+	align-items: start;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.ct-implant-library-head strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-implant-library-head span {
+	color: #b7dcd7;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	max-width: 680px;
+	text-align: right;
+}
+
+.ct-implant-library-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ct-implant-library-card {
+	background: rgba(234, 255, 250, 0.07);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-radius: 8px;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	gap: 4px;
+	font: inherit;
+	min-width: 0;
+	padding: 8px;
+	text-align: left;
+}
+
+.ct-implant-library-card:hover,
+.ct-implant-library-card:focus-visible,
+.ct-implant-library-card.selected {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+	outline: none;
+}
+
+.ct-implant-library-card span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.ct-implant-library-card strong {
+	color: #eafffa;
+	font-size: 14px;
+	line-height: 1.25;
+}
+
+.ct-implant-library-card p,
+.ct-implant-library-card small {
+	color: #c4eee8;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}

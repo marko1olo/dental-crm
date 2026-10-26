@@ -1,0 +1,102 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING SESSION STRIP & NOTES (viewerSessionAndNotes.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Session persistence status & annotation list.
+   ========================================================================== */
+.viewer-session-strip {
+	align-items: start;
+	border-top: 1px solid var(--line);
+	display: grid;
+	gap: 8px;
+	grid-template-columns: minmax(110px, auto) minmax(200px, 1fr) auto;
+	padding-top: 8px;
+}
+
+.viewer-save-state-queued,
+.viewer-save-state-error {
+	box-shadow: inset 3px 0 0 #f0b44c;
+	padding-left: 9px;
+}
+
+.viewer-save-state-saved {
+	box-shadow: inset 3px 0 0 #78d09a;
+	padding-left: 9px;
+}
+
+.viewer-session-strip > div:first-child {
+	display: grid;
+	gap: 2px;
+}
+
+.viewer-session-strip strong {
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.viewer-session-strip span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.viewer-session-strip input,
+.viewer-session-strip textarea {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	min-height: 36px;
+	padding: 6px 10px;
+	width: 100%;
+}
+
+.viewer-session-strip .secondary-button {
+	min-height: 34px;
+}
+
+.viewer-session-strip .viewer-session-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.viewer-note-missing {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 700;
+	grid-column: 1 / -1;
+	margin: 0;
+	padding: 6px 10px;
+}
+
+.viewer-annotation-list {
+	display: grid;
+	gap: 6px;
+}
+
+.viewer-annotation-list article {
+	background: var(--teal-surface, rgba(215, 255, 246, 0.08));
+	border: 1px solid var(--line, rgba(215, 255, 246, 0.18));
+	border-left: 3px solid var(--teal, #0d9488);
+	border-radius: 8px;
+	display: grid;
+	gap: 2px;
+	padding: 7px 8px;
+}
+
+.viewer-annotation-list strong {
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.viewer-annotation-list span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 800;
+}

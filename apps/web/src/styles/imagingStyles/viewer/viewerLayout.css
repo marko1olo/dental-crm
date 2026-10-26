@@ -1,0 +1,62 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER LAYOUT & WORKSPACE (viewerLayout.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Panel enter animation, copy & grid layout.
+   ========================================================================== */
+.imaging-panel {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+}
+
+section.imaging-panel {
+	animation-name: imaging-panel-enter;
+}
+
+@keyframes imaging-panel-enter {
+	from {
+		transform: translateY(12px);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+.imaging-copy {
+	align-items: center;
+	display: flex;
+	gap: 16px;
+	justify-content: space-between;
+}
+
+.imaging-copy h2 {
+	font-size: 18px;
+	line-height: 1.2;
+	margin: 0;
+	white-space: nowrap;
+}
+
+.imaging-actions {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 6px;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.imaging-layout {
+	align-items: start;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(360px, 0.9fr) minmax(360px, 1.1fr);
+}
+
+@media (max-width: 1024px) {
+	.imaging-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

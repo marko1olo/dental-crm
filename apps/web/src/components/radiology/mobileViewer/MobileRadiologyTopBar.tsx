@@ -44,17 +44,14 @@ export const MobileRadiologyTopBar: React.FC<MobileRadiologyTopBarProps> = ({
 				</span>
 			</button>
 
-			<div className="mobile-radiology-topbar-title min-w-0 flex-1 px-1">
+			<div className="mobile-radiology-topbar-title min-w-0 flex-1 px-1 overflow-hidden">
 				<div className="flex items-center justify-center">
 					<span
-						className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 shrink-0"
+						className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/30 truncate"
 						title={toothBadge}
 					>
 						{toothBadge}
 					</span>
-				</div>
-				<div className="text-[11px] text-slate-400 truncate mt-0.5 font-medium">
-					{studyDateStr} · {modalityTitle}
 				</div>
 			</div>
 
@@ -73,7 +70,8 @@ export const MobileRadiologyTopBar: React.FC<MobileRadiologyTopBarProps> = ({
 				<button
 					type="button"
 					onClick={onResetTransform}
-					className="mobile-radiology-icon-btn hidden sm:flex rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 items-center justify-center transition-all border border-white/10 cursor-pointer"
+					style={{ display: "none" }}
+					className="mobile-radiology-icon-btn rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 items-center justify-center transition-all border border-white/10 cursor-pointer"
 					data-testid="btn-mobile-reset-transform"
 					aria-label="Сбросить масштаб и положение"
 					title="Сброс (1:1)"

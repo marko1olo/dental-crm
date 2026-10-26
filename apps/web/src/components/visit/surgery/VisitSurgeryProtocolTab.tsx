@@ -1,4 +1,9 @@
 import type React from "react";
+import "../../surgery/styles/surgery-cards.css";
+import "../../surgery/styles/surgery-buttons.css";
+import "../../surgery/styles/surgery-toolbar.css";
+import "../../surgery/styles/surgery-overdraft-and-protocol.css";
+import "../../surgery/styles/surgery-memo.css";
 import { SURGICAL_OPERATION_NORMS, COMMON_SURGERY_TEETH } from "../../surgery/surgeryProtocols";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
 import { useVisitSurgeryState } from "./modules/useVisitSurgeryState";

@@ -13,6 +13,8 @@ export const EMERGENCY_PERIOSTOTOMY_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "emergency",
 		icd10: "K10.2",
 		icd10Label: "Воспалительные заболевания челюстей (острый гнойный периостит)",
+		serviceCode: "A16.07.011",
+		serviceTitle: "Вскрытие поднадкостничного очага воспаления (периостотомия)",
 		code804n: "A16.07.011",
 		service804nTitle: "Вскрытие поднадкостничного очага воспаления (периостотомия)",
 		defaultToothFdi: 46,

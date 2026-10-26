@@ -2,11 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Zap, CheckCircle2, ShieldCheck, Layers, Plus, SlidersHorizontal } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
-	getSinusGbrServices,
-	getSinusGbrServices804n,
+	getSinusGbrSurgicalServices,
 	dispatchSurgicalServicesToInvoice,
 	type SurgicalServiceItem,
-	type SurgicalService804n,
 } from "../../surgery/surgeryProtocols";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
 import { triggerHaptic } from "../../../native/mobileBridge";
@@ -95,7 +93,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 
 	// 1-клик начисление услуг синус-лифтинга и костной пластики в смету визита
 	const handleAddServicesToInvoice = () => {
-		const services = getSinusGbrServices804n({
+		const services = getSinusGbrSurgicalServices({
 			isClosedSinus,
 			toothFdi: effectiveTooth,
 			membrane: selectedMembrane,
@@ -128,7 +126,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 		onApplyProtocolText(text);
 
 		// Auto-dispatch services to invoice
-		const services = getSinusGbrServices804n({
+		const services = getSinusGbrSurgicalServices({
 			isClosedSinus,
 			toothFdi: effectiveTooth,
 			membrane,

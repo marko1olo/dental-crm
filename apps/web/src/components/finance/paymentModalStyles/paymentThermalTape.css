@@ -1,0 +1,114 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentThermalTape.css
+ * Thermal receipt paper simulation, tear perforation & dark mode eye hygiene.
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+.receipt-tape-container {
+	position: relative;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding: 2px 4px;
+}
+
+.receipt-tape-paper {
+	background: #ffffff !important;
+	color: #0f172a !important;
+	box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.12);
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	width: 100%;
+	max-width: 360px;
+	padding: 8px 12px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 11px;
+	line-height: 1.25;
+	user-select: text;
+	position: relative;
+}
+
+.receipt-tape-paper h1,
+.receipt-tape-paper h2,
+.receipt-tape-paper h3,
+.receipt-tape-paper p,
+.receipt-tape-paper span,
+.receipt-tape-paper strong,
+.receipt-tape-paper div {
+	color: #0f172a;
+}
+
+[data-theme="dark"] .receipt-tape-paper,
+.dark .receipt-tape-paper {
+	background: #0f172a !important;
+	color: #f1f5f9 !important;
+	border-color: #334155 !important;
+	box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .receipt-tape-paper h1,
+[data-theme="dark"] .receipt-tape-paper h2,
+[data-theme="dark"] .receipt-tape-paper h3,
+[data-theme="dark"] .receipt-tape-paper p,
+[data-theme="dark"] .receipt-tape-paper span,
+[data-theme="dark"] .receipt-tape-paper strong,
+[data-theme="dark"] .receipt-tape-paper div,
+.dark .receipt-tape-paper h1,
+.dark .receipt-tape-paper h2,
+.dark .receipt-tape-paper h3,
+.dark .receipt-tape-paper p,
+.dark .receipt-tape-paper span,
+.dark .receipt-tape-paper strong,
+.dark .receipt-tape-paper div {
+	color: #e2e8f0;
+}
+
+.receipt-tape-tear-top {
+	position: absolute;
+	top: -5px;
+	left: 0;
+	right: 0;
+	height: 5px;
+	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+	background-size: 10px 10px;
+	opacity: 0.95;
+}
+
+.receipt-tape-tear-bottom {
+	position: absolute;
+	bottom: -5px;
+	left: 0;
+	right: 0;
+	height: 5px;
+	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+	background-size: 10px 10px;
+	opacity: 0.95;
+}
+
+[data-theme="dark"] .receipt-tape-tear-top,
+[data-theme="dark"] .receipt-tape-tear-bottom,
+.dark .receipt-tape-tear-top,
+.dark .receipt-tape-tear-bottom {
+	background: radial-gradient(circle, transparent, transparent 50%, #0f172a 50%, #0f172a 100%);
+	background-size: 10px 10px;
+}
+
+.receipt-divider-dashed {
+	border-top: 1px dashed #cbd5e1;
+	margin: 4px 0;
+}
+
+.receipt-divider-double {
+	border-top: 2px dashed #94a3b8;
+	margin: 5px 0;
+}
+
+[data-theme="dark"] .receipt-divider-dashed,
+.dark .receipt-divider-dashed {
+	border-top-color: #334155;
+}
+
+[data-theme="dark"] .receipt-divider-double,
+.dark .receipt-divider-double {
+	border-top-color: #475569;
+}

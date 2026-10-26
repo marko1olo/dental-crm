@@ -75,6 +75,15 @@
 	flex: 1;
 }
 
+@media (max-width: 640px) {
+	.mobile-radiology-topbar [data-testid="btn-mobile-reset-transform"] {
+		display: none !important;
+	}
+	.mobile-radiology-topbar-title div:last-child {
+		display: none !important;
+	}
+}
+
 /* 2. CHAIRSIDE VIEWPORT (DOMINANT BLACK CANVAS) */
 .mobile-radiology-viewport {
 	position: relative;

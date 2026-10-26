@@ -4,7 +4,7 @@
 
 export const COMMON_SURGERY_TEETH = [46, 36, 16, 26, 48, 38, 18, 28, 11, 21, 14, 24, 34, 44] as const;
 
-export const EXTRACTION_804N_CODES = {
+export const EXTRACTION_SURGICAL_CODES = {
 	SIMPLE: "A16.07.001",
 	COMPLEX_SEPARATION: "A16.07.001.001",
 	IMPACTED_DYSTOPIC: "A16.07.001.002",
@@ -15,6 +15,8 @@ export const EXTRACTION_804N_CODES = {
 	ANESTHESIA_INFILTRATION: "A11.07.015",
 	ANESTHESIA_CONDUCTION: "A11.07.016",
 } as const;
+
+export const EXTRACTION_804N_CODES = EXTRACTION_SURGICAL_CODES;
 
 export type ExtractionComplexity = "simple" | "complex" | "impacted_dystopic";
 export type SurgicalHemostasisMethod = "alvogyl" | "hemostatic_sponge" | "vicryl_suture" | "tampon";
@@ -55,6 +57,7 @@ export const SURGICAL_HEMOSTASIS_OPTIONS: readonly SurgicalHemostasisOption[] = 
 
 export interface ExtractionComplexityOption {
 	readonly id: ExtractionComplexity;
+	readonly serviceCode: string;
 	readonly code804n: string;
 	readonly labelRu: string;
 	readonly badge: string;
@@ -65,7 +68,8 @@ export interface ExtractionComplexityOption {
 export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[] = [
 	{
 		id: "simple",
-		code804n: EXTRACTION_804N_CODES.SIMPLE,
+		serviceCode: EXTRACTION_SURGICAL_CODES.SIMPLE,
+		code804n: EXTRACTION_SURGICAL_CODES.SIMPLE,
 		labelRu: "Простое удаление постоянного зуба (щипцы / элеватор)",
 		badge: "Простое (A16.07.001)",
 		normId: "surgery_extraction_simple",
@@ -73,7 +77,8 @@ export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[
 	},
 	{
 		id: "complex",
-		code804n: EXTRACTION_804N_CODES.COMPLEX_SEPARATION,
+		serviceCode: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION,
+		code804n: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION,
 		labelRu: "Сложное удаление с разъединением корней бором Lindemann",
 		badge: "Сложное (A16.07.001.001)",
 		normId: "surgery_extraction_complex",
@@ -81,7 +86,8 @@ export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[
 	},
 	{
 		id: "impacted_dystopic",
-		code804n: EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC,
+		serviceCode: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC,
+		code804n: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC,
 		labelRu: "Удаление ретинированного / дистопированного зуба с лоскутом",
 		badge: "Ретинированный (A16.07.001.002)",
 		normId: "surgery_extraction_atypical",

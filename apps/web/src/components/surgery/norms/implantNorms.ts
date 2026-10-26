@@ -13,6 +13,8 @@ export const IMPLANT_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "implant",
 		icd10: "K08.1",
 		icd10Label: "Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
+		serviceCode: "A16.07.054",
+		serviceTitle: "Внутрикостная дентальная имплантация",
 		code804n: "A16.07.054",
 		service804nTitle: "Внутрикостная дентальная имплантация",
 		defaultToothFdi: 46,

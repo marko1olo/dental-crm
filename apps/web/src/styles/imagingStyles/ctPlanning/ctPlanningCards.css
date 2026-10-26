@@ -1,0 +1,89 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING CARDS & STATE BORDERS (ctPlanningCards.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Card base styling, state color indicators.
+   ========================================================================== */
+:is(
+	.ct-planning-task-board article, .ct-planning-task,
+	.ct-planning-workflow-summary, .ct-planning-workflow-focus,
+	.ct-planning-workflow-step, .ct-planning-workflow-warnings,
+	.ct-planning-geometry-card, .ct-planning-validation-card,
+	.ct-planning-measurement-summary, .ct-planning-measurement-card,
+	.ct-planning-measurement-warnings, .ct-planning-implant-fit-summary,
+	.ct-planning-implant-fit-card, .ct-planning-implant-fit-warnings,
+	.ct-planning-implant-summary, .ct-planning-implant-card,
+	.ct-planning-implant-warnings, .ct-planning-reconstruction-summary,
+	.ct-planning-reconstruction-card, .ct-planning-reconstruction-warnings,
+	.ct-planning-export-summary, .ct-planning-export-release,
+	.ct-planning-export-focus, .ct-planning-export-fit,
+	.ct-planning-export-fact, .ct-planning-export-card,
+	.ct-planning-export-missing, .ct-planning-artifact-summary,
+	.ct-planning-artifact-card
+) {
+	background: rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(215, 255, 246, 0.14);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+	padding: 10px;
+}
+
+:is(
+	.ct-planning-task-board article.blocked, .ct-planning-task.blocked,
+	.ct-planning-workflow-summary.active, .ct-planning-workflow-focus.active,
+	.ct-planning-workflow-step.active, .ct-planning-geometry-card.attention,
+	.ct-planning-validation-card.warn, .ct-planning-measurement-summary.draft,
+	.ct-planning-measurement-card.draft, .ct-planning-implant-fit-summary.draft,
+	.ct-planning-implant-fit-card.draft, .ct-planning-implant-summary.draft,
+	.ct-planning-implant-card.draft, .ct-planning-reconstruction-summary.draft,
+	.ct-planning-reconstruction-card.draft, .ct-planning-export-summary.warning,
+	.ct-planning-export-release.warning, .ct-planning-export-focus.warning,
+	.ct-planning-export-fit.warning, .ct-planning-export-fact.warning,
+	.ct-planning-export-card.warning, .ct-planning-artifact-card.draft
+) {
+	border-left-color: #f0b44b;
+}
+
+:is(
+	.ct-planning-validation-card.fail, .ct-planning-workflow-summary.blocked,
+	.ct-planning-workflow-focus.blocked, .ct-planning-workflow-step.blocked,
+	.ct-planning-workflow-warnings, .ct-planning-measurement-summary.blocked,
+	.ct-planning-measurement-card.blocked, .ct-planning-measurement-warnings,
+	.ct-planning-implant-fit-summary.blocked, .ct-planning-implant-fit-card.blocked,
+	.ct-planning-implant-fit-warnings, .ct-planning-implant-summary.blocked,
+	.ct-planning-implant-card.blocked, .ct-planning-implant-warnings,
+	.ct-planning-reconstruction-summary.blocked, .ct-planning-reconstruction-card.blocked,
+	.ct-planning-reconstruction-warnings, .ct-planning-export-summary.blocked,
+	.ct-planning-export-release.blocked, .ct-planning-export-focus.blocked,
+	.ct-planning-export-fit.blocked, .ct-planning-export-fact.blocked,
+	.ct-planning-export-card.blocked, .ct-planning-export-missing,
+	.ct-planning-artifact-card.blocked
+) {
+	border-left-color: #ef6f6c;
+}
+
+:is(
+	.ct-planning-validation-card.pass, .ct-planning-workflow-summary.ready,
+	.ct-planning-workflow-focus.ready, .ct-planning-workflow-step.ready,
+	.ct-planning-measurement-summary.ready, .ct-planning-measurement-card.ready,
+	.ct-planning-implant-fit-summary.ready, .ct-planning-implant-fit-card.ready,
+	.ct-planning-implant-summary.ready, .ct-planning-implant-card.ready,
+	.ct-planning-reconstruction-summary.ready, .ct-planning-reconstruction-card.ready,
+	.ct-planning-export-summary.ready, .ct-planning-export-release.ready,
+	.ct-planning-export-focus.ready, .ct-planning-export-fit.ready,
+	.ct-planning-export-fact.ready, .ct-planning-export-card.ready,
+	.ct-planning-artifact-card.ready
+) {
+	border-left-color: #77d7c7;
+}
+
+:is(
+	.ct-planning-task.active,
+	.ct-planning-workflow-focus.active,
+	.ct-planning-workflow-step.active
+) {
+	background: rgba(119, 215, 199, 0.14);
+	border-color: rgba(119, 215, 199, 0.42);
+}

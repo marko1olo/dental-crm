@@ -1,0 +1,88 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER COMPARISON STRIP (viewerCompare.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Side-by-side comparison thumbnail list.
+   ========================================================================== */
+.imaging-compare-strip {
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.imaging-compare-head {
+	align-items: end;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+}
+
+.imaging-compare-head strong {
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 950;
+}
+
+.imaging-compare-head span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 850;
+	text-align: right;
+}
+
+.imaging-compare-list {
+	display: grid;
+	gap: 7px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.imaging-compare-list button {
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	cursor: pointer;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 54px minmax(0, 1fr);
+	min-height: 62px;
+	padding: 6px;
+	text-align: left;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.imaging-compare-list button:hover {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+}
+
+.imaging-compare-list img {
+	aspect-ratio: 1;
+	border-radius: 7px;
+	height: 54px;
+	object-fit: cover;
+	width: 54px;
+}
+
+.imaging-compare-list span {
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+}
+
+.imaging-compare-list strong {
+	font-size: 12px;
+	font-weight: 950;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+.imaging-compare-list small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 850;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+}

@@ -1,0 +1,100 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER TOOLBARS & SLIDERS (viewerToolbars.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Viewport tools, contrast/brightness sliders.
+   ========================================================================== */
+.imaging-unified-toolbar {
+	height: 48px;
+	min-height: 48px;
+	max-height: 52px;
+	overflow-x: clip;
+	max-width: 100vw;
+}
+
+.imaging-unified-toolbar .secondary-button,
+.imaging-unified-toolbar .primary-button {
+	height: 36px !important;
+	min-height: 36px !important;
+	padding: 0 12px !important;
+	font-size: 12px !important;
+	gap: 6px !important;
+	border-radius: 12px !important;
+}
+
+.imaging-viewer-toolbar {
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	display: grid;
+	gap: 10px;
+	padding: 10px;
+}
+
+.imaging-viewer-tools {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.imaging-viewer-tools::-webkit-scrollbar {
+	display: none;
+}
+
+.viewer-tool-button {
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	display: inline-flex;
+	font-weight: 900;
+	height: 36px;
+	min-height: 36px;
+	justify-content: center;
+	min-width: 36px;
+	padding: 0 8px;
+	flex-shrink: 0;
+	white-space: nowrap;
+	transition: all 0.15s ease-in-out;
+}
+
+.viewer-tool-button.active,
+.viewer-tool-button:hover {
+	background: var(--teal-fill, var(--teal));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal);
+}
+
+.viewer-tool-button svg {
+	height: 18px;
+	width: 18px;
+}
+
+.viewer-slider-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.viewer-slider-grid label {
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 5px;
+}
+
+.viewer-slider-grid input {
+	accent-color: var(--teal);
+	width: 100%;
+}
+
+@media (max-width: 768px) {
+	.viewer-tool-button {
+		height: 44px;
+		min-height: 44px;
+		min-width: 44px;
+	}
+}

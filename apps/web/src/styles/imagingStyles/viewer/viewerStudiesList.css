@@ -1,0 +1,91 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING STUDIES LIST & ROWS (viewerStudiesList.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Study cards, thumbnail previews & actions.
+   ========================================================================== */
+.imaging-empty {
+	align-content: center;
+	display: grid;
+	gap: 10px;
+	justify-items: center;
+	min-height: 220px;
+	padding: 20px;
+	text-align: center;
+}
+
+.imaging-empty svg {
+	height: 34px;
+	width: 34px;
+}
+
+.imaging-list {
+	align-content: start;
+	display: grid;
+	gap: 9px;
+}
+
+.imaging-row {
+	align-items: center;
+	background: var(--paper-strong, var(--paper, #fbfefd));
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	color: var(--ink);
+	display: grid;
+	gap: 12px;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
+	min-height: 76px;
+	padding: 12px;
+	text-align: left;
+}
+
+.imaging-row.active {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.imaging-row img {
+	background: #0b2426;
+	border-radius: 7px;
+	height: 64px;
+	object-fit: cover;
+	width: 92px;
+}
+
+.imaging-row h3 {
+	font-size: 15px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.imaging-row p {
+	color: var(--muted);
+	margin: 4px 0;
+}
+
+.imaging-row span {
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 850;
+}
+
+.imaging-row-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+	justify-content: flex-end;
+}
+
+.imaging-row-select {
+	min-height: 36px;
+	white-space: nowrap;
+}
+
+.imaging-row-select[aria-pressed="true"] {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.imaging-needs_review {
+	border-left: 4px solid var(--amber);
+}

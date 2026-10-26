@@ -1,0 +1,104 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentActionButtons.css
+ * Apple HIG Primary CTA buttons (>= 52px), tender variations & cashier autonomy.
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+.payment-footer-submit-btn {
+	min-height: 52px !important;
+	height: 52px !important;
+	padding: 0 20px;
+	border-radius: 14px;
+	font-size: 14px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	border: 1px solid transparent !important;
+	color: #ffffff !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+	user-select: none;
+}
+
+.payment-footer-submit-btn:hover:not(:disabled) {
+	transform: translateY(-1px);
+	filter: brightness(1.08);
+}
+
+.payment-footer-submit-btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.payment-footer-submit-btn.btn-cash,
+.payment-footer-submit-btn.btn-card,
+.payment-footer-submit-btn.btn-sbp,
+.payment-footer-submit-btn.btn-split,
+.payment-footer-submit-btn.btn-deposit,
+.payment-footer-submit-btn.btn-warranty {
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+}
+
+.cash-submit-primary-btn {
+	min-height: 52px !important;
+	height: 52px !important;
+	width: 100%;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #059669, #047857) !important;
+	border: 1px solid #047857 !important;
+	color: #ffffff !important;
+	font-weight: 800 !important;
+	font-size: 13.5px !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.cash-submit-primary-btn:hover:not(:disabled) {
+	background: linear-gradient(135deg, #047857, #065f46) !important;
+	transform: translateY(-1px);
+	box-shadow: 0 5px 14px rgba(5, 150, 105, 0.45);
+}
+
+[data-theme="dark"] .cash-submit-primary-btn {
+	background: linear-gradient(135deg, #059669, #10b981) !important;
+	border-color: #34d399 !important;
+	color: #ffffff !important;
+}
+
+.payment-footer-cancel-btn {
+	min-height: 40px;
+	height: 40px;
+	padding: 0 16px;
+	border-radius: 12px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--muted, #64748b) !important;
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.payment-footer-cancel-btn:hover {
+	background: var(--paper, #ffffff) !important;
+	color: var(--ink, #0f172a) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
+}
+
+[data-theme="dark"] .payment-footer-cancel-btn {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #94a3b8 !important;
+}

@@ -1,0 +1,112 @@
+/**
+ * apps/web/src/components/finance/paymentModalStyles/paymentModalBase.css
+ * Base typography, resets, drawer tabs & close button.
+ * Mandate 8b: strictly <= 120 lines.
+ */
+
+.payment-modal button,
+.receipt-preview-root button,
+.cash-register-drawer button {
+	font-family: inherit;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.payment-modal h2,
+.payment-modal h3,
+.payment-modal strong {
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) h2,
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) h3:not(.receipt-tape-paper h3),
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) strong:not(.receipt-tape-paper strong) {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .payment-modal p:not(.receipt-tape-paper p),
+[data-theme="dark"] .payment-modal label:not(.receipt-tape-paper label) {
+	color: #94a3b8 !important;
+}
+
+.cash-drawer-tabs {
+	display: flex;
+	border-bottom: 1.5px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	padding: 0 16px;
+	gap: 4px;
+	flex-shrink: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .cash-drawer-tabs {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+.cash-drawer-tab-btn {
+	padding: 10px 14px;
+	font-size: 12px;
+	font-weight: 700;
+	border: none !important;
+	border-bottom: 2.5px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted, #64748b) !important;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.cash-drawer-tab-btn:hover { color: var(--ink, #0f172a) !important; }
+
+.cash-drawer-tab-btn.is-active {
+	border-bottom-color: var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+	font-weight: 800;
+}
+
+[data-theme="dark"] .cash-drawer-tab-btn { color: #94a3b8 !important; }
+[data-theme="dark"] .cash-drawer-tab-btn:hover { color: #f1f5f9 !important; }
+[data-theme="dark"] .cash-drawer-tab-btn.is-active {
+	border-bottom-color: #2dd4bf !important;
+	color: #2dd4bf !important;
+}
+
+.payment-modal-close-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--muted, #64748b) !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.payment-modal-close-btn:hover {
+	border-color: #ef4444 !important;
+	background: #fef2f2 !important;
+	color: #dc2626 !important;
+}
+
+[data-theme="dark"] .payment-modal-close-btn {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .payment-modal-close-btn:hover {
+	background: #450a0a !important;
+	border-color: #f87171 !important;
+	color: #fca5a5 !important;
+}

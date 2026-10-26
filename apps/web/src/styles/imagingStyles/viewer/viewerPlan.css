@@ -1,0 +1,54 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER PLAN & CHIPS (viewerPlan.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. CBCT MPR plans and plan chip tags.
+   ========================================================================== */
+.imaging-viewer-plan {
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.imaging-viewer-plan.viewer-plan-cbct_mpr {
+	border-left-color: var(--amber);
+}
+
+.imaging-viewer-plan > div:first-child,
+.imaging-viewer-plan .viewer-plan-header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+}
+
+.imaging-viewer-plan strong {
+	color: var(--ink);
+	font-size: 13px;
+	line-height: 1.2;
+}
+
+.imaging-viewer-plan span,
+.imaging-viewer-plan small {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.viewer-plan-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.viewer-plan-chip-row span {
+	background: var(--teal-surface);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--ink);
+	padding: 5px 7px;
+}

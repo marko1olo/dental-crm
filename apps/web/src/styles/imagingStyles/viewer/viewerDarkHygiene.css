@@ -1,0 +1,87 @@
+/* ==========================================================================
+   DENTE CRM — DARK ROOM HYGIENE & APPLE HIG (viewerDarkHygiene.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Dark Room Hygiene & touch ergonomics.
+   ========================================================================== */
+.imaging-viewer-stage,
+.imaging-viewer-canvas,
+.dicom-viewport-container {
+	background-color: #020617 !important;
+	border-color: #1e293b !important;
+}
+
+/* Semi-transparent dark HUD overlays with glassmorphism */
+.imaging-hud-overlay,
+.imaging-viewer-hud {
+	background: rgba(15, 23, 42, 0.85) !important;
+	backdrop-filter: blur(12px) !important;
+	border: 1px solid rgba(51, 65, 85, 0.5) !important;
+	border-radius: 12px;
+	color: #f8fafc !important;
+}
+
+/* Dark mode theme hygiene — zero blinding borders */
+[data-theme="dark"] .imaging-panel,
+[data-theme="dark"] .imaging-viewer,
+[data-theme="dark"] .imaging-row {
+	background: #0b0f19;
+	border-color: #1e293b;
+	color: #f1f5f9;
+}
+
+[data-theme="dark"] .imaging-row.active {
+	border-color: #0d9488;
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3);
+}
+
+[data-theme="dark"] .imaging-viewer-toolbar {
+	background: #0f172a;
+	border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .viewer-tool-button {
+	background: #1e293b;
+	border-color: #334155;
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .viewer-tool-button:hover,
+[data-theme="dark"] .viewer-tool-button.active {
+	background: #0d9488;
+	border-color: #14b8a6;
+	color: #ffffff;
+}
+
+/* Apple HIG Touch Target & Mobile Zero Horizontal Drift */
+.mobile-radiology-viewer,
+.mobile-radiology-topbar,
+.mobile-radiology-bottom-bar {
+	background: #020617 !important;
+	border-color: #1e293b !important;
+}
+
+@media (max-width: 768px) {
+	.imaging-panel {
+		padding: 10px;
+		gap: 10px;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.imaging-viewer-tools button,
+	.imaging-actions button,
+	.viewer-tool-button,
+	.imaging-kind-filter button {
+		min-height: 44px;
+		min-width: 44px;
+	}
+
+	.imaging-row {
+		min-height: 80px;
+		padding: 10px;
+	}
+
+	.imaging-viewer-stage {
+		min-height: 50vh;
+	}
+}

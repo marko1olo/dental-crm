@@ -4,18 +4,18 @@
  */
 
 import type {
+	SurgicalServiceItem,
 	SurgicalService804n,
 	SurgicalOperationNorm,
 	SurgicalWarehouseOverdraftStatus,
 } from "@dental/shared";
 
 export type {
+	SurgicalServiceItem,
 	SurgicalService804n,
 	SurgicalOperationNorm,
 	SurgicalWarehouseOverdraftStatus,
 };
-
-export type SurgicalServiceItem = SurgicalService804n;
 
 export * from "./norms/surgeryCanonicalTexts";
 export * from "./norms/surgeryImplantProtocolBuilder";

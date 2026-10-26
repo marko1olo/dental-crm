@@ -39,17 +39,17 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 
 	if (activeMethod === "cash") {
 		return (
-			<button type="button" onClick={execHook.handleCashSubmit} disabled={execHook.isSubmittingCash} className="payment-footer-submit-btn btn-cash min-h-[44px] w-full sm:w-auto" data-testid="btn-cash-submit-footer">
+			<button type="button" onClick={execHook.handleCashSubmit} disabled={execHook.isSubmittingCash} title="Оплатить наличными (Enter)" className="payment-footer-submit-btn btn-cash min-h-[44px] w-full sm:w-auto" data-testid="btn-cash-submit-footer">
 				<span data-testid="btn-cash-submit" className="sr-only">Принять наличные</span>
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
-				<span className="truncate">Оплатить наличными (Enter) — {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+				<span className="truncate">Оплатить наличными — {totalDueRub.toLocaleString("ru-RU")} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "sbp_qr") {
 		return (
-			<button type="button" onClick={execHook.handleConfirmSbpManual} disabled={tendersHook.isCheckingSbp} className="payment-footer-submit-btn btn-sbp min-h-[44px] w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
+			<button type="button" onClick={execHook.handleConfirmSbpManual} disabled={tendersHook.isCheckingSbp} title="Оплатить через СБП" className="payment-footer-submit-btn btn-sbp min-h-[44px] w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="truncate">Оплатить через СБП ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 			</button>
@@ -58,7 +58,7 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 
 	if (activeMethod === "split") {
 		return (
-			<button type="button" onClick={execHook.handleSplitSubmit} disabled={execHook.isSubmittingSplit} className="payment-footer-submit-btn btn-split min-h-[44px] w-full sm:w-auto" data-testid="btn-split-submit-footer">
+			<button type="button" onClick={execHook.handleSplitSubmit} disabled={execHook.isSubmittingSplit} title="Оплатить сплит" className="payment-footer-submit-btn btn-split min-h-[44px] w-full sm:w-auto" data-testid="btn-split-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="truncate">Оплатить сплит ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 			</button>
@@ -67,7 +67,7 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 
 	if (activeMethod === "family_deposit") {
 		return (
-			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} disabled={execHook.isSubmittingDeposit} className="payment-footer-submit-btn btn-deposit min-h-[44px] w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
+			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} disabled={execHook.isSubmittingDeposit} title="Оплатить с депозита" className="payment-footer-submit-btn btn-deposit min-h-[44px] w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
 				{srReceiptAnchor}<Wallet size={16} className="shrink-0" />
 				<span className="truncate">Оплатить с депозита ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 			</button>
@@ -75,9 +75,9 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 	}
 
 	return (
-		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} disabled={execHook.isSubmittingManualCard} className="payment-footer-submit-btn btn-card min-h-[44px] w-full sm:w-auto" data-testid="btn-card-submit-footer">
+		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} disabled={execHook.isSubmittingManualCard} title="Оплатить картой (Enter)" className="payment-footer-submit-btn btn-card min-h-[44px] w-full sm:w-auto" data-testid="btn-card-submit-footer">
 			{srReceiptAnchor}<CreditCard size={16} className="shrink-0" />
-			<span className="truncate">Оплатить картой (Enter) — {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+			<span className="truncate">Оплатить картой — {totalDueRub.toLocaleString("ru-RU")} ₽</span>
 		</button>
 	);
 };

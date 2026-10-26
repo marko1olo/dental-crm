@@ -284,7 +284,7 @@ export function calculateFamilyRefundRouting(params: {
 			requiresFiscalReceipt54Fz: true,
 			receiptType: "return_of_income",
 			description:
-				"Возврат наличными из кассы с обязательным формированием фискального чека «Возврат прихода» (54-ФЗ).",
+				"Возврат наличными из кассы с обязательным формированием кассового чека «Возврат прихода».",
 		};
 	}
 
@@ -293,7 +293,7 @@ export function calculateFamilyRefundRouting(params: {
 		requiresFiscalReceipt54Fz: true,
 		receiptType: "return_of_income",
 		description:
-			"Безналичный возврат на карту плательщика с формированием фискального чека «Возврат прихода» (54-ФЗ).",
+			"Безналичный возврат на карту плательщика с формированием кассового чека «Возврат прихода».",
 	};
 }
 

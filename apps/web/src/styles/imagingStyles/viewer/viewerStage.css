@@ -1,0 +1,86 @@
+/* ==========================================================================
+   DENTE CRM — IMAGING VIEWER STAGE & HUD (viewerStage.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Dark Room Hygiene: background #020617 / #0b0f19.
+   ========================================================================== */
+.imaging-viewer {
+	background: var(--paper-soft, #0b0f19);
+	border: 1px solid var(--line, #1e293b);
+	border-radius: 12px;
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	min-height: 70vh;
+	overflow: hidden;
+}
+
+.imaging-viewer-stage {
+	background: #020617;
+	min-height: 70vh;
+	overflow: hidden;
+	position: relative;
+	flex: 1;
+}
+
+.imaging-viewer-stage img {
+	display: block;
+	height: 100%;
+	min-height: 220px;
+	object-fit: contain;
+	transform-origin: center;
+	transition:
+		filter 0.14s ease,
+		transform 0.14s ease;
+	width: 100%;
+}
+
+.imaging-cbct-hint {
+	align-content: center;
+	background: rgba(15, 23, 42, 0.7);
+	border: 1px dashed var(--line-strong, #334155);
+	border-radius: 12px;
+	display: grid;
+	flex: 1;
+	gap: 8px;
+	padding: 20px 24px;
+	text-align: center;
+}
+
+.imaging-cbct-hint p {
+	color: var(--muted, #94a3b8);
+	margin: 0;
+	max-width: 60ch;
+	justify-self: center;
+}
+
+.imaging-viewer-meta {
+	background: linear-gradient(
+		180deg,
+		rgba(2, 6, 23, 0),
+		rgba(2, 6, 23, 0.94)
+	);
+	backdrop-filter: blur(8px);
+	bottom: 0;
+	display: grid;
+	gap: 5px;
+	left: 0;
+	padding: 48px 14px 14px;
+	position: absolute;
+	right: 0;
+	pointer-events: none;
+}
+
+.imaging-viewer-meta > * {
+	pointer-events: auto;
+}
+
+.imaging-viewer-meta strong {
+	font-size: 18px;
+	color: #f8fafc;
+}
+
+.imaging-viewer-meta span,
+.imaging-viewer-meta p {
+	color: #94a3b8;
+	margin: 0;
+}

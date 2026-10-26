@@ -271,7 +271,7 @@ export function printFamilyLedgerStatement(options: PrintFamilyLedgerOptions): v
 										: entry.entryType === "refund_deposit"
 											? "Возврат на депозит"
 											: entry.entryType === "refund_payout"
-												? "Выплата наличными (54-ФЗ)"
+												? "Выплата наличными (кассовый чек)"
 												: "Списание за лечение";
 								const isPlus =
 									entry.entryType === "deposit" ||

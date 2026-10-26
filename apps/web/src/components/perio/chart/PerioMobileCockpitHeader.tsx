@@ -1,10 +1,10 @@
 /**
- * PerioMobileCockpitHeader.tsx — Верхний блок мобильного кокпита: диагноз AAP/EFP и 1-клик пресеты.
+ * PerioMobileCockpitHeader.tsx — Верхний блок мобильного кокпита: диагноз AAP/EFP, 1-клик норма PSR 0 и скрининг.
  * Архитектурный слой Layer 4: UI Subcomponent (Мандат 8b, <= 120 строк).
  */
 
 import type { PeriodontalDiagnosisDetail } from "@dental/shared";
-import { Check, FileText, ShieldCheck } from "lucide-react";
+import { Check, FileText, Layers, ShieldCheck } from "lucide-react";
 import React from "react";
 import { UltrasonicScaler } from "../../icons/DentalIcons";
 import type { PerioExpressPresetId } from "../perioMath";
@@ -14,38 +14,48 @@ export interface PerioMobileCockpitHeaderProps {
 	readonly insertStatus: boolean;
 	readonly onApplyExpressPreset: (presetId: PerioExpressPresetId) => void;
 	readonly onInsertToProtocol: () => void;
+	readonly onOpenPsrDrawer?: (() => void) | undefined;
 }
 
 export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> = React.memo(({
-	aapDiagnosis, insertStatus, onApplyExpressPreset, onInsertToProtocol,
+	aapDiagnosis, insertStatus, onApplyExpressPreset, onInsertToProtocol, onOpenPsrDrawer,
 }) => {
 	const severityClass =
-		aapDiagnosis.severity === "intact"
-			? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
-			: aapDiagnosis.severity === "gingivitis"
-				? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
-				: aapDiagnosis.severity === "moderate"
-					? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30"
+		aapDiagnosis.severity === "intact" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
+			: aapDiagnosis.severity === "gingivitis" ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
+				: aapDiagnosis.severity === "moderate" ? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30"
 					: "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40";
 
 	return (
 		<div className="w-full flex flex-col gap-1.5">
-			<div className="w-full flex items-center justify-between gap-2">
+			<div className="w-full flex items-center justify-between gap-1.5">
 				<span className={`block flex-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border text-center truncate ${severityClass}`} title={aapDiagnosis.diagnosisNameRu}>
 					{aapDiagnosis.icd10Code} • {aapDiagnosis.diagnosisNameRu.split("(")[0]?.trim()}
 				</span>
+				{onOpenPsrDrawer && (
+					<button
+						type="button" onClick={onOpenPsrDrawer}
+						className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-800 dark:text-teal-200 shrink-0 flex items-center gap-1 cursor-pointer"
+						data-testid="perio-mobile-open-psr-btn"
+						data-test="perio-mobile-psr-btn"
+						title="Открыть экспресс-скрининг PSR (ВОЗ)"
+					>
+						<Layers size={14} className="text-teal-600 dark:text-teal-400" />
+						<span>PSR (0–4)</span>
+					</button>
+				)}
 			</div>
 
-			{/* 1-клик кнопки: «Норма» • «Гигиена» • «В дневник» */}
+			{/* 1-клик кнопки: «Интактен (PSR 0)» • «Гигиена» • «В дневник» */}
 			<div className="grid grid-cols-3 gap-1.5 w-full">
 				<button
 					type="button" onClick={() => onApplyExpressPreset("perio_norm_express")}
 					className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 active:scale-95 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-					title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, BOP 0%)"
+					title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, BOP 0%, PSR 0)"
 					data-testid="perio-toolbar-norm-1click-btn"
 				>
 					<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-					<span className="whitespace-nowrap">Норма</span>
+					<span className="whitespace-nowrap font-bold">Интактен (PSR 0)</span>
 				</button>
 
 				<button

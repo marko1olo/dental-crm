@@ -23,13 +23,34 @@
 | 8 | `mobile_light_cash_flow.png` | 390×844 (📱 Mobile Light) | Мобильная кассовая выемка/внесение: тач-таргеты $\ge 44\times 44\text{px}$, адаптивная верстка под большой палец. |
 | 9 | `mobile_dark_cash_flow.png` | 390×844 (📱 Mobile Dark) | Мобильная выемка в тёмной теме: отсутствие горизонтального скролла, контрастные элементы управления. |
 | 10 | `pc_light_fiscal_receipt.png` | 1440×900 (☀️ PC Light) | Печатная форма чека: «Кассовый чек и слип», 80мм лента, чистые реквизиты клиники, ноль канцелярита и сырых законов. |
+| 11 | `01_payment_modal_pc_light.png` | 1440×900 (☀️ PC Light) | Payment Modal Studio: Сумма 14 500 ₽, 4 способа оплаты (СБП, Терминал, Наличные, Семейный баланс), сплит, калькулятор сдачи, быстрые купюры, скидки врача, термочек 80мм/A4/SMS/Email, Primary CTA «Оплатить наличными — 14 500 ₽». |
+| 12 | `02_payment_modal_pc_dark.png` | 1440×900 (🌙 PC Dark) | Payment Modal Studio (Dark): тёмная тема `var(--paper-strong)`, контрастные границы, отсутствие паразитных белых рамок. |
+| 13 | `03_payment_modal_mobile_light.png` | 390×844 (📱 Mobile Light) | Payment Modal Mobile (Apple HIG): нативный Bottom Sheet Drawer, tactile drag handle 36×5px, 24px top radius, Hero сумма 38px bold по центру, купюры в 2 колонки, Sticky Bottom Checkout Bar 52px в Thumb Zone без обрезания текста. |
+| 14 | `04_payment_modal_mobile_dark.png` | 390×844 (📱 Mobile Dark) | Payment Modal Mobile (Dark HIG): глубокий контраст, 0px горизонтального скролла, безупречная сенсорная эргономика. |
 
 ---
 
-## 3. Результаты инструментальной верификации
+## 3. Red Team Визуальная Аутопсия по 8 Осям (Payment Studio)
+1. **Vertical Budget**: PC-модалка центрирована и идеально входит в 900px высоты. Mobile Bottom Sheet занимает до 92dvh со скроллируемым контентом и липким футером.
+2. **Geometry**: Радиус скругления 24px на мобильном Bottom Sheet, 36×5px drag handle по центру.
+3. **0px Horizontal Drift**: Отсутствие паразитного горизонтального дрифта (`max-width: 100vw; overflow-x: clip;`).
+4. **Typography**: Моноширинная hero-сумма 14 500 ₽ (38px bold), правильные неразрывные пробелы и знак рубля ₽.
+5. **Single Primary CTA**: Строго одна Primary CTA кнопка изумрудного оттенка на видимый экран («Оплатить наличными — 14 500 ₽»).
+6. **No White Glare in Dark Mode**: Отсутствие слепящих белых пятен, глубокий фон `var(--paper-strong)`, токены темы полностью соблюдены.
+7. **Touch Targets $\ge 44\times 44\text{px}$**: Главная кнопка 52px, плитки купюр 52px, переключатели способов оплаты 48px.
+8. **Clean Russian Language**: Ноль сырых номеров приказов, форм («ФФД 1.2», «54-ФЗ»). Чистый клинический язык: «Кассовый чек», «Оплата приёма», «Прием наличных денежных средств».
+
+---
+
+## 4. Результаты инструментальной верификации
 - **Компиляция TypeScript (`apps/web`)**: 0 ошибок во всем финансовом домене (`apps/web/src/components/finance/`).
 - **Модульные и интеграционные тесты (`vitest`)**:
-  - `npx vitest run apps/web/src/components/finance`: **41 passed (41 test files), 403 passed (403 tests), Duration: 16.48s, Exit Code 0**.
+  - `npx vitest run apps/web/src/components/finance apps/web/src/components/cashbox`: **62 passed (62 test files), 429 passed (429 tests), Duration: 28.64s, Exit Code 0**.
+- **Проверка CSS токенов (`node scripts/check-css-tokens.mjs`)**: 1347 CSS-файлов проверено, **0 неразрешенных `var()`**, Exit Code 0.
+- **Проверка кодировок (`npm run check:encoding`)**: 21 171 файлов проверено, 100% чистый UTF-8 без BOM, замечаний нет.
+- **Мандат 8b (Архитектурный лимит $\le 120$ строк)**:
+  - `paymentModalStudio.css` схлопнут в фасад из 16 строк ($\le 20$ строк).
+  - Все 12 модулей в `apps/web/src/components/finance/paymentModalStyles/` строго $\le 120$ строк.
 - **Бэкенд Fastify API (`npx tsx --test`)**:
   - `apps/api/src/routes/cashbox.test.ts`: **100% green**.
   - `apps/api/src/tests/routes/splitPaymentTreatmentConsumablesE2E.test.ts`: **100% PASS** (E2E сплит-оплата Карта + СБП + Семейный депозит -> Чек 54-ФЗ -> Списание со склада по техкартам).

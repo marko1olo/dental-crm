@@ -202,9 +202,11 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 	describe("3. FinanceView Integration (DEF-02, Mandates 8c, 8d, 8e)", () => {
 		it("FinanceView source mounts InvoicesView and renders btn-finance-open-invoices button", () => {
 			const toolbarPath = path.resolve(__dirname, "../FinanceToolbar.tsx");
+			const toolbarActionsPath = path.resolve(__dirname, "../toolbar/FinanceToolbarActions.tsx");
 			const modalPath = path.resolve(__dirname, "../FinanceInvoicesModal.tsx");
 			const source = fs.readFileSync(financeFilePath, "utf-8") +
 				(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "") +
+				(fs.existsSync(toolbarActionsPath) ? fs.readFileSync(toolbarActionsPath, "utf-8") : "") +
 				(fs.existsSync(modalPath) ? fs.readFileSync(modalPath, "utf-8") : "");
 
 			assert.ok(
@@ -239,7 +241,9 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("4. 7 Deadly Sins of UI & Theme Hygiene (DEF-06, Mandate 8d)", () => {
 		it("All status badges include WCAG AAA dark mode border tokens", () => {
-			const source = fs.readFileSync(invoicesFilePath, "utf-8");
+			const cardIdentityPath = path.resolve(__dirname, "../../billing/invoices/InvoiceCardIdentity.tsx");
+			const source = fs.readFileSync(invoicesFilePath, "utf-8") +
+				(fs.existsSync(cardIdentityPath) ? fs.readFileSync(cardIdentityPath, "utf-8") : "");
 
 			assert.ok(
 				source.includes("border-emerald-200 dark:border-emerald-800"),

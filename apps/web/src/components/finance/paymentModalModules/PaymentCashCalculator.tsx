@@ -42,7 +42,7 @@ export const PaymentCashCalculator: React.FC<PaymentCashCalculatorProps> = ({
 					<button
 						type="button"
 						onClick={() => setReceivedCashRub(totalDueRub)}
-						className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
+						className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1 bg-transparent border-0 shadow-none p-0"
 						data-testid="btn-cash-exact-amount"
 					>
 						<Coins size={12} />

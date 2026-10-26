@@ -1,0 +1,103 @@
+/* ==========================================================================
+   DENTE CRM — CT PLANNING TYPOGRAPHY & BUTTONS (ctPlanningTypography.css)
+   ==========================================================================
+   Mandate 8b: Strictly <= 120 lines. Spans, headings, text elements & action buttons.
+   ========================================================================== */
+:is(
+	.ct-planning-task-board, .ct-planning-task,
+	.ct-planning-workflow-summary, .ct-planning-workflow-focus,
+	.ct-planning-workflow-step, .ct-planning-workflow-warnings,
+	.ct-planning-geometry-card, .ct-planning-validation-card,
+	.ct-planning-measurement-summary, .ct-planning-measurement-card,
+	.ct-planning-measurement-warnings, .ct-planning-implant-fit-summary,
+	.ct-planning-implant-fit-card, .ct-planning-implant-fit-warnings,
+	.ct-planning-implant-summary, .ct-planning-implant-card,
+	.ct-planning-implant-warnings, .ct-planning-reconstruction-summary,
+	.ct-planning-reconstruction-card, .ct-planning-reconstruction-warnings,
+	.ct-planning-export-summary, .ct-planning-export-release,
+	.ct-planning-export-focus, .ct-planning-export-fit,
+	.ct-planning-export-fact, .ct-planning-export-card,
+	.ct-planning-export-missing, .ct-planning-artifact-summary,
+	.ct-planning-artifact-card
+) span {
+	color: #9fd8d0;
+	font-size: 11px;
+	font-weight: 950;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+:is(
+	.ct-planning-task-board, .ct-planning-task,
+	.ct-planning-workflow-summary, .ct-planning-workflow-focus,
+	.ct-planning-workflow-step, .ct-planning-geometry-card,
+	.ct-planning-validation-card, .ct-planning-measurement-summary,
+	.ct-planning-measurement-card, .ct-planning-implant-fit-summary,
+	.ct-planning-implant-fit-card, .ct-planning-implant-summary,
+	.ct-planning-implant-card, .ct-planning-reconstruction-summary,
+	.ct-planning-reconstruction-card, .ct-planning-export-summary,
+	.ct-planning-export-release, .ct-planning-export-focus,
+	.ct-planning-export-fit, .ct-planning-export-fact,
+	.ct-planning-export-card, .ct-planning-artifact-summary,
+	.ct-planning-artifact-card
+) strong {
+	color: #eafffa;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.ct-planning-export-card b {
+	color: #77d7c7;
+	font-size: 12px;
+	line-height: 1.25;
+}
+
+.ct-planning-artifact-card button {
+	align-items: center;
+	background: rgba(119, 215, 199, 0.14);
+	border: 1px solid rgba(119, 215, 199, 0.32);
+	border-radius: 8px;
+	color: #eafffa;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 950;
+	justify-content: center;
+	min-height: 34px;
+	padding: 6px 10px;
+}
+
+.ct-planning-artifact-card button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+:is(
+	.ct-planning-task-board, .ct-planning-task,
+	.ct-planning-workflow-summary, .ct-planning-workflow-focus,
+	.ct-planning-workflow-step, .ct-planning-workflow-warnings,
+	.ct-planning-geometry-card, .ct-planning-validation-card,
+	.ct-planning-measurement-summary, .ct-planning-measurement-card,
+	.ct-planning-measurement-warnings, .ct-planning-implant-fit-summary,
+	.ct-planning-implant-fit-card, .ct-planning-implant-fit-warnings,
+	.ct-planning-implant-summary, .ct-planning-implant-card,
+	.ct-planning-implant-warnings, .ct-planning-reconstruction-summary,
+	.ct-planning-reconstruction-card, .ct-planning-reconstruction-warnings,
+	.ct-planning-export-summary, .ct-planning-export-release,
+	.ct-planning-export-focus, .ct-planning-export-fit,
+	.ct-planning-export-fact, .ct-planning-export-card,
+	.ct-planning-export-missing, .ct-planning-artifact-summary,
+	.ct-planning-artifact-card
+) :is(p, small, em) {
+	color: #c4eee8;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.ct-planning-task em {
+	color: #ffe5aa;
+}

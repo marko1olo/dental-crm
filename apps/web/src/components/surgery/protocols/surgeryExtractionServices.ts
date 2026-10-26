@@ -1,6 +1,6 @@
 /**
- * surgeryExtractionServices.ts — Расчет перечня услуг для экстракций и синус-лифтинга (Мандат 8e).
+ * surgeryExtractionServices.ts — Агрегатор сервисов хирургии и расчет услуг каталога (Мандаты 8e, 8ap).
  */
 
-export * from "./extraction804nServices";
-export * from "./sinusGbr804nServices";
+export * from "./extractionSurgicalServices";
+export * from "./sinusGbrSurgicalServices";

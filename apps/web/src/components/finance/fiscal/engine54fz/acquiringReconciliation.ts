@@ -59,7 +59,7 @@ export function reconcileAcquiringWithKkt(
 				diffRub: kopecksToRub(diffKop),
 				diffKopecks: diffKop,
 				explanationRu: isAmountSame
-					? "Сумма по терминалу и чек ККТ 54-ФЗ совпадают копейка в копейку"
+					? "Сумма по терминалу и кассовый чек совпадают копейка в копейку"
 					: `Расхождение суммы: терминал ${t.amountRub.toFixed(2)} ₽, касса ${match.electronicAmountRub.toFixed(2)} ₽`,
 				suggestedActionRu: isAmountSame
 					? "Действий не требуется. Сверка успешна."
@@ -107,7 +107,7 @@ export function reconcileAcquiringWithKkt(
 				diffRub: t.amountRub,
 				diffKopecks: t.amountKopecks,
 				explanationRu: `Оплата по карте ${t.panMasked} (RRN ${t.rrn}) прошла успешно, но чек в ККТ не сформирован!`,
-				suggestedActionRu: "Срочно пробить фискальный чек прихода 54-ФЗ по безналичному расчету.",
+				suggestedActionRu: "Срочно пробить кассовый чек прихода по безналичному расчету.",
 			});
 		}
 	}
@@ -269,7 +269,7 @@ export function generateAcquiringReconciliationPrintHtml(
 	</style>
 </head>
 <body>
-	<h1>АКТ СВЕРКИ ОПЕРАЦИЙ ЭКВАЙРИНГА С ФИСКАЛЬНЫМИ ЧЕКАМИ ККТ 54-ФЗ</h1>
+	<h1>АКТ СВЕРКИ ОПЕРАЦИЙ ЭКВАЙРИНГА С КАССОВЫМИ ЧЕКАМИ ККТ</h1>
 	<div class="subtitle">${clinic} | Смена № ${shift} | Терминал: ${terminal} | Дата: ${date}</div>
 
 	<div class="kpi-box">

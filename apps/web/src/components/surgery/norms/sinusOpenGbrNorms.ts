@@ -13,6 +13,8 @@ export const SINUS_OPEN_GBR_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "sinus_gbr",
 		icd10: "K08.2",
 		icd10Label: "Атрофия беззубого альвеолярного края",
+		serviceCode: "A16.07.041",
+		serviceTitle: "Костная пластика челюстно-лицевой области (синус-лифтинг)",
 		code804n: "A16.07.041",
 		service804nTitle: "Костная пластика челюстно-лицевой области (синус-лифтинг)",
 		defaultToothFdi: 16,

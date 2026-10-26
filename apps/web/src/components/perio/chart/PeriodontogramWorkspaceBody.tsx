@@ -28,7 +28,7 @@ export const PeriodontogramWorkspaceBody: React.FC<PeriodontogramWorkspaceBodyPr
 		handleKeypadToggleSuppuration, moveToPreviousSite, moveToNextSite,
 		handleCycleMobility, handleCycleFurcation, updateToothSite,
 		updateToothProperties, summary, aapDiagnosis, handleApplyExpressPreset,
-		handleSetAllIntact, handleInsertToProtocol, insertStatus,
+		handleSetAllIntact, handleApplySextantCode, handleInsertToProtocol, insertStatus,
 	} = logic;
 
 	return (
@@ -69,6 +69,7 @@ export const PeriodontogramWorkspaceBody: React.FC<PeriodontogramWorkspaceBodyPr
 					aapDiagnosis={aapDiagnosis}
 					onApplyExpressPreset={handleApplyExpressPreset}
 					onSetAllIntact={handleSetAllIntact}
+					onApplySextantCode={handleApplySextantCode}
 					onInsertToProtocol={handleInsertToProtocol}
 					insertStatus={insertStatus}
 				/>
