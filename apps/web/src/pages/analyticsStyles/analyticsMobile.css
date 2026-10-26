@@ -1,0 +1,56 @@
+/* Сенсорный мобильный адаптив, Apple HIG touch targets и 0px горизонтального дрифта (<= 120 строк) */
+
+@media (max-width: 1024px) {
+	.analytics-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+	.analytics-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+	.analytics-toolbar--executive-mobile-hidden { display: none !important; }
+}
+
+@media (max-width: 640px) {
+	.analytics-dashboard {
+		gap: 8px; padding: 8px 10px; overflow-x: clip; max-width: 100vw;
+	}
+	.analytics-header {
+		display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+		gap: 8px; padding-bottom: 6px; min-height: 36px; height: auto; flex-wrap: wrap;
+	}
+	.analytics-header-title-group {
+		width: 100%; display: flex; align-items: center; justify-content: space-between;
+		gap: 8px; flex-wrap: nowrap;
+	}
+	.analytics-title { font-size: 1.125rem; white-space: nowrap; flex-shrink: 0; }
+	.analytics-section-tabs {
+		gap: 4px; padding-bottom: 0; margin-bottom: 0; border-bottom: none;
+		flex-wrap: nowrap; overflow-x: auto; flex-shrink: 1; min-width: 0;
+	}
+	.analytics-section-tabs button,
+	.analytics-tab-btn {
+		min-height: 32px; height: 32px; max-height: 32px; padding: 0 8px;
+		font-size: 12px; white-space: nowrap; flex-shrink: 0;
+	}
+	.analytics-tab-btn--desktop-only { display: none !important; }
+	.analytics-toolbar {
+		width: 100%; flex-direction: column; align-items: stretch; gap: 6px;
+	}
+	.analytics-segmented {
+		width: 100%; display: flex; height: 32px; min-height: 32px; max-height: 32px;
+		box-sizing: border-box; align-items: center; overflow: hidden;
+	}
+	.analytics-segmented-btn {
+		flex: 1 1 0%; min-width: 0; height: 26px; min-height: 26px; max-height: 26px;
+		padding: 0 4px; font-size: 0.6875rem; text-align: center; box-sizing: border-box;
+		border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+	}
+	.analytics-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+	.analytics-kpi-card { padding: 8px 10px; min-height: 56px; }
+	.analytics-kpi-header { font-size: 0.75rem; }
+	.analytics-kpi-value { font-size: 1.125rem; }
+	.glass-widget { border-radius: 10px; padding: 12px; }
+	.glass-widget h3 { font-size: 0.875rem; margin-bottom: 8px; }
+	.analytics-chart-container,
+	.widget-chart-container { height: 200px; }
+	.analytics-chart-empty { min-height: 200px; }
+}

@@ -1,0 +1,47 @@
+/* Таблица выработки врачей и конверсия планов лечения */
+
+.analytics-table-container {
+	overflow-y: auto;
+}
+
+.analytics-table-wrapper {
+	width: 100%;
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.analytics-leaderboard-table {
+	width: 100%;
+	min-width: 280px;
+	border-collapse: collapse;
+}
+
+.analytics-leaderboard-table th,
+.analytics-leaderboard-table td {
+	padding: 8px 10px;
+	text-align: left;
+	border-bottom: 1px solid var(--line);
+}
+
+.analytics-leaderboard-table th {
+	color: var(--ink-muted, var(--muted));
+	font-weight: 700;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	background: var(--paper-soft);
+}
+
+.analytics-leaderboard-table td {
+	font-size: 0.8125rem;
+	color: var(--ink);
+}
+
+.analytics-leaderboard-table tr:hover td {
+	background: var(--paper-soft);
+}
+
+.analytics-leaderboard-table tr:last-child td {
+	border-bottom: none;
+}

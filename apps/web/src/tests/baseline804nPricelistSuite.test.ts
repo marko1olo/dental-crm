@@ -1,8 +1,8 @@
 /**
  * apps/web/src/tests/baseline804nPricelistSuite.test.ts
  *
- * Семантический тест базового прейскуранта услуг клиники (30 услуг) и 1-клик наполнения.
- * Соответствует Мандатам 8b (копейка в копейку), 8e (автономия врача), 8x (живой язык без канцелярита).
+ * Семантический тест рекомендованного прейскуранта услуг клиники (30 услуг) и каталога процедур.
+ * Соответствует Мандатам 8b (копейка в копейку), 8e (автономия врача), 8x (живой язык без канцелярита) и 8ap (чистый доменный язык).
  */
 
 import assert from "node:assert/strict";
@@ -17,7 +17,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-describe("Базовый рекомендованный прейскурант клиники (30 услуг) и быстрое наполнение каталога", () => {
+describe("Прейскурант услуг клиники и быстрое наполнение каталога процедур (Мандаты 8b, 8e, 8x, 8ap)", () => {
 	it("клиентский пресет содержит ровно 30 канонических клинических услуг", () => {
 		assert.equal(BASELINE_PRICELIST_SERVICES.length, 30);
 	});
@@ -25,7 +25,7 @@ describe("Базовый рекомендованный прейскурант �
 	it("каждая услуга имеет валидный код медицинской номенклатуры (класс A или B)", () => {
 		const statutoryCodeRegex = /^[ABАВ]\d{2}\.\d{2,3}\.\d{3}(\.\d{3})?$/i;
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode || item.code804n;
+			const code = item.statutoryCode ?? item.code804n;
 			assert.ok(
 				statutoryCodeRegex.test(code),
 				`Услуга ${item.id} («${item.commercialTitle}») имеет некорректный номенклатурный код: «${code}»`,
@@ -35,28 +35,28 @@ describe("Базовый рекомендованный прейскурант �
 
 	it("цены в рублях и копейках строго согласованы (Мандат 8b: копейка в копейку)", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode || item.code804n;
+			const code = item.statutoryCode ?? item.code804n;
 			assert.ok(item.basePriceRub > 0, `Услуга ${code} имеет нулевую или отрицательную цену`);
 			assert.equal(
 				item.basePriceKopecks,
 				Math.round(item.basePriceRub * 100),
-				`Услуга ${code} имеет расхождение между basePriceRub (${item.basePriceRub}) и basePriceKopecks (${item.basePriceKopecks})`,
+				`Услуга ${code} имеет расхождение между ценой в рублях (${item.basePriceRub}) и копейках (${item.basePriceKopecks})`,
 			);
 		}
 	});
 
 	it("все услуги содержат официальное наименование номенклатуры и понятное коммерческое наименование", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode || item.code804n;
-			const statTitle = item.statutoryTitle || item.statutoryTitle804n;
-			assert.ok(statTitle.trim().length > 5, `Пустое номенклатурное название у ${code}`);
-			assert.ok(item.commercialTitle.trim().length > 5, `Пустое коммерческое название у ${code}`);
+			const code = item.statutoryCode ?? item.code804n;
+			const statTitle = item.statutoryTitle ?? item.statutoryTitle804n;
+			assert.ok(statTitle.trim().length > 5, `Пустое номенклатурное название у услуги ${code}`);
+			assert.ok(item.commercialTitle.trim().length > 5, `Пустое коммерческое название у услуги ${code}`);
 		}
 	});
 
 	it("НДС равен 0% с указанием ссылки на пп. 2 п. 2 ст. 149 НК РФ", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode || item.code804n;
+			const code = item.statutoryCode ?? item.code804n;
 			assert.equal(item.vatRate, 0);
 			assert.ok(
 				item.vatExemptionArticle.includes("149"),
@@ -75,7 +75,7 @@ describe("Базовый рекомендованный прейскурант �
 		assert.ok(categories.has("radiology"), "Отсутствует категория радиовизиография");
 	});
 
-	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения с data-testid='pricelist-seed-standard-catalog-btn' и в пустом каталоге, и в меню справочника", () => {
+	it("SettingsPricesTab и его подмодули содержат кнопку быстрого заполнения стандартного каталога процедур", () => {
 		const settingsDir = join(here, "..", "components", "settings");
 		const tabContent = [
 			readFileSync(join(settingsDir, "SettingsPricesTab.tsx"), "utf8"),
@@ -85,26 +85,26 @@ describe("Базовый рекомендованный прейскурант �
 		].join("\n");
 
 		const testIdMatches = tabContent.match(
-			/data-testid="(?:pricelist-seed-baseline-804n-btn|pricelist-seed-standard-catalog-btn)"/g,
+			/data-testid="(?:pricelist-seed-standard-catalog-btn|pricelist-seed-baseline-804n-btn)"/g,
 		);
 		assert.ok(
 			testIdMatches,
-			"В модуле SettingsPricesTab отсутствует data-testid='pricelist-seed-standard-catalog-btn' / 'pricelist-seed-baseline-804n-btn'",
+			"В модуле SettingsPricesTab отсутствует кнопка заполнения каталога data-testid='pricelist-seed-standard-catalog-btn'",
 		);
 		assert.ok(
 			testIdMatches.length >= 2,
-			`Ожидалось как минимум 2 точки вызова (пустой каталог и меню справочника), найдено: ${testIdMatches.length}`,
+			`Ожидалось как минимум 2 точки вызова быстрого заполнения каталога, найдено: ${testIdMatches.length}`,
 		);
 
 		assert.ok(
-			tabContent.includes("/api/pricelist/seed-baseline-804n") ||
-				tabContent.includes("/api/pricelist/seed-standard-catalog"),
-			"Модуль SettingsPricesTab должен вызывать серверный маршрут заполнения прейскуранта",
+			tabContent.includes("/api/pricelist/seed-standard-catalog") ||
+				tabContent.includes("/api/pricelist/seed-baseline-804n"),
+			"Модуль SettingsPricesTab должен вызывать серверный маршрут заполнения прейскуранта услуг",
 		);
 		assert.ok(
 			tabContent.includes("Заполнить базовый прейскурант (30 услуг)") ||
 				tabContent.includes("Заполнить рекомендованный прейскурант"),
-			"В пустом состоянии каталога должна быть карточка с текстом о заполнении 30 базовых услуг",
+			"В пустом состоянии каталога должна быть карточка с текстом о заполнении 30 базовых услуг прейскуранта",
 		);
 	});
 });

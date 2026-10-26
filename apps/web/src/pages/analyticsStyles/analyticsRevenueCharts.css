@@ -1,0 +1,57 @@
+/* Графики выручки, оплат и интерактивные виджеты (<= 120 строк) */
+
+.analytics-grid {
+	display: grid; grid-template-columns: repeat(2, 1fr);
+	gap: 16px; width: 100%; box-sizing: border-box;
+}
+.glass-widget {
+	background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+	padding: 16px 18px; box-shadow: var(--shadow-1); transition: border-color 0.2s ease;
+	display: flex; flex-direction: column; min-width: 0; overflow: hidden; box-sizing: border-box;
+}
+.glass-widget:hover { border-color: var(--teal); }
+.glass-widget-header {
+	display: flex; align-items: center; justify-content: space-between;
+	gap: 8px; margin-bottom: 12px;
+}
+.glass-widget-header h3,
+.glass-widget h3 {
+	font-size: 0.9375rem; font-weight: 600; margin: 0;
+	color: var(--ink); display: flex; align-items: center; gap: 8px;
+}
+.glass-widget-actions { display: flex; align-items: center; gap: 6px; }
+.glass-action-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+	height: 26px; padding: 0 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;
+	color: var(--ink-2, var(--ink)); background: var(--paper-soft); border: 1px solid var(--line);
+	cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+}
+.glass-action-btn:hover {
+	color: var(--ink); border-color: var(--teal); background: var(--paper);
+}
+.analytics-chart-container,
+.widget-chart-container {
+	height: 240px; width: 100%; min-width: 0; position: relative;
+}
+.analytics-empty-state {
+	display: flex; align-items: center; justify-content: center; height: 100%;
+	color: var(--muted); font-size: 0.875rem; background: var(--paper-soft);
+	border: 1px dashed var(--line); border-radius: 8px; font-style: italic;
+}
+.analytics-chart-empty {
+	gap: 0; min-height: 100%; overflow: hidden; position: relative;
+}
+.analytics-chart-empty::before {
+	background: radial-gradient(
+		circle at 50% 0%,
+		var(--teal-surface, rgba(13, 148, 136, 0.08)),
+		transparent 62%
+	);
+	content: ""; inset: 0; pointer-events: none; position: absolute;
+}
+.analytics-chart-empty > * { position: relative; z-index: 1; }
+.analytics-chart-empty .dnt-empty-state-icon {
+	border: 1px solid var(--line-strong); box-shadow: var(--shadow-1); flex: 0 0 auto;
+}
+.analytics-chart-empty .dnt-empty-state-title { line-height: 1.35; max-width: 30rem; }
+.analytics-chart-empty .dnt-empty-state-desc { line-height: 1.6; max-width: 30rem; }

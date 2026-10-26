@@ -17,8 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { TreatmentPlanPriceValidatorModal as VisitValidatorModal } from "../TreatmentPlanPriceValidatorModal";
-import { TreatmentPlanPriceValidatorModal as CanonicalValidatorModal } from "../../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
+import { TreatmentPlanPriceValidatorModal } from "../../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import { validateTreatmentPlanPrices } from "../../treatment-plans/validation/planPriceValidationEngine";
 import {
 	PLAN_PRICE_POLICY_PRESETS,
@@ -32,13 +31,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("АРМ Врача: Автономия смет, согласий и Формы 043/у (Мандаты 8d, 8e, 8k, 8n)", () => {
-	test("1. Фасад-делегат visit/TreatmentPlanPriceValidatorModal идентичен каноническому компоненту", () => {
-		assert.ok(VisitValidatorModal, "Visit-фасад модального окна должен существовать");
-		assert.strictEqual(
-			VisitValidatorModal,
-			CanonicalValidatorModal,
-			"Фасад должен напрямую реэкспортировать канонический компонент без дублирования",
-		);
+	test("1. Канонический TreatmentPlanPriceValidatorModal доступен из домена treatment-plans/validation (Мандат 8s SSOT)", () => {
+		assert.ok(TreatmentPlanPriceValidatorModal, "Канонический компонент модального окна должен существовать");
 	});
 
 	test("2. Мандат 8e: Срок плана > 30 дней НЕ БЛОКИРУЕТ создание нарядов ЗТЛ или оплату", () => {

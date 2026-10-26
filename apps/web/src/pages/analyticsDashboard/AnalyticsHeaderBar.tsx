@@ -330,13 +330,13 @@ export function AnalyticsHeaderBar({
 					))}
 				</div>
 
-				{/* Период (Compact 32px SegmentedControl with ... menu for rare ranges) */}
+				{/* Период (Compact 32px SegmentedControl: Сегодня, Неделя, Месяц, Квартал в 1 клик per Mandate 8e) */}
 				<div
 					className="analytics-segmented flex"
 					role="radiogroup"
 					aria-label="Выбор периода"
 				>
-					{DATE_RANGES.slice(0, 3).map((r) => (
+					{DATE_RANGES.slice(0, 4).map((r) => (
 						<button
 							key={r.value}
 							type="button"
@@ -352,21 +352,21 @@ export function AnalyticsHeaderBar({
 						</button>
 					))}
 
-					{/* Меню редких периодов: Квартал, Год, Всё время */}
+					{/* Меню редких периодов: Год, Всё время */}
 					<div className="relative inline-flex items-center" ref={dateMoreRef}>
 						<button
 							type="button"
 							className={`analytics-segmented-btn inline-flex items-center gap-1 ${
-								DATE_RANGES.slice(3).some((r) => r.value === dateRange)
+								DATE_RANGES.slice(4).some((r) => r.value === dateRange)
 									? "analytics-segmented-btn--active"
 									: ""
 							}`}
 							onClick={() => setIsDateMoreOpen((prev) => !prev)}
 							aria-expanded={isDateMoreOpen}
-							title="Выбрать расширенный период (Квартал, Год, Всё время)"
+							title="Выбрать расширенный период (Год, Всё время)"
 						>
 							<span>
-								{DATE_RANGES.slice(3).find((r) => r.value === dateRange)?.label || "Период..."}
+								{DATE_RANGES.slice(4).find((r) => r.value === dateRange)?.label || "Ещё..."}
 							</span>
 							<ChevronDown
 								size={11}
@@ -379,7 +379,7 @@ export function AnalyticsHeaderBar({
 								className="analytics-dropdown-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[130px] text-xs animate-in fade-in zoom-in-95 duration-100"
 								role="menu"
 							>
-								{DATE_RANGES.slice(3).map((r) => (
+								{DATE_RANGES.slice(4).map((r) => (
 									<button
 										key={r.value}
 										type="button"

@@ -1,0 +1,50 @@
+/* Глубокая контрастная тёмная тема для аналитической панели */
+
+[data-theme="dark"] .analytics-segmented-btn--active,
+[data-theme="night"] .analytics-segmented-btn--active {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+}
+
+[data-theme="dark"] .analytics-segmented-btn--active:hover,
+[data-theme="night"] .analytics-segmented-btn--active:hover {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+}
+
+[data-theme="dark"] .glass-action-btn,
+[data-theme="night"] .glass-action-btn {
+	color: var(--ink);
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+[data-theme="dark"] .analytics-dropdown-menu,
+[data-theme="night"] .analytics-dropdown-menu {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line-strong, #334155);
+	box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .analytics-leaderboard-table th,
+[data-theme="night"] .analytics-leaderboard-table th {
+	color: var(--ink-2, #e2e8f0);
+}
+
+[data-theme="dark"] .analytics-dashboard,
+[data-theme="night"] .analytics-dashboard {
+	background: var(--paper);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .analytics-kpi-card,
+[data-theme="night"] .analytics-kpi-card {
+	background: var(--paper);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .glass-widget,
+[data-theme="night"] .glass-widget {
+	background: var(--paper);
+	border-color: var(--line);
+}
