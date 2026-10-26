@@ -38,7 +38,7 @@ export const PhasedStageItemsList: React.FC<PhasedStageItemsListProps> = ({
 									</span>
 								)}
 								<span className="font-mono text-[10px] text-[var(--ink-muted)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-									Код: {item.code804n}
+									Код: {item.serviceCode || item.code804n}
 								</span>
 							</div>
 							{item.clinicalJustification && (

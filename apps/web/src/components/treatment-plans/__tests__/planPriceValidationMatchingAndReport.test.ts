@@ -23,7 +23,7 @@ describe("planPriceValidationEngine — Сопоставление с катал
 		assert.equal(calculateDaysBetween("2026-08-01T00:00:00.000Z", "2026-08-21T00:00:00.000Z"), 20);
 	});
 
-	test("findCatalogService сопоставляет услугу сначала по ID, затем по коду 804н", () => {
+	test("findCatalogService сопоставляет услугу сначала по ID, затем по коду услуги каталога", () => {
 		const byId = findCatalogService("A16.07.054.001", "srv_implant_straumann", SAMPLE_CURRENT_PRICELIST);
 		assert.equal(byId?.id, "srv_implant_straumann");
 

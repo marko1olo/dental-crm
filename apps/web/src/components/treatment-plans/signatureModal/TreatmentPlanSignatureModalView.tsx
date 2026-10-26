@@ -34,8 +34,13 @@ export const TreatmentPlanSignatureModalView: React.FC<TreatmentPlanSignatureMod
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in" data-testid="treatment-plan-signature-modal">
-			<div className="relative flex flex-col w-full max-w-2xl max-h-[92vh] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--border,#cbd5e1)] shadow-2xl overflow-hidden">
+		<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in" data-testid="treatment-plan-signature-modal">
+			<div className="relative flex flex-col w-full sm:max-w-2xl max-h-[90dvh] sm:max-h-[92vh] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-t-[24px] sm:rounded-3xl border-t sm:border border-[var(--border,#cbd5e1)] shadow-2xl overflow-hidden">
+				{/* Tactile drag handle for mobile bottom sheet (Apple HIG) */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1 cursor-grab">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
+
 				<SignatureModalHeader onClose={onClose} />
 
 				<div className="flex-1 overflow-y-auto p-5 space-y-4">

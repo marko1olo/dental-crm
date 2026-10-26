@@ -49,7 +49,7 @@ describe("treatmentPlanStagesEngine: Service Catalog & Clinical Anatomy", () => 
 		for (const [key, code] of Object.entries(expectedCodes)) {
 			const def = ORDER_804N_DICTIONARY[key];
 			assert.ok(def, "Определение для " + key + " должно существовать");
-			assert.equal(def.code, code, "Код 804н для " + key + " должен быть " + code);
+			assert.equal(def.code, code, "Код процедуры для " + key + " должен быть " + code);
 			assert.ok(def.title.length > 0, "Название для " + key + " не должно быть пустым");
 			assert.ok(def.defaultPriceRub > 0, "Цена по умолчанию для " + key + " > 0");
 			assert.ok(def.stageNumber >= 1 && def.stageNumber <= 3, "Номер этапа должен быть 1, 2 или 3");

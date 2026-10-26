@@ -29,7 +29,7 @@ describe("TreatmentPlan3TierComparison — View & Mobile Segmented Control", () 
 		assert.ok(html.includes("3-Tier Сравнение планов"));
 		assert.ok(html.includes("Рассрочка 0%"));
 		assert.ok(html.includes("Этапы (30/40/30)"));
-		assert.ok(html.includes("Утвердить и подписать план"));
+		assert.ok(html.includes("Утвердить план"));
 		assert.ok(html.includes("sticky bottom-0"));
 		assert.ok(html.includes("tier-card-optimum"));
 		assert.ok(html.includes("tier-card-standard"));

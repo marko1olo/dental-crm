@@ -26,7 +26,7 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 		: undefined;
 
 	return (
-		<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--border)] bg-[var(--paper-soft)]">
+		<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--border)] bg-[var(--paper-soft)] pb-[max(1rem,env(safe-area-inset-bottom))]">
 			<button
 				type="button"
 				onClick={onClose}

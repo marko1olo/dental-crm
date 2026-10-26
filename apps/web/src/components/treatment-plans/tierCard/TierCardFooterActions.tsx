@@ -35,15 +35,15 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onSignClick(e, tier)}
-					className={`w-full h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 active:scale-[0.99] ${
+					className={`w-full h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-[0.99] ${
 						isSelected
-							? "primary-button bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-dark,#0f766e)] text-white shadow-teal-700/20"
+							? "primary-button bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-emerald-700/20"
 							: "secondary-button bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
 					}`}
 					data-testid={`approve-tier-btn-${tier.tierId}`}
 				>
 					<PenTool size={14} />
-					<span>{isSelected ? "Утвердить и подписать план" : "Выбрать этот вариант"}</span>
+					<span>{isSelected ? "Утвердить план" : "Выбрать этот вариант"}</span>
 				</button>
 			)}
 

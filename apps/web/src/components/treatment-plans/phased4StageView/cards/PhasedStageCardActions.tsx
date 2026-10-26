@@ -27,7 +27,7 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 	onOpenStagePayment,
 }) => {
 	const orderCodes = hasItems
-		? Array.from(new Set(stageData.items.map((i) => i.code804n))).join(", ")
+		? Array.from(new Set(stageData.items.map((i) => i.serviceCode || i.code804n))).join(", ")
 		: "—";
 
 	return (
@@ -40,7 +40,7 @@ export const PhasedStageCardActions: React.FC<PhasedStageCardActionsProps> = ({
 					</strong>
 				</span>
 				<span className="text-[11px] text-[var(--ink-muted)]">
-					Позиций: {stageData.items.length} | Коды: {orderCodes}
+					Позиций: {stageData.items.length} | Коды процедур: {orderCodes}
 				</span>
 			</div>
 

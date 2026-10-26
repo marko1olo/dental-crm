@@ -14,6 +14,7 @@ import type { TreatmentPlanStage } from "../types";
 export interface PhasedStageItem {
 	id: string;
 	name: string;
+	serviceCode?: string;
 	code804n: string;
 	toothNumber?: number | undefined;
 	category: TreatmentPlanStageCategory;

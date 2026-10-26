@@ -9,6 +9,7 @@
 export interface ConsumableItemLike {
 	readonly name?: string | undefined;
 	readonly category?: string | undefined;
+	readonly serviceCode?: string | undefined;
 	readonly code804n?: string | undefined;
 	readonly priceRub?: number | undefined;
 	readonly unitPriceRub?: number | undefined;

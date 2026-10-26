@@ -1,3 +1,4 @@
+import React from "react";
 import type { ClinicalBundleCategory, ClinicalBundleDefinition } from "../treatmentPlanBundlesEngine";
 
 export interface BundleCategoryFilterProps {

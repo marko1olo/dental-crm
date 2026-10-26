@@ -72,12 +72,12 @@ export const PhasedDesktopFooterPanel: React.FC<PhasedDesktopFooterPanelProps> =
 						type="button"
 						data-testid="phased-approve-plan-btn"
 						onClick={onApprovePlan}
-						className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-opacity cursor-pointer min-h-[36px]"
+						className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer min-h-[36px]"
 					>
 						<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
-						{planApproved ? "План согласован с пациентом" : "Согласовать план"}
+						{planApproved ? "План утвержден врачом" : "Утвердить план"}
 					</button>
 
 					<button

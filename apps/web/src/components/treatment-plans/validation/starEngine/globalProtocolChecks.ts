@@ -1,5 +1,5 @@
 import type { TreatmentPlanItem } from "../../types";
-import { isValidOrder804nCodeFormat } from "./toothProcedureClassifier";
+import { isValidServiceCatalogCodeFormat } from "./toothProcedureClassifier";
 import type { StarProtocolRuleCheck } from "./types";
 
 export function checkGlobalStarProtocols(
@@ -12,34 +12,35 @@ export function checkGlobalStarProtocols(
 
 	let validCodesCount = 0;
 	for (const item of allItems) {
-		const isValidFormat = isValidOrder804nCodeFormat(item.code804n);
+		const rawCode = (item as any).serviceCode || item.code804n;
+		const isValidFormat = isValidServiceCatalogCodeFormat(rawCode);
 		if (isValidFormat) {
 			validCodesCount++;
 		} else {
 			checks.push({
-				ruleId: `804n-format-${item.id}`,
-				protocolCode: "NOMENCLATURE_804N",
-				protocolTitleRu: "Прейскурант и номенклатура услуг",
+				ruleId: `service-code-format-${item.id}`,
+				protocolCode: "CATALOG_SERVICES",
+				protocolTitleRu: "Прейскурант и каталог процедур",
 				toothNumber: item.toothNumber,
-				ruleDescriptionRu: "Каждая позиция плана должна иметь валидный код по прейскуранту услуг",
+				ruleDescriptionRu: "Каждая позиция плана должна иметь валидный код по каталогу процедур",
 				status: "warning",
-				messageRu: `Позиция «${item.name}» использует пользовательский код номенклатуры: «${item.code804n}»`,
-				recommendationRu: "Рекомендуется указать утвержденный код прейскуранта услуг (например, A16.07.002.001)",
+				messageRu: `Позиция «${item.name}» использует пользовательский код каталога: «${rawCode}»`,
+				recommendationRu: "Рекомендуется указать утвержденный код каталога услуг (например, A16.07.002.001)",
 				normativeRefRu: "Прейскурант и клинические стандарты услуг",
-				serviceCatalogCodesRelated: [item.serviceCode || item.code804n],
-				order804nCodesRelated: [item.code804n],
+				serviceCatalogCodesRelated: [rawCode],
+				order804nCodesRelated: [rawCode],
 			});
 		}
 	}
 
 	if (allItems.length > 0 && validCodesCount === allItems.length) {
 		checks.push({
-			ruleId: "804n-all-valid",
-			protocolCode: "NOMENCLATURE_804N",
-			protocolTitleRu: "Прейскурант и номенклатура услуг",
-			ruleDescriptionRu: "Все позиции плана соответствуют прейскуранту услуг",
+			ruleId: "service-code-all-valid",
+			protocolCode: "CATALOG_SERVICES",
+			protocolTitleRu: "Прейскурант и каталог процедур",
+			ruleDescriptionRu: "Все позиции плана соответствуют каталогу процедур",
 			status: "pass",
-			messageRu: `Все ${allItems.length} процедур плана имеют зарегистрированные коды прейскуранта услуг`,
+			messageRu: `Все ${allItems.length} процедур плана имеют зарегистрированные коды каталога процедур`,
 			normativeRefRu: "Прейскурант и клинические стандарты услуг",
 			serviceCatalogCodesRelated: Array.from(codesPresent),
 			order804nCodesRelated: Array.from(codesPresent),

@@ -4,7 +4,7 @@ export type StarProtocolSeverity = "pass" | "warning" | "error";
 
 export interface StarProtocolRuleCheck {
 	readonly ruleId: string;
-	readonly protocolCode: "K02_CARIES" | "K04_ENDO" | "K05_PERIO" | "K08_IMPLANT_ORTHO" | "PEDIATRIC" | "NOMENCLATURE_804N";
+	readonly protocolCode: "K02_CARIES" | "K04_ENDO" | "K05_PERIO" | "K08_IMPLANT_ORTHO" | "PEDIATRIC" | "NOMENCLATURE_804N" | "CATALOG_SERVICES";
 	readonly protocolTitleRu: string;
 	readonly toothNumber?: number | undefined;
 	readonly ruleDescriptionRu: string;

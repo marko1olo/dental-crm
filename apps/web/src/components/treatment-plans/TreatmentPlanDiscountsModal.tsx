@@ -46,13 +46,18 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="tp-discounts-title"
 			data-testid="treatment-plan-discounts-modal"
 		>
-			<div className="relative w-full max-w-lg p-5 rounded-3xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl space-y-4">
+			<div className="relative w-full sm:max-w-lg p-5 rounded-t-[24px] sm:rounded-3xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-t sm:border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl space-y-4 max-h-[88dvh] overflow-y-auto overscroll-contain">
+				{/* Tactile drag handle for mobile bottom sheet (Apple HIG) */}
+				<div className="sm:hidden flex justify-center -mt-2 pb-1 cursor-grab">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
+
 				{/* Header */}
 				<div className="flex items-center justify-between pb-3 border-b border-[var(--line,var(--border,#cbd5e1))]">
 					<div className="flex items-center gap-2">
@@ -71,7 +76,7 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 rounded-xl hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+						className="min-h-[44px] min-w-[44px] p-1.5 rounded-xl hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
 						aria-label="Закрыть"
 					>
 						<X size={18} />
@@ -93,11 +98,11 @@ export const TreatmentPlanDiscountsModal: React.FC<TreatmentPlanDiscountsModalPr
 					<DiscountsSummaryBox summary={summary} discountPercent={discountPercent} />
 				)}
 
-				<div className="pt-3 border-t border-[var(--line,var(--border,#cbd5e1))] flex justify-end">
+				<div className="pt-3 border-t border-[var(--line,var(--border,#cbd5e1))] flex justify-end pb-[max(0.5rem,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:bg-[var(--teal-dark,var(--teal))] cursor-pointer shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] px-5 py-2 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:bg-[var(--teal-dark,var(--teal))] cursor-pointer shadow-xs flex items-center justify-center"
 					>
 						Готово
 					</button>

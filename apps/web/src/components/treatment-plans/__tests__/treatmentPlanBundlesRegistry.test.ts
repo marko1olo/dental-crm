@@ -38,7 +38,7 @@ describe("treatmentPlanBundlesEngine — Реестр канонических �
 		}
 	});
 
-	test("все позиции пакетов имеют валидный код Минздрава 804н, материалы и обоснование", () => {
+	test("все позиции пакетов имеют валидный код каталога процедур, материалы и обоснование", () => {
 		for (const bundle of CLINICAL_BUNDLES) {
 			assert.ok(bundle.items.length > 0);
 			for (const item of bundle.items) {

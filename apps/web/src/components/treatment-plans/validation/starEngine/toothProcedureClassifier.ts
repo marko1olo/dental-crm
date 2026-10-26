@@ -59,11 +59,11 @@ export function isToothPreservationOrProstheticItem(item: TreatmentPlanItem): bo
 	);
 }
 
-export function isValidOrder804nCodeFormat(code: string): boolean {
+export function isValidServiceCatalogCodeFormat(code: string): boolean {
 	if (!code || typeof code !== "string") return false;
 	const trimmed = code.trim().toUpperCase();
 	const regex = /^[AB]\d{2}\.\d{2,3}\.\d{3}(\.\d{3})*$/;
 	return regex.test(trimmed);
 }
 
-export const isValidServiceCatalogCodeFormat = isValidOrder804nCodeFormat;
+export const isValidOrder804nCodeFormat = isValidServiceCatalogCodeFormat;

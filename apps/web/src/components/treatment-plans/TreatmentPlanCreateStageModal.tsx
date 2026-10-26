@@ -35,20 +35,25 @@ export const TreatmentPlanCreateStageModal: React.FC<TreatmentPlanCreateStageMod
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="create-stage-modal-title"
 			data-testid="create-stage-modal"
 		>
 			<div
-				className="w-full max-w-lg bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex flex-col overflow-hidden"
+				className="w-full sm:max-w-lg bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-t-[24px] sm:rounded-3xl border-t sm:border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex flex-col max-h-[88dvh] overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
+				{/* Tactile drag handle for mobile bottom sheet (Apple HIG) */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1 cursor-grab">
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+				</div>
+
 				<CreateStageModalHeader onClose={onClose} />
 
 				{/* Body */}
-				<div className="p-4 space-y-4 text-xs">
+				<div className="p-4 space-y-4 text-xs overflow-y-auto overscroll-contain">
 					<StagePresetSelector
 						selectedPreset={newStagePreset}
 						onSelectPreset={setNewStagePreset}
@@ -64,14 +69,14 @@ export const TreatmentPlanCreateStageModal: React.FC<TreatmentPlanCreateStageMod
 							value={newStageCustomTitle}
 							onChange={(e) => setNewStageCustomTitle(e.target.value)}
 							placeholder="Например: Протезирование на мультиюнитах All-on-4"
-							className="w-full h-9 px-3 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+							className="w-full h-10 sm:h-9 px-3 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							data-testid="create-stage-title-input"
 						/>
 					</div>
 				</div>
 
-				{/* Footer */}
-				<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+				{/* Footer with Safe Area Protection */}
+				<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)] pb-[max(1rem,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
 						onClick={onClose}

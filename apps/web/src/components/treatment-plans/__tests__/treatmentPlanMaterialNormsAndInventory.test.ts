@@ -1,5 +1,5 @@
 /**
- * treatmentPlanMaterialNormsAndInventory.test.ts — нормы расхода материалов 804н и сопоставление со складом.
+ * treatmentPlanMaterialNormsAndInventory.test.ts — нормы расхода материалов каталога процедур и сопоставление со складом.
  * (Мандат 8b: строго <= 120 строк).
  */
 
@@ -11,7 +11,7 @@ import {
 	ORDER_804N_MATERIAL_NORMS_MAP,
 } from "../treatmentPlanMaterialEngine";
 
-describe("treatmentPlanMaterialEngine — Нормы 804н и складской маппинг", () => {
+describe("treatmentPlanMaterialEngine — Нормы расхода материалов каталога и складской маппинг", () => {
 	test("Все нормы расхода материалов содержат корректные единицы измерения и цены", () => {
 		const codes = Object.keys(ORDER_804N_MATERIAL_NORMS_MAP);
 		assert.ok(codes.length >= 10);

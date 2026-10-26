@@ -44,7 +44,8 @@ export function categorizePhasedPlanStages(
 			map[cat].items.push({
 				id: item.id,
 				name: item.name,
-				code804n: item.code804n,
+				serviceCode: (item as any).serviceCode || item.code804n || (item as any).code || "",
+				code804n: item.code804n || (item as any).serviceCode || (item as any).code || "",
 				toothNumber: item.toothNumber,
 				category: cat,
 				priceKopecks: lineTotalKop,

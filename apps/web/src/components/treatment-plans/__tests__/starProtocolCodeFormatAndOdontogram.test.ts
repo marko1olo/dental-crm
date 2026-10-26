@@ -1,11 +1,12 @@
 /**
- * starProtocolCodeFormatAndOdontogram.test.ts — валидация кодов 804н и планов из одонтограммы.
+ * starProtocolCodeFormatAndOdontogram.test.ts — валидация кодов каталога процедур и планов из одонтограммы.
  * (Мандат 8b: строго <= 120 строк).
  */
 
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
+	isValidServiceCatalogCodeFormat,
 	isValidOrder804nCodeFormat,
 	validateTreatmentPlanStarProtocols,
 } from "../validation/starProtocolValidationEngine";
@@ -13,18 +14,21 @@ import { generateTreatmentPlanStages } from "../treatmentPlanStagesEngine";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { TreatmentPlanStage } from "../types";
 
-describe("starProtocolValidationEngine — Формат кодов 804н и одонтограмма", () => {
-	test("isValidOrder804nCodeFormat строго проверяет соответствие стандарту Приказа 804н", () => {
-		assert.equal(isValidOrder804nCodeFormat("A06.07.004"), true);
-		assert.equal(isValidOrder804nCodeFormat("A16.07.002.001"), true);
-		assert.equal(isValidOrder804nCodeFormat("A16.07.054.001"), true);
-		assert.equal(isValidOrder804nCodeFormat("B01.003.004.005"), true);
-		assert.equal(isValidOrder804nCodeFormat("a16.07.050"), true);
+describe("starProtocolValidationEngine — Формат кодов каталога процедур и одонтограмма", () => {
+	test("isValidServiceCatalogCodeFormat строго проверяет соответствие стандарту каталога процедур", () => {
+		assert.equal(isValidServiceCatalogCodeFormat("A06.07.004"), true);
+		assert.equal(isValidServiceCatalogCodeFormat("A16.07.002.001"), true);
+		assert.equal(isValidServiceCatalogCodeFormat("A16.07.054.001"), true);
+		assert.equal(isValidServiceCatalogCodeFormat("B01.003.004.005"), true);
+		assert.equal(isValidServiceCatalogCodeFormat("a16.07.050"), true);
 
-		assert.equal(isValidOrder804nCodeFormat("123"), false);
-		assert.equal(isValidOrder804nCodeFormat("INVALID_CODE"), false);
-		assert.equal(isValidOrder804nCodeFormat("A16-07-001"), false);
-		assert.equal(isValidOrder804nCodeFormat(""), false);
+		assert.equal(isValidServiceCatalogCodeFormat("123"), false);
+		assert.equal(isValidServiceCatalogCodeFormat("INVALID_CODE"), false);
+		assert.equal(isValidServiceCatalogCodeFormat("A16-07-001"), false);
+		assert.equal(isValidServiceCatalogCodeFormat(""), false);
+
+		// Обратная совместимость с алиасом
+		assert.equal(isValidOrder804nCodeFormat("A16.07.002.001"), true);
 	});
 
 	test("Авто-сгенерированный план из одонтограммы проходит валидацию СтАР", () => {
@@ -77,7 +81,7 @@ describe("starProtocolValidationEngine — Формат кодов 804н и од
 		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "star-implant-no-ct-36"));
 	});
 
-	test("Обнаруживает невалидный формат кода Номенклатуры 804н", () => {
+	test("Обнаруживает невалидный формат кода каталога процедур", () => {
 		const stageWithBadCode: TreatmentPlanStage = {
 			stageNumber: 1,
 			stageKind: "stage_1_therapy",
@@ -88,6 +92,7 @@ describe("starProtocolValidationEngine — Формат кодов 804н и од
 				{
 					id: "bad-item",
 					toothNumber: 11,
+					serviceCode: "НЕВАЛИДНЫЙ_КОД_999",
 					code804n: "НЕВАЛИДНЫЙ_КОД_999",
 					name: "Нестандартная услуга",
 					category: "Терапия",
@@ -103,11 +108,12 @@ describe("starProtocolValidationEngine — Формат кодов 804н и од
 			totalKopecks: 500000 as any,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
+			serviceCatalogCodes: ["НЕВАЛИДНЫЙ_КОД_999"],
 			order804nCodes: ["НЕВАЛИДНЫЙ_КОД_999"],
 		};
 
 		const summary = validateTreatmentPlanStarProtocols([stageWithBadCode]);
 		assert.equal(summary.overallStatus, "COMPLIANT_WITH_RECOMMENDATIONS");
-		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "804n-format-bad-item"));
+		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "service-code-format-bad-item"));
 	});
 });

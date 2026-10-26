@@ -1,6 +1,6 @@
 /**
  * clinicalServiceBundlesModal.test.tsx — Тестирование рендеринга и доступности модального окна
- * клинических пакетов услуг «Все включено» у кресла (Приказ Минздрава РФ № 804н).
+ * клинических пакетов услуг «Все включено» у кресла (Каталог комплексных услуг).
  *
  * Использует чистый renderToString (React SSR) в соответствии с правилом Anti-Kustarnyi-DOM
  * (0 MB memory leak overhead, абсолютная безопасность V8).
@@ -13,7 +13,7 @@ import { renderToString } from "react-dom/server";
 import { ClinicalServiceBundlesModal } from "../ClinicalServiceBundlesModal";
 import { CLINICAL_BUNDLES } from "../treatmentPlanBundlesEngine";
 
-describe("ClinicalServiceBundlesModal — Компонент модального окна пакетов 804н", () => {
+describe("ClinicalServiceBundlesModal — Компонент модального окна пакетов комплексного лечения", () => {
 	test("не рендерит разметку, если isOpen === false", () => {
 		const html = renderToString(
 			<ClinicalServiceBundlesModal

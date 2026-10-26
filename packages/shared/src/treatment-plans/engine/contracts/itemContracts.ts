@@ -9,6 +9,7 @@ export interface TreatmentPlanItemInput {
 	readonly id?: string;
 	readonly toothNumber?: number | null;
 	readonly surfaces?: readonly string[];
+	readonly serviceCode?: string;
 	readonly code804n: string;
 	readonly nameRu: string;
 	readonly categoryRu: string;
@@ -32,6 +33,7 @@ export interface TreatmentPlanItem {
 	readonly id: string;
 	readonly toothNumber: number | null;
 	readonly surfaces: readonly string[];
+	readonly serviceCode?: string;
 	readonly code804n: string;
 	readonly nameRu: string;
 	readonly categoryRu: string;

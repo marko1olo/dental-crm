@@ -52,12 +52,12 @@ export const PhasedMobileFloatingBottomBar: React.FC<PhasedMobileFloatingBottomB
 					type="button"
 					data-testid="phased-approve-plan-btn"
 					onClick={onApprovePlan}
-					className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--teal)] px-4 py-2.5 text-sm font-bold text-white shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
+					className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
 				>
 					<svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 					</svg>
-					<span>{planApproved ? "План согласован" : "Утвердить план"}</span>
+					<span>{planApproved ? "План утвержден" : "Утвердить план"}</span>
 				</button>
 				<button
 					type="button"
