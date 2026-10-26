@@ -1,0 +1,68 @@
+/* selfCheckinTicketStatus.css - Doctor status, reception alert, and QR pass (Mandate 8b: <= 120 lines) */
+.selfcheckin-ticket-doctor-status {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.875rem 1rem;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	text-align: left;
+	width: 100%;
+}
+
+.selfcheckin-ticket-doc-text {
+	color: var(--ink, #0f172a);
+	line-height: 1.35;
+}
+
+.selfcheckin-reception-alert-badge {
+	width: 100%;
+	padding: 0.875rem 1rem;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.08);
+	border: 1.5px solid rgba(13, 148, 136, 0.3);
+	text-align: left;
+}
+
+.selfcheckin-status-dot-pulse {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #10b981;
+	display: inline-block;
+	box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+	animation: selfcheckinDotPulse 1.8s infinite;
+	flex-shrink: 0;
+}
+
+@keyframes selfcheckinDotPulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+	}
+}
+
+.selfcheckin-ticket-qr-section {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.selfcheckin-error-alert {
+	padding: 0.75rem 1rem;
+	border-radius: 8px;
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	color: var(--danger, #dc2626);
+	font-size: 0.875rem;
+	font-weight: 500;
+}

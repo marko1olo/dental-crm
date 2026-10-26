@@ -187,10 +187,10 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 								data-testid="consent-mode-canvas-btn"
 								style={{
 									flex: 1,
-									minHeight: "36px",
-									padding: "4px 8px",
-									borderRadius: "8px",
-									fontSize: "12px",
+									minHeight: "48px",
+									padding: "8px 12px",
+									borderRadius: "10px",
+									fontSize: "13px",
 									fontWeight: signMode === "canvas" ? 700 : 500,
 									border: "none",
 									backgroundColor: signMode === "canvas" ? "var(--teal)" : "transparent",
@@ -199,11 +199,11 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
-									gap: "5px",
+									gap: "6px",
 									transition: "all 0.15s ease",
 								}}
 							>
-								<FileSignature size={14} />
+								<FileSignature size={16} />
 								<span>Роспись пальцем</span>
 							</button>
 
@@ -213,10 +213,10 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 								data-testid="consent-mode-pep-btn"
 								style={{
 									flex: 1,
-									minHeight: "36px",
-									padding: "4px 8px",
-									borderRadius: "8px",
-									fontSize: "12px",
+									minHeight: "48px",
+									padding: "8px 12px",
+									borderRadius: "10px",
+									fontSize: "13px",
 									fontWeight: signMode === "pep" ? 700 : 500,
 									border: "none",
 									backgroundColor: signMode === "pep" ? "var(--teal)" : "transparent",
@@ -225,11 +225,11 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
-									gap: "5px",
+									gap: "6px",
 									transition: "all 0.15s ease",
 								}}
 							>
-								<ShieldCheck size={14} />
+								<ShieldCheck size={16} />
 								<span>ПЭП онлайн</span>
 							</button>
 						</div>

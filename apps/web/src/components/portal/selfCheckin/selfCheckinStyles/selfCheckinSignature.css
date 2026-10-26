@@ -1,0 +1,93 @@
+/* selfCheckinSignature.css - Touchscreen signature pad drawing canvas (Mandate 8b: <= 120 lines) */
+.signature-pad-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.signature-pad-canvas-wrapper {
+	position: relative;
+	border: 2px dashed var(--glass-border, #94a3b8);
+	border-radius: 10px;
+	background: var(--paper-strong, #ffffff);
+	overflow: hidden;
+	margin: 0 auto;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.signature-pad-canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.signature-pad-placeholder {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	color: var(--muted, #94a3b8);
+	font-size: 0.875rem;
+	font-weight: 500;
+	pointer-events: none;
+	user-select: none;
+}
+
+.signature-pad-placeholder-icon {
+	font-size: 1.5rem;
+}
+
+.signature-pad-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.signature-pad-btn {
+	min-height: 48px;
+	padding: 0.5rem 1rem;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+}
+
+.signature-pad-btn-secondary {
+	border: 1px solid var(--glass-border, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #334155);
+}
+
+.signature-pad-btn-secondary:hover:not(:disabled) {
+	background: var(--surface-hover, #f1f5f9);
+}
+
+.signature-pad-btn-outline {
+	border: 1px solid rgba(239, 68, 68, 0.35);
+	background: rgba(239, 68, 68, 0.08);
+	color: var(--danger, #ef4444);
+}
+
+.signature-pad-btn-outline:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.15);
+}
+
+.signature-pad-status {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	margin-left: auto;
+}
+
+.signature-status-pending {
+	color: var(--muted, #94a3b8);
+}
+
+.signature-status-valid {
+	color: var(--success, #16a34a);
+}

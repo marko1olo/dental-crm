@@ -1,0 +1,32 @@
+/* selfCheckinSignaturePreview.css - Signed signature preview badge (Mandate 8b: <= 120 lines) */
+.selfcheckin-signed-badge-box {
+	background: rgba(22, 163, 74, 0.08);
+	border: 1px solid rgba(22, 163, 74, 0.3);
+	border-radius: 10px;
+	padding: 1rem;
+	text-align: center;
+}
+
+.selfcheckin-signed-success {
+	font-weight: 700;
+	color: var(--success, #16a34a);
+	font-size: 0.9375rem;
+}
+
+.selfcheckin-signed-meta {
+	font-size: 0.75rem;
+	color: var(--muted, #166534);
+	margin-top: 0.25rem;
+}
+
+.selfcheckin-signed-preview {
+	margin-top: 0.75rem;
+	max-height: 80px;
+	display: flex;
+	justify-content: center;
+}
+
+.selfcheckin-signed-preview svg {
+	max-height: 80px;
+	width: auto;
+}

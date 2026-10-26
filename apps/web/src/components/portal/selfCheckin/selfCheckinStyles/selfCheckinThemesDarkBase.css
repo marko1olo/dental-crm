@@ -1,0 +1,80 @@
+/* selfCheckinThemesDarkBase.css - Dark theme overrides for layout and cards (Mandate 8b: <= 120 lines) */
+[data-theme="dark"] .selfcheckin-modal-window,
+.dark .selfcheckin-modal-window {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+}
+
+[data-theme="dark"] .selfcheckin-header,
+.dark .selfcheckin-header {
+	background: var(--paper, #0b1120);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .selfcheckin-steps-bar,
+.dark .selfcheckin-steps-bar {
+	background: var(--paper-muted, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .selfcheckin-welcome-card,
+.dark .selfcheckin-welcome-card {
+	background: rgba(2, 132, 199, 0.12);
+	border-color: rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="dark"] .selfcheckin-welcome-name,
+.dark .selfcheckin-welcome-name {
+	color: #38bdf8;
+}
+
+[data-theme="dark"] .selfcheckin-welcome-sub,
+.dark .selfcheckin-welcome-sub {
+	color: #94a3b8;
+}
+
+[data-theme="dark"] .selfcheckin-consent-card,
+[data-theme="dark"] .selfcheckin-question-card,
+[data-theme="dark"] .selfcheckin-pass-card,
+.dark .selfcheckin-consent-card,
+.dark .selfcheckin-question-card,
+.dark .selfcheckin-pass-card {
+	background: var(--paper, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .selfcheckin-consent-text-box,
+[data-theme="dark"] .selfcheckin-pass-qr,
+.dark .selfcheckin-consent-text-box,
+.dark .selfcheckin-pass-qr {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-consent-tab,
+.dark .selfcheckin-consent-tab {
+	background: var(--paper, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.15));
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .signature-pad-canvas-wrapper,
+.dark .signature-pad-canvas-wrapper {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.2));
+}
+
+[data-theme="dark"] .signature-pad-btn-secondary,
+.dark .signature-pad-btn-secondary {
+	background: var(--paper, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-alerts-container,
+.dark .selfcheckin-alerts-container {
+	background: rgba(249, 115, 22, 0.12);
+	border-color: rgba(249, 115, 22, 0.4);
+}

@@ -1,0 +1,114 @@
+/* selfCheckinHeader.css - Header, navigation steps, and patient welcome banner (Mandate 8b: <= 120 lines) */
+.selfcheckin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--glass-border);
+	background: var(--paper, #f8fafc);
+}
+
+.selfcheckin-clinic-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: #0284c7;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-bottom: 0.25rem;
+}
+
+.selfcheckin-clinic-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #0284c7;
+}
+
+.selfcheckin-title {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.selfcheckin-close-btn {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 10px;
+	border: 1px solid var(--glass-border);
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 1.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-close-btn:hover {
+	background: var(--surface-hover, rgba(255, 255, 255, 0.08));
+	color: var(--ink, #0f172a);
+}
+
+.selfcheckin-steps-bar {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	background: var(--paper-muted, #f1f5f9);
+	border-bottom: 1px solid var(--glass-border);
+	overflow-x: auto;
+}
+
+.selfcheckin-step-pill {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 0.375rem 0.75rem;
+	border-radius: 20px;
+	background: var(--glass-panel, rgba(148, 163, 184, 0.15));
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	transition: all 0.2s ease;
+}
+
+.selfcheckin-step-pill.active {
+	background: #0284c7;
+	color: #ffffff;
+}
+
+.selfcheckin-step-pill.done {
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--success, #10b981);
+}
+
+.selfcheckin-welcome-card {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 1rem;
+	background: var(--paper-muted, rgba(2, 132, 199, 0.08));
+	border: 1px solid var(--glass-border, rgba(2, 132, 199, 0.25));
+	border-radius: 12px;
+}
+
+.selfcheckin-welcome-icon {
+	font-size: 2rem;
+}
+
+.selfcheckin-welcome-name {
+	font-size: 1.0625rem;
+	font-weight: 700;
+	color: var(--primary, #0284c7);
+}
+
+.selfcheckin-welcome-sub {
+	font-size: 0.875rem;
+	color: var(--muted, #0c4a6e);
+	margin-top: 0.125rem;
+}

@@ -1,0 +1,91 @@
+/* selfCheckinButtons.css - Express kiosk and primary action buttons (Mandate 8b: <= 120 lines) */
+.selfcheckin-btn-kiosk-express {
+	min-height: 58px;
+	padding: 0.875rem 1.125rem;
+	border-radius: 12px;
+	border: 2px solid #10b981;
+	background: rgba(16, 185, 129, 0.08);
+	color: #065f46;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-kiosk-express:hover:not(:disabled) {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: #059669;
+	transform: translateY(-1px);
+}
+
+.selfcheckin-btn-kiosk-express:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.selfcheckin-kiosk-check-icon {
+	color: #059669;
+}
+
+.selfcheckin-kiosk-title {
+	font-size: 1rem;
+	font-weight: 800;
+	color: #065f46;
+}
+
+.selfcheckin-kiosk-sub {
+	font-size: 0.75rem;
+	color: #047857;
+	margin-top: 0.125rem;
+}
+
+.selfcheckin-btn-primary {
+	min-height: 52px;
+	padding: 0.875rem 1.5rem;
+	border-radius: 12px;
+	border: none;
+	background: #0284c7;
+	color: #ffffff;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s ease, transform 0.1s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-primary:hover:not(:disabled) {
+	background: #0369a1;
+}
+
+.selfcheckin-btn-primary:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.selfcheckin-btn-accent {
+	min-height: 52px;
+	padding: 0.875rem 1.5rem;
+	border-radius: 12px;
+	border: none;
+	background: #10b981;
+	color: #ffffff;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s ease, transform 0.1s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-accent:hover {
+	background: #059669;
+}
+
+.selfcheckin-btn-accent:active:not(:disabled) {
+	transform: scale(0.98);
+}

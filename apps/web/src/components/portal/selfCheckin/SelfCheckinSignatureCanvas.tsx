@@ -160,6 +160,7 @@ export const SelfCheckinSignatureCanvas: React.FC<SelfCheckinSignatureCanvasProp
 	};
 
 	const handleConfirm = () => {
+		if (isSubmitting) return;
 		if (!canvasRef.current || !hasStrokes || pointsCount < 10) {
 			triggerHaptic("error");
 			setError("Пожалуйста, распишитесь пальцем в поле выше (не менее 10 точек росчерка).");
@@ -215,13 +216,14 @@ export const SelfCheckinSignatureCanvas: React.FC<SelfCheckinSignatureCanvasProp
 					onClick={clearCanvas}
 					className="signature-pad-btn signature-pad-btn-outline"
 					style={{
-						minHeight: "36px",
-						padding: "4px 10px",
-						fontSize: "12px",
+						minHeight: "48px",
+						padding: "6px 12px",
+						fontSize: "13px",
+						fontWeight: 600,
 						display: "flex",
 						alignItems: "center",
-						gap: "4px",
-						borderRadius: "8px",
+						gap: "6px",
+						borderRadius: "10px",
 						border: "1px solid var(--line)",
 						backgroundColor: "var(--paper-card, var(--paper))",
 						color: "var(--muted)",
@@ -230,7 +232,7 @@ export const SelfCheckinSignatureCanvas: React.FC<SelfCheckinSignatureCanvasProp
 					title="Очистить роспись и повторить ввод"
 					data-testid="signature-clear-btn"
 				>
-					<RotateCcw size={13} />
+					<RotateCcw size={16} />
 					<span>Очистить</span>
 				</button>
 			</div>
@@ -315,23 +317,23 @@ export const SelfCheckinSignatureCanvas: React.FC<SelfCheckinSignatureCanvasProp
 					type="button"
 					className="selfcheckin-btn-primary"
 					onClick={handleConfirm}
-					disabled={isSubmitting}
 					style={{
 						flex: 1,
-						minHeight: "44px",
-						fontSize: "14px",
+						minHeight: "52px",
+						fontSize: "15px",
 						fontWeight: 700,
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
 						gap: "8px",
-						borderRadius: "10px",
+						borderRadius: "12px",
 						backgroundColor: hasStrokes ? "var(--teal)" : "var(--paper-soft)",
 						color: hasStrokes ? "var(--on-teal, #ffffff)" : "var(--muted)",
 						border: "1px solid var(--line)",
 						cursor: hasStrokes ? "pointer" : "default",
 						transition: "all 0.15s ease",
 					}}
+					title={isSubmitting ? "Сохранение подписи..." : "Подтвердить роспись на сенсорном экране"}
 					data-testid="confirm-touch-signature-btn"
 				>
 					<CheckCircle2 size={16} />

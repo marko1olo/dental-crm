@@ -87,7 +87,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 
 	return (
 		<div className="selfcheckin-step-box">
-			{/* Reception Welcome Banner (152-FZ Protected: masked on public display) */}
+			{/* Reception Welcome Banner (Protected: masked on public display) */}
 			<div className="selfcheckin-welcome-card">
 				<span className="selfcheckin-welcome-icon">
 					<CheckCircle2 size={28} className="text-teal-600" />
@@ -415,7 +415,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 								data-testid={`keypad-digit-${num}`}
 								style={{
 									minWidth: "64px",
-									minHeight: "48px",
+									minHeight: "56px",
 									borderRadius: "14px",
 									fontSize: "22px",
 									fontWeight: 700,
@@ -443,7 +443,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-clear"
 							style={{
 								minWidth: "64px",
-								minHeight: "48px",
+								minHeight: "56px",
 								borderRadius: "14px",
 								fontSize: "15px",
 								fontWeight: 700,
@@ -465,7 +465,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-digit-0"
 							style={{
 								minWidth: "64px",
-								minHeight: "48px",
+								minHeight: "56px",
 								borderRadius: "14px",
 								fontSize: "22px",
 								fontWeight: 700,
@@ -488,7 +488,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 							data-testid="keypad-backspace"
 							style={{
 								minWidth: "64px",
-								minHeight: "48px",
+								minHeight: "56px",
 								borderRadius: "14px",
 								backgroundColor: "var(--paper-soft, var(--paper))",
 								border: "1.5px solid var(--line)",
@@ -585,8 +585,8 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 					onClick={() => setShowOptionalDocs(!showOptionalDocs)}
 				>
 					{showOptionalDocs
-						? "Скрыть нормативные документы"
-						: "Нормативные документы (152-ФЗ) и анкета здоровья"}
+						? "Скрыть документы"
+						: "Нормативные документы и анкета здоровья"}
 				</button>
 
 				{showOptionalDocs && (

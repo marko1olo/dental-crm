@@ -1,0 +1,66 @@
+/* selfCheckinAllergies.css - Quick Allergy Chips and Consents Bar (Mandate 8b: <= 120 lines) */
+.selfcheckin-quick-allergies-block {
+	padding: 0.875rem 1rem;
+	background: var(--paper-muted, #f1f5f9);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	border-radius: 12px;
+	margin-bottom: 0.75rem;
+}
+
+.selfcheckin-quick-allergies-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.5rem;
+}
+
+.selfcheckin-allergy-chip {
+	min-height: 48px;
+	padding: 0.625rem 0.875rem;
+	border-radius: 10px;
+	border: 1.5px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #334155);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.2s ease;
+}
+
+.selfcheckin-allergy-chip:hover {
+	border-color: var(--border, #94a3b8);
+	background: var(--surface-hover, #f8fafc);
+}
+
+.selfcheckin-allergy-chip.active {
+	border-color: var(--danger, #ef4444);
+	background: rgba(239, 68, 68, 0.08);
+	color: var(--danger, #dc2626);
+	box-shadow: 0 0 0 1px var(--danger, #ef4444);
+}
+
+.selfcheckin-chip-icon {
+	font-weight: 700;
+	font-size: 1rem;
+	width: 22px;
+	height: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--glass-panel, rgba(0, 0, 0, 0.05));
+	flex-shrink: 0;
+}
+
+.selfcheckin-allergy-chip.active .selfcheckin-chip-icon {
+	background: rgba(239, 68, 68, 0.15);
+	color: #dc2626;
+}
+
+.selfcheckin-consents-quick-bar {
+	margin-bottom: 0.75rem;
+}

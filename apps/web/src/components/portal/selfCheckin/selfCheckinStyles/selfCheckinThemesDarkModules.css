@@ -1,0 +1,108 @@
+/* selfCheckinThemesDarkModules.css - Dark theme overrides for buttons, chips, tickets (Mandate 8b: <= 120 lines) */
+[data-theme="dark"] .selfcheckin-norm-title,
+.dark .selfcheckin-norm-title {
+	color: #34d399;
+}
+
+[data-theme="dark"] .selfcheckin-norm-description,
+.dark .selfcheckin-norm-description {
+	color: #a7f3d0;
+}
+
+[data-theme="dark"] .selfcheckin-btn-kiosk-express,
+.dark .selfcheckin-btn-kiosk-express {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.45);
+	color: #34d399;
+}
+
+[data-theme="dark"] .selfcheckin-btn-kiosk-express:hover:not(:disabled),
+.dark .selfcheckin-btn-kiosk-express:hover:not(:disabled) {
+	background: rgba(16, 185, 129, 0.25);
+	border-color: #10b981;
+}
+
+[data-theme="dark"] .selfcheckin-btn-norm-dominant,
+.dark .selfcheckin-btn-norm-dominant {
+	background: #047857;
+	box-shadow: 0 4px 6px -1px rgba(4, 120, 87, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-btn-norm-dominant:hover:not(:disabled),
+.dark .selfcheckin-btn-norm-dominant:hover:not(:disabled) {
+	background: #065f46;
+}
+
+[data-theme="dark"] .selfcheckin-quick-allergies-block,
+.dark .selfcheckin-quick-allergies-block {
+	background: var(--paper, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip,
+.dark .selfcheckin-allergy-chip {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #e2e8f0);
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip:hover,
+.dark .selfcheckin-allergy-chip:hover {
+	background: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip.active,
+.dark .selfcheckin-allergy-chip.active {
+	background: rgba(239, 68, 68, 0.15);
+	border-color: #ef4444;
+	color: #f87171;
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip.active .selfcheckin-chip-icon,
+.dark .selfcheckin-allergy-chip.active .selfcheckin-chip-icon {
+	background: rgba(239, 68, 68, 0.25);
+	color: #f87171;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-card,
+.dark .selfcheckin-ticket-card {
+	background: var(--paper, #1e293b);
+	border-color: #10b981;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-number-display,
+.dark .selfcheckin-ticket-number-display {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.4);
+	color: #34d399;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-doctor-status,
+.dark .selfcheckin-ticket-doctor-status {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-ticket-doc-text,
+.dark .selfcheckin-ticket-doc-text {
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-reception-alert-badge,
+.dark .selfcheckin-reception-alert-badge {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-success-ring,
+.dark .selfcheckin-success-ring {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-success-check-icon,
+.dark .selfcheckin-success-check-icon {
+	color: #34d399;
+}

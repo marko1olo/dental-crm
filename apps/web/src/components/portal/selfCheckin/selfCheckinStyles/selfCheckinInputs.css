@@ -1,0 +1,65 @@
+/* selfCheckinInputs.css - Form controls, phone and OTP inputs (Mandate 8b: <= 120 lines) */
+.selfcheckin-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.selfcheckin-label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ink, #1e293b);
+}
+
+.selfcheckin-input {
+	height: 52px;
+	min-height: 52px;
+	padding: 0 1rem;
+	border-radius: 10px;
+	border: 1.5px solid var(--glass-border);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 1.0625rem;
+	outline: none;
+	transition: border-color 0.2s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-input:focus {
+	border-color: #0284c7;
+	box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.selfcheckin-input-sm {
+	height: 48px;
+	min-height: 48px;
+	font-size: 0.9375rem;
+	touch-action: manipulation;
+}
+
+.selfcheckin-otp-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.selfcheckin-otp-input-wrapper {
+	display: flex;
+	gap: 0.75rem;
+}
+
+.selfcheckin-otp-input {
+	font-size: 1.5rem;
+	letter-spacing: 0.25em;
+	text-align: center;
+	font-weight: 800;
+	max-width: 160px;
+	min-height: 52px;
+	height: 52px;
+	touch-action: manipulation;
+}
+
+.selfcheckin-otp-hint {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+}
