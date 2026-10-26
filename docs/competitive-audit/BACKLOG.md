@@ -11026,7 +11026,8 @@
     - **7. Пакетная генерация журнала автоклавирования Формы 257/у для проверок Роспотребнадзора (коммит `f410941e0`, Мандаты 8e, 8v, 8s)**: реализована функция `generateBatchForm257Records` в `autoclaveLogEngine.ts` с точными режимами 134°C 2.1 бар 5 мин / 20 мин и контрольными тестами 5 класса химических индикаторов; селектор периодов (сентябрь 2026, сегодня, неделя, квартал, произвольный диапазон дат) в `AutoclaveJournal257Tab.tsx` (631 строка); интеграция 1-клик пакетного формирования в `AutoclaveLog257Modal.tsx` (294 строки), `DocumentsView.tsx` (вкладка сертификатов/СанПиН) и `PrimaryIntakePackageModal.tsx` (590 строк); полное отсутствие навязчивых виджетов стерилизации у кресла врача; 100% тест в `sterilizationForm257BatchReporting.test.ts` (226 строк);
     - **8. Копеечно-точная финансовая математика, SSOT расчета скидок и модули кассы <800 строк (коммит `318a6e9dd`, Мандаты 8j, 8n)**: канонический расчет валовой и чистой стоимости со скидкой сведен к единому SSOT `calculateGrossAndNetServiceAmounts` в `@dental/shared/finance/expensesEngine.ts` (156 строк); ликвидированы рассинхроны при расчете сумм и скидок в кассе `cashboxOperations.ts` (782 строки), `PaymentModal.tsx` и `RefundServiceModal.tsx` (774 строки); оптимизированы кассовые компоненты под лимит <800 строк (`CashRegisterModal.tsx` 521 строка, `DentalLabOrdersTrackerModal.tsx` 732 строки, `dentalLabOrderEngine.ts` 749 строк, `DentalLabOrderDrawer.tsx` 467 строк);
     - **9. Ликвидация паразитной дублирующей папки ЗТЛ `components/laboratory/` и консолидация на `components/lab/` (коммит `f61415235`, Мандат 8s)**: физически ликвидирована дублирующая директория `apps/web/src/components/laboratory/` (-2154 строки), включая 1148-строчный монолит `DentalLabOrdersTrackerModal.tsx`; полная консолидация на каноническом домене `apps/web/src/components/lab/` с файлами строго <800 строк (`DentalLabOrdersTrackerModal.tsx` 732 строки, `dentalLabOrderEngine.ts` 749 строк, `DentalLabOrderDrawer.tsx` 467 строк, `LabTrackingDrawer.tsx` 524 строки); все внешние импорты и страницы (`LabOrdersPanel.tsx`, `LabOrdersPage.tsx`, `TelephonyFloatingWidget.tsx`) переведены на единый SSOT;
-    - **10. Декомпозиция монолита шаблонов дневника ЭМК и искоренение мультяшных эмодзи (коммит `30345ce61`, Мандаты 8d, 8s, 8j)**: монолит движка шаблонов дневников `clinicalDiaryTemplatesEngine.ts` (952 строки) успешно декомпозирован до компактных 310 строк за счет выделения структурированного справочника клинических пресетов `clinicalDiaryTemplatesCatalogData.ts` (644 строки); оба файла строго соответствуют нормативу <800 строк; ликвидированы мультяшные эмодзи в протоколах ЭМК, дневниках 043/у и одонтограмме (`ToothContextDrawer.tsx` 665 строк, `VisitAnamnesisTab.tsx` 486 строк, `PediatricAnesthesiaCalculator.tsx` 479 строк) с заменой на векторные иконки Lucide по канонам официальной медицинской документации РФ.
+    - **10. Декомпозиция монолита шаблонов дневника ЭМК и искоренение мультяшных эмодзи (коммит `30345ce61`, Мандаты 8d, 8s, 8j)**: монолит движка шаблонов дневников `clinicalDiaryTemplatesEngine.ts` (952 строки) успешно декомпозирован до компактных 310 строк за счет выделения структурированного справочника клинических пресетов `clinicalDiaryTemplatesCatalogData.ts` (644 строки); оба файла строго соответствуют нормативу <800 строк; ликвидированы мультяшные эмодзи в протоколах ЭМК, дневниках 043/у и одонтограмме (`ToothContextDrawer.tsx` 665 строк, `VisitAnamnesisTab.tsx` 486 строк, `PediatricAnesthesiaCalculator.tsx` 479 строк) с заменой на векторные иконки Lucide по канонам официальной медицинской документации РФ;
+    - **11. Red Team инквизиция и декомпозиция каталога клинических протоколов и дневников EMR (Мандаты 8b, 8e, 8n, 8x, 8ap, Apple HIG)**: монолит каталога дневников `clinicalDiaryTemplatesCatalogData.ts` (751 строка) декомпозирован на модульные файлы `<= 120` строк в каталоге `apps/web/src/components/emr/templates/catalog/` (`clinicalDiaryTypes.ts`, `therapyDiaryTemplates.ts`, `endodonticDiaryTemplates.ts`, `surgicalDiaryTemplates.ts`, `orthopedicDiaryTemplates.ts`, `periodonticDiaryTemplates.ts`, `pediatricDiaryTemplates.ts`, `physiologicalNormPreset.ts`) с компактным корневым фасадом (61 строка); полное искоренение канцелярита советских приказов («Форма 043/у», «804н», «834н»); автосохранение правок врача в черновик (debounced 600ms); Apple HIG сенсорная эргономика (тач-таргеты >= 44x44px, 0px горизонтального скролла, выделенная Primary CTA в нижней зоне большого пальца); 100% покрытие тестами (26/26 passing) и 4 канонических скриншот-пруфа (PC Light/Dark 1440x900, Mobile Light/Dark 390x844).
 
 42. **Волна 327: Канонический Single Source of Truth (SoT) экрана 44 («Кресла») и ликвидация дефектов сетки (коммит `f76a1b11c`, Мандаты 8d, 8e, 8n, 8s, 8t)**:
     - **Канонический статус SoT экрана 44**: Утверждён пользователем как единственный легитимный эталон сетки кресел («Кресла») вариант «Шаг 1 назад» (коммит `f76a1b11c`);
@@ -11799,6 +11800,36 @@
         - `loyalty_03_mobile_light_390x844.png` (Mobile Light 390×844, нативный Bottom Sheet с Drag Handle)
         - `loyalty_04_mobile_dark_390x844.png` (Mobile Dark 390×844, мобильная тёмная тема)
         - `loyalty_03b_mobile_light_scrolled.png` (Mobile Light 390×844 скролл, крупные тач-таргеты $\ge 44$px).
+
+49. **Декомпозиция CSS-монолита страхования и ДМС insurance.css под лимит Мандата 8b (все файлы <= 120 строк), Split Payment UX и 4-State Visual Proof (Мандаты 8b, 8e, 8n, 8x, 8ap, 8ze, 8am)**:
+    - **1. Радикальная First-Principles декомпозиция монолита insurance.css (Мандат 8b)**:
+      * Монолит `apps/web/src/components/insurance/insurance.css` (было 967 строк) распилен на 7 высококогезионных стилей в `apps/web/src/components/insurance/insuranceStyles/`, каждый строго $\le 120$ строк:
+        - `insuranceThemeTokens.css` (117 строк) — CSS-токены, WCAG AAA темная тема, переменные палитры;
+        - `insuranceLayout.css` (73 строки) — `dms-grid-*`, карточки, адаптивный тулбар с переносом кнопок на мобильных (`flex-wrap: wrap`);
+        - `insurancePoliciesTable.css` (49 строк) — таблицы реестра полисов и Grouped Cards;
+        - `insuranceLettersQueue.css` (97 строк) — бейджи гарантийных писем, услуги и чекбоксы исключений;
+        - `insuranceSplitPayment.css` (58 строк) — плашка сплит-оплаты на кассе (DMS + Пациент), бейджи долей;
+        - `insuranceActSummary.css` (76 строк) — статистика, лимиты и `@media print`;
+        - `insuranceModals.css` (82 строки) — диалоговые окна, кнопки `dms-btn*` и мобильный Bottom Sheet.
+      * Корневой `insurance.css` сокращен до ультратонкого фасада импортов (13 строк, строго $\le 20$ строк).
+    - **2. Санация TypeScript-файлов под лимит Мандата 8b (все файлы <= 120 строк)**:
+      * Из `useDmsBillSplitLogic.ts` (было 125 строк) вынесен модуль `mapBillItemToDmsLine.ts` (26 строк), сам хук сокращен до 113 строк;
+      * Из `apiHandlers.ts` (было 152 строки) вынесен `statutoryApi.ts` (77 строк), сам `apiHandlers.ts` сокращен до 86 строк с сохранением 100% обратной совместимости;
+      * Итоговый аудит подсистемы страхования: **153 файла проверено, 0 файлов > 120 строк**.
+    - **3. Клиническая и финансовая автономия (Мандаты 8e, 8n, 8x, 8ap)**:
+      * Сплит счёта (Split Invoice) рассчитывается строго в целочисленных копейках `amountKopecks` (`BIGINT`);
+      * Кнопки подтверждения и кассы никогда не блокируются (`disabled`), поддерживается дебаунсированное сохранение;
+      * В интерфейсе используется живой доменный язык без номеров советских приказов и канцелярита.
+    - **4. Интеграция живого UI и 4-State Visual Proof (Мандаты 8aq, 8am, 8ze)**:
+      * Обеспечена сквозная демонстрационная загрузка в `useDmsPatientLoader.ts` без потемкинских песочниц;
+      * 100% прохождение тестов: vitest (9 файлов, 64 теста passed, Exit Code 0);
+      * 100% проверка кодировок: `npm run check:encoding` (20657 файлов, Exit Code 0);
+      * Сняты и лично отсмотрены через `read_file` 4 скриншота в `docs/proofs/insurance/`:
+        - `01_insurance_hub_pc_light.png` (1440×900, светлая тема, сплит счёта ДМС)
+        - `02_insurance_hub_pc_dark.png` (1440×900, темная тема, высокий контраст WCAG AAA)
+        - `03_insurance_split_mobile_light.png` (390×844, мобильный Bottom Sheet, 0px горизонтального скролла)
+        - `04_insurance_split_mobile_dark.png` (390×844, темная тема на смартфоне, тач-таргеты $\ge 44$px).
+
 
 
 

@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CLINICAL DIARY TEMPLATES ENGINE — 1-CLICK STATUTORY EMR PROTOCOLS
- * Order of the Ministry of Health of Russia № 834n / № 804n / СтАР
+ * CLINICAL DIARY TEMPLATES ENGINE — 1-CLICK CLINICAL PROTOCOLS
+ * Evidence-based dental visit protocols according to EBM guidelines
  * ═══════════════════════════════════════════════════════════════════════════
  * High-density 1-Click EMR protocol engine: zero endless dropdowns,
  * instant insertion of strictly formulated statutory clinical diary text.
@@ -165,7 +165,7 @@ export function synthesize1ClickSoapDiary(
 		return sum + (s.priceKopecks ?? 0) * qty;
 	}, 0);
 
-	// Форматирование единого текста дневника Формы 043/у
+	// Форматирование единого текста дневника приёма
 	const unifiedSoapText = formatStatutoryUnifiedSoapText({
 		template,
 		toothDesc,
@@ -207,7 +207,7 @@ export function synthesize1ClickSoapDiary(
 }
 
 /**
- * Форматирует единый регламентный блок дневника Формы 043/у для вставки в текстовое поле.
+ * Форматирует единый регламентный блок дневника приёма для вставки в текстовое поле.
  */
 export function formatStatutoryUnifiedSoapText(params: {
 	readonly template: Clinical1ClickTemplate;

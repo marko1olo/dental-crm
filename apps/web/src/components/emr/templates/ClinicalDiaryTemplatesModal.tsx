@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
 	Sparkles,
@@ -92,6 +92,35 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 		const [editedSoapText, setEditedSoapText] = useState<string>("");
 		const [isCustomEdited, setIsCustomEdited] = useState<boolean>(false);
 		const [isCopied, setIsCopied] = useState<boolean>(false);
+		const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+		// Debounced автосейв текста врача на лету (Мандат 8e: Zero Keystroke Loss)
+		const handleTextChange = useCallback((newText: string) => {
+			setEditedSoapText(newText);
+			setIsCustomEdited(true);
+
+			if (autosaveTimerRef.current) {
+				clearTimeout(autosaveTimerRef.current);
+			}
+			autosaveTimerRef.current = setTimeout(() => {
+				try {
+					if (typeof sessionStorage !== "undefined") {
+						const draftKey = `dente:template_draft:${patientFullName || "common"}`;
+						sessionStorage.setItem(draftKey, newText);
+					}
+				} catch {
+					// Ignore storage errors
+				}
+			}, 600);
+		}, [patientFullName]);
+
+		useEffect(() => {
+			return () => {
+				if (autosaveTimerRef.current) {
+					clearTimeout(autosaveTimerRef.current);
+				}
+			};
+		}, []);
 
 		// Синхронизация initialToothNumber при открытии
 		useEffect(() => {
@@ -176,7 +205,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 			}
 		}, [editedSoapText, synthesized.unifiedSoapText]);
 
-		// Применение в карту 043/у
+		// Применение в медицинскую карту приёма
 		const handleApply = useCallback(() => {
 			const finalSoapText = editedSoapText || synthesized.unifiedSoapText;
 			const finalResult: SynthesizedDiaryResult = {
@@ -218,7 +247,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							</div>
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2 flex-wrap">
-									<h2 className="cd-templates-title truncate">
+									<h2 className="cd-templates-title max-sm:whitespace-normal truncate">
 										Клинические протоколы и дневники приёма
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30 shrink-0 whitespace-nowrap">
@@ -226,7 +255,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										Клинические стандарты СтАР
 									</span>
 								</div>
-								<p className="cd-templates-subtitle truncate">
+								<p className="cd-templates-subtitle max-sm:whitespace-normal truncate">
 									{patientFullName ? `Пациент: ${patientFullName} · ` : ""}
 									{toothNumberInput ? `${getToothAnatomicalDescription(toothNumberInput)} · ` : ""}
 									Мгновенная вставка канонического протокола без лишних кликов
@@ -383,7 +412,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							</div>
 						</aside>
 
-						{/* ── Right Main Pane (Editor & Live Protocol 043/u Preview) ── */}
+						{/* ── Right Main Pane (Editor & Live Protocol Preview) ── */}
 						<main className="cd-templates-editor-pane">
 							{/* Top Controls: Tooth Selector & Quick Chips */}
 							<div className="cd-editor-top-toolbar">
@@ -460,17 +489,14 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 												: "Единый протокол приема (Редактируемый дневник):"}
 										</span>
 										{isCustomEdited && (
-											<span className="text-amber-600 font-normal">
-												(внесены ручные правки)
+											<span className="text-emerald-600 dark:text-emerald-400 font-medium">
+												(внесены ручные правки · черновик автосохранён)
 											</span>
 										)}
 									</div>
 									<textarea
 										value={editedSoapText}
-										onChange={(e) => {
-											setEditedSoapText(e.target.value);
-											setIsCustomEdited(true);
-										}}
+										onChange={(e) => handleTextChange(e.target.value)}
 										className="cd-soap-textarea"
 										rows={14}
 										data-testid="cd-soap-textarea"
@@ -478,7 +504,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									/>
 								</div>
 
-								{/* Nomenclature 804n Services Attached */}
+								{/* Clinical Services Attached */}
 								{synthesized.order804nServices.length > 0 && (
 									<div className="cd-services-804n-box">
 										<div className="cd-services-title flex items-center justify-between">

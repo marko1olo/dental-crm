@@ -24,9 +24,12 @@ export function useVisitDiaryModalsState() {
 
 	useEffect(() => {
 		const handleOpenSummary = () => setShowSummaryModal(true);
+		const handleOpenTemplates = () => setShowTemplatesModal(true);
 		window.addEventListener("dente:open-visit-summary-modal", handleOpenSummary);
+		window.addEventListener("dente:open-clinical-templates-modal", handleOpenTemplates);
 		return () => {
 			window.removeEventListener("dente:open-visit-summary-modal", handleOpenSummary);
+			window.removeEventListener("dente:open-clinical-templates-modal", handleOpenTemplates);
 		};
 	}, []);
 

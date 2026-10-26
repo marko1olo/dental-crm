@@ -119,7 +119,7 @@
   transition: all 0.15s ease;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-templates-close-btn {
     min-width: 44px;
     min-height: 44px;
@@ -271,7 +271,7 @@
   transition: all 0.15s ease;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-fast-preset-btn {
     min-height: 44px;
     height: 44px;
@@ -391,7 +391,7 @@
   transition: border-color 0.15s ease;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-search-input {
     min-height: 44px;
     height: 44px;
@@ -475,7 +475,7 @@
   transition: all 0.15s ease;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-category-chip {
     min-height: 36px;
     height: 36px;
@@ -643,7 +643,7 @@
   outline: none;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-tooth-input {
     min-height: 44px;
     height: 44px;
@@ -680,11 +680,11 @@
   justify-content: center;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-tooth-chip {
-    min-height: 40px;
-    height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    height: 44px;
+    min-width: 44px;
     font-size: 13px;
   }
 }
@@ -901,9 +901,10 @@
   gap: 6px;
   border: 1px solid transparent;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .cd-btn {
     min-height: 44px;
     height: 44px;
@@ -945,18 +946,100 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ── Mobile 390px Responsive Rules ── */
+/* ── Mobile 390px Responsive Rules (Apple HIG Touch Ergonomics) ── */
 @media (max-width: 640px) {
   .cd-templates-backdrop {
-    padding: 4px;
+    padding: 0;
+    align-items: flex-end;
   }
   .cd-templates-modal {
-    height: 98vh;
-    border-radius: 10px;
+    width: 100%;
+    max-width: 100%;
+    height: 96vh;
+    border-radius: 20px 20px 0 0;
   }
-  .cd-templates-header,
-  .cd-templates-fast-ribbon,
-  .cd-templates-footer {
+  .cd-templates-header {
+    padding: 10px 14px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .cd-templates-icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+  }
+  .cd-templates-title {
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .cd-templates-subtitle {
+    font-size: 11px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cd-templates-dominant-norm-bar {
+    padding: 8px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .cd-dominant-norm-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .cd-templates-fast-ribbon {
     padding: 8px 12px;
   }
+  .cd-fast-buttons-grid {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cd-fast-buttons-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .cd-statutory-summary-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .cd-statutory-summary-card span.truncate {
+    white-space: normal;
+    word-break: break-word;
+  }
+  .cd-templates-footer {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .cd-footer-meta {
+    font-size: 11px;
+    justify-content: center;
+    text-align: center;
+  }
+  .cd-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .cd-footer-actions .cd-btn-primary {
+    grid-column: 1 / -1;
+    order: -1;
+    min-height: 48px;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .cd-footer-actions .cd-btn-secondary {
+    min-height: 44px;
+    justify-content: center;
+    font-size: 13px;
+    white-space: nowrap;
+  }
 }
+

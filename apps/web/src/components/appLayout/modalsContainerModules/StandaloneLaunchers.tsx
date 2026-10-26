@@ -11,6 +11,8 @@ import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./standalone/SpecializedAdministrativeLaunchers";
 import { renderSpecializedClinicalLaunchers } from "./standalone/SpecializedClinicalLaunchers";
+import { StandaloneClinicalTemplatesHost } from "./standalone/clinical/StandaloneClinicalTemplatesHost";
+import { clearUrlTokens } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
 	props: StandaloneLaunchersProps,
@@ -29,6 +31,21 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("odontogram-32"))
 	) {
 		return <Tooth46InspectionStand />;
+	}
+
+	// 0. Clinical Protocols & SOAP Templates Standalone Launcher (?protocols=1, #protocols)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("protocols") ||
+			window.location.hash.includes("protocols") ||
+			window.location.search.includes("clinical-templates") ||
+			window.location.hash.includes("clinical-templates"))
+	) {
+		return (
+			<StandaloneClinicalTemplatesHost
+				onClose={() => clearUrlTokens(["protocols", "clinical-templates"])}
+			/>
+		);
 	}
 
 	// 0. Doctor Payroll & Commission Launcher (?payroll=1, ?payout=1, #payroll)

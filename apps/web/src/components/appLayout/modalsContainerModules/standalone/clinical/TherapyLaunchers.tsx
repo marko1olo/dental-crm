@@ -14,6 +14,7 @@ import {
 	StandalonePerioHost,
 	StandaloneRecallsHost,
 } from "./StandaloneTherapyWorkspaceHosts";
+import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -42,6 +43,14 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 
 	if (hasUrlToken(["recalls"])) {
 		return <StandaloneRecallsHost onClose={() => clearUrlTokens(["recalls"])} />;
+	}
+
+	if (hasUrlToken(["protocols", "clinical-templates", "diary-templates"])) {
+		return (
+			<StandaloneClinicalTemplatesHost
+				onClose={() => clearUrlTokens(["protocols", "clinical-templates", "diary-templates"])}
+			/>
+		);
 	}
 
 	return null;
