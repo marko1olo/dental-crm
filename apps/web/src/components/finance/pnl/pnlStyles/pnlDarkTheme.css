@@ -59,6 +59,18 @@
 	border-color: var(--border, #334155);
 }
 
+[data-theme="dark"] .pnl-table td .text-slate-800,
+.dark .pnl-table td .text-slate-800,
+[data-theme="dark"] .pnl-table td.text-slate-800,
+.dark .pnl-table td.text-slate-800 {
+	color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .pnl-progress-bar-bg,
+.dark .pnl-progress-bar-bg {
+	background: #334155;
+}
+
 [data-theme="dark"] .pnl-date-btn,
 .dark .pnl-date-btn {
 	background: var(--paper-strong, #1e293b);

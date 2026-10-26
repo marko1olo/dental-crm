@@ -3,11 +3,13 @@
 .pnl-table-wrapper {
 	border: 1px solid var(--border, #e2e8f0);
 	border-radius: 6px;
-	overflow: hidden;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 	background: var(--paper, #ffffff);
 }
 .pnl-table {
 	width: 100%;
+	min-width: 640px;
 	border-collapse: collapse;
 	font-size: 12px;
 }
@@ -21,10 +23,12 @@
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	border-bottom: 1px solid var(--border, #e2e8f0);
+	white-space: nowrap;
 }
 .pnl-table td {
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--border, #e2e8f0);
+	white-space: nowrap;
 }
 .pnl-table tr:last-child td {
 	border-bottom: none;
@@ -103,6 +107,8 @@
 	align-items: center;
 	gap: 6px;
 	transition: background 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 .pnl-action-btn-expense:hover {
 	background: #991b1b;

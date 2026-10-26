@@ -4,12 +4,12 @@
 	position: fixed;
 	inset: 0;
 	z-index: 1050;
-	background: rgba(15, 23, 42, 0.75);
-	backdrop-filter: blur(4px);
+	background: rgba(15, 23, 42, 0.55);
+	backdrop-filter: blur(8px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 16px;
+	padding: 12px;
 }
 
 .pnl-modal-dialog {
@@ -17,9 +17,10 @@
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--border, #e2e8f0);
 	border-radius: 8px;
-	width: 100%;
-	max-width: 1320px;
-	height: 92vh;
+	width: calc(100vw - 32px);
+	max-width: 1560px;
+	height: calc(100vh - 32px);
+	max-height: 96vh;
 	display: flex;
 	flex-direction: column;
 	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -48,11 +49,15 @@
 
 .pnl-grid-two-col {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
 	gap: 16px;
 }
 
-@media (max-width: 900px) {
+.pnl-grid-two-col > * {
+	min-width: 0;
+}
+
+@media (max-width: 1200px) {
 	.pnl-grid-two-col {
 		grid-template-columns: 1fr;
 	}

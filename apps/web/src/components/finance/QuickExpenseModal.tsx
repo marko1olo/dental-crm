@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Building,
 	Calendar,
@@ -131,7 +132,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div className="quick-expense-overlay" role="dialog" aria-modal="true">
 			<div className="quick-expense-dialog">
 				{/* Шапка */}
@@ -321,4 +322,6 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

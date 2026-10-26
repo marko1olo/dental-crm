@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	BarChart3,
 	Building2,
@@ -41,18 +42,18 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div className="pnl-modal-overlay">
 			<div className="pnl-modal-dialog">
 				{/* Шапка */}
 				<div className="pnl-header">
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 min-w-0">
 						<h2 className="pnl-title">
-							<BarChart3 size={18} className="text-blue-600" />
-							Управленческий отчет P&L (Прибыли и убытки)
+							<BarChart3 size={18} className="text-blue-600 shrink-0" />
+							<span>Управленческий отчет P&L (Прибыли и убытки)</span>
 						</h2>
-						<span className="pnl-badge">
-							6 реальных касс · 12 регламентированных статей расходов
+						<span className="pnl-badge hidden xl:inline-flex">
+							6 касс · 12 регламентированных статей
 						</span>
 					</div>
 
@@ -208,7 +209,7 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 													<th>Доля (%)</th>
 													<th>Прямые затраты</th>
 													<th>Маржа (₽)</th>
-													<th>Рентабельность (%)</th>
+													<th>Рент. (%)</th>
 													<th>Средний чек</th>
 												</tr>
 											</thead>
@@ -570,4 +571,6 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 			)}
 		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
