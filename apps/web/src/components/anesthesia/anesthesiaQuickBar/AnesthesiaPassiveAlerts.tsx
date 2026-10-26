@@ -65,8 +65,8 @@ export function AnesthesiaPassiveAlerts({
 				</span>
 			)}
 			{isCardioRisk && (
-				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" title="Кардио-профиль: лимит адреналина 0.04 мг">
-					<span>{`${WARN_ICON} Кардио-контроль`}</span>
+				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" data-testid="anesthesia-passive-cardio-alert" title="Кардио-профиль: рекомендуется препарат без вазоконстриктора (Скандонест 3%)">
+					<span>{`${WARN_ICON} Рекомендуется препарат без вазоконстриктора (Скандонест 3%)`}</span>
 				</span>
 			)}
 		</div>

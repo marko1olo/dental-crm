@@ -23,7 +23,7 @@ if (typeof document !== "undefined") {
 export { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocolsReception";
 export type { AnesthesiaPatientMemoParams, AnesthesiaCalculationResult };
 export { formatAnesthesiaPatientMemo, resolveClinicalDefaultWeightKg };
-export { WEIGHT_QUICK_PRESETS, WEIGHT_PRESETS, type PrimaryAnestheticDrug, PRIMARY_ANESTHETIC_DRUGS } from "./anesthesiaQuickBar/primaryDrugs";
+export { WEIGHT_QUICK_PRESETS, WEIGHT_PRESETS, type PrimaryAnestheticDrug, PRIMARY_ANESTHETIC_DRUGS, CLINICAL_FAST_PRESETS, type ClinicalFastPresetItem } from "./anesthesiaQuickBar/primaryDrugs";
 
 export interface AnesthesiaQuickBarProps {
 	readonly patientId?: string | undefined;
@@ -50,7 +50,7 @@ export interface AnesthesiaQuickBarProps {
 }
 
 export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
-	const initialDrugId: AnestheticDrugId = props.hasLidocaineAllergy || props.hasArticaineAllergy ? "mepivacaine_plain" : "articaine_1_100k";
+	const initialDrugId: AnestheticDrugId = props.hasLidocaineAllergy || props.hasArticaineAllergy ? "mepivacaine_plain" : "articaine_1_200k";
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId | "none">(initialDrugId);
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [carpulesCount, setCarpulesCount] = useState<number>(1.0);
@@ -67,16 +67,16 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 
 	const applyAnesthesiaDirect = (drugId: AnestheticDrugId | "none", count: number, tech: InjectionTechniqueId = techniqueId) => {
 		setSelectedDrugId(drugId); setCarpulesCount(count); setTechniqueId(tech);
-		const effDrug: AnestheticDrugId = drugId === "none" ? "articaine_1_100k" : drugId;
+		const effDrug: AnestheticDrugId = drugId === "none" ? "articaine_1_200k" : drugId;
 		const result = calculateAnesthesiaSafety({
 			drugId: effDrug, carpulesCount: count, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35,
 			asaStatus: isCardioRisk ? "asa_3" : "asa_1", hasCardiovascularRisk: isCardioRisk,
 			hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy), hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
 			isPregnantOrLactating: Boolean(props.isPregnantOrLactating), techniqueId: tech, targetToothNumberFdi: props.targetToothNumberFdi,
-			needleType: "g27_long_35mm", aspirationNegativeConfirmed: isAspirationNegative,
+			needleType: tech.includes("mandibular") ? "g27_long_35mm" : "g30_short_21mm", aspirationNegativeConfirmed: isAspirationNegative,
 		});
 		const diaryText = drugId === "none" ? "Анестезия не проводилась. Лечение проведено без анестезии по согласию пациента." : result.diaryEntryRu;
-		setLastAppliedText(drugId === "none" ? "Лечение без анестезии" : `${drugId === "mepivacaine_plain" ? "Скандонест 3%" : drugId === "articaine_1_200k" ? "Убистезин (1:200k)" : "Ультракаин 1:100k"} — ${count} карп.`);
+		setLastAppliedText(drugId === "none" ? "Лечение без анестезии" : `${drugId === "mepivacaine_plain" ? "Скандонест 3%" : drugId === "articaine_1_200k" ? "Ультракаин Д-С 1:200к" : drugId === "septanest_1_100k" ? "Септанест 1:100к" : "Ультракаин Д-С Форте 1:100к"} — ${count} карп.`);
 		props.onApplyAnesthesia?.(diaryText, result);
 		if (drugId !== "none" && count > 0) {
 			props.onDisposalCarpules?.(count, effDrug);
@@ -86,7 +86,7 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 	};
 
 	const copyPatientMemo = async () => {
-		const drugName = selectedDrugId === "mepivacaine_plain" ? "Скандонест 3%" : selectedDrugId === "articaine_1_200k" ? "Убистезин" : selectedDrugId === "none" ? "Без анестезии" : "Ультракаин 1:100к";
+		const drugName = selectedDrugId === "mepivacaine_plain" ? "Скандонест 3%" : selectedDrugId === "articaine_1_200k" ? "Ультракаин Д-С (1:200 000)" : selectedDrugId === "septanest_1_100k" ? "Септанест с адреналином 1:100 000" : selectedDrugId === "none" ? "Без анестезии" : "Ультракаин Д-С Форте 1:100 000";
 		const memo = formatAnesthesiaPatientMemo({ clinicName: "Стоматологическая клиника DENTE", clinicPhone: "+7 (495) 123-45-67", patientName: "Пациент", doctorName: "Лечащий врач", drugTradeName: drugName, carpulesCount, targetArea: props.targetToothNumberFdi ? `зуб ${props.targetToothNumberFdi}` : "область вмешательства" });
 		try { await navigator.clipboard.writeText(memo); showToast("Памятка пациенту скопирована в буфер"); } catch { showToast("Памятка сформирована"); }
 	};

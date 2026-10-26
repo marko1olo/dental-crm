@@ -20,7 +20,10 @@ export interface PersistAnesthesiaLogParams {
 }
 
 export function resolveDrugMeta(drugId: AnestheticDrugId) {
-	if (drugId === "articaine_1_100k" || drugId === "septanest_1_100k") {
+	if (drugId === "septanest_1_100k") {
+		return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Септанест с адреналином 1:100 000" };
+	}
+	if (drugId === "articaine_1_100k") {
 		return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С форте 1:100 000" };
 	}
 	if (drugId === "articaine_1_200k") {
@@ -32,12 +35,12 @@ export function resolveDrugMeta(drugId: AnestheticDrugId) {
 	if (drugId === "lidocaine_1_100k") {
 		return { drugEnum: "lidocaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 2.0, brandName: "Лидокаин 2% с адреналином" };
 	}
-	return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С" };
+	return { drugEnum: "articaine" as const, vasoEnum: "1:200000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С 1:200 000" };
 }
 
 export function resolveTechniqueEnum(techniqueId: InjectionTechniqueId) {
-	if (techniqueId.includes("mandibular")) return "mandibular_block" as const;
-	if (techniqueId.includes("torus")) return "torus_block" as const;
+	if (techniqueId.includes("mandibular") || techniqueId.includes("torus")) return "mandibular_block" as const;
+	if (techniqueId.includes("tuberal")) return "tuberal_block" as const;
 	return "infiltration" as const;
 }
 
@@ -49,6 +52,7 @@ export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
 		? params.targetToothNumberFdi
 		: parseInt(String(params.targetToothNumberFdi || ""), 10);
 	const toothNumbers = Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
+	const carpuleVolumeMl = params.drugId === "mepivacaine_plain" ? 1.8 : 1.7;
 
 	try {
 		fetch(`/api/anesthesia/patients/${params.patientId}/logs`, {
@@ -61,10 +65,10 @@ export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
 				drugBrandName: brandName,
 				concentrationPct,
 				vasoconstrictor: vasoEnum,
-				carpuleVolumeMl: 1.7,
+				carpuleVolumeMl,
 				carpulesAdministered: params.carpulesCount,
-				patientWeightKg: params.patientWeightKg,
-				patientAgeYears: params.patientAgeYears,
+				patientWeightKg: params.patientWeightKg || 70,
+				patientAgeYears: params.patientAgeYears ?? 35,
 				asaClass: params.isCardioRisk ? "ASA_III" : "ASA_I",
 				hasCardiovascularDisease: params.isCardioRisk,
 				aspirationTestPositive: false,

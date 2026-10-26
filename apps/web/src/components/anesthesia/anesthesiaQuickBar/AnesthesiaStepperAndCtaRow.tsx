@@ -85,17 +85,17 @@ export function AnesthesiaStepperAndCtaRow(props: AnesthesiaStepperAndCtaRowProp
 				</button>
 			</div>
 
-			<label data-testid="label-aspiration-negative-norm" className="inline-flex items-center gap-1 px-2 py-1 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors select-none shrink-0">
+			<label data-testid="label-aspiration-negative-norm" className="inline-flex items-center gap-1 px-2 py-1 min-h-[36px] h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors select-none shrink-0">
 				<input type="checkbox" checked={isAspirationNegative} onChange={() => setIsAspirationNegative((v) => !v)} data-testid="checkbox-aspiration-negative-norm" className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer" />
 				<span className="text-[11px] text-[var(--muted)]">Аспирация (−)</span>
 			</label>
 
-			<button id={memoCopyButtonId} type="button" onClick={copyPatientMemo} className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer shrink-0" title="Скопировать памятку пациенту для мессенджера">
+			<button id={memoCopyButtonId} type="button" onClick={copyPatientMemo} className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[36px] h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer shrink-0" title="Скопировать памятку пациенту для мессенджера">
 				<Share2 size={12} className="text-teal-600 shrink-0" />
 				<span className="hidden xl:inline">Памятка</span>
 			</button>
 
-			<button type="button" onClick={onOpenMobileDrawer} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] shrink-0" title="Открыть мобильную шторку анестезии" data-testid="btn-open-anesthesia-mobile-sheet">
+			<button type="button" onClick={onOpenMobileDrawer} className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 min-h-[36px] h-9 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] shrink-0" title="Открыть мобильную шторку анестезии" data-testid="btn-open-anesthesia-mobile-sheet">
 				<SlidersHorizontal size={13} />
 				<span>Шторка</span>
 			</button>
@@ -103,7 +103,7 @@ export function AnesthesiaStepperAndCtaRow(props: AnesthesiaStepperAndCtaRowProp
 			<button
 				type="button"
 				onClick={onApplyToCard}
-				className="primary-button inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-xl border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
+				className="primary-button inline-flex items-center gap-1.5 px-3.5 py-1.5 h-9 min-h-[36px] rounded-xl border border-[var(--teal-strong,#0f766e)] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
 				title={`Применить анестезию (${carpulesCount} карп.) в протокол приёма`}
 				data-testid="btn-apply-anesthesia-to-card"
 			>

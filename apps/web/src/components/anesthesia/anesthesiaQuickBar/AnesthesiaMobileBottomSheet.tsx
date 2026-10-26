@@ -6,6 +6,7 @@
 import { CheckCircle2, Syringe, X } from "lucide-react";
 import React from "react";
 import type { AnestheticDrugId, InjectionTechniqueId } from "../anesthesiaCatalog";
+import { CLINICAL_FAST_PRESETS, type ClinicalFastPresetItem } from "./primaryDrugs";
 
 export interface AnesthesiaMobileBottomSheetProps {
 	readonly isOpen: boolean;
@@ -55,42 +56,24 @@ export function AnesthesiaMobileBottomSheet({
 				</div>
 
 				<div className="flex flex-col gap-2 pt-1">
-					<button type="button" onClick={() => onApplyDirect("articaine_1_100k", 1.0, "infiltration")} className={`w-full min-h-[48px] px-3 py-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${selectedDrugId === "articaine_1_100k" ? "border-emerald-600 bg-emerald-500/10 dark:bg-emerald-500/20 text-[var(--ink)] ring-1 ring-emerald-600/30" : "border-[var(--line)] bg-[var(--paper)]"}`}>
-						<div>
-							<div className="text-xs font-bold text-[var(--ink)]">Ультракаин 1:100к (Форте)</div>
-							<div className="text-[11px] text-[var(--muted)]">1 карпула 1.7 мл • Инфильтрация • Стандарт</div>
-						</div>
-						<span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">1.7 мл</span>
-					</button>
+					{CLINICAL_FAST_PRESETS.map((p: ClinicalFastPresetItem) => {
+						const isSelected = selectedDrugId === p.drugId;
+						const activeCls = isSelected
+							? p.isCardioRecommended
+								? "border-amber-600 bg-amber-500/10 text-[var(--ink)] ring-1 ring-amber-600/30"
+								: "border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--ink)] ring-1 ring-[var(--teal,#0d9488)]/30"
+							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]";
 
-					<button type="button" onClick={() => onApplyDirect("articaine_1_200k", 1.0, "mandibular_torus")} className={`w-full min-h-[48px] px-3 py-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${selectedDrugId === "articaine_1_200k" ? "border-teal-600 bg-teal-500/10 dark:bg-teal-500/20 text-[var(--ink)] ring-1 ring-teal-600/30" : "border-[var(--line)] bg-[var(--paper)]"}`}>
-						<div>
-							<div className="text-xs font-bold text-[var(--ink)]">Убистезин (Артикаин 1:200к)</div>
-							<div className="text-[11px] text-[var(--muted)]">1 карпула 1.7 мл • Проводниковая • Щадящий адреналин</div>
-						</div>
-						<span className="text-xs font-bold text-teal-600 dark:text-teal-400">1.7 мл</span>
-					</button>
-
-					<button type="button" onClick={() => onApplyDirect("mepivacaine_plain", 1.0, techniqueId)} className={`w-full min-h-[48px] px-3 py-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${selectedDrugId === "mepivacaine_plain" ? "border-amber-600 bg-amber-500/10 dark:bg-amber-500/20 text-[var(--ink)] ring-1 ring-amber-600/30" : "border-[var(--line)] bg-[var(--paper)]"}`}>
-						<div>
-							<div className="text-xs font-bold text-[var(--ink)]">Скандонест (без адреналина)</div>
-							<div className="text-[11px] text-[var(--muted)]">1 карпула 1.7 мл • Мепивакаин 3% • Кардио-риск</div>
-						</div>
-						<span className="text-xs font-bold text-amber-600 dark:text-amber-400">1.7 мл</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => onApplyDirect("none", 0)}
-						className={`w-full min-h-[44px] px-3 py-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all cursor-pointer ${
-							selectedDrugId === "none"
-								? "border-slate-500 bg-slate-500/10 text-[var(--ink)] font-bold"
-								: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<span className="text-xs font-semibold">Без анестезии (по согласию)</span>
-						<span className="text-xs font-bold text-slate-500 shrink-0">0 мл</span>
-					</button>
+						return (
+							<button key={p.testId} type="button" onClick={() => onApplyDirect(p.drugId, p.count, p.defaultTechnique ?? techniqueId)} className={`w-full min-h-[48px] px-3 py-2 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${activeCls}`}>
+								<div>
+									<div className="text-xs font-bold text-[var(--ink)]">{p.shortLabelRu}</div>
+									<div className="text-[11px] text-[var(--muted)]">{p.clinicalScopeRu}</div>
+								</div>
+								<span className="text-xs font-bold text-[var(--teal,#0d9488)] shrink-0">{p.volumeMl > 0 ? `${p.volumeMl} мл` : "0 мл"}</span>
+							</button>
+						);
+					})}
 				</div>
 
 				<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
@@ -102,7 +85,7 @@ export function AnesthesiaMobileBottomSheet({
 				</div>
 
 				<div className="pt-2 pb-[env(safe-area-inset-bottom)]">
-					<button type="button" onClick={() => { onApplyDirect(selectedDrugId, carpulesCount, techniqueId); onClose(); }} className="primary-button w-full min-h-[48px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98" data-testid="btn-apply-anesthesia-mobile-to-card">
+					<button type="button" onClick={() => { onApplyDirect(selectedDrugId, carpulesCount, techniqueId); onClose(); }} className="primary-button w-full min-h-[48px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98" data-testid="btn-apply-anesthesia-mobile-to-card">
 						<CheckCircle2 size={16} />
 						<span>Применить анестезию в протокол</span>
 					</button>
