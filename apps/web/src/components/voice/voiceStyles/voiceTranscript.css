@@ -1,0 +1,39 @@
+/**
+ * voiceTranscript.css — Блок расшифровки и отображения транскрипта речи.
+ * Layer 3: Карточка транскрипта, заголовок и плейсхолдер.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-transcript-card {
+	padding: 16px 20px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dnt-voice-transcript-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.dnt-voice-transcript-text {
+	font-size: 15px;
+	line-height: 1.5;
+	color: var(--ink);
+	min-height: 24px;
+	word-break: break-word;
+}
+
+.dnt-voice-transcript-placeholder {
+	color: var(--muted);
+	font-style: italic;
+}

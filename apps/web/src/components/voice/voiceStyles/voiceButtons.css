@@ -1,0 +1,116 @@
+/**
+ * voiceButtons.css — Кнопки действий диалога SmartMic.
+ * Layer 3: Кнопки «Применить», «Применить всё», вторичные действия и иконки.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.voice-btn-apply,
+.dnt-voice-btn-apply {
+	min-height: 38px;
+	min-width: 38px;
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: none;
+	background: var(--ok-fg);
+	color: var(--paper-strong);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	transition: background 0.15s ease;
+}
+
+.voice-btn-apply:hover,
+.dnt-voice-btn-apply:hover {
+	opacity: 0.9;
+}
+
+.voice-btn-icon,
+.dnt-voice-btn-icon-only {
+	min-height: 38px;
+	min-width: 38px;
+	padding: 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.voice-btn-icon:hover,
+.dnt-voice-btn-icon-only:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.dnt-voice-fallback-bar .voice-btn-apply,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply {
+	min-height: 44px;
+	padding: 10px 18px;
+	font-size: 14px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: none;
+	background: var(--teal);
+	color: var(--paper-strong);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+}
+
+.dnt-voice-fallback-bar .voice-btn-apply:hover,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply:hover {
+	background: var(--teal-dark);
+}
+
+.voice-btn-secondary,
+.dnt-voice-btn-secondary {
+	min-height: 44px;
+	padding: 10px 18px;
+	font-size: 14px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--ink);
+	cursor: pointer;
+}
+
+.voice-btn-secondary:hover,
+.dnt-voice-btn-secondary:hover {
+	background: var(--paper-soft);
+}
+
+.voice-btn-primary,
+.dnt-voice-btn-primary {
+	min-height: 44px;
+	padding: 10px 20px;
+	font-size: 14px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: none;
+	background: var(--teal);
+	color: var(--paper-strong);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.voice-btn-primary:hover,
+.dnt-voice-btn-primary:hover {
+	background: var(--teal-dark);
+}
+
+.voice-btn-primary:disabled,
+.dnt-voice-btn-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

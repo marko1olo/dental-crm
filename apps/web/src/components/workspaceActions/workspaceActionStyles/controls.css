@@ -1,0 +1,108 @@
+/* ---------- КНОПКА ДЕЙСТВИЯ ---------- */
+.dnt-actions__control {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	border: 0;
+	background: var(--paper);
+	color: var(--ink-2);
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition:
+		background var(--transition-fast, 0.15s ease),
+		color var(--transition-fast, 0.15s ease);
+}
+
+.dnt-actions[data-placement="header"] .dnt-actions__control {
+	min-height: 32px;
+	height: 32px;
+	padding: 0 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control {
+	width: 100%;
+	/* Крупная зона нажатия: палец, а не курсор */
+	min-height: 3.25rem;
+	padding: 0.625rem 0.875rem;
+	border: 1px solid var(--line-strong);
+	border-radius: 0.875rem;
+	font-size: 0.9375rem;
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.dnt-actions__control:hover {
+	background: var(--teal-surface);
+	color: var(--teal-dark);
+}
+
+.dnt-actions__control:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: -2px;
+	position: relative;
+}
+
+.dnt-actions__control--primary {
+	background: var(--paper-strong);
+	color: var(--ink);
+}
+
+.dnt-actions__control[aria-pressed="true"],
+.dnt-actions__control[aria-expanded="true"],
+.dnt-actions__control--active {
+	background: var(--teal);
+	border-color: var(--teal-dark);
+	color: var(--on-teal);
+}
+
+.dnt-actions__control[aria-pressed="true"] .dnt-actions__control-hint,
+.dnt-actions__control[aria-expanded="true"] .dnt-actions__control-hint {
+	color: var(--on-teal);
+}
+
+.dnt-actions__control-icon {
+	width: 1.125rem;
+	height: 1.125rem;
+	flex: 0 0 auto;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control-icon {
+	width: 1.375rem;
+	height: 1.375rem;
+}
+
+.dnt-actions__control-text {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 0;
+	gap: 0.0625rem;
+}
+
+.dnt-actions__control-label {
+	overflow-wrap: anywhere;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.dnt-actions__control-hint {
+	display: none;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control-hint {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}

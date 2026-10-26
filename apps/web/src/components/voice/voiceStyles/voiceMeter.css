@@ -1,0 +1,27 @@
+/**
+ * voiceMeter.css — Аудиовизуализатор VU-метра и спектрограммы речи.
+ * Layer 2: Полоски уровня звука и состояния активности микрофона.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-meter-bars {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	height: 36px;
+	width: 100%;
+	max-width: 280px;
+}
+
+.dnt-voice-meter-bar {
+	width: 5px;
+	background: var(--teal);
+	border-radius: 4px;
+	transition: height 0.08s ease-out;
+	min-height: 4px;
+}
+
+.dnt-voice-meter-bar--active {
+	background: var(--bad-fg);
+}

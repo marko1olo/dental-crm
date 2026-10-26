@@ -1,0 +1,110 @@
+/**
+ * voiceHeader.css — Шапка модального окна голосового ассистента.
+ * Layer 3: Заголовок, бейдж, кнопки закрытия и калибровки (сенсорный минимум >= 44x44px).
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 24px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-strong);
+}
+
+.dnt-voice-modal-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.dnt-voice-modal-icon-badge {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--teal);
+	color: var(--paper-strong);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.dnt-voice-modal-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.3;
+}
+
+.dnt-voice-modal-subtitle {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+}
+
+.dnt-voice-modal-close-btn {
+	min-width: 36px;
+	min-height: 36px;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.dnt-voice-modal-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
+}
+
+.dnt-voice-modal-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+.dnt-voice-modal-calibrate-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px;
+	min-height: 36px;
+	height: 36px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.dnt-voice-modal-calibrate-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 0 14px;
+	}
+}
+
+.dnt-voice-modal-calibrate-btn:hover {
+	background: var(--paper);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+}

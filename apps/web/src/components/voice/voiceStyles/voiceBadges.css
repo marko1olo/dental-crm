@@ -1,0 +1,41 @@
+/**
+ * voiceBadges.css — Клинические бейджи категорий и достоверности распознавания.
+ * Layer 3: Зубные номера FDI, уровни доверия, SOAP, анестезия и материалы.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-badge {
+	font-size: 12px;
+	font-weight: 700;
+	padding: 3px 8px;
+	border-radius: 6px;
+	line-height: 1.2;
+}
+
+.dnt-voice-badge--tooth {
+	background: var(--teal);
+	color: var(--paper-strong);
+}
+
+.dnt-voice-badge--high {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
+}
+
+.dnt-voice-badge--review {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border: 1px solid var(--warn-fg);
+}
+
+.dnt-voice-badge--soap {
+	background: var(--info-bg);
+	color: var(--info-fg);
+}
+
+.dnt-voice-badge--anesthesia,
+.dnt-voice-badge--consumable {
+	background: var(--teal-surface);
+	color: var(--teal);
+}

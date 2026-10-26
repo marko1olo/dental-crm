@@ -1,0 +1,95 @@
+/**
+ * voiceCommands.css — Карточки и списки распознанных клинических команд.
+ * Layer 3: Секция команд, чипы, метаданные и кнопки управления.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-commands-section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dnt-voice-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dnt-voice-section-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dnt-voice-command-chips-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.dnt-voice-chip-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong);
+	gap: 12px;
+	transition: all 0.2s ease;
+}
+
+.dnt-voice-chip-card--high {
+	border-left: 4px solid var(--ok-fg);
+	background: var(--ok-bg);
+}
+
+.dnt-voice-chip-card--review {
+	border-left: 4px solid var(--warn-fg);
+	background: var(--warn-bg);
+}
+
+.dnt-voice-chip-card--applied {
+	opacity: 0.7;
+	border-left: 4px solid var(--muted);
+}
+
+.dnt-voice-chip-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+	min-width: 0;
+}
+
+.dnt-voice-chip-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.dnt-voice-chip-summary {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: normal;
+	word-break: break-word;
+}
+
+.dnt-voice-chip-raw {
+	font-size: 12px;
+	color: var(--muted);
+	font-style: italic;
+}
+
+.dnt-voice-chip-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}

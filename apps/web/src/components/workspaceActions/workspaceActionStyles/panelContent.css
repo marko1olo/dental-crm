@@ -1,0 +1,70 @@
+/* ---------- СОДЕРЖИМОЕ ПАНЕЛИ СПРАВКИ И КОМАНД ---------- */
+.dnt-actions__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	margin-bottom: 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.dnt-actions__tab {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.375rem 0.5rem;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.dnt-actions__tab--active {
+	background: var(--teal-soft);
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+}
+
+.dnt-actions__hint {
+	margin: 0 0 0.5rem;
+	color: var(--ink-2);
+}
+
+.dnt-actions__cmd-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.dnt-actions__cmd {
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.dnt-actions__cmd-title {
+	font-weight: 600;
+	color: var(--teal-dark);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__cmd-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__note {
+	margin-top: 0.75rem;
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--warn-fg);
+	border-radius: 0.75rem;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	font-size: 0.6875rem;
+}

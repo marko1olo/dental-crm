@@ -1,0 +1,107 @@
+/* ---------- ВРЕМЕННАЯ НАКЛАДКА ----------
+   Единственный слой группы, который перекрывает страницу. Вызывается человеком. */
+.dnt-actions__notice:empty,
+.dnt-actions__notice:not(:has(*)) {
+	display: none !important;
+	pointer-events: none !important;
+}
+
+.dnt-actions[data-placement="header"] .dnt-actions__notice {
+	position: absolute;
+	top: calc(100% + 0.5rem);
+	right: 0;
+	z-index: var(--dnt-actions-z);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.75rem;
+	width: 24rem;
+	max-width: 24rem;
+	max-height: min(70vh, 34rem);
+	overflow-y: auto;
+	pointer-events: none;
+}
+
+.dnt-actions__notice > * {
+	pointer-events: auto;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__notice {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+/* ---------- СОДЕРЖИМОЕ НАКЛАДКИ ---------- */
+.dnt-actions__panel {
+	width: 100%;
+	padding: 1rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+	font-size: 0.8125rem;
+	line-height: 1.5;
+}
+
+.dnt-actions__panel-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-bottom: 0.75rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.dnt-actions__panel-title {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__panel-subtitle {
+	margin: 0;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__panel-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	min-width: 44px;
+	min-height: 44px;
+	flex: 0 0 auto;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+}
+
+.dnt-actions__panel-close:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.dnt-actions__panel-close svg {
+	width: 1.125rem;
+	height: 1.125rem;
+}
+
+.dnt-actions__panel-close:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}

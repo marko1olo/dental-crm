@@ -1,0 +1,108 @@
+/**
+ * voiceSoapAndFallback.css — Сводка дневника приёма (SOAP) и резервный ввод команд.
+ * Layer 3: Сетка секций SOAP, текстовый фоллбэк при лагах сети и чипсы быстрых шаблонов.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-soap-card {
+	padding: 16px;
+	border-radius: 12px;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dnt-voice-soap-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+}
+
+@media (min-width: 640px) {
+	.dnt-voice-soap-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+.dnt-voice-soap-item {
+	padding: 10px 12px;
+	background: var(--paper-soft);
+	border-radius: 8px;
+	border-left: 3px solid var(--teal);
+}
+
+.dnt-voice-soap-item-label {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--teal);
+	text-transform: uppercase;
+	margin-bottom: 4px;
+}
+
+.dnt-voice-soap-item-text {
+	font-size: 13px;
+	color: var(--ink);
+	line-height: 1.4;
+}
+
+/* Резервный клинический ввод текста диктовки при задержке сети */
+.dnt-voice-fallback-bar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding-top: 12px;
+	border-top: 1px solid var(--line);
+}
+
+.dnt-voice-input {
+	flex: 1;
+	min-height: 44px;
+	padding: 10px 14px;
+	font-size: 14px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	outline: none;
+}
+
+.dnt-voice-input:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-soft);
+}
+
+/* Quick Cheat Sheet Pills */
+.dnt-voice-cheatsheet {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.dnt-voice-cheatsheet-pill {
+	font-size: 12px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 32px;
+	display: inline-flex;
+	align-items: center;
+}
+
+@media (pointer: coarse) {
+	.dnt-voice-cheatsheet-pill {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+}
+
+.dnt-voice-cheatsheet-pill:hover {
+	background: var(--teal);
+	color: var(--paper-strong);
+	border-color: var(--teal);
+}

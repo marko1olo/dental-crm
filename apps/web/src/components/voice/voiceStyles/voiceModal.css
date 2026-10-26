@@ -1,0 +1,103 @@
+/**
+ * voiceModal.css — Модальное окно и мобильная шторка Bottom Sheet (Apple HIG).
+ * Layer 3: Стили контейнера диалога, анимации появления и тактильный Drag Handle.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	animation: dntVoiceFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow-x: clip;
+	max-width: 100vw;
+}
+
+@keyframes dntVoiceFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.dnt-voice-modal-dialog {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	box-shadow: var(--shadow-3);
+	border-radius: 16px;
+	width: 100%;
+	max-width: 780px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: dntVoiceSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	position: relative;
+	box-sizing: border-box;
+}
+
+@keyframes dntVoiceSlideUp {
+	from {
+		transform: translateY(20px) scale(0.98);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* Apple HIG: тактильный Drag Handle для мобильной шторки */
+.dnt-voice-drag-handle {
+	display: none;
+}
+
+/* Мобильный слой (Apple HIG): нативная шторка Bottom Sheet */
+@media (max-width: 768px) {
+	.dnt-voice-modal-backdrop {
+		align-items: flex-end;
+		padding: 0;
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.dnt-voice-modal-dialog {
+		border-radius: 24px 24px 0 0;
+		max-width: 100vw;
+		max-height: 92vh;
+		width: 100%;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		overflow-x: clip;
+		animation: dntVoiceSheetUp 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+	}
+
+	.dnt-voice-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--line-strong);
+		margin: 10px auto 2px auto;
+		flex-shrink: 0;
+		touch-action: pan-y;
+	}
+}
+
+@keyframes dntVoiceSheetUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}

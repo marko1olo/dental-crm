@@ -1,0 +1,115 @@
+/* ---------- ПУЗЫРЬ РАСШИФРОВКИ И ИНДИКАТОР ЗАПИСИ ---------- */
+.dnt-actions__transcript {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.75rem;
+	width: 100%;
+}
+
+.dnt-actions__transcript-card {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.875rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+}
+
+.dnt-actions__transcript-head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.dnt-actions__rec-dot {
+	width: 0.625rem;
+	height: 0.625rem;
+	border-radius: 9999px;
+	background: var(--bad-fg);
+}
+
+.dnt-actions__rec-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.dnt-actions__rec-mode {
+	margin-left: auto;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 0.625rem;
+	font-weight: 600;
+}
+
+.dnt-actions__transcript-text {
+	min-height: 2.5rem;
+	margin-bottom: 0.75rem;
+	color: var(--ink);
+	font-size: 0.875rem;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__meter {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.25rem;
+	height: 1.5rem;
+}
+
+.dnt-actions__meter-bar {
+	width: 0.375rem;
+	border-radius: 9999px;
+	background: var(--teal);
+}
+
+/* Чип выполненной команды */
+.dnt-actions__action {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 0.75rem;
+	border: 1px solid var(--teal-ring);
+	border-radius: 0.75rem;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	box-shadow: var(--shadow-2);
+}
+
+.dnt-actions__action-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	flex: 0 0 auto;
+}
+
+.dnt-actions__action-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.dnt-actions__action-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+/* Подсказки диктовки рядом с пузырём — только там, где есть ширина */
+.dnt-actions__side-hints {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.dnt-actions__side-hints {
+		display: block;
+	}
+}

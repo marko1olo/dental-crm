@@ -1,0 +1,68 @@
+/* ---------- ТОЧКА КРЕПЛЕНИЯ В ТОПБАРЕ ---------- */
+.dnt-actions-mount--header {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 0 0 auto;
+}
+
+/* Пока раскладка узкая, хост живёт в навигации, а эта точка пуста */
+.dnt-actions-mount--header:empty {
+	display: none;
+}
+
+/* Строка действий топбара: перенос при наличии группы действий */
+.topbar .top-actions:has(> .dnt-actions-mount--header) {
+	flex-wrap: nowrap;
+	justify-content: flex-end;
+}
+
+/* ---------- ХОСТ ---------- */
+.dnt-actions {
+	/* Слой накладки: шкала main.css: --z-sticky 500 < накладка < --z-drawer-overlay 1000 */
+	--dnt-actions-z: 900;
+	min-width: 0;
+}
+
+.dnt-actions[data-placement="header"] {
+	display: flex;
+	align-items: center;
+}
+
+.dnt-actions[data-placement="nav"] {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-width: 0;
+}
+
+/* Слот строки не создаёт собственный бокс */
+.dnt-actions__bar .dnt-actions__slot {
+	display: contents;
+}
+
+/* Гарантия одиночного контрола: если в слот попало несколько детей, отображается строго последний */
+.dnt-actions__slot > *:not(:last-child) {
+	display: none !important;
+}
+
+/* ---------- СТРОКА КНОПОК: ШИРОКИЙ ЭКРАН ----------
+   Кнопки действий с отступом (gap: 8px) по дизайн-системе DENTE */
+.dnt-actions[data-placement="header"] .dnt-actions__bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	overflow: visible;
+	box-shadow: none;
+}
+
+/* ---------- СТРОКА КНОПОК: УЗКИЙ ЭКРАН ----------
+   Вертикальный список крупных строк с подписью и объяснением. */
+.dnt-actions[data-placement="nav"] .dnt-actions__bar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}

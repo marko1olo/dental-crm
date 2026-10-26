@@ -51,9 +51,10 @@ export interface VoiceDictationAssistantModalProps {
 }
 
 const QUICK_EXAMPLES = [
+	"Норма по соматике",
+	"Кариес 36 зуб дистальный",
 	"Зуб 46 кариес дентина",
 	"Шестнадцатый зуб острый пульпит",
-	"Нижний левый первый моляр пломба",
 	"Анестезия убистезин 1.7 мл 1 карпула",
 	"Коффердам установлен",
 	"Жалобы: ноющая боль от холодного",
@@ -267,6 +268,8 @@ export function VoiceDictationAssistantModal({
 			aria-labelledby="voice-assistant-title"
 		>
 			<div className="dnt-voice-modal-dialog">
+				{/* Apple HIG: тактильный Drag Handle для мобильной шторки */}
+				<div className="dnt-voice-drag-handle" aria-hidden="true" />
 				{/* Header */}
 				<div className="dnt-voice-modal-header">
 					<div className="dnt-voice-modal-title-group">
@@ -324,7 +327,7 @@ export function VoiceDictationAssistantModal({
 						<button
 							type="button"
 							onClick={handleToggleListening}
-							disabled={isProcessing}
+							disabled={false}
 							className={`dnt-voice-mic-button ${
 								isListening ? "dnt-voice-mic-button--listening" : ""
 							} ${isProcessing ? "dnt-voice-mic-button--processing" : ""}`}

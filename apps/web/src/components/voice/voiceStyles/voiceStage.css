@@ -1,0 +1,106 @@
+/**
+ * voiceStage.css — Интерактивная сцена записи и тактильная кнопка SmartMic.
+ * Layer 3: Кнопка микрофона (72x72px desktop, 64x64px mobile), пульсация и статусы.
+ * Строго <= 120 строк по Мандату 8b.
+ */
+
+.dnt-voice-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+@media (max-width: 768px) {
+	.dnt-voice-modal-body {
+		padding: 16px;
+		gap: 16px;
+	}
+}
+
+.dnt-voice-rec-stage {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 16px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	gap: 16px;
+	position: relative;
+	min-height: 210px;
+}
+
+/* Крупная тактильная кнопка микрофона (72x72px десктоп, 64x64px смартфон) */
+.dnt-voice-mic-button {
+	position: relative;
+	width: 72px;
+	height: 72px;
+	min-width: 72px;
+	min-height: 72px;
+	border-radius: 50%;
+	border: none;
+	background: var(--teal);
+	color: var(--paper-strong);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, background 0.2s ease;
+	outline: none;
+	z-index: 2;
+}
+
+@media (max-width: 768px) {
+	.dnt-voice-mic-button {
+		width: 64px;
+		height: 64px;
+		min-width: 64px;
+		min-height: 64px;
+	}
+}
+
+.dnt-voice-mic-button:hover {
+	transform: scale(1.06);
+	background: var(--teal-dark);
+}
+
+.dnt-voice-mic-button--listening {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+	animation: dntVoicePulse 1.8s infinite;
+}
+
+@keyframes dntVoicePulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+	}
+	70% {
+		box-shadow: 0 0 0 22px rgba(239, 68, 68, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+	}
+}
+
+.dnt-voice-mic-button--processing {
+	background: var(--info-fg);
+	color: var(--paper-strong);
+	cursor: wait;
+}
+
+.dnt-voice-rec-status-label {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	text-align: center;
+}
+
+.dnt-voice-rec-status-sub {
+	font-size: 13px;
+	color: var(--muted);
+	text-align: center;
+}
