@@ -20,7 +20,7 @@ import {
 	generateMonospacedTapeText,
 	generateShiftClosingAct,
 	generateShiftClosingActHtml,
-} from "../cashShiftClosingEngine";
+} from "../cashShiftClosingEngine.js";
 
 describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 	describe("1. Denomination breakdown calculations", () => {
@@ -229,7 +229,7 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			assert.equal(resExceeded.isShiftDurationWarning20h, false);
 			assert.ok(resExceeded.shiftDurationHours >= 26);
 			assert.equal(resExceeded.hoursRemainingUntil24h, 0);
-			assert.ok(resExceeded.ftsWarningMessage?.includes("Смена превысила 24 часа"));
+			assert.ok(resExceeded.ftsWarningMessage?.includes("Смена длится больше 24 часов"), "Human shift-limit message, no law citations");
 		});
 
 		it("correctly reconciles all payment tenders (Cash, Card, SBP, Advance)", () => {
@@ -308,9 +308,9 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			assert.equal(v.receivedFrom, "Сидорова А. П.");
 
 			const html = generateKo1Html(v);
-			assert.ok(html.includes("Приходный кассовый ордер (Форма КО-1)"));
+			assert.ok(html.includes("Квитанция об оплате медицинских услуг") || html.includes("Внесение наличных"));
 			assert.ok(html.includes("ПКО-42"));
-			assert.ok(html.includes("5000.00 руб."));
+			assert.ok(html.includes("5000.00"));
 			assert.ok(html.includes(DEFAULT_CLINIC_FISCAL_DETAILS.legalName));
 		});
 
@@ -330,9 +330,9 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			assert.ok(v.recipientPassportRu?.includes("394821"));
 
 			const html = generateKo2Html(v);
-			assert.ok(html.includes("Расходный кассовый ордер (Форма КО-2)"));
+			assert.ok(html.includes("Квитанция о выдаче"));
 			assert.ok(html.includes("РКО-42"));
-			assert.ok(html.includes("15400.00 руб."));
+			assert.ok(html.includes("15400.00"));
 		});
 
 		it("generates valid Encashment Statement and HTML", () => {

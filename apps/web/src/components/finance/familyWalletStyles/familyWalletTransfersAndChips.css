@@ -1,0 +1,59 @@
+/* ── Family Wallet Panel: Transfers & Quick Chips ── */
+.family-member-transfer-btn {
+	min-height: 44px;
+	min-width: 44px;
+	width: 100%;
+	padding: 0.5rem 0.875rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #cbd5e1);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-member-transfer-btn {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
+}
+
+.family-member-transfer-btn:hover:not(:disabled) {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	background-color: var(--teal-soft, rgba(13, 148, 136, 0.08));
+}
+
+.family-member-transfer-btn.active {
+	background-color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.family-wallet-panel .quick-chip,
+.family-wallet-panel .quick-chip--sm {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 1rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-radius: 0.5rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.family-wallet-panel .family-wallet-btn {
+	min-height: 48px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	padding: 0 1.5rem;
+}

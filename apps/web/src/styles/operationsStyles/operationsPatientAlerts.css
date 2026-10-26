@@ -1,0 +1,99 @@
+/* ── Operations Patient Duplicate Alerts ── */
+.patient-duplicate-alert {
+	margin: 10px 0 14px;
+	padding: 12px 14px;
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--warn-fg);
+	border-radius: 12px;
+	background: var(--warn-bg);
+}
+
+.patient-duplicate-alert__lead,
+.patient-duplicate-alert__notice {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--ink);
+}
+
+.patient-duplicate-alert__notice {
+	margin-top: 8px;
+	font-size: 12.5px;
+}
+
+.patient-duplicate-alert--done {
+	border-left-color: var(--teal);
+	background: var(--paper);
+	font-size: 12.5px;
+	color: var(--ink);
+}
+
+.patient-duplicate-alert__list {
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 8px;
+}
+
+.patient-duplicate-alert__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 16px;
+	align-items: flex-start;
+	justify-content: space-between;
+	padding: 10px 0 0;
+	border-top: 1px solid var(--line);
+}
+
+.patient-duplicate-alert__item:first-child {
+	border-top: none;
+	padding-top: 0;
+}
+
+.patient-duplicate-alert__who {
+	display: grid;
+	gap: 3px;
+	min-width: 220px;
+	flex: 1 1 260px;
+}
+
+.patient-duplicate-alert__name {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.patient-duplicate-alert__facts {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink);
+}
+
+.patient-duplicate-alert__why {
+	font-size: 11.5px;
+	line-height: 1.45;
+	color: var(--warn-fg);
+}
+
+.patient-duplicate-alert__who .ops-state {
+	justify-self: start;
+}
+
+.patient-duplicate-alert__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: stretch;
+	min-width: 190px;
+}
+
+.patient-duplicate-alert__actions button {
+	white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+	.patient-duplicate-alert__actions {
+		width: 100%;
+	}
+}

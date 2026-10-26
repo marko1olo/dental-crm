@@ -5,7 +5,7 @@
 
 import { escapeXml } from "./escapeXml";
 import type { ConsolidatedStaffPayrollSummary } from "../engine/staffPayrollAssistantAdminTypes";
-import { renderStaffRecordAccrualsXml } from "./zup31XmlAccruals";
+import { renderStaffRecordAccrualsXml } from "./staffPayrollXmlAccruals";
 
 export function generateStaffPayrollXml(
 	summary: ConsolidatedStaffPayrollSummary,

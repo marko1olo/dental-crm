@@ -1,0 +1,108 @@
+/* ── Fiscal Tax Defaults & Feedback Alerts ── */
+.payment-tax-defaults {
+	align-items: start;
+	background: var(--paper-soft, #f7fbf9);
+	border: 1px solid rgba(16, 118, 103, 0.16);
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	grid-column: 1 / -1;
+	padding: 10px;
+}
+
+.payment-tax-defaults small {
+	color: var(--muted, #5d7470);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.payment-tax-defaults .secondary-button {
+	justify-self: start;
+}
+
+html.dark .payment-tax-defaults,
+[data-theme="dark"] .payment-tax-defaults,
+[data-theme="night"] .payment-tax-defaults,
+.dark .payment-tax-defaults,
+body.dark-mode .payment-tax-defaults {
+	background: var(--surface-alt, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+html.dark .payment-tax-defaults small,
+[data-theme="dark"] .payment-tax-defaults small,
+[data-theme="night"] .payment-tax-defaults small,
+.dark .payment-tax-defaults small,
+body.dark-mode .payment-tax-defaults small {
+	color: var(--muted, #94a3b8);
+}
+
+.payment-capture-feedback {
+	background: #eef7f5;
+	border: 1px solid rgba(16, 118, 103, 0.22);
+	border-radius: 8px;
+	color: #0f5f56;
+	font-size: 13px;
+	font-weight: 850;
+	grid-column: 1 / -1;
+	line-height: 1.35;
+	padding: 8px 10px;
+}
+
+html.dark .payment-capture-feedback,
+[data-theme="dark"] .payment-capture-feedback,
+[data-theme="night"] .payment-capture-feedback,
+.dark .payment-capture-feedback,
+body.dark-mode .payment-capture-feedback {
+	background: rgba(16, 185, 129, 0.12);
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	color: #6ee7b7;
+}
+
+.payment-capture-missing {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	display: grid;
+	gap: 4px;
+	grid-column: 1 / -1;
+	padding: 8px 10px;
+}
+
+.payment-capture-missing strong,
+.payment-capture-missing ul {
+	color: #744d18;
+	font-size: 13px;
+}
+
+.payment-capture-missing ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+html.dark .payment-capture-missing,
+[data-theme="dark"] .payment-capture-missing,
+[data-theme="night"] .payment-capture-missing,
+.dark .payment-capture-missing,
+body.dark-mode .payment-capture-missing {
+	background: rgba(245, 158, 11, 0.12);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	color: #fcd34d;
+}
+
+html.dark .payment-capture-missing strong,
+[data-theme="dark"] .payment-capture-missing strong,
+[data-theme="night"] .payment-capture-missing strong,
+.dark .payment-capture-missing strong,
+body.dark-mode .payment-capture-missing strong,
+html.dark .payment-capture-missing ul,
+[data-theme="dark"] .payment-capture-missing ul,
+[data-theme="night"] .payment-capture-missing ul,
+.dark .payment-capture-missing ul,
+body.dark-mode .payment-capture-missing ul {
+	color: #fcd34d;
+}

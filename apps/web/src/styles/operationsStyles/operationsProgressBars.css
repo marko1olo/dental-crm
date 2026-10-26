@@ -1,0 +1,46 @@
+/* ── Operations Progress Bars ── */
+.ops-bars {
+	display: grid;
+	gap: 6px;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.ops-bar {
+	display: grid;
+	grid-template-columns: minmax(88px, max-content) minmax(0, 520px) minmax(96px, max-content);
+	justify-content: start;
+	align-items: center;
+	gap: 12px;
+	font-size: 12.5px;
+}
+
+.ops-bar__label {
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.ops-bar__track {
+	height: 8px;
+	border-radius: 999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	overflow: hidden;
+}
+
+.ops-bar__fill {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: var(--teal);
+	transition: width var(--transition-smooth);
+}
+
+.ops-bar__value {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	color: var(--ink);
+}

@@ -1,0 +1,100 @@
+/* ── Operations Subtables, Badges & Pagination ── */
+.ops-subtable-wrap {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow-x: auto;
+	background: var(--paper);
+}
+
+.ops-subtable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.ops-subtable th {
+	padding: 8px 10px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	color: var(--muted);
+	font-weight: 600;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.ops-subtable td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: top;
+}
+
+.ops-subtable tr:last-child td {
+	border-bottom: none;
+}
+
+.ops-badge-804n {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 6px;
+	font-size: 10.5px;
+	font-family: inherit;
+	font-weight: 600;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	margin-right: 4px;
+}
+
+.ops-badge-tooth {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 6px;
+	font-size: 10.5px;
+	font-weight: 700;
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	color: var(--teal-ink);
+	margin-right: 4px;
+}
+
+.ops-item-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ops-item-entry {
+	font-size: 11.5px;
+	line-height: 1.4;
+}
+
+.ops-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 4px;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.ops-pagination-button {
+	min-height: 32px;
+	min-width: 32px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.ops-pagination-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

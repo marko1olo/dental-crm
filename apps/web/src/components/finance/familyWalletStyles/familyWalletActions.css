@@ -1,0 +1,100 @@
+/* ── Family Wallet Panel: Actions, Inputs & Payers ── */
+.family-wallet-actions {
+	margin-top: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+@media (min-width: 640px) {
+	.family-wallet-actions {
+		flex-direction: row;
+	}
+}
+
+.family-wallet-input-group {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.family-wallet-input-label {
+	font-size: 0.75rem;
+	line-height: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-input-label {
+	color: var(--muted, #94a3b8);
+}
+
+.family-wallet-input {
+	width: 100%;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	color: var(--ink, #0f172a);
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-input {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #ffffff);
+}
+
+.family-wallet-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+}
+
+.family-wallet-btn-container {
+	display: flex;
+	align-items: flex-end;
+}
+
+.family-wallet-btn {
+	min-height: 44px;
+	padding: 0 1.5rem;
+	background-color: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 0;
+	border-radius: 0.5rem;
+	font-weight: 600;
+	box-shadow: var(--shadow-sm, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+}
+
+.family-wallet-btn:hover:not(:disabled) {
+	background-color: var(--teal-dark, #0f766e);
+}
+
+.family-wallet-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.family-wallet-loading {
+	color: var(--muted, #64748b);
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	padding: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-loading {
+	color: var(--muted, #94a3b8);
+}

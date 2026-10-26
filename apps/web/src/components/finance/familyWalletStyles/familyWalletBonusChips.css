@@ -1,0 +1,81 @@
+/* ── Family Wallet Panel: Bonus Section & Chips ── */
+.family-bonus-section {
+	margin-top: 1rem;
+	padding: 0.875rem;
+	background-color: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 0.75rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-section {
+	background-color: var(--paper, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+.family-bonus-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.625rem;
+}
+
+.family-bonus-title {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-title {
+	color: var(--ink, #f1f5f9);
+}
+
+.family-bonus-chips-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.family-bonus-chip {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5rem 1rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #cbd5e1);
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	cursor: pointer;
+	transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-bonus-chip {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f1f5f9);
+}
+
+.family-bonus-chip:hover:not(:disabled) {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+}
+
+.family-bonus-chip:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+.family-bonus-chip.active {
+	background-color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+}

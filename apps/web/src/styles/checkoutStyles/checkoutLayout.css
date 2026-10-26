@@ -1,0 +1,100 @@
+/* ── Checkout Layout & Summary Grid ── */
+.finance-panel {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 0;
+	display: grid;
+	gap: 14px;
+}
+
+.finance-scope-label {
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 800;
+	margin: 4px 0 0;
+}
+
+.finance-summary-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.finance-summary-grid article,
+.payment-capture,
+.plan-scenarios,
+.plan-scenario,
+.clinical-rule-panel,
+.clinical-rule-card,
+.finance-list,
+.service-catalog-strip article {
+	background: var(--paper, #fbfefd);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	min-width: 0;
+}
+
+.plan-scenarios h2,
+.plan-scenarios h3,
+.payment-capture h2,
+.payment-capture h3 {
+	color: var(--ink, #0f172a);
+}
+
+html.dark .plan-scenarios h2,
+html.dark .plan-scenarios h3,
+html.dark .payment-capture h2,
+html.dark .payment-capture h3,
+[data-theme="dark"] .plan-scenarios h2,
+[data-theme="dark"] .plan-scenarios h3,
+[data-theme="dark"] .payment-capture h2,
+[data-theme="dark"] .payment-capture h3,
+[data-theme="night"] .plan-scenarios h2,
+[data-theme="night"] .plan-scenarios h3,
+[data-theme="night"] .payment-capture h2,
+[data-theme="night"] .payment-capture h3 {
+	color: #f8fafc;
+}
+
+.finance-summary-grid article {
+	display: grid;
+	gap: 2px;
+	min-height: 54px;
+	padding: 6px 10px;
+}
+
+.finance-summary-grid span,
+.service-catalog-strip span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.service-catalog-strip span {
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.service-catalog-strip strong {
+	display: block;
+	margin-top: 2px;
+	font-size: 14px;
+	line-height: 1.3;
+	color: var(--ink);
+}
+
+.finance-summary-grid strong {
+	font-size: 18px;
+	line-height: 1.1;
+}
+
+.finance-summary-grid p,
+.service-catalog-strip p {
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.15;
+	margin: 0;
+}

@@ -1,0 +1,32 @@
+/* ── Family Wallet Panel: Members Grid & Layout ── */
+.family-members-section {
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-members-section {
+	border-color: var(--line, #1e293b);
+}
+
+.family-members-title {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted, #64748b);
+	margin-bottom: 0.75rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-members-title {
+	color: var(--muted, #94a3b8);
+}
+
+.family-members-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 0.75rem;
+}

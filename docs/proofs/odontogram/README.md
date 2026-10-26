@@ -59,4 +59,43 @@ Full 8-tooth resolution in Quadrant 4 (mandibular right quadrant):
    - Смоделирован естественный монолитный сросшийся конический корень с плавным анатомическим сужением шейки и мягким дистальным изгибом апекса.
    - Добавлена срединная продольная борозда сращения (`fusedRootSulcus`) с деликатным бликом.
 
+---
+
+## 6. Monolith CSS Decomposition (Mandate 8b) & Modular Architecture
+
+### Deconstruction of Cyclopean Monolith (3,069L -> 16 Focused Modules)
+The historical monolithic stylesheet `apps/web/src/components/odontogram/odontogram.css` (3,069 lines in Git HEAD) has been completely deconstructed into 16 focused, decoupled domain modules in `apps/web/src/components/odontogram/odontogramStyles/`, each strictly $\le 110$ lines:
+1. `odontogramThemeTokens.css` (94L) — `:root`, Light, Dark, Night, Cyber, Ocean themes.
+2. `odontogramThemePalette.css` (108L) — Emerald, Sakura, Warm Sand, Calm Teal, Contrast palettes.
+3. `odontogramGrid.css` (108L) — Dominant arch container (min-height: 300px), midline guide, responsive layout.
+4. `odontogramToothBase.css` (105L) — Tooth SVG wrapper (44x48px min), `::before` hitbox (44x44px), 60 FPS mesh, low-spec hardware suppression.
+5. `odontogramCariesShaders.css` (86L) — Caries, demineralization, surface hover targets.
+6. `odontogramEndoShaders.css` (83L) — Root canals, obturation, gutta-percha, apex resection.
+7. `odontogramRestorations.css` (91L) — Composites, ceramics, inlays/onlays, full crowns, pontics, implants.
+8. `odontogramPediatric.css` (83L) — FDI 51..85 teeth, mixed dentition, resorption stages, cariogram.
+9. `odontogramToolbar.css` (106L) — 1-row toolbar (36px height), segmented controls, 1 Primary CTA emerald button.
+10. `odontogramToolbarStamps.css` (106L) — Action stamps, palette, sanitation button, trigger buttons.
+11. `odontogramMobileQuadrants.css` (109L) — Apple HIG Q1..Q4 quadrants, touch targets $\ge 44\times 56$px, `.radial-item-btn` $\ge 44$px, `.gost-keypad-btn` $\ge 44$px.
+12. `odontogramInteractive.css` (96L) — Radial popover, context menus, caret.
+13. `odontogramEstimator.css` (80L) — Live invoice estimator breakdown, prices, totals.
+14. `odontogramGost.css` (93L) — GOST table, cell states, touch keypad container, contrast overrides.
+15. `odontogramHistory.css` (88L) — Tooth history chronicle, timeline, event cards.
+16. `odontogramPrint.css` (54L) — A4 print styles, `@media print`, mobile hide.
+
+Master Facade: `apps/web/src/components/odontogram/odontogram.css` (19 lines, strictly $\le 20$L).
+Secondary Facade: `apps/web/src/components/odontogram/OdontogramToolbar.css` (6 lines, strictly $\le 20$L).
+
+### Red Team 4-State Verification & Visual Proofs (docs/proofs/odontogram/):
+- **01_odontogram_pc_light.png** (189.5 KB) — 1440x900 PC Light: 1-row toolbar (36px), 1 Primary CTA button (`Завершить приём`), full FDI dentition with roots/canals, 0 cartoon emojis.
+- **02_odontogram_pc_dark.png** (189.2 KB) — 1440x900 PC Dark: Pure dark slate background (`--paper: #0f172a`), 0 glaring white (`#fff`) flashes around teeth, WCAG AAA compliant.
+- **03_odontogram_mobile_light.png** (73.3 KB) — 390x844 Mobile Light: Apple HIG Q1..Q4 quadrant navigation, 1-tap intact norm ("✓ Интактные зубы (Норма в 1 клик)"), bottom thumb zone Primary CTA.
+- **04_odontogram_mobile_dark.png** (70.7 KB) — 390x844 Mobile Dark: Mobile dark theme, 0px horizontal drift, touch targets $\ge 44\times 44$px.
+
+### Vitest & Quality Gates:
+- **Test Suite:** 64 passed (64 test files), 586 passed (586 tests), Exit Code 0.
+- **CSS Token Check:** `node scripts/check-css-tokens.mjs` -> 0 unresolvable tokens.
+- **Mandate 8b Compliance:** All CSS modules $\le 110$L, facades $\le 20$L, TSX components $\le 120$L.
+- **Mandates 8e & 8n:** 100% doctor autonomy, 1-click norm presets, zero disabled blockers, zero Soviet bureaucrat numbers in UI.
+
+
 

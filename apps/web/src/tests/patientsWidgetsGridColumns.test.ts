@@ -29,7 +29,12 @@ import { fileURLToPath } from "node:url";
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function read(relativePath: string): string {
-	return readFileSync(path.join(webSrc, relativePath), "utf8");
+	const raw = readFileSync(path.join(webSrc, relativePath), "utf8");
+	const baseDir = path.dirname(path.join(webSrc, relativePath));
+	return raw.replace(/@import\s+["']([^"']+)["'];/g, (_, importPath) => {
+		const fullPath = path.resolve(baseDir, importPath);
+		return readFileSync(fullPath, "utf8");
+	});
 }
 
 /**

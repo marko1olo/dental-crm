@@ -1,0 +1,86 @@
+/* ── Operations Payout Formulas & Calculation Cards ── */
+.ops-formula-card {
+	padding: 14px 16px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+}
+
+.ops-formula-card__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.ops-formula-card__header h4 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.ops-formula-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ops-formula-equation {
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px dashed var(--line-strong);
+	font-size: 12.5px;
+	color: var(--ink-2);
+	font-family: inherit;
+}
+
+.ops-formula-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 10px;
+}
+
+.ops-formula-item {
+	display: flex;
+	flex-direction: column;
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	gap: 2px;
+}
+
+.ops-formula-item--total {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+
+.ops-formula-item__label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.ops-formula-item__val {
+	font-size: 14px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink);
+}
+
+.ops-formula-item__val--minus {
+	color: var(--warn-fg);
+}
+
+.ops-formula-item__val--total {
+	color: var(--teal-ink);
+}
+
+.ops-formula-item__sub {
+	font-size: 10.5px;
+	color: var(--muted);
+}

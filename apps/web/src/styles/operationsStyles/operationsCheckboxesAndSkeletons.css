@@ -1,0 +1,110 @@
+/* ── Operations Checkboxes, Skeleton Shimmer & Variable Catalog ── */
+.ops-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--ink-2);
+	cursor: pointer;
+	padding: 8px 0;
+}
+
+.ops-checkbox input {
+	appearance: none;
+	-webkit-appearance: none;
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	border: 1.5px solid var(--line-strong);
+	border-radius: 6px;
+	background: var(--paper);
+	cursor: pointer;
+	display: grid;
+	place-content: center;
+	transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.ops-checkbox input::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	transform: scale(0);
+	transition: transform var(--transition-fast);
+	box-shadow: inset 1em 1em var(--on-teal);
+	clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.ops-checkbox input:checked {
+	background: var(--teal);
+	border-color: var(--teal);
+}
+
+.ops-checkbox input:checked::before {
+	transform: scale(1);
+}
+
+.ops-checkbox input:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.ops-skeleton {
+	display: grid;
+	gap: 8px;
+}
+
+.ops-skeleton__line {
+	height: 14px;
+	border-radius: 8px;
+	background: linear-gradient(90deg, var(--paper-soft), var(--line), var(--paper-soft));
+	background-size: 200% 100%;
+	animation: ops-shimmer 1.2s linear infinite;
+}
+
+.ops-skeleton__line:nth-child(2) {
+	width: 86%;
+}
+
+.ops-skeleton__line:nth-child(3) {
+	width: 72%;
+}
+
+@keyframes ops-shimmer {
+	from { background-position: 200% 0; }
+	to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ops-skeleton__line {
+		animation: none;
+		background: var(--paper-soft);
+	}
+	.ops-bar__fill {
+		transition: none;
+	}
+}
+
+.ops-variable-catalog {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+	margin-bottom: 8px;
+}
+
+.ops-variable-catalog__title {
+	width: 100%;
+	margin-bottom: 2px;
+}
+
+.quick-chip--phi {
+	border-color: var(--bad-bg);
+	color: var(--bad-fg);
+}
+
+.quick-chip__label {
+	opacity: 0.75;
+	margin-left: 4px;
+	font-size: 0.85em;
+}

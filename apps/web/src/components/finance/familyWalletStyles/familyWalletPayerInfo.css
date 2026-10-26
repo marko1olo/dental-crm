@@ -1,0 +1,31 @@
+/* ── Family Wallet Panel: Payer Info & Hints ── */
+.family-wallet-payer {
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: var(--ink-soft, #334155);
+	margin: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-payer {
+	color: var(--ink-soft, #e2e8f0);
+}
+
+.family-wallet-payer strong {
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-payer strong {
+	color: var(--ink, #ffffff);
+}
+
+.family-wallet-hint {
+	margin-top: 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.625;
+	color: var(--warn-fg, #92400e);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-hint {
+	color: var(--warn-fg, #fde68a);
+}

@@ -1,0 +1,105 @@
+/* ── Family Wallet Panel: Layout, Header & Balances ── */
+.family-wallet-panel {
+	background-color: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+	position: relative;
+	overflow: hidden;
+	margin-top: 1rem;
+	transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-panel {
+	background-color: var(--paper-soft, #0f172a);
+	border-color: var(--line, #1e293b);
+	color: var(--ink, #f1f5f9);
+}
+
+.family-wallet-panel:hover {
+	box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
+}
+
+.family-wallet-bg-icon {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 16px;
+	opacity: 0.08;
+	transition: opacity 0.2s ease-out;
+	color: var(--teal, #0d9488);
+}
+
+.family-wallet-panel:hover .family-wallet-bg-icon {
+	opacity: 0.15;
+}
+
+.family-wallet-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	position: relative;
+	z-index: 1;
+}
+
+.family-wallet-title-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 1.125rem;
+	line-height: 1.75rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-title-row {
+	color: var(--ink, #ffffff);
+}
+
+.family-wallet-subtitle {
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: var(--muted, #64748b);
+	margin-top: 0.25rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-subtitle {
+	color: var(--muted, #94a3b8);
+}
+
+.family-wallet-balance-container {
+	text-align: right;
+}
+
+.family-wallet-balance {
+	font-size: 1.875rem;
+	line-height: 2.25rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-weight: 900;
+	color: var(--ok-fg, #059669);
+	letter-spacing: -0.025em;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-balance {
+	color: var(--ok-fg, #34d399);
+}
+
+.family-wallet-balance-label {
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-top: 0.125rem;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.25rem;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .family-wallet-balance-label {
+	color: var(--muted, #94a3b8);
+}

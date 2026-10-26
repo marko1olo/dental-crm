@@ -1,0 +1,84 @@
+/* ── Operations Tables & Tabular Numerics ── */
+.ops-table-wrap {
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	overflow: auto;
+	max-height: 62vh;
+	background: var(--paper);
+}
+
+.ops-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 13px;
+}
+
+.ops-table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	padding: 9px 12px;
+	text-align: left;
+	font-size: 11.5px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--muted);
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line-strong);
+	white-space: nowrap;
+}
+
+.ops-table tbody td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	vertical-align: top;
+}
+
+.ops-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.ops-table tbody tr:hover td {
+	background: var(--paper-soft);
+}
+
+.ops-table .ops-num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.ops-table .ops-time {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	font-weight: 600;
+}
+
+.ops-table .ops-strong {
+	font-weight: 600;
+}
+
+.ops-note {
+	display: block;
+	margin-top: 3px;
+	font-size: 11.5px;
+	font-weight: 400;
+	line-height: 1.45;
+	color: var(--muted);
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.ops-row--done td {
+	color: var(--muted);
+}
+
+.ops-row--done .ops-strong {
+	font-weight: 500;
+}
+
+.ops-row--action td:first-child {
+	box-shadow: inset 3px 0 0 var(--teal);
+}

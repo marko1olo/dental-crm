@@ -26,7 +26,7 @@ const projectRoot = path.resolve(
 const OPERATIONS_PANELS = [
 	"components/schedule/DayConfirmationsPanel.tsx",
 	"components/communications/MessageDeliveryConsole.tsx",
-	"components/communications/CampaignPanel.tsx",
+	"components/communications/campaignPanel/index.tsx",
 	"components/reports/ManagerReportsPanel.tsx",
 ];
 
@@ -45,7 +45,12 @@ const NESTED_OPERATIONS_BLOCKS = ["pages/DoctorPayoutDashboard.tsx"];
 const STYLESHEET = "styles/dente-operations.css";
 
 function read(relativePath: string): string {
-	return readFileSync(path.join(projectRoot, relativePath), "utf8");
+	const raw = readFileSync(path.join(projectRoot, relativePath), "utf8");
+	const baseDir = path.dirname(path.join(projectRoot, relativePath));
+	return raw.replace(/@import\s+["']([^"']+)["'];/g, (_, importPath) => {
+		const fullPath = path.resolve(baseDir, importPath);
+		return readFileSync(fullPath, "utf8");
+	});
 }
 
 /** Шестнадцатеричный цвет. Комментарии до сравнения вырезаются — см. stripComments. */
@@ -226,7 +231,7 @@ test("числовые колонки помечены для моноширин
 		reports.includes('className="ops-num"'),
 		"в отчётах числовые колонки не помечены",
 	);
-	const confirmations = read("components/schedule/DayConfirmationsPanel.tsx");
+	const confirmations = read("components/schedule/DayConfirmationsTable.tsx");
 	assert.ok(
 		confirmations.includes('className="ops-time"'),
 		"в обзвоне колонка времени не помечена",
@@ -284,7 +289,7 @@ test("класс sr-only определён — им пользуется раз
 	// таблицы просто отображалась бы на экране.
 	const css = read(STYLESHEET);
 	assert.ok(css.includes(".sr-only"), "sr-only не определён");
-	const confirmations = read("components/schedule/DayConfirmationsPanel.tsx");
+	const confirmations = read("components/schedule/DayConfirmationsTable.tsx");
 	assert.ok(
 		confirmations.includes('className="sr-only"'),
 		"разметка не пользуется sr-only",
