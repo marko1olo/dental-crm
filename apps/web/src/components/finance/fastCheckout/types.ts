@@ -7,6 +7,7 @@ import type {
 	FastCheckoutDiscountPreset,
 	FastCheckoutDiscountResult,
 	FastCheckoutValidationResult,
+	FiscalReceiptPayload,
 	Ffd12FiscalPayload,
 	QuickCheckoutPresetType,
 	StageAdvanceCalculation,
@@ -23,6 +24,7 @@ export type {
 	FastCheckoutDiscountPreset,
 	FastCheckoutDiscountResult,
 	FastCheckoutValidationResult,
+	FiscalReceiptPayload,
 	Ffd12FiscalPayload,
 	QuickCheckoutPresetType,
 	StageAdvanceCalculation,
@@ -101,7 +103,7 @@ export interface UseFastCheckoutLogicProps {
 	readonly initialSplit5050?: boolean | undefined;
 	readonly advanceAlreadyPaidRub?: number | undefined;
 	readonly advanceAlreadyPaidKop?: number | undefined;
-	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
+	readonly onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
 	readonly items?: readonly any[] | undefined;
 	readonly onSuccess?: ((payload: any) => void) | undefined;
 	readonly containerTestId?: string | undefined;
