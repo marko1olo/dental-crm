@@ -9,29 +9,31 @@ import {
 } from "./index";
 
 describe("Tooth13 Wheeler Ch. 9 Maxillary Canine Anatomical Invariants", () => {
-	it("enforces diamond spear crown with sharp tearing cusp apex (Y=153)", () => {
+	it("enforces diamond spear crown with sharp tearing cusp apex (Y=154)", () => {
 		assert.ok(TOOTH13_GEOMETRY.labialRidge);
 		assert.ok(TOOTH13_GEOMETRY.labialRidgeHighlight);
+		assert.ok(TOOTH13_GEOMETRY.cingulum);
 	});
 
-	it("maintains Wheeler Ch. 9 massive crown width (54px, 7.5mm scale)", () => {
+	it("maintains Wheeler Ch. 9 massive crown width (53px, 7.5mm scale)", () => {
 		const path = TOOTH13_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("23.0,95.5"));
-		assert.ok(path.includes("77.0,95.5"));
+		assert.ok(path.includes("24.0,94.5"));
+		assert.ok(path.includes("76.0,94.5"));
+		assert.ok(path.includes("50.0,154.0"));
 	});
 
-	it("models longest human root up to Y=7.0 with apex at (52, 7)", () => {
+	it("models longest human root up to Y=8.0 with apex at (50, 8)", () => {
 		const apex = TOOTH13_GEOMETRY.apex;
-		assert.equal(apex.x, 52.0);
-		assert.equal(apex.y, 7.0);
+		assert.equal(apex.x, 50.0);
+		assert.equal(apex.y, 8.0);
 		assert.ok(TOOTH13_GEOMETRY.rootSulcus);
 	});
 
-	it("defines 1 massive canal up to Y=9.5", () => {
+	it("defines 1 massive canal up to Y=10.5", () => {
 		const canals = TOOTH13_PULP_GEOMETRY.canals;
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
-		assert.equal(canals[0]?.apex.y, 9.5);
+		assert.equal(canals[0]?.apex.y, 10.5);
 	});
 
 	it("renders Tooth13Container with badge clearance (cy=194.5, height=218)", () => {

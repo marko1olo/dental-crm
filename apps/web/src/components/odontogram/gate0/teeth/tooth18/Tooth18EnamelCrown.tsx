@@ -1,5 +1,6 @@
 import React from "react";
-import { TOOTH18_CUSPS, TOOTH18_GEOMETRY } from "./tooth18Geometry";
+import { TOOTH18_GEOMETRY } from "./tooth18Geometry";
+import { Tooth18OcclusalCusps } from "./Tooth18OcclusalCusps";
 
 export interface Tooth18EnamelCrownProps {
 	stroke: string;
@@ -22,8 +23,6 @@ export const Tooth18EnamelCrown: React.FC<Tooth18EnamelCrownProps> = ({
 }) => {
 	const geo = TOOTH18_GEOMETRY;
 	const crownPath = showAbfraction ? geo.crownMonolithPathWithAbfraction : geo.crownMonolithPath;
-	const fissureStroke = isDark ? "rgba(148, 163, 184, 0.70)" : "rgba(51, 65, 85, 0.65)";
-	const specularFill = isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.85)";
 
 	return (
 		<g id="tooth18-natural-crown-group" mask={destructive ? "url(#tooth18-crown-destruct-mask)" : undefined}>
@@ -31,7 +30,7 @@ export const Tooth18EnamelCrown: React.FC<Tooth18EnamelCrownProps> = ({
 				{destructive && (
 					<mask id="tooth18-crown-destruct-mask">
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
-						<path d="M 40,118 C 47,116 55,116 62,120 C 65,130 58,138 49,138 C 41,138 36,130 40,118 Z" fill="#000000" />
+						<path d="M 36,118 C 44,116 54,116 62,120 C 66,130 58,140 48,140 C 38,140 32,130 36,118 Z" fill="#000000" />
 					</mask>
 				)}
 			</defs>
@@ -49,28 +48,17 @@ export const Tooth18EnamelCrown: React.FC<Tooth18EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			<g clipPath="url(#tooth18-crown-clip)">
-				<path d={crownPath} fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"} vectorEffect="non-scaling-stroke" />
+				<path
+					d={crownPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
 			</g>
-			<path id="tooth18-central-basin" d={geo.centralBasinPath} fill={isDark ? "rgba(15, 23, 42, 0.40)" : "rgba(226, 232, 240, 0.50)"} />
-			<path id="tooth18-distal-basin" d={geo.distalBasinPath} fill={isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(226, 232, 240, 0.45)"} />
-			{showFissures && (
-				<g id="tooth18-fissures" fill="none" stroke={fissureStroke} strokeLinecap="round">
-					<path d={geo.fissures.sulcusCentralis} strokeWidth="1.1" />
-					<path d={geo.fissures.sulcusDistalis} strokeWidth="1.0" />
-					<path d={geo.fissures.sulcusBuccalis} strokeWidth="0.8" />
-					<circle cx={geo.fissures.centralPit.x} cy={geo.fissures.centralPit.y} r="1.1" fill={fissureStroke} />
-				</g>
-			)}
-			{showCusps && (
-				<g id="tooth18-cusps-group">
-					{TOOTH18_CUSPS.map((c) => (
-						<g key={c.id} id={`tooth18-cusp-${c.id}`}>
-							<path d={c.ridgePath} stroke={fissureStroke} strokeWidth="0.6" fill="none" />
-							<ellipse cx={c.apex.x} cy={c.apex.y} rx="1.5" ry="1.0" fill={specularFill} />
-						</g>
-					))}
-				</g>
-			)}
+			<Tooth18OcclusalCusps
+				showCusps={showCusps}
+				showFissures={showFissures}
+				isDark={isDark}
+			/>
 		</g>
 	);
 };

@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Wheeler Ch. 8 Maxillary Lateral Incisor (Tooth 12) Pulp & Canal
- * Slender pulp chamber with mesial/distal horns & curved canal to apex (X=54.0, Y=15.5).
+ * Slender pulp chamber with mesial/distal horns & curved canal to apex (X=44.0, Y=20.0).
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
@@ -15,31 +15,31 @@ export interface Tooth12CanalAnatomy {
 
 export const TOOTH12_PULP_GEOMETRY = {
 	coronalPulpChamber:
-		"M 47.0,94.0 " +
-		"C 45.0,96.0 43.5,105.0 43.5,115.0 " +
-		"C 43.5,120.0 45.5,123.0 47.0,126.0 " + // Mesial pulp horn
-		"L 53.0,126.0 " +                      // Pulp ceiling
-		"C 54.5,123.0 56.5,120.0 56.5,115.0 " + // Distal pulp horn
-		"C 56.5,105.0 55.0,96.0 53.0,94.0 " +
-		"C 51.5,92.5 48.5,92.5 47.0,94.0 Z",
+		"M 47.0,92.5 " +
+		"C 45.0,94.5 43.5,103.5 43.5,113.5 " +
+		"C 43.5,118.5 45.5,121.5 47.0,124.5 " + // Distal horn
+		"L 53.0,124.5 " +                      // Pulp ceiling
+		"C 54.5,121.5 56.5,118.5 56.5,113.5 " + // Mesial horn
+		"C 56.5,103.5 55.0,94.5 53.0,92.5 " +
+		"C 51.5,91.0 48.5,91.0 47.0,92.5 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный корневой канал",
-			orifice: { x: 50.0, y: 93.0 },
-			apex: { x: 54.0, y: 15.5 },
+			orifice: { x: 50.0, y: 91.5 },
+			apex: { x: 44.0, y: 20.0 },
 			centerLine:
-				"M 50.0,93.0 C 49.0,72.0 51.0,46.0 54.0,15.5",
+				"M 50.0,91.5 C 49.0,70.0 46.5,45.0 44.0,20.0",
 			taperedLumen:
-				"M 48.0,93.0 C 47.5,72.0 49.8,46.0 53.2,15.5 " +
-				"L 54.8,15.5 C 52.2,46.0 50.5,72.0 52.0,93.0 Z",
+				"M 47.8,91.5 C 47.2,70.0 45.3,45.0 43.2,20.0 " +
+				"L 44.8,20.0 C 47.7,45.0 50.8,70.0 52.2,91.5 Z",
 		},
 	] as readonly Tooth12CanalAnatomy[],
 	rostrumMap: {
-		grooves: "M 48.0,93.0 C 49.0,91.5 51.0,91.5 52.0,93.0",
-		orifices: [{ id: "Main", x: 50.0, y: 93.0, r: 1.2 }],
+		grooves: "M 48.0,91.5 C 49.0,90.0 51.0,90.0 52.0,91.5",
+		orifices: [{ id: "Main", x: 50.0, y: 91.5, r: 1.2 }],
 	},
 	neuroPlexus: [
-		{ id: "lateral_trunk", d: "M 50.0,93.0 C 50.0,103.0 50.0,113.0 50.0,123.0" },
+		{ id: "lateral_trunk", d: "M 50.0,91.5 C 50.0,102.0 50.0,112.0 50.0,122.0" },
 	] as const,
 } as const;

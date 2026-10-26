@@ -15,26 +15,25 @@ describe("Tooth11 Wheeler Ch. 8 Maxillary Central Incisor Anatomical Invariants"
 		assert.ok(TOOTH11_GEOMETRY.labialRidgeDistal);
 	});
 
-	it("maintains Wheeler Ch. 8 central incisor widest crown width (58px scale) & 90° mesial angle", () => {
+	it("maintains Wheeler Ch. 8 central incisor widest crown width (57px scale) & 90° mesial angle", () => {
 		const path = TOOTH11_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("21.0,95.0"));
-		assert.ok(path.includes("79.0,95.0"));
-		assert.ok(path.includes("22.0,149.0"));
-		assert.ok(path.includes("75.5,149.0"));
+		assert.ok(path.includes("21.5,93.5"));
+		assert.ok(path.includes("78.5,93.5"));
+		assert.ok(path.includes("78.5,150.0"));
 	});
 
-	it("models powerful straight conical single root with apex at (50, 12)", () => {
+	it("models powerful straight conical single root with apex at (50, 14)", () => {
 		const apex = TOOTH11_GEOMETRY.apex;
 		assert.equal(apex.x, 50.0);
-		assert.equal(apex.y, 12.0);
+		assert.equal(apex.y, 14.0);
 		assert.ok(TOOTH11_GEOMETRY.rootSulcus);
 	});
 
-	it("defines 1 wide cylindrical canal up to Y=14.5", () => {
+	it("defines 1 wide cylindrical canal up to Y=16.5", () => {
 		const canals = TOOTH11_PULP_GEOMETRY.canals;
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
-		assert.equal(canals[0]?.apex.y, 14.5);
+		assert.equal(canals[0]?.apex.y, 16.5);
 	});
 
 	it("renders Tooth11Container with badge clearance (cy=194.5, height=218)", () => {

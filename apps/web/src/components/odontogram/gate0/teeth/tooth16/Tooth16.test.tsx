@@ -23,10 +23,10 @@ describe("Tooth16 Wheeler Ch. 11 Maxillary First Molar Anatomical Invariants", (
 		assert.equal(apices.length, 3);
 		assert.equal(TOOTH16_GEOMETRY.palatalApex.x, 50);
 		assert.equal(TOOTH16_GEOMETRY.palatalApex.y, 8);
-		assert.equal(TOOTH16_GEOMETRY.mbApex.x, 18);
-		assert.equal(TOOTH16_GEOMETRY.mbApex.y, 14);
-		assert.equal(TOOTH16_GEOMETRY.dbApex.x, 82);
-		assert.equal(TOOTH16_GEOMETRY.dbApex.y, 18);
+		assert.equal(TOOTH16_GEOMETRY.mbApex.x, 22);
+		assert.equal(TOOTH16_GEOMETRY.mbApex.y, 16);
+		assert.equal(TOOTH16_GEOMETRY.dbApex.x, 78);
+		assert.equal(TOOTH16_GEOMETRY.dbApex.y, 20);
 		assert.ok(TOOTH16_GEOMETRY.palatalApex.y < TOOTH16_GEOMETRY.mbApex.y);
 	});
 

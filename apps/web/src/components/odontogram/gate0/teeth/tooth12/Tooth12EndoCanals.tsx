@@ -35,7 +35,7 @@ export const Tooth12EndoCanals: React.FC<Tooth12EndoCanalsProps> = ({
 				<Tooth12PulpChamber condition={canalCondition} isDark={isDark} />
 			)}
 
-			{/* Single Canal Tract with Distal Curve */}
+			{/* Curved Canal Tract */}
 			{showCanals && (
 				<g id="tooth12-canals-tract">
 					{p.canals.map((canal) => (
@@ -52,7 +52,7 @@ export const Tooth12EndoCanals: React.FC<Tooth12EndoCanalsProps> = ({
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth12-overfill-puffs">
 							<path
-								d="M 53.0,14.5 C 51.2,13.0 52.2,10.5 54.7,11.0 C 57.2,11.5 57.0,14.0 55.0,14.5 Z"
+								d="M 42.5,19.0 C 40.5,17.5 41.5,15.0 44.0,15.5 C 46.5,16.0 46.2,18.5 44.5,19.0 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -64,11 +64,11 @@ export const Tooth12EndoCanals: React.FC<Tooth12EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="12"
-							path="M 52.5,28.0 L 54.0,15.2"
-							fracturePoint={{ x: 52.5, y: 28.0 }}
+							path="M 47.0,32.0 L 44.0,19.5"
+							fracturePoint={{ x: 47.0, y: 32.0 }}
 							flutes={[
-								"M 51.5,25.0 L 53.5,23.0",
-								"M 52.0,20.5 L 54.0,18.5",
+								"M 46.0,29.0 L 48.0,27.0",
+								"M 44.5,24.0 L 46.5,22.0",
 							]}
 							isDark={isDark}
 						/>

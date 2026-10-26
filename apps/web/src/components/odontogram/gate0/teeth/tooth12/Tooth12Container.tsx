@@ -14,15 +14,8 @@ import { Tooth12Roots } from "./Tooth12Roots";
 import { TOOTH12_GEOMETRY } from "./tooth12Geometry";
 
 export const Tooth12Container: React.FC<Tooth46ContainerProps> = ({
-	isDark = false,
-	zoom = 1,
-	layers = DEFAULT_TOOTH46_LAYERS,
-	presetId,
-	className,
-	style,
-	badgeRadius = 18.5,
-	badgeCy,
-	showBadge = true,
+	isDark = false, zoom = 1, layers = DEFAULT_TOOTH46_LAYERS,
+	presetId, className, style, badgeRadius = 18.5, badgeCy, showBadge = true,
 }) => {
 	const a = { ...DEFAULT_TOOTH46_LAYERS, ...layers };
 	if (showBadge === false) a.showBadge = false;

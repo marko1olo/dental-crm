@@ -25,7 +25,7 @@ export const Tooth17Roots: React.FC<Tooth17RootsProps> = ({
 				<path d={geo.rootMonolithPath} />
 			</clipPath>
 
-			{/* Monolithic 3-Root Parallel Silhouette */}
+			{/* Monolithic 3-Root Silhouette with Distal Parallel Slant */}
 			<path
 				id="tooth17-root-monolith"
 				d={geo.rootMonolithPath}
@@ -45,7 +45,7 @@ export const Tooth17Roots: React.FC<Tooth17RootsProps> = ({
 				opacity="0.9"
 			/>
 
-			{/* Deep Trifurcation ambient occlusion shadow */}
+			{/* Trifurcation ambient occlusion shadow */}
 			<path
 				id="tooth17-trifurcation-shadow"
 				d={geo.trifurcationShadowPath}
@@ -65,9 +65,9 @@ export const Tooth17Roots: React.FC<Tooth17RootsProps> = ({
 			{/* Developmental grooves & longitudinal sulci */}
 			{showGrooves && (
 				<g id="tooth17-root-grooves">
-					<path d="M 25,20 C 27,38 30,62 33,78" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 75,22 C 73,40 70,62 67,78" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 50,10 C 50,30 50,56 50,72" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 24,20 C 23,38 22,60 21,80" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 77,22 C 78,40 80,62 80,80" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 50,14 C 50,34 50,56 50,76" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
 				</g>
 			)}
 

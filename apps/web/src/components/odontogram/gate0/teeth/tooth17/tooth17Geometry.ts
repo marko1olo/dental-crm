@@ -1,23 +1,11 @@
 /**
  * DENTE Dental CRM — Wheeler Ch. 11 Maxillary Second Molar (Tooth 17 / FDI 17)
- * Rhomboid Crown (reduced Carabelli-free morphology, DL cusp reduced),
- * 3 Closely Spaced / More Parallel Roots (MB, DB, Palatal) & 4 Endodontic Canals.
+ * Rhomboid Crown (Carabelli-free, DL cusp reduced),
+ * 3 Closely Spaced / Parallel Roots with Distal Slant & 4 Endodontic Canals.
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
-export interface Tooth17CuspDef {
-	id: "MB" | "ML" | "DB" | "DL";
-	nameRu: string;
-	apex: { x: number; y: number };
-	ridgePath: string;
-}
-
-export const TOOTH17_CUSPS: readonly Tooth17CuspDef[] = [
-	{ id: "MB", nameRu: "Мезиально-щечный", apex: { x: 28, y: 149 }, ridgePath: "M 28,149 C 34,142 40,136 44,126" },
-	{ id: "ML", nameRu: "Мезиально-нёбный", apex: { x: 36, y: 153 }, ridgePath: "M 36,153 C 40,143 45,136 49,128" },
-	{ id: "DB", nameRu: "Дистально-щечный", apex: { x: 72, y: 147 }, ridgePath: "M 72,147 C 66,141 61,135 56,130" },
-	{ id: "DL", nameRu: "Дистально-нёбный (редуцирован)", apex: { x: 64, y: 144 }, ridgePath: "M 64,144 C 61,139 58,135 57,132" },
-] as const;
+export { TOOTH17_CUSPS, type Tooth17CuspDef } from "./tooth17CuspGeometry";
 
 export const TOOTH17_PULP_GEOMETRY = {
 	pulpChamberPath:
@@ -42,18 +30,22 @@ export const TOOTH17_GEOMETRY = {
 	viewBox: "0 0 100 218",
 	cejCurve: "M 16,96 C 35,93 65,93 84,96",
 	crownMonolithPath:
-		"M 16,96 C 13,106 13,121 15,131 C 17,136 20,140 24,144 " +
-		"C 28,148 32,151 36,153 C 45,154 53,151 58,149 C 63,151 68,150 73,147 " +
-		"C 78,143 82,137 83,127 C 84,117 84,106 84,96 C 65,93 35,93 16,96 Z",
+		"M 16,96 C 13.5,108 13.0,122 15.0,131 C 17.0,137 20.5,142 24.5,146 " +
+		"C 28.5,149.5 32.5,152 36.5,153 C 44.5,153.5 50.0,150.0 57.5,149 " +
+		"C 63.5,150.0 68.0,149.5 72.5,147 C 77.5,144 81.5,138 83.0,129 " +
+		"C 84.5,119 84.0,107 84.0,96 C 65.0,93 35.0,93 16.0,96 Z",
 	crownMonolithPathWithAbfraction:
-		"M 16,96 L 16,98 L 21,101 L 14,104 C 13,121 15,131 24,144 " +
-		"C 32,151 36,153 58,149 C 68,150 73,147 83,127 C 84,117 84,106 84,96 Z",
+		"M 16,96 L 16,97.5 L 20.5,100.5 L 14.2,103.5 C 13.5,108 13.0,122 15.0,131 " +
+		"C 17.0,137 20.5,142 24.5,146 C 28.5,149.5 32.5,152 36.5,153 " +
+		"C 44.5,153.5 50.0,150.0 57.5,149 C 63.5,150.0 68.0,149.5 72.5,147 " +
+		"C 77.5,144 81.5,138 83.0,129 C 84.5,119 84.0,107 84.0,96 C 65.0,93 35.0,93 16.0,96 Z",
 	rootMonolithPath:
-		"M 16,96 C 14,72 17,42 24,16 C 28,16 31,26 33,44 C 36,58 39,70 43,72 " +
-		"C 46,50 48,26 50,10 C 52,26 54,50 57,72 C 61,70 64,58 67,44 " +
-		"C 69,26 72,18 76,18 C 81,42 82,72 84,96 C 65,93 35,93 16,96 Z",
-	palatalRootBody: "M 44,72 C 46,50 48,26 50,10 C 52,26 54,50 56,72 Z",
-	trifurcationShadowPath: "M 43,72 C 47,66 50,65 50,65 C 50,65 53,66 57,72 C 54,69 46,69 43,72 Z",
+		"M 16,96 C 14,80 16,50 24,16 C 25.5,15 27.5,16.5 28.5,20 " +
+		"C 31,36 34,54 39,70 C 42,54 45,28 48.5,10 C 49.5,9 51.5,9 52.5,10 " +
+		"C 55,28 58,54 61,70 C 65,52 69,34 73.5,20 C 74.8,18 77.2,18 78.5,20 " +
+		"C 81,32 82.5,58 83.5,76 C 84.5,84 84,92 84,96 C 65,93 35,93 16,96 Z",
+	palatalRootBody: "M 41,70 C 44,48 46,24 48.5,10 C 49.5,9 51.5,9 52.5,10 C 55,24 57,48 60,70 Z",
+	trifurcationShadowPath: "M 37,74 C 44,67 50,66 50,66 C 50,66 56,67 63,74 C 57,71 43,71 37,74 Z",
 	mbApex: { x: 24, y: 16 },
 	palatalApex: { x: 50, y: 10 },
 	dbApex: { x: 76, y: 18 },
@@ -62,6 +54,9 @@ export const TOOTH17_GEOMETRY = {
 		{ x: 50.0, y: 10.0, r: 8.5 },
 		{ x: 76.0, y: 18.0, r: 8.0 },
 	] as const,
+	buccalCervicalRidge: "M 16,96 C 22,102 36,106 50,106 C 64,106 78,102 84,96 C 68,98 32,98 16,96 Z",
+	cervicalRidgeHighlight: "M 18,98 C 24,103 36,105 50,105 C 64,105 76,103 82,98",
+	crownEquatorHighlight: "M 18,121 C 34,125 66,125 82,121",
 	centralBasinPath: "M 28,121 C 35,117 44,117 51,119 C 49,127 44,130 37,132 C 30,130 26,125 28,121 Z",
 	distalBasinPath: "M 55,131 C 62,128 69,126 74,130 C 73,135 68,139 61,141 C 57,137 55,133 55,131 Z",
 	fissures: {
@@ -73,7 +68,8 @@ export const TOOTH17_GEOMETRY = {
 	},
 	compositeFillingPath: "M 30,122 C 38,119 46,119 52,121 C 58,125 65,129 70,135 C 65,137 57,133 50,130 C 42,128 34,126 30,122 Z",
 	zirconiaCrownShell:
-		"M 16,96 C 13,106 13,121 15,131 C 17,136 20,140 24,144 " +
-		"C 28,148 32,151 36,153 C 45,154 53,151 58,149 C 63,151 68,150 73,147 " +
-		"C 78,143 82,137 83,127 C 84,117 84,106 84,96 Z",
+		"M 16,96 C 13.5,108 13.0,122 15.0,131 C 17.0,137 20.5,142 24.5,146 " +
+		"C 28.5,149.5 32.5,152 36.5,153 C 44.5,153.5 50.0,150.0 57.5,149 " +
+		"C 63.5,150.0 68.0,149.5 72.5,147 C 77.5,144 81.5,138 83.0,129 " +
+		"C 84.5,119 84.0,107 84.0,96 Z",
 } as const;

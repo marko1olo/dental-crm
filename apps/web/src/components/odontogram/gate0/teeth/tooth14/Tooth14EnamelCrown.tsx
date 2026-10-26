@@ -1,6 +1,7 @@
 import type React from "react";
 import type { CariesType } from "../../tooth46PresetTypes";
 import { TOOTH14_GEOMETRY } from "./tooth14Geometry";
+import { Tooth14OcclusalCusps } from "./Tooth14OcclusalCusps";
 
 export interface Tooth14EnamelCrownProps {
 	stroke: string;
@@ -14,8 +15,7 @@ export interface Tooth14EnamelCrownProps {
 }
 
 /**
- * Anatomical Enamel Monolith & Wheeler Ch. 10 Cusps for Maxillary First Premolar 14
- * Features sharp buccal cusp, softer palatal cusp, and mesial marginal groove.
+ * Natural Enamel Monolith & 3D Cusps for Maxillary First Premolar 14
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth14EnamelCrown: React.FC<Tooth14EnamelCrownProps> = ({
@@ -27,25 +27,29 @@ export const Tooth14EnamelCrown: React.FC<Tooth14EnamelCrownProps> = ({
 	isDark = false,
 	destructive = false,
 }) => {
-	const g = TOOTH14_GEOMETRY;
 	const crownPath = showAbfraction
-		? g.crownMonolithPathWithAbfraction
-		: g.crownMonolithPath;
-
-	const fissureStroke = isDark
-		? "rgba(100, 116, 139, 0.70)"
-		: "rgba(71, 85, 105, 0.65)";
-	const ridgeStroke = isDark
-		? "rgba(255, 255, 255, 0.40)"
-		: "rgba(255, 255, 255, 0.65)";
+		? TOOTH14_GEOMETRY.crownMonolithPathWithAbfraction
+		: TOOTH14_GEOMETRY.crownMonolithPath;
 
 	return (
-		<g id="tooth14-natural-crown-group">
+		<g
+			id="tooth14-natural-crown-group"
+			mask={destructive ? "url(#tooth14-crown-destruct-mask)" : undefined}
+		>
+			<defs>
+				{destructive && (
+					<mask id="tooth14-crown-destruct-mask">
+						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
+						<path
+							d="M 36,134 C 44,136 56,136 64,134 C 62,143 56,146 50,146 C 44,146 38,143 36,134 Z"
+							fill="#000000"
+						/>
+					</mask>
+				)}
+			</defs>
 			<clipPath id="tooth14-crown-clip">
 				<path d={crownPath} />
 			</clipPath>
-
-			{/* Enamel Monolith */}
 			<path
 				id="tooth14-crown-monolith"
 				d={crownPath}
@@ -56,65 +60,20 @@ export const Tooth14EnamelCrown: React.FC<Tooth14EnamelCrownProps> = ({
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-
-			{/* Proximal Volume Gradient */}
+			{/* Unified 3D Cylindrical Proximal Contour Volume */}
 			<g clipPath="url(#tooth14-crown-clip)">
 				<path
 					d={crownPath}
 					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
-
-				{/* Buccal Cervical Convexity Ridge */}
-				<path
-					d={g.buccalCervicalRidge}
-					fill="none"
-					stroke={ridgeStroke}
-					strokeWidth="0.7"
-					opacity="0.5"
-				/>
-
-				{/* Buccal Axial Ridge Highlight */}
-				{showCusps && (
-					<path
-						d={g.buccalAxialRidge}
-						fill="none"
-						stroke={ridgeStroke}
-						strokeWidth="0.9"
-						strokeLinecap="round"
-						opacity="0.6"
-					/>
-				)}
-
-				{/* Occlusal Fissures: Central Sulcus & Mesial Marginal Groove */}
-				{showFissures && (
-					<g id="tooth14-fissure-system">
-						<path d={g.sulcusCentralis} fill="none" stroke={fissureStroke} strokeWidth="0.75" strokeLinecap="round" />
-						<path d={g.mesialMarginalGroove} fill="none" stroke={fissureStroke} strokeWidth="0.65" strokeLinecap="round" />
-						<path d={g.buccalTriangularGroove} fill="none" stroke={fissureStroke} strokeWidth="0.55" strokeLinecap="round" />
-						<path d={g.distalTriangularGroove} fill="none" stroke={fissureStroke} strokeWidth="0.55" strokeLinecap="round" />
-						<path d={g.distalFossaGroove} fill="none" stroke={fissureStroke} strokeWidth="0.5" strokeLinecap="round" />
-					</g>
-				)}
-
-				{/* Cusp Specular Highlights */}
-				{showCusps && (
-					<g id="tooth14-cusp-highlights">
-						<path d={g.crownSpecularRidges[0]!.d} fill="none" stroke={ridgeStroke} strokeWidth="0.7" strokeLinecap="round" />
-						<path d={g.crownEquatorHighlight} fill="none" stroke={ridgeStroke} strokeWidth="0.5" strokeLinecap="round" opacity="0.3" />
-					</g>
-				)}
 			</g>
-
-			{/* Destructive Caries Notch if active */}
-			{destructive && (
-				<path
-					d="M 40,146 C 45,142 50,142 55,145 L 53,151 L 42,151 Z"
-					fill="#0c0a09"
-					stroke="#991b1b"
-					strokeWidth="0.8"
-				/>
-			)}
+			<Tooth14OcclusalCusps
+				showCusps={showCusps}
+				showFissures={showFissures}
+				renderBaseCrown={false}
+				isDark={isDark}
+			/>
 		</g>
 	);
 };

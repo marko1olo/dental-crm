@@ -52,7 +52,7 @@ export const Tooth11EndoCanals: React.FC<Tooth11EndoCanalsProps> = ({
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth11-overfill-puffs">
 							<path
-								d="M 48.0,13.5 C 46.2,12.0 47.2,9.5 49.7,10.0 C 52.2,10.5 52.0,13.0 50.0,13.5 Z"
+								d="M 48.0,15.5 C 46.2,14.0 47.2,11.5 49.7,12.0 C 52.2,12.5 52.0,15.0 50.0,15.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -64,11 +64,11 @@ export const Tooth11EndoCanals: React.FC<Tooth11EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="11"
-							path="M 50.0,28.0 L 50.0,14.2"
-							fracturePoint={{ x: 50.0, y: 28.0 }}
+							path="M 50.0,30.0 L 50.0,16.2"
+							fracturePoint={{ x: 50.0, y: 30.0 }}
 							flutes={[
-								"M 49.0,25.0 L 51.0,23.0",
-								"M 49.0,20.0 L 51.0,18.0",
+								"M 49.0,27.0 L 51.0,25.0",
+								"M 49.0,22.0 L 51.0,20.0",
 							]}
 							isDark={isDark}
 						/>

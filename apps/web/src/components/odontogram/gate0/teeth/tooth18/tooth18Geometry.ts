@@ -1,22 +1,11 @@
 /**
  * DENTE Dental CRM — Wheeler Ch. 11 Maxillary Third Molar (Tooth 18 / FDI 18)
- * "Wisdom Tooth": Tricuspid Heart-Shaped Crown, Fused Conical Roots with Distal Curve,
+ * "Wisdom Tooth": Tricuspid Heart-Shaped Crown, Fused Conical Roots with Distal Sweep,
  * 3 Convergent Endodontic Canals (MB, P, DB).
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
-export interface Tooth18CuspDef {
-	id: "MB" | "DB" | "Lingual";
-	nameRu: string;
-	apex: { x: number; y: number };
-	ridgePath: string;
-}
-
-export const TOOTH18_CUSPS: readonly Tooth18CuspDef[] = [
-	{ id: "MB", nameRu: "Мезиально-щечный", apex: { x: 30, y: 148 }, ridgePath: "M 30,148 C 36,141 42,135 46,126" },
-	{ id: "DB", nameRu: "Дистально-щечный", apex: { x: 70, y: 146 }, ridgePath: "M 70,146 C 64,140 58,134 54,129" },
-	{ id: "Lingual", nameRu: "Слитый нёбный", apex: { x: 48, y: 152 }, ridgePath: "M 48,152 C 48,144 49,136 50,128" },
-] as const;
+export { TOOTH18_CUSPS, type Tooth18CuspDef } from "./tooth18CuspGeometry";
 
 export const TOOTH18_PULP_GEOMETRY = {
 	pulpChamberPath:
@@ -29,9 +18,9 @@ export const TOOTH18_PULP_GEOMETRY = {
 		{ id: "Lingual", apex: { x: 48, y: 132 } },
 	],
 	canals: [
-		{ id: "MB", nameRu: "Мезиально-щечный", orifice: { x: 38, y: 98.5 }, apex: { x: 36, y: 18 }, centerLine: "M 38,98.5 C 37,74 36,46 36,18", taperedLumen: "M 36.5,98.5 C 35.5,74 34.5,46 35,18 L 37,18 C 37.5,46 38.5,74 39.5,98.5 Z" },
-		{ id: "P", nameRu: "Нёбный (Palatal)", orifice: { x: 49, y: 98.5 }, apex: { x: 48, y: 16 }, centerLine: "M 49,98.5 C 49,70 48,42 48,16", taperedLumen: "M 47.5,98.5 C 47.5,70 47,42 47,16 L 49,16 C 50,42 50.5,70 50.5,98.5 Z" },
-		{ id: "DB", nameRu: "Дистально-щечный", orifice: { x: 60, y: 98.5 }, apex: { x: 64, y: 20 }, centerLine: "M 60,98.5 C 62,74 63,46 64,20", taperedLumen: "M 58.5,98.5 C 60.5,74 61.5,46 63,20 L 65,20 C 64.5,46 63.5,74 61.5,98.5 Z" },
+		{ id: "MB", nameRu: "Мезиально-щечный", orifice: { x: 38, y: 98.5 }, apex: { x: 34, y: 24 }, centerLine: "M 38,98.5 C 37,74 35,46 34,24", taperedLumen: "M 36.5,98.5 C 35.5,74 33.5,46 33,24 L 35,24 C 36.5,46 38.5,74 39.5,98.5 Z" },
+		{ id: "P", nameRu: "Нёбный (Palatal)", orifice: { x: 49, y: 98.5 }, apex: { x: 40, y: 24 }, centerLine: "M 49,98.5 C 47,70 43,44 40,24", taperedLumen: "M 47.5,98.5 C 45.5,70 41.5,44 39,24 L 41,24 C 44.5,44 48.5,70 50.5,98.5 Z" },
+		{ id: "DB", nameRu: "Дистально-щечный", orifice: { x: 60, y: 98.5 }, apex: { x: 46, y: 25 }, centerLine: "M 60,98.5 C 57,74 51,46 46,25", taperedLumen: "M 58.5,98.5 C 55.5,74 49.5,46 45,25 L 47,25 C 52.5,46 58.5,74 61.5,98.5 Z" },
 	],
 } as const;
 
@@ -39,27 +28,30 @@ export const TOOTH18_GEOMETRY = {
 	viewBox: "0 0 100 218",
 	cejCurve: "M 18,96 C 36,93 64,93 82,96",
 	crownMonolithPath:
-		"M 18,96 C 15,106 15,120 17,130 C 19,135 23,139 28,143 " +
-		"C 34,147 40,150 48,152 C 56,150 62,147 68,143 " +
-		"C 74,138 78,133 80,126 C 82,116 82,106 82,96 C 64,93 36,93 18,96 Z",
+		"M 18,96 C 15.5,107 15.0,121 17.5,130 C 19.5,136 23.5,140 28.5,144 " +
+		"C 34.5,148 40.5,151 48.0,152 C 55.5,151 61.5,148 67.5,144 " +
+		"C 72.5,140 76.5,135 78.5,127 C 80.5,117 81.0,107 82.0,96 C 64.0,93 36.0,93 18.0,96 Z",
 	crownMonolithPathWithAbfraction:
-		"M 18,96 L 18,98 L 23,101 L 16,104 C 15,120 17,130 28,143 " +
-		"C 40,150 48,152 68,143 C 78,133 80,126 82,96 Z",
+		"M 18,96 L 18,97.5 L 22.5,100.5 L 16.2,103.5 C 15.5,107 15.0,121 17.5,130 " +
+		"C 19.5,136 23.5,140 28.5,144 C 34.5,148 40.5,151 48.0,152 " +
+		"C 55.5,151 61.5,148 67.5,144 C 72.5,140 76.5,135 78.5,127 C 80.5,117 81.0,107 82.0,96 Z",
 	rootMonolithPath:
-		"M 18,96 C 18,72 24,42 34,18 C 36,16 38,16 40,18 C 42,26 44,40 46,56 " +
-		"C 48,40 50,24 50,16 C 52,16 54,20 56,36 C 58,46 60,56 61,64 " +
-		"C 62,48 63,32 65,20 C 67,20 69,24 71,38 C 76,56 80,74 82,96 C 64,93 36,93 18,96 Z",
+		"M 18,96 C 18.5,74 23.0,46 34.0,26 C 36.5,23.5 42.0,23.5 45.0,26 " +
+		"C 50.0,34 58.0,52 66.0,68 C 72.0,80 77.0,88 82.0,96 C 64.0,93 36.0,93 18.0,96 Z",
 	fusedConicalRootPath:
-		"M 18,96 C 19,74 27,44 35,18 C 37,16 59,16 66,20 " +
-		"C 74,44 80,74 82,96 C 64,93 36,93 18,96 Z",
-	mbApex: { x: 36, y: 18 },
-	palatalApex: { x: 48, y: 16 },
-	dbApex: { x: 64, y: 20 },
+		"M 18,96 C 18.5,74 23.0,46 34.0,26 C 36.5,23.5 42.0,23.5 45.0,26 " +
+		"C 50.0,34 58.0,52 66.0,68 C 72.0,80 77.0,88 82.0,96 C 64.0,93 36.0,93 18.0,96 Z",
+	mbApex: { x: 34, y: 24 },
+	palatalApex: { x: 40, y: 24 },
+	dbApex: { x: 46, y: 25 },
 	apices: [
-		{ x: 36.0, y: 18.0, r: 7.5 },
-		{ x: 48.0, y: 16.0, r: 8.5 },
-		{ x: 64.0, y: 20.0, r: 7.5 },
+		{ x: 34.0, y: 24.0, r: 7.5 },
+		{ x: 40.0, y: 24.0, r: 8.5 },
+		{ x: 46.0, y: 25.0, r: 7.5 },
 	] as const,
+	buccalCervicalRidge: "M 18,96 C 24,102 36,105 50,105 C 64,105 76,102 82,96 C 68,98 32,98 18,96 Z",
+	cervicalRidgeHighlight: "M 20,98 C 26,103 36,104.5 50,104.5 C 64,104.5 74,103 80,98",
+	crownEquatorHighlight: "M 20,120 C 34,124 66,124 80,120",
 	centralBasinPath: "M 32,122 C 38,118 46,118 52,120 C 58,124 56,132 50,134 C 42,133 34,129 32,122 Z",
 	distalBasinPath: "M 54,126 C 60,123 66,124 70,128 C 68,133 62,136 56,134 C 54,131 53,128 54,126 Z",
 	fissures: {
@@ -70,7 +62,7 @@ export const TOOTH18_GEOMETRY = {
 	},
 	compositeFillingPath: "M 34,123 C 42,120 50,120 58,122 C 64,126 66,131 62,134 C 54,133 42,131 34,123 Z",
 	zirconiaCrownShell:
-		"M 18,96 C 15,106 15,120 17,130 C 19,135 23,139 28,143 " +
-		"C 34,147 40,150 48,152 C 56,150 62,147 68,143 " +
-		"C 74,138 78,133 80,126 C 82,116 82,106 82,96 Z",
+		"M 18,96 C 15.5,107 15.0,121 17.5,130 C 19.5,136 23.5,140 28.5,144 " +
+		"C 34.5,148 40.5,151 48.0,152 C 55.5,151 61.5,148 67.5,144 " +
+		"C 72.5,140 76.5,135 78.5,127 C 80.5,117 81.0,107 82.0,96 Z",
 } as const;

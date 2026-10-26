@@ -22,13 +22,13 @@ export const Tooth18Roots: React.FC<Tooth18RootsProps> = ({
 	return (
 		<g id="tooth18-roots" {...(className ? { className } : {})}>
 			<clipPath id="tooth18-root-clip">
-				<path d={geo.fusedConicalRootPath} />
+				<path d={geo.rootMonolithPath} />
 			</clipPath>
 
-			{/* Fused Conical Roots Monolith with Distal Sweep */}
+			{/* Fused Conical Root Silhouette with Distal Curve */}
 			<path
 				id="tooth18-root-monolith"
-				d={geo.fusedConicalRootPath}
+				d={geo.rootMonolithPath}
 				fill="url(#dente-root-dentin)"
 				fillOpacity="1.0"
 				stroke={strokeColor}
@@ -37,32 +37,21 @@ export const Tooth18Roots: React.FC<Tooth18RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Internal anatomical root separation grooves */}
-			<path
-				id="tooth18-internal-root-contour"
-				d={geo.rootMonolithPath}
-				fill="none"
-				stroke={strokeColor}
-				strokeWidth="0.5"
-				opacity="0.5"
-				clipPath="url(#tooth18-root-clip)"
-			/>
-
 			{/* Cylindrical Volume Shading */}
 			<g clipPath="url(#tooth18-root-clip)">
 				<path
-					d={geo.fusedConicalRootPath}
+					d={geo.rootMonolithPath}
 					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>
 
-			{/* Developmental fused sulci */}
+			{/* Developmental grooves demarcating fused root segments */}
 			{showGrooves && (
 				<g id="tooth18-root-grooves">
-					<path d="M 36,20 C 37,42 39,66 40,82" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 64,22 C 63,44 61,66 60,82" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 48,16 C 48,36 49,60 50,78" stroke={grooveStroke} strokeWidth="0.5" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 28,94 C 27,76 30,52 36,32" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 68,94 C 64,76 56,54 44,32" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 48,94 C 47,74 44,52 40,30" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
 				</g>
 			)}
 

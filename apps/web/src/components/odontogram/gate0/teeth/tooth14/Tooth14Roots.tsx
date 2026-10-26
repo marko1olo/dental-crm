@@ -52,7 +52,7 @@ export const Tooth14Roots: React.FC<Tooth14RootsProps> = ({
 					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
-				{/* Wheeler Bifurcation Fornix Shadow */}
+				{/* Parabolic Bifurcation Fornix Shadow */}
 				<path
 					d={TOOTH14_GEOMETRY.bifurcationShadow}
 					fill={shadowColor}

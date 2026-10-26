@@ -14,8 +14,8 @@ export interface Tooth15EndoCanalsProps {
 }
 
 /**
- * Single Wide Canal Endodontic System for Tooth 15 (Wheeler Ch. 10)
- * 1 central canal + Coronal pulp chamber with 2 equal-height horns.
+ * Single Root Canal Endodontic System for Tooth 15 (Wheeler Ch. 10)
+ * 1 wide central canal + Coronal pulp chamber with 2 equal horns.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
@@ -41,7 +41,7 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 
 	return (
 		<g id="tooth15-endodontics" className={className}>
-			{/* Coronal Pulp Chamber with Symmetrical Buccal & Palatal Horns */}
+			{/* Coronal Pulp Chamber with Equal Buccal & Palatal Horns */}
 			{showPulp && (
 				<g id="tooth15-pulp-chamber">
 					<path
@@ -57,21 +57,21 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 			{/* Single Wide Root Canal System */}
 			{showCanals && (
 				<g id="tooth15-canals-tract">
-					{p.canals.map((canal) => (
+					{p.canals.map((c) => (
 						<Tooth46SingleCanal
-							key={canal.id}
-							canal={canal as any}
+							key={c.id}
+							canal={c as any}
 							showGuttaPercha={showGuttaPercha}
 							isNecrotic={isNecrotic}
 							isUnderfill={isUnderfill}
 						/>
 					))}
 
-					{/* Overfilled Apical Sealer Puff at Conical Apex */}
+					{/* Overfilled Apical Sealer Puff at Apex (48.0, 18.0) */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth15-overfill-puffs">
 							<path
-								d="M 47.0,13.5 C 45.5,11.0 47.5,9.0 49.0,10.5 C 50.5,12.0 49.0,14.0 47.0,13.5 Z"
+								d="M 46.0,18.5 C 44.5,16.0 46.5,14.0 48.0,15.5 C 49.5,17.0 48.5,19.0 46.0,18.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -79,17 +79,12 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 						</g>
 					)}
 
-					{/* Broken Instrument in Apical Third */}
+					{/* Broken Instrument in Central Canal */}
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="15"
-							path="M 49.5,25.0 L 49.0,13.0"
-							fracturePoint={{ x: 49.5, y: 25.0 }}
-							flutes={[
-								"M 48.8,22.0 L 50.2,20.5",
-								"M 48.2,18.0 L 49.6,16.5",
-							]}
-							isDark={isDark}
+							path="M 49.0,30.0 L 48.0,18.0"
+							fracturePoint={{ x: 49.0, y: 30.0 }}
 						/>
 					)}
 				</g>

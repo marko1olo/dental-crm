@@ -51,12 +51,12 @@ export const Tooth18EndoCanals: React.FC<Tooth18EndoCanalsProps> = ({
 						strokeWidth="0.8"
 					/>
 					{p.horns.map((h) => (
-						<circle key={h.id} cx={h.apex.x} cy={h.apex.y} r="1.1" fill={isDark ? "#fda4af" : "#f43f5e"} />
+						<circle key={h.id} cx={h.apex.x} cy={h.apex.y} r="1.2" fill={isDark ? "#fda4af" : "#f43f5e"} />
 					))}
 				</g>
 			)}
 
-			{/* 3 Convergent Canals (MB, P, DB) */}
+			{/* 3 Canals (MB, Palatal, DB) converging towards apex */}
 			{showCanals && (
 				<g id="tooth18-canals-tract">
 					{p.canals.map((c) => (
@@ -84,19 +84,19 @@ export const Tooth18EndoCanals: React.FC<Tooth18EndoCanalsProps> = ({
 					{/* Apical Sealer Puffs at fused root tip during Overfill */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth18-overfill-puffs">
-							<circle cx={36} cy={18} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={48} cy={16} r={2.0} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={64} cy={20} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={34} cy={24} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={40} cy={24} r={2.2} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={46} cy={25} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
 						</g>
 					)}
 
-					{/* Broken instrument in MB canal */}
+					{/* Broken instrument in MB canal apical third */}
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="18"
-							path="M 37,28 L 36,18"
-							fracturePoint={{ x: 37, y: 28 }}
-							flutes={["M 36,24 L 38,26", "M 35.5,20 L 37.5,22"]}
+							path="M 35,32 L 34,24"
+							fracturePoint={{ x: 35, y: 32 }}
+							flutes={["M 34,28 L 36,30", "M 33.5,22 L 35.5,24"]}
 							isDark={isDark}
 						/>
 					)}

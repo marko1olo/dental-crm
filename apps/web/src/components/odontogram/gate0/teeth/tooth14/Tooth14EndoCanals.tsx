@@ -77,14 +77,14 @@ export const Tooth14EndoCanals: React.FC<Tooth14EndoCanalsProps> = ({
 						<g id="tooth14-overfill-puffs">
 							{/* Buccal Apex Puff */}
 							<path
-								d="M 36.5,12.5 C 35.0,10.0 37.0,8.0 38.5,9.5 C 40.0,11.0 38.5,13.0 36.5,12.5 Z"
+								d="M 32.5,14.5 C 31.0,12.0 33.0,10.0 34.5,11.5 C 36.0,13.0 34.5,15.0 32.5,14.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
 							/>
 							{/* Palatal Apex Puff */}
 							<path
-								d="M 60.5,14.5 C 59.0,12.0 61.0,10.0 62.5,11.5 C 64.0,13.0 62.5,15.0 60.5,14.5 Z"
+								d="M 64.5,16.5 C 63.0,14.0 65.0,12.0 66.5,13.5 C 68.0,15.0 66.5,17.0 64.5,16.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -96,13 +96,8 @@ export const Tooth14EndoCanals: React.FC<Tooth14EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="14"
-							path="M 39.5,24.0 L 38.0,12.0"
-							fracturePoint={{ x: 39.5, y: 24.0 }}
-							flutes={[
-								"M 38.8,21.0 L 40.2,19.5",
-								"M 38.2,17.0 L 39.6,15.5",
-							]}
-							isDark={isDark}
+							path="M 36.5,24.0 L 34.0,14.0"
+							fracturePoint={{ x: 36.5, y: 24.0 }}
 						/>
 					)}
 				</g>

@@ -17,13 +17,13 @@ describe("Tooth18 Wheeler Ch. 11 Maxillary Third Molar Anatomical Invariants", (
 		assert.ok(!ids.includes("Carabelli" as any));
 	});
 
-	it("defines fused conical roots with tight apex convergence (28px buccal span)", () => {
+	it("defines fused conical roots with tight apex convergence (12px buccal span)", () => {
 		const mb = TOOTH18_GEOMETRY.mbApex;
 		const db = TOOTH18_GEOMETRY.dbApex;
 		const span = db.x - mb.x;
-		assert.equal(span, 28);
-		assert.equal(TOOTH18_GEOMETRY.palatalApex.x, 48);
-		assert.equal(TOOTH18_GEOMETRY.palatalApex.y, 16);
+		assert.equal(span, 12);
+		assert.equal(TOOTH18_GEOMETRY.palatalApex.x, 40);
+		assert.equal(TOOTH18_GEOMETRY.palatalApex.y, 24);
 		assert.equal(TOOTH18_GEOMETRY.apices.length, 3);
 		assert.ok(TOOTH18_GEOMETRY.fusedConicalRootPath);
 	});
