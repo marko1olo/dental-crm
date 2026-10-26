@@ -110,6 +110,7 @@
 ## 📑 4. СПЕЦИАЛИЗИРОВАННЫЕ ОТЧЁТЫ ИНКВИЗИЦИИ (DETAILED DOSSIERS)
 - [`14_COMMUNICATIONS_AND_PATIENT_PORTAL_INQUISITION.md`](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/14_COMMUNICATIONS_AND_PATIENT_PORTAL_INQUISITION.md) — Портал пациента, мессенджеры и омниканальные коммуникации
 - [`15_FINANCIAL_ANALYTICS_AND_PNL_INQUISITION.md`](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/15_FINANCIAL_ANALYTICS_AND_PNL_INQUISITION.md) — Финансовая аналитика, P&L, СанПиН-загрузка кресел, декомпозиция до 120 строк и 4-State Visual Proof
+- [`20_PATIENT_CARD_AND_ANAMNESIS_DECOMPOSITION_REPORT.md`](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/20_PATIENT_CARD_AND_ANAMNESIS_DECOMPOSITION_REPORT.md) — Карточка пациента, паспортные данные, соматический анамнез, семейный кошелек и трансфер ЭМК (декомпозиция до 120 строк, Apple HIG и 4-State Visual Proof)
 
 ---
 

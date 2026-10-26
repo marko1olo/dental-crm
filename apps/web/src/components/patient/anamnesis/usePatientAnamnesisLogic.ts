@@ -1,6 +1,6 @@
 /**
- * usePatientAnamnesisLogic.ts — Хук состояния клинического анамнеза и 1-кликовой соматической нормы.
- * (Layer 3 Hook).
+ * usePatientAnamnesisLogic.ts — Хук состояния клинического анамнеза и 1-кликовой нормы.
+ * Лимит <= 120 строк по Мандату 8b.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,14 +16,8 @@ import {
 } from "../../patients/safetyMath";
 
 export interface UsePatientAnamnesisLogicParams {
-	readonly initialProfile?:
-		| Partial<PatientClinicalSafetyProfile>
-		| string
-		| null
-		| undefined;
-	readonly onSaveProfile?:
-		| ((profile: PatientClinicalSafetyProfile) => void)
-		| undefined;
+	readonly initialProfile?: Partial<PatientClinicalSafetyProfile> | string | null | undefined;
+	readonly onSaveProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 	readonly onSyncToEmkDiary?: ((diarySnippet: string) => void) | undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 }
@@ -37,72 +31,39 @@ export function usePatientAnamnesisLogic({
 	const [profile, setProfile] = useState<PatientClinicalSafetyProfile>(() => {
 		if (!initialProfile) return DEFAULT_SOMATIC_HEALTHY_NORM;
 		if (typeof initialProfile === "string") {
-			return {
-				...DEFAULT_SOMATIC_HEALTHY_NORM,
-				...parseSafetyProfileFromText(initialProfile),
-			};
+			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...parseSafetyProfileFromText(initialProfile) };
 		}
 		return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...initialProfile };
 	});
 
 	useEffect(() => {
-		if (initialProfile) {
-			if (typeof initialProfile === "string") {
-				setProfile((prev) => ({
-					...prev,
-					...parseSafetyProfileFromText(initialProfile),
-				}));
-			} else {
-				setProfile((prev) => ({ ...prev, ...initialProfile }));
-			}
+		if (!initialProfile) return;
+		if (typeof initialProfile === "string") {
+			setProfile((prev) => ({ ...prev, ...parseSafetyProfileFromText(initialProfile) }));
+		} else {
+			setProfile((prev) => ({ ...prev, ...initialProfile }));
 		}
 	}, [initialProfile]);
 
-	const evaluation = useMemo(
-		() => evaluatePatientSafetyFlags(profile),
-		[profile],
-	);
-	const isNorm = useMemo(
-		() => isSomaticProfilePhysiologicalNorm(profile),
-		[profile],
-	);
-	const diaryText = useMemo(
-		() => formatSafetyProfileToDiaryText(profile),
-		[profile],
-	);
+	const evaluation = useMemo(() => evaluatePatientSafetyFlags(profile), [profile]);
+	const isNorm = useMemo(() => isSomaticProfilePhysiologicalNorm(profile), [profile]);
+	const diaryText = useMemo(() => formatSafetyProfileToDiaryText(profile), [profile]);
 
 	const updateField = useCallback(
-		<K extends keyof PatientClinicalSafetyProfile>(
-			key: K,
-			value: PatientClinicalSafetyProfile[K],
-		) => {
-			setProfile((prev) => ({
-				...prev,
-				[key]: value,
-			}));
+		<K extends keyof PatientClinicalSafetyProfile>(key: K, value: PatientClinicalSafetyProfile[K]) => {
+			setProfile((prev) => ({ ...prev, [key]: value }));
 		},
 		[],
 	);
 
-	const toggleField = useCallback(
-		(key: keyof PatientClinicalSafetyProfile) => {
-			setProfile((prev) => ({
-				...prev,
-				[key]: !prev[key],
-			}));
-		},
-		[],
-	);
+	const toggleField = useCallback((key: keyof PatientClinicalSafetyProfile) => {
+		setProfile((prev) => ({ ...prev, [key]: !prev[key] }));
+	}, []);
 
 	const handleApplyPhysiologicalNorm = useCallback(() => {
-		const healthyNorm = createHealthySomaticNormProfile();
-		setProfile(healthyNorm);
+		setProfile(createHealthySomaticNormProfile());
 		onApplySomaticNorm?.();
-		showToast(
-			"✓ Физиологическая норма: соматически здоров, аллергий нет",
-			"success",
-			3500,
-		);
+		showToast("✓ Физиологическая норма: соматически здоров, аллергий нет", "success", 3500);
 	}, [onApplySomaticNorm]);
 
 	const handleSave = useCallback(() => {

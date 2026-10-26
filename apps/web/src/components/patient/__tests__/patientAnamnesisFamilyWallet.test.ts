@@ -403,7 +403,16 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 	describe("4. PatientDetailsModal Invariants", () => {
 		it("guarantees save button is never disabled by formIsValid or missing optional fields", () => {
 			const modalFile = path.resolve(patientDir, "PatientDetailsModal.tsx");
-			const content = fs.readFileSync(modalFile, "utf-8");
+			let content = fs.readFileSync(modalFile, "utf-8");
+			const detailsDir = path.resolve(patientDir, "detailsModal");
+			if (fs.existsSync(detailsDir)) {
+				const files = fs
+					.readdirSync(detailsDir)
+					.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"));
+				for (const f of files) {
+					content += `\n${fs.readFileSync(path.join(detailsDir, f), "utf-8")}`;
+				}
+			}
 
 			assert.ok(
 				content.includes('data-testid="patient-details-modal"'),
