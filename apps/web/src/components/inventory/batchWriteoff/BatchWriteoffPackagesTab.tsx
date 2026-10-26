@@ -25,10 +25,10 @@ export const BatchWriteoffPackagesTab: React.FC<BatchWriteoffPackagesTabProps> =
 							key={m}
 							type="button"
 							onClick={() => setPackageMultiplier(m)}
-							className={`h-8 px-3 rounded-lg text-xs font-bold transition border cursor-pointer ${
+							className={`h-8 px-3 rounded-xl text-xs font-bold transition border cursor-pointer ${
 								packageMultiplier === m
-									? "bg-teal-600 text-white border-teal-600"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line)]/10"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							{m}x
@@ -44,7 +44,7 @@ export const BatchWriteoffPackagesTab: React.FC<BatchWriteoffPackagesTabProps> =
 					return (
 						<div
 							key={pkg.id}
-							className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-teal-600 transition flex flex-col justify-between gap-3 text-xs"
+							className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,#0d9488)] transition flex flex-col justify-between gap-3 text-xs"
 						>
 							<div>
 								<div className="flex items-center justify-between gap-2">
@@ -64,7 +64,7 @@ export const BatchWriteoffPackagesTab: React.FC<BatchWriteoffPackagesTabProps> =
 									type="button"
 									disabled={false}
 									onClick={() => onPackageClick(pkg.id as ClinicalPackageId)}
-									className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
+									className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs transition inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
 									data-testid={`btn-writeoff-pkg-${pkg.id}`}
 								>
 									<Zap size={14} />

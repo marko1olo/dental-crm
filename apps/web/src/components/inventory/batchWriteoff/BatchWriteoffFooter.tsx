@@ -32,11 +32,11 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 			<button
 				type="button"
 				onClick={onPrintAct}
-				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+				className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
 				title="Печать акта списания материалов"
 				data-testid="btn-print-writeoff-act"
 			>
-				<Printer size={16} />
+				<Printer size={15} />
 				<span>Печать акта списания</span>
 			</button>
 
@@ -44,7 +44,7 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold transition cursor-pointer"
+					className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold transition cursor-pointer"
 				>
 					Закрыть
 				</button>
@@ -54,17 +54,17 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 						type="button"
 						onClick={onExecuteShiftWriteoff}
 						disabled={false}
-						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+						className="h-9 min-h-[36px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
 						data-testid="btn-confirm-shift-batch-deduction"
 					>
 						{isSubmitting ? (
 							<>
-								<Loader2 size={16} className="animate-spin" />
+								<Loader2 size={15} className="animate-spin" />
 								<span>Списание...</span>
 							</>
 						) : (
 							<>
-								<PackageCheck size={16} />
+								<PackageCheck size={15} />
 								<span>Списать расходники за смену ({completedVisits} визитов)</span>
 							</>
 						)}
@@ -76,17 +76,17 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 						type="button"
 						onClick={() => onPackageClick("anesthesia_package")}
 						disabled={false}
-						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+						className="h-9 min-h-[36px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
 						data-testid="btn-confirm-primary-package"
 					>
 						{submittingPackageId ? (
 							<>
-								<Loader2 size={16} className="animate-spin" />
+								<Loader2 size={15} className="animate-spin" />
 								<span>Списание...</span>
 							</>
 						) : (
 							<>
-								<Zap size={16} />
+								<Zap size={15} />
 								<span>Списать выбранный пакет</span>
 							</>
 						)}
@@ -98,17 +98,17 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 						type="button"
 						onClick={onConfirmProcedureDeduction}
 						disabled={false}
-						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+						className="h-9 min-h-[36px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
 						data-testid="btn-confirm-procedure-deduction"
 					>
 						{isSubmitting ? (
 							<>
-								<Loader2 size={16} className="animate-spin" />
+								<Loader2 size={15} className="animate-spin" />
 								<span>Списание...</span>
 							</>
 						) : (
 							<>
-								<CheckCircle2 size={16} />
+								<CheckCircle2 size={15} />
 								<span>Списать материалы приёма</span>
 							</>
 						)}

@@ -33,8 +33,8 @@ export function useBatchWriteoffLogic(props: BatchWriteoffModalProps) {
 		let mounted = true;
 		const loadSummary = async () => {
 			try {
-				let res = await fetch(`/api/warehouse/${organizationId}/shift-summary`).catch(() => null);
-				if (!res?.ok) res = await fetch(`/api/inventory/${organizationId}/shift-summary`).catch(() => null);
+				let res = await fetch(`/api/inventory/${organizationId}/shift-summary`).catch(() => null);
+				if (!res?.ok) res = await fetch(`/api/warehouse/${organizationId}/shift-summary`).catch(() => null);
 				if (res?.ok && mounted) {
 					const data = await res.json();
 					startTransition(() => setSummaryData(data));
@@ -53,7 +53,7 @@ export function useBatchWriteoffLogic(props: BatchWriteoffModalProps) {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
-			let res = await fetch(`/api/warehouse/${organizationId}/shift-deduct`, {
+			let res = await fetch(`/api/inventory/${organizationId}/shift-deduct`, {
 				method: "POST", headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ bundleType: selectedShiftBundle, notes: `Пакетное списание смены (${selectedShiftBundle})` }),
 			}).catch(() => null);

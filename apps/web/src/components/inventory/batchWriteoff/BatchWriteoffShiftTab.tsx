@@ -36,9 +36,9 @@ export const BatchWriteoffShiftTab: React.FC<BatchWriteoffShiftTabProps> = ({
 							key={b}
 							type="button"
 							onClick={() => setSelectedShiftBundle(b)}
-							className={`h-8 px-3 text-xs font-semibold rounded-lg border transition ${
+							className={`h-8 px-3 text-xs font-semibold rounded-xl border transition cursor-pointer ${
 								selectedShiftBundle === b
-									? "bg-teal-600 text-white border-teal-600"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line)]/10"
 							}`}
 						>
@@ -53,7 +53,7 @@ export const BatchWriteoffShiftTab: React.FC<BatchWriteoffShiftTabProps> = ({
 					<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
 					<div>
 						<strong className="font-bold block">Мягкий овердрафт активен для {overdraftCount} поз.</strong>
-						<span>Прием и касса не блокируются. Отрицательный остаток зафиксирован в журнале.</span>
+						<span>Приём и касса не блокируются. Отрицательный остаток зафиксирован в журнале завсклада.</span>
 					</div>
 				</div>
 			) : (
@@ -65,24 +65,24 @@ export const BatchWriteoffShiftTab: React.FC<BatchWriteoffShiftTabProps> = ({
 
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 				<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]">
-					<span className="text-[var(--muted)] block">Базовый набор приёма</span>
-					<strong className="text-sm text-[var(--ink)] block mt-0.5">{completedVisits} наборов</strong>
-					<span className="text-[11px] text-[var(--muted)]">Перчатки, маски, слюноотсосы, валики</span>
+					<span className="text-[var(--muted)] block">Базовые комплекты приёма</span>
+					<strong className="text-sm text-[var(--ink)] block mt-0.5">{completedVisits} комплектов</strong>
+					<span className="text-[11px] text-[var(--muted)]">СИЗ, смотровые лотки и аспирационные наборы</span>
 				</div>
 				<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]">
 					<span className="text-[var(--muted)] block">Местная анестезия</span>
 					<strong className="text-sm text-[var(--ink)] block mt-0.5">8 карпул (Артикаин)</strong>
-					<span className="text-[11px] text-[var(--muted)]">Иглы 0.3x21мм, антисептики</span>
+					<span className="text-[11px] text-[var(--muted)]">Карпульный анестетик и инъекционный комплект</span>
 				</div>
 				<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]">
 					<span className="text-[var(--muted)] block">Стерилизация лотков</span>
-					<strong className="text-sm text-[var(--ink)] block mt-0.5">{completedVisits} крафт-пакетов</strong>
-					<span className="text-[11px] text-[var(--muted)]">Индикаторы 5 класса, азопирам</span>
+					<strong className="text-sm text-[var(--ink)] block mt-0.5">{completedVisits} наборов</strong>
+					<span className="text-[11px] text-[var(--muted)]">Стерильные лотки инструментов на смену</span>
 				</div>
 			</div>
 
-			<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[11px] text-[var(--muted)]">
-				Врач и ассистент не тратят время на набивку отдельных строк. Списание формируется пакетом за всю смену в 1 клик.
+			<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[11px] text-[var(--muted)]">
+				Врач и персонал не тратят время на набивку отдельных строк. Пакетное списание формируется в 1 клик с мягким овердрафтом (Мандат 8n).
 			</div>
 		</div>
 	);
