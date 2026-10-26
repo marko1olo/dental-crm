@@ -1,0 +1,71 @@
+/* omnichannelQuickBooking.css — Шторка быстрой записи слота в расписание (Мандат 8b) */
+.hub-btn-quick-booking {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 10px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.hub-btn-quick-booking:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.hub-quick-booking-drawer {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 340px;
+	max-width: 100%;
+	background: var(--paper);
+	border-left: 1px solid var(--line-strong);
+	box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+	display: flex;
+	flex-direction: column;
+	z-index: 40;
+}
+
+.hub-quick-booking-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+}
+
+.hub-quick-booking-title { font-size: 0.9rem; font-weight: 700; color: var(--ink); margin: 0; }
+.hub-quick-booking-body { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.hub-quick-booking-slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+
+.hub-quick-booking-slot-btn {
+	padding: 6px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--ink);
+	text-align: center;
+	cursor: pointer;
+}
+
+.hub-quick-booking-slot-btn:hover { border-color: var(--teal); background: var(--paper); }
+.hub-quick-booking-slot-btn.selected { background: var(--teal); color: #ffffff; border-color: var(--teal); }
+
+.hub-quick-booking-footer {
+	padding: 12px 16px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	display: flex;
+	justify-content: flex-end;
+}

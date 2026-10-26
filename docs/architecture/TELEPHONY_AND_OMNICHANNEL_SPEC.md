@@ -116,3 +116,15 @@
 - 📱 `docs/proofs/messaging/03_messaging_sbp_modal_mobile_light_390.png` (45.1 KB)
 - 📱 `docs/proofs/messaging/04_messaging_sbp_modal_mobile_dark_390.png` (46.3 KB)
 
+3. **`omnichannelHub.css` (фасад 16 строк $\le 20$ строк) & Быстрая запись на приём:**
+   - Декомпозирован из 1832-строчного монолита в подпапку `apps/web/src/components/messaging/styles/` на 16 модулей (каждый $\le 101$ строки, лимит $\le 120$ строк):
+     * `omnichannelThemeTokens.css` (66 строк), `omnichannelLayout.css` (81 строка), `omnichannelHeader.css` (60 строк), `omnichannelDialogList.css` (89 строк), `omnichannelChatFeed.css` (99 строк), `omnichannelComposer.css` (91 строка), `omnichannelPatientSidebar.css` (82 строки), `omnichannelQuickBooking.css` (71 строка), `omnichannelTemplates.css` (66 строк), `omnichannelNpsMetrics.css` (36 строк), `omnichannelNpsTable.css` (32 строки), `omnichannelSbpQr.css` (54 строки), `omnichannelSbpDetails.css` (55 строк), `omnichannelFooter.css` (31 строка), `omnichannelMobile.css` (101 строка), `omnichannelMobileChat.css` (95 строк).
+   - 1-клик быстрое бронирование (`isBookingOpen` в `OmnichannelChatTab.tsx`) прямо из чата пациента без переходов и блокировок (Мандаты 8e/8n).
+   - Мандат 8am: строго один Primary CTA изумрудного цвета (`.hub-btn-send`), все остальные действия оформлены как нейтральные/outline кнопки.
+   - 4-State Red Team Visual Proofs (`docs/proofs/omnichannel/`):
+     * ☀️ `01_omnichannel_hub_pc_light.png` (1440×900)
+     * 🌙 `02_omnichannel_hub_pc_dark.png` (1440×900)
+     * 📱 `03_omnichannel_hub_mobile_light.png` (390×844)
+     * 📱 `04_omnichannel_hub_mobile_dark.png` (390×844)
+
+

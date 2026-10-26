@@ -1,0 +1,54 @@
+/* omnichannelSbpQr.css — Бренд, QR-фрейм и радар эквайринга СБП (Мандат 8b) */
+.sbp-header-brand { display: flex; align-items: center; gap: 12px; }
+
+.sbp-emblem-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	background: #1d3557;
+	border-radius: 10px;
+	flex-shrink: 0;
+}
+
+.sbp-icon-tri { width: 22px; height: 22px; color: #f1faee; }
+.sbp-brand-text { display: flex; flex-direction: column; }
+.sbp-modal-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--ink); }
+.sbp-modal-subtitle { margin: 2px 0 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.sbp-modal-body {
+	display: grid;
+	grid-template-columns: 320px 1fr;
+	gap: 20px;
+	padding: 20px;
+	overflow-y: auto;
+}
+
+.sbp-qr-column { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+.sbp-qr-frame {
+	position: relative;
+	padding: 16px;
+	background: #ffffff;
+	border: 2px solid var(--line-strong);
+	border-radius: 16px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.sbp-qr-wrapper { display: flex; align-items: center; justify-content: center; }
+.sbp-qr-svg-holder svg { display: block; width: 200px; height: 200px; }
+
+.sbp-qr-radar-sweep {
+	position: absolute;
+	inset: 0;
+	border-radius: 14px;
+	border: 2px dashed rgba(13, 148, 136, 0.35);
+	pointer-events: none;
+}
+
+.sbp-qr-corner-bracket { position: absolute; width: 14px; height: 14px; border-color: var(--teal); }
+.sbp-qr-countdown-box { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+.sbp-qr-timer-text { font-weight: 700; color: var(--ink); }
+.sbp-supported-banks-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.sbp-bank-logo-chip { font-size: 0.68rem; padding: 2px 6px; background: var(--paper-soft); border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }

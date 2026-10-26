@@ -1,0 +1,36 @@
+/* omnichannelNpsMetrics.css — Метрики дашборда NPS и удовлетворенности (Мандат 8b) */
+.hub-nps-workspace {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.hub-nps-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 14px;
+}
+
+.hub-nps-metric-card {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.metric-title { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+.metric-val-num { font-size: 1.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 6px; }
+.metric-count { font-size: 0.85rem; font-weight: 600; opacity: 0.8; }
+.metric-bar-track { height: 6px; background: var(--paper-soft); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+.metric-bar-fill { height: 100%; border-radius: 3px; }
+.bar-promoter { background: var(--ok-fg); }
+.bar-neutral { background: var(--warn-fg); }
+.bar-detractor { background: var(--bad-fg); }
+.metric-hint { font-size: 0.72rem; color: var(--muted); margin: 0; }

@@ -1,0 +1,95 @@
+/* ============================================================
+   omnichannelMobileChat.css — Адаптивность активного чата,
+   Master-Detail список диалогов / чат по Apple HIG (390x844).
+   Строго <= 120 строк по Мандату 8b.
+   ============================================================ */
+
+.hub-btn-back-contacts {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.hub-chat-workspace {
+		flex-direction: column;
+		height: 100%;
+	}
+
+	.hub-contacts-sidebar.mobile-hidden,
+	.hub-active-chat-pane.mobile-hidden {
+		display: none !important;
+	}
+
+	.hub-contacts-sidebar.mobile-visible {
+		display: flex !important;
+		flex-direction: column;
+		width: 100% !important;
+		height: 100% !important;
+		flex: 1 1 auto;
+		border-right: none;
+	}
+
+	.hub-active-chat-pane.mobile-visible {
+		display: flex !important;
+		flex-direction: column;
+		width: 100% !important;
+		height: 100% !important;
+		flex: 1 1 auto;
+	}
+
+	.hub-btn-back-contacts {
+		display: inline-flex !important;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		min-width: 44px;
+		padding: 6px 12px;
+		gap: 4px;
+		font-size: 0.82rem;
+		font-weight: 600;
+		border-radius: 8px;
+		border: 1px solid var(--line);
+		background: var(--paper-soft);
+		color: var(--ink);
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+
+	.hub-btn-back-contacts:hover {
+		background: var(--paper-strong);
+	}
+
+	.hub-chat-header {
+		padding: 8px 12px;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.hub-chat-patient-title-row {
+		flex-wrap: wrap;
+	}
+
+	.hub-chat-header-actions {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.hub-message-bubble {
+		max-width: 88%;
+	}
+
+	.hub-input-top-bar {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 6px;
+	}
+
+	.hub-chat-input-area {
+		padding: 8px 12px;
+		padding-bottom: max(10px, env(safe-area-inset-bottom));
+	}
+
+	.hub-btn-send {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+}

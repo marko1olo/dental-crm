@@ -1,0 +1,66 @@
+/* omnichannelThemeTokens.css — Дизайн-токены каналов, плашки и статусы (Мандат 8b) */
+:root {
+	--waba-green: #25d366;
+	--tg-blue: #0088cc;
+	--vk-blue: #0077ff;
+	--sms-purple: #6366f1;
+}
+
+.text-ok { color: var(--ok-fg); }
+.text-bad { color: var(--bad-fg); }
+.text-amber { color: var(--warn-fg); }
+
+.hub-channel-icon-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #ffffff;
+}
+
+.hub-channel-icon-pill.whatsapp { background: var(--waba-green); }
+.hub-channel-icon-pill.telegram { background: var(--tg-blue); }
+.hub-channel-icon-pill.vk { background: var(--vk-blue); }
+.hub-channel-icon-pill.sms { background: var(--sms-purple); }
+.hub-channel-icon-pill.web { background: var(--teal); }
+
+.hub-status-pill {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	font-size: 0.75rem;
+	color: var(--ink-2);
+}
+
+.hub-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+.hub-status-dot.green {
+	background: var(--ok-fg);
+	box-shadow: 0 0 6px var(--ok-fg);
+}
+
+.hub-status-dot.blue {
+	background: #0284c7;
+	box-shadow: 0 0 6px #0284c7;
+}
+
+.hub-status-pill.nps-badge {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	font-weight: 600;
+}
+
+.hub-status-name { color: var(--muted); }
+.hub-status-val { color: var(--ink); font-weight: 600; }

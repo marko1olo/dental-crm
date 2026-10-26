@@ -1,0 +1,91 @@
+/* omnichannelInputToolbar.css — Панель ввода, вложения и Primary CTA отправки (Мандат 8b) */
+.hub-chat-input-area {
+	padding: 12px 20px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.hub-input-top-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hub-channel-select-wrap, .hub-template-quick-select-wrap { display: flex; align-items: center; gap: 6px; }
+.hub-input-bar-label { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+
+.hub-channel-select, .hub-template-select {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 5px 8px;
+	font-size: 0.78rem;
+	color: var(--ink);
+	outline: none;
+}
+
+.hub-channel-select:focus, .hub-template-select:focus { border-color: var(--teal); }
+.hub-textarea-container { position: relative; display: flex; flex-direction: column; }
+
+.hub-message-textarea {
+	width: 100%;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 12px;
+	padding-bottom: 38px;
+	font-size: 0.86rem;
+	font-family: inherit;
+	color: var(--ink);
+	resize: none;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.hub-message-textarea:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.hub-textarea-actions {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	left: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hub-icon-action-btn {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hub-icon-action-btn:hover { color: var(--ink); background: var(--paper-soft); }
+
+/* Единственная Primary CTA изумрудная кнопка (Мандат 8am) */
+.hub-btn-send {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.28);
+	transition: opacity 0.15s ease;
+}
+
+.hub-btn-send:hover { opacity: 0.92; }
+.hub-btn-send:disabled { opacity: 0.45; cursor: not-allowed; }

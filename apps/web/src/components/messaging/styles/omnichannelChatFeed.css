@@ -1,0 +1,99 @@
+/* omnichannelMessageFeed.css — Лента пузырей переписки, вложения и статусы (Мандат 8b) */
+.hub-messages-feed {
+	flex: 1;
+	overflow-y: auto;
+	padding: 20px 20px 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+}
+
+.hub-empty-feed {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: var(--muted);
+	gap: 8px;
+	font-size: 0.9rem;
+}
+
+.hub-message-bubble-wrapper { display: flex; width: 100%; }
+.hub-message-bubble-wrapper.outbound { justify-content: flex-end; }
+.hub-message-bubble-wrapper.inbound { justify-content: flex-start; }
+
+.hub-message-bubble {
+	max-width: 65%;
+	padding: 10px 14px;
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	position: relative;
+	box-sizing: border-box;
+}
+
+.hub-message-bubble-wrapper.outbound .hub-message-bubble {
+	background: var(--paper-strong);
+	border: 1px solid var(--line-strong);
+	border-bottom-right-radius: 2px;
+}
+
+.hub-message-bubble-wrapper.inbound .hub-message-bubble {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-bottom-left-radius: 2px;
+}
+
+.hub-message-bubble.whatsapp { border-left: 3px solid var(--ok-fg); }
+.hub-message-bubble.telegram { border-left: 3px solid #0284c7; }
+.hub-message-bubble.sms { border-left: 3px solid var(--muted); }
+
+.hub-msg-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hub-msg-sender { font-size: 0.72rem; font-weight: 700; color: var(--teal); }
+
+.hub-msg-channel-tag {
+	font-size: 0.62rem;
+	font-weight: 700;
+	padding: 1px 4px;
+	border-radius: 3px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.hub-msg-body-text { font-size: 0.84rem; line-height: 1.45; color: var(--ink); word-break: break-word; }
+.hub-msg-interactive-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+
+.hub-msg-interactive-btn {
+	padding: 5px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+}
+
+.hub-msg-interactive-btn.primary { background: var(--teal); color: #ffffff; border-color: var(--teal); }
+.hub-msg-attachments { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+
+.hub-msg-attachment-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 0.78rem;
+}
+
+.att-name { color: var(--ink); font-weight: 500; }
+.att-size { color: var(--muted); font-size: 0.7rem; }
+.hub-msg-footer { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 0.7rem; color: var(--muted); }
+.hub-msg-time { font-size: 0.7rem; }
+.hub-msg-status { display: flex; align-items: center; }

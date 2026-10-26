@@ -95,3 +95,20 @@
   - `docs/proofs/portal/03_portal_kiosk_mobile_light.png` — мобильное сенсорное представление, 0px горизонтального скролла, тач-таргеты $\ge 44\times 44\text{px}$.
 - 📱 **Mobile Dark (390×844)**:
   - `docs/proofs/portal/04_portal_kiosk_mobile_dark.png` — мобильный терминал в тёмной теме.
+
+### 3.4. Омниканальный центр сообщений и лояльности (Omnichannel Hub & SBP)
+- ☀️ **PC Light (1440×900)**:
+  - `docs/proofs/omnichannel/01_omnichannel_hub_pc_light.png` — Десктопный хаб сообщений: лента диалогов, статусы каналов WhatsApp/Telegram/SMS, единая primary CTA кнопка «Отправить» (`.hub-btn-send`), вторичные действия (СБП, запись, перехват).
+- 🌙 **PC Dark (1440×900)**:
+  - `docs/proofs/omnichannel/02_omnichannel_hub_pc_dark.png` — OLED-контрастная тёмная тема, идеальная читаемость сообщений и бейджей.
+- 📱 **Mobile Light (390×844)**:
+  - `docs/proofs/omnichannel/03_omnichannel_hub_mobile_light.png` — Мобильное представление по Apple HIG: Master-Detail навигация (кнопка «< Назад»), скрытие сайдбара при открытом чате, полноэкранная шторка быстрой записи на приём в 1 клик, 0px горизонтального скролла.
+- 📱 **Mobile Dark (390×844)**:
+  - `docs/proofs/omnichannel/04_omnichannel_hub_mobile_dark.png` — Тёмная тема мобильного чата, сенсорные таргеты $\ge 44\times 44\text{px}$, адаптивная клавиатурная зона.
+
+## 4. Архитектурная декомпозиция стилей (Мандат 8b)
+- Монолит `apps/web/src/components/messaging/omnichannelHub.css` (1832 строки) распилен на 16 специализированных подмодулей в каталоге `apps/web/src/components/messaging/styles/`.
+- Каждый подмодуль строго $\le 101$ строк (лимит мандата $\le 120$ строк).
+- Корневой файл `omnichannelHub.css` преобразован в тонкий фасад импорта (16 строк).
+- Проверено 100% покрытие классов (104/104 классов) через `verifyMessagingClasses.mjs`.
+

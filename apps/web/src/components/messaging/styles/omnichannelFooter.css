@@ -1,0 +1,31 @@
+/* omnichannelFooter.css — Футер модалки и юридические уведомления (Мандат 8b) */
+.omnichannel-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.hub-footer-status { display: flex; align-items: center; gap: 8px; font-size: 0.74rem; color: var(--muted); }
+.sbp-footer-legal { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.sbp-legal-link { color: var(--teal); text-decoration: underline; }
+
+.omnichannel-btn-secondary {
+	padding: 6px 14px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.omnichannel-btn-secondary:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}

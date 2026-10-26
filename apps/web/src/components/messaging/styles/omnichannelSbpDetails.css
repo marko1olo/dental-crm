@@ -1,0 +1,55 @@
+/* omnichannelSbpDetails.css — Счет, действия и статусы СБП (Мандат 8b) */
+.sbp-details-column { display: flex; flex-direction: column; gap: 14px; }
+
+.sbp-invoice-summary-card {
+	padding: 16px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.sbp-summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem; }
+.sbp-summary-label { color: var(--muted); }
+.sbp-summary-value { font-weight: 600; color: var(--ink); }
+.sbp-amount-highlight { font-size: 1.4rem; font-weight: 800; color: var(--teal); }
+
+.sbp-live-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+.sbp-live-status-pill.status-awaiting_scan { background: rgba(234, 179, 8, 0.15); color: #d97706; border: 1px solid rgba(234, 179, 8, 0.3); }
+.sbp-live-status-pill.status-paid_success { background: rgba(34, 197, 94, 0.15); color: #16a34a; border: 1px solid rgba(34, 197, 94, 0.3); }
+.sbp-live-status-pill.status-expired { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+.sbp-actions-section { display: flex; flex-direction: column; gap: 8px; }
+.sbp-actions-heading { font-size: 0.78rem; font-weight: 700; color: var(--muted); margin: 0; }
+.sbp-action-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.sbp-action-btn, .sbp-copy-link-btn, .sbp-send-sms-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+}
+
+.sbp-action-btn:hover, .sbp-copy-link-btn:hover, .sbp-send-sms-btn:hover { border-color: var(--teal); background: var(--paper-soft); }
+.sbp-cashier-override { margin-top: 10px; display: flex; justify-content: flex-end; }
+.sbp-cashier-confirm-btn { padding: 6px 12px; font-size: 0.76rem; border: 1px dashed var(--line-strong); background: transparent; color: var(--muted); border-radius: 6px; cursor: pointer; }
+.sbp-embedded-drawer { position: absolute; inset: 0; z-index: 50; background: var(--paper); display: flex; flex-direction: column; overflow-y: auto; border-radius: 12px; }

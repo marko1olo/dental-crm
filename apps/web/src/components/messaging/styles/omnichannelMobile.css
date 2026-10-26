@@ -1,0 +1,101 @@
+/* ============================================================
+   omnichannelMobile.css — Адаптивность модального хаба для смартфонов
+   и планшетов: полноэкранный контейнер, компактная шапка и табы.
+   Строго <= 120 строк по Мандату 8b.
+   ============================================================ */
+
+@media (max-width: 900px) {
+	.hub-main-container {
+		height: calc(100vh - 20px);
+	}
+
+	.hub-nps-metrics-row {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.sbp-modal-body {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.omnichannel-modal-overlay {
+		padding: 0;
+	}
+
+	.omnichannel-modal-container {
+		max-height: 100vh;
+		height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.hub-main-container {
+		height: 100vh;
+		max-width: 100vw;
+	}
+
+	.omnichannel-modal-header {
+		padding: 10px 14px;
+	}
+
+	.hub-header-sub,
+	.hub-channel-status-bar {
+		display: none !important;
+	}
+
+	.hub-header-left {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.omnichannel-modal-title {
+		font-size: 0.92rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.hub-tabs-navigation {
+		overflow-x: auto;
+		white-space: nowrap;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 0 8px;
+		gap: 4px;
+	}
+
+	.hub-tabs-navigation::-webkit-scrollbar {
+		display: none;
+	}
+
+	.hub-nav-tab {
+		flex-shrink: 0;
+		padding: 8px 12px;
+		font-size: 0.78rem;
+		min-height: 44px;
+	}
+
+	.omnichannel-modal-close {
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
+.sbp-embedded-drawer {
+	position: absolute;
+	inset: 0;
+	z-index: 50;
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+	.hub-contacts-sidebar.mobile-hidden { display: none !important; }
+	.hub-active-chat-pane.mobile-hidden { display: none !important; }
+	.hub-contacts-sidebar { width: 100% !important; height: 100% !important; }
+	.hub-active-chat-pane { width: 100% !important; height: 100% !important; }
+}

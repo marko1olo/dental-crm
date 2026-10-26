@@ -1,0 +1,89 @@
+/* omnichannelConversationsList.css — Список диалогов и фильтры контактов (Мандат 8b) */
+.hub-contacts-sidebar {
+	width: 320px;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper-soft);
+	border-right: 1px solid var(--line);
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.hub-contacts-search { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+
+.hub-contacts-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+.hub-contact-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 12px;
+	background: transparent;
+	border: none;
+	border-bottom: 1px solid var(--line);
+	text-align: left;
+	color: inherit;
+	transition: background 0.15s ease;
+}
+
+.hub-contact-card:hover { background: var(--paper); }
+.hub-contact-card.selected { background: var(--paper); border-left: 3px solid var(--teal); }
+
+.hub-contact-avatar {
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 0.88rem;
+	flex-shrink: 0;
+}
+
+.hub-contact-info { flex: 1; min-width: 0; }
+
+.hub-contact-row-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 3px;
+}
+
+.hub-contact-name {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hub-contact-snippet {
+	font-size: 0.76rem;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin: 0;
+}
+
+.hub-unread-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	background: var(--teal);
+	color: #ffffff;
+	border-radius: 10px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	margin-left: 6px;
+}
+
+.hub-filter-channels-group { display: flex; align-items: center; gap: 4px; padding: 6px 14px; }
+.hub-filter-btn { padding: 4px 8px; border-radius: 6px; font-size: 0.74rem; border: 1px solid var(--line); background: var(--paper); color: var(--muted); }
+.hub-filter-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }

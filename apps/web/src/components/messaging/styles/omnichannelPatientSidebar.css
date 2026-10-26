@@ -1,0 +1,82 @@
+/* omnichannelPatientCard.css — Досье пациента, шапка диалога и действия (Мандат 8b) */
+.hub-chat-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.hub-chat-patient-meta { display: flex; align-items: center; gap: 10px; }
+
+.hub-chat-avatar-large {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 0.95rem;
+	flex-shrink: 0;
+}
+
+.hub-chat-patient-title-row { display: flex; align-items: center; gap: 8px; }
+.hub-chat-patient-name { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+.hub-phone-chip { font-size: 0.78rem; color: var(--muted); }
+.hub-chat-quick-details { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+
+.hub-detail-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 7px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	font-size: 0.72rem;
+	color: var(--ink-2);
+}
+
+.hub-detail-chip.highlight { background: rgba(13, 148, 136, 0.1); border-color: var(--teal); color: var(--teal); }
+.hub-chat-header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* Второстепенная кнопка СБП (Мандат 8am: ровно 1 Primary CTA) */
+.hub-btn-sbp-invoice {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 10px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.hub-btn-sbp-invoice:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.hub-patient-sidebar-panel { width: 280px; border-left: 1px solid var(--line); background: var(--paper-soft); padding: 14px; }
+.hub-patient-sidebar-card { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.hub-patient-sidebar-header { font-size: 0.82rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+
+.hub-btn-takeover {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
