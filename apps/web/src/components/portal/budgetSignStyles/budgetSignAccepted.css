@@ -1,0 +1,83 @@
+.patient-budget-accepted-card {
+	background-color: var(--teal-surface);
+	border: 1px solid var(--teal-soft);
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	text-align: center;
+	margin-bottom: 1rem;
+}
+
+.patient-budget-accepted-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--teal-dark, var(--teal));
+	margin-top: 0.5rem;
+	margin-bottom: 0.25rem;
+}
+
+.patient-budget-accepted-desc {
+	font-size: 0.8125rem;
+	color: var(--ink);
+	margin: 0 0 0.5rem;
+}
+
+.patient-budget-accepted-date {
+	font-size: 0.75rem;
+	color: var(--teal);
+	margin: 0 0 0.5rem;
+}
+
+.patient-budget-hash-box {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.75rem;
+	color: var(--muted);
+	background: var(--paper);
+	padding: 0.5rem;
+	border-radius: 0.375rem;
+	border: 1px solid var(--line);
+	margin: 0.75rem 0;
+	word-break: break-all;
+}
+
+.patient-budget-print-btn {
+	min-height: 44px;
+	width: 100%;
+	padding: 0.5rem 1rem;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	margin-top: 0.75rem;
+}
+
+.patient-budget-print-btn:hover {
+	background: var(--paper-soft);
+}
+
+@media (min-width: 540px) {
+	.patient-budget-container {
+		max-width: 520px;
+		margin: 2rem auto;
+		min-height: auto;
+		border: 1px solid var(--line);
+		border-radius: 1rem;
+		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+		padding: 1.5rem;
+	}
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+	.patient-budget-clear-btn,
+	.patient-budget-stamp-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+		font-size: 0.8125rem;
+	}
+}

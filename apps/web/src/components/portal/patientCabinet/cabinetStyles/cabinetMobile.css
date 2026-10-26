@@ -1,0 +1,207 @@
+/* cabinetMobile.css — Mobile PWA Bar, Touch-Targets & 390x844 Ergonomics (Mandate 8b <= 120 lines) */
+.pc-mobile-tab-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.patient-cabinet-backdrop {
+		padding: 0;
+		align-items: flex-start;
+		justify-content: flex-start;
+		position: fixed;
+		inset: 0;
+		width: 100vw;
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.patient-cabinet-modal {
+		height: 100%;
+		max-height: 100%;
+		height: 100dvh;
+		max-height: 100dvh;
+		width: 100vw;
+		max-width: 100vw;
+		min-width: 0;
+		border-radius: 0;
+		border: none;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.pc-header {
+		padding: 12px 14px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100vw;
+		min-width: 0;
+	}
+
+	.pc-header-user {
+		width: 100%;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.pc-avatar {
+		width: 40px;
+		height: 40px;
+		min-width: 40px;
+		font-size: 1rem;
+		flex-shrink: 0;
+	}
+
+	.pc-header-title {
+		font-size: 0.9375rem;
+		line-height: 1.25;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+		word-break: break-word;
+	}
+
+	.pc-badge-tier {
+		font-size: 0.6875rem;
+		padding: 2px 8px;
+		white-space: nowrap;
+	}
+
+	.pc-header-badges {
+		width: 100%;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+
+	.pc-mobile-tab-bar {
+		display: flex;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--paper, var(--pc-surface, #ffffff));
+		border-top: 1px solid var(--line, var(--pc-border, #e2e8f0));
+		z-index: 1100;
+		padding: 6px 4px calc(env(safe-area-inset-bottom, 0px) + 6px) 4px;
+		justify-content: space-around;
+		align-items: center;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+	}
+
+	.pc-mobile-tab-btn {
+		flex: 1;
+		min-width: 0;
+		min-height: 44px;
+		padding: 4px 2px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		background: transparent;
+		border: none;
+		color: var(--muted, var(--pc-text-muted, #64748b));
+		cursor: pointer;
+		touch-action: manipulation;
+		transition: color 0.15s ease;
+	}
+
+	.pc-mobile-tab-btn.active {
+		color: var(--pc-primary, #0d9488);
+		font-weight: 700;
+	}
+
+	.pc-mobile-tab-btn span {
+		white-space: nowrap;
+		max-width: 100%;
+		display: block;
+		line-height: 1.1;
+		font-size: 0.6875rem;
+		text-align: center;
+	}
+
+	.pc-close-btn,
+	.pc-quick-action-btn,
+	.pc-cal-btn,
+	.pc-year-btn,
+	.pc-filter-chip,
+	.pc-view-mode-btn,
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		touch-action: manipulation;
+	}
+
+	.pc-body {
+		padding: 12px 10px calc(env(safe-area-inset-bottom, 0px) + 68px) 10px;
+		gap: 12px;
+		overflow-x: clip;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.pc-card {
+		padding: 12px 10px;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	.pc-alert-banner,
+	.pc-invoice-header,
+	.pc-invoice-actions,
+	.tax-deduction-quick-card,
+	.next-visit-card,
+	.emergency-hotline-card {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.pc-invoice-actions button,
+	.pc-invoice-actions a,
+	.tax-deduction-quick-card button,
+	.next-visit-card button,
+	.next-visit-card a,
+	.emergency-hotline-card a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+		touch-action: manipulation;
+	}
+
+	.pc-bank-buttons-grid,
+	.three-tier-switcher-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	.three-tier-switcher-grid > button {
+		width: 100% !important;
+		min-height: 52px !important;
+	}
+}
+
+@media (pointer: coarse) {
+	.pc-close-btn,
+	.pc-quick-action-btn,
+	.pc-cal-btn,
+	.pc-year-btn,
+	.pc-filter-chip,
+	.pc-view-mode-btn,
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		touch-action: manipulation;
+	}
+}

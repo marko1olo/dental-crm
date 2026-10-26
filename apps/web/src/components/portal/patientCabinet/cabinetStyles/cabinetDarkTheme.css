@@ -1,0 +1,94 @@
+/* cabinetDarkTheme.css — Patient Cabinet Deep Dark Theme (Mandate 8b <= 120 lines) */
+:root[data-theme="dark"],
+.dark {
+	--pc-backdrop: rgba(2, 6, 23, 0.85);
+	--pc-surface: #0f172a;
+	--pc-border: #1e293b;
+	--pc-text: #f8fafc;
+	--pc-text-muted: #94a3b8;
+	--pc-hover: rgba(255, 255, 255, 0.06);
+	--pc-chip-bg: rgba(255, 255, 255, 0.05);
+	--pc-primary-soft: rgba(20, 184, 166, 0.15);
+	--pc-primary-line: rgba(20, 184, 166, 0.3);
+}
+
+[data-theme="dark"] .patient-cabinet-modal,
+.dark .patient-cabinet-modal {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-color: var(--line, var(--pc-border, #1e293b));
+	color: var(--text, var(--pc-text, #f8fafc));
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .pc-header,
+.dark .pc-header {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-bottom-color: var(--line, var(--pc-border, #1e293b));
+}
+
+[data-theme="dark"] .pc-card,
+.dark .pc-card,
+[data-theme="dark"] .next-visit-card,
+.dark .next-visit-card,
+[data-theme="dark"] .tax-deduction-quick-card,
+.dark .tax-deduction-quick-card,
+[data-theme="dark"] .emergency-hotline-card,
+.dark .emergency-hotline-card {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-color: var(--line, var(--pc-border, #1e293b));
+}
+
+[data-theme="dark"] .pc-close-btn,
+.dark .pc-close-btn,
+[data-theme="dark"] .pc-cal-btn,
+.dark .pc-cal-btn,
+[data-theme="dark"] .pc-year-btn,
+.dark .pc-year-btn,
+[data-theme="dark"] .pc-stage-chevron-btn,
+.dark .pc-stage-chevron-btn {
+	background: var(--pc-hover, rgba(255, 255, 255, 0.04));
+	border-color: var(--line, var(--pc-border, #1e293b));
+	color: var(--text, var(--pc-text, #f8fafc));
+}
+
+[data-theme="dark"] .pc-close-btn:hover,
+.dark .pc-close-btn:hover,
+[data-theme="dark"] .pc-cal-btn:hover,
+.dark .pc-cal-btn:hover {
+	background: var(--pc-hover, rgba(255, 255, 255, 0.08));
+	border-color: var(--pc-primary, #14b8a6);
+}
+
+[data-theme="dark"] .pc-filter-chip,
+.dark .pc-filter-chip {
+	background: var(--pc-chip-bg, rgba(255, 255, 255, 0.05));
+	border-color: var(--line, var(--pc-border, #1e293b));
+	color: var(--muted, var(--pc-text-muted, #94a3b8));
+}
+
+[data-theme="dark"] .pc-filter-chip.active,
+.dark .pc-filter-chip.active {
+	background: var(--pc-primary-soft, rgba(20, 184, 166, 0.2));
+	color: var(--pc-primary, #14b8a6);
+	border-color: var(--pc-primary, #14b8a6);
+}
+
+[data-theme="dark"] .pc-otp-digit,
+.dark .pc-otp-digit {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-color: var(--line, var(--pc-border, #334155));
+	color: var(--text, var(--pc-text, #f8fafc));
+}
+
+[data-theme="dark"] .pc-mobile-tab-bar,
+.dark .pc-mobile-tab-bar {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-top-color: var(--line, var(--pc-border, #1e293b));
+	box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .pc-reception-qr-card,
+.dark .pc-reception-qr-card {
+	background: var(--paper, var(--pc-surface, #0f172a));
+	border-color: var(--pc-primary, #14b8a6);
+}

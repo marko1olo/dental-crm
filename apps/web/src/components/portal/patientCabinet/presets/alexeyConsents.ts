@@ -1,0 +1,62 @@
+import type { PatientStatutoryConsent } from "../patientCabinetEngine";
+
+export const ALEXEY_CONSENTS: readonly PatientStatutoryConsent[] = [
+	{
+		id: "c-pending-1",
+		code: "ИДС-ХИР-02",
+		titleRu: "Информированное добровольное согласие на операцию синус-лифтинга и костной пластики",
+		categoryRu: "Хирургия & Имплантация",
+		statutoryBasis: "323-ФЗ",
+		status: "pending_signature",
+		diagnosisIcd: "K08.2 Атрофия альвеолярного края верхней челюсти",
+		toothNumbers: "2.6, 2.7",
+		summaryTextRu:
+			"Проведение закрытого/открытого субантрального аугментирования дна гайморовой пазухи (синус-лифтинг) с использованием остеопластического биоматериала Bio-Oss и барьерной мембраны Bio-Gide.",
+		fullTextContent:
+			"Я, Воронов Алексей Владимирович, подтверждаю, что лечащий врач разъяснил мне цели, методы и возможные риски операции субантральной аугментации (синус-лифтинга) в области зубов #2.6, #2.7. Мне понятна необходимость соблюдения послеоперационного режима (исключение сморкания, перелетов и перепадов давления в течение 14 дней). Даю добровольное согласие в соответствии со ст. 20 Федерального закона № 323-ФЗ.",
+	},
+	{
+		id: "c-signed-1",
+		code: "ИДС-ТЕР-01",
+		titleRu: "Информированное согласие на терапевтическое лечение и эндодонтию под микроскопом",
+		categoryRu: "Терапия",
+		statutoryBasis: "323-ФЗ",
+		status: "signed",
+		diagnosisIcd: "K04.0 Пульпит зуба #3.6",
+		toothNumbers: "3.6",
+		summaryTextRu: "Механическая и медикаментозная обработка корневых каналов под операционным дентальным микроскопом 25x.",
+		fullTextContent: "Подтверждаю согласие на эндодонтическое лечение зуба #3.6. Подписано через SMS/OTP (63-ФЗ ПЭП).",
+		signedAtIso: "2026-07-20T15:42:10Z",
+		signatureAudit: {
+			verificationMethod: "sms_otp",
+			phone: "+7 (999) 123-45-67",
+			smsOtpCode: "748291",
+			integrityHash: "3f8a42b109cde8714041b312ef901452a819b9901723c0a1b2410f983419bbca",
+			timestamp: 1784562130000,
+			signedAtIso: "2026-07-20T15:42:10Z",
+			legalBasis: "63-ФЗ ПЭП",
+		},
+		pdfDownloadUrl: "/portal/documents/consent-ids-ter-01-pat8842.pdf",
+	},
+	{
+		id: "c-signed-2",
+		code: "СОГЛ-ПД-152",
+		titleRu: "Согласие на обработку персональных данных и врачебную тайну",
+		categoryRu: "Персональные данные",
+		statutoryBasis: "152-ФЗ",
+		status: "signed",
+		summaryTextRu: "Обработка специальных категорий персональных данных о состоянии здоровья в соответствии с 152-ФЗ.",
+		fullTextContent: "Согласие на обработку ПДн пациента Воронова А. В. в МИС DENTE. Подписано при первичном приеме.",
+		signedAtIso: "2026-06-10T10:15:00Z",
+		signatureAudit: {
+			verificationMethod: "sms_otp",
+			phone: "+7 (999) 123-45-67",
+			smsOtpCode: "884120",
+			integrityHash: "a1c49802bf1e7842c9038204910248abef014285918237491029481920381029",
+			timestamp: 1781086500000,
+			signedAtIso: "2026-06-10T10:15:00Z",
+			legalBasis: "63-ФЗ ПЭП",
+		},
+		pdfDownloadUrl: "/portal/documents/consent-pd-152-pat8842.pdf",
+	},
+];

@@ -1,0 +1,129 @@
+/* cabinetInvoices.css — Patient Cabinet Invoices, Billing, SBP & Tax (Mandate 8b <= 120 lines) */
+.pc-invoice-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line, var(--pc-border, #e2e8f0));
+}
+
+.pc-invoice-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-invoice-actions button,
+.pc-invoice-actions a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 8px 14px;
+	border-radius: var(--pc-radius-sm, 8px);
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.15s ease;
+}
+
+.tax-deduction-quick-card,
+.emergency-hotline-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 16px;
+	border-radius: var(--pc-radius-md, 12px);
+	background: var(--paper, var(--pc-surface, #ffffff));
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	box-sizing: border-box;
+}
+
+.tax-deduction-quick-card button,
+.emergency-hotline-card a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 8px 14px;
+	border-radius: var(--pc-radius-sm, 8px);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.pc-bank-buttons-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 10px;
+	margin-top: 12px;
+}
+
+.three-tier-switcher-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.pc-otp-digit {
+	width: 44px;
+	height: 48px;
+	border: 1.5px solid var(--line, var(--pc-border, #cbd5e1));
+	border-radius: var(--pc-radius-sm, 8px);
+	background: var(--paper, var(--pc-surface, #ffffff));
+	color: var(--text, var(--pc-text, #0f172a));
+	font-size: 1.25rem;
+	font-weight: 700;
+	text-align: center;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease;
+}
+
+.pc-otp-digit:focus {
+	outline: none;
+	border-color: var(--pc-primary, #0d9488);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.pc-filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 6px 14px;
+	border-radius: 9999px;
+	background: var(--pc-chip-bg, rgba(0, 0, 0, 0.04));
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	color: var(--muted, var(--pc-text-muted, #64748b));
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.pc-filter-chip.active,
+.pc-filter-chip:hover {
+	background: var(--pc-primary-soft, rgba(13, 148, 136, 0.1));
+	color: var(--pc-primary, #0d9488);
+	border-color: var(--pc-primary, #0d9488);
+}
+
+.pc-view-mode-btn {
+	background: transparent;
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	border-radius: var(--pc-radius-sm, 8px);
+	color: var(--muted, var(--pc-text-muted, #64748b));
+	padding: 6px 12px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.pc-view-mode-btn.active {
+	background: var(--pc-primary, #0d9488);
+	color: #ffffff;
+	border-color: var(--pc-primary, #0d9488);
+}

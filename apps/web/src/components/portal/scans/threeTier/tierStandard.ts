@@ -1,0 +1,55 @@
+import type { ThreeTierOption } from "../../patientCabinet/patientCabinetEngine.js";
+
+export const STANDARD_TIER_OPTION: ThreeTierOption = {
+	tierId: "standard",
+	tierNameRu: "Оптимум (Выбор врача)",
+	subtitleRu: "Премиальная эстетика, микроскоп 30x и диоксид циркония",
+	totalCostRub: 135000,
+	warrantyMonths: 36,
+	durationWeeks: 4,
+	benefits: [
+		"Субмикрофильный японский нанокомпозит Estelite Asteria (эффект хамелеона)",
+		"Монолитные коронки из диоксида циркония Katana HTML (Япония)",
+		"Лечение каналов под дентальным микроскопом 30x",
+		"Расширенная гарантия клиники 3 года (36 месяцев)",
+		"Изоляция коффердамом и бестеневая оптика",
+	],
+	stages: [
+		{
+			id: "tier-std-st1",
+			orderIndex: 1,
+			titleRu: "Этап 1: Комплексная гигиена и реминерализация",
+			categoryRu: "Гигиена",
+			teethFdi: ["11-48"],
+			costRub: 12000,
+			status: "completed",
+			procedures: ["Комплексная гигиена (УЗ + Air-Flow + реминерализация)"],
+			targetDateRu: "Выполнен",
+		},
+		{
+			id: "tier-std-st2",
+			orderIndex: 2,
+			titleRu: "Этап 2: Лечение каналов под микроскопом 30x и пломба Estelite",
+			categoryRu: "Терапия",
+			teethFdi: ["1.6", "2.5"],
+			costRub: 55000,
+			status: "in_progress",
+			procedures: [
+				"Лечение корневых каналов под микроскопом",
+				"Лечение кариеса и светоотверждаемая пломба",
+			],
+			targetDateRu: "В процессе",
+		},
+		{
+			id: "tier-std-st3",
+			orderIndex: 3,
+			titleRu: "Этап 3: Ортопедическое восстановление циркониевой коронкой",
+			categoryRu: "Ортопедия",
+			teethFdi: ["4.6"],
+			costRub: 68000,
+			status: "planned",
+			procedures: ["Установка эстетической коронки (диоксид циркония / E.max)"],
+			targetDateRu: "15.10.2026",
+		},
+	],
+};

@@ -1,0 +1,114 @@
+/* cabinetAppointments.css — Patient Cabinet Appointments & Visit Actions (Mandate 8b <= 120 lines) */
+.pc-next-visit-time {
+	font-size: 20px !important;
+	font-weight: 800 !important;
+	color: var(--pc-primary, #0d9488) !important;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+}
+
+.pc-reception-qr-card {
+	border: 2px solid var(--pc-primary, #0d9488);
+	background: var(--paper, var(--pc-surface, #ffffff));
+	border-radius: var(--pc-radius-md, 12px);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.next-visit-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px;
+	background: var(--paper, var(--pc-surface, #ffffff));
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	border-radius: var(--pc-radius-md, 12px);
+	box-sizing: border-box;
+}
+
+.next-visit-card button,
+.next-visit-card a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 16px;
+	border-radius: var(--pc-radius-sm, 8px);
+	font-weight: 600;
+	font-size: 0.875rem;
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.15s ease;
+}
+
+.pc-cal-btn {
+	background: var(--paper, var(--pc-surface, #ffffff));
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	border-radius: var(--pc-radius-sm, 8px);
+	color: var(--text, var(--pc-text, #0f172a));
+	font-size: 0.875rem;
+	font-weight: 600;
+	padding: 8px 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pc-cal-btn:hover {
+	background: var(--pc-hover, rgba(0, 0, 0, 0.04));
+	border-color: var(--pc-primary, #0d9488);
+}
+
+.pc-year-btn {
+	background: transparent;
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	border-radius: var(--pc-radius-sm, 8px);
+	color: var(--muted, var(--pc-text-muted, #64748b));
+	font-size: 0.8125rem;
+	padding: 6px 12px;
+	cursor: pointer;
+}
+
+.pc-year-btn.active,
+.pc-year-btn:hover {
+	color: var(--pc-primary, #0d9488);
+	border-color: var(--pc-primary, #0d9488);
+	font-weight: 700;
+}
+
+.pc-stage-chevron-btn {
+	background: transparent;
+	border: 1px solid var(--line, var(--pc-border, #e2e8f0));
+	border-radius: var(--pc-radius-sm, 8px);
+	color: var(--muted, var(--pc-text-muted, #64748b));
+	padding: 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.pc-stage-chevron-btn:hover {
+	color: var(--pc-primary, #0d9488);
+	border-color: var(--pc-primary, #0d9488);
+}
+
+.pc-appointment-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-appointment-actions button {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: var(--pc-radius-sm, 8px);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
