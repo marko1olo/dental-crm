@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 
 const API_BASE = "http://127.0.0.1:4100";
 const PROOFS_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/warranty";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/a4979f39-cf04-44db-9273-1b787eb14bfd";
+const BRAIN_DIR = process.env.BRAIN_DIR || "C:/Users/Admin/.gemini/antigravity/brain/1840b950-ed75-4e21-ba75-2dc6b63a03f3";
 
 mkdirSync(PROOFS_DIR, { recursive: true });
 mkdirSync(BRAIN_DIR, { recursive: true });
@@ -216,6 +216,19 @@ async function run() {
 
     const outPath = path.join(PROOFS_DIR, state.file);
     await page.screenshot({ path: outPath, fullPage: false });
+
+    // Also save with ordered prefix as requested by Mandate 8al and Battle Order
+    const prefixMap = {
+      "warranty_pc_light.png": "01_warranty_pc_light.png",
+      "warranty_pc_dark.png": "02_warranty_pc_dark.png",
+      "warranty_mobile_light.png": "03_warranty_mobile_light.png",
+      "warranty_mobile_dark.png": "04_warranty_mobile_dark.png",
+    };
+    if (prefixMap[state.file]) {
+      const orderedPath = path.join(PROOFS_DIR, prefixMap[state.file]);
+      copyFileSync(outPath, orderedPath);
+      copyFileSync(outPath, path.join(BRAIN_DIR, prefixMap[state.file]));
+    }
 
     const brainPath = path.join(BRAIN_DIR, state.file);
     copyFileSync(outPath, brainPath);

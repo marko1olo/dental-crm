@@ -1,21 +1,4 @@
-/**
- * ============================================================================
- * CLINICAL DENTAL WARRANTY PASSPORT STUDIO (MODAL HUD) — CANONICAL FACADE
- * ============================================================================
- */
-
-import {
-	Calendar,
-	CheckCircle2,
-	Eye,
-	FileCheck,
-	Printer,
-	QrCode,
-	ShieldCheck,
-	Sliders,
-	Sparkles,
-	X,
-} from "lucide-react";
+import { ShieldCheck, X } from "lucide-react";
 import type React from "react";
 import { createPortal } from "react-dom";
 import "./warrantyPassport.css";
@@ -29,9 +12,10 @@ import {
 	WarrantyConditionsStep,
 	WarrantyItemsStep,
 	WarrantyPreviewPrint,
-	WarrantyShareMenu,
 	WarrantySignatureStep,
 } from "./warrantyPassport";
+import { WarrantyModalTabs } from "./warrantyPassport/modalParts/WarrantyModalTabs";
+import { WarrantyModalFooter } from "./warrantyPassport/modalParts/WarrantyModalFooter";
 
 export type { CompletedTreatmentStage, WarrantyPassportModalProps };
 export { detectCategoryFromServiceTitle, mapCompletedStagesToWarrantyItems };
@@ -65,23 +49,12 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				</div>
 
 				{/* Tabs */}
-				<div className="warranty-tabs-bar">
-					<button type="button" className={`warranty-tab-btn ${s.activeTab === "editor" ? "active" : ""}`} onClick={() => s.setActiveTab("editor")}>
-						<Sliders size={16} /> Позиции и регламент гарантии
-					</button>
-					<button type="button" className={`warranty-tab-btn ${s.activeTab === "preview" ? "active" : ""}`} onClick={() => s.setActiveTab("preview")}>
-						<Eye size={16} /> Гарантийный паспорт (A4 / A5)
-					</button>
-					<button type="button" className={`warranty-tab-btn ${s.activeTab === "schedule" ? "active" : ""}`} onClick={() => s.setActiveTab("schedule")}>
-						<Calendar size={16} /> График чекапов ({s.calculation.checkupSchedule.length})
-					</button>
-					<button type="button" className={`warranty-tab-btn ${s.activeTab === "conditions" ? "active" : ""}`} onClick={() => s.setActiveTab("conditions")}>
-						<FileCheck size={16} /> Правила ухода и гарантии клиники
-					</button>
-					<button type="button" className={`warranty-tab-btn warranty-tab-remediation ${s.activeTab === "remediation" ? "active" : ""}`} onClick={() => s.setActiveTab("remediation")}>
-						<Sparkles size={16} /> Гарантийная переделка (0 ₽) {s.remediations.length > 0 ? `(${s.remediations.length})` : ""}
-					</button>
-				</div>
+				<WarrantyModalTabs
+					activeTab={s.activeTab}
+					setActiveTab={s.setActiveTab}
+					checkupScheduleCount={s.calculation.checkupSchedule.length}
+					remediationsCount={s.remediations.length}
+				/>
 
 				{/* Body */}
 				<div className="warranty-modal-body">
@@ -93,25 +66,15 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				</div>
 
 				{/* Footer */}
-				<div className="warranty-modal-footer">
-					<div className="warranty-footer-left">
-						<QrCode size={16} />
-						<span className="truncate min-w-0">Сертификат: {s.certificateId}</span>
-						<span>•</span>
-						<span className="truncate min-w-0">ЭЦП: {s.certificateData.integrityHash.slice(0, 16)}...</span>
-					</div>
-
-					<div className="warranty-footer-right">
-						<WarrantyShareMenu phone={patient?.phone} {...s.shareMenuProps} />
-						<button type="button" className="warranty-btn-secondary" onClick={s.handlePrint}>
-							<Printer size={16} /> Распечатать сертификат (Enter)
-						</button>
-						<button type="button" className="warranty-btn-primary" onClick={s.handleAttachTo043u} title="Выдать гарантийный паспорт и сохранить в медицинскую карту">
-							{s.attachedStatus ? <CheckCircle2 size={16} /> : <FileCheck size={16} />}
-							{s.attachedStatus ? "Обновлено в карте" : "Выдать гарантийный паспорт"}
-						</button>
-					</div>
-				</div>
+				<WarrantyModalFooter
+					certificateId={s.certificateId}
+					integrityHash={s.certificateData.integrityHash}
+					patientPhone={patient?.phone}
+					shareMenuProps={s.shareMenuProps}
+					onPrint={s.handlePrint}
+					onAttachTo043u={s.handleAttachTo043u}
+					attachedStatus={s.attachedStatus}
+				/>
 			</div>
 		</div>
 	);
