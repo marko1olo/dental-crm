@@ -1,0 +1,58 @@
+/* Tab Navigation */
+.pc-nav-bar {
+	display: flex;
+	flex-wrap: nowrap;
+	background: var(--pc-surface);
+	border-bottom: 1px solid var(--pc-border);
+	padding: 0 16px;
+	gap: 4px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	flex-shrink: 0;
+	scrollbar-width: none;
+}
+
+.pc-nav-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.pc-tab-btn {
+	min-height: 48px;
+	min-width: 44px;
+	padding: 0 11px;
+	background: transparent;
+	border: none;
+	border-bottom: 2.5px solid transparent;
+	color: var(--pc-text-muted);
+	font-weight: 600;
+	font-size: 0.8125rem;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
+	touch-action: manipulation;
+}
+
+.pc-tab-btn:hover {
+	color: var(--pc-text-main);
+	background: var(--pc-surface-hover);
+}
+
+.pc-tab-btn.active {
+	color: var(--pc-primary);
+	border-bottom-color: var(--pc-primary);
+	background: var(--pc-primary-light);
+}
+
+.pc-tab-counter {
+	background: var(--pc-danger);
+	color: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 800;
+	border-radius: 10px;
+	padding: 1px 6px;
+	line-height: 1;
+}

@@ -1,0 +1,89 @@
+@media (max-width: 480px) {
+	.pc-invoice-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+
+	.pc-invoice-actions {
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+	}
+
+	.pc-invoice-actions button,
+	.pc-invoice-actions a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.tax-deduction-quick-card,
+	.next-visit-card,
+	.emergency-hotline-card {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.tax-deduction-quick-card button,
+	.next-visit-card button,
+	.next-visit-card a,
+	.emergency-hotline-card a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 38px;
+		height: 44px;
+		font-size: 1.125rem;
+	}
+}
+
+/* ==========================================================================
+   Touch Screen / Tablet Ergonomics (Mandate 8c: >= 44px Touch Targets)
+   ========================================================================== */
+@media (pointer: coarse) {
+	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
+	}
+}

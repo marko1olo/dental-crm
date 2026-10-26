@@ -1,0 +1,67 @@
+.pc-care-actions-bar {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.pc-care-actions-bar button {
+	min-height: 44px;
+	padding: 8px 14px;
+	font-weight: 700;
+	border-radius: var(--pc-radius-md);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.pc-care-actions-bar {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+		width: 100%;
+		margin-top: 8px;
+	}
+
+	.pc-care-actions-bar .pc-whatsapp-btn {
+		grid-column: 1 / -1;
+		width: 100%;
+		min-height: 46px;
+	}
+
+	.pc-care-actions-bar button {
+		min-height: 44px;
+		font-size: 0.8125rem;
+		padding: 8px 10px;
+		width: 100%;
+	}
+}
+
+.pc-whatsapp-btn {
+	min-height: 48px;
+	padding: 10px 20px;
+	border-radius: var(--pc-radius-md);
+	font-size: 0.9375rem;
+	font-weight: 800;
+	background: #25d366;
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-decoration: none;
+	touch-action: manipulation;
+	box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+	transition: all 0.15s ease;
+}
+
+.pc-whatsapp-btn:hover {
+	background: #20ba59;
+	transform: scale(1.02);
+}

@@ -1,0 +1,61 @@
+/* Documents & Tax Deduction Section Styles */
+.pc-tax-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.pc-tax-main-title {
+	margin: 0 0 4px 0;
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-tax-subtitle {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-tax-year-selector {
+	display: flex;
+	gap: 6px;
+}
+
+.pc-year-btn {
+	padding: 6px 14px;
+	min-height: 34px;
+	border-radius: 8px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-year-btn.active {
+	background: var(--pc-primary);
+	color: #ffffff;
+	border-color: var(--pc-primary);
+}
+
+.pc-tax-banner-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	border-radius: var(--pc-radius-md);
+	background: linear-gradient(135deg, var(--pc-primary), var(--pc-primary-hover));
+	color: #ffffff;
+	font-size: 0.875rem;
+	font-weight: 700;
+	margin-bottom: 16px;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}

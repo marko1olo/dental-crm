@@ -1,0 +1,39 @@
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.patient-cabinet-modal {
+		height: 98vh;
+		border-radius: 0;
+	}
+
+	.pc-header {
+		padding: 12px 14px;
+	}
+
+	.pc-body {
+		padding: 12px;
+		gap: 14px;
+	}
+
+	.pc-summary-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 40px;
+		height: 48px;
+		font-size: 1.25rem;
+	}
+
+	.pc-nav-bar {
+		padding: 0 8px;
+	}
+
+	.pc-tab-btn {
+		padding: 0 12px;
+		font-size: 0.8125rem;
+	}
+}

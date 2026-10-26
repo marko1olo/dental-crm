@@ -1,0 +1,45 @@
+/* Treatment Plan SVG Progress Ring */
+.pc-plan-hero-grid {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.pc-ring-diagram-wrapper {
+	position: relative;
+	width: 130px;
+	height: 130px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-ring-center-content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	pointer-events: none;
+}
+
+.pc-ring-percent {
+	font-size: 1.625rem;
+	font-weight: 900;
+	color: var(--pc-text-main);
+	line-height: 1;
+}
+
+.pc-ring-subtext {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+	margin-top: 2px;
+}

@@ -1,0 +1,96 @@
+/* Invoices Toolbar & Friendly Blocks */
+.pc-invoices-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 14px;
+}
+
+.pc-view-mode-wrapper {
+	display: flex;
+	align-items: center;
+}
+
+.pc-mode-toggle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: var(--pc-radius-sm);
+	cursor: pointer;
+}
+
+.pc-friendly-breakdown-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 10px 0;
+}
+
+.pc-friendly-group-card {
+	background: transparent;
+	border: none;
+	border-top: 1px solid var(--pc-border);
+	border-radius: 0;
+	padding: 12px 2px 4px 2px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pc-friendly-group-card:first-child {
+	border-top: none;
+	padding-top: 4px;
+}
+
+.pc-friendly-group-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--pc-border);
+}
+
+.pc-group-icon-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.pc-group-icon-box {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-group-name {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: block;
+}
+
+.pc-group-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	margin-top: 2px;
+}
+
+.pc-group-subtotal {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+}

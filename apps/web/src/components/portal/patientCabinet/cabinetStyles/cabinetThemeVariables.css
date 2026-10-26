@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Patient Personal Portal & SMS/OTP Cabinet Styles
+   Touch-First, Multi-Theme (Light, Dark, Night, Calm Teal)
+   ========================================================================== */
+
+.patient-cabinet-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1050;
+	padding: 12px;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.patient-cabinet-modal {
+	--pc-bg: var(--paper, #ffffff);
+	--pc-surface: var(--paper-strong, #f8fafc);
+	--pc-surface-hover: var(--surface-hover, #f1f5f9);
+	--pc-border: var(--border, #e2e8f0);
+	--pc-border-focus: var(--primary, #0d9488);
+	--pc-text-main: var(--ink, #0f172a);
+	--pc-text-muted: var(--muted, #64748b);
+	--pc-primary: var(--primary, #0d9488);
+	--pc-primary-hover: var(--primary-hover, #0f766e);
+	--pc-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
+	--pc-surface-muted: var(--pc-primary-light, rgba(13, 148, 136, 0.1));
+	--pc-success: var(--success, #10b981);
+	--pc-success-light: rgba(16, 185, 129, 0.12);
+	--pc-warning: var(--warning, #f59e0b);
+	--pc-warning-light: rgba(245, 158, 11, 0.12);
+	--pc-danger: var(--danger, #ef4444);
+	--pc-danger-light: rgba(239, 68, 68, 0.12);
+	--pc-radius-lg: 16px;
+	--pc-radius-md: 10px;
+	--pc-radius-sm: 6px;
+	--pc-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	position: relative;
+	z-index: 10;
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 1120px;
+	height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+	font-family: inherit;
+}

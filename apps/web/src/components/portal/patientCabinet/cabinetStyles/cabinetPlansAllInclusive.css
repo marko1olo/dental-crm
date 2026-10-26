@@ -1,0 +1,63 @@
+.pc-all-inclusive-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 14px 16px;
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-primary);
+	border-radius: var(--pc-radius-md);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.06);
+	box-sizing: border-box;
+}
+
+.pc-ai-icon {
+	color: var(--pc-primary);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.pc-ai-text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pc-ai-title {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-ai-desc {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+	line-height: 1.45;
+}
+
+/* 3-Tier Comparison Header */
+.pc-tier-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.pc-tier-label {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+}
+
+.pc-tier-current-badge {
+	font-size: 0.8125rem;
+	color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-weight: 600;
+}
+
+/* Stages List & Cards */

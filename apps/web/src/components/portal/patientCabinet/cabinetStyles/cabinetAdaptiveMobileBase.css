@@ -1,0 +1,96 @@
+/* ── Mobile Smartphone Optimization (<= 480px & iPhone SE 375px) ── */
+@media (max-width: 480px) {
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+
+	.patient-cabinet-modal {
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.pc-header {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.pc-header-user {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.pc-header-badges {
+		width: 100%;
+		justify-content: space-between;
+		gap: 6px;
+	}
+
+	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+		margin-left: auto;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
+	}
+
+	/* Mandate 8p: Purge duplicate profile hero card on mobile (it duplicates sticky .pc-header and wastes 220px) */
+	.pc-status-hero-card {
+		display: none !important;
+	}
+
+	.pc-body {
+		padding: 12px 10px 56px 10px;
+		gap: 12px;
+	}
+
+	.pc-card {
+		padding: 12px 10px;
+	}
+
+	.pc-alert-banner {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.pc-alert-banner button {
+		width: 100%;
+		min-height: 44px;
+	}
+}
+

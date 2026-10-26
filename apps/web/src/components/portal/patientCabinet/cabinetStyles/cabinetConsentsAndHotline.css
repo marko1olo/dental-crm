@@ -1,0 +1,55 @@
+.pc-audit-hash-badge {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 8px 12px;
+	font-family: monospace;
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	overflow-x: auto;
+}
+
+/* Appointments Cards */
+.pc-appointment-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Patient Plan View & Guarantees */
+.patient-plan-view-container {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.emergency-hotline-card {
+	animation: pc-pulse-border 3s infinite ease-in-out;
+}
+
+@keyframes pc-pulse-border {
+	0%, 100% {
+		border-color: var(--pc-danger, #ef4444);
+	}
+	50% {
+		border-color: rgba(239, 68, 68, 0.4);
+	}
+}
+
+.treatment-plan-stage-card {
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.treatment-plan-stage-card:hover {
+	border-color: var(--pc-primary, #0d9488);
+}

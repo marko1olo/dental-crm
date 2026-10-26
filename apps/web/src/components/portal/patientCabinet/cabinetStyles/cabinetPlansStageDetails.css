@@ -1,0 +1,83 @@
+.pc-stage-meta-line {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pc-stage-price-col {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.pc-stage-cost {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+}
+
+.pc-stage-chevron-btn {
+	background: transparent;
+	border: none;
+	padding: 4px;
+	color: var(--pc-text-muted);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pc-stage-body {
+	padding: 12px 16px 16px 16px;
+	border-top: 1px solid var(--pc-border);
+	background: var(--pc-bg);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-stage-included-pill {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	padding: 6px 12px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.pc-stage-procedures-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-proc-list-header {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.pc-proc-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8125rem;
+	color: var(--pc-text-main);
+}
+
+.pc-stage-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding-top: 8px;
+}

@@ -1,0 +1,71 @@
+/* ==========================================================================
+   WAVE 2: SLEEK BOTTOM SHEETS (ANTI-MATRYOSHKA - MANDATE 8d #6)
+   Depth strictly 1 - Inside modal container
+   ========================================================================== */
+
+.pc-sheet-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	z-index: 50;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	animation: pcFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+.pc-sheet-window {
+	width: 100%;
+	max-width: 580px;
+	max-height: 90%;
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	padding: 12px 20px 24px 20px;
+	box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow-y: auto;
+	box-sizing: border-box;
+	animation: pcSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pc-sheet-handle-bar {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding-bottom: 4px;
+	cursor: grab;
+}
+
+.pc-sheet-handle {
+	width: 40px;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--pc-border);
+}
+
+@keyframes pcFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes pcSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}

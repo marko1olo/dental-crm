@@ -1,0 +1,76 @@
+/* Invoices Filter Chips & View Mode Buttons */
+.pc-filter-chips-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	min-height: 34px;
+	border-radius: 20px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-filter-chip:hover {
+	color: var(--pc-text-main);
+	border-color: var(--pc-border-focus);
+}
+
+.pc-filter-chip.active {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border-color: var(--pc-primary);
+	font-weight: 700;
+}
+
+.pc-filter-chip.warning.active {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border-color: var(--pc-warning);
+}
+
+.pc-filter-chip.success.active {
+	background: var(--pc-success-light);
+	color: var(--pc-success);
+	border-color: var(--pc-success);
+}
+
+.pc-view-mode-wrapper {
+	display: flex;
+	gap: 6px;
+}
+
+.pc-view-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 34px;
+	border-radius: 8px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-view-mode-btn.active {
+	background: var(--pc-surface-hover);
+	color: var(--pc-text-main);
+	border-color: var(--pc-primary);
+}

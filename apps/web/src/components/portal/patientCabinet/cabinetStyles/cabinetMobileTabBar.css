@@ -1,0 +1,69 @@
+/* ==========================================================================
+   MOBILE PWA BOTTOM NAVIGATION BAR (390PX VIEWPORTS)
+   ========================================================================== */
+
+.pc-mobile-tab-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.pc-nav-bar {
+		display: none;
+	}
+
+	.pc-mobile-tab-bar {
+		display: flex;
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--pc-surface);
+		border-top: 1px solid var(--pc-border);
+		padding: 6px 6px env(safe-area-inset-bottom, 8px) 6px;
+		gap: 2px;
+		z-index: 30;
+		box-sizing: border-box;
+	}
+
+	.pc-mobile-tab-btn {
+		flex: 1;
+		min-height: 48px;
+		min-width: 44px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--pc-text-muted);
+		background: transparent;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition: all 0.15s ease;
+		padding: 4px 2px;
+	}
+
+	.pc-mobile-tab-btn:hover {
+		color: var(--pc-text-main);
+	}
+
+	.pc-mobile-tab-btn.active {
+		color: var(--pc-primary);
+		background: var(--pc-primary-light);
+	}
+
+	.patient-cabinet-modal {
+		max-width: 100%;
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+}

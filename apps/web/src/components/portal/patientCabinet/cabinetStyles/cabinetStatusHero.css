@@ -1,0 +1,114 @@
+/* ==========================================================================
+   Patient Status Hero Card & Overview Elements (Mandate 8c & Apple Health)
+   ========================================================================== */
+.pc-status-hero-card {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.pc-status-hero-top {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.pc-avatar-large {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--pc-primary), var(--pc-primary-hover));
+	color: #ffffff;
+	font-size: 1.25rem;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.pc-status-hero-details {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-status-name-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-patient-name {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	line-height: 1.25;
+}
+
+.pc-badge-card-number {
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	color: var(--pc-text-muted);
+}
+
+.pc-doctor-subtitle {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-doctor-subtitle strong {
+	color: var(--pc-text-main);
+}
+
+.pc-loyalty-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--pc-border);
+}
+
+.pc-loyalty-pill {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: var(--pc-radius-sm);
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	flex: 1;
+	min-width: 180px;
+}
+
+.pc-loyalty-text {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.pc-loyalty-label {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-loyalty-val {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+}

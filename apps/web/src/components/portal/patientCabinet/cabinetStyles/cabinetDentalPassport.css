@@ -1,0 +1,59 @@
+/* Dental Passport Grid & Cards */
+.pc-dental-passport-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.pc-dental-passport-card {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.2s ease;
+}
+
+.pc-dental-passport-card:hover {
+	border-color: var(--pc-primary);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.pc-tooth-badge {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-size: 1.125rem;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-plain-summary-box {
+	background: rgba(13, 148, 136, 0.06);
+	border-left: 3px solid var(--pc-primary);
+	padding: 8px 12px;
+	border-radius: 0 6px 6px 0;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+	.pc-tax-calc-grid,
+	.pc-tax-steps-grid,
+	.pc-dental-passport-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-tax-deduction-widget {
+		padding: 14px;
+	}
+}

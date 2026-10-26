@@ -1,0 +1,85 @@
+.pc-group-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pc-friendly-item-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 6px 0;
+	border-bottom: 1px dashed var(--pc-border);
+}
+
+.pc-friendly-item-row:last-child {
+	border-bottom: none;
+}
+
+.pc-friendly-item-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-friendly-item-name {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--pc-text-main);
+}
+
+.pc-friendly-item-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	line-height: 1.35;
+}
+
+.pc-friendly-item-cost {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+	text-align: right;
+}
+
+.pc-unpaid-actions-row,
+.pc-paid-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+.pc-sbp-pay-btn {
+	width: 100%;
+	justify-content: center;
+	padding: 10px 16px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.pc-receipt-download-btn,
+.pc-receipt-print-btn,
+.pc-fns-link-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 7px 12px;
+}
+
+.pc-fiscal-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-success);
+	background: var(--pc-success-light);
+	border: 1px solid var(--pc-success);
+	padding: 4px 10px;
+	border-radius: 12px;
+	margin-right: auto;
+}

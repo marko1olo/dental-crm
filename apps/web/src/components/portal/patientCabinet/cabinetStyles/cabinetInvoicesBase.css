@@ -1,0 +1,110 @@
+/* Invoices List */
+.pc-invoices-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-invoice-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.15s ease;
+}
+
+.pc-invoice-card.unpaid {
+	border-left: 5px solid var(--pc-warning);
+}
+
+.pc-invoice-card.paid {
+	border-left: 5px solid var(--pc-success);
+}
+
+.pc-invoice-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.pc-status-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pc-status-badge.paid {
+	background: var(--pc-success-light);
+	color: var(--pc-success);
+	border: 1px solid var(--pc-success);
+}
+
+.pc-status-badge.unpaid {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border: 1px solid var(--pc-warning);
+}
+
+.pc-status-badge.scheduled {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+}
+
+[data-theme="dark"] .pc-status-badge.paid,
+.dark .pc-status-badge.paid {
+	color: var(--pc-success);
+	border-color: var(--pc-success);
+}
+
+[data-theme="dark"] .pc-status-badge.unpaid,
+.dark .pc-status-badge.unpaid {
+	color: var(--pc-warning);
+	border-color: var(--pc-warning);
+}
+
+[data-theme="dark"] .pc-status-badge.scheduled,
+.dark .pc-status-badge.scheduled {
+	color: var(--pc-primary);
+	border-color: var(--pc-primary);
+}
+
+.pc-invoice-items-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	margin-top: 4px;
+}
+
+.pc-invoice-items-table th {
+	text-align: left;
+	color: var(--pc-text-muted);
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--pc-border);
+	font-weight: 600;
+}
+
+.pc-invoice-items-table td {
+	padding: 8px;
+	border-bottom: 1px solid var(--pc-border);
+	color: var(--pc-text-main);
+}
+
+.pc-invoice-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding-top: 8px;
+	border-top: 1px solid var(--pc-border);
+}

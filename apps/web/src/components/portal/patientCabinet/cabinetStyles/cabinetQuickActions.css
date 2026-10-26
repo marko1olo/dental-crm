@@ -1,0 +1,103 @@
+/* Quick Actions Bar & Buttons (Mandates 8c, 8e) */
+.pc-quick-actions-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 2px 0;
+}
+
+.pc-quick-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px 14px;
+	min-height: 38px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+	white-space: nowrap;
+	border: 1px solid transparent;
+}
+
+.pc-quick-action-btn.primary {
+	background: var(--pc-primary);
+	color: #ffffff;
+	border-color: var(--pc-primary);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+.pc-quick-action-btn.primary:hover {
+	background: var(--pc-primary-hover);
+}
+
+.pc-quick-action-btn.secondary {
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+}
+
+.pc-quick-action-btn.secondary:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}
+
+.pc-quick-action-btn.accent {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+}
+
+.pc-quick-action-btn.accent:hover {
+	background: var(--pc-primary);
+	color: #ffffff;
+}
+
+/* Calendar Export Strip & Buttons */
+.pc-calendar-export-strip {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 8px;
+	padding-top: 10px;
+	border-top: 1px solid var(--pc-border);
+}
+
+.pc-cal-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--pc-text-muted);
+}
+
+.pc-cal-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-cal-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	min-height: 30px;
+	border-radius: 6px;
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-cal-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}

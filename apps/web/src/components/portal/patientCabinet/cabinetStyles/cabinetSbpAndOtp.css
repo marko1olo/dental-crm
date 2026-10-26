@@ -1,0 +1,100 @@
+/* SBP QR Modal Sheet Overlay */
+.pc-sheet-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1100;
+	padding: 16px;
+}
+
+.pc-sheet-window {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 480px;
+	max-height: 90vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px;
+}
+
+.pc-qr-container {
+	background: var(--pc-bg, #ffffff);
+	padding: 16px;
+	border-radius: var(--pc-radius-md);
+	border: 1px solid var(--pc-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.pc-bank-buttons-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.pc-bank-btn {
+	min-height: 48px;
+	min-width: 44px;
+	border: 1px solid var(--pc-border);
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border-radius: var(--pc-radius-sm);
+	font-weight: 700;
+	font-size: 0.8125rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-bank-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-border-focus);
+}
+
+/* SMS OTP Inputs */
+.pc-otp-container {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin: 12px 0;
+}
+
+.pc-otp-digit {
+	width: 46px;
+	height: 52px;
+	min-width: 44px;
+	min-height: 44px;
+	border: 2px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	font-size: 1.5rem;
+	font-weight: 800;
+	text-align: center;
+	transition: all 0.15s ease;
+}
+
+.pc-otp-digit:focus {
+	outline: none;
+	border-color: var(--pc-primary);
+	box-shadow: 0 0 0 3px var(--pc-primary-light);
+}

@@ -1,0 +1,92 @@
+/* Multi-Theme Overrides */
+[data-theme="light"] .patient-cabinet-modal,
+:root[data-theme="light"] .patient-cabinet-modal,
+html[data-theme="light"] .patient-cabinet-modal,
+.light .patient-cabinet-modal {
+	--pc-bg: #ffffff;
+	--pc-surface: #f8fafc;
+	--pc-surface-hover: #f1f5f9;
+	--pc-border: #e2e8f0;
+	--pc-border-focus: #0d9488;
+	--pc-text-main: #0f172a;
+	--pc-text-muted: #64748b;
+	--pc-primary: #0d9488;
+	--pc-primary-hover: #0f766e;
+	--pc-primary-light: rgba(13, 148, 136, 0.1);
+	--pc-success: #10b981;
+	--pc-success-light: rgba(16, 185, 129, 0.12);
+	--pc-warning: #f59e0b;
+	--pc-warning-light: rgba(245, 158, 11, 0.12);
+	--pc-danger: #ef4444;
+	--pc-danger-light: rgba(239, 68, 68, 0.12);
+	--pc-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .patient-cabinet-backdrop {
+	background: rgba(15, 23, 42, 0.45);
+}
+
+html.dark:not([data-theme="light"]) .patient-cabinet-modal,
+[data-theme="dark"] .patient-cabinet-modal {
+	--pc-bg: #0f172a;
+	--pc-surface: #1e293b;
+	--pc-surface-hover: #334155;
+	--pc-border: #334155;
+	--pc-text-main: #f8fafc;
+	--pc-text-muted: #94a3b8;
+	--pc-primary: #2dd4bf;
+	--pc-primary-hover: #14b8a6;
+	--pc-primary-light: rgba(45, 212, 191, 0.15);
+	--pc-success: #34d399;
+	--pc-success-light: rgba(52, 211, 153, 0.15);
+	--pc-warning: #fbbf24;
+	--pc-warning-light: rgba(251, 191, 36, 0.15);
+	--pc-danger: #f87171;
+	--pc-danger-light: rgba(248, 113, 113, 0.15);
+}
+
+[data-theme="night"] .patient-cabinet-modal,
+[data-theme="oled"] .patient-cabinet-modal {
+	--pc-bg: #000000;
+	--pc-surface: #121215;
+	--pc-surface-hover: #27272a;
+	--pc-border: #27272a;
+	--pc-text-main: #ffffff;
+	--pc-text-muted: #a1a1aa;
+	--pc-primary: #2dd4bf;
+	--pc-primary-hover: #5eead4;
+	--pc-primary-light: rgba(45, 212, 191, 0.2);
+}
+
+[data-theme="cyber_xray"] .patient-cabinet-modal,
+[data-theme="cyber-xray"] .patient-cabinet-modal,
+[data-theme="xray"] .patient-cabinet-modal {
+	--pc-bg: #030712;
+	--pc-surface: #0b1329;
+	--pc-surface-hover: #111e38;
+	--pc-border: #1e293b;
+	--pc-text-main: #38bdf8;
+	--pc-text-muted: #94a3b8;
+	--pc-primary: #00f0ff;
+	--pc-primary-hover: #38bdf8;
+	--pc-primary-light: rgba(0, 240, 255, 0.18);
+	--pc-success: #10b981;
+	--pc-success-light: rgba(16, 185, 129, 0.18);
+	--pc-warning: #f59e0b;
+	--pc-warning-light: rgba(245, 158, 11, 0.18);
+	--pc-danger: #ff0055;
+	--pc-danger-light: rgba(255, 0, 85, 0.18);
+}
+
+[data-theme="calm_teal"] .patient-cabinet-modal,
+[data-theme="calm-teal"] .patient-cabinet-modal {
+	--pc-bg: #ffffff;
+	--pc-surface: #f0fdfa;
+	--pc-surface-hover: #ccfbf1;
+	--pc-border: #99f6e4;
+	--pc-text-main: #134e4a;
+	--pc-text-muted: #0f766e;
+	--pc-primary: #0f766e;
+	--pc-primary-hover: #115e59;
+	--pc-primary-light: rgba(15, 118, 110, 0.12);
+}
