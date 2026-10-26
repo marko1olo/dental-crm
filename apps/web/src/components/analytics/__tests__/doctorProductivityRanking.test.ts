@@ -84,7 +84,6 @@ test("doctorProductivityEngine: calculateDoctorProductivity ranks and computes a
 	];
 
 	const summary = calculateDoctorProductivity({ visits, periodLabel: "Неделя" });
-
 	assert.equal(summary.isEmpty, false);
 	assert.equal(summary.activeDoctorsCount, 2);
 	assert.equal(summary.topPerformerDoctorName, "Д-р Петров П.П.");

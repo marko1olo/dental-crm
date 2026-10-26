@@ -13,6 +13,8 @@ export function MobileExecutiveKpiCards({
 	totalChairsCount,
 	onNavigateToSection,
 }: MobileExecutiveKpiCardsProps) {
+	const ringOffset = 69.1 - (69.1 * Math.min(100, Math.max(0, periodMetrics.occupancyPercent))) / 100;
+
 	return (
 		<section className="mobile-exec-kpi-grid" aria-label="3 ключевые цифры соло-врача и клиники (Мандат 8n)">
 			<div className="mobile-exec-kpi-card" data-testid="kpi-card-revenue">
@@ -62,26 +64,8 @@ export function MobileExecutiveKpiCards({
 					</div>
 					<div className="kpi-mini-ring" aria-hidden="true">
 						<svg width="28" height="28" viewBox="0 0 28 28">
-							<circle
-								cx="14"
-								cy="14"
-								r="11"
-								fill="none"
-								stroke="var(--line, #cbd5e1)"
-								strokeWidth="3"
-							/>
-							<circle
-								cx="14"
-								cy="14"
-								r="11"
-								fill="none"
-								stroke="var(--teal, #0d9488)"
-								strokeWidth="3"
-								strokeLinecap="round"
-								strokeDasharray={69.1}
-								strokeDashoffset={69.1 - (69.1 * periodMetrics.occupancyPercent) / 100}
-								style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
-							/>
+							<circle cx="14" cy="14" r="11" fill="none" stroke="var(--line, #cbd5e1)" strokeWidth="3" />
+							<circle cx="14" cy="14" r="11" fill="none" stroke="var(--teal, #0d9488)" strokeWidth="3" strokeLinecap="round" strokeDasharray={69.1} strokeDashoffset={ringOffset} style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }} />
 						</svg>
 					</div>
 				</div>
