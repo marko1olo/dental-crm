@@ -38,6 +38,8 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 	const isSuperficial = cariesDepth === "superficial";
 	const showNecrotic = cariesDepth === "profunda" || cariesDepth === "destructive" || !cariesDepth;
 
+	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
+
 	return (
 		<g
 			id="tooth46-biological-caries"
@@ -63,9 +65,9 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 				<g id="tooth46-caries-class5">
 					{cariesDepth !== "destructive" ? (
 						<>
-							<path d={sp.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth={isSuperficial ? "1.0" : "0.5"} />
+							<path d={sp.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && (
-								<path d={sp.class5.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />
+								<path d={sp.class5.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />
 							)}
 							{showNecrotic && <path d={sp.class5.necrotic} fill={necroticFill} stroke="#0c0a09" />}
 						</>

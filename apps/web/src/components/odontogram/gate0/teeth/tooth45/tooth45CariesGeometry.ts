@@ -9,16 +9,16 @@ import { TOOTH45_CARIES_CLASS2_GEOMETRY } from "./tooth45CariesClass2Geometry";
 export { TOOTH45_CARIES_CLASS2_GEOMETRY };
 
 export const TOOTH45_CARIES_GEOMETRY = {
-	// Class I Destructive: central occlusal table collapse
+	// Class I Destructive: organic central occlusal table collapse
 	destructiveCutout:
-		"M 32,12 L 68,12 L 67,24 L 62,31 L 50,36 L 38,31 L 33,24 Z",
+		"M 32,0 L 68,0 C 67,16 63,26 58,32 C 54,36 46,36 42,32 C 37,26 33,16 32,0 Z",
 
 	destructive: {
-		fractureMargin: "M 33,24 L 38,31 L 50,36 L 62,31 L 67,24",
+		fractureMargin: "M 33,18 C 36,26 42,32 50,33 C 58,32 64,26 67,18",
 		fractureSteps: [
-			"M 33,24 L 38,31 L 50,36 L 62,31 L 67,24",
-			"M 38,31 L 36,35",
-			"M 62,31 L 64,35",
+			"M 36,22 C 40,28 45,31 50,31 C 55,31 60,28 64,22",
+			"M 40,28 L 38,32",
+			"M 60,28 L 62,32",
 		],
 	},
 

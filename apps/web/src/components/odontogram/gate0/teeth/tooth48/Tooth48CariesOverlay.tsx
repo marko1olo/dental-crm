@@ -30,6 +30,7 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 	const isSuperficial = cariesDepth === "superficial";
 	const isProfunda = cariesDepth === "profunda" || (!cariesDepth && cariesDepth !== "media" && cariesDepth !== "superficial" && cariesDepth !== "destructive");
 	const isDestructive = cariesDepth === "destructive";
+	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 
 	return (
 		<g
@@ -45,7 +46,7 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 				<g id="tooth48-caries-crenulated">
 					{!isDestructive ? (
 						<>
-							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth={isSuperficial ? "1.0" : "0.5"} />
+							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class1.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>
@@ -78,7 +79,7 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 				<g id="tooth48-caries-cervical">
 					{!isDestructive ? (
 						<>
-							<path d={g.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth={isSuperficial ? "1.0" : "0.5"} />
+							<path d={g.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class5.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class5.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>

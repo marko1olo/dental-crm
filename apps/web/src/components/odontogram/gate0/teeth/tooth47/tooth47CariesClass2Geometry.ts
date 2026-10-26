@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Authentic Class II Proximal Geometry for Tooth 47
- * Mandibular Second Molar: M, D, MO, DO, MOD Isthmus Bridge & Massive Fractures.
+ * Mandibular Second Molar: M, D, MO, DO, MOD Cruciform Fissure Ingress & Organic Fractures.
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
@@ -17,67 +17,75 @@ export const TOOTH47_CARIES_CLASS2_GEOMETRY = {
 		necrotic: "M 84,38 C 84.2,33 83.2,29 81.2,28 C 79.2,26 77.2,26 76.2,28 C 76.8,32 77.5,36 78.5,38.5 C 80.5,39.5 82.5,39.5 84,38 Z",
 	},
 
+	// MO: Mesial box flows across mesial ridge into cruciform central sulcus
 	class2Mo: {
-		halo: "M 15.0,42 C 14.5,35 15.5,29 18.5,25 C 22,21 26,20 30.5,21.5 C 33.5,23.0 32.0,26.5 28.0,28.0 C 25.5,29 24.5,38 23,42 C 20,44 17,44 15.0,42 Z",
-		crater: "M 15.5,40 C 15,34 16,29 18.5,26 C 21,22.5 25,21.5 29.2,22.5 C 31.8,23.5 30.5,26.0 27.0,27.0 C 24.5,28 23.5,37 22.5,40.5 C 20,42 17.5,42 15.5,40 Z",
-		necrotic: "M 16,38 C 15.8,33 16.8,29 18.8,27 C 20.8,24 24,23 27.5,23.8 C 29.0,24.8 28.5,25.8 26.0,26.2 C 23.5,27 22.5,36 21.5,38.5 Z",
+		halo: "M 14,44 C 13.5,36 14.5,29 18.5,25 C 23,21 31,21 44,22.5 C 47.5,23.5 46.5,26.5 42,27.5 C 36,28.5 32,29.5 28,33 C 24.5,36.5 21.5,41 20,44 Z",
+		crater: "M 15,42 C 14.5,35 15.5,30 19.5,26 C 24,22.5 32,22.2 43,23.5 C 45.5,24.2 44.5,26 41,26.8 C 35,27.5 31.5,28.5 27.5,31.5 C 24,35 21,39.5 20.5,42 Z",
+		necrotic: "M 16,39 C 15.5,34 16.5,30 20.5,27 C 24.5,23.5 32,23.2 41.5,24.2 C 43,24.8 42,25.8 39.5,26.5 C 34.5,27.2 31.5,28.2 27.5,31.5 C 24.5,34 22,37.5 21.5,39 Z",
 	},
 
+	// DO: Distal box flows across distal ridge into cruciform central sulcus
 	class2Do: {
-		halo: "M 85.0,42 C 85.5,35 84.5,29 81.5,25 C 78,21 74,20 69.5,21.5 C 66.5,23.0 68.0,26.5 72.0,28.0 C 74.5,29 75.5,38 77,42 C 80,44 83,44 85.0,42 Z",
-		crater: "M 84.5,40 C 85,34 84,29 81.5,26 C 79,22.5 75,21.5 70.8,22.5 C 68.2,23.5 69.5,26.0 73.0,27.0 C 75.5,28 76.5,37 77.5,40.5 C 80,42 82.5,42 84.5,40 Z",
-		necrotic: "M 84,38 C 84.2,33 83.2,29 81.2,27 C 79.2,24 76,23 72.5,23.8 C 71.0,24.8 71.5,25.8 74.0,26.2 C 76.5,27 77.5,36 78.5,38.5 Z",
+		halo: "M 86,44 C 86.5,36 85.5,29 81.5,25 C 77,21 69,21 56,22.5 C 52.5,23.5 53.5,26.5 58,27.5 C 64,28.5 68,29.5 72,33 C 75.5,36.5 78.5,41 80,44 Z",
+		crater: "M 85,42 C 85.5,35 84.5,30 80.5,26 C 76,22.5 68,22.2 57,23.5 C 54.5,24.2 55.5,26 59,26.8 C 65,27.5 68.5,28.5 72.5,31.5 C 76,35 79,39.5 79.5,42 Z",
+		necrotic: "M 84,39 C 84.5,34 83.5,30 79.5,27 C 75.5,23.5 68,23.2 58.5,24.2 C 57,24.8 58,25.8 60.5,26.5 C 65.5,27.2 68.5,28.2 72.5,31.5 C 75.5,34 78,37.5 78.5,39 Z",
 	},
 
+	// MOD: Continuous anatomical tunnel through cruciform central sulcus from M to D
+	class2Mod: {
+		halo: "M 14,44 C 13.5,36 14.5,29 18.5,25 C 23,21 33,21 50,22 C 67,21 77,21 81.5,25 C 85.5,29 86.5,36 86,44 C 80,44 78.5,41 72,33 C 68,29.5 62,25.5 50,26 C 38,25.5 32,29.5 28,33 C 21.5,41 20,44 14,44 Z",
+		crater: "M 15,42 C 14.5,35 15.5,30 19.5,26 C 24,22.5 34,22.2 50,22.8 C 66,22.2 76,22.5 80.5,26 C 84.5,30 85.5,35 85,42 C 79.5,42 78.5,39.5 72.5,32 C 68,28.5 61.5,25 50,25.5 C 38.5,25 32,28.5 27.5,32 C 21.5,39.5 20.5,42 15,42 Z",
+		necrotic: "M 16,39 C 15.5,34 16.5,30 20.5,27 C 25,23.5 35,23.2 50,23.6 C 65,23.2 75,23.5 79.5,27 C 83.5,30 84.5,34 84,39 C 79,39 78,37.5 73,31.5 C 67,27 60.5,24.5 50,25 C 39.5,24.5 33,27 27,31.5 C 22,37.5 21,39 16,39 Z",
+	},
 	class2ModBridge: {
 		halo: "M 28,21.0 C 38,19.5 62,19.5 72,21.0 C 70,25.5 30,25.5 28,21.0 Z",
 		crater: "M 29,21.8 C 39,20.5 61,20.5 71,21.8 C 69,24.5 31,24.5 29,21.8 Z",
 		necrotic: "M 32,22.2 C 41,21.5 59,21.5 68,22.2 C 66,23.8 34,23.8 32,22.2 Z",
 	},
 
-	// M: chip strictly of approximal contact wall (Y=26..46), cusp intact
+	// M: organic chip strictly of proximal contact wall (Y=24..48), cusp intact
 	destructiveCutoutM:
-		"M 8,26 L 28,26 L 28,34 L 24,42 L 14,46 L 8,46 Z",
+		"M 12,24 C 18,24 23,26 28,31 C 32,37 31,43 25,49 C 20,53 14,54 12,54 Z",
 	destructiveM: {
-		fractureMargin: "M 8,26 L 28,26 L 28,34 L 24,42 L 14,46 L 8,46",
-		fractureSteps: ["M 8,26 L 28,26 L 28,34 L 24,42 L 14,46", "M 28,26 L 30,30", "M 24,42 L 22,44"],
+		fractureMargin: "M 12,24 C 18,24 23,26 28,31 C 32,37 31,43 25,49 C 20,53 14,54 12,54",
+		fractureSteps: ["M 18,26 C 23,28 28,31 28,37 C 28,43 24,49 18,51", "M 28,31 L 31,35", "M 28,40 L 29,44"],
 	},
 
-	// D: chip strictly of distal contact wall (Y=26..46), cusp intact
+	// D: organic chip strictly of distal contact wall (Y=24..48), cusp intact
 	destructiveCutoutD:
-		"M 92,26 L 72,26 L 72,34 L 76,42 L 86,46 L 92,46 Z",
+		"M 88,24 C 82,24 77,26 72,31 C 68,37 69,43 75,49 C 80,53 86,54 88,54 Z",
 	destructiveD: {
-		fractureMargin: "M 92,26 L 72,26 L 72,34 L 76,42 L 86,46 L 92,46",
-		fractureSteps: ["M 92,26 L 72,26 L 72,34 L 76,42 L 86,46", "M 72,26 L 70,30", "M 76,42 L 78,44"],
+		fractureMargin: "M 88,24 C 82,24 77,26 72,31 C 68,37 69,43 75,49 C 80,53 86,54 88,54",
+		fractureSteps: ["M 82,26 C 77,28 72,31 72,37 C 72,43 76,49 82,51", "M 72,31 L 69,35", "M 72,40 L 71,44"],
 	},
 
-	// MO: breakdown of mesial wall and mesial cusp/occlusal table
+	// MO: organic breakdown of mesial wall and mesial cusp slope
 	destructiveCutoutMO:
-		"M 8,10 L 48,10 L 48,22 L 44,30 L 36,36 L 24,42 L 8,42 Z",
+		"M 12,0 L 48,0 C 48,12 46,18 41,24 C 36,30 29,37 23,43 C 17,48 12,50 12,50 Z",
 	destructiveMO: {
-		fractureMargin: "M 48,10 L 48,22 L 44,30 L 36,36 L 24,42 L 8,42",
-		fractureSteps: ["M 48,10 L 48,22 L 44,30 L 36,36 L 24,42", "M 44,30 L 46,34", "M 36,36 L 38,40"],
+		fractureMargin: "M 48,0 C 48,12 46,18 41,24 C 36,30 29,37 23,43 C 17,48 12,50 12,50",
+		fractureSteps: ["M 41,24 C 36,30 29,37 23,43", "M 41,24 L 44,28", "M 29,37 L 32,41"],
 	},
 
-	// DO: breakdown of distal wall and distal cusp/occlusal table
+	// DO: organic breakdown of distal wall and distal cusp slope
 	destructiveCutoutDO:
-		"M 92,10 L 52,10 L 52,22 L 56,30 L 64,36 L 76,42 L 92,42 Z",
+		"M 88,0 L 52,0 C 52,12 54,18 59,24 C 64,30 71,37 77,43 C 83,48 88,50 88,50 Z",
 	destructiveDO: {
-		fractureMargin: "M 52,10 L 52,22 L 56,30 L 64,36 L 76,42 L 92,42",
-		fractureSteps: ["M 52,10 L 52,22 L 56,30 L 64,36 L 76,42", "M 56,30 L 54,34", "M 64,36 L 62,40"],
+		fractureMargin: "M 52,0 C 52,12 54,18 59,24 C 64,30 71,37 77,43 C 83,48 88,50 88,50",
+		fractureSteps: ["M 59,24 C 64,30 71,37 77,43", "M 59,24 L 56,28", "M 71,37 L 68,41"],
 	},
 
-	// MOD: massive bilateral through-and-through saddle breakdown
+	// MOD: continuous organic saddle breakdown
 	destructiveCutoutMOD:
-		"M 8,10 L 92,10 L 92,44 L 80,44 L 74,38 L 66,28 L 50,33 L 34,28 L 26,38 L 20,44 L 8,44 Z",
+		"M 12,0 L 88,0 L 88,48 C 82,48 76,41 68,31 C 60,24 55,25 50,26 C 45,25 40,24 32,31 C 24,41 18,48 12,48 Z",
 	destructiveMOD: {
 		fractureMargin:
-			"M 8,44 L 20,44 L 26,38 L 34,28 L 50,33 L 66,28 L 74,38 L 80,44 L 92,44",
+			"M 12,48 C 18,48 24,41 32,31 C 40,24 45,25 50,26 C 55,25 60,24 68,31 C 76,41 82,48 88,48",
 		fractureSteps: [
-			"M 20,44 L 26,38 L 34,28 L 50,33",
-			"M 50,33 L 66,28 L 74,38 L 80,44",
-			"M 34,28 L 36,32",
-			"M 66,28 L 64,32",
+			"M 18,46 C 24,39 32,31 40,25",
+			"M 40,25 C 45,26 50,27 55,26 C 60,25 68,31 82,46",
+			"M 32,31 L 34,35",
+			"M 68,31 L 66,35",
 		],
 	},
 } as const;

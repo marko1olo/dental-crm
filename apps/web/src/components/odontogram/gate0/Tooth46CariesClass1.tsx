@@ -30,27 +30,29 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	const isProfunda = cariesDepth === "profunda" || (!cariesDepth && !isSuperficial && !isDestructive);
 	const destr = TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY.destructive;
 
+	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
+
 	return (
 		<g id="tooth46-caries-class1">
 			{/* Non-destructive depths: superficial, media, profunda */}
 			{!isDestructive && (
 				<>
-					<path d={c1.demineralizedHalo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth={isSuperficial ? "1.1" : "0.6"} />
+					<path d={c1.demineralizedHalo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.6"} />
 					{!isSuperficial && (
-						<path d={c1.dendriticCariesPath} fill={lesionFill} stroke="rgba(120, 53, 15, 0.95)" strokeWidth="0.8" />
+						<path d={c1.dendriticCariesPath} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />
 					)}
 					{isProfunda && (
 						<path d={c1.necroticCore} fill={necroticFill} stroke="rgba(12, 10, 9, 0.98)" strokeWidth="0.8" />
 					)}
 					<path
 						d={c1.buccalGrooveTrace} fill="none"
-						stroke={isSuperficial ? "#1c1917" : isDark ? "rgba(120, 53, 15, 0.70)" : "rgba(146, 64, 14, 0.80)"}
-						strokeWidth={isSuperficial ? "1.2" : "0.7"} strokeLinecap="round"
+						stroke={isSuperficial ? deminStroke : isDark ? "rgba(120, 53, 15, 0.70)" : "rgba(146, 64, 14, 0.80)"}
+						strokeWidth={isSuperficial ? "0.8" : "0.7"} strokeLinecap="round"
 					/>
 					{showBuccalPit && (
 						<g id="tooth46-buccal-caecum">
-							<path d={c1.buccalPitCavity.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? "#1c1917" : haloStroke} strokeWidth="0.5" />
-							{!isSuperficial && <path d={c1.buccalPitCavity.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />}
+							<path d={c1.buccalPitCavity.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth="0.5" />
+							{!isSuperficial && <path d={c1.buccalPitCavity.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.9)" strokeWidth="0.6" />}
 							{isProfunda && <path d={c1.buccalPitCavity.necroticCenter} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</g>
 					)}

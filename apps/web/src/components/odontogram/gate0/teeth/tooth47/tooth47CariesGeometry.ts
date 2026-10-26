@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Organic Caries & Cavitation Geometry for Tooth 47
- * Mandibular Second Molar: Class I (Dendritic Fissure), Class II (5 localizations x 4 depths), Class V.
+ * Mandibular Second Molar: Class I (Cruciform Fissure), Class II (5 localizations x 4 depths), Class V.
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
@@ -9,20 +9,20 @@ import { TOOTH47_CARIES_CLASS2_GEOMETRY } from "./tooth47CariesClass2Geometry";
 export { TOOTH47_CARIES_CLASS2_GEOMETRY };
 
 export const TOOTH47_CARIES_GEOMETRY = {
-	// Class I Destructive: central occlusal table collapse
+	// Class I Destructive: organic central occlusal table collapse
 	destructiveCutout:
-		"M 26,12 L 74,12 L 73,25 L 68,32 L 60,37 L 50,38 L 40,37 L 32,32 L 27,25 Z",
+		"M 24,0 L 76,0 C 75,16 71,26 64,33 C 58,38 42,38 36,33 C 29,26 25,16 24,0 Z",
 
 	destructive: {
-		fractureMargin: "M 27,25 L 32,32 L 40,37 L 50,38 L 60,37 L 68,32 L 73,25",
+		fractureMargin: "M 25,18 C 30,26 40,33 50,34 C 60,33 70,26 75,18",
 		fractureSteps: [
-			"M 27,25 L 32,32 L 40,37 L 50,38 L 60,37 L 68,32 L 73,25",
-			"M 32,32 L 30,36",
-			"M 68,32 L 70,36",
+			"M 30,22 C 36,28 43,32 50,32 C 57,32 64,28 70,22",
+			"M 36,28 L 34,32",
+			"M 64,28 L 66,32",
 		],
 	},
 
-	// Class I Organic Dendritic Cavity along Offset Molar Fissures
+	// Class I Organic Dendritic Cavity along Cruciform Fissure
 	class1: {
 		halo:
 			"M 26,19.5 C 34,19.0 42,20.0 46,21.0 C 45,25.0 43,29.5 41,33.5 C 44,34.0 46,31.0 47,26.5 " +
